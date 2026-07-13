@@ -1,12 +1,12 @@
 # ASMO API
 
-Backend REST API (Laravel) untuk aplikasi kalibrasi alat ukur & sertifikat digital PT ASMO. Melayani aplikasi mobile [`asmo-mobile`](https://github.com/USERNAME/asmo-mobile) — tidak ada web admin panel terpisah, semua konsumsi data lewat API ini.
+Backend REST API (Laravel) untuk aplikasi kalibrasi alat ukur & sertifikat digital PT ASMO. Melayani aplikasi mobile [`asmo-mobile`](https://github.com/ZainulArkaanAlinsi/asmo-mobile) — tidak ada web admin panel terpisah, semua konsumsi data lewat API ini.
 
 ## Tech Stack
 - **Framework**: Laravel 13 (PHP 8.3)
 - **Auth**: Laravel Sanctum (token-based, dipakai dari mobile)
 - **Database**: MySQL 8.0
-- **Mobile client**: lihat repo [`asmo-mobile`](https://github.com/USERNAME/asmo-mobile)
+- **Mobile client**: lihat repo [`asmo-mobile`](https://github.com/ZainulArkaanAlinsi/asmo-mobile)
 
 ## Fitur Utama (rencana)
 - Autentikasi & otorisasi berbasis role: **admin** (semua akses), **teknisi** (input alat & kalibrasi), **viewer** (read-only)
@@ -19,7 +19,7 @@ Backend REST API (Laravel) untuk aplikasi kalibrasi alat ukur & sertifikat digit
 ## Setup Lokal
 
 ```bash
-git clone https://github.com/USERNAME/asmo-api.git
+git clone https://github.com/ZainulArkaanAlinsi/asmo-api.git
 cd asmo-api
 composer install
 cp .env.example .env
