@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
@@ -58,15 +59,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
 
-    // Nulis data alat: admin & teknisi. Viewer ditolak 403.
+    // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
+    // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
+    Route::get('/calibrations', [CalibrationController::class, 'index']);
+    Route::get('/calibrations/{calibration}', [CalibrationController::class, 'show']);
+
+    // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+
+        Route::post('/calibrations', [CalibrationController::class, 'store']);
+        // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
+        Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
     });
 
-    // Master data & approval akun: admin doang.
+    // Approval kalibrasi & master data: admin doang.
     Route::middleware('role:admin')->group(function () {
+        // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
+        // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
+        Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
+        Route::post('/calibrations/{calibration}/reject', [CalibrationController::class, 'reject']);
+
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
 

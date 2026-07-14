@@ -35,6 +35,21 @@ class CalibrationSession extends Model
         ];
     }
 
+    /**
+     * Titik ukur yang NENTUIN hasil sesi: yang marginnya paling mepet ke batas
+     * toleransi (|error| + U terbesar).
+     *
+     * Sesi punya banyak titik, tapi sertifikat cuma nampilin satu keputusan —
+     * dan keputusannya digerakin sama titik terburuk. Satu titik FAIL bikin
+     * seluruh sesi FAIL, walaupun titik lainnya lolos semua.
+     */
+    public function titikPenentu(): ?UncertaintyCalculation
+    {
+        return $this->uncertaintyCalculations
+            ->sortByDesc(fn (UncertaintyCalculation $titik): float => abs($titik->error) + $titik->ketidakpastian_diperluas)
+            ->first();
+    }
+
     /** @return BelongsTo<Equipment, $this> */
     public function equipment(): BelongsTo
     {
