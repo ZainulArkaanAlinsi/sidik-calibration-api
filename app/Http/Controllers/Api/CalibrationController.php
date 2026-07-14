@@ -1,0 +1,291 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\CalibrationRequest;
+use App\Http\Resources\CalibrationResource;
+use App\Models\CalibrationSession;
+use App\Models\Equipment;
+use App\Models\Standard;
+use App\Models\User;
+use App\Services\GumCalculator;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Sesi kalibrasi: draft → menunggu_approval → disetujui / perlu_revisi.
+ *
+ * Data dari input manual dan dari hasil scan kamera masuk ke endpoint yang SAMA —
+ * bedanya cuma `input_method`, buat statistik, bukan buat logic beda. Nggak ada
+ * endpoint terpisah buat OCR.
+ */
+class CalibrationController extends Controller
+{
+    public function __construct(private readonly GumCalculator $gum) {}
+
+    /** Relasi yang selalu dibutuhin CalibrationResource. */
+    private const RELASI = ['equipment', 'teknisi', 'standard', 'uncertaintyCalculations', 'certificate'];
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $user = $request->user();
+
+        $sesi = CalibrationSession::query()
+            ->with(self::RELASI)
+            ->where('organization_id', $user->organization_id)
+            // Teknisi SELALU cuma lihat sesi miliknya sendiri — nggak peduli query
+            // param-nya diisi apa. Kalau `mine` dipercaya apa adanya, teknisi
+            // tinggal ngirim `mine=false` buat ngintip kerjaan orang lain.
+            // Buat admin & viewer, `mine=true` baru berfungsi sebagai filter.
+            ->when(
+                $user->role === User::ROLE_TEKNISI || $request->boolean('mine'),
+                fn ($query) => $query->where('teknisi_id', $user->id),
+            )
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when(
+                $request->filled('equipment_id'),
+                fn ($query) => $query->where('equipment_id', $request->integer('equipment_id')),
+            )
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return CalibrationResource::collection($sesi);
+    }
+
+    public function store(CalibrationRequest $request): JsonResponse
+    {
+        $sesi = DB::transaction(function () use ($request): CalibrationSession {
+            $sesi = CalibrationSession::create([
+                'organization_id' => $request->user()->organization_id,
+                'equipment_id' => $request->integer('equipment_id'),
+                'standard_id' => $request->integer('standard_id'),
+                'teknisi_id' => $request->user()->id,
+                'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
+                'input_method' => $request->string('input_method', 'manual'),
+                'lokasi' => $request->string('lokasi', 'lab'),
+                'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
+                'suhu_ruang' => $request->input('suhu_ruang'),
+                'kelembaban' => $request->input('kelembaban'),
+                'status' => CalibrationSession::STATUS_DRAFT,
+            ]);
+
+            return $this->isiUlangPengukuran($sesi, $request);
+        });
+
+        return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    }
+
+    public function show(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        return response()->json([
+            'data' => new CalibrationResource($calibration->load(self::RELASI)),
+        ]);
+    }
+
+    /**
+     * Teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau
+     * nerusin draft-nya. Semua titik & hasil hitung lama dibuang, diganti yang baru.
+     *
+     * Sesi yang udah `disetujui` NGGAK bisa diubah — sertifikatnya udah terbit,
+     * dan angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah
+     * diam-diam. Kalau ada yang salah, terbitin revisi sertifikat, bukan edit sesi.
+     */
+    public function update(CalibrationRequest $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        abort_if(
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            403,
+            'Cuma teknisi yang ngerjain sesi ini yang boleh ngubahnya.',
+        );
+
+        if (! in_array($calibration->status, [
+            CalibrationSession::STATUS_DRAFT,
+            CalibrationSession::STATUS_PERLU_REVISI,
+        ], true)) {
+            return response()->json([
+                'message' => 'Sesi yang lagi nunggu approval atau udah disetujui nggak bisa diubah.',
+            ], 422);
+        }
+
+        $sesi = DB::transaction(function () use ($request, $calibration): CalibrationSession {
+            $calibration->update([
+                'equipment_id' => $request->integer('equipment_id'),
+                'standard_id' => $request->integer('standard_id'),
+                'input_method' => $request->string('input_method', 'manual'),
+                'lokasi' => $request->string('lokasi', 'lab'),
+                'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
+                'suhu_ruang' => $request->input('suhu_ruang'),
+                'kelembaban' => $request->input('kelembaban'),
+                // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
+                // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
+                'catatan_revisi' => null,
+            ]);
+
+            return $this->isiUlangPengukuran($calibration, $request);
+        });
+
+        return response()->json(['data' => new CalibrationResource($sesi)]);
+    }
+
+    /** Admin doang (dijaga `role:admin` di routes). */
+    public function approve(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        if ($calibration->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+            return response()->json([
+                'message' => 'Cuma sesi yang statusnya `menunggu_approval` yang bisa disetujui.',
+            ], 422);
+        }
+
+        // Sesi FAIL tetap boleh disetujui — hasil FAIL itu temuan yang sah dan
+        // sertifikatnya tetap terbit (isinya "tidak laik pakai"). Yang beda cuma
+        // keputusannya, bukan boleh/nggaknya terbit.
+        $calibration->update([
+            'status' => CalibrationSession::STATUS_DISETUJUI,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'catatan_revisi' => null,
+        ]);
+
+        return response()->json([
+            'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
+        ]);
+    }
+
+    /** Admin doang (dijaga `role:admin` di routes). */
+    public function reject(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        $data = $request->validate([
+            'catatan_revisi' => ['required', 'string', 'min:5'],
+        ], [
+            'catatan_revisi.required' => 'Catatan revisi wajib diisi — teknisi perlu tahu apa yang harus dibenerin.',
+        ]);
+
+        if ($calibration->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+            return response()->json([
+                'message' => 'Cuma sesi yang statusnya `menunggu_approval` yang bisa ditolak.',
+            ], 422);
+        }
+
+        $calibration->update([
+            'status' => CalibrationSession::STATUS_PERLU_REVISI,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'catatan_revisi' => $data['catatan_revisi'],
+        ]);
+
+        return response()->json([
+            'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
+        ]);
+    }
+
+    /**
+     * Simpen pembacaan mentah + hasil hitung GUM-nya. Dipakai waktu bikin sesi
+     * baru dan waktu revisi — makanya yang lama dihapus dulu, biar nggak numpuk.
+     */
+    private function isiUlangPengukuran(CalibrationSession $sesi, CalibrationRequest $request): CalibrationSession
+    {
+        $sesi->rawMeasurements()->delete();
+        $sesi->uncertaintyCalculations()->delete();
+
+        $alat = Equipment::findOrFail($request->integer('equipment_id'));
+        $standar = Standard::findOrFail($request->integer('standard_id'));
+        $inputMethod = (string) $request->string('input_method', 'manual');
+
+        $keputusanSesi = 'PASS';
+
+        foreach (array_values($request->input('measurements')) as $index => $titik) {
+            $titikKe = $index + 1;
+            $pembacaan = array_map(floatval(...), array_values($titik['pembacaan']));
+
+            foreach ($pembacaan as $urutan => $nilai) {
+                $sesi->rawMeasurements()->create([
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'titik_ukur' => $titik['titik_ukur'],
+                    'pembacaan' => $nilai,
+                    'satuan' => $titik['satuan'],
+                    'input_source' => $inputMethod,
+                    // Input manual otomatis dianggap terverifikasi — yang ngetik
+                    // manusianya sendiri. Hasil OCR belum: kamera cuma mempercepat
+                    // input, bukan menggantikan verifikasi manusia.
+                    'is_verified' => $inputMethod === 'manual',
+                ]);
+            }
+
+            $hasil = $this->gum->hitungTitik(
+                $titikKe,
+                (float) $titik['titik_ukur'],
+                $pembacaan,
+                $alat,
+                $standar,
+            );
+
+            $sesi->uncertaintyCalculations()->create($hasil);
+
+            // Satu titik FAIL bikin seluruh sesi FAIL.
+            if ($hasil['keputusan'] === 'FAIL') {
+                $keputusanSesi = 'FAIL';
+            }
+        }
+
+        $sesi->update([
+            'keputusan' => $keputusanSesi,
+            'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
+            'submitted_at' => $request->string('status')->value() === CalibrationSession::STATUS_DRAFT
+                ? null
+                : now(),
+        ]);
+
+        return $sesi->fresh()->load(self::RELASI);
+    }
+
+    /** Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001. */
+    private function nomorSesiBerikutnya(int $organizationId): string
+    {
+        $prefix = sprintf('KAL/%s/', now()->format('Y/m'));
+
+        $urutanTerakhir = CalibrationSession::where('organization_id', $organizationId)
+            ->where('nomor_sesi', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByDesc('nomor_sesi')
+            ->value('nomor_sesi');
+
+        $urutan = $urutanTerakhir ? ((int) substr($urutanTerakhir, -4)) + 1 : 1;
+
+        return $prefix.str_pad((string) $urutan, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Teknisi cuma boleh buka sesi miliknya sendiri. Tanpa ini, `GET /calibrations`
+     * udah difilter tapi `GET /calibrations/{id}` masih bocor — tinggal tebak ID.
+     */
+    private function pastikanBolehLihat(Request $request, CalibrationSession $sesi): void
+    {
+        $this->pastikanSatuOrganisasi($request, $sesi);
+
+        $user = $request->user();
+
+        abort_if(
+            $user->role === User::ROLE_TEKNISI && $sesi->teknisi_id !== $user->id,
+            404,
+        );
+    }
+
+    /** Jaring pengaman multi-tenant: PT lain nggak boleh bisa baca sesi kita. */
+    private function pastikanSatuOrganisasi(Request $request, CalibrationSession $sesi): void
+    {
+        abort_if($sesi->organization_id !== $request->user()->organization_id, 404);
+    }
+}
