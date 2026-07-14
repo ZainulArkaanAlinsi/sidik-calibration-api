@@ -27,6 +27,12 @@ class Certificate extends Model
         ];
     }
 
+    /** @return BelongsTo<Organization, $this> */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     /** @return BelongsTo<CalibrationSession, $this> */
     public function session(): BelongsTo
     {
