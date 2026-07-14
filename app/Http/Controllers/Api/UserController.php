@@ -64,4 +64,66 @@ class UserController extends Controller
             'data' => new UserResource($user),
         ]);
     }
+
+    /**
+     * Admin benerin data akun — terutama EMAIL yang salah ketik waktu daftar.
+     *
+     * Ini bukan kemewahan: reset password jalannya lewat email, sementara login
+     * pakai ID pegawai. Jadi orang yang salah ketik emailnya waktu daftar bakal
+     * kekunci selamanya kalau nggak ada yang bisa benerin.
+     */
+    public function update(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'nama' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'employee_id' => ['sometimes', 'string', 'max:50', Rule::unique('users', 'employee_id')->ignore($user->id)],
+            'department' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'role' => ['sometimes', Rule::in(User::roles())],
+            'status' => ['sometimes', Rule::in([User::STATUS_AKTIF, User::STATUS_PENDING, User::STATUS_NONAKTIF])],
+        ], [
+            'email.unique' => 'Email ini sudah terdaftar.',
+            'employee_id.unique' => 'ID pegawai ini sudah terdaftar.',
+        ]);
+
+        if (isset($validated['nama'])) {
+            $validated['name'] = $validated['nama'];
+            unset($validated['nama']);
+        }
+
+        $user->update($validated);
+
+        // Akun yang dinonaktifkan admin harus langsung kehilangan sesinya.
+        if (($validated['status'] ?? null) === User::STATUS_NONAKTIF) {
+            $user->tokens()->delete();
+        }
+
+        return response()->json([
+            'message' => 'Data akun diperbarui.',
+            'data' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * Admin nyetel ulang password user, buat kasus yang nggak bisa ditolong
+     * `/forgot-password`: emailnya salah ketik, atau emailnya udah nggak bisa
+     * diakses. Password barunya dikasih tahu admin ke orangnya langsung.
+     */
+    public function resetPassword(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8'],
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+        ]);
+
+        $user->update(['password' => $validated['password']]);
+
+        // Semua sesi lama dicabut — kalau password diganti karena akunnya
+        // kebobolan, sesi yang lagi jalan justru yang paling penting dimatiin.
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Password akun berhasil disetel ulang.']);
+    }
 }

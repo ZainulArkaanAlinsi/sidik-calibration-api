@@ -41,6 +41,9 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middl
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
+    // yang ilang.
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -66,7 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
 
         Route::get('/users', [UserController::class, 'index']);
+        Route::put('/users/{user}', [UserController::class, 'update']);
         Route::post('/users/{user}/approve', [UserController::class, 'approve']);
         Route::post('/users/{user}/reject', [UserController::class, 'reject']);
+        // Buat kasus yang /forgot-password nggak bisa tolong: emailnya salah ketik.
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
     });
 });
