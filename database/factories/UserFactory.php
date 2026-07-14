@@ -25,10 +25,17 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'organization_id' => 1,
+            'employee_id' => 'ASM-'.fake()->unique()->numberBetween(1000, 9999),
             'name' => fake()->name(),
+            'department' => fake()->randomElement(['Kalibrasi', 'Quality Control']),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => User::ROLE_TEKNISI,
+            // Default kolomnya di DB itu `pending` (buat pendaftar baru), tapi user
+            // hasil factory dipakai buat nyoba alur yang udah login — jadi aktif.
+            'status' => User::STATUS_AKTIF,
             'remember_token' => Str::random(10),
         ];
     }
@@ -40,6 +47,21 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /** Akun hasil daftar mandiri yang belum disetujui admin. */
+    public function pending(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => User::STATUS_PENDING,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_ADMIN,
         ]);
     }
 }

@@ -4,27 +4,41 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
+        $identifier = $credentials['identifier'];
 
-        $user = User::where('email', $credentials['email'])->first();
+        // Ada '@' → anggap email, kalau nggak → ID pegawai.
+        $field = Str::contains($identifier, '@') ? 'email' : 'employee_id';
 
-        // Pesan errornya sengaja disamain buat email nggak ada & password salah,
-        // biar orang luar nggak bisa nebak-nebak email mana yang kedaftar.
+        $user = User::where($field, $identifier)->first();
+
+        // Pesan errornya sengaja disamain buat akun nggak ada & password salah,
+        // biar orang luar nggak bisa nebak-nebak ID/email mana yang kedaftar.
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['message' => 'Email atau password salah.'], 401);
+            return response()->json(['message' => 'ID pegawai / email atau password salah.'], 401);
         }
 
-        if (! $user->is_active) {
+        // Benteng aslinya ada di sini, bukan di UI — orang bisa nembak API
+        // langsung pakai curl tanpa lewat app.
+        if ($user->status === User::STATUS_PENDING) {
+            return response()->json([
+                'message' => 'Akun kamu belum disetujui admin. Tunggu konfirmasi dulu ya.',
+            ], 403);
+        }
+
+        if ($user->status === User::STATUS_NONAKTIF) {
             return response()->json(['message' => 'Akun ini nonaktif. Hubungi admin.'], 403);
         }
 
@@ -34,6 +48,26 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
             ],
         ]);
+    }
+
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        // role & status di-hardcode, NGGAK diambil dari request.
+        User::create([
+            'name' => $data['nama'],
+            'employee_id' => $data['employee_id'],
+            'department' => $data['department'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+            'role' => User::ROLE_TEKNISI,
+            'status' => User::STATUS_PENDING,
+        ]);
+
+        return response()->json([
+            'message' => 'Pendaftaran terkirim. Akun menunggu persetujuan admin.',
+        ], 201);
     }
 
     public function me(Request $request): JsonResponse

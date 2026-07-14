@@ -17,11 +17,12 @@ class AuthTest extends TestCase
 
     private function admin(): User
     {
-        return User::factory()->create([
+        return User::factory()->admin()->create([
+            'employee_id' => 'ASM-0001',
             'name' => 'Admin ASMO',
+            'department' => 'Quality Control',
             'email' => 'admin@asmo.test',
             'password' => 'rahasia123',
-            'role' => User::ROLE_ADMIN,
             'organization_id' => 1,
         ]);
     }
@@ -34,18 +35,36 @@ class AuthTest extends TestCase
             ->assertJsonStructure(['status', 'app', 'time']);
     }
 
-    public function test_login_dengan_kredensial_benar_balikin_token_dan_user(): void
+    public function test_login_pakai_email_balikin_token_dan_user(): void
     {
         $this->admin();
 
         $this->postJson('/api/login', [
-            'email' => 'admin@asmo.test',
+            'identifier' => 'admin@asmo.test',
             'password' => 'rahasia123',
         ])
             ->assertOk()
-            ->assertJsonStructure(['data' => ['token', 'user' => ['id', 'nama', 'email', 'role', 'organization_id']]])
+            ->assertJsonStructure([
+                'data' => [
+                    'token',
+                    'user' => ['id', 'nama', 'email', 'employee_id', 'role', 'status', 'department', 'organization_id'],
+                ],
+            ])
             ->assertJsonPath('data.user.nama', 'Admin ASMO')
-            ->assertJsonPath('data.user.role', 'admin');
+            ->assertJsonPath('data.user.role', 'admin')
+            ->assertJsonPath('data.user.status', 'aktif');
+    }
+
+    public function test_login_pakai_id_pegawai_juga_jalan(): void
+    {
+        $this->admin();
+
+        $this->postJson('/api/login', [
+            'identifier' => 'ASM-0001',
+            'password' => 'rahasia123',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.user.employee_id', 'ASM-0001');
     }
 
     public function test_login_dengan_password_salah_balikin_401(): void
@@ -53,30 +72,47 @@ class AuthTest extends TestCase
         $this->admin();
 
         $this->postJson('/api/login', [
-            'email' => 'admin@asmo.test',
+            'identifier' => 'ASM-0001',
             'password' => 'ngasal',
         ])
             ->assertUnauthorized()
-            ->assertJsonPath('message', 'Email atau password salah.');
+            ->assertJsonPath('message', 'ID pegawai / email atau password salah.');
     }
 
-    public function test_login_tanpa_email_balikin_422_dengan_error_per_field(): void
+    public function test_login_tanpa_identifier_balikin_422(): void
     {
         $this->postJson('/api/login', ['password' => 'rahasia123'])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('email');
+            ->assertJsonValidationErrors('identifier');
+    }
+
+    public function test_akun_pending_ditolak_403_walau_password_benar(): void
+    {
+        User::factory()->pending()->create([
+            'employee_id' => 'ASM-0099',
+            'email' => 'eko@asmo.test',
+            'password' => 'rahasia123',
+        ]);
+
+        $this->postJson('/api/login', [
+            'identifier' => 'ASM-0099',
+            'password' => 'rahasia123',
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Akun kamu belum disetujui admin. Tunggu konfirmasi dulu ya.');
     }
 
     public function test_akun_nonaktif_ditolak_403(): void
     {
         User::factory()->create([
+            'employee_id' => 'ASM-0077',
             'email' => 'nonaktif@asmo.test',
             'password' => 'rahasia123',
-            'is_active' => false,
+            'status' => User::STATUS_NONAKTIF,
         ]);
 
         $this->postJson('/api/login', [
-            'email' => 'nonaktif@asmo.test',
+            'identifier' => 'ASM-0077',
             'password' => 'rahasia123',
         ])->assertForbidden();
     }
