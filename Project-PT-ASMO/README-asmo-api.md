@@ -5,7 +5,7 @@ Backend untuk aplikasi kalibrasi alat ukur & penerbitan sertifikat digital — d
 ## Tech Stack
 - **Framework**: Laravel
 - **Database**: MySQL
-- **Auth**: JWT
+- **Auth**: Laravel Sanctum (token Bearer). Bukan JWT — token Sanctum nggak kadaluarsa, jadi nggak ada endpoint `/refresh`
 - **Queue**: buat proses berat (generate PDF sertifikat, notifikasi) — jangan jalan sinkron di request cycle
 
 ## Fitur Utama
@@ -24,7 +24,7 @@ cd asmo-api
 composer install
 cp .env.example .env
 php artisan key:generate
-# isi .env: DB_*, JWT_SECRET, QR_ENCRYPTION_KEY (unik, jangan disamain sama staging/production)
+# isi .env: DB_*, QR_ENCRYPTION_KEY (unik, jangan disamain sama staging/production)
 php artisan migrate --seed   # bikin 1 organisasi + akun admin awal
 php artisan serve
 ```
