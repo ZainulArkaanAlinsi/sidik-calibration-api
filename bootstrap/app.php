@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Backend ini API-only (nggak ada halaman login), jadi guest jangan di-redirect
         // ke route 'login' yang nggak ada — biar langsung jadi 401 JSON.
         $middleware->redirectGuestsTo(fn () => null);
+
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
