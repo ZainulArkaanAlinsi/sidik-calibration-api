@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories/{kode}', [CategoryController::class, 'show']);
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
+
+    // Standar acuan milik lab — buat dropdown "Standar Acuan" di layar kalibrasi.
+    Route::get('/standards', [StandardController::class, 'index']);
+    Route::get('/standards/{standard}', [StandardController::class, 'show']);
 
     // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
     // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
