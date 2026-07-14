@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Reset Password URL
+    |--------------------------------------------------------------------------
+    |
+    | Tujuan link reset password di email. Ini deep link ke app Flutter, bukan
+    | halaman web — backend ini API-only, nggak punya halaman reset sendiri.
+    |
+    */
+
+    'reset_password_url' => env('RESET_PASSWORD_URL', 'asmo://reset-password'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
