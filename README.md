@@ -67,11 +67,24 @@ DB_PASSWORD=AsmoDev#2026
 
 Masing-masing tetap jalanin `php artisan serve` sendiri di laptopnya — yang dibagi cuma databasenya, bukan servernya.
 
+### Syaratnya: harus SATU jaringan yang sama
+
+| Situasi | Bisa? |
+|---|---|
+| Berdua di kantor, satu wifi | ✅ Bisa |
+| Berdua di rumah salah satu, satu wifi | ✅ Bisa |
+| Berdua di kafe, satu wifi | ✅ Bisa |
+| Zainul di rumahnya, Raihan di rumahnya (wifi beda) | ❌ **Nggak bisa** |
+
+"Satu wifi" artinya benar-benar **nyambung ke router yang sama**, bukan sekadar sama-sama pakai wifi. Kalau beda rumah, laptop Zainul nggak bisa dihubungi dari luar (kehalang NAT/router). Kalau nanti perlu kerja dari rumah masing-masing, pindahkan DB ke cloud (Railway/Aiven) atau pakai VPN mesh (Tailscale).
+
+User MySQL `asmo_dev` sudah dibolehkan dari semua subnet privat umum (`192.168.%`, `10.%`, `172.16.%`), jadi ganti wifi nggak masalah — **yang wajib diupdate cuma `DB_HOST`**, karena IP laptop Zainul berubah tiap ganti jaringan. Cek dengan `ipconfig` di laptop Zainul, lalu Raihan update `DB_HOST` di `.env`-nya.
+
 ### ⚠️ Aturan wajib kalau DB dipakai bareng
 - **JANGAN `php artisan migrate:fresh` / `migrate:refresh` / `db:wipe`** — perintah itu menghapus SEMUA tabel, dan karena databasenya bersama, data yang kehapus bukan cuma punyamu tapi punya berdua.
 - `php artisan migrate` **cukup dijalankan satu orang** (siapa pun yang bikin migration-nya). Yang lain tinggal `git pull` — skemanya sudah keburu ke-apply di DB bersama.
-- Laptop Zainul harus **nyala dan sewifi** biar Raihan bisa connect. Kalau Zainul pulang duluan, Raihan sementara nggak bisa akses DB.
-- IP `192.168.1.46` bisa **berubah kalau ganti wifi/router** (DHCP). Kalau Raihan tiba-tiba dapat error `SQLSTATE[HY000] [2002] Connection refused` atau timeout, langkah pertama: minta Zainul cek `ipconfig`, lalu update `DB_HOST`.
+- Laptop Zainul harus **nyala dan sejaringan** biar Raihan bisa connect. Kalau Zainul pulang duluan / laptopnya mati, Raihan sementara nggak bisa akses DB.
+- Error `SQLSTATE[HY000] [2002]` (connection refused/timeout) di sisi Raihan? Urutan ngecek: (1) laptop Zainul nyala & sejaringan? (2) `DB_HOST` masih IP yang benar? cek `ipconfig`.
 
 ## Konvensi API
 - Semua endpoint di-prefix `/api` (lihat `routes/api.php`)
