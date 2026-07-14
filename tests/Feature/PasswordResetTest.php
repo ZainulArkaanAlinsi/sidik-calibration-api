@@ -8,6 +8,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
@@ -62,7 +63,7 @@ class PasswordResetTest extends TestCase
         $user->createToken('hp-lama');
         $this->assertDatabaseCount('personal_access_tokens', 1);
 
-        $token = \Illuminate\Support\Facades\Password::createToken($user);
+        $token = Password::createToken($user);
 
         $this->postJson('/api/reset-password', [
             'token' => $token,
@@ -124,7 +125,7 @@ class PasswordResetTest extends TestCase
         ]);
 
         $this->postJson('/api/reset-password', [
-            'token' => \Illuminate\Support\Facades\Password::createToken($user),
+            'token' => Password::createToken($user),
             'email' => 'teknisi@asmo.test',
             'password' => 'passwordbaru123',
         ])->assertOk();
