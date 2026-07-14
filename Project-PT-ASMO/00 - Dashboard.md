@@ -28,6 +28,7 @@ Aplikasi kalibrasi alat ukur & sertifikat digital. Tim 2 orang, mulai 13 Juli 20
 Buka catatan harian sesuai tanggal di folder `03 - Catatan Harian/` — nama filenya format `YYYY-MM-DD`, jadi kalau pakai plugin Daily Notes bawaan Obsidian, arahin ke folder itu biar bisa langsung `Ctrl/Cmd+O` buka catatan hari ini.
 
 ## Referensi Teknis
+- [[ERD Awal]] — skema database (11 tabel) + keputusan desain, acuan semua migration
 - [[Data Kemampuan Kalibrasi]] — batas rentang ukur & ketidakpastian per kategori alat, dipakai buat validasi input
 - [[Aturan Bisnis Inti]] — aturan penomoran sertifikat, GUM, ILAC-G8, role & akses
 
