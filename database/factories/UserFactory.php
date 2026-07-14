@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +26,9 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'organization_id' => 1,
+            // Nempel ke organisasi yang udah ada kalau ada — biar test nggak
+            // kebanjiran organisasi baru tiap bikin 1 user.
+            'organization_id' => fn () => Organization::query()->value('id') ?? Organization::factory(),
             'employee_id' => 'ASM-'.fake()->unique()->numberBetween(1000, 9999),
             'name' => fake()->name(),
             'department' => fake()->randomElement(['Kalibrasi', 'Quality Control']),

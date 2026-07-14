@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,6 +13,14 @@ use Tests\TestCase;
 class RegisterApprovalTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // User nempel ke organisasi (FK), jadi organisasinya harus ada duluan.
+        Organization::factory()->create();
+    }
 
     /** @var array<string, string> */
     private array $pendaftar = [
