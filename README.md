@@ -50,6 +50,29 @@ API tersedia di `http://localhost:8000/api`. Health check: `GET /up`.
 
 > Kalau mobile dites di HP fisik, `API_BASE_URL` di app harus diarahkan ke IP LAN laptop (mis. `http://192.168.1.10:8000/api`), bukan `localhost` — dan server dijalankan dengan `php artisan serve --host=0.0.0.0`.
 
+## Kerja Berdua — Database Bersama (LAN)
+
+Tim ini pakai **satu database bersama** yang ada di laptop Zainul, biar data yang dilihat berdua persis sama. Zainul connect ke `127.0.0.1`, Raihan connect lewat IP LAN.
+
+**`.env` Raihan** (sisanya sama):
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=192.168.1.46      # IP laptop Zainul — cek ulang pakai `ipconfig` kalau ganti wifi
+DB_PORT=3306
+DB_DATABASE=asmo_db
+DB_USERNAME=asmo_dev      # user khusus LAN, bukan root
+DB_PASSWORD=AsmoDev#2026
+```
+
+Masing-masing tetap jalanin `php artisan serve` sendiri di laptopnya — yang dibagi cuma databasenya, bukan servernya.
+
+### ⚠️ Aturan wajib kalau DB dipakai bareng
+- **JANGAN `php artisan migrate:fresh` / `migrate:refresh` / `db:wipe`** — perintah itu menghapus SEMUA tabel, dan karena databasenya bersama, data yang kehapus bukan cuma punyamu tapi punya berdua.
+- `php artisan migrate` **cukup dijalankan satu orang** (siapa pun yang bikin migration-nya). Yang lain tinggal `git pull` — skemanya sudah keburu ke-apply di DB bersama.
+- Laptop Zainul harus **nyala dan sewifi** biar Raihan bisa connect. Kalau Zainul pulang duluan, Raihan sementara nggak bisa akses DB.
+- IP `192.168.1.46` bisa **berubah kalau ganti wifi/router** (DHCP). Kalau Raihan tiba-tiba dapat error `SQLSTATE[HY000] [2002] Connection refused` atau timeout, langkah pertama: minta Zainul cek `ipconfig`, lalu update `DB_HOST`.
+
 ## Konvensi API
 - Semua endpoint di-prefix `/api` (lihat `routes/api.php`)
 - Autentikasi pakai Bearer token Sanctum: header `Authorization: Bearer <token>`
