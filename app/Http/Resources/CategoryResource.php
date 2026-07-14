@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CalibrationCapability;
 use App\Models\EquipmentCategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,7 +26,7 @@ class CategoryResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var Collection<int, \App\Models\CalibrationCapability> $caps */
+        /** @var Collection<int, CalibrationCapability> $caps */
         $caps = $this->capabilities;
 
         $satuanDominan = $caps->groupBy('satuan')

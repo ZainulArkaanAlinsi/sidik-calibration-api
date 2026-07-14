@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,7 +27,7 @@ class DashboardController extends Controller
 
         $sesi = CalibrationSession::where('organization_id', $organizationId)
             ->when(
-                $user->role === \App\Models\User::ROLE_TEKNISI,
+                $user->role === User::ROLE_TEKNISI,
                 fn ($query) => $query->where('teknisi_id', $user->id),
             );
 

@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +35,10 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');
 
+// Verifikasi QR sertifikat — buat orang luar, tanpa auth (versi JSON-nya;
+// versi halaman webnya ada di routes/web.php).
+Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:30,1');
+
 /*
 |--------------------------------------------------------------------------
 | Butuh login
@@ -53,17 +60,42 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
 
-    // Nulis data alat: admin & teknisi. Viewer ditolak 403.
+    // Standar acuan milik lab — buat dropdown "Standar Acuan" di layar kalibrasi.
+    Route::get('/standards', [StandardController::class, 'index']);
+    Route::get('/standards/{standard}', [StandardController::class, 'show']);
+
+    // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
+    // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
+    Route::get('/calibrations', [CalibrationController::class, 'index']);
+    Route::get('/calibrations/{calibration}', [CalibrationController::class, 'show']);
+
+    // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+
+        Route::post('/calibrations', [CalibrationController::class, 'store']);
+        // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
+        Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
     });
 
-    // Master data & approval akun: admin doang.
+    // Approval kalibrasi & master data: admin doang.
     Route::middleware('role:admin')->group(function () {
+        // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
+        // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
+        Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
+        Route::post('/calibrations/{calibration}/reject', [CalibrationController::class, 'reject']);
+
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
+
+        // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
+        // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
+        // standar itu ikut salah.
+        Route::post('/standards', [StandardController::class, 'store']);
+        Route::put('/standards/{standard}', [StandardController::class, 'update']);
+        Route::delete('/standards/{standard}', [StandardController::class, 'destroy']);
 
         Route::apiResource('customers', CustomerController::class)->except(['show']);
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
