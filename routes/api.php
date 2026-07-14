@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,6 +32,10 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');
+
+// Verifikasi QR sertifikat — buat orang luar, tanpa auth (versi JSON-nya;
+// versi halaman webnya ada di routes/web.php).
+Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:30,1');
 
 /*
 |--------------------------------------------------------------------------

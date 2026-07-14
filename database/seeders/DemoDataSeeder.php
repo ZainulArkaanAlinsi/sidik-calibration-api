@@ -2,10 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Standard;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
@@ -97,5 +100,56 @@ class DemoDataSeeder extends Seeder
                 ],
             );
         }
+
+        $this->seedSertifikatContoh();
+    }
+
+    /**
+     * Satu sesi kalibrasi + sertifikat "terbit", supaya halaman verifikasi QR
+     * (`/verify/{qr_token}`) bisa dites sekarang — fitur kalibrasi & generator
+     * sertifikat baru dibikin Minggu 4-8.
+     *
+     * qr_token-nya sengaja dibikin gampang diketik pas dev: `DEMOQR123`.
+     * Yang asli nanti diacak.
+     */
+    private function seedSertifikatContoh(): void
+    {
+        $alat = Equipment::where('serial_number', 'MT-500-196-30')->first();
+        $teknisi = User::where('employee_id', 'ASM-0002')->first();
+        $admin = User::where('employee_id', 'ASM-0001')->first();
+
+        if (! $alat || ! $teknisi || ! $admin) {
+            return;
+        }
+
+        $sesi = CalibrationSession::updateOrCreate(
+            ['organization_id' => 1, 'nomor_sesi' => 'SES/2026/07/0001'],
+            [
+                'equipment_id' => $alat->id,
+                'teknisi_id' => $teknisi->id,
+                'reviewed_by' => $admin->id,
+                'input_method' => 'manual',
+                'status' => CalibrationSession::STATUS_DISETUJUI,
+                'keputusan' => 'PASS',
+                'tanggal_kalibrasi' => now()->subMonth(),
+                'lokasi' => 'lab',
+                'suhu_ruang' => 23.5,
+                'kelembaban' => 55.0,
+                'submitted_at' => now()->subMonth(),
+                'reviewed_at' => now()->subMonth()->addDay(),
+            ],
+        );
+
+        Certificate::updateOrCreate(
+            ['organization_id' => 1, 'nomor' => 'CAL/2026/07/0001'],
+            [
+                'calibration_session_id' => $sesi->id,
+                'issued_by' => $admin->id,
+                'qr_token' => 'DEMOQR123',
+                'diterbitkan_pada' => now()->subMonth()->addDay(),
+                'berlaku_sampai' => now()->addMonths(11),
+                'status' => Certificate::STATUS_TERBIT,
+            ],
+        );
     }
 }
