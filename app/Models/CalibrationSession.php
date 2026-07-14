@@ -62,10 +62,18 @@ class CalibrationSession extends Model
         return $this->belongsTo(User::class, 'teknisi_id');
     }
 
-    /** @return BelongsTo<Standard, $this> */
+    /**
+     * `withTrashed()` itu WAJIB di sini, bukan pemanis.
+     *
+     * Standar yang dipensiunin di-soft-delete. Tanpa ini, sesi kalibrasi dari
+     * tahun lalu bakal balikin `standar_acuan: null` begitu standarnya dihapus —
+     * ketertelusurannya ilang, padahal itu justru yang dicari asesor waktu audit.
+     *
+     * @return BelongsTo<Standard, $this>
+     */
     public function standard(): BelongsTo
     {
-        return $this->belongsTo(Standard::class);
+        return $this->belongsTo(Standard::class)->withTrashed();
     }
 
     /** @return HasMany<RawMeasurement, $this> */
