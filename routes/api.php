@@ -90,6 +90,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
 
+        // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
+        // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
+        // standar itu ikut salah.
+        Route::post('/standards', [StandardController::class, 'store']);
+        Route::put('/standards/{standard}', [StandardController::class, 'update']);
+        Route::delete('/standards/{standard}', [StandardController::class, 'destroy']);
+
         Route::apiResource('customers', CustomerController::class)->except(['show']);
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
 
