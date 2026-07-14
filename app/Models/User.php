@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -35,6 +37,23 @@ class User extends Authenticatable
     public static function roles(): array
     {
         return [self::ROLE_ADMIN, self::ROLE_TEKNISI, self::ROLE_VIEWER];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /** @return BelongsTo<Organization, $this> */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    /** @return HasMany<CalibrationSession, $this> */
+    public function calibrationSessions(): HasMany
+    {
+        return $this->hasMany(CalibrationSession::class, 'teknisi_id');
     }
 
     /**

@@ -11,16 +11,31 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
+     * Urutannya penting: organisasi dulu (semua nempel ke situ), baru kategori
+     * (alat demo butuh kategori), baru data demo.
+     */
+    public function run(): void
+    {
+        $this->call([
+            OrganizationSeeder::class,
+            CalibrationCapabilitySeeder::class,
+        ]);
+
+        $this->seedUsers();
+
+        $this->call([
+            DemoDataSeeder::class,
+        ]);
+    }
+
+    /**
      * Akun dev buat mobile nyobain login (kredensialnya sesuai contoh di
-     * docs/kontrak-api.md). Pakai updateOrCreate biar aman di-seed berkali-kali.
+     * docs/kontrak-api.md). updateOrCreate biar aman di-seed berkali-kali.
      *
      * Yang terakhir sengaja `pending` — biar mobile bisa nyobain layar "akun
      * belum disetujui" tanpa harus daftar manual dulu.
-     *
-     * organization_id diisi 1 walaupun tabel organizations belum ada — FK-nya
-     * nyusul waktu migration lengkap dibikin (lihat vault: ERD Awal).
      */
-    public function run(): void
+    private function seedUsers(): void
     {
         $accounts = [
             ['employee_id' => 'ASM-0001', 'name' => 'Admin ASMO', 'email' => 'admin@asmo.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],

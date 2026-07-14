@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,6 +16,14 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // User nempel ke organisasi (FK), jadi organisasinya harus ada duluan.
+        Organization::factory()->create();
+    }
+
     private function admin(): User
     {
         return User::factory()->admin()->create([
@@ -23,7 +32,6 @@ class AuthTest extends TestCase
             'department' => 'Quality Control',
             'email' => 'admin@asmo.test',
             'password' => 'rahasia123',
-            'organization_id' => 1,
         ]);
     }
 
