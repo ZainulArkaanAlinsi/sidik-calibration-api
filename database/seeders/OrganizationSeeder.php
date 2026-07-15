@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Datanya disalin dari lampiran akreditasi asli:
@@ -13,6 +14,16 @@ class OrganizationSeeder extends Seeder
 {
     public function run(): void
     {
+        // Salin logo bawaan ke disk publik biar org megang logonya sendiri —
+        // sama kayak nanti admin upload lewat panel. Job sertifikat baca dari
+        // logo_path ini; kalau kosong, dia fallback ke public/images/logo-sidik.png.
+        $logoPath = null;
+        $sumberLogo = public_path('images/logo-sidik.png');
+        if (is_file($sumberLogo)) {
+            $logoPath = 'logos/sidik.png';
+            Storage::disk('public')->put($logoPath, (string) file_get_contents($sumberLogo));
+        }
+
         Organization::updateOrCreate(
             ['id' => 1],
             [
@@ -24,6 +35,7 @@ class OrganizationSeeder extends Seeder
                 'standar_akreditasi' => 'SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)',
                 'akreditasi_mulai' => '2024-10-28',
                 'akreditasi_berakhir' => '2029-10-27',
+                'logo_path' => $logoPath,
                 'settings' => [
                     'prefix_sertifikat' => 'CAL',
                     'masa_berlaku_sertifikat_bulan' => 12,
