@@ -84,8 +84,10 @@ class CalibrationController extends Controller
     {
         $this->pastikanBolehLihat($request, $calibration);
 
+        // rawMeasurements cuma dimuat di detail (bukan list) — buat nampilin
+        // status verifikasi tiap pembacaan. Lihat CalibrationResource.
         return response()->json([
-            'data' => new CalibrationResource($calibration->load(self::RELASI)),
+            'data' => new CalibrationResource($calibration->load([...self::RELASI, 'rawMeasurements'])),
         ]);
     }
 
@@ -261,7 +263,7 @@ class CalibrationController extends Controller
         $jumlah = $query->update(['is_verified' => true]);
 
         return response()->json([
-            'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
+            'data' => new CalibrationResource($calibration->fresh()->load([...self::RELASI, 'rawMeasurements'])),
             'meta' => ['diverifikasi' => $jumlah],
         ]);
     }

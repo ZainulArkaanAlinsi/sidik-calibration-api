@@ -274,4 +274,59 @@ class OcrMeasurementTest extends TestCase
             ->postJson("/api/calibrations/{$sesi->id}/measurements/verify")
             ->assertNotFound();
     }
+
+    public function test_detail_sesi_nampilin_status_verifikasi_pembacaan(): void
+    {
+        $sesi = $this->submitOcr();
+
+        $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->assertJsonPath('data.perlu_verifikasi', true)
+            ->assertJsonCount(3, 'data.pembacaan_mentah')
+            ->assertJsonPath('data.pembacaan_mentah.0.is_verified', false)
+            ->assertJsonPath('data.pembacaan_mentah.0.input_source', 'ocr');
+    }
+
+    public function test_perlu_verifikasi_jadi_false_setelah_diverifikasi(): void
+    {
+        $sesi = $this->submitOcr();
+        $this->actingAs($this->teknisi)
+            ->postJson("/api/calibrations/{$sesi->id}/measurements/verify")
+            ->assertOk();
+
+        $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->assertJsonPath('data.perlu_verifikasi', false)
+            ->assertJsonPath('data.pembacaan_mentah.0.is_verified', true);
+    }
+
+    public function test_detail_sesi_manual_nggak_perlu_verifikasi(): void
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $this->alat->id,
+            'standard_id' => $this->standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toIso8601ZuluString(),
+            'measurements' => [['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03]]],
+        ])->assertCreated();
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->assertJsonPath('data.perlu_verifikasi', false);
+    }
+
+    public function test_daftar_sesi_nggak_muat_pembacaan_mentah(): void
+    {
+        $this->submitOcr();
+
+        // whenLoaded: rawMeasurements cuma dimuat di detail, biar list nggak berat.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations')
+            ->assertOk()
+            ->assertJsonMissingPath('data.0.pembacaan_mentah')
+            ->assertJsonMissingPath('data.0.perlu_verifikasi');
+    }
 }
