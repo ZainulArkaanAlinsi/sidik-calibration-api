@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
@@ -69,6 +70,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/calibrations', [CalibrationController::class, 'index']);
     Route::get('/calibrations/{calibration}', [CalibrationController::class, 'show']);
 
+    // Sertifikat terbit: semua role bisa lihat & unduh — teknisi cuma miliknya
+    // sendiri (scope di controller). PDF-nya di disk privat, cuma bisa lewat sini.
+    Route::get('/certificates', [CertificateController::class, 'index']);
+    Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])
+        ->name('certificates.download');
+
     // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
         Route::post('/equipments', [EquipmentController::class, 'store']);
@@ -86,6 +93,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
         Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
         Route::post('/calibrations/{calibration}/reject', [CalibrationController::class, 'reject']);
+
+        // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
+        // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
+        Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
