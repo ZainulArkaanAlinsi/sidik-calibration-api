@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Models\Certificate;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * Bentuk sertifikat buat mobile. Superset — kalau kontrak di repo mobile ngunci
+ * bentuknya, selarasin di sana. `pdf_url` sengaja URL absolut siap-pakai biar
+ * mobile nggak nyusun path sendiri (gampang salah, dan path storage-nya privat).
+ *
+ * @mixin Certificate
+ */
+class CertificateResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'calibration_session_id' => $this->calibration_session_id,
+            'nomor' => $this->nomor,
+            'status' => $this->status,
+            // Ikut nempel biar layar daftar sertifikat nggak perlu buka sesi satu-satu.
+            'keputusan' => $this->session?->keputusan,
+            'diterbitkan_pada' => $this->diterbitkan_pada?->toIso8601ZuluString(),
+            'berlaku_sampai' => $this->berlaku_sampai?->toIso8601ZuluString(),
+            'kadaluarsa' => (bool) $this->berlaku_sampai?->isPast(),
+            'qr_token' => $this->qr_token,
+            'qr_payload' => $this->qr_payload,
+
+            // Cuma ada kalau PDF-nya emang udah jadi. Kalau `gagal`/`menunggu_generate`,
+            // null — mobile munculin tombol retry, bukan tombol unduh.
+            'pdf_url' => $this->status === Certificate::STATUS_TERBIT
+                ? route('certificates.download', $this->resource)
+                : null,
+
+            'alat' => [
+                'nama_alat' => $this->session?->equipment?->nama_alat,
+                'serial_number' => $this->session?->equipment?->serial_number,
+            ],
+        ];
+    }
+}
