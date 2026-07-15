@@ -1,0 +1,79 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Panel admin web (Filament) di /admin. Bentengnya cuma `canAccessPanel` di
+ * User — jadi aksesnya dikunci di sini, terpisah dari izin API.
+ */
+class FilamentAccessTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Organization::factory()->create();
+    }
+
+    public function test_admin_aktif_bisa_buka_panel(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get('/admin')->assertOk();
+    }
+
+    public function test_teknisi_ditolak_masuk_panel(): void
+    {
+        $teknisi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+
+        // Punya akun yang sah, tapi bukan admin — panel admin harus nolak dia,
+        // walaupun API tetap nerima dia buat endpoint yang boleh.
+        $this->actingAs($teknisi)->get('/admin')->assertForbidden();
+    }
+
+    public function test_viewer_ditolak_masuk_panel(): void
+    {
+        $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
+
+        $this->actingAs($viewer)->get('/admin')->assertForbidden();
+    }
+
+    public function test_admin_yang_dinonaktifin_langsung_kehilangan_akses_panel(): void
+    {
+        $admin = User::factory()->admin()->create(['status' => User::STATUS_NONAKTIF]);
+
+        // Role masih admin, tapi status nonaktif — nggak boleh nyangkut ke panel.
+        $this->actingAs($admin)->get('/admin')->assertForbidden();
+    }
+
+    public function test_tanpa_login_dilempar_ke_halaman_login(): void
+    {
+        $this->get('/admin')->assertRedirect('/admin/login');
+    }
+
+    /**
+     * Smoke test: tiap halaman daftar resource ke-render tanpa error. Nangkep
+     * salah nama kolom / relasi di tabel Filament sebelum ketemu pas dibuka admin.
+     */
+    public function test_semua_halaman_resource_render_buat_admin(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        foreach ([
+            '/admin/equipment',
+            '/admin/customers',
+            '/admin/standards',
+            '/admin/users',
+            '/admin/calibration-sessions',
+        ] as $path) {
+            $this->actingAs($admin)->get($path)->assertOk();
+        }
+    }
+}
