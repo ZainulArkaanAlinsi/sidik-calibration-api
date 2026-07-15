@@ -159,6 +159,35 @@ class CertificateApiTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function test_detail_sesi_nyertain_pdf_url_sertifikat(): void
+    {
+        $sertifikat = $this->terbitkanSertifikat($this->teknisi);
+
+        $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sertifikat->calibration_session_id}")
+            ->assertOk()
+            ->assertJsonPath('data.certificate_id', $sertifikat->id)
+            ->assertJsonPath('data.sertifikat.status', Certificate::STATUS_TERBIT)
+            ->assertJsonPath('data.sertifikat.pdf_url', route('certificates.download', $sertifikat));
+    }
+
+    public function test_detail_sesi_tanpa_sertifikat_pdf_url_null(): void
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $this->alat->id,
+            'standard_id' => $this->standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toIso8601ZuluString(),
+            'measurements' => [['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03]]],
+        ])->assertCreated();
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        // Sesi masih draft/menunggu — belum ada sertifikat sama sekali.
+        $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->assertJsonPath('data.sertifikat', null);
+    }
+
     public function test_admin_retry_sertifikat_gagal_nge_dispatch_ulang(): void
     {
         $sertifikat = $this->terbitkanSertifikat($this->teknisi);

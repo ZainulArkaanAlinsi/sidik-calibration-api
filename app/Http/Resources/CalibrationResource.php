@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\UncertaintyCalculation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -54,6 +55,19 @@ class CalibrationResource extends JsonResource
 
             // Tambahan di luar kontrak (superset, aman diabaikan mobile) —
             // dibutuhin buat nampilin worksheet & rincian ketidakpastian.
+
+            // Sertifikat sesi ini, kalau udah terbit. `pdf_url` siap-pakai biar
+            // layar detail sesi bisa langsung nawarin unduh tanpa nyusun URL
+            // sendiri dari `certificate_id`. null selama belum `terbit`.
+            'sertifikat' => $this->certificate ? [
+                'id' => $this->certificate->id,
+                'nomor' => $this->certificate->nomor,
+                'status' => $this->certificate->status,
+                'pdf_url' => $this->certificate->status === Certificate::STATUS_TERBIT
+                    ? route('certificates.download', $this->certificate)
+                    : null,
+            ] : null,
+
             'suhu_ruang' => $this->suhu_ruang,
             'kelembaban' => $this->kelembaban,
             'lokasi' => $this->lokasi,
