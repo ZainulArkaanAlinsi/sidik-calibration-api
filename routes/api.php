@@ -85,6 +85,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/calibrations', [CalibrationController::class, 'store']);
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
+
+        // Upload foto display alat buat pembacaan OCR → balikin photo_path.
+        Route::post('/calibrations/photos', [CalibrationController::class, 'uploadPhoto']);
+        // Konfirmasi pembacaan OCR (is_verified) — syarat sebelum sesi di-approve.
+        Route::post(
+            '/calibrations/{calibration}/measurements/verify',
+            [CalibrationController::class, 'verifyMeasurements'],
+        );
     });
 
     // Approval kalibrasi & master data: admin doang.

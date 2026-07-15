@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\GumCalculator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -53,6 +54,20 @@ class CalibrationRequest extends FormRequest
             'measurements.*.satuan' => ['required', 'string', 'max:50'],
             'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
             'measurements.*.pembacaan.*' => ['required', 'numeric'],
+
+            // Metadata OCR — opsional, sejajar sama `pembacaan` (index ke-i punya
+            // pembacaan[i] + ocr[i]). OCR jalan di mobile; backend cuma nyimpen
+            // fotonya, skor keyakinan, & teks mentahnya buat jejak audit. Pembacaan
+            // yang datang lewat OCR mulai belum terverifikasi (lihat controller).
+            'measurements.*.ocr' => ['sometimes', 'array'],
+            'measurements.*.ocr.*.photo_path' => [
+                'nullable', 'string',
+                // Wajib nunjuk ke hasil upload /calibrations/photos — cegah path
+                // sembarangan (path traversal) nyelip ke DB.
+                'regex:/^measurements\/[A-Za-z0-9]+\.(jpg|jpeg|png|webp)$/',
+            ],
+            'measurements.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
+            'measurements.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -106,6 +121,36 @@ class CalibrationRequest extends FormRequest
                     'standard_id',
                     'Sertifikat standar acuan ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.',
                 );
+            }
+
+            // Kalau ada metadata OCR: jumlahnya wajib sama persis dengan pembacaan
+            // (dipetakan per-index), dan tiap foto yang dirujuk beneran ada di disk.
+            foreach ((array) $this->input('measurements', []) as $i => $titik) {
+                if (! isset($titik['ocr'])) {
+                    continue;
+                }
+
+                $ocr = array_values((array) $titik['ocr']);
+                $pembacaan = (array) ($titik['pembacaan'] ?? []);
+
+                if (count($ocr) !== count($pembacaan)) {
+                    $validator->errors()->add(
+                        "measurements.$i.ocr",
+                        'Jumlah data OCR harus sama dengan jumlah pembacaan di titik ini.',
+                    );
+
+                    continue;
+                }
+
+                foreach ($ocr as $j => $meta) {
+                    $path = $meta['photo_path'] ?? null;
+                    if ($path !== null && ! Storage::disk('local')->exists($path)) {
+                        $validator->errors()->add(
+                            "measurements.$i.ocr.$j.photo_path",
+                            'Foto yang dirujuk nggak ketemu — upload dulu lewat /calibrations/photos.',
+                        );
+                    }
+                }
             }
         });
     }
