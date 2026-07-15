@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CalibrationTest extends TestCase
@@ -29,6 +30,10 @@ class CalibrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Approve nge-dispatch GenerateCertificate; di test queue-nya sync, jadi
+        // job jalan inline & bikin PDF. Fake disk biar nggak nyampah ke storage asli.
+        Storage::fake('local');
 
         Organization::factory()->create();
 
