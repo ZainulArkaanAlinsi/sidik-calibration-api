@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Organization;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -72,6 +73,9 @@ class GenerateCertificate implements ShouldQueue
                 'sertifikat' => $sertifikat,
                 'sesi' => $sesi,
                 'titik' => $sesi->uncertaintyCalculations->sortBy('titik_ke'),
+                // Embed sebagai data URI — paling aman buat dompdf (nggak
+                // gantung ke path/symlink). null kalau logonya nggak ketemu.
+                'logo' => $this->logoDataUri($sesi->organization),
             ]);
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
@@ -88,6 +92,31 @@ class GenerateCertificate implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /**
+     * Logo lab sebagai data URI buat kop sertifikat. Prioritas logo milik
+     * organisasi (`logo_path` di disk publik, diupload admin lewat panel);
+     * kalau kosong/nggak ada, pakai logo bawaan di public/images. null kalau
+     * dua-duanya nggak ada — kop-nya balik ke teks doang, PDF tetap kebuat.
+     */
+    private function logoDataUri(?Organization $organization): ?string
+    {
+        $path = null;
+
+        if ($organization?->logo_path && Storage::disk('public')->exists($organization->logo_path)) {
+            $path = Storage::disk('public')->path($organization->logo_path);
+        } elseif (is_file(public_path('images/logo-sidik.png'))) {
+            $path = public_path('images/logo-sidik.png');
+        }
+
+        if ($path === null) {
+            return null;
+        }
+
+        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
     }
 
     /** Nomor sertifikat urut per organisasi per bulan: CAL/2026/07/0001. */

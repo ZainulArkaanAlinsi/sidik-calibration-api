@@ -7,6 +7,10 @@
         * { font-family: DejaVu Sans, sans-serif; }
         body { font-size: 11px; color: #1a1a1a; margin: 0; }
         .kop { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 16px; }
+        .kop table { width: 100%; border-collapse: collapse; }
+        .kop td.logo { width: 84px; vertical-align: middle; }
+        .kop td.logo img { width: 74px; height: auto; }
+        .kop td.teks { vertical-align: middle; }
         .kop h1 { font-size: 16px; margin: 0 0 2px; }
         .kop .akr { font-size: 10px; color: #555; }
         .judul { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin: 4px 0 2px; }
@@ -27,11 +31,21 @@
 </head>
 <body>
     <div class="kop">
-        <h1>{{ $sesi->organization->nama ?? 'Laboratorium Kalibrasi' }}</h1>
-        <div class="akr">
-            No. Akreditasi: {{ $sesi->organization->no_akreditasi ?? '—' }}
-            @if ($sesi->organization->alamat) &middot; {{ $sesi->organization->alamat }} @endif
-        </div>
+        <table>
+            <tr>
+                @if (! empty($logo))
+                    <td class="logo"><img src="{{ $logo }}" alt="Logo"></td>
+                @endif
+                <td class="teks">
+                    <h1>{{ $sesi->organization->nama ?? 'Laboratorium Kalibrasi' }}</h1>
+                    <div class="akr">
+                        Terakreditasi {{ $sesi->organization->standar_akreditasi ?? 'KAN' }}
+                        &middot; No. {{ $sesi->organization->no_akreditasi ?? '—' }}
+                        @if ($sesi->organization->alamat) <br>{{ $sesi->organization->alamat }} @endif
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <div class="judul">SERTIFIKAT KALIBRASI</div>
