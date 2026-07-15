@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
+use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
@@ -155,6 +156,10 @@ class CalibrationController extends Controller
             'reviewed_at' => now(),
             'catatan_revisi' => null,
         ]);
+
+        // Generate sertifikat jalan di queue (async) — bikin PDF bisa lama, jadi
+        // `certificate_id` boleh masih null sesaat sesudah approve.
+        GenerateCertificate::dispatch($calibration->id, $request->user()->id);
 
         return response()->json([
             'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
