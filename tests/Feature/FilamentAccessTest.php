@@ -70,8 +70,13 @@ class FilamentAccessTest extends TestCase
             '/admin/equipment',
             '/admin/customers',
             '/admin/standards',
+            '/admin/equipment-categories',
             '/admin/users',
             '/admin/calibration-sessions',
+            '/admin/certificates',
+            // Halaman singleton — mount-nya ngambil organisasi si admin & ngisi
+            // form, jadi ini sekalian nguji organization_id-nya nyambung.
+            '/admin/pengaturan-organisasi',
         ] as $path) {
             $this->actingAs($admin)->get($path)->assertOk();
         }
