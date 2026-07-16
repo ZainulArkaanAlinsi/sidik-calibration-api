@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +17,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['organization_id', 'employee_id', 'name', 'department', 'email', 'role', 'status', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -42,6 +44,17 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Benteng panel admin web (Filament). Ini SATU-SATUNYA yang misahin panel
+     * dari sesi login biasa — tanpa ini, teknisi & viewer yang punya akun tetap
+     * bisa buka /admin. Wajib admin DAN aktif: akun yang dinonaktifin harus
+     * langsung kehilangan akses panel, bukan cuma ditolak API.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->role === self::ROLE_ADMIN && $this->status === self::STATUS_AKTIF;
     }
 
     /** @return BelongsTo<Organization, $this> */

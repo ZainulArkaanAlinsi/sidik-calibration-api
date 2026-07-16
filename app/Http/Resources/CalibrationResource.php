@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
+use App\Models\RawMeasurement;
 use App\Models\UncertaintyCalculation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -54,6 +56,19 @@ class CalibrationResource extends JsonResource
 
             // Tambahan di luar kontrak (superset, aman diabaikan mobile) —
             // dibutuhin buat nampilin worksheet & rincian ketidakpastian.
+
+            // Sertifikat sesi ini, kalau udah terbit. `pdf_url` siap-pakai biar
+            // layar detail sesi bisa langsung nawarin unduh tanpa nyusun URL
+            // sendiri dari `certificate_id`. null selama belum `terbit`.
+            'sertifikat' => $this->certificate ? [
+                'id' => $this->certificate->id,
+                'nomor' => $this->certificate->nomor,
+                'status' => $this->certificate->status,
+                'pdf_url' => $this->certificate->status === Certificate::STATUS_TERBIT
+                    ? route('certificates.download', $this->certificate)
+                    : null,
+            ] : null,
+
             'suhu_ruang' => $this->suhu_ruang,
             'kelembaban' => $this->kelembaban,
             'lokasi' => $this->lokasi,
@@ -82,6 +97,32 @@ class CalibrationResource extends JsonResource
                     'toleransi' => $titik->toleransi,
                     'keputusan' => $titik->keputusan,
                 ]),
+
+            // Status verifikasi pembacaan — cuma ikut waktu detail sesi dibuka
+            // (whenLoaded), biar daftar sesi nggak kebanjiran baris pembacaan.
+            // Mobile pakai ini buat tau baris OCR mana yang masih perlu
+            // dikonfirmasi, walau device-nya beda dari yang nginput.
+            'perlu_verifikasi' => $this->whenLoaded(
+                'rawMeasurements',
+                fn (): bool => $this->rawMeasurements->contains('is_verified', false),
+            ),
+            'pembacaan_mentah' => $this->whenLoaded(
+                'rawMeasurements',
+                fn () => $this->rawMeasurements
+                    ->sortBy([['titik_ke', 'asc'], ['pembacaan_ke', 'asc']])
+                    ->values()
+                    ->map(fn (RawMeasurement $m): array => [
+                        'id' => $m->id,
+                        'titik_ke' => $m->titik_ke,
+                        'pembacaan_ke' => $m->pembacaan_ke,
+                        'pembacaan' => $m->pembacaan,
+                        'input_source' => $m->input_source,
+                        'is_verified' => $m->is_verified,
+                        'photo_path' => $m->photo_path,
+                        'ocr_confidence' => $m->ocr_confidence,
+                        'ocr_raw_text' => $m->ocr_raw_text,
+                    ]),
+            ),
         ];
     }
 }

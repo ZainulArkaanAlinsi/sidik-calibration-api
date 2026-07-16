@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
+use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
@@ -83,8 +84,10 @@ class CalibrationController extends Controller
     {
         $this->pastikanBolehLihat($request, $calibration);
 
+        // rawMeasurements cuma dimuat di detail (bukan list) — buat nampilin
+        // status verifikasi tiap pembacaan. Lihat CalibrationResource.
         return response()->json([
-            'data' => new CalibrationResource($calibration->load(self::RELASI)),
+            'data' => new CalibrationResource($calibration->load([...self::RELASI, 'rawMeasurements'])),
         ]);
     }
 
@@ -146,6 +149,15 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Angka hasil OCR yang belum dikonfirmasi manusia nggak boleh ikut
+        // disertifikasi — itu inti "kamera mempercepat, bukan menggantikan
+        // verifikasi". Teknisi verifikasi dulu lewat endpoint measurements/verify.
+        if ($calibration->rawMeasurements()->where('is_verified', false)->exists()) {
+            return response()->json([
+                'message' => 'Masih ada pembacaan hasil OCR yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
+            ], 422);
+        }
+
         // Sesi FAIL tetap boleh disetujui — hasil FAIL itu temuan yang sah dan
         // sertifikatnya tetap terbit (isinya "tidak laik pakai"). Yang beda cuma
         // keputusannya, bukan boleh/nggaknya terbit.
@@ -155,6 +167,10 @@ class CalibrationController extends Controller
             'reviewed_at' => now(),
             'catatan_revisi' => null,
         ]);
+
+        // Generate sertifikat jalan di queue (async) — bikin PDF bisa lama, jadi
+        // `certificate_id` boleh masih null sesaat sesudah approve.
+        GenerateCertificate::dispatch($calibration->id, $request->user()->id);
 
         return response()->json([
             'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
@@ -191,6 +207,68 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Upload foto display alat buat pembacaan hasil OCR. Balikin `photo_path`
+     * yang lalu dirujuk di payload `measurements[].ocr[].photo_path` waktu submit.
+     * Dipisah dari submit biar submit-nya tetap JSON murni & fotonya bisa dicicil.
+     *
+     * Disk `local` (privat) — foto ini bukti audit, bukan konsumsi publik.
+     */
+    public function uploadPhoto(Request $request): JsonResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+        ], [
+            'photo.required' => 'Fotonya wajib ada.',
+            'photo.image' => 'File-nya harus berupa gambar.',
+            'photo.max' => 'Foto maksimal 8 MB.',
+        ]);
+
+        $path = $request->file('photo')->store('measurements', 'local');
+
+        return response()->json(['data' => ['photo_path' => $path]], 201);
+    }
+
+    /**
+     * Konfirmasi pembacaan hasil OCR: tandain `is_verified = true`. Tanpa ini,
+     * sesi yang ada pembacaan OCR-nya nggak bisa di-approve (lihat `approve`).
+     *
+     * `measurement_ids` opsional — kalau dikirim, cuma baris itu yang diverifikasi
+     * (teknisi ngonfirmasi satu-satu); kalau kosong, semua pembacaan sesi ini
+     * yang belum terverifikasi langsung ditandai (teknisi udah nyocokin semua).
+     *
+     * Ini murni "iya, angkanya udah bener" — kalau OCR salah baca, teknisi
+     * betulin lewat PUT /calibrations/{id} (angka baru masuk sebagai manual).
+     */
+    public function verifyMeasurements(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        abort_if(
+            $calibration->teknisi_id !== $request->user()->id && ! $request->user()->isAdmin(),
+            403,
+            'Cuma teknisi yang ngerjain sesi ini yang boleh verifikasi pembacaannya.',
+        );
+
+        $data = $request->validate([
+            'measurement_ids' => ['sometimes', 'array'],
+            'measurement_ids.*' => ['integer'],
+        ]);
+
+        $query = $calibration->rawMeasurements()->where('is_verified', false);
+
+        if (! empty($data['measurement_ids'])) {
+            $query->whereIn('id', $data['measurement_ids']);
+        }
+
+        $jumlah = $query->update(['is_verified' => true]);
+
+        return response()->json([
+            'data' => new CalibrationResource($calibration->fresh()->load([...self::RELASI, 'rawMeasurements'])),
+            'meta' => ['diverifikasi' => $jumlah],
+        ]);
+    }
+
+    /**
      * Simpen pembacaan mentah + hasil hitung GUM-nya. Dipakai waktu bikin sesi
      * baru dan waktu revisi — makanya yang lama dihapus dulu, biar nggak numpuk.
      */
@@ -201,26 +279,38 @@ class CalibrationController extends Controller
 
         $alat = Equipment::findOrFail($request->integer('equipment_id'));
         $standar = Standard::findOrFail($request->integer('standard_id'));
-        $inputMethod = (string) $request->string('input_method', 'manual');
-
         $keputusanSesi = 'PASS';
+        // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
+        // walau metadata per-pembacaan (foto/skor) nggak dikirim. Metadata cuma
+        // nambah jejak audit; yang nentuin "perlu diverifikasi" ya asal OCR-nya.
+        $sesiOcr = (string) $request->string('input_method', 'manual') === 'ocr';
 
         foreach (array_values($request->input('measurements')) as $index => $titik) {
             $titikKe = $index + 1;
             $pembacaan = array_map(floatval(...), array_values($titik['pembacaan']));
+            // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
+            // (input manual). Divalidasi panjangnya di CalibrationRequest.
+            $ocr = array_values($titik['ocr'] ?? []);
 
             foreach ($pembacaan as $urutan => $nilai) {
+                $meta = $ocr[$urutan] ?? null;
+                $dariOcr = $meta !== null || $sesiOcr;
+
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
                     'satuan' => $titik['satuan'],
-                    'input_source' => $inputMethod,
-                    // Input manual otomatis dianggap terverifikasi — yang ngetik
-                    // manusianya sendiri. Hasil OCR belum: kamera cuma mempercepat
-                    // input, bukan menggantikan verifikasi manusia.
-                    'is_verified' => $inputMethod === 'manual',
+                    'input_source' => $dariOcr ? 'ocr' : 'manual',
+                    'photo_path' => $meta['photo_path'] ?? null,
+                    'ocr_confidence' => $meta['confidence'] ?? null,
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    // Input manual: yang ngetik manusianya sendiri, langsung
+                    // terverifikasi. Hasil OCR: kamera cuma mempercepat input —
+                    // angkanya WAJIB dikonfirmasi manusia (endpoint verify) dulu
+                    // sebelum sesi bisa disetujui.
+                    'is_verified' => ! $dariOcr,
                 ]);
             }
 

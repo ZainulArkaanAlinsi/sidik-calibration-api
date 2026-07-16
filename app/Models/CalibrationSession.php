@@ -50,6 +50,12 @@ class CalibrationSession extends Model
             ->first();
     }
 
+    /** @return BelongsTo<Organization, $this> */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     /** @return BelongsTo<Equipment, $this> */
     public function equipment(): BelongsTo
     {
