@@ -53,7 +53,16 @@
             margin-bottom: 16px;
         }
 
-        .lab { font-size: 13px; color: var(--teks-redup); margin-bottom: 24px; }
+        .lab-head { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+        .lab-logo {
+            flex: 0 0 auto;
+            height: 58px;
+            width: auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .lab { font-size: 13px; color: var(--teks-redup); }
         .lab strong { display: block; color: var(--teks); font-size: 15px; }
 
         h1 { font-size: 20px; margin: 0 0 4px; }
@@ -81,16 +90,20 @@
 </head>
 <body>
     <div class="bungkus">
-        @if ($organization)
-            <div class="lab">
-                <strong>{{ $organization->nama }}</strong>
-                {{ $organization->alamat }}<br>
-                @if ($organization->no_akreditasi)
-                    Terakreditasi KAN No. {{ $organization->no_akreditasi }}
-                    @if ($organization->standar_akreditasi) — {{ $organization->standar_akreditasi }} @endif
-                @endif
-            </div>
-        @endif
+        <div class="lab-head">
+            <img class="lab-logo" src="{{ asset('images/logo-sidik.png') }}"
+                 alt="Logo {{ $organization?->nama ?? config('app.name') }}">
+            @if ($organization)
+                <div class="lab">
+                    <strong>{{ $organization->nama }}</strong>
+                    {{ $organization->alamat }}<br>
+                    @if ($organization->no_akreditasi)
+                        Terakreditasi KAN No. {{ $organization->no_akreditasi }}
+                        @if ($organization->standar_akreditasi) — {{ $organization->standar_akreditasi }} @endif
+                    @endif
+                </div>
+            @endif
+        </div>
 
         @yield('isi')
 

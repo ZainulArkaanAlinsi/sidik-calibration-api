@@ -29,6 +29,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('SIDIK Kalibrasi')
+            // Logo resmi Sidik di layar login & topbar panel. brandName tetap
+            // dipertahankan sebagai teks alt/fallback.
+            ->brandLogo(asset('images/logo-sidik.png'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(asset('images/logo-sidik.png'))
             // Lonceng notifikasi di panel + polling tiap 30 detik, biar pengingat
             // jatuh tempo (command harian) langsung kelihatan.
             ->databaseNotifications()
