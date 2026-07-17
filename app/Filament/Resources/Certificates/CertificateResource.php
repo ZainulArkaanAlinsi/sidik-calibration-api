@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Sertifikat terbit dari sesi yang disetujui. Sama kayak sesi kalibrasi, admin
@@ -69,6 +70,27 @@ class CertificateResource extends Resource
     public static function canCreate(): bool
     {
         return false;
+    }
+
+    /**
+     * Global search default cuma nyari `nomor` — tambah token QR & data sesi
+     * asalnya, biar admin bisa nemuin sertifikat dari nomor sesi/nama alat
+     * juga, nggak cuma nomor sertifikat persis.
+     *
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nomor', 'qr_token', 'session.nomor_sesi', 'session.equipment.nama_alat'];
+    }
+
+    /** @return array<string, string> */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Status' => ucfirst(str_replace('_', ' ', $record->status)),
+            'Alat' => $record->session?->equipment?->nama_alat ?? '—',
+        ];
     }
 
     public static function getPages(): array

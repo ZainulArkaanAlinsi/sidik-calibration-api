@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Sesi kalibrasi datang dari mobile (bareng pengukuran + hasil GUM). Admin di
@@ -55,6 +56,26 @@ class CalibrationSessionResource extends Resource
     public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
+    }
+
+    /**
+     * Selain nomor sesi, tambahin nama alat & teknisi — admin sering nyarinya
+     * dari situ, bukan hafal nomor sesi.
+     *
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nomor_sesi', 'equipment.nama_alat', 'teknisi.name'];
+    }
+
+    /** @return array<string, string> */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Alat' => $record->equipment?->nama_alat ?? '—',
+            'Status' => ucfirst(str_replace('_', ' ', $record->status)),
+        ];
     }
 
     public static function getPages(): array

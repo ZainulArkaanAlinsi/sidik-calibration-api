@@ -47,6 +47,14 @@ class EquipmentCategoryResource extends Resource
         return EquipmentCategoriesTable::configure($table);
     }
 
+    /**
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'kode'];
+    }
+
     public static function getPages(): array
     {
         return [

@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CustomerResource extends Resource
@@ -49,6 +50,26 @@ class CustomerResource extends Resource
     {
         return [
             //
+        ];
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'contact_person', 'telepon', 'email'];
+    }
+
+    /**
+     * @param  Customer  $record
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Narahubung' => $record->contact_person ?? '—',
+            'Telepon' => $record->telepon ?? '—',
         ];
     }
 

@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EquipmentResource extends Resource
@@ -51,6 +52,29 @@ class EquipmentResource extends Resource
     {
         return [
             //
+        ];
+    }
+
+    /**
+     * Selain nama alat, tambahin nomor seri & nama pelanggan — dua hal itu
+     * yang paling sering jadi patokan pencarian pas nelusurin alat.
+     *
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama_alat', 'serial_number', 'customer.nama'];
+    }
+
+    /**
+     * @param  Equipment  $record
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Pelanggan' => $record->customer?->nama ?? '—',
+            'Status' => ucfirst($record->statusUntukApi()),
         ];
     }
 
