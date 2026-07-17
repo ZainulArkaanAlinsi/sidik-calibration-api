@@ -8,7 +8,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class StandardsTable
 {
@@ -38,6 +40,17 @@ class StandardsTable
                     ->label('Masih berlaku')
                     ->boolean()
                     ->state(fn (Standard $record): bool => $record->masihBerlaku()),
+            ])
+            ->filters([
+                // Standar kadaluarsa nggak boleh dipakai acuan kalibrasi
+                // (lihat `masihBerlaku()`) — perlu gampang ditemukan biar
+                // cepet diperpanjang/diganti sebelum kepakai teknisi.
+                Filter::make('kadaluarsa')
+                    ->label('Kadaluarsa')
+                    ->query(fn (Builder $query): Builder => $query
+                        ->whereNotNull('berlaku_sampai')
+                        ->whereDate('berlaku_sampai', '<', now()))
+                    ->toggle(),
             ])
             ->recordActions([
                 EditAction::make(),
