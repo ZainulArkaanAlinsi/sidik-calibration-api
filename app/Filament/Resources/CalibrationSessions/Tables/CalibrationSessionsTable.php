@@ -7,6 +7,8 @@ use App\Models\CalibrationSession;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
@@ -123,6 +125,38 @@ class CalibrationSessionsTable
                         ->color(fn (?string $state): string => $state === 'PASS' ? 'success' : 'danger'),
                     TextEntry::make('catatan_revisi')->label('Catatan revisi')->placeholder('—')->columnSpanFull(),
                 ]),
+
+            // Rincian GUM per titik — biar admin approve/reject nggak cuma
+            // percaya badge PASS/FAIL doang, tapi bisa liat angka yang
+            // ngebentuk keputusannya (mepet atau nggak ke batas toleransi).
+            Section::make('Titik Ukur & Ketidakpastian')
+                ->schema([
+                    RepeatableEntry::make('uncertaintyCalculations')
+                        ->label('')
+                        ->table([
+                            TableColumn::make('Titik'),
+                            TableColumn::make('Nilai ukur'),
+                            TableColumn::make('Rata-rata'),
+                            TableColumn::make('Error'),
+                            TableColumn::make('U diperluas'),
+                            TableColumn::make('Toleransi'),
+                            TableColumn::make('Keputusan'),
+                        ])
+                        ->schema([
+                            TextEntry::make('titik_ke'),
+                            TextEntry::make('titik_ukur')->numeric(4),
+                            TextEntry::make('rata_rata')->numeric(4),
+                            TextEntry::make('error')->numeric(4),
+                            TextEntry::make('ketidakpastian_diperluas')
+                                ->formatStateUsing(fn (?float $state): string => $state === null ? '—' : '± '.number_format($state, 4)),
+                            TextEntry::make('toleransi')
+                                ->formatStateUsing(fn (?float $state): string => $state === null ? '—' : '± '.number_format($state, 4)),
+                            TextEntry::make('keputusan')
+                                ->badge()
+                                ->color(fn (?string $state): string => $state === 'PASS' ? 'success' : 'danger'),
+                        ]),
+                ])
+                ->collapsible(),
         ]);
     }
 }
