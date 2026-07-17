@@ -2,6 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationSession;
+use App\Models\Certificate;
+use App\Models\Customer;
+use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -80,5 +85,47 @@ class FilamentAccessTest extends TestCase
         ] as $path) {
             $this->actingAs($admin)->get($path)->assertOk();
         }
+    }
+
+    /**
+     * Halaman detail sertifikat harus render walau sertifikatnya revisi dari
+     * sertifikat lain — nangkep salah relasi (session.equipment, revisionOf).
+     */
+    public function test_halaman_detail_sertifikat_render_termasuk_yang_revisi(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $teknisi = User::factory()->create();
+        $alat = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create()->id,
+        ]);
+        $sesi = CalibrationSession::create([
+            'organization_id' => $admin->organization_id,
+            'equipment_id' => $alat->id,
+            'teknisi_id' => $teknisi->id,
+            'status' => CalibrationSession::STATUS_DISETUJUI,
+            'tanggal_kalibrasi' => now()->subDay(),
+        ]);
+        $asli = Certificate::create([
+            'organization_id' => $admin->organization_id,
+            'calibration_session_id' => $sesi->id,
+            'nomor' => 'CAL/2026/07/0001',
+            'qr_token' => 'token-asli',
+            'status' => Certificate::STATUS_TERBIT,
+            'diterbitkan_pada' => now()->subDay(),
+        ]);
+        $revisi = Certificate::create([
+            'organization_id' => $admin->organization_id,
+            'calibration_session_id' => $sesi->id,
+            'revision_of' => $asli->id,
+            'nomor' => 'CAL/2026/07/0001-R1',
+            'qr_token' => 'token-revisi',
+            'status' => Certificate::STATUS_TERBIT,
+            'diterbitkan_pada' => now(),
+            'alasan_revisi' => 'Koreksi nama pelanggan',
+        ]);
+
+        $this->actingAs($admin)->get("/admin/certificates/{$asli->id}")->assertOk();
+        $this->actingAs($admin)->get("/admin/certificates/{$revisi->id}")->assertOk();
     }
 }

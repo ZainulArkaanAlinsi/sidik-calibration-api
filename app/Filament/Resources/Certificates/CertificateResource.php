@@ -4,10 +4,13 @@ namespace App\Filament\Resources\Certificates;
 
 use App\Filament\Concerns\ScopesToOrganization;
 use App\Filament\Resources\Certificates\Pages\ListCertificates;
+use App\Filament\Resources\Certificates\Pages\ViewCertificate;
+use App\Filament\Resources\Certificates\Schemas\CertificateInfolist;
 use App\Filament\Resources\Certificates\Tables\CertificatesTable;
 use App\Models\Certificate;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
@@ -43,6 +46,11 @@ class CertificateResource extends Resource
         return CertificatesTable::configure($table);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return CertificateInfolist::configure($schema);
+    }
+
     /** Lencana angka: berapa sertifikat yang generate-nya gagal & perlu retry. */
     public static function getNavigationBadge(): ?string
     {
@@ -67,6 +75,7 @@ class CertificateResource extends Resource
     {
         return [
             'index' => ListCertificates::route('/'),
+            'view' => ViewCertificate::route('/{record}'),
         ];
     }
 }

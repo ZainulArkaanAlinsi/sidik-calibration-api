@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Certificates\Tables;
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
 use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -57,6 +58,8 @@ class CertificatesTable
                 ]),
             ])
             ->recordActions([
+                ViewAction::make(),
+
                 // Unduh PDF — cuma buat sertifikat yang beneran udah terbit DAN
                 // file-nya masih ada di disk. PDF disimpen di disk `local` (privat),
                 // jadi distream lewat sini, bukan URL publik.
