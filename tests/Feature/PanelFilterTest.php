@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\CalibrationSessions\Pages\ListCalibrationSessions;
+use App\Filament\Resources\Certificates\Pages\ListCertificates;
 use App\Filament\Resources\Equipment\Pages\ListEquipment;
 use App\Filament\Resources\Standards\Pages\ListStandards;
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
@@ -79,5 +81,21 @@ class PanelFilterTest extends TestCase
             ->filterTable('keputusan', 'FAIL')
             ->assertCanSeeTableRecords([$fail])
             ->assertCanNotSeeTableRecords([$pass]);
+    }
+
+    public function test_filter_kadaluarsa_di_resource_certificates(): void
+    {
+        Organization::factory()->create();
+        $admin = User::factory()->admin()->create();
+
+        $kadaluarsa = Certificate::factory()->create(['berlaku_sampai' => now()->subDay()]);
+        $berlaku = Certificate::factory()->create(['berlaku_sampai' => now()->addYear()]);
+
+        Livewire::actingAs($admin)
+            ->test(ListCertificates::class)
+            ->assertCanSeeTableRecords([$kadaluarsa, $berlaku])
+            ->filterTable('kadaluarsa')
+            ->assertCanSeeTableRecords([$kadaluarsa])
+            ->assertCanNotSeeTableRecords([$berlaku]);
     }
 }
