@@ -59,12 +59,32 @@ class CalibrationController extends Controller
 
     public function store(CalibrationRequest $request): JsonResponse
     {
-        $sesi = DB::transaction(function () use ($request): CalibrationSession {
+        $clientRequestId = $request->input('client_request_id');
+
+        // Replay: teknisi di lapangan submit, sinyal putus pas nunggu respons
+        // (padahal request-nya udah sampe ke server), mobile nganggep gagal &
+        // retry begitu koneksi balik. Tanpa ini, retry-nya bikin sesi dobel
+        // buat 1 kejadian kalibrasi yang sama. `client_request_id` di-scope ke
+        // organisasi, sama kayak constraint DB-nya.
+        if ($clientRequestId !== null) {
+            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
+                ->where('client_request_id', $clientRequestId)
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'data' => new CalibrationResource($existing->load(self::RELASI)),
+                ], 200);
+            }
+        }
+
+        $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
             $sesi = CalibrationSession::create([
                 'organization_id' => $request->user()->organization_id,
                 'equipment_id' => $request->integer('equipment_id'),
                 'standard_id' => $request->integer('standard_id'),
                 'teknisi_id' => $request->user()->id,
+                'client_request_id' => $clientRequestId,
                 'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
                 'input_method' => $request->string('input_method', 'manual'),
                 'lokasi' => $request->string('lokasi', 'lab'),

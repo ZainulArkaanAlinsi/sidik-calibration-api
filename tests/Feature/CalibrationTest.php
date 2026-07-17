@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CalibrationTest extends TestCase
@@ -352,5 +353,57 @@ class CalibrationTest extends TestCase
         $this->actingAs($adminPtLain)
             ->getJson("/api/calibrations/{$sesi->id}")
             ->assertNotFound();
+    }
+
+    /**
+     * Skenario offline: teknisi submit di lapangan, sinyal putus pas nunggu
+     * respons (padahal request-nya udah sampe), mobile retry begitu koneksi
+     * balik. `client_request_id` yang sama harus balikin sesi yang sama,
+     * bukan bikin dobel.
+     */
+    public function test_retry_dengan_client_request_id_sama_cuma_bikin_1_sesi(): void
+    {
+        $requestId = (string) Str::uuid();
+
+        $pertama = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload(['client_request_id' => $requestId]))
+            ->assertCreated();
+
+        $kedua = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload(['client_request_id' => $requestId]))
+            ->assertOk(); // 200, bukan 201 — ini replay, bukan resource baru.
+
+        $this->assertSame($pertama->json('data.id'), $kedua->json('data.id'));
+        $this->assertSame(1, CalibrationSession::count());
+    }
+
+    public function test_client_request_id_beda_tetap_bikin_2_sesi_terpisah(): void
+    {
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload(['client_request_id' => (string) Str::uuid()]))
+            ->assertCreated();
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload(['client_request_id' => (string) Str::uuid()]))
+            ->assertCreated();
+
+        $this->assertSame(2, CalibrationSession::count());
+    }
+
+    /** Mobile lama yang belum kirim `client_request_id` harus tetap jalan seperti biasa. */
+    public function test_tanpa_client_request_id_tetap_jalan_seperti_biasa(): void
+    {
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload())
+            ->assertCreated();
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload())
+            ->assertCreated();
+
+        // Tanpa key, backend nggak punya cara bedain retry dari submission
+        // baru yang emang disengaja — makanya field ini opsional tapi
+        // direkomendasikan buat mobile.
+        $this->assertSame(2, CalibrationSession::count());
     }
 }

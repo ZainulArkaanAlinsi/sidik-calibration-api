@@ -37,6 +37,13 @@ class CalibrationRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'tanggal_kalibrasi' => ['required', 'date', 'before_or_equal:today'],
+
+            // UUID yang mobile generate sekali per submission — kalau request-nya
+            // di-retry (mis. sinyal putus pas nunggu respons) dengan key yang
+            // sama, backend balikin sesi yang udah ada, bukan bikin dobel.
+            // Opsional & backward-compatible: mobile lama yang belum kirim ini
+            // tetap jalan seperti biasa (lihat CalibrationController::store()).
+            'client_request_id' => ['sometimes', 'nullable', 'uuid'],
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
             'suhu_ruang' => ['nullable', 'numeric'],

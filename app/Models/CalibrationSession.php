@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'organization_id', 'equipment_id', 'teknisi_id', 'standard_id', 'reviewed_by', 'nomor_sesi',
-    'input_method', 'status', 'keputusan', 'tanggal_kalibrasi', 'lokasi', 'suhu_ruang',
+    'organization_id', 'equipment_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
+    'nomor_sesi', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi', 'lokasi', 'suhu_ruang',
     'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
 ])]
 class CalibrationSession extends Model
