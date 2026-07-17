@@ -7,8 +7,10 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class EquipmentTable
 {
@@ -48,6 +50,13 @@ class EquipmentTable
             ->filters([
                 SelectFilter::make('status')
                     ->options(['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif']),
+                // Sama persis sama scope `overdue()` yang dipakai buat angka
+                // "Alat overdue" di widget dashboard — biar admin bisa langsung
+                // liat daftarnya, bukan cuma angkanya doang.
+                Filter::make('overdue')
+                    ->label('Alat overdue')
+                    ->query(fn (Builder $query): Builder => $query->overdue())
+                    ->toggle(),
             ])
             ->recordActions([
                 EditAction::make(),
