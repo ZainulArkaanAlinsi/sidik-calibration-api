@@ -8,8 +8,10 @@ use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -56,6 +58,15 @@ class CertificatesTable
                     Certificate::STATUS_TERBIT => 'Terbit',
                     Certificate::STATUS_GAGAL => 'Gagal',
                 ]),
+                // Sama kayak filter "Kadaluarsa" di resource Standards — sertifikat
+                // yang masa berlakunya lewat perlu gampang ditemukan biar pelanggan
+                // bisa diingetin kalibrasi ulang.
+                Filter::make('kadaluarsa')
+                    ->label('Kadaluarsa')
+                    ->query(fn (Builder $query): Builder => $query
+                        ->whereNotNull('berlaku_sampai')
+                        ->whereDate('berlaku_sampai', '<', now()))
+                    ->toggle(),
             ])
             ->recordActions([
                 ViewAction::make(),
