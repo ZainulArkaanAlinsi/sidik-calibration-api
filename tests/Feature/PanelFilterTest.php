@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\CalibrationSessions\Pages\ListCalibrationSessions;
 use App\Filament\Resources\Equipment\Pages\ListEquipment;
 use App\Filament\Resources\Standards\Pages\ListStandards;
+use App\Models\CalibrationSession;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
@@ -61,5 +63,21 @@ class PanelFilterTest extends TestCase
             ->filterTable('kadaluarsa')
             ->assertCanSeeTableRecords([$kadaluarsa])
             ->assertCanNotSeeTableRecords([$berlaku]);
+    }
+
+    public function test_filter_keputusan_di_resource_calibration_sessions(): void
+    {
+        Organization::factory()->create();
+        $admin = User::factory()->admin()->create();
+
+        $pass = CalibrationSession::factory()->create(['keputusan' => 'PASS']);
+        $fail = CalibrationSession::factory()->create(['keputusan' => 'FAIL']);
+
+        Livewire::actingAs($admin)
+            ->test(ListCalibrationSessions::class)
+            ->assertCanSeeTableRecords([$pass, $fail])
+            ->filterTable('keputusan', 'FAIL')
+            ->assertCanSeeTableRecords([$fail])
+            ->assertCanNotSeeTableRecords([$pass]);
     }
 }

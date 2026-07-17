@@ -60,6 +60,13 @@ class CalibrationSessionsTable
                     CalibrationSession::STATUS_DISETUJUI => 'Disetujui',
                     CalibrationSession::STATUS_PERLU_REVISI => 'Perlu revisi',
                 ]),
+                // Sesi FAIL = alat "tidak laik pakai" — perlu gampang
+                // ditemukan lintas status, bukan cuma keliatan badge-nya doang
+                // pas udah scroll ke barisnya.
+                SelectFilter::make('keputusan')->options([
+                    'PASS' => 'PASS',
+                    'FAIL' => 'FAIL',
+                ]),
             ])
             ->recordActions([
                 ViewAction::make()
