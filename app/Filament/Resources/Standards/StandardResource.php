@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StandardResource extends Resource
@@ -51,6 +52,26 @@ class StandardResource extends Resource
     {
         return [
             //
+        ];
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'no_sertifikat', 'serial_number'];
+    }
+
+    /**
+     * @param  Standard  $record
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'No. sertifikat' => $record->no_sertifikat ?? '—',
+            'Masih berlaku' => $record->masihBerlaku() ? 'Ya' : 'Tidak',
         ];
     }
 
