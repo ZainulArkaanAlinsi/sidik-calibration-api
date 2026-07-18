@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,6 +36,16 @@ class EquipmentRequest extends FormRequest
                 $wajibKalauBikinBaru,
                 Rule::exists('customers', 'id')->where('organization_id', $organizationId),
             ],
+            // Nunjuk ke CalibrationCapability.nama_alat (mis. "Vernier Caliper")
+            // biar GumCalculator tau CMC mana yang beneran punya jenis alat
+            // yang sama — bukan cuma kategori yang sama (lihat komentar
+            // GumCalculator::kemampuanUntukTitik()). Opsional: alat yang belum
+            // dilink tetap kalibrasi lewat jalur generik.
+            'nama_alat_kemampuan' => [
+                'sometimes', 'nullable', 'string', 'max:255',
+                Rule::exists('calibration_capabilities', 'nama_alat')
+                    ->where('equipment_category_id', $this->resolveEquipmentCategoryId($organizationId, $equipment)),
+            ],
             'merk' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'no_identifikasi' => ['nullable', 'string', 'max:100'],
@@ -65,9 +76,29 @@ class EquipmentRequest extends FormRequest
             'kategori.exists' => 'Kategori itu nggak ada. Ambil daftarnya dari GET /api/categories.',
             'pelanggan_id.required' => 'Pelanggan wajib diisi.',
             'pelanggan_id.exists' => 'Pelanggan itu nggak ada.',
+            'nama_alat_kemampuan.exists' => 'Jenis alat itu nggak ada di kemampuan kalibrasi kategori ini. '
+                .'Ambil daftarnya dari GET /api/categories/{kode}.',
             'range_max.gte' => 'Batas atas rentang ukur nggak boleh lebih kecil dari batas bawah.',
             'tanggal_jatuh_tempo.after_or_equal' => 'Tanggal jatuh tempo nggak boleh sebelum tanggal kalibrasi terakhir.',
             'status.in' => 'Status cuma boleh `aktif` atau `nonaktif` — `overdue` dihitung otomatis dari tanggal jatuh tempo.',
         ];
+    }
+
+    /**
+     * Kategori buat ngecek `nama_alat_kemampuan`: dari `kategori` (kode) kalau
+     * request ini ngirimnya, kalau nggak (mis. PATCH yang cuma ubah field
+     * lain) jatuh balik ke kategori alat yang udah ada.
+     */
+    private function resolveEquipmentCategoryId(int $organizationId, ?Equipment $equipment): ?int
+    {
+        $kode = $this->input('kategori');
+
+        if ($kode !== null) {
+            return EquipmentCategory::where('organization_id', $organizationId)
+                ->where('kode', $kode)
+                ->value('id');
+        }
+
+        return $equipment?->equipment_category_id;
     }
 }

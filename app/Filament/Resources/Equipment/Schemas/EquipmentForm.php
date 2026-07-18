@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\Equipment\Schemas;
 
+use App\Models\CalibrationCapability;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class EquipmentForm
@@ -36,7 +38,26 @@ class EquipmentForm
                             ->relationship('category', 'nama')
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->live()
+                            // Kategori ganti → jenis kemampuan lama kemungkinan
+                            // besar udah nggak nyambung, jangan dibiarin nyangkut.
+                            ->afterStateUpdated(fn (callable $set) => $set('nama_alat_kemampuan', null)),
+                        // Nunjuk ke CalibrationCapability.nama_alat biar
+                        // GumCalculator tau CMC mana yang beneran punya jenis
+                        // alat yang sama, bukan cuma kategori yang sama — lihat
+                        // komentar GumCalculator::kemampuanUntukTitik(). Opsinya
+                        // dibatasin ke nama_alat yang beneran ada di kategori
+                        // yang lagi dipilih, biar nggak salah link/typo.
+                        Select::make('nama_alat_kemampuan')
+                            ->label('Jenis kemampuan kalibrasi (CMC)')
+                            ->helperText('Opsional. Kosongkan kalau alat ini belum punya data kemampuan kalibrasi khusus — kalibrasinya tetap jalan lewat perhitungan Type A+B generik.')
+                            ->options(fn (Get $get): array => CalibrationCapability::query()
+                                ->where('equipment_category_id', $get('equipment_category_id'))
+                                ->distinct()
+                                ->pluck('nama_alat', 'nama_alat')
+                                ->all())
+                            ->searchable(),
                         TextInput::make('serial_number')
                             ->label('Nomor seri')
                             ->required()

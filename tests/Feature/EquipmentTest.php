@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationCapability;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
@@ -128,6 +129,51 @@ class EquipmentTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('kategori');
+    }
+
+    public function test_nama_alat_kemampuan_yang_nggak_ada_di_kategori_itu_ditolak_422(): void
+    {
+        CalibrationCapability::create([
+            'equipment_category_id' => $this->kategori->id,
+            'nama_alat' => 'Vernier Caliper',
+            'range_min' => 0, 'range_max' => 300, 'satuan' => 'mm',
+            'ketidakpastian_terbaik' => 0.015, 'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+
+        // "Sieve" ada di kemampuan kalibrasi, tapi bukan di kategori "panjang"
+        // yang lagi dipakai di request ini — atau typo/karangan sama sekali.
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Jangka Sorong',
+            'serial_number' => 'JS-01',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'nama_alat_kemampuan' => 'Vernier Kaliper Yang Salah Ketik',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('nama_alat_kemampuan');
+    }
+
+    public function test_nama_alat_kemampuan_yang_valid_kesimpen(): void
+    {
+        CalibrationCapability::create([
+            'equipment_category_id' => $this->kategori->id,
+            'nama_alat' => 'Vernier Caliper',
+            'range_min' => 0, 'range_max' => 300, 'satuan' => 'mm',
+            'ketidakpastian_terbaik' => 0.015, 'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Jangka Sorong Mitutoyo',
+            'serial_number' => 'JS-02',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'nama_alat_kemampuan' => 'Vernier Caliper',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('equipments', [
+            'serial_number' => 'JS-02',
+            'nama_alat_kemampuan' => 'Vernier Caliper',
+        ]);
     }
 
     public function test_status_overdue_nggak_boleh_dikirim_manual(): void

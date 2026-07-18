@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'organization_id', 'customer_id', 'equipment_category_id', 'nama_alat', 'merk', 'model',
-    'serial_number', 'no_identifikasi', 'range_min', 'range_max', 'satuan', 'resolusi',
+    'organization_id', 'customer_id', 'equipment_category_id', 'nama_alat', 'nama_alat_kemampuan',
+    'merk', 'model', 'serial_number', 'no_identifikasi', 'range_min', 'range_max', 'satuan', 'resolusi',
     'toleransi', 'lokasi', 'tanggal_kalibrasi_terakhir', 'tanggal_jatuh_tempo', 'status', 'catatan',
 ])]
 class Equipment extends Model

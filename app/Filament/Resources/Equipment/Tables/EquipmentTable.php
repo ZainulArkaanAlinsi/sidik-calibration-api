@@ -31,6 +31,13 @@ class EquipmentTable
                 TextColumn::make('category.nama')
                     ->label('Kategori')
                     ->badge(),
+                // Kosong = alat ini kalibrasinya masih pakai jalur Type A+B
+                // generik, belum kepake kemampuan kalibrasi (CMC) khusus
+                // jenis alatnya. Lihat GumCalculator::kemampuanUntukTitik().
+                TextColumn::make('nama_alat_kemampuan')
+                    ->label('Jenis kemampuan')
+                    ->placeholder('— belum dilink —')
+                    ->toggleable(),
                 TextColumn::make('tanggal_jatuh_tempo')
                     ->label('Jatuh tempo')
                     ->date()
