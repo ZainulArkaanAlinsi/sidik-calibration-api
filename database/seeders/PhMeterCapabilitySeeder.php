@@ -9,18 +9,20 @@ use Illuminate\Support\Str;
 
 /**
  * CMC pH Meter presisi tinggi (3 titik buffer: 4, 7, 10), dari sheet
- * `FORM VALIDASI` di trial workbook pH ("Uncertainty sertifikat") — beda dari
- * angka pH yang ada di `database/data/kemampuan-kalibrasi.json` (lampiran
- * akreditasi resmi, dibulatkan 3 desimal: 0.023/0.021/0.031). Dua-duanya
- * sengaja dibiarkan hidup berdampingan: baris seeder ini pakai
- * `range_min = range_max = titik` (bukan `min: null` kayak konvensi JSON),
- * jadi `updateOrCreate`-nya nggak numpuk sama baris dari
- * `CalibrationCapabilitySeeder` — dan `GumCalculator::kemampuanUntukTitik()`
- * sengaja nyari match yang persis (`range_min = range_max = titik`) biar
- * yang kepake presisi tinggi punya seeder ini, bukan versi bulat.
+ * `PERHITUNGAN U95%` di trial workbook pH — baris "Ketidakpastian Bentangan,
+ * U = k Uc" / "Uncertainty sertifikat" di tabel budget ketidakpastian tiap
+ * titik ukur. Beda dari angka pH yang ada di
+ * `database/data/kemampuan-kalibrasi.json` (lampiran akreditasi resmi,
+ * dibulatkan 3 desimal: 0.023/0.021/0.031). Dua-duanya sengaja dibiarkan
+ * hidup berdampingan: baris seeder ini pakai `range_min = range_max = titik`
+ * (bukan `min: null` kayak konvensi JSON), jadi `updateOrCreate`-nya nggak
+ * numpuk sama baris dari `CalibrationCapabilitySeeder` — dan
+ * `GumCalculator::kemampuanUntukTitik()` sengaja nyari match yang persis
+ * (`range_min = range_max = titik`) biar yang kepake presisi tinggi punya
+ * seeder ini, bukan versi bulat.
  *
  * Angkanya SUDAH dipotong ke 8 desimal (bukan 17 digit penuh dari
- * `FORM VALIDASI`) karena `calibration_capabilities.ketidakpastian_terbaik`
+ * `PERHITUNGAN U95%`) karena `calibration_capabilities.ketidakpastian_terbaik`
  * itu `decimal(20,8)` — nyimpen lebih dari 8 desimal cuma keliatan presisi di
  * SQLite (dipakai test), MySQL beneran (dipakai app) bakal motong sendiri ke
  * 8 desimal pas INSERT. Nulis 17 digit di sini bikin kesan salah kalau
