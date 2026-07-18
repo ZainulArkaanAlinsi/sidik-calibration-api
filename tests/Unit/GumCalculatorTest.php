@@ -2,9 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Models\CalibrationCapability;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\Standard;
 use App\Services\GumCalculator;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -30,6 +33,8 @@ use Tests\TestCase;
  */
 class GumCalculatorTest extends TestCase
 {
+    use RefreshDatabase;
+
     private GumCalculator $gum;
 
     protected function setUp(): void
@@ -170,5 +175,64 @@ class GumCalculatorTest extends TestCase
 
         $this->assertCount(1, $hasil['type_b_components']);
         $this->assertEqualsWithDelta(0.0002, $hasil['type_b'], 1e-12);
+    }
+
+    /**
+     * Kasus pH: kategori alatnya punya CalibrationCapability (CMC) buat titik
+     * ukur ini, jadi ketidakpastian yang dilaporkan = CMC-nya langsung, BUKAN
+     * kombinasi Type A+B kayak kasus acuan di atas — walaupun pembacaannya
+     * sengaja dibikin nyebar jauh (STDEV gede).
+     */
+    public function test_titik_yang_punya_kemampuan_kalibrasi_pakai_cmc_bukan_gabungan_type_ab(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'parameter' => 'pH',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221021262627,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // Pembacaan sengaja nyebar jauh (STDEV ~0.43) — kalau kodenya salah
+        // masih makan jalur Type A+B generik, U bakal jauh lebih gede dari CMC.
+        $hasil = $this->gum->hitungTitik(1, 4.009244572, [4.04, 4.04, 4.04, 5.0, 4.04], $alat, $this->standar());
+
+        $this->assertEqualsWithDelta(0.02343221021262627, $hasil['ketidakpastian_diperluas'], 1e-12);
+        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-9);
+        $this->assertNull($hasil['derajat_kebebasan_efektif']);
+        $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
+
+        // Type A tetap kehitung & disimpen (QC), walaupun bukan yang dilaporkan.
+        $this->assertGreaterThan(0.1, $hasil['type_a']);
+    }
+
+    public function test_titik_tanpa_kemampuan_kalibrasi_tetap_pakai_jalur_generik(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // Nggak ada CalibrationCapability yang match titik ukur ini — harus
+        // balik ke jalur Type A+B lama, sama persis kasus acuan di atas.
+        $hasil = $this->gum->hitungTitik(1, 50.0, [50.02, 50.01, 50.03], $alat, $this->standar());
+
+        $this->assertEqualsWithDelta(0.0129161398, $hasil['ketidakpastian_diperluas'], 1e-8);
+        $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
     }
 }

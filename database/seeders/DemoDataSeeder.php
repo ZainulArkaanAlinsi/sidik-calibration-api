@@ -43,6 +43,26 @@ class DemoDataSeeder extends Seeder
             ],
         );
 
+        // Buffer pH 4/7/10, dari `DATABASE.csv` trial workbook — dipakai bareng
+        // pH Meter Bench di bawah supaya sesi pH bisa dites end-to-end.
+        collect([
+            ['serial_number' => 'HC32513535', 'nama' => 'pH Buffer Solution 4', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2026-07-31'],
+            ['serial_number' => 'HC46341939', 'nama' => 'pH Buffer Solution 7', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2027-12-17'],
+            ['serial_number' => 'HC45400338', 'nama' => 'pH Buffer Solution 10', 'ketidakpastian' => 0.03, 'berlaku_sampai' => '2027-07-31'],
+        ])->each(fn (array $b) => Standard::updateOrCreate(
+            ['organization_id' => 1, 'serial_number' => $b['serial_number']],
+            [
+                'nama' => $b['nama'],
+                'merk' => 'Supelco/Merck',
+                'no_sertifikat' => $b['serial_number'],
+                'tertelusur_ke' => 'Merck KGaA',
+                'berlaku_sampai' => $b['berlaku_sampai'],
+                'ketidakpastian' => $b['ketidakpastian'],
+                'satuan_ketidakpastian' => 'pH',
+                'faktor_cakupan' => 2,
+            ],
+        ));
+
         $kategori = fn (string $kode) => EquipmentCategory::where('kode', $kode)->value('id');
 
         $alat = [

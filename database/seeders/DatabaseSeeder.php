@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OrganizationSeeder::class,
             CalibrationCapabilitySeeder::class,
+            PhMeterCapabilitySeeder::class,
         ]);
 
         $this->seedUsers();

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationCapability;
 use App\Models\Equipment;
 use App\Models\Standard;
 use Illuminate\Support\Carbon;
@@ -49,19 +50,22 @@ class GumCalculator
         $rataRata = array_sum($pembacaan) / $n;
         $standarDeviasi = $this->standarDeviasiSampel($pembacaan, $rataRata);
 
-        // Type A — sebaran hasil pengulangan itu sendiri.
+        // Type A — sebaran hasil pengulangan itu sendiri. Tetap dihitung &
+        // disimpen buat audit/QC walaupun jalur CMC di bawah nggak makai
+        // angka ini buat ketidakpastian yang dilaporkan.
         $typeA = $standarDeviasi / sqrt($n);
-
-        $komponenTypeB = $this->komponenTypeB($equipment, $standard);
-        $typeB = $this->akarJumlahKuadrat(array_column($komponenTypeB, 'nilai'));
-
-        $gabungan = $this->akarJumlahKuadrat([$typeA, $typeB]);
-        $diperluas = self::FAKTOR_CAKUPAN * $gabungan;
 
         $error = $rataRata - $titikUkur;
         $toleransi = (float) $equipment->toleransi;
 
+        $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
+
+        $hasil = $kemampuan !== null
+            ? $this->hitungDariKemampuan($kemampuan)
+            : $this->hitungDariStandarDanResolusi($typeA, $n, $equipment, $standard);
+
         return [
+            'standard_id' => $standard->id,
             'titik_ke' => $titikKe,
             'titik_ukur' => $titikUkur,
             'rata_rata' => $rataRata,
@@ -72,16 +76,93 @@ class GumCalculator
             'standar_deviasi' => $standarDeviasi,
             'jumlah_pengulangan' => $n,
             'type_a' => $typeA,
+            ...$hasil,
+            'toleransi' => $toleransi,
+            'keputusan' => $this->keputusan($error, $hasil['ketidakpastian_diperluas'], $toleransi),
+            'calculated_at' => Carbon::now(),
+        ];
+    }
+
+    /**
+     * Jalur CMC: lab udah menyatakan ketidakpastian terbaiknya (dari lampiran
+     * akreditasi) buat titik ini, jadi itu yang dilaporkan apa adanya — bukan
+     * dikombinasi ulang sama Type A sesi ini. Type A sesi cuma buat QC internal.
+     *
+     * @return array<string, mixed>
+     */
+    private function hitungDariKemampuan(CalibrationCapability $kemampuan): array
+    {
+        $k = $kemampuan->faktor_cakupan ?: self::FAKTOR_CAKUPAN;
+        $diperluas = $kemampuan->ketidakpastian_terbaik;
+        $gabungan = $diperluas / $k;
+
+        return [
+            'type_b_components' => [[
+                'sumber' => 'cmc_kemampuan_kalibrasi',
+                'keterangan' => sprintf(
+                    'CMC %s%s (U=%s %s, k=%s)',
+                    $kemampuan->nama_alat,
+                    $kemampuan->parameter ? " — {$kemampuan->parameter}" : '',
+                    $diperluas,
+                    $kemampuan->satuan_ketidakpastian,
+                    $k,
+                ),
+                'distribusi' => 'normal',
+                'nilai' => $gabungan,
+            ]],
+            'type_b' => $gabungan,
+            'ketidakpastian_gabungan' => $gabungan,
+            'faktor_cakupan_k' => $k,
+            // CMC itu nilai tetap dari akreditasi, bukan turunan dari sebaran
+            // sesi ini — Welch-Satterthwaite nggak berlaku di sini.
+            'derajat_kebebasan_efektif' => null,
+            'ketidakpastian_diperluas' => $diperluas,
+        ];
+    }
+
+    /**
+     * Jalur generik yang udah ada dari awal: Type B dari sertifikat standar +
+     * resolusi alat, digabung sama Type A sesi ini lewat RSS.
+     *
+     * @return array<string, mixed>
+     */
+    private function hitungDariStandarDanResolusi(float $typeA, int $n, Equipment $equipment, Standard $standard): array
+    {
+        $komponenTypeB = $this->komponenTypeB($equipment, $standard);
+        $typeB = $this->akarJumlahKuadrat(array_column($komponenTypeB, 'nilai'));
+
+        $gabungan = $this->akarJumlahKuadrat([$typeA, $typeB]);
+        $diperluas = self::FAKTOR_CAKUPAN * $gabungan;
+
+        return [
             'type_b_components' => $komponenTypeB,
             'type_b' => $typeB,
             'ketidakpastian_gabungan' => $gabungan,
             'faktor_cakupan_k' => self::FAKTOR_CAKUPAN,
             'derajat_kebebasan_efektif' => $this->derajatKebebasanEfektif($gabungan, $typeA, $n),
             'ketidakpastian_diperluas' => $diperluas,
-            'toleransi' => $toleransi,
-            'keputusan' => $this->keputusan($error, $diperluas, $toleransi),
-            'calculated_at' => Carbon::now(),
         ];
+    }
+
+    /**
+     * Kemampuan kalibrasi (CMC) yang dideklarasikan lab buat titik ini, kalau
+     * ada. Dicocokkan ke titik BULAT terdekat (round) karena nilai sertifikat
+     * buffer/standar asli suka geser dikit per lot (mis. pH 3.99 bukan 4.00
+     * persis), sementara kemampuan didaftarkan per titik nominal (4, 7, 10).
+     */
+    private function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
+    {
+        if ($equipment->equipment_category_id === null) {
+            return null;
+        }
+
+        $titikBulat = round($titikUkur);
+
+        return CalibrationCapability::query()
+            ->where('equipment_category_id', $equipment->equipment_category_id)
+            ->where('range_min', $titikBulat)
+            ->where('range_max', $titikBulat)
+            ->first();
     }
 
     /**
@@ -195,3 +276,10 @@ class GumCalculator
         return sqrt(array_sum(array_map(fn (float $u): float => $u ** 2, $nilai)));
     }
 }
+
+// Project ini sebenernya udah punya contoh konkretnya sendiri: app/Services/GumCalculator.php. Itu implementasi perhitungan ketidakpastian kalibrasi (standar JCGM/GUM). Polanya:
+
+// 1. Tiap istilah rumus → method sendiri, dikasih nama sesuai istilah fisikanya, bukan nama matematis: standarDeviasiSampel(), komponenTypeB(), akarJumlahKuadrat(), derajatKebebasanEfektif().
+// 2. Method utama (hitungTitik) cuma manggil method-method itu berurutan dan nyusun hasilnya jadi array — jadi alurnya kebaca kayak baca rumus di kertas: Type A → Type B → gabungan → diperluas → keputusan.
+// 3. Komentar dipakai buat jelasin bagian yang nggak kelihatan dari kode doang — misal kenapa Type B harus dibagi faktor cakupan k dulu sebelum digabung (baris 96-102), atau kenapa dipakai n-1 bukan n (baris 166-171). Rumusnya sendiri (sqrt, **, dll) udah jelas dari kode, jadi nggak perlu dikomentarin ulang — yang dijelasin itu jebakan/keputusan yang nggak kelihatan cuma dari liat operator matematikanya.
+// 4. Konstanta dikasih nama & dikunci di satu tempat (FAKTOR_CAKUPAN, MIN_PENGULANGAN), bukan angka ajaib nyebar di banyak tempat.

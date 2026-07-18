@@ -28,7 +28,7 @@ class CalibrationController extends Controller
     public function __construct(private readonly GumCalculator $gum) {}
 
     /** Relasi yang selalu dibutuhin CalibrationResource. */
-    private const RELASI = ['equipment', 'teknisi', 'standard', 'uncertaintyCalculations', 'certificate'];
+    private const RELASI = ['equipment', 'teknisi', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -298,7 +298,14 @@ class CalibrationController extends Controller
         $sesi->uncertaintyCalculations()->delete();
 
         $alat = Equipment::findOrFail($request->integer('equipment_id'));
-        $standar = Standard::findOrFail($request->integer('standard_id'));
+        $standarDefault = Standard::findOrFail($request->integer('standard_id'));
+
+        // Sebagian kategori alat (mis. pH) butuh standar beda per titik ukur
+        // (buffer 4/7/10) — dimuat sekaligus di sini biar nggak query per titik.
+        $standarPerTitik = Standard::whereIn('id', array_unique(array_filter(
+            array_column($request->input('measurements'), 'standard_id'),
+        )))->get()->keyBy('id');
+
         $keputusanSesi = 'PASS';
         // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
         // walau metadata per-pembacaan (foto/skor) nggak dikirim. Metadata cuma
@@ -334,12 +341,16 @@ class CalibrationController extends Controller
                 ]);
             }
 
+            $standarTitik = isset($titik['standard_id']) && $titik['standard_id'] !== null
+                ? $standarPerTitik->get($titik['standard_id'], $standarDefault)
+                : $standarDefault;
+
             $hasil = $this->gum->hitungTitik(
                 $titikKe,
                 (float) $titik['titik_ukur'],
                 $pembacaan,
                 $alat,
-                $standar,
+                $standarTitik,
             );
 
             $sesi->uncertaintyCalculations()->create($hasil);

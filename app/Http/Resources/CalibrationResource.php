@@ -96,6 +96,13 @@ class CalibrationResource extends JsonResource
                     'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
                     'toleransi' => $titik->toleransi,
                     'keputusan' => $titik->keputusan,
+                    // Titik yang standarnya beda dari standar default sesi (mis.
+                    // buffer pH 4/7/10) nampilin punyanya sendiri di sini.
+                    'standar_acuan' => $titik->standard ? [
+                        'id' => $titik->standard->id,
+                        'nama' => $titik->standard->nama,
+                        'no_sertifikat' => $titik->standard->no_sertifikat,
+                    ] : null,
                 ]),
 
             // Status verifikasi pembacaan — cuma ikut waktu detail sesi dibuka
