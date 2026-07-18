@@ -201,6 +201,7 @@ class GumCalculatorTest extends TestCase
 
         $alat = Equipment::factory()->create([
             'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
             'satuan' => 'pH',
             'resolusi' => 0.01,
             'toleransi' => 0.05,
@@ -244,6 +245,7 @@ class GumCalculatorTest extends TestCase
 
         $alat = Equipment::factory()->create([
             'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
             'satuan' => 'pH',
             'resolusi' => 0.01,
             'toleransi' => 0.05,
@@ -276,15 +278,14 @@ class GumCalculatorTest extends TestCase
     /**
      * Regresi: satu equipment_category_id (mis. "Panjang") nampung banyak
      * JENIS alat beda (Sieve, Micrometer, Vernier Caliper) yang rentang
-     * kemampuannya suka tumpang tindih. Kalau matching cuma dari kategori +
-     * "titik ukur jatuh di dalam rentang" TANPA mastiin jenis alatnya sama,
-     * jangka sorong bisa kepasangin CMC alat lain yang kebetulan rentangnya
-     * nyerempet — kejadian beneran waktu nyoba generalisasi ini pertama kali
-     * (jangka sorong 0.05mm toleransi kepasangin CMC Sieve 4mm). Makanya
-     * kemampuanUntukTitik() SENGAJA cuma nyocokin titik tunggal presisi
-     * (range_min = range_max = titik), bukan rentang kontinyu.
+     * kemampuannya suka tumpang tindih. Alat yang BELUM di-link lewat
+     * `nama_alat_kemampuan` HARUS tetap balik ke jalur generik — bukan
+     * nebak-nebak dari kategori + rentang doang (itu yang dulu kejadian:
+     * jangka sorong 0.05mm toleransi kepasangin CMC Sieve 4mm gara-gara
+     * sama-sama "Panjang" dan sama-sama nyakup 50mm). Kasus "udah di-link
+     * dan kepasangin yang bener" ada di test setelah ini.
      */
-    public function test_kategori_yang_isinya_banyak_jenis_alat_beda_nggak_ketuker_cmc(): void
+    public function test_alat_yang_belum_dilink_di_kategori_ambigu_nggak_ketuker_cmc(): void
     {
         $kategori = EquipmentCategory::factory()->create(['kode' => 'panjang']);
 
@@ -304,6 +305,7 @@ class GumCalculatorTest extends TestCase
             'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
         ]);
 
+        // nama_alat_kemampuan SENGAJA nggak diisi — alat belum di-link.
         $jangkaSorong = Equipment::factory()->create([
             'nama_alat' => 'Jangka Sorong Mitutoyo',
             'equipment_category_id' => $kategori->id,
@@ -312,10 +314,47 @@ class GumCalculatorTest extends TestCase
 
         $hasil = $this->gum->hitungTitik(1, 50.0, [50.02, 50.01, 50.03], $jangkaSorong, $this->standar());
 
-        // Nggak ada baris CalibrationCapability dengan range_min=range_max=50
-        // persis, jadi HARUS balik ke jalur generik — bukan nyomot CMC Sieve
-        // ataupun Vernier Caliper cuma karena rentangnya kebetulan nyakup 50.
         $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
         $this->assertEqualsWithDelta(0.0129161398, $hasil['ketidakpastian_diperluas'], 1e-8);
+    }
+
+    /**
+     * Begitu `nama_alat_kemampuan` diisi ('Vernier Caliper'), matching-nya
+     * nggak ambigu lagi — titik 50mm boleh jatuh di rentang Sieve MAUPUN
+     * Caliper, tapi karena alatnya udah dinyatain "Vernier Caliper", cuma
+     * baris kemampuan punya Vernier Caliper yang dilirik. Ini generalisasi
+     * yang sebenernya: rentang kontinyu (bukan cuma titik tunggal kayak pH)
+     * sekarang aman dipakai karena jenis alatnya udah eksplisit.
+     */
+    public function test_alat_yang_udah_dilink_pakai_cmc_rentang_kontinyu_yang_bener(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'panjang']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'Sieve', 'range_min' => 45, 'range_max' => 4000,
+            'satuan' => 'mm', 'ketidakpastian_terbaik' => 4.0,
+            'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'Vernier Caliper', 'range_min' => 0, 'range_max' => 300,
+            'satuan' => 'mm', 'ketidakpastian_terbaik' => 0.015,
+            'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+
+        $jangkaSorong = Equipment::factory()->create([
+            'nama_alat' => 'Jangka Sorong Mitutoyo',
+            'nama_alat_kemampuan' => 'Vernier Caliper',
+            'equipment_category_id' => $kategori->id,
+            'satuan' => 'mm', 'resolusi' => 0.01, 'toleransi' => 0.05,
+        ]);
+
+        // Pembacaan sengaja nyebar jauh — kalau kodenya salah masih makan
+        // jalur generik, U bakal jauh lebih gede dari CMC Caliper (0.015mm).
+        $hasil = $this->gum->hitungTitik(1, 50.0, [50.5, 49.5, 50.0], $jangkaSorong, $this->standar());
+
+        $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
+        $this->assertEqualsWithDelta(0.015, $hasil['ketidakpastian_diperluas'], 1e-12);
     }
 }

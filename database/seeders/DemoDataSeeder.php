@@ -71,6 +71,9 @@ class DemoDataSeeder extends Seeder
                 'serial_number' => 'MT-500-196-30', 'kode_kategori' => 'panjang', 'customer' => 0,
                 'range_min' => 0, 'range_max' => 300, 'satuan' => 'mm', 'resolusi' => 0.01,
                 'toleransi' => 0.05,
+                // Jangka sorong = vernier caliper — di-link ke kemampuan
+                // kalibrasi biar CMC-nya kepake (bukan cuma Type A+B generik).
+                'nama_alat_kemampuan' => 'Vernier Caliper',
                 'terakhir' => '-11 months', 'jatuh_tempo' => '+1 month', 'status' => 'aktif',
             ],
             [
@@ -100,6 +103,7 @@ class DemoDataSeeder extends Seeder
                 'serial_number' => 'HN-2211-05', 'kode_kategori' => 'instrumen-analitik', 'customer' => 0,
                 'range_min' => 0, 'range_max' => 14, 'satuan' => 'pH', 'resolusi' => 0.01,
                 'toleransi' => 0.05,
+                'nama_alat_kemampuan' => 'pH Meter',
                 'terakhir' => '-3 months', 'jatuh_tempo' => '+9 months', 'status' => 'nonaktif',
             ],
         ];
@@ -112,6 +116,7 @@ class DemoDataSeeder extends Seeder
                     'customer_id' => $pelanggan[$a['customer']]->id,
                     'equipment_category_id' => $kategori($a['kode_kategori']),
                     'nama_alat' => $a['nama_alat'],
+                    'nama_alat_kemampuan' => $a['nama_alat_kemampuan'] ?? null,
                     'merk' => $a['merk'],
                     'model' => $a['model'],
                     'range_min' => $a['range_min'],

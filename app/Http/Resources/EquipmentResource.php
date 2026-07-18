@@ -43,6 +43,7 @@ class EquipmentResource extends JsonResource
             'resolusi' => $this->resolusi,
             'toleransi' => $this->toleransi,
             'lokasi' => $this->lokasi,
+            'nama_alat_kemampuan' => $this->nama_alat_kemampuan,
         ];
     }
 }

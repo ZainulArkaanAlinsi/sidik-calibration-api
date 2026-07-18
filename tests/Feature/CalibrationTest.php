@@ -431,6 +431,7 @@ class CalibrationTest extends TestCase
 
         $phMeter = Equipment::factory()->create([
             'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
             'satuan' => 'pH',
             'resolusi' => 0.01,
             'toleransi' => 0.05,

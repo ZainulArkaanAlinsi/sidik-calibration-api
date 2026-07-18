@@ -168,26 +168,31 @@ class GumCalculator
 
     /**
      * Kemampuan kalibrasi (CMC) yang dideklarasikan lab buat titik ini, kalau
-     * ada. Dicocokkan ke titik BULAT terdekat (round) karena nilai sertifikat
-     * buffer/standar asli suka geser dikit per lot (mis. pH 3.99 bukan 4.00
-     * persis), sementara kemampuan didaftarkan per titik nominal (4, 7, 10) —
-     * TAPI selisihnya wajib di bawah `MAX_DRIFT_TITIK_TUNGGAL`, bukan asal
-     * "titik bulatnya sama". Tanpa batas ini, titik ukur yang beneran beda
-     * (mis. 3.5 pH) ikut kepasangin CMC titik nominal terdekat (4 pH) cuma
-     * karena round(3.5) kebetulan jadi 4.
+     * ada. WAJIB `equipment->nama_alat_kemampuan` keisi — itu yang nunjuk baris
+     * `CalibrationCapability` mana yang beneran punya JENIS alat yang sama
+     * (mis. "Vernier Caliper"), bukan cuma kategori yang sama. Tanpa link ini,
+     * balik `null` (jalur generik) — TIDAK nebak dari kategori doang.
      *
-     * SENGAJA cuma nyocokin `range_min = range_max = titik` (titik tunggal
-     * presisi, lihat `PhMeterCapabilitySeeder`) — BUKAN rentang kontinyu
-     * (mis. jangka sorong 0-300mm) dan BUKAN konvensi `range_min: null` punya
-     * lampiran akreditasi. Satu `equipment_category_id` (mis. "Panjang")
+     * Kenapa link ini wajib: satu `equipment_category_id` (mis. "Panjang")
      * nampung banyak JENIS alat berbeda (Sieve, Micrometer, Vernier Caliper)
-     * yang rentangnya suka tumpang tindih, dan nggak ada link yang jelas
-     * antara `Equipment.nama_alat` sama `CalibrationCapability.nama_alat`
-     * buat mastiin baris kemampuan yang match itu emang punya JENIS alat yang
-     * sama — kalau match cuma dari kategori + rentang angka doang, alat yang
-     * satu bisa kepasangin CMC alat lain yang kebetulan rentangnya nyerempet
-     * (kejadian nyata: jangka sorong 0.05mm toleransi kepasangin CMC Sieve
-     * 4mm gara-gara sama-sama "Panjang" dan sama-sama nyakup 50mm).
+     * yang rentangnya suka tumpang tindih. Match cuma dari kategori + rentang
+     * angka doang bikin jangka sorong toleransi 0.05mm kepasangin CMC Sieve
+     * 4mm gara-gara sama-sama "Panjang" dan sama-sama nyakup 50mm — bug nyata
+     * yang kejadian pas fitur ini pertama kali dicoba digeneralisir. Begitu
+     * `nama_alat_kemampuan` mastiin jenis alatnya, ambiguitas itu ilang, dan
+     * dua macam kemampuan di bawah ini aman dicocokkan:
+     *
+     * - Titik tunggal (`range_min` kosong, atau `range_min == range_max`,
+     *   lihat `PhMeterCapabilitySeeder`): satu CMC buat satu titik ukur
+     *   spesifik (mis. buffer pH 4/7/10). Dicocokkan ke titik BULAT karena
+     *   nilai sertifikat buffer/standar asli suka geser dikit per lot (mis.
+     *   pH 3.99 bukan 4.00 persis) — tapi selisihnya wajib di bawah
+     *   `MAX_DRIFT_TITIK_TUNGGAL`, bukan asal "titik bulatnya sama" (round(3.5)
+     *   kebetulan == 4 bukan berarti 3.5 itu "buffer 4 yang geser").
+     * - Rentang kontinyu (`range_min < range_max` beneran, mis. jangka sorong
+     *   0-300mm): satu CMC berlaku buat SELURUH rentang itu, dicocokkan
+     *   dengan titik ukur ASLI (nggak dibulatkan) jatuh di dalamnya. Titik
+     *   tunggal diprioritaskan lebih dulu kalau dua-duanya somehow cocok.
      *
      * Kandidat kemampuan per kategori di-cache di instance ini — satu sesi
      * kalibrasi bisa punya banyak titik ukur (hitungTitik dipanggil berkali-
@@ -197,7 +202,7 @@ class GumCalculator
      */
     private function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
     {
-        if ($equipment->equipment_category_id === null) {
+        if ($equipment->equipment_category_id === null || $equipment->nama_alat_kemampuan === null) {
             return null;
         }
 
@@ -207,12 +212,26 @@ class GumCalculator
             ->where('equipment_category_id', $kategoriId)
             ->get();
 
+        $kandidat = $this->kemampuanPerKategori[$kategoriId]
+            ->where('nama_alat', $equipment->nama_alat_kemampuan);
+
         $titikBulat = round($titikUkur);
 
-        return $this->kemampuanPerKategori[$kategoriId]->first(
-            fn (CalibrationCapability $k): bool => (float) $k->range_min === (float) $titikBulat
+        $titikTunggal = $kandidat->first(
+            fn (CalibrationCapability $k): bool => ($k->range_min === null || (float) $k->range_min === (float) $k->range_max)
                 && (float) $k->range_max === (float) $titikBulat
                 && abs($titikUkur - $titikBulat) <= self::MAX_DRIFT_TITIK_TUNGGAL,
+        );
+
+        if ($titikTunggal !== null) {
+            return $titikTunggal;
+        }
+
+        return $kandidat->first(
+            fn (CalibrationCapability $k): bool => $k->range_min !== null
+                && $k->range_min < $k->range_max
+                && $titikUkur >= $k->range_min
+                && $titikUkur <= $k->range_max,
         );
     }
 
