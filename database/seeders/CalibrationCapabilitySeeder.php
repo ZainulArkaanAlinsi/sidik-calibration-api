@@ -12,12 +12,17 @@ use RuntimeException;
  * Nyalin lampiran akreditasi (10 kelompok pengukuran, 48 alat, 151 rentang) jadi
  * kategori + kemampuan kalibrasi (CMC). Ini yang jadi batas: alat di luar rentang
  * ini nggak boleh dikalibrasi.
+ *
+ * Datanya dulu dibaca dari `Project-PT-ASMO/` (vault catatan, di luar repo
+ * kode), sampai folder itu kehapus dan seeder ini gagal total. Sekarang
+ * disalin ke `database/data/` — bagian dari kodebase, ikut ke-commit, nggak
+ * gantung ke folder catatan pribadi yang bisa berubah/kehapus kapan aja.
  */
 class CalibrationCapabilitySeeder extends Seeder
 {
     public function run(): void
     {
-        $path = base_path('Project-PT-ASMO/04 - Referensi Teknis/data-kemampuan-kalibrasi.json');
+        $path = database_path('data/kemampuan-kalibrasi.json');
 
         if (! is_file($path)) {
             throw new RuntimeException("File kemampuan kalibrasi nggak ketemu di: {$path}");

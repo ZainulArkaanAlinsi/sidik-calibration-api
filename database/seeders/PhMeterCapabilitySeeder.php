@@ -7,11 +7,23 @@ use App\Models\EquipmentCategory;
 use Illuminate\Database\Seeder;
 
 /**
- * CMC pH Meter (3 titik buffer: 4, 7, 10), diambil dari `DATABASE.csv` /
- * `FORM VALIDASI.csv` di trial workbook pH. Sengaja berdiri sendiri, nggak
- * lewat `CalibrationCapabilitySeeder` — seeder itu gantung ke
- * `Project-PT-ASMO/04 - Referensi Teknis/data-kemampuan-kalibrasi.json` yang
- * lagi nggak ada di working tree, jadi selalu gagal duluan.
+ * CMC pH Meter presisi penuh (3 titik buffer: 4, 7, 10), dari sheet
+ * `FORM VALIDASI` di trial workbook pH ("Uncertainty sertifikat") — beda dari
+ * angka pH yang ada di `database/data/kemampuan-kalibrasi.json` (lampiran
+ * akreditasi resmi, dibulatkan 3 desimal: 0.023/0.021/0.031). Dua-duanya
+ * sengaja dibiarkan hidup berdampingan: baris seeder ini pakai
+ * `range_min = range_max = titik` (bukan `min: null` kayak konvensi JSON),
+ * jadi `updateOrCreate`-nya nggak numpuk sama baris dari
+ * `CalibrationCapabilitySeeder` — dan `GumCalculator::kemampuanUntukTitik()`
+ * sengaja nyari match yang persis (`range_min = range_max = titik`) biar
+ * yang kepake presisi penuh punya seeder ini, bukan versi bulat.
+ *
+ * PENTING — urutan run: harus abis `CalibrationCapabilitySeeder`. Seeder itu
+ * ngehapus SEMUA `CalibrationCapability` di bawah kategori
+ * `instrumen-analitik` sebelum nulis ulang dari JSON (termasuk baris pH punya
+ * seeder ini). Kalau `CalibrationCapabilitySeeder` dijalanin sendirian
+ * (`--class=`) di luar urutan `DatabaseSeeder`, seeder ini WAJIB di-re-run
+ * abis itu buat munculin lagi baris presisi penuhnya.
  */
 class PhMeterCapabilitySeeder extends Seeder
 {
@@ -22,9 +34,6 @@ class PhMeterCapabilitySeeder extends Seeder
             ['nama' => 'Instrumen Analitik'],
         );
 
-        // Dicocokkan lewat range_min=range_max=titik nominal (round-trip sama
-        // GumCalculator::kemampuanUntukTitik()) — konvensi kemampuan titik
-        // tunggal yang sama kayak yang dipakai CalibrationCapabilitySeeder.
         $titik = [
             ['titik' => 4, 'ketidakpastian_terbaik' => 0.02343221021262627],
             ['titik' => 7, 'ketidakpastian_terbaik' => 0.02110894987572546],
