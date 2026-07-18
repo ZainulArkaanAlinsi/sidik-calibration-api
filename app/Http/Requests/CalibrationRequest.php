@@ -61,6 +61,14 @@ class CalibrationRequest extends FormRequest
             'measurements.*.satuan' => ['required', 'string', 'max:50'],
             'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
             'measurements.*.pembacaan.*' => ['required', 'numeric'],
+            // Sebagian kategori alat (mis. pH) butuh standar BEDA per titik ukur
+            // (buffer 4/7/10) — kosong berarti titik ini ikut `standard_id` sesi.
+            'measurements.*.standard_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('standards', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
 
             // Metadata OCR — opsional, sejajar sama `pembacaan` (index ke-i punya
             // pembacaan[i] + ocr[i]). OCR jalan di mobile; backend cuma nyimpen
@@ -128,6 +136,24 @@ class CalibrationRequest extends FormRequest
                     'standard_id',
                     'Sertifikat standar acuan ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.',
                 );
+            }
+
+            // Sama kayak standar_id sesi: standar per-titik yang di-override juga
+            // wajib masih berlaku.
+            foreach ((array) $this->input('measurements', []) as $i => $titik) {
+                $standardIdTitik = $titik['standard_id'] ?? null;
+                if ($standardIdTitik === null) {
+                    continue;
+                }
+
+                $standarTitik = Standard::find($standardIdTitik);
+
+                if ($standarTitik && ! $standarTitik->masihBerlaku()) {
+                    $validator->errors()->add(
+                        "measurements.$i.standard_id",
+                        'Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.',
+                    );
+                }
             }
 
             // Kalau ada metadata OCR: jumlahnya wajib sama persis dengan pembacaan

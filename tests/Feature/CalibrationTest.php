@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Customer;
 use App\Models\Equipment;
@@ -405,5 +406,73 @@ class CalibrationTest extends TestCase
         // baru yang emang disengaja — makanya field ini opsional tapi
         // direkomendasikan buat mobile.
         $this->assertSame(2, CalibrationSession::count());
+    }
+
+    /**
+     * Kasus pH: tiap titik (buffer 4/7/10) pakai standar sendiri lewat
+     * `measurements.*.standard_id`, dan U95%-nya harus CMC dari
+     * CalibrationCapability, bukan dihitung ulang dari pembacaan sesi ini.
+     */
+    public function test_titik_ukur_bisa_pakai_standar_beda_beda_dan_kepake_cmc(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'parameter' => 'pH',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221021262627,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $phMeter = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        $bufferDefault = Standard::factory()->create(['nama' => 'pH Buffer Solution 7']);
+        $buffer4 = Standard::factory()->create(['nama' => 'pH Buffer Solution 4']);
+
+        $response = $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'equipment_id' => $phMeter->id,
+            'standard_id' => $bufferDefault->id,
+            'measurements' => [
+                // Titik ini nunjuk standar_id sendiri (buffer 4) dan punya
+                // CalibrationCapability — U95%-nya harus CMC, bukan gabungan
+                // Type A+B, walaupun pembacaannya nyebar jauh.
+                [
+                    'titik_ukur' => 4.009244572, 'satuan' => 'pH',
+                    'pembacaan' => [4.04, 4.04, 4.04, 5.0, 4.04],
+                    'standard_id' => $buffer4->id,
+                ],
+            ],
+        ]));
+
+        $response->assertCreated();
+
+        $titik = $response->json('data.titik.0');
+        $this->assertEqualsWithDelta(0.02343221021262627, $titik['ketidakpastian_diperluas'], 1e-9);
+        $this->assertSame($buffer4->id, $titik['standar_acuan']['id']);
+
+        // Kolom DB-nya juga kesimpan, bukan cuma yang keluar di response.
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+        $this->assertSame($buffer4->id, $sesi->uncertaintyCalculations()->first()->standard_id);
+    }
+
+    /** Titik yang nggak nentuin standard_id sendiri ikut standar default sesi. */
+    public function test_titik_tanpa_standard_id_ikut_standar_default_sesi(): void
+    {
+        $sesi = $this->buatSesi();
+
+        $this->assertSame(
+            $this->standar->id,
+            $sesi->uncertaintyCalculations()->first()->standard_id,
+        );
     }
 }

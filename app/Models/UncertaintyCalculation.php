@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'calibration_session_id', 'titik_ke', 'titik_ukur', 'rata_rata', 'error', 'koreksi',
+    'calibration_session_id', 'standard_id', 'titik_ke', 'titik_ukur', 'rata_rata', 'error', 'koreksi',
     'standar_deviasi', 'jumlah_pengulangan', 'type_a', 'type_b_components', 'type_b',
     'ketidakpastian_gabungan', 'faktor_cakupan_k', 'derajat_kebebasan_efektif',
     'ketidakpastian_diperluas', 'toleransi', 'keputusan', 'calculated_at',
@@ -38,5 +38,12 @@ class UncertaintyCalculation extends Model
     public function session(): BelongsTo
     {
         return $this->belongsTo(CalibrationSession::class, 'calibration_session_id');
+    }
+
+    /** Standar yang beneran dipakai buat titik ini — bisa beda dari standar default sesi. */
+    /** @return BelongsTo<Standard, $this> */
+    public function standard(): BelongsTo
+    {
+        return $this->belongsTo(Standard::class);
     }
 }
