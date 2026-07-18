@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\Equipment;
 use App\Models\Standard;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Perhitungan ketidakpastian ngikutin JCGM 100:2008 (GUM):
@@ -32,6 +33,27 @@ class GumCalculator
 
     /** Type A butuh sebaran; satu pembacaan doang nggak punya standar deviasi. */
     public const MIN_PENGULANGAN = 2;
+
+    /**
+     * Batas geser titik ukur dari titik nominal kemampuan (CMC) sebelum
+     * dianggap BUKAN titik yang sama. Nilai sertifikat buffer/standar asli
+     * di data pH cuma geser 0.009-0.021 dari nominalnya (3.99 vs 4, 6.9889
+     * vs 7, 9.9789 vs 10) — 0.1 ngasih margin ~5x dari itu, jauh di bawah
+     * jarak antar titik nominal (min. 3, buat pH 4 ke 7). Lihat
+     * kemampuanUntukTitik(): titik ukur beneran BEDA (mis. 3.5) TIDAK boleh
+     * ikut kepasangin CMC titik nominal terdekat cuma karena round()-nya
+     * kebetulan sama.
+     */
+    private const MAX_DRIFT_TITIK_TUNGGAL = 0.1;
+
+    /**
+     * Cache kemampuan kalibrasi per `equipment_category_id`, seumur hidup
+     * instance ini (satu request lewat DI, lihat CalibrationController) —
+     * bukan cache lintas-request.
+     *
+     * @var array<int, Collection<int, CalibrationCapability>>
+     */
+    private array $kemampuanPerKategori = [];
 
     /**
      * Hitung satu titik ukur. Balikannya siap di-insert ke `uncertainty_calculations`.
@@ -148,7 +170,11 @@ class GumCalculator
      * Kemampuan kalibrasi (CMC) yang dideklarasikan lab buat titik ini, kalau
      * ada. Dicocokkan ke titik BULAT terdekat (round) karena nilai sertifikat
      * buffer/standar asli suka geser dikit per lot (mis. pH 3.99 bukan 4.00
-     * persis), sementara kemampuan didaftarkan per titik nominal (4, 7, 10).
+     * persis), sementara kemampuan didaftarkan per titik nominal (4, 7, 10) —
+     * TAPI selisihnya wajib di bawah `MAX_DRIFT_TITIK_TUNGGAL`, bukan asal
+     * "titik bulatnya sama". Tanpa batas ini, titik ukur yang beneran beda
+     * (mis. 3.5 pH) ikut kepasangin CMC titik nominal terdekat (4 pH) cuma
+     * karena round(3.5) kebetulan jadi 4.
      *
      * SENGAJA cuma nyocokin `range_min = range_max = titik` (titik tunggal
      * presisi, lihat `PhMeterCapabilitySeeder`) — BUKAN rentang kontinyu
@@ -162,6 +188,12 @@ class GumCalculator
      * satu bisa kepasangin CMC alat lain yang kebetulan rentangnya nyerempet
      * (kejadian nyata: jangka sorong 0.05mm toleransi kepasangin CMC Sieve
      * 4mm gara-gara sama-sama "Panjang" dan sama-sama nyakup 50mm).
+     *
+     * Kandidat kemampuan per kategori di-cache di instance ini — satu sesi
+     * kalibrasi bisa punya banyak titik ukur (hitungTitik dipanggil berkali-
+     * kali di request yang sama), dan semuanya nunjuk ke `equipment` yang
+     * sama, jadi kategorinya juga sama. Tanpa cache ini query-nya nge-N+1
+     * satu kali per titik.
      */
     private function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
     {
@@ -169,13 +201,19 @@ class GumCalculator
             return null;
         }
 
+        $kategoriId = $equipment->equipment_category_id;
+
+        $this->kemampuanPerKategori[$kategoriId] ??= CalibrationCapability::query()
+            ->where('equipment_category_id', $kategoriId)
+            ->get();
+
         $titikBulat = round($titikUkur);
 
-        return CalibrationCapability::query()
-            ->where('equipment_category_id', $equipment->equipment_category_id)
-            ->where('range_min', $titikBulat)
-            ->where('range_max', $titikBulat)
-            ->first();
+        return $this->kemampuanPerKategori[$kategoriId]->first(
+            fn (CalibrationCapability $k): bool => (float) $k->range_min === (float) $titikBulat
+                && (float) $k->range_max === (float) $titikBulat
+                && abs($titikUkur - $titikBulat) <= self::MAX_DRIFT_TITIK_TUNGGAL,
+        );
     }
 
     /**
@@ -289,10 +327,3 @@ class GumCalculator
         return sqrt(array_sum(array_map(fn (float $u): float => $u ** 2, $nilai)));
     }
 }
-
-// Project ini sebenernya udah punya contoh konkretnya sendiri: app/Services/GumCalculator.php. Itu implementasi perhitungan ketidakpastian kalibrasi (standar JCGM/GUM). Polanya:
-
-// 1. Tiap istilah rumus → method sendiri, dikasih nama sesuai istilah fisikanya, bukan nama matematis: standarDeviasiSampel(), komponenTypeB(), akarJumlahKuadrat(), derajatKebebasanEfektif().
-// 2. Method utama (hitungTitik) cuma manggil method-method itu berurutan dan nyusun hasilnya jadi array — jadi alurnya kebaca kayak baca rumus di kertas: Type A → Type B → gabungan → diperluas → keputusan.
-// 3. Komentar dipakai buat jelasin bagian yang nggak kelihatan dari kode doang — misal kenapa Type B harus dibagi faktor cakupan k dulu sebelum digabung (baris 96-102), atau kenapa dipakai n-1 bukan n (baris 166-171). Rumusnya sendiri (sqrt, **, dll) udah jelas dari kode, jadi nggak perlu dikomentarin ulang — yang dijelasin itu jebakan/keputusan yang nggak kelihatan cuma dari liat operator matematikanya.
-// 4. Konstanta dikasih nama & dikunci di satu tempat (FAKTOR_CAKUPAN, MIN_PENGULANGAN), bukan angka ajaib nyebar di banyak tempat.

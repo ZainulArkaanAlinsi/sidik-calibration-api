@@ -40,10 +40,15 @@ class UncertaintyCalculation extends Model
         return $this->belongsTo(CalibrationSession::class, 'calibration_session_id');
     }
 
-    /** Standar yang beneran dipakai buat titik ini — bisa beda dari standar default sesi. */
+    /**
+     * Standar yang beneran dipakai buat titik ini — bisa beda dari standar
+     * default sesi. `withTrashed()` — sama kayak `CalibrationSession::standard()`
+     * — karena standar yang udah di-retire tetap harus bisa ditelusuri di
+     * sertifikat lama.
+     */
     /** @return BelongsTo<Standard, $this> */
     public function standard(): BelongsTo
     {
-        return $this->belongsTo(Standard::class);
+        return $this->belongsTo(Standard::class)->withTrashed();
     }
 }

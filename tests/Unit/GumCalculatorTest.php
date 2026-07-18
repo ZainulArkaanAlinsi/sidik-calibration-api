@@ -194,7 +194,7 @@ class GumCalculatorTest extends TestCase
             'range_min' => 4,
             'range_max' => 4,
             'satuan' => 'pH',
-            'ketidakpastian_terbaik' => 0.02343221021262627,
+            'ketidakpastian_terbaik' => 0.02343221,
             'satuan_ketidakpastian' => 'pH',
             'faktor_cakupan' => 2,
         ]);
@@ -210,13 +210,50 @@ class GumCalculatorTest extends TestCase
         // masih makan jalur Type A+B generik, U bakal jauh lebih gede dari CMC.
         $hasil = $this->gum->hitungTitik(1, 4.009244572, [4.04, 4.04, 4.04, 5.0, 4.04], $alat, $this->standar());
 
-        $this->assertEqualsWithDelta(0.02343221021262627, $hasil['ketidakpastian_diperluas'], 1e-12);
+        $this->assertEqualsWithDelta(0.02343221, $hasil['ketidakpastian_diperluas'], 1e-12);
         $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-9);
         $this->assertNull($hasil['derajat_kebebasan_efektif']);
         $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
 
         // Type A tetap kehitung & disimpen (QC), walaupun bukan yang dilaporkan.
         $this->assertGreaterThan(0.1, $hasil['type_a']);
+    }
+
+    /**
+     * Regresi: round(3.5) kebetulan jadi 4, sama kayak titik nominal buffer
+     * pH 4 — tapi 3.5 itu titik ukur yang BENERAN beda, bukan "buffer 4 yang
+     * cerdiknya geser dikit" (drift asli di data pH cuma 0.009-0.021, jauh di
+     * bawah 0.5). Kejadian nyata pas GumCalculator sempat kena bug ini: titik
+     * 3.5 pH ikut kepasangin CMC buffer 4 padahal harusnya jalur generik.
+     */
+    public function test_titik_yang_geser_jauh_dari_titik_nominal_nggak_ikut_kepasangin_cmc(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'parameter' => 'pH',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // round(3.5) == 4.0, tapi selisihnya (0.5) jauh ngelewatin
+        // MAX_DRIFT_TITIK_TUNGGAL (0.1) — HARUS balik ke jalur generik.
+        $hasil = $this->gum->hitungTitik(1, 3.5, [3.51, 3.52, 3.50], $alat, $this->standar());
+
+        $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
     }
 
     public function test_titik_tanpa_kemampuan_kalibrasi_tetap_pakai_jalur_generik(): void
