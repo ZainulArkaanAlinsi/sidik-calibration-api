@@ -235,4 +235,50 @@ class GumCalculatorTest extends TestCase
         $this->assertEqualsWithDelta(0.0129161398, $hasil['ketidakpastian_diperluas'], 1e-8);
         $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
     }
+
+    /**
+     * Regresi: satu equipment_category_id (mis. "Panjang") nampung banyak
+     * JENIS alat beda (Sieve, Micrometer, Vernier Caliper) yang rentang
+     * kemampuannya suka tumpang tindih. Kalau matching cuma dari kategori +
+     * "titik ukur jatuh di dalam rentang" TANPA mastiin jenis alatnya sama,
+     * jangka sorong bisa kepasangin CMC alat lain yang kebetulan rentangnya
+     * nyerempet — kejadian beneran waktu nyoba generalisasi ini pertama kali
+     * (jangka sorong 0.05mm toleransi kepasangin CMC Sieve 4mm). Makanya
+     * kemampuanUntukTitik() SENGAJA cuma nyocokin titik tunggal presisi
+     * (range_min = range_max = titik), bukan rentang kontinyu.
+     */
+    public function test_kategori_yang_isinya_banyak_jenis_alat_beda_nggak_ketuker_cmc(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'panjang']);
+
+        // Dua alat BEDA JENIS di kategori yang SAMA, rentangnya nyerempet:
+        // Sieve nyakup 45-4000mm (CMC gede, buat ukur mesh), Vernier Caliper
+        // nyakup 0-300mm (CMC kecil). Titik ukur 50mm masuk ke dua-duanya.
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'Sieve', 'range_min' => 45, 'range_max' => 4000,
+            'satuan' => 'mm', 'ketidakpastian_terbaik' => 4.0,
+            'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'Vernier Caliper', 'range_min' => 0, 'range_max' => 300,
+            'satuan' => 'mm', 'ketidakpastian_terbaik' => 0.015,
+            'satuan_ketidakpastian' => 'mm', 'faktor_cakupan' => 2,
+        ]);
+
+        $jangkaSorong = Equipment::factory()->create([
+            'nama_alat' => 'Jangka Sorong Mitutoyo',
+            'equipment_category_id' => $kategori->id,
+            'satuan' => 'mm', 'resolusi' => 0.01, 'toleransi' => 0.05,
+        ]);
+
+        $hasil = $this->gum->hitungTitik(1, 50.0, [50.02, 50.01, 50.03], $jangkaSorong, $this->standar());
+
+        // Nggak ada baris CalibrationCapability dengan range_min=range_max=50
+        // persis, jadi HARUS balik ke jalur generik — bukan nyomot CMC Sieve
+        // ataupun Vernier Caliper cuma karena rentangnya kebetulan nyakup 50.
+        $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
+        $this->assertEqualsWithDelta(0.0129161398, $hasil['ketidakpastian_diperluas'], 1e-8);
+    }
 }
