@@ -12,7 +12,11 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Urutannya penting: organisasi dulu (semua nempel ke situ), baru kategori
-     * (alat demo butuh kategori), baru data demo.
+     * (alat demo butuh kategori), baru data demo. `PhMeterCapabilitySeeder`
+     * WAJIB abis `CalibrationCapabilitySeeder` — yang belakangan ngehapus
+     * semua kemampuan kalibrasi di kategori `instrumen-analitik` sebelum
+     * nulis ulang dari JSON, jadi kalau kebalik baris pH presisi penuhnya
+     * ikut kehapus.
      */
     public function run(): void
     {

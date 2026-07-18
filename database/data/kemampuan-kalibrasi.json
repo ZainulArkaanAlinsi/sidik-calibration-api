@@ -1,0 +1,600 @@
+{
+  "sumber_dokumen": {
+    "nama_lpk": "PT Sistem Dirgantara Inovasi Teknologi (PT Sidik)",
+    "no_akreditasi": "LK-285-IDN",
+    "standar_akreditasi": "SNI ISO/IEC 17025:2017 (ISO/IEC 17025:2017)",
+    "alamat": "Kawasan Niaga MTC/ MIM Blok J No 25, Buahbatu, Kota Bandung, Jawa Barat",
+    "telp": "(022)7537623",
+    "email": "sidikkalibrasi@pt-sidik.com",
+    "masa_berlaku": "28 Oktober 2024 s/d 27 Oktober 2029",
+    "catatan_ketidakpastian": "Ketidakpastian diperluas dinyatakan pada tingkat kepercayaan 95% dengan faktor cakupan k=2, merupakan ketidakpastian terbaik yang dapat dicapai dalam layanan kalibrasi rutin dengan sumberdaya yang dimiliki laboratorium",
+    "catatan_hak_cipta": "Lampiran sertifikat akreditasi ini tidak boleh digandakan kecuali seluruhnya, tanpa persetujuan tertulis dari pihak KAN"
+  },
+  "kelompok_pengukuran": [
+    {
+      "kelompok": "Suhu dan Kelembapan",
+      "alat": [
+        {
+          "no": 1,
+          "nama_alat": "Temperature Indicator tanpa Sensor",
+          "rentang": [
+            {"parameter": "Thermocouple sensor type K", "min": -20, "max": 1000, "satuan": "°C", "ketidakpastian": 0.63, "satuan_u": "°C"},
+            {"parameter": "Thermocouple sensor type J", "min": 0, "max": 1000, "satuan": "°C", "ketidakpastian": 0.63, "satuan_u": "°C"},
+            {"parameter": "Thermocouple sensor type T", "min": -20, "max": 400, "satuan": "°C", "ketidakpastian": 0.56, "satuan_u": "°C"},
+            {"parameter": "Thermocouple sensor type N", "min": -20, "max": 1000, "satuan": "°C", "ketidakpastian": 0.83, "satuan_u": "°C"},
+            {"parameter": "Thermocouple sensor type R", "min": 0, "max": 1000, "satuan": "°C", "ketidakpastian": 1.0, "satuan_u": "°C"},
+            {"parameter": "Thermocouple sensor type S", "min": 0, "max": 1000, "satuan": "°C", "ketidakpastian": 1.2, "satuan_u": "°C"},
+            {"parameter": "Resistance sensor", "min": -20, "max": 800, "satuan": "°C", "ketidakpastian": 0.50, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0502_Rev.3; Euramet cg-11 V.2 (03/2011) (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 2,
+          "nama_alat": "Temperatur Indikator dengan Sensor",
+          "rentang": [
+            {"parameter": null, "min": -20, "max": 150, "satuan": "°C", "ketidakpastian": 0.86, "satuan_u": "°C"},
+            {"parameter": null, "min": 150, "max": 400, "satuan": "°C", "ketidakpastian": 1.4, "satuan_u": "°C"},
+            {"parameter": null, "min": 400, "max": 600, "satuan": "°C", "ketidakpastian": 3.1, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0503_Rev.6; SNSU PK.S-02:2021",
+          "keterangan": null
+        },
+        {
+          "no": 3,
+          "nama_alat": "Temperatur Transmitter",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 150, "satuan": "°C", "ketidakpastian": 0.86, "satuan_u": "°C"},
+            {"parameter": null, "min": 150, "max": 400, "satuan": "°C", "ketidakpastian": 1.3, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0503_Rev.6; SNSU PK.S-02:2021",
+          "keterangan": null
+        },
+        {
+          "no": 4,
+          "nama_alat": "Termometer Gelas",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 100, "satuan": "°C", "ketidakpastian": 0.58, "satuan_u": "°C"},
+            {"parameter": null, "min": 100, "max": 200, "satuan": "°C", "ketidakpastian": 1.0, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0527_Rev.0; SNSU PK.S-01:2020 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 5,
+          "nama_alat": "Thermocouple",
+          "rentang": [
+            {"parameter": null, "min": -20, "max": 150, "satuan": "°C", "ketidakpastian": 0.84, "satuan_u": "°C"},
+            {"parameter": null, "min": 150, "max": 400, "satuan": "°C", "ketidakpastian": 1.5, "satuan_u": "°C"},
+            {"parameter": null, "min": 400, "max": 600, "satuan": "°C", "ketidakpastian": 3.3, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0529_Rev.2; ASTM E220-13 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 6,
+          "nama_alat": "Oven",
+          "rentang": [
+            {"parameter": null, "min": "ambient", "max": 300, "satuan": "°C", "ketidakpastian": 1.5, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0501_Rev.6; KAN Pd-02.04 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 7,
+          "nama_alat": "Bath",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 100, "satuan": "°C", "ketidakpastian": 1.2, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0501_Rev.6; KAN Pd-02.04 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 8,
+          "nama_alat": "Inkubator",
+          "rentang": [
+            {"parameter": null, "min": 15, "max": 100, "satuan": "°C", "ketidakpastian": 1.4, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0501_Rev.6; KAN Pd-02.04 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 9,
+          "nama_alat": "Furnace",
+          "rentang": [
+            {"parameter": null, "min": 300, "max": 1000, "satuan": "°C", "ketidakpastian": 3.0, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0501_Rev.6; KAN Pd-02.04 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 10,
+          "nama_alat": "Refrigerator",
+          "rentang": [
+            {"parameter": null, "min": -20, "max": 10, "satuan": "°C", "ketidakpastian": 1.5, "satuan_u": "°C"}
+          ],
+          "metode": "SIDIK-IK-CAL-0501_Rev.6; KAN Pd-02.04 (Perbandingan Langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 11,
+          "nama_alat": "Thermohygrometer",
+          "rentang": [
+            {"parameter": "Suhu", "min": 15, "max": 50, "satuan": "°C", "ketidakpastian": 1.7, "satuan_u": "°C"},
+            {"parameter": "Kelembapan", "min": 30, "max": 90, "satuan": "%RH", "ketidakpastian": 4.8, "satuan_u": "%RH"}
+          ],
+          "metode": "SIDIK-IK-CAL-0518_Rev.4 (Perbandingan langsung)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Massa",
+      "alat": [
+        {
+          "no": 12,
+          "nama_alat": "Timbangan (Elektronik, mekanik)",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 200, "satuan": "g", "ketidakpastian": 0.57, "satuan_u": "mg"},
+            {"parameter": null, "min": 200, "max": 1200, "satuan": "g", "ketidakpastian": 14, "satuan_u": "mg"},
+            {"parameter": null, "min": 1200, "max": 2, "satuan": "g~kg", "ketidakpastian": 31, "satuan_u": "mg"},
+            {"parameter": null, "min": 2, "max": 3, "satuan": "kg", "ketidakpastian": 48, "satuan_u": "mg"},
+            {"parameter": null, "min": 3, "max": 12, "satuan": "kg", "ketidakpastian": 0.14, "satuan_u": "g"},
+            {"parameter": null, "min": 12, "max": 60, "satuan": "kg", "ketidakpastian": 8.0, "satuan_u": "g"},
+            {"parameter": null, "min": 60, "max": 150, "satuan": "kg", "ketidakpastian": 0.033, "satuan_u": "kg"},
+            {"parameter": null, "min": 150, "max": 200, "satuan": "kg", "ketidakpastian": 0.083, "satuan_u": "kg"},
+            {"parameter": null, "min": 200, "max": 400, "satuan": "kg", "ketidakpastian": 0.41, "satuan_u": "kg"},
+            {"parameter": null, "min": 400, "max": 600, "satuan": "kg", "ketidakpastian": 0.41, "satuan_u": "kg"},
+            {"parameter": null, "min": 600, "max": 800, "satuan": "kg", "ketidakpastian": 0.43, "satuan_u": "kg"},
+            {"parameter": null, "min": 800, "max": 1000, "satuan": "kg", "ketidakpastian": 0.43, "satuan_u": "kg"},
+            {"parameter": null, "min": 1000, "max": 1200, "satuan": "kg", "ketidakpastian": 0.45, "satuan_u": "kg"},
+            {"parameter": null, "min": 1200, "max": 1400, "satuan": "kg", "ketidakpastian": 0.46, "satuan_u": "kg"},
+            {"parameter": null, "min": 1400, "max": 1600, "satuan": "kg", "ketidakpastian": 0.48, "satuan_u": "kg"},
+            {"parameter": null, "min": 1600, "max": 1800, "satuan": "kg", "ketidakpastian": 0.50, "satuan_u": "kg"},
+            {"parameter": null, "min": 1800, "max": 2000, "satuan": "kg", "ketidakpastian": 0.52, "satuan_u": "kg"}
+          ],
+          "metode": "CSIRO 2010 (untuk rentang di atas 200 kg menggunakan Metode beban substitusi)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Volume",
+      "alat": [
+        {
+          "no": 13,
+          "nama_alat": "Buret",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.019, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 50, "satuan": "mL", "ketidakpastian": 0.035, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 14,
+          "nama_alat": "Buret Digital",
+          "rentang": [
+            {"parameter": null, "min": 1, "max": 10, "satuan": "mL", "ketidakpastian": 0.0044, "satuan_u": "mL"},
+            {"parameter": null, "min": 10, "max": 50, "satuan": "mL", "ketidakpastian": 0.023, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0522_Rev.4; SNSU PK.M-01:2020; ISO 8655-5:2002 (Gravimetric Method)",
+          "keterangan": null
+        },
+        {
+          "no": 15,
+          "nama_alat": "Piston Pipette",
+          "rentang": [
+            {"parameter": null, "min": 101, "max": 1000, "satuan": "µL", "ketidakpastian": 1.2, "satuan_u": "µL"},
+            {"parameter": null, "min": 1, "max": 5, "satuan": "mL", "ketidakpastian": 4.2, "satuan_u": "µL"},
+            {"parameter": null, "min": 5, "max": 10, "satuan": "mL", "ketidakpastian": 8.3, "satuan_u": "µL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0522_Rev.4; SNSU PK.M-01:2020 (Gravimetric Method)",
+          "keterangan": null
+        },
+        {
+          "no": 16,
+          "nama_alat": "Dispensett",
+          "rentang": [
+            {"parameter": null, "min": 1, "max": 10, "satuan": "mL", "ketidakpastian": 0.0082, "satuan_u": "mL"},
+            {"parameter": null, "min": 10, "max": 50, "satuan": "mL", "ketidakpastian": 0.042, "satuan_u": "mL"},
+            {"parameter": null, "min": 50, "max": 100, "satuan": "mL", "ketidakpastian": 0.083, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0522_Rev.4; SNSU PK.M-01:2020 (Gravimetric Method)",
+          "keterangan": null
+        },
+        {
+          "no": 17,
+          "nama_alat": "Gelas Ukur",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 10, "satuan": "mL", "ketidakpastian": 0.067, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.17, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 50, "satuan": "mL", "ketidakpastian": 0.17, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 100, "satuan": "mL", "ketidakpastian": 0.34, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 250, "satuan": "mL", "ketidakpastian": 0.34, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 500, "satuan": "mL", "ketidakpastian": 1.7, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 1000, "satuan": "mL", "ketidakpastian": 3.3, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 2000, "satuan": "mL", "ketidakpastian": 6.7, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 18,
+          "nama_alat": "Labu Ukur",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 5, "satuan": "mL", "ketidakpastian": 0.0067, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 10, "satuan": "mL", "ketidakpastian": 0.0068, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 20, "satuan": "mL", "ketidakpastian": 0.011, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.011, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 50, "satuan": "mL", "ketidakpastian": 0.021, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 100, "satuan": "mL", "ketidakpastian": 0.026, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 200, "satuan": "mL", "ketidakpastian": 0.044, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 250, "satuan": "mL", "ketidakpastian": 0.044, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 500, "satuan": "mL", "ketidakpastian": 0.077, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 1000, "satuan": "mL", "ketidakpastian": 0.12, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 2000, "satuan": "mL", "ketidakpastian": 0.25, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 19,
+          "nama_alat": "Pipet Ukur",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 1, "satuan": "mL", "ketidakpastian": 0.0033, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 2, "satuan": "mL", "ketidakpastian": 0.0067, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 5, "satuan": "mL", "ketidakpastian": 0.017, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 10, "satuan": "mL", "ketidakpastian": 0.033, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.034, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 20,
+          "nama_alat": "Pipet Volume",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 0.5, "satuan": "mL", "ketidakpastian": 0.0020, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 1, "satuan": "mL", "ketidakpastian": 0.0030, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 2, "satuan": "mL", "ketidakpastian": 0.0034, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 5, "satuan": "mL", "ketidakpastian": 0.0039, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 10, "satuan": "mL", "ketidakpastian": 0.0059, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 15, "satuan": "mL", "ketidakpastian": 0.0061, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 20, "satuan": "mL", "ketidakpastian": 0.0072, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.0083, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 50, "satuan": "mL", "ketidakpastian": 0.013, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 100, "satuan": "mL", "ketidakpastian": 0.015, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 21,
+          "nama_alat": "Picnometer",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 25, "satuan": "mL", "ketidakpastian": 0.018, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 50, "satuan": "mL", "ketidakpastian": 0.019, "satuan_u": "mL"},
+            {"parameter": null, "min": null, "max": 100, "satuan": "mL", "ketidakpastian": 0.022, "satuan_u": "mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0510_Rev.6",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Tekanan",
+      "alat": [
+        {
+          "no": 22,
+          "nama_alat": "Pressure Transmitter",
+          "rentang": [
+            {"parameter": null, "min": 4, "max": 20, "satuan": "mA", "ketidakpastian": 0.014, "satuan_u": "mA"}
+          ],
+          "metode": "SIDIK-IK-CAL-0533_Rev.0; DKD-R-6-1, Ed.3/2014; EURAMET cg-17 V4.0 2019; BS-EN 837-1&3:1998 (Perbandingan langsung)",
+          "keterangan": null
+        },
+        {
+          "no": 23,
+          "nama_alat": "Pressure Gauge",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 290, "satuan": "psi", "ketidakpastian": 0.066, "satuan_u": "psi"}
+          ],
+          "metode": "SIDIK-IK-CAL-0504_Rev.6; DKD-R-6-1, Ed.3/2014; EURAMET cg-17 V4.0 2019; BS-EN 837-1&3:1998",
+          "keterangan": null
+        },
+        {
+          "no": 24,
+          "nama_alat": "Pressure Gauge; Pressure Tranducer; Pressure Recorder; Pressure Safety Valve; Manometer",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 600, "satuan": "bar", "ketidakpastian": 0.11, "satuan_u": "bar"},
+            {"parameter": null, "min": 0, "max": 27.5, "satuan": "psi", "ketidakpastian": 0.0048, "satuan_u": "psi"}
+          ],
+          "metode": "SIDIK-IK-CAL-0504_Rev.6; DKD-R-6-1, Ed.3/2014; EURAMET cg-17 V4.0 2019; BS-EN 837-1&3:1998",
+          "keterangan": "1 bar = 10^5 Pa"
+        },
+        {
+          "no": 25,
+          "nama_alat": "Vacuum Gauge",
+          "rentang": [
+            {"parameter": null, "min": -24.2, "max": 0, "satuan": "inHg", "ketidakpastian": 0.43, "satuan_u": "inHg"}
+          ],
+          "metode": "SIDIK-IK-CAL-0534_Rev.1; DKD-R-6-1, Ed.3/2014; EURAMET cg-17 V4.0 2019; BS-EN 837-1&3:1998",
+          "keterangan": null
+        },
+        {
+          "no": 26,
+          "nama_alat": "Differential Pressure",
+          "rentang": [
+            {"parameter": null, "min": -10, "max": 10, "satuan": "mbar", "ketidakpastian": 0.0093, "satuan_u": "mbar"}
+          ],
+          "metode": "SIDIK-IK-CAL-0532_Rev.0; DKD-R-6-1, Ed.3/2014; EURAMET cg-17 V4.0 2019; BS-EN 837-1&3:1998",
+          "keterangan": "1 mbar = 100 Pa"
+        }
+      ]
+    },
+    {
+      "kelompok": "Gaya",
+      "alat": [
+        {
+          "no": 27,
+          "nama_alat": "Mesin UTM",
+          "rentang": [
+            {"parameter": "Tekan", "min": 0, "max": 500, "satuan": "kgf", "ketidakpastian": 2.1, "satuan_u": "kgf"},
+            {"parameter": "Tekan", "min": 10, "max": 88, "satuan": "kN", "ketidakpastian": 0.21, "satuan_u": "kN"},
+            {"parameter": "Tekan", "min": 200, "max": 3000, "satuan": "kN", "ketidakpastian": 13, "satuan_u": "kN"},
+            {"parameter": "Tarik", "min": 0, "max": 500, "satuan": "kgf", "ketidakpastian": 2.1, "satuan_u": "kgf"},
+            {"parameter": "Tarik", "min": 10, "max": 88, "satuan": "kN", "ketidakpastian": 0.22, "satuan_u": "kN"}
+          ],
+          "metode": "SIDIK-IK-CAL-0513_Rev.4; ISO 7500-1 2018",
+          "keterangan": "1 kgf = 0.00980665 kN"
+        },
+        {
+          "no": 28,
+          "nama_alat": "Load Cell",
+          "rentang": [
+            {"parameter": "Tekan", "min": 0, "max": 500, "satuan": "kgf", "ketidakpastian": 2.3, "satuan_u": "kgf"},
+            {"parameter": "Tekan", "min": 10, "max": 88, "satuan": "kN", "ketidakpastian": 0.27, "satuan_u": "kN"},
+            {"parameter": "Tekan", "min": 200, "max": 2000, "satuan": "kN", "ketidakpastian": 7.60, "satuan_u": "kN"},
+            {"parameter": "Tarik", "min": 0, "max": 500, "satuan": "kgf", "ketidakpastian": 2.1, "satuan_u": "kgf"}
+          ],
+          "metode": "SIDIK-IK-CAL-0514_Rev.6; ASTM E74-13a",
+          "keterangan": null
+        },
+        {
+          "no": 29,
+          "nama_alat": "Proving Ring",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 500, "satuan": "kgf", "ketidakpastian": 2.3, "satuan_u": "kgf"},
+            {"parameter": null, "min": 10, "max": 88, "satuan": "kN", "ketidakpastian": 0.22, "satuan_u": "kN"}
+          ],
+          "metode": "SIDIK-IK-CAL-0514_Rev.6; ASTM E74-13a",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Aliran",
+      "alat": [
+        {
+          "no": 30,
+          "nama_alat": "Flow Meter Cairan (Totalizer)",
+          "rentang": [
+            {"parameter": null, "min": 10, "max": 78, "satuan": "L", "ketidakpastian": 0.76, "satuan_u": "% of reading"},
+            {"parameter": null, "min": 78, "max": 1991, "satuan": "L", "ketidakpastian": 1.2, "satuan_u": "% of reading"}
+          ],
+          "metode": "SIDIK-IK-CAL-0528_Rev.4; ISO 4185:1980; NIST Special Publication 250 (Static weighing method)",
+          "keterangan": null
+        },
+        {
+          "no": 31,
+          "nama_alat": "Flow Meter Cairan (Flowrate)",
+          "rentang": [
+            {"parameter": null, "min": 75, "max": 191, "satuan": "Lpm", "ketidakpastian": 0.76, "satuan_u": "% of reading"},
+            {"parameter": null, "min": 190.6, "max": 519.4, "satuan": "Lpm", "ketidakpastian": 1.2, "satuan_u": "% of reading"}
+          ],
+          "metode": "SIDIK-IK-CAL-0528_Rev.4; ISO 4185:1980; NIST Special Publication 250 (Static weighing method)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Densitas",
+      "alat": [
+        {
+          "no": 32,
+          "nama_alat": "Hydrometer",
+          "rentang": [
+            {"parameter": null, "min": 1.1, "max": 1.7, "satuan": "g/mL", "ketidakpastian": 0.00070, "satuan_u": "g/mL"},
+            {"parameter": null, "min": 0.6, "max": 1, "satuan": "g/mL", "ketidakpastian": 0.00051, "satuan_u": "g/mL"}
+          ],
+          "metode": "SIDIK-IK-CAL-0525 (Metode Cuckcow)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Panjang",
+      "alat": [
+        {
+          "no": 33,
+          "nama_alat": "Sieve",
+          "rentang": [
+            {"parameter": null, "min": 45, "max": 4000, "satuan": "µm", "ketidakpastian": 4.33, "satuan_u": "µm"},
+            {"parameter": null, "min": 4, "max": 100, "satuan": "mm", "ketidakpastian": 0.02, "satuan_u": "mm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0526_Rev.3; ASTM E11-20; ISO 3310-1:2016 (Pengukuran langsung dengan Microscope dan Caliper)",
+          "keterangan": null
+        },
+        {
+          "no": 34,
+          "nama_alat": "Micrometer",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 25, "satuan": "mm", "ketidakpastian": 0.83, "satuan_u": "µm"},
+            {"parameter": null, "min": 25, "max": 50, "satuan": "mm", "ketidakpastian": 0.87, "satuan_u": "µm"},
+            {"parameter": null, "min": 50, "max": 75, "satuan": "mm", "ketidakpastian": 0.91, "satuan_u": "µm"},
+            {"parameter": null, "min": 75, "max": 100, "satuan": "mm", "ketidakpastian": 0.91, "satuan_u": "µm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0515_Rev.3; SNSU PK.P-01:2020 (Pengukuran langsung dengan Gauge block)",
+          "keterangan": null
+        },
+        {
+          "no": 35,
+          "nama_alat": "Vernier Caliper",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 300, "satuan": "mm", "ketidakpastian": 0.015, "satuan_u": "mm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0520_Rev.2; SNSU PK.P-02:2020 (Pengukuran Langsung dengan Gauge block)",
+          "keterangan": null
+        },
+        {
+          "no": 36,
+          "nama_alat": "Dial Indicator",
+          "rentang": [
+            {"parameter": null, "min": 0, "max": 25, "satuan": "mm", "ketidakpastian": 6.5, "satuan_u": "µm"},
+            {"parameter": null, "min": 0, "max": 50, "satuan": "mm", "ketidakpastian": 8.6, "satuan_u": "µm"},
+            {"parameter": null, "min": 0, "max": 100, "satuan": "mm", "ketidakpastian": 8.9, "satuan_u": "µm"},
+            {"parameter": null, "min": 0, "max": 300, "satuan": "mm", "ketidakpastian": 9.7, "satuan_u": "µm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0519_Rev.2; USBR 1007-89 (Pengukuran langsung dengan Gauge block)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Waktu dan Frekuensi",
+      "alat": [
+        {
+          "no": 37,
+          "nama_alat": "Timer/Stopwatch",
+          "rentang": [
+            {"parameter": null, "min": 5, "max": 3600, "satuan": "s", "ketidakpastian": 0.81, "satuan_u": "s"}
+          ],
+          "metode": "SIDIK-IK-CAL-0509_Rev.6; SNSU PK.W-01:2020",
+          "keterangan": null
+        },
+        {
+          "no": 38,
+          "nama_alat": "Centrifuge",
+          "rentang": [
+            {"parameter": null, "min": 60, "max": 200, "satuan": "rpm", "ketidakpastian": 1.5, "satuan_u": "rpm"},
+            {"parameter": null, "min": 200, "max": 9000, "satuan": "rpm", "ketidakpastian": 1.6, "satuan_u": "rpm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0511_Rev.6",
+          "keterangan": null
+        },
+        {
+          "no": 39,
+          "nama_alat": "Infrared Tachometer",
+          "rentang": [
+            {"parameter": null, "min": 60, "max": 7000, "satuan": "rpm", "ketidakpastian": 1.5, "satuan_u": "rpm"},
+            {"parameter": null, "min": 7000, "max": 30000, "satuan": "rpm", "ketidakpastian": 5.0, "satuan_u": "rpm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0511_Rev.6; SANAS TR 45-02 (2017)",
+          "keterangan": null
+        }
+      ]
+    },
+    {
+      "kelompok": "Instrumen Analitik",
+      "alat": [
+        {
+          "no": 40,
+          "nama_alat": "Conductivitymeter",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 25, "satuan": "µS", "ketidakpastian": 0.41, "satuan_u": "µS"},
+            {"parameter": null, "min": null, "max": 1412, "satuan": "µS", "ketidakpastian": 5.1, "satuan_u": "µS"},
+            {"parameter": null, "min": null, "max": 111, "satuan": "mS/cm", "ketidakpastian": 1.7, "satuan_u": "mS/cm"}
+          ],
+          "metode": "SIDIK-IK-CAL-0507_Rev.6; ASTM D 1125-2023 (Perbandingan langsung dengan larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 41,
+          "nama_alat": "pH Meter",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 4, "satuan": "pH", "ketidakpastian": 0.023, "satuan_u": "pH"},
+            {"parameter": null, "min": null, "max": 7, "satuan": "pH", "ketidakpastian": 0.021, "satuan_u": "pH"},
+            {"parameter": null, "min": null, "max": 10, "satuan": "pH", "ketidakpastian": 0.031, "satuan_u": "pH"}
+          ],
+          "metode": "SIDIK-IK-CAL-0506_Rev.6; ASTM D 1293:2018 (Perbandingan langsung dengan larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 42,
+          "nama_alat": "Chlorin Meter",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 1.74, "satuan": "mg/L", "ketidakpastian": 0.091, "satuan_u": "mg/L"},
+            {"parameter": null, "min": null, "max": 1.83, "satuan": "mg/L", "ketidakpastian": 0.080, "satuan_u": "mg/L"}
+          ],
+          "metode": "SIDIK-IK-CAL-0524_Rev.1; ICADME 2015 (Perbandingan Langsung dengan Larutan Standar)",
+          "keterangan": null
+        },
+        {
+          "no": 43,
+          "nama_alat": "Turbidimeter",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 1, "satuan": "NTU", "ketidakpastian": 0.041, "satuan_u": "NTU"},
+            {"parameter": null, "min": null, "max": 100, "satuan": "NTU", "ketidakpastian": 3.1, "satuan_u": "NTU"},
+            {"parameter": null, "min": null, "max": 1000, "satuan": "NTU", "ketidakpastian": 22, "satuan_u": "NTU"}
+          ],
+          "metode": "SIDIK-IK-CAL-0523_Rev.1 (Perbandingan langsung dengan Larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 44,
+          "nama_alat": "Viscometer",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 102, "satuan": "cP", "ketidakpastian": 0.20, "satuan_u": "cP"},
+            {"parameter": null, "min": null, "max": 1028, "satuan": "cP", "ketidakpastian": 2.10, "satuan_u": "cP"},
+            {"parameter": null, "min": null, "max": 58021, "satuan": "cP", "ketidakpastian": 1.4, "satuan_u": "P"}
+          ],
+          "metode": "SIDIK-IK-CAL-0517_Rev.3; ASTME 2975-2023 (Perbandingan langsung dengan Larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 45,
+          "nama_alat": "Refractometer",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 1.3366, "satuan": "n20D", "ketidakpastian": 0.000062, "satuan_u": "n20D"},
+            {"parameter": null, "min": null, "max": 1.3999, "satuan": "n20D", "ketidakpastian": 0.000067, "satuan_u": "n20D"},
+            {"parameter": null, "min": null, "max": 2.5, "satuan": "°Brix", "ketidakpastian": 0.019, "satuan_u": "°Brix"},
+            {"parameter": null, "min": null, "max": 40, "satuan": "°Brix", "ketidakpastian": 0.020, "satuan_u": "°Brix"}
+          ],
+          "metode": "SIDIK-IK-CAL-0516_Rev.4; OIML R 142-E:2008 (Perbandingan langsung dengan Larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 46,
+          "nama_alat": "DO Meter",
+          "rentang": [
+            {"parameter": null, "min": null, "max": 8.77, "satuan": "mg/L", "ketidakpastian": 0.16, "satuan_u": "mg/L"}
+          ],
+          "metode": "SIDIK-IK-CAL-0530_Rev.2; ASTM D888-2018 (Perbandingan langsung dengan Larutan standar)",
+          "keterangan": null
+        },
+        {
+          "no": 47,
+          "nama_alat": "Spektrofotometer",
+          "rentang": [
+            {"parameter": "Panjang Gelombang", "min": 283, "max": 641, "satuan": "nm", "ketidakpastian": 0.40, "satuan_u": "nm"},
+            {"parameter": "Panjang Gelombang", "min": 474, "max": 810, "satuan": "nm", "ketidakpastian": 0.38, "satuan_u": "nm"},
+            {"parameter": "Linearitas Fotometrik pada λ=560nm", "min": 10, "max": 30.5, "satuan": "%T", "ketidakpastian": 0.50, "satuan_u": "%T"}
+          ],
+          "metode": "SIDIK-IK-CAL-0508_Rev.4; SNSU PK.F-01:2020 (Perbandingan langsung Glass Filter Standar)",
+          "keterangan": null
+        },
+        {
+          "no": 48,
+          "nama_alat": "Autoklaf",
+          "rentang": [
+            {"parameter": "Suhu", "min": 105, "max": 121, "satuan": "°C", "ketidakpastian": 0.34, "satuan_u": "°C"},
+            {"parameter": "Tekanan", "min": 0, "max": 4, "satuan": "bar", "ketidakpastian": 0.059, "satuan_u": "bar"}
+          ],
+          "metode": "SIDIK-IK-CAL-0531_Rev.4",
+          "keterangan": "1 bar = 10^5 Pa"
+        }
+      ]
+    }
+  ]
+}
