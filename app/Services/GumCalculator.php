@@ -149,6 +149,19 @@ class GumCalculator
      * ada. Dicocokkan ke titik BULAT terdekat (round) karena nilai sertifikat
      * buffer/standar asli suka geser dikit per lot (mis. pH 3.99 bukan 4.00
      * persis), sementara kemampuan didaftarkan per titik nominal (4, 7, 10).
+     *
+     * SENGAJA cuma nyocokin `range_min = range_max = titik` (titik tunggal
+     * presisi, lihat `PhMeterCapabilitySeeder`) — BUKAN rentang kontinyu
+     * (mis. jangka sorong 0-300mm) dan BUKAN konvensi `range_min: null` punya
+     * lampiran akreditasi. Satu `equipment_category_id` (mis. "Panjang")
+     * nampung banyak JENIS alat berbeda (Sieve, Micrometer, Vernier Caliper)
+     * yang rentangnya suka tumpang tindih, dan nggak ada link yang jelas
+     * antara `Equipment.nama_alat` sama `CalibrationCapability.nama_alat`
+     * buat mastiin baris kemampuan yang match itu emang punya JENIS alat yang
+     * sama — kalau match cuma dari kategori + rentang angka doang, alat yang
+     * satu bisa kepasangin CMC alat lain yang kebetulan rentangnya nyerempet
+     * (kejadian nyata: jangka sorong 0.05mm toleransi kepasangin CMC Sieve
+     * 4mm gara-gara sama-sama "Panjang" dan sama-sama nyakup 50mm).
      */
     private function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
     {
