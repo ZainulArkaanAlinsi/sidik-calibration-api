@@ -127,7 +127,16 @@ class CalibrationRequest extends FormRequest
                 );
             }
 
-            $standar = Standard::find($this->integer('standard_id'));
+            // Semua standar yang kesebut (sesi + per-titik) dimuat sekaligus di
+            // sini, dipakai buat dua-duanya di bawah — biar nggak query
+            // Standard berkali-kali buat baris yang sama.
+            $idPerTitik = array_column($this->input('measurements', []), 'standard_id');
+            $standarById = Standard::query()
+                ->whereIn('id', array_filter([$this->integer('standard_id'), ...$idPerTitik]))
+                ->get()
+                ->keyBy('id');
+
+            $standar = $standarById->get($this->integer('standard_id'));
 
             // Standar yang sertifikatnya udah lewat masa berlaku nggak boleh
             // jadi acuan — ketertelusurannya putus, dan itu temuan asesor.
@@ -146,7 +155,7 @@ class CalibrationRequest extends FormRequest
                     continue;
                 }
 
-                $standarTitik = Standard::find($standardIdTitik);
+                $standarTitik = $standarById->get($standardIdTitik);
 
                 if ($standarTitik && ! $standarTitik->masihBerlaku()) {
                     $validator->errors()->add(

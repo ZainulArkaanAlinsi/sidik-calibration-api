@@ -424,7 +424,7 @@ class CalibrationTest extends TestCase
             'range_min' => 4,
             'range_max' => 4,
             'satuan' => 'pH',
-            'ketidakpastian_terbaik' => 0.02343221021262627,
+            'ketidakpastian_terbaik' => 0.02343221,
             'satuan_ketidakpastian' => 'pH',
             'faktor_cakupan' => 2,
         ]);
@@ -457,7 +457,7 @@ class CalibrationTest extends TestCase
         $response->assertCreated();
 
         $titik = $response->json('data.titik.0');
-        $this->assertEqualsWithDelta(0.02343221021262627, $titik['ketidakpastian_diperluas'], 1e-9);
+        $this->assertEqualsWithDelta(0.02343221, $titik['ketidakpastian_diperluas'], 1e-9);
         $this->assertSame($buffer4->id, $titik['standar_acuan']['id']);
 
         // Kolom DB-nya juga kesimpan, bukan cuma yang keluar di response.

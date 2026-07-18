@@ -302,9 +302,10 @@ class CalibrationController extends Controller
 
         // Sebagian kategori alat (mis. pH) butuh standar beda per titik ukur
         // (buffer 4/7/10) — dimuat sekaligus di sini biar nggak query per titik.
-        $standarPerTitik = Standard::whereIn('id', array_unique(array_filter(
-            array_column($request->input('measurements'), 'standard_id'),
-        )))->get()->keyBy('id');
+        $standarPerTitik = Standard::whereIn(
+            'id',
+            array_filter(array_column($request->input('measurements'), 'standard_id')),
+        )->get()->keyBy('id');
 
         $keputusanSesi = 'PASS';
         // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
@@ -341,9 +342,23 @@ class CalibrationController extends Controller
                 ]);
             }
 
-            $standarTitik = isset($titik['standard_id']) && $titik['standard_id'] !== null
-                ? $standarPerTitik->get($titik['standard_id'], $standarDefault)
-                : $standarDefault;
+            // CalibrationRequest udah validasi standard_id per titik itu ada &
+            // masih berlaku — kalau sampe nggak ketemu di sini (standar
+            // dihapus di antara validasi & baris ini, atau endpoint lain
+            // manggil isiUlangPengukuran tanpa lewat CalibrationRequest),
+            // gagal keras. Diam-diam pakai standar default sesi bakal nyimpen
+            // hasil hitung yang ngaku dihitung pakai standar yang salah.
+            $standarTitik = $standarDefault;
+
+            if (isset($titik['standard_id'])) {
+                $standarTitik = $standarPerTitik->get($titik['standard_id']);
+
+                abort_if(
+                    $standarTitik === null,
+                    422,
+                    "Standar acuan titik ke-{$titikKe} nggak ketemu — mungkin baru dihapus.",
+                );
+            }
 
             $hasil = $this->gum->hitungTitik(
                 $titikKe,
