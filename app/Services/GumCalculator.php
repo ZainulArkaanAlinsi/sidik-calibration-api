@@ -182,17 +182,29 @@ class GumCalculator
      * `nama_alat_kemampuan` mastiin jenis alatnya, ambiguitas itu ilang, dan
      * dua macam kemampuan di bawah ini aman dicocokkan:
      *
-     * - Titik tunggal (`range_min` kosong, atau `range_min == range_max`,
-     *   lihat `PhMeterCapabilitySeeder`): satu CMC buat satu titik ukur
-     *   spesifik (mis. buffer pH 4/7/10). Dicocokkan ke titik BULAT karena
-     *   nilai sertifikat buffer/standar asli suka geser dikit per lot (mis.
-     *   pH 3.99 bukan 4.00 persis) — tapi selisihnya wajib di bawah
+     * - Titik tunggal PRESISI (`range_min == range_max`, non-null — lihat
+     *   `PhMeterCapabilitySeeder`): satu CMC buat satu titik ukur spesifik
+     *   (mis. buffer pH 4/7/10), dari perhitungan budget ketidakpastian
+     *   sendiri (bukan dibulatkan). Dicocokkan ke titik BULAT karena nilai
+     *   sertifikat buffer/standar asli suka geser dikit per lot (mis. pH 3.99
+     *   bukan 4.00 persis) — tapi selisihnya wajib di bawah
      *   `MAX_DRIFT_TITIK_TUNGGAL`, bukan asal "titik bulatnya sama" (round(3.5)
-     *   kebetulan == 4 bukan berarti 3.5 itu "buffer 4 yang geser").
+     *   kebetulan == 4 bukan berarti 3.5 itu "buffer 4 yang geser"). Ini
+     *   PRIORITAS PERTAMA — dicek duluan sebelum titik tunggal generik.
+     * - Titik tunggal GENERIK (`range_min` kosong — konvensi
+     *   `kemampuan-kalibrasi.json` / `CalibrationCapabilitySeeder`, dibulatkan
+     *   3 desimal): fallback kalau nggak ada baris presisi buat titik yang
+     *   sama. Tanpa prioritas ini, `nama_alat` yang punya DUA baris buat titik
+     *   bulat yang sama (satu generik dari lampiran akreditasi, satu presisi
+     *   dari perhitungan GUM sendiri — persis kasus "pH Meter") bakal ambigu:
+     *   `first()` polos milih siapa aja yang duluan ke-insert, biasanya yang
+     *   generik, dan baris presisinya jadi nggak pernah kepake — bug nyata
+     *   yang kejadian pas `PhMeterCapabilitySeeder` pertama kali ditambahin.
      * - Rentang kontinyu (`range_min < range_max` beneran, mis. jangka sorong
      *   0-300mm): satu CMC berlaku buat SELURUH rentang itu, dicocokkan
      *   dengan titik ukur ASLI (nggak dibulatkan) jatuh di dalamnya. Titik
-     *   tunggal diprioritaskan lebih dulu kalau dua-duanya somehow cocok.
+     *   tunggal (presisi maupun generik) diprioritaskan lebih dulu kalau
+     *   dua-duanya somehow cocok.
      *
      * Kandidat kemampuan per kategori di-cache di instance ini — satu sesi
      * kalibrasi bisa punya banyak titik ukur (hitungTitik dipanggil berkali-
@@ -217,10 +229,17 @@ class GumCalculator
 
         $titikBulat = round($titikUkur);
 
+        $cocokTitikTunggal = fn (CalibrationCapability $k): bool => (float) $k->range_max === (float) $titikBulat
+            && abs($titikUkur - $titikBulat) <= self::MAX_DRIFT_TITIK_TUNGGAL;
+
+        // Presisi dulu (range_min == range_max, non-null), baru generik
+        // (range_min null) — lihat penjelasan di docblock method ini.
         $titikTunggal = $kandidat->first(
-            fn (CalibrationCapability $k): bool => ($k->range_min === null || (float) $k->range_min === (float) $k->range_max)
-                && (float) $k->range_max === (float) $titikBulat
-                && abs($titikUkur - $titikBulat) <= self::MAX_DRIFT_TITIK_TUNGGAL,
+            fn (CalibrationCapability $k): bool => $k->range_min !== null
+                && (float) $k->range_min === (float) $k->range_max
+                && $cocokTitikTunggal($k),
+        ) ?? $kandidat->first(
+            fn (CalibrationCapability $k): bool => $k->range_min === null && $cocokTitikTunggal($k),
         );
 
         if ($titikTunggal !== null) {
