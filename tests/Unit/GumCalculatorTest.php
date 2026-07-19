@@ -221,6 +221,56 @@ class GumCalculatorTest extends TestCase
     }
 
     /**
+     * Regresi: `nama_alat` "pH Meter" bisa punya DUA baris CalibrationCapability
+     * buat titik bulat yang sama — satu generik dibulatkan 3 desimal (dari
+     * lampiran akreditasi, `range_min` null, konvensi `CalibrationCapabilitySeeder`)
+     * dan satu presisi 8 desimal (dari perhitungan GUM sendiri, `range_min ==
+     * range_max`, konvensi `PhMeterCapabilitySeeder`) — persis kejadian nyata di
+     * data pH Meter PT Sidik. Baris presisi WAJIB menang, bukan baris generik
+     * yang kebetulan lebih dulu ke-insert.
+     */
+    public function test_baris_cmc_presisi_menang_dibanding_baris_cmc_generik_buat_titik_sama(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        // Generik dulu yang dibikin (id lebih kecil) — kalau kodenya salah,
+        // `first()` polos bakal milih ini duluan.
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'range_min' => null,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.023,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        $hasil = $this->gum->hitungTitik(1, 4.009244572, [4.0, 4.0, 4.0], $alat, $this->standar());
+
+        $this->assertEqualsWithDelta(0.02343221, $hasil['ketidakpastian_diperluas'], 1e-12);
+    }
+
+    /**
      * Regresi: round(3.5) kebetulan jadi 4, sama kayak titik nominal buffer
      * pH 4 — tapi 3.5 itu titik ukur yang BENERAN beda, bukan "buffer 4 yang
      * cerdiknya geser dikit" (drift asli di data pH cuma 0.009-0.021, jauh di

@@ -30,6 +30,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             DemoDataSeeder::class,
+            // Record kalibrasi ASLI (bukan demo) — lihat docblock seeder ini.
+            TirtaGraciaPhMeterSeeder::class,
         ]);
     }
 

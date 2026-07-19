@@ -1,0 +1,111 @@
+{
+  "_sumber": "Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/ (diringkas dari Master Olah Data_pH for trial_CSV/, workbook aslinya .xlsm ter-password protect)",
+  "_catatan": "Satu record kalibrasi ASLI end-to-end (bukan dummy). titik_ukur pakai nilai after-adjustment (yang dicetak di sertifikat 012-CAL-524). Toleransi alat (0.2 pH) tidak ada di sumber — itu asumsi kriteria penerimaan, lihat TirtaGraciaPhMeterSeeder.",
+  "customer": {
+    "nama": "PT TIRTA GRACIA SEMESTA MANDIRI",
+    "alamat": "Jl. Arteri Primer A-10 RT. 01 RW.12 Nyalindung Kec. Cicalengka, Kab. Bandung, Jawa Barat"
+  },
+  "standards": [
+    {
+      "serial_number": "HC32513535",
+      "nama": "pH Buffer Solution 4",
+      "merk": "Supelco/Merck",
+      "tertelusur_ke": "Merck KGaA",
+      "berlaku_sampai": "2026-07-31",
+      "ketidakpastian": 0.02,
+      "satuan_ketidakpastian": "pH",
+      "faktor_cakupan": 2
+    },
+    {
+      "serial_number": "HC46341939",
+      "nama": "pH Buffer Solution 7",
+      "merk": "Supelco/Merck",
+      "tertelusur_ke": "Merck KGaA",
+      "berlaku_sampai": "2027-12-17",
+      "ketidakpastian": 0.02,
+      "satuan_ketidakpastian": "pH",
+      "faktor_cakupan": 2
+    },
+    {
+      "serial_number": "HC45400338",
+      "nama": "pH Buffer Solution 10",
+      "merk": "Supelco/Merck",
+      "tertelusur_ke": "Merck KGaA",
+      "berlaku_sampai": "2027-07-31",
+      "ketidakpastian": 0.03,
+      "satuan_ketidakpastian": "pH",
+      "faktor_cakupan": 2
+    },
+    {
+      "serial_number": "23P1005",
+      "nama": "Termometer & Sensor Std.",
+      "merk": "Yokogawa",
+      "model": "CA 150 Handy Cal",
+      "tertelusur_ke": "LK-285-IDN",
+      "berlaku_sampai": "2026-08-12",
+      "ketidakpastian": 0.72,
+      "satuan_ketidakpastian": "°C",
+      "faktor_cakupan": 2
+    }
+  ],
+  "equipment": {
+    "nama_alat": "pH Meter",
+    "nama_alat_kemampuan": "pH Meter",
+    "merk": "Mettler Toledo",
+    "model": "Five Easy",
+    "serial_number": "B628755900",
+    "range_min": 0,
+    "range_max": 14,
+    "satuan": "pH",
+    "resolusi": 0.01,
+    "toleransi": 0.2,
+    "lokasi": "Lab. Uji A",
+    "tanggal_kalibrasi_terakhir": "2024-05-26",
+    "tanggal_jatuh_tempo": "2025-05-26"
+  },
+  "teknisi": {
+    "employee_id": "PTS-DR",
+    "name": "DR",
+    "department": "Kalibrasi",
+    "email": "teknisi.dr@pt-sidik.com"
+  },
+  "penandatangan": {
+    "employee_id": "PTS-AM",
+    "name": "Alex Misramto",
+    "department": "Technical Manager",
+    "email": "alex.misramto@pt-sidik.com"
+  },
+  "sesi": {
+    "nomor_sesi": "2405.13.A",
+    "tanggal_kalibrasi": "2024-05-26",
+    "lokasi": "lab",
+    "suhu_ruang": 21.4,
+    "kelembaban": 54.5,
+    "submitted_at": "2024-05-26 16:00:00",
+    "reviewed_at": "2024-05-29 10:00:00"
+  },
+  "titik_ukur": [
+    {
+      "titik_ke": 1,
+      "standard_serial_number": "HC32513535",
+      "titik_ukur": 4.009244572,
+      "pembacaan": [4, 4, 4, 4, 4]
+    },
+    {
+      "titik_ke": 2,
+      "standard_serial_number": "HC46341939",
+      "titik_ukur": 6.9889072,
+      "pembacaan": [7.01, 7.01, 7, 7, 7]
+    },
+    {
+      "titik_ke": 3,
+      "standard_serial_number": "HC45400338",
+      "titik_ukur": 9.978876900000001,
+      "pembacaan": [10.11, 10.11, 10.11, 10.11, 10.11]
+    }
+  ],
+  "sertifikat": {
+    "nomor": "012-CAL-524",
+    "diterbitkan_pada": "2024-05-30"
+  }
+}
