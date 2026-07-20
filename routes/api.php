@@ -56,6 +56,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    // Deret waktu masuk-vs-selesai, rentang & granularitas bebas — dipakai
+    // grafik di Dashboard sama halaman Perhitungan. Agregasinya di sini biar
+    // mobile nggak narik ribuan baris cuma buat gambar belasan titik.
+    Route::get('/dashboard/tren', [DashboardController::class, 'tren']);
 
     // Baca data alat & kategori: semua role, termasuk viewer.
     Route::get('/categories', [CategoryController::class, 'index']);
