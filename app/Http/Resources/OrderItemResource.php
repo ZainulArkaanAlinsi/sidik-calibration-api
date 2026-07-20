@@ -16,6 +16,13 @@ class OrderItemResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            // Teknisi yang DITUGASKAN ngerjain alat ini. null = belum dibagi.
+            // Beda sama teknisi di sesi kalibrasi, yang nyatet siapa yang
+            // sudah ngerjain dan kepake di sertifikat.
+            'teknisi' => $this->whenLoaded('teknisi', fn () => $this->teknisi ? [
+                'id' => $this->teknisi->id,
+                'nama' => $this->teknisi->name,
+            ] : null),
             'kondisi_terima' => $this->kondisi_terima,
             'kelengkapan' => $this->kelengkapan,
             'catatan' => $this->catatan,

@@ -144,6 +144,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Order: bacanya udah didaftarin di atas buat semua role, di sini
         // tinggal yang nulis — pencatatan alat masuk itu kerjaan meja depan.
         Route::apiResource('orders', OrderController::class)->only(['store', 'update', 'destroy']);
+        // Bagi-bagi kerjaan ke teknisi tanpa ngirim ulang seluruh order —
+        // aksinya sering, payload `PUT` lengkap kemahalan buat ini.
+        Route::post('/orders/{order}/penugasan', [OrderController::class, 'penugasan']);
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,
