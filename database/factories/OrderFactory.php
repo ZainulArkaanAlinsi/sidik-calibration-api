@@ -30,6 +30,6 @@ class OrderFactory extends Factory
 
     public function selesai(): static
     {
-        return $this->state(fn (array $attributes) => ['status' => Order::STATUS_SELESAI]);
+        return $this->state(fn () => ['status' => Order::STATUS_SELESAI]);
     }
 }
