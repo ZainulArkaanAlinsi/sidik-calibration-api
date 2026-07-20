@@ -145,6 +145,75 @@ class CalibrationTest extends TestCase
         $this->assertEqualsWithDelta(4.009244572, (float) $titik->titik_ukur, 1e-8);
     }
 
+    /**
+     * SESI pH ASLI, 3 titik, dikirim lewat API persis kayak yang bakal dikirim
+     * mobile — dan hasilnya harus sama dengan sertifikat 012-CAL-524.
+     *
+     * Semua angka di sini diambil dari `Master Olah Data_pH for trial.xlsm`
+     * sheet `PERHITUNGAN` blok *After Adjustment*: pembacaan, suhu tiap
+     * pengulangan, dan `titik_ukur` yang tercetak di sertifikat. Nggak ada satu
+     * pun yang dikarang.
+     *
+     * Ini yang ngebuktiin alur pH bisa dites pakai DATA ASLI tanpa perlu
+     * ngetik nilai buffer manual dari Excel.
+     */
+    public function test_sesi_ph_asli_3_titik_reproduksi_sertifikat_012_cal_524(): void
+    {
+        $buffer = fn (float $a, float $b, float $c) => Standard::factory()->create([
+            'koef_suhu_a' => $a, 'koef_suhu_b' => $b, 'koef_suhu_c' => $c,
+            'ketidakpastian' => 0.02, 'satuan_ketidakpastian' => 'pH',
+        ]);
+
+        $ph4 = $buffer(0.00003, -0.0023, 4.0455);
+        $ph7 = $buffer(0.00008, -0.0076, 7.1182);
+        $ph10 = $buffer(0.00009, -0.0148, 10.262);
+
+        $this->alat->update(['satuan' => 'pH', 'resolusi' => 0.01, 'toleransi' => 0.2]);
+
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'standard_id' => $ph7->id,
+            // Suhu RUANG 21,4 °C — sengaja beda dari suhu larutan di bawah,
+            // buat mastiin yang kepakai di kurva emang suhu larutan.
+            'suhu_ruang' => 21.4,
+            'measurements' => [
+                [
+                    'standard_id' => $ph4->id, 'satuan' => 'pH',
+                    'pembacaan' => [4, 4, 4, 4, 4],
+                    'suhu_larutan' => [22.2, 22.2, 22.1, 22.2, 22.2],
+                ],
+                [
+                    'standard_id' => $ph7->id, 'satuan' => 'pH',
+                    'pembacaan' => [7.01, 7.01, 7, 7, 7],
+                    'suhu_larutan' => [22.2, 22.2, 22.2, 22.2, 22.2],
+                ],
+                [
+                    'standard_id' => $ph10->id, 'satuan' => 'pH',
+                    'pembacaan' => [10.11, 10.11, 10.11, 10.11, 10.11],
+                    'suhu_larutan' => [22.1, 22.1, 22.1, 22.1, 22.1],
+                ],
+            ],
+        ]))->assertCreated();
+
+        $titik = CalibrationSession::latest('id')->firstOrFail()
+            ->uncertaintyCalculations()->orderBy('titik_ke')->get();
+
+        // Nilai standar tiap titik — persis yang tercetak di sertifikat.
+        // Delta 1e-8: kolomnya decimal(20,8), digit ke-9 kepotong.
+        $this->assertEqualsWithDelta(4.009244572, (float) $titik[0]->titik_ukur, 1e-8);
+        $this->assertEqualsWithDelta(6.9889072, (float) $titik[1]->titik_ukur, 1e-8);
+        $this->assertEqualsWithDelta(9.9788769, (float) $titik[2]->titik_ukur, 1e-8);
+
+        // Rata-rata pembacaan & error, dari kolom `Average` dan `Correction`
+        // di sheet yang sama (Correction = lawan tanda dari error).
+        $this->assertEqualsWithDelta(4.0, (float) $titik[0]->rata_rata, 1e-8);
+        $this->assertEqualsWithDelta(7.004, (float) $titik[1]->rata_rata, 1e-8);
+        $this->assertEqualsWithDelta(10.11, (float) $titik[2]->rata_rata, 1e-8);
+
+        $this->assertEqualsWithDelta(-0.009244572, (float) $titik[0]->error, 1e-8);
+        $this->assertEqualsWithDelta(0.0150928, (float) $titik[1]->error, 1e-8);
+        $this->assertEqualsWithDelta(0.1311231, (float) $titik[2]->error, 1e-8);
+    }
+
     /** Suhu tiap pengulangan kesimpen sendiri-sendiri, kayak di Excel. */
     public function test_suhu_larutan_disimpen_per_pembacaan(): void
     {
