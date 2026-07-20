@@ -61,7 +61,16 @@ class CalibrationRequest extends FormRequest
             ])],
 
             'measurements' => ['required', 'array', 'min:1'],
-            'measurements.*.titik_ukur' => ['required', 'numeric'],
+            // Boleh kosong KALAU `suhu_larutan` dikirim & standarnya punya kurva
+            // suhu — backend yang ngitung dari kurva sertifikat. Aturan
+            // "salah satu wajib ada" dijaga di `withValidator()`.
+            'measurements.*.titik_ukur' => ['nullable', 'numeric'],
+
+            // Suhu larutan tiap pembacaan, sejajar sama `pembacaan`. Dipakai
+            // buat ngitung nilai standar dari kurva suhu sertifikat — ini yang
+            // dulu dihitung manual di Excel.
+            'measurements.*.suhu_larutan' => ['sometimes', 'array'],
+            'measurements.*.suhu_larutan.*' => ['required', 'numeric'],
             'measurements.*.satuan' => ['required', 'string', 'max:50'],
             'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
             'measurements.*.pembacaan.*' => ['required', 'numeric'],
@@ -170,6 +179,39 @@ class CalibrationRequest extends FormRequest
                     $validator->errors()->add(
                         "measurements.$i.standard_id",
                         'Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.',
+                    );
+                }
+            }
+
+            // `titik_ukur` boleh kosong CUMA kalau backend bisa ngitung sendiri:
+            // `suhu_larutan` lengkap sejajar pembacaan, DAN standar titik itu
+            // punya kurva suhu di sertifikatnya. Di luar itu wajib dikirim —
+            // titik ukur kosong bikin error nggak bisa dihitung sama sekali.
+            foreach ((array) $this->input('measurements', []) as $i => $titik) {
+                if (($titik['titik_ukur'] ?? null) !== null) {
+                    continue;
+                }
+
+                $suhu = (array) ($titik['suhu_larutan'] ?? []);
+                $pembacaan = (array) ($titik['pembacaan'] ?? []);
+                $standarTitik = $standarById->get($titik['standard_id'] ?? null) ?? $standar;
+
+                if ($suhu === [] || ! $standarTitik?->sensitifSuhu()) {
+                    $validator->errors()->add(
+                        "measurements.$i.titik_ukur",
+                        'Titik ukur wajib diisi. Boleh dikosongin cuma kalau kamu kirim `suhu_larutan` '
+                        .'dan standarnya punya kurva suhu (mis. buffer pH).',
+                    );
+
+                    continue;
+                }
+
+                // Rata-ratanya harus dari jumlah baris yang sama kayak pembacaan
+                // — persis kayak Excel yang nyatet suhu di tiap pengulangan.
+                if (count($suhu) !== count($pembacaan)) {
+                    $validator->errors()->add(
+                        "measurements.$i.suhu_larutan",
+                        'Jumlah suhu larutan harus sama dengan jumlah pembacaan di titik ini.',
                     );
                 }
             }

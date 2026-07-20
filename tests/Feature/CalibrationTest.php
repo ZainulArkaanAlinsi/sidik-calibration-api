@@ -110,6 +110,112 @@ class CalibrationTest extends TestCase
         $this->assertEqualsWithDelta(0.0129161, $response->json('data.hasil.ketidakpastian_diperluas'), 1e-6);
     }
 
+    /**
+     * Alur pH tanpa Excel: mobile ngirim suhu larutan, backend yang ngitung
+     * titik ukurnya dari kurva suhu sertifikat standar.
+     *
+     * Angka yang diuji bukan karangan — 4.009244572 itu `titik_ukur` yang
+     * BENERAN tercetak di sertifikat 012-CAL-524, dan suhunya (22,2 / 22,2 /
+     * 22,1 / 22,2 / 22,2 -> rata-rata 22,18 °C) diambil dari sheet
+     * `PERHITUNGAN` blok After Adjustment.
+     */
+    public function test_titik_ukur_dihitung_dari_suhu_larutan_kalau_nggak_dikirim(): void
+    {
+        $buffer = Standard::factory()->create([
+            'nama' => 'pH Buffer Solution 4',
+            // Koefisien dari sheet `Nilai koefisien Sensitifitas`.
+            'koef_suhu_a' => 0.00003,
+            'koef_suhu_b' => -0.0023,
+            'koef_suhu_c' => 4.0455,
+        ]);
+
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'standard_id' => $buffer->id,
+            'measurements' => [[
+                // `titik_ukur` sengaja NGGAK dikirim — ini intinya.
+                'satuan' => 'pH',
+                'pembacaan' => [4, 4, 4, 4, 4],
+                'suhu_larutan' => [22.2, 22.2, 22.1, 22.2, 22.2],
+            ]],
+        ]))->assertCreated();
+
+        $titik = CalibrationSession::latest('id')->firstOrFail()->uncertaintyCalculations()->firstOrFail();
+
+        // Toleransi 1e-8: kolomnya decimal(20,8), jadi digit ke-9 kepotong.
+        $this->assertEqualsWithDelta(4.009244572, (float) $titik->titik_ukur, 1e-8);
+    }
+
+    /** Suhu tiap pengulangan kesimpen sendiri-sendiri, kayak di Excel. */
+    public function test_suhu_larutan_disimpen_per_pembacaan(): void
+    {
+        $buffer = Standard::factory()->create([
+            'koef_suhu_a' => 0.00003, 'koef_suhu_b' => -0.0023, 'koef_suhu_c' => 4.0455,
+        ]);
+
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'standard_id' => $buffer->id,
+            'measurements' => [[
+                'satuan' => 'pH',
+                'pembacaan' => [4, 4, 4],
+                'suhu_larutan' => [22.2, 22.1, 22.2],
+            ]],
+        ]))->assertCreated();
+
+        $suhu = CalibrationSession::latest('id')->firstOrFail()
+            ->rawMeasurements()->where('tahap', 'sesudah_adjustment')
+            ->orderBy('pembacaan_ke')->pluck('suhu_larutan')->map(fn ($s) => (float) $s)->all();
+
+        $this->assertSame([22.2, 22.1, 22.2], $suhu);
+    }
+
+    /**
+     * Titik ukur kosong TANPA jalan buat ngitungnya harus ditolak — nebak
+     * angkanya bikin error salah tanpa ada yang tau.
+     */
+    public function test_titik_ukur_kosong_ditolak_kalau_standarnya_nggak_punya_kurva_suhu(): void
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'measurements' => [[
+                'satuan' => 'mm',
+                'pembacaan' => [50.02, 50.01, 50.03],
+                'suhu_larutan' => [22.2, 22.1, 22.2],
+            ]],
+        ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements.0.titik_ukur');
+    }
+
+    public function test_jumlah_suhu_larutan_harus_sama_dengan_jumlah_pembacaan(): void
+    {
+        $buffer = Standard::factory()->create([
+            'koef_suhu_a' => 0.00003, 'koef_suhu_b' => -0.0023, 'koef_suhu_c' => 4.0455,
+        ]);
+
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', $this->payload([
+            'standard_id' => $buffer->id,
+            'measurements' => [[
+                'satuan' => 'pH',
+                'pembacaan' => [4, 4, 4],
+                // Cuma 2 suhu buat 3 pembacaan — rata-ratanya bakal salah.
+                'suhu_larutan' => [22.2, 22.1],
+            ]],
+        ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements.0.suhu_larutan');
+    }
+
+    /** Jalur lama tetap jalan: kalau `titik_ukur` dikirim, itu yang dipakai. */
+    public function test_titik_ukur_yang_dikirim_tetap_menang(): void
+    {
+        $sesi = $this->buatSesi();
+
+        $this->assertEqualsWithDelta(
+            50.0,
+            (float) $sesi->uncertaintyCalculations()->firstOrFail()->titik_ukur,
+            1e-8,
+        );
+    }
+
     public function test_tiap_pembacaan_disimpen_satu_baris_sendiri_bukan_ditumpuk_jadi_json(): void
     {
         $sesi = $this->buatSesi();
