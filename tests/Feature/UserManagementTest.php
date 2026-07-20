@@ -131,6 +131,50 @@ class UserManagementTest extends TestCase
         $this->assertSame(User::ROLE_TEKNISI, $korban->fresh()->role);
     }
 
+    /**
+     * `role:admin` di routes cuma mastiin yang manggil itu admin — dia nggak
+     * peduli admin MANA. Tanpa penjaga per-organisasi, daftar user bocor lintas
+     * PT dan admin PT A bisa nyetel ulang password admin PT B modal nebak ID.
+     */
+    public function test_daftar_user_nggak_bocor_ke_organisasi_lain(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $ptLain = Organization::factory()->create();
+        User::factory()->count(3)->create(['organization_id' => $ptLain->id]);
+
+        $this->actingAs($admin)->getJson('/api/users')
+            ->assertOk()
+            // Cuma dirinya sendiri. Tiga user PT sebelah nggak ikut kebawa.
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $admin->id);
+    }
+
+    public function test_admin_nggak_bisa_ngutak_atik_akun_organisasi_lain(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $ptLain = Organization::factory()->create();
+        $korban = User::factory()->create([
+            'organization_id' => $ptLain->id,
+            'password' => 'passwordlama',
+            'status' => User::STATUS_PENDING,
+        ]);
+
+        // 404, bukan 403 — 403 ngonfirmasi akunnya ada, itu udah bocoran sendiri.
+        $this->actingAs($admin)->putJson("/api/users/{$korban->id}", ['email' => 'dibajak@a.test'])
+            ->assertNotFound();
+        $this->actingAs($admin)->postJson("/api/users/{$korban->id}/reset-password", ['password' => 'dibajak123'])
+            ->assertNotFound();
+        $this->actingAs($admin)->postJson("/api/users/{$korban->id}/approve", ['role' => User::ROLE_ADMIN])
+            ->assertNotFound();
+        $this->actingAs($admin)->postJson("/api/users/{$korban->id}/reject")
+            ->assertNotFound();
+
+        $korban->refresh();
+        $this->assertTrue(Hash::check('passwordlama', $korban->password));
+        $this->assertSame(User::STATUS_PENDING, $korban->status);
+        $this->assertSame(User::ROLE_TEKNISI, $korban->role);
+    }
+
     public function test_admin_menonaktifkan_akun_langsung_mutusin_sesinya(): void
     {
         $admin = User::factory()->admin()->create();
