@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\RoomController;
@@ -76,6 +77,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
 
+    // Order kalibrasi: bacanya semua role — teknisi butuh lihat alat apa aja
+    // yang masuk dan harus dikerjain. Nulisnya admin doang (meja penerimaan),
+    // di blok bawah.
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+
     // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
     // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
     Route::get('/calibrations', [CalibrationController::class, 'index']);
@@ -133,6 +140,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Ruangan: bacanya udah didaftarin di atas buat semua role, di sini
         // tinggal yang nulis.
         Route::apiResource('rooms', RoomController::class)->only(['store', 'update', 'destroy']);
+
+        // Order: bacanya udah didaftarin di atas buat semua role, di sini
+        // tinggal yang nulis — pencatatan alat masuk itu kerjaan meja depan.
+        Route::apiResource('orders', OrderController::class)->only(['store', 'update', 'destroy']);
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,

@@ -29,6 +29,12 @@ class StandardRequest extends FormRequest
                     ->ignore($standard?->id),
             ],
 
+            // Nilai sertifikat standar + suhu acuannya. Nggak divalidasi
+            // rentangnya: 4.01 masuk akal buat buffer pH, 0.0004 buat gauge
+            // block — nggak ada batas yang bener buat semua jenis standar.
+            'nilai_konvensional' => ['nullable', 'numeric'],
+            'suhu_referensi' => ['nullable', 'numeric'],
+
             'no_sertifikat' => ['nullable', 'string', 'max:100'],
             'tertelusur_ke' => ['nullable', 'string', 'max:255'],
             'berlaku_sampai' => ['nullable', 'date'],
