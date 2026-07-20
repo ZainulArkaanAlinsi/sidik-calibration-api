@@ -205,6 +205,108 @@ class OrderTest extends TestCase
             ->assertJsonValidationErrors('tanggal_janji_selesai');
     }
 
+    public function test_teknisi_bisa_ditugaskan_per_alat_bukan_per_order(): void
+    {
+        $andi = User::factory()->create(['role' => User::ROLE_TEKNISI, 'name' => 'Andi']);
+        $budi = User::factory()->create(['role' => User::ROLE_TEKNISI, 'name' => 'Budi']);
+        $alat = Equipment::factory()->count(2)->create();
+
+        // Satu pengiriman, dua alat, dua orang berbeda — ini yang nggak bisa
+        // diwakili kalau penugasannya nempel di order.
+        $response = $this->actingAs($this->admin)->postJson('/api/orders', [
+            'customer_id' => $this->pelanggan->id,
+            'tanggal_masuk' => '2026-07-20',
+            'items' => [
+                ['equipment_id' => $alat[0]->id, 'teknisi_id' => $andi->id],
+                ['equipment_id' => $alat[1]->id, 'teknisi_id' => $budi->id],
+            ],
+        ])->assertCreated();
+
+        $nama = collect($response->json('data.items'))->pluck('teknisi.nama')->sort()->values()->all();
+        $this->assertSame(['Andi', 'Budi'], $nama);
+    }
+
+    public function test_penugasan_bisa_diubah_tanpa_ngirim_ulang_seluruh_order(): void
+    {
+        $andi = User::factory()->create(['role' => User::ROLE_TEKNISI, 'name' => 'Andi']);
+        $order = Order::factory()->create();
+        $item = OrderItem::factory()->create(['order_id' => $order->id]);
+        $lain = OrderItem::factory()->create(['order_id' => $order->id, 'teknisi_id' => $andi->id]);
+
+        $response = $this->actingAs($this->admin)->postJson("/api/orders/{$order->id}/penugasan", [
+            'penugasan' => [
+                ['item_id' => $item->id, 'teknisi_id' => $andi->id],
+                // null = lepas penugasan, bukan diabaikan.
+                ['item_id' => $lain->id, 'teknisi_id' => null],
+            ],
+        ])->assertOk();
+
+        $this->assertSame($andi->id, $item->fresh()->teknisi_id);
+        $this->assertNull($lain->fresh()->teknisi_id);
+
+        // Data penerimaan nggak boleh ikut kesenggol.
+        $this->assertNotNull($item->fresh()->kondisi_terima);
+        $this->assertCount(2, $response->json('data.items'));
+    }
+
+    public function test_yang_ditugaskan_harus_teknisi_aktif_seorganisasi(): void
+    {
+        $order = Order::factory()->create();
+        $item = OrderItem::factory()->create(['order_id' => $order->id]);
+
+        $kandidat = [
+            // Admin — bukan teknisi.
+            User::factory()->admin()->create()->id,
+            // Teknisi tapi nonaktif: kerjaan bakal nyangkut, nggak ada yang ngerjain.
+            User::factory()->create(['role' => User::ROLE_TEKNISI, 'status' => User::STATUS_NONAKTIF])->id,
+            // Teknisi PT lain.
+            User::factory()->create([
+                'role' => User::ROLE_TEKNISI,
+                'organization_id' => Organization::factory()->create()->id,
+            ])->id,
+        ];
+
+        foreach ($kandidat as $id) {
+            $this->actingAs($this->admin)->postJson("/api/orders/{$order->id}/penugasan", [
+                'penugasan' => [['item_id' => $item->id, 'teknisi_id' => $id]],
+            ])->assertStatus(422);
+        }
+
+        $this->assertNull($item->fresh()->teknisi_id);
+    }
+
+    public function test_penugasan_nggak_bisa_nyentuh_item_order_lain(): void
+    {
+        $order = Order::factory()->create();
+        $orderLain = Order::factory()->create();
+        $itemOrderLain = OrderItem::factory()->create(['order_id' => $orderLain->id]);
+        $andi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+
+        $this->actingAs($this->admin)->postJson("/api/orders/{$order->id}/penugasan", [
+            'penugasan' => [['item_id' => $itemOrderLain->id, 'teknisi_id' => $andi->id]],
+        ])->assertStatus(422);
+
+        $this->assertNull($itemOrderLain->fresh()->teknisi_id);
+    }
+
+    /** Layar "Tugas Saya" — mobile nggak perlu tau ID-nya sendiri. */
+    public function test_filter_teknisi_saya_balikin_antrean_sendiri(): void
+    {
+        $andi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+        $budi = User::factory()->create(['role' => User::ROLE_TEKNISI]);
+
+        $punyaAndi = Order::factory()->create();
+        OrderItem::factory()->create(['order_id' => $punyaAndi->id, 'teknisi_id' => $andi->id]);
+
+        $punyaBudi = Order::factory()->create();
+        OrderItem::factory()->create(['order_id' => $punyaBudi->id, 'teknisi_id' => $budi->id]);
+
+        $this->actingAs($andi)->getJson('/api/orders?teknisi_id=saya')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nomor', $punyaAndi->nomor);
+    }
+
     public function test_cari_order_lewat_nomor_atau_nama_pelanggan(): void
     {
         Order::factory()->create(['customer_id' => $this->pelanggan->id]);

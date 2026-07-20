@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Order kalibrasi — permintaan pelanggan yang dicatat di meja penerimaan.
@@ -35,6 +37,19 @@ class OrderController extends Controller
                 $request->filled('customer_id'),
                 fn ($query) => $query->where('customer_id', $request->integer('customer_id')),
             )
+            // Antrean kerjaan satu teknisi: order yang punya minimal satu alat
+            // ditugaskan ke dia. `teknisi_id=saya` biar mobile nggak perlu tau
+            // ID-nya sendiri buat layar "Tugas Saya".
+            ->when($request->filled('teknisi_id'), function ($query) use ($request) {
+                // `input()`, bukan `string()`: yang terakhir balikin Stringable,
+                // jadi `=== 'saya'` nggak pernah kena dan filternya diam-diam
+                // nyari teknisi_id = 0.
+                $teknisiId = $request->input('teknisi_id') === 'saya'
+                    ? $request->user()->id
+                    : $request->integer('teknisi_id');
+
+                $query->whereHas('items', fn ($i) => $i->where('teknisi_id', $teknisiId));
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $cari = '%'.$request->string('search').'%';
 
@@ -126,6 +141,55 @@ class OrderController extends Controller
     }
 
     /**
+     * Bagi-bagi kerjaan tanpa ngirim ulang seluruh order.
+     *
+     * `PUT /orders/{id}` butuh payload `items` lengkap; itu berat & rawan buat
+     * aksi yang sesering ini — kepala lab cuma mindahin satu alat ke teknisi
+     * lain. Endpoint sendiri bikin aksinya murah dan nggak bisa nggak sengaja
+     * ngubah data penerimaan.
+     *
+     * `teknisi_id: null` artinya lepas penugasan, bukan diabaikan.
+     */
+    public function penugasan(Request $request, Order $order): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $order);
+
+        $organizationId = $request->user()->organization_id;
+
+        $validated = $request->validate([
+            'penugasan' => ['required', 'array', 'min:1'],
+            'penugasan.*.item_id' => [
+                'required', 'integer',
+                // Dibatesin ke item milik order INI — tanpa ini, satu request
+                // bisa nyentuh item order lain modal nebak ID.
+                Rule::exists('order_items', 'id')->where('order_id', $order->id),
+            ],
+            'penugasan.*.teknisi_id' => [
+                'present', 'nullable', 'integer',
+                Rule::exists('users', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->where('role', User::ROLE_TEKNISI)
+                    ->where('status', User::STATUS_AKTIF),
+            ],
+        ], [
+            'penugasan.required' => 'Nggak ada penugasan yang dikirim.',
+            'penugasan.*.item_id.exists' => 'Ada alat yang bukan bagian dari order ini.',
+            'penugasan.*.teknisi_id.present' => 'Kirim `teknisi_id` (isi null kalau mau lepas penugasan).',
+            'penugasan.*.teknisi_id.exists' => 'Teknisi yang dipilih nggak ketemu, bukan teknisi, atau akunnya nonaktif.',
+        ]);
+
+        DB::transaction(function () use ($order, $validated) {
+            foreach ($validated['penugasan'] as $baris) {
+                $order->items()->whereKey($baris['item_id'])->update([
+                    'teknisi_id' => $baris['teknisi_id'],
+                ]);
+            }
+        });
+
+        return response()->json(['data' => new OrderResource($this->muatRelasi($order->fresh()))]);
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $items
      */
     private function simpanItems(Order $order, array $items): void
@@ -133,6 +197,7 @@ class OrderController extends Controller
         foreach ($items as $item) {
             $order->items()->create([
                 'equipment_id' => $item['equipment_id'],
+                'teknisi_id' => $item['teknisi_id'] ?? null,
                 'kondisi_terima' => $item['kondisi_terima'] ?? null,
                 'kelengkapan' => $item['kelengkapan'] ?? null,
                 'catatan' => $item['catatan'] ?? null,
@@ -166,7 +231,7 @@ class OrderController extends Controller
 
     private function muatRelasi(Order $order): Order
     {
-        return $order->load(['customer', 'penerima', 'items.equipment'])->loadCount('items');
+        return $order->load(['customer', 'penerima', 'items.equipment', 'items.teknisi'])->loadCount('items');
     }
 
     /** Nomor order urut per organisasi per bulan: ORD/2026/07/0001. */
