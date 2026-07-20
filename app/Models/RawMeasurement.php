@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan', 'satuan',
-    'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path', 'is_verified',
+    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan',
+    'suhu_larutan', 'satuan', 'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path',
+    'is_verified',
 ])]
 class RawMeasurement extends Model
 {
