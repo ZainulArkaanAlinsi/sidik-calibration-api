@@ -323,6 +323,31 @@ class CalibrationController extends Controller
             // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
+            $suhuLarutan = array_map(floatval(...), array_values($titik['suhu_larutan'] ?? []));
+
+            // Standar titik ini di-resolve DULUAN, sebelum pembacaan disimpen:
+            // titik ukurnya bisa berasal dari kurva suhu standar, jadi standarnya
+            // harus udah ketahuan sebelum baris pertama ditulis.
+            //
+            // CalibrationRequest udah validasi standard_id per titik itu ada &
+            // masih berlaku — kalau sampe nggak ketemu di sini (standar dihapus
+            // di antara validasi & baris ini, atau endpoint lain manggil
+            // isiUlangPengukuran tanpa lewat CalibrationRequest), gagal keras.
+            // Diam-diam pakai standar default sesi bakal nyimpen hasil hitung
+            // yang ngaku dihitung pakai standar yang salah.
+            $standarTitik = $standarDefault;
+
+            if (isset($titik['standard_id'])) {
+                $standarTitik = $standarPerTitik->get($titik['standard_id']);
+
+                abort_if(
+                    $standarTitik === null,
+                    422,
+                    "Standar acuan titik ke-{$titikKe} nggak ketemu — mungkin baru dihapus.",
+                );
+            }
+
+            $titikUkur = $this->titikUkurTitik($titik, $suhuLarutan, $standarTitik, $titikKe);
 
             foreach ($pembacaan as $urutan => $nilai) {
                 $meta = $ocr[$urutan] ?? null;
@@ -332,8 +357,9 @@ class CalibrationController extends Controller
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sesudah_adjustment',
-                    'titik_ukur' => $titik['titik_ukur'],
+                    'titik_ukur' => $titikUkur,
                     'pembacaan' => $nilai,
+                    'suhu_larutan' => $suhuLarutan[$urutan] ?? null,
                     'satuan' => $titik['satuan'],
                     'input_source' => $dariOcr ? 'ocr' : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
@@ -355,7 +381,7 @@ class CalibrationController extends Controller
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sebelum_adjustment',
-                    'titik_ukur' => $titik['titik_ukur'],
+                    'titik_ukur' => $titikUkur,
                     'pembacaan' => $nilai,
                     'satuan' => $titik['satuan'],
                     'input_source' => 'manual',
@@ -363,27 +389,9 @@ class CalibrationController extends Controller
                 ]);
             }
 
-            // CalibrationRequest udah validasi standard_id per titik itu ada &
-            // masih berlaku — kalau sampe nggak ketemu di sini (standar
-            // dihapus di antara validasi & baris ini, atau endpoint lain
-            // manggil isiUlangPengukuran tanpa lewat CalibrationRequest),
-            // gagal keras. Diam-diam pakai standar default sesi bakal nyimpen
-            // hasil hitung yang ngaku dihitung pakai standar yang salah.
-            $standarTitik = $standarDefault;
-
-            if (isset($titik['standard_id'])) {
-                $standarTitik = $standarPerTitik->get($titik['standard_id']);
-
-                abort_if(
-                    $standarTitik === null,
-                    422,
-                    "Standar acuan titik ke-{$titikKe} nggak ketemu — mungkin baru dihapus.",
-                );
-            }
-
             $hasil = $this->gum->hitungTitik(
                 $titikKe,
-                (float) $titik['titik_ukur'],
+                $titikUkur,
                 $pembacaan,
                 $alat,
                 $standarTitik,
@@ -406,6 +414,45 @@ class CalibrationController extends Controller
         ]);
 
         return $sesi->fresh()->load(self::RELASI);
+    }
+
+    /**
+     * Titik ukur (nilai standar) buat satu titik.
+     *
+     * Kalau mobile ngirim `titik_ukur`, itu yang dipakai — jalur lama, dan
+     * teknisi tetap boleh nulis angka dari sumber lain.
+     *
+     * Kalau kosong, dihitung dari kurva suhu sertifikat standar. Ini MINDAHIN
+     * langkah yang tadinya manual di `Master Olah Data_pH for trial.xlsm`:
+     * teknisi nyari nilai buffer di suhu larutan, terus ngetik hasilnya ke app.
+     *
+     * Suhunya dirata-rata dari SEMUA pengulangan di titik itu, persis kayak
+     * Excel yang nyatet suhu di tiap baris lalu ngambil averagenya. Sesi
+     * 2405.13.A: 22,2 + 22,2 + 22,1 + 22,2 + 22,2 = 111,0 -> 22,18 °C ->
+     * nilai buffer 4.009244572, sama kayak yang tercetak di sertifikat.
+     *
+     * @param  array<string, mixed>  $titik
+     * @param  list<float>  $suhuLarutan
+     */
+    private function titikUkurTitik(array $titik, array $suhuLarutan, Standard $standar, int $titikKe): float
+    {
+        if (($titik['titik_ukur'] ?? null) !== null) {
+            return (float) $titik['titik_ukur'];
+        }
+
+        $rataSuhu = array_sum($suhuLarutan) / count($suhuLarutan);
+        $nilai = $standar->nilaiPadaSuhu($rataSuhu);
+
+        // CalibrationRequest udah nolak kombinasi ini. Kalau tetap kejadian,
+        // berarti lewat jalur lain — dan nebak titik ukur lebih buruk daripada
+        // gagal keras: errornya bakal salah tanpa ada yang tau.
+        abort_if(
+            $nilai === null,
+            422,
+            "Titik ke-{$titikKe}: standar acuannya nggak punya kurva suhu, jadi titik ukur nggak bisa dihitung. Kirim `titik_ukur` langsung.",
+        );
+
+        return $nilai;
     }
 
     /** Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001. */
