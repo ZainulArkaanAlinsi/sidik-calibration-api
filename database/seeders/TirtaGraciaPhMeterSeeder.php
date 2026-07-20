@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
@@ -15,6 +16,7 @@ use App\Services\GumCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -55,7 +57,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
             ['alamat' => $data['customer']['alamat'], 'organization_id' => 1],
         );
 
-        /** @var \Illuminate\Support\Collection<string, Standard> $standarPerSerial */
+        /** @var Collection<string, Standard> $standarPerSerial */
         $standarPerSerial = collect($data['standards'])->mapWithKeys(
             fn (array $s) => [$s['serial_number'] => Standard::updateOrCreate(
                 ['organization_id' => 1, 'serial_number' => $s['serial_number']],
@@ -167,14 +169,14 @@ class TirtaGraciaPhMeterSeeder extends Seeder
      * seluruh sesi FAIL.
      *
      * @param  list<array{titik_ke: int, standard_serial_number: string, titik_ukur: float, pembacaan: list<float>}>  $titikUkur
-     * @param  \Illuminate\Support\Collection<string, Standard>  $standarPerSerial
+     * @param  Collection<string, Standard>  $standarPerSerial
      */
     private function isiTitikUkur(CalibrationSession $sesi, array $titikUkur, Equipment $equipment, $standarPerSerial): void
     {
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
 
-        $kalkulator = new GumCalculator();
+        $kalkulator = new GumCalculator;
         $keputusanSesi = 'PASS';
 
         foreach ($titikUkur as $titik) {
@@ -242,12 +244,10 @@ class TirtaGraciaPhMeterSeeder extends Seeder
             $logo = 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath));
         }
 
-        $pdf = Pdf::loadView('sertifikat.pdf', [
-            'sertifikat' => $sertifikat,
-            'sesi' => $sesi,
-            'titik' => $sesi->uncertaintyCalculations->sortBy('titik_ke'),
-            'logo' => $logo,
-        ]);
+        // Variabel view-nya diambil dari GenerateCertificate, BUKAN disalin
+        // ulang di sini. Salinan yang dulu ketinggalan waktu view dikasih
+        // `standarDipakai` & `metodeKalibrasi`, dan seeder-nya mati.
+        $pdf = Pdf::loadView('sertifikat.pdf', GenerateCertificate::dataView($sertifikat, $sesi, $logo));
 
         $path = "certificates/{$sertifikat->qr_token}.pdf";
         Storage::disk('local')->put($path, $pdf->output());

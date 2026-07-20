@@ -71,25 +71,13 @@ class GenerateCertificate implements ShouldQueue
         });
 
         try {
-            $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke');
-
-            $pdf = Pdf::loadView('sertifikat.pdf', [
-                'sertifikat' => $sertifikat,
-                'sesi' => $sesi,
-                'titik' => $titik,
-                // Standar per titik (mis. buffer pH 4/7/10, beda-beda) + standar
-                // sesi (mis. Termometer & Sensor Std., kondisi lingkungan) —
-                // digabung & di-dedupe biar standar yang sama nggak dobel di PDF.
-                'standarDipakai' => $titik->pluck('standard')->filter()
-                    ->when($sesi->standard, fn ($c) => $c->push($sesi->standard))
-                    ->unique('id'),
-                // Nomor IK dari titik pertama yang punya CMC — semua titik dari
-                // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
-                'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
+            $pdf = Pdf::loadView('sertifikat.pdf', self::dataView(
+                $sertifikat,
+                $sesi,
                 // Embed sebagai data URI — paling aman buat dompdf (nggak
                 // gantung ke path/symlink). null kalau logonya nggak ketemu.
-                'logo' => $this->logoDataUri($sesi->organization),
-            ]);
+                $this->logoDataUri($sesi->organization),
+            ));
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
             Storage::disk('local')->put($path, $pdf->output());
@@ -105,6 +93,38 @@ class GenerateCertificate implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /**
+     * Semua variabel yang dibutuhin `sertifikat.pdf`, dibikin DI SATU TEMPAT.
+     *
+     * Dipublikin karena seeder data asli juga nge-render view yang sama. Dulu
+     * seeder nyalin isi method ini; begitu view dikasih variabel baru
+     * (`standarDipakai`, `metodeKalibrasi`), salinannya ketinggalan dan
+     * seeder-nya mati dengan "Undefined variable" — sementara jalur produksi
+     * kelihatan sehat. Satu sumber begini bikin nyimpang kayak gitu mustahil.
+     *
+     * @return array<string, mixed>
+     */
+    public static function dataView(Certificate $sertifikat, CalibrationSession $sesi, ?string $logo): array
+    {
+        $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke');
+
+        return [
+            'sertifikat' => $sertifikat,
+            'sesi' => $sesi,
+            'titik' => $titik,
+            // Standar per titik (mis. buffer pH 4/7/10, beda-beda) + standar
+            // sesi (mis. Termometer & Sensor Std., kondisi lingkungan) —
+            // digabung & di-dedupe biar standar yang sama nggak dobel di PDF.
+            'standarDipakai' => $titik->pluck('standard')->filter()
+                ->when($sesi->standard, fn ($c) => $c->push($sesi->standard))
+                ->unique('id'),
+            // Nomor IK dari titik pertama yang punya CMC — semua titik dari
+            // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
+            'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
+            'logo' => $logo,
+        ];
     }
 
     /**
