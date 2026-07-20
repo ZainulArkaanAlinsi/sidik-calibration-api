@@ -45,10 +45,14 @@ class DemoDataSeeder extends Seeder
 
         // Buffer pH 4/7/10, dari `DATABASE.csv` trial workbook — dipakai bareng
         // pH Meter Bench di bawah supaya sesi pH bisa dites end-to-end.
+        // `koef_suhu_*` = kurva y = a·x² + b·x + c yang bikin nilai buffer bisa
+        // dihitung di suhu larutan berapa pun. Diambil APA ADANYA dari workbook
+        // `Master Olah Data_pH for trial.xlsm` sheet `Nilai koefisien
+        // Sensitifitas` — bukan regresi baru yang dihitung ulang di sini.
         collect([
-            ['serial_number' => 'HC32513535', 'nama' => 'pH Buffer Solution 4', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2026-07-31'],
-            ['serial_number' => 'HC46341939', 'nama' => 'pH Buffer Solution 7', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2027-12-17'],
-            ['serial_number' => 'HC45400338', 'nama' => 'pH Buffer Solution 10', 'ketidakpastian' => 0.03, 'berlaku_sampai' => '2027-07-31'],
+            ['serial_number' => 'HC32513535', 'nama' => 'pH Buffer Solution 4', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2026-07-31', 'koef' => [0.00003, -0.0023, 4.0455]],
+            ['serial_number' => 'HC46341939', 'nama' => 'pH Buffer Solution 7', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2027-12-17', 'koef' => [0.00008, -0.0076, 7.1182]],
+            ['serial_number' => 'HC45400338', 'nama' => 'pH Buffer Solution 10', 'ketidakpastian' => 0.03, 'berlaku_sampai' => '2027-07-31', 'koef' => [0.00009, -0.0148, 10.262]],
         ])->each(fn (array $b) => Standard::updateOrCreate(
             ['organization_id' => 1, 'serial_number' => $b['serial_number']],
             [
@@ -60,6 +64,9 @@ class DemoDataSeeder extends Seeder
                 'ketidakpastian' => $b['ketidakpastian'],
                 'satuan_ketidakpastian' => 'pH',
                 'faktor_cakupan' => 2,
+                'koef_suhu_a' => $b['koef'][0],
+                'koef_suhu_b' => $b['koef'][1],
+                'koef_suhu_c' => $b['koef'][2],
             ],
         ));
 
