@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'organization_id', 'nama', 'merk', 'model', 'serial_number', 'nilai_konvensional',
-    'suhu_referensi', 'no_sertifikat', 'tertelusur_ke', 'berlaku_sampai', 'ketidakpastian',
-    'satuan_ketidakpastian', 'faktor_cakupan', 'drift',
+    'organization_id', 'nama', 'merk', 'model', 'serial_number', 'no_sertifikat',
+    'tertelusur_ke', 'berlaku_sampai', 'ketidakpastian', 'satuan_ketidakpastian',
+    'faktor_cakupan', 'drift',
 ])]
 class Standard extends Model
 {
@@ -22,8 +22,6 @@ class Standard extends Model
     {
         return [
             'berlaku_sampai' => 'date',
-            'nilai_konvensional' => 'float',
-            'suhu_referensi' => 'float',
             'ketidakpastian' => 'float',
             'faktor_cakupan' => 'float',
             'drift' => 'float',
