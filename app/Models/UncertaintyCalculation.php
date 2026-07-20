@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'calibration_session_id', 'standard_id', 'titik_ke', 'titik_ukur', 'rata_rata', 'error', 'koreksi',
     'standar_deviasi', 'jumlah_pengulangan', 'type_a', 'type_b_components', 'type_b',
     'ketidakpastian_gabungan', 'faktor_cakupan_k', 'derajat_kebebasan_efektif',
-    'ketidakpastian_diperluas', 'toleransi', 'keputusan', 'calculated_at',
+    'ketidakpastian_diperluas', 'toleransi', 'keputusan', 'metode', 'calculated_at',
 ])]
 class UncertaintyCalculation extends Model
 {

@@ -86,9 +86,11 @@ class CalibrationController extends Controller
                 'teknisi_id' => $request->user()->id,
                 'client_request_id' => $clientRequestId,
                 'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
+                'nomor_order' => $request->input('nomor_order'),
                 'input_method' => $request->string('input_method', 'manual'),
                 'lokasi' => $request->string('lokasi', 'lab'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
+                'tanggal_terima' => $request->date('tanggal_terima'),
                 'suhu_ruang' => $request->input('suhu_ruang'),
                 'kelembaban' => $request->input('kelembaban'),
                 'status' => CalibrationSession::STATUS_DRAFT,
@@ -142,9 +144,11 @@ class CalibrationController extends Controller
             $calibration->update([
                 'equipment_id' => $request->integer('equipment_id'),
                 'standard_id' => $request->integer('standard_id'),
+                'nomor_order' => $request->input('nomor_order'),
                 'input_method' => $request->string('input_method', 'manual'),
                 'lokasi' => $request->string('lokasi', 'lab'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
+                'tanggal_terima' => $request->date('tanggal_terima'),
                 'suhu_ruang' => $request->input('suhu_ruang'),
                 'kelembaban' => $request->input('kelembaban'),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
@@ -327,6 +331,7 @@ class CalibrationController extends Controller
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
+                    'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
                     'satuan' => $titik['satuan'],
@@ -339,6 +344,22 @@ class CalibrationController extends Controller
                     // angkanya WAJIB dikonfirmasi manusia (endpoint verify) dulu
                     // sebelum sesi bisa disetujui.
                     'is_verified' => ! $dariOcr,
+                ]);
+            }
+
+            // As-found (sebelum adjustment) — dokumentasi kondisi alat doang,
+            // TIDAK ikut GumCalculator::hitungTitik() di bawah. Selalu manual
+            // (belum ada jalur OCR buat state ini) & langsung terverifikasi.
+            foreach (($titik['pembacaan_sebelum'] ?? []) as $urutan => $nilai) {
+                $sesi->rawMeasurements()->create([
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'tahap' => 'sebelum_adjustment',
+                    'titik_ukur' => $titik['titik_ukur'],
+                    'pembacaan' => $nilai,
+                    'satuan' => $titik['satuan'],
+                    'input_source' => 'manual',
+                    'is_verified' => true,
                 ]);
             }
 

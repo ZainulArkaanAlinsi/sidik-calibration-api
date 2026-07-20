@@ -26,6 +26,7 @@ class CalibrationResource extends JsonResource
         return [
             'id' => $this->id,
             'nomor_sesi' => $this->nomor_sesi,
+            'nomor_order' => $this->nomor_order,
             'equipment' => [
                 'id' => $this->equipment?->id,
                 'nama_alat' => $this->equipment?->nama_alat,
@@ -36,6 +37,7 @@ class CalibrationResource extends JsonResource
                 'nama' => $this->teknisi?->name,
             ],
             'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toIso8601ZuluString(),
+            'tanggal_terima' => $this->tanggal_terima?->toIso8601ZuluString(),
             'status' => $this->status,
             'input_method' => $this->input_method,
 
@@ -96,6 +98,7 @@ class CalibrationResource extends JsonResource
                     'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
                     'toleransi' => $titik->toleransi,
                     'keputusan' => $titik->keputusan,
+                    'metode' => $titik->metode,
                     // Titik yang standarnya beda dari standar default sesi (mis.
                     // buffer pH 4/7/10) nampilin punyanya sendiri di sini.
                     'standar_acuan' => $titik->standard ? [
@@ -122,6 +125,7 @@ class CalibrationResource extends JsonResource
                         'id' => $m->id,
                         'titik_ke' => $m->titik_ke,
                         'pembacaan_ke' => $m->pembacaan_ke,
+                        'tahap' => $m->tahap,
                         'pembacaan' => $m->pembacaan,
                         'input_source' => $m->input_source,
                         'is_verified' => $m->is_verified,

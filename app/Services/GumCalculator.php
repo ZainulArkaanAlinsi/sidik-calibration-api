@@ -139,6 +139,9 @@ class GumCalculator
             // sesi ini — Welch-Satterthwaite nggak berlaku di sini.
             'derajat_kebebasan_efektif' => null,
             'ketidakpastian_diperluas' => $diperluas,
+            // Nomor IK dari lampiran akreditasi — dicetak di sertifikat sebagai
+            // "Calibration Method". Null kalau CMC ini nggak punya field metode.
+            'metode' => $kemampuan->metode,
         ];
     }
 
@@ -163,6 +166,8 @@ class GumCalculator
             'faktor_cakupan_k' => self::FAKTOR_CAKUPAN,
             'derajat_kebebasan_efektif' => $this->derajatKebebasanEfektif($gabungan, $typeA, $n),
             'ketidakpastian_diperluas' => $diperluas,
+            // Jalur generik nggak nunjuk ke CMC spesifik, jadi nggak ada nomor IK.
+            'metode' => null,
         ];
     }
 

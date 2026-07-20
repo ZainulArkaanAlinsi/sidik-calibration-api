@@ -27,6 +27,12 @@
         .footer { font-size: 9px; color: #555; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 20px; }
         .verify { margin-top: 12px; font-size: 9px; }
         .verify code { font-size: 11px; font-weight: bold; }
+        .judul-sub { font-size: 11px; font-weight: bold; margin: 14px 0 4px; }
+        table.ttd { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        table.ttd td { width: 50%; vertical-align: top; font-size: 10px; }
+        .ttd .garis { margin-top: 40px; border-top: 1px solid #333; padding-top: 3px; }
+        .halaman { position: fixed; top: -20px; right: 0; font-size: 9px; color: #777; }
+        .disclaimer { font-size: 9px; font-style: italic; color: #555; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -48,8 +54,9 @@
         </table>
     </div>
 
+    <div class="halaman">Halaman 1 dari 1</div>
     <div class="judul">SERTIFIKAT KALIBRASI</div>
-    <div class="nomor">Nomor: {{ $sertifikat->nomor }}</div>
+    <div class="nomor">Nomor: {{ $sertifikat->nomor }}@if ($sesi->nomor_order) &middot; No. Order: {{ $sesi->nomor_order }} @endif</div>
 
     <table class="info">
         <tr>
@@ -61,12 +68,32 @@
             <td class="lbl">Pemilik</td><td>{{ $sesi->equipment->customer->nama ?? '—' }}</td>
         </tr>
         <tr>
-            <td class="lbl">Tanggal kalibrasi</td><td>{{ $sesi->tanggal_kalibrasi?->translatedFormat('d F Y') }}</td>
-            <td class="lbl">Diterbitkan</td><td>{{ $sertifikat->diterbitkan_pada?->translatedFormat('d F Y') }}</td>
+            <td class="lbl">Kapasitas / Graduasi</td>
+            <td>
+                @if ($sesi->equipment->range_min !== null || $sesi->equipment->range_max !== null)
+                    {{ $sesi->equipment->range_min ?? '—' }}–{{ $sesi->equipment->range_max ?? '—' }} {{ $sesi->equipment->satuan }}
+                    @if ($sesi->equipment->resolusi) / {{ $sesi->equipment->resolusi }} {{ $sesi->equipment->satuan }} @endif
+                @else
+                    —
+                @endif
+            </td>
+            <td class="lbl">Lokasi kalibrasi</td><td>{{ $sesi->lokasi === 'onsite' ? 'Onsite' : 'Laboratorium' }}</td>
         </tr>
         <tr>
-            <td class="lbl">Suhu ruang</td><td>{{ $sesi->suhu_ruang ? $sesi->suhu_ruang.' °C' : '—' }}</td>
+            <td class="lbl">Tanggal terima</td><td>{{ $sesi->tanggal_terima?->translatedFormat('d F Y') ?? '—' }}</td>
+            <td class="lbl">Tanggal kalibrasi</td><td>{{ $sesi->tanggal_kalibrasi?->translatedFormat('d F Y') }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Diterbitkan</td><td>{{ $sertifikat->diterbitkan_pada?->translatedFormat('d F Y') }}</td>
             <td class="lbl">Berlaku sampai</td><td>{{ $sertifikat->berlaku_sampai?->translatedFormat('d F Y') }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Suhu ruang</td><td>{{ $sesi->suhu_ruang !== null ? $sesi->suhu_ruang.' °C' : '—' }}</td>
+            <td class="lbl">Kelembaban</td><td>{{ $sesi->kelembaban !== null ? $sesi->kelembaban.' %RH' : '—' }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Teknisi</td><td>{{ $sesi->teknisi->name ?? '—' }}</td>
+            <td class="lbl">Metode kalibrasi</td><td>{{ $metodeKalibrasi ?? '—' }}</td>
         </tr>
     </table>
 
@@ -101,6 +128,40 @@
         KEPUTUSAN: {{ $sesi->keputusan ?? '—' }}
     </div>
 
+    @if ($standarDipakai->isNotEmpty())
+        <div class="judul-sub">Standar Acuan yang Digunakan</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Nama</th><th>Merk / Model</th><th>No. Seri</th><th>Tertelusur ke</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($standarDipakai as $s)
+                    <tr>
+                        <td>{{ $s->nama }}</td>
+                        <td>{{ trim(($s->merk ?? '').' '.($s->model ?? '')) ?: '—' }}</td>
+                        <td>{{ $s->serial_number ?? '—' }}</td>
+                        <td>{{ $s->tertelusur_ke ?? '—' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
+    <table class="ttd">
+        <tr>
+            <td></td>
+            <td>
+                <div>{{ $sesi->organization->alamat ? \Illuminate\Support\Str::before($sesi->organization->alamat, ',') : '' }}, {{ $sertifikat->diterbitkan_pada?->translatedFormat('d F Y') }}</div>
+                <div class="garis">
+                    <strong>{{ $sesi->reviewer->name ?? '—' }}</strong><br>
+                    {{ $sesi->reviewer->department ?? 'Technical Manager' }}
+                </div>
+            </td>
+        </tr>
+    </table>
+
     <div class="footer">
         <p>
             Ketidakpastian pengukuran dinyatakan pada tingkat kepercayaan ~95% dengan faktor cakupan k=2.
@@ -108,6 +169,8 @@
             bila |error| + U masih dalam batas toleransi.
         </p>
         <p>Sertifikat ini tidak boleh digandakan sebagian tanpa izin tertulis dari laboratorium penerbit.</p>
+        <p class="disclaimer">Calibration results are not to be announced and only apply to related tools.</p>
+        <p>No. Dokumen Form: SIDIK-FM-CAL-2403_Rev.0</p>
         <div class="verify">
             Verifikasi keaslian: <code>{{ $sertifikat->qr_payload }}</code>
             (kode: <code>{{ $sertifikat->qr_token }}</code>)
