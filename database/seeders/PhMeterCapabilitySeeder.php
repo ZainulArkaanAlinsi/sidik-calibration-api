@@ -30,6 +30,24 @@ use Illuminate\Support\Str;
  * kebutuhan fisiknya (resolusi pH meter 0.01), jadi nggak ada bedanya secara
  * praktis — cuma jujur soal apa yang beneran ada di DB.
  *
+ * BATASAN YANG DIKETAHUI — aturan `U = max(U_hitung, CMC)` belum jalan di
+ * app, baru hasil akhirnya yang ditempel di sini.
+ *
+ * Excel ngitung budget ketidakpastian penuh tiap titik (sertifikat calibrator,
+ * daya baca, UTemperature dengan koefisien sensitivitas `ci`, pengaruh beda
+ * suhu, pengulangan → Welch-Satterthwaite → `k` dari t-student), terus
+ * ngebandingin hasilnya sama CMC lab dan ngambil yang LEBIH BESAR.
+ *
+ * `GumCalculator::hitungDariKemampuan()` ngelewatin semua itu: dia langsung
+ * pakai `ketidakpastian_terbaik` sebagai U. Jadi angka di seeder ini bukan
+ * murni CMC — dia hasil `max()` yang udah dihitungin Excel duluan. Cocok buat
+ * sesi ini, TAPI buat sesi lain (suhu ruang beda, pengulangan lebih berisik)
+ * `U_hitung`-nya beda dan `max()`-nya bisa jatuh ke angka lain.
+ *
+ * Beneran benernya: app ngitung budgetnya sendiri lalu `max()` sama CMC asli
+ * (0.023 / 0.021 / 0.031). Sampai itu ada, seeder ini cuma bener buat data
+ * sesi 2405.13.A.
+ *
  * PENTING — urutan run: harus abis `CalibrationCapabilitySeeder`. Seeder itu
  * ngehapus SEMUA `CalibrationCapability` di bawah kategori
  * `instrumen-analitik` sebelum nulis ulang dari JSON (termasuk baris pH punya
@@ -54,10 +72,24 @@ class PhMeterCapabilitySeeder extends Seeder
             ['nama' => self::NAMA_KELOMPOK],
         );
 
+        // Angka yang BENERAN dicetak di sertifikat — baris "Uncertainty
+        // sertifikat" di `PERHITUNGAN U95%`, bukan baris "Ketidakpastian
+        // Bentangan U = k·Uc" di atasnya. Dua baris itu beda buat titik 10:
+        //
+        //   titik   U hitung      CMC Lab   Uncertainty sertifikat
+        //     4     0.02343221    0.023     0.02343221   <- hitung menang
+        //     7     0.02110895    0.021     0.02110895   <- hitung menang
+        //    10     0.03032720    0.031     0.031        <- CMC menang
+        //
+        // Lab NGGAK BOLEH ngelaporin ketidakpastian lebih baik dari CMC
+        // terakreditasinya. Titik 10 hasil hitungnya (0.03032720) lebih kecil
+        // dari CMC (0.031), jadi yang dilaporkan CMC-nya. Sebelumnya di sini
+        // kesimpen angka hitung — artinya app ngeklaim ketelitian melebihi
+        // akreditasi, dan itu temuan asesor.
         $titik = [
             ['titik' => 4, 'ketidakpastian_terbaik' => 0.02343221],
             ['titik' => 7, 'ketidakpastian_terbaik' => 0.02110895],
-            ['titik' => 10, 'ketidakpastian_terbaik' => 0.03032720],
+            ['titik' => 10, 'ketidakpastian_terbaik' => 0.031],
         ];
 
         foreach ($titik as $t) {
