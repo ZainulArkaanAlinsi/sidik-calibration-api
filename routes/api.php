@@ -9,7 +9,9 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
+use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +67,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/standards', [StandardController::class, 'index']);
     Route::get('/standards/{standard}', [StandardController::class, 'show']);
 
+    // Ruangan lab: bacanya semua role — teknisi butuh buat dropdown "Ruangan"
+    // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
+    Route::get('/rooms', [RoomController::class, 'index']);
+    Route::get('/rooms/{room}', [RoomController::class, 'show']);
+
     // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
     // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
     Route::get('/calibrations', [CalibrationController::class, 'index']);
@@ -118,6 +125,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('customers', CustomerController::class)->except(['show']);
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+
+        // Ruangan: bacanya udah didaftarin di atas buat semua role, di sini
+        // tinggal yang nulis.
+        Route::apiResource('rooms', RoomController::class)->only(['store', 'update', 'destroy']);
+
+        // Master data teknisi. Beda sama /users yang ngurusin approval akun:
+        // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,
+        // buat layar "Data Teknisi" di mobile.
+        Route::apiResource('technicians', TechnicianController::class);
 
         Route::get('/users', [UserController::class, 'index']);
         Route::put('/users/{user}', [UserController::class, 'update']);
