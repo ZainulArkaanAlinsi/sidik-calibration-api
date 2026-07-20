@@ -51,6 +51,42 @@ class EquipmentTest extends TestCase
             ->assertJsonPath('data.0.status', 'aktif');
     }
 
+    /**
+     * `rentang_ukur` itu gabungan siap-tempel dari range_min/max/satuan buat
+     * form Order — bukan kolom baru, datanya emang udah ada.
+     */
+    public function test_rentang_ukur_digabung_jadi_satu_baris(): void
+    {
+        Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 0,
+            'range_max' => 14,
+            'satuan' => 'pH',
+        ]);
+
+        $this->actingAs($this->admin)->getJson('/api/equipments')
+            ->assertOk()
+            // Kolomnya decimal — tanpa dirapiin bakal kebaca "0.00000000–14.00000000".
+            ->assertJsonPath('data.0.rentang_ukur', '0–14 pH');
+    }
+
+    public function test_rentang_ukur_null_kalau_batasnya_belum_diisi(): void
+    {
+        Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'range_min' => 0,
+            'range_max' => null,
+            'satuan' => 'mm',
+        ]);
+
+        // Lebih baik field-nya kosong daripada nampilin "0– mm" di form Order.
+        $this->actingAs($this->admin)->getJson('/api/equipments')
+            ->assertOk()
+            ->assertJsonPath('data.0.rentang_ukur', null);
+    }
+
     public function test_alat_lewat_jatuh_tempo_statusnya_jadi_overdue(): void
     {
         Equipment::factory()->overdue()->create(['nama_alat' => 'Micrometer']);
