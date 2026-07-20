@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'organization_id', 'equipment_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
-    'nomor_sesi', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi', 'lokasi', 'suhu_ruang',
-    'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
+    'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
+    'tanggal_terima', 'lokasi', 'suhu_ruang', 'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
 ])]
 class CalibrationSession extends Model
 {
@@ -31,6 +31,7 @@ class CalibrationSession extends Model
     {
         return [
             'tanggal_kalibrasi' => 'date',
+            'tanggal_terima' => 'date',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'suhu_ruang' => 'float',
@@ -69,6 +70,12 @@ class CalibrationSession extends Model
     public function teknisi(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teknisi_id');
+    }
+
+    /** Admin yang approve/reject — penandatangan sertifikat. */
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     /**

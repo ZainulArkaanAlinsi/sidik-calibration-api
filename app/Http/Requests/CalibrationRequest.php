@@ -37,6 +37,10 @@ class CalibrationRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'tanggal_kalibrasi' => ['required', 'date', 'before_or_equal:today'],
+            'nomor_order' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // Tanggal alat diterima dari customer — logisnya nggak setelah
+            // tanggal kalibrasinya sendiri.
+            'tanggal_terima' => ['sometimes', 'nullable', 'date', 'before_or_equal:tanggal_kalibrasi'],
 
             // UUID yang mobile generate sekali per submission — kalau request-nya
             // di-retry (mis. sinyal putus pas nunggu respons) dengan key yang
@@ -61,6 +65,11 @@ class CalibrationRequest extends FormRequest
             'measurements.*.satuan' => ['required', 'string', 'max:50'],
             'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
             'measurements.*.pembacaan.*' => ['required', 'numeric'],
+            // As-found (sebelum alat di-adjustment) — murni dokumentasi kondisi
+            // alat, TIDAK ikut hitungan GUM. Nggak ada minimum jumlah karena
+            // bukan data resmi (beda dari `pembacaan` di atas).
+            'measurements.*.pembacaan_sebelum' => ['sometimes', 'array'],
+            'measurements.*.pembacaan_sebelum.*' => ['required', 'numeric'],
             // Sebagian kategori alat (mis. pH) butuh standar BEDA per titik ukur
             // (buffer 4/7/10) — kosong berarti titik ini ikut `standard_id` sesi.
             'measurements.*.standard_id' => [

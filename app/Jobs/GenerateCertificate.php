@@ -35,8 +35,10 @@ class GenerateCertificate implements ShouldQueue
 
     public function handle(): void
     {
-        $sesi = CalibrationSession::with(['equipment.customer', 'organization', 'uncertaintyCalculations'])
-            ->find($this->calibrationSessionId);
+        $sesi = CalibrationSession::with([
+            'equipment.customer', 'organization', 'teknisi', 'reviewer', 'standard',
+            'uncertaintyCalculations.standard',
+        ])->find($this->calibrationSessionId);
 
         if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI) {
             return;
@@ -69,10 +71,21 @@ class GenerateCertificate implements ShouldQueue
         });
 
         try {
+            $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke');
+
             $pdf = Pdf::loadView('sertifikat.pdf', [
                 'sertifikat' => $sertifikat,
                 'sesi' => $sesi,
-                'titik' => $sesi->uncertaintyCalculations->sortBy('titik_ke'),
+                'titik' => $titik,
+                // Standar per titik (mis. buffer pH 4/7/10, beda-beda) + standar
+                // sesi (mis. Termometer & Sensor Std., kondisi lingkungan) —
+                // digabung & di-dedupe biar standar yang sama nggak dobel di PDF.
+                'standarDipakai' => $titik->pluck('standard')->filter()
+                    ->when($sesi->standard, fn ($c) => $c->push($sesi->standard))
+                    ->unique('id'),
+                // Nomor IK dari titik pertama yang punya CMC — semua titik dari
+                // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
+                'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
                 // Embed sebagai data URI — paling aman buat dompdf (nggak
                 // gantung ke path/symlink). null kalau logonya nggak ketemu.
                 'logo' => $this->logoDataUri($sesi->organization),
