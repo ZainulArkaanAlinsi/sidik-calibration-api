@@ -22,11 +22,6 @@ class StandardResource extends JsonResource
             'merk' => $this->merk,
             'model' => $this->model,
             'serial_number' => $this->serial_number,
-            // Nilai yang tertulis di sertifikat standar (mis. buffer "pH 4"
-            // yang sebenernya 4.01), plus suhu acuannya — nilai buffer pH
-            // berubah sama suhu, jadi angkanya nggak ada artinya sendirian.
-            'nilai_konvensional' => $this->nilai_konvensional,
-            'suhu_referensi' => $this->suhu_referensi,
 
             'no_sertifikat' => $this->no_sertifikat,
             'tertelusur_ke' => $this->tertelusur_ke,
