@@ -20,6 +20,7 @@ class UserController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $users = User::query()
+            ->where('organization_id', $request->user()->organization_id)
             ->when(
                 $request->filled('status'),
                 fn ($query) => $query->where('status', $request->string('status')),
@@ -32,6 +33,8 @@ class UserController extends Controller
 
     public function approve(Request $request, User $user): JsonResponse
     {
+        $this->pastikanSatuOrganisasi($request, $user);
+
         // Admin yang nentuin role-nya di sini, bukan si pendaftar.
         $validated = $request->validate(
             ['role' => ['required', Rule::in(User::roles())]],
@@ -52,8 +55,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function reject(User $user): JsonResponse
+    public function reject(Request $request, User $user): JsonResponse
     {
+        $this->pastikanSatuOrganisasi($request, $user);
+
         $user->update(['status' => User::STATUS_NONAKTIF]);
 
         // Token yang mungkin udah kepegang dicabut, biar penolakannya langsung berlaku.
@@ -74,6 +79,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        $this->pastikanSatuOrganisasi($request, $user);
+
         $validated = $request->validate([
             'nama' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
@@ -111,6 +118,8 @@ class UserController extends Controller
      */
     public function resetPassword(Request $request, User $user): JsonResponse
     {
+        $this->pastikanSatuOrganisasi($request, $user);
+
         $validated = $request->validate([
             'password' => ['required', 'string', 'min:8'],
         ], [
@@ -125,5 +134,19 @@ class UserController extends Controller
         $user->tokens()->delete();
 
         return response()->json(['message' => 'Password akun berhasil disetel ulang.']);
+    }
+
+    /**
+     * Admin cuma boleh ngurus akun di organisasinya sendiri.
+     *
+     * `role:admin` di routes cuma mastiin yang manggil itu admin — dia nggak
+     * peduli admin MANA. Tanpa penjaga ini, admin PT A bisa nyetel ulang
+     * password admin PT B cuma modal nebak ID di URL.
+     *
+     * 404, bukan 403: 403 ngonfirmasi akunnya ada: itu udah bocoran sendiri.
+     */
+    private function pastikanSatuOrganisasi(Request $request, User $user): void
+    {
+        abort_if($user->organization_id !== $request->user()->organization_id, 404);
     }
 }
