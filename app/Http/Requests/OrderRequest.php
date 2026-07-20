@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 class OrderRequest extends FormRequest
 {
@@ -42,10 +44,29 @@ class OrderRequest extends FormRequest
                 'required', 'integer',
                 Rule::exists('equipments', 'id')->where('organization_id', $organizationId),
             ],
+            // Penugasan boleh kosong dulu — alat sering diterima duluan, baru
+            // dibagi kerjaannya belakangan pas kepala lab lihat antreannya.
+            'items.*.teknisi_id' => ['nullable', 'integer', $this->teknisiValid($organizationId)],
             'items.*.kondisi_terima' => ['nullable', 'string', 'max:1000'],
             'items.*.kelengkapan' => ['nullable', 'string', 'max:255'],
             'items.*.catatan' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    /**
+     * Yang ditugaskan harus teknisi seorganisasi yang AKTIF.
+     *
+     * Tiga saringannya masing-masing nutup lubang: tanpa organisasi, kerjaan
+     * bisa dilempar ke orang PT lain; tanpa role, admin/viewer bisa ketugasan
+     * kalibrasi; tanpa status, kerjaan nyangkut di akun yang udah dinonaktifin
+     * dan nggak pernah ada yang ngerjain.
+     */
+    private function teknisiValid(int $organizationId): Exists
+    {
+        return Rule::exists('users', 'id')
+            ->where('organization_id', $organizationId)
+            ->where('role', User::ROLE_TEKNISI)
+            ->where('status', User::STATUS_AKTIF);
     }
 
     /**
@@ -54,6 +75,7 @@ class OrderRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'items.*.teknisi_id.exists' => 'Teknisi yang dipilih nggak ketemu, bukan teknisi, atau akunnya nonaktif.',
             'customer_id.required' => 'Pelanggan wajib dipilih.',
             'customer_id.exists' => 'Pelanggan nggak ketemu.',
             'tanggal_masuk.required' => 'Tanggal alat masuk wajib diisi.',
