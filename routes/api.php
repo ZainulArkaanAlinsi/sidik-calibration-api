@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ArsipController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
@@ -93,6 +94,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/certificates', [CertificateController::class, 'index']);
     Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])
         ->name('certificates.download');
+
+    // Arsip = tampilan "file manager" atas data yang udah ada:
+    // perusahaan → alat → berkas (sesi + sertifikat). Baca-baca buat semua role;
+    // level berkas disaring per-teknisi di controller. Lihat ArsipController.
+    Route::get('/arsip/perusahaan', [ArsipController::class, 'perusahaan']);
+    Route::get('/arsip/perusahaan/{customer}', [ArsipController::class, 'alat']);
+    Route::get('/arsip/alat/{equipment}', [ArsipController::class, 'berkas']);
 
     // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
