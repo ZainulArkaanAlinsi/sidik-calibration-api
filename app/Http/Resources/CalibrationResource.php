@@ -73,6 +73,34 @@ class CalibrationResource extends JsonResource
 
             'suhu_ruang' => $this->suhu_ruang,
             'kelembaban' => $this->kelembaban,
+            // Kondisi lingkungan rinci (worksheet pH): awal/akhir + koreksi
+            // (dari sertifikat thermohygro) + nilai terkoreksi + U95%. Field
+            // lama `suhu_ruang`/`kelembaban` = rata-ratanya, tetap ada di atas.
+            'kondisi_lingkungan' => [
+                'suhu' => [
+                    'awal' => $this->suhu_ruang_awal,
+                    'akhir' => $this->suhu_ruang_akhir,
+                    'rata_rata' => $this->suhu_ruang,
+                    'koreksi' => $this->suhu_ruang_koreksi,
+                    'nilai_terkoreksi' => $this->suhu_ruang !== null && $this->suhu_ruang_koreksi !== null
+                        ? $this->suhu_ruang + $this->suhu_ruang_koreksi
+                        : $this->suhu_ruang,
+                    'u95' => $this->suhu_ruang_u95,
+                    'satuan' => '°C',
+                ],
+                'kelembaban' => [
+                    'awal' => $this->kelembaban_awal,
+                    'akhir' => $this->kelembaban_akhir,
+                    'rata_rata' => $this->kelembaban,
+                    'koreksi' => $this->kelembaban_koreksi,
+                    'nilai_terkoreksi' => $this->kelembaban !== null && $this->kelembaban_koreksi !== null
+                        ? $this->kelembaban + $this->kelembaban_koreksi
+                        : $this->kelembaban,
+                    'u95' => $this->kelembaban_u95,
+                    'satuan' => '%RH',
+                ],
+                'thermohygro' => $this->thermohygro,
+            ],
             'lokasi' => $this->lokasi,
             'standar_acuan' => $this->standard ? [
                 'id' => $this->standard->id,
@@ -127,6 +155,9 @@ class CalibrationResource extends JsonResource
                         'pembacaan_ke' => $m->pembacaan_ke,
                         'tahap' => $m->tahap,
                         'pembacaan' => $m->pembacaan,
+                        // Suhu larutan tiap pembacaan (pasangan pH/°C) — null
+                        // buat alat yang nggak nyatet suhu per baca.
+                        'suhu' => $m->suhu,
                         'input_source' => $m->input_source,
                         'is_verified' => $m->is_verified,
                         'photo_path' => $m->photo_path,
@@ -134,6 +165,48 @@ class CalibrationResource extends JsonResource
                         'ocr_raw_text' => $m->ocr_raw_text,
                     ]),
             ),
+
+            // Ringkasan tahap SEBELUM adjustment (as-found) per titik: rata-rata,
+            // koreksi, STDEV — buat tabel "Before Adjustment" di worksheet/sertifikat.
+            // Beda dari `titik` di atas yang tahap SESUDAH (yang disertifikasi).
+            'titik_sebelum' => $this->whenLoaded(
+                'rawMeasurements',
+                fn () => $this->ringkasanSebelumAdjustment(),
+            ),
         ];
+    }
+
+    /**
+     * Ringkas pembacaan tahap sebelum adjustment jadi rata-rata/koreksi/STDEV
+     * per titik. Nggak disimpen di DB (bukan hasil resmi) — diturunkan dari
+     * `rawMeasurements` yang tahap-nya `sebelum_adjustment`.
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function ringkasanSebelumAdjustment(): \Illuminate\Support\Collection
+    {
+        return $this->rawMeasurements
+            ->where('tahap', 'sebelum_adjustment')
+            ->groupBy('titik_ke')
+            ->map(function ($rows) {
+                $nilai = $rows->pluck('pembacaan')->map(fn ($v): float => (float) $v)->values();
+                $n = $nilai->count();
+                $rata = $n > 0 ? $nilai->sum() / $n : null;
+                $titikUkur = (float) $rows->first()->titik_ukur;
+                $stdev = $n > 1
+                    ? sqrt($nilai->map(fn (float $x): float => ($x - $rata) ** 2)->sum() / ($n - 1))
+                    : 0.0;
+
+                return [
+                    'titik_ke' => (int) $rows->first()->titik_ke,
+                    'titik_ukur' => $titikUkur,
+                    'rata_rata' => $rata,
+                    'koreksi' => $rata !== null ? $rata - $titikUkur : null,
+                    'standar_deviasi' => $stdev,
+                    'jumlah_pengulangan' => $n,
+                ];
+            })
+            ->sortBy('titik_ke')
+            ->values();
     }
 }

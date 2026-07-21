@@ -97,6 +97,67 @@
         </tr>
     </table>
 
+    @if ($adaLingkungan)
+        <div class="judul-sub">Kondisi Lingkungan</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Parameter</th><th>Awal</th><th>Akhir</th><th>Rata-rata</th>
+                    <th>Koreksi</th><th>Nilai terkoreksi</th><th>U95% (±)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ([
+                    ['Suhu Ruangan (°C)', $sesi->suhu_ruang_awal, $sesi->suhu_ruang_akhir, $sesi->suhu_ruang, $sesi->suhu_ruang_koreksi, $sesi->suhu_ruang_u95],
+                    ['Kelembaban (%RH)', $sesi->kelembaban_awal, $sesi->kelembaban_akhir, $sesi->kelembaban, $sesi->kelembaban_koreksi, $sesi->kelembaban_u95],
+                ] as [$nama, $awal, $akhir, $rata, $koreksi, $u95])
+                    <tr>
+                        <td style="text-align:left">{{ $nama }}</td>
+                        <td>{{ $awal !== null ? rtrim(rtrim(number_format($awal, 2, '.', ''), '0'), '.') : '—' }}</td>
+                        <td>{{ $akhir !== null ? rtrim(rtrim(number_format($akhir, 2, '.', ''), '0'), '.') : '—' }}</td>
+                        <td>{{ $rata !== null ? number_format($rata, 2, '.', '') : '—' }}</td>
+                        <td>{{ $koreksi !== null ? number_format($koreksi, 2, '.', '') : '—' }}</td>
+                        <td>{{ ($rata !== null && $koreksi !== null) ? number_format($rata + $koreksi, 2, '.', '') : '—' }}</td>
+                        <td>{{ $u95 !== null ? number_format($u95, 4, '.', '') : '—' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @if ($sesi->thermohygro)
+            <div class="disclaimer">Alat pemantau ruangan (thermohygro): {{ $sesi->thermohygro }}.</div>
+        @endif
+    @endif
+
+    @foreach ([['Pembacaan — Sebelum Adjustment', $bacaSebelum], ['Pembacaan — Sesudah Adjustment', $bacaSesudah]] as [$judulBaca, $baca])
+        @if ($baca->isNotEmpty())
+            @php($maxBaca = $baca->max(fn ($b) => count($b['pembacaan'])))
+            <div class="judul-sub">{{ $judulBaca }}</div>
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Standar</th>
+                        @for ($i = 1; $i <= $maxBaca; $i++)<th>{{ $i }}</th>@endfor
+                        <th>Suhu (°C)</th><th>Rata-rata</th><th>Koreksi</th><th>STDEV</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($baca as $b)
+                        <tr>
+                            <td>{{ rtrim(rtrim(number_format($b['titik_ukur'], 4, '.', ''), '0'), '.') }}</td>
+                            @foreach ($b['pembacaan'] as $p)<td>{{ rtrim(rtrim(number_format($p, 2, '.', ''), '0'), '.') }}</td>@endforeach
+                            @for ($i = count($b['pembacaan']); $i < $maxBaca; $i++)<td>—</td>@endfor
+                            <td>{{ $b['suhu_rata'] !== null ? number_format($b['suhu_rata'], 1, '.', '') : '—' }}</td>
+                            <td>{{ number_format($b['rata_rata'], 4, '.', '') }}</td>
+                            <td>{{ number_format($b['koreksi'], 5, '.', '') }}</td>
+                            <td>{{ number_format($b['stdev'], 5, '.', '') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+    @endforeach
+
+    <div class="judul-sub">Hasil Kalibrasi{{ $bacaSesudah->isNotEmpty() ? ' (Sesudah Adjustment)' : '' }}</div>
     <table class="data">
         <thead>
             <tr>

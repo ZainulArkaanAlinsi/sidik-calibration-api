@@ -91,8 +91,7 @@ class CalibrationController extends Controller
                 'lokasi' => $request->string('lokasi', 'lab'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
                 'tanggal_terima' => $request->date('tanggal_terima'),
-                'suhu_ruang' => $request->input('suhu_ruang'),
-                'kelembaban' => $request->input('kelembaban'),
+                ...$this->dataLingkungan($request),
                 'status' => CalibrationSession::STATUS_DRAFT,
             ]);
 
@@ -149,8 +148,7 @@ class CalibrationController extends Controller
                 'lokasi' => $request->string('lokasi', 'lab'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
                 'tanggal_terima' => $request->date('tanggal_terima'),
-                'suhu_ruang' => $request->input('suhu_ruang'),
-                'kelembaban' => $request->input('kelembaban'),
+                ...$this->dataLingkungan($request),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
                 // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
                 'catatan_revisi' => null,
@@ -323,6 +321,10 @@ class CalibrationController extends Controller
             // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
+            // Suhu larutan tiap pembacaan (worksheet pH nyatet pasangan pH/°C).
+            // Sejajar per-index sama pembacaan; boleh kosong buat alat non-pH.
+            $suhu = array_values($titik['suhu'] ?? []);
+            $suhuSebelum = array_values($titik['suhu_sebelum'] ?? []);
 
             foreach ($pembacaan as $urutan => $nilai) {
                 $meta = $ocr[$urutan] ?? null;
@@ -334,6 +336,7 @@ class CalibrationController extends Controller
                     'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
+                    'suhu' => isset($suhu[$urutan]) ? (float) $suhu[$urutan] : null,
                     'satuan' => $titik['satuan'],
                     'input_source' => $dariOcr ? 'ocr' : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
@@ -347,16 +350,20 @@ class CalibrationController extends Controller
                 ]);
             }
 
-            // As-found (sebelum adjustment) — dokumentasi kondisi alat doang,
-            // TIDAK ikut GumCalculator::hitungTitik() di bawah. Selalu manual
-            // (belum ada jalur OCR buat state ini) & langsung terverifikasi.
-            foreach (($titik['pembacaan_sebelum'] ?? []) as $urutan => $nilai) {
+            // As-found (sebelum adjustment). Buat pH, tahap ini juga diringkas
+            // (rata-rata/koreksi/STDEV) di sertifikat — tapi TIDAK ikut budget
+            // GUM resmi di bawah (yang disertifikasi kondisi sesudah adjustment).
+            // Nilai standar bisa beda tipis dari sesudah (koreksi suhu larutan),
+            // jadi `titik_ukur_sebelum` dipakai kalau dikirim.
+            $titikUkurSebelum = $titik['titik_ukur_sebelum'] ?? $titik['titik_ukur'];
+            foreach (array_values($titik['pembacaan_sebelum'] ?? []) as $urutan => $nilai) {
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sebelum_adjustment',
-                    'titik_ukur' => $titik['titik_ukur'],
+                    'titik_ukur' => $titikUkurSebelum,
                     'pembacaan' => $nilai,
+                    'suhu' => isset($suhuSebelum[$urutan]) ? (float) $suhuSebelum[$urutan] : null,
                     'satuan' => $titik['satuan'],
                     'input_source' => 'manual',
                     'is_verified' => true,
@@ -406,6 +413,46 @@ class CalibrationController extends Controller
         ]);
 
         return $sesi->fresh()->load(self::RELASI);
+    }
+
+    /**
+     * Rakit field kondisi lingkungan buat disimpen di sesi. Rata-rata & U95%
+     * DIHITUNG server dari awal/akhir + U95% thermohygro — biar mobile nggak
+     * ngitung sendiri (gampang salah). Kalau awal/akhir nggak dikirim, jatuh
+     * balik ke `suhu_ruang`/`kelembaban` yang dikirim langsung (kompatibel mundur).
+     *
+     * @return array<string, mixed>
+     */
+    private function dataLingkungan(Request $request): array
+    {
+        $suhuAwal = $request->input('suhu_ruang_awal');
+        $suhuAkhir = $request->input('suhu_ruang_akhir');
+        $rhAwal = $request->input('kelembaban_awal');
+        $rhAkhir = $request->input('kelembaban_akhir');
+
+        $rata = fn ($awal, $akhir, $fallback) => ($awal !== null && $akhir !== null)
+            ? ((float) $awal + (float) $akhir) / 2
+            : $fallback;
+
+        // U95% lingkungan dihitung kalau awal/akhir + U thermohygro (`*_u_std`)
+        // dikirim; kalau nggak, pakai `*_u95` yang dikirim langsung (atau null).
+        $u95 = fn ($awal, $akhir, $uStd, $langsung) => ($awal !== null && $akhir !== null && $uStd !== null)
+            ? $this->gum->ketidakpastianLingkungan((float) $awal, (float) $akhir, (float) $uStd)
+            : $langsung;
+
+        return [
+            'suhu_ruang' => $rata($suhuAwal, $suhuAkhir, $request->input('suhu_ruang')),
+            'kelembaban' => $rata($rhAwal, $rhAkhir, $request->input('kelembaban')),
+            'suhu_ruang_awal' => $suhuAwal,
+            'suhu_ruang_akhir' => $suhuAkhir,
+            'kelembaban_awal' => $rhAwal,
+            'kelembaban_akhir' => $rhAkhir,
+            'suhu_ruang_koreksi' => $request->input('suhu_ruang_koreksi'),
+            'kelembaban_koreksi' => $request->input('kelembaban_koreksi'),
+            'suhu_ruang_u95' => $u95($suhuAwal, $suhuAkhir, $request->input('suhu_ruang_u_std'), $request->input('suhu_ruang_u95')),
+            'kelembaban_u95' => $u95($rhAwal, $rhAkhir, $request->input('kelembaban_u_std'), $request->input('kelembaban_u95')),
+            'thermohygro' => $request->input('thermohygro'),
+        ];
     }
 
     /** Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001. */

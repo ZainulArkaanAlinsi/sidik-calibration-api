@@ -37,7 +37,7 @@ class GenerateCertificate implements ShouldQueue
     {
         $sesi = CalibrationSession::with([
             'equipment.customer', 'organization', 'teknisi', 'reviewer', 'standard',
-            'uncertaintyCalculations.standard',
+            'uncertaintyCalculations.standard', 'rawMeasurements',
         ])->find($this->calibrationSessionId);
 
         if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI) {
@@ -123,8 +123,64 @@ class GenerateCertificate implements ShouldQueue
             // Nomor IK dari titik pertama yang punya CMC — semua titik dari
             // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
             'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
+            // Tabel pembacaan Before/After adjustment (worksheet pH). Kosong buat
+            // alat yang cuma nyimpen satu tahap tanpa rincian pembacaan.
+            'bacaSebelum' => self::ringkasPembacaan($sesi, 'sebelum_adjustment', $titik),
+            'bacaSesudah' => self::ringkasPembacaan($sesi, 'sesudah_adjustment', $titik),
+            // Kondisi lingkungan rinci ada kalau awal/akhir keisi (worksheet pH).
+            'adaLingkungan' => $sesi->suhu_ruang_awal !== null || $sesi->kelembaban_awal !== null,
             'logo' => $logo,
         ];
+    }
+
+    /**
+     * Ringkas pembacaan mentah satu tahap (sebelum/sesudah adjustment) jadi baris
+     * per titik: pembacaan tiap pengulangan + suhunya, rata-rata, koreksi, STDEV.
+     * Buat tahap sesudah, dijoin sama hasil hitung ketidakpastiannya (U95%, k,
+     * keputusan). Balik koleksi kosong kalau tahap itu nggak punya pembacaan.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\UncertaintyCalculation>  $titikCalc
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private static function ringkasPembacaan(CalibrationSession $sesi, string $tahap, $titikCalc): \Illuminate\Support\Collection
+    {
+        if (! $sesi->relationLoaded('rawMeasurements')) {
+            return collect();
+        }
+
+        return $sesi->rawMeasurements
+            ->where('tahap', $tahap)
+            ->groupBy('titik_ke')
+            ->map(function ($rows) use ($titikCalc, $tahap): array {
+                $rows = $rows->sortBy('pembacaan_ke')->values();
+                $nilai = $rows->pluck('pembacaan')->map(fn ($v): float => (float) $v)->values();
+                $n = $nilai->count();
+                $rata = $n > 0 ? $nilai->sum() / $n : 0.0;
+                $titikUkur = (float) $rows->first()->titik_ukur;
+                $stdev = $n > 1
+                    ? sqrt($nilai->map(fn (float $x): float => ($x - $rata) ** 2)->sum() / ($n - 1))
+                    : 0.0;
+                $suhu = $rows->pluck('suhu')->filter(fn ($v): bool => $v !== null);
+
+                $calc = $tahap === 'sesudah_adjustment'
+                    ? $titikCalc->firstWhere('titik_ke', (int) $rows->first()->titik_ke)
+                    : null;
+
+                return [
+                    'titik_ke' => (int) $rows->first()->titik_ke,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => $nilai->all(),
+                    'suhu_rata' => $suhu->isNotEmpty() ? $suhu->sum() / $suhu->count() : null,
+                    'rata_rata' => $rata,
+                    'koreksi' => $rata - $titikUkur,
+                    'stdev' => $stdev,
+                    'u95' => $calc?->ketidakpastian_diperluas,
+                    'k' => $calc?->faktor_cakupan_k,
+                    'keputusan' => $calc?->keputusan,
+                ];
+            })
+            ->sortBy('titik_ke')
+            ->values();
     }
 
     /**

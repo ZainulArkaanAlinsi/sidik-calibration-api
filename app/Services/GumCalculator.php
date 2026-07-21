@@ -82,9 +82,16 @@ class GumCalculator
 
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
-        $hasil = $kemampuan !== null
-            ? $this->hitungDariKemampuan($kemampuan)
-            : $this->hitungDariStandarDanResolusi($typeA, $n, $equipment, $standard);
+        if ($kemampuan !== null && $kemampuan->punyaBudgetPenuh()) {
+            // Budget dirinci (mis. pH): hitung U penuh dari komponennya, lalu
+            // ambil max(U_hitung, CMC) — lab nggak boleh lapor lebih baik dari CMC.
+            $hasil = $this->hitungDariBudgetPenuh($kemampuan, $typeA, $n, $equipment, $standard);
+        } elseif ($kemampuan !== null) {
+            // CMC ada tapi budget-nya nggak dirinci — pakai CMC apa adanya.
+            $hasil = $this->hitungDariKemampuan($kemampuan);
+        } else {
+            $hasil = $this->hitungDariStandarDanResolusi($typeA, $n, $equipment, $standard);
+        }
 
         return [
             'standard_id' => $standard->id,
@@ -141,6 +148,133 @@ class GumCalculator
             'ketidakpastian_diperluas' => $diperluas,
             // Nomor IK dari lampiran akreditasi — dicetak di sertifikat sebagai
             // "Calibration Method". Null kalau CMC ini nggak punya field metode.
+            'metode' => $kemampuan->metode,
+        ];
+    }
+
+    /**
+     * Budget ketidakpastian PENUH gaya lampiran akreditasi (sheet
+     * `PERHITUNGAN U95%` di workbook pH): 5 komponen dirinci, digabung lewat
+     * `agregasiBudget` (Welch-Satterthwaite + k t-student), lalu hasilnya
+     * dibandingin sama CMC — yang DILAPORKAN yang LEBIH BESAR.
+     *
+     * Bedanya dari `hitungDariKemampuan`: yang itu nempel CMC apa adanya (buat
+     * kemampuan yang budget-nya nggak dirinci). Yang ini beneran ngitung, jadi
+     * sesi dengan suhu/pengulangan beda ngasih U yang beda — persis kayak
+     * worksheet Excel-nya, cuma otomatis.
+     *
+     * vi (derajat kebebasan) tiap komponen Type B ngikutin angka reliabilitas
+     * yang diasumsiin di workbook: kalibrator & temperature 200, daya baca 1e6,
+     * pengaruh perbedaan suhu 50. Type A pakai n−1.
+     *
+     * @return array<string, mixed>
+     */
+    private function hitungDariBudgetPenuh(
+        CalibrationCapability $kemampuan,
+        float $typeA,
+        int $n,
+        Equipment $equipment,
+        Standard $standard,
+    ): array {
+        $sqrt3 = sqrt(3);
+        $kStandar = $standard->faktor_cakupan ?: self::FAKTOR_CAKUPAN;
+
+        $komponen = [
+            [
+                'sumber' => 'ketidakpastian_standar',
+                'keterangan' => sprintf(
+                    'Sertifikat kalibrator %s (U=%s %s, k=%s)',
+                    $standard->nama, $standard->ketidakpastian, $standard->satuan_ketidakpastian ?? '', $kStandar,
+                ),
+                'distribusi' => 'normal',
+                'u' => ($standard->ketidakpastian ?? 0.0) / $kStandar,
+                'ci' => 1.0,
+                'vi' => 200,
+            ],
+            [
+                'sumber' => 'resolusi_alat',
+                'keterangan' => sprintf('Daya baca alat %s %s', $equipment->resolusi, $equipment->satuan ?? ''),
+                'distribusi' => 'persegi',
+                'u' => ((float) $equipment->resolusi / 2.0) / $sqrt3,
+                'ci' => 1.0,
+                'vi' => 1_000_000,
+            ],
+            [
+                'sumber' => 'ketidakpastian_temperature',
+                'keterangan' => sprintf(
+                    'UTemperature %s °C (÷k=2), ci %s',
+                    $kemampuan->u_temperature, $kemampuan->ci_suhu,
+                ),
+                'distribusi' => 'normal',
+                'u' => (float) $kemampuan->u_temperature / 2.0,
+                'ci' => (float) $kemampuan->ci_suhu,
+                'vi' => 200,
+            ],
+            [
+                'sumber' => 'pengaruh_perbedaan_suhu',
+                'keterangan' => sprintf(
+                    'Pengaruh perbedaan suhu U=%s (÷√3), ci %s',
+                    $kemampuan->u_perbedaan_suhu, $kemampuan->ci_perbedaan_suhu,
+                ),
+                'distribusi' => 'persegi',
+                'u' => (float) $kemampuan->u_perbedaan_suhu / $sqrt3,
+                'ci' => (float) $kemampuan->ci_perbedaan_suhu,
+                'vi' => 50,
+            ],
+            [
+                'sumber' => 'pengulangan_pembacaan',
+                'keterangan' => sprintf('Pengulangan %d pembacaan (Type A)', $n),
+                'distribusi' => 't-student',
+                'u' => $typeA,
+                'ci' => 1.0,
+                'vi' => max($n - 1, 1),
+            ],
+        ];
+
+        $agg = $this->agregasiBudget(array_map(
+            fn (array $k): array => ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']],
+            $komponen,
+        ));
+
+        // Aturan akreditasi: lab nggak boleh ngeklaim ketidakpastian lebih baik
+        // dari CMC-nya. Kalau U hitung < CMC, yang dilaporkan CMC-nya.
+        $cmc = (float) $kemampuan->ketidakpastian_terbaik;
+        $uHitung = $agg['ketidakpastian_diperluas'];
+        $uFinal = max($uHitung, $cmc);
+
+        // Jejak audit lengkap: tiap komponen bawa u baku, ci, vi, dan uici-nya.
+        $komponenAudit = array_map(fn (array $k): array => [
+            'sumber' => $k['sumber'],
+            'keterangan' => $k['keterangan'],
+            'distribusi' => $k['distribusi'],
+            'nilai' => $k['u'] * $k['ci'],
+            'u_baku' => $k['u'],
+            'ci' => $k['ci'],
+            'vi' => $k['vi'],
+        ], $komponen);
+
+        $komponenAudit[] = [
+            'sumber' => 'perbandingan_cmc',
+            'keterangan' => sprintf(
+                'U hitung %.8f vs CMC %.8f → dilaporkan %s',
+                $uHitung, $cmc, ($cmc > $uHitung) ? 'CMC' : 'hitung',
+            ),
+            'distribusi' => '-',
+            'nilai' => $cmc,
+        ];
+
+        // type_b = RSS komponen Type B doang (4 pertama, tanpa pengulangan).
+        $typeB = $this->akarJumlahKuadrat(
+            array_map(fn (array $k): float => $k['u'] * $k['ci'], array_slice($komponen, 0, 4)),
+        );
+
+        return [
+            'type_b_components' => $komponenAudit,
+            'type_b' => $typeB,
+            'ketidakpastian_gabungan' => $agg['ketidakpastian_gabungan'],
+            'faktor_cakupan_k' => $agg['faktor_cakupan_k'],
+            'derajat_kebebasan_efektif' => $agg['derajat_kebebasan_efektif'],
+            'ketidakpastian_diperluas' => $uFinal,
             'metode' => $kemampuan->metode,
         ];
     }
@@ -368,5 +502,78 @@ class GumCalculator
     private function akarJumlahKuadrat(array $nilai): float
     {
         return sqrt(array_sum(array_map(fn (float $u): float => $u ** 2, $nilai)));
+    }
+
+    /**
+     * Agregasi budget ketidakpastian gaya lampiran akreditasi (sheet
+     * `PERHITUNGAN U95%` di workbook pH): tiap komponen bawa ketidakpastian baku
+     * `u`, koefisien sensitivitas `ci`, dan derajat kebebasan `vi`.
+     *
+     *   uc     = √Σ(u·ci)²
+     *   veff   = uc⁴ / Σ((u·ci)⁴ / vi)                (Welch–Satterthwaite)
+     *   k      = t-student(97.5%, veff)               (CL 95% dua-sisi)
+     *   U      = k · uc
+     *
+     * `k` DIHITUNG dari veff, bukan dikunci 2 — sertifikat pH asli pakai k dari
+     * t-student (mis. 1.96857 buat veff 277.96). Beda tipis, tapi ikut ke angka
+     * U yang dicetak.
+     *
+     * @param  list<array{u: float, ci: float, vi: float}>  $komponen
+     * @return array{ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float}
+     */
+    public function agregasiBudget(array $komponen): array
+    {
+        $uici = array_map(fn (array $k): float => $k['u'] * $k['ci'], $komponen);
+
+        $jumlahKuadrat = array_sum(array_map(fn (float $x): float => $x ** 2, $uici));
+        $gabungan = sqrt($jumlahKuadrat);
+
+        // Penyebut Welch-Satterthwaite. Komponen ber-vi <= 0 (mis. tak hingga)
+        // atau ber-uici 0 nggak nyumbang — dilewati biar nggak bagi nol.
+        $penyebutWs = 0.0;
+        foreach ($komponen as $i => $k) {
+            if ($k['vi'] > 0 && $uici[$i] !== 0.0) {
+                $penyebutWs += ($uici[$i] ** 4) / $k['vi'];
+            }
+        }
+
+        $veff = $penyebutWs > 0.0 ? ($jumlahKuadrat ** 2) / $penyebutWs : null;
+
+        $k = $veff !== null
+            ? (new StudentTDistribution)->quantile(0.975, $veff)
+            : self::FAKTOR_CAKUPAN;
+
+        return [
+            'ketidakpastian_gabungan' => $gabungan,
+            'derajat_kebebasan_efektif' => $veff,
+            'faktor_cakupan_k' => $k,
+            'ketidakpastian_diperluas' => $k * $gabungan,
+        ];
+    }
+
+    /**
+     * U95% kondisi lingkungan (suhu ruang / kelembaban) — bukan per titik, tapi
+     * satu buat sesi. Gabungin ketidakpastian sertifikat thermohygro sama sebaran
+     * pembacaan awal↔akhir:
+     *
+     *   u_std   = U95%_thermohygro / k            (baku, dari sertifikat TH)
+     *   u_sebar = stdev(awal, akhir) / √2 = |awal − akhir| / 2
+     *   U95%    = k · √(u_std² + u_sebar²)
+     *
+     * Contoh sertifikat 012-CAL-524: suhu U_TH 1.7°C, awal 21.3 akhir 21.5
+     * → 2·√(0.85² + 0.1²) = 1.7117 °C. Kelembaban U_TH 4.8, 53↔56
+     * → 2·√(2.4² + 1.5²) = 5.6604 %RH.
+     */
+    public function ketidakpastianLingkungan(
+        float $awal,
+        float $akhir,
+        float $uStandar,
+        float $kStandar = self::FAKTOR_CAKUPAN,
+    ): float {
+        $k = $kStandar ?: self::FAKTOR_CAKUPAN;
+        $uStd = $uStandar / $k;
+        $uSebar = abs($awal - $akhir) / 2.0;
+
+        return $k * sqrt($uStd ** 2 + $uSebar ** 2);
     }
 }

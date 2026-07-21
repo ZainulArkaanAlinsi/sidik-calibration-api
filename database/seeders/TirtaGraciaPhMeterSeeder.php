@@ -109,7 +109,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
 
         $this->isiTitikUkur($sesi, $data['titik_ukur'], $equipment, $standarPerSerial);
 
-        $this->terbitkanSertifikat($sesi->fresh(['equipment.customer', 'organization', 'uncertaintyCalculations']), $penandatangan, $data['sertifikat']);
+        $this->terbitkanSertifikat($sesi->fresh(['equipment.customer', 'organization', 'uncertaintyCalculations.standard', 'rawMeasurements']), $penandatangan, $data['sertifikat']);
     }
 
     /** @return array<string, mixed> */
@@ -141,9 +141,16 @@ class TirtaGraciaPhMeterSeeder extends Seeder
         );
     }
 
-    /** @param  array{nomor_sesi: string, tanggal_kalibrasi: string, lokasi: string, suhu_ruang: float, kelembaban: float, submitted_at: string, reviewed_at: string}  $s */
+    /** @param  array<string, mixed>  $s */
     private function buatSesi(array $s, Equipment $equipment, User $teknisi, User $penandatangan, Standard $standarDefault): CalibrationSession
     {
+        $gum = new GumCalculator;
+
+        // Rata-rata & U95% lingkungan DIHITUNG (jalur sama kayak
+        // CalibrationController::dataLingkungan()) — bukan angka beku.
+        $suhuRata = ($s['suhu_ruang_awal'] + $s['suhu_ruang_akhir']) / 2;
+        $rhRata = ($s['kelembaban_awal'] + $s['kelembaban_akhir']) / 2;
+
         return CalibrationSession::updateOrCreate(
             ['organization_id' => 1, 'nomor_sesi' => $s['nomor_sesi']],
             [
@@ -155,8 +162,21 @@ class TirtaGraciaPhMeterSeeder extends Seeder
                 'status' => CalibrationSession::STATUS_DISETUJUI,
                 'tanggal_kalibrasi' => $s['tanggal_kalibrasi'],
                 'lokasi' => $s['lokasi'],
-                'suhu_ruang' => $s['suhu_ruang'],
-                'kelembaban' => $s['kelembaban'],
+                'suhu_ruang' => $suhuRata,
+                'kelembaban' => $rhRata,
+                'suhu_ruang_awal' => $s['suhu_ruang_awal'],
+                'suhu_ruang_akhir' => $s['suhu_ruang_akhir'],
+                'kelembaban_awal' => $s['kelembaban_awal'],
+                'kelembaban_akhir' => $s['kelembaban_akhir'],
+                'suhu_ruang_koreksi' => $s['suhu_ruang_koreksi'],
+                'kelembaban_koreksi' => $s['kelembaban_koreksi'],
+                'suhu_ruang_u95' => $gum->ketidakpastianLingkungan(
+                    $s['suhu_ruang_awal'], $s['suhu_ruang_akhir'], $s['suhu_ruang_u_std'],
+                ),
+                'kelembaban_u95' => $gum->ketidakpastianLingkungan(
+                    $s['kelembaban_awal'], $s['kelembaban_akhir'], $s['kelembaban_u_std'],
+                ),
+                'thermohygro' => $s['thermohygro'],
                 'submitted_at' => $s['submitted_at'],
                 'reviewed_at' => $s['reviewed_at'],
             ],
@@ -168,7 +188,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
      * `CalibrationController::isiUlangPengukuran()`: satu titik FAIL bikin
      * seluruh sesi FAIL.
      *
-     * @param  list<array{titik_ke: int, standard_serial_number: string, titik_ukur: float, pembacaan: list<float>}>  $titikUkur
+     * @param  list<array<string, mixed>>  $titikUkur
      * @param  Collection<string, Standard>  $standarPerSerial
      */
     private function isiTitikUkur(CalibrationSession $sesi, array $titikUkur, Equipment $equipment, $standarPerSerial): void
@@ -182,13 +202,33 @@ class TirtaGraciaPhMeterSeeder extends Seeder
         foreach ($titikUkur as $titik) {
             $standar = $standarPerSerial[$titik['standard_serial_number']];
 
+            // Sesudah adjustment — kondisi final, ini yang disertifikasi & ikut GUM.
             foreach ($titik['pembacaan'] as $i => $nilai) {
                 RawMeasurement::create([
                     'calibration_session_id' => $sesi->id,
                     'titik_ke' => $titik['titik_ke'],
                     'pembacaan_ke' => $i + 1,
+                    'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
+                    'suhu' => $titik['suhu'][$i] ?? null,
+                    'satuan' => 'pH',
+                    'input_source' => 'manual',
+                    'is_verified' => true,
+                ]);
+            }
+
+            // Sebelum adjustment (as-found) — dokumentasi, tabel "Before
+            // Adjustment" di sertifikat. TIDAK ikut GUM resmi di bawah.
+            foreach ($titik['pembacaan_sebelum'] ?? [] as $i => $nilai) {
+                RawMeasurement::create([
+                    'calibration_session_id' => $sesi->id,
+                    'titik_ke' => $titik['titik_ke'],
+                    'pembacaan_ke' => $i + 1,
+                    'tahap' => 'sebelum_adjustment',
+                    'titik_ukur' => $titik['titik_ukur_sebelum'] ?? $titik['titik_ukur'],
+                    'pembacaan' => $nilai,
+                    'suhu' => $titik['suhu_sebelum'][$i] ?? null,
                     'satuan' => 'pH',
                     'input_source' => 'manual',
                     'is_verified' => true,

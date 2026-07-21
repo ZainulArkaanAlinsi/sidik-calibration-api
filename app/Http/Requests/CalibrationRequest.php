@@ -53,6 +53,23 @@ class CalibrationRequest extends FormRequest
             'suhu_ruang' => ['nullable', 'numeric'],
             'kelembaban' => ['nullable', 'numeric', 'between:0,100'],
 
+            // Kondisi lingkungan rinci (worksheet pH). Semua opsional — alat
+            // non-pH cukup `suhu_ruang`/`kelembaban` di atas. Rata-rata & U95%
+            // dihitung server (lihat CalibrationController::dataLingkungan).
+            'suhu_ruang_awal' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_ruang_akhir' => ['sometimes', 'nullable', 'numeric'],
+            'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'suhu_ruang_koreksi' => ['sometimes', 'nullable', 'numeric'],
+            'kelembaban_koreksi' => ['sometimes', 'nullable', 'numeric'],
+            // U95% sertifikat thermohygro — dipakai ngitung U95% lingkungan.
+            'suhu_ruang_u_std' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'kelembaban_u_std' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            // Alternatif: kirim U95% lingkungan jadi (kalau nggak mau server hitung).
+            'suhu_ruang_u95' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'kelembaban_u95' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'thermohygro' => ['sometimes', 'nullable', 'string', 'max:50'],
+
             // Teknisi boleh nyimpen dulu sebagai draft & nerusin nanti. Kalau
             // nggak dikirim, sesi langsung masuk antrean approval admin.
             'status' => ['sometimes', Rule::in([
@@ -70,6 +87,15 @@ class CalibrationRequest extends FormRequest
             // bukan data resmi (beda dari `pembacaan` di atas).
             'measurements.*.pembacaan_sebelum' => ['sometimes', 'array'],
             'measurements.*.pembacaan_sebelum.*' => ['required', 'numeric'],
+            // Suhu larutan tiap pembacaan (pasangan pH/°C di worksheet pH),
+            // sejajar per-index sama pembacaan. Opsional (alat non-pH nggak isi).
+            'measurements.*.suhu' => ['sometimes', 'array'],
+            'measurements.*.suhu.*' => ['required', 'numeric'],
+            'measurements.*.suhu_sebelum' => ['sometimes', 'array'],
+            'measurements.*.suhu_sebelum.*' => ['required', 'numeric'],
+            // Nilai standar sebelum adjustment (bisa beda tipis dari sesudah
+            // karena koreksi suhu larutan) — buat ngitung koreksi as-found.
+            'measurements.*.titik_ukur_sebelum' => ['sometimes', 'nullable', 'numeric'],
             // Sebagian kategori alat (mis. pH) butuh standar BEDA per titik ukur
             // (buffer 4/7/10) — kosong berarti titik ini ikut `standard_id` sesi.
             'measurements.*.standard_id' => [

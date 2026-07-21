@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan', 'satuan',
+    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan', 'suhu', 'satuan',
     'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path', 'is_verified',
 ])]
 class RawMeasurement extends Model
@@ -18,6 +18,7 @@ class RawMeasurement extends Model
         return [
             'titik_ukur' => 'float',
             'pembacaan' => 'float',
+            'suhu' => 'float',
             'ocr_confidence' => 'float',
             'is_verified' => 'boolean',
         ];
