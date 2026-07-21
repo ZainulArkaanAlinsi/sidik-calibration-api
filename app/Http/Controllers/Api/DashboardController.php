@@ -57,6 +57,14 @@ class DashboardController extends Controller
                     ->where('status', '!=', CalibrationSession::STATUS_DISETUJUI)
                     ->count(),
 
+                // Total sertifikat terbit sepanjang waktu — kartu ringkasan di
+                // dashboard. Dipisah dari `sertifikat_bulan_ini` karena dua-duanya
+                // dipajang bareng: yang satu capaian bulan berjalan, yang satu
+                // jumlah arsip keseluruhan.
+                'total_sertifikat' => Certificate::where('organization_id', $organizationId)
+                    ->where('status', Certificate::STATUS_TERBIT)
+                    ->count(),
+
                 'sertifikat_bulan_ini' => Certificate::where('organization_id', $organizationId)
                     ->where('status', Certificate::STATUS_TERBIT)
                     ->whereBetween('diterbitkan_pada', [now()->startOfMonth(), now()->endOfMonth()])
