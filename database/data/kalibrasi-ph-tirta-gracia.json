@@ -1,6 +1,6 @@
 {
   "_sumber": "Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/ (diringkas dari Master Olah Data_pH for trial_CSV/, workbook aslinya .xlsm ter-password protect)",
-  "_catatan": "Satu record kalibrasi ASLI end-to-end (bukan dummy). titik_ukur pakai nilai after-adjustment (yang dicetak di sertifikat 012-CAL-524). Toleransi alat (0.2 pH) tidak ada di sumber — itu asumsi kriteria penerimaan, lihat TirtaGraciaPhMeterSeeder.",
+  "_catatan": "Satu record kalibrasi ASLI end-to-end (bukan dummy). titik_ukur pakai nilai after-adjustment (yang dicetak di sertifikat 012-CAL-524). Sebelum adjustment (as-found) dilampirkan juga buat tabel 'Before Adjustment'. Toleransi alat (0.2 pH) tidak ada di sumber — itu asumsi kriteria penerimaan, lihat TirtaGraciaPhMeterSeeder.",
   "customer": {
     "nama": "PT TIRTA GRACIA SEMESTA MANDIRI",
     "alamat": "Jl. Arteri Primer A-10 RT. 01 RW.12 Nyalindung Kec. Cicalengka, Kab. Bandung, Jawa Barat"
@@ -79,8 +79,15 @@
     "nomor_sesi": "2405.13.A",
     "tanggal_kalibrasi": "2024-05-26",
     "lokasi": "lab",
-    "suhu_ruang": 21.4,
-    "kelembaban": 54.5,
+    "suhu_ruang_awal": 21.3,
+    "suhu_ruang_akhir": 21.5,
+    "kelembaban_awal": 53,
+    "kelembaban_akhir": 56,
+    "suhu_ruang_koreksi": -0.43,
+    "kelembaban_koreksi": -2.55,
+    "suhu_ruang_u_std": 1.7,
+    "kelembaban_u_std": 4.8,
+    "thermohygro": "TH-3",
     "submitted_at": "2024-05-26 16:00:00",
     "reviewed_at": "2024-05-29 10:00:00"
   },
@@ -89,19 +96,31 @@
       "titik_ke": 1,
       "standard_serial_number": "HC32513535",
       "titik_ukur": 4.009244572,
-      "pembacaan": [4, 4, 4, 4, 4]
+      "pembacaan": [4, 4, 4, 4, 4],
+      "suhu": [22.2, 22.2, 22.1, 22.2, 22.2],
+      "titik_ukur_sebelum": 4.0092252,
+      "pembacaan_sebelum": [4.04, 4.04, 4.04, 5.0, 4.04],
+      "suhu_sebelum": [22.2, 22.2, 22.2, 22.2, 22.2]
     },
     {
       "titik_ke": 2,
       "standard_serial_number": "HC46341939",
       "titik_ukur": 6.9889072,
-      "pembacaan": [7.01, 7.01, 7, 7, 7]
+      "pembacaan": [7.01, 7.01, 7, 7, 7],
+      "suhu": [22.2, 22.2, 22.2, 22.2, 22.2],
+      "titik_ukur_sebelum": 6.9885032,
+      "pembacaan_sebelum": [7.02, 7.04, 7.05, 7.02, 7.02],
+      "suhu_sebelum": [22.3, 22.3, 22.3, 22.3, 22.3]
     },
     {
       "titik_ke": 3,
       "standard_serial_number": "HC45400338",
       "titik_ukur": 9.978876900000001,
-      "pembacaan": [10.11, 10.11, 10.11, 10.11, 10.11]
+      "pembacaan": [10.11, 10.11, 10.11, 10.11, 10.11],
+      "suhu": [22.1, 22.1, 22.1, 22.1, 22.1],
+      "titik_ukur_sebelum": 9.9777956,
+      "pembacaan_sebelum": [9.61, 9.94, 9.66, 9.61, 9.61],
+      "suhu_sebelum": [22.2, 22.2, 22.2, 22.2, 22.2]
     }
   ],
   "sertifikat": {

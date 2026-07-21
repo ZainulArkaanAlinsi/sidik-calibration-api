@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'organization_id', 'equipment_id', 'order_item_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'suhu_ruang', 'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
+    // Kondisi lingkungan rinci (worksheet pH): awal/akhir + koreksi + U95% + label thermohygro.
+    'suhu_ruang_awal', 'suhu_ruang_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+    'suhu_ruang_koreksi', 'kelembaban_koreksi', 'suhu_ruang_u95', 'kelembaban_u95', 'thermohygro',
 ])]
 class CalibrationSession extends Model
 {
@@ -36,6 +39,14 @@ class CalibrationSession extends Model
             'reviewed_at' => 'datetime',
             'suhu_ruang' => 'float',
             'kelembaban' => 'float',
+            'suhu_ruang_awal' => 'float',
+            'suhu_ruang_akhir' => 'float',
+            'kelembaban_awal' => 'float',
+            'kelembaban_akhir' => 'float',
+            'suhu_ruang_koreksi' => 'float',
+            'kelembaban_koreksi' => 'float',
+            'suhu_ruang_u95' => 'float',
+            'kelembaban_u95' => 'float',
         ];
     }
 

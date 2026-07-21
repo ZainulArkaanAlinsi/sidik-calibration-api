@@ -308,6 +308,79 @@ class GumCalculatorTest extends TestCase
         $this->assertSame('ketidakpastian_standar', $hasil['type_b_components'][0]['sumber']);
     }
 
+    /**
+     * Budget PENUH: kalau CalibrationCapability-nya dirinci konstanta suhunya
+     * (`punyaBudgetPenuh()`), U DIHITUNG dari 5 komponen (bukan nempel CMC),
+     * dan hasilnya reproduksi sertifikat pH asli 012-CAL-524 titik pH 4:
+     * U95% = 0.023432 (U hitung 0.02343 > CMC 0.023, jadi hitung yang menang).
+     */
+    public function test_budget_penuh_ngitung_u_dan_reproduksi_sertifikat_ph4(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter', 'parameter' => 'pH',
+            'range_min' => 4, 'range_max' => 4, 'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.023, 'satuan_ketidakpastian' => 'pH', 'faktor_cakupan' => 2,
+            'u_temperature' => sqrt((0.72 / 2) ** 2 + (0.06 / 2) ** 2),
+            'ci_suhu' => 0.00077, 'u_perbedaan_suhu' => 0.01, 'ci_perbedaan_suhu' => 1.0,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id, 'nama_alat_kemampuan' => 'pH Meter',
+            'satuan' => 'pH', 'resolusi' => 0.01, 'toleransi' => 0.2,
+        ]);
+        $buffer = new Standard([
+            'nama' => 'pH Buffer Solution 4', 'ketidakpastian' => 0.02,
+            'satuan_ketidakpastian' => 'pH', 'faktor_cakupan' => 2,
+        ]);
+
+        // 5x baca 4.00 (stdev 0), titik ukur = nilai standar terkoreksi suhu.
+        $hasil = $this->gum->hitungTitik(1, 4.009244572, [4.0, 4.0, 4.0, 4.0, 4.0], $alat, $buffer);
+
+        // U dihitung penuh → dibulatkan 6 desimal sama kayak sertifikat.
+        $this->assertSame('0.023432', number_format($hasil['ketidakpastian_diperluas'], 6, '.', ''));
+        // k dari veff (t-student ~1.9685), bukan dikunci 2.
+        $this->assertEqualsWithDelta(1.9685, $hasil['faktor_cakupan_k'], 1e-3);
+        $this->assertNotNull($hasil['derajat_kebebasan_efektif']);
+        $this->assertSame('ketidakpastian_temperature', $hasil['type_b_components'][2]['sumber']);
+    }
+
+    /**
+     * Titik pH 10: U hitung (0.030327) LEBIH KECIL dari CMC (0.031), jadi yang
+     * DILAPORKAN CMC-nya — lab nggak boleh ngeklaim lebih teliti dari akreditasi.
+     */
+    public function test_budget_penuh_lapor_cmc_kalau_hitung_lebih_kecil(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter', 'parameter' => 'pH',
+            'range_min' => 10, 'range_max' => 10, 'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.031, 'satuan_ketidakpastian' => 'pH', 'faktor_cakupan' => 2,
+            'u_temperature' => sqrt((0.72 / 2) ** 2 + (0.06 / 2) ** 2),
+            'ci_suhu' => 0.01021, 'u_perbedaan_suhu' => 0.05, 'ci_perbedaan_suhu' => 0.00949,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id, 'nama_alat_kemampuan' => 'pH Meter',
+            'satuan' => 'pH', 'resolusi' => 0.01, 'toleransi' => 0.2,
+        ]);
+        $buffer = new Standard([
+            'nama' => 'pH Buffer Solution 10', 'ketidakpastian' => 0.03,
+            'satuan_ketidakpastian' => 'pH', 'faktor_cakupan' => 2,
+        ]);
+
+        $hasil = $this->gum->hitungTitik(1, 9.978876900, [10.11, 10.11, 10.11, 10.11, 10.11], $alat, $buffer);
+
+        // Dilaporkan CMC 0.031, walaupun k·Uc-nya cuma ~0.030327.
+        $this->assertEqualsWithDelta(0.031, $hasil['ketidakpastian_diperluas'], 1e-9);
+        $this->assertLessThan(0.031, $hasil['ketidakpastian_gabungan'] * $hasil['faktor_cakupan_k']);
+        $this->assertSame('perbandingan_cmc', $hasil['type_b_components'][5]['sumber']);
+    }
+
     public function test_titik_tanpa_kemampuan_kalibrasi_tetap_pakai_jalur_generik(): void
     {
         $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
