@@ -8,6 +8,7 @@ use App\Http\Resources\CalibrationResource;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\Folder;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\GumCalculator;
@@ -82,6 +83,7 @@ class CalibrationController extends Controller
             $sesi = CalibrationSession::create([
                 'organization_id' => $request->user()->organization_id,
                 'equipment_id' => $request->integer('equipment_id'),
+                'folder_id' => $this->folderOtomatis($request->integer('equipment_id')),
                 'standard_id' => $request->integer('standard_id'),
                 'teknisi_id' => $request->user()->id,
                 'client_request_id' => $clientRequestId,
@@ -99,6 +101,29 @@ class CalibrationController extends Controller
         });
 
         return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    }
+
+    /**
+     * Folder tempat sesi baru jatuh otomatis: folder akar perusahaan pemilik
+     * alatnya.
+     *
+     * Sengaja lewat relasi `equipment.customer_id`, BUKAN cocok-cocokan nama
+     * perusahaan. Teknisi milih alat waktu input, dan alat itu udah nempel ke
+     * pemiliknya — jadi foldernya nggak mungkin salah. Kalau dicocokin nama,
+     * "PT Tirta Gracia" / "PT. Tirta Gracia" / "pt tirta gracia" bakal jadi
+     * tiga folder beda, dan sertifikat lab terakreditasi nyasar ke perusahaan
+     * lain itu masalah serius.
+     *
+     * Prakteknya nggak pernah null: `equipments.customer_id` itu NOT NULL,
+     * jadi tiap alat pasti punya pelanggan. Null-nya cuma jaga-jaga kalau
+     * kolom itu suatu saat dibikin nullable — sesinya tetap kesimpen, cuma
+     * belum kefolderin, dan bisa dipindah manual belakangan.
+     */
+    private function folderOtomatis(int $equipmentId): ?int
+    {
+        $customer = Equipment::find($equipmentId)?->customer;
+
+        return $customer ? Folder::akarUntuk($customer)->id : null;
     }
 
     public function show(Request $request, CalibrationSession $calibration): JsonResponse

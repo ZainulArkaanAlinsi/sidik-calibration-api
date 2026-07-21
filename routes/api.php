@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArsipController;
+use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
@@ -102,8 +103,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/arsip/perusahaan/{customer}', [ArsipController::class, 'alat']);
     Route::get('/arsip/alat/{equipment}', [ArsipController::class, 'berkas']);
 
+    // Folder arsip yang disusun bebas user — pohon beneran, sedalam apa pun.
+    // Bacanya semua role (berkas tetap disaring per-teknisi di controller);
+    // nyusunnya admin & teknisi, viewer ditolak 403. Lihat FolderController.
+    Route::get('/arsip/perusahaan/{customer}/folder', [FolderController::class, 'akar']);
+    Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
+
     // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
+        // Nyusun folder arsip. Bikin/rename/pindah/hapus — folder akar
+        // perusahaan dikunci sistem, lihat FolderController.
+        Route::post('/arsip/folders', [FolderController::class, 'store']);
+        Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
+        Route::put('/arsip/folders/{folder}/pindah', [FolderController::class, 'pindah']);
+        Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
+        Route::put('/arsip/berkas/{calibration}/pindah', [FolderController::class, 'pindahBerkas']);
+
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
