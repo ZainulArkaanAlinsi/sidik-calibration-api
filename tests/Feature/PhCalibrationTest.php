@@ -48,10 +48,10 @@ class PhCalibrationTest extends TestCase
         // CMC + konstanta budget pH 4/7/10 (sama kayak PhMeterCapabilitySeeder).
         $uTemp = sqrt((0.72 / 2) ** 2 + (0.06 / 2) ** 2);
         foreach ([
-            [4, 0.023, 0.00077, 0.01, 1.0],
-            [7, 0.021, 0.00352, 0.02, 0.00304],
-            [10, 0.031, 0.01021, 0.05, 0.00949],
-        ] as [$titik, $cmc, $ciSuhu, $uBeda, $ciBeda]) {
+            [4, 0.023, 0.00077, 0.01, 1.0, 0.00003, -0.0023, 4.0455],
+            [7, 0.021, 0.00352, 0.02, 0.00304, 0.00008, -0.0076, 7.1182],
+            [10, 0.031, 0.01021, 0.05, 0.00949, 0.00009, -0.0148, 10.262],
+        ] as [$titik, $cmc, $ciSuhu, $uBeda, $ciBeda, $ka, $kb, $kc]) {
             CalibrationCapability::create([
                 'equipment_category_id' => $kategori->id,
                 'nama_alat' => 'pH Meter', 'parameter' => 'pH',
@@ -59,6 +59,9 @@ class PhCalibrationTest extends TestCase
                 'ketidakpastian_terbaik' => $cmc, 'satuan_ketidakpastian' => 'pH', 'faktor_cakupan' => 2,
                 'u_temperature' => $uTemp, 'ci_suhu' => $ciSuhu,
                 'u_perbedaan_suhu' => $uBeda, 'ci_perbedaan_suhu' => $ciBeda,
+                // Kurva nilai buffer vs suhu — ngidupin pemeriksaan
+                // "titik_ukur udah dikoreksi suhu belum".
+                'koef_suhu_a' => $ka, 'koef_suhu_b' => $kb, 'koef_suhu_c' => $kc,
             ]);
         }
 
@@ -142,6 +145,69 @@ class PhCalibrationTest extends TestCase
         $this->assertEqualsWithDelta(54.5, $sesi->kelembaban, 1e-9);
         $this->assertEqualsWithDelta(1.7117, $sesi->suhu_ruang_u95, 1e-4);
         $this->assertEqualsWithDelta(5.6604, $sesi->kelembaban_u95, 1e-4);
+    }
+
+    /**
+     * Penjagaan nominal-vs-terkoreksi.
+     *
+     * Nilai buffer bergerak ngikutin suhu larutan: pH 4 pada 22.2 °C itu
+     * 4.0092, BUKAN 3.99 yang tertulis di botol. Kalau yang dikirim nominal,
+     * pencocokan CMC tetap berhasil dan nggak ada error sama sekali — cuma
+     * angka KOREKSI di sertifikat yang salah. Makanya ditolak di depan.
+     */
+    public function test_titik_ukur_nominal_ditolak_karena_belum_dikoreksi_suhu(): void
+    {
+        $payload = $this->payload();
+        // 3.99 = label botol. Yang bener 4.0092 pada suhu larutan yang dicatat.
+        $payload['measurements'][0]['titik_ukur'] = 3.99;
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements.0.titik_ukur');
+
+        // Nggak boleh nyisain sesi setengah jadi.
+        $this->assertDatabaseCount('calibration_sessions', 0);
+    }
+
+    public function test_titik_ukur_terkoreksi_diterima(): void
+    {
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload())
+            ->assertCreated();
+    }
+
+    public function test_pemeriksaan_dilewat_kalau_suhu_larutan_nggak_dicatat(): void
+    {
+        $payload = $this->payload();
+        $payload['measurements'][0]['titik_ukur'] = 3.99;
+        unset($payload['measurements'][0]['suhu']);
+
+        // Tanpa suhu larutan, nilai seharusnya nggak bisa dihitung — jadi
+        // nggak ada dasar buat nolak. Lebih baik lolos daripada nolak
+        // berdasarkan tebakan.
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertCreated();
+    }
+
+    public function test_pesan_error_nyebutin_nilai_yang_seharusnya(): void
+    {
+        $payload = $this->payload();
+        $payload['measurements'][0]['titik_ukur'] = 3.99;
+
+        // Key error-nya `measurements.0.titik_ukur` — ada titiknya, jadi nggak
+        // bisa diambil pakai dot-notation `json()`. Ambil arraynya langsung.
+        $errors = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->json('errors');
+
+        $pesan = $errors['measurements.0.titik_ukur'][0] ?? '';
+
+        // Teknisi harus tahu angka bener­nya berapa, bukan cuma "salah".
+        $this->assertStringContainsString('4.009', (string) $pesan);
+        $this->assertStringContainsString('3.99', (string) $pesan);
     }
 
     public function test_detail_sesi_ph_bawa_before_after_dan_kondisi_lingkungan(): void

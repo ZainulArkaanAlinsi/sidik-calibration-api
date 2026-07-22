@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'satuan', 'ketidakpastian_terbaik', 'satuan_ketidakpastian', 'faktor_cakupan', 'metode', 'keterangan',
     // Konstanta budget ketidakpastian penuh (mis. buffer pH) — lihat migrasi.
     'u_temperature', 'ci_suhu', 'u_perbedaan_suhu', 'ci_perbedaan_suhu',
+    // Kurva nilai standar terhadap suhu larutan: y = a·x² + b·x + c.
+    'koef_suhu_a', 'koef_suhu_b', 'koef_suhu_c',
 ])]
 class CalibrationCapability extends Model
 {
@@ -26,7 +28,28 @@ class CalibrationCapability extends Model
             'ci_suhu' => 'float',
             'u_perbedaan_suhu' => 'float',
             'ci_perbedaan_suhu' => 'float',
+            'koef_suhu_a' => 'float',
+            'koef_suhu_b' => 'float',
+            'koef_suhu_c' => 'float',
         ];
+    }
+
+    /**
+     * Nilai standar pada suhu larutan tertentu: y = a·x² + b·x + c.
+     *
+     * Contoh (buffer pH 4, koefisien 3e-5 / −0.0023 / 4.0455):
+     *   22.2 °C → 4.0092252 — bukan 3.99 yang tertulis di botol.
+     *
+     * Balik null kalau kurvanya nggak didefinisiin buat titik ini; pemanggilnya
+     * wajib nganggep itu "nggak bisa diperiksa", bukan "nilainya nol".
+     */
+    public function nilaiPadaSuhu(float $suhu): ?float
+    {
+        if ($this->koef_suhu_a === null || $this->koef_suhu_b === null || $this->koef_suhu_c === null) {
+            return null;
+        }
+
+        return $this->koef_suhu_a * $suhu ** 2 + $this->koef_suhu_b * $suhu + $this->koef_suhu_c;
     }
 
     /**
