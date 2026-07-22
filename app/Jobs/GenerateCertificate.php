@@ -144,8 +144,29 @@ class GenerateCertificate implements ShouldQueue
             'bacaSesudah' => self::ringkasPembacaan($sesi, 'sesudah_adjustment', $titik),
             // Kondisi lingkungan rinci ada kalau awal/akhir keisi (worksheet pH).
             'adaLingkungan' => $sesi->suhu_ruang_awal !== null || $sesi->kelembaban_awal !== null,
+            // Tanda tangan penanda tangan (admin yang meng-approve). Di-embed
+            // sebagai data URI, sama kayak logo — dompdf paling aman begitu.
+            // null kalau yang bersangkutan belum pernah unggah TTD; sertifikat
+            // tetap terbit, cuma nama & jabatan yang tercetak di atas garis.
+            'ttdPenandaTangan' => self::gambarDataUri($sesi->reviewer?->ttd_path),
             'logo' => $logo,
         ];
+    }
+
+    /**
+     * Baca gambar dari disk `public` jadi data URI. Balik null kalau path-nya
+     * kosong atau filenya udah nggak ada — sertifikat nggak boleh gagal terbit
+     * cuma gara-gara gambar hiasan ilang.
+     */
+    private static function gambarDataUri(?string $path): ?string
+    {
+        if ($path === null || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) Storage::disk('public')->get($path));
     }
 
     /**

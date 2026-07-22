@@ -31,6 +31,11 @@
         table.ttd { width: 100%; border-collapse: collapse; margin-top: 24px; }
         table.ttd td { width: 50%; vertical-align: top; font-size: 10px; }
         .ttd .garis { margin-top: 40px; border-top: 1px solid #333; padding-top: 3px; }
+        /* Kalau ada gambar TTD, dia yang ngisi jarak di atas garis — jadi
+           margin-top garisnya dikecilin lewat kelas ini biar nggak dobel. */
+        .ttd .ttd-gambar { margin-top: 6px; height: 46px; }
+        .ttd .ttd-gambar + .garis { margin-top: 0; }
+        .ttd .ttd-gambar img { height: 46px; width: auto; }
         .halaman { position: fixed; top: -20px; right: 0; font-size: 9px; color: #777; }
         .disclaimer { font-size: 9px; font-style: italic; color: #555; margin-top: 6px; }
     </style>
@@ -215,6 +220,12 @@
             <td></td>
             <td>
                 <div>{{ $sesi->organization->alamat ? \Illuminate\Support\Str::before($sesi->organization->alamat, ',') : '' }}, {{ $sertifikat->diterbitkan_pada?->translatedFormat('d F Y') }}</div>
+                @if (! empty($ttdPenandaTangan))
+                    {{-- Gambar TTD ditaruh DI ATAS garis, tingginya dikunci biar
+                         file besar nggak ngedorong blok tanda tangan ke halaman
+                         berikutnya. --}}
+                    <div class="ttd-gambar"><img src="{{ $ttdPenandaTangan }}" alt="Tanda tangan"></div>
+                @endif
                 <div class="garis">
                     <strong>{{ $sesi->reviewer->name ?? '—' }}</strong><br>
                     {{ $sesi->reviewer->department ?? 'Technical Manager' }}

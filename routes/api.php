@@ -57,6 +57,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ability pemanggil — dipakai mobile buat nyembunyiin tombol yang bakal
     // ditolak 403. Lihat App\Support\Permissions & MATRIKS-PERAN.md.
     Route::get('/me/permissions', [AuthController::class, 'permissions']);
+    // Unggah tanda tangan SENDIRI buat sertifikat (multipart, field `ttd`).
+    Route::post('/me/ttd', [AuthController::class, 'uploadTtd']);
     Route::post('/logout', [AuthController::class, 'logout']);
     // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
     // yang ilang.
