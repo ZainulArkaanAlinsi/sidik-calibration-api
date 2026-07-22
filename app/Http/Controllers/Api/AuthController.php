@@ -8,6 +8,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -78,6 +79,26 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json(['data' => new UserResource($request->user())]);
+    }
+
+    /**
+     * Ability milik pemanggil — biar mobile nyembunyiin tombol yang bakal
+     * ditolak 403, bukan nampilin tombol lalu user kena error.
+     *
+     * Role diambil dari token, nggak nerima apa pun dari client. Lihat
+     * `App\Support\Permissions` buat daftar lengkap & aturan sinkronnya sama
+     * middleware `role:` di routes.
+     */
+    public function permissions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'data' => [
+                'role' => $user->role,
+                'boleh' => Permissions::untukRole($user->role),
+            ],
+        ]);
     }
 
     public function logout(Request $request): JsonResponse

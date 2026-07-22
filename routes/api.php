@@ -53,6 +53,9 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    // Ability pemanggil — dipakai mobile buat nyembunyiin tombol yang bakal
+    // ditolak 403. Lihat App\Support\Permissions & MATRIKS-PERAN.md.
+    Route::get('/me/permissions', [AuthController::class, 'permissions']);
     Route::post('/logout', [AuthController::class, 'logout']);
     // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
     // yang ilang.

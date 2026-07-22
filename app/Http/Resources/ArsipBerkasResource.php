@@ -49,6 +49,9 @@ class ArsipBerkasResource extends JsonResource
                     'pdf_url' => $this->certificate->status === Certificate::STATUS_TERBIT
                         ? route('certificates.download', $this->certificate)
                         : null,
+                    // QR verifikasi — mobile yang nge-render gambarnya.
+                    'qr_token' => $this->certificate->qr_token,
+                    'qr_url' => $this->certificate->qr_payload,
                 ],
             ),
         ];
