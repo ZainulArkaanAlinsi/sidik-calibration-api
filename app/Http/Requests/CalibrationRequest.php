@@ -50,6 +50,12 @@ class CalibrationRequest extends FormRequest
             'client_request_id' => ['sometimes', 'nullable', 'uuid'],
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
+            // Ruangan lab spesifik (mis. "Lab. Uji A") — beda dari `lokasi` yang
+            // cuma lab vs onsite. Opsional; disaring ke organisasi pemanggil.
+            'room_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('rooms', 'id')->where('organization_id', $organizationId),
+            ],
             'suhu_ruang' => ['nullable', 'numeric'],
             'kelembaban' => ['nullable', 'numeric', 'between:0,100'],
 

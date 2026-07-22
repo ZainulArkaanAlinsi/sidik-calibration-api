@@ -135,6 +135,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
 
         Route::post('/calibrations', [CalibrationController::class, 'store']);
+        // Hitung hasil TANPA nyimpen — layar input nampilin koreksi & U95%
+        // sambil teknisi ngetik. Nggak nyentuh DB sama sekali.
+        Route::post('/calibrations/preview', [CalibrationController::class, 'preview']);
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 
