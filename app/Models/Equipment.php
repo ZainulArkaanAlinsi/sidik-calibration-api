@@ -58,6 +58,31 @@ class Equipment extends Model
         return $this->isOverdue() ? self::STATUS_OVERDUE : self::STATUS_AKTIF;
     }
 
+    /**
+     * "0–14 pH" — versi siap-tempel dari range_min/max/satuan. Pakai en dash (–),
+     * bukan hyphen, karena ini rentang; kebaca lebih jelas waktu satuannya
+     * sendiri mengandung minus (mis. °C).
+     *
+     * Balikin null kalau salah satu batasnya kosong — lebih baik field-nya
+     * nggak ada daripada nampilin "0– pH".
+     *
+     * Ditaruh di model (bukan di resource) karena dipakai lebih dari satu
+     * tempat: daftar alat DAN detail sesi kalibrasi.
+     */
+    public function rentangUkur(): ?string
+    {
+        if ($this->range_min === null || $this->range_max === null) {
+            return null;
+        }
+
+        // Kolomnya decimal — tanpa dirapiin, "0–14" nampil "0.00000000–14.00000000".
+        $rapi = fn ($angka): string => rtrim(rtrim(number_format((float) $angka, 8, '.', ''), '0'), '.') ?: '0';
+
+        $rentang = $rapi($this->range_min).'–'.$rapi($this->range_max);
+
+        return $this->satuan ? $rentang.' '.$this->satuan : $rentang;
+    }
+
     public function isOverdue(): bool
     {
         return $this->tanggal_jatuh_tempo !== null

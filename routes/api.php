@@ -159,6 +159,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
+        // Logo kop sertifikat (multipart, field `logo`).
+        Route::post('/organization/logo', [OrganizationController::class, 'uploadLogo']);
 
         // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
         // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
