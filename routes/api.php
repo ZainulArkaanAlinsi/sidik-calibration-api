@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ArsipController;
 use App\Http\Controllers\Api\FolderController;
+use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
@@ -69,6 +70,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/baca-semua', [NotificationController::class, 'bacaSemua']);
     Route::post('/notifications/{id}/baca', [NotificationController::class, 'baca']);
+
+    // Laporan kalibrasi + ekspor. Cakupan datanya ngikutin aturan yang sama
+    // kayak /calibrations: teknisi cuma sesinya sendiri, admin & viewer semua.
+    Route::get('/laporan/kalibrasi', [LaporanController::class, 'kalibrasi']);
+    Route::get('/laporan/kalibrasi/export', [LaporanController::class, 'export']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     // Deret waktu masuk-vs-selesai, rentang & granularitas bebas — dipakai

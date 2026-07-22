@@ -41,6 +41,8 @@ class Permissions
         // Nandain kebaca juga ikut di sini — semua role boleh, dan itu cuma
         // nyentuh notifikasi miliknya sendiri.
         'notifikasi.lihat',
+        'laporan.lihat',
+        'laporan.unduh',
     ];
 
     /** Tambahan buat teknisi: input kerjaan lapangan + nyusun arsip. */
