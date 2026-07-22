@@ -15,106 +15,112 @@ Role yang ada saat ini cuma **3**: `admin`, `teknisi`, `viewer`.
 | Kelompok | Jumlah | Siapa |
 |---|---|---|
 | Publik (tanpa login) | 6 | siapa saja |
-| Semua role (login) | 25 | admin, teknisi, viewer |
-| Tulis kalibrasi & alat | 11 | admin, teknisi |
-| Admin saja | 31 | admin |
+| Semua role (login) | 31 | admin, teknisi, viewer |
+| Tulis kalibrasi & alat | 12 | admin, teknisi |
+| Admin saja | 33 | admin |
 
 ---
 
 ## 1. Publik — tanpa token
 
 ```
-GET  /health
-GET  /verify/{qr_token}
-POST /login
-POST /register
-POST /forgot-password
-POST /reset-password
+GET    /health
+GET    /verify/{qr_token}
+POST   /forgot-password
+POST   /login
+POST   /register
+POST   /reset-password
 ```
 
 ## 2. Semua role yang login (termasuk `viewer`)
 
 ```
-GET  /me
-GET  /me/permissions
-GET  /notifications
-POST /notifications/{id}/baca
-POST /notifications/baca-semua
-GET  /dashboard
-GET  /dashboard/tren
-GET  /categories
-GET  /categories/{kode}
-GET  /equipments
-GET  /equipments/{equipment}
-GET  /standards
-GET  /standards/{standard}
-GET  /rooms
-GET  /rooms/{room}
-GET  /orders
-GET  /orders/{order}
-GET  /calibrations
-GET  /calibrations/{calibration}
-GET  /certificates
-GET  /certificates/{certificate}/download
-GET  /arsip/perusahaan
-GET  /arsip/perusahaan/{customer}
-GET  /arsip/perusahaan/{customer}/folder
-GET  /arsip/alat/{equipment}
-GET  /arsip/folders/{folder}
-POST /logout
-POST /logout-all
+GET    /arsip/alat/{equipment}
+GET    /arsip/folders/{folder}
+GET    /arsip/perusahaan
+GET    /arsip/perusahaan/{customer}
+GET    /arsip/perusahaan/{customer}/folder
+GET    /calibrations
+GET    /calibrations/{calibration}
+GET    /categories
+GET    /categories/{kode}
+GET    /certificates
+GET    /certificates/{certificate}/download
+GET    /dashboard
+GET    /dashboard/tren
+GET    /equipments
+GET    /equipments/{equipment}
+GET    /laporan/kalibrasi
+GET    /laporan/kalibrasi/export
+GET    /me
+GET    /me/permissions
+GET    /notifications
+GET    /orders
+GET    /orders/{order}
+GET    /rooms
+GET    /rooms/{room}
+GET    /standards
+GET    /standards/{standard}
+POST   /logout
+POST   /logout-all
+POST   /me/ttd
+POST   /notifications/baca-semua
+POST   /notifications/{id}/baca
 ```
 
 ## 3. `admin` + `teknisi`
 
 ```
-POST   /equipments
-PUT    /equipments/{equipment}
 DELETE /equipments/{equipment}
-POST   /calibrations
-PUT    /calibrations/{calibration}
-POST   /calibrations/photos
-POST   /calibrations/{calibration}/measurements/verify
 POST   /arsip/folders
+POST   /calibrations
+POST   /calibrations/photos
+POST   /calibrations/preview
+POST   /calibrations/{calibration}/measurements/verify
+POST   /equipments
+PUT    /arsip/berkas/{calibration}/pindah
 PUT    /arsip/folders/{folder}
 PUT    /arsip/folders/{folder}/pindah
-PUT    /arsip/berkas/{calibration}/pindah
+PUT    /calibrations/{calibration}
+PUT    /equipments/{equipment}
 ```
 
 ## 4. `admin` saja
 
 ```
 DELETE /arsip/folders/{folder}
-POST   /calibrations/{calibration}/approve
-POST   /calibrations/{calibration}/reject
-POST   /certificates/{certificate}/retry
-GET    /organization
-PUT    /organization
+DELETE /customers/{customer}
+DELETE /orders/{order}
+DELETE /rooms/{room}
+DELETE /standards/{standard}
+DELETE /technicians/{technician}
 GET    /customers
 GET    /customers/{customer}
-POST   /customers
-PUT    /customers/{customer}
-DELETE /customers/{customer}
-POST   /orders
-PUT    /orders/{order}
-DELETE /orders/{order}
-POST   /orders/{order}/penugasan
-POST   /rooms
-PUT    /rooms/{room}
-DELETE /rooms/{room}
-POST   /standards
-PUT    /standards/{standard}
-DELETE /standards/{standard}
+GET    /organization
 GET    /technicians
 GET    /technicians/{technician}
-POST   /technicians
-PUT    /technicians/{technician}
-DELETE /technicians/{technician}
 GET    /users
-PUT    /users/{user}
+POST   /calibrations/{calibration}/approve
+POST   /calibrations/{calibration}/reject
+POST   /certificates/{certificate}/kirim-email
+POST   /certificates/{certificate}/retry
+POST   /customers
+POST   /orders
+POST   /orders/{order}/penugasan
+POST   /organization/logo
+POST   /rooms
+POST   /standards
+POST   /technicians
 POST   /users/{user}/approve
 POST   /users/{user}/reject
 POST   /users/{user}/reset-password
+PUT    /customers/{customer}
+PUT    /orders/{order}
+PUT    /organization
+PUT    /rooms/{room}
+PUT    /standards/{standard}
+PUT    /technicians/{technician}
+PUT    /users/{user}
 ```
 
 ---

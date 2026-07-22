@@ -70,14 +70,14 @@ Sudah diverifikasi: record pH ter-seed mereproduksi sertifikat 012-CAL-524 **per
 ```jsonc
 { "data": { "role": "teknisi", "boleh": ["alat.tambah", "kalibrasi.buat", ...] } }
 ```
-viewer **10** ability (baca doang) ⊂ teknisi **22** ⊂ admin **43**.
+viewer **13** ability (baca doang) ⊂ teknisi **24** ⊂ admin **47**.
 
 Daftarnya diturunkan dari middleware di `routes/api.php`, dan ada test yang mastiin ability yang **tidak** dipunyai satu role beneran ditolak 403 — jadi kalau daftar & middleware nyimpang, test jebol duluan.
 
 ### Jawaban 3 pertanyaan kalian
 1. **Viewer boleh lihat arsip & sertifikat?** **Ya** — baca semua, nggak bisa nulis. Tebakan kalian benar.
 2. **Teknisi lihat sesi teknisi lain?** **Tidak** — dan bukan cuma disaring di daftar: buka per-ID punya orang lain dibalas **404**, jadi nggak bisa ditebak. Tebakan kalian benar.
-3. **Role keempat (Manajer Teknis)?** **Belum ada.** Sekarang penanda tangan = admin yang meng-approve, jabatannya dari field `department`. Jadi "Manajer Teknis" = atribut, bukan role. Kalau mau jadi role sungguhan, itu mengubah alur approval — **masih nunggu keputusan pemilik produk**, jadi §3 #9 belum bisa jalan.
+3. **Role keempat (Manajer Teknis)?** **Tidak — sudah diputuskan.** Pemilik produk memilih tetap sebagai **atribut `department`**, bukan role keempat. Penanda tangan = admin yang meng-approve, jabatannya dari `department`-nya. Alur approval tidak berubah, dan §3 #9 sudah selesai dikerjakan atas dasar keputusan ini.
 
 ### Soal bug "mulus di admin, mentok di teknisi"
 Akar masalahnya: `GET /customers` admin-only tapi `pelanggan_id` wajib di form Tambah Alat. **Pakai `GET /api/arsip/perusahaan?search=` buat dropdown pelanggan** — kebuka semua role, ada pencarian, balikin `id` + `nama`. Itu jalan keluar tanpa perlu ngubah hak akses master data.
@@ -88,18 +88,89 @@ Akar masalahnya: `GET /customers` admin-only tapi `pelanggan_id` wajib di form T
 
 | # | Permintaan | Status |
 |---|---|---|
-| 1 | `qr_token` di objek sertifikat | ✅ **selesai** — `qr_token` + `qr_url` |
-| 2 | `nomor_order` + `tanggal_terima` | ✅ **sudah ada sejak lama** — silakan cek lagi, mungkin kelewat |
-| 3 | `employee_id` di objek teknisi | ✅ **selesai** |
-| 4 | `equipment` digemukin (+pelanggan) | ✅ **selesai** |
-| 5 | `merk_type` + `tertelusur_ke` di standar | ✅ **selesai** (+ `serial_number`) |
-| 6 | `logo_url` di organisasi | ✅ **selesai** (+ endpoint unggah) |
-| 7 | Notifikasi kejadian butuh admin | ✅ **selesai** |
-| 8 | `POST /calibrations/preview` | ⬜ belum |
-| 9 | Penanda tangan / Manajer Teknis | ⏸ nunggu keputusan role |
-| 10 | `POST /certificates/{id}/kirim-email` | ⬜ belum — butuh SMTP lab dulu (sekarang `MAIL_MAILER=log`) |
-| 11 | `room_id` di sesi kalibrasi | ⬜ belum |
-| 12 | Laporan + export | ⬜ belum |
+| 1 | `qr_token` di objek sertifikat | ✅ selesai — `qr_token` + `qr_url` |
+| 2 | `nomor_order` + `tanggal_terima` | ✅ selesai — field-nya udah lama ada; datanya di record pH contoh sekarang ikut diisi |
+| 3 | `employee_id` di objek teknisi | ✅ selesai |
+| 4 | `equipment` digemukin (+pelanggan) | ✅ selesai |
+| 5 | `merk_type` + `tertelusur_ke` di standar | ✅ selesai (+ `serial_number`) |
+| 6 | `logo_url` di organisasi | ✅ selesai (+ `POST /organization/logo`) |
+| 7 | Notifikasi kejadian butuh admin | ✅ selesai |
+| 8 | `POST /calibrations/preview` | ✅ selesai |
+| 9 | Penanda tangan / Manajer Teknis | ✅ selesai — keputusan: **atribut `department`**, bukan role keempat |
+| 10 | `POST /certificates/{id}/kirim-email` | ✅ selesai |
+| 11 | `room_id` di sesi kalibrasi | ✅ selesai |
+| 12 | Laporan + export | ✅ selesai (PDF & CSV; `.xlsx` asli lihat catatan) |
+
+**Semua 12 permintaan selesai.** Rinciannya di bawah.
+
+### Endpoint baru
+
+```
+GET  /api/me/permissions                       ability pemanggil
+GET  /api/notifications?belum_dibaca=1         + meta_tambahan.belum_dibaca (badge)
+POST /api/notifications/{id}/baca
+POST /api/notifications/baca-semua
+POST /api/calibrations/preview                 hitung tanpa simpan
+POST /api/me/ttd                               unggah TTD sendiri (multipart `ttd`)
+POST /api/organization/logo                    unggah logo (multipart `logo`)
+POST /api/certificates/{id}/kirim-email        { ke: [...], cc: [...] }
+GET  /api/laporan/kalibrasi                    + filter, berpaginasi
+GET  /api/laporan/kalibrasi/export?format=pdf|csv
+```
+
+### #8 `POST /calibrations/preview`
+
+Ngitung koreksi & U95% dari pembacaan **tanpa nyimpen apa pun** — nggak bikin sesi, nggak nomor sesi, nggak notifikasi. Aman dipanggil tiap kali teknisi ngetik.
+
+```jsonc
+POST { "equipment_id": 6, "standard_id": 3,
+       "measurements": [{ "titik_ukur": 6.9889072, "pembacaan": [7.01,7.01,7,7,7] }] }
+
+→ { "data": { "keputusan": "PASS", "titik": [ { ...bentuknya SAMA kayak titik[] di detail sesi... } ] } }
+```
+
+Bentuk `titik[]`-nya sengaja disamain sama `GET /calibrations/{id}`, jadi parser mobile bisa dipakai ulang. Ada test yang mastiin angka preview **sama persis** sama yang tersimpan lewat `POST /calibrations` biasa — kalau dua jalur itu pernah nyimpang, sertifikat bakal beda dari yang dilihat teknisi waktu ngisi.
+
+### #9 Penanda tangan
+
+Keputusan pemilik produk: **"Manajer Teknis" itu atribut `department`, bukan role keempat.** Penanda tangan = admin yang meng-approve. Jadi cukup atur `department` akun admin dengan benar.
+
+```jsonc
+"penanda_tangan": { "nama": "Alex Misramto", "jabatan": "Technical Manager", "ttd_url": "..." }
+```
+Ada di objek `sertifikat` (sesuai permintaan kalian) DAN di level atas respons sesi — yang level atas kepakai buat sesi yang udah disetujui tapi PDF-nya belum kelar digenerate.
+
+Unggah TTD: `POST /api/me/ttd`. Sengaja **TTD sendiri**, bukan `/users/{id}/ttd` yang dikelola admin — kalau admin bisa ngunggahin TTD orang lain, sertifikat terakreditasi bisa ditandatangani atas nama orang yang nggak pernah menyetujuinya. PNG/JPG doang (SVG nggak kebaca dompdf).
+
+### #10 Kirim email
+
+`POST /api/certificates/{id}/kirim-email` — admin doang. PDF **dilampirkan** (bukan tautan unduh: tautan butuh login, pelanggan nggak punya akun). Tiap pengiriman tercatat di tabel `certificate_emails` buat audit — siapa ngirim ke siapa, kapan.
+
+Sertifikat yang PDF-nya belum jadi ditolak `422` — email tanpa lampiran lebih membingungkan daripada nggak ada email.
+
+⚠️ Jalan otomatis begitu SMTP lab diisi. Sekarang `MAIL_MAILER=log`, jadi isinya nongol di `storage/logs`, belum beneran kekirim.
+
+### #11 `room_id`
+
+Disepakati: dipakai. `POST`/`PUT /calibrations` nerima `room_id`, dan responsnya bawa:
+```jsonc
+"ruangan": { "id": 1, "nama": "Lab. Uji A" }
+```
+Ini yang ngisi kolom *Calibration Location*. Beda dari `lokasi` yang cuma `lab`/`onsite`. Silakan tambahin dropdown "Ruangan" — daftarnya dari `GET /api/rooms` (kebuka semua role).
+
+### #12 Laporan
+
+```
+GET /api/laporan/kalibrasi?dari=&sampai=&pelanggan_id=&teknisi_id=&kategori=&status=&keputusan=&page=
+GET /api/laporan/kalibrasi/export?format=pdf|csv   (+ filter yang sama)
+```
+Responsnya bawa `meta.ringkasan` (total/pass/fail/disetujui/bersertifikat) yang dihitung dari **seluruh hasil filter**, bukan cuma halaman yang lagi dibuka — biar angka footer nggak berubah tiap ganti halaman.
+
+Cakupan datanya ngikut aturan yang sama kayak `/calibrations`: teknisi cuma sesinya sendiri, admin & viewer seluruh lab. Ringkasan ikut disaring.
+
+⚠️ **`.xlsx` asli belum didukung** — butuh paket tambahan (phpspreadsheet) yang belum dipasang. `format=csv` kebuka langsung di Excel dan udah pakai BOM UTF-8 biar nama pelanggan non-ASCII nggak ngacak. Kalau kalian butuh `.xlsx` beneran, bilang — tinggal pasang paketnya.
+
+Ekspor dibatesin **5000 baris** sekali jalan; lebih dari itu dibalas `422` dengan pesan biar rentangnya dipersempit.
 
 ### Bentuk field baru (1–6)
 
