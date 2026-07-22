@@ -126,7 +126,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/arsip/folders', [FolderController::class, 'store']);
         Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
         Route::put('/arsip/folders/{folder}/pindah', [FolderController::class, 'pindah']);
-        Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
         Route::put('/arsip/berkas/{calibration}/pindah', [FolderController::class, 'pindahBerkas']);
 
         Route::post('/equipments', [EquipmentController::class, 'store']);
@@ -156,6 +155,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
+
+        // Hapus folder arsip: ADMIN DOANG, bukan teknisi. Teknisi boleh nyusun
+        // (bikin/rename/pindah) tapi nggak boleh ngilangin — arsip lab itu
+        // barang audit, dan folder bisa berisi sertifikat yang jadi bukti
+        // akreditasi KAN. Sengaja lebih ketat dari route arsip yang lain.
+        Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);

@@ -13,6 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -50,6 +51,8 @@ class GenerateCertificate implements ShouldQueue
         if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
             return;
         }
+
+        $this->peringatkanKalauUrlLokal();
 
         $sertifikat = DB::transaction(function () use ($sesi): Certificate {
             $nomor = $this->nomorBerikutnya($sesi->organization_id);
@@ -218,6 +221,36 @@ class GenerateCertificate implements ShouldQueue
         $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
 
         return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    /**
+     * Teriak di log kalau `APP_URL` masih alamat lokal waktu sertifikat dibikin.
+     *
+     * `qr_payload` DIBEKUKAN di sini dan ikut TERCETAK di PDF. Kalau APP_URL
+     * masih `localhost` atau IP LAN, QR di kertas yang dipegang pelanggan
+     * nggak akan bisa dipindai siapa pun — dan itu baru ketahuan setelah
+     * sertifikatnya beredar, waktu udah nggak bisa ditarik balik.
+     *
+     * Sengaja cuma warning, bukan gagal keras: di mesin dev APP_URL memang
+     * lokal, dan bikin generate sertifikat mati total di dev cuma bikin orang
+     * matiin pengecekannya.
+     */
+    private function peringatkanKalauUrlLokal(): void
+    {
+        $host = parse_url((string) config('app.url'), PHP_URL_HOST) ?: '';
+
+        $lokal = $host === ''
+            || in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+            || (bool) preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/', $host);
+
+        if ($lokal) {
+            Log::warning(
+                'APP_URL masih alamat lokal waktu sertifikat dibikin — QR verifikasi '
+                .'yang tercetak di PDF nggak bakal bisa dipindai pelanggan. '
+                .'Isi APP_URL dengan domain publik sebelum nerbitin sertifikat sungguhan.',
+                ['app_url' => config('app.url'), 'calibration_session_id' => $this->calibrationSessionId],
+            );
+        }
     }
 
     /** Nomor sertifikat urut per organisasi per bulan: CAL/2026/07/0001. */
