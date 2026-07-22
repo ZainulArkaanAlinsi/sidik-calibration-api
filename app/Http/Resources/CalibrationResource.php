@@ -107,6 +107,20 @@ class CalibrationResource extends JsonResource
                 // halaman verifikasi publik, bisa dibuka siapa aja tanpa login.
                 'qr_token' => $this->certificate->qr_token,
                 'qr_url' => $this->certificate->qr_payload,
+                // Kolom "Issuance Date" di sertifikat.
+                'tanggal_terbit' => $this->certificate->diterbitkan_pada?->toIso8601ZuluString(),
+                'berlaku_sampai' => $this->certificate->berlaku_sampai?->toIso8601ZuluString(),
+                // Dikembar dari `penanda_tangan` di level atas — kontrak mobile
+                // bacanya dari sini (blok tanda tangan nempel ke sertifikat).
+                // Yang di level atas tetap ada karena kepakai buat sesi yang
+                // udah disetujui tapi PDF-nya belum kelar digenerate.
+                'penanda_tangan' => $this->reviewer ? [
+                    'nama' => $this->reviewer->name,
+                    'jabatan' => $this->reviewer->department,
+                    'ttd_url' => $this->reviewer->ttd_path
+                        ? Storage::disk('public')->url($this->reviewer->ttd_path)
+                        : null,
+                ] : null,
             ] : null,
 
             'suhu_ruang' => $this->suhu_ruang,

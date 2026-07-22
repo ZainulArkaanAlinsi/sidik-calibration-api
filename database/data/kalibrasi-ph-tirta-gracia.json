@@ -77,7 +77,9 @@
   },
   "sesi": {
     "nomor_sesi": "2405.13.A",
+    "nomor_order": "2405.13.A",
     "tanggal_kalibrasi": "2024-05-26",
+    "tanggal_terima": "2024-05-26",
     "lokasi": "lab",
     "suhu_ruang_awal": 21.3,
     "suhu_ruang_akhir": 21.5,
