@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\Equipment;
 use App\Models\Standard;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 
 /**
@@ -353,7 +354,7 @@ class GumCalculator
      */
     public function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
     {
-        if ($equipment->equipment_category_id === null || $equipment->nama_alat_kemampuan === null) {
+        if ($equipment->equipment_category_id === null) {
             return null;
         }
 
@@ -362,6 +363,30 @@ class GumCalculator
         $this->kemampuanPerKategori[$kategoriId] ??= CalibrationCapability::query()
             ->where('equipment_category_id', $kategoriId)
             ->get();
+
+        // Alat belum di-link ke jenis kemampuan. Dia bakal jatuh ke jalur hitung
+        // GENERIK — dan itu ngasih U yang jauh beda dari CMC. Diam-diam jatuh ke
+        // situ padahal kategorinya PUNYA CMC itu hampir selalu salah setup, bukan
+        // keputusan sadar: alatnya kelihatan kalibrasi normal, sertifikatnya
+        // terbit, tapi angka ketidakpastiannya bukan yang diklaim lab.
+        if ($equipment->nama_alat_kemampuan === null) {
+            if ($this->kemampuanPerKategori[$kategoriId]->isNotEmpty()) {
+                Log::warning(
+                    'Alat belum di-link ke kemampuan kalibrasi (`nama_alat_kemampuan` kosong), '
+                    .'padahal kategorinya punya CMC. Perhitungan jatuh ke jalur generik — '
+                    .'ketidakpastiannya bakal beda dari CMC lab.',
+                    [
+                        'equipment_id' => $equipment->id,
+                        'nama_alat' => $equipment->nama_alat,
+                        'kategori_id' => $kategoriId,
+                        'kandidat_kemampuan' => $this->kemampuanPerKategori[$kategoriId]
+                            ->pluck('nama_alat')->unique()->values()->all(),
+                    ],
+                );
+            }
+
+            return null;
+        }
 
         $kandidat = $this->kemampuanPerKategori[$kategoriId]
             ->where('nama_alat', $equipment->nama_alat_kemampuan);

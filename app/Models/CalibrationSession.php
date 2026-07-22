@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'organization_id', 'equipment_id', 'room_id', 'folder_id', 'order_item_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
-    'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
+    'nomor_sesi', 'nomor_order', 'nomor_sertifikat', 'dihitung_oleh', 'metode_kalibrasi', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'suhu_ruang', 'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
     // Kondisi lingkungan rinci (worksheet pH): awal/akhir + koreksi + U95% + label thermohygro.
     'suhu_ruang_awal', 'suhu_ruang_akhir', 'kelembaban_awal', 'kelembaban_akhir',

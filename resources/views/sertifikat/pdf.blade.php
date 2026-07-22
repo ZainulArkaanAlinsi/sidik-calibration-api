@@ -217,7 +217,14 @@
 
     <table class="ttd">
         <tr>
-            <td></td>
+            {{-- "Calculated by" pakai INISIAL (mis. NR); penanda tangan di
+                 sebelah kanan pakai nama lengkap. Dua orang yang bisa beda. --}}
+            <td>
+                @if (! empty($dihitungOleh))
+                    <div>Dihitung oleh</div>
+                    <div class="garis"><strong>{{ $dihitungOleh }}</strong></div>
+                @endif
+            </td>
             <td>
                 <div>{{ $sesi->organization->alamat ? \Illuminate\Support\Str::before($sesi->organization->alamat, ',') : '' }}, {{ $sertifikat->diterbitkan_pada?->translatedFormat('d F Y') }}</div>
                 @if (! empty($ttdPenandaTangan))
