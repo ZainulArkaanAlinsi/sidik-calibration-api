@@ -16,8 +16,8 @@ Role yang ada saat ini cuma **3**: `admin`, `teknisi`, `viewer`.
 |---|---|---|
 | Publik (tanpa login) | 6 | siapa saja |
 | Semua role (login) | 25 | admin, teknisi, viewer |
-| Tulis kalibrasi & alat | 12 | admin, teknisi |
-| Admin saja | 30 | admin |
+| Tulis kalibrasi & alat | 11 | admin, teknisi |
+| Admin saja | 31 | admin |
 
 ---
 
@@ -78,13 +78,13 @@ POST   /calibrations/{calibration}/measurements/verify
 POST   /arsip/folders
 PUT    /arsip/folders/{folder}
 PUT    /arsip/folders/{folder}/pindah
-DELETE /arsip/folders/{folder}
 PUT    /arsip/berkas/{calibration}/pindah
 ```
 
 ## 4. `admin` saja
 
 ```
+DELETE /arsip/folders/{folder}
 POST   /calibrations/{calibration}/approve
 POST   /calibrations/{calibration}/reject
 POST   /certificates/{certificate}/retry
@@ -154,7 +154,7 @@ Dokumen Fase 2 nulis *"arsip read-only"* — itu sudah **tidak berlaku**. Folder
 
 | # | Pertanyaan | Kondisi sekarang |
 |---|---|---|
-| 1 | Siapa boleh hapus folder? | **admin & teknisi** — beda dari saran kalian (admin doang). **Perlu keputusan**: mau diketatkan? |
+| 1 | Siapa boleh hapus folder? | ✅ **admin doang** — sesuai saran kalian. Teknisi boleh bikin/rename/pindah, nggak boleh hapus |
 | 2 | Hapus beneran hilang? | **Soft delete** ✅ sesuai saran |
 | 3 | Folder berisi boleh dihapus? | **Ditolak 422** ✅ sesuai saran |
 | 4 | Sertifikat boleh dihapus dari arsip? | **Tidak bisa** ✅ — yang dipindah cuma penempatan folder; sesi & sertifikat nggak pernah terhapus (`folder_id` nullable, `nullOnDelete`) |

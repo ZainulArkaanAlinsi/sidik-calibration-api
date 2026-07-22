@@ -397,6 +397,36 @@ class FolderArsipTest extends TestCase
         $this->actingAs($adminLain)->deleteJson("/api/arsip/folders/{$folder->id}")->assertNotFound();
     }
 
+    /**
+     * Teknisi boleh NYUSUN arsip tapi nggak boleh NGILANGIN — folder bisa
+     * berisi sertifikat yang jadi bukti akreditasi KAN, jadi hapus dikunci ke
+     * admin. Sengaja lebih ketat dari route arsip yang lain.
+     */
+    public function test_teknisi_boleh_nyusun_tapi_nggak_boleh_hapus_folder(): void
+    {
+        $akar = Folder::akarUntuk($this->perusahaan);
+
+        // Bikin & rename: boleh.
+        $dibuat = $this->actingAs($this->teknisi)
+            ->postJson('/api/arsip/folders', ['parent_id' => $akar->id, 'nama' => '2026'])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/arsip/folders/{$dibuat}", ['nama' => '2026 Revisi'])
+            ->assertOk();
+
+        // Hapus: ditolak, walaupun foldernya kosong & dia sendiri yang bikin.
+        $this->actingAs($this->teknisi)
+            ->deleteJson("/api/arsip/folders/{$dibuat}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('folders', ['id' => $dibuat, 'deleted_at' => null]);
+
+        // Admin tetap bisa.
+        $this->actingAs($this->admin)->deleteJson("/api/arsip/folders/{$dibuat}")->assertOk();
+    }
+
     public function test_viewer_nggak_boleh_nyusun_folder(): void
     {
         $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);

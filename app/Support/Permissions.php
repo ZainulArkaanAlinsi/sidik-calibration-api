@@ -54,7 +54,6 @@ class Permissions
         'kalibrasi.verifikasi-ocr',
         'arsip.folder.buat',
         'arsip.folder.ubah',
-        'arsip.folder.hapus',
         'arsip.folder.pindah',
         'arsip.berkas.pindah',
     ];
@@ -64,6 +63,9 @@ class Permissions
         'kalibrasi.approve',
         'kalibrasi.reject',
         'sertifikat.terbitkan-ulang',
+        // Hapus folder arsip sengaja admin doang — teknisi boleh nyusun, nggak
+        // boleh ngilangin. Arsip lab itu barang audit.
+        'arsip.folder.hapus',
         'pelanggan.lihat',
         'pelanggan.tambah',
         'pelanggan.ubah',
