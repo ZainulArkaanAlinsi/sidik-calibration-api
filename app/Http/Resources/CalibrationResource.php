@@ -69,6 +69,11 @@ class CalibrationResource extends JsonResource
                 'pdf_url' => $this->certificate->status === Certificate::STATUS_TERBIT
                     ? route('certificates.download', $this->certificate)
                     : null,
+                // Buat mobile nge-render QR verifikasi sendiri di layar (backend
+                // nggak ngirim gambar). `qr_url` itu alamat yang di-encode ke QR —
+                // halaman verifikasi publik, bisa dibuka siapa aja tanpa login.
+                'qr_token' => $this->certificate->qr_token,
+                'qr_url' => $this->certificate->qr_payload,
             ] : null,
 
             'suhu_ruang' => $this->suhu_ruang,
