@@ -37,6 +37,9 @@ POST /reset-password
 ```
 GET  /me
 GET  /me/permissions
+GET  /notifications
+POST /notifications/{id}/baca
+POST /notifications/baca-semua
 GET  /dashboard
 GET  /dashboard/tren
 GET  /categories

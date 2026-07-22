@@ -12,6 +12,7 @@ use App\Models\Folder;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\GumCalculator;
+use App\Support\KirimNotifikasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -248,6 +249,16 @@ class CalibrationController extends Controller
             'catatan_revisi' => $data['catatan_revisi'],
         ]);
 
+        // Teknisi pembuatnya harus tahu kerjaannya dibalikin — kalau nggak,
+        // sesi nyangkut di `perlu_revisi` tanpa ada yang ngerjain.
+        KirimNotifikasi::kePengguna(
+            $calibration->teknisi,
+            'kalibrasi.perlu_revisi',
+            "Sesi {$calibration->nomor_sesi} diminta direvisi",
+            $data['catatan_revisi'],
+            ['jenis' => 'kalibrasi', 'id' => $calibration->id],
+        );
+
         return response()->json([
             'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
         ]);
@@ -437,7 +448,23 @@ class CalibrationController extends Controller
                 : now(),
         ]);
 
-        return $sesi->fresh()->load(self::RELASI);
+        $sesi = $sesi->fresh()->load(self::RELASI);
+
+        // Begitu masuk antrean approval, admin WAJIB dikabarin — tanpa ini sesi
+        // cuma ketahuan kalau ada admin yang kebetulan buka layar approval, dan
+        // kerjaan teknisi bisa nganggur berhari-hari. Draft nggak dikabarin:
+        // belum minta diapa-apain.
+        if ($sesi->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+            KirimNotifikasi::keAdmin(
+                $sesi->organization_id,
+                'kalibrasi.menunggu_approval',
+                "Sesi {$sesi->nomor_sesi} menunggu persetujuan",
+                trim(($sesi->equipment?->nama_alat ?? 'Alat').' · teknisi '.($sesi->teknisi?->name ?? '-')),
+                ['jenis' => 'kalibrasi', 'id' => $sesi->id],
+            );
+        }
+
+        return $sesi;
     }
 
     /**

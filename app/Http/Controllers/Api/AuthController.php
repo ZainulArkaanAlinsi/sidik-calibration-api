@@ -8,6 +8,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\KirimNotifikasi;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,7 @@ class AuthController extends Controller
         $data = $request->validated();
 
         // role & status di-hardcode, NGGAK diambil dari request.
-        User::create([
+        $pendaftar = User::create([
             // Pendaftar langsung nempel ke organisasi bawaan. Satu instalasi =
             // satu PT, jadi nggak ada yang perlu dipilih — dan kalau dibiarin null,
             // layar profil di mobile bakal nampilin PT kosong.
@@ -70,6 +71,17 @@ class AuthController extends Controller
             'role' => User::ROLE_TEKNISI,
             'status' => User::STATUS_PENDING,
         ]);
+
+        // Tanpa ini pendaftar kejebak di layar "akun belum disetujui" tanpa batas
+        // waktu — nggak ada yang tahu dia nunggu kecuali ada admin yang iseng
+        // buka daftar pengguna.
+        KirimNotifikasi::keAdmin(
+            $pendaftar->organization_id,
+            'pengguna.menunggu_persetujuan',
+            'Pendaftaran akun baru menunggu persetujuan',
+            trim($pendaftar->name.' · '.($pendaftar->department ?? '-')),
+            ['jenis' => 'pengguna', 'id' => $pendaftar->id],
+        );
 
         return response()->json([
             'message' => 'Pendaftaran terkirim. Akun menunggu persetujuan admin.',

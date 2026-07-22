@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Support\KirimNotifikasi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -90,6 +91,17 @@ class GenerateCertificate implements ShouldQueue
             // Status `gagal` bikin tombol retry muncul di mobile, bukan diem-diem
             // ngilang. Sesi tetap `disetujui`.
             $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
+
+            // Admin dikabarin — sebelumnya kegagalan ini cuma ketahuan kalau ada
+            // yang kebetulan buka layar sertifikatnya. Sesi udah disetujui tapi
+            // pelanggan nggak pernah dapat PDF-nya, dan nggak ada yang sadar.
+            KirimNotifikasi::keAdmin(
+                $sesi->organization_id,
+                'sertifikat.gagal',
+                "Sertifikat {$sertifikat->nomor} gagal dibuat",
+                'Sesi '.$sesi->nomor_sesi.' · coba terbitkan ulang dari layar sertifikat.',
+                ['jenis' => 'sertifikat', 'id' => $sertifikat->id],
+            );
 
             throw $e;
         }

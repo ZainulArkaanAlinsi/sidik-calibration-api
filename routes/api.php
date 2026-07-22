@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ArsipController;
 use App\Http\Controllers\Api\FolderController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CategoryController;
@@ -60,6 +61,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
     // yang ilang.
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
+    // Notifikasi milik pemanggil. Polling aja (mobile refresh waktu app dibuka),
+    // belum pakai push. `?belum_dibaca=1` buat badge angka di lonceng.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/baca-semua', [NotificationController::class, 'bacaSemua']);
+    Route::post('/notifications/{id}/baca', [NotificationController::class, 'baca']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     // Deret waktu masuk-vs-selesai, rentang & granularitas bebas — dipakai
