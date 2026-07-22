@@ -30,7 +30,7 @@ class CalibrationController extends Controller
     public function __construct(private readonly GumCalculator $gum) {}
 
     /** Relasi yang selalu dibutuhin CalibrationResource. */
-    private const RELASI = ['equipment', 'teknisi', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
+    private const RELASI = ['equipment.customer', 'teknisi', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
 
     public function index(Request $request): AnonymousResourceCollection
     {

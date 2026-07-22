@@ -27,14 +27,33 @@ class CalibrationResource extends JsonResource
             'id' => $this->id,
             'nomor_sesi' => $this->nomor_sesi,
             'nomor_order' => $this->nomor_order,
+            // Digemukin biar layar pencocokan & cetak sertifikat nggak perlu
+            // nembak GET /equipments lagi cuma buat ngisi kop.
             'equipment' => [
                 'id' => $this->equipment?->id,
                 'nama_alat' => $this->equipment?->nama_alat,
                 'serial_number' => $this->equipment?->serial_number,
+                'merk' => $this->equipment?->merk,
+                'model' => $this->equipment?->model,
+                'no_identifikasi' => $this->equipment?->no_identifikasi,
+                'range_min' => $this->equipment?->range_min,
+                'range_max' => $this->equipment?->range_max,
+                'satuan' => $this->equipment?->satuan,
+                'rentang_ukur' => $this->equipment?->rentangUkur(),
+                'resolusi' => $this->equipment?->resolusi,
+                'toleransi' => $this->equipment?->toleransi,
+                'pelanggan' => [
+                    'id' => $this->equipment?->customer?->id,
+                    'nama' => $this->equipment?->customer?->nama,
+                    'alamat' => $this->equipment?->customer?->alamat,
+                ],
             ],
             'teknisi' => [
                 'id' => $this->teknisi?->id,
                 'nama' => $this->teknisi?->name,
+                // Kolom "Technician ID" di sertifikat isinya inisial (mis. "DR"),
+                // bukan nama panjang.
+                'employee_id' => $this->teknisi?->employee_id,
             ],
             'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toIso8601ZuluString(),
             'tanggal_terima' => $this->tanggal_terima?->toIso8601ZuluString(),
@@ -111,6 +130,11 @@ class CalibrationResource extends JsonResource
                 'id' => $this->standard->id,
                 'nama' => $this->standard->nama,
                 'no_sertifikat' => $this->standard->no_sertifikat,
+                'serial_number' => $this->standard->serial_number,
+                // Kolom "Merk/Type" di sertifikat — digabung di sini biar mobile
+                // nggak nyusun sendiri (gampang beda spasi antar layar).
+                'merk_type' => trim(($this->standard->merk ?? '').' '.($this->standard->model ?? '')) ?: null,
+                'tertelusur_ke' => $this->standard->tertelusur_ke,
             ] : null,
             'titik' => $this->uncertaintyCalculations
                 ->sortBy('titik_ke')
@@ -138,6 +162,9 @@ class CalibrationResource extends JsonResource
                         'id' => $titik->standard->id,
                         'nama' => $titik->standard->nama,
                         'no_sertifikat' => $titik->standard->no_sertifikat,
+                        'serial_number' => $titik->standard->serial_number,
+                        'merk_type' => trim(($titik->standard->merk ?? '').' '.($titik->standard->model ?? '')) ?: null,
+                        'tertelusur_ke' => $titik->standard->tertelusur_ke,
                     ] : null,
                 ]),
 

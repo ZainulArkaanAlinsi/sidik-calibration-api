@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /** @mixin Organization */
 class OrganizationResource extends JsonResource
@@ -25,6 +26,10 @@ class OrganizationResource extends JsonResource
             'akreditasi_mulai' => $this->akreditasi_mulai?->toIso8601ZuluString(),
             'akreditasi_berakhir' => $this->akreditasi_berakhir?->toIso8601ZuluString(),
             'akreditasi_masih_berlaku' => $this->akreditasiMasihBerlaku(),
+            // Logo kop sertifikat. Disimpen di disk `public`, jadi URL-nya bisa
+            // dibuka langsung tanpa token — nggak ada yang rahasia di logo lab.
+            // null = belum pernah diunggah; PDF sertifikat jatuh ke logo bawaan.
+            'logo_url' => $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null,
             'settings' => $this->settings,
         ];
     }
