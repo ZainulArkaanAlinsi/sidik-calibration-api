@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Datanya disalin dari lampiran akreditasi asli:
- * `Project-PT-ASMO/LK 285 IDN_PT Sidik_draft.pdf` (9 halaman, 48 alat).
+ * `Project-PT-Sidik/LK 285 IDN_PT Sidik_draft.pdf` (9 halaman, 48 alat).
  */
 class OrganizationSeeder extends Seeder
 {

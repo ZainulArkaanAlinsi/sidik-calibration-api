@@ -45,10 +45,10 @@ class DatabaseSeeder extends Seeder
     private function seedUsers(): void
     {
         $accounts = [
-            ['employee_id' => 'ASM-0001', 'name' => 'Admin ASMO', 'email' => 'admin@asmo.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0002', 'name' => 'Teknisi ASMO', 'email' => 'teknisi@asmo.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0003', 'name' => 'Viewer ASMO', 'email' => 'viewer@asmo.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0099', 'name' => 'Eko Pending', 'email' => 'eko@asmo.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
+            ['employee_id' => 'SDK-0001', 'name' => 'Admin Sidik', 'email' => 'admin@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0002', 'name' => 'Teknisi Sidik', 'email' => 'teknisi@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0003', 'name' => 'Viewer Sidik', 'email' => 'viewer@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0099', 'name' => 'Eko Pending', 'email' => 'eko@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
         ];
 
         foreach ($accounts as $account) {
