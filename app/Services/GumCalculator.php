@@ -351,7 +351,7 @@ class GumCalculator
      * sama, jadi kategorinya juga sama. Tanpa cache ini query-nya nge-N+1
      * satu kali per titik.
      */
-    private function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
+    public function kemampuanUntukTitik(Equipment $equipment, float $titikUkur): ?CalibrationCapability
     {
         if ($equipment->equipment_category_id === null || $equipment->nama_alat_kemampuan === null) {
             return null;

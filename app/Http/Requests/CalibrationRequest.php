@@ -128,6 +128,74 @@ class CalibrationRequest extends FormRequest
     }
 
     /**
+     * Selisih maksimum antara `titik_ukur` kiriman klien sama nilai standar
+     * hasil hitung dari suhu larutan.
+     *
+     * Kenapa 0.005: di data asli, selisih nilai yang bener cuma 1.9e-5 (buffer
+     * pH 4) sampai ~0 (pH 7 & 10). Sedangkan kalau yang dikirim keliru nilai
+     * NOMINAL (label botol), selisihnya 0.011–0.031. Ambang ini duduk jauh di
+     * antara keduanya — longgar buat variasi lot buffer yang wajar, tapi tetap
+     * nangkep kekeliruan nominal-vs-terkoreksi.
+     */
+    private const MAKS_SELISIH_TITIK_UKUR = 0.005;
+
+    /**
+     * Periksa `titik_ukur` beneran nilai standar TERKOREKSI SUHU, bukan angka
+     * nominal di label botol.
+     *
+     * Ini nangkep kesalahan yang paling nggak keliatan di alur pH: nilai buffer
+     * bergerak ngikutin suhu larutan (pH 4 @22.2°C = 4.0092, bukan 3.99), dan
+     * `titik_ukur` dipakai langsung buat ngitung koreksi yang tercetak di
+     * sertifikat. Kalau yang dikirim nominal, pencocokan CMC TETAP berhasil
+     * (matching-nya pakai pembulatan + toleransi geser), nggak ada error sama
+     * sekali — cuma angka koreksinya yang salah, dan itu baru ketahuan kalau
+     * ada yang mbandingin sertifikat sama arsip lama.
+     *
+     * Cuma jalan kalau dua-duanya ada: kurva suhu buat titik itu (diisi lewat
+     * `PhMeterCapabilitySeeder`) DAN suhu larutan yang dicatat teknisi. Alat
+     * yang nilainya nggak bergantung suhu nggak kesentuh sama sekali.
+     */
+    private function periksaTitikUkurTerkoreksiSuhu(Validator $validator, ?Equipment $alat): void
+    {
+        if ($alat === null) {
+            return;
+        }
+
+        $gum = app(GumCalculator::class);
+
+        foreach ((array) $this->input('measurements', []) as $i => $titik) {
+            $suhu = array_filter(
+                array_map(fn ($s) => is_numeric($s) ? (float) $s : null, (array) ($titik['suhu'] ?? [])),
+                fn (?float $s): bool => $s !== null,
+            );
+
+            if ($suhu === [] || ! isset($titik['titik_ukur'])) {
+                continue;
+            }
+
+            $kemampuan = $gum->kemampuanUntukTitik($alat, (float) $titik['titik_ukur']);
+            $suhuRata = array_sum($suhu) / count($suhu);
+            $seharusnya = $kemampuan?->nilaiPadaSuhu($suhuRata);
+
+            if ($seharusnya === null) {
+                continue;
+            }
+
+            $selisih = abs((float) $titik['titik_ukur'] - $seharusnya);
+
+            if ($selisih > self::MAKS_SELISIH_TITIK_UKUR) {
+                $validator->errors()->add("measurements.$i.titik_ukur", sprintf(
+                    'Nilai standar titik ini kelihatannya belum dikoreksi suhu. Pada suhu larutan '
+                    .'%.1f °C nilainya %.6f, tapi yang dikirim %.6f (selisih %.4f). Kirim nilai '
+                    .'terkoreksi suhu, bukan angka nominal di label botol — `titik_ukur` dipakai '
+                    .'langsung buat ngitung koreksi yang tercetak di sertifikat.',
+                    $suhuRata, $seharusnya, (float) $titik['titik_ukur'], $selisih,
+                ));
+            }
+        }
+    }
+
+    /**
      * @return array<string, string>
      */
     public function messages(): array
@@ -205,6 +273,8 @@ class CalibrationRequest extends FormRequest
                     );
                 }
             }
+
+            $this->periksaTitikUkurTerkoreksiSuhu($validator, $alat);
 
             // Kalau ada metadata OCR: jumlahnya wajib sama persis dengan pembacaan
             // (dipetakan per-index), dan tiap foto yang dirujuk beneran ada di disk.

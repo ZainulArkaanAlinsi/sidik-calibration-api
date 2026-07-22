@@ -67,10 +67,18 @@ class PhMeterCapabilitySeeder extends Seeder
         // ci_suhu      : koef. sensitivitas suhu @25°C (sheet Nilai Koef. Sensitifitas).
         // u_perbedaan  : U95% pengaruh perbedaan suhu (konstanta lab).
         // ci_perbedaan : koef. sensitivitas komponen perbedaan suhu.
+        // koef_a/b/c: kurva nilai buffer terhadap suhu larutan (y = a·x² + b·x + c),
+        // dari sheet `Nilai koefisien Sensitifitas`. Dipakai buat MERIKSA
+        // `titik_ukur` kiriman klien — nilai buffer bergerak ngikutin suhu, jadi
+        // yang bener itu nilai terkoreksi (mis. 4.0092 @22.2°C), bukan angka
+        // nominal di botol (3.99).
         $titik = [
-            ['titik' => 4, 'cmc' => 0.023, 'ci_suhu' => 0.00077, 'u_perbedaan' => 0.01, 'ci_perbedaan' => 1.0],
-            ['titik' => 7, 'cmc' => 0.021, 'ci_suhu' => 0.00352, 'u_perbedaan' => 0.02, 'ci_perbedaan' => 0.00304],
-            ['titik' => 10, 'cmc' => 0.031, 'ci_suhu' => 0.01021, 'u_perbedaan' => 0.05, 'ci_perbedaan' => 0.00949],
+            ['titik' => 4, 'cmc' => 0.023, 'ci_suhu' => 0.00077, 'u_perbedaan' => 0.01, 'ci_perbedaan' => 1.0,
+                'koef_a' => 0.00003, 'koef_b' => -0.0023, 'koef_c' => 4.0455],
+            ['titik' => 7, 'cmc' => 0.021, 'ci_suhu' => 0.00352, 'u_perbedaan' => 0.02, 'ci_perbedaan' => 0.00304,
+                'koef_a' => 0.00008, 'koef_b' => -0.0076, 'koef_c' => 7.1182],
+            ['titik' => 10, 'cmc' => 0.031, 'ci_suhu' => 0.01021, 'u_perbedaan' => 0.05, 'ci_perbedaan' => 0.00949,
+                'koef_a' => 0.00009, 'koef_b' => -0.0148, 'koef_c' => 10.262],
         ];
 
         foreach ($titik as $t) {
@@ -92,6 +100,9 @@ class PhMeterCapabilitySeeder extends Seeder
                     'ci_suhu' => $t['ci_suhu'],
                     'u_perbedaan_suhu' => $t['u_perbedaan'],
                     'ci_perbedaan_suhu' => $t['ci_perbedaan'],
+                    'koef_suhu_a' => $t['koef_a'],
+                    'koef_suhu_b' => $t['koef_b'],
+                    'koef_suhu_c' => $t['koef_c'],
                 ],
             );
         }
