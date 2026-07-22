@@ -38,6 +38,15 @@ class CalibrationRequest extends FormRequest
             ],
             'tanggal_kalibrasi' => ['required', 'date', 'before_or_equal:today'],
             'nomor_order' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // Kolom "Certificate Number" di worksheet. Kalau kosong, backend
+            // yang ngasih nomor otomatis waktu sertifikatnya terbit.
+            'nomor_sertifikat' => ['sometimes', 'nullable', 'string', 'max:100'],
+            // Kolom "Calculated by" — INISIAL (mis. "NR"), bisa beda orang
+            // dari yang nandatangani.
+            'dihitung_oleh' => ['sometimes', 'nullable', 'string', 'max:50'],
+            // Kolom "Calibration Method". Kalau diisi, menang atas nomor IK
+            // yang diturunkan dari CMC.
+            'metode_kalibrasi' => ['sometimes', 'nullable', 'string', 'max:100'],
             // Tanggal alat diterima dari customer — logisnya nggak setelah
             // tanggal kalibrasinya sendiri.
             'tanggal_terima' => ['sometimes', 'nullable', 'date', 'before_or_equal:tanggal_kalibrasi'],

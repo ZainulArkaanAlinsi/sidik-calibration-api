@@ -28,6 +28,10 @@ class CalibrationResource extends JsonResource
             'id' => $this->id,
             'nomor_sesi' => $this->nomor_sesi,
             'nomor_order' => $this->nomor_order,
+            // Field "langkah awal" yang diisi manual/dari foto worksheet.
+            'nomor_sertifikat' => $this->nomor_sertifikat,
+            'dihitung_oleh' => $this->dihitung_oleh,
+            'metode_kalibrasi' => $this->metode_kalibrasi,
             // Digemukin biar layar pencocokan & cetak sertifikat nggak perlu
             // nembak GET /equipments lagi cuma buat ngisi kop.
             'equipment' => [

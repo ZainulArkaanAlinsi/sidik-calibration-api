@@ -55,7 +55,10 @@ class GenerateCertificate implements ShouldQueue
         $this->peringatkanKalauUrlLokal();
 
         $sertifikat = DB::transaction(function () use ($sesi): Certificate {
-            $nomor = $this->nomorBerikutnya($sesi->organization_id);
+            // Nomor dari worksheet menang kalau diisi — lab udah punya penomoran
+            // sendiri (mis. 012-CAL-524) dan itu yang tercetak di arsip mereka.
+            // Kosong → backend yang ngasih nomor otomatis, kayak sebelumnya.
+            $nomor = $sesi->nomor_sertifikat ?: $this->nomorBerikutnya($sesi->organization_id);
             $token = $this->tokenUnik();
 
             return $sesi->certificate()->updateOrCreate(
@@ -137,7 +140,14 @@ class GenerateCertificate implements ShouldQueue
                 ->unique('id'),
             // Nomor IK dari titik pertama yang punya CMC — semua titik dari
             // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
-            'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
+            // Metode yang diisi manual di worksheet menang atas nomor IK yang
+            // diturunkan dari CMC — teknisi kadang perlu nyatet revisi metode
+            // yang beda dari default.
+            'metodeKalibrasi' => $sesi->metode_kalibrasi
+                ?: $titik->first(fn ($t) => $t->metode !== null)?->metode,
+            // Kolom "Calculated by" — INISIAL, dan orangnya bisa beda dari yang
+            // nandatangani (yang itu pakai nama lengkap).
+            'dihitungOleh' => $sesi->dihitung_oleh,
             // Tabel pembacaan Before/After adjustment (worksheet pH). Kosong buat
             // alat yang cuma nyimpen satu tahap tanpa rincian pembacaan.
             'bacaSebelum' => self::ringkasPembacaan($sesi, 'sebelum_adjustment', $titik),
