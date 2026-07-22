@@ -13,7 +13,7 @@ use RuntimeException;
  * kategori + kemampuan kalibrasi (CMC). Ini yang jadi batas: alat di luar rentang
  * ini nggak boleh dikalibrasi.
  *
- * Datanya dulu dibaca dari `Project-PT-ASMO/` (vault catatan, di luar repo
+ * Datanya dulu dibaca dari `Project-PT-Sidik/` (vault catatan, di luar repo
  * kode), sampai folder itu kehapus dan seeder ini gagal total. Sekarang
  * disalin ke `database/data/` — bagian dari kodebase, ikut ke-commit, nggak
  * gantung ke folder catatan pribadi yang bisa berubah/kehapus kapan aja.
