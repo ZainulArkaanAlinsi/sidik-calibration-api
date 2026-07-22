@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'organization_id', 'equipment_id', 'folder_id', 'order_item_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
+    'organization_id', 'equipment_id', 'room_id', 'folder_id', 'order_item_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'suhu_ruang', 'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
     // Kondisi lingkungan rinci (worksheet pH): awal/akhir + koreksi + U95% + label thermohygro.
@@ -98,6 +98,17 @@ class CalibrationSession extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    /**
+     * Ruangan lab tempat sesi ini dikerjain (mis. "Lab. Uji A"). Null buat sesi
+     * lama atau kalibrasi onsite yang bukan di ruangan lab kita.
+     *
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
     }
 
     /** @return BelongsTo<User, $this> */

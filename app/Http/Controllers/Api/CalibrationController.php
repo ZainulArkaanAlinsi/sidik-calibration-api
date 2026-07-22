@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Sesi kalibrasi: draft → menunggu_approval → disetujui / perlu_revisi.
@@ -30,7 +31,7 @@ class CalibrationController extends Controller
     public function __construct(private readonly GumCalculator $gum) {}
 
     /** Relasi yang selalu dibutuhin CalibrationResource. */
-    private const RELASI = ['equipment.customer', 'teknisi', 'reviewer', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
+    private const RELASI = ['equipment.customer', 'room', 'teknisi', 'reviewer', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -92,6 +93,7 @@ class CalibrationController extends Controller
                 'nomor_order' => $request->input('nomor_order'),
                 'input_method' => $request->string('input_method', 'manual'),
                 'lokasi' => $request->string('lokasi', 'lab'),
+                'room_id' => $request->input('room_id'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
                 'tanggal_terima' => $request->date('tanggal_terima'),
                 ...$this->dataLingkungan($request),
@@ -125,6 +127,105 @@ class CalibrationController extends Controller
         $customer = Equipment::find($equipmentId)?->customer;
 
         return $customer ? Folder::akarUntuk($customer)->id : null;
+    }
+
+    /**
+     * Hitung hasil TANPA nyimpen apa pun — buat layar input yang nampilin
+     * koreksi & U95% sambil teknisi ngetik.
+     *
+     * Kenapa nggak dihitung di mobile aja: rumusnya (budget ketidakpastian,
+     * Welch-Satterthwaite, k dari t-student, aturan max(U, CMC)) cuma ada di
+     * sini. Kalau mobile bikin versinya sendiri, angka di layar bisa beda tipis
+     * sama yang akhirnya tercetak di sertifikat — dan buat lab terakreditasi,
+     * dua angka beda buat pengukuran yang sama itu temuan.
+     *
+     * Nggak nyentuh DB sama sekali: nggak bikin sesi, nggak nomor sesi, nggak
+     * notifikasi. Aman dipanggil tiap kali teknisi ngetik.
+     */
+    public function preview(Request $request): JsonResponse
+    {
+        $organizationId = $request->user()->organization_id;
+
+        $data = $request->validate([
+            'equipment_id' => [
+                'required',
+                Rule::exists('equipments', 'id')->where('organization_id', $organizationId)->whereNull('deleted_at'),
+            ],
+            'standard_id' => [
+                'required',
+                Rule::exists('standards', 'id')->where('organization_id', $organizationId)->whereNull('deleted_at'),
+            ],
+            'measurements' => ['required', 'array', 'min:1'],
+            'measurements.*.titik_ukur' => ['required', 'numeric'],
+            'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
+            'measurements.*.pembacaan.*' => ['required', 'numeric'],
+            'measurements.*.standard_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('standards', 'id')->where('organization_id', $organizationId)->whereNull('deleted_at'),
+            ],
+        ], [
+            'measurements.*.pembacaan.min' => 'Tiap titik minimal '.GumCalculator::MIN_PENGULANGAN
+                .' pembacaan — standar deviasi nggak bisa dihitung dari satu angka.',
+        ]);
+
+        $alat = Equipment::findOrFail($data['equipment_id']);
+
+        if ($alat->toleransi === null) {
+            return response()->json([
+                'message' => 'Alat ini belum punya nilai toleransi, jadi PASS/FAIL nggak bisa diputuskan.',
+            ], 422);
+        }
+
+        $standarDefault = Standard::findOrFail($data['standard_id']);
+        $standarPerTitik = Standard::whereIn('id', array_filter(array_column($data['measurements'], 'standard_id')))
+            ->get()->keyBy('id');
+
+        $keputusanSesi = 'PASS';
+        $titik = [];
+
+        foreach (array_values($data['measurements']) as $index => $m) {
+            $standar = isset($m['standard_id'])
+                ? ($standarPerTitik->get($m['standard_id']) ?? $standarDefault)
+                : $standarDefault;
+
+            $hasil = $this->gum->hitungTitik(
+                $index + 1,
+                (float) $m['titik_ukur'],
+                array_map(floatval(...), array_values($m['pembacaan'])),
+                $alat,
+                $standar,
+            );
+
+            if ($hasil['keputusan'] === 'FAIL') {
+                $keputusanSesi = 'FAIL';
+            }
+
+            // Bentuknya disamain sama `titik[]` di CalibrationResource biar
+            // mobile bisa pakai parser yang sama persis.
+            $titik[] = [
+                'titik_ke' => $hasil['titik_ke'],
+                'titik_ukur' => $hasil['titik_ukur'],
+                'rata_rata' => $hasil['rata_rata'],
+                'error' => $hasil['error'],
+                'koreksi' => $hasil['koreksi'],
+                'standar_deviasi' => $hasil['standar_deviasi'],
+                'jumlah_pengulangan' => $hasil['jumlah_pengulangan'],
+                'type_a' => $hasil['type_a'],
+                'type_b' => $hasil['type_b'],
+                'type_b_components' => $hasil['type_b_components'],
+                'ketidakpastian_gabungan' => $hasil['ketidakpastian_gabungan'],
+                'faktor_cakupan_k' => $hasil['faktor_cakupan_k'],
+                'ketidakpastian_diperluas' => $hasil['ketidakpastian_diperluas'],
+                'toleransi' => $hasil['toleransi'],
+                'keputusan' => $hasil['keputusan'],
+                'metode' => $hasil['metode'],
+            ];
+        }
+
+        return response()->json(['data' => [
+            'keputusan' => $keputusanSesi,
+            'titik' => $titik,
+        ]]);
     }
 
     public function show(Request $request, CalibrationSession $calibration): JsonResponse
@@ -172,6 +273,7 @@ class CalibrationController extends Controller
                 'nomor_order' => $request->input('nomor_order'),
                 'input_method' => $request->string('input_method', 'manual'),
                 'lokasi' => $request->string('lokasi', 'lab'),
+                'room_id' => $request->input('room_id'),
                 'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
                 'tanggal_terima' => $request->date('tanggal_terima'),
                 ...$this->dataLingkungan($request),

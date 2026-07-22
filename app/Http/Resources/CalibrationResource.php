@@ -140,6 +140,8 @@ class CalibrationResource extends JsonResource
                 'thermohygro' => $this->thermohygro,
             ],
             'lokasi' => $this->lokasi,
+            // Ruangan lab spesifik. `lokasi` di atas cuma lab vs onsite.
+            'ruangan' => $this->room ? ['id' => $this->room->id, 'nama' => $this->room->nama] : null,
             'standar_acuan' => $this->standard ? [
                 'id' => $this->standard->id,
                 'nama' => $this->standard->nama,
