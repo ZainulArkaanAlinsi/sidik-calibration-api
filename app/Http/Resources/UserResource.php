@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Bentuknya dikunci sama docs/kontrak-api.md di repo mobile — nama field pakai
@@ -24,6 +25,9 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'status' => $this->status,
             'department' => $this->department,
+            // Gambar tanda tangan buat sertifikat. null = belum diunggah;
+            // sertifikat tetap terbit, cuma nama & jabatan yang tercetak.
+            'ttd_url' => $this->ttd_path ? Storage::disk('public')->url($this->ttd_path) : null,
             'organization_id' => $this->organization_id,
         ];
     }

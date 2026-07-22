@@ -8,6 +8,7 @@ use App\Models\RawMeasurement;
 use App\Models\UncertaintyCalculation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Bentuknya dikunci sama docs/kontrak-api.md bagian 4 (repo mobile).
@@ -55,6 +56,19 @@ class CalibrationResource extends JsonResource
                 // bukan nama panjang.
                 'employee_id' => $this->teknisi?->employee_id,
             ],
+            // Penanda tangan sertifikat = admin yang meng-approve sesi ini.
+            // "Manajer Teknis" itu ATRIBUT (`department`), bukan role tersendiri —
+            // keputusan pemilik produk, lihat MATRIKS-PERAN.md. null selama sesi
+            // belum disetujui.
+            'penanda_tangan' => $this->reviewer ? [
+                'id' => $this->reviewer->id,
+                'nama' => $this->reviewer->name,
+                'jabatan' => $this->reviewer->department,
+                'ttd_url' => $this->reviewer->ttd_path
+                    ? Storage::disk('public')->url($this->reviewer->ttd_path)
+                    : null,
+            ] : null,
+
             'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toIso8601ZuluString(),
             'tanggal_terima' => $this->tanggal_terima?->toIso8601ZuluString(),
             'status' => $this->status,

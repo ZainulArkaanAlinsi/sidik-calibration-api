@@ -13,6 +13,7 @@ use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -91,6 +92,41 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json(['data' => new UserResource($request->user())]);
+    }
+
+    /**
+     * Unggah tanda tangan SENDIRI buat dicetak di sertifikat. Multipart, field `ttd`.
+     *
+     * Sengaja `/me/ttd`, bukan `/users/{user}/ttd` yang dikelola admin: tanda
+     * tangan itu milik orangnya. Kalau admin bisa ngunggahin TTD orang lain,
+     * sertifikat terakreditasi bisa ditandatangani atas nama orang yang nggak
+     * pernah menyetujuinya — itu masalah, bukan kemudahan.
+     *
+     * Disimpen di disk `public` biar `ttd_url` kebuka langsung & kebaca dompdf.
+     * PNG diutamain (latar transparan); SVG ditolak karena dompdf nggak bisa
+     * nge-render-nya — nanti TTD-nya diam-diam ilang dari PDF.
+     */
+    public function uploadTtd(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ttd' => ['required', 'image', 'mimes:png,jpg,jpeg', 'max:1024'],
+        ], [
+            'ttd.required' => 'File tanda tangannya wajib ada.',
+            'ttd.mimes' => 'Tanda tangan harus PNG atau JPG — PNG lebih bagus karena latarnya bisa transparan.',
+            'ttd.max' => 'Tanda tangan maksimal 1 MB.',
+        ]);
+
+        $user = $request->user();
+        $lama = $user->ttd_path;
+
+        $path = $request->file('ttd')->store('ttd', 'public');
+        $user->update(['ttd_path' => $path]);
+
+        if ($lama && $lama !== $path) {
+            Storage::disk('public')->delete($lama);
+        }
+
+        return response()->json(['data' => new UserResource($user->fresh())]);
     }
 
     /**

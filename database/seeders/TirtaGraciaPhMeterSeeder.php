@@ -109,7 +109,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
 
         $this->isiTitikUkur($sesi, $data['titik_ukur'], $equipment, $standarPerSerial);
 
-        $this->terbitkanSertifikat($sesi->fresh(['equipment.customer', 'organization', 'uncertaintyCalculations.standard', 'rawMeasurements']), $penandatangan, $data['sertifikat']);
+        $this->terbitkanSertifikat($sesi->fresh(['equipment.customer', 'organization', 'reviewer', 'uncertaintyCalculations.standard', 'rawMeasurements']), $penandatangan, $data['sertifikat']);
     }
 
     /** @return array<string, mixed> */
