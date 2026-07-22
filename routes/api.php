@@ -166,6 +166,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
+        // Kirim sertifikat ke pelanggan. Di backend biar pengirimnya domain lab
+        // dan tiap pengiriman tercatat buat audit (tabel certificate_emails).
+        Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail']);
 
         // Hapus folder arsip: ADMIN DOANG, bukan teknisi. Teknisi boleh nyusun
         // (bikin/rename/pindah) tapi nggak boleh ngilangin — arsip lab itu

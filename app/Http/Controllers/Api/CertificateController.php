@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CertificateResource;
 use App\Jobs\GenerateCertificate;
+use App\Mail\SertifikatKalibrasi;
 use App\Models\Certificate;
+use App\Models\CertificateEmail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -91,6 +94,61 @@ class CertificateController extends Controller
         return response()->json([
             'data' => new CertificateResource($certificate->fresh()->load(self::RELASI)),
         ]);
+    }
+
+    /**
+     * Kirim sertifikat ke pelanggan lewat email. Admin doang (dijaga
+     * `role:admin` di routes) — ini tindakan penerbitan, sejalan sama approve.
+     *
+     * Ditaruh di backend, bukan di HP teknisi, karena dua hal: alamat pengirim
+     * harus domain lab (bukan Gmail pribadi), dan tiap pengiriman WAJIB
+     * tercatat — asesor nanya "sertifikat ini dikirim ke siapa, kapan, oleh
+     * siapa", dan log aplikasi kepangkas berkala jadi nggak bisa diandelin.
+     */
+    public function kirimEmail(Request $request, Certificate $certificate): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $certificate);
+
+        $data = $request->validate([
+            'ke' => ['required', 'array', 'min:1'],
+            'ke.*' => ['required', 'email'],
+            'cc' => ['sometimes', 'nullable', 'array'],
+            'cc.*' => ['required', 'email'],
+        ], [
+            'ke.required' => 'Alamat email tujuan wajib diisi.',
+            'ke.*.email' => 'Ada alamat email tujuan yang formatnya salah.',
+        ]);
+
+        // Sertifikat yang PDF-nya belum jadi nggak boleh dikirim — pelanggan
+        // bakal nerima email tanpa lampiran, dan itu lebih membingungkan
+        // daripada nggak nerima apa-apa.
+        if ($certificate->status !== Certificate::STATUS_TERBIT || ! $certificate->pdf_path) {
+            return response()->json([
+                'message' => 'Sertifikat ini belum punya PDF yang bisa dikirim.',
+            ], 422);
+        }
+
+        $certificate->loadMissing(['session.equipment.customer', 'organization']);
+
+        Mail::to($data['ke'])
+            ->cc($data['cc'] ?? [])
+            ->send(new SertifikatKalibrasi($certificate));
+
+        $catatan = CertificateEmail::create([
+            'certificate_id' => $certificate->id,
+            'dikirim_oleh' => $request->user()->id,
+            'penerima' => $data['ke'],
+            'cc' => $data['cc'] ?? [],
+            'dikirim_pada' => now(),
+        ]);
+
+        return response()->json(['data' => [
+            'certificate_id' => $certificate->id,
+            'nomor' => $certificate->nomor,
+            'penerima' => $catatan->penerima,
+            'cc' => $catatan->cc,
+            'dikirim_pada' => $catatan->dikirim_pada->toIso8601ZuluString(),
+        ]]);
     }
 
     /**

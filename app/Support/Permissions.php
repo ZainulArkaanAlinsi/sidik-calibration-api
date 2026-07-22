@@ -65,6 +65,7 @@ class Permissions
         'kalibrasi.approve',
         'kalibrasi.reject',
         'sertifikat.terbitkan-ulang',
+        'sertifikat.kirim-email',
         // Hapus folder arsip sengaja admin doang — teknisi boleh nyusun, nggak
         // boleh ngilangin. Arsip lab itu barang audit.
         'arsip.folder.hapus',
