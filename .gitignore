@@ -10,7 +10,14 @@
 /.idea
 /.nova
 /.phpunit.cache
-/.vscode
+# Ditulis `/.vscode/*`, bukan `/.vscode` — git nggak bisa nge-include balik
+# file yang FOLDER induknya diabaikan. Dengan pola ini, isinya tetap diabaikan
+# semua kecuali yang dikecualikan di bawah.
+/.vscode/*
+# Setelan lint project ikut di-commit biar semua yang buka repo ini dapat
+# editor yang sama bersihnya (at-rule Tailwind v4 nggak dikenali VS Code).
+# Setelan pribadi lain di /.vscode tetap diabaikan.
+!/.vscode/settings.json
 /.zed
 /auth.json
 /node_modules
