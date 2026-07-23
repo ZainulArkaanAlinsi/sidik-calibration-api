@@ -1,0 +1,205 @@
+{
+  "_sumber": "Project-PT-Sidik/Master Olah Data_pH for trial_CSV/DATABASE.csv, blok 'Environmental Meter' (baris 28-67)",
+  "_catatan": "Tiap thermohygro dikalibrasi di 5 titik suhu & 5 titik kelembaban. `parameter_kondisi` cuma muat SATU titik per parameter, jadi yang dipilih titik yang paling dekat sama kondisi ruang lab sehari-hari (~20 °C / ~50 %RH) — itu juga titik yang dipakai sheet PERHITUNGAN aslinya buat TH-3 (19,83 / 47,05). Titik penuhnya diarsipkan di `titik_kalibrasi` supaya nggak ilang kalau nanti pemilihan titiknya dibikin otomatis.",
+  "_u95_suhu": "Kolom 'Uncertainty ±' suhu di CSV cuma diisi di baris pertama tiap unit (sel di-merge) — berlaku buat kelima titiknya.",
+
+  "thermohygro": [
+    {
+      "nama": "TH-1",
+      "serial_number": "TH-1",
+      "lokasi": "Inlab (Lab. Dimensi)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 19.3, "correction": -0.16, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 48.04, "correction": -1.96, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 15.42, "instrument": 15, "correction": 0.46, "u95": 1.7 },
+          { "indexed_value": 19.3, "instrument": 19.5, "correction": -0.16, "u95": 1.7 },
+          { "indexed_value": 29.69, "instrument": 29.1, "correction": 0.55, "u95": 1.7 },
+          { "indexed_value": 39.48, "instrument": 39.3, "correction": 0.14, "u95": 1.7 },
+          { "indexed_value": 49.21, "instrument": 49.9, "correction": -0.71, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 29.6, "instrument": 30, "correction": -0.4, "u95": 4.9 },
+          { "indexed_value": 48.04, "instrument": 50, "correction": -1.96, "u95": 4.8 },
+          { "indexed_value": 68.74, "instrument": 70, "correction": -0.86, "u95": 4.8 },
+          { "indexed_value": 77.58, "instrument": 80, "correction": -2.02, "u95": 4.8 },
+          { "indexed_value": 87.31, "instrument": 89, "correction": -1.29, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "nama": "TH-2",
+      "serial_number": "TH-2",
+      "lokasi": "Insitu (Outsite)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 19.77, "correction": -0.39, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 49.0, "correction": -1.0, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 14.81, "instrument": 15, "correction": -0.15, "u95": 1.7 },
+          { "indexed_value": 19.77, "instrument": 20.2, "correction": -0.39, "u95": 1.7 },
+          { "indexed_value": 29.81, "instrument": 30, "correction": -0.23, "u95": 1.7 },
+          { "indexed_value": 39.53, "instrument": 40.1, "correction": -0.53, "u95": 1.7 },
+          { "indexed_value": 49.74, "instrument": 50, "correction": -0.22, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 30.02, "instrument": 30, "correction": -0.38, "u95": 4.9 },
+          { "indexed_value": 49.0, "instrument": 50, "correction": -1.0, "u95": 4.8 },
+          { "indexed_value": 68.32, "instrument": 70, "correction": -1.28, "u95": 4.8 },
+          { "indexed_value": 78.07, "instrument": 79, "correction": -0.93, "u95": 4.8 },
+          { "indexed_value": 86.97, "instrument": 88, "correction": -1.43, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "nama": "TH-3",
+      "serial_number": "TH-3",
+      "lokasi": "Inlab (Lab. Pressure)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 19.83, "correction": -0.43, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 47.05, "correction": -2.55, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 14.72, "instrument": 15, "correction": -0.32, "u95": 1.7 },
+          { "indexed_value": 19.83, "instrument": 20.3, "correction": -0.43, "u95": 1.7 },
+          { "indexed_value": 29.87, "instrument": 30.5, "correction": -0.59, "u95": 1.7 },
+          { "indexed_value": 39.64, "instrument": 40.2, "correction": -0.52, "u95": 1.7 },
+          { "indexed_value": 50.14, "instrument": 50.3, "correction": -0.2, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 29.02, "instrument": 30, "correction": -1.38, "u95": 4.9 },
+          { "indexed_value": 47.05, "instrument": 50, "correction": -2.55, "u95": 4.8 },
+          { "indexed_value": 67.94, "instrument": 70, "correction": -2.06, "u95": 4.8 },
+          { "indexed_value": 77.06, "instrument": 80, "correction": -2.94, "u95": 4.8 },
+          { "indexed_value": 86.28, "instrument": 90, "correction": -3.32, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "nama": "TH-4",
+      "serial_number": "TH-4",
+      "lokasi": "Inlab (Lab. Suhu)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 19.37, "correction": -0.59, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 47.1, "correction": -2.5, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 14.39, "instrument": 15, "correction": -0.65, "u95": 1.7 },
+          { "indexed_value": 19.37, "instrument": 20, "correction": -0.59, "u95": 1.7 },
+          { "indexed_value": 29.14, "instrument": 30, "correction": -0.82, "u95": 1.7 },
+          { "indexed_value": 39.63, "instrument": 40, "correction": -0.41, "u95": 1.7 },
+          { "indexed_value": 50.13, "instrument": 50, "correction": 0.13, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 28.77, "instrument": 30, "correction": -0.83, "u95": 4.9 },
+          { "indexed_value": 47.1, "instrument": 50, "correction": -2.5, "u95": 4.8 },
+          { "indexed_value": 69.18, "instrument": 70, "correction": -1.22, "u95": 4.8 },
+          { "indexed_value": 78.4, "instrument": 80, "correction": -1.8, "u95": 4.8 },
+          { "indexed_value": 87.26, "instrument": 85, "correction": -2.34, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "_catatan": "Sertifikatnya udah lewat masa berlaku (due 2024-06-18) dan unit ini nggak ikut pembaruan 2025-11-26 di FORM VALIDASI — sengaja diseed apa adanya biar kelihatan `masih_berlaku: false` dan nggak kepilih buat kalibrasi baru.",
+      "nama": "TH-5",
+      "serial_number": "TH-5",
+      "lokasi": "Inlab (Flowmeter Instalation)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2024-06-17",
+      "berlaku_sampai": "2024-06-18",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 21.51, "correction": 0.91, "u95": 1.8 },
+        "kelembaban": { "indexed_value": 49.5, "correction": -0.5, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 21.51, "instrument": 20.6, "correction": 0.91, "u95": 1.8 },
+          { "indexed_value": 26.61, "instrument": 25.8, "correction": 0.81, "u95": 1.8 },
+          { "indexed_value": 31.71, "instrument": 30.9, "correction": 0.81, "u95": 1.8 },
+          { "indexed_value": 40.46, "instrument": 40, "correction": 0.46, "u95": 1.8 },
+          { "indexed_value": 51.24, "instrument": 50.8, "correction": 0.44, "u95": 1.8 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 29.8, "instrument": 31, "correction": -1.2, "u95": 4.9 },
+          { "indexed_value": 49.5, "instrument": 50, "correction": -0.5, "u95": 4.8 },
+          { "indexed_value": 59.41, "instrument": 60, "correction": -0.59, "u95": 4.8 },
+          { "indexed_value": 79.52, "instrument": 80, "correction": -0.48, "u95": 4.8 },
+          { "indexed_value": 84.81, "instrument": 85, "correction": -0.19, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "nama": "TH-6",
+      "serial_number": "TH-6",
+      "lokasi": "Insitu (Outsite)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 19.33, "correction": -0.23, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 46.83, "correction": -3.17, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 14.64, "instrument": 15, "correction": -0.32, "u95": 1.7 },
+          { "indexed_value": 19.33, "instrument": 19.6, "correction": -0.23, "u95": 1.7 },
+          { "indexed_value": 29.75, "instrument": 29.4, "correction": 0.35, "u95": 1.7 },
+          { "indexed_value": 39.34, "instrument": 39.1, "correction": 0.2, "u95": 1.7 },
+          { "indexed_value": 49.95, "instrument": 49.2, "correction": 0.73, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 28.67, "instrument": 30, "correction": -1.33, "u95": 4.9 },
+          { "indexed_value": 46.83, "instrument": 50, "correction": -3.17, "u95": 4.8 },
+          { "indexed_value": 67.23, "instrument": 69, "correction": -2.17, "u95": 4.8 },
+          { "indexed_value": 76.79, "instrument": 80, "correction": -2.81, "u95": 4.8 },
+          { "indexed_value": 86.52, "instrument": 89, "correction": -2.88, "u95": 4.8 }
+        ]
+      }
+    },
+    {
+      "nama": "TH-7",
+      "serial_number": "TH-7",
+      "lokasi": "Inlab (Lab. Gaya)",
+      "tertelusur_ke": "LK-285-IDN",
+      "tanggal_kalibrasi": "2025-09-11",
+      "berlaku_sampai": "2027-09-12",
+      "parameter_kondisi": {
+        "suhu": { "indexed_value": 20.36, "correction": 0.4, "u95": 1.7 },
+        "kelembaban": { "indexed_value": 48.72, "correction": -0.88, "u95": 4.8 }
+      },
+      "titik_kalibrasi": {
+        "suhu": [
+          { "indexed_value": 15.32, "instrument": 15, "correction": 0.36, "u95": 1.7 },
+          { "indexed_value": 20.36, "instrument": 20, "correction": 0.4, "u95": 1.7 },
+          { "indexed_value": 30.27, "instrument": 30, "correction": 0.31, "u95": 1.7 },
+          { "indexed_value": 40.78, "instrument": 40, "correction": 0.78, "u95": 1.7 },
+          { "indexed_value": 50.49, "instrument": 50, "correction": 0.51, "u95": 1.7 }
+        ],
+        "kelembaban": [
+          { "indexed_value": 29.27, "instrument": 30, "correction": -0.73, "u95": 4.9 },
+          { "indexed_value": 48.72, "instrument": 50, "correction": -0.88, "u95": 4.8 },
+          { "indexed_value": 69.06, "instrument": 70, "correction": -0.54, "u95": 4.8 },
+          { "indexed_value": 77.54, "instrument": 80, "correction": -2.06, "u95": 4.8 },
+          { "indexed_value": 86.4, "instrument": 89, "correction": -2.2, "u95": 4.8 }
+        ]
+      }
+    }
+  ]
+}

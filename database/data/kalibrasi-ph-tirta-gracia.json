@@ -14,7 +14,12 @@
       "berlaku_sampai": "2026-07-31",
       "ketidakpastian": 0.02,
       "satuan_ketidakpastian": "pH",
-      "faktor_cakupan": 2
+      "faktor_cakupan": 2,
+      "koefisien_suhu": {
+        "a": 3e-05,
+        "b": -0.0023,
+        "c": 4.0455
+      }
     },
     {
       "serial_number": "HC46341939",
@@ -24,7 +29,12 @@
       "berlaku_sampai": "2027-12-17",
       "ketidakpastian": 0.02,
       "satuan_ketidakpastian": "pH",
-      "faktor_cakupan": 2
+      "faktor_cakupan": 2,
+      "koefisien_suhu": {
+        "a": 8e-05,
+        "b": -0.0076,
+        "c": 7.1182
+      }
     },
     {
       "serial_number": "HC45400338",
@@ -34,7 +44,12 @@
       "berlaku_sampai": "2027-07-31",
       "ketidakpastian": 0.03,
       "satuan_ketidakpastian": "pH",
-      "faktor_cakupan": 2
+      "faktor_cakupan": 2,
+      "koefisien_suhu": {
+        "a": 9e-05,
+        "b": -0.0148,
+        "c": 10.262
+      }
     },
     {
       "serial_number": "23P1005",
@@ -89,19 +104,37 @@
       "titik_ke": 1,
       "standard_serial_number": "HC32513535",
       "titik_ukur": 4.009244572,
-      "pembacaan": [4, 4, 4, 4, 4]
+      "pembacaan": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
     },
     {
       "titik_ke": 2,
       "standard_serial_number": "HC46341939",
       "titik_ukur": 6.9889072,
-      "pembacaan": [7.01, 7.01, 7, 7, 7]
+      "pembacaan": [
+        7.01,
+        7.01,
+        7,
+        7,
+        7
+      ]
     },
     {
       "titik_ke": 3,
       "standard_serial_number": "HC45400338",
       "titik_ukur": 9.978876900000001,
-      "pembacaan": [10.11, 10.11, 10.11, 10.11, 10.11]
+      "pembacaan": [
+        10.11,
+        10.11,
+        10.11,
+        10.11,
+        10.11
+      ]
     }
   ],
   "sertifikat": {

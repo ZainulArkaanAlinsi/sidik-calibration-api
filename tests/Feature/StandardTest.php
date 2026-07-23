@@ -145,6 +145,79 @@ class StandardTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_bisa_ngisi_kurva_suhu_buffer_lewat_api(): void
+    {
+        // Sebelum ini `koefisien_suhu` nggak ada di aturan validasi, jadi
+        // `$request->validated()` ngebuangnya diam-diam: form ngirim, admin lihat
+        // sukses, kolomnya tetap null, dan lembar perhitungan diam-diam balik ke
+        // nilai nominal. Test ini yang jagain itu nggak kejadian lagi.
+        $this->actingAs($this->admin)
+            ->postJson('/api/standards', [
+                'nama' => 'pH Buffer Solution 4',
+                'serial_number' => 'HC32513535',
+                'koefisien_suhu' => ['a' => 3e-5, 'b' => -0.0023, 'c' => 4.0455],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.koefisien_suhu.c', 4.0455)
+            ->assertJsonPath('data.punya_kurva_suhu', true);
+
+        // Nilai buffer pH 4 di 22,2 °C — angka yang dipakai lembar olah data lab
+        // (`PERHITUNGAN.csv`: Standard = 4,0092252), bukan nominal 4,00.
+        $standar = Standard::where('serial_number', 'HC32513535')->firstOrFail();
+        $this->assertEqualsWithDelta(4.0092252, $standar->nilaiPadaSuhu(22.2), 1e-9);
+    }
+
+    public function test_koefisien_suhu_setengah_terisi_ditolak(): void
+    {
+        // `nilaiPadaSuhu()` balik null kalau salah satu koefisiennya ilang —
+        // separuh terisi sama aja kayak kosong, cuma bikin admin ngira udah beres.
+        $this->actingAs($this->admin)
+            ->postJson('/api/standards', [
+                'nama' => 'Buffer Setengah Jadi',
+                'koefisien_suhu' => ['a' => 3e-5],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['koefisien_suhu.b', 'koefisien_suhu.c']);
+    }
+
+    public function test_admin_bisa_ngisi_data_sertifikat_thermohygro(): void
+    {
+        // Angka TH-3 dari DATABASE.csv — yang bikin blok kondisi lingkungan di
+        // lembar perhitungan keluar koreksi & U95%-nya, bukan pembacaan mentah.
+        $this->actingAs($this->admin)
+            ->postJson('/api/standards', [
+                'nama' => 'TH-3',
+                'serial_number' => 'TH-3',
+                'parameter_kondisi' => [
+                    'suhu' => ['indexed_value' => 19.83, 'correction' => -0.43, 'u95' => 1.7],
+                    'kelembaban' => ['indexed_value' => 47.05, 'correction' => -2.55, 'u95' => 4.8],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.parameter_kondisi.suhu.correction', -0.43)
+            ->assertJsonPath('data.parameter_kondisi.kelembaban.u95', 4.8);
+
+        $standar = Standard::where('serial_number', 'TH-3')->firstOrFail();
+
+        $this->assertSame(
+            ['indexed_value' => 19.83, 'correction' => -0.43, 'u95' => 1.7],
+            $standar->parameterKondisi('suhu'),
+        );
+    }
+
+    public function test_u95_negatif_ditolak_tapi_koreksi_negatif_diterima(): void
+    {
+        // Koreksi thermohygro nyaris selalu negatif (lihat TH-1..TH-7) — itu sah.
+        // Yang nggak masuk akal cuma ketidakpastian negatif.
+        $this->actingAs($this->admin)
+            ->postJson('/api/standards', [
+                'nama' => 'TH Ngawur',
+                'parameter_kondisi' => ['suhu' => ['correction' => -0.43, 'u95' => -1.7]],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('parameter_kondisi.suhu.u95');
+    }
+
     public function test_faktor_cakupan_nol_ditolak_karena_dipakai_sebagai_pembagi(): void
     {
         // k dipakai buat bagi balik ketidakpastian diperluas jadi baku. Nol bikin

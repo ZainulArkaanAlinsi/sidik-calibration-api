@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
             OrganizationSeeder::class,
             CalibrationCapabilitySeeder::class,
             PhMeterCapabilitySeeder::class,
+            // Master data standar yang berdiri sendiri — nggak butuh kategori
+            // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
+            // ngitung koreksi kondisi lingkungan.
+            ThermohygroSeeder::class,
         ]);
 
         $this->seedUsers();
