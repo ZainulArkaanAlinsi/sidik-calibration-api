@@ -27,6 +27,11 @@ class EquipmentResource extends JsonResource
             'pelanggan' => [
                 'id' => $this->customer?->id,
                 'nama' => $this->customer?->nama,
+                // Bagian OWNER di lembar kerja minta Name DAN Address, dua-duanya
+                // keisi otomatis begitu teknisi milih alat. Tanpa alamat di sini
+                // mobile kepaksa nembak /api/customers cuma buat satu baris —
+                // dan itu endpoint admin, teknisi bakal kena 403.
+                'alamat' => $this->customer?->alamat,
             ],
             'tanggal_kalibrasi_terakhir' => $this->tanggal_kalibrasi_terakhir?->toIso8601ZuluString(),
             'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo?->toIso8601ZuluString(),
