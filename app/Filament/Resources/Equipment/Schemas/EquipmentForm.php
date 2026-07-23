@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Equipment\Schemas;
 
 use App\Models\CalibrationCapability;
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -19,7 +20,7 @@ class EquipmentForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 Section::make('Identitas alat')
                     ->columns(2)

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CalibrationMethods\Schemas;
 
 use App\Models\EquipmentCategory;
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -19,7 +20,7 @@ class CalibrationMethodForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 Section::make('Identitas Instruksi Kerja')
                     ->description('Kode + revisi inilah yang dicetak di sertifikat, mis. SIDIK-IK-CAL-0506_Rev.6.')
@@ -45,7 +46,7 @@ class CalibrationMethodForm
                         Select::make('equipment_category_id')
                             ->label('Kategori alat')
                             ->options(fn () => EquipmentCategory::query()
-                                ->where('organization_id', auth()->user()->organization_id)
+                                ->where('organization_id', User::yangLogin()?->organization_id)
                                 ->pluck('nama', 'id'))
                             ->searchable()
                             ->helperText('Kosongin kalau IK ini kepakai lintas kategori.'),

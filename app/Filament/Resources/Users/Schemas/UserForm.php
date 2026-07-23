@@ -15,7 +15,7 @@ class UserForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 TextInput::make('name')
                     ->label('Nama')

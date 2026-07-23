@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Organization;
+use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
@@ -45,7 +46,7 @@ class PengaturanOrganisasi extends Page
 
     public function mount(): void
     {
-        $this->record = Organization::findOrFail(auth()->user()->organization_id);
+        $this->record = Organization::findOrFail(User::yangLogin()?->organization_id);
         $this->form->fill($this->record->attributesToArray());
     }
 

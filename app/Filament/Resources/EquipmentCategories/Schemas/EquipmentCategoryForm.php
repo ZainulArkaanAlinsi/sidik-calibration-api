@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EquipmentCategories\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
@@ -16,7 +17,7 @@ class EquipmentCategoryForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 Section::make('Identitas kategori')
                     ->columns(2)

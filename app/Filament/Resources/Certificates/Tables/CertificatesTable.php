@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Certificates\Tables;
 
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
+use App\Models\User;
 use App\Services\CertificateExcelExporter;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -115,7 +116,7 @@ class CertificatesTable
                     ->modalDescription('Coba bikin ulang PDF sertifikat yang tadinya gagal. Statusnya balik ke "menunggu generate" selagi diproses.')
                     ->action(function (Certificate $record): void {
                         $record->update(['status' => Certificate::STATUS_MENUNGGU_GENERATE]);
-                        GenerateCertificate::dispatch($record->calibration_session_id, auth()->id());
+                        GenerateCertificate::dispatch($record->calibration_session_id, User::yangLogin()?->id);
                         Notification::make()->title('Sertifikat sedang diterbitkan ulang.')->success()->send();
                     }),
             ]);
