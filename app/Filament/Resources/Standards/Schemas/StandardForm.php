@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Standards\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
@@ -15,7 +16,7 @@ class StandardForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 Section::make('Identitas standar')
                     ->columns(2)

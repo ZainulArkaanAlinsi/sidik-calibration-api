@@ -2,6 +2,7 @@
 
 namespace App\Filament\Concerns;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -16,6 +17,6 @@ trait ScopesToOrganization
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where(static::getModel()::make()->getTable().'.organization_id', auth()->user()?->organization_id);
+            ->where(static::getModel()::make()->getTable().'.organization_id', User::yangLogin()?->organization_id);
     }
 }

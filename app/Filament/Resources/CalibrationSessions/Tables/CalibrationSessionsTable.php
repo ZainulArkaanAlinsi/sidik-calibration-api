@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CalibrationSessions\Tables;
 
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
@@ -84,11 +85,11 @@ class CalibrationSessionsTable
                     ->action(function (CalibrationSession $record): void {
                         $record->update([
                             'status' => CalibrationSession::STATUS_DISETUJUI,
-                            'reviewed_by' => auth()->id(),
+                            'reviewed_by' => User::yangLogin()?->id,
                             'reviewed_at' => now(),
                             'catatan_revisi' => null,
                         ]);
-                        GenerateCertificate::dispatch($record->id, auth()->id());
+                        GenerateCertificate::dispatch($record->id, User::yangLogin()?->id);
                         Notification::make()->title('Sesi disetujui. Sertifikat sedang diterbitkan.')->success()->send();
                     }),
 
@@ -108,7 +109,7 @@ class CalibrationSessionsTable
                     ->action(function (CalibrationSession $record, array $data): void {
                         $record->update([
                             'status' => CalibrationSession::STATUS_PERLU_REVISI,
-                            'reviewed_by' => auth()->id(),
+                            'reviewed_by' => User::yangLogin()?->id,
                             'reviewed_at' => now(),
                             'catatan_revisi' => $data['catatan_revisi'],
                         ]);

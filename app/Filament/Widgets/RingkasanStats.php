@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
+use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -17,7 +18,7 @@ class RingkasanStats extends StatsOverviewWidget
 {
     protected function getStats(): array
     {
-        $organizationId = auth()->user()->organization_id;
+        $organizationId = User::yangLogin()?->organization_id;
 
         $totalAlat = Equipment::where('organization_id', $organizationId)->count();
         $overdue = Equipment::where('organization_id', $organizationId)->overdue()->count();

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Customers\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -15,7 +16,7 @@ class CustomerForm
                 // Organisasi diisi otomatis dari admin yang login, bukan dipilih —
                 // satu instalasi = satu PT.
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()->organization_id),
+                    ->default(fn () => User::yangLogin()?->organization_id),
 
                 TextInput::make('nama')
                     ->label('Nama pelanggan')

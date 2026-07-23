@@ -47,6 +47,27 @@ class User extends Authenticatable implements FilamentUser
         return [self::ROLE_ADMIN, self::ROLE_TEKNISI, self::ROLE_VIEWER];
     }
 
+    /**
+     * Pengguna yang lagi login, sudah pasti bertipe `User`.
+     *
+     * Dipakai menggantikan pemanggilan `user()` langsung dari helper `auth()`
+     * di seluruh panel admin. Alasannya bukan gaya-gayaan: helper itu
+     * dideklarasiin balikin `AuthFactory|Guard`, dan `AuthFactory` NGGAK punya
+     * method `user()` — jadi analisa statis (intelephense/PHPStan) nandainnya
+     * sebagai method nggak dikenal. Perkaranya bukan cuma garis merah di
+     * editor: karena tipenya ngambang, salah ketik nama kolom
+     * (`->organisation_id`) juga nggak ketahuan sampai jalan di browser.
+     *
+     * Lewat `auth()->guard()` tipenya jelas `Guard|StatefulGuard` yang
+     * dua-duanya punya `user()`, terus dipersempit ke `User` di sini.
+     */
+    public static function yangLogin(): ?self
+    {
+        $user = auth()->guard()->user();
+
+        return $user instanceof self ? $user : null;
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
