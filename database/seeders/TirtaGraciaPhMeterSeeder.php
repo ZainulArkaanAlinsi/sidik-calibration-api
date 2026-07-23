@@ -70,6 +70,11 @@ class TirtaGraciaPhMeterSeeder extends Seeder
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => $s['satuan_ketidakpastian'],
                     'faktor_cakupan' => $s['faktor_cakupan'],
+                    // Persamaan suhu dari sertifikat Merck — cuma ada di larutan
+                    // buffer, nggak di Termometer & Sensor Std. Tanpa ini nilai
+                    // Standard di lembar perhitungan jatuh ke nominal (4,00),
+                    // bukan 4,0092252 kayak di lembar olah data aslinya.
+                    'koefisien_suhu' => $s['koefisien_suhu'] ?? null,
                 ],
             )],
         );

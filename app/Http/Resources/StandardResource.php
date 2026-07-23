@@ -38,6 +38,15 @@ class StandardResource extends JsonResource
             'satuan_ketidakpastian' => $this->satuan_ketidakpastian,
             'faktor_cakupan' => $this->faktor_cakupan,
             'drift' => $this->drift,
+
+            // Dua data sertifikat yang bikin lembar perhitungan jalan otomatis.
+            // Dikirim apa adanya (boleh null) supaya form master data di mobile
+            // bisa nampilin & ngedit tanpa nebak bentuknya.
+            'koefisien_suhu' => $this->koefisien_suhu,
+            'parameter_kondisi' => $this->parameter_kondisi,
+            // Jalan pintas biar layar nggak perlu ngintip isi JSON-nya cuma
+            // buat mutusin nampilin lencana "siap dipakai perhitungan".
+            'punya_kurva_suhu' => $this->nilaiPadaSuhu(25.0) !== null,
         ];
     }
 }

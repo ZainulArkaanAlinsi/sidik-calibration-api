@@ -64,6 +64,63 @@ class StandardForm
                             ->numeric()
                             ->minValue(0),
                     ]),
+
+                // Cuma relevan buat larutan buffer pH. Standar lain (gauge
+                // block, anak timbangan) nilainya nggak bergantung suhu larutan
+                // — dikosongin, dan perhitungan otomatis jatuh ke nilai nominal.
+                Section::make('Kurva suhu buffer (khusus larutan pH)')
+                    ->description('Persamaan dari sertifikat Merck: y = a·x² + b·x + c, '
+                        .'dengan x = suhu larutan (°C) dan y = nilai pH buffer pada suhu itu. '
+                        .'Ini yang bikin nilai Standard di lembar perhitungan jadi 4,0092 di 22,2 °C, bukan 4,00 mentah.')
+                    ->columns(3)
+                    ->collapsed()
+                    ->schema([
+                        TextInput::make('koefisien_suhu.a')
+                            ->label('a (koefisien x²)')
+                            ->numeric()
+                            ->helperText('Buffer pH 4: 0,00003'),
+                        TextInput::make('koefisien_suhu.b')
+                            ->label('b (koefisien x)')
+                            ->numeric()
+                            ->helperText('Buffer pH 4: -0,0023'),
+                        TextInput::make('koefisien_suhu.c')
+                            ->label('c (konstanta)')
+                            ->numeric()
+                            ->helperText('Buffer pH 4: 4,0455'),
+                    ]),
+
+                // Cuma relevan buat thermohygro (TH-1..TH-7). Begitu diisi,
+                // blok "Perhitungan Kondisi Lingkungan" di lembar perhitungan
+                // langsung dapat koreksi & U95%-nya — tanpa ini, yang dilaporin
+                // pembacaan mentah tanpa koreksi.
+                Section::make('Data sertifikat thermohygro')
+                    ->description('Diisi dari sertifikat thermohygro-nya sendiri (LK-285-IDN). '
+                        .'Ambil titik kalibrasi yang paling dekat sama kondisi ruang lab sehari-hari '
+                        .'(biasanya titik ~20 °C / ~50 %RH). Koreksi boleh negatif.')
+                    ->columns(3)
+                    ->collapsed()
+                    ->schema([
+                        TextInput::make('parameter_kondisi.suhu.indexed_value')
+                            ->label('Suhu — indexed value (°C)')
+                            ->numeric(),
+                        TextInput::make('parameter_kondisi.suhu.correction')
+                            ->label('Suhu — correction (°C)')
+                            ->numeric(),
+                        TextInput::make('parameter_kondisi.suhu.u95')
+                            ->label('Suhu — U95% (°C)')
+                            ->numeric()
+                            ->minValue(0),
+                        TextInput::make('parameter_kondisi.kelembaban.indexed_value')
+                            ->label('Kelembaban — indexed value (%RH)')
+                            ->numeric(),
+                        TextInput::make('parameter_kondisi.kelembaban.correction')
+                            ->label('Kelembaban — correction (%RH)')
+                            ->numeric(),
+                        TextInput::make('parameter_kondisi.kelembaban.u95')
+                            ->label('Kelembaban — U95% (%RH)')
+                            ->numeric()
+                            ->minValue(0),
+                    ]),
             ]);
     }
 }
