@@ -6,13 +6,21 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+/**
+ * @mixin IdeHelperCalibrationSession
+ */
 #[Fillable([
     'organization_id', 'equipment_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
+    'calibration_method_id', 'thermohygro_standard_id',
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
-    'tanggal_terima', 'lokasi', 'suhu_ruang', 'kelembaban', 'catatan_revisi', 'submitted_at', 'reviewed_at',
+    'tanggal_terima', 'lokasi', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
+    'kelembaban_ketidakpastian', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+    'catatan_revisi', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
 ])]
 class CalibrationSession extends Model
 {
@@ -35,7 +43,36 @@ class CalibrationSession extends Model
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'suhu_ruang' => 'float',
+            'suhu_ketidakpastian' => 'float',
             'kelembaban' => 'float',
+            'kelembaban_ketidakpastian' => 'float',
+            'suhu_awal' => 'float',
+            'suhu_akhir' => 'float',
+            'kelembaban_awal' => 'float',
+            'kelembaban_akhir' => 'float',
+        ];
+    }
+
+    /**
+     * Field administratif — dihapus dari layar teknisi (spesifikasi poin 1) dan
+     * dibuang dari payload-nya sama `CalibrationRequest`.
+     *
+     * Yang masuk daftar ini persis yang disebut spesifikasi: Order Number,
+     * Calibration Method, Thermohygro Used, plus ketidakpastian kondisi ruang
+     * (angka ± di Env. Condition — datangnya dari sertifikat thermohygro, bukan
+     * dari yang dilihat teknisi di lapangan).
+     *
+     * `tanggal_terima`, `suhu_ruang`, `kelembaban`, dan `room_id` SENGAJA nggak
+     * di sini: itu fakta lapangan yang cuma teknisi yang tau, dan spesifikasi
+     * nggak nyuruh dihapus dari layar teknisi.
+     *
+     * @return array<int, string>
+     */
+    public static function fieldAdmin(): array
+    {
+        return [
+            'nomor_order', 'calibration_method_id', 'thermohygro_standard_id',
+            'suhu_ketidakpastian', 'kelembaban_ketidakpastian',
         ];
     }
 
@@ -90,6 +127,51 @@ class CalibrationSession extends Model
     public function standard(): BelongsTo
     {
         return $this->belongsTo(Standard::class)->withTrashed();
+    }
+
+    /** Ruangan lab tempat sesi dikerjain — "Calibration Location" di sertifikat. */
+    /** @return BelongsTo<Room, $this> */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Thermohygro yang dipakai nyatet kondisi ruang. `withTrashed()` dengan
+     * alasan yang sama kayak `standard()`: ketertelusuran sertifikat lama.
+     *
+     * @return BelongsTo<Standard, $this>
+     */
+    public function thermohygro(): BelongsTo
+    {
+        return $this->belongsTo(Standard::class, 'thermohygro_standard_id')->withTrashed();
+    }
+
+    /**
+     * IK yang dipakai. `withTrashed()` — revisi IK yang dipensiunin tetap harus
+     * kebaca di sertifikat yang diterbitin waktu revisi itu masih berlaku.
+     *
+     * @return BelongsTo<CalibrationMethod, $this>
+     */
+    public function calibrationMethod(): BelongsTo
+    {
+        return $this->belongsTo(CalibrationMethod::class, 'calibration_method_id')->withTrashed();
+    }
+
+    /**
+     * Kolom "Usage Check" di lembar kerja: standar mana aja yang dicentang
+     * teknisi. `withoutGlobalScope(SoftDeletingScope::class)` dengan alasan yang
+     * sama kayak `standard()` — standar yang udah dipensiunin tetap harus
+     * kebaca di lembar kerja & sertifikat lama.
+     *
+     * @return BelongsToMany<Standard, $this>
+     */
+    public function standarDicek(): BelongsToMany
+    {
+        return $this->belongsToMany(Standard::class, 'calibration_session_standard')
+            ->withPivot(['dipakai', 'keterangan'])
+            ->withTimestamps()
+            ->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     /** @return HasMany<RawMeasurement, $this> */

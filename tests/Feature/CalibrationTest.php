@@ -138,17 +138,30 @@ class CalibrationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_standar_acuan_wajib_diisi(): void
+    public function test_lembar_kerja_tanpa_standar_acuan_tetap_bisa_dikirim_tapi_nggak_dihitung(): void
     {
         $payload = $this->payload();
         unset($payload['standard_id']);
 
-        // Tanpa standar, Type B kehilangan komponen terbesarnya dan U jadi
-        // kekecilan — alat yang harusnya FAIL malah lulus.
+        // Lembar kerja boleh dikirim setengah jadi — teknisi di lapangan nggak
+        // boleh keblokir cuma gara-gara satu kolom belum keisi.
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $payload)
+            ->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        // Tapi tanpa standar, Type B kehilangan komponen terbesarnya — jadi
+        // titiknya disimpen mentah & NGGAK dihitung, bukan dihitung asal-asalan.
+        $this->assertSame(3, $sesi->rawMeasurements()->count());
+        $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
+        $this->assertNull($sesi->keputusan);
+
+        // Penjagaannya pindah ke penerbitan: sertifikat nggak bisa terbit.
+        $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422)
-            ->assertJsonValidationErrors('standard_id');
+            ->assertJsonPath('validasi.boleh_terbit', false);
     }
 
     public function test_standar_yang_sertifikatnya_kadaluarsa_ditolak(): void
@@ -161,24 +174,43 @@ class CalibrationTest extends TestCase
             ->assertJsonValidationErrors('standard_id');
     }
 
-    public function test_alat_tanpa_toleransi_ditolak_karena_pass_fail_nggak_bisa_diputusin(): void
+    public function test_alat_tanpa_toleransi_nggak_dihitung_dan_sertifikatnya_ketahan(): void
     {
+        // Toleransi itu data master yang cuma admin yang bisa isi — teknisi di
+        // lapangan nggak bisa benerin, jadi jangan diblokir di sana.
         $this->alat->update(['toleransi' => null]);
 
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $this->payload())
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('equipment_id');
+            ->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+        $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
+
+        $respons = $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->assertStatus(422);
+
+        $this->assertContains(
+            'toleransi_kosong',
+            array_column($respons->json('validasi.temuan'), 'kode'),
+        );
     }
 
-    public function test_satu_pembacaan_doang_ditolak_karena_type_a_butuh_sebaran(): void
+    public function test_titik_dengan_satu_pembacaan_disimpen_tapi_nggak_dihitung(): void
     {
+        // Type A butuh sebaran — satu angka nggak punya standar deviasi. Datanya
+        // tetap kesimpen (bukti kerja lapangan), cuma nggak jadi hasil resmi.
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $this->payload([
                 'measurements' => [['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02]]],
             ]))
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('measurements.0.pembacaan');
+            ->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        $this->assertSame(1, $sesi->rawMeasurements()->count());
+        $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
     }
 
     public function test_satu_titik_fail_bikin_seluruh_sesi_fail(): void

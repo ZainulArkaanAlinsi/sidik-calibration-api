@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperCustomer
+ */
 #[Fillable(['organization_id', 'nama', 'alamat', 'contact_person', 'telepon', 'email'])]
 class Customer extends Model
 {

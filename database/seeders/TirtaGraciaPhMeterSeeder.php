@@ -15,6 +15,7 @@ use App\Services\GumCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -55,7 +56,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
             ['alamat' => $data['customer']['alamat'], 'organization_id' => 1],
         );
 
-        /** @var \Illuminate\Support\Collection<string, Standard> $standarPerSerial */
+        /** @var Collection<string, Standard> $standarPerSerial */
         $standarPerSerial = collect($data['standards'])->mapWithKeys(
             fn (array $s) => [$s['serial_number'] => Standard::updateOrCreate(
                 ['organization_id' => 1, 'serial_number' => $s['serial_number']],
@@ -167,14 +168,14 @@ class TirtaGraciaPhMeterSeeder extends Seeder
      * seluruh sesi FAIL.
      *
      * @param  list<array{titik_ke: int, standard_serial_number: string, titik_ukur: float, pembacaan: list<float>}>  $titikUkur
-     * @param  \Illuminate\Support\Collection<string, Standard>  $standarPerSerial
+     * @param  Collection<string, Standard>  $standarPerSerial
      */
     private function isiTitikUkur(CalibrationSession $sesi, array $titikUkur, Equipment $equipment, $standarPerSerial): void
     {
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
 
-        $kalkulator = new GumCalculator();
+        $kalkulator = new GumCalculator;
         $keputusanSesi = 'PASS';
 
         foreach ($titikUkur as $titik) {

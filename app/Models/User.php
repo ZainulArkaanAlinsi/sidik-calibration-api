@@ -15,7 +15,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['organization_id', 'employee_id', 'name', 'department', 'email', 'role', 'status', 'password'])]
+/**
+ * @mixin IdeHelperUser
+ */
+#[Fillable([
+    'organization_id', 'employee_id', 'kode_teknisi', 'name', 'department',
+    'email', 'role', 'status', 'password',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -44,6 +50,26 @@ class User extends Authenticatable implements FilamentUser
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * "Technician ID" yang dicetak di sertifikat (mis. `DR`). Kalau admin belum
+     * ngisi kodenya, jatuh ke inisial nama — lebih baik inisial daripada kolom
+     * kosong di dokumen resmi.
+     */
+    public function kodeTeknisi(): string
+    {
+        if (filled($this->kode_teknisi)) {
+            return strtoupper($this->kode_teknisi);
+        }
+
+        $inisial = collect(preg_split('/\s+/', trim((string) $this->name)))
+            ->filter()
+            ->take(2)
+            ->map(fn (string $kata): string => strtoupper(mb_substr($kata, 0, 1)))
+            ->implode('');
+
+        return $inisial !== '' ? $inisial : '—';
     }
 
     /**

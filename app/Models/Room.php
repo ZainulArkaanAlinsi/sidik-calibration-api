@@ -9,7 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** Ruangan lab — master data, dipakai buat nyatet di mana sesi dikerjain. */
+/**
+ * Ruangan lab — master data, dipakai buat nyatet di mana sesi dikerjain.
+ *
+ * @mixin IdeHelperRoom
+ */
 #[Fillable([
     'organization_id', 'kode', 'nama', 'lokasi', 'suhu_min', 'suhu_max',
     'kelembaban_min', 'kelembaban_max', 'keterangan', 'aktif',

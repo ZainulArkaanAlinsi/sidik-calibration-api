@@ -3,10 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Models\Organization;
+use App\Services\CertificateSnapshotBuilder;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
@@ -78,6 +80,36 @@ class PengaturanOrganisasi extends Page
                             ->placeholder('SNI ISO/IEC 17025:2017'),
                         DatePicker::make('akreditasi_mulai')->label('Berlaku mulai'),
                         DatePicker::make('akreditasi_berakhir')->label('Berlaku sampai'),
+                    ]),
+
+                Section::make('Penerbitan sertifikat')
+                    ->description('Dicetak di footer sertifikat. Yang tanda tangan itu penanggung jawab teknis, belum tentu admin yang mencet tombol setujui.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('settings.penandatangan_nama')
+                            ->label('Nama penandatangan')
+                            ->maxLength(255)
+                            ->placeholder('Alex Misramto'),
+                        TextInput::make('settings.penandatangan_jabatan')
+                            ->label('Jabatan')
+                            ->maxLength(255)
+                            ->placeholder('Technical Manager'),
+                        TextInput::make('settings.kode_dokumen_form')
+                            ->label('Kode dokumen form')
+                            ->maxLength(255)
+                            ->placeholder(CertificateSnapshotBuilder::KODE_DOKUMEN_DEFAULT)
+                            ->columnSpanFull(),
+                        Toggle::make('settings.tampilkan_qr_di_pdf')
+                            ->label('Cetak QR Code di sertifikat')
+                            ->default(true)
+                            ->helperText('QR-nya buat verifikasi & unduh cepat oleh pelanggan.'),
+                        // Struktur baku sertifikat pH nggak punya baris keputusan.
+                        // Buat alat lain yang formatnya nggak dikunci pelanggan,
+                        // ini informasi paling penting di dokumennya.
+                        Toggle::make('settings.tampilkan_keputusan_di_pdf')
+                            ->label('Cetak keputusan PASS/FAIL')
+                            ->default(false)
+                            ->helperText('Matikan kalau layout sertifikat dikunci pelanggan — struktur baku pH nggak punya baris ini.'),
                     ]),
 
                 Section::make('Logo')

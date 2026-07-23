@@ -20,3 +20,10 @@ Route::get('/', [VerificationController::class, 'beranda']);
 Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])
     ->middleware('throttle:30,1')
     ->name('verify');
+
+// Unduh sertifikat langsung dari hasil scan QR (?format=pdf|xlsx). Jatahnya
+// dipisah & lebih sedikit dari halaman verifikasi: yang ini bikin file, bukan
+// cuma baca satu baris.
+Route::get('/verify/{qr_token}/download', [VerificationController::class, 'download'])
+    ->middleware('throttle:10,1')
+    ->name('verify.download');

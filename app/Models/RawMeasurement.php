@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @mixin IdeHelperRawMeasurement
+ */
 #[Fillable([
-    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan', 'satuan',
-    'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path', 'is_verified',
+    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'pembacaan', 'suhu',
+    'satuan', 'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path', 'is_verified',
 ])]
 class RawMeasurement extends Model
 {
@@ -18,6 +21,9 @@ class RawMeasurement extends Model
         return [
             'titik_ukur' => 'float',
             'pembacaan' => 'float',
+            // Suhu larutan waktu pembacaan diambil — pH bergantung suhu, jadi
+            // ini bagian dari data, bukan catatan tambahan.
+            'suhu' => 'float',
             'ocr_confidence' => 'float',
             'is_verified' => 'boolean',
         ];
