@@ -5,8 +5,11 @@ namespace App\Filament\Resources\CalibrationSessions\Tables;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\User;
+use App\Services\CalibrationValidator;
+use App\Services\PerhitunganBuilder;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
@@ -17,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 
 class CalibrationSessionsTable
 {
@@ -73,16 +77,100 @@ class CalibrationSessionsTable
                 ViewAction::make()
                     ->schema(fn (Schema $schema): Schema => self::detail($schema)),
 
+                // Lembar PERHITUNGAN — layar utama admin (spesifikasi poin 12A).
+                // Dirender dari PerhitunganBuilder yang SAMA dengan yang dipakai
+                // API, jadi angka di web & mobile mustahil beda.
+                Action::make('perhitungan')
+                    ->label('Perhitungan')
+                    ->icon('heroicon-o-calculator')
+                    ->color('info')
+                    ->modalHeading(fn (CalibrationSession $record): string => 'Lembar Perhitungan — '.$record->nomor_sesi)
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalContent(fn (CalibrationSession $record): View => view(
+                        'filament.perhitungan',
+                        ['perhitungan' => app(PerhitunganBuilder::class)->bangun($record)],
+                    )),
+
+                // Periksa → hitung ulang tanpa nyetujuin (spesifikasi poin 11).
+                // Admin bisa lihat temuannya dulu sebelum mutusin.
+                Action::make('periksa')
+                    ->label('Periksa')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('gray')
+                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+                    ->action(function (CalibrationSession $record, CalibrationValidator $validator): void {
+                        $hasil = $validator->periksa($record);
+
+                        Notification::make()
+                            ->title(self::judulTemuan($hasil))
+                            ->body(self::ringkasTemuan($hasil))
+                            ->status($hasil['boleh_terbit'] ? ($hasil['valid'] ? 'success' : 'warning') : 'danger')
+                            ->persistent()
+                            ->send();
+                    }),
+
                 // Approve → sesi disetujui + sertifikat digenerate di queue.
                 // Nongol cuma buat sesi yang emang lagi nunggu approval.
+                //
+                // LEWAT `CalibrationValidator`, sama persis kayak jalur API.
+                // Dulu tombol ini cuma ngubah status & nembak job — jadi admin
+                // yang nyetujuin dari web ngelewatin SELURUH pemeriksaan yang
+                // di API nahan penerbitan. Dua pintu ke keputusan yang sama,
+                // satu ada penjaganya satu nggak, itu justru yang paling
+                // berbahaya: yang lolos diam-diam nggak ketahuan sampai ada
+                // yang ngebandingin sertifikatnya.
                 Action::make('approve')
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL)
-                    ->requiresConfirmation()
+                    ->schema([
+                        Checkbox::make('abaikan_peringatan')
+                            ->label('Saya sudah periksa, lanjutkan walau ada peringatan')
+                            ->helperText('Cuma berlaku buat peringatan. Temuan fatal tetap nahan penerbitan.'),
+                    ])
                     ->modalDescription('Sesi disetujui dan sertifikat langsung diterbitkan. Sesi FAIL pun tetap terbit (hasil "tidak laik pakai").')
-                    ->action(function (CalibrationSession $record): void {
+                    ->action(function (CalibrationSession $record, array $data, CalibrationValidator $validator): void {
+                        // Angka OCR yang belum dikonfirmasi manusia nggak boleh
+                        // ikut disertifikasi — dicek duluan biar pesannya
+                        // langsung nunjuk ke tindakannya.
+                        if ($record->rawMeasurements()->where('is_verified', false)->exists()) {
+                            Notification::make()
+                                ->title('Masih ada pembacaan OCR yang belum diverifikasi.')
+                                ->body('Teknisi harus konfirmasi angkanya dulu sebelum sesi ini bisa disetujui.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
+                        $hasil = $validator->periksa($record);
+
+                        if (! $hasil['boleh_terbit']) {
+                            Notification::make()
+                                ->title('Nggak bisa disetujui — ada temuan fatal.')
+                                ->body(self::ringkasTemuan($hasil))
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
+                        if (! $hasil['valid'] && ! ($data['abaikan_peringatan'] ?? false)) {
+                            Notification::make()
+                                ->title('Hasil hitung ulang beda dari yang tersimpan.')
+                                ->body(self::ringkasTemuan($hasil)
+                                    ."\n\nKalau memang mau lanjut, centang \"Saya sudah periksa\" lalu setujui lagi.")
+                                ->warning()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
                         $record->update([
                             'status' => CalibrationSession::STATUS_DISETUJUI,
                             'reviewed_by' => User::yangLogin()?->id,
@@ -166,5 +254,49 @@ class CalibrationSessionsTable
                 ])
                 ->collapsible(),
         ]);
+    }
+
+    /** @param  array<string, mixed>  $hasil */
+    private static function judulTemuan(array $hasil): string
+    {
+        if (! $hasil['boleh_terbit']) {
+            return 'Ada temuan fatal — sertifikat nggak bisa terbit.';
+        }
+
+        return $hasil['valid']
+            ? 'Bersih. Aman disetujui.'
+            : 'Ada peringatan — perlu konfirmasi sadar.';
+    }
+
+    /**
+     * Temuan dirangkum jadi teks notifikasi, diurut dari yang paling berat:
+     * yang nahan penerbitan harus kebaca duluan, bukan ketimbun di bawah
+     * daftar info.
+     *
+     * @param  array<string, mixed>  $hasil
+     */
+    private static function ringkasTemuan(array $hasil): string
+    {
+        if ($hasil['temuan'] === []) {
+            return 'Nggak ada temuan.';
+        }
+
+        $urutan = [
+            CalibrationValidator::ERROR => '[FATAL]',
+            CalibrationValidator::PERINGATAN => '[PERINGATAN]',
+            CalibrationValidator::INFO => '[info]',
+        ];
+
+        $baris = [];
+
+        foreach ($urutan as $tingkat => $label) {
+            foreach ($hasil['temuan'] as $t) {
+                if ($t['tingkat'] === $tingkat) {
+                    $baris[] = $label.' '.$t['pesan'];
+                }
+            }
+        }
+
+        return implode("\n", $baris);
     }
 }
