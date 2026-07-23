@@ -1,0 +1,13 @@
+{
+    // `@import 'tailwindcss'`, `@source`, dan `@theme` itu at-rule bawaan
+    // Tailwind v4. Validator CSS bawaan VS Code belum kenal, jadi dia
+    // nandain sebagai "Unknown at rule" — padahal file-nya bener dan
+    // `npm run build` jalan normal.
+    //
+    // Dimatiin di level project (bukan per-orang) supaya semua yang buka repo
+    // ini lihat editor yang sama bersihnya, nggak cuma yang kebetulan udah
+    // ngatur sendiri.
+    "css.lint.unknownAtRules": "ignore",
+    "less.lint.unknownAtRules": "ignore",
+    "scss.lint.unknownAtRules": "ignore"
+}
