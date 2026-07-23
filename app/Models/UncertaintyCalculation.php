@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @mixin IdeHelperUncertaintyCalculation
+ */
 #[Fillable([
     'calibration_session_id', 'standard_id', 'titik_ke', 'titik_ukur', 'rata_rata', 'error', 'koreksi',
     'standar_deviasi', 'jumlah_pengulangan', 'type_a', 'type_b_components', 'type_b',

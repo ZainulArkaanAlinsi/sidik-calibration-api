@@ -9,12 +9,22 @@ use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Models\UncertaintyCalculation;
 use App\Models\User;
+use App\Notifications\SesiDisetujui;
+use App\Notifications\SesiMenungguApproval;
+use App\Notifications\SesiPerluRevisi;
+use App\Services\CalibrationValidator;
 use App\Services\GumCalculator;
+use App\Services\KondisiLingkungan;
+use App\Services\LembarKerjaTemplate;
+use App\Services\PerhitunganBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Sesi kalibrasi: draft → menunggu_approval → disetujui / perlu_revisi.
@@ -25,10 +35,17 @@ use Illuminate\Support\Facades\DB;
  */
 class CalibrationController extends Controller
 {
-    public function __construct(private readonly GumCalculator $gum) {}
+    public function __construct(
+        private readonly GumCalculator $gum,
+        private readonly CalibrationValidator $validator,
+        private readonly KondisiLingkungan $kondisi,
+    ) {}
 
     /** Relasi yang selalu dibutuhin CalibrationResource. */
-    private const RELASI = ['equipment', 'teknisi', 'standard', 'uncertaintyCalculations.standard', 'certificate'];
+    private const RELASI = [
+        'equipment', 'teknisi', 'standard', 'thermohygro', 'standarDicek', 'calibrationMethod', 'room',
+        'uncertaintyCalculations.standard', 'certificate',
+    ];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -57,6 +74,25 @@ class CalibrationController extends Controller
         return CalibrationResource::collection($sesi);
     }
 
+    /**
+     * Bentuk baku Lembar Kerja pH Meter (SIDIK-FM-CAL-0509_Rev.4) — susunan
+     * bagian, kolom, jumlah pengulangan, dan mana yang keisi otomatis.
+     *
+     * Dipakai layar input teknisi biar tampilannya persis kertas yang mereka
+     * pakai selama ini, dan biar nggak ada tebak-tebakan kolom mana yang harus
+     * diisi. Jawabannya: nggak ada yang wajib — semua boleh dikosongin dan
+     * lembar kerjanya tetap bisa dikirim.
+     *
+     * Bentuknya beda per role: teknisi dapat PERSIS kolom di lembar kerja,
+     * admin dapat itu plus kolom administratif (spesifikasi poin 1 & 12A).
+     */
+    public function lembarKerja(Request $request, LembarKerjaTemplate $template): JsonResponse
+    {
+        return response()->json([
+            'data' => $template->phMeter(untukAdmin: $request->user()->isAdmin()),
+        ]);
+    }
+
     public function store(CalibrationRequest $request): JsonResponse
     {
         $clientRequestId = $request->input('client_request_id');
@@ -80,19 +116,11 @@ class CalibrationController extends Controller
 
         $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
             $sesi = CalibrationSession::create([
+                ...$this->atributDariRequest($request),
                 'organization_id' => $request->user()->organization_id,
-                'equipment_id' => $request->integer('equipment_id'),
-                'standard_id' => $request->integer('standard_id'),
                 'teknisi_id' => $request->user()->id,
                 'client_request_id' => $clientRequestId,
                 'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
-                'nomor_order' => $request->input('nomor_order'),
-                'input_method' => $request->string('input_method', 'manual'),
-                'lokasi' => $request->string('lokasi', 'lab'),
-                'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
-                'tanggal_terima' => $request->date('tanggal_terima'),
-                'suhu_ruang' => $request->input('suhu_ruang'),
-                'kelembaban' => $request->input('kelembaban'),
                 'status' => CalibrationSession::STATUS_DRAFT,
             ]);
 
@@ -142,15 +170,7 @@ class CalibrationController extends Controller
 
         $sesi = DB::transaction(function () use ($request, $calibration): CalibrationSession {
             $calibration->update([
-                'equipment_id' => $request->integer('equipment_id'),
-                'standard_id' => $request->integer('standard_id'),
-                'nomor_order' => $request->input('nomor_order'),
-                'input_method' => $request->string('input_method', 'manual'),
-                'lokasi' => $request->string('lokasi', 'lab'),
-                'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
-                'tanggal_terima' => $request->date('tanggal_terima'),
-                'suhu_ruang' => $request->input('suhu_ruang'),
-                'kelembaban' => $request->input('kelembaban'),
+                ...$this->atributDariRequest($request),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
                 // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
                 'catatan_revisi' => null,
@@ -162,7 +182,14 @@ class CalibrationController extends Controller
         return response()->json(['data' => new CalibrationResource($sesi)]);
     }
 
-    /** Admin doang (dijaga `role:admin` di routes). */
+    /**
+     * Admin doang (dijaga `role:admin` di routes).
+     *
+     * Sebelum disetujui, sistem NGITUNG ULANG semua angka dari pembacaan mentah
+     * & ngadu sama yang tersimpan (spesifikasi poin 11). Temuan fatal nahan
+     * approve tanpa syarat; peringatan nahan sekali, dan admin harus lanjut
+     * secara sadar dengan `abaikan_peringatan: true`.
+     */
     public function approve(Request $request, CalibrationSession $calibration): JsonResponse
     {
         $this->pastikanSatuOrganisasi($request, $calibration);
@@ -176,9 +203,30 @@ class CalibrationController extends Controller
         // Angka hasil OCR yang belum dikonfirmasi manusia nggak boleh ikut
         // disertifikasi — itu inti "kamera mempercepat, bukan menggantikan
         // verifikasi". Teknisi verifikasi dulu lewat endpoint measurements/verify.
+        // Dicek duluan (di luar validator) supaya pesannya spesifik & langsung
+        // nunjuk ke tindakan yang harus dilakuin.
         if ($calibration->rawMeasurements()->where('is_verified', false)->exists()) {
             return response()->json([
                 'message' => 'Masih ada pembacaan hasil OCR yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
+            ], 422);
+        }
+
+        $periksa = $this->validator->periksa($calibration);
+        $abaikan = $request->boolean('abaikan_peringatan');
+
+        if (! $periksa['boleh_terbit']) {
+            return response()->json([
+                'message' => 'Ada masalah di data sesi ini yang bikin sertifikatnya nggak bisa diterbitin.',
+                'validasi' => $periksa,
+            ], 422);
+        }
+
+        if (! $periksa['valid'] && ! $abaikan) {
+            return response()->json([
+                'message' => 'Hasil hitung ulang beda dari yang tersimpan. Periksa dulu; '
+                    .'kalau memang mau lanjut, kirim ulang dengan `abaikan_peringatan: true`.',
+                'butuh_konfirmasi' => true,
+                'validasi' => $periksa,
             ], 422);
         }
 
@@ -195,6 +243,96 @@ class CalibrationController extends Controller
         // Generate sertifikat jalan di queue (async) — bikin PDF bisa lama, jadi
         // `certificate_id` boleh masih null sesaat sesudah approve.
         GenerateCertificate::dispatch($calibration->id, $request->user()->id);
+
+        $segar = $calibration->fresh()->load(self::RELASI);
+        $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
+
+        return response()->json([
+            'data' => new CalibrationResource($segar),
+            'validasi' => $periksa,
+        ]);
+    }
+
+    /**
+     * Lembar PERHITUNGAN — tampilan sisi admin dari lembar kerja yang dikirim
+     * teknisi. Identitas alat & customer, perhitungan kondisi lingkungan, dan
+     * tabel hasil sebelum/sesudah adjustment lengkap dengan Average, Correction,
+     * dan STDEV.
+     *
+     * Admin doang: teknisi ngisi lembar kerja, admin yang ngolah. Angkanya
+     * TURUNAN semua — nggak ada yang diketik ulang di sini.
+     */
+    public function perhitungan(Request $request, CalibrationSession $calibration, PerhitunganBuilder $builder): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        return response()->json(['data' => $builder->bangun($calibration)]);
+    }
+
+    /**
+     * Hasil pemeriksaan tanpa nyetujuin apa-apa — buat tombol "Periksa" di
+     * panel admin, biar admin bisa lihat temuannya sebelum mutusin.
+     */
+    public function validasi(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        return response()->json(['data' => $this->validator->periksa($calibration)]);
+    }
+
+    /**
+     * Field administratif sertifikat — admin doang (spesifikasi poin 1 & 12A).
+     *
+     * Dipisah dari `update()` karena beda aturannya: `update()` cuma boleh buat
+     * sesi draft/perlu_revisi dan bakal ngitung ulang seluruh pengukuran, sedang
+     * yang ini cuma nyentuh kolom administratif dan tetap boleh dipakai waktu
+     * sesi udah nunggu approval. Sesi yang udah DISETUJUI tetap dikunci —
+     * sertifikatnya udah terbit.
+     */
+    public function updateAdminFields(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        if ($calibration->status === CalibrationSession::STATUS_DISETUJUI) {
+            return response()->json([
+                'message' => 'Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit.',
+            ], 422);
+        }
+
+        $organizationId = $request->user()->organization_id;
+
+        $data = $request->validate([
+            'nomor_order' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'tanggal_terima' => ['sometimes', 'nullable', 'date', 'before_or_equal:'.$calibration->tanggal_kalibrasi?->toDateString()],
+            'calibration_method_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('calibration_methods', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'thermohygro_standard_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('standards', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'room_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('rooms', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'suhu_ruang' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'kelembaban' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'kelembaban_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+        ]);
+
+        $calibration->update($data);
+
+        // Admin baru milih thermohygro-nya di sini — koreksi & U95% kondisi
+        // lingkungan baru bisa dihitung sekarang.
+        $this->kondisi->terapkan($calibration->fresh()->load('thermohygro'));
 
         return response()->json([
             'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
@@ -225,8 +363,11 @@ class CalibrationController extends Controller
             'catatan_revisi' => $data['catatan_revisi'],
         ]);
 
+        $segar = $calibration->fresh()->load(self::RELASI);
+        $this->kabarinTeknisi($segar, SesiPerluRevisi::dariSesi($segar));
+
         return response()->json([
-            'data' => new CalibrationResource($calibration->fresh()->load(self::RELASI)),
+            'data' => new CalibrationResource($segar),
         ]);
     }
 
@@ -298,33 +439,50 @@ class CalibrationController extends Controller
      */
     private function isiUlangPengukuran(CalibrationSession $sesi, CalibrationRequest $request): CalibrationSession
     {
+        $this->simpanUsageCheck($sesi, $request);
+
+        // Payload tanpa kunci `measurements` sama sekali = teknisi cuma nyimpen
+        // bagian header lembar kerja. Yang udah kecatat jangan dihapus.
+        if (! $request->has('measurements')) {
+            return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
+        }
+
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
 
         $alat = Equipment::findOrFail($request->integer('equipment_id'));
-        $standarDefault = Standard::findOrFail($request->integer('standard_id'));
+        $standarDefault = $request->filled('standard_id')
+            ? Standard::findOrFail($request->integer('standard_id'))
+            : null;
 
         // Sebagian kategori alat (mis. pH) butuh standar beda per titik ukur
         // (buffer 4/7/10) — dimuat sekaligus di sini biar nggak query per titik.
         $standarPerTitik = Standard::whereIn(
             'id',
-            array_filter(array_column($request->input('measurements'), 'standard_id')),
+            array_filter(array_column($request->input('measurements', []), 'standard_id')),
         )->get()->keyBy('id');
 
-        $keputusanSesi = 'PASS';
         // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
         // walau metadata per-pembacaan (foto/skor) nggak dikirim. Metadata cuma
         // nambah jejak audit; yang nentuin "perlu diverifikasi" ya asal OCR-nya.
         $sesiOcr = (string) $request->string('input_method', 'manual') === 'ocr';
+        $satuanDefault = $alat->satuan;
 
-        foreach (array_values($request->input('measurements')) as $index => $titik) {
+        foreach (array_values($request->input('measurements', [])) as $index => $titik) {
             $titikKe = $index + 1;
-            $pembacaan = array_map(floatval(...), array_values($titik['pembacaan']));
+            $satuan = $titik['satuan'] ?? $satuanDefault;
             // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
+            $suhu = array_values($titik['suhu'] ?? []);
 
-            foreach ($pembacaan as $urutan => $nilai) {
+            // Sel kosong di lembar kerja tetap kekirim (sebagai null) supaya
+            // nomor pengulangannya nggak geser. Yang disimpen cuma yang keisi.
+            foreach (array_values($titik['pembacaan'] ?? []) as $urutan => $nilai) {
+                if ($nilai === null || $nilai === '') {
+                    continue;
+                }
+
                 $meta = $ocr[$urutan] ?? null;
                 $dariOcr = $meta !== null || $sesiOcr;
 
@@ -334,7 +492,8 @@ class CalibrationController extends Controller
                     'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
-                    'satuan' => $titik['satuan'],
+                    'suhu' => $suhu[$urutan] ?? null,
+                    'satuan' => $satuan,
                     'input_source' => $dariOcr ? 'ocr' : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
                     'ocr_confidence' => $meta['confidence'] ?? null,
@@ -350,14 +509,21 @@ class CalibrationController extends Controller
             // As-found (sebelum adjustment) — dokumentasi kondisi alat doang,
             // TIDAK ikut GumCalculator::hitungTitik() di bawah. Selalu manual
             // (belum ada jalur OCR buat state ini) & langsung terverifikasi.
-            foreach (($titik['pembacaan_sebelum'] ?? []) as $urutan => $nilai) {
+            $suhuSebelum = array_values($titik['suhu_sebelum'] ?? []);
+
+            foreach (array_values($titik['pembacaan_sebelum'] ?? []) as $urutan => $nilai) {
+                if ($nilai === null || $nilai === '') {
+                    continue;
+                }
+
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sebelum_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
                     'pembacaan' => $nilai,
-                    'satuan' => $titik['satuan'],
+                    'suhu' => $suhuSebelum[$urutan] ?? null,
+                    'satuan' => $satuan,
                     'input_source' => 'manual',
                     'is_verified' => true,
                 ]);
@@ -381,31 +547,188 @@ class CalibrationController extends Controller
                 );
             }
 
-            $hasil = $this->gum->hitungTitik(
+            $pembacaanTerisi = $sesi->rawMeasurements()
+                ->where('titik_ke', $titikKe)
+                ->where('tahap', 'sesudah_adjustment')
+                ->orderBy('pembacaan_ke')
+                ->pluck('pembacaan')
+                ->map(fn ($nilai): float => (float) $nilai)
+                ->all();
+
+            // Titik yang datanya belum cukup TETAP disimpen mentah, cuma nggak
+            // dihitung. Ini yang bikin lembar kerja setengah jadi boleh dikirim
+            // dari lapangan tanpa maksa sistem ngarang angka: yang nahan bukan
+            // tombol kirim, tapi penerbitan sertifikatnya (CalibrationValidator).
+            if (! $this->bisaDihitung($pembacaanTerisi, $alat, $standarTitik)) {
+                continue;
+            }
+
+            $sesi->uncertaintyCalculations()->create($this->gum->hitungTitik(
                 $titikKe,
                 (float) $titik['titik_ukur'],
-                $pembacaan,
+                $pembacaanTerisi,
                 $alat,
                 $standarTitik,
-            );
+            ));
+        }
 
-            $sesi->uncertaintyCalculations()->create($hasil);
+        return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
+    }
 
-            // Satu titik FAIL bikin seluruh sesi FAIL.
-            if ($hasil['keputusan'] === 'FAIL') {
-                $keputusanSesi = 'FAIL';
+    /**
+     * Syarat minimal biar satu titik bisa dihitung ketidakpastiannya.
+     *
+     * - Pengulangan minimal 2: standar deviasi (Type A) nggak ada artinya dari
+     *   satu angka.
+     * - Standar acuan harus ada: ketidakpastiannya komponen Type B terbesar.
+     * - Toleransi alat harus ada: tanpa batas pembanding, PASS/FAIL nggak punya
+     *   dasar sama sekali.
+     *
+     * @param  list<float>  $pembacaan
+     */
+    private function bisaDihitung(array $pembacaan, Equipment $alat, ?Standard $standar): bool
+    {
+        return count($pembacaan) >= GumCalculator::MIN_PENGULANGAN
+            && $standar !== null
+            && $alat->toleransi !== null;
+    }
+
+    /**
+     * Kolom "Usage Check" di lembar kerja. Nggak dikirim = nggak diapa-apain,
+     * biar simpan-header doang nggak ngehapus centang yang udah ada.
+     */
+    private function simpanUsageCheck(CalibrationSession $sesi, CalibrationRequest $request): void
+    {
+        if (! $request->has('standar_dicek')) {
+            return;
+        }
+
+        $pivot = [];
+
+        foreach ((array) $request->input('standar_dicek', []) as $baris) {
+            $pivot[(int) $baris['standard_id']] = [
+                'dipakai' => (bool) ($baris['dipakai'] ?? true),
+                'keterangan' => $baris['keterangan'] ?? null,
+            ];
+        }
+
+        $sesi->standarDicek()->sync($pivot);
+    }
+
+    /**
+     * Tutup pengisian: tentuin keputusan sesi & statusnya.
+     *
+     * Keputusan sesi `null` kalau nggak ada satu pun titik yang kehitung —
+     * lembar kerja yang masih setengah nggak punya hasil, dan nulis "PASS" di
+     * situ jauh lebih berbahaya daripada ngosongin.
+     *
+     * @param  Collection<int, UncertaintyCalculation>  $titik
+     */
+    private function tutupPengisian(
+        CalibrationSession $sesi,
+        CalibrationRequest $request,
+        $titik,
+    ): CalibrationSession {
+        $draft = $request->string('status')->value() === CalibrationSession::STATUS_DRAFT;
+
+        $sesi->update([
+            'keputusan' => match (true) {
+                $titik->isEmpty() => null,
+                // Satu titik FAIL bikin seluruh sesi FAIL.
+                $titik->contains('keputusan', 'FAIL') => 'FAIL',
+                default => 'PASS',
+            },
+            'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
+            'submitted_at' => $draft ? null : now(),
+        ]);
+
+        // Kondisi lingkungan yang dicetak di sertifikat dihitung ulang tiap
+        // sesi disimpen — biar nggak pernah ketinggalan dari pembacaan
+        // awal/akhir yang barusan diubah.
+        $this->kondisi->terapkan($sesi);
+
+        $segar = $sesi->fresh()->load(self::RELASI);
+
+        // Draft nggak ngabarin siapa-siapa — belum masuk antrean approval.
+        $this->kabarinAdmin($segar);
+
+        return $segar;
+    }
+
+    /**
+     * Atribut sesi yang datang dari payload teknisi/admin. Dipakai `store()`
+     * sama `update()` biar dua-duanya nggak bisa beda perlakuan.
+     *
+     * Field administratif cuma ditulis kalau BENERAN dikirim. Kalau nggak,
+     * revisi dari teknisi bakal ngosongin nomor order yang udah diisi admin —
+     * padahal payload teknisi emang nggak pernah bawa field itu.
+     *
+     * @return array<string, mixed>
+     */
+    private function atributDariRequest(CalibrationRequest $request): array
+    {
+        $atribut = [
+            'equipment_id' => $request->integer('equipment_id'),
+            'standard_id' => $request->filled('standard_id') ? $request->integer('standard_id') : null,
+            'input_method' => $request->string('input_method', 'manual'),
+            'lokasi' => $request->string('lokasi', 'lab'),
+            'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
+            'tanggal_terima' => $request->date('tanggal_terima'),
+            // Angka yang DICETAK di sertifikat. Biasanya nggak dikirim mobile —
+            // dihitung dari pembacaan awal/akhir + koreksi sertifikat
+            // thermohygro sesudah sesi disimpen (lihat KondisiLingkungan).
+            'suhu_ruang' => $request->input('suhu_ruang'),
+            'kelembaban' => $request->input('kelembaban'),
+        ];
+
+        $opsional = [
+            ...CalibrationSession::fieldAdmin(),
+            'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir', 'catatan_teknisi',
+        ];
+
+        foreach ($opsional as $field) {
+            if ($request->has($field)) {
+                $atribut[$field] = $request->input($field);
             }
         }
 
-        $sesi->update([
-            'keputusan' => $keputusanSesi,
-            'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
-            'submitted_at' => $request->string('status')->value() === CalibrationSession::STATUS_DRAFT
-                ? null
-                : now(),
-        ]);
+        return $atribut;
+    }
 
-        return $sesi->fresh()->load(self::RELASI);
+    /**
+     * Kabarin teknisi yang ngerjain sesi. Admin yang ngerjain sesinya sendiri
+     * nggak perlu dikabarin soal tindakannya sendiri.
+     */
+    private function kabarinTeknisi(CalibrationSession $sesi, object $notifikasi): void
+    {
+        $teknisi = $sesi->teknisi;
+
+        if ($teknisi === null || $teknisi->id === request()->user()?->id) {
+            return;
+        }
+
+        $teknisi->notify($notifikasi);
+    }
+
+    /** Kabarin semua admin aktif kalau ada sesi baru masuk antrean approval. */
+    private function kabarinAdmin(CalibrationSession $sesi): void
+    {
+        if ($sesi->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+            return;
+        }
+
+        $admin = User::query()
+            ->where('organization_id', $sesi->organization_id)
+            ->where('role', User::ROLE_ADMIN)
+            ->where('status', User::STATUS_AKTIF)
+            ->where('id', '!=', $sesi->teknisi_id)
+            ->get();
+
+        $notifikasi = SesiMenungguApproval::dariSesi($sesi);
+
+        foreach ($admin as $user) {
+            $user->notify($notifikasi);
+        }
     }
 
     /** Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001. */

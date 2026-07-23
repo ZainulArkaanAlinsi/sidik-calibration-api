@@ -5,6 +5,12 @@ namespace App\Jobs;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Models\User;
+use App\Notifications\SertifikatTerbit;
+use App\Services\CalibrationValidator;
+use App\Services\CertificateSnapshotBuilder;
+use App\Services\FolderOrganizer;
+use App\Services\QrCodeGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,6 +18,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -23,6 +30,11 @@ use Illuminate\Support\Str;
  * sesaat sampai job ini kelar.
  *
  * FAIL tetap diterbitin — hasil "tidak laik pakai" itu sertifikat yang sah.
+ *
+ * Urutannya: hitung ulang & periksa (spesifikasi poin 11) → bekukan snapshot
+ * (poin 9) → cetak PDF → taruh di Folder Manager (poin 3) → kabarin yang
+ * bersangkutan (poin 6). Snapshot dibekukan DULUAN, sebelum PDF, biar kalau
+ * cetaknya gagal isinya tetap kesimpen & tinggal di-retry.
  */
 class GenerateCertificate implements ShouldQueue
 {
@@ -35,9 +47,18 @@ class GenerateCertificate implements ShouldQueue
 
     public function handle(): void
     {
+        // Diambil dari container di dalam sini, bukan lewat parameter handle().
+        // Job ini juga dipanggil langsung (`(new GenerateCertificate($id))->handle()`)
+        // dari test & aksi panel admin — kalau dependensinya jadi parameter,
+        // semua pemanggilan langsung itu ikut pecah.
+        $snapshotBuilder = app(CertificateSnapshotBuilder::class);
+        $validator = app(CalibrationValidator::class);
+        $qr = app(QrCodeGenerator::class);
+        $folder = app(FolderOrganizer::class);
+
         $sesi = CalibrationSession::with([
-            'equipment.customer', 'organization', 'teknisi', 'reviewer', 'standard',
-            'uncertaintyCalculations.standard',
+            'equipment.customer', 'organization', 'teknisi', 'reviewer', 'standard', 'thermohygro',
+            'standarDicek', 'calibrationMethod', 'room', 'rawMeasurements', 'uncertaintyCalculations.standard',
         ])->find($this->calibrationSessionId);
 
         if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI) {
@@ -71,24 +92,23 @@ class GenerateCertificate implements ShouldQueue
         });
 
         try {
-            $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke');
+            // Hasil pemeriksaan disimpan APA ADANYA, termasuk kalau ada temuan.
+            // Approve udah nahan yang fatal; yang nyampe sini paling banter
+            // peringatan yang sengaja dilewatin admin — dan justru itu yang
+            // paling penting ketinggalan jejaknya.
+            $sertifikat->update([
+                'validasi' => $validator->periksa($sesi),
+                'snapshot' => $snapshotBuilder->bangun($sesi, $sertifikat),
+            ]);
 
             $pdf = Pdf::loadView('sertifikat.pdf', [
                 'sertifikat' => $sertifikat,
-                'sesi' => $sesi,
-                'titik' => $titik,
-                // Standar per titik (mis. buffer pH 4/7/10, beda-beda) + standar
-                // sesi (mis. Termometer & Sensor Std., kondisi lingkungan) —
-                // digabung & di-dedupe biar standar yang sama nggak dobel di PDF.
-                'standarDipakai' => $titik->pluck('standard')->filter()
-                    ->when($sesi->standard, fn ($c) => $c->push($sesi->standard))
-                    ->unique('id'),
-                // Nomor IK dari titik pertama yang punya CMC — semua titik dari
-                // alat yang sama biasanya satu IK, jadi cukup satu buat dipajang.
-                'metodeKalibrasi' => $titik->first(fn ($t) => $t->metode !== null)?->metode,
+                'snapshot' => $sertifikat->snapshot,
                 // Embed sebagai data URI — paling aman buat dompdf (nggak
                 // gantung ke path/symlink). null kalau logonya nggak ketemu.
                 'logo' => $this->logoDataUri($sesi->organization),
+                'qr' => $this->qrDataUri($qr, $sesi->organization, $sertifikat),
+                'keputusan' => $this->tampilkanKeputusan($sesi->organization) ? $sesi->keputusan : null,
             ]);
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
@@ -105,6 +125,71 @@ class GenerateCertificate implements ShouldQueue
 
             throw $e;
         }
+
+        // Dua langkah di bawah ini pelengkap, bukan syarat sahnya sertifikat.
+        // Kalau salah satunya meledak, sertifikatnya udah terbit & PDF-nya udah
+        // ada — jangan sampai job-nya di-retry cuma gara-gara ini, karena retry
+        // bakal ngulang dari nol dan bikin nomor baru.
+        try {
+            $folder->tautkanSertifikat($sertifikat->fresh()->load('session.equipment.customer'));
+            $this->kabarin($sertifikat);
+        } catch (\Throwable $e) {
+            Log::warning('Sertifikat terbit, tapi penautan folder/notifikasi gagal.', [
+                'certificate_id' => $sertifikat->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** Kabarin teknisi yang ngerjain + admin yang nerbitin. */
+    private function kabarin(Certificate $sertifikat): void
+    {
+        $sertifikat->loadMissing('session.equipment', 'session.teknisi');
+
+        $penerima = User::query()
+            ->whereIn('id', array_filter([$sertifikat->session?->teknisi_id, $sertifikat->issued_by]))
+            ->where('status', User::STATUS_AKTIF)
+            ->get();
+
+        foreach ($penerima as $user) {
+            $user->notify(SertifikatTerbit::dariSertifikat($sertifikat));
+        }
+    }
+
+    /**
+     * QR verifikasi buat dicetak di sertifikat. Bisa dimatiin lewat pengaturan
+     * organisasi (`tampilkan_qr_di_pdf`) buat lab yang layout sertifikatnya
+     * dikunci ketat sama dokumen mutu.
+     */
+    private function qrDataUri(QrCodeGenerator $qr, ?Organization $organization, Certificate $sertifikat): ?string
+    {
+        if (($organization?->settings['tampilkan_qr_di_pdf'] ?? true) === false) {
+            return null;
+        }
+
+        try {
+            return $qr->dataUri((string) $sertifikat->qr_payload, skala: 4);
+        } catch (\Throwable $e) {
+            // QR gagal dibikin (mis. ekstensi GD nggak aktif di server) nggak
+            // boleh nahan penerbitan — sertifikatnya masih sah tanpa QR.
+            Log::warning('QR sertifikat gagal dibuat.', [
+                'certificate_id' => $sertifikat->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Struktur baku sertifikat pH nggak punya baris keputusan PASS/FAIL, jadi
+     * defaultnya NGGAK dicetak. Tapi buat sertifikat alat lain (yang formatnya
+     * nggak dikunci pelanggan), keputusan itu informasi paling penting di
+     * dokumennya — makanya disediain sakelarnya, bukan dihapus permanen.
+     */
+    private function tampilkanKeputusan(?Organization $organization): bool
+    {
+        return (bool) ($organization?->settings['tampilkan_keputusan_di_pdf'] ?? false);
     }
 
     /**

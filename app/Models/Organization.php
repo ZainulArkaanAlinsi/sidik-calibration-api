@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperOrganization
+ */
 #[Fillable([
     'nama', 'alamat', 'telepon', 'email', 'no_akreditasi', 'standar_akreditasi',
     'akreditasi_mulai', 'akreditasi_berakhir', 'logo_path', 'settings',

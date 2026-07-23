@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Equipment;
 use App\Models\User;
-use Filament\Notifications\Notification;
+use App\Notifications\AlatJatuhTempo;
 use Illuminate\Console\Command;
 
 /**
@@ -44,13 +44,23 @@ class CekJatuhTempo extends Command
                     ->where('status', User::STATUS_AKTIF)
                     ->get();
 
+                // Notifikasi ditulis lewat kelas aplikasi, bukan langsung
+                // Filament: baris yang sama harus kebaca di lonceng panel DAN
+                // di halaman notifikasi mobile (spesifikasi poin 4 & 6).
+                $notifikasi = new AlatJatuhTempo(
+                    $overdue,
+                    $mendekati,
+                    $alatList->take(20)->map(fn (Equipment $a): array => [
+                        'id' => $a->id,
+                        'nama_alat' => $a->nama_alat,
+                        'serial_number' => $a->serial_number,
+                        'tanggal_jatuh_tempo' => $a->tanggal_jatuh_tempo?->toDateString(),
+                        'overdue' => $a->isOverdue(),
+                    ])->values()->all(),
+                );
+
                 foreach ($admins as $admin) {
-                    Notification::make()
-                        ->title('Pengingat kalibrasi')
-                        ->body(ucfirst($pesan).'.')
-                        ->icon('heroicon-o-exclamation-triangle')
-                        ->color($overdue > 0 ? 'danger' : 'warning')
-                        ->sendToDatabase($admin);
+                    $admin->notify($notifikasi);
                 }
 
                 $this->info("Org {$organizationId}: {$pesan} → {$admins->count()} admin dikabarin.");

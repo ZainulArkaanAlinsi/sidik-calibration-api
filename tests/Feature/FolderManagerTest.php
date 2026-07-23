@@ -1,0 +1,234 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Jobs\GenerateCertificate;
+use App\Models\CalibrationSession;
+use App\Models\Customer;
+use App\Models\Equipment;
+use App\Models\EquipmentCategory;
+use App\Models\Folder;
+use App\Models\FolderFile;
+use App\Models\Organization;
+use App\Models\Standard;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+/**
+ * Folder Manager (spesifikasi poin 3 & 7): folder kebentuk otomatis per PT,
+ * CRUD folder & file, dan penyaringan isi per-role.
+ */
+class FolderManagerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $admin;
+
+    private User $teknisi;
+
+    private Customer $pelanggan;
+
+    private Standard $standar;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Organization::factory()->create();
+        $this->admin = User::factory()->admin()->create();
+        $this->teknisi = User::factory()->create();
+        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $this->standar = Standard::factory()->create();
+    }
+
+    private function terbitkanSertifikatUntuk(User $teknisi, ?Customer $pelanggan = null): CalibrationSession
+    {
+        Storage::fake('local');
+
+        $alat = Equipment::factory()->create([
+            'customer_id' => ($pelanggan ?? $this->pelanggan)->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create()->id,
+            'satuan' => 'mm', 'resolusi' => 0.01, 'toleransi' => 0.05,
+        ]);
+
+        $this->actingAs($teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $alat->id,
+            'standard_id' => $this->standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'measurements' => [['titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03]]],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+        $sesi->update(['status' => CalibrationSession::STATUS_DISETUJUI]);
+
+        (new GenerateCertificate($sesi->id, $this->admin->id))->handle();
+
+        return $sesi;
+    }
+
+    public function test_sertifikat_terbit_otomatis_masuk_folder_pt_per_tahun(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+
+        $akar = Folder::whereNull('parent_id')->firstOrFail();
+        $this->assertSame('PT Tirta Gracia', $akar->nama);
+        $this->assertSame(Folder::TIPE_SISTEM, $akar->tipe);
+
+        $tahun = $akar->children()->firstOrFail();
+        $this->assertSame(now()->format('Y'), $tahun->nama);
+
+        $file = $tahun->files()->firstOrFail();
+        $this->assertSame(FolderFile::SUMBER_SERTIFIKAT, $file->sumber);
+        $this->assertStringStartsWith('Sertifikat-CAL-', $file->nama);
+    }
+
+    public function test_dua_sertifikat_pt_yang_sama_numpuk_di_satu_folder(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+
+        $this->assertSame(1, Folder::whereNull('parent_id')->count());
+        $this->assertSame(2, FolderFile::count());
+    }
+
+    public function test_daftar_folder_akar_nampilin_jumlah_isinya(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+
+        $this->actingAs($this->admin)
+            ->getJson('/api/folders')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia')
+            ->assertJsonPath('data.0.tipe', 'sistem')
+            ->assertJsonPath('data.0.jumlah_folder', 1);
+    }
+
+    public function test_buka_folder_nampilin_sub_folder_dan_file_di_dalamnya(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+        $tahun = Folder::whereNotNull('parent_id')->firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->getJson("/api/folders/{$tahun->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data.file')
+            ->assertJsonPath('data.file.0.sumber', 'sertifikat');
+    }
+
+    public function test_admin_bisa_bikin_ganti_nama_dan_hapus_folder_manual(): void
+    {
+        $id = $this->actingAs($this->admin)
+            ->postJson('/api/folders', ['nama' => 'Arsip Surat Jalan'])
+            ->assertCreated()
+            ->assertJsonPath('data.tipe', 'manual')
+            ->json('data.id');
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/folders/{$id}", ['nama' => 'Arsip Surat Jalan 2026'])
+            ->assertOk()
+            ->assertJsonPath('data.nama', 'Arsip Surat Jalan 2026');
+
+        $this->actingAs($this->admin)->deleteJson("/api/folders/{$id}")->assertNoContent();
+        $this->assertSoftDeleted('folders', ['id' => $id]);
+    }
+
+    public function test_nama_folder_nggak_boleh_kembar_di_lokasi_yang_sama(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/folders', ['nama' => 'Arsip'])->assertCreated();
+
+        $this->actingAs($this->admin)
+            ->postJson('/api/folders', ['nama' => 'Arsip'])
+            ->assertStatus(422);
+    }
+
+    public function test_folder_otomatis_nggak_bisa_direname_atau_dihapus_selagi_ada_isinya(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+        $akar = Folder::whereNull('parent_id')->firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/folders/{$akar->id}", ['nama' => 'Nama Karangan'])
+            ->assertStatus(422);
+
+        $this->actingAs($this->admin)
+            ->deleteJson("/api/folders/{$akar->id}")
+            ->assertStatus(422);
+    }
+
+    public function test_teknisi_nggak_bisa_bikin_atau_hapus_folder(): void
+    {
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/folders', ['nama' => 'Punya Saya'])
+            ->assertForbidden();
+    }
+
+    public function test_teknisi_cuma_lihat_folder_yang_ada_sertifikat_miliknya(): void
+    {
+        $teknisiLain = User::factory()->create();
+        $this->terbitkanSertifikatUntuk($teknisiLain, Customer::factory()->create(['nama' => 'PT Lain']));
+
+        // Folder PT Lain ada, tapi isinya bukan kerjaan teknisi ini.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/folders')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/folders')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia');
+    }
+
+    public function test_teknisi_nggak_bisa_unduh_file_punya_orang_lain(): void
+    {
+        $teknisiLain = User::factory()->create();
+        $this->terbitkanSertifikatUntuk($teknisiLain);
+
+        $file = FolderFile::firstOrFail();
+
+        $this->actingAs($this->teknisi)
+            ->get("/api/folder-files/{$file->id}/download")
+            ->assertNotFound();
+
+        $this->actingAs($teknisiLain)
+            ->get("/api/folder-files/{$file->id}/download")
+            ->assertOk();
+    }
+
+    public function test_admin_bisa_unggah_dokumen_pendukung_ke_folder(): void
+    {
+        Storage::fake('local');
+        $folder = Folder::factory()->create();
+
+        $id = $this->actingAs($this->admin)
+            ->postJson('/api/folder-files', [
+                'folder_id' => $folder->id,
+                'file' => UploadedFile::fake()->create('surat-jalan.pdf', 12, 'application/pdf'),
+                'keterangan' => 'Surat jalan pengiriman alat',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.sumber', 'unggahan')
+            ->assertJsonPath('data.nama', 'surat-jalan.pdf')
+            ->json('data.id');
+
+        $this->actingAs($this->admin)->get("/api/folder-files/{$id}/download")->assertOk();
+    }
+
+    public function test_hapus_entri_sertifikat_dari_folder_nggak_ngehapus_sertifikatnya(): void
+    {
+        $sesi = $this->terbitkanSertifikatUntuk($this->teknisi);
+        $file = FolderFile::firstOrFail();
+
+        $this->actingAs($this->admin)->deleteJson("/api/folder-files/{$file->id}")->assertNoContent();
+
+        $this->assertSoftDeleted('folder_files', ['id' => $file->id]);
+        $this->assertNotNull($sesi->fresh()->certificate);
+    }
+}

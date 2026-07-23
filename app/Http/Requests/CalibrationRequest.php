@@ -3,16 +3,32 @@
 namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
-use App\Models\Equipment;
 use App\Models\Standard;
-use App\Services\GumCalculator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class CalibrationRequest extends FormRequest
 {
+    /**
+     * Buang field administratif dari kiriman non-admin (spesifikasi poin 1).
+     *
+     * DIBUANG, bukan ditolak 422: layar teknisi versi lama masih ngirim
+     * `nomor_order`, dan bikin mobile lama gagal submit di lapangan itu
+     * kerugian yang jauh lebih besar daripada nolak satu field yang emang
+     * bakal diisi ulang admin. Yang penting nilainya nggak nyampe DB.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->user()?->isAdmin()) {
+            return;
+        }
+
+        $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -27,17 +43,42 @@ class CalibrationRequest extends FormRequest
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at'),
             ],
-            // Ketidakpastian standar acuan itu komponen Type B terbesar — tanpa
-            // ini U jadi kekecilan dan alat yang harusnya FAIL malah lulus. Jadi
-            // wajib, walaupun kontrak mobile versi awal nggak nyantumin.
+            // Ketidakpastian standar acuan itu komponen Type B terbesar. DULUNYA
+            // wajib — sekarang boleh kosong, ngikutin lembar kerja: teknisi di
+            // lapangan boleh ngirim lembar yang belum lengkap. Konsekuensinya
+            // titik tanpa standar NGGAK dihitung ketidakpastiannya (lihat
+            // CalibrationController::isiUlangPengukuran), dan sertifikatnya
+            // ketahan di validasi admin — bukan angka ngasal yang terbit.
             'standard_id' => [
-                'required',
+                'nullable',
                 Rule::exists('standards', 'id')
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at'),
             ],
-            'tanggal_kalibrasi' => ['required', 'date', 'before_or_equal:today'],
+            // Draft boleh disimpen sebelum tanggalnya kepikiran; begitu dikirim
+            // buat approval, tanggal kalibrasi wajib ada — itu identitas
+            // pekerjaannya, bukan detail tambahan.
+            'tanggal_kalibrasi' => [
+                $this->disimpanSebagaiDraft() ? 'nullable' : 'required',
+                'date', 'before_or_equal:today',
+            ],
+            // Cuma nyampe sini kalau yang ngirim admin — kiriman teknisi udah
+            // dibuang di prepareForValidation().
             'nomor_order' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'calibration_method_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('calibration_methods', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'thermohygro_standard_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('standards', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'suhu_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'kelembaban_ketidakpastian' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             // Tanggal alat diterima dari customer — logisnya nggak setelah
             // tanggal kalibrasinya sendiri.
             'tanggal_terima' => ['sometimes', 'nullable', 'date', 'before_or_equal:tanggal_kalibrasi'],
@@ -50,8 +91,36 @@ class CalibrationRequest extends FormRequest
             'client_request_id' => ['sometimes', 'nullable', 'uuid'],
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
+            // Ruangan lab tempat sesi dikerjain — jadi "Calibration Location"
+            // di sertifikat. Kosong buat sesi onsite.
+            'room_id' => [
+                'sometimes', 'nullable',
+                Rule::exists('rooms', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
             'suhu_ruang' => ['nullable', 'numeric'],
             'kelembaban' => ['nullable', 'numeric', 'between:0,100'],
+            // "Env. Condition" di lembar kerja dicatat dua kali: awal & akhir
+            // kerja. Semua opsional — thermohygro-nya nggak selalu ada di
+            // lokasi pelanggan.
+            'suhu_awal' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
+            'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            // Kolom "Catatan:" di lembar kerja.
+            'catatan_teknisi' => ['sometimes', 'nullable', 'string', 'max:2000'],
+
+            // Kolom "Usage Check": standar mana aja yang dicentang teknisi.
+            'standar_dicek' => ['sometimes', 'array'],
+            'standar_dicek.*.standard_id' => [
+                'required',
+                Rule::exists('standards', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'standar_dicek.*.dipakai' => ['sometimes', 'boolean'],
+            'standar_dicek.*.keterangan' => ['sometimes', 'nullable', 'string', 'max:255'],
 
             // Teknisi boleh nyimpen dulu sebagai draft & nerusin nanti. Kalau
             // nggak dikirim, sesi langsung masuk antrean approval admin.
@@ -60,16 +129,29 @@ class CalibrationRequest extends FormRequest
                 CalibrationSession::STATUS_MENUNGGU_APPROVAL,
             ])],
 
-            'measurements' => ['required', 'array', 'min:1'],
+            // Lembar kerja boleh dikirim walau belum penuh — kolom yang belum
+            // keisi tetap lolos. Yang dijaga BUKAN kelengkapan formulirnya, tapi
+            // penerbitan sertifikatnya: titik yang datanya kurang nggak dihitung,
+            // dan sertifikat cuma bisa terbit sesudah lolos pemeriksaan admin
+            // (lihat CalibrationValidator). Jadi teknisi nggak pernah keblokir
+            // di lapangan, tapi angka setengah jadi juga nggak pernah nyampe
+            // dokumen resmi.
+            'measurements' => ['sometimes', 'array'],
             'measurements.*.titik_ukur' => ['required', 'numeric'],
-            'measurements.*.satuan' => ['required', 'string', 'max:50'],
-            'measurements.*.pembacaan' => ['required', 'array', 'min:'.GumCalculator::MIN_PENGULANGAN],
-            'measurements.*.pembacaan.*' => ['required', 'numeric'],
+            'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'measurements.*.pembacaan' => ['sometimes', 'nullable', 'array'],
+            // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
+            // disaring waktu ngitung.
+            'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
+            // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
+            'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.suhu.*' => ['nullable', 'numeric'],
             // As-found (sebelum alat di-adjustment) — murni dokumentasi kondisi
-            // alat, TIDAK ikut hitungan GUM. Nggak ada minimum jumlah karena
-            // bukan data resmi (beda dari `pembacaan` di atas).
-            'measurements.*.pembacaan_sebelum' => ['sometimes', 'array'],
-            'measurements.*.pembacaan_sebelum.*' => ['required', 'numeric'],
+            // alat, TIDAK ikut hitungan GUM.
+            'measurements.*.pembacaan_sebelum' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.pembacaan_sebelum.*' => ['nullable', 'numeric'],
+            'measurements.*.suhu_sebelum' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.suhu_sebelum.*' => ['nullable', 'numeric'],
             // Sebagian kategori alat (mis. pH) butuh standar BEDA per titik ukur
             // (buffer 4/7/10) — kosong berarti titik ini ikut `standard_id` sesi.
             'measurements.*.standard_id' => [
@@ -103,14 +185,21 @@ class CalibrationRequest extends FormRequest
         return [
             'equipment_id.required' => 'Alat yang mau dikalibrasi wajib diisi.',
             'equipment_id.exists' => 'Alat itu nggak ada.',
-            'standard_id.required' => 'Standar acuan wajib diisi — ketidakpastiannya dipakai buat hitung Type B.',
             'standard_id.exists' => 'Standar acuan itu nggak ada.',
+            'tanggal_kalibrasi.required' => 'Tanggal kalibrasi wajib diisi sebelum lembar kerja dikirim.',
             'tanggal_kalibrasi.before_or_equal' => 'Tanggal kalibrasi nggak boleh di masa depan.',
             'kelembaban.between' => 'Kelembaban itu persen, jadi cuma boleh 0–100.',
-            'measurements.required' => 'Data pengukuran wajib diisi.',
-            'measurements.*.pembacaan.min' => 'Tiap titik ukur minimal '.GumCalculator::MIN_PENGULANGAN
-                .' pembacaan — standar deviasi (Type A) nggak bisa dihitung dari satu angka.',
+            'measurements.*.titik_ukur.required' => 'Tiap baris hasil wajib punya nilai larutan standar (Solution Standard).',
         ];
+    }
+
+    /**
+     * Lembar kerja yang lagi disimpen sebagai draft, belum dikirim ke admin.
+     * Kolom wajibnya lebih longgar — draft itu memang catatan setengah jadi.
+     */
+    private function disimpanSebagaiDraft(): bool
+    {
+        return $this->input('status') === CalibrationSession::STATUS_DRAFT;
     }
 
     /**
@@ -124,17 +213,13 @@ class CalibrationRequest extends FormRequest
                 return;
             }
 
-            $alat = Equipment::find($this->integer('equipment_id'));
-
-            // Tanpa toleransi, PASS/FAIL nggak bisa diputuskan sama sekali —
-            // nggak ada batas buat dibandingin. Lebih baik nolak sekarang
-            // daripada nerbitin sertifikat tanpa keputusan.
-            if ($alat && $alat->toleransi === null) {
-                $validator->errors()->add(
-                    'equipment_id',
-                    'Alat ini belum punya nilai toleransi. Isi dulu di data alat — tanpa itu PASS/FAIL nggak bisa diputuskan.',
-                );
-            }
+            // Toleransi alat yang kosong SENGAJA nggak ditolak di sini, walaupun
+            // tanpa itu PASS/FAIL nggak bisa diputuskan. Itu data master yang
+            // cuma admin yang bisa benerin — nolak di sini bikin teknisi
+            // mentok di lapangan tanpa bisa ngapa-ngapain. Yang kejadian:
+            // titiknya disimpen mentah tanpa dihitung, dan penerbitan
+            // sertifikatnya ketahan `CalibrationValidator` sampai admin ngisi
+            // toleransinya.
 
             // Semua standar yang kesebut (sesi + per-titik) dimuat sekaligus di
             // sini, dipakai buat dua-duanya di bawah — biar nggak query

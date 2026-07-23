@@ -1,0 +1,218 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Api\Concerns\ScopesFolderAccess;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\FolderResource;
+use App\Models\Folder;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
+
+/**
+ * Folder Manager (spesifikasi poin 3 & 7) — CRUD folder.
+ *
+ * Sebagian besar isinya KEBENTUK SENDIRI: tiap sertifikat terbit langsung
+ * masuk ke `PT / tahun` lewat `FolderOrganizer`. Yang di sini buat ngerapiin
+ * sisanya — bikin folder arsip sendiri, ganti nama, hapus yang nggak kepake.
+ */
+class FolderController extends Controller
+{
+    use ScopesFolderAccess;
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $folder = $this->query($request)
+            ->withCount(['children', 'files'])
+            // `parent_id` nggak dikirim = tampilkan akar (daftar PT). Dikirim
+            // kosong pun sama artinya — mobile gampang ngirim string kosong.
+            ->when(
+                $request->filled('parent_id'),
+                fn (Builder $query) => $query->where('parent_id', $request->integer('parent_id')),
+                fn (Builder $query) => $query->whereNull('parent_id'),
+            )
+            ->when(
+                $request->filled('customer_id'),
+                fn (Builder $query) => $query->where('customer_id', $request->integer('customer_id')),
+            )
+            ->when(
+                $request->filled('q'),
+                fn (Builder $query) => $query->where('nama', 'like', '%'.$request->string('q').'%'),
+            )
+            ->orderBy('nama')
+            ->get();
+
+        return FolderResource::collection($folder);
+    }
+
+    public function show(Request $request, Folder $folder): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $folder);
+
+        $folder->load([
+            'customer',
+            'children' => fn ($query) => $query->withCount(['children', 'files'])->orderBy('nama'),
+            // Isi folder disaring pakai aturan yang sama kayak daftar file —
+            // teknisi cuma lihat punyanya sendiri.
+            'files' => fn ($query) => $query
+                ->whereIn('id', $this->queryFileYangBolehDilihat($request)->select('id'))
+                ->with(['certificate', 'uploader'])
+                ->orderByDesc('id'),
+        ]);
+
+        return response()->json(['data' => new FolderResource($folder)]);
+    }
+
+    /** Admin doang (dijaga `role:admin` di routes). */
+    public function store(Request $request): JsonResponse
+    {
+        $organizationId = $request->user()->organization_id;
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'parent_id' => [
+                'nullable',
+                Rule::exists('folders', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'customer_id' => [
+                'nullable',
+                Rule::exists('customers', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+            'keterangan' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($pesan = $this->namaBentrok($organizationId, $data['parent_id'] ?? null, $data['nama'])) {
+            return response()->json(['message' => $pesan], 422);
+        }
+
+        $folder = Folder::create([
+            ...$data,
+            'organization_id' => $organizationId,
+            // Folder buatan tangan SELALU `manual`. Tipe `sistem` cuma boleh
+            // lahir dari FolderOrganizer — kalau bisa dibikin lewat API, ada
+            // yang bakal bikin folder "sistem" palsu yang nggak nyambung ke data.
+            'tipe' => Folder::TIPE_MANUAL,
+        ]);
+
+        return response()->json([
+            'data' => new FolderResource($folder->loadCount(['children', 'files'])),
+        ], 201);
+    }
+
+    /** Admin doang. */
+    public function update(Request $request, Folder $folder): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $folder);
+
+        // Folder sistem namanya = nama PT / tahun, dan itu yang dipakai
+        // `FolderOrganizer` buat nemuin folder yang udah ada. Begitu direname,
+        // sertifikat berikutnya bikin folder baru dan arsipnya kepecah dua.
+        // Keterangannya tetap boleh diubah.
+        $data = $request->validate([
+            'nama' => [
+                $folder->tipe === Folder::TIPE_SISTEM ? 'prohibited' : 'sometimes',
+                'string', 'max:255',
+            ],
+            'keterangan' => ['sometimes', 'nullable', 'string', 'max:1000'],
+        ], [
+            'nama.prohibited' => 'Folder ini kebentuk otomatis dari data, jadi namanya ngikut nama PT/tahun.',
+        ]);
+
+        if (isset($data['nama']) && $data['nama'] !== $folder->nama) {
+            $pesan = $this->namaBentrok($folder->organization_id, $folder->parent_id, $data['nama']);
+
+            if ($pesan !== null) {
+                return response()->json(['message' => $pesan], 422);
+            }
+        }
+
+        $folder->update($data);
+
+        return response()->json([
+            'data' => new FolderResource($folder->fresh()->loadCount(['children', 'files'])),
+        ]);
+    }
+
+    /** Admin doang. */
+    public function destroy(Request $request, Folder $folder): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $folder);
+
+        // Folder sistem boleh dihapus cuma kalau udah kosong — kalau masih ada
+        // isinya, yang kehapus itu jalur ke sertifikat resmi, dan itu bukan
+        // "ngerapiin", itu ngilangin arsip.
+        if ($folder->tipe === Folder::TIPE_SISTEM
+            && ($folder->files()->exists() || $folder->children()->exists())) {
+            return response()->json([
+                'message' => 'Folder otomatis yang masih ada isinya nggak bisa dihapus. '
+                    .'Kosongin dulu isinya kalau memang mau dibuang.',
+            ], 422);
+        }
+
+        $folder->delete();
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Nama folder harus unik dalam satu induk. Dicek di aplikasi, bukan lewat
+     * unique index: `parent_id` bisa null (folder akar), dan di MySQL/SQLite
+     * dua baris dengan kolom unik bernilai NULL itu dianggap nggak bentrok —
+     * jadi index-nya nggak bakal nahan dua folder akar bernama sama.
+     */
+    private function namaBentrok(int $organizationId, ?int $parentId, string $nama): ?string
+    {
+        $ada = Folder::query()
+            ->where('organization_id', $organizationId)
+            ->where('parent_id', $parentId)
+            ->where('nama', $nama)
+            ->exists();
+
+        return $ada ? "Sudah ada folder bernama \"{$nama}\" di lokasi ini." : null;
+    }
+
+    /** @return Builder<Folder> */
+    private function query(Request $request): Builder
+    {
+        return Folder::query()
+            ->where('organization_id', $request->user()->organization_id)
+            ->with('customer')
+            // Teknisi cuma dikasih lihat folder yang beneran ada isinya buat
+            // dia — folder PT yang nggak pernah dia sentuh nggak usah nongol.
+            ->when($this->teknisiBiasa($request), fn (Builder $query) => $query->where(
+                fn (Builder $q) => $q
+                    ->whereIn('id', $this->queryFileYangBolehDilihat($request)->select('folder_id'))
+                    ->orWhereHas(
+                        'children',
+                        fn (Builder $anak) => $anak->whereIn(
+                            'id',
+                            $this->queryFileYangBolehDilihat($request)->select('folder_id'),
+                        ),
+                    ),
+            ));
+    }
+
+    private function pastikanBolehLihat(Request $request, Folder $folder): void
+    {
+        $this->pastikanSatuOrganisasi($request, $folder);
+
+        if (! $this->teknisiBiasa($request)) {
+            return;
+        }
+
+        abort_unless($this->query($request)->whereKey($folder->id)->exists(), 404);
+    }
+
+    /** Jaring pengaman multi-tenant: PT lain nggak boleh baca folder kita. */
+    private function pastikanSatuOrganisasi(Request $request, Folder $folder): void
+    {
+        abort_if($folder->organization_id !== $request->user()->organization_id, 404);
+    }
+}

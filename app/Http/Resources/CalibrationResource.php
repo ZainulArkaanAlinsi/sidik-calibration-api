@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\RawMeasurement;
+use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -72,13 +73,56 @@ class CalibrationResource extends JsonResource
             ] : null,
 
             'suhu_ruang' => $this->suhu_ruang,
+            'suhu_ketidakpastian' => $this->suhu_ketidakpastian,
             'kelembaban' => $this->kelembaban,
+            'kelembaban_ketidakpastian' => $this->kelembaban_ketidakpastian,
+            // "Env. Condition" di lembar kerja: dicatat di awal & akhir kerja.
+            'suhu_awal' => $this->suhu_awal,
+            'suhu_akhir' => $this->suhu_akhir,
+            'kelembaban_awal' => $this->kelembaban_awal,
+            'kelembaban_akhir' => $this->kelembaban_akhir,
+            'catatan_teknisi' => $this->catatan_teknisi,
             'lokasi' => $this->lokasi,
+            'ruangan' => $this->room ? [
+                'id' => $this->room->id,
+                'kode' => $this->room->kode,
+                'nama' => $this->room->nama,
+            ] : null,
             'standar_acuan' => $this->standard ? [
                 'id' => $this->standard->id,
                 'nama' => $this->standard->nama,
                 'no_sertifikat' => $this->standard->no_sertifikat,
             ] : null,
+
+            // Field administratif — diisi admin, dihapus dari layar teknisi
+            // (spesifikasi poin 1). Tetap dikirim ke semua role: layar teknisi
+            // yang milih nggak nampilin, bukan API yang nyembunyiin. Yang
+            // dijaga backend itu siapa yang boleh NGUBAH (lihat
+            // CalibrationRequest::prepareForValidation).
+            'metode_kalibrasi' => $this->calibrationMethod ? [
+                'id' => $this->calibrationMethod->id,
+                'kode' => $this->calibrationMethod->kodeLengkap(),
+                'nama' => $this->calibrationMethod->nama,
+            ] : null,
+            'thermohygro' => $this->thermohygro ? [
+                'id' => $this->thermohygro->id,
+                'nama' => $this->thermohygro->nama,
+                'serial_number' => $this->thermohygro->serial_number,
+            ] : null,
+
+            // Kolom "Usage Check" di lembar kerja.
+            'standar_dicek' => $this->whenLoaded(
+                'standarDicek',
+                fn () => $this->standarDicek
+                    ->map(fn (Standard $s): array => [
+                        'standard_id' => $s->id,
+                        'nama' => $s->nama,
+                        'serial_number' => $s->serial_number,
+                        'dipakai' => (bool) $s->pivot->dipakai,
+                        'keterangan' => $s->pivot->keterangan,
+                    ])
+                    ->values(),
+            ),
             'titik' => $this->uncertaintyCalculations
                 ->sortBy('titik_ke')
                 ->values()
@@ -127,6 +171,9 @@ class CalibrationResource extends JsonResource
                         'pembacaan_ke' => $m->pembacaan_ke,
                         'tahap' => $m->tahap,
                         'pembacaan' => $m->pembacaan,
+                        // Suhu larutan waktu pembacaan diambil — kolom °C di
+                        // sebelah kolom pH di lembar kerja.
+                        'suhu' => $m->suhu,
                         'input_source' => $m->input_source,
                         'is_verified' => $m->is_verified,
                         'photo_path' => $m->photo_path,

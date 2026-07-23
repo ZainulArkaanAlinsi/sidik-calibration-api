@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Certificates\Tables;
 
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
+use App\Services\CertificateExcelExporter;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
@@ -13,6 +14,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CertificatesTable
@@ -85,6 +87,21 @@ class CertificatesTable
                         $namaFile = 'Sertifikat-'.str_replace('/', '-', (string) $record->nomor).'.pdf';
 
                         return Storage::disk('local')->download($record->pdf_path, $namaFile);
+                    }),
+
+                // Export Excel (spesifikasi poin 10). Dibikin on demand dari
+                // snapshot yang sama dengan PDF, jadi angkanya mustahil beda.
+                Action::make('excel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('success')
+                    ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_TERBIT
+                        && filled($record->snapshot))
+                    ->action(function (Certificate $record): BinaryFileResponse {
+                        $tmp = tempnam(sys_get_temp_dir(), 'sertifikat-').'.xlsx';
+                        app(CertificateExcelExporter::class)->satu($record, $tmp);
+
+                        return response()->download($tmp, $record->namaFile('xlsx'))->deleteFileAfterSend();
                     }),
 
                 // Terbitin ulang yang gagal. Job-nya idempoten (updateOrCreate di
