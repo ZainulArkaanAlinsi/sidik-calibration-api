@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Customer;
 use App\Models\Equipment;
@@ -91,8 +92,10 @@ class CalibrationValidationTest extends TestCase
         );
 
         // Ketahan beneran: statusnya nggak pindah & sertifikat nggak diantre.
+        // (Sinyal broadcast realtime boleh jalan — yang dijaga cuma jangan sampai
+        // sertifikatnya kegenerate.)
         $this->assertSame(CalibrationSession::STATUS_MENUNGGU_APPROVAL, $sesi->fresh()->status);
-        Queue::assertNothingPushed();
+        Queue::assertNotPushed(GenerateCertificate::class);
     }
 
     public function test_admin_tetap_bisa_lanjut_kalau_peringatannya_disadari(): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
@@ -127,6 +128,8 @@ class CalibrationController extends Controller
             return $this->isiUlangPengukuran($sesi, $request);
         });
 
+        $this->siarkan($sesi, 'dibuat');
+
         return response()->json(['data' => new CalibrationResource($sesi)], 201);
     }
 
@@ -178,6 +181,8 @@ class CalibrationController extends Controller
 
             return $this->isiUlangPengukuran($calibration, $request);
         });
+
+        $this->siarkan($sesi, 'diubah');
 
         return response()->json(['data' => new CalibrationResource($sesi)]);
     }
@@ -246,6 +251,7 @@ class CalibrationController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
+        $this->siarkan($segar, 'disetujui');
 
         return response()->json([
             'data' => new CalibrationResource($segar),
@@ -365,6 +371,7 @@ class CalibrationController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiPerluRevisi::dariSesi($segar));
+        $this->siarkan($segar, 'ditolak');
 
         return response()->json([
             'data' => new CalibrationResource($segar),
@@ -698,6 +705,16 @@ class CalibrationController extends Controller
         }
 
         return $atribut;
+    }
+
+    /**
+     * Sinyal realtime ke channel organisasi biar HP & panel desktop nge-refresh
+     * data yang sama barengan (spec poin 12D). Cuma sinyal — isi datanya tetap
+     * ditarik lewat REST biasa.
+     */
+    private function siarkan(CalibrationSession $sesi, string $aksi): void
+    {
+        PerubahanDataOrganisasi::dispatch($sesi->organization_id, 'kalibrasi', $aksi, $sesi->id);
     }
 
     /**

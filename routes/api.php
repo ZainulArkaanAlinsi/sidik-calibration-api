@@ -14,12 +14,14 @@ use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -57,6 +59,10 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Otorisasi channel privat buat realtime sync (Echo authEndpoint di mobile &
+    // desktop → /api/broadcasting/auth, pakai token Sanctum). Lihat routes/channels.php.
+    Route::post('/broadcasting/auth', fn (Request $request) => Broadcast::auth($request));
     // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
     // yang ilang.
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
@@ -179,6 +185,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
+
+        // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
+        // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di
+        // organization.settings.reminder_hari_sebelum (default 30 hari).
+        Route::post('/reminders/jatuh-tempo', [ReminderController::class, 'jatuhTempo']);
 
         // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
         // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
