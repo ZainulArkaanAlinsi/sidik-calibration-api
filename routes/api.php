@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\WorksheetExtractionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -133,9 +134,17 @@ Route::middleware('auth:sanctum')->group(function () {
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 
-        // Upload foto display alat buat pembacaan OCR → balikin photo_path.
+        // Upload foto display alat → balikin photo_path.
         Route::post('/calibrations/photos', [CalibrationController::class, 'uploadPhoto']);
-        // Konfirmasi pembacaan OCR (is_verified) — syarat sebelum sesi di-approve.
+
+        // AI Vision: foto tabel lembar kerja → { baris: [...] } + skor keyakinan
+        // per sel (gantinya OCR di HP). Hasilnya buat dikonfirmasi teknisi, BUKAN
+        // langsung disimpen — submit final tetap lewat POST/PUT /calibrations.
+        // Path ngikut SPEC-vision-prompt.md §8 (yang dipanggil mobile).
+        Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
+            ->middleware('throttle:30,1');
+
+        // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
             '/calibrations/{calibration}/measurements/verify',
             [CalibrationController::class, 'verifyMeasurements'],

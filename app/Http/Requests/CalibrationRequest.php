@@ -89,7 +89,9 @@ class CalibrationRequest extends FormRequest
             // Opsional & backward-compatible: mobile lama yang belum kirim ini
             // tetap jalan seperti biasa (lihat CalibrationController::store()).
             'client_request_id' => ['sometimes', 'nullable', 'uuid'],
-            'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
+            // `ocr` disimpen buat kompatibilitas app lama; sumber baru dari
+            // kamera adalah `ai_vision` (Claude Vision di server, ganti OCR).
+            'input_method' => ['sometimes', Rule::in(['manual', 'ocr', 'ai_vision'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
             // Ruangan lab tempat sesi dikerjain — jadi "Calibration Location"
             // di sertifikat. Kosong buat sesi onsite.

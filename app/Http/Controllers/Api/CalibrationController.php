@@ -207,7 +207,7 @@ class CalibrationController extends Controller
         // nunjuk ke tindakan yang harus dilakuin.
         if ($calibration->rawMeasurements()->where('is_verified', false)->exists()) {
             return response()->json([
-                'message' => 'Masih ada pembacaan hasil OCR yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
+                'message' => 'Masih ada pembacaan hasil pindai (AI Vision) yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
             ], 422);
         }
 
@@ -462,10 +462,15 @@ class CalibrationController extends Controller
             array_filter(array_column($request->input('measurements', []), 'standard_id')),
         )->get()->keyBy('id');
 
-        // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
-        // walau metadata per-pembacaan (foto/skor) nggak dikirim. Metadata cuma
-        // nambah jejak audit; yang nentuin "perlu diverifikasi" ya asal OCR-nya.
-        $sesiOcr = (string) $request->string('input_method', 'manual') === 'ocr';
+        // Angka yang datang dari KAMERA (AI Vision — atau OCR versi lama) butuh
+        // verifikasi manusia, walau metadata per-pembacaan (foto/skor) nggak
+        // dikirim. Metadata cuma nambah jejak audit; yang nentuin "perlu
+        // diverifikasi" ya asal-kamera-nya.
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        // Nilai yang disimpen di kolom input_source: kalau metodenya bukan
+        // kamera tapi ada metadata per-pembacaan (app lama), anggap 'ocr'.
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
         $satuanDefault = $alat->satuan;
 
         foreach (array_values($request->input('measurements', [])) as $index => $titik) {
@@ -484,7 +489,7 @@ class CalibrationController extends Controller
                 }
 
                 $meta = $ocr[$urutan] ?? null;
-                $dariOcr = $meta !== null || $sesiOcr;
+                $dariKamera = $meta !== null || $sesiKamera;
 
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
@@ -494,15 +499,15 @@ class CalibrationController extends Controller
                     'pembacaan' => $nilai,
                     'suhu' => $suhu[$urutan] ?? null,
                     'satuan' => $satuan,
-                    'input_source' => $dariOcr ? 'ocr' : 'manual',
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
                     'ocr_confidence' => $meta['confidence'] ?? null,
                     'ocr_raw_text' => $meta['raw_text'] ?? null,
                     // Input manual: yang ngetik manusianya sendiri, langsung
-                    // terverifikasi. Hasil OCR: kamera cuma mempercepat input —
-                    // angkanya WAJIB dikonfirmasi manusia (endpoint verify) dulu
-                    // sebelum sesi bisa disetujui.
-                    'is_verified' => ! $dariOcr,
+                    // terverifikasi. Hasil AI Vision: kamera cuma mempercepat
+                    // input — angkanya WAJIB dikonfirmasi manusia (endpoint
+                    // verify) dulu sebelum sesi bisa disetujui.
+                    'is_verified' => ! $dariKamera,
                 ]);
             }
 

@@ -132,12 +132,12 @@ class CalibrationSessionsTable
                     ])
                     ->modalDescription('Sesi disetujui dan sertifikat langsung diterbitkan. Sesi FAIL pun tetap terbit (hasil "tidak laik pakai").')
                     ->action(function (CalibrationSession $record, array $data, CalibrationValidator $validator): void {
-                        // Angka OCR yang belum dikonfirmasi manusia nggak boleh
-                        // ikut disertifikasi — dicek duluan biar pesannya
-                        // langsung nunjuk ke tindakannya.
+                        // Angka hasil pindai AI yang belum dikonfirmasi manusia
+                        // nggak boleh ikut disertifikasi — dicek duluan biar
+                        // pesannya langsung nunjuk ke tindakannya.
                         if ($record->rawMeasurements()->where('is_verified', false)->exists()) {
                             Notification::make()
-                                ->title('Masih ada pembacaan OCR yang belum diverifikasi.')
+                                ->title('Masih ada pembacaan hasil pindai yang belum diverifikasi.')
                                 ->body('Teknisi harus konfirmasi angkanya dulu sebelum sesi ini bisa disetujui.')
                                 ->danger()
                                 ->persistent()
