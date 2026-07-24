@@ -75,6 +75,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // di navbar bawah teknisi; isinya disaring per-role di controller.
     Route::get('/folders', [FolderController::class, 'index']);
     Route::get('/folders/{folder}', [FolderController::class, 'show']);
+    // Alias `/arsip/*` yang dipanggil mobile (docs/permintaan-backend-2026-07-24.md §2).
+    // Folder akar = per-PT, jadi daftar "perusahaan" = index tanpa parent_id.
+    Route::get('/arsip/perusahaan', [FolderController::class, 'index']);
+    Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
     Route::get('/folder-files', [FolderFileController::class, 'index']);
     Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
         ->name('folder-files.download');
@@ -204,6 +208,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/folders', [FolderController::class, 'store']);
         Route::put('/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
+        // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
+        Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
+        Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
         Route::post('/folder-files', [FolderFileController::class, 'store']);
         Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
         Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);
