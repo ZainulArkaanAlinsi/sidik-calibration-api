@@ -347,6 +347,33 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Soal `?mine=true`
 > Teknisi **selalu** cuma dapat sesi miliknya sendiri — nggak peduli query param-nya diisi apa. `mine=false` bukan pintu belakang. Param `mine=true` cuma berfungsi buat **admin & viewer** yang mau nyaring punya sendiri. Ada testnya.
 
+### `status_standar` di respons sesi — banner kepala lembar kerja
+
+✅ **Live 25 Jul.** Ikut di `GET /api/calibrations` & `GET /api/calibrations/{id}`.
+
+```json
+"status_standar": {
+  "ringkasan": "expired",
+  "pesan": "ONE OR MORE STANDARD EXPIRED",
+  "standar": [
+    { "id": 10, "nama": "pH Buffer Solution 7", "status": "valid", "hari_menuju_kadaluarsa": 190 },
+    { "id": 12, "nama": "Termometer & Sensor Std.", "status": "expired", "hari_menuju_kadaluarsa": -3 }
+  ]
+}
+```
+
+- **`ringkasan` itu status TERBURUK** dari semua standar yang kepakai di sesi itu:
+  standar default sesi, thermohygro, standar per titik ukur (buffer 4/7/10
+  masing-masing punya sertifikat sendiri), dan baris Usage Check. Satu yang
+  kadaluarsa udah cukup nahan penerbitan sertifikat, jadi banner-nya nggak boleh
+  kalem cuma karena standar lain masih valid.
+- **`pesan` udah siap tampil** — jangan disusun ulang di mobile, biar kalimatnya
+  sama sama yang tercetak di lembar kerja. **`null` = nggak usah nampilin banner
+  sama sekali.**
+- **`standar[]`** buat badge per baris di bagian PENGERJAAN. Standar yang kepakai
+  dari dua jalur (mis. standar default sesi juga kepakai di titik pertama) cukup
+  muncul sekali.
+
 ### `GET /api/standards` — isi dropdown "Standar Acuan"
 
 ✅ **Live sejak 14 Jul.** Baca: semua role (termasuk viewer). Nggak pakai paginasi — daftar standar lab itu pendek, jadi langsung kekirim semua (sama kayak `/categories`).
@@ -372,6 +399,30 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
   ]
 }
 ```
+
+> ## ✅ 25 Jul — `status_kalibrasi` & `hari_menuju_kadaluarsa` (worksheet-ph §2.1)
+>
+> `masih_berlaku` (bool) nggak cukup buat kepala lembar kerja: worksheet-nya punya
+> state **TENGAH** — "mau kadaluarsa". Sekarang tiap standar ikut bawa:
+>
+> ```json
+> "status_kalibrasi": "valid",          // valid | warning | expired
+> "hari_menuju_kadaluarsa": 23
+> ```
+>
+> - **`hari_menuju_kadaluarsa` BERTANDA**: positif = sisa hari, `0` = habis hari
+>   ini, **negatif = udah lewat** (`-12` artinya kadaluarsa 12 hari lalu). `null`
+>   kalau standar itu nggak punya tanggal berlaku — beda artinya dari `0`.
+> - **Ambang `warning` ditentukan BACKEND**, per organisasi
+>   (`organization.settings.reminder_hari_sebelum`, default **30 hari**) — knob yang
+>   sama dipakai reminder alat jatuh tempo. Sengaja satu sumber: kalau mobile
+>   nentuin ambangnya sendiri, dia bisa nampilin VALID buat standar yang nanti
+>   ditolak backend waktu approve, dan teknisi baru tahu setelah kerjaannya kelar.
+> - ⚠️ **`status_kalibrasi` yang jadi pegangan, BUKAN `hari_menuju_kadaluarsa`.**
+>   Standar yang habis HARI INI balik `hari_menuju_kadaluarsa: 0` tapi
+>   `status_kalibrasi: "expired"` — konsisten sama `masih_berlaku` dan sama aturan
+>   yang nolak `POST /calibrations` dengan `422`. Jangan nurunin status sendiri
+>   dari angka harinya; pakai angkanya buat teks doang ("lewat 12 hari").
 
 > **Pakai `masih_berlaku`, jangan banding-bandingin `berlaku_sampai` sendiri** — gampang salah zona waktu. Standar yang `masih_berlaku: false` **ditolak `422`** kalau dipakai kalibrasi (ketertelusurannya putus), jadi jangan dibikin bisa dipilih di dropdown.
 >
