@@ -98,6 +98,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Kirim / perbaiki lembar kerja | `POST /calibrations`, `PUT /calibrations/{id}` |
 | **Hitung sambil ngetik** | `POST /calibrations/preview` — body sama persis kayak `POST /calibrations`, nggak nyimpen apa pun. Lihat [`kontrak-api.md` §4a](kontrak-api.md) |
 | Standar beda per titik (buffer 4/7/10) | `measurements[].standard_id` |
+| **Badge & banner status standar** | `status_kalibrasi` + `hari_menuju_kadaluarsa` di `/standards`, `status_standar` di respons sesi. Ambang dari `organization.settings.reminder_hari_sebelum` (default 30) |
 | Pembacaan as-found | `measurements[].pembacaan_sebelum` |
 | Idempotency retry submit | `client_request_id` (UUID) |
 | Ruangan di sesi | `room_id` — ikut di request & response (`ruangan.{id,kode,nama}`) |
@@ -164,7 +165,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 | `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |
 | `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
-| `status_kalibrasi` + `hari_menuju_kadaluarsa` di standar | worksheet-ph §2.1 | Banner "ONE OR MORE STANDARD EXPIRED". `masih_berlaku` (bool) udah ada, tapi state **WARNING (H-30)** belum |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
 | `audit_logs` + rumus berversi | arsitektur-desktop §Keputusan 4 & 5 | Menu Kelola Data & Rumus di desktop |
 

@@ -19,6 +19,12 @@ class Organization extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /** Default ambang peringatan H- kalau org belum ngatur sendiri (± sebulan). */
+    public const DEFAULT_AMBANG_HARI = 30;
+
+    /** Kunci setting di `organization.settings` buat ambang peringatan. */
+    public const KEY_AMBANG_HARI = 'reminder_hari_sebelum';
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -27,6 +33,33 @@ class Organization extends Model
             'akreditasi_mulai' => 'date',
             'akreditasi_berakhir' => 'date',
         ];
+    }
+
+    /**
+     * Ambang "mendekati kadaluarsa" (H- berapa hari) yang berlaku buat org ini.
+     *
+     * SATU angka dipakai dua tempat, sengaja:
+     * - pengingat alat mendekati jatuh tempo (`PengingatJatuhTempo`)
+     * - badge `warning` di standar acuan (`Standard::statusKalibrasi()`)
+     *
+     * Alasannya: keduanya jawab pertanyaan yang sama ("berapa lama sebelum
+     * sesuatu kadaluarsa lab mau diingetin"), dan yang paling penting dari
+     * permintaan mobile itu **satu sumber** — kalau HP nentuin ambangnya sendiri,
+     * dia bisa bilang VALID padahal backend nolak waktu approve, dan teknisi
+     * kerja sia-sia.
+     *
+     * Konsekuensi yang perlu disadari: admin yang ngecilin ambang biar reminder
+     * alat nggak terlalu sering JUGA ngecilin jendela warning standar. Kalau
+     * suatu saat perlu dipisah, tambah kunci setting baru — jangan hardcode
+     * angka kedua di tempat lain.
+     */
+    public function ambangPeringatanHari(): int
+    {
+        $nilai = $this->settings[self::KEY_AMBANG_HARI] ?? null;
+
+        return is_numeric($nilai) && (int) $nilai > 0
+            ? (int) $nilai
+            : self::DEFAULT_AMBANG_HARI;
     }
 
     /**

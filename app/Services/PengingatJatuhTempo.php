@@ -19,10 +19,10 @@ use App\Notifications\AlatJatuhTempo;
 class PengingatJatuhTempo
 {
     /** Default kalau org belum ngatur sendiri (± sebulan sebelum jatuh tempo). */
-    public const DEFAULT_HARI = 30;
+    public const DEFAULT_HARI = Organization::DEFAULT_AMBANG_HARI;
 
     /** Kunci setting di organization.settings buat ambang reminder. */
-    public const KEY_SETTING = 'reminder_hari_sebelum';
+    public const KEY_SETTING = Organization::KEY_AMBANG_HARI;
 
     /**
      * Jalanin buat SEMUA organisasi (dipakai scheduler harian).
@@ -96,11 +96,14 @@ class PengingatJatuhTempo
         ];
     }
 
-    /** Ambang reminder yang berlaku buat satu org: setting admin, atau default. */
+    /**
+     * Ambang reminder yang berlaku buat satu org: setting admin, atau default.
+     *
+     * Angkanya dipegang `Organization` supaya badge `warning` di standar acuan
+     * bisa pakai ambang yang SAMA tanpa nyalin logikanya ke resource.
+     */
     public function ambangOrganisasi(Organization $org): int
     {
-        $nilai = $org->settings[self::KEY_SETTING] ?? null;
-
-        return is_numeric($nilai) && (int) $nilai > 0 ? (int) $nilai : self::DEFAULT_HARI;
+        return $org->ambangPeringatanHari();
     }
 }

@@ -72,7 +72,7 @@ Dicek ke kode, semua ini udah jalan:
 
 ## 2. Yang KURANG — per bagian worksheet
 
-### 2.1 Header — `Calibrator Standard Status Monitoring`
+### 2.1 Header — `Calibrator Standard Status Monitoring` — ✅ **UDAH JADI (25 Jul)**
 
 Worksheet nampilin banner merah **"ONE OR MORE STANDARD EXPIRED"**, plus badge
 per standar di bagian PENGERJAAN:
@@ -97,6 +97,20 @@ backend nolak waktu approve, teknisi kerja sia-sia.
 
 Ambangnya diputuskan backend (mis. `warning` = ≤30 hari), yang penting
 **satu sumber**. Mobile cuma nampilin.
+
+> ### ✅ Jadi — persis bentuk yang diminta, plus dua catatan
+>
+> `status_kalibrasi` & `hari_menuju_kadaluarsa` ada di `StandardResource`;
+> `status_standar` (`ringkasan` + `pesan` + `standar[]`) ada di respons sesi.
+> Kontrak lengkap: [`kontrak-api.md` §4](kontrak-api.md).
+>
+> - Ambangnya **`organization.settings.reminder_hari_sebelum`** (default 30) —
+>   knob yang sama dipakai reminder alat jatuh tempo, biar nggak ada angka kedua
+>   yang bisa nyimpang.
+> - ⚠️ **`status_kalibrasi` yang jadi pegangan, bukan `hari_menuju_kadaluarsa`.**
+>   Standar yang habis HARI INI balik `0` tapi statusnya `expired` — itu konsisten
+>   sama aturan yang nolak `POST /calibrations` dengan `422`, jadi badge-nya nggak
+>   bakal bilang aman buat sesi yang bakal ditolak.
 
 **Dan di response sesi**, ringkasan buat banner header:
 
@@ -226,7 +240,7 @@ sertifikat), tapi teknisi lihat hasilnya sambil ngetik.
 | # | Item | Ngeblok | Ukuran |
 |---|---|---|---|
 | 0 | **Keputusan `titik_ukur` nominal vs terkoreksi** | Seluruh angka sertifikat | Cuma keputusan |
-| 1 | `status_kalibrasi` di StandardResource + ringkasan sesi | Banner + badge Halaman 1 | Kecil |
+| 1 | ~~`status_kalibrasi` di StandardResource + ringkasan sesi~~ | ~~Banner + badge Halaman 1~~ | ✅ **jadi 25 Jul** |
 | 2 | `alamat` di `pelanggan` | Identitas Customer | Sangat kecil |
 | 3 | ~~`POST /calibrations/preview`~~ | ~~Perhitungan sambil ngetik~~ | ✅ **jadi 25 Jul** |
 | 4 | `room_id` di sesi | Lokasi "Lab. Uji A" | Kecil |

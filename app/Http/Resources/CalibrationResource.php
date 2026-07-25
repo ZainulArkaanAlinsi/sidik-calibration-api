@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Organization;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
@@ -86,6 +87,15 @@ class CalibrationResource extends JsonResource
                 'nama' => $this->standard->nama,
                 'no_sertifikat' => $this->standard->no_sertifikat,
             ] : null,
+
+            // Banner merah di kepala lembar kerja ("ONE OR MORE STANDARD EXPIRED")
+            // + badge per standar. Statusnya TERBURUK dari semua standar sesi ini:
+            // satu yang kadaluarsa udah cukup nahan penerbitan sertifikat, jadi
+            // banner-nya nggak boleh kalem cuma karena yang lain masih valid.
+            'status_standar' => $this->statusStandar(
+                $request->user()?->organization?->ambangPeringatanHari()
+                    ?? Organization::DEFAULT_AMBANG_HARI,
+            ),
 
             // Field administratif — diisi admin, dihapus dari layar teknisi
             // (spesifikasi poin 1). Tetap dikirim ke semua role: layar teknisi
