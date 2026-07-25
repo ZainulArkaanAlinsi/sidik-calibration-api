@@ -21,6 +21,24 @@ php artisan route:list --path=api
 
 ---
 
+## Peta dokumen di `docs/`
+
+Biar jelas mana yang dibaca buat apa:
+
+| File | Isinya | Percaya statusnya? |
+|---|---|---|
+| **`BACA-DULU-BACKEND.md`** (ini) | Status apa yang udah/belum jalan | ✅ **ya** — diverifikasi ke kode |
+| [`Spesifikasi-Aplikasi-Kalibrasi.md`](Spesifikasi-Aplikasi-Kalibrasi.md) | Spec produk asli. **Ini rujukan komentar "spesifikasi poin N" yang kesebar di 45 tempat di kode** | ✅ ya (dokumen kebutuhan, bukan status) |
+| [`kontrak-api.md`](kontrak-api.md) | Bentuk JSON tiap endpoint | ✅ ya, sesudah koreksi §6 (nama field notifikasi) |
+| [`realtime-sync.md`](realtime-sync.md) | Arsitektur broadcast + contoh klien Laravel Echo | ✅ ya |
+| [`SPEC-vision-prompt.md`](SPEC-vision-prompt.md) | Prompt & implementasi AI Vision | ✅ ya, kecuali klaim caching (lihat §4) |
+| [`Rekap-Data-Kemampuan-Kalibrasi.md`](Rekap-Data-Kemampuan-Kalibrasi.md) | Data CMC dari lampiran akreditasi LK-285-IDN | ✅ ya (data sumber) |
+| [`infrastruktur-vps-produksi.md`](infrastruktur-vps-produksi.md) | Rencana deploy VPS | ✅ ya (usulan) |
+| `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
+| [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
+
+---
+
 ## 0. WAJIB dibaca sebelum setup — dua hal yang bikin mentok
 
 ### `php artisan migrate` di MySQL fresh sempat GAGAL — sudah dibetulkan
@@ -98,7 +116,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |
 | Master data | `/equipments`, `/categories`, `/standards`, `/customers`, `/rooms`, `/technicians`, `/organization` |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
-| Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` |
+| Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
 
 ---
 

@@ -48,6 +48,28 @@ php artisan queue:work         # broadcast & notifikasi jalan lewat queue
 
 Alternatif tanpa self-host: `pusher` (isi `PUSHER_*`, set `BROADCAST_CONNECTION=pusher`).
 
+> ⚠️ **`composer require laravel/reverb` itu WAJIB dijalanin duluan.** Paketnya
+> (termasuk `pusher/pusher-php-server`) belum terpasang di repo ini. Kalau
+> `BROADCAST_CONNECTION` diset ke `reverb`/`pusher` sebelum itu, `/api/broadcasting/auth`
+> gagal dengan `Class "Pusher\Pusher" not found` — itu bukan salah kodenya.
+
+> ### Catatan 25 Juli 2026 — bug di `/api/broadcasting/auth`, udah dibetulin
+>
+> `Illuminate\Http\Request` nggak ke-import di `routes/api.php`, jadi type-hint di
+> closure-nya resolve ke alias global = **facade**, bukan HTTP request-nya.
+> Akibatnya `$request->channel_name` selalu `null`, dan begitu driver-nya diganti
+> ke `reverb`/`pusher`, **semua subscribe kena `403`** — tanpa satu pun error di log.
+>
+> Kenapa nggak kelihatan berbulan-bulan: driver `log` (dev) & `null` (test) bikin
+> `auth()` jadi no-op yang balikin `200` body kosong, jadi salah apa pun di dalam
+> closure kelihatan "lolos". Test yang ada waktu itu cuma nyentuh jalur `401`
+> tanpa token — itu dicegat middleware **sebelum** closure-nya jalan.
+>
+> Sekarang ada `RealtimeSyncTest::test_endpoint_auth_channel_nerima_http_request_asli`
+> yang masang driver penangkap dan mastiin yang keinjeksi beneran HTTP request
+> lengkap dengan `channel_name` & `user()`. Jadi kalau ada yang ngapus import-nya
+> lagi, testnya merah duluan sebelum kejadian di produksi.
+
 ## Sisi klien (mobile & desktop — repo terpisah)
 
 Pakai Laravel Echo. Contoh (JS/desktop; mobile pakai paket Echo Flutter yang setara):
