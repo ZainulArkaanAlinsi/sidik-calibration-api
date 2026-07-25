@@ -47,10 +47,15 @@ class CalibrationController extends Controller
         private readonly KondisiLingkungan $kondisi,
     ) {}
 
-    /** Relasi yang selalu dibutuhin CalibrationResource. */
+    /**
+     * Relasi yang selalu dibutuhin CalibrationResource.
+     *
+     * `reviewer` ikut karena resource-nya nampilin "Checked by" — tanpa dimuat di
+     * sini, daftar sesi jadi satu query tambahan per baris.
+     */
     private const RELASI = [
-        'equipment', 'teknisi', 'standard', 'thermohygro', 'standarDicek', 'calibrationMethod', 'room',
-        'uncertaintyCalculations.standard', 'certificate',
+        'equipment', 'teknisi', 'reviewer', 'standard', 'thermohygro', 'standarDicek',
+        'calibrationMethod', 'room', 'uncertaintyCalculations.standard', 'certificate',
     ];
 
     /**
