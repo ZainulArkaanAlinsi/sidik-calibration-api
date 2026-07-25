@@ -14,11 +14,15 @@ use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\WorksheetExtractionController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -56,6 +60,10 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Otorisasi channel privat buat realtime sync (Echo authEndpoint di mobile &
+    // desktop → /api/broadcasting/auth, pakai token Sanctum). Lihat routes/channels.php.
+    Route::post('/broadcasting/auth', fn (Request $request) => Broadcast::auth($request));
     // Token Sanctum nggak kadaluarsa sendiri — ini caranya matiin sesi di HP
     // yang ilang.
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
@@ -74,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // di navbar bawah teknisi; isinya disaring per-role di controller.
     Route::get('/folders', [FolderController::class, 'index']);
     Route::get('/folders/{folder}', [FolderController::class, 'show']);
+    // Alias `/arsip/*` yang dipanggil mobile (docs/permintaan-backend-2026-07-24.md §2).
+    // Folder akar = per-PT, jadi daftar "perusahaan" = index tanpa parent_id.
+    Route::get('/arsip/perusahaan', [FolderController::class, 'index']);
+    Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
     Route::get('/folder-files', [FolderFileController::class, 'index']);
     Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
         ->name('folder-files.download');
@@ -133,9 +145,17 @@ Route::middleware('auth:sanctum')->group(function () {
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 
-        // Upload foto display alat buat pembacaan OCR → balikin photo_path.
+        // Upload foto display alat → balikin photo_path.
         Route::post('/calibrations/photos', [CalibrationController::class, 'uploadPhoto']);
-        // Konfirmasi pembacaan OCR (is_verified) — syarat sebelum sesi di-approve.
+
+        // AI Vision: foto tabel lembar kerja → { baris: [...] } + skor keyakinan
+        // per sel (gantinya OCR di HP). Hasilnya buat dikonfirmasi teknisi, BUKAN
+        // langsung disimpen — submit final tetap lewat POST/PUT /calibrations.
+        // Path ngikut SPEC-vision-prompt.md §8 (yang dipanggil mobile).
+        Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
+            ->middleware('throttle:30,1');
+
+        // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
             '/calibrations/{calibration}/measurements/verify',
             [CalibrationController::class, 'verifyMeasurements'],
@@ -167,6 +187,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
 
+        // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
+        // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di
+        // organization.settings.reminder_hari_sebelum (default 30 hari).
+        Route::post('/reminders/jatuh-tempo', [ReminderController::class, 'jatuhTempo']);
+
         // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
         // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
         // standar itu ikut salah.
@@ -195,6 +220,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/folders', [FolderController::class, 'store']);
         Route::put('/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
+        // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
+        Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
+        Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
         Route::post('/folder-files', [FolderFileController::class, 'store']);
         Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
         Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);

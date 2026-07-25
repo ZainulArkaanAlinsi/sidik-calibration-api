@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
@@ -133,6 +134,10 @@ class GenerateCertificate implements ShouldQueue
         try {
             $folder->tautkanSertifikat($sertifikat->fresh()->load('session.equipment.customer'));
             $this->kabarin($sertifikat);
+            // Sinyal realtime: sertifikat baru terbit → HP & desktop refresh barengan.
+            PerubahanDataOrganisasi::dispatch(
+                $sertifikat->organization_id, 'sertifikat', 'diterbitkan', $sertifikat->id,
+            );
         } catch (\Throwable $e) {
             Log::warning('Sertifikat terbit, tapi penautan folder/notifikasi gagal.', [
                 'certificate_id' => $sertifikat->id,

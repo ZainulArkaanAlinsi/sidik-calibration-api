@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class LoginRequest extends FormRequest
 {
     /**
-     * `identifier` bisa ID pegawai (ASM-0001) atau email — teknisi di lapangan
+     * `identifier` bisa ID pegawai (SDK-0001) atau email — teknisi di lapangan
      * hafalnya nomor pegawai, bukan email.
      *
      * @return array<string, array<int, string>>

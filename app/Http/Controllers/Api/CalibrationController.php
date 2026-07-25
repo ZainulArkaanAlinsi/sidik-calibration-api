@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
@@ -127,6 +128,8 @@ class CalibrationController extends Controller
             return $this->isiUlangPengukuran($sesi, $request);
         });
 
+        $this->siarkan($sesi, 'dibuat');
+
         return response()->json(['data' => new CalibrationResource($sesi)], 201);
     }
 
@@ -179,6 +182,8 @@ class CalibrationController extends Controller
             return $this->isiUlangPengukuran($calibration, $request);
         });
 
+        $this->siarkan($sesi, 'diubah');
+
         return response()->json(['data' => new CalibrationResource($sesi)]);
     }
 
@@ -207,7 +212,7 @@ class CalibrationController extends Controller
         // nunjuk ke tindakan yang harus dilakuin.
         if ($calibration->rawMeasurements()->where('is_verified', false)->exists()) {
             return response()->json([
-                'message' => 'Masih ada pembacaan hasil OCR yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
+                'message' => 'Masih ada pembacaan hasil pindai (AI Vision) yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
             ], 422);
         }
 
@@ -246,6 +251,7 @@ class CalibrationController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
+        $this->siarkan($segar, 'disetujui');
 
         return response()->json([
             'data' => new CalibrationResource($segar),
@@ -365,6 +371,7 @@ class CalibrationController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiPerluRevisi::dariSesi($segar));
+        $this->siarkan($segar, 'ditolak');
 
         return response()->json([
             'data' => new CalibrationResource($segar),
@@ -462,10 +469,15 @@ class CalibrationController extends Controller
             array_filter(array_column($request->input('measurements', []), 'standard_id')),
         )->get()->keyBy('id');
 
-        // Seluruh sesi ditandai OCR: tiap pembacaannya butuh verifikasi manusia,
-        // walau metadata per-pembacaan (foto/skor) nggak dikirim. Metadata cuma
-        // nambah jejak audit; yang nentuin "perlu diverifikasi" ya asal OCR-nya.
-        $sesiOcr = (string) $request->string('input_method', 'manual') === 'ocr';
+        // Angka yang datang dari KAMERA (AI Vision — atau OCR versi lama) butuh
+        // verifikasi manusia, walau metadata per-pembacaan (foto/skor) nggak
+        // dikirim. Metadata cuma nambah jejak audit; yang nentuin "perlu
+        // diverifikasi" ya asal-kamera-nya.
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        // Nilai yang disimpen di kolom input_source: kalau metodenya bukan
+        // kamera tapi ada metadata per-pembacaan (app lama), anggap 'ocr'.
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
         $satuanDefault = $alat->satuan;
 
         foreach (array_values($request->input('measurements', [])) as $index => $titik) {
@@ -484,7 +496,7 @@ class CalibrationController extends Controller
                 }
 
                 $meta = $ocr[$urutan] ?? null;
-                $dariOcr = $meta !== null || $sesiOcr;
+                $dariKamera = $meta !== null || $sesiKamera;
 
                 $sesi->rawMeasurements()->create([
                     'titik_ke' => $titikKe,
@@ -494,15 +506,15 @@ class CalibrationController extends Controller
                     'pembacaan' => $nilai,
                     'suhu' => $suhu[$urutan] ?? null,
                     'satuan' => $satuan,
-                    'input_source' => $dariOcr ? 'ocr' : 'manual',
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
                     'ocr_confidence' => $meta['confidence'] ?? null,
                     'ocr_raw_text' => $meta['raw_text'] ?? null,
                     // Input manual: yang ngetik manusianya sendiri, langsung
-                    // terverifikasi. Hasil OCR: kamera cuma mempercepat input —
-                    // angkanya WAJIB dikonfirmasi manusia (endpoint verify) dulu
-                    // sebelum sesi bisa disetujui.
-                    'is_verified' => ! $dariOcr,
+                    // terverifikasi. Hasil AI Vision: kamera cuma mempercepat
+                    // input — angkanya WAJIB dikonfirmasi manusia (endpoint
+                    // verify) dulu sebelum sesi bisa disetujui.
+                    'is_verified' => ! $dariKamera,
                 ]);
             }
 
@@ -693,6 +705,16 @@ class CalibrationController extends Controller
         }
 
         return $atribut;
+    }
+
+    /**
+     * Sinyal realtime ke channel organisasi biar HP & panel desktop nge-refresh
+     * data yang sama barengan (spec poin 12D). Cuma sinyal — isi datanya tetap
+     * ditarik lewat REST biasa.
+     */
+    private function siarkan(CalibrationSession $sesi, string $aksi): void
+    {
+        PerubahanDataOrganisasi::dispatch($sesi->organization_id, 'kalibrasi', $aksi, $sesi->id);
     }
 
     /**

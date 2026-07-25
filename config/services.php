@@ -35,4 +35,26 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Anthropic Claude (AI Vision buat baca lembar kerja dari foto)
+    |--------------------------------------------------------------------------
+    | Nggantiin OCR di HP. Teknisi foto lembar kerja → dikirim ke Claude Vision →
+    | balik JSON terstruktur buat dicek & dikonfirmasi teknisi sebelum disimpen.
+    | Model default Opus 4.8: paling akurat buat baca tulisan tangan/tabel.
+    | `temperature` SENGAJA nggak diset — model 4.8 ke atas nolak parameter itu;
+    | konsistensi dijaga lewat prompt yang tegas + JSON-only.
+    */
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
+        'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),
+        'max_tokens' => (int) env('ANTHROPIC_MAX_TOKENS', 2048),
+        'timeout' => (int) env('ANTHROPIC_TIMEOUT', 60),
+        // Structured Output (output_config.format) — jamin bentuk JSON. Matiin
+        // (=false) cuma kalau API nolak skema-nya; prompt tetap minta JSON murni.
+        'structured_output' => (bool) env('ANTHROPIC_STRUCTURED_OUTPUT', true),
+    ],
+
 ];

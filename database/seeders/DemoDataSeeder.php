@@ -148,8 +148,8 @@ class DemoDataSeeder extends Seeder
     private function seedSertifikatContoh(): void
     {
         $alat = Equipment::where('serial_number', 'MT-500-196-30')->first();
-        $teknisi = User::where('employee_id', 'ASM-0002')->first();
-        $admin = User::where('employee_id', 'ASM-0001')->first();
+        $teknisi = User::where('employee_id', 'SDK-0002')->first();
+        $admin = User::where('employee_id', 'SDK-0001')->first();
 
         if (! $alat || ! $teknisi || ! $admin) {
             return;

@@ -224,7 +224,8 @@ class OcrMeasurementTest extends TestCase
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertStatus(422);
 
-        Queue::assertNothingPushed();
+        // Sertifikat nggak boleh kegenerate; sinyal broadcast realtime boleh jalan.
+        Queue::assertNotPushed(GenerateCertificate::class);
     }
 
     public function test_verifikasi_semua_lalu_approve_berhasil(): void

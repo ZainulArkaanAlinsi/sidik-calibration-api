@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Equipment;
-use App\Models\User;
-use App\Notifications\AlatJatuhTempo;
+use App\Services\PengingatJatuhTempo;
 use Illuminate\Console\Command;
 
 /**
@@ -12,59 +10,34 @@ use Illuminate\Console\Command;
  * lewat / mendekati jatuh tempo, terus kirim notifikasi ke semua admin lewat
  * lonceng panel. Tanpa ini, alat yang telat kalibrasi cuma ketahuan kalau ada
  * yang kebetulan buka daftar alat.
+ *
+ * Ambang "mendekati" default diatur per organisasi (organization.settings) —
+ * lihat PengingatJatuhTempo. `--hari` cuma buat maksa nilai yang sama ke semua
+ * org (mis. sekali jalan manual dari terminal).
  */
 class CekJatuhTempo extends Command
 {
-    protected $signature = 'alat:cek-jatuh-tempo {--hari=30 : Ambang "mendekati" jatuh tempo dalam hari}';
+    protected $signature = 'alat:cek-jatuh-tempo {--hari= : Paksa ambang (hari) ke semua org; kosong = pakai setting tiap org}';
 
     protected $description = 'Cek alat yang lewat/mendekati jatuh tempo & kabarin admin';
 
-    public function handle(): int
+    public function handle(PengingatJatuhTempo $pengingat): int
     {
-        $ambang = (int) $this->option('hari');
+        $override = $this->option('hari');
+        $override = ($override === null || $override === '') ? null : (int) $override;
 
-        // Kelompokin per organisasi — tiap admin cuma dikabarin soal alat PT-nya.
-        Equipment::query()
-            ->where('status', Equipment::STATUS_AKTIF)
-            ->whereNotNull('tanggal_jatuh_tempo')
-            ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays($ambang))
-            ->get()
-            ->groupBy('organization_id')
-            ->each(function ($alatList, $organizationId): void {
-                $overdue = $alatList->filter(fn (Equipment $a) => $a->isOverdue())->count();
-                $mendekati = $alatList->count() - $overdue;
+        $ringkasan = $pengingat->jalankan($override);
 
-                $pesan = collect([
-                    $overdue > 0 ? "{$overdue} alat sudah lewat jatuh tempo" : null,
-                    $mendekati > 0 ? "{$mendekati} alat mendekati jatuh tempo" : null,
-                ])->filter()->implode(', ');
+        foreach ($ringkasan as $r) {
+            $this->info(
+                "Org {$r['organization_id']}: {$r['overdue']} lewat, {$r['mendekati']} mendekati "
+                ."(H-{$r['ambang_hari']}) → {$r['admin_dikabarin']} admin dikabarin."
+            );
+        }
 
-                $admins = User::where('organization_id', $organizationId)
-                    ->where('role', User::ROLE_ADMIN)
-                    ->where('status', User::STATUS_AKTIF)
-                    ->get();
-
-                // Notifikasi ditulis lewat kelas aplikasi, bukan langsung
-                // Filament: baris yang sama harus kebaca di lonceng panel DAN
-                // di halaman notifikasi mobile (spesifikasi poin 4 & 6).
-                $notifikasi = new AlatJatuhTempo(
-                    $overdue,
-                    $mendekati,
-                    $alatList->take(20)->map(fn (Equipment $a): array => [
-                        'id' => $a->id,
-                        'nama_alat' => $a->nama_alat,
-                        'serial_number' => $a->serial_number,
-                        'tanggal_jatuh_tempo' => $a->tanggal_jatuh_tempo?->toDateString(),
-                        'overdue' => $a->isOverdue(),
-                    ])->values()->all(),
-                );
-
-                foreach ($admins as $admin) {
-                    $admin->notify($notifikasi);
-                }
-
-                $this->info("Org {$organizationId}: {$pesan} → {$admins->count()} admin dikabarin.");
-            });
+        if ($ringkasan === []) {
+            $this->info('Nggak ada alat yang perlu dikabarin.');
+        }
 
         return self::SUCCESS;
     }

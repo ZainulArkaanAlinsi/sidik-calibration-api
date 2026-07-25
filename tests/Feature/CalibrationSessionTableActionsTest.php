@@ -69,4 +69,79 @@ class CalibrationSessionTableActionsTest extends TestCase
             ->mountTableAction('view', $sesi)
             ->assertSuccessful();
     }
+
+    /**
+     * Tombol Setujui di panel web SEBELUMNYA cuma ngubah status & nembak job —
+     * ngelewatin `CalibrationValidator` yang di jalur API nahan penerbitan.
+     * Dua pintu ke keputusan yang sama, satu ada penjaganya satu nggak.
+     */
+    public function test_approve_di_panel_diblokir_kalau_ada_temuan_fatal(): void
+    {
+        [$admin, $sesi] = $this->sesiTanpaHitungan();
+
+        Livewire::actingAs($admin)
+            ->test(ListCalibrationSessions::class)
+            ->callTableAction('approve', $sesi, ['abaikan_peringatan' => false]);
+
+        // Sesi tanpa satu pun titik kehitung = temuan fatal. Statusnya WAJIB
+        // nggak berubah, dan sertifikatnya nggak boleh kebentuk.
+        $this->assertSame(
+            CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+            $sesi->fresh()->status,
+        );
+        $this->assertDatabaseMissing('certificates', ['calibration_session_id' => $sesi->id]);
+    }
+
+    public function test_periksa_nggak_ngubah_status_sesi(): void
+    {
+        [$admin, $sesi] = $this->sesiTanpaHitungan();
+
+        Livewire::actingAs($admin)
+            ->test(ListCalibrationSessions::class)
+            ->callTableAction('periksa', $sesi)
+            ->assertSuccessful();
+
+        $this->assertSame(
+            CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+            $sesi->fresh()->status,
+        );
+    }
+
+    public function test_lembar_perhitungan_kerender_di_panel(): void
+    {
+        [$admin, $sesi] = $this->sesiTanpaHitungan();
+
+        // Blade-nya baca banyak kunci nested dari PerhitunganBuilder — salah
+        // satu nama kunci aja bikin modalnya blank di produksi, dan itu nggak
+        // ketahuan dari test yang cuma ngecek route.
+        Livewire::actingAs($admin)
+            ->test(ListCalibrationSessions::class)
+            ->mountTableAction('perhitungan', $sesi)
+            ->assertSuccessful();
+    }
+
+    /**
+     * Sesi yang belum punya satu pun `UncertaintyCalculation` — bikin
+     * validator ngeluarin temuan fatal.
+     *
+     * @return array{0: User, 1: CalibrationSession}
+     */
+    private function sesiTanpaHitungan(): array
+    {
+        Organization::factory()->create();
+        $admin = User::factory()->admin()->create();
+        $alat = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create()->id,
+        ]);
+
+        $sesi = CalibrationSession::factory()->create([
+            'equipment_id' => $alat->id,
+            'teknisi_id' => User::factory()->create()->id,
+            'standard_id' => Standard::factory()->create()->id,
+            'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+        ]);
+
+        return [$admin, $sesi];
+    }
 }
