@@ -208,6 +208,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
+        // Logo yang dicetak di kop sertifikat (fase-2 §3a). Multipart, field
+        // `logo`. Disimpen di disk publik — GenerateCertificate udah baca dari
+        // situ, dan logo PT itu identitas yang memang dipajang.
+        Route::post('/organization/logo', [OrganizationController::class, 'uploadLogo']);
+        Route::delete('/organization/logo', [OrganizationController::class, 'deleteLogo']);
 
         // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
         // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di

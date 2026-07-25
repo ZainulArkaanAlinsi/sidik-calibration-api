@@ -146,7 +146,7 @@ Catatan penting: **PDF sertifikat digenerate backend**, jadi yang nempel di
 kertas itu urusan backend. Mobile cuma butuh datanya buat layar pencocokan
 sebelum approve.
 
-### 3a. Logo lab di Pengaturan Organisasi
+### 3a. Logo lab di Pengaturan Organisasi — ✅ **UDAH JADI (25 Jul)**
 
 `GET/PUT /api/organization` belum punya field logo.
 
@@ -156,6 +156,17 @@ sebelum approve.
 
 Plus cara ngunggahnya (`POST /api/organization/logo`, multipart). Mobile udah
 punya alur unggah gambar (dipakai foto profil), jadi tinggal diarahkan.
+
+> ### ✅ Jadi — plus satu batasan yang perlu dipegang
+>
+> `logo_url` ada di `GET/PUT /api/organization`; unggahnya `POST /api/organization/logo`
+> (field `logo`, admin doang), hapusnya `DELETE`. Kontrak: [`kontrak-api.md` §8](kontrak-api.md).
+>
+> - **PNG atau JPG doang.** WEBP ditolak `422` — dompdf nggak bisa render WEBP,
+>   dan mime di PDF ditebak dari ekstensi, jadi WEBP bakal dilabeli JPEG dan kop
+>   sertifikatnya rusak tanpa error.
+> - Ternyata sisi PDF-nya **udah jalan dari sebelumnya**: `GenerateCertificate`
+>   udah baca `logo_path` dari disk publik. Yang kurang cuma pintu unggahnya.
 
 ### 3b. QR verifikasi
 
@@ -294,7 +305,7 @@ laporan dengan angka beda itu temuan.
 |---|---|---|---|---|
 | 1 | Matriks peran (dokumen) / `GET /me/permissions` | Kecil–Sedang | Tombol yang muncul tapi ditolak 403 | Minimal dokumen dulu |
 | 2 | Notifikasi kejadian yang butuh admin | Sedang | "Semua ke admin" | Polling dulu nggak apa-apa |
-| 3a | `logo_url` di organisasi | Kecil | Logo di sertifikat | |
+| ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
 | 3b | `qr_token` di objek sertifikat | **Sangat kecil** | QR verifikasi | Endpoint verify-nya udah ada |
 | 3c | Penanda tangan / Manajer Teknis | Sedang | Blok TTD | Perlu keputusan role dulu |
 | 3d | `POST /certificates/{id}/kirim-email` | Sedang | Kirim sertifikat ke pelanggan | |
