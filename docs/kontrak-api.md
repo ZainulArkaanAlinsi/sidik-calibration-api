@@ -714,10 +714,39 @@ Teknisi & viewer yang nembak endpoint ini dapat `403`.
 > sertifikat. Jadi buat teknisi yang mau nyimpen alat milik pelanggan **baru**,
 > PT-nya nggak akan nongol — persis dead-end yang mau dihindarin.
 >
-> **Sementara ini:** kalau pelanggannya udah punya arsip, ambil dari
-> `data[].pelanggan.id` (pakai `?q=` buat nyari). Kalau belum, teknisi memang
-> belum punya jalan — **butuh endpoint lookup pelanggan yang kebuka semua role**,
-> dan itu belum ada. Status: [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md) §3.
+> **Pakai ini:** ✅ **`GET /api/customers/lookup`** (live 25 Jul, kebuka semua
+> role) — dibikin persis buat kasus ini. Bentuknya di bawah.
+
+### `GET /api/customers/lookup` — dropdown pelanggan, semua role
+
+✅ **Live 25 Jul.** Ini yang dipakai picker pelanggan di form Alat, **bukan**
+`/arsip/perusahaan` (lihat koreksi di atas) dan bukan `/customers` (admin-only).
+
+```
+GET /api/customers/lookup?search=tirta&page=1
+```
+
+```json
+{
+  "data": [
+    { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI", "alamat": "Jl. Arteri Primer A-10 ..." }
+  ],
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 }
+}
+```
+
+- **`data[].id` itu id PELANGGAN** — langsung kepakai jadi `pelanggan_id` waktu
+  `POST`/`PUT /equipments`. Nggak perlu diturunin dari apa pun.
+- **Pelanggan baru yang belum punya sertifikat TETAP nongol.** Ini bedanya paling
+  penting dari `/arsip/perusahaan`, yang cuma ngelist PT yang udah punya arsip.
+- **Dipaginasi 15/halaman**, jadi pencariannya dilempar ke server lewat `?search=`
+  — nyaring di sisi mobile cuma nyaring halaman pertama, dan pelanggan ke-16 dst.
+  jadi nggak kejangkau. `?q=` diterima juga sebagai alias.
+- **Cuma `id`, `nama`, `alamat`.** `contact_person`/`telepon`/`email` sengaja
+  nggak ikut: ini dropdown, bukan layar CRUD — role yang nggak boleh ngelola
+  pelanggan nggak perlu megang kontaknya. `alamat` ikut karena blok OWNER di
+  lembar kerja butuh (dan itu udah kekirim lewat `EquipmentResource.pelanggan`).
+- CRUD pelanggan **tetap admin-only** — endpoint ini bukan pintu belakang ke situ.
 
 ---
 

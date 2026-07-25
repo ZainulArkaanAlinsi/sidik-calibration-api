@@ -116,6 +116,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |
 | Master data | `/equipments`, `/categories`, `/standards`, `/customers`, `/rooms`, `/technicians`, `/organization` |
+| **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
 | **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
@@ -182,12 +183,15 @@ Yang ada cuma alias baca/rename/hapus; tiga ini belum:
 Jadi tinggal dua, dua-duanya sekunder: browse/rename/hapus **dan** tap PT udah
 bisa disambungin sekarang.
 
-**Satu hal yang ketemu waktu ngerjain ini dan belum ada:** teknisi belum punya
-jalan buat milih pelanggan **baru** di form Alat. `kontrak-api.md` §8 nyaranin
-pakai `GET /arsip/perusahaan`, tapi itu ngelist FOLDER — dan folder cuma ada buat
-PT yang udah pernah punya sertifikat, plus buat teknisi isinya disaring lagi.
-Rinciannya di koreksi §8. **Butuh endpoint lookup pelanggan yang kebuka semua
-role**; `GET /customers` admin-only, jadi belum kepakai.
+**Satu hal yang ketemu waktu ngerjain ini — dan udah ditutup:** teknisi nggak
+punya jalan buat milih pelanggan **baru** di form Alat. `kontrak-api.md` §8
+nyaranin pakai `GET /arsip/perusahaan`, tapi itu ngelist FOLDER — dan folder cuma
+ada buat PT yang udah pernah punya sertifikat, plus buat teknisi isinya disaring
+lagi. Karena `pelanggan_id` itu wajib, teknisi beneran mentok: nggak bisa nyimpen
+alat sama sekali buat pelanggan baru.
+
+✅ **Sekarang pakai `GET /customers/lookup`** (kebuka semua role, live 25 Jul).
+Rinciannya di [`kontrak-api.md` §8](kontrak-api.md).
 
 Test-nya juga bukan `tests/Feature/FolderArsipTest.php` (nggak ada file itu) —
 yang ada `FolderManagerTest.php` + `FolderManagerArsipAliasTest.php`.

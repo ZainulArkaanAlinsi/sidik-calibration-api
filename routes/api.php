@@ -105,6 +105,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
 
+    // Dropdown pelanggan — SEMUA role, read-only, cuma id/nama/alamat.
+    //
+    // Kepisah dari `/customers` yang admin-only: `POST /equipments` boleh dipakai
+    // teknisi dan `pelanggan_id` itu wajib, jadi tanpa ini form Tambah Alat mentok
+    // total di akun teknisi (dropdown 403 → alat nggak bisa disimpen).
+    //
+    // WAJIB didaftarin SEBELUM blok `role:admin` di bawah, biar "lookup" nggak
+    // kebaca sebagai `{customer}` di `GET /customers/{customer}`.
+    Route::get('/customers/lookup', [CustomerController::class, 'lookup']);
+
     // Standar acuan milik lab — buat dropdown "Standar Acuan" di layar kalibrasi.
     Route::get('/standards', [StandardController::class, 'index']);
     Route::get('/standards/{standard}', [StandardController::class, 'show']);
