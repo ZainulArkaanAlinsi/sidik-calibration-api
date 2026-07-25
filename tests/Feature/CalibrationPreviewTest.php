@@ -324,6 +324,44 @@ class CalibrationPreviewTest extends TestCase
             ->assertForbidden();
     }
 
+    /** Admin juga boleh — dia yang meriksa, jadi butuh lihat angkanya juga. */
+    public function test_admin_boleh_preview(): void
+    {
+        $this->actingAs(User::factory()->admin()->create())
+            ->postJson(self::URL, $this->payload())
+            ->assertOk()
+            ->assertJsonPath('data.keputusan', 'PASS');
+    }
+
+    /**
+     * Alat milik PT lain ditolak — dan ini yang dijaga: `susunPengukuran()`
+     * manggil `Equipment::findOrFail()` TANPA scope organisasi, jadi satu-satunya
+     * penjaga isolasi di jalur ini adalah `Rule::exists()->where('organization_id')`
+     * di CalibrationRequest.
+     *
+     * Kalau aturan itu kelepas, preview bakal balikin nama alat DAN nama +
+     * alamat customer PT lain (lewat `identitas_alat` / `identitas_customer` di
+     * lembar perhitungan) ke siapa pun yang bisa nebak id-nya. Test ini yang
+     * bikin kelepasannya kelihatan.
+     */
+    public function test_alat_milik_organisasi_lain_ditolak(): void
+    {
+        $lain = Organization::factory()->create();
+
+        $alatOrgLain = Equipment::factory()->create([
+            'organization_id' => $lain->id,
+            'customer_id' => Customer::factory()->create(['organization_id' => $lain->id])->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'ph-lain'])->id,
+            'satuan' => 'pH',
+            'toleransi' => 0.05,
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->postJson(self::URL, $this->payload(['equipment_id' => $alatOrgLain->id]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('equipment_id');
+    }
+
     public function test_tanpa_token_ditolak(): void
     {
         $this->postJson(self::URL, $this->payload())->assertUnauthorized();
