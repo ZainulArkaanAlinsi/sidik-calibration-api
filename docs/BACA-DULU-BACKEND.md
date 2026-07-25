@@ -147,9 +147,17 @@ dicari pakai nama di dokumen, hasilnya nggak ketemu dan kelihatan kayak hilang.
 > teknisi        → { id, nama }                            (tanpa employee_id)
 > ```
 >
-> Jadi buat layar pencocokan sertifikat, sekarang **masih perlu request tambahan**
-> ke `/certificates/{id}`, `/standards/{id}`, dan `/technicians`. Itu bukan bug,
-> cuma belum digemukin — permintaannya ada di `permintaan-endpoint.md` §5c–5e.
+> ✅ **25 Jul — objek embed-nya UDAH digemukin**, jadi layar pencocokan sertifikat
+> nggak perlu request tambahan lagi:
+>
+> ```
+> sertifikat     → + diterbitkan_pada, berlaku_sampai, qr_token, qr_payload
+> standar_acuan  → + merk, model, merk_type, serial_number, tertelusur_ke
+> teknisi        → + employee_id, kode_teknisi, department
+> reviewer       → BARU ("Checked by" — admin yang approve/reject)
+> ```
+>
+> Yang masih belum: **penanda tangan sertifikat** (butuh keputusan dulu, lihat §3).
 
 ---
 

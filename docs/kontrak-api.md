@@ -558,6 +558,63 @@ Response `200`:
 > **`keputusan`: `PASS` atau `FAIL`** (huruf besar). Ingat: **FAIL tetap boleh terbit sertifikat**, statusnya aja beda — jangan diblokir di backend.
 > Perhitungan GUM (Type A + Type B → gabungan → `U = k × u_c`) dan keputusan ILAC-G8 **dihitung di backend**, mobile cuma nampilin. Mobile nggak ngitung apa pun.
 
+> ## ✅ 25 Jul — objek embed digemukin (permintaan-endpoint.md §5c–5e)
+>
+> Layar pencocokan sertifikat dulu kepaksa nembak tiga endpoint tambahan cuma
+> buat ngisi kepala dokumen. Sekarang ikut di `GET /api/calibrations/{id}`:
+>
+> ```json
+> "teknisi": {
+>   "id": 4, "nama": "Dwi Rahayu",
+>   "employee_id": "SDK-2001",     // buat login
+>   "kode_teknisi": "DR",          // <- INI yang dicetak di kolom "Technician ID"
+>   "department": "Kalibrasi"
+> },
+> "reviewer": { "id": 1, "nama": "Alex Misramto", "kode_teknisi": "AM" },
+> "standar_acuan": {
+>   "id": 10, "nama": "pH Buffer Solution 7", "no_sertifikat": "HC46341939",
+>   "merk": "Supelco", "model": "Merck",
+>   "merk_type": "Supelco/Merck",   // kolom "Merk/Type" digabung backend
+>   "serial_number": "HC46341939",
+>   "tertelusur_ke": "Merck KGaA"
+> },
+> "sertifikat": {
+>   "id": 9, "nomor": "012-CAL-524", "status": "terbit", "pdf_url": "...",
+>   "diterbitkan_pada": "2024-05-29T17:00:00Z",
+>   "berlaku_sampai": "2025-05-28T17:00:00Z",
+>   "qr_token": "DEMOQR123",
+>   "qr_payload": "https://.../verify/DEMOQR123"
+> }
+> ```
+>
+> - ⚠️ **Kolom "Technician ID" di lembar kerja & sertifikat isinya `kode_teknisi`
+>   (`DR`), BUKAN `employee_id` (`SDK-2001`).** Contoh di `permintaan-endpoint.md`
+>   §5c nulis `"employee_id": "DR"` — itu ketuker. Kalau `kode_teknisi` belum
+>   diisi, backend jatuh ke inisial nama; lebih baik inisial daripada kolom kosong
+>   di dokumen resmi.
+> - **`reviewer` = "Checked by"** — admin yang approve/reject sesi. `null` selama
+>   sesinya belum diperiksa.
+> - **`merk_type` digabung di backend** (`merk` + `model`, dipisah `/`, yang kosong
+>   dilewat) supaya dua klien nggak bikin dua gaya penulisan buat satu kolom di
+>   dokumen resmi. Bagian mentahnya tetap ikut kalau mau dirender sendiri.
+> - **`standar_acuan` bentuknya SAMA di level sesi dan di tiap `titik[]`** — satu
+>   parser cukup.
+> - **`qr_payload` udah URL siap di-render** jadi QR; jangan nyusun URL sendiri
+>   dari `qr_token`, biar domainnya nggak bisa salah.
+> - **Penanda tangan sertifikat BELUM ada** — masih nunggu keputusan apakah
+>   "Manajer Teknis" itu role keempat atau atribut di user.
+>
+> ### ⚠️ Soal tanggal: `date` kegeser ke jam 17:00 hari sebelumnya
+>
+> `diterbitkan_pada: "2024-05-29T17:00:00Z"` itu **tanggal 30 Mei**, bukan 29.
+> Kolomnya cast `date` (tengah malam) dan `APP_TIMEZONE`-nya `Asia/Jakarta`, jadi
+> begitu diserialisasi ke UTC dia mundur 7 jam. Ini kena **semua** field bercast
+> `date` di API ini, bukan cuma yang ini.
+>
+> **Jadi: JANGAN ambil 10 karakter pertama string-nya** buat nampilin tanggal —
+> hasilnya beda satu hari. `DateTime.parse()` dulu, format ke waktu lokal, baru
+> tampilkan; di Jakarta hasilnya balik bener.
+
 ### Riwayat
 `GET /api/calibrations?mine=true` — teknisi cuma lihat kalibrasi miliknya sendiri; **admin lihat semua**. Filter ini penting, jangan sampai teknisi bisa lihat punya orang lain.
 
