@@ -80,9 +80,9 @@ class GlobalSearchTest extends TestCase
 
     public function test_pengguna_ketemu_lewat_id_pegawai(): void
     {
-        User::factory()->create(['employee_id' => 'ASM-7777']);
+        User::factory()->create(['employee_id' => 'SDK-7777']);
 
-        $this->assertCount(1, UserResource::getGlobalSearchResults('ASM-7777'));
+        $this->assertCount(1, UserResource::getGlobalSearchResults('SDK-7777'));
     }
 
     public function test_pencarian_nggak_nembus_organisasi_lain(): void

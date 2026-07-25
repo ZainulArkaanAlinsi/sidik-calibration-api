@@ -29,7 +29,7 @@ class UserFactory extends Factory
             // Nempel ke organisasi yang udah ada kalau ada — biar test nggak
             // kebanjiran organisasi baru tiap bikin 1 user.
             'organization_id' => fn () => Organization::query()->value('id') ?? Organization::factory(),
-            'employee_id' => 'ASM-'.fake()->unique()->numberBetween(1000, 9999),
+            'employee_id' => 'SDK-'.fake()->unique()->numberBetween(1000, 9999),
             'name' => fake()->name(),
             'department' => fake()->randomElement(['Kalibrasi', 'Quality Control']),
             'email' => fake()->unique()->safeEmail(),

@@ -25,9 +25,9 @@ class RegisterApprovalTest extends TestCase
     /** @var array<string, string> */
     private array $pendaftar = [
         'nama' => 'Eko Prasetyo',
-        'employee_id' => 'ASM-0099',
+        'employee_id' => 'SDK-0099',
         'department' => 'Kalibrasi',
-        'email' => 'eko@ptasmo.com',
+        'email' => 'eko@ptsidik.com',
         'password' => 'rahasia123',
     ];
 
@@ -38,8 +38,8 @@ class RegisterApprovalTest extends TestCase
             ->assertJsonPath('message', 'Pendaftaran terkirim. Akun menunggu persetujuan admin.');
 
         $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptasmo.com',
-            'employee_id' => 'ASM-0099',
+            'email' => 'eko@ptsidik.com',
+            'employee_id' => 'SDK-0099',
             'role' => User::ROLE_TEKNISI,
             'status' => User::STATUS_PENDING,
         ]);
@@ -52,7 +52,7 @@ class RegisterApprovalTest extends TestCase
             ->assertCreated();
 
         $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptasmo.com',
+            'email' => 'eko@ptsidik.com',
             'role' => User::ROLE_TEKNISI,
             'status' => User::STATUS_PENDING,
         ]);
@@ -61,8 +61,8 @@ class RegisterApprovalTest extends TestCase
     public function test_email_dan_id_pegawai_dobel_ditolak_422(): void
     {
         User::factory()->create([
-            'email' => 'eko@ptasmo.com',
-            'employee_id' => 'ASM-0099',
+            'email' => 'eko@ptsidik.com',
+            'employee_id' => 'SDK-0099',
         ]);
 
         $this->postJson('/api/register', $this->pendaftar)
@@ -97,7 +97,7 @@ class RegisterApprovalTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $pendaftar = User::factory()->pending()->create([
-            'employee_id' => 'ASM-0099',
+            'employee_id' => 'SDK-0099',
             'password' => 'rahasia123',
         ]);
 
@@ -111,7 +111,7 @@ class RegisterApprovalTest extends TestCase
 
         // Sebelum di-approve dia 403; sekarang harus bisa masuk.
         $this->postJson('/api/login', [
-            'identifier' => 'ASM-0099',
+            'identifier' => 'SDK-0099',
             'password' => 'rahasia123',
         ])->assertOk();
     }

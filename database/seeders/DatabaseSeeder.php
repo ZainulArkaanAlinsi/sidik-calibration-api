@@ -40,26 +40,38 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * Akun dev buat mobile nyobain login (kredensialnya sesuai contoh di
-     * docs/kontrak-api.md). updateOrCreate biar aman di-seed berkali-kali.
+     * Akun dev buat mobile nyobain login (kredensialnya sesuai tabel di
+     * docs/kontrak-api.md — kalau salah satu diubah, ubah dua-duanya).
      *
      * Yang terakhir sengaja `pending` — biar mobile bisa nyobain layar "akun
      * belum disetujui" tanpa harus daftar manual dulu.
+     *
+     * `sebelumnya` = ID pegawai versi lama (waktu project masih bernama ASMO).
+     * Ada di sini supaya DB dev yang udah kepakai di-RENAME, bukan ditambahin
+     * baris kembar: sesi kalibrasi & sertifikat nempel ke `users.id`, jadi kalau
+     * bikin baris baru, riwayat demo pH-nya jadi yatim DAN akun lama tetep bisa
+     * login. Boleh dihapus begitu semua DB dev udah kepindah.
      */
     private function seedUsers(): void
     {
         $accounts = [
-            ['employee_id' => 'ASM-0001', 'name' => 'Admin ASMO', 'email' => 'admin@asmo.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0002', 'name' => 'Teknisi ASMO', 'email' => 'teknisi@asmo.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0003', 'name' => 'Viewer ASMO', 'email' => 'viewer@asmo.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'ASM-0099', 'name' => 'Eko Pending', 'email' => 'eko@asmo.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
+            ['employee_id' => 'SDK-0001', 'sebelumnya' => 'ASM-0001', 'name' => 'Admin SIDIK', 'email' => 'admin@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0002', 'sebelumnya' => 'ASM-0002', 'name' => 'Teknisi SIDIK', 'email' => 'teknisi@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0003', 'sebelumnya' => 'ASM-0003', 'name' => 'Viewer SIDIK', 'email' => 'viewer@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0099', 'sebelumnya' => 'ASM-0099', 'name' => 'Eko Pending', 'email' => 'eko@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
         ];
 
         foreach ($accounts as $account) {
-            User::updateOrCreate(
-                ['email' => $account['email']],
-                [...$account, 'organization_id' => 1, 'password' => 'rahasia123'],
-            );
+            $sebelumnya = $account['sebelumnya'];
+            unset($account['sebelumnya']);
+
+            $atribut = [...$account, 'organization_id' => 1, 'password' => 'rahasia123'];
+
+            $lama = User::query()
+                ->whereIn('employee_id', [$account['employee_id'], $sebelumnya])
+                ->first();
+
+            $lama ? $lama->update($atribut) : User::create($atribut);
         }
     }
 }

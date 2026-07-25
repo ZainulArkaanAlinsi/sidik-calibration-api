@@ -55,6 +55,19 @@ class WorksheetExtractionController extends Controller
             // Salah setup server (API key kosong) — bukan salah teknisi.
             report($e);
 
+            // Ikut dicatat: kriteria SPEC-vision-ai-worksheet-extraction.md §5
+            // minta log ditulis buat SETIAP percobaan, sukses maupun gagal.
+            // Sebelumnya jalur ini return duluan, jadi kalau API key kelupaan
+            // diisi di server, tombol foto teknisi mati tanpa nyisain jejak
+            // apa pun di DB — yang kelihatan cuma "kok nggak jalan".
+            WorksheetExtractionLog::create([
+                'calibration_session_id' => $sesi?->id,
+                'user_id' => $user->id,
+                'model' => (string) config('services.anthropic.model'),
+                'status' => 'belum_disetel',
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'message' => 'Fitur pindai AI belum aktif di server. Gunakan input manual dulu.',
             ], 503);
@@ -70,6 +83,11 @@ class WorksheetExtractionController extends Controller
             'extracted' => $hasil['data'],
             'input_tokens' => $hasil['usage']['input_tokens'],
             'output_tokens' => $hasil['usage']['output_tokens'],
+            // Buat mastiin prompt caching beneran kena (SPEC-vision-prompt.md §5).
+            // Harus > 0 mulai panggilan ke-2; kalau selalu 0/null berarti prefix
+            // yang di-cache masih di bawah ambang minimum model — API-nya nggak
+            // ngasih error buat kasus itu, jadi ini satu-satunya caranya kelihatan.
+            'cache_read_input_tokens' => $hasil['usage']['cache_read_input_tokens'],
             'error' => $hasil['error'],
         ]);
 

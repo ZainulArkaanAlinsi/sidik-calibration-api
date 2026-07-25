@@ -136,12 +136,84 @@ class WorksheetExtractionTest extends TestCase
             ->assertJsonCount(3, 'baris.0.suhu_keyakinan');
     }
 
+    /**
+     * Prompt caching cuma jalan kalau prefix-nya lewat ambang minimum model
+     * (claude-opus-4-8: 1024 token; claude-opus-5: 512). Di bawah ambang, API
+     * NGGAK ngasih error — dia diam-diam nggak nge-cache. Jadi satu-satunya cara
+     * tahu caching beneran kena adalah nyimpen angkanya dan ngeliatnya.
+     * SPEC-vision-prompt.md §5 nyuruh ngecek ini; sebelumnya angkanya nggak
+     * pernah disimpen, jadi klaim "hemat ~90%" nggak bisa dibuktiin/dibantah.
+     */
+    public function test_token_cache_read_ikut_dicatat_di_log(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'usage' => [
+                'input_tokens' => 120,
+                'output_tokens' => 40,
+                'cache_read_input_tokens' => 1536,
+            ],
+            'content' => [['type' => 'text', 'text' => '{"baris":[{"ph":[4.04],"suhu":[22.2],"ph_keyakinan":["high"],"suhu_keyakinan":["high"]}]}']],
+        ])]);
+
+        $this->kirim($this->teknisi)->assertOk();
+
+        $log = WorksheetExtractionLog::sole();
+        $this->assertSame(1536, $log->cache_read_input_tokens);
+        $this->assertSame(120, $log->input_tokens);
+        $this->assertSame(40, $log->output_tokens);
+    }
+
+    /**
+     * Cache MISS (`0`) harus kecatat apa adanya, jangan dianggap "nggak ada data".
+     * Ini justru kondisi nyata sekarang: foto few-shot di storage/app/few_shot/
+     * belum diisi, jadi prefix yang di-cache cuma system prompt (~400 token) —
+     * di bawah ambang 1024 token claude-opus-4-8, jadi nggak pernah nge-cache.
+     * Angka 0 yang muncul terus di kolom ini = sinyal buat naruh foto few-shot.
+     */
+    public function test_cache_miss_dicatat_sebagai_nol_bukan_null(): void
+    {
+        $this->fakeSukses();
+
+        $this->kirim($this->teknisi)->assertOk();
+
+        $this->assertSame(0, WorksheetExtractionLog::sole()->cache_read_input_tokens);
+    }
+
+    /** Respons tanpa field cache sama sekali nggak boleh bikin error. */
+    public function test_token_cache_read_null_kalau_tidak_dikirim_api(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'usage' => ['input_tokens' => 120, 'output_tokens' => 40],
+            'content' => [['type' => 'text', 'text' => '{"baris":[{"ph":[4.04],"suhu":[22.2],"ph_keyakinan":["high"],"suhu_keyakinan":["high"]}]}']],
+        ])]);
+
+        $this->kirim($this->teknisi)->assertOk();
+
+        $this->assertNull(WorksheetExtractionLog::sole()->cache_read_input_tokens);
+    }
+
     public function test_tanpa_api_key_balik_503(): void
     {
         Config::set('services.anthropic.api_key', '');
 
         $this->kirim($this->teknisi)->assertStatus(503);
-        $this->assertSame(0, WorksheetExtractionLog::count());
+
+        // Percobaannya TETAP dicatat, walau nggak pernah nyampe ke Anthropic.
+        // SPEC-vision-ai-worksheet-extraction.md §5 minta log ditulis buat tiap
+        // percobaan, sukses maupun gagal — dan kalau API key kelupaan diisi,
+        // inilah satu-satunya tempat kelihatannya. Tanpa baris ini, gejalanya
+        // cuma "tombol foto teknisi nggak jalan" tanpa jejak apa pun.
+        $log = WorksheetExtractionLog::sole();
+        $this->assertSame('belum_disetel', $log->status);
+        $this->assertSame($this->teknisi->id, $log->user_id);
+        $this->assertNotNull($log->error);
+        // Nggak ada panggilan API, jadi nggak ada pemakaian token buat dicatat.
+        $this->assertNull($log->input_tokens);
+        $this->assertNull($log->cache_read_input_tokens);
     }
 
     public function test_refusal_balik_422_dan_fallback_manual(): void

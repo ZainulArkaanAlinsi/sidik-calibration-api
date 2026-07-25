@@ -12,9 +12,12 @@ use App\Models\Standard;
 use App\Models\User;
 use App\Notifications\AlatJatuhTempo;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -120,5 +123,63 @@ class RealtimeSyncTest extends TestCase
             'channel_name' => 'private-organisasi.'.$this->teknisi->organization_id,
             'socket_id' => '1234.5678',
         ])->assertUnauthorized();
+    }
+
+    /**
+     * Test di atas cuma nyentuh jalur 401 — itu dicegat middleware SEBELUM closure
+     * route-nya jalan, jadi isi closure-nya nggak pernah kepakai. Yang ini nembak
+     * dengan token supaya closure-nya beneran dieksekusi.
+     *
+     * Kenapa perlu: driver `log` (dev) & `null` (test) bikin `auth()` jadi no-op
+     * yang balikin 200 body kosong, jadi salah apa pun di dalam closure kelihatan
+     * "lolos". Pernah kejadian: `Request` di routes/api.php nggak ke-import, jadi
+     * type-hint-nya resolve ke alias global = FACADE, bukan HTTP request-nya.
+     * Akibatnya `$request->channel_name` selalu null → begitu produksi pindah ke
+     * reverb, semua subscribe kena 403 tanpa satu pun error di log.
+     *
+     * Makanya di sini dipasang driver penangkap yang beneran baca request-nya.
+     */
+    public function test_endpoint_auth_channel_nerima_http_request_asli(): void
+    {
+        $penangkap = new class implements Broadcaster
+        {
+            public mixed $diterima = null;
+
+            public function auth($request)
+            {
+                $this->diterima = $request;
+
+                return ['sukses' => true];
+            }
+
+            public function validAuthenticationResponse($request, $result)
+            {
+                return $result;
+            }
+
+            public function broadcast(array $channels, $event, array $payload = []): void {}
+        };
+
+        Broadcast::extend('penangkap', fn () => $penangkap);
+        config([
+            'broadcasting.default' => 'penangkap',
+            'broadcasting.connections.penangkap' => ['driver' => 'penangkap'],
+        ]);
+
+        $channel = 'private-organisasi.'.$this->teknisi->organization_id;
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/broadcasting/auth', [
+                'channel_name' => $channel,
+                'socket_id' => '1234.5678',
+            ])
+            ->assertOk()
+            ->assertJson(['sukses' => true]);
+
+        // Inti test-nya: yang keinjeksi harus HTTP request, bukan facade.
+        $this->assertInstanceOf(Request::class, $penangkap->diterima);
+        $this->assertSame($channel, $penangkap->diterima->input('channel_name'));
+        // Broadcaster butuh user buat nyocokin ke callback di routes/channels.php.
+        $this->assertSame($this->teknisi->id, $penangkap->diterima->user()?->id);
     }
 }

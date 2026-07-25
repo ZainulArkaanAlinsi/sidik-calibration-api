@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'calibration_session_id', 'user_id', 'model', 'status',
     'raw_model_response', 'extracted', 'technician_corrections',
-    'input_tokens', 'output_tokens', 'error',
+    'input_tokens', 'output_tokens', 'cache_read_input_tokens', 'error',
 ])]
 class WorksheetExtractionLog extends Model
 {
@@ -27,6 +27,7 @@ class WorksheetExtractionLog extends Model
             'technician_corrections' => 'array',
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
+            'cache_read_input_tokens' => 'integer',
         ];
     }
 

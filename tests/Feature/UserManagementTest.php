@@ -51,15 +51,15 @@ class UserManagementTest extends TestCase
     {
         $this->postJson('/api/register', [
             'nama' => 'Eko Prasetyo',
-            'employee_id' => 'ASM-0099',
+            'employee_id' => 'SDK-0099',
             'department' => 'Kalibrasi',
-            'email' => 'eko@ptasmo.com',
+            'email' => 'eko@ptsidik.com',
             'password' => 'rahasia123',
         ])->assertCreated();
 
         // Kalau organization_id-nya null, layar profil di mobile nampilin PT kosong.
         $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptasmo.com',
+            'email' => 'eko@ptsidik.com',
             'organization_id' => Organization::first()->id,
         ]);
     }
@@ -84,10 +84,10 @@ class UserManagementTest extends TestCase
     public function test_admin_nggak_bisa_nyetel_email_yang_udah_dipakai_orang_lain(): void
     {
         $admin = User::factory()->admin()->create();
-        User::factory()->create(['email' => 'kepakai@asmo.test']);
+        User::factory()->create(['email' => 'kepakai@sidik.test']);
         $teknisi = User::factory()->create();
 
-        $this->actingAs($admin)->putJson("/api/users/{$teknisi->id}", ['email' => 'kepakai@asmo.test'])
+        $this->actingAs($admin)->putJson("/api/users/{$teknisi->id}", ['email' => 'kepakai@sidik.test'])
             ->assertStatus(422)
             ->assertJsonPath('errors.email.0', 'Email ini sudah terdaftar.');
     }
@@ -96,7 +96,7 @@ class UserManagementTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
         $teknisi = User::factory()->create([
-            'employee_id' => 'ASM-0042',
+            'employee_id' => 'SDK-0042',
             'password' => 'passwordlama',
         ]);
         $teknisi->createToken('hp-teknisi');
@@ -109,7 +109,7 @@ class UserManagementTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
 
         $this->app['auth']->forgetGuards();
-        $this->postJson('/api/login', ['identifier' => 'ASM-0042', 'password' => 'passwordbaru123'])
+        $this->postJson('/api/login', ['identifier' => 'SDK-0042', 'password' => 'passwordbaru123'])
             ->assertOk();
     }
 
