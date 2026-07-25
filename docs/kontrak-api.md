@@ -697,6 +697,64 @@ Teknisi & viewer yang nembak endpoint ini dapat `403`.
 >
 > Daftarnya **dipaginasi 15/halaman**, jadi pencariannya dilempar ke server lewat `?search=` — nyaring di sisi mobile cuma nyaring halaman pertama, dan pelanggan ke-16 dst. jadi nggak kejangkau.
 
+> ## ⛔ KOREKSI 25 Juli 2026 — saran di atas SALAH, jangan diikutin
+>
+> Dicek ke `FolderController@index`. Empat hal keliru, dan yang pertama bisa
+> nyimpen data ke pelanggan yang salah:
+>
+> | Klaim di atas | Kenyataan |
+> |---|---|
+> | `data[].id` dipakai jadi `pelanggan_id` | ⛔ **`id` itu id FOLDER, bukan pelanggan.** Id pelanggan ada di **`data[].pelanggan.id`**. Ngirim id folder sebagai `pelanggan_id` bakal ditolak `422` — atau lebih buruk, nyantol ke pelanggan lain yang id-nya kebetulan sama |
+> | `?search=` | Param yang kebaca **`?q=`**. `search` diabaikan diam-diam, jadi daftarnya balik utuh dan kelihatan kayak filternya nggak jalan |
+> | "dipaginasi 15/halaman" | **Nggak dipaginasi sama sekali** — `->get()`, semua baris balik |
+> | "kebuka semua role" | Kebuka, **tapi isinya disaring per role.** Buat teknisi cuma folder yang ada isinya buat DIA |
+>
+> **Yang terakhir itu yang bikin saran ini nggak nyelesaiin masalahnya.** Endpoint
+> ini ngelist FOLDER, dan folder cuma ada buat PT yang udah pernah punya
+> sertifikat. Jadi buat teknisi yang mau nyimpen alat milik pelanggan **baru**,
+> PT-nya nggak akan nongol — persis dead-end yang mau dihindarin.
+>
+> **Sementara ini:** kalau pelanggannya udah punya arsip, ambil dari
+> `data[].pelanggan.id` (pakai `?q=` buat nyari). Kalau belum, teknisi memang
+> belum punya jalan — **butuh endpoint lookup pelanggan yang kebuka semua role**,
+> dan itu belum ada. Status: [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md) §3.
+
+---
+
+## 8a. Folder Manager — buka folder satu PT (live 25 Jul)
+
+### `GET /api/arsip/perusahaan/{customer}/folder`
+
+Tap PT → lihat isinya. `{customer}` itu **id PELANGGAN**, bukan id folder (lihat
+koreksi di §8 — ini beda yang gampang kebalik).
+
+Balikannya **bentuk yang sama persis** kayak `GET /api/arsip/folders/{id}`
+(breadcrumb + `sub_folder[]` + `file[]`), karena handler-nya memang yang sama.
+Jadi **parser folder yang udah ada bisa dipakai apa adanya.**
+
+Bedanya sama `GET /api/arsip/folders/{id}`: yang ini **find-or-create** — PT yang
+belum pernah punya sertifikat pun tetap kebuka, folder akarnya dibikin saat itu.
+Tanpa ini tap PT mentok `404` padahal PT-nya jelas ada.
+
+**Siapa yang bisa apa** — beda per role, dan ini bukan kebetulan:
+
+| Role | Folder belum ada | Folder udah ada |
+|---|---|---|
+| admin | **dibikin**, balik `200` | `200` |
+| teknisi | `404` (nggak dibikin) | `200` **kalau ada berkas yang dia boleh lihat**, kalau nggak `404` |
+| viewer | `404` (nggak dibikin) | `200` |
+
+- **Cuma admin yang bikin.** `POST`/`PUT`/`DELETE /folders` semuanya admin-only,
+  jadi endpoint ini nggak boleh jadi celah nulis buat role yang di tempat lain
+  ditolak. Viewer itu role baca-saja — bikin baris sebagai efek samping `GET`
+  bikin klaim itu berhenti benar.
+- **Teknisi dapat `404` buat PT yang dia nggak punya kerjaan di situ**, bukan
+  folder kosong. Ini aturan privasi Folder Manager yang udah lama jalan: folder
+  kosong yang ditampilin ngasih tahu "PT ini ada arsipnya, cuma bukan urusanmu",
+  dan menu ini ada di navbar teknisi. Di alur normal nggak kerasa — daftar PT
+  yang teknisi lihat udah tersaring, jadi yang bisa dia tap selalu ada isinya.
+- PT milik lab lain → `404` (bukan `403`), dan nggak ninggalin folder apa pun.
+
 ---
 
 ## 9. Master Data Ruangan & Teknisi (live 20 Jul)

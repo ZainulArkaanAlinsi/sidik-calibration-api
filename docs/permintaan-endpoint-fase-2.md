@@ -233,7 +233,7 @@ Status per endpoint, dicek ke `routes/api.php` 25 Juli 2026:
 ✅ DELETE /api/arsip/folders/{folder}
 ✅ POST   /api/folders                     (bukan /arsip/folders)
 
-❌ GET    /api/arsip/perusahaan/{customer}/folder   ← find-or-create folder akar. CORE.
+✅ GET    /api/arsip/perusahaan/{customer}/folder   ← find-or-create folder akar (jadi 25 Jul)
 ❌ PUT    /api/arsip/folders/{folder}/pindah        ← sekunder
 ❌ PUT    /api/arsip/berkas/{calibration}/pindah    ← sekunder
 ```
@@ -255,8 +255,9 @@ jawabannya nggak cocok sama kode di sini. Versi terverifikasi (25 Juli 2026):
 > teknisi lihat tombolnya lalu kena `403` — persis bug "jalan di admin, mentok di
 > teknisi" yang §1 dokumen ini keluhin.
 
-**Yang tersisa buat backend di bagian ini: 3 operasi di atas** (satu core, dua
-sekunder). Browse / rename / hapus udah bisa disambungin sekarang.
+**Yang tersisa buat backend di bagian ini: 2 operasi**, dua-duanya sekunder
+(`/pindah` folder & berkas). Yang core — tap PT buka folder akarnya — **udah jadi
+25 Jul**, jadi browse / rename / hapus / tap PT semuanya bisa disambungin sekarang.
 
 ---
 

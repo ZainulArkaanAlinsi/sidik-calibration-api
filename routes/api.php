@@ -85,6 +85,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Alias `/arsip/*` yang dipanggil mobile (docs/permintaan-backend-2026-07-24.md §2).
     // Folder akar = per-PT, jadi daftar "perusahaan" = index tanpa parent_id.
     Route::get('/arsip/perusahaan', [FolderController::class, 'index']);
+    // Tap PT → buka folder akarnya, dibikin kalau belum ada (find-or-create).
+    // Inti Folder Manager: tanpa ini, PT yang belum pernah punya sertifikat
+    // mentok 404 padahal PT-nya ada. Balikannya bentuk `show`.
+    // {customer} = id PELANGGAN, bukan id folder — lihat kontrak-api.md §8.
+    Route::get('/arsip/perusahaan/{customer}/folder', [FolderController::class, 'folderPelanggan']);
     Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
     Route::get('/folder-files', [FolderFileController::class, 'index']);
     Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
