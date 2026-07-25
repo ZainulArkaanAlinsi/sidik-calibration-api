@@ -183,7 +183,7 @@ handoff §7), tapi ada dua hal yang perlu backend:
 
 ---
 
-## 4. Perhitungan tampil saat input
+## 4. Perhitungan tampil saat input — ✅ **UDAH JADI (25 Jul)**
 
 Worksheet ngitung `Average`, `Correction`, `STDEV`, `MAX STDEV` langsung sambil
 diisi. Sekarang: mobile kirim → backend hitung → hasil baru kelihatan setelah
@@ -196,6 +196,29 @@ hitungan (`titik[]`, `titik_sebelum[]`, `kondisi_lingkungan`).
 Dengan ini angkanya tetap 100% dari backend (nggak ada risiko beda sama
 sertifikat), tapi teknisi lihat hasilnya sambil ngetik.
 
+> ### ✅ Jadi, dengan dua catatan soal nama field
+>
+> Kontrak lengkapnya di [`kontrak-api.md` §4a](kontrak-api.md). Bentuknya beda
+> dikit dari yang diminta di atas:
+>
+> - **`titik_sebelum[]` nggak dibikin sebagai key terpisah.** Tabel Before &
+>   After adjustment dua-duanya ada di **`lembar_perhitungan[]`** — isinya persis
+>   `data.hasil`-nya `GET /calibrations/{id}/perhitungan`, jadi tabel yang teknisi
+>   lihat sambil ngetik sama sama yang admin lihat waktu meriksa. Bikin key
+>   `titik_sebelum` sendiri berarti nulis bentuk ketiga buat data yang sama.
+> - **`titik[]` isinya hasil GUM** (rata-rata, error, U95, keputusan) — sama arti
+>   sama `titik` di `GET /calibrations/{id}`, jadi parser mobile bisa dipakai
+>   ulang. Kolom Average/Correction/STDEV gaya worksheet ada di
+>   `lembar_perhitungan`.
+>
+> Bonusnya: **`belum_dihitung[]`** ngasih tahu kenapa satu titik belum keluar
+> angkanya (mis. baru 1 pembacaan). Tanpa itu titik yang ilang dari `titik`
+> kelihatan kayak bug.
+>
+> Angkanya **dijamin identik** sama yang nanti tersimpan — ada test yang ngirim
+> payload sama ke `/preview` dan ke `/calibrations` terus ngebandingin field per
+> field.
+
 ---
 
 ## 5. Prioritas
@@ -205,7 +228,7 @@ sertifikat), tapi teknisi lihat hasilnya sambil ngetik.
 | 0 | **Keputusan `titik_ukur` nominal vs terkoreksi** | Seluruh angka sertifikat | Cuma keputusan |
 | 1 | `status_kalibrasi` di StandardResource + ringkasan sesi | Banner + badge Halaman 1 | Kecil |
 | 2 | `alamat` di `pelanggan` | Identitas Customer | Sangat kecil |
-| 3 | `POST /calibrations/preview` | Perhitungan sambil ngetik | Sedang |
+| 3 | ~~`POST /calibrations/preview`~~ | ~~Perhitungan sambil ngetik~~ | ✅ **jadi 25 Jul** |
 | 4 | `room_id` di sesi | Lokasi "Lab. Uji A" | Kecil |
 | 5 | `calculated_by` / `signed_by` / `inisial` | Blok Approval Halaman 2 | Sedang |
 | 6 | `tanggal_terbit` di certificates | Issuance Date | Kecil |

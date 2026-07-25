@@ -9,6 +9,7 @@ use App\Http\Resources\CalibrationResource;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
@@ -20,6 +21,10 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\LembarKerjaTemplate;
 use App\Services\PerhitunganBuilder;
+// Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
+// `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
+// method `load()` yang cuma ada di Eloquent Collection.
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -47,6 +52,21 @@ class CalibrationController extends Controller
         'equipment', 'teknisi', 'standard', 'thermohygro', 'standarDicek', 'calibrationMethod', 'room',
         'uncertaintyCalculations.standard', 'certificate',
     ];
+
+    /**
+     * Presisi kolom `raw_measurements` & `uncertainty_calculations`.
+     *
+     * Angka dibulatin di sini SEBELUM masuk DB, biar `POST /calibrations/preview`
+     * (yang nggak lewat DB) dan sesi tersimpan ngasih angka yang sama. Kalau
+     * presisi kolomnya diubah di migrasi, ubah di sini juga —
+     * `CalibrationPreviewTest::test_angka_preview_identik_sama_angka_yang_tersimpan`
+     * yang bakal ngasih tahu kalau kelewat.
+     */
+    private const DESIMAL_PEMBACAAN = 8;   // decimal(20, 8)
+
+    private const DESIMAL_SUHU = 2;        // decimal(8, 2)
+
+    private const DESIMAL_K = 2;           // faktor_cakupan_k: decimal(5, 2)
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -131,6 +151,93 @@ class CalibrationController extends Controller
         $this->siarkan($sesi, 'dibuat');
 
         return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    }
+
+    /**
+     * Hitung tanpa nyimpen — buat "hitung sambil ngetik" di lembar kerja
+     * (docs/permintaan-worksheet-ph.md §4).
+     *
+     * Body-nya SAMA PERSIS kayak `POST /calibrations`, jadi mobile nggak perlu
+     * bikin payload kedua: kirim draft yang sedang diisi, dapat angkanya, ulangi.
+     *
+     * Kenapa harus di backend padahal cuma buat dilihat sekilas: kalau HP yang
+     * ngitung Average/Correction/STDEV sendiri, angka di layar bisa beda tipis
+     * dari yang nanti tercetak di sertifikat (pembulatan, urutan operasi, nilai
+     * buffer pada suhu). Buat lab terakreditasi, dua angka beda buat satu
+     * pengukuran itu temuan audit. Jadi yang ngitung tetap satu mesin.
+     *
+     * NGGAK NYIMPEN APA-APA:
+     * - nggak ada baris `calibration_sessions` / `raw_measurements` / `uncertainty_calculations`
+     * - nggak makan nomor sesi (`nomor_sesi` di-generate cuma waktu `store`)
+     * - nggak nyalain notifikasi & nggak nyiarin sinyal realtime
+     * - `client_request_id` diabaikan — preview bukan submit, jadi nggak ada
+     *   yang perlu di-idempoten-in
+     */
+    public function preview(CalibrationRequest $request, PerhitunganBuilder $builder): JsonResponse
+    {
+        $susunan = $this->susunPengukuran($request);
+
+        // Sesi TIRUAN, sengaja nggak pernah disimpen. Relasinya diisi di memori
+        // (setRelation) supaya PerhitunganBuilder & KondisiLingkungan bisa jalan
+        // di atasnya — dua-duanya cuma baca atribut & koleksi, nggak nyentuh DB
+        // buat itu. Kalau relasinya nggak diisi duluan, `loadMissing` di
+        // PerhitunganBuilder bakal query `calibration_session_id IS NULL` dan
+        // nimpa hasil hitung kita sama koleksi kosong.
+        $sesi = new CalibrationSession([
+            ...$this->atributDariRequest($request),
+            'organization_id' => $request->user()->organization_id,
+            'teknisi_id' => $request->user()->id,
+            'status' => CalibrationSession::STATUS_DRAFT,
+        ]);
+
+        $sesi->setRelation('rawMeasurements', new EloquentCollection(array_map(
+            fn (array $baris): RawMeasurement => new RawMeasurement($baris),
+            $susunan['mentah'],
+        )));
+
+        $sesi->setRelation('uncertaintyCalculations', new EloquentCollection(array_map(
+            fn (array $hitungan): UncertaintyCalculation => new UncertaintyCalculation($hitungan),
+            $susunan['hitungan'],
+        )));
+
+        $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke')->values();
+
+        // Keputusan sesi kalau dikirim sekarang. Satu titik FAIL bikin seluruh
+        // sesi FAIL — aturan yang sama kayak `tutupPengisian()`.
+        $sesi->keputusan = match (true) {
+            $titik->isEmpty() => null,
+            $titik->contains('keputusan', 'FAIL') => 'FAIL',
+            default => 'PASS',
+        };
+
+        $perhitungan = $builder->bangun($sesi);
+
+        return response()->json([
+            'data' => [
+                'keputusan' => $sesi->keputusan,
+                // `hasil` & `titik` SENGAJA sama arti + sama bentuk kayak di
+                // GET /calibrations/{id} — dua-duanya lewat helper yang sama di
+                // CalibrationResource, jadi parser mobile bisa dipakai ulang
+                // apa adanya. Jangan diisi hal lain di sini.
+                'hasil' => CalibrationResource::petakanHasil($sesi->titikPenentu(), $sesi->keputusan),
+                'titik' => $titik
+                    ->map(fn (UncertaintyCalculation $t): array => CalibrationResource::petakanTitik($t))
+                    ->all(),
+                // Dua tabel lembar kerja (Before/After adjustment) lengkap sama
+                // baris Average, Correction, STDEV, dan MAX STDEV — ini yang
+                // diminta worksheet §4 buat "hitung sambil ngetik".
+                //
+                // Namanya BUKAN `hasil` walau isinya `data.hasil`-nya
+                // GET /calibrations/{id}/perhitungan: di sesi tersimpan, key
+                // `hasil` artinya ringkasan titik penentu. Satu nama dua arti
+                // itu jebakan; jadi di sini dinamain apa adanya.
+                'lembar_perhitungan' => $perhitungan['hasil'],
+                'kondisi_lingkungan' => $perhitungan['kondisi_lingkungan'],
+                // Titik yang belum keluar angkanya + alasannya. Tanpa ini, titik
+                // yang ilang dari `titik` kelihatan kayak bug di mata teknisi.
+                'belum_dihitung' => $susunan['belum_dihitung'],
+            ],
+        ]);
     }
 
     public function show(Request $request, CalibrationSession $calibration): JsonResponse
@@ -457,6 +564,36 @@ class CalibrationController extends Controller
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
 
+        $susunan = $this->susunPengukuran($request);
+
+        foreach ($susunan['mentah'] as $baris) {
+            $sesi->rawMeasurements()->create($baris);
+        }
+
+        foreach ($susunan['hitungan'] as $hitungan) {
+            $sesi->uncertaintyCalculations()->create($hitungan);
+        }
+
+        return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
+    }
+
+    /**
+     * Susun pembacaan mentah + hasil hitung GUM dari payload — TANPA nyentuh DB.
+     *
+     * Dipisah dari penyimpanan supaya `POST /calibrations/preview` bisa mutar
+     * perhitungan yang SAMA PERSIS tanpa nyimpen apa-apa. Kalau logikanya disalin
+     * jadi dua, angka preview bisa diam-diam beda dari angka yang tersimpan —
+     * dan buat lab terakreditasi, dua angka beda buat satu pengukuran itu temuan.
+     * Satu-satunya cara mencegahnya: satu fungsi, dua pemakai.
+     *
+     * @return array{
+     *     mentah: list<array<string, mixed>>,
+     *     hitungan: list<array<string, mixed>>,
+     *     belum_dihitung: list<array{titik_ke: int, alasan: string}>,
+     * }
+     */
+    private function susunPengukuran(CalibrationRequest $request): array
+    {
         $alat = Equipment::findOrFail($request->integer('equipment_id'));
         $standarDefault = $request->filled('standard_id')
             ? Standard::findOrFail($request->integer('standard_id'))
@@ -480,6 +617,10 @@ class CalibrationController extends Controller
         $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
         $satuanDefault = $alat->satuan;
 
+        $mentah = [];
+        $hitungan = [];
+        $belumDihitung = [];
+
         foreach (array_values($request->input('measurements', [])) as $index => $titik) {
             $titikKe = $index + 1;
             $satuan = $titik['satuan'] ?? $satuanDefault;
@@ -487,6 +628,8 @@ class CalibrationController extends Controller
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
             $suhu = array_values($titik['suhu'] ?? []);
+
+            $pembacaanTerisi = [];
 
             // Sel kosong di lembar kerja tetap kekirim (sebagai null) supaya
             // nomor pengulangannya nggak geser. Yang disimpen cuma yang keisi.
@@ -498,13 +641,16 @@ class CalibrationController extends Controller
                 $meta = $ocr[$urutan] ?? null;
                 $dariKamera = $meta !== null || $sesiKamera;
 
-                $sesi->rawMeasurements()->create([
+                $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                $pembacaanTerisi[] = $pembacaan;
+
+                $mentah[] = [
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
-                    'pembacaan' => $nilai,
-                    'suhu' => $suhu[$urutan] ?? null,
+                    'pembacaan' => $pembacaan,
+                    'suhu' => $this->bulatkanKolom($suhu[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
                     'input_source' => $dariKamera ? $sumberKamera : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
@@ -515,7 +661,7 @@ class CalibrationController extends Controller
                     // input — angkanya WAJIB dikonfirmasi manusia (endpoint
                     // verify) dulu sebelum sesi bisa disetujui.
                     'is_verified' => ! $dariKamera,
-                ]);
+                ];
             }
 
             // As-found (sebelum adjustment) — dokumentasi kondisi alat doang,
@@ -528,23 +674,23 @@ class CalibrationController extends Controller
                     continue;
                 }
 
-                $sesi->rawMeasurements()->create([
+                $mentah[] = [
                     'titik_ke' => $titikKe,
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sebelum_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
-                    'pembacaan' => $nilai,
-                    'suhu' => $suhuSebelum[$urutan] ?? null,
+                    'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
+                    'suhu' => $this->bulatkanKolom($suhuSebelum[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
                     'input_source' => 'manual',
                     'is_verified' => true,
-                ]);
+                ];
             }
 
             // CalibrationRequest udah validasi standard_id per titik itu ada &
             // masih berlaku — kalau sampe nggak ketemu di sini (standar
             // dihapus di antara validasi & baris ini, atau endpoint lain
-            // manggil isiUlangPengukuran tanpa lewat CalibrationRequest),
+            // manggil susunPengukuran tanpa lewat CalibrationRequest),
             // gagal keras. Diam-diam pakai standar default sesi bakal nyimpen
             // hasil hitung yang ngaku dihitung pakai standar yang salah.
             $standarTitik = $standarDefault;
@@ -559,23 +705,19 @@ class CalibrationController extends Controller
                 );
             }
 
-            $pembacaanTerisi = $sesi->rawMeasurements()
-                ->where('titik_ke', $titikKe)
-                ->where('tahap', 'sesudah_adjustment')
-                ->orderBy('pembacaan_ke')
-                ->pluck('pembacaan')
-                ->map(fn ($nilai): float => (float) $nilai)
-                ->all();
-
             // Titik yang datanya belum cukup TETAP disimpen mentah, cuma nggak
             // dihitung. Ini yang bikin lembar kerja setengah jadi boleh dikirim
             // dari lapangan tanpa maksa sistem ngarang angka: yang nahan bukan
             // tombol kirim, tapi penerbitan sertifikatnya (CalibrationValidator).
-            if (! $this->bisaDihitung($pembacaanTerisi, $alat, $standarTitik)) {
+            $alasan = $this->alasanBelumBisaDihitung($pembacaanTerisi, $alat, $standarTitik);
+
+            if ($alasan !== null) {
+                $belumDihitung[] = ['titik_ke' => $titikKe, 'alasan' => $alasan];
+
                 continue;
             }
 
-            $sesi->uncertaintyCalculations()->create($this->gum->hitungTitik(
+            $hitungan[] = $this->bulatkanHitungan($this->gum->hitungTitik(
                 $titikKe,
                 (float) $titik['titik_ukur'],
                 $pembacaanTerisi,
@@ -584,11 +726,64 @@ class CalibrationController extends Controller
             ));
         }
 
-        return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
+        return ['mentah' => $mentah, 'hitungan' => $hitungan, 'belum_dihitung' => $belumDihitung];
     }
 
     /**
-     * Syarat minimal biar satu titik bisa dihitung ketidakpastiannya.
+     * Bulatin hasil GUM ke presisi kolom `uncertainty_calculations`.
+     *
+     * Dilakuin SEBELUM insert, bukan cuma buat preview — supaya dua jalurnya
+     * dapat angka yang sama karena dihitung sama, bukan karena dicocokin
+     * belakangan. Sebelumnya pembulatan ini dikerjain MySQL diam-diam waktu
+     * INSERT, jadi sesi tersimpan balikin `0.03` sementara preview (yang nggak
+     * lewat DB) balikin `0.03000000000000025`.
+     *
+     * `type_b_components` sengaja NGGAK disentuh: kolomnya JSON, jadi DB nyimpen
+     * apa adanya tanpa pembulatan.
+     *
+     * @param  array<string, mixed>  $hitungan
+     * @return array<string, mixed>
+     */
+    private function bulatkanHitungan(array $hitungan): array
+    {
+        // decimal(20, 8) — semua besaran hasil hitung.
+        $delapanDesimal = [
+            'titik_ukur', 'rata_rata', 'error', 'koreksi', 'standar_deviasi',
+            'type_a', 'type_b', 'ketidakpastian_gabungan', 'derajat_kebebasan_efektif',
+            'ketidakpastian_diperluas', 'toleransi',
+        ];
+
+        foreach ($delapanDesimal as $field) {
+            if (isset($hitungan[$field])) {
+                $hitungan[$field] = round((float) $hitungan[$field], self::DESIMAL_PEMBACAAN);
+            }
+        }
+
+        // decimal(5, 2) — beda dari yang lain, gampang kelewat.
+        if (isset($hitungan['faktor_cakupan_k'])) {
+            $hitungan['faktor_cakupan_k'] = round((float) $hitungan['faktor_cakupan_k'], self::DESIMAL_K);
+        }
+
+        return $hitungan;
+    }
+
+    /**
+     * Bulatin ke presisi kolomnya di `raw_measurements`.
+     *
+     * MySQL yang bulatin sendiri waktu INSERT, jadi jalur simpan (yang baca ulang
+     * dari DB) selalu dapat angka yang udah dibulatkan. Preview nggak lewat DB,
+     * jadi kalau nggak dibulatin di sini angkanya bisa beda tipis dari yang
+     * tersimpan. Paling kerasa di `suhu`: cuma 2 desimal, dan buat pH nilai itu
+     * masuk ke `Standard::nilaiPadaSuhu()` — jadi ngaruh ke nilai standarnya.
+     */
+    private function bulatkanKolom(mixed $nilai, int $desimal): ?float
+    {
+        return $nilai === null || $nilai === '' ? null : round((float) $nilai, $desimal);
+    }
+
+    /**
+     * Syarat minimal biar satu titik bisa dihitung ketidakpastiannya. Balikin
+     * `null` kalau udah memenuhi, atau alasannya kalau belum.
      *
      * - Pengulangan minimal 2: standar deviasi (Type A) nggak ada artinya dari
      *   satu angka.
@@ -596,13 +791,27 @@ class CalibrationController extends Controller
      * - Toleransi alat harus ada: tanpa batas pembanding, PASS/FAIL nggak punya
      *   dasar sama sekali.
      *
+     * Alasannya dikembaliin sebagai teks (bukan cuma bool) supaya
+     * `POST /calibrations/preview` bisa ngasih tahu teknisi KENAPA satu titik
+     * belum keluar angkanya. Tanpa itu, titik yang ilang dari hasil kelihatan
+     * kayak bug — padahal cuma kurang satu pembacaan.
+     *
      * @param  list<float>  $pembacaan
      */
-    private function bisaDihitung(array $pembacaan, Equipment $alat, ?Standard $standar): bool
+    private function alasanBelumBisaDihitung(array $pembacaan, Equipment $alat, ?Standard $standar): ?string
     {
-        return count($pembacaan) >= GumCalculator::MIN_PENGULANGAN
-            && $standar !== null
-            && $alat->toleransi !== null;
+        $jumlah = count($pembacaan);
+
+        return match (true) {
+            $jumlah < GumCalculator::MIN_PENGULANGAN => sprintf(
+                'Baru %d pembacaan terisi, minimal %d — standar deviasi nggak bisa dihitung dari satu angka.',
+                $jumlah,
+                GumCalculator::MIN_PENGULANGAN,
+            ),
+            $standar === null => 'Standar acuan belum dipilih buat titik ini.',
+            $alat->toleransi === null => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
+            default => null,
+        };
     }
 
     /**

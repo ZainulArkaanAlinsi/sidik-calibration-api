@@ -96,6 +96,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 |---|---|
 | Bentuk form lembar kerja pH | `GET /calibrations/lembar-kerja` — **cocok persis** sama `permintaan-backend-2026-07-24.md` §1, semua key wajib ada, enum `tipe` & `sumber` sama nilai-per-nilai |
 | Kirim / perbaiki lembar kerja | `POST /calibrations`, `PUT /calibrations/{id}` |
+| **Hitung sambil ngetik** | `POST /calibrations/preview` — body sama persis kayak `POST /calibrations`, nggak nyimpen apa pun. Lihat [`kontrak-api.md` §4a](kontrak-api.md) |
 | Standar beda per titik (buffer 4/7/10) | `measurements[].standard_id` |
 | Pembacaan as-found | `measurements[].pembacaan_sebelum` |
 | Idempotency retry submit | `client_request_id` (UUID) |
@@ -155,7 +156,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `POST /calibrations/preview` | worksheet-ph §4 | Nggak ada hitung-sambil-ngetik. `/validasi` butuh sesi yang udah kesimpen, jadi bukan gantinya |
 | `logo_url` + `POST /organization/logo` | fase-2 §3a | Kop sertifikat tanpa logo |
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
 | `GET /laporan/kalibrasi` + `/export` | fase-2 §5 | Seluruh bagian Laporan. `GET /certificates/export/excel` nutup sebagian (rekap sertifikat), tapi tanpa filter pelanggan/teknisi/kategori |
