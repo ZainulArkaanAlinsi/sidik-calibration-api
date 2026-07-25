@@ -25,9 +25,9 @@ class PasswordResetTest extends TestCase
     public function test_email_terdaftar_dapat_link_reset(): void
     {
         Notification::fake();
-        $user = User::factory()->create(['email' => 'teknisi@asmo.test']);
+        $user = User::factory()->create(['email' => 'teknisi@sidik.test']);
 
-        $this->postJson('/api/forgot-password', ['email' => 'teknisi@asmo.test'])->assertOk();
+        $this->postJson('/api/forgot-password', ['email' => 'teknisi@sidik.test'])->assertOk();
 
         Notification::assertSentTo($user, ResetPassword::class);
     }
@@ -42,20 +42,20 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $terdaftar = $this->postJson('/api/forgot-password', ['email' => 'ada@asmo.test']);
-        User::factory()->create(['email' => 'ada@asmo.test']);
-        $asing = $this->postJson('/api/forgot-password', ['email' => 'nggak-ada@asmo.test']);
+        $terdaftar = $this->postJson('/api/forgot-password', ['email' => 'ada@sidik.test']);
+        User::factory()->create(['email' => 'ada@sidik.test']);
+        $asing = $this->postJson('/api/forgot-password', ['email' => 'nggak-ada@sidik.test']);
 
         $asing->assertOk();
         $this->assertSame($terdaftar->json('message'), $asing->json('message'));
 
-        Notification::assertNothingSentTo([User::firstWhere('email', 'ada@asmo.test')]);
+        Notification::assertNothingSentTo([User::firstWhere('email', 'ada@sidik.test')]);
     }
 
     public function test_reset_pakai_token_valid_ganti_password_dan_cabut_semua_token(): void
     {
         $user = User::factory()->create([
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordlama',
         ]);
 
@@ -67,7 +67,7 @@ class PasswordResetTest extends TestCase
 
         $this->postJson('/api/reset-password', [
             'token' => $token,
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordbaru123',
             'password_confirmation' => 'passwordbaru123',
         ])
@@ -80,18 +80,18 @@ class PasswordResetTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
 
         $this->postJson('/api/login', [
-            'identifier' => 'teknisi@asmo.test',
+            'identifier' => 'teknisi@sidik.test',
             'password' => 'passwordbaru123',
         ])->assertOk();
     }
 
     public function test_token_ngawur_ditolak_422(): void
     {
-        User::factory()->create(['email' => 'teknisi@asmo.test']);
+        User::factory()->create(['email' => 'teknisi@sidik.test']);
 
         $this->postJson('/api/reset-password', [
             'token' => 'token-karangan',
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordbaru123',
             'password_confirmation' => 'passwordbaru123',
         ])
@@ -101,11 +101,11 @@ class PasswordResetTest extends TestCase
 
     public function test_konfirmasi_password_kalau_dikirim_dan_beda_ditolak(): void
     {
-        User::factory()->create(['email' => 'teknisi@asmo.test']);
+        User::factory()->create(['email' => 'teknisi@sidik.test']);
 
         $this->postJson('/api/reset-password', [
             'token' => 'apa-aja',
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordbaru123',
             'password_confirmation' => 'beda-sendiri',
         ])
@@ -120,13 +120,13 @@ class PasswordResetTest extends TestCase
     public function test_reset_tanpa_field_konfirmasi_tetap_jalan(): void
     {
         $user = User::factory()->create([
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordlama',
         ]);
 
         $this->postJson('/api/reset-password', [
             'token' => Password::createToken($user),
-            'email' => 'teknisi@asmo.test',
+            'email' => 'teknisi@sidik.test',
             'password' => 'passwordbaru123',
         ])->assertOk();
 

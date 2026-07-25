@@ -19,8 +19,8 @@ Backend REST API (Laravel) untuk aplikasi kalibrasi alat ukur & sertifikat digit
 ## Setup Lokal
 
 ```bash
-git clone https://github.com/ZainulArkaanAlinsi/asmo-api.git
-cd asmo-api
+git clone https://github.com/ZainulArkaanAlinsi/sidik-calibration-api.git
+cd sidik-calibration-api
 composer install
 cp .env.example .env
 php artisan key:generate

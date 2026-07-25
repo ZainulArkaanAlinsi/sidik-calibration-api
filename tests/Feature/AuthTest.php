@@ -27,10 +27,10 @@ class AuthTest extends TestCase
     private function admin(): User
     {
         return User::factory()->admin()->create([
-            'employee_id' => 'ASM-0001',
+            'employee_id' => 'SDK-0001',
             'name' => 'Admin ASMO',
             'department' => 'Quality Control',
-            'email' => 'admin@asmo.test',
+            'email' => 'admin@sidik.test',
             'password' => 'rahasia123',
         ]);
     }
@@ -48,7 +48,7 @@ class AuthTest extends TestCase
         $this->admin();
 
         $this->postJson('/api/login', [
-            'identifier' => 'admin@asmo.test',
+            'identifier' => 'admin@sidik.test',
             'password' => 'rahasia123',
         ])
             ->assertOk()
@@ -68,11 +68,11 @@ class AuthTest extends TestCase
         $this->admin();
 
         $this->postJson('/api/login', [
-            'identifier' => 'ASM-0001',
+            'identifier' => 'SDK-0001',
             'password' => 'rahasia123',
         ])
             ->assertOk()
-            ->assertJsonPath('data.user.employee_id', 'ASM-0001');
+            ->assertJsonPath('data.user.employee_id', 'SDK-0001');
     }
 
     public function test_login_dengan_password_salah_balikin_401(): void
@@ -80,7 +80,7 @@ class AuthTest extends TestCase
         $this->admin();
 
         $this->postJson('/api/login', [
-            'identifier' => 'ASM-0001',
+            'identifier' => 'SDK-0001',
             'password' => 'ngasal',
         ])
             ->assertUnauthorized()
@@ -97,13 +97,13 @@ class AuthTest extends TestCase
     public function test_akun_pending_ditolak_403_walau_password_benar(): void
     {
         User::factory()->pending()->create([
-            'employee_id' => 'ASM-0099',
-            'email' => 'eko@asmo.test',
+            'employee_id' => 'SDK-0099',
+            'email' => 'eko@sidik.test',
             'password' => 'rahasia123',
         ]);
 
         $this->postJson('/api/login', [
-            'identifier' => 'ASM-0099',
+            'identifier' => 'SDK-0099',
             'password' => 'rahasia123',
         ])
             ->assertForbidden()
@@ -113,14 +113,14 @@ class AuthTest extends TestCase
     public function test_akun_nonaktif_ditolak_403(): void
     {
         User::factory()->create([
-            'employee_id' => 'ASM-0077',
-            'email' => 'nonaktif@asmo.test',
+            'employee_id' => 'SDK-0077',
+            'email' => 'nonaktif@sidik.test',
             'password' => 'rahasia123',
             'status' => User::STATUS_NONAKTIF,
         ]);
 
         $this->postJson('/api/login', [
-            'identifier' => 'ASM-0077',
+            'identifier' => 'SDK-0077',
             'password' => 'rahasia123',
         ])->assertForbidden();
     }
@@ -137,7 +137,7 @@ class AuthTest extends TestCase
 
         $this->withToken($token)->getJson('/api/me')
             ->assertOk()
-            ->assertJsonPath('data.email', 'admin@asmo.test')
+            ->assertJsonPath('data.email', 'admin@sidik.test')
             ->assertJsonPath('data.role', 'admin');
     }
 

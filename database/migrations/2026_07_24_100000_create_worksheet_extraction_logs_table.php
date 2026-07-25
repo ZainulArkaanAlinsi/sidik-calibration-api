@@ -41,7 +41,17 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['calibration_session_id', 'created_at']);
+            // Nama index WAJIB ditulis eksplisit. Kalau dibiarin auto-generate,
+            // Laravel bikin `worksheet_extraction_logs_calibration_session_id_
+            // created_at_index` = 65 karakter, dan MySQL nolak di 64 (error 1059).
+            // Efeknya jahat: CREATE TABLE-nya sukses, ADD INDEX-nya gagal, jadi
+            // tabelnya ketinggalan tapi migrasinya nggak kecatat — `migrate`
+            // berikutnya mentok "table already exists" terus.
+            //
+            // Ini nggak ketangkep test karena phpunit.xml jalan di SQLite
+            // in-memory, yang nggak punya batas panjang identifier. Yang kena
+            // cuma MySQL — alias dev & produksi.
+            $table->index(['calibration_session_id', 'created_at'], 'wel_sesi_created_at_idx');
         });
     }
 

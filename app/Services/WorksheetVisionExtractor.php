@@ -10,7 +10,7 @@ use RuntimeException;
 /**
  * Baca tabel lembar kerja pH dari FOTO pakai Claude Vision (ganti OCR di HP).
  *
- * Implementasi dari Project-PT-Sidik/SPEC-vision-prompt.md:
+ * Implementasi dari docs/SPEC-vision-prompt.md:
  * - SATU foto = SATU tabel (Before ATAU After adjustment).
  * - Output: { "baris": [...] } — tiap `baris` = satu Repeat, array `ph`/`suhu`/
  *   keyakinan sepanjang jumlah buffer standar (4/7/10), urut kiri→kanan.
