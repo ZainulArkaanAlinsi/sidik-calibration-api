@@ -4,15 +4,63 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CustomerRequest;
+use App\Http\Resources\CustomerLookupResource;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-/** Master data pelanggan — admin doang (dijaga `role:admin` di routes). */
+/**
+ * Master data pelanggan — admin doang (dijaga `role:admin` di routes).
+ *
+ * SATU pengecualian: `lookup()` kebuka semua role. Lihat alasannya di sana.
+ */
 class CustomerController extends Controller
 {
+    /**
+     * Daftar pelanggan buat dropdown — **kebuka semua role**, read-only.
+     *
+     * Kenapa perlu endpoint sendiri padahal `index()` udah ada: `POST /equipments`
+     * boleh dipakai **teknisi** dan `pelanggan_id` itu **wajib**, tapi seluruh
+     * `/customers` admin-only. Jadi form Tambah Alat mulus waktu dites pakai akun
+     * admin lalu mentok total di akun teknisi — dropdown-nya `403`, dan alatnya
+     * nggak bisa disimpen sama sekali.
+     *
+     * `docs/kontrak-api.md` §8 sempat nyaranin pakai `GET /arsip/perusahaan` buat
+     * ini. Itu nggak nyelesaiin masalahnya: endpoint itu ngelist FOLDER, dan
+     * folder cuma ada buat PT yang udah pernah punya sertifikat — jadi pelanggan
+     * BARU (justru yang paling sering diinput) nggak akan nongol. Buat teknisi
+     * daftarnya juga disaring lagi per-role.
+     *
+     * Yang dikirim cuma `id`, `nama`, `alamat` — sengaja nggak bawa
+     * `contact_person`/`telepon`/`email`. Ini dropdown, bukan layar CRUD: role
+     * yang nggak boleh ngelola pelanggan nggak perlu megang kontaknya juga.
+     * `alamat` ikut karena blok OWNER di lembar kerja butuh, dan itu udah kekirim
+     * ke semua role lewat `EquipmentResource.pelanggan` — jadi bukan data baru.
+     */
+    public function lookup(Request $request): AnonymousResourceCollection
+    {
+        $cari = $request->string('search')->value() !== ''
+            ? $request->string('search')
+            // `q` diterima juga: dokumen lama nyebut param ini buat lookup
+            // pelanggan, dan filter yang diabaikan diam-diam itu bug yang mahal
+            // (daftarnya balik utuh, kelihatan kayak pencariannya rusak).
+            : $request->string('q');
+
+        $pelanggan = Customer::query()
+            ->where('organization_id', $request->user()->organization_id)
+            ->when(
+                (string) $cari !== '',
+                fn ($query) => $query->where('nama', 'like', '%'.$cari.'%'),
+            )
+            ->orderBy('nama')
+            ->paginate(15)
+            ->withQueryString();
+
+        return CustomerLookupResource::collection($pelanggan);
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $customers = Customer::query()
