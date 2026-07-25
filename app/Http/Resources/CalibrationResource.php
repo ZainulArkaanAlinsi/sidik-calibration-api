@@ -45,14 +45,7 @@ class CalibrationResource extends JsonResource
             // Sesi bisa punya banyak titik ukur, tapi kontrak minta SATU objek
             // `hasil`. Yang dikirim adalah titik penentu — yang paling mepet ke
             // batas toleransi. Rincian tiap titik ada di `titik` di bawah.
-            'hasil' => $penentu ? [
-                'rata_rata' => $penentu->rata_rata,
-                'error' => $penentu->error,
-                'ketidakpastian_gabungan' => $penentu->ketidakpastian_gabungan,
-                'faktor_cakupan_k' => $penentu->faktor_cakupan_k,
-                'ketidakpastian_diperluas' => $penentu->ketidakpastian_diperluas,
-                'keputusan' => $this->keputusan,
-            ] : null,
+            'hasil' => self::petakanHasil($penentu, $this->keputusan),
 
             'catatan_revisi' => $this->catatan_revisi,
             'certificate_id' => $this->certificate?->id,
@@ -126,31 +119,7 @@ class CalibrationResource extends JsonResource
             'titik' => $this->uncertaintyCalculations
                 ->sortBy('titik_ke')
                 ->values()
-                ->map(fn (UncertaintyCalculation $titik): array => [
-                    'titik_ke' => $titik->titik_ke,
-                    'titik_ukur' => $titik->titik_ukur,
-                    'rata_rata' => $titik->rata_rata,
-                    'error' => $titik->error,
-                    'koreksi' => $titik->koreksi,
-                    'standar_deviasi' => $titik->standar_deviasi,
-                    'jumlah_pengulangan' => $titik->jumlah_pengulangan,
-                    'type_a' => $titik->type_a,
-                    'type_b' => $titik->type_b,
-                    'type_b_components' => $titik->type_b_components,
-                    'ketidakpastian_gabungan' => $titik->ketidakpastian_gabungan,
-                    'faktor_cakupan_k' => $titik->faktor_cakupan_k,
-                    'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
-                    'toleransi' => $titik->toleransi,
-                    'keputusan' => $titik->keputusan,
-                    'metode' => $titik->metode,
-                    // Titik yang standarnya beda dari standar default sesi (mis.
-                    // buffer pH 4/7/10) nampilin punyanya sendiri di sini.
-                    'standar_acuan' => $titik->standard ? [
-                        'id' => $titik->standard->id,
-                        'nama' => $titik->standard->nama,
-                        'no_sertifikat' => $titik->standard->no_sertifikat,
-                    ] : null,
-                ]),
+                ->map(fn (UncertaintyCalculation $titik): array => self::petakanTitik($titik)),
 
             // Status verifikasi pembacaan — cuma ikut waktu detail sesi dibuka
             // (whenLoaded), biar daftar sesi nggak kebanjiran baris pembacaan.
@@ -181,6 +150,89 @@ class CalibrationResource extends JsonResource
                         'ocr_raw_text' => $m->ocr_raw_text,
                     ]),
             ),
+        ];
+    }
+
+    /**
+     * Ringkasan satu sesi: titik PENENTU (yang paling mepet batas toleransi) +
+     * keputusan sesi. Kontrak minta satu objek `hasil`, walau sesinya punya
+     * banyak titik ukur — rinciannya ada di `titik`.
+     *
+     * Dipisah jadi static supaya `POST /calibrations/preview` bisa balikin key
+     * `hasil` dengan ARTI YANG SAMA. Ini penting: bentuk yang sama tapi arti beda
+     * di endpoint berbeda itu jebakan paling mahal buat sisi frontend.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function petakanHasil(?UncertaintyCalculation $penentu, ?string $keputusanSesi): ?array
+    {
+        if ($penentu === null) {
+            return null;
+        }
+
+        return [
+            'rata_rata' => $penentu->rata_rata,
+            'error' => $penentu->error,
+            'ketidakpastian_gabungan' => $penentu->ketidakpastian_gabungan,
+            'faktor_cakupan_k' => $penentu->faktor_cakupan_k,
+            'ketidakpastian_diperluas' => $penentu->ketidakpastian_diperluas,
+            'keputusan' => $keputusanSesi,
+        ];
+    }
+
+    /**
+     * Bentuk satu titik hasil hitung GUM.
+     *
+     * Dipisah jadi static supaya `POST /calibrations/preview` bisa balikin bentuk
+     * yang SAMA PERSIS tanpa nyalin daftar fieldnya. Preview jalan di atas objek
+     * `UncertaintyCalculation` yang belum disimpen, jadi jangan sentuh `$titik->id`
+     * atau apa pun yang cuma ada sesudah insert.
+     *
+     * @return array<string, mixed>
+     */
+    public static function petakanTitik(UncertaintyCalculation $titik): array
+    {
+        return [
+            'titik_ke' => $titik->titik_ke,
+            'titik_ukur' => $titik->titik_ukur,
+            'rata_rata' => $titik->rata_rata,
+            'error' => $titik->error,
+            'koreksi' => $titik->koreksi,
+            'standar_deviasi' => $titik->standar_deviasi,
+            'jumlah_pengulangan' => $titik->jumlah_pengulangan,
+            'type_a' => $titik->type_a,
+            'type_b' => $titik->type_b,
+            // Urutan key dinormalisasi, JANGAN dikirim apa adanya.
+            //
+            // Kolomnya JSON, dan MySQL nyimpen JSON dalam format biner yang
+            // ngurutin ulang key-nya — jadi baris yang udah lewat DB balik dengan
+            // urutan beda dari yang baru dihitung di memori (SQLite nyimpen apa
+            // adanya, makanya ini nggak kelihatan di test). Efeknya: respons
+            // endpoint yang sama bisa beda urutan key tergantung driver, dan
+            // urutan di kontrak-api.md jadi nggak bisa dipegang.
+            //
+            // Buat konsumen JSON biasa (Dart Map) urutan nggak ngaruh, tapi ini
+            // bikin `POST /calibrations/preview` mustahil byte-identik sama sesi
+            // tersimpan — padahal itu justru jaminan yang dijual endpoint itu.
+            'type_b_components' => array_map(fn (array $k): array => [
+                'sumber' => $k['sumber'] ?? null,
+                'keterangan' => $k['keterangan'] ?? null,
+                'distribusi' => $k['distribusi'] ?? null,
+                'nilai' => $k['nilai'] ?? null,
+            ], $titik->type_b_components ?? []),
+            'ketidakpastian_gabungan' => $titik->ketidakpastian_gabungan,
+            'faktor_cakupan_k' => $titik->faktor_cakupan_k,
+            'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
+            'toleransi' => $titik->toleransi,
+            'keputusan' => $titik->keputusan,
+            'metode' => $titik->metode,
+            // Titik yang standarnya beda dari standar default sesi (mis.
+            // buffer pH 4/7/10) nampilin punyanya sendiri di sini.
+            'standar_acuan' => $titik->standard ? [
+                'id' => $titik->standard->id,
+                'nama' => $titik->standard->nama,
+                'no_sertifikat' => $titik->standard->no_sertifikat,
+            ] : null,
         ];
     }
 }

@@ -142,6 +142,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
 
         Route::post('/calibrations', [CalibrationController::class, 'store']);
+        // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja
+        // (docs/permintaan-worksheet-ph.md §4). Body sama persis kayak POST
+        // /calibrations. Throttle-nya longgar karena ini dipanggil tiap teknisi
+        // selesai ngisi satu baris, bukan sekali per sesi — tapi tetap ada
+        // batasnya, soalnya tiap panggilan mutar perhitungan GUM penuh.
+        Route::post('/calibrations/preview', [CalibrationController::class, 'preview'])
+            ->middleware('throttle:120,1');
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 

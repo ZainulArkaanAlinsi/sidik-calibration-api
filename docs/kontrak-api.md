@@ -404,6 +404,82 @@ Bikin sesi kalibrasi + kirim data mentah sekaligus. **Data dari input manual dan
 
 Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 
+### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
+
+✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;
+viewer `403`. Rate limit **120/menit per IP** (dipanggil tiap selesai satu baris,
+bukan sekali per sesi).
+
+**Body-nya SAMA PERSIS kayak `POST /api/calibrations`** — kirim aja draft yang
+sedang diisi. Nggak perlu payload kedua, nggak perlu field tambahan.
+`client_request_id` boleh ikut, diabaikan (preview bukan submit).
+
+**Nggak nyimpen apa pun**: nggak ada baris sesi/pembacaan/hitungan, nggak makan
+nomor sesi, nggak ngirim notifikasi, nggak nyiarin sinyal realtime. Aman dipanggil
+tiap ketukan.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "keputusan": "PASS",
+    "hasil": {
+      "rata_rata": 7.03, "error": 0.03,
+      "ketidakpastian_gabungan": 0.01055448,
+      "faktor_cakupan_k": 2, "ketidakpastian_diperluas": 0.02110895,
+      "keputusan": "PASS"
+    },
+    "titik": [ { "titik_ke": 1, "rata_rata": 7.03, "error": 0.03, "koreksi": -0.03, "…": "…" } ],
+    "lembar_perhitungan": [
+      { "tahap": "sebelum_adjustment", "judul": "Before Adjustment Reading",
+        "titik": [ { "titik_ke": 1, "standard": 7.0021, "average": 7.11, "correction": 0.1079, "stdev": 0.01414, "…": "…" } ],
+        "max_stdev": 0.01414 },
+      { "tahap": "sesudah_adjustment", "judul": "After Adjustment Reading", "titik": [ "…" ], "max_stdev": 0.01 }
+    ],
+    "kondisi_lingkungan": {
+      "suhu": { "awal": 22.2, "akhir": 22.4, "average": 22.3, "delta": 0.2, "u95_sertifikat": 0.2, "nilai_terkoreksi": 22.3, "satuan": "°C" },
+      "kelembaban": { "…": "…" },
+      "thermohygro": null, "thermohygro_serial": null
+    },
+    "belum_dihitung": [
+      { "titik_ke": 3, "alasan": "Baru 1 pembacaan terisi, minimal 2 — standar deviasi nggak bisa dihitung dari satu angka." }
+    ]
+  }
+}
+```
+
+**Yang penting dipahami soal bentuknya:**
+
+- **`hasil` & `titik` sama arti + sama bentuk kayak di `GET /api/calibrations/{id}`.**
+  Dua-duanya lewat helper yang sama di backend, jadi **parser yang udah ada bisa
+  dipakai ulang apa adanya**. `hasil` = ringkasan titik penentu (yang paling mepet
+  batas toleransi), bukan gabungan semua titik.
+- **`lembar_perhitungan` = `data.hasil`-nya `GET /api/calibrations/{id}/perhitungan`**,
+  byte-per-byte. Namanya beda **sengaja**: di detail sesi, key `hasil` artinya
+  ringkasan titik penentu. Satu nama dua arti itu jebakan, jadi di sini dipisah.
+  Isinya dua tabel (Before/After adjustment) lengkap sama baris Average,
+  Correction, STDEV, dan MAX STDEV — persis kolom yang dihitung Excel-nya lab.
+- **`belum_dihitung`** ngasih tahu KENAPA satu titik belum keluar angkanya. Tanpa
+  ini, titik yang nggak muncul di `titik` kelihatan kayak bug. Alasannya sudah
+  berupa kalimat siap tampil — jangan disusun ulang di mobile.
+- **`keputusan` di top-level** sama nilainya sama `hasil.keputusan`. Ada di luar
+  supaya tetap kebaca waktu `hasil` masih `null` (belum ada titik yang kehitung).
+- `titik` **cuma berisi titik yang bisa dihitung**. Titik yang belum cukup datanya
+  pindah ke `belum_dihitung`, jadi `titik` bisa lebih pendek dari `measurements`.
+
+> **Angkanya dijamin identik sama yang nanti tersimpan** — bukan "mirip". Preview
+> dan submit mutar fungsi yang sama, dan pembulatan ke presisi kolom DB dilakuin
+> sebelum keduanya, jadi nggak ada selisih di desimal jauh. Ada test yang ngirim
+> payload sama ke `/preview` dan ke `/calibrations` terus ngebandingin field per
+> field (`CalibrationPreviewTest`). Ini yang bikin aman nampilin angkanya ke
+> teknisi: yang di layar sama sama yang bakal tercetak di sertifikat.
+>
+> Makanya **jangan hitung Average/Correction/STDEV sendiri di mobile** walau
+> rumusnya kelihatan sepele. Bukan soal susah — soal `standard` di lembar
+> perhitungan itu nilai buffer pada SUHU LARUTAN saat itu (4,0092252 di 22,2 °C),
+> bukan nominal 4,00, dan diturunkan dari persamaan di sertifikat buffer.
+
 ### `GET /api/calibrations` · `GET /api/calibrations/{id}`
 ```json
 {
