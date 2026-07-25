@@ -157,6 +157,18 @@ Semua di bawah `/api`. Butuh Bearer token (Sanctum). Bungkus data di `{"data": .
 
 **Semua error harus JSON** (`{"message": "..."}`) dengan status yang benar (401/403/404/422/500) — bukan HTML Laravel. Mobile nampilin `message`-nya.
 
+### 2b. Folder Manager (arsip) — 3 endpoint yang MASIH kurang
+
+Backend sudah alias `/arsip/perusahaan` (index), `/arsip/folders/{id}` (show/update/destroy). Bagus. Tapi mobile (`lib/services/arsip_service.dart`, dipakai `arsip_provider`) masih manggil **3 op** yang belum ada padanannya — dan ini **bukan sekadar alias, ada gap kapabilitas**. Mobile tidak bisa fake ini; harus di backend:
+
+| Mobile panggil | Padanan backend saat ini | Yang perlu ditambah |
+|---|---|---|
+| `GET /arsip/perusahaan/{customerId}/folder` — **buka folder akar per-PT** (core: tap PT → lihat isinya) | `FolderController@index` bisa filter `customer_id`, tapi **tidak get-or-create** folder akar | Endpoint yang **find-or-create** root folder milik `customerId` lalu balikin bentuk `show` (breadcrumb + subfolder + berkas). Reuse logika `show`. |
+| `PUT /arsip/folders/{id}/pindah` (body `{parent_id}`) — pindah folder | `FolderController@update` **cuma rename** — `parent_id` dipertahankan (baris `$folder->parent_id`) | Dukung ubah `parent_id` (validasi: bukan pindah ke diri sendiri/keturunannya; cek `namaBentrok` di parent baru). Sekunder — boleh ditunda. |
+| `PUT /arsip/berkas/{sesiId}/pindah` (body `{folder_id}`) — pindah berkas | `FolderFileController@update` bisa pindah via `folder_id`, **tapi pakai id folderFile, bukan sesiId** | Alias yang terima **`sesiId` (calibration session)** → temukan folderFile-nya → set `folder_id`. Sekunder — boleh ditunda. |
+
+**Prioritas:** baris 1 (buka folder akar PT) itu **core** Folder Manager — tanpa ini, tap PT gagal. Baris 2 & 3 (pindah folder/berkas) sekunder, boleh menyusul. Sampai ada, mobile menampilkan folder tapa adanya (browse/rename/hapus sudah jalan lewat alias yang ada).
+
 ---
 
 ## 3. Gap spesifikasi yang menuntut backend (bukan mobile)
@@ -184,7 +196,7 @@ Semua di bawah `/api`. Butuh Bearer token (Sanctum). Bungkus data di `{"data": .
 dependency, `live_scan_screen`, `worksheet_ocr`, `ocr_service` dibuang. Tombol scan
 sekarang: foto → **upload ke endpoint di bawah** → pra-isi sel + tandai sel keyakinan
 rendah → teknisi konfirmasi. **Backend WAJIB bikin endpoint ini biar tombol foto jalan.**
-Acuan lengkap: `Project-PT-Sidik/SPEC-vision-ai-worksheet-extraction.md`.
+Acuan lengkap: `docs/SPEC-vision-ai-worksheet-extraction.md`.
 
 Endpoint yang dipanggil mobile (`ApiWorksheetVisionService` di `lib/services/worksheet_vision.dart`):
 

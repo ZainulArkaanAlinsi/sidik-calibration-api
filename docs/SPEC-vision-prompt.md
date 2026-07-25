@@ -337,4 +337,3 @@ menggantikan):**
 
 **Garis batas satu kalimat:** *AI membaca & membantu (foto, flag, QA, draft),
 mesin rumus yang menghitung & sertifikat yang mengesahkan.*
-```
