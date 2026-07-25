@@ -31,32 +31,32 @@ class RateLimitTest extends TestCase
 
     public function test_gagal_login_berkali_kali_nggak_ngabisin_jatah_forgot_password(): void
     {
-        User::factory()->create(['email' => 'teknisi@asmo.test']);
+        User::factory()->create(['email' => 'teknisi@sidik.test']);
 
         // Habisin jatah login (10/menit).
         for ($i = 0; $i < 10; $i++) {
-            $this->postJson('/api/login', ['identifier' => 'teknisi@asmo.test', 'password' => 'salah'])
+            $this->postJson('/api/login', ['identifier' => 'teknisi@sidik.test', 'password' => 'salah'])
                 ->assertUnauthorized();
         }
 
-        $this->postJson('/api/login', ['identifier' => 'teknisi@asmo.test', 'password' => 'salah'])
+        $this->postJson('/api/login', ['identifier' => 'teknisi@sidik.test', 'password' => 'salah'])
             ->assertStatus(429);
 
         // Justru orang yang lupa password itu yang salah login berkali-kali.
         // Dia HARUS tetap bisa minta reset.
-        $this->postJson('/api/forgot-password', ['email' => 'teknisi@asmo.test'])
+        $this->postJson('/api/forgot-password', ['email' => 'teknisi@sidik.test'])
             ->assertOk();
     }
 
     public function test_jatah_login_habis_balikin_429_dengan_pesan_yang_layak_ditampilin(): void
     {
-        User::factory()->create(['email' => 'teknisi@asmo.test']);
+        User::factory()->create(['email' => 'teknisi@sidik.test']);
 
         for ($i = 0; $i < 10; $i++) {
-            $this->postJson('/api/login', ['identifier' => 'teknisi@asmo.test', 'password' => 'salah']);
+            $this->postJson('/api/login', ['identifier' => 'teknisi@sidik.test', 'password' => 'salah']);
         }
 
-        $this->postJson('/api/login', ['identifier' => 'teknisi@asmo.test', 'password' => 'salah'])
+        $this->postJson('/api/login', ['identifier' => 'teknisi@sidik.test', 'password' => 'salah'])
             ->assertStatus(429)
             ->assertJsonPath('message', 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.');
     }

@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Bawaan Laravel nunjuk ke route web `password.reset` yang nggak ada di
         // project API-only ini. Diganti deep link ke app Flutter — mobile daftarin
-        // scheme `asmo://` biar link di email langsung buka layar reset.
+        // scheme `sidik://` biar link di email langsung buka layar reset.
         // Waktu dev MAIL_MAILER=log, jadi linknya nongol di storage/logs/laravel.log.
         ResetPassword::createUrlUsing(fn (object $notifiable, string $token) => sprintf(
             '%s?token=%s&email=%s',

@@ -174,7 +174,7 @@ class MasterDataTest extends TestCase
     {
         $this->actingAs($this->admin)->postJson('/api/technicians', [
             'nama' => 'Budi Santoso',
-            'employee_id' => 'ASM-2001',
+            'employee_id' => 'SDK-2001',
             'email' => 'budi@sidik.test',
             'department' => 'Kalibrasi',
             'password' => 'rahasia123',
@@ -183,7 +183,7 @@ class MasterDataTest extends TestCase
             ->assertJsonPath('data.nama', 'Budi Santoso')
             ->assertJsonPath('data.status', User::STATUS_AKTIF);
 
-        $teknisi = User::firstWhere('employee_id', 'ASM-2001');
+        $teknisi = User::firstWhere('employee_id', 'SDK-2001');
 
         // Dibikinin admin, jadi langsung role teknisi & aktif — nggak nyangkut
         // di antrean approval yang gunanya nyaring pendaftar mandiri.

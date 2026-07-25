@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -25,7 +26,17 @@ abstract class NotifikasiSistem extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        // `database` = lonceng Filament + halaman notifikasi mobile (jejak permanen).
+        // `broadcast` = push realtime biar lonceng nyala BARENGAN di HP & desktop
+        // tanpa refresh (channel privat App.Models.User.{id}). Butuh driver
+        // broadcast aktif (Reverb); dengan driver `log`/`null` aman jadi no-op.
+        return ['database', 'broadcast'];
+    }
+
+    /** Payload broadcast = sama persis dengan yang disimpen di database. */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     /**

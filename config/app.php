@@ -25,7 +25,7 @@ return [
     |
     */
 
-    'reset_password_url' => env('RESET_PASSWORD_URL', 'asmo://reset-password'),
+    'reset_password_url' => env('RESET_PASSWORD_URL', 'sidik://reset-password'),
 
     /*
     |--------------------------------------------------------------------------
