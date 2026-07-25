@@ -790,8 +790,25 @@ Isinya beda tergantung role — teknisi dapat ringkasan miliknya, admin dapat li
 
 Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat layar Pengaturan (admin).
 
-- **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`. Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
+- **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`, plus **`logo_url`** (read-only, diisi lewat endpoint di bawah). Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
   > **✅ 18 Jul — response-nya lebih gemuk dari yang didokumentasiin, mobile baru nyusul makainya**: `standar_akreditasi`, `akreditasi_mulai`, `akreditasi_berakhir`, dan `akreditasi_masih_berlaku` (dihitung backend, read-only — jangan dikirim balik waktu `PUT`). Ini yang nentuin akreditasi lab (LK-285-IDN) masih sah apa nggak; sebelumnya nggak ada di layar mana pun. `settings` (array) juga ada di response tapi mobile sengaja belum kasih UI buat itu — bentuknya belum didokumentasiin.
+- **`POST /api/organization/logo`** · **`DELETE /api/organization/logo`** — ✅ live 25 Jul.
+  Logo yang dicetak di kop sertifikat. Multipart, field **`logo`**, admin doang.
+  > **PNG atau JPG doang, maks 2 MB.** WEBP ditolak `422` walau itu gambar sah:
+  > logonya berakhir di PDF lewat dompdf yang nggak bisa render WEBP, dan mime-nya
+  > ditebak dari ekstensi — WEBP bakal dilabeli JPEG dan kop sertifikatnya rusak
+  > tanpa error apa pun.
+  >
+  > Balikannya objek organisasi lengkap (sama kayak `GET /organization`), jadi
+  > `logo_url` yang baru langsung kepakai tanpa request ulang.
+  >
+  > `logo_url` **`null`** artinya org ini belum ngunggah logo — **bukan** berarti
+  > sertifikatnya bakal tanpa logo. PDF jatuh ke logo bawaan
+  > (`public/images/logo-sidik.png`); kalau itu juga nggak ada, kop-nya jadi teks
+  > doang dan PDF tetap kebuat.
+  >
+  > Ganti logo otomatis ngehapus yang lama. `DELETE` idempoten — aman dipanggil
+  > walau belum ada logonya.
 - **`GET /api/customers?search=&page=`** · **`POST`** · **`GET/PUT/DELETE /api/customers/{id}`** — CRUD pelanggan. Field: `nama`, `alamat`, `contact_person`, `telepon`, `email` (+ `jumlah_alat` di response).
 - **Pelanggan yang masih punya alat nggak bisa dihapus** → `422`. Kalau dipaksa, alat & riwayat kalibrasinya jadi yatim. Mobile: tampilin pesannya apa adanya.
 

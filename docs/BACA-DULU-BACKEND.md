@@ -117,6 +117,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |
 | Master data | `/equipments`, `/categories`, `/standards`, `/customers`, `/rooms`, `/technicians`, `/organization` |
+| **Logo kop sertifikat** | `logo_url` di `/organization`; unggah `POST /organization/logo`, hapus `DELETE`. PNG/JPG doang — WEBP nggak bisa dicetak dompdf |
 | **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
 | **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
@@ -167,7 +168,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `logo_url` + `POST /organization/logo` | fase-2 §3a | Kop sertifikat tanpa logo |
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
 | `GET /laporan/kalibrasi` + `/export` | fase-2 §5 | Seluruh bagian Laporan. `GET /certificates/export/excel` nutup sebagian (rekap sertifikat), tapi tanpa filter pelanggan/teknisi/kategori |
 | `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |

@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /** @mixin Organization */
 class OrganizationResource extends JsonResource
@@ -25,6 +26,19 @@ class OrganizationResource extends JsonResource
             'akreditasi_mulai' => $this->akreditasi_mulai?->toIso8601ZuluString(),
             'akreditasi_berakhir' => $this->akreditasi_berakhir?->toIso8601ZuluString(),
             'akreditasi_masih_berlaku' => $this->akreditasiMasihBerlaku(),
+
+            // Logo yang dicetak di kop sertifikat. URL absolut & siap dipasang di
+            // `Image.network` — mobile nggak nyusun path sendiri, biar nggak ada
+            // dua tempat yang harus tahu logonya disimpen di disk mana.
+            //
+            // `null` artinya org ini belum ngunggah logo. PDF sertifikat TETAP
+            // kebuat: dia jatuh ke logo bawaan di `public/images/logo-sidik.png`,
+            // dan kalau itu juga nggak ada, kop-nya jadi teks doang. Jadi `null`
+            // di sini bukan berarti sertifikatnya bakal tanpa logo.
+            'logo_url' => $this->logo_path
+                ? Storage::disk('public')->url($this->logo_path)
+                : null,
+
             'settings' => $this->settings,
         ];
     }
