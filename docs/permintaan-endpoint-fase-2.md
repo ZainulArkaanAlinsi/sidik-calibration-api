@@ -90,7 +90,32 @@ tombol lalu user kena error 403. Sekarang aturannya di-hardcode di mobile
 
 ---
 
-## 2. Semua yang butuh keputusan admin harus **nyampe** ke admin
+## 2. Semua yang butuh keputusan admin harus **nyampe** ke admin — ✅ SUDAH JADI (26 Jul)
+
+> **Keenam kejadian di tabel bawah sekarang kekirim.** Tiga udah ada dari sebelumnya
+> (sesi masuk antrean approval, alat lewat jatuh tempo, sesi ditolak/minta revisi);
+> tiga yang bolong baru dipasang 26 Jul:
+>
+> | `kategori` | Kejadian |
+> |---|---|
+> | `akun.menunggu_persetujuan` | ada yang `POST /register` |
+> | `sertifikat.gagal` | PDF sertifikat gagal dibuat |
+> | `standar.kadaluarsa` | standar acuan mendekati / udah habis (harian) |
+>
+> Bentuk payload + `tautan`-nya di [`kontrak-api.md` §6](kontrak-api.md).
+>
+> Yang dikabarin cuma **admin `aktif`**. `pending` nggak — dia nggak bisa login,
+> dan yang lebih penting, pendaftar nggak boleh dikabarin soal pendaftar lain.
+>
+> **Satu hal yang ditambahin di luar permintaan, dan ini yang bikin kepakai:**
+> `standar.kadaluarsa` jalan dari scheduler harian dengan ambang 30 hari. Kalau
+> dikirim apa adanya, admin dapat baris yang persis sama 30 pagi berturut-turut,
+> dan sesudah minggu pertama nggak ada yang buka loncengnya lagi. Jadi isi yang
+> sama ditahan 7 hari — tapi begitu ada standar yang **statusnya berubah**,
+> dikabarin saat itu juga. Nggak ada efeknya ke mobile; yang berubah cuma jumlah
+> baris yang masuk.
+>
+> Polling aja masih cukup, sesuai catatan di bawah — FCM belum dipasang.
 
 Permintaan Zainul: *"kalo ada sesuatu dan yang dibutuhkan sama admin maka
 semuanya dikirim ke bagian admin."*
@@ -314,7 +339,7 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 | # | Permintaan | Ukuran | Ngeblok | Catatan |
 |---|---|---|---|---|
 | 1 | Matriks peran (dokumen) / `GET /me/permissions` | Kecil–Sedang | Tombol yang muncul tapi ditolak 403 | Minimal dokumen dulu |
-| 2 | Notifikasi kejadian yang butuh admin | Sedang | "Semua ke admin" | Polling dulu nggak apa-apa |
+| ~~2~~ | ~~Notifikasi kejadian yang butuh admin~~ | — | — | ✅ **jadi 26 Jul** — 3 kategori baru + anti-spam buat yang harian |
 | ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
 | ~~3b~~ | ~~`qr_token` di objek sertifikat~~ | — | — | ✅ **jadi 25 Jul** — `qr_token` **+ `qr_payload`** (URL siap di-render) ikut di embed sertifikat |
 | 3c | Penanda tangan / Manajer Teknis | Sedang | Blok TTD | Perlu keputusan role dulu |
@@ -322,8 +347,8 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 | 4 | CRUD folder & file arsip | Kecil–Sedang | Tap PT di Folder Manager | 🔸 **SEBAGIAN** — 3 operasi masih kurang, lihat §4 (dulu salah ditandain "udah ada") |
 | ~~5~~ | ~~`GET /laporan/kalibrasi` + export~~ | — | — | ✅ **jadi 26 Jul** — plus `ringkasan`, `penyaring`, filter `status`/`keputusan` |
 
-**Sisa yang belum:** 1 (matriks peran), 2 (notifikasi per-kejadian), 3c (penanda
-tangan — masih nunggu keputusan role), 3d (kirim email), dan 3 operasi arsip di §4.
+**Sisa yang belum:** 1 (matriks peran), 3c (penanda tangan — masih nunggu keputusan
+role), 3d (kirim email), dan 3 operasi arsip di §4.
 
 **Paling ngeblok mobile:** §1 (matriks peran). Selama itu belum ada, tiap layar
 baru berisiko ngulang bug "jalan di admin, mentok di teknisi".

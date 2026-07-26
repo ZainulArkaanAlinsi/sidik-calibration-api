@@ -113,6 +113,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Verifikasi QR publik | `GET /verify/{qr_token}` (web) & `GET /api/verify/{qr_token}` (JSON) |
 | Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru |
 | Notifikasi | `GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}` |
+| **Kejadian yang butuh admin sekarang nyampe** | 3 kategori baru: `akun.menunggu_persetujuan`, `sertifikat.gagal`, `standar.kadaluarsa`. Cuma ke admin **aktif**. Yang harian ditahan anti-spam (isi sama nggak diulang 7 hari; isi berubah dikirim saat itu juga). Lihat [`kontrak-api.md` §6](kontrak-api.md) |
 | Reminder jatuh tempo | otomatis tiap pagi + `POST /reminders/jatuh-tempo` (manual, admin) |
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |
