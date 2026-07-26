@@ -176,6 +176,68 @@ Request — **`email` ikut dikirim**, ya:
 ### `GET /api/me`
 Buat validasi token yang tersimpan waktu app dibuka (splash). Response: objek `user` yang sama kayak di atas.
 
+### `GET /api/me/permissions` — matriks peran (live 26 Jul)
+
+Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu kena
+`403`. Panggil sekali sehabis login, simpen di state.
+
+```json
+{
+  "data": {
+    "role": "teknisi",
+    "boleh": [
+      "alat.lihat", "alat.tambah", "alat.ubah", "alat.hapus",
+      "kalibrasi.lihat", "kalibrasi.buat", "kalibrasi.ubah",
+      "kalibrasi.hitung-preview", "kalibrasi.pindai-foto",
+      "kalibrasi.verifikasi-pindai",
+      "sertifikat.lihat", "sertifikat.unduh",
+      "laporan.lihat", "laporan.export",
+      "arsip.lihat", "arsip.berkas.unduh",
+      "pelanggan.dropdown", "standar.lihat", "ruangan.lihat",
+      "metode.lihat", "kategori.lihat",
+      "dashboard.lihat", "notifikasi.lihat"
+    ],
+    "batasan": {
+      "kalibrasi": "sendiri",
+      "sertifikat": "sendiri",
+      "laporan": "sendiri",
+      "dashboard": "sendiri"
+    }
+  }
+}
+```
+
+Jumlah izin sekarang: **admin 44 · teknisi 23 · viewer 15.**
+
+- **`boleh` itu daftar putih.** Nama izin yang nggak ada di situ = ditolak. Jangan
+  nebak dari `role` lagi — itu yang bikin bug "mulus di admin, mentok di teknisi".
+- **`batasan` beda dari `boleh`.** `boleh` jawab "layarnya kebuka apa nggak";
+  `batasan` jawab "isinya sebanyak apa". Teknisi **boleh** buka `/calibrations`,
+  cuma dapat pekerjaannya sendiri. Nilainya `sendiri` atau `semua`.
+- **Ini alat TAMPILAN, bukan penjagaan.** Penjagaannya tetap di server: kalau
+  mobile ngeyel manggil, tetap `403`. Jangan dipakai buat mutusin hal yang
+  sifatnya keamanan.
+- **Nama izinnya STABIL** — aman di-hardcode di mobile. Yang bisa berubah itu
+  isi `boleh` per role.
+
+> **Kenapa ini nggak bisa basi.** Daftarnya nggak ditulis tangan — dihitung dari
+> middleware `role:` di rute yang beneran terdaftar (`app/Services/MatriksIzin.php`).
+> Jadi begitu ada yang mindahin rute masuk/keluar blok `role:admin`, jawaban
+> endpoint ini ikut berubah di request berikutnya. `MeIzinTest` manggil **semua**
+> endpoint yang dipetakan pakai ketiga role dan mastiin `403`-nya kejadian persis
+> kalau izinnya nggak ada — jadi daftar ini nggak bisa bohong tanpa test-nya merah.
+
+**Jawaban tiga pertanyaan di `permintaan-endpoint-fase-2.md` §1:**
+
+1. **Viewer boleh lihat arsip & sertifikat?** **Boleh** — baca semua, nulis nggak
+   ada sama sekali. Persis kayak asumsi mobile sekarang.
+2. **Teknisi boleh lihat sesi teknisi lain?** **Nggak.** `batasan.kalibrasi:
+   "sendiri"`. Kalau nebak ID lewat `GET /calibrations/{id}` punya orang lain,
+   dapat `404` (bukan `403` — biar nggak jadi cara ngintip ID mana yang ada).
+3. **Ada rencana role keempat?** **Nggak.** Penanda tangan sertifikat diputusin
+   jadi **atribut**, bukan role (keputusan 26 Jul), jadi `UserRole` di mobile tetap
+   tiga.
+
 ### `POST /api/logout`
 Response `200`: `{ "message": "Berhasil logout." }`
 
