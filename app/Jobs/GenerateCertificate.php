@@ -7,10 +7,12 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
 use App\Models\User;
+use App\Notifications\SertifikatGagal;
 use App\Notifications\SertifikatTerbit;
 use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\FolderOrganizer;
+use App\Services\PenerimaNotifikasi;
 use App\Services\QrCodeGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -130,6 +132,13 @@ class GenerateCertificate implements ShouldQueue
             // ngilang. Sesi tetap `disetujui`.
             $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
 
+            // Kabarin admin (fase-2 §2). Ini kegagalan paling sunyi di sistem:
+            // sesinya udah disetujui, teknisi udah dikabarin "disetujui", tapi
+            // PDF-nya nggak pernah jadi. Sebelum ini cuma keliatan kalau ada yang
+            // kebetulan buka layar sertifikatnya — sementara pelanggan nungguin
+            // dokumen yang dari sisi lab kelihatan udah selesai.
+            $this->kabarinKegagalan($sertifikat, $e);
+
             throw $e;
         }
 
@@ -164,6 +173,31 @@ class GenerateCertificate implements ShouldQueue
 
         foreach ($penerima as $user) {
             $user->notify(SertifikatTerbit::dariSertifikat($sertifikat));
+        }
+    }
+
+    /**
+     * Kabarin admin kalau pembuatan sertifikat gagal.
+     *
+     * Dibungkus `try` sendiri: kalau ngirim notifikasinya juga meledak, yang harus
+     * kelihatan di log tetap error ASLINYA (yang bikin sertifikatnya gagal), bukan
+     * error notifikasinya. Salah nutupin di sini bikin penyebab sebenernya ilang.
+     */
+    private function kabarinKegagalan(Certificate $sertifikat, \Throwable $penyebab): void
+    {
+        try {
+            $sertifikat->loadMissing('session');
+            $notifikasi = SertifikatGagal::dariSertifikat($sertifikat, $penyebab->getMessage());
+
+            foreach (app(PenerimaNotifikasi::class)->adminAktif($sertifikat->organization_id) as $admin) {
+                $admin->notify($notifikasi);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Sertifikat gagal, dan ngabarin admin soal itu juga gagal.', [
+                'certificate_id' => $sertifikat->id,
+                'penyebab_asli' => $penyebab->getMessage(),
+                'error_notifikasi' => $e->getMessage(),
+            ]);
         }
     }
 
