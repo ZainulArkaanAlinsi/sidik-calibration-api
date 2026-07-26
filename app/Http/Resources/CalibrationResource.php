@@ -55,8 +55,11 @@ class CalibrationResource extends JsonResource
                 'nama' => $this->reviewer->name,
                 'kode_teknisi' => $this->reviewer->kodeTeknisi(),
             ] : null,
-            'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toIso8601ZuluString(),
-            'tanggal_terima' => $this->tanggal_terima?->toIso8601ZuluString(),
+            // Tanggal POLOS (`2024-05-26`), jangan dibalikin ke ISO — kolomnya cast
+            // `date` dan di zona Jakarta ISO-nya mundur sehari. Lihat komentar
+            // panjangnya di `LaporanKalibrasiResource`.
+            'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toDateString(),
+            'tanggal_terima' => $this->tanggal_terima?->toDateString(),
             'status' => $this->status,
             'input_method' => $this->input_method,
 
@@ -83,8 +86,8 @@ class CalibrationResource extends JsonResource
                     : null,
                 // "Issuance Date" di sertifikat — beda dari `tanggal_kalibrasi`
                 // (kalibrasi 26 Mei, sertifikat terbit 30 Mei).
-                'diterbitkan_pada' => $this->certificate->diterbitkan_pada?->toIso8601ZuluString(),
-                'berlaku_sampai' => $this->certificate->berlaku_sampai?->toIso8601ZuluString(),
+                'diterbitkan_pada' => $this->certificate->diterbitkan_pada?->toDateString(),
+                'berlaku_sampai' => $this->certificate->berlaku_sampai?->toDateString(),
                 // QR buat layar sertifikat. `qr_payload` udah berupa URL siap
                 // di-render jadi QR (`.../verify/{token}`) — mobile nggak perlu
                 // nyusun URL-nya sendiri, jadi domainnya nggak bisa salah.

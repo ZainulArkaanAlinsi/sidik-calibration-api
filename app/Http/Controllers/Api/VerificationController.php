@@ -35,15 +35,15 @@ class VerificationController extends Controller
                 'nomor' => $certificate->nomor,
                 'status' => $certificate->status,
                 'keputusan' => $certificate->session->keputusan,
-                'diterbitkan_pada' => $certificate->diterbitkan_pada?->toIso8601ZuluString(),
-                'berlaku_sampai' => $certificate->berlaku_sampai?->toIso8601ZuluString(),
+                'diterbitkan_pada' => $certificate->diterbitkan_pada?->toDateString(),
+                'berlaku_sampai' => $certificate->berlaku_sampai?->toDateString(),
                 'kadaluarsa' => (bool) $certificate->berlaku_sampai?->isPast(),
                 'alat' => [
                     'nama_alat' => $alat->nama_alat,
                     'serial_number' => $alat->serial_number,
                     'pemilik' => $alat->customer->nama,
                 ],
-                'tanggal_kalibrasi' => $certificate->session->tanggal_kalibrasi?->toIso8601ZuluString(),
+                'tanggal_kalibrasi' => $certificate->session->tanggal_kalibrasi?->toDateString(),
                 'diterbitkan_oleh' => [
                     'nama' => $certificate->organization->nama,
                     'no_akreditasi' => $certificate->organization->no_akreditasi,

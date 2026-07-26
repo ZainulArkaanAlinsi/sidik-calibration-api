@@ -23,8 +23,8 @@ class OrganizationResource extends JsonResource
             'email' => $this->email,
             'no_akreditasi' => $this->no_akreditasi,
             'standar_akreditasi' => $this->standar_akreditasi,
-            'akreditasi_mulai' => $this->akreditasi_mulai?->toIso8601ZuluString(),
-            'akreditasi_berakhir' => $this->akreditasi_berakhir?->toIso8601ZuluString(),
+            'akreditasi_mulai' => $this->akreditasi_mulai?->toDateString(),
+            'akreditasi_berakhir' => $this->akreditasi_berakhir?->toDateString(),
             'akreditasi_masih_berlaku' => $this->akreditasiMasihBerlaku(),
 
             // Logo yang dicetak di kop sertifikat. URL absolut & siap dipasang di

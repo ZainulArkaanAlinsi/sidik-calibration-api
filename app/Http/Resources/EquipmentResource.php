@@ -33,8 +33,8 @@ class EquipmentResource extends JsonResource
                 // dan itu endpoint admin, teknisi bakal kena 403.
                 'alamat' => $this->customer?->alamat,
             ],
-            'tanggal_kalibrasi_terakhir' => $this->tanggal_kalibrasi_terakhir?->toIso8601ZuluString(),
-            'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo?->toIso8601ZuluString(),
+            'tanggal_kalibrasi_terakhir' => $this->tanggal_kalibrasi_terakhir?->toDateString(),
+            'tanggal_jatuh_tempo' => $this->tanggal_jatuh_tempo?->toDateString(),
             // `overdue` dihitung dari tanggal jatuh tempo, bukan disimpen di DB.
             'status' => $this->statusUntukApi(),
 

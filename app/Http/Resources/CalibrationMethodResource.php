@@ -29,7 +29,7 @@ class CalibrationMethodResource extends JsonResource
                 'kode' => $this->category->kode,
                 'nama' => $this->category->nama,
             ] : null,
-            'berlaku_mulai' => $this->berlaku_mulai?->toIso8601ZuluString(),
+            'berlaku_mulai' => $this->berlaku_mulai?->toDateString(),
             'aktif' => $this->aktif,
             'keterangan' => $this->keterangan,
         ];
