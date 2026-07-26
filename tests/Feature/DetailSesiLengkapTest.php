@@ -202,18 +202,16 @@ class DetailSesiLengkapTest extends TestCase
             // "Issuance Date" — beda dari tanggal_kalibrasi (kalibrasi 26 Mei,
             // sertifikat terbit 30 Mei).
             //
-            // ⚠️ Perhatiin nilainya: `2024-05-29T17:00:00Z`, BUKAN `2024-05-30`.
-            // Kolomnya cast `date` (tengah malam) dan APP_TIMEZONE-nya
-            // Asia/Jakarta, jadi begitu diserialisasi jadi UTC dia mundur 7 jam —
-            // ke jam 17:00 HARI SEBELUMNYA. Ini kuirk yang udah ada dan kena
-            // SEMUA field bercast `date` di API ini, bukan cuma yang ini.
+            // Tanggal POLOS, persis tanggal yang disimpan. Dulu keluar
+            // `2024-05-29T17:00:00Z`: kolomnya cast `date` (tengah malam) dan
+            // APP_TIMEZONE-nya Asia/Jakarta, jadi begitu diserialisasi ke UTC dia
+            // mundur 7 jam — ke jam 17:00 HARI SEBELUMNYA. Konsumen yang ngambil
+            // 10 karakter pertama dapat tanggal salah sehari, dan di sertifikat
+            // itu cacat dokumen terkendali, bukan bug tampilan.
             //
-            // Aman buat konsumen di Jakarta: `DateTime.parse()` lalu diformat ke
-            // waktu lokal balik lagi ke 30 Mei. Yang perlu diinget: JANGAN ambil
-            // 10 karakter pertama string-nya buat nampilin tanggal — hasilnya
-            // beda satu hari. Parse dulu, format ke lokal, baru tampilkan.
-            ->assertJsonPath('data.sertifikat.diterbitkan_pada', '2024-05-29T17:00:00Z')
-            ->assertJsonPath('data.sertifikat.berlaku_sampai', '2025-05-28T17:00:00Z')
+            // Test ini yang ngunci supaya nggak balik ke ISO.
+            ->assertJsonPath('data.sertifikat.diterbitkan_pada', '2024-05-30')
+            ->assertJsonPath('data.sertifikat.berlaku_sampai', '2025-05-29')
             // `qr_payload` udah URL siap di-render — mobile nggak nyusun sendiri,
             // jadi domainnya nggak bisa salah.
             ->assertJsonPath('data.sertifikat.qr_token', 'DEMOQR123')

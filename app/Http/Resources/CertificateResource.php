@@ -27,8 +27,13 @@ class CertificateResource extends JsonResource
             'status' => $this->status,
             // Ikut nempel biar layar daftar sertifikat nggak perlu buka sesi satu-satu.
             'keputusan' => $this->session?->keputusan,
-            'diterbitkan_pada' => $this->diterbitkan_pada?->toIso8601ZuluString(),
-            'berlaku_sampai' => $this->berlaku_sampai?->toIso8601ZuluString(),
+            // Tanggal POLOS (`2024-05-30`), jangan dibalikin ke ISO. Kolomnya cast
+            // `date` — nggak ada jamnya — dan `toIso8601ZuluString()` di zona
+            // Jakarta bikin `30 Mei` keluar jadi `2024-05-29T17:00:00Z`. Di
+            // sertifikat, tanggal terbit yang salah sehari itu cacat dokumen
+            // terkendali, bukan bug tampilan.
+            'diterbitkan_pada' => $this->diterbitkan_pada?->toDateString(),
+            'berlaku_sampai' => $this->berlaku_sampai?->toDateString(),
             'kadaluarsa' => (bool) $this->berlaku_sampai?->isPast(),
             'qr_token' => $this->qr_token,
             'qr_payload' => $this->qr_payload,
