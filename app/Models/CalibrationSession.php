@@ -84,6 +84,63 @@ class CalibrationSession extends Model
      * dan keputusannya digerakin sama titik terburuk. Satu titik FAIL bikin
      * seluruh sesi FAIL, walaupun titik lainnya lolos semua.
      */
+    /**
+     * Ringkasan status sertifikat SEMUA standar yang kepakai di sesi ini —
+     * jadi banner merah di kepala lembar kerja ("ONE OR MORE STANDARD EXPIRED").
+     *
+     * Yang dihitung: standar default sesi, thermohygro, standar per titik ukur
+     * (buffer pH 4/7/10 masing-masing punya sertifikat sendiri), dan baris Usage
+     * Check. Diambil dari relasi yang UDAH dimuat — jangan nambah query di sini,
+     * ini kepanggil buat tiap baris di daftar sesi.
+     *
+     * Yang dilaporin status TERBURUK: satu standar kadaluarsa udah cukup bikin
+     * seluruh sesi nggak bisa diterbitin, jadi banner-nya nggak boleh kalem cuma
+     * karena standar lain masih valid.
+     *
+     * @return array{ringkasan: string, pesan: string|null, standar: list<array{id: int, nama: string|null, status: string, hari_menuju_kadaluarsa: int|null}>}
+     */
+    public function statusStandar(int $ambangHari): array
+    {
+        $semua = collect([$this->standard, $this->thermohygro])
+            ->concat($this->uncertaintyCalculations->pluck('standard'))
+            ->concat($this->relationLoaded('standarDicek') ? $this->standarDicek : [])
+            ->filter()
+            // Standar yang sama bisa nongol dari dua jalur (mis. standar default
+            // sesi juga kepakai di titik pertama) — cukup dihitung sekali.
+            ->unique('id')
+            ->values();
+
+        $rincian = $semua
+            ->map(fn (Standard $s): array => [
+                'id' => $s->id,
+                'nama' => $s->nama,
+                'status' => $s->statusKalibrasi($ambangHari),
+                'hari_menuju_kadaluarsa' => $s->hariMenujuKadaluarsa(),
+            ])
+            ->all();
+
+        $status = array_column($rincian, 'status');
+
+        $ringkasan = match (true) {
+            in_array(Standard::STATUS_EXPIRED, $status, true) => Standard::STATUS_EXPIRED,
+            in_array(Standard::STATUS_WARNING, $status, true) => Standard::STATUS_WARNING,
+            default => Standard::STATUS_VALID,
+        };
+
+        return [
+            'ringkasan' => $ringkasan,
+            // Teks banner udah siap tampil — mobile jangan nyusun sendiri, biar
+            // kalimatnya sama sama yang tercetak di lembar kerja. `null` = nggak
+            // ada banner sama sekali (semua standar aman).
+            'pesan' => match ($ringkasan) {
+                Standard::STATUS_EXPIRED => 'ONE OR MORE STANDARD EXPIRED',
+                Standard::STATUS_WARNING => 'ONE OR MORE STANDARD NEAR EXPIRY',
+                default => null,
+            },
+            'standar' => $rincian,
+        ];
+    }
+
     public function titikPenentu(): ?UncertaintyCalculation
     {
         return $this->uncertaintyCalculations

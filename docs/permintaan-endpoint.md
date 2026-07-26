@@ -17,8 +17,7 @@ kemungkinan cuma nambah beberapa baris di controller yang udah ada.
 > **Baca ini dulu — dikoreksi 25 Juli 2026.** Catatan lama di sini bilang nomor
 > **1–4 udah kelar semua**. Itu nggak bener: yang beneran ada cuma **1 & 3**.
 > Nomor **2** (`/dashboard/tren`) dan **4** (entitas `/orders`) nggak ada di repo
-> ini. Nomor **5** baru **5a & 5b** yang kekirim; **5c, 5d, 5e belum** (lihat
-> tabel §7). **`room_id` udah jalan** — nggak perlu disepakati lagi. Rincian di
+> ini. Nomor **5**: 5a–5d ✅ kelar, 5e 🔸 sebagian (penanda tangan belum). **`room_id` udah jalan** — nggak perlu disepakati lagi. Rincian di
 > [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md).
 >
 > Permintaan lanjutan (peran & hak akses, notifikasi ke admin, pelengkap
@@ -362,9 +361,9 @@ Supaya nggak salah paham arah:
 | 4 | Entitas `/orders` + `rentang_ukur` + teknisi | Besar | Seluruh bagian Order Kalibrasi | ❌ **belum ada** (nggak ada route/controller/model). `rentang_ukur` ✅ ada di `EquipmentResource`; `nomor_order` & `tanggal_terima` ✅ ada di sesi |
 | 5a | `nomor_order` + `tanggal_terima` di detail sesi | **Sangat kecil** | 2 kolom kepala sertifikat | ✅ **ada** (`CalibrationResource:30,41`) |
 | 5b | `equipment` digemukin (+ `pelanggan.alamat`) | Kecil | 6 kolom kepala sertifikat | ✅ **ada** (`EquipmentResource`) |
-| 5c | `employee_id` di `teknisi` | Sangat kecil | Kolom *Technician ID* | ❌ **belum** — `teknisi` cuma `{id, nama}`. Ada di `GET /technicians`, jadi butuh request tambahan |
-| 5d | `merk_type` + `tertelusur_ke` di `standar_acuan` | Kecil | 2 kolom tabel *Standard used* | ❌ **belum** — `standar_acuan` cuma `{id, nama, no_sertifikat}`, sama di level sesi & per-titik. Datanya lengkap di `GET /standards/{id}` (`merk`, `model`, `tertelusur_ke`) |
-| 5e | `tanggal_terbit` + penanda tangan di `sertifikat` | Kecil | *Issuance Date* + blok TTD | ❌ **belum** — objek `sertifikat` cuma `{id, nomor, status, pdf_url}`. `diterbitkan_pada` ada di `GET /certificates/{id}`; **penanda tangan belum ada di mana pun** |
+| 5c | `employee_id` di `teknisi` | Sangat kecil | Kolom *Technician ID* | ✅ **jadi 25 Jul** — plus `kode_teknisi` & `department`. ⚠️ Kolom *Technician ID* isinya `kode_teknisi` (`DR`), BUKAN `employee_id` (`SDK-2001`) — contoh di §5c ketuker |
+| 5d | `merk_type` + `tertelusur_ke` di `standar_acuan` | Kecil | 2 kolom tabel *Standard used* | ✅ **jadi 25 Jul** — plus `merk`, `model`, `serial_number`. Level sesi & per-titik dua-duanya |
+| 5e | `tanggal_terbit` + penanda tangan di `sertifikat` | Kecil | *Issuance Date* + blok TTD | 🔸 **SEBAGIAN 25 Jul** — `diterbitkan_pada`, `berlaku_sampai`, `qr_token`, `qr_payload` ikut. **Penanda tangan belum** (butuh keputusan: role keempat atau atribut user). `reviewer` ("Checked by") udah ikut |
 | — | `room_id` di sesi kalibrasi | Sedang | Kolom *Calibration Location* | ✅ **udah jalan** — ikut di request & response sebagai `ruangan.{id,kode,nama}` |
 
 Nomor **5a** paling murah dan datanya udah kesimpen — mobile sendiri yang

@@ -96,7 +96,9 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 |---|---|
 | Bentuk form lembar kerja pH | `GET /calibrations/lembar-kerja` — **cocok persis** sama `permintaan-backend-2026-07-24.md` §1, semua key wajib ada, enum `tipe` & `sumber` sama nilai-per-nilai |
 | Kirim / perbaiki lembar kerja | `POST /calibrations`, `PUT /calibrations/{id}` |
+| **Hitung sambil ngetik** | `POST /calibrations/preview` — body sama persis kayak `POST /calibrations`, nggak nyimpen apa pun. Lihat [`kontrak-api.md` §4a](kontrak-api.md) |
 | Standar beda per titik (buffer 4/7/10) | `measurements[].standard_id` |
+| **Badge & banner status standar** | `status_kalibrasi` + `hari_menuju_kadaluarsa` di `/standards`, `status_standar` di respons sesi. Ambang dari `organization.settings.reminder_hari_sebelum` (default 30) |
 | Pembacaan as-found | `measurements[].pembacaan_sebelum` |
 | Idempotency retry submit | `client_request_id` (UUID) |
 | Ruangan di sesi | `room_id` — ikut di request & response (`ruangan.{id,kode,nama}`) |
@@ -115,7 +117,11 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |
 | Master data | `/equipments`, `/categories`, `/standards`, `/customers`, `/rooms`, `/technicians`, `/organization` |
+| **Logo kop sertifikat** | `logo_url` di `/organization`; unggah `POST /organization/logo`, hapus `DELETE`. PNG/JPG doang — WEBP nggak bisa dicetak dompdf |
+| **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
+| **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
+| **Laporan kalibrasi + export** | `GET /laporan/kalibrasi` (dipaginasi + `ringkasan`) & `GET /laporan/kalibrasi/export?format=pdf\|xlsx`. Semua role; teknisi cuma dapat pekerjaannya sendiri. Lihat [`kontrak-api.md` §10](kontrak-api.md) |
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
 
 ---
@@ -143,9 +149,17 @@ dicari pakai nama di dokumen, hasilnya nggak ketemu dan kelihatan kayak hilang.
 > teknisi        → { id, nama }                            (tanpa employee_id)
 > ```
 >
-> Jadi buat layar pencocokan sertifikat, sekarang **masih perlu request tambahan**
-> ke `/certificates/{id}`, `/standards/{id}`, dan `/technicians`. Itu bukan bug,
-> cuma belum digemukin — permintaannya ada di `permintaan-endpoint.md` §5c–5e.
+> ✅ **25 Jul — objek embed-nya UDAH digemukin**, jadi layar pencocokan sertifikat
+> nggak perlu request tambahan lagi:
+>
+> ```
+> sertifikat     → + diterbitkan_pada, berlaku_sampai, qr_token, qr_payload
+> standar_acuan  → + merk, model, merk_type, serial_number, tertelusur_ke
+> teknisi        → + employee_id, kode_teknisi, department
+> reviewer       → BARU ("Checked by" — admin yang approve/reject)
+> ```
+>
+> Yang masih belum: **penanda tangan sertifikat** (butuh keputusan dulu, lihat §3).
 
 ---
 
@@ -155,14 +169,10 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `POST /calibrations/preview` | worksheet-ph §4 | Nggak ada hitung-sambil-ngetik. `/validasi` butuh sesi yang udah kesimpen, jadi bukan gantinya |
-| `logo_url` + `POST /organization/logo` | fase-2 §3a | Kop sertifikat tanpa logo |
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
-| `GET /laporan/kalibrasi` + `/export` | fase-2 §5 | Seluruh bagian Laporan. `GET /certificates/export/excel` nutup sebagian (rekap sertifikat), tapi tanpa filter pelanggan/teknisi/kategori |
 | `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |
 | `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
-| `status_kalibrasi` + `hari_menuju_kadaluarsa` di standar | worksheet-ph §2.1 | Banner "ONE OR MORE STANDARD EXPIRED". `masih_berlaku` (bool) udah ada, tapi state **WARNING (H-30)** belum |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
 | `audit_logs` + rumus berversi | arsitektur-desktop §Keputusan 4 & 5 | Menu Kelola Data & Rumus di desktop |
 
@@ -174,9 +184,22 @@ Yang ada cuma alias baca/rename/hapus; tiga ini belum:
 
 | Mobile manggil | Status |
 |---|---|
-| `GET /arsip/perusahaan/{customerId}/folder` (find-or-create folder akar PT) | ❌ **core** — tanpa ini tap PT gagal |
+| `GET /arsip/perusahaan/{customerId}/folder` (find-or-create folder akar PT) | ✅ **jadi 25 Jul** — lihat §1 & `kontrak-api.md` §8a |
 | `PUT /arsip/folders/{id}/pindah` | ❌ sekunder |
 | `PUT /arsip/berkas/{sesiId}/pindah` | ❌ sekunder |
+
+Jadi tinggal dua, dua-duanya sekunder: browse/rename/hapus **dan** tap PT udah
+bisa disambungin sekarang.
+
+**Satu hal yang ketemu waktu ngerjain ini — dan udah ditutup:** teknisi nggak
+punya jalan buat milih pelanggan **baru** di form Alat. `kontrak-api.md` §8
+nyaranin pakai `GET /arsip/perusahaan`, tapi itu ngelist FOLDER — dan folder cuma
+ada buat PT yang udah pernah punya sertifikat, plus buat teknisi isinya disaring
+lagi. Karena `pelanggan_id` itu wajib, teknisi beneran mentok: nggak bisa nyimpen
+alat sama sekali buat pelanggan baru.
+
+✅ **Sekarang pakai `GET /customers/lookup`** (kebuka semua role, live 25 Jul).
+Rinciannya di [`kontrak-api.md` §8](kontrak-api.md).
 
 Test-nya juga bukan `tests/Feature/FolderArsipTest.php` (nggak ada file itu) —
 yang ada `FolderManagerTest.php` + `FolderManagerArsipAliasTest.php`.

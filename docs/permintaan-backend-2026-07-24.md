@@ -163,7 +163,7 @@ Backend sudah alias `/arsip/perusahaan` (index), `/arsip/folders/{id}` (show/upd
 
 | Mobile panggil | Padanan backend saat ini | Yang perlu ditambah |
 |---|---|---|
-| `GET /arsip/perusahaan/{customerId}/folder` — **buka folder akar per-PT** (core: tap PT → lihat isinya) | `FolderController@index` bisa filter `customer_id`, tapi **tidak get-or-create** folder akar | Endpoint yang **find-or-create** root folder milik `customerId` lalu balikin bentuk `show` (breadcrumb + subfolder + berkas). Reuse logika `show`. |
+| ✅ **JADI 25 Jul** — `GET /arsip/perusahaan/{customerId}/folder` — **buka folder akar per-PT** (core: tap PT → lihat isinya) | `FolderController@index` bisa filter `customer_id`, tapi **tidak get-or-create** folder akar | Endpoint yang **find-or-create** root folder milik `customerId` lalu balikin bentuk `show` (breadcrumb + subfolder + berkas). Reuse logika `show`. |
 | `PUT /arsip/folders/{id}/pindah` (body `{parent_id}`) — pindah folder | `FolderController@update` **cuma rename** — `parent_id` dipertahankan (baris `$folder->parent_id`) | Dukung ubah `parent_id` (validasi: bukan pindah ke diri sendiri/keturunannya; cek `namaBentrok` di parent baru). Sekunder — boleh ditunda. |
 | `PUT /arsip/berkas/{sesiId}/pindah` (body `{folder_id}`) — pindah berkas | `FolderFileController@update` bisa pindah via `folder_id`, **tapi pakai id folderFile, bukan sesiId** | Alias yang terima **`sesiId` (calibration session)** → temukan folderFile-nya → set `folder_id`. Sekunder — boleh ditunda. |
 

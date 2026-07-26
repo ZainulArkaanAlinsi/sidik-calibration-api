@@ -347,6 +347,33 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Soal `?mine=true`
 > Teknisi **selalu** cuma dapat sesi miliknya sendiri — nggak peduli query param-nya diisi apa. `mine=false` bukan pintu belakang. Param `mine=true` cuma berfungsi buat **admin & viewer** yang mau nyaring punya sendiri. Ada testnya.
 
+### `status_standar` di respons sesi — banner kepala lembar kerja
+
+✅ **Live 25 Jul.** Ikut di `GET /api/calibrations` & `GET /api/calibrations/{id}`.
+
+```json
+"status_standar": {
+  "ringkasan": "expired",
+  "pesan": "ONE OR MORE STANDARD EXPIRED",
+  "standar": [
+    { "id": 10, "nama": "pH Buffer Solution 7", "status": "valid", "hari_menuju_kadaluarsa": 190 },
+    { "id": 12, "nama": "Termometer & Sensor Std.", "status": "expired", "hari_menuju_kadaluarsa": -3 }
+  ]
+}
+```
+
+- **`ringkasan` itu status TERBURUK** dari semua standar yang kepakai di sesi itu:
+  standar default sesi, thermohygro, standar per titik ukur (buffer 4/7/10
+  masing-masing punya sertifikat sendiri), dan baris Usage Check. Satu yang
+  kadaluarsa udah cukup nahan penerbitan sertifikat, jadi banner-nya nggak boleh
+  kalem cuma karena standar lain masih valid.
+- **`pesan` udah siap tampil** — jangan disusun ulang di mobile, biar kalimatnya
+  sama sama yang tercetak di lembar kerja. **`null` = nggak usah nampilin banner
+  sama sekali.**
+- **`standar[]`** buat badge per baris di bagian PENGERJAAN. Standar yang kepakai
+  dari dua jalur (mis. standar default sesi juga kepakai di titik pertama) cukup
+  muncul sekali.
+
 ### `GET /api/standards` — isi dropdown "Standar Acuan"
 
 ✅ **Live sejak 14 Jul.** Baca: semua role (termasuk viewer). Nggak pakai paginasi — daftar standar lab itu pendek, jadi langsung kekirim semua (sama kayak `/categories`).
@@ -372,6 +399,30 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
   ]
 }
 ```
+
+> ## ✅ 25 Jul — `status_kalibrasi` & `hari_menuju_kadaluarsa` (worksheet-ph §2.1)
+>
+> `masih_berlaku` (bool) nggak cukup buat kepala lembar kerja: worksheet-nya punya
+> state **TENGAH** — "mau kadaluarsa". Sekarang tiap standar ikut bawa:
+>
+> ```json
+> "status_kalibrasi": "valid",          // valid | warning | expired
+> "hari_menuju_kadaluarsa": 23
+> ```
+>
+> - **`hari_menuju_kadaluarsa` BERTANDA**: positif = sisa hari, `0` = habis hari
+>   ini, **negatif = udah lewat** (`-12` artinya kadaluarsa 12 hari lalu). `null`
+>   kalau standar itu nggak punya tanggal berlaku — beda artinya dari `0`.
+> - **Ambang `warning` ditentukan BACKEND**, per organisasi
+>   (`organization.settings.reminder_hari_sebelum`, default **30 hari**) — knob yang
+>   sama dipakai reminder alat jatuh tempo. Sengaja satu sumber: kalau mobile
+>   nentuin ambangnya sendiri, dia bisa nampilin VALID buat standar yang nanti
+>   ditolak backend waktu approve, dan teknisi baru tahu setelah kerjaannya kelar.
+> - ⚠️ **`status_kalibrasi` yang jadi pegangan, BUKAN `hari_menuju_kadaluarsa`.**
+>   Standar yang habis HARI INI balik `hari_menuju_kadaluarsa: 0` tapi
+>   `status_kalibrasi: "expired"` — konsisten sama `masih_berlaku` dan sama aturan
+>   yang nolak `POST /calibrations` dengan `422`. Jangan nurunin status sendiri
+>   dari angka harinya; pakai angkanya buat teks doang ("lewat 12 hari").
 
 > **Pakai `masih_berlaku`, jangan banding-bandingin `berlaku_sampai` sendiri** — gampang salah zona waktu. Standar yang `masih_berlaku: false` **ditolak `422`** kalau dipakai kalibrasi (ketertelusurannya putus), jadi jangan dibikin bisa dipilih di dropdown.
 >
@@ -404,6 +455,82 @@ Bikin sesi kalibrasi + kirim data mentah sekaligus. **Data dari input manual dan
 
 Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 
+### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
+
+✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;
+viewer `403`. Rate limit **120/menit per IP** (dipanggil tiap selesai satu baris,
+bukan sekali per sesi).
+
+**Body-nya SAMA PERSIS kayak `POST /api/calibrations`** — kirim aja draft yang
+sedang diisi. Nggak perlu payload kedua, nggak perlu field tambahan.
+`client_request_id` boleh ikut, diabaikan (preview bukan submit).
+
+**Nggak nyimpen apa pun**: nggak ada baris sesi/pembacaan/hitungan, nggak makan
+nomor sesi, nggak ngirim notifikasi, nggak nyiarin sinyal realtime. Aman dipanggil
+tiap ketukan.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "keputusan": "PASS",
+    "hasil": {
+      "rata_rata": 7.03, "error": 0.03,
+      "ketidakpastian_gabungan": 0.01055448,
+      "faktor_cakupan_k": 2, "ketidakpastian_diperluas": 0.02110895,
+      "keputusan": "PASS"
+    },
+    "titik": [ { "titik_ke": 1, "rata_rata": 7.03, "error": 0.03, "koreksi": -0.03, "…": "…" } ],
+    "lembar_perhitungan": [
+      { "tahap": "sebelum_adjustment", "judul": "Before Adjustment Reading",
+        "titik": [ { "titik_ke": 1, "standard": 7.0021, "average": 7.11, "correction": 0.1079, "stdev": 0.01414, "…": "…" } ],
+        "max_stdev": 0.01414 },
+      { "tahap": "sesudah_adjustment", "judul": "After Adjustment Reading", "titik": [ "…" ], "max_stdev": 0.01 }
+    ],
+    "kondisi_lingkungan": {
+      "suhu": { "awal": 22.2, "akhir": 22.4, "average": 22.3, "delta": 0.2, "u95_sertifikat": 0.2, "nilai_terkoreksi": 22.3, "satuan": "°C" },
+      "kelembaban": { "…": "…" },
+      "thermohygro": null, "thermohygro_serial": null
+    },
+    "belum_dihitung": [
+      { "titik_ke": 3, "alasan": "Baru 1 pembacaan terisi, minimal 2 — standar deviasi nggak bisa dihitung dari satu angka." }
+    ]
+  }
+}
+```
+
+**Yang penting dipahami soal bentuknya:**
+
+- **`hasil` & `titik` sama arti + sama bentuk kayak di `GET /api/calibrations/{id}`.**
+  Dua-duanya lewat helper yang sama di backend, jadi **parser yang udah ada bisa
+  dipakai ulang apa adanya**. `hasil` = ringkasan titik penentu (yang paling mepet
+  batas toleransi), bukan gabungan semua titik.
+- **`lembar_perhitungan` = `data.hasil`-nya `GET /api/calibrations/{id}/perhitungan`**,
+  byte-per-byte. Namanya beda **sengaja**: di detail sesi, key `hasil` artinya
+  ringkasan titik penentu. Satu nama dua arti itu jebakan, jadi di sini dipisah.
+  Isinya dua tabel (Before/After adjustment) lengkap sama baris Average,
+  Correction, STDEV, dan MAX STDEV — persis kolom yang dihitung Excel-nya lab.
+- **`belum_dihitung`** ngasih tahu KENAPA satu titik belum keluar angkanya. Tanpa
+  ini, titik yang nggak muncul di `titik` kelihatan kayak bug. Alasannya sudah
+  berupa kalimat siap tampil — jangan disusun ulang di mobile.
+- **`keputusan` di top-level** sama nilainya sama `hasil.keputusan`. Ada di luar
+  supaya tetap kebaca waktu `hasil` masih `null` (belum ada titik yang kehitung).
+- `titik` **cuma berisi titik yang bisa dihitung**. Titik yang belum cukup datanya
+  pindah ke `belum_dihitung`, jadi `titik` bisa lebih pendek dari `measurements`.
+
+> **Angkanya dijamin identik sama yang nanti tersimpan** — bukan "mirip". Preview
+> dan submit mutar fungsi yang sama, dan pembulatan ke presisi kolom DB dilakuin
+> sebelum keduanya, jadi nggak ada selisih di desimal jauh. Ada test yang ngirim
+> payload sama ke `/preview` dan ke `/calibrations` terus ngebandingin field per
+> field (`CalibrationPreviewTest`). Ini yang bikin aman nampilin angkanya ke
+> teknisi: yang di layar sama sama yang bakal tercetak di sertifikat.
+>
+> Makanya **jangan hitung Average/Correction/STDEV sendiri di mobile** walau
+> rumusnya kelihatan sepele. Bukan soal susah — soal `standard` di lembar
+> perhitungan itu nilai buffer pada SUHU LARUTAN saat itu (4,0092252 di 22,2 °C),
+> bukan nominal 4,00, dan diturunkan dari persamaan di sertifikat buffer.
+
 ### `GET /api/calibrations` · `GET /api/calibrations/{id}`
 ```json
 {
@@ -430,6 +557,63 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > **`status` wajib salah satu dari: `draft` / `menunggu_approval` / `disetujui` / `perlu_revisi`.**
 > **`keputusan`: `PASS` atau `FAIL`** (huruf besar). Ingat: **FAIL tetap boleh terbit sertifikat**, statusnya aja beda — jangan diblokir di backend.
 > Perhitungan GUM (Type A + Type B → gabungan → `U = k × u_c`) dan keputusan ILAC-G8 **dihitung di backend**, mobile cuma nampilin. Mobile nggak ngitung apa pun.
+
+> ## ✅ 25 Jul — objek embed digemukin (permintaan-endpoint.md §5c–5e)
+>
+> Layar pencocokan sertifikat dulu kepaksa nembak tiga endpoint tambahan cuma
+> buat ngisi kepala dokumen. Sekarang ikut di `GET /api/calibrations/{id}`:
+>
+> ```json
+> "teknisi": {
+>   "id": 4, "nama": "Dwi Rahayu",
+>   "employee_id": "SDK-2001",     // buat login
+>   "kode_teknisi": "DR",          // <- INI yang dicetak di kolom "Technician ID"
+>   "department": "Kalibrasi"
+> },
+> "reviewer": { "id": 1, "nama": "Alex Misramto", "kode_teknisi": "AM" },
+> "standar_acuan": {
+>   "id": 10, "nama": "pH Buffer Solution 7", "no_sertifikat": "HC46341939",
+>   "merk": "Supelco", "model": "Merck",
+>   "merk_type": "Supelco/Merck",   // kolom "Merk/Type" digabung backend
+>   "serial_number": "HC46341939",
+>   "tertelusur_ke": "Merck KGaA"
+> },
+> "sertifikat": {
+>   "id": 9, "nomor": "012-CAL-524", "status": "terbit", "pdf_url": "...",
+>   "diterbitkan_pada": "2024-05-29T17:00:00Z",
+>   "berlaku_sampai": "2025-05-28T17:00:00Z",
+>   "qr_token": "DEMOQR123",
+>   "qr_payload": "https://.../verify/DEMOQR123"
+> }
+> ```
+>
+> - ⚠️ **Kolom "Technician ID" di lembar kerja & sertifikat isinya `kode_teknisi`
+>   (`DR`), BUKAN `employee_id` (`SDK-2001`).** Contoh di `permintaan-endpoint.md`
+>   §5c nulis `"employee_id": "DR"` — itu ketuker. Kalau `kode_teknisi` belum
+>   diisi, backend jatuh ke inisial nama; lebih baik inisial daripada kolom kosong
+>   di dokumen resmi.
+> - **`reviewer` = "Checked by"** — admin yang approve/reject sesi. `null` selama
+>   sesinya belum diperiksa.
+> - **`merk_type` digabung di backend** (`merk` + `model`, dipisah `/`, yang kosong
+>   dilewat) supaya dua klien nggak bikin dua gaya penulisan buat satu kolom di
+>   dokumen resmi. Bagian mentahnya tetap ikut kalau mau dirender sendiri.
+> - **`standar_acuan` bentuknya SAMA di level sesi dan di tiap `titik[]`** — satu
+>   parser cukup.
+> - **`qr_payload` udah URL siap di-render** jadi QR; jangan nyusun URL sendiri
+>   dari `qr_token`, biar domainnya nggak bisa salah.
+> - **Penanda tangan sertifikat BELUM ada** — masih nunggu keputusan apakah
+>   "Manajer Teknis" itu role keempat atau atribut di user.
+>
+> ### ⚠️ Soal tanggal: `date` kegeser ke jam 17:00 hari sebelumnya
+>
+> `diterbitkan_pada: "2024-05-29T17:00:00Z"` itu **tanggal 30 Mei**, bukan 29.
+> Kolomnya cast `date` (tengah malam) dan `APP_TIMEZONE`-nya `Asia/Jakarta`, jadi
+> begitu diserialisasi ke UTC dia mundur 7 jam. Ini kena **semua** field bercast
+> `date` di API ini, bukan cuma yang ini.
+>
+> **Jadi: JANGAN ambil 10 karakter pertama string-nya** buat nampilin tanggal —
+> hasilnya beda satu hari. `DateTime.parse()` dulu, format ke waktu lokal, baru
+> tampilkan; di Jakarta hasilnya balik bener.
 
 ### Riwayat
 `GET /api/calibrations?mine=true` — teknisi cuma lihat kalibrasi miliknya sendiri; **admin lihat semua**. Filter ini penting, jangan sampai teknisi bisa lihat punya orang lain.
@@ -606,8 +790,25 @@ Isinya beda tergantung role — teknisi dapat ringkasan miliknya, admin dapat li
 
 Belum ada di kontrak versi kamu, tapi udah jalan di backend. Dibutuhin buat layar Pengaturan (admin).
 
-- **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`. Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
+- **`GET /api/organization`** · **`PUT /api/organization`** — data PT: `nama`, `alamat`, `telepon`, `email`, `no_akreditasi`, plus **`logo_url`** (read-only, diisi lewat endpoint di bawah). Ini yang bakal dicetak di kop sertifikat. *Nggak ada create/delete* — satu instalasi = satu PT.
   > **✅ 18 Jul — response-nya lebih gemuk dari yang didokumentasiin, mobile baru nyusul makainya**: `standar_akreditasi`, `akreditasi_mulai`, `akreditasi_berakhir`, dan `akreditasi_masih_berlaku` (dihitung backend, read-only — jangan dikirim balik waktu `PUT`). Ini yang nentuin akreditasi lab (LK-285-IDN) masih sah apa nggak; sebelumnya nggak ada di layar mana pun. `settings` (array) juga ada di response tapi mobile sengaja belum kasih UI buat itu — bentuknya belum didokumentasiin.
+- **`POST /api/organization/logo`** · **`DELETE /api/organization/logo`** — ✅ live 25 Jul.
+  Logo yang dicetak di kop sertifikat. Multipart, field **`logo`**, admin doang.
+  > **PNG atau JPG doang, maks 2 MB.** WEBP ditolak `422` walau itu gambar sah:
+  > logonya berakhir di PDF lewat dompdf yang nggak bisa render WEBP, dan mime-nya
+  > ditebak dari ekstensi — WEBP bakal dilabeli JPEG dan kop sertifikatnya rusak
+  > tanpa error apa pun.
+  >
+  > Balikannya objek organisasi lengkap (sama kayak `GET /organization`), jadi
+  > `logo_url` yang baru langsung kepakai tanpa request ulang.
+  >
+  > `logo_url` **`null`** artinya org ini belum ngunggah logo — **bukan** berarti
+  > sertifikatnya bakal tanpa logo. PDF jatuh ke logo bawaan
+  > (`public/images/logo-sidik.png`); kalau itu juga nggak ada, kop-nya jadi teks
+  > doang dan PDF tetap kebuat.
+  >
+  > Ganti logo otomatis ngehapus yang lama. `DELETE` idempoten — aman dipanggil
+  > walau belum ada logonya.
 - **`GET /api/customers?search=&page=`** · **`POST`** · **`GET/PUT/DELETE /api/customers/{id}`** — CRUD pelanggan. Field: `nama`, `alamat`, `contact_person`, `telepon`, `email` (+ `jumlah_alat` di response).
 - **Pelanggan yang masih punya alat nggak bisa dihapus** → `422`. Kalau dipaksa, alat & riwayat kalibrasinya jadi yatim. Mobile: tampilin pesannya apa adanya.
 
@@ -620,6 +821,93 @@ Teknisi & viewer yang nembak endpoint ini dapat `403`.
 > Pakai **`GET /api/arsip/perusahaan?search=`** (kebuka semua role) — balikannya `data[].id` & `data[].nama`, `id`-nya yang dipakai jadi `pelanggan_id`. Di mobile ini `CustomerLookupService`, kepisah dari `CustomerService` yang buat layar CRUD Pelanggan.
 >
 > Daftarnya **dipaginasi 15/halaman**, jadi pencariannya dilempar ke server lewat `?search=` — nyaring di sisi mobile cuma nyaring halaman pertama, dan pelanggan ke-16 dst. jadi nggak kejangkau.
+
+> ## ⛔ KOREKSI 25 Juli 2026 — saran di atas SALAH, jangan diikutin
+>
+> Dicek ke `FolderController@index`. Empat hal keliru, dan yang pertama bisa
+> nyimpen data ke pelanggan yang salah:
+>
+> | Klaim di atas | Kenyataan |
+> |---|---|
+> | `data[].id` dipakai jadi `pelanggan_id` | ⛔ **`id` itu id FOLDER, bukan pelanggan.** Id pelanggan ada di **`data[].pelanggan.id`**. Ngirim id folder sebagai `pelanggan_id` bakal ditolak `422` — atau lebih buruk, nyantol ke pelanggan lain yang id-nya kebetulan sama |
+> | `?search=` | Param yang kebaca **`?q=`**. `search` diabaikan diam-diam, jadi daftarnya balik utuh dan kelihatan kayak filternya nggak jalan |
+> | "dipaginasi 15/halaman" | **Nggak dipaginasi sama sekali** — `->get()`, semua baris balik |
+> | "kebuka semua role" | Kebuka, **tapi isinya disaring per role.** Buat teknisi cuma folder yang ada isinya buat DIA |
+>
+> **Yang terakhir itu yang bikin saran ini nggak nyelesaiin masalahnya.** Endpoint
+> ini ngelist FOLDER, dan folder cuma ada buat PT yang udah pernah punya
+> sertifikat. Jadi buat teknisi yang mau nyimpen alat milik pelanggan **baru**,
+> PT-nya nggak akan nongol — persis dead-end yang mau dihindarin.
+>
+> **Pakai ini:** ✅ **`GET /api/customers/lookup`** (live 25 Jul, kebuka semua
+> role) — dibikin persis buat kasus ini. Bentuknya di bawah.
+
+### `GET /api/customers/lookup` — dropdown pelanggan, semua role
+
+✅ **Live 25 Jul.** Ini yang dipakai picker pelanggan di form Alat, **bukan**
+`/arsip/perusahaan` (lihat koreksi di atas) dan bukan `/customers` (admin-only).
+
+```
+GET /api/customers/lookup?search=tirta&page=1
+```
+
+```json
+{
+  "data": [
+    { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI", "alamat": "Jl. Arteri Primer A-10 ..." }
+  ],
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 }
+}
+```
+
+- **`data[].id` itu id PELANGGAN** — langsung kepakai jadi `pelanggan_id` waktu
+  `POST`/`PUT /equipments`. Nggak perlu diturunin dari apa pun.
+- **Pelanggan baru yang belum punya sertifikat TETAP nongol.** Ini bedanya paling
+  penting dari `/arsip/perusahaan`, yang cuma ngelist PT yang udah punya arsip.
+- **Dipaginasi 15/halaman**, jadi pencariannya dilempar ke server lewat `?search=`
+  — nyaring di sisi mobile cuma nyaring halaman pertama, dan pelanggan ke-16 dst.
+  jadi nggak kejangkau. `?q=` diterima juga sebagai alias.
+- **Cuma `id`, `nama`, `alamat`.** `contact_person`/`telepon`/`email` sengaja
+  nggak ikut: ini dropdown, bukan layar CRUD — role yang nggak boleh ngelola
+  pelanggan nggak perlu megang kontaknya. `alamat` ikut karena blok OWNER di
+  lembar kerja butuh (dan itu udah kekirim lewat `EquipmentResource.pelanggan`).
+- CRUD pelanggan **tetap admin-only** — endpoint ini bukan pintu belakang ke situ.
+
+---
+
+## 8a. Folder Manager — buka folder satu PT (live 25 Jul)
+
+### `GET /api/arsip/perusahaan/{customer}/folder`
+
+Tap PT → lihat isinya. `{customer}` itu **id PELANGGAN**, bukan id folder (lihat
+koreksi di §8 — ini beda yang gampang kebalik).
+
+Balikannya **bentuk yang sama persis** kayak `GET /api/arsip/folders/{id}`
+(breadcrumb + `sub_folder[]` + `file[]`), karena handler-nya memang yang sama.
+Jadi **parser folder yang udah ada bisa dipakai apa adanya.**
+
+Bedanya sama `GET /api/arsip/folders/{id}`: yang ini **find-or-create** — PT yang
+belum pernah punya sertifikat pun tetap kebuka, folder akarnya dibikin saat itu.
+Tanpa ini tap PT mentok `404` padahal PT-nya jelas ada.
+
+**Siapa yang bisa apa** — beda per role, dan ini bukan kebetulan:
+
+| Role | Folder belum ada | Folder udah ada |
+|---|---|---|
+| admin | **dibikin**, balik `200` | `200` |
+| teknisi | `404` (nggak dibikin) | `200` **kalau ada berkas yang dia boleh lihat**, kalau nggak `404` |
+| viewer | `404` (nggak dibikin) | `200` |
+
+- **Cuma admin yang bikin.** `POST`/`PUT`/`DELETE /folders` semuanya admin-only,
+  jadi endpoint ini nggak boleh jadi celah nulis buat role yang di tempat lain
+  ditolak. Viewer itu role baca-saja — bikin baris sebagai efek samping `GET`
+  bikin klaim itu berhenti benar.
+- **Teknisi dapat `404` buat PT yang dia nggak punya kerjaan di situ**, bukan
+  folder kosong. Ini aturan privasi Folder Manager yang udah lama jalan: folder
+  kosong yang ditampilin ngasih tahu "PT ini ada arsipnya, cuma bukan urusanmu",
+  dan menu ini ada di navbar teknisi. Di alur normal nggak kerasa — daftar PT
+  yang teknisi lihat udah tersaring, jadi yang bisa dia tap selalu ada isinya.
+- PT milik lab lain → `404` (bukan `403`), dan nggak ninggalin folder apa pun.
 
 ---
 
@@ -690,6 +978,116 @@ Beda sama `lokasi` di sesi kalibrasi. Field itu enum `lab`/`onsite`, cuma misahi
 - **Teknisi yang punya riwayat kalibrasi nggak bisa dihapus** → `422`. Namanya nempel di sertifikat yang udah terbit; hapus dia = putus ketertelusuran yang justru dicari asesor waktu audit. `jumlah_kalibrasi` di response ada persis buat ini — pakai buat nge-disable tombol hapus + jelasin kenapa. Jalan keluarnya: `PUT` jadi `nonaktif`.
 - `search` nyari di `nama` atau `employee_id`. `status` isinya `aktif`/`nonaktif`.
 - ID yang bukan teknisi (admin/viewer) balik **`404`**, bukan `403` — endpoint ini nggak boleh jadi jalan pintas ngintip atau ngehapus akun admin lewat URL yang kedengarannya nggak berbahaya.
+
+---
+
+## 10. Laporan Kalibrasi + Export (live 26 Jul)
+
+### `GET /api/laporan/kalibrasi`
+
+**Semua role boleh.** Tapi **teknisi cuma dapat pekerjaannya sendiri** — aturan
+yang sama kayak `/calibrations?mine=true`. Kalau di sini dilonggarin, penyaringan
+di layar Riwayat jadi nggak ada artinya: tinggal buka Laporan buat ngintip.
+
+```
+GET /api/laporan/kalibrasi?dari=2026-07-01&sampai=2026-07-31
+    &pelanggan_id=3&teknisi_id=5&kategori=instrumen-analitik
+    &status=disetujui&keputusan=PASS&page=1
+```
+
+| Penyaring | Isi | Catatan |
+|---|---|---|
+| `dari` / `sampai` | `YYYY-MM-DD` | **Dua ujungnya INKLUSIF.** "1–31 Juli" ikut tanggal 31 |
+| `pelanggan_id` | id dari `GET /customers/lookup` | |
+| `teknisi_id` | id dari `GET /technicians` | |
+| `kategori` | **KODE** kategori (`instrumen-analitik`), bukan id | Sama gayanya kayak penyaring `/equipments` |
+| `status` | `draft` · `menunggu_approval` · `disetujui` · `perlu_revisi` | Nilai lain → `422` |
+| `keputusan` | `PASS` · `FAIL` | |
+
+Semua opsional. `sampai` lebih awal dari `dari` → `422`.
+
+```json
+{
+  "data": [
+    {
+      "id": 2,
+      "nomor_sesi": "2405.13.A",
+      "tanggal_kalibrasi": "2024-05-26",
+      "pelanggan": { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI" },
+      "alat": { "id": 6, "nama_alat": "pH Meter", "serial_number": "B628755900" },
+      "kategori": { "kode": "instrumen-analitik", "nama": "Instrumen Analitik" },
+      "teknisi": { "id": 5, "nama": "Dwi Rahayu", "kode_teknisi": "DR" },
+      "status": "disetujui",
+      "keputusan": "PASS",
+      "ketidakpastian_diperluas": 0.0303272,
+      "sertifikat": { "id": 2, "nomor": "012-CAL-524", "status": "terbit" }
+    }
+  ],
+  "ringkasan": {
+    "total": 4, "pass": 3, "fail": 0,
+    "belum_ada_keputusan": 1, "disetujui": 3
+  },
+  "penyaring": {
+    "Dari tanggal": "2026-07-01", "Sampai tanggal": "2026-07-31",
+    "Pelanggan": "PT Tirta Gracia", "Teknisi": null,
+    "Kategori": "Instrumen Analitik", "Status": "disetujui", "Keputusan": "PASS"
+  },
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 4 }
+}
+```
+
+> ### ⚠️ `tanggal_kalibrasi` di sini TANGGAL POLOS — beda dari endpoint lain
+>
+> `"2024-05-26"`, bukan `"2024-05-25T17:00:00Z"`. Ini **sengaja beda** dari field
+> `date` di endpoint lain (lihat peringatan di §4 soal `diterbitkan_pada`), karena
+> dua alasan:
+>
+> 1. Tanggalnya harus **sama** dengan yang dicetak di PDF/Excel. Satu sesi nggak
+>    boleh punya dua tanggal beda tergantung dilihat di mana.
+> 2. Nilainya harus bisa **dipakai balik jadi penyaring** `dari`/`sampai`. Kalau
+>    dikirim sebagai ISO, tombol "filter tanggal sesi ini" balik kosong, dan
+>    date-picker "1–31 Juli" diam-diam ngebuang sesi tanggal 1.
+>
+> Jadi di endpoint ini **boleh** dipakai apa adanya buat ditampilin & buat
+> penyaring — nggak usah di-`DateTime.parse()`.
+
+- **`ringkasan` dihitung dari SELURUH hasil penyaring, bukan dari halaman yang
+  kebuka.** `ringkasan.total` == `meta.total`. Angka "total 15" yang ternyata cuma
+  berarti "15 di halaman ini" itu menyesatkan di dokumen yang dikirim ke asesor.
+- **`ringkasan.belum_ada_keputusan`** = sesi yang belum lewat perhitungan (draft /
+  datanya belum cukup). Dipisah biar `total` nggak kelihatan nggak nyambung sama
+  `pass + fail`.
+- **`penyaring` itu penyaring versi manusia** — pakai buat nampilin "sedang
+  disaring: …" di kepala layar. `null` artinya "Semua". Id dari lab lain
+  di-resolve jadi `null`, bukan nama PT orang.
+- **`ketidakpastian_diperluas` diambil dari titik PENENTU** (yang paling mepet
+  batas toleransi) — **angka yang sama** yang muncul di `hasil` detail sesi, bukan
+  rata-rata semua titik. `null` kalau sesinya belum dihitung.
+- **Barisnya sengaja RINGKAS.** Nggak ada `titik[]`, `pembacaan_mentah`,
+  `type_b_components`, atau `status_standar` — laporan itu tabel, dan bawa semua
+  itu per baris bikin HP keabisan memori di lab yang datanya setahun. Butuh
+  rinciannya? `GET /calibrations/{id}`.
+- Urutannya `tanggal_kalibrasi` naik, lalu `id`. 15 baris/halaman.
+
+### `GET /api/laporan/kalibrasi/export?format=pdf|xlsx`
+
+`format` **wajib** (`pdf` atau `xlsx`; lain → `422`). **Semua penyaring di atas
+jalan sama persis di sini** — query-nya dipegang satu service yang sama, jadi file
+yang kedownload isinya sama dengan yang dilihat di layar.
+
+- Balikannya **file download** (`Content-Disposition: attachment`), nama
+  `Laporan-Kalibrasi-YYYY-MM-DD.pdf|xlsx`. Bukan JSON.
+- **Nggak ada baris yang cocok → `404`**, bukan file kosong. File 11 kolom tanpa
+  isi itu kelihatan kayak "nggak ada data" padahal bisa jadi penyaringnya salah.
+- PDF-nya **A4 landscape** — 11 kolom nggak masuk di portrait.
+- **Penyaring & ringkasannya ikut dicetak di kepala file.** File yang udah nyebar
+  harus bisa dijelasin isinya periode/pelanggan mana; itu pertanyaan pertama
+  asesor waktu lihat rekap.
+- Maksimal **5000 baris** per export. Lebih dari itu, sempitin rentang tanggalnya.
+- Throttle **`20/menit`** khusus buat `/export` (endpoint layar-nya nggak
+  dithrottle) — bikin file dari 5000 baris jauh lebih berat dari baca biasa.
+  Kalau kena, respons `429`. Jadi jangan panggil `/export` tiap penyaring diubah;
+  panggil waktu tombol "Unduh" ditekan aja.
 
 ---
 

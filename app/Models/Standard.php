@@ -33,10 +33,63 @@ class Standard extends Model
         ];
     }
 
+    public const STATUS_VALID = 'valid';
+
+    public const STATUS_WARNING = 'warning';
+
+    public const STATUS_EXPIRED = 'expired';
+
     /** Standar yang sertifikatnya kadaluarsa nggak boleh dipakai kalibrasi. */
     public function masihBerlaku(): bool
     {
         return $this->berlaku_sampai === null || $this->berlaku_sampai->isFuture();
+    }
+
+    /**
+     * Sisa hari sampai sertifikat standar ini kadaluarsa.
+     *
+     * **Bertanda**: positif = masih ada sisa, `0` = habis hari ini, **negatif =
+     * udah lewat** (mis. `-12` artinya kadaluarsa 12 hari lalu). Sengaja bukan
+     * di-nol-in, biar layar bisa bilang "lewat 12 hari" bukan cuma "kadaluarsa".
+     *
+     * `null` kalau standar itu nggak punya tanggal berlaku sama sekali — beda
+     * artinya dari `0`.
+     */
+    public function hariMenujuKadaluarsa(): ?int
+    {
+        if ($this->berlaku_sampai === null) {
+            return null;
+        }
+
+        // Dibandingin per HARI, bukan per jam: sertifikat berlaku sampai akhir
+        // tanggalnya. Tanpa startOfDay, standar yang habis hari ini bisa kebaca
+        // "-1" cuma gara-gara jam request-nya lewat tengah hari.
+        return (int) now()->startOfDay()->diffInDays($this->berlaku_sampai->startOfDay(), false);
+    }
+
+    /**
+     * Badge status sertifikat standar buat kepala lembar kerja:
+     * `valid` / `warning` / `expired`.
+     *
+     * Ambang `warning` DITENTUKAN BACKEND (per organisasi, lihat
+     * `Organization::ambangPeringatanHari()`) — bukan mobile. Kalau HP nentuin
+     * sendiri, dia bisa nampilin VALID buat standar yang bakal ditolak backend
+     * waktu approve, dan teknisi baru tahu setelah kerjaannya kelar.
+     *
+     * `expired` di sini artinya sama sama yang bikin `POST /calibrations` ditolak
+     * `422` — satu definisi, dua tempat.
+     */
+    public function statusKalibrasi(int $ambangHari): string
+    {
+        if (! $this->masihBerlaku()) {
+            return self::STATUS_EXPIRED;
+        }
+
+        $sisa = $this->hariMenujuKadaluarsa();
+
+        return $sisa !== null && $sisa <= $ambangHari
+            ? self::STATUS_WARNING
+            : self::STATUS_VALID;
     }
 
     /**
