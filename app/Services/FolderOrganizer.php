@@ -61,16 +61,41 @@ class FolderOrganizer
     public function folderPelanggan(Customer $pelanggan): Folder
     {
         return Folder::firstOrCreate(
-            [
-                'organization_id' => $pelanggan->organization_id,
-                'parent_id' => null,
-                'customer_id' => $pelanggan->id,
-            ],
+            $this->kriteriaFolderAkar($pelanggan),
             [
                 'nama' => $pelanggan->nama,
                 'tipe' => Folder::TIPE_SISTEM,
             ],
         );
+    }
+
+    /**
+     * Folder akar PT kalau UDAH ada — nggak bikin baru.
+     *
+     * Dipakai jalur yang nggak boleh nulis: teknisi buka `/arsip/perusahaan/{id}/folder`
+     * buat PT yang dia nggak punya kerjaan di situ. Folder-nya bakal disembunyiin
+     * lagi sama aturan privasi Folder Manager, jadi bikin barisnya cuma nyampah.
+     */
+    public function cariFolderPelanggan(Customer $pelanggan): ?Folder
+    {
+        return Folder::where($this->kriteriaFolderAkar($pelanggan))->first();
+    }
+
+    /**
+     * Kriteria folder akar satu PT — ditulis sekali, dipakai cari & bikin.
+     *
+     * `parent_id => null` aman dilempar ke `where()`: Laravel nerjemahin nilai
+     * null jadi `whereNull`, bukan `= null` yang nggak pernah true.
+     *
+     * @return array<string, mixed>
+     */
+    private function kriteriaFolderAkar(Customer $pelanggan): array
+    {
+        return [
+            'organization_id' => $pelanggan->organization_id,
+            'parent_id' => null,
+            'customer_id' => $pelanggan->id,
+        ];
     }
 
     private function folderTahun(Customer $pelanggan, string $tahun): Folder

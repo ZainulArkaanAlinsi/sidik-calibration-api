@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -85,6 +86,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Alias `/arsip/*` yang dipanggil mobile (docs/permintaan-backend-2026-07-24.md §2).
     // Folder akar = per-PT, jadi daftar "perusahaan" = index tanpa parent_id.
     Route::get('/arsip/perusahaan', [FolderController::class, 'index']);
+    // Tap PT → buka folder akarnya, dibikin kalau belum ada (find-or-create).
+    // Inti Folder Manager: tanpa ini, PT yang belum pernah punya sertifikat
+    // mentok 404 padahal PT-nya ada. Balikannya bentuk `show`.
+    // {customer} = id PELANGGAN, bukan id folder — lihat kontrak-api.md §8.
+    Route::get('/arsip/perusahaan/{customer}/folder', [FolderController::class, 'folderPelanggan']);
     Route::get('/arsip/folders/{folder}', [FolderController::class, 'show']);
     Route::get('/folder-files', [FolderFileController::class, 'index']);
     Route::get('/folder-files/{folderFile}/download', [FolderFileController::class, 'download'])
@@ -100,6 +106,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/equipments', [EquipmentController::class, 'index']);
     Route::get('/equipments/{equipment}', [EquipmentController::class, 'show']);
 
+    // Dropdown pelanggan — SEMUA role, read-only, cuma id/nama/alamat.
+    //
+    // Kepisah dari `/customers` yang admin-only: `POST /equipments` boleh dipakai
+    // teknisi dan `pelanggan_id` itu wajib, jadi tanpa ini form Tambah Alat mentok
+    // total di akun teknisi (dropdown 403 → alat nggak bisa disimpen).
+    //
+    // WAJIB didaftarin SEBELUM blok `role:admin` di bawah, biar "lookup" nggak
+    // kebaca sebagai `{customer}` di `GET /customers/{customer}`.
+    Route::get('/customers/lookup', [CustomerController::class, 'lookup']);
+
     // Standar acuan milik lab — buat dropdown "Standar Acuan" di layar kalibrasi.
     Route::get('/standards', [StandardController::class, 'index']);
     Route::get('/standards/{standard}', [StandardController::class, 'show']);
@@ -108,6 +124,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
+
+    // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
+    // Semua role boleh; teknisi cuma dapat pekerjaannya sendiri (di service).
+    // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
+    Route::get('/laporan/kalibrasi/export', [LaporanController::class, 'export'])
+        // Bikin file (PDF/Excel) dari sampai 5000 baris — jauh lebih berat dari
+        // baca biasa, jadi jatahnya dipisah & lebih sedikit.
+        ->middleware('throttle:20,1');
+    Route::get('/laporan/kalibrasi', [LaporanController::class, 'kalibrasi']);
 
     // Bentuk baku lembar kerja (SIDIK-FM-CAL-0509_Rev.4) buat layar input
     // teknisi. Didaftarin SEBELUM `/calibrations/{calibration}` biar
@@ -142,6 +167,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
 
         Route::post('/calibrations', [CalibrationController::class, 'store']);
+        // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja
+        // (docs/permintaan-worksheet-ph.md §4). Body sama persis kayak POST
+        // /calibrations. Throttle-nya longgar karena ini dipanggil tiap teknisi
+        // selesai ngisi satu baris, bukan sekali per sesi — tapi tetap ada
+        // batasnya, soalnya tiap panggilan mutar perhitungan GUM penuh.
+        Route::post('/calibrations/preview', [CalibrationController::class, 'preview'])
+            ->middleware('throttle:120,1');
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 
@@ -186,6 +218,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
+        // Logo yang dicetak di kop sertifikat (fase-2 §3a). Multipart, field
+        // `logo`. Disimpen di disk publik — GenerateCertificate udah baca dari
+        // situ, dan logo PT itu identitas yang memang dipajang.
+        Route::post('/organization/logo', [OrganizationController::class, 'uploadLogo']);
+        Route::delete('/organization/logo', [OrganizationController::class, 'deleteLogo']);
 
         // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
         // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di

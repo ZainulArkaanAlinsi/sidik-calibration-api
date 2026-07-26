@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\Concerns\ScopesFolderAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FolderResource;
+use App\Models\Customer;
 use App\Models\Folder;
+use App\Services\FolderOrganizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -46,6 +49,76 @@ class FolderController extends Controller
             ->get();
 
         return FolderResource::collection($folder);
+    }
+
+    /**
+     * Buka folder akar satu PT — dibikin kalau belum ada.
+     *
+     * Ini inti Folder Manager: tap PT → lihat isinya (docs/permintaan-backend-2026-07-24.md
+     * §2b baris 1). `index` doang nggak cukup, soalnya PT yang belum pernah punya
+     * sertifikat belum punya folder — tanpa find-or-create, tap-nya mentok 404
+     * padahal PT-nya ada.
+     *
+     * Balikannya bentuk `show` (breadcrumb + subfolder + berkas) — dipanggil
+     * langsung, bukan disalin, biar mobile cukup satu parser buat dua endpoint.
+     *
+     * SEMUA ROLE boleh baca, tapi yang bisa MEMBIKIN folder cuma **admin**.
+     * Dua alasannya ada di badan fungsi (teknisi & viewer), dan yang paling
+     * menentukan: `POST`/`PUT`/`DELETE /folders` semuanya admin-only, jadi pintu
+     * ini nggak boleh jadi celah nulis buat role yang di tempat lain ditolak.
+     */
+    public function folderPelanggan(
+        Request $request,
+        Customer $customer,
+        FolderOrganizer $organizer,
+    ): JsonResponse {
+        // PT milik organisasi lain → 404, bukan 403. 403 ngasih tahu "id ini ada,
+        // cuma bukan punyamu", dan karena responsnya bawa nama PT, beda 403 vs
+        // 404 doang udah cukup buat nyisir daftar pelanggan lab lain.
+        abort_if(
+            $customer->organization_id !== $request->user()->organization_id,
+            404,
+            'Perusahaan nggak ketemu.',
+        );
+
+        // Non-admin nggak mancing pembikinan folder — cuma buka yang udah ada.
+        //
+        // TEKNISI: aturan privasi Folder Manager (lihat ScopesFolderAccess) bikin
+        // teknisi cuma lihat folder yang ada isinya buat DIA. Jadi kalau dia buka
+        // PT yang dia nggak punya kerjaan di situ, folder yang baru dibikin
+        // langsung disembunyiin lagi oleh `show()` — barisnya kebikin cuma buat
+        // dijawab 404. Di alur nyata ini nggak kerasa: daftar PT yang dia lihat
+        // udah tersaring, jadi yang bisa dia tap selalu folder yang ada isinya.
+        //
+        // VIEWER: role baca-saja. Bikin barisnya sebagai efek samping GET bikin
+        // "viewer nggak pernah nulis" berhenti benar — dan itu klaim yang lebih
+        // berharga daripada kemudahan satu tap.
+        //
+        // Yang beneran butuh find-or-create cuma admin: dia milih PT dari daftar
+        // pelanggan, termasuk PT yang belum pernah punya sertifikat sama sekali.
+        if (! $request->user()->isAdmin()) {
+            $folder = $organizer->cariFolderPelanggan($customer);
+
+            abort_if($folder === null, 404, 'Folder perusahaan ini belum ada.');
+
+            return $this->show($request, $folder);
+        }
+
+        $folder = DB::transaction(function () use ($customer, $organizer): Folder {
+            // Kunci baris PT-nya dulu biar dua request buat PT yang sama nggak
+            // bikin DUA folder akar. `firstOrCreate` nggak atomik, dan unique
+            // index-nya nggak nahan: `parent_id` folder akar itu NULL, dan
+            // MySQL/SQLite nganggep NULL selalu beda satu sama lain.
+            //
+            // Kenapa baru sekarang dijaga padahal FolderOrganizer udah lama
+            // begini: dulu cuma kepanggil sekali per penerbitan sertifikat.
+            // Endpoint ini kepanggil tiap tap, jadi dobel-tap doang udah cukup.
+            Customer::whereKey($customer->id)->lockForUpdate()->first();
+
+            return $organizer->folderPelanggan($customer);
+        });
+
+        return $this->show($request, $folder);
     }
 
     public function show(Request $request, Folder $folder): JsonResponse
