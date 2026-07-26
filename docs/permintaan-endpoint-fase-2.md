@@ -272,30 +272,40 @@ jawabannya nggak cocok sama kode di sini. Versi terverifikasi (25 Juli 2026):
 
 ---
 
-## 5. Laporan — belum ada apa-apa
+## 5. Laporan — ✅ SUDAH JADI (26 Jul)
 
 Spec bagian 08 minta laporan dengan filter Pelanggan / Tanggal / Teknisi /
-Jenis Alat, output PDF & Excel. Di mobile belum ada layar, service, maupun
-model — dan nggak bisa dimulai karena endpointnya belum ada.
+Jenis Alat, output PDF & Excel. **Dua-duanya udah live**, kontrak lengkapnya di
+[`kontrak-api.md` §10](kontrak-api.md).
 
 ```
-GET /api/laporan/kalibrasi?dari=&sampai=&pelanggan_id=&teknisi_id=&kategori=&page=
-```
-
-Balikan JSON berpaginasi (buat ditampilin di layar), plus:
-
-```
+GET /api/laporan/kalibrasi?dari=&sampai=&pelanggan_id=&teknisi_id=&kategori=&status=&keputusan=&page=
 GET /api/laporan/kalibrasi/export?format=pdf|xlsx&<filter sama>
 ```
 
-yang nge-stream file — sama polanya kayak
-`GET /certificates/{id}/download` yang udah jalan, jadi mobile bisa pakai
-`pdf_downloader.dart` yang sudah ada.
+`/export` nge-stream file — sama polanya kayak `GET /certificates/{id}/download`
+yang udah jalan, jadi mobile bisa pakai `pdf_downloader.dart` yang sudah ada.
 
-**Catatan:** rekap Excel-nya **jangan** dirakit di HP. Bukan soal susah, tapi
-soal angka: kalau HP yang ngerangkum, hasilnya bisa beda tipis dengan yang
-keluar dari server (pembulatan, zona waktu) — dan buat lab terakreditasi, dua
-laporan dengan angka beda itu temuan.
+Yang ikut dikirim di luar permintaan awal:
+
+- **`ringkasan`** (total / pass / fail / belum ada keputusan / disetujui),
+  dihitung dari **seluruh** hasil penyaring, bukan dari halaman yang kebuka.
+- **`penyaring`** versi manusia, buat dipajang di kepala layar **dan** dicetak di
+  file — biar file yang udah nyebar masih bisa dijelasin isinya periode mana.
+- Penyaring **`status`** & **`keputusan`** (nggak diminta, tapi ini dua pertanyaan
+  pertama tiap buka rekap).
+
+**Catatan yang dijalanin:** rekap Excel-nya **nggak** dirakit di HP. Bukan soal
+susah, tapi soal angka: kalau HP yang ngerangkum, hasilnya bisa beda tipis dengan
+yang keluar dari server (pembulatan, zona waktu) — dan buat lab terakreditasi, dua
+laporan dengan angka beda itu temuan. Alasan yang sama kenapa layar, PDF, dan Excel
+di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendiri.
+
+> ⚠️ **`tanggal_kalibrasi` di endpoint ini tanggal polos (`"2024-05-26"`)**, beda
+> dari field `date` di endpoint lain yang keluar sebagai `"…T17:00:00Z"`. Sengaja:
+> biar tanggal di layar sama dengan yang dicetak di file, **dan** biar nilainya
+> bisa dipakai balik jadi penyaring `dari`/`sampai`. Kalau ISO, date-picker
+> "1–31 Juli" diam-diam ngebuang sesi tanggal 1.
 
 ---
 
@@ -306,14 +316,14 @@ laporan dengan angka beda itu temuan.
 | 1 | Matriks peran (dokumen) / `GET /me/permissions` | Kecil–Sedang | Tombol yang muncul tapi ditolak 403 | Minimal dokumen dulu |
 | 2 | Notifikasi kejadian yang butuh admin | Sedang | "Semua ke admin" | Polling dulu nggak apa-apa |
 | ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
-| 3b | `qr_token` di objek sertifikat | **Sangat kecil** | QR verifikasi | Endpoint verify-nya udah ada |
+| ~~3b~~ | ~~`qr_token` di objek sertifikat~~ | — | — | ✅ **jadi 25 Jul** — `qr_token` **+ `qr_payload`** (URL siap di-render) ikut di embed sertifikat |
 | 3c | Penanda tangan / Manajer Teknis | Sedang | Blok TTD | Perlu keputusan role dulu |
 | 3d | `POST /certificates/{id}/kirim-email` | Sedang | Kirim sertifikat ke pelanggan | |
 | 4 | CRUD folder & file arsip | Kecil–Sedang | Tap PT di Folder Manager | 🔸 **SEBAGIAN** — 3 operasi masih kurang, lihat §4 (dulu salah ditandain "udah ada") |
-| 5 | `GET /laporan/kalibrasi` + export | Besar | Seluruh bagian Laporan | |
+| ~~5~~ | ~~`GET /laporan/kalibrasi` + export~~ | — | — | ✅ **jadi 26 Jul** — plus `ringkasan`, `penyaring`, filter `status`/`keputusan` |
 
-**Paling murah & bisa dirilis besok:** 3b (`qr_token`) dan §5 di dokumen
-sebelumnya (`nomor_order` + `tanggal_terima`).
+**Sisa yang belum:** 1 (matriks peran), 2 (notifikasi per-kejadian), 3c (penanda
+tangan — masih nunggu keputusan role), 3d (kirim email), dan 3 operasi arsip di §4.
 
 **Paling ngeblok mobile:** §1 (matriks peran). Selama itu belum ada, tiap layar
 baru berisiko ngulang bug "jalan di admin, mentok di teknisi".

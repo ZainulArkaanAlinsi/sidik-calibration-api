@@ -121,6 +121,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
 | **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
+| **Laporan kalibrasi + export** | `GET /laporan/kalibrasi` (dipaginasi + `ringkasan`) & `GET /laporan/kalibrasi/export?format=pdf\|xlsx`. Semua role; teknisi cuma dapat pekerjaannya sendiri. Lihat [`kontrak-api.md` §10](kontrak-api.md) |
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
 
 ---
@@ -169,7 +170,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
-| `GET /laporan/kalibrasi` + `/export` | fase-2 §5 | Seluruh bagian Laporan. `GET /certificates/export/excel` nutup sebagian (rekap sertifikat), tapi tanpa filter pelanggan/teknisi/kategori |
 | `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |
 | `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
