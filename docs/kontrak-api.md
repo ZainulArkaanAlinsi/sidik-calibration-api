@@ -981,6 +981,116 @@ Beda sama `lokasi` di sesi kalibrasi. Field itu enum `lab`/`onsite`, cuma misahi
 
 ---
 
+## 10. Laporan Kalibrasi + Export (live 26 Jul)
+
+### `GET /api/laporan/kalibrasi`
+
+**Semua role boleh.** Tapi **teknisi cuma dapat pekerjaannya sendiri** — aturan
+yang sama kayak `/calibrations?mine=true`. Kalau di sini dilonggarin, penyaringan
+di layar Riwayat jadi nggak ada artinya: tinggal buka Laporan buat ngintip.
+
+```
+GET /api/laporan/kalibrasi?dari=2026-07-01&sampai=2026-07-31
+    &pelanggan_id=3&teknisi_id=5&kategori=instrumen-analitik
+    &status=disetujui&keputusan=PASS&page=1
+```
+
+| Penyaring | Isi | Catatan |
+|---|---|---|
+| `dari` / `sampai` | `YYYY-MM-DD` | **Dua ujungnya INKLUSIF.** "1–31 Juli" ikut tanggal 31 |
+| `pelanggan_id` | id dari `GET /customers/lookup` | |
+| `teknisi_id` | id dari `GET /technicians` | |
+| `kategori` | **KODE** kategori (`instrumen-analitik`), bukan id | Sama gayanya kayak penyaring `/equipments` |
+| `status` | `draft` · `menunggu_approval` · `disetujui` · `perlu_revisi` | Nilai lain → `422` |
+| `keputusan` | `PASS` · `FAIL` | |
+
+Semua opsional. `sampai` lebih awal dari `dari` → `422`.
+
+```json
+{
+  "data": [
+    {
+      "id": 2,
+      "nomor_sesi": "2405.13.A",
+      "tanggal_kalibrasi": "2024-05-26",
+      "pelanggan": { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI" },
+      "alat": { "id": 6, "nama_alat": "pH Meter", "serial_number": "B628755900" },
+      "kategori": { "kode": "instrumen-analitik", "nama": "Instrumen Analitik" },
+      "teknisi": { "id": 5, "nama": "Dwi Rahayu", "kode_teknisi": "DR" },
+      "status": "disetujui",
+      "keputusan": "PASS",
+      "ketidakpastian_diperluas": 0.0303272,
+      "sertifikat": { "id": 2, "nomor": "012-CAL-524", "status": "terbit" }
+    }
+  ],
+  "ringkasan": {
+    "total": 4, "pass": 3, "fail": 0,
+    "belum_ada_keputusan": 1, "disetujui": 3
+  },
+  "penyaring": {
+    "Dari tanggal": "2026-07-01", "Sampai tanggal": "2026-07-31",
+    "Pelanggan": "PT Tirta Gracia", "Teknisi": null,
+    "Kategori": "Instrumen Analitik", "Status": "disetujui", "Keputusan": "PASS"
+  },
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 4 }
+}
+```
+
+> ### ⚠️ `tanggal_kalibrasi` di sini TANGGAL POLOS — beda dari endpoint lain
+>
+> `"2024-05-26"`, bukan `"2024-05-25T17:00:00Z"`. Ini **sengaja beda** dari field
+> `date` di endpoint lain (lihat peringatan di §4 soal `diterbitkan_pada`), karena
+> dua alasan:
+>
+> 1. Tanggalnya harus **sama** dengan yang dicetak di PDF/Excel. Satu sesi nggak
+>    boleh punya dua tanggal beda tergantung dilihat di mana.
+> 2. Nilainya harus bisa **dipakai balik jadi penyaring** `dari`/`sampai`. Kalau
+>    dikirim sebagai ISO, tombol "filter tanggal sesi ini" balik kosong, dan
+>    date-picker "1–31 Juli" diam-diam ngebuang sesi tanggal 1.
+>
+> Jadi di endpoint ini **boleh** dipakai apa adanya buat ditampilin & buat
+> penyaring — nggak usah di-`DateTime.parse()`.
+
+- **`ringkasan` dihitung dari SELURUH hasil penyaring, bukan dari halaman yang
+  kebuka.** `ringkasan.total` == `meta.total`. Angka "total 15" yang ternyata cuma
+  berarti "15 di halaman ini" itu menyesatkan di dokumen yang dikirim ke asesor.
+- **`ringkasan.belum_ada_keputusan`** = sesi yang belum lewat perhitungan (draft /
+  datanya belum cukup). Dipisah biar `total` nggak kelihatan nggak nyambung sama
+  `pass + fail`.
+- **`penyaring` itu penyaring versi manusia** — pakai buat nampilin "sedang
+  disaring: …" di kepala layar. `null` artinya "Semua". Id dari lab lain
+  di-resolve jadi `null`, bukan nama PT orang.
+- **`ketidakpastian_diperluas` diambil dari titik PENENTU** (yang paling mepet
+  batas toleransi) — **angka yang sama** yang muncul di `hasil` detail sesi, bukan
+  rata-rata semua titik. `null` kalau sesinya belum dihitung.
+- **Barisnya sengaja RINGKAS.** Nggak ada `titik[]`, `pembacaan_mentah`,
+  `type_b_components`, atau `status_standar` — laporan itu tabel, dan bawa semua
+  itu per baris bikin HP keabisan memori di lab yang datanya setahun. Butuh
+  rinciannya? `GET /calibrations/{id}`.
+- Urutannya `tanggal_kalibrasi` naik, lalu `id`. 15 baris/halaman.
+
+### `GET /api/laporan/kalibrasi/export?format=pdf|xlsx`
+
+`format` **wajib** (`pdf` atau `xlsx`; lain → `422`). **Semua penyaring di atas
+jalan sama persis di sini** — query-nya dipegang satu service yang sama, jadi file
+yang kedownload isinya sama dengan yang dilihat di layar.
+
+- Balikannya **file download** (`Content-Disposition: attachment`), nama
+  `Laporan-Kalibrasi-YYYY-MM-DD.pdf|xlsx`. Bukan JSON.
+- **Nggak ada baris yang cocok → `404`**, bukan file kosong. File 11 kolom tanpa
+  isi itu kelihatan kayak "nggak ada data" padahal bisa jadi penyaringnya salah.
+- PDF-nya **A4 landscape** — 11 kolom nggak masuk di portrait.
+- **Penyaring & ringkasannya ikut dicetak di kepala file.** File yang udah nyebar
+  harus bisa dijelasin isinya periode/pelanggan mana; itu pertanyaan pertama
+  asesor waktu lihat rekap.
+- Maksimal **5000 baris** per export. Lebih dari itu, sempitin rentang tanggalnya.
+- Throttle **`20/menit`** khusus buat `/export` (endpoint layar-nya nggak
+  dithrottle) — bikin file dari 5000 baris jauh lebih berat dari baca biasa.
+  Kalau kena, respons `429`. Jadi jangan panggil `/export` tiap penyaring diubah;
+  panggil waktu tombol "Unduh" ditekan aja.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

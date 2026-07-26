@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -123,6 +124,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // waktu ngisi sesi. Nulisnya admin doang, di blok bawah.
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
+
+    // Laporan kalibrasi berpenyaring + export (spesifikasi poin 08, fase-2 §5).
+    // Semua role boleh; teknisi cuma dapat pekerjaannya sendiri (di service).
+    // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
+    Route::get('/laporan/kalibrasi/export', [LaporanController::class, 'export'])
+        // Bikin file (PDF/Excel) dari sampai 5000 baris — jauh lebih berat dari
+        // baca biasa, jadi jatahnya dipisah & lebih sedikit.
+        ->middleware('throttle:20,1');
+    Route::get('/laporan/kalibrasi', [LaporanController::class, 'kalibrasi']);
 
     // Bentuk baku lembar kerja (SIDIK-FM-CAL-0509_Rev.4) buat layar input
     // teknisi. Didaftarin SEBELUM `/calibrations/{calibration}` biar
