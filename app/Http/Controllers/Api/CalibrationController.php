@@ -21,6 +21,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\LembarKerjaTemplate;
 use App\Services\PerhitunganBuilder;
+use Carbon\Carbon;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
 // method `load()` yang cuma ada di Eloquent Collection.
@@ -328,6 +329,24 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Masa berlaku sertifikat itu keputusan admin, bukan angka mati di kode:
+        // interval kalibrasi beda-beda per jenis alat & permintaan pelanggan.
+        // Kalau nggak dikirim, dipakai default masa berlaku organisasi.
+        //
+        // `after:tanggal kalibrasi` bukan `after:today` — sertifikat yang
+        // berlakunya habis sebelum atau pas hari alat dikerjain itu nggak masuk
+        // akal, dan `max` 10 tahun nahan salah ketik tahun (2035 → 2350).
+        $data = $request->validate([
+            'berlaku_sampai' => [
+                'sometimes', 'nullable', 'date',
+                'after:'.($calibration->tanggal_kalibrasi?->toDateString() ?? 'today'),
+                'before_or_equal:'.now()->addYears(10)->toDateString(),
+            ],
+        ], [
+            'berlaku_sampai.after' => 'Masa berlaku harus sesudah tanggal kalibrasi.',
+            'berlaku_sampai.before_or_equal' => 'Masa berlaku kejauhan — maksimal 10 tahun dari sekarang.',
+        ]);
+
         $periksa = $this->validator->periksa($calibration);
         $abaikan = $request->boolean('abaikan_peringatan');
 
@@ -359,7 +378,13 @@ class CalibrationController extends Controller
 
         // Generate sertifikat jalan di queue (async) — bikin PDF bisa lama, jadi
         // `certificate_id` boleh masih null sesaat sesudah approve.
-        GenerateCertificate::dispatch($calibration->id, $request->user()->id);
+        GenerateCertificate::dispatch(
+            $calibration->id,
+            $request->user()->id,
+            filled($data['berlaku_sampai'] ?? null)
+                ? Carbon::parse($data['berlaku_sampai'])->toDateString()
+                : null,
+        );
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));

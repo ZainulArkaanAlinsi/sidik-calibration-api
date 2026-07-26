@@ -26,7 +26,7 @@ class StandardResource extends JsonResource
 
             'no_sertifikat' => $this->no_sertifikat,
             'tertelusur_ke' => $this->tertelusur_ke,
-            'berlaku_sampai' => $this->berlaku_sampai?->toIso8601ZuluString(),
+            'berlaku_sampai' => $this->berlaku_sampai?->toDateString(),
             // Standar yang sertifikatnya lewat masa berlaku ditolak `422` waktu
             // dipakai kalibrasi. Dikirim sebagai flag siap pakai biar mobile nggak
             // perlu banding-bandingin tanggal sendiri — gampang salah zona waktu.

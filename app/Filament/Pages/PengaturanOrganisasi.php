@@ -100,6 +100,17 @@ class PengaturanOrganisasi extends Page
                             ->maxLength(255)
                             ->placeholder(CertificateSnapshotBuilder::KODE_DOKUMEN_DEFAULT)
                             ->columnSpanFull(),
+                        TextInput::make('settings.'.Organization::KEY_MASA_BERLAKU_BULAN)
+                            ->label('Masa berlaku sertifikat (bulan)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(120)
+                            ->placeholder(Organization::DEFAULT_MASA_BERLAKU_BULAN)
+                            ->helperText(
+                                'Cuma nilai BAKU. Admin tetap bisa nimpa per sertifikat waktu '
+                                .'menyetujui sesi. Dihitung dari tanggal kalibrasi, bukan tanggal terbit.',
+                            )
+                            ->columnSpanFull(),
                         Toggle::make('settings.tampilkan_qr_di_pdf')
                             ->label('Cetak QR Code di sertifikat')
                             ->default(true)

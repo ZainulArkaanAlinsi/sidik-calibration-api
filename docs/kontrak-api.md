@@ -389,7 +389,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
       "serial_number": "GB-STD-001",
       "no_sertifikat": "SNSU/2025/P-0142",
       "tertelusur_ke": "SNSU-BSN",
-      "berlaku_sampai": "2027-07-13T17:00:00Z",
+      "berlaku_sampai": "2027-07-13",
       "masih_berlaku": true,
       "ketidakpastian": 0.0004,
       "satuan_ketidakpastian": "mm",
@@ -580,8 +580,8 @@ Response `200`:
 > },
 > "sertifikat": {
 >   "id": 9, "nomor": "012-CAL-524", "status": "terbit", "pdf_url": "...",
->   "diterbitkan_pada": "2024-05-29T17:00:00Z",
->   "berlaku_sampai": "2025-05-28T17:00:00Z",
+>   "diterbitkan_pada": "2024-05-30",
+>   "berlaku_sampai": "2025-05-29",
 >   "qr_token": "DEMOQR123",
 >   "qr_payload": "https://.../verify/DEMOQR123"
 > }
@@ -604,16 +604,42 @@ Response `200`:
 > - **Penanda tangan sertifikat BELUM ada** — masih nunggu keputusan apakah
 >   "Manajer Teknis" itu role keempat atau atribut di user.
 >
-> ### ⚠️ Soal tanggal: `date` kegeser ke jam 17:00 hari sebelumnya
+> ### 🔄 PERUBAHAN 26 Jul: semua field tanggal jadi TANGGAL POLOS
 >
-> `diterbitkan_pada: "2024-05-29T17:00:00Z"` itu **tanggal 30 Mei**, bukan 29.
-> Kolomnya cast `date` (tengah malam) dan `APP_TIMEZONE`-nya `Asia/Jakarta`, jadi
-> begitu diserialisasi ke UTC dia mundur 7 jam. Ini kena **semua** field bercast
-> `date` di API ini, bukan cuma yang ini.
+> **Yang berubah:** field bertipe tanggal sekarang keluar sebagai `"2024-05-30"`,
+> **bukan lagi** `"2024-05-29T17:00:00Z"`.
 >
-> **Jadi: JANGAN ambil 10 karakter pertama string-nya** buat nampilin tanggal —
-> hasilnya beda satu hari. `DateTime.parse()` dulu, format ke waktu lokal, baru
-> tampilkan; di Jakarta hasilnya balik bener.
+> **Kenapa:** kolomnya cast `date` (nggak ada jamnya) dan `APP_TIMEZONE`-nya
+> `Asia/Jakarta` — begitu diserialisasi ke UTC dia mundur 7 jam, ke jam 17:00
+> **hari sebelumnya**. Jadi `diterbitkan_pada: "2024-05-29T17:00:00Z"` itu
+> sebenernya **tanggal 30 Mei**. Konsumen yang ngambil 10 karakter pertama dapat
+> tanggal salah sehari, dan nilainya nggak bisa dipakai balik jadi penyaring
+> tanggal. Di sertifikat, tanggal terbit yang salah sehari itu cacat dokumen
+> terkendali.
+>
+> **Field yang kena:**
+>
+> | Endpoint | Field |
+> |---|---|
+> | `GET /calibrations`, `/{id}` | `tanggal_kalibrasi`, `tanggal_terima` |
+> | `GET /certificates/{id}` & embed `sertifikat` | `diterbitkan_pada`, `berlaku_sampai` |
+> | `GET /equipments` | `tanggal_kalibrasi_terakhir`, `tanggal_jatuh_tempo` |
+> | `GET /standards` | `berlaku_sampai` |
+> | `GET /organization` | `akreditasi_mulai`, `akreditasi_berakhir` |
+> | `GET /calibration-methods` | `berlaku_mulai` |
+> | `GET /verify/{qr_token}` | `diterbitkan_pada`, `berlaku_sampai`, `tanggal_kalibrasi` |
+> | `GET /laporan/kalibrasi` | `tanggal_kalibrasi` |
+>
+> **Yang TIDAK berubah:** `created_at`/`dibuat_pada`/`dibaca_pada` — itu `datetime`
+> asli, jamnya beneran berarti, jadi tetap ISO `2026-07-26T09:10:00Z`.
+>
+> **Dampak buat mobile:** kecil. `DateTime.parse("2024-05-30")` di Dart tetap
+> jalan, dan sekarang hasilnya **bener** tanpa perlu konversi zona waktu. Kode
+> yang motong 10 karakter pertama juga jadi bener sendiri. Yang perlu diperiksa
+> cuma kode yang menganggap string-nya **pasti** ada `T`/`Z`-nya (mis. regex ISO
+> ketat, atau `substring(11)` buat ngambil jam).
+>
+> Dijaga `tests/Feature/FormatTanggalApiTest.php` biar nggak balik ke ISO.
 
 ### Riwayat
 `GET /api/calibrations?mine=true` — teknisi cuma lihat kalibrasi miliknya sendiri; **admin lihat semua**. Filter ini penting, jangan sampai teknisi bisa lihat punya orang lain.
@@ -624,6 +650,41 @@ Response `200`:
 
 ### `POST /api/calibrations/{id}/approve` — **admin doang**, teknisi/viewer → `403`.
 Response: sesi dengan `status: "disetujui"`. Generate sertifikat jalan di **queue** (async), jadi `certificate_id` boleh masih `null` sesaat.
+
+Body-nya opsional semua:
+
+```json
+{ "berlaku_sampai": "2029-02-28", "abaikan_peringatan": false }
+```
+
+**`berlaku_sampai` — masa berlaku sertifikat, ditentukan admin (baru 26 Jul).**
+Interval kalibrasi itu keputusan teknis: beda per jenis alat, seberapa sering
+dipakai, dan permintaan pelanggan. Jadi angkanya milik admin, bukan dipaku di kode.
+
+Tiga lapis, dari yang paling spesifik:
+
+1. `berlaku_sampai` dikirim → dipakai apa adanya
+2. nggak dikirim → **default organisasi**, `settings.masa_berlaku_sertifikat_bulan`
+   (bisa disetel di panel: Pengaturan Organisasi → Penerbitan sertifikat)
+3. organisasi belum nyetel → **12 bulan**
+
+- **Dihitung dari `tanggal_kalibrasi`, bukan tanggal terbit.** Sertifikat bisa
+  terbit beberapa hari sesudah alat dikerjain (contoh Tirta Gracia: kalibrasi
+  26 Mei, terbit 30 Mei). Kalau dihitung dari tanggal terbit, masa berlakunya
+  diam-diam kepanjangan dan alat lewat jatuh tempo tanpa ada yang sadar.
+- Harus **sesudah** `tanggal_kalibrasi` → kalau nggak, `422`.
+- Maksimal **10 tahun** dari sekarang → nahan salah ketik tahun (2035 → 2350).
+- Kalau validasinya gagal, **sesinya nggak keburu disetujui** — statusnya tetap
+  `menunggu_approval`.
+- **Sesudah sertifikat terbit, masa berlakunya nggak bisa diubah lagi.** Aturan
+  yang sama kayak `PATCH /calibrations/{id}/admin`: sertifikat yang udah terbit
+  itu dokumen terkendali. Kalau salah, jalannya lewat reject → revisi → approve
+  ulang, biar ada jejaknya.
+
+**Buat UI:** taruh date-picker `berlaku_sampai` di dialog "Setujui", **prefilled**
+pakai default organisasi (`tanggal_kalibrasi` + N bulan) supaya admin nggak perlu
+ngetik tiap kali — ngetik tanggal manual berulang itu justru sumber salah ketik di
+kolom yang nentuin kapan alat harus dikalibrasi lagi.
 
 ### `POST /api/calibrations/{id}/reject`
 ```json
