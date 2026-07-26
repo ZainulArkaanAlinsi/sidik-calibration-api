@@ -13,6 +13,8 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\FolderOrganizer;
 use App\Services\QrCodeGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,9 +43,14 @@ class GenerateCertificate implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * @param  string|null  $berlakuSampai  Masa berlaku pilihan admin (`Y-m-d`).
+     *                                      Null → pakai default masa berlaku organisasi.
+     */
     public function __construct(
         public int $calibrationSessionId,
         public ?int $issuedBy = null,
+        public ?string $berlakuSampai = null,
     ) {}
 
     public function handle(): void
@@ -85,8 +92,7 @@ class GenerateCertificate implements ShouldQueue
                     'qr_token' => $token,
                     'qr_payload' => url("/verify/{$token}"),
                     'diterbitkan_pada' => now(),
-                    // Interval kalibrasi baku 1 tahun.
-                    'berlaku_sampai' => now()->addYear(),
+                    'berlaku_sampai' => $this->berlakuSampai($sesi),
                     'status' => Certificate::STATUS_MENUNGGU_GENERATE,
                 ],
             );
@@ -220,6 +226,33 @@ class GenerateCertificate implements ShouldQueue
         $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
 
         return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    /**
+     * Masa berlaku sertifikat: pilihan admin dulu, baru default organisasi.
+     *
+     * Interval kalibrasi itu keputusan teknis — tergantung jenis alat, seberapa
+     * sering dipakai, dan permintaan pelanggan — jadi nggak bisa dipaksa satu
+     * angka buat semua. Yang dipatok backend cuma batasnya (lihat validasi di
+     * `CalibrationController::approve()`); angkanya milik admin.
+     *
+     * Dihitung dari TANGGAL KALIBRASI, bukan tanggal terbit. Sertifikat bisa
+     * terbit beberapa hari sesudah alat dikerjain (di contoh Tirta Gracia:
+     * kalibrasi 26 Mei, terbit 30 Mei) — kalau dihitung dari tanggal terbit,
+     * masa berlakunya diam-diam kepanjangan, dan alat lewat jatuh tempo tanpa
+     * ada yang sadar.
+     */
+    private function berlakuSampai(CalibrationSession $sesi): CarbonInterface
+    {
+        if ($this->berlakuSampai !== null) {
+            return Carbon::parse($this->berlakuSampai)->startOfDay();
+        }
+
+        $dasar = $sesi->tanggal_kalibrasi ?? now();
+
+        return $dasar->copy()->addMonthsNoOverflow(
+            $sesi->organization?->masaBerlakuBulan() ?? Organization::DEFAULT_MASA_BERLAKU_BULAN,
+        )->startOfDay();
     }
 
     /** Nomor sertifikat urut per organisasi per bulan: CAL/2026/07/0001. */
