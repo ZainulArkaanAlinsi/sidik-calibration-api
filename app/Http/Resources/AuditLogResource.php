@@ -50,9 +50,13 @@ class AuditLogResource extends JsonResource
     /**
      * Perubahan disusun per kolom: `{ nama: { lama: …, baru: … } }`.
      *
-     * @return array<string, array{lama: mixed, baru: mixed}>
+     * Balikannya `object`, BUKAN `array`. PHP nge-serialize array kosong jadi `[]`,
+     * dan itu bikin tipe `perubahan` berubah tergantung isinya — objek kalau ada
+     * yang berubah, array kalau nggak. Aksi `dihapus`/`dipulihkan` selalu kosong,
+     * jadi ini bukan kasus langka: klien yang ngiterasi key-nya bakal pecah di
+     * setiap baris hapus.
      */
-    private function perubahanPerKolom(): array
+    private function perubahanPerKolom(): object
     {
         $lama = $this->old_data ?? [];
         $baru = $this->new_data ?? [];
@@ -67,6 +71,6 @@ class AuditLogResource extends JsonResource
             ];
         }
 
-        return $hasil;
+        return (object) $hasil;
     }
 }
