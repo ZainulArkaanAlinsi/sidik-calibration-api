@@ -188,9 +188,31 @@ class PengaturanOrganisasi extends Page
             ]);
     }
 
+    /**
+     * `settings` DIGABUNG, bukan ditimpa.
+     *
+     * Kolom `settings` itu satu JSON yang dipakai bareng-bareng, tapi form ini cuma
+     * nampilin sebagian kuncinya — `reminder_hari_sebelum`, `catatan_ketidakpastian`,
+     * dan `catatan_penggandaan` nggak punya field di sini. Nimpa seluruh array bikin
+     * ketiganya ilang tiap admin nyimpan halaman ini, dan ilangnya SUNYI: nggak ada
+     * error, pengingat jatuh tempo diam-diam balik ke default 30 hari dan catatan
+     * sertifikat ilang dari PDF. Ketahuannya baru pas ada yang nyariin.
+     *
+     * Alasannya sama persis kayak `OrganizationController::updatePosisiTandaTangan()`
+     * yang udah hati-hati nge-merge — jalur panel ini yang ketinggalan.
+     */
     public function save(): void
     {
-        $this->record->update($this->form->getState());
+        $data = $this->form->getState();
+
+        if (array_key_exists('settings', $data)) {
+            $data['settings'] = array_merge(
+                $this->record->settings ?? [],
+                $data['settings'] ?? [],
+            );
+        }
+
+        $this->record->update($data);
 
         Notification::make()
             ->title('Pengaturan organisasi disimpan.')
