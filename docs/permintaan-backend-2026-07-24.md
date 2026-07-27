@@ -164,10 +164,16 @@ Backend sudah alias `/arsip/perusahaan` (index), `/arsip/folders/{id}` (show/upd
 | Mobile panggil | Padanan backend saat ini | Yang perlu ditambah |
 |---|---|---|
 | ✅ **JADI 25 Jul** — `GET /arsip/perusahaan/{customerId}/folder` — **buka folder akar per-PT** (core: tap PT → lihat isinya) | `FolderController@index` bisa filter `customer_id`, tapi **tidak get-or-create** folder akar | Endpoint yang **find-or-create** root folder milik `customerId` lalu balikin bentuk `show` (breadcrumb + subfolder + berkas). Reuse logika `show`. |
-| `PUT /arsip/folders/{id}/pindah` (body `{parent_id}`) — pindah folder | `FolderController@update` **cuma rename** — `parent_id` dipertahankan (baris `$folder->parent_id`) | Dukung ubah `parent_id` (validasi: bukan pindah ke diri sendiri/keturunannya; cek `namaBentrok` di parent baru). Sekunder — boleh ditunda. |
-| `PUT /arsip/berkas/{sesiId}/pindah` (body `{folder_id}`) — pindah berkas | `FolderFileController@update` bisa pindah via `folder_id`, **tapi pakai id folderFile, bukan sesiId** | Alias yang terima **`sesiId` (calibration session)** → temukan folderFile-nya → set `folder_id`. Sekunder — boleh ditunda. |
+| ~~`PUT /arsip/folders/{id}/pindah`~~ ✅ **jadi 27 Jul** | `FolderController@update` **cuma rename** — `parent_id` dipertahankan (baris `$folder->parent_id`) | Dukung ubah `parent_id` (validasi: bukan pindah ke diri sendiri/keturunannya; cek `namaBentrok` di parent baru). Sekunder — boleh ditunda. |
+| ~~`PUT /arsip/berkas/{sesiId}/pindah`~~ ✅ **jadi 27 Jul** | `FolderFileController@update` bisa pindah via `folder_id`, **tapi pakai id folderFile, bukan sesiId** | Alias yang terima **`sesiId` (calibration session)** → temukan folderFile-nya → set `folder_id`. Sekunder — boleh ditunda. |
 
-**Prioritas:** baris 1 (buka folder akar PT) itu **core** Folder Manager — tanpa ini, tap PT gagal. Baris 2 & 3 (pindah folder/berkas) sekunder, boleh menyusul. Sampai ada, mobile menampilkan folder tapa adanya (browse/rename/hapus sudah jalan lewat alias yang ada).
+> ✅ **27 Jul: ketiganya udah jadi.** Dua batasan yang perlu dipatuhi UI: folder
+> bertipe `sistem` nggak bisa dipindah (`422` — kalau dipaksa, arsip satu PT kepecah
+> dua), dan folder nggak bisa dipindah ke dalam keturunannya sendiri (`422` — kalau
+> lolos, folder-nya ilang dari semua layar tanpa error). Kontrak lengkap di
+> [`kontrak-api.md` §8a](kontrak-api.md).
+
+**Prioritas (catatan waktu belum ada):** baris 1 (buka folder akar PT) itu **core** Folder Manager — tanpa ini, tap PT gagal. Baris 2 & 3 (pindah folder/berkas) sekunder, boleh menyusul. Sampai ada, mobile menampilkan folder tapa adanya (browse/rename/hapus sudah jalan lewat alias yang ada).
 
 ---
 
