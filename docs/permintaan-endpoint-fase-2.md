@@ -321,9 +321,18 @@ jawabannya nggak cocok sama kode di sini. Versi terverifikasi (25 Juli 2026):
 > teknisi lihat tombolnya lalu kena `403` — persis bug "jalan di admin, mentok di
 > teknisi" yang §1 dokumen ini keluhin.
 
-**Yang tersisa buat backend di bagian ini: 2 operasi**, dua-duanya sekunder
-(`/pindah` folder & berkas). Yang core — tap PT buka folder akarnya — **udah jadi
-25 Jul**, jadi browse / rename / hapus / tap PT semuanya bisa disambungin sekarang.
+**✅ 27 Jul: bagian ini KELAR SEMUA.** Yang core (tap PT buka folder akarnya) jadi
+25 Jul; dua operasi `/pindah` terakhir jadi 27 Jul. Jadi browse / rename / hapus /
+tap PT / pindah folder / pindah berkas semuanya bisa disambungin sekarang.
+
+Dua batasan yang perlu dipatuhi UI waktu bikin drag-drop:
+
+1. **Folder bertipe `sistem` nggak bisa dipindah** → `422`. `tipe` udah ikut di
+   respons `/folders`, jadi jangan dibikin bisa di-drag sama sekali.
+2. **Folder nggak bisa dipindah ke dalam keturunannya sendiri** → `422`. Kalau
+   lolos, folder-nya lepas dari pohon dan ilang dari semua layar tanpa error.
+
+Kontrak lengkap: [`kontrak-api.md` §8a](kontrak-api.md).
 
 ---
 
