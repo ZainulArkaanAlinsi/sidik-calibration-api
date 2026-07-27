@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Organization extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Diaudit, HasFactory, SoftDeletes;
 
     /** Default ambang peringatan H- kalau org belum ngatur sendiri (± sebulan). */
     public const DEFAULT_AMBANG_HARI = 30;
