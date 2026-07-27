@@ -111,7 +111,8 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Sertifikat + PDF + Excel + QR | `GET /certificates/{id}`, `/download`, `/excel`, `/qr`, `POST /{id}/retry` |
 | Rekap sertifikat (Excel) | `GET /certificates/export/excel` (admin) |
 | Verifikasi QR publik | `GET /verify/{qr_token}` (web) & `GET /api/verify/{qr_token}` (JSON) |
-| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru |
+| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru. Kuncinya `bulan` |
+| **Grafik tren rentang bebas** | `GET /dashboard/tren?dari=&sampai=&satuan=hari\|minggu\|bulan`. Kuncinya **`periode`** (bukan `bulan` — sengaja beda). Angkanya dijamin sama dengan `grafik_pekerjaan`, satu service. Maks 400 periode. Lihat [`kontrak-api.md` §7](kontrak-api.md) |
 | Notifikasi | `GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}` |
 | Reminder jatuh tempo | otomatis tiap pagi + `POST /reminders/jatuh-tempo` (manual, admin) |
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
@@ -173,7 +174,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 |---|---|---|
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
 | `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |
-| `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
 | `audit_logs` + rumus berversi | arsitektur-desktop §Keputusan 4 & 5 | Menu Kelola Data & Rumus di desktop |
