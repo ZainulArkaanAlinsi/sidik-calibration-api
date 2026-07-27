@@ -15,9 +15,15 @@ Untuk: Raihan (full stack mobile/desktop) · Arkaan (full stack mobile/desktop)
 > - ~~nomor 1: pindah `DB_CONNECTION` ke `sqlite` + `PRAGMA journal_mode=WAL`~~
 > - ~~nomor 4 bagian "cadangkan/pulihkan berkas SQLite"~~ (backup jadi urusan VPS)
 >
-> Yang **tetap berlaku** dan belum dikerjain: Keputusan 4 (menu Kelola Data +
-> `audit_logs`), Keputusan 5 (rumus berversi), Keputusan 6 (tiga jalur impor data
-> lama), dan batas peran AI. Status terverifikasi tiap item ada di
+> ✅ **27 Jul: `audit_logs` (fondasi Keputusan 4) udah jadi.** Jejak perubahan
+> kecatat otomatis dari model event, jadi semua jalur ikut — API, panel Filament,
+> queue, command. `GET /audit-logs` + ekspor CSV, admin doang & baca-saja; baris
+> audit nggak bisa diubah/dihapus lewat model. Kontrak: [`kontrak-api.md` §11](kontrak-api.md).
+>
+> Yang **tetap berlaku** dan belum dikerjain: sisa Keputusan 4 (layar "Kelola Data"
+> di desktop, perkakas perawatan, ekspor CSV per tabel — fondasi audit-nya udah
+> ada), Keputusan 5 (rumus berversi), Keputusan 6 (tiga jalur impor data lama), dan
+> batas peran AI. Status terverifikasi tiap item ada di
 > [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md).
 
 ## Yang harus dicapai
