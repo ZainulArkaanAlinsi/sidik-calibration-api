@@ -1317,6 +1317,141 @@ Waktu,Entitas,ID,Aksi,Pelaku,Role,Kolom,Nilai Lama,Nilai Baru,Catatan
 
 ---
 
+## 12. Rumus Kalibrasi Berversi (live 27 Jul — fondasi)
+
+**Admin doang.** Salah ngetik di sini ngubah angka yang masuk sertifikat
+terakreditasi — ini menu paling berbahaya di seluruh aplikasi
+(`arsitektur-desktop-database.md` Keputusan 5).
+
+> ### ⚠️ Yang UDAH ada vs yang BELUM
+>
+> **Udah:** pencatatan versi + stempel versi di tiap hasil hitung + validasi rentang
+> berlaku. Ini fondasi ketertelusurannya, dan **inilah bagian yang bikin rumus boleh
+> diubah nanti**: tanpa stempel, ngubah rumus bikin seluruh riwayat kalibrasi nggak
+> bisa dipertanggungjawabkan.
+>
+> **Belum:** evaluator ekspresinya. Jadi ngubah versi rumus **belum ngubah cara
+> ngitungnya sama sekali** — dia baru nyatet "dihitung pakai aturan versi berapa".
+> `sumber: "database"` ditolak `422` selama evaluatornya belum ada, sengaja: versi
+> yang tercatat "dihitung dari database" padahal angkanya tetap dari kode itu riwayat
+> yang bohong, dan itu lebih berbahaya daripada fiturnya belum ada.
+
+### `GET /api/formulas`
+
+```json
+{
+  "data": [
+    {
+      "id": 2, "kode": "gum-ph", "nama": "Ketidakpastian GUM (jalur pH)",
+      "besaran": "ph", "jumlah_versi": 1,
+      "versi_berlaku": {
+        "id": 2, "nomor_versi": 1, "sumber": "kode", "status": "aktif",
+        "berlaku_dari": "2000-01-01", "berlaku_sampai": null,
+        "parameter": { "faktor_cakupan_k": 2, "dihitung_oleh": "App\\Services\\GumCalculator" },
+        "ekspresi": null, "pembuat": null, "oleh_sistem": true
+      }
+    }
+  ]
+}
+```
+
+- **Versi 1 dibikin OTOMATIS** waktu organisasinya pertama buka endpoint ini atau
+  pertama nyimpen kalibrasi. Nggak ada langkah setup — lab yang udah jalan sebelum
+  fitur ini ada nggak boleh dipaksa nyetel rumus dulu sebelum bisa nyimpen kalibrasi.
+- **`sumber: "kode"`** artinya angkanya dihitung program (`GumCalculator`), dan
+  `parameter` nyatet nilai yang beneran dipakai. Ini jujur: rumus yang sekarang jalan
+  MEMANG ada di kode.
+- **`berlaku_dari` versi 1 dipatok `2000-01-01`**, bukan hari ini. Kalau dipatok hari
+  ini, sesi lama yang di-revisi nggak nemu versi yang berlaku di tanggalnya.
+- `berlaku_sampai: null` = masih berlaku sampai sekarang.
+
+### Arti `status` — beda dari bacaan naifnya, dan ini penting
+
+Keputusan 5 nulis "versi lama diarsipkan". Kalau itu dibaca sebagai "statusnya jadi
+`arsip`", fiturnya justru **rusak**: pencarian versi per-tanggal cuma ngambil yang
+`aktif`, jadi sesi tahun lalu nggak nemu versinya lagi.
+
+Yang nentuin versi mana berlaku buat suatu tanggal itu **rentang tanggalnya**, bukan
+statusnya:
+
+| Status | Arti |
+|---|---|
+| `aktif` | Bagian dari garis waktu yang sah. Versi yang udah **digantikan tetap `aktif`**, cuma `berlaku_sampai`-nya ditutup — dia masih jawaban yang BENAR buat tanggal di rentangnya |
+| `draft` | Belum masuk garis waktu. Boleh ada beberapa sekaligus; admin bisa nyiapin calon sebelum milih |
+| `arsip` | **Dibatalkan**, jangan dipakai buat tanggal apa pun. Buat versi yang kebikin karena salah — **bukan** buat versi yang digantikan secara wajar |
+
+### `GET /api/formulas/{id}/versions`
+
+Riwayat versi, terbaru dulu. Sesudah nerbitin versi 2:
+
+```
+v2: aktif  2026-08-01 → sekarang
+v1: aktif  2000-01-01 → 2026-07-31
+```
+
+### `GET /api/formulas/{id}/versi-berlaku?tanggal=2024-05-26`
+
+**Pertanyaan yang bikin fitur ini ada:** *"sesi 26 Mei dihitung pakai aturan yang
+mana?"* — beda dari "aturan apa yang dipakai sekarang". `tanggal` opsional (bawaan:
+hari ini). Balikannya satu objek versi, atau `null` kalau nggak ada yang berlaku.
+
+### `POST /api/formulas/{id}/versions` — terbitin versi baru
+
+```json
+{
+  "sumber": "kode",
+  "berlaku_dari": "2026-08-01",
+  "parameter": { "faktor_cakupan_k": 2 },
+  "catatan": "Ikut IK Rev.7",
+  "langsung_aktif": true
+}
+```
+
+- **`langsung_aktif: true` bikin DUA hal dalam satu transaksi**: versi baru dibikin
+  `aktif`, dan rentang versi sebelumnya **ditutup sehari sebelum** versi baru mulai.
+  Dua langkah itu satu operasi — kalau dipisah, ada jeda di mana dua versi sama-sama
+  berlaku buat satu tanggal, dan di jeda itu "sesi ini pakai versi mana" nggak punya
+  jawaban.
+- **Tanpa `langsung_aktif` → jadi `draft`**, dan ini yang disarankan. Keputusan 5
+  minta "uji coba sebelum disimpan", dan draft yang belum masuk garis waktu itu
+  tempat paling aman buat nyoba.
+- `sumber: "database"` → `422` (evaluator belum ada, lihat peringatan di atas).
+- Rentang yang tumpang tindih sama versi aktif lain → `422` dengan pesan yang nyebut
+  versi mana yang nabrak.
+
+### `PATCH /api/formula-versions/{id}`
+
+Cuma `status` (→ `aktif` / `arsip`) dan `catatan`.
+
+- **Rentang tanggalnya SENGAJA nggak bisa diubah.** Ngubah rentang versi yang udah
+  dipakai berarti ngubah jawaban dari "sesi ini dihitung pakai versi apa" — secara
+  retroaktif, buat sesi yang sertifikatnya udah terbit. Kalau aturannya salah,
+  jalannya terbitin versi baru.
+- **Versi yang udah kepakai di hasil hitung nggak bisa diarsipin** → `422`. Kalau
+  diarsipin, angka yang udah terbit nggak bisa dijelasin lagi — kebalikan dari
+  gunanya fitur ini.
+- Ngaktifin `draft` yang rentangnya nabrak → `422`.
+
+### Stempel di hasil hitung
+
+`uncertainty_calculations.formula_version_id` — versi yang **menghasilkan** angka di
+baris itu. Distempel dari versi yang berlaku di **tanggal kalibrasi** sesi, bukan
+"yang aktif sekarang".
+
+Bedanya bikin atau nggak: sesi 26 Mei yang di-revisi hari ini harus tetap kestempel
+versi yang berlaku 26 Mei. Kalau pakai "yang aktif sekarang", angkanya dihitung
+aturan lama tapi kecatat aturan baru — dan itu **lebih menyesatkan daripada nggak
+distempel sama sekali**.
+
+`null` cuma buat baris yang udah ada sebelum fitur ini dipasang. Itu jujur: versinya
+beneran nggak diketahui, dan nebak lebih buruk.
+
+> **Semua perubahan versi rumus kecatat di `audit_logs`** (§11) — Keputusan 5 minta
+> itu eksplisit. Termasuk penutupan rentang versi lama, jadi satu operasi "terbitin
+> versi baru" ninggalin jejak lengkap: siapa, kapan, versi mana yang ditutup.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

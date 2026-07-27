@@ -20,10 +20,23 @@ Untuk: Raihan (full stack mobile/desktop) · Arkaan (full stack mobile/desktop)
 > queue, command. `GET /audit-logs` + ekspor CSV, admin doang & baca-saja; baris
 > audit nggak bisa diubah/dihapus lewat model. Kontrak: [`kontrak-api.md` §11](kontrak-api.md).
 >
+> ✅ **27 Jul: fondasi Keputusan 5 juga udah jadi.** `formulas` + `formula_versions`
+> + validasi rentang berlaku non-overlap, dan **tiap hasil hitung distempel
+> `formula_version_id`** dari versi yang berlaku di tanggal kalibrasinya. Itu bagian
+> yang bikin rumus boleh diubah nanti: tanpa stempel, ngubah rumus bikin seluruh
+> riwayat kalibrasi nggak bisa dipertanggungjawabkan. Perubahan versi ikut kecatat di
+> `audit_logs`. Kontrak: [`kontrak-api.md` §12](kontrak-api.md).
+>
+> Yang **belum** dari Keputusan 5: **evaluator ekspresinya**. Jadi ngubah versi rumus
+> belum ngubah cara ngitungnya — versi 1 dicatat `sumber: "kode"` (dihitung
+> `GumCalculator`), dan `sumber: "database"` ditolak `422` selama evaluatornya belum
+> ada. Itu sengaja: versi yang tercatat "dihitung dari database" padahal angkanya
+> tetap dari kode itu riwayat yang bohong. Belum ada juga fitur "uji coba sebelum
+> disimpan" yang diminta di bawah.
+>
 > Yang **tetap berlaku** dan belum dikerjain: sisa Keputusan 4 (layar "Kelola Data"
-> di desktop, perkakas perawatan, ekspor CSV per tabel — fondasi audit-nya udah
-> ada), Keputusan 5 (rumus berversi), Keputusan 6 (tiga jalur impor data lama), dan
-> batas peran AI. Status terverifikasi tiap item ada di
+> di desktop, perkakas perawatan, ekspor CSV per tabel), sisa Keputusan 5 (evaluator
+> + uji coba), Keputusan 6 (tiga jalur impor data lama), dan batas peran AI. Status terverifikasi tiap item ada di
 > [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md).
 
 ## Yang harus dicapai
