@@ -211,7 +211,41 @@ Minta ditambah di objek `sertifikat`:
 
 Mobile yang render QR-nya di layar (nggak perlu backend kirim gambar).
 
-### 3c. Tanda tangan & Manajer Teknis
+### 3c. Tanda tangan & Manajer Teknis — ✅ **UDAH JADI (27 Jul)**
+
+> Kontrak lengkap: [`kontrak-api.md` §14](kontrak-api.md). Empat endpoint di
+> `/api/organization/tanda-tangan` (unggah / pratinjau / hapus / setel posisi),
+> **admin doang**, dan gambarnya kecetak di footer PDF sertifikat.
+>
+> **Pertanyaan role di §1 kejawab: "Manajer Teknis" BUKAN role keempat.** Dia
+> atribut tingkat organisasi (`settings.penandatangan_nama` +
+> `settings.penandatangan_jabatan`), bukan role dan bukan atribut teknisi.
+> Alasannya: yang tanda tangan itu penanggung jawab teknis lab — satu orang buat
+> semua sertifikat — dan dia belum tentu orang yang mencet tombol setujui. Bikin
+> dia role keempat berarti tiap sertifikat harus nunjuk user, padahal jawabannya
+> selalu sama. Jadi **nggak ada layar baru yang perlu dibikin buat role ini.**
+>
+> **Satu hal yang beda dari permintaan di bawah: `ttd_url` NGGAK ADA, dan nggak
+> akan pernah ada.** Gambarnya sengaja disimpen di disk **privat** — gambar tanda
+> tangan yang URL-nya bisa diakses siapa pun berarti siapa pun bisa nempelin ke
+> dokumen palsu. Gantinya:
+>
+> ```json
+> "punya_tanda_tangan": true,
+> "tanda_tangan": { "geser_x_mm": -8.5, "geser_y_mm": 4, "lebar_mm": 42 }
+> ```
+>
+> Buat nampilin gambarnya, `GET /api/organization/tanda-tangan` nge-stream PNG-nya
+> dengan pengecekan hak akses. Di Flutter itu berarti **`Image.memory` dari respons
+> `http`, bukan `Image.network`** — `Image.network` nggak bawa header
+> `Authorization`, jadi bakal gagal.
+>
+> Nama & jabatan yang kecetak tetap dari `settings.penandatangan_*` yang udah ada
+> sejak §8, jadi bagian itu nggak berubah.
+>
+> **Kalau gambarnya belum diunggah, sertifikat tetap terbit** — nyetak garis + nama
+> + jabatan dengan ruang kosong buat tanda tangan basah. Itu state yang sah, bukan
+> sertifikat rusak, dan tata letaknya sama persis kayak yang ada gambarnya.
 
 Sertifikat contoh ditandatangani **Alex Misramto, Technical Manager**. Sekarang
 nggak ada tempat buat nyimpen itu.
