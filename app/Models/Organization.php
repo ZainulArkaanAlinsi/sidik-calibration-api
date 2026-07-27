@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +14,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'nama', 'alamat', 'telepon', 'email', 'no_akreditasi', 'standar_akreditasi',
-    'akreditasi_mulai', 'akreditasi_berakhir', 'logo_path', 'settings',
+    'akreditasi_mulai', 'akreditasi_berakhir', 'logo_path', 'tanda_tangan_path', 'settings',
 ])]
 class Organization extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Diaudit, HasFactory, SoftDeletes;
 
     /** Default ambang peringatan H- kalau org belum ngatur sendiri (± sebulan). */
     public const DEFAULT_AMBANG_HARI = 30;
@@ -74,6 +75,67 @@ class Organization extends Model
         return is_numeric($nilai) && (int) $nilai > 0
             ? (int) $nilai
             : self::DEFAULT_AMBANG_HARI;
+    }
+
+    /**
+     * Kunci setelan posisi & ukuran tanda tangan di sertifikat.
+     *
+     * Posisinya RELATIF ke blok tanda tangan, bukan koordinat absolut di halaman.
+     * Ini keputusan yang penting: tinggi isi sertifikat BERUBAH-UBAH — jumlah titik
+     * ukur dan jumlah standar yang dipakai beda tiap sesi, jadi blok tanda tangannya
+     * naik-turun. Koordinat absolut yang pas di satu sertifikat bakal nimpa tabel di
+     * sertifikat lain, dan itu baru ketahuan sesudah PDF-nya nyampe pelanggan.
+     */
+    public const KEY_TTD_GESER_X = 'ttd_geser_x_mm';
+
+    /** POSITIF = naik. Lihat catatan arah di `resources/views/sertifikat/pdf.blade.php`. */
+    public const KEY_TTD_GESER_Y = 'ttd_geser_y_mm';
+
+    public const KEY_TTD_LEBAR = 'ttd_lebar_mm';
+
+    /** Lebar cetak bawaan tanda tangan (mm) — sekitar selebar kolom tanda tangan. */
+    public const DEFAULT_TTD_LEBAR_MM = 35;
+
+    /** Batas geseran (mm) — di luar ini tanda tangannya keluar dari bloknya. */
+    public const MAKS_TTD_GESER_MM = 40;
+
+    /** Batas lebar cetak (mm). Di bawah 10 nggak kebaca, di atas 80 nutupin teks. */
+    public const MIN_TTD_LEBAR_MM = 10;
+
+    public const MAKS_TTD_LEBAR_MM = 80;
+
+    /**
+     * Setelan tanda tangan yang berlaku, udah dibersihin & dibatasin.
+     *
+     * Dibatesin di sini (bukan cuma di validasi request) karena nilainya bisa masuk
+     * lewat `PUT /organization` yang nerima `settings` sebagai array bebas, dan lewat
+     * panel Filament. Nilai ngawur di sini bikin tanda tangan kecetak di luar
+     * halaman — dan yang lihat cuma tahu sertifikatnya rusak, bukan kenapa.
+     *
+     * @return array{geser_x_mm: float, geser_y_mm: float, lebar_mm: float}
+     */
+    public function pengaturanTandaTangan(): array
+    {
+        $angka = function (string $kunci, float $bawaan, float $min, float $maks): float {
+            $nilai = $this->settings[$kunci] ?? null;
+
+            if (! is_numeric($nilai)) {
+                return $bawaan;
+            }
+
+            return max($min, min($maks, (float) $nilai));
+        };
+
+        return [
+            'geser_x_mm' => $angka(self::KEY_TTD_GESER_X, 0, -self::MAKS_TTD_GESER_MM, self::MAKS_TTD_GESER_MM),
+            'geser_y_mm' => $angka(self::KEY_TTD_GESER_Y, 0, -self::MAKS_TTD_GESER_MM, self::MAKS_TTD_GESER_MM),
+            'lebar_mm' => $angka(
+                self::KEY_TTD_LEBAR,
+                self::DEFAULT_TTD_LEBAR_MM,
+                self::MIN_TTD_LEBAR_MM,
+                self::MAKS_TTD_LEBAR_MM,
+            ),
+        ];
     }
 
     /**
