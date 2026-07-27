@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
+use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
@@ -272,6 +273,19 @@ Route::middleware('auth:sanctum')->group(function () {
         // Import Excel buat masa transisi (spesifikasi poin 12C).
         Route::get('/imports/format', [ImportController::class, 'format']);
         Route::post('/imports/excel', [ImportController::class, 'excel']);
+
+        // Rumus kalibrasi berversi (Keputusan 5). Admin doang — salah ngetik di
+        // sini ngubah angka yang masuk sertifikat terakreditasi.
+        Route::get('/formulas', [FormulaController::class, 'index']);
+        Route::get('/formulas/{formula}/versions', [FormulaController::class, 'versions']);
+        // "Sesi tanggal 26 Mei dihitung pakai aturan yang mana?" — pertanyaan yang
+        // bikin fitur ini ada, dan beda dari "aturan apa yang dipakai sekarang".
+        Route::get('/formulas/{formula}/versi-berlaku', [FormulaController::class, 'versiPadaTanggal']);
+        // Terbitin versi baru = bikin versinya + tutup rentang versi sebelumnya,
+        // dalam SATU transaksi. Kalau dipisah, ada jeda di mana dua versi
+        // sama-sama berlaku buat satu tanggal.
+        Route::post('/formulas/{formula}/versions', [FormulaController::class, 'storeVersion']);
+        Route::patch('/formula-versions/{formulaVersion}', [FormulaController::class, 'updateVersion']);
 
         // Riwayat perubahan data (Keputusan 4) — baca-saja, admin doang.
         // Nggak ada POST/PUT/DELETE: baris audit lahir dari perubahan datanya
