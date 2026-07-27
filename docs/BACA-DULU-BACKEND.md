@@ -128,6 +128,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
 | **Riwayat perubahan data (audit)** | `GET /audit-logs` + `/audit-logs/export` (CSV). Admin doang & **baca-saja**. Kecatat OTOMATIS dari model event, jadi semua jalur ikut: API, panel Filament, queue, command. `password` disensor. Lihat [`kontrak-api.md` §11](kontrak-api.md) |
 | **Rumus kalibrasi berversi** | `GET /formulas`, `/{id}/versions`, `/{id}/versi-berlaku?tanggal=`, `POST /{id}/versions`, `PATCH /formula-versions/{id}`. Admin doang. Hasil hitung distempel `formula_version_id` dari versi yang berlaku di **tanggal kalibrasi**. ⚠️ **Fondasi** — evaluator ekspresinya belum ada, jadi ngubah versi belum ngubah cara hitung. Lihat [`kontrak-api.md` §12](kontrak-api.md) |
+| **Kirim sertifikat ke email pelanggan** | `POST /certificates/{id}/kirim-email` (body `{ke:[], cc:[]}`) + `GET /certificates/{id}/riwayat-email`. Admin doang, PDF dilampirkan, tiap percobaan (termasuk gagal) tercatat. ⚠️ Butuh `MAIL_*` diisi di `.env` produksi — sekarang `MAIL_MAILER=log`. Lihat [`kontrak-api.md` §13](kontrak-api.md) |
 
 ---
 
@@ -174,7 +175,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
 | `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |

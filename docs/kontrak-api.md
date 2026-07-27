@@ -1452,6 +1452,112 @@ beneran nggak diketahui, dan nebak lebih buruk.
 
 ---
 
+## 13. Kirim Sertifikat ke Email Pelanggan (live 27 Jul)
+
+**Admin doang.** Nutup `permintaan-endpoint-fase-2.md` §3d.
+
+Kenapa di backend dan bukan di mobile — dua alasan dari permintaannya:
+alamat pengirim harus domain lab (bukan Gmail teknisi), dan **pengirimannya wajib
+tercatat buat audit**: siapa ngirim sertifikat ke siapa, kapan.
+
+### `POST /api/certificates/{id}/kirim-email`
+
+```json
+{ "ke": ["pic@pelanggan.co.id"], "cc": ["manajer@pelanggan.co.id"] }
+```
+
+| Field | Aturan |
+|---|---|
+| `ke` | **wajib**, array, 1–10 alamat, format email valid |
+| `cc` | opsional, array, maks 10 |
+
+```json
+{
+  "message": "Sertifikat terkirim ke pic@pelanggan.co.id.",
+  "data": {
+    "id": 7,
+    "ke": ["pic@pelanggan.co.id"],
+    "cc": ["manajer@pelanggan.co.id"],
+    "status": "terkirim",
+    "error": null,
+    "dikirim_oleh": { "id": 1, "nama": "Alex Misramto" },
+    "dikirim_pada": "2026-07-27T04:31:24Z"
+  }
+}
+```
+
+- **PDF-nya DILAMPIRKAN**, bukan dikirim sebagai tautan unduh. Tautan ke disk privat
+  butuh login dan pelanggan nggak punya akun; tautan publik berarti sertifikat bisa
+  diakses siapa pun yang dapat URL-nya. Nama lampirannya `Sertifikat-{nomor}.pdf`.
+- **Dikirim SINKRON**, bukan lewat queue. Admin yang mencet "Kirim" perlu tahu
+  hasilnya saat itu juga — kiriman yang di-queue lalu gagal diam-diam berarti
+  pelanggan nggak pernah nerima dan nggak ada yang sadar sampai ditanya. Jadi
+  responsnya baru balik sesudah email-nya beneran keluar.
+- Alamat yang dobel digabung otomatis.
+- Throttle **`20/menit`** — ini ngirim dokumen resmi ke luar, bukan baca data.
+
+**Status yang mungkin:**
+
+| Kode | Kapan |
+|---|---|
+| `200` | Terkirim |
+| `502` | **Gagal kirim** (SMTP nolak/mati). Percobaannya **tetap tercatat**, dan `data.error` bawa pesan aslinya |
+| `422` | Sertifikat belum terbit · sertifikat belum punya PDF · PDF-nya raib dari penyimpanan · alamat nggak valid · lebih dari 10 alamat |
+| `403` | Teknisi / viewer |
+| `404` | Sertifikat lab lain |
+
+> **`422`-nya dipisah per sebab.** "Belum terbit" dan "belum punya PDF" itu dua
+> masalah beda dengan dua tindakan beda, jadi pesannya nggak digabung — pesan
+> gabungan bikin admin baca "harus terbit & punya PDF, yang ini statusnya `terbit`"
+> dan nyangka backend-nya ngaco.
+
+### `GET /api/certificates/{id}/riwayat-email`
+
+Riwayat pengiriman sertifikat itu, **terbaru dulu**. Bentuk barisnya sama kayak
+`data` di atas.
+
+- **Semua percobaan tercatat, termasuk yang GAGAL.** "Kami udah nyoba kirim tapi
+  alamatnya nolak" itu justru informasi yang dicari waktu pelanggan ngaku nggak
+  nerima. Kalau cuma yang sukses dicatat, riwayatnya bohong lewat kelalaian.
+- **Riwayatnya tabel terpisah, bukan kolom `dikirim_pada` di sertifikat.** Kirim
+  ulang itu kejadian normal (pelanggan kehilangan filenya, ganti PIC, alamatnya
+  salah ketik), dan kolom tunggal cuma nyimpen yang terakhir — "kapan kita ngirim ke
+  PIC yang lama" jadi nggak bisa dijawab.
+- Barisnya **nggak bisa diubah** (ditolak di level model), sama alasannya kayak
+  `audit_logs`.
+
+### Soal alamat pengirim — dan kenapa `From`-nya bukan email lab
+
+Permintaannya: *"alamat pengirim harus domain lab (bukan Gmail teknisi)."* Itu
+dipenuhi lewat **`MAIL_FROM_ADDRESS` di `.env`**, yang disetel ke domain lab.
+
+Email organisasi (`organization.email`) ditaruh di **`Reply-To`**, **bukan** `From`.
+Ini bukan kelalaian: `From` yang domainnya beda dari domain yang beneran ngirim bikin
+**SPF/DKIM gagal**, dan email-nya masuk spam atau ditolak server penerima. Jadi
+`From` = domain pengirim yang sah, dan balasan pelanggan tetap nyampe ke lab lewat
+`Reply-To`.
+
+> ### Yang masih perlu dari sisi operasional
+>
+> Kodenya **selesai dan udah diuji**, termasuk lampiran PDF-nya. Yang belum: **isi
+> `MAIL_*` di `.env` produksi**. Sekarang `MAIL_MAILER=log`, jadi email-nya kerender
+> lengkap tapi masuk `storage/logs/laravel.log`, bukan ke internet — dan itu memang
+> perilaku yang bener buat dev.
+>
+> Begitu SMTP-nya diisi, **nggak ada kode yang perlu diubah**. Yang perlu disetel:
+>
+> ```
+> MAIL_MAILER=smtp
+> MAIL_HOST=…
+> MAIL_PORT=587
+> MAIL_USERNAME=…
+> MAIL_PASSWORD=…
+> MAIL_FROM_ADDRESS="sertifikat@domain-lab.com"   ← WAJIB domain lab
+> MAIL_FROM_NAME="PT Sidik Kalibrasi"
+> ```
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |
