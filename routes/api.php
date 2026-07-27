@@ -287,6 +287,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
         Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
+        // Pindahin folder ke induk lain. Kepisah dari `update()` yang cuma rename:
+        // yang ini nyentuh struktur pohonnya, dan struktur yang rusak bikin folder
+        // ilang dari layar tanpa kehapus. Folder sistem ditolak — lihat handler-nya.
+        Route::put('/arsip/folders/{folder}/pindah', [FolderController::class, 'pindah']);
+        // Pindahin berkas sertifikat, dikunci pakai id SESI KALIBRASI (bukan id
+        // folder_files) — itu yang dipegang mobile di layar arsip.
+        Route::put('/arsip/berkas/{calibration}/pindah', [FolderFileController::class, 'pindahBerkasSesi']);
         Route::post('/folder-files', [FolderFileController::class, 'store']);
         Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
         Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);

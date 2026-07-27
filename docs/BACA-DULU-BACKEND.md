@@ -121,6 +121,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
 | **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
+| **Pindah folder & berkas arsip** | `PUT /arsip/folders/{id}/pindah` (body `{parent_id}`) & `PUT /arsip/berkas/{sesiId}/pindah` (body `{folder_id}`). Folder `sistem` ditolak `422`; pindah ke keturunan sendiri ditolak `422`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
 | **Laporan kalibrasi + export** | `GET /laporan/kalibrasi` (dipaginasi + `ringkasan`) & `GET /laporan/kalibrasi/export?format=pdf\|xlsx`. Semua role; teknisi cuma dapat pekerjaannya sendiri. Lihat [`kontrak-api.md` §10](kontrak-api.md) |
 | **Masa berlaku sertifikat ditentukan admin** | `berlaku_sampai` (opsional) di `POST /calibrations/{id}/approve`. Kalau nggak dikirim → `settings.masa_berlaku_sertifikat_bulan`, default 12. Dihitung dari **tanggal kalibrasi**, bukan tanggal terbit. Lihat [`kontrak-api.md` §5](kontrak-api.md) |
 | **Tanggal keluar sebagai tanggal polos** | `"2024-05-30"`, bukan lagi `"2024-05-29T17:00:00Z"`. Kena semua field bercast `date`; `created_at` dll tetap ISO. Daftar lengkap + dampaknya di [`kontrak-api.md` §4](kontrak-api.md) |
@@ -180,20 +181,31 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
 | **Evaluator ekspresi rumus** | arsitektur-desktop §Keputusan 5 | Ngubah versi rumus **belum ngubah cara hitung**. Pencatatan versi + stempel `formula_version_id` di hasil hitung udah jadi 27 Jul (lihat §1); yang belum: mesin yang ngeksekusi ekspresi dari DB, plus uji-coba-sebelum-disimpan. `audit_logs` (Keputusan 4) juga udah jadi |
 
-### Tiga operasi arsip yang masih kurang
+### Tiga operasi arsip — ✅ SEMUANYA UDAH JADI (27 Jul)
 
 `permintaan-endpoint-fase-2.md` §4 bilang bagian ini "UDAH DIBIKIN, JANGAN
-DIULANG". **Itu salah** — yang bener `permintaan-backend-2026-07-24.md` §2b.
-Yang ada cuma alias baca/rename/hapus; tiga ini belum:
+DIULANG" waktu belum ada. **Itu salah** — yang bener `permintaan-backend-2026-07-24.md`
+§2b. Sekarang ketiganya beneran ada:
 
 | Mobile manggil | Status |
 |---|---|
 | `GET /arsip/perusahaan/{customerId}/folder` (find-or-create folder akar PT) | ✅ **jadi 25 Jul** — lihat §1 & `kontrak-api.md` §8a |
-| `PUT /arsip/folders/{id}/pindah` | ❌ sekunder |
-| `PUT /arsip/berkas/{sesiId}/pindah` | ❌ sekunder |
+| `PUT /arsip/folders/{id}/pindah` | ✅ **jadi 27 Jul** — body `{parent_id}`; `null` = jadiin akar |
+| `PUT /arsip/berkas/{sesiId}/pindah` | ✅ **jadi 27 Jul** — body `{folder_id}`; dikunci **id sesi**, bukan id `folder_files` |
 
-Jadi tinggal dua, dua-duanya sekunder: browse/rename/hapus **dan** tap PT udah
-bisa disambungin sekarang.
+**Dua batasan yang perlu dipegang frontend:**
+
+1. **Folder `sistem` nggak bisa dipindah** → `422`. Alasannya sama kayak larangan
+   rename yang udah ada: `FolderOrganizer` nemuin folder akar PT dari
+   `parent_id = null` dan folder tahun dari `parent_id = akar->id`. Begitu dipindah,
+   kriterianya nggak nyocok lagi, sertifikat berikutnya bikin folder **baru**, dan
+   arsip satu PT kepecah dua. Jadi di UI, folder `sistem` jangan dibikin bisa
+   di-drag.
+2. **Folder nggak bisa dipindah ke dalam keturunannya sendiri** → `422`. Kalau
+   lolos, folder-nya lepas dari pohon dan **ilang dari semua layar** tanpa error —
+   barisnya masih ada di DB tapi nggak bisa dijangkau lagi.
+
+Rinciannya di [`kontrak-api.md` §8a](kontrak-api.md).
 
 **Satu hal yang ketemu waktu ngerjain ini — dan udah ditutup:** teknisi nggak
 punya jalan buat milih pelanggan **baru** di form Alat. `kontrak-api.md` §8
