@@ -64,7 +64,22 @@
         table.ttd td.qr { width: 110px; text-align: center; }
         table.ttd td.qr img { width: 92px; height: 92px; }
         table.ttd td.qr .ket { font-size: 7.5px; color: #666; margin-top: 2px; }
-        .ttd .garis { margin-top: 44px; border-top: 1px solid #333; padding-top: 3px; }
+        /*
+          `margin-top` DIBUANG dari `.garis` dan dipindah jadi tinggi `.ruang-ttd`
+          di bawah. Bukan ditambah — kalau dua-duanya ada, jaraknya jadi 88px dan
+          tata letak semua sertifikat yang udah pernah dicetak ikut berubah.
+        */
+        .ttd .garis { border-top: 1px solid #333; padding-top: 3px; }
+
+        /*
+          Ruang tanda tangan. Tingginya DIPATOK 44px — persis `margin-top` yang dulu
+          ada di `.garis`, jadi sertifikat tanpa gambar TTD tata letaknya sama persis
+          kayak sebelum fitur ini ada. Dan tingginya nggak ikut gambar: kalau ikut,
+          dua sertifikat dengan format resmi yang sama jadi beda tata letak cuma
+          gara-gara yang satu diunggahin TTD.
+        */
+        .ttd .ruang-ttd { height: 44px; position: relative; }
+        .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
         .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 18px; border-top: 1px solid #ccc; padding-top: 5px; }
     </style>
@@ -197,6 +212,42 @@
             <td></td>
             <td style="width: 38%;">
                 <div>Issuance Date: {{ $tgl($footer['issuance_date'] ?? null) }}</div>
+
+                {{--
+                  Ruang tanda tangan. Tingginya dipatok di CSS, jadi tata letaknya
+                  SAMA entah gambar TTD-nya ada atau nggak — dua sertifikat dengan
+                  format resmi yang sama nggak boleh beda tata letak cuma gara-gara
+                  yang satu diunggahin TTD.
+
+                  Kalau `$tandaTangan` null, yang tercetak ruang kosong buat tanda
+                  tangan basah. Itu state yang SAH, bukan kekurangan.
+
+                  Geserannya relatif ke ruang ini, bukan koordinat absolut halaman:
+                  tinggi isi sertifikat berubah-ubah (jumlah titik ukur & standar
+                  beda tiap sesi), jadi koordinat absolut yang pas di satu sertifikat
+                  bakal nimpa tabel di sertifikat lain.
+                --}}
+                <div class="ruang-ttd">
+                    @if (! empty($tandaTangan))
+                        {{--
+                          Arah `geser_y_mm`: POSITIF = naik. Gambarnya di-anchor
+                          `bottom: 0`, dan nambah `bottom` mendorongnya ke ATAS —
+                          jadi nilainya dipakai apa adanya, JANGAN dinegate. Versi
+                          pertama file ini nge-negate, dan efeknya arah drag di UI
+                          kebalik: geser ke atas, tanda tangannya turun.
+                        --}}
+                        <img
+                            src="{{ $tandaTangan }}"
+                            alt="Tanda tangan"
+                            style="
+                                width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
+                                bottom: {{ $posisiTtd['geser_y_mm'] ?? 0 }}mm;
+                            "
+                        >
+                    @endif
+                </div>
+
                 <div class="garis">
                     <strong>{{ $isi($footer['penandatangan'] ?? null) }}</strong><br>
                     {{ $isi($footer['jabatan'] ?? null) }}

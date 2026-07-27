@@ -39,6 +39,14 @@ class OrganizationResource extends JsonResource
                 ? Storage::disk('public')->url($this->logo_path)
                 : null,
 
+            // Tanda tangan SENGAJA nggak dikasih URL langsung — file-nya di disk
+            // PRIVAT, karena gambar tanda tangan yang URL-nya bisa diakses siapa pun
+            // berarti siapa pun bisa nempelin ke dokumen palsu. Yang dikirim cuma
+            // penandanya; pratinjaunya lewat `GET /organization/tanda-tangan` yang
+            // ngecek hak akses.
+            'punya_tanda_tangan' => filled($this->tanda_tangan_path),
+            'tanda_tangan' => $this->pengaturanTandaTangan(),
+
             'settings' => $this->settings,
         ];
     }
