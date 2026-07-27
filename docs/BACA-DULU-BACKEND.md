@@ -125,6 +125,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | **Laporan kalibrasi + export** | `GET /laporan/kalibrasi` (dipaginasi + `ringkasan`) & `GET /laporan/kalibrasi/export?format=pdf\|xlsx`. Semua role; teknisi cuma dapat pekerjaannya sendiri. Lihat [`kontrak-api.md` §10](kontrak-api.md) |
 | **Masa berlaku sertifikat ditentukan admin** | `berlaku_sampai` (opsional) di `POST /calibrations/{id}/approve`. Kalau nggak dikirim → `settings.masa_berlaku_sertifikat_bulan`, default 12. Dihitung dari **tanggal kalibrasi**, bukan tanggal terbit. Lihat [`kontrak-api.md` §5](kontrak-api.md) |
 | **Tanggal keluar sebagai tanggal polos** | `"2024-05-30"`, bukan lagi `"2024-05-29T17:00:00Z"`. Kena semua field bercast `date`; `created_at` dll tetap ISO. Daftar lengkap + dampaknya di [`kontrak-api.md` §4](kontrak-api.md) |
+| **Matriks peran** | `GET /me/permissions` — `boleh[]` (daftar putih nama izin) + `batasan{}` (`sendiri`/`semua`). Dihitung dari middleware rute, jadi nggak bisa basi. Admin 44 · teknisi 23 · viewer 15. Lihat [`kontrak-api.md` §2](kontrak-api.md) |
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
 
 ---
@@ -173,7 +174,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
 | `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
-| `GET /me/permissions` | fase-2 §1 | Tombol muncul terus ditolak 403. Sementara pakai role dari `/me` |
 | `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |

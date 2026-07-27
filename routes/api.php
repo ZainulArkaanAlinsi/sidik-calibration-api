@@ -60,6 +60,10 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    // Izin pemanggil buat nyembunyiin tombol yang bakal ditolak (fase-2 §1).
+    // Jawabannya diturunkan dari middleware `role:` di rute-rute di bawah, jadi
+    // nggak bisa beda dari penjagaan yang beneran jalan. Lihat `MatriksIzin`.
+    Route::get('/me/permissions', [AuthController::class, 'permissions']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Otorisasi channel privat buat realtime sync (Echo authEndpoint di mobile &
