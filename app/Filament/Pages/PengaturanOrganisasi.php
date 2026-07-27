@@ -136,6 +136,55 @@ class PengaturanOrganisasi extends Page
                             ->maxSize(2048)
                             ->helperText('PNG/JPG, maksimal 2 MB.'),
                     ]),
+
+                Section::make('Tanda tangan')
+                    ->description(
+                        'Dicetak di atas garis tanda tangan. Posisinya disetel SEKALI di sini '
+                        .'dan berlaku buat semua sertifikat — sertifikat yang udah terbit nggak '
+                        .'bisa diedit, karena itu dokumen terkendali.',
+                    )
+                    ->schema([
+                        FileUpload::make('tanda_tangan_path')
+                            ->label('Gambar tanda tangan')
+                            ->image()
+                            // Disk `local` (PRIVAT), beda dari logo. Gambar tanda tangan
+                            // yang URL-nya bisa diakses siapa pun berarti siapa pun bisa
+                            // nempelin ke dokumen palsu.
+                            ->disk('local')
+                            ->directory('tanda-tangan')
+                            ->visibility('private')
+                            // PNG doang: JPG nggak punya latar transparan, jadi bakal
+                            // kecetak sebagai kotak putih yang nutupin garis & nama.
+                            ->acceptedFileTypes(['image/png'])
+                            ->maxSize(2048)
+                            ->helperText('PNG dengan latar transparan, maksimal 2 MB. JPG nggak bisa — '
+                                .'nggak punya latar transparan, jadi kecetak sebagai kotak putih.'),
+
+                        TextInput::make('settings.'.Organization::KEY_TTD_LEBAR)
+                            ->label('Lebar cetak (mm)')
+                            ->numeric()
+                            ->minValue(Organization::MIN_TTD_LEBAR_MM)
+                            ->maxValue(Organization::MAKS_TTD_LEBAR_MM)
+                            ->placeholder(Organization::DEFAULT_TTD_LEBAR_MM)
+                            ->helperText('Tingginya ngikut, rasionya dijaga.'),
+
+                        TextInput::make('settings.'.Organization::KEY_TTD_GESER_X)
+                            ->label('Geser horizontal (mm)')
+                            ->numeric()
+                            ->minValue(-Organization::MAKS_TTD_GESER_MM)
+                            ->maxValue(Organization::MAKS_TTD_GESER_MM)
+                            ->placeholder(0)
+                            ->helperText('Negatif = ke kiri.'),
+
+                        TextInput::make('settings.'.Organization::KEY_TTD_GESER_Y)
+                            ->label('Geser vertikal (mm)')
+                            ->numeric()
+                            ->minValue(-Organization::MAKS_TTD_GESER_MM)
+                            ->maxValue(Organization::MAKS_TTD_GESER_MM)
+                            ->placeholder(0)
+                            ->helperText('POSITIF = naik.'),
+                    ])
+                    ->columns(2),
             ]);
     }
 

@@ -237,6 +237,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/organization/logo', [OrganizationController::class, 'uploadLogo']);
         Route::delete('/organization/logo', [OrganizationController::class, 'deleteLogo']);
 
+        // Tanda tangan penanda tangan sertifikat (fase-2 §3c). Admin doang —
+        // teknisi & viewer nggak boleh nyentuh sama sekali.
+        //
+        // File-nya di disk PRIVAT (beda dari logo): gambar tanda tangan yang URL-nya
+        // bisa diakses siapa pun berarti siapa pun bisa nempelin ke dokumen palsu.
+        // Makanya pratinjaunya lewat endpoint yang ngecek hak akses, bukan URL storage.
+        Route::post('/organization/tanda-tangan', [OrganizationController::class, 'uploadTandaTangan']);
+        Route::get('/organization/tanda-tangan', [OrganizationController::class, 'previewTandaTangan']);
+        Route::delete('/organization/tanda-tangan', [OrganizationController::class, 'deleteTandaTangan']);
+        // Posisi & ukuran cetaknya — ini yang bakal dipakai UI drag-and-drop.
+        // Disimpen SEKALI di tingkat template, bukan per sertifikat: sertifikat yang
+        // udah terbit itu dokumen terkendali dan nggak boleh bisa diedit.
+        Route::patch('/organization/tanda-tangan/posisi', [OrganizationController::class, 'updatePosisiTandaTangan']);
+
         // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
         // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di
         // organization.settings.reminder_hari_sebelum (default 30 hari).
