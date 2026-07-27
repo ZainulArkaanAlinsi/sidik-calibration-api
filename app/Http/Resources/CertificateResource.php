@@ -38,6 +38,11 @@ class CertificateResource extends JsonResource
             'qr_token' => $this->qr_token,
             'qr_payload' => $this->qr_payload,
 
+            // Siapa yang tanda tangan sertifikat ini (fase-2 §3c). Beku dari
+            // snapshot, bukan dari pengaturan organisasi yang berlaku sekarang —
+            // alasannya di `Certificate::penandaTangan()`. `null` kalau belum terbit.
+            'penanda_tangan' => $this->penandaTangan(),
+
             // Cuma ada kalau PDF-nya emang udah jadi. Kalau `gagal`/`menunggu_generate`,
             // null — mobile munculin tombol retry, bukan tombol unduh.
             'pdf_url' => $this->status === Certificate::STATUS_TERBIT
