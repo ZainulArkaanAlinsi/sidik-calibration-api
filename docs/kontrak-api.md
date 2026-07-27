@@ -1214,6 +1214,109 @@ yang kedownload isinya sama dengan yang dilihat di layar.
 
 ---
 
+## 11. Riwayat Perubahan Data / Audit (live 27 Jul)
+
+**Admin doang, dan baca-saja.** Nggak ada `POST`/`PUT`/`DELETE` — baris audit lahir
+dari perubahan datanya sendiri, bukan dari request. Riwayat yang bisa ditulis tangan
+berhenti jadi bukti.
+
+Kenapa ini ada: ISO/IEC 17025 minta rekaman bisa ditelusuri — siapa ngubah apa,
+kapan, dari nilai berapa ke berapa. Menu "Kelola Data" di desktop ngasih admin
+keleluasaan kayak phpMyAdmin, dan phpMyAdmin nggak nyatet apa pun
+(`arsitektur-desktop-database.md` Keputusan 4).
+
+### `GET /api/audit-logs`
+
+```
+GET /api/audit-logs?entity_type=standards&entity_id=1&action=diubah
+    &changed_by=5&dari=2026-07-01&sampai=2026-07-31&page=1
+```
+
+| Penyaring | Isi |
+|---|---|
+| `entity_type` | **nama TABEL**, mis. `standards`, `equipment`, `calibration_sessions` |
+| `entity_id` | id baris yang diubah |
+| `action` | `dibikin` · `diubah` · `dihapus` · `dipulihkan` (lain → `422`) |
+| `changed_by` | id user pelakunya |
+| `dari` / `sampai` | `YYYY-MM-DD`, **dua ujungnya inklusif** — aturan yang sama kayak `/laporan/kalibrasi` |
+
+```json
+{
+  "data": [
+    {
+      "id": 812,
+      "entitas": { "tipe": "standards", "id": 1 },
+      "aksi": "diubah",
+      "perubahan": {
+        "nama": { "lama": "TH-1", "baru": "TH-1 (kalibrasi ulang)" }
+      },
+      "pelaku": { "id": 1, "nama": "Alex Misramto", "role": "admin" },
+      "oleh_sistem": false,
+      "catatan": null,
+      "dicatat_pada": "2026-07-27T10:17:43Z"
+    }
+  ],
+  "penyaring": { "entity_type": "standards", "entity_id": 1 },
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 25, "total": 1 }
+}
+```
+
+- **`entity_type` itu nama TABEL, bukan nama kelas PHP.** Nama kelas bisa berubah
+  kalau kodenya di-refactor, dan riwayat lama nggak boleh ikut basi gara-gara itu.
+- **`perubahan` disusun per kolom** (`lama` → `baru`), bukan dua objek utuh yang
+  harus dibandingin sendiri di layar. Yang dicari asesor "apa yang berubah", bukan
+  seluruh isi baris.
+- **Cuma kolom yang BERUBAH yang kecatat.** Snapshot penuh tiap update bikin
+  riwayatnya nggak kebaca manusia. `updated_at` sengaja nggak ikut — dia berubah di
+  setiap update, jadi kalau ikut, tiap baris punya "perubahan" palsu.
+- **`aksi: "dihapus"` / `"dipulihkan"` `perubahan`-nya kosong `{}`** — yang penting
+  di situ kejadiannya, bukan nilainya. Isi barisnya masih bisa dilihat dari riwayat
+  `dibikin`/`diubah` sebelumnya.
+- **`oleh_sistem: true` (dan `pelaku: null`)** artinya perubahannya BUKAN dari orang
+  yang login — job di queue (`GenerateCertificate`), command artisan, atau seeder.
+  Itu bukan data hilang; dibiarin `null` lebih jujur daripada dituduhin ke user acak.
+- Urutannya **terbaru dulu**, 25 baris/halaman.
+
+> ### `password` nggak pernah masuk riwayat
+>
+> Nilainya diganti `"[disensor]"`, tapi **nama kolomnya tetap kecatat** — jadi masih
+> kelihatan "password diubah", tanpa nyimpen isinya. Alasannya bukan kerapian:
+> `password` itu hash, dan hash yang kesimpen di tabel lain berarti satu kebocoran
+> jadi dua. Sama perlakuannya buat `remember_token`.
+
+### `GET /api/audit-logs/export` — CSV
+
+Penyaringnya **sama persis** kayak `index`. Balikannya file CSV (`text/csv`,
+`Content-Disposition: attachment`), nama `Riwayat-Perubahan-YYYY-MM-DD.csv`.
+
+```
+Waktu,Entitas,ID,Aksi,Pelaku,Role,Kolom,Nilai Lama,Nilai Baru,Catatan
+2026-07-27 10:17:43,standards,1,diubah,Alex Misramto,admin,nama,TH-1,TH-1 (kalibrasi ulang),
+```
+
+- **Satu baris per KOLOM yang berubah**, bukan satu baris dengan sel berisi JSON.
+  CSV yang selnya JSON nggak bisa disaring atau di-pivot di Excel — dan itu
+  satu-satunya alasan orang mau CSV-nya.
+- Ada **BOM UTF-8**. Tanpa itu, Excel di Windows nampilin nama PT yang ada karakter
+  non-ASCII jadi kacau, dan itu yang dibaca asesor.
+- Pelaku `null` ditulis `(sistem)`.
+- Maksimal **10.000 baris**, di-stream (nggak numpuk di memori). Throttle `20/menit`.
+
+### Yang perlu diketahui frontend
+
+- **Pencatatannya OTOMATIS lewat model event**, bukan ditempel per endpoint. Jadi
+  semua jalur ikut kecatat: API, panel Filament, command artisan, job di queue.
+  Nggak ada yang perlu dipanggil dari sisi klien.
+- **Entitas yang diaudit:** `equipment`, `customers`, `standards`, `users`,
+  `calibration_sessions`, `certificates`, `folders`, `folder_files`,
+  `organizations`, `rooms`, `calibration_methods`, `equipment_categories`.
+- **Riwayat lab lain nggak kebaca** — di-scope `organization_id`. Ini justru tabel
+  yang paling nggak boleh kebuka lebar: isinya nilai sebelum & sesudah dari seluruh
+  data lab, termasuk data pelanggan dan angka kalibrasi. Itu juga alasan
+  teknisi/viewer dapat `403`, bukan daftar kosong.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |
