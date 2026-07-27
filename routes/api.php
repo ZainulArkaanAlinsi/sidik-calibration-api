@@ -221,6 +221,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
+        // Kirim sertifikat ke email pelanggan (fase-2 §3d). Di backend, bukan
+        // mobile, karena dua hal: alamat pengirim harus domain lab, dan
+        // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
+        // dokumen resmi ke luar, bukan baca data.
+        Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
+            ->middleware('throttle:20,1');
+        Route::get('/certificates/{certificate}/riwayat-email', [CertificateController::class, 'riwayatEmail']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
