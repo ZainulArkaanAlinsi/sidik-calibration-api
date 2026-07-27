@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CalibrationMethodController;
@@ -271,6 +272,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Import Excel buat masa transisi (spesifikasi poin 12C).
         Route::get('/imports/format', [ImportController::class, 'format']);
         Route::post('/imports/excel', [ImportController::class, 'excel']);
+
+        // Riwayat perubahan data (Keputusan 4) — baca-saja, admin doang.
+        // Nggak ada POST/PUT/DELETE: baris audit lahir dari perubahan datanya
+        // sendiri (trait `Diaudit`), bukan dari request. Riwayat yang bisa ditulis
+        // tangan berhenti jadi bukti.
+        // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
+        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
+            ->middleware('throttle:20,1');
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
         Route::get('/users', [UserController::class, 'index']);
         Route::put('/users/{user}', [UserController::class, 'update']);

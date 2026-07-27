@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['organization_id', 'parent_id', 'customer_id', 'nama', 'tipe', 'keterangan'])]
 class Folder extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Diaudit, HasFactory, SoftDeletes;
 
     /** Kebentuk sendiri dari data — nggak boleh dihapus/dipindah admin. */
     public const TIPE_SISTEM = 'sistem';
