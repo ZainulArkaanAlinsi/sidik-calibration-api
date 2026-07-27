@@ -9,6 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\AkunBaruMenunggu;
+use App\Services\MatriksIzin;
 use App\Services\PenerimaNotifikasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,6 +103,22 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json(['data' => new UserResource($request->user())]);
+    }
+
+    /**
+     * Izin pemanggil, buat nyembunyiin tombol yang bakal ditolak (fase-2 §1).
+     *
+     * Dijawab dari middleware `role:` di rute yang beneran terdaftar, BUKAN dari
+     * daftar tulis tangan — lihat `MatriksIzin`. Yang bikin bug sebelumnya:
+     * aturannya di-hardcode di mobile, jadi tiap backend ganti aturan mobile ikut
+     * basi diam-diam.
+     *
+     * Ini alat buat TAMPILAN, bukan penjagaan. Penjagaannya tetap di middleware;
+     * kalau mobile ngeyel manggil, tetap `403`.
+     */
+    public function permissions(Request $request, MatriksIzin $matriks): JsonResponse
+    {
+        return response()->json(['data' => $matriks->untuk($request->user())]);
     }
 
     public function logout(Request $request): JsonResponse
