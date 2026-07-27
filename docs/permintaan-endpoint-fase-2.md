@@ -43,7 +43,33 @@ Laporan (seluruhnya), dan pelengkap sertifikat (logo, QR, TTD, print, email).
 
 ---
 
-## 1. Matriks peran — **perlu dikonfirmasi, bukan ditebak**
+## 1. Matriks peran — ✅ SUDAH JADI (26 Jul)
+
+> **`GET /api/me/permissions` udah live.** Kontrak lengkap + jawaban tiga
+> pertanyaan di bawah ada di [`kontrak-api.md` §2](kontrak-api.md).
+>
+> Jawaban singkatnya:
+> 1. **Viewer boleh** baca arsip & sertifikat, nulis nggak sama sekali — persis
+>    kayak asumsi mobile sekarang.
+> 2. **Teknisi nggak boleh** lihat sesi teknisi lain. `batasan.kalibrasi:
+>    "sendiri"`; nebak ID punya orang lain dapat `404`.
+> 3. **Nggak ada role keempat.** Penanda tangan diputusin jadi atribut, bukan role
+>    (keputusan 26 Jul), jadi `UserRole` tetap tiga.
+>
+> Yang penting: daftarnya **nggak ditulis tangan** — dihitung dari middleware
+> `role:` di rute yang beneran terdaftar, dan ada test yang manggil semua endpoint
+> pakai ketiga role buat mastiin daftarnya nggak bohong. Jadi kekhawatiran "tiap
+> backend ganti aturan, mobile ikut basi diam-diam" nggak berlaku lagi: aturan
+> berubah → jawaban endpoint ikut berubah di request berikutnya.
+>
+> Respons juga bawa **`batasan`** yang nggak diminta: `boleh` jawab "layarnya
+> kebuka apa nggak", `batasan` jawab "isinya sebanyak apa". Tanpa itu, mobile nggak
+> bisa bedain tombol yang disembunyiin dari layar yang kebuka tapi datanya lebih
+> sedikit.
+
+<details>
+<summary>Permintaan aslinya (buat arsip)</summary>
+
 
 Mobile sekarang cuma kenal tiga role (`UserRole`: `admin`, `teknisi`,
 `viewer`) dan dua turunan: `isAdmin` dan `bisaInput` (admin+teknisi).
@@ -87,6 +113,8 @@ tombol lalu user kena error 403. Sekarang aturannya di-hardcode di mobile
    sekarang nganggep tidak)
 3. Apakah ada rencana role keempat (mis. Manajer Teknis yang tanda tangan
    sertifikat)? Ini nyangkut permintaan §3 di bawah.
+
+</details>
 
 ---
 
@@ -313,7 +341,7 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 
 | # | Permintaan | Ukuran | Ngeblok | Catatan |
 |---|---|---|---|---|
-| 1 | Matriks peran (dokumen) / `GET /me/permissions` | Kecil–Sedang | Tombol yang muncul tapi ditolak 403 | Minimal dokumen dulu |
+| ~~1~~ | ~~Matriks peran / `GET /me/permissions`~~ | — | — | ✅ **jadi 26 Jul** — plus `batasan{}`; daftarnya diturunkan dari middleware rute, jadi nggak bisa basi |
 | 2 | Notifikasi kejadian yang butuh admin | Sedang | "Semua ke admin" | Polling dulu nggak apa-apa |
 | ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
 | ~~3b~~ | ~~`qr_token` di objek sertifikat~~ | — | — | ✅ **jadi 25 Jul** — `qr_token` **+ `qr_payload`** (URL siap di-render) ikut di embed sertifikat |
@@ -322,11 +350,18 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 | 4 | CRUD folder & file arsip | Kecil–Sedang | Tap PT di Folder Manager | 🔸 **SEBAGIAN** — 3 operasi masih kurang, lihat §4 (dulu salah ditandain "udah ada") |
 | ~~5~~ | ~~`GET /laporan/kalibrasi` + export~~ | — | — | ✅ **jadi 26 Jul** — plus `ringkasan`, `penyaring`, filter `status`/`keputusan` |
 
-**Sisa yang belum:** 1 (matriks peran), 2 (notifikasi per-kejadian), 3c (penanda
-tangan — masih nunggu keputusan role), 3d (kirim email), dan 3 operasi arsip di §4.
+**Sisa yang belum:** 2 (notifikasi per-kejadian), 3d (kirim email — butuh
+kredensial SMTP dulu), dan 2 operasi `/pindah` di §4 (dua-duanya sekunder).
 
-**Paling ngeblok mobile:** §1 (matriks peran). Selama itu belum ada, tiap layar
-baru berisiko ngulang bug "jalan di admin, mentok di teknisi".
+**3c (penanda tangan) udah diputusin 26 Jul:** kosong dulu — sertifikat nyetak
+garis + nama + jabatan dengan ruang kosong buat tanda tangan basah, dan itu udah
+jalan sekarang. Fitur import + drag-and-drop belakangan; waktu dibangun, drag-nya
+di **template** (sekali, admin-only), bukan di sertifikat yang udah terbit —
+sertifikat terbit itu dokumen terkendali.
+
+**Yang tadinya paling ngeblok mobile (§1, matriks peran) udah beres.** Bug "jalan
+di admin, mentok di teknisi" sekarang bisa dicegah dari `GET /me/permissions`
+sebelum tombolnya dirender.
 
 **Jangan dikerjain:** Data Ruangan (backend udah ada, tinggal layar mobile),
 Import Excel, Backup Database, User Management penuh — alasannya di
