@@ -286,6 +286,29 @@ class AuditLogTest extends TestCase
         $this->assertFalse($baris['oleh_sistem']);
     }
 
+    /**
+     * `perubahan` SELALU objek, walaupun kosong.
+     *
+     * PHP nge-serialize array kosong jadi `[]`, dan itu bikin tipenya berubah
+     * tergantung isi — objek kalau ada yang berubah, array kalau nggak. Aksi
+     * `dihapus`/`dipulihkan` selalu kosong, jadi ini bukan kasus langka: klien yang
+     * ngiterasi key-nya bakal pecah di SETIAP baris hapus.
+     */
+    public function test_perubahan_selalu_objek_walaupun_kosong(): void
+    {
+        $standar = $this->standar();
+        AuditLog::query()->delete();
+        $standar->delete();
+
+        $mentah = $this->actingAs($this->admin)->getJson(self::URL)->assertOk()->content();
+        $baris = json_decode($mentah, true)['data'][0];
+
+        $this->assertSame('dihapus', $baris['aksi']);
+        $this->assertSame([], $baris['perubahan'], 'Isinya kosong…');
+        // …tapi di JSON-nya harus `{}`, bukan `[]`.
+        $this->assertStringContainsString('"perubahan":{}', $mentah);
+    }
+
     public function test_saring_per_entitas(): void
     {
         $standar = $this->standar();
