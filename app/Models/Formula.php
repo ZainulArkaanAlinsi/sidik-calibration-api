@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\Diaudit;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+
+/**
+ * Rumus kalibrasi (Keputusan 5). Wadahnya; isinya ada di `FormulaVersion`.
+ *
+ * `kode` yang dirujuk kode program, bukan `nama` — nama boleh diubah admin kapan
+ * aja, dan kalau kode nyari lewat nama, sekali rename bikin jalur hitungnya nggak
+ * ketemu rumusnya.
+ *
+ * @mixin IdeHelperFormula
+ */
+#[Fillable(['organization_id', 'kode', 'nama', 'besaran', 'deskripsi'])]
+class Formula extends Model
+{
+    use Diaudit, HasFactory, SoftDeletes;
+
+    /** Rumus GUM buat jalur pH — yang sekarang dihitung `GumCalculator`. */
+    public const KODE_GUM_PH = 'gum-ph';
+
+    /** @return HasMany<FormulaVersion, $this> */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(FormulaVersion::class);
+    }
+
+    /** @return BelongsTo<Organization, $this> */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Versi yang berlaku pada suatu tanggal.
+     *
+     * Dicari per TANGGAL, bukan "yang statusnya aktif", karena itu dua pertanyaan
+     * beda: "mana yang dipakai sekarang" vs "mana yang dipakai waktu sesi tanggal
+     * 26 Mei dikerjain". Yang kedua yang bikin hasil hitung lama bisa dijelasin.
+     */
+    public function versiPadaTanggal(Carbon|string $tanggal): ?FormulaVersion
+    {
+        $t = $tanggal instanceof Carbon ? $tanggal->toDateString() : Carbon::parse($tanggal)->toDateString();
+
+        return $this->versions()
+            ->where('status', FormulaVersion::STATUS_AKTIF)
+            ->whereDate('effective_from', '<=', $t)
+            ->where(fn ($q) => $q->whereNull('effective_until')->orWhereDate('effective_until', '>=', $t))
+            ->orderByDesc('effective_from')
+            ->first();
+    }
+
+    /** Versi yang berlaku SEKARANG. */
+    public function versiAktif(): ?FormulaVersion
+    {
+        return $this->versiPadaTanggal(now());
+    }
+}

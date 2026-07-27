@@ -1317,6 +1317,247 @@ Waktu,Entitas,ID,Aksi,Pelaku,Role,Kolom,Nilai Lama,Nilai Baru,Catatan
 
 ---
 
+## 12. Rumus Kalibrasi Berversi (live 27 Jul — fondasi)
+
+**Admin doang.** Salah ngetik di sini ngubah angka yang masuk sertifikat
+terakreditasi — ini menu paling berbahaya di seluruh aplikasi
+(`arsitektur-desktop-database.md` Keputusan 5).
+
+> ### ⚠️ Yang UDAH ada vs yang BELUM
+>
+> **Udah:** pencatatan versi + stempel versi di tiap hasil hitung + validasi rentang
+> berlaku. Ini fondasi ketertelusurannya, dan **inilah bagian yang bikin rumus boleh
+> diubah nanti**: tanpa stempel, ngubah rumus bikin seluruh riwayat kalibrasi nggak
+> bisa dipertanggungjawabkan.
+>
+> **Belum:** evaluator ekspresinya. Jadi ngubah versi rumus **belum ngubah cara
+> ngitungnya sama sekali** — dia baru nyatet "dihitung pakai aturan versi berapa".
+> `sumber: "database"` ditolak `422` selama evaluatornya belum ada, sengaja: versi
+> yang tercatat "dihitung dari database" padahal angkanya tetap dari kode itu riwayat
+> yang bohong, dan itu lebih berbahaya daripada fiturnya belum ada.
+
+### `GET /api/formulas`
+
+```json
+{
+  "data": [
+    {
+      "id": 2, "kode": "gum-ph", "nama": "Ketidakpastian GUM (jalur pH)",
+      "besaran": "ph", "jumlah_versi": 1,
+      "versi_berlaku": {
+        "id": 2, "nomor_versi": 1, "sumber": "kode", "status": "aktif",
+        "berlaku_dari": "2000-01-01", "berlaku_sampai": null,
+        "parameter": { "faktor_cakupan_k": 2, "dihitung_oleh": "App\\Services\\GumCalculator" },
+        "ekspresi": null, "pembuat": null, "oleh_sistem": true
+      }
+    }
+  ]
+}
+```
+
+- **Versi 1 dibikin OTOMATIS** waktu organisasinya pertama buka endpoint ini atau
+  pertama nyimpen kalibrasi. Nggak ada langkah setup — lab yang udah jalan sebelum
+  fitur ini ada nggak boleh dipaksa nyetel rumus dulu sebelum bisa nyimpen kalibrasi.
+- **`sumber: "kode"`** artinya angkanya dihitung program (`GumCalculator`), dan
+  `parameter` nyatet nilai yang beneran dipakai. Ini jujur: rumus yang sekarang jalan
+  MEMANG ada di kode.
+- **`berlaku_dari` versi 1 dipatok `2000-01-01`**, bukan hari ini. Kalau dipatok hari
+  ini, sesi lama yang di-revisi nggak nemu versi yang berlaku di tanggalnya.
+- `berlaku_sampai: null` = masih berlaku sampai sekarang.
+
+### Arti `status` — beda dari bacaan naifnya, dan ini penting
+
+Keputusan 5 nulis "versi lama diarsipkan". Kalau itu dibaca sebagai "statusnya jadi
+`arsip`", fiturnya justru **rusak**: pencarian versi per-tanggal cuma ngambil yang
+`aktif`, jadi sesi tahun lalu nggak nemu versinya lagi.
+
+Yang nentuin versi mana berlaku buat suatu tanggal itu **rentang tanggalnya**, bukan
+statusnya:
+
+| Status | Arti |
+|---|---|
+| `aktif` | Bagian dari garis waktu yang sah. Versi yang udah **digantikan tetap `aktif`**, cuma `berlaku_sampai`-nya ditutup — dia masih jawaban yang BENAR buat tanggal di rentangnya |
+| `draft` | Belum masuk garis waktu. Boleh ada beberapa sekaligus; admin bisa nyiapin calon sebelum milih |
+| `arsip` | **Dibatalkan**, jangan dipakai buat tanggal apa pun. Buat versi yang kebikin karena salah — **bukan** buat versi yang digantikan secara wajar |
+
+### `GET /api/formulas/{id}/versions`
+
+Riwayat versi, terbaru dulu. Sesudah nerbitin versi 2:
+
+```
+v2: aktif  2026-08-01 → sekarang
+v1: aktif  2000-01-01 → 2026-07-31
+```
+
+### `GET /api/formulas/{id}/versi-berlaku?tanggal=2024-05-26`
+
+**Pertanyaan yang bikin fitur ini ada:** *"sesi 26 Mei dihitung pakai aturan yang
+mana?"* — beda dari "aturan apa yang dipakai sekarang". `tanggal` opsional (bawaan:
+hari ini). Balikannya satu objek versi, atau `null` kalau nggak ada yang berlaku.
+
+### `POST /api/formulas/{id}/versions` — terbitin versi baru
+
+```json
+{
+  "sumber": "kode",
+  "berlaku_dari": "2026-08-01",
+  "parameter": { "faktor_cakupan_k": 2 },
+  "catatan": "Ikut IK Rev.7",
+  "langsung_aktif": true
+}
+```
+
+- **`langsung_aktif: true` bikin DUA hal dalam satu transaksi**: versi baru dibikin
+  `aktif`, dan rentang versi sebelumnya **ditutup sehari sebelum** versi baru mulai.
+  Dua langkah itu satu operasi — kalau dipisah, ada jeda di mana dua versi sama-sama
+  berlaku buat satu tanggal, dan di jeda itu "sesi ini pakai versi mana" nggak punya
+  jawaban.
+- **Tanpa `langsung_aktif` → jadi `draft`**, dan ini yang disarankan. Keputusan 5
+  minta "uji coba sebelum disimpan", dan draft yang belum masuk garis waktu itu
+  tempat paling aman buat nyoba.
+- `sumber: "database"` → `422` (evaluator belum ada, lihat peringatan di atas).
+- Rentang yang tumpang tindih sama versi aktif lain → `422` dengan pesan yang nyebut
+  versi mana yang nabrak.
+
+### `PATCH /api/formula-versions/{id}`
+
+Cuma `status` (→ `aktif` / `arsip`) dan `catatan`.
+
+- **Rentang tanggalnya SENGAJA nggak bisa diubah.** Ngubah rentang versi yang udah
+  dipakai berarti ngubah jawaban dari "sesi ini dihitung pakai versi apa" — secara
+  retroaktif, buat sesi yang sertifikatnya udah terbit. Kalau aturannya salah,
+  jalannya terbitin versi baru.
+- **Versi yang udah kepakai di hasil hitung nggak bisa diarsipin** → `422`. Kalau
+  diarsipin, angka yang udah terbit nggak bisa dijelasin lagi — kebalikan dari
+  gunanya fitur ini.
+- Ngaktifin `draft` yang rentangnya nabrak → `422`.
+
+### Stempel di hasil hitung
+
+`uncertainty_calculations.formula_version_id` — versi yang **menghasilkan** angka di
+baris itu. Distempel dari versi yang berlaku di **tanggal kalibrasi** sesi, bukan
+"yang aktif sekarang".
+
+Bedanya bikin atau nggak: sesi 26 Mei yang di-revisi hari ini harus tetap kestempel
+versi yang berlaku 26 Mei. Kalau pakai "yang aktif sekarang", angkanya dihitung
+aturan lama tapi kecatat aturan baru — dan itu **lebih menyesatkan daripada nggak
+distempel sama sekali**.
+
+`null` cuma buat baris yang udah ada sebelum fitur ini dipasang. Itu jujur: versinya
+beneran nggak diketahui, dan nebak lebih buruk.
+
+> **Semua perubahan versi rumus kecatat di `audit_logs`** (§11) — Keputusan 5 minta
+> itu eksplisit. Termasuk penutupan rentang versi lama, jadi satu operasi "terbitin
+> versi baru" ninggalin jejak lengkap: siapa, kapan, versi mana yang ditutup.
+
+---
+
+## 13. Kirim Sertifikat ke Email Pelanggan (live 27 Jul)
+
+**Admin doang.** Nutup `permintaan-endpoint-fase-2.md` §3d.
+
+Kenapa di backend dan bukan di mobile — dua alasan dari permintaannya:
+alamat pengirim harus domain lab (bukan Gmail teknisi), dan **pengirimannya wajib
+tercatat buat audit**: siapa ngirim sertifikat ke siapa, kapan.
+
+### `POST /api/certificates/{id}/kirim-email`
+
+```json
+{ "ke": ["pic@pelanggan.co.id"], "cc": ["manajer@pelanggan.co.id"] }
+```
+
+| Field | Aturan |
+|---|---|
+| `ke` | **wajib**, array, 1–10 alamat, format email valid |
+| `cc` | opsional, array, maks 10 |
+
+```json
+{
+  "message": "Sertifikat terkirim ke pic@pelanggan.co.id.",
+  "data": {
+    "id": 7,
+    "ke": ["pic@pelanggan.co.id"],
+    "cc": ["manajer@pelanggan.co.id"],
+    "status": "terkirim",
+    "error": null,
+    "dikirim_oleh": { "id": 1, "nama": "Alex Misramto" },
+    "dikirim_pada": "2026-07-27T04:31:24Z"
+  }
+}
+```
+
+- **PDF-nya DILAMPIRKAN**, bukan dikirim sebagai tautan unduh. Tautan ke disk privat
+  butuh login dan pelanggan nggak punya akun; tautan publik berarti sertifikat bisa
+  diakses siapa pun yang dapat URL-nya. Nama lampirannya `Sertifikat-{nomor}.pdf`.
+- **Dikirim SINKRON**, bukan lewat queue. Admin yang mencet "Kirim" perlu tahu
+  hasilnya saat itu juga — kiriman yang di-queue lalu gagal diam-diam berarti
+  pelanggan nggak pernah nerima dan nggak ada yang sadar sampai ditanya. Jadi
+  responsnya baru balik sesudah email-nya beneran keluar.
+- Alamat yang dobel digabung otomatis.
+- Throttle **`20/menit`** — ini ngirim dokumen resmi ke luar, bukan baca data.
+
+**Status yang mungkin:**
+
+| Kode | Kapan |
+|---|---|
+| `200` | Terkirim |
+| `502` | **Gagal kirim** (SMTP nolak/mati). Percobaannya **tetap tercatat**, dan `data.error` bawa pesan aslinya |
+| `422` | Sertifikat belum terbit · sertifikat belum punya PDF · PDF-nya raib dari penyimpanan · alamat nggak valid · lebih dari 10 alamat |
+| `403` | Teknisi / viewer |
+| `404` | Sertifikat lab lain |
+
+> **`422`-nya dipisah per sebab.** "Belum terbit" dan "belum punya PDF" itu dua
+> masalah beda dengan dua tindakan beda, jadi pesannya nggak digabung — pesan
+> gabungan bikin admin baca "harus terbit & punya PDF, yang ini statusnya `terbit`"
+> dan nyangka backend-nya ngaco.
+
+### `GET /api/certificates/{id}/riwayat-email`
+
+Riwayat pengiriman sertifikat itu, **terbaru dulu**. Bentuk barisnya sama kayak
+`data` di atas.
+
+- **Semua percobaan tercatat, termasuk yang GAGAL.** "Kami udah nyoba kirim tapi
+  alamatnya nolak" itu justru informasi yang dicari waktu pelanggan ngaku nggak
+  nerima. Kalau cuma yang sukses dicatat, riwayatnya bohong lewat kelalaian.
+- **Riwayatnya tabel terpisah, bukan kolom `dikirim_pada` di sertifikat.** Kirim
+  ulang itu kejadian normal (pelanggan kehilangan filenya, ganti PIC, alamatnya
+  salah ketik), dan kolom tunggal cuma nyimpen yang terakhir — "kapan kita ngirim ke
+  PIC yang lama" jadi nggak bisa dijawab.
+- Barisnya **nggak bisa diubah** (ditolak di level model), sama alasannya kayak
+  `audit_logs`.
+
+### Soal alamat pengirim — dan kenapa `From`-nya bukan email lab
+
+Permintaannya: *"alamat pengirim harus domain lab (bukan Gmail teknisi)."* Itu
+dipenuhi lewat **`MAIL_FROM_ADDRESS` di `.env`**, yang disetel ke domain lab.
+
+Email organisasi (`organization.email`) ditaruh di **`Reply-To`**, **bukan** `From`.
+Ini bukan kelalaian: `From` yang domainnya beda dari domain yang beneran ngirim bikin
+**SPF/DKIM gagal**, dan email-nya masuk spam atau ditolak server penerima. Jadi
+`From` = domain pengirim yang sah, dan balasan pelanggan tetap nyampe ke lab lewat
+`Reply-To`.
+
+> ### Yang masih perlu dari sisi operasional
+>
+> Kodenya **selesai dan udah diuji**, termasuk lampiran PDF-nya. Yang belum: **isi
+> `MAIL_*` di `.env` produksi**. Sekarang `MAIL_MAILER=log`, jadi email-nya kerender
+> lengkap tapi masuk `storage/logs/laravel.log`, bukan ke internet — dan itu memang
+> perilaku yang bener buat dev.
+>
+> Begitu SMTP-nya diisi, **nggak ada kode yang perlu diubah**. Yang perlu disetel:
+>
+> ```
+> MAIL_MAILER=smtp
+> MAIL_HOST=…
+> MAIL_PORT=587
+> MAIL_USERNAME=…
+> MAIL_PASSWORD=…
+> MAIL_FROM_ADDRESS="sertifikat@domain-lab.com"   ← WAJIB domain lab
+> MAIL_FROM_NAME="PT Sidik Kalibrasi"
+> ```
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |
