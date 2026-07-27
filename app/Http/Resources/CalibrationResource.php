@@ -93,6 +93,9 @@ class CalibrationResource extends JsonResource
                 // nyusun URL-nya sendiri, jadi domainnya nggak bisa salah.
                 'qr_token' => $this->certificate->qr_token,
                 'qr_payload' => $this->certificate->qr_payload,
+                // Penanda tangan yang kecetak di PDF ini (fase-2 §3c). Beku dari
+                // snapshot — lihat `Certificate::penandaTangan()`.
+                'penanda_tangan' => $this->certificate->penandaTangan(),
             ] : null,
 
             'suhu_ruang' => $this->suhu_ruang,
