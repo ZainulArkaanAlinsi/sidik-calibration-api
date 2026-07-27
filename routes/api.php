@@ -70,6 +70,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    // Grafik tren rentang bebas (permintaan-endpoint.md §2). Angkanya dari service
+    // yang SAMA dengan `grafik_pekerjaan` di `/dashboard`, biar dua grafik nggak
+    // bisa beda buat bulan yang sama. Didaftarin SESUDAH `/dashboard` — beda path,
+    // nggak bentrok.
+    Route::get('/dashboard/tren', [DashboardController::class, 'tren']);
 
     // Notifikasi — ikonnya pindah ke atas layar & punya halaman sendiri
     // (spesifikasi poin 4). Semua role: tiap orang cuma dapat notifikasinya sendiri.
