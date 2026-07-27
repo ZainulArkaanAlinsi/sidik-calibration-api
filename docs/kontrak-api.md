@@ -1032,6 +1032,66 @@ Tanpa ini tap PT mentok `404` padahal PT-nya jelas ada.
   yang teknisi lihat udah tersaring, jadi yang bisa dia tap selalu ada isinya.
 - PT milik lab lain → `404` (bukan `403`), dan nggak ninggalin folder apa pun.
 
+### `PUT /api/arsip/folders/{id}/pindah` — pindah folder (live 27 Jul)
+
+**Admin doang.** Kepisah dari `PUT /arsip/folders/{id}` yang cuma rename, karena
+yang ini nyentuh struktur pohonnya.
+
+```json
+{ "parent_id": 12 }
+```
+
+- **`parent_id` WAJIB dikirim**, tapi boleh `null` — `null` artinya jadiin folder
+  akar. Kalau nggak dikirim sama sekali → `422` (biar "lupa ngirim" nggak diam-diam
+  kebaca sebagai "pindahin ke akar").
+- Balikannya objek folder, bentuknya sama kayak `PUT /arsip/folders/{id}`.
+- **Drag ke induk yang sama → `200`**, bukan error. Biar UI drag-drop nggak
+  nampilin merah cuma gara-gara user naruh balik di tempat asalnya.
+
+**Empat penolakan `422`, dan tiga di antaranya perlu dipatuhi UI:**
+
+| Kasus | Kenapa |
+|---|---|
+| Folder bertipe **`sistem`** | `FolderOrganizer` nemuin folder akar PT dari `parent_id = null` dan folder tahun dari `parent_id = akar->id`. Begitu dipindah, kriterianya nggak nyocok, sertifikat berikutnya bikin folder **baru**, dan arsip satu PT **kepecah dua**. Aturan yang sama yang udah nolak rename folder sistem |
+| Dipindah ke **dirinya sendiri** | — |
+| Dipindah ke **keturunannya sendiri** | Bikin siklus: folder-nya lepas dari pohon dan **ilang dari semua layar** tanpa error. Barisnya masih di DB, tapi nggak bisa dijangkau |
+| **Nama bentrok** di folder tujuan | Nama folder harus unik dalam satu induk — aturan yang sama kayak rename & create |
+
+> **Buat UI:** folder yang `tipe`-nya `sistem` jangan dibikin bisa di-drag sama
+> sekali. `tipe` udah ikut di respons `/folders`, jadi ini bisa dicegah sebelum
+> user nyoba dan kena `422`.
+
+### `PUT /api/arsip/berkas/{sesiId}/pindah` — pindah berkas (live 27 Jul)
+
+**Admin doang.** `{sesiId}` itu **id SESI KALIBRASI**, bukan id `folder_files` —
+itu yang dipegang mobile di layar arsip.
+
+```json
+{ "folder_id": 12 }
+```
+
+- `folder_id` **wajib**, nggak boleh `null` (berkas harus ada di suatu folder).
+- Balikannya objek berkas, bentuknya sama kayak `PUT /api/folder-files/{id}`.
+- Drag ke folder yang sama → `200`.
+
+| Kasus | Status |
+|---|---|
+| Sesi belum punya sertifikat | `404` — belum ada berkasnya di arsip |
+| Sertifikatnya belum pernah ditautkan ke folder | `404` |
+| Sertifikat tertaut di **lebih dari satu** folder | `422` + daftar kandidatnya di `data` |
+| Sertifikat udah ada di folder tujuan | `422` |
+| Sesi / folder tujuan milik lab lain | `404` / `422` |
+
+> **Soal yang `422` "tertaut di lebih dari satu folder":** unique index-nya
+> `(folder_id, certificate_id)`, bukan `certificate_id` sendiri — jadi satu
+> sertifikat **bisa** nyangkut di dua folder. Kalau kejadian, backend **nanya**
+> bukan nebak, dan daftar kandidatnya ikut dikirim di `data` biar admin bisa milih
+> tanpa nyari lagi. Pindahin yang dipilih pakai `PUT /api/folder-files/{id}` dengan
+> id berkasnya langsung.
+>
+> Kenapa nggak ditebak aja: yang salah kepindah **nggak keliatan sebagai error** —
+> cuma sebagai berkas yang ilang dari folder yang orangnya lihat.
+
 ---
 
 ## 9. Master Data Ruangan & Teknisi (live 20 Jul)
