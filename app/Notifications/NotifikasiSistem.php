@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\PenjagaNotifikasiUlang;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
@@ -62,6 +63,11 @@ abstract class NotifikasiSistem extends Notification
             // `tautan` nunjuk layar mana yang harus kebuka waktu diketuk.
             'kategori' => $this->kategori(),
             'tautan' => $this->tautan(),
+
+            // --- Dipakai backend, diabaikan Filament & mobile ---
+            // Ringkasan isi buat nahan pengulangan (`PenjagaNotifikasiUlang`).
+            // Nebeng di payload biar nggak perlu tabel/kolom baru.
+            PenjagaNotifikasiUlang::KEY_TANDA_TANGAN => $this->tandaTangan(),
         ];
     }
 
@@ -74,6 +80,19 @@ abstract class NotifikasiSistem extends Notification
 
     /** @return array<string, mixed>|null */
     protected function tautan(): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Ringkasan isi notifikasi, buat nahan pengulangan yang isinya sama.
+     *
+     * Cuma perlu diisi notifikasi yang dipicu BERULANG (scheduler harian). Yang
+     * dipicu satu kejadian — sesi disetujui, akun baru daftar — nggak perlu:
+     * tiap kejadiannya beneran beda, dan nahan salah satunya berarti ada kabar
+     * yang nggak nyampe.
+     */
+    protected function tandaTangan(): ?string
     {
         return null;
     }

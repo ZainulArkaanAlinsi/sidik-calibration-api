@@ -118,7 +118,32 @@ tombol lalu user kena error 403. Sekarang aturannya di-hardcode di mobile
 
 ---
 
-## 2. Semua yang butuh keputusan admin harus **nyampe** ke admin
+## 2. Semua yang butuh keputusan admin harus **nyampe** ke admin — ✅ SUDAH JADI (26 Jul)
+
+> **Keenam kejadian di tabel bawah sekarang kekirim.** Tiga udah ada dari sebelumnya
+> (sesi masuk antrean approval, alat lewat jatuh tempo, sesi ditolak/minta revisi);
+> tiga yang bolong baru dipasang 26 Jul:
+>
+> | `kategori` | Kejadian |
+> |---|---|
+> | `akun.menunggu_persetujuan` | ada yang `POST /register` |
+> | `sertifikat.gagal` | PDF sertifikat gagal dibuat |
+> | `standar.kadaluarsa` | standar acuan mendekati / udah habis (harian) |
+>
+> Bentuk payload + `tautan`-nya di [`kontrak-api.md` §6](kontrak-api.md).
+>
+> Yang dikabarin cuma **admin `aktif`**. `pending` nggak — dia nggak bisa login,
+> dan yang lebih penting, pendaftar nggak boleh dikabarin soal pendaftar lain.
+>
+> **Satu hal yang ditambahin di luar permintaan, dan ini yang bikin kepakai:**
+> `standar.kadaluarsa` jalan dari scheduler harian dengan ambang 30 hari. Kalau
+> dikirim apa adanya, admin dapat baris yang persis sama 30 pagi berturut-turut,
+> dan sesudah minggu pertama nggak ada yang buka loncengnya lagi. Jadi isi yang
+> sama ditahan 7 hari — tapi begitu ada standar yang **statusnya berubah**,
+> dikabarin saat itu juga. Nggak ada efeknya ke mobile; yang berubah cuma jumlah
+> baris yang masuk.
+>
+> Polling aja masih cukup, sesuai catatan di bawah — FCM belum dipasang.
 
 Permintaan Zainul: *"kalo ada sesuatu dan yang dibutuhkan sama admin maka
 semuanya dikirim ke bagian admin."*
@@ -378,22 +403,33 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 | # | Permintaan | Ukuran | Ngeblok | Catatan |
 |---|---|---|---|---|
 | ~~1~~ | ~~Matriks peran / `GET /me/permissions`~~ | — | — | ✅ **jadi 26 Jul** — plus `batasan{}`; daftarnya diturunkan dari middleware rute, jadi nggak bisa basi |
-| 2 | Notifikasi kejadian yang butuh admin | Sedang | "Semua ke admin" | Polling dulu nggak apa-apa |
+| ~~2~~ | ~~Notifikasi kejadian yang butuh admin~~ | — | — | ✅ **jadi 26 Jul** — 3 kategori baru + anti-spam buat yang harian |
 | ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
 | ~~3b~~ | ~~`qr_token` di objek sertifikat~~ | — | — | ✅ **jadi 25 Jul** — `qr_token` **+ `qr_payload`** (URL siap di-render) ikut di embed sertifikat |
-| 3c | Penanda tangan / Manajer Teknis | Sedang | Blok TTD | Perlu keputusan role dulu |
+| ~~3c~~ | ~~Penanda tangan / Manajer Teknis~~ | — | — | ✅ **jadi 27 Jul** — 4 endpoint `/organization/tanda-tangan` + gambar kecetak di PDF. Keputusan role: **bukan role keempat**, tapi atribut organisasi |
 | ~~3d~~ | ~~`POST /certificates/{id}/kirim-email`~~ | — | — | ✅ **jadi 27 Jul** — plus riwayat pengiriman. Nunggu `MAIL_*` diisi di `.env` produksi |
-| 4 | CRUD folder & file arsip | Kecil–Sedang | Tap PT di Folder Manager | 🔸 **SEBAGIAN** — 3 operasi masih kurang, lihat §4 (dulu salah ditandain "udah ada") |
+| ~~4~~ | ~~CRUD folder & file arsip~~ | — | — | ✅ **KELAR SEMUA 27 Jul** — browse/rename/hapus/tap-PT + 2 operasi `/pindah` terakhir |
 | ~~5~~ | ~~`GET /laporan/kalibrasi` + export~~ | — | — | ✅ **jadi 26 Jul** — plus `ringkasan`, `penyaring`, filter `status`/`keputusan` |
 
-**Sisa yang belum:** 2 (notifikasi per-kejadian), 3d (kirim email — butuh
-kredensial SMTP dulu), dan 2 operasi `/pindah` di §4 (dua-duanya sekunder).
+**Enam-enamnya kelar per 27 Jul.** Nggak ada sisa di tabel ini.
 
-**3c (penanda tangan) udah diputusin 26 Jul:** kosong dulu — sertifikat nyetak
-garis + nama + jabatan dengan ruang kosong buat tanda tangan basah, dan itu udah
-jalan sekarang. Fitur import + drag-and-drop belakangan; waktu dibangun, drag-nya
-di **template** (sekali, admin-only), bukan di sertifikat yang udah terbit —
-sertifikat terbit itu dokumen terkendali.
+Dua hal yang tinggal urusan operasional, bukan kode:
+
+1. **`MAIL_*` di `.env` produksi** buat 3d — sekarang email masuk file log, bukan ke
+   internet. Nggak ada kode yang perlu diubah waktu SMTP-nya diisi.
+2. **File PNG tanda tangan asli + jabatan resminya** buat 3c — sekarang jalan pakai
+   placeholder. Admin tinggal unggah lewat panel atau `POST
+   /organization/tanda-tangan`.
+
+**3c ternyata nggak jadi "kosong dulu".** Keputusan 26 Jul bilang cetak garis kosong
+buat tanda tangan basah dan bangun drag-and-drop belakangan — tapi 27 Jul
+dua-duanya jadi sekalian. Yang tetap dipegang: drag-nya di **template** (sekali,
+admin-only), bukan di sertifikat yang udah terbit. Sertifikat terbit itu dokumen
+terkendali, dan kalau posisinya per sertifikat, dua orang bisa punya PDF beda dengan
+nomor sertifikat yang sama.
+
+Sertifikat tanpa gambar TTD **tetap terbit** — nyetak garis + nama + jabatan dengan
+ruang kosong buat tanda tangan basah, tata letaknya sama persis. Itu state yang sah.
 
 **Yang tadinya paling ngeblok mobile (§1, matriks peran) udah beres.** Bug "jalan
 di admin, mentok di teknisi" sekarang bisa dicegah dari `GET /me/permissions`
