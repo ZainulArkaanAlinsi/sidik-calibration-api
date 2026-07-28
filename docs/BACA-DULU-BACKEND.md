@@ -111,7 +111,8 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Sertifikat + PDF + Excel + QR | `GET /certificates/{id}`, `/download`, `/excel`, `/qr`, `POST /{id}/retry` |
 | Rekap sertifikat (Excel) | `GET /certificates/export/excel` (admin) |
 | Verifikasi QR publik | `GET /verify/{qr_token}` (web) & `GET /api/verify/{qr_token}` (JSON) |
-| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru |
+| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru. Kuncinya `bulan` |
+| **Grafik tren rentang bebas** | `GET /dashboard/tren?dari=&sampai=&satuan=hari\|minggu\|bulan`. Kuncinya **`periode`** (bukan `bulan` — sengaja beda). Angkanya dijamin sama dengan `grafik_pekerjaan`, satu service. Maks 400 periode. Lihat [`kontrak-api.md` §7](kontrak-api.md) |
 | Notifikasi | `GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}` |
 | Reminder jatuh tempo | otomatis tiap pagi + `POST /reminders/jatuh-tempo` (manual, admin) |
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
@@ -176,7 +177,6 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
 | **Evaluator ekspresi rumus** | arsitektur-desktop §Keputusan 5 | Ngubah versi rumus **belum ngubah cara hitung**. Pencatatan versi + stempel `formula_version_id` di hasil hitung udah jadi 27 Jul (lihat §1); yang belum: mesin yang ngeksekusi ekspresi dari DB, plus uji-coba-sebelum-disimpan. `audit_logs` (Keputusan 4) juga udah jadi |

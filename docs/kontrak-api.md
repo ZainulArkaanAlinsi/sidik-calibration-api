@@ -907,6 +907,66 @@ Isinya beda tergantung role — teknisi dapat ringkasan miliknya, admin dapat li
 >
 > Jadi di layar teknisi wajar muncul "Kalibrasi selesai: 2" bareng "Sertifikat: 137". Dashboard misahin dua kelompok ini secara visual (kartu hero berlabel "SE-LAB" vs seksi "KALIBRASI SAYA") — jangan digabung jadi satu deret kartu tanpa keterangan, nanti kebaca kayak datanya ngaco.
 
+### `GET /api/dashboard/tren` — grafik rentang bebas (live 26 Jul)
+
+Buat grafik yang periodenya dipilih user, bukan dipatok 6 bulan kayak
+`grafik_pekerjaan`. **Semua role**; teknisi cuma dapat pekerjaannya sendiri.
+
+```
+GET /api/dashboard/tren?dari=2026-05-01&sampai=2026-07-31&satuan=bulan
+```
+
+| Penyaring | Isi | Bawaan kalau nggak dikirim |
+|---|---|---|
+| `satuan` | `hari` · `minggu` · `bulan` | `bulan` |
+| `sampai` | `YYYY-MM-DD` | hari ini |
+| `dari` | `YYYY-MM-DD` | `hari` → 30 hari · `minggu` → 12 minggu · `bulan` → 6 bulan |
+
+```json
+{
+  "data": [
+    { "periode": "2026-05", "label": "Mei 2026", "masuk": 14, "selesai": 11 },
+    { "periode": "2026-06", "label": "Jun 2026", "masuk": 9,  "selesai": 9  },
+    { "periode": "2026-07", "label": "Jul 2026", "masuk": 6,  "selesai": 3  }
+  ],
+  "penyaring": { "dari": "2026-05-01", "sampai": "2026-07-31", "satuan": "bulan" }
+}
+```
+
+- **Urutannya lama → baru**, bisa langsung digambar tanpa nyortir.
+- **Periode kosong tetap keluar dengan nilai `0`, nggak dilewat** — kalau dilewat,
+  grafiknya bohong: jeda kosong ketutup dan tren naik-turunnya kelihatan lebih
+  mulus dari kenyataan.
+- `masuk` = sesi yang **tanggal kalibrasinya** jatuh di periode itu.
+  `selesai` = yang **di-approve** di periode itu (`reviewed_at`), bukan tanggal
+  sertifikat terbit — generate PDF jalan di queue, jadi sesi yang baru di-approve
+  bakal kehitung "belum selesai" kalau worker lagi ngantre.
+- `label` udah siap tempel ke sumbu X. `hari`/`minggu` → `"23 Jul"`,
+  `bulan` → `"Jul 2026"`. Minggu dilabeli tanggal **mulai**nya — `"W30"` nggak
+  berarti apa-apa buat yang lihat grafik.
+- **Kunci `periode` buat `minggu` pakai tahun-minggu ISO**: `"2026-W01"`. Perhatiin
+  di pergantian tahun — 29 Des 2025 itu minggu ke-1 tahun **2026** menurut ISO,
+  jadi jangan diasumsikan 4 karakter pertamanya sama dengan tahun tanggalnya.
+- **`dari`/`sampai` dinormalisasi ke batas periode.** `dari=2026-01-31&satuan=bulan`
+  tetap mulai dari `2026-01`, bukan ngelewatin Januari.
+
+> ⚠️ **Nama kuncinya `periode`, BUKAN `bulan`.** Sebaliknya `grafik_pekerjaan` di
+> `GET /dashboard` pakai `bulan`, bukan `periode`. Dua-duanya sengaja beda dan
+> **nggak** dibikin alias — mobile pernah kena bug nyata gara-gara ketuker (sumbu X
+> Dashboard kosong melompong padahal semua test ijo). Satu endpoint, satu nama.
+
+**Batas: maksimal 400 periode.** Lebih dari itu `422`, bukan hasil yang dipotong —
+hasil yang dipotong sepi-sepi bikin orang salah baca tren, dan 400+ batang di layar
+HP itu garis abu-abu, bukan grafik. Kalau kena, sempitin rentangnya atau naikin
+`satuan` (`hari` → `minggu` → `bulan`). `satuan` ngawur & `sampai` lebih awal dari
+`dari` juga `422`.
+
+> **Angkanya dijamin sama dengan `grafik_pekerjaan`.** Dua-duanya narik dari satu
+> service (`TrenPekerjaan`), dan ada test yang ngebandingin keluaran keduanya bulan
+> per bulan. Jadi `/dashboard/tren?satuan=bulan` yang dibuka tanpa penyaring bakal
+> ngasih angka identik dengan grafik di Dashboard — kalau beda, itu bug, bukan beda
+> definisi.
+
 ---
 
 ## 8. Master Data PT & Pelanggan — **admin doang** (live 14 Jul)
