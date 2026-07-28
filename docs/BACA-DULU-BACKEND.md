@@ -114,6 +114,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru. Kuncinya `bulan` |
 | **Grafik tren rentang bebas** | `GET /dashboard/tren?dari=&sampai=&satuan=hari\|minggu\|bulan`. Kuncinya **`periode`** (bukan `bulan` — sengaja beda). Angkanya dijamin sama dengan `grafik_pekerjaan`, satu service. Maks 400 periode. Lihat [`kontrak-api.md` §7](kontrak-api.md) |
 | Notifikasi | `GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}` |
+| **Kejadian yang butuh admin sekarang nyampe** | 3 kategori baru: `akun.menunggu_persetujuan`, `sertifikat.gagal`, `standar.kadaluarsa`. Cuma ke admin **aktif**. Yang harian ditahan anti-spam (isi sama nggak diulang 7 hari; isi berubah dikirim saat itu juga). Lihat [`kontrak-api.md` §6](kontrak-api.md) |
 | Reminder jatuh tempo | otomatis tiap pagi + `POST /reminders/jatuh-tempo` (manual, admin) |
 | Metode kalibrasi (IK) | `GET/POST/PUT/DELETE /calibration-methods` |
 | Import Excel | `GET /imports/format`, `POST /imports/excel` |

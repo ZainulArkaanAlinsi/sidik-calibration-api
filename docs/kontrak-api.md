@@ -835,7 +835,8 @@ Catatan yang bikin beda dari dugaan:
   bawaan Laravel. Jangan di-parse jadi `int`.
 - **`kategori`**, nilai yang beneran dipakai (dari `app/Notifications/`):
   `jatuh_tempo` · `sesi_menunggu_approval` · `sesi_disetujui` ·
-  `sesi_perlu_revisi` · `sertifikat_terbit` · `umum` (fallback).
+  `sesi_perlu_revisi` · `sertifikat_terbit` · **`akun.menunggu_persetujuan`** ·
+  **`sertifikat.gagal`** · **`standar.kadaluarsa`** · `umum` (fallback).
 - **`tautan`** bentuknya `{ "tipe": ..., "id": ... }` — dipakai buat langsung
   buka layar yang dimaksud waktu notifikasinya diketuk. Bisa `null`.
 - **`ikon`** itu nama ikon Heroicon (dipakai lonceng panel admin). Mobile boleh
@@ -854,6 +855,80 @@ DELETE /api/notifications/{id}
 
 > Dokumen lain sempat nyebut `POST /notifications/{id}/baca`. Itu nggak ada —
 > yang bener `/read`.
+
+### Tiga kejadian baru yang sekarang nyampe ke admin (live 26 Jul)
+
+Nutup `permintaan-endpoint-fase-2.md` §2 — *"kalo ada sesuatu dan yang dibutuhkan
+sama admin maka semuanya dikirim ke bagian admin."* Tiga yang tadinya nggak
+dikabarin ke siapa pun:
+
+| `kategori` | Kapan | `tautan` | Warna |
+|---|---|---|---|
+| `akun.menunggu_persetujuan` | ada yang `POST /register` | `{tipe: "users", filter: "pending", id}` | `warning` |
+| `sertifikat.gagal` | PDF sertifikat gagal dibuat | `{tipe: "certificates", id}` | `danger` |
+| `standar.kadaluarsa` | scheduler harian nemu standar mendekati/lewat habis | `{tipe: "standards", filter: "expired"\|"warning", standar: [...]}` | `danger`/`warning` |
+
+Yang dikabarin: **admin `aktif` di organisasi itu**. `pending`/`nonaktif` nggak —
+mereka nggak bisa login, jadi notifikasinya cuma numpuk. Teknisi & viewer juga
+nggak: tiganya cuma bisa ditindak admin.
+
+**`standar.kadaluarsa` bawa daftar rincian di `tautan.standar`**, jadi tap-nya bisa
+langsung nampilin standar mana aja yang kena tanpa request tambahan:
+
+```json
+"tautan": {
+  "tipe": "standards",
+  "filter": "expired",
+  "standar": [
+    {
+      "id": 5, "nama": "TH-5", "no_sertifikat": "LK-285-IDN",
+      "berlaku_sampai": "2024-06-18",
+      "hari_menuju_kadaluarsa": -768,
+      "status_kalibrasi": "expired"
+    }
+  ]
+}
+```
+
+- **`hari_menuju_kadaluarsa` bertanda:** negatif = udah lewat segitu hari.
+- **Ambangnya sama** dengan badge `warning` di `GET /standards`:
+  `organization.settings.reminder_hari_sebelum` (default 30). Sengaja satu angka —
+  kalau ambang notifikasi beda dari ambang badge, admin bisa lihat badge kuning
+  tanpa pernah dikabarin, atau sebaliknya.
+
+> ### Anti-spam: isi yang sama nggak diulang tiap pagi
+>
+> `standar.kadaluarsa` dipicu scheduler **harian** dan ambangnya **30 hari**. Tanpa
+> penjaga, admin dapat baris yang persis sama 30 kali berturut-turut — dan sesudah
+> minggu pertama nggak ada yang buka loncengnya lagi.
+>
+> Aturannya dua:
+>
+> 1. **Isi sama** → dilewat selama **7 hari**, terus diingetin lagi.
+> 2. **Isi berubah** (standar baru masuk jendela, atau satu berubah dari `warning`
+>    jadi `expired`) → dikirim **saat itu juga**, nggak nunggu masa tenang. Itu
+>    justru kabar yang paling nggak boleh telat.
+>
+> Efeknya buat mobile: **nggak ada.** Ini murni di sisi server; yang berubah cuma
+> jumlah baris yang masuk. Tapi berguna diketahui waktu nyoba manual — kalau
+> command-nya dijalanin dua kali dan yang kedua nggak nambah notifikasi, itu
+> perilaku yang benar, bukan bug.
+>
+> `akun.menunggu_persetujuan` & `sertifikat.gagal` **nggak** kena penjaga ini: tiap
+> kejadiannya beneran beda, dan nahan salah satunya berarti ada kabar yang nggak
+> nyampe. Sertifikat yang gagal lagi sesudah retry tetap dikabarin — kegagalan
+> kedua itu kabar baru (berarti bukan gangguan sesaat).
+
+**Yang jalan otomatis** (butuh `php artisan schedule:work` di dev, atau cron ke
+`schedule:run` di prod):
+
+```
+07:00  alat:cek-jatuh-tempo        alat mendekati/lewat jatuh tempo
+07:05  standar:cek-kadaluarsa      sertifikat standar acuan
+```
+
+Bisa juga dipanggil manual: `php artisan standar:cek-kadaluarsa --hari=45`
+(`--hari` maksa ambang yang sama ke semua organisasi, buat nyoba).
 
 ---
 
