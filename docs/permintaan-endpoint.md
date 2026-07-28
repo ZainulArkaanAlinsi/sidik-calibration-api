@@ -14,10 +14,10 @@ digarap mobile tanpa backend baru nggak dimasukin.
 Urutannya udah diurutin dari yang paling murah ke paling mahal — nomor 1 dan 2
 kemungkinan cuma nambah beberapa baris di controller yang udah ada.
 
-> **Baca ini dulu — dikoreksi 25 Juli 2026.** Catatan lama di sini bilang nomor
-> **1–4 udah kelar semua**. Itu nggak bener: yang beneran ada cuma **1 & 3**.
-> Nomor **2** (`/dashboard/tren`) dan **4** (entitas `/orders`) nggak ada di repo
-> ini. Nomor **5**: 5a–5d ✅ kelar, 5e 🔸 sebagian (penanda tangan belum). **`room_id` udah jalan** — nggak perlu disepakati lagi. Rincian di
+> **Baca ini dulu — dikoreksi 25 Juli, diperbarui 26 Juli 2026.** Catatan lama di
+> sini bilang nomor **1–4 udah kelar semua**. Itu nggak bener waktu itu: yang ada
+> cuma **1 & 3**. Nomor **2** (`/dashboard/tren`) ✅ **udah jadi 26 Jul**; nomor
+> **4** (entitas `/orders`) masih nggak ada di repo ini. Nomor **5**: 5a–5d ✅ kelar, 5e 🔸 sebagian (penanda tangan belum). **`room_id` udah jalan** — nggak perlu disepakati lagi. Rincian di
 > [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md).
 >
 > Permintaan lanjutan (peran & hak akses, notifikasi ke admin, pelengkap
@@ -74,7 +74,38 @@ dikabarin batasannya apa — mobile cuma nampilin, nggak nurunin sendiri.
 
 ---
 
-## 2. Endpoint grafik pekerjaan
+## 2. Endpoint grafik pekerjaan — ✅ SUDAH JADI (26 Jul)
+
+> **`GET /api/dashboard/tren` udah live**, bentuknya persis kayak yang diminta di
+> bawah. Kontrak lengkap: [`kontrak-api.md` §7](kontrak-api.md).
+>
+> Ketiga catatan di bawah dijalanin: agregasinya di backend, scope-nya ngikut role
+> dari token, dan **periode kosong tetap dikirim dengan nilai `0`**.
+>
+> Yang ikut dikirim di luar permintaan:
+>
+> - **`label`** siap tempel ke sumbu X (`"Jul 2026"`, `"23 Jul"`) — biar mobile
+>   nggak nerjemahin nama bulan sendiri di tiap layar, dan nggak beda-beda antar layar.
+> - **`penyaring`** (dari/sampai/satuan yang beneran dipakai) — berguna waktu
+>   `dari` nggak dikirim dan backend milih bawaannya.
+> - **Batas 400 periode** → `422`, bukan hasil yang dipotong. Hasil yang dipotong
+>   sepi-sepi bikin orang salah baca tren.
+>
+> **Dua hal yang perlu diperhatiin waktu nyambungin:**
+>
+> 1. **Kuncinya `periode`, BUKAN `bulan`.** `grafik_pekerjaan` di `/dashboard`
+>    kebalikannya: `bulan`, bukan `periode`. Sengaja beda dan **nggak** dibikin
+>    alias — pernah ada bug nyata gara-gara ketuker.
+> 2. **`periode` buat `satuan=minggu` pakai tahun-minggu ISO** (`"2026-W01"`). Di
+>    pergantian tahun, 29 Des 2025 itu minggu ke-1 tahun **2026** — jadi jangan
+>    diasumsikan 4 karakter pertamanya sama dengan tahun tanggalnya.
+>
+> Angkanya **dijamin sama** dengan `grafik_pekerjaan`: dua-duanya narik dari satu
+> service, dan ada test yang ngebandingin keluarannya bulan per bulan.
+
+<details>
+<summary>Permintaan aslinya (buat arsip)</summary>
+
 
 Spec minta **grafik pekerjaan** di Dashboard, plus grafik Error/Koreksi/Deviasi
 di halaman Perhitungan. Semua endpoint yang ada sekarang cuma ngasih angka
@@ -107,6 +138,8 @@ Catatan:
   admin lintas-teknisi. Diambil dari token, mobile nggak ngirim role.
 - Periode kosong tetap dikirim dengan nilai `0`, jangan di-skip — biar sumbu
   waktunya nggak bolong.
+
+</details>
 
 ---
 
@@ -352,11 +385,15 @@ Supaya nggak salah paham arah:
 > `/dashboard/tren` maupun `/orders`, dan nggak ada `OrderController` atau model
 > `Order`. Tandanya kelihatannya nyalin dari repo `asmo-api`. Status terverifikasi
 > ada di [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md).
+>
+> ✅ **26 Juli 2026: nomor 2 (`/dashboard/tren`) sekarang beneran ada.** Nomor 4
+> (`/orders`) masih belum — dan masih perlu dipastiin dulu beneran dibutuhin apa
+> nggak, soalnya `nomor_order` & `tanggal_terima` udah ada di sesi.
 
 | # | Permintaan | Ukuran | Ngeblok | Status |
 |---|---|---|---|---|
 | 1 | `kalibrasi_selesai` di `/dashboard` | Kecil | Kartu "Kalibrasi selesai" | ✅ udah ada |
-| 2 | `GET /dashboard/tren` | Sedang | Grafik rentang tanggal bebas | ❌ **belum ada.** Grafik Dashboard sendiri **aman** — pakai `grafik_pekerjaan` di `GET /dashboard` (6 bulan terakhir) |
+| ~~2~~ | ~~`GET /dashboard/tren`~~ | — | — | ✅ **jadi 26 Jul** — `hari`/`minggu`/`bulan`, periode kosong tetap `0`, plus `label` & `penyaring`. Kuncinya `periode` (bukan `bulan`) |
 | 3 | CRUD `/rooms` | Sedang | Master Data → Data Ruangan | ✅ udah ada |
 | 4 | Entitas `/orders` + `rentang_ukur` + teknisi | Besar | Seluruh bagian Order Kalibrasi | ❌ **belum ada** (nggak ada route/controller/model). `rentang_ukur` ✅ ada di `EquipmentResource`; `nomor_order` & `tanggal_terima` ✅ ada di sesi |
 | 5a | `nomor_order` + `tanggal_terima` di detail sesi | **Sangat kecil** | 2 kolom kepala sertifikat | ✅ **ada** (`CalibrationResource:30,41`) |

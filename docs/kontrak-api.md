@@ -835,7 +835,8 @@ Catatan yang bikin beda dari dugaan:
   bawaan Laravel. Jangan di-parse jadi `int`.
 - **`kategori`**, nilai yang beneran dipakai (dari `app/Notifications/`):
   `jatuh_tempo` · `sesi_menunggu_approval` · `sesi_disetujui` ·
-  `sesi_perlu_revisi` · `sertifikat_terbit` · `umum` (fallback).
+  `sesi_perlu_revisi` · `sertifikat_terbit` · **`akun.menunggu_persetujuan`** ·
+  **`sertifikat.gagal`** · **`standar.kadaluarsa`** · `umum` (fallback).
 - **`tautan`** bentuknya `{ "tipe": ..., "id": ... }` — dipakai buat langsung
   buka layar yang dimaksud waktu notifikasinya diketuk. Bisa `null`.
 - **`ikon`** itu nama ikon Heroicon (dipakai lonceng panel admin). Mobile boleh
@@ -854,6 +855,80 @@ DELETE /api/notifications/{id}
 
 > Dokumen lain sempat nyebut `POST /notifications/{id}/baca`. Itu nggak ada —
 > yang bener `/read`.
+
+### Tiga kejadian baru yang sekarang nyampe ke admin (live 26 Jul)
+
+Nutup `permintaan-endpoint-fase-2.md` §2 — *"kalo ada sesuatu dan yang dibutuhkan
+sama admin maka semuanya dikirim ke bagian admin."* Tiga yang tadinya nggak
+dikabarin ke siapa pun:
+
+| `kategori` | Kapan | `tautan` | Warna |
+|---|---|---|---|
+| `akun.menunggu_persetujuan` | ada yang `POST /register` | `{tipe: "users", filter: "pending", id}` | `warning` |
+| `sertifikat.gagal` | PDF sertifikat gagal dibuat | `{tipe: "certificates", id}` | `danger` |
+| `standar.kadaluarsa` | scheduler harian nemu standar mendekati/lewat habis | `{tipe: "standards", filter: "expired"\|"warning", standar: [...]}` | `danger`/`warning` |
+
+Yang dikabarin: **admin `aktif` di organisasi itu**. `pending`/`nonaktif` nggak —
+mereka nggak bisa login, jadi notifikasinya cuma numpuk. Teknisi & viewer juga
+nggak: tiganya cuma bisa ditindak admin.
+
+**`standar.kadaluarsa` bawa daftar rincian di `tautan.standar`**, jadi tap-nya bisa
+langsung nampilin standar mana aja yang kena tanpa request tambahan:
+
+```json
+"tautan": {
+  "tipe": "standards",
+  "filter": "expired",
+  "standar": [
+    {
+      "id": 5, "nama": "TH-5", "no_sertifikat": "LK-285-IDN",
+      "berlaku_sampai": "2024-06-18",
+      "hari_menuju_kadaluarsa": -768,
+      "status_kalibrasi": "expired"
+    }
+  ]
+}
+```
+
+- **`hari_menuju_kadaluarsa` bertanda:** negatif = udah lewat segitu hari.
+- **Ambangnya sama** dengan badge `warning` di `GET /standards`:
+  `organization.settings.reminder_hari_sebelum` (default 30). Sengaja satu angka —
+  kalau ambang notifikasi beda dari ambang badge, admin bisa lihat badge kuning
+  tanpa pernah dikabarin, atau sebaliknya.
+
+> ### Anti-spam: isi yang sama nggak diulang tiap pagi
+>
+> `standar.kadaluarsa` dipicu scheduler **harian** dan ambangnya **30 hari**. Tanpa
+> penjaga, admin dapat baris yang persis sama 30 kali berturut-turut — dan sesudah
+> minggu pertama nggak ada yang buka loncengnya lagi.
+>
+> Aturannya dua:
+>
+> 1. **Isi sama** → dilewat selama **7 hari**, terus diingetin lagi.
+> 2. **Isi berubah** (standar baru masuk jendela, atau satu berubah dari `warning`
+>    jadi `expired`) → dikirim **saat itu juga**, nggak nunggu masa tenang. Itu
+>    justru kabar yang paling nggak boleh telat.
+>
+> Efeknya buat mobile: **nggak ada.** Ini murni di sisi server; yang berubah cuma
+> jumlah baris yang masuk. Tapi berguna diketahui waktu nyoba manual — kalau
+> command-nya dijalanin dua kali dan yang kedua nggak nambah notifikasi, itu
+> perilaku yang benar, bukan bug.
+>
+> `akun.menunggu_persetujuan` & `sertifikat.gagal` **nggak** kena penjaga ini: tiap
+> kejadiannya beneran beda, dan nahan salah satunya berarti ada kabar yang nggak
+> nyampe. Sertifikat yang gagal lagi sesudah retry tetap dikabarin — kegagalan
+> kedua itu kabar baru (berarti bukan gangguan sesaat).
+
+**Yang jalan otomatis** (butuh `php artisan schedule:work` di dev, atau cron ke
+`schedule:run` di prod):
+
+```
+07:00  alat:cek-jatuh-tempo        alat mendekati/lewat jatuh tempo
+07:05  standar:cek-kadaluarsa      sertifikat standar acuan
+```
+
+Bisa juga dipanggil manual: `php artisan standar:cek-kadaluarsa --hari=45`
+(`--hari` maksa ambang yang sama ke semua organisasi, buat nyoba).
 
 ---
 
@@ -906,6 +981,66 @@ Isinya beda tergantung role — teknisi dapat ringkasan miliknya, admin dapat li
 > | Alat & sertifikat | `total_alat`, `alat_overdue`, `total_sertifikat`, `sertifikat_bulan_ini` | **selalu se-lab**, termasuk buat teknisi |
 >
 > Jadi di layar teknisi wajar muncul "Kalibrasi selesai: 2" bareng "Sertifikat: 137". Dashboard misahin dua kelompok ini secara visual (kartu hero berlabel "SE-LAB" vs seksi "KALIBRASI SAYA") — jangan digabung jadi satu deret kartu tanpa keterangan, nanti kebaca kayak datanya ngaco.
+
+### `GET /api/dashboard/tren` — grafik rentang bebas (live 26 Jul)
+
+Buat grafik yang periodenya dipilih user, bukan dipatok 6 bulan kayak
+`grafik_pekerjaan`. **Semua role**; teknisi cuma dapat pekerjaannya sendiri.
+
+```
+GET /api/dashboard/tren?dari=2026-05-01&sampai=2026-07-31&satuan=bulan
+```
+
+| Penyaring | Isi | Bawaan kalau nggak dikirim |
+|---|---|---|
+| `satuan` | `hari` · `minggu` · `bulan` | `bulan` |
+| `sampai` | `YYYY-MM-DD` | hari ini |
+| `dari` | `YYYY-MM-DD` | `hari` → 30 hari · `minggu` → 12 minggu · `bulan` → 6 bulan |
+
+```json
+{
+  "data": [
+    { "periode": "2026-05", "label": "Mei 2026", "masuk": 14, "selesai": 11 },
+    { "periode": "2026-06", "label": "Jun 2026", "masuk": 9,  "selesai": 9  },
+    { "periode": "2026-07", "label": "Jul 2026", "masuk": 6,  "selesai": 3  }
+  ],
+  "penyaring": { "dari": "2026-05-01", "sampai": "2026-07-31", "satuan": "bulan" }
+}
+```
+
+- **Urutannya lama → baru**, bisa langsung digambar tanpa nyortir.
+- **Periode kosong tetap keluar dengan nilai `0`, nggak dilewat** — kalau dilewat,
+  grafiknya bohong: jeda kosong ketutup dan tren naik-turunnya kelihatan lebih
+  mulus dari kenyataan.
+- `masuk` = sesi yang **tanggal kalibrasinya** jatuh di periode itu.
+  `selesai` = yang **di-approve** di periode itu (`reviewed_at`), bukan tanggal
+  sertifikat terbit — generate PDF jalan di queue, jadi sesi yang baru di-approve
+  bakal kehitung "belum selesai" kalau worker lagi ngantre.
+- `label` udah siap tempel ke sumbu X. `hari`/`minggu` → `"23 Jul"`,
+  `bulan` → `"Jul 2026"`. Minggu dilabeli tanggal **mulai**nya — `"W30"` nggak
+  berarti apa-apa buat yang lihat grafik.
+- **Kunci `periode` buat `minggu` pakai tahun-minggu ISO**: `"2026-W01"`. Perhatiin
+  di pergantian tahun — 29 Des 2025 itu minggu ke-1 tahun **2026** menurut ISO,
+  jadi jangan diasumsikan 4 karakter pertamanya sama dengan tahun tanggalnya.
+- **`dari`/`sampai` dinormalisasi ke batas periode.** `dari=2026-01-31&satuan=bulan`
+  tetap mulai dari `2026-01`, bukan ngelewatin Januari.
+
+> ⚠️ **Nama kuncinya `periode`, BUKAN `bulan`.** Sebaliknya `grafik_pekerjaan` di
+> `GET /dashboard` pakai `bulan`, bukan `periode`. Dua-duanya sengaja beda dan
+> **nggak** dibikin alias — mobile pernah kena bug nyata gara-gara ketuker (sumbu X
+> Dashboard kosong melompong padahal semua test ijo). Satu endpoint, satu nama.
+
+**Batas: maksimal 400 periode.** Lebih dari itu `422`, bukan hasil yang dipotong —
+hasil yang dipotong sepi-sepi bikin orang salah baca tren, dan 400+ batang di layar
+HP itu garis abu-abu, bukan grafik. Kalau kena, sempitin rentangnya atau naikin
+`satuan` (`hari` → `minggu` → `bulan`). `satuan` ngawur & `sampai` lebih awal dari
+`dari` juga `422`.
+
+> **Angkanya dijamin sama dengan `grafik_pekerjaan`.** Dua-duanya narik dari satu
+> service (`TrenPekerjaan`), dan ada test yang ngebandingin keluaran keduanya bulan
+> per bulan. Jadi `/dashboard/tren?satuan=bulan` yang dibuka tanpa penyaring bakal
+> ngasih angka identik dengan grafik di Dashboard — kalau beda, itu bug, bukan beda
+> definisi.
 
 ---
 
