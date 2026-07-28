@@ -198,7 +198,49 @@ Plus `POST /api/calibrations/photos` buat unggah foto.
 Beda dari tanda tangan: logo **ADA URL-nya** dan bisa dipakai langsung di
 `Image.network`, karena logo itu identitas yang memang dipajang.
 
-### 2j. Lain-lain yang udah live
+### 2j. Grafik tren rentang bebas (BARU, 28 Jul)
+
+```
+GET /api/dashboard/tren?dari=&sampai=&satuan=hari|minggu|bulan
+```
+
+**Kuncinya `periode`, BUKAN `bulan`** — sengaja beda dari `grafik_pekerjaan` di
+`GET /dashboard` biar nggak ketuker waktu dipasang ke chart yang sama. Maks 400
+periode per request.
+
+Angkanya dijamin sama dengan `grafik_pekerjaan` karena dua-duanya lewat satu
+service. Jadi kalau dashboard nampilin dua grafik, nggak akan ada angka yang beda
+buat rentang yang sama.
+
+### 2k. Notifikasi kejadian — sekarang beneran keisi (BARU, 28 Jul)
+
+Endpoint-nya:
+
+```
+GET    /api/notifications
+GET    /api/notifications/unread-count
+POST   /api/notifications/{id}/read
+POST   /api/notifications/read-all
+DELETE /api/notifications/{id}
+```
+
+**Tiga kategori kejadian baru** yang sekarang beneran nyampe ke admin:
+
+| Tipe | Kapan |
+|---|---|
+| `akun.menunggu_persetujuan` | ada akun baru daftar |
+| `sertifikat.gagal` | generate PDF gagal |
+| `standar.kadaluarsa` | sertifikat standar acuan mau habis |
+
+Dua hal yang ngaruh ke desain layarnya:
+
+1. **Cuma ke admin yang AKTIF.** Teknisi & viewer nggak nerima tiga kategori ini —
+   jangan bikin badge-nya nongol di role yang nggak pernah dapet isi.
+2. **Yang harian kena anti-spam.** Isi yang sama nggak diulang selama 7 hari, tapi
+   kalau isinya berubah dikirim saat itu juga. Jadi kalau QA bilang "notifikasinya
+   nggak muncul lagi padahal kondisinya masih ada" — itu perilaku yang bener.
+
+### 2l. Lain-lain yang udah live
 
 | Endpoint | Guna |
 |---|---|
@@ -223,26 +265,11 @@ Diverifikasi absen dari 115 rute yang terdaftar di `main`:
 
 | Yang diminta | Status | Dampak |
 |---|---|---|
-| `GET /dashboard/tren` | **PR #21 belum di-merge** | Grafik Dashboard **aman** (pakai `grafik_pekerjaan` yang udah ada). Yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | **belum ada sama sekali** | Nggak ada layar Order tersendiri. Tapi `nomor_order` & `tanggal_terima` **udah ada di objek sesi** — kalau yang dibutuhin cuma nampilin itu, bisa jalan sekarang |
 | `calculated_by` / `signed_by` di worksheet | **belum ada** | Blok approval Halaman 2 worksheet. **Beda dari penanda tangan sertifikat** (§2c): yang itu satu orang tingkat lab, yang ini per sesi |
 | Evaluator ekspresi rumus | **belum ada** | Ganti versi rumus belum ngubah cara hitung. Pencatatan versinya udah ada, mesin eksekusinya belum |
 
-### Soal notifikasi — setengah tersedia
-
-**Endpoint-nya UDAH ADA** dan bisa dipakai sekarang:
-
-```
-GET    /api/notifications
-GET    /api/notifications/unread-count
-POST   /api/notifications/{id}/read
-POST   /api/notifications/read-all
-DELETE /api/notifications/{id}
-```
-
-**Tapi** 3 kejadian yang bikin notifikasi itu keisi masih di **PR #20 yang belum
-di-merge**. Artinya: layar notifikasi boleh dibangun sekarang (bentuk datanya udah
-final), cuma jangan kaget kalau isinya masih sepi sampai #20 masuk.
+Cuma tiga itu. Sisanya udah kepasang.
 
 ---
 
@@ -250,18 +277,26 @@ final), cuma jangan kaget kalau isinya masih sepi sampai #20 masuk.
 
 **Bisa dikerjain sekarang, nggak nunggu siapa-siapa:**
 
-1. Layar pengaturan tanda tangan (unggah + drag posisi) — §2b
-2. Layar kirim email sertifikat + riwayat — §2d
-3. Folder Manager lengkap termasuk drag-drop — §2e
-4. Layar laporan + tombol ekspor — §2f
-5. Perbaikan parsing tanggal di seluruh app — §1a ⚠️ **paling mendesak, ini
+1. **Perbaikan parsing tanggal di seluruh app** — §1a ⚠️ **paling mendesak, ini
    ngerusak yang udah jalan**
+2. Layar pengaturan tanda tangan (unggah + drag posisi) — §2b
+3. Layar kirim email sertifikat + riwayat — §2d
+4. Folder Manager lengkap termasuk drag-drop — §2e
+5. Layar laporan + tombol ekspor — §2f
 6. Ganti aturan role hard-coded pakai `/me/permissions` — §2a
-7. Layar notifikasi (shell-nya) — §3
+7. Layar notifikasi **lengkap dengan isinya** — §2k
+8. Grafik tren rentang bebas di Dashboard — §2j
 
-**Tunggu dulu:** grafik tren rentang bebas, layar Order, blok approval worksheet.
+**Tunggu dulu:** layar Order, blok approval worksheet (`calculated_by`/`signed_by`),
+evaluator ekspresi rumus.
 
 ---
 
-*Disusun 28 Juli 2026 · dicek langsung ke `routes/api.php` (115 rute) dan test suite
-(556 hijau) di branch `main` + `feat/penanda-tangan-objek-sertifikat`.*
+*Disusun 28 Juli 2026 · dicek langsung ke `routes/api.php` dan test suite (594 hijau)
+di branch `main` sesudah PR #20, #21, #27 di-merge, plus
+`feat/penanda-tangan-objek-sertifikat` (PR #28).*
+
+> **Satu hal yang perlu dicek sebelum mulai:** bagian `penanda_tangan` di objek
+> sertifikat (§2c) ada di PR #28 yang **belum di-merge**. Sisanya semua udah di
+> `main`. Kalau PR itu belum masuk waktu kamu baca ini, field-nya belum keluar di
+> respons — tapi bentuknya nggak akan berubah.
