@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class Certificate extends Model
 {
-    use HasFactory;
+    use Diaudit, HasFactory;
 
     public const STATUS_MENUNGGU_GENERATE = 'menunggu_generate';
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalibrationController;
 use App\Http\Controllers\Api\CalibrationMethodController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
+use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
@@ -224,6 +226,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
+        // Kirim sertifikat ke email pelanggan (fase-2 §3d). Di backend, bukan
+        // mobile, karena dua hal: alamat pengirim harus domain lab, dan
+        // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
+        // dokumen resmi ke luar, bukan baca data.
+        Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
+            ->middleware('throttle:20,1');
+        Route::get('/certificates/{certificate}/riwayat-email', [CertificateController::class, 'riwayatEmail']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
         Route::put('/organization', [OrganizationController::class, 'update']);
@@ -232,6 +241,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // situ, dan logo PT itu identitas yang memang dipajang.
         Route::post('/organization/logo', [OrganizationController::class, 'uploadLogo']);
         Route::delete('/organization/logo', [OrganizationController::class, 'deleteLogo']);
+
+        // Tanda tangan penanda tangan sertifikat (fase-2 §3c). Admin doang —
+        // teknisi & viewer nggak boleh nyentuh sama sekali.
+        //
+        // File-nya di disk PRIVAT (beda dari logo): gambar tanda tangan yang URL-nya
+        // bisa diakses siapa pun berarti siapa pun bisa nempelin ke dokumen palsu.
+        // Makanya pratinjaunya lewat endpoint yang ngecek hak akses, bukan URL storage.
+        Route::post('/organization/tanda-tangan', [OrganizationController::class, 'uploadTandaTangan']);
+        Route::get('/organization/tanda-tangan', [OrganizationController::class, 'previewTandaTangan']);
+        Route::delete('/organization/tanda-tangan', [OrganizationController::class, 'deleteTandaTangan']);
+        // Posisi & ukuran cetaknya — ini yang bakal dipakai UI drag-and-drop.
+        // Disimpen SEKALI di tingkat template, bukan per sertifikat: sertifikat yang
+        // udah terbit itu dokumen terkendali dan nggak boleh bisa diedit.
+        Route::patch('/organization/tanda-tangan/posisi', [OrganizationController::class, 'updatePosisiTandaTangan']);
 
         // Pemicu MANUAL pengingat jatuh tempo (spec poin 6). Otomatisnya jalan
         // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di
@@ -269,6 +292,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
         Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
+        // Pindahin folder ke induk lain. Kepisah dari `update()` yang cuma rename:
+        // yang ini nyentuh struktur pohonnya, dan struktur yang rusak bikin folder
+        // ilang dari layar tanpa kehapus. Folder sistem ditolak — lihat handler-nya.
+        Route::put('/arsip/folders/{folder}/pindah', [FolderController::class, 'pindah']);
+        // Pindahin berkas sertifikat, dikunci pakai id SESI KALIBRASI (bukan id
+        // folder_files) — itu yang dipegang mobile di layar arsip.
+        Route::put('/arsip/berkas/{calibration}/pindah', [FolderFileController::class, 'pindahBerkasSesi']);
         Route::post('/folder-files', [FolderFileController::class, 'store']);
         Route::put('/folder-files/{folderFile}', [FolderFileController::class, 'update']);
         Route::delete('/folder-files/{folderFile}', [FolderFileController::class, 'destroy']);
@@ -276,6 +306,28 @@ Route::middleware('auth:sanctum')->group(function () {
         // Import Excel buat masa transisi (spesifikasi poin 12C).
         Route::get('/imports/format', [ImportController::class, 'format']);
         Route::post('/imports/excel', [ImportController::class, 'excel']);
+
+        // Rumus kalibrasi berversi (Keputusan 5). Admin doang — salah ngetik di
+        // sini ngubah angka yang masuk sertifikat terakreditasi.
+        Route::get('/formulas', [FormulaController::class, 'index']);
+        Route::get('/formulas/{formula}/versions', [FormulaController::class, 'versions']);
+        // "Sesi tanggal 26 Mei dihitung pakai aturan yang mana?" — pertanyaan yang
+        // bikin fitur ini ada, dan beda dari "aturan apa yang dipakai sekarang".
+        Route::get('/formulas/{formula}/versi-berlaku', [FormulaController::class, 'versiPadaTanggal']);
+        // Terbitin versi baru = bikin versinya + tutup rentang versi sebelumnya,
+        // dalam SATU transaksi. Kalau dipisah, ada jeda di mana dua versi
+        // sama-sama berlaku buat satu tanggal.
+        Route::post('/formulas/{formula}/versions', [FormulaController::class, 'storeVersion']);
+        Route::patch('/formula-versions/{formulaVersion}', [FormulaController::class, 'updateVersion']);
+
+        // Riwayat perubahan data (Keputusan 4) — baca-saja, admin doang.
+        // Nggak ada POST/PUT/DELETE: baris audit lahir dari perubahan datanya
+        // sendiri (trait `Diaudit`), bukan dari request. Riwayat yang bisa ditulis
+        // tangan berhenti jadi bukti.
+        // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
+        Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
+            ->middleware('throttle:20,1');
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
         Route::get('/users', [UserController::class, 'index']);
         Route::put('/users/{user}', [UserController::class, 'update']);
