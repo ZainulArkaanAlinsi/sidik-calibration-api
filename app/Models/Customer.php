@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['organization_id', 'nama', 'alamat', 'contact_person', 'telepon', 'email'])]
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Diaudit, HasFactory, SoftDeletes;
 
     /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo

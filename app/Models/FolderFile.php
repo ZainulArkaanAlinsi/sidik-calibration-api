@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class FolderFile extends Model
 {
-    use SoftDeletes;
+    use Diaudit, SoftDeletes;
 
     /** Tautan ke sertifikat resmi — file-nya nggak disalin ke sini. */
     public const SUMBER_SERTIFIKAT = 'sertifikat';

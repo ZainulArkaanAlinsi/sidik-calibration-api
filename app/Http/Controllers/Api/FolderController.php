@@ -213,6 +213,109 @@ class FolderController extends Controller
         ]);
     }
 
+    /**
+     * Pindahin folder ke induk lain (`docs/permintaan-backend-2026-07-24.md` §2b).
+     *
+     * Kepisah dari `update()` yang cuma rename, karena aturannya beda: yang ini
+     * nyentuh struktur pohonnya, dan struktur yang rusak bikin folder ilang dari
+     * layar tanpa kehapus. Admin doang.
+     */
+    public function pindah(Request $request, Folder $folder): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $folder);
+
+        // Folder SISTEM nggak bisa dipindah — alasannya sama kayak larangan rename
+        // di `update()`, cuma jalurnya beda. `FolderOrganizer` nemuin folder akar
+        // PT dari `parent_id = null` dan folder tahun dari `parent_id = akar->id`.
+        // Begitu salah satunya dipindah, kriterianya nggak nyocok lagi, sertifikat
+        // berikutnya bikin folder BARU, dan arsip satu PT kepecah dua tanpa ada
+        // yang sadar.
+        if ($folder->tipe === Folder::TIPE_SISTEM) {
+            return response()->json([
+                'message' => 'Folder ini kebentuk otomatis dari data (PT/tahun), jadi tempatnya '
+                    .'ngikut datanya dan nggak bisa dipindah. Yang bisa dipindah folder buatan sendiri.',
+            ], 422);
+        }
+
+        $organizationId = $request->user()->organization_id;
+
+        $data = $request->validate([
+            // `null` artinya jadiin folder akar — sama kayak yang `POST /folders`
+            // udah izinin, jadi bukan kemampuan baru.
+            'parent_id' => [
+                'present', 'nullable',
+                Rule::exists('folders', 'id')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
+            ],
+        ], [
+            'parent_id.present' => 'Kirim `parent_id` — pakai `null` kalau mau dijadiin folder akar.',
+            'parent_id.exists' => 'Folder tujuannya nggak ketemu.',
+        ]);
+
+        $tujuanId = $data['parent_id'] === null ? null : (int) $data['parent_id'];
+
+        if ($tujuanId === $folder->id) {
+            return response()->json([
+                'message' => 'Folder nggak bisa dipindah ke dalam dirinya sendiri.',
+            ], 422);
+        }
+
+        // Pindah ke KETURUNAN sendiri bikin siklus: folder-nya lepas dari pohon
+        // dan ilang dari semua layar, padahal barisnya masih ada di database.
+        // `jalur()` udah dibatesin 10 tingkat biar nggak loop tak hingga, jadi
+        // kerusakannya sunyi — nggak error, cuma nggak keliatan lagi.
+        if ($tujuanId !== null && $this->keturunanDari($folder, $tujuanId)) {
+            return response()->json([
+                'message' => 'Folder nggak bisa dipindah ke dalam folder yang ada DI DALAM dia. '
+                    .'Kalau dipaksa, folder-nya lepas dari pohon dan ilang dari layar.',
+            ], 422);
+        }
+
+        if ($tujuanId === $folder->parent_id) {
+            // Udah di situ — nggak diapa-apain, tapi tetap `200` biar mobile yang
+            // nge-drag ke tempat yang sama nggak nampilin error.
+            return response()->json([
+                'data' => new FolderResource($folder->loadCount(['children', 'files'])),
+            ]);
+        }
+
+        if ($pesan = $this->namaBentrok($folder->organization_id, $tujuanId, (string) $folder->nama)) {
+            return response()->json(['message' => $pesan], 422);
+        }
+
+        $folder->update(['parent_id' => $tujuanId]);
+
+        return response()->json([
+            'data' => new FolderResource($folder->fresh()->loadCount(['children', 'files'])),
+        ]);
+    }
+
+    /**
+     * Apakah `$kandidatId` ada di dalam `$folder` (anak, cucu, dst)?
+     *
+     * Ditelusuri dari kandidat NAIK ke akar, bukan dari folder turun ke bawah:
+     * naik itu satu query per tingkat dan pohonnya cuma dua tingkat, sedangkan
+     * turun harus nyapu seluruh cabang.
+     *
+     * Batas 10 tingkat sama kayak `Folder::jalur()` — kalau datanya udah rusak
+     * dan bikin siklus, ini berhenti, bukan nggantung.
+     */
+    private function keturunanDari(Folder $folder, int $kandidatId): bool
+    {
+        $kursor = Folder::find($kandidatId);
+
+        for ($i = 0; $kursor !== null && $i < 10; $i++) {
+            if ($kursor->id === $folder->id) {
+                return true;
+            }
+
+            $kursor = $kursor->parent_id === null ? null : Folder::find($kursor->parent_id);
+        }
+
+        return false;
+    }
+
     /** Admin doang. */
     public function destroy(Request $request, Folder $folder): JsonResponse
     {
