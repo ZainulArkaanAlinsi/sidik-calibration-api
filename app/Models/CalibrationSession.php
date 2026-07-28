@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 ])]
 class CalibrationSession extends Model
 {
-    use HasFactory;
+    use Diaudit, HasFactory;
 
     public const STATUS_DRAFT = 'draft';
 

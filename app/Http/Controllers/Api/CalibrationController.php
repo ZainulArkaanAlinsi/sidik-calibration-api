@@ -21,6 +21,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\LembarKerjaTemplate;
 use App\Services\PerhitunganBuilder;
+use App\Services\RumusKalibrasi;
 use Carbon\Carbon;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
@@ -600,8 +601,20 @@ class CalibrationController extends Controller
             $sesi->rawMeasurements()->create($baris);
         }
 
+        // Stempel versi rumus yang berlaku di TANGGAL KALIBRASI sesi ini
+        // (Keputusan 5). Ini yang bikin hasil hitung lama tetap bisa dijelasin
+        // sesudah rumusnya diubah: tanpa stempel, nggak ada cara tahu sertifikat
+        // mana dihitung pakai aturan yang mana.
+        //
+        // Dihitung SEKALI di luar loop — semua titik di satu sesi pakai versi yang
+        // sama, dan manggilnya per titik cuma nambah query tanpa nambah informasi.
+        $versiRumus = app(RumusKalibrasi::class)->versiUntukSesi($sesi);
+
         foreach ($susunan['hitungan'] as $hitungan) {
-            $sesi->uncertaintyCalculations()->create($hitungan);
+            $sesi->uncertaintyCalculations()->create([
+                ...$hitungan,
+                'formula_version_id' => $versiRumus?->id,
+            ]);
         }
 
         return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
