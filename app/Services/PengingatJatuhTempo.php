@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Equipment;
 use App\Models\Organization;
-use App\Models\User;
 use App\Notifications\AlatJatuhTempo;
 
 /**
@@ -63,11 +62,10 @@ class PengingatJatuhTempo
         $overdue = $alatList->filter(fn (Equipment $a): bool => $a->isOverdue())->count();
         $mendekati = $alatList->count() - $overdue;
 
-        $admins = User::query()
-            ->where('organization_id', $org->id)
-            ->where('role', User::ROLE_ADMIN)
-            ->where('status', User::STATUS_AKTIF)
-            ->get();
+        // Lewat `PenerimaNotifikasi` biar aturan "siapa yang dikabarin" cuma ada
+        // di satu tempat — dulu query-nya ditulis ulang di tiap pemicu, dan itu
+        // cara paling gampang bikin salah satunya lupa nyaring `status = aktif`.
+        $admins = app(PenerimaNotifikasi::class)->adminAktifOrganisasi($org);
 
         // Ditulis lewat kelas notifikasi aplikasi biar baris yang sama kebaca di
         // lonceng panel admin DAN di halaman notifikasi mobile (spec poin 4 & 6).
