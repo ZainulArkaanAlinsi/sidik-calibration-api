@@ -116,6 +116,12 @@ class GenerateCertificate implements ShouldQueue
                 // Embed sebagai data URI — paling aman buat dompdf (nggak
                 // gantung ke path/symlink). null kalau logonya nggak ketemu.
                 'logo' => $this->logoDataUri($sesi->organization),
+                // Tanda tangan (fase-2 §3c). `null` kalau belum diunggah — dan itu
+                // state yang sah: sertifikat nyetak garis + nama + jabatan dengan
+                // ruang kosong buat tanda tangan basah, persis kayak sebelumnya.
+                'tandaTangan' => $this->tandaTanganDataUri($sesi->organization),
+                'posisiTtd' => $sesi->organization?->pengaturanTandaTangan()
+                    ?? ['geser_x_mm' => 0, 'geser_y_mm' => 0, 'lebar_mm' => Organization::DEFAULT_TTD_LEBAR_MM],
                 'qr' => $this->qrDataUri($qr, $sesi->organization, $sertifikat),
                 'keputusan' => $this->tampilkanKeputusan($sesi->organization) ? $sesi->keputusan : null,
             ]);
@@ -260,6 +266,29 @@ class GenerateCertificate implements ShouldQueue
         $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
 
         return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    /**
+     * Gambar tanda tangan sebagai data URI buat dompdf (fase-2 §3c).
+     *
+     * Dibaca dari disk **local (privat)**, beda dari logo yang di disk publik —
+     * gambar tanda tangan yang URL-nya bisa diakses siapa pun berarti siapa pun bisa
+     * nempelin ke dokumen palsu. Di sini nggak masalah: dompdf jalan di server, jadi
+     * dia bisa baca disk privat langsung.
+     *
+     * Mime-nya dipatok `image/png`, nggak ditebak dari ekstensi kayak `logoDataUri()`.
+     * Unggahannya udah dibatasi PNG doang (JPG nggak punya alpha → kecetak jadi kotak
+     * putih yang nutupin garis tanda tangan), jadi nebak cuma nambah cara buat salah.
+     */
+    private function tandaTanganDataUri(?Organization $organization): ?string
+    {
+        $path = $organization?->tanda_tangan_path;
+
+        if (! filled($path) || ! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode((string) Storage::disk('local')->get($path));
     }
 
     /**

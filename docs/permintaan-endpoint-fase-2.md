@@ -252,7 +252,32 @@ Minimal yang dibutuhin:
                     "ttd_url": "https://.../ttd-alex.png" }
 ```
 
-### 3d. Print & Kirim Email
+### 3d. Print & Kirim Email — ✅ **KIRIM EMAIL UDAH JADI (27 Jul)**
+
+> `POST /api/certificates/{id}/kirim-email` + `GET /certificates/{id}/riwayat-email`,
+> admin doang. Kontrak lengkap: [`kontrak-api.md` §13](kontrak-api.md).
+>
+> Dua alasan yang disebut di bawah dipenuhi:
+>
+> 1. **Alamat pengirim domain lab** — lewat `MAIL_FROM_ADDRESS`. Email organisasi
+>    ditaruh di `Reply-To`, **bukan** `From`: `From` yang domainnya beda dari domain
+>    pengirim bikin SPF/DKIM gagal dan email-nya masuk spam.
+> 2. **Tercatat buat audit** — tabel `certificate_email_logs`, dan **semua percobaan
+>    dicatat termasuk yang gagal**. "Kami udah nyoba tapi alamatnya nolak" itu justru
+>    yang dicari waktu pelanggan ngaku nggak nerima.
+>
+> PDF-nya **dilampirkan**, bukan dikirim sebagai tautan — tautan ke disk privat butuh
+> login (pelanggan nggak punya akun), tautan publik berarti sertifikat bisa diakses
+> siapa pun yang dapat URL-nya.
+>
+> **Yang masih perlu dari lo:** isi `MAIL_*` di `.env` produksi. Sekarang
+> `MAIL_MAILER=log`, jadi email-nya kerender lengkap (udah diuji, lampiran PDF-nya
+> nempel) tapi masuk `storage/logs/laravel.log`. Begitu SMTP diisi, **nggak ada kode
+> yang perlu diubah**.
+
+<details>
+<summary>Permintaan aslinya (buat arsip)</summary>
+
 
 - **Print** — nggak perlu endpoint. Mobile bisa nge-print PDF yang udah ada
   lewat dialog cetak Android. Ini pekerjaan kami.
@@ -266,6 +291,8 @@ POST /api/certificates/{id}/kirim-email
 Alasan ditaruh di backend, bukan mobile: alamat pengirim harus domain lab
 (bukan Gmail teknisi), dan pengirimannya perlu tercatat buat audit — siapa
 ngirim sertifikat ke siapa, kapan.
+
+</details>
 
 ---
 
@@ -319,9 +346,18 @@ jawabannya nggak cocok sama kode di sini. Versi terverifikasi (25 Juli 2026):
 > teknisi lihat tombolnya lalu kena `403` — persis bug "jalan di admin, mentok di
 > teknisi" yang §1 dokumen ini keluhin.
 
-**Yang tersisa buat backend di bagian ini: 2 operasi**, dua-duanya sekunder
-(`/pindah` folder & berkas). Yang core — tap PT buka folder akarnya — **udah jadi
-25 Jul**, jadi browse / rename / hapus / tap PT semuanya bisa disambungin sekarang.
+**✅ 27 Jul: bagian ini KELAR SEMUA.** Yang core (tap PT buka folder akarnya) jadi
+25 Jul; dua operasi `/pindah` terakhir jadi 27 Jul. Jadi browse / rename / hapus /
+tap PT / pindah folder / pindah berkas semuanya bisa disambungin sekarang.
+
+Dua batasan yang perlu dipatuhi UI waktu bikin drag-drop:
+
+1. **Folder bertipe `sistem` nggak bisa dipindah** → `422`. `tipe` udah ikut di
+   respons `/folders`, jadi jangan dibikin bisa di-drag sama sekali.
+2. **Folder nggak bisa dipindah ke dalam keturunannya sendiri** → `422`. Kalau
+   lolos, folder-nya lepas dari pohon dan ilang dari semua layar tanpa error.
+
+Kontrak lengkap: [`kontrak-api.md` §8a](kontrak-api.md).
 
 ---
 
@@ -370,19 +406,30 @@ di sini narik dari **satu** service (`LaporanKalibrasi`), bukan tiga query sendi
 | ~~2~~ | ~~Notifikasi kejadian yang butuh admin~~ | — | — | ✅ **jadi 26 Jul** — 3 kategori baru + anti-spam buat yang harian |
 | ~~3a~~ | ~~`logo_url` di organisasi~~ | — | — | ✅ **jadi 25 Jul** |
 | ~~3b~~ | ~~`qr_token` di objek sertifikat~~ | — | — | ✅ **jadi 25 Jul** — `qr_token` **+ `qr_payload`** (URL siap di-render) ikut di embed sertifikat |
-| 3c | Penanda tangan / Manajer Teknis | Sedang | — | 🔸 **diputusin 26 Jul: kosong dulu**, dan yang kosong itu udah jalan. Fitur import + drag-and-drop belakangan — lihat catatan di bawah tabel |
-| 3d | `POST /certificates/{id}/kirim-email` | Sedang | Kirim sertifikat ke pelanggan | |
-| 4 | CRUD folder & file arsip | Kecil–Sedang | — | 🔸 **SEBAGIAN** — browse/rename/hapus & tap-PT udah jalan; tinggal **2** operasi `/pindah`, dua-duanya sekunder. Lihat §4 (dulu salah ditandain "udah ada") |
+| ~~3c~~ | ~~Penanda tangan / Manajer Teknis~~ | — | — | ✅ **jadi 27 Jul** — 4 endpoint `/organization/tanda-tangan` + gambar kecetak di PDF. Keputusan role: **bukan role keempat**, tapi atribut organisasi |
+| ~~3d~~ | ~~`POST /certificates/{id}/kirim-email`~~ | — | — | ✅ **jadi 27 Jul** — plus riwayat pengiriman. Nunggu `MAIL_*` diisi di `.env` produksi |
+| ~~4~~ | ~~CRUD folder & file arsip~~ | — | — | ✅ **KELAR SEMUA 27 Jul** — browse/rename/hapus/tap-PT + 2 operasi `/pindah` terakhir |
 | ~~5~~ | ~~`GET /laporan/kalibrasi` + export~~ | — | — | ✅ **jadi 26 Jul** — plus `ringkasan`, `penyaring`, filter `status`/`keputusan` |
 
-**Sisa yang belum:** 3d (kirim email — butuh kredensial SMTP dulu) dan 2 operasi
-`/pindah` di §4 (dua-duanya sekunder). Nomor 1 & 2 dua-duanya kelar 26 Jul.
+**Enam-enamnya kelar per 27 Jul.** Nggak ada sisa di tabel ini.
 
-**3c (penanda tangan) udah diputusin 26 Jul:** kosong dulu — sertifikat nyetak
-garis + nama + jabatan dengan ruang kosong buat tanda tangan basah, dan itu udah
-jalan sekarang. Fitur import + drag-and-drop belakangan; waktu dibangun, drag-nya
-di **template** (sekali, admin-only), bukan di sertifikat yang udah terbit —
-sertifikat terbit itu dokumen terkendali.
+Dua hal yang tinggal urusan operasional, bukan kode:
+
+1. **`MAIL_*` di `.env` produksi** buat 3d — sekarang email masuk file log, bukan ke
+   internet. Nggak ada kode yang perlu diubah waktu SMTP-nya diisi.
+2. **File PNG tanda tangan asli + jabatan resminya** buat 3c — sekarang jalan pakai
+   placeholder. Admin tinggal unggah lewat panel atau `POST
+   /organization/tanda-tangan`.
+
+**3c ternyata nggak jadi "kosong dulu".** Keputusan 26 Jul bilang cetak garis kosong
+buat tanda tangan basah dan bangun drag-and-drop belakangan — tapi 27 Jul
+dua-duanya jadi sekalian. Yang tetap dipegang: drag-nya di **template** (sekali,
+admin-only), bukan di sertifikat yang udah terbit. Sertifikat terbit itu dokumen
+terkendali, dan kalau posisinya per sertifikat, dua orang bisa punya PDF beda dengan
+nomor sertifikat yang sama.
+
+Sertifikat tanpa gambar TTD **tetap terbit** — nyetak garis + nama + jabatan dengan
+ruang kosong buat tanda tangan basah, tata letaknya sama persis. Itu state yang sah.
 
 **Yang tadinya paling ngeblok mobile (§1, matriks peran) udah beres.** Bug "jalan
 di admin, mentok di teknisi" sekarang bisa dicegah dari `GET /me/permissions`

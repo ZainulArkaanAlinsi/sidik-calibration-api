@@ -111,7 +111,8 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Sertifikat + PDF + Excel + QR | `GET /certificates/{id}`, `/download`, `/excel`, `/qr`, `POST /{id}/retry` |
 | Rekap sertifikat (Excel) | `GET /certificates/export/excel` (admin) |
 | Verifikasi QR publik | `GET /verify/{qr_token}` (web) & `GET /api/verify/{qr_token}` (JSON) |
-| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru |
+| Grafik Dashboard | `grafik_pekerjaan` di `GET /dashboard` — 6 bulan, urut lama→baru. Kuncinya `bulan` |
+| **Grafik tren rentang bebas** | `GET /dashboard/tren?dari=&sampai=&satuan=hari\|minggu\|bulan`. Kuncinya **`periode`** (bukan `bulan` — sengaja beda). Angkanya dijamin sama dengan `grafik_pekerjaan`, satu service. Maks 400 periode. Lihat [`kontrak-api.md` §7](kontrak-api.md) |
 | Notifikasi | `GET /notifications`, `/unread-count`, `POST /{id}/read`, `/read-all`, `DELETE /{id}` |
 | **Kejadian yang butuh admin sekarang nyampe** | 3 kategori baru: `akun.menunggu_persetujuan`, `sertifikat.gagal`, `standar.kadaluarsa`. Cuma ke admin **aktif**. Yang harian ditahan anti-spam (isi sama nggak diulang 7 hari; isi berubah dikirim saat itu juga). Lihat [`kontrak-api.md` §6](kontrak-api.md) |
 | Reminder jatuh tempo | otomatis tiap pagi + `POST /reminders/jatuh-tempo` (manual, admin) |
@@ -122,11 +123,15 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | **Dropdown pelanggan (semua role)** | `GET /customers/lookup?search=` — id/nama/alamat, dipaginasi. Ini yang dipakai picker di form Alat, BUKAN `/arsip/perusahaan`. Lihat [`kontrak-api.md` §8](kontrak-api.md) |
 | Folder arsip (browse/rename/hapus) | `/folders`, `/folder-files`, alias `/arsip/perusahaan`, `/arsip/folders/{id}` |
 | **Tap PT → buka folder akarnya** | `GET /arsip/perusahaan/{customer}/folder` — find-or-create, bentuknya sama kayak `show`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
+| **Pindah folder & berkas arsip** | `PUT /arsip/folders/{id}/pindah` (body `{parent_id}`) & `PUT /arsip/berkas/{sesiId}/pindah` (body `{folder_id}`). Folder `sistem` ditolak `422`; pindah ke keturunan sendiri ditolak `422`. Lihat [`kontrak-api.md` §8a](kontrak-api.md) |
 | **Laporan kalibrasi + export** | `GET /laporan/kalibrasi` (dipaginasi + `ringkasan`) & `GET /laporan/kalibrasi/export?format=pdf\|xlsx`. Semua role; teknisi cuma dapat pekerjaannya sendiri. Lihat [`kontrak-api.md` §10](kontrak-api.md) |
 | **Masa berlaku sertifikat ditentukan admin** | `berlaku_sampai` (opsional) di `POST /calibrations/{id}/approve`. Kalau nggak dikirim → `settings.masa_berlaku_sertifikat_bulan`, default 12. Dihitung dari **tanggal kalibrasi**, bukan tanggal terbit. Lihat [`kontrak-api.md` §5](kontrak-api.md) |
 | **Tanggal keluar sebagai tanggal polos** | `"2024-05-30"`, bukan lagi `"2024-05-29T17:00:00Z"`. Kena semua field bercast `date`; `created_at` dll tetap ISO. Daftar lengkap + dampaknya di [`kontrak-api.md` §4](kontrak-api.md) |
 | **Matriks peran** | `GET /me/permissions` — `boleh[]` (daftar putih nama izin) + `batasan{}` (`sendiri`/`semua`). Dihitung dari middleware rute, jadi nggak bisa basi. Admin 44 · teknisi 23 · viewer 15. Lihat [`kontrak-api.md` §2](kontrak-api.md) |
 | Realtime sync | `POST /broadcasting/auth` + channel di `routes/channels.php` — arsitektur & contoh klien Echo di [`realtime-sync.md`](realtime-sync.md) |
+| **Riwayat perubahan data (audit)** | `GET /audit-logs` + `/audit-logs/export` (CSV). Admin doang & **baca-saja**. Kecatat OTOMATIS dari model event, jadi semua jalur ikut: API, panel Filament, queue, command. `password` disensor. Lihat [`kontrak-api.md` §11](kontrak-api.md) |
+| **Rumus kalibrasi berversi** | `GET /formulas`, `/{id}/versions`, `/{id}/versi-berlaku?tanggal=`, `POST /{id}/versions`, `PATCH /formula-versions/{id}`. Admin doang. Hasil hitung distempel `formula_version_id` dari versi yang berlaku di **tanggal kalibrasi**. ⚠️ **Fondasi** — evaluator ekspresinya belum ada, jadi ngubah versi belum ngubah cara hitung. Lihat [`kontrak-api.md` §12](kontrak-api.md) |
+| **Kirim sertifikat ke email pelanggan** | `POST /certificates/{id}/kirim-email` (body `{ke:[], cc:[]}`) + `GET /certificates/{id}/riwayat-email`. Admin doang, PDF dilampirkan, tiap percobaan (termasuk gagal) tercatat. ⚠️ Butuh `MAIL_*` diisi di `.env` produksi — sekarang `MAIL_MAILER=log`. Lihat [`kontrak-api.md` §13](kontrak-api.md) |
 
 ---
 
@@ -173,26 +178,35 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
-| `POST /certificates/{id}/kirim-email` | fase-2 §3d | Kirim sertifikat ke pelanggan belum bisa |
-| `GET /dashboard/tren?dari=&sampai=&satuan=` | permintaan-endpoint §2 | Grafik Dashboard **aman** (pakai `grafik_pekerjaan`); yang belum bisa cuma grafik rentang tanggal bebas |
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
 | `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
-| `audit_logs` + rumus berversi | arsitektur-desktop §Keputusan 4 & 5 | Menu Kelola Data & Rumus di desktop |
+| **Evaluator ekspresi rumus** | arsitektur-desktop §Keputusan 5 | Ngubah versi rumus **belum ngubah cara hitung**. Pencatatan versi + stempel `formula_version_id` di hasil hitung udah jadi 27 Jul (lihat §1); yang belum: mesin yang ngeksekusi ekspresi dari DB, plus uji-coba-sebelum-disimpan. `audit_logs` (Keputusan 4) juga udah jadi |
 
-### Tiga operasi arsip yang masih kurang
+### Tiga operasi arsip — ✅ SEMUANYA UDAH JADI (27 Jul)
 
 `permintaan-endpoint-fase-2.md` §4 bilang bagian ini "UDAH DIBIKIN, JANGAN
-DIULANG". **Itu salah** — yang bener `permintaan-backend-2026-07-24.md` §2b.
-Yang ada cuma alias baca/rename/hapus; tiga ini belum:
+DIULANG" waktu belum ada. **Itu salah** — yang bener `permintaan-backend-2026-07-24.md`
+§2b. Sekarang ketiganya beneran ada:
 
 | Mobile manggil | Status |
 |---|---|
 | `GET /arsip/perusahaan/{customerId}/folder` (find-or-create folder akar PT) | ✅ **jadi 25 Jul** — lihat §1 & `kontrak-api.md` §8a |
-| `PUT /arsip/folders/{id}/pindah` | ❌ sekunder |
-| `PUT /arsip/berkas/{sesiId}/pindah` | ❌ sekunder |
+| `PUT /arsip/folders/{id}/pindah` | ✅ **jadi 27 Jul** — body `{parent_id}`; `null` = jadiin akar |
+| `PUT /arsip/berkas/{sesiId}/pindah` | ✅ **jadi 27 Jul** — body `{folder_id}`; dikunci **id sesi**, bukan id `folder_files` |
 
-Jadi tinggal dua, dua-duanya sekunder: browse/rename/hapus **dan** tap PT udah
-bisa disambungin sekarang.
+**Dua batasan yang perlu dipegang frontend:**
+
+1. **Folder `sistem` nggak bisa dipindah** → `422`. Alasannya sama kayak larangan
+   rename yang udah ada: `FolderOrganizer` nemuin folder akar PT dari
+   `parent_id = null` dan folder tahun dari `parent_id = akar->id`. Begitu dipindah,
+   kriterianya nggak nyocok lagi, sertifikat berikutnya bikin folder **baru**, dan
+   arsip satu PT kepecah dua. Jadi di UI, folder `sistem` jangan dibikin bisa
+   di-drag.
+2. **Folder nggak bisa dipindah ke dalam keturunannya sendiri** → `422`. Kalau
+   lolos, folder-nya lepas dari pohon dan **ilang dari semua layar** tanpa error —
+   barisnya masih ada di DB tapi nggak bisa dijangkau lagi.
+
+Rinciannya di [`kontrak-api.md` §8a](kontrak-api.md).
 
 **Satu hal yang ketemu waktu ngerjain ini — dan udah ditutup:** teknisi nggak
 punya jalan buat milih pelanggan **baru** di form Alat. `kontrak-api.md` §8

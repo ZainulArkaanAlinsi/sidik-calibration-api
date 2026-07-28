@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\Concerns\ScopesFolderAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FolderFileResource;
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\FolderFile;
 use Illuminate\Database\Eloquent\Builder;
@@ -127,6 +128,100 @@ class FolderFileController extends Controller
 
         return response()->json([
             'data' => new FolderFileResource($folderFile->fresh()->load(['certificate', 'uploader'])),
+        ]);
+    }
+
+    /**
+     * Pindahin berkas sertifikat, dikunci pakai **id SESI KALIBRASI**
+     * (`docs/permintaan-backend-2026-07-24.md` §2b).
+     *
+     * Kenapa perlu alias ini padahal `update()` udah bisa pindah lewat `folder_id`:
+     * yang dipegang mobile di layar arsip itu **id sesi**, bukan id `folder_files`.
+     * Tanpa alias ini, mobile harus nebak dulu berkas mana yang punya sesi itu —
+     * dan satu-satunya cara nebaknya bener itu nyapu `/folder-files` sambil
+     * ngebandingin `sertifikat.id`, yang artinya request tambahan buat tiap kali
+     * drag.
+     *
+     * Admin doang.
+     */
+    public function pindahBerkasSesi(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        // 404, bukan 403 — id sesi lab lain nggak boleh bisa dipakai buat mastiin
+        // sesi itu ada.
+        abort_if(
+            $calibration->organization_id !== $request->user()->organization_id,
+            404,
+        );
+
+        $data = $request->validate([
+            'folder_id' => [
+                'required',
+                Rule::exists('folders', 'id')
+                    ->where('organization_id', $request->user()->organization_id)
+                    ->whereNull('deleted_at'),
+            ],
+        ], [
+            'folder_id.required' => 'Kirim `folder_id` folder tujuannya.',
+            'folder_id.exists' => 'Folder tujuannya nggak ketemu.',
+        ]);
+
+        $sertifikat = $calibration->certificate;
+
+        abort_if(
+            $sertifikat === null,
+            404,
+            'Sesi ini belum punya sertifikat, jadi belum ada berkasnya di arsip.',
+        );
+
+        $berkas = FolderFile::where('certificate_id', $sertifikat->id)->get();
+
+        abort_if(
+            $berkas->isEmpty(),
+            404,
+            'Sertifikat sesi ini belum tertaut ke folder mana pun.',
+        );
+
+        // Satu sertifikat BISA nyangkut di lebih dari satu folder — unique
+        // index-nya `(folder_id, certificate_id)`, bukan `certificate_id` sendiri.
+        // Kalau kejadian, nebak yang mana yang dimaksud itu lebih jahat daripada
+        // nanya: yang salah kepindah nggak keliatan sebagai error, cuma sebagai
+        // berkas yang ilang dari folder yang orangnya lihat.
+        if ($berkas->count() > 1) {
+            return response()->json([
+                'message' => 'Sertifikat sesi ini tertaut di '.$berkas->count().' folder, jadi nggak '
+                    .'jelas yang mana yang mau dipindah. Pakai `PUT /api/folder-files/{id}` '
+                    .'dengan id berkasnya langsung.',
+                'data' => FolderFileResource::collection($berkas->load(['certificate', 'uploader'])),
+            ], 422);
+        }
+
+        $satu = $berkas->first();
+
+        if ($satu->folder_id === (int) $data['folder_id']) {
+            // Udah di situ — tetap 200 biar drag ke tempat yang sama nggak error.
+            return response()->json([
+                'data' => new FolderFileResource($satu->load(['certificate', 'uploader'])),
+            ]);
+        }
+
+        // Aturan yang sama kayak `update()`: satu sertifikat cuma boleh nongol
+        // sekali per folder. Ditahan di sini biar pesannya kebaca manusia, bukan
+        // 500 dari unique index.
+        $bentrok = FolderFile::where('folder_id', $data['folder_id'])
+            ->where('certificate_id', $sertifikat->id)
+            ->whereKeyNot($satu->id)
+            ->exists();
+
+        if ($bentrok) {
+            return response()->json([
+                'message' => 'Sertifikat ini udah ada di folder tujuan.',
+            ], 422);
+        }
+
+        $satu->update(['folder_id' => (int) $data['folder_id']]);
+
+        return response()->json([
+            'data' => new FolderFileResource($satu->fresh()->load(['certificate', 'uploader'])),
         ]);
     }
 

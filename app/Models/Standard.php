@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Standard extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Diaudit, HasFactory, SoftDeletes;
 
     /** @return array<string, string> */
     protected function casts(): array
