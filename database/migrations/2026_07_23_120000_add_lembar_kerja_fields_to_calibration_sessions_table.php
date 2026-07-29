@@ -21,16 +21,31 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Dijaga PER KOLOM, bukan sekali buat seluruh migrasi. Di database yang
+        // dipakai bareng, sebagian kolom ini bisa udah kepasang duluan —
+        // dan kalau penjaganya dipasang di luar (`return` kalau salah satu
+        // ada), kolom yang BELUM ada ikut nggak kebikin, lalu error-nya pindah
+        // ke tempat lain yang jauh lebih susah dilacak.
         Schema::table('calibration_sessions', function (Blueprint $table) {
-            $table->decimal('suhu_awal', 8, 2)->nullable()->after('suhu_ketidakpastian');
-            $table->decimal('suhu_akhir', 8, 2)->nullable()->after('suhu_awal');
-            $table->decimal('kelembaban_awal', 8, 2)->nullable()->after('kelembaban_ketidakpastian');
-            $table->decimal('kelembaban_akhir', 8, 2)->nullable()->after('kelembaban_awal');
+            if (! Schema::hasColumn('calibration_sessions', 'suhu_awal')) {
+                $table->decimal('suhu_awal', 8, 2)->nullable()->after('suhu_ketidakpastian');
+            }
+            if (! Schema::hasColumn('calibration_sessions', 'suhu_akhir')) {
+                $table->decimal('suhu_akhir', 8, 2)->nullable()->after('suhu_awal');
+            }
+            if (! Schema::hasColumn('calibration_sessions', 'kelembaban_awal')) {
+                $table->decimal('kelembaban_awal', 8, 2)->nullable()->after('kelembaban_ketidakpastian');
+            }
+            if (! Schema::hasColumn('calibration_sessions', 'kelembaban_akhir')) {
+                $table->decimal('kelembaban_akhir', 8, 2)->nullable()->after('kelembaban_awal');
+            }
 
             // Kolom "Catatan:" di lembar kerja — kondisi lapangan yang nggak
             // muat di kolom lain (mis. "elektroda kotor, dibersihkan dulu").
             // Beda dari `catatan_revisi` yang isinya teguran admin ke teknisi.
-            $table->text('catatan_teknisi')->nullable()->after('catatan_revisi');
+            if (! Schema::hasColumn('calibration_sessions', 'catatan_teknisi')) {
+                $table->text('catatan_teknisi')->nullable()->after('catatan_revisi');
+            }
         });
     }
 
