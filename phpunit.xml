@@ -28,6 +28,16 @@
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <!--
+          Penyedia AI dipatok di sini, BUKAN diwarisin dari `.env`.
+
+          Test WorksheetExtraction nge-fake HTTP-nya Anthropic. Waktu `.env`
+          dev dipindah ke Gemini, delapan test itu langsung pecah — bukan
+          karena kodenya salah, tapi karena mereka jadi nembak host yang
+          nggak difake. Test nggak boleh ikut berubah tiap ada yang ganti
+          setelan lokal.
+        -->
+        <env name="VISION_DRIVER" value="anthropic"/>
+        <!--
             Zona waktu HARUS sama kayak produksi (Asia/Jakarta). Kalau test jalan
             di UTC sementara server jalan di Jakarta, seluruh bug tanggal jadi
             nggak kelihatan: kolom bertipe `date` yang di-serialize sebagai ISO

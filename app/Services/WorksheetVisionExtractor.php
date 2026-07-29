@@ -51,17 +51,23 @@ class WorksheetVisionExtractor
         ?int $jumlahTitik = null,
         ?int $jumlahPengulangan = null,
     ): array {
+        $penyedia = strtolower((string) config('services.vision.driver', 'anthropic'));
+
+        $mimeType = strtolower($mimeType);
+        if (! in_array($mimeType, self::MIME_DIDUKUNG, true)) {
+            $mimeType = 'image/jpeg';
+        }
+
+        if ($penyedia === 'gemini') {
+            return $this->lewatGemini($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan);
+        }
+
         $apiKey = (string) config('services.anthropic.api_key');
         $model = (string) config('services.anthropic.model');
 
         if ($apiKey === '') {
             // Bukan error data — ini salah setup. Controller nerjemahin jadi 503.
             throw new RuntimeException('ANTHROPIC_API_KEY belum diisi di server.');
-        }
-
-        $mimeType = strtolower($mimeType);
-        if (! in_array($mimeType, self::MIME_DIDUKUNG, true)) {
-            $mimeType = 'image/jpeg';
         }
 
         $body = [
@@ -215,6 +221,205 @@ class WorksheetVisionExtractor
         return $messages;
     }
 
+    /**
+     * Jalur Gemini (Google AI Studio).
+     *
+     * Kenapa ada dua penyedia, bukan satu yang "terbaik": bentuk hasil, prompt,
+     * skema, dan normalisasi barisnya **dipakai bareng** — yang beda cuma cara
+     * ngomong ke servernya. Jadi ganti penyedia nggak ngubah apa pun yang
+     * nyampe ke lembar kerja teknisi, dan lab nggak kekunci ke satu vendor.
+     *
+     * Bedanya sama jalur Anthropic:
+     * - **Nggak ada prompt caching.** Gemini nggak punya padanan langsung buat
+     *   `cache_control`, jadi few-shot ikut kekirim tiap panggilan. Efeknya ke
+     *   biaya, bukan ke hasil.
+     * - **Skema JSON nggak dikirim.** `responseSchema` Gemini cuma nerima
+     *   subset OpenAPI, bukan JSON Schema penuh — skema kita bakal ditolak.
+     *   Yang dipakai `responseMimeType: application/json` + prompt yang minta
+     *   JSON murni, dan parser toleran yang udah ada tetap jadi jaringnya.
+     *
+     * @return array<string, mixed>
+     */
+    private function lewatGemini(
+        string $isiGambar,
+        string $mimeType,
+        ?int $jumlahTitik,
+        ?int $jumlahPengulangan,
+    ): array {
+        $apiKey = (string) config('services.gemini.api_key');
+        $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
+
+        if ($apiKey === '') {
+            throw new RuntimeException('GEMINI_API_KEY belum diisi di server.');
+        }
+
+        try {
+            $resp = Http::withHeaders(['content-type' => 'application/json'])
+                ->timeout((int) config('services.gemini.timeout', 60))
+                ->baseUrl((string) config(
+                    'services.gemini.base_url',
+                    'https://generativelanguage.googleapis.com',
+                ))
+                ->withQueryParameters(['key' => $apiKey])
+                ->post("/v1beta/models/{$model}:generateContent", [
+                    'system_instruction' => [
+                        'parts' => [['text' => $this->systemPrompt()]],
+                    ],
+                    'contents' => $this->kontenGemini(
+                        $isiGambar,
+                        $mimeType,
+                        $jumlahTitik,
+                        $jumlahPengulangan,
+                    ),
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                        'maxOutputTokens' => (int) config('services.gemini.max_tokens', 4096),
+                        // Ekstraksi angka dari foto itu tugas baca, bukan
+                        // mengarang — variasi di sini cuma nambah risiko salah
+                        // baca yang beda tiap jepretan.
+                        'temperature' => 0,
+                    ],
+                ]);
+        } catch (ConnectionException $e) {
+            Log::warning('WorksheetVisionExtractor: koneksi ke Gemini gagal', ['pesan' => $e->getMessage()]);
+
+            return $this->gagal($model, 'Gagal menghubungi layanan AI. Coba lagi sebentar.', null);
+        }
+
+        if ($resp->failed()) {
+            Log::warning('WorksheetVisionExtractor: Gemini balik error', [
+                'status' => $resp->status(),
+                'pesan' => $resp->json('error.message') ?? $resp->body(),
+            ]);
+
+            return $this->gagal($model, 'Layanan AI menolak permintaan.', $resp->json() ?? $resp->body());
+        }
+
+        $json = $resp->json();
+
+        // Gemini nolak lewat `finishReason`, bukan HTTP error. `SAFETY` &
+        // `PROHIBITED_CONTENT` = classifier; `MAX_TOKENS` = kepotong, dan JSON
+        // yang kepotong lebih baik dibilang gagal daripada diparse separuh lalu
+        // diisikan ke lembar kerja sebagai angka.
+        $alasan = (string) ($json['candidates'][0]['finishReason'] ?? '');
+        if (in_array($alasan, ['SAFETY', 'PROHIBITED_CONTENT', 'RECITATION'], true)) {
+            return [
+                'ok' => false,
+                'status' => 'ditolak',
+                'data' => null,
+                'raw' => $json,
+                'usage' => $this->usageGemini($json),
+                'error' => 'AI menolak memproses gambar ini. Gunakan input manual.',
+                'model' => $model,
+            ];
+        }
+
+        $teks = '';
+        foreach ((array) ($json['candidates'][0]['content']['parts'] ?? []) as $bagian) {
+            $teks .= (string) ($bagian['text'] ?? '');
+        }
+
+        $data = $this->parseJson($teks);
+
+        if ($data === null) {
+            Log::warning('WorksheetVisionExtractor: respons Gemini bukan JSON valid', [
+                'finish_reason' => $alasan,
+                'teks' => mb_substr($teks, 0, 500),
+            ]);
+
+            return [
+                'ok' => false,
+                'status' => 'gagal',
+                'data' => null,
+                'raw' => $json,
+                'usage' => $this->usageGemini($json),
+                'error' => $alasan === 'MAX_TOKENS'
+                    ? 'Hasil AI kepotong. Foto tabelnya lebih dekat, atau isi manual.'
+                    : 'Hasil AI tidak bisa dibaca. Coba foto ulang atau isi manual.',
+                'model' => $model,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'status' => 'sukses',
+            'data' => ['baris' => $this->normalisasiBaris($data)],
+            'raw' => $json,
+            'usage' => $this->usageGemini($json),
+            'error' => null,
+            'model' => $model,
+        ];
+    }
+
+    /**
+     * Few-shot + foto lapangan dalam bentuk `contents` Gemini.
+     *
+     * Isinya SAMA PERSIS dengan yang dikirim ke Anthropic — cuma dibungkus
+     * beda. Kalau contohnya beda antar penyedia, hasil ekstraksinya ikut beda
+     * dan nggak ada yang tahu kenapa.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function kontenGemini(
+        string $isiGambar,
+        string $mimeType,
+        ?int $jumlahTitik,
+        ?int $jumlahPengulangan,
+    ): array {
+        $contents = [];
+
+        foreach ([
+            ['file' => 'few_shot_before.jpg', 'json' => $this->fewShotBefore()],
+            ['file' => 'few_shot_after.jpg', 'json' => $this->fewShotAfter()],
+        ] as $c) {
+            $path = storage_path('app/'.self::FEW_SHOT_DIR.'/'.$c['file']);
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $contents[] = ['role' => 'user', 'parts' => [
+                ['inline_data' => [
+                    'mime_type' => 'image/jpeg',
+                    'data' => base64_encode((string) file_get_contents($path)),
+                ]],
+                ['text' => 'Extract this table.'],
+            ]];
+            $contents[] = ['role' => 'model', 'parts' => [['text' => $c['json']]]];
+        }
+
+        $contents[] = ['role' => 'user', 'parts' => [
+            ['inline_data' => [
+                'mime_type' => $mimeType,
+                'data' => base64_encode($isiGambar),
+            ]],
+            ['text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan)],
+        ]];
+
+        return $contents;
+    }
+
+    /**
+     * Pemakaian token Gemini, dipetakan ke bentuk yang sama dengan Anthropic
+     * supaya `worksheet_extraction_logs` nggak perlu tahu penyedianya siapa.
+     *
+     * `cache_read_input_tokens` selalu null: Gemini nggak punya padanan prompt
+     * caching di jalur ini. Null artinya "nggak berlaku", bukan nol — dan nol
+     * bakal kebaca sebagai "caching-nya nggak kena", yang beda arti.
+     *
+     * @param  array<string, mixed>  $json
+     * @return array<string, int|null>
+     */
+    private function usageGemini(array $json): array
+    {
+        $u = (array) ($json['usageMetadata'] ?? []);
+
+        return [
+            'input_tokens' => isset($u['promptTokenCount']) ? (int) $u['promptTokenCount'] : null,
+            'output_tokens' => isset($u['candidatesTokenCount']) ? (int) $u['candidatesTokenCount'] : null,
+            'cache_read_input_tokens' => null,
+        ];
+    }
+
     /** Petunjuk jumlah kolom (larutan standar) & baris (Repeat) buat bantu model. */
     private function instruksiFoto(?int $jumlahTitik, ?int $jumlahPengulangan): string
     {
@@ -241,6 +446,7 @@ buffer solution (nominal 4, 7, 10), left to right. Each cell holds two numbers:
 a pH reading and a temperature in °C.
 
 Return ONLY the JSON matching the provided schema. For each Repeat row, output:
+- "repeat": the Repeat number printed in the leftmost column (1, 2, 3, ...)
 - "ph": the pH reading per buffer, left to right (null if illegible/missing)
 - "suhu": the °C reading per buffer, same order (null if illegible/missing)
 - "ph_keyakinan" / "suhu_keyakinan": your confidence per cell — "high", "medium", "low"
@@ -257,8 +463,10 @@ Rules:
 - Confidence: "high" = crisp and unambiguous; "medium" = readable but a digit is
   smudged/uncertain; "low" = guessed, partially obscured, or handwriting hard to
   read. When unsure between two readings, pick the most likely and mark "low".
-- If a whole Repeat row is missing from the photo, omit it. If a single cell is
-  unreadable, set its value to null and its confidence to "low".
+- NEVER omit a Repeat row. If a whole row is blank in the photo, still output it
+  with its "repeat" number and all values null. Dropping a row would shift every
+  row below it into the wrong Repeat slot on the certificate.
+- If a single cell is unreadable, set its value to null and its confidence to "low".
 - Do not invent rows or cells beyond what the photographed table contains.
 PROMPT;
     }
@@ -336,15 +544,38 @@ PROMPT;
         $teks = trim($teks);
         $teks = preg_replace('/^```(?:json)?|```$/mi', '', $teks) ?? $teks;
 
-        $awal = strpos($teks, '{');
-        $akhir = strrpos($teks, '}');
-        if ($awal === false || $akhir === false || $akhir < $awal) {
+        // Objek `{...}` MAUPUN array telanjang `[...]`.
+        //
+        // Anthropic balikin objek berkunci `baris`; Gemini — dengan
+        // `responseMimeType: application/json` — sering balikin arraynya
+        // langsung tanpa pembungkus. Dulu cuma `{` yang dicari, jadi hasil
+        // Gemini yang SUDAH BENAR isinya kebuang sebagai "tidak bisa dibaca",
+        // dan teknisi disuruh ngetik ulang tabel yang barusan kebaca sempurna.
+        $kandidat = [];
+        foreach ([['{', '}'], ['[', ']']] as [$buka, $tutup]) {
+            $awal = strpos($teks, $buka);
+            $akhir = strrpos($teks, $tutup);
+            if ($awal !== false && $akhir !== false && $akhir > $awal) {
+                $kandidat[$awal] = substr($teks, $awal, $akhir - $awal + 1);
+            }
+        }
+
+        if ($kandidat === []) {
             return null;
         }
 
-        $data = json_decode(substr($teks, $awal, $akhir - $awal + 1), true);
+        // Yang paling awal muncul yang dipakai — kalau responsnya
+        // `{"baris": [...]}`, `{` datang duluan dan pembungkusnya ikut kebaca.
+        ksort($kandidat);
+        $data = json_decode(reset($kandidat), true);
 
-        return is_array($data) ? $data : null;
+        if (! is_array($data)) {
+            return null;
+        }
+
+        // Array telanjang dibungkus balik ke bentuk yang dipahami
+        // `normalisasiBaris()` — satu bentuk di hilir, apa pun penyedianya.
+        return array_is_list($data) ? ['baris' => $data] : $data;
     }
 
     /**
@@ -372,12 +603,34 @@ PROMPT;
             // Suhu disamakan panjang sama ph (pengukuran sepasang per sel).
             $suhu = array_slice(array_pad($suhu, $n, null), 0, $n);
 
-            $out[] = [
+            $baris = [
                 'ph' => $ph,
                 'suhu' => $suhu,
                 'ph_keyakinan' => $this->keyakinanArray($b['ph_keyakinan'] ?? [], $n),
                 'suhu_keyakinan' => $this->keyakinanArray($b['suhu_keyakinan'] ?? [], $n),
             ];
+
+            // Nomor Repeat dari kolom paling kiri, kalau modelnya ngasih.
+            //
+            // Posisi array dipakai sebagai nomor Repeat di hilir, jadi satu
+            // baris yang kelewat bikin SELURUH baris di bawahnya geser —
+            // pembacaan Repeat 3 mendarat di slot Repeat 2, di dokumen
+            // kalibrasi, tanpa ada yang kelihatan salah. Nomor eksplisit ini
+            // yang bikin pergeseran itu ketahuan (dan bisa ditempatkan benar)
+            // daripada diam-diam kejadian.
+            $nomor = filter_var($b['repeat'] ?? null, FILTER_VALIDATE_INT);
+            if ($nomor !== false && $nomor > 0) {
+                $baris['repeat'] = $nomor;
+            }
+
+            $out[] = $baris;
+        }
+
+        // Kalau SEMUA baris punya nomor, urutin sesuai nomornya — bukan sesuai
+        // urutan datangnya dari model.
+        $bernomor = array_filter($out, fn (array $b): bool => isset($b['repeat']));
+        if (count($bernomor) === count($out) && $out !== []) {
+            usort($out, fn (array $a, array $b): int => $a['repeat'] <=> $b['repeat']);
         }
 
         return $out;
