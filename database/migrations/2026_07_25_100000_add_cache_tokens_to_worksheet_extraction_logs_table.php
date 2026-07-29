@@ -22,8 +22,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+            // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
+            // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
         Schema::table('worksheet_extraction_logs', function (Blueprint $table) {
-            $table->unsignedInteger('cache_read_input_tokens')->nullable()->after('output_tokens');
+            if (! Schema::hasColumn('worksheet_extraction_logs', 'cache_read_input_tokens')) {
+                $table->unsignedInteger('cache_read_input_tokens')->nullable()->after('output_tokens');
+            }
         });
     }
 
