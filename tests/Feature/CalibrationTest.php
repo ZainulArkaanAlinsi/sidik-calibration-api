@@ -477,11 +477,10 @@ class CalibrationTest extends TestCase
             'standard_id' => $bufferDefault->id,
             'measurements' => [
                 // Titik ini nunjuk standar_id sendiri (buffer 4) dan punya
-                // CalibrationCapability — U95%-nya harus CMC, bukan gabungan
-                // Type A+B, walaupun pembacaannya nyebar jauh.
+                // CalibrationCapability, jadi jalur CMC yang kepakai.
                 [
-                    'titik_ukur' => 4.009244572, 'satuan' => 'pH',
-                    'pembacaan' => [4.04, 4.04, 4.04, 5.0, 4.04],
+                    'titik_ukur' => 4.00, 'satuan' => 'pH',
+                    'pembacaan' => [4.01, 4.01, 4.01],
                     'standard_id' => $buffer4->id,
                 ],
             ],
@@ -490,8 +489,14 @@ class CalibrationTest extends TestCase
         $response->assertCreated();
 
         $titik = $response->json('data.titik.0');
-        $this->assertEqualsWithDelta(0.02343221, $titik['ketidakpastian_diperluas'], 1e-9);
+
+        // Yang diuji: standar per-titik kepakai & jalur CMC yang jalan.
+        // Pembacaannya sengaja rapat, jadi Type A mendekati nol dan U95 jatuh
+        // ke lantai CMC — U95 ikut sebaran sejak 29 Juli 2026 (lihat
+        // GumCalculatorTest::test_sebaran_pembacaan_yang_lebar_bikin_u95_ikut_membesar).
         $this->assertSame($buffer4->id, $titik['standar_acuan']['id']);
+        $this->assertSame('cmc_kemampuan_kalibrasi', $titik['type_b_components'][0]['sumber']);
+        $this->assertEqualsWithDelta(0.02343221, $titik['ketidakpastian_diperluas'], 1e-9);
 
         // Kolom DB-nya juga kesimpan, bukan cuma yang keluar di response.
         $sesi = CalibrationSession::latest('id')->firstOrFail();
