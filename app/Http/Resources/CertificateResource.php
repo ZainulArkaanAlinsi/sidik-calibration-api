@@ -53,6 +53,21 @@ class CertificateResource extends JsonResource
                 'nama_alat' => $this->session?->equipment?->nama_alat,
                 'serial_number' => $this->session?->equipment?->serial_number,
             ],
+
+            // Kontak pelanggan buat tombol kirim. Dua-duanya boleh null —
+            // layar yang milih nampilin tombol mana, bukan nebak nomor sendiri.
+            //
+            // Kenapa `pemilik_nama` sesi menang atas master pelanggan: yang
+            // dicetak di sertifikat juga pakai isian teknisi (lihat
+            // `CertificateSnapshotBuilder`), jadi nama di pesan WhatsApp mesti
+            // sama dengan nama di dokumennya — kalau beda, penerima ngira salah
+            // kirim.
+            'pelanggan' => [
+                'nama' => $this->session?->pemilik_nama
+                    ?: $this->session?->equipment?->customer?->nama,
+                'email' => $this->session?->equipment?->customer?->email,
+                'telepon' => $this->session?->equipment?->customer?->telepon,
+            ],
         ];
     }
 }

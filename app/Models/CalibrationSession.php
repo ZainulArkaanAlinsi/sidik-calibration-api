@@ -21,7 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
     'kelembaban_ketidakpastian', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
-    'catatan_revisi', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
+    'catatan_revisi', 'revisi_field', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
+    // Identitas alat & pemilik seperti yang DICATAT TEKNISI di lembar kerja —
+    // bukan salinan master. Lihat migrasi 2026_07_29_120000.
+    'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
 ])]
 class CalibrationSession extends Model
 {
@@ -41,6 +44,8 @@ class CalibrationSession extends Model
         return [
             'tanggal_kalibrasi' => 'date',
             'tanggal_terima' => 'date',
+            // Kode kolom yang diminta admin dibetulin waktu nolak.
+            'revisi_field' => 'array',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'suhu_ruang' => 'float',
@@ -58,21 +63,28 @@ class CalibrationSession extends Model
      * Field administratif — dihapus dari layar teknisi (spesifikasi poin 1) dan
      * dibuang dari payload-nya sama `CalibrationRequest`.
      *
-     * Yang masuk daftar ini persis yang disebut spesifikasi: Order Number,
-     * Calibration Method, Thermohygro Used, plus ketidakpastian kondisi ruang
-     * (angka ± di Env. Condition — datangnya dari sertifikat thermohygro, bukan
-     * dari yang dilihat teknisi di lapangan).
+     * Isinya: Order Number, Calibration Method, plus ketidakpastian kondisi
+     * ruang (angka ± di Env. Condition — datangnya dari sertifikat thermohygro,
+     * bukan dari yang dilihat teknisi di lapangan).
      *
      * `tanggal_terima`, `suhu_ruang`, `kelembaban`, dan `room_id` SENGAJA nggak
      * di sini: itu fakta lapangan yang cuma teknisi yang tau, dan spesifikasi
      * nggak nyuruh dihapus dari layar teknisi.
+     *
+     * **`thermohygro_standard_id` DIKELUARKAN 29 Juli 2026.** Awalnya masuk
+     * sini ngikut spesifikasi poin 1, tapi di praktiknya salah: unit thermohygro
+     * mana yang kepakai itu fakta lapangan — teknisi yang bawa TH-2 ke lokasi
+     * pelanggan atau makai TH-4 di lab, dan admin nggak punya cara tau selain
+     * nanya. Selama field ini administratif, kiriman teknisi buat kolom
+     * "6. Thermohygro used" dibuang diam-diam sama `prepareForValidation()` —
+     * kolomnya keisi di HP, nyampe server jadi null.
      *
      * @return array<int, string>
      */
     public static function fieldAdmin(): array
     {
         return [
-            'nomor_order', 'calibration_method_id', 'thermohygro_standard_id',
+            'nomor_order', 'calibration_method_id',
             'suhu_ketidakpastian', 'kelembaban_ketidakpastian',
         ];
     }
@@ -105,7 +117,12 @@ class CalibrationSession extends Model
         $semua = collect([$this->standard, $this->thermohygro])
             ->concat($this->uncertaintyCalculations->pluck('standard'))
             ->concat($this->relationLoaded('standarDicek') ? $this->standarDicek : [])
-            ->filter()
+            // Saringnya per tipe, bukan `filter()` polos. Yang masuk ke sini
+            // harus `Standard` — `map(fn (Standard $s))` di bawah bertipe keras,
+            // jadi satu isian nyeleneh bikin SELURUH daftar sesi mati 500, bukan
+            // cuma barisnya. Pernah kejadian: kolom teks lama `thermohygro`
+            // nutupin relasi senama, dibersihin migrasi 2026_07_29_090000.
+            ->filter(fn (mixed $s): bool => $s instanceof Standard)
             // Standar yang sama bisa nongol dari dua jalur (mis. standar default
             // sesi juga kepakai di titik pertama) — cukup dihitung sekali.
             ->unique('id')

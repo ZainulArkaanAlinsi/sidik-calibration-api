@@ -55,10 +55,10 @@ class DatabaseSeeder extends Seeder
     private function seedUsers(): void
     {
         $accounts = [
-            ['employee_id' => 'SDK-0001', 'sebelumnya' => 'ASM-0001', 'name' => 'Admin SIDIK', 'email' => 'admin@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'SDK-0002', 'sebelumnya' => 'ASM-0002', 'name' => 'Teknisi SIDIK', 'email' => 'teknisi@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'SDK-0003', 'sebelumnya' => 'ASM-0003', 'name' => 'Viewer SIDIK', 'email' => 'viewer@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
-            ['employee_id' => 'SDK-0099', 'sebelumnya' => 'ASM-0099', 'name' => 'Eko Pending', 'email' => 'eko@sidik.test', 'department' => 'Kalibrasi', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
+            ['employee_id' => 'SDK-0001', 'sebelumnya' => 'ASM-0001', 'name' => 'Rina Kartika', 'email' => 'admin@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_ADMIN, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0002', 'sebelumnya' => 'ASM-0002', 'name' => 'Dimas Rahardjo', 'email' => 'teknisi@sidik.test', 'department' => 'Calibration', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0003', 'sebelumnya' => 'ASM-0003', 'name' => 'Sari Wijaya', 'email' => 'viewer@sidik.test', 'department' => 'Quality Control', 'role' => User::ROLE_VIEWER, 'status' => User::STATUS_AKTIF],
+            ['employee_id' => 'SDK-0099', 'sebelumnya' => 'ASM-0099', 'name' => 'Eko Pending', 'email' => 'eko@sidik.test', 'department' => 'Calibration', 'role' => User::ROLE_TEKNISI, 'status' => User::STATUS_PENDING],
         ];
 
         foreach ($accounts as $account) {

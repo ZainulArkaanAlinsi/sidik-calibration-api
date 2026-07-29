@@ -188,22 +188,33 @@ class CertificateApiTest extends TestCase
             ->assertJsonPath('data.sertifikat', null);
     }
 
-    public function test_admin_retry_sertifikat_gagal_nge_dispatch_ulang(): void
+    /**
+     * Retry nerbitin ulang LANGSUNG, dan statusnya mendarat di keadaan akhir.
+     *
+     * Test ini dulu ngunci `menunggu_generate` + `Queue::assertPushed`. Perilaku
+     * itu punya mode macet yang cuma kelihatan di mesin tanpa `queue:work`:
+     * status kegeser dari `gagal` ke `menunggu_generate`, job-nya nggak pernah
+     * dikerjain, dan tombol retry ILANG karena statusnya udah bukan `gagal`.
+     * Jalur pemulihannya sendiri yang jadi jalan buntu.
+     */
+    public function test_admin_retry_sertifikat_gagal_nerbitin_ulang_langsung(): void
     {
         $sertifikat = $this->terbitkanSertifikat($this->teknisi);
-        $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
+        $sertifikat->update(['status' => Certificate::STATUS_GAGAL, 'pdf_path' => null]);
 
         Queue::fake();
 
         $this->actingAs($this->admin)
             ->postJson("/api/certificates/{$sertifikat->id}/retry")
             ->assertOk()
-            ->assertJsonPath('data.status', Certificate::STATUS_MENUNGGU_GENERATE);
+            ->assertJsonPath('data.status', Certificate::STATUS_TERBIT);
 
-        Queue::assertPushed(
-            GenerateCertificate::class,
-            fn ($job) => $job->calibrationSessionId === $sertifikat->calibration_session_id,
-        );
+        // PDF-nya beneran jadi, bukan cuma statusnya yang dioper.
+        $this->assertNotNull($sertifikat->fresh()->pdf_path);
+
+        // Yang paling penting: retry nggak nyandar ke pekerja antrean. Kalau
+        // suatu saat ini balik ke `dispatch()`, mode macet di atas balik juga.
+        Queue::assertNotPushed(GenerateCertificate::class);
     }
 
     public function test_retry_sertifikat_yang_udah_terbit_ditolak(): void
