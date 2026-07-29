@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Standard;
+
 /**
  * Bentuk baku Lembar Kerja pH Meter (SIDIK-FM-CAL-0509_Rev.4).
  *
@@ -32,12 +34,43 @@ class LembarKerjaTemplate
     public const LARUTAN_STANDAR_PH = [4.00, 7.00, 10.01];
 
     /**
+     * Tabel "STANDARD" di lembar kerja pH — LIMA baris yang udah tercetak di
+     * formulirnya, bukan katalog standar lab.
+     *
+     * `cocok` dipakai nyocokin baris ke master `standards` (nama ATAU serial),
+     * supaya baris yang ketemu bawa `standard_id` — dari situ sertifikat dapat
+     * lot & ketertelusurannya. Yang nggak ketemu tetap tampil, `standard_id`
+     * null, dan itu jadi penanda buat admin: standar ini belum didaftarin di
+     * master.
+     */
+    public const STANDARD_TERCETAK = [
+        ['label' => 'pH Buffer Solutions 4', 'cocok' => ['pH Buffer Solution 4']],
+        ['label' => 'pH Buffer Solutions 7', 'cocok' => ['pH Buffer Solution 7']],
+        ['label' => 'pH Buffer Solutions 10', 'cocok' => ['pH Buffer Solution 10']],
+        ['label' => 'RTD Sensor/SH1/20', 'cocok' => ['Termometer & Sensor Std.', 'SH1/20', '23P1005']],
+        ['label' => 'Victor 14+/992613877', 'cocok' => ['Victor 14+', '992613877']],
+    ];
+
+    /**
+     * Unit thermohygro yang TERCETAK di lembar kerja pH, dikelompokkan sesuai
+     * kotak centangnya: Insitu (dibawa ke lokasi pelanggan) vs Inlab.
+     */
+    public const THERMOHYGRO_TERCETAK = [
+        ['label' => 'TH-2', 'grup' => 'Insitu'],
+        ['label' => 'TH-6', 'grup' => 'Insitu'],
+        ['label' => 'TH-7', 'grup' => 'Insitu'],
+        ['label' => 'TH-4', 'grup' => 'Inlab'],
+    ];
+
+    /**
      * @param  bool  $untukAdmin  true = tampilan admin (superset), false = tampilan teknisi
      * @return array<string, mixed>
      */
     public function phMeter(bool $untukAdmin = false): array
     {
         $bentuk = $this->bentukLengkap();
+        $bentuk = $this->tautkanStandar($bentuk);
+        $bentuk = $this->isiPilihanThermohygro($bentuk);
 
         if ($untukAdmin) {
             // Admin dapat semuanya: kolom lembar kerja + kolom administratif
@@ -77,6 +110,7 @@ class LembarKerjaTemplate
     {
         return [
             'kode' => 'administratif',
+            'halaman' => 1,
             'judul' => 'Data Administratif (Admin)',
             'field' => [
                 $this->field('nomor_order', 'Order Number', 'teks', hanyaAdmin: true),
@@ -108,48 +142,100 @@ class LembarKerjaTemplate
             'bagian' => [
                 [
                     'kode' => 'identitas_alat',
+                    'halaman' => 1,
                     'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
                     'field' => [
                         $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
-                        // Enam field di bawah ketarik otomatis dari data alat —
-                        // teknisi cuma milih alatnya, nggak ngetik ulang.
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
                         $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis', satuan: 'pH'),
-                        $this->field('equipment.model', '3. Type/Model', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.serial_number', '4. Serial Number/LPI', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.merk', '5. Merk/Manufacture', 'teks', sumber: 'otomatis'),
-                        // "Thermohygro used" (TH-2/TH-6/TH-7/TH-4) itu field
-                        // administratif — dihapus dari layar teknisi sesuai
-                        // spesifikasi poin 1, diisi admin.
+
+                        // TIGA field di bawah DIKETIK TEKNISI, bukan ditarik dari
+                        // master alat — dan itu bukan pilihan gaya.
+                        //
+                        // Teknisi megang alat fisiknya; yang dia baca dari badan
+                        // alat itu yang sah. Data master diisi admin waktu alat
+                        // didaftarkan, sering dari email pelanggan, dan sering
+                        // beda sama unit yang beneran datang (tipe sama, seri
+                        // beda; atau merk kekosongan). Kalau lembar kerja nyalin
+                        // master, salah ketiknya kebawa sampai ke sertifikat dan
+                        // nggak ada yang bisa mbetulin dari lapangan.
+                        //
+                        // Sengaja NGGAK di-prefill: kolom yang udah keisi bikin
+                        // orang nyentang tanpa baca. Kosong maksa teknisi nengok
+                        // badan alatnya.
+                        $this->field('alat_model', '3. Type/Model', 'teks'),
+                        $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
+                        $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+
+                        // "6. Thermohygro used" — di kertas ini BUKAN bagian dari
+                        // tabel STANDARD, dan pilihannya dikelompokkan Insitu vs
+                        // Inlab. Sekarang diisi TEKNISI (dia yang tau unit mana
+                        // yang kebawa ke lokasi), bukan admin.
                         $this->field(
                             'thermohygro_standard_id',
                             '6. Thermohygro used',
                             'pilihan',
-                            sumber: 'master_standar',
-                            hanyaAdmin: true,
+                            sumber: 'master_thermohygro',
                         ),
                     ],
                 ],
                 [
                     'kode' => 'pemilik',
+                    'halaman' => 1,
                     'judul' => 'OWNER',
+                    // Sama alasannya kayak Type/Model & Serial di atas: yang
+                    // nulis nama PT & alamat di lembar kerja itu teknisi, dari
+                    // surat jalan/alat yang dia terima — bukan disalin dari
+                    // master pelanggan yang bisa udah basi (PT pindah kantor,
+                    // atau alatnya titipan cabang lain).
                     'field' => [
-                        $this->field('customer.nama', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('customer.alamat', '2. Address', 'teks', sumber: 'otomatis'),
+                        $this->field('pemilik_nama', '1. Name', 'teks'),
+                        $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+                    ],
+                ],
+                [
+                    'kode' => 'usage_check',
+                    'halaman' => 1,
+                    'judul' => 'STANDARD',
+                    // BARISNYA TERCETAK, bukan tarikan seluruh master standar.
+                    //
+                    // Sebelumnya bagian ini `sumber: master_standar` — mobile
+                    // narik `GET /standards` lalu nampilin SEMUANYA. Akibatnya di
+                    // lembar kerja pH ikut nongol Gauge Block Set (standar
+                    // panjang) dan tujuh unit thermohygro, jadi satu daftar
+                    // panjang yang nggak mirip kertasnya sama sekali.
+                    //
+                    // Di kertas, tabel STANDARD lembar pH isinya LIMA baris yang
+                    // udah tercetak — persis kayak nilai larutan 4.00/7.00/10.01
+                    // yang juga udah dipatok di kelas ini. Teknisi cuma nyentang
+                    // Usage Check, bukan milih standar dari katalog.
+                    //
+                    // Tiap baris dicocokin ke master lab (buat dapat lot &
+                    // sertifikat ketertelusurannya); yang belum kedaftar tetap
+                    // tampil sebagai baris berlabel dengan `standard_id` null —
+                    // lebih baik barisnya ada tapi belum ketaut daripada hilang
+                    // dari lembar kerja resmi.
+                    'baris' => self::STANDARD_TERCETAK,
+                    'field' => [
+                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
+                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
                     ],
                 ],
                 [
                     'kode' => 'data_kalibrasi',
-                    'judul' => 'STANDARD CALIBRATION DATA',
+                    'halaman' => 1,
+                    'judul' => 'CALIBRATION DATA',
                     'field' => [
                         $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
                             ['nilai' => 'lab', 'label' => 'In lab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
                         $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
-                        // "Calibration Methode" juga field administratif.
+                        // "Calibration Methode" tetap administratif — di kertas
+                        // nilainya udah TERCETAK (SIDIK-IK-CAL-0506), bukan
+                        // kolom kosong yang diisi teknisi.
                         $this->field(
                             'calibration_method_id',
                             '2. Calibration Methode',
@@ -157,28 +243,21 @@ class LembarKerjaTemplate
                             sumber: 'master_metode',
                             hanyaAdmin: true,
                         ),
+                    ],
+                ],
+                [
+                    'kode' => 'hasil',
+                    'halaman' => 2,
+                    'judul' => 'CALIBRATION RESULT',
+                    // Env. Condition ADA DI SINI, bukan di CALIBRATION DATA.
+                    // Di kertas dia baris pertama blok CALIBRATION RESULT —
+                    // dicatat bareng waktu ngukur, bukan waktu nyiapin sesi.
+                    'field' => [
                         $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
                     ],
-                ],
-                [
-                    'kode' => 'usage_check',
-                    'judul' => 'Standard Name / Usage Check',
-                    // Daftar standarnya diambil dari master data lab
-                    // (`GET /api/standards`), bukan dipatok di sini — tiap lab
-                    // punya lot buffer & sensor sendiri.
-                    'sumber' => 'master_standar',
-                    'field' => [
-                        $this->field('standar_dicek.*.standard_id', 'Standard Name', 'pilihan', sumber: 'master_standar'),
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
-                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
-                    ],
-                ],
-                [
-                    'kode' => 'hasil',
-                    'judul' => 'CALIBRATION RESULT',
                     // Dua tabel dengan bentuk sama: sebelum & sesudah adjustment.
                     'tabel' => [
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
@@ -187,6 +266,7 @@ class LembarKerjaTemplate
                 ],
                 [
                     'kode' => 'penutup',
+                    'halaman' => 2,
                     'judul' => 'Catatan & Tanda Tangan',
                     'field' => [
                         $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
@@ -199,6 +279,100 @@ class LembarKerjaTemplate
                 ],
             ],
         ];
+    }
+
+    /**
+     * Cocokin lima baris tercetak tabel STANDARD ke master `standards` lab.
+     *
+     * Dicocokin ke `nama` ATAU `serial_number` — lembar kerjanya nulis
+     * "RTD Sensor/SH1/20" sementara di master kekatalog "Termometer & Sensor
+     * Std." dengan serial `23P1005`. Dua-duanya barang yang sama; yang beda
+     * cuma penyebutan lapangan vs katalog.
+     *
+     * Yang nggak ketemu TETAP dikirim, `standard_id` null. Baris hilang dari
+     * lembar kerja resmi jauh lebih berbahaya daripada baris yang belum
+     * ketaut — teknisi nggak bakal sadar ada standar yang nggak kecatat.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function tautkanStandar(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNull('parameter_kondisi')   // thermohygro punya bagiannya sendiri
+            ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            if (($bagian['kode'] ?? null) !== 'usage_check') {
+                continue;
+            }
+
+            $bentuk['bagian'][$i]['baris'] = array_map(
+                function (array $baris) use ($master): array {
+                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
+                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
+                            || $s->serial_number === $kunci));
+
+                    return [
+                        'label' => $baris['label'],
+                        'standard_id' => $cocok?->id,
+                        'serial_number' => $cocok?->serial_number,
+                        'no_sertifikat' => $cocok?->no_sertifikat,
+                        'tertelusur_ke' => $cocok?->tertelusur_ke,
+                        // Penanda buat admin, bukan buat teknisi: baris ini
+                        // tercetak di formulir tapi belum ada di master lab.
+                        'terdaftar' => $cocok !== null,
+                    ];
+                },
+                $bentuk['bagian'][$i]['baris'],
+            );
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Isi pilihan "6. Thermohygro used" — dikelompokkan Insitu vs Inlab persis
+     * kayak kotak centang di kertas, bukan dropdown seluruh master standar.
+     *
+     * Unit yang tercetak di formulir cuma empat (TH-2/TH-6/TH-7 insitu, TH-4
+     * inlab) walau lab punya TH-1..TH-7 — sisanya dipakai di lembar kerja alat
+     * lain. Nampilin ketujuhnya di sini bikin teknisi bisa milih unit yang
+     * secara prosedur nggak boleh dipakai buat pekerjaan ini.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function isiPilihanThermohygro(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->pluck('id', 'nama');
+
+        $pilihan = [];
+        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
+            $id = $master[$unit['label']] ?? null;
+
+            if ($id === null) {
+                continue;   // unit belum diseed — jangan tawarin yang nggak ada
+            }
+
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $unit['label'],
+                'grup' => $unit['grup'],
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if ($field['kode'] === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
+        }
+
+        return $bentuk;
     }
 
     /**

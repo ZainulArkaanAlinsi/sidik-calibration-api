@@ -55,16 +55,30 @@ class CertificateGenerationTest extends TestCase
         return CalibrationSession::latest('id')->firstOrFail();
     }
 
-    public function test_approve_nge_dispatch_job_generate_sertifikat(): void
+    /**
+     * Sejak 29 Juli 2026 approve nerbitin sertifikat LANGSUNG, bukan lewat
+     * antrean.
+     *
+     * Dulu ini `Queue::assertPushed`. Masalahnya kelihatan waktu dipakai
+     * beneran: tanpa `queue:work` yang jalan, approve-nya sukses tapi
+     * sertifikatnya nggak pernah terbit — dan dari layar admin itu kelihatan
+     * "lagi diproses" selamanya, tanpa error di mana pun.
+     */
+    public function test_approve_langsung_nerbitin_sertifikat_tanpa_antrean(): void
     {
-        Queue::fake();
+        Storage::fake('local');
         $sesi = $this->buatSesiMenungguApproval();
 
         $this->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
-            ->assertOk();
+            ->assertOk()
+            // `certificate_id` udah keisi di respons approve-nya sendiri —
+            // mobile nggak perlu polling nunggu sertifikatnya jadi.
+            ->assertJsonPath('data.sertifikat.status', Certificate::STATUS_TERBIT);
 
-        Queue::assertPushed(GenerateCertificate::class, fn ($job) => $job->calibrationSessionId === $sesi->id);
+        $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
+        $this->assertSame(Certificate::STATUS_TERBIT, $sertifikat->status);
+        $this->assertNotNull($sertifikat->pdf_path);
     }
 
     public function test_job_bikin_sertifikat_terbit_lengkap_dengan_pdf(): void

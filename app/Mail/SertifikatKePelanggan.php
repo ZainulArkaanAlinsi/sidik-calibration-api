@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Certificate;
+use App\Models\CertificateEmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -41,10 +42,18 @@ class SertifikatKePelanggan extends Mailable
      * induk yang nggak bertipe. Ketemu waktu test pertama fatal error.
      *
      * @param  list<string>  $salinanKe
+     * @param  string  $format  `pdf` | `xlsx` | `tautan` — lihat konstanta di
+     *                          `CertificateEmailLog`.
+     * @param  string|null  $berkasXlsx  Path absolut berkas Excel yang udah dibikin
+     *                                   pemanggil. Excel dirakit on-the-fly (nggak
+     *                                   disimpen kayak PDF), jadi yang bikin dia
+     *                                   juga yang tanggung jawab ngehapus.
      */
     public function __construct(
         public Certificate $sertifikat,
         public array $salinanKe = [],
+        public string $format = CertificateEmailLog::FORMAT_PDF,
+        public ?string $berkasXlsx = null,
     ) {}
 
     public function envelope(): Envelope
@@ -77,6 +86,7 @@ class SertifikatKePelanggan extends Mailable
                 'sesi' => $this->sertifikat->session,
                 'alat' => $this->sertifikat->session?->equipment,
                 'pelanggan' => $this->sertifikat->session?->equipment?->customer,
+                'format' => $this->format,
             ],
         );
     }
@@ -86,21 +96,29 @@ class SertifikatKePelanggan extends Mailable
      */
     public function attachments(): array
     {
-        // PDF-nya diambil dari disk PRIVAT dan dilampirkan — bukan dikirim sebagai
-        // tautan unduh. Tautan ke disk privat butuh login, dan pelanggan nggak punya
-        // akun; tautan publik berarti sertifikat bisa diakses siapa pun yang dapat
-        // URL-nya. Lampiran itu jalan yang bener buat dokumen resmi.
+        // Berkasnya diambil dari disk PRIVAT dan DILAMPIRKAN — bukan dikirim
+        // sebagai tautan unduh. Tautan ke disk privat butuh login, dan pelanggan
+        // nggak punya akun; tautan publik berarti sertifikat bisa diakses siapa
+        // pun yang dapat URL-nya. Lampiran itu jalan yang bener buat dokumen resmi.
         //
-        // Kalau PDF-nya nggak ada, dikirim TANPA lampiran nggak masuk akal — jadi
-        // pemanggilnya (`CertificateController`) yang nolak duluan.
-        if (! filled($this->sertifikat->pdf_path)) {
-            return [];
-        }
+        // Kalau berkasnya nggak ada, dikirim TANPA lampiran nggak masuk akal —
+        // jadi pemanggilnya (`CertificateController`) yang nolak duluan.
+        return match ($this->format) {
+            // Format `tautan` emang sengaja tanpa lampiran: yang dikirim cuma
+            // alamat verifikasi, dan halaman itu sendiri yang nyediain unduhan.
+            CertificateEmailLog::FORMAT_TAUTAN => [],
 
-        return [
-            Attachment::fromStorageDisk('local', $this->sertifikat->pdf_path)
-                ->as($this->sertifikat->namaFile('pdf'))
-                ->withMime('application/pdf'),
-        ];
+            CertificateEmailLog::FORMAT_XLSX => filled($this->berkasXlsx) ? [
+                Attachment::fromPath($this->berkasXlsx)
+                    ->as($this->sertifikat->namaFile('xlsx'))
+                    ->withMime('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            ] : [],
+
+            default => filled($this->sertifikat->pdf_path) ? [
+                Attachment::fromStorageDisk('local', $this->sertifikat->pdf_path)
+                    ->as($this->sertifikat->namaFile('pdf'))
+                    ->withMime('application/pdf'),
+            ] : [],
+        };
     }
 }

@@ -67,7 +67,6 @@ class AdminFieldSeparationTest extends TestCase
             ->postJson('/api/calibrations', $this->payload([
                 'nomor_order' => 'DIISI-TEKNISI',
                 'calibration_method_id' => $metode->id,
-                'thermohygro_standard_id' => $this->standar->id,
                 'suhu_ketidakpastian' => 9.9,
             ]))
             ->assertCreated();
@@ -76,8 +75,31 @@ class AdminFieldSeparationTest extends TestCase
 
         $this->assertNull($sesi->nomor_order);
         $this->assertNull($sesi->calibration_method_id);
-        $this->assertNull($sesi->thermohygro_standard_id);
         $this->assertNull($sesi->suhu_ketidakpastian);
+    }
+
+    /**
+     * `thermohygro_standard_id` PINDAH jadi hak teknisi, 29 Juli 2026.
+     *
+     * Awalnya dia ikut dibuang di test atas ini, ngikut spesifikasi poin 1.
+     * Di praktiknya keliru: unit thermohygro mana yang kepakai itu fakta
+     * lapangan — teknisi yang bawa TH-2 ke lokasi pelanggan atau makai TH-4 di
+     * lab, dan admin nggak punya cara tau selain nanya. Selama field ini
+     * administratif, kolom "6. Thermohygro used" keisi di HP tapi nyampe server
+     * jadi null, tanpa pesan error apa pun.
+     */
+    public function test_thermohygro_dari_teknisi_DISIMPAN_karena_itu_fakta_lapangan(): void
+    {
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload([
+                'thermohygro_standard_id' => $this->standar->id,
+            ]))
+            ->assertCreated();
+
+        $this->assertSame(
+            $this->standar->id,
+            CalibrationSession::latest('id')->firstOrFail()->thermohygro_standard_id,
+        );
     }
 
     public function test_admin_ngisi_field_administratif_lewat_endpoint_sendiri(): void

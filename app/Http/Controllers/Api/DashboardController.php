@@ -125,7 +125,19 @@ class DashboardController extends Controller
         return match ($satuan) {
             TrenPekerjaan::SATUAN_HARI => $sampai->copy()->subDays(29),
             TrenPekerjaan::SATUAN_MINGGU => $sampai->copy()->subWeeks(11),
-            default => $sampai->copy()->subMonths(self::BULAN_GRAFIK - 1),
+            // `subMonthsNoOverflow` — sama alasannya dengan `addMonthNoOverflow`
+            // di `TrenPekerjaan::majukan()`, cuma arah sebaliknya. `subMonths()`
+            // polos dari tanggal 29-31 nyelonong maju kalau bulan sasarannya
+            // lebih pendek: 29 Jul 2026 - 5 bulan = 29 Feb yang nggak ada, jadi
+            // 1 Maret. `awalPeriode()` nge-startOfMonth-in itu ke Maret, dan
+            // grafiknya keluar 5 bulan, bukan 6.
+            //
+            // Yang bikin ini susah ketangkep: dia cuma salah di tanggal ujung
+            // bulan, jadi bug-nya ilang-timbul ngikut kalender dan gampang
+            // dikira flaky. `grafikPekerjaan()` kebetulan kebal karena dia
+            // `startOfMonth()` duluan — jadi /dashboard ngasih 6 bulan sementara
+            // /dashboard/tren ngasih 5, dua grafik beda buat rentang yang sama.
+            default => $sampai->copy()->subMonthsNoOverflow(self::BULAN_GRAFIK - 1),
         };
     }
 

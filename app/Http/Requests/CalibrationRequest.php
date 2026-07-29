@@ -113,6 +113,16 @@ class CalibrationRequest extends FormRequest
             // Kolom "Catatan:" di lembar kerja.
             'catatan_teknisi' => ['sometimes', 'nullable', 'string', 'max:2000'],
 
+            // Identitas alat & pemilik yang DIKETIK TEKNISI dari badan alat /
+            // surat jalan (lembar kerja poin 3-5 & OWNER 1-2). Bukan field
+            // admin: yang megang alat fisiknya teknisi. Semuanya opsional —
+            // lembar kerja boleh dikirim belum lengkap.
+            'alat_model' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'alat_serial_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'alat_merk' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
+
             // Kolom "Usage Check": standar mana aja yang dicentang teknisi.
             'standar_dicek' => ['sometimes', 'array'],
             'standar_dicek.*.standard_id' => [
