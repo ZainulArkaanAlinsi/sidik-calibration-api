@@ -712,12 +712,22 @@ class CalibrationController extends Controller
             $suhu = array_values($titik['suhu'] ?? []);
 
             $pembacaanTerisi = [];
+            // Suhu larutan, disaring sejajar sama `$pembacaanTerisi` — bukan
+            // seluruh kolom suhu. Rata-ratanya dipakai buat nurunin nilai buffer
+            // pada suhu pengukuran, jadi dia harus ngikut baris yang beneran
+            // ikut dihitung; baris yang pembacaannya kosong nggak boleh nyeret
+            // suhunya ke rata-rata.
+            $suhuTerisi = [];
 
             // Sel kosong di lembar kerja tetap kekirim (sebagai null) supaya
             // nomor pengulangannya nggak geser. Yang disimpen cuma yang keisi.
             foreach (array_values($titik['pembacaan'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
+                }
+
+                if (($suhu[$urutan] ?? null) !== null && $suhu[$urutan] !== '') {
+                    $suhuTerisi[] = (float) $suhu[$urutan];
                 }
 
                 $meta = $ocr[$urutan] ?? null;
@@ -805,6 +815,10 @@ class CalibrationController extends Controller
                 $pembacaanTerisi,
                 $alat,
                 $standarTitik,
+                // Suhu larutan rata-rata titik ini. Null kalau teknisi nggak
+                // ngisi kolom suhu — `hitungTitik()` bakal balik ke nilai
+                // nominal yang diketik, sama kayak perilaku sebelumnya.
+                $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
             ));
         }
 

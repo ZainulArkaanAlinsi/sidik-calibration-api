@@ -220,12 +220,37 @@ class CalibrationValidator
                     ->all(),
                 $alat,
                 $standar,
+                // Suhu larutan yang kecatat di pembacaan, biar hitung ulang di
+                // sini nurunin nilai acuan dengan cara yang SAMA kayak waktu
+                // disimpen. Kalau nggak dikirim, pemeriksaan ini nerima
+                // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
+                // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
+                $this->suhuLarutanRataRata($pembacaan),
             );
 
             $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];
         }
 
         return $temuan;
+    }
+
+    /**
+     * Suhu larutan rata-rata dari pembacaan yang beneran ikut dihitung.
+     *
+     * Null kalau nggak ada satu pun yang kecatat — bukan 0, karena 0 °C itu suhu
+     * yang sah dan bakal bikin nilai buffer diturunin dari ujung kurva yang
+     * salah, bukan dilewati.
+     *
+     * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     */
+    private function suhuLarutanRataRata($pembacaan): ?float
+    {
+        $suhu = $pembacaan
+            ->map(fn (RawMeasurement $m): ?float => $m->suhu === null ? null : (float) $m->suhu)
+            ->filter(fn (?float $s): bool => $s !== null)
+            ->values();
+
+        return $suhu->isEmpty() ? null : (float) $suhu->avg();
     }
 
     /**
