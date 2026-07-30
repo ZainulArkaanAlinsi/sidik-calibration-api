@@ -93,30 +93,35 @@ berbeda bisa beda tata letak, dan itu benar.
 
 ---
 
-## 3. 🕳️ Celah yang BELUM ketutup: desimal nggak kekirim ke mobile
+## 3. ✅ `desimal` sekarang dikirim backend — pakai ini, jangan nebak
 
-Jumlah desimal tabel hasil di sertifikat sekarang **diturunin dari resolusi alat**
-(0,01 → 2 desimal; 0,001 → 3), dan bisa ditimpa pengaturan organisasi. Nilainya
-dibekukan ke snapshot sertifikat.
+Jumlah desimal angka hasil **diturunin dari resolusi alat** (0,01 → 2 desimal;
+0,001 → 3), dan bisa ditimpa pengaturan organisasi. Sekarang angkanya ikut kekirim,
+jadi mobile nggak perlu bikin aturan pembulatan sendiri:
 
-**Tapi angka itu nggak ada di API.** `GET /certificates/{id}` nggak ngirim `snapshot`
-maupun `desimal`. Jadi kalau mobile nampilin tabel hasil sendiri (dari
-`GET /calibrations/{id}` → `data.titik[]`), dia **nggak punya cara tau** sertifikatnya
-bakal dibulatkan ke berapa desimal.
+| Endpoint | Field | Sifatnya |
+|---|---|---|
+| `GET /calibrations/{id}` (& daftar) | `data.desimal` | **Hidup** — ngikut pengaturan yang berlaku sekarang |
+| `GET /certificates/{id}` (& daftar) | `data.desimal` | **Beku** — dari snapshot sertifikat itu |
 
-Efeknya: layar mobile bisa nampilin `0,0234` sementara sertifikat nyetak `0,023` — dan
-pelanggan yang mencocokkan dua-duanya bakal nanya mana yang bener.
+**Bedanya disengaja.** Sesi belum punya dokumen resmi, jadi angkanya masih boleh
+berubah sampai sertifikatnya terbit. Sertifikat yang udah terbit **nggak boleh** berubah
+bentuk gara-gara pengaturan diubah sesudahnya — jadi dua sertifikat dari tanggal berbeda
+boleh punya `desimal` beda, dan itu benar. Contoh nyata dari data dev sekarang:
 
-Dua jalan, dan ini perlu diputusin bareng:
+```
+CAL/2026/07/0022 -> desimal=3   (terbit sesudah resolusi alat dibenerin)
+CAL/2026/07/0021 -> desimal=2
+CAL/2026/07/0020 -> desimal=2
+```
 
-1. **Mobile nurunin sendiri dari `equipment.resolusi`** (udah ada di
-   `GET /equipments/{id}`). Cocok buat kasus normal, tapi **meleset kalau organisasi
-   nyetel override** — mobile nggak tau setelan itu ada.
-2. **Backend ngirim `desimal`** di `CertificateResource` dan/atau
-   `CalibrationResource`. Ini yang bener, karena satu sumber angka.
+**Yang perlu dilakukan:** bulatkan angka di `data.titik[]` (dan tabel hasil di layar
+sertifikat) pakai `desimal` dari respons yang sama. Jangan nurunin sendiri dari
+`equipment.resolusi` — itu cocok buat kasus biasa tapi meleset begitu organisasi nyetel
+timpaan, dan mobile nggak punya cara tau setelan itu ada.
 
-Saranku nomor 2, dan itu perubahan kecil di backend. **Belum dikerjain** — bilang aja
-kalau mau, biar nggak dua sisi bikin aturan pembulatan masing-masing.
+Kalau `desimal` datang `null` (organisasi nggak kebaca), jatuh ke 4 desimal — sama
+dengan bawaan backend.
 
 ---
 
@@ -141,7 +146,7 @@ Dua-duanya alat nyata milik pelanggan berbeda — jangan disamain.
 |---|---|---|
 | 1 | Dua kode temuan baru di `/validasi` | ✅ **ya** — layar approval harus nampilin tingkat `peringatan`, dan bedain tindak lanjutnya |
 | 2 | Tata letak sertifikat (kop, TTD kiri, thermohygro keluar) | ⚠️ cuma kalau ada pratinjau sertifikat di mobile |
-| 3 | Desimal nggak kekirim ke mobile | ⏸️ **nunggu keputusan** — jangan bikin aturan pembulatan sendiri dulu |
+| 3 | `desimal` dikirim backend (`data.desimal`) | ✅ **ya** — pakai buat membulatkan, jangan nurunin dari `resolusi` |
 | 4 | Alat & pelanggan baru di data demo | ℹ️ info doang |
 
 Nomor 1 yang paling penting: kalau layar approval cuma nyaring `error`, dua peringatan
