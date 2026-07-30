@@ -67,7 +67,30 @@ class GumCalculator
         array $pembacaan,
         Equipment $equipment,
         Standard $standard,
+        ?float $suhuLarutan = null,
     ): array {
+        // Nilai acuan yang dipakai itu nilai larutan PADA SUHU PENGUKURAN, bukan
+        // angka nominal yang tercetak di botol.
+        //
+        // pH larutan buffer berubah sama suhu, dan sertifikat buffer-nya ngasih
+        // kurvanya (kuadratik, disimpen di `standards.koefisien_suhu`). Buffer
+        // "10.01" yang diukur pada 25,3 °C nilai benernya 9,9451681 — selisih
+        // 0,065 pH dari nominalnya. Toleransi alat pH biasanya 0,2, jadi salah
+        // di sini makan sepertiga anggaran toleransi dan bisa bikin alat yang
+        // seharusnya FAIL kelihatan PASS (atau sebaliknya).
+        //
+        // Sebelum ini `titik_ukur` dipakai apa adanya dari yang diketik teknisi,
+        // dan yang diketik teknisi itu nominal botol — jadi kolom "Correction"
+        // di sertifikat kegeser sebesar koreksi suhu yang nggak pernah kepakai.
+        // Dibandingin lembar olah data manual lab, tiga titik pH mismatch di
+        // koreksi (-0,0038 vs -0,0096 · -0,0232 vs +0,0004 · -0,0554 vs +0,0094),
+        // dua di antaranya sampai kebalik tanda.
+        //
+        // `?? $titikUkur` bikin ini aman buat semua yang bukan pH: standar tanpa
+        // `koefisien_suhu` (atau titik tanpa suhu larutan) balik ke perilaku lama
+        // persis, karena `nilaiPadaSuhu()` balikin null.
+        $titikUkur = $standard->nilaiPadaSuhu($suhuLarutan) ?? $titikUkur;
+
         $n = count($pembacaan);
         $rataRata = array_sum($pembacaan) / $n;
         $standarDeviasi = $this->standarDeviasiSampel($pembacaan, $rataRata);
