@@ -48,6 +48,44 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 🔴 31 Juli 2026 — buffer pH 4 KADALUARSA, alur pH 3 titik berhenti
+
+Buat @raihannazhiif. Ini bukan bug, dan **jangan dicari di kode** — datanya yang
+lewat masa berlaku.
+
+| Standar | Serial | `berlaku_sampai` | Status |
+|---|---|---|---|
+| **pH Buffer Solution 4** | `HC32513535` | **2026-07-31** | ❌ **kadaluarsa hari ini** |
+| pH Buffer Solution 7 | `HC46341939` | 2027-12-17 | ✅ masih berlaku |
+| pH Buffer Solution 10 | `HC45400338` | 2027-07-31 | ✅ masih berlaku |
+
+**Efeknya:** `POST /calibrations` balikin **422** buat titik mana pun yang pakai
+buffer 4 —
+
+```
+Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.
+```
+
+Karena kalibrasi pH baku itu 3 titik (4/7/10), **seluruh alur pH berhenti** sampai
+buffernya diganti. Yang nolak `CalibrationRequest::withValidator()`, dan itu
+perilaku yang BENER: standar yang lewat masa berlaku bikin ketertelusuran putus,
+dan itu temuan asesor.
+
+**Yang bakal bikin salah sangka:** `docs/skrip/e2e-ph.py` sekarang berhenti di
+mata rantai ke-4 dengan `PUTUS DI: nyari 3 standar buffer pH` + pesan kadaluarsa.
+Itu penjaganya bekerja, **bukan** regresi dari perubahan pH minggu ini. Kalau
+skripnya tiba-tiba merah, cek tanggal standarnya duluan sebelum ngulik kode.
+
+**Yang dibutuhin: keputusan lab, bukan tambalan kode.** Salah satu dari —
+
+1. Buffer fisiknya diganti, sertifikat baru diinput ke master Standar; atau
+2. `berlaku_sampai` diperpanjang **kalau memang ada sertifikat baru yang mendasari**.
+
+Tanggalnya sengaja NGGAK digeser dari sisi ini. Itu masa berlaku sertifikat
+standar beneran — bukan angka yang boleh diubah biar aplikasinya jalan lagi.
+
+---
+
 ## Update 30 Juli 2026 — kalau kamu yang nerusin backend, baca ini dulu
 
 Enam commit masuk 29–30 Juli, dan **§1 di bawah belum nyusul**. Yang di bawah ini
