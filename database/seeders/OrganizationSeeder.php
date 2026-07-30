@@ -41,6 +41,22 @@ class OrganizationSeeder extends Seeder
                     'masa_berlaku_sertifikat_bulan' => 12,
                     'faktor_cakupan_default' => 2,
 
+                    // WAJIB ikut di sini, bukan cuma diset lewat panel admin.
+                    // `settings` ditulis sebagai array utuh, jadi tiap `db:seed`
+                    // NIMPA seluruh JSON-nya — kunci yang cuma ada di database
+                    // dan nggak ada di sini bakal ilang tanpa suara. Itu yang
+                    // kejadian 29 Juli: QR-nya dimatiin lewat panel, terus
+                    // `db:seed` hari itu juga ngembaliin QR-nya ke sertifikat.
+                    'tampilkan_qr_di_pdf' => false,
+
+                    // Yang nandatangani sertifikat itu jabatan, bukan siapa pun
+                    // yang kebetulan nekan approve. Tanpa dua kunci ini,
+                    // `CertificateSnapshotBuilder` jatuh ke nama & department
+                    // user peng-approve — jadi sertifikat resmi bisa
+                    // ketandatanganan nama admin yang beda-beda tiap hari.
+                    'penandatangan_nama' => 'Alex Misramto',
+                    'penandatangan_jabatan' => 'Technical Manager',
+
                     // Dua catatan kaki ini WAJIB ikut kecetak di sertifikat/lampiran.
                     // Bunyinya disalin persis dari dokumen akreditasi asli — jangan
                     // diparafrase, ini pernyataan formal ke KAN.
