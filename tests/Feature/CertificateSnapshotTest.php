@@ -262,4 +262,44 @@ class CertificateSnapshotTest extends TestCase
 
         $this->assertSame(3, $this->terbitkanSertifikat()->snapshot['desimal']);
     }
+
+    /**
+     * `desimal` ikut kekirim ke mobile, dan di sertifikat dia BEKU.
+     *
+     * Tanpa ini mobile kepaksa nebak aturan pembulatannya sendiri, dan layar bisa
+     * nulis `0,0234` sementara sertifikat nyetak `0,023` — pelanggan yang
+     * mencocokkan dua-duanya nggak punya cara tau mana yang bener.
+     *
+     * Bekunya penting: sertifikat yang udah terbit nggak boleh berubah bentuk
+     * gara-gara pengaturan diubah sesudahnya.
+     */
+    public function test_desimal_kekirim_ke_api_dan_beku_di_sertifikat(): void
+    {
+        $this->alat->update(['resolusi' => 0.001]);
+        $sertifikat = $this->terbitkanSertifikat();
+
+        $this->actingAs($this->admin)
+            ->getJson("/api/certificates/{$sertifikat->id}")
+            ->assertOk()
+            ->assertJsonPath('data.desimal', 3);
+
+        // Pengaturan diubah SESUDAH sertifikat terbit — yang udah terbit nggak
+        // boleh ikut berubah.
+        $organisasi = Organization::query()->firstOrFail();
+        $organisasi->update([
+            'settings' => [...$organisasi->settings, Organization::KEY_DESIMAL_SERTIFIKAT => 5],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson("/api/certificates/{$sertifikat->id}")
+            ->assertOk()
+            ->assertJsonPath('data.desimal', 3);
+
+        // Sesi masih HIDUP: dia belum punya dokumen resmi, jadi dia ngikut
+        // pengaturan yang berlaku sekarang.
+        $this->actingAs($this->admin)
+            ->getJson("/api/calibrations/{$sertifikat->calibration_session_id}")
+            ->assertOk()
+            ->assertJsonPath('data.desimal', 5);
+    }
 }

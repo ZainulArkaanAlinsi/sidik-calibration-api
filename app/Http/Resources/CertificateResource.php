@@ -25,6 +25,20 @@ class CertificateResource extends JsonResource
             'calibration_session_id' => $this->calibration_session_id,
             'nomor' => $this->nomor,
             'status' => $this->status,
+            // Berapa desimal angka hasil ditulis di sertifikat ini. Diambil dari
+            // SNAPSHOT, bukan dihitung ulang: sertifikat yang udah terbit nggak
+            // boleh berubah bentuk gara-gara pengaturan organisasi atau resolusi
+            // alat diubah sesudahnya. Dua sertifikat dari tanggal berbeda boleh
+            // beda desimal, dan itu bener.
+            //
+            // Sertifikat lama yang snapshot-nya kosong jatuh ke hitungan hidup —
+            // lebih baik angka yang wajar daripada null yang bikin layar nebak.
+            'desimal' => $this->snapshot['desimal']
+                ?? $this->organization?->desimalSertifikat(
+                    $this->session?->equipment?->resolusi !== null
+                        ? (float) $this->session->equipment->resolusi
+                        : null,
+                ),
             // Ikut nempel biar layar daftar sertifikat nggak perlu buka sesi satu-satu.
             'keputusan' => $this->session?->keputusan,
             // Tanggal POLOS (`2024-05-30`), jangan dibalikin ke ISO. Kolomnya cast

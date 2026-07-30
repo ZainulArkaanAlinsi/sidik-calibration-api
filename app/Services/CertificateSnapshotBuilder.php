@@ -47,7 +47,7 @@ class CertificateSnapshotBuilder
     {
         $alat = $sesi->equipment;
         $pengaturan = $sesi->organization?->settings ?? [];
-        $desimal = $this->desimal($alat, $pengaturan);
+        $desimal = $this->desimal($alat, $sesi->organization);
 
         return [
             'versi' => self::VERSI,
@@ -259,22 +259,17 @@ class CertificateSnapshotBuilder
      * sertifikat yang udah terbit nggak berubah bentuk gara-gara pengaturan
      * diubah sesudahnya.
      *
-     * @param  array<string, mixed>  $pengaturan
      */
-    private function desimal(?Equipment $alat, array $pengaturan): int
+    private function desimal(?Equipment $alat, ?Organization $organisasi): int
     {
-        $paksa = $pengaturan[Organization::KEY_DESIMAL_SERTIFIKAT] ?? null;
+        $resolusi = $alat?->resolusi !== null ? (float) $alat->resolusi : null;
 
-        // `is_numeric` bukan `!== null`: kolom teks di panel admin ngirim string
-        // kosong waktu dibersihin, dan `(int) ''` itu 0 — nol desimal bikin
-        // seluruh tabel sertifikat jadi bilangan bulat tanpa ada yang minta.
-        if (is_numeric($paksa)) {
-            return max(0, min(6, (int) $paksa));
-        }
-
-        return Angka::desimalDariResolusi(
-            $alat?->resolusi !== null ? (float) $alat->resolusi : null,
-        );
+        // Aturannya sengaja NGGAK diulang di sini — satu-satunya tempat dia
+        // diputusin itu `Organization::desimalSertifikat()`, biar angka yang
+        // dibekukan ke sertifikat sama persis dengan yang dikirim ke mobile.
+        return $organisasi
+            ? $organisasi->desimalSertifikat($resolusi)
+            : Angka::desimalDariResolusi($resolusi);
     }
 
     /** `0–14 pH / 0,01 pH` — rentang alat / resolusinya. */
