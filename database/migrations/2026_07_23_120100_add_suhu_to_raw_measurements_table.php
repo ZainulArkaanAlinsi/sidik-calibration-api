@@ -17,8 +17,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+            // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
+            // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
         Schema::table('raw_measurements', function (Blueprint $table) {
-            $table->decimal('suhu', 8, 2)->nullable()->after('pembacaan');
+            if (! Schema::hasColumn('raw_measurements', 'suhu')) {
+                $table->decimal('suhu', 8, 2)->nullable()->after('pembacaan');
+            }
         });
     }
 

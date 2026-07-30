@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
@@ -140,19 +141,20 @@ class MasaBerlakuSertifikatTest extends TestCase
 
     // --------------------------------------------------- pilihan admin & batas
 
+    /**
+     * Approve nerbitin langsung (bukan antrean) sejak 29 Juli 2026, jadi yang
+     * diperiksa tanggal di SERTIFIKATNYA — bukan parameter job yang dikirim.
+     * Itu juga yang sebenernya penting: yang salah tanggal bakal kecetak.
+     */
     public function test_admin_bisa_nentuin_tanggal_sendiri_waktu_approve(): void
     {
-        Queue::fake();
+        Storage::fake('local');
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
         $this->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['berlaku_sampai' => '2028-03-31'])
-            ->assertOk();
-
-        Queue::assertPushed(
-            GenerateCertificate::class,
-            fn (GenerateCertificate $job): bool => $job->berlakuSampai === '2028-03-31',
-        );
+            ->assertOk()
+            ->assertJsonPath('data.sertifikat.berlaku_sampai', '2028-03-31');
     }
 
     public function test_tanggal_pilihan_admin_beneran_kepakai_di_sertifikat(): void
@@ -164,16 +166,18 @@ class MasaBerlakuSertifikatTest extends TestCase
 
     public function test_tanpa_berlaku_sampai_tetap_jalan_pakai_default(): void
     {
-        Queue::fake();
+        Storage::fake('local');
         $sesi = $this->sesiMenungguApproval('2026-07-20');
 
         $this->actingAs($this->admin)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
-            ->assertOk();
+            ->assertOk()
+            // Default masa berlaku organisasi yang kepakai — yang penting ADA
+            // tanggalnya, bukan null yang kecetak jadi "—" di sertifikat.
+            ->assertJsonPath('data.sertifikat.status', 'terbit');
 
-        Queue::assertPushed(
-            GenerateCertificate::class,
-            fn (GenerateCertificate $job): bool => $job->berlakuSampai === null,
+        $this->assertNotNull(
+            Certificate::where('calibration_session_id', $sesi->id)->firstOrFail()->berlaku_sampai,
         );
     }
 

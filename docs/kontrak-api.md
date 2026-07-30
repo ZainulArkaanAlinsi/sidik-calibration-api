@@ -1753,6 +1753,149 @@ Ini bukan kelalaian: `From` yang domainnya beda dari domain yang beneran ngirim 
 
 ---
 
+## 14. Tanda Tangan di Sertifikat (live 27 Jul)
+
+**Admin doang.** Nutup `permintaan-endpoint-fase-2.md` §3c — bagian terakhir dari
+"Pelengkap sertifikat" (logo & QR udah live duluan di §8).
+
+Gambar tanda tangan penanggung jawab teknis, dicetak **di atas garis tanda tangan**
+di footer sertifikat. Nama & jabatannya tetap dari `settings.penandatangan_nama` /
+`settings.penandatangan_jabatan` yang udah ada — yang baru di sini cuma gambarnya.
+
+> **Gambarnya disimpen di disk PRIVAT, dan itu keputusan keamanan.** Logo ada di disk
+> publik karena itu identitas yang memang dipajang. Tanda tangan **nggak boleh**:
+> gambar tanda tangan yang URL-nya bisa diakses siapa pun berarti siapa pun bisa
+> nempelin ke dokumen palsu. Konsekuensinya buat mobile: **responsnya nggak bawa
+> `tanda_tangan_url`** — nggak akan pernah ada. Yang ada cuma penanda
+> `punya_tanda_tangan`, dan pratinjaunya lewat endpoint yang ngecek hak akses.
+
+### Yang nambah di objek organisasi
+
+Muncul di semua respons yang bawa organisasi (`GET /organization`, dst):
+
+```json
+{
+  "punya_tanda_tangan": true,
+  "tanda_tangan": { "geser_x_mm": -8.5, "geser_y_mm": 4, "lebar_mm": 42 }
+}
+```
+
+`tanda_tangan` **selalu ada dan selalu lengkap**, walaupun gambarnya belum diunggah —
+isinya nilai bawaan. Mobile nggak perlu nyiapin cabang buat `null`.
+
+### Yang nambah di objek `sertifikat`
+
+Muncul di `GET /calibrations/{id}` (objek `sertifikat` yang di-embed) **dan** di
+respons sertifikat sendiri:
+
+```json
+"penanda_tangan": { "nama": "Alex Misramto", "jabatan": "Technical Manager" }
+```
+
+- **Nilainya BEKU dari snapshot sertifikat**, bukan dibaca live dari pengaturan
+  organisasi. Ganti penandatangan di pengaturan **nggak ngubah sertifikat yang udah
+  terbit** — kalau berubah, sertifikat lama bakal nampilin nama yang beda dari yang
+  kecetak di PDF-nya sendiri, dan yang lihat nggak punya cara buat tahu mana yang
+  bener.
+- `null` kalau sertifikatnya belum terbit / belum punya snapshot.
+- **Nggak ada `ttd_url`** di sini, sama alasannya kayak di atas.
+
+### `POST /api/organization/tanda-tangan`
+
+Multipart, field **`tanda_tangan`**.
+
+| Field | Aturan |
+|---|---|
+| `tanda_tangan` | **wajib**, gambar, **PNG doang**, maks **2 MB** |
+
+> **PNG doang — bukan PNG/JPG kayak logo.** JPG nggak punya latar transparan, jadi
+> tanda tangannya kecetak sebagai **kotak putih** yang nutupin garis tanda tangan &
+> nama di bawahnya. Rusaknya **sunyi**: nggak ada error, ketahuannya baru waktu ada
+> yang buka PDF-nya. Jadi ditolak di pintu masuk, dan pesan `422`-nya nyebut alasannya
+> — tampilkan apa adanya ke admin, jangan diganti "format tidak didukung".
+
+Balikannya objek organisasi dengan `punya_tanda_tangan: true`. Gambar lama otomatis
+kehapus — tapi **sesudah** yang baru kesimpen, biar unggahan yang gagal nggak bikin
+sertifikat berikutnya terbit tanpa tanda tangan tanpa ada yang sadar.
+
+### `GET /api/organization/tanda-tangan`
+
+Nge-stream gambarnya (`Content-Type: image/png`) — **bukan JSON**. Ini yang dipakai
+buat nampilin pratinjau di layar pengaturan & nanti di UI drag-and-drop.
+
+Ada karena file-nya di disk privat, jadi nggak bisa dipanggil lewat URL storage.
+Butuh header `Authorization` kayak endpoint lain — di Flutter berarti lewat
+`Image.memory` dari respons `http`, **bukan** `Image.network`.
+
+`404` kalau belum ada gambarnya.
+
+### `DELETE /api/organization/tanda-tangan`
+
+Hapus gambarnya. Sertifikat balik nyetak **garis kosong buat tanda tangan basah** —
+itu state yang sah, bukan sertifikat rusak.
+
+### `PATCH /api/organization/tanda-tangan/posisi`
+
+Posisi & ukuran cetaknya. Semua field opsional — kirim yang berubah aja.
+
+```json
+{ "geser_x_mm": -8.5, "geser_y_mm": 4, "lebar_mm": 42 }
+```
+
+| Field | Aturan | Bawaan |
+|---|---|---|
+| `geser_x_mm` | numerik, **−40 … 40**. Negatif = ke kiri | `0` |
+| `geser_y_mm` | numerik, **−40 … 40**. **POSITIF = NAIK** | `0` |
+| `lebar_mm` | numerik, **10 … 80**. Tingginya ngikut, rasio dijaga | `35` |
+
+- **Kirim `null`** di suatu field = balikin ke bawaan (kuncinya dibuang, bukan
+  disimpen `null`).
+- Setelan lain di `settings` (penandatangan, kode dokumen, ambang reminder, masa
+  berlaku) **nggak keinjek** — yang dikirim digabung, bukan nimpa seluruh objek.
+- Nilai di luar batas → `422`. Nilai ngawur yang masuk lewat jalur lain
+  (`PUT /organization` yang nerima `settings` bebas, atau panel admin) **tetap
+  dibatasin waktu dibaca**, jadi API nggak akan pernah balikin angka di luar rentang.
+
+> **`geser_y_mm` POSITIF = NAIK.** Ini kebalikan dari koordinat layar, jadi gampang
+> kebalik waktu bikin UI drag. Kalau drag ke atas malah bikin tanda tangannya turun,
+> yang salah tanda di sisi UI — backend-nya udah dites buat arah ini.
+
+> **Geserannya RELATIF ke blok tanda tangan, bukan koordinat absolut halaman.** Tinggi
+> isi sertifikat berubah-ubah (jumlah titik ukur & standar beda tiap sesi), jadi blok
+> tanda tangannya naik-turun. Koordinat absolut yang pas di satu sertifikat bakal
+> nimpa tabel di sertifikat lain — dan itu baru ketahuan sesudah PDF-nya nyampe
+> pelanggan.
+
+### Kenapa posisinya disimpen SEKALI, bukan per sertifikat
+
+Sertifikat yang udah terbit itu **dokumen terkendali**. Kalau posisi tanda tangan
+disimpen per sertifikat, berarti sertifikat yang udah dikirim ke pelanggan bisa
+diubah — dan dua orang bisa punya PDF beda dengan nomor sertifikat yang sama. Dengan
+disimpen di tingkat template, admin geser **sekali** dan semua sertifikat konsisten.
+
+Ini juga alasan tinggi blok tanda tangannya **dipatok**, nggak ikut tinggi gambar: dua
+sertifikat dengan format resmi yang sama nggak boleh beda tata letak cuma gara-gara
+yang satu diunggahin gambar TTD.
+
+**Status yang mungkin** (berlaku buat keempat endpoint):
+
+| Kode | Kapan |
+|---|---|
+| `200` | Beres |
+| `422` | Bukan PNG · lebih dari 2 MB · nggak ada file · nilai posisi di luar batas |
+| `403` | Teknisi / viewer — **nggak boleh nyentuh sama sekali**, termasuk pratinjau |
+| `404` | `GET` waktu gambarnya belum ada |
+| `401` | Tanpa token |
+
+> ### Yang masih perlu dari sisi operasional
+>
+> Kodenya **selesai dan udah diuji** end-to-end sampai PDF-nya (22 test), pakai PNG
+> placeholder. Yang belum: **file PNG tanda tangan asli + jabatan resminya** dari lab.
+> Nggak ada kode yang perlu diubah waktu file aslinya masuk — admin tinggal unggah
+> lewat panel atau endpoint di atas.
+
+---
+
 ## Akun buat nyoba (seeder)
 
 | ID pegawai | Email | Role | Status |

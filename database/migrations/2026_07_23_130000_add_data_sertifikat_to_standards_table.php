@@ -27,11 +27,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+            // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
+            // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
         Schema::table('standards', function (Blueprint $table) {
-            $table->json('koefisien_suhu')->nullable()->after('drift')
-                ->comment('{a,b,c} buat y = a·x² + b·x + c — nilai standar pada suhu x');
-            $table->json('parameter_kondisi')->nullable()->after('koefisien_suhu')
-                ->comment('{suhu:{indexed_value,correction,u95}, kelembaban:{...}} dari sertifikat thermohygro');
+            if (! Schema::hasColumn('standards', 'koefisien_suhu')) {
+                $table->json('koefisien_suhu')->nullable()->after('drift')
+                    ->comment('{a,b,c} buat y = a·x² + b·x + c — nilai standar pada suhu x');
+            }
+            if (! Schema::hasColumn('standards', 'parameter_kondisi')) {
+                $table->json('parameter_kondisi')->nullable()->after('koefisien_suhu')
+                    ->comment('{suhu:{indexed_value,correction,u95}, kelembaban:{...}} dari sertifikat thermohygro');
+            }
         });
     }
 

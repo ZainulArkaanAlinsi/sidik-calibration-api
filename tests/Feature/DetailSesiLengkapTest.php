@@ -223,6 +223,75 @@ class DetailSesiLengkapTest extends TestCase
         $this->detail()->assertJsonPath('data.sertifikat', null);
     }
 
+    /**
+     * `penanda_tangan` di objek sertifikat (fase-2 §3c).
+     *
+     * Dibaca dari `snapshot`, bukan dari pengaturan organisasi yang berlaku
+     * sekarang — lihat test berikutnya buat alasannya.
+     */
+    public function test_sertifikat_bawa_penanda_tangan_dari_snapshot(): void
+    {
+        Certificate::factory()->create([
+            'calibration_session_id' => $this->sesi->id,
+            'status' => Certificate::STATUS_TERBIT,
+            'snapshot' => [
+                'footer' => [
+                    'penandatangan' => 'Alex Misramto',
+                    'jabatan' => 'Technical Manager',
+                ],
+            ],
+        ]);
+
+        $this->detail()
+            ->assertJsonPath('data.sertifikat.penanda_tangan.nama', 'Alex Misramto')
+            ->assertJsonPath('data.sertifikat.penanda_tangan.jabatan', 'Technical Manager')
+            // `ttd_url` diminta di §3c tapi SENGAJA nggak ada: gambarnya di disk
+            // privat. URL tanda tangan yang bisa diakses siapa pun = siapa pun bisa
+            // nempelin ke dokumen palsu. Dikunci di sini biar nggak "dibantu
+            // tambahin" nanti.
+            ->assertJsonMissingPath('data.sertifikat.penanda_tangan.ttd_url');
+    }
+
+    /**
+     * Ganti penandatangan di pengaturan organisasi **nggak boleh** ngubah
+     * sertifikat yang udah terbit.
+     *
+     * Kalau resource-nya baca live dari `organization.settings`, sertifikat lama
+     * bakal nampilin nama yang BEDA dari yang kecetak di PDF-nya sendiri — dan yang
+     * lihat nggak punya cara buat tahu mana yang bener. Sertifikat terbit itu
+     * dokumen terkendali; isinya beku.
+     */
+    public function test_ganti_penandatangan_nggak_ngubah_sertifikat_lama(): void
+    {
+        Certificate::factory()->create([
+            'calibration_session_id' => $this->sesi->id,
+            'status' => Certificate::STATUS_TERBIT,
+            'snapshot' => [
+                'footer' => ['penandatangan' => 'Alex Misramto', 'jabatan' => 'Technical Manager'],
+            ],
+        ]);
+
+        $this->sesi->organization->update([
+            'settings' => ['penandatangan_nama' => 'Orang Baru', 'penandatangan_jabatan' => 'Direktur'],
+        ]);
+
+        $this->detail()
+            ->assertJsonPath('data.sertifikat.penanda_tangan.nama', 'Alex Misramto')
+            ->assertJsonPath('data.sertifikat.penanda_tangan.jabatan', 'Technical Manager');
+    }
+
+    /** Sertifikat tanpa snapshot (belum terbit) — `null`, bukan objek berisi null. */
+    public function test_penanda_tangan_null_kalau_belum_ada_snapshot(): void
+    {
+        Certificate::factory()->create([
+            'calibration_session_id' => $this->sesi->id,
+            'status' => Certificate::STATUS_TERBIT,
+            'snapshot' => null,
+        ]);
+
+        $this->detail()->assertJsonPath('data.sertifikat.penanda_tangan', null);
+    }
+
     // ------------------------------------------------------------- efisiensi
 
     /**

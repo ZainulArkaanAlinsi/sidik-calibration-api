@@ -18,6 +18,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Dijaga `hasTable`: tabelnya bisa udah kepasang duluan di database
+        // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
+        // Tanpa penjaga ini `migrate` mati di sini dan SEMUA migrasi sesudahnya
+        // ikut nggak kepasang.
+        if (Schema::hasTable('folders')) {
+            return;
+        }
         Schema::create('folders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();

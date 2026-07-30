@@ -286,10 +286,21 @@ class PerhitunganTest extends TestCase
             ->assertJsonPath('data.untuk', 'teknisi')
             ->json('data.bagian'));
 
-        // Thermohygro & metode kalibrasi itu hak admin (spesifikasi poin 1).
-        $this->assertNotContains('thermohygro_standard_id', $kodeTeknisi);
+        // Metode kalibrasi & nomor order tetap hak admin (spesifikasi poin 1) —
+        // dua-duanya udah TERCETAK/ditentukan kantor, bukan dibaca di lapangan.
         $this->assertNotContains('calibration_method_id', $kodeTeknisi);
         $this->assertNotContains('nomor_order', $kodeTeknisi);
+
+        // Thermohygro SEBALIKNYA: pindah jadi hak teknisi 29 Juli 2026 — dia
+        // yang tau unit mana yang kebawa. Lihat AdminFieldSeparationTest.
+        $this->assertContains('thermohygro_standard_id', $kodeTeknisi);
+
+        // Identitas alat & pemilik diketik teknisi dari badan alat, bukan
+        // disalin master — kolomnya wajib ada di lembar kerjanya.
+        foreach (['alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat'] as $kode) {
+            $this->assertContains($kode, $kodeTeknisi);
+        }
+
         // Kolom lembar kerjanya sendiri tetap ada.
         $this->assertContains('suhu_awal', $kodeTeknisi);
         $this->assertContains('catatan_teknisi', $kodeTeknisi);
