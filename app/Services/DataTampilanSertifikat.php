@@ -57,9 +57,17 @@ class DataTampilanSertifikat
     }
 
     /**
-     * QR verifikasi. Bisa dimatiin lewat pengaturan organisasi
-     * (`tampilkan_qr_di_pdf`) buat lab yang layout sertifikatnya dikunci ketat
-     * sama dokumen mutu — PT Sidik termasuk, jadi di sini nilainya `false`.
+     * QR verifikasi. **Harus di-opt-in** lewat pengaturan organisasi
+     * (`tampilkan_qr_di_pdf` = true); default-nya nggak dicetak.
+     *
+     * Arahnya sengaja dibalik. Dulu default-nya nyetak QR dan PT Sidik
+     * matiin lewat panel admin — sampai `db:seed` nimpa JSON `settings`
+     * dan kuncinya ilang. Diam-diam QR-nya balik kecetak di sertifikat yang
+     * layout-nya dikunci dokumen mutu, dan nggak ada yang error.
+     *
+     * Dengan default "nggak dicetak", kunci yang ilang bikin QR-nya absen —
+     * kelihatan, dan gampang dibalikin. Kalau default-nya nyetak, kunci yang
+     * ilang bikin dokumen resmi salah bentuk tanpa tanda apa pun.
      *
      * Di tampilan web QR-nya SELALU nggak ada, apa pun pengaturannya: halaman
      * itu sendiri yang dituju QR. Nyetak QR di halaman hasil scan QR cuma
@@ -67,7 +75,7 @@ class DataTampilanSertifikat
      */
     private function qrDataUri(?Organization $organisasi, Certificate $sertifikat, bool $web): ?string
     {
-        if ($web || ($organisasi?->settings['tampilkan_qr_di_pdf'] ?? true) === false) {
+        if ($web || ($organisasi?->settings['tampilkan_qr_di_pdf'] ?? false) !== true) {
             return null;
         }
 

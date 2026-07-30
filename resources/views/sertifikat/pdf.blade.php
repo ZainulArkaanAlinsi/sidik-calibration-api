@@ -52,6 +52,12 @@
         table.info td.lbl { width: 17%; color: #222; font-weight: bold; }
         table.info td.val { width: 33%; }
 
+        /* Nama alat ditebelin: itu yang dicari pertama waktu nyocokin lembar
+           di tangan sama alat di meja, jadi dia mesti kebaca tanpa nyusurin
+           tabel. Label "Equipment Name"-nya udah tebel — nilainya ikut, biar
+           yang nempel di mata barisnya, bukan cuma judul kolomnya. */
+        table.info td.val.alat { font-weight: bold; }
+
         .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 4px; letter-spacing: .5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 10px; }
         table.data th, table.data td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
@@ -252,7 +258,7 @@
             <td class="lbl">Received Date</td><td class="val">{{ $tgl($header['received_date'] ?? null) }}</td>
         </tr>
         <tr>
-            <td class="lbl">Equipment Name</td><td class="val">{{ $isi($header['equipment_name'] ?? null) }}</td>
+            <td class="lbl">Equipment Name</td><td class="val alat">{{ $isi($header['equipment_name'] ?? null) }}</td>
             <td class="lbl">Manufacturer</td><td class="val">{{ $isi($header['manufacturer'] ?? null) }}</td>
         </tr>
         <tr>
