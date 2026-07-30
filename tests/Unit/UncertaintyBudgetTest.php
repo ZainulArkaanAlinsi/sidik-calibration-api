@@ -121,10 +121,16 @@ class UncertaintyBudgetTest extends TestCase
      *
      * Dia manggil `GumCalculator::ketidakpastianLingkungan()`, dan di main
      * rumusnya udah pindah ke service `KondisiLingkungan` — bukan hilang, cuma
-     * beda rumah. Yang perlu dicatat: `KondisiLingkungan` di main BELUM punya
-     * test sama pengujiannya sekali, dan method rumusnya privat, jadi
-     * ngetesnya butuh feature test dengan sesi + standar thermohygro. Itu
-     * pekerjaan tersendiri, bukan bagian dari port budget ini.
+     * beda rumah.
+     *
+     * Cakupannya JUGA nggak hilang: `PerhitunganTest` udah ngunci angkanya
+     * lewat endpoint lembar perhitungan, dan lebih ketat daripada test yang
+     * dibuang ini — `u95_sertifikat` dicocokin ke 1.7117242768623688 (suhu) &
+     * 5.660388679233963 (kelembaban) dengan delta 1e-9, lawan 1e-4 di sini.
+     *
+     * Ditulis eksplisit karena gampang salah kira: nyari `KondisiLingkungan`
+     * di folder `tests/` nggak ngasih hasil apa-apa, padahal rumusnya keuji.
+     * Yang diuji nilainya lewat endpoint, bukan nama kelasnya.
      */
 
 
