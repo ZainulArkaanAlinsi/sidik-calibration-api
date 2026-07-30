@@ -66,10 +66,38 @@ SERIAL_BUFFER = {
 # 29 Juli (Type A ikut masuk `u_c`), tiga titik ini mestinya keluar U95 yang
 # BEDA satu sama lain. Kalau ketiganya keluar angka identik, itu tanda Type A
 # kebuang lagi — dan itu justru yang paling gampang lolos dari test.
+#
+# `titik_ukur` di sini NOMINAL BOTOL, dan tiap titik bawa `suhu` larutan —
+# persis yang diketik teknisi di lembar kerja. Backend yang nurunin nilai
+# terkoreksinya dari kurva suhu buffer, dan `harusnya` di bawah angka yang
+# dibandingin (dihitung dari koefisien di `database/data/...json`).
+#
+# Versi pertama skrip ini ngirim nilai yang UDAH terkoreksi tanpa suhu, jadi
+# dia lolos terus walaupun backend nggak pernah nurunin apa-apa — uji rantai
+# yang ngelewatin justru langkah yang paling gampang salah. Jangan dibalik lagi
+# ke nilai terkoreksi: yang diuji itu backend bisa nurunin sendiri apa nggak.
 TITIK_UJI = [
-    {"buffer": 4, "titik_ukur": 4.009244572, "pembacaan": [4.00, 4.00, 4.00, 4.00, 4.00]},
-    {"buffer": 7, "titik_ukur": 6.98890720, "pembacaan": [7.01, 7.01, 7.00, 7.00, 7.00]},
-    {"buffer": 10, "titik_ukur": 9.97887690, "pembacaan": [10.11, 10.10, 10.12, 10.11, 10.11]},
+    {
+        "buffer": 4,
+        "titik_ukur": 4.01,
+        "suhu": 26.3,
+        "harusnya": 4.0057607,
+        "pembacaan": [4.00, 4.00, 4.00, 4.00, 4.00],
+    },
+    {
+        "buffer": 7,
+        "titik_ukur": 7.00,
+        "suhu": 25.5,
+        "harusnya": 6.9764200,
+        "pembacaan": [7.01, 7.01, 7.00, 7.00, 7.00],
+    },
+    {
+        "buffer": 10,
+        "titik_ukur": 10.01,
+        "suhu": 25.3,
+        "harusnya": 9.9451681,
+        "pembacaan": [10.11, 10.10, 10.12, 10.11, 10.11],
+    },
 ]
 
 
@@ -302,6 +330,11 @@ def kirim_lembar_kerja(
                 "satuan": "pH",
                 "standard_id": buffer[t["buffer"]]["id"],
                 "pembacaan": t["pembacaan"],
+                # Suhu larutan per pembacaan — sejajar per-index sama `pembacaan`.
+                # Ini yang dipakai backend buat nurunin nilai buffer dari kurva
+                # sertifikatnya. Tanpa ini, backend jatuh ke nominal botol dan
+                # kolom Correction di sertifikat kegeser.
+                "suhu": [t["suhu"]] * len(t["pembacaan"]),
             }
             for t in TITIK_UJI
         ],
@@ -324,6 +357,42 @@ def kirim_lembar_kerja(
     return sesi_id
 
 
+def _cek_koreksi_suhu(rantai: Rantai, titik: list[dict[str, Any]]) -> None:
+    """
+    Nilai acuan wajib DITURUNIN dari kurva suhu buffer, bukan dipakai nominalnya.
+
+    Ini mata rantai yang paling gampang putus tanpa kelihatan. Kalau backend
+    lupa nurunin, `titik_ukur` balik sama persis kayak yang dikirim, semua angka
+    lain tetap konsisten, sertifikatnya tetap terbit rapi — dan kolom Correction
+    di dokumen resmi salah sebesar koreksi suhu yang nggak pernah kepakai. Di
+    pH 10 itu 0,065 pH pada alat bertoleransi 0,2.
+
+    Dibandingin ke angka yang dihitung dari koefisien kurva di master standar,
+    jadi yang dijaga bukan cuma "berubah", tapi "berubah jadi nilai yang bener".
+    """
+    harusnya = {i + 1: t["harusnya"] for i, t in enumerate(TITIK_UJI)}
+    dikirim = {i + 1: t["titik_ukur"] for i, t in enumerate(TITIK_UJI)}
+    salah = []
+
+    for t in titik:
+        ke = t.get("titik_ke")
+        if ke not in harusnya:
+            continue
+
+        nilai = float(t.get("titik_ukur") or 0)
+
+        if abs(nilai - harusnya[ke]) > 5e-7:
+            mentah = " (nominal botol, koreksi suhunya nggak kepakai)" if abs(nilai - dikirim[ke]) < 5e-7 else ""
+            salah.append(f"t{ke}={nilai:.7f} harusnya {harusnya[ke]:.7f}{mentah}")
+
+    if salah:
+        raise rantai.gagal(
+            "nilai acuan nggak dikoreksi ke suhu larutan: " + "; ".join(salah),
+            "Cek `GumCalculator::hitungTitik()` — `$suhuLarutan` kekirim & "
+            "`Standard::koefisien_suhu` keisi apa nggak.",
+        )
+
+
 def cek_ketidakpastian(api: Api, rantai: Rantai, token: str, sesi_id: int) -> None:
     rantai.mulai("cek ketidakpastian tersimpan")
     status, data = api.panggil("GET", f"/calibrations/{sesi_id}", token=token)
@@ -341,6 +410,8 @@ def cek_ketidakpastian(api: Api, rantai: Rantai, token: str, sesi_id: int) -> No
     kosong = [str(t.get("titik_ke")) for t in titik if t.get("ketidakpastian_diperluas") in (None, 0)]
     if kosong:
         raise rantai.gagal(f"U95 kosong di titik ke-{', '.join(kosong)}")
+
+    _cek_koreksi_suhu(rantai, titik)
 
     u95 = [float(t["ketidakpastian_diperluas"]) for t in titik]
     ringkas = ", ".join(
