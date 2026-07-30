@@ -72,7 +72,7 @@
     "range_min": 0,
     "range_max": 14,
     "satuan": "pH",
-    "resolusi": 0.01,
+    "resolusi": 0.001,
     "toleransi": 0.2,
     "lokasi": "Lab. Uji A",
     "tanggal_kalibrasi_terakhir": "2024-05-26",

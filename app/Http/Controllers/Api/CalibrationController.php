@@ -17,6 +17,7 @@ use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
 use App\Services\CalibrationValidator;
+use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\LembarKerjaTemplate;
@@ -48,6 +49,7 @@ class CalibrationController extends Controller
         private readonly GumCalculator $gum,
         private readonly CalibrationValidator $validator,
         private readonly KondisiLingkungan $kondisi,
+        private readonly FolderOrganizer $folder,
     ) {}
 
     /**
@@ -968,6 +970,29 @@ class CalibrationController extends Controller
 
         // Draft nggak ngabarin siapa-siapa — belum masuk antrean approval.
         $this->kabarinAdmin($segar);
+
+        // Lembar yang UDAH dikirim diarsip ke folder PT-nya. Draft nggak:
+        // dia masih diisi, dan folder PT bukan tempat naruh pekerjaan
+        // setengah jalan.
+        //
+        // Ditaruh di sini, bukan di store()/update() masing-masing, karena
+        // ini satu-satunya tempat status & `submitted_at` diputusin — dua
+        // pemanggil itu lewat sini semua, termasuk kirim ulang sesudah revisi.
+        //
+        // Kegagalannya ditelan on purpose: pengarsipan itu turunan, bukan
+        // syarat sahnya lembar kerja. Kalau folder-nya gagal dibikin, lembarnya
+        // tetap kekirim dan tetap masuk antrean approval — teknisi nggak
+        // kehilangan kerjaannya gara-gara urusan rak berkas.
+        if ($segar->submitted_at !== null) {
+            try {
+                $this->folder->tautkanLembarKerja($segar);
+            } catch (\Throwable $e) {
+                Log::warning('Lembar kerja gagal ditaut ke folder PT.', [
+                    'calibration_session_id' => $segar->id,
+                    'pesan' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $segar;
     }
