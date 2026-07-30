@@ -40,6 +40,30 @@ class Organization extends Model
      */
     public const KEY_MASA_BERLAKU_BULAN = 'masa_berlaku_sertifikat_bulan';
 
+    /**
+     * Jumlah desimal tabel CALIBRATION REPORT di sertifikat.
+     *
+     * Kosong = turunin dari resolusi alat (`Angka::desimalDariResolusi()`), yang
+     * itu perilaku bawaan & biasanya yang bener: nulis desimal lebih banyak
+     * daripada yang bisa dibaca alatnya berarti ngaku presisi yang nggak ada.
+     *
+     * Override-nya ada karena resolusi di master alat nggak selalu ngikut spek
+     * fisiknya — dan kalau kekecilan, U95% kehilangan angka penting waktu
+     * dibulatkan (0,023 kecetak `0,02`). Sebelum pakai ini, cek dulu
+     * `equipments.resolusi`-nya bener apa nggak; itu perbaikan yang lebih tepat.
+     */
+    public const KEY_DESIMAL_SERTIFIKAT = 'desimal_sertifikat';
+
+    /**
+     * Kop surat sertifikat (path di disk publik) — banner selebar halaman.
+     *
+     * Beda dari `logo_path`: logo itu lambang kecil di samping teks kop; kop
+     * surat ini satu gambar yang udah memuat lambang, nama & alamat PT, plus
+     * lambang KAN + nomor akreditasi. Kosong = pakai bawaan di
+     * `public/images/kop-surat.png`.
+     */
+    public const KEY_KOP_PATH = 'kop_path';
+
     /** @return array<string, string> */
     protected function casts(): array
     {
