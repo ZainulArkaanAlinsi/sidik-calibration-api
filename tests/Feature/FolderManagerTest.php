@@ -123,6 +123,40 @@ class FolderManagerTest extends TestCase
             ->assertJsonPath('data.0.jumlah_folder', 1);
     }
 
+    public function test_buka_folder_pt_ikut_nampilin_alat_milik_pt_itu(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+        $akar = Folder::whereNull('parent_id')->firstOrFail();
+
+        $data = $this->actingAs($this->admin)
+            ->getJson("/api/folders/{$akar->id}")
+            ->assertOk()
+            ->json('data');
+
+        // Folder PT jadi satu pintu masuk: buka PT-nya, kelihatan alat apa aja
+        // yang dia punya — nggak perlu pindah ke layar Alat lalu nyaring PT-nya
+        // lagi.
+        $this->assertNotEmpty($data['alat'] ?? []);
+        $this->assertSame('PT Tirta Gracia', $data['pelanggan']['nama']);
+        $this->assertArrayHasKey('tanggal_jatuh_tempo', $data['alat'][0]);
+        $this->assertSame(1, $data['alat'][0]['jumlah_kalibrasi']);
+    }
+
+    public function test_folder_tahun_NGGAK_nyeret_daftar_alat(): void
+    {
+        $this->terbitkanSertifikatUntuk($this->teknisi);
+        $tahun = Folder::whereNotNull('parent_id')->firstOrFail();
+
+        $data = $this->actingAs($this->admin)
+            ->getJson("/api/folders/{$tahun->id}")
+            ->assertOk()
+            ->json('data');
+
+        // Folder tahun isinya berkas. Nyeret daftar alat ke tiap subfolder cuma
+        // gedein payload tanpa nambah yang bisa dipakai.
+        $this->assertArrayNotHasKey('alat', $data);
+    }
+
     public function test_buka_folder_nampilin_sub_folder_dan_file_di_dalamnya(): void
     {
         $this->terbitkanSertifikatUntuk($this->teknisi);

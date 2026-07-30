@@ -132,9 +132,28 @@ class FolderController extends Controller
             // teknisi cuma lihat punyanya sendiri.
             'files' => fn ($query) => $query
                 ->whereIn('id', $this->queryFileYangBolehDilihat($request)->select('id'))
-                ->with(['certificate', 'uploader'])
+                // `calibrationSession` ikut karena `FolderFileResource` nyebut
+                // nomor sesi buat baris lembar kerja — tanpa dimuat di sini,
+                // folder yang isinya 30 lembar kerja jadi 30 query tambahan.
+                ->with(['certificate', 'uploader', 'calibrationSession'])
                 ->orderByDesc('id'),
         ]);
+
+        // Alat milik PT ikut dibawa waktu folder AKAR PT dibuka.
+        //
+        // Bikin folder PT jadi satu pintu masuk: buka PT-nya, kelihatan alat
+        // apa aja yang dia punya plus berkas & subfoldernya — nggak perlu
+        // pindah ke layar Alat lalu nyaring PT-nya lagi.
+        //
+        // Cuma di folder akar, dan cuma di `show`: folder tahun isinya berkas,
+        // dan daftar folder nggak boleh nyeret daftar alat tiap barisnya.
+        if ($folder->parent_id === null && $folder->customer_id !== null) {
+            $folder->load([
+                'customer.equipments' => fn ($query) => $query
+                    ->withCount('calibrationSessions')
+                    ->orderBy('nama_alat'),
+            ]);
+        }
 
         return response()->json(['data' => new FolderResource($folder)]);
     }
