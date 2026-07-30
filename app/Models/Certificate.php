@@ -38,6 +38,39 @@ class Certificate extends Model
     }
 
     /**
+     * Siapa yang tanda tangan sertifikat ini (fase-2 §3c).
+     *
+     * Dibaca dari `snapshot`, **bukan** live dari pengaturan organisasi. Bedanya
+     * penting: snapshot itu yang beneran kecetak di PDF, dan pengaturannya bisa
+     * berubah kapan aja. Kalau dibaca live, sertifikat lama bakal nampilin penanda
+     * tangan yang BEDA dari yang ada di PDF-nya sendiri — dan yang lihat nggak punya
+     * cara buat tahu mana yang bener. Sertifikat terbit itu dokumen terkendali.
+     *
+     * Ditaruh di model, bukan di resource, karena dipakai di DUA bentuk respons
+     * (`CertificateResource` & objek embed di `CalibrationResource`) — disalin dua
+     * kali berarti suatu saat yang satu diubah dan yang lain ketinggalan.
+     *
+     * `ttd_url` yang diminta di §3c sengaja NGGAK ADA: gambarnya di disk privat,
+     * karena URL tanda tangan yang bisa diakses siapa pun berarti siapa pun bisa
+     * nempelin ke dokumen palsu.
+     *
+     * @return array{nama: string|null, jabatan: string|null}|null
+     */
+    public function penandaTangan(): ?array
+    {
+        $footer = $this->snapshot['footer'] ?? null;
+
+        if (! filled($footer)) {
+            return null;
+        }
+
+        return [
+            'nama' => $footer['penandatangan'] ?? null,
+            'jabatan' => $footer['jabatan'] ?? null,
+        ];
+    }
+
+    /**
      * Nama file yang aman dipakai di disk & header unduhan. `nomor` ada
      * slash-nya (`CAL/2026/07/0001`) — kalau dipakai apa adanya, itu bikin
      * subdirektori, bukan nama file.

@@ -232,6 +232,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // dokumen resmi ke luar, bukan baca data.
         Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
             ->middleware('throttle:20,1');
+        // Catat pengiriman lewat WhatsApp. Pesannya sendiri dikirim dari HP
+        // admin (buka WhatsApp lewat `wa.me`), BUKAN dari server — makanya
+        // endpoint-nya cuma nyatet, nggak ngirim.
+        //
+        // Kenapa tetap dicatat padahal servernya nggak ngirim: pertanyaan yang
+        // muncul waktu pelanggan ngaku nggak nerima itu "kapan dikirim, ke
+        // nomor mana, sama siapa" — dan itu nggak bisa dijawab kalau jejaknya
+        // cuma ada di HP satu orang.
+        Route::post('/certificates/{certificate}/catat-whatsapp', [CertificateController::class, 'catatWhatsapp'])
+            ->middleware('throttle:20,1');
         Route::get('/certificates/{certificate}/riwayat-email', [CertificateController::class, 'riwayatEmail']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);

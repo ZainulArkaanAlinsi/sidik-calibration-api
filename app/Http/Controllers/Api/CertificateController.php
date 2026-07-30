@@ -18,6 +18,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -36,7 +37,10 @@ class CertificateController extends Controller
     ) {}
 
     /** Relasi yang dibutuhin CertificateResource. */
-    private const RELASI = ['session.equipment'];
+    // `customer` ikut karena resource-nya nampilin kontak pelanggan (email &
+    // telepon) buat tombol kirim. Tanpa dimuat di sini, daftar sertifikat jadi
+    // satu query tambahan per baris.
+    private const RELASI = ['session.equipment.customer'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -189,8 +193,25 @@ class CertificateController extends Controller
      * (dijaga `role:admin` di routes) — ini tindakan penerbitan, sejalan sama approve.
      *
      * Job-nya idempoten & pakai updateOrCreate di baris sesi yang sama, jadi aman
-     * dipanggil ulang. Status dibalik ke `menunggu_generate` biar mobile langsung
-     * nunjukin "lagi diproses", bukan nawarin retry lagi selagi job jalan.
+     * dipanggil ulang.
+     *
+     * Dikerjain LANGSUNG, bukan lewat antrean — alasannya sama persis kayak di
+     * `CalibrationController::approve()`, dan di sini taruhannya lebih tinggi.
+     * Dulu method ini nge-set status ke `menunggu_generate` DULU baru
+     * `dispatch()`, dan tanpa `queue:work` yang jalan urutannya jadi: admin
+     * pencet retry → 200 OK → job ngendon di tabel `jobs` → mobile nunjukin
+     * "lagi diproses" selamanya → dan tombol retry-nya IKUT ILANG, karena
+     * statusnya udah bukan `gagal` lagi. Sertifikat yang tadinya masih bisa
+     * dicoba ulang jadi nggak bisa disentuh sama sekali tanpa masuk database
+     * manual. Retry itu jalur pemulihan — dia dipencet justru waktu udah ada
+     * yang gagal, jadi dia yang paling nggak boleh punya mode macet sendiri.
+     *
+     * Pre-update ke `menunggu_generate` dibuang, bukan cuma dipindah: job-nya
+     * udah nge-set status itu sendiri di dalam transaksi tepat sebelum ngerender
+     * (`GenerateCertificate::handle()`). Dengan dibuang, status sertifikat
+     * SELALU mendarat di keadaan akhir — `terbit` kalau jadi, `gagal` kalau
+     * nggak — bahkan kalau prosesnya mati total di tengah. Yang gagal tetap
+     * nawarin retry.
      */
     public function retry(Request $request, Certificate $certificate): JsonResponse
     {
@@ -202,8 +223,22 @@ class CertificateController extends Controller
             ], 422);
         }
 
-        $certificate->update(['status' => Certificate::STATUS_MENUNGGU_GENERATE]);
-        GenerateCertificate::dispatch($certificate->calibration_session_id, $request->user()->id);
+        try {
+            (new GenerateCertificate(
+                $certificate->calibration_session_id,
+                $request->user()->id,
+            ))->handle();
+        } catch (\Throwable $e) {
+            // Job-nya udah nandain sertifikatnya `gagal` lagi + ngabarin admin
+            // sebelum ngelempar, jadi tombol retry tetap ada di layar. Responsnya
+            // sengaja tetap 200 dengan status apa adanya: yang nanya "berhasil
+            // nggak?" itu field `status` di data, bukan kode HTTP-nya.
+            Log::warning('Sertifikat gagal dibikin waktu retry.', [
+                'certificate_id' => $certificate->id,
+                'calibration_session_id' => $certificate->calibration_session_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'data' => new CertificateResource($certificate->fresh()->load(self::RELASI)),
@@ -229,8 +264,11 @@ class CertificateController extends Controller
      * hasilnya saat itu juga; kiriman yang di-queue lalu gagal diam-diam berarti
      * pelanggan nggak pernah nerima dan nggak ada yang sadar sampai ditanya.
      */
-    public function kirimEmail(Request $request, Certificate $certificate): JsonResponse
-    {
+    public function kirimEmail(
+        Request $request,
+        Certificate $certificate,
+        CertificateExcelExporter $excel,
+    ): JsonResponse {
         $this->pastikanSatuOrganisasi($request, $certificate);
 
         $data = $request->validate([
@@ -238,11 +276,17 @@ class CertificateController extends Controller
             'ke.*' => ['required', 'email:rfc'],
             'cc' => ['sometimes', 'nullable', 'array', 'max:10'],
             'cc.*' => ['required', 'email:rfc'],
+            // Default `pdf` — app lama yang belum ngirim field ini tetap jalan
+            // persis kayak sebelumnya.
+            'format' => ['sometimes', Rule::in(CertificateEmailLog::formatTersedia())],
         ], [
             'ke.required' => 'Alamat tujuannya wajib diisi.',
             'ke.max' => 'Maksimal 10 alamat tujuan sekali kirim.',
             'ke.*.email' => 'Ada alamat email yang formatnya nggak valid.',
+            'format.in' => 'Format kirimnya cuma bisa pdf, xlsx, atau tautan.',
         ]);
+
+        $format = $data['format'] ?? CertificateEmailLog::FORMAT_PDF;
 
         // Cuma sertifikat TERBIT yang boleh dikirim. Yang `gagal` atau
         // `menunggu_generate` belum punya PDF — dan email sertifikat tanpa
@@ -258,25 +302,53 @@ class CertificateController extends Controller
             ], 422);
         }
 
-        if (! filled($certificate->pdf_path)) {
+        // Tiap format punya syarat berkasnya sendiri, dan yang kurang disebut
+        // spesifik. "Sertifikat belum siap dikirim" bikin admin nebak-nebak;
+        // yang dia butuh tahu itu PDF-nya yang belum jadi, atau justru datanya.
+        if ($format === CertificateEmailLog::FORMAT_PDF) {
+            if (! filled($certificate->pdf_path)) {
+                return response()->json([
+                    'message' => 'Sertifikat ini belum punya berkas PDF, jadi belum ada yang bisa '
+                        .'dilampirkan. Coba terbitkan ulang dulu.',
+                ], 422);
+            }
+
+            abort_unless(
+                Storage::disk('local')->exists($certificate->pdf_path),
+                422,
+                'Berkas PDF sertifikatnya nggak ketemu di penyimpanan. Coba terbitkan ulang dulu.',
+            );
+        }
+
+        if ($format === CertificateEmailLog::FORMAT_XLSX && blank($certificate->snapshot)) {
             return response()->json([
-                'message' => 'Sertifikat ini belum punya berkas PDF, jadi belum ada yang bisa '
-                    .'dilampirkan. Coba terbitkan ulang dulu.',
+                'message' => 'Sertifikat ini belum punya data beku (snapshot), jadi Excel-nya '
+                    .'belum bisa dirakit. Coba terbitkan ulang dulu.',
             ], 422);
         }
 
-        abort_unless(
-            Storage::disk('local')->exists($certificate->pdf_path),
-            422,
-            'Berkas PDF sertifikatnya nggak ketemu di penyimpanan. Coba terbitkan ulang dulu.',
-        );
+        if ($format === CertificateEmailLog::FORMAT_TAUTAN && blank($certificate->qr_token)) {
+            return response()->json([
+                'message' => 'Sertifikat ini belum punya kode verifikasi, jadi belum ada tautan '
+                    .'yang bisa dikirim. Coba terbitkan ulang dulu.',
+            ], 422);
+        }
 
         $ke = array_values(array_unique($data['ke']));
         $cc = array_values(array_unique($data['cc'] ?? []));
         $certificate->loadMissing(['organization', 'session.equipment.customer']);
 
+        // Excel dirakit on-the-fly (nggak disimpen kayak PDF), jadi berkas
+        // sementaranya dihapus di `finally` — termasuk waktu pengiriman gagal.
+        $berkasXlsx = null;
+
         try {
-            Mail::to($ke)->send(new SertifikatKePelanggan($certificate, $cc));
+            if ($format === CertificateEmailLog::FORMAT_XLSX) {
+                $berkasXlsx = tempnam(sys_get_temp_dir(), 'sertifikat-').'.xlsx';
+                $excel->satu($certificate, $berkasXlsx);
+            }
+
+            Mail::to($ke)->send(new SertifikatKePelanggan($certificate, $cc, $format, $berkasXlsx));
             $status = CertificateEmailLog::STATUS_TERKIRIM;
             $error = null;
         } catch (\Throwable $e) {
@@ -285,8 +357,13 @@ class CertificateController extends Controller
 
             Log::warning('Kirim email sertifikat gagal.', [
                 'certificate_id' => $certificate->id,
+                'format' => $format,
                 'error' => $error,
             ]);
+        } finally {
+            if ($berkasXlsx !== null && is_file($berkasXlsx)) {
+                @unlink($berkasXlsx);
+            }
         }
 
         // Dicatat DULUAN sebelum responsnya dibalik, dan buat dua-dua hasilnya.
@@ -296,6 +373,7 @@ class CertificateController extends Controller
             'certificate_id' => $certificate->id,
             'ke' => $ke,
             'cc' => $cc === [] ? null : $cc,
+            'format' => $format,
             'status' => $status,
             'error' => $error,
             'dikirim_oleh' => $request->user()->id,
@@ -309,9 +387,146 @@ class CertificateController extends Controller
         }
 
         return response()->json([
-            'message' => 'Sertifikat terkirim ke '.implode(', ', $ke).'.',
+            'message' => match ($format) {
+                CertificateEmailLog::FORMAT_XLSX => 'Sertifikat (Excel) terkirim ke '.implode(', ', $ke).'.',
+                CertificateEmailLog::FORMAT_TAUTAN => 'Tautan verifikasi terkirim ke '.implode(', ', $ke).'.',
+                default => 'Sertifikat (PDF) terkirim ke '.implode(', ', $ke).'.',
+            },
             'data' => $this->barisRiwayat($log),
         ]);
+    }
+
+    /**
+     * Catat bahwa sertifikat dikirim lewat WhatsApp.
+     *
+     * **Server nggak ngirim apa-apa di sini.** Pesannya dikirim dari HP admin
+     * lewat aplikasi WhatsApp-nya sendiri (`wa.me`); endpoint ini cuma nyimpen
+     * jejaknya. Beda dari `kirimEmail()` yang beneran ngirim, jadi statusnya
+     * SELALU `terkirim` — nggak ada kegagalan yang bisa kita lihat dari sini.
+     *
+     * Kenapa tetap dicatat: waktu pelanggan ngaku nggak nerima, yang ditanya
+     * "kapan dikirim, ke nomor mana, sama siapa". Kalau jejaknya cuma ada di HP
+     * satu orang, nggak ada yang bisa mbuktiin apa-apa — persis alasan riwayat
+     * email ada.
+     */
+    public function catatWhatsapp(Request $request, Certificate $certificate): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $certificate);
+
+        $data = $request->validate([
+            // Nomor disimpen apa adanya (mis. `+6281234567890`) — yang harus
+            // bisa dibuktikan itu nomor yang BENERAN dipakai waktu itu, bukan
+            // nomor pelanggan yang mungkin udah diubah sesudahnya.
+            'ke' => ['required', 'array', 'min:1', 'max:10'],
+            'ke.*' => ['required', 'string', 'max:32'],
+            // Yang mau dikirim: PDF, Excel, atau halaman verifikasi.
+            'format' => ['sometimes', Rule::in([
+                CertificateEmailLog::FORMAT_PDF,
+                CertificateEmailLog::FORMAT_XLSX,
+                CertificateEmailLog::FORMAT_TAUTAN,
+            ])],
+        ], [
+            'ke.required' => 'Nomor WhatsApp tujuannya wajib diisi.',
+            'format.in' => 'Format kirimnya cuma bisa pdf, xlsx, atau tautan.',
+        ]);
+
+        if ($certificate->status !== Certificate::STATUS_TERBIT) {
+            return response()->json([
+                'message' => 'Cuma sertifikat yang udah terbit yang bisa dikirim. '
+                    .'Yang ini statusnya `'.$certificate->status.'`.',
+            ], 422);
+        }
+
+        if (blank($certificate->qr_token)) {
+            return response()->json([
+                'message' => 'Sertifikat ini belum punya kode verifikasi, jadi belum ada '
+                    .'tautan yang bisa dikirim. Coba terbitkan ulang dulu.',
+            ], 422);
+        }
+
+        $format = $data['format'] ?? CertificateEmailLog::FORMAT_TAUTAN;
+
+        if ($format === CertificateEmailLog::FORMAT_XLSX && blank($certificate->snapshot)) {
+            return response()->json([
+                'message' => 'Sertifikat ini belum punya data beku (snapshot), jadi Excel-nya '
+                    .'belum bisa dirakit. Coba terbitkan ulang dulu.',
+            ], 422);
+        }
+
+        $ke = array_values(array_unique($data['ke']));
+
+        $log = CertificateEmailLog::create([
+            'organization_id' => $certificate->organization_id,
+            'certificate_id' => $certificate->id,
+            'ke' => $ke,
+            'cc' => null,
+            // Formatnya dicatat sebagai `whatsapp` — yang perlu bisa dijawab
+            // waktu pelanggan ngaku nggak nerima itu "lewat mana", dan itu yang
+            // paling ngebedain. Isi persisnya (PDF/Excel/tautan) nempel di
+            // `pesan` yang dikirim, dan sama-sama nunjuk sertifikat yang ini.
+            'format' => CertificateEmailLog::FORMAT_WHATSAPP,
+            'status' => CertificateEmailLog::STATUS_TERKIRIM,
+            'error' => null,
+            'dikirim_oleh' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Pengiriman lewat WhatsApp ke '.implode(', ', $ke).' tercatat.',
+            // Pesan & tautannya disusun DI SINI, bukan di mobile.
+            //
+            // Tautan unduhnya nempel ke `qr_token` dan skema URL yang cuma
+            // backend yang tahu. Kalau mobile nyusun sendiri, satu perubahan
+            // rute bikin pelanggan nerima tautan mati — dan yang ketahuan
+            // belakangan, sesudah pesannya kekirim.
+            'pesan' => $this->pesanWhatsapp($certificate, $format),
+            'data' => $this->barisRiwayat($log),
+        ]);
+    }
+
+    /**
+     * Teks siap-kirim buat WhatsApp, per format.
+     *
+     * WhatsApp nggak bisa dititipin lampiran tanpa Business API, dan nempelin
+     * PDF ke pesan pribadi juga bikin dokumen resmi nyebar tanpa jejak. Jadi
+     * yang dikirim TAUTAN — bedanya cuma tautan ke apa:
+     *
+     * - `pdf`    → unduhan PDF langsung
+     * - `xlsx`   → unduhan Excel langsung
+     * - `tautan` → halaman verifikasi (lembar sertifikat + tombol unduh)
+     *
+     * Ketiganya tanpa auth: pelanggan nggak punya akun, dan yang jagain tetap
+     * `qr_token` — 10 karakter acak, bukan id berurutan. Siapa pun yang megang
+     * tautannya emang udah dikasih sertifikatnya.
+     */
+    private function pesanWhatsapp(Certificate $certificate, string $format): string
+    {
+        $certificate->loadMissing('organization', 'session.equipment');
+
+        $tautan = match ($format) {
+            CertificateEmailLog::FORMAT_PDF => route('verify.download', $certificate->qr_token),
+            CertificateEmailLog::FORMAT_XLSX => route('verify.download', $certificate->qr_token).'?format=xlsx',
+            default => route('verify', $certificate->qr_token),
+        };
+
+        $baris = array_filter([
+            'Sertifikat Kalibrasi '.($certificate->nomor ?? ''),
+            '',
+            'Alat: '.($certificate->session?->equipment?->nama_alat ?? '-'),
+            'Serial: '.($certificate->session?->alat_serial_number
+                ?: $certificate->session?->equipment?->serial_number ?: '-'),
+            'Berlaku sampai: '.($certificate->berlaku_sampai?->translatedFormat('d F Y') ?? '-'),
+            '',
+            match ($format) {
+                CertificateEmailLog::FORMAT_PDF => 'Unduh PDF-nya di sini:',
+                CertificateEmailLog::FORMAT_XLSX => 'Unduh versi Excel-nya di sini:',
+                default => 'Lihat & unduh sertifikatnya di sini:',
+            },
+            $tautan,
+            '',
+            $certificate->organization?->nama ?? '',
+        ], fn (string $b): bool => $b !== '' || true);
+
+        return implode("\n", $baris);
     }
 
     /**
@@ -344,6 +559,7 @@ class CertificateController extends Controller
             'id' => $log->id,
             'ke' => $log->ke,
             'cc' => $log->cc ?? [],
+            'format' => $log->format ?? CertificateEmailLog::FORMAT_PDF,
             'status' => $log->status,
             'error' => $log->error,
             'dikirim_oleh' => $log->pengirim ? [

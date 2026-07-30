@@ -18,8 +18,19 @@ Kepada **{{ $pelanggan->nama }}**,
 Selamat siang,
 @endif
 
+{{-- Kalimat pembuka ngikutin apa yang BENERAN ikut di email ini. Nyebut
+     "terlampir" di email tanpa lampiran bikin penerima nyari-nyari berkas yang
+     nggak ada, lalu balik nanya ke lab — persis yang mau dihindarin. --}}
+@if ($format === 'tautan')
+Berikut kami kirimkan sertifikat kalibrasi untuk alat Anda. Dokumen resminya
+bisa dilihat dan diunduh lewat tautan di bawah.
+@elseif ($format === 'xlsx')
+Berikut kami kirimkan sertifikat kalibrasi untuk alat Anda, terlampir dalam
+berkas Excel.
+@else
 Berikut kami kirimkan sertifikat kalibrasi untuk alat Anda. Dokumen resminya
 terlampir dalam berkas PDF.
+@endif
 
 @component('mail::table')
 | | |

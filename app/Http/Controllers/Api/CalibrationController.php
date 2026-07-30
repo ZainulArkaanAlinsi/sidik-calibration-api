@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
@@ -56,7 +57,7 @@ class CalibrationController extends Controller
      * sini, daftar sesi jadi satu query tambahan per baris.
      */
     private const RELASI = [
-        'equipment', 'teknisi', 'reviewer', 'standard', 'thermohygro', 'standarDicek',
+        'equipment.customer', 'teknisi', 'reviewer', 'standard', 'thermohygro', 'standarDicek',
         'calibrationMethod', 'room', 'uncertaintyCalculations.standard', 'certificate',
     ];
 
@@ -377,15 +378,38 @@ class CalibrationController extends Controller
             'catatan_revisi' => null,
         ]);
 
-        // Generate sertifikat jalan di queue (async) — bikin PDF bisa lama, jadi
-        // `certificate_id` boleh masih null sesaat sesudah approve.
-        GenerateCertificate::dispatch(
+        $job = new GenerateCertificate(
             $calibration->id,
             $request->user()->id,
             filled($data['berlaku_sampai'] ?? null)
                 ? Carbon::parse($data['berlaku_sampai'])->toDateString()
                 : null,
         );
+
+        // Sertifikatnya dibikin LANGSUNG, bukan dilempar ke antrean.
+        //
+        // Dulu ini `dispatch()`, dan konsekuensinya nggak kelihatan sampai
+        // dipakai beneran: kalau nggak ada `queue:work` yang jalan, approve-nya
+        // sukses tapi sertifikatnya nggak pernah terbit — dan dari layar admin
+        // itu kelihatan kayak "lagi diproses" selamanya, tanpa error di mana
+        // pun. Satu proses yang lupa dinyalain bikin seluruh alur mati diam.
+        //
+        // Bikin PDF-nya ~1-2 detik; admin nunggu sebentar jauh lebih baik
+        // daripada nunggu sesuatu yang nggak akan datang. Kalau nanti volumenya
+        // naik dan ada pekerja antrean yang beneran diawasi, balikin ke
+        // `dispatch()` — job-nya idempoten, jadi aman dipindah-pindah.
+        try {
+            $job->handle();
+        } catch (\Throwable $e) {
+            // Job-nya udah nandain sertifikatnya `gagal` + ngabarin admin, jadi
+            // tombol retry muncul di layar. Approve-nya sendiri TETAP SAH: sesi
+            // udah disetujui, dan mbatalin approve gara-gara PDF gagal cuma
+            // maksa admin ngulang pemeriksaan yang udah bener.
+            Log::warning('Sertifikat gagal dibikin waktu approve.', [
+                'calibration_session_id' => $calibration->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
@@ -490,6 +514,18 @@ class CalibrationController extends Controller
 
         $data = $request->validate([
             'catatan_revisi' => ['required', 'string', 'min:5'],
+            // Kode kolom yang diminta dibetulin, mis. `alat_serial_number`.
+            // Opsional: nolak tanpa nunjuk kolom tertentu tetap sah ("hasilnya
+            // nggak masuk akal, ulangi seluruh titik 7").
+            //
+            // Sengaja NGGAK divalidasi terhadap daftar kolom yang ada. Yang
+            // ngirim ini layar admin yang bentuk formulirnya juga dari backend,
+            // jadi kode asing artinya formulirnya berubah — dan kalau itu bikin
+            // 422, admin keblokir nolak gara-gara hal yang bukan urusannya.
+            // Efek terburuk dari kode yang nggak dikenal cuma: nggak ada kolom
+            // yang kesorot, prosa catatannya tetap kebaca.
+            'revisi_field' => ['sometimes', 'nullable', 'array', 'max:40'],
+            'revisi_field.*' => ['required', 'string', 'max:64'],
         ], [
             'catatan_revisi.required' => 'Catatan revisi wajib diisi — teknisi perlu tahu apa yang harus dibenerin.',
         ]);
@@ -500,11 +536,14 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        $field = array_values(array_unique($data['revisi_field'] ?? []));
+
         $calibration->update([
             'status' => CalibrationSession::STATUS_PERLU_REVISI,
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
             'catatan_revisi' => $data['catatan_revisi'],
+            'revisi_field' => $field === [] ? null : $field,
         ]);
 
         $segar = $calibration->fresh()->load(self::RELASI);
@@ -947,7 +986,18 @@ class CalibrationController extends Controller
 
         $opsional = [
             ...CalibrationSession::fieldAdmin(),
+            // Disebut EKSPLISIT, bukan ikut `fieldAdmin()`. Dulu dia nebeng di
+            // sana; waktu dikeluarkan (biar teknisi bisa ngisi "6. Thermohygro
+            // used"), dia ikut hilang dari daftar yang disimpan — kolomnya lolos
+            // validasi tapi nggak pernah nyampe database. Gejalanya persis
+            // kayak field yang dibuang: teknisi ngisi, hasilnya null.
+            'thermohygro_standard_id',
             'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir', 'catatan_teknisi',
+            // Identitas alat & pemilik versi teknisi (lembar kerja poin 3-5 &
+            // OWNER 1-2). Ikut `$opsional`, bukan blok wajib di atas: yang
+            // nggak dikirim TIDAK ditimpa null — teknisi bisa nyimpen draft
+            // bertahap tanpa ngosongin yang udah dia isi sebelumnya.
+            'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
         ];
 
         foreach ($opsional as $field) {

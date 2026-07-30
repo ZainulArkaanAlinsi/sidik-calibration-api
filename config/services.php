@@ -45,6 +45,25 @@ return [
     | `temperature` SENGAJA nggak diset — model 4.8 ke atas nolak parameter itu;
     | konsistensi dijaga lewat prompt yang tegas + JSON-only.
     */
+    /**
+     * Penyedia AI buat baca lembar kerja dari foto.
+     *
+     * `anthropic` atau `gemini`. Yang beda cuma cara ngomong ke servernya —
+     * prompt, few-shot, skema, dan normalisasi hasilnya dipakai bareng, jadi
+     * ganti penyedia nggak ngubah apa pun yang nyampe ke lembar kerja teknisi.
+     */
+    'vision' => [
+        'driver' => env('VISION_DRIVER', 'anthropic'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        'max_tokens' => (int) env('GEMINI_MAX_TOKENS', 4096),
+        'timeout' => (int) env('GEMINI_TIMEOUT', 60),
+    ],
+
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),

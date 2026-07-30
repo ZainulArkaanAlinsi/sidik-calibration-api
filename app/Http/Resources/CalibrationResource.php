@@ -34,6 +34,28 @@ class CalibrationResource extends JsonResource
                 'nama_alat' => $this->equipment?->nama_alat,
                 'serial_number' => $this->equipment?->serial_number,
             ],
+
+            // Identitas alat & pemilik VERSI TEKNISI (lembar kerja poin 3-5 &
+            // OWNER 1-2). Wajib ikut di respons, bukan cuma tersimpan: waktu
+            // sesi dikembalikan buat revisi, mobile ngisi ulang formulirnya dari
+            // sini. Tanpa ini kolomnya balik kosong dan teknisi ngetik ulang
+            // semuanya cuma buat mbenerin satu hal yang diminta admin.
+            'alat_model' => $this->alat_model,
+            'alat_serial_number' => $this->alat_serial_number,
+            'alat_merk' => $this->alat_merk,
+            'pemilik_nama' => $this->pemilik_nama,
+            'pemilik_alamat' => $this->pemilik_alamat,
+            // Pelanggan pemilik alat — dipakai layar antrean approval buat
+            // ngelompokkin kiriman per PT. Admin mikirnya per perusahaan
+            // ("beresin punya Maju Jaya dulu"), bukan per teknisi.
+            //
+            // `pemilik_nama` isian teknisi menang, sama kayak di sertifikat —
+            // biar nama yang dilihat admin di antrean sama dengan yang bakal
+            // kecetak. Kalau beda, admin mikir itu dua PT.
+            'pelanggan' => [
+                'id' => $this->equipment?->customer?->id,
+                'nama' => $this->pemilik_nama ?: $this->equipment?->customer?->nama,
+            ],
             'teknisi' => [
                 'id' => $this->teknisi?->id,
                 'nama' => $this->teknisi?->name,
@@ -69,6 +91,10 @@ class CalibrationResource extends JsonResource
             'hasil' => self::petakanHasil($penentu, $this->keputusan),
 
             'catatan_revisi' => $this->catatan_revisi,
+            // Kode kolom yang diminta admin dibetulin. Layar teknisi nyorot
+            // persis kolom ini, jadi dia nggak perlu nyisir formulir nyari
+            // mana yang salah. Null = ditolak tanpa nunjuk kolom tertentu.
+            'revisi_field' => $this->revisi_field ?? [],
             'certificate_id' => $this->certificate?->id,
 
             // Tambahan di luar kontrak (superset, aman diabaikan mobile) —
@@ -93,6 +119,9 @@ class CalibrationResource extends JsonResource
                 // nyusun URL-nya sendiri, jadi domainnya nggak bisa salah.
                 'qr_token' => $this->certificate->qr_token,
                 'qr_payload' => $this->certificate->qr_payload,
+                // Penanda tangan yang kecetak di PDF ini (fase-2 §3c). Beku dari
+                // snapshot — lihat `Certificate::penandaTangan()`.
+                'penanda_tangan' => $this->certificate->penandaTangan(),
             ] : null,
 
             'suhu_ruang' => $this->suhu_ruang,

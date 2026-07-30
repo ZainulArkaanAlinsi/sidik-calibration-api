@@ -207,17 +207,94 @@ class GumCalculatorTest extends TestCase
             'toleransi' => 0.05,
         ]);
 
-        // Pembacaan sengaja nyebar jauh (STDEV ~0.43) — kalau kodenya salah
-        // masih makan jalur Type A+B generik, U bakal jauh lebih gede dari CMC.
+        // Pembacaan rapat: Type A kecil banget dibanding CMC, jadi hasilnya
+        // praktis sama kayak CMC apa adanya — inilah kasus normal sehari-hari.
+        $rapat = $this->gum->hitungTitik(1, 4.00, [4.01, 4.01, 4.01], $alat, $this->standar());
+
+        $this->assertEqualsWithDelta(0.02343221, $rapat['ketidakpastian_diperluas'], 1e-9);
+        $this->assertSame('cmc_kemampuan_kalibrasi', $rapat['type_b_components'][0]['sumber']);
+    }
+
+    /**
+     * Pembacaan yang BERSERAK harus bikin U95 ikut membesar.
+     *
+     * Sampai 29 Juli 2026 jalur CMC ngelaporin CMC apa adanya dan Type A cuma
+     * disimpen "buat QC" — jadi U95 di sertifikat sama persis buat sebaran
+     * serapat apa pun maupun seberantakan apa pun. Itu klaim presisi yang
+     * nggak pernah terjadi: CMC nyakup kemampuan LAB, bukan perilaku alat
+     * pelanggan yang lagi dikalibrasi (ILAC-P14).
+     */
+    public function test_sebaran_pembacaan_yang_lebar_bikin_u95_ikut_membesar(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'parameter' => 'pH',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // Satu pembacaan meleset jauh (5.0 di antara 4.04) — elektroda mau mati.
         $hasil = $this->gum->hitungTitik(1, 4.009244572, [4.04, 4.04, 4.04, 5.0, 4.04], $alat, $this->standar());
 
-        $this->assertEqualsWithDelta(0.02343221, $hasil['ketidakpastian_diperluas'], 1e-12);
-        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-9);
-        $this->assertNull($hasil['derajat_kebebasan_efektif']);
-        $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
-
-        // Type A tetap kehitung & disimpen (QC), walaupun bukan yang dilaporkan.
+        // Type A di sini ~0.19; U95 wajib ikut kebawa, bukan tetap di CMC.
         $this->assertGreaterThan(0.1, $hasil['type_a']);
+        $this->assertGreaterThan(
+            0.3,
+            $hasil['ketidakpastian_diperluas'],
+            'U95 mesti nyerminin sebaran yang beneran keukur, bukan CMC doang.',
+        );
+
+        // CMC tetap kecatat sebagai komponen Type B-nya.
+        $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
+        $this->assertEqualsWithDelta(0.02343221 / 2, $hasil['type_b'], 1e-9);
+    }
+
+    /** U95 nggak boleh lebih kecil dari CMC, walau pembacaannya mulus sempurna. */
+    public function test_u95_dilantai_ke_cmc_walau_semua_pembacaan_identik(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'instrumen-analitik']);
+
+        CalibrationCapability::create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'pH Meter',
+            'parameter' => 'pH',
+            'range_min' => 4,
+            'range_max' => 4,
+            'satuan' => 'pH',
+            'ketidakpastian_terbaik' => 0.02343221,
+            'satuan_ketidakpastian' => 'pH',
+            'faktor_cakupan' => 2,
+        ]);
+
+        $alat = Equipment::factory()->create([
+            'equipment_category_id' => $kategori->id,
+            'nama_alat_kemampuan' => 'pH Meter',
+            'satuan' => 'pH',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // Type A = 0 persis. Tanpa lantai, U95 bakal jatuh ke 0 dan lab ngeklaim
+        // lebih baik dari kemampuan terakreditasinya sendiri.
+        $hasil = $this->gum->hitungTitik(1, 4.00, [4.01, 4.01, 4.01, 4.01, 4.01], $alat, $this->standar());
+
+        $this->assertEqualsWithDelta(0.0, $hasil['type_a'], 1e-12);
+        $this->assertEqualsWithDelta(0.02343221, $hasil['ketidakpastian_diperluas'], 1e-9);
     }
 
     /**
@@ -400,11 +477,22 @@ class GumCalculatorTest extends TestCase
             'satuan' => 'mm', 'resolusi' => 0.01, 'toleransi' => 0.05,
         ]);
 
-        // Pembacaan sengaja nyebar jauh — kalau kodenya salah masih makan
-        // jalur generik, U bakal jauh lebih gede dari CMC Caliper (0.015mm).
-        $hasil = $this->gum->hitungTitik(1, 50.0, [50.5, 49.5, 50.0], $jangkaSorong, $this->standar());
+        $hasil = $this->gum->hitungTitik(1, 50.0, [50.01, 50.00, 50.01], $jangkaSorong, $this->standar());
 
+        // Yang diuji di sini: BARIS CMC MANA yang kepilih. Titik 50mm jatuh di
+        // rentang Sieve (45-4000, U=4.0mm) maupun Caliper (0-300, U=0.015mm);
+        // `nama_alat_kemampuan` yang bikin nggak ambigu.
+        //
+        // Dicek lewat `type_b` (= CMC/k), bukan `ketidakpastian_diperluas`:
+        // U95 sekarang ikut sebaran pembacaan (lihat
+        // test_sebaran_pembacaan_yang_lebar_bikin_u95_ikut_membesar), jadi
+        // ngunci U95 ke angka tetap di sini bakal nguji dua hal sekaligus dan
+        // pecah tiap kali sebaran contohnya diubah.
         $this->assertSame('cmc_kemampuan_kalibrasi', $hasil['type_b_components'][0]['sumber']);
-        $this->assertEqualsWithDelta(0.015, $hasil['ketidakpastian_diperluas'], 1e-12);
+        $this->assertEqualsWithDelta(0.015 / 2, $hasil['type_b'], 1e-12);
+        $this->assertStringContainsString(
+            'Vernier Caliper',
+            $hasil['type_b_components'][0]['keterangan'],
+        );
     }
 }

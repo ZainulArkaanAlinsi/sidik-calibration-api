@@ -34,3 +34,9 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 worklog.csv
+
+# Artefak Python dari skrip di docs/skrip/. Bukan bagian dari aplikasi Laravel,
+# tapi begitu skripnya pernah dijalanin/dicompile, __pycache__ kebentuk sendiri
+# dan gampang keikut `git add`.
+__pycache__/
+*.pyc

@@ -38,6 +38,11 @@ class CertificateResource extends JsonResource
             'qr_token' => $this->qr_token,
             'qr_payload' => $this->qr_payload,
 
+            // Siapa yang tanda tangan sertifikat ini (fase-2 §3c). Beku dari
+            // snapshot, bukan dari pengaturan organisasi yang berlaku sekarang —
+            // alasannya di `Certificate::penandaTangan()`. `null` kalau belum terbit.
+            'penanda_tangan' => $this->penandaTangan(),
+
             // Cuma ada kalau PDF-nya emang udah jadi. Kalau `gagal`/`menunggu_generate`,
             // null — mobile munculin tombol retry, bukan tombol unduh.
             'pdf_url' => $this->status === Certificate::STATUS_TERBIT
@@ -47,6 +52,21 @@ class CertificateResource extends JsonResource
             'alat' => [
                 'nama_alat' => $this->session?->equipment?->nama_alat,
                 'serial_number' => $this->session?->equipment?->serial_number,
+            ],
+
+            // Kontak pelanggan buat tombol kirim. Dua-duanya boleh null —
+            // layar yang milih nampilin tombol mana, bukan nebak nomor sendiri.
+            //
+            // Kenapa `pemilik_nama` sesi menang atas master pelanggan: yang
+            // dicetak di sertifikat juga pakai isian teknisi (lihat
+            // `CertificateSnapshotBuilder`), jadi nama di pesan WhatsApp mesti
+            // sama dengan nama di dokumennya — kalau beda, penerima ngira salah
+            // kirim.
+            'pelanggan' => [
+                'nama' => $this->session?->pemilik_nama
+                    ?: $this->session?->equipment?->customer?->nama,
+                'email' => $this->session?->equipment?->customer?->email,
+                'telepon' => $this->session?->equipment?->customer?->telepon,
             ],
         ];
     }

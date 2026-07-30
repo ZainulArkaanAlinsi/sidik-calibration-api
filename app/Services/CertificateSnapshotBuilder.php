@@ -88,16 +88,25 @@ class CertificateSnapshotBuilder
             // Satu sesi = satu halaman sertifikat. Kalau nanti tabel hasilnya
             // panjang & kepecah, angka ini yang diubah, bukan strukturnya.
             'page' => '1 of 1',
-            'owner' => $pelanggan?->nama,
+            // Lima field di bawah: YANG DICATAT TEKNISI menang, master cuma
+            // cadangan. Teknisi megang alat fisiknya dan nyalin dari badan
+            // alat; master diisi admin waktu pendaftaran dan bisa udah basi
+            // (unit ketuker, PT pindah alamat). Kalau master yang menang,
+            // sertifikat resmi bisa nyebut seri alat yang bukan alat yang
+            // beneran dikalibrasi — dan itu temuan asesor.
+            //
+            // `??` PER FIELD, bukan per blok: teknisi boleh ngisi seri doang
+            // dan ngosongin merk, dan yang kosong itu tetap jatuh ke master.
+            'owner' => $sesi->pemilik_nama ?: $pelanggan?->nama,
             'order_number' => $sesi->nomor_order,
-            'address' => $pelanggan?->alamat,
+            'address' => $sesi->pemilik_alamat ?: $pelanggan?->alamat,
             'received_date' => $sesi->tanggal_terima?->toDateString(),
             'equipment_name' => $alat?->nama_alat,
-            'manufacturer' => $alat?->merk,
+            'manufacturer' => $sesi->alat_merk ?: $alat?->merk,
             'calibration_location' => $this->lokasiKalibrasi($sesi),
-            'model_type' => $alat?->model,
+            'model_type' => $sesi->alat_model ?: $alat?->model,
             'calibration_date' => $sesi->tanggal_kalibrasi?->toDateString(),
-            'serial_number' => $alat?->serial_number,
+            'serial_number' => $sesi->alat_serial_number ?: $alat?->serial_number,
             'calibration_method' => $this->metodeKalibrasi($sesi),
             'capacity_graduation' => $this->kapasitasGraduasi($sesi),
             'env_condition' => $this->kondisiLingkungan($sesi),

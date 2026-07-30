@@ -168,7 +168,23 @@ dicari pakai nama di dokumen, hasilnya nggak ketemu dan kelihatan kayak hilang.
 > reviewer       → BARU ("Checked by" — admin yang approve/reject)
 > ```
 >
-> Yang masih belum: **penanda tangan sertifikat** (butuh keputusan dulu, lihat §3).
+> ✅ **27 Jul — penanda tangan sertifikat UDAH JADI**, jadi bagian embed ini kelar:
+>
+> ```
+> sertifikat     → + penanda_tangan { nama, jabatan }
+> ```
+>
+> Keputusan yang ditunggu terjawab: **"Manajer Teknis" bukan role keempat**, tapi
+> atribut organisasi (`settings.penandatangan_nama` / `_jabatan`) plus gambar TTD yang
+> diunggah admin. Kontrak: [`kontrak-api.md` §14](kontrak-api.md).
+>
+> Dua hal yang perlu diperhatiin mobile:
+>
+> 1. **Nggak ada `ttd_url`** — gambarnya di disk privat, jadi ambilnya lewat
+>    `GET /organization/tanda-tangan` (pakai `Image.memory`, bukan `Image.network`).
+> 2. `penanda_tangan` **beku dari snapshot**, bukan dari pengaturan yang berlaku
+>    sekarang. Jadi jangan disamain sama `organization.settings.penandatangan_nama`
+>    buat sertifikat lama — dua-duanya bener, cuma beda waktu.
 
 ---
 
@@ -179,7 +195,7 @@ Diverifikasi absen dari `routes/api.php` dan `app/`:
 | Yang diminta | Diminta di | Dampak kalau dipaksa |
 |---|---|---|
 | Entitas `/orders` | permintaan-endpoint §4 | Nggak ada layar Order tersendiri. `nomor_order` & `tanggal_terima` udah ada di sesi |
-| `signed_by` / penanda tangan | worksheet-ph §2.3 | Blok tanda tangan. `reviewed_by` bukan gantinya — beda orang |
+| `calculated_by` / `signed_by` **di worksheet** | worksheet-ph §2.3 | Blok approval Halaman 2 ("Calculated by" / "Signed by" per sesi, FK ke `users`, plus `inisial` di `UserResource`). `reviewed_by` bukan gantinya — beda orang. **Beda dari penanda tangan sertifikat**, yang udah jadi 27 Jul (`kontrak-api.md` §14): yang itu satu orang tingkat lab buat semua sertifikat, yang ini per sesi |
 | **Evaluator ekspresi rumus** | arsitektur-desktop §Keputusan 5 | Ngubah versi rumus **belum ngubah cara hitung**. Pencatatan versi + stempel `formula_version_id` di hasil hitung udah jadi 27 Jul (lihat §1); yang belum: mesin yang ngeksekusi ekspresi dari DB, plus uji-coba-sebelum-disimpan. `audit_logs` (Keputusan 4) juga udah jadi |
 
 ### Tiga operasi arsip — ✅ SEMUANYA UDAH JADI (27 Jul)

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use App\Models\Organization;
 use App\Services\CertificateExcelExporter;
+use App\Services\DataTampilanSertifikat;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -40,14 +41,36 @@ class VerificationController extends Controller
             );
         }
 
-        $settings = $certificate->organization->settings ?? [];
+        // Yang ditampilin LEMBAR SERTIFIKATNYA SENDIRI — blade yang sama persis
+        // dengan yang dicetak jadi PDF, bukan ringkasan versi web.
+        //
+        // Sebelumnya halaman ini bikin kartu ringkas sendiri, dan itu keliru:
+        // orang yang nycan QR lagi mencocokkan lembar di tangannya dengan yang
+        // asli. Kalau bentuknya beda, nggak ada yang bisa dicocokin — dia cuma
+        // dikasih tahu "terdaftar", tanpa bisa lihat angka mana yang bener.
+        //
+        // Ini nggak nambah data yang kebuka: tombol unduh PDF di halaman ini
+        // udah tanpa auth dari dulu (spesifikasi poin 13), jadi siapa pun yang
+        // megang token QR-nya emang udah bisa lihat lembar penuhnya. Yang
+        // jagain tetap `qr_token`-nya: 10 karakter acak, bukan id berurutan.
+        //
+        // Sertifikat lama yang snapshot-nya kosong nggak bisa dirender begitu —
+        // buat mereka kartu ringkas yang lama tetap dipakai.
+        if (blank($certificate->snapshot)) {
+            $settings = $certificate->organization->settings ?? [];
 
-        return response()->view('verifikasi.sertifikat', [
-            'organization' => $certificate->organization,
-            'certificate' => $certificate,
-            'catatanKetidakpastian' => $settings['catatan_ketidakpastian'] ?? null,
-            'catatanPenggandaan' => $settings['catatan_penggandaan'] ?? null,
-        ]);
+            return response()->view('verifikasi.sertifikat', [
+                'organization' => $certificate->organization,
+                'certificate' => $certificate,
+                'catatanKetidakpastian' => $settings['catatan_ketidakpastian'] ?? null,
+                'catatanPenggandaan' => $settings['catatan_penggandaan'] ?? null,
+            ]);
+        }
+
+        return response()->view(
+            'sertifikat.pdf',
+            app(DataTampilanSertifikat::class)->untuk($certificate, web: true),
+        );
     }
 
     /**

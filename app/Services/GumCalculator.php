@@ -83,7 +83,7 @@ class GumCalculator
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
         $hasil = $kemampuan !== null
-            ? $this->hitungDariKemampuan($kemampuan)
+            ? $this->hitungDariKemampuan($kemampuan, $typeA, $n)
             : $this->hitungDariStandarDanResolusi($typeA, $n, $equipment, $standard);
 
         return [
@@ -106,17 +106,45 @@ class GumCalculator
     }
 
     /**
-     * Jalur CMC: lab udah menyatakan ketidakpastian terbaiknya (dari lampiran
-     * akreditasi) buat titik ini, jadi itu yang dilaporkan apa adanya — bukan
-     * dikombinasi ulang sama Type A sesi ini. Type A sesi cuma buat QC internal.
+     * Jalur CMC: lab udah menyatakan ketidakpastian terbaiknya buat titik ini
+     * di lampiran akreditasi. CMC dipakai sebagai **kontribusi lab + LANTAI**
+     * yang dilaporkan — bukan sebagai angka jadi yang menggantikan sebaran ukur.
+     *
+     * ## Kenapa Type A WAJIB ikut
+     *
+     * Sampai 29 Juli 2026 method ini balikin CMC apa adanya dan Type A cuma
+     * disimpen "buat QC". Akibatnya U95 di sertifikat SELALU sama persis buat
+     * titik yang sama, berapa pun sebaran pembacaan teknisi — lima pembacaan
+     * rapat dan lima pembacaan berantakan keluar angka identik.
+     *
+     * Itu bukan cuma bikin bingung; itu klaim yang salah. CMC adalah
+     * ketidakpastian TERBAIK yang bisa dicapai lab pada kondisi optimal dengan
+     * alat yang berperilaku normal (ILAC-P14). Dia nggak nyakup perilaku alat
+     * PELANGGAN yang lagi dikalibrasi. Waktu pembacaan alat itu berserak jauh
+     * lebih besar dari CMC — alat rusak, elektroda mau mati, larutan kotor —
+     * ngelaporin ±CMC berarti nyatain presisi yang nggak pernah terjadi.
+     *
+     * Jadi: `u_c = sqrt(u_cmc² + u_A²)`, `U = k · u_c`, lalu **dilantai ke
+     * CMC** supaya nggak pernah ngeklaim lebih baik dari kemampuan terakreditasi
+     * lab. Sebaran yang rapat menghasilkan angka yang praktis sama kayak dulu;
+     * yang berantakan sekarang kelihatan berantakan.
      *
      * @return array<string, mixed>
      */
-    private function hitungDariKemampuan(CalibrationCapability $kemampuan): array
-    {
+    private function hitungDariKemampuan(
+        CalibrationCapability $kemampuan,
+        float $typeA,
+        int $n,
+    ): array {
         $k = $kemampuan->faktor_cakupan ?: self::FAKTOR_CAKUPAN;
-        $diperluas = $kemampuan->ketidakpastian_terbaik;
-        $gabungan = $diperluas / $k;
+        $cmcDiperluas = (float) $kemampuan->ketidakpastian_terbaik;
+        $uCmc = $cmcDiperluas / $k;
+
+        $gabungan = $this->akarJumlahKuadrat([$uCmc, $typeA]);
+
+        // Lantai CMC: hasil hitung nggak boleh lebih kecil dari kemampuan
+        // terakreditasi lab, walau pembacaannya kebetulan mulus banget.
+        $diperluas = max($cmcDiperluas, $k * $gabungan);
 
         return [
             'type_b_components' => [[
@@ -125,19 +153,20 @@ class GumCalculator
                     'CMC %s%s (U=%s %s, k=%s)',
                     $kemampuan->nama_alat,
                     $kemampuan->parameter ? " — {$kemampuan->parameter}" : '',
-                    $diperluas,
+                    $cmcDiperluas,
                     $kemampuan->satuan_ketidakpastian,
                     $k,
                 ),
                 'distribusi' => 'normal',
-                'nilai' => $gabungan,
+                'nilai' => $uCmc,
             ]],
-            'type_b' => $gabungan,
+            'type_b' => $uCmc,
             'ketidakpastian_gabungan' => $gabungan,
             'faktor_cakupan_k' => $k,
-            // CMC itu nilai tetap dari akreditasi, bukan turunan dari sebaran
-            // sesi ini — Welch-Satterthwaite nggak berlaku di sini.
-            'derajat_kebebasan_efektif' => null,
+            // Welch-Satterthwaite: cuma Type A yang punya derajat kebebasan
+            // terbatas di sini; CMC dianggap tak-hingga (nilai tetap dari
+            // akreditasi). Null kalau nggak ada pengulangan buat dihitung.
+            'derajat_kebebasan_efektif' => $this->derajatKebebasanEfektif($gabungan, $typeA, $n),
             'ketidakpastian_diperluas' => $diperluas,
             // Nomor IK dari lampiran akreditasi — dicetak di sertifikat sebagai
             // "Calibration Method". Null kalau CMC ini nggak punya field metode.

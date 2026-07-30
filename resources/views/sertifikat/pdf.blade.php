@@ -43,7 +43,13 @@
 
         table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
         table.info td { padding: 2.5px 6px; vertical-align: top; }
-        table.info td.lbl { width: 17%; color: #555; }
+        /*
+          Label ditebelin & digelapin: di kertas cetak, label abu tipis bikin
+          mata harus balik-balik nyari mana nama kolom mana isinya. Yang dibaca
+          orang di sertifikat itu pasangan label→nilai, jadi labelnya harus
+          kebaca sekali lihat.
+        */
+        table.info td.lbl { width: 17%; color: #222; font-weight: bold; }
         table.info td.val { width: 33%; }
 
         .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 4px; letter-spacing: .5px; }
@@ -82,9 +88,135 @@
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
         .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 18px; border-top: 1px solid #ccc; padding-top: 5px; }
+
+        @if ($web ?? false)
+        /*
+          Mode web — cuma dipakai halaman hasil scan QR. Isinya NGGAK disentuh
+          sama sekali di sini: yang ditambah cuma bingkai layar (latar abu,
+          lembar putih di tengah) biar kebaca di HP. Dompdf nggak pernah kena
+          blok ini, jadi PDF-nya nggak mungkin ikut berubah.
+        */
+        body {
+            background: #eef1f5;
+            /* Ukuran font lembar dipatok px kecil buat cetak; di layar itu
+               kekecilan, jadi dinaikin khusus web. */
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 16px 12px 40px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .lembar {
+            background: #fff;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 28px 32px 36px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16, 24, 40, .06),
+                        0 8px 24px rgba(16, 24, 40, .08);
+        }
+
+        .bilah {
+            max-width: 820px;
+            margin: 0 auto 14px;
+            background: #0f766e;
+            color: #fff;
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .bilah .cap { font-size: 15px; font-weight: bold; letter-spacing: .2px; }
+        .bilah .ket { font-size: 12px; opacity: .92; margin-top: 4px; }
+        .bilah .aksi { margin-top: 14px; }
+        .bilah a {
+            display: inline-block;
+            background: #fff;
+            color: #0f766e;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 12.5px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            margin: 0 8px 8px 0;
+        }
+
+        /*
+          Tabel hasil & standar dibikin selebar lembarnya.
+
+          Sempat kebalik: `display: block` dipasang biar bisa digeser di HP,
+          tapi itu bikin `width: 100%`-nya tabel nggak berlaku lagi — tabelnya
+          nyusut jadi selebar isinya doang dan kelihatan nyempil di kiri.
+          Sekarang: lebar penuh di layar lebar, geser-horizontal cuma di layar
+          sempit (aturan `@media` di bawah).
+        */
+        .lembar table.data { width: 100%; }
+        .lembar table.data th,
+        .lembar table.data td { padding: 7px 8px; }
+
+        /* Label header sertifikat: kolomnya nggak ditarik sempit, biar
+           labelnya nggak kepotong dua baris di tengah kata. */
+        .lembar table.info td { padding: 5px 8px; }
+        .lembar table.info td.lbl { width: 22%; white-space: nowrap; }
+        .lembar table.info td.val { width: 28%; }
+
+        .lembar .judul { margin: 6px 0 18px; }
+        .lembar .judul-sub { margin: 22px 0 8px; }
+        .lembar .kop { margin-bottom: 18px; }
+
+        @media (max-width: 720px) {
+            body { padding: 10px 8px 32px; }
+            .lembar { padding: 18px 16px 26px; border-radius: 10px; }
+            .bilah { border-radius: 10px; padding: 14px; }
+            .bilah a { display: block; text-align: center; margin-right: 0; }
+
+            /*
+              Header info balik jadi SATU kolom.
+
+              Di kertas dia dua pasang label→nilai bersebelahan; dipaksa muat
+              di layar 360px, tiap sel jadi setumpuk kata terpotong yang
+              nggak kebaca. Satu kolom lebih panjang, tapi kebaca.
+            */
+            .lembar table.info,
+            .lembar table.info tbody,
+            .lembar table.info tr,
+            .lembar table.info td { display: block; width: auto; }
+            .lembar table.info tr { padding: 2px 0; }
+            .lembar table.info td.lbl {
+                width: auto;
+                padding: 6px 0 0;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+                color: #667085;
+            }
+            .lembar table.info td.val {
+                width: auto;
+                padding: 0 0 6px;
+                font-size: 14px;
+                border-bottom: 1px solid #eef1f5;
+            }
+
+            /* Tabel angka nggak bisa dilipat — dia yang digeser sendiri,
+               bukan seluruh halaman yang ikut goyang. */
+            .lembar table.data { display: block; overflow-x: auto; width: 100%; }
+        }
+        @endif
     </style>
 </head>
 <body>
+@if ($web ?? false)
+    <div class="bilah">
+        <div class="cap">&#10003; Sertifikat terverifikasi</div>
+        <div class="ket">
+            Lembar di bawah ini salinan sah dari sistem
+            {{ $snapshot['meta']['organization']['nama'] ?? 'laboratorium' }}.
+            Cocokkan dengan lembar yang kamu pegang.
+        </div>
+        <div class="aksi">
+            <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF</a>
+            <a href="{{ route('verify.download', $sertifikat->qr_token) }}?format=xlsx">Unduh Excel</a>
+        </div>
+    </div>
+    <div class="lembar">
+@endif
     <div class="kop">
         <table>
             <tr>
@@ -257,5 +389,8 @@
     </table>
 
     <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
+@if ($web ?? false)
+    </div>
+@endif
 </body>
 </html>
