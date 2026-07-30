@@ -37,6 +37,32 @@ class FolderResource extends JsonResource
 
             'sub_folder' => FolderResource::collection($this->whenLoaded('children')),
             'file' => FolderFileResource::collection($this->whenLoaded('files')),
+
+            /*
+             * Alat milik PT ini — cuma keisi di folder AKAR PT (lihat
+             * `FolderController::show`). Bikin folder PT jadi satu pintu masuk:
+             * buka PT-nya, kelihatan alat apa aja yang dia punya, bukan cuma
+             * berkasnya.
+             *
+             * `tanggal_jatuh_tempo` ikut karena itu yang bikin daftar ini
+             * berguna, bukan cuma lengkap: yang dicari admin waktu buka folder
+             * PT biasanya "alat mana yang udah waktunya dikalibrasi lagi".
+             */
+            'alat' => $this->when(
+                $this->relationLoaded('customer')
+                    && $this->customer?->relationLoaded('equipments'),
+                fn () => $this->customer->equipments->map(fn ($alat) => [
+                    'id' => $alat->id,
+                    'nama_alat' => $alat->nama_alat,
+                    'merk' => $alat->merk,
+                    'model' => $alat->model,
+                    'serial_number' => $alat->serial_number,
+                    'status' => $alat->status,
+                    'tanggal_kalibrasi_terakhir' => $alat->tanggal_kalibrasi_terakhir?->toDateString(),
+                    'tanggal_jatuh_tempo' => $alat->tanggal_jatuh_tempo?->toDateString(),
+                    'jumlah_kalibrasi' => $alat->calibration_sessions_count,
+                ])->values(),
+            ),
         ];
     }
 }
