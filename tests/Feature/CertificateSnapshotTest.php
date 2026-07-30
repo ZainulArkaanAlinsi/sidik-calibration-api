@@ -203,4 +203,63 @@ class CertificateSnapshotTest extends TestCase
 
         $this->assertSame('DR', $this->terbitkanSertifikat()->snapshot['header']['technician_id']);
     }
+
+    /**
+     * Desimal tabel hasil ngikut resolusi alat, bukan angka mati.
+     *
+     * Nulis desimal lebih banyak daripada yang bisa dibaca alatnya itu ngaku
+     * presisi yang nggak ada; kekurangan bikin U95% kehilangan angka penting.
+     */
+    public function test_desimal_tabel_hasil_ngikut_resolusi_alat(): void
+    {
+        // Resolusi 0,01 → 2 desimal, dibekukan di snapshot waktu terbit.
+        $this->assertSame(2, $this->terbitkanSertifikat()->snapshot['desimal']);
+    }
+
+    /**
+     * Semua variasi diuji lewat builder langsung, bukan dengan nerbitin
+     * sertifikat berulang: `terbitkanSertifikat()` bikin `CalibrationMethod`
+     * berkode tetap, jadi pemanggilan kedua nabrak unique constraint.
+     */
+    public function test_desimal_bisa_ditimpa_pengaturan_dan_nolak_nilai_bukan_angka(): void
+    {
+        $sertifikat = $this->terbitkanSertifikat();
+        $sesi = $sertifikat->session;
+        $organisasi = Organization::query()->firstOrFail();
+        $builder = app(CertificateSnapshotBuilder::class);
+
+        $desimalUntuk = function (mixed $setelan) use ($organisasi, $sesi, $sertifikat, $builder): int {
+            $organisasi->update([
+                'settings' => [...$organisasi->settings, Organization::KEY_DESIMAL_SERTIFIKAT => $setelan],
+            ]);
+
+            return $builder->bangun($sesi->fresh(), $sertifikat)['desimal'];
+        };
+
+        // Resolusi alatnya tetap 0,01 (otomatisnya 2), jadi 3 & 4 di bawah cuma
+        // bisa datang dari pengaturan.
+        $this->assertSame(3, $desimalUntuk(3));
+        $this->assertSame(4, $desimalUntuk('4'), 'Angka berupa string dari form tetap kepakai.');
+
+        // Yang bukan angka HARUS jatuh balik ke resolusi alat, bukan jadi 0
+        // desimal. Bukan kasus karangan: kolom teks di panel admin ngirim string
+        // kosong waktu dibersihin, dan `(int) ''` itu 0 — kalau lolos, seluruh
+        // tabel sertifikat kecetak jadi bilangan bulat (`4` bukan `4,01`) tanpa
+        // ada yang minta.
+        foreach (['', 'otomatis', null] as $nilai) {
+            $this->assertSame(
+                2,
+                $desimalUntuk($nilai),
+                'Setelan '.var_export($nilai, true).' mestinya diabaikan, bukan jadi 0 desimal.',
+            );
+        }
+    }
+
+    /** Alat yang bacanya lebih halus dapet lebih banyak desimal. */
+    public function test_alat_resolusi_lebih_halus_dapet_desimal_lebih_banyak(): void
+    {
+        $this->alat->update(['resolusi' => 0.001]);
+
+        $this->assertSame(3, $this->terbitkanSertifikat()->snapshot['desimal']);
+    }
 }

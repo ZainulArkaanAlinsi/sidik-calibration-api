@@ -42,6 +42,9 @@ class DataTampilanSertifikat
             'sertifikat' => $sertifikat,
             'snapshot' => $sertifikat->snapshot,
             'logo' => $this->logoDataUri($organisasi),
+            // Kop surat selebar halaman. Kalau ada, dia GANTIIN kop teks — bukan
+            // ditambahin di atasnya (lihat `kopDataUri()`).
+            'kop' => $this->kopDataUri($organisasi),
             // `null` kalau belum diunggah — dan itu state yang SAH: sertifikat
             // nyetak garis + nama + jabatan dengan ruang kosong buat tanda
             // tangan basah.
@@ -102,6 +105,39 @@ class DataTampilanSertifikat
     private function tampilkanKeputusan(?Organization $organisasi): bool
     {
         return (bool) ($organisasi?->settings['tampilkan_keputusan_di_pdf'] ?? false);
+    }
+
+    /**
+     * Kop surat sebagai data URI — banner selebar halaman di atas sertifikat.
+     *
+     * Ini BUKAN logo. Logo itu lambang kecil; kop surat ini satu gambar yang
+     * udah memuat lambang lab, nama & alamat PT, plus lambang KAN + nomor
+     * akreditasi. Karena semua itu ada di dalam gambarnya, blade nggak nulis
+     * ulang teksnya di sebelahnya — kalau ditulis dua kali, alamat & nomor
+     * akreditasi kecetak dobel dan yang satu bisa basi duluan.
+     *
+     * Prioritasnya sama kayak logo: punya organisasi dulu (`kop_path`, diunggah
+     * admin), baru bawaan di `public/images`. null kalau dua-duanya nggak ada —
+     * blade balik ke kop teks yang lama, jadi sertifikatnya tetap terbit.
+     */
+    private function kopDataUri(?Organization $organisasi): ?string
+    {
+        $path = null;
+        $kop = $organisasi?->settings[Organization::KEY_KOP_PATH] ?? null;
+
+        if ($kop && Storage::disk('public')->exists($kop)) {
+            $path = Storage::disk('public')->path($kop);
+        } elseif (is_file(public_path('images/kop-surat.png'))) {
+            $path = public_path('images/kop-surat.png');
+        }
+
+        if ($path === null) {
+            return null;
+        }
+
+        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
     }
 
     /**

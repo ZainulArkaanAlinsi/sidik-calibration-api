@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Equipment;
+use App\Models\Organization;
 use App\Models\Standard;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
@@ -44,8 +46,8 @@ class CertificateSnapshotBuilder
     public function bangun(CalibrationSession $sesi, Certificate $sertifikat): array
     {
         $alat = $sesi->equipment;
-        $desimal = Angka::desimalDariResolusi($alat?->resolusi !== null ? (float) $alat->resolusi : null);
         $pengaturan = $sesi->organization?->settings ?? [];
+        $desimal = $this->desimal($alat, $pengaturan);
 
         return [
             'versi' => self::VERSI,
@@ -157,7 +159,20 @@ class CertificateSnapshotBuilder
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn (Collection $c) => $c->push($sesi->standard))
-            ->when($sesi->thermohygro, fn (Collection $c) => $c->push($sesi->thermohygro))
+            // Thermohygro SENGAJA nggak masuk tabel ini.
+            //
+            // Dia alat pemantau kondisi ruangan, bukan acuan yang nilainya
+            // dipakai ngoreksi pembacaan — dan kontribusinya udah kelaporan di
+            // tempatnya sendiri: kolom "Env. Condition" di header. Waktu ikut
+            // ditulis di sini, barisnya keluar setengah jadi (`TH-2` · `—` ·
+            // `TH-2`) karena master thermohygro nggak nyimpen merk/model/serial
+            // kayak standar acuan, dan baris kosong di tabel ketertelusuran itu
+            // lebih buruk daripada nggak ada baris.
+            //
+            // Kalau nanti thermohygro-nya mau tampil (lembar manual lab nulisnya
+            // sebagai "Termometer & Sensor Std." dengan merk, serial, dan dua
+            // nomor ketertelusuran), yang dibutuhin itu data masternya dulu —
+            // bukan baris ini dibalikin.
             // Kolom "Usage Check" di lembar kerja: standar yang dicentang
             // teknisi tapi nggak nempel ke titik hitung mana pun (mis. RTD
             // Sensor buat baca suhu larutan) tetap harus tercatat — itu bagian
@@ -226,6 +241,40 @@ class CertificateSnapshotBuilder
         return $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->first(fn ($titik): bool => filled($titik->metode))?->metode;
+    }
+
+    /**
+     * Jumlah desimal tabel CALIBRATION REPORT.
+     *
+     * Bawaannya diturunin dari resolusi alat: alat yang bacanya sampai 0,001
+     * dicetak 3 desimal, yang 0,01 dicetak 2. Nulis lebih banyak daripada yang
+     * bisa dibaca alatnya itu ngaku-ngaku presisi yang nggak ada.
+     *
+     * Pengaturan organisasi bisa nimpa, karena resolusi di master alat nggak
+     * selalu ngikut spek fisiknya — dan kalau kekecilan, yang paling kena itu
+     * U95%: 0,023 kecetak jadi `0,02` dan kehilangan angka penting, padahal
+     * ketidakpastian lazimnya dilaporin 2 angka penting.
+     *
+     * Ikut dibekukan ke snapshot (bukan dibaca ulang waktu render) supaya
+     * sertifikat yang udah terbit nggak berubah bentuk gara-gara pengaturan
+     * diubah sesudahnya.
+     *
+     * @param  array<string, mixed>  $pengaturan
+     */
+    private function desimal(?Equipment $alat, array $pengaturan): int
+    {
+        $paksa = $pengaturan[Organization::KEY_DESIMAL_SERTIFIKAT] ?? null;
+
+        // `is_numeric` bukan `!== null`: kolom teks di panel admin ngirim string
+        // kosong waktu dibersihin, dan `(int) ''` itu 0 — nol desimal bikin
+        // seluruh tabel sertifikat jadi bilangan bulat tanpa ada yang minta.
+        if (is_numeric($paksa)) {
+            return max(0, min(6, (int) $paksa));
+        }
+
+        return Angka::desimalDariResolusi(
+            $alat?->resolusi !== null ? (float) $alat->resolusi : null,
+        );
     }
 
     /** `0–14 pH / 0,01 pH` — rentang alat / resolusinya. */

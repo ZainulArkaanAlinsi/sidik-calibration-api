@@ -31,6 +31,16 @@
         * { font-family: DejaVu Sans, sans-serif; }
         body { font-size: 10.5px; color: #1a1a1a; margin: 0; }
 
+        /*
+          Kop surat banner. `width: 100%` + `height: auto` biar rasionya kejaga
+          di lebar halaman mana pun; gambarnya 1289x225 (5,73:1).
+
+          SENGAJA tanpa garis bawah: kop-nya sendiri udah punya lengkung biru di
+          bagian bawah gambarnya, dan garis ganda di bawahnya bikin dua pembatas
+          yang nempel.
+        */
+        .kop-gambar { margin-bottom: 12px; }
+        .kop-gambar img { width: 100%; height: auto; display: block; }
         .kop { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 14px; }
         .kop table { width: 100%; border-collapse: collapse; }
         .kop td.logo { width: 84px; vertical-align: middle; }
@@ -223,6 +233,19 @@
     </div>
     <div class="lembar">
 @endif
+    {{--
+      Kop surat. Kalau kop banner-nya ada, dia dipakai SENDIRIAN — nama PT,
+      alamat, dan nomor akreditasi udah tercetak di dalam gambarnya, jadi kop
+      teks di bawah nggak ikut dirender. Kalau dua-duanya dicetak, alamat &
+      nomor akreditasi muncul dobel, dan yang versi teks bisa basi duluan waktu
+      lab pindah kantor sementara gambarnya belum diganti.
+
+      Kop teks tetap dipertahanin sebagai jalur cadangan: organisasi yang belum
+      punya berkas kop tetap dapat sertifikat berkepala, bukan lembar telanjang.
+    --}}
+    @if (! empty($kop))
+        <div class="kop-gambar"><img src="{{ $kop }}" alt="Kop surat"></div>
+    @else
     <div class="kop">
         <table>
             <tr>
@@ -240,6 +263,7 @@
             </tr>
         </table>
     </div>
+    @endif
 
     <div class="judul">CALIBRATION CERTIFICATE</div>
 
@@ -340,14 +364,13 @@
     </table>
 
     <table class="ttd">
+        {{--
+          Issuance Date + tanda tangan di KIRI, QR (kalau dicetak) di kanan.
+          Urutan sel inilah yang nentuin posisinya — dompdf nggak dukung
+          `float`/flexbox di konteks tabel, jadi jangan coba dibalik pakai CSS.
+          Sel kosong di tengah yang mendorong keduanya ke pinggir masing-masing.
+        --}}
         <tr>
-            @if (! empty($qr))
-                <td class="qr">
-                    <img src="{{ $qr }}" alt="QR verifikasi">
-                    <div class="ket">Scan untuk verifikasi &amp; unduh</div>
-                </td>
-            @endif
-            <td></td>
             <td style="width: 38%;">
                 <div>Issuance Date: {{ $tgl($footer['issuance_date'] ?? null) }}</div>
 
@@ -391,6 +414,13 @@
                     {{ $isi($footer['jabatan'] ?? null) }}
                 </div>
             </td>
+            <td></td>
+            @if (! empty($qr))
+                <td class="qr">
+                    <img src="{{ $qr }}" alt="QR verifikasi">
+                    <div class="ket">Scan untuk verifikasi &amp; unduh</div>
+                </td>
+            @endif
         </tr>
     </table>
 
