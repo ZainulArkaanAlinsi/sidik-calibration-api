@@ -261,6 +261,18 @@ class FolderFileController extends Controller
             return Storage::disk('local')->download($sertifikat->pdf_path, $sertifikat->namaFile('pdf'));
         }
 
+        // Lembar kerja itu TAUTAN ke record, bukan berkas — `path`-nya memang
+        // null. Kalau dibiarin jatuh ke 404 di bawah, pesannya jadi
+        // "nggak ketemu", padahal barisnya ada dan sah; yang nggak ada cuma
+        // berkas buat diunduh. Bedanya penting: "nggak ketemu" bikin orang
+        // ngira datanya ilang.
+        abort_if(
+            $folderFile->sumber === FolderFile::SUMBER_LEMBAR_KERJA,
+            422,
+            'Ini tautan ke lembar kerja, bukan berkas unduhan. '
+            .'Buka sesi kalibrasinya buat lihat isinya.',
+        );
+
         abort_unless($folderFile->path && Storage::disk('local')->exists($folderFile->path), 404);
 
         return Storage::disk('local')->download($folderFile->path, $folderFile->nama);

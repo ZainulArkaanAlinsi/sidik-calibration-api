@@ -80,9 +80,19 @@ class FolderManagerTest extends TestCase
         $tahun = $akar->children()->firstOrFail();
         $this->assertSame(now()->format('Y'), $tahun->nama);
 
-        $file = $tahun->files()->firstOrFail();
-        $this->assertSame(FolderFile::SUMBER_SERTIFIKAT, $file->sumber);
+        // Disaring per `sumber`, bukan `firstOrFail()`: folder tahun sekarang
+        // juga nampung lembar kerja, dan lembar kerjanya dibikin LEBIH DULU
+        // (waktu dikirim) daripada sertifikatnya (waktu disetujui). Jadi
+        // "berkas pertama" bukan lagi sertifikatnya.
+        $file = $tahun->files()->where('sumber', FolderFile::SUMBER_SERTIFIKAT)->firstOrFail();
         $this->assertStringStartsWith('Sertifikat-CAL-', $file->nama);
+
+        // Lembar kerjanya ikut diarsip di folder yang sama — sertifikat itu
+        // kesimpulan, lembar kerja itu pembacaan mentahnya. Audit nanya
+        // dua-duanya.
+        $lembar = $tahun->files()->where('sumber', FolderFile::SUMBER_LEMBAR_KERJA)->firstOrFail();
+        $this->assertNotNull($lembar->calibration_session_id);
+        $this->assertNull($lembar->path);
     }
 
     public function test_dua_sertifikat_pt_yang_sama_numpuk_di_satu_folder(): void
@@ -91,7 +101,13 @@ class FolderManagerTest extends TestCase
         $this->terbitkanSertifikatUntuk($this->teknisi);
 
         $this->assertSame(1, Folder::whereNull('parent_id')->count());
-        $this->assertSame(2, FolderFile::count());
+
+        // Yang diuji di sini penumpukan SERTIFIKAT, jadi hitungannya disaring.
+        // Total berkasnya 4 (2 sertifikat + 2 lembar kerja) — dihitung mentah,
+        // testnya jadi ngunci "berapa jenis berkas yang diarsip", bukan
+        // "sertifikat PT yang sama numpuk di satu folder".
+        $this->assertSame(2, FolderFile::where('sumber', FolderFile::SUMBER_SERTIFIKAT)->count());
+        $this->assertSame(2, FolderFile::where('sumber', FolderFile::SUMBER_LEMBAR_KERJA)->count());
     }
 
     public function test_daftar_folder_akar_nampilin_jumlah_isinya(): void
@@ -112,11 +128,41 @@ class FolderManagerTest extends TestCase
         $this->terbitkanSertifikatUntuk($this->teknisi);
         $tahun = Folder::whereNotNull('parent_id')->firstOrFail();
 
-        $this->actingAs($this->admin)
+        // Dua berkas sekarang: lembar kerja (dibikin waktu dikirim) lalu
+        // sertifikat (waktu disetujui). Urutannya dari id, jadi lembar kerja
+        // duluan.
+        $data = $this->actingAs($this->admin)
             ->getJson("/api/folders/{$tahun->id}")
             ->assertOk()
-            ->assertJsonCount(1, 'data.file')
-            ->assertJsonPath('data.file.0.sumber', 'sertifikat');
+            ->assertJsonCount(2, 'data.file')
+            ->json('data.file');
+
+        $lembar = collect($data)->firstWhere('sumber', 'lembar_kerja');
+        $sertifikat = collect($data)->firstWhere('sumber', 'sertifikat');
+
+        $this->assertNotNull($lembar);
+        $this->assertNotNull($sertifikat);
+
+        // Lembar kerja NGGAK nawarin unduhan — `path`-nya null, jadi tombol
+        // Unduh yang muncul di layar pasti gagal. Yang ditawarin tautan ke
+        // sesinya.
+        $this->assertNull($lembar['download_url']);
+        $this->assertNotNull($lembar['lembar_kerja']['calibration_session_id']);
+        $this->assertNotNull($sertifikat['download_url']);
+    }
+
+    public function test_unduh_lembar_kerja_dijawab_jelas_bukan_404(): void
+    {
+        $sesi = $this->terbitkanSertifikatUntuk($this->teknisi);
+
+        $lembar = FolderFile::where('calibration_session_id', $sesi->id)->firstOrFail();
+
+        // 404 di sini nyesatin: barisnya ADA dan sah, yang nggak ada cuma
+        // berkas buat diunduh. "Nggak ketemu" bikin orang ngira datanya ilang.
+        $this->actingAs($this->admin)
+            ->getJson("/api/folder-files/{$lembar->id}/download")
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn (string $m) => str_contains($m, 'lembar kerja'));
     }
 
     public function test_admin_bisa_bikin_ganti_nama_dan_hapus_folder_manual(): void
@@ -191,7 +237,12 @@ class FolderManagerTest extends TestCase
         $teknisiLain = User::factory()->create();
         $this->terbitkanSertifikatUntuk($teknisiLain);
 
-        $file = FolderFile::firstOrFail();
+        // Sertifikatnya yang diambil, bukan `firstOrFail()`: yang diuji di sini
+        // IZIN unduhan, jadi berkasnya mesti yang beneran bisa diunduh. Berkas
+        // pertama sekarang lembar kerja, yang `path`-nya null — pakai itu,
+        // testnya jadi ngukur "ada berkasnya apa nggak", bukan "boleh apa
+        // nggak".
+        $file = FolderFile::where('sumber', FolderFile::SUMBER_SERTIFIKAT)->firstOrFail();
 
         $this->actingAs($this->teknisi)
             ->get("/api/folder-files/{$file->id}/download")

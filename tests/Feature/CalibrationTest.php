@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Models\FolderFile;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
@@ -87,6 +88,67 @@ class CalibrationTest extends TestCase
             ->assertCreated();
 
         return CalibrationSession::latest('id')->firstOrFail();
+    }
+
+    public function test_lembar_kerja_yang_dikirim_masuk_folder_pt(): void
+    {
+        $sesi = $this->buatSesi();
+
+        // Sertifikat itu KESIMPULAN. Yang ditanya waktu audit justru pembacaan
+        // mentahnya — siapa yang ngukur, pakai standar apa, suhu berapa. Tanpa
+        // lembar kerjanya ikut diarsip, riwayat kalibrasi satu alat nggak
+        // lengkap di Folder Manager.
+        $berkas = FolderFile::where('calibration_session_id', $sesi->id)->first();
+
+        $this->assertNotNull($berkas, 'Lembar kerja yang dikirim nggak nyampe folder PT.');
+        $this->assertSame(FolderFile::SUMBER_LEMBAR_KERJA, $berkas->sumber);
+        $this->assertNull($berkas->path, 'Yang ditaut mestinya record-nya, bukan berkas hasil render.');
+
+        // Foldernya: PT Maju Jaya / <tahun kalibrasi>
+        $folderTahun = $berkas->folder;
+        $this->assertSame(
+            $sesi->tanggal_kalibrasi->format('Y'),
+            $folderTahun->nama,
+        );
+        $this->assertSame('PT Maju Jaya', $folderTahun->parent->nama);
+    }
+
+    public function test_draft_NGGAK_diarsip_ke_folder_pt(): void
+    {
+        $sesi = $this->buatSesi(ubah: ['status' => CalibrationSession::STATUS_DRAFT]);
+
+        // Draft masih diisi. Folder PT bukan tempat naruh pekerjaan setengah
+        // jalan — kalau draft ikut masuk, folder pelanggan penuh sesi yang
+        // belum tentu jadi.
+        $this->assertNull($sesi->submitted_at);
+        $this->assertDatabaseMissing('folder_files', [
+            'calibration_session_id' => $sesi->id,
+        ]);
+    }
+
+    public function test_kirim_ulang_sesudah_revisi_nggak_bikin_entri_kembar(): void
+    {
+        $sesi = $this->buatSesi();
+        $this->assertSame(1, FolderFile::where('calibration_session_id', $sesi->id)->count());
+
+        // Sesi yang masih `menunggu_approval` NGGAK bisa di-PUT — cuma draft
+        // dan `perlu_revisi` yang boleh. Jadi jalur revisinya mesti lewat
+        // penolakan admin dulu, dan itu justru skenario yang mau diuji.
+        $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/reject", [
+                'catatan_revisi' => 'Suhu awalnya di luar rentang IK, ulangi.',
+            ])
+            ->assertOk();
+
+        // Lembar yang ditolak lalu dikirim ulang manggil penautan lagi. Satu
+        // sesi mesti tetap satu entri — kalau nambah tiap revisi, folder PT
+        // keisi entri yang isinya sama dan nggak ada yang tau mana yang
+        // berlaku.
+        $this->actingAs($this->teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", $this->payload())
+            ->assertOk();
+
+        $this->assertSame(1, FolderFile::where('calibration_session_id', $sesi->id)->count());
     }
 
     public function test_teknisi_bikin_sesi_dapet_bentuk_yang_dijanjiin_ke_mobile(): void
