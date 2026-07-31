@@ -45,6 +45,27 @@ class AngkaKetidakpastianTest extends TestCase
         $this->assertSame($harap, Angka::ketidakpastian($nilai, $desimalAlat));
     }
 
+    /**
+     * Keputusan lab, 31 Juli 2026: U95 dicetak **2 angka penting** — bukan
+     * semua desimal apa adanya, bukan 3 angka penting.
+     *
+     * Alasannya: nyetak 8 desimal itu ngaku-ngaku presisi yang alatnya nggak
+     * punya (pH meter resolusi 0,01 nggak bisa dukung angka ke-8), dan lembar
+     * manual lab sendiri nulis CMC-nya 2 angka penting (0,023 / 0,021 / 0,031).
+     *
+     * Test ini ngunci keputusannya, bukan cuma perilakunya — kalau suatu saat
+     * ada yang naikin jadi 3 angka penting "biar lebih teliti", yang berubah
+     * bukan bug, tapi kesepakatan sama lab.
+     */
+    public function test_dua_angka_penting_bukan_tiga_bukan_semua(): void
+    {
+        // 3 angka penting bakal ngasih "0,0266"; semua desimal "0,02658849".
+        $this->assertSame('0,027', Angka::ketidakpastian(0.02658849, 2));
+
+        // Yang gede tetap 2 angka penting juga — bukan tiba-tiba 3.
+        $this->assertSame('0,22', Angka::ketidakpastian(0.2199435, 2));
+    }
+
     public function test_desimal_alat_nggak_pernah_diturunin(): void
     {
         // Alat 4 desimal, U besar: dua angka penting cuma butuh 2 desimal,
