@@ -103,20 +103,43 @@ class PhMeterCapabilitySeeder extends Seeder
         // labnya sendiri belum bisa jelasin asalnya. Diikutin biar angkanya
         // reproducible lawan lembar manual; JANGAN "dirapikan" jadi pecahan
         // tanpa lab yang mutusin, karena itu ngubah U yang dilaporkan.
+        // UTemperature = akar jumlah kuadrat dua sertifikat, sesuai kepala
+        // lembar `PERHITUNGAN U95%`:
+        //
+        //   termometer  U95 0.72, k=2  ->  u = 0.36
+        //   sensor      U95 0.06, k=2  ->  u = 0.03
+        //   UTemperature = sqrt(0.36^2 + 0.03^2) = 0.36124783736376886
+        //
+        // Sebelumnya di sini kesimpen 0.25179356624028343 = sqrt(0.25^2 +
+        // 0.03^2) — angka termometernya kebaca 0.25, bukan 0.36. Efeknya
+        // `u_c` dan `v_eff` meleset di desimal ke-7 lawan lembar manual, dan
+        // itu KETUTUP lantai CMC selama CMC-nya diisi jawaban jadi (lihat
+        // bawah). Begitu pembacaannya lebih berisik, selisihnya kebuka.
+        $uTemperature = sqrt(0.36 ** 2 + 0.03 ** 2);
+
+        // `ketidakpastian_terbaik` = CMC Laboratory apa adanya (baris "CMC
+        // Laboratory" di lembar), BUKAN hasil `max(U_hitung, CMC)`.
+        //
+        // Dulu yang disimpen di sini jawaban jadinya (0.02343221 / 0.02110895)
+        // karena `hitungDariKemampuan()` mustahil ngitung budget sendiri. Itu
+        // udah nggak berlaku: `hitungDariBudgetPenuh()` sekarang ngitung lima
+        // komponennya, Welch-Satterthwaite, dan `k` dari t-student — lalu
+        // `max()`-nya sama CMC. Nyimpen jawaban jadi sebagai CMC bikin
+        // lantainya kelewat tinggi dan nutupin hasil hitung yang sebenarnya.
         $titik = [
             [
-                'titik' => 4, 'ketidakpastian_terbaik' => 0.02343221,
-                'u_temperature' => 0.25179356624028343, 'ci_suhu' => 0.00077,
+                'titik' => 4, 'ketidakpastian_terbaik' => 0.023,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.00077,
                 'u_perbedaan_suhu' => 0.01, 'ci_perbedaan_suhu' => 1,
             ],
             [
-                'titik' => 7, 'ketidakpastian_terbaik' => 0.02110895,
-                'u_temperature' => 0.25179356624028343, 'ci_suhu' => 0.00352,
+                'titik' => 7, 'ketidakpastian_terbaik' => 0.021,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.00352,
                 'u_perbedaan_suhu' => 0.02, 'ci_perbedaan_suhu' => 0.00304,
             ],
             [
                 'titik' => 10, 'ketidakpastian_terbaik' => 0.031,
-                'u_temperature' => 0.25179356624028343, 'ci_suhu' => 0.01021,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.01021,
                 'u_perbedaan_suhu' => 0.05, 'ci_perbedaan_suhu' => 0.00949,
             ],
         ];
