@@ -76,7 +76,12 @@ class CalibrationController extends Controller
 
     private const DESIMAL_SUHU = 2;        // decimal(8, 2)
 
-    private const DESIMAL_K = 2;           // faktor_cakupan_k: decimal(5, 2)
+    // `k` bukan konstanta 2 lagi: sejak budget penuh jalan dia dihitung dari
+    // t-student pada derajat kebebasan efektif (mis. 1.97065259 buat veff
+    // 223.13). Dibulatkan 2 desimal, yang kesimpen jadi 1.97 — dan siapa pun
+    // yang ngalikan `k × u_c` dari baris itu dapat angka yang beda dari `U`
+    // yang beneran dilaporkan. Kolomnya udah dinaikin ke decimal(12,8).
+    private const DESIMAL_K = 8;           // faktor_cakupan_k: decimal(12, 8)
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -293,7 +298,13 @@ class CalibrationController extends Controller
                 ...$this->atributDariRequest($request),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
                 // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
+                //
+                // `revisi_field` ikut dibuang, dan itu sempat kelewat: catatannya
+                // ilang tapi kolom yang ditandai NGGAK, jadi garis merahnya
+                // nempel terus di lembar yang udah dibetulin — bahkan sesudah
+                // sesinya disetujui.
                 'catatan_revisi' => null,
+                'revisi_field' => null,
             ]);
 
             return $this->isiUlangPengukuran($calibration, $request);
@@ -378,6 +389,7 @@ class CalibrationController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
             'catatan_revisi' => null,
+            'revisi_field' => null,
         ]);
 
         $job = new GenerateCertificate(
