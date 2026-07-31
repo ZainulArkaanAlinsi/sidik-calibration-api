@@ -110,6 +110,19 @@ class LembarKerjaTemplate
     {
         return [
             'kode' => 'administratif',
+            // SEMUA bagian sekarang di halaman 1 — lembar kerjanya satu
+            // gulungan, nggak dipecah dua lagi.
+            //
+            // Dulu dipecah biar persis kayak kertasnya (identitas & standar di
+            // muka, tabel hasil di belakang). Dipakai beneran, itu malah bikin
+            // teknisi bolak-balik: tabel hasil butuh nengok standar yang
+            // dipilih di halaman sebelumnya, dan tiap pindah halaman itu satu
+            // kesempatan lupa. Kertas dipecah karena kertas ADA batas fisiknya;
+            // layar nggak.
+            //
+            // Kunci `halaman` sengaja DIPERTAHANKAN, bukan dihapus: mobile
+            // udah baca field ini, dan kalau nanti ada lembar alat lain yang
+            // beneran perlu dipecah, tinggal diisi 2 tanpa ngubah kontrak.
             'halaman' => 1,
             'judul' => 'Data Administratif (Admin)',
             'field' => [
@@ -247,7 +260,7 @@ class LembarKerjaTemplate
                 ],
                 [
                     'kode' => 'hasil',
-                    'halaman' => 2,
+                    'halaman' => 1,
                     'judul' => 'CALIBRATION RESULT',
                     // Env. Condition ADA DI SINI, bukan di CALIBRATION DATA.
                     // Di kertas dia baris pertama blok CALIBRATION RESULT —
@@ -266,7 +279,7 @@ class LembarKerjaTemplate
                 ],
                 [
                     'kode' => 'penutup',
-                    'halaman' => 2,
+                    'halaman' => 1,
                     'judul' => 'Catatan & Tanda Tangan',
                     'field' => [
                         $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
