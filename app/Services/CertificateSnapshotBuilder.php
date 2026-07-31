@@ -247,16 +247,27 @@ class CertificateSnapshotBuilder
         //
         // Dicocokkan lewat NAMA ALAT, bukan id: master metode ngelistnya per
         // jenis pengukuran, dan nama alat di sesi ini yang mewakilinya.
-        $jenis = $sesi->equipment?->nama_alat;
+        $namaAlat = mb_strtolower(trim((string) $sesi->equipment?->nama_alat));
 
-        if (filled($jenis)) {
+        if ($namaAlat !== '') {
+            // Dicocokkan lewat "nama alat MENGANDUNG jenis pengukuran", bukan
+            // sama persis: master ngelist jenisnya ("pH Meter") sementara alat
+            // di lapangan namanya lebih panjang ("pH Meter Bench"). Cocok
+            // persis bikin cadangan ini nggak pernah kena.
+            //
+            // Yang dipilih kecocokan TERPANJANG, supaya "Thermometer Glass"
+            // nggak kalah sama jenis lain yang kebetulan jadi bagian namanya.
             $metode = CalibrationMethod::query()
                 ->where('organization_id', $sesi->organization_id)
                 ->where('aktif', true)
-                ->whereRaw('LOWER(nama) = ?', [mb_strtolower(trim($jenis))])
-                // Revisi tertinggi = IK terbaru. `revisi` disimpen string
-                // (dokumen mutu nomorin bebas), jadi diurut sebagai angka.
-                ->orderByRaw('CAST(revisi AS UNSIGNED) DESC')
+                ->get()
+                ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
+                    && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
+                // Urutannya: revisi dulu, PANJANG NAMA belakangan. `sortBy`
+                // Laravel stabil, jadi yang dipanggil terakhir jadi kunci
+                // utama — panjang nama menang, revisi jadi pemecah seri.
+                ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
+                ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
                 ->first();
 
             if ($metode !== null) {
