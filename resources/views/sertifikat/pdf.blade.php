@@ -29,7 +29,7 @@
     <title>Sertifikat {{ $header['certificate_number'] ?? $sertifikat->nomor }}</title>
     <style>
         * { font-family: DejaVu Sans, sans-serif; }
-        body { font-size: 10.5px; color: #1a1a1a; margin: 0; }
+        body { font-size: 10.5px; color: #1a1a1a; margin: 0; line-height: 1.45; }
 
         /*
           Kop surat banner. `width: 100%` + `height: auto` biar rasionya kejaga
@@ -49,10 +49,10 @@
         .kop h1 { font-size: 16px; margin: 0 0 2px; }
         .kop .akr { font-size: 9.5px; color: #555; }
 
-        .judul { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 12px; }
+        .judul { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin: 6px 0 18px; }
 
-        table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-        table.info td { padding: 2.5px 6px; vertical-align: top; }
+        table.info { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table.info td { padding: 5px 6px; vertical-align: top; }
         /*
           Label ditebelin & digelapin: di kertas cetak, label abu tipis bikin
           mata harus balik-balik nyari mana nama kolom mana isinya. Yang dibaca
@@ -68,20 +68,20 @@
            yang nempel di mata barisnya, bukan cuma judul kolomnya. */
         table.info td.val.alat { font-weight: bold; }
 
-        .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 4px; letter-spacing: .5px; }
+        .judul-sub { font-size: 11px; font-weight: bold; margin: 18px 0 7px; letter-spacing: .5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 10px; }
-        table.data th, table.data td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
+        table.data th, table.data td { border: 1px solid #999; padding: 7px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
 
-        .catatan { font-size: 9px; font-style: italic; color: #444; margin-top: 6px; }
-        .catatan div { margin-bottom: 2px; }
+        .catatan { font-size: 9px; font-style: italic; color: #444; margin-top: 10px; line-height: 1.6; }
+        .catatan div { margin-bottom: 4px; }
 
         .putusan { text-align: center; font-size: 13px; font-weight: bold; padding: 6px; margin: 10px 0; border: 2px solid; }
         .pass { color: #146c2e; border-color: #146c2e; }
         .fail { color: #a01919; border-color: #a01919; }
 
-        table.ttd { width: 100%; border-collapse: collapse; margin-top: 22px; }
+        table.ttd { width: 100%; border-collapse: collapse; margin-top: 30px; }
         table.ttd td { vertical-align: top; font-size: 10px; }
         table.ttd td.qr { width: 110px; text-align: center; }
         table.ttd td.qr img { width: 92px; height: 92px; }
@@ -103,7 +103,7 @@
         .ttd .ruang-ttd { height: 44px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
-        .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 18px; border-top: 1px solid #ccc; padding-top: 5px; }
+        .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 24px; border-top: 1px solid #ccc; padding-top: 8px; }
 
         @if ($web ?? false)
         /*
