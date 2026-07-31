@@ -319,7 +319,11 @@
                     <td>{{ $angka($baris['standard_value'] ?? null) }}</td>
                     <td>{{ $angka($baris['unit_under_test'] ?? null) }}</td>
                     <td>{{ $angka($baris['correction'] ?? null) }}</td>
-                    <td>{{ $angka($baris['u95'] ?? null) }}</td>
+                    {{-- U95 pakai formatter sendiri: dia dijamin kebaca 2
+                         angka penting, nggak dipaksa ikut desimal alat. Ikut
+                         desimal alat, `0,0234` kecetak `0,02` dan kehilangan
+                         setengah nilainya. --}}
+                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $desimal) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="4">—</td></tr>
