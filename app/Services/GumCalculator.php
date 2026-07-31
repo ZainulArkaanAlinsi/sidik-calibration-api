@@ -367,8 +367,29 @@ class GumCalculator
 
         $veff = $penyebutWs > 0.0 ? ($jumlahKuadrat ** 2) / $penyebutWs : null;
 
+        // Derajat kebebasan DIPOTONG ke bawah sebelum dicari t-nya.
+        //
+        // GUM G.4.1: kalau v_eff bukan bilangan bulat, ambil bilangan bulat
+        // TERDEKAT KE BAWAH. Motong ke bawah = derajat kebebasan lebih kecil =
+        // `k` lebih besar = U lebih besar. Itu arah yang aman: ketidakpastian
+        // yang dilaporkan nggak boleh lebih kecil dari yang bisa
+        // dipertanggungjawabkan.
+        //
+        // Bedanya nyata, bukan di desimal ke-10. Waktu Type A dominan,
+        // v_eff-nya kecil dan pemotongannya kerasa:
+        //
+        //   v_eff 4.92 -> tepat  t=2.5830 -> U=0.1266  (kecetak "0,13")
+        //   v_eff 4.92 -> potong t=2.7764 -> U=0.1361  (kecetak "0,14")
+        //
+        // Dicek lawan lembar manual lab: KEEMPAT nilai k di situ (1.96856,
+        // 1.97066, 1.97076, 2.77645) cocok persis sama versi DIPOTONG, dan
+        // nggak ada satu pun yang cocok sama versi tepat. Jadi ini bukan
+        // "ngikutin Excel" — lembar labnya sendiri yang ngikutin GUM.
+        //
+        // Minimal 1: v_eff di bawah 1 nggak punya arti fisik, dan t(0.975, 0)
+        // itu tak hingga.
         $k = $veff !== null
-            ? (new StudentTDistribution)->quantile(0.975, $veff)
+            ? (new StudentTDistribution)->quantile(0.975, max(1.0, floor($veff)))
             : self::FAKTOR_CAKUPAN;
 
         return [
