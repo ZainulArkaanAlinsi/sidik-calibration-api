@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             OrganizationSeeder::class,
+            MetodeKalibrasiSeeder::class,
             CalibrationCapabilitySeeder::class,
             PhMeterCapabilitySeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori

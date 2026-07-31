@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationMethod;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
@@ -238,6 +239,34 @@ class CertificateSnapshotBuilder
             return $sesi->calibrationMethod->kodeLengkap();
         }
 
+        // Admin nggak selalu milih metode sebelum approve. Kalau nggak dipilih,
+        // yang dipakai IK TERBARU buat jenis pengukurannya — itu persis tabel
+        // "Jenis Pengukuran → Metode Kalibrasi (Latest IK)" di lembar master,
+        // dan `MetodeKalibrasiSeeder` nyimpen jenis pengukurannya di kolom
+        // `nama` (mis. "pH Meter").
+        //
+        // Dicocokkan lewat NAMA ALAT, bukan id: master metode ngelistnya per
+        // jenis pengukuran, dan nama alat di sesi ini yang mewakilinya.
+        $jenis = $sesi->equipment?->nama_alat;
+
+        if (filled($jenis)) {
+            $metode = CalibrationMethod::query()
+                ->where('organization_id', $sesi->organization_id)
+                ->where('aktif', true)
+                ->whereRaw('LOWER(nama) = ?', [mb_strtolower(trim($jenis))])
+                // Revisi tertinggi = IK terbaru. `revisi` disimpen string
+                // (dokumen mutu nomorin bebas), jadi diurut sebagai angka.
+                ->orderByRaw('CAST(revisi AS UNSIGNED) DESC')
+                ->first();
+
+            if ($metode !== null) {
+                return $metode->kodeLengkap();
+            }
+        }
+
+        // Terakhir: kode yang kesimpen di baris perhitungan. Ini nggak bawa
+        // revisi, jadi sengaja jadi cadangan paling akhir — sertifikat yang
+        // nyebut IK tanpa revisi nggak bisa dicocokin ke dokumen mutu mana.
         return $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->first(fn ($titik): bool => filled($titik->metode))?->metode;
