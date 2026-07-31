@@ -140,6 +140,56 @@ Dua-duanya alat nyata milik pelanggan berbeda — jangan disamain.
 
 ---
 
+## 5. 🔴 Buffer pH 4 kadaluarsa — kiriman lembar pH bakal ditolak 422
+
+Mulai 31 Juli 2026, `pH Buffer Solution 4` (`HC32513535`) lewat masa berlaku
+sertifikatnya. Efeknya ke layar teknisi:
+
+```
+POST /calibrations  ->  422
+{
+  "message": "Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.",
+  "errors": { "measurements.0.standard_id": ["Sertifikat standar acuan titik ini udah kadaluarsa, ..."] }
+}
+```
+
+Karena kalibrasi pH baku 3 titik (4/7/10), **seluruh alur pH berhenti** sampai
+buffernya diganti. Dua buffer lain masih berlaku sampai 2027.
+
+**Yang perlu dilakukan mobile: tampilkan pesannya apa adanya**, dan jangan
+bikin kelihatan seperti salah input teknisi. Ini masalah data master — teknisinya
+nggak bisa ngapa-ngapain selain lapor ke admin. Kalau layarnya cuma nulis
+"Gagal menyimpan", teknisi bakal ngulang-ngulang kiriman yang sama.
+
+Layar pilih standar juga udah punya bahannya buat nyegah lebih awal:
+`GET /standards` ngirim `masih_berlaku`, `status_kalibrasi`, dan
+`hari_menuju_kadaluarsa` per standar. Standar kadaluarsa **tetap dikirim** (biar
+teknisi nggak ngira datanya hilang), jadi penandaannya di sisi layar.
+
+## 6. ❌ Order Kalibrasi & penugasan teknisi: BATAL, bukan "nanti"
+
+Branch tempat dua fitur itu dibangun **ditutup 31 Juli** dan nggak akan di-merge.
+
+Dokumen lama (`BACA-DULU-BACKEND.md` §3) nulis entitas `/orders` sebagai "BELUM
+ADA — jangan dibangun frontend-nya dulu". Kalimat itu sekarang **permanen**:
+
+| Fitur | Status |
+|---|---|
+| Entitas `/orders` (Order Kalibrasi) | ❌ batal |
+| Penugasan teknisi per alat | ❌ batal |
+| Antrean "Tugas Saya" | ❌ batal |
+
+**Yang perlu dilakukan:** buang ketiganya dari rencana layar, jangan disimpan
+sebagai "menunggu backend". Kalau ada rancangan atau navigasi yang udah nyiapin
+tempat buat mereka, itu bisa dibersihin.
+
+Yang tetap ada dan nggak berubah: `nomor_order` & `tanggal_terima` udah jadi
+field di sesi kalibrasi (diisi admin lewat `PATCH /calibrations/{id}/admin`).
+Jadi "nomor order" sebagai informasi tetap kepakai — yang batal itu Order sebagai
+**entitas tersendiri** dengan layar dan alurnya sendiri.
+
+---
+
 ## Ringkasan buat yang buru-buru
 
 | # | Hal | Perlu kerjaan mobile? |
@@ -148,6 +198,8 @@ Dua-duanya alat nyata milik pelanggan berbeda — jangan disamain.
 | 2 | Tata letak sertifikat (kop, TTD kiri, thermohygro keluar) | ⚠️ cuma kalau ada pratinjau sertifikat di mobile |
 | 3 | `desimal` dikirim backend (`data.desimal`) | ✅ **ya** — pakai buat membulatkan, jangan nurunin dari `resolusi` |
 | 4 | Alat & pelanggan baru di data demo | ℹ️ info doang |
+| 5 | Buffer pH 4 kadaluarsa → kiriman pH ditolak 422 | ✅ **ya** — tampilkan pesannya apa adanya, jangan kayak salah input |
+| 6 | Order Kalibrasi & penugasan teknisi **batal** | ✅ **ya** — buang dari rencana layar, bukan ditunda |
 
 Nomor 1 yang paling penting: kalau layar approval cuma nyaring `error`, dua peringatan
 itu nggak akan pernah kelihatan dan seluruh gunanya hilang.

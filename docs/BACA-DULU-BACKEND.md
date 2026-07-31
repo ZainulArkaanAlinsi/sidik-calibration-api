@@ -48,6 +48,45 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
+
+Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.
+
+Isinya sudah nggak sepadan sama ongkosnya: 30 commit, 105 file, dan **90 file
+konflik** lawan `main` — 11 di antaranya file inti yang paling banyak berubah
+minggu ini. Sebagian besar isinya juga udah ada di `main` lewat jalan lain:
+
+| Isi branch | Status di `main` |
+|---|---|
+| Budget ketidakpastian penuh + student's t | ✅ udah diangkat (`99f5f57`) |
+| Arsip / file manager | ✅ ada, ditulis ulang dengan bentuk beda |
+| Matriks peran & `/me/permissions` | ✅ ada |
+| Koreksi suhu buffer, kondisi lingkungan | ✅ ada |
+| **Order Kalibrasi + penugasan teknisi** | ❌ **nggak ada, dan nggak jadi dibangun** |
+
+### ⚠️ Yang ikut ditutup: entitas Order
+
+Baris terakhir itu yang perlu disadari. Branch ini punya fitur **Order Kalibrasi**
+yang jalan (`Order`, `OrderItem`, `OrderController`, resource, factory) plus
+**penugasan teknisi per alat + antrean "Tugas Saya"**. Di `main` nol rute — dan
+sekarang statusnya bukan "belum dibangun", tapi **nggak jadi dibangun**.
+
+§3 di bawah masih nulis `/orders` sebagai "BELUM ADA, jangan dibangun frontend-nya
+dulu". Kalimat itu sekarang perlu dibaca sebagai **permanen**, bukan "nanti".
+
+### Kodenya nggak hilang
+
+Diikat tag sebelum ditutup, dan tag-nya udah di remote:
+
+```bash
+git checkout -b <nama-baru> arsip/ph-lengkap-dan-order
+```
+
+`HANDOFF-BACKEND.md` asli juga cuma ada di situ — kalau ada yang nyari dokumen
+itu, di tag ini tempatnya, bukan di `main`.
+
+---
+
 ## 🔴 31 Juli 2026 — buffer pH 4 KADALUARSA, alur pH 3 titik berhenti
 
 Buat @raihannazhiif. Ini bukan bug, dan **jangan dicari di kode** — datanya yang
