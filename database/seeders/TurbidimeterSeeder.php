@@ -31,35 +31,28 @@ use Illuminate\Support\Str;
 class TurbidimeterSeeder extends Seeder
 {
     /**
-     * Lima larutan standar turbidity resmi (lembar `SIDIK-FM-CAL-0530_Rev.2`).
+     * Tiga larutan standar turbidity ASLI yang dimiliki lab (sheet DATABASE
+     * workbook S13/S14/S15): Supelco/Merck, U95 sertifikat 0,04 / 3 / 21 NTU,
+     * k=2, tertelusur Merck KGaA. Bukan placeholder.
      *
-     * ⚠️ `ketidakpastian` (U95 sertifikat larutan) masih PLACEHOLDER — belum ada
-     * angka sertifikat asli buat 0,04/15/750/2000 NTU. WAJIB diganti sebelum
-     * sertifikat terbit. Engine-nya udah bener; ini cuma DATA sampel biar alur
-     * jalan end-to-end.
-     *
-     * @var list<array{nama: string, ketidakpastian: float}>
+     * @var list<array{nama: string, serial: string, ketidakpastian: float}>
      */
     private const STANDAR = [
-        ['nama' => 'Turbidity Std. Solutions 0.04 NTU', 'ketidakpastian' => 0.01],
-        ['nama' => 'Turbidity Std. Solutions 15 NTU', 'ketidakpastian' => 0.3],
-        ['nama' => 'Turbidity Std. Solutions 100 NTU', 'ketidakpastian' => 3.0],
-        ['nama' => 'Turbidity Std. Solutions 750 NTU', 'ketidakpastian' => 10.0],
-        ['nama' => 'Turbidity Std. Solutions 2000 NTU', 'ketidakpastian' => 21.0],
+        ['nama' => 'Turbidity Standard 1 NTU', 'serial' => 'LRAD7304', 'ketidakpastian' => 0.04],
+        ['nama' => 'Turbidity Standard 100 NTU', 'serial' => 'LRAD7305', 'ketidakpastian' => 3.0],
+        ['nama' => 'Turbidity Standard 1000 NTU', 'serial' => 'LRAD7089', 'ketidakpastian' => 21.0],
     ];
 
     /**
-     * Pembacaan After Adjustment per titik — data CONTOH (bukan job asli), buat
-     * ngisi 5 titik resmi biar layar admin & sertifikat ada isinya.
+     * Pembacaan After Adjustment per titik (INPUT DATA G/I/K 46-50) — data job
+     * trial 0189-CAL-624. STDEV keluar 0,00894 / 0,04472 / 0,54772.
      *
      * @var list<array{titik: float, standar: int, pembacaan: list<float>}>
      */
     private const TITIK = [
-        ['titik' => 0.04, 'standar' => 0, 'pembacaan' => [0.04, 0.04, 0.05, 0.04, 0.04]],
-        ['titik' => 15.0, 'standar' => 1, 'pembacaan' => [15.0, 15.0, 15.1, 15.0, 15.0]],
-        ['titik' => 100.0, 'standar' => 2, 'pembacaan' => [100, 100, 100, 100, 100.1]],
-        ['titik' => 750.0, 'standar' => 3, 'pembacaan' => [750, 750, 751, 750, 750]],
-        ['titik' => 2000.0, 'standar' => 4, 'pembacaan' => [2000, 2000, 2001, 2001, 2000]],
+        ['titik' => 1.0, 'standar' => 0, 'pembacaan' => [1, 1, 1, 1, 1.02]],
+        ['titik' => 100.0, 'standar' => 1, 'pembacaan' => [100, 100, 100, 100, 100.1]],
+        ['titik' => 1000.0, 'standar' => 2, 'pembacaan' => [1000, 1000, 1001, 1001, 1001]],
     ];
 
     public function run(): void
@@ -75,10 +68,14 @@ class TurbidimeterSeeder extends Seeder
                 ['organization_id' => 1, 'nama' => $s['nama']],
                 [
                     'organization_id' => 1,
-                    'serial_number' => 'TURB-STD-'.($i + 1),
-                    'no_sertifikat' => 'TURB-STD-'.($i + 1),
-                    'tertelusur_ke' => 'HACH / SNI ISO 7027',
-                    'berlaku_sampai' => now()->addYears(2),
+                    'merk' => 'Supelco/Merck',
+                    'serial_number' => $s['serial'],
+                    'no_sertifikat' => $s['serial'],
+                    'tertelusur_ke' => 'Merck KGaA',
+                    // Sertifikat asli due 2025 (workbook), tapi dipanjangin biar
+                    // sesi demo nggak keblok "standar kadaluarsa". Angka U95-nya
+                    // yang asli.
+                    'berlaku_sampai' => now()->addYear(),
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => 'NTU',
                     'faktor_cakupan' => 2,
@@ -111,11 +108,11 @@ class TurbidimeterSeeder extends Seeder
                 // titik diambil dari TurbidimeterProfile::TITIK (0.01/0.1/1).
                 'resolusi' => 0.01,
                 // Toleransi skalar. CATATAN: turbidimeter aslinya toleransi
-                // persentase (±2% pembacaan), jadi satu angka ini nggak pas buat
-                // 0,04..2000 NTU sekaligus — dipilih 50 supaya guarded-acceptance
-                // titik 2000 (|error| + CMC placeholder 40) tetap PASS buat demo.
-                // Toleransi per-titik = follow-up (lihat SPEC-turbidimeter-profile.md).
-                'toleransi' => 50,
+                // persentase (±2% pembacaan) - satu angka ini nggak pas buat
+                // 1..1000 NTU sekaligus; dipilih 24 supaya guarded-acceptance
+                // titik 1000 (|error| 0,6 + U 22) tetap PASS buat demo. Toleransi
+                // per-titik = follow-up (lihat SPEC-turbidimeter-profile.md).
+                'toleransi' => 24,
                 'lokasi' => 'Lab PT. Sidik',
                 'status' => Equipment::STATUS_AKTIF,
             ],

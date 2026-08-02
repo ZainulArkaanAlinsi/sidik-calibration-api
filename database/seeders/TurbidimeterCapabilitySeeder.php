@@ -49,19 +49,15 @@ class TurbidimeterCapabilitySeeder extends Seeder
 
         $uTemperature = sqrt(0.36 ** 2 + 0.03 ** 2);
 
-        // ⚠️ CMC (`ketidakpastian_terbaik`) di sini masih PLACEHOLDER — 5 titik
-        // resmi (0,04/15/100/750/2000 NTU) belum ada angka lampiran akreditasi
-        // LK-285-IDN-nya. Angka trial cuma buat 1/100/1000 (0,041/3,1/22).
-        // WAJIB diganti angka asli sebelum sertifikat turbidimeter terbit ke
-        // pelanggan — kolomnya `NOT NULL` jadi nggak bisa dikosongin, tapi ini
-        // BUKAN angka terakreditasi. Rumusnya (engine) udah bener & teruji;
-        // yang kurang cuma DATA lampirannya.
+        // CMC (`ketidakpastian_terbaik`) = CMC Laboratory ASLI dari sheet
+        // DATABASE workbook (T5/T6/T7 = 0,041 / 3,1 / 22). Bukan placeholder —
+        // ini angka lampiran akreditasi yang beneran dipakai lab, sama yang
+        // kecetak di sertifikat trial 0189-CAL-624. Di ketiga titik U hitung <
+        // CMC, jadi yang dilaporkan CMC-nya (sel AB21/AB35/AB49 U95%).
         $titik = [
-            ['titik' => 0.04, 'ketidakpastian_terbaik' => 0.02],
-            ['titik' => 15, 'ketidakpastian_terbaik' => 0.5],
+            ['titik' => 1, 'ketidakpastian_terbaik' => 0.041],
             ['titik' => 100, 'ketidakpastian_terbaik' => 3.1],
-            ['titik' => 750, 'ketidakpastian_terbaik' => 15],
-            ['titik' => 2000, 'ketidakpastian_terbaik' => 40],
+            ['titik' => 1000, 'ketidakpastian_terbaik' => 22],
         ];
 
         foreach ($titik as $t) {
@@ -79,9 +75,8 @@ class TurbidimeterCapabilitySeeder extends Seeder
                     'satuan_ketidakpastian' => 'NTU',
                     'faktor_cakupan' => 2,
                     'metode' => 'SIDIK-IK-CAL-0523',
-                    'keterangan' => 'PLACEHOLDER CMC — ganti angka lampiran akreditasi LK-285-IDN',
                     'u_temperature' => $uTemperature,
-                    // Sengaja null — lihat docblock kelas.
+                    // Sengaja null — lihat docblock kelas (profil ngitung ci sendiri).
                     'ci_suhu' => null,
                     'u_perbedaan_suhu' => null,
                     'ci_perbedaan_suhu' => null,
