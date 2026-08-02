@@ -101,6 +101,8 @@ class LembarKerjaTest extends TestCase
         $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'][0];
         $this->assertSame([2, 1, 0], array_column($tabel['baris'], 'desimal'));
         $this->assertEqualsWithDelta([0.01, 0.1, 1.0], array_column($tabel['baris'], 'resolusi'), 1e-9);
+        // Label titik: 1000 harus utuh "1000", bukan kestrip jadi "1".
+        $this->assertSame(['1', '100', '1000'], array_column($tabel['baris'], 'label'));
     }
 
     public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void

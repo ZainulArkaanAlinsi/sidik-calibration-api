@@ -212,6 +212,17 @@ class TurbidimeterProfile extends CalibrationProfile
     }
 
     /**
+     * Label titik buat tampilan: nol belakang dibuang HANYA di bagian desimal.
+     * "1.00"→"1", "100.0"→"100", "1000"→"1000" (bukan "1").
+     */
+    private function labelTitik(float $nilai, int $desimal): string
+    {
+        $label = number_format($nilai, $desimal, '.', '');
+
+        return str_contains($label, '.') ? rtrim(rtrim($label, '0'), '.') : $label;
+    }
+
+    /**
      * Baris [TITIK] yang nilainya paling dekat ke titik ukur.
      *
      * @return array{nilai: float, resolusi: float, desimal: int}
@@ -365,9 +376,10 @@ class TurbidimeterProfile extends CalibrationProfile
             'baris' => array_map(
                 fn (array $t): array => [
                     'titik_ukur' => $t['nilai'],
-                    // Label = nilai apa adanya tanpa nol belakang yang nggak perlu:
-                    // 0,04 → "0.04", 15 → "15", 2000 → "2000".
-                    'label' => rtrim(rtrim(number_format($t['nilai'], $t['desimal'], '.', ''), '0'), '.'),
+                    // Label = nilai apa adanya. Nol belakang dibuang HANYA di
+                    // bagian desimal ("1.00"→"1"), bilangan bulat utuh ("1000"
+                    // tetap "1000" — jangan sampai kestrip jadi "1").
+                    'label' => $this->labelTitik($t['nilai'], $t['desimal']),
                     // Resolusi & desimal per titik — dipakai layar buat mad angka
                     // ke jumlah desimal yang bener tanpa buang nol belakang.
                     'resolusi' => $t['resolusi'],

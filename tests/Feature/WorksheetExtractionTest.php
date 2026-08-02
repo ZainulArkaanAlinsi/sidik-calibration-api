@@ -84,6 +84,27 @@ class WorksheetExtractionTest extends TestCase
         ], $payload));
     }
 
+    public function test_petunjuk_satuan_dan_nominal_kekirim_ke_model(): void
+    {
+        $this->fakeSukses();
+
+        // Turbidimeter: satuan NTU + nominal 1/100/1000 + desimal 2/1/0. Petunjuk
+        // ini yang bikin AI nangkap angka lebih akurat (tau tiap kolom mestinya
+        // dekat nilai apa & berapa desimal).
+        $this->kirim($this->teknisi, [
+            'satuan' => 'NTU',
+            'titik_nominal' => [1, 100, 1000],
+            'desimal' => [2, 1, 0],
+        ])->assertOk();
+
+        Http::assertSent(function ($request): bool {
+            $body = (string) $request->body();
+
+            return str_contains($body, 'standard 1000 NTU')
+                && str_contains($body, 'standard 1 NTU');
+        });
+    }
+
     public function test_ekstrak_sukses_balikin_baris_dan_catat_log(): void
     {
         $this->fakeSukses();

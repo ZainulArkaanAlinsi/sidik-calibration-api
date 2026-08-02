@@ -31,6 +31,14 @@ class WorksheetExtractionController extends Controller
             'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'jumlah_titik' => ['sometimes', 'nullable', 'integer', 'between:1,20'],
             'jumlah_pengulangan' => ['sometimes', 'nullable', 'integer', 'between:1,50'],
+            // Petunjuk buat AI biar nangkap angka lebih akurat: satuan pembacaan,
+            // nilai nominal tiap kolom (kiri→kanan), & jumlah desimal tipikalnya.
+            // Mobile ngambil ini dari bentuk lembar kerja (larutan_standar/satuan).
+            'satuan' => ['sometimes', 'nullable', 'string', 'max:16'],
+            'titik_nominal' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'titik_nominal.*' => ['numeric'],
+            'desimal' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'desimal.*' => ['integer', 'between:0,8'],
             // Opsional: sesi baru belum punya id. Kalau dikirim → batasin akses & tautin log.
             'calibration_session_id' => ['sometimes', 'nullable', 'integer'],
         ], [
@@ -50,6 +58,13 @@ class WorksheetExtractionController extends Controller
                 (string) $file->getMimeType(),
                 $data['jumlah_titik'] ?? null,
                 $data['jumlah_pengulangan'] ?? null,
+                $data['satuan'] ?? null,
+                isset($data['titik_nominal'])
+                    ? array_map('floatval', array_values($data['titik_nominal']))
+                    : null,
+                isset($data['desimal'])
+                    ? array_map('intval', array_values($data['desimal']))
+                    : null,
             );
         } catch (RuntimeException $e) {
             // Salah setup server (API key kosong) — bukan salah teknisi.
