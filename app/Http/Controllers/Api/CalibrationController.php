@@ -16,11 +16,11 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
-use App\Services\LembarKerjaTemplate;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
 use Carbon\Carbon;
@@ -121,11 +121,19 @@ class CalibrationController extends Controller
      *
      * Bentuknya beda per role: teknisi dapat PERSIS kolom di lembar kerja,
      * admin dapat itu plus kolom administratif (spesifikasi poin 1 & 12A).
+     *
+     * Bentuknya juga beda per JENIS ALAT: `?instrumen=Turbidimeter` (atau
+     * `?profil=turbidimeter`) milih profilnya. Default pH — mobile lama yang
+     * belum ngirim param tetap dapat lembar pH persis kayak sebelumnya.
      */
-    public function lembarKerja(Request $request, LembarKerjaTemplate $template): JsonResponse
+    public function lembarKerja(Request $request, CalibrationProfileRegistry $registry): JsonResponse
     {
+        $kode = (string) $request->string('profil', '');
+        $profil = ($kode !== '' ? $registry->untukKode($kode) : null)
+            ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
+
         return response()->json([
-            'data' => $template->phMeter(untukAdmin: $request->user()->isAdmin()),
+            'data' => $profil->bentukLembarKerja(untukAdmin: $request->user()->isAdmin()),
         ]);
     }
 

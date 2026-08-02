@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\CalibrationSession;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
+use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use Illuminate\Support\Carbon;
 
 /**
@@ -33,9 +35,18 @@ use Illuminate\Support\Carbon;
  */
 class RumusKalibrasi
 {
+    public function __construct(
+        private readonly CalibrationProfileRegistry $registry = new CalibrationProfileRegistry,
+    ) {}
+
     /**
      * Versi rumus yang berlaku buat sesi ini. Dibikin kalau organisasinya belum
      * punya sama sekali.
+     *
+     * Rumus yang dipakai ditentuin PROFIL alatnya (pH pakai `gum-ph`,
+     * Turbidimeter `gum-turbidi`) — sesi turbidimeter distempel versi rumus
+     * turbidimeter, bukan pH. Alat tanpa profil khusus jatuh ke pH (default
+     * registry), jadi sesi lama nggak berubah stempelnya.
      */
     public function versiUntukSesi(CalibrationSession $sesi): ?FormulaVersion
     {
@@ -46,8 +57,23 @@ class RumusKalibrasi
         }
 
         $tanggal = $sesi->tanggal_kalibrasi ?? now();
+        $alat = $sesi->loadMissing('equipment')->equipment;
+        $profil = $alat !== null ? $this->registry->untukAlat($alat) : $this->registry->default();
 
-        return $this->versiBerlaku((int) $organizationId, $tanggal);
+        return $this->versiUntukProfil((int) $organizationId, $profil, $tanggal);
+    }
+
+    /**
+     * Versi yang berlaku buat satu organisasi + profil alat pada satu tanggal.
+     */
+    public function versiUntukProfil(
+        int $organizationId,
+        CalibrationProfile $profil,
+        Carbon|string $tanggal,
+    ): ?FormulaVersion {
+        $formula = $this->formulaUntukProfil($organizationId, $profil);
+
+        return $formula->versiPadaTanggal($tanggal) ?? $formula->versiAktif();
     }
 
     /**
@@ -60,27 +86,23 @@ class RumusKalibrasi
      */
     public function versiBerlaku(int $organizationId, Carbon|string $tanggal): ?FormulaVersion
     {
-        $formula = $this->formulaGumPh($organizationId);
-
-        return $formula->versiPadaTanggal($tanggal) ?? $formula->versiAktif();
+        return $this->versiUntukProfil($organizationId, $this->registry->default(), $tanggal);
     }
 
     /**
-     * Rumus GUM pH milik satu organisasi — dibikin kalau belum ada.
-     *
-     * `firstOrCreate` di dua tingkat, dan itu aman di-retry: kalau dua request
-     * barengan, unique index `(organization_id, kode)` & `(formula_id, nomor_versi)`
-     * yang nahan.
+     * Rumus GUM buat satu profil alat milik satu organisasi — dibikin kalau
+     * belum ada. `firstOrCreate` aman di-retry: unique index
+     * `(organization_id, kode)` & `(formula_id, nomor_versi)` yang nahan.
      */
-    public function formulaGumPh(int $organizationId): Formula
+    public function formulaUntukProfil(int $organizationId, CalibrationProfile $profil): Formula
     {
         $formula = Formula::firstOrCreate(
-            ['organization_id' => $organizationId, 'kode' => Formula::KODE_GUM_PH],
+            ['organization_id' => $organizationId, 'kode' => $profil->kodeFormula()],
             [
-                'nama' => 'Ketidakpastian GUM (jalur pH)',
-                'besaran' => 'ph',
-                'deskripsi' => 'Perhitungan ketidakpastian diperluas U95% sesuai GUM, '
-                    .'dipakai jalur kalibrasi pH. Versi 1 dihitung kode program.',
+                'nama' => 'Ketidakpastian GUM (jalur '.$profil->namaAlatKemampuan().')',
+                'besaran' => $profil->besaran(),
+                'deskripsi' => 'Perhitungan ketidakpastian diperluas U95% sesuai GUM, dipakai jalur '
+                    .'kalibrasi '.$profil->namaAlatKemampuan().'. Versi 1 dihitung kode program.',
             ],
         );
 
@@ -89,6 +111,16 @@ class RumusKalibrasi
         }
 
         return $formula->fresh();
+    }
+
+    /**
+     * Rumus GUM pH — dipertahankan buat kompatibilitas pemanggil lama
+     * (FormulaController, test). Sekarang cuma jalan pintas ke
+     * [formulaUntukProfil] dengan profil default (pH).
+     */
+    public function formulaGumPh(int $organizationId): Formula
+    {
+        return $this->formulaUntukProfil($organizationId, $this->registry->default());
     }
 
     /**
