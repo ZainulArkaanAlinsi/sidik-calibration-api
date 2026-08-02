@@ -1,24 +1,27 @@
 # SPEC — Profil Kalibrasi Turbidimeter (alat ke-2 dari 48)
 
-Serah-terima buat Rehan. Sumber kebenaran FORM: lembar kerja resmi
-**`SIDIK-FM-CAL-0530_Rev.2`** (5 titik: 0,04 / 15 / 100 / 750 / 2000 NTU, metode
-`SIDIK-IK-CAL-0523`). Sumber kebenaran ENGINE/rumus: `Master Olah
-Data_Turbidimeter.xlsm` (pw `spirit285`) — tapi workbook itu cuma 3 titik trial
-(1/100/1000), dipakai buat validasi MATEMATIKA engine.
+Serah-terima buat Rehan. Sumber kebenaran: `Master Olah Data_Turbidimeter.xlsm`
+(pw `spirit285`) — sheet INPUT DATA, PERHITUNGAN, PERHITUNGAN U95%, DATABASE.
+Metode `SIDIK-IK-CAL-0523`, form `SIDIK-FM-CAL-0530_Rev.2` (DATABASE row).
 
-Status: **jalan end-to-end** (worksheet 5 titik → hitung GUM → seeder → sesi
-demo). Doc ini nerangin arsitekturnya biar alat ke-3..48 tinggal ngikut pola.
+Status: **jalan end-to-end dengan ANGKA ASLI** (worksheet → hitung GUM → seeder
+→ sesi demo). 3 titik: **1 / 100 / 1000 NTU**.
 
-## ⚠️ Yang WAJIB diganti sebelum sertifikat turbidimeter terbit ke pelanggan
+## Kenapa 3 titik, bukan 5 (form nyetak 5)
 
-Angka **CMC & U95 sertifikat larutan buat 5 titik resmi (0,04/15/100/750/2000
-NTU) masih PLACEHOLDER** — workbook trial cuma punya buat 1/100/1000. Yang perlu
-dari lampiran akreditasi LK-285-IDN + sertifikat larutan turbidity:
-- `calibration_capabilities.ketidakpastian_terbaik` (CMC) per 5 titik
-  → `TurbidimeterCapabilitySeeder` (sekarang 0,02/0,5/3,1/15/40, ditandai PLACEHOLDER).
-- `standards.ketidakpastian` (U95 sertifikat) tiap larutan
-  → `TurbidimeterSeeder` (ditandai PLACEHOLDER).
-Engine-nya udah bener & teruji; yang kurang cuma DATA-nya.
+Form PDF `SIDIK-FM-CAL-0530_Rev.2` nyetak 5 kolom (0,04/15/100/750/2000 NTU),
+TAPI master data lab (sheet DATABASE workbook) cuma punya **3 standar turbidity
+yang beneran dimiliki**: 1/100/1000 NTU (Supelco/Merck LRAD7304/7305/7089),
+dengan U95 sertifikat **0,04 / 3 / 21** dan CMC **0,041 / 3,1 / 22**. Sertifikat
+trial 0189-CAL-624 juga pakai 3 titik itu. Standar **15 & 750 NTU nggak ada**
+di master data + nggak ada sertifikatnya — jadi angkanya nggak bisa diisi tanpa
+ngarang. Semua angka turbidimeter sekarang **ASLI, bukan placeholder**.
+
+### Kalau lab NAMBAH standar 15 & 750 NTU (biar 5 titik penuh)
+Butuh dari lab: U95 sertifikat tiap larutan baru + CMC-nya (lampiran LK-285-IDN).
+Lalu tambah baris di `TurbidimeterProfile::TITIK` & `STANDARD_TERCETAK`,
+`TurbidimeterCapabilitySeeder`, `TurbidimeterSeeder`. Engine-nya udah generik —
+nggak perlu diubah.
 
 ## Arsitektur "Profil Kalibrasi"
 
@@ -101,6 +104,9 @@ Test: `tests/Unit/TurbidimeterBudgetTest.php` (reproduksi sampai 1e-6/1e-8) &
 1. **Toleransi per-titik.** `equipments.toleransi` skalar; turbidimeter aslinya
    ±% pembacaan. Demo pakai 24 (biar titik 1000 PASS). Perlu toleransi per-titik
    (mungkin di `calibration_capabilities`) buat keputusan PASS/FAIL yang bener.
-2. **Sertifikat PDF turbidimeter** — `TurbidimeterSeeder` belum nerbitin PDF
-   (beda `TirtaGraciaPhMeterSeeder`); cek `sertifikat.pdf.blade.php` muat NTU.
-3. `CertificateSnapshotBuilder` — verifikasi satuan/desimal NTU kebawa ke snapshot.
+2. **5 titik penuh** — kalau lab nambah standar 15 & 750 NTU (lihat bagian atas).
+
+## Udah diverifikasi
+- Sertifikat PDF turbidimeter render 1 halaman + kop full-bleed (dicek lewat
+  `CertificateSnapshotBuilder` → `sertifikat.pdf` blade, satuan NTU kebawa).
+- Sesi demo `2406.32.A`: U95 keluar 0,041 / 3,1 / 22 (cocok workbook), PASS.

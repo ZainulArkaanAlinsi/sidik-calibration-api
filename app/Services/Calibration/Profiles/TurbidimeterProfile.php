@@ -8,28 +8,27 @@ use App\Models\Formula;
 use App\Models\Standard;
 
 /**
- * Profil Turbidimeter (alat ke-2). Bentuk formulirnya ngikut lembar kerja RESMI
- * `SIDIK-FM-CAL-0530_Rev.2` (bukan Excel trial yang cuma 3 titik) — 5 titik:
- * 0,04 / 15 / 100 / 750 / 2000 NTU.
+ * Profil Turbidimeter (alat ke-2). Metode `SIDIK-IK-CAL-0523`, form
+ * `SIDIK-FM-CAL-0530_Rev.2` (DATABASE row).
  *
- * Beda inti dari pH, dan tiap beda HIDUP DI FILE INI doang — nggak ada `if
- * turbidi` yang bocor ke kelas bersama:
+ * TITIK = 3 (1 / 100 / 1000 NTU) — bukan 5. Form PDF-nya nyetak 5 kolom
+ * (0,04/15/100/750/2000), TAPI master data lab (sheet DATABASE workbook) cuma
+ * punya 3 standar turbidity yang beneran dimiliki (Supelco/Merck LRAD7304/
+ * 7305/7089), dengan U95 sertifikat 0,04/3/21 & CMC 0,041/3,1/22. Sertifikat
+ * trial 0189-CAL-624 juga pakai 3 titik itu. Jadi yang punya ANGKA ASLI cuma
+ * 1/100/1000; 15 & 750 NTU belum ada standarnya. Kalau lab nambah standar itu +
+ * sertifikatnya, tinggal tambah baris di sini + seeder.
  *
- *  - Titik standar 0,04 / 15 / 100 / 750 / 2000 NTU (pH: 4 / 7 / 10)
- *  - **Resolusi UUT beda per titik** — di lembar kertas diisi teknisi. Di app,
- *    resolusinya diambil dari data alat (UUT) yang dipilih; [TITIK] cuma bawa
- *    resolusi DEFAULT tipikal per rentang biar tampilan tetap dipad (0,04 → 2
- *    desimal "0,04"; 2000 → "2000"). Default ini kalah sama resolusi alat kalau
- *    ada.
- *  - Nilai standar = NOMINAL apa adanya (turbidity nggak punya kurva suhu kayak
- *    buffer pH), jadi nggak perlu `koefisien_suhu`.
+ * Beda inti dari pH, dan tiap beda HIDUP DI FILE INI doang:
+ *  - Titik 1 / 100 / 1000 NTU (pH: 4 / 7 / 10), resolusi beda per titik
+ *    (0,01 / 0,1 / 1 — INPUT DATA E17/F17/G17).
+ *  - Nilai standar = NOMINAL apa adanya (turbidity nggak punya kurva suhu),
+ *    jadi nggak perlu `koefisien_suhu`.
  *  - Budget ketidakpastian **4 komponen** (pH: 5) — nggak ada "pengaruh
- *    perbedaan suhu". Komponen suhunya rect (÷√3) dengan koefisien sensitivitas
- *    `ci = (UTemperature / 400) · titik`, bukan konstanta per titik kayak pH.
+ *    perbedaan suhu". Komponen suhunya rect (÷√3), ci = (UTemperature/400)·titik.
  *
- * Engine budget-nya udah dicocokin ke sheet `PERHITUNGAN U95%` workbook trial
- * (titik 1000 NTU → uc = 10.508511455997626, sel AB44) di
- * `TurbidimeterBudgetTest` — itu validasi MATEMATIKA-nya, lepas dari titik form.
+ * Engine budget dicocokin ke sheet `PERHITUNGAN U95%` (titik 1000 → uc =
+ * 10.508511455997626, sel AB44) di `TurbidimeterBudgetTest`.
  */
 class TurbidimeterProfile extends CalibrationProfile
 {
@@ -38,38 +37,32 @@ class TurbidimeterProfile extends CalibrationProfile
     public const JUMLAH_PENGULANGAN = 5;
 
     /**
-     * Lima titik standar turbidity yang TERCETAK di lembar kerja resmi
-     * `SIDIK-FM-CAL-0530_Rev.2`. `resolusi`/`desimal` = default tampilan tipikal
-     * per rentang (0,04/15 halus → 2 desimal; 100 → 1; 750/2000 kasar → 0);
-     * dipad biar nol belakang nggak keiris ("0,04", bukan "0"). Resolusi
-     * SEBENARNYA buat budget ketidakpastian diambil dari alat yang dipilih.
+     * Tiga titik standar turbidity yang lab BENERAN punya (DATABASE S13/S14/S15),
+     * dengan resolusi per titik (INPUT DATA E17/F17/G17). `desimal` dikirim ke
+     * mobile biar angkanya dipad tanpa buang nol belakang (999 tetap "999",
+     * 4.60 tetap "4.60").
      *
      * @var list<array{nilai: float, resolusi: float, desimal: int}>
      */
     public const TITIK = [
-        ['nilai' => 0.04, 'resolusi' => 0.01, 'desimal' => 2],
-        ['nilai' => 15.0, 'resolusi' => 0.01, 'desimal' => 2],
+        ['nilai' => 1.0, 'resolusi' => 0.01, 'desimal' => 2],
         ['nilai' => 100.0, 'resolusi' => 0.1, 'desimal' => 1],
-        ['nilai' => 750.0, 'resolusi' => 1.0, 'desimal' => 0],
-        ['nilai' => 2000.0, 'resolusi' => 1.0, 'desimal' => 0],
+        ['nilai' => 1000.0, 'resolusi' => 1.0, 'desimal' => 0],
     ];
 
     public const SATUAN = 'NTU';
 
     /**
-     * Baris tabel STANDARD yang tercetak di formulir resmi (5 larutan turbidity
-     * + RTD Sensor + Victor 14+). Dicocokin ke master `standards` lewat
-     * nama/serial, sama polanya kayak lembar pH. RTD & Victor sama persis kayak
-     * lembar pH — nautin ke standar yang udah keseed.
+     * Baris tabel STANDARD: 3 larutan turbidity yang dimiliki lab + RTD Sensor +
+     * Victor 14+ (RTD & Victor sama kayak lembar pH). Dicocokin ke master
+     * `standards` lewat nama/serial.
      *
      * @var list<array{label: string, cocok: list<string>}>
      */
     public const STANDARD_TERCETAK = [
-        ['label' => 'Turbidity Std. Solutions 0.04 NTU', 'cocok' => ['Turbidity Std. Solutions 0.04 NTU']],
-        ['label' => 'Turbidity Std. Solutions 15 NTU', 'cocok' => ['Turbidity Std. Solutions 15 NTU']],
-        ['label' => 'Turbidity Std. Solutions 100 NTU', 'cocok' => ['Turbidity Std. Solutions 100 NTU']],
-        ['label' => 'Turbidity Std. Solutions 750 NTU', 'cocok' => ['Turbidity Std. Solutions 750 NTU']],
-        ['label' => 'Turbidity Std. Solutions 2000 NTU', 'cocok' => ['Turbidity Std. Solutions 2000 NTU']],
+        ['label' => 'Turbidity Standard 1 NTU', 'cocok' => ['Turbidity Standard 1 NTU']],
+        ['label' => 'Turbidity Standard 100 NTU', 'cocok' => ['Turbidity Standard 100 NTU']],
+        ['label' => 'Turbidity Standard 1000 NTU', 'cocok' => ['Turbidity Standard 1000 NTU']],
         ['label' => 'RTD Sensor/SH1/20', 'cocok' => ['Termometer & Sensor Std.', 'SH1/20', '23P1005']],
         ['label' => 'Victor 14+/992613877', 'cocok' => ['Victor 14+', '992613877']],
     ];
