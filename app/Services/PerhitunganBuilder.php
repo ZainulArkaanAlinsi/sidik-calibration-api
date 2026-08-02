@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
+use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use Illuminate\Support\Collection;
 
 /**
@@ -33,7 +35,10 @@ use Illuminate\Support\Collection;
  */
 class PerhitunganBuilder
 {
-    public function __construct(private readonly KondisiLingkungan $kondisi) {}
+    public function __construct(
+        private readonly KondisiLingkungan $kondisi,
+        private readonly CalibrationProfileRegistry $registry = new CalibrationProfileRegistry,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -44,6 +49,10 @@ class PerhitunganBuilder
             'equipment.customer', 'teknisi', 'standard', 'thermohygro',
             'rawMeasurements', 'uncertaintyCalculations.standard',
         ]);
+
+        $profil = $sesi->equipment !== null
+            ? $this->registry->untukAlat($sesi->equipment)
+            : $this->registry->default();
 
         return [
             'nomor_sesi' => $sesi->nomor_sesi,
@@ -56,8 +65,8 @@ class PerhitunganBuilder
                 'thermohygro_serial' => $sesi->thermohygro?->serial_number,
             ],
             'hasil' => [
-                $this->tabel($sesi, 'sebelum_adjustment', 'Before Adjustment Reading'),
-                $this->tabel($sesi, 'sesudah_adjustment', 'After Adjustment Reading'),
+                $this->tabel($sesi, 'sebelum_adjustment', 'Before Adjustment Reading', $profil),
+                $this->tabel($sesi, 'sesudah_adjustment', 'After Adjustment Reading', $profil),
             ],
         ];
     }
@@ -98,7 +107,7 @@ class PerhitunganBuilder
      *
      * @return array<string, mixed>
      */
-    private function tabel(CalibrationSession $sesi, string $tahap, string $judul): array
+    private function tabel(CalibrationSession $sesi, string $tahap, string $judul, CalibrationProfile $profil): array
     {
         /** @var Collection<int, Collection<int, RawMeasurement>> $perTitik */
         $perTitik = $sesi->rawMeasurements
@@ -109,7 +118,7 @@ class PerhitunganBuilder
         $standarPerTitik = $sesi->uncertaintyCalculations->keyBy('titik_ke');
 
         $titik = $perTitik
-            ->map(function (Collection $pembacaan, int|string $titikKe) use ($sesi, $standarPerTitik): array {
+            ->map(function (Collection $pembacaan, int|string $titikKe) use ($sesi, $standarPerTitik, $profil): array {
                 $nilai = $pembacaan->map(fn (RawMeasurement $m): float => (float) $m->pembacaan)->values();
                 $suhu = $pembacaan
                     ->map(fn (RawMeasurement $m): ?float => $m->suhu !== null ? (float) $m->suhu : null)
@@ -126,12 +135,19 @@ class PerhitunganBuilder
 
                 $nilaiStandar = $this->nilaiStandar($standar, $rataSuhu, $pembacaan->first());
 
+                $titikUkur = (float) $pembacaan->first()->titik_ukur;
+
                 return [
                     'titik_ke' => (int) $titikKe,
                     'standard' => $nilaiStandar,
-                    'standard_nominal' => (float) $pembacaan->first()->titik_ukur,
+                    'standard_nominal' => $titikUkur,
                     'standard_dari_suhu' => $standar?->nilaiPadaSuhu($rataSuhu) !== null,
                     'satuan' => $pembacaan->first()->satuan,
+                    // Resolusi per titik (Turbidimeter). null buat alat resolusi
+                    // seragam — layar jatuh ke resolusi alat. Ini yang bikin
+                    // lembar perhitungan nampilin "4,60" bukan "4,6".
+                    'desimal' => $profil->desimalTitik($titikUkur),
+                    'resolusi' => $profil->resolusiTitik($titikUkur),
                     'pembacaan' => $pembacaan
                         ->map(fn (RawMeasurement $m): array => [
                             'repeat' => (int) $m->pembacaan_ke,

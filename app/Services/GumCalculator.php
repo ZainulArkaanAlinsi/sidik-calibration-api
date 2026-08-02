@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CalibrationCapability;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -56,6 +57,19 @@ class GumCalculator
     private array $kemampuanPerKategori = [];
 
     /**
+     * Registry profil kalibrasi — nyediain DAFTAR komponen budget per jenis
+     * alat. Opsional biar `new GumCalculator` di test lama tetap jalan; kalau
+     * nggak dikasih, dibikin sendiri (konstruktornya cuma daftar profil,
+     * nggak nyentuh DB).
+     */
+    private readonly CalibrationProfileRegistry $registry;
+
+    public function __construct(?CalibrationProfileRegistry $registry = null)
+    {
+        $this->registry = $registry ?? new CalibrationProfileRegistry;
+    }
+
+    /**
      * Hitung satu titik ukur. Balikannya siap di-insert ke `uncertainty_calculations`.
      *
      * @param  list<float>  $pembacaan  hasil pengulangan di titik ini
@@ -105,12 +119,21 @@ class GumCalculator
 
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
+        // Daftar komponen budget-nya diserahin ke PROFIL alat (pH, Turbidimeter,
+        // ...) — tiap alat punya bentuk budget beda, dan itu satu-satunya bagian
+        // per-alat yang tersisa di sini. Aturan agregasi (Uc, Welch–Satterthwaite,
+        // k, lantai CMC) tetap generik di bawah.
+        $profil = $this->registry->untukAlat($equipment);
+        $komponen = $kemampuan !== null
+            ? $profil->komponenBudget($kemampuan, $equipment, $standard, $titikUkur, $typeA, $n)
+            : null;
+
         // Tiga jalur, dari yang paling lengkap ke yang paling menyederhanakan.
         // Yang dipilih ditentuin DATA yang tersedia, bukan jenis alatnya:
-        // kategori yang konstanta budgetnya udah diturunkan dapat budget penuh,
+        // profil yang konstanta budgetnya udah diturunkan dapat budget penuh,
         // yang belum tetap jalan lewat jalur lama tanpa berubah perilaku.
-        if ($kemampuan !== null && $kemampuan->punyaBudgetPenuh()) {
-            $hasil = $this->hitungDariBudgetPenuh($kemampuan, $typeA, $n, $equipment, $standard);
+        if ($komponen !== null && $kemampuan !== null) {
+            $hasil = $this->hitungDariBudget($komponen, $kemampuan, $typeA, $n);
         } elseif ($kemampuan !== null) {
             $hasil = $this->hitungDariKemampuan($kemampuan, $typeA, $n);
         } else {
@@ -207,83 +230,30 @@ class GumCalculator
 
     /**
      * Budget ketidakpastian PENUH gaya lampiran akreditasi (sheet
-     * `PERHITUNGAN U95%` di workbook pH): 5 komponen dirinci, digabung lewat
-     * `agregasiBudget` (Welch-Satterthwaite + k t-student), lalu hasilnya
-     * dibandingin sama CMC — yang DILAPORKAN yang LEBIH BESAR.
+     * `PERHITUNGAN U95%`): komponennya dari PROFIL alat (lihat
+     * `CalibrationProfile::komponenBudget`), digabung lewat `agregasiBudget`
+     * (Welch-Satterthwaite + k t-student), lalu hasilnya dibandingin sama CMC —
+     * yang DILAPORKAN yang LEBIH BESAR.
      *
      * Bedanya dari `hitungDariKemampuan`: yang itu nempel CMC apa adanya (buat
      * kemampuan yang budget-nya nggak dirinci). Yang ini beneran ngitung, jadi
      * sesi dengan suhu/pengulangan beda ngasih U yang beda — persis kayak
      * worksheet Excel-nya, cuma otomatis.
      *
-     * vi (derajat kebebasan) tiap komponen Type B ngikutin angka reliabilitas
-     * yang diasumsiin di workbook: kalibrator & temperature 200, daya baca 1e6,
-     * pengaruh perbedaan suhu 50. Type A pakai n−1.
+     * DAFTAR komponennya milik profil (pH 5 komponen, Turbidimeter 4) — di sini
+     * cuma agregasi & lantai CMC yang generik. Komponen pengulangan ditandai
+     * `distribusi = 't-student'`; itu yang dipakai buat misahin Type A dari
+     * Type B waktu ngitung `type_b`.
      *
+     * @param  list<array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}>  $komponen
      * @return array<string, mixed>
      */
-    private function hitungDariBudgetPenuh(
+    private function hitungDariBudget(
+        array $komponen,
         CalibrationCapability $kemampuan,
         float $typeA,
         int $n,
-        Equipment $equipment,
-        Standard $standard,
     ): array {
-        $sqrt3 = sqrt(3);
-        $kStandar = $standard->faktor_cakupan ?: self::FAKTOR_CAKUPAN;
-
-        $komponen = [
-            [
-                'sumber' => 'ketidakpastian_standar',
-                'keterangan' => sprintf(
-                    'Sertifikat kalibrator %s (U=%s %s, k=%s)',
-                    $standard->nama, $standard->ketidakpastian, $standard->satuan_ketidakpastian ?? '', $kStandar,
-                ),
-                'distribusi' => 'normal',
-                'u' => ($standard->ketidakpastian ?? 0.0) / $kStandar,
-                'ci' => 1.0,
-                'vi' => 200,
-            ],
-            [
-                'sumber' => 'resolusi_alat',
-                'keterangan' => sprintf('Daya baca alat %s %s', $equipment->resolusi, $equipment->satuan ?? ''),
-                'distribusi' => 'persegi',
-                'u' => ((float) $equipment->resolusi / 2.0) / $sqrt3,
-                'ci' => 1.0,
-                'vi' => 1_000_000,
-            ],
-            [
-                'sumber' => 'ketidakpastian_temperature',
-                'keterangan' => sprintf(
-                    'UTemperature %s °C (÷k=2), ci %s',
-                    $kemampuan->u_temperature, $kemampuan->ci_suhu,
-                ),
-                'distribusi' => 'normal',
-                'u' => (float) $kemampuan->u_temperature / 2.0,
-                'ci' => (float) $kemampuan->ci_suhu,
-                'vi' => 200,
-            ],
-            [
-                'sumber' => 'pengaruh_perbedaan_suhu',
-                'keterangan' => sprintf(
-                    'Pengaruh perbedaan suhu U=%s (÷√3), ci %s',
-                    $kemampuan->u_perbedaan_suhu, $kemampuan->ci_perbedaan_suhu,
-                ),
-                'distribusi' => 'persegi',
-                'u' => (float) $kemampuan->u_perbedaan_suhu / $sqrt3,
-                'ci' => (float) $kemampuan->ci_perbedaan_suhu,
-                'vi' => 50,
-            ],
-            [
-                'sumber' => 'pengulangan_pembacaan',
-                'keterangan' => sprintf('Pengulangan %d pembacaan (Type A)', $n),
-                'distribusi' => 't-student',
-                'u' => $typeA,
-                'ci' => 1.0,
-                'vi' => max($n - 1, 1),
-            ],
-        ];
-
         $agg = $this->agregasiBudget(array_map(
             fn (array $k): array => ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']],
             $komponen,
@@ -316,9 +286,15 @@ class GumCalculator
             'nilai' => $cmc,
         ];
 
-        // type_b = RSS komponen Type B doang (4 pertama, tanpa pengulangan).
+        // type_b = RSS komponen Type B doang — semua yang BUKAN pengulangan
+        // (Type A ditandai `distribusi = 't-student'`). Dulu di-slice 4 pertama
+        // waktu budget selalu 5 komponen pH; sekarang jumlah komponen beda per
+        // alat (Turbidimeter 4), jadi disaring by distribusi, bukan by posisi.
         $typeB = $this->akarJumlahKuadrat(
-            array_map(fn (array $k): float => $k['u'] * $k['ci'], array_slice($komponen, 0, 4)),
+            array_map(
+                fn (array $k): float => $k['u'] * $k['ci'],
+                array_filter($komponen, fn (array $k): bool => $k['distribusi'] !== 't-student'),
+            ),
         );
 
         return [
@@ -487,10 +463,14 @@ class GumCalculator
         $kandidat = $this->kemampuanPerKategori[$kategoriId]
             ->where('nama_alat', $equipment->nama_alat_kemampuan);
 
-        $titikBulat = round($titikUkur);
-
-        $cocokTitikTunggal = fn (CalibrationCapability $k): bool => (float) $k->range_max === (float) $titikBulat
-            && abs($titikUkur - $titikBulat) <= self::MAX_DRIFT_TITIK_TUNGGAL;
+        // Dicocokin ke NILAI titik kemampuannya langsung (range_max), bukan ke
+        // titik ukur yang dibulatkan ke integer. Versi lama pakai
+        // `round($titikUkur)` — itu jebol buat titik pecahan di bawah 1: titik
+        // 0,04 NTU dibulatin jadi 0, nggak match kemampuan 0,04, dan CMC-nya
+        // nggak kepasang. Guard driftnya tetap: 3,5 nggak nyangkut ke buffer 4
+        // (selisih 0,5 > 0,1), tapi buffer 10,01 tetap match titik 10 (0,01).
+        $cocokTitikTunggal = fn (CalibrationCapability $k): bool =>
+            abs($titikUkur - (float) $k->range_max) <= self::MAX_DRIFT_TITIK_TUNGGAL;
 
         // Presisi dulu (range_min == range_max, non-null), baru generik
         // (range_min null) — lihat penjelasan di docblock method ini.

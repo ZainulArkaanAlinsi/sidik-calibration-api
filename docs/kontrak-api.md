@@ -409,6 +409,14 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Soal `?mine=true`
 > Teknisi **selalu** cuma dapat sesi miliknya sendiri — nggak peduli query param-nya diisi apa. `mine=false` bukan pintu belakang. Param `mine=true` cuma berfungsi buat **admin & viewer** yang mau nyaring punya sendiri. Ada testnya.
 
+### `GET /api/calibrations/lembar-kerja?profil=...` — bentuk per jenis alat
+
+✅ **Live (Turbidimeter, Agu).** Bentuk lembar kerja beda per jenis alat.
+`?profil=turbidimeter` (atau `?instrumen=Turbidimeter`) balikin lembar NTU
+(titik 1/100/1000, resolusi per-titik di `bagian[].tabel[].baris[].desimal`).
+Tanpa param = pH (default — mobile lama nggak berubah). Detail rumus & arsitektur
+profil: `docs/SPEC-turbidimeter-profile.md`.
+
 ### `status_standar` di respons sesi — banner kepala lembar kerja
 
 ✅ **Live 25 Jul.** Ikut di `GET /api/calibrations` & `GET /api/calibrations/{id}`.

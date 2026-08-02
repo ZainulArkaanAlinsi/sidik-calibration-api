@@ -80,6 +80,35 @@ class LembarKerjaTest extends TestCase
         $this->assertSame(['sebelum_adjustment', 'sesudah_adjustment'], array_column($tabel, 'tahap'));
     }
 
+    public function test_lembar_kerja_turbidimeter_pakai_ntu_lima_titik_resmi(): void
+    {
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=turbidimeter')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'NTU')
+            // Kode dokumen lembar kerja RESMI turbidimeter, bukan pH (0509).
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0530_Rev.2')
+            ->json('data');
+
+        // Lima titik turbidity resmi (SIDIK-FM-CAL-0530_Rev.2), bukan 3 trial.
+        $this->assertEqualsWithDelta([0.04, 15.0, 100.0, 750.0, 2000.0], $data['larutan_standar'], 1e-9);
+        $this->assertStringContainsString('Turbidimeter', $data['judul']);
+
+        // Desimal per titik ikut di baris tabel hasil (buat pad tampilan, mis.
+        // "0.04" nggak keiris jadi "0").
+        $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'][0];
+        $this->assertSame([2, 2, 1, 0, 0], array_column($tabel['baris'], 'desimal'));
+    }
+
+    public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void
+    {
+        // Mobile lama yang belum ngirim ?profil harus tetap dapat pH persis.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'pH');
+    }
+
     public function test_lembar_kerja_setengah_jadi_tetap_bisa_dikirim(): void
     {
         // Skenario lapangan: buffer 7 & 10 habis, jadi cuma titik pertama yang
