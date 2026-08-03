@@ -1,6 +1,6 @@
 {
   "_sumber": "Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/ (diringkas dari Master Olah Data_pH for trial_CSV/, workbook aslinya .xlsm ter-password protect)",
-  "_catatan": "Satu record kalibrasi ASLI end-to-end (bukan dummy). titik_ukur pakai nilai after-adjustment (yang dicetak di sertifikat 012-CAL-524). Toleransi alat (0.2 pH) tidak ada di sumber — itu asumsi kriteria penerimaan, lihat TirtaGraciaPhMeterSeeder.",
+  "_catatan": "Satu record kalibrasi ASLI end-to-end (bukan dummy). titik_ukur pakai nilai after-adjustment (yang dicetak di sertifikat 012-CAL-524). Toleransi alat (0.2 pH) tidak ada di sumber — itu asumsi kriteria penerimaan, lihat PhMeterSeeder.",
   "customer": {
     "nama": "PT TIRTA GRACIA SEMESTA MANDIRI",
     "alamat": "Jl. Arteri Primer A-10 RT. 01 RW.12 Nyalindung Kec. Cicalengka, Kab. Bandung, Jawa Barat"

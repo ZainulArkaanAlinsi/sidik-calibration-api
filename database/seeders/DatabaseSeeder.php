@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DemoDataSeeder::class,
             // Record kalibrasi ASLI (bukan demo) — lihat docblock seeder ini.
-            TirtaGraciaPhMeterSeeder::class,
+            PhMeterSeeder::class,
             // Standar turbidity + alat + sesi demo Turbidimeter (butuh user demo,
             // jadi abis seedUsers()).
             TurbidimeterSeeder::class,

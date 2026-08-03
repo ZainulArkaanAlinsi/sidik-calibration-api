@@ -13,7 +13,7 @@ Baris 1–3 (buffer pH) sudah ada di `DemoDataSeeder.php`. Baris 4 (termometer &
 sensor) BELUM ada di seeder manapun — dipakai [PhMeterCapabilitySeeder] secara
 tidak langsung (komponen ketidakpastian suhu di
 [03-perhitungan-ketidakpastian.md](03-perhitungan-ketidakpastian.md)), dan sekarang
-ditambahkan lewat `TirtaGraciaPhMeterSeeder`.
+ditambahkan lewat `PhMeterSeeder`.
 
 Catatan: kolom sumber aslinya bertuliskan "U95% (µS/cm)" — itu template bawaan sheet
 untuk conductivity meter yang dipakai ulang, satuan sebenarnya untuk baris pH & suhu
