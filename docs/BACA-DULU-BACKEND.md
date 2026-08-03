@@ -261,7 +261,7 @@ disamain ke dokumen, jadi tabel akun di `kontrak-api.md` udah bener.
 
 Password semua `rahasia123`. Login pakai ID pegawai **atau** email.
 
-Seeder `TirtaGraciaPhMeterSeeder` juga bikin dua akun PT Sidik asli yang kepakai
+Seeder `PhMeterSeeder` juga bikin dua akun PT Sidik asli yang kepakai
 di demo sertifikat pH `012-CAL-524` — belum pernah didokumentasiin sebelumnya:
 
 | ID pegawai | Email | Peran di worksheet |

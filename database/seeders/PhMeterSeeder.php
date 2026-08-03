@@ -30,7 +30,7 @@ use RuntimeException;
  * `Master Olah Data_pH for trial_CSV/` — workbook `.xlsm` aslinya ter-password
  * protect, jadi nggak bisa dibaca langsung. Dirapikan dulu di
  * `Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/`, dikanonikalkan ke
- * `database/data/kalibrasi-ph-tirta-gracia.json`.
+ * `database/data/kalibrasi-ph-meter.json`.
  *
  * Ketidakpastiannya BENERAN dihitung lewat `GumCalculator::hitungTitik()`
  * (jalur sama yang dipakai `CalibrationController::isiUlangPengukuran()`),
@@ -48,7 +48,7 @@ use RuntimeException;
  * `instrumen-analitik`) dan `PhMeterCapabilitySeeder` (butuh CMC pH 4/7/10
  * presisi tinggi supaya `GumCalculator` masuk jalur CMC, bukan jalur generik).
  */
-class TirtaGraciaPhMeterSeeder extends Seeder
+class PhMeterSeeder extends Seeder
 {
     public function run(): void
     {
@@ -122,7 +122,7 @@ class TirtaGraciaPhMeterSeeder extends Seeder
     /** @return array<string, mixed> */
     private function muatData(): array
     {
-        $path = database_path('data/kalibrasi-ph-tirta-gracia.json');
+        $path = database_path('data/kalibrasi-ph-meter.json');
 
         if (! is_file($path)) {
             throw new RuntimeException("File data kalibrasi nggak ketemu di: {$path}");

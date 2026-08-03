@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
  * Data Turbidimeter dari `Master Olah Data_Turbidimeter.xlsm` (sheet INPUT DATA)
  * — standar turbidity 1/100/1000 NTU, alat HACH 2100Q, dan satu sesi kalibrasi
  * end-to-end yang ketidakpastiannya BENERAN dihitung `GumCalculator` (bukan
- * angka jadi ditempel), sama polanya kayak `TirtaGraciaPhMeterSeeder`.
+ * angka jadi ditempel), sama polanya kayak `PhMeterSeeder`.
  *
  * Pembacaannya diambil dari blok "After Adjustment Reading" (INPUT DATA baris
  * 46–50). STDEV-nya harus keluar 0.00894 / 0.04472 / 0.54772 (sel PERHITUNGAN

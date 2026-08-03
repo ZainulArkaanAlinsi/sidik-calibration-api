@@ -113,7 +113,7 @@ class DemoDataSeeder extends Seeder
             [
                 // Alat NYATA dari lembar olah data manual lab (sertifikat
                 // 0558-CAL-525). Ini alat yang beda dari pH Meter punya
-                // PT Tirta Gracia di `TirtaGraciaPhMeterSeeder` — beda pemilik,
+                // PT Tirta Gracia di `PhMeterSeeder` — beda pemilik,
                 // beda merk, dan beda resolusi. Dua-duanya perlu ada supaya
                 // hasil sistem bisa dicocokin ke lembar manual masing-masing.
                 //

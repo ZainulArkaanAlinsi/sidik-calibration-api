@@ -52,7 +52,7 @@ SANDI_BAWAAN = "rahasia123"
 TEKNISI_BAWAAN = "teknisi@sidik.test"
 ADMIN_BAWAAN = "admin@sidik.test"
 
-# Serial dari `database/data/kalibrasi-ph-tirta-gracia.json`. Dicari lewat serial,
+# Serial dari `database/data/kalibrasi-ph-meter.json`. Dicari lewat serial,
 # BUKAN id: id auto-increment beda di tiap mesin, sedangkan serial itu identitas
 # barang fisiknya dan sama di mana-mana.
 SERIAL_ALAT = "B628755900"
@@ -246,7 +246,7 @@ def cari_alat(api: Api, rantai: Rantai, token: str) -> dict[str, Any]:
 
     raise rantai.gagal(
         f"alat serial {SERIAL_ALAT} nggak ada di organisasi ini",
-        "Seeder pH-nya udah jalan? `php artisan db:seed --class=TirtaGraciaPhMeterSeeder`",
+        "Seeder pH-nya udah jalan? `php artisan db:seed --class=PhMeterSeeder`",
     )
 
 
@@ -270,7 +270,7 @@ def cari_buffer(api: Api, rantai: Rantai, token: str) -> dict[int, dict[str, Any
     if hilang:
         raise rantai.gagal(
             "buffer nggak ketemu: " + ", ".join(hilang),
-            "Seeder pH-nya udah jalan? `php artisan db:seed --class=TirtaGraciaPhMeterSeeder`",
+            "Seeder pH-nya udah jalan? `php artisan db:seed --class=PhMeterSeeder`",
         )
 
     # Standar kadaluarsa ditolak `CalibrationRequest` waktu submit, jadi lebih
