@@ -86,10 +86,62 @@ class PhMeterCapabilitySeeder extends Seeder
         // dari CMC (0.031), jadi yang dilaporkan CMC-nya. Sebelumnya di sini
         // kesimpen angka hitung — artinya app ngeklaim ketelitian melebihi
         // akreditasi, dan itu temuan asesor.
+        // Konstanta budget ketidakpastian, dari sheet `PERHITUNGAN U95%` lembar
+        // olah data lab. Empat angka ini yang bikin `GumCalculator` nyusun
+        // budget 5 komponen, bukan cuma ngelaporin CMC + pengulangan.
+        //
+        // `u_temperature` sama buat ketiga titik karena dia sifat ALAT UKUR
+        // SUHU-nya, bukan sifat larutannya: √((0,5/2)² + (0,06/2)²) dari
+        // sertifikat thermometer (U95 0,5 °C) & sensor (0,06 °C), dua-duanya k=2.
+        //
+        // `ci_suhu` beda jauh per titik dan itu memang fisiknya: pH 10 belasan
+        // kali lebih sensitif ke suhu daripada pH 4 (lihat kurva buffer di
+        // `standards.koefisien_suhu` — kemiringannya di 25 °C).
+        //
+        // `ci_perbedaan_suhu` di titik 4 nilainya 1, bukan pecahan kayak dua
+        // titik lain. Itu KEANEHAN yang dibawa apa adanya dari lembar aslinya —
+        // labnya sendiri belum bisa jelasin asalnya. Diikutin biar angkanya
+        // reproducible lawan lembar manual; JANGAN "dirapikan" jadi pecahan
+        // tanpa lab yang mutusin, karena itu ngubah U yang dilaporkan.
+        // UTemperature = akar jumlah kuadrat dua sertifikat, sesuai kepala
+        // lembar `PERHITUNGAN U95%`:
+        //
+        //   termometer  U95 0.72, k=2  ->  u = 0.36
+        //   sensor      U95 0.06, k=2  ->  u = 0.03
+        //   UTemperature = sqrt(0.36^2 + 0.03^2) = 0.36124783736376886
+        //
+        // Sebelumnya di sini kesimpen 0.25179356624028343 = sqrt(0.25^2 +
+        // 0.03^2) — angka termometernya kebaca 0.25, bukan 0.36. Efeknya
+        // `u_c` dan `v_eff` meleset di desimal ke-7 lawan lembar manual, dan
+        // itu KETUTUP lantai CMC selama CMC-nya diisi jawaban jadi (lihat
+        // bawah). Begitu pembacaannya lebih berisik, selisihnya kebuka.
+        $uTemperature = sqrt(0.36 ** 2 + 0.03 ** 2);
+
+        // `ketidakpastian_terbaik` = CMC Laboratory apa adanya (baris "CMC
+        // Laboratory" di lembar), BUKAN hasil `max(U_hitung, CMC)`.
+        //
+        // Dulu yang disimpen di sini jawaban jadinya (0.02343221 / 0.02110895)
+        // karena `hitungDariKemampuan()` mustahil ngitung budget sendiri. Itu
+        // udah nggak berlaku: `hitungDariBudgetPenuh()` sekarang ngitung lima
+        // komponennya, Welch-Satterthwaite, dan `k` dari t-student — lalu
+        // `max()`-nya sama CMC. Nyimpen jawaban jadi sebagai CMC bikin
+        // lantainya kelewat tinggi dan nutupin hasil hitung yang sebenarnya.
         $titik = [
-            ['titik' => 4, 'ketidakpastian_terbaik' => 0.02343221],
-            ['titik' => 7, 'ketidakpastian_terbaik' => 0.02110895],
-            ['titik' => 10, 'ketidakpastian_terbaik' => 0.031],
+            [
+                'titik' => 4, 'ketidakpastian_terbaik' => 0.023,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.00077,
+                'u_perbedaan_suhu' => 0.01, 'ci_perbedaan_suhu' => 1,
+            ],
+            [
+                'titik' => 7, 'ketidakpastian_terbaik' => 0.021,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.00352,
+                'u_perbedaan_suhu' => 0.02, 'ci_perbedaan_suhu' => 0.00304,
+            ],
+            [
+                'titik' => 10, 'ketidakpastian_terbaik' => 0.031,
+                'u_temperature' => $uTemperature, 'ci_suhu' => 0.01021,
+                'u_perbedaan_suhu' => 0.05, 'ci_perbedaan_suhu' => 0.00949,
+            ],
         ];
 
         foreach ($titik as $t) {
@@ -107,6 +159,10 @@ class PhMeterCapabilitySeeder extends Seeder
                     'satuan_ketidakpastian' => 'pH',
                     'faktor_cakupan' => 2,
                     'metode' => 'SIDIK-IK-CAL-0506',
+                    'u_temperature' => $t['u_temperature'],
+                    'ci_suhu' => $t['ci_suhu'],
+                    'u_perbedaan_suhu' => $t['u_perbedaan_suhu'],
+                    'ci_perbedaan_suhu' => $t['ci_perbedaan_suhu'],
                 ],
             );
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Folder;
@@ -52,6 +53,53 @@ class FolderOrganizer
                     'nama' => $sertifikat->namaFile('pdf'),
                     'sumber' => FolderFile::SUMBER_SERTIFIKAT,
                     'uploaded_by' => $sertifikat->issued_by,
+                ],
+            );
+        });
+    }
+
+    /**
+     * Taruh lembar kerja yang baru dikirim teknisi ke folder PT-nya.
+     *
+     * Kenapa lembar kerja ikut diarsip, bukan cuma sertifikatnya: sertifikat
+     * itu KESIMPULAN. Yang ditanya waktu audit justru pembacaan mentahnya —
+     * siapa yang ngukur, pakai standar apa, suhu berapa. Tanpa ini, riwayat
+     * kalibrasi satu alat nggak lengkap di Folder Manager.
+     *
+     * Aman dipanggil ulang, dan itu penting: lembar yang ditolak lalu dikirim
+     * ulang manggil ini lagi. Kuncinya `calibration_session_id`, jadi revisi
+     * NGGAK bikin baris kedua — satu sesi tetap satu entri, isinya ikut
+     * keadaan terakhir.
+     */
+    public function tautkanLembarKerja(CalibrationSession $sesi): ?FolderFile
+    {
+        $pelanggan = $sesi->equipment?->customer;
+
+        if ($pelanggan === null) {
+            // Sama kayak sertifikat: alat tanpa pemilik nggak punya PT buat
+            // dikelompokin. Sesinya tetap sah dan tetap kebuka dari Riwayat.
+            return null;
+        }
+
+        // Tahunnya ikut TANGGAL KALIBRASI, bukan tanggal kirim. Kalibrasi 31
+        // Desember yang lembarnya baru dikirim 2 Januari tetap masuk tahun
+        // kerjanya — kalau ikut tanggal kirim, satu pekerjaan kepecah dua
+        // folder tahun dan riwayat alatnya jadi bolong.
+        $tahun = ($sesi->tanggal_kalibrasi ?? $sesi->created_at ?? now())->format('Y');
+
+        return DB::transaction(function () use ($sesi, $pelanggan, $tahun): FolderFile {
+            $folderTahun = $this->folderTahun($pelanggan, $tahun);
+
+            return FolderFile::firstOrCreate(
+                [
+                    'folder_id' => $folderTahun->id,
+                    'calibration_session_id' => $sesi->id,
+                ],
+                [
+                    'organization_id' => $sesi->organization_id,
+                    'nama' => 'Lembar Kerja '.($sesi->nomor_sesi ?? $sesi->id),
+                    'sumber' => FolderFile::SUMBER_LEMBAR_KERJA,
+                    'uploaded_by' => $sesi->teknisi_id,
                 ],
             );
         });

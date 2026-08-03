@@ -29,12 +29,12 @@ php artisan key:generate
 Buat database, lalu sesuaikan kredensial di `.env`:
 
 ```sql
-CREATE DATABASE asmo_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE sidik_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ```env
 DB_CONNECTION=mysql
-DB_DATABASE=asmo_db
+DB_DATABASE=sidik_db
 DB_USERNAME=root
 DB_PASSWORD=<password mysql lokal kamu>
 ```
@@ -60,7 +60,7 @@ Tim ini pakai **satu database bersama** yang ada di laptop Zainul, biar data yan
 DB_CONNECTION=mysql
 DB_HOST=192.168.1.46      # IP laptop Zainul — cek ulang pakai `ipconfig` kalau ganti wifi
 DB_PORT=3306
-DB_DATABASE=asmo_db
+DB_DATABASE=sidik_db
 DB_USERNAME=asmo_dev      # user khusus LAN, bukan root
 DB_PASSWORD=AsmoDev#2026
 ```

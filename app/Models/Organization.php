@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Diaudit;
+use App\Support\Angka;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,58 @@ class Organization extends Model
      * bulan, dan nggak ada yang sadar sampai ada alat lewat jatuh tempo.
      */
     public const KEY_MASA_BERLAKU_BULAN = 'masa_berlaku_sertifikat_bulan';
+
+    /**
+     * Jumlah desimal tabel CALIBRATION REPORT di sertifikat.
+     *
+     * Kosong = turunin dari resolusi alat (`Angka::desimalDariResolusi()`), yang
+     * itu perilaku bawaan & biasanya yang bener: nulis desimal lebih banyak
+     * daripada yang bisa dibaca alatnya berarti ngaku presisi yang nggak ada.
+     *
+     * Override-nya ada karena resolusi di master alat nggak selalu ngikut spek
+     * fisiknya — dan kalau kekecilan, U95% kehilangan angka penting waktu
+     * dibulatkan (0,023 kecetak `0,02`). Sebelum pakai ini, cek dulu
+     * `equipments.resolusi`-nya bener apa nggak; itu perbaikan yang lebih tepat.
+     */
+    public const KEY_DESIMAL_SERTIFIKAT = 'desimal_sertifikat';
+
+    /**
+     * Kop surat sertifikat (path di disk publik) — banner selebar halaman.
+     *
+     * Beda dari `logo_path`: logo itu lambang kecil di samping teks kop; kop
+     * surat ini satu gambar yang udah memuat lambang, nama & alamat PT, plus
+     * lambang KAN + nomor akreditasi. Kosong = pakai bawaan di
+     * `public/images/kop-surat.png`.
+     */
+    public const KEY_KOP_PATH = 'kop_path';
+
+    /**
+     * Berapa desimal yang dipakai buat nulis angka hasil kalibrasi.
+     *
+     * SATU-SATUNYA tempat aturan ini diputusin. Dipakai `CertificateSnapshotBuilder`
+     * (buat dibekukan ke sertifikat), `CalibrationResource`, dan `CertificateResource`
+     * — kalau tiap pemanggil ngitung sendiri, layar mobile bisa nulis `0,0234`
+     * sementara sertifikat nyetak `0,023`, dan pelanggan yang mencocokkan dua-duanya
+     * nggak punya cara tau mana yang bener.
+     *
+     * Bawaannya dari resolusi alat: nulis desimal lebih banyak daripada yang bisa
+     * dibaca alatnya itu ngaku-ngaku presisi yang nggak ada. Pengaturan organisasi
+     * bisa nimpa, karena resolusi di master alat nggak selalu ngikut spek fisiknya.
+     */
+    public function desimalSertifikat(?float $resolusi): int
+    {
+        $paksa = $this->settings[self::KEY_DESIMAL_SERTIFIKAT] ?? null;
+
+        // `is_numeric`, bukan `!== null`: kolom teks di panel admin ngirim string
+        // kosong waktu dibersihin, dan `(int) ''` itu 0 — nol desimal bikin seluruh
+        // tabel hasil kecetak jadi bilangan bulat (`4` bukan `4,01`) tanpa ada yang
+        // minta, dan itu ngerusak dokumen resmi.
+        if (is_numeric($paksa)) {
+            return max(0, min(6, (int) $paksa));
+        }
+
+        return Angka::desimalDariResolusi($resolusi);
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @mixin IdeHelperFolderFile
  */
 #[Fillable([
-    'organization_id', 'folder_id', 'certificate_id', 'uploaded_by',
-    'nama', 'sumber', 'path', 'mime', 'ukuran', 'keterangan',
+    'organization_id', 'folder_id', 'certificate_id', 'calibration_session_id',
+    'uploaded_by', 'nama', 'sumber', 'path', 'mime', 'ukuran', 'keterangan',
 ])]
 class FolderFile extends Model
 {
@@ -25,6 +25,17 @@ class FolderFile extends Model
     public const SUMBER_SERTIFIKAT = 'sertifikat';
 
     public const SUMBER_UNGGAHAN = 'unggahan';
+
+    /**
+     * Tautan ke lembar kerja teknisi — `path` NULL, karena yang ditaut itu
+     * record-nya, bukan berkas hasil render.
+     *
+     * Lembar kerja bisa direvisi. Kalau tiap kirim dirender jadi berkas, satu
+     * sesi yang ditolak lalu dikirim ulang ninggalin beberapa berkas yang
+     * isinya beda dan nggak ada yang tau mana yang berlaku. Nunjuk ke record
+     * bikin isinya selalu ikut keadaan terakhir.
+     */
+    public const SUMBER_LEMBAR_KERJA = 'lembar_kerja';
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -42,6 +53,12 @@ class FolderFile extends Model
     public function certificate(): BelongsTo
     {
         return $this->belongsTo(Certificate::class);
+    }
+
+    /** @return BelongsTo<CalibrationSession, $this> */
+    public function calibrationSession(): BelongsTo
+    {
+        return $this->belongsTo(CalibrationSession::class);
     }
 
     /** @return BelongsTo<User, $this> */

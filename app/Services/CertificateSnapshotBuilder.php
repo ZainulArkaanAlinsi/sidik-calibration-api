@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationMethod;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Equipment;
+use App\Models\Organization;
 use App\Models\Standard;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
@@ -44,8 +47,8 @@ class CertificateSnapshotBuilder
     public function bangun(CalibrationSession $sesi, Certificate $sertifikat): array
     {
         $alat = $sesi->equipment;
-        $desimal = Angka::desimalDariResolusi($alat?->resolusi !== null ? (float) $alat->resolusi : null);
         $pengaturan = $sesi->organization?->settings ?? [];
+        $desimal = $this->desimal($alat, $sesi->organization);
 
         return [
             'versi' => self::VERSI,
@@ -157,7 +160,20 @@ class CertificateSnapshotBuilder
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn (Collection $c) => $c->push($sesi->standard))
-            ->when($sesi->thermohygro, fn (Collection $c) => $c->push($sesi->thermohygro))
+            // Thermohygro SENGAJA nggak masuk tabel ini.
+            //
+            // Dia alat pemantau kondisi ruangan, bukan acuan yang nilainya
+            // dipakai ngoreksi pembacaan — dan kontribusinya udah kelaporan di
+            // tempatnya sendiri: kolom "Env. Condition" di header. Waktu ikut
+            // ditulis di sini, barisnya keluar setengah jadi (`TH-2` · `—` ·
+            // `TH-2`) karena master thermohygro nggak nyimpen merk/model/serial
+            // kayak standar acuan, dan baris kosong di tabel ketertelusuran itu
+            // lebih buruk daripada nggak ada baris.
+            //
+            // Kalau nanti thermohygro-nya mau tampil (lembar manual lab nulisnya
+            // sebagai "Termometer & Sensor Std." dengan merk, serial, dan dua
+            // nomor ketertelusuran), yang dibutuhin itu data masternya dulu —
+            // bukan baris ini dibalikin.
             // Kolom "Usage Check" di lembar kerja: standar yang dicentang
             // teknisi tapi nggak nempel ke titik hitung mana pun (mis. RTD
             // Sensor buat baca suhu larutan) tetap harus tercatat — itu bagian
@@ -223,9 +239,77 @@ class CertificateSnapshotBuilder
             return $sesi->calibrationMethod->kodeLengkap();
         }
 
+        // Admin nggak selalu milih metode sebelum approve. Kalau nggak dipilih,
+        // yang dipakai IK TERBARU buat jenis pengukurannya — itu persis tabel
+        // "Jenis Pengukuran → Metode Kalibrasi (Latest IK)" di lembar master,
+        // dan `MetodeKalibrasiSeeder` nyimpen jenis pengukurannya di kolom
+        // `nama` (mis. "pH Meter").
+        //
+        // Dicocokkan lewat NAMA ALAT, bukan id: master metode ngelistnya per
+        // jenis pengukuran, dan nama alat di sesi ini yang mewakilinya.
+        $namaAlat = mb_strtolower(trim((string) $sesi->equipment?->nama_alat));
+
+        if ($namaAlat !== '') {
+            // Dicocokkan lewat "nama alat MENGANDUNG jenis pengukuran", bukan
+            // sama persis: master ngelist jenisnya ("pH Meter") sementara alat
+            // di lapangan namanya lebih panjang ("pH Meter Bench"). Cocok
+            // persis bikin cadangan ini nggak pernah kena.
+            //
+            // Yang dipilih kecocokan TERPANJANG, supaya "Thermometer Glass"
+            // nggak kalah sama jenis lain yang kebetulan jadi bagian namanya.
+            $metode = CalibrationMethod::query()
+                ->where('organization_id', $sesi->organization_id)
+                ->where('aktif', true)
+                ->get()
+                ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
+                    && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
+                // Urutannya: revisi dulu, PANJANG NAMA belakangan. `sortBy`
+                // Laravel stabil, jadi yang dipanggil terakhir jadi kunci
+                // utama — panjang nama menang, revisi jadi pemecah seri.
+                ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
+                ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
+                ->first();
+
+            if ($metode !== null) {
+                return $metode->kodeLengkap();
+            }
+        }
+
+        // Terakhir: kode yang kesimpen di baris perhitungan. Ini nggak bawa
+        // revisi, jadi sengaja jadi cadangan paling akhir — sertifikat yang
+        // nyebut IK tanpa revisi nggak bisa dicocokin ke dokumen mutu mana.
         return $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->first(fn ($titik): bool => filled($titik->metode))?->metode;
+    }
+
+    /**
+     * Jumlah desimal tabel CALIBRATION REPORT.
+     *
+     * Bawaannya diturunin dari resolusi alat: alat yang bacanya sampai 0,001
+     * dicetak 3 desimal, yang 0,01 dicetak 2. Nulis lebih banyak daripada yang
+     * bisa dibaca alatnya itu ngaku-ngaku presisi yang nggak ada.
+     *
+     * Pengaturan organisasi bisa nimpa, karena resolusi di master alat nggak
+     * selalu ngikut spek fisiknya — dan kalau kekecilan, yang paling kena itu
+     * U95%: 0,023 kecetak jadi `0,02` dan kehilangan angka penting, padahal
+     * ketidakpastian lazimnya dilaporin 2 angka penting.
+     *
+     * Ikut dibekukan ke snapshot (bukan dibaca ulang waktu render) supaya
+     * sertifikat yang udah terbit nggak berubah bentuk gara-gara pengaturan
+     * diubah sesudahnya.
+     *
+     */
+    private function desimal(?Equipment $alat, ?Organization $organisasi): int
+    {
+        $resolusi = $alat?->resolusi !== null ? (float) $alat->resolusi : null;
+
+        // Aturannya sengaja NGGAK diulang di sini — satu-satunya tempat dia
+        // diputusin itu `Organization::desimalSertifikat()`, biar angka yang
+        // dibekukan ke sertifikat sama persis dengan yang dikirim ke mobile.
+        return $organisasi
+            ? $organisasi->desimalSertifikat($resolusi)
+            : Angka::desimalDariResolusi($resolusi);
     }
 
     /** `0–14 pH / 0,01 pH` — rentang alat / resolusinya. */

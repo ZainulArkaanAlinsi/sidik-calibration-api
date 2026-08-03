@@ -3,7 +3,7 @@
 Sumber: `DATABASE.csv`, `FORM VALIDASI.csv`
 
 Ini data master lab yang dipakai lintas-sertifikat — dicatat di sini sebagai
-referensi, TIDAK ikut di-seed oleh `TirtaGraciaPhMeterSeeder` (di luar ruang lingkup
+referensi, TIDAK ikut di-seed oleh `PhMeterSeeder` (di luar ruang lingkup
 satu record kalibrasi), tapi berguna kalau nanti mau diperluas.
 
 ## Pelaksana Kalibrasi (inisial teknisi)

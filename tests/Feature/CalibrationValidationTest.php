@@ -173,4 +173,93 @@ class CalibrationValidationTest extends TestCase
         $this->assertTrue($validasi['boleh_terbit']);
         $this->assertSame(0, $validasi['ringkasan']['error']);
     }
+
+    // ------------------------------------------------ koreksi suhu larutan
+
+    /** @param array<string, mixed> $titik */
+    private function periksaSesiDengan(Standard $standar, array $titik): array
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $this->alat->id,
+            'standard_id' => $standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'measurements' => [$titik],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        return $this->actingAs($this->admin)
+            ->getJson("/api/calibrations/{$sesi->id}/validasi")
+            ->assertOk()
+            ->json('data');
+    }
+
+    /** @param array<string, mixed> $hasil */
+    private function kodeTemuan(array $hasil): array
+    {
+        return array_column($hasil['temuan'], 'kode');
+    }
+
+    /**
+     * Standar punya kurva suhu tapi suhu larutannya nggak dicatat.
+     *
+     * Nilai acuan kepaksa pakai nominal, dan Correction meleset sebesar koreksi
+     * suhu yang nggak kepakai — di titik pH 10 itu 0,065 pH pada alat
+     * bertoleransi 0,2. Sebelum ini nggak ada satu pun yang ngasih tau: nggak
+     * ada error, nggak ada peringatan, sertifikatnya terbit rapi.
+     */
+    public function test_suhu_larutan_yang_nggak_dicatat_jadi_peringatan(): void
+    {
+        $berkurva = Standard::factory()->create([
+            'koefisien_suhu' => ['a' => 3e-5, 'b' => -0.0023, 'c' => 4.0455],
+        ]);
+
+        $hasil = $this->periksaSesiDengan($berkurva, [
+            'titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03],
+        ]);
+
+        $this->assertContains('suhu_larutan_tidak_dicatat', $this->kodeTemuan($hasil));
+
+        // PERINGATAN, bukan error: teknisi di lapangan nggak boleh keblokir, dan
+        // admin tetap boleh lanjut kalau dia sadar risikonya.
+        $this->assertTrue($hasil['boleh_terbit']);
+    }
+
+    /**
+     * Kebalikannya: teknisi nyatat suhu, tapi standarnya belum punya kurva.
+     *
+     * Angka yang dia catat kebuang percuma dan nilai acuan tetap nominal. Yang
+     * perlu dibenerin data master standarnya, bukan lembar kerjanya — makanya
+     * pesannya nunjuk ke situ.
+     */
+    public function test_standar_tanpa_kurva_suhu_jadi_peringatan_kalau_suhunya_dicatat(): void
+    {
+        $hasil = $this->periksaSesiDengan($this->standar, [
+            'titik_ukur' => 50.0, 'satuan' => 'mm',
+            'pembacaan' => [50.02, 50.01, 50.03],
+            'suhu' => [25.3, 25.3, 25.3],
+        ]);
+
+        $this->assertContains('standar_tanpa_kurva_suhu', $this->kodeTemuan($hasil));
+        $this->assertTrue($hasil['boleh_terbit']);
+    }
+
+    /**
+     * Alat yang suhunya emang nggak ngaruh JANGAN dikasih peringatan.
+     *
+     * Standar panjang/massa/tekanan nggak punya kurva suhu dan nggak butuh.
+     * Kalau tiap sesi non-pH kebanjiran temuan yang nggak ada tindak lanjutnya,
+     * temuannya berhenti dibaca orang — dan yang beneran penting ikut kelewat.
+     */
+    public function test_sesi_tanpa_suhu_dan_tanpa_kurva_nggak_dikasih_peringatan(): void
+    {
+        $hasil = $this->periksaSesiDengan($this->standar, [
+            'titik_ukur' => 50.0, 'satuan' => 'mm', 'pembacaan' => [50.02, 50.01, 50.03],
+        ]);
+
+        $kode = $this->kodeTemuan($hasil);
+
+        $this->assertNotContains('suhu_larutan_tidak_dicatat', $kode);
+        $this->assertNotContains('standar_tanpa_kurva_suhu', $kode);
+    }
 }

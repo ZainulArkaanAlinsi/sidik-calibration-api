@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{-- Halaman ini dibuka orang luar yang scan QR pakai kamera HP, jadi
-         jangan sampai ke-index mesin pencari. --}}
+    jangan sampai ke-index mesin pencari. --}}
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('judul') — {{ $organization?->nama ?? config('app.name') }}</title>
     <style>
@@ -32,7 +33,9 @@
             }
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -43,7 +46,10 @@
             line-height: 1.55;
         }
 
-        .bungkus { max-width: 640px; margin: 0 auto; }
+        .bungkus {
+            max-width: 640px;
+            margin: 0 auto;
+        }
 
         .kartu {
             background: var(--kartu);
@@ -53,7 +59,13 @@
             margin-bottom: 16px;
         }
 
-        .lab-head { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+        .lab-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
         .lab-logo {
             flex: 0 0 auto;
             height: 58px;
@@ -62,10 +74,22 @@
             border-radius: 8px;
             padding: 4px;
         }
-        .lab { font-size: 13px; color: var(--teks-redup); }
-        .lab strong { display: block; color: var(--teks); font-size: 15px; }
 
-        h1 { font-size: 20px; margin: 0 0 4px; }
+        .lab {
+            font-size: 13px;
+            color: var(--teks-redup);
+        }
+
+        .lab strong {
+            display: block;
+            color: var(--teks);
+            font-size: 15px;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 4px;
+        }
 
         .lencana {
             display: inline-block;
@@ -75,33 +99,72 @@
             font-weight: 600;
             border: 1px solid currentColor;
         }
-        .lencana-pass { color: var(--pass); }
-        .lencana-fail { color: var(--fail); }
 
-        dl { margin: 0; display: grid; grid-template-columns: 1fr; gap: 14px; }
-        @media (min-width: 480px) { dl { grid-template-columns: 1fr 1fr; } }
-        dt { font-size: 12px; color: var(--teks-redup); text-transform: uppercase; letter-spacing: .04em; }
-        dd { margin: 2px 0 0; font-weight: 600; }
+        .lencana-pass {
+            color: var(--pass);
+        }
 
-        .catatan { font-size: 12px; color: var(--teks-redup); }
-        .catatan p { margin: 0 0 8px; }
-        footer { text-align: center; font-size: 12px; color: var(--teks-redup); margin-top: 24px; }
+        .lencana-fail {
+            color: var(--fail);
+        }
+
+        dl {
+            margin: 0;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        @media (min-width: 480px) {
+            dl {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        dt {
+            font-size: 12px;
+            color: var(--teks-redup);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        dd {
+            margin: 2px 0 0;
+            font-weight: 600;
+        }
+
+        .catatan {
+            font-size: 12px;
+            color: var(--teks-redup);
+        }
+
+        .catatan p {
+            margin: 0 0 8px;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--teks-redup);
+            margin-top: 24px;
+        }
     </style>
 </head>
+
 <body>
     <div class="bungkus">
         <div class="lab-head">
             <img class="lab-logo" src="{{ asset('images/logo-sidik.png') }}"
-                 alt="Logo {{ $organization?->nama ?? config('app.name') }}">
+                alt="Logo {{ $organization?->nama ?? config('app.name') }}">
             @if ($organization)
-                <div class="lab">
-                    <strong>{{ $organization->nama }}</strong>
-                    {{ $organization->alamat }}<br>
-                    @if ($organization->no_akreditasi)
-                        Terakreditasi KAN No. {{ $organization->no_akreditasi }}
-                        @if ($organization->standar_akreditasi) — {{ $organization->standar_akreditasi }} @endif
-                    @endif
-                </div>
+            <div class="lab">
+                <strong>{{ $organization->nama }}</strong>
+                {{ $organization->alamat }}<br>
+                @if ($organization->no_akreditasi)
+                Terakreditasi KAN No. {{ $organization->no_akreditasi }}
+                @if ($organization->standar_akreditasi) — {{ $organization->standar_akreditasi }} @endif
+                @endif
+            </div>
             @endif
         </div>
 
@@ -110,4 +173,5 @@
         <footer>{{ $organization?->nama ?? config('app.name') }}</footer>
     </div>
 </body>
+
 </html>

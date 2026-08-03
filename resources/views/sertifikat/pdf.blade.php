@@ -28,9 +28,29 @@
     <meta charset="utf-8">
     <title>Sertifikat {{ $header['certificate_number'] ?? $sertifikat->nomor }}</title>
     <style>
-        * { font-family: DejaVu Sans, sans-serif; }
-        body { font-size: 10.5px; color: #1a1a1a; margin: 0; }
+        /*
+          Margin halaman DIPATOK ketat & seragam biar (a) kop surat bisa nempel
+          ke pinggir atas/samping (dulu default dompdf ~0,5in bikin kop ngambang
+          jauh dari tepi & isinya kedorong ke bawah — kelihatan jelek), dan (b)
+          seluruh isi muat SATU halaman. Cuma kena PDF (dompdf baca @page);
+          mode web pakai `.lembar` sendiri.
+        */
+        @page { margin: 0.85cm 1.05cm; }
 
+        * { font-family: DejaVu Sans, sans-serif; }
+        body { font-size: 10.5px; color: #1a1a1a; margin: 0; line-height: 1.4; }
+
+        /*
+          Kop surat banner FULL-BLEED: margin negatif nariknya keluar sampai tepi
+          halaman (nutup margin @page di atas & dua sisi), jadi kopnya rapat ke
+          pinggir kertas — bukan kotak ngambang di tengah. Gambarnya 1289x225
+          (5,73:1); `width: 100%` jaga rasionya.
+
+          SENGAJA tanpa garis bawah: kop-nya sendiri udah punya lengkung biru di
+          bagian bawah gambarnya.
+        */
+        .kop-gambar { margin: -0.85cm -1.05cm 10px; }
+        .kop-gambar img { width: 100%; height: auto; display: block; }
         .kop { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 14px; }
         .kop table { width: 100%; border-collapse: collapse; }
         .kop td.logo { width: 84px; vertical-align: middle; }
@@ -41,7 +61,7 @@
 
         .judul { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 12px; }
 
-        table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        table.info { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         table.info td { padding: 2.5px 6px; vertical-align: top; }
         /*
           Label ditebelin & digelapin: di kertas cetak, label abu tipis bikin
@@ -52,20 +72,26 @@
         table.info td.lbl { width: 17%; color: #222; font-weight: bold; }
         table.info td.val { width: 33%; }
 
-        .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 4px; letter-spacing: .5px; }
+        /* Nama alat ditebelin: itu yang dicari pertama waktu nyocokin lembar
+           di tangan sama alat di meja, jadi dia mesti kebaca tanpa nyusurin
+           tabel. Label "Equipment Name"-nya udah tebel — nilainya ikut, biar
+           yang nempel di mata barisnya, bukan cuma judul kolomnya. */
+        table.info td.val.alat { font-weight: bold; }
+
+        .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 6px; letter-spacing: .5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 10px; }
-        table.data th, table.data td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
+        table.data th, table.data td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
 
-        .catatan { font-size: 9px; font-style: italic; color: #444; margin-top: 6px; }
-        .catatan div { margin-bottom: 2px; }
+        .catatan { font-size: 9px; font-style: italic; color: #444; margin-top: 8px; line-height: 1.5; }
+        .catatan div { margin-bottom: 3px; }
 
         .putusan { text-align: center; font-size: 13px; font-weight: bold; padding: 6px; margin: 10px 0; border: 2px solid; }
         .pass { color: #146c2e; border-color: #146c2e; }
         .fail { color: #a01919; border-color: #a01919; }
 
-        table.ttd { width: 100%; border-collapse: collapse; margin-top: 22px; }
+        table.ttd { width: 100%; border-collapse: collapse; margin-top: 10px; }
         table.ttd td { vertical-align: top; font-size: 10px; }
         table.ttd td.qr { width: 110px; text-align: center; }
         table.ttd td.qr img { width: 92px; height: 92px; }
@@ -87,7 +113,7 @@
         .ttd .ruang-ttd { height: 44px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
-        .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 18px; border-top: 1px solid #ccc; padding-top: 5px; }
+        .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
 
         @if ($web ?? false)
         /*
@@ -160,6 +186,12 @@
         .lembar .judul { margin: 6px 0 18px; }
         .lembar .judul-sub { margin: 22px 0 8px; }
         .lembar .kop { margin-bottom: 18px; }
+        /*
+          Di web, kop TETAP di dalam kartu putih — full-bleed margin negatif
+          (buat PDF) dibatalin di sini biar banner-nya nggak nyembul keluar
+          kartu yang punya sudut membulat.
+        */
+        .lembar .kop-gambar { margin: 0 0 16px; }
 
         @media (max-width: 720px) {
             body { padding: 10px 8px 32px; }
@@ -217,6 +249,19 @@
     </div>
     <div class="lembar">
 @endif
+    {{--
+      Kop surat. Kalau kop banner-nya ada, dia dipakai SENDIRIAN — nama PT,
+      alamat, dan nomor akreditasi udah tercetak di dalam gambarnya, jadi kop
+      teks di bawah nggak ikut dirender. Kalau dua-duanya dicetak, alamat &
+      nomor akreditasi muncul dobel, dan yang versi teks bisa basi duluan waktu
+      lab pindah kantor sementara gambarnya belum diganti.
+
+      Kop teks tetap dipertahanin sebagai jalur cadangan: organisasi yang belum
+      punya berkas kop tetap dapat sertifikat berkepala, bukan lembar telanjang.
+    --}}
+    @if (! empty($kop))
+        <div class="kop-gambar"><img src="{{ $kop }}" alt="Kop surat"></div>
+    @else
     <div class="kop">
         <table>
             <tr>
@@ -234,6 +279,7 @@
             </tr>
         </table>
     </div>
+    @endif
 
     <div class="judul">CALIBRATION CERTIFICATE</div>
 
@@ -252,7 +298,7 @@
             <td class="lbl">Received Date</td><td class="val">{{ $tgl($header['received_date'] ?? null) }}</td>
         </tr>
         <tr>
-            <td class="lbl">Equipment Name</td><td class="val">{{ $isi($header['equipment_name'] ?? null) }}</td>
+            <td class="lbl">Equipment Name</td><td class="val alat">{{ $isi($header['equipment_name'] ?? null) }}</td>
             <td class="lbl">Manufacturer</td><td class="val">{{ $isi($header['manufacturer'] ?? null) }}</td>
         </tr>
         <tr>
@@ -289,7 +335,11 @@
                     <td>{{ $angka($baris['standard_value'] ?? null) }}</td>
                     <td>{{ $angka($baris['unit_under_test'] ?? null) }}</td>
                     <td>{{ $angka($baris['correction'] ?? null) }}</td>
-                    <td>{{ $angka($baris['u95'] ?? null) }}</td>
+                    {{-- U95 pakai formatter sendiri: dia dijamin kebaca 2
+                         angka penting, nggak dipaksa ikut desimal alat. Ikut
+                         desimal alat, `0,0234` kecetak `0,02` dan kehilangan
+                         setengah nilainya. --}}
+                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $desimal) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="4">—</td></tr>
@@ -334,14 +384,13 @@
     </table>
 
     <table class="ttd">
+        {{--
+          Issuance Date + tanda tangan di KIRI, QR (kalau dicetak) di kanan.
+          Urutan sel inilah yang nentuin posisinya — dompdf nggak dukung
+          `float`/flexbox di konteks tabel, jadi jangan coba dibalik pakai CSS.
+          Sel kosong di tengah yang mendorong keduanya ke pinggir masing-masing.
+        --}}
         <tr>
-            @if (! empty($qr))
-                <td class="qr">
-                    <img src="{{ $qr }}" alt="QR verifikasi">
-                    <div class="ket">Scan untuk verifikasi &amp; unduh</div>
-                </td>
-            @endif
-            <td></td>
             <td style="width: 38%;">
                 <div>Issuance Date: {{ $tgl($footer['issuance_date'] ?? null) }}</div>
 
@@ -385,6 +434,13 @@
                     {{ $isi($footer['jabatan'] ?? null) }}
                 </div>
             </td>
+            <td></td>
+            @if (! empty($qr))
+                <td class="qr">
+                    <img src="{{ $qr }}" alt="QR verifikasi">
+                    <div class="ket">Scan untuk verifikasi &amp; unduh</div>
+                </td>
+            @endif
         </tr>
     </table>
 

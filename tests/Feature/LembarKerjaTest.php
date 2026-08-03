@@ -80,6 +80,40 @@ class LembarKerjaTest extends TestCase
         $this->assertSame(['sebelum_adjustment', 'sesudah_adjustment'], array_column($tabel, 'tahap'));
     }
 
+    public function test_lembar_kerja_turbidimeter_pakai_ntu_tiga_titik(): void
+    {
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=turbidimeter')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'NTU')
+            // Kode dokumen form turbidimeter (DATABASE row), bukan pH (0509).
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0530_Rev.2')
+            ->json('data');
+
+        // Tiga titik turbidity yang lab beneran punya standarnya (1/100/1000),
+        // dengan angka akreditasi asli. Form nyetak 5 kolom tapi standar 15 &
+        // 750 NTU belum ada — lihat TurbidimeterProfile.
+        $this->assertEqualsWithDelta([1.0, 100.0, 1000.0], $data['larutan_standar'], 1e-9);
+        $this->assertStringContainsString('Turbidimeter', $data['judul']);
+
+        // Resolusi per titik ikut di baris tabel hasil (0.01/0.1/1 → 2/1/0
+        // desimal) — ini yang bikin layar nampilin "4.60" vs "999".
+        $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'][0];
+        $this->assertSame([2, 1, 0], array_column($tabel['baris'], 'desimal'));
+        $this->assertEqualsWithDelta([0.01, 0.1, 1.0], array_column($tabel['baris'], 'resolusi'), 1e-9);
+        // Label titik: 1000 harus utuh "1000", bukan kestrip jadi "1".
+        $this->assertSame(['1', '100', '1000'], array_column($tabel['baris'], 'label'));
+    }
+
+    public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void
+    {
+        // Mobile lama yang belum ngirim ?profil harus tetap dapat pH persis.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'pH');
+    }
+
     public function test_lembar_kerja_setengah_jadi_tetap_bisa_dikirim(): void
     {
         // Skenario lapangan: buffer 7 & 10 habis, jadi cuma titik pertama yang

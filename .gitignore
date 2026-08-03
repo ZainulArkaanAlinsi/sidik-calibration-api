@@ -40,3 +40,9 @@ worklog.csv
 # dan gampang keikut `git add`.
 __pycache__/
 *.pyc
+
+# Master data mentah turbidimeter (CSV ekspor Excel lab) — sumber acuan hitungan,
+# tapi isinya sertifikat asli + nama pelanggan. Angkanya udah masuk kode lewat
+# TurbidimeterCapabilitySeeder/TurbidimeterSeeder, jadi CSV mentahnya nggak perlu
+# ikut ke repo.
+Project-PT-Sidik/Master Data TurbidiMeter_CSV/

@@ -46,6 +46,55 @@ class Angka
     }
 
     /**
+     * Ketidakpastian (U95) — dijamin kebaca **2 angka penting**.
+     *
+     * Kolom hasil lain dicetak sebanyak desimal alatnya (resolusi 0,01 → 2
+     * desimal), dan buat pembacaan itu bener: nulis lebih banyak dari yang bisa
+     * dibaca alatnya itu ngaku-ngaku presisi.
+     *
+     * Ketidakpastian beda aturannya. Dia lazim dilaporin 2 angka penting, dan
+     * dipaksa ikut desimal alat justru bikin angkanya rusak:
+     *
+     *     U = 0,02658849   desimal alat 2  ->  "0,03"   (1 angka penting)
+     *     U = 0,023432     desimal alat 2  ->  "0,02"   (1 angka penting)
+     *
+     * "0,02" dan "0,03" itu beda 50% dari nilai aslinya — dan di sertifikat
+     * terakreditasi, U yang salah baca langsung ngubah kesimpulan PASS/FAIL
+     * waktu pelanggan ngebandingin sama toleransinya.
+     *
+     * Desimalnya dinaikin cuma kalau perlu; U yang udah besar nggak berubah:
+     *
+     *     0,2199  ->  "0,22"    (2 desimal udah cukup)
+     *     0,02658 ->  "0,027"   (naik ke 3)
+     *     0,00234 ->  "0,0023"  (naik ke 4)
+     */
+    public static function ketidakpastian(
+        ?float $nilai,
+        int $desimalAlat = self::DESIMAL_DEFAULT,
+        string $kosong = '—',
+    ): string {
+        if ($nilai === null) {
+            return $kosong;
+        }
+
+        $desimal = $desimalAlat;
+        $besar = abs($nilai);
+
+        if ($besar > 0.0) {
+            // Posisi angka penting pertama. `0,0265` -> eksponen -2, jadi butuh
+            // 3 desimal biar dua angka pentingnya (2 dan 7) kebaca.
+            $eksponenPertama = (int) floor(log10($besar));
+            $perluDesimal = -$eksponenPertama + 1;
+
+            // Dibatasi 8: kolomnya `decimal(20,8)`, lebih dari itu nggak ada
+            // isinya lagi.
+            $desimal = min(max($desimalAlat, $perluDesimal), 8);
+        }
+
+        return number_format($nilai, $desimal, ',', '.');
+    }
+
+    /**
      * Sama kayak `id()`, tapi nol di belakang koma dibuang: `4,0100` → `4,01`.
      * Dipakai buat nilai yang jumlah desimalnya beda-beda (mis. kapasitas alat).
      */

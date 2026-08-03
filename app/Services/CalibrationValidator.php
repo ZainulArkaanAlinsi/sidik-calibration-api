@@ -211,6 +211,8 @@ class CalibrationValidator
                 continue;
             }
 
+            $temuan = [...$temuan, ...$this->periksaKoreksiSuhu($ke, $standar, $pembacaan)];
+
             $ulang = $this->gum->hitungTitik(
                 $ke,
                 (float) $titik->titik_ukur,
@@ -220,12 +222,100 @@ class CalibrationValidator
                     ->all(),
                 $alat,
                 $standar,
+                // Suhu larutan yang kecatat di pembacaan, biar hitung ulang di
+                // sini nurunin nilai acuan dengan cara yang SAMA kayak waktu
+                // disimpen. Kalau nggak dikirim, pemeriksaan ini nerima
+                // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
+                // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
+                $this->suhuLarutanRataRata($pembacaan),
             );
 
             $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];
         }
 
         return $temuan;
+    }
+
+    /**
+     * Dua setengah pasang yang bikin nilai acuan diam-diam salah.
+     *
+     * Nilai acuan yang bener itu nilai larutan PADA SUHU PENGUKURAN, diturunin
+     * dari kurva di sertifikat standarnya. Itu butuh DUA bahan: kurvanya ada di
+     * master standar, dan suhu larutannya dicatat teknisi. Kalau salah satu
+     * hilang, `GumCalculator` balik ke nilai nominal — dan itu **sengaja**,
+     * karena teknisi di lapangan nggak boleh keblokir gara-gara satu kolom.
+     *
+     * Masalahnya, sampai sekarang nggak ada satu pun yang ngasih tau. Sertifikat
+     * tetap terbit rapi, angkanya masuk akal, nol error di mana pun — padahal
+     * kolom Correction meleset sebesar koreksi suhu yang nggak pernah kepakai.
+     * Di titik pH 10 itu 0,065 pH pada alat bertoleransi 0,2: sepertiga
+     * anggaran toleransi, cukup buat mbalik keputusan PASS/FAIL.
+     *
+     * Jadi dua-duanya PERINGATAN, bukan error: yang berubah cuma kegagalannya
+     * jadi kelihatan sebelum admin menyetujui, bukan sesudah pelanggan nanya.
+     *
+     * ## Kenapa nggak nyalain peringatan buat semua standar tanpa kurva
+     *
+     * Standar panjang, massa, dan tekanan emang nggak punya kurva suhu dan
+     * nggak butuh — nyalain peringatan buat mereka bikin tiap sesi non-pH
+     * kebanjiran temuan yang nggak ada tindak lanjutnya, dan temuan yang selalu
+     * muncul itu berhenti dibaca orang.
+     *
+     * Yang dipakai: **suhu larutan yang KECATAT** sebagai tanda bahwa suhu
+     * memang relevan buat pengukuran ini. Teknisi yang repot nyatat suhu tiap
+     * pembacaan lagi ngerjain alat yang suhunya ngaruh — dan kalau standarnya
+     * ternyata nggak punya kurva, angka yang dia catat itu kebuang percuma.
+     *
+     * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     * @return list<array<string, mixed>>
+     */
+    private function periksaKoreksiSuhu(int $ke, Standard $standar, $pembacaan): array
+    {
+        $suhu = $this->suhuLarutanRataRata($pembacaan);
+        $punyaKurva = $standar->nilaiPadaSuhu(25.0) !== null;
+
+        if ($punyaKurva && $suhu === null) {
+            return [$this->temuan(
+                self::PERINGATAN,
+                'suhu_larutan_tidak_dicatat',
+                "Titik ke-{$ke}: standar acuannya ({$standar->nama}) punya kurva suhu, tapi suhu "
+                .'larutannya nggak dicatat. Nilai acuan kepaksa pakai angka nominal, jadi Correction '
+                .'bisa meleset sebesar koreksi suhunya.',
+                ['titik_ke' => $ke, 'standard_id' => $standar->id],
+            )];
+        }
+
+        if (! $punyaKurva && $suhu !== null) {
+            return [$this->temuan(
+                self::PERINGATAN,
+                'standar_tanpa_kurva_suhu',
+                "Titik ke-{$ke}: suhu larutan kecatat ({$suhu} °C), tapi standar acuannya "
+                ."({$standar->nama}) belum punya kurva suhu di master. Angka suhunya nggak kepakai "
+                .'dan nilai acuan tetap pakai nominal.',
+                ['titik_ke' => $ke, 'standard_id' => $standar->id, 'suhu' => $suhu],
+            )];
+        }
+
+        return [];
+    }
+
+    /**
+     * Suhu larutan rata-rata dari pembacaan yang beneran ikut dihitung.
+     *
+     * Null kalau nggak ada satu pun yang kecatat — bukan 0, karena 0 °C itu suhu
+     * yang sah dan bakal bikin nilai buffer diturunin dari ujung kurva yang
+     * salah, bukan dilewati.
+     *
+     * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     */
+    private function suhuLarutanRataRata($pembacaan): ?float
+    {
+        $suhu = $pembacaan
+            ->map(fn (RawMeasurement $m): ?float => $m->suhu === null ? null : (float) $m->suhu)
+            ->filter(fn (?float $s): bool => $s !== null)
+            ->values();
+
+        return $suhu->isEmpty() ? null : (float) $suhu->avg();
     }
 
     /**
