@@ -16,10 +16,11 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
+use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
-use App\Services\LembarKerjaTemplate;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
 use Carbon\Carbon;
@@ -48,6 +49,7 @@ class CalibrationController extends Controller
         private readonly GumCalculator $gum,
         private readonly CalibrationValidator $validator,
         private readonly KondisiLingkungan $kondisi,
+        private readonly FolderOrganizer $folder,
     ) {}
 
     /**
@@ -74,7 +76,12 @@ class CalibrationController extends Controller
 
     private const DESIMAL_SUHU = 2;        // decimal(8, 2)
 
-    private const DESIMAL_K = 2;           // faktor_cakupan_k: decimal(5, 2)
+    // `k` bukan konstanta 2 lagi: sejak budget penuh jalan dia dihitung dari
+    // t-student pada derajat kebebasan efektif (mis. 1.97065259 buat veff
+    // 223.13). Dibulatkan 2 desimal, yang kesimpen jadi 1.97 — dan siapa pun
+    // yang ngalikan `k × u_c` dari baris itu dapat angka yang beda dari `U`
+    // yang beneran dilaporkan. Kolomnya udah dinaikin ke decimal(12,8).
+    private const DESIMAL_K = 8;           // faktor_cakupan_k: decimal(12, 8)
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -114,11 +121,19 @@ class CalibrationController extends Controller
      *
      * Bentuknya beda per role: teknisi dapat PERSIS kolom di lembar kerja,
      * admin dapat itu plus kolom administratif (spesifikasi poin 1 & 12A).
+     *
+     * Bentuknya juga beda per JENIS ALAT: `?instrumen=Turbidimeter` (atau
+     * `?profil=turbidimeter`) milih profilnya. Default pH — mobile lama yang
+     * belum ngirim param tetap dapat lembar pH persis kayak sebelumnya.
      */
-    public function lembarKerja(Request $request, LembarKerjaTemplate $template): JsonResponse
+    public function lembarKerja(Request $request, CalibrationProfileRegistry $registry): JsonResponse
     {
+        $kode = (string) $request->string('profil', '');
+        $profil = ($kode !== '' ? $registry->untukKode($kode) : null)
+            ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
+
         return response()->json([
-            'data' => $template->phMeter(untukAdmin: $request->user()->isAdmin()),
+            'data' => $profil->bentukLembarKerja(untukAdmin: $request->user()->isAdmin()),
         ]);
     }
 
@@ -291,7 +306,13 @@ class CalibrationController extends Controller
                 ...$this->atributDariRequest($request),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
                 // relevan lagi — jangan sampai teknisi lihat teguran yang udah dibenerin.
+                //
+                // `revisi_field` ikut dibuang, dan itu sempat kelewat: catatannya
+                // ilang tapi kolom yang ditandai NGGAK, jadi garis merahnya
+                // nempel terus di lembar yang udah dibetulin — bahkan sesudah
+                // sesinya disetujui.
                 'catatan_revisi' => null,
+                'revisi_field' => null,
             ]);
 
             return $this->isiUlangPengukuran($calibration, $request);
@@ -376,6 +397,7 @@ class CalibrationController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
             'catatan_revisi' => null,
+            'revisi_field' => null,
         ]);
 
         $job = new GenerateCertificate(
@@ -712,12 +734,22 @@ class CalibrationController extends Controller
             $suhu = array_values($titik['suhu'] ?? []);
 
             $pembacaanTerisi = [];
+            // Suhu larutan, disaring sejajar sama `$pembacaanTerisi` — bukan
+            // seluruh kolom suhu. Rata-ratanya dipakai buat nurunin nilai buffer
+            // pada suhu pengukuran, jadi dia harus ngikut baris yang beneran
+            // ikut dihitung; baris yang pembacaannya kosong nggak boleh nyeret
+            // suhunya ke rata-rata.
+            $suhuTerisi = [];
 
             // Sel kosong di lembar kerja tetap kekirim (sebagai null) supaya
             // nomor pengulangannya nggak geser. Yang disimpen cuma yang keisi.
             foreach (array_values($titik['pembacaan'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
+                }
+
+                if (($suhu[$urutan] ?? null) !== null && $suhu[$urutan] !== '') {
+                    $suhuTerisi[] = (float) $suhu[$urutan];
                 }
 
                 $meta = $ocr[$urutan] ?? null;
@@ -805,6 +837,10 @@ class CalibrationController extends Controller
                 $pembacaanTerisi,
                 $alat,
                 $standarTitik,
+                // Suhu larutan rata-rata titik ini. Null kalau teknisi nggak
+                // ngisi kolom suhu — `hitungTitik()` bakal balik ke nilai
+                // nominal yang diketik, sama kayak perilaku sebelumnya.
+                $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
             ));
         }
 
@@ -954,6 +990,29 @@ class CalibrationController extends Controller
 
         // Draft nggak ngabarin siapa-siapa — belum masuk antrean approval.
         $this->kabarinAdmin($segar);
+
+        // Lembar yang UDAH dikirim diarsip ke folder PT-nya. Draft nggak:
+        // dia masih diisi, dan folder PT bukan tempat naruh pekerjaan
+        // setengah jalan.
+        //
+        // Ditaruh di sini, bukan di store()/update() masing-masing, karena
+        // ini satu-satunya tempat status & `submitted_at` diputusin — dua
+        // pemanggil itu lewat sini semua, termasuk kirim ulang sesudah revisi.
+        //
+        // Kegagalannya ditelan on purpose: pengarsipan itu turunan, bukan
+        // syarat sahnya lembar kerja. Kalau folder-nya gagal dibikin, lembarnya
+        // tetap kekirim dan tetap masuk antrean approval — teknisi nggak
+        // kehilangan kerjaannya gara-gara urusan rak berkas.
+        if ($segar->submitted_at !== null) {
+            try {
+                $this->folder->tautkanLembarKerja($segar);
+            } catch (\Throwable $e) {
+                Log::warning('Lembar kerja gagal ditaut ke folder PT.', [
+                    'calibration_session_id' => $segar->id,
+                    'pesan' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $segar;
     }

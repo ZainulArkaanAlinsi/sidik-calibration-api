@@ -1,5 +1,11 @@
 # Status Backend — dicek langsung ke kode, 25 Juli 2026
 
+> ⚠️ **Isi §0–§6 di bawah statusnya per 25 Juli.** Ada tiga hari kerja perubahan
+> sesudah itu (29–30 Juli) yang **belum kesusul ke bagian-bagian itu** — termasuk
+> beberapa yang ngubah perilaku, bukan cuma benerin. Ringkasannya +
+> penunjuknya ada di [bagian **Update 30 Juli**](#update-30-juli-2026--kalau-kamu-yang-nerusin-backend-baca-ini-dulu)
+> tepat di bawah peta dokumen. Baca itu dulu sebelum mutusin apa pun dari §1.
+
 **Halaman ini satu-satunya sumber status yang boleh dipercaya.** Dokumen lain di
 `docs/` isinya *permintaan* dari mobile, dan beberapa tanda ✅-nya salah — tabel
 ringkasan di `permintaan-endpoint.md` §7 dan `permintaan-endpoint-fase-2.md` §4
@@ -27,7 +33,10 @@ Biar jelas mana yang dibaca buat apa:
 
 | File | Isinya | Percaya statusnya? |
 |---|---|---|
-| **`BACA-DULU-BACKEND.md`** (ini) | Status apa yang udah/belum jalan | ✅ **ya** — diverifikasi ke kode |
+| **`BACA-DULU-BACKEND.md`** (ini) | Status apa yang udah/belum jalan | ✅ **ya** — tapi §0–§6 per **25 Juli**, lihat Update 30 Juli |
+| [`HANDOFF-BACKEND-29-Jul-adendum.md`](HANDOFF-BACKEND-29-Jul-adendum.md) | Rincian teknis & **alasan** perubahan 29 Juli, plus yang belum dikerjain | ✅ ya — diverifikasi ke kode & hasil test |
+| [`HANDOFF-FRONTEND-29-Jul.md`](HANDOFF-FRONTEND-29-Jul.md) | Perubahan yang kelihatan dari sisi API 29 Juli, buat mobile | ✅ ya |
+| [`skrip/e2e-ph.py`](skrip/e2e-ph.py) | Uji rantai pH → sertifikat lawan server beneran | ✅ ya — alat, bukan dokumen |
 | [`Spesifikasi-Aplikasi-Kalibrasi.md`](Spesifikasi-Aplikasi-Kalibrasi.md) | Spec produk asli. **Ini rujukan komentar "spesifikasi poin N" yang kesebar di 45 tempat di kode** | ✅ ya (dokumen kebutuhan, bukan status) |
 | [`kontrak-api.md`](kontrak-api.md) | Bentuk JSON tiap endpoint | ✅ ya, sesudah koreksi §6 (nama field notifikasi) |
 | [`realtime-sync.md`](realtime-sync.md) | Arsitektur broadcast + contoh klien Laravel Echo | ✅ ya |
@@ -36,6 +45,185 @@ Biar jelas mana yang dibaca buat apa:
 | [`infrastruktur-vps-produksi.md`](infrastruktur-vps-produksi.md) | Rencana deploy VPS | ✅ ya (usulan) |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
+
+---
+
+## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
+
+Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.
+
+Isinya sudah nggak sepadan sama ongkosnya: 30 commit, 105 file, dan **90 file
+konflik** lawan `main` — 11 di antaranya file inti yang paling banyak berubah
+minggu ini. Sebagian besar isinya juga udah ada di `main` lewat jalan lain:
+
+| Isi branch | Status di `main` |
+|---|---|
+| Budget ketidakpastian penuh + student's t | ✅ udah diangkat (`99f5f57`) |
+| Arsip / file manager | ✅ ada, ditulis ulang dengan bentuk beda |
+| Matriks peran & `/me/permissions` | ✅ ada |
+| Koreksi suhu buffer, kondisi lingkungan | ✅ ada |
+| **Order Kalibrasi + penugasan teknisi** | ❌ **nggak ada, dan nggak jadi dibangun** |
+
+### ⚠️ Yang ikut ditutup: entitas Order
+
+Baris terakhir itu yang perlu disadari. Branch ini punya fitur **Order Kalibrasi**
+yang jalan (`Order`, `OrderItem`, `OrderController`, resource, factory) plus
+**penugasan teknisi per alat + antrean "Tugas Saya"**. Di `main` nol rute — dan
+sekarang statusnya bukan "belum dibangun", tapi **nggak jadi dibangun**.
+
+§3 di bawah masih nulis `/orders` sebagai "BELUM ADA, jangan dibangun frontend-nya
+dulu". Kalimat itu sekarang perlu dibaca sebagai **permanen**, bukan "nanti".
+
+### Kodenya nggak hilang
+
+Diikat tag sebelum ditutup, dan tag-nya udah di remote:
+
+```bash
+git checkout -b <nama-baru> arsip/ph-lengkap-dan-order
+```
+
+`HANDOFF-BACKEND.md` asli juga cuma ada di situ — kalau ada yang nyari dokumen
+itu, di tag ini tempatnya, bukan di `main`.
+
+---
+
+## 🔴 31 Juli 2026 — buffer pH 4 KADALUARSA, alur pH 3 titik berhenti
+
+Buat @raihannazhiif. Ini bukan bug, dan **jangan dicari di kode** — datanya yang
+lewat masa berlaku.
+
+| Standar | Serial | `berlaku_sampai` | Status |
+|---|---|---|---|
+| **pH Buffer Solution 4** | `HC32513535` | **2026-07-31** | ❌ **kadaluarsa hari ini** |
+| pH Buffer Solution 7 | `HC46341939` | 2027-12-17 | ✅ masih berlaku |
+| pH Buffer Solution 10 | `HC45400338` | 2027-07-31 | ✅ masih berlaku |
+
+**Efeknya:** `POST /calibrations` balikin **422** buat titik mana pun yang pakai
+buffer 4 —
+
+```
+Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.
+```
+
+Karena kalibrasi pH baku itu 3 titik (4/7/10), **seluruh alur pH berhenti** sampai
+buffernya diganti. Yang nolak `CalibrationRequest::withValidator()`, dan itu
+perilaku yang BENER: standar yang lewat masa berlaku bikin ketertelusuran putus,
+dan itu temuan asesor.
+
+**Yang bakal bikin salah sangka:** `docs/skrip/e2e-ph.py` sekarang berhenti di
+mata rantai ke-4 dengan `PUTUS DI: nyari 3 standar buffer pH` + pesan kadaluarsa.
+Itu penjaganya bekerja, **bukan** regresi dari perubahan pH minggu ini. Kalau
+skripnya tiba-tiba merah, cek tanggal standarnya duluan sebelum ngulik kode.
+
+**Yang dibutuhin: keputusan lab, bukan tambalan kode.** Salah satu dari —
+
+1. Buffer fisiknya diganti, sertifikat baru diinput ke master Standar; atau
+2. `berlaku_sampai` diperpanjang **kalau memang ada sertifikat baru yang mendasari**.
+
+Tanggalnya sengaja NGGAK digeser dari sisi ini. Itu masa berlaku sertifikat
+standar beneran — bukan angka yang boleh diubah biar aplikasinya jalan lagi.
+
+---
+
+## Update 30 Juli 2026 — kalau kamu yang nerusin backend, baca ini dulu
+
+Enam commit masuk 29–30 Juli, dan **§1 di bawah belum nyusul**. Yang di bawah ini
+bukan daftar changelog — cuma yang bisa bikin kamu salah ambil keputusan kalau nggak
+tau. Alasan & rinciannya di
+[`HANDOFF-BACKEND-29-Jul-adendum.md`](HANDOFF-BACKEND-29-Jul-adendum.md).
+
+Suite penuh sesudah semuanya: **604/604**.
+
+### Yang ngubah PERILAKU, bukan cuma benerin
+
+| Commit | Apa | Yang perlu kamu tau |
+|---|---|---|
+| `b86eed3` | **U95 sekarang ikut sebaran pembacaan.** `u_c = sqrt(u_cmc² + u_A²)`, dilantai ke CMC | Angka di sertifikat berubah. **Sertifikat lama nggak ikut** — snapshot-nya beku. Kalau ada yang perlu dihitung ulang, itu **keputusan mutu**, bukan teknis; jangan nerbitin ulang sendirian |
+| `d3fa98d` | **Approve & retry nerbitin sertifikat LANGSUNG**, bukan lewat antrean | `queue:listen` nggak wajib lagi buat dua jalur itu. **Masih wajib buat panel admin Filament** — lihat "Yang belum" di bawah |
+| `d3fa98d` | Lembar kerja pH dirombak ngikut kertasnya | 5 kolom baru diketik teknisi (`alat_model`, `alat_serial_number`, `alat_merk`, `pemilik_nama`, `pemilik_alamat`). `CertificateSnapshotBuilder` ngutamain isian teknisi, master cuma cadangan |
+| `d3fa98d` | `/dashboard/tren` bawaan 5 → **6** bulan | Bug kalender: `subMonths()` polos dari tanggal 29–31 nyelonong maju. Sekarang `subMonthsNoOverflow()` |
+| `ab80b80` | **QR di PDF jadi opt-in**, default nggak nyetak | Dulu default-nya nyetak, jadi setelan yang ilang bikin dokumen resmi salah bentuk tanpa tanda apa pun |
+| `c35b044` | **Nama pelanggan unique per organisasi** | Dua lapis: unique index + `Rule::unique`. Migrasinya **nolak jalan** kalau kembar udah ada, dengan pesan yang nyebut namanya |
+
+### Empat pola kegagalan yang udah kena di repo ini
+
+Ini yang paling berharga buat dibawa ke kerjaan berikutnya. Keempatnya **lolos dari
+seluruh suite test**, dan ketemunya cuma gara-gara app-nya beneran dipakai.
+
+1. **Penjaga `hasTable` bikin `migrate` nggak mati, tapi NGGAK bikin tabel lamanya
+   jadi bener.** Tabel `folders` keskip penjaga, bentuknya ketinggalan dua kolom, dan
+   sertifikat terbit tanpa pernah ketaut ke folder — errornya ketelen `Log::warning`.
+   Tiap tabel yang keskip penjaga mesti dicocokin kolomnya satu-satu.
+2. **Setelan organisasi bisa ditimpa `db:seed`.** `OrganizationSeeder` nulis
+   `settings` sebagai array utuh, jadi seed nimpa seluruh JSON dan satu kunci ilang
+   tanpa suara. Setelan yang ngatur bentuk dokumen resmi **wajib default opt-in**,
+   biar kunci yang ilang bikin sesuatu absen (kelihatan) bukan salah bentuk (nggak
+   kelihatan).
+3. **Kolom sisa skema lama yang nggak ada di migrasi mana pun.** `thermohygro` (teks)
+   nyamperin relasi `thermohygro()` — di Eloquent atribut menang atas relasi, jadi
+   `GET /calibrations` mati 500 buat semua orang. Test tetap hijau karena DB test
+   dibangun dari migrasi yang nggak punya kolom itu.
+4. **Test hijau bukan bukti jalan.** Test pakai SQLite in-memory yang dibangun dari
+   migrasi; dev & produksi pakai MySQL yang skemanya udah terlanjur kena sejarah.
+   Kelas kegagalan yang cuma ada di sisi kanan: kolom nyasar, migrasi belum jalan,
+   nama index kepanjangan, pekerja antrean mati, standar kadaluarsa, `.env` nunjuk IP
+   lama. **Semua enam itu pernah kejadian di sini.**
+
+### Yang belum — dan keputusannya nunggu orang, bukan kode
+
+| Hal | Kondisi |
+|---|---|
+| **Dua pemanggil Filament masih lewat antrean** | `CalibrationSessionsTable:180` & `CertificatesTable:119` masih `GenerateCertificate::dispatch()`. Artinya **`queue:listen` tetap wajib buat panel admin**. Sengaja nggak diikutin — itu mesin desktop yang emang ada worker, dan aksinya bukan jalur pemulihan satu arah kayak retry |
+| **`rooms` masih 0 baris** | Belum ada seeder-nya, dan di mobile belum ada layar master Ruangan. Belum nahan apa-apa (sesi lab jalan pakai `lokasi=lab` tanpa `room_id`), tapi "Calibration Location" di sertifikat bakal kosong |
+| **Kunci Gemini sempat lewat chat** | Perlu diputer/diganti di Google Cloud Console. Kuncinya di `.env`, bukan di kode |
+| **Berkas non-sertifikat belum ketaut ke folder PT** | Baru sertifikat yang otomatis masuk. Ini fitur baru, bentuknya belum diputusin (subfolder per alat? berkas apa aja?) |
+
+### ⚠️ Branch `feat/kalibrasi-ph-lengkap-dan-arsip` — jangan di-merge tanpa sesi khusus
+
+Di sinilah `HANDOFF-BACKEND.md` yang asli berada — **file itu ada di branch itu, bukan
+di `main`**. Kalau kamu diarahkan "baca HANDOFF-BACKEND.md" terus nggak nemu, itu
+sebabnya.
+
+Diukur 30 Juli, branch itu vs `main`:
+
+| | Angka |
+|---|---|
+| Commit di depan `main` | **30** |
+| File kesentuh | **105** |
+| **File konflik kalau di-merge** | **90** |
+| Di antaranya, file yang baru disentuh 29–30 Juli | **11** |
+
+Sebelas file yang tabrakan itu inti alur: `CalibrationController`,
+`CertificateController`, `DashboardController`, `CalibrationRequest`,
+`CalibrationResource`, `GenerateCertificate`, `CalibrationSession`,
+`DatabaseSeeder`, `routes/api.php`, dan dua blade sertifikat.
+
+Cara ngecek ulang sendiri, tanpa nyentuh working tree:
+
+```bash
+git merge-tree --write-tree --name-only main feat/kalibrasi-ph-lengkap-dan-arsip
+```
+
+**Jadi ini bukan "tinggal merge".** Sebelas file itu persis yang paling banyak berubah
+minggu ini, jadi resolusinya butuh orang yang tau maksud kedua sisi — dan itu paling
+aman dikerjain sebagai satu pekerjaan tersendiri, bukan nyelip di tengah yang lain.
+
+### Cara cek cepat kalau ada yang kelihatan aneh
+
+Sebelum ngulik kode, jalanin rantai penuhnya lawan server beneran:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+python docs/skrip/e2e-ph.py http://127.0.0.1:8000/api sertifikat.pdf
+```
+
+Sebelas mata rantai dari login sampai unduh PDF. Keluarnya `SEMUA MATA RANTAI
+TERSAMBUNG` atau `PUTUS DI: <langkah>` + sebab + petunjuk. Ini yang paling cepat
+mbedain "bug mobile atau backend" — dan dia nembak lapisan yang test **nggak** lewatin
+(lihat pola kegagalan #4 di atas).
+
+> Skripnya bikin data beneran tiap dijalanin (sesi + sertifikat baru di DB dev).
+> Itu disengaja: yang mau dibuktiin justru jalur yang nyampe database.
 
 ---
 
@@ -73,7 +261,7 @@ disamain ke dokumen, jadi tabel akun di `kontrak-api.md` udah bener.
 
 Password semua `rahasia123`. Login pakai ID pegawai **atau** email.
 
-Seeder `TirtaGraciaPhMeterSeeder` juga bikin dua akun PT Sidik asli yang kepakai
+Seeder `PhMeterSeeder` juga bikin dua akun PT Sidik asli yang kepakai
 di demo sertifikat pH `012-CAL-524` — belum pernah didokumentasiin sebelumnya:
 
 | ID pegawai | Email | Peran di worksheet |

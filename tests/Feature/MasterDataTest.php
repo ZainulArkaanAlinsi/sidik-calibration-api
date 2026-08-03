@@ -42,6 +42,42 @@ class MasterDataTest extends TestCase
             ->assertJsonPath('data.no_akreditasi', 'LK-285-IDN');
     }
 
+    public function test_nama_pelanggan_nggak_boleh_kembar(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/customers', [
+            'nama' => 'PT Maju Jaya',
+        ])->assertCreated();
+
+        // Nama PT dipakai sebagai kunci folder & berkasnya. Dua PT bernama sama
+        // bikin "berkas ini punya siapa" nggak punya jawaban tunggal, dan
+        // folder yang salah baru ketahuan sesudah sertifikatnya dikirim.
+        $this->actingAs($this->admin)->postJson('/api/customers', [
+            'nama' => 'PT Maju Jaya',
+            'alamat' => 'Alamat lain',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('nama');
+
+        $this->assertSame(1, Customer::where('nama', 'PT Maju Jaya')->count());
+    }
+
+    public function test_pelanggan_bisa_disimpan_ulang_tanpa_ganti_nama(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/customers', [
+            'nama' => 'PT Maju Jaya',
+        ])->assertCreated();
+
+        $pelanggan = Customer::firstWhere('nama', 'PT Maju Jaya');
+
+        // Tanpa `ignore()`, ngedit alamat doang ketolak gara-gara namanya
+        // sendiri kebaca sebagai kembar.
+        $this->actingAs($this->admin)->patchJson("/api/customers/{$pelanggan->id}", [
+            'alamat' => 'Jl. Baru 99',
+        ])->assertOk();
+
+        $this->assertSame('Jl. Baru 99', $pelanggan->fresh()->alamat);
+    }
+
     public function test_crud_pelanggan_jalan(): void
     {
         $this->actingAs($this->admin)->postJson('/api/customers', [

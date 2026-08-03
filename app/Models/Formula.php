@@ -28,6 +28,9 @@ class Formula extends Model
     /** Rumus GUM buat jalur pH — yang sekarang dihitung `GumCalculator`. */
     public const KODE_GUM_PH = 'gum-ph';
 
+    /** Rumus GUM buat jalur Turbidimeter (budget 4 komponen, lihat TurbidimeterProfile). */
+    public const KODE_GUM_TURBIDI = 'gum-turbidi';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

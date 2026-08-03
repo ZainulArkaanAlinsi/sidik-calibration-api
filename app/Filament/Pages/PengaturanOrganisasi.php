@@ -111,6 +111,19 @@ class PengaturanOrganisasi extends Page
                                 .'menyetujui sesi. Dihitung dari tanggal kalibrasi, bukan tanggal terbit.',
                             )
                             ->columnSpanFull(),
+                        TextInput::make('settings.'.Organization::KEY_DESIMAL_SERTIFIKAT)
+                            ->label('Desimal tabel hasil sertifikat')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(6)
+                            ->placeholder('otomatis dari resolusi alat')
+                            ->helperText(
+                                'Kosongin buat ngikut resolusi alat per sertifikat (0,01 → 2 desimal; '
+                                .'0,001 → 3). Isi cuma kalau resolusi di master alat nggak ngikut spek '
+                                .'fisiknya — kalau kekecilan, U95% kehilangan angka penting (0,023 '
+                                .'kecetak 0,02). Sertifikat yang udah terbit nggak ikut berubah.',
+                            )
+                            ->columnSpanFull(),
                         Toggle::make('settings.tampilkan_qr_di_pdf')
                             ->label('Cetak QR Code di sertifikat')
                             ->default(true)

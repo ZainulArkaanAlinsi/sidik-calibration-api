@@ -29,6 +29,20 @@ class CalibrationResource extends JsonResource
             'id' => $this->id,
             'nomor_sesi' => $this->nomor_sesi,
             'nomor_order' => $this->nomor_order,
+            // Berapa desimal angka di `titik[]` mesti ditulis, biar layar mobile
+            // membulatkan persis sama dengan yang bakal kecetak di sertifikat.
+            // Tanpa ini mobile kepaksa nebak dari `equipment.resolusi` — cocok
+            // buat kasus biasa, tapi meleset kalau organisasi nyetel timpaan yang
+            // mobile nggak tau ada.
+            //
+            // Nilainya HIDUP (dihitung sekarang), beda dari `desimal` di
+            // CertificateResource yang beku dari snapshot. Di sesi belum ada
+            // sertifikat buat dibaca, dan angkanya masih boleh berubah sampai
+            // sertifikatnya terbit.
+            'desimal' => ($this->organization ?? $request->user()?->organization)
+                ?->desimalSertifikat(
+                    $this->equipment?->resolusi !== null ? (float) $this->equipment->resolusi : null,
+                ),
             'equipment' => [
                 'id' => $this->equipment?->id,
                 'nama_alat' => $this->equipment?->nama_alat,

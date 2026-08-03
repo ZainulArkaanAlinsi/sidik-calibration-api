@@ -23,6 +23,10 @@ class DemoDataSeeder extends Seeder
         $pelanggan = collect([
             ['nama' => 'PT Maju Jaya', 'alamat' => 'Jl. Soekarno Hatta No. 12, Bandung', 'contact_person' => 'Rina', 'telepon' => '0812-1111-2222'],
             ['nama' => 'PT Karya Logam', 'alamat' => 'Kawasan Industri Cimahi Blok C5', 'contact_person' => 'Dedi', 'telepon' => '0813-3333-4444'],
+            // Pelanggan & alat NYATA dari lembar olah data manual lab
+            // (sertifikat 0558-CAL-525). Ditaruh di sini biar hasil sistem bisa
+            // dicocokin ke lembar itu tanpa ngarang data.
+            ['nama' => 'PT THE MAGNUM ICE CREAM INDONESIA', 'alamat' => 'Jababeka Industrial Estate, Jl. Jababeka IX-B No.29 Blok D1, Wangunharja, Kec. Cikarang Utara, Kabupaten Bekasi, Jawa Barat 17531', 'contact_person' => null, 'telepon' => null],
         ])->map(fn (array $c) => Customer::updateOrCreate(
             ['organization_id' => 1, 'nama' => $c['nama']],
             [...$c, 'organization_id' => 1],
@@ -105,6 +109,27 @@ class DemoDataSeeder extends Seeder
                 'toleransi' => 0.05,
                 'nama_alat_kemampuan' => 'pH Meter',
                 'terakhir' => '-3 months', 'jatuh_tempo' => '+9 months', 'status' => 'nonaktif',
+            ],
+            [
+                // Alat NYATA dari lembar olah data manual lab (sertifikat
+                // 0558-CAL-525). Ini alat yang beda dari pH Meter punya
+                // PT Tirta Gracia di `PhMeterSeeder` — beda pemilik,
+                // beda merk, dan beda resolusi. Dua-duanya perlu ada supaya
+                // hasil sistem bisa dicocokin ke lembar manual masing-masing.
+                //
+                // `resolusi` 0,001 itu spek alat INI, dan dia yang nentuin
+                // sertifikatnya kecetak 3 desimal (`Angka::desimalDariResolusi`).
+                // Di 2 desimal, U95% 0,023 kecetak `0,02` dan kehilangan angka
+                // penting. JANGAN disalin ke alat lain cuma buat naikin desimal —
+                // resolusi itu spek fisik, bukan setelan tampilan; kalau butuh
+                // desimal lebih buat alat lain, pakai
+                // `settings.desimal_sertifikat`.
+                'nama_alat' => 'pH Meter', 'merk' => 'SI Analytics', 'model' => 'Lab. 855',
+                'serial_number' => 'IMTE-WQ-129', 'kode_kategori' => 'instrumen-analitik', 'customer' => 2,
+                'range_min' => 0, 'range_max' => 14, 'satuan' => 'pH', 'resolusi' => 0.001,
+                'toleransi' => 0.2,
+                'nama_alat_kemampuan' => 'pH Meter',
+                'terakhir' => '-14 months', 'jatuh_tempo' => '-2 months', 'status' => 'aktif',
             ],
         ];
 

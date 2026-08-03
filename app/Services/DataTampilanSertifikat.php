@@ -42,6 +42,9 @@ class DataTampilanSertifikat
             'sertifikat' => $sertifikat,
             'snapshot' => $sertifikat->snapshot,
             'logo' => $this->logoDataUri($organisasi),
+            // Kop surat selebar halaman. Kalau ada, dia GANTIIN kop teks — bukan
+            // ditambahin di atasnya (lihat `kopDataUri()`).
+            'kop' => $this->kopDataUri($organisasi),
             // `null` kalau belum diunggah — dan itu state yang SAH: sertifikat
             // nyetak garis + nama + jabatan dengan ruang kosong buat tanda
             // tangan basah.
@@ -57,9 +60,17 @@ class DataTampilanSertifikat
     }
 
     /**
-     * QR verifikasi. Bisa dimatiin lewat pengaturan organisasi
-     * (`tampilkan_qr_di_pdf`) buat lab yang layout sertifikatnya dikunci ketat
-     * sama dokumen mutu — PT Sidik termasuk, jadi di sini nilainya `false`.
+     * QR verifikasi. **Harus di-opt-in** lewat pengaturan organisasi
+     * (`tampilkan_qr_di_pdf` = true); default-nya nggak dicetak.
+     *
+     * Arahnya sengaja dibalik. Dulu default-nya nyetak QR dan PT Sidik
+     * matiin lewat panel admin — sampai `db:seed` nimpa JSON `settings`
+     * dan kuncinya ilang. Diam-diam QR-nya balik kecetak di sertifikat yang
+     * layout-nya dikunci dokumen mutu, dan nggak ada yang error.
+     *
+     * Dengan default "nggak dicetak", kunci yang ilang bikin QR-nya absen —
+     * kelihatan, dan gampang dibalikin. Kalau default-nya nyetak, kunci yang
+     * ilang bikin dokumen resmi salah bentuk tanpa tanda apa pun.
      *
      * Di tampilan web QR-nya SELALU nggak ada, apa pun pengaturannya: halaman
      * itu sendiri yang dituju QR. Nyetak QR di halaman hasil scan QR cuma
@@ -67,7 +78,7 @@ class DataTampilanSertifikat
      */
     private function qrDataUri(?Organization $organisasi, Certificate $sertifikat, bool $web): ?string
     {
-        if ($web || ($organisasi?->settings['tampilkan_qr_di_pdf'] ?? true) === false) {
+        if ($web || ($organisasi?->settings['tampilkan_qr_di_pdf'] ?? false) !== true) {
             return null;
         }
 
@@ -94,6 +105,39 @@ class DataTampilanSertifikat
     private function tampilkanKeputusan(?Organization $organisasi): bool
     {
         return (bool) ($organisasi?->settings['tampilkan_keputusan_di_pdf'] ?? false);
+    }
+
+    /**
+     * Kop surat sebagai data URI — banner selebar halaman di atas sertifikat.
+     *
+     * Ini BUKAN logo. Logo itu lambang kecil; kop surat ini satu gambar yang
+     * udah memuat lambang lab, nama & alamat PT, plus lambang KAN + nomor
+     * akreditasi. Karena semua itu ada di dalam gambarnya, blade nggak nulis
+     * ulang teksnya di sebelahnya — kalau ditulis dua kali, alamat & nomor
+     * akreditasi kecetak dobel dan yang satu bisa basi duluan.
+     *
+     * Prioritasnya sama kayak logo: punya organisasi dulu (`kop_path`, diunggah
+     * admin), baru bawaan di `public/images`. null kalau dua-duanya nggak ada —
+     * blade balik ke kop teks yang lama, jadi sertifikatnya tetap terbit.
+     */
+    private function kopDataUri(?Organization $organisasi): ?string
+    {
+        $path = null;
+        $kop = $organisasi?->settings[Organization::KEY_KOP_PATH] ?? null;
+
+        if ($kop && Storage::disk('public')->exists($kop)) {
+            $path = Storage::disk('public')->path($kop);
+        } elseif (is_file(public_path('images/kop-surat.png'))) {
+            $path = public_path('images/kop-surat.png');
+        }
+
+        if ($path === null) {
+            return null;
+        }
+
+        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
     }
 
     /**

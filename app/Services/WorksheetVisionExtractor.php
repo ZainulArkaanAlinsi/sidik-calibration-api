@@ -44,12 +44,18 @@ class WorksheetVisionExtractor
     /**
      * @param  int|null  $jumlahTitik  jumlah larutan standar (kolom, mis. 3) — petunjuk buat model
      * @param  int|null  $jumlahPengulangan  jumlah Repeat (baris) yang diharapkan — petunjuk
+     * @param  string|null  $satuan  satuan pembacaan (mis. `pH`, `NTU`) — bikin model tau kolom bacaan vs °C
+     * @param  list<float>|null  $nominal  nilai nominal standar tiap kolom (kiri→kanan), mis. [1,100,1000]
+     * @param  list<int>|null  $desimal  jumlah desimal tipikal tiap kolom (sejajar $nominal)
      */
     public function extract(
         string $isiGambar,
         string $mimeType,
         ?int $jumlahTitik = null,
         ?int $jumlahPengulangan = null,
+        ?string $satuan = null,
+        ?array $nominal = null,
+        ?array $desimal = null,
     ): array {
         $penyedia = strtolower((string) config('services.vision.driver', 'anthropic'));
 
@@ -59,7 +65,7 @@ class WorksheetVisionExtractor
         }
 
         if ($penyedia === 'gemini') {
-            return $this->lewatGemini($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan);
+            return $this->lewatGemini($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal);
         }
 
         $apiKey = (string) config('services.anthropic.api_key');
@@ -79,7 +85,7 @@ class WorksheetVisionExtractor
                 'text' => $this->systemPrompt(),
                 'cache_control' => ['type' => 'ephemeral', 'ttl' => '1h'],
             ]],
-            'messages' => $this->bangunMessages($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan),
+            'messages' => $this->bangunMessages($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal),
         ];
 
         // Structured Output: jamin bentuk JSON. Bisa dimatiin lewat env kalau
@@ -170,6 +176,9 @@ class WorksheetVisionExtractor
         string $mimeType,
         ?int $jumlahTitik = null,
         ?int $jumlahPengulangan = null,
+        ?string $satuan = null,
+        ?array $nominal = null,
+        ?array $desimal = null,
     ): array {
         $messages = [];
 
@@ -214,7 +223,7 @@ class WorksheetVisionExtractor
                 ['type' => 'image', 'source' => [
                     'type' => 'base64', 'media_type' => $mimeType, 'data' => base64_encode($isiGambar),
                 ]],
-                ['type' => 'text', 'text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan)],
+                ['type' => 'text', 'text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal)],
             ],
         ];
 
@@ -245,6 +254,9 @@ class WorksheetVisionExtractor
         string $mimeType,
         ?int $jumlahTitik,
         ?int $jumlahPengulangan,
+        ?string $satuan = null,
+        ?array $nominal = null,
+        ?array $desimal = null,
     ): array {
         $apiKey = (string) config('services.gemini.api_key');
         $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
@@ -270,6 +282,9 @@ class WorksheetVisionExtractor
                         $mimeType,
                         $jumlahTitik,
                         $jumlahPengulangan,
+                        $satuan,
+                        $nominal,
+                        $desimal,
                     ),
                     'generationConfig' => [
                         'responseMimeType' => 'application/json',
@@ -365,6 +380,9 @@ class WorksheetVisionExtractor
         string $mimeType,
         ?int $jumlahTitik,
         ?int $jumlahPengulangan,
+        ?string $satuan = null,
+        ?array $nominal = null,
+        ?array $desimal = null,
     ): array {
         $contents = [];
 
@@ -392,7 +410,7 @@ class WorksheetVisionExtractor
                 'mime_type' => $mimeType,
                 'data' => base64_encode($isiGambar),
             ]],
-            ['text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan)],
+            ['text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal)],
         ]];
 
         return $contents;
@@ -421,13 +439,49 @@ class WorksheetVisionExtractor
     }
 
     /** Petunjuk jumlah kolom (larutan standar) & baris (Repeat) buat bantu model. */
-    private function instruksiFoto(?int $jumlahTitik, ?int $jumlahPengulangan): string
-    {
-        $teks = 'Extract this table.';
+    /**
+     * @param  list<float>|null  $nominal
+     * @param  list<int>|null  $desimal
+     */
+    private function instruksiFoto(
+        ?int $jumlahTitik,
+        ?int $jumlahPengulangan,
+        ?string $satuan = null,
+        ?array $nominal = null,
+        ?array $desimal = null,
+    ): string {
+        $unit = ($satuan !== null && $satuan !== '') ? $satuan : 'the instrument unit';
+        $teks = "Extract this calibration worksheet table. Each cell holds two numbers: "
+            ."an instrument reading in {$unit} and a temperature in °C.";
 
-        if ($jumlahTitik !== null && $jumlahTitik > 0) {
-            $teks .= " It has {$jumlahTitik} standard buffer columns, left to right.";
+        // Nilai nominal per kolom = petunjuk paling kuat: model tau angka tiap
+        // kolom mestinya DEKAT nilai itu, jadi penempatan digit & titik desimal
+        // jauh lebih akurat (mis. "9,61" nggak kebaca "961" di kolom pH 10, dan
+        // "1000" nggak kebaca "100" di kolom NTU 1000). TAPI ditegasin: JANGAN
+        // ngubah nilai yang beneran menyimpang — itu justru yang mesti ketangkep.
+        if ($nominal !== null && $nominal !== []) {
+            $kolom = [];
+            foreach (array_values($nominal) as $i => $n) {
+                $d = isset($desimal[$i]) ? max(0, (int) $desimal[$i]) : null;
+                $label = number_format((float) $n, $d ?? 2, '.', '');
+                // Buang nol belakang HANYA di bagian desimal — "1.00"→"1", tapi
+                // "1000" tetap "1000" (jangan strip nol pada bilangan bulat).
+                if (str_contains($label, '.')) {
+                    $label = rtrim(rtrim($label, '0'), '.');
+                }
+                $petunjukDesimal = $d !== null
+                    ? " (reading usually {$d} decimal place".($d === 1 ? '' : 's').')'
+                    : '';
+                $kolom[] = 'standard '.$label.' '.$unit.$petunjukDesimal;
+            }
+            $teks .= ' Columns left to right: '.implode(', ', $kolom).'.';
+            $teks .= " Each column's reading should be CLOSE TO its standard value —"
+                .' use that to place digits and the decimal point correctly, but'
+                .' NEVER change a value that genuinely deviates.';
+        } elseif ($jumlahTitik !== null && $jumlahTitik > 0) {
+            $teks .= " It has {$jumlahTitik} standard columns, left to right.";
         }
+
         if ($jumlahPengulangan !== null && $jumlahPengulangan > 0) {
             $teks .= " There are up to {$jumlahPengulangan} Repeat rows.";
         }
@@ -438,18 +492,23 @@ class WorksheetVisionExtractor
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-You extract numeric readings from a photographed pH-meter calibration worksheet
-table for Sidik Calibration.
+You extract numeric readings from a photographed instrument calibration worksheet
+table for Sidik Calibration. The instrument's unit and the expected standard
+columns (with their nominal values) are given in the user message — read them
+first; they tell you what each column should look like.
 
 The table has one row per "Repeat" (1..N) and one column group per standard
-buffer solution (nominal 4, 7, 10), left to right. Each cell holds two numbers:
-a pH reading and a temperature in °C.
+solution, left to right. Each cell holds two numbers: an instrument reading and a
+temperature in °C.
 
 Return ONLY the JSON matching the provided schema. For each Repeat row, output:
-- "repeat": the Repeat number printed in the leftmost column (1, 2, 3, ...)
-- "ph": the pH reading per buffer, left to right (null if illegible/missing)
-- "suhu": the °C reading per buffer, same order (null if illegible/missing)
+- "ph": the instrument reading per column, left to right (null if illegible/missing)
+- "suhu": the °C reading per column, same order (null if illegible/missing)
 - "ph_keyakinan" / "suhu_keyakinan": your confidence per cell — "high", "medium", "low"
+
+(The JSON keys are "ph" and "suhu" for historical reasons. "ph" means the
+instrument reading in WHATEVER unit the worksheet uses — pH, NTU, etc. — not
+necessarily pH. "suhu" is the temperature in °C.)
 
 Rules:
 - Transcribe EXACTLY what is written. NEVER correct, round, or "fix" values that
@@ -457,15 +516,17 @@ Rules:
   catch. If a cell clearly reads 5.00 where ~4.0 is expected, output 5.00.
 - Indonesian decimal convention: a comma is a decimal point (4,04 → 4.04).
   Output all numbers with a period decimal.
-- pH readings are 0–14; temperatures are typically 5–60 °C. Use this only to tell
-  the pH column from the °C column when the layout is ambiguous — NOT to reject or
-  alter a value.
+- Match each reading to its column's expected decimal places from the user message
+  (e.g. a 0.01-resolution column reads like 4.60, a whole-number column like 999).
+  Use the column's nominal value only to place digits/decimal point and to tell the
+  reading column from the °C column — NEVER to reject or alter a genuine value.
+- Temperatures are typically 5–60 °C. The reading column is in the worksheet's unit.
 - Confidence: "high" = crisp and unambiguous; "medium" = readable but a digit is
   smudged/uncertain; "low" = guessed, partially obscured, or handwriting hard to
   read. When unsure between two readings, pick the most likely and mark "low".
 - NEVER omit a Repeat row. If a whole row is blank in the photo, still output it
-  with its "repeat" number and all values null. Dropping a row would shift every
-  row below it into the wrong Repeat slot on the certificate.
+  with all values null. Dropping a row would shift every row below it into the
+  wrong Repeat slot on the certificate.
 - If a single cell is unreadable, set its value to null and its confidence to "low".
 - Do not invent rows or cells beyond what the photographed table contains.
 PROMPT;

@@ -73,7 +73,7 @@ ini tinggal dikonfirmasi cocok, bukan dibuat ulang.
 \* Toleransi ±0.2 pH tidak tercantum eksplisit di workbook sumber (workbook ini cuma
 melaporkan koreksi & U95%, tanpa kriteria PASS/FAIL) — ini asumsi kriteria
 penerimaan umum untuk pH meter lab yang dipakai di sistem (lihat catatan di
-`TirtaGraciaPhMeterSeeder`). Kalau PT Sidik punya kriteria penerimaan resmi yang
+`PhMeterSeeder`). Kalau PT Sidik punya kriteria penerimaan resmi yang
 beda, tinggal ganti `toleransi` di seeder.
 
 Keputusan pakai *guarded acceptance* (ILAC-G8): `|error| + U95% <= toleransi`.

@@ -29,8 +29,8 @@ artefak export Excel dibuang, datanya dikelompokkan per topik biar gampang dibac
 
 ## Ke mana data ini dipakai di backend
 
-Data di sini adalah sumber untuk `database/data/kalibrasi-ph-tirta-gracia.json`, yang
-dibaca oleh `database/seeders/TirtaGraciaPhMeterSeeder.php` buat bikin record
+Data di sini adalah sumber untuk `database/data/kalibrasi-ph-meter.json`, yang
+dibaca oleh `database/seeders/PhMeterSeeder.php` buat bikin record
 kalibrasi ASLI (bukan dummy) yang jalan penuh lewat sistem yang sama dipakai app:
 `Customer → Equipment → CalibrationSession → RawMeasurement → GumCalculator →
 UncertaintyCalculation → Certificate (PDF beneran ke-generate)`.

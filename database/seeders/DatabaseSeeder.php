@@ -22,8 +22,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             OrganizationSeeder::class,
+            MetodeKalibrasiSeeder::class,
             CalibrationCapabilitySeeder::class,
             PhMeterCapabilitySeeder::class,
+            // Turbidimeter (alat ke-2) — WAJIB abis CalibrationCapabilitySeeder
+            // dengan alasan sama kayak PhMeterCapabilitySeeder.
+            TurbidimeterCapabilitySeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori
             // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
             // ngitung koreksi kondisi lingkungan.
@@ -35,7 +39,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DemoDataSeeder::class,
             // Record kalibrasi ASLI (bukan demo) — lihat docblock seeder ini.
-            TirtaGraciaPhMeterSeeder::class,
+            PhMeterSeeder::class,
+            // Standar turbidity + alat + sesi demo Turbidimeter (butuh user demo,
+            // jadi abis seedUsers()).
+            TurbidimeterSeeder::class,
         ]);
     }
 
