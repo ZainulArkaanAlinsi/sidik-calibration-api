@@ -11,6 +11,9 @@ use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
+use App\Services\CalibrationValidator;
+use App\Services\CertificateSnapshotBuilder;
+use App\Services\DataTampilanSertifikat;
 use App\Services\GumCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Seeder;
@@ -242,18 +245,21 @@ class TirtaGraciaPhMeterSeeder extends Seeder
             'status' => Certificate::STATUS_MENUNGGU_GENERATE,
         ])->save();
 
-        $logo = null;
-        $logoPath = public_path('images/logo-sidik.png');
-        if (is_file($logoPath)) {
-            $logo = 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath));
-        }
-
-        $pdf = Pdf::loadView('sertifikat.pdf', [
-            'sertifikat' => $sertifikat,
-            'sesi' => $sesi,
-            'titik' => $sesi->uncertaintyCalculations->sortBy('titik_ke'),
-            'logo' => $logo,
+        // Snapshot WAJIB diisi sebelum render. View `sertifikat.pdf` baca
+        // `certificates.snapshot` bulat-bulat (lihat docblock di atas view-nya),
+        // bukan relasi `sesi`/`titik` — jadi sertifikat tanpa snapshot kecetak
+        // dengan tabel hasil KOSONG, dan `CertificateExcelExporter` nolak
+        // dengan "belum terbit". Dulu di sini masih ngirim `sesi`+`titik` ke
+        // `loadView` ngikut kontrak view yang lama, jadi 012-CAL-524 blank.
+        $sertifikat->update([
+            'validasi' => app(CalibrationValidator::class)->periksa($sesi),
+            'snapshot' => app(CertificateSnapshotBuilder::class)->bangun($sesi, $sertifikat),
         ]);
+
+        // Bahannya dirakit `DataTampilanSertifikat`, sama persis kayak
+        // `GenerateCertificate::handle()` — biar lembar hasil seeder nggak bisa
+        // beda dari lembar yang keluar lewat alur approve beneran.
+        $pdf = Pdf::loadView('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat));
 
         $path = "certificates/{$sertifikat->qr_token}.pdf";
         Storage::disk('local')->put($path, $pdf->output());
