@@ -4,7 +4,7 @@ aliases: [Alur Aplikasi, Flow User & Admin]
 
 # Alur Aplikasi Lengkap — Flow Teknisi (User) & Admin
 
-🏠 [[Dashboard]] · Dokumen ini merangkum & mendetailkan ulang isi dari `README-asmo-mobile.md`, `01 - Ringkasan Project.md`, `01-Rencana-Pengembangan-Ringkas.md`, `03-Addendum-Fitur-Kamera-OCR.md`, dan dua file mermaid (`Flowchart-Alur-Utama-Lengkap.mermaid`, `Flowchart-Alur-Inti-Ringkas.mermaid`) jadi satu peta alur utuh — biar nggak perlu buka-buka banyak file cuma buat lihat "urutan layar-nya gimana sih".
+🏠 [[Dashboard]] · Dokumen ini merangkum & mendetailkan ulang isi dari `README-mobile.md`, `01 - Ringkasan Project.md`, `01-Rencana-Pengembangan-Ringkas.md`, `03-Addendum-Fitur-Kamera-OCR.md`, dan dua file mermaid (`Flowchart-Alur-Utama-Lengkap.mermaid`, `Flowchart-Alur-Inti-Ringkas.mermaid`) jadi satu peta alur utuh — biar nggak perlu buka-buka banyak file cuma buat lihat "urutan layar-nya gimana sih".
 
 > Satu APK, satu codebase Flutter. Admin dan Teknisi pakai app yang **sama persis** — yang beda cuma isi menu & hak akses, dikontrol lewat role. Nggak ada web admin panel terpisah.
 
@@ -243,6 +243,6 @@ Tidak ada tombol "Tambah", "Submit", atau "Approve" yang dirender sama sekali di
 - Detail pilot kamera/OCR per task → `03-Addendum-Fitur-Kamera-OCR.md`
 - Batas rentang ukur & ketidakpastian per kategori alat (buat validasi input & worksheet dinamis) → [[Rekap-Data-Kemampuan-Kalibrasi]] / `data-kemampuan-kalibrasi.json`
 - Diagram alur data mentah → sertifikat versi ringkas/lengkap asli → `Flowchart-Alur-Inti-Ringkas.mermaid`, `Flowchart-Alur-Utama-Lengkap.mermaid`
-- Setup teknis & struktur folder aplikasi mobile → `README-asmo-mobile.md`
+- Setup teknis & struktur folder aplikasi mobile → `README-mobile.md`
 
 *Dokumen ini bisa langsung dipindah ke folder `04 - Referensi Teknis/` di vault Obsidian kamu — semua diagram mermaid di atas otomatis kerender kalau dibuka di Obsidian.*
