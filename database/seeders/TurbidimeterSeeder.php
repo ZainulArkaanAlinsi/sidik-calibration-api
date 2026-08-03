@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\GumCalculator;
+use App\Services\KondisiLingkungan;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -127,21 +128,40 @@ class TurbidimeterSeeder extends Seeder
             return; // user demo belum diseed — cukup master data-nya aja
         }
 
+        // Thermohygro TH-6 (INPUT DATA "Thermohygro used: TH-6"). Sertifikatnya
+        // udah diseed ThermohygroSeeder (yang jalan sebelum ini) dengan koreksi
+        // suhu -0,23 & kelembaban -3,17 + U95 std 1,7 / 4,8.
+        $th6 = Standard::where('organization_id', 1)->where('nama', 'TH-6')->first();
+
         $sesi = CalibrationSession::updateOrCreate(
             ['organization_id' => 1, 'nomor_sesi' => '2406.32.A'],
             [
                 'equipment_id' => $equipment->id,
                 'teknisi_id' => $teknisi->id,
                 'standard_id' => $standar[0]->id,
+                'thermohygro_standard_id' => $th6?->id,
                 'input_method' => 'manual',
                 'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
                 'tanggal_kalibrasi' => '2024-06-22',
                 'lokasi' => 'lab',
-                'suhu_ruang' => 23.3,
-                'kelembaban' => 28.5,
+                // Pembacaan thermohygro AWAL & AKHIR apa adanya (PERHITUNGAN
+                // KONDISI LINGKUNGAN). suhu_ruang & U95-nya JANGAN ditulis di
+                // sini — biar `KondisiLingkungan` yang ngitung dari awal/akhir +
+                // koreksi sertifikat TH-6, persis kayak alur teknisi beneran.
+                // Kelembaban 55/55 ngikut sheet PERHITUNGAN (INPUT DATA nulis
+                // Awal=2 — salah ketik, 2 %RH mustahil di lab).
+                'suhu_awal' => 23.2,
+                'suhu_akhir' => 23.4,
+                'kelembaban_awal' => 55.0,
+                'kelembaban_akhir' => 55.0,
                 'submitted_at' => now(),
             ],
         );
+
+        // suhu_ruang -> 23,07 (avg 23,3 + koreksi -0,23), U95 -> √(1,7²+0,2²) =
+        // 1,7117242768623688; kelembaban -> 51,83, U95 -> 4,8. Cocok sama sel
+        // "U95% Sertifikat" di PERHITUNGAN.csv baris 14-15.
+        app(KondisiLingkungan::class)->terapkan($sesi);
 
         $this->isiTitikUkur($sesi, $equipment, $standar);
     }
