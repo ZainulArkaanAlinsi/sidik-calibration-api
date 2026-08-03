@@ -136,7 +136,7 @@ class TurbidimeterSeeder extends Seeder
                 'input_method' => 'manual',
                 'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
                 'tanggal_kalibrasi' => '2024-06-22',
-                'lokasi' => 'Lab PT. Sidik',
+                'lokasi' => 'lab',
                 'suhu_ruang' => 23.3,
                 'kelembaban' => 28.5,
                 'submitted_at' => now(),
