@@ -349,8 +349,16 @@ class CertificateSnapshotBuilder
         $bagian = [];
 
         if ($alat->range_min !== null || $alat->range_max !== null) {
-            $bagian[] = Angka::idRingkas((float) $alat->range_min)
-                .'–'.Angka::idRingkas((float) $alat->range_max).$satuan;
+            // Rentang ukur ditulis TANPA pemisah ribuan: sertifikat asli nyetak
+            // `0-1000 NTU`, bukan `0-1.000 NTU`. Di angka rentang alat, titik
+            // ribuan malah gampang kebaca sebagai koma desimal oleh pembaca
+            // asing — dan ini dokumen dwibahasa.
+            $angkaRentang = static fn (?float $n): string => $n === null
+                ? '—'
+                : rtrim(rtrim(number_format($n, 6, ',', ''), '0'), ',');
+
+            $bagian[] = $angkaRentang((float) $alat->range_min)
+                .'–'.$angkaRentang((float) $alat->range_max).$satuan;
         }
 
         // Alat ber-resolusi BERTINGKAT ditulis semua resolusinya, bukan cuma
@@ -374,9 +382,20 @@ class CertificateSnapshotBuilder
                 }
             }
             if ($resolusi !== []) {
+                // Dipisah BARIS BARU, bukan koma — sertifikat asli PT Sidik
+                // (0189-CAL-624) nyetak resolusinya bertumpuk:
+                //
+                //   Capacity/Graduation : 0-1000 NTU / 0,01 NTU
+                //                                      0,1 NTU
+                //                                      1 NTU
+                //
+                // Dijejer koma, barisnya kepanjangan lalu membungkus asal di
+                // tengah angka. Yang ngerender wajib ngehormatin `\n`
+                // (`white-space: pre-line` di blade PDF & web).
+                //
                 // `array_unique` jaga-jaga kalau dua rentang resolusinya sama —
                 // nulis "1 NTU / 1 NTU" cuma bikin dokumen kelihatan salah.
-                $bagian[] = implode(', ', array_unique($resolusi));
+                $bagian[] = implode("\n", array_unique($resolusi));
 
                 return implode(' / ', $bagian);
             }

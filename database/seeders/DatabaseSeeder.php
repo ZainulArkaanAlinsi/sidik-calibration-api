@@ -43,6 +43,11 @@ class DatabaseSeeder extends Seeder
             // Standar turbidity + alat + sesi demo Turbidimeter (butuh user demo,
             // jadi abis seedUsers()).
             TurbidimeterSeeder::class,
+            // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
+            // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
+            // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena
+            // apa-apa — diam-diam, tanpa error.
+            PengaturanSertifikatSeeder::class,
         ]);
     }
 
