@@ -78,6 +78,14 @@
            yang nempel di mata barisnya, bukan cuma judul kolomnya. */
         table.info td.val.alat { font-weight: bold; }
 
+        /*
+          Sel yang isinya boleh BERTUMPUK. Cuma dipakai Capacity/Graduation:
+          alat ber-resolusi bertingkat nyetak satu resolusi per baris, persis
+          sertifikat asli. Tanpa `pre-line`, `\n` dari snapshot diratakan jadi
+          spasi dan barisnya membungkus asal di tengah angka.
+        */
+        table.info td.val.tumpuk { white-space: pre-line; }
+
         .judul-sub { font-size: 11.5px; font-weight: bold; margin: 10px 0 5px; letter-spacing: .5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 11px; }
         table.data th, table.data td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
@@ -318,7 +326,7 @@
         </tr>
         <tr>
             <td class="lbl">Calibration Method</td><td class="val">{{ $isi($header['calibration_method'] ?? null) }}</td>
-            <td class="lbl">Capacity/Graduation</td><td class="val">{{ $isi($header['capacity_graduation'] ?? null) }}</td>
+            <td class="lbl">Capacity/Graduation</td><td class="val tumpuk">{{ $isi($header['capacity_graduation'] ?? null) }}</td>
         </tr>
         <tr>
             <td class="lbl">Env. Condition</td><td class="val">{{ $isi($header['env_condition'] ?? null) }}</td>

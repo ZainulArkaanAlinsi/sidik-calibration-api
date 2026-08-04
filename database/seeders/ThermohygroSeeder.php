@@ -18,15 +18,20 @@ use RuntimeException;
  * jalan, cuma yang dilaporin pembacaan mentah tanpa koreksi dan U95%-nya
  * kosong — diam-diam beda dari sertifikat yang selama ini terbit.
  *
- * BATASAN YANG DISENGAJA: tiap unit sebenernya dikalibrasi di LIMA titik suhu
- * & lima titik kelembaban, dan Excel-nya milih titik yang paling dekat sama
- * kondisi ruangan waktu itu. `parameter_kondisi` cuma muat satu titik per
- * parameter, jadi yang diseed titik ~20 °C / ~50 %RH — kondisi ruang lab
- * sehari-hari, dan persis titik yang dipakai sheet PERHITUNGAN buat TH-3
- * (19,83 °C / 47,05 %RH). Selama kalibrasi dikerjain di ruang ber-AC angkanya
- * sama persis; kalau nanti ada sesi di luar rentang itu, pemilihan titiknya
- * yang harus dibikin otomatis — titik lengkapnya udah ikut diarsipkan di
- * `titik_kalibrasi` dalam JSON-nya supaya nggak perlu ngetik ulang dari CSV.
+ * KELIMA TITIK DISEED, bukan satu.
+ *
+ * Versi pertama seeder ini sengaja cuma nyeed satu titik (~20 °C / ~50 %RH)
+ * karena `Standard::parameterKondisi()` waktu itu cuma bisa megang satu, dan
+ * docblock-nya udah mewanti: "kalau nanti ada sesi di luar rentang itu,
+ * pemilihan titiknya yang harus dibikin otomatis". Itu kejadian — sesi
+ * turbidimeter di ruangan 25,7 °C kena koreksi titik 19,6 °C (-0,23) dan
+ * kecetak 25,47, padahal Excel lab pakai titik 29,4 °C (+0,35) dan dapat
+ * 26,05. Selisih 0,58 °C di dokumen terakreditasi.
+ *
+ * Sekarang `parameterKondisi()` milih titik terdekat sendiri lewat Instrument
+ * Indication, jadi yang diseed titik lengkapnya. Untungnya `titik_kalibrasi`
+ * emang udah diarsipkan di JSON dari dulu buat momen ini — nggak ada yang
+ * perlu diketik ulang dari CSV.
  */
 class ThermohygroSeeder extends Seeder
 {
@@ -47,10 +52,53 @@ class ThermohygroSeeder extends Seeder
                     // kolom `ketidakpastian` yang cuma muat satu angka nggak dipakai
                     // — yang kepakai `parameter_kondisi` di bawah.
                     'faktor_cakupan' => 2,
-                    'parameter_kondisi' => $th['parameter_kondisi'],
+                    'parameter_kondisi' => $this->parameterKondisi($th),
                 ],
             );
         }
+    }
+
+    /**
+     * Susun `parameter_kondisi` dari KELIMA titik kalibrasi.
+     *
+     * `titik_kalibrasi` udah lama diarsipkan di JSON-nya buat kepentingan ini
+     * — waktu itu belum kepakai karena `Standard::parameterKondisi()` cuma
+     * bisa megang satu titik. Sekarang dia milih titik terdekat sendiri, jadi
+     * yang diseed titik lengkapnya.
+     *
+     * `u95` tingkat-parameter ikut ditulis sebagai cadangan buat pemanggil
+     * lama yang baca `parameter_kondisi[p]['u95']` langsung.
+     *
+     * @param  array<string, mixed>  $th
+     * @return array<string, mixed>
+     */
+    private function parameterKondisi(array $th): array
+    {
+        $titik = $th['titik_kalibrasi'] ?? null;
+
+        // Unit tanpa arsip titik lengkap tetap keseed satu titik seperti dulu —
+        // lebih baik koreksinya kasar daripada kosong sama sekali.
+        if (! is_array($titik)) {
+            return $th['parameter_kondisi'];
+        }
+
+        $hasil = [];
+        foreach (['suhu', 'kelembaban'] as $parameter) {
+            $daftar = $titik[$parameter] ?? null;
+
+            if (! is_array($daftar) || $daftar === []) {
+                $hasil[$parameter] = $th['parameter_kondisi'][$parameter] ?? [];
+
+                continue;
+            }
+
+            $hasil[$parameter] = [
+                'u95' => $th['parameter_kondisi'][$parameter]['u95'] ?? ($daftar[0]['u95'] ?? null),
+                'titik' => array_values($daftar),
+            ];
+        }
+
+        return $hasil;
     }
 
     /**
