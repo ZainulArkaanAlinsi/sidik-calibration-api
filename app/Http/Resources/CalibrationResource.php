@@ -4,10 +4,12 @@ namespace App\Http\Resources;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
+use App\Support\Angka;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -197,7 +199,11 @@ class CalibrationResource extends JsonResource
             'titik' => $this->uncertaintyCalculations
                 ->sortBy('titik_ke')
                 ->values()
-                ->map(fn (UncertaintyCalculation $titik): array => self::petakanTitik($titik)),
+                ->map(fn (UncertaintyCalculation $titik): array => self::petakanTitik(
+                    $titik,
+                    $this->equipment,
+                    $this->organization ?? $request->user()?->organization,
+                )),
 
             // Status verifikasi pembacaan — cuma ikut waktu detail sesi dibuka
             // (whenLoaded), biar daftar sesi nggak kebanjiran baris pembacaan.
@@ -268,11 +274,27 @@ class CalibrationResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public static function petakanTitik(UncertaintyCalculation $titik): array
+    public static function petakanTitik(UncertaintyCalculation $titik, ?Equipment $alat = null, ?Organization $organisasi = null): array
     {
         return [
             'titik_ke' => $titik->titik_ke,
             'titik_ukur' => $titik->titik_ukur,
+            // Desimal KHUSUS titik ini — nol kalau alatnya nggak dikirim.
+            //
+            // Alat yang resolusinya berubah per rentang (Turbidimeter: 0,01 di
+            // bawah 10 NTU, 0,1 di 10–100, 1 di atas itu) nggak bisa diwakili
+            // satu angka `desimal` di level sesi. Waktu dipaksa satu, titik
+            // 100 NTU kecetak `101,00` — dua digit yang alatnya nggak bisa
+            // tampilkan, dan di sertifikat terakreditasi itu ngaku-ngaku
+            // ketelitian. Excel master lab nulisnya `101`.
+            //
+            // `desimal` di level sesi TETAP dikirim buat kompatibilitas; mobile
+            // versi lama yang belum baca field ini jalan seperti biasa.
+            'desimal' => $alat?->resolusi_rentang
+                ? ($organisasi
+                    ? $organisasi->desimalSertifikat($alat->resolusiPada((float) $titik->titik_ukur))
+                    : Angka::desimalDariResolusi($alat->resolusiPada((float) $titik->titik_ukur)))
+                : null,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,
