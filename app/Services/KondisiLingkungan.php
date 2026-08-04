@@ -53,7 +53,9 @@ class KondisiLingkungan
         // nggak bisa bilang ruangannya bergeser apa nggak.
         $delta = ($awal !== null && $akhir !== null) ? abs($akhir - $awal) : null;
 
-        $sertifikat = $sesi->thermohygro?->parameterKondisi($parameter);
+        // Titik koreksi dipilih menurut RATA-RATA pembacaan, bukan titik
+        // pertama yang kebetulan kesimpen. Lihat `Standard::parameterKondisi`.
+        $sertifikat = $sesi->thermohygro?->parameterKondisi($parameter, $average);
         $correction = $sertifikat['correction'] ?? null;
         $u95StdTh = $sertifikat['u95'] ?? null;
 
