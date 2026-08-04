@@ -399,8 +399,13 @@ class CertificateSnapshotBuilder
     {
         $bagian = [];
 
+        // Desimalnya ngikut Excel master lab, dan dulu KEBALIK: suhu ditulis 1
+        // desimal (25,47 kepangkas jadi 25,5 — kehilangan angka yang dicatat
+        // teknisi) sementara kelembaban ditulis 2 desimal (51,83) padahal
+        // sertifikat aslinya nulis bulat (52). Suhu ruang dicatat sampai 0,01°C
+        // karena ikut ngaruh ke koreksi; kelembaban nggak, makanya dibulatkan.
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 1).'°C';
+            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 2).'°C';
 
             if ($sesi->suhu_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
@@ -410,7 +415,7 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->kelembaban !== null) {
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 2).'%';
+            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
