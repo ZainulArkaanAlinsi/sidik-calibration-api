@@ -420,11 +420,14 @@ class TandaTanganSertifikatTest extends TestCase
     {
         $css = file_get_contents(resource_path('views/sertifikat/pdf.blade.php'));
 
-        $this->assertStringContainsString('.ttd .ruang-ttd { height: 44px;', $css);
+        // Tingginya dipatok (dinaikin 44 -> 56 waktu skala huruf sertifikat
+        // dibesarin). Yang dijaga test ini BUKAN angkanya, tapi bahwa jaraknya
+        // cuma ada di SATU tempat.
+        $this->assertStringContainsString('.ttd .ruang-ttd { height: 56px;', $css);
         $this->assertStringNotContainsString(
-            '.ttd .garis { margin-top: 44px;',
+            '.ttd .garis { margin-top: 56px;',
             $css,
-            'Jarak 44px cuma boleh di satu tempat, bukan di `.garis` DAN `.ruang-ttd`.',
+            'Jaraknya cuma boleh di satu tempat, bukan di `.garis` DAN `.ruang-ttd`.',
         );
     }
 
