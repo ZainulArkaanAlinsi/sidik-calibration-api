@@ -247,7 +247,10 @@ class PerhitunganTest extends TestCase
             ->assertOk();
 
         $this->assertSame(
-            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
+            // Suhu 2 desimal, kelembaban bulat — ngikut Excel master lab. Perhatiin
+            // `20,97`: format lama (1 desimal) nampilinnya `21,0`, jadi dua digit
+            // yang dicatat teknisi ilang dari dokumen resmi tanpa ada yang tau.
+            'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
             $sesi->fresh()->certificate->snapshot['header']['env_condition'],
         );
     }
