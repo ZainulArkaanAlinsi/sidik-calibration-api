@@ -259,7 +259,11 @@ class WorksheetVisionExtractor
         ?array $desimal = null,
     ): array {
         $apiKey = (string) config('services.gemini.api_key');
-        $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
+        // Sengaja TANPA fallback literal (sama kayak jalur Anthropic di atas):
+        // default-nya cuma boleh hidup di `config/services.php`. Salinan kedua di
+        // sini pernah nyangkut di `gemini-2.0-flash` yang udah kena 429 — dan
+        // karena config-nya udah bener, nggak ada yang curiga ke baris ini.
+        $model = (string) config('services.gemini.model');
 
         if ($apiKey === '') {
             throw new RuntimeException('GEMINI_API_KEY belum diisi di server.');
