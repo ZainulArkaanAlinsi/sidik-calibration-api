@@ -331,15 +331,26 @@
         </thead>
         <tbody>
             @forelse ($snapshot['hasil'] ?? [] as $baris)
+                {{-- Desimal diambil PER BARIS dulu, baru jatuh ke $desimal
+                     tingkat-sertifikat. Alat yang resolusinya berubah menurut
+                     rentang (Turbidimeter: 0,01 di bawah 10 NTU, 0,1 di 10–100,
+                     1 di atasnya) nggak bisa diwakili satu angka: dipaksa satu,
+                     titik 100 NTU kecetak `101,00` — dua digit yang alatnya
+                     nggak bisa tampilkan. Di dokumen terakreditasi itu ngaku
+                     ketelitian yang nggak ada; Excel master lab nulisnya `101`.
+
+                     Sertifikat lama yang snapshot-nya belum punya field ini
+                     kecetak persis seperti waktu diterbitkan. --}}
+                @php($db = $baris['desimal'] ?? $desimal)
                 <tr>
-                    <td>{{ $angka($baris['standard_value'] ?? null) }}</td>
-                    <td>{{ $angka($baris['unit_under_test'] ?? null) }}</td>
-                    <td>{{ $angka($baris['correction'] ?? null) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
                     {{-- U95 pakai formatter sendiri: dia dijamin kebaca 2
                          angka penting, nggak dipaksa ikut desimal alat. Ikut
                          desimal alat, `0,0234` kecetak `0,02` dan kehilangan
                          setengah nilainya. --}}
-                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $desimal) }}</td>
+                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $db) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="4">—</td></tr>
