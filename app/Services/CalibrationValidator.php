@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Support\Angka;
 
 /**
@@ -35,7 +36,10 @@ class CalibrationValidator
 
     public const INFO = 'info';
 
-    public function __construct(private readonly GumCalculator $gum) {}
+    public function __construct(
+        private readonly GumCalculator $gum,
+        private readonly CalibrationProfileRegistry $profil,
+    ) {}
 
     /**
      * @return array{
@@ -211,7 +215,12 @@ class CalibrationValidator
                 continue;
             }
 
-            $temuan = [...$temuan, ...$this->periksaKoreksiSuhu($ke, $standar, $pembacaan)];
+            $temuan = [...$temuan, ...$this->periksaKoreksiSuhu(
+                $ke,
+                $standar,
+                $pembacaan,
+                $this->profil->untukAlat($alat)->standarBerkurvaSuhu(),
+            )];
 
             $ulang = $this->gum->hitungTitik(
                 $ke,
@@ -266,13 +275,33 @@ class CalibrationValidator
      * pembacaan lagi ngerjain alat yang suhunya ngaruh — dan kalau standarnya
      * ternyata nggak punya kurva, angka yang dia catat itu kebuang percuma.
      *
+     * TAPI tanda itu nggak cukup sendirian. Turbidimeter & chlorine juga nyatet
+     * suhu larutan — bukan buat ngoreksi nilai acuan, tapi karena suhunya masuk
+     * budget ketidakpastian. Standarnya emang dibaca nominal, `koefisien_suhu`
+     * NULL-nya disengaja. Tanpa saringan kedua, tiap sertifikat dua alat itu
+     * ke-flag `valid: false` gara-gara perilaku yang justru diharapkan — persis
+     * yang kejadian di sesi 7 & 11–13. Makanya profil alatnya ikut ditanya lewat
+     * [$standarBerkurvaSuhu]; peringatan ini cuma buat standar yang MESTINYA
+     * berkurva tapi datanya belum diisi.
+     *
      * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     * @param  bool  $standarBerkurvaSuhu  dari `CalibrationProfile::standarBerkurvaSuhu()`
      * @return list<array<string, mixed>>
      */
-    private function periksaKoreksiSuhu(int $ke, Standard $standar, $pembacaan): array
-    {
+    private function periksaKoreksiSuhu(
+        int $ke,
+        Standard $standar,
+        $pembacaan,
+        bool $standarBerkurvaSuhu = true,
+    ): array {
         $suhu = $this->suhuLarutanRataRata($pembacaan);
         $punyaKurva = $standar->nilaiPadaSuhu(25.0) !== null;
+
+        // Jenis alat yang standarnya emang nggak berkurva: NULL itu jawaban yang
+        // benar, nggak ada yang perlu dilaporin.
+        if (! $standarBerkurvaSuhu && ! $punyaKurva) {
+            return [];
+        }
 
         if ($punyaKurva && $suhu === null) {
             return [$this->temuan(

@@ -302,6 +302,18 @@ class ChlorineProfile extends CalibrationProfile
     }
 
     /**
+     * Larutan chlorine dibaca NOMINAL apa adanya — `ChlorineSeeder` sengaja nulis
+     * `koefisien_suhu = null`, dan sheet `PERHITUNGAN` juga nggak punya kolom
+     * koreksi suhu larutan. Suhu tetap dicatat teknisi (25,8 °C di sesi asli)
+     * karena masuk budget lewat komponen `ketidakpastian_temperature`, bukan
+     * buat ngoreksi nilai acuan.
+     */
+    public function standarBerkurvaSuhu(): bool
+    {
+        return false;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function bentukLengkap(): array
