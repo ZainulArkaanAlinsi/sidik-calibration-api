@@ -212,6 +212,16 @@ class TurbidimeterProfile extends CalibrationProfile
     }
 
     /**
+     * Standar turbidity dibaca NOMINAL apa adanya — `TurbidimeterSeeder` sengaja
+     * nulis `koefisien_suhu = null`. Sama alasannya kayak chlorine: suhu masuk
+     * budget lewat komponen suhunya sendiri, bukan buat ngegeser nilai acuan.
+     */
+    public function standarBerkurvaSuhu(): bool
+    {
+        return false;
+    }
+
+    /**
      * Label titik buat tampilan: nol belakang dibuang HANYA di bagian desimal.
      * "1.00"→"1", "100.0"→"100", "1000"→"1000" (bukan "1").
      */
