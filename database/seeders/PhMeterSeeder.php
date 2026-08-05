@@ -69,7 +69,7 @@ class PhMeterSeeder extends Seeder
                     'model' => $s['model'] ?? null,
                     'no_sertifikat' => $s['serial_number'],
                     'tertelusur_ke' => $s['tertelusur_ke'],
-                    'berlaku_sampai' => $s['berlaku_sampai'],
+                    'berlaku_sampai' => $this->berlakuSampai($s),
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => $s['satuan_ketidakpastian'],
                     'faktor_cakupan' => $s['faktor_cakupan'],
@@ -120,6 +120,55 @@ class PhMeterSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
+    /**
+     * Masa berlaku sertifikat kalibrator, DIPANJANGIN kalau udah (mau) lewat.
+     *
+     * ## Kenapa perlu
+     *
+     * Backend nolak `422` kalau standar acuannya kadaluarsa — dan itu BENER,
+     * ketertelusurannya putus. Tapi tanggal di `kalibrasi-ph-meter.json` itu
+     * tanggal sertifikat ASLI, dan sertifikat punya masa berlaku: per 5 Agt
+     * 2026 pH Buffer 4 udah lewat (31 Jul 2026) dan Termometer & Sensor Std.
+     * tinggal seminggu (12 Agt 2026). Jadi seeder ini BASI SENDIRI LEWAT WAKTU:
+     * rantai pH 3 titik berhenti di dev tanpa ada yang ngubah kode apa pun.
+     *
+     * `TurbidimeterSeeder` & `ChlorineSeeder` udah lama nangani ini dengan
+     * `now()->addYear()`. Yang pH kelewat, makanya dia yang mati duluan.
+     *
+     * ## Yang TIDAK diubah
+     *
+     * Cuma masa berlakunya. **Angka U95, faktor cakupan, koefisien suhu, nomor
+     * sertifikat, dan tertelusur-ke tetap yang asli** — itu yang masuk ke
+     * perhitungan & kecetak di sertifikat. JSON-nya juga sengaja nggak disentuh:
+     * dia tetap catatan tanggal sebenarnya.
+     *
+     * Perpanjangannya diumumin ke keluaran seeder, bukan diam-diam — data demo
+     * yang nyamar jadi data valid itu persis cara orang salah percaya.
+     *
+     * Ambangnya 60 hari, bukan "udah lewat": kalau pas-pasan, seeder yang hari
+     * ini hijau bakal merah minggu depan, dan yang kena orang lain.
+     */
+    private function berlakuSampai(array $s): Carbon
+    {
+        $asli = Carbon::parse($s['berlaku_sampai']);
+
+        if ($asli->greaterThan(now()->addDays(60))) {
+            return $asli;
+        }
+
+        $baru = now()->addYear();
+        $this->command?->warn(sprintf(
+            '  [demo] "%s" masa berlakunya %s (%s) -> dipanjangin ke %s. '
+            .'U95 & data sertifikat lainnya TETAP asli.',
+            $s['nama'],
+            $asli->toDateString(),
+            $asli->isPast() ? 'udah lewat' : 'tinggal '.(int) now()->diffInDays($asli).' hari',
+            $baru->toDateString(),
+        ));
+
+        return $baru;
+    }
+
     private function muatData(): array
     {
         $path = database_path('data/kalibrasi-ph-meter.json');
