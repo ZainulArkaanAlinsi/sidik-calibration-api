@@ -16,6 +16,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\GumCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -50,6 +51,8 @@ use RuntimeException;
  */
 class PhMeterSeeder extends Seeder
 {
+    use MemanjangkanMasaBerlaku;
+
     public function run(): void
     {
         $data = $this->muatData();
@@ -69,7 +72,7 @@ class PhMeterSeeder extends Seeder
                     'model' => $s['model'] ?? null,
                     'no_sertifikat' => $s['serial_number'],
                     'tertelusur_ke' => $s['tertelusur_ke'],
-                    'berlaku_sampai' => $s['berlaku_sampai'],
+                    'berlaku_sampai' => $this->berlakuSampaiDemo($s['nama'], $s['berlaku_sampai']),
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => $s['satuan_ketidakpastian'],
                     'faktor_cakupan' => $s['faktor_cakupan'],
