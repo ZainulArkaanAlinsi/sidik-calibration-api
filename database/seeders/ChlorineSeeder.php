@@ -12,6 +12,7 @@ use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
+use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -31,6 +32,8 @@ use Illuminate\Support\Str;
  */
 class ChlorineSeeder extends Seeder
 {
+    use MemanjangkanMasaBerlaku;
+
     /**
      * Dua larutan standar chlorine ASLI yang dimiliki lab (sheet DATABASE
      * baris 1–2): Supelco/Merck, U95 sertifikat 0,09 & 0,06 mg/L, k=2,
@@ -40,18 +43,26 @@ class ChlorineSeeder extends Seeder
      * satu kit dua cuvette), jadi dipecah biar `Standard` tetap unik dan
      * `ChlorineProfile::STANDARD_TERCETAK` bisa nyocokin per baris.
      *
-     * @var list<array{nama: string, serial: string, ketidakpastian: float}>
+     * `berlaku_sampai` = Due Date ASLI dari sheet DATABASE (dikalibrasi
+     * 30 Apr 2024, interval 3 tahun). Per 5 Agt 2026 dua-duanya MASIH BERLAKU
+     * ~20 bulan lagi, jadi `MemanjangkanMasaBerlaku` bakal mertahanin tanggal
+     * ini apa adanya — beda dari `now()->addYear()` yang dulu dipakai di sini
+     * dan ngebuang tanggal aslinya tiap kali seed, tanpa alasan.
+     *
+     * @var list<array{nama: string, serial: string, ketidakpastian: float, berlaku_sampai: string}>
      */
     private const STANDAR = [
         [
             'nama' => 'Chlorine Standard Solution 1.74 mg/L',
             'serial' => 'QC1065-2ML',
             'ketidakpastian' => 0.09,
+            'berlaku_sampai' => '2027-04-30',
         ],
         [
             'nama' => 'Chlorine Standar Cuvettes 1.83 mg/L',
             'serial' => 'LRAD8911',
             'ketidakpastian' => 0.06,
+            'berlaku_sampai' => '2027-04-30',
         ],
     ];
 
@@ -94,11 +105,7 @@ class ChlorineSeeder extends Seeder
                     'serial_number' => $s['serial'],
                     'no_sertifikat' => $s['serial'],
                     'tertelusur_ke' => 'Merck KGaA',
-                    // Sertifikat asli due 30 Apr 2027 (interval 3 tahun dari
-                    // 2024-04-30). Dipanjangin relatif ke hari ini biar sesi
-                    // demo nggak keblok "standar kadaluarsa" waktu tanggalnya
-                    // kelewat. Angka U95-nya yang asli.
-                    'berlaku_sampai' => now()->addYear(),
+                    'berlaku_sampai' => $this->berlakuSampaiDemo($s['nama'], $s['berlaku_sampai']),
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => 'mg/L',
                     'faktor_cakupan' => 2,
