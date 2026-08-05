@@ -455,7 +455,7 @@ class WorksheetVisionExtractor
         ?array $desimal = null,
     ): string {
         $unit = ($satuan !== null && $satuan !== '') ? $satuan : 'the instrument unit';
-        $teks = "Extract this calibration worksheet table. Each cell holds two numbers: "
+        $teks = 'Extract this calibration worksheet table. Each cell holds two numbers: '
             ."an instrument reading in {$unit} and a temperature in °C.";
 
         // Nilai nominal per kolom = petunjuk paling kuat: model tau angka tiap
@@ -533,6 +533,34 @@ Rules:
   wrong Repeat slot on the certificate.
 - If a single cell is unreadable, set its value to null and its confidence to "low".
 - Do not invent rows or cells beyond what the photographed table contains.
+
+Read each cell on its own:
+- Read EVERY cell independently, digit by digit. Do NOT copy a value from the row
+  above, the row below, or a neighbouring column because it "looks the same".
+  Repeated readings are common on real worksheets, but they must come from what is
+  actually written in THAT cell — an assumed repeat hides the one reading that
+  differs, which is the whole point of the measurement.
+- A cell that looks empty IS empty: output null, do not fill it from context.
+- Map cells by POSITION in the grid, not by proximity to a number. A blank cell
+  must keep its slot; never slide a value left or right to close a gap.
+
+Handwriting — distinguish carefully:
+- These pairs are the usual mistakes on handwritten worksheets. Compare the actual
+  strokes before deciding: 1 vs 7 (crossbar/serif), 4 vs 9 (closed loop), 3 vs 8
+  (left side open or closed), 5 vs 6 (top stroke), 0 vs 6, 2 vs Z, 6 vs b.
+- Decide from the stroke shape, not from what the expected nominal makes
+  convenient. If the strokes say 9 where 4 is expected, output 9 and let the
+  calibration flag it.
+- Distinguish a decimal separator from a stray pen mark or a grid line: a real
+  separator sits ON the baseline between digits. If a mark is ambiguous, prefer
+  the reading whose decimal places match the column's resolution, and mark the
+  cell "medium".
+- Trailing zeros are meaningful: "4,60" in a 0.01-resolution column is 4.60, not
+  4.6. Keep the digits the technician wrote.
+- If two readings are genuinely equally plausible after examining the strokes,
+  pick the more likely one and mark it "low" — never "high". A confidently wrong
+  number is far worse here than a flagged uncertain one: low-confidence cells get
+  highlighted for a human to check, high-confidence cells do not.
 PROMPT;
     }
 
