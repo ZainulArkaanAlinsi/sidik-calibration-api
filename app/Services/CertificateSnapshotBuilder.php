@@ -131,15 +131,39 @@ class CertificateSnapshotBuilder
      */
     private function hasil(CalibrationSession $sesi): array
     {
+        $alat = $sesi->equipment;
+        $organisasi = $sesi->organization;
+
         return $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
-            ->map(fn ($titik): array => [
-                'titik_ke' => (int) $titik->titik_ke,
-                'standard_value' => (float) $titik->titik_ukur,
-                'unit_under_test' => (float) $titik->rata_rata,
-                'correction' => (float) $titik->koreksi,
-                'u95' => (float) $titik->ketidakpastian_diperluas,
-            ])
+            ->map(function ($titik) use ($alat, $organisasi): array {
+                // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
+                //
+                // Alat yang resolusinya berubah per rentang (Turbidimeter:
+                // 0,01 / 0,1 / 1) sebelumnya kepaksa ikut satu angka `resolusi`,
+                // jadi titik 100 NTU kecetak `101,00` — dua digit yang alatnya
+                // nggak bisa tampilkan. Di sertifikat terakreditasi itu ngaku
+                // ketelitian yang nggak ada.
+                //
+                // Aturannya tetap cuma diputus di `Organization::desimalSertifikat`
+                // (termasuk override manual di pengaturan organisasi); yang beda
+                // di sini cuma resolusi mana yang disodorin.
+                $resolusi = $alat?->resolusiPada((float) $titik->titik_ukur);
+                $desimal = $organisasi
+                    ? $organisasi->desimalSertifikat($resolusi)
+                    : Angka::desimalDariResolusi($resolusi);
+
+                return [
+                    'titik_ke' => (int) $titik->titik_ke,
+                    'standard_value' => (float) $titik->titik_ukur,
+                    'unit_under_test' => (float) $titik->rata_rata,
+                    'correction' => (float) $titik->koreksi,
+                    'u95' => (float) $titik->ketidakpastian_diperluas,
+                    // Nilai mentahnya TETAP presisi penuh — ini cuma ngatur
+                    // berapa digit yang ditulis. Nggak ada pembulatan data.
+                    'desimal' => $desimal,
+                ];
+            })
             ->values()
             ->all();
     }
@@ -325,8 +349,56 @@ class CertificateSnapshotBuilder
         $bagian = [];
 
         if ($alat->range_min !== null || $alat->range_max !== null) {
-            $bagian[] = Angka::idRingkas((float) $alat->range_min)
-                .'–'.Angka::idRingkas((float) $alat->range_max).$satuan;
+            // Rentang ukur ditulis TANPA pemisah ribuan: sertifikat asli nyetak
+            // `0-1000 NTU`, bukan `0-1.000 NTU`. Di angka rentang alat, titik
+            // ribuan malah gampang kebaca sebagai koma desimal oleh pembaca
+            // asing — dan ini dokumen dwibahasa.
+            $angkaRentang = static fn (?float $n): string => $n === null
+                ? '—'
+                : rtrim(rtrim(number_format($n, 6, ',', ''), '0'), ',');
+
+            $bagian[] = $angkaRentang((float) $alat->range_min)
+                .'–'.$angkaRentang((float) $alat->range_max).$satuan;
+        }
+
+        // Alat ber-resolusi BERTINGKAT ditulis semua resolusinya, bukan cuma
+        // satu. Sertifikat asli PT Sidik buat HACH 2100Q (0189-CAL-624) nulis:
+        //
+        //   Capacity/Graduation : 0–1000 NTU / 0,01 NTU
+        //                                      0,1 NTU
+        //                                      1 NTU
+        //
+        // Waktu cuma `$alat->resolusi` yang dipakai, dua baris terakhir ilang
+        // dan dokumennya jadi ngaku alatnya ber-resolusi 0,01 di SELURUH
+        // rentang — padahal di atas 100 NTU dia cuma bisa bilangan bulat.
+        // Dipisah koma (bukan baris baru) karena field ini satu baris teks di
+        // snapshot; yang penting ketiganya kebawa, bukan tata letaknya.
+        $rentang = $alat->resolusi_rentang;
+        if (is_array($rentang) && $rentang !== []) {
+            $resolusi = [];
+            foreach ($rentang as $band) {
+                if (is_array($band) && isset($band['resolusi'])) {
+                    $resolusi[] = Angka::idRingkas((float) $band['resolusi'], 6).$satuan;
+                }
+            }
+            if ($resolusi !== []) {
+                // Dipisah BARIS BARU, bukan koma — sertifikat asli PT Sidik
+                // (0189-CAL-624) nyetak resolusinya bertumpuk:
+                //
+                //   Capacity/Graduation : 0-1000 NTU / 0,01 NTU
+                //                                      0,1 NTU
+                //                                      1 NTU
+                //
+                // Dijejer koma, barisnya kepanjangan lalu membungkus asal di
+                // tengah angka. Yang ngerender wajib ngehormatin `\n`
+                // (`white-space: pre-line` di blade PDF & web).
+                //
+                // `array_unique` jaga-jaga kalau dua rentang resolusinya sama —
+                // nulis "1 NTU / 1 NTU" cuma bikin dokumen kelihatan salah.
+                $bagian[] = implode("\n", array_unique($resolusi));
+
+                return implode(' / ', $bagian);
+            }
         }
 
         if ($alat->resolusi !== null) {
@@ -346,8 +418,13 @@ class CertificateSnapshotBuilder
     {
         $bagian = [];
 
+        // Desimalnya ngikut Excel master lab, dan dulu KEBALIK: suhu ditulis 1
+        // desimal (25,47 kepangkas jadi 25,5 — kehilangan angka yang dicatat
+        // teknisi) sementara kelembaban ditulis 2 desimal (51,83) padahal
+        // sertifikat aslinya nulis bulat (52). Suhu ruang dicatat sampai 0,01°C
+        // karena ikut ngaruh ke koreksi; kelembaban nggak, makanya dibulatkan.
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 1).'°C';
+            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 2).'°C';
 
             if ($sesi->suhu_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
@@ -357,7 +434,7 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->kelembaban !== null) {
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 2).'%';
+            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';

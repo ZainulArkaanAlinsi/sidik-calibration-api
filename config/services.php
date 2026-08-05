@@ -59,7 +59,17 @@ return [
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        /*
+         * Nama model Gemini MATI TANPA ABA-ABA, dan gejalanya nggak kelihatan
+         * kayak masalah model: `gemini-2.5-flash` balas 404 "no longer available
+         * to new users", `gemini-2.0-flash` balas 429 quota walau key-nya sehat.
+         * Dua-duanya gampang ketuker jadi "API key-nya rusak" waktu ditelusuri.
+         * Sebelum ganti pin ini, pastikan namanya masih kejawab:
+         *   GET https://generativelanguage.googleapis.com/v1beta/models
+         * Jangan turun ke tier `flash-lite` — angka tulisan tangan yang dibaca
+         * di sini masuk sertifikat resmi.
+         */
+        'model' => env('GEMINI_MODEL', 'gemini-3.6-flash'),
         'max_tokens' => (int) env('GEMINI_MAX_TOKENS', 4096),
         'timeout' => (int) env('GEMINI_TIMEOUT', 60),
     ],

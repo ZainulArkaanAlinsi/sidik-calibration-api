@@ -122,7 +122,33 @@ class Standard extends Model
      *
      * @return array{indexed_value: float|null, correction: float|null, u95: float|null}|null
      */
-    public function parameterKondisi(string $parameter): ?array
+    /**
+     * Koreksi thermohygro buat satu parameter, DI TITIK YANG PALING DEKAT
+     * dengan [$pembacaan].
+     *
+     * Thermohygro dikalibrasi di BEBERAPA titik, bukan satu. Master data lab
+     * nyimpen lima per alat — TH-6 misalnya:
+     *
+     *   Instrument | Correction
+     *   15         | -0,32
+     *   19,6       | -0,23
+     *   29,4       | +0,35
+     *   39,1       | +0,20
+     *   49,2       | +0,73
+     *
+     * Sebelum ini cuma SATU titik yang kesimpen, dan titik itu dipakai buat
+     * suhu ruangan berapa pun. Akibatnya ruangan 25,7°C dikoreksi pakai angka
+     * titik 19,6 (-0,23) dan kecetak 25,47, padahal Excel lab pakai titik 29,4
+     * (+0,35) dan dapat 26,05. Selisih 0,58°C di dokumen terakreditasi, dan
+     * kena SEMUA sertifikat — bukan cuma turbidimeter.
+     *
+     * [$pembacaan] null = nggak tau lagi di suhu berapa; ambil titik pertama
+     * biar perilakunya sama kayak dulu daripada nebak.
+     *
+     * Bentuk lama (satu objek langsung) tetap dibaca — data yang belum
+     * dimigrasi nggak boleh mendadak kehilangan koreksinya.
+     */
+    public function parameterKondisi(string $parameter, ?float $pembacaan = null): ?array
     {
         $data = $this->parameter_kondisi[$parameter] ?? null;
 
@@ -130,10 +156,39 @@ class Standard extends Model
             return null;
         }
 
+        // Bentuk baru: daftar titik di `titik[]`. Bentuk lama: objek tunggal.
+        $titik = is_array($data['titik'] ?? null) && $data['titik'] !== []
+            ? $data['titik']
+            : [$data];
+
+        $pilih = $titik[0];
+
+        if ($pembacaan !== null) {
+            $jarakTerdekat = null;
+            foreach ($titik as $t) {
+                if (! is_array($t)) {
+                    continue;
+                }
+                // Dicocokin ke INSTRUMENT INDICATION — itu angka yang kebaca di
+                // layar thermohygro, jadi itu yang sebanding sama pembacaan
+                // teknisi. Standard indication itu nilai acuannya.
+                $acuan = $t['instrument'] ?? $t['indexed_value'] ?? null;
+                if ($acuan === null) {
+                    continue;
+                }
+                $jarak = abs($pembacaan - (float) $acuan);
+                if ($jarakTerdekat === null || $jarak < $jarakTerdekat) {
+                    $jarakTerdekat = $jarak;
+                    $pilih = $t;
+                }
+            }
+        }
+
         return [
-            'indexed_value' => isset($data['indexed_value']) ? (float) $data['indexed_value'] : null,
-            'correction' => isset($data['correction']) ? (float) $data['correction'] : null,
-            'u95' => isset($data['u95']) ? (float) $data['u95'] : null,
+            'indexed_value' => isset($pilih['indexed_value']) ? (float) $pilih['indexed_value'] : null,
+            'instrument' => isset($pilih['instrument']) ? (float) $pilih['instrument'] : null,
+            'correction' => isset($pilih['correction']) ? (float) $pilih['correction'] : null,
+            'u95' => isset($pilih['u95']) ? (float) $pilih['u95'] : null,
         ];
     }
 

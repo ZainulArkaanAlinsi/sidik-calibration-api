@@ -45,8 +45,48 @@ class Equipment extends Model
             'range_min' => 'float',
             'range_max' => 'float',
             'resolusi' => 'float',
+            'resolusi_rentang' => 'array',
             'toleransi' => 'float',
         ];
+    }
+
+    /**
+     * Resolusi alat DI TITIK [$nilai].
+     *
+     * Sebagian alat resolusinya berubah menurut rentang — Turbidimeter PT Sidik
+     * 0,01 di bawah 10 NTU, 0,1 di 10–100, dan 1 di atas itu. Selama cuma ada
+     * satu kolom `resolusi`, titik 100 NTU kecetak `101,00`: dua digit yang
+     * alatnya nggak bisa tampilkan. Lihat migrasi
+     * `2026_08_04_120000_tambah_resolusi_rentang_ke_equipments`.
+     *
+     * `maks` bersifat EKSKLUSIF, jadi 100 NTU jatuh ke golongan di atasnya —
+     * itu yang bikin hasilnya cocok sama Excel master lab (`100` / `101`,
+     * bukan `100,0` / `101,0`).
+     *
+     * Balik ke [resolusi] biasa kalau `resolusi_rentang` kosong. Alat
+     * ber-resolusi seragam (pH meter) karena itu nggak berubah perilakunya.
+     */
+    public function resolusiPada(?float $nilai): ?float
+    {
+        $rentang = $this->resolusi_rentang;
+
+        if ($nilai === null || ! is_array($rentang) || $rentang === []) {
+            return $this->resolusi !== null ? (float) $this->resolusi : null;
+        }
+
+        foreach ($rentang as $band) {
+            if (! is_array($band) || ! isset($band['resolusi'])) {
+                continue;
+            }
+            $maks = $band['maks'] ?? null;
+
+            // `maks: null` = golongan terakhir, nampung sisanya.
+            if ($maks === null || abs($nilai) < (float) $maks) {
+                return (float) $band['resolusi'];
+            }
+        }
+
+        return $this->resolusi !== null ? (float) $this->resolusi : null;
     }
 
     /**
