@@ -420,11 +420,23 @@ class TandaTanganSertifikatTest extends TestCase
     {
         $css = file_get_contents(resource_path('views/sertifikat/pdf.blade.php'));
 
-        $this->assertStringContainsString('.ttd .ruang-ttd { height: 44px;', $css);
-        $this->assertStringNotContainsString(
-            '.ttd .garis { margin-top: 44px;',
+        // Angkanya SENGAJA nggak dipatok di test.
+        //
+        // Dulu ditulis literal `44px`, dan tiap kali skala cetaknya disetel
+        // ulang test ini ikut merah padahal aturannya nggak dilanggar — bikin
+        // orang mikir dia ngerusak sesuatu. Yang beneran dijaga di sini dua
+        // hal: tingginya DIPATOK (ada satuan px, bukan auto/ikut gambar), dan
+        // jaraknya cuma ada di SATU tempat.
+        $this->assertMatchesRegularExpression(
+            '/\.ttd \.ruang-ttd \{ height: \d+(\.\d+)?px;/',
             $css,
-            'Jarak 44px cuma boleh di satu tempat, bukan di `.garis` DAN `.ruang-ttd`.',
+            'Tinggi ruang TTD wajib dipatok px — kalau ikut tinggi gambar, dua '
+            .'sertifikat dengan format resmi yang sama jadi beda tata letak.',
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/\.ttd \.garis \{[^}]*margin-top:/',
+            $css,
+            'Jaraknya cuma boleh di satu tempat, bukan di `.garis` DAN `.ruang-ttd`.',
         );
     }
 

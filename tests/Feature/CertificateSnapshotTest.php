@@ -133,7 +133,11 @@ class CertificateSnapshotTest extends TestCase
         $this->assertSame('Lab. Uji A', $header['calibration_location']);
         $this->assertSame('SIDIK-IK-CAL-0506_Rev.6', $header['calibration_method']);
         $this->assertSame('0–14 pH / 0,01 pH', $header['capacity_graduation']);
-        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%', $header['env_condition']);
+        // Desimalnya ngikut Excel master lab: suhu 2 desimal (dicatat sampai
+        // 0,01°C karena ikut ngaruh ke koreksi), kelembaban BULAT. Sebelumnya
+        // kebalik — suhu 1 desimal & kelembaban 2 — jadi angka yang dicatat
+        // teknisi kepangkas di dokumen resmi.
+        $this->assertSame('T: 21,00°C ± 1,7°C — %RH: 52% ± 5,7%', $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 

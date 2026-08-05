@@ -38,7 +38,7 @@
         @page { margin: 0.85cm 1.05cm; }
 
         * { font-family: DejaVu Sans, sans-serif; }
-        body { font-size: 10.5px; color: #1a1a1a; margin: 0; line-height: 1.4; }
+        body { font-size: 11px; color: #1a1a1a; margin: 0; line-height: 1.4; }
 
         /*
           Kop surat banner FULL-BLEED: margin negatif nariknya keluar sampai tepi
@@ -56,13 +56,13 @@
         .kop td.logo { width: 84px; vertical-align: middle; }
         .kop td.logo img { width: 74px; height: auto; }
         .kop td.teks { vertical-align: middle; }
-        .kop h1 { font-size: 16px; margin: 0 0 2px; }
-        .kop .akr { font-size: 9.5px; color: #555; }
+        .kop h1 { font-size: 17.5px; margin: 0 0 2px; }
+        .kop .akr { font-size: 10.5px; color: #555; }
 
-        .judul { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 12px; }
+        .judul { text-align: center; font-size: 16px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 12px; }
 
         table.info { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        table.info td { padding: 2.5px 6px; vertical-align: top; }
+        table.info td { padding: 3px 6px; vertical-align: top; }
         /*
           Label ditebelin & digelapin: di kertas cetak, label abu tipis bikin
           mata harus balik-balik nyari mana nama kolom mana isinya. Yang dibaca
@@ -78,21 +78,29 @@
            yang nempel di mata barisnya, bukan cuma judul kolomnya. */
         table.info td.val.alat { font-weight: bold; }
 
-        .judul-sub { font-size: 11px; font-weight: bold; margin: 12px 0 6px; letter-spacing: .5px; }
-        table.data { width: 100%; border-collapse: collapse; font-size: 10px; }
+        /*
+          Sel yang isinya boleh BERTUMPUK. Cuma dipakai Capacity/Graduation:
+          alat ber-resolusi bertingkat nyetak satu resolusi per baris, persis
+          sertifikat asli. Tanpa `pre-line`, `\n` dari snapshot diratakan jadi
+          spasi dan barisnya membungkus asal di tengah angka.
+        */
+        table.info td.val.tumpuk { white-space: pre-line; }
+
+        .judul-sub { font-size: 11.5px; font-weight: bold; margin: 10px 0 5px; letter-spacing: .5px; }
+        table.data { width: 100%; border-collapse: collapse; font-size: 11px; }
         table.data th, table.data td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
 
-        .catatan { font-size: 9px; font-style: italic; color: #444; margin-top: 8px; line-height: 1.5; }
+        .catatan { font-size: 10px; font-style: italic; color: #444; margin-top: 8px; line-height: 1.5; }
         .catatan div { margin-bottom: 3px; }
 
-        .putusan { text-align: center; font-size: 13px; font-weight: bold; padding: 6px; margin: 10px 0; border: 2px solid; }
+        .putusan { text-align: center; font-size: 14.5px; font-weight: bold; padding: 6px; margin: 10px 0; border: 2px solid; }
         .pass { color: #146c2e; border-color: #146c2e; }
         .fail { color: #a01919; border-color: #a01919; }
 
-        table.ttd { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table.ttd td { vertical-align: top; font-size: 10px; }
+        table.ttd { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        table.ttd td { vertical-align: top; font-size: 11.5px; }
         table.ttd td.qr { width: 110px; text-align: center; }
         table.ttd td.qr img { width: 92px; height: 92px; }
         table.ttd td.qr .ket { font-size: 7.5px; color: #666; margin-top: 2px; }
@@ -104,16 +112,23 @@
         .ttd .garis { border-top: 1px solid #333; padding-top: 3px; }
 
         /*
-          Ruang tanda tangan. Tingginya DIPATOK 44px — persis `margin-top` yang dulu
-          ada di `.garis`, jadi sertifikat tanpa gambar TTD tata letaknya sama persis
-          kayak sebelum fitur ini ada. Dan tingginya nggak ikut gambar: kalau ikut,
-          dua sertifikat dengan format resmi yang sama jadi beda tata letak cuma
-          gara-gara yang satu diunggahin TTD.
+          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px) — BUKAN ngikut
+          gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama jadi
+          beda tata letak cuma gara-gara yang satu diunggahin gambar TTD, dan
+          itu nggak boleh buat dokumen berformat baku.
+
+          SEMUA angka di blok cetak ini (skala huruf, padding, jarak TTD) diukur
+          ke KASUS TERBERAT: sertifikat pH 3 baris hasil + 3 standar. Percobaan
+          pertama naikin huruf ke 12px dan jarak TTD ke 46px — turbidimeter yang
+          cuma 2 baris tetap muat, tapi pH-nya jadi DUA HALAMAN. Sertifikat ini
+          wajib satu halaman ('Page 1 of 1' dicetak di headernya), jadi kalau
+          ada yang mau ngegedein huruf lagi: ukur ulang pakai sertifikat 3 baris,
+          bukan yang 2.
         */
-        .ttd .ruang-ttd { height: 44px; position: relative; }
+        .ttd .ruang-ttd { height: 46px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
-        .kode-dokumen { font-size: 8.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
+        .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
 
         @if ($web ?? false)
         /*
@@ -311,7 +326,7 @@
         </tr>
         <tr>
             <td class="lbl">Calibration Method</td><td class="val">{{ $isi($header['calibration_method'] ?? null) }}</td>
-            <td class="lbl">Capacity/Graduation</td><td class="val">{{ $isi($header['capacity_graduation'] ?? null) }}</td>
+            <td class="lbl">Capacity/Graduation</td><td class="val tumpuk">{{ $isi($header['capacity_graduation'] ?? null) }}</td>
         </tr>
         <tr>
             <td class="lbl">Env. Condition</td><td class="val">{{ $isi($header['env_condition'] ?? null) }}</td>
@@ -331,15 +346,26 @@
         </thead>
         <tbody>
             @forelse ($snapshot['hasil'] ?? [] as $baris)
+                {{-- Desimal diambil PER BARIS dulu, baru jatuh ke $desimal
+                     tingkat-sertifikat. Alat yang resolusinya berubah menurut
+                     rentang (Turbidimeter: 0,01 di bawah 10 NTU, 0,1 di 10–100,
+                     1 di atasnya) nggak bisa diwakili satu angka: dipaksa satu,
+                     titik 100 NTU kecetak `101,00` — dua digit yang alatnya
+                     nggak bisa tampilkan. Di dokumen terakreditasi itu ngaku
+                     ketelitian yang nggak ada; Excel master lab nulisnya `101`.
+
+                     Sertifikat lama yang snapshot-nya belum punya field ini
+                     kecetak persis seperti waktu diterbitkan. --}}
+                @php($db = $baris['desimal'] ?? $desimal)
                 <tr>
-                    <td>{{ $angka($baris['standard_value'] ?? null) }}</td>
-                    <td>{{ $angka($baris['unit_under_test'] ?? null) }}</td>
-                    <td>{{ $angka($baris['correction'] ?? null) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::id($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
                     {{-- U95 pakai formatter sendiri: dia dijamin kebaca 2
                          angka penting, nggak dipaksa ikut desimal alat. Ikut
                          desimal alat, `0,0234` kecetak `0,02` dan kehilangan
                          setengah nilainya. --}}
-                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $desimal) }}</td>
+                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $db) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="4">—</td></tr>

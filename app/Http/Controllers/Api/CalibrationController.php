@@ -244,7 +244,15 @@ class CalibrationController extends Controller
                 // apa adanya. Jangan diisi hal lain di sini.
                 'hasil' => CalibrationResource::petakanHasil($sesi->titikPenentu(), $sesi->keputusan),
                 'titik' => $titik
-                    ->map(fn (UncertaintyCalculation $t): array => CalibrationResource::petakanTitik($t))
+                    // Alat & organisasi ikut dikirim biar `desimal` per titik
+                    // ikut kehitung di sini juga — kalau nggak, layar preview
+                    // nampilin desimal beda dari sesi tersimpan buat alat yang
+                    // resolusinya berubah per rentang (Turbidimeter).
+                    ->map(fn (UncertaintyCalculation $t): array => CalibrationResource::petakanTitik(
+                        $t,
+                        $sesi->equipment,
+                        $sesi->organization,
+                    ))
                     ->all(),
                 // Dua tabel lembar kerja (Before/After adjustment) lengkap sama
                 // baris Average, Correction, STDEV, dan MAX STDEV — ini yang

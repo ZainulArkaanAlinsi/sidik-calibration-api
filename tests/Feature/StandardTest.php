@@ -200,7 +200,11 @@ class StandardTest extends TestCase
         $standar = Standard::where('serial_number', 'TH-3')->firstOrFail();
 
         $this->assertSame(
-            ['indexed_value' => 19.83, 'correction' => -0.43, 'u95' => 1.7],
+            // `instrument` = angka yang kebaca di layar thermohygro. Null di
+            // sini karena bentuk lama cuma nyimpen SATU titik tanpa kolom itu.
+            // Standar yang titiknya lengkap (lihat `parameterKondisi`) pakai
+            // kolom ini buat milih koreksi yang paling dekat sama pembacaan.
+            ['indexed_value' => 19.83, 'instrument' => null, 'correction' => -0.43, 'u95' => 1.7],
             $standar->parameterKondisi('suhu'),
         );
     }
