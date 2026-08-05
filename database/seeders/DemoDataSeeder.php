@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Standard;
 use App\Models\User;
+use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
 
 /**
@@ -18,6 +19,8 @@ use Illuminate\Database\Seeder;
  */
 class DemoDataSeeder extends Seeder
 {
+    use MemanjangkanMasaBerlaku;
+
     public function run(): void
     {
         $pelanggan = collect([
@@ -40,6 +43,9 @@ class DemoDataSeeder extends Seeder
                 'model' => '516-905',
                 'no_sertifikat' => 'SNSU/2025/P-0142',
                 'tertelusur_ke' => 'SNSU-BSN',
+                // Standar KARANGAN buat demo kategori Panjang — nggak ada
+                // sertifikat aslinya di workbook mana pun, jadi nggak ada
+                // tanggal yang perlu dipertahanin. Beda dari buffer pH di bawah.
                 'berlaku_sampai' => now()->addYear(),
                 'ketidakpastian' => 0.0004,
                 'satuan_ketidakpastian' => 'mm',
@@ -49,6 +55,13 @@ class DemoDataSeeder extends Seeder
 
         // Buffer pH 4/7/10, dari `DATABASE.csv` trial workbook — dipakai bareng
         // pH Meter Bench di bawah supaya sesi pH bisa dites end-to-end.
+        //
+        // Tanggalnya lewat `berlakuSampaiDemo`, BUKAN ditulis mentah: buffer 4
+        // aslinya habis 31 Jul 2026, dan backend nolak `422` kalau standarnya
+        // kadaluarsa. Selama ini selamat cuma karena `PhMeterSeeder` jalan
+        // SESUDAH seeder ini dan nimpa tanggalnya — jadi begitu ada yang
+        // jalanin `db:seed --class=DemoDataSeeder` sendirian, rantai pH mati
+        // lagi diam-diam. Sekarang nggak gantung ke urutan.
         collect([
             ['serial_number' => 'HC32513535', 'nama' => 'pH Buffer Solution 4', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2026-07-31'],
             ['serial_number' => 'HC46341939', 'nama' => 'pH Buffer Solution 7', 'ketidakpastian' => 0.02, 'berlaku_sampai' => '2027-12-17'],
@@ -60,7 +73,7 @@ class DemoDataSeeder extends Seeder
                 'merk' => 'Supelco/Merck',
                 'no_sertifikat' => $b['serial_number'],
                 'tertelusur_ke' => 'Merck KGaA',
-                'berlaku_sampai' => $b['berlaku_sampai'],
+                'berlaku_sampai' => $this->berlakuSampaiDemo($b['nama'], $b['berlaku_sampai']),
                 'ketidakpastian' => $b['ketidakpastian'],
                 'satuan_ketidakpastian' => 'pH',
                 'faktor_cakupan' => 2,
