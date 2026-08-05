@@ -12,6 +12,7 @@ use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
+use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -31,17 +32,24 @@ use Illuminate\Support\Str;
  */
 class TurbidimeterSeeder extends Seeder
 {
+    use MemanjangkanMasaBerlaku;
+
     /**
      * Tiga larutan standar turbidity ASLI yang dimiliki lab (sheet DATABASE
      * workbook S13/S14/S15): Supelco/Merck, U95 sertifikat 0,04 / 3 / 21 NTU,
      * k=2, tertelusur Merck KGaA. Bukan placeholder.
      *
-     * @var list<array{nama: string, serial: string, ketidakpastian: float}>
+     * `berlaku_sampai` = Due Date ASLI dari sheet DATABASE workbook. Ketiganya
+     * UDAH LEWAT (akhir 2025) — dipanjangin `MemanjangkanMasaBerlaku` buat demo,
+     * dan perpanjangannya diumumin. Di produksi ketiga larutan ini memang perlu
+     * dikalibrasi ulang; nggak ada kode yang bisa mbenerin itu.
+     *
+     * @var list<array{nama: string, serial: string, ketidakpastian: float, berlaku_sampai: string}>
      */
     private const STANDAR = [
-        ['nama' => 'Turbidity Standard 1 NTU', 'serial' => 'LRAD7304', 'ketidakpastian' => 0.04],
-        ['nama' => 'Turbidity Standard 100 NTU', 'serial' => 'LRAD7305', 'ketidakpastian' => 3.0],
-        ['nama' => 'Turbidity Standard 1000 NTU', 'serial' => 'LRAD7089', 'ketidakpastian' => 21.0],
+        ['nama' => 'Turbidity Standard 1 NTU', 'serial' => 'LRAD7304', 'ketidakpastian' => 0.04, 'berlaku_sampai' => '2025-12-04'],
+        ['nama' => 'Turbidity Standard 100 NTU', 'serial' => 'LRAD7305', 'ketidakpastian' => 3.0, 'berlaku_sampai' => '2025-11-03'],
+        ['nama' => 'Turbidity Standard 1000 NTU', 'serial' => 'LRAD7089', 'ketidakpastian' => 21.0, 'berlaku_sampai' => '2025-12-19'],
     ];
 
     /**
@@ -73,10 +81,7 @@ class TurbidimeterSeeder extends Seeder
                     'serial_number' => $s['serial'],
                     'no_sertifikat' => $s['serial'],
                     'tertelusur_ke' => 'Merck KGaA',
-                    // Sertifikat asli due 2025 (workbook), tapi dipanjangin biar
-                    // sesi demo nggak keblok "standar kadaluarsa". Angka U95-nya
-                    // yang asli.
-                    'berlaku_sampai' => now()->addYear(),
+                    'berlaku_sampai' => $this->berlakuSampaiDemo($s['nama'], $s['berlaku_sampai']),
                     'ketidakpastian' => $s['ketidakpastian'],
                     'satuan_ketidakpastian' => 'NTU',
                     'faktor_cakupan' => 2,
