@@ -31,6 +31,9 @@ class Formula extends Model
     /** Rumus GUM buat jalur Turbidimeter (budget 4 komponen, lihat TurbidimeterProfile). */
     public const KODE_GUM_TURBIDI = 'gum-turbidi';
 
+    /** Rumus GUM buat jalur Chlorin Meter (budget 5 komponen, lihat ChlorineProfile). */
+    public const KODE_GUM_CHLORINE = 'gum-chlorine';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

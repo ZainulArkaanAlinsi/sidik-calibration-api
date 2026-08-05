@@ -469,18 +469,30 @@ class GumCalculator
         // 0,04 NTU dibulatin jadi 0, nggak match kemampuan 0,04, dan CMC-nya
         // nggak kepasang. Guard driftnya tetap: 3,5 nggak nyangkut ke buffer 4
         // (selisih 0,5 > 0,1), tapi buffer 10,01 tetap match titik 10 (0,01).
-        $cocokTitikTunggal = fn (CalibrationCapability $k): bool =>
-            abs($titikUkur - (float) $k->range_max) <= self::MAX_DRIFT_TITIK_TUNGGAL;
+        $cocokTitikTunggal = fn (CalibrationCapability $k): bool => abs($titikUkur - (float) $k->range_max) <= self::MAX_DRIFT_TITIK_TUNGGAL;
+
+        // Yang PALING DEKAT, bukan yang ketemu duluan.
+        //
+        // Dulu `->first(...)`, dan itu jebol begitu dua titik kemampuan jaraknya
+        // lebih rapat dari MAX_DRIFT_TITIK_TUNGGAL. Chlorin Meter titiknya 1,74
+        // & 1,83 — cuma 0,09 apart, di bawah toleransi 0,1 — jadi titik 1,83
+        // nyangkut ke kemampuan 1,74 dan kepasang CMC 0,091, padahal punya dia
+        // 0,08. Diam-diam: nggak ada error, cuma angka ketidakpastian yang salah
+        // di sertifikat. pH (4/7/10) & Turbidimeter (1/100/1000) nggak pernah
+        // kena karena titiknya berjauhan.
+        $terdekat = fn (Collection $c): ?CalibrationCapability => $c
+            ->sortBy(fn (CalibrationCapability $k): float => abs($titikUkur - (float) $k->range_max))
+            ->first();
 
         // Presisi dulu (range_min == range_max, non-null), baru generik
         // (range_min null) — lihat penjelasan di docblock method ini.
-        $titikTunggal = $kandidat->first(
+        $titikTunggal = $terdekat($kandidat->filter(
             fn (CalibrationCapability $k): bool => $k->range_min !== null
                 && (float) $k->range_min === (float) $k->range_max
                 && $cocokTitikTunggal($k),
-        ) ?? $kandidat->first(
+        )) ?? $terdekat($kandidat->filter(
             fn (CalibrationCapability $k): bool => $k->range_min === null && $cocokTitikTunggal($k),
-        );
+        ));
 
         if ($titikTunggal !== null) {
             return $titikTunggal;
