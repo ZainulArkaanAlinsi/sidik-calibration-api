@@ -4,6 +4,7 @@ namespace App\Services\Calibration;
 
 use App\Models\Equipment;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 
@@ -38,6 +39,7 @@ class CalibrationProfileRegistry
         return [
             new PhMeterProfile,
             new TurbidimeterProfile,
+            new ChlorineProfile,
         ];
     }
 
@@ -81,7 +83,8 @@ class CalibrationProfileRegistry
     }
 
     /**
-     * Profil dari kode stabilnya (`ph_meter` / `turbidimeter`), atau null kalau
+     * Profil dari kode stabilnya (`ph_meter` / `turbidimeter` / `chlorine_meter`),
+     * atau null kalau
      * nggak ada. Dipakai routing yang ngirim kode eksplisit, bukan nama alat.
      */
     public function untukKode(string $kode): ?CalibrationProfile
