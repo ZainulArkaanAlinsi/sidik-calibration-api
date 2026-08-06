@@ -17,6 +17,7 @@ use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -128,13 +129,30 @@ class CalibrationController extends Controller
      */
     public function lembarKerja(Request $request, CalibrationProfileRegistry $registry): JsonResponse
     {
+        $request->validate([
+            // Berapa KOTAK pengulangan yang digambar. Nggak dikirim = pakai
+            // bawaan profilnya (5, ngikut form kertas).
+            'pengulangan' => [
+                'sometimes', 'integer',
+                'between:'.CalibrationProfile::MIN_KOLOM_PENGULANGAN.','.CalibrationProfile::MAKS_KOLOM_PENGULANGAN,
+            ],
+        ], [
+            'pengulangan.between' => 'Kolom pengulangan cuma boleh '
+                .CalibrationProfile::MIN_KOLOM_PENGULANGAN.'–'.CalibrationProfile::MAKS_KOLOM_PENGULANGAN
+                .'. Di bawah 2 standar deviasi nggak bisa dihitung.',
+        ]);
+
         $kode = (string) $request->string('profil', '');
         $profil = ($kode !== '' ? $registry->untukKode($kode) : null)
             ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
 
-        return response()->json([
-            'data' => $profil->bentukLembarKerja(untukAdmin: $request->user()->isAdmin()),
-        ]);
+        $bentuk = $profil->bentukLembarKerja(untukAdmin: $request->user()->isAdmin());
+
+        if ($request->filled('pengulangan')) {
+            $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
+        }
+
+        return response()->json(['data' => $bentuk]);
     }
 
     public function store(CalibrationRequest $request): JsonResponse

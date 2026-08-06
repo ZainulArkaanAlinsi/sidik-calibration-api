@@ -73,7 +73,15 @@ class WorksheetVisionExtractor
 
         if ($apiKey === '') {
             // Bukan error data — ini salah setup. Controller nerjemahin jadi 503.
-            throw new RuntimeException('ANTHROPIC_API_KEY belum diisi di server.');
+            //
+            // Penyedianya ikut disebut: pesan "ANTHROPIC_API_KEY belum diisi"
+            // doang bikin orang nyari kunci Anthropic, padahal yang salah
+            // biasanya `VISION_DRIVER`-nya — lab ini pakai Gemini, dan kunci
+            // Gemini-nya udah ada.
+            throw new RuntimeException(
+                'ANTHROPIC_API_KEY belum diisi di server, padahal VISION_DRIVER-nya `'
+                .$penyedia.'`. Kalau maunya Gemini, setel VISION_DRIVER=gemini di `.env`.',
+            );
         }
 
         $body = [

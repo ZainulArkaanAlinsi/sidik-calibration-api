@@ -86,22 +86,29 @@ class CertificateExcelExporter
 
         $writer->addRow(Row::fromValues([
             'Certificate Number', 'Owner', 'Equipment Name', 'Serial Number',
-            'Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)',
+            'Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)', 'Remark',
         ], $this->gayaHeaderTabel()));
 
         foreach ($sertifikat as $s) {
             $header = $s->snapshot['header'] ?? [];
 
             foreach ($s->snapshot['hasil'] ?? [] as $baris) {
+                $db = $this->desimalBaris($baris, $s->snapshot ?? []);
+
                 $writer->addRow(Row::fromValues([
                     $header['certificate_number'] ?? $s->nomor,
                     $header['owner'] ?? '',
                     $header['equipment_name'] ?? '',
                     $header['serial_number'] ?? '',
-                    $baris['standard_value'],
-                    $baris['unit_under_test'],
-                    $baris['correction'],
-                    $baris['u95'],
+                    $this->bulat($baris['standard_value'] ?? null, $db),
+                    $this->bulat($baris['unit_under_test'] ?? null, $db),
+                    $this->bulat($baris['correction'] ?? null, $db),
+                    $this->bulat($baris['u95'] ?? null, $db),
+                    // Kolomnya SELALU ada di rekap, beda dari sertifikat satuan:
+                    // isinya lintas alat, dan yang punya remark cuma sebagian.
+                    // Kolom yang muncul-ilang tergantung isi bikin rekap dua
+                    // bulan nggak bisa ditumpuk.
+                    $baris['remark'] ?? '',
                 ]));
             }
         }
@@ -165,23 +172,77 @@ class CertificateExcelExporter
         }
     }
 
+    /**
+     * Berapa desimal baris ini ditulis — per baris dulu, baru jatuh ke desimal
+     * sertifikat.
+     *
+     * Sebagian alat resolusinya berubah menurut rentang (Turbidimeter: 0,01 di
+     * bawah 10 NTU, 0,1 di 10–100, 1 di atasnya), jadi satu angka buat seluruh
+     * tabel bikin titik 100 NTU ketulis `101,00`. Aturan yang sama persis dipakai
+     * PDF (`pdf.blade.php`) dan pratinjau di app.
+     *
+     * @param  array<string, mixed>  $baris
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function desimalBaris(array $baris, array $snapshot): int
+    {
+        return (int) ($baris['desimal'] ?? $snapshot['desimal'] ?? 2);
+    }
+
+    /**
+     * Bulatkan ke desimal sertifikat, tapi **tetap angka** (bukan teks).
+     *
+     * Dibulatkan karena Excel itu salinan dokumen yang sama: PDF nulis `1,76`,
+     * jadi Excel nggak boleh nulis `1,758`. Beda angka di dua berkas buat satu
+     * sertifikat terakreditasi itu temuan audit, dan pelanggan yang ngebandingin
+     * dua-duanya nggak punya cara tahu mana yang resmi.
+     *
+     * Tetap `float` (bukan hasil `number_format`) karena Excel dipakai buat
+     * ngerekap & ngitung. Jadi teks bikin kolomnya nggak bisa dijumlah, dan
+     * separator koma bikin Excel-nya baca sebagai kalimat.
+     */
+    private function bulat(mixed $nilai, int $desimal): ?float
+    {
+        if ($nilai === null) {
+            return null;
+        }
+
+        $hasil = round((float) $nilai, $desimal);
+
+        // `round(-0.2, 0)` di PHP balikin NEGATIF NOL, dan Excel nulisnya `-0`.
+        // Nilainya sama dengan nol, tapi di kolom Correction sertifikat itu
+        // kebaca kayak salah cetak — pelanggan nggak tahu itu artinya nol.
+        //
+        // PDF nggak kena karena `number_format()` emang buang tandanya; ini
+        // cuma nyamain jalur Excel sama jalur PDF.
+        return $hasil == 0.0 ? 0.0 : $hasil;
+    }
+
     /** @param  array<string, mixed>  $snapshot */
     private function tulisHasil(Writer $writer, array $snapshot): void
     {
         $writer->addRow(Row::fromValues(['CALIBRATION REPORT'], (new Style)->setFontBold()));
 
+        $adaRemark = collect($snapshot['hasil'] ?? [])
+            ->contains(fn ($b) => filled($b['remark'] ?? null));
+
         $writer->addRow(Row::fromValues(
-            ['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'],
+            array_merge(
+                ['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'],
+                $adaRemark ? ['Remark'] : [],
+            ),
             $this->gayaHeaderTabel(),
         ));
 
         foreach ($snapshot['hasil'] ?? [] as $baris) {
-            $writer->addRow(Row::fromValues([
-                $baris['standard_value'],
-                $baris['unit_under_test'],
-                $baris['correction'],
-                $baris['u95'],
-            ]));
+            $db = $this->desimalBaris($baris, $snapshot);
+
+            $writer->addRow(Row::fromValues(array_merge([
+                $this->bulat($baris['standard_value'] ?? null, $db),
+                $this->bulat($baris['unit_under_test'] ?? null, $db),
+                $this->bulat($baris['correction'] ?? null, $db),
+                $this->bulat($baris['u95'] ?? null, $db),
+            ], $adaRemark ? [$baris['remark'] ?? ''] : [])));
         }
 
         $this->kosong($writer);

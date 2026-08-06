@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationSession;
+use App\Models\Certificate;
+use App\Models\Customer;
+use App\Models\Equipment;
 use App\Models\Folder;
 use App\Models\Organization;
 use App\Models\User;
@@ -41,6 +45,50 @@ class FolderManagerArsipAliasTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.id', $this->folder->id)
             ->assertJsonPath('data.0.nama', 'PT Contoh');
+    }
+
+    /**
+     * Daftar arsip majang "N instruments · M certificates" per PT.
+     *
+     * App-nya udah baca `jumlah_alat` & `jumlah_sertifikat` dari dulu, tapi
+     * backend nggak pernah ngirim dua field itu — jadi yang kebaca selalu nol,
+     * buat SEMUA PT, selamanya. Nggak ada yang error, nggak ada yang gagal;
+     * angkanya cuma bohong. Persis jenis putus-kontrak yang cuma ketahuan kalau
+     * ada yang ngecek angkanya ke database.
+     */
+    public function test_tiap_pt_bawa_jumlah_alat_dan_sertifikatnya(): void
+    {
+        $pelanggan = Customer::factory()->create();
+        $this->folder->update(['customer_id' => $pelanggan->id]);
+
+        $alat = Equipment::factory()->count(3)->create([
+            'customer_id' => $pelanggan->id,
+        ]);
+
+        // Dua sesi disetujui: satu udah terbit sertifikatnya, satu belum.
+        // Yang belum terbit NGGAK boleh ikut kehitung — di layar itu bakal
+        // kebaca sebagai dokumen yang siap dikirim, padahal belum ada.
+        $sesiTerbit = CalibrationSession::factory()->create([
+            'equipment_id' => $alat->first()->id,
+        ]);
+        Certificate::factory()->create([
+            'calibration_session_id' => $sesiTerbit->id,
+            'status' => Certificate::STATUS_TERBIT,
+        ]);
+
+        $sesiBelum = CalibrationSession::factory()->create([
+            'equipment_id' => $alat->last()->id,
+        ]);
+        Certificate::factory()->create([
+            'calibration_session_id' => $sesiBelum->id,
+            'status' => Certificate::STATUS_MENUNGGU_GENERATE,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson('/api/arsip/perusahaan')
+            ->assertOk()
+            ->assertJsonPath('data.0.jumlah_alat', 3)
+            ->assertJsonPath('data.0.jumlah_sertifikat', 1);
     }
 
     public function test_arsip_folders_detail_alias(): void

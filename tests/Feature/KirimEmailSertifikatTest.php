@@ -43,6 +43,15 @@ class KirimEmailSertifikatTest extends TestCase
     {
         parent::setUp();
 
+        // Kelas ini nguji jalur KIRIM, jadi mailernya dianggap beneran ngirim.
+        //
+        // Perlu disebut eksplisit: `phpunit.xml` nyetel MAIL_MAILER=array, dan
+        // `array` itu salah satu mailer yang nggak nganter ke mana-mana — tanpa
+        // baris ini semua test di sini kecatat `tidak_terkirim` dan yang diuji
+        // jadi bukan yang dimaksud. Test yang MEMANG nguji mailer mati nyetel
+        // sendiri `mail.default` di dalam testnya.
+        config(['mail.default' => 'smtp']);
+
         $this->org = Organization::factory()->create([
             'nama' => 'PT SIDIK KALIBRASI',
             'email' => 'lab@pt-sidik.com',
@@ -131,6 +140,13 @@ class KirimEmailSertifikatTest extends TestCase
         // Pesan utamanya juga harus jujur: app cuma nampilin `message`, jadi
         // peringatan yang cuma nyempil di field lain sama aja nggak ada.
         $this->assertStringNotContainsString('terkirim ke pic@tirta.co.id', $respons->json('message'));
+
+        // Dan yang paling penting: JEJAKNYA juga jujur. Dulu baris ini kecatat
+        // `terkirim`, jadi layar kirim nampilin "Sent" selamanya buat email yang
+        // nggak pernah keluar — dan riwayat itu yang dipakai jadi bukti waktu
+        // pelanggan bilang nggak nerima sertifikatnya.
+        $this->assertSame('tidak_terkirim', $respons->json('data.status'));
+        $this->assertStringContainsString('MAIL_MAILER', (string) $respons->json('data.error'));
     }
 
     public function test_mailer_beneran_tetap_lapor_terkirim(): void
@@ -477,25 +493,31 @@ class KirimEmailSertifikatTest extends TestCase
     // ------------------------------------------------------ tanpa SMTP
 
     /**
-     * Bisa dites 100% tanpa kredensial SMTP.
+     * Seluruh alurnya jalan tanpa kredensial SMTP — TAPI jejaknya nggak ngaku
+     * terkirim.
      *
-     * `MAIL_MAILER` di test itu `array` (lihat `phpunit.xml`), dan di dev `log` —
-     * dua-duanya nggak nyentuh internet. Yang beneran nunggu kredensial cuma
-     * pengiriman sungguhan; kodenya nggak perlu diubah sama sekali begitu SMTP
-     * dikasih.
+     * `MAIL_MAILER` di test itu `array` (lihat `phpunit.xml`), dan di dev `log`.
+     * Dua-duanya nggak nyentuh internet, jadi nggak ada yang nerima apa pun.
+     * Dulu baris ini kecatat `terkirim` — dan itu yang bikin layar kirim di dev
+     * nampilin tiga "Sent" ke pelanggan yang nggak pernah nerima sertifikatnya.
+     *
+     * Kodenya tetap nggak perlu diubah begitu SMTP dikasih: yang nentuin cuma
+     * `mail.default`.
      */
-    public function test_jalan_tanpa_kredensial_smtp(): void
+    public function test_jalan_tanpa_kredensial_smtp_tapi_nggak_ngaku_terkirim(): void
     {
+        // Balikin ke mailer bawaan test — setUp() nyetel `smtp` buat jalur kirim.
+        config(['mail.default' => 'array']);
         $sertifikat = $this->sertifikatTerbit();
 
         // Tanpa `Mail::fake()` — pakai mailer `array` bawaan test.
         $this->actingAs($this->admin)
             ->postJson($this->url($sertifikat), ['ke' => ['pic@tirta.co.id']])
             ->assertOk()
-            ->assertJsonPath('data.status', 'terkirim');
+            ->assertJsonPath('data.status', 'tidak_terkirim');
 
         $this->assertSame(
-            CertificateEmailLog::STATUS_TERKIRIM,
+            CertificateEmailLog::STATUS_TIDAK_TERKIRIM,
             CertificateEmailLog::latest('id')->first()->status,
         );
     }

@@ -106,6 +106,28 @@ class GumCalculator
         $titikUkur = $standard->nilaiPadaSuhu($suhuLarutan) ?? $titikUkur;
 
         $n = count($pembacaan);
+
+        // Satu pembacaan nggak punya sebaran. `standarDeviasiSampel()` balikin
+        // 0.0 di kasus itu, dan 0 di sini artinya "pengulangannya sempurna" —
+        // sertifikatnya bakal ngeklaim ketidakpastian lebih bagus dari yang bisa
+        // dibuktiin. Salah yang diam-diam, dan justru di angka yang paling
+        // dipercaya orang.
+        //
+        // Jalur API udah nyaring ini duluan (`alasanBelumBisaDihitung()`, yang
+        // ngasih tahu teknisi KENAPA titiknya belum keluar). Yang dijaga di sini
+        // pemanggil BARU — job, import, jalur AI Vision — yang gampang lupa
+        // nyaring dan nggak bakal ketahuan salahnya karena nggak ada yang error.
+        //
+        // Jumlah pengulangan bebas: 2, 3, 5, berapa pun. Yang nggak boleh cuma 1.
+        if ($n < self::MIN_PENGULANGAN) {
+            throw new \InvalidArgumentException(sprintf(
+                'Titik ke-%d cuma punya %d pembacaan, minimal %d — standar deviasi nggak bisa dihitung dari satu angka.',
+                $titikKe,
+                $n,
+                self::MIN_PENGULANGAN,
+            ));
+        }
+
         $rataRata = array_sum($pembacaan) / $n;
         $standarDeviasi = $this->standarDeviasiSampel($pembacaan, $rataRata);
 

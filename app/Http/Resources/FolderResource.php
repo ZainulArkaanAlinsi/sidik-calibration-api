@@ -29,6 +29,17 @@ class FolderResource extends JsonResource
                 'id' => $this->customer->id,
                 'nama' => $this->customer->nama,
             ] : null,
+            // Dua angka yang dipajang di daftar arsip. Dikirim cuma kalau
+            // dihitung di controller — folder yang bukan akar PT nggak punya
+            // pelanggan, dan `null` di situ lebih jujur daripada nol.
+            'jumlah_alat' => $this->when(
+                $this->customer?->jumlah_alat !== null,
+                fn () => (int) $this->customer->jumlah_alat,
+            ),
+            'jumlah_sertifikat' => $this->when(
+                $this->customer?->jumlah_sertifikat !== null,
+                fn () => (int) $this->customer->jumlah_sertifikat,
+            ),
             // Dihitung lewat withCount di controller; kalau nggak dimuat,
             // biarin null daripada nge-query per baris.
             'jumlah_folder' => $this->whenCounted('children'),
