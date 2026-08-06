@@ -46,3 +46,6 @@ __pycache__/
 # TurbidimeterCapabilitySeeder/TurbidimeterSeeder, jadi CSV mentahnya nggak perlu
 # ikut ke repo.
 Project-PT-Sidik/Master Data TurbidiMeter_CSV/
+# Idem buat chlorine meter — isinya sertifikat 0189-CAL-624 + nama & alamat
+# pelanggan asli. Angkanya udah masuk ChlorineCapabilitySeeder/ChlorineSeeder.
+Project-PT-Sidik/Chlorine_Meter_CSV/

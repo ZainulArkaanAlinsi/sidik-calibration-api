@@ -11,6 +11,7 @@ use App\Models\CertificateEmailLog;
 use App\Models\User;
 use App\Services\CertificateExcelExporter;
 use App\Services\QrCodeGenerator;
+use App\Support\Mailer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -386,12 +387,34 @@ class CertificateController extends Controller
             ], 502);
         }
 
+        // Mailer pengembangan "berhasil" tanpa ngirim apa-apa. Kalau kita diem,
+        // admin baca "Sertifikat terkirim ke pic@..." dan nungguin balasan yang
+        // nggak bakal datang — kegagalan paling mahal, karena nggak keliatan.
+        if (($mailerMati = Mailer::takMengirim()) !== null) {
+            Log::warning('Email sertifikat NGGAK beneran dikirim: MAIL_MAILER masih mailer pengembangan.', [
+                'certificate_id' => $certificate->id,
+                'mail_mailer' => $mailerMati,
+                'ke' => $ke,
+            ]);
+
+            $peringatan = "Belum beneran terkirim. MAIL_MAILER masih `{$mailerMati}`, jadi emailnya "
+                .'cuma dicatat di server dan pelanggan nggak nerima apa-apa. Isi setelan SMTP di '
+                .'`.env` dulu, baru kirim ulang.';
+
+            return response()->json([
+                'message' => $peringatan,
+                'peringatan' => $peringatan,
+                'data' => $this->barisRiwayat($log),
+            ]);
+        }
+
         return response()->json([
             'message' => match ($format) {
                 CertificateEmailLog::FORMAT_XLSX => 'Sertifikat (Excel) terkirim ke '.implode(', ', $ke).'.',
                 CertificateEmailLog::FORMAT_TAUTAN => 'Tautan verifikasi terkirim ke '.implode(', ', $ke).'.',
                 default => 'Sertifikat (PDF) terkirim ke '.implode(', ', $ke).'.',
             },
+            'peringatan' => null,
             'data' => $this->barisRiwayat($log),
         ]);
     }

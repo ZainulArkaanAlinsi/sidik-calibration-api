@@ -335,6 +335,11 @@
     </table>
 
     <div class="judul-sub">CALIBRATION REPORT</div>
+    {{-- Kolom "Remark" cuma dicetak kalau alatnya emang punya keterangan
+         parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
+         alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
+         muncul kosong. --}}
+    @php($adaRemark = collect($snapshot['hasil'] ?? [])->contains(fn ($b) => filled($b['remark'] ?? null)))
     <table class="data">
         <thead>
             <tr>
@@ -342,6 +347,7 @@
                 <th>Unit Under Test</th>
                 <th>Correction</th>
                 <th>U95% (&plusmn;)</th>
+                @if ($adaRemark)<th>Remark</th>@endif
             </tr>
         </thead>
         <tbody>
@@ -361,14 +367,23 @@
                     <td>{{ \App\Support\Angka::id($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
                     <td>{{ \App\Support\Angka::id($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
                     <td>{{ \App\Support\Angka::id($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
-                    {{-- U95 pakai formatter sendiri: dia dijamin kebaca 2
-                         angka penting, nggak dipaksa ikut desimal alat. Ikut
-                         desimal alat, `0,0234` kecetak `0,02` dan kehilangan
-                         setengah nilainya. --}}
-                    <td>{{ \App\Support\Angka::ketidakpastian($baris['u95'] ?? null, $db) }}</td>
+                    {{-- U95 ikut desimal alat, SAMA kayak tiga kolom di atas —
+                         ngikut sertifikat asli lab (`0,09` & `0,08`, bukan
+                         `0,091` & `0,080`).
+
+                         Sebelumnya pakai `Angka::ketidakpastian()` yang naikin
+                         desimal demi jaga 2 angka penting. Alasannya kuat, tapi
+                         yang dicetak lab bukan itu — dan dokumen yang dipegang
+                         pelanggan harus sama persis dengan yang lab terbitkan.
+
+                         KONSEKUENSI yang mesti diketahui: CMC titik 1,74 itu
+                         0,091; dibulatkan jadi 0,09 berarti angka yang tercetak
+                         sedikit DI BAWAH CMC. Keputusan formatnya ada di lab. --}}
+                    <td>{{ \App\Support\Angka::id($baris['u95'] === null ? null : (float) $baris['u95'], $db) }}</td>
+                    @if ($adaRemark)<td>{{ $baris['remark'] ?? '—' }}</td>@endif
                 </tr>
             @empty
-                <tr><td colspan="4">—</td></tr>
+                <tr><td colspan="{{ $adaRemark ? 5 : 4 }}">—</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -404,7 +419,7 @@
                     <td>{{ $isi($standar['traceable_to'] ?? null) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="4">—</td></tr>
+                <tr><td colspan="{{ $adaRemark ? 5 : 4 }}">—</td></tr>
             @endforelse
         </tbody>
     </table>

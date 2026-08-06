@@ -81,6 +81,47 @@ class CertificateGenerationTest extends TestCase
         $this->assertNotNull($sertifikat->pdf_path);
     }
 
+    /**
+     * **Bug asli:** `qr_payload` dibikin pakai `url()`, yang ngambil host dari
+     * request yang lagi jalan. Sertifikat diterbitin lewat request admin dari
+     * LAN, jadi alamat sementara mesin dev ikut kecetak PERMANEN ke QR —
+     * ketemu `http://192.168.1.8:8000/verify/...` di sertifikat yang udah
+     * terbit. IP-nya pindah, QR-nya mati; dari luar kantor emang nggak pernah
+     * bisa dibuka.
+     *
+     * QR nempel di dokumen terkendali yang salinannya dipegang pelanggan, jadi
+     * alamatnya harus satu & stabil — diambil dari `APP_URL`, bukan dari
+     * request yang kebetulan lagi jalan.
+     */
+    public function test_qr_pakai_app_url_bukan_host_request(): void
+    {
+        Storage::fake('local');
+        config(['app.url' => 'https://sertifikat.ptsidik.co.id']);
+
+        $sesi = $this->buatSesiMenungguApproval();
+
+        // Request-nya SENGAJA dari host lain — persis kejadian di lapangan:
+        // admin approve dari HP/laptop lewat IP LAN.
+        $this->actingAs($this->admin)
+            ->withServerVariables(['HTTP_HOST' => '192.168.1.8:8000'])
+            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->assertOk();
+
+        $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
+
+        $this->assertStringStartsWith(
+            'https://sertifikat.ptsidik.co.id/verify/',
+            $sertifikat->qr_payload,
+            'QR harus ngikut APP_URL biar bisa dibuka siapa pun, kapan pun',
+        );
+        $this->assertStringNotContainsString(
+            '192.168.1.8',
+            $sertifikat->qr_payload,
+            'alamat sementara mesin dev nggak boleh nempel di dokumen resmi',
+        );
+        $this->assertStringEndsWith($sertifikat->qr_token, $sertifikat->qr_payload);
+    }
+
     public function test_job_bikin_sertifikat_terbit_lengkap_dengan_pdf(): void
     {
         Storage::fake('local');

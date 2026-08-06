@@ -107,6 +107,45 @@ class KirimEmailSertifikatTest extends TestCase
         Mail::assertSent(SertifikatKePelanggan::class, fn ($mail) => $mail->hasTo('pic@tirta.co.id'));
     }
 
+    // ------------------------------------------------- mailer yang nggak ngirim
+
+    /**
+     * `MAIL_MAILER=log` nulis email ke `laravel.log` dan nggak pernah ngelempar
+     * exception, jadi dulu responsnya bilang "Sertifikat (PDF) terkirim ke ..."
+     * buat email yang nggak pernah keluar. Admin nungguin balasan pelanggan yang
+     * nggak bakal datang, dan nggak ada apa pun di layar yang ngasih tahu kenapa.
+     */
+    public function test_mailer_log_diakui_belum_beneran_terkirim(): void
+    {
+        Mail::fake();
+        config(['mail.default' => 'log']);
+        $sertifikat = $this->sertifikatTerbit();
+
+        $respons = $this->actingAs($this->admin)
+            ->postJson($this->url($sertifikat), ['ke' => ['pic@tirta.co.id']])
+            ->assertOk();
+
+        $this->assertStringContainsString('Belum beneran terkirim', $respons->json('peringatan'));
+        $this->assertStringContainsString('MAIL_MAILER', $respons->json('peringatan'));
+
+        // Pesan utamanya juga harus jujur: app cuma nampilin `message`, jadi
+        // peringatan yang cuma nyempil di field lain sama aja nggak ada.
+        $this->assertStringNotContainsString('terkirim ke pic@tirta.co.id', $respons->json('message'));
+    }
+
+    public function test_mailer_beneran_tetap_lapor_terkirim(): void
+    {
+        Mail::fake();
+        config(['mail.default' => 'smtp']);
+        $sertifikat = $this->sertifikatTerbit();
+
+        $this->actingAs($this->admin)
+            ->postJson($this->url($sertifikat), ['ke' => ['pic@tirta.co.id']])
+            ->assertOk()
+            ->assertJsonPath('peringatan', null)
+            ->assertJsonPath('data.status', 'terkirim');
+    }
+
     public function test_cc_ikut_terkirim(): void
     {
         Mail::fake();

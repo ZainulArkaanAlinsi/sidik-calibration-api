@@ -117,13 +117,13 @@
       }
     },
     {
-      "_catatan": "Sertifikatnya udah lewat masa berlaku (due 2024-06-18) dan unit ini nggak ikut pembaruan 2025-11-26 di FORM VALIDASI — sengaja diseed apa adanya biar kelihatan `masih_berlaku: false` dan nggak kepilih buat kalibrasi baru.",
+      "_catatan": "Due date-nya BEDA di tiga master: CSV pH nulis 2024-06-18, sedangkan Master Data TurbidiMeter & Chlorine_Meter dua-duanya nulis 2026-06-18 — dan cuma yang 2026 yang nyambung sama kolom 'Interval (tahun) = 2' (2024-06-17 + 2 tahun). Yang dipakai 2026-06-18; angka 2024 kelihatannya interval-nya kelupaan dipasang di file pH yang lebih tua. Unit ini juga nggak ikut pembaruan 2025-11-26 di FORM VALIDASI. Tetap diseed apa adanya: per Agustus 2026 sertifikatnya toh udah lewat ~7 minggu, jadi `masih_berlaku: false` yang jadi maksud semula tetap kejadian.",
       "nama": "TH-5",
       "serial_number": "TH-5",
       "lokasi": "Inlab (Flowmeter Instalation)",
       "tertelusur_ke": "LK-285-IDN",
       "tanggal_kalibrasi": "2024-06-17",
-      "berlaku_sampai": "2024-06-18",
+      "berlaku_sampai": "2026-06-18",
       "parameter_kondisi": {
         "suhu": { "indexed_value": 21.51, "correction": 0.91, "u95": 1.8 },
         "kelembaban": { "indexed_value": 49.5, "correction": -0.5, "u95": 4.8 }
