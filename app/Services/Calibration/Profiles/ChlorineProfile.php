@@ -61,12 +61,6 @@ class ChlorineProfile extends CalibrationProfile
     public const RESOLUSI = 0.01;
 
     /**
-     * Dua titik standar chlorine yang lab BENERAN punya. Lihat docblock kelas
-     * soal kenapa bukan 0,40 & 4,00.
-     *
-     * @var list<array{nilai: float, label: string}>
-     */
-    /**
      * Batas geser titik ukur dari nilai nominalnya waktu dicocokin.
      *
      * `titik_ukur` yang kesimpen itu nilai standar SESUDAH koreksi suhu (mis.
@@ -77,6 +71,12 @@ class ChlorineProfile extends CalibrationProfile
      */
     private const TOLERANSI_TITIK = 0.05;
 
+    /**
+     * Dua titik standar chlorine yang lab BENERAN punya. Lihat docblock kelas
+     * soal kenapa bukan 0,40 & 4,00.
+     *
+     * @var list<array{nilai: float, label: string, remark: string}>
+     */
     public const TITIK = [
         // `remark` = kolom "Remark" di sertifikat asli lab. Dua titik chlorine
         // itu parameter yang BEDA, bukan cuma dua level di besaran yang sama:
