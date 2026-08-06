@@ -322,7 +322,6 @@ class CertificateSnapshotBuilder
      * Ikut dibekukan ke snapshot (bukan dibaca ulang waktu render) supaya
      * sertifikat yang udah terbit nggak berubah bentuk gara-gara pengaturan
      * diubah sesudahnya.
-     *
      */
     private function desimal(?Equipment $alat, ?Organization $organisasi): int
     {
@@ -418,13 +417,26 @@ class CertificateSnapshotBuilder
     {
         $bagian = [];
 
-        // Desimalnya ngikut Excel master lab, dan dulu KEBALIK: suhu ditulis 1
-        // desimal (25,47 kepangkas jadi 25,5 — kehilangan angka yang dicatat
-        // teknisi) sementara kelembaban ditulis 2 desimal (51,83) padahal
-        // sertifikat aslinya nulis bulat (52). Suhu ruang dicatat sampai 0,01°C
-        // karena ikut ngaruh ke koreksi; kelembaban nggak, makanya dibulatkan.
+        // Desimalnya ngikut sertifikat ASLI lab: `T 23,2 °C` & `%RH 53 %` —
+        // suhu 1 desimal, kelembaban bulat.
+        //
+        // Suhu sempat dinaikin ke 2 desimal dengan alasan "suhu ruang dicatat
+        // sampai 0,01°C karena ikut ngaruh ke koreksi, jangan dipangkas ke 25,5
+        // — nanti kehilangan angka yang dicatat teknisi". Alasannya masuk akal
+        // buat NYIMPEN, tapi keliru buat NYETAK, dan premisnya nggak kebukti:
+        // teknisi ngisi `suhu_awal`/`suhu_akhir` di resolusi 0,1°C (mis. 24,1 &
+        // 23,5). Desimal ketiga di `suhu_ruang` (23,21) itu hasil HITUNGAN
+        // koreksi thermohygro, bukan angka yang pernah dibaca orang dari alat.
+        //
+        // Jadi nyetak 23,21 itu ngaku-ngaku ketelitian yang thermohygro-nya
+        // nggak punya — persis kesalahan yang dijaga di tempat lain di kode ini.
+        // Nilai penuhnya tetap utuh di DB & tetap dipakai ngitung; yang berubah
+        // cuma cara nampilinnya di dokumen.
+        //
+        // Kalau nanti `standards.resolusi` buat thermohygro udah keisi (sekarang
+        // NULL), desimalnya mestinya diturunin dari situ, bukan dipatok di sini.
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 2).'°C';
+            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 1).'°C';
 
             if ($sesi->suhu_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
