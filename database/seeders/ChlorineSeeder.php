@@ -78,6 +78,19 @@ class ChlorineSeeder extends Seeder
      * beneran, jadi uc titik 1,83 sengaja BEDA dari sheet — lihat
      * `ChlorineBudgetTest`. Titik 1,74 cocok sampai digit terakhir.
      *
+     * Tiga hal yang bikin yakin selnya yang salah, bukan hitungan di sini:
+     * `PERHITUNGAN.csv` baris 31 nulis STDEV titik 1,83 = 0; kolom `U` di baris
+     * budget itu sendiri juga 0 (jadi `ui` mestinya 0/√5 = 0); dan 0,0244949²
+     * = 0,0006 persis nutup selisih antara jumlah kuadrat versi kita
+     * (0,00090842245) sama sel "Jumlah" di sheet (0,0015084224467774394).
+     *
+     * KONSEKUENSINYA KE SERTIFIKAT, bukan cuma angka antara: sheet ngasih
+     * U = 0,0801585479793244 dan itu yang kecetak di `SERTIFIKAT.csv` — DI ATAS
+     * CMC 0,08 yang jadi lingkup akreditasi lab sendiri. Versi kita 0,0596 →
+     * dilaporkan 0,08 (kena batas CMC). Jangan "disamain" ke sheet tanpa lab
+     * mbenerin selnya dulu; yang keluar bakal ketidakpastian di luar lingkup.
+     * Diperiksa ulang 5 Agt 2026 waktu cocokin DB ke Chlorine_Meter_CSV.
+     *
      * @var list<array{titik: float, standar: int, pembacaan: list<float>, suhu: float}>
      */
     private const TITIK = [
@@ -163,12 +176,21 @@ class ChlorineSeeder extends Seeder
             ['organization_id' => 1, 'nomor_sesi' => '2406.32.C'],
             [
                 'equipment_id' => $equipment->id,
+                // Order Number sesi asli (sel SERTIFIKAT "Order Number"). Tanpa
+                // ini `CalibrationValidator` nyalain temuan `nomor_order` di
+                // tiap sertifikat — cuma tingkat info, tapi bikin kolom Order
+                // Number kecetak strip di dokumen yang mestinya lengkap.
+                'nomor_order' => '2406.32.C.NK',
                 'teknisi_id' => $teknisi->id,
                 'standard_id' => $standar[0]->id,
                 'thermohygro_standard_id' => $th4?->id,
                 'input_method' => 'manual',
                 'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
                 'tanggal_kalibrasi' => '2024-06-11',
+                // Received Date sel SERTIFIKAT — sama alasannya kayak nomor_order
+                // di atas: kolomnya kecetak di sertifikat, jadi jangan dibiarin
+                // kosong di data contoh yang jadi acuan orang.
+                'tanggal_terima' => '2024-06-10',
                 'lokasi' => 'lab',
                 // Awal & akhir apa adanya dari PERHITUNGAN KONDISI LINGKUNGAN
                 // (24,1 → 23,5 °C dan 56 → 55 %RH). suhu_ruang & U95-nya

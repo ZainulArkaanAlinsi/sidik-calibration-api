@@ -266,4 +266,35 @@ class ChlorineBudgetTest extends TestCase
         $this->assertArrayNotHasKey('desimal', $baris[0]);
         $this->assertNull((new ChlorineProfile)->desimalTitik(1.74));
     }
+
+    /**
+     * Kolom "Remark" di sertifikat asli lab: 1,74 mg/L = klorin BEBAS,
+     * 1,83 mg/L = klorin TOTAL. Dua titik itu parameter yang beda, bukan cuma
+     * dua level di besaran yang sama — tanpa keterangan ini pelanggan nggak
+     * punya cara tau baris mana yang mana.
+     */
+    public function test_remark_titik_kecocokan_bebas_dan_total(): void
+    {
+        $profil = new ChlorineProfile;
+
+        $this->assertSame('Free Chlorine', $profil->remarkTitik(1.74));
+        $this->assertSame('Total Chlorine', $profil->remarkTitik(1.83));
+    }
+
+    /**
+     * `titik_ukur` yang kesimpen itu nilai standar SESUDAH koreksi suhu, jadi
+     * nggak pernah persis 1,74. Pencocokannya harus tahan geser itu — kalau
+     * pakai `===`, kolom Remark bakal kosong terus di sertifikat asli.
+     */
+    public function test_remark_tahan_geser_koreksi_suhu(): void
+    {
+        $profil = new ChlorineProfile;
+
+        $this->assertSame('Free Chlorine', $profil->remarkTitik(1.7401));
+        $this->assertSame('Total Chlorine', $profil->remarkTitik(1.8297));
+
+        // Tapi jangan sampai ngasal: titik di luar dua itu tetap null.
+        $this->assertNull($profil->remarkTitik(4.0));
+        $this->assertNull($profil->remarkTitik(0.4));
+    }
 }

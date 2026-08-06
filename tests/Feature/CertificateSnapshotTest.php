@@ -137,7 +137,10 @@ class CertificateSnapshotTest extends TestCase
         // 0,01°C karena ikut ngaruh ke koreksi), kelembaban BULAT. Sebelumnya
         // kebalik — suhu 1 desimal & kelembaban 2 — jadi angka yang dicatat
         // teknisi kepangkas di dokumen resmi.
-        $this->assertSame('T: 21,00°C ± 1,7°C — %RH: 52% ± 5,7%', $header['env_condition']);
+        // Suhu 1 desimal, ngikut sertifikat ASLI lab (`T 23,2 °C`). Teknisi
+        // ngisi suhu di resolusi 0,1°C; desimal ketiga itu hasil hitungan
+        // koreksi thermohygro, bukan angka yang pernah kebaca dari alat.
+        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 52% ± 5,7%', $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 
