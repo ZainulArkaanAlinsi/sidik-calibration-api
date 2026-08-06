@@ -152,6 +152,27 @@ class LembarKerjaTest extends TestCase
             (float) $sesi->rawMeasurements()->where('pembacaan_ke', 1)->value('suhu'),
             1e-9,
         );
+
+        // Dan ini yang paling gampang kelewat: ANGKANYA harus ikut 3 pembacaan,
+        // bukan 5. Lembar kerjanya nyetak 5 kolom, jadi gampang dikira angka 5
+        // itu ikut masuk rumus.
+        //
+        // Kalau rata-ratanya dibagi 5 (dua kolom kosong kehitung sebagai nol),
+        // hasilnya 2,404 — bukan 4,006667. Nggak ada error yang muncul; yang
+        // salah cuma sertifikatnya.
+        $titik = $sesi->uncertaintyCalculations()->where('titik_ke', 1)->firstOrFail();
+
+        $this->assertSame(3, $titik->jumlah_pengulangan);
+        // Delta 1e-7: kolomnya `decimal(20,8)`, jadi yang kesimpen udah
+        // dibulatkan ke 8 desimal.
+        $this->assertEqualsWithDelta((4.01 + 4.00 + 4.01) / 3, (float) $titik->rata_rata, 1e-7);
+
+        // s = √(((4,01−4,00667)² + (4,00−4,00667)² + (4,01−4,00667)²) / 2)
+        $rata = (4.01 + 4.00 + 4.01) / 3;
+        $s = sqrt(((4.01 - $rata) ** 2 + (4.00 - $rata) ** 2 + (4.01 - $rata) ** 2) / 2);
+
+        $this->assertEqualsWithDelta($s, (float) $titik->standar_deviasi, 1e-7);
+        $this->assertEqualsWithDelta($s / sqrt(3), (float) $titik->type_a, 1e-7, 'Type A harus √3, bukan √5');
     }
 
     public function test_kondisi_ruang_yang_cuma_keukur_sebagian_tetap_kepakai(): void
