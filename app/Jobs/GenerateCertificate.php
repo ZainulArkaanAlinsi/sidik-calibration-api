@@ -92,7 +92,27 @@ class GenerateCertificate implements ShouldQueue
                     'issued_by' => $this->issuedBy,
                     'nomor' => $nomor,
                     'qr_token' => $token,
-                    'qr_payload' => url("/verify/{$token}"),
+                    // WAJIB dari `config('app.url')`, BUKAN `url()`.
+                    //
+                    // `url()` ngambil host dari request yang lagi jalan. Sertifikat
+                    // diterbitkan lewat request admin dari HP/laptop di LAN, jadi
+                    // yang kecetak ke QR itu alamat sementara mesin dev —
+                    // ketemu `http://192.168.1.8:8000/verify/...` di sertifikat
+                    // yang udah terbit. Begitu IP-nya pindah (sehari bisa 3x),
+                    // QR-nya mati; dan dari luar kantor emang nggak pernah bisa
+                    // dibuka sama sekali.
+                    //
+                    // Ini bukan cuma "nggak bisa di-scan sekarang": nomor QR
+                    // nempel PERMANEN di dokumen terkendali yang udah dikirim ke
+                    // pelanggan. Alamatnya harus satu, stabil, dan nggak ikut
+                    // berubah-ubah — makanya diambil dari konfigurasi, bukan dari
+                    // request yang kebetulan lagi jalan.
+                    //
+                    // Konsekuensinya: `APP_URL` di `.env` HARUS diisi alamat yang
+                    // beneran kejangkau publik. Selama dia masih `localhost` atau
+                    // IP LAN, QR-nya nggak akan pernah bisa dibuka pelanggan —
+                    // itu batas infrastruktur, bukan batas kode.
+                    'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
                     'diterbitkan_pada' => now(),
                     'berlaku_sampai' => $this->berlakuSampai($sesi),
                     'status' => Certificate::STATUS_MENUNGGU_GENERATE,
