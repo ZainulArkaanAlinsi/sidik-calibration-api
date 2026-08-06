@@ -177,10 +177,10 @@ class CalibrationValidationTest extends TestCase
     // ------------------------------------------------ koreksi suhu larutan
 
     /** @param array<string, mixed> $titik */
-    private function periksaSesiDengan(Standard $standar, array $titik): array
+    private function periksaSesiDengan(Standard $standar, array $titik, ?Equipment $alat = null): array
     {
         $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
-            'equipment_id' => $this->alat->id,
+            'equipment_id' => ($alat ?? $this->alat)->id,
             'standard_id' => $standar->id,
             'tanggal_kalibrasi' => now()->subDay()->toDateString(),
             'measurements' => [$titik],
@@ -261,5 +261,45 @@ class CalibrationValidationTest extends TestCase
 
         $this->assertNotContains('suhu_larutan_tidak_dicatat', $kode);
         $this->assertNotContains('standar_tanpa_kurva_suhu', $kode);
+    }
+
+    /**
+     * Alat yang standarnya MEMANG dibaca nominal (chlorine, turbidimeter) tetap
+     * nyatat suhu larutan — suhunya masuk budget ketidakpastian, bukan buat
+     * ngoreksi nilai acuan. `koefisien_suhu` NULL di situ jawaban yang benar.
+     *
+     * Sebelum ini kombinasi "suhu kecatat + standar tanpa kurva" langsung jadi
+     * peringatan, jadi TIAP sertifikat chlorine & turbidimeter ke-flag
+     * `valid: false` gara-gara perilaku yang justru diharapkan — kejadian di
+     * sesi 7 & 11–13 di DB lab. Yang mbedain sekarang profil alatnya.
+     */
+    public function test_alat_yang_standarnya_nominal_nggak_dikasih_peringatan_kurva_suhu(): void
+    {
+        $chlorine = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'analitik'])->id,
+            'nama_alat' => 'Chlorine Meter',
+            // Kunci yang bikin registry milih ChlorineProfile.
+            'nama_alat_kemampuan' => 'Chlorin Meter',
+            'satuan' => 'mg/L', 'resolusi' => 0.01, 'toleransi' => 0.15,
+        ]);
+
+        $hasil = $this->periksaSesiDengan($this->standar, [
+            'titik_ukur' => 1.74, 'satuan' => 'mg/L',
+            'pembacaan' => [1.76, 1.76, 1.75],
+            'suhu' => [25.8, 25.8, 25.8],
+        ], $chlorine);
+
+        $this->assertNotContains('standar_tanpa_kurva_suhu', $this->kodeTemuan($hasil));
+
+        // Dan alat generik dengan standar & suhu yang sama persis TETAP diperingatin
+        // — yang berubah cuma jenis alatnya, bukan saringannya dilonggarin.
+        $this->assertContains('standar_tanpa_kurva_suhu', $this->kodeTemuan(
+            $this->periksaSesiDengan($this->standar, [
+                'titik_ukur' => 50.0, 'satuan' => 'mm',
+                'pembacaan' => [50.02, 50.01, 50.03],
+                'suhu' => [25.8, 25.8, 25.8],
+            ]),
+        ));
     }
 }
