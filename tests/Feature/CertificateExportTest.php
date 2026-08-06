@@ -11,8 +11,10 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\CertificateExcelExporter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use OpenSpout\Reader\XLSX\Reader;
 use Tests\TestCase;
 
 /**
@@ -84,6 +86,65 @@ class CertificateExportTest extends TestCase
         // yang kekirim beneran workbook, bukan halaman error.
         $this->assertStringStartsWith('PK', $isi);
         $this->assertGreaterThan(1000, strlen($isi));
+    }
+
+    /**
+     * Satu sertifikat, tiga tampilan (PDF, Excel, pratinjau di app) — angkanya
+     * WAJIB sama.
+     *
+     * Dulu Excel nulis nilai mentah dari snapshot (`1.758`, `0.091`) sementara
+     * PDF nulis `1,76` dan `0,09`. Buat sertifikat terakreditasi itu temuan
+     * audit: pelanggan yang mbandingin dua berkas nggak punya cara tahu mana
+     * yang resmi. Kolom Remark juga cuma ada di PDF.
+     */
+    public function test_angka_di_excel_sama_persis_dengan_yang_dicetak_di_pdf(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Snapshot chlorine beneran (CAL/2026/08/0009): nilai mentahnya lebih
+        // panjang dari resolusi alatnya, jadi bedanya kelihatan.
+        $sertifikat->update(['snapshot' => [
+            'desimal' => 2,
+            'header' => ['certificate_number' => $sertifikat->nomor],
+            'hasil' => [[
+                'titik_ke' => 1,
+                'standard_value' => 1.74,
+                'unit_under_test' => 1.758,
+                'correction' => -0.018,
+                'u95' => 0.091,
+                'desimal' => 2,
+                'remark' => 'Free Chlorine',
+            ]],
+        ]]);
+
+        $berkas = tempnam(sys_get_temp_dir(), 'uji-').'.xlsx';
+        app(CertificateExcelExporter::class)->satu($sertifikat->fresh(), $berkas);
+
+        $sel = [];
+        $pembaca = new Reader;
+        $pembaca->open($berkas);
+        foreach ($pembaca->getSheetIterator() as $lembar) {
+            foreach ($lembar->getRowIterator() as $baris) {
+                $sel[] = array_map(
+                    static fn ($c) => $c->getValue(),
+                    $baris->getCells(),
+                );
+            }
+        }
+        $pembaca->close();
+        @unlink($berkas);
+
+        $hasil = collect($sel)->first(fn ($b) => ($b[0] ?? null) === 1.74);
+
+        $this->assertNotNull($hasil, 'Baris hasil nggak ketemu di Excel-nya.');
+        $this->assertSame(1.76, $hasil[1], 'Unit Under Test harus dibulatkan kayak di PDF.');
+        $this->assertSame(-0.02, $hasil[2], 'Correction harus dibulatkan kayak di PDF.');
+        $this->assertSame(0.09, $hasil[3], 'U95 harus dibulatkan kayak di PDF, bukan 0,091.');
+        $this->assertSame('Free Chlorine', $hasil[4], 'Kolom Remark harus ikut kayak di PDF.');
+
+        // Tetap ANGKA, bukan teks — Excel dipakai buat ngerekap & ngitung, dan
+        // `number_format` bikin kolomnya nggak bisa dijumlah.
+        $this->assertIsFloat($hasil[3]);
     }
 
     public function test_rekap_banyak_sertifikat_bisa_diexport_sekaligus(): void
