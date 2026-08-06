@@ -166,4 +166,39 @@ class WorksheetExtractionGeminiTest extends TestCase
 
         app(WorksheetVisionExtractor::class)->extract('x', 'image/png');
     }
+
+    /**
+     * Prompt-nya WAJIB tetap nyuruh model hati-hati, bukan cuma "baca angka".
+     *
+     * Dua pagar yang paling gampang keikis waktu ada yang ngerapiin prompt, dan
+     * dua-duanya bikin angka salah lolos ke sertifikat berakreditasi TANPA ada
+     * yang sadar:
+     *
+     *  - Sel dibaca sendiri-sendiri. Model gampang banget nyalin nilai dari
+     *    baris atas ke bawah karena "kelihatannya sama" — dan itu justru
+     *    ngumpetin satu pembacaan yang beda, yang persis jadi alasan kalibrasi
+     *    ini dilakuin.
+     *  - Ragu = keyakinan RENDAH, bukan tinggi. Sel keyakinan rendah ditandain
+     *    buat dicek manusia; yang tinggi nggak. Jadi salah yang percaya diri
+     *    jauh lebih bahaya daripada sel yang ngaku ragu.
+     */
+    public function test_prompt_tetap_bawa_pagar_ketelitian(): void
+    {
+        $prompt = (new \ReflectionMethod(WorksheetVisionExtractor::class, 'systemPrompt'))
+            ->invoke(app(WorksheetVisionExtractor::class));
+
+        foreach ([
+            'Read EVERY cell independently',
+            'Do NOT copy a value',
+            'Map cells by POSITION',
+            'never "high"',
+            'NEVER correct, round',
+        ] as $wajib) {
+            $this->assertStringContainsString(
+                $wajib,
+                $prompt,
+                "pagar ketelitian '{$wajib}' ilang dari prompt",
+            );
+        }
+    }
 }
