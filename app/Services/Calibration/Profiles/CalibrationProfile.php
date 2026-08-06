@@ -66,6 +66,28 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apa larutan/standar acuan alat ini PUNYA kurva suhu (nilai acuannya
+     * bergeser ikut suhu larutan, kayak buffer pH)?
+     *
+     * Dipakai [\App\Services\CalibrationValidator] buat mbedain dua hal yang di
+     * tabel `standards` kelihatan sama persis — `koefisien_suhu` NULL:
+     *
+     *  - **data kurvanya belum diisi** → suhu yang susah-susah dicatat teknisi
+     *    kebuang percuma, pantas diperingatin; dan
+     *  - **standarnya emang nggak berkurva** (turbidity, chlorine) → NULL itu
+     *    jawaban yang benar, bukan data yang bolong.
+     *
+     * Default `true` karena profil pertama (pH) emang berkurva. Profil yang
+     * standarnya dibaca nominal apa adanya override jadi `false` — kalau nggak,
+     * tiap sertifikatnya ke-flag `valid: false` gara-gara temuan yang sebenernya
+     * perilaku yang diharapkan.
+     */
+    public function standarBerkurvaSuhu(): bool
+    {
+        return true;
+    }
+
+    /**
      * Bentuk lembar kerja (struktur bagian/field/tabel) — yang dulu di
      * `LembarKerjaTemplate::phMeter()`. Dibaca langsung layar input mobile.
      *
