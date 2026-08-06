@@ -114,6 +114,61 @@ class LembarKerjaTest extends TestCase
             ->assertJsonPath('data.satuan', 'pH');
     }
 
+    /**
+     * Jumlah KOTAK pengulangan bisa diatur — 5 cuma bawaan, bukan patokan.
+     *
+     * Teknisi kadang cuma perlu 3 (sampel terbatas, atau alatnya stabil banget).
+     * Sebelum ini kolomnya selalu 5 dan dua kolom terakhir cuma jadi ruang
+     * kosong yang bikin ragu: "ini wajib diisi apa nggak?"
+     *
+     * Yang berubah CUMA gambarnya. Rumusnya tetap ngikut berapa yang beneran
+     * diisi — dijaga `PengulanganBebasTest`.
+     */
+    public function test_jumlah_kolom_pengulangan_bisa_diatur_di_ketiga_alat(): void
+    {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+            $data = $this->actingAs($this->teknisi)
+                ->getJson("/api/calibrations/lembar-kerja?profil={$profil}&pengulangan=3")
+                ->assertOk()
+                ->assertJsonPath('data.jumlah_pengulangan', 3)
+                ->json('data');
+
+            foreach ($data['bagian'] as $bagian) {
+                foreach ($bagian['tabel'] ?? [] as $tabel) {
+                    $this->assertSame(
+                        [1, 2, 3],
+                        $tabel['pengulangan'],
+                        "{$profil}: kotak pengulangan di tabel harus ikut, bukan cuma angkanya di header",
+                    );
+                }
+            }
+        }
+    }
+
+    public function test_tanpa_parameter_tetap_lima_kolom_kayak_form_kertas(): void
+    {
+        // Mobile lama yang belum ngirim `pengulangan` nggak boleh ikut berubah.
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+            $this->actingAs($this->teknisi)
+                ->getJson("/api/calibrations/lembar-kerja?profil={$profil}")
+                ->assertOk()
+                ->assertJsonPath('data.jumlah_pengulangan', 5);
+        }
+    }
+
+    public function test_kolom_pengulangan_di_luar_batas_ditolak(): void
+    {
+        // 1 kolom = standar deviasi nggak ada. Ditolak di sini, bukan dibiarin
+        // sampai teknisi selesai ngisi lalu titiknya ilang dari hasil.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?pengulangan=1')
+            ->assertJsonValidationErrors('pengulangan');
+
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?pengulangan=99')
+            ->assertJsonValidationErrors('pengulangan');
+    }
+
     public function test_lembar_kerja_setengah_jadi_tetap_bisa_dikirim(): void
     {
         // Skenario lapangan: buffer 7 & 10 habis, jadi cuma titik pertama yang
