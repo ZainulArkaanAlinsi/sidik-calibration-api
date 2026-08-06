@@ -114,6 +114,61 @@ class LembarKerjaTest extends TestCase
             ->assertJsonPath('data.satuan', 'pH');
     }
 
+    /**
+     * Jumlah KOTAK pengulangan bisa diatur — 5 cuma bawaan, bukan patokan.
+     *
+     * Teknisi kadang cuma perlu 3 (sampel terbatas, atau alatnya stabil banget).
+     * Sebelum ini kolomnya selalu 5 dan dua kolom terakhir cuma jadi ruang
+     * kosong yang bikin ragu: "ini wajib diisi apa nggak?"
+     *
+     * Yang berubah CUMA gambarnya. Rumusnya tetap ngikut berapa yang beneran
+     * diisi — dijaga `PengulanganBebasTest`.
+     */
+    public function test_jumlah_kolom_pengulangan_bisa_diatur_di_ketiga_alat(): void
+    {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+            $data = $this->actingAs($this->teknisi)
+                ->getJson("/api/calibrations/lembar-kerja?profil={$profil}&pengulangan=3")
+                ->assertOk()
+                ->assertJsonPath('data.jumlah_pengulangan', 3)
+                ->json('data');
+
+            foreach ($data['bagian'] as $bagian) {
+                foreach ($bagian['tabel'] ?? [] as $tabel) {
+                    $this->assertSame(
+                        [1, 2, 3],
+                        $tabel['pengulangan'],
+                        "{$profil}: kotak pengulangan di tabel harus ikut, bukan cuma angkanya di header",
+                    );
+                }
+            }
+        }
+    }
+
+    public function test_tanpa_parameter_tetap_lima_kolom_kayak_form_kertas(): void
+    {
+        // Mobile lama yang belum ngirim `pengulangan` nggak boleh ikut berubah.
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+            $this->actingAs($this->teknisi)
+                ->getJson("/api/calibrations/lembar-kerja?profil={$profil}")
+                ->assertOk()
+                ->assertJsonPath('data.jumlah_pengulangan', 5);
+        }
+    }
+
+    public function test_kolom_pengulangan_di_luar_batas_ditolak(): void
+    {
+        // 1 kolom = standar deviasi nggak ada. Ditolak di sini, bukan dibiarin
+        // sampai teknisi selesai ngisi lalu titiknya ilang dari hasil.
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?pengulangan=1')
+            ->assertJsonValidationErrors('pengulangan');
+
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?pengulangan=99')
+            ->assertJsonValidationErrors('pengulangan');
+    }
+
     public function test_lembar_kerja_setengah_jadi_tetap_bisa_dikirim(): void
     {
         // Skenario lapangan: buffer 7 & 10 habis, jadi cuma titik pertama yang
@@ -152,6 +207,27 @@ class LembarKerjaTest extends TestCase
             (float) $sesi->rawMeasurements()->where('pembacaan_ke', 1)->value('suhu'),
             1e-9,
         );
+
+        // Dan ini yang paling gampang kelewat: ANGKANYA harus ikut 3 pembacaan,
+        // bukan 5. Lembar kerjanya nyetak 5 kolom, jadi gampang dikira angka 5
+        // itu ikut masuk rumus.
+        //
+        // Kalau rata-ratanya dibagi 5 (dua kolom kosong kehitung sebagai nol),
+        // hasilnya 2,404 — bukan 4,006667. Nggak ada error yang muncul; yang
+        // salah cuma sertifikatnya.
+        $titik = $sesi->uncertaintyCalculations()->where('titik_ke', 1)->firstOrFail();
+
+        $this->assertSame(3, $titik->jumlah_pengulangan);
+        // Delta 1e-7: kolomnya `decimal(20,8)`, jadi yang kesimpen udah
+        // dibulatkan ke 8 desimal.
+        $this->assertEqualsWithDelta((4.01 + 4.00 + 4.01) / 3, (float) $titik->rata_rata, 1e-7);
+
+        // s = √(((4,01−4,00667)² + (4,00−4,00667)² + (4,01−4,00667)²) / 2)
+        $rata = (4.01 + 4.00 + 4.01) / 3;
+        $s = sqrt(((4.01 - $rata) ** 2 + (4.00 - $rata) ** 2 + (4.01 - $rata) ** 2) / 2);
+
+        $this->assertEqualsWithDelta($s, (float) $titik->standar_deviasi, 1e-7);
+        $this->assertEqualsWithDelta($s / sqrt(3), (float) $titik->type_a, 1e-7, 'Type A harus √3, bukan √5');
     }
 
     public function test_kondisi_ruang_yang_cuma_keukur_sebagian_tetap_kepakai(): void

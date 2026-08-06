@@ -95,6 +95,66 @@ abstract class CalibrationProfile
      */
     abstract public function bentukLembarKerja(bool $untukAdmin = false): array;
 
+    /** Sedikit-dikitnya kolom pengulangan yang masuk akal buat lembar kerja. */
+    public const MIN_KOLOM_PENGULANGAN = 2;
+
+    /**
+     * Sebanyak-banyaknya. Lembar kerja itu dicetak & diisi tangan — lebih dari
+     * ini kolomnya kekecilan buat dibaca, dan nggak ada prosedur lab yang minta
+     * sebanyak itu.
+     */
+    public const MAKS_KOLOM_PENGULANGAN = 10;
+
+    /**
+     * Ganti jumlah KOLOM pengulangan di bentuk lembar kerja.
+     *
+     * Tiap profil punya jumlah bawaannya sendiri (5, ngikut form kertas), tapi
+     * teknisi kadang cuma perlu 3 — mis. sampelnya terbatas atau alatnya lama
+     * banget stabil. Angka ini murni soal berapa kotak yang DIGAMBAR: rumusnya
+     * sendiri selalu ngikut berapa kotak yang beneran diisi (lihat
+     * `GumCalculator::hitungTitik()`), jadi ngecilin kolom nggak ngubah cara
+     * ngitungnya sama sekali.
+     *
+     * Ditulis ulang di sini — sekali, buat semua profil — bukan dioper sebagai
+     * parameter ke tiap `bentukLembarKerja()`. Bentuknya nested dan tiap profil
+     * nyusunnya beda; kalau tiap profil harus ngoper sendiri, cepat atau lambat
+     * ada satu yang lupa dan kolomnya balik ke 5 diam-diam.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    public static function setelKolomPengulangan(array $bentuk, int $jumlah): array
+    {
+        $jumlah = max(self::MIN_KOLOM_PENGULANGAN, min(self::MAKS_KOLOM_PENGULANGAN, $jumlah));
+
+        $tulisUlang = static function (array $simpul) use (&$tulisUlang, $jumlah): array {
+            foreach ($simpul as $kunci => $nilai) {
+                if ($kunci === 'jumlah_pengulangan' && is_int($nilai)) {
+                    $simpul[$kunci] = $jumlah;
+
+                    continue;
+                }
+
+                // `pengulangan` di tabel hasil isinya nomor kolom (`[1,2,3,4,5]`).
+                // Dicek isinya, bukan cuma namanya, biar kunci bernama sama yang
+                // isinya lain nggak ikut kegilas.
+                if ($kunci === 'pengulangan' && is_array($nilai) && $nilai === range(1, count($nilai))) {
+                    $simpul[$kunci] = range(1, $jumlah);
+
+                    continue;
+                }
+
+                if (is_array($nilai)) {
+                    $simpul[$kunci] = $tulisUlang($nilai);
+                }
+            }
+
+            return $simpul;
+        };
+
+        return $tulisUlang($bentuk);
+    }
+
     /**
      * Daftar komponen budget ketidakpastian buat SATU titik ukur, siap disuap
      * ke `GumCalculator::agregasiBudget()`. Balikin `null` kalau profil ini

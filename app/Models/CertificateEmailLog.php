@@ -23,6 +23,20 @@ class CertificateEmailLog extends Model
 
     public const STATUS_GAGAL = 'gagal';
 
+    /**
+     * Kejadiannya kecatat, tapi emailnya NGGAK pernah keluar — mailer server
+     * masih `log`/`array` (lihat `App\Support\Mailer`).
+     *
+     * Beda dari `gagal`: nggak ada yang gagal, nggak ada yang dicoba. Beda dari
+     * `terkirim`: nggak ada yang nerima. Dulu kasus ini kecatat `terkirim`, jadi
+     * riwayat pengiriman ngaku tiga email udah sampai ke pelanggan padahal
+     * nggak satu pun keluar dari server.
+     *
+     * Buat lab terakreditasi ini bukan soal tampilan: riwayat pengiriman itu
+     * yang dijadiin bukti waktu pelanggan bilang nggak nerima sertifikatnya.
+     */
+    public const STATUS_TIDAK_TERKIRIM = 'tidak_terkirim';
+
     /** Dokumen resmi, dilampirkan. */
     public const FORMAT_PDF = 'pdf';
 
