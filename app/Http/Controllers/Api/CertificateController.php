@@ -11,6 +11,7 @@ use App\Models\CertificateEmailLog;
 use App\Models\User;
 use App\Services\CertificateExcelExporter;
 use App\Services\QrCodeGenerator;
+use App\Support\Mailer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -389,7 +390,7 @@ class CertificateController extends Controller
         // Mailer pengembangan "berhasil" tanpa ngirim apa-apa. Kalau kita diem,
         // admin baca "Sertifikat terkirim ke pic@..." dan nungguin balasan yang
         // nggak bakal datang — kegagalan paling mahal, karena nggak keliatan.
-        if (($mailerMati = $this->mailerTakMengirim()) !== null) {
+        if (($mailerMati = Mailer::takMengirim()) !== null) {
             Log::warning('Email sertifikat NGGAK beneran dikirim: MAIL_MAILER masih mailer pengembangan.', [
                 'certificate_id' => $certificate->id,
                 'mail_mailer' => $mailerMati,
@@ -416,26 +417,6 @@ class CertificateController extends Controller
             'peringatan' => null,
             'data' => $this->barisRiwayat($log),
         ]);
-    }
-
-    /**
-     * Nama mailer yang sebenernya NGGAK ngirim ke mana-mana, atau `null` kalau
-     * beneran ngirim.
-     *
-     * `log` nulis email ke `storage/logs/laravel.log`, `array` cuma numpuk di
-     * memori. Dari sudut pandang `Mail::send()` dua-duanya SUKSES — nggak ada
-     * exception yang bisa ditangkap `catch` di atas — jadi tanpa pengecekan ini
-     * jejaknya kecatat `terkirim` dan layarnya bilang "terkirim". Padahal nggak
-     * ada satu email pun yang keluar.
-     *
-     * Dicek dari `mail.default`, bukan dari hasil kirimnya, karena memang nggak
-     * ada hasil yang bisa dibedain. Ini satu-satunya cara tahunya.
-     */
-    private function mailerTakMengirim(): ?string
-    {
-        $mailer = (string) config('mail.default');
-
-        return in_array($mailer, ['log', 'array'], true) ? $mailer : null;
     }
 
     /**

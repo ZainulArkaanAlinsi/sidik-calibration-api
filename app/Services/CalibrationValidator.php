@@ -8,6 +8,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Support\Angka;
+use Illuminate\Support\Collection;
 
 /**
  * Pemeriksaan ulang sebelum sertifikat diterbitin (spesifikasi poin 11).
@@ -284,7 +285,7 @@ class CalibrationValidator
      * [$standarBerkurvaSuhu]; peringatan ini cuma buat standar yang MESTINYA
      * berkurva tapi datanya belum diisi.
      *
-     * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     * @param  Collection<int, RawMeasurement>  $pembacaan
      * @param  bool  $standarBerkurvaSuhu  dari `CalibrationProfile::standarBerkurvaSuhu()`
      * @return list<array<string, mixed>>
      */
@@ -335,7 +336,7 @@ class CalibrationValidator
      * yang sah dan bakal bikin nilai buffer diturunin dari ujung kurva yang
      * salah, bukan dilewati.
      *
-     * @param  \Illuminate\Support\Collection<int, RawMeasurement>  $pembacaan
+     * @param  Collection<int, RawMeasurement>  $pembacaan
      */
     private function suhuLarutanRataRata($pembacaan): ?float
     {
