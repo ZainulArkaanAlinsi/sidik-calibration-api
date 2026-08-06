@@ -113,7 +113,7 @@ class CalibrationTest extends TestCase
         $this->assertSame('PT Maju Jaya', $folderTahun->parent->nama);
     }
 
-    public function test_draft_NGGAK_diarsip_ke_folder_pt(): void
+    public function test_draft_ngga_k_diarsip_ke_folder_pt(): void
     {
         $sesi = $this->buatSesi(ubah: ['status' => CalibrationSession::STATUS_DRAFT]);
 

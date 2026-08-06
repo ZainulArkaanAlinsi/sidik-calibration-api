@@ -88,7 +88,7 @@ class AdminFieldSeparationTest extends TestCase
      * administratif, kolom "6. Thermohygro used" keisi di HP tapi nyampe server
      * jadi null, tanpa pesan error apa pun.
      */
-    public function test_thermohygro_dari_teknisi_DISIMPAN_karena_itu_fakta_lapangan(): void
+    public function test_thermohygro_dari_teknisi_disimpa_n_karena_itu_fakta_lapangan(): void
     {
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $this->payload([

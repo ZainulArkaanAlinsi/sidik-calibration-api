@@ -203,7 +203,19 @@ class CertificateExcelExporter
      */
     private function bulat(mixed $nilai, int $desimal): ?float
     {
-        return $nilai === null ? null : round((float) $nilai, $desimal);
+        if ($nilai === null) {
+            return null;
+        }
+
+        $hasil = round((float) $nilai, $desimal);
+
+        // `round(-0.2, 0)` di PHP balikin NEGATIF NOL, dan Excel nulisnya `-0`.
+        // Nilainya sama dengan nol, tapi di kolom Correction sertifikat itu
+        // kebaca kayak salah cetak — pelanggan nggak tahu itu artinya nol.
+        //
+        // PDF nggak kena karena `number_format()` emang buang tandanya; ini
+        // cuma nyamain jalur Excel sama jalur PDF.
+        return $hasil == 0.0 ? 0.0 : $hasil;
     }
 
     /** @param  array<string, mixed>  $snapshot */
