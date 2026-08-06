@@ -367,8 +367,31 @@ class CertificateController extends Controller
             }
         }
 
-        // Dicatat DULUAN sebelum responsnya dibalik, dan buat dua-dua hasilnya.
-        // Percobaan yang gagal tetap kejadian yang perlu bisa dibuktiin.
+        // Mailer pengembangan nggak ngelempar exception, jadi `catch` di atas
+        // nggak kena dan statusnya terlanjur `terkirim`. Dibetulin SEBELUM
+        // dicatat — kalau sesudah, riwayatnya udah telanjur bohong.
+        //
+        // Ini yang bikin layar kirim nampilin tiga baris "Sent" ke pelanggan
+        // yang sebenernya nggak pernah nerima apa-apa.
+        $mailerMati = $status === CertificateEmailLog::STATUS_TERKIRIM
+            ? Mailer::takMengirim()
+            : null;
+
+        if ($mailerMati !== null) {
+            $status = CertificateEmailLog::STATUS_TIDAK_TERKIRIM;
+            $error = "MAIL_MAILER masih `{$mailerMati}` — emailnya cuma dicatat di server, "
+                .'nggak dikirim ke mana-mana.';
+
+            Log::warning('Email sertifikat NGGAK beneran dikirim: MAIL_MAILER masih mailer pengembangan.', [
+                'certificate_id' => $certificate->id,
+                'mail_mailer' => $mailerMati,
+                'ke' => $ke,
+            ]);
+        }
+
+        // Dicatat DULUAN sebelum responsnya dibalik, dan buat SEMUA hasilnya.
+        // Percobaan yang gagal — dan yang nggak pernah keluar — tetap kejadian
+        // yang perlu bisa dibuktiin.
         $log = CertificateEmailLog::create([
             'organization_id' => $certificate->organization_id,
             'certificate_id' => $certificate->id,
@@ -390,13 +413,7 @@ class CertificateController extends Controller
         // Mailer pengembangan "berhasil" tanpa ngirim apa-apa. Kalau kita diem,
         // admin baca "Sertifikat terkirim ke pic@..." dan nungguin balasan yang
         // nggak bakal datang — kegagalan paling mahal, karena nggak keliatan.
-        if (($mailerMati = Mailer::takMengirim()) !== null) {
-            Log::warning('Email sertifikat NGGAK beneran dikirim: MAIL_MAILER masih mailer pengembangan.', [
-                'certificate_id' => $certificate->id,
-                'mail_mailer' => $mailerMati,
-                'ke' => $ke,
-            ]);
-
+        if ($mailerMati !== null) {
             $peringatan = "Belum beneran terkirim. MAIL_MAILER masih `{$mailerMati}`, jadi emailnya "
                 .'cuma dicatat di server dan pelanggan nggak nerima apa-apa. Isi setelan SMTP di '
                 .'`.env` dulu, baru kirim ulang.';
