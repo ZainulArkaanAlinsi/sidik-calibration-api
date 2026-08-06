@@ -142,7 +142,7 @@ class FolderManagerTest extends TestCase
         $this->assertSame(1, $data['alat'][0]['jumlah_kalibrasi']);
     }
 
-    public function test_folder_tahun_NGGAK_nyeret_daftar_alat(): void
+    public function test_folder_tahun_ngga_k_nyeret_daftar_alat(): void
     {
         $this->terbitkanSertifikatUntuk($this->teknisi);
         $tahun = Folder::whereNotNull('parent_id')->firstOrFail();

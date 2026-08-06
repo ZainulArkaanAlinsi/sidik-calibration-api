@@ -54,7 +54,7 @@ class DerajatKebebasanDipotongTest extends TestCase
     }
 
     #[DataProvider('dariLembarLab')]
-    public function test_veff_tanpa_dipotong_NGGAK_cocok(
+    public function test_veff_tanpa_dipotong_ngga_k_cocok(
         float $veff,
         float $kLembar,
     ): void {

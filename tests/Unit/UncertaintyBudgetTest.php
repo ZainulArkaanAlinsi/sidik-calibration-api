@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\GumCalculator;
 use App\Services\StudentTDistribution;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -133,7 +134,6 @@ class UncertaintyBudgetTest extends TestCase
      * Yang diuji nilainya lewat endpoint, bukan nama kelasnya.
      */
 
-
     public function test_student_t_quantile_cocok_nilai_tabel(): void
     {
         $t = new StudentTDistribution;
@@ -173,7 +173,7 @@ class UncertaintyBudgetTest extends TestCase
     /**
      * @param  list<float>  $pembacaan
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('titikLembarManual')]
+    #[DataProvider('titikLembarManual')]
     public function test_budget_reproduksi_lembar_manual_lab(
         float $uKalibrator95,
         float $ciSuhu,
