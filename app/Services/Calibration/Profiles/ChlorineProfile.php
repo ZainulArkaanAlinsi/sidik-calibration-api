@@ -66,10 +66,44 @@ class ChlorineProfile extends CalibrationProfile
      *
      * @var list<array{nilai: float, label: string}>
      */
+    /**
+     * Batas geser titik ukur dari nilai nominalnya waktu dicocokin.
+     *
+     * `titik_ukur` yang kesimpen itu nilai standar SESUDAH koreksi suhu (mis.
+     * 1,7401 buat nominal 1,74), jadi perbandingan persis nggak akan pernah
+     * ketemu. 0,05 mg/L cukup longgar buat nyerap koreksi, dan masih jauh lebih
+     * kecil dari jarak antar-titik (1,74 ↔ 1,83 = 0,09) jadi nggak mungkin
+     * ketuker.
+     */
+    private const TOLERANSI_TITIK = 0.05;
+
     public const TITIK = [
-        ['nilai' => 1.74, 'label' => '1,74'],
-        ['nilai' => 1.83, 'label' => '1,83'],
+        // `remark` = kolom "Remark" di sertifikat asli lab. Dua titik chlorine
+        // itu parameter yang BEDA, bukan cuma dua level di besaran yang sama:
+        // 1,74 mg/L ngukur klorin bebas, 1,83 mg/L klorin total. Tanpa kolom
+        // ini pelanggan nggak punya cara tau baris mana yang mana.
+        ['nilai' => 1.74, 'label' => '1,74', 'remark' => 'Free Chlorine'],
+        ['nilai' => 1.83, 'label' => '1,83', 'remark' => 'Total Chlorine'],
     ];
+
+    /**
+     * Keterangan parameter buat kolom "Remark" di sertifikat, dicocokin ke
+     * titik ukur terdekat.
+     *
+     * Dicocokin pakai toleransi, bukan `===`: `titik_ukur` yang kesimpen itu
+     * nilai standar setelah koreksi suhu (mis. 1,7401), jadi perbandingan
+     * persis nggak akan pernah ketemu.
+     */
+    public function remarkTitik(float $titikUkur): ?string
+    {
+        foreach (self::TITIK as $t) {
+            if (abs($titikUkur - $t['nilai']) <= self::TOLERANSI_TITIK) {
+                return $t['remark'];
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Koefisien sensitivitas faktor pengenceran (sheet `PERHITUNGAN U95%`,

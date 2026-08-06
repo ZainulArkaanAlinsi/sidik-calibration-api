@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
 
@@ -134,9 +135,17 @@ class CertificateSnapshotBuilder
         $alat = $sesi->equipment;
         $organisasi = $sesi->organization;
 
+        // Profil alat dipakai buat kolom "Remark" — keterangan parameter per
+        // titik (Chlorine: "Free Chlorine" / "Total Chlorine"). Alat yang
+        // profilnya nggak nyediain remark balikin null, dan kolomnya nggak
+        // dicetak sama sekali.
+        $profil = $alat
+            ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
+            : null;
+
         return $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
-            ->map(function ($titik) use ($alat, $organisasi): array {
+            ->map(function ($titik) use ($alat, $organisasi, $profil): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
                 //
                 // Alat yang resolusinya berubah per rentang (Turbidimeter:
@@ -153,9 +162,16 @@ class CertificateSnapshotBuilder
                     ? $organisasi->desimalSertifikat($resolusi)
                     : Angka::desimalDariResolusi($resolusi);
 
+                $remark = ($profil !== null && method_exists($profil, 'remarkTitik'))
+                    ? $profil->remarkTitik((float) $titik->titik_ukur)
+                    : null;
+
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
                     'standard_value' => (float) $titik->titik_ukur,
+                    // Kolom "Remark" di sertifikat asli. Null buat alat yang
+                    // titiknya nggak punya keterangan parameter.
+                    'remark' => $remark,
                     'unit_under_test' => (float) $titik->rata_rata,
                     'correction' => (float) $titik->koreksi,
                     'u95' => (float) $titik->ketidakpastian_diperluas,
