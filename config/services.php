@@ -53,7 +53,17 @@ return [
      * ganti penyedia nggak ngubah apa pun yang nyampe ke lembar kerja teknisi.
      */
     'vision' => [
-        'driver' => env('VISION_DRIVER', 'anthropic'),
+        /*
+         * Bawaannya `gemini` — itu yang lab ini beneran pakai, dan kuncinya
+         * yang ada di server.
+         *
+         * Dulu bawaannya `anthropic`. Selama `VISION_DRIVER=gemini` ada di
+         * `.env` nggak ada bedanya, tapi begitu baris itu hilang (server baru,
+         * `.env` disalin dari `.env.example`, atau kepencet kehapus) kameranya
+         * diam-diam pindah ke penyedia yang kuncinya nggak ada — dan gagalnya
+         * baru ketahuan waktu teknisi udah di lapangan megang alat.
+         */
+        'driver' => env('VISION_DRIVER', 'gemini'),
     ],
 
     'gemini' => [
