@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\Concerns\ScopesFolderAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FolderResource;
+use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Folder;
 use App\Services\FolderOrganizer;
@@ -378,7 +379,23 @@ class FolderController extends Controller
     {
         return Folder::query()
             ->where('organization_id', $request->user()->organization_id)
-            ->with('customer')
+            // Jumlah alat & sertifikat PT-nya ikut dihitung di sini, bukan
+            // per baris. Ini yang dipajang di daftar arsip ("N instruments ·
+            // M certificates") — app-nya udah minta dua angka ini dari dulu,
+            // cuma nggak pernah dikirim, jadi yang kebaca selalu nol.
+            //
+            // Sertifikat dihitung lewat SESI yang punya sertifikat terbit, bukan
+            // dari tabel `certificates` langsung: satu sesi paling banyak punya
+            // satu sertifikat (`updateOrCreate` di GenerateCertificate), jadi
+            // angkanya sama — dan lewat sesi, rantai relasinya udah ada.
+            ->with(['customer' => fn ($pelanggan) => $pelanggan->withCount([
+                'equipments as jumlah_alat',
+                'calibrationSessions as jumlah_sertifikat' => fn (Builder $sesi) => $sesi
+                    ->whereHas(
+                        'certificate',
+                        fn (Builder $s) => $s->where('status', Certificate::STATUS_TERBIT),
+                    ),
+            ])])
             // Teknisi cuma dikasih lihat folder yang beneran ada isinya buat
             // dia — folder PT yang nggak pernah dia sentuh nggak usah nongol.
             ->when($this->teknisiBiasa($request), fn (Builder $query) => $query->where(
