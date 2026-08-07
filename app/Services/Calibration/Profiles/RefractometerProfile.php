@@ -441,7 +441,20 @@ class RefractometerProfile extends CalibrationProfile
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis', satuan: self::SATUAN_N20D),
+                        // SENGAJA tanpa `satuan`, beda dari tiga profil lain.
+                        //
+                        // Nilai yang ditampilin (`equipment.range_resolusi`) udah
+                        // bawa satuannya sendiri — "0–53 °Brix / 0,1 °Brix". Buat
+                        // pH/Turbidimeter/Chlorine nempelin satuan tetap di situ
+                        // aman, satuan alatnya emang cuma satu. Refractometer
+                        // nggak: alat yang kecatat °Brix bikin barisnya kebaca
+                        // "0–53 °Brix / 0,1 °Brix   n20D" — satu baris yang
+                        // membantah dirinya sendiri, di dokumen yang justru
+                        // gunanya nyatet satuan dengan benar.
+                        //
+                        // Ketahuan 7 Agt 2026 waktu lembarnya dibuka di HP pakai
+                        // alat Atago MASTER-53M.
+                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
                         $this->field('alat_model', '3. Type/Model', 'teks'),
                         $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
