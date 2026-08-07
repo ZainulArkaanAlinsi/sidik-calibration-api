@@ -40,7 +40,8 @@ use Tests\TestCase;
  *
  * Dua kolom diperiksa dua tingkat:
  *
- *  1. **nilai mentah** — dibandingin ke angka di sel Excel-nya, toleransi 1e-9.
+ *  1. **nilai mentah** — dibandingin ke angka di sel Excel-nya, toleransi
+ *     [TOLERANSI_SIMPAN] (= resolusi kolomnya).
  *     Ini yang nangkep rumus meleset walau pembulatannya nutupin.
  *  2. **hasil cetak** — lewat `Angka::id()` dengan desimal per baris, formatter
  *     yang sama persis dipakai `sertifikat/pdf.blade.php`. Ini yang nangkep
@@ -49,6 +50,34 @@ use Tests\TestCase;
 class SertifikatCocokMasterTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Toleransi banding nilai mentah = **resolusi penyimpanannya**, bukan angka
+     * yang dikarang. Kolom hasil hitung itu `decimal(20, 8)`, jadi 1e-8 adalah
+     * sehalus-halusnya yang bisa dijanjiin DB.
+     *
+     * Dulu 1e-9 — lebih halus dari yang bisa disimpen, dan itu lolos CUMA karena
+     * suite jalan di SQLite, yang nggak nerapin presisi `decimal` sama sekali.
+     * Dijalanin ke MySQL (yang dipakai produksi) dua kasus langsung merah:
+     *
+     *   pH  titik 1 `standard_value`: 4,00924457   vs 4,009244572     (kepotong)
+     *   Ref titik 1 `u95`           : 0,00052715   vs 0,0005271534327 (kepotong)
+     *
+     * Dua-duanya bukan salah hitung — angkanya bener sampai `round()` terakhir,
+     * lalu kolomnya yang motong. Ditemukan 7 Agt 2026 waktu nambah Refractometer.
+     *
+     * ## Yang MASIH jadi PR, jangan dianggap kelar gara-gara test ini ijo
+     *
+     * 8 desimal itu longgar buat pH (0–14) & Turbidimeter (sampai 1000 NTU),
+     * tapi buat Refractometer U95-nya ~5e-4 — jadi cuma nyisa **4 angka
+     * penting**. Sertifikat yang kecetak nggak berubah (dibulatkan ke 4 desimal:
+     * `0,0005`) dan keputusan PASS/FAIL juga nggak, jadi nggak ada yang salah
+     * keluar HARI INI. Tapi kalau nanti ada alat yang skalanya lebih kecil lagi,
+     * atau lab minta U95 dilaporin lebih presisi, kolomnya yang mesti dilebarin
+     * (`decimal(28, 16)`) bareng `CalibrationController::DESIMAL_PEMBACAAN`.
+     * Itu ganti skema di repo bersama — keputusannya bukan di test ini.
+     */
+    private const TOLERANSI_SIMPAN = 1e-8;
 
     /**
      * Satu kasus = satu alat.
@@ -101,6 +130,28 @@ class SertifikatCocokMasterTest extends TestCase
                     ['mentah' => [1.83, 1.86, -0.03, 0.08], 'cetak' => ['1,83', '1,86', '-0,03', '0,08']],
                 ],
             ],
+
+            // Refractometer_CSV 2/SERTIFIKAT.csv baris 18–19.
+            //
+            // Unit Under Test-nya BUKAN pembacaan mentah teknisi (1,3362 &
+            // 1,3986) — itu pembacaan yang udah dinormalisasi ke suhu acuan
+            // 20 °C. Titik 1 dibaca pada rata-rata 27 °C (repeat ke-5 kecatat
+            // 35 °C di sheet), jadi 1,3362 + 0,00045 × 7 = 1,33935. Titik 2
+            // pada 25 °C → 1,3986 + 0,00045 × 5 = 1,40085.
+            //
+            // Kalau suatu saat baris ini merah dengan UUT = pembacaan mentah,
+            // yang rusak `RefractometerProfile::rataRataPadaSuhuAcuan()` atau
+            // urutannya di `GumCalculator::hitungTitik()` — bukan angkanya.
+            //
+            // Baris ke-3 di CSV (`#REF!`) sengaja nggak ikut: sel rusak di
+            // master, bukan titik ukur beneran.
+            'Refractometer — 2211.11.R' => [
+                'nomorSesi' => '2211.11.R',
+                'hasil' => [
+                    ['mentah' => [1.33659, 1.33935, -0.00276, 0.0005271534327323267], 'cetak' => ['1,3366', '1,3394', '-0,0028', '0,0005']],
+                    ['mentah' => [1.39986, 1.40085, -0.00099, 0.0005295557108700615], 'cetak' => ['1,3999', '1,4009', '-0,0010', '0,0005']],
+                ],
+            ],
         ];
     }
 
@@ -125,7 +176,7 @@ class SertifikatCocokMasterTest extends TestCase
                 $this->assertEqualsWithDelta(
                     $harapan['mentah'][$k],
                     $nilai,
-                    1e-9,
+                    self::TOLERANSI_SIMPAN,
                     'titik '.($i + 1)." kolom {$nama} meleset dari master Excel",
                 );
 
@@ -192,7 +243,7 @@ class SertifikatCocokMasterTest extends TestCase
             $this->assertEqualsWithDelta(
                 (float) $baris['standard_value'] - (float) $baris['unit_under_test'],
                 (float) $baris['correction'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
             );
         }
     }

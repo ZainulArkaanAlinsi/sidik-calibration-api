@@ -168,6 +168,12 @@ abstract class CalibrationProfile
      *
      * @param  float  $typeA  ketidakpastian baku Type A (STDEV/√n) titik ini
      * @param  int  $n  jumlah pengulangan
+     * @param  float|null  $suhuRuang  rata-rata suhu ruang MENTAH (awal+akhir)/2,
+     *                                 sebelum koreksi sertifikat thermohygro.
+     *                                 Refractometer butuh ini buat komponen
+     *                                 "Pengaruh Perbedaan Temperature"; profil
+     *                                 lain mengabaikannya. Lihat
+     *                                 `GumCalculator::hitungTitik()`.
      * @return list<array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}>|null
      */
     abstract public function komponenBudget(
@@ -177,5 +183,42 @@ abstract class CalibrationProfile
         float $titikUkur,
         float $typeA,
         int $n,
+        ?float $suhuRuang = null,
     ): ?array;
+
+    /**
+     * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
+     * ngapa-ngapain — pembacaan dipakai apa adanya.
+     *
+     * ## Beda dari `Standard::nilaiPadaSuhu()` — dua arah yang berlawanan
+     *
+     * Dua-duanya ngurus suhu, tapi yang digeser BEDA SISI:
+     *
+     *  - `Standard::nilaiPadaSuhu()` geser **nilai acuan**. Buffer pH "10.01"
+     *    yang diukur pada 25,3 °C nilai benernya 9,9451681 — botolnya yang
+     *    berubah, pembacaan alatnya sah apa adanya.
+     *  - Method ini geser **pembacaan alat**. Refractometer dibaca pada 27 °C
+     *    nunjukin 1,3362; kalau larutan yang sama dibaca pada 20 °C (suhu acuan
+     *    n20D) alatnya bakal nunjukin 1,33935. Larutan standarnya tetap 1,33659.
+     *
+     * Kalau kebalik, kolom "Correction" di sertifikat kegeser sebesar dua kali
+     * koreksi suhu dan bisa ketuker tanda.
+     *
+     * ## Kenapa RATA-RATA, bukan tiap pembacaan
+     *
+     * Master Excel lab ngerata-rata dulu pembacaan DAN suhunya, baru dikoreksi
+     * (sheet `PERHITUNGAN` baris Average: `1,3362 | 27`). STDEV-nya dihitung
+     * dari pembacaan MENTAH. Kalau tiap pembacaan dikoreksi sendiri-sendiri,
+     * satu repeat yang suhunya nyeleneh (35 °C di sesi contoh) bikin STDEV
+     * bukan nol dan seluruh budget-nya meleset.
+     *
+     * @param  float|null  $suhuLarutan  rata-rata suhu larutan titik ini (°C)
+     */
+    public function rataRataPadaSuhuAcuan(
+        float $rataRata,
+        ?float $suhuLarutan,
+        Equipment $equipment,
+    ): float {
+        return $rataRata;
+    }
 }

@@ -247,6 +247,7 @@ class ChlorineProfile extends CalibrationProfile
         float $titikUkur,
         float $typeA,
         int $n,
+        ?float $suhuRuang = null,
     ): ?array {
         if ($kemampuan->u_temperature === null) {
             return null;

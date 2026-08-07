@@ -729,6 +729,20 @@ class CalibrationController extends Controller
             ? Standard::findOrFail($request->integer('standard_id'))
             : null;
 
+        // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
+        // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
+        // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
+        // yang mentah: 20,9 & 21,2 → 21,05 → baris tabel 21,0. Kalau dipakein
+        // `suhu_ruang` yang udah dikoreksi (21,96) hasilnya turun satu baris
+        // lebih dan U95-nya meleset.
+        $suhuRuangTerisi = array_values(array_filter(
+            [$request->input('suhu_awal'), $request->input('suhu_akhir')],
+            fn ($s): bool => $s !== null && $s !== '',
+        ));
+        $suhuRuang = $suhuRuangTerisi === []
+            ? null
+            : array_sum(array_map('floatval', $suhuRuangTerisi)) / count($suhuRuangTerisi);
+
         // Sebagian kategori alat (mis. pH) butuh standar beda per titik ukur
         // (buffer 4/7/10) — dimuat sekaligus di sini biar nggak query per titik.
         $standarPerTitik = Standard::whereIn(
@@ -867,6 +881,7 @@ class CalibrationController extends Controller
                 // ngisi kolom suhu — `hitungTitik()` bakal balik ke nilai
                 // nominal yang diketik, sama kayak perilaku sebelumnya.
                 $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
+                $suhuRuang,
             ));
         }
 
