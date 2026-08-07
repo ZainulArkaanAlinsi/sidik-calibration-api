@@ -465,7 +465,18 @@ class CertificateSnapshotBuilder
             $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
-                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
+                // Ketidakpastian ditulis di posisi desimal yang SAMA dengan
+                // nilainya — konvensi metrologi, dan sebelumnya nggak diikuti:
+                // nilainya bulat tapi ketidakpastiannya 1 desimal, jadi kecetak
+                // `60% ± 5,2%`. Satu tarikan napas, dua ketelitian berbeda.
+                //
+                // Yang bulat itu nilainya, bukan sebaliknya: teknisi baca
+                // kelembaban di resolusi 1% (isiannya 62 & 60), jadi desimal di
+                // `kelembaban` (60,41) itu hasil koreksi thermohygro — bukan
+                // angka yang pernah kebaca dari alat. Alasan yang sama persis
+                // dipakai buat suhu di atas, cuma suhunya dibaca di 0,1 °C jadi
+                // dia dapat 1 desimal.
+                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 0).'%';
             }
 
             $bagian[] = $teks;
