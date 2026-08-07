@@ -732,4 +732,26 @@ class RefractometerProfile extends CalibrationProfile
             'hanya_admin' => $hanyaAdmin,
         ];
     }
+
+    /**
+     * **5 desimal, bukan 4** — satu-satunya alat yang nyimpang dari aturan
+     * umum, dan angkanya diambil dari sertifikat master yang beneran kecetak.
+     *
+     * Resolusi alat 0,0001 bakal ngasih 4, dan di 4 desimal U95% runtuh:
+     * `0,00053` jadi `0,0005` — kehilangan angka penting di kolom yang justru
+     * jadi inti sertifikat kalibrasi. Nilainya pun kepangkas, `1,33935` jadi
+     * `1,3394`.
+     *
+     * pH & Chlorine di master TETAP 2 desimal (= resolusinya), jadi ini BUKAN
+     * rumus yang bisa diturunkan ("resolusi + 1" bakal ngerusak dua alat itu).
+     * Ini pilihan lab per alat, dan di sinilah tempat nyatetnya.
+     *
+     * Dibetulin 7 Agt 2026 sesudah sertifikat master diadu langsung ke keluaran
+     * app — dua-duanya nyimpen angka yang sama persis (`1,33935`, `0,00052715`),
+     * yang beda cuma berapa digit yang kecetak.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return 5;
+    }
 }

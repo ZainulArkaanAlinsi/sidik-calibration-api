@@ -221,4 +221,19 @@ abstract class CalibrationProfile
     ): float {
         return $rataRata;
     }
+
+    /**
+     * Berapa desimal yang dipakai NYETAK angka hasil di sertifikat, kalau alat
+     * ini emang beda dari aturan umum. `null` = ikut aturan umum
+     * (`Organization::desimalSertifikat`, yaitu diturunkan dari resolusi alat).
+     *
+     * Aturan umumnya bener buat hampir semua alat: nulis desimal lebih banyak
+     * dari yang bisa dibaca alatnya itu ngaku-ngaku presisi yang nggak ada.
+     * Tapi lab-nya sendiri nggak ngikutin itu di semua alat, dan yang menentukan
+     * dokumen resminya — bukan prinsipnya.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return null;
+    }
 }
