@@ -11,6 +11,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Email sertifikat ke pelanggan (fase-2 §3d).
@@ -76,10 +77,17 @@ class SertifikatKePelanggan extends Mailable
     public function content(): Content
     {
         return new Content(
-            // `markdown:`, BUKAN `view:`. Templatenya pakai komponen
-            // `<x-mail::message>`, dan komponen itu cuma kedaftar di jalur markdown
-            // mailable — lewat `view:` dia gagal "No hint path defined for [mail]".
-            markdown: 'emails.sertifikat',
+            // `view:` + `text:`, bukan `markdown:` lagi. Templatenya sekarang HTML
+            // email beneran (tabel + gaya inline) supaya tata letaknya kepegang di
+            // Gmail/Outlook — komponen `<x-mail::message>` nggak dipakai sama
+            // sekali, jadi jalur markdown-nya nggak diperlukan.
+            //
+            // `text:` WAJIB diisi sendiri: dulu versi teksnya digenerate otomatis
+            // oleh mailable markdown. Tanpa ini yang terkirim cuma HTML, dan
+            // sebagian filter spam menaikkan skor email yang nggak punya
+            // alternatif teks.
+            view: 'emails.sertifikat',
+            text: 'emails.sertifikat-teks',
             with: [
                 'sertifikat' => $this->sertifikat,
                 'organisasi' => $this->sertifikat->organization,
@@ -87,8 +95,31 @@ class SertifikatKePelanggan extends Mailable
                 'alat' => $this->sertifikat->session?->equipment,
                 'pelanggan' => $this->sertifikat->session?->equipment?->customer,
                 'format' => $this->format,
+                'logo' => $this->berkasLogo(),
             ],
         );
+    }
+
+    /**
+     * Path absolut logo lab, atau `null` kalau belum diunggah / berkasnya hilang.
+     *
+     * Dilampirkan inline (CID) lewat `$message->embed()` di view, BUKAN ditaruh
+     * sebagai `<img src="https://...">`. Dua alasannya: logo ada di disk `public`
+     * yang selama `APP_URL` masih lokal nggak kejangkau penerima sama sekali, dan
+     * Gmail memblokir gambar dari sumber luar sampai penerima menekan "tampilkan
+     * gambar" — kop surat yang baru muncul setelah diklik sama saja tidak ada.
+     */
+    private function berkasLogo(): ?string
+    {
+        $path = $this->sertifikat->organization?->logo_path;
+
+        if (blank($path)) {
+            return null;
+        }
+
+        $absolut = Storage::disk('public')->path($path);
+
+        return is_file($absolut) ? $absolut : null;
     }
 
     /**

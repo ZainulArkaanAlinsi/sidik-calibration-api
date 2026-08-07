@@ -145,11 +145,18 @@ class SertifikatCocokMasterTest extends TestCase
             //
             // Baris ke-3 di CSV (`#REF!`) sengaja nggak ikut: sel rusak di
             // master, bukan titik ukur beneran.
+            //
+            // **5 desimal, bukan 4.** Angka `cetak` di bawah sempat ditulis 4
+            // desimal — ditebak dari resolusi alat (0,0001), bukan dibaca dari
+            // sertifikat masternya. Waktu PDF master diadu langsung 7 Agt 2026,
+            // yang kecetak ternyata `1,33659 | 1,33935 | −0,00276 | 0,00053`.
+            // Di 4 desimal U95% runtuh jadi `0,0005` — kehilangan angka penting
+            // di kolom yang justru jadi inti sertifikat kalibrasi.
             'Refractometer — 2211.11.R' => [
                 'nomorSesi' => '2211.11.R',
                 'hasil' => [
-                    ['mentah' => [1.33659, 1.33935, -0.00276, 0.0005271534327323267], 'cetak' => ['1,3366', '1,3394', '-0,0028', '0,0005']],
-                    ['mentah' => [1.39986, 1.40085, -0.00099, 0.0005295557108700615], 'cetak' => ['1,3999', '1,4009', '-0,0010', '0,0005']],
+                    ['mentah' => [1.33659, 1.33935, -0.00276, 0.0005271534327323267], 'cetak' => ['1,33659', '1,33935', '-0,00276', '0,00053']],
+                    ['mentah' => [1.39986, 1.40085, -0.00099, 0.0005295557108700615], 'cetak' => ['1,39986', '1,40085', '-0,00099', '0,00053']],
                 ],
             ],
         ];
