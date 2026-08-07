@@ -254,7 +254,7 @@ class PerhitunganTest extends TestCase
             // ngikut sertifikat asli lab. Yang diuji test ini tetap kejaga:
             // angkanya beda dari average mentah 21,4, jadi koreksi thermohygro
             // kebukti ikut kepakai.
-            'T: 21,0°C ± 1,7°C — %RH: 52% ± 5,7%',
+            'T: 21,0°C ± 1,7°C — %RH: 52% ± 6%',
             $sesi->fresh()->certificate->snapshot['header']['env_condition'],
         );
     }

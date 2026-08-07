@@ -133,15 +133,34 @@ class CertificateSnapshotTest extends TestCase
         $this->assertSame('Lab. Uji A', $header['calibration_location']);
         $this->assertSame('SIDIK-IK-CAL-0506_Rev.6', $header['calibration_method']);
         $this->assertSame('0–14 pH / 0,01 pH', $header['capacity_graduation']);
-        // Desimalnya ngikut Excel master lab: suhu 2 desimal (dicatat sampai
-        // 0,01°C karena ikut ngaruh ke koreksi), kelembaban BULAT. Sebelumnya
-        // kebalik — suhu 1 desimal & kelembaban 2 — jadi angka yang dicatat
-        // teknisi kepangkas di dokumen resmi.
-        // Suhu 1 desimal, ngikut sertifikat ASLI lab (`T 23,2 °C`). Teknisi
-        // ngisi suhu di resolusi 0,1°C; desimal ketiga itu hasil hitungan
-        // koreksi thermohygro, bukan angka yang pernah kebaca dari alat.
-        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 52% ± 5,7%', $header['env_condition']);
+        // Tiap angka dicetak di resolusi yang BENERAN dibaca teknisi: suhu
+        // 0,1 °C, kelembaban 1 %. Desimal di bawah itu hasil koreksi
+        // thermohygro, bukan angka yang pernah kebaca dari alat — nyetaknya
+        // berarti ngaku-ngaku ketelitian yang alatnya nggak punya.
+        //
+        // Ketidakpastiannya ikut posisi desimal nilainya (konvensi metrologi).
+        // Sempat kecetak `%RH: 60% ± 5,2%` — nilai bulat, ketidakpastian 1
+        // desimal: satu tarikan napas, dua ketelitian beda. Dikeluhkan dari
+        // lapangan 7 Agt 2026.
+        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 52% ± 6%', $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
+    }
+
+    /**
+     * Aturannya dikunci terpisah dari contoh angka di atas, biar yang dijaga
+     * PRINSIPNYA — bukan satu string yang gampang diperbarui asal hijau.
+     */
+    public function test_ketidakpastian_env_sedesimal_sama_dengan_nilainya(): void
+    {
+        $header = $this->terbitkanSertifikat()->snapshot['header'];
+        $env = $header['env_condition'];
+
+        // Suhu: nilai & ketidakpastian dua-duanya 1 desimal (dibaca 0,1 °C).
+        $this->assertMatchesRegularExpression('/T: \d+,\d°C ± \d+,\d°C/', $env);
+
+        // Kelembaban: dua-duanya bulat (dibaca 1 %). `± 5,2%` di sini artinya
+        // aturannya bocor lagi.
+        $this->assertMatchesRegularExpression('/%RH: \d+% ± \d+%/', $env);
     }
 
     public function test_correction_di_tabel_hasil_itu_standard_value_dikurangi_pembacaan(): void
