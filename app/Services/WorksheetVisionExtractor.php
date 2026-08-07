@@ -8,12 +8,20 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * Baca tabel lembar kerja pH dari FOTO pakai Claude Vision (ganti OCR di HP).
+ * Baca tabel lembar kerja dari FOTO pakai Claude Vision (ganti OCR di HP).
+ *
+ * **Nggak khusus pH**, walau nama kunci JSON-nya masih `ph` (dipertahankan
+ * karena mobile udah nge-parse nama itu). Yang dibaca selalu bentuk yang sama —
+ * tabel Repeat × larutan standar, tiap sel isinya sepasang angka
+ * "pembacaan + suhu °C" — dan itu berlaku buat keempat alat: pH, Turbidimeter,
+ * Chlorine, Refractometer. Yang mbedain cuma PETUNJUK yang dikirim mobile
+ * (`$satuan`, `$nominal`, `$desimal`), diambil dari `bentukLembarKerja()`
+ * profil alatnya. Nambah alat ke-5 nggak perlu nyentuh file ini.
  *
  * Implementasi dari docs/SPEC-vision-prompt.md:
  * - SATU foto = SATU tabel (Before ATAU After adjustment).
  * - Output: { "baris": [...] } — tiap `baris` = satu Repeat, array `ph`/`suhu`/
- *   keyakinan sepanjang jumlah buffer standar (4/7/10), urut kiri→kanan.
+ *   keyakinan sepanjang jumlah larutan standar, urut kiri→kanan.
  * - Structured Output (`output_config.format`) MENJAMIN bentuk JSON — ini
  *   pengganti `temperature: 0` yang udah dihapus di Opus 4.8. `temperature` &
  *   `budget_tokens` sengaja NGGAK dikirim (error 400 di 4.8).

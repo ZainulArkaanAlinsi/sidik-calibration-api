@@ -137,6 +137,15 @@ class PerhitunganBuilder
 
                 $titikUkur = (float) $pembacaan->first()->titik_ukur;
 
+                // Pembacaan yang udah dinormalisasi ke suhu acuan alat. Buat pH/
+                // Turbidimeter/Chlorine ini sama persis sama `average` (profilnya
+                // balikin angkanya apa adanya); buat Refractometer inilah kolom
+                // "Corrected Value" di sheet `PERHITUNGAN` — dan ini juga yang
+                // dipakai ngitung Correction, bukan `average` yang mentah.
+                $rataTerkoreksi = ($rataNilai !== null && $sesi->equipment !== null)
+                    ? $profil->rataRataPadaSuhuAcuan($rataNilai, $rataSuhu, $sesi->equipment)
+                    : $rataNilai;
+
                 return [
                     'titik_ke' => (int) $titikKe,
                     'standard' => $nilaiStandar,
@@ -156,12 +165,18 @@ class PerhitunganBuilder
                         ])
                         ->values()
                         ->all(),
+                    // `average` = Observed Value (mentah, apa adanya dari
+                    // teknisi). `average_dikoreksi_suhu` = Corrected Value.
+                    // Dua-duanya dikirim karena sheet lab nampilin dua-duanya
+                    // bersebelahan, dan teknisi perlu lihat pembacaan aslinya
+                    // buat ngecek dia nggak salah ketik.
                     'average' => $rataNilai,
+                    'average_dikoreksi_suhu' => $rataTerkoreksi,
                     'average_suhu' => $rataSuhu,
                     // Lihat catatan tanda di docblock kelas: di lembar ini
                     // Correction = Average − Standard.
-                    'correction' => ($rataNilai !== null && $nilaiStandar !== null)
-                        ? $rataNilai - $nilaiStandar
+                    'correction' => ($rataTerkoreksi !== null && $nilaiStandar !== null)
+                        ? $rataTerkoreksi - $nilaiStandar
                         : null,
                     'stdev' => $this->stdevSampel($nilai->all()),
                 ];

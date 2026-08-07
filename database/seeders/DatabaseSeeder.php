@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             // dengan alasan sama kayak PhMeterCapabilitySeeder.
             TurbidimeterCapabilitySeeder::class,
             ChlorineCapabilitySeeder::class,
+            RefractometerCapabilitySeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori
             // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
             // ngitung koreksi kondisi lingkungan.
@@ -45,6 +46,7 @@ class DatabaseSeeder extends Seeder
             // jadi abis seedUsers()).
             TurbidimeterSeeder::class,
             ChlorineSeeder::class,
+            RefractometerSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

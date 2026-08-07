@@ -105,6 +105,49 @@ class LembarKerjaTest extends TestCase
         $this->assertSame(['1', '100', '1000'], array_column($tabel['baris'], 'label'));
     }
 
+    public function test_lembar_kerja_refractometer_pakai_n20d_dua_titik(): void
+    {
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=refractometer')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'n20D')
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0523_Rev.2')
+            ->json('data');
+
+        // Dua titik n20D yang ada di lingkup akreditasi. Nilainya nominal
+        // larutan aslinya (1,33659 & 1,39986), bukan versi bulat 1,3366/1,3999
+        // yang ketulis di tabel CMC.
+        $this->assertEqualsWithDelta([1.33659, 1.39986], $data['larutan_standar'], 1e-9);
+        $this->assertStringContainsString('Refractometer', $data['judul']);
+
+        // Alat ini bisa dua satuan dan itu ngubah SEMUA angka hilirnya, jadi
+        // pilihannya wajib ikut kekirim — layar input nanya di depan, nggak nebak.
+        $this->assertSame(
+            ['n20D', '°Brix'],
+            array_column($data['pilihan_satuan'], 'nilai'),
+        );
+
+        // Tiap sel punya DUA kolom: pembacaan + suhu larutan. Kolom suhunya
+        // bukan pelengkap — dia yang dipakai normalisasi ke 20 °C. Kalau kolom
+        // ini hilang dari lembar kerja, Correction di sertifikat meleset.
+        $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'];
+        $this->assertSame(
+            ['sebelum_adjustment', 'sesudah_adjustment'],
+            array_column($tabel, 'tahap'),
+        );
+        $this->assertSame(['pembacaan', 'suhu'], array_column($tabel[0]['kolom'], 'kode'));
+
+        // Resolusi seragam 0,0001 → `desimal`/`resolusi` per baris sengaja
+        // NGGAK dikirim sama sekali (bukan dikirim null), sama kayak Chlorine.
+        // Di sisi mobile "nggak ada" itu artinya "seragam, pakai resolusi alat".
+        // Penting buat refractometer: nilai terkoreksinya bisa 5 desimal
+        // (1,33935), jadi mad per baris ke 4 desimal justru bakal salah.
+        $this->assertSame(
+            ['titik_ukur', 'label'],
+            array_keys($tabel[0]['baris'][0]),
+        );
+    }
+
     public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void
     {
         // Mobile lama yang belum ngirim ?profil harus tetap dapat pH persis.
@@ -126,7 +169,7 @@ class LembarKerjaTest extends TestCase
      */
     public function test_jumlah_kolom_pengulangan_bisa_diatur_di_ketiga_alat(): void
     {
-        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer'] as $profil) {
             $data = $this->actingAs($this->teknisi)
                 ->getJson("/api/calibrations/lembar-kerja?profil={$profil}&pengulangan=3")
                 ->assertOk()
@@ -148,7 +191,7 @@ class LembarKerjaTest extends TestCase
     public function test_tanpa_parameter_tetap_lima_kolom_kayak_form_kertas(): void
     {
         // Mobile lama yang belum ngirim `pengulangan` nggak boleh ikut berubah.
-        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter'] as $profil) {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer'] as $profil) {
             $this->actingAs($this->teknisi)
                 ->getJson("/api/calibrations/lembar-kerja?profil={$profil}")
                 ->assertOk()

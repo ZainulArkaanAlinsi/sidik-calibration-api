@@ -320,6 +320,20 @@ class CalibrationValidator
             ->where('tahap', 'sesudah_adjustment')
             ->groupBy('titik_ke');
 
+        // Suhu ruang MENTAH (awal+akhir)/2, sama persis kayak yang dipakai waktu
+        // sesi ini pertama dihitung di `CalibrationController::susunPengukuran()`.
+        // Wajib dikirim ke `hitungTitik()` di bawah: tanpa ini budget
+        // Refractometer jatuh ke jalur CMC waktu hitung ulang, dan tiap
+        // sertifikat refractometer ke-flag `ketidakpastian_beda` padahal angka
+        // tersimpannya benar.
+        $suhuRuangTerisi = array_values(array_filter(
+            [$sesi->suhu_awal, $sesi->suhu_akhir],
+            fn ($s): bool => $s !== null,
+        ));
+        $suhuRuang = $suhuRuangTerisi === []
+            ? null
+            : array_sum(array_map('floatval', $suhuRuangTerisi)) / count($suhuRuangTerisi);
+
         foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
             /** @var UncertaintyCalculation $titik */
             $ke = (int) $titik->titik_ke;
@@ -387,6 +401,7 @@ class CalibrationValidator
                 // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
                 // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
                 $this->suhuLarutanRataRata($pembacaan),
+                $suhuRuang,
             );
 
             $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];

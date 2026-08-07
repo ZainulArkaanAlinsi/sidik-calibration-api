@@ -66,6 +66,7 @@ class PhMeterProfile extends CalibrationProfile
         float $titikUkur,
         float $typeA,
         int $n,
+        ?float $suhuRuang = null,
     ): ?array {
         if (! $kemampuan->punyaBudgetPenuh()) {
             return null;
