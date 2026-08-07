@@ -146,6 +146,40 @@ class LembarKerjaTest extends TestCase
             ['titik_ukur', 'label'],
             array_keys($tabel[0]['baris'][0]),
         );
+
+        // Titik standarnya ikut SATUAN, bukan cuma koefisien suhunya. Larutan
+        // fisiknya sama — BSAG2.5-0034 dibaca 2,5 °Brix ATAU 1,33659 n20D —
+        // tapi angka yang ditulis di lembar kerja beda, dan `titik_ukur` yang
+        // kekirim ikut beda. Sebelum ini sesi °Brix ngirim titik n20D bareng
+        // satuan °Brix: nilai standar satu skala, pembacaan skala lain.
+        //
+        // Dua set dikirim sekaligus karena satuannya dipilih DI DALAM formulir,
+        // sesudah lembar kerjanya diambil — lihat docblock `tabelHasil`.
+        $this->assertEqualsWithDelta(
+            [1.33659, 1.39986],
+            array_column($tabel[0]['baris_per_satuan']['n20D'], 'titik_ukur'),
+            1e-9,
+        );
+        $this->assertEqualsWithDelta(
+            [2.5, 40.0],
+            array_column($tabel[0]['baris_per_satuan']['°Brix'], 'titik_ukur'),
+            1e-9,
+        );
+
+        // Dua titik °Brix itu WAJIB sama dengan yang diseed CMC-nya
+        // (`RefractometerCapabilitySeeder`), kalau nggak titiknya kehilangan
+        // budget ketidakpastian tanpa satu pun peringatan.
+        $this->assertSame(
+            ['2,5', '40'],
+            array_column($tabel[0]['baris_per_satuan']['°Brix'], 'label'),
+        );
+
+        // `baris` lama tetap n20D — app versi lama nggak boleh ikut berubah.
+        $this->assertEqualsWithDelta(
+            [1.33659, 1.39986],
+            array_column($tabel[0]['baris'], 'titik_ukur'),
+            1e-9,
+        );
     }
 
     public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void

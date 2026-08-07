@@ -117,6 +117,33 @@ class RefractometerProfile extends CalibrationProfile
     ];
 
     /**
+     * Titik yang sama, dibaca di skala °Brix — **larutan fisiknya identik**.
+     * `BSAG2.5-0034` dibaca 2,5 °Brix ATAU 1,33659 n20D; `BSAG40-0071` dibaca
+     * 40 °Brix ATAU 1,39986 n20D (lihat [STANDARD_TERCETAK]).
+     *
+     * Ada karena satuan alat nentuin titik standarnya juga, bukan cuma
+     * koefisien suhunya. Sebelum ini lembar kerja selalu ngirim dua titik n20D
+     * apa pun satuan yang dipilih teknisi — jadi sesi °Brix ngirim
+     * `titik_ukur: 1.33659` bareng `satuan: "°Brix"`, dan dikoreksi pakai
+     * koefisien °Brix. Nilai standar satu skala, pembacaan skala lain.
+     *
+     * Angkanya cocok sama CMC yang diseed `RefractometerCapabilitySeeder`
+     * (2,5 & 40 °Brix), jadi titiknya tetap dapat budget.
+     *
+     * @var list<array{nilai: float, label: string}>
+     */
+    public const TITIK_BRIX = [
+        ['nilai' => 2.5, 'label' => '2,5'],
+        ['nilai' => 40.0, 'label' => '40'],
+    ];
+
+    /** Titik standar per satuan — dipakai layar buat nuker baris tabel. */
+    public const TITIK_PER_SATUAN = [
+        self::SATUAN_N20D => self::TITIK,
+        self::SATUAN_BRIX => self::TITIK_BRIX,
+    ];
+
+    /**
      * Baris tabel STANDARD di lembar kerja, dari sheet DATABASE baris 13–18.
      *
      * Dicocokin lewat NAMA doang buat empat larutannya, sengaja bukan serial:
@@ -565,17 +592,40 @@ class RefractometerProfile extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
+    /**
+     * @param  list<array{nilai: float, label: string}>  $titik
+     * @return list<array{titik_ukur: float, label: string}>
+     */
+    private function barisTitik(array $titik): array
+    {
+        return array_map(
+            fn (array $t): array => [
+                'titik_ukur' => $t['nilai'],
+                'label' => $t['label'],
+            ],
+            $titik,
+        );
+    }
+
     private function tabelHasil(string $tahap, string $judul): array
     {
         return [
             'tahap' => $tahap,
             'judul' => $judul,
-            'baris' => array_map(
-                fn (array $t): array => [
-                    'titik_ukur' => $t['nilai'],
-                    'label' => $t['label'],
-                ],
-                self::TITIK,
+            'baris' => $this->barisTitik(self::TITIK),
+            // Dua set baris dikirim SEKALIGUS, bukan lembar kerjanya diambil
+            // ulang tiap satuan diganti.
+            //
+            // Satuannya dipilih DI DALAM formulir (`equipment.satuan`), jadi
+            // waktu `GET /calibrations/lembar-kerja` dipanggil backend belum
+            // tahu mana yang bakal dipakai. Ngambil ulang tiap kali diganti
+            // berarti seluruh isian yang udah diketik teknisi kereset — di
+            // lapangan itu jauh lebih mahal daripada satu field ekstra di
+            // respons. `baris` di atas tetap ada & tetap n20D biar app versi
+            // lama nggak berubah perilakunya.
+            'baris_per_satuan' => array_map(
+                fn (array $titik): array => $this->barisTitik($titik),
+                self::TITIK_PER_SATUAN,
             ),
             'kolom' => [
                 ['kode' => 'pembacaan', 'label' => self::SATUAN_N20D, 'tipe' => 'angka', 'satuan' => self::SATUAN_N20D],
