@@ -95,6 +95,100 @@ abstract class CalibrationProfile
      */
     abstract public function bentukLembarKerja(bool $untukAdmin = false): array;
 
+    /**
+     * Pasangan TERCETAK "titik ukur → larutan standarnya", persis kayak di
+     * formulir kertas: baris 7,00 di lembar pH cuma boleh diisi pakai pH Buffer
+     * Solution 7, nggak pernah yang lain.
+     *
+     * Kunci `standar` isinya kunci pencocokan yang sama dipakai
+     * `STANDARD_TERCETAK` (nama master ATAU serial), jadi satu sumber kebenaran
+     * — bukan daftar kedua yang bisa jalan sendiri.
+     *
+     * Kenapa ada: sebelum ini titik ukur nggak punya pasangan sama sekali.
+     * Teknisi milih sendiri dari dropdown berisi SELURUH master standar, satu
+     * dropdown per titik. Salah pilih nggak keliatan salah — sampai muncul di
+     * sertifikat: sesi pH 7 Agt 2026 kepilih Buffer 4 di titik 7,00, dan kolom
+     * Correction-nya kecetak `-2,99` (= 4,0092 − 7,00) di antara dua angka yang
+     * wajar. Pasangannya emang nggak pernah jadi keputusan teknisi; itu
+     * tercetak di formulirnya.
+     *
+     * Balikin `[]` = profil ini nggak punya pasangan tetap, dan layar jatuh ke
+     * pilihan manual kayak dulu.
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [];
+    }
+
+    /**
+     * Sedekat apa `titik_ukur` boleh meleset dari nilai di [standarPerTitik]
+     * dan masih dianggap titik yang sama.
+     *
+     * Bukan `===`: titik chlorine kesimpen sebagai nilai standar SESUDAH
+     * koreksi suhu (1,7401, bukan 1,74). Dipakai relatif ke nilai titik supaya
+     * satu angka ini kepakai baik di 1,74 mg/L maupun 1000 NTU.
+     */
+    protected const TOLERANSI_PASANGAN_TITIK = 0.02;
+
+    /**
+     * Stempel `standard_id` ke tiap baris tabel hasil, dari pasangan tercetak
+     * [standarPerTitik]. Dipanggil profil sesudah bentuknya jadi.
+     *
+     * Yang nggak ketemu pasangannya dibiarin `null` — layar bakal nawarin
+     * pilihan manual buat titik itu doang, bukan buat semuanya. Standar yang
+     * kepasang tapi belum keseed di master juga `null`, dengan alasan yang sama
+     * kayak `tautkanStandar`: baris yang hilang lebih berbahaya daripada baris
+     * yang belum ketaut.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    protected function tautkanStandarTitik(array $bentuk): array
+    {
+        $pasangan = $this->standarPerTitik();
+
+        if ($pasangan === []) {
+            return $bentuk;
+        }
+
+        $master = Standard::query()
+            ->whereNull('parameter_kondisi')
+            ->get(['id', 'nama', 'serial_number']);
+
+        $cocokkan = static function (float $titikUkur) use ($pasangan, $master): ?Standard {
+            foreach ($pasangan as $p) {
+                $batas = max(abs($p['titik']), 1.0) * self::TOLERANSI_PASANGAN_TITIK;
+
+                if (abs($titikUkur - $p['titik']) > $batas) {
+                    continue;
+                }
+
+                return $master->first(fn (Standard $s): bool => in_array($s->nama, $p['standar'], true)
+                    || in_array($s->serial_number, $p['standar'], true));
+            }
+
+            return null;
+        };
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $j => $tabel) {
+                foreach ($tabel['baris'] ?? [] as $k => $baris) {
+                    $standar = $cocokkan((float) $baris['titik_ukur']);
+
+                    $bentuk['bagian'][$i]['tabel'][$j]['baris'][$k] = [
+                        ...$baris,
+                        'standard_id' => $standar?->id,
+                        'standard_nama' => $standar?->nama,
+                    ];
+                }
+            }
+        }
+
+        return $bentuk;
+    }
+
     /** Sedikit-dikitnya kolom pengulangan yang masuk akal buat lembar kerja. */
     public const MIN_KOLOM_PENGULANGAN = 2;
 

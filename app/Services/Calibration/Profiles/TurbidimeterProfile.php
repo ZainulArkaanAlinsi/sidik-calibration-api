@@ -74,6 +74,21 @@ class TurbidimeterProfile extends CalibrationProfile
         ['label' => 'TH-4', 'grup' => 'Inlab'],
     ];
 
+    /**
+     * Tiap titik NTU cuma boleh diisi pakai larutan senilai — 100 NTU nggak
+     * pernah dibaca pakai botol 1 NTU.
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [
+            ['titik' => 1.0, 'standar' => ['Turbidity Standard 1 NTU']],
+            ['titik' => 100.0, 'standar' => ['Turbidity Standard 100 NTU']],
+            ['titik' => 1000.0, 'standar' => ['Turbidity Standard 1000 NTU']],
+        ];
+    }
+
     public function kode(): string
     {
         return 'turbidimeter';
@@ -101,6 +116,7 @@ class TurbidimeterProfile extends CalibrationProfile
     {
         $bentuk = $this->bentukLengkap();
         $bentuk = $this->tautkanStandar($bentuk);
+        $bentuk = $this->tautkanStandarTitik($bentuk);
         $bentuk = $this->isiPilihanThermohygro($bentuk);
 
         if ($untukAdmin) {

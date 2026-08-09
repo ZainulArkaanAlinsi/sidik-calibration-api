@@ -80,6 +80,65 @@ class LembarKerjaTest extends TestCase
         $this->assertSame(['sebelum_adjustment', 'sesudah_adjustment'], array_column($tabel, 'tahap'));
     }
 
+    /**
+     * Tiap baris tabel hasil bawa standar PASANGANNYA, bukan dikosongin buat
+     * dipilih teknisi satu-satu dari seluruh master.
+     *
+     * Ini yang nahan `-2,99`. Sesi pH 7 Agt 2026 kecetak Correction
+     * `0,01 / -2,99 / -0,13`: titik 7,00 kepilih Buffer 4, jadi nilai standar
+     * yang dipakai 4,0092 dan koreksinya jadi 4,0092 − 7,00. Dua tetangganya
+     * wajar, jadi yang di tengah nggak keliatan salah sampai nyampe pelanggan.
+     *
+     * Yang diuji PASANGANNYA, bukan cuma "ada isinya" — tertukar itu justru
+     * mode gagal yang bikin sertifikatnya salah.
+     */
+    public function test_tiap_titik_bawa_larutan_standar_pasangannya(): void
+    {
+        $buffer = collect(['4', '7', '10'])->mapWithKeys(
+            fn (string $n): array => [$n => Standard::factory()->create(['nama' => "pH Buffer Solution {$n}"])->id],
+        );
+
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->json('data');
+
+        foreach (collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'] as $tabel) {
+            $this->assertSame(
+                [$buffer['4'], $buffer['7'], $buffer['10']],
+                array_column($tabel['baris'], 'standard_id'),
+                "Tabel {$tabel['tahap']}: titik ketuker sama buffer yang salah.",
+            );
+
+            $this->assertSame(
+                ['pH Buffer Solution 4', 'pH Buffer Solution 7', 'pH Buffer Solution 10'],
+                array_column($tabel['baris'], 'standard_nama'),
+            );
+        }
+    }
+
+    /**
+     * Standar yang belum keseed di master bikin titik itu doang jatuh ke
+     * pilihan manual — bukan bikin barisnya hilang, dan bukan bikin titik lain
+     * ikut kosong.
+     */
+    public function test_titik_tanpa_standar_di_master_tetap_tampil_dengan_id_null(): void
+    {
+        Standard::factory()->create(['nama' => 'pH Buffer Solution 7']);
+
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->json('data');
+
+        $baris = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'][0]['baris'];
+
+        $this->assertCount(3, $baris);
+        $this->assertNull($baris[0]['standard_id']);
+        $this->assertNotNull($baris[1]['standard_id']);
+        $this->assertNull($baris[2]['standard_id']);
+    }
+
     public function test_lembar_kerja_turbidimeter_pakai_ntu_tiga_titik(): void
     {
         $data = $this->actingAs($this->teknisi)
@@ -142,10 +201,13 @@ class LembarKerjaTest extends TestCase
         // Di sisi mobile "nggak ada" itu artinya "seragam, pakai resolusi alat".
         // Penting buat refractometer: nilai terkoreksinya bisa 5 desimal
         // (1,33935), jadi mad per baris ke 4 desimal justru bakal salah.
-        $this->assertSame(
-            ['titik_ukur', 'label'],
-            array_keys($tabel[0]['baris'][0]),
-        );
+        //
+        // Dicek sebagai KETIDAKHADIRAN dua kunci itu, bukan sebagai daftar
+        // kunci yang persis: baris tabel emang nambah kunci dari waktu ke waktu
+        // (`standard_id` pasangan titik, misalnya), dan tes yang mematok daftar
+        // penuh bakal merah tiap kali itu terjadi tanpa ada yang rusak.
+        $this->assertArrayNotHasKey('desimal', $tabel[0]['baris'][0]);
+        $this->assertArrayNotHasKey('resolusi', $tabel[0]['baris'][0]);
 
         // Titik standarnya ikut SATUAN, bukan cuma koefisien suhunya. Larutan
         // fisiknya sama — BSAG2.5-0034 dibaca 2,5 °Brix ATAU 1,33659 n20D —

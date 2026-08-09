@@ -144,6 +144,21 @@ class ChlorineProfile extends CalibrationProfile
         ['label' => 'Victor 14+/992613877', 'cocok' => ['Victor 14+', '992613877']],
     ];
 
+    /**
+     * Dua titik chlorine itu parameter yang BEDA (free vs total), masing-masing
+     * punya larutannya sendiri — ketuker berarti sertifikatnya nyebut parameter
+     * yang salah, bukan cuma angka yang meleset.
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [
+            ['titik' => 1.74, 'standar' => ['Chlorine Standard Solution 1.74 mg/L', 'QC1065-2ML']],
+            ['titik' => 1.83, 'standar' => ['Chlorine Standar Cuvettes 1.83 mg/L', 'LRAD8911']],
+        ];
+    }
+
     public const THERMOHYGRO_TERCETAK = [
         ['label' => 'TH-2', 'grup' => 'Insitu'],
         ['label' => 'TH-6', 'grup' => 'Insitu'],
@@ -200,6 +215,7 @@ class ChlorineProfile extends CalibrationProfile
     {
         $bentuk = $this->bentukLengkap();
         $bentuk = $this->tautkanStandar($bentuk);
+        $bentuk = $this->tautkanStandarTitik($bentuk);
         $bentuk = $this->isiPilihanThermohygro($bentuk);
 
         if ($untukAdmin) {
