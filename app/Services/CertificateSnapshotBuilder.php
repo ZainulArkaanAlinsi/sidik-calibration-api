@@ -469,21 +469,31 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->kelembaban !== null) {
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
+            // DUA desimal, nilai & ketidakpastiannya sama-sama — bukan bulat.
+            //
+            // Ini dokumen lab, bukan soal prinsip. Master nulis `51,95` (pH),
+            // `51,83` (Turbidimeter), `60,41` (Refractometer): kelembabannya
+            // emang berdesimal, dan `53` di Chlorine itu kebetulan bulat, bukan
+            // buktinya aturan pembulatan.
+            //
+            // Dua kali salah di sini, dua-duanya karena nalar dari konvensi
+            // bukan dari kertasnya:
+            //
+            //  - sampai 7 Agt kecetak `60% ± 5,2%` — nilai bulat, U 1 desimal.
+            //    Dikeluhkan lapangan, wajar: satu tarikan napas dua ketelitian.
+            //  - 7 Agt "dibetulin" jadi `60% ± 5%` dengan nyamain U ke nilainya.
+            //    Sejajar, tapi disejajarkan ke sisi yang salah — dan dikeluhkan
+            //    lagi 9 Agt, sekarang buat tiga alat sekaligus.
+            //
+            // Yang bener: NILAINYA yang nggak boleh dipangkas. Argumen lama
+            // ("teknisi baca kelembaban di resolusi 1%, desimalnya cuma hasil
+            // koreksi thermohygro") kedengaran masuk akal tapi nggak dipakai
+            // lab-nya sendiri — dan yang menentukan isi sertifikat itu dokumen
+            // resminya, bukan turunan prinsip.
+            $teks = '%RH: '.Angka::id($sesi->kelembaban, 2).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
-                // Ketidakpastian ditulis di posisi desimal yang SAMA dengan
-                // nilainya — konvensi metrologi, dan sebelumnya nggak diikuti:
-                // nilainya bulat tapi ketidakpastiannya 1 desimal, jadi kecetak
-                // `60% ± 5,2%`. Satu tarikan napas, dua ketelitian berbeda.
-                //
-                // Yang bulat itu nilainya, bukan sebaliknya: teknisi baca
-                // kelembaban di resolusi 1% (isiannya 62 & 60), jadi desimal di
-                // `kelembaban` (60,41) itu hasil koreksi thermohygro — bukan
-                // angka yang pernah kebaca dari alat. Alasan yang sama persis
-                // dipakai buat suhu di atas, cuma suhunya dibaca di 0,1 °C jadi
-                // dia dapat 1 desimal.
-                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 0).'%';
+                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 2).'%';
             }
 
             $bagian[] = $teks;

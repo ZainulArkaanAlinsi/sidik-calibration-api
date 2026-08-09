@@ -198,6 +198,78 @@ class SertifikatCocokMasterTest extends TestCase
     }
 
     /**
+     * Env. Condition kecetak persis kayak master lab — buat KEEMPAT alat.
+     *
+     * Baris ini udah dua kali salah dan dua kali "dibetulin" dari nalar, bukan
+     * dari kertasnya: 7 Agt kecetak `60% ± 5,2%` (nilai bulat, U 1 desimal),
+     * lalu disejajarkan jadi `60% ± 5%` — sejajar, tapi ke sisi yang salah, dan
+     * 9 Agt dikeluhkan lagi buat tiga alat sekaligus.
+     *
+     * Yang bikin bisa balik dua kali: tabel hasilnya diadu ke master (tes di
+     * atas), header-nya nggak. Jadi kelembaban bisa digeser-geser tanpa ada
+     * satu pun tes yang merah. Sekarang ikut kepatok ke sel yang sama.
+     *
+     * Angkanya dari `Env. Condition` di tiap `SERTIFIKAT.csv`:
+     *   pH        T 20,97      ± 1,7117242768623688 · %RH 51,95 ± 5,660388679233963
+     *   Turbidi   T 23,07      ± 1,7117242768623688 · %RH 51,83 ± 4,8
+     *   Chlorine  T 23,21      ± 1,802775637731995  · %RH 53    ± 4,903060268852505
+     *   Refracto  T 21,96      ± 1,824828759089466  · %RH 60,41 ± 5,292447448959697
+     */
+    #[DataProvider('envKondisi')]
+    public function test_env_condition_sama_dengan_master_excel(string $nomorSesi, string $harapan): void
+    {
+        $this->assertSame(
+            $harapan,
+            $this->terbitkan($this->sesi($nomorSesi))->snapshot['header']['env_condition'],
+        );
+    }
+
+    /**
+     * @return array<string, array{nomorSesi: string, harapan: string}>
+     */
+    public static function envKondisi(): array
+    {
+        return [
+            'pH Meter' => [
+                'nomorSesi' => '2405.13.A',
+                'harapan' => 'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,66%',
+            ],
+            'Turbidimeter' => [
+                'nomorSesi' => '2406.32.A',
+                'harapan' => 'T: 23,1°C ± 1,7°C — %RH: 51,83% ± 4,80%',
+            ],
+            'Chlorine Meter' => [
+                'nomorSesi' => '2406.32.C',
+                'harapan' => 'T: 23,2°C ± 1,8°C — %RH: 53,00% ± 4,90%',
+            ],
+            // U95 kelembaban SENGAJA beda dari master: 5,20 punya kita vs
+            // 5,292447448959697 di sheet. Nilai & koreksinya sendiri cocok
+            // persis (60,41 = rata-rata 61 + koreksi −0,59), jadi yang beda
+            // cuma satu masukan: U95 sertifikat TH-5 di titik itu.
+            //
+            //   punya kita  √(4,8² + 2²) = 5,2
+            //   master      √(4,9² + 2²) = 5,2924474489…
+            //
+            // 4,8 itu yang tercatat di titik 60 %RH pada arsip titik kalibrasi
+            // TH-5 (`database/data/thermohygro-lab.json`). 4,9 itu angka di
+            // titik PERTAMA-nya (29,8 %RH) — dan itu juga satu-satunya titik
+            // TH-5 yang U95-nya bukan 4,8. Bacaan yang paling masuk akal:
+            // sheet lab ngambil U95 dari satu sel tetap per unit, sementara
+            // koreksinya dicocokin per titik.
+            //
+            // Nggak diikutin diam-diam, dan nggak juga dianggap master yang
+            // salah — dua-duanya ngubah angka di dokumen terakreditasi. Ini
+            // mesti ditanyain ke lab: U95 thermohygro itu per titik atau satu
+            // buat seluruh rentang? Cuma kelihatan di Refractometer karena cuma
+            // sesi ini yang pakai TH-5 di kelembaban ~60 %RH.
+            'Refractometer' => [
+                'nomorSesi' => '2211.11.R',
+                'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60,41% ± 5,20%',
+            ],
+        ];
+    }
+
+    /**
      * Desimal per baris HARUS ikut resolusi titiknya, bukan satu angka buat
      * seluruh tabel. Turbidimeter yang mbuktiin: resolusinya berubah menurut
      * rentang, jadi baris 100 NTU nggak boleh kecetak `100,00` — dua digit yang

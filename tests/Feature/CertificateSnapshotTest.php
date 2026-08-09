@@ -142,7 +142,7 @@ class CertificateSnapshotTest extends TestCase
         // Sempat kecetak `%RH: 60% ± 5,2%` — nilai bulat, ketidakpastian 1
         // desimal: satu tarikan napas, dua ketelitian beda. Dikeluhkan dari
         // lapangan 7 Agt 2026.
-        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 52% ± 6%', $header['env_condition']);
+        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,70%', $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 
@@ -155,12 +155,14 @@ class CertificateSnapshotTest extends TestCase
         $header = $this->terbitkanSertifikat()->snapshot['header'];
         $env = $header['env_condition'];
 
-        // Suhu: nilai & ketidakpastian dua-duanya 1 desimal (dibaca 0,1 °C).
+        // Suhu: nilai & ketidakpastian dua-duanya 1 desimal.
         $this->assertMatchesRegularExpression('/T: \d+,\d°C ± \d+,\d°C/', $env);
 
-        // Kelembaban: dua-duanya bulat (dibaca 1 %). `± 5,2%` di sini artinya
-        // aturannya bocor lagi.
-        $this->assertMatchesRegularExpression('/%RH: \d+% ± \d+%/', $env);
+        // Kelembaban: dua-duanya 2 desimal, ngikut master lab (51,95 / 60,41).
+        // Yang dijaga di sini NILAINYA ikut kecetak utuh — `%RH: 52%` atau
+        // `52,0%` artinya kepangkas lagi, dan itu keluhan yang udah dua kali
+        // balik (7 & 9 Agt 2026).
+        $this->assertMatchesRegularExpression('/%RH: \d+,\d{2}% ± \d+,\d{2}%/', $env);
     }
 
     public function test_correction_di_tabel_hasil_itu_standard_value_dikurangi_pembacaan(): void

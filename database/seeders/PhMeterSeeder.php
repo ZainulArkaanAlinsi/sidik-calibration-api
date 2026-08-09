@@ -15,6 +15,7 @@ use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\GumCalculator;
+use App\Services\KondisiLingkungan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
@@ -151,26 +152,50 @@ class PhMeterSeeder extends Seeder
         );
     }
 
-    /** @param  array{nomor_sesi: string, tanggal_kalibrasi: string, lokasi: string, suhu_ruang: float, kelembaban: float, submitted_at: string, reviewed_at: string}  $s */
+    /**
+     * @param  array{nomor_sesi: string, tanggal_kalibrasi: string, lokasi: string, thermohygro_serial: string, suhu_awal: float, suhu_akhir: float, kelembaban_awal: float, kelembaban_akhir: float, submitted_at: string, reviewed_at: string}  $s
+     */
     private function buatSesi(array $s, Equipment $equipment, User $teknisi, User $penandatangan, Standard $standarDefault): CalibrationSession
     {
-        return CalibrationSession::updateOrCreate(
+        $thermohygro = Standard::where('organization_id', 1)
+            ->where('serial_number', $s['thermohygro_serial'])
+            ->first();
+
+        $sesi = CalibrationSession::updateOrCreate(
             ['organization_id' => 1, 'nomor_sesi' => $s['nomor_sesi']],
             [
                 'equipment_id' => $equipment->id,
                 'teknisi_id' => $teknisi->id,
                 'standard_id' => $standarDefault->id,
+                'thermohygro_standard_id' => $thermohygro?->id,
                 'reviewed_by' => $penandatangan->id,
                 'input_method' => 'manual',
                 'status' => CalibrationSession::STATUS_DISETUJUI,
                 'tanggal_kalibrasi' => $s['tanggal_kalibrasi'],
                 'lokasi' => $s['lokasi'],
-                'suhu_ruang' => $s['suhu_ruang'],
-                'kelembaban' => $s['kelembaban'],
+                // Pembacaan thermohygro AWAL & AKHIR apa adanya — `suhu_ruang`
+                // & U95-nya sengaja NGGAK ditulis di sini, biar dihitung
+                // `KondisiLingkungan` dari koreksi sertifikat TH-3. Pola yang
+                // sama dipakai seeder Turbidimeter & Chlorine.
+                //
+                // Dulu yang keseed langsung `suhu_ruang: 21,4` & `kelembaban:
+                // 54,5` — itu rata-rata MENTAH, bukan yang terkoreksi. Jadi
+                // satu-satunya alat yang masternya punya blok kondisi
+                // lingkungan lengkap malah nerbitin sertifikat tanpa koreksi
+                // dan tanpa U95 sama sekali (`T: 21,4°C — %RH: 54,50%`),
+                // padahal master nulis `20,97 ± 1,7117` & `51,95 ± 5,6604`.
+                'suhu_awal' => $s['suhu_awal'],
+                'suhu_akhir' => $s['suhu_akhir'],
+                'kelembaban_awal' => $s['kelembaban_awal'],
+                'kelembaban_akhir' => $s['kelembaban_akhir'],
                 'submitted_at' => $s['submitted_at'],
                 'reviewed_at' => $s['reviewed_at'],
             ],
         );
+
+        app(KondisiLingkungan::class)->terapkan($sesi);
+
+        return $sesi->fresh();
     }
 
     /**
