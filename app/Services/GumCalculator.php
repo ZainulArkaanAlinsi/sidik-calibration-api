@@ -82,6 +82,7 @@ class GumCalculator
         Equipment $equipment,
         Standard $standard,
         ?float $suhuLarutan = null,
+        ?float $suhuRuang = null,
     ): array {
         // Nilai acuan yang dipakai itu nilai larutan PADA SUHU PENGUKURAN, bukan
         // angka nominal yang tercetak di botol.
@@ -129,6 +130,13 @@ class GumCalculator
         }
 
         $rataRata = array_sum($pembacaan) / $n;
+
+        // STDEV dihitung dari pembacaan MENTAH, SEBELUM normalisasi suhu di
+        // bawah — dan urutan ini nggak boleh dibalik. Normalisasi refractometer
+        // dipasang ke rata-rata pakai SATU suhu rata-rata, jadi dia nggak nambah
+        // sebaran; kalau tiap pembacaan dikoreksi sendiri-sendiri pakai suhunya
+        // masing-masing, satu repeat yang suhunya nyeleneh bikin STDEV bukan nol
+        // dan seluruh budget-nya meleset dari master lab.
         $standarDeviasi = $this->standarDeviasiSampel($pembacaan, $rataRata);
 
         // Type A — sebaran hasil pengulangan itu sendiri. Tetap dihitung &
@@ -136,18 +144,31 @@ class GumCalculator
         // angka ini buat ketidakpastian yang dilaporkan.
         $typeA = $standarDeviasi / sqrt($n);
 
-        $error = $rataRata - $titikUkur;
-        $toleransi = (float) $equipment->toleransi;
-
-        $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
-
         // Daftar komponen budget-nya diserahin ke PROFIL alat (pH, Turbidimeter,
         // ...) — tiap alat punya bentuk budget beda, dan itu satu-satunya bagian
         // per-alat yang tersisa di sini. Aturan agregasi (Uc, Welch–Satterthwaite,
         // k, lantai CMC) tetap generik di bawah.
         $profil = $this->registry->untukAlat($equipment);
+
+        // Pembacaan dinormalisasi ke suhu acuan alat. Cuma refractometer yang
+        // ngelakuin sesuatu di sini (1,3362 @27 °C → 1,33935 @20 °C); profil
+        // lain balikin angkanya apa adanya. Lihat
+        // `CalibrationProfile::rataRataPadaSuhuAcuan()` soal kenapa ini beda
+        // sisi dari `Standard::nilaiPadaSuhu()` di atas.
+        //
+        // Ditaruh SESUDAH STDEV & Type A, SEBELUM $error — biar nilai yang
+        // ke-simpen sebagai `rata_rata` (dan kecetak di sertifikat sebagai
+        // kolom "Unit Under Test") itu nilai terkoreksinya, dan `koreksi`
+        // otomatis jadi `Standard − Corrected`.
+        $rataRata = $profil->rataRataPadaSuhuAcuan($rataRata, $suhuLarutan, $equipment);
+
+        $error = $rataRata - $titikUkur;
+        $toleransi = (float) $equipment->toleransi;
+
+        $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
+
         $komponen = $kemampuan !== null
-            ? $profil->komponenBudget($kemampuan, $equipment, $standard, $titikUkur, $typeA, $n)
+            ? $profil->komponenBudget($kemampuan, $equipment, $standard, $titikUkur, $typeA, $n, $suhuRuang)
             : null;
 
         // Tiga jalur, dari yang paling lengkap ke yang paling menyederhanakan.

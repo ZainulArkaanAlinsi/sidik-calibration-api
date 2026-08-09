@@ -12,7 +12,14 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * AI Vision baca tabel lembar kerja pH dari foto — GANTINYA OCR di HP.
+ * AI Vision baca tabel lembar kerja dari foto — GANTINYA OCR di HP.
+ *
+ * Berlaku buat SEMUA jenis alat (pH, Turbidimeter, Chlorine, Refractometer),
+ * bukan cuma pH: bentuk tabelnya sama, yang beda cuma petunjuk `satuan` /
+ * `titik_nominal` / `desimal` yang dikirim mobile dari bentuk lembar kerja
+ * profil alatnya. Buat Refractometer isinya `satuan=n20D` &
+ * `titik_nominal=[1.33659, 1.39986]` — petunjuk nominal itu yang bikin model
+ * nggak salah baca "1,3362" jadi "13362".
  *
  * Endpoint: POST /api/raw-measurements/extract-from-photo (SPEC-vision-prompt.md §8).
  * Satu foto = satu tabel (Before ATAU After adjustment). Balik { baris: [...] }
