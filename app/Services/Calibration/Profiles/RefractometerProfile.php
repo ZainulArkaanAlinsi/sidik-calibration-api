@@ -144,6 +144,27 @@ class RefractometerProfile extends CalibrationProfile
     ];
 
     /**
+     * Keempat titik dua satuan ditulis sekaligus — nilainya nggak ada yang
+     * tabrakan (1,33659 / 1,39986 / 2,5 / 40), jadi pasangannya tetap tunggal
+     * tanpa perlu tau satuan mana yang lagi dipilih teknisi.
+     *
+     * Botolnya cuma dua: BSAG2.5-0034 kecatat DUA KALI di master (sekali per
+     * skala), dan itu yang bikin dicocokin lewat nama, bukan serial — persis
+     * alasan yang sama di [STANDARD_TERCETAK].
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [
+            ['titik' => 1.33659, 'standar' => ['Refractometer Std Solution 1.33659 n20D']],
+            ['titik' => 1.39986, 'standar' => ['Refractometer Std Solution 1.39986 n20D']],
+            ['titik' => 2.5, 'standar' => ['Refractometer Std Solution 2.5 oBrix']],
+            ['titik' => 40.0, 'standar' => ['Refractometer Std Solution 40 oBrix']],
+        ];
+    }
+
+    /**
      * Baris tabel STANDARD di lembar kerja, dari sheet DATABASE baris 13–18.
      *
      * Dicocokin lewat NAMA doang buat empat larutannya, sengaja bukan serial:
@@ -410,6 +431,7 @@ class RefractometerProfile extends CalibrationProfile
     {
         $bentuk = $this->bentukLengkap();
         $bentuk = $this->tautkanStandar($bentuk);
+        $bentuk = $this->tautkanStandarTitik($bentuk);
         $bentuk = $this->isiPilihanThermohygro($bentuk);
 
         if ($untukAdmin) {
