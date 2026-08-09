@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\KondisiLingkungan;
 use App\Support\Angka;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -265,6 +266,111 @@ class SertifikatCocokMasterTest extends TestCase
             'Refractometer' => [
                 'nomorSesi' => '2211.11.R',
                 'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60,41% ± 5,20%',
+            ],
+        ];
+    }
+
+    /**
+     * Blok **PERHITUNGAN KONDISI LINGKUNGAN** diadu sel per sel ke master —
+     * bukan cuma hasil cetaknya di header sertifikat.
+     *
+     * Bedanya penting: `env_condition` itu string yang udah dibulatkan, jadi
+     * pemilihan titik koreksi yang salah bisa lolos di sana kalau kebetulan
+     * pembulatannya nutupin. Yang diperiksa di sini rantai lengkapnya —
+     * average → indexed value → correction → Δ → U95% — persis kolom di sheet
+     * `PERHITUNGAN` baris "Suhu Ruangan" & "Kelembaban".
+     *
+     * `indexed_value` yang ikut dipatok itu intinya: dia yang mbuktiin titik
+     * koreksi thermohygro-nya kepilih bener. Pernah salah sekali — sesi
+     * turbidimeter 25,7 °C kena titik 19,6 °C dan kecetak 25,47 padahal master
+     * 26,05, selisih 0,58 °C di dokumen terakreditasi.
+     *
+     * @param  array<string, list<float|null>>  $harapan
+     */
+    #[DataProvider('kondisiLingkungan')]
+    public function test_blok_kondisi_lingkungan_sama_dengan_master_excel(string $nomorSesi, array $harapan): void
+    {
+        $sesi = $this->sesi($nomorSesi);
+        $hitung = app(KondisiLingkungan::class);
+
+        foreach ($harapan as $parameter => [$awal, $akhir, $average, $indexed, $correction, $delta, $u95StdTh, $u95Sertifikat]) {
+            $h = $hitung->hitung($sesi, $parameter);
+
+            $this->assertNotNull($h, "{$nomorSesi} {$parameter}: blok kondisi lingkungannya kosong");
+
+            foreach ([
+                'awal' => $awal,
+                'akhir' => $akhir,
+                'average' => $average,
+                'indexed_value' => $indexed,
+                'correction' => $correction,
+                'delta' => $delta,
+                'u95_std_th' => $u95StdTh,
+                'u95_sertifikat' => $u95Sertifikat,
+            ] as $kolom => $nilai) {
+                $this->assertEqualsWithDelta(
+                    $nilai,
+                    (float) $h[$kolom],
+                    1e-9,
+                    "{$nomorSesi} {$parameter}: kolom {$kolom} meleset dari master Excel",
+                );
+            }
+        }
+    }
+
+    /**
+     * Kolom per parameter, urut kayak di sheet:
+     * `[awal, akhir, average, indexed_value, correction, Δ, U95 std TH, U95 sertifikat]`.
+     *
+     * @return array<string, array{nomorSesi: string, harapan: array<string, list<float>>}>
+     */
+    public static function kondisiLingkungan(): array
+    {
+        return [
+            'pH Meter' => [
+                'nomorSesi' => '2405.13.A',
+                'harapan' => [
+                    'suhu' => [21.3, 21.5, 21.4, 19.83, -0.43, 0.2, 1.7, 1.7117242768623688],
+                    'kelembaban' => [53, 56, 54.5, 47.05, -2.55, 3, 4.8, 5.660388679233963],
+                ],
+            ],
+            'Turbidimeter' => [
+                'nomorSesi' => '2406.32.A',
+                'harapan' => [
+                    'suhu' => [23.2, 23.4, 23.3, 19.33, -0.23, 0.2, 1.7, 1.7117242768623688],
+                    // Δ = 0 → U95% sertifikat = U95% std TH apa adanya.
+                    'kelembaban' => [55, 55, 55, 46.83, -3.17, 0, 4.8, 4.8],
+                ],
+            ],
+            'Chlorine Meter' => [
+                'nomorSesi' => '2406.32.C',
+                'harapan' => [
+                    'suhu' => [24.1, 23.5, 23.8, 19.37, -0.59, 0.6, 1.7, 1.802775637731995],
+                    'kelembaban' => [56, 55, 55.5, 47.1, -2.5, 1, 4.8, 4.903060268852505],
+                ],
+            ],
+            // Kelembaban: `u95_std_th` 4,8 punya kita vs 4,9 yang ketulis di
+            // sheet refractometer. SEMBILAN kolom lainnya cocok persis, jadi
+            // yang beda cuma satu sel — dan sel itu bertentangan sama sheet
+            // DATABASE-nya sendiri, yang nulis 4,8 buat titik 59,41.
+            //
+            // Bukan aturan yang beda, tapi salah isi di workbook lab. Bukti:
+            // di SEMUA unit TH, titik %RH pertama u95-nya 4,9 dan sisanya 4,8.
+            // Tiga alat lain kepakai titik non-pertama dan sheet-nya nulis 4,8
+            // — konsisten sama aturan per-titik yang kita pakai. Cuma
+            // refractometer yang nulis 4,9 padahal titiknya (59,41) 4,8.
+            //
+            // Kalau aturannya diganti jadi "selalu titik pertama" biar
+            // refractometer cocok, KETIGA alat lain langsung meleset — mereka
+            // bakal ikut dapat 4,9. Jadi nggak ada satu aturan pun yang bisa
+            // mereproduksi keempatnya; yang perlu dibetulkan sel di
+            // workbook-nya, bukan kodenya. Sudah diteruskan ke lab.
+            'Refractometer' => [
+                'nomorSesi' => '2211.11.R',
+                'harapan' => [
+                    'suhu' => [20.9, 21.2, 21.05, 21.51, 0.91, 0.3, 1.8, 1.824828759089466],
+                    'kelembaban' => [62, 60, 61, 59.41, -0.59, 2, 4.8, 5.2],
+                ],
             ],
         ];
     }
