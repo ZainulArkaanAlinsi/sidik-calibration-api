@@ -34,6 +34,9 @@ class Formula extends Model
     /** Rumus GUM buat jalur Chlorin Meter (budget 5 komponen, lihat ChlorineProfile). */
     public const KODE_GUM_CHLORINE = 'gum-chlorine';
 
+    /** Rumus GUM buat jalur Refractometer (budget 5 komponen, lihat RefractometerProfile). */
+    public const KODE_GUM_REFRACTOMETER = 'gum-refractometer';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

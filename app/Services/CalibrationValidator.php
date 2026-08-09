@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CalibrationSession;
+use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
@@ -59,6 +60,7 @@ class CalibrationValidator
 
         $temuan = [
             ...$this->periksaKelengkapanHitung($sesi),
+            ...$this->periksaPembacaanMustahil($sesi),
             ...$this->periksaTiapTitik($sesi),
             ...$this->periksaKeputusanSesi($sesi),
             ...$this->periksaKelengkapanSertifikat($sesi),
@@ -155,6 +157,153 @@ class CalibrationValidator
     }
 
     /**
+     * Pembacaan yang **alatnya sendiri nggak mungkin nampilin** — bukan
+     * pembacaan yang "kelihatan aneh".
+     *
+     * ## Kenapa cuma yang mustahil, bukan yang mencurigakan
+     *
+     * 6 Agt 2026 sesi chlorine kesimpen dengan pembacaan 1,90 buat standar 1,83,
+     * padahal kertas labnya 1,86 — salah ketik satu digit yang nembus sampai
+     * sertifikat terbit. Yang pertama dicoba: nyalain peringatan kalau
+     * |error| + U mepet ke toleransi. Diadu ke data nyata, ambangnya gugur:
+     *
+     *     Turbidimeter master, titik 1.000 NTU  → rasio 0,958
+     *     pH master 012-CAL-524, titik 10,01    → rasio 0,811
+     *     Chlorine 1,90 (yang salah)            → rasio 1,000
+     *     Chlorine 1,86 (yang benar)            → rasio 0,733
+     *
+     * Ambang mana pun yang nangkep si 1,90 ikut nyalain peringatan di dua
+     * SERTIFIKAT MASTER yang benar. Alasannya sederhana: 1,90 buat standar 1,83
+     * itu meleset 3,8% — angka yang sama sekali wajar buat alat bertoleransi
+     * 8%. Nggak ada ambang yang bisa misahin salah ketik dari penyimpangan
+     * beneran, karena emang nggak beda. Yang bisa mbedain cuma orang yang
+     * mbandingin ke lembar kerjanya.
+     *
+     * Jadi yang diperiksa di sini cuma yang OBJEKTIF salah, dan dua-duanya
+     * nggak nyala satu kali pun di data master ketiga alat:
+     *
+     *  1. **Di luar rentang ukur alat** — nangkep koma kegeser (18,6 buat alat
+     *     0–4 mg/L).
+     *  2. **Bukan kelipatan resolusi** — nangkep digit kelebihan (1,867 di alat
+     *     yang layarnya cuma bisa nampilin dua desimal). Alatnya nggak bisa
+     *     nampilin angka itu, jadi nggak mungkin itu yang dibaca teknisi.
+     *
+     * Dua-duanya PERINGATAN, bukan error: admin tetap boleh lanjut kalau dia
+     * yakin (mis. alat rusak yang beneran nampilin di luar rentang), asal sadar.
+     *
+     * Tahap `sebelum_adjustment` ikut diperiksa. Dia nggak masuk hitungan
+     * sertifikat, tapi tetap kecetak di lembar kerja yang diarsip — dan salah
+     * ketik di situ sama nyasarnya buat orang yang baca arsipnya nanti.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaPembacaanMustahil(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return [];
+        }
+
+        $profil = $this->profil->untukAlat($alat);
+        $satuan = $alat->satuan ?? '';
+        $temuan = [];
+
+        foreach ($sesi->rawMeasurements->sortBy(['titik_ke', 'pembacaan_ke']) as $m) {
+            /** @var RawMeasurement $m */
+            $nilai = $m->pembacaan === null ? null : (float) $m->pembacaan;
+
+            if ($nilai === null) {
+                continue;
+            }
+
+            $ke = (int) $m->titik_ke;
+            $ulang = (int) $m->pembacaan_ke;
+            $di = "Titik ke-{$ke} Repeat {$ulang}";
+
+            if ($this->diLuarRentang($nilai, $alat)) {
+                $temuan[] = $this->temuan(
+                    self::PERINGATAN,
+                    'pembacaan_di_luar_rentang',
+                    "{$di}: pembacaan {$nilai} {$satuan} jauh di luar rentang ukur alat "
+                        ."({$alat->range_min}–{$alat->range_max} {$satuan}). "
+                        .'Kemungkinan besar komanya kegeser waktu ngetik.',
+                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai],
+                );
+
+                continue;
+            }
+
+            // Resolusi bisa beda per titik (Turbidimeter: 0,01 / 0,1 / 1 NTU),
+            // jadi ditanya ke profilnya dulu — bukan langsung pakai satu angka
+            // di master alat.
+            $resolusi = $profil->resolusiTitik((float) $m->titik_ukur)
+                ?? ($alat->resolusi === null ? null : (float) $alat->resolusi);
+
+            if ($resolusi === null || $resolusi <= 0) {
+                continue;
+            }
+
+            if (! $this->kelipatanDari($nilai, $resolusi)) {
+                $temuan[] = $this->temuan(
+                    self::PERINGATAN,
+                    'pembacaan_bukan_kelipatan_resolusi',
+                    "{$di}: pembacaan {$nilai} {$satuan} bukan kelipatan resolusi alat "
+                        ."({$resolusi} {$satuan}), jadi layarnya nggak mungkin nunjukin angka itu. "
+                        .'Kemungkinan besar kelebihan digit waktu ngetik.',
+                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai, 'resolusi' => $resolusi],
+                );
+            }
+        }
+
+        return $temuan;
+    }
+
+    /**
+     * Di luar rentang ukur, **dikasih pita jaga selebar toleransi alat**.
+     *
+     * Batas mentahnya nggak bisa dipakai apa adanya. Titik kalibrasi teratas
+     * itu justru duduk PERSIS di batas rentang, jadi pembacaan yang normal pun
+     * lewat sedikit: master Turbidimeter (`Master Data TurbidiMeter_CSV`) nyatet
+     * 1001 NTU di titik 1.000 NTU sementara rentang alatnya 0–1000, dan itu
+     * angka asli yang kecetak di sertifikat lab (UUT 1.000,6). Tanpa pita jaga,
+     * empat dari lima pembacaan di titik teratas ke-flag tiap sesi Turbidimeter
+     * — persis jenis temuan yang bikin orang berhenti baca temuan.
+     *
+     * Toleransi alat dipakai sebagai lebar pitanya karena itu ukuran "masih
+     * masuk akal buat alat ini" yang sudah dipegang lab, bukan angka baru yang
+     * dikarang di sini. Chlorine rentang 0–4 toleransi 0,15: pembacaan 18,6
+     * (koma kegeser dari 1,86) tetap ketangkep, 4,1 nggak.
+     */
+    private function diLuarRentang(float $nilai, Equipment $alat): bool
+    {
+        if ($alat->range_min === null || $alat->range_max === null) {
+            return false;
+        }
+
+        $pita = $alat->toleransi === null ? 0.0 : abs((float) $alat->toleransi);
+
+        return $nilai < (float) $alat->range_min - $pita
+            || $nilai > (float) $alat->range_max + $pita;
+    }
+
+    /**
+     * `1.86` kelipatan `0.01`? Dihitung lewat pembulatan, bukan `fmod` — `fmod`
+     * di floating point balikin sisa 0,00999999… buat angka yang jelas-jelas
+     * pas, jadi tiap pembacaan bakal ke-flag.
+     *
+     * Toleransinya diikat ke besar angkanya (bukan epsilon tetap) supaya
+     * pembacaan 1.001 NTU nggak kena cuma gara-gara galat representasi double.
+     */
+    private function kelipatanDari(float $nilai, float $resolusi): bool
+    {
+        $kelipatan = round($nilai / $resolusi);
+        $selisih = abs($nilai - $kelipatan * $resolusi);
+
+        return $selisih <= max(1e-9, 1e-6 * abs($nilai));
+    }
+
+    /**
      * Hitung ulang tiap titik dari pembacaan mentah, terus adu sama yang
      * tersimpan.
      *
@@ -170,6 +319,20 @@ class CalibrationValidator
         $pembacaanPerTitik = $sesi->rawMeasurements
             ->where('tahap', 'sesudah_adjustment')
             ->groupBy('titik_ke');
+
+        // Suhu ruang MENTAH (awal+akhir)/2, sama persis kayak yang dipakai waktu
+        // sesi ini pertama dihitung di `CalibrationController::susunPengukuran()`.
+        // Wajib dikirim ke `hitungTitik()` di bawah: tanpa ini budget
+        // Refractometer jatuh ke jalur CMC waktu hitung ulang, dan tiap
+        // sertifikat refractometer ke-flag `ketidakpastian_beda` padahal angka
+        // tersimpannya benar.
+        $suhuRuangTerisi = array_values(array_filter(
+            [$sesi->suhu_awal, $sesi->suhu_akhir],
+            fn ($s): bool => $s !== null,
+        ));
+        $suhuRuang = $suhuRuangTerisi === []
+            ? null
+            : array_sum(array_map('floatval', $suhuRuangTerisi)) / count($suhuRuangTerisi);
 
         foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
             /** @var UncertaintyCalculation $titik */
@@ -238,6 +401,7 @@ class CalibrationValidator
                 // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
                 // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
                 $this->suhuLarutanRataRata($pembacaan),
+                $suhuRuang,
             );
 
             $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];

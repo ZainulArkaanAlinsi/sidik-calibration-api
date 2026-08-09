@@ -6,6 +6,7 @@ use App\Models\Equipment;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
+use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 
 /**
@@ -40,6 +41,7 @@ class CalibrationProfileRegistry
             new PhMeterProfile,
             new TurbidimeterProfile,
             new ChlorineProfile,
+            new RefractometerProfile,
         ];
     }
 
