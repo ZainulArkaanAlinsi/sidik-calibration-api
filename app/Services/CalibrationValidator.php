@@ -61,6 +61,7 @@ class CalibrationValidator
         $temuan = [
             ...$this->periksaKelengkapanHitung($sesi),
             ...$this->periksaPembacaanMustahil($sesi),
+            ...$this->periksaKondisiLingkunganMustahil($sesi),
             ...$this->periksaTiapTitik($sesi),
             ...$this->periksaKeputusanSesi($sesi),
             ...$this->periksaKelengkapanSertifikat($sesi),
@@ -275,6 +276,92 @@ class CalibrationValidator
      * dikarang di sini. Chlorine rentang 0–4 toleransi 0,15: pembacaan 18,6
      * (koma kegeser dari 1,86) tetap ketangkep, 4,1 nggak.
      */
+    /**
+     * Batas kelembaban yang MASUK AKAL buat ruang lab. Bukan batas alat —
+     * higrometer bisa baca 0–100 — tapi batas ruangan berpendingin yang lagi
+     * dipakai kerja. Di luar ini hampir pasti salah ketik.
+     */
+    private const KELEMBABAN_MIN = 20.0;
+
+    private const KELEMBABAN_MAKS = 90.0;
+
+    /**
+     * Pergeseran kelembaban selama satu sesi. Ruangan bisa naik-turun beberapa
+     * persen; puluhan persen artinya salah satu dari dua angkanya salah ketik.
+     */
+    private const DELTA_KELEMBABAN_WAJAR = 20.0;
+
+    /**
+     * Pembacaan thermohygro yang ruangannya nggak mungkin segitu.
+     *
+     * Sesi Turbidimeter `KAL/2026/08/0021` (8 Agt 2026) kesimpen
+     * `kelembaban_awal = 2`. Dua persen RH itu lebih kering dari gurun — jelas
+     * `52` yang kepencet jadi `2`. Yang bikin mahal bukan salah ketiknya, tapi
+     * sistemnya nerima tanpa sepatah kata: Δ jadi 53, dan sertifikatnya kecetak
+     * `%RH: 28% ± 53%` — ketidakpastian dua kali lipat nilainya sendiri, di
+     * dokumen terakreditasi.
+     *
+     * Rumus U95%-nya sendiri bener (`√(4,8² + 53²)`), dan itu justru intinya:
+     * masukan ngawur nggak bikin hitungannya meledak, cuma bikin hasilnya
+     * ngawur dengan rapi. Jadi yang mesti nangkep validator, bukan rumusnya.
+     *
+     * PERINGATAN, bukan ERROR — sama alasannya kayak
+     * [periksaPembacaanMustahil]: admin yang mutusin, dan sesi insitu di
+     * gudang tanpa AC beneran bisa lembab ekstrem. Yang nggak boleh cuma
+     * LOLOS DIAM-DIAM.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaKondisiLingkunganMustahil(CalibrationSession $sesi): array
+    {
+        $temuan = [];
+
+        foreach (['awal' => $sesi->kelembaban_awal, 'akhir' => $sesi->kelembaban_akhir] as $kapan => $nilai) {
+            if ($nilai === null) {
+                continue;
+            }
+
+            $nilai = (float) $nilai;
+
+            if ($nilai >= self::KELEMBABAN_MIN && $nilai <= self::KELEMBABAN_MAKS) {
+                continue;
+            }
+
+            $temuan[] = $this->temuan(
+                self::PERINGATAN,
+                'kelembaban_mustahil',
+                "Kelembaban {$kapan} kecatat {$nilai} %RH — di luar rentang wajar ruang lab ("
+                .self::KELEMBABAN_MIN.'–'.self::KELEMBABAN_MAKS.' %RH). '
+                .'Cek lagi angkanya sebelum sertifikat terbit.',
+                ['kolom' => "kelembaban_{$kapan}", 'nilai' => $nilai],
+            );
+        }
+
+        // Dicek terpisah dari batas di atas: dua angka yang sama-sama masuk
+        // rentang masih bisa mustahil kalau jaraknya kejauhan (30 → 80).
+        // Δ ini yang langsung masuk U95%, jadi dampaknya paling kelihatan.
+        if ($sesi->kelembaban_awal !== null && $sesi->kelembaban_akhir !== null) {
+            $delta = abs((float) $sesi->kelembaban_akhir - (float) $sesi->kelembaban_awal);
+
+            if ($delta > self::DELTA_KELEMBABAN_WAJAR) {
+                $temuan[] = $this->temuan(
+                    self::PERINGATAN,
+                    'delta_kelembaban_ekstrem',
+                    "Kelembaban bergeser {$delta} %RH selama sesi ini — angka segitu langsung "
+                    .'kebawa ke U95% kondisi lingkungan. Pastikan dua-duanya kecatat bener.',
+                    [
+                        'kolom' => 'kelembaban_akhir',
+                        'awal' => (float) $sesi->kelembaban_awal,
+                        'akhir' => (float) $sesi->kelembaban_akhir,
+                        'delta' => $delta,
+                    ],
+                );
+            }
+        }
+
+        return $temuan;
+    }
+
     private function diLuarRentang(float $nilai, Equipment $alat): bool
     {
         if ($alat->range_min === null || $alat->range_max === null) {

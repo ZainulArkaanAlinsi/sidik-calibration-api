@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\KondisiLingkungan;
 use App\Support\Angka;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -145,11 +146,18 @@ class SertifikatCocokMasterTest extends TestCase
             //
             // Baris ke-3 di CSV (`#REF!`) sengaja nggak ikut: sel rusak di
             // master, bukan titik ukur beneran.
+            //
+            // **5 desimal, bukan 4.** Angka `cetak` di bawah sempat ditulis 4
+            // desimal — ditebak dari resolusi alat (0,0001), bukan dibaca dari
+            // sertifikat masternya. Waktu PDF master diadu langsung 7 Agt 2026,
+            // yang kecetak ternyata `1,33659 | 1,33935 | −0,00276 | 0,00053`.
+            // Di 4 desimal U95% runtuh jadi `0,0005` — kehilangan angka penting
+            // di kolom yang justru jadi inti sertifikat kalibrasi.
             'Refractometer — 2211.11.R' => [
                 'nomorSesi' => '2211.11.R',
                 'hasil' => [
-                    ['mentah' => [1.33659, 1.33935, -0.00276, 0.0005271534327323267], 'cetak' => ['1,3366', '1,3394', '-0,0028', '0,0005']],
-                    ['mentah' => [1.39986, 1.40085, -0.00099, 0.0005295557108700615], 'cetak' => ['1,3999', '1,4009', '-0,0010', '0,0005']],
+                    ['mentah' => [1.33659, 1.33935, -0.00276, 0.0005271534327323267], 'cetak' => ['1,33659', '1,33935', '-0,00276', '0,00053']],
+                    ['mentah' => [1.39986, 1.40085, -0.00099, 0.0005295557108700615], 'cetak' => ['1,39986', '1,40085', '-0,00099', '0,00053']],
                 ],
             ],
         ];
@@ -188,6 +196,183 @@ class SertifikatCocokMasterTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Env. Condition kecetak persis kayak master lab — buat KEEMPAT alat.
+     *
+     * Baris ini udah dua kali salah dan dua kali "dibetulin" dari nalar, bukan
+     * dari kertasnya: 7 Agt kecetak `60% ± 5,2%` (nilai bulat, U 1 desimal),
+     * lalu disejajarkan jadi `60% ± 5%` — sejajar, tapi ke sisi yang salah, dan
+     * 9 Agt dikeluhkan lagi buat tiga alat sekaligus.
+     *
+     * Yang bikin bisa balik dua kali: tabel hasilnya diadu ke master (tes di
+     * atas), header-nya nggak. Jadi kelembaban bisa digeser-geser tanpa ada
+     * satu pun tes yang merah. Sekarang ikut kepatok ke sel yang sama.
+     *
+     * Angkanya dari `Env. Condition` di tiap `SERTIFIKAT.csv`:
+     *   pH        T 20,97      ± 1,7117242768623688 · %RH 51,95 ± 5,660388679233963
+     *   Turbidi   T 23,07      ± 1,7117242768623688 · %RH 51,83 ± 4,8
+     *   Chlorine  T 23,21      ± 1,802775637731995  · %RH 53    ± 4,903060268852505
+     *   Refracto  T 21,96      ± 1,824828759089466  · %RH 60,41 ± 5,292447448959697
+     */
+    #[DataProvider('envKondisi')]
+    public function test_env_condition_sama_dengan_master_excel(string $nomorSesi, string $harapan): void
+    {
+        $this->assertSame(
+            $harapan,
+            $this->terbitkan($this->sesi($nomorSesi))->snapshot['header']['env_condition'],
+        );
+    }
+
+    /**
+     * @return array<string, array{nomorSesi: string, harapan: string}>
+     */
+    public static function envKondisi(): array
+    {
+        return [
+            'pH Meter' => [
+                'nomorSesi' => '2405.13.A',
+                'harapan' => 'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,66%',
+            ],
+            'Turbidimeter' => [
+                'nomorSesi' => '2406.32.A',
+                'harapan' => 'T: 23,1°C ± 1,7°C — %RH: 51,83% ± 4,80%',
+            ],
+            'Chlorine Meter' => [
+                'nomorSesi' => '2406.32.C',
+                'harapan' => 'T: 23,2°C ± 1,8°C — %RH: 53,00% ± 4,90%',
+            ],
+            // U95 kelembaban SENGAJA beda dari master: 5,20 punya kita vs
+            // 5,292447448959697 di sheet. Nilai & koreksinya sendiri cocok
+            // persis (60,41 = rata-rata 61 + koreksi −0,59), jadi yang beda
+            // cuma satu masukan: U95 sertifikat TH-5 di titik itu.
+            //
+            //   punya kita  √(4,8² + 2²) = 5,2
+            //   master      √(4,9² + 2²) = 5,2924474489…
+            //
+            // 4,8 itu yang tercatat di titik 60 %RH pada arsip titik kalibrasi
+            // TH-5 (`database/data/thermohygro-lab.json`). 4,9 itu angka di
+            // titik PERTAMA-nya (29,8 %RH) — dan itu juga satu-satunya titik
+            // TH-5 yang U95-nya bukan 4,8. Bacaan yang paling masuk akal:
+            // sheet lab ngambil U95 dari satu sel tetap per unit, sementara
+            // koreksinya dicocokin per titik.
+            //
+            // Nggak diikutin diam-diam, dan nggak juga dianggap master yang
+            // salah — dua-duanya ngubah angka di dokumen terakreditasi. Ini
+            // mesti ditanyain ke lab: U95 thermohygro itu per titik atau satu
+            // buat seluruh rentang? Cuma kelihatan di Refractometer karena cuma
+            // sesi ini yang pakai TH-5 di kelembaban ~60 %RH.
+            'Refractometer' => [
+                'nomorSesi' => '2211.11.R',
+                'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60,41% ± 5,20%',
+            ],
+        ];
+    }
+
+    /**
+     * Blok **PERHITUNGAN KONDISI LINGKUNGAN** diadu sel per sel ke master —
+     * bukan cuma hasil cetaknya di header sertifikat.
+     *
+     * Bedanya penting: `env_condition` itu string yang udah dibulatkan, jadi
+     * pemilihan titik koreksi yang salah bisa lolos di sana kalau kebetulan
+     * pembulatannya nutupin. Yang diperiksa di sini rantai lengkapnya —
+     * average → indexed value → correction → Δ → U95% — persis kolom di sheet
+     * `PERHITUNGAN` baris "Suhu Ruangan" & "Kelembaban".
+     *
+     * `indexed_value` yang ikut dipatok itu intinya: dia yang mbuktiin titik
+     * koreksi thermohygro-nya kepilih bener. Pernah salah sekali — sesi
+     * turbidimeter 25,7 °C kena titik 19,6 °C dan kecetak 25,47 padahal master
+     * 26,05, selisih 0,58 °C di dokumen terakreditasi.
+     *
+     * @param  array<string, list<float|null>>  $harapan
+     */
+    #[DataProvider('kondisiLingkungan')]
+    public function test_blok_kondisi_lingkungan_sama_dengan_master_excel(string $nomorSesi, array $harapan): void
+    {
+        $sesi = $this->sesi($nomorSesi);
+        $hitung = app(KondisiLingkungan::class);
+
+        foreach ($harapan as $parameter => [$awal, $akhir, $average, $indexed, $correction, $delta, $u95StdTh, $u95Sertifikat]) {
+            $h = $hitung->hitung($sesi, $parameter);
+
+            $this->assertNotNull($h, "{$nomorSesi} {$parameter}: blok kondisi lingkungannya kosong");
+
+            foreach ([
+                'awal' => $awal,
+                'akhir' => $akhir,
+                'average' => $average,
+                'indexed_value' => $indexed,
+                'correction' => $correction,
+                'delta' => $delta,
+                'u95_std_th' => $u95StdTh,
+                'u95_sertifikat' => $u95Sertifikat,
+            ] as $kolom => $nilai) {
+                $this->assertEqualsWithDelta(
+                    $nilai,
+                    (float) $h[$kolom],
+                    1e-9,
+                    "{$nomorSesi} {$parameter}: kolom {$kolom} meleset dari master Excel",
+                );
+            }
+        }
+    }
+
+    /**
+     * Kolom per parameter, urut kayak di sheet:
+     * `[awal, akhir, average, indexed_value, correction, Δ, U95 std TH, U95 sertifikat]`.
+     *
+     * @return array<string, array{nomorSesi: string, harapan: array<string, list<float>>}>
+     */
+    public static function kondisiLingkungan(): array
+    {
+        return [
+            'pH Meter' => [
+                'nomorSesi' => '2405.13.A',
+                'harapan' => [
+                    'suhu' => [21.3, 21.5, 21.4, 19.83, -0.43, 0.2, 1.7, 1.7117242768623688],
+                    'kelembaban' => [53, 56, 54.5, 47.05, -2.55, 3, 4.8, 5.660388679233963],
+                ],
+            ],
+            'Turbidimeter' => [
+                'nomorSesi' => '2406.32.A',
+                'harapan' => [
+                    'suhu' => [23.2, 23.4, 23.3, 19.33, -0.23, 0.2, 1.7, 1.7117242768623688],
+                    // Δ = 0 → U95% sertifikat = U95% std TH apa adanya.
+                    'kelembaban' => [55, 55, 55, 46.83, -3.17, 0, 4.8, 4.8],
+                ],
+            ],
+            'Chlorine Meter' => [
+                'nomorSesi' => '2406.32.C',
+                'harapan' => [
+                    'suhu' => [24.1, 23.5, 23.8, 19.37, -0.59, 0.6, 1.7, 1.802775637731995],
+                    'kelembaban' => [56, 55, 55.5, 47.1, -2.5, 1, 4.8, 4.903060268852505],
+                ],
+            ],
+            // Kelembaban: `u95_std_th` 4,8 punya kita vs 4,9 yang ketulis di
+            // sheet refractometer. SEMBILAN kolom lainnya cocok persis, jadi
+            // yang beda cuma satu sel — dan sel itu bertentangan sama sheet
+            // DATABASE-nya sendiri, yang nulis 4,8 buat titik 59,41.
+            //
+            // Bukan aturan yang beda, tapi salah isi di workbook lab. Bukti:
+            // di SEMUA unit TH, titik %RH pertama u95-nya 4,9 dan sisanya 4,8.
+            // Tiga alat lain kepakai titik non-pertama dan sheet-nya nulis 4,8
+            // — konsisten sama aturan per-titik yang kita pakai. Cuma
+            // refractometer yang nulis 4,9 padahal titiknya (59,41) 4,8.
+            //
+            // Kalau aturannya diganti jadi "selalu titik pertama" biar
+            // refractometer cocok, KETIGA alat lain langsung meleset — mereka
+            // bakal ikut dapat 4,9. Jadi nggak ada satu aturan pun yang bisa
+            // mereproduksi keempatnya; yang perlu dibetulkan sel di
+            // workbook-nya, bukan kodenya. Sudah diteruskan ke lab.
+            'Refractometer' => [
+                'nomorSesi' => '2211.11.R',
+                'harapan' => [
+                    'suhu' => [20.9, 21.2, 21.05, 21.51, 0.91, 0.3, 1.8, 1.824828759089466],
+                    'kelembaban' => [62, 60, 61, 59.41, -0.59, 2, 4.8, 5.2],
+                ],
+            ],
+        ];
     }
 
     /**

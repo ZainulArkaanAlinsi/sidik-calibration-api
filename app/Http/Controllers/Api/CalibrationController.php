@@ -177,6 +177,11 @@ class CalibrationController extends Controller
         }
 
         $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
+            // Duluan sebelum pengukurannya disusun: `isiUlangPengukuran` muter
+            // GUM pakai alat yang dibaca ulang dari DB, jadi satuannya mesti
+            // udah kesimpen kalau nggak mau hasil hitungnya ikut satuan lama.
+            $this->simpanSatuanAlat($request);
+
             $sesi = CalibrationSession::create([
                 ...$this->atributDariRequest($request),
                 'organization_id' => $request->user()->organization_id,
@@ -328,6 +333,11 @@ class CalibrationController extends Controller
         }
 
         $sesi = DB::transaction(function () use ($request, $calibration): CalibrationSession {
+            // Sama kayak `store`: sebelum pengukurannya disusun ulang. Teknisi
+            // yang sadar salah pilih satuan lalu ngerevisi sesinya mesti bikin
+            // hitungannya ikut berubah, bukan cuma labelnya.
+            $this->simpanSatuanAlat($request);
+
             $calibration->update([
                 ...$this->atributDariRequest($request),
                 // Begitu direvisi & disubmit ulang, catatan revisi lama nggak
@@ -722,9 +732,84 @@ class CalibrationController extends Controller
      *     belum_dihitung: list<array{titik_ke: int, alasan: string}>,
      * }
      */
+    /**
+     * Satuan yang dipilih teknisi di "7. Satuan Refracto", atau null kalau
+     * lembar kerjanya emang nggak punya kolom itu.
+     *
+     * String kosong dianggap **nggak milih**, bukan "kosongin satuan alatnya".
+     * Lembar kerja boleh dikirim setengah jadi dari lapangan — itu aturan yang
+     * nggak berubah sejak awal — dan kolom yang dilewat nggak boleh diam-diam
+     * ngehapus data master yang udah bener.
+     */
+    private function satuanPilihan(CalibrationRequest $request): ?string
+    {
+        $satuan = trim((string) $request->input('equipment_satuan', ''));
+
+        return $satuan === '' ? null : $satuan;
+    }
+
+    /**
+     * Tempelin satuan pilihan ke objek alat, **tanpa nyimpen**.
+     *
+     * Sengaja dipisah dari [simpanSatuanAlat]: yang ini jalan juga di
+     * `preview`, yang nggak boleh nyentuh DB sama sekali.
+     */
+    private function tempelSatuanPilihan(CalibrationRequest $request, Equipment $alat): void
+    {
+        $satuan = $this->satuanPilihan($request);
+
+        if ($satuan !== null) {
+            $alat->satuan = $satuan;
+        }
+    }
+
+    /**
+     * Simpen satuan pilihan teknisi ke data master alat (`equipments.satuan`).
+     *
+     * Ini satu-satunya jalur di controller ini yang nulis ke luar sesi, jadi
+     * dipagerin tiga lapis: `equipment_id` udah divalidasi ada DI ORGANISASI
+     * si pengirim (lihat CalibrationRequest), kolomnya cuma dikirim mobile buat
+     * lembar yang punya "7. Satuan Refracto", dan nilai yang sama persis nggak
+     * bikin tulisan baru.
+     *
+     * Kenapa ke master alat dan bukan ke sesi: `RefractometerProfile::satuan()`
+     * bacanya `equipments.satuan`, dan lewat situ juga sertifikat, budget CMC,
+     * & hitung ulang di kemudian hari ngambil satuannya. Nyimpen di sesi doang
+     * bikin sesi ini bener tapi semua yang mbaca alatnya masih salah.
+     */
+    private function simpanSatuanAlat(CalibrationRequest $request): void
+    {
+        $satuan = $this->satuanPilihan($request);
+
+        if ($satuan === null) {
+            return;
+        }
+
+        $alat = Equipment::find($request->integer('equipment_id'));
+
+        if ($alat === null || $alat->satuan === $satuan) {
+            return;
+        }
+
+        $alat->update(['satuan' => $satuan]);
+    }
+
     private function susunPengukuran(CalibrationRequest $request): array
     {
         $alat = Equipment::findOrFail($request->integer('equipment_id'));
+
+        // Satuan pilihan teknisi ditempelin ke objek alat SEBELUM apa pun
+        // dihitung — di memori doang, penyimpanannya urusan `simpanSatuanAlat()`.
+        //
+        // Ditaruh di sini, bukan cuma di `store`, supaya `POST
+        // /calibrations/preview` ikut kena. Preview & sesi tersimpan wajib
+        // ngeluarin angka yang sama persis; kalau satuannya cuma nempel waktu
+        // nyimpen, teknisi mindahin alatnya ke °Brix, ngintip preview, dapat
+        // angka yang dihitung pakai koefisien n20D, terus sertifikatnya keluar
+        // beda. Buat lab terakreditasi, dua angka beda buat satu pengukuran itu
+        // temuan audit.
+        $this->tempelSatuanPilihan($request, $alat);
+
         $standarDefault = $request->filled('standard_id')
             ? Standard::findOrFail($request->integer('standard_id'))
             : null;
