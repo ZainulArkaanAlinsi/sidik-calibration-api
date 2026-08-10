@@ -9,6 +9,8 @@ use App\Models\Organization;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
+use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Support\Angka;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -41,10 +43,15 @@ class CalibrationResource extends JsonResource
             // CertificateResource yang beku dari snapshot. Di sesi belum ada
             // sertifikat buat dibaca, dan angkanya masih boleh berubah sampai
             // sertifikatnya terbit.
-            'desimal' => ($this->organization ?? $request->user()?->organization)
-                ?->desimalSertifikat(
-                    $this->equipment?->resolusi !== null ? (float) $this->equipment->resolusi : null,
-                ),
+            //
+            // Timpaan profil alat menang di sini, SAMA kayak di
+            // `CertificateSnapshotBuilder` — kalau nggak, sesi Refractometer
+            // kebaca 4 desimal di layar tapi kecetak 5 di PDF-nya.
+            'desimal' => self::desimalAlat(
+                $this->resource->equipment,
+                $this->organization ?? $request->user()?->organization,
+                $this->equipment?->resolusi !== null ? (float) $this->equipment->resolusi : null,
+            ),
             'equipment' => [
                 'id' => $this->equipment?->id,
                 'nama_alat' => $this->equipment?->nama_alat,
@@ -308,11 +315,14 @@ class CalibrationResource extends JsonResource
             //
             // `desimal` di level sesi TETAP dikirim buat kompatibilitas; mobile
             // versi lama yang belum baca field ini jalan seperti biasa.
+            //
+            // Alat yang resolusinya SERAGAM tetap kirim `null` dan ikut
+            // `desimal` level sesi — kecuali profilnya nyatain angka sendiri
+            // (Refractometer 5), yang di level sesi belum tentu kebaca mobile
+            // versi lama.
             'desimal' => $alat?->resolusi_rentang
-                ? ($organisasi
-                    ? $organisasi->desimalSertifikat($alat->resolusiPada((float) $titik->titik_ukur))
-                    : Angka::desimalDariResolusi($alat->resolusiPada((float) $titik->titik_ukur)))
-                : null,
+                ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada((float) $titik->titik_ukur))
+                : ($alat !== null ? self::profil($alat)?->desimalSertifikat() : null),
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,
@@ -385,5 +395,33 @@ class CalibrationResource extends JsonResource
             'serial_number' => $standar->serial_number,
             'tertelusur_ke' => $standar->tertelusur_ke,
         ];
+    }
+
+    /**
+     * Berapa desimal angka sesi ditulis — aturan yang SAMA PERSIS dipakai
+     * `CertificateSnapshotBuilder::bangun()`.
+     *
+     * Dipisah jadi satu tempat karena pernah kepisah: builder ngikutin timpaan
+     * profil alat, resource ini nggak. Akibatnya sesi Refractometer `2211.11.R`
+     * kebaca `desimal: 4` lewat API — `0,00053` runtuh jadi `0,0005` di layar —
+     * sementara PDF-nya bener nyetak 5 desimal. Angka yang sama, dua tampilan,
+     * dan yang salah justru yang dipegang teknisi waktu ngecek.
+     */
+    private static function desimalAlat(?Equipment $alat, ?Organization $organisasi, ?float $resolusi): ?int
+    {
+        $timpaan = $alat !== null ? self::profil($alat)?->desimalSertifikat() : null;
+
+        if ($timpaan !== null) {
+            return $timpaan;
+        }
+
+        return $organisasi
+            ? $organisasi->desimalSertifikat($resolusi)
+            : ($resolusi !== null ? Angka::desimalDariResolusi($resolusi) : null);
+    }
+
+    private static function profil(Equipment $alat): ?CalibrationProfile
+    {
+        return app(CalibrationProfileRegistry::class)->untukAlat($alat);
     }
 }

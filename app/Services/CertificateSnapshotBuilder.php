@@ -345,17 +345,29 @@ class CertificateSnapshotBuilder
      * Ikut dibekukan ke snapshot (bukan dibaca ulang waktu render) supaya
      * sertifikat yang udah terbit nggak berubah bentuk gara-gara pengaturan
      * diubah sesudahnya.
+     *
+     * Timpaan profil alat menang di atas dua-duanya — aturan yang sama persis
+     * udah dipakai `hasil()` buat desimal per baris. Sempat cuma dipasang di
+     * sana: baris Refractometer kebekuin 5, angka level-sertifikat ini tetap 4.
+     * Nggak keliatan di PDF (blade-nya baca per baris duluan), tapi itu yang
+     * dipakai sebagai cadangan sama layar mobile & `CertificateResource`, jadi
+     * satu sertifikat bisa punya dua jawaban buat pertanyaan yang sama.
      */
     private function desimal(?Equipment $alat, ?Organization $organisasi): int
     {
         $resolusi = $alat?->resolusi !== null ? (float) $alat->resolusi : null;
 
+        $profil = $alat !== null
+            ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
+            : null;
+
         // Aturannya sengaja NGGAK diulang di sini — satu-satunya tempat dia
         // diputusin itu `Organization::desimalSertifikat()`, biar angka yang
         // dibekukan ke sertifikat sama persis dengan yang dikirim ke mobile.
-        return $organisasi
-            ? $organisasi->desimalSertifikat($resolusi)
-            : Angka::desimalDariResolusi($resolusi);
+        return $profil?->desimalSertifikat()
+            ?? ($organisasi
+                ? $organisasi->desimalSertifikat($resolusi)
+                : Angka::desimalDariResolusi($resolusi));
     }
 
     /** `0–14 pH / 0,01 pH` — rentang alat / resolusinya. */
