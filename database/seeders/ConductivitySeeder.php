@@ -146,7 +146,25 @@ class ConductivitySeeder extends Seeder
             ->firstOrFail();
 
         $equipment = Equipment::updateOrCreate(
-            ['organization_id' => 1, 'serial_number' => 'C12345'],
+            // ⚠ SERIAL SEED, BUKAN SERIAL ALAT SEBENARNYA.
+            //
+            // `INPUT DATA!C13` di master Conductivity nulis `C12345` — dan
+            // master Refractometer nulis serial yang SAMA PERSIS. Dua workbook
+            // trial lab memakai nomor contoh yang sama.
+            //
+            // `equipments` punya unique `(organization_id, serial_number)`,
+            // jadi dua alat nggak bisa berbagi serial. Waktu seeder ini pakai
+            // `C12345`, `updateOrCreate` nggak bikin baris baru — dia MENIMPA
+            // baris alat Refractometer: sesi `2211.11.R` berubah jadi
+            // "Conductivity Meter", ke-match `ConductivityProfile`, dan hasil
+            // hitung ulangnya jadi ngawur (UUT balik ke pembacaan mentah
+            // 1,3362, U95 0,005774, satuan kebaca mS/cm). Lima tes
+            // Refractometer mendadak 422; ketahuan 11 Agt 2026.
+            //
+            // Sufiks di bawah dipakai supaya alat kelima berhenti ngerusak alat
+            // keempat. Ini keputusan DATA SEED, bukan angka kalibrasi — begitu
+            // lab ngasih serial Conductivity yang sebenarnya, ganti di sini.
+            ['organization_id' => 1, 'serial_number' => 'C12345-COND'],
             [
                 'organization_id' => 1,
                 'customer_id' => $customer->id,
