@@ -81,7 +81,14 @@ class Equipment extends Model
             $maks = $band['maks'] ?? null;
 
             // `maks: null` = golongan terakhir, nampung sisanya.
-            if ($maks === null || abs($nilai) < (float) $maks) {
+            //
+            // Batas atasnya INKLUSIF (`<=`). Waktu masih `<`, titik ukur yang
+            // pas jatuh di batas ikut golongan berikutnya: 100 NTU dapat
+            // resolusi 1 padahal Capacity/Graduation-nya bilang 0,1 sampai
+            // 100 NTU. Akibatnya baris 100 kecetak `100` & U95 `3`, sementara
+            // master `0189-CAL-624` nulis `100,0` & `3,1` — satu angka penting
+            // hilang di kolom ketidakpastian.
+            if ($maks === null || abs($nilai) <= (float) $maks) {
                 return (float) $band['resolusi'];
             }
         }

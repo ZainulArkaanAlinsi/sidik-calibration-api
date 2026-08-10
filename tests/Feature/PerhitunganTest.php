@@ -247,16 +247,14 @@ class PerhitunganTest extends TestCase
             ->assertOk();
 
         $this->assertSame(
-            // Suhu 2 desimal, kelembaban bulat — ngikut Excel master lab. Perhatiin
-            // `20,97`: format lama (1 desimal) nampilinnya `21,0`, jadi dua digit
-            // yang dicatat teknisi ilang dari dokumen resmi tanpa ada yang tau.
-            // 20,97 disimpen utuh di DB (dicek di atas) tapi DICETAK 1 desimal,
-            // ngikut sertifikat asli lab. Yang diuji test ini tetap kejaga:
-            // angkanya beda dari average mentah 21,4, jadi koreksi thermohygro
-            // kebukti ikut kepakai.
-            // 51,95 & 5,6604 itu ANGKA MASTER pH apa adanya — kalau di sini
-            // kecetak `52%` lagi, artinya kelembabannya kepangkas lagi.
-            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,66%',
+            // Suhu 2 desimal, kelembaban bulat — bentuk yang dibaca dari master
+            // Turbidimeter & Chlorine (10 Agt 2026).
+            //
+            // Yang diuji test ini bukan formatnya, tapi bahwa koreksi
+            // thermohygro ikut kepakai: `20,97` beda dari average mentah `21,4`.
+            // Itu tetap kejaga — dan sekarang malah lebih jelas, karena dua
+            // digit hasil koreksinya nggak lagi kepangkas jadi `21,0`.
+            'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
             $sesi->fresh()->certificate->snapshot['header']['env_condition'],
         );
     }

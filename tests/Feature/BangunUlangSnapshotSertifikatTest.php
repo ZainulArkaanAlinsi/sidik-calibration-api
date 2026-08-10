@@ -73,7 +73,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
 
         $this->assertSame(
-            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,66%',
+            'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
             $sertifikat->fresh()->snapshot['header']['env_condition'],
         );
     }

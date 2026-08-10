@@ -364,9 +364,14 @@
                      kecetak persis seperti waktu diterbitkan. --}}
                 @php($db = $baris['desimal'] ?? $desimal)
                 <tr>
-                    <td>{{ \App\Support\Angka::id($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
-                    <td>{{ \App\Support\Angka::id($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
-                    <td>{{ \App\Support\Angka::id($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
+                    {{-- `nilaiStandar` buat kolom pertama, `hasil` buat sisanya:
+                         Standard Value nulis nilai NOMINAL standarnya (`1`,
+                         `100`, `1000`), tiga kolom lain ikut desimal barisnya.
+                         Dua-duanya tanpa pemisah ribuan & tanda minus tetap
+                         dipertahankan — lihat docblock `Angka::hasil()`. --}}
+                    <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
                     {{-- U95 ikut desimal alat, SAMA kayak tiga kolom di atas —
                          ngikut sertifikat asli lab (`0,09` & `0,08`, bukan
                          `0,091` & `0,080`).
@@ -379,7 +384,7 @@
                          KONSEKUENSI yang mesti diketahui: CMC titik 1,74 itu
                          0,091; dibulatkan jadi 0,09 berarti angka yang tercetak
                          sedikit DI BAWAH CMC. Keputusan formatnya ada di lab. --}}
-                    <td>{{ \App\Support\Angka::id($baris['u95'] === null ? null : (float) $baris['u95'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::hasil($baris['u95'] === null ? null : (float) $baris['u95'], $db) }}</td>
                     @if ($adaRemark)<td>{{ $baris['remark'] ?? '—' }}</td>@endif
                 </tr>
             @empty
