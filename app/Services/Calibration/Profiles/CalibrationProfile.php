@@ -172,16 +172,36 @@ abstract class CalibrationProfile
             return null;
         };
 
+        $stempel = static function (array $baris) use ($cocokkan): array {
+            $standar = $cocokkan((float) $baris['titik_ukur']);
+
+            return [
+                ...$baris,
+                'standard_id' => $standar?->id,
+                'standard_nama' => $standar?->nama,
+            ];
+        };
+
         foreach ($bentuk['bagian'] as $i => $bagian) {
             foreach ($bagian['tabel'] ?? [] as $j => $tabel) {
                 foreach ($tabel['baris'] ?? [] as $k => $baris) {
-                    $standar = $cocokkan((float) $baris['titik_ukur']);
+                    $bentuk['bagian'][$i]['tabel'][$j]['baris'][$k] = $stempel($baris);
+                }
 
-                    $bentuk['bagian'][$i]['tabel'][$j]['baris'][$k] = [
-                        ...$baris,
-                        'standard_id' => $standar?->id,
-                        'standard_nama' => $standar?->nama,
-                    ];
+                // `baris_per_satuan` IKUT distempel.
+                //
+                // Alat yang satuannya bisa dipindah (Refractometer n20D/°Brix)
+                // ngirim tabel cadangan per satuan, dan mobile nuker barisnya
+                // waktu teknisi milih. Sebelum ini yang distempel cuma `baris`
+                // bawaan, jadi begitu teknisi pindah ke °Brix titiknya bener
+                // (2,5 & 40) tapi standarnya balik KOSONG — jatuh lagi ke
+                // pilih-manual, persis lubang yang `standarPerTitik()` ada buat
+                // nutup. Sesi pH 7 Agt 2026 kepilih Buffer 4 di titik 7,00 dan
+                // Correction-nya kecetak `-2,99` gara-gara lubang yang sama.
+                foreach ($tabel['baris_per_satuan'] ?? [] as $satuan => $barisSatuan) {
+                    foreach ($barisSatuan as $k => $baris) {
+                        $bentuk['bagian'][$i]['tabel'][$j]['baris_per_satuan'][$satuan][$k] = $stempel($baris);
+                    }
                 }
             }
         }

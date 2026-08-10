@@ -671,4 +671,62 @@ class LembarKerjaTest extends TestCase
         $this->assertSame('n20D', $alat->fresh()->satuan, 'Preview nggak boleh nyentuh DB.');
         $this->assertSame(0, CalibrationSession::count());
     }
+
+    /**
+     * Baris cadangan per satuan ikut bawa standar pasangannya.
+     *
+     * Refractometer ngirim `baris_per_satuan` supaya mobile bisa nuker titik
+     * waktu teknisi milih °Brix — tanpa narik ulang formulir & ngosongin isian.
+     * Sebelum 11 Agt 2026 yang distempel standar cuma `baris` bawaan, jadi
+     * begitu pindah ke °Brix titiknya bener (2,5 & 40) tapi standarnya KOSONG,
+     * dan teknisi balik milih manual dari seluruh master — lubang yang persis
+     * bikin sesi pH 7 Agt kecetak Correction `-2,99`.
+     */
+    public function test_baris_per_satuan_ikut_bawa_standar_pasangannya(): void
+    {
+        // Master standarnya disiapin dulu — pemasangan titik→standar cuma bisa
+        // kejadian kalau barisnya ADA di `standards`. Tanpa ini yang keuji
+        // cuma "field-nya null", bukan pemasangannya.
+        foreach ([
+            'Refractometer Std Solution 1.33659 n20D',
+            'Refractometer Std Solution 1.39986 n20D',
+            'Refractometer Std Solution 2.5 oBrix',
+            'Refractometer Std Solution 40 oBrix',
+        ] as $nama) {
+            Standard::factory()->create(['nama' => $nama, 'parameter_kondisi' => null]);
+        }
+
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=refractometer')
+            ->assertOk()
+            ->json('data');
+
+        $perSatuan = null;
+
+        foreach ($data['bagian'] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                if (! empty($tabel['baris_per_satuan'])) {
+                    $perSatuan = $tabel['baris_per_satuan'];
+                    break 2;
+                }
+            }
+        }
+
+        $this->assertNotNull($perSatuan, 'Refractometer mesti ngirim baris_per_satuan');
+        $this->assertArrayHasKey('°Brix', $perSatuan);
+
+        $this->assertSame(
+            [2.5, 40.0],
+            array_map(fn (array $b): float => (float) $b['titik_ukur'], $perSatuan['°Brix']),
+        );
+
+        foreach ($perSatuan as $satuan => $baris) {
+            foreach ($baris as $b) {
+                $this->assertNotNull(
+                    $b['standard_nama'] ?? null,
+                    "baris {$satuan} titik {$b['titik_ukur']} nggak bawa standar pasangannya",
+                );
+            }
+        }
+    }
 }
