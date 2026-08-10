@@ -98,6 +98,24 @@ class CalibrationResource extends JsonResource
             // panjangnya di `LaporanKalibrasiResource`.
             'tanggal_kalibrasi' => $this->tanggal_kalibrasi?->toDateString(),
             'tanggal_terima' => $this->tanggal_terima?->toDateString(),
+
+            // JAM-nya ikut, dan ini SENGAJA beda perlakuan dari dua tanggal di
+            // atas: yang di atas kolom `date` (nggak punya jam sama sekali),
+            // yang di bawah `datetime` — titik waktu beneran.
+            //
+            // Kenapa perlu: admin nggak bisa mbedain mana kiriman terbaru waktu
+            // beberapa sesi masuk di HARI yang sama. Yang kelihatan cuma
+            // `10 Agt 2026` tiga kali, padahal urutannya yang menentukan mana
+            // yang mesti diperiksa duluan.
+            //
+            // ISO 8601 penuh (UTC), bukan string yang udah diformat — biar
+            // mobile yang mutusin tampilannya, dan zona waktunya nggak ketebak
+            // dua kali. Beda dari `tanggal_kalibrasi` yang justru HARUS polos.
+            'submitted_at' => $this->submitted_at?->toIso8601String(),
+            'reviewed_at' => $this->reviewed_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
+
             'status' => $this->status,
             'input_method' => $this->input_method,
 
