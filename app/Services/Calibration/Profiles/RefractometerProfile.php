@@ -39,6 +39,30 @@ use App\Models\Standard;
  * sheet lab, bukan diturunkan — jangan "dibenerin" tanpa lab mbenerin sheet-nya
  * dulu, karena yang keluar bakal beda dari sertifikat yang sudah terbit.
  *
+ * ## Status pembuktian: TERVERIFIKASI 10 Agt 2026
+ *
+ * Sampai 9 Agt semua di berkas ini diturunkan dari `SERTIFIKAT.csv` &
+ * `PERHITUNGAN U95%.csv` — ekspor NILAI, yang nggak nyimpen satu pun formula.
+ * Jadi statusnya inferensi: angkanya kebetulan cocok, rumusnya nggak kebukti.
+ *
+ * 10 Agt 2026 `Master Olah Data_Refractometer.xlsm` (terenkripsi) dibuka dan
+ * formulanya dibaca sel per sel. Yang di bawah ini sekarang punya sumber:
+ *
+ *   normalisasi 20 °C  PERHITUNGAN!J46  =H46+((G46-20)*0.00045)
+ *   correction         SERTIFIKAT!O18   =IF(ISERROR(C18-I18),"",C18-I18)
+ *   uc                 U95%!AC15        =SQRT(SUM(AC9:AC13))
+ *   veff               U95%!AC16        =AC15^4/SUM(AG9:AG13), AGi=(uici)^4/vi
+ *   k                  U95%!AC17        =TINV(0.05,AC16)      ← bukan 2 bulat
+ *   U95 akhir          U95%!AC20        =MAX(AC18:AF19)       ← lantai CMC
+ *   vi per komponen    U95%!S9..S13     200 / 1e6 / 50 / 200 / 4
+ *
+ * Dua penyimpangan di bawah (divisor 1 & ci 0,0001) ikut kebukti benar di sel
+ * `U95%!Q9` dan `U95%!X12` — bukan salah baca CSV.
+ *
+ * Titik ketiga di `SERTIFIKAT.csv` yang `#REF!` juga terjawab: `C20` nunjuk
+ * `'[3]Input Data Mentah'!T27`, workbook LUAR yang nggak ketaut. Itu sisa
+ * tautan, bukan titik ukur — jadi dua titik emang benar.
+ *
  *  1. **Ketidakpastian larutan standar dibagi divisor 1**, bukan `/k=2`. Sheet
  *     `PERHITUNGAN U95%` kolom Divisor baris "Ketidakpastian Kemurnian Standard
  *     Larutan Refracto" nulis `1`, padahal distribusinya "normal" dan angkanya

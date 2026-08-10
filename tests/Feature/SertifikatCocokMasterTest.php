@@ -266,22 +266,34 @@ class SertifikatCocokMasterTest extends TestCase
             //   punya kita  √(4,8² + 2²) = 5,2
             //   master      √(4,9² + 2²) = 5,2924474489…
             //
-            // 4,8 itu yang tercatat di titik 60 %RH pada arsip titik kalibrasi
-            // TH-5 (`database/data/thermohygro-lab.json`). 4,9 itu angka di
-            // titik PERTAMA-nya (29,8 %RH) — dan itu juga satu-satunya titik
-            // TH-5 yang U95-nya bukan 4,8. Bacaan yang paling masuk akal:
-            // sheet lab ngambil U95 dari satu sel tetap per unit, sementara
-            // koreksinya dicocokin per titik.
+            // TERJAWAB 10 Agt 2026, sesudah ketiga workbook master dibuka dan
+            // formulanya dibaca langsung. Dugaan di atas ("satu sel tetap per
+            // unit") ternyata BENAR — tapi cuma buat Refractometer, dan itu
+            // justru yang bikin dia menyimpang:
             //
-            // Nggak diikutin diam-diam, dan nggak juga dianggap master yang
-            // salah — dua-duanya ngubah angka di dokumen terakreditasi. Ini
-            // mesti ditanyain ke lab: U95 thermohygro itu per titik atau satu
-            // buat seluruh rentang? Cuma kelihatan di Refractometer karena cuma
-            // sesi ini yang pakai TH-5 di kelembaban ~60 %RH.
+            //   Turbidimeter  O15 = VLOOKUP($H$15, DATABASE!$G$31:$J$35, 4, 0)
+            //   Chlorine      O15 = VLOOKUP($H$15, DATABASE!$G$31:$J$35, 4, 0)
+            //   Refractometer O15 = VLOOKUP($E$16, Termohygro_Lingkungan, 9, 0)
+            //
+            // Dua workbook nyari per TITIK RH (→ 4,8 di titik ~60 %RH), satu
+            // nyari per UNIT (→ 4,9, satu angka buat seluruh rentang). Tabel
+            // sumbernya sendiri IDENTIK di ketiganya (TH-1..4 & TH-6..7 =
+            // 1,7/4,9; TH-5 = 1,8/4,9), jadi yang beda beneran cuma satu sel
+            // formula — dan buat SUHU ketiganya sama-sama per unit (kolom 5).
+            //
+            // Baris RH di sheet Refractometer kemungkinan besar salinan yang
+            // kelewat disesuaikan. Yang dipakai di sini tetap aturan per titik:
+            // dua dari tiga master, dan dua itu yang diadu langsung ke
+            // sertifikat kertas 10 Agt 2026 dan cocok karakter per karakter.
+            //
+            // Konsekuensinya kebuka, bukan disembunyiin: Env. Condition
+            // Refractometer kecetak `± 5,2%`, masternya `± 5,3%`. Kalau lab
+            // mastiin yang bener per unit, yang diubah `KondisiLingkungan`-nya
+            // — dan Turbidimeter & Chlorine bakal ikut geser ke 4,9.
             'Refractometer' => [
                 'nomorSesi' => '2211.11.R',
-                // Sama kayak pH: bentuknya dipatok, angkanya belum diadu ke
-                // halaman master Refractometer. Lihat catatan di atas.
+                // T & nilai RH cocok persis sama master (21,96 & 60,41);
+                // yang beda cuma U95 RH — lihat catatan di atas.
                 'harapan' => 'T: 21,96°C ± 1,8°C — %RH: 60% ± 5,2%',
             ],
         ];
