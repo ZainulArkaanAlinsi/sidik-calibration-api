@@ -800,4 +800,16 @@ class RefractometerProfile extends CalibrationProfile
     {
         return 5;
     }
+
+    /** Master Refractometer: sel T format `0.0` → `22,0`. */
+    public function desimalSuhuEnv(): ?int
+    {
+        return 1;
+    }
+
+    /** Master Refractometer: sel %RH format `0` → `60` (nilai 60,41 dibulatkan). */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return 0;
+    }
 }

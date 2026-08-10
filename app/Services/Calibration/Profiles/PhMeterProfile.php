@@ -144,4 +144,16 @@ class PhMeterProfile extends CalibrationProfile
             ],
         ];
     }
+
+    /** Master pH: sel T format `0.0` → `21,0`. */
+    public function desimalSuhuEnv(): ?int
+    {
+        return 1;
+    }
+
+    /** Master pH: sel %RH format `General` → `51,95` (nggak dipangkas). */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return null;
+    }
 }

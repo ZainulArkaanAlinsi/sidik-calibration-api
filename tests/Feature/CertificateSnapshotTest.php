@@ -133,31 +133,36 @@ class CertificateSnapshotTest extends TestCase
         $this->assertSame('Lab. Uji A', $header['calibration_location']);
         $this->assertSame('SIDIK-IK-CAL-0506_Rev.6', $header['calibration_method']);
         $this->assertSame('0–14 pH / 0,01 pH', $header['capacity_graduation']);
-        // Bentuknya disalin dari master lab (Turbidimeter `0189-CAL-624` &
-        // Chlorine `2406.32.C.NK`, diadu 10 Agt 2026): suhu 2 desimal,
-        // kelembaban BULAT, ketidakpastian dua-duanya 1 desimal.
+        // Bentuk pH, disalin dari format sel `Master Olah Data_pH for trial.xlsm`
+        // sheet SERTIFIKAT (diadu 10 Agt 2026): `U14` format `0.0` → `21,0`,
+        // `U15` format `General` → `51,95`, dua ketidakpastian format `0.0`.
         //
-        // Kombinasi itu sengaja nggak simetris dan nggak bisa dinalar — makanya
-        // baris ini udah tiga kali digeser dari dua arah berlawanan. Kalau mau
-        // digeser lagi, adu dulu ke halaman masternya.
-        $this->assertSame('T: 21,00°C ± 1,7°C — %RH: 52% ± 5,7%', $header['env_condition']);
+        // **Ini format pH, BUKAN aturan umum.** Keempat workbook master
+        // memformat baris ini beda-beda — lihat `CalibrationProfile::
+        // desimalSuhuEnv()`. Baris ini udah tiga kali digeser bolak-balik
+        // justru karena tiap kali dipatok ke satu master lalu dikeluhkan dari
+        // master yang lain.
+        $this->assertSame('T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%', $header['env_condition']);
         $this->assertSame('DR', $header['technician_id']);
     }
 
     /**
-     * Aturannya dikunci terpisah dari contoh angka di atas, biar yang dijaga
-     * PRINSIPNYA — bukan satu string yang gampang diperbarui asal hijau.
+     * Satu-satunya aturan Env. Condition yang berlaku buat SEMUA alat:
+     * **ketidakpastian 1 desimal**.
+     *
+     * Nilainya sendiri sengaja NGGAK dipatok di sini. Keempat workbook master
+     * memformat kolom nilai beda-beda (pH `0.0`/`General`, Turbidimeter
+     * `General`/`0`, Chlorine `General`/`General`, Refractometer `0.0`/`0`),
+     * jadi regex tunggal buat nilai bakal maksa tiga alat ngikutin satu alat —
+     * dan itu persis yang bikin baris ini tiga kali digeser bolak-balik.
+     * Per-alatnya dipatok di `SertifikatCocokMasterTest::envKondisi()`.
      */
-    public function test_ketidakpastian_env_sedesimal_sama_dengan_nilainya(): void
+    public function test_ketidakpastian_env_selalu_satu_desimal(): void
     {
-        $header = $this->terbitkanSertifikat()->snapshot['header'];
-        $env = $header['env_condition'];
+        $env = $this->terbitkanSertifikat()->snapshot['header']['env_condition'];
 
-        // Suhu: NILAI 2 desimal, ketidakpastian 1.
-        $this->assertMatchesRegularExpression('/T: \d+,\d{2}°C ± \d+,\d°C/', $env);
-
-        // Kelembaban: NILAI bulat, ketidakpastian 1 desimal.
-        $this->assertMatchesRegularExpression('/%RH: \d+% ± \d+,\d%/', $env);
+        $this->assertMatchesRegularExpression('/± \d+,\d°C/', $env);
+        $this->assertMatchesRegularExpression('/± \d+,\d%/', $env);
     }
 
     public function test_correction_di_tabel_hasil_itu_standard_value_dikurangi_pembacaan(): void

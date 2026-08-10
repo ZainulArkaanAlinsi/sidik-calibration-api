@@ -475,8 +475,23 @@ class CertificateSnapshotBuilder
         // Dua-duanya diputus dari nalar metrologi, bukan dari kertasnya, dan
         // dua-duanya kebalik dari yang lab tulis. Kalau baris ini mau digeser
         // lagi, geser SETELAH ngadu ke halaman masternya — bukan sebelum.
+        $profil = $sesi->equipment !== null
+            ? app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment)
+            : null;
+
+        // `null` = format `General` di Excel: tulis apa adanya, nol di belakang
+        // dibuang. Dibatesin 2 desimal dulu supaya derau float
+        // (`23.069999999999997`) nggak ikut kecetak — Excel juga mangkas di
+        // situ waktu nampilin `General`.
+        $suhuDesimal = $profil?->desimalSuhuEnv();
+        $rhDesimal = $profil?->desimalKelembabanEnv();
+
+        $tulis = static fn (float $nilai, ?int $desimal): string => $desimal === null
+            ? Angka::nilaiStandar($nilai, 2)
+            : Angka::id($nilai, $desimal);
+
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 2).'°C';
+            $teks = 'T: '.$tulis((float) $sesi->suhu_ruang, $suhuDesimal).'°C';
 
             if ($sesi->suhu_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
@@ -491,7 +506,7 @@ class CertificateSnapshotBuilder
             // `52`; Chlorine nyimpen 53,0 dan nyetak `53`. Nilai penuhnya tetap
             // utuh di DB dan tetap dipakai ngitung; yang dipangkas cuma yang
             // kecetak.
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
+            $teks = '%RH: '.$tulis((float) $sesi->kelembaban, $rhDesimal).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
