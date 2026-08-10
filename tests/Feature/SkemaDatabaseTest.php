@@ -37,6 +37,17 @@ class SkemaDatabaseTest extends TestCase
 
     public function test_semua_nama_index_masih_di_bawah_batas_mysql(): void
     {
+        // Katalognya dibaca lewat `sqlite_master`, jadi tes ini cuma sah di
+        // SQLite. Yang dijaga sendiri batas identifier MySQL — dicek dari
+        // skema SQLite karena di situlah suite hariannya jalan.
+        //
+        // Kembaran terbalik dari `OcrMeasurementTest::test_kolom_sumber_input_
+        // bukan_enum_sempit`, yang cuma sah di MySQL. Dua-duanya perlu, dan
+        // dua-duanya harus BILANG kalau lagi nggak jalan — bukan meledak.
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('Katalog `sqlite_master` cuma ada di SQLite.');
+        }
+
         $kepanjangan = [];
 
         $indexes = DB::select(
@@ -65,6 +76,17 @@ class SkemaDatabaseTest extends TestCase
 
     public function test_semua_nama_tabel_masih_di_bawah_batas_mysql(): void
     {
+        // Katalognya dibaca lewat `sqlite_master`, jadi tes ini cuma sah di
+        // SQLite. Yang dijaga sendiri batas identifier MySQL — dicek dari
+        // skema SQLite karena di situlah suite hariannya jalan.
+        //
+        // Kembaran terbalik dari `OcrMeasurementTest::test_kolom_sumber_input_
+        // bukan_enum_sempit`, yang cuma sah di MySQL. Dua-duanya perlu, dan
+        // dua-duanya harus BILANG kalau lagi nggak jalan — bukan meledak.
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->markTestSkipped('Katalog `sqlite_master` cuma ada di SQLite.');
+        }
+
         $kepanjangan = [];
 
         $tabel = DB::select(

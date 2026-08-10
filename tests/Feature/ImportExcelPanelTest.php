@@ -102,9 +102,12 @@ class ImportExcelPanelTest extends TestCase
 
     public function test_customer_yang_udah_ada_kebaca_sebagai_diperbarui(): void
     {
-        Organization::factory()->create();
+        // `organization_id` diambil dari organisasi yang baru dibikin, bukan
+        // dipatok `1`. Di SQLite in-memory id-nya selalu 1; di MySQL
+        // AUTO_INCREMENT terus maju lintas tes, jadi FK-nya putus.
+        $org = Organization::factory()->create();
         $admin = User::factory()->admin()->create();
-        Customer::factory()->create(['nama' => 'PT Uji Coba', 'organization_id' => 1]);
+        Customer::factory()->create(['nama' => 'PT Uji Coba', 'organization_id' => $org->id]);
         $path = $this->siapkanBerkas();
 
         $komponen = Livewire::actingAs($admin)

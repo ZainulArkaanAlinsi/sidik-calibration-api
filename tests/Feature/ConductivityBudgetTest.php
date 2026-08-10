@@ -9,7 +9,11 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
+use App\Services\Calibration\Profiles\PhMeterProfile;
+use App\Services\Calibration\Profiles\RefractometerProfile;
+use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\GumCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -89,13 +93,41 @@ class ConductivityBudgetTest extends TestCase
     /** @var array<int, Standard> */
     private array $standar = [];
 
+    /**
+     * Toleransi banding = **resolusi penyimpanannya**, bukan angka yang enak
+     * dilihat. Kolom hasil hitung `decimal(20, 8)`, jadi 1e-8 itu sehalus-
+     * halusnya yang bisa dijanjiin DB.
+     *
+     * Sempat `1e-12`, dan itu lolos CUMA karena suite jalan di SQLite — SQLite
+     * nggak nerapin presisi `decimal` sama sekali. Dijalanin ke MySQL (yang
+     * dipakai produksi) dua kasus langsung merah, dan dua-duanya bukan salah
+     * hitung, cuma kolomnya yang motong:
+     *
+     *   Uc titik 25    0,25337606634674636 vs 0,25337606633141846
+     *   U  titik 1412  8,109011953785368   vs 8,109011947857544
+     *
+     * Pelajaran yang sama persis udah kecatat di `SertifikatCocokMasterTest`
+     * 7 Agt 2026. Ditemukan lagi di sini 11 Agt 2026.
+     */
+    private const TOLERANSI_SIMPAN = 1e-8;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        Organization::factory()->create();
+        // `organization_id` diambil dari organisasi yang BARU dibikin, bukan
+        // dipatok `1`.
+        //
+        // Di SQLite in-memory tiap tes dapat database kosong, jadi id-nya
+        // selalu 1 dan `=> 1` kelihatan benar. Di MySQL `RefreshDatabase`
+        // migrasi sekali lalu tiap tes dibungkus transaksi — AUTO_INCREMENT
+        // terus maju lintas tes, jadi organisasinya bukan id 1 dan FK
+        // `equipment_categories.organization_id` putus. 14 tes Conductivity
+        // merah begitu suite dijalanin ke MySQL (11 Agt 2026); di SQLite nol
+        // yang merah karena SQLite nggak negakin FK sama sekali.
+        $org = Organization::factory()->create();
 
-        $kategori = EquipmentCategory::factory()->create(['organization_id' => 1]);
+        $kategori = EquipmentCategory::factory()->create(['organization_id' => $org->id]);
         $uTemperature = sqrt(0.36 ** 2 + 0.03 ** 2);
 
         $spek = [
@@ -106,7 +138,7 @@ class ConductivityBudgetTest extends TestCase
 
         foreach ($spek as $i => $s) {
             $this->standar[$i] = Standard::factory()->create([
-                'organization_id' => 1,
+                'organization_id' => $org->id,
                 'nama' => $s['nama'],
                 'ketidakpastian' => $s['u'],
                 'satuan_ketidakpastian' => $s['satuan'],
@@ -133,8 +165,8 @@ class ConductivityBudgetTest extends TestCase
         }
 
         $this->alat = Equipment::factory()->create([
-            'organization_id' => 1,
-            'customer_id' => Customer::factory()->create(['organization_id' => 1])->id,
+            'organization_id' => $org->id,
+            'customer_id' => Customer::factory()->create(['organization_id' => $org->id])->id,
             'equipment_category_id' => $kategori->id,
             'nama_alat' => 'Conductivity Meter',
             'nama_alat_kemampuan' => 'Conductivitymeter',
@@ -176,14 +208,23 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $m['uc'],
                 $hasil['ketidakpastian_gabungan'],
-                1e-12,
+                self::TOLERANSI_SIMPAN,
                 "Uc titik {$titik} meleset dari master",
             );
 
+            // v_eff toleransinya RELATIF, bukan mutlak. Dia rasio pangkat
+            // empat (`uc^4 / Σ((uici)^4/vi)`), jadi pemotongan `decimal(20,8)`
+            // di `uc` teramplifikasi ~4× secara relatif — dan nilainya sendiri
+            // ratusan, bukan pecahan. Toleransi mutlak 1e-8 di angka 210 itu
+            // menuntut 10 digit signifikan — lebih ketat dari yang DB simpan.
+            //
+            // Relatif 1e-8 = delapan angka penting, setara resolusi kolomnya.
+            // Selisih terbesar yang keukur di MySQL: 6,2e-7 di titik 1412
+            // (relatif 2,8e-9), jadi masih jauh di dalam batas.
             $this->assertEqualsWithDelta(
                 $m['veff'],
                 $hasil['derajat_kebebasan_efektif'],
-                1e-9,
+                abs($m['veff']) * self::TOLERANSI_SIMPAN,
                 "v_eff titik {$titik} meleset dari master",
             );
 
@@ -194,7 +235,7 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $m['k'],
                 $hasil['faktor_cakupan_k'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "k titik {$titik} meleset dari master",
             );
 
@@ -204,7 +245,7 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $m['u95'],
                 $hasil['ketidakpastian_gabungan'] * $hasil['faktor_cakupan_k'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "U95% titik {$titik} meleset dari master",
             );
 
@@ -213,7 +254,7 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $m['sertifikat'],
                 $hasil['ketidakpastian_diperluas'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "Ketidakpastian sertifikat titik {$titik} meleset dari master",
             );
         }
@@ -231,14 +272,14 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $m['sertifikat'],
                 $hasil['ketidakpastian_diperluas'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "Ketidakpastian sertifikat titik {$m['titik']} meleset dari master",
             );
 
             $this->assertEqualsWithDelta(
                 max($uHitung, $m['cmc']),
                 $hasil['ketidakpastian_diperluas'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "Lantai CMC titik {$m['titik']} nggak kepasang sebagaimana mestinya",
             );
         }
@@ -268,7 +309,7 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $master[$i],
                 $this->hitung($i)['koreksi'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "Correction titik {$m['titik']} meleset dari master",
             );
         }
@@ -288,7 +329,7 @@ class ConductivityBudgetTest extends TestCase
             $this->assertEqualsWithDelta(
                 $master[$i],
                 $this->hitung($i)['titik_ukur'],
-                1e-9,
+                self::TOLERANSI_SIMPAN,
                 "Nilai acuan titik {$m['titik']} meleset dari master",
             );
         }
@@ -313,7 +354,7 @@ class ConductivityBudgetTest extends TestCase
         $this->assertEqualsWithDelta(
             $polinomial,
             $this->hitung(1)['titik_ukur'],
-            1e-9,
+            self::TOLERANSI_SIMPAN,
             'Titik 1412 harus ikut polinomial suhu, bukan konstanta',
         );
 
@@ -404,14 +445,14 @@ class ConductivityBudgetTest extends TestCase
         $this->assertEqualsWithDelta(
             1.413,
             $profil->nilaiDalamSatuanAlat(1413.0, 'µS/cm', $this->alat),
-            1e-9,
+            self::TOLERANSI_SIMPAN,
         );
 
         // Yang satuannya udah sama nggak disentuh.
         $this->assertEqualsWithDelta(
             110.67,
             $profil->nilaiDalamSatuanAlat(110.67, 'mS/cm', $this->alat),
-            1e-9,
+            self::TOLERANSI_SIMPAN,
         );
     }
 
@@ -420,10 +461,10 @@ class ConductivityBudgetTest extends TestCase
      */
     public function test_profil_lain_tidak_ikut_berubah(): void
     {
-        foreach ([new \App\Services\Calibration\Profiles\PhMeterProfile,
-            new \App\Services\Calibration\Profiles\TurbidimeterProfile,
-            new \App\Services\Calibration\Profiles\ChlorineProfile,
-            new \App\Services\Calibration\Profiles\RefractometerProfile] as $lain) {
+        foreach ([new PhMeterProfile,
+            new TurbidimeterProfile,
+            new ChlorineProfile,
+            new RefractometerProfile] as $lain) {
             $this->assertTrue($lain->punyaToleransi(), get_class($lain).' harus tetap divonis');
             $this->assertSame(
                 1413.0,
