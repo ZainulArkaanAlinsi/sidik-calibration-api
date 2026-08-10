@@ -351,20 +351,35 @@ class SertifikatCocokMasterTest extends TestCase
             ],
             // Kelembaban: `u95_std_th` 4,8 punya kita vs 4,9 yang ketulis di
             // sheet refractometer. SEMBILAN kolom lainnya cocok persis, jadi
-            // yang beda cuma satu sel — dan sel itu bertentangan sama sheet
-            // DATABASE-nya sendiri, yang nulis 4,8 buat titik 59,41.
+            // yang beda cuma satu sel.
             //
-            // Bukan aturan yang beda, tapi salah isi di workbook lab. Bukti:
-            // di SEMUA unit TH, titik %RH pertama u95-nya 4,9 dan sisanya 4,8.
-            // Tiga alat lain kepakai titik non-pertama dan sheet-nya nulis 4,8
-            // — konsisten sama aturan per-titik yang kita pakai. Cuma
-            // refractometer yang nulis 4,9 padahal titiknya (59,41) 4,8.
+            // ## Sel mana persisnya, dan kenapa kita nggak ngikut
             //
-            // Kalau aturannya diganti jadi "selalu titik pertama" biar
-            // refractometer cocok, KETIGA alat lain langsung meleset — mereka
-            // bakal ikut dapat 4,9. Jadi nggak ada satu aturan pun yang bisa
-            // mereproduksi keempatnya; yang perlu dibetulkan sel di
-            // workbook-nya, bukan kodenya. Sudah diteruskan ke lab.
+            // Tiap unit TH punya 5 baris titik kalibrasi, dan tiap baris muat
+            // titik suhu DAN titik kelembaban sekaligus. Sesi refractometer ini
+            // makai baris yang BEDA buat dua parameternya:
+            //
+            //     suhu       indexed 21,51  → baris 1  (u95 %RH di baris itu 4,9)
+            //     kelembaban indexed 59,41  → baris 3  (u95 %RH di baris itu 4,8)
+            //
+            // Sheet lab ngambil koreksi kelembaban dari baris 3 (−0,59, dan itu
+            // yang bikin 60,41 cocok), tapi U95%-nya dari baris 1. Jadi aturan
+            // yang beneran jalan di workbook itu: **U95 kelembaban ikut baris
+            // yang kepilih lewat SUHU**, bukan lewat titik kelembabannya
+            // sendiri — ciri khas VLOOKUP yang salah kolom acuan.
+            //
+            // Tiga alat lain nggak bisa mbuktiin apa-apa soal ini: di pH,
+            // Turbidimeter & Chlorine baris suhu dan baris kelembabannya
+            // KEBETULAN sama (dua-duanya baris 2), jadi dua aturan yang beda
+            // ngasih angka yang sama persis. Cuma refractometer yang misahin
+            // keduanya.
+            //
+            // Aturan itu bisa ditiru dan hasilnya bakal cocok 4/4 — tapi
+            // sengaja NGGAK ditiru (keputusan Raihan, 10 Agt 2026): nyalin bug
+            // lookup ke perhitungan terakreditasi berarti begitu lab mbetulin
+            // workbook-nya, kode kita yang jadi salah. Yang perlu dibetulin sel
+            // `U95% Std TH` di sheet PERHITUNGAN refractometer: 4,9 → 4,8.
+            // Sudah diteruskan ke lab.
             'Refractometer' => [
                 'nomorSesi' => '2211.11.R',
                 'harapan' => [
