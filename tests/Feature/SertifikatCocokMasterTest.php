@@ -411,6 +411,51 @@ class SertifikatCocokMasterTest extends TestCase
     }
 
     /**
+     * `desimal` yang dikirim API sesi WAJIB sama dengan yang kecetak di
+     * sertifikatnya — buat keempat alat.
+     *
+     * Ini jahitan yang sempat lepas. `CertificateSnapshotBuilder` ngikutin
+     * timpaan profil alat, `CalibrationResource` nggak: dia langsung nurunin
+     * dari resolusi. Buat tiga alat kebetulan sama, tapi Refractometer
+     * (profilnya nyatain 5, resolusinya ngasih 4) jadi punya dua jawaban buat
+     * satu sertifikat — layar HP nulis `1,3394` / `0,0005`, PDF-nya `1,33935` /
+     * `0,00053`. Yang salah justru yang dipegang teknisi waktu ngecek, dan
+     * nggak ada satu pun tes yang merah karena tabel hasil diadu ke master
+     * lewat snapshot, bukan lewat API.
+     *
+     * @param  list<array{mentah: list<float>, cetak: list<string>}>  $hasil
+     */
+    #[DataProvider('alat')]
+    public function test_desimal_di_api_sesi_sama_dengan_yang_kecetak(string $nomorSesi, array $hasil): void
+    {
+        $sesi = $this->sesi($nomorSesi);
+        $sertifikat = $this->terbitkan($sesi);
+
+        $admin = User::where('role', 'admin')->firstOrFail();
+
+        $respons = $this->actingAs($admin)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk();
+
+        // Level sesi: satu angka, dibandingin ke `desimal` snapshot.
+        $this->assertSame(
+            (int) $sertifikat->snapshot['desimal'],
+            (int) $respons->json('data.desimal'),
+            "desimal sesi {$nomorSesi} beda dari sertifikatnya",
+        );
+
+        // Per titik: alat yang resolusinya berubah per rentang (Turbidimeter)
+        // bawa angkanya sendiri, dan itu juga harus sama baris per baris.
+        foreach ($sertifikat->snapshot['hasil'] as $i => $baris) {
+            $this->assertSame(
+                (int) $baris['desimal'],
+                (int) ($respons->json("data.titik.{$i}.desimal") ?? $respons->json('data.desimal')),
+                'desimal titik '.($i + 1)." sesi {$nomorSesi} beda dari sertifikatnya",
+            );
+        }
+    }
+
+    /**
      * Correction di sertifikat itu `standard − pembacaan`, BUKAN kebalikannya.
      * Ketuker berarti tanda koreksi di dokumen pelanggan kebalik semua, dan
      * angkanya tetap "kelihatan wajar" jadi nggak ada yang curiga.
