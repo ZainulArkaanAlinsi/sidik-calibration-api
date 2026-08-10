@@ -245,7 +245,7 @@ class SertifikatCocokMasterTest extends TestCase
             // bawah 10 Agt 2026. Jangan dianggap kelar cuma karena ijo.
             'pH Meter' => [
                 'nomorSesi' => '2405.13.A',
-                'harapan' => 'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
+                'harapan' => 'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
             ],
             // Disalin dari halaman `Env. Condition` master yang diadu langsung
             // 10 Agt 2026 — `T 23,07 °C ± 1,7 °C` & `%RH 52 % ± 4,8 %`. Nilai
@@ -294,7 +294,7 @@ class SertifikatCocokMasterTest extends TestCase
                 'nomorSesi' => '2211.11.R',
                 // T & nilai RH cocok persis sama master (21,96 & 60,41);
                 // yang beda cuma U95 RH — lihat catatan di atas.
-                'harapan' => 'T: 21,96°C ± 1,8°C — %RH: 60% ± 5,2%',
+                'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60% ± 5,2%',
             ],
         ];
     }

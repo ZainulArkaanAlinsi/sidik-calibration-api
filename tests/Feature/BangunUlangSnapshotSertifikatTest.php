@@ -59,8 +59,9 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
 
     /**
      * Snapshot basi ditulis ulang ngikut kode yang sekarang. Ini inti gunanya:
-     * kelembaban yang kesimpen dengan format lama (`%RH: 52%`) mesti berubah
-     * jadi dua desimal tanpa nunggu sesinya diulang.
+     * sertifikat yang kesimpen dengan format lama ikut betul tanpa nunggu
+     * sesinya diulang — dan format Env. Condition udah beberapa kali berubah,
+     * jadi jalur ini yang dipakai buat nyusulin sertifikat lama.
      */
     public function test_snapshot_lama_ditulis_ulang_ngikut_kode_sekarang(): void
     {
@@ -73,7 +74,7 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
 
         $this->assertSame(
-            'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
+            'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
             $sertifikat->fresh()->snapshot['header']['env_condition'],
         );
     }

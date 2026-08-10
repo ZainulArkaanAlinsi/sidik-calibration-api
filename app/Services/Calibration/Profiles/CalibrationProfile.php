@@ -330,4 +330,37 @@ abstract class CalibrationProfile
     {
         return null;
     }
+
+    /**
+     * Desimal NILAI suhu & kelembaban di baris `Env. Condition`.
+     * `null` = tulis apa adanya (nol di belakang dibuang), padanan format
+     * `General` di Excel.
+     *
+     * ## Kenapa ini per alat, bukan satu aturan
+     *
+     * Baris `Env. Condition` udah TIGA KALI digeser dan tiap kali balik lagi,
+     * karena tiap kali dipatok ke SATU master lalu dikeluhkan dari master yang
+     * lain. 10 Agt 2026 keempat workbook dibuka bareng dan sebabnya ketemu:
+     * format selnya emang beda-beda per workbook.
+     *
+     *   alat           sel T        kecetak    sel %RH      kecetak
+     *   pH             `0.0`        21,0       `General`    51,95
+     *   Turbidimeter   `General`    23,07      `0`          52
+     *   Chlorine       `General`    23,21      `General`    53
+     *   Refractometer  `0.0`        22,0       `0`          60
+     *
+     * Nggak ada satu aturan yang bener buat keempatnya — jadi jangan dicari.
+     * Ketidakpastiannya beda: `0.0` di keempat workbook, jadi ITU tetap dipatok
+     * global (1 desimal) di `CertificateSnapshotBuilder`.
+     */
+    public function desimalSuhuEnv(): ?int
+    {
+        return null;
+    }
+
+    /** Lihat [desimalSuhuEnv]. */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return null;
+    }
 }

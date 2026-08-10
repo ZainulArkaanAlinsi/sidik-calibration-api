@@ -540,4 +540,16 @@ class TurbidimeterProfile extends CalibrationProfile
             'hanya_admin' => $hanyaAdmin,
         ];
     }
+
+    /** Master Turbidimeter: sel T format `General` → `23,07`. */
+    public function desimalSuhuEnv(): ?int
+    {
+        return null;
+    }
+
+    /** Master Turbidimeter: sel %RH format `0` → `52` (nilai 51,83 dibulatkan). */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return 0;
+    }
 }
