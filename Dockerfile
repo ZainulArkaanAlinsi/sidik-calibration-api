@@ -17,7 +17,13 @@
 # Dipisah dari tahap PHP biar Node nggak ikut kebawa ke image akhir; yang
 # nyampe cuma hasil build-nya (public/build), bukan node_modules-nya.
 # ─────────────────────────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS aset
+# Node 22, bukan 20. Vite 8 minta `^20.19.0 || >=22.12.0`, dan Rolldown (mesin
+# barunya) nitip binding native lewat optionalDependencies. Kalau Node-nya nggak
+# masuk syarat itu, npm NGELEWATIN binding-nya tanpa bilang gagal — `npm install`
+# kelihatan sukses, baru `npm run build` mati dengan "Cannot find module
+# '@rolldown/binding-...'". Tag `node:20` nempel di batas persis syarat itu;
+# `node:22` nggak ada urusan sama sekali.
+FROM node:22-bookworm-slim AS aset
 
 WORKDIR /app
 
@@ -37,7 +43,12 @@ RUN npm run build
 # ─────────────────────────────────────────────────────────────────────
 # Tahap 2 — runtime PHP
 # ─────────────────────────────────────────────────────────────────────
-FROM dunglas/frankenphp:1-php8.3-bookworm
+# PHP 8.4, bukan 8.3, dan itu WAJIB — bukan sekadar "biar baru".
+# config/database.php nyebut `Pdo\Mysql::ATTR_SSL_CA` (bawaan skeleton Laravel
+# 13), dan kelas `Pdo\Mysql` itu baru ada sejak PHP 8.4. Di PHP 8.3 berkas
+# config-nya fatal waktu dimuat — `php artisan package:discover` di bawah mati,
+# jadi build-nya gagal sebelum sempat deploy. Laptop dev juga jalan di 8.4.
+FROM dunglas/frankenphp:1-php8.4-bookworm
 
 # pdo_mysql : koneksi ke MySQL Aiven
 # gd        : dompdf butuh ini buat gambar (logo & QR di sertifikat)
