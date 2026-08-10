@@ -28,7 +28,11 @@ jobs:
         with:
           # Samain sama Dockerfile — beda versi PHP antara CI dan produksi
           # bikin CI hijau tapi servernya tetap error.
-          php-version: '8.3'
+          #
+          # 8.4 itu batas bawah beneran, bukan pilihan: config/database.php
+          # nyebut `Pdo\Mysql::ATTR_SSL_CA`, dan kelas itu baru ada di 8.4.
+          # Di 8.3 config-nya fatal waktu dimuat, jauh sebelum test pertama jalan.
+          php-version: '8.4'
           extensions: pdo_sqlite, gd, intl, bcmath, zip, exif
           coverage: none
 
