@@ -158,9 +158,16 @@ class CertificateSnapshotBuilder
                 // (termasuk override manual di pengaturan organisasi); yang beda
                 // di sini cuma resolusi mana yang disodorin.
                 $resolusi = $alat?->resolusiPada((float) $titik->titik_ukur);
-                $desimal = $organisasi
-                    ? $organisasi->desimalSertifikat($resolusi)
-                    : Angka::desimalDariResolusi($resolusi);
+
+                // Profil alat menang kalau dia nyatain sendiri. Refractometer
+                // nyetak 5 desimal walau resolusinya ngasih 4 — di 4 desimal
+                // U95% `0,00053` runtuh jadi `0,0005`, kehilangan angka penting
+                // di kolom yang justru jadi inti sertifikat. Angkanya dari
+                // sertifikat master yang beneran kecetak, bukan diturunkan.
+                $desimal = $profil?->desimalSertifikat()
+                    ?? ($organisasi
+                        ? $organisasi->desimalSertifikat($resolusi)
+                        : Angka::desimalDariResolusi($resolusi));
 
                 $remark = ($profil !== null && method_exists($profil, 'remarkTitik'))
                     ? $profil->remarkTitik((float) $titik->titik_ukur)
@@ -462,10 +469,31 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->kelembaban !== null) {
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
+            // DUA desimal, nilai & ketidakpastiannya sama-sama — bukan bulat.
+            //
+            // Ini dokumen lab, bukan soal prinsip. Master nulis `51,95` (pH),
+            // `51,83` (Turbidimeter), `60,41` (Refractometer): kelembabannya
+            // emang berdesimal, dan `53` di Chlorine itu kebetulan bulat, bukan
+            // buktinya aturan pembulatan.
+            //
+            // Dua kali salah di sini, dua-duanya karena nalar dari konvensi
+            // bukan dari kertasnya:
+            //
+            //  - sampai 7 Agt kecetak `60% ± 5,2%` — nilai bulat, U 1 desimal.
+            //    Dikeluhkan lapangan, wajar: satu tarikan napas dua ketelitian.
+            //  - 7 Agt "dibetulin" jadi `60% ± 5%` dengan nyamain U ke nilainya.
+            //    Sejajar, tapi disejajarkan ke sisi yang salah — dan dikeluhkan
+            //    lagi 9 Agt, sekarang buat tiga alat sekaligus.
+            //
+            // Yang bener: NILAINYA yang nggak boleh dipangkas. Argumen lama
+            // ("teknisi baca kelembaban di resolusi 1%, desimalnya cuma hasil
+            // koreksi thermohygro") kedengaran masuk akal tapi nggak dipakai
+            // lab-nya sendiri — dan yang menentukan isi sertifikat itu dokumen
+            // resminya, bukan turunan prinsip.
+            $teks = '%RH: '.Angka::id($sesi->kelembaban, 2).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
-                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
+                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 2).'%';
             }
 
             $bagian[] = $teks;

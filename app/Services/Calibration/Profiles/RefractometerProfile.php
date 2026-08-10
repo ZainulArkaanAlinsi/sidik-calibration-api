@@ -117,6 +117,54 @@ class RefractometerProfile extends CalibrationProfile
     ];
 
     /**
+     * Titik yang sama, dibaca di skala °Brix — **larutan fisiknya identik**.
+     * `BSAG2.5-0034` dibaca 2,5 °Brix ATAU 1,33659 n20D; `BSAG40-0071` dibaca
+     * 40 °Brix ATAU 1,39986 n20D (lihat [STANDARD_TERCETAK]).
+     *
+     * Ada karena satuan alat nentuin titik standarnya juga, bukan cuma
+     * koefisien suhunya. Sebelum ini lembar kerja selalu ngirim dua titik n20D
+     * apa pun satuan yang dipilih teknisi — jadi sesi °Brix ngirim
+     * `titik_ukur: 1.33659` bareng `satuan: "°Brix"`, dan dikoreksi pakai
+     * koefisien °Brix. Nilai standar satu skala, pembacaan skala lain.
+     *
+     * Angkanya cocok sama CMC yang diseed `RefractometerCapabilitySeeder`
+     * (2,5 & 40 °Brix), jadi titiknya tetap dapat budget.
+     *
+     * @var list<array{nilai: float, label: string}>
+     */
+    public const TITIK_BRIX = [
+        ['nilai' => 2.5, 'label' => '2,5'],
+        ['nilai' => 40.0, 'label' => '40'],
+    ];
+
+    /** Titik standar per satuan — dipakai layar buat nuker baris tabel. */
+    public const TITIK_PER_SATUAN = [
+        self::SATUAN_N20D => self::TITIK,
+        self::SATUAN_BRIX => self::TITIK_BRIX,
+    ];
+
+    /**
+     * Keempat titik dua satuan ditulis sekaligus — nilainya nggak ada yang
+     * tabrakan (1,33659 / 1,39986 / 2,5 / 40), jadi pasangannya tetap tunggal
+     * tanpa perlu tau satuan mana yang lagi dipilih teknisi.
+     *
+     * Botolnya cuma dua: BSAG2.5-0034 kecatat DUA KALI di master (sekali per
+     * skala), dan itu yang bikin dicocokin lewat nama, bukan serial — persis
+     * alasan yang sama di [STANDARD_TERCETAK].
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [
+            ['titik' => 1.33659, 'standar' => ['Refractometer Std Solution 1.33659 n20D']],
+            ['titik' => 1.39986, 'standar' => ['Refractometer Std Solution 1.39986 n20D']],
+            ['titik' => 2.5, 'standar' => ['Refractometer Std Solution 2.5 oBrix']],
+            ['titik' => 40.0, 'standar' => ['Refractometer Std Solution 40 oBrix']],
+        ];
+    }
+
+    /**
      * Baris tabel STANDARD di lembar kerja, dari sheet DATABASE baris 13–18.
      *
      * Dicocokin lewat NAMA doang buat empat larutannya, sengaja bukan serial:
@@ -383,6 +431,7 @@ class RefractometerProfile extends CalibrationProfile
     {
         $bentuk = $this->bentukLengkap();
         $bentuk = $this->tautkanStandar($bentuk);
+        $bentuk = $this->tautkanStandarTitik($bentuk);
         $bentuk = $this->isiPilihanThermohygro($bentuk);
 
         if ($untukAdmin) {
@@ -441,7 +490,20 @@ class RefractometerProfile extends CalibrationProfile
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis', satuan: self::SATUAN_N20D),
+                        // SENGAJA tanpa `satuan`, beda dari tiga profil lain.
+                        //
+                        // Nilai yang ditampilin (`equipment.range_resolusi`) udah
+                        // bawa satuannya sendiri — "0–53 °Brix / 0,1 °Brix". Buat
+                        // pH/Turbidimeter/Chlorine nempelin satuan tetap di situ
+                        // aman, satuan alatnya emang cuma satu. Refractometer
+                        // nggak: alat yang kecatat °Brix bikin barisnya kebaca
+                        // "0–53 °Brix / 0,1 °Brix   n20D" — satu baris yang
+                        // membantah dirinya sendiri, di dokumen yang justru
+                        // gunanya nyatet satuan dengan benar.
+                        //
+                        // Ketahuan 7 Agt 2026 waktu lembarnya dibuka di HP pakai
+                        // alat Atago MASTER-53M.
+                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
                         $this->field('alat_model', '3. Type/Model', 'teks'),
                         $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
@@ -552,17 +614,40 @@ class RefractometerProfile extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
+    /**
+     * @param  list<array{nilai: float, label: string}>  $titik
+     * @return list<array{titik_ukur: float, label: string}>
+     */
+    private function barisTitik(array $titik): array
+    {
+        return array_map(
+            fn (array $t): array => [
+                'titik_ukur' => $t['nilai'],
+                'label' => $t['label'],
+            ],
+            $titik,
+        );
+    }
+
     private function tabelHasil(string $tahap, string $judul): array
     {
         return [
             'tahap' => $tahap,
             'judul' => $judul,
-            'baris' => array_map(
-                fn (array $t): array => [
-                    'titik_ukur' => $t['nilai'],
-                    'label' => $t['label'],
-                ],
-                self::TITIK,
+            'baris' => $this->barisTitik(self::TITIK),
+            // Dua set baris dikirim SEKALIGUS, bukan lembar kerjanya diambil
+            // ulang tiap satuan diganti.
+            //
+            // Satuannya dipilih DI DALAM formulir (`equipment.satuan`), jadi
+            // waktu `GET /calibrations/lembar-kerja` dipanggil backend belum
+            // tahu mana yang bakal dipakai. Ngambil ulang tiap kali diganti
+            // berarti seluruh isian yang udah diketik teknisi kereset — di
+            // lapangan itu jauh lebih mahal daripada satu field ekstra di
+            // respons. `baris` di atas tetap ada & tetap n20D biar app versi
+            // lama nggak berubah perilakunya.
+            'baris_per_satuan' => array_map(
+                fn (array $titik): array => $this->barisTitik($titik),
+                self::TITIK_PER_SATUAN,
             ),
             'kolom' => [
                 ['kode' => 'pembacaan', 'label' => self::SATUAN_N20D, 'tipe' => 'angka', 'satuan' => self::SATUAN_N20D],
@@ -668,5 +753,27 @@ class RefractometerProfile extends CalibrationProfile
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
         ];
+    }
+
+    /**
+     * **5 desimal, bukan 4** — satu-satunya alat yang nyimpang dari aturan
+     * umum, dan angkanya diambil dari sertifikat master yang beneran kecetak.
+     *
+     * Resolusi alat 0,0001 bakal ngasih 4, dan di 4 desimal U95% runtuh:
+     * `0,00053` jadi `0,0005` — kehilangan angka penting di kolom yang justru
+     * jadi inti sertifikat kalibrasi. Nilainya pun kepangkas, `1,33935` jadi
+     * `1,3394`.
+     *
+     * pH & Chlorine di master TETAP 2 desimal (= resolusinya), jadi ini BUKAN
+     * rumus yang bisa diturunkan ("resolusi + 1" bakal ngerusak dua alat itu).
+     * Ini pilihan lab per alat, dan di sinilah tempat nyatetnya.
+     *
+     * Dibetulin 7 Agt 2026 sesudah sertifikat master diadu langsung ke keluaran
+     * app — dua-duanya nyimpen angka yang sama persis (`1,33935`, `0,00052715`),
+     * yang beda cuma berapa digit yang kecetak.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return 5;
     }
 }

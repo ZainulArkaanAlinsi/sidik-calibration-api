@@ -166,7 +166,77 @@ class PembacaanMustahilTest extends TestCase
                 $kode,
                 "sesi master {$nomorSesi} kena peringatan resolusi — aturannya kebanyakan bunyi",
             );
+            $this->assertNotContains(
+                'kelembaban_mustahil',
+                $kode,
+                "sesi master {$nomorSesi} kena peringatan kelembaban — aturannya kebanyakan bunyi",
+            );
+            $this->assertNotContains(
+                'delta_kelembaban_ekstrem',
+                $kode,
+                "sesi master {$nomorSesi} kena peringatan Δ kelembaban — aturannya kebanyakan bunyi",
+            );
         }
+    }
+
+    /**
+     * Kelembaban 2 %RH ketangkep.
+     *
+     * Sesi Turbidimeter `KAL/2026/08/0021` (8 Agt 2026) kesimpen dengan
+     * `kelembaban_awal = 2` — jelas `52` yang kepencet jadi `2`. Nggak ada satu
+     * pun temuan waktu itu, dan sertifikatnya kecetak `%RH: 28% ± 53%`:
+     * ketidakpastian dua kali lipat nilainya sendiri, di dokumen terakreditasi.
+     *
+     * Rumusnya sendiri bener (`√(4,8² + 53²)`) — itu justru intinya. Masukan
+     * ngawur nggak bikin hitungannya meledak, cuma bikin hasilnya ngawur dengan
+     * rapi, jadi yang mesti nangkep validator.
+     */
+    public function test_kelembaban_di_luar_nalar_ruang_lab_ketangkep(): void
+    {
+        $kode = $this->periksaKondisi(kelembabanAwal: 2, kelembabanAkhir: 55);
+
+        $this->assertContains('kelembaban_mustahil', $kode);
+        // Δ = 53 juga kena, dan itu memang temuan yang beda: dua angka bisa
+        // sama-sama masuk rentang tapi jaraknya tetap mustahil.
+        $this->assertContains('delta_kelembaban_ekstrem', $kode);
+    }
+
+    public function test_delta_kelembaban_ekstrem_ketangkep_walau_dua_duanya_wajar(): void
+    {
+        $kode = $this->periksaKondisi(kelembabanAwal: 30, kelembabanAkhir: 80);
+
+        $this->assertNotContains('kelembaban_mustahil', $kode);
+        $this->assertContains('delta_kelembaban_ekstrem', $kode);
+    }
+
+    /** Pergeseran beberapa persen itu ruangan normal — jangan bunyi. */
+    public function test_kelembaban_ruang_lab_yang_wajar_nggak_bikin_peringatan(): void
+    {
+        $kode = $this->periksaKondisi(kelembabanAwal: 56, kelembabanAkhir: 55);
+
+        $this->assertNotContains('kelembaban_mustahil', $kode);
+        $this->assertNotContains('delta_kelembaban_ekstrem', $kode);
+    }
+
+    /** @return list<string> */
+    private function periksaKondisi(float $kelembabanAwal, float $kelembabanAkhir): array
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $this->alat->id,
+            'standard_id' => $this->standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'suhu_awal' => 23.2,
+            'suhu_akhir' => 23.4,
+            'kelembaban_awal' => $kelembabanAwal,
+            'kelembaban_akhir' => $kelembabanAkhir,
+            'measurements' => [
+                ['titik_ukur' => 1.83, 'satuan' => 'mg/L', 'pembacaan' => [1.83, 1.83]],
+            ],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        return array_column(app(CalibrationValidator::class)->periksa($sesi)['temuan'], 'kode');
     }
 
     /**

@@ -13,6 +13,7 @@ use App\Models\Standard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -334,5 +335,71 @@ class OcrMeasurementTest extends TestCase
             ->assertOk()
             ->assertJsonMissingPath('data.0.pembacaan_mentah')
             ->assertJsonMissingPath('data.0.perlu_verifikasi');
+    }
+
+    /**
+     * Sesi yang tabelnya dibaca AI Vision harus BENERAN kesimpen `ai_vision`.
+     *
+     * **Bug lapangan 7 Agt 2026.** Mobile udah ngirim `ai_vision` sejak jalur
+     * kamera pindah ke server, `CalibrationRequest` udah nerima
+     * (`Rule::in(['manual','ocr','ai_vision'])`) — tapi kolomnya masih
+     * `enum('manual','ocr')`, sisa dari sebelum AI Vision ada. MySQL nolak:
+     *
+     *     SQLSTATE[01000]: 1265 Data truncated for column 'input_method'
+     *
+     * Teknisi lihat "gagal kirim" padahal fotonya sukses kebaca dan angkanya
+     * udah masuk formulir. Migrasi `2026_07_24_100100` udah ngelebarin
+     * `raw_measurements.input_source` buat alasan yang sama persis —
+     * `calibration_sessions.input_method` kelewat.
+     *
+     * Nggak ada satu pun test yang pernah ngirim `ai_vision`; semuanya `ocr`.
+     */
+    public function test_sesi_hasil_ai_vision_kesimpen_apa_adanya(): void
+    {
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $this->alat->id,
+            'standard_id' => $this->standar->id,
+            'input_method' => 'ai_vision',
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'measurements' => [[
+                'titik_ukur' => 50.0,
+                'satuan' => 'mm',
+                'pembacaan' => [50.02, 50.01, 50.03],
+            ]],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        $this->assertSame('ai_vision', $sesi->input_method);
+        $this->assertSame('ai_vision', $sesi->rawMeasurements()->value('input_source'));
+    }
+
+    /**
+     * Pagar buat kelas bug di atas, bukan cuma satu nilainya.
+     *
+     * Test jalan di SQLite, dan SQLite **nggak nagih enum sama sekali** — nilai
+     * apa pun masuk tanpa keluhan. Jadi test di atas bakal tetap hijau di
+     * SQLite walau kolomnya balik jadi enum sempit, dan bugnya baru ketahuan
+     * lagi dari lapangan. Yang ini nyium langsung ke skema, dan cuma jalan di
+     * MySQL — satu-satunya tempat enum-nya beneran ditegakkan.
+     */
+    public function test_kolom_sumber_input_bukan_enum_sempit(): void
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            $this->markTestSkipped('Enum cuma ditegakkan MySQL; SQLite nerima apa aja.');
+        }
+
+        foreach ([
+            ['calibration_sessions', 'input_method'],
+            ['raw_measurements', 'input_source'],
+        ] as [$tabel, $kolom]) {
+            $tipe = DB::selectOne("SHOW COLUMNS FROM {$tabel} LIKE ?", [$kolom])->Type;
+
+            $this->assertStringStartsNotWith(
+                'enum(',
+                $tipe,
+                "{$tabel}.{$kolom} balik jadi enum — sumber input baru bakal ditolak diam-diam",
+            );
+        }
     }
 }

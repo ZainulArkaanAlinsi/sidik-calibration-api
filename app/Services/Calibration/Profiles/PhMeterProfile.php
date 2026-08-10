@@ -49,7 +49,24 @@ class PhMeterProfile extends CalibrationProfile
      */
     public function bentukLembarKerja(bool $untukAdmin = false): array
     {
-        return $this->template->phMeter($untukAdmin);
+        return $this->tautkanStandarTitik($this->template->phMeter($untukAdmin));
+    }
+
+    /**
+     * Tiga baris tabel hasil (4,00 / 7,00 / 10,01) sama tiga buffer tercetak di
+     * `LembarKerjaTemplate::STANDARD_TERCETAK`. Urutannya emang sejajar, tapi
+     * ditulis eksplisit — pasangan yang cuma "kebetulan sejajar" bakal diam-diam
+     * ketuker begitu ada yang nyisipin satu baris.
+     *
+     * @return list<array{titik: float, standar: list<string>}>
+     */
+    public function standarPerTitik(): array
+    {
+        return [
+            ['titik' => 4.00, 'standar' => ['pH Buffer Solution 4']],
+            ['titik' => 7.00, 'standar' => ['pH Buffer Solution 7']],
+            ['titik' => 10.01, 'standar' => ['pH Buffer Solution 10']],
+        ];
     }
 
     /**

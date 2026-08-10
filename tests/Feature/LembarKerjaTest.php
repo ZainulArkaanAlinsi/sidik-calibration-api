@@ -80,6 +80,65 @@ class LembarKerjaTest extends TestCase
         $this->assertSame(['sebelum_adjustment', 'sesudah_adjustment'], array_column($tabel, 'tahap'));
     }
 
+    /**
+     * Tiap baris tabel hasil bawa standar PASANGANNYA, bukan dikosongin buat
+     * dipilih teknisi satu-satu dari seluruh master.
+     *
+     * Ini yang nahan `-2,99`. Sesi pH 7 Agt 2026 kecetak Correction
+     * `0,01 / -2,99 / -0,13`: titik 7,00 kepilih Buffer 4, jadi nilai standar
+     * yang dipakai 4,0092 dan koreksinya jadi 4,0092 − 7,00. Dua tetangganya
+     * wajar, jadi yang di tengah nggak keliatan salah sampai nyampe pelanggan.
+     *
+     * Yang diuji PASANGANNYA, bukan cuma "ada isinya" — tertukar itu justru
+     * mode gagal yang bikin sertifikatnya salah.
+     */
+    public function test_tiap_titik_bawa_larutan_standar_pasangannya(): void
+    {
+        $buffer = collect(['4', '7', '10'])->mapWithKeys(
+            fn (string $n): array => [$n => Standard::factory()->create(['nama' => "pH Buffer Solution {$n}"])->id],
+        );
+
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->json('data');
+
+        foreach (collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'] as $tabel) {
+            $this->assertSame(
+                [$buffer['4'], $buffer['7'], $buffer['10']],
+                array_column($tabel['baris'], 'standard_id'),
+                "Tabel {$tabel['tahap']}: titik ketuker sama buffer yang salah.",
+            );
+
+            $this->assertSame(
+                ['pH Buffer Solution 4', 'pH Buffer Solution 7', 'pH Buffer Solution 10'],
+                array_column($tabel['baris'], 'standard_nama'),
+            );
+        }
+    }
+
+    /**
+     * Standar yang belum keseed di master bikin titik itu doang jatuh ke
+     * pilihan manual — bukan bikin barisnya hilang, dan bukan bikin titik lain
+     * ikut kosong.
+     */
+    public function test_titik_tanpa_standar_di_master_tetap_tampil_dengan_id_null(): void
+    {
+        Standard::factory()->create(['nama' => 'pH Buffer Solution 7']);
+
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja')
+            ->assertOk()
+            ->json('data');
+
+        $baris = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'][0]['baris'];
+
+        $this->assertCount(3, $baris);
+        $this->assertNull($baris[0]['standard_id']);
+        $this->assertNotNull($baris[1]['standard_id']);
+        $this->assertNull($baris[2]['standard_id']);
+    }
+
     public function test_lembar_kerja_turbidimeter_pakai_ntu_tiga_titik(): void
     {
         $data = $this->actingAs($this->teknisi)
@@ -142,9 +201,46 @@ class LembarKerjaTest extends TestCase
         // Di sisi mobile "nggak ada" itu artinya "seragam, pakai resolusi alat".
         // Penting buat refractometer: nilai terkoreksinya bisa 5 desimal
         // (1,33935), jadi mad per baris ke 4 desimal justru bakal salah.
+        //
+        // Dicek sebagai KETIDAKHADIRAN dua kunci itu, bukan sebagai daftar
+        // kunci yang persis: baris tabel emang nambah kunci dari waktu ke waktu
+        // (`standard_id` pasangan titik, misalnya), dan tes yang mematok daftar
+        // penuh bakal merah tiap kali itu terjadi tanpa ada yang rusak.
+        $this->assertArrayNotHasKey('desimal', $tabel[0]['baris'][0]);
+        $this->assertArrayNotHasKey('resolusi', $tabel[0]['baris'][0]);
+
+        // Titik standarnya ikut SATUAN, bukan cuma koefisien suhunya. Larutan
+        // fisiknya sama — BSAG2.5-0034 dibaca 2,5 °Brix ATAU 1,33659 n20D —
+        // tapi angka yang ditulis di lembar kerja beda, dan `titik_ukur` yang
+        // kekirim ikut beda. Sebelum ini sesi °Brix ngirim titik n20D bareng
+        // satuan °Brix: nilai standar satu skala, pembacaan skala lain.
+        //
+        // Dua set dikirim sekaligus karena satuannya dipilih DI DALAM formulir,
+        // sesudah lembar kerjanya diambil — lihat docblock `tabelHasil`.
+        $this->assertEqualsWithDelta(
+            [1.33659, 1.39986],
+            array_column($tabel[0]['baris_per_satuan']['n20D'], 'titik_ukur'),
+            1e-9,
+        );
+        $this->assertEqualsWithDelta(
+            [2.5, 40.0],
+            array_column($tabel[0]['baris_per_satuan']['°Brix'], 'titik_ukur'),
+            1e-9,
+        );
+
+        // Dua titik °Brix itu WAJIB sama dengan yang diseed CMC-nya
+        // (`RefractometerCapabilitySeeder`), kalau nggak titiknya kehilangan
+        // budget ketidakpastian tanpa satu pun peringatan.
         $this->assertSame(
-            ['titik_ukur', 'label'],
-            array_keys($tabel[0]['baris'][0]),
+            ['2,5', '40'],
+            array_column($tabel[0]['baris_per_satuan']['°Brix'], 'label'),
+        );
+
+        // `baris` lama tetap n20D — app versi lama nggak boleh ikut berubah.
+        $this->assertEqualsWithDelta(
+            [1.33659, 1.39986],
+            array_column($tabel[0]['baris'], 'titik_ukur'),
+            1e-9,
         );
     }
 
@@ -444,5 +540,135 @@ class LembarKerjaTest extends TestCase
             'pH',
             CalibrationSession::latest('id')->firstOrFail()->rawMeasurements()->value('satuan'),
         );
+    }
+
+    /**
+     * Refractometer yang dipindah teknisi ke skala °Brix.
+     *
+     * Satu alat fisik bisa nampilin n20D atau °Brix, dan pilihannya nentuin
+     * koefisien normalisasi suhu — 0,00045/°C vs 0,07/°C, beda 155 kali.
+     * `RefractometerProfile::satuan()` bacanya `equipments.satuan`, jadi
+     * pilihan teknisi wajib nyampe ke sana; kalau cuma nempel di pembacaan,
+     * angkanya kelabel °Brix tapi dikoreksi pakai koefisien n20D dan nggak ada
+     * satu pun yang error.
+     */
+    private function alatRefracto(string $satuan = 'n20D'): Equipment
+    {
+        return Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => EquipmentCategory::factory()->create(
+                ['kode' => 'instrumen-analitik'],
+            )->id,
+            'nama_alat' => 'Refractometer',
+            'range_min' => 0, 'range_max' => 1.7,
+            // Toleransi wajib ada, bukan hiasan: tanpa itu titiknya nggak
+            // dihitung sama sekali ("PASS/FAIL nggak ada dasarnya").
+            'satuan' => $satuan, 'resolusi' => 0.0001, 'toleransi' => 0.01,
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function payloadRefracto(Equipment $alat, ?string $satuan): array
+    {
+        // Titik tanpa standar acuan sengaja NGGAK dihitung ketidakpastiannya
+        // (lihat CalibrationRequest), dan test ini butuh angkanya keluar.
+        $larutan = Standard::factory()->create([
+            'nama' => 'Refractometer Std Solution 1.33659 n20D',
+        ]);
+
+        return array_filter([
+            'equipment_id' => $alat->id,
+            'equipment_satuan' => $satuan,
+            'standard_id' => $larutan->id,
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'suhu_awal' => 20.9,
+            'suhu_akhir' => 21.2,
+            'measurements' => [[
+                'titik_ukur' => 1.33659,
+                'pembacaan' => [1.3362, 1.3362, 1.3362],
+                'suhu' => [25, 25, 25],
+            ]],
+        ], fn ($v): bool => $v !== null);
+    }
+
+    public function test_satuan_pilihan_teknisi_kesimpen_ke_master_alat(): void
+    {
+        $alat = $this->alatRefracto('n20D');
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payloadRefracto($alat, '°Brix'))
+            ->assertCreated();
+
+        $this->assertSame('°Brix', $alat->fresh()->satuan);
+
+        // Dan yang penting: hitungannya IKUT satuan baru, bukan cuma labelnya.
+        // 1,3362 pada 25 °C → 1,3362 + 0,07 × 5 = 1,6862. Kalau koefisiennya
+        // masih n20D hasilnya 1,33845 — selisih yang nggak mungkin kelewat.
+        $titik = CalibrationSession::latest('id')->firstOrFail()
+            ->uncertaintyCalculations()->firstOrFail();
+
+        $this->assertEqualsWithDelta(1.6862, (float) $titik->rata_rata, 1e-6);
+
+        // Ini satu-satunya jalur di lembar kerja yang nulis ke DATA MASTER, jadi
+        // jejaknya wajib ada. Trait `Diaudit` di Equipment yang ngerjain, dan
+        // test ini yang njaga dia nggak ilang diam-diam: perubahan master yang
+        // nggak kecatat baru ketahuan waktu asesmen, waktu udah nggak bisa
+        // direkonstruksi siapa yang ngubah dan kapan.
+        $this->assertDatabaseHas('audit_logs', [
+            'entity_type' => 'equipments',
+            'entity_id' => $alat->id,
+            'action' => 'diubah',
+            'changed_by' => $this->teknisi->id,
+        ]);
+    }
+
+    public function test_lembar_tanpa_kolom_satuan_nggak_ngutak_atik_master_alat(): void
+    {
+        // Mobile cuma ngirim `equipment_satuan` buat lembar yang punya kolomnya.
+        // Sesi pH/Turbidimeter/Chlorine nggak ngirim apa-apa, dan satuan alatnya
+        // wajib tetap kayak semula — kiriman lembar kerja bukan tempat data
+        // master keubah diam-diam.
+        $alat = $this->alatRefracto('n20D');
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payloadRefracto($alat, null))
+            ->assertCreated();
+
+        $this->assertSame('n20D', $alat->fresh()->satuan);
+    }
+
+    public function test_satuan_kosong_nggak_ngehapus_satuan_alat(): void
+    {
+        // Lembar kerja boleh dikirim setengah jadi dari lapangan. Kolom yang
+        // dilewat artinya "belum diisi", BUKAN "kosongin satuan alatnya".
+        $alat = $this->alatRefracto('°Brix');
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payloadRefracto($alat, ''))
+            ->assertCreated();
+
+        $this->assertSame('°Brix', $alat->fresh()->satuan);
+    }
+
+    public function test_preview_ikut_satuan_pilihan_tapi_nggak_nyimpen(): void
+    {
+        // Preview & sesi tersimpan wajib ngeluarin angka yang sama persis —
+        // teknisi ngintip hasil sebelum kirim, dan dua angka beda buat satu
+        // pengukuran itu temuan audit. Tapi preview tetap NGGAK boleh ninggalin
+        // jejak: dia dipanggil tiap selesai satu baris.
+        $alat = $this->alatRefracto('n20D');
+
+        $preview = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations/preview', $this->payloadRefracto($alat, '°Brix'))
+            ->assertOk();
+
+        $this->assertEqualsWithDelta(
+            1.6862,
+            (float) $preview->json('data.titik.0.rata_rata'),
+            1e-6,
+        );
+
+        $this->assertSame('n20D', $alat->fresh()->satuan, 'Preview nggak boleh nyentuh DB.');
+        $this->assertSame(0, CalibrationSession::count());
     }
 }

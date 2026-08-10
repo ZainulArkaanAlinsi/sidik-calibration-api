@@ -43,6 +43,20 @@ class CalibrationRequest extends FormRequest
                     ->where('organization_id', $organizationId)
                     ->whereNull('deleted_at'),
             ],
+
+            // "7. Satuan Refracto" — satu-satunya kolom lembar kerja yang nulis
+            // balik ke DATA MASTER alat (`equipments.satuan`), bukan ke sesinya.
+            //
+            // Bukan kemewahan: satu refractometer fisik bisa dipindah antara
+            // skala n20D & °Brix, dan RefractometerProfile milih koefisien suhu
+            // (0,00045/°C vs 0,07/°C) sama komponen CMC dari kolom itu. Teknisi
+            // yang mindahin skalanya di lapangan tapi nggak bisa nyatetnya bikin
+            // pembacaan °Brix dikoreksi pakai koefisien n20D — meleset 155 kali,
+            // tanpa satu pun error.
+            //
+            // Mobile cuma ngirim ini buat lembar yang PUNYA kolomnya, jadi sesi
+            // pH/Turbidimeter/Chlorine nggak pernah nyentuh satuan alatnya.
+            'equipment_satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
             // Ketidakpastian standar acuan itu komponen Type B terbesar. DULUNYA
             // wajib — sekarang boleh kosong, ngikutin lembar kerja: teknisi di
             // lapangan boleh ngirim lembar yang belum lengkap. Konsekuensinya
