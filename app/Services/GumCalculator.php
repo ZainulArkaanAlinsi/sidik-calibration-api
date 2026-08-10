@@ -48,6 +48,16 @@ class GumCalculator
     private const MAX_DRIFT_TITIK_TUNGGAL = 0.1;
 
     /**
+     * Batas geser RELATIF, dipakai bareng [MAX_DRIFT_TITIK_TUNGGAL] lewat
+     * `max()` — lihat alasannya di `kemampuanUntukTitik()`.
+     *
+     * 0,5% itu ~3x geseran koreksi suhu terbesar yang beneran kejadian di data
+     * (111 → 111,193568 = 0,17%), dan masih ratusan kali lebih sempit dari
+     * jarak antar titik CMC mana pun.
+     */
+    private const DRIFT_RELATIF_TITIK = 0.005;
+
+    /**
      * Cache kemampuan kalibrasi per `equipment_category_id`, seumur hidup
      * instance ini (satu request lewat DI, lihat CalibrationController) —
      * bukan cache lintas-request.
@@ -512,7 +522,24 @@ class GumCalculator
         // 0,04 NTU dibulatin jadi 0, nggak match kemampuan 0,04, dan CMC-nya
         // nggak kepasang. Guard driftnya tetap: 3,5 nggak nyangkut ke buffer 4
         // (selisih 0,5 > 0,1), tapi buffer 10,01 tetap match titik 10 (0,01).
-        $cocokTitikTunggal = fn (CalibrationCapability $k): bool => abs($titikUkur - (float) $k->range_max) <= self::MAX_DRIFT_TITIK_TUNGGAL;
+        // Ambang geser: yang lebih longgar antara batas MUTLAK (0,1) dan batas
+        // RELATIF (0,5% dari nilai titik).
+        //
+        // Batas mutlak doang jebol di titik bernilai besar. Nilai acuan
+        // conductivity 111 mS/cm digeser koreksi suhu jadi 111,193568 — meleset
+        // 0,194 dari titik CMC-nya, lewat dari 0,1, jadi CMC-nya NGGAK kepasang
+        // dan titiknya diam-diam jatuh ke jalur generik. Relatifnya cuma 0,17%.
+        //
+        // Dipakai `max()`, bukan diganti: buat semua titik bernilai kecil,
+        // suku relatifnya lebih sempit dari 0,1, jadi ambangnya tetap 0,1
+        // PERSIS kayak sebelumnya — pH (4/7/10), Chlorine (1,74/1,83),
+        // Refractometer (1,3366) nggak berubah sama sekali. Yang melebar cuma
+        // titik besar, dan di situ jarak antar titik CMC-nya ribuan kali lebih
+        // lebar dari ambangnya (25 → 1412 → 111 mS/cm), jadi nggak ada yang
+        // bisa nyangkut ke tetangga. Guard "yang paling dekat menang" di bawah
+        // tetap jadi lapis kedua.
+        $cocokTitikTunggal = fn (CalibrationCapability $k): bool => abs($titikUkur - (float) $k->range_max)
+            <= max(self::MAX_DRIFT_TITIK_TUNGGAL, self::DRIFT_RELATIF_TITIK * abs((float) $k->range_max));
 
         // Yang PALING DEKAT, bukan yang ketemu duluan.
         //
@@ -551,9 +578,26 @@ class GumCalculator
 
     /**
      * Guarded acceptance: pita jaga selebar U dipotong dari batas toleransi.
+     *
+     * `null` kalau alatnya NGGAK PUNYA batas toleransi — dan itu jawaban yang
+     * benar, bukan data yang bolong. Nggak semua jenis alat divonis: master
+     * Conductivity Meter, misalnya, nggak punya satu pun sel yang mbandingin
+     * hasil sama batas keberterimaan, dan sertifikatnya cuma nyetak Correction
+     * + U95% lalu berhenti.
+     *
+     * Sebelum ini `toleransi` yang kosong ke-cast jadi `0.0`, dan
+     * `|error| + U <= 0` itu mustahil — jadi tiap alat tanpa toleransi divonis
+     * **FAIL** diam-diam, di kolom yang paling dipercaya orang. Nggak ada alat
+     * terseed yang kena (pH, Turbidimeter, Chlorine, Refractometer semuanya
+     * punya toleransi), jadi ini nutup lubang sebelum keinjek, bukan mbenerin
+     * angka yang udah terlanjur kecetak.
      */
-    private function keputusan(float $error, float $diperluas, float $toleransi): string
+    private function keputusan(float $error, float $diperluas, float $toleransi): ?string
     {
+        if ($toleransi <= 0.0) {
+            return null;
+        }
+
         return abs($error) + $diperluas <= $toleransi ? 'PASS' : 'FAIL';
     }
 

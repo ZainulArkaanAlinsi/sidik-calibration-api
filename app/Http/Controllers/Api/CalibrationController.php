@@ -323,12 +323,38 @@ class CalibrationController extends Controller
             'Cuma teknisi yang ngerjain sesi ini yang boleh ngubahnya.',
         );
 
-        if (! in_array($calibration->status, [
+        // Admin boleh ngedit lembar yang UDAH disubmit teknisi (`menunggu_approval`),
+        // teknisi nggak.
+        //
+        // Sebelum ini status itu ngunci semua orang, jadi admin yang nemu satu
+        // angka keliru waktu review cuma punya satu jalan: `reject()` — lembar
+        // balik ke teknisi, teknisi benerin, submit ulang, admin review lagi.
+        // Buat salah ketik satu digit, itu muter-muter dan bikin lembar bolak-balik
+        // cuma buat perbaikan yang admin sendiri udah tahu benernya.
+        //
+        // Yang dibuka CUMA jendela statusnya. Isi yang boleh diubah tetap lewat
+        // `CalibrationRequest` + `atributDariRequest()` yang sama persis kayak
+        // jalur teknisi — termasuk field administratif, yang emang cuma kebuka
+        // buat admin. Nggak ada kolom yang lolos validasi cuma gara-gara yang
+        // ngirim admin.
+        //
+        // `disetujui` tetap terkunci buat SEMUA orang, admin sekalipun:
+        // sertifikatnya udah terbit dan udah kekirim ke pelanggan. Ngubahnya
+        // lewat jalur terbitkan-ulang, bukan lewat sini.
+        $statusBolehDiubah = [
             CalibrationSession::STATUS_DRAFT,
             CalibrationSession::STATUS_PERLU_REVISI,
-        ], true)) {
+        ];
+
+        if ($request->user()->isAdmin()) {
+            $statusBolehDiubah[] = CalibrationSession::STATUS_MENUNGGU_APPROVAL;
+        }
+
+        if (! in_array($calibration->status, $statusBolehDiubah, true)) {
             return response()->json([
-                'message' => 'Sesi yang lagi nunggu approval atau udah disetujui nggak bisa diubah.',
+                'message' => $calibration->status === CalibrationSession::STATUS_DISETUJUI
+                    ? 'Sesi yang udah disetujui nggak bisa diubah — sertifikatnya udah terbit.'
+                    : 'Sesi yang lagi nunggu approval nggak bisa diubah teknisi. Minta admin yang ngedit, atau minta lembarnya dibalikin dulu.',
             ], 422);
         }
 

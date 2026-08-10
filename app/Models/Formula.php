@@ -37,6 +37,9 @@ class Formula extends Model
     /** Rumus GUM buat jalur Refractometer (budget 5 komponen, lihat RefractometerProfile). */
     public const KODE_GUM_REFRACTOMETER = 'gum-refractometer';
 
+    /** Rumus GUM buat jalur Conductivity Meter (budget 4 komponen, lihat ConductivityProfile). */
+    public const KODE_GUM_CONDUCTIVITY = 'gum-conductivity';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {
