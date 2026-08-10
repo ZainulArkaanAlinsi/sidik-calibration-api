@@ -67,11 +67,32 @@ class TurbidimeterProfile extends CalibrationProfile
         ['label' => 'Victor 14+/992613877', 'cocok' => ['Victor 14+', '992613877']],
     ];
 
+    /**
+     * SEMUA unit thermohygro lab (TH-1..TH-7), dikelompokkan Insitu vs Inlab.
+     *
+     * Daftar ini dulu dipersempit jadi empat unit, dengan alasan "biar teknisi
+     * nggak bisa milih unit yang secara prosedur nggak boleh dipakai". Niatnya
+     * bener, akibatnya kebalikannya: sertifikat pH master `012-CAL-524` MEMAKAI
+     * TH-3 — dan TH-3 nggak ada di daftar. Teknisi jadi nggak punya pilihan
+     * yang benar sama sekali, lalu mau nggak mau milih unit lain.
+     *
+     * Itu yang kejadian 10 Agt 2026: pH kepilih TH-2, Turbidimeter TH-7,
+     * Chlorine TH-2. Env. Condition ketiganya meleset dari master BUKAN karena
+     * salah hitung — pembacaan suhu & kelembabannya sama persis — tapi karena
+     * tabel koreksi yang kepakai punya unit yang beda.
+     *
+     * Yang milih unit itu teknisi yang megang alatnya, dan dia tau unit mana
+     * yang beneran dibawa. Sistem nggak punya dasar buat nebak itu, jadi
+     * jangan menghalangi.
+     */
     public const THERMOHYGRO_TERCETAK = [
+        ['label' => 'TH-1', 'grup' => 'Inlab'],
+        ['label' => 'TH-3', 'grup' => 'Inlab'],
+        ['label' => 'TH-4', 'grup' => 'Inlab'],
+        ['label' => 'TH-5', 'grup' => 'Inlab'],
+        ['label' => 'TH-7', 'grup' => 'Inlab'],
         ['label' => 'TH-2', 'grup' => 'Insitu'],
         ['label' => 'TH-6', 'grup' => 'Insitu'],
-        ['label' => 'TH-7', 'grup' => 'Insitu'],
-        ['label' => 'TH-4', 'grup' => 'Inlab'],
     ];
 
     /**
