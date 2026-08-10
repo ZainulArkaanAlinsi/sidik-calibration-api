@@ -110,11 +110,9 @@ class SertifikatCocokMasterTest extends TestCase
             'Turbidimeter — 0189-CAL-624' => [
                 'nomorSesi' => '2406.32.A',
                 'hasil' => [
-                    ['mentah' => [1.0, 1.004, -0.004, 0.041], 'cetak' => ['1,00', '1,00', '0,00', '0,04']],
-                    // Koreksi -0,02 membulat ke nol di resolusi 1 NTU. Yang
-                    // kecetak `0`, BUKAN `-0`.
-                    ['mentah' => [100.0, 100.02, -0.02, 3.1], 'cetak' => ['100', '100', '0', '3']],
-                    ['mentah' => [1000.0, 1000.6, -0.6, 22.0], 'cetak' => ['1.000', '1.001', '-1', '22']],
+                    ['mentah' => [1.0, 1.004, -0.004, 0.041], 'cetak' => ['1', '1,00', '-0,00', '0,04']],
+                    ['mentah' => [100.0, 100.02, -0.02, 3.1], 'cetak' => ['100', '100,0', '-0,0', '3,1']],
+                    ['mentah' => [1000.0, 1000.6, -0.6, 22.0], 'cetak' => ['1000', '1001', '-1', '22']],
                 ],
             ],
 
@@ -188,10 +186,13 @@ class SertifikatCocokMasterTest extends TestCase
                     'titik '.($i + 1)." kolom {$nama} meleset dari master Excel",
                 );
 
-                // Formatter yang sama persis dipakai `sertifikat/pdf.blade.php`.
+                // Formatter yang sama persis dipakai `sertifikat/pdf.blade.php`:
+                // kolom pertama `nilaiStandar`, tiga sisanya `hasil`.
                 $this->assertSame(
                     $harapan['cetak'][$k],
-                    Angka::id($nilai, $desimal),
+                    $nama === 'standard_value'
+                        ? Angka::nilaiStandar($nilai, $desimal)
+                        : Angka::hasil($nilai, $desimal),
                     'titik '.($i + 1)." kolom {$nama} kecetak beda dari sertifikat kertas",
                 );
             }
@@ -231,17 +232,31 @@ class SertifikatCocokMasterTest extends TestCase
     public static function envKondisi(): array
     {
         return [
+            // ⚠ pH & Refractometer BELUM diadu ke halaman master masing-masing.
+            //
+            // Yang dipatok di sini cuma BENTUKNYA — aturan desimal yang sama
+            // yang kebaca dari master Turbidimeter & Chlorine (suhu 2 desimal,
+            // kelembaban bulat, ketidakpastian 1 desimal). Angkanya sendiri
+            // datang dari pipeline, bukan dari kertas.
+            //
+            // Artinya baris ini nahan REGRESI, tapi nggak mbuktiin kecocokan.
+            // Begitu halaman `Env. Condition` master pH & Refractometer kebuka,
+            // adu ke situ dan ganti — persis kayak yang dilakuin ke dua alat di
+            // bawah 10 Agt 2026. Jangan dianggap kelar cuma karena ijo.
             'pH Meter' => [
                 'nomorSesi' => '2405.13.A',
-                'harapan' => 'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,66%',
+                'harapan' => 'T: 20,97°C ± 1,7°C — %RH: 52% ± 5,7%',
             ],
+            // Disalin dari halaman `Env. Condition` master yang diadu langsung
+            // 10 Agt 2026 — `T 23,07 °C ± 1,7 °C` & `%RH 52 % ± 4,8 %`. Nilai
+            // kelembaban tersimpan 51,83, yang kecetak `52`.
             'Turbidimeter' => [
                 'nomorSesi' => '2406.32.A',
-                'harapan' => 'T: 23,1°C ± 1,7°C — %RH: 51,83% ± 4,80%',
+                'harapan' => 'T: 23,07°C ± 1,7°C — %RH: 52% ± 4,8%',
             ],
             'Chlorine Meter' => [
                 'nomorSesi' => '2406.32.C',
-                'harapan' => 'T: 23,2°C ± 1,8°C — %RH: 53,00% ± 4,90%',
+                'harapan' => 'T: 23,21°C ± 1,8°C — %RH: 53% ± 4,9%',
             ],
             // U95 kelembaban SENGAJA beda dari master: 5,20 punya kita vs
             // 5,292447448959697 di sheet. Nilai & koreksinya sendiri cocok
@@ -265,7 +280,9 @@ class SertifikatCocokMasterTest extends TestCase
             // sesi ini yang pakai TH-5 di kelembaban ~60 %RH.
             'Refractometer' => [
                 'nomorSesi' => '2211.11.R',
-                'harapan' => 'T: 22,0°C ± 1,8°C — %RH: 60,41% ± 5,20%',
+                // Sama kayak pH: bentuknya dipatok, angkanya belum diadu ke
+                // halaman master Refractometer. Lihat catatan di atas.
+                'harapan' => 'T: 21,96°C ± 1,8°C — %RH: 60% ± 5,2%',
             ],
         ];
     }
@@ -400,7 +417,11 @@ class SertifikatCocokMasterTest extends TestCase
     {
         $baris = $this->tabelHasil('2406.32.A');
 
-        $this->assertSame([2, 0, 0], array_map(
+        // `[2, 1, 0]` — titik 100 NTU masuk pita 0,1 (1 desimal), BUKAN pita 1.
+        // Sempat `[2, 0, 0]` karena `Equipment::resolusiPada()` mbandingin
+        // `< maks`, jadi nilai yang pas di batas kelempar ke pita berikutnya.
+        // Master nulis `100,0` & U95 `3,1`; yang keluar `100` & `3`.
+        $this->assertSame([2, 1, 0], array_map(
             fn (array $b): ?int => $b['desimal'] ?? null,
             $baris,
         ));

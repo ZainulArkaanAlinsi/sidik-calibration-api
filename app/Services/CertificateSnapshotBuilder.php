@@ -452,26 +452,31 @@ class CertificateSnapshotBuilder
     {
         $bagian = [];
 
-        // Desimalnya ngikut sertifikat ASLI lab: `T 23,2 °C` & `%RH 53 %` —
-        // suhu 1 desimal, kelembaban bulat.
+        // Desimalnya DISALIN dari sertifikat master, bukan diturunkan:
         //
-        // Suhu sempat dinaikin ke 2 desimal dengan alasan "suhu ruang dicatat
-        // sampai 0,01°C karena ikut ngaruh ke koreksi, jangan dipangkas ke 25,5
-        // — nanti kehilangan angka yang dicatat teknisi". Alasannya masuk akal
-        // buat NYIMPEN, tapi keliru buat NYETAK, dan premisnya nggak kebukti:
-        // teknisi ngisi `suhu_awal`/`suhu_akhir` di resolusi 0,1°C (mis. 24,1 &
-        // 23,5). Desimal ketiga di `suhu_ruang` (23,21) itu hasil HITUNGAN
-        // koreksi thermohygro, bukan angka yang pernah dibaca orang dari alat.
+        //   Turbidimeter 0189-CAL-624  T 23,07 °C ± 1,7 °C · %RH 52 % ± 4,8 %
+        //   Chlorine     2406.32.C.NK  T 23,21 °C ± 1,8 °C · %RH 53 % ± 4,9 %
         //
-        // Jadi nyetak 23,21 itu ngaku-ngaku ketelitian yang thermohygro-nya
-        // nggak punya — persis kesalahan yang dijaga di tempat lain di kode ini.
-        // Nilai penuhnya tetap utuh di DB & tetap dipakai ngitung; yang berubah
-        // cuma cara nampilinnya di dokumen.
+        // Jadi: NILAI suhu 2 desimal, NILAI kelembaban bulat, dan ketidakpastian
+        // dua-duanya 1 desimal. Kombinasi itu nggak simetris dan nggak bisa
+        // dinalar — makanya sempat salah berkali-kali dari dua arah sekaligus.
         //
-        // Kalau nanti `standards.resolusi` buat thermohygro udah keisi (sekarang
-        // NULL), desimalnya mestinya diturunin dari situ, bukan dipatok di sini.
+        // ## Riwayatnya, biar nggak diputer lagi
+        //
+        // Baris ini udah tiga kali digeser, dan tiap kali alasannya masuk akal:
+        //
+        //  - suhu diturunkan ke 1 desimal ("teknisi cuma baca 0,1°C, desimal
+        //    ketiga itu hasil hitungan koreksi thermohygro") — masuk akal, dan
+        //    salah: master nulis `23,07`.
+        //  - kelembaban dinaikin ke 2 desimal ("nilainya emang berdesimal,
+        //    `53` di Chlorine itu kebetulan bulat") — masuk akal, dan salah:
+        //    Turbidimeter yang nilainya 51,83 pun kecetak `52`.
+        //
+        // Dua-duanya diputus dari nalar metrologi, bukan dari kertasnya, dan
+        // dua-duanya kebalik dari yang lab tulis. Kalau baris ini mau digeser
+        // lagi, geser SETELAH ngadu ke halaman masternya — bukan sebelum.
         if ($sesi->suhu_ruang !== null) {
-            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 1).'°C';
+            $teks = 'T: '.Angka::id($sesi->suhu_ruang, 2).'°C';
 
             if ($sesi->suhu_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->suhu_ketidakpastian, 1).'°C';
@@ -481,31 +486,15 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->kelembaban !== null) {
-            // DUA desimal, nilai & ketidakpastiannya sama-sama — bukan bulat.
-            //
-            // Ini dokumen lab, bukan soal prinsip. Master nulis `51,95` (pH),
-            // `51,83` (Turbidimeter), `60,41` (Refractometer): kelembabannya
-            // emang berdesimal, dan `53` di Chlorine itu kebetulan bulat, bukan
-            // buktinya aturan pembulatan.
-            //
-            // Dua kali salah di sini, dua-duanya karena nalar dari konvensi
-            // bukan dari kertasnya:
-            //
-            //  - sampai 7 Agt kecetak `60% ± 5,2%` — nilai bulat, U 1 desimal.
-            //    Dikeluhkan lapangan, wajar: satu tarikan napas dua ketelitian.
-            //  - 7 Agt "dibetulin" jadi `60% ± 5%` dengan nyamain U ke nilainya.
-            //    Sejajar, tapi disejajarkan ke sisi yang salah — dan dikeluhkan
-            //    lagi 9 Agt, sekarang buat tiga alat sekaligus.
-            //
-            // Yang bener: NILAINYA yang nggak boleh dipangkas. Argumen lama
-            // ("teknisi baca kelembaban di resolusi 1%, desimalnya cuma hasil
-            // koreksi thermohygro") kedengaran masuk akal tapi nggak dipakai
-            // lab-nya sendiri — dan yang menentukan isi sertifikat itu dokumen
-            // resminya, bukan turunan prinsip.
-            $teks = '%RH: '.Angka::id($sesi->kelembaban, 2).'%';
+            // Nilainya BULAT, ketidakpastiannya 1 desimal — lihat catatan di
+            // blok suhu di atas. Master Turbidimeter nyimpen 51,83 dan nyetak
+            // `52`; Chlorine nyimpen 53,0 dan nyetak `53`. Nilai penuhnya tetap
+            // utuh di DB dan tetap dipakai ngitung; yang dipangkas cuma yang
+            // kecetak.
+            $teks = '%RH: '.Angka::id($sesi->kelembaban, 0).'%';
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
-                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 2).'%';
+                $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
             }
 
             $bagian[] = $teks;

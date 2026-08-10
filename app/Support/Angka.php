@@ -46,6 +46,67 @@ class Angka
     }
 
     /**
+     * Angka buat tabel **CALIBRATION REPORT** — beda dari [id()] di dua hal, dan
+     * dua-duanya dibaca dari master lab, bukan diturunkan dari konvensi.
+     *
+     * 1. **Tanpa pemisah ribuan.** Master nulis `1000` & `1001`, bukan `1.000` &
+     *    `1.001`. `number_format()` selalu ngelompokin, jadi titik 1.000 NTU
+     *    kecetak `1.001` — di dokumen yang komanya dipakai buat desimal, itu
+     *    kebaca ambigu.
+     * 2. **Tanda minus dipertahankan walau membulat ke nol.** Master nulis
+     *    `-0,00` (koreksi -0,004) dan `-0,0` (koreksi -0,02). PHP sendiri yang
+     *    ngebuang tandanya: `number_format(-0.004, 2)` balik `0,00`.
+     *
+     * Poin 2 pernah dipatok terbalik di tes ("yang kecetak `0`, BUKAN `-0`") —
+     * ditulis dari nalar, bukan dari kertasnya. Waktu master Turbidimeter
+     * `0189-CAL-624` diadu langsung 10 Agt 2026, yang kecetak `-0,00` / `-0,0`.
+     * Tandanya bukan hiasan: dia yang bilang alatnya baca DI ATAS standar.
+     */
+    public static function hasil(?float $nilai, int $desimal = self::DESIMAL_DEFAULT, string $kosong = '—'): string
+    {
+        if ($nilai === null) {
+            return $kosong;
+        }
+
+        $teks = number_format($nilai, $desimal, ',', '');
+
+        // `$nilai < 0` sengaja dicek di nilai ASLI, bukan di hasil pembulatan —
+        // itu justru bedanya: -0,004 membulat ke nol, tapi tetap negatif.
+        if ($nilai < 0 && ! str_starts_with($teks, '-')) {
+            $teks = '-'.$teks;
+        }
+
+        return $teks;
+    }
+
+    /**
+     * Kolom **Standard Value** — [hasil()] dengan nol di belakang dibuang.
+     *
+     * Kolomnya nulis nilai NOMINAL standar yang dipakai, dan master nulisnya apa
+     * adanya: Turbidimeter `1` / `100` / `1000` (bukan `1,00` / `100,0`),
+     * sementara Chlorine tetap `1,74` & `1,83` dan pH `4,01`. Bedanya bukan
+     * aturan per alat — bedanya standar Turbidimeter itu angka bulat, jadi
+     * desimalnya nggak membawa informasi apa pun.
+     *
+     * Batas atasnya tetap desimal barisnya: `4,009244572` di baris ber-2-desimal
+     * tetap kecetak `4,01`, nggak balik jadi presisi penuh.
+     */
+    public static function nilaiStandar(?float $nilai, int $desimal = self::DESIMAL_DEFAULT, string $kosong = '—'): string
+    {
+        if ($nilai === null) {
+            return $kosong;
+        }
+
+        $teks = self::hasil($nilai, $desimal);
+
+        if (! str_contains($teks, ',')) {
+            return $teks;
+        }
+
+        return rtrim(rtrim($teks, '0'), ',');
+    }
+
+    /**
      * Ketidakpastian (U95) — dijamin kebaca **2 angka penting**.
      *
      * Kolom hasil lain dicetak sebanyak desimal alatnya (resolusi 0,01 → 2
