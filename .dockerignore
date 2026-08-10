@@ -1,0 +1,50 @@
+# Yang paling penting di berkas ini: baris `.env`.
+#
+# Tanpa itu, .env laptop (kredensial MySQL lokal + GEMINI_API_KEY) ikut kesalin
+# ke dalam image, dan nilainya bakal MENANG atas environment variable yang
+# dipasang di dashboard Render — Laravel baca berkas .env duluan. Jadi bocor
+# sekaligus salah konfigurasi.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.gitattributes
+.github
+
+vendor
+node_modules
+public/build
+public/storage
+
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+!storage/**/.gitignore
+
+tests
+phpunit.xml
+.phpunit.result.cache
+_ide_helper_models.php
+.editorconfig
+.vscode
+.claude
+
+# Vault Obsidian, catatan, dan PDF master lab — nggak ada urusannya sama
+# server, tapi ukurannya bikin konteks build membengkak.
+Project-PT-Sidik
+CATATAN
+daily-reports
+docs
+*.pdf
+*.xlsm
+DAILY_REPORT.md
+CLAUDE.md
+README.md
+
+Dockerfile
+.dockerignore
+render.yaml

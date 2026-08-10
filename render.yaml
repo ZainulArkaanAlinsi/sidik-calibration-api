@@ -1,0 +1,91 @@
+# Blueprint Render — sekali impor, service-nya kebentuk lengkap sama semua
+# environment variable-nya.
+#
+# Yang ditandai `sync: false` sengaja NGGAK punya nilai di sini: itu rahasia
+# (kunci aplikasi, password database, kunci Gemini) dan berkas ini masuk git.
+# Render bakal nanyain satu-satu waktu blueprint diimpor.
+#
+# Database-nya nggak ikut didefinisikan di sini karena Render nggak punya MySQL
+# gratis — yang gratis cuma PostgreSQL, dan itu pun kedaluwarsa. MySQL-nya
+# nebeng Aiven (gratis selamanya, 1 GB). Lihat docs/deploy-gratis-render.md.
+
+services:
+  - type: web
+    name: sidik-calibration-api
+    runtime: docker
+    plan: free
+    # Singapura = region Render yang paling deket ke Indonesia.
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    # Laravel udah nyediain /up sendiri (didaftarin di bootstrap/app.php).
+    # Dipakai Render buat mastiin container-nya beneran hidup, bukan cuma
+    # nyala tapi error 500.
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: SIDIK Calibration
+      - key: APP_ENV
+        value: production
+      # WAJIB false di produksi. `true` bikin halaman error nampilin isi .env
+      # lengkap — termasuk password database — ke siapa pun yang kebetulan
+      # kena error.
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Jakarta
+      - key: APP_LOCALE
+        value: id
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      # Bikin nilainya: php artisan key:generate --show
+      - key: APP_KEY
+        sync: false
+
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Isi ca.pem dari Aiven, dalam base64 satu baris:
+      #   base64 -i ca.pem | tr -d '\n'
+      - key: DB_SSL_CA_B64
+        sync: false
+
+      # Semuanya numpang tabel di MySQL — biar nggak perlu Redis, yang di
+      # paket gratis emang nggak ada.
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+
+      # Disk container Render itu sementara — kehapus tiap deploy/restart.
+      # Foto lembar kerja & PDF sertifikat ikut hilang. Buat uji coba masih
+      # kepakai (PDF bisa dibangun ulang: php artisan sertifikat:bangun-ulang),
+      # tapi sebelum dipakai beneran pindahin ke Cloudflare R2.
+      - key: FILESYSTEM_DISK
+        value: local
+
+      - key: VISION_DRIVER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
+      # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
+      # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
+      - key: SEED_ON_BOOT
+        value: "false"
