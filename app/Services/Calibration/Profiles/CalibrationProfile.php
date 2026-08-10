@@ -348,6 +348,7 @@ abstract class CalibrationProfile
      *   Turbidimeter   `General`    23,07      `0`          52
      *   Chlorine       `General`    23,21      `General`    53
      *   Refractometer  `0.0`        22,0       `0`          60
+     *   Conductivity   `0.0`        25,8       `0`          51
      *
      * Nggak ada satu aturan yang bener buat keempatnya — jadi jangan dicari.
      * Ketidakpastiannya beda: `0.0` di keempat workbook, jadi ITU tetap dipatok
@@ -362,5 +363,48 @@ abstract class CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return null;
+    }
+
+    /**
+     * Apa jenis alat ini PUNYA batas toleransi yang jadi dasar vonis PASS/FAIL?
+     *
+     * Dipakai `CalibrationValidator` buat mbedain dua hal yang di tabel
+     * `equipments` kelihatan sama persis — `toleransi` NULL:
+     *
+     *  - **belum diisi** → sertifikat bakal terbit tanpa vonis padahal
+     *    mestinya ada, dan itu pantas ditahan; dan
+     *  - **alatnya emang nggak divonis** → NULL itu jawaban yang benar.
+     *
+     * Conductivity Meter masuk yang kedua: seluruh master-nya nggak punya satu
+     * pun sel yang mbandingin hasil sama batas keberterimaan, dan kedua sheet
+     * sertifikatnya cuma nyetak `Correction` + `U95%` lalu berhenti.
+     *
+     * Default `true` — keempat profil yang lebih dulu ada semuanya punya
+     * toleransi, jadi perilaku mereka nggak berubah sama sekali.
+     */
+    public function punyaToleransi(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Ubah satu pembacaan ke satuan yang dipakai `equipments.range_min/max`,
+     * biar pengecekan "pembacaan di luar rentang" mbandingin dua angka yang
+     * SEBANDING.
+     *
+     * Default: nggak ngapa-ngapain. Hampir semua alat cuma punya satu satuan
+     * di seluruh lembar, jadi pembacaan dan rentang alat udah otomatis
+     * sebanding — dan buat mereka method ini nggak ngubah apa pun.
+     *
+     * Yang butuh cuma alat yang lembarnya NYAMPUR satuan. Conductivity Meter
+     * nyatet titik 25 & 1412 dalam µS/cm tapi rentang alatnya `0–100 mS/cm`;
+     * tanpa konversi, pembacaan 1413 µS/cm (= 1,413 mS/cm, jelas di dalam
+     * rentang) ke-flag "jauh di luar rentang, komanya kegeser".
+     *
+     * @param  string|null  $satuanTitik  satuan yang kecatat di baris pembacaan
+     */
+    public function nilaiDalamSatuanAlat(float $nilai, ?string $satuanTitik, Equipment $equipment): float
+    {
+        return $nilai;
     }
 }

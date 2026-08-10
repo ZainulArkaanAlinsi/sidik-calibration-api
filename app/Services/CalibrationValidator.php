@@ -101,7 +101,18 @@ class CalibrationValidator
             );
         }
 
-        if ($sesi->equipment === null || $sesi->equipment->toleransi === null) {
+        // Toleransi kosong cuma jadi temuan kalau alatnya MEMANG divonis
+        // PASS/FAIL. Ada jenis alat yang nggak — Conductivity Meter nggak punya
+        // satu pun batas keberterimaan di seluruh master-nya, dan sertifikatnya
+        // berhenti di `Correction` + `U95%`. Buat alat kayak gitu, `toleransi`
+        // NULL itu jawaban yang benar, dan nahan penerbitannya berarti minta
+        // orang ngarang kriteria kelulusan biar lembarnya bisa lewat.
+        $profilAlat = $sesi->equipment !== null
+            ? $this->profil->untukAlat($sesi->equipment)
+            : null;
+
+        if ($sesi->equipment === null
+            || ($sesi->equipment->toleransi === null && $profilAlat?->punyaToleransi() !== false)) {
             $temuan[] = $this->temuan(
                 self::ERROR,
                 'toleransi_kosong',
@@ -222,7 +233,12 @@ class CalibrationValidator
             $ulang = (int) $m->pembacaan_ke;
             $di = "Titik ke-{$ke} Repeat {$ulang}";
 
-            if ($this->diLuarRentang($nilai, $alat)) {
+            // Dibandingin dalam SATUAN ALAT, bukan satuan yang kecatat di baris
+            // pembacaan. Buat alat yang lembarnya satu satuan (hampir semuanya)
+            // ini nggak ngubah angkanya sama sekali; buat Conductivity Meter —
+            // yang nyampur µS/cm & mS/cm dalam satu lembar — ini yang bikin
+            // 1413 µS/cm nggak lagi ke-flag "di luar rentang 0–100 mS/cm".
+            if ($this->diLuarRentang($profil->nilaiDalamSatuanAlat($nilai, $m->satuan, $alat), $alat)) {
                 $temuan[] = $this->temuan(
                     self::PERINGATAN,
                     'pembacaan_di_luar_rentang',
@@ -653,6 +669,15 @@ class CalibrationValidator
     private function periksaKeputusanSesi(CalibrationSession $sesi): array
     {
         if ($sesi->uncertaintyCalculations->isEmpty()) {
+            return [];
+        }
+
+        // Alat yang emang nggak divonis nggak punya "keputusan yang seharusnya"
+        // — sesinya `null`, titik-titiknya `null`, dan itu konsisten. Tanpa
+        // pengaman ini, tiap sesi Conductivity ke-flag "keputusan sesi salah,
+        // seharusnya PASS" dan nggak akan pernah bisa terbit.
+        if ($sesi->equipment !== null
+            && $this->profil->untukAlat($sesi->equipment)->punyaToleransi() === false) {
             return [];
         }
 
