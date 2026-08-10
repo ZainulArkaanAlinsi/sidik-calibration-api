@@ -117,12 +117,24 @@ class CertificateSnapshotTest extends TestCase
         $header = $this->terbitkanSertifikat()->snapshot['header'];
 
         // 16 field, nggak lebih & nggak kurang — strukturnya dikunci spesifikasi.
-        $this->assertSame([
+        //
+        // Yang diadu HIMPUNAN kuncinya, bukan urutannya. `snapshot` itu kolom
+        // JSON, dan MySQL nyimpen JSON dalam format biner yang MENGURUT ULANG
+        // kunci (panjang dulu, baru leksikografis) — jadi urutan sisipan nggak
+        // pernah balik utuh. Di SQLite kolomnya teks, urutannya kebetulan
+        // kejaga, dan `assertSame` kelihatan bener. Ketahuan 11 Agt 2026 waktu
+        // suite dijalanin ke MySQL. Yang dijaga tes ini kelengkapan field,
+        // bukan urutan cetaknya (itu diatur blade).
+        $harapan = [
             'certificate_number', 'page', 'owner', 'order_number', 'address', 'received_date',
             'equipment_name', 'manufacturer', 'calibration_location', 'model_type',
             'calibration_date', 'serial_number', 'calibration_method', 'capacity_graduation',
             'env_condition', 'technician_id',
-        ], array_keys($header));
+        ];
+        $aktual = array_keys($header);
+        sort($harapan);
+        sort($aktual);
+        $this->assertSame($harapan, $aktual);
 
         $this->assertSame('PT TIRTA GRACIA SEMESTA MANDIRI', $header['owner']);
         $this->assertSame('2405.13.A', $header['order_number']);

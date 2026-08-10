@@ -123,7 +123,13 @@ class StandardTest extends TestCase
             ->assertJsonPath('data.nama', 'Anak Timbangan Kelas F1')
             ->assertJsonPath('data.masih_berlaku', true);
 
-        $this->assertDatabaseHas('standards', ['serial_number' => 'KRN-F1-001', 'organization_id' => 1]);
+        // `organization_id` diambil dari organisasi tesnya, bukan dipatok `1`.
+        // Di SQLite in-memory id-nya selalu 1; di MySQL AUTO_INCREMENT terus
+        // maju lintas tes, jadi patokan itu ngecek organisasi yang salah.
+        $this->assertDatabaseHas('standards', [
+            'serial_number' => 'KRN-F1-001',
+            'organization_id' => $this->admin->organization_id,
+        ]);
     }
 
     public function test_teknisi_nggak_boleh_nambah_atau_ngubah_standar(): void
