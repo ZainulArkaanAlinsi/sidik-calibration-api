@@ -393,11 +393,27 @@ class OcrMeasurementTest extends TestCase
             ['calibration_sessions', 'input_method'],
             ['raw_measurements', 'input_source'],
         ] as [$tabel, $kolom]) {
-            $tipe = DB::selectOne("SHOW COLUMNS FROM {$tabel} LIKE ?", [$kolom])->Type;
+            // Lewat `information_schema`, BUKAN `SHOW COLUMNS ... LIKE ?`.
+            //
+            // MySQL nggak nerima placeholder di `SHOW COLUMNS`, jadi bind-nya
+            // nggak kepasang dan yang kekirim `... LIKE input_method` tanpa
+            // kutip — syntax error, bukan assert yang gagal.
+            //
+            // Efeknya tes ini NGGAK PERNAH beneran jalan: di SQLite di-skip,
+            // di MySQL meledak sebelum sampai assert. Ketahuan 11 Agt 2026
+            // waktu suite sengaja dijalanin ke MySQL buat ngilangin skip
+            // terakhir. Cakupan yang cuma kelihatan ada.
+            $baris = DB::selectOne(
+                'select column_type as tipe from information_schema.columns
+                 where table_schema = database() and table_name = ? and column_name = ?',
+                [$tabel, $kolom],
+            );
+
+            $this->assertNotNull($baris, "kolom {$tabel}.{$kolom} nggak ketemu di skema");
 
             $this->assertStringStartsNotWith(
                 'enum(',
-                $tipe,
+                (string) $baris->tipe,
                 "{$tabel}.{$kolom} balik jadi enum — sumber input baru bakal ditolak diam-diam",
             );
         }
