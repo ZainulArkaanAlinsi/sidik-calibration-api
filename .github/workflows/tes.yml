@@ -1,0 +1,49 @@
+# Penjaga buat auto-deploy.
+#
+# Render dipasang `autoDeploy: true` — tiap push ke branch yang kesambung
+# langsung kedorong ke server, tanpa nunggu siapa pun. Enak, tapi artinya
+# commit yang rusak juga ikut naik. Workflow ini jalan barengan dan bikin
+# push-nya kelihatan merah di GitHub kalau ada test yang jatuh, jadi ketahuan
+# sebelum ada yang buka aplikasinya di lokasi.
+#
+# Ini penanda, BUKAN gerbang: Render nggak nungguin hasil workflow ini. Kalau
+# merah, ya di-revert atau di-fix terus push lagi.
+name: Tes
+
+on:
+  push:
+    branches:
+      - main
+      - chore/deploy-gratis-render
+  pull_request:
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          # Samain sama Dockerfile — beda versi PHP antara CI dan produksi
+          # bikin CI hijau tapi servernya tetap error.
+          php-version: '8.3'
+          extensions: pdo_sqlite, gd, intl, bcmath, zip, exif
+          coverage: none
+
+      - name: Cache dependency Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --prefer-dist --no-interaction --no-progress
+
+      # Test-nya jalan di SQLite in-memory (lihat phpunit.xml), jadi nggak perlu
+      # nyalain MySQL di CI. Tapi .env harus tetap ada — `key:generate` nulisnya
+      # ke situ, dan tanpa APP_KEY semua test yang nyentuh enkripsi/sesi jatuh.
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+
+      - run: php artisan test
