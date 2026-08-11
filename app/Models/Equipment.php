@@ -17,6 +17,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'organization_id', 'customer_id', 'equipment_category_id', 'nama_alat', 'nama_alat_kemampuan',
     'merk', 'model', 'serial_number', 'no_identifikasi', 'range_min', 'range_max', 'satuan', 'resolusi',
+    // Ketinggalan sejak kolomnya dibikin (migrasi 2026_08_04_120000): dia ada
+    // di `casts()` tapi nggak pernah masuk daftar ini, jadi tiap mass-assign
+    // membuangnya TANPA error. `ConductivitySeeder` kelihatan sukses padahal
+    // satuan per titiknya nggak pernah kesimpen, dan form panel admin bakal
+    // kena hal yang sama. Ketahuan 11 Agt 2026 waktu form-nya mau dibikin.
+    'resolusi_rentang',
     'toleransi', 'lokasi', 'tanggal_kalibrasi_terakhir', 'tanggal_jatuh_tempo', 'status', 'catatan',
 ])]
 class Equipment extends Model

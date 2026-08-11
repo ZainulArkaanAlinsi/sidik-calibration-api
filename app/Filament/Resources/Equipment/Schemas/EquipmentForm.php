@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -84,7 +85,67 @@ class EquipmentForm
                         TextInput::make('toleransi')
                             ->numeric()
                             ->minValue(0)
-                            ->helperText('Wajib diisi sebelum alat bisa dikalibrasi.'),
+                            ->helperText('Wajib diisi sebelum alat bisa dikalibrasi. Kosongkan kalau jenis alat ini memang tidak divonis PASS/FAIL (mis. Conductivity Meter).'),
+                    ]),
+
+                Section::make('Resolusi per titik')
+                    ->description('Isi kalau alat ini TIDAK seragam — resolusi atau satuannya berubah antar titik. Kosongkan kalau resolusi tunggal di atas sudah mewakili.')
+                    ->schema([
+                        Repeater::make('resolusi_rentang')
+                            ->hiddenLabel()
+                            ->addActionLabel('Tambah baris resolusi')
+                            ->columns(4)
+                            ->schema([
+                                TextInput::make('titik')
+                                    ->label('Titik standar')
+                                    ->numeric()
+                                    ->helperText('mis. 25 / 1412 / 111'),
+                                TextInput::make('maks')
+                                    ->label('Batas atas')
+                                    ->numeric()
+                                    ->helperText('Alternatif dari titik. Kosongkan = golongan terakhir.'),
+                                TextInput::make('resolusi')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->required(),
+                                TextInput::make('satuan')
+                                    ->maxLength(20)
+                                    ->helperText('mis. µS/cm'),
+                            ])
+                            // Dua bentuk baris, dan keduanya harus bisa
+                            // disimpan tanpa saling merusak:
+                            //
+                            //  - **Titik standar** — buat alat yang SATUANNYA
+                            //    beda antar titik. Conductivity meter baca 25 &
+                            //    1412 dalam µS/cm lalu pindah sendiri ke mS/cm
+                            //    di standar ketiga, dan sertifikatnya wajib
+                            //    ikut yang tampil di layar alat pelanggan.
+                            //    Ambang angka nggak bisa dipakai di sini:
+                            //    `111 mS/cm` secara ANGKA lebih kecil dari
+                            //    `1412 µS/cm`, jadi dia bakal nyangkut ke
+                            //    golongan yang salah.
+                            //
+                            //  - **Batas atas** — buat alat yang satuannya
+                            //    seragam tapi resolusinya berubah menurut besar
+                            //    pembacaan (Turbidimeter: 0,01 di bawah 10 NTU,
+                            //    0,1 di 10–100, 1 di atasnya).
+                            //
+                            // Dua-duanya ditaruh di form yang sama supaya alat
+                            // lama yang pakai `maks` nggak kehilangan datanya
+                            // begitu dibuka & disimpan lewat panel ini.
+                            ->helperText(
+                                'Pakai **Titik standar** kalau satuannya beda antar titik (Conductivity Meter). '
+                                .'Pakai **Batas atas** kalau satuannya seragam tapi resolusinya berubah menurut besar '
+                                .'pembacaan (Turbidimeter). Isi salah satu, jangan dua-duanya.'
+                            )
+                            ->defaultItems(0)
+                            ->collapsible()
+                            ->itemLabel(fn (array $state): ?string => match (true) {
+                                filled($state['titik'] ?? null) => trim(($state['titik'] ?? '').' '.($state['satuan'] ?? '')),
+                                filled($state['maks'] ?? null) => 'sampai '.$state['maks'].' '.($state['satuan'] ?? ''),
+                                default => null,
+                            })
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Status kalibrasi')
