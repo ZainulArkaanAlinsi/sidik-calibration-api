@@ -34,11 +34,26 @@ Conductivity satu-satunya alat yang **mencampur dua satuan dalam satu lembar**.
    `baris[].satuan`. Kalau kamu ambil dari level lembar, seluruh kolom akan
    salah label.
 
-2. **Dua baris saling meniadakan.** Baris `1412 µS/cm` dan `1,412 mS/cm` adalah
-   botol larutan yang sama dibaca dalam dua satuan; teknisi mengisi salah satu.
-   Tiap baris membawa `eksklusif_dengan`. Begitu satu baris mulai diisi, kunci
-   pasangannya dan beri keterangan singkat. Kalau dua-duanya bisa terisi,
-   sistem menerima dua nilai untuk satu botol.
+2. **Kirim `equipment_id` kalau alatnya sudah dipilih.**
+
+   ```
+   GET /api/calibrations/lembar-kerja?profil=conductivity_meter&equipment_id=123
+   ```
+
+   Ini yang paling menentukan bentuk layarnya:
+
+   - **Dengan `equipment_id`** → 3 baris, satuan tiap titik sudah terpilih
+     mengikuti alat pelanggan. Tidak ada yang perlu dipilih teknisi.
+   - **Tanpa `equipment_id`** → 4 baris (template generik), karena titik tengah
+     dikirim dalam dua varian satuan untuk dipilih.
+
+   Pada bentuk generik, baris `1412 µS/cm` dan `1,412 mS/cm` adalah botol
+   larutan yang sama dibaca dalam dua satuan. Tiap baris membawa
+   `eksklusif_dengan` — begitu satu diisi, kunci pasangannya. Kalau dua-duanya
+   bisa terisi, sistem menerima dua nilai untuk satu botol.
+
+   **Selalu kirim `equipment_id` kalau bisa.** Aturan lab: sertifikat mengikuti
+   satuan yang tampil di layar alat pelanggan, dan hanya alat yang tahu itu.
 
 3. **Suhu wajib kalau pembacaan diisi.** Nilai acuan larutan digeser ikut suhu.
    Tahan pengiriman kalau ada baris yang pembacaannya terisi tapi suhunya
@@ -86,9 +101,26 @@ lain di alur approve.
    perbaiki tampilannya** — laporkan selisihnya, karena kemungkinan besar
    masalahnya di pemetaan data, bukan di format.
 
-## CATATAN
+## CATATAN — nomor style tertukar dari file Excel lama
 
-Titik 1412 µS/cm **sengaja berbeda** dari cetakan Excel lama: Standard Value
-1411 (bukan 1412) dan Correction −2 (bukan −1). Nilai acuannya sekarang
-dikoreksi suhu. Kalau ada yang membandingkan dengan sertifikat lama dan
-menemukan selisih 1, itu bukan bug — alasannya di bagian 6 dokumen handoff.
+Angka hasil kalibrasi **cocok master Excel persis**, tidak ada selisih yang
+disengaja.
+
+Yang berbeda cuma **penomoran style**:
+
+| Style | Satuan per titik |
+|---|---|
+| 1 | µS/cm · µS/cm · mS/cm |
+| 2 | µS/cm · mS/cm · mS/cm |
+| 3 | mS/cm · mS/cm · mS/cm |
+
+Sheet `SERTIFIKAT STYLE 1` di file Excel justru mencetak titik tengah dalam
+mS/cm — kebalikan dari tabel ini. Lab sendiri yang menyatakan label di file itu
+keliru dan menetapkan urutan di atas.
+
+Kalau ada yang membandingkan dengan cetakan Excel lama: **angkanya sama persis,
+hanya nomor style-nya yang tertukar.** Jangan dibalik agar cocok dengan nama
+sheet.
+
+Style-nya **diturunkan dari satuan**, bukan dipilih. Tidak perlu dropdown
+"pilih style" di layar mana pun.
