@@ -99,7 +99,16 @@ class ConductivitySesiVarianMiliTest extends TestCase
         $mili = $this->sesi(self::SESI_FIXTURE)->uncertaintyCalculations
             ->firstWhere('titik_ke', 2);
 
-        foreach (['titik_ukur', 'rata_rata', 'koreksi'] as $kolom) {
+        foreach ([
+            'titik_ukur',
+            'rata_rata',
+            'koreksi',
+            'standar_deviasi',
+            'type_a',
+            'type_b',
+            'ketidakpastian_gabungan',
+            'ketidakpastian_diperluas',
+        ] as $kolom) {
             $harapan = (float) $mikro->{$kolom} / 1000.0;
 
             $this->assertEqualsWithDelta(
@@ -112,51 +121,40 @@ class ConductivitySesiVarianMiliTest extends TestCase
     }
 
     /**
-     * CACAT TERBUKA — ketidakpastian titik tengah varian mS/cm masih salah.
+     * Titik tengah varian mS/cm harus lewat jalur budget terakreditasi yang
+     * SAMA dengan jalur µS/cm — bukan jatuh ke jalur generik.
      *
-     * Ditemukan 11 Agt 2026 waktu bikin sesi contoh ini. Angkanya:
+     * Sebelum 11 Agt 2026 dia jatuh: `v_eff` NULL, U95 keluar 8,0000 (harusnya
+     * ~0,008109), dan angkanya bukan turunan CMC lab sama sekali. Sebabnya CMC
+     * kedaftar di 25 & 1412 (µS/cm) dan 111 (mS/cm) — nggak ada baris di 1,412,
+     * jadi `kemampuanUntukTitik()` nggak nemu apa-apa.
      *
-     *   sesi µS/cm  titik 2: uc=4,1149  v_eff=223,35  U95=8,1090
-     *   sesi mS/cm  titik 2: uc=4,0000  v_eff=NULL    U95=8,0000
-     *
-     * `v_eff` NULL itu tandanya: titik ini nggak lewat jalur budget sama sekali,
-     * dia jatuh ke `GumCalculator::hitungDariStandarDanResolusi()`. Sebabnya CMC
-     * lab kedaftar di titik 25 & 1412 (µS/cm) dan 111 (mS/cm) — nggak ada baris
-     * di 1,412, jadi `kemampuanUntukTitik()` nggak nemu apa-apa dan lantai CMC
-     * plus Welch–Satterthwaite nggak kepasang.
-     *
-     * Akibatnya U95 kecetak 8,0000 mS/cm, sekitar 1000× kegedean, DAN bukan
-     * turunan dari kemampuan terakreditasi lab. Nilai bacaannya sendiri
-     * (`titik_ukur`/`rata_rata`/`koreksi`) udah bener — lihat tes di atas.
-     *
-     * Kenapa belum dibetulin di sini: perbaikannya nyentuh mesin budget yang
-     * dipakai SEMUA alat, dan angkanya masuk sertifikat terakreditasi. Itu
-     * keputusan yang bukan punya saya. Dua jalan yang kelihatan:
-     *
-     *  1. Hitung titik ini di satuan kanonik (µS/cm) lalu skalakan hasilnya —
-     *     bikin jalur mS/cm terbukti identik sama jalur yang udah diadu master.
-     *  2. Tambah baris CMC 1,412 mS/cm di lampiran kemampuan — tapi itu klaim
-     *     akreditasi yang lab-nya sendiri belum pernah nulis.
-     *
-     * Sampai itu diputuskan, sesi varian mS/cm JANGAN diterbitkan sertifikatnya.
-     * Peringatan `conductivity_titik_tengah_mili` udah nahan mata admin di sana.
+     * Perbaikannya bukan nambah baris CMC (itu klaim akreditasi yang lab-nya
+     * belum pernah nulis), tapi ngitung titik ini di satuan kanoniknya lewat
+     * `faktorKanonik()`. Yang dijaga di sini: v_eff & k IDENTIK sama sesi µS/cm
+     * — dua-duanya nirsatuan, jadi kalau beda artinya titiknya lewat jalur lain
+     * atau kena skala yang nggak boleh kena.
      */
-    public function test_ketidakpastian_titik_tengah_mili_belum_benar(): void
+    public function test_titik_tengah_mili_lewat_jalur_budget_yang_sama(): void
     {
+        $mikro = $this->sesi(self::SESI_ASLI)->uncertaintyCalculations
+            ->firstWhere('titik_ke', 2);
         $mili = $this->sesi(self::SESI_FIXTURE)->uncertaintyCalculations
             ->firstWhere('titik_ke', 2);
 
-        // Dijaga supaya cacatnya nggak diam-diam berubah bentuk tanpa ketahuan.
-        $this->assertNull(
+        $this->assertNotNull(
             $mili->derajat_kebebasan_efektif,
-            'v_eff udah keisi — jalur budget kepasang, tes ini pantas dinaikin jadi assertion beneran.',
+            'v_eff kosong — titiknya jatuh ke jalur generik, lantai CMC nggak kepasang.',
         );
 
-        $this->markTestIncomplete(
-            'U95 varian mS/cm = '.$mili->ketidakpastian_diperluas
-            .', harusnya ~0,0081090119478521 (U95 sesi µS/cm ÷ 1000). '
-            .'Butuh keputusan soal jalur CMC — lihat docblock.',
-        );
+        foreach (['derajat_kebebasan_efektif', 'faktor_cakupan_k'] as $nirsatuan) {
+            $this->assertEqualsWithDelta(
+                (float) $mikro->{$nirsatuan},
+                (float) $mili->{$nirsatuan},
+                1e-9,
+                "Kolom {$nirsatuan} nirsatuan, harusnya identik di dua sesi.",
+            );
+        }
     }
 
     public function test_peringatan_varian_mili_nyampe_ke_dialog_approve(): void

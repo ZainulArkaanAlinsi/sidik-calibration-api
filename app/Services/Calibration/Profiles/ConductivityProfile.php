@@ -488,22 +488,23 @@ class ConductivityProfile extends CalibrationProfile
      *  - Syarat botolnya masih µS/cm bikin ini mati sendiri kalau suatu saat
      *    lab nyimpen botol 1412 dalam mS/cm — nggak kebagi dua kali.
      */
-    public function nilaiAcuanPadaSuhu(
-        float $nilaiAcuan,
-        float $titikDiminta,
-        Standard $standard,
-        Equipment $equipment,
-    ): float {
+    public function faktorKanonik(float $titikUkur, Equipment $equipment): float
+    {
         $tengah = self::TITIK[1]['varian_mili'] ?? null;
 
-        if ($tengah === null || $standard->satuan_ketidakpastian !== self::SATUAN_MIKRO) {
-            return $nilaiAcuan;
+        if ($tengah === null) {
+            return 1.0;
         }
 
-        $variannya = abs($titikDiminta - $tengah['nilai'])
+        // CUMA titik tengah yang punya dua varian. Titik 111 emang native
+        // mS/cm — botol, polinomial, dan baris CMC-nya sama-sama mS/cm — jadi
+        // dia udah kanonik dan nggak boleh ikut dinaikin.
+        $variannya = abs($titikUkur - $tengah['nilai'])
             <= $tengah['nilai'] * self::TOLERANSI_PASANGAN_TITIK;
 
-        return $variannya ? $nilaiAcuan / 1000.0 : $nilaiAcuan;
+        // 1 mS/cm = 1000 µS/cm. Kanoniknya µS/cm, karena itu yang dipakai
+        // master Excel lab dan yang baris CMC titik tengah ditulis.
+        return $variannya ? 1000.0 : 1.0;
     }
 
     /**
