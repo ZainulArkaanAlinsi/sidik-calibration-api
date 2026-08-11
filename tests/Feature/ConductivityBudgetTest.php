@@ -537,6 +537,40 @@ class ConductivityBudgetTest extends TestCase
     }
 
     /**
+     * `resolusi_rentang` HARUS bisa di-mass-assign.
+     *
+     * Kolomnya ada di `casts()` sejak migrasi 2026_08_04_120000 tapi nggak
+     * pernah masuk daftar `Fillable`. Akibatnya tiap `create()`/`update()`
+     * membuangnya TANPA error: `ConductivitySeeder` kelihatan sukses padahal
+     * satuan per titiknya nggak pernah kesimpen, dan form panel admin bakal
+     * kena hal yang sama. Ketahuan 11 Agt 2026.
+     *
+     * Diuji lewat mass-assign beneran, bukan cuma ngintip `getFillable()` —
+     * yang mau dijaga perilakunya, bukan isi daftarnya.
+     */
+    public function test_resolusi_rentang_bisa_disimpan_lewat_mass_assign(): void
+    {
+        $rentang = [
+            ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+            ['titik' => 1412, 'resolusi' => 1.0, 'satuan' => 'µS/cm'],
+            ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+        ];
+
+        $this->alat->update(['resolusi_rentang' => $rentang]);
+
+        $tersimpan = $this->alat->fresh()->resolusi_rentang;
+
+        $this->assertIsArray($tersimpan, 'resolusi_rentang kebuang waktu disimpan');
+        $this->assertCount(3, $tersimpan);
+        $this->assertSame('mS/cm', $tersimpan[2]['satuan']);
+
+        // Dan yang paling penting: satuannya beneran kepakai sesudah dimuat
+        // ulang dari DB, bukan cuma nempel di objek yang masih di memori.
+        $profil = new ConductivityProfile;
+        $this->assertSame('mS/cm', $profil->satuanTitik(111.0, $this->alat->fresh()));
+    }
+
+    /**
      * Lembar kerja ikut ALAT PELANGGAN — arahan lab 11 Agt 2026: "nggak ada
      * memilih-milih lagi, disesuaikan sama input data di resolusi alat".
      */
