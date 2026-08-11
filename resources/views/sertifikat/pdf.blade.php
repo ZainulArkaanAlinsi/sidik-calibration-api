@@ -369,7 +369,13 @@
                          `100`, `1000`), tiga kolom lain ikut desimal barisnya.
                          Dua-duanya tanpa pemisah ribuan & tanda minus tetap
                          dipertahankan — lihat docblock `Angka::hasil()`. --}}
-                    <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
+                    {{-- Satuan ikut di kolom pertama buat alat yang nyampur
+                         satuan dalam satu lembar (Conductivity: `25 µS/cm` vs
+                         `111 mS/cm`). Alat bersatuan seragam ngirim null dan
+                         tampilannya nggak berubah — satuannya udah kesebut di
+                         kepala kolom. --}}
+                    @php($sat = $baris['satuan'] ?? null)
+                    <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}{{ $sat ? ' '.$sat : '' }}</td>
                     <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
                     <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
                     {{-- U95 ikut desimal alat, SAMA kayak tiga kolom di atas —
