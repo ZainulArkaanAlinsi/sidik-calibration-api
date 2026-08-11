@@ -185,6 +185,21 @@ class CertificateSnapshotBuilder
                     // Nilai mentahnya TETAP presisi penuh — ini cuma ngatur
                     // berapa digit yang ditulis. Nggak ada pembulatan data.
                     'desimal' => $desimal,
+                    // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam
+                    // satu lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
+                    //
+                    // Ikut DIBEKUKAN ke snapshot, sama alasannya kayak
+                    // `desimal`: sertifikat yang udah terbit nggak boleh
+                    // berubah bentuk gara-gara master alat diedit sesudahnya.
+                    //
+                    // Ditambah SEBELUM sertifikat Conductivity pertama terbit —
+                    // sesudah itu betulinnya mesti lewat `sertifikat:bangun-ulang`
+                    // ke dokumen yang mungkin udah dipegang pelanggan.
+                    //
+                    // `null` buat alat bersatuan seragam; PDF & layar jatuh ke
+                    // satuan alat kayak biasa, jadi empat alat lain nggak
+                    // berubah sama sekali.
+                    'satuan' => $profil?->satuanTitik((float) $titik->titik_ukur, $alat),
                 ];
             })
             ->values()

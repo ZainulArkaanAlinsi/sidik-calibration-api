@@ -13,6 +13,7 @@ use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -341,5 +342,49 @@ class CertificateSnapshotTest extends TestCase
             ->getJson("/api/calibrations/{$sertifikat->calibration_session_id}")
             ->assertOk()
             ->assertJsonPath('data.desimal', 5);
+    }
+
+    /**
+     * Baris hasil bawa satuannya sendiri buat alat yang nyampur satuan.
+     *
+     * Ditambah SEBELUM sertifikat Conductivity pertama terbit. `snapshot` itu
+     * beku: kalau sertifikat keluar tanpa satuan per baris, betulinnya mesti
+     * lewat `sertifikat:bangun-ulang` ke dokumen yang mungkin udah dipegang
+     * pelanggan. Sekarang biayanya nol.
+     *
+     * Alat bersatuan seragam tetap `null` — dicek di bawah, karena kalau dia
+     * ikut keisi, tampilan empat alat lain berubah tanpa ada yang minta.
+     */
+    public function test_baris_hasil_bawa_satuan_buat_alat_satuan_campuran(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $conductivity = CalibrationSession::where('nomor_sesi', '2405.32.A.NK')->first();
+
+        if ($conductivity === null) {
+            $this->markTestSkipped('Sesi contoh Conductivity belum diseed.');
+        }
+
+        $snapshot = app(CertificateSnapshotBuilder::class)->bangun(
+            $conductivity,
+            new Certificate(['nomor' => 'UJI', 'qr_token' => 'uji']),
+        );
+
+        $this->assertSame(
+            ['µS/cm', 'µS/cm', 'mS/cm'],
+            array_map(fn (array $b): ?string => $b['satuan'] ?? null, $snapshot['hasil']),
+        );
+
+        // Alat bersatuan seragam: null, dan tampilannya nggak berubah.
+        $ph = CalibrationSession::where('nomor_sesi', '2405.13.A')->firstOrFail();
+
+        $snapshotPh = app(CertificateSnapshotBuilder::class)->bangun(
+            $ph,
+            new Certificate(['nomor' => 'UJI2', 'qr_token' => 'uji2']),
+        );
+
+        foreach ($snapshotPh['hasil'] as $baris) {
+            $this->assertNull($baris['satuan'] ?? null);
+        }
     }
 }
