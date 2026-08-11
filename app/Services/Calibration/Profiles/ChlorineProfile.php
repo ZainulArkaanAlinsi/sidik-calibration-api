@@ -232,7 +232,7 @@ class ChlorineProfile extends CalibrationProfile
     /**
      * @return array<string, mixed>
      */
-    public function bentukLembarKerja(bool $untukAdmin = false): array
+    public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = $this->bentukLengkap();
         $bentuk = $this->tautkanStandar($bentuk);

@@ -128,60 +128,49 @@ class ConductivityProfile extends CalibrationProfile
      *  - **111 mS/cm** → sheet yang sama A55: `y = 0,0042x² + 1,732x + 64,88`,
      *    dan dieksekusi beneran di `PERHITUNGAN!L26`.
      *
-     * ## E-5 — DIBETULKAN: 1412 µS/cm ikut polinomial, bukan angka ketik
+     * ## E-5 — 25 & 1412 µS/cm DIKUNCI KONSTAN, atas arahan lab
+     *
+     * Riwayatnya perlu dibaca utuh, karena nilainya sempat bolak-balik:
      *
      * `PERHITUNGAN!H26` isinya angka ketik `1412`, tanpa koreksi suhu. Larutan
      * yang PERSIS SAMA di kolom sebelahnya (`J26`, varian mS/cm) dikoreksi
      * pakai polinomial `2E-13·T² + 27·T + 738`, dan sheet
      * `nilai koefisien sensitifitas` A39 mendokumentasikan polinomial itu tepat
-     * di bawah judul "DR 1412 μS/cm". Jadi satu botol larutan dapat dua
-     * perlakuan berbeda di dalam satu workbook, dan cuma SATU yang punya dasar
-     * tertulis.
+     * di bawah judul "DR 1412 μS/cm". Satu botol, dua perlakuan, di satu
+     * workbook.
      *
-     * Yang punya dasar itu yang dipakai — keputusan user, 10 Agt 2026, sesudah
-     * angka geserannya ditunjukkan lebih dulu. Akibatnya suhu larutan yang
-     * dicatat teknisi buat kolom ini jadi KEPAKAI, bukan kebuang; dan larutan
-     * yang sama nggak lagi dinilai beda cuma gara-gara satuan yang dipilih
-     * operator.
+     * 10 Agt 2026 polinomialnya sempat dipakai — nilai acuan jadi 1410,84 pada
+     * 24,92 °C, Correction −2,16. 11 Agt 2026 arahan lab masuk dan
+     * MEMBATALKANNYA: **nilainya dikunci dulu, jangan diubah-ubah**, sambil
+     * rumus yang benar buat titik ini dicari. Yang tetap dipakai cuma rumus
+     * `0,0042·T² + 1,732·T + 64,88` buat titik 111 mS/cm — itu yang diminta
+     * "ikutin aja".
      *
-     * ## Yang berubah dari master, dan sebesar apa
+     * Jadi jangan "dirapikan" lagi biar konsisten. Ketidakkonsistenannya nyata
+     * dan sudah diketahui lab; menutupnya sendiri berarti mengarang rumus buat
+     * larutan yang rumusnya memang belum diputuskan.
      *
-     * Pada suhu yang BENERAN kecatat di sesi contoh — 24,92 °C, bukan 25 —
-     * polinomialnya ngasih **1410,84 µS/cm** lawan `1412` yang diketik master:
-     *
-     *   nilai acuan   1412  →  1410,84    (geser 1,16 µS/cm)
-     *   Correction      −1  →  −2,16      (geser 1,16 µS/cm)
-     *
-     * Budget ketidakpastiannya TIDAK ikut berubah: `ci` dihitung dari nilai
-     * NOMINAL titik (lihat [komponenBudget]), jadi Uc, v_eff, k, dan U95% tetap
-     * cocok master sampai belasan digit. Geserannya sendiri jauh di dalam U95%
-     * titik itu (±8,1) maupun CMC-nya (5,1) — yang dilaporkan tetap `1413 ± 8`.
-     *
-     * Selisih 1,16 itu DIKUNCI di
-     * `ConductivityBudgetTest::test_titik_1412_dikoreksi_suhu_bukan_angka_ketik`,
-     * lengkap sama nilai master-nya. Kalau suatu saat ada yang mbalikin ke
-     * konstanta, test-nya merah dan alasannya kebaca — bukan ketemu setahun
-     * kemudian waktu sertifikatnya dipertanyakan.
-     *
-     * Kalau lab mau balik persis ke master: pakai [KOEF_SUHU_1412_MASTER].
+     * Begitu lab ngasih rumusnya, ganti baris `1412` di sini — nggak ada tempat
+     * lain yang perlu disentuh, dan `ConductivitySeeder` ikut otomatis karena
+     * dia baca konstanta yang sama.
      *
      * @var array<string, array{a: float, b: float, c: float}>
      */
     public const KOEF_SUHU = [
         '25' => ['a' => 0.0, 'b' => 0.0, 'c' => 25.0],
-        '1412' => ['a' => 2.0e-13, 'b' => 27.0, 'c' => 738.0],
+        '1412' => ['a' => 0.0, 'b' => 0.0, 'c' => 1412.0],
         '111' => ['a' => 0.0042, 'b' => 1.732, 'c' => 64.88],
     ];
 
     /**
-     * Perlakuan ASLI master buat larutan 1412 µS/cm: angka ketik `1412` di
-     * `PERHITUNGAN!H26`, tanpa koreksi suhu.
+     * Polinomial yang master DOKUMENTASIKAN buat larutan 1412 µS/cm tapi cuma
+     * dia pakai di varian mS/cm (`PERHITUNGAN!J26`), sheet
+     * `nilai koefisien sensitifitas` A39.
      *
-     * Disimpen — bukan dibuang — karena dia yang jadi pembanding di test, dan
-     * karena kalau lab suatu saat mau balik ke perilaku master, jalannya cukup
-     * nunjuk konstanta ini.
+     * Disimpen — bukan dibuang — supaya angkanya nggak hilang waktu lab
+     * memutuskan rumus final buat titik ini. TIDAK dipakai menghitung apa pun.
      */
-    public const KOEF_SUHU_1412_MASTER = ['a' => 0.0, 'b' => 0.0, 'c' => 1412.0];
+    public const KOEF_SUHU_1412_TERDOKUMENTASI = ['a' => 2.0e-13, 'b' => 27.0, 'c' => 738.0];
 
     /**
      * Baris tabel STANDARD di lembar kerja: 3 larutan Supelco/Merck (DATABASE
@@ -275,9 +264,9 @@ class ConductivityProfile extends CalibrationProfile
     /**
      * @return array<string, mixed>
      */
-    public function bentukLembarKerja(bool $untukAdmin = false): array
+    public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
-        $bentuk = $this->bentukLengkap();
+        $bentuk = $this->bentukLengkap($equipment);
         $bentuk = $this->tautkanStandar($bentuk);
         $bentuk = $this->tautkanStandarTitik($bentuk);
         $bentuk = $this->isiPilihanThermohygro($bentuk);
@@ -330,8 +319,20 @@ class ConductivityProfile extends CalibrationProfile
         $sqrt3 = sqrt(3);
         $kStandar = $standard->faktor_cakupan ?: 2.0;
         $uTemperature = (float) $kemampuan->u_temperature;
-        $satuan = $this->satuanTitik($titikUkur);
-        $resolusi = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        // Satuan & resolusi diambil dari ALAT PELANGGAN dulu — dua-duanya
+        // menggambarkan apa yang beneran tampil di layar alatnya. Baru jatuh
+        // ke bawaan profil kalau alatnya belum diisi rinci.
+        $satuan = $this->satuanTitik($titikUkur, $equipment);
+
+        // Urutannya penting: baris RINCI punya alat menang, lalu bawaan profil,
+        // baru `resolusi` tunggal. `resolusi` tunggal itu angka kasar — kalau
+        // dia mendahului, titik 25 µS/cm kepakai resolusi 0,01 (punya mS/cm)
+        // dan Uc-nya jatuh dari 0,2534 ke 0,0296.
+        $baris = $this->barisAlat($equipment, $titikUkur);
+
+        $resolusi = (isset($baris['resolusi']) ? (float) $baris['resolusi'] : null)
+            ?? $this->resolusiTitik($titikUkur)
+            ?? (float) $equipment->resolusi;
 
         // U95% sertifikat larutan disimpen dalam satuan native larutannya
         // (µS/cm buat dua yang pertama, mS/cm buat yang ketiga). Titik tengah
@@ -415,10 +416,27 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
-     * Satuan native titik ini (`µS/cm` atau `mS/cm`).
+     * Satuan titik ini — dari ALAT PELANGGAN kalau dia punya, baru jatuh ke
+     * bawaan profil.
+     *
+     * Arahan lab 11 Agt 2026: sertifikat ikut satuan yang tampil di alat
+     * pelanggan, bukan format yang kita patok. Alat conductivity ganti satuan
+     * sendiri di ambang yang beda-beda per merk — larutan 1412 bisa kebaca
+     * `1412 µS/cm` di satu alat dan `1,412 mS/cm` di alat lain, dua-duanya
+     * benar. Yang menentukan: baris resolusi alat yang diisi waktu input
+     * spesifikasi (`equipments.resolusi_rentang`, kunci `satuan`).
+     *
+     * Tanpa `$equipment`, balik ke bawaan profil — dipakai pemanggil yang cuma
+     * butuh bentuk lembar kerja kosong, sebelum alatnya dipilih.
      */
-    public function satuanTitik(float $titikUkur): string
+    public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): string
     {
+        $satuan = $this->barisAlat($equipment, $titikUkur)['satuan'] ?? null;
+
+        if (is_string($satuan) && in_array($satuan, [self::SATUAN_MIKRO, self::SATUAN_MILI], true)) {
+            return $satuan;
+        }
+
         return $this->titikTerdekat($titikUkur)['satuan'];
     }
 
@@ -569,6 +587,32 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
+     * Berapa desimal yang masuk akal buat resolusi ini: `0,1`→1, `1`→0,
+     * `0,01`→2, `0,001`→3.
+     *
+     * Diturunkan, bukan diseed terpisah — kalau admin ngisi resolusi alat
+     * `0,001 mS/cm`, jumlah desimal cetaknya HARUS ikut, bukan nyangkut di
+     * angka bawaan profil. Nulis lebih banyak desimal dari yang bisa dibaca
+     * alatnya itu ngaku-ngaku presisi yang nggak ada.
+     */
+    private function desimalDariResolusi(float $resolusi): int
+    {
+        if ($resolusi <= 0.0) {
+            return 0;
+        }
+
+        // 8 = batas presisi kolom `decimal(20, 8)`; lebih dari itu nggak bisa
+        // disimpen, jadi nggak ada gunanya dicetak.
+        for ($d = 0; $d <= 8; $d++) {
+            if (abs($resolusi * (10 ** $d) - round($resolusi * (10 ** $d))) < 1e-9) {
+                return $d;
+            }
+        }
+
+        return 8;
+    }
+
+    /**
      * Label titik buat tampilan: nol belakang dibuang HANYA di bagian desimal.
      */
     private function labelTitik(float $nilai, int $desimal): string
@@ -581,7 +625,7 @@ class ConductivityProfile extends CalibrationProfile
     /**
      * @return array<string, mixed>
      */
-    private function bentukLengkap(): array
+    private function bentukLengkap(?Equipment $equipment = null): array
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
@@ -670,8 +714,8 @@ class ConductivityProfile extends CalibrationProfile
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
                     ],
                     'tabel' => [
-                        $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
-                        $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
+                        $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading', $equipment),
+                        $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading', $equipment),
                     ],
                 ],
                 [
@@ -714,11 +758,42 @@ class ConductivityProfile extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
-    private function tabelHasil(string $tahap, string $judul): array
+    private function tabelHasil(string $tahap, string $judul, ?Equipment $equipment = null): array
     {
         $baris = [];
 
         foreach (self::TITIK as $t) {
+            // ALATNYA UDAH DIKENAL → satu baris per titik, satuannya ngikut
+            // yang tampil di layar alat pelanggan.
+            //
+            // Ini inti arahan lab 11 Agt 2026: "nggak ada memilih-milih lagi,
+            // disesuaikan sama input data di resolusi alat". Baris titik tengah
+            // nggak lagi dikirim dua-duanya buat dipilih teknisi — yang dikirim
+            // yang benar buat alat ini, titik.
+            $dariAlat = $this->barisAlat($equipment, $t['nilai']);
+            $satuanAlat = $dariAlat['satuan'] ?? null;
+
+            if (is_string($satuanAlat) && in_array($satuanAlat, [self::SATUAN_MIKRO, self::SATUAN_MILI], true)) {
+                $v = ($satuanAlat === self::SATUAN_MILI && $t['varian_mili'] !== null)
+                    ? $t['varian_mili']
+                    : $t;
+
+                $resolusi = isset($dariAlat['resolusi']) ? (float) $dariAlat['resolusi'] : $v['resolusi'];
+
+                $baris[] = [
+                    'titik_ukur' => $v['nilai'],
+                    'label' => $this->labelTitik($v['nilai'], $this->desimalDariResolusi($resolusi)),
+                    'satuan' => $satuanAlat,
+                    'resolusi' => $resolusi,
+                    'desimal' => $this->desimalDariResolusi($resolusi),
+                    'eksklusif_dengan' => null,
+                ];
+
+                continue;
+            }
+
+            // Alatnya belum dipilih (template generik) → kirim dua-duanya, dan
+            // layar yang saling mengunci lewat `eksklusif_dengan`.
             $varian = [$t];
 
             if ($t['varian_mili'] !== null) {
@@ -853,6 +928,38 @@ class ConductivityProfile extends CalibrationProfile
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
         ];
+    }
+
+    /**
+     * Baris "Resolusi Alat" milik ALAT PELANGGAN buat titik ini — resolusi +
+     * satuan yang beneran tampil di layar alatnya.
+     *
+     * ## Kenapa dikunci ke TITIK, bukan ke ambang angka
+     *
+     * `equipments.resolusi_rentang` aslinya dipakai Turbidimeter dengan kunci
+     * `maks` (ambang numerik: 0–10 NTU resolusi 0,01, dst). Cara itu JEBOL di
+     * conductivity, karena satuannya campur: titik `111 mS/cm` secara ANGKA
+     * lebih kecil daripada `1412 µS/cm` (111 < 1412), padahal secara fisik
+     * hampir 100× lebih besar. Titik 111 nyangkut ke band "sampai 1412" dan
+     * kebaca µS/cm.
+     *
+     * Jadi di sini kuncinya `titik` — nilai nominal larutannya. Itu juga yang
+     * lebih cocok sama lembar aslinya: `INPUT DATA` E16/G16/I16 emang tiga
+     * kotak BERLABEL ("Std 25 µS/cm", "Std 1412 µS/cm", "Std 111 mS/cm"),
+     * bukan tiga rentang.
+     *
+     * Baris ber-`maks` (punya Turbidimeter) diabaikan di sini, jadi dua bentuk
+     * itu bisa hidup berdampingan di kolom yang sama tanpa saling ganggu.
+     *
+     * @return array{titik?: float, resolusi?: float, satuan?: string}
+     */
+    private function barisAlat(?Equipment $equipment, float $titikUkur): array
+    {
+        // Band MENTAH, bukan lewat `satuanPada()`: method itu jatuh ke
+        // `equipments.satuan` borongan waktu bandnya nggak nyebut satuan, dan
+        // buat alat bersatuan campur itu bikin titik 25 µS/cm ikut kebaca
+        // mS/cm — satuan borongan alat contoh ini emang mS/cm.
+        return $equipment?->bandResolusi($titikUkur) ?? [];
     }
 
     /**

@@ -93,7 +93,7 @@ abstract class CalibrationProfile
      *
      * @return array<string, mixed>
      */
-    abstract public function bentukLembarKerja(bool $untukAdmin = false): array;
+    abstract public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array;
 
     /**
      * Pasangan TERCETAK "titik ukur → larutan standarnya", persis kayak di

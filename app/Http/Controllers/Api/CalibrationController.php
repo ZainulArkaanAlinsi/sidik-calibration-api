@@ -136,17 +136,41 @@ class CalibrationController extends Controller
                 'sometimes', 'integer',
                 'between:'.CalibrationProfile::MIN_KOLOM_PENGULANGAN.','.CalibrationProfile::MAKS_KOLOM_PENGULANGAN,
             ],
+            // Alat yang bakal dikalibrasi, kalau layar udah tahu.
+            //
+            // Bikin lembarnya ngikut ALAT PELANGGAN, bukan cuma jenis alatnya:
+            // conductivity meter nampilin µS/cm atau mS/cm sendiri-sendiri per
+            // titik, dan sertifikatnya wajib ikut yang tampil di layar alatnya
+            // (arahan lab 11 Agt 2026). Tanpa param ini lembarnya tetap keluar
+            // — cuma pakai satuan bawaan profil, dan layar yang harus nawarin
+            // dua varian buat dipilih.
+            'equipment_id' => [
+                'sometimes', 'integer',
+                Rule::exists('equipments', 'id')
+                    ->where('organization_id', $request->user()->organization_id)
+                    ->whereNull('deleted_at'),
+            ],
         ], [
             'pengulangan.between' => 'Kolom pengulangan cuma boleh '
                 .CalibrationProfile::MIN_KOLOM_PENGULANGAN.'–'.CalibrationProfile::MAKS_KOLOM_PENGULANGAN
                 .'. Di bawah 2 standar deviasi nggak bisa dihitung.',
         ]);
 
+        $alat = $request->filled('equipment_id')
+            ? Equipment::find($request->integer('equipment_id'))
+            : null;
+
+        // Alat yang dikirim MENANG buat milih profil — dia lebih spesifik
+        // daripada nama jenis alat yang diketik pemanggil.
         $kode = (string) $request->string('profil', '');
-        $profil = ($kode !== '' ? $registry->untukKode($kode) : null)
+        $profil = ($alat !== null ? $registry->untukAlat($alat) : null)
+            ?? ($kode !== '' ? $registry->untukKode($kode) : null)
             ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
 
-        $bentuk = $profil->bentukLembarKerja(untukAdmin: $request->user()->isAdmin());
+        $bentuk = $profil->bentukLembarKerja(
+            untukAdmin: $request->user()->isAdmin(),
+            equipment: $alat,
+        );
 
         if ($request->filled('pengulangan')) {
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
