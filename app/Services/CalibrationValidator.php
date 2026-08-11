@@ -239,7 +239,29 @@ class CalibrationValidator
             // ini nggak ngubah angkanya sama sekali; buat Conductivity Meter —
             // yang nyampur µS/cm & mS/cm dalam satu lembar — ini yang bikin
             // 1413 µS/cm nggak lagi ke-flag "di luar rentang 0–100 mS/cm".
-            if ($this->diLuarRentang($profil->nilaiDalamSatuanAlat($nilai, $m->satuan, $alat), $alat)) {
+            $nilaiAlat = $profil->nilaiDalamSatuanAlat($nilai, $m->satuan, $alat);
+            $titikAlat = $profil->nilaiDalamSatuanAlat((float) $m->titik_ukur, $m->satuan, $alat);
+
+            // Pembacaan yang DEKAT ke titik yang lagi dikalibrasi dilewat,
+            // walau titiknya sendiri di luar rentang terdaftar alat.
+            //
+            // Aturan ini ada buat nangkep SALAH KETIK ("komanya kegeser"), dan
+            // pembacaan di titik yang emang lagi diukur menurut definisi bukan
+            // salah ketik — itu justru angka yang diharapkan.
+            //
+            // Kasus nyatanya Conductivity: larutan standarnya 111 mS/cm
+            // sementara rentang alat kecatat 0–100 mS/cm (masternya sendiri
+            // nulis `Rentang Ukur 0-100` lalu ngalibrasi di 111). Tiap approve
+            // ngeluarin 4 peringatan yang selalu bisa diabaikan — dan itu yang
+            // bahaya: admin belajar nekan "SETUJUI TETAP" tanpa baca, lalu
+            // peringatan yang beneran penting ikut tenggelam.
+            //
+            // Yang meleset jauh TETAP kena: 1106,7 atau 11,067 di titik 111
+            // masih ke-flag. Kalau titik standarnya sendiri emang di luar
+            // kemampuan alat, itu pertanyaan ke master alat — bukan sesuatu
+            // yang pantas diteriakin per pembacaan.
+            if ($this->diLuarRentang($nilaiAlat, $alat)
+                && ! $this->dekatTitikStandar($nilaiAlat, $titikAlat)) {
                 $temuan[] = $this->temuan(
                     self::PERINGATAN,
                     'pembacaan_di_luar_rentang',
@@ -803,5 +825,24 @@ class CalibrationValidator
             fn (array $p): array => $this->temuan(self::PERINGATAN, $p['kode'], $p['pesan']),
             $profil->peringatanSesi($sesi),
         );
+    }
+
+    /**
+     * Sedekat apa (RELATIF) pembacaan boleh meleset dari titik yang lagi
+     * dikalibrasi dan masih dianggap "ya emang segitu".
+     *
+     * 10% longgar buat pembacaan wajar (110,67 di titik 111 = meleset 0,3%),
+     * tapi masih jauh lebih ketat daripada salah ketik geser koma, yang selalu
+     * meleset ordebesaran: 1106,7 meleset 897%, 11,067 meleset 90%.
+     */
+    private const TOLERANSI_DEKAT_TITIK = 0.1;
+
+    private function dekatTitikStandar(float $nilai, float $titik): bool
+    {
+        if ($titik == 0.0) {
+            return false;
+        }
+
+        return abs($nilai - $titik) / abs($titik) <= self::TOLERANSI_DEKAT_TITIK;
     }
 }

@@ -270,4 +270,76 @@ class PembacaanMustahilTest extends TestCase
             ->assertOk()
             ->json('data');
     }
+
+    /**
+     * Pembacaan DI TITIK yang lagi dikalibrasi nggak diteriakin, walau titiknya
+     * sendiri di luar rentang terdaftar alat.
+     *
+     * Kejadian nyatanya Conductivity: larutan standarnya 111 mS/cm sementara
+     * rentang alat kecatat 0–100 (masternya sendiri nulis `Rentang Ukur 0-100`
+     * lalu ngalibrasi di 111). Tiap approve ngeluarin 4 peringatan yang selalu
+     * bisa diabaikan — dan itu yang bahaya: admin belajar nekan "SETUJUI TETAP"
+     * tanpa baca, lalu peringatan yang beneran penting ikut tenggelam.
+     *
+     * Aturan ini ada buat nangkep SALAH KETIK, dan pembacaan di titik yang
+     * emang lagi diukur menurut definisi bukan salah ketik.
+     */
+    public function test_pembacaan_di_titik_standar_nggak_diteriakin_walau_di_luar_rentang(): void
+    {
+        $kode = $this->periksaTitikDiLuarRentang(110.67);
+
+        $this->assertNotContains('pembacaan_di_luar_rentang', $kode);
+    }
+
+    /**
+     * Yang meleset ORDE BESARAN tetap kena — pengecualian di atas sempit, bukan
+     * pintu keluar buat seluruh titik itu.
+     */
+    public function test_koma_kegeser_di_titik_yang_sama_tetap_ketangkep(): void
+    {
+        $this->assertContains(
+            'pembacaan_di_luar_rentang',
+            $this->periksaTitikDiLuarRentang(1106.7),
+        );
+
+        // Jauh dari titiknya & di luar rentang — nggak ada alasan diam.
+        $this->assertContains(
+            'pembacaan_di_luar_rentang',
+            $this->periksaTitikDiLuarRentang(250.0),
+        );
+    }
+
+    /**
+     * Sesi dengan titik ukur DI LUAR rentang alat (111 di alat 0–100), niru
+     * bentuk Conductivity.
+     *
+     * @return list<string>
+     */
+    private function periksaTitikDiLuarRentang(float $pembacaan): array
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            // Dipakai ULANG kalau udah ada — helper ini dipanggil dua kali
+            // dalam satu tes, dan `kode` unik per organisasi.
+            'equipment_category_id' => EquipmentCategory::firstOrCreate(
+                ['kode' => 'listrik'],
+                EquipmentCategory::factory()->raw(['kode' => 'listrik']),
+            )->id,
+            'satuan' => 'mS/cm', 'range_min' => 0, 'range_max' => 100,
+            'resolusi' => 0.01, 'toleransi' => null,
+        ]);
+
+        $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $alat->id,
+            'standard_id' => $this->standar->id,
+            'tanggal_kalibrasi' => now()->subDay()->toDateString(),
+            'measurements' => [
+                ['titik_ukur' => 111.0, 'satuan' => 'mS/cm', 'pembacaan' => [$pembacaan, $pembacaan]],
+            ],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::latest('id')->firstOrFail();
+
+        return array_column(app(CalibrationValidator::class)->periksa($sesi)['temuan'], 'kode');
+    }
 }
