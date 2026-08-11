@@ -55,6 +55,29 @@ hasil**, di field `baris[].satuan`.
 `desimal` dipakai buat mad angka tanpa membuang nol belakang — `25,0` tetap
 `25,0`, bukan `25`.
 
+**Dan satuan itu datang dari alat pelanggan, bukan dari format kita.** Aturan
+lab: kalau alat pelanggan menampilkan mS/cm, sertifikat harus mS/cm. Memaksa
+satu format membuat angka di kertas tidak cocok dengan angka yang dilihat
+pelanggan di layar alatnya sendiri.
+
+Sumbernya baris **Resolusi Alat** yang diisi saat input spesifikasi alat — tiga
+kotak berlabel, masing-masing dengan satuannya sendiri
+(`equipments.resolusi_rentang`):
+
+```json
+[
+  { "titik": 25,   "resolusi": 0.1,  "satuan": "µS/cm" },
+  { "titik": 1412, "resolusi": 1.0,  "satuan": "µS/cm" },
+  { "titik": 111,  "resolusi": 0.01, "satuan": "mS/cm" }
+]
+```
+
+Alat yang pindah ke mS/cm lebih awal tinggal diisi berbeda —
+`{"titik": 1.412, "resolusi": 0.001, "satuan": "mS/cm"}` — dan sertifikatnya
+otomatis ikut. **Tidak ada pilihan style manual**: style diturunkan dari satuan
+yang diisi. Form input spesifikasi alat perlu menyediakan ketiga kotak resolusi
+ini beserta pilihan satuannya.
+
 ### 2b. Titik tengah punya dua baris yang saling meniadakan
 
 Baris `1412 µS/cm` dan `1,412 mS/cm` adalah **botol larutan yang sama** dibaca
@@ -179,12 +202,10 @@ untuk sesi `2405.32.A.NK` (cocok dengan master Excel, sudah dikunci di
 | Titik | Standard Value | Unit Under Test | Correction | U95% |
 |---|---|---|---|---|
 | 25 µS/cm | 25,0 | 25,0 | −0,0 | ± 0,5 |
-| 1412 µS/cm | 1411 | 1413 | −2 | ± 8 |
+| 1412 µS/cm | 1412 | 1413 | −1 | ± 8 |
 | 111 mS/cm | 111,19 | 110,67 | 0,52 | ± 1,70 |
 
-Titik tengah **sengaja berbeda dari master Excel** (master: 1412 dan −1). Nilai
-acuannya sekarang dikoreksi suhu — nilai internalnya 1410,84 dan −2,16, dicetak
-0 desimal jadi 1411 dan −2. Lihat bagian 6.
+Ketiganya **cocok master Excel persis**. Tidak ada lagi selisih yang disengaja.
 
 Perhatikan pembulatannya berbeda per titik — itu bukan bug, itu format sel
 master (`0.0` / `0` / `0.00`). Nilai internal disimpan presisi penuh; yang
@@ -195,30 +216,24 @@ mengikuti master.
 
 ---
 
-## 6. Titik 1412 µS/cm sengaja beda dari master
+## 6. Nilai standar: mana yang dikoreksi suhu, mana yang dikunci
 
-Ini satu-satunya tempat sistem tidak mereproduksi master, dan itu disengaja.
+Arahan lab 11 Agustus 2026:
 
-Master mengetik `1412` untuk larutan ini tanpa koreksi suhu, padahal larutan
-yang **sama persis** di kolom sebelahnya (varian mS/cm) dikoreksi dengan
-polinomial `2E-13·T² + 27·T + 738` — dan sheet koefisien mendokumentasikan
-polinomial itu tepat di bawah judul "DR 1412 μS/cm". Satu botol, dua perlakuan,
-hanya satu yang punya dasar tertulis. Yang punya dasar itu yang dipakai.
+- **25 µS/cm dan 1412 µS/cm → nilainya dikunci**, tidak digeser suhu. Rumus
+  yang benar untuk dua titik ini masih dicari lab. Jangan "dirapikan" biar
+  konsisten.
+- **111 mS/cm → dikoreksi suhu** dengan `0,0042·T² + 1,732·T + 64,88`. Pada
+  25,2 °C nilainya jadi 111,193568, bukan 111. Ini yang diminta "ikutin aja".
 
-Pada suhu sesi (24,92 °C) nilai acuannya jadi **1410,84** bukan 1412, sehingga
-Correction bergeser dari −1 ke −2,16. Geseran 1,16 µS/cm itu jauh di dalam U95%
-titiknya sendiri (±8,1) dan CMC-nya (5,1), jadi yang dilaporkan tetap
-`1413 ± 8`. Budget ketidakpastiannya **tidak berubah sama sekali** — koefisien
-sensitivitasnya dihitung dari nilai nominal.
+Frontend tidak perlu melakukan apa pun — semua sudah dihitung backend. Ini
+disebutkan supaya kalau ada yang bertanya kenapa hanya satu titik yang
+bergeser, jawabannya tertulis.
 
-Yang perlu frontend lakukan: tidak ada. Ini disebutkan supaya kalau ada yang
-membandingkan hasil sistem dengan cetakan Excel lama dan menemukan selisih 1 di
-titik tengah, jawabannya sudah tertulis di sini — bukan dikira bug.
-
-Untuk sesi yang memakai varian **mS/cm** (sertifikat style 1), backend tetap
+Untuk sesi yang memakai varian **mS/cm** pada titik tengah, backend
 mengembalikan peringatan yang harus **ditampilkan ke admin** sebelum approve —
-bukan karena rumusnya meragukan lagi, tapi karena jalur itu belum pernah diadu
-dengan sesi nyata. Ini peringatan, bukan penghalang.
+jalur itu belum pernah diadu dengan sesi nyata di master. Ini peringatan, bukan
+penghalang.
 
 ---
 

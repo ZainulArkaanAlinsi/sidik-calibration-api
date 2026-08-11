@@ -299,11 +299,8 @@ class ConductivityBudgetTest extends TestCase
     public function test_correction_ikut_rumus_sertifikat_bukan_sel_buntu(): void
     {
         // PERHITUNGAN F47/H47/L47 — nilai yang kecetak di kolom "Correction".
-        //
-        // Titik tengah SENGAJA beda dari master: −2,16 lawan −1, karena nilai
-        // acuannya sekarang dikoreksi suhu (E-5 dibetulkan). Lihat
-        // `test_titik_1412_dikoreksi_suhu_bukan_angka_ketik`.
-        $master = [-0.03999999999999915, -2.1599999999999966, 0.5195679999999925];
+        // Ketiganya cocok master persis.
+        $master = [-0.03999999999999915, -1.0, 0.5195679999999925];
 
         foreach (self::MASTER as $i => $m) {
             $this->assertEqualsWithDelta(
@@ -321,9 +318,9 @@ class ConductivityBudgetTest extends TestCase
      */
     public function test_nilai_acuan_terkoreksi_suhu_cocok_master(): void
     {
-        // PERHITUNGAN F39 / H39 / L39. Titik tengah sengaja beda dari master
-        // (1410,84 lawan 1412) — E-5 dibetulkan, lihat test di bawah.
-        $master = [25.0, 1410.8399999999999, 111.193568];
+        // PERHITUNGAN F39 / H39 / L39. Ketiganya cocok master persis: dua titik
+        // pertama dikunci konstan, cuma titik 111 mS/cm yang bergeser ikut suhu.
+        $master = [25.0, 1412.0, 111.193568];
 
         foreach (self::MASTER as $i => $m) {
             $this->assertEqualsWithDelta(
@@ -336,41 +333,58 @@ class ConductivityBudgetTest extends TestCase
     }
 
     /**
-     * E-5 DIBETULKAN — titik 1412 µS/cm dikoreksi suhu pakai polinomial yang
-     * didokumentasikan sheet `nilai koefisien sensitifitas` A39, bukan angka
-     * ketik `1412` di `PERHITUNGAN!H26`.
+     * E-5 — titik 25 & 1412 µS/cm DIKUNCI KONSTAN, atas arahan lab 11 Agt 2026:
+     * nilainya di-fix dulu sambil rumus yang benar dicari. Cuma titik 111 mS/cm
+     * yang pakai rumus (`0,0042·T² + 1,732·T + 64,88` — "ikutin aja").
      *
-     * Ini SATU-SATUNYA tempat sistem sengaja beda dari master, dan test ini
-     * yang menahannya tetap terlihat: kalau ada yang mbalikin ke konstanta,
-     * dia merah; kalau selisihnya melar lebih dari yang diperkirakan, dia juga
-     * merah.
+     * Test ini yang menahan supaya nggak ada yang "ngerapiin" biar konsisten.
+     * Polinomial 1412 yang terdokumentasi di master tetap disimpan sebagai
+     * konstanta, tapi TIDAK dipakai menghitung — dan itu yang dijaga di sini.
      */
-    public function test_titik_1412_dikoreksi_suhu_bukan_angka_ketik(): void
+    public function test_titik_25_dan_1412_dikunci_konstan(): void
     {
         $suhu = (25 + 24.9 * 4) / 5; // 24,919999999999998 — sel PERHITUNGAN I46
-        $koef = ConductivityProfile::KOEF_SUHU['1412'];
+
+        // Berapa pun suhunya, nilainya nggak bergeser.
+        $this->assertSame(0.0, ConductivityProfile::KOEF_SUHU['25']['a']);
+        $this->assertSame(0.0, ConductivityProfile::KOEF_SUHU['25']['b']);
+        $this->assertSame(0.0, ConductivityProfile::KOEF_SUHU['1412']['a']);
+        $this->assertSame(0.0, ConductivityProfile::KOEF_SUHU['1412']['b']);
+
+        $this->assertEqualsWithDelta(25.0, $this->hitung(0)['titik_ukur'], self::TOLERANSI_SIMPAN);
+        $this->assertEqualsWithDelta(1412.0, $this->hitung(1)['titik_ukur'], self::TOLERANSI_SIMPAN);
+
+        // Polinomial terdokumentasi disimpan, tapi tidak boleh ikut menghitung.
+        $koef = ConductivityProfile::KOEF_SUHU_1412_TERDOKUMENTASI;
         $polinomial = $koef['a'] * $suhu ** 2 + $koef['b'] * $suhu + $koef['c'];
 
-        $this->assertEqualsWithDelta(
+        $this->assertEqualsWithDelta(1410.84, $polinomial, 1e-6);
+        $this->assertNotEqualsWithDelta(
             $polinomial,
             $this->hitung(1)['titik_ukur'],
-            self::TOLERANSI_SIMPAN,
-            'Titik 1412 harus ikut polinomial suhu, bukan konstanta',
+            1e-6,
+            'Titik 1412 nggak boleh ikut polinomial — lab minta nilainya dikunci dulu',
         );
+    }
 
-        // Angka master yang ditinggalkan, dan sebesar apa geserannya.
-        $master = ConductivityProfile::KOEF_SUHU_1412_MASTER['c'];
+    /**
+     * Titik 111 mS/cm SATU-SATUNYA yang bergeser ikut suhu — rumus `0,0042`
+     * yang lab minta diikuti (`PERHITUNGAN!L26`).
+     */
+    public function test_titik_111_ikut_rumus_suhu(): void
+    {
+        $koef = ConductivityProfile::KOEF_SUHU['111'];
 
-        $this->assertSame(1412.0, $master);
-        $this->assertEqualsWithDelta(1410.84, $polinomial, 1e-6);
-        $this->assertEqualsWithDelta(1.16, $master - $polinomial, 1e-6);
+        $this->assertSame(0.0042, $koef['a']);
+        $this->assertSame(1.732, $koef['b']);
+        $this->assertSame(64.88, $koef['c']);
 
-        // Geserannya harus tetap jauh di dalam U95% titik ini (±8,1) — kalau
-        // nggak, dia bukan lagi koreksi halus tapi perubahan hasil.
-        $this->assertLessThan(
-            $this->hitung(1)['ketidakpastian_diperluas'],
-            abs($master - $polinomial),
-            'Geseran E-5 nggak boleh melampaui ketidakpastian titiknya sendiri',
+        // Pada 25,2 °C: 0,0042·635,04 + 1,732·25,2 + 64,88 = 111,193568
+        $this->assertEqualsWithDelta(
+            111.193568,
+            $this->hitung(2)['titik_ukur'],
+            self::TOLERANSI_SIMPAN,
+            'Titik 111 harus bergeser ikut suhu, bukan tetap 111',
         );
     }
 
@@ -428,6 +442,54 @@ class ConductivityBudgetTest extends TestCase
     }
 
     /**
+     * Arahan lab 11 Agt 2026 — **sertifikat ikut satuan yang tampil di alat
+     * pelanggan**, bukan format yang kita patok.
+     *
+     * Alat conductivity ganti satuan sendiri di ambang yang beda-beda per
+     * merk. Yang menentukan: baris resolusi alat yang diisi waktu input
+     * spesifikasi (`equipments.resolusi_rentang`).
+     */
+    public function test_satuan_titik_ikut_alat_pelanggan(): void
+    {
+        $profil = new ConductivityProfile;
+
+        // Alat A — pola paling umum: 25 & 1412 µS/cm, standar ketiga mS/cm.
+        $this->alat->resolusi_rentang = [
+            ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+            ['titik' => 1412, 'resolusi' => 1.0, 'satuan' => 'µS/cm'],
+            ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+        ];
+
+        $this->assertSame('µS/cm', $profil->satuanTitik(25.0, $this->alat));
+        $this->assertSame('µS/cm', $profil->satuanTitik(1412.0, $this->alat));
+
+        // 111 mS/cm harus ketemu barisnya sendiri, BUKAN nyangkut ke baris
+        // 1412 — secara angka 111 < 1412, jadi ambang numerik bakal salah.
+        $this->assertSame('mS/cm', $profil->satuanTitik(111.193568, $this->alat));
+
+        // Alat B — pindah ke mS/cm lebih awal: standar 1412 kebaca 1,412
+        // mS/cm. Sertifikat HARUS ikut, walaupun larutan standarnya sama persis.
+        $this->alat->resolusi_rentang = [
+            ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+            ['titik' => 1.412, 'resolusi' => 0.001, 'satuan' => 'mS/cm'],
+            ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+        ];
+
+        $this->assertSame('µS/cm', $profil->satuanTitik(25.0, $this->alat));
+        $this->assertSame(
+            'mS/cm',
+            $profil->satuanTitik(1.412, $this->alat),
+            'Alat yang baca standar tengah dalam mS/cm harus disertifikatkan dalam mS/cm',
+        );
+
+        // Alat tanpa rincian jatuh ke bawaan profil — perilaku lama, dan
+        // `equipments.satuan` yang borongan (mS/cm) TIDAK boleh menimpa.
+        $this->alat->resolusi_rentang = null;
+        $this->assertSame('µS/cm', $profil->satuanTitik(1412.0, $this->alat));
+        $this->assertSame('µS/cm', $profil->satuanTitik(25.0, $this->alat));
+    }
+
+    /**
      * Dua pengaman yang bikin sesi conductivity bisa terbit sama sekali.
      *
      * Tanpa keduanya, `CalibrationValidator` nahan SETIAP sesi conductivity:
@@ -472,6 +534,61 @@ class ConductivityBudgetTest extends TestCase
                 get_class($lain).' nggak boleh ngonversi apa pun',
             );
         }
+    }
+
+    /**
+     * Lembar kerja ikut ALAT PELANGGAN — arahan lab 11 Agt 2026: "nggak ada
+     * memilih-milih lagi, disesuaikan sama input data di resolusi alat".
+     */
+    public function test_lembar_kerja_ikut_satuan_alat(): void
+    {
+        $profil = new ConductivityProfile;
+
+        $barisTabel = function (?Equipment $alat) use ($profil): array {
+            $bentuk = $profil->bentukLembarKerja(false, $alat);
+            $bagian = collect($bentuk['bagian'])->firstWhere('kode', 'hasil');
+
+            return $bagian['tabel'][1]['baris'];
+        };
+
+        // Tanpa alat = template generik: titik tengah dikirim DUA-DUANYA biar
+        // layar yang nawarin, dan keduanya saling mengunci.
+        $generik = $barisTabel(null);
+        $this->assertCount(4, $generik);
+        $this->assertSame(1.412, $generik[1]['eksklusif_dengan']);
+
+        // Dengan alat = satu baris per titik, satuannya udah kepilih.
+        $this->alat->resolusi_rentang = [
+            ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+            ['titik' => 1412, 'resolusi' => 1.0, 'satuan' => 'µS/cm'],
+            ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+        ];
+
+        $ikutAlat = $barisTabel($this->alat);
+
+        $this->assertCount(3, $ikutAlat);
+        $this->assertSame(['µS/cm', 'µS/cm', 'mS/cm'], array_column($ikutAlat, 'satuan'));
+        $this->assertSame([1, 0, 2], array_column($ikutAlat, 'desimal'));
+        $this->assertSame(
+            [null, null, null],
+            array_column($ikutAlat, 'eksklusif_dengan'),
+            'Alat yang satuannya udah ditentukan nggak boleh nyisain pilihan',
+        );
+
+        // Alat yang baca titik tengah dalam mS/cm: barisnya jadi 1,412 mS/cm,
+        // dan desimalnya ikut resolusi yang diisi — bukan angka bawaan profil.
+        $this->alat->resolusi_rentang = [
+            ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+            ['titik' => 1412, 'resolusi' => 0.001, 'satuan' => 'mS/cm'],
+            ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+        ];
+
+        $variantMili = $barisTabel($this->alat);
+
+        $this->assertCount(3, $variantMili);
+        $this->assertSame(1.412, $variantMili[1]['titik_ukur']);
+        $this->assertSame('mS/cm', $variantMili[1]['satuan']);
+        $this->assertSame(3, $variantMili[1]['desimal']);
     }
 
     /**

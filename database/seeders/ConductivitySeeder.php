@@ -179,10 +179,28 @@ class ConductivitySeeder extends Seeder
                 'range_min' => 0,
                 'range_max' => 100,
                 'satuan' => 'mS/cm',
-                // Fallback tampilan doang. Resolusi yang beneran kepakai per
-                // titik diambil dari ConductivityProfile::TITIK
-                // (0,1 µS/cm | 1 µS/cm | 0,01 mS/cm — INPUT DATA E17/G17/I17).
+                // Fallback kalau `resolusi_rentang` di bawah kosong.
                 'resolusi' => 0.01,
+                // Baris "Resolusi Alat" di lembar input — INPUT DATA
+                // E16/E17 · G16/G17 · I16/I17, tiga kotak dengan SATUANNYA
+                // masing-masing.
+                //
+                // Satuan di sini yang nentuin satuan sertifikat, bukan format
+                // yang kita patok (arahan lab 11 Agt 2026). Alat contoh ini
+                // baca 25 & 1412 dalam µS/cm lalu pindah ke mS/cm di standar
+                // ketiga — pola paling umum. Alat pelanggan lain yang pindah
+                // ke mS/cm lebih awal tinggal diisi beda di sini; nggak ada
+                // kode yang perlu disentuh.
+                //
+                // Kuncinya `titik` (nilai nominal larutan), BUKAN `maks` kayak
+                // Turbidimeter — lihat `ConductivityProfile::barisAlat()`.
+                // Singkatnya: 111 mS/cm secara angka lebih kecil dari 1412
+                // µS/cm, jadi ambang numerik nggak bisa misahin keduanya.
+                'resolusi_rentang' => [
+                    ['titik' => 25, 'resolusi' => 0.1, 'satuan' => 'µS/cm'],
+                    ['titik' => 1412, 'resolusi' => 1.0, 'satuan' => 'µS/cm'],
+                    ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+                ],
                 // SENGAJA null — Q3. Master nggak punya satu pun sel yang
                 // mbandingin hasil sama batas keberterimaan, dan sertifikatnya
                 // nggak nyetak vonis. `GumCalculator::keputusan()` balikin null
