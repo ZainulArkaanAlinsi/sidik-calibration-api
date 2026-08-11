@@ -468,6 +468,45 @@ class ConductivityProfile extends CalibrationProfile
      * @param  list<float>  $titikUkur  titik yang beneran diukur di sesi ini
      */
     /**
+     * Nilai acuan dari polinomial suhu selalu keluar dalam satuan NATIVE
+     * botolnya. Titik tengah bisa dibaca dua satuan dari botol yang sama, jadi
+     * varian mS/cm harus dibagi 1000.
+     *
+     * Sisi kembarannya udah lama ada di `komponenBudget()` buat KETIDAKPASTIAN
+     * botol — sel `M23 = IF(I21="mS/cm", DATABASE!V14/1000, DATABASE!V14)`.
+     * Yang kelewat cuma NILAI ACUANNYA, dan itu nggak pernah ketahuan karena
+     * jalur mS/cm belum pernah dijalanin satu sesi pun: sesi contoh lab
+     * (`2405.32.A.NK`) baca titik tengah dalam µS/cm.
+     *
+     * Tanpa ini, sesi varian mS/cm nyimpen `titik_ukur = 1412` di sebelah
+     * pembacaan `1,413`, dan kolom Correction sertifikat keluar `+1410,587`
+     * mS/cm — bukan `-0,001`.
+     *
+     * Yang dijaga di sini:
+     *  - Cuma titik TENGAH yang kena. Titik 111 emang native mS/cm (botol &
+     *    polinomialnya sama-sama mS/cm), jadi nggak boleh ikut dibagi.
+     *  - Syarat botolnya masih µS/cm bikin ini mati sendiri kalau suatu saat
+     *    lab nyimpen botol 1412 dalam mS/cm — nggak kebagi dua kali.
+     */
+    public function nilaiAcuanPadaSuhu(
+        float $nilaiAcuan,
+        float $titikDiminta,
+        Standard $standard,
+        Equipment $equipment,
+    ): float {
+        $tengah = self::TITIK[1]['varian_mili'] ?? null;
+
+        if ($tengah === null || $standard->satuan_ketidakpastian !== self::SATUAN_MIKRO) {
+            return $nilaiAcuan;
+        }
+
+        $variannya = abs($titikDiminta - $tengah['nilai'])
+            <= $tengah['nilai'] * self::TOLERANSI_PASANGAN_TITIK;
+
+        return $variannya ? $nilaiAcuan / 1000.0 : $nilaiAcuan;
+    }
+
+    /**
      * Peringatan sesi: titik tengah kebaca dalam **mS/cm**.
      *
      * Titik tengah punya dua bentuk yang mewakili botol yang SAMA — 1412 µS/cm
