@@ -374,35 +374,31 @@ abstract class CalibrationProfile
     }
 
     /**
-     * Kesempatan buat profil betulin SATUAN nilai acuan yang baru keluar dari
-     * `Standard::nilaiPadaSuhu()`. Default: nggak ngapa-ngapain.
+     * Faktor pengali dari satuan yang DILAPORKAN ke satuan KANONIK titik ini.
+     * Default `1.0` — hampir semua alat cuma punya satu satuan per titik, jadi
+     * satuan laporannya memang satuan kanoniknya.
      *
-     * ## Kenapa perlu
+     * ## Kenapa ada
      *
-     * `koefisien_suhu` sebuah botol ditulis dalam SATU satuan — satuan native
-     * botol itu. Buat hampir semua alat itu cukup, karena titiknya cuma bisa
-     * dibaca dalam satu satuan.
+     * Conductivity bisa baca satu botol dalam dua satuan: `1412 µS/cm` dan
+     * `1,412 mS/cm` itu larutan yang SAMA. Cuma jalur µS/cm yang pernah diadu
+     * ke master Excel lab; jalur mS/cm nggak pernah keisi di sana.
      *
-     * Conductivity beda: satu botol bisa dibaca dua satuan (`1412 µS/cm` dan
-     * `1,412 mS/cm` itu botol yang SAMA). Polinomialnya cuma punya satu skala,
-     * jadi kalau sesinya baca varian mS/cm, nilai acuan yang balik dari
-     * polinomial kegedean 1000×. Yang kesimpen jadi `titik_ukur = 1412` lawan
-     * pembacaan `1,413` — kolom Correction sertifikat keluar `+1410,587`.
+     * Kalau jalur mS/cm dihitung sendiri, dia jadi jalur kedua yang harus
+     * divalidasi sendiri — dan tiap potongan konversi (nilai acuan, U botol,
+     * resolusi, lantai CMC) jadi kesempatan salah yang terpisah. Waktu titik
+     * ini pertama kali dijalanin, dua di antaranya emang salah sekaligus.
      *
-     * [$titikDiminta] itu titik yang MINTA dihitung (mis. `1.412`), sebelum
-     * ketimpa nilai acuan. Itu satu-satunya petunjuk varian mana yang lagi
-     * dipakai, karena nilai baliknya sendiri udah kehilangan skalanya.
+     * Jadi jalannya dibalik: titiknya dinaikin ke satuan kanonik, dihitung
+     * lewat jalur yang SUDAH terbukti, baru hasilnya diturunkan lagi. Yang
+     * dilaporkan jadi identik dengan jalur µS/cm dibagi 1000 **secara
+     * konstruksi**, bukan karena empat konversi kebetulan semuanya benar.
      *
-     * @param  float  $nilaiAcuan  hasil polinomial, dalam satuan native botol
-     * @param  float  $titikDiminta  titik yang dipanggil pemanggil, apa adanya
+     * Balikin `1.0` kalau titiknya emang udah kanonik.
      */
-    public function nilaiAcuanPadaSuhu(
-        float $nilaiAcuan,
-        float $titikDiminta,
-        Standard $standard,
-        Equipment $equipment,
-    ): float {
-        return $nilaiAcuan;
+    public function faktorKanonik(float $titikUkur, Equipment $equipment): float
+    {
+        return 1.0;
     }
 
     /**

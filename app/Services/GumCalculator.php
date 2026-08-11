@@ -114,17 +114,30 @@ class GumCalculator
         // `?? $titikUkur` bikin ini aman buat semua yang bukan pH: standar tanpa
         // `koefisien_suhu` (atau titik tanpa suhu larutan) balik ke perilaku lama
         // persis, karena `nilaiPadaSuhu()` balikin null.
-        //
-        // Nilai yang balik itu dalam satuan NATIVE botolnya. Buat alat yang satu
-        // titiknya cuma bisa dibaca satu satuan, itu udah bener. Conductivity
-        // bisa baca botol yang sama dalam dua satuan, jadi profilnya dikasih
-        // kesempatan nyetel skalanya — lihat `nilaiAcuanPadaSuhu()`.
         $profil = $this->registry->untukAlat($equipment);
-        $nilaiAcuan = $standard->nilaiPadaSuhu($suhuLarutan);
 
-        if ($nilaiAcuan !== null) {
-            $titikUkur = $profil->nilaiAcuanPadaSuhu($nilaiAcuan, $titikUkur, $standard, $equipment);
+        // Titik yang punya lebih dari satu satuan dihitung di satuan KANONIK-nya,
+        // baru hasilnya diturunkan lagi di ujung method ini.
+        //
+        // Semua yang di bawah — nilai acuan dari polinomial botol, U botol,
+        // resolusi alat, pencocokan baris CMC — ditulis dengan anggapan titik &
+        // pembacaan sesatuan. Menaikkan dua-duanya di sini bikin anggapan itu
+        // benar lagi tanpa satu pun dari mereka perlu tahu soal satuan ganda.
+        //
+        // Lihat `CalibrationProfile::faktorKanonik()`. `1.0` buat semua alat
+        // lain, dan `$kanonik === 1.0` bikin seluruh blok skala ini nggak
+        // ngapa-ngapain — perilaku empat alat lain persis kayak sebelumnya.
+        $kanonik = $profil->faktorKanonik($titikUkur, $equipment);
+
+        if ($kanonik !== 1.0) {
+            $titikUkur *= $kanonik;
+            $pembacaan = array_map(static fn (float $p): float => $p * $kanonik, $pembacaan);
         }
+
+        // Nilai acuan dari polinomial botol selalu keluar di satuan native
+        // botolnya — yang, sesudah penaikan di atas, sama dengan satuan kerja
+        // kita sekarang.
+        $titikUkur = $standard->nilaiPadaSuhu($suhuLarutan) ?? $titikUkur;
 
         $n = count($pembacaan);
 
@@ -202,23 +215,102 @@ class GumCalculator
             $hasil = $this->hitungDariStandarDanResolusi($typeA, $n, $equipment, $standard);
         }
 
+        // Turun balik ke satuan yang DILAPORKAN. Buat titik bersatuan tunggal
+        // `$skala` = 1.0 dan seluruh baris di bawah jadi identitas.
+        //
+        // Yang TIDAK ikut turun, dan alasannya:
+        //  - `derajat_kebebasan_efektif` & `faktor_cakupan_k` — nirsatuan, dua-
+        //    duanya rasio. Kalau ikut diskalakan, k bisa jatuh ke bawah 1 dan
+        //    U95 mengecil diam-diam.
+        //  - `toleransi` — datang dari alat pelanggan, jadi udah di satuan yang
+        //    dilaporkan sejak awal. Menskalakannya bikin PASS/FAIL 1000× ketat.
+        $skala = 1.0 / $kanonik;
+
+        $error *= $skala;
+        $hasil = $this->turunkanKeSatuanLaporan($hasil, $skala);
+
         return [
             'standard_id' => $standard->id,
             'titik_ke' => $titikKe,
-            'titik_ukur' => $titikUkur,
-            'rata_rata' => $rataRata,
+            'titik_ukur' => $titikUkur * $skala,
+            'rata_rata' => $rataRata * $skala,
             'error' => $error,
             // Koreksi = lawan dari error: angka yang harus DITAMBAHKAN ke pembacaan
             // alat biar ketemu nilai benar. Ini yang dicetak di sertifikat, bukan error.
             'koreksi' => -$error,
-            'standar_deviasi' => $standarDeviasi,
+            'standar_deviasi' => $standarDeviasi * $skala,
             'jumlah_pengulangan' => $n,
-            'type_a' => $typeA,
+            'type_a' => $typeA * $skala,
             ...$hasil,
             'toleransi' => $toleransi,
+            // Diadu SESUDAH semuanya turun — error, U95, dan toleransi harus
+            // sesatuan waktu dibandingin.
             'keputusan' => $this->keputusan($error, $hasil['ketidakpastian_diperluas'], $toleransi),
             'calculated_at' => Carbon::now(),
         ];
+    }
+
+    /**
+     * Turunin hasil hitung dari satuan kanonik ke satuan yang dilaporkan.
+     *
+     * ## Kenapa `u_baku` dan `ci` diperlakukan beda
+     *
+     * Konvensi GUM: `u` itu ketidakpastian INPUT-nya (dalam satuan input), `ci`
+     * turunan parsial yang nerjemahin ke satuan besaran ukur, dan kontribusinya
+     * `nilai = u · ci`. Jadi `nilai` SELALU bersatuan besaran ukur dan selalu
+     * ikut turun.
+     *
+     * Yang bergantian itu `u` sama `ci`, dan `ci` sendiri penandanya:
+     *
+     *  - `ci = 1` berarti input-nya ADALAH besaran ukurnya (U botol, resolusi
+     *    alat, pengulangan). Yang bersatuan `u`-nya → `u` yang turun.
+     *  - `ci ≠ 1` berarti input-nya besaran LAIN (buat conductivity: suhu, `u`
+     *    dalam %). Yang bersatuan `ci`-nya → `ci` yang turun.
+     *
+     * Kalau kebalik, `nilai` tetap benar tapi rincian audit yang dibaca orang
+     * meleset 1000× — dan itu justru yang dilihat waktu ngecek angka.
+     *
+     * @param  array<string, mixed>  $hasil
+     * @return array<string, mixed>
+     */
+    private function turunkanKeSatuanLaporan(array $hasil, float $skala): array
+    {
+        if ($skala === 1.0) {
+            return $hasil;
+        }
+
+        foreach (['type_b', 'ketidakpastian_gabungan', 'ketidakpastian_diperluas'] as $kunci) {
+            if (isset($hasil[$kunci])) {
+                $hasil[$kunci] = (float) $hasil[$kunci] * $skala;
+            }
+        }
+
+        if (! isset($hasil['type_b_components']) || ! is_array($hasil['type_b_components'])) {
+            return $hasil;
+        }
+
+        $hasil['type_b_components'] = array_map(
+            function (array $k) use ($skala): array {
+                if (isset($k['nilai'])) {
+                    $k['nilai'] = (float) $k['nilai'] * $skala;
+                }
+
+                $ci = isset($k['ci']) ? (float) $k['ci'] : 1.0;
+
+                if (abs($ci - 1.0) < 1e-12) {
+                    if (isset($k['u_baku'])) {
+                        $k['u_baku'] = (float) $k['u_baku'] * $skala;
+                    }
+                } else {
+                    $k['ci'] = $ci * $skala;
+                }
+
+                return $k;
+            },
+            $hasil['type_b_components'],
+        );
+
+        return $hasil;
     }
 
     /**
