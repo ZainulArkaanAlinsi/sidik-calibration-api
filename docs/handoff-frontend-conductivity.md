@@ -97,8 +97,23 @@ menerima dua nilai untuk satu botol dan sertifikatnya jadi ambigu.
 Pilihan itu juga yang menentukan style sertifikat — backend yang memutuskan,
 frontend tidak perlu mengirim apa-apa:
 
-- titik tengah dalam **mS/cm** → sertifikat **style 1**
-- titik tengah dalam **µS/cm** → sertifikat **style 2**
+| Style | Satuan per titik | Kapan |
+|---|---|---|
+| **1** | µS/cm · µS/cm · mS/cm | Titik tengah terbaca µS/cm — pola paling umum |
+| **2** | µS/cm · mS/cm · mS/cm | Titik tengah terbaca mS/cm |
+| **3** | mS/cm · mS/cm · mS/cm | Alat menampilkan mS/cm di semua titik |
+
+**Penting — nomor ini sengaja berbeda dari nama sheet di file Excel lama.**
+Sheet `SERTIFIKAT STYLE 1` di master justru mencetak titik tengah dalam mS/cm,
+kebalikan dari tabel di atas. Lab sendiri yang menyatakan label di file itu
+keliru dan menetapkan urutan yang benar (keputusan 11 Agustus 2026).
+
+Kalau membandingkan hasil sistem dengan cetakan Excel lama: **angkanya sama
+persis, hanya nomor style-nya yang tertukar.** Jangan "diperbaiki" agar cocok
+dengan nama sheet.
+
+Style 3 belum punya sheet di master, tapi lab menyebutnya ada. Sistem sudah
+menanganinya karena style diturunkan dari satuan, bukan dari daftar tetap.
 
 ### 2c. Suhu larutan wajib, bukan opsional
 
