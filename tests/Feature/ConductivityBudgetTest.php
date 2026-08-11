@@ -610,8 +610,24 @@ class ConductivityBudgetTest extends TestCase
     {
         $profil = new ConductivityProfile;
 
-        $this->assertSame(2, $profil->styleSertifikat([25.0, 1412.0, 111.0]));
-        $this->assertSame(1, $profil->styleSertifikat([25.0, 1.412, 111.0]));
+        // Penomoran ikut lab, SENGAJA kebalik dari nama sheet di master —
+        // lab sendiri yang bilang label di file-nya salah. Lihat docblock
+        // `styleSertifikat()`.
+        $this->assertSame(1, $profil->styleSertifikat([25.0, 1412.0, 111.0]));
+        $this->assertSame(2, $profil->styleSertifikat([25.0, 1.412, 111.0]));
+
+        // Style 3 — semuanya mS/cm. Belum ada sheet-nya di master, tapi lab
+        // menyebutnya ada; bentuk ini nangkep dia tanpa aturan tambahan.
+        $semuaMili = Equipment::factory()->make([
+            'satuan' => 'mS/cm',
+            'resolusi_rentang' => [
+                ['titik' => 0.025, 'resolusi' => 0.0001, 'satuan' => 'mS/cm'],
+                ['titik' => 1.412, 'resolusi' => 0.001, 'satuan' => 'mS/cm'],
+                ['titik' => 111, 'resolusi' => 0.01, 'satuan' => 'mS/cm'],
+            ],
+        ]);
+
+        $this->assertSame(3, $profil->styleSertifikat([0.025, 1.412, 111.0], $semuaMili));
 
         // Varian mS/cm bawa peringatan; varian µS/cm nggak.
         $this->assertNull($profil->peringatanVarianMili([25.0, 1412.0, 111.0]));

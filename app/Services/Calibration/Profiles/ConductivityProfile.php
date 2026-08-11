@@ -441,23 +441,50 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
-     * Style sertifikat buat sesi ini, dari satuan yang dipakai baca titik
-     * tengah — catatan `INPUT DATA!K57`, diverifikasi dari isi kedua sheet:
+     * Style sertifikat buat sesi ini — DITURUNKAN dari satuan tiap titik,
+     * bukan dipilih orang.
      *
-     *  - **style 1** nyetak 25 µS/cm · 1,412 mS/cm · 111 mS/cm
-     *  - **style 2** nyetak 25 µS/cm · 1412 µS/cm · 111 mS/cm
+     *  - **style 1** — 25 µS/cm · 1412 µS/cm · 111 mS/cm
+     *  - **style 2** — 25 µS/cm · 1,412 mS/cm · 111 mS/cm
+     *  - **style 3** — semuanya mS/cm
+     *
+     * ## Nomornya SENGAJA kebalik dari nama sheet di master
+     *
+     * Sheet `SERTIFIKAT STYLE 1` di workbook nyetak titik tengah dalam mS/cm
+     * (sel `C40 = PERHITUNGAN!J39`), dan `STYLE 2` nyetaknya dalam µS/cm
+     * (`C36 = H39`) — jadi label di file itu kebalikan dari yang dipakai di
+     * sini.
+     *
+     * Itu bukan kekeliruan baca. Lab sendiri yang bilang label di file-nya
+     * salah ("coba lihat style satu ini salah, harusnya mikrosimen"), lalu
+     * menegaskan urutan yang benar: opsi pertama µS·µS·mS, opsi kedua
+     * µS·mS·mS. Penomoran di sini ngikut lab, karena itu yang dipakai ngomong
+     * sehari-hari dan yang nyampe ke pelanggan — keputusan 11 Agt 2026.
+     *
+     * Yang perlu diingat waktu ngadu hasil sistem sama cetakan Excel lama:
+     * ANGKANYA sama persis, cuma nomor style-nya yang ketuker.
      *
      * @param  list<float>  $titikUkur  titik yang beneran diukur di sesi ini
      */
-    public function styleSertifikat(array $titikUkur): int
+    public function styleSertifikat(array $titikUkur, ?Equipment $equipment = null): int
     {
+        $satuan = array_map(
+            fn (float $t): string => $this->satuanTitik($t, $equipment),
+            $titikUkur,
+        );
+
+        if ($satuan !== [] && ! in_array(self::SATUAN_MIKRO, $satuan, true)) {
+            return 3;
+        }
+
+        // Titik tengah kebaca mS/cm — nilainya ~1,412, bukan ~1412.
         foreach ($titikUkur as $t) {
             if (abs($t - 1.412) < 0.05) {
-                return 1;
+                return 2;
             }
         }
 
-        return 2;
+        return 1;
     }
 
     /**
@@ -476,7 +503,7 @@ class ConductivityProfile extends CalibrationProfile
      */
     public function peringatanVarianMili(array $titikUkur): ?string
     {
-        if ($this->styleSertifikat($titikUkur) !== 1) {
+        if ($this->styleSertifikat($titikUkur) !== 2) {
             return null;
         }
 
