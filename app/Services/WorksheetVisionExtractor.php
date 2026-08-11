@@ -172,7 +172,12 @@ class WorksheetVisionExtractor
         return [
             'ok' => true,
             'status' => 'sukses',
-            'data' => ['baris' => $this->normalisasiBaris($data)],
+            'data' => [
+                'baris' => $this->normalisasiBaris($data),
+                // Diteruskan apa adanya. Frontend yang mutusin kolom mana
+                // mendarat di titik mana — di sini nggak ada daftar titiknya.
+                'standard_value' => $this->normalisasiStandarNilai($data),
+            ],
             'raw' => $json,
             'usage' => $this->usage($json),
             'error' => null,
@@ -378,7 +383,12 @@ class WorksheetVisionExtractor
         return [
             'ok' => true,
             'status' => 'sukses',
-            'data' => ['baris' => $this->normalisasiBaris($data)],
+            'data' => [
+                'baris' => $this->normalisasiBaris($data),
+                // Diteruskan apa adanya. Frontend yang mutusin kolom mana
+                // mendarat di titik mana — di sini nggak ada daftar titiknya.
+                'standard_value' => $this->normalisasiStandarNilai($data),
+            ],
             'raw' => $json,
             'usage' => $this->usageGemini($json),
             'error' => null,
@@ -458,6 +468,30 @@ class WorksheetVisionExtractor
         ];
     }
 
+    /**
+     * Nilai standar per kolom, dibersihin ke `list<float|null>`.
+     *
+     * Balikin `[]` kalau model nggak ngirim — frontend punya jalur balik ke
+     * pemetaan posisi, jadi respons tanpa kolom ini tetap kepakai (cuma nggak
+     * dapat perlindungan geser barisnya).
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<float|null>
+     */
+    private function normalisasiStandarNilai(array $data): array
+    {
+        $nilai = $data['standard_value'] ?? null;
+
+        if (! is_array($nilai)) {
+            return [];
+        }
+
+        return array_values(array_map(
+            static fn ($v): ?float => is_numeric($v) ? (float) $v : null,
+            $nilai,
+        ));
+    }
+
     /** Petunjuk jumlah kolom (larutan standar) & baris (Repeat) buat bantu model. */
     /**
      * @param  list<float>|null  $nominal
@@ -521,7 +555,16 @@ The table has one row per "Repeat" (1..N) and one column group per standard
 solution, left to right. Each cell holds two numbers: an instrument reading and a
 temperature in °C.
 
-Return ONLY the JSON matching the provided schema. For each Repeat row, output:
+Return ONLY the JSON matching the provided schema.
+
+First, output "standard_value": the NOMINAL VALUE of each standard solution
+column, left to right — read it from the column header, not from the readings.
+E.g. headers "25 µS/cm | 1412 µS/cm | 111 mS/cm" give [25, 1412, 111]. Use the
+number as printed, without converting units. Use null for a column whose header
+you cannot read. This array MUST have one entry per column, in the same order as
+"ph" and "suhu" — it is what lets the app place each column on the right row.
+
+Then, for each Repeat row, output:
 - "ph": the instrument reading per column, left to right (null if illegible/missing)
 - "suhu": the °C reading per column, same order (null if illegible/missing)
 - "ph_keyakinan" / "suhu_keyakinan": your confidence per cell — "high", "medium", "low"
@@ -592,8 +635,18 @@ PROMPT;
         return [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['baris'],
+            'required' => ['baris', 'standard_value'],
             'properties' => [
+                // Nilai standar tiap KOLOM, urut kiri→kanan — sama urutannya
+                // dengan `ph`/`suhu` di tiap baris.
+                //
+                // Ini yang bikin frontend bisa naruh angka di BARIS YANG BENAR
+                // tanpa nebak dari urutan. Lembar yang digambar nggak selalu
+                // sejumlah & seurut kolom di foto: lembar Conductivity generik
+                // punya 4 baris (dua varian satuan titik tengah) sementara
+                // fotonya 3 kolom. Tanpa kolom ini semua angka geser satu baris,
+                // diam-diam, tanpa satu pun error.
+                'standard_value' => $angka,
                 'baris' => [
                     'type' => 'array',
                     'items' => [
