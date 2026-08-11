@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 
@@ -63,6 +64,42 @@ abstract class CalibrationProfile
     public function desimalTitik(float $titikUkur): ?int
     {
         return null;
+    }
+
+    /**
+     * Satuan yang berlaku DI TITIK ini. `null` = alatnya bersatuan seragam,
+     * pemanggil jatuh ke `equipments.satuan` yang tunggal.
+     *
+     * Kebanyakan alat nggak perlu override: pH selalu pH, Turbidimeter selalu
+     * NTU. Yang butuh cuma alat yang nyampur satuan dalam satu lembar —
+     * Conductivity baca 25 & 1412 dalam µS/cm tapi 111 dalam mS/cm, dan
+     * ambang pindahnya beda-beda per alat pelanggan.
+     *
+     * Ada di kelas induk (bukan cuma di profil Conductivity) supaya pemanggil
+     * bersama — `CalibrationResource`, sertifikat, lembar perhitungan — bisa
+     * nanya satu cara buat semua alat, tanpa `if (alat == conductivity)`.
+     */
+    public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Peringatan khas alat ini buat SATU sesi, di luar aturan umum validator.
+     *
+     * Balikin daftar `[kode, pesan]`; `CalibrationValidator` yang mbungkus jadi
+     * temuan tingkat PERINGATAN — nahan approve sekali, dan admin boleh lanjut
+     * secara sadar. Bukan ERROR: yang diperingatin di sini hal yang mungkin
+     * benar, bukan yang pasti salah.
+     *
+     * Ada di sini supaya validator bersama nggak perlu tau nama alat mana pun.
+     * Alat yang nggak punya peringatan khusus nggak override apa-apa.
+     *
+     * @return list<array{kode: string, pesan: string}>
+     */
+    public function peringatanSesi(CalibrationSession $sesi): array
+    {
+        return [];
     }
 
     /**

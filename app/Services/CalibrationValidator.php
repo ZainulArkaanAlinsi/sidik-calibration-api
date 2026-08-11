@@ -65,6 +65,7 @@ class CalibrationValidator
             ...$this->periksaTiapTitik($sesi),
             ...$this->periksaKeputusanSesi($sesi),
             ...$this->periksaKelengkapanSertifikat($sesi),
+            ...$this->periksaPeringatanProfil($sesi),
         ];
 
         $ringkasan = [
@@ -771,5 +772,36 @@ class CalibrationValidator
             'pesan' => $pesan,
             ...($konteks === [] ? [] : ['konteks' => $konteks]),
         ];
+    }
+
+    /**
+     * Peringatan khas alat, diserahin ke profilnya lewat
+     * `CalibrationProfile::peringatanSesi()`.
+     *
+     * Validator ini sengaja nggak tau nama alat mana pun — kalau nggak, tiap
+     * alat baru (lab mau sampai 48) nambah satu `if` di sini, dan dalam lima
+     * alat aja udah nggak kebaca. Alat yang nggak punya peringatan khusus
+     * balikin `[]` dan nggak ngaruh apa-apa.
+     *
+     * Semuanya PERINGATAN, bukan error: yang dilaporin di sini hal yang mungkin
+     * benar tapi perlu dilihat orang — approve tetap bisa dilanjutkan secara
+     * sadar lewat `abaikan_peringatan`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaPeringatanProfil(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return [];
+        }
+
+        $profil = app(CalibrationProfileRegistry::class)->untukAlat($alat);
+
+        return array_map(
+            fn (array $p): array => $this->temuan(self::PERINGATAN, $p['kode'], $p['pesan']),
+            $profil->peringatanSesi($sesi),
+        );
     }
 }
