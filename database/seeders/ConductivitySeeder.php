@@ -110,6 +110,44 @@ class ConductivitySeeder extends Seeder
         ],
     ];
 
+    /**
+     * Titik yang sama, tapi titik TENGAH dibaca dalam mS/cm.
+     *
+     * `1412 µS/cm` dan `1,412 mS/cm` itu botol larutan yang SAMA; yang beda
+     * cuma satuan yang tampil di layar alat pelanggan. Pembacaan 1413 µS/cm
+     * jadi 1,413 mS/cm — angka fisik yang sama.
+     *
+     * Ada supaya jalur varian mS/cm PERNAH DILIHAT ORANG di layar: dia yang
+     * mancing peringatan `conductivity_titik_tengah_mili` dan yang bikin
+     * sertifikatnya keluar style 2. Sebelum ini dua-duanya cuma kebukti lewat
+     * tes, dan nggak ada satu pun sesi yang bisa dibuka buat ngeceknya.
+     *
+     * @var list<array{titik: float, standar: int, satuan: string, pembacaan: list<float>, suhu: list<float>}>
+     */
+    private const TITIK_VARIAN_MILI = [
+        [
+            'titik' => 25.0,
+            'standar' => 0,
+            'satuan' => 'µS/cm',
+            'pembacaan' => [25, 25, 25, 25.1, 25.1],
+            'suhu' => [25.2, 25.2, 25.2, 25.3, 25.2],
+        ],
+        [
+            'titik' => 1.412,
+            'standar' => 1,
+            'satuan' => 'mS/cm',
+            'pembacaan' => [1.413, 1.413, 1.413, 1.413, 1.413],
+            'suhu' => [25, 24.9, 24.9, 24.9, 24.9],
+        ],
+        [
+            'titik' => 111.0,
+            'standar' => 2,
+            'satuan' => 'mS/cm',
+            'pembacaan' => [110.69, 110.67, 110.67, 110.67, 110.67],
+            'suhu' => [25.2, 25.2, 25.2, 25.2, 25.2],
+        ],
+    ];
+
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
@@ -248,20 +286,70 @@ class ConductivitySeeder extends Seeder
 
         app(KondisiLingkungan::class)->terapkan($sesi);
 
-        $this->isiTitikUkur($sesi, $equipment, $standar);
+        $this->isiTitikUkur($sesi, $equipment, $standar, self::TITIK);
+
+        $this->sesiVarianMili($equipment, $standar, $teknisi, $th6);
+    }
+
+    /**
+     * Sesi kedua: titik tengah dibaca dalam mS/cm.
+     *
+     * **Nomornya SENGAJA bukan nomor job lab.** Sesi `2405.32.A.NK` itu job
+     * beneran yang angkanya diadu ke master; yang ini fixture buat mancing
+     * jalur varian mS/cm — peringatan `conductivity_titik_tengah_mili` dan
+     * sertifikat style 2. Ngasih nomor job palsu bikin orang ngira ada
+     * pekerjaan lab kedua yang nggak pernah ada.
+     *
+     * Angkanya JANGAN diadu ke master: jalur mS/cm belum pernah ketemu sesi
+     * nyata di workbook lab — itu justru yang diperingatin backend.
+     *
+     * @param  array<int, Standard>  $standar
+     */
+    private function sesiVarianMili(
+        Equipment $equipment,
+        array $standar,
+        User $teknisi,
+        ?Standard $th6,
+    ): void {
+        $sesi = CalibrationSession::updateOrCreate(
+            ['organization_id' => 1, 'nomor_sesi' => 'DEMO-COND-MSCM'],
+            [
+                'equipment_id' => $equipment->id,
+                'teknisi_id' => $teknisi->id,
+                'standard_id' => $standar[0]->id,
+                'thermohygro_standard_id' => $th6?->id,
+                'input_method' => 'manual',
+                'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+                'tanggal_kalibrasi' => '2024-05-13',
+                'lokasi' => 'lab',
+                'suhu_awal' => 25.4,
+                'suhu_akhir' => 25.5,
+                'kelembaban_awal' => 54.0,
+                'kelembaban_akhir' => 55.0,
+                'submitted_at' => now(),
+            ],
+        );
+
+        app(KondisiLingkungan::class)->terapkan($sesi);
+
+        $this->isiTitikUkur($sesi, $equipment, $standar, self::TITIK_VARIAN_MILI);
     }
 
     /**
      * @param  array<int, Standard>  $standar
      */
-    private function isiTitikUkur(CalibrationSession $sesi, Equipment $equipment, array $standar): void
-    {
+    private function isiTitikUkur(
+        CalibrationSession $sesi,
+        Equipment $equipment,
+        array $standar,
+        array $daftarTitik,
+    ): void {
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
 
         $kalkulator = new GumCalculator;
 
-        foreach (self::TITIK as $index => $titik) {
+        foreach ($daftarTitik as $index => $titik) {
             $std = $standar[$titik['standar']];
             $titikKe = $index + 1;
 

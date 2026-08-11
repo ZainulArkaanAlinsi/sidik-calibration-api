@@ -374,6 +374,38 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Kesempatan buat profil betulin SATUAN nilai acuan yang baru keluar dari
+     * `Standard::nilaiPadaSuhu()`. Default: nggak ngapa-ngapain.
+     *
+     * ## Kenapa perlu
+     *
+     * `koefisien_suhu` sebuah botol ditulis dalam SATU satuan — satuan native
+     * botol itu. Buat hampir semua alat itu cukup, karena titiknya cuma bisa
+     * dibaca dalam satu satuan.
+     *
+     * Conductivity beda: satu botol bisa dibaca dua satuan (`1412 µS/cm` dan
+     * `1,412 mS/cm` itu botol yang SAMA). Polinomialnya cuma punya satu skala,
+     * jadi kalau sesinya baca varian mS/cm, nilai acuan yang balik dari
+     * polinomial kegedean 1000×. Yang kesimpen jadi `titik_ukur = 1412` lawan
+     * pembacaan `1,413` — kolom Correction sertifikat keluar `+1410,587`.
+     *
+     * [$titikDiminta] itu titik yang MINTA dihitung (mis. `1.412`), sebelum
+     * ketimpa nilai acuan. Itu satu-satunya petunjuk varian mana yang lagi
+     * dipakai, karena nilai baliknya sendiri udah kehilangan skalanya.
+     *
+     * @param  float  $nilaiAcuan  hasil polinomial, dalam satuan native botol
+     * @param  float  $titikDiminta  titik yang dipanggil pemanggil, apa adanya
+     */
+    public function nilaiAcuanPadaSuhu(
+        float $nilaiAcuan,
+        float $titikDiminta,
+        Standard $standard,
+        Equipment $equipment,
+    ): float {
+        return $nilaiAcuan;
+    }
+
+    /**
      * Berapa desimal yang dipakai NYETAK angka hasil di sertifikat, kalau alat
      * ini emang beda dari aturan umum. `null` = ikut aturan umum
      * (`Organization::desimalSertifikat`, yaitu diturunkan dari resolusi alat).

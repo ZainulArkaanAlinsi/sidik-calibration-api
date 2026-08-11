@@ -114,7 +114,17 @@ class GumCalculator
         // `?? $titikUkur` bikin ini aman buat semua yang bukan pH: standar tanpa
         // `koefisien_suhu` (atau titik tanpa suhu larutan) balik ke perilaku lama
         // persis, karena `nilaiPadaSuhu()` balikin null.
-        $titikUkur = $standard->nilaiPadaSuhu($suhuLarutan) ?? $titikUkur;
+        //
+        // Nilai yang balik itu dalam satuan NATIVE botolnya. Buat alat yang satu
+        // titiknya cuma bisa dibaca satu satuan, itu udah bener. Conductivity
+        // bisa baca botol yang sama dalam dua satuan, jadi profilnya dikasih
+        // kesempatan nyetel skalanya — lihat `nilaiAcuanPadaSuhu()`.
+        $profil = $this->registry->untukAlat($equipment);
+        $nilaiAcuan = $standard->nilaiPadaSuhu($suhuLarutan);
+
+        if ($nilaiAcuan !== null) {
+            $titikUkur = $profil->nilaiAcuanPadaSuhu($nilaiAcuan, $titikUkur, $standard, $equipment);
+        }
 
         $n = count($pembacaan);
 
@@ -154,11 +164,10 @@ class GumCalculator
         // angka ini buat ketidakpastian yang dilaporkan.
         $typeA = $standarDeviasi / sqrt($n);
 
-        // Daftar komponen budget-nya diserahin ke PROFIL alat (pH, Turbidimeter,
-        // ...) — tiap alat punya bentuk budget beda, dan itu satu-satunya bagian
+        // `$profil` (diambil di atas) juga yang nentuin daftar komponen budget —
+        // tiap alat punya bentuk budget beda, dan itu satu-satunya bagian
         // per-alat yang tersisa di sini. Aturan agregasi (Uc, Welch–Satterthwaite,
         // k, lantai CMC) tetap generik di bawah.
-        $profil = $this->registry->untukAlat($equipment);
 
         // Pembacaan dinormalisasi ke suhu acuan alat. Cuma refractometer yang
         // ngelakuin sesuatu di sini (1,3362 @27 °C → 1,33935 @20 °C); profil
