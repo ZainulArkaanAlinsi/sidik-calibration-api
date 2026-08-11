@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -466,6 +467,46 @@ class ConductivityProfile extends CalibrationProfile
      *
      * @param  list<float>  $titikUkur  titik yang beneran diukur di sesi ini
      */
+    /**
+     * Peringatan sesi: titik tengah kebaca dalam **mS/cm**.
+     *
+     * Titik tengah punya dua bentuk yang mewakili botol yang SAMA — 1412 µS/cm
+     * dan 1,412 mS/cm. Yang µS/cm itu yang diadu ke master Excel dan cocok
+     * angka per angka. Yang mS/cm belum pernah ketemu sesi nyata di master;
+     * jalurnya kebentuk dari aturan lab ("sertifikat ikut satuan yang tampil di
+     * alat pelanggan"), bukan dari lembar yang pernah dihitung tangan.
+     *
+     * Jadi bukan salah — cuma belum pernah dibuktikan. Admin berhak tau itu
+     * SEBELUM sertifikatnya terbit, dan tetap boleh lanjut.
+     *
+     * @return list<array{kode: string, pesan: string}>
+     */
+    public function peringatanSesi(CalibrationSession $sesi): array
+    {
+        $tengah = self::TITIK[1]['varian_mili'] ?? null;
+
+        if ($tengah === null) {
+            return [];
+        }
+
+        $pakaiMili = $sesi->uncertaintyCalculations->contains(
+            fn ($titik): bool => abs((float) $titik->titik_ukur - $tengah['nilai'])
+                <= $tengah['nilai'] * self::TOLERANSI_PASANGAN_TITIK,
+        );
+
+        if (! $pakaiMili) {
+            return [];
+        }
+
+        return [[
+            'kode' => 'conductivity_titik_tengah_mili',
+            'pesan' => 'Titik tengah sesi ini kecatat dalam '.self::SATUAN_MILI
+                .' ('.$tengah['nilai'].'), bukan '.self::SATUAN_MIKRO.' ('.self::TITIK[1]['nilai'].'). '
+                .'Angkanya diproses dengan rumus yang sama, tapi jalur satuan ini belum pernah '
+                .'diadu ke sesi nyata di master Excel. Periksa sekali lagi sebelum sertifikatnya terbit.',
+        ]];
+    }
+
     public function styleSertifikat(array $titikUkur, ?Equipment $equipment = null): int
     {
         $satuan = array_map(
@@ -664,6 +705,17 @@ class ConductivityProfile extends CalibrationProfile
             // yang mengikat itu `satuan` per baris tabel hasil.
             'satuan' => null,
             'satuan_campuran' => true,
+            // Suhu larutan WAJIB kalau pembacaannya diisi — dan itu dikirim
+            // sebagai BENDERA, bukan dibiarin layar nebak dari nama alat.
+            //
+            // Keempat alat sama-sama punya kolom `suhu` di tabelnya, jadi ada
+            // atau nggaknya kolom nggak mbedain apa-apa. Yang mbedain: nilai
+            // acuan Conductivity DIGESER ikut suhu, sementara Turbidimeter &
+            // Chlorine dibaca nominal — suhunya dicatat tapi nggak masuk
+            // hitungan. Tanpa bendera ini frontend cuma bisa mbedainnya lewat
+            // `if (profil == conductivity)`, dan itu bakal diulang tiap alat
+            // baru sampai alat ke-48.
+            'suhu_wajib' => true,
             'satuan_suhu' => '°C',
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Suhu larutan WAJIB diisi buat tiap titik yang pembacaannya diisi — '

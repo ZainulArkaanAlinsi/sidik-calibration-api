@@ -323,6 +323,21 @@ class CalibrationResource extends JsonResource
             'desimal' => $alat?->resolusi_rentang
                 ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada((float) $titik->titik_ukur))
                 : ($alat !== null ? self::profil($alat)?->desimalSertifikat() : null),
+            // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam satu
+            // lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
+            //
+            // Sebelumnya cuma `desimal` yang per titik, satuannya nggak ikut —
+            // jadi layar detail, approval, & sertifikat nggak punya cara nulis
+            // `25 µS/cm` vs `111 mS/cm` selain nebak dari besar angkanya.
+            // Bentuk lembar kerja udah lama ngirim `baris[].satuan`; yang
+            // ketinggalan jalur hasil.
+            //
+            // `null` buat alat bersatuan seragam — mobile jatuh ke
+            // `equipment.satuan` kayak biasa, jadi pH/Turbidimeter/Chlorine/
+            // Refractometer nggak berubah perilakunya.
+            'satuan' => $alat !== null
+                ? self::profil($alat)?->satuanTitik((float) $titik->titik_ukur, $alat)
+                : null,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,
