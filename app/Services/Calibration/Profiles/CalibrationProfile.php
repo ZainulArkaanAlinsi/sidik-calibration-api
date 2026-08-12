@@ -338,6 +338,35 @@ abstract class CalibrationProfile
     ): ?array;
 
     /**
+     * Hitung SEMUA titik satu sesi sekaligus, buat alat yang ketidakpastiannya
+     * lahir per KELOMPOK titik, bukan per titik.
+     *
+     * Default `null` = "profil ini nggak ambil alih" — pemanggil tetap jalan
+     * per titik lewat `GumCalculator::hitungTitik()` persis kayak sebelum hook
+     * ini ada. Cuma profil yang emang butuh yang nge-override.
+     *
+     * ## Kenapa hook ini perlu
+     *
+     * `GumCalculator::hitungTitik()` cuma lihat SATU titik, jadi dia nggak bisa
+     * tahu STDEV titik tetangganya. Master Spectrophotometer nyusun satu budget
+     * per kelompok filter dari **STDEV terbesar** di kelompok itu, lalu nyetak
+     * satu `U95%` yang sama buat semua titik kelompok tersebut. Itu nggak bisa
+     * diungkapin lewat [komponenBudget] yang per titik.
+     *
+     * Implementasi WAJIB balikin satu baris hitungan per titik yang berhasil
+     * (bentuknya sama kayak keluaran `GumCalculator::hitungTitik()`), dan
+     * ngelaporin titik yang nggak kehitung lewat `belum_dihitung` — bukan
+     * ngebuang diam-diam.
+     *
+     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard}>  $titik
+     * @return array{hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}|null
+     */
+    public function hitungPerGrup(array $titik, Equipment $equipment): ?array
+    {
+        return null;
+    }
+
+    /**
      * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
      * ngapa-ngapain — pembacaan dipakai apa adanya.
      *
