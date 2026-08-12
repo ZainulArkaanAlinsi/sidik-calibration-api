@@ -80,7 +80,12 @@ return [
          * di sini masuk sertifikat resmi.
          */
         'model' => env('GEMINI_MODEL', 'gemini-3.6-flash'),
-        'max_tokens' => (int) env('GEMINI_MAX_TOKENS', 4096),
+        // 4096 KEKECILAN buat model yang mikir dulu: token berpikir ikut
+        // dihitung ke jatah ini, jadi JSON-nya kepotong di tengah dan balik
+        // sebagai `finish_reason: MAX_TOKENS`. Gejalanya di HP: "nggak ada
+        // angka yang kebaca sama sekali" — kelihatan kayak fotonya jelek,
+        // padahal fotonya bagus.
+        'max_tokens' => (int) env('GEMINI_MAX_TOKENS', 32768),
         'timeout' => (int) env('GEMINI_TIMEOUT', 60),
     ],
 
