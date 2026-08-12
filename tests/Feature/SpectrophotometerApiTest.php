@@ -529,6 +529,39 @@ class SpectrophotometerApiTest extends TestCase
         $this->assertSame(3, $perRemark['Accuracy %T and Linierity at λ = 560nm']->first()['desimal']);
     }
 
+    /**
+     * Sesi yang SEMUA titiknya tanpa vonis nggak boleh distempel PASS.
+     *
+     * Alat ini nggak punya satu pun batas keberterimaan di master-nya, jadi
+     * `GumCalculator::keputusan()` balikin null buat tiap titik. Waktu
+     * keputusan sesi masih `default => 'PASS'`, sesi spektro yang dikirim dari
+     * HP kebaca "LULUS" di daftar riwayat, di antrean approval, dan di
+     * ringkasan sertifikat — padahal nggak ada kriteria kelulusan yang pernah
+     * diperiksa. Kelas kekeliruan yang sama kayak `keputusan` per titik yang
+     * dulu bikin badge hijau di titik tanpa vonis.
+     *
+     * Preview ikut diperiksa di sini: yang dilihat teknisi sebelum kirim wajib
+     * sama dengan yang bakal kesimpen.
+     */
+    public function test_sesi_tanpa_vonis_nggak_distempel_pass(): void
+    {
+        $preview = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations/preview', $this->payload())
+            ->assertOk();
+
+        $preview->assertJsonPath('data.keputusan', null);
+        $preview->assertJsonPath('data.hasil.keputusan', null);
+
+        $sesi = $this->simpanSesi();
+
+        $this->assertNotEmpty($sesi->uncertaintyCalculations, 'titiknya kehitung');
+        $this->assertTrue(
+            $sesi->uncertaintyCalculations->every(fn ($t): bool => $t->keputusan === null),
+            'tiap titik spektro emang nggak divonis',
+        );
+        $this->assertNull($sesi->keputusan);
+    }
+
     public function test_standar_kadaluarsa_ditolak(): void
     {
         $this->standar[SpectrophotometerCalculator::GRUP_DIDYNIUM]
