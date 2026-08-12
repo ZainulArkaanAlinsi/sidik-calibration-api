@@ -112,10 +112,24 @@ class ConductivitySesiVarianMiliTest extends TestCase
         ] as $kolom) {
             $harapan = (float) $mikro->{$kolom} / 1000.0;
 
+            // Lantai deltanya HARUS setinggi kuantum simpan, bukan batas double.
+            // Kolom-kolom ini `decimal(20, 8)`, jadi angka mS/cm dibulatkan di
+            // desimal ke-8 sebelum masuk DB — selisih sampai 5e-9 itu bikinan
+            // kolomnya, bukan bikinan hitungannya. Sisi µS/cm ikut dibulatkan
+            // juga, tapi dibagi 1000 dulu jadi sumbangannya cuma ~5e-12.
+            //
+            // Lantai lama `1e-12` cuma lolos di SQLite, yang nyimpen kolom
+            // `decimal` sebagai float tanpa motong di desimal ke-8. Di MySQL
+            // test ini gagal di `type_b` (0,00411487 lawan 0,00411487331) —
+            // beda 3,3e-9, persis sebesar pembulatan kolomnya.
+            //
+            // Longgar segini nggak nge-tumpulin penjaganya: regresi yang
+            // diincer test ini ordenya 1000× (koreksi +1410,587 lawan +1,41),
+            // bukan di desimal ke-9.
             $this->assertEqualsWithDelta(
                 $harapan,
                 (float) $mili->{$kolom},
-                max(abs($harapan) * 1e-9, 1e-12),
+                max(abs($harapan) * 1e-9, 1e-8),
                 "Kolom {$kolom} sesi mS/cm nggak setara sesi µS/cm dibagi 1000.",
             );
         }
