@@ -95,7 +95,15 @@ class RealtimeSyncTest extends TestCase
     {
         $event = new PerubahanDataOrganisasi(7, 'sertifikat', 'diterbitkan', 42);
 
-        $this->assertInstanceOf(ShouldBroadcast::class, $event);
+        // Dicek di level KELAS, bukan `assertInstanceOf` ke `$event`: yang
+        // terakhir nyempitin tipe `$event` jadi cuma `ShouldBroadcast`, padahal
+        // di bawah ini masih dipanggil `broadcastAs()`/`broadcastWith()` yang
+        // punya kelas eventnya.
+        $this->assertContains(
+            ShouldBroadcast::class,
+            class_implements($event),
+            'Event wajib nge-implement ShouldBroadcast — kalau nggak, Laravel nggak nyiarin apa pun.',
+        );
 
         $channel = $event->broadcastOn()[0];
         $this->assertInstanceOf(PrivateChannel::class, $channel);

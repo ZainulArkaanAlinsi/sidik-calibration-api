@@ -53,7 +53,10 @@ class UncertaintyCalculation extends Model
     /** @return BelongsTo<Standard, $this> */
     public function standard(): BelongsTo
     {
-        return $this->belongsTo(Standard::class)->withTrashed();
+        $relasi = $this->belongsTo(Standard::class);
+        $relasi->withTrashed();
+
+        return $relasi;
     }
 
     /**

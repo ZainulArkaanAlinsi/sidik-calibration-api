@@ -26,7 +26,7 @@ class PengaturanOrganisasiTest extends TestCase
         Livewire::actingAs($admin)
             ->test(PengaturanOrganisasi::class)
             // Form keisi dari record pas mount — pastiin nama lama kebaca dulu.
-            ->assertFormSet(['nama' => 'Nama Lama'])
+            ->assertSchemaStateSet(['nama' => 'Nama Lama'])
             ->fillForm([
                 'nama' => 'PT Sidik Kalibrasi Baru',
                 'no_akreditasi' => 'LK-999-IDN',

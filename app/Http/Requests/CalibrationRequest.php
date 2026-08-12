@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
 use App\Models\Standard;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -251,6 +252,8 @@ class CalibrationRequest extends FormRequest
             // sini, dipakai buat dua-duanya di bawah — biar nggak query
             // Standard berkali-kali buat baris yang sama.
             $idPerTitik = array_column($this->input('measurements', []), 'standard_id');
+
+            /** @var Collection<int, Standard> $standarById */
             $standarById = Standard::query()
                 ->whereIn('id', array_filter([$this->integer('standard_id'), ...$idPerTitik]))
                 ->get()

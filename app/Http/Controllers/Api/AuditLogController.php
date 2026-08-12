@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AuditLogResource;
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\Rule;
@@ -73,7 +74,8 @@ class AuditLogController extends Controller
 
             // `chunkById`, bukan `get()`: 10 ribu baris audit yang bawa dua kolom
             // JSON itu berat kalau ditarik sekaligus.
-            $query->chunkById(500, function ($kumpulan) use ($keluaran): void {
+            $query->chunkById(500, function (Collection $kumpulan) use ($keluaran): void {
+                /** @var AuditLog $log */
                 foreach ($kumpulan as $log) {
                     $baris = $this->barisCsv($log);
 

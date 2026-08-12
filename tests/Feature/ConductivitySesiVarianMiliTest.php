@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\CalibrationValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -184,6 +185,10 @@ class ConductivitySesiVarianMiliTest extends TestCase
 
         $profil = app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment);
 
+        // `untukAlat()` balikin CalibrationProfile; `styleSertifikat()` itu
+        // milik ConductivityProfile. Sekalian ngunci routing registry-nya.
+        $this->assertInstanceOf(ConductivityProfile::class, $profil);
+
         $titik = $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->map(fn ($t): float => (float) $t->titik_ukur)
@@ -211,6 +216,10 @@ class ConductivitySesiVarianMiliTest extends TestCase
         $this->assertSame([], $kode, 'Sesi job asli harus nol peringatan (hasil nomor 2).');
 
         $profil = app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment);
+
+        // `untukAlat()` balikin CalibrationProfile; `styleSertifikat()` itu
+        // milik ConductivityProfile. Sekalian ngunci routing registry-nya.
+        $this->assertInstanceOf(ConductivityProfile::class, $profil);
 
         $titik = $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
