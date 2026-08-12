@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
+use Database\Seeders\Concerns\MenstempelVersiRumus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -33,6 +34,7 @@ use Illuminate\Support\Str;
 class ChlorineSeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
+    use MenstempelVersiRumus;
 
     /**
      * Dua larutan standar chlorine ASLI yang dimiliki lab (sheet DATABASE
@@ -221,6 +223,9 @@ class ChlorineSeeder extends Seeder
         $kalkulator = new GumCalculator;
         $keputusanSesi = 'PASS';
 
+        // Sekali per sesi, di luar loop — semua titik pakai versi yang sama.
+        $versiRumus = $this->versiRumusUntuk($sesi);
+
         foreach (self::TITIK as $index => $titik) {
             $std = $standar[$titik['standar']];
             $titikKe = $index + 1;
@@ -252,7 +257,11 @@ class ChlorineSeeder extends Seeder
                 $keputusanSesi = 'FAIL';
             }
 
-            UncertaintyCalculation::create(['calibration_session_id' => $sesi->id, ...$hasil]);
+            UncertaintyCalculation::create([
+                'calibration_session_id' => $sesi->id,
+                'formula_version_id' => $versiRumus,
+                ...$hasil,
+            ]);
         }
 
         $sesi->update(['keputusan' => $keputusanSesi]);

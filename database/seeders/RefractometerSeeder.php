@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
+use Database\Seeders\Concerns\MenstempelVersiRumus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -37,6 +38,7 @@ use Illuminate\Support\Str;
 class RefractometerSeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
+    use MenstempelVersiRumus;
 
     /**
      * Empat larutan standar dari sheet DATABASE baris 1–4. U95% & tanggalnya
@@ -255,6 +257,9 @@ class RefractometerSeeder extends Seeder
         // 21,96 turun ke 21,9 (deviasi −0,000855).
         $suhuRuang = ((float) $sesi->suhu_awal + (float) $sesi->suhu_akhir) / 2;
 
+        // Sekali per sesi, di luar loop — semua titik pakai versi yang sama.
+        $versiRumus = $this->versiRumusUntuk($sesi);
+
         foreach (self::TITIK as $index => $titik) {
             $std = $standar[$titik['standar']];
             $titikKe = $index + 1;
@@ -295,7 +300,11 @@ class RefractometerSeeder extends Seeder
                 $keputusanSesi = 'FAIL';
             }
 
-            UncertaintyCalculation::create(['calibration_session_id' => $sesi->id, ...$hasil]);
+            UncertaintyCalculation::create([
+                'calibration_session_id' => $sesi->id,
+                'formula_version_id' => $versiRumus,
+                ...$hasil,
+            ]);
         }
 
         $sesi->update(['keputusan' => $keputusanSesi]);

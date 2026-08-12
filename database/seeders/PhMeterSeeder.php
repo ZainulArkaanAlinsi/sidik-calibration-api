@@ -18,6 +18,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
+use Database\Seeders\Concerns\MenstempelVersiRumus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -53,6 +54,7 @@ use RuntimeException;
 class PhMeterSeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
+    use MenstempelVersiRumus;
 
     public function run(): void
     {
@@ -214,6 +216,9 @@ class PhMeterSeeder extends Seeder
         $kalkulator = new GumCalculator;
         $keputusanSesi = 'PASS';
 
+        // Sekali per sesi, di luar loop — semua titik pakai versi yang sama.
+        $versiRumus = $this->versiRumusUntuk($sesi);
+
         foreach ($titikUkur as $titik) {
             $standar = $standarPerSerial[$titik['standard_serial_number']];
 
@@ -242,7 +247,11 @@ class PhMeterSeeder extends Seeder
                 $keputusanSesi = 'FAIL';
             }
 
-            UncertaintyCalculation::create(['calibration_session_id' => $sesi->id, ...$hasil]);
+            UncertaintyCalculation::create([
+                'calibration_session_id' => $sesi->id,
+                'formula_version_id' => $versiRumus,
+                ...$hasil,
+            ]);
         }
 
         $sesi->update(['keputusan' => $keputusanSesi]);
