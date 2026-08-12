@@ -173,11 +173,67 @@ class CalibrationController extends Controller
             equipment: $alat,
         );
 
+        // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan
+        // buat titik yang sama — artinya master alatnya belum bilang varian
+        // mana yang dipakai, dan yang bakal milih jadinya teknisi.
+        //
+        // Itu keputusan yang bukan haknya. Varian satuan nentuin style
+        // sertifikat, dan salah pilih bikin nilai acuannya meleset 1000×:
+        // 1413 di baris `1,412 mS/cm` keluar Correction -1411,588 (sesi 53,
+        // 12 Agt 2026). Waktu alatnya masih sedikit, orang lab hafal mana yang
+        // benar; begitu alatnya banyak, nggak ada yang tau.
+        //
+        // Dicek dari BENTUKNYA — ada baris yang saling `eksklusif_dengan` —
+        // bukan dari nama profil, jadi profil baru yang punya varian ikut
+        // kejaga tanpa nyentuh baris ini.
+        if ($alat !== null && self::adaVarianBelumDitentukan($bentuk)) {
+            return response()->json([
+                'message' => 'Alat ini punya titik dengan dua varian satuan, dan master alatnya belum '
+                    .'nyebut yang mana. Isi "Resolusi per titik" di data Alat dulu — satuan yang kepakai '
+                    .'itu properti alat pelanggan, bukan pilihan teknisi di lapangan.',
+            ], 422);
+        }
+
         if ($request->filled('pengulangan')) {
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
         }
 
         return response()->json(['data' => $bentuk]);
+    }
+
+    /**
+     * Bentuk lembar masih nyisain dua baris yang saling meniadakan?
+     *
+     * `eksklusif_dengan` nunjuk ke titik ukur pasangannya. Kalau dua-duanya
+     * masih ada di bentuk yang UDAH disusutin ke alat, penyusutannya nggak
+     * kejadian — master alatnya nggak punya keterangan buat milih.
+     *
+     * @param  array<string, mixed>  $bentuk
+     */
+    private static function adaVarianBelumDitentukan(array $bentuk): bool
+    {
+        $titik = [];
+        $pasangan = [];
+
+        foreach ($bentuk['bagian'] ?? [] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                foreach ($tabel['baris'] ?? [] as $baris) {
+                    $titik[(string) (float) $baris['titik_ukur']] = true;
+
+                    if (($baris['eksklusif_dengan'] ?? null) !== null) {
+                        $pasangan[] = (string) (float) $baris['eksklusif_dengan'];
+                    }
+                }
+            }
+        }
+
+        foreach ($pasangan as $p) {
+            if (isset($titik[$p])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function store(CalibrationRequest $request): JsonResponse
