@@ -40,6 +40,13 @@ class Formula extends Model
     /** Rumus GUM buat jalur Conductivity Meter (budget 4 komponen, lihat ConductivityProfile). */
     public const KODE_GUM_CONDUCTIVITY = 'gum-conductivity';
 
+    /**
+     * Rumus GUM buat jalur Spectrophotometer. Beda sendiri dari lima di atas:
+     * budgetnya disusun per KELOMPOK titik (Holmium / Didynium / %T), bukan per
+     * titik — lihat SpectrophotometerCalculator & SpectrophotometerProfile.
+     */
+    public const KODE_GUM_SPECTRO = 'gum-spectro';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

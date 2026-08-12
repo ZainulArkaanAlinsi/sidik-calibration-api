@@ -956,6 +956,9 @@ class CalibrationController extends Controller
         $mentah = [];
         $hitungan = [];
         $belumDihitung = [];
+        // Titik yang lolos saringan `alasanBelumBisaDihitung()`, ditampung dulu
+        // — lihat alasannya di bawah loop.
+        $siapHitung = [];
 
         // Baris yang NGGAK nyumbang satu pun pembacaan — titik yang di-hide di
         // lembar kerja, atau yang barisnya emang dikosongin karena alat
@@ -1099,19 +1102,48 @@ class CalibrationController extends Controller
                 continue;
             }
 
-            $hitungan[] = $this->bulatkanHitungan($this->gum->hitungTitik(
-                $titikKe,
-                (float) $titik['titik_ukur'],
-                $pembacaanTerisi,
-                $alat,
-                $standarTitik,
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => (float) $titik['titik_ukur'],
+                'pembacaan' => $pembacaanTerisi,
+                'standard' => $standarTitik,
                 // Suhu larutan rata-rata titik ini. Null kalau teknisi nggak
                 // ngisi kolom suhu — `hitungTitik()` bakal balik ke nilai
                 // nominal yang diketik, sama kayak perilaku sebelumnya.
-                $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
-                $suhuRuang,
-            ));
+                'suhu_larutan' => $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
+            ];
         }
+
+        // Hitungnya baru dikerjain SESUDAH semua titik terkumpul, karena ada
+        // alat yang satu titiknya nggak bisa dihitung sendirian: master
+        // Spectrophotometer nyusun satu budget per kelompok filter dari STDEV
+        // TERBESAR di kelompok itu, jadi tiap titik butuh tahu tetangganya.
+        //
+        // Profil yang nggak butuh itu balikin null dari `hitungPerGrup()` dan
+        // jatuh ke jalur per-titik di bawah — perilakunya persis kayak sebelum
+        // hook ini ada.
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        if ($perGrup !== null) {
+            $hitungan = $perGrup['hitungan'];
+            $belumDihitung = [...$belumDihitung, ...$perGrup['belum_dihitung']];
+        } else {
+            foreach ($siapHitung as $t) {
+                $hitungan[] = $this->gum->hitungTitik(
+                    $t['titik_ke'],
+                    $t['titik_ukur'],
+                    $t['pembacaan'],
+                    $alat,
+                    $t['standard'],
+                    $t['suhu_larutan'],
+                    $suhuRuang,
+                );
+            }
+        }
+
+        $hitungan = array_map(fn (array $h): array => $this->bulatkanHitungan($h), $hitungan);
+
+        usort($belumDihitung, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
         return ['mentah' => $mentah, 'hitungan' => $hitungan, 'belum_dihitung' => $belumDihitung];
     }
