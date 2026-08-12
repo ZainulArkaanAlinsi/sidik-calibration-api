@@ -46,6 +46,15 @@ class EquipmentResource extends JsonResource
             'range_max' => $this->range_max,
             'satuan' => $this->satuan,
             'resolusi' => $this->resolusi,
+
+            // Band resolusi/satuan PER TITIK. Sempat cuma hidup di kolom DB &
+            // panel Filament, jadi mobile nggak pernah nerima angka yang
+            // nentuin satuan tiap baris lembar kerja, jumlah desimal
+            // sertifikat, dan style sertifikat Conductivity
+            // (`ConductivityProfile::styleSertifikat()`) — form alat di HP cuma
+            // bisa nampilin `resolusi` tunggal, yang buat alat bersatuan campur
+            // nggak mewakili apa-apa.
+            'resolusi_rentang' => $this->resolusi_rentang,
             'toleransi' => $this->toleransi,
             'lokasi' => $this->lokasi,
             'nama_alat_kemampuan' => $this->nama_alat_kemampuan,

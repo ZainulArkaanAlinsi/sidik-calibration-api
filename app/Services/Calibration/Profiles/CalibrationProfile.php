@@ -85,6 +85,32 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Koreksi negatif yang MEMBULAT KE NOL dicetak pakai tanda minus atau nggak.
+     *
+     * Ini murni soal cetak — nilai mentahnya nggak kena sama sekali, dan
+     * PASS/FAIL tetap diadu ke `koreksi` asli.
+     *
+     * Bukan aturan metrologi, melainkan format sel di master masing-masing
+     * alat, dan masternya emang beda satu sama lain:
+     *
+     *  - Turbidimeter `0189-CAL-624` nyetak `-0,00` (koreksi -0,004) dan `-0,0`
+     *    (koreksi -0,02) — diadu ke kertasnya langsung 10 Agt 2026. pH &
+     *    Chlorine ikut pola yang sama.
+     *  - Master Conductivity nyimpen angka yang SAMA PERSIS kayak kita
+     *    (`SERTIFIKAT STYLE 1` baris 35: `25` · `25.04` · `-0.03999999999999915`)
+     *    tapi nyetaknya `0,0`, tanpa minus.
+     *
+     * Jadi jawabannya nggak bisa diturunkan dari nalar "tanda minus itu
+     * informasi" — dua dokumen resmi lab jawabnya beda buat angka yang sama.
+     * Default `true` (tanda dipertahankan) karena itu yang berlaku di empat
+     * dari lima alat; yang beda cuma override sendiri.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return true;
+    }
+
+    /**
      * Peringatan khas alat ini buat SATU sesi, di luar aturan umum validator.
      *
      * Balikin daftar `[kode, pesan]`; `CalibrationValidator` yang mbungkus jadi

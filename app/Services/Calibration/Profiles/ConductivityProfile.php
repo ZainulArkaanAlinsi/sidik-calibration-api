@@ -442,6 +442,25 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
+     * Conductivity nyetak koreksi yang membulat ke nol TANPA minus — kebalikan
+     * dari empat alat lain. Lihat docblock induknya buat kenapa ini setelan per
+     * alat dan bukan aturan umum.
+     *
+     * Titik 25 µS/cm di master: Standard `25`, UUT `25,04`, Correction
+     * `-0.03999999999999915` di selnya, tapi yang KECETAK `0,0` (1 desimal,
+     * ngikut resolusi 0,1 µS/cm). Angka mentahnya sama persis kayak yang
+     * dihitung sistem — yang beda cuma format selnya.
+     *
+     * Dua titik lain nggak kena: koreksinya nggak membulat ke nol (`-1` dan
+     * `0,52`), jadi override ini cuma nyentuh baris yang kolom Correction-nya
+     * emang nol di kertas.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
+
+    /**
      * Style sertifikat buat sesi ini — DITURUNKAN dari satuan tiap titik,
      * bukan dipilih orang.
      *

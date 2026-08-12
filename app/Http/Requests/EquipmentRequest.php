@@ -6,6 +6,7 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class EquipmentRequest extends FormRequest
 {
@@ -53,6 +54,29 @@ class EquipmentRequest extends FormRequest
             'range_max' => ['nullable', 'numeric', 'gte:range_min'],
             'satuan' => ['nullable', 'string', 'max:50'],
             'resolusi' => ['nullable', 'numeric', 'min:0'],
+
+            // Band resolusi/satuan per titik — dua bentuk baris, dan keduanya
+            // harus lolos lewat kolom yang sama (lihat `Equipment::bandResolusi()`):
+            //
+            //  - berkunci `titik` — alat yang SATUANNYA beda antar titik
+            //    (Conductivity: 25 & 1412 µS/cm, 111 mS/cm). Ambang numerik
+            //    nggak bisa dipakai di sini karena 111 mS/cm secara angka lebih
+            //    kecil dari 1412 µS/cm.
+            //  - berkunci `maks` — satuan seragam, resolusi berubah menurut
+            //    besar pembacaan (Turbidimeter).
+            //
+            // `sometimes`: PATCH yang nggak nyebut field ini nggak boleh
+            // ngehapus band yang sudah diisi lewat panel admin. Kiriman `[]`
+            // yang eksplisit tetap ngosongin — itu memang yang diminta.
+            'resolusi_rentang' => ['sometimes', 'nullable', 'array'],
+            'resolusi_rentang.*' => ['array'],
+            'resolusi_rentang.*.titik' => ['nullable', 'numeric'],
+            'resolusi_rentang.*.maks' => ['nullable', 'numeric'],
+            // `min:0` nggak cukup: resolusi 0 bikin `desimalDariResolusi()`
+            // jatuh ke default 4 desimal diam-diam, dan sertifikatnya ngaku
+            // presisi yang alatnya nggak punya.
+            'resolusi_rentang.*.resolusi' => ['required', 'numeric', 'gt:0'],
+            'resolusi_rentang.*.satuan' => ['nullable', 'string', 'max:20'],
             'toleransi' => ['nullable', 'numeric', 'min:0'],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_kalibrasi_terakhir' => ['nullable', 'date'],
@@ -79,8 +103,60 @@ class EquipmentRequest extends FormRequest
             'nama_alat_kemampuan.exists' => 'Jenis alat itu nggak ada di kemampuan kalibrasi kategori ini. '
                 .'Ambil daftarnya dari GET /api/categories/{kode}.',
             'range_max.gte' => 'Batas atas rentang ukur nggak boleh lebih kecil dari batas bawah.',
+            'resolusi_rentang.*.resolusi.required' => 'Tiap baris resolusi per titik wajib punya angka resolusi.',
+            'resolusi_rentang.*.resolusi.gt' => 'Resolusi harus lebih besar dari nol.',
             'tanggal_jatuh_tempo.after_or_equal' => 'Tanggal jatuh tempo nggak boleh sebelum tanggal kalibrasi terakhir.',
             'status.in' => 'Status cuma boleh `aktif` atau `nonaktif` — `overdue` dihitung otomatis dari tanggal jatuh tempo.',
+        ];
+    }
+
+    /**
+     * Satu baris `resolusi_rentang` cuma boleh berkunci `titik` ATAU `maks`,
+     * nggak dua-duanya.
+     *
+     * `Equipment::bandResolusi()` mriksa band ber-`titik` duluan dan langsung
+     * balik begitu ketemu yang cocok, jadi baris yang punya dua kunci bikin
+     * `maks`-nya nggak pernah kepakai — diam, tanpa error, dan ketahuannya baru
+     * waktu sertifikat kecetak dengan desimal yang salah.
+     *
+     * `maks: null` sengaja tetap sah: itu golongan terakhir Turbidimeter yang
+     * nampung sisa pembacaan di atas band sebelumnya.
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $rentang = $this->input('resolusi_rentang');
+
+                if (! is_array($rentang)) {
+                    return;
+                }
+
+                foreach ($rentang as $i => $band) {
+                    if (! is_array($band)) {
+                        continue;
+                    }
+
+                    $punyaTitik = ($band['titik'] ?? null) !== null;
+                    $punyaMaks = array_key_exists('maks', $band);
+
+                    if ($punyaTitik && $punyaMaks && $band['maks'] !== null) {
+                        $validator->errors()->add(
+                            "resolusi_rentang.{$i}.maks",
+                            'Isi `titik` ATAU `maks`, jangan dua-duanya — band ber-`titik` selalu menang '
+                            .'dan `maks`-nya bakal diabaikan diam-diam.',
+                        );
+                    }
+
+                    if (! $punyaTitik && ! $punyaMaks) {
+                        $validator->errors()->add(
+                            "resolusi_rentang.{$i}.titik",
+                            'Baris resolusi wajib nyebut `titik` (satuan beda antar titik) atau `maks` '
+                            .'(resolusi berubah menurut besar pembacaan).',
+                        );
+                    }
+                }
+            },
         ];
     }
 

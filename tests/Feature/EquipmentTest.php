@@ -200,6 +200,147 @@ class EquipmentTest extends TestCase
         $this->assertSoftDeleted('equipments', ['id' => $alat->id]);
     }
 
+    /**
+     * `resolusi_rentang` nentuin satuan tiap baris lembar kerja, jumlah desimal
+     * sertifikat, dan style sertifikat Conductivity — dan sempat cuma bisa
+     * diisi lewat panel admin. Mobile nggak pernah nerima maupun ngirimnya,
+     * jadi form alat di HP cuma bisa nampilin `resolusi` tunggal yang buat alat
+     * bersatuan campur nggak mewakili apa-apa.
+     */
+    public function test_resolusi_rentang_kekirim_ke_mobile(): void
+    {
+        $alat = Equipment::factory()->create([
+            'resolusi_rentang' => [
+                ['titik' => 25, 'satuan' => 'µS/cm', 'resolusi' => 0.1],
+                ['titik' => 111, 'satuan' => 'mS/cm', 'resolusi' => 0.01],
+            ],
+        ]);
+
+        $this->actingAs($this->admin)->getJson("/api/equipments/{$alat->id}")
+            ->assertOk()
+            ->assertJsonPath('data.resolusi_rentang.0.satuan', 'µS/cm')
+            ->assertJsonPath('data.resolusi_rentang.1.resolusi', 0.01);
+    }
+
+    public function test_mobile_bisa_nyimpen_resolusi_rentang(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Conductivity Meter',
+            'serial_number' => 'C12345-COND',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'resolusi_rentang' => [
+                ['titik' => 25, 'satuan' => 'µS/cm', 'resolusi' => 0.1],
+                ['titik' => 1412, 'satuan' => 'µS/cm', 'resolusi' => 1],
+                ['titik' => 111, 'satuan' => 'mS/cm', 'resolusi' => 0.01],
+            ],
+        ])->assertCreated();
+
+        $alat = Equipment::where('serial_number', 'C12345-COND')->firstOrFail();
+
+        $this->assertCount(3, $alat->resolusi_rentang);
+        // Yang beneran diuji: bandnya kepakai buat mutusin satuan per titik,
+        // bukan cuma kesimpen sebagai JSON.
+        $this->assertSame('µS/cm', $alat->satuanPada(1412.0));
+        $this->assertSame('mS/cm', $alat->satuanPada(111.0));
+    }
+
+    /**
+     * PATCH yang nggak nyebut `resolusi_rentang` nggak boleh ngehapus band yang
+     * udah diisi lewat panel admin — mobile ngirim body parsial buat perubahan
+     * kecil kayak ganti lokasi.
+     */
+    public function test_update_tanpa_resolusi_rentang_nggak_ngehapus_band(): void
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'resolusi_rentang' => [['titik' => 25, 'satuan' => 'µS/cm', 'resolusi' => 0.1]],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alat->id}", ['lokasi' => 'Lab. PT. Sidik'])
+            ->assertOk();
+
+        $this->assertCount(1, $alat->fresh()->resolusi_rentang);
+    }
+
+    public function test_resolusi_rentang_kosong_yang_eksplisit_ngosongin_band(): void
+    {
+        $alat = Equipment::factory()->create([
+            'customer_id' => $this->pelanggan->id,
+            'equipment_category_id' => $this->kategori->id,
+            'resolusi_rentang' => [['titik' => 25, 'satuan' => 'µS/cm', 'resolusi' => 0.1]],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->putJson("/api/equipments/{$alat->id}", ['resolusi_rentang' => []])
+            ->assertOk();
+
+        $this->assertSame([], $alat->fresh()->resolusi_rentang);
+    }
+
+    public function test_resolusi_nol_di_baris_band_ditolak_422(): void
+    {
+        // Resolusi 0 bikin `Angka::desimalDariResolusi()` jatuh ke default 4
+        // desimal diam-diam, dan sertifikatnya ngaku presisi yang alatnya
+        // nggak punya.
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Alat Resolusi Nol',
+            'serial_number' => 'RES-0',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'resolusi_rentang' => [['titik' => 25, 'satuan' => 'µS/cm', 'resolusi' => 0]],
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('resolusi_rentang.0.resolusi');
+    }
+
+    /**
+     * `bandResolusi()` mriksa band ber-`titik` duluan dan langsung balik begitu
+     * ketemu yang cocok, jadi baris yang punya dua kunci bikin `maks`-nya nggak
+     * pernah kepakai — diam, tanpa error, dan ketahuannya baru waktu sertifikat
+     * kecetak dengan desimal yang salah.
+     */
+    public function test_baris_yang_punya_titik_dan_maks_sekaligus_ditolak_422(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Alat Dua Kunci',
+            'serial_number' => 'DUA-KUNCI',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'resolusi_rentang' => [
+                ['titik' => 25, 'maks' => 100, 'satuan' => 'µS/cm', 'resolusi' => 0.1],
+            ],
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('resolusi_rentang.0.maks');
+    }
+
+    /**
+     * Golongan terakhir Turbidimeter — `maks: null` itu nilai yang SAH (nampung
+     * sisa pembacaan di atas band sebelumnya), bukan baris yang belum diisi.
+     */
+    public function test_band_maks_null_golongan_terakhir_diterima(): void
+    {
+        $this->actingAs($this->admin)->postJson('/api/equipments', [
+            'nama_alat' => 'Turbidimeter',
+            'serial_number' => 'TB-01',
+            'kategori' => 'panjang',
+            'pelanggan_id' => $this->pelanggan->id,
+            'resolusi_rentang' => [
+                ['maks' => 10, 'resolusi' => 0.01],
+                ['maks' => 100, 'resolusi' => 0.1],
+                ['maks' => null, 'resolusi' => 1],
+            ],
+        ])->assertCreated();
+
+        $alat = Equipment::where('serial_number', 'TB-01')->firstOrFail();
+
+        $this->assertSame(0.1, $alat->resolusiPada(100.0));
+        $this->assertSame(1.0, $alat->resolusiPada(5000.0));
+    }
+
     public function test_alat_milik_organisasi_lain_nggak_kelihatan(): void
     {
         $organisasiLain = Organization::factory()->create();
