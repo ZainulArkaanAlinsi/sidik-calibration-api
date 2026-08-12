@@ -246,6 +246,17 @@ class CalibrationResource extends JsonResource
                     ->map(fn (RawMeasurement $m): array => [
                         'id' => $m->id,
                         'titik_ke' => $m->titik_ke,
+                        // Nilai titiknya, bukan cuma nomor barisnya. Lembar
+                        // kerja di HP nyusun ulang tabelnya per TITIK UKUR —
+                        // `titik_ke` itu posisi, dan posisi bisa geser begitu
+                        // bentuk lembarnya berubah (varian satuan Conductivity
+                        // nyusut sesudah alatnya dipilih). Tanpa kolom ini,
+                        // teknisi yang mbuka draft-nya lagi nggak punya cara
+                        // naruh angka balik ke baris yang benar.
+                        'titik_ukur' => $m->titik_ukur,
+                        // Centang standar acuan baris ini. Null = teknisi
+                        // belum milih, dan itu sah buat draft.
+                        'standard_id' => $m->standard_id,
                         'pembacaan_ke' => $m->pembacaan_ke,
                         'tahap' => $m->tahap,
                         'pembacaan' => $m->pembacaan,
@@ -304,6 +315,13 @@ class CalibrationResource extends JsonResource
         return [
             'titik_ke' => $titik->titik_ke,
             'titik_ukur' => $titik->titik_ukur,
+            // Standar acuan yang dipakai NGITUNG titik ini.
+            //
+            // Sesi yang dikirim sebelum `raw_measurements.standard_id` ada
+            // cuma nyimpen pilihan standarnya di sini. Buat sesi lama yang
+            // dibalikin admin, ini satu-satunya sumber buat mulangin centangnya
+            // ke lembar kerja teknisi.
+            'standard_id' => $titik->standard_id,
             // Desimal KHUSUS titik ini — nol kalau alatnya nggak dikirim.
             //
             // Alat yang resolusinya berubah per rentang (Turbidimeter: 0,01 di

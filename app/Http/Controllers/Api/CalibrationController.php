@@ -51,6 +51,7 @@ class CalibrationController extends Controller
         private readonly CalibrationValidator $validator,
         private readonly KondisiLingkungan $kondisi,
         private readonly FolderOrganizer $folder,
+        private readonly CalibrationProfileRegistry $profil,
     ) {}
 
     /**
@@ -900,13 +901,65 @@ class CalibrationController extends Controller
         $hitungan = [];
         $belumDihitung = [];
 
-        foreach (array_values($request->input('measurements', [])) as $index => $titik) {
+        // Baris yang NGGAK nyumbang satu pun pembacaan — titik yang di-hide di
+        // lembar kerja, atau yang barisnya emang dikosongin karena alat
+        // pelanggan nggak punya titik itu — dibuang SEBELUM penomoran, bukan
+        // sesudah.
+        //
+        // Dulu dia tetap kekirim dan tetap makan satu slot `$index`, jadi tiap
+        // titik sesudahnya kegeser satu: titik 25 µS/cm yang mestinya `titik_ke`
+        // 1 kesimpen sebagai 2. `PerhitunganBuilder` nyari standar pakai
+        // `keyBy('titik_ke')` dan sertifikatnya nyetak baris per `titik_ke`,
+        // jadi geseran itu mendarat langsung di dokumen — angka titik pertama
+        // nongol di baris kedua, persis kayak kasus salah-petak hasil foto.
+        //
+        // `pembacaan_sebelum` ikut diitung: baris yang cuma punya as-found tetap
+        // titik yang nyata, cuma belum bisa dihitung.
+        $titikTerpakai = array_values(array_filter(
+            $request->input('measurements', []),
+            static fn (array $titik): bool => array_filter(
+                [...array_values($titik['pembacaan'] ?? []), ...array_values($titik['pembacaan_sebelum'] ?? [])],
+                static fn ($nilai): bool => $nilai !== null && $nilai !== '',
+            ) !== [],
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
             $titikKe = $index + 1;
             $satuan = $titik['satuan'] ?? $satuanDefault;
             // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
             $suhu = array_values($titik['suhu'] ?? []);
+
+            // Dihitung SEBELUM barisnya disusun, karena tiap baris mentah ikut
+            // nyimpen standarnya sendiri sekarang. Dulu ini di bawah — waktu
+            // standar cuma dipakai buat ngitung, urutannya nggak penting.
+            //
+            // CalibrationRequest udah validasi standard_id per titik itu ada &
+            // masih berlaku — kalau sampe nggak ketemu di sini (standar
+            // dihapus di antara validasi & baris ini, atau endpoint lain
+            // manggil susunPengukuran tanpa lewat CalibrationRequest),
+            // gagal keras. Diam-diam pakai standar default sesi bakal nyimpen
+            // hasil hitung yang ngaku dihitung pakai standar yang salah.
+            $standarTitik = $standarDefault;
+
+            if (isset($titik['standard_id'])) {
+                $standarTitik = $standarPerTitik->get($titik['standard_id']);
+
+                abort_if(
+                    $standarTitik === null,
+                    422,
+                    "Standar acuan titik ke-{$titikKe} nggak ketemu — mungkin baru dihapus.",
+                );
+            }
+
+            // Centang standar milik BARIS ini, bukan standar default sesi.
+            //
+            // Bedanya penting waktu lembarnya dibuka lagi: `$standarDefault`
+            // kepasang ke semua titik, jadi kalau dia yang disimpen, teknisi
+            // bakal lihat semua baris kecentang padahal dia belum milih apa
+            // pun per titik.
+            $standarBaris = isset($titik['standard_id']) ? $standarTitik?->id : null;
 
             $pembacaanTerisi = [];
             // Suhu larutan, disaring sejajar sama `$pembacaanTerisi` — bukan
@@ -938,6 +991,7 @@ class CalibrationController extends Controller
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
+                    'standard_id' => $standarBaris,
                     'pembacaan' => $pembacaan,
                     'suhu' => $this->bulatkanKolom($suhu[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
@@ -968,30 +1022,13 @@ class CalibrationController extends Controller
                     'pembacaan_ke' => $urutan + 1,
                     'tahap' => 'sebelum_adjustment',
                     'titik_ukur' => $titik['titik_ukur'],
+                    'standard_id' => $standarBaris,
                     'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
                     'suhu' => $this->bulatkanKolom($suhuSebelum[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
                     'input_source' => 'manual',
                     'is_verified' => true,
                 ];
-            }
-
-            // CalibrationRequest udah validasi standard_id per titik itu ada &
-            // masih berlaku — kalau sampe nggak ketemu di sini (standar
-            // dihapus di antara validasi & baris ini, atau endpoint lain
-            // manggil susunPengukuran tanpa lewat CalibrationRequest),
-            // gagal keras. Diam-diam pakai standar default sesi bakal nyimpen
-            // hasil hitung yang ngaku dihitung pakai standar yang salah.
-            $standarTitik = $standarDefault;
-
-            if (isset($titik['standard_id'])) {
-                $standarTitik = $standarPerTitik->get($titik['standard_id']);
-
-                abort_if(
-                    $standarTitik === null,
-                    422,
-                    "Standar acuan titik ke-{$titikKe} nggak ketemu — mungkin baru dihapus.",
-                );
             }
 
             // Titik yang datanya belum cukup TETAP disimpen mentah, cuma nggak
@@ -1082,8 +1119,17 @@ class CalibrationController extends Controller
      * - Pengulangan minimal 2: standar deviasi (Type A) nggak ada artinya dari
      *   satu angka.
      * - Standar acuan harus ada: ketidakpastiannya komponen Type B terbesar.
-     * - Toleransi alat harus ada: tanpa batas pembanding, PASS/FAIL nggak punya
-     *   dasar sama sekali.
+     * - Toleransi alat harus ada — TAPI cuma buat alat yang emang divonis
+     *   PASS/FAIL. Conductivity Meter nggak: `punyaToleransi()` false, dan
+     *   `toleransi` NULL di situ artinya "emang nggak ada", bukan "belum
+     *   diisi". `CalibrationValidator::periksaKelengkapanHitung()` udah kasih
+     *   pengecualian itu dan `GumCalculator::keputusan()` udah balikin null
+     *   waktu toleransinya <= 0, cuma gerbang di sini yang kelewat — jadi tiap
+     *   titik Conductivity divonis "belum bisa dihitung", sesinya keluar tanpa
+     *   satu pun hasil hitung, dan di admin muncul sebagai `titik_kosong` yang
+     *   MEMBLOKIR penerbitan. Selama `equipments.toleransi` alat itu masih
+     *   keisi `0.0` bug-nya kependem; begitu diberesin jadi NULL (yang benar),
+     *   semua sesi Conductivity mati.
      *
      * Alasannya dikembaliin sebagai teks (bukan cuma bool) supaya
      * `POST /calibrations/preview` bisa ngasih tahu teknisi KENAPA satu titik
@@ -1103,7 +1149,8 @@ class CalibrationController extends Controller
                 GumCalculator::MIN_PENGULANGAN,
             ),
             $standar === null => 'Standar acuan belum dipilih buat titik ini.',
-            $alat->toleransi === null => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
+            $alat->toleransi === null && $this->profil->untukAlat($alat)->punyaToleransi()
+                => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
             default => null,
         };
     }
