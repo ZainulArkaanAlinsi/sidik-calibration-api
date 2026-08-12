@@ -8,8 +8,8 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
@@ -119,8 +119,8 @@ class DashboardTest extends TestCase
     private function bikinSesi(
         User $teknisi,
         string $status,
-        ?Carbon $tanggalKalibrasi = null,
-        ?Carbon $reviewedAt = null,
+        ?CarbonInterface $tanggalKalibrasi = null,
+        ?CarbonInterface $reviewedAt = null,
     ): CalibrationSession {
         return CalibrationSession::create([
             'organization_id' => $teknisi->organization_id,

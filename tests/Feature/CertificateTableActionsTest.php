@@ -7,6 +7,7 @@ use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
 use App\Models\Organization;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -41,8 +42,8 @@ class CertificateTableActionsTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
-            ->assertTableActionVisible('download', $sertifikat)
-            ->callTableAction('download', $sertifikat)
+            ->assertActionVisible(TestAction::make('download')->table($sertifikat))
+            ->callAction(TestAction::make('download')->table($sertifikat))
             ->assertFileDownloaded('Sertifikat-'.str_replace('/', '-', $sertifikat->nomor).'.pdf');
     }
 
@@ -52,7 +53,7 @@ class CertificateTableActionsTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
-            ->assertTableActionHidden('download', $sertifikat);
+            ->assertActionHidden(TestAction::make('download')->table($sertifikat));
     }
 
     public function test_admin_bisa_terbitkan_ulang_sertifikat_yang_gagal(): void
@@ -63,9 +64,9 @@ class CertificateTableActionsTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
-            ->assertTableActionVisible('retry', $sertifikat)
-            ->callTableAction('retry', $sertifikat)
-            ->assertHasNoTableActionErrors();
+            ->assertActionVisible(TestAction::make('retry')->table($sertifikat))
+            ->callAction(TestAction::make('retry')->table($sertifikat))
+            ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('certificates', [
             'id' => $sertifikat->id,
@@ -83,6 +84,6 @@ class CertificateTableActionsTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
-            ->assertTableActionHidden('retry', $sertifikat);
+            ->assertActionHidden(TestAction::make('retry')->table($sertifikat));
     }
 }

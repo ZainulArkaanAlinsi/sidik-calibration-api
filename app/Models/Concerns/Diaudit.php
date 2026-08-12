@@ -5,6 +5,7 @@ namespace App\Models\Concerns;
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Nyatet tiap perubahan model ke `audit_logs` (Keputusan 4).
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * gagal. Buat lab terakreditasi, perubahan yang nggak kecatat lebih berbahaya
  * daripada perubahan yang gagal — yang gagal keliatan dan bisa diulang, yang nggak
  * kecatat baru ketahuan waktu audit dan udah nggak bisa direkonstruksi.
+ *
+ * @mixin Model
  */
 trait Diaudit
 {
@@ -108,7 +111,11 @@ trait Diaudit
         });
 
         if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
-            static::restored(function (Model $model): void {
+            // `registerModelEvent`, bukan `static::restored()`: yang terakhir cuma
+            // ada di model yang makai SoftDeletes — persis yang lagi dicek di atas.
+            // Ini isi persis `SoftDeletes::restored()`, tanpa ngaku-ngaku method
+            // itu selalu ada di tiap model yang pakai trait ini.
+            static::registerModelEvent('restored', function (Model $model): void {
                 $model->catatAudit(AuditLog::ACTION_DIPULIHKAN, null, null);
             });
         }
@@ -143,7 +150,7 @@ trait Diaudit
             'new_data' => $baru,
             // `auth()->id()` null di queue & command — itu wajar, dan dibiarin null
             // lebih jujur daripada dituduhin ke user acak.
-            'changed_by' => auth()->id(),
+            'changed_by' => Auth::id(),
             'note' => $catatan,
         ]);
     }

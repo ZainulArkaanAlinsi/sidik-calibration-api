@@ -9,5 +9,15 @@
     // ngatur sendiri.
     "css.lint.unknownAtRules": "ignore",
     "less.lint.unknownAtRules": "ignore",
-    "scss.lint.unknownAtRules": "ignore"
+    "scss.lint.unknownAtRules": "ignore",
+
+    // File Blade nyampur PHP ke dalam CSS, dan itu emang nggak bisa dihindari:
+    // `style="width: {{ $lebar }}mm"` di sertifikat/pdf.blade.php, plus `@if`
+    // di dalam blok style buat mode web. Validator CSS bawaan VS Code baca itu
+    // sebagai CSS rusak — padahal yang sampai ke browser hasil render Blade,
+    // bukan sumbernya.
+    //
+    // Cuma validasi style yang NEMPEL di HTML yang dimatiin. File .css berdiri
+    // sendiri (resources/css/app.css) tetap divalidasi seperti biasa.
+    "html.validate.styles": false
 }

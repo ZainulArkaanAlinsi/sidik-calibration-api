@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\CalibrationSession;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -68,7 +68,7 @@ class TrenPekerjaan
      * Berapa periode yang bakal dihasilkan rentang ini. Dipakai validasi SEBELUM
      * datanya ditarik.
      */
-    public function jumlahPeriode(Carbon $dari, Carbon $sampai, string $satuan): int
+    public function jumlahPeriode(CarbonInterface $dari, CarbonInterface $sampai, string $satuan): int
     {
         $awal = $this->awalPeriode($dari, $satuan);
         $akhir = $this->awalPeriode($sampai, $satuan);
@@ -90,7 +90,7 @@ class TrenPekerjaan
      * @param  Builder<CalibrationSession>  $sesi
      * @return list<array{periode: string, label: string, masuk: int, selesai: int}>
      */
-    public function hitung(Builder $sesi, Carbon $dari, Carbon $sampai, string $satuan): array
+    public function hitung(Builder $sesi, CarbonInterface $dari, CarbonInterface $sampai, string $satuan): array
     {
         $mulai = $this->awalPeriode($dari, $satuan);
         $selesaiRentang = $this->akhirPeriode($sampai, $satuan);
@@ -139,14 +139,14 @@ class TrenPekerjaan
     }
 
     /**
-     * @param  Collection<int, Carbon|null>  $tanggal
+     * @param  Collection<int, CarbonInterface|null>  $tanggal
      * @return Collection<string, int>
      */
     private function kelompokkan(Collection $tanggal, string $satuan): Collection
     {
         return $tanggal
             ->filter()
-            ->countBy(fn (Carbon $t): string => $this->kunci($t, $satuan));
+            ->countBy(fn (CarbonInterface $t): string => $this->kunci($t, $satuan));
     }
 
     /**
@@ -156,7 +156,7 @@ class TrenPekerjaan
      * 29 Des 2025 itu minggu ke-1 tahun **2026** menurut ISO. Pakai `Y` bikin dua
      * minggu beda dapat kunci yang sama (`2025-W01`) dan angkanya kegabung.
      */
-    private function kunci(Carbon $tanggal, string $satuan): string
+    private function kunci(CarbonInterface $tanggal, string $satuan): string
     {
         return match ($satuan) {
             self::SATUAN_HARI => $tanggal->format('Y-m-d'),
@@ -165,7 +165,7 @@ class TrenPekerjaan
         };
     }
 
-    private function label(Carbon $awal, string $satuan): string
+    private function label(CarbonInterface $awal, string $satuan): string
     {
         return match ($satuan) {
             self::SATUAN_HARI => $awal->translatedFormat('d M'),
@@ -176,7 +176,7 @@ class TrenPekerjaan
         };
     }
 
-    private function awalPeriode(Carbon $tanggal, string $satuan): Carbon
+    private function awalPeriode(CarbonInterface $tanggal, string $satuan): CarbonInterface
     {
         return match ($satuan) {
             self::SATUAN_HARI => $tanggal->copy()->startOfDay(),
@@ -185,7 +185,7 @@ class TrenPekerjaan
         };
     }
 
-    private function akhirPeriode(Carbon $tanggal, string $satuan): Carbon
+    private function akhirPeriode(CarbonInterface $tanggal, string $satuan): CarbonInterface
     {
         return match ($satuan) {
             self::SATUAN_HARI => $tanggal->copy()->endOfDay(),
@@ -194,7 +194,7 @@ class TrenPekerjaan
         };
     }
 
-    private function majukan(Carbon $kursor, string $satuan): void
+    private function majukan(CarbonInterface $kursor, string $satuan): void
     {
         match ($satuan) {
             self::SATUAN_HARI => $kursor->addDay(),

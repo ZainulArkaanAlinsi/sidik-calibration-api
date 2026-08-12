@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Standard;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -261,8 +262,13 @@ class ExcelImporter
 
         // Nomor seri itu penanda paling pasti buat alat standar; kalau kosong,
         // jatuh ke nama.
-        $standar = Standard::where('organization_id', $organizationId)
-            ->when($serial !== '', fn ($q) => $q->where('serial_number', $serial), fn ($q) => $q->where('nama', $nama))
+        $standar = Standard::query()
+            ->where('organization_id', $organizationId)
+            ->when(
+                $serial !== '',
+                fn (Builder $q) => $q->where('serial_number', $serial),
+                fn (Builder $q) => $q->where('nama', $nama),
+            )
             ->first();
 
         if ($standar) {
@@ -349,11 +355,12 @@ class ExcelImporter
             'tanggal_jatuh_tempo' => $this->tanggal($nilai['tanggal_jatuh_tempo'] ?? null),
         ], fn ($v): bool => filled($v));
 
-        $alat = Equipment::where('organization_id', $organizationId)
+        $alat = Equipment::query()
+            ->where('organization_id', $organizationId)
             ->when(
                 $serial !== '',
-                fn ($q) => $q->where('serial_number', $serial),
-                fn ($q) => $q->where('nama_alat', $nama)->where('customer_id', $pelanggan->id),
+                fn (Builder $q) => $q->where('serial_number', $serial),
+                fn (Builder $q) => $q->where('nama_alat', $nama)->where('customer_id', $pelanggan->id),
             )
             ->first();
 

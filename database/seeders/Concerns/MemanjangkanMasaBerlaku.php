@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Concerns;
 
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 /**
@@ -52,7 +53,7 @@ trait MemanjangkanMasaBerlaku
      */
     protected int $ambangHari = 60;
 
-    protected function berlakuSampaiDemo(string $nama, Carbon|string|null $asli): Carbon
+    protected function berlakuSampaiDemo(string $nama, CarbonInterface|string|null $asli): CarbonInterface
     {
         // Data lama yang nggak nyimpen tanggal sama sekali: nggak ada yang bisa
         // dipertahankan, jadi langsung dikasih masa berlaku demo.
@@ -60,7 +61,7 @@ trait MemanjangkanMasaBerlaku
             return now()->addYear();
         }
 
-        $tanggal = $asli instanceof Carbon ? $asli : Carbon::parse($asli);
+        $tanggal = $asli instanceof CarbonInterface ? $asli : Carbon::parse($asli);
 
         if ($tanggal->greaterThan(now()->addDays($this->ambangHari))) {
             return $tanggal;

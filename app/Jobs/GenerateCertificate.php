@@ -187,6 +187,7 @@ class GenerateCertificate implements ShouldQueue
             ->where('status', User::STATUS_AKTIF)
             ->get();
 
+        /** @var User $user */
         foreach ($penerima as $user) {
             $user->notify(SertifikatTerbit::dariSertifikat($sertifikat));
         }

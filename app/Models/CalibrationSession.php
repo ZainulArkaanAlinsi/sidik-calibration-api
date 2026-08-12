@@ -197,11 +197,19 @@ class CalibrationSession extends Model
      * tahun lalu bakal balikin `standar_acuan: null` begitu standarnya dihapus —
      * ketertelusurannya ilang, padahal itu justru yang dicari asesor waktu audit.
      *
+     * Dipanggil sebagai statement, bukan dirantai: `withTrashed()` nyetel
+     * query relasinya di tempat, tapi tipe baliknya `Builder` (lewat `@mixin`
+     * di `Relation`), bukan `BelongsTo`. Dirantai bikin nilai balik method ini
+     * bohong sama tipe yang dideklarasi.
+     *
      * @return BelongsTo<Standard, $this>
      */
     public function standard(): BelongsTo
     {
-        return $this->belongsTo(Standard::class)->withTrashed();
+        $relasi = $this->belongsTo(Standard::class);
+        $relasi->withTrashed();
+
+        return $relasi;
     }
 
     /** Ruangan lab tempat sesi dikerjain — "Calibration Location" di sertifikat. */
@@ -219,7 +227,10 @@ class CalibrationSession extends Model
      */
     public function thermohygro(): BelongsTo
     {
-        return $this->belongsTo(Standard::class, 'thermohygro_standard_id')->withTrashed();
+        $relasi = $this->belongsTo(Standard::class, 'thermohygro_standard_id');
+        $relasi->withTrashed();
+
+        return $relasi;
     }
 
     /**
@@ -230,7 +241,10 @@ class CalibrationSession extends Model
      */
     public function calibrationMethod(): BelongsTo
     {
-        return $this->belongsTo(CalibrationMethod::class, 'calibration_method_id')->withTrashed();
+        $relasi = $this->belongsTo(CalibrationMethod::class, 'calibration_method_id');
+        $relasi->withTrashed();
+
+        return $relasi;
     }
 
     /**

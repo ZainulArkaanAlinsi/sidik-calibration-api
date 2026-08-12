@@ -18,10 +18,14 @@
   gambar dekoratif, tanpa kalimat promosi. Satu-satunya gambar adalah logo lab,
   dilampirkan inline (CID) supaya muncul tanpa perlu "tampilkan gambar".
 
-  Tata letaknya pakai <table> dan gaya INLINE. Bukan gaya lama-lamaan: Outlook
+  Tata letaknya pakai tabel dan gaya INLINE. Bukan gaya lama-lamaan: Outlook
   masih merender lewat mesin Word (div+flex berantakan), dan sebagian klien
-  membuang blok <style>. Yang di <style> cuma penyempurnaan yang boleh gagal —
-  mode gelap & lebar layar kecil.
+  membuang blok "style". Yang ada di blok itu cuma penyempurnaan yang boleh
+  gagal — mode gelap & lebar layar kecil.
+
+  Nama tag di komentar ini sengaja ditulis tanpa kurung sudut: parser HTML
+  nggak ngerti komentar Blade, jadi tag pembuka yang kesebut di sini kebaca
+  sebagai tag beneran dan sisa file-nya diperlakukan sebagai CSS.
 --}}
 @php
     // Diambil sekali di atas biar badan template tetap enak dibaca.

@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -66,7 +67,7 @@ class CalibrationSessionTableActionsTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ListCalibrationSessions::class)
-            ->mountTableAction('view', $sesi)
+            ->mountAction(TestAction::make('view')->table($sesi))
             ->assertSuccessful();
     }
 
@@ -81,7 +82,7 @@ class CalibrationSessionTableActionsTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ListCalibrationSessions::class)
-            ->callTableAction('approve', $sesi, ['abaikan_peringatan' => false]);
+            ->callAction(TestAction::make('approve')->table($sesi), ['abaikan_peringatan' => false]);
 
         // Sesi tanpa satu pun titik kehitung = temuan fatal. Statusnya WAJIB
         // nggak berubah, dan sertifikatnya nggak boleh kebentuk.
@@ -98,7 +99,7 @@ class CalibrationSessionTableActionsTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ListCalibrationSessions::class)
-            ->callTableAction('periksa', $sesi)
+            ->callAction(TestAction::make('periksa')->table($sesi))
             ->assertSuccessful();
 
         $this->assertSame(
@@ -116,7 +117,7 @@ class CalibrationSessionTableActionsTest extends TestCase
         // ketahuan dari test yang cuma ngecek route.
         Livewire::actingAs($admin)
             ->test(ListCalibrationSessions::class)
-            ->mountTableAction('perhitungan', $sesi)
+            ->mountAction(TestAction::make('perhitungan')->table($sesi))
             ->assertSuccessful();
     }
 
