@@ -169,6 +169,7 @@ ngilangin keempat poin di atas sekaligus.
 |---|---|
 | Build gagal di `composer install` | `composer.lock` nggak cocok sama PHP di image — cek pesan versinya di log |
 | Build mati di `package:discover` dengan `Class "Pdo\Mysql" not found` | image-nya keturunin ke PHP 8.3; `config/database.php` butuh 8.4 |
+| `npm install` sukses tapi `npm run build` mati: `Cannot find module '@rolldown/binding-...'` | Node di tahap aset keturunin ke bawah syarat Vite 8 (`^20.19.0 \|\| >=22.12.0`). npm ngelewatin binding native-nya diam-diam, tanpa bilang gagal — makanya tahap aset dipatok `node:22` |
 | Log nyebut `APP_KEY kosong` | langkah 2 kelewat |
 | `SQLSTATE[HY000] [2002]` waktu migrasi | DB_HOST/DB_PORT Aiven salah ketik |
 | `SSL connection error` | `DB_SSL_CA_B64` kosong atau base64-nya kepotong (harus SATU baris, tanpa newline) |
