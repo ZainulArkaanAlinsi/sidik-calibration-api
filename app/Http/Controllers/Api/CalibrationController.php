@@ -329,13 +329,10 @@ class CalibrationController extends Controller
 
         $titik = $sesi->uncertaintyCalculations->sortBy('titik_ke')->values();
 
-        // Keputusan sesi kalau dikirim sekarang. Satu titik FAIL bikin seluruh
-        // sesi FAIL — aturan yang sama kayak `tutupPengisian()`.
-        $sesi->keputusan = match (true) {
-            $titik->isEmpty() => null,
-            $titik->contains('keputusan', 'FAIL') => 'FAIL',
-            default => 'PASS',
-        };
+        // Keputusan sesi kalau dikirim sekarang — aturan yang sama persis kayak
+        // `tutupPengisian()`, lewat helper yang sama supaya nggak bisa geser
+        // sendiri-sendiri.
+        $sesi->keputusan = self::keputusanSesi($titik);
 
         $perhitungan = $builder->bangun($sesi);
 
@@ -1266,11 +1263,45 @@ class CalibrationController extends Controller
     }
 
     /**
-     * Tutup pengisian: tentuin keputusan sesi & statusnya.
+     * Keputusan sesi dari keputusan titik-titiknya. Satu pintu buat
+     * `tutupPengisian()` dan `preview()` — dua tempat itu wajib sepakat, kalau
+     * nggak, angka yang dilihat teknisi sebelum kirim beda dari yang kesimpen.
      *
-     * Keputusan sesi `null` kalau nggak ada satu pun titik yang kehitung —
-     * lembar kerja yang masih setengah nggak punya hasil, dan nulis "PASS" di
-     * situ jauh lebih berbahaya daripada ngosongin.
+     * Tiga keadaan, bukan dua:
+     *
+     *  - **`null` kalau belum ada titik yang kehitung.** Lembar setengah jadi
+     *    nggak punya hasil, dan nulis "PASS" di situ jauh lebih berbahaya
+     *    daripada ngosongin.
+     *  - **`FAIL` kalau ADA satu titik yang FAIL.**
+     *  - **`null` kalau semua titiknya nggak divonis.** Ini yang dulu kelewat:
+     *    Conductivity & Spectrophotometer nggak punya satu pun batas
+     *    keberterimaan di master-nya, jadi `GumCalculator::keputusan()` balikin
+     *    null buat SETIAP titik — dan `default => 'PASS'` di sini nyetempel
+     *    sesinya LULUS. Sesi spektro yang dikirim dari HP kebaca "PASS" di
+     *    daftar riwayat, di antrean approval, dan di ringkasan sertifikat,
+     *    padahal nggak ada satu pun kriteria kelulusan yang pernah diperiksa.
+     *    Kelas kekeliruan yang sama persis kayak `keputusan` per titik yang
+     *    dulu di-parse `== 'FAIL' ? fail : pass` di sisi mobile.
+     *
+     * `CalibrationValidator::periksaKeputusanSesi()` udah lama ngelewatin alat
+     * `punyaToleransi() === false` — jadi yang salah cuma stempelnya di sini,
+     * dan pemeriksaan admin nggak akan nolak sesi yang keputusannya null.
+     *
+     * @param  Collection<int, UncertaintyCalculation>  $titik
+     */
+    private static function keputusanSesi($titik): ?string
+    {
+        return match (true) {
+            $titik->isEmpty() => null,
+            // Satu titik FAIL bikin seluruh sesi FAIL.
+            $titik->contains('keputusan', 'FAIL') => 'FAIL',
+            $titik->every(fn (UncertaintyCalculation $t): bool => $t->keputusan === null) => null,
+            default => 'PASS',
+        };
+    }
+
+    /**
+     * Tutup pengisian: tentuin keputusan sesi & statusnya.
      *
      * @param  Collection<int, UncertaintyCalculation>  $titik
      */
@@ -1282,12 +1313,7 @@ class CalibrationController extends Controller
         $draft = $request->string('status')->value() === CalibrationSession::STATUS_DRAFT;
 
         $sesi->update([
-            'keputusan' => match (true) {
-                $titik->isEmpty() => null,
-                // Satu titik FAIL bikin seluruh sesi FAIL.
-                $titik->contains('keputusan', 'FAIL') => 'FAIL',
-                default => 'PASS',
-            },
+            'keputusan' => self::keputusanSesi($titik),
             'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
             'submitted_at' => $draft ? null : now(),
         ]);
