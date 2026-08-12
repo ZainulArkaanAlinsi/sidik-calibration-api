@@ -4,9 +4,16 @@
 Tanggal: 11 Agustus 2026. Belum ada kode produksi yang ditulis dari audit ini.
 
 > **Revisi 12 Agustus 2026** — isi versi pertama dicek ulang lawan repo. Tiga
-> temuan baru: master `.xlsm` Refractometer ternyata tidak ada di repo (§2.4),
-> `formulaVersion` ternyata **sudah** terpasang dan versi lama salah menyebutnya
-> belum ada (§3), dan hitungan `#REF!` Refractometer dikoreksi 23 → 22 (§2.2).
+> temuan: master `.xlsm` Refractometer tidak ada di repo (§2.4), `formulaVersion`
+> ternyata **sudah** terpasang dan versi lama salah menyebutnya belum ada (§3),
+> dan hitungan `#REF!` Refractometer dikoreksi 23 → 22 (§2.2).
+>
+> **Susulan sore hari** — dua koreksi atas revisi pagi, keduanya karena revisi itu
+> berhenti bertanya terlalu cepat: (a) "16 baris tanpa versi rumus" bukan
+> keputusan yang perlu diambil lab, melainkan bug seeder, dan sudah diperbaiki
+> (§3); (b) hilangnya `.xlsm` Refractometer sempat ditulis seolah buktinya ikut
+> hilang — padahal alamat sel & ekspresi Excel-nya tercatat di
+> `RefractometerProfile.php` (§2.2, §2.4).
 
 Audit ini **audit selisih**, bukan audit dari nol. Kedua alat sudah punya modul
 jalan (`ConductivityProfile`, `RefractometerProfile`) dengan golden test yang
@@ -111,9 +118,13 @@ sudah dibaca langsung dari `.xlsm` — tujuh rumus inti dengan alamat sel, terma
 penyimpangan yang dulu ditandai "aneh tapi ikut sheet" (divisor 1 di `U95%!Q9`,
 ci = 0,0001 di `U95%!X12`).
 
-**Catatan ketertelusuran:** `.xlsm`-nya sendiri tidak ada di repo (§2.4), jadi
-klaim di atas bersandar pada catatan commit, bukan pada berkas yang bisa dibuka
-ulang. Untuk keperluan asesor itu belum cukup.
+**Buktinya ada di repo, bukan cuma di catatan commit.** Ketujuh rumus itu
+tercatat lengkap dengan alamat sel DAN ekspresi Excel-nya di docblock
+`app/Services/Calibration/Profiles/RefractometerProfile.php` (bagian "Status
+pembuktian"), mis. `U95%!AC17 =TINV(0.05,AC16)` dan `U95%!AC20 =MAX(AC18:AF19)`.
+Siapa pun bisa baca tanpa buka Excel.
+
+Yang hilang cuma kemampuan **mencocokkan ulang** ke workbook sumbernya (§2.4).
 
 ### 2.3 Refractometer — `#REF!` titik ketiga: SUDAH TERJAWAB
 
@@ -132,17 +143,20 @@ pernah masuk git** (`git log --all --diff-filter=A` untuk pola `*Refractometer*.
 tidak mengembalikan apa pun). Yang ada di repo cuma dua `.xlsm`: Conductivity dan
 pH.
 
-Ini bukan soal kerapian arsip. Seluruh §2.2 — tujuh rumus inti Refractometer
-berikut alamat selnya — bersandar pada berkas ini. Selama berkasnya tidak ada,
-tidak seorang pun (termasuk asesor) bisa membuka ulang dan mencocokkan; yang
-tersisa hanya catatan commit `b55585e`.
+Perlu diletakkan pada porsinya: **hasil bacaannya tidak hilang.** Alamat sel dan
+ekspresi Excel ketujuh rumus tercatat di docblock `RefractometerProfile.php`
+(§2.2), dan angkanya dikunci golden test lawan sertifikat kertas. Yang tidak bisa
+dilakukan sekarang hanyalah **mencocokkan ulang** catatan itu ke workbook
+sumbernya.
 
 Berbeda dengan §2.1 dan §2.2 yang errornya ada **di dalam** sumber, yang ini
-error **ketersediaan** sumber — dan lebih gampang dibereskan: berkasnya tinggal
+error **ketersediaan** sumber — dan paling gampang dibereskan: berkasnya tinggal
 dimasukkan.
 
-**Status:** `SUMBER HILANG`. Perlu dicek ke pemegang berkas apakah `.xlsm`-nya
-memang belum pernah dikirim, atau ada tapi tidak ikut ter-commit.
+**Status:** `SUMBER TIDAK TERSEDIA` (bukan bukti yang hilang). Perlu dicek ke
+pemegang berkas apakah `.xlsm`-nya memang belum pernah dikirim, atau ada tapi
+tidak ikut ter-commit — kemungkinan besar karena ukurannya, seperti `.xlsm`
+Conductivity yang ada di disk tapi juga belum ter-track git.
 
 ---
 
@@ -169,11 +183,25 @@ berdiri. Yang sebenarnya terpasang:
   sudah terpaut ke versi rumus yang menghasilkannya
 - `tests/Feature/RumusBerversiTest.php` — 20 test
 
-Jadi selisihnya bukan "belum ada", melainkan **16 baris (25%) yang belum
-terpaut**. Itu hasil hitungan lama yang ditulis sebelum kolomnya dipasang;
-perlu diputuskan: di-backfill ke versi yang berlaku saat itu, atau sengaja
-dibiarkan null supaya tidak mengaku-ngaku ketertelusuran yang tidak dimiliki.
-Untuk lab terakreditasi, pilihan kedua lebih jujur.
+**Susulan, 12 Agt (sore) — 16 baris itu sudah terjawab, dan bukan keputusan lab.**
+Revisi pagi menduga baris tersebut hasil hitungan lama dari sebelum kolomnya
+dipasang, lalu menyerahkan pilihan backfill-vs-null ke lab. Dugaan itu salah:
+barisnya dibuat **10–11 Agt**, sedangkan versi rumusnya sudah ada sejak **5 Agt**
+(`effective_from` 2000-01-01). Jadi bukan data lama.
+
+Sebabnya: kelima seeder (`PhMeter`, `Turbidimeter`, `Chlorine`, `Refractometer`,
+`Conductivity`) membuat baris `uncertainty_calculations` **tanpa** menyetel
+`formula_version_id`, sementara jalur API sudah menyetelnya. Keenam sesi yang
+terdampak semuanya sesi demo bikinan seeder — satu per jenis alat. Tidak ada
+satu pun data kalibrasi nyata yang kehilangan ketertelusuran.
+
+Sudah diperbaiki lewat `Database\Seeders\Concerns\MenstempelVersiRumus`.
+Diverifikasi dengan menjalankan kelima seeder di dalam transaksi: 16 baris tanpa
+versi → **0 dari 64 (100% terpaut)**, lalu di-rollback.
+
+Pelajarannya bukan soal kolom bolong: data demo yang bohong soal kelemahannya
+sendiri bikin audit ini menghabiskan satu putaran penuh mengejar kebocoran
+ketertelusuran yang tidak pernah ada.
 
 Yang benar-benar belum ada dan layak digarap: **`sourceReference` terstruktur**
 (alamat sel Excel). Kolom `formula_versions.sumber` yang ada sekarang isinya
@@ -189,8 +217,10 @@ provenance kasar (`"kode"`), bukan alamat sel.
    verifikasi ulang formula Conductivity tidak bisa dilanjutkan.
 
 2. **Berkas `.xlsm` Refractometer (§2.4).** Bukan soal password: berkasnya
-   memang tidak ada. Perlu dikirim/di-commit dulu sebelum §2.2 bisa dicek ulang
-   oleh siapa pun selain penulis commit `b55585e`.
+   memang tidak ada di repo. Ini **tidak memblokir pekerjaan** — hasil bacaan
+   formulanya sudah tercatat di `RefractometerProfile.php` — tapi memblokir
+   pencocokan ulang. Perlu dikirim/di-commit kalau pencocokan itu diperlukan
+   asesor.
 
 3. **Satuan kolom sertifikat Conductivity (§2.1).** Karena master-nya `#REF!`,
    perlu konfirmasi tertulis dari lab bahwa konvensi lisan 11 Agt itu yang

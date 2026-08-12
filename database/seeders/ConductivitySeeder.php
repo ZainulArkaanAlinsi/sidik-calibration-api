@@ -14,6 +14,7 @@ use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
+use Database\Seeders\Concerns\MenstempelVersiRumus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -39,6 +40,7 @@ use Illuminate\Support\Str;
 class ConductivitySeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
+    use MenstempelVersiRumus;
 
     /**
      * Tiga larutan standar ASLI (sheet DATABASE R13/R14/R15 + V13/V14/V15 +
@@ -349,6 +351,9 @@ class ConductivitySeeder extends Seeder
 
         $kalkulator = new GumCalculator;
 
+        // Sekali per sesi, di luar loop — semua titik pakai versi yang sama.
+        $versiRumus = $this->versiRumusUntuk($sesi);
+
         foreach ($daftarTitik as $index => $titik) {
             $std = $standar[$titik['standar']];
             $titikKe = $index + 1;
@@ -382,7 +387,11 @@ class ConductivitySeeder extends Seeder
                 $suhuRata,
             );
 
-            UncertaintyCalculation::create(['calibration_session_id' => $sesi->id, ...$hasil]);
+            UncertaintyCalculation::create([
+                'calibration_session_id' => $sesi->id,
+                'formula_version_id' => $versiRumus,
+                ...$hasil,
+            ]);
         }
 
         // Sengaja NGGAK nyetel `keputusan` — conductivity nggak divonis

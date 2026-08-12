@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
+use Database\Seeders\Concerns\MenstempelVersiRumus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -33,6 +34,7 @@ use Illuminate\Support\Str;
 class TurbidimeterSeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
+    use MenstempelVersiRumus;
 
     /**
      * Tiga larutan standar turbidity ASLI yang dimiliki lab (sheet DATABASE
@@ -182,6 +184,9 @@ class TurbidimeterSeeder extends Seeder
         $kalkulator = new GumCalculator;
         $keputusanSesi = 'PASS';
 
+        // Sekali per sesi, di luar loop — semua titik pakai versi yang sama.
+        $versiRumus = $this->versiRumusUntuk($sesi);
+
         foreach (self::TITIK as $index => $titik) {
             $std = $standar[$titik['standar']];
             $titikKe = $index + 1;
@@ -213,7 +218,11 @@ class TurbidimeterSeeder extends Seeder
                 $keputusanSesi = 'FAIL';
             }
 
-            UncertaintyCalculation::create(['calibration_session_id' => $sesi->id, ...$hasil]);
+            UncertaintyCalculation::create([
+                'calibration_session_id' => $sesi->id,
+                'formula_version_id' => $versiRumus,
+                ...$hasil,
+            ]);
         }
 
         $sesi->update(['keputusan' => $keputusanSesi]);
