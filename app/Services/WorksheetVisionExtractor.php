@@ -185,7 +185,7 @@ class WorksheetVisionExtractor
             'ok' => true,
             'status' => 'sukses',
             'data' => [
-                'baris' => $this->catatKalauKosong($this->normalisasiBaris($data), $data),
+                'baris' => $this->catatHasil($this->normalisasiBaris($data), $data),
                 // Diteruskan apa adanya. Frontend yang mutusin kolom mana
                 // mendarat di titik mana — di sini nggak ada daftar titiknya.
                 'standard_value' => $this->normalisasiStandarNilai($data),
@@ -411,7 +411,7 @@ class WorksheetVisionExtractor
             'ok' => true,
             'status' => 'sukses',
             'data' => [
-                'baris' => $this->catatKalauKosong($this->normalisasiBaris($data), $data),
+                'baris' => $this->catatHasil($this->normalisasiBaris($data), $data),
                 // Diteruskan apa adanya. Frontend yang mutusin kolom mana
                 // mendarat di titik mana — di sini nggak ada daftar titiknya.
                 'standard_value' => $this->normalisasiStandarNilai($data),
@@ -788,7 +788,7 @@ PROMPT;
      * @param  array<string, mixed>  $data
      * @return list<array<string, mixed>>
      */
-    private function catatKalauKosong(array $baris, array $data): array
+    private function catatHasil(array $baris, array $data): array
     {
         $kebaca = 0;
 
@@ -802,15 +802,42 @@ PROMPT;
             }
         }
 
-        if ($kebaca === 0) {
-            Log::warning('WorksheetVisionExtractor: respons sah tapi NOL angka kebaca', [
-                'jumlah_baris' => count($baris),
-                'standard_value' => $this->normalisasiStandarNilai($data),
-                // Dipotong: cukup buat tau bentuknya, nggak nyalin seluruh
-                // respons ke log.
-                'cuplikan' => mb_substr(json_encode($data, JSON_UNESCAPED_UNICODE) ?: '', 0, 600),
-            ]);
+        // Sel kosong PER KOLOM, bukan cuma totalnya. Ini yang bikin keluhan
+        // "masih harus ngetik manual" punya data: kolom mana yang sering
+        // dilewatin model kelihatan dari sini, bukan ditebak.
+        $kosongPerKolom = [];
+
+        foreach ($baris as $b) {
+            foreach (['ph', 'suhu'] as $kolom) {
+                foreach ((array) ($b[$kolom] ?? []) as $i => $v) {
+                    if ($v === null) {
+                        $kosongPerKolom["{$kolom}[{$i}]"] = ($kosongPerKolom["{$kolom}[{$i}]"] ?? 0) + 1;
+                    }
+                }
+            }
         }
+
+        $konteks = [
+            'jumlah_baris' => count($baris),
+            'sel_kebaca' => $kebaca,
+            'sel_kosong_per_kolom' => $kosongPerKolom,
+            'standard_value' => $this->normalisasiStandarNilai($data),
+        ];
+
+        if ($kebaca === 0) {
+            // Dipotong: cukup buat tau bentuknya, nggak nyalin seluruh respons.
+            $konteks['cuplikan'] = mb_substr(json_encode($data, JSON_UNESCAPED_UNICODE) ?: '', 0, 600);
+
+            Log::warning('WorksheetVisionExtractor: respons sah tapi NOL angka kebaca', $konteks);
+
+            return $baris;
+        }
+
+        // Yang BERHASIL ikut dicatat. Sebelum ini cuma kegagalan yang
+        // ninggalin jejak, jadi scan yang "berhasil tapi nyisain sel kosong"
+        // — yang bikin teknisi tetap ngetik manual — nggak kelihatan sama
+        // sekali di log.
+        Log::info('WorksheetVisionExtractor: ekstraksi selesai', $konteks);
 
         return $baris;
     }
