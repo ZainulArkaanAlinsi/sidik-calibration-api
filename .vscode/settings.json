@@ -19,5 +19,15 @@
     //
     // Cuma validasi style yang NEMPEL di HTML yang dimatiin. File .css berdiri
     // sendiri (resources/css/app.css) tetap divalidasi seperti biasa.
-    "html.validate.styles": false
+    "html.validate.styles": false,
+
+    // `_ide_helper.php` ukurannya ~1,1 MB — lewat tipis dari batas bawaan
+    // Intelephense (1 MB), jadi file itu DILEWATI waktu indexing. Akibatnya
+    // percuma: `Storage::disk()->download()`, `->url()`, `assertExists()` tetap
+    // dilaporin "Undefined method" walaupun helper-nya udah digenerate.
+    //
+    // Gejalanya nyesatin — file-nya ada, isinya bener, tapi nggak kebaca. Yang
+    // ngasih tau cuma log Intelephense ("is over the maximum file size"), dan
+    // nggak ada yang buka log itu.
+    "intelephense.files.maxSize": 5000000
 }

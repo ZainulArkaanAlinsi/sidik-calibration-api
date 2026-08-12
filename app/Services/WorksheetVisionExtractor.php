@@ -41,6 +41,40 @@ class WorksheetVisionExtractor
     private const FEW_SHOT_DIR = 'few_shot';
 
     /**
+     * Jatah detik yang disisain buat kerjaan sesudah panggilan HTTP: decode JSON,
+     * nyatet log ekstraksi, nyusun response.
+     */
+    private const CADANGAN_DETIK = 5;
+
+    /**
+     * Timeout HTTP yang NGGAK boleh lebih panjang dari umur prosesnya sendiri.
+     *
+     * Kenapa ada: `max_execution_time` di php.ini dev itu 30 detik, sedangkan
+     * timeout AI default 60. Artinya PHP mati duluan — dan `catch
+     * (ConnectionException)` di bawah, yang tugasnya balikin "Coba lagi
+     * sebentar" ke teknisi, NGGAK PERNAH kejalan pas paling dibutuhin.
+     * Yang kelihatan di lapangan malah "Maximum execution time exceeded".
+     *
+     * Dipotong di sini, bukan dinaikin di php.ini: server produksi punya batas
+     * sendiri (php-fpm, nginx) yang nggak kekontrol dari repo ini. Yang bisa
+     * dijamin cuma satu — aplikasi nggak menjanjikan tunggu yang lebih lama
+     * dari jatah hidupnya.
+     *
+     * `max_execution_time` 0 = nggak dibatasi (CLI, queue worker) → pakai angka
+     * config apa adanya.
+     */
+    private function batasWaktu(int $dariConfig): int
+    {
+        $batasProses = (int) ini_get('max_execution_time');
+
+        if ($batasProses <= 0) {
+            return $dariConfig;
+        }
+
+        return max(5, min($dariConfig, $batasProses - self::CADANGAN_DETIK));
+    }
+
+    /**
      * @return array{
      *     ok: bool, status: string,
      *     data: array{baris: array<int, mixed>}|null,
@@ -118,7 +152,7 @@ class WorksheetVisionExtractor
                 'anthropic-version' => (string) config('services.anthropic.version', '2023-06-01'),
                 'content-type' => 'application/json',
             ])
-                ->timeout((int) config('services.anthropic.timeout', 60))
+                ->timeout($this->batasWaktu((int) config('services.anthropic.timeout', 60)))
                 ->baseUrl((string) config('services.anthropic.base_url', 'https://api.anthropic.com'))
                 ->post('/v1/messages', $body);
         } catch (ConnectionException $e) {
@@ -304,7 +338,7 @@ class WorksheetVisionExtractor
 
         try {
             $resp = Http::withHeaders(['content-type' => 'application/json'])
-                ->timeout((int) config('services.gemini.timeout', 60))
+                ->timeout($this->batasWaktu((int) config('services.gemini.timeout', 60)))
                 ->baseUrl((string) config(
                     'services.gemini.base_url',
                     'https://generativelanguage.googleapis.com',

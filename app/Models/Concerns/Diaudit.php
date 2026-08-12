@@ -22,7 +22,18 @@ use Illuminate\Support\Facades\Auth;
  * daripada perubahan yang gagal — yang gagal keliatan dan bisa diulang, yang nggak
  * kecatat baru ketahuan waktu audit dan udah nggak bisa direkonstruksi.
  *
- * @mixin Model
+ * Trait ini CUMA sah dipasang di Eloquent model — `bootDiaudit()` manggil
+ * pendaftar event yang datang dari `HasEvents`. Dideklarasi sebagai `@method`,
+ * bukan `@mixin`: analyzer nggak ngikutin `@mixin` buat panggilan `static::`
+ * dari dalam trait, jadi `@mixin` di sini cuma jadi hiasan yang nggak ngefek.
+ *
+ * `restored()` datang dari `SoftDeletes`, bukan `HasEvents` — makanya
+ * pemanggilannya dipagerin `class_uses_recursive()` di bawah.
+ *
+ * @method static void created(callable $callback)
+ * @method static void updated(callable $callback)
+ * @method static void deleted(callable $callback)
+ * @method static void restored(callable $callback)
  */
 trait Diaudit
 {
@@ -111,11 +122,7 @@ trait Diaudit
         });
 
         if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
-            // `registerModelEvent`, bukan `static::restored()`: yang terakhir cuma
-            // ada di model yang makai SoftDeletes — persis yang lagi dicek di atas.
-            // Ini isi persis `SoftDeletes::restored()`, tanpa ngaku-ngaku method
-            // itu selalu ada di tiap model yang pakai trait ini.
-            static::registerModelEvent('restored', function (Model $model): void {
+            static::restored(function (Model $model): void {
                 $model->catatAudit(AuditLog::ACTION_DIPULIHKAN, null, null);
             });
         }
