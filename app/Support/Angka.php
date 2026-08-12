@@ -61,9 +61,20 @@ class Angka
      * ditulis dari nalar, bukan dari kertasnya. Waktu master Turbidimeter
      * `0189-CAL-624` diadu langsung 10 Agt 2026, yang kecetak `-0,00` / `-0,0`.
      * Tandanya bukan hiasan: dia yang bilang alatnya baca DI ATAS standar.
+     *
+     * Tapi poin 2 juga NGGAK berlaku di semua alat, dan itu ketahuan waktu
+     * master Conductivity dibuka: selnya nyimpen `-0.03999999999999915` — sama
+     * persis kayak yang dihitung sistem — tapi yang kecetak `0,0`. Makanya
+     * `$tandaNol` ada: yang mutusin bukan fungsi ini, tapi profil alatnya
+     * (`CalibrationProfile::tandaNolDicetak()`), yang bacanya dari master
+     * masing-masing.
      */
-    public static function hasil(?float $nilai, int $desimal = self::DESIMAL_DEFAULT, string $kosong = '—'): string
-    {
+    public static function hasil(
+        ?float $nilai,
+        int $desimal = self::DESIMAL_DEFAULT,
+        string $kosong = '—',
+        bool $tandaNol = true,
+    ): string {
         if ($nilai === null) {
             return $kosong;
         }
@@ -72,7 +83,7 @@ class Angka
 
         // `$nilai < 0` sengaja dicek di nilai ASLI, bukan di hasil pembulatan —
         // itu justru bedanya: -0,004 membulat ke nol, tapi tetap negatif.
-        if ($nilai < 0 && ! str_starts_with($teks, '-')) {
+        if ($tandaNol && $nilai < 0 && ! str_starts_with($teks, '-')) {
             $teks = '-'.$teks;
         }
 

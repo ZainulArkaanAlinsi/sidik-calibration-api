@@ -356,6 +356,17 @@ class CalibrationResource extends JsonResource
             'satuan' => $alat !== null
                 ? self::profil($alat)?->satuanTitik((float) $titik->titik_ukur, $alat)
                 : null,
+            // Koreksi negatif yang membulat ke nol dicetak `-0,0` atau `0,0` —
+            // beda per alat, dibaca dari master masing-masing (lihat
+            // `CalibrationProfile::tandaNolDicetak()`).
+            //
+            // Ikut dikirim ke sini, bukan cuma ke snapshot sertifikat: layar
+            // riwayat & approval di HP nampilin tabel Calibration Report yang
+            // SAMA, dan kalau angkanya beda dari PDF-nya, yang ketahuan duluan
+            // justru teknisi yang lagi mriksa hasilnya sendiri.
+            'tanda_nol' => $alat !== null
+                ? (self::profil($alat)?->tandaNolDicetak() ?? true)
+                : true,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,

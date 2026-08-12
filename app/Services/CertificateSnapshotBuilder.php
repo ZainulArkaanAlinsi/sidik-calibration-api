@@ -200,6 +200,15 @@ class CertificateSnapshotBuilder
                     // satuan alat kayak biasa, jadi empat alat lain nggak
                     // berubah sama sekali.
                     'satuan' => $profil?->satuanTitik((float) $titik->titik_ukur, $alat),
+                    // Koreksi negatif yang membulat ke nol kecetak `-0,0` atau
+                    // `0,0` — beda per alat, dibaca dari master masing-masing
+                    // (lihat `CalibrationProfile::tandaNolDicetak()`).
+                    //
+                    // Ikut dibekukan sama alasannya kayak `desimal` & `satuan`.
+                    // Sertifikat yang udah terbit nggak punya kunci ini, dan
+                    // pembacanya jatuh ke `true` — persis perilaku lamanya, jadi
+                    // dokumen yang udah dipegang pelanggan nggak berubah bentuk.
+                    'tanda_nol' => $profil?->tandaNolDicetak() ?? true,
                 ];
             })
             ->values()

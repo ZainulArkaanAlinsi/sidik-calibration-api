@@ -88,7 +88,14 @@
 
         .judul-sub { font-size: 11.5px; font-weight: bold; margin: 10px 0 5px; letter-spacing: .5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 11px; }
-        table.data th, table.data td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
+        /*
+          Padding VERTIKAL sengaja lebih kecil dari horizontal, dan itu yang
+          nentuin sertifikat muat sehalaman. Tingginya dikali jumlah baris —
+          sertifikat 4 standar (Conductivity: 3 larutan + termometer) punya 9
+          baris tabel, jadi 1px padding = 18px tinggi halaman. Padding
+          horizontalnya nggak ngefek ke sini; jangan ikut dikecilin.
+        */
+        table.data th, table.data td { border: 1px solid #999; padding: 3px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
 
@@ -375,9 +382,16 @@
                          tampilannya nggak berubah — satuannya udah kesebut di
                          kepala kolom. --}}
                     @php($sat = $baris['satuan'] ?? null)
+                    {{-- Koreksi negatif yang membulat ke nol: `-0,0` di
+                         Turbidimeter/pH/Chlorine, `0,0` di Conductivity. Beda
+                         itu dibaca dari master masing-masing, bukan dinalar —
+                         lihat `CalibrationProfile::tandaNolDicetak()`.
+                         Sertifikat lama nggak punya kunci ini dan jatuh ke
+                         `true`, persis kayak waktu diterbitkan. --}}
+                    @php($tandaNol = $baris['tanda_nol'] ?? true)
                     <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}{{ $sat ? ' '.$sat : '' }}</td>
-                    <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db) }}</td>
-                    <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db) }}</td>
+                    <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
+                    <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
                     {{-- U95 ikut desimal alat, SAMA kayak tiga kolom di atas —
                          ngikut sertifikat asli lab (`0,09` & `0,08`, bukan
                          `0,091` & `0,080`).
