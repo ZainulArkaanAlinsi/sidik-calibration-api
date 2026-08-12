@@ -134,7 +134,19 @@ class WorksheetVisionExtractor
                 'pesan' => $pesanApi,
             ]);
 
-            return $this->gagal($model, 'Layanan AI menolak permintaan.', $resp->json() ?? $resp->body());
+            // 503/429 itu MASALAH DI SISI GOOGLE, bukan fotonya. Pesan yang
+            // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat
+            // sesuatu yang mustahil berhasil sampai bebannya turun — kejadian
+            // 12 Agt 2026, dan dua kali kelihatan kayak "fotonya jelek".
+            $sibuk = in_array($resp->status(), [429, 503], true);
+
+            return $this->gagal(
+                $model,
+                $sibuk
+                    ? 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.'
+                    : 'Layanan AI menolak permintaan.',
+                $resp->json() ?? $resp->body(),
+            );
         }
 
         $json = $resp->json();
@@ -173,7 +185,7 @@ class WorksheetVisionExtractor
             'ok' => true,
             'status' => 'sukses',
             'data' => [
-                'baris' => $this->normalisasiBaris($data),
+                'baris' => $this->catatKalauKosong($this->normalisasiBaris($data), $data),
                 // Diteruskan apa adanya. Frontend yang mutusin kolom mana
                 // mendarat di titik mana — di sini nggak ada daftar titiknya.
                 'standard_value' => $this->normalisasiStandarNilai($data),
@@ -332,7 +344,19 @@ class WorksheetVisionExtractor
                 'pesan' => $resp->json('error.message') ?? $resp->body(),
             ]);
 
-            return $this->gagal($model, 'Layanan AI menolak permintaan.', $resp->json() ?? $resp->body());
+            // 503/429 itu MASALAH DI SISI GOOGLE, bukan fotonya. Pesan yang
+            // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat
+            // sesuatu yang mustahil berhasil sampai bebannya turun — kejadian
+            // 12 Agt 2026, dan dua kali kelihatan kayak "fotonya jelek".
+            $sibuk = in_array($resp->status(), [429, 503], true);
+
+            return $this->gagal(
+                $model,
+                $sibuk
+                    ? 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.'
+                    : 'Layanan AI menolak permintaan.',
+                $resp->json() ?? $resp->body(),
+            );
         }
 
         $json = $resp->json();
@@ -373,8 +397,11 @@ class WorksheetVisionExtractor
                 'data' => null,
                 'raw' => $json,
                 'usage' => $this->usageGemini($json),
+                // MAX_TOKENS = jatah keluaran abis, BUKAN fotonya kurang
+                // dekat. Motret ulang nggak ngubah apa pun; yang ngubah cuma
+                // `GEMINI_MAX_TOKENS`.
                 'error' => $alasan === 'MAX_TOKENS'
-                    ? 'Hasil AI kepotong. Foto tabelnya lebih dekat, atau isi manual.'
+                    ? 'Jawaban AI kepotong sebelum selesai (batas token). Ini setelan server, bukan fotonya — lapor ke yang ngurus backend, atau isi manual dulu.'
                     : 'Hasil AI tidak bisa dibaca. Coba foto ulang atau isi manual.',
                 'model' => $model,
             ];
@@ -384,7 +411,7 @@ class WorksheetVisionExtractor
             'ok' => true,
             'status' => 'sukses',
             'data' => [
-                'baris' => $this->normalisasiBaris($data),
+                'baris' => $this->catatKalauKosong($this->normalisasiBaris($data), $data),
                 // Diteruskan apa adanya. Frontend yang mutusin kolom mana
                 // mendarat di titik mana — di sini nggak ada daftar titiknya.
                 'standard_value' => $this->normalisasiStandarNilai($data),
@@ -749,11 +776,59 @@ PROMPT;
      * @param  array<string, mixed>  $data
      * @return array<int, array<string, mixed>>
      */
+    /**
+     * Catat kalau responsnya SAH tapi nggak ada satu angka pun kebaca.
+     *
+     * Sebelum ini kasus itu lolos tanpa jejak: warning cuma ditulis waktu JSON
+     * gagal di-parse. Jadi "nggak ada angka yang kebaca" di HP nggak ninggalin
+     * apa pun di log, dan nggak ada cara bedain "modelnya balik null semua"
+     * dari "requestnya nggak pernah nyampe".
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @param  array<string, mixed>  $data
+     * @return list<array<string, mixed>>
+     */
+    private function catatKalauKosong(array $baris, array $data): array
+    {
+        $kebaca = 0;
+
+        foreach ($baris as $b) {
+            foreach (['ph', 'suhu'] as $kolom) {
+                foreach ((array) ($b[$kolom] ?? []) as $v) {
+                    if ($v !== null) {
+                        $kebaca++;
+                    }
+                }
+            }
+        }
+
+        if ($kebaca === 0) {
+            Log::warning('WorksheetVisionExtractor: respons sah tapi NOL angka kebaca', [
+                'jumlah_baris' => count($baris),
+                'standard_value' => $this->normalisasiStandarNilai($data),
+                // Dipotong: cukup buat tau bentuknya, nggak nyalin seluruh
+                // respons ke log.
+                'cuplikan' => mb_substr(json_encode($data, JSON_UNESCAPED_UNICODE) ?: '', 0, 600),
+            ]);
+        }
+
+        return $baris;
+    }
+
     private function normalisasiBaris(array $data): array
     {
         $out = [];
 
-        foreach ((array) ($data['baris'] ?? []) as $b) {
+        // Model kadang naruh barisnya di `data`, bukan `baris` — kejadian nyata
+        // 12 Agt 2026: seluruh tabel kebaca SEMPURNA (angka benar, keyakinan
+        // `high` semua, `standard_value` lengkap) tapi kebuang total cuma
+        // gara-gara nama kunci, dan di HP muncul sebagai "fotonya gelap/buram".
+        //
+        // Dua-duanya diterima. Ini bukan nebak isi: strukturnya identik, cuma
+        // labelnya beda, dan schema-nya sendiri yang minta `baris`.
+        $baris = $data['baris'] ?? $data['data'] ?? [];
+
+        foreach ((array) $baris as $b) {
             if (! is_array($b) || ! isset($b['ph']) || ! is_array($b['ph'])) {
                 continue;
             }
