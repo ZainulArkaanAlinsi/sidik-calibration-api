@@ -201,4 +201,50 @@ class WorksheetExtractionGeminiTest extends TestCase
             );
         }
     }
+
+    /**
+     * Timeout HTTP nggak boleh lebih panjang dari umur prosesnya sendiri.
+     *
+     * Pernah kejadian di lapangan (12 Agt 2026): `max_execution_time` php.ini dev
+     * 30 detik, timeout AI default 60. Teknisi motret lembar kerja, Gemini lagi
+     * lambat, dan yang muncul BUKAN "Coba lagi sebentar" tapi
+     * `Fatal error: Maximum execution time of 30+2 seconds exceeded` — PHP
+     * dibunuh sebelum `catch (ConnectionException)` sempat jalan.
+     *
+     * Diuji lewat `batasWaktu()` langsung, bukan lewat request beneran: yang mau
+     * dikunci itu aritmatikanya, dan bikin request beneran nunggu 30 detik cuma
+     * buat mastiin ini bakal bikin suite-nya lambat tanpa nambah keyakinan.
+     */
+    public function test_timeout_http_nggak_pernah_ngelewatin_jatah_hidup_proses(): void
+    {
+        $batasWaktu = new \ReflectionMethod(WorksheetVisionExtractor::class, 'batasWaktu');
+        $ekstraktor = app(WorksheetVisionExtractor::class);
+
+        $asli = ini_get('max_execution_time');
+
+        try {
+            // Ada batas → timeout WAJIB lebih pendek, biar Guzzle yang nyerah
+            // duluan dan pesan ramahnya kebaca teknisi.
+            foreach ([30, 60] as $batasProses) {
+                ini_set('max_execution_time', (string) $batasProses);
+
+                $this->assertLessThan(
+                    $batasProses,
+                    $batasWaktu->invoke($ekstraktor, 60),
+                    "timeout HTTP nggak boleh >= max_execution_time ({$batasProses}s)",
+                );
+            }
+
+            // Tanpa batas (CLI, queue worker) → angka config dipakai apa adanya.
+            ini_set('max_execution_time', '0');
+            $this->assertSame(60, $batasWaktu->invoke($ekstraktor, 60));
+
+            // Batas proses yang mepet banget nggak boleh bikin timeout jadi nol
+            // atau negatif — itu di Guzzle artinya "tunggu selamanya".
+            ini_set('max_execution_time', '3');
+            $this->assertGreaterThan(0, $batasWaktu->invoke($ekstraktor, 60));
+        } finally {
+            ini_set('max_execution_time', (string) $asli);
+        }
+    }
 }
