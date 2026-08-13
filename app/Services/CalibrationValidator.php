@@ -36,6 +36,16 @@ class CalibrationValidator
 
     public const PERINGATAN = 'peringatan';
 
+    /**
+     * Berapa kali lipat CMC sebelum U95 dianggap mustahil.
+     *
+     * 10x sengaja longgar. Alat pelanggan yang bener-bener nggak stabil bisa
+     * keluar 2–3x CMC, dan itu temuan yang sah — bukan sesuatu yang pantas
+     * ditahan. Yang dicari di sini salah ketik, dan salah ketik satu digit
+     * biasanya ngasih puluhan sampai ratusan kali lipat.
+     */
+    private const FAKTOR_U95_MELEDAK = 10.0;
+
     public const INFO = 'info';
 
     public function __construct(
@@ -63,6 +73,7 @@ class CalibrationValidator
             ...$this->periksaPembacaanMustahil($sesi),
             ...$this->periksaKondisiLingkunganMustahil($sesi),
             ...$this->periksaTiapTitik($sesi),
+            ...$this->periksaU95MeledakDariCmc($sesi),
             ...$this->periksaKeputusanSesi($sesi),
             ...$this->periksaKelengkapanSertifikat($sesi),
             ...$this->periksaPeringatanProfil($sesi),
@@ -680,6 +691,108 @@ class CalibrationValidator
         }
 
         return $temuan;
+    }
+
+    /**
+     * U95 yang MELEDAK jauh di atas CMC — hampir selalu satu angka salah ketik.
+     *
+     * ## Kenapa ini penjagaan, bukan sekadar peringatan
+     *
+     * CMC itu ketidakpastian TERBAIK yang diakreditasi lab buat besaran itu.
+     * Sesi normal keluar di sekitar CMC — kadang sedikit di atasnya kalau alat
+     * pelanggannya nggak stabil, dan itu justru temuan kalibrasi yang berharga.
+     *
+     * Tapi U95 belasan sampai ratusan kali CMC bukan "alatnya jelek": itu
+     * aritmetika yang bener di atas angka yang salah. Kejadian nyata
+     * `CAL/2026/08/0043`: satu pembacaan Didynium diketik `783,52` — `738,52`
+     * dengan digit 3 & 8 ketuker. Satu digit, dan U95 kelompoknya lompat dari
+     * 0,40 nm ke 84,84 nm, 212x CMC-nya. Sertifikatnya tetap terbit, dan angka
+     * itu nyampe pelanggan sebagai klaim ketidakpastian resmi.
+     *
+     * Nggak ada satu pun penjagaan lama yang nangkep:
+     *  - `pembacaan_di_luar_rentang` — 783,52 masih di dalam 200–700 nm... eh,
+     *    di luar, tapi titik 738,5 sendiri juga di luar, jadi dia kena
+     *    pengecualian `dekatTitikStandar`;
+     *  - `bukan_kelipatan_resolusi` — 783,52 kelipatan 0,01, lolos;
+     *  - vonis PASS/FAIL — alat ini emang nggak divonis.
+     *
+     * ## Kenapa ERROR, bukan peringatan
+     *
+     * Peringatan bisa di-"SETUJUI TETAP". Sertifikat terakreditasi yang
+     * ngeklaim ketidakpastian 212x kemampuan lab itu dokumen yang salah, dan
+     * yang mbetulin harus balik ke lembar kerjanya — bukan mengakui klaim yang
+     * nggak bisa dipertanggungjawabkan.
+     *
+     * Ambangnya longgar sengaja ([FAKTOR_U95_MELEDAK]): yang dicari salah
+     * ketik, bukan alat pelanggan yang kurang stabil.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaU95MeledakDariCmc(CalibrationSession $sesi): array
+    {
+        $temuan = [];
+
+        foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
+            /** @var UncertaintyCalculation $titik */
+            $cmc = $this->cmcTitik($titik);
+
+            if ($cmc === null || $cmc <= 0) {
+                continue;
+            }
+
+            $u95 = (float) $titik->ketidakpastian_diperluas;
+
+            if ($u95 <= $cmc * self::FAKTOR_U95_MELEDAK) {
+                continue;
+            }
+
+            $temuan[] = $this->temuan(
+                self::ERROR,
+                'u95_meledak_dari_cmc',
+                sprintf(
+                    'Titik ke-%d: U95 %s jauh di atas CMC lab (%s) — %.0fx lipat. '
+                    .'Hampir selalu ada satu pembacaan yang salah ketik; cek lembar kerjanya, '
+                    .'jangan diterbitkan dengan angka ini.',
+                    (int) $titik->titik_ke,
+                    Angka::idRingkas($u95, 4),
+                    Angka::idRingkas($cmc, 4),
+                    $u95 / $cmc,
+                ),
+                [
+                    'titik_ke' => (int) $titik->titik_ke,
+                    'u95' => $u95,
+                    'cmc' => $cmc,
+                ],
+            );
+        }
+
+        return $temuan;
+    }
+
+    /**
+     * CMC yang dipakai waktu titik ini dihitung, dibaca dari jejak auditnya
+     * sendiri — bukan dicari ulang ke master.
+     *
+     * Dibaca dari `type_b_components` karena di situ angkanya BEKU: kalau
+     * baris CMC di master diubah sesudah sesinya dihitung, yang dibandingkan
+     * tetap angka yang beneran dipakai. Ngitung ulang di sini bikin sesi lama
+     * ke-flag gara-gara master yang berubah.
+     */
+    private function cmcTitik(UncertaintyCalculation $titik): ?float
+    {
+        foreach ($titik->type_b_components ?? [] as $k) {
+            if (! is_array($k)) {
+                continue;
+            }
+
+            // `perbandingan_cmc` (jalur per titik) & `cmc` (jalur per kelompok)
+            // sama-sama nyimpen angkanya di `nilai`.
+            if (in_array($k['sumber'] ?? null, ['perbandingan_cmc', 'lantai_cmc', 'cmc'], true)) {
+                return isset($k['nilai']) ? (float) $k['nilai'] : null;
+            }
+        }
+
+        return null;
     }
 
     /**
