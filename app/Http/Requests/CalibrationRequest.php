@@ -135,6 +135,12 @@ class CalibrationRequest extends FormRequest
             'alat_model' => ['sometimes', 'nullable', 'string', 'max:255'],
             'alat_serial_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'alat_merk' => ['sometimes', 'nullable', 'string', 'max:255'],
+            // Rentang ukur / kapasitas / resolusi yang DIBACA teknisi dari
+            // badan alat. Kuncinya datang dari bentuk lembar kerja; nilainya
+            // teks apa adanya (`0-100`, `0,001`) karena yang tercetak di
+            // sertifikat juga teks, bukan hasil hitung.
+            'spesifikasi_alat' => ['sometimes', 'nullable', 'array'],
+            'spesifikasi_alat.*' => ['nullable', 'string', 'max:64'],
             'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 

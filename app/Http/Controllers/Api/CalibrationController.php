@@ -1394,6 +1394,7 @@ class CalibrationController extends Controller
             // nggak dikirim TIDAK ditimpa null — teknisi bisa nyimpen draft
             // bertahap tanpa ngosongin yang udah dia isi sebelumnya.
             'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
+            'spesifikasi_alat',
         ];
 
         foreach ($opsional as $field) {

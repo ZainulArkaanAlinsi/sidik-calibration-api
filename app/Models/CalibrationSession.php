@@ -25,6 +25,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
     // Identitas alat & pemilik seperti yang DICATAT TEKNISI di lembar kerja —
     // bukan salinan master. Lihat migrasi 2026_07_29_120000.
     'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
+    // Rentang ukur / kapasitas / resolusi versi teknisi — lihat migrasi
+    // 2026_08_13_100000.
+    'spesifikasi_alat',
 ])]
 class CalibrationSession extends Model
 {
@@ -46,6 +49,10 @@ class CalibrationSession extends Model
             'tanggal_terima' => 'date',
             // Kode kolom yang diminta admin dibetulin waktu nolak.
             'revisi_field' => 'array',
+            // Kunci → nilai apa adanya yang diketik teknisi, mis.
+            // `rentang_ukur_transmitan` → `0-100`. Kuncinya ditentuin bentuk
+            // lembar kerja, bukan dikarang HP.
+            'spesifikasi_alat' => 'array',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'suhu_ruang' => 'float',

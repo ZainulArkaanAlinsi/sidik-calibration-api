@@ -66,6 +66,9 @@ class CalibrationResource extends JsonResource
             'alat_model' => $this->alat_model,
             'alat_serial_number' => $this->alat_serial_number,
             'alat_merk' => $this->alat_merk,
+            // Dipulangin apa adanya biar draft yang dibuka lagi keisi persis
+            // kayak waktu ditinggal.
+            'spesifikasi_alat' => $this->spesifikasi_alat,
             'pemilik_nama' => $this->pemilik_nama,
             'pemilik_alamat' => $this->pemilik_alamat,
             // Pelanggan pemilik alat — dipakai layar antrean approval buat
