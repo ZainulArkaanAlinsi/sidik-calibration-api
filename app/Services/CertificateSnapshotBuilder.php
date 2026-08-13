@@ -169,9 +169,7 @@ class CertificateSnapshotBuilder
                         ? $organisasi->desimalSertifikat($resolusi)
                         : Angka::desimalDariResolusi($resolusi));
 
-                $remark = ($profil !== null && method_exists($profil, 'remarkTitik'))
-                    ? $profil->remarkTitik((float) $titik->titik_ukur)
-                    : null;
+                $remark = $profil?->remarkTitik((float) $titik->titik_ukur);
 
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
@@ -193,6 +191,16 @@ class CertificateSnapshotBuilder
                     //
                     // Sertifikat yang udah terbit nggak punya kunci ini —
                     // pembacanya ngosongin barisnya, bukan ngarang k.
+                    // Desimal khusus baris `Uncertainty U95% = ±`, kalau alat
+                    // ini nyetaknya beda dari kolom hasil di atasnya. Master
+                    // spektro nulis `0,50 %T` sementara UUT & Correction di
+                    // blok yang sama pakai tiga desimal (`9,665`).
+                    //
+                    // Ikut DIBEKUKAN, sama alasannya kayak `desimal` & `satuan`:
+                    // sertifikat yang udah terbit nggak boleh berubah bentuk
+                    // gara-gara profilnya diedit sesudahnya. `null` = ikut
+                    // `desimal` titik, persis perilaku lama.
+                    'desimal_u95' => $profil?->desimalU95(),
                     'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
                         ? null
                         : (float) $titik->faktor_cakupan_k,

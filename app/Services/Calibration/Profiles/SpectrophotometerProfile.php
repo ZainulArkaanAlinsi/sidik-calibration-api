@@ -289,6 +289,18 @@ class SpectrophotometerProfile extends CalibrationProfile
      * / Correction / U95% lalu berhenti. Sama kayak Conductivity: `toleransi`
      * NULL di sini artinya "emang nggak ada", bukan "belum diisi".
      */
+    /**
+     * Master nyetak `Uncertainty U95% = ± 0,50 %T` — DUA desimal, sementara
+     * kolom UUT & Correction di blok yang sama pakai tiga (`9,665`).
+     *
+     * Sama juga di dua blok panjang gelombang: `0,43 nm` & `0,40 nm`, dua
+     * desimal, ngikut desimal titiknya yang emang 2. Yang beda cuma blok %T.
+     */
+    public function desimalU95(): ?int
+    {
+        return 2;
+    }
+
     public function punyaToleransi(): bool
     {
         return false;
