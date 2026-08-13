@@ -398,6 +398,13 @@ class CalibrationResource extends JsonResource
             ], $titik->type_b_components ?? []),
             'ketidakpastian_gabungan' => $titik->ketidakpastian_gabungan,
             'faktor_cakupan_k' => $titik->faktor_cakupan_k,
+            // Derajat kebebasan efektif (Welch–Satterthwaite) — angka yang
+            // NENTUIN k lewat `TINV(0,05; veff)`. Dikirim biar layar detail
+            // bisa nunjukin rantai hitungnya utuh: tanpa veff, `k = 3,18`
+            // muncul tanpa asal-usul dan nggak ada yang bisa ngecek ulang.
+            'derajat_kebebasan_efektif' => $titik->derajat_kebebasan_efektif === null
+                ? null
+                : (float) $titik->derajat_kebebasan_efektif,
             'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
             'toleransi' => $titik->toleransi,
             'keputusan' => $titik->keputusan,
