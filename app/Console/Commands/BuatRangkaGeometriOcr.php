@@ -126,13 +126,30 @@ class BuatRangkaGeometriOcr extends Command
                 'isi' => $kode.'|v'.$versi,
                 'kotak' => ['x' => $lebar - 260, 'y' => 130, 'w' => 170, 'h' => 170],
             ],
-            // 'kolom' = Repeat berjajar ke kanan (bentuk pH). Alat yang lembarnya
-            // Repeat ke bawah tinggal ganti 'baris' — mesinnya nggak peduli,
-            // orientasi itu data, bukan kode.
-            'sumbu_pengulangan' => 'kolom',
+            // 'kolom' = Repeat berjajar ke kanan (bentuk pH), 'baris' = Repeat
+            // turun ke bawah (bentuk Conductivity). Dibaca dari profil alatnya,
+            // bukan dipatok di sini — dulu selalu 'kolom', jadi lembar
+            // Conductivity digambar terbalik dari kertasnya tanpa ada yang
+            // ngasih tahu.
+            'sumbu_pengulangan' => $this->sumbu($definisi),
             'jangkar' => $this->jangkar($definisi),
             'tabel' => $this->tabel($definisi, $lebar, $tinggi),
         ];
+    }
+
+    /**
+     * Arah nomor Repeat di lembar cetak, diambil dari tabel PERTAMA.
+     *
+     * Satu lembar nggak pernah mencampur dua orientasi — kalau suatu saat ada
+     * yang begitu, ini titik yang harus dilonggarin jadi per tabel.
+     *
+     * @param  array<string, mixed>  $definisi
+     */
+    private function sumbu(array $definisi): string
+    {
+        $sumbu = $definisi['tabel'][0]['sumbu_pengulangan'] ?? 'kolom';
+
+        return in_array($sumbu, ['baris', 'kolom'], true) ? $sumbu : 'kolom';
     }
 
     /**
@@ -177,13 +194,25 @@ class BuatRangkaGeometriOcr extends Command
         $tinggiTabel = intdiv((int) ($tinggi * 0.45), $jumlahTabel);
         $atas = (int) ($tinggi * 0.45);
 
+        $keBawah = $this->sumbu($definisi) === 'baris';
+
         foreach ($definisi['tabel'] as $i => $tabel) {
             $sel = [];
-            $jumlahBaris = max(1, count($tabel['baris']));
-            $jumlahKolom = max(1, count($tabel['kolom']) * count($tabel['pengulangan']));
 
-            // Kolom pertama di kertas dipakai label titik ukur (4,00 / 7,00 /
-            // 10,01), jadi grid selnya mulai dari 25% lebar.
+            // Yang turun ke bawah itu SIAPA — di lembar pH barisnya titik ukur,
+            // di lembar Conductivity barisnya nomor Repeat. Sisanya sama: satu
+            // kolom per (yang melintang × field).
+            $jumlahBaris = max(1, $keBawah
+                ? count($tabel['pengulangan'])
+                : count($tabel['baris']));
+
+            $jumlahKolom = max(1, count($tabel['kolom']) * ($keBawah
+                ? count($tabel['baris'])
+                : count($tabel['pengulangan'])));
+
+            // Kolom pertama di kertas dipakai label — titik ukur (4,00 / 7,00 /
+            // 10,01) di bentuk pH, nomor Repeat di bentuk Conductivity — jadi
+            // grid selnya mulai dari 25% lebar.
             $kiri = (int) ($lebar * 0.25);
             $lebarSel = intdiv((int) ($lebar * 0.68), $jumlahKolom);
             $tinggiSel = intdiv($tinggiTabel - 120, $jumlahBaris);
@@ -191,15 +220,25 @@ class BuatRangkaGeometriOcr extends Command
 
             $kolomKe = 0;
 
-            foreach ($tabel['pengulangan'] as $repeat) {
+            // Kuncinya TIDAK berubah bentuk: `tabel|baris_ke|repeat|field`
+            // tetap sama apa pun orientasinya. Yang berubah cuma di kotak mana
+            // kunci itu digambar — supaya sel yang dipotong HP tetap ketemu
+            // kunci yang sama dengan yang dikirim layar.
+            $melintang = $keBawah ? $tabel['baris'] : $tabel['pengulangan'];
+            $menurun = $keBawah ? $tabel['pengulangan'] : $tabel['baris'];
+
+            foreach ($melintang as $luar) {
                 foreach ($tabel['kolom'] as $kolom) {
-                    foreach ($tabel['baris'] as $barisKe => $baris) {
+                    foreach ($menurun as $dalamKe => $dalam) {
+                        $baris = $keBawah ? $luar : $dalam;
+                        $repeat = $keBawah ? $dalam : $luar;
+
                         $kunci = $tabel['tabel_id'].'|'.$baris['baris_ke'].'|'
                             .(int) $repeat.'|'.$kolom['field_id'];
 
                         $sel[$kunci] = [
                             'x' => $kiri + $kolomKe * $lebarSel,
-                            'y' => $atasTabel + $barisKe * $tinggiSel,
+                            'y' => $atasTabel + $dalamKe * $tinggiSel,
                             'w' => $lebarSel,
                             'h' => $tinggiSel,
                         ];
