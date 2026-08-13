@@ -1,8 +1,9 @@
 {
     "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "_catatan_formulir": "Cetakan asli (SIDIK-FM-CAL-0510_Rev.5, PDF 15 Des 2023) diukur 13 Agt 2026 dan TIDAK cocok dengan rangka ini: (1) halamannya LANDSCAPE 792x612 pt = 2200x1700 px @200dpi, bukan A4 tegak 1654x2339; (2) Repeat 1..5 jalan ke BAWAH, jadi sumbu_pengulangan harusnya 'baris', bukan 'kolom'; (3) tabelnya 4 kolom larutan (84 / 1413-1.413 / 5000-5 / 80000-80), sementara profil cuma punya 3 titik (25 / 1412-1.412 / 111); (4) formulirnya NGGAK punya marker sudut maupun QR sama sekali, padahal mesin pindai nyarinya itu. Jangan diukur ulang sebelum lab nerbitin revisi formulir yang cocok sama master (poin ukur jadi 3 sejak 3 Apr 2024).",
     "template_id": "conductivity_meter",
     "versi": 1,
-    "kode_dokumen": "SIDIK-IK-CAL-0507_Rev.6",
+    "kode_dokumen": "SIDIK-FM-CAL-0510_Rev.5",
     "terverifikasi": false,
     "ukuran_referensi": {
         "w": 1654,

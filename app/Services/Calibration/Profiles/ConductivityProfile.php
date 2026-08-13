@@ -65,7 +65,26 @@ use App\Models\Standard;
  */
 class ConductivityProfile extends CalibrationProfile
 {
-    public const KODE_DOKUMEN = 'SIDIK-IK-CAL-0507_Rev.6';
+    /**
+     * Kode FORMULIR lembar kerjanya, bukan kode metodenya.
+     *
+     * Sebelumnya di sini terisi `SIDIK-IK-CAL-0507_Rev.6` — itu nomor instruksi
+     * kerja (IK), sementara `kode_dokumen` di bentuk lembar kerja dipakai
+     * sebagai identitas FORMULIR (FM), sama kayak empat profil lain
+     * (`SIDIK-FM-CAL-0509/0523/0530/0531`). Nomor formulir yang benar kebaca
+     * dari cetakan aslinya, `SIDIK-FM-CAL-0510_Rev.5 - LEMBAR KERJA
+     * CONDUCTIVITY.pdf` (footer kanan bawah + `Revise : 5`), yang baru masuk
+     * 13 Agt 2026.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0510_Rev.5';
+
+    /**
+     * Metode kalibrasinya — TERCETAK di lembar kerja ("2. Calibration Methode :
+     * SIDIK-IK-CAL-0507"), jadi teknisi memang melihatnya di kertas. Sengaja
+     * dipisah dari [KODE_DOKUMEN] biar dua nomor yang beda jenis nggak saling
+     * menimpa lagi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0507_Rev.6';
 
     public const JUMLAH_PENGULANGAN = 5;
 
@@ -756,6 +775,11 @@ class ConductivityProfile extends CalibrationProfile
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
+            // Tercetak di kertas sebagai "2. Calibration Methode :
+            // SIDIK-IK-CAL-0507" — teknisi melihatnya, tapi nggak mengisinya.
+            // `calibration_method_id` tetap `hanya_admin` karena yang dipilih
+            // admin itu BARIS master metode, bukan teks ini.
+            'kode_metode' => self::KODE_METODE,
             'judul' => 'Calibration Worksheet - Conductivity Meter',
             'jumlah_pengulangan' => self::JUMLAH_PENGULANGAN,
             'larutan_standar' => array_map(fn (array $t): float => $t['nilai'], self::TITIK),
