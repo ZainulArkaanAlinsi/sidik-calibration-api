@@ -633,7 +633,22 @@ class SpectrophotometerProfile extends CalibrationProfile
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
+                        // DIKETIK TEKNISI, bukan ditarik dari master alat.
+                        //
+                        // Alat ini punya DUA skala — `0–100 %T` dan
+                        // `200–700 nm`, resolusi `0,001 %T` dan `0,01 nm` —
+                        // sementara `equipments` cuma punya satu `satuan` +
+                        // satu pasang range. Apa pun yang dipilih otomatis dari
+                        // situ pasti salah separuh, dan salahnya kecetak di
+                        // sertifikat sebagai Capacity/Graduation.
+                        //
+                        // Dua kolom yang LABEL-nya sama digambar sebaris sama
+                        // layar, persis lembar cetaknya.
+                        $this->field('spesifikasi_alat.rentang_ukur_transmitan', '2. Rentang Ukur', 'teks', satuan: self::SATUAN_TRANSMITAN),
+                        $this->field('spesifikasi_alat.rentang_ukur_panjang_gelombang', '2. Rentang Ukur', 'teks', satuan: self::SATUAN_PANJANG_GELOMBANG),
+                        $this->field('spesifikasi_alat.kapasitas_maks_transmitan', 'Kapasitas Max.', 'teks', satuan: self::SATUAN_TRANSMITAN),
+                        $this->field('spesifikasi_alat.resolusi_transmitan', 'Resolusi Alat', 'teks', satuan: self::SATUAN_TRANSMITAN),
+                        $this->field('spesifikasi_alat.resolusi_panjang_gelombang', 'Resolusi Alat', 'teks', satuan: self::SATUAN_PANJANG_GELOMBANG),
                         $this->field('alat_model', '3. Type/Model', 'teks'),
                         $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),

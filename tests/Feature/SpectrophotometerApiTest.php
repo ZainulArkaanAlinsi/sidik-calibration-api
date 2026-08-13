@@ -334,6 +334,69 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * Rentang ukur / kapasitas / resolusi DIKETIK TEKNISI, dan yang dia ketik
+     * beneran kesimpen.
+     *
+     * Sebelumnya tiga baris itu `equipment.range_resolusi` bersumber
+     * `otomatis` — read-only di layar, isinya ditarik dari master alat. Buat
+     * alat berskala DUA (`0–100 %T` dan `200–700 nm`) master cuma bisa jawab
+     * separuh, dan separuh yang salah itu kecetak di sertifikat sebagai
+     * Capacity/Graduation.
+     */
+    public function test_spesifikasi_alat_diketik_teknisi_dan_tersimpan(): void
+    {
+        $bentuk = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$this->alat->id)
+            ->assertOk()
+            ->json('data.bagian');
+
+        $field = collect($bentuk)->firstWhere('kode', 'identitas_alat')['field'];
+        $spesifikasi = collect($field)->filter(
+            static fn (array $f): bool => str_starts_with($f['kode'], 'spesifikasi_alat.')
+        )->values();
+
+        // Lima kotak: rentang & resolusi masing-masing dua satuan, kapasitas
+        // satu. Nggak ada yang bersumber `otomatis` — semuanya diketik.
+        $this->assertCount(5, $spesifikasi);
+        $this->assertSame([null, null, null, null, null], $spesifikasi->pluck('sumber')->all());
+        $this->assertSame(
+            ['%T', 'nm', '%T', '%T', 'nm'],
+            $spesifikasi->pluck('satuan')->all(),
+        );
+
+        // Dua kotak yang labelnya SAMA digambar sebaris sama layar, persis
+        // lembar cetaknya.
+        $this->assertSame(
+            ['2. Rentang Ukur', '2. Rentang Ukur', 'Kapasitas Max.', 'Resolusi Alat', 'Resolusi Alat'],
+            $spesifikasi->pluck('label')->all(),
+        );
+
+        // Master alat NGGAK lagi jadi sumber baris ini.
+        $this->assertNull(collect($field)->firstWhere('kode', 'equipment.range_resolusi'));
+
+        $sesi = $this->simpanSesi(['spesifikasi_alat' => [
+            'rentang_ukur_transmitan' => '0-100',
+            'rentang_ukur_panjang_gelombang' => '200-700',
+            'kapasitas_maks_transmitan' => '100',
+            'resolusi_transmitan' => '0,001',
+            'resolusi_panjang_gelombang' => '0,01',
+        ]]);
+
+        $this->assertSame('200-700', $sesi->spesifikasi_alat['rentang_ukur_panjang_gelombang']);
+        $this->assertSame('0,001', $sesi->spesifikasi_alat['resolusi_transmitan']);
+
+        // Dipulangin apa adanya biar draft yang dibuka lagi keisi persis kayak
+        // waktu ditinggal.
+        $this->assertSame(
+            '0,01',
+            $this->actingAs($this->teknisi)
+                ->getJson('/api/calibrations/'.$sesi->id)
+                ->assertOk()
+                ->json('data.spesifikasi_alat.resolusi_panjang_gelombang'),
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.
