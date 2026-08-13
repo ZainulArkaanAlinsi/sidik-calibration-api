@@ -494,6 +494,55 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * U95 yang meledak jauh di atas CMC MENAHAN penerbitan.
+     *
+     * Kejadian nyata `CAL/2026/08/0043`: satu pembacaan Didynium diketik
+     * `783,52` — `738,52` dengan digit 3 & 8 tertukar. Satu digit, dan U95
+     * kelompoknya lompat dari 0,40 nm ke 84,84 nm, 212x CMC lab. Sertifikatnya
+     * tetap terbit, dan angka itu sampai ke pelanggan sebagai klaim
+     * ketidakpastian resmi.
+     *
+     * Tidak satu pun penjagaan lama menangkapnya: 783,52 kelipatan 0,01 (lolos
+     * `bukan_kelipatan_resolusi`), dekat titik standarnya (lolos
+     * `pembacaan_di_luar_rentang`), dan alat ini memang tidak divonis PASS/FAIL.
+     */
+    public function test_u95_meledak_dari_cmc_nahan_penerbitan(): void
+    {
+        $sesi = $this->simpanSesi(['measurements' => array_map(
+            function (array $m): array {
+                // Satu digit ketuker di titik Didynium 513,7 — titik yang
+                // memegang STDEV maks kelompoknya.
+                if (abs($m['titik_ukur'] - 513.7) < 0.01) {
+                    $m['pembacaan'] = [513.32, 553.58, 513.58];
+                }
+
+                return $m;
+            },
+            $this->payload()['measurements'],
+        )]);
+
+        $hasil = app(\App\Services\CalibrationValidator::class)->periksa($sesi);
+
+        $this->assertFalse($hasil['boleh_terbit'], 'U95 meledak mestinya nahan penerbitan');
+
+        $kode = array_column($hasil['temuan'], 'kode');
+        $this->assertContains('u95_meledak_dari_cmc', $kode);
+    }
+
+    /** Sesi normal TIDAK ke-flag — ambangnya longgar (10x CMC) sengaja. */
+    public function test_sesi_normal_nggak_ke_flag_u95_meledak(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $hasil = app(\App\Services\CalibrationValidator::class)->periksa($sesi);
+
+        $this->assertNotContains(
+            'u95_meledak_dari_cmc',
+            array_column($hasil['temuan'], 'kode'),
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.
