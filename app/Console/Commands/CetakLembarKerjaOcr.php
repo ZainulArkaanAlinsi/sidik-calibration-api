@@ -153,8 +153,8 @@ class CetakLembarKerjaOcr extends Command
      * label yang kebaca nggak cocok sama yang diharapkan template — penjagaan
      * yang baca ISI, bukan cuma ngukur geometri.
      *
-     * @param  array<string, mixed>  $tabel
      * @param  array<string, array<string, mixed>>  $sel
+     * @param  array<int, string>  $labelTemplate
      * @return list<array<string, mixed>>
      */
     private function labelBaris(array $sel, array $labelTemplate): array
@@ -195,8 +195,10 @@ class CetakLembarKerjaOcr extends Command
     /**
      * Label kolom pengulangan (`Repeat 1` / `X1`) di atas tiap kolom.
      *
-     * @param  array<string, mixed>  $tabel
      * @param  array<string, array<string, mixed>>  $sel
+     * @param  array<string, string>  $labelTemplate  dikunci NAMA FIELD
+     *                                                (`pembacaan` / `suhu`),
+     *                                                bukan nomor repeat
      * @return list<array<string, mixed>>
      */
     private function labelKolom(array $sel, array $labelTemplate): array
