@@ -289,6 +289,51 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * Bentuk tabelnya wajib sebaris sama LEMBAR CETAK, bukan sekadar benar
+     * datanya: teknisi ngisi sambil megang kertas yang sama, dan kepala kolom
+     * yang beda bikin dia ngitung baris pakai jari.
+     *
+     * Yang paling gampang meleset blok %T. Di kertas dia 5 nilai standar x DUA
+     * baris X1..X3 (itu asal enam pengulangan), plus satu kolom kiri `λ (nm)`
+     * bernilai 560 yang kegabung buat seluruh tabel. Enam kolom berjejer dalam
+     * satu baris itu bentuk DATA-nya, bukan bentuk kertasnya —
+     * `pengulangan_per_baris` yang misahin dua hal itu supaya layar nggak
+     * nebak-nebak motongnya di mana.
+     */
+    public function test_bentuk_tabel_ngikut_lembar_cetak(): void
+    {
+        $tabel = collect($this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$this->alat->id)
+            ->assertOk()
+            ->json('data.bagian'))
+            ->firstWhere('kode', 'hasil')['tabel'];
+
+        $this->assertSame([3, 3, 3], array_column($tabel, 'pengulangan_per_baris'));
+        $this->assertSame(
+            ['Std Value (λ1)', 'Std Value (λ1)', 'Std Value'],
+            array_column($tabel, 'judul_nilai'),
+        );
+        $this->assertSame(
+            ['Measurement Result', 'Measurement Result', 'Measurement Result'],
+            array_column($tabel, 'judul_pengulangan'),
+        );
+        $this->assertSame(['X', 'X', 'X'], array_column($tabel, 'prefiks_pengulangan'));
+        // Blok %T nggak punya kolom "No." — kolom kirinya dipakai `λ (nm)`.
+        $this->assertSame([true, true, false], array_column($tabel, 'nomor_baris'));
+
+        // Kolom kiri yang kegabung — cuma ada di blok %T.
+        $this->assertNull($tabel[0]['kolom_tetap']);
+        $this->assertSame(['label' => 'λ (nm)', 'nilai' => '560'], $tabel[2]['kolom_tetap']);
+
+        // Catatan di bawah tabel Didynium, tercetak persis begini.
+        $this->assertNull($tabel[0]['catatan']);
+        $this->assertSame(
+            '*) Measured at 25°C and with spectral bandwidth 1 nm.',
+            $tabel[1]['catatan'],
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.

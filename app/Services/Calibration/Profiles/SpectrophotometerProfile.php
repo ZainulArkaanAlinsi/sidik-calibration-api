@@ -107,37 +107,60 @@ class SpectrophotometerProfile extends CalibrationProfile
      *
      * Resolusi dari `INPUT DATA!G16` (0,01 nm) & `E16` (0,001 %T).
      *
-     * @var array<string, array{judul: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, nilai: list<float>}>
+     * `judul_nilai`, `pengulangan_per_baris`, `kolom_tetap`, dan `catatan`
+     * NIRU LEMBAR CETAKNYA, bukan hiasan: teknisi ngisi sambil ngeliat kertas
+     * yang sama, jadi urutan & kepala kolom di layar wajib sebaris sama di
+     * kertas. Blok %T di kertas nulis DUA baris X1..X3 per nilai standar (itu
+     * asal 6 pengulangan), dan `pengulangan_per_baris` yang ngasih tau layar
+     * motongnya di mana — bukan ditebak dari jumlah kolom.
+     *
+     * @var array<string, array{judul: string, judul_nilai: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, pengulangan_per_baris: int, kolom_tetap: ?array{label: string, nilai: string}, catatan: ?string, nilai: list<float>}>
      */
     public const TITIK = [
         SpectrophotometerCalculator::GRUP_HOLMIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Holmium',
+            'judul_nilai' => 'Std Value (λ1)',
+            'kolom_tetap' => null,
+            'catatan' => null,
             'satuan' => self::SATUAN_PANJANG_GELOMBANG,
             'resolusi' => 0.01,
             'desimal' => 2,
             'standar' => ['Filter Standard 1'],
             'parameter_cmc' => 'panjang gelombang (nm)-Holmium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
             'nilai' => [279.6, 287.7, 334.0, 360.9, 418.6, 445.8, 453.6, 460.0, 536.3, 637.9],
         ],
         SpectrophotometerCalculator::GRUP_DIDYNIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Didynium',
+            'judul_nilai' => 'Std Value (λ1)',
+            'kolom_tetap' => null,
+            // Tercetak persis begini di bawah tabel Didynium.
+            'catatan' => '*) Measured at 25°C and with spectral bandwidth 1 nm.',
             'satuan' => self::SATUAN_PANJANG_GELOMBANG,
             'resolusi' => 0.01,
             'desimal' => 2,
             'standar' => ['Filter Standard 2'],
             'parameter_cmc' => 'panjang gelombang (nm)-Didynium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
             'nilai' => [475.2, 513.7, 529.7, 572.7, 585.7, 684.9, 738.5, 748.0, 806.1],
         ],
         SpectrophotometerCalculator::GRUP_TRANSMITAN => [
             'judul' => 'Accuracy %T and Linierity at λ = 560nm',
+            'judul_nilai' => 'Std Value',
+            // Kolom kiri yang di kertas kegabung buat SELURUH tabel: panjang
+            // gelombang tempat %T diukur.
+            'kolom_tetap' => ['label' => 'λ (nm)', 'nilai' => '560'],
+            'catatan' => null,
             'satuan' => self::SATUAN_TRANSMITAN,
             'resolusi' => 0.001,
             'desimal' => 3,
             'standar' => ['Filter Standard 3'],
             'parameter_cmc' => 'akurasi (%T)',
             'pengulangan' => self::PENGULANGAN_TRANSMITAN,
+            // 6 kolom di data, tapi di kertas kegambar 2 baris X1..X3.
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
             'nilai' => [0.0, 9.9, 20.0, 30.1, 100.0],
         ],
     ];
@@ -739,10 +762,25 @@ class SpectrophotometerProfile extends CalibrationProfile
             'grup' => $grup,
             'judul' => $blok['judul'],
             'satuan' => $blok['satuan'],
+            // Bentuk tabel seperti di lembar cetak — lihat catatan di [TITIK].
+            //
+            // Blok %T NGGAK punya kolom "No." di kertas: kolom kirinya dipakai
+            // `λ (nm)` yang kegabung buat seluruh tabel.
+            'nomor_baris' => $blok['kolom_tetap'] === null,
+            'judul_nilai' => $blok['judul_nilai'],
+            'judul_pengulangan' => 'Measurement Result',
+            'prefiks_pengulangan' => 'X',
+            'pengulangan_per_baris' => $blok['pengulangan_per_baris'],
+            'kolom_tetap' => $blok['kolom_tetap'],
+            'catatan' => $blok['catatan'],
             'baris' => array_map(
                 fn (float $nilai): array => [
                     'titik_ukur' => $nilai,
-                    'label' => number_format($nilai, $blok['desimal'], '.', ''),
+                    // Label ditulis kayak di KERTAS: satu desimal, koma —
+                    // `279,6` & `0,0`, bukan `279.60` & `0.000`. Yang dua/tiga
+                    // desimal itu resolusi PEMBACAAN alatnya (`desimal` di
+                    // bawah), bukan cara nilai standarnya tercetak.
+                    'label' => number_format($nilai, 1, ',', ''),
                     'resolusi' => $blok['resolusi'],
                     'desimal' => $blok['desimal'],
                     'satuan' => $blok['satuan'],
