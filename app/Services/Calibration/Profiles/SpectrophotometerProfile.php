@@ -688,6 +688,14 @@ class SpectrophotometerProfile extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'In lab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
+                        // Kalibrasi di tempat pelanggan ditulis `Insitu
+                        // (PT. LDC)` di sertifikat. Nama tempatnya DIKETIK
+                        // teknisi, bukan disalin dari pelanggan pemilik alat:
+                        // satu kunjungan bisa dikerjakan di pabrik lain milik
+                        // grup yang sama, dan yang sah di dokumen adalah tempat
+                        // alatnya beneran diukur.
+                        $this->field('lokasi_nama', 'Nama Lokasi (kalau Insitu)', 'teks'),
+                        $this->field('teknisi.kode', 'Technician ID', 'teks', sumber: 'otomatis'),
                         $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
                         $this->field(
                             'calibration_method_id',

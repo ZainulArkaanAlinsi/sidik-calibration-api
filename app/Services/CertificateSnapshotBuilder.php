@@ -283,7 +283,15 @@ class CertificateSnapshotBuilder
         ];
     }
 
-    /** Nama ruangan kalau ada; kalau onsite, alamat pelanggan yang lebih berguna. */
+    /**
+     * Nama ruangan kalau ada; kalau onsite, tempat yang DITULIS TEKNISI.
+     *
+     * `Insitu (PT. LDC)` — persis yang tercetak di sertifikat master. Nama
+     * tempatnya nggak diturunkan dari pelanggan pemilik alat: satu kunjungan
+     * bisa dikerjakan di pabrik lain milik grup yang sama, dan yang sah di
+     * dokumen adalah tempat alatnya beneran diukur. Kalau teknisi nggak nulis
+     * apa-apa, jatuh ke alamat pelanggan seperti sebelumnya.
+     */
     private function lokasiKalibrasi(CalibrationSession $sesi): ?string
     {
         if ($sesi->room) {
@@ -291,6 +299,10 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->lokasi === 'onsite') {
+            if (filled($sesi->lokasi_nama)) {
+                return 'Insitu ('.trim((string) $sesi->lokasi_nama).')';
+            }
+
             return $sesi->equipment?->customer?->alamat
                 ? 'Onsite — '.$sesi->equipment->customer->alamat
                 : 'Onsite';

@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
     'organization_id', 'equipment_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
     'calibration_method_id', 'thermohygro_standard_id',
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
-    'tanggal_terima', 'lokasi', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
+    'tanggal_terima', 'lokasi', 'lokasi_nama', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
     'kelembaban_ketidakpastian', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
     'catatan_revisi', 'revisi_field', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
     // Identitas alat & pemilik seperti yang DICATAT TEKNISI di lembar kerja —

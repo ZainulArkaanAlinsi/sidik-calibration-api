@@ -108,6 +108,8 @@ class CalibrationRequest extends FormRequest
             // kamera adalah `ai_vision` (Claude Vision di server, ganti OCR).
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr', 'ai_vision'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
+            // Nama tempat buat sesi `onsite` — yang tercetak `Insitu (PT. LDC)`.
+            'lokasi_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             // Ruangan lab tempat sesi dikerjain — jadi "Calibration Location"
             // di sertifikat. Kosong buat sesi onsite.
             'room_id' => [
