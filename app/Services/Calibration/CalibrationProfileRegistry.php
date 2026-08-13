@@ -50,6 +50,21 @@ class CalibrationProfileRegistry
     }
 
     /**
+     * Semua profil terdaftar.
+     *
+     * Dipakai jalur yang harus nyapu SEMUA jenis alat sekaligus — mis. daftar
+     * template OCR (`App\Services\Ocr\TemplateLembarKerja::daftar()`). Tanpa ini
+     * pemanggilnya kepaksa nyalin daftar profil sendiri, dan salinan itu pasti
+     * ketinggalan waktu alat ke-7 ditambahin di sini.
+     *
+     * @return list<CalibrationProfile>
+     */
+    public function semua(): array
+    {
+        return $this->profil;
+    }
+
+    /**
      * Profil default kalau alat/nama nggak ketemu — pH, karena itu jalur yang
      * paling matang & udah kepakai. Alat lama yang `nama_alat_kemampuan`-nya
      * kosong nggak boleh bikin request meledak; dia jatuh ke pH apa adanya
