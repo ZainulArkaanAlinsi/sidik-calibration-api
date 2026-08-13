@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use App\Services\QrCodeGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -44,8 +46,16 @@ class CetakLembarKerjaOcr extends Command
 
     protected $description = 'Cetak lembar kerja bermarker dari berkas geometri OCR (koordinatnya jadi eksak)';
 
-    public function handle(QrCodeGenerator $qr, TemplateLembarKerja $template): int
+    public function __construct(private readonly TataLetakLembar $tataLetak)
     {
+        parent::__construct();
+    }
+
+    public function handle(
+        QrCodeGenerator $qr,
+        TemplateLembarKerja $template,
+        CalibrationProfileRegistry $registry,
+    ): int {
         $kode = (string) $this->argument('kode');
         $versi = (int) $this->option('versi');
 
@@ -136,8 +146,12 @@ class CetakLembarKerjaOcr extends Command
 
             $tabel[] = [
                 'judul' => $t['judul'] ?? '',
-                'judul_x' => min(array_column($sel, 'x')) - 300,
-                'judul_y' => min(array_column($sel, 'y')) - 60,
+                'judul_x' => max(0, min(array_column($sel, 'x')) - 300),
+                // Judulnya duduk di baris paling atas kepala tabel, DI ATAS dua
+                // baris label kolom. Dulu jaraknya cuma 60 px sementara label
+                // fieldnya sendiri 40 px di atas sel: judul "Before adjustment
+                // Reading" numpuk sama tulisan "Reading" di kolom pertama.
+                'judul_y' => min(array_column($sel, 'y')) - $this->tataLetak->kepalaTabel($tinggi),
                 'sel' => array_values($sel),
                 // Di lembar yang Repeat-nya turun ke bawah, yang berdiri di
                 // kiri justru nomor Repeat dan yang berdiri di atas justru
@@ -166,19 +180,43 @@ class CetakLembarKerjaOcr extends Command
 
         $isiQr = (string) ($geometri['qr']['isi'] ?? "{$kode}|v{$versi}");
 
+        $bentuk = $registry->untukKode($kode)?->bentukLembarKerja() ?? [];
+
+        $kepala = $this->tataLetak->kepala(
+            $bentuk,
+            $lebar,
+            $tinggi,
+            (string) ($geometri['kode_dokumen'] ?? ''),
+            $kode,
+            $versi,
+        );
+
+        $bawahGrid = 0;
+
+        foreach ($tabel as $t) {
+            foreach ($t['sel'] as $kotak) {
+                $bawahGrid = max($bawahGrid, (int) $kotak['y'] + (int) $kotak['h']);
+            }
+        }
+
         $pdf = Pdf::loadView('ocr.lembar-kerja', [
-            'judul' => $geometri['judul'] ?? $kode,
-            'kodeDokumen' => $geometri['kode_dokumen'] ?? '',
-            'templateId' => $kode,
-            'versi' => $versi,
+            'judul' => $kepala['judul'],
             'lebar' => $lebar,
             'tinggi' => $tinggi,
             'mm' => $mm,
             'marker' => $geometri['marker'] ?? [],
             'qr' => $geometri['qr'] ?? ['kotak' => ['x' => 0, 'y' => 0, 'w' => 0, 'h' => 0]],
             'qrGambar' => $qr->dataUri($isiQr),
+            'kepala' => $kepala,
+            'catatan' => $this->tataLetak->catatan($bentuk, $lebar, $tinggi, $bawahGrid),
             'tabel' => $tabel,
-        ])->setPaper('a4');
+        ])
+            // Halaman dibikin sepersis ukuran referensinya, bukan `a4`.
+            // 1654x2339 @200dpi itu 595,44x842,04 pt — A4 dompdf 595,28x841,89
+            // pt, jadi lembarnya kelebihan 0,16 pt dan dompdf mendorong elemen
+            // TERAKHIR ke halaman dua. Yang hilang dari halaman satu kemarin
+            // satu sel: pojok kanan bawah tabel `sesudah_adjustment`.
+            ->setPaper([0, 0, $lebar / $dpi * 72, $tinggi / $dpi * 72]);
 
         $keluar = (string) ($this->option('keluar')
             ?: storage_path("app/lembar-kerja-{$kode}-v{$versi}.pdf"));
@@ -247,7 +285,11 @@ class CetakLembarKerjaOcr extends Command
                     ? 'X'.$baris
                     : (string) ($labelTemplate[$baris] ?? $baris),
                 'x' => max(0, $kotak['x'] - 300),
-                'y' => $kotak['y'] + $kotak['h'] / 3,
+                // Ketengahin beneran, bukan `h / 3`. Baris teks 8 pt setinggi
+                // ~27 px di 200 dpi; `h / 3` kebetulan pas waktu selnya 81 px
+                // dan makin melenceng makin tinggi selnya — di lembar Chlorine
+                // (sel 203 px) labelnya nyangkut di sepertiga atas.
+                'y' => $kotak['y'] + max(0, ($kotak['h'] - 27) / 2),
                 'w' => 290,
             ];
         }
@@ -298,6 +340,12 @@ class CetakLembarKerjaOcr extends Command
         $label = [];
 
         foreach ($perRepeat as $repeat => $r) {
+            // Kepala kelompok naik satu baris CUMA kalau di bawahnya masih ada
+            // baris nama field. Kalau tabelnya satu field per kelompok (lembar
+            // Spectrophotometer), barisnya kosong dan `X1` kelihatan
+            // menggantung jauh di atas gridnya.
+            $adaBarisField = count($r['field']) >= 2;
+
             // Satu `X{n}` memayungi seluruh kolom repeat itu — sel pH & °C di
             // bawahnya berbagi satu nomor, persis lembar cetaknya.
             $label[] = [
@@ -307,13 +355,13 @@ class CetakLembarKerjaOcr extends Command
                     ? (string) ($labelBaris[$repeat] ?? $repeat)
                     : 'X'.$repeat,
                 'x' => $r['kiri'],
-                'y' => $r['atas'] - 80,
+                'y' => $r['atas'] - ($adaBarisField ? 80 : 40),
                 'w' => $r['kanan'] - $r['kiri'],
             ];
 
             // Nama kolomnya (pH / °C) cuma dicetak kalau satu repeat emang
             // punya lebih dari satu kolom; kalau cuma satu, `X{n}` udah cukup.
-            if (count($r['field']) < 2) {
+            if (! $adaBarisField) {
                 continue;
             }
 

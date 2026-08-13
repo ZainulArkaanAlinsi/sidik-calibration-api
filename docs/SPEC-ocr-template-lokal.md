@@ -35,7 +35,7 @@ disimpennya di infrastruktur lab sendiri.
 | A1 | Lembar kerja diisi TULISAN TANGAN | `config/services.php` nyebut angka tulisan tangan dari lembar ini nyampe sertifikat resmi |
 | A2 | Formulirnya tercetak & bentuknya tetap per revisi | tiap profil punya `kode_dokumen`, mis. `SIDIK-FM-CAL-0509_Rev.4` |
 | A3 | Formulir bisa dicetak ulang dengan 4 penanda sudut + QR | prasyarat; tanpa ini fitur ini nggak bisa jalan (§10) |
-| A4 | HP teknisi Android, bisa CameraX + OpenCV + ML Kit | aplikasi lapangan sekarang udah Android |
+| A4 | HP teknisi Android, bisa CameraX + ML Kit (marker dideteksi sendiri, nggak butuh OpenCV) | aplikasi lapangan sekarang udah Android |
 | A5 | Sel kosong itu SAH | `LembarKerjaTemplate` — nggak ada kolom yang nahan tombol kirim |
 | A6 | Produksi sekarang di Render plan free (disk sementara) | `render.yaml`; lihat §8 |
 
@@ -376,13 +376,17 @@ Keputusan matiin totalnya ada di lab, bukan di kode.
   buat alat ke-7 dst), normalisasi, validasi berlapis, pemetaan berkunci,
   `POST /api/worksheet-scans`, endpoint crop, koreksi, tabel audit + dataset,
   logging, 59 tes (SQLite & MySQL).
-- **Tahap 2 — formulir & geometri.** Cetak ulang formulir pH dengan 4 marker
-  ArUco + QR. Ukur koordinat dari cetakan asli
-  (`php artisan ocr:rangka-geometri ph_meter` bikin rangkanya, tinggal diisi
-  angkanya), adu ke ≥ 20 foto nyata, baru setel `terverifikasi: true`.
-- **Tahap 3 — sisi HP.** CameraX + OpenCV (marker, homography, snap garis, potong
-  sel) + ML Kit per crop + overlay indikator (lurus/terang/fokus/4 sudut). Nggak
-  ada pemindaian terus-menerus — teknisi yang mutusin kapan jepret.
+- **Tahap 2 — formulir & geometri.** Arahnya dibalik: koordinat JSON yang jadi
+  sumber, kertasnya yang mengikuti. `php artisan ocr:rangka-geometri {kode}`
+  bikin geometrinya, `php artisan ocr:cetak-lembar {kode}` mencetak lembar yang
+  tiap kotaknya digambar persis di `x/y/w/h` itu — jadi nggak ada acara ngukur
+  cetakan pakai penggaris. Markernya kotak hitam pejal berlubang putih (bukan
+  ArUco) + QR `{template_id}|v{versi}`. Tetap adu ke ≥ 20 foto nyata sebelum
+  `terverifikasi: true`.
+- **Tahap 3 — sisi HP.** CameraX + deteksi marker sendiri (ambang gelap + titik
+  berat gumpalan, homography, snap garis, potong sel) + ML Kit per crop +
+  overlay indikator (lurus/terang/fokus/4 sudut). Nggak ada pemindaian
+  terus-menerus — teknisi yang mutusin kapan jepret.
 - **Tahap 4 — layar review.** Tabel berwarna, tap sel → crop aslinya, teknisi
   cuma betulin sel bermasalah, simpan → endpoint koreksi → `POST /calibrations`.
 - **Tahap 5 — sebar ke alat lain.** Ulang tahap 2 per alat. Kode servernya nggak
