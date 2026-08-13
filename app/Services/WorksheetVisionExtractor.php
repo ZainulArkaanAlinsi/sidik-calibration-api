@@ -172,13 +172,9 @@ class WorksheetVisionExtractor
             // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat
             // sesuatu yang mustahil berhasil sampai bebannya turun — kejadian
             // 12 Agt 2026, dan dua kali kelihatan kayak "fotonya jelek".
-            $sibuk = in_array($resp->status(), [429, 503], true);
-
             return $this->gagal(
                 $model,
-                $sibuk
-                    ? 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.'
-                    : 'Layanan AI menolak permintaan.',
+                $this->pesanGagalHttp($resp->status(), $resp->json('error.message')),
                 $resp->json() ?? $resp->body(),
             );
         }
@@ -382,13 +378,9 @@ class WorksheetVisionExtractor
             // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat
             // sesuatu yang mustahil berhasil sampai bebannya turun — kejadian
             // 12 Agt 2026, dan dua kali kelihatan kayak "fotonya jelek".
-            $sibuk = in_array($resp->status(), [429, 503], true);
-
             return $this->gagal(
                 $model,
-                $sibuk
-                    ? 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.'
-                    : 'Layanan AI menolak permintaan.',
+                $this->pesanGagalHttp($resp->status(), $resp->json('error.message')),
                 $resp->json() ?? $resp->body(),
             );
         }
@@ -979,6 +971,49 @@ PROMPT;
             // Buat mastiin prompt caching kena (SPEC §5): harus > 0 setelah panggilan ke-2.
             'cache_read_input_tokens' => isset($u['cache_read_input_tokens']) ? (int) $u['cache_read_input_tokens'] : null,
         ];
+    }
+
+    /**
+     * Pesan buat kegagalan HTTP dari penyedia AI.
+     *
+     * 429 punya DUA arti yang beda jauh, dan bedanya nggak kelihatan dari kode
+     * statusnya:
+     *
+     *  - **Rate limit / server sibuk** — sembuh sendiri. "Tunggu beberapa
+     *    menit" itu saran yang bener.
+     *  - **Kredit/kuota habis** — NGGAK akan sembuh dengan nunggu. Kejadian
+     *    13 Agt 2026: teknisi nyoba jam 11:53 & 13:22, dua-duanya dapat
+     *    "layanan lagi sibuk", padahal yang perlu dilakuin cuma satu — isi
+     *    saldo. Sehari kebuang nungguin sesuatu yang nggak berubah.
+     *
+     * Yang dibedain ISI pesan errornya, bukan statusnya, karena cuma di situ
+     * bedanya kelihatan.
+     */
+    private function pesanGagalHttp(int $status, mixed $pesanApi): string
+    {
+        $teks = mb_strtolower(is_string($pesanApi) ? $pesanApi : '');
+
+        $habis = str_contains($teks, 'credits are depleted')
+            || str_contains($teks, 'insufficient')
+            || str_contains($teks, 'billing')
+            || str_contains($teks, 'exceeded your current quota')
+            || str_contains($teks, 'quota_exceeded');
+
+        if ($habis) {
+            return 'Kuota layanan AI habis, jadi foto tabel belum bisa dibaca. '
+                .'Kabarin admin buat isi ulang — nunggu nggak bakal bikin ini jalan lagi. '
+                .'Sementara ini isi angkanya manual.';
+        }
+
+        // 503/429 sisanya MASALAH DI SISI PENYEDIA, bukan fotonya. Pesan yang
+        // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat sesuatu
+        // yang mustahil berhasil sampai bebannya turun — kejadian 12 Agt 2026,
+        // dan dua kali kelihatan kayak "fotonya jelek".
+        if (in_array($status, [429, 503], true)) {
+            return 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.';
+        }
+
+        return 'Layanan AI menolak permintaan.';
     }
 
     /**
