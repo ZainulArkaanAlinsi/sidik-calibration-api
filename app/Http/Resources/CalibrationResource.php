@@ -179,6 +179,7 @@ class CalibrationResource extends JsonResource
             'kelembaban_akhir' => $this->kelembaban_akhir,
             'catatan_teknisi' => $this->catatan_teknisi,
             'lokasi' => $this->lokasi,
+            'lokasi_nama' => $this->lokasi_nama,
             'ruangan' => $this->room ? [
                 'id' => $this->room->id,
                 'kode' => $this->room->kode,

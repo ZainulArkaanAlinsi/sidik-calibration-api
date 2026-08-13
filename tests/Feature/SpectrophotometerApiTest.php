@@ -397,6 +397,50 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * Lokasi insitu ditulis lengkap sama nama tempatnya, dan Technician ID
+     * ngikut akun yang login.
+     *
+     * Sertifikat master nulis `Insitu (PT. LDC)` — tanpa nama tempat, dokumen
+     * nggak bisa ditelusuri balik ke kunjungan mana. Nama itu DIKETIK teknisi,
+     * bukan disalin dari pelanggan pemilik alat: satu kunjungan bisa dikerjakan
+     * di pabrik lain milik grup yang sama.
+     */
+    public function test_lokasi_insitu_bawa_nama_tempat_dan_technician_id(): void
+    {
+        $field = collect($this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$this->alat->id)
+            ->assertOk()
+            ->json('data.bagian'))
+            ->firstWhere('kode', 'data_kalibrasi')['field'];
+
+        $this->assertNotNull(collect($field)->firstWhere('kode', 'lokasi_nama'));
+
+        // Technician ID cuma DILIHAT teknisi — inisialnya ngikut akun yang
+        // login, jadi nggak ada yang bisa ngaku-ngaku ngerjain punya orang.
+        $id = collect($field)->firstWhere('kode', 'teknisi.kode');
+        $this->assertSame('otomatis', $id['sumber']);
+        $this->assertSame('Technician ID', $id['label']);
+
+        $sesi = $this->simpanSesi(['lokasi' => 'onsite', 'lokasi_nama' => 'PT. LDC']);
+
+        $this->assertSame('PT. LDC', $sesi->lokasi_nama);
+
+        $this->actingAs($this->admin)
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
+            ->assertOk();
+
+        $snapshot = Certificate::where('calibration_session_id', $sesi->id)
+            ->firstOrFail()
+            ->snapshot;
+
+        $this->assertSame('Insitu (PT. LDC)', $snapshot['header']['calibration_location']);
+        $this->assertSame(
+            $this->teknisi->kodeTeknisi(),
+            $snapshot['header']['technician_id'],
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.
