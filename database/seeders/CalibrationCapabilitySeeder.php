@@ -20,6 +20,30 @@ use RuntimeException;
  */
 class CalibrationCapabilitySeeder extends Seeder
 {
+    /**
+     * Alat yang baris CMC-nya PUNYA seeder sendiri, jadi jangan ikut ditulis
+     * dari JSON lampiran akreditasi.
+     *
+     * Tanpa ini alatnya kedaftar DUA KALI di kategori yang sama dengan ejaan
+     * yang beda — `Spektrofotometer` (JSON) dan `Spectrophotometer` (master
+     * Excel) — dan di layar teknisi keduanya muncul sebagai dua kartu berbeda
+     * di Instrumen Analitik. Teknisi nggak punya cara tahu yang mana yang
+     * bener.
+     *
+     * Baris JSON-nya juga NGGAK bisa dipakai jalur hitung: dua rentang panjang
+     * gelombangnya sama-sama berparameter "Panjang Gelombang", jadi Holmium
+     * (283–641 nm) dan Didynium (474–810 nm) nggak bisa dibedain dari situ —
+     * padahal keduanya punya U95 kelompok sendiri. `SpectrophotometerCapability
+     * Seeder` nulis label parameter yang eksplisit buat itu.
+     *
+     * Angka di JSON tetap dipertahankan sebagai catatan akreditasi (KAN
+     * LK-285-IDN no. 47), termasuk CMC Didynium 0,38 nm yang beda dari master
+     * Excel (0,40 nm) — lihat `docs/handoff-backend-spectrophotometer.md` §10.2
+     * soal kenapa yang dipakai angka master.
+     *
+     * @var list<string>
+     */
+    private const DISEED_TERPISAH = ['Spektrofotometer'];
     public function run(): void
     {
         $path = database_path('data/kemampuan-kalibrasi.json');
@@ -41,6 +65,10 @@ class CalibrationCapabilitySeeder extends Seeder
             $category->capabilities()->delete();
 
             foreach ($kelompok['alat'] as $alat) {
+                if (in_array($alat['nama_alat'], self::DISEED_TERPISAH, true)) {
+                    continue;
+                }
+
                 foreach ($alat['rentang'] as $rentang) {
                     CalibrationCapability::create([
                         'equipment_category_id' => $category->id,

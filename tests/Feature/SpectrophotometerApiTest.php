@@ -441,6 +441,26 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * Satu alat = SATU kartu di layar pilih instrumen.
+     *
+     * Lampiran akreditasi (`kemampuan-kalibrasi.json` no. 47) menulis
+     * "Spektrofotometer", master Excel menulis "Spectrophotometer". Waktu
+     * dua-duanya ikut di-seed, kategori Instrumen Analitik punya DUA kartu
+     * untuk alat yang sama dan teknisi nggak punya cara tahu yang mana yang
+     * benar — cuma satu yang nyambung ke lembar kerja & CMC berkelompok.
+     */
+    public function test_kemampuan_spektro_nggak_kembar_dua_ejaan(): void
+    {
+        $this->seed(\Database\Seeders\CalibrationCapabilitySeeder::class);
+
+        $this->assertSame(
+            0,
+            CalibrationCapability::where('nama_alat', 'Spektrofotometer')->count(),
+            'ejaan JSON masih ikut di-seed — kartunya bakal dobel di picker',
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.
