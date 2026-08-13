@@ -28,7 +28,18 @@ Semua berkas geometri di server masih `terverifikasi: false`, jadi **`siap_pinda
 
 Konsekuensi buat kamu: bangun layarnya, tapi **hormati `siap_pindai`**. Kalau `false`, tombol "Pindai" nonaktif dan tampilkan `alasan_belum_siap` apa adanya. Jangan buka kamera "biar bisa dites dulu" — hasilnya cuma bikin teknisi percaya fitur yang belum boleh dipakai.
 
-Prasyarat kedua ada di sisi lab, bukan di kode: lembar kerja harus dicetak ulang dengan **4 marker ArUco di pojok + QR versi**. Tanpa itu, penguncian baris/kolom tidak bisa dijamin.
+Prasyarat kedua ada di sisi lab, bukan di kode: lembar kerja harus dicetak ulang dari `php artisan ocr:cetak-lembar {kode}`. Cuma lembar itu yang punya **4 marker sudut + QR versi**, dan tanpa keduanya penguncian baris/kolom tidak bisa dijamin. Formulir lama hasil fotokopi tidak bisa dipakai.
+
+### Bentuk markernya — jangan pasang OpenCV
+
+Markernya **bukan ArUco**, dan itu disengaja. Yang tercetak di tiap sudut cuma **kotak hitam pejal 90 px (±11,4 mm @200 dpi) dengan kotak putih di tengahnya**. Titik yang kamu kirim di `geometri.marker[].x/y` adalah **titik pusat** kotak itu, bukan pojoknya — sama dengan yang tertulis di berkas geometri server.
+
+Konsekuensinya buat aplikasi:
+
+- Deteksinya cukup **ambang gelap + titik berat gumpalan** di tiap kuadran sudut foto. Itu bisa Dart murni di atas bytes kamera; **tidak perlu OpenCV, tidak perlu kamus/dictionary ArUco, tidak perlu paket native tambahan**.
+- Kotak putih di tengah ada supaya gumpalannya tidak menyatu dengan garis tabel saat fotonya agak gelap. Pakai itu sebagai penyaring: gumpalan sudut yang benar punya lubang terang di tengah.
+- `id` 0..3 = kiri-atas, kanan-atas, kanan-bawah, kiri-bawah. Urutannya **kamu tentukan dari posisi gumpalan di foto**, bukan dari id yang tercetak — markernya memang tidak menyimpan id apa pun.
+- QR-nya beda urusan: baca dengan pemindai barcode ML Kit yang sudah on-device, isinya `{template_id}|v{versi}`.
 
 ## ALUR LAYARNYA
 
@@ -75,7 +86,7 @@ Isi yang wajib kamu pakai:
 | `tabel[].kolom[]` | `field_id`, `label`, `satuan` — judul kolom di layar |
 | `tabel[].pengulangan` | daftar nomor Repeat, mis. `[1,2,3,4,5]` |
 | `sel` | peta koordinat per sel, kunci → `{x, y, w, h}` di ruang `ukuran_referensi` |
-| `geometri.marker`, `geometri.qr` | posisi marker & QR untuk penyelarasan |
+| `geometri.marker`, `geometri.qr` | posisi marker & QR untuk penyelarasan. `marker[].x/y` = titik pusat kotak, `ukuran` = sisi kotak dalam piksel |
 | `jangkar` | teks yang harus ikut kebaca sebagai bukti barisnya tidak geser |
 | `siap_pindai`, `alasan_belum_siap` | penentu tombol pindai aktif atau tidak |
 
@@ -136,7 +147,7 @@ Ambil kunci dari template apa adanya. Jangan menyusunnya sendiri dari indeks tam
       "teks_mentah": "4,01",
       "confidence_ocr": 0.93,
       "kotak_teks_di_dalam_sel": true,
-      "kotak": { "x": 413, "y": 1172, "w": 112, "h": 135 },
+      "kotak": { "x": 413, "y": 940, "w": 112, "h": 150 },
       "titik_ukur": 4,
       "standard_id": 9,
       "sumber": "mlkit"
@@ -198,7 +209,7 @@ Aturan kiriman:
                   "normalisasi": [],
                   "confidence_ocr": 0.93,
                   "confidence_akhir": 0.83,
-                  "kotak": { "x": 413, "y": 1172, "w": 112, "h": 135 }
+                  "kotak": { "x": 413, "y": 940, "w": 112, "h": 150 }
                 }
               }
             }
@@ -274,7 +285,7 @@ Balasan: `{ "data": { "scan_id", "tercatat", "kunci_tidak_dikenal", "cocok", "me
 Urutannya wajib begini — kalau OCR dijalankan sebelum warp, atau seluruh halaman dibaca sekaligus lalu dicocokkan ke kolom, angka akan pindah baris dan itu persis kegagalan yang harus dicegah fitur ini.
 
 1. **CameraX** — resolusi tertinggi yang wajar, fokus terkunci, flash mati (flash bikin silau di kertas mengkilap).
-2. **Deteksi 4 marker ArUco + QR** (OpenCV) secara langsung sebelum jepret. Tombol jepret nonaktif sampai keempatnya terlihat.
+2. **Deteksi 4 marker sudut + QR** secara langsung sebelum jepret — ambang gelap + titik berat gumpalan per kuadran (Dart murni, tanpa OpenCV; lihat "Bentuk markernya" di atas), QR pakai ML Kit. Tombol jepret nonaktif sampai keempatnya terlihat.
 3. **Gerbang mutu** — hitung di HP dan cegah kirim kalau tidak lolos, supaya teknisi tidak menunggu server hanya untuk ditolak. Ambang server (kirim nilainya apa adanya, jangan dibulatkan):
 
    | Ukuran | Ambang server |

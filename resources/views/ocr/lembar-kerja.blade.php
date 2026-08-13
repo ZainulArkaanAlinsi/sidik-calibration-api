@@ -58,8 +58,30 @@
 
         .sel { border: 1px solid #333; }
         .label { font-size: 8pt; }
+
+        /*
+          Label baris dirapatkan ke gridnya. Kolom kirinya selebar 300 px, dan
+          label rata kiri berdiri sejauh 3 cm dari sel yang ditandainya —
+          mengundang salah baca baris justru di tempat yang paling mahal.
+        */
+        .label-baris { text-align: right; padding-right: 3mm; }
         .judul-tabel { font-size: 9pt; font-weight: bold; }
+
+        /*
+          BLOK KEPALA. Isiannya diambil dari profil alat yang sama yang dipakai
+          layar, jadi kertas dan aplikasi minta data yang sama. Yang ditulis
+          tangan di sini nggak dipotong OCR — yang dipotong cuma sel bertanda
+          di berkas geometri.
+        */
+        .judul-lembar { font-size: 13pt; font-weight: bold; }
         .kop { font-size: 8pt; color: #333; }
+        .garis-kop { border-top: 1px solid #333; }
+        /*
+          Sebaris, apa pun panjang labelnya. Label yang membungkus jadi dua
+          baris nabrak isian di bawahnya — jaraknya cuma satu baris.
+        */
+        .isian { font-size: 7pt; color: #222; white-space: nowrap; overflow: hidden; }
+        .isian-garis { border-bottom: 1px solid #777; height: 0; }
     </style>
 </head>
 <body>
@@ -91,10 +113,46 @@
         <img src="{{ $qrGambar }}" style="width: 100%; height: 100%;" alt="QR versi lembar">
     </div>
 
-    <div class="abs kop" style="left: {{ $mm(90) }}mm; top: {{ $mm(150) }}mm;">
-        {{ $judul }}<br>
-        {{ $kodeDokumen }} &middot; {{ $templateId }} v{{ $versi }}
-    </div>
+    {{-- Kepala lembar: judul, baris dokumen, dan isian identitas bergaris.
+         Sebelumnya bagian ini cuma dua baris kecil dan separuh atas kertas
+         dibiarkan kosong — sementara gridnya sendiri berdesakan di bawah. --}}
+    <div class="abs judul-lembar" style="
+        left: {{ $mm($kepala['judul_x']) }}mm;
+        top: {{ $mm($kepala['judul_y']) }}mm;">{{ $kepala['judul'] }}</div>
+
+    <div class="abs kop" style="
+        left: {{ $mm($kepala['judul_x']) }}mm;
+        top: {{ $mm($kepala['dokumen_y']) }}mm;">{{ $kepala['dokumen'] }}</div>
+
+    <div class="abs garis-kop" style="
+        left: {{ $mm($kepala['judul_x']) }}mm;
+        top: {{ $mm($kepala['garis_y']) }}mm;
+        width: {{ $mm($kepala['garis_w']) }}mm;"></div>
+
+    @foreach ($kepala['isian'] as $i)
+        <div class="abs isian" style="
+            left: {{ $mm($i['x']) }}mm;
+            top: {{ $mm($i['y']) }}mm;
+            width: {{ $mm($i['w']) }}mm;">{{ $i['teks'] }}</div>
+        <div class="abs isian-garis" style="
+            left: {{ $mm($i['garis_x']) }}mm;
+            top: {{ $mm($i['garis_y']) }}mm;
+            width: {{ $mm($i['garis_w']) }}mm;"></div>
+    @endforeach
+
+    {{-- Kotak catatan, kalau gridnya nyisain ruang di bawah. --}}
+    @if ($catatan !== [])
+        <div class="abs judul-tabel" style="
+            left: {{ $mm($catatan['x']) }}mm;
+            top: {{ $mm($catatan['y']) }}mm;">{{ $catatan['teks'] }}</div>
+
+        @foreach ($catatan['garis'] as $g)
+            <div class="abs isian-garis" style="
+                left: {{ $mm($g['x']) }}mm;
+                top: {{ $mm($g['y']) }}mm;
+                width: {{ $mm($g['w']) }}mm;"></div>
+        @endforeach
+    @endif
 
     @foreach ($tabel as $t)
         <div class="abs judul-tabel" style="
@@ -105,7 +163,7 @@
              dibaca HP sebagai JANGKAR: kalau grid kegeser satu baris, label
              yang kebaca nggak cocok sama yang diharapkan template. --}}
         @foreach ($t['label_baris'] as $l)
-            <div class="abs label" style="
+            <div class="abs label label-baris" style="
                 left: {{ $mm($l['x']) }}mm;
                 top: {{ $mm($l['y']) }}mm;
                 width: {{ $mm($l['w']) }}mm;">{{ $l['teks'] }}</div>

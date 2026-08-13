@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Console\Command;
 
@@ -49,6 +50,11 @@ class BuatRangkaGeometriOcr extends Command
 
     protected $description = 'Bikin rangka file geometri OCR (koordinat sel) buat satu jenis alat';
 
+    public function __construct(private readonly TataLetakLembar $tataLetak)
+    {
+        parent::__construct();
+    }
+
     public function handle(CalibrationProfileRegistry $registry, TemplateLembarKerja $template): int
     {
         $kode = (string) $this->argument('kode');
@@ -78,6 +84,23 @@ class BuatRangkaGeometriOcr extends Command
 
         $definisi = $template->untukKode($kode);
         $rangka = $this->rangka($kode, $versi, $definisi);
+
+        // Catatan yang ditulis tangan di berkas lama — misalnya kenapa cetakan
+        // lab yang beredar TIDAK boleh dipakai sebagai acuan ukur — ikut
+        // dibawa. Kalau nggak, satu `--timpa` menghapus keterangan yang nggak
+        // ada di kode mana pun dan nggak ada yang sadar sampai keputusannya
+        // diulang salah.
+        if (file_exists($berkas)) {
+            /** @var array<string, mixed> $lama */
+            $lama = json_decode((string) file_get_contents($berkas), true) ?: [];
+
+            if (isset($lama['_catatan_formulir'])) {
+                $rangka = array_merge([
+                    '_catatan' => $rangka['_catatan'],
+                    '_catatan_formulir' => $lama['_catatan_formulir'],
+                ], $rangka);
+            }
+        }
 
         file_put_contents(
             $berkas,
@@ -188,23 +211,42 @@ class BuatRangkaGeometriOcr extends Command
     private function tabel(array $definisi, int $lebar, int $tinggi): array
     {
         $hasil = [];
-        $jumlahTabel = max(1, count($definisi['tabel']));
-        // Tebakan awal: tiap tabel dapet jatah tinggi yang sama di separuh bawah
-        // halaman. Cuma buat ngasih bentuk — angkanya wajib diganti hasil ukur.
-        $tinggiTabel = intdiv((int) ($tinggi * 0.45), $jumlahTabel);
-        $atas = (int) ($tinggi * 0.45);
-
         $keBawah = $this->sumbu($definisi) === 'baris';
+
+        // Yang turun ke bawah itu SIAPA — di lembar pH barisnya titik ukur, di
+        // lembar Conductivity barisnya nomor Repeat. Sisanya sama: satu kolom
+        // per (yang melintang × field).
+        $barisTabel = array_map(
+            fn (array $tabel): int => max(1, count($keBawah ? $tabel['pengulangan'] : $tabel['baris'])),
+            $definisi['tabel'],
+        );
+
+        $jumlahTabel = max(1, count($definisi['tabel']));
+        $kepalaTabel = $this->tataLetak->kepalaTabel($tinggi);
+        $jarakTabel = $this->tataLetak->jarakTabel($tinggi);
+
+        // Grid mengisi SELURUH ruang di bawah blok kepala sampai batas penanda
+        // sudut bawah. Dulu jatahnya cuma 45% halaman paling bawah: separuh
+        // atas kertas kosong melompong sementara selnya sendiri kekecilan, dan
+        // di lembar Conductivity baris terakhirnya malah kedorong ke halaman
+        // dua.
+        $ruang = $this->tataLetak->bawahGrid($tinggi) - $this->tataLetak->atasGrid($tinggi)
+            - $jumlahTabel * $kepalaTabel
+            - ($jumlahTabel - 1) * $jarakTabel;
+
+        // Tinggi selnya SATU angka buat semua tabel, dibagi menurut jumlah
+        // baris. Tabel yang barisnya sedikit nggak dapat sel raksasa cuma
+        // karena jatah tingginya dibagi rata per tabel.
+        $tinggiSel = max(1, min(
+            intdiv($ruang, max(1, array_sum($barisTabel))),
+            $this->tataLetak->tinggiSelMaks($tinggi),
+        ));
+
+        $kursor = $this->tataLetak->atasGrid($tinggi);
 
         foreach ($definisi['tabel'] as $i => $tabel) {
             $sel = [];
-
-            // Yang turun ke bawah itu SIAPA — di lembar pH barisnya titik ukur,
-            // di lembar Conductivity barisnya nomor Repeat. Sisanya sama: satu
-            // kolom per (yang melintang × field).
-            $jumlahBaris = max(1, $keBawah
-                ? count($tabel['pengulangan'])
-                : count($tabel['baris']));
+            $jumlahBaris = $barisTabel[$i];
 
             $jumlahKolom = max(1, count($tabel['kolom']) * ($keBawah
                 ? count($tabel['baris'])
@@ -215,8 +257,8 @@ class BuatRangkaGeometriOcr extends Command
             // grid selnya mulai dari 25% lebar.
             $kiri = (int) ($lebar * 0.25);
             $lebarSel = intdiv((int) ($lebar * 0.68), $jumlahKolom);
-            $tinggiSel = intdiv($tinggiTabel - 120, $jumlahBaris);
-            $atasTabel = $atas + $i * $tinggiTabel + 120;
+            $atasTabel = $kursor + $kepalaTabel;
+            $kursor = $atasTabel + $jumlahBaris * $tinggiSel + $jarakTabel;
 
             $kolomKe = 0;
 

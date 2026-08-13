@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -122,6 +123,95 @@ class CetakLembarKerjaOcrTest extends TestCase
                 $this->assertFalse($tindih, "Sel {$kunciA} & {$kunciB} tumpang tindih");
             }
         }
+    }
+
+    /**
+     * Kotak selnya nggak boleh nabrak apa pun yang BUKAN sel.
+     *
+     * Penanda sudut itu titik acuan homography dan QR itu penentu versi lembar:
+     * sel yang menimpa salah satunya bikin coretan teknisi merusak justru dua
+     * hal yang dipakai buat mbaca coretan itu. Blok kepala lebih halus lagi —
+     * garis isian yang lewat di dalam sel kebaca OCR sebagai coretan.
+     */
+    #[DataProvider('alat')]
+    public function test_sel_nggak_nabrak_penanda_qr_atau_blok_kepala(string $kode): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path("ocr-templates/{$kode}-v1.json")),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $tinggi = (int) $geometri['ukuran_referensi']['h'];
+        $tataLetak = app(TataLetakLembar::class);
+
+        $terlarang = [];
+
+        foreach ($geometri['marker'] as $m) {
+            $u = (int) $m['ukuran'];
+            $terlarang['penanda '.$m['id']] = [
+                'x' => (int) $m['x'] - intdiv($u, 2),
+                'y' => (int) $m['y'] - intdiv($u, 2),
+                'w' => $u,
+                'h' => $u,
+            ];
+        }
+
+        $terlarang['qr'] = $geometri['qr']['kotak'];
+
+        foreach ($geometri['tabel'] as $t) {
+            foreach ($t['sel'] as $kunci => $sel) {
+                // Judul tabel & label kolomnya digambar di atas selnya sendiri,
+                // jadi yang harus bebas bukan cuma baris selnya.
+                $this->assertGreaterThanOrEqual(
+                    $tataLetak->atasGrid($tinggi),
+                    $sel['y'] - $tataLetak->kepalaTabel($tinggi),
+                    "Kepala tabel {$kunci} naik ke blok isian identitas",
+                );
+
+                $this->assertLessThanOrEqual(
+                    $tataLetak->bawahGrid($tinggi),
+                    $sel['y'] + $sel['h'],
+                    "Sel {$kunci} turun ke area penanda bawah",
+                );
+
+                foreach ($terlarang as $nama => $l) {
+                    $tindih = $sel['x'] < $l['x'] + $l['w']
+                        && $l['x'] < $sel['x'] + $sel['w']
+                        && $sel['y'] < $l['y'] + $l['h']
+                        && $l['y'] < $sel['y'] + $sel['h'];
+
+                    $this->assertFalse($tindih, "Sel {$kunci} nabrak {$nama}");
+                }
+            }
+        }
+    }
+
+    /**
+     * Satu lembar = SATU halaman.
+     *
+     * Halaman dua nggak pernah difoto, dan sel yang mendarat di sana hilang
+     * tanpa gejala: PDF-nya kelihatan normal, gridnya cuma kurang satu kotak di
+     * pojok. Kejadian di lembar Conductivity gara-gara halaman disetel `a4`
+     * (595,28 pt) sementara lembarnya sendiri 595,44 pt.
+     */
+    #[DataProvider('alat')]
+    public function test_lembar_cetak_muat_satu_halaman(string $kode): void
+    {
+        $keluar = storage_path("app/uji-satu-halaman-{$kode}.pdf");
+        File::delete($keluar);
+
+        $this->artisan('ocr:cetak-lembar', ['kode' => $kode, '--keluar' => $keluar])
+            ->assertSuccessful();
+
+        $isi = (string) File::get($keluar);
+        File::delete($keluar);
+
+        $this->assertSame(
+            1,
+            preg_match_all('#/Type\s*/Page[^s]#', $isi),
+            "Lembar {$kode} tumpah ke halaman berikutnya",
+        );
     }
 
     /**
