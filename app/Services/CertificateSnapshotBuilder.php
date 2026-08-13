@@ -182,6 +182,20 @@ class CertificateSnapshotBuilder
                     'unit_under_test' => (float) $titik->rata_rata,
                     'correction' => (float) $titik->koreksi,
                     'u95' => (float) $titik->ketidakpastian_diperluas,
+                    // Faktor cakupan yang dipakai buat U95 titik ini.
+                    //
+                    // Dibekukan karena sertifikat master nyetaknya di bawah
+                    // TIAP tabel hasil: "The Uncertainty is taken at a
+                    // Confidence Level 95 % and Coverage Factor ( k ) = 3".
+                    // Angkanya beda per kelompok (Holmium 3,18; Didynium 2,36;
+                    // %T 2,01), jadi nggak bisa diwakili satu nilai di level
+                    // sertifikat.
+                    //
+                    // Sertifikat yang udah terbit nggak punya kunci ini —
+                    // pembacanya ngosongin barisnya, bukan ngarang k.
+                    'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
+                        ? null
+                        : (float) $titik->faktor_cakupan_k,
                     // Nilai mentahnya TETAP presisi penuh — ini cuma ngatur
                     // berapa digit yang ditulis. Nggak ada pembulatan data.
                     'desimal' => $desimal,
