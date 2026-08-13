@@ -26,7 +26,21 @@
         body { margin: 0; font-family: DejaVu Sans, sans-serif; }
 
         /* Semua ditaruh absolut di ruang piksel template. */
-        .lembar { position: relative; width: {{ $mm($lebar) }}mm; height: {{ $mm($tinggi) }}mm; }
+        /*
+          Ukurannya ditaruh di atribut `style` elemennya, bukan di sini.
+          Blok `<style>` ini sengaja dijaga MURNI CSS: begitu ada echo Blade di
+          dalamnya, validator CSS bawaan editor berhenti mem-parse dan seluruh
+          aturan di bawahnya ikut dilaporin rusak — puluhan penanda merah buat
+          berkas yang sebenarnya benar.
+
+          Catatan buat yang menyunting berkas ini: kurung kurawal ganda tetap
+          diproses Blade WALAUPUN ada di dalam komentar CSS seperti ini, jadi
+          jangan menuliskannya di sini cuma buat contoh. Komentar yang memuat
+          kurawal ganda kosong bikin `ocr:cetak-lembar` mati dengan
+          `ParseError: Unclosed '(' does not match '}'` — pesannya nunjuk ke
+          berkas tampilan hasil kompilasi, bukan ke baris ini.
+        */
+        .lembar { position: relative; }
         .abs { position: absolute; }
 
         /*
@@ -49,7 +63,7 @@
     </style>
 </head>
 <body>
-<div class="lembar">
+<div class="lembar" style="width: {{ $mm($lebar) }}mm; height: {{ $mm($tinggi) }}mm;">
     {{-- Empat penanda sudut. Urutannya id 0..3 = kiri-atas, kanan-atas,
          kanan-bawah, kiri-bawah — sama dengan yang diharapkan server. --}}
     @foreach ($marker as $m)
