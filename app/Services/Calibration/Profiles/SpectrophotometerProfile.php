@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\SpectrophotometerCalculator;
+use App\Support\Regresi;
 use Illuminate\Support\Carbon;
 
 /**
@@ -55,7 +56,7 @@ use Illuminate\Support\Carbon;
  * ketidakpastian standarnya), tinggal tambah satu kelompok di [TITIK] + satu
  * baris CMC di seeder-nya.
  *
- * @see \App\Services\Calibration\SpectrophotometerCalculator soal penyimpangan
+ * @see SpectrophotometerCalculator soal penyimpangan
  *      master yang sengaja ditiru (pembagi 3^0,25 & jangkauan SUM blok %T).
  * @see docs/handoff-backend-spectrophotometer.md
  */
@@ -83,6 +84,16 @@ class SpectrophotometerProfile extends CalibrationProfile
     public const SATUAN_PANJANG_GELOMBANG = 'nm';
 
     public const SATUAN_TRANSMITAN = '%T';
+
+    /**
+     * Satu-satunya definisi R² yang dikenal sistem: `RSQ(Standard %T, UUT %T)`
+     * atas seluruh titik blok %T.
+     *
+     * Dipilih karena cuma pasangan ini yang punya arti fisika buat linieritas
+     * fotometrik — sumbu X nilai benar filternya, sumbu Y yang dibaca alat.
+     * Lihat [koefisienDeterminasi] soal kenapa bawaannya tetap mati.
+     */
+    public const R2_RSQ_STANDAR_UUT = 'rsq_standar_uut';
 
     /**
      * Sedekat apa `titik_ukur` boleh meleset dari nilai [TITIK] dan masih
@@ -270,6 +281,71 @@ class SpectrophotometerProfile extends CalibrationProfile
         $grup = $this->grupTitik($titikUkur);
 
         return $grup === null ? null : self::TITIK[$grup]['judul'];
+    }
+
+    /**
+     * Kolom `R2` di blok %T — SATU-SATUNYA blok yang punya kolom itu di master
+     * (`SERTIFIKAT!R47`). Dua blok panjang gelombang nggak, jadi kelompok
+     * Holmium & Didynium selalu balik `null` dan kolomnya nggak kecetak di
+     * tabel mereka.
+     *
+     * ## Kenapa bawaannya MATI
+     *
+     * Angka R² di master `0,9359`, sementara sertifikat cetak yang beredar
+     * nulis `1`. Dua-duanya nggak bisa dilahirkan dari data blok ini: RSQ atas
+     * seluruh titiknya ngasih 0,999922. Rumus aslinya nggak bisa dibaca karena
+     * workbook-nya terenkripsi, dan penyisiran 7 transformasi × 7 transformasi
+     * × semua subset titik nggak nemu satu pun kandidat yang masuk akal secara
+     * fisika.
+     *
+     * Selama lab belum mbenerin beda itu secara tertulis, kolomnya nggak
+     * dicetak sama sekali. Nyetak 0,999922 berarti sertifikat terakreditasi
+     * ngeklaim linieritas yang BEDA dari dokumen lab yang udah beredar, dan
+     * nggak ada yang bisa nerangin bedanya waktu diaudit — kolom yang nggak ada
+     * lebih jujur daripada kolom berisi angka yang nggak bisa
+     * dipertanggungjawabkan.
+     *
+     * Tiga pertanyaan yang nunggu jawaban lab & seluruh riwayat penelusurannya:
+     * `docs/pertanyaan-lab-r2-spektro.md`. Sakelarnya `config('kalibrasi.r2_spektro')`.
+     *
+     * @param  list<array{standard_value: float|null, unit_under_test: float|null}>  $baris
+     */
+    public function koefisienDeterminasi(array $baris): ?float
+    {
+        if ($baris === []) {
+            return null;
+        }
+
+        $standar = $baris[0]['standard_value'] ?? null;
+
+        if ($standar === null || $this->grupTitik((float) $standar) !== SpectrophotometerCalculator::GRUP_TRANSMITAN) {
+            return null;
+        }
+
+        // Definisi yang nggak dikenal (salah ketik di `.env`) diperlakukan sama
+        // kayak mati. Sertifikat terakreditasi nggak boleh berubah isi gara-gara
+        // typo yang nggak ada yang review.
+        if (config('kalibrasi.r2_spektro') !== self::R2_RSQ_STANDAR_UUT) {
+            return null;
+        }
+
+        // Titik yang salah satu kolomnya kosong dibuang BERPASANGAN, bukan
+        // diisi nol: `0` di kolom UUT itu pembacaan yang sah di blok ini (titik
+        // 0 %T = berkas ditutup), jadi nol pengganti data kosong nggak bisa
+        // dibedain dari nol yang beneran diukur.
+        $x = [];
+        $y = [];
+
+        foreach ($baris as $b) {
+            if ($b['standard_value'] === null || $b['unit_under_test'] === null) {
+                continue;
+            }
+
+            $x[] = (float) $b['standard_value'];
+            $y[] = (float) $b['unit_under_test'];
+        }
+
+        return Regresi::koefisienDeterminasi($x, $y);
     }
 
     /**

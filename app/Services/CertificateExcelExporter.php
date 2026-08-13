@@ -226,23 +226,45 @@ class CertificateExcelExporter
         $adaRemark = collect($snapshot['hasil'] ?? [])
             ->contains(fn ($b) => filled($b['remark'] ?? null));
 
+        // Sama aturannya kayak PDF: kolom R² cuma ada kalau alatnya emang
+        // nyetak kolom itu DAN definisinya udah diputus lab. Selama belum,
+        // nggak ada kolom yang muncul kosong di Excel sementara PDF-nya nggak
+        // punya kolom sama sekali — dua jalur ini wajib nyetak dokumen yang
+        // sama bentuknya.
+        $adaR2 = collect($snapshot['hasil'] ?? [])
+            ->contains(fn ($b) => ($b['r2'] ?? null) !== null);
+
         $writer->addRow(Row::fromValues(
             array_merge(
                 ['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'],
                 $adaRemark ? ['Remark'] : [],
+                $adaR2 ? ['R2'] : [],
             ),
             $this->gayaHeaderTabel(),
         ));
 
+        $remarkTerakhir = null;
+
         foreach ($snapshot['hasil'] ?? [] as $baris) {
             $db = $this->desimalBaris($baris, $snapshot);
+
+            // R² itu angka SATU KELOMPOK, bukan angka per titik — ditulis sekali
+            // di baris pertama kelompoknya, persis kayak PDF & master. Diulang
+            // di lima baris, dia kebaca kayak lima R² yang kebetulan sama.
+            $remark = $baris['remark'] ?? null;
+            $awalKelompok = $remark !== $remarkTerakhir;
+            $remarkTerakhir = $remark;
 
             $writer->addRow(Row::fromValues(array_merge([
                 $this->bulat($baris['standard_value'] ?? null, $db),
                 $this->bulat($baris['unit_under_test'] ?? null, $db),
                 $this->bulat($baris['correction'] ?? null, $db),
                 $this->bulat($baris['u95'] ?? null, $db),
-            ], $adaRemark ? [$baris['remark'] ?? ''] : [])));
+            ], $adaRemark ? [$baris['remark'] ?? ''] : [], $adaR2 ? [
+                $awalKelompok && ($baris['r2'] ?? null) !== null
+                    ? $this->bulat((float) $baris['r2'], 4)
+                    : '',
+            ] : [])));
         }
 
         $this->kosong($writer);

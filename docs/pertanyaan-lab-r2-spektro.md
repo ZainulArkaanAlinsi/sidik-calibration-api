@@ -74,3 +74,38 @@ dipertanggungjawabkan.
 
 Sisa sertifikatnya tidak terpengaruh: 24 titik lain (Standard/UUT/Correction)
 dan ketiga U95 sudah cocok dengan master sampai batas presisi penyimpanan.
+
+## Yang sudah terpasang di sistem
+
+Kolomnya sudah dibangun penuh — PDF, Excel, dan halaman verifikasi QR — lalu
+**dimatikan**. Yang menunggu jawaban lab cuma keputusannya, bukan pekerjaannya.
+
+Sakelarnya satu nilai config:
+
+```php
+// config/kalibrasi.php
+'r2_spektro' => env('SPEKTRO_R2', 'off'),
+```
+
+| Nilai | Perilaku |
+|---|---|
+| `off` (bawaan) | Kolom R² tidak ada sama sekali di PDF maupun Excel |
+| `rsq_standar_uut` | Kolom R² = `RSQ(Standard %T; UUT %T)` atas seluruh titik blok %T |
+
+Nilai lain (termasuk salah ketik di `.env`) diperlakukan sebagai `off`, supaya
+isi sertifikat terakreditasi tidak bisa berubah karena typo yang tidak direview.
+
+Kalau nanti jawaban lab ternyata rumus yang berbeda, yang diganti cuma isi
+`SpectrophotometerProfile::koefisienDeterminasi()` — sisanya (pembekuan ke
+snapshot, tata letak kolom, pembulatan 4 desimal) sudah terpasang dan bertes.
+
+Catatan yang ikut menentukan bentuk kolomnya:
+
+- **Cuma blok %T.** Dua blok panjang gelombang (Holmium & Didynium) tidak punya
+  kolom R² di master, jadi tabelnya tidak berubah sama sekali.
+- **Sekali per kelompok.** Nilainya dicetak di baris pertama saja, persis
+  seperti master (`SERTIFIKAT!R47:R51` — empat baris sisanya kosong).
+- **Minimal 3 titik.** Dua titik selalu menghasilkan R² = 1 apa pun datanya,
+  jadi angka seperti itu bukan bukti linieritas dan tidak dicetak.
+- **Sertifikat lama aman.** Snapshot yang terbit sebelum kolom ini ada tetap
+  bisa dirender dan tidak berubah bentuk.
