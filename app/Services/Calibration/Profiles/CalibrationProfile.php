@@ -105,6 +105,29 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Koefisien determinasi (R²) satu KELOMPOK titik tercetak — kolom `R2` di
+     * blok `%T` sertifikat Spectrophotometer. `null` = alat ini nggak nyetak
+     * kolom itu, dan kolomnya nggak muncul sama sekali (bukan muncul kosong).
+     *
+     * ## Kenapa se-kelompok, bukan per titik kayak `remarkTitik()`
+     *
+     * R² itu pernyataan tentang SEKUMPULAN titik: seberapa rapat pasangan
+     * (nilai standar, pembacaan alat) jatuh di satu garis. Satu titik nggak
+     * punya R², dan nanya "R² titik ke-3 berapa" itu pertanyaan yang nggak ada
+     * jawabannya. Makanya yang masuk seluruh baris kelompoknya sekaligus,
+     * persis kayak U95 & faktor cakupan yang juga lahir per kelompok.
+     *
+     * Barisnya dateng udah dikelompokkan sama pemanggilnya (`remark` yang sama
+     * = satu tabel tercetak), dan urutannya urutan cetak.
+     *
+     * @param  list<array{standard_value: float|null, unit_under_test: float|null}>  $baris
+     */
+    public function koefisienDeterminasi(array $baris): ?float
+    {
+        return null;
+    }
+
+    /**
      * Koreksi negatif yang MEMBULAT KE NOL dicetak pakai tanda minus atau nggak.
      *
      * Ini murni soal cetak — nilai mentahnya nggak kena sama sekali, dan

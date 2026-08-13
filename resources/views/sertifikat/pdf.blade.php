@@ -412,12 +412,21 @@
              bersatuan seragam ngirim null dan kepalanya tetap kayak dulu. --}}
         @php($satKelompok = $barisKelompok->first()['satuan'] ?? null)
         @php($sufiks = $satKelompok ? ' ('.$satKelompok.')' : '')
+        {{-- Kolom R² cuma ada di blok %T Spectrophotometer, dan cuma kalau
+             definisinya udah diputus lab (`config('kalibrasi.r2_spektro')`).
+             Kelompok lain & sertifikat lama yang snapshot-nya belum punya kunci
+             ini balik null — kolomnya NGGAK MUNCUL, bukan muncul kosong.
+             Alasan lengkapnya: docs/pertanyaan-lab-r2-spektro.md. --}}
+        @php($r2 = $barisKelompok->first()['r2'] ?? null)
         <table class="data">
             <thead>
                 <tr>
                     <th>Standard{{ $sufiks }}</th>
                     <th>Unit Under Test{{ $sufiks }}</th>
                     <th>Correction{{ $sufiks }}</th>
+                    @if ($r2 !== null)
+                        <th>R<sup>2</sup></th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -442,6 +451,15 @@
                         <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
+                        @if ($r2 !== null)
+                            {{-- Angkanya SATU buat seluruh kelompok, jadi cuma
+                                 ditulis di baris pertama — persis master, yang
+                                 nulis `0,9359` sekali di baris titik 0 %T dan
+                                 ngosongin empat baris sisanya. Diulang tiap
+                                 baris malah kebaca kayak lima R² yang kebetulan
+                                 sama. Empat desimal ngikut sel masternya. --}}
+                            <td>{{ $loop->first ? \App\Support\Angka::id((float) $r2, 4) : '' }}</td>
+                        @endif
                     </tr>
                 @endforeach
 
@@ -459,6 +477,12 @@
                 <tr class="u95">
                     <td colspan="2">Uncertainty U<sub>95%</sub> = &plusmn;</td>
                     <td>{{ \App\Support\Angka::hasil($barisU95['u95'] === null ? null : (float) $barisU95['u95'], $dbU95) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
+                    {{-- Sel kosong biar baris U95 tetap selebar tabelnya waktu
+                         kolom R² muncul. Tanpa ini kolom terakhir kegeser dan
+                         angka U95 mendarat di bawah kepala `R²`. --}}
+                    @if ($r2 !== null)
+                        <td></td>
+                    @endif
                 </tr>
             </tbody>
         </table>

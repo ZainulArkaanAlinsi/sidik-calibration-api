@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
 
@@ -143,7 +144,7 @@ class CertificateSnapshotBuilder
             ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
             : null;
 
-        return $sesi->uncertaintyCalculations
+        $baris = $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->map(function ($titik) use ($alat, $organisasi, $profil): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
@@ -235,6 +236,52 @@ class CertificateSnapshotBuilder
             })
             ->values()
             ->all();
+
+        return $this->bubuhkanR2($baris, $profil);
+    }
+
+    /**
+     * Tempelin R² kelompok ke tiap barisnya.
+     *
+     * Ditempel BERULANG di semua baris sekelompok, sama kayak `u95` &
+     * `faktor_cakupan_k` — bukan karena tiap titik punya R² sendiri (nggak,
+     * lihat `CalibrationProfile::koefisienDeterminasi()`), tapi supaya
+     * pembacanya nggak usah ngerti struktur kelompok buat nemuinnya. Snapshot
+     * ini dibaca PDF, halaman verifikasi QR, dan Excel; tiga-tiganya udah
+     * ngambil angka kelompok dari baris pertama.
+     *
+     * Dikelompokkan pakai `remark`, persis kayak PDF-nya. Alat yang `remark`-nya
+     * null lewat sebagai satu kelompok tanpa judul, dan profilnya balikin null,
+     * jadi lima alat lain nggak kesenggol sama sekali.
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return list<array<string, mixed>>
+     */
+    private function bubuhkanR2(array $baris, ?CalibrationProfile $profil): array
+    {
+        if ($profil === null) {
+            return $baris;
+        }
+
+        $r2 = [];
+
+        foreach ($baris as $b) {
+            $r2[(string) ($b['remark'] ?? '')][] = $b;
+        }
+
+        $r2 = array_map(
+            fn (array $kelompok): ?float => $profil->koefisienDeterminasi($kelompok),
+            $r2,
+        );
+
+        return array_map(
+            // Kunci `r2` SELALU ada begitu alatnya lewat sini, walau isinya
+            // null. Sertifikat lama yang snapshot-nya belum punya kunci ini
+            // dibaca `?? null` di PDF — dokumen yang udah dipegang pelanggan
+            // nggak berubah bentuk gara-gara kolomnya ditambahin sekarang.
+            fn (array $b): array => [...$b, 'r2' => $r2[(string) ($b['remark'] ?? '')]],
+            $baris,
+        );
     }
 
     /**
