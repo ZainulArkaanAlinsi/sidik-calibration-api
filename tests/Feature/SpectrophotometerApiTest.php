@@ -461,6 +461,39 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * Baris `Uncertainty U95% = ±` blok %T dicetak DUA desimal (`0,50`),
+     * sementara kolom UUT & Correction di blok yang sama pakai tiga (`9,665`).
+     *
+     * Dua angka, dua format, satu tabel. Diadu ke `SERTIFIKAT.csv` master —
+     * bukan dinalar dari konsistensi yang kelihatan lebih rapi.
+     */
+    public function test_desimal_u95_ikut_master_bukan_desimal_titik(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $this->actingAs($this->admin)
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
+            ->assertOk();
+
+        $hasil = collect(
+            Certificate::where('calibration_session_id', $sesi->id)->firstOrFail()->snapshot['hasil']
+        );
+
+        $transmitan = $hasil->firstWhere('remark', SpectrophotometerProfile::TITIK[
+            SpectrophotometerCalculator::GRUP_TRANSMITAN
+        ]['judul']);
+
+        // Titiknya sendiri tetap tiga desimal — yang beda cuma baris U95.
+        $this->assertSame(3, $transmitan['desimal']);
+        $this->assertSame(2, $transmitan['desimal_u95']);
+
+        $this->assertSame(
+            '0,50',
+            \App\Support\Angka::hasil((float) $transmitan['u95'], $transmitan['desimal_u95']),
+        );
+    }
+
+    /**
      * Blok SRE muncul di lembar kerja sebagai bagian BERSTATUS, bukan ilang
      * diam-diam dan bukan kotak input yang bisa diisi. Kalau suatu hari ada
      * yang nambahin field ke situ tanpa sumber angka yang sah, tes ini jatuh.

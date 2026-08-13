@@ -85,6 +85,26 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Keterangan kolom "Remark" buat titik ini — nama parameter atau judul
+     * kelompoknya. `null` = titiknya nggak punya keterangan, kolomnya kosong.
+     *
+     * Dipakai dua arah: sertifikat ngelompokin barisnya lewat kolom ini
+     * (Chlorine: `Free Chlorine` vs `Total Chlorine`; Spectrophotometer: tiga
+     * blok filter), dan layar riwayat/approval butuh label yang SAMA biar tabel
+     * di HP nggak beda dari PDF-nya.
+     *
+     * Ada di kelas induk — bukan cuma di dua profil yang ngisi — supaya
+     * pemanggilnya bisa nanya satu cara buat semua alat. Sebelumnya
+     * `CertificateSnapshotBuilder` kepaksa `method_exists()`, yang artinya
+     * salah ketik nama method di profil baru nggak bakal ketahuan: kolomnya
+     * cuma kosong diam-diam.
+     */
+    public function remarkTitik(float $titikUkur): ?string
+    {
+        return null;
+    }
+
+    /**
      * Koreksi negatif yang MEMBULAT KE NOL dicetak pakai tanda minus atau nggak.
      *
      * Ini murni soal cetak — nilai mentahnya nggak kena sama sekali, dan
@@ -467,6 +487,22 @@ abstract class CalibrationProfile
      * dokumen resminya — bukan prinsipnya.
      */
     public function desimalSertifikat(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Desimal khusus baris `Uncertainty U95% = ±`, kalau alat ini nyetaknya
+     * beda dari kolom hasil di atasnya. `null` = ikut desimal titiknya.
+     *
+     * Ada karena master Spectrophotometer nyetak U95 blok %T sebagai `0,50`
+     * sementara kolom UUT & Correction di blok yang sama pakai TIGA desimal
+     * (`9,665`). Dua angka, dua format, satu tabel — dan yang menentukan
+     * dokumen resminya, bukan konsistensi yang kelihatan lebih rapi.
+     *
+     * Lima alat lain balik `null` dan sertifikatnya nggak berubah sama sekali.
+     */
+    public function desimalU95(): ?int
     {
         return null;
     }

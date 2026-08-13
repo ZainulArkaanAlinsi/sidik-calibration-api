@@ -450,7 +450,12 @@
                      sama; kalau suatu saat beda, yang salah datanya, dan
                      ngerata-ratain di sini cuma nyembunyiin itu. --}}
                 @php($barisU95 = $barisKelompok->first())
-                @php($dbU95 = $barisU95['desimal'] ?? $desimal)
+                {{-- Desimal U95 punya jalurnya sendiri: master nyetak
+                     `0,50 %T` sementara kolom UUT & Correction di blok yang
+                     sama pakai tiga desimal (`9,665`). Sertifikat lama yang
+                     snapshot-nya belum punya kunci ini jatuh ke desimal titik,
+                     persis kayak waktu diterbitkan. --}}
+                @php($dbU95 = $barisU95['desimal_u95'] ?? $barisU95['desimal'] ?? $desimal)
                 <tr class="u95">
                     <td colspan="2">Uncertainty U<sub>95%</sub> = &plusmn;</td>
                     <td>{{ \App\Support\Angka::hasil($barisU95['u95'] === null ? null : (float) $barisU95['u95'], $dbU95) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
