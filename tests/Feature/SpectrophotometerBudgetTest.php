@@ -217,7 +217,7 @@ class SpectrophotometerBudgetTest extends TestCase
                 'ketidakpastian_terbaik' => $c['u'],
                 'satuan_ketidakpastian' => $c['satuan'],
                 'faktor_cakupan' => 2,
-                'metode' => SpectrophotometerProfile::KODE_DOKUMEN,
+                'metode' => SpectrophotometerProfile::KODE_METODE,
             ]);
         }
 
@@ -265,7 +265,11 @@ class SpectrophotometerBudgetTest extends TestCase
 
         $this->assertInstanceOf(SpectrophotometerProfile::class, $profil);
         $this->assertSame('gum-spectro', $profil->kodeFormula());
-        $this->assertSame('SIDIK-IK-CAL-0508_Rev.4', SpectrophotometerProfile::KODE_DOKUMEN);
+        // Dua nomor yang beda jenis: FORMULIR lembar kerjanya vs METODE
+        // kalibrasinya. Sempat ketuker (kode_dokumen keisi nomor IK), jadi
+        // dua-duanya dipatok di sini.
+        $this->assertSame('SIDIK-FM-CAL-0511_Rev.5', SpectrophotometerProfile::KODE_DOKUMEN);
+        $this->assertSame('SIDIK-IK-CAL-0508_Rev.4', SpectrophotometerProfile::KODE_METODE);
     }
 
     /**

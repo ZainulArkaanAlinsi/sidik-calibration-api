@@ -127,6 +127,12 @@ class CalibrationRequest extends FormRequest
             'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            // Kolom `Time` di tabel yang sama (lembar Spectrophotometer
+            // SIDIK-FM-CAL-0511_Rev.5). `H:i:s` ikut diterima karena itu bentuk
+            // yang dipulangkan kolom `time` MySQL — draft yang dibuka lagi lalu
+            // dikirim balik apa adanya nggak boleh ditolak.
+            'waktu_awal' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
+            'waktu_akhir' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
             // Kolom "Catatan:" di lembar kerja.
             'catatan_teknisi' => ['sometimes', 'nullable', 'string', 'max:2000'],
 

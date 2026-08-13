@@ -1388,7 +1388,8 @@ class CalibrationController extends Controller
             // validasi tapi nggak pernah nyampe database. Gejalanya persis
             // kayak field yang dibuang: teknisi ngisi, hasilnya null.
             'thermohygro_standard_id',
-            'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir', 'catatan_teknisi',
+            'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+            'waktu_awal', 'waktu_akhir', 'catatan_teknisi',
             // Identitas alat & pemilik versi teknisi (lembar kerja poin 3-5 &
             // OWNER 1-2). Ikut `$opsional`, bukan blok wajib di atas: yang
             // nggak dikirim TIDAK ditimpa null — teknisi bisa nyimpen draft

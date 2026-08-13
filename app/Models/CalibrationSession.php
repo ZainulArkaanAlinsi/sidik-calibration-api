@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
 
 /**
  * @mixin IdeHelperCalibrationSession
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'lokasi_nama', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
     'kelembaban_ketidakpastian', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+    // Kolom `Time` di tabel Env. Condition — lihat migrasi 2026_08_13_170000.
+    'waktu_awal', 'waktu_akhir',
     'catatan_revisi', 'revisi_field', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
     // Identitas alat & pemilik seperti yang DICATAT TEKNISI di lembar kerja —
     // bukan salinan master. Lihat migrasi 2026_07_29_120000.
@@ -64,6 +68,45 @@ class CalibrationSession extends Model
             'kelembaban_awal' => 'float',
             'kelembaban_akhir' => 'float',
         ];
+    }
+
+    /** Kolom `Time` baris `First` di Env. Condition. */
+    protected function waktuAwal(): Attribute
+    {
+        return self::jam();
+    }
+
+    /** Kolom `Time` baris `End` di Env. Condition. */
+    protected function waktuAkhir(): Attribute
+    {
+        return self::jam();
+    }
+
+    /**
+     * Jam lembar kerja: DISIMPAN `H:i:s`, DIBACA `H:i`.
+     *
+     * Normalisasinya bukan kerapian, tapi syarat biar hasilnya sama di dua mesin
+     * database yang dipakai proyek ini. Kolom `time` MySQL selalu memulangkan
+     * `08:30:00`, sementara SQLite (yang dipakai test) memulangkan persis apa
+     * yang ditulis — `08:30` kalau itu yang dikirim HP. Tanpa normalisasi, test
+     * hijau di SQLite dan responsnya beda bentuk di produksi.
+     *
+     * `H:i` yang dibaca balik ngikut kertasnya: kolom `Time` di lembar kerja
+     * ditulis jam:menit, detiknya nggak pernah ada.
+     */
+    private static function jam(): Attribute
+    {
+        return Attribute::make(
+            get: static fn (?string $nilai): ?string => $nilai === null || $nilai === ''
+                ? null
+                : substr($nilai, 0, 5),
+            // Nilai ngawur sengaja dibiarkan melempar, bukan diam-diam jadi
+            // null: jam yang hilang tanpa suara lebih susah ketahuan daripada
+            // sesi yang gagal disimpan.
+            set: static fn (?string $nilai): ?string => $nilai === null || trim($nilai) === ''
+                ? null
+                : Carbon::parse(trim($nilai))->format('H:i:s'),
+        );
     }
 
     /**

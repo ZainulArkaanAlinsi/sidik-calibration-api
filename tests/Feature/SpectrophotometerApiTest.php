@@ -112,7 +112,7 @@ class SpectrophotometerApiTest extends TestCase
                 'ketidakpastian_terbaik' => $c['u'],
                 'satuan_ketidakpastian' => $c['satuan'],
                 'faktor_cakupan' => 2,
-                'metode' => SpectrophotometerProfile::KODE_DOKUMEN,
+                'metode' => SpectrophotometerProfile::KODE_METODE,
             ]);
         }
 
@@ -360,15 +360,21 @@ class SpectrophotometerApiTest extends TestCase
         $this->assertCount(5, $spesifikasi);
         $this->assertSame([null, null, null, null, null], $spesifikasi->pluck('sumber')->all());
         $this->assertSame(
-            ['%T', 'nm', '%T', '%T', 'nm'],
+            ['%T', 'nm', '%T', 'nm', '%T'],
             $spesifikasi->pluck('satuan')->all(),
         );
 
-        // Dua kotak yang labelnya SAMA digambar sebaris sama layar, persis
-        // lembar cetaknya.
+        // Label & urutannya niru cetakan SIDIK-FM-CAL-0511_Rev.5: "2 Range" dan
+        // "3 Sensitivity/Resolusi" masing-masing dua kotak (%T & nm) yang
+        // digambar sebaris. "Kapasitas Max." nggak ada di kertas — dia nempel di
+        // belakang dan ditandai `di_kertas: false`.
         $this->assertSame(
-            ['2. Rentang Ukur', '2. Rentang Ukur', 'Kapasitas Max.', 'Resolusi Alat', 'Resolusi Alat'],
+            ['2. Range', '2. Range', '3. Sensitivity/Resolusi', '3. Sensitivity/Resolusi', 'Kapasitas Max.'],
             $spesifikasi->pluck('label')->all(),
+        );
+        $this->assertSame(
+            [true, true, true, true, false],
+            $spesifikasi->pluck('di_kertas')->all(),
         );
 
         // Master alat NGGAK lagi jadi sumber baris ini.
