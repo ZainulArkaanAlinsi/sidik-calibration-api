@@ -202,6 +202,17 @@ class TemplateLembarKerja
                 'tahap' => (string) ($definisi['tahap'] ?? 'sesudah_adjustment'),
                 'grup' => $definisi['grup'] ?? null,
                 'judul' => $definisi['judul'] ?? null,
+                // Arah nomor Repeat di lembar CETAK. Ikut dibawa karena yang
+                // menggambar kertasnya (`ocr:rangka-geometri` &
+                // `ocr:cetak-lembar`) ada di luar profil, dan tanpa ini
+                // dua-duanya cuma bisa menganggap semua lembar berbentuk pH.
+                'sumbu_pengulangan' => in_array($definisi['sumbu_pengulangan'] ?? null, ['baris', 'kolom'], true)
+                    ? $definisi['sumbu_pengulangan']
+                    : 'kolom',
+                // Kepala kolom seperti TERCETAK, buat lembar yang tulisan
+                // kertasnya beda dari titik yang dihitung (Conductivity).
+                // Kosong = pakai label barisnya seperti biasa.
+                'slot_cetak' => array_values($definisi['slot_cetak'] ?? []),
                 'baris' => $barisRingkas,
                 'kolom' => array_values(array_map(
                     static fn (array $k): array => [

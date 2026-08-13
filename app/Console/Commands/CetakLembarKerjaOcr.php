@@ -76,9 +76,49 @@ class CetakLembarKerjaOcr extends Command
         $dariTemplate = [];
 
         foreach ($template->untukKode($kode)['tabel'] ?? [] as $t) {
+            // Lembar yang tulisan kertasnya beda dari titik yang dihitung
+            // (Conductivity: kepala kolomnya `84 / 1413 / 5000 / 80000`, yang
+            // dihitung `25 / 1412 / 111`) mencetak tulisan KERTASNYA. Yang
+            // dicetak harus sama dengan yang dipegang teknisi, bukan dengan
+            // yang dipakai mesin hitung.
+            // Slot dan baris TIDAK satu lawan satu: satu slot bisa menaungi dua
+            // baris (titik tengah Conductivity dikirim dua varian satuan buat
+            // botol yang sama), dan satu slot bisa tidak menaungi baris mana
+            // pun (`80000` — tercetak di kertas, tapi larutannya tidak ada).
+            // Jadi dicocokkan lewat `titik_ukur`, bukan lewat urutan.
+            $slot = array_values($t['slot_cetak'] ?? []);
+            $labelBaris = [];
+            $terpakai = [];
+
+            foreach ($t['baris'] as $b) {
+                $labelBaris[$b['baris_ke']] = $b['label'];
+
+                foreach ($slot as $j => $s) {
+                    if (! in_array((float) $b['titik_ukur'], array_map('floatval', $s['titik_ukur'] ?? []), true)) {
+                        continue;
+                    }
+
+                    // Slot yang sama kena dua kali = dua varian satuan buat
+                    // botol yang sama. Di kertas itu SATU kolom dengan kotak
+                    // "ceklis salah satu"; di lembar cetak kotaknya nggak bisa
+                    // dicentang, jadi dua-duanya digambar dan yang kedua pakai
+                    // nama varian (`1.413 mS`). Tanpa ini dua kolom bersebelahan
+                    // sama-sama berkepala `1413 µS` dan teknisi nggak punya cara
+                    // tahu yang mana yang mana.
+                    $labelBaris[$b['baris_ke']] = isset($terpakai[$j])
+                        ? ($s['varian'] ?? $s['label'])
+                        : $s['label'];
+
+                    $terpakai[$j] = true;
+
+                    break;
+                }
+            }
+
             $dariTemplate[$t['tabel_id']] = [
-                'baris' => array_column($t['baris'], 'label', 'baris_ke'),
+                'baris' => $labelBaris,
                 'kolom' => array_column($t['kolom'], 'label', 'field_id'),
+                'ke_bawah' => ($t['sumbu_pengulangan'] ?? 'kolom') === 'baris',
             ];
         }
 
@@ -99,8 +139,21 @@ class CetakLembarKerjaOcr extends Command
                 'judul_x' => min(array_column($sel, 'x')) - 300,
                 'judul_y' => min(array_column($sel, 'y')) - 60,
                 'sel' => array_values($sel),
-                'label_baris' => $this->labelBaris($sel, $dariTemplate[$t['tabel_id']]['baris'] ?? []),
-                'label_kolom' => $this->labelKolom($sel, $dariTemplate[$t['tabel_id']]['kolom'] ?? []),
+                // Di lembar yang Repeat-nya turun ke bawah, yang berdiri di
+                // kiri justru nomor Repeat dan yang berdiri di atas justru
+                // nama larutannya — kebalikan bentuk pH. Yang ditukar cuma
+                // PERAN kedua label; kunci selnya sama sekali tidak berubah.
+                'label_baris' => $this->labelBaris(
+                    $sel,
+                    $dariTemplate[$t['tabel_id']]['baris'] ?? [],
+                    $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
+                ),
+                'label_kolom' => $this->labelKolom(
+                    $sel,
+                    $dariTemplate[$t['tabel_id']]['kolom'] ?? [],
+                    $dariTemplate[$t['tabel_id']]['baris'] ?? [],
+                    $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
+                ),
             ];
         }
 
@@ -155,11 +208,17 @@ class CetakLembarKerjaOcr extends Command
      *
      * @param  array<string, array<string, mixed>>  $sel
      * @param  array<int, string>  $labelTemplate
+     * @param  bool  $keBawah  lembar yang Repeat-nya turun: yang berdiri di
+     *                         kiri nomor Repeat, bukan nilai standarnya
      * @return list<array<string, mixed>>
      */
-    private function labelBaris(array $sel, array $labelTemplate): array
+    private function labelBaris(array $sel, array $labelTemplate, bool $keBawah = false): array
     {
         $perBaris = [];
+
+        // Bagian ke-1 kunci = nomor baris titik, ke-2 = nomor Repeat. Yang mana
+        // yang jadi baris di kertas tergantung orientasinya.
+        $indeks = $keBawah ? 2 : 1;
 
         foreach ($sel as $kunci => $kotak) {
             $bagian = explode('|', (string) $kunci);
@@ -167,7 +226,7 @@ class CetakLembarKerjaOcr extends Command
                 continue;
             }
 
-            $baris = (int) $bagian[1];
+            $baris = (int) $bagian[$indeks];
 
             if (! isset($perBaris[$baris]) || $kotak['x'] < $perBaris[$baris]['x']) {
                 $perBaris[$baris] = $kotak;
@@ -182,7 +241,11 @@ class CetakLembarKerjaOcr extends Command
                 // Nilai standarnya (`4,00`), bukan "Baris 1". Ini yang dibaca
                 // HP sebagai jangkar, jadi teksnya harus yang bisa diadu ke
                 // template — nomor baris nggak bisa mbuktiin apa-apa.
-                'teks' => (string) ($labelTemplate[$baris] ?? $baris),
+                // Lembar Repeat-ke-bawah menulis `X1..X5` di kiri; yang lain
+                // menulis nilai standarnya (`4,00`).
+                'teks' => $keBawah
+                    ? 'X'.$baris
+                    : (string) ($labelTemplate[$baris] ?? $baris),
                 'x' => max(0, $kotak['x'] - 300),
                 'y' => $kotak['y'] + $kotak['h'] / 3,
                 'w' => 290,
@@ -199,11 +262,22 @@ class CetakLembarKerjaOcr extends Command
      * @param  array<string, string>  $labelTemplate  dikunci NAMA FIELD
      *                                                (`pembacaan` / `suhu`),
      *                                                bukan nomor repeat
+     * @param  array<int, string>  $labelBaris  nama larutan per nomor baris —
+     *                                          kepala kolom lembar yang
+     *                                          Repeat-nya turun ke bawah
      * @return list<array<string, mixed>>
      */
-    private function labelKolom(array $sel, array $labelTemplate): array
-    {
+    private function labelKolom(
+        array $sel,
+        array $labelTemplate,
+        array $labelBaris = [],
+        bool $keBawah = false,
+    ): array {
         $perRepeat = [];
+
+        // Yang memayungi kolom: nomor Repeat di bentuk pH, nomor baris titik di
+        // bentuk Conductivity.
+        $indeks = $keBawah ? 1 : 2;
 
         foreach ($sel as $kunci => $kotak) {
             $bagian = explode('|', (string) $kunci);
@@ -211,7 +285,7 @@ class CetakLembarKerjaOcr extends Command
                 continue;
             }
 
-            $repeat = (int) $bagian[2];
+            $repeat = (int) $bagian[$indeks];
             $field = $bagian[3];
 
             $perRepeat[$repeat]['kiri'] = min($perRepeat[$repeat]['kiri'] ?? PHP_INT_MAX, $kotak['x']);
@@ -227,7 +301,11 @@ class CetakLembarKerjaOcr extends Command
             // Satu `X{n}` memayungi seluruh kolom repeat itu — sel pH & °C di
             // bawahnya berbagi satu nomor, persis lembar cetaknya.
             $label[] = [
-                'teks' => 'X'.$repeat,
+                // Bentuk Conductivity: yang di atas kolom itu NAMA LARUTAN
+                // seperti tercetak di kertas (`1413 µS`), bukan `X{n}`.
+                'teks' => $keBawah
+                    ? (string) ($labelBaris[$repeat] ?? $repeat)
+                    : 'X'.$repeat,
                 'x' => $r['kiri'],
                 'y' => $r['atas'] - 80,
                 'w' => $r['kanan'] - $r['kiri'],

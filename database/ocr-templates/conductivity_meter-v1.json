@@ -1,6 +1,6 @@
 {
     "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
-    "_catatan_formulir": "Cetakan asli (SIDIK-FM-CAL-0510_Rev.5, PDF 15 Des 2023) diukur 13 Agt 2026 dan TIDAK cocok dengan rangka ini: (1) halamannya LANDSCAPE 792x612 pt = 2200x1700 px @200dpi, bukan A4 tegak 1654x2339; (2) Repeat 1..5 jalan ke BAWAH, jadi sumbu_pengulangan harusnya 'baris', bukan 'kolom'; (3) tabelnya 4 kolom larutan (84 / 1413-1.413 / 5000-5 / 80000-80), sementara profil cuma punya 3 titik (25 / 1412-1.412 / 111); (4) formulirnya NGGAK punya marker sudut maupun QR sama sekali, padahal mesin pindai nyarinya itu. Jangan diukur ulang sebelum lab nerbitin revisi formulir yang cocok sama master (poin ukur jadi 3 sejak 3 Apr 2024).",
+    "_catatan_formulir": "JANGAN diukur dari cetakan lab `SIDIK-FM-CAL-0510_Rev.5` (PDF 15 Des 2023). Kertas itu lebih tua dari master: kolom larutannya masih 84/1413/5000/80000 (master pindah ke 25/1412/111 pada 3 Apr 2024), readout-nya masih Victor 14+, dan yang paling menentukan — kertas itu NGGAK punya marker sudut maupun QR, jadi mesin pindai nggak akan pernah nemu jangkarnya. Yang dipakai: lembar hasil `php artisan ocr:cetak-lembar conductivity_meter`, yang koordinatnya lahir dari berkas ini sendiri sehingga eksak. Orientasinya sudah ikut kertas (Repeat turun ke bawah) dan kepala kolomnya sudah memakai nama slot cetak. Setel `terverifikasi: true` cuma sesudah lembar itu dicetak, difoto pakai HP, dan angkanya terbukti mendarat di sel yang benar.",
     "template_id": "conductivity_meter",
     "versi": 1,
     "kode_dokumen": "SIDIK-FM-CAL-0510_Rev.5",
@@ -45,7 +45,7 @@
             "h": 170
         }
     },
-    "sumbu_pengulangan": "kolom",
+    "sumbu_pengulangan": "baris",
     "jangkar": [
         {
             "field_id": "label_repeat",
@@ -111,242 +111,242 @@
                 "sebelum_adjustment|1|1|pembacaan": {
                     "x": 413,
                     "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|1|pembacaan": {
-                    "x": 413,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|1|pembacaan": {
-                    "x": 413,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|1|pembacaan": {
-                    "x": 413,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|1|1|suhu": {
-                    "x": 525,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|1|suhu": {
-                    "x": 525,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|1|suhu": {
-                    "x": 525,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|1|suhu": {
-                    "x": 525,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|1|2|pembacaan": {
-                    "x": 637,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|2|pembacaan": {
-                    "x": 637,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|2|pembacaan": {
-                    "x": 637,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|2|pembacaan": {
-                    "x": 637,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|1|2|suhu": {
-                    "x": 749,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|2|suhu": {
-                    "x": 749,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|2|suhu": {
-                    "x": 749,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|2|suhu": {
-                    "x": 749,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|1|3|pembacaan": {
-                    "x": 861,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|3|pembacaan": {
-                    "x": 861,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|3|pembacaan": {
-                    "x": 861,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|3|pembacaan": {
-                    "x": 861,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|1|3|suhu": {
-                    "x": 973,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|3|suhu": {
-                    "x": 973,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|3|suhu": {
-                    "x": 973,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|3|suhu": {
-                    "x": 973,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|1|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|1|4|suhu": {
-                    "x": 1197,
-                    "y": 1172,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|2|4|suhu": {
-                    "x": 1197,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|3|4|suhu": {
-                    "x": 1197,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
-                },
-                "sebelum_adjustment|4|4|suhu": {
-                    "x": 1197,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|1|5|pembacaan": {
-                    "x": 1309,
+                    "x": 413,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|1|1|suhu": {
+                    "x": 553,
                     "y": 1172,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
                 },
-                "sebelum_adjustment|2|5|pembacaan": {
-                    "x": 1309,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
+                "sebelum_adjustment|1|2|suhu": {
+                    "x": 553,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
                 },
-                "sebelum_adjustment|3|5|pembacaan": {
-                    "x": 1309,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
+                "sebelum_adjustment|1|3|suhu": {
+                    "x": 553,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
                 },
-                "sebelum_adjustment|4|5|pembacaan": {
-                    "x": 1309,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                "sebelum_adjustment|1|4|suhu": {
+                    "x": 553,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|1|5|suhu": {
-                    "x": 1421,
+                    "x": 553,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|1|pembacaan": {
+                    "x": 693,
                     "y": 1172,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|2|pembacaan": {
+                    "x": 693,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|3|pembacaan": {
+                    "x": 693,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|4|pembacaan": {
+                    "x": 693,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|5|pembacaan": {
+                    "x": 693,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|1|suhu": {
+                    "x": 833,
+                    "y": 1172,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|2|suhu": {
+                    "x": 833,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|3|suhu": {
+                    "x": 833,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|2|4|suhu": {
+                    "x": 833,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|2|5|suhu": {
-                    "x": 1421,
-                    "y": 1273,
-                    "w": 112,
-                    "h": 101
+                    "x": 833,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|1|pembacaan": {
+                    "x": 973,
+                    "y": 1172,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|2|pembacaan": {
+                    "x": 973,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|3|pembacaan": {
+                    "x": 973,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|4|pembacaan": {
+                    "x": 973,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|5|pembacaan": {
+                    "x": 973,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|1|suhu": {
+                    "x": 1113,
+                    "y": 1172,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|2|suhu": {
+                    "x": 1113,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|3|suhu": {
+                    "x": 1113,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|3|4|suhu": {
+                    "x": 1113,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|3|5|suhu": {
-                    "x": 1421,
-                    "y": 1374,
-                    "w": 112,
-                    "h": 101
+                    "x": 1113,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|1|pembacaan": {
+                    "x": 1253,
+                    "y": 1172,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|2|pembacaan": {
+                    "x": 1253,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|3|pembacaan": {
+                    "x": 1253,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|4|pembacaan": {
+                    "x": 1253,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|5|pembacaan": {
+                    "x": 1253,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|1|suhu": {
+                    "x": 1393,
+                    "y": 1172,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|2|suhu": {
+                    "x": 1393,
+                    "y": 1253,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|3|suhu": {
+                    "x": 1393,
+                    "y": 1334,
+                    "w": 140,
+                    "h": 81
+                },
+                "sebelum_adjustment|4|4|suhu": {
+                    "x": 1393,
+                    "y": 1415,
+                    "w": 140,
+                    "h": 81
                 },
                 "sebelum_adjustment|4|5|suhu": {
-                    "x": 1421,
-                    "y": 1475,
-                    "w": 112,
-                    "h": 101
+                    "x": 1393,
+                    "y": 1496,
+                    "w": 140,
+                    "h": 81
                 }
             }
         },
@@ -357,242 +357,242 @@
                 "sesudah_adjustment|1|1|pembacaan": {
                     "x": 413,
                     "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|1|pembacaan": {
-                    "x": 413,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|1|pembacaan": {
-                    "x": 413,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|1|pembacaan": {
-                    "x": 413,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|1|1|suhu": {
-                    "x": 525,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|1|suhu": {
-                    "x": 525,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|1|suhu": {
-                    "x": 525,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|1|suhu": {
-                    "x": 525,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|1|2|pembacaan": {
-                    "x": 637,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|2|pembacaan": {
-                    "x": 637,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|2|pembacaan": {
-                    "x": 637,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|2|pembacaan": {
-                    "x": 637,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|1|2|suhu": {
-                    "x": 749,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|2|suhu": {
-                    "x": 749,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|2|suhu": {
-                    "x": 749,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|2|suhu": {
-                    "x": 749,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|1|3|pembacaan": {
-                    "x": 861,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|3|pembacaan": {
-                    "x": 861,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|3|pembacaan": {
-                    "x": 861,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|3|pembacaan": {
-                    "x": 861,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|1|3|suhu": {
-                    "x": 973,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|3|suhu": {
-                    "x": 973,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|3|suhu": {
-                    "x": 973,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|3|suhu": {
-                    "x": 973,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|1|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|4|pembacaan": {
-                    "x": 1085,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|4|pembacaan": {
-                    "x": 1085,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|1|4|suhu": {
-                    "x": 1197,
-                    "y": 1698,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|2|4|suhu": {
-                    "x": 1197,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|3|4|suhu": {
-                    "x": 1197,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
-                },
-                "sesudah_adjustment|4|4|suhu": {
-                    "x": 1197,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                    "x": 413,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|1|5|pembacaan": {
-                    "x": 1309,
+                    "x": 413,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|1|1|suhu": {
+                    "x": 553,
                     "y": 1698,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
                 },
-                "sesudah_adjustment|2|5|pembacaan": {
-                    "x": 1309,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
+                "sesudah_adjustment|1|2|suhu": {
+                    "x": 553,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
                 },
-                "sesudah_adjustment|3|5|pembacaan": {
-                    "x": 1309,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
+                "sesudah_adjustment|1|3|suhu": {
+                    "x": 553,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
                 },
-                "sesudah_adjustment|4|5|pembacaan": {
-                    "x": 1309,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                "sesudah_adjustment|1|4|suhu": {
+                    "x": 553,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|1|5|suhu": {
-                    "x": 1421,
+                    "x": 553,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|1|pembacaan": {
+                    "x": 693,
                     "y": 1698,
-                    "w": 112,
-                    "h": 101
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|2|pembacaan": {
+                    "x": 693,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|3|pembacaan": {
+                    "x": 693,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|4|pembacaan": {
+                    "x": 693,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|5|pembacaan": {
+                    "x": 693,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|1|suhu": {
+                    "x": 833,
+                    "y": 1698,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|2|suhu": {
+                    "x": 833,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|3|suhu": {
+                    "x": 833,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|2|4|suhu": {
+                    "x": 833,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|2|5|suhu": {
-                    "x": 1421,
-                    "y": 1799,
-                    "w": 112,
-                    "h": 101
+                    "x": 833,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|1|pembacaan": {
+                    "x": 973,
+                    "y": 1698,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|2|pembacaan": {
+                    "x": 973,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|3|pembacaan": {
+                    "x": 973,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|4|pembacaan": {
+                    "x": 973,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|5|pembacaan": {
+                    "x": 973,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|1|suhu": {
+                    "x": 1113,
+                    "y": 1698,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|2|suhu": {
+                    "x": 1113,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|3|suhu": {
+                    "x": 1113,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|3|4|suhu": {
+                    "x": 1113,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|3|5|suhu": {
-                    "x": 1421,
-                    "y": 1900,
-                    "w": 112,
-                    "h": 101
+                    "x": 1113,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|1|pembacaan": {
+                    "x": 1253,
+                    "y": 1698,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|2|pembacaan": {
+                    "x": 1253,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|3|pembacaan": {
+                    "x": 1253,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|4|pembacaan": {
+                    "x": 1253,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|5|pembacaan": {
+                    "x": 1253,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|1|suhu": {
+                    "x": 1393,
+                    "y": 1698,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|2|suhu": {
+                    "x": 1393,
+                    "y": 1779,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|3|suhu": {
+                    "x": 1393,
+                    "y": 1860,
+                    "w": 140,
+                    "h": 81
+                },
+                "sesudah_adjustment|4|4|suhu": {
+                    "x": 1393,
+                    "y": 1941,
+                    "w": 140,
+                    "h": 81
                 },
                 "sesudah_adjustment|4|5|suhu": {
-                    "x": 1421,
-                    "y": 2001,
-                    "w": 112,
-                    "h": 101
+                    "x": 1393,
+                    "y": 2022,
+                    "w": 140,
+                    "h": 81
                 }
             }
         }
