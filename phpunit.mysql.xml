@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <!--
+        Suite yang sama, tapi jalan di MySQL.
+
+            php artisan test -c phpunit.mysql.xml
+
+        ## Kenapa ini perlu ada
+
+        `phpunit.xml` jalan di SQLite in-memory — cepat, dan itu yang dipakai
+        sehari-hari. Tapi produksi jalan di MySQL, dan dua-duanya TIDAK
+        berperilaku sama untuk hal-hal yang justru menyentuh angka sertifikat:
+
+         - Kolom `decimal(20,8)` dibaca sebagai float oleh SQLite (`279.6`) tapi
+           sebagai string oleh MySQL (`"279.60000000"`). Test yang nge-`keyBy`
+           kolom decimal cuma lolos di satu dari dua.
+         - `AUTO_INCREMENT` MySQL terus maju lintas test; SQLite mengulang dari 1.
+           Seeder/test yang mematok `id => 1` putus FK-nya di MySQL saja.
+         - MySQL memaksa mode strict pada panjang kolom & tipe; SQLite tidak.
+
+        Suite yang hijau di SQLite pernah menyembunyikan empat bug yang hanya
+        muncul di MySQL. Jadi sebelum bilang sebuah modul selesai, jalankan
+        keduanya.
+
+        ## Kredensial
+
+        Sengaja HANYA `DB_CONNECTION` & `DB_DATABASE` yang dipatok di sini. Host,
+        port, user, dan password diwarisi dari `.env` masing-masing orang —
+        supaya tidak ada kredensial yang masuk repo, dan supaya setelan MAMP /
+        Docker / Homebrew yang beda-beda tetap jalan tanpa berkas ini diedit.
+
+        ## PERINGATAN — nama database
+
+        `DB_DATABASE` dipatok ke `asmo_db_test`, BUKAN database kerja. Test pakai
+        `RefreshDatabase`, yang me-migrate ulang dari nol: mengarahkannya ke
+        `asmo_db` berarti menghapus seluruh data kerja tanpa konfirmasi. Jangan
+        ganti nilai ini ke database yang isinya dipakai.
+
+        Bikin sekali:
+
+            CREATE DATABASE asmo_db_test
+              CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    -->
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <!-- Alasannya sama persis kayak di phpunit.xml: dompdf rakus memori. -->
+        <ini name="memory_limit" value="512M"/>
+        <env name="APP_ENV" value="testing"/>
+        <env name="VISION_DRIVER" value="anthropic"/>
+        <env name="APP_TIMEZONE" value="Asia/Jakarta"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="asmo_db_test"/>
+        <env name="DB_URL" value=""/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>
