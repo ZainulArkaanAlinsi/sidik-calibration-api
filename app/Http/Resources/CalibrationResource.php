@@ -177,6 +177,10 @@ class CalibrationResource extends JsonResource
             'suhu_akhir' => $this->suhu_akhir,
             'kelembaban_awal' => $this->kelembaban_awal,
             'kelembaban_akhir' => $this->kelembaban_akhir,
+            // Kolom `Time` di tabel Env. Condition, selalu `H:i` (lihat
+            // CalibrationSession::jam()).
+            'waktu_awal' => $this->waktu_awal,
+            'waktu_akhir' => $this->waktu_akhir,
             'catatan_teknisi' => $this->catatan_teknisi,
             'lokasi' => $this->lokasi,
             'lokasi_nama' => $this->lokasi_nama,

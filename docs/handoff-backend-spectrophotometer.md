@@ -1,6 +1,7 @@
 # Handoff Backend — Kalibrasi Spectrophotometer
 
-Modul kalibrasi UV-Vis / Visible Spectrophotometer. Metode `SIDIK-IK-CAL-0508_Rev.4`.
+Modul kalibrasi UV-Vis / Visible Spectrophotometer. Formulir lembar kerja
+`SIDIK-FM-CAL-0511_Rev.5`, metode `SIDIK-IK-CAL-0508_Rev.4`.
 
 Semua angka di dokumen ini diturunkan dari master Excel lab
 (`Master Olah Data_Spectrofotometer.xlsm`), bukan dari asumsi. Master itu yang
@@ -117,7 +118,10 @@ Respons (dipangkas):
 ```jsonc
 {
   "data": {
-    "kode_dokumen": "SIDIK-IK-CAL-0508_Rev.4",
+    // Nomor FORMULIR lembar kerjanya; nomor metodenya terpisah.
+    "kode_dokumen": "SIDIK-FM-CAL-0511_Rev.5",
+    "kode_metode": "SIDIK-IK-CAL-0508_Rev.4",
+    "judul": "Calibration Worksheet - UV/VIS Spectrophotometer",
     "bagian": [
       { "kode": "hasil", "tabel": [
         {
@@ -133,20 +137,54 @@ Respons (dipangkas):
         { "judul": "Accuracy %T and Linierity at λ = 560nm", "satuan": "%T",
           "pengulangan": ["X1","X2","X3","X4","X5","X6"], "…": "5 baris" }
       ]},
-      { "kode": "sre", "status": "sumber_belum_ada", "field": [], "catatan": "… #REF! …" }
+      { "kode": "sre", "status": "sumber_belum_ada", "di_kertas": false,
+        "field": [], "catatan": "… #REF! …" }
     ]
   }
 }
 ```
+
+Dua hal yang berubah pada 13 Agt 2026, setelah cetakan asli
+`SIDIK-FM-CAL-0511_Rev.5` diperiksa:
+
+- **`kode_dokumen` sekarang nomor FORMULIR (FM), bukan nomor metode (IK).**
+  Sebelumnya kolom itu berisi `SIDIK-IK-CAL-0508_Rev.4`. Nomor metodenya tidak
+  hilang — pindah ke `kode_metode`, karena di kertas dua-duanya tercetak
+  (metodenya di baris "2. Calibration Methode"). Baris CMC di
+  `calibration_capabilities.metode` tetap memakai nomor IK.
+- **Tiap `field` membawa `di_kertas` (boolean).** `false` berarti kotak itu
+  memang diminta backend/master tetapi **tidak ada di formulir cetak** — saat ini
+  hanya `spesifikasi_alat.kapasitas_maks_transmitan` dan bagian `sre`. Bukan
+  perintah menyembunyikan: teknisi mengisi sambil memegang kertas, jadi kotak
+  yang tidak ada di kertas sebaiknya dibedakan, bukan dihilangkan. Field tanpa
+  kunci ini (profil alat lain) diperlakukan `true`.
+
+Label blok EQUIPMENT mengikuti penomoran Rev.5: `1. Name`, `2. Range` (dua
+kotak: %T & nm), `3. Sensitivity/Resolusi` (dua kotak: %T & nm),
+`4. Type/Model`, `5. Serial Number`, `6. Manufacture`. "Thermohygro used" tidak
+lagi bernomor — di kertas ia ada di kepala lembar, sebaris dengan Received Date
+dan Calibration Date, bukan bagian dari daftar EQUIPMENT.
+
+Pilihan "Thermohygro used" juga membawa `di_kertas` per unit: cetakan hanya
+mencetak TH-2, TH-6, TH-7 (Insitu) dan TH-4 (Inlab), tetapi ketujuh unit tetap
+dikirim. Mempersempit daftar pernah dicoba dan menghasilkan data salah — lihat
+`LembarKerjaTemplate::THERMOHYGRO_TERCETAK`.
+
+Bagian `hasil` menambah dua field bertipe **`waktu`** (`waktu_awal`,
+`waktu_akhir`), format `H:i`. Itu kolom `Time` di tabel Env. Condition, yang
+di kertas berdiri sejajar dengan Temperature dan Humidity untuk baris `First`
+dan `End`. Sebelumnya tidak punya tempat di database, jadi jam yang ditulis
+teknisi hilang saat lembar dipindahkan ke aplikasi.
 
 Tiap baris **sudah membawa `standard_id`-nya sendiri** — teknisi tidak memilih
 filter per titik. Ini disengaja: rentang Holmium (283–641 nm) dan Didynium
 (474–810 nm) tumpang tindih 167 nm, jadi pemilihan manual gampang salah dan
 salahnya tidak kelihatan dari dokumen hasilnya.
 
-Blok %T mendapat **enam** kolom pengulangan, bukan tiga — master mencetak dua
-baris X1..X3 per nilai standar %T dan `PERHITUNGAN` merata-rata keenamnya
-(`F47 = SQRT(6)`, `G47 = 6-1`).
+Blok %T mendapat **enam** kolom pengulangan, bukan tiga — `PERHITUNGAN`
+merata-rata enam pembacaan per nilai standar (`F47 = SQRT(6)`, `G47 = 6-1`).
+Formulir cetak Rev.5 hanya menggambar satu baris `X1 X2 X3`; selisih itu
+dibiarkan dan menunggu lab (lihat §10.5).
 
 ### 4.2 `POST /api/calibrations` dan `POST /api/calibrations/preview`
 
@@ -481,6 +519,25 @@ Master menyertifikasi titik yang keluar dari rentang CMC-nya: Holmium 279,6 nm
 (di bawah 283) dan %T 0 / 9,9 / 100 (di luar 10–30,5). Backend mengikuti, tapi
 mencatat — lewat komponen `titik_luar_rentang_cmc` di jejak audit tiap titik.
 Dikunci `test_titik_di_luar_rentang_cmc_dicatat_di_jejak_audit`.
+
+### 10.5 Cetakan Rev.5 vs master: empat selisih yang menunggu lab
+
+Formulir cetak `SIDIK-FM-CAL-0511_Rev.5` diperiksa 13 Agt 2026 dan tidak
+sepenuhnya cocok dengan master yang menjadi acuan hitungan. Selisih penamaan dan
+tata letak sudah disamakan ke kertas. Empat sisanya **tidak** dibetulkan
+sepihak, karena semuanya mengubah angka yang tercetak di sertifikat:
+
+| # | Di kertas | Di master (dipakai sistem) | Kalau kertas yang diikuti |
+|---|---|---|---|
+| 1 | Holmium 9 titik (mulai 287,4) | 10 titik (mulai 279,6) | Satu baris sertifikat hilang; U95 kelompok bergeser kalau STDEV terbesar ada di titik itu |
+| 2 | Holmium 287,4 / 333,6 / 360,6 …; Didynium 478 / 513,4 / 529,4 … | 287,7 / 334,0 / 360,9 …; 475,2 / 513,7 / 529,7 … | Nilai standar berubah → kolom Correction tiap titik berubah |
+| 3 | %T 0,0 / 10,0 / 20,2 / 30,5 / 100,0 | 0,0 / 9,9 / 20,0 / 30,1 / 100,0 | Sama seperti no. 2, untuk blok %T |
+| 4 | Satu baris `X1 X2 X3` di blok %T | 6 pembacaan (`SQRT(6)`, `6-1`) | `n` dan `vi` berubah → U95 blok %T berubah, sesi master tak bisa direproduksi |
+
+Selisih no. 2 jauh lebih besar dari toleransi pasangan titik profil ini
+(0,05 nm), jadi itu bukan pembulatan — kemungkinan salah satunya nilai
+sertifikat filter yang lebih tua. Yang berlaku ditentukan lab; begitu dijawab,
+yang diganti hanya isi `SpectrophotometerProfile::TITIK`.
 
 ---
 
