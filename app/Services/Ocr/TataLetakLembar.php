@@ -48,15 +48,44 @@ class TataLetakLembar
 
     private const KIRI = 90;
 
-    /** Sisi kanan blok kepala; QR duduk di luar batas ini. */
-    private const KANAN_JUDUL = 1354;
+    /**
+     * Batas kanan SATU-SATUNYA: garis kop, isian identitas, dan grid sel
+     * berhenti di angka yang sama.
+     *
+     * Dulu garis kop punya batasnya sendiri (1354) karena QR duduk di
+     * bawahnya, jadi garisnya berhenti 2 cm sebelum isian di kanannya —
+     * kelihatan seperti garis yang kurang panjang, bukan seperti pilihan.
+     * Sekarang QR-nya yang naik ke atas garis, dan batas kanannya satu.
+     */
+    private const KANAN = 1534;
 
-    private const KANAN_ISIAN = 1534;
+    private const LEBAR_LABEL = 340;
 
-    private const LEBAR_LABEL = 300;
+    /**
+     * Kolom label baris di kiri grid (`X1`, `10,01`, `1,33659`).
+     *
+     * Dulu grid mulai di 25% lebar kertas (413 px) dan labelnya digambar 300
+     * px sebelum itu — jadi labelnya mulai di 113, bukan di margin 90, dan
+     * sisanya 1 cm ruang kosong yang nggak dipakai siapa pun. Label
+     * terpanjang di semua lembar `1,33659` (7 huruf ≈ 85 px), jadi 200 px
+     * kelebihan cukup buat label yang lebih panjang tanpa nyuri lebar sel.
+     */
+    private const LEBAR_LABEL_BARIS = 200;
+
+    /**
+     * Jarak label baris ke garis grid di kanannya (~3 mm @200dpi).
+     *
+     * Ini yang dikurangi dari lebar labelnya, BUKAN `padding` di tampilan:
+     * dompdf menghitung `width` sebagai kotak isi, jadi padding kanan cuma
+     * menambah lebar total dan tulisannya tetap mentok di garis sel.
+     */
+    private const JARAK_LABEL_BARIS = 24;
+
+    /** Jarak antar baris tulisan di kepala tabel: judul, kelompok, nama field. */
+    private const JARAK_BARIS_KEPALA = 45;
 
     /** Tinggi kepala tiap tabel: judul + label kelompok + label field. */
-    private const KEPALA_TABEL = 120;
+    private const KEPALA_TABEL = 3 * self::JARAK_BARIS_KEPALA;
 
     /** Napas antar tabel, biar baris terakhir tabel atas nggak nempel judul di bawahnya. */
     private const JARAK_TABEL = 50;
@@ -91,6 +120,49 @@ class TataLetakLembar
         return $this->y(self::KEPALA_TABEL, $tinggi);
     }
 
+    /**
+     * Jarak satu baris tulisan di kepala tabel.
+     *
+     * Dipakai buat menaruh label kelompok (`1413 µS`) dan nama field
+     * (`Reading`) di atas gridnya. Angkanya diambil dari sini, bukan ditulis
+     * ulang di perintah cetak: judul tabel duduk setinggi `kepalaTabel()`, dan
+     * dua baris di bawahnya harus persis mengisi jarak itu.
+     */
+    public function jarakBarisKepala(int $tinggi): int
+    {
+        return $this->y(self::JARAK_BARIS_KEPALA, $tinggi);
+    }
+
+    /** Margin kiri halaman — judul, isian, dan label baris berdiri di sini. */
+    public function kiri(int $lebar): int
+    {
+        return $this->x(self::KIRI, $lebar);
+    }
+
+    /** Lebar kolom label di kiri grid. */
+    public function lebarLabelBaris(int $lebar): int
+    {
+        return $this->x(self::LEBAR_LABEL_BARIS, $lebar);
+    }
+
+    /** Jarak label baris ke garis sel di kanannya. */
+    public function jarakLabelBaris(int $lebar): int
+    {
+        return $this->x(self::JARAK_LABEL_BARIS, $lebar);
+    }
+
+    /** Kolom sel paling kiri: sesudah kolom label, bukan di 25% lebar kertas. */
+    public function kiriGrid(int $lebar): int
+    {
+        return $this->kiri($lebar) + $this->lebarLabelBaris($lebar);
+    }
+
+    /** Batas kanan grid — sama dengan batas kanan isian identitas di atasnya. */
+    public function kananGrid(int $lebar): int
+    {
+        return $this->x(self::KANAN, $lebar);
+    }
+
     public function jarakTabel(int $tinggi): int
     {
         return $this->y(self::JARAK_TABEL, $tinggi);
@@ -121,8 +193,8 @@ class TataLetakLembar
     ): array {
         $isian = $this->isian($bentuk);
 
-        $kiri = $this->x(self::KIRI, $lebar);
-        $kanan = $this->x(self::KANAN_ISIAN, $lebar);
+        $kiri = $this->kiri($lebar);
+        $kanan = $this->x(self::KANAN, $lebar);
         $lebarLabel = $this->x(self::LEBAR_LABEL, $lebar);
 
         // Dua kolom, bukan tiga: labelnya panjang (`Env. Condition — First
@@ -177,7 +249,7 @@ class TataLetakLembar
             'dokumen' => implode(' · ', $dokumen),
             'dokumen_y' => $this->y(self::Y_DOKUMEN, $tinggi),
             'garis_y' => $this->y(self::Y_GARIS, $tinggi),
-            'garis_w' => $this->x(self::KANAN_JUDUL, $lebar) - $kiri,
+            'garis_w' => $kanan - $kiri,
             'isian' => $kotak,
         ];
     }
@@ -212,8 +284,8 @@ class TataLetakLembar
             return [];
         }
 
-        $kiri = $this->x(self::KIRI, $lebar);
-        $lebarGaris = $this->x(self::KANAN_ISIAN, $lebar) - $kiri;
+        $kiri = $this->kiri($lebar);
+        $lebarGaris = $this->x(self::KANAN, $lebar) - $kiri;
         $pitch = $this->y(70, $tinggi);
         $atas = $bawahGrid + $this->y(70, $tinggi);
         $batas = $this->bawahGrid($tinggi);

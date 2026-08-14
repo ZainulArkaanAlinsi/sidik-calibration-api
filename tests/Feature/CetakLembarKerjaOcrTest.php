@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\CetakLembarKerjaOcr;
 use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -188,6 +189,65 @@ class CetakLembarKerjaOcrTest extends TestCase
     }
 
     /**
+     * QR nggak boleh nyentuh penanda sudut, dan gridnya berhenti di margin.
+     *
+     * Kotak QR yang lama melar sampai `lebar - 90` sementara penanda kanan-atas
+     * mulai di `lebar - 135`: 45x5 px tinta QR duduk DI DALAM kotak penanda.
+     * Deteksi sudut di HP cuma ambang gelap + titik berat gumpalan, jadi tinta
+     * asing di situ menggeser titik acuan homography — seluruh grid ikut geser
+     * dan gejalanya cuma angka yang mendarat di sel tetangga. Sel yang nabrak
+     * QR udah dijaga di atas; yang ini penanda lawan QR-nya sendiri.
+     */
+    #[DataProvider('alat')]
+    public function test_qr_nggak_nyentuh_penanda_dan_grid_berhenti_di_margin(string $kode): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path("ocr-templates/{$kode}-v1.json")),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $lebar = (int) $geometri['ukuran_referensi']['w'];
+        $qr = $geometri['qr']['kotak'];
+
+        foreach ($geometri['marker'] as $m) {
+            $u = (int) $m['ukuran'];
+            $p = [
+                'x' => (int) $m['x'] - intdiv($u, 2),
+                'y' => (int) $m['y'] - intdiv($u, 2),
+                'w' => $u,
+                'h' => $u,
+            ];
+
+            $tindih = $qr['x'] < $p['x'] + $p['w']
+                && $p['x'] < $qr['x'] + $qr['w']
+                && $qr['y'] < $p['y'] + $p['h']
+                && $p['y'] < $qr['y'] + $qr['h'];
+
+            $this->assertFalse($tindih, "QR {$kode} nabrak penanda {$m['id']}");
+        }
+
+        // Tepi kanan grid sejajar tepi kanan isian identitas di atasnya. Lebar
+        // sel bilangan bulat nggak pernah pas ngisi ruangnya, dan sisanya
+        // dulu digantung di kanan: dua garis vertikal yang meleset beberapa
+        // piksel — beda per lembar, karena jumlah kolomnya beda.
+        $tataLetak = app(TataLetakLembar::class);
+        $kanan = 0;
+
+        foreach ($geometri['tabel'] as $t) {
+            foreach ($t['sel'] as $sel) {
+                $kanan = max($kanan, (int) $sel['x'] + (int) $sel['w']);
+            }
+        }
+
+        $this->assertSame(
+            $tataLetak->kananGrid($lebar),
+            $kanan,
+            "Tepi kanan grid {$kode} nggak sejajar blok kepala",
+        );
+    }
+
+    /**
      * Satu lembar = SATU halaman.
      *
      * Halaman dua nggak pernah difoto, dan sel yang mendarat di sana hilang
@@ -276,6 +336,67 @@ class CetakLembarKerjaOcrTest extends TestCase
             $sel['sebelum_adjustment|2|1|pembacaan']['x'],
             'Dua larutan berbeda harus berjajar ke samping.',
         );
+    }
+
+    /**
+     * Nama kolom (`Reading` / `°C`) berdiri DI ATAS grid, bukan di dalamnya.
+     *
+     * Letaknya diturunkan dari label kelompok di atasnya. Waktu diambil dari
+     * kotak sel yang tersimpan per field, yang kesimpan sel TERAKHIR yang
+     * kebaca — di lembar yang Repeat-nya turun ke bawah itu baris X5, jadi
+     * `Reading` & `°C` kecetak di tengah grid, menimpa kotak yang mestinya
+     * diisi teknisi. PDF-nya tetap terbit dan jumlah selnya tetap benar, jadi
+     * nggak ada satu pun test lama yang merah.
+     */
+    #[DataProvider('alat')]
+    public function test_nama_kolom_nggak_kecetak_di_dalam_sel(string $kode): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path("ocr-templates/{$kode}-v1.json")),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $perintah = app(CetakLembarKerjaOcr::class);
+        $tinggi = (int) $geometri['ukuran_referensi']['h'];
+        $template = app(TemplateLembarKerja::class)->untukKode($kode);
+
+        $keBawah = [];
+        $kolom = [];
+
+        foreach ($template['tabel'] as $t) {
+            $keBawah[$t['tabel_id']] = ($t['sumbu_pengulangan'] ?? 'kolom') === 'baris';
+            $kolom[$t['tabel_id']] = array_column($t['kolom'], 'label', 'field_id');
+        }
+
+        // Metodenya `private` — yang diuji di sini letak cetakannya, dan itu
+        // nggak kebaca lagi begitu sudah jadi PDF.
+        $labelKolom = new \ReflectionMethod($perintah, 'labelKolom');
+        $labelKolom->setAccessible(true);
+
+        foreach ($geometri['tabel'] as $t) {
+            $sel = $t['sel'];
+            $atasGrid = min(array_column($sel, 'y'));
+
+            $label = $labelKolom->invoke(
+                $perintah,
+                $sel,
+                $kolom[$t['tabel_id']] ?? [],
+                [],
+                $keBawah[$t['tabel_id']] ?? false,
+                app(TataLetakLembar::class)->jarakBarisKepala($tinggi),
+            );
+
+            $this->assertNotEmpty($label, "Tabel {$t['tabel_id']} nggak punya kepala kolom sama sekali");
+
+            foreach ($label as $l) {
+                $this->assertLessThan(
+                    $atasGrid,
+                    $l['y'],
+                    "Kepala kolom `{$l['teks']}` di {$kode}/{$t['tabel_id']} kecetak di dalam grid",
+                );
+            }
+        }
     }
 
     /**

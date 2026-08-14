@@ -147,7 +147,7 @@ Ambil kunci dari template apa adanya. Jangan menyusunnya sendiri dari indeks tam
       "teks_mentah": "4,01",
       "confidence_ocr": 0.93,
       "kotak_teks_di_dalam_sel": true,
-      "kotak": { "x": 413, "y": 940, "w": 112, "h": 150 },
+      "kotak": { "x": 294, "y": 955, "w": 124, "h": 150 },
       "titik_ukur": 4,
       "standard_id": 9,
       "sumber": "mlkit"
@@ -209,7 +209,7 @@ Aturan kiriman:
                   "normalisasi": [],
                   "confidence_ocr": 0.93,
                   "confidence_akhir": 0.83,
-                  "kotak": { "x": 413, "y": 940, "w": 112, "h": 150 }
+                  "kotak": { "x": 294, "y": 955, "w": 124, "h": 150 }
                 }
               }
             }
