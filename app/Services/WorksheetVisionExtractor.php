@@ -89,6 +89,8 @@ class WorksheetVisionExtractor
      * @param  string|null  $satuan  satuan pembacaan (mis. `pH`, `NTU`) — bikin model tau kolom bacaan vs °C
      * @param  list<float>|null  $nominal  nilai nominal standar tiap kolom (kiri→kanan), mis. [1,100,1000]
      * @param  list<int>|null  $desimal  jumlah desimal tipikal tiap kolom (sejajar $nominal)
+     * @param  bool  $kolomSuhu  tiap sel berisi pembacaan + suhu °C (lembar Spectrophotometer: false)
+     * @param  bool  $standarDiBaris  standar turun ke bawah & Repeat berjajar ke kanan (Spectrophotometer: true)
      */
     public function extract(
         string $isiGambar,
@@ -98,7 +100,19 @@ class WorksheetVisionExtractor
         ?string $satuan = null,
         ?array $nominal = null,
         ?array $desimal = null,
+        bool $kolomSuhu = true,
+        bool $standarDiBaris = false,
     ): array {
+        $petunjuk = new PetunjukLembarKerja(
+            $jumlahTitik,
+            $jumlahPengulangan,
+            $satuan,
+            $nominal,
+            $desimal,
+            $kolomSuhu,
+            $standarDiBaris,
+        );
+
         $penyedia = strtolower((string) config('services.vision.driver', 'anthropic'));
 
         $mimeType = strtolower($mimeType);
@@ -107,7 +121,7 @@ class WorksheetVisionExtractor
         }
 
         if ($penyedia === 'gemini') {
-            return $this->lewatGemini($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal);
+            return $this->lewatGemini($isiGambar, $mimeType, $petunjuk);
         }
 
         $apiKey = (string) config('services.anthropic.api_key');
@@ -132,17 +146,17 @@ class WorksheetVisionExtractor
             // System di-cache: konten stabil, dipakai tiap panggilan.
             'system' => [[
                 'type' => 'text',
-                'text' => $this->systemPrompt(),
+                'text' => $this->systemPrompt($petunjuk),
                 'cache_control' => ['type' => 'ephemeral', 'ttl' => '1h'],
             ]],
-            'messages' => $this->bangunMessages($isiGambar, $mimeType, $jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal),
+            'messages' => $this->bangunMessages($isiGambar, $mimeType, $petunjuk),
         ];
 
         // Structured Output: jamin bentuk JSON. Bisa dimatiin lewat env kalau
         // API nolak skema-nya — prompt tetap minta JSON murni sebagai jaring.
         if ((bool) config('services.anthropic.structured_output', true)) {
             $body['output_config'] = [
-                'format' => ['type' => 'json_schema', 'schema' => $this->schema()],
+                'format' => ['type' => 'json_schema', 'schema' => $this->schema($petunjuk)],
             ];
         }
 
@@ -214,17 +228,97 @@ class WorksheetVisionExtractor
         return [
             'ok' => true,
             'status' => 'sukses',
-            'data' => [
-                'baris' => $this->catatHasil($this->normalisasiBaris($data), $data),
-                // Diteruskan apa adanya. Frontend yang mutusin kolom mana
-                // mendarat di titik mana — di sini nggak ada daftar titiknya.
-                'standard_value' => $this->normalisasiStandarNilai($data),
-            ],
+            'data' => $this->hasil($data, $petunjuk),
             'raw' => $json,
             'usage' => $this->usage($json),
             'error' => null,
             'model' => $model,
         ];
+    }
+
+    /**
+     * Bentuk `data` yang dikirim ke mobile — SATU bentuk, apa pun bentuk
+     * kertasnya.
+     *
+     * Di sinilah lembar yang standarnya turun ke bawah diputar balik: model
+     * membacanya baris demi baris seperti yang tercetak (satu baris = satu
+     * standar), sedangkan mobile — dan seluruh alur simpan di belakangnya —
+     * mengharap satu entri per Repeat. Yang memutar server, bukan model:
+     * meminta model menulis ulang tabel secara transpos berarti dia harus
+     * menyimpan sepuluh baris di kepala sambil membaca kolom, dan tiap sel yang
+     * salah tempat mendarat di panjang gelombang yang salah tanpa gejala.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{baris: list<array<string, mixed>>, standard_value: list<float|null>}
+     */
+    private function hasil(array $data, PetunjukLembarKerja $petunjuk): array
+    {
+        $baris = $this->normalisasiBaris($data, $petunjuk);
+
+        if ($petunjuk->standarDiBaris) {
+            $baris = $this->putarKeRepeat($baris);
+        }
+
+        return [
+            'baris' => $this->catatHasil($baris, $data),
+            // Diteruskan apa adanya. Frontend yang mutusin kolom mana
+            // mendarat di titik mana — di sini nggak ada daftar titiknya.
+            'standard_value' => $this->normalisasiStandarNilai($data),
+        ];
+    }
+
+    /**
+     * Tabel yang standarnya turun ke bawah → satu entri per Repeat.
+     *
+     * Masuk: N baris (satu per standar), tiap baris `ph` sepanjang jumlah
+     * Repeat. Keluar: M baris (satu per Repeat), tiap baris `ph` sepanjang
+     * jumlah standar — persis bentuk yang sama dengan lembar pH, jadi mobile
+     * nggak perlu tahu kertasnya bentuknya beda.
+     *
+     * Baris yang lebih pendek dari yang terpanjang diisi `null`, bukan
+     * dirapatkan: sel kosong di tengah tabel harus tetap di slotnya. Menggeser
+     * satu sel ke kiri buat nutup lubang bikin pembacaan Repeat 3 mendarat di
+     * Repeat 2 — persis kegagalan yang dijaga di seluruh berkas ini.
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return list<array<string, mixed>>
+     */
+    private function putarKeRepeat(array $baris): array
+    {
+        if ($baris === []) {
+            return [];
+        }
+
+        $jumlahRepeat = max(array_map(
+            static fn (array $b): int => count((array) ($b['ph'] ?? [])),
+            $baris,
+        ));
+
+        $keluar = [];
+
+        for ($r = 0; $r < $jumlahRepeat; $r++) {
+            $nilai = [];
+            $keyakinan = [];
+
+            foreach ($baris as $b) {
+                $nilai[] = ((array) ($b['ph'] ?? []))[$r] ?? null;
+                $keyakinan[] = ((array) ($b['ph_keyakinan'] ?? []))[$r] ?? 'low';
+            }
+
+            $keluar[] = [
+                'ph' => $nilai,
+                // Lembar begini nggak punya kolom suhu sama sekali. Dikirim
+                // kosong, bukan diisi null sepanjang barisnya: null di sini
+                // artinya "ada selnya, nggak kebaca", dan itu yang bikin mobile
+                // menandai seluruh lembar `perlu_dicek` selamanya.
+                'suhu' => [],
+                'ph_keyakinan' => $keyakinan,
+                'suhu_keyakinan' => [],
+                'repeat' => $r + 1,
+            ];
+        }
+
+        return $keluar;
     }
 
     /**
@@ -237,21 +331,12 @@ class WorksheetVisionExtractor
     private function bangunMessages(
         string $isiGambar,
         string $mimeType,
-        ?int $jumlahTitik = null,
-        ?int $jumlahPengulangan = null,
-        ?string $satuan = null,
-        ?array $nominal = null,
-        ?array $desimal = null,
+        PetunjukLembarKerja $petunjuk,
     ): array {
         $messages = [];
 
-        $contoh = [
-            ['file' => 'few_shot_before.jpg', 'json' => $this->fewShotBefore()],
-            ['file' => 'few_shot_after.jpg', 'json' => $this->fewShotAfter()],
-        ];
-
         $tersedia = [];
-        foreach ($contoh as $c) {
+        foreach ($this->contohFewShot($petunjuk) as $c) {
             $path = storage_path('app/'.self::FEW_SHOT_DIR.'/'.$c['file']);
             if (is_file($path)) {
                 $tersedia[] = ['b64' => base64_encode((string) file_get_contents($path)), 'json' => $c['json']];
@@ -286,7 +371,7 @@ class WorksheetVisionExtractor
                 ['type' => 'image', 'source' => [
                     'type' => 'base64', 'media_type' => $mimeType, 'data' => base64_encode($isiGambar),
                 ]],
-                ['type' => 'text', 'text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal)],
+                ['type' => 'text', 'text' => $this->instruksiFoto($petunjuk)],
             ],
         ];
 
@@ -315,11 +400,7 @@ class WorksheetVisionExtractor
     private function lewatGemini(
         string $isiGambar,
         string $mimeType,
-        ?int $jumlahTitik,
-        ?int $jumlahPengulangan,
-        ?string $satuan = null,
-        ?array $nominal = null,
-        ?array $desimal = null,
+        PetunjukLembarKerja $petunjuk,
     ): array {
         $apiKey = (string) config('services.gemini.api_key');
         // Sengaja TANPA fallback literal (sama kayak jalur Anthropic di atas):
@@ -342,17 +423,9 @@ class WorksheetVisionExtractor
                 ->withQueryParameters(['key' => $apiKey])
                 ->post("/v1beta/models/{$model}:generateContent", [
                     'system_instruction' => [
-                        'parts' => [['text' => $this->systemPrompt()]],
+                        'parts' => [['text' => $this->systemPrompt($petunjuk)]],
                     ],
-                    'contents' => $this->kontenGemini(
-                        $isiGambar,
-                        $mimeType,
-                        $jumlahTitik,
-                        $jumlahPengulangan,
-                        $satuan,
-                        $nominal,
-                        $desimal,
-                    ),
+                    'contents' => $this->kontenGemini($isiGambar, $mimeType, $petunjuk),
                     'generationConfig' => [
                         'responseMimeType' => 'application/json',
                         'maxOutputTokens' => (int) config('services.gemini.max_tokens', 4096),
@@ -436,12 +509,7 @@ class WorksheetVisionExtractor
         return [
             'ok' => true,
             'status' => 'sukses',
-            'data' => [
-                'baris' => $this->catatHasil($this->normalisasiBaris($data), $data),
-                // Diteruskan apa adanya. Frontend yang mutusin kolom mana
-                // mendarat di titik mana — di sini nggak ada daftar titiknya.
-                'standard_value' => $this->normalisasiStandarNilai($data),
-            ],
+            'data' => $this->hasil($data, $petunjuk),
             'raw' => $json,
             'usage' => $this->usageGemini($json),
             'error' => null,
@@ -461,18 +529,11 @@ class WorksheetVisionExtractor
     private function kontenGemini(
         string $isiGambar,
         string $mimeType,
-        ?int $jumlahTitik,
-        ?int $jumlahPengulangan,
-        ?string $satuan = null,
-        ?array $nominal = null,
-        ?array $desimal = null,
+        PetunjukLembarKerja $petunjuk,
     ): array {
         $contents = [];
 
-        foreach ([
-            ['file' => 'few_shot_before.jpg', 'json' => $this->fewShotBefore()],
-            ['file' => 'few_shot_after.jpg', 'json' => $this->fewShotAfter()],
-        ] as $c) {
+        foreach ($this->contohFewShot($petunjuk) as $c) {
             $path = storage_path('app/'.self::FEW_SHOT_DIR.'/'.$c['file']);
             if (! is_file($path)) {
                 continue;
@@ -493,10 +554,35 @@ class WorksheetVisionExtractor
                 'mime_type' => $mimeType,
                 'data' => base64_encode($isiGambar),
             ]],
-            ['text' => $this->instruksiFoto($jumlahTitik, $jumlahPengulangan, $satuan, $nominal, $desimal)],
+            ['text' => $this->instruksiFoto($petunjuk)],
         ]];
 
         return $contents;
+    }
+
+    /**
+     * Contoh foto + JSON yang dilampirkan sebelum foto lapangan.
+     *
+     * Kosong buat lembar yang bentuknya bukan bentuk pH. Contoh yang ada cuma
+     * lembar pH asli (Tirta Gracia, cert 012-CAL-524), dan buat lembar
+     * Spectrophotometer contoh itu memperagakan tepat dua hal yang nggak ada di
+     * kertasnya: kolom suhu di tiap sel, dan standar sebagai kolom. Model yang
+     * dikasih dua contoh begitu lalu disuruh baca tabel yang bentuknya lain
+     * cenderung mengikuti CONTOHNYA — mengarang kolom °C, atau memampatkan tiga
+     * Repeat jadi satu baris.
+     *
+     * @return list<array{file: string, json: string}>
+     */
+    private function contohFewShot(PetunjukLembarKerja $petunjuk): array
+    {
+        if (! $petunjuk->bentukPh()) {
+            return [];
+        }
+
+        return [
+            ['file' => 'few_shot_before.jpg', 'json' => $this->fewShotBefore()],
+            ['file' => 'few_shot_after.jpg', 'json' => $this->fewShotAfter()],
+        ];
     }
 
     /**
@@ -545,29 +631,28 @@ class WorksheetVisionExtractor
         ));
     }
 
-    /** Petunjuk jumlah kolom (larutan standar) & baris (Repeat) buat bantu model. */
-    /**
-     * @param  list<float>|null  $nominal
-     * @param  list<int>|null  $desimal
-     */
-    private function instruksiFoto(
-        ?int $jumlahTitik,
-        ?int $jumlahPengulangan,
-        ?string $satuan = null,
-        ?array $nominal = null,
-        ?array $desimal = null,
-    ): string {
-        $unit = ($satuan !== null && $satuan !== '') ? $satuan : 'the instrument unit';
-        $teks = 'Extract this calibration worksheet table. Each cell holds two numbers: '
-            ."an instrument reading in {$unit} and a temperature in °C.";
+    /** Petunjuk bentuk tabel, jumlah standar, & jumlah Repeat buat bantu model. */
+    private function instruksiFoto(PetunjukLembarKerja $petunjuk): string
+    {
+        $satuan = $petunjuk->satuan;
+        $nominal = $petunjuk->nominal;
+        $desimal = $petunjuk->desimal;
 
-        // Nilai nominal per kolom = petunjuk paling kuat: model tau angka tiap
+        $unit = ($satuan !== null && $satuan !== '') ? $satuan : 'the instrument unit';
+
+        $teks = $petunjuk->kolomSuhu
+            ? 'Extract this calibration worksheet table. Each cell holds two numbers: '
+                ."an instrument reading in {$unit} and a temperature in °C."
+            : 'Extract this calibration worksheet table. Each cell holds ONE number: '
+                ."an instrument reading in {$unit}. This worksheet has NO temperature column.";
+
+        // Nilai nominal per standar = petunjuk paling kuat: model tau angka tiap
         // kolom mestinya DEKAT nilai itu, jadi penempatan digit & titik desimal
         // jauh lebih akurat (mis. "9,61" nggak kebaca "961" di kolom pH 10, dan
         // "1000" nggak kebaca "100" di kolom NTU 1000). TAPI ditegasin: JANGAN
         // ngubah nilai yang beneran menyimpang — itu justru yang mesti ketangkep.
         if ($nominal !== null && $nominal !== []) {
-            $kolom = [];
+            $daftar = [];
             foreach (array_values($nominal) as $i => $n) {
                 $d = isset($desimal[$i]) ? max(0, (int) $desimal[$i]) : null;
                 $label = number_format((float) $n, $d ?? 2, '.', '');
@@ -579,105 +664,185 @@ class WorksheetVisionExtractor
                 $petunjukDesimal = $d !== null
                     ? " (reading usually {$d} decimal place".($d === 1 ? '' : 's').')'
                     : '';
-                $kolom[] = 'standard '.$label.' '.$unit.$petunjukDesimal;
+                $daftar[] = 'standard '.$label.' '.$unit.$petunjukDesimal;
             }
-            $teks .= ' Columns left to right: '.implode(', ', $kolom).'.';
-            $teks .= " Each column's reading should be CLOSE TO its standard value —"
+
+            $teks .= $petunjuk->standarDiBaris
+                ? ' Rows top to bottom: '.implode(', ', $daftar).'.'
+                : ' Columns left to right: '.implode(', ', $daftar).'.';
+
+            $teks .= ' Each reading should be CLOSE TO its standard value —'
                 .' use that to place digits and the decimal point correctly, but'
                 .' NEVER change a value that genuinely deviates.';
-        } elseif ($jumlahTitik !== null && $jumlahTitik > 0) {
-            $teks .= " It has {$jumlahTitik} standard columns, left to right.";
+        } elseif ($petunjuk->jumlahTitik !== null && $petunjuk->jumlahTitik > 0) {
+            $teks .= $petunjuk->standarDiBaris
+                ? " It has {$petunjuk->jumlahTitik} standard rows, top to bottom."
+                : " It has {$petunjuk->jumlahTitik} standard columns, left to right.";
         }
 
-        if ($jumlahPengulangan !== null && $jumlahPengulangan > 0) {
-            $teks .= " There are up to {$jumlahPengulangan} Repeat rows.";
+        if ($petunjuk->jumlahPengulangan !== null && $petunjuk->jumlahPengulangan > 0) {
+            $teks .= $petunjuk->standarDiBaris
+                ? " There are up to {$petunjuk->jumlahPengulangan} Repeat columns (X1..X{$petunjuk->jumlahPengulangan})."
+                : " There are up to {$petunjuk->jumlahPengulangan} Repeat rows.";
         }
 
         return $teks;
     }
 
-    private function systemPrompt(): string
+    /**
+     * Prompt sistem = bagian BENTUK + aturan baca yang dipakai semua lembar.
+     *
+     * Dipecah dua karena cuma bagian pertamanya yang bergantung ke bentuk
+     * kertas. Aturan bacanya — jangan membetulkan anomali, koma itu titik
+     * desimal, baca tiap sel sendiri-sendiri, bedakan 1 dari 7 — berlaku sama
+     * buat lembar mana pun, dan menyalinnya dua kali berarti suatu hari nanti
+     * cuma salah satunya yang diperbaiki.
+     */
+    private function systemPrompt(PetunjukLembarKerja $petunjuk): string
     {
-        return <<<'PROMPT'
-You extract numeric readings from a photographed instrument calibration worksheet
-table for Sidik Calibration. The instrument's unit and the expected standard
-columns (with their nominal values) are given in the user message — read them
-first; they tell you what each column should look like.
-
-The table has one row per "Repeat" (1..N) and one column group per standard
-solution, left to right. Each cell holds two numbers: an instrument reading and a
-temperature in °C.
-
-Return ONLY the JSON matching the provided schema.
-
-First, output "standard_value": the NOMINAL VALUE of each standard solution
-column, left to right — read it from the column header, not from the readings.
-E.g. headers "25 µS/cm | 1412 µS/cm | 111 mS/cm" give [25, 1412, 111]. Use the
-number as printed, without converting units. Use null for a column whose header
-you cannot read. This array MUST have one entry per column, in the same order as
-"ph" and "suhu" — it is what lets the app place each column on the right row.
-
-Then, for each Repeat row, output:
-- "ph": the instrument reading per column, left to right (null if illegible/missing)
-- "suhu": the °C reading per column, same order (null if illegible/missing)
-- "ph_keyakinan" / "suhu_keyakinan": your confidence per cell — "high", "medium", "low"
-
-(The JSON keys are "ph" and "suhu" for historical reasons. "ph" means the
-instrument reading in WHATEVER unit the worksheet uses — pH, NTU, etc. — not
-necessarily pH. "suhu" is the temperature in °C.)
-
-Rules:
-- Transcribe EXACTLY what is written. NEVER correct, round, or "fix" values that
-  look like outliers — a deviating reading is exactly what the calibration must
-  catch. If a cell clearly reads 5.00 where ~4.0 is expected, output 5.00.
-- Indonesian decimal convention: a comma is a decimal point (4,04 → 4.04).
-  Output all numbers with a period decimal.
-- Match each reading to its column's expected decimal places from the user message
-  (e.g. a 0.01-resolution column reads like 4.60, a whole-number column like 999).
-  Use the column's nominal value only to place digits/decimal point and to tell the
-  reading column from the °C column — NEVER to reject or alter a genuine value.
-- Temperatures are typically 5–60 °C. The reading column is in the worksheet's unit.
-- Confidence: "high" = crisp and unambiguous; "medium" = readable but a digit is
-  smudged/uncertain; "low" = guessed, partially obscured, or handwriting hard to
-  read. When unsure between two readings, pick the most likely and mark "low".
-- NEVER omit a Repeat row. If a whole row is blank in the photo, still output it
-  with all values null. Dropping a row would shift every row below it into the
-  wrong Repeat slot on the certificate.
-- If a single cell is unreadable, set its value to null and its confidence to "low".
-- Do not invent rows or cells beyond what the photographed table contains.
-
-Read each cell on its own:
-- Read EVERY cell independently, digit by digit. Do NOT copy a value from the row
-  above, the row below, or a neighbouring column because it "looks the same".
-  Repeated readings are common on real worksheets, but they must come from what is
-  actually written in THAT cell — an assumed repeat hides the one reading that
-  differs, which is the whole point of the measurement.
-- A cell that looks empty IS empty: output null, do not fill it from context.
-- Map cells by POSITION in the grid, not by proximity to a number. A blank cell
-  must keep its slot; never slide a value left or right to close a gap.
-
-Handwriting — distinguish carefully:
-- These pairs are the usual mistakes on handwritten worksheets. Compare the actual
-  strokes before deciding: 1 vs 7 (crossbar/serif), 4 vs 9 (closed loop), 3 vs 8
-  (left side open or closed), 5 vs 6 (top stroke), 0 vs 6, 2 vs Z, 6 vs b.
-- Decide from the stroke shape, not from what the expected nominal makes
-  convenient. If the strokes say 9 where 4 is expected, output 9 and let the
-  calibration flag it.
-- Distinguish a decimal separator from a stray pen mark or a grid line: a real
-  separator sits ON the baseline between digits. If a mark is ambiguous, prefer
-  the reading whose decimal places match the column's resolution, and mark the
-  cell "medium".
-- Trailing zeros are meaningful: "4,60" in a 0.01-resolution column is 4.60, not
-  4.6. Keep the digits the technician wrote.
-- If two readings are genuinely equally plausible after examining the strokes,
-  pick the more likely one and mark it "low" — never "high". A confidently wrong
-  number is far worse here than a flagged uncertain one: low-confidence cells get
-  highlighted for a human to check, high-confidence cells do not.
-PROMPT;
+        return $this->bentukLembar($petunjuk)."\n\n".$this->aturanBaca();
     }
 
-    /** @return array<string, mixed> */
-    private function schema(): array
+    /** Bagian prompt yang menjelaskan susunan tabel & bentuk JSON-nya. */
+    private function bentukLembar(PetunjukLembarKerja $petunjuk): string
+    {
+        $pembuka = <<<'PROMPT'
+        You extract numeric readings from a photographed instrument calibration worksheet
+        table for Sidik Calibration. The instrument's unit and the expected standards
+        (with their nominal values) are given in the user message — read them first; they
+        tell you what each cell should look like.
+        PROMPT;
+
+        if ($petunjuk->standarDiBaris) {
+            // Lembar Spectrophotometer: standar (panjang gelombang / %T) turun
+            // ke bawah, Repeat berjajar ke kanan, dan tiap sel cuma satu angka.
+            // Yang diminta di sini bentuk SEPERTI TERCETAK — satu obyek per
+            // baris kertas. Memutarnya jadi per-Repeat dikerjakan server, bukan
+            // model: model yang disuruh transpos harus menahan sepuluh baris di
+            // kepala sambil membaca kolom, dan tiap sel yang meleset mendarat di
+            // panjang gelombang yang salah tanpa satu pun gejala.
+            return $pembuka."\n\n".<<<'PROMPT'
+            The table has one row per STANDARD (its nominal value is printed at the left of
+            the row) and one column per "Repeat" (X1..Xn), left to right. Each cell holds a
+            SINGLE number: the instrument reading. There is NO temperature column — do not
+            invent one.
+
+            Return ONLY the JSON matching the provided schema.
+
+            First, output "standard_value": the NOMINAL VALUE printed at the left of each
+            row, top to bottom — read it from the row label, not from the readings.
+            E.g. labels "279,6 | 287,7 | 334,0" give [279.6, 287.7, 334.0]. Use the number
+            as printed, without converting units. Use null for a row whose label you cannot
+            read. This array MUST have one entry per row, in the same order as "baris" — it
+            is what lets the app place each row on the right standard.
+
+            Then, for each STANDARD row, output:
+            - "ph": the reading of each Repeat column, left to right (null if illegible/missing)
+            - "ph_keyakinan": your confidence per cell — "high", "medium", "low"
+
+            (The JSON key is "ph" for historical reasons. It means the instrument reading in
+            WHATEVER unit the worksheet uses — nm, %T, etc. — not pH.)
+
+            - NEVER omit a standard row. If a whole row is blank in the photo, still output it
+              with all values null. Dropping a row would shift every row below it onto the
+              wrong standard on the certificate.
+            - NEVER omit a Repeat column either: every row must have the same number of
+              entries, left to right, with null for the ones you cannot read.
+            PROMPT;
+        }
+
+        return $pembuka."\n\n".<<<'PROMPT'
+        The table has one row per "Repeat" (1..N) and one column group per standard
+        solution, left to right. Each cell holds two numbers: an instrument reading and a
+        temperature in °C.
+
+        Return ONLY the JSON matching the provided schema.
+
+        First, output "standard_value": the NOMINAL VALUE of each standard solution
+        column, left to right — read it from the column header, not from the readings.
+        E.g. headers "25 µS/cm | 1412 µS/cm | 111 mS/cm" give [25, 1412, 111]. Use the
+        number as printed, without converting units. Use null for a column whose header
+        you cannot read. This array MUST have one entry per column, in the same order as
+        "ph" and "suhu" — it is what lets the app place each column on the right row.
+
+        Then, for each Repeat row, output:
+        - "ph": the instrument reading per column, left to right (null if illegible/missing)
+        - "suhu": the °C reading per column, same order (null if illegible/missing)
+        - "ph_keyakinan" / "suhu_keyakinan": your confidence per cell — "high", "medium", "low"
+
+        (The JSON keys are "ph" and "suhu" for historical reasons. "ph" means the
+        instrument reading in WHATEVER unit the worksheet uses — pH, NTU, etc. — not
+        necessarily pH. "suhu" is the temperature in °C.)
+
+        - NEVER omit a Repeat row. If a whole row is blank in the photo, still output it
+          with all values null. Dropping a row would shift every row below it into the
+          wrong Repeat slot on the certificate.
+        - Temperatures are typically 5–60 °C. The reading column is in the worksheet's unit.
+        PROMPT;
+    }
+
+    /** Aturan baca yang sama buat semua bentuk lembar. */
+    private function aturanBaca(): string
+    {
+        return <<<'PROMPT'
+        Rules:
+        - Transcribe EXACTLY what is written. NEVER correct, round, or "fix" values that
+          look like outliers — a deviating reading is exactly what the calibration must
+          catch. If a cell clearly reads 5.00 where ~4.0 is expected, output 5.00.
+        - Indonesian decimal convention: a comma is a decimal point (4,04 → 4.04).
+          Output all numbers with a period decimal.
+        - Match each reading to its standard's expected decimal places from the user message
+          (e.g. a 0.01-resolution standard reads like 4.60, a whole-number one like 999).
+          Use the nominal value only to place digits/decimal point — NEVER to reject or
+          alter a genuine value.
+        - Confidence: "high" = crisp and unambiguous; "medium" = readable but a digit is
+          smudged/uncertain; "low" = guessed, partially obscured, or handwriting hard to
+          read. When unsure between two readings, pick the most likely and mark "low".
+        - If a single cell is unreadable, set its value to null and its confidence to "low".
+        - Do not invent rows or cells beyond what the photographed table contains.
+
+        Read each cell on its own:
+        - Read EVERY cell independently, digit by digit. Do NOT copy a value from the row
+          above, the row below, or a neighbouring column because it "looks the same".
+          Repeated readings are common on real worksheets, but they must come from what is
+          actually written in THAT cell — an assumed repeat hides the one reading that
+          differs, which is the whole point of the measurement.
+        - A cell that looks empty IS empty: output null, do not fill it from context.
+        - Map cells by POSITION in the grid, not by proximity to a number. A blank cell
+          must keep its slot; never slide a value left or right to close a gap.
+
+        Handwriting — distinguish carefully:
+        - These pairs are the usual mistakes on handwritten worksheets. Compare the actual
+          strokes before deciding: 1 vs 7 (crossbar/serif), 4 vs 9 (closed loop), 3 vs 8
+          (left side open or closed), 5 vs 6 (top stroke), 0 vs 6, 2 vs Z, 6 vs b.
+        - Decide from the stroke shape, not from what the expected nominal makes
+          convenient. If the strokes say 9 where 4 is expected, output 9 and let the
+          calibration flag it.
+        - Distinguish a decimal separator from a stray pen mark or a grid line: a real
+          separator sits ON the baseline between digits. If a mark is ambiguous, prefer
+          the reading whose decimal places match the standard's resolution, and mark the
+          cell "medium".
+        - Trailing zeros are meaningful: "4,60" in a 0.01-resolution column is 4.60, not
+          4.6. Keep the digits the technician wrote.
+        - If two readings are genuinely equally plausible after examining the strokes,
+          pick the more likely one and mark it "low" — never "high". A confidently wrong
+          number is far worse here than a flagged uncertain one: low-confidence cells get
+          highlighted for a human to check, high-confidence cells do not.
+        PROMPT;
+    }
+
+    /**
+     * Skema JSON yang dipaksakan ke model.
+     *
+     * `suhu`/`suhu_keyakinan` cuma dipasang buat lembar yang PUNYA kolom suhu.
+     * Sebelumnya dua kunci itu selalu `required`, jadi lembar Spectrophotometer
+     * — yang tiap selnya cuma satu angka — memaksa model MENGARANG suhu supaya
+     * jawabannya lolos skema. Yang keluar bukan error, tapi angka palsu yang
+     * kelihatan sah.
+     *
+     * @return array<string, mixed>
+     */
+    private function schema(PetunjukLembarKerja $petunjuk): array
     {
         $keyakinan = [
             'type' => 'array',
@@ -685,13 +850,27 @@ PROMPT;
         ];
         $angka = ['type' => 'array', 'items' => ['type' => ['number', 'null']]];
 
+        $wajib = ['ph', 'ph_keyakinan'];
+        $isiBaris = ['ph' => $angka, 'ph_keyakinan' => $keyakinan];
+
+        if ($petunjuk->kolomSuhu) {
+            $wajib = ['ph', 'suhu', 'ph_keyakinan', 'suhu_keyakinan'];
+            $isiBaris = [
+                'ph' => $angka,
+                'suhu' => $angka,
+                'ph_keyakinan' => $keyakinan,
+                'suhu_keyakinan' => $keyakinan,
+            ];
+        }
+
         return [
             'type' => 'object',
             'additionalProperties' => false,
             'required' => ['baris', 'standard_value'],
             'properties' => [
-                // Nilai standar tiap KOLOM, urut kiri→kanan — sama urutannya
-                // dengan `ph`/`suhu` di tiap baris.
+                // Nilai standar tiap KOLOM (atau tiap BARIS kalau
+                // `standarDiBaris`), urut seperti di kertas — sama urutannya
+                // dengan `ph`/`suhu`.
                 //
                 // Ini yang bikin frontend bisa naruh angka di BARIS YANG BENAR
                 // tanpa nebak dari urutan. Lembar yang digambar nggak selalu
@@ -705,13 +884,8 @@ PROMPT;
                     'items' => [
                         'type' => 'object',
                         'additionalProperties' => false,
-                        'required' => ['ph', 'suhu', 'ph_keyakinan', 'suhu_keyakinan'],
-                        'properties' => [
-                            'ph' => $angka,
-                            'suhu' => $angka,
-                            'ph_keyakinan' => $keyakinan,
-                            'suhu_keyakinan' => $keyakinan,
-                        ],
+                        'required' => $wajib,
+                        'properties' => $isiBaris,
                     ],
                 ],
             ],
@@ -868,7 +1042,7 @@ PROMPT;
         return $baris;
     }
 
-    private function normalisasiBaris(array $data): array
+    private function normalisasiBaris(array $data, PetunjukLembarKerja $petunjuk): array
     {
         $out = [];
 
@@ -887,17 +1061,29 @@ PROMPT;
             }
 
             $ph = array_map(fn ($v) => $this->angka($v), array_values($b['ph']));
-            $suhu = array_map(fn ($v) => $this->angka($v), array_values((array) ($b['suhu'] ?? [])));
             $n = count($ph);
 
-            // Suhu disamakan panjang sama ph (pengukuran sepasang per sel).
-            $suhu = array_slice(array_pad($suhu, $n, null), 0, $n);
+            $suhu = [];
+            $suhuKeyakinan = [];
+
+            // Lembar tanpa kolom suhu (mis. Spectrophotometer) ninggalin dua
+            // array ini KOSONG, bukan diisi null sepanjang $ph. Bedanya kelihatan
+            // di HP: `suhu_keyakinan` yang dipadding bakal kebaca "low" semua
+            // oleh pengecekan keyakinan rendah, jadi tiap scan yang sebetulnya
+            // sempurna tetap dicap perlu dicek manual.
+            if ($petunjuk->kolomSuhu) {
+                $suhu = array_map(fn ($v) => $this->angka($v), array_values((array) ($b['suhu'] ?? [])));
+
+                // Suhu disamakan panjang sama ph (pengukuran sepasang per sel).
+                $suhu = array_slice(array_pad($suhu, $n, null), 0, $n);
+                $suhuKeyakinan = $this->keyakinanArray($b['suhu_keyakinan'] ?? [], $n);
+            }
 
             $baris = [
                 'ph' => $ph,
                 'suhu' => $suhu,
                 'ph_keyakinan' => $this->keyakinanArray($b['ph_keyakinan'] ?? [], $n),
-                'suhu_keyakinan' => $this->keyakinanArray($b['suhu_keyakinan'] ?? [], $n),
+                'suhu_keyakinan' => $suhuKeyakinan,
             ];
 
             // Nomor Repeat dari kolom paling kiri, kalau modelnya ngasih.

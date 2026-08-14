@@ -182,7 +182,12 @@ class SpectrophotometerProfile extends CalibrationProfile
      * sama persis sama yang tercetak di Rev.5 — lihat "Cetakan Rev.5 vs master"
      * di dokumentasi kelas sebelum mengubahnya.
      *
-     * @var array<string, array{judul: string, judul_nilai: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, pengulangan_per_baris: int, kolom_tetap: ?array{label: string, nilai: string}, catatan: ?string, nilai: list<float>}>
+     * `pita_cetak` cuma soal LEMBAR CETAK siap pindai: dua blok panjang
+     * gelombang digambar berdampingan (pita 1), blok %T sendirian di bawahnya
+     * (pita 2). Ditumpuk bertiga, 24 barisnya cuma kebagian sel setinggi 4,3 mm
+     * — nggak ada tulisan tangan yang muat. Layar nggak memakai angka ini.
+     *
+     * @var array<string, array{judul: string, judul_nilai: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, pengulangan_per_baris: int, pita_cetak: int, kolom_tetap: ?array{label: string, nilai: string}, catatan: ?string, nilai: list<float>}>
      */
     public const TITIK = [
         SpectrophotometerCalculator::GRUP_HOLMIUM => [
@@ -197,6 +202,7 @@ class SpectrophotometerProfile extends CalibrationProfile
             'parameter_cmc' => 'panjang gelombang (nm)-Holmium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
             'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            'pita_cetak' => 1,
             'nilai' => [279.6, 287.7, 334.0, 360.9, 418.6, 445.8, 453.6, 460.0, 536.3, 637.9],
         ],
         SpectrophotometerCalculator::GRUP_DIDYNIUM => [
@@ -212,6 +218,8 @@ class SpectrophotometerProfile extends CalibrationProfile
             'parameter_cmc' => 'panjang gelombang (nm)-Didynium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
             'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            // Sepita sama Holmium: dua blok 3 kolom muat berdampingan.
+            'pita_cetak' => 1,
             'nilai' => [475.2, 513.7, 529.7, 572.7, 585.7, 684.9, 738.5, 748.0, 806.1],
         ],
         SpectrophotometerCalculator::GRUP_TRANSMITAN => [
@@ -230,6 +238,8 @@ class SpectrophotometerProfile extends CalibrationProfile
             // 6 kotak dipotong jadi 2 baris X1..X3 di layar. Kertas Rev.5 cuma
             // nggambar satu barisnya — lihat [PENGULANGAN_TRANSMITAN].
             'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            // Sendirian sepita: 6 kolomnya butuh selebar kertas.
+            'pita_cetak' => 2,
             'nilai' => [0.0, 9.9, 20.0, 30.1, 100.0],
         ],
     ];
@@ -431,6 +441,25 @@ class SpectrophotometerProfile extends CalibrationProfile
     public function standarBerkurvaSuhu(): bool
     {
         return false;
+    }
+
+    /**
+     * Kertas lembar ini melanggar dua anggapan lembar pH sekaligus.
+     *
+     *  - Tiap sel cuma SATU angka. Nggak ada kolom °C di tabel mana pun; suhu
+     *    ruangnya dicatat sekali di blok `Env. Condition` di kepala lembar.
+     *  - Standarnya turun ke bawah (279,6 nm … 637,9 nm berdiri di kiri tiap
+     *    baris) sementara Repeat X1..X3 berjajar ke kanan.
+     *
+     * Sebelum ini dua-duanya nggak pernah disebut ke pembaca foto, jadi model
+     * dikasih prompt "tiap sel isinya dua angka" plus skema yang MEWAJIBKAN
+     * `suhu` — buat kertas yang nggak punya kolom suhu. Yang keluar bukan
+     * error: modelnya ngarang suhu atau memampatkan tiga Repeat jadi satu
+     * baris, dan di HP kelihatannya cuma "gagal baca, isi manual".
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => true];
     }
 
     /**
@@ -995,6 +1024,8 @@ class SpectrophotometerProfile extends CalibrationProfile
             'judul_pengulangan' => 'Measurement Result',
             'prefiks_pengulangan' => 'X',
             'pengulangan_per_baris' => $blok['pengulangan_per_baris'],
+            // Cuma dipakai perintah yang menggambar kertasnya — lihat [TITIK].
+            'pita_cetak' => $blok['pita_cetak'],
             'kolom_tetap' => $blok['kolom_tetap'],
             'catatan' => $blok['catatan'],
             'baris' => array_map(

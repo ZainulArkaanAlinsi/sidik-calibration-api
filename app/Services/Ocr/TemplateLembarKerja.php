@@ -213,6 +213,10 @@ class TemplateLembarKerja
                 // kertasnya beda dari titik yang dihitung (Conductivity).
                 // Kosong = pakai label barisnya seperti biasa.
                 'slot_cetak' => array_values($definisi['slot_cetak'] ?? []),
+                // Tabel bernomor pita sama digambar BERDAMPINGAN di lembar
+                // cetak, bukan bertumpuk. 0 = sendirian sepita, dan itu yang
+                // berlaku buat semua lembar kecuali Spectrophotometer.
+                'pita_cetak' => (int) ($definisi['pita_cetak'] ?? 0),
                 'baris' => $barisRingkas,
                 'kolom' => array_values(array_map(
                     static fn (array $k): array => [

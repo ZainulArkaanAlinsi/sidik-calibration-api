@@ -202,6 +202,30 @@ abstract class CalibrationProfile
     abstract public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array;
 
     /**
+     * Bentuk KERTASNYA buat pindai foto — bukan isinya.
+     *
+     * Dikirim ikut bentuk lembar kerja supaya mobile tinggal meneruskannya ke
+     * `POST /raw-measurements/extract-from-photo` tanpa perlu hafal alat mana
+     * yang kertasnya bentuknya beda.
+     *
+     *  - `kolom_suhu`: tiap sel isinya sepasang angka (pembacaan + suhu °C).
+     *  - `standar_di_baris`: standarnya turun ke bawah & Repeat berjajar ke
+     *    kanan (kebalikan lembar pH).
+     *
+     * Default-nya bentuk lembar pH karena lima profil pertama semuanya begitu.
+     * Yang override cuma yang kertasnya beneran beda — dan bedanya bukan soal
+     * rapi-rapian: prompt & skema JSON yang dikirim ke model dibangun dari dua
+     * penanda ini, jadi salah nilai berarti model diminta membaca kolom suhu
+     * yang nggak pernah ada di kertasnya.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => true, 'standar_di_baris' => false];
+    }
+
+    /**
      * Pasangan TERCETAK "titik ukur → larutan standarnya", persis kayak di
      * formulir kertas: baris 7,00 di lembar pH cuma boleh diisi pakai pH Buffer
      * Solution 7, nggak pernah yang lain.

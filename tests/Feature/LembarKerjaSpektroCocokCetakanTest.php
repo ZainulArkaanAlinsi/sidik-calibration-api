@@ -212,6 +212,25 @@ class LembarKerjaSpektroCocokCetakanTest extends TestCase
         );
     }
 
+    /**
+     * Bentuk KERTASNYA buat pindai foto ikut dikirim bareng lembar kerjanya.
+     *
+     * Mobile nggak boleh nyimpen daftar "alat mana yang kertasnya beda" —
+     * daftar begitu pasti basi begitu ada profil baru. Dia tinggal nerusin
+     * `pindai_foto` apa adanya ke endpoint ekstraksi foto.
+     *
+     * Isinya buat lembar ini: nggak ada kolom suhu (tiap sel satu angka; suhu
+     * ruang dicatat sekali di Env. Condition) dan standarnya turun ke bawah
+     * sementara Repeat X1..X3 berjajar ke kanan.
+     */
+    public function test_bentuk_pindai_foto_ikut_dikirim(): void
+    {
+        $this->assertSame(
+            ['kolom_suhu' => false, 'standar_di_baris' => true],
+            $this->lembar()['pindai_foto'],
+        );
+    }
+
     /** @return array<string, mixed> */
     private function lembar(): array
     {

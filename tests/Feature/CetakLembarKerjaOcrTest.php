@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Console\Commands\CetakLembarKerjaOcr;
+use App\Services\Ocr\LetakLabelLembar;
 use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -501,6 +502,129 @@ class CetakLembarKerjaOcrTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Label kiri tiap tabel berdiri di kolomnya sendiri, bukan di dalam sel.
+     *
+     * Lembar Spectrophotometer menggambar dua tabel BERDAMPINGAN supaya
+     * selnya nggak jatuh ke 34 px. Begitu ada tabel yang nggak mulai di margin
+     * halaman, label barisnya harus ikut pindah: kalau nggak, `475,2` sampai
+     * `806,1` kecetak di dalam kotak Holmium yang mestinya diisi teknisi —
+     * PDF-nya tetap terbit, jumlah selnya tetap benar, dan nggak ada test lama
+     * yang merah.
+     */
+    #[DataProvider('alat')]
+    public function test_label_baris_nggak_kecetak_di_dalam_sel(string $kode): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path("ocr-templates/{$kode}-v1.json")),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $lebar = (int) $geometri['ukuran_referensi']['w'];
+        $tataLetak = app(TataLetakLembar::class);
+        $perintah = app(CetakLembarKerjaOcr::class);
+
+        $keBawah = [];
+
+        foreach (app(TemplateLembarKerja::class)->untukKode($kode)['tabel'] as $t) {
+            $keBawah[$t['tabel_id']] = ($t['sumbu_pengulangan'] ?? 'kolom') === 'baris';
+        }
+
+        $semuaSel = [];
+
+        foreach ($geometri['tabel'] as $t) {
+            foreach ($t['sel'] as $kunci => $s) {
+                $semuaSel[$kunci] = $s;
+            }
+        }
+
+        // Metodenya `private` — yang diuji letak cetakannya, dan itu nggak
+        // kebaca lagi begitu sudah jadi PDF.
+        $labelBaris = new \ReflectionMethod($perintah, 'labelBaris');
+        $labelBaris->setAccessible(true);
+
+        foreach ($geometri['tabel'] as $t) {
+            $label = $labelBaris->invoke(
+                $perintah,
+                $t['sel'],
+                [],
+                $keBawah[$t['tabel_id']] ?? false,
+                (int) ($t['kiri'] ?? $tataLetak->kiri($lebar)),
+                $tataLetak->jarakLabelBaris($lebar),
+            );
+
+            $this->assertNotEmpty($label, "Tabel {$t['tabel_id']} nggak punya label baris sama sekali");
+
+            foreach ($label as $l) {
+                $this->assertGreaterThan(
+                    0,
+                    $l['w'],
+                    "Label `{$l['teks']}` di {$kode}/{$t['tabel_id']} nggak kebagian lebar",
+                );
+
+                foreach ($semuaSel as $kunci => $s) {
+                    $tindih = $l['x'] < $s['x'] + $s['w']
+                        && $s['x'] < $l['x'] + $l['w']
+                        && $l['y'] < $s['y'] + $s['h']
+                        && $s['y'] < $l['y'] + LetakLabelLembar::TINGGI_TEKS;
+
+                    $this->assertFalse(
+                        $tindih,
+                        "Label `{$l['teks']}` di {$kode}/{$t['tabel_id']} kecetak di dalam sel {$kunci}",
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Sel Spectrophotometer harus muat ditulisi tangan.
+     *
+     * 24 baris dari tiga tabel yang ditumpuk kebagian 34 px (4,3 mm) per sel —
+     * masih di atas ambang mutu pindai (`ocr.kualitas.px_per_sel_min` = 24),
+     * jadi nggak ada satu pun penjagaan yang berbunyi, tapi nggak ada angka
+     * tulisan tangan yang muat di situ. Dua tabel panjang gelombangnya
+     * masing-masing cuma butuh 3 kolom, jadi separuh lebar kertasnya nganggur:
+     * yang ditukar lebar nganggur itu jadi tinggi sel.
+     *
+     * Ambangnya 60 px (7,6 mm) — kira-kira setinggi baris buku tulis. Angka
+     * ini yang jatuh duluan kalau ada yang menaikkan jumlah titik ukur atau
+     * mengembalikan ketiga tabel ke satu tumpukan.
+     */
+    public function test_sel_spektro_muat_ditulisi_tangan(): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path('ocr-templates/spectrophotometer-v1.json')),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        foreach ($geometri['tabel'] as $t) {
+            foreach ($t['sel'] as $kunci => $s) {
+                $this->assertGreaterThanOrEqual(60, $s['h'], "Sel {$kunci} kependekan buat tulisan tangan");
+            }
+        }
+
+        // Dua tabel panjang gelombang berdampingan: barisnya mulai di ketinggian
+        // yang sama, kolomnya nggak. Kalau ini jebol, tabelnya balik bertumpuk
+        // dan selnya kembali ke 34 px.
+        $holmium = collect($geometri['tabel'])->firstWhere('tabel_id', 'holmium');
+        $didynium = collect($geometri['tabel'])->firstWhere('tabel_id', 'didynium');
+
+        $this->assertSame(
+            min(array_column($holmium['sel'], 'y')),
+            min(array_column($didynium['sel'], 'y')),
+            'Holmium & Didynium mestinya sepita — baris pertamanya harus sama tinggi.',
+        );
+
+        $this->assertGreaterThan(
+            max(array_map(static fn (array $s): int => $s['x'] + $s['w'], $holmium['sel'])),
+            (int) $didynium['kiri'],
+            'Blok Didynium mestinya mulai sesudah sel terakhir Holmium.',
+        );
     }
 
     /**
