@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Ocr\LetakLabelLembar;
 use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use Illuminate\Console\Command;
@@ -50,8 +51,10 @@ class BuatRangkaGeometriOcr extends Command
 
     protected $description = 'Bikin rangka file geometri OCR (koordinat sel) buat satu jenis alat';
 
-    public function __construct(private readonly TataLetakLembar $tataLetak)
-    {
+    public function __construct(
+        private readonly TataLetakLembar $tataLetak,
+        private readonly LetakLabelLembar $letakLabel,
+    ) {
         parent::__construct();
     }
 
@@ -124,6 +127,8 @@ class BuatRangkaGeometriOcr extends Command
         $lebar = (int) $this->option('lebar');
         $tinggi = (int) $this->option('tinggi');
 
+        $tabel = $this->tabel($definisi, $lebar, $tinggi);
+
         return [
             '_catatan' => 'RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, '
                 .'bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel '
@@ -147,7 +152,19 @@ class BuatRangkaGeometriOcr extends Command
                 // Isi QR yang dicetak di lembar. Dicocokin sama `template_id` &
                 // `versi` waktu pindai — QR beda = lembar beda, berhenti.
                 'isi' => $kode.'|v'.$versi,
-                'kotak' => ['x' => $lebar - 260, 'y' => 130, 'w' => 170, 'h' => 170],
+                // QR-nya NGGAK boleh nyentuh penanda sudut. Kotak lama
+                // (`lebar - 260`, y 130) melar sampai `lebar - 90`, sementara
+                // penanda kanan-atas mulai di `lebar - 135`: 45x5 px tinta QR
+                // masuk ke dalam kotak penandanya. Deteksi sudut di HP cuma
+                // ambang gelap + titik berat gumpalan, jadi tinta asing di
+                // dalam penanda menggeser titik acuan homography-nya — seluruh
+                // grid ikut geser, dan gejalanya cuma angka yang mendarat di
+                // sel tetangga.
+                //
+                // Sekarang QR-nya naik ke sisi kanan blok judul: 40 px dari
+                // penanda, dan berhenti di atas garis kop (y 255) supaya garis
+                // itu bisa lurus sampai batas kanan halaman.
+                'kotak' => ['x' => $lebar - 345, 'y' => 55, 'w' => 170, 'h' => 170],
             ],
             // 'kolom' = Repeat berjajar ke kanan (bentuk pH), 'baris' = Repeat
             // turun ke bawah (bentuk Conductivity). Dibaca dari profil alatnya,
@@ -155,8 +172,11 @@ class BuatRangkaGeometriOcr extends Command
             // Conductivity digambar terbalik dari kertasnya tanpa ada yang
             // ngasih tahu.
             'sumbu_pengulangan' => $this->sumbu($definisi),
-            'jangkar' => $this->jangkar($definisi),
-            'tabel' => $this->tabel($definisi, $lebar, $tinggi),
+            // Jangkar diturunkan dari kotak sel yang BARUSAN dihitung, bukan
+            // dari definisi tabelnya: letak label cuma bisa ditentukan sesudah
+            // gridnya ada.
+            'jangkar' => $this->jangkar($tabel, $lebar, $tinggi, $this->sumbu($definisi) === 'baris'),
+            'tabel' => $tabel,
         ];
     }
 
@@ -176,28 +196,62 @@ class BuatRangkaGeometriOcr extends Command
     }
 
     /**
-     * Label Repeat yang TERCETAK di kepala kolom — ikut dibaca OCR buat mastiin
-     * kolomnya nggak kegeser.
+     * Label Repeat yang TERCETAK di lembar — ikut dibaca OCR buat mastiin
+     * barisnya nggak kegeser.
      *
-     * @param  array<string, mixed>  $definisi
+     * **Ini penjagaan yang paling menentukan.** Yang lain ngukur geometri:
+     * marker ketemu, residual kecil, grid ke-snap. Yang ini BACA ISINYA —
+     * kalau gridnya kegeser satu baris, label yang kebaca di posisi Repeat 2
+     * bakal `X3`, dan seluruh lembar ditolak sebelum satu angka pun dipetakan.
+     *
+     * Kotaknya dihitung [LetakLabelLembar], kelas yang sama yang dipakai
+     * `ocr:cetak-lembar` waktu menggambar labelnya. Dua tempat yang menghitung
+     * sendiri-sendiri berarti kotak yang dipotong HP pelan-pelan meleset dari
+     * tulisan yang tercetak — dan jangkarnya berubah dari penjaga jadi sumber
+     * penolakan.
+     *
+     * Diambil dari tabel PERTAMA saja. Lembar yang punya dua/tiga tabel
+     * (pH, Spectrophotometer) barisnya digambar dari grid yang sama, jadi
+     * geseran yang kena tabel kedua kena tabel pertama juga.
+     *
+     * @param  list<array<string, mixed>>  $tabel  hasil [tabel()]
      * @return list<array<string, mixed>>
      */
-    private function jangkar(array $definisi): array
+    private function jangkar(array $tabel, int $lebar, int $tinggi, bool $keBawah): array
     {
-        $tabel = $definisi['tabel'][0] ?? null;
+        $sel = $tabel[0]['sel'] ?? [];
 
-        if ($tabel === null) {
+        if ($sel === []) {
             return [];
         }
 
+        // Di lembar bentuk pH nomor Repeat berdiri DI ATAS kelompok kolomnya;
+        // di lembar Conductivity dia turun ke kiri tiap baris. Yang dibaca HP
+        // harus yang benar-benar tercetak, jadi sumbunya ikut lembarnya.
+        $letak = $keBawah
+            ? $this->letakLabel->perBaris(
+                $sel,
+                2,
+                $this->tataLetak->kiri($lebar),
+                $this->tataLetak->jarakLabelBaris($lebar),
+            )
+            : $this->letakLabel->perKelompokKolom(
+                $sel,
+                2,
+                $this->tataLetak->jarakBarisKepala($tinggi),
+            );
+
         $hasil = [];
 
-        foreach ($tabel['pengulangan'] as $repeat) {
+        foreach ($letak as $repeat => $kotak) {
             $hasil[] = [
                 'field_id' => 'label_repeat',
-                'repeat_no' => (int) $repeat,
-                'teks' => (string) $repeat,
-                'kotak' => ['x' => 0, 'y' => 0, 'w' => 0, 'h' => 0],
+                'repeat_no' => $repeat,
+                // Teksnya `X1`, bukan `1` — itu yang tercetak di kertas
+                // (`CetakLembarKerjaOcr::labelBaris`/`labelKolom`). Nulis `1`
+                // di sini bikin tiap lembar ditolak walau bacaannya benar.
+                'teks' => 'X'.$repeat,
+                'kotak' => $this->letakLabel->berNapas($kotak),
             ];
         }
 
@@ -254,9 +308,24 @@ class BuatRangkaGeometriOcr extends Command
 
             // Kolom pertama di kertas dipakai label — titik ukur (4,00 / 7,00 /
             // 10,01) di bentuk pH, nomor Repeat di bentuk Conductivity — jadi
-            // grid selnya mulai dari 25% lebar.
-            $kiri = (int) ($lebar * 0.25);
-            $lebarSel = intdiv((int) ($lebar * 0.68), $jumlahKolom);
+            // grid selnya mulai sesudah kolom label.
+            //
+            // Dulu angkanya pecahan lebar kertas (25% mulai, 68% lebar). Dua
+            // angka itu nggak nyambung ke margin mana pun: gridnya kebetulan
+            // berhenti di 1533 sementara isian identitas di atasnya berhenti di
+            // 1534, dan di lembar Spectrophotometer malah lewat jadi 1535 —
+            // tepi kanan yang goyang 2 px per lembar. Sekarang dua-duanya
+            // dihitung dari margin yang sama.
+            $kanan = $this->tataLetak->kananGrid($lebar);
+            $lebarSel = intdiv($kanan - $this->tataLetak->kiriGrid($lebar), $jumlahKolom);
+
+            // Sisa pembagian ditaruh di KIRI, bukan dibiarkan menggantung di
+            // kanan. Lebar selnya bilangan bulat, jadi 8 kolom nggak pernah
+            // pas ngisi ruangnya: tepi kanan grid berhenti 4 px sebelum tepi
+            // kanan isian identitas di atasnya — sedikit, tapi di kertas itu
+            // dua garis vertikal yang jelas nggak sejajar. Kolom labelnya yang
+            // menyerap sisanya, dan label baris tetap digambar dari margin.
+            $kiri = $kanan - $jumlahKolom * $lebarSel;
             $atasTabel = $kursor + $kepalaTabel;
             $kursor = $atasTabel + $jumlahBaris * $tinggiSel + $jarakTabel;
 

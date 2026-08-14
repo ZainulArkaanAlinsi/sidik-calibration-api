@@ -60,11 +60,12 @@
         .label { font-size: 8pt; }
 
         /*
-          Label baris dirapatkan ke gridnya. Kolom kirinya selebar 300 px, dan
-          label rata kiri berdiri sejauh 3 cm dari sel yang ditandainya —
-          mengundang salah baca baris justru di tempat yang paling mahal.
+          Label baris dirapatkan ke gridnya: label rata kiri berdiri sejauh 3 cm
+          dari sel yang ditandainya — mengundang salah baca baris justru di
+          tempat yang paling mahal. Jaraknya ke garis sel diatur dari lebar
+          kotaknya di `CetakLembarKerjaOcr`, bukan `padding` di sini.
         */
-        .label-baris { text-align: right; padding-right: 3mm; }
+        .label-baris { text-align: right; }
         .judul-tabel { font-size: 9pt; font-weight: bold; }
 
         /*
@@ -80,7 +81,12 @@
           Sebaris, apa pun panjang labelnya. Label yang membungkus jadi dua
           baris nabrak isian di bawahnya — jaraknya cuma satu baris.
         */
-        .isian { font-size: 7pt; color: #222; white-space: nowrap; overflow: hidden; }
+        /*
+          8 pt, sama dengan label grid. 7 pt kekecilan buat formulir yang diisi
+          tangan di lab — dan label 7 pt di kolom selebar 300 px bikin jarak ke
+          garis isiannya kelihatan seperti ruang kosong yang lupa dipakai.
+        */
+        .isian { font-size: 8pt; color: #222; white-space: nowrap; overflow: hidden; }
         .isian-garis { border-bottom: 1px solid #777; height: 0; }
     </style>
 </head>

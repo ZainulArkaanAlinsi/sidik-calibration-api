@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Ocr\LetakLabelLembar;
 use App\Services\Ocr\TataLetakLembar;
 use App\Services\Ocr\TemplateLembarKerja;
 use App\Services\QrCodeGenerator;
@@ -42,12 +43,15 @@ class CetakLembarKerjaOcr extends Command
     protected $signature = 'ocr:cetak-lembar
         {kode : kode profil alat, misal ph_meter}
         {--versi=1 : versi FORMULIR CETAK}
-        {--keluar= : path file PDF hasilnya}';
+        {--keluar= : path file PDF hasilnya}
+        {--html= : simpan juga HTML mentahnya — buat bikin aset uji & ngintip tata letak}';
 
     protected $description = 'Cetak lembar kerja bermarker dari berkas geometri OCR (koordinatnya jadi eksak)';
 
-    public function __construct(private readonly TataLetakLembar $tataLetak)
-    {
+    public function __construct(
+        private readonly TataLetakLembar $tataLetak,
+        private readonly LetakLabelLembar $letakLabel,
+    ) {
         parent::__construct();
     }
 
@@ -146,7 +150,11 @@ class CetakLembarKerjaOcr extends Command
 
             $tabel[] = [
                 'judul' => $t['judul'] ?? '',
-                'judul_x' => max(0, min(array_column($sel, 'x')) - 300),
+                // Judul tabel berdiri di margin kiri halaman, sejajar judul
+                // lembar dan isian identitas. Dulu diturunkan dari sel paling
+                // kiri (`- 300`), jadi letaknya ikut bergeser tiap lebar
+                // gridnya berubah dan nggak pernah pas di margin.
+                'judul_x' => $this->tataLetak->kiri($lebar),
                 // Judulnya duduk di baris paling atas kepala tabel, DI ATAS dua
                 // baris label kolom. Dulu jaraknya cuma 60 px sementara label
                 // fieldnya sendiri 40 px di atas sel: judul "Before adjustment
@@ -161,12 +169,15 @@ class CetakLembarKerjaOcr extends Command
                     $sel,
                     $dariTemplate[$t['tabel_id']]['baris'] ?? [],
                     $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
+                    $this->tataLetak->kiri($lebar),
+                    $this->tataLetak->jarakLabelBaris($lebar),
                 ),
                 'label_kolom' => $this->labelKolom(
                     $sel,
                     $dariTemplate[$t['tabel_id']]['kolom'] ?? [],
                     $dariTemplate[$t['tabel_id']]['baris'] ?? [],
                     $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
+                    $this->tataLetak->jarakBarisKepala($tinggi),
                 ),
             ];
         }
@@ -199,7 +210,7 @@ class CetakLembarKerjaOcr extends Command
             }
         }
 
-        $pdf = Pdf::loadView('ocr.lembar-kerja', [
+        $data = [
             'judul' => $kepala['judul'],
             'lebar' => $lebar,
             'tinggi' => $tinggi,
@@ -210,7 +221,20 @@ class CetakLembarKerjaOcr extends Command
             'kepala' => $kepala,
             'catatan' => $this->tataLetak->catatan($bentuk, $lebar, $tinggi, $bawahGrid),
             'tabel' => $tabel,
-        ])
+        ];
+
+        // HTML mentahnya disimpan kalau diminta. Ini yang dipakai bikin aset
+        // uji: dirender browser pada ukuran referensi, hasilnya citra lembar
+        // yang piksel-per-pikselnya sama dengan ruang yang dipakai HP sesudah
+        // warp — jadi kotak sel & kotak jangkar bisa diadu ke tinta yang
+        // beneran tercetak, bukan ke citra karangan.
+        if ($this->option('html')) {
+            File::ensureDirectoryExists(dirname((string) $this->option('html')));
+            File::put((string) $this->option('html'), view('ocr.lembar-kerja', $data)->render());
+            $this->line('  HTML: '.$this->option('html'));
+        }
+
+        $pdf = Pdf::loadView('ocr.lembar-kerja', $data)
             // Halaman dibikin sepersis ukuran referensinya, bukan `a4`.
             // 1654x2339 @200dpi itu 595,44x842,04 pt — A4 dompdf 595,28x841,89
             // pt, jadi lembarnya kelebihan 0,16 pt dan dompdf mendorong elemen
@@ -238,59 +262,44 @@ class CetakLembarKerjaOcr extends Command
     }
 
     /**
-     * Label nilai standar di kiri tiap baris.
+     * Label di kiri tiap baris.
      *
-     * Ini juga yang dibaca HP sebagai JANGKAR: kalau grid kegeser satu baris,
-     * label yang kebaca nggak cocok sama yang diharapkan template — penjagaan
-     * yang baca ISI, bukan cuma ngukur geometri.
+     * LETAKNYA dari [LetakLabelLembar] — sama persis dengan yang ditulis ke
+     * kotak jangkar di berkas geometri, karena dua-duanya manggil kode yang
+     * sama. Dua tempat yang menghitung sendiri-sendiri berarti kotak yang
+     * dipotong HP pelan-pelan meleset dari tulisan yang tercetak.
+     *
+     * Yang ditentukan di sini cuma TEKSNYA: lembar bentuk pH menulis nilai
+     * standarnya (`4,00`), lembar yang Repeat-nya turun ke bawah menulis
+     * `X1..X5` — dan yang kedua itulah yang dibaca HP sebagai jangkar.
      *
      * @param  array<string, array<string, mixed>>  $sel
-     * @param  array<int, string>  $labelTemplate
-     * @param  bool  $keBawah  lembar yang Repeat-nya turun: yang berdiri di
-     *                         kiri nomor Repeat, bukan nilai standarnya
+     * @param  array<int, string>  $labelTemplate  nomor baris → teks yang tercetak di kertas
+     * @param  bool  $keBawah  true = Repeat turun ke bawah (bentuk Conductivity)
+     * @param  int  $kiri  margin kiri halaman
+     * @param  int  $jarak  jarak label ke garis sel di kanannya
      * @return list<array<string, mixed>>
      */
-    private function labelBaris(array $sel, array $labelTemplate, bool $keBawah = false): array
-    {
-        $perBaris = [];
-
+    private function labelBaris(
+        array $sel,
+        array $labelTemplate,
+        bool $keBawah = false,
+        int $kiri = 90,
+        int $jarak = 24,
+    ): array {
         // Bagian ke-1 kunci = nomor baris titik, ke-2 = nomor Repeat. Yang mana
         // yang jadi baris di kertas tergantung orientasinya.
-        $indeks = $keBawah ? 2 : 1;
-
-        foreach ($sel as $kunci => $kotak) {
-            $bagian = explode('|', (string) $kunci);
-            if (count($bagian) !== 4) {
-                continue;
-            }
-
-            $baris = (int) $bagian[$indeks];
-
-            if (! isset($perBaris[$baris]) || $kotak['x'] < $perBaris[$baris]['x']) {
-                $perBaris[$baris] = $kotak;
-            }
-        }
-
-        ksort($perBaris);
+        $letak = $this->letakLabel->perBaris($sel, $keBawah ? 2 : 1, $kiri, $jarak);
         $label = [];
 
-        foreach ($perBaris as $baris => $kotak) {
+        foreach ($letak as $baris => $kotak) {
             $label[] = [
-                // Nilai standarnya (`4,00`), bukan "Baris 1". Ini yang dibaca
-                // HP sebagai jangkar, jadi teksnya harus yang bisa diadu ke
-                // template — nomor baris nggak bisa mbuktiin apa-apa.
-                // Lembar Repeat-ke-bawah menulis `X1..X5` di kiri; yang lain
-                // menulis nilai standarnya (`4,00`).
                 'teks' => $keBawah
                     ? 'X'.$baris
                     : (string) ($labelTemplate[$baris] ?? $baris),
-                'x' => max(0, $kotak['x'] - 300),
-                // Ketengahin beneran, bukan `h / 3`. Baris teks 8 pt setinggi
-                // ~27 px di 200 dpi; `h / 3` kebetulan pas waktu selnya 81 px
-                // dan makin melenceng makin tinggi selnya — di lembar Chlorine
-                // (sel 203 px) labelnya nyangkut di sepertiga atas.
-                'y' => $kotak['y'] + max(0, ($kotak['h'] - 27) / 2),
-                'w' => 290,
+                'x' => $kotak['x'],
+                'y' => $kotak['y'],
+                'w' => $kotak['w'],
             ];
         }
 
@@ -298,15 +307,17 @@ class CetakLembarKerjaOcr extends Command
     }
 
     /**
-     * Label kolom pengulangan (`Repeat 1` / `X1`) di atas tiap kolom.
+     * Label yang memayungi tiap kelompok kolom.
+     *
+     * Sama seperti [labelBaris]: letaknya dari [LetakLabelLembar], teksnya
+     * ditentukan di sini. Bentuk pH menulis `X1..X5` di atas tiap kelompok
+     * Repeat; bentuk Conductivity menulis NAMA LARUTAN seperti tercetak di
+     * kertas (`1413 µS`).
      *
      * @param  array<string, array<string, mixed>>  $sel
-     * @param  array<string, string>  $labelTemplate  dikunci NAMA FIELD
-     *                                                (`pembacaan` / `suhu`),
-     *                                                bukan nomor repeat
-     * @param  array<int, string>  $labelBaris  nama larutan per nomor baris —
-     *                                          kepala kolom lembar yang
-     *                                          Repeat-nya turun ke bawah
+     * @param  array<string, string>  $labelTemplate  field_id → label kolom
+     * @param  array<int, string>  $labelBaris  nomor baris → teks yang tercetak di kertas
+     * @param  int  $jarakBaris  tinggi satu baris kepala tabel
      * @return list<array<string, mixed>>
      */
     private function labelKolom(
@@ -314,63 +325,59 @@ class CetakLembarKerjaOcr extends Command
         array $labelTemplate,
         array $labelBaris = [],
         bool $keBawah = false,
+        int $jarakBaris = 45,
     ): array {
-        $perRepeat = [];
-
         // Yang memayungi kolom: nomor Repeat di bentuk pH, nomor baris titik di
         // bentuk Conductivity.
         $indeks = $keBawah ? 1 : 2;
+        $letak = $this->letakLabel->perKelompokKolom($sel, $indeks, $jarakBaris);
+
+        // Nama field (pH / °C) cuma dicetak kalau satu kelompok emang punya
+        // lebih dari satu kolom; kalau cuma satu, `X{n}` udah cukup.
+        $fieldPerKelompok = [];
 
         foreach ($sel as $kunci => $kotak) {
             $bagian = explode('|', (string) $kunci);
+
             if (count($bagian) !== 4) {
                 continue;
             }
 
-            $repeat = (int) $bagian[$indeks];
-            $field = $bagian[3];
-
-            $perRepeat[$repeat]['kiri'] = min($perRepeat[$repeat]['kiri'] ?? PHP_INT_MAX, $kotak['x']);
-            $perRepeat[$repeat]['kanan'] = max($perRepeat[$repeat]['kanan'] ?? 0, $kotak['x'] + $kotak['w']);
-            $perRepeat[$repeat]['atas'] = min($perRepeat[$repeat]['atas'] ?? PHP_INT_MAX, $kotak['y']);
-            $perRepeat[$repeat]['field'][$field] = $kotak;
+            $fieldPerKelompok[(int) $bagian[$indeks]][$bagian[3]] = $kotak;
         }
 
-        ksort($perRepeat);
         $label = [];
 
-        foreach ($perRepeat as $repeat => $r) {
-            // Kepala kelompok naik satu baris CUMA kalau di bawahnya masih ada
-            // baris nama field. Kalau tabelnya satu field per kelompok (lembar
-            // Spectrophotometer), barisnya kosong dan `X1` kelihatan
-            // menggantung jauh di atas gridnya.
-            $adaBarisField = count($r['field']) >= 2;
+        foreach ($letak as $nomor => $kotak) {
+            $field = $fieldPerKelompok[$nomor] ?? [];
 
             // Satu `X{n}` memayungi seluruh kolom repeat itu — sel pH & °C di
             // bawahnya berbagi satu nomor, persis lembar cetaknya.
             $label[] = [
-                // Bentuk Conductivity: yang di atas kolom itu NAMA LARUTAN
-                // seperti tercetak di kertas (`1413 µS`), bukan `X{n}`.
                 'teks' => $keBawah
-                    ? (string) ($labelBaris[$repeat] ?? $repeat)
-                    : 'X'.$repeat,
-                'x' => $r['kiri'],
-                'y' => $r['atas'] - ($adaBarisField ? 80 : 40),
-                'w' => $r['kanan'] - $r['kiri'],
+                    ? (string) ($labelBaris[$nomor] ?? $nomor)
+                    : 'X'.$nomor,
+                'x' => $kotak['x'],
+                'y' => $kotak['y'],
+                'w' => $kotak['w'],
             ];
 
-            // Nama kolomnya (pH / °C) cuma dicetak kalau satu repeat emang
-            // punya lebih dari satu kolom; kalau cuma satu, `X{n}` udah cukup.
-            if (! $adaBarisField) {
+            if (count($field) < 2) {
                 continue;
             }
 
-            foreach ($r['field'] as $field => $kotak) {
+            // Sebaris DI BAWAH label kelompoknya, dan letaknya diturunkan dari
+            // label itu — bukan dari kotak sel yang kesimpan di
+            // `$fieldPerKelompok`. Yang kesimpan di situ sel TERAKHIR yang
+            // kebaca per field, dan di lembar yang Repeat-nya turun ke bawah
+            // itu barisnya X5: `Reading` & `°C` kecetak di tengah grid, di
+            // dalam kotak yang mestinya diisi teknisi.
+            foreach ($field as $namaField => $kotakField) {
                 $label[] = [
-                    'teks' => (string) ($labelTemplate[$field] ?? $field),
-                    'x' => $kotak['x'],
-                    'y' => $r['atas'] - 40,
-                    'w' => $kotak['w'],
+                    'teks' => (string) ($labelTemplate[$namaField] ?? $namaField),
+                    'x' => $kotakField['x'],
+                    'y' => $kotak['y'] + $jarakBaris,
+                    'w' => $kotakField['w'],
                 ];
             }
         }
