@@ -201,6 +201,45 @@ class PembacaanMustahilTest extends TestCase
         $this->assertContains('delta_kelembaban_ekstrem', $kode);
     }
 
+    /**
+     * Dan ketangkepnya MENAHAN penerbitan, bukan cuma bunyi.
+     *
+     * Sebelumnya peringatan, jadi bisa dilewatin `abaikan_peringatan` — dan
+     * itu beneran kepakai: disisir ke MySQL produksi 14 Agt 2026, DUA
+     * sertifikat sudah beredar dengan angka yang persis diperingatkan
+     * (`CAL/2026/08/0022` & `CAL/2026/08/0027`, dua-duanya `± 53,2%`).
+     * Peringatan yang bisa diabaikan, ternyata, diabaikan.
+     *
+     * 20–90 %RH bukan "ruangan yang nyaman" — itu batas yang thermohygro mana
+     * pun masih baca di ruangan berpenghuni. Di luar itu cuma dua kemungkinan:
+     * salah ketik, atau alatnya rusak.
+     */
+    public function test_kelembaban_mustahil_nahan_penerbitan(): void
+    {
+        $hasil = $this->periksaKondisiLengkap(kelembabanAwal: 2, kelembabanAkhir: 55);
+
+        $this->assertFalse($hasil['boleh_terbit'], 'kelembaban 2 %RH nggak boleh bisa terbit');
+
+        $tingkat = collect($hasil['temuan'])->firstWhere('kode', 'kelembaban_mustahil')['tingkat'] ?? null;
+        $this->assertSame(CalibrationValidator::ERROR, $tingkat);
+    }
+
+    /**
+     * Δ ekstrem TETAP peringatan — dua angka yang sama-sama masuk rentang tapi
+     * jauh (30 → 80) beneran bisa kejadian di sesi panjang, dan yang begitu
+     * pantas diputus admin, bukan ditahan sistem.
+     */
+    public function test_delta_ekstrem_saja_tidak_nahan_penerbitan(): void
+    {
+        $hasil = $this->periksaKondisiLengkap(kelembabanAwal: 30, kelembabanAkhir: 80);
+
+        $this->assertTrue($hasil['boleh_terbit']);
+        $this->assertSame(
+            CalibrationValidator::PERINGATAN,
+            collect($hasil['temuan'])->firstWhere('kode', 'delta_kelembaban_ekstrem')['tingkat'] ?? null,
+        );
+    }
+
     public function test_delta_kelembaban_ekstrem_ketangkep_walau_dua_duanya_wajar(): void
     {
         $kode = $this->periksaKondisi(kelembabanAwal: 30, kelembabanAkhir: 80);
@@ -221,6 +260,12 @@ class PembacaanMustahilTest extends TestCase
     /** @return list<string> */
     private function periksaKondisi(float $kelembabanAwal, float $kelembabanAkhir): array
     {
+        return array_column($this->periksaKondisiLengkap($kelembabanAwal, $kelembabanAkhir)['temuan'], 'kode');
+    }
+
+    /** @return array<string, mixed> */
+    private function periksaKondisiLengkap(float $kelembabanAwal, float $kelembabanAkhir): array
+    {
         $this->actingAs($this->teknisi)->postJson('/api/calibrations', [
             'equipment_id' => $this->alat->id,
             'standard_id' => $this->standar->id,
@@ -236,7 +281,7 @@ class PembacaanMustahilTest extends TestCase
 
         $sesi = CalibrationSession::latest('id')->firstOrFail();
 
-        return array_column(app(CalibrationValidator::class)->periksa($sesi)['temuan'], 'kode');
+        return app(CalibrationValidator::class)->periksa($sesi);
     }
 
     /**
