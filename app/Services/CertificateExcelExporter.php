@@ -103,7 +103,7 @@ class CertificateExcelExporter
                     $this->bulat($baris['standard_value'] ?? null, $db),
                     $this->bulat($baris['unit_under_test'] ?? null, $db),
                     $this->bulat($baris['correction'] ?? null, $db),
-                    $this->bulat($baris['u95'] ?? null, $db),
+                    $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $s->snapshot ?? [])),
                     // Kolomnya SELALU ada di rekap, beda dari sertifikat satuan:
                     // isinya lintas alat, dan yang punya remark cuma sebagian.
                     // Kolom yang muncul-ilang tergantung isi bikin rekap dua
@@ -190,6 +190,31 @@ class CertificateExcelExporter
     }
 
     /**
+     * Desimal kolom **U95%**, yang buat sebagian alat BEDA dari kolom di
+     * sebelahnya.
+     *
+     * Master Spectrophotometer nulis `0,43 nm` (dua desimal) sementara
+     * Standard/UUT/Correction di tabel yang sama cuma satu (`333,7`). PDF udah
+     * lama baca `desimal_u95`; Excel belum, jadi berkas yang sama nulis `0,4`.
+     * Dua angka, dua berkas, satu sertifikat terakreditasi — persis yang
+     * dilarang docblock [bulat()].
+     *
+     * Bedanya sempat kesembunyi: waktu desimal titik spektro masih 2, `0,43`
+     * kebetulan keluar bener lewat jalur yang salah. Begitu desimalnya turun ke
+     * 1 (ngikut format sel master), Excel-nya langsung meleset.
+     *
+     * `null` = alat ini nggak nyatain apa-apa, jadi ikut desimal barisnya —
+     * persis perilaku lama buat lima alat lain.
+     *
+     * @param  array<string, mixed>  $baris
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function desimalU95Baris(array $baris, array $snapshot): int
+    {
+        return (int) ($baris['desimal_u95'] ?? $this->desimalBaris($baris, $snapshot));
+    }
+
+    /**
      * Bulatkan ke desimal sertifikat, tapi **tetap angka** (bukan teks).
      *
      * Dibulatkan karena Excel itu salinan dokumen yang sama: PDF nulis `1,76`,
@@ -259,7 +284,7 @@ class CertificateExcelExporter
                 $this->bulat($baris['standard_value'] ?? null, $db),
                 $this->bulat($baris['unit_under_test'] ?? null, $db),
                 $this->bulat($baris['correction'] ?? null, $db),
-                $this->bulat($baris['u95'] ?? null, $db),
+                $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $snapshot)),
             ], $adaRemark ? [$baris['remark'] ?? ''] : [], $adaR2 ? [
                 // NOL desimal, sama kayak PDF & sel masternya (`0,9359`
                 // diformat 0 desimal → tercetak `1`). Empat desimal bikin

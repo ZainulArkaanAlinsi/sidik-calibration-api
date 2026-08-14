@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\CertificateExcelExporter;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use OpenSpout\Reader\XLSX\Reader;
 use Tests\TestCase;
 
 /**
@@ -133,6 +135,46 @@ class SertifikatSpektroCocokMasterTest extends TestCase
         preg_match_all('/Coverage Factor \( k \) =\s*([^<\s]+)/u', $html, $cocok);
 
         $this->assertSame(['3', '2', '2'], $cocok[1]);
+    }
+
+    /**
+     * Excel itu SALINAN sertifikat yang sama, jadi kolom U95-nya wajib bunyi
+     * sama kayak PDF-nya.
+     *
+     * Sempat nggak: exporter mbulatin U95 pakai desimal BARIS (1), bukan
+     * `desimal_u95` (2) — PDF nulis `0,43`, Excel nulis `0,4`. Dua angka, dua
+     * berkas, satu sertifikat terakreditasi, dan pelanggan yang mbandingin
+     * dua-duanya nggak punya cara tahu mana yang resmi.
+     *
+     * Bedanya kesembunyi selama desimal titik spektro masih 2: `0,43` kebetulan
+     * keluar bener lewat jalur yang salah. Turun ke 1, langsung meleset.
+     */
+    public function test_u95_di_excel_sama_dengan_yang_kecetak_di_pdf(): void
+    {
+        $berkas = tempnam(sys_get_temp_dir(), 'uji-spektro-').'.xlsx';
+        app(CertificateExcelExporter::class)->satu($this->terbitkan(), $berkas);
+
+        $sel = [];
+        $pembaca = new Reader;
+        $pembaca->open($berkas);
+        foreach ($pembaca->getSheetIterator() as $lembar) {
+            foreach ($lembar->getRowIterator() as $baris) {
+                $sel[] = array_map(static fn ($c) => $c->getValue(), $baris->getCells());
+            }
+        }
+        $pembaca->close();
+        @unlink($berkas);
+
+        // Kolom ke-4 tabel hasil = `U95% (±)`. Satu angka per kelompok, jadi
+        // yang unik cuma tiga — dan ketiganya wajib 2 desimal.
+        $u95 = collect($sel)
+            ->filter(fn (array $b) => is_numeric($b[0] ?? null) && isset($b[3]))
+            ->map(fn (array $b) => (float) $b[3])
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->assertEqualsWithDelta([0.43, 0.4, 0.5], $u95, 1e-9);
     }
 
     /**

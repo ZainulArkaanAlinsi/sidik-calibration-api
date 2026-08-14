@@ -546,6 +546,33 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
+     * `desimal_u95` juga ikut ke RESPONS SESI, bukan cuma dibekukan ke snapshot.
+     *
+     * Layar riwayat & approval di HP nampilin tabel Calibration Report yang
+     * SAMA kayak PDF-nya. Tanpa field ini layar cuma punya `desimal` (1), jadi
+     * U95 kecetak `0,4` di layar dan `0,43` di sertifikat — dan yang kena
+     * duluan justru teknisi yang lagi ngecek hasilnya sendiri sebelum minta
+     * approve. Persis pola yang pernah kejadian di Refractometer, lihat
+     * `CalibrationResource::desimalAlat()`.
+     */
+    public function test_desimal_u95_ikut_dikirim_di_respons_sesi(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $titik = $this->actingAs($this->admin)
+            ->getJson('/api/calibrations/'.$sesi->id)
+            ->assertOk()
+            ->json('data.titik');
+
+        $this->assertNotEmpty($titik);
+
+        foreach ($titik as $t) {
+            $this->assertSame(1, $t['desimal'], 'kolom hasil ikut format sel master');
+            $this->assertSame(2, $t['desimal_u95'], 'baris U95 punya desimalnya sendiri');
+        }
+    }
+
+    /**
      * U95 yang meledak jauh di atas CMC MENAHAN penerbitan.
      *
      * Kejadian nyata `CAL/2026/08/0043`: satu pembacaan Didynium diketik

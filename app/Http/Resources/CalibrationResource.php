@@ -349,6 +349,20 @@ class CalibrationResource extends JsonResource
             'desimal' => $alat?->resolusi_rentang
                 ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada((float) $titik->titik_ukur))
                 : ($alat !== null ? self::profil($alat)?->desimalSertifikat() : null),
+            // Desimal KHUSUS kolom U95%, yang buat sebagian alat BEDA dari
+            // kolom di sebelahnya: master Spectrophotometer nulis `0,43 nm`
+            // (dua desimal) sementara Standard/UUT/Correction di tabel yang
+            // sama cuma satu (`333,7`).
+            //
+            // Ikut dikirim ke sini dengan alasan yang sama kayak `tanda_nol` di
+            // bawah: layar riwayat & approval nampilin tabel Calibration Report
+            // yang SAMA kayak PDF-nya. Tanpa field ini layar nulis U95 `0,4`
+            // sementara sertifikatnya `0,43` — dan yang kena duluan justru
+            // teknisi yang lagi ngecek hasilnya sendiri sebelum minta approve.
+            //
+            // `null` buat lima alat lain — mobile jatuh ke `desimal` kayak
+            // biasa, jadi perilakunya nggak berubah.
+            'desimal_u95' => $alat !== null ? self::profil($alat)?->desimalU95() : null,
             // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam satu
             // lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
             //
