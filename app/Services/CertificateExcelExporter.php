@@ -261,7 +261,14 @@ class CertificateExcelExporter
 
         $writer->addRow(Row::fromValues(
             array_merge(
-                ['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'],
+                // Judul kolom ikut snapshot, sama kayak PDF: master
+                // Spectrophotometer nulis `UUT`, lima alat lain `Unit Under
+                // Test`. Excel itu salinan sertifikat yang sama, jadi kepala
+                // kolomnya nggak boleh beda dari PDF-nya.
+                //
+                // Rekap lintas alat SENGAJA nggak ikut (lihat `rekap()`):
+                // kolomnya mesti stabil biar rekap dua bulan bisa ditumpuk.
+                ['Standard Value', $snapshot['judul_uut'] ?? 'Unit Under Test', 'Correction', 'U95% (±)'],
                 $adaRemark ? ['Remark'] : [],
                 $adaR2 ? ['R2'] : [],
             ),

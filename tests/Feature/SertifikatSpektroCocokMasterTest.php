@@ -138,6 +138,45 @@ class SertifikatSpektroCocokMasterTest extends TestCase
     }
 
     /**
+     * Kepala kolom kedua: `UUT (nm)`, bukan `Unit Under Test (nm)`.
+     *
+     * Master spektro nulis `UUT` di KETIGA bloknya — jadi bukan sel yang
+     * kepotong, itu pilihan lab. Lima master lain nulis panjang, dan sistem
+     * dulu maksa satu judul buat semuanya.
+     *
+     * Yang SENGAJA nggak ditiru: spasi yang ilang di `Correction(nm)`. Master
+     * spektro sendiri nulisnya dua cara (`Correction (%T)` di blok %T,
+     * `Correction(%T)` di blok SRE), jadi itu kelalaian ketik — bukan aturan.
+     */
+    public function test_kepala_kolom_uut_ikut_master(): void
+    {
+        $html = $this->pdf();
+
+        $this->assertStringContainsString('<th>UUT (nm)</th>', $html);
+        $this->assertStringContainsString('<th>UUT (%T)</th>', $html);
+        $this->assertStringNotContainsString('Unit Under Test', $html);
+
+        // Correction tetap pakai spasi — master sendiri nggak konsisten.
+        $this->assertStringContainsString('<th>Correction (nm)</th>', $html);
+    }
+
+    /** Lima alat lain nggak kesenggol — judulnya tetap panjang. */
+    public function test_alat_lain_tetap_unit_under_test(): void
+    {
+        if (CalibrationSession::query()->doesntExist()) {
+            $this->seed(DatabaseSeeder::class);
+        }
+
+        $sesi = CalibrationSession::where('nomor_sesi', '2405.13.A')->firstOrFail();
+        $sertifikat = $sesi->certificate()->first() ?? $this->terbitkanSesi($sesi);
+
+        $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
+
+        $this->assertStringContainsString('Unit Under Test', $html);
+        $this->assertStringNotContainsString('<th>UUT', $html);
+    }
+
+    /**
      * Excel itu SALINAN sertifikat yang sama, jadi kolom U95-nya wajib bunyi
      * sama kayak PDF-nya.
      *
@@ -274,12 +313,12 @@ class SertifikatSpektroCocokMasterTest extends TestCase
         }
 
         $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-SPECTRO-LDC')->firstOrFail();
-        $sertifikat = $sesi->certificate()->first();
 
-        if ($sertifikat !== null) {
-            return $sertifikat;
-        }
+        return $sesi->certificate()->first() ?? $this->terbitkanSesi($sesi);
+    }
 
+    private function terbitkanSesi(CalibrationSession $sesi): Certificate
+    {
         // `abaikan_peringatan`: titik %T (0–100) diadu ke rentang alat yang
         // kesimpen dalam nm (200–700). Batasan satu kolom rentang buat alat dua
         // besaran, bukan salah data — lihat `SpectrophotometerSeeder`.

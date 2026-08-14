@@ -577,6 +577,23 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Judul kolom kedua tabel CALIBRATION REPORT.
+     *
+     * Lima master nulis `Unit Under Test`; master Spectrophotometer nulis
+     * `UUT` — dan konsisten begitu di KETIGA bloknya (`SERTIFIKAT!L18`, `L33`,
+     * `L47`), jadi itu pilihan lab, bukan sel yang kepotong.
+     *
+     * Yang NGGAK ditiru: spasi yang ilang di `Correction(nm)`. Master spektro
+     * sendiri nulisnya dua cara — `Correction (%T)` di blok %T, `Correction(%T)`
+     * di blok SRE — jadi itu kelalaian ketik, bukan aturan. Niru kelalaian
+     * bikin dokumen resmi kelihatan salah cetak.
+     */
+    public function judulKolomUut(): string
+    {
+        return 'Unit Under Test';
+    }
+
+    /**
      * Kolom **Standard Value** nulis nol di belakang koma atau nggak.
      *
      * `true` (bawaan) = nol di belakang dibuang — master Turbidimeter nulis
