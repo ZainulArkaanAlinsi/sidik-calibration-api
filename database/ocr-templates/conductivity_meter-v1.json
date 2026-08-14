@@ -53,9 +53,9 @@
             "teks": "X1",
             "kotak": {
                 "x": 84,
-                "y": 986,
+                "y": 973,
                 "w": 192,
-                "h": 39
+                "h": 64
             }
         },
         {
@@ -64,9 +64,9 @@
             "teks": "X2",
             "kotak": {
                 "x": 84,
-                "y": 1086,
+                "y": 1073,
                 "w": 192,
-                "h": 39
+                "h": 64
             }
         },
         {
@@ -75,9 +75,9 @@
             "teks": "X3",
             "kotak": {
                 "x": 84,
-                "y": 1186,
+                "y": 1173,
                 "w": 192,
-                "h": 39
+                "h": 64
             }
         },
         {
@@ -86,9 +86,9 @@
             "teks": "X4",
             "kotak": {
                 "x": 84,
-                "y": 1286,
+                "y": 1273,
                 "w": 192,
-                "h": 39
+                "h": 64
             }
         },
         {
@@ -97,9 +97,9 @@
             "teks": "X5",
             "kotak": {
                 "x": 84,
-                "y": 1386,
+                "y": 1373,
                 "w": 192,
-                "h": 39
+                "h": 64
             }
         }
     ],
@@ -107,6 +107,7 @@
         {
             "tabel_id": "sebelum_adjustment",
             "judul": "Before adjustment Reading",
+            "kiri": 90,
             "sel": {
                 "sebelum_adjustment|1|1|pembacaan": {
                     "x": 294,
@@ -353,6 +354,7 @@
         {
             "tabel_id": "sesudah_adjustment",
             "judul": "After adjustment Reading",
+            "kiri": 90,
             "sel": {
                 "sesudah_adjustment|1|1|pembacaan": {
                     "x": 294,

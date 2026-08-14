@@ -148,13 +148,20 @@ class CetakLembarKerjaOcr extends Command
                 continue;
             }
 
+            // Margin kiri blok tabel ini. Ditulis di berkas geometri sama
+            // perintah rangka — tabel yang berdampingan dalam satu pita punya
+            // kolom labelnya sendiri-sendiri, dan cuma yang menghitung gridnya
+            // yang tahu di mana blok kanan mulai. Lembar lama yang berkasnya
+            // belum punya angka ini tetap memakai margin halaman.
+            $kiriTabel = (int) ($t['kiri'] ?? $this->tataLetak->kiri($lebar));
+
             $tabel[] = [
                 'judul' => $t['judul'] ?? '',
                 // Judul tabel berdiri di margin kiri halaman, sejajar judul
                 // lembar dan isian identitas. Dulu diturunkan dari sel paling
                 // kiri (`- 300`), jadi letaknya ikut bergeser tiap lebar
                 // gridnya berubah dan nggak pernah pas di margin.
-                'judul_x' => $this->tataLetak->kiri($lebar),
+                'judul_x' => $kiriTabel,
                 // Judulnya duduk di baris paling atas kepala tabel, DI ATAS dua
                 // baris label kolom. Dulu jaraknya cuma 60 px sementara label
                 // fieldnya sendiri 40 px di atas sel: judul "Before adjustment
@@ -169,7 +176,7 @@ class CetakLembarKerjaOcr extends Command
                     $sel,
                     $dariTemplate[$t['tabel_id']]['baris'] ?? [],
                     $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
-                    $this->tataLetak->kiri($lebar),
+                    $kiriTabel,
                     $this->tataLetak->jarakLabelBaris($lebar),
                 ),
                 'label_kolom' => $this->labelKolom(
@@ -219,6 +226,7 @@ class CetakLembarKerjaOcr extends Command
             'qr' => $geometri['qr'] ?? ['kotak' => ['x' => 0, 'y' => 0, 'w' => 0, 'h' => 0]],
             'qrGambar' => $qr->dataUri($isiQr),
             'kepala' => $kepala,
+            'lingkungan' => $this->tataLetak->kondisiLingkungan($bentuk, $lebar, $tinggi),
             'catatan' => $this->tataLetak->catatan($bentuk, $lebar, $tinggi, $bawahGrid),
             'tabel' => $tabel,
         ];
@@ -300,6 +308,10 @@ class CetakLembarKerjaOcr extends Command
                 'x' => $kotak['x'],
                 'y' => $kotak['y'],
                 'w' => $kotak['w'],
+                // Di lembar yang Repeat-nya turun ke bawah, label kiri INI
+                // yang jadi jangkar — dan jangkar dicetak lebih besar supaya
+                // kebaca mesin. Lihat `.label-jangkar` di tampilannya.
+                'jangkar' => $keBawah,
             ];
         }
 
@@ -360,6 +372,9 @@ class CetakLembarKerjaOcr extends Command
                 'x' => $kotak['x'],
                 'y' => $kotak['y'],
                 'w' => $kotak['w'],
+                // Kebalikan `labelBaris`: di lembar bentuk pH yang jadi
+                // jangkar justru label kepala kolom ini.
+                'jangkar' => ! $keBawah,
             ];
 
             if (count($field) < 2) {

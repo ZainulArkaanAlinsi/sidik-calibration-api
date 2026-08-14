@@ -232,7 +232,9 @@ class BuatRangkaGeometriOcr extends Command
             ? $this->letakLabel->perBaris(
                 $sel,
                 2,
-                $this->tataLetak->kiri($lebar),
+                // Margin blok TABELNYA, bukan margin halaman: tabel yang
+                // berbagi pita berdiri di kolom label masing-masing.
+                (int) ($tabel[0]['kiri'] ?? $this->tataLetak->kiri($lebar)),
                 $this->tataLetak->jarakLabelBaris($lebar),
             )
             : $this->letakLabel->perKelompokKolom(
@@ -275,7 +277,20 @@ class BuatRangkaGeometriOcr extends Command
             $definisi['tabel'],
         );
 
-        $jumlahTabel = max(1, count($definisi['tabel']));
+        // Yang menghabiskan tinggi halaman jumlah PITA-nya, bukan jumlah
+        // tabelnya: tabel yang berbagi satu pita berdiri berdampingan, jadi
+        // kepala tabel & jatah barisnya dihitung sekali buat pita itu.
+        $pita = $this->pita($definisi);
+        $jumlahPita = max(1, count($pita));
+
+        $barisPita = array_map(
+            static fn (array $isi): int => max(array_map(
+                static fn (int $i): int => $barisTabel[$i],
+                $isi,
+            )),
+            $pita,
+        );
+
         $kepalaTabel = $this->tataLetak->kepalaTabel($tinggi);
         $jarakTabel = $this->tataLetak->jarakTabel($tinggi);
 
@@ -285,87 +300,142 @@ class BuatRangkaGeometriOcr extends Command
         // di lembar Conductivity baris terakhirnya malah kedorong ke halaman
         // dua.
         $ruang = $this->tataLetak->bawahGrid($tinggi) - $this->tataLetak->atasGrid($tinggi)
-            - $jumlahTabel * $kepalaTabel
-            - ($jumlahTabel - 1) * $jarakTabel;
+            - $jumlahPita * $kepalaTabel
+            - ($jumlahPita - 1) * $jarakTabel;
 
         // Tinggi selnya SATU angka buat semua tabel, dibagi menurut jumlah
         // baris. Tabel yang barisnya sedikit nggak dapat sel raksasa cuma
         // karena jatah tingginya dibagi rata per tabel.
         $tinggiSel = max(1, min(
-            intdiv($ruang, max(1, array_sum($barisTabel))),
+            intdiv($ruang, max(1, array_sum($barisPita))),
             $this->tataLetak->tinggiSelMaks($tinggi),
         ));
 
         $kursor = $this->tataLetak->atasGrid($tinggi);
 
-        foreach ($definisi['tabel'] as $i => $tabel) {
-            $sel = [];
-            $jumlahBaris = $barisTabel[$i];
+        // Batas kiri & kanan SEMUA pita — sama dengan margin blok kepala di
+        // atasnya. Dulu angkanya pecahan lebar kertas (25% mulai, 68% lebar).
+        // Dua angka itu nggak nyambung ke margin mana pun: gridnya kebetulan
+        // berhenti di 1533 sementara isian identitas di atasnya berhenti di
+        // 1534, dan di lembar Spectrophotometer malah lewat jadi 1535 — tepi
+        // kanan yang goyang 2 px per lembar.
+        $kiriPita = $this->tataLetak->kiri($lebar);
+        $kananPita = $this->tataLetak->kananGrid($lebar);
+        $jarakPita = $this->tataLetak->jarakPita($lebar);
 
-            $jumlahKolom = max(1, count($tabel['kolom']) * ($keBawah
-                ? count($tabel['baris'])
-                : count($tabel['pengulangan'])));
-
-            // Kolom pertama di kertas dipakai label — titik ukur (4,00 / 7,00 /
-            // 10,01) di bentuk pH, nomor Repeat di bentuk Conductivity — jadi
-            // grid selnya mulai sesudah kolom label.
-            //
-            // Dulu angkanya pecahan lebar kertas (25% mulai, 68% lebar). Dua
-            // angka itu nggak nyambung ke margin mana pun: gridnya kebetulan
-            // berhenti di 1533 sementara isian identitas di atasnya berhenti di
-            // 1534, dan di lembar Spectrophotometer malah lewat jadi 1535 —
-            // tepi kanan yang goyang 2 px per lembar. Sekarang dua-duanya
-            // dihitung dari margin yang sama.
-            $kanan = $this->tataLetak->kananGrid($lebar);
-            $lebarSel = intdiv($kanan - $this->tataLetak->kiriGrid($lebar), $jumlahKolom);
-
-            // Sisa pembagian ditaruh di KIRI, bukan dibiarkan menggantung di
-            // kanan. Lebar selnya bilangan bulat, jadi 8 kolom nggak pernah
-            // pas ngisi ruangnya: tepi kanan grid berhenti 4 px sebelum tepi
-            // kanan isian identitas di atasnya — sedikit, tapi di kertas itu
-            // dua garis vertikal yang jelas nggak sejajar. Kolom labelnya yang
-            // menyerap sisanya, dan label baris tetap digambar dari margin.
-            $kiri = $kanan - $jumlahKolom * $lebarSel;
+        foreach ($pita as $p => $isiPita) {
+            $jumlahSlot = max(1, count($isiPita));
+            $lebarSlot = intdiv($kananPita - $kiriPita - ($jumlahSlot - 1) * $jarakPita, $jumlahSlot);
             $atasTabel = $kursor + $kepalaTabel;
-            $kursor = $atasTabel + $jumlahBaris * $tinggiSel + $jarakTabel;
 
-            $kolomKe = 0;
+            foreach (array_values($isiPita) as $slot => $i) {
+                $tabel = $definisi['tabel'][$i];
+                $sel = [];
 
-            // Kuncinya TIDAK berubah bentuk: `tabel|baris_ke|repeat|field`
-            // tetap sama apa pun orientasinya. Yang berubah cuma di kotak mana
-            // kunci itu digambar — supaya sel yang dipotong HP tetap ketemu
-            // kunci yang sama dengan yang dikirim layar.
-            $melintang = $keBawah ? $tabel['baris'] : $tabel['pengulangan'];
-            $menurun = $keBawah ? $tabel['pengulangan'] : $tabel['baris'];
+                $jumlahKolom = max(1, count($tabel['kolom']) * ($keBawah
+                    ? count($tabel['baris'])
+                    : count($tabel['pengulangan'])));
 
-            foreach ($melintang as $luar) {
-                foreach ($tabel['kolom'] as $kolom) {
-                    foreach ($menurun as $dalamKe => $dalam) {
-                        $baris = $keBawah ? $luar : $dalam;
-                        $repeat = $keBawah ? $dalam : $luar;
+                $kiriSlot = $kiriPita + $slot * ($lebarSlot + $jarakPita);
 
-                        $kunci = $tabel['tabel_id'].'|'.$baris['baris_ke'].'|'
-                            .(int) $repeat.'|'.$kolom['field_id'];
+                // Slot terakhir berhenti PERSIS di batas kanan, bukan di
+                // kelipatan lebar slot: sisa pembagian lebar pita mesti
+                // diserap di sini, kalau nggak tepi kanan grid meleset
+                // beberapa piksel dari isian identitas di atasnya.
+                $kanan = $slot === $jumlahSlot - 1 ? $kananPita : $kiriSlot + $lebarSlot;
 
-                        $sel[$kunci] = [
-                            'x' => $kiri + $kolomKe * $lebarSel,
-                            'y' => $atasTabel + $dalamKe * $tinggiSel,
-                            'w' => $lebarSel,
-                            'h' => $tinggiSel,
-                        ];
+                // Kolom pertama tiap tabel dipakai label — titik ukur (4,00 /
+                // 7,00 / 10,01) di bentuk pH, nomor Repeat di bentuk
+                // Conductivity — jadi grid selnya mulai sesudah kolom label.
+                $lebarSel = intdiv(
+                    $kanan - $kiriSlot - $this->tataLetak->lebarLabelBaris($lebar),
+                    $jumlahKolom,
+                );
+
+                // Sisa pembagian ditaruh di KIRI, bukan dibiarkan menggantung
+                // di kanan. Lebar selnya bilangan bulat, jadi 8 kolom nggak
+                // pernah pas ngisi ruangnya: tepi kanan grid berhenti 4 px
+                // sebelum tepi kanan isian identitas di atasnya — sedikit, tapi
+                // di kertas itu dua garis vertikal yang jelas nggak sejajar.
+                // Kolom labelnya yang menyerap sisanya, dan label baris tetap
+                // digambar dari margin slotnya.
+                $kiri = $kanan - $jumlahKolom * $lebarSel;
+
+                $kolomKe = 0;
+
+                // Kuncinya TIDAK berubah bentuk: `tabel|baris_ke|repeat|field`
+                // tetap sama apa pun orientasinya. Yang berubah cuma di kotak
+                // mana kunci itu digambar — supaya sel yang dipotong HP tetap
+                // ketemu kunci yang sama dengan yang dikirim layar.
+                $melintang = $keBawah ? $tabel['baris'] : $tabel['pengulangan'];
+                $menurun = $keBawah ? $tabel['pengulangan'] : $tabel['baris'];
+
+                foreach ($melintang as $luar) {
+                    foreach ($tabel['kolom'] as $kolom) {
+                        foreach ($menurun as $dalamKe => $dalam) {
+                            $baris = $keBawah ? $luar : $dalam;
+                            $repeat = $keBawah ? $dalam : $luar;
+
+                            $kunci = $tabel['tabel_id'].'|'.$baris['baris_ke'].'|'
+                                .(int) $repeat.'|'.$kolom['field_id'];
+
+                            $sel[$kunci] = [
+                                'x' => $kiri + $kolomKe * $lebarSel,
+                                'y' => $atasTabel + $dalamKe * $tinggiSel,
+                                'w' => $lebarSel,
+                                'h' => $tinggiSel,
+                            ];
+                        }
+
+                        $kolomKe++;
                     }
-
-                    $kolomKe++;
                 }
+
+                $hasil[] = [
+                    'tabel_id' => $tabel['tabel_id'],
+                    'judul' => $tabel['judul'],
+                    // Margin kiri blok tabel INI: judul tabel & kolom labelnya
+                    // berdiri di sini. Ikut ditulis ke berkas karena perintah
+                    // cetak cuma pegang berkas ini — tanpa angkanya, judul
+                    // tabel kanan mendarat di margin halaman, numpuk sama judul
+                    // tabel kiri yang sepita dengannya.
+                    'kiri' => $kiriSlot,
+                    'sel' => $sel,
+                ];
             }
 
-            $hasil[] = [
-                'tabel_id' => $tabel['tabel_id'],
-                'judul' => $tabel['judul'],
-                'sel' => $sel,
-            ];
+            $kursor = $atasTabel + $barisPita[$p] * $tinggiSel + $jarakTabel;
         }
 
         return $hasil;
+    }
+
+    /**
+     * Kelompok tabel yang digambar BERDAMPINGAN dalam satu pita mendatar.
+     *
+     * Bawaannya satu tabel satu pita — susunan lama, semua tabel bertumpuk ke
+     * bawah. Yang butuh lain cuma lembar Spectrophotometer: 24 baris di tiga
+     * tabel, dibagi rata satu halaman, jatuh ke sel setinggi 34 px (4,3 mm) —
+     * di atas ambang mutu pindai, tapi nggak ada tulisan tangan yang muat di
+     * situ. Dua tabel panjang gelombangnya masing-masing cuma butuh 3 kolom,
+     * jadi separuh lebar kertasnya nganggur; pita menukar lebar nganggur itu
+     * jadi tinggi sel.
+     *
+     * Nomornya dari profil alatnya (`pita_cetak`), bukan ditebak di sini:
+     * tabel mana yang muat berdampingan itu keputusan bentuk lembarnya.
+     *
+     * @param  array<string, mixed>  $definisi
+     * @return list<list<int>>
+     */
+    private function pita(array $definisi): array
+    {
+        $pita = [];
+
+        foreach ($definisi['tabel'] as $i => $tabel) {
+            $nomor = (int) ($tabel['pita_cetak'] ?? 0);
+            $pita[$nomor > 0 ? 'pita-'.$nomor : 'tabel-'.$i][] = $i;
+        }
+
+        return array_values($pita);
     }
 }

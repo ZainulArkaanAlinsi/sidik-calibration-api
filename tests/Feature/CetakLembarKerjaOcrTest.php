@@ -80,6 +80,110 @@ class CetakLembarKerjaOcrTest extends TestCase
     }
 
     /**
+     * **Kotak jangkar menaungi label yang beneran tercetak.**
+     *
+     * Jangkar itu satu-satunya penjagaan yang MEMBACA ISI lembar, bukan
+     * mengukur geometrinya: kalau gridnya bergeser satu baris, label yang
+     * kebaca di posisi Repeat 2 bakal `X3` dan seluruh lembar ditolak sebelum
+     * satu angka pun dipetakan.
+     *
+     * Tapi dia cuma berguna kalau kotaknya jatuh pas di atas tulisannya.
+     * Kotak yang meleset bikin HP motong kertas kosong, `cocok: false`, dan
+     * lembar yang sebenarnya BENAR ditolak — kegagalan yang kelihatannya
+     * seperti "OCR-nya jelek" padahal koordinat.
+     *
+     * Dua sisinya sekarang dihitung `LetakLabelLembar`, jadi mestinya nggak
+     * bisa meleset. Test ini yang mbuktiin mestinya itu.
+     */
+    #[DataProvider('alat')]
+    public function test_kotak_jangkar_menaungi_label_yang_tercetak(string $kode): void
+    {
+        $geometri = json_decode(
+            (string) File::get(database_path("ocr-templates/{$kode}-v1.json")),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $this->assertNotEmpty(
+            $geometri['jangkar'] ?? [],
+            "Geometri {$kode} nggak punya jangkar — penjagaan geser-satu-baris mati.",
+        );
+
+        $html = tempnam(sys_get_temp_dir(), 'lembar').'.html';
+
+        $this->artisan("ocr:cetak-lembar {$kode} --keluar=".tempnam(sys_get_temp_dir(), 'lembar').'.pdf'
+            ." --html={$html}")->assertSuccessful();
+
+        $isi = (string) File::get($html);
+        $dpi = (int) ($geometri['ukuran_referensi']['dpi'] ?? 200);
+
+        // Tiap label yang tercetak: teks + kotaknya dalam piksel ruang template.
+        preg_match_all(
+            '/<div class="abs label[^"]*" style="([^"]*)">([^<]*)<\/div>/',
+            $isi,
+            $cocok,
+            PREG_SET_ORDER,
+        );
+
+        $tercetak = [];
+
+        foreach ($cocok as $m) {
+            preg_match('/left:\s*([0-9.]+)mm/', $m[1], $x);
+            preg_match('/top:\s*([0-9.]+)mm/', $m[1], $y);
+            preg_match('/width:\s*([0-9.]+)mm/', $m[1], $w);
+
+            if ($x === [] || $y === [] || $w === []) {
+                continue;
+            }
+
+            $tercetak[] = [
+                'teks' => trim(html_entity_decode($m[2])),
+                'x' => (float) $x[1] * $dpi / 25.4,
+                'y' => (float) $y[1] * $dpi / 25.4,
+                'w' => (float) $w[1] * $dpi / 25.4,
+            ];
+        }
+
+        $this->assertNotEmpty($tercetak, "Nggak ada label kecetak di lembar {$kode}.");
+
+        foreach ($geometri['jangkar'] as $j) {
+            $kotak = $j['kotak'];
+
+            $this->assertGreaterThanOrEqual(
+                1,
+                $kotak['w'] * $kotak['h'],
+                "Kotak jangkar {$j['teks']} ukurannya nol — nggak bisa dipotong HP.",
+            );
+
+            $ketemu = false;
+
+            foreach ($tercetak as $label) {
+                if ($label['teks'] !== $j['teks']) {
+                    continue;
+                }
+
+                // Tulisannya duduk DI DALAM kotak jangkarnya. Toleransi 1 px:
+                // koordinatnya bolak-balik lewat milimeter berdesimal tiga.
+                $didalam = $label['x'] >= $kotak['x'] - 1
+                    && $label['x'] + $label['w'] <= $kotak['x'] + $kotak['w'] + 1
+                    && $label['y'] >= $kotak['y'] - 1
+                    && $label['y'] <= $kotak['y'] + $kotak['h'] + 1;
+
+                if ($didalam) {
+                    $ketemu = true;
+
+                    break;
+                }
+            }
+
+            $this->assertTrue(
+                $ketemu,
+                "Label {$j['teks']} nggak kecetak di dalam kotak jangkarnya ({$kode}).",
+            );
+        }
+    }
+
+    /**
      * Kotaknya nggak boleh keluar halaman atau tumpang tindih.
      *
      * Sel yang saling tumpang tindih artinya satu coretan kepotong dua kali —

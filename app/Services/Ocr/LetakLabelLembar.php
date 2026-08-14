@@ -20,13 +20,24 @@ namespace App\Services\Ocr;
 class LetakLabelLembar
 {
     /**
-     * Tinggi satu baris teks 8 pt di 200 dpi.
+     * Tinggi satu baris label di 200 dpi.
      *
-     * Dipakai buat menaruh label kiri persis di tengah selnya, dan buat
-     * menentukan tinggi kotak jangkar. Bukan angka karangan: 8 pt = 8/72 inci,
-     * dikali 200 dpi = 22,2 px badan huruf, plus jarak antar baris.
+     * Dipakai dua-duanya: menaruh label kiri persis di tengah selnya, DAN
+     * menentukan tinggi kotak jangkar yang dipotong HP.
+     *
+     * Ukurannya ikut label JANGKAR (16 pt), bukan label biasa (8 pt) — dan
+     * bukan buat gaya. Jangkar satu-satunya tulisan di lembar ini yang dibaca
+     * mesin, dan ukurannya diadu ke HP fisik (14 Agt 2026):
+     *
+     *   8 pt          → `X-` `X?` `X` `Xe` `XE`  (angkanya hilang semua)
+     *   14 pt tebal   → `X1` `X2` `X3` `X4` `XE` (tinggal `5` yang jatuh)
+     *
+     * 16 pt = 16/72 inci × 200 dpi = 44,4 px badan huruf; dibulatkan ke atas
+     * plus jarak antar baris. **Kotak yang lebih pendek dari tulisannya bikin
+     * hurufnya kepotong pas dibaca**, jadi angka ini WAJIB ikut kalau
+     * `.label-jangkar` di tampilannya diubah.
      */
-    public const TINGGI_TEKS = 27;
+    public const TINGGI_TEKS = 52;
 
     /**
      * Napas di sekeliling kotak jangkar.
@@ -105,9 +116,17 @@ class LetakLabelLembar
         foreach ($kelompok as $nomor => $k) {
             $baris = count($k['field']) >= 2 ? 2 : 1;
 
+            // Naiknya paling sedikit setinggi TULISANNYA, bukan cuma satu
+            // jarak baris. Jarak baris (45 px) lebih pendek dari badan huruf
+            // jangkar (52 px), jadi di lembar yang satu kelompoknya cuma punya
+            // satu kolom — Spectrophotometer — garis atas grid lewat di tengah
+            // `X1`. Kelompok berkolom dua naik dua baris, jauh di atas ambang
+            // ini, jadi lembar bentuk pH nggak bergeser sepiksel pun.
+            $naik = max($jarakBaris * $baris, self::TINGGI_TEKS);
+
             $hasil[$nomor] = [
                 'x' => (int) $k['kiri'],
-                'y' => (int) $k['atas'] - $jarakBaris * $baris,
+                'y' => (int) $k['atas'] - $naik,
                 'w' => (int) ($k['kanan'] - $k['kiri']),
                 'h' => self::TINGGI_TEKS,
             ];

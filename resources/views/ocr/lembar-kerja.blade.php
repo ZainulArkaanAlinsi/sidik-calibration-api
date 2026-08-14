@@ -60,6 +60,39 @@
         .label { font-size: 8pt; }
 
         /*
+          LABEL JANGKAR (`X1`..`X5`) sengaja lebih besar dari label lain.
+
+          Ini bukan pilihan tata letak — ini syarat supaya dia kebaca MESIN.
+          Label jangkar satu-satunya tulisan di lembar ini yang dibaca ML Kit
+          sebagai penjagaan: kalau grid kegeser satu baris, label yang kebaca
+          di posisi Repeat 2 bakal `X3`, dan seluruh lembar ditolak sebelum
+          satu angka pun dipetakan.
+
+          Di 8 pt dia GAGAL dibaca. Diadu ke HP fisik 14 Agt 2026: `X1..X5`
+          kebaca `X-` `X?` `X` `Xe` `XE` — hurufnya ketemu, ANGKANYA hilang.
+          Memperbesar potongannya di sisi HP nggak menolong (`X` `X` `XE` `X4`
+          `XE`): yang kurang bukan piksel hasil perbesaran, tapi tinta di
+          kertasnya. 8 pt @200 dpi cuma ~22 px badan huruf.
+
+          Tiga hal di aturan ini, dan ketiganya lahir dari kegagalan di HP —
+          bukan dari selera:
+
+          - **16 pt** (≈ 44 px badan huruf). 14 pt sudah jauh lebih baik dari
+            8 pt (`X1`..`X4` kebaca benar) tapi `X5` masih jatuh jadi `XE`.
+          - **Nggak bold.** Bold menebalkan goresan sampai lekuk bawah `5`
+            hampir menutup, dan `5` yang lekuknya tertutup itu persis bentuk
+            `E`. Ini kebalikan dari dugaan pertama — lebih tebal bikin lebih
+            susah dibaca, bukan lebih gampang.
+          - **`letter-spacing`.** Tanpa jarak, `X` dan angkanya kebaca sebagai
+            satu gumpalan, dan yang paling sering kalah angkanya.
+
+          Kalau ukurannya diubah, `LetakLabelLembar::TINGGI_TEKS` WAJIB ikut:
+          kotak jangkar di berkas geometri diturunkan dari situ, dan kotak yang
+          lebih pendek dari tulisannya bikin hurufnya kepotong pas dibaca.
+        */
+        .label-jangkar { font-size: 16pt; letter-spacing: 3px; }
+
+        /*
           Label baris dirapatkan ke gridnya: label rata kiri berdiri sejauh 3 cm
           dari sel yang ditandainya — mengundang salah baca baris justru di
           tempat yang paling mahal. Jaraknya ke garis sel diatur dari lebar
@@ -146,6 +179,27 @@
             width: {{ $mm($i['garis_w']) }}mm;"></div>
     @endforeach
 
+    {{-- Kondisi lingkungan: tabel melintang, bukan empat garis berdiri
+         sendiri. Bentuknya niru tabel di formulir cetak lab — kolom nama baris
+         (`First` / `End`), lalu kotak isi + kotak satuan buat tiap besaran. --}}
+    @if ($lingkungan !== [])
+        @foreach ($lingkungan['sel'] as $kotak)
+            <div class="abs sel" style="
+                left: {{ $mm($kotak['x']) }}mm;
+                top: {{ $mm($kotak['y']) }}mm;
+                width: {{ $mm($kotak['w']) }}mm;
+                height: {{ $mm($kotak['h']) }}mm;"></div>
+        @endforeach
+
+        @foreach ($lingkungan['teks'] as $t)
+            <div class="abs label" style="
+                left: {{ $mm($t['x']) }}mm;
+                top: {{ $mm($t['y']) }}mm;
+                width: {{ $mm($t['w']) }}mm;
+                text-align: center;">{{ $t['teks'] }}</div>
+        @endforeach
+    @endif
+
     {{-- Kotak catatan, kalau gridnya nyisain ruang di bawah. --}}
     @if ($catatan !== [])
         <div class="abs judul-tabel" style="
@@ -169,14 +223,14 @@
              dibaca HP sebagai JANGKAR: kalau grid kegeser satu baris, label
              yang kebaca nggak cocok sama yang diharapkan template. --}}
         @foreach ($t['label_baris'] as $l)
-            <div class="abs label label-baris" style="
+            <div class="abs label label-baris{{ ($l['jangkar'] ?? false) ? ' label-jangkar' : '' }}" style="
                 left: {{ $mm($l['x']) }}mm;
                 top: {{ $mm($l['y']) }}mm;
                 width: {{ $mm($l['w']) }}mm;">{{ $l['teks'] }}</div>
         @endforeach
 
         @foreach ($t['label_kolom'] as $l)
-            <div class="abs label" style="
+            <div class="abs label{{ ($l['jangkar'] ?? false) ? ' label-jangkar' : '' }}" style="
                 left: {{ $mm($l['x']) }}mm;
                 top: {{ $mm($l['y']) }}mm;
                 width: {{ $mm($l['w']) }}mm;
