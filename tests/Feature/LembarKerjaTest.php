@@ -78,6 +78,12 @@ class LembarKerjaTest extends TestCase
         // Dua tabel: sebelum & sesudah adjustment.
         $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'];
         $this->assertSame(['sebelum_adjustment', 'sesudah_adjustment'], array_column($tabel, 'tahap'));
+
+        // Bentuk kertas buat pindai foto: lembar pH punya kolom suhu, dan
+        // standarnya jadi KOLOM. Dikirim eksplisit — mobile nerusinnya apa
+        // adanya ke endpoint ekstraksi, jadi dia nggak perlu nyimpen daftar
+        // alat mana yang kertasnya beda.
+        $this->assertSame(['kolom_suhu' => true, 'standar_di_baris' => false], $data['pindai_foto']);
     }
 
     /**

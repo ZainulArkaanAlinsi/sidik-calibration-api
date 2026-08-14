@@ -198,6 +198,11 @@ class CalibrationController extends Controller
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
         }
 
+        // Bentuk kertasnya buat pindai foto ikut dikirim, biar mobile tinggal
+        // meneruskan apa adanya ke endpoint ekstraksi — nggak perlu hafal alat
+        // mana yang kertasnya beda, dan nggak ada daftar kedua yang bisa basi.
+        $bentuk['pindai_foto'] = $profil->bentukPindaiFoto();
+
         return response()->json(['data' => $bentuk]);
     }
 
@@ -1234,8 +1239,7 @@ class CalibrationController extends Controller
                 GumCalculator::MIN_PENGULANGAN,
             ),
             $standar === null => 'Standar acuan belum dipilih buat titik ini.',
-            $alat->toleransi === null && $this->profil->untukAlat($alat)->punyaToleransi()
-                => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
+            $alat->toleransi === null && $this->profil->untukAlat($alat)->punyaToleransi() => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
             default => null,
         };
     }

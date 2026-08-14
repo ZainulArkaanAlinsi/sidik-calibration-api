@@ -37,8 +37,42 @@ class TataLetakLembar
      * panjang (Spectrophotometer: 28 isian) bakal ngedorong gridnya turun
      * sampai tinggi selnya nggak bisa ditulisi. Yang mengalah jaraknya, bukan
      * gridnya: isian rapat masih kebaca, sel 3 mm nggak bisa diisi.
+     *
+     * Angkanya turun dari 480 waktu kondisi lingkungan pindah ke tabelnya
+     * sendiri: empat sampai enam isian keluar dari daftar dua kolom ini, jadi
+     * barisnya berkurang tiga (Spectrophotometer: 12 baris jadi 9) dan ruang
+     * yang dibebaskan itu yang dipakai tabelnya. Batas bawah grid nggak
+     * bergeser sepiksel pun — geometri selnya tetap sama.
      */
-    private const TINGGI_ISIAN = 480;
+    private const TINGGI_ISIAN = 350;
+
+    /** Baris pertama tabel kondisi lingkungan, tepat di bawah isian identitas. */
+    private const Y_LINGKUNGAN = 670;
+
+    /** Tinggi satu baris tabel kondisi lingkungan (~7 mm, cukup ditulisi tangan). */
+    private const TINGGI_BARIS_LINGKUNGAN = 55;
+
+    /** Dua baris: `First` & `End`. Semua lembar bentuknya begini. */
+    private const TINGGI_LINGKUNGAN = 2 * self::TINGGI_BARIS_LINGKUNGAN;
+
+    /** Kolom nama baris (`First` / `End`) di tabel kondisi lingkungan. */
+    private const LEBAR_NAMA_LINGKUNGAN = 160;
+
+    /**
+     * Kolom judul yang memayungi dua barisnya.
+     *
+     * `Env. Condition` 8 pt makan ~170 px sebaris; 300 px nyisain napas kiri
+     * kanan. Kekecilan sedikit aja tulisannya membungkus jadi dua baris dan
+     * meluber keluar kotaknya — di dompdf luberannya ke KIRI, jadi judulnya
+     * mendarat di luar halaman, bukan di dalam sel tetangganya.
+     */
+    private const LEBAR_JUDUL_LINGKUNGAN = 300;
+
+    /** Bagian lebar kelompok yang jadi kotak satuan; sisanya kotak isi. */
+    private const PERSEN_SATUAN_LINGKUNGAN = 38;
+
+    /** Awalan label yang menandai isian kondisi lingkungan di profil alat. */
+    private const AWALAN_LINGKUNGAN = 'Env. Condition';
 
     private const JARAK_KE_GRID = 40;
 
@@ -90,6 +124,16 @@ class TataLetakLembar
     /** Napas antar tabel, biar baris terakhir tabel atas nggak nempel judul di bawahnya. */
     private const JARAK_TABEL = 50;
 
+    /**
+     * Napas mendatar antar tabel yang digambar BERDAMPINGAN dalam satu pita.
+     *
+     * Kolom label tabel kanan berdiri persis sesudah sel terakhir tabel kiri.
+     * Labelnya rata kanan jadi tulisannya sendiri nggak nempel, tapi tanpa
+     * jarak ini kotak labelnya mulai di garis sel tetangganya — dan begitu ada
+     * label yang lebih panjang dari jatahnya, tulisannya numpuk di garis itu.
+     */
+    private const JARAK_PITA = 40;
+
     /** Sisa ruang di bawah grid, buat penanda sudut bawah. */
     private const SISA_BAWAH = 190;
 
@@ -103,10 +147,17 @@ class TataLetakLembar
      */
     private const TINGGI_SEL_MAKS = 150;
 
-    /** Baris paling atas yang boleh dipakai grid sel. */
+    /**
+     * Baris paling atas yang boleh dipakai grid sel.
+     *
+     * Dihitung dari BAWAH tabel kondisi lingkungan, bukan dari bawah isian
+     * identitas: tabel itu yang paling bawah di blok kepala. Angkanya tetap 820
+     * seperti sebelum tabelnya ada, jadi berkas geometri yang udah tercetak
+     * nggak berubah.
+     */
     public function atasGrid(int $tinggi): int
     {
-        return $this->y(self::Y_ISIAN + self::TINGGI_ISIAN + self::JARAK_KE_GRID, $tinggi);
+        return $this->y(self::Y_LINGKUNGAN + self::TINGGI_LINGKUNGAN + self::JARAK_KE_GRID, $tinggi);
     }
 
     /** Baris paling bawah yang boleh dipakai grid sel. */
@@ -166,6 +217,12 @@ class TataLetakLembar
     public function jarakTabel(int $tinggi): int
     {
         return $this->y(self::JARAK_TABEL, $tinggi);
+    }
+
+    /** Jarak mendatar antar tabel yang berbagi satu pita. */
+    public function jarakPita(int $lebar): int
+    {
+        return $this->x(self::JARAK_PITA, $lebar);
     }
 
     public function tinggiSelMaks(int $tinggi): int
@@ -251,6 +308,163 @@ class TataLetakLembar
             'garis_y' => $this->y(self::Y_GARIS, $tinggi),
             'garis_w' => $kanan - $kiri,
             'isian' => $kotak,
+        ];
+    }
+
+    /**
+     * Tabel kondisi lingkungan — MELINTANG, bukan empat garis berdiri sendiri.
+     *
+     * Di kertas lab bagian ini satu tabel kecil: satu kolom nama baris (`First`
+     * / `End`), lalu tiap besaran dapat kotak isi + kotak satuan di kanannya.
+     * Sebagai isian identitas biasa bentuknya berantakan: empat sampai enam
+     * baris berlabel `Env. Condition — First (°C)` tersebar di dua kolom,
+     * kadang kepisah kolom kiri dan kanan, dan pasangan awal–akhir yang
+     * sebenarnya satu tabel jadi nggak kelihatan sepasang.
+     *
+     * Jumlah kolomnya ikut profil: Conductivity dua (°C, %RH),
+     * Spectrophotometer tiga (jam, °C, %RH).
+     *
+     * @param  array<string, mixed>  $bentuk  hasil `CalibrationProfile::bentukLembarKerja()`
+     * @return array{sel: list<array{x: int, y: int, w: int, h: int}>, teks: list<array{teks: string, x: int, y: int, w: int}>}|array{}
+     */
+    public function kondisiLingkungan(array $bentuk, int $lebar, int $tinggi): array
+    {
+        $baris = $this->barisLingkungan($bentuk);
+
+        if ($baris === []) {
+            return [];
+        }
+
+        // Semua satuan yang muncul, urut kemunculannya di profil: itu urutan
+        // kolom di kertas (`Time | Temperature | Humidity`).
+        $kolom = [];
+
+        foreach ($baris as $satuan) {
+            foreach (array_keys($satuan) as $s) {
+                $kolom[$s] = true;
+            }
+        }
+
+        $kolom = array_keys($kolom);
+
+        $kiri = $this->kiri($lebar);
+        $kanan = $this->x(self::KANAN, $lebar);
+        $lebarNama = $this->x(self::LEBAR_NAMA_LINGKUNGAN, $lebar);
+        $tinggiBaris = $this->y(self::TINGGI_BARIS_LINGKUNGAN, $tinggi);
+
+        $lebarJudul = $this->x(self::LEBAR_JUDUL_LINGKUNGAN, $lebar);
+        // Sisa pembagian ditelan kolom judul di kiri, jadi tepi kanan tabelnya
+        // jatuh persis di batas kanan grid dan garis kop di atasnya.
+        $lebarKelompok = intdiv($kanan - $kiri - $lebarNama - $lebarJudul, count($kolom));
+        $lebarJudul = $kanan - $kiri - $lebarNama - count($kolom) * $lebarKelompok;
+        $lebarSatuan = intdiv($lebarKelompok * self::PERSEN_SATUAN_LINGKUNGAN, 100);
+
+        $atas = $this->y(self::Y_LINGKUNGAN, $tinggi);
+
+        // Kotak judul membentang dua baris, seperti sel yang di-merge di
+        // formulir aslinya. Tanpa itu `First` & `End` berdiri sendirian tanpa
+        // ada yang menyebut ini kondisi lingkungan.
+        $sel = [['x' => $kiri, 'y' => $atas, 'w' => $lebarJudul, 'h' => $tinggiBaris * count($baris)]];
+        $teks = [$this->teksLingkungan(self::AWALAN_LINGKUNGAN, $kiri, $atas, $lebarJudul, $tinggiBaris * count($baris))];
+
+        $y = $atas;
+
+        foreach ($baris as $nama => $satuan) {
+            $x = $kiri + $lebarJudul;
+
+            $sel[] = ['x' => $x, 'y' => $y, 'w' => $lebarNama, 'h' => $tinggiBaris];
+            $teks[] = $this->teksLingkungan((string) $nama, $x, $y, $lebarNama, $tinggiBaris);
+
+            $x += $lebarNama;
+
+            foreach ($kolom as $s) {
+                // Kotak isi dikosongkan walaupun lembar ini nggak punya
+                // besarannya: tabel yang selnya bolong di tengah kelihatan
+                // seperti tabel yang salah cetak.
+                $sel[] = ['x' => $x, 'y' => $y, 'w' => $lebarKelompok - $lebarSatuan, 'h' => $tinggiBaris];
+                $sel[] = ['x' => $x + $lebarKelompok - $lebarSatuan, 'y' => $y, 'w' => $lebarSatuan, 'h' => $tinggiBaris];
+
+                if (isset($satuan[$s])) {
+                    $teks[] = $this->teksLingkungan(
+                        $s,
+                        $x + $lebarKelompok - $lebarSatuan,
+                        $y,
+                        $lebarSatuan,
+                        $tinggiBaris,
+                    );
+                }
+
+                $x += $lebarKelompok;
+            }
+
+            $y += $tinggiBaris;
+        }
+
+        return ['sel' => $sel, 'teks' => $teks];
+    }
+
+    /**
+     * Isian kondisi lingkungan, dikelompokkan jadi baris tabel.
+     *
+     * Nama barisnya diambil dari belakang tanda pisah di labelnya
+     * (`Env. Condition — First` jadi `First`), jadi yang menentukan isi tabel
+     * tetap profil alatnya, bukan daftar kode yang ditulis ulang di sini.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, array<string, true>> nama baris → satuan yang dipunyainya
+     */
+    private function barisLingkungan(array $bentuk): array
+    {
+        $baris = [];
+
+        foreach ($bentuk['bagian'] ?? [] as $bagian) {
+            if (($bagian['di_kertas'] ?? true) === false) {
+                continue;
+            }
+
+            foreach ($bagian['field'] ?? [] as $field) {
+                if (($field['di_kertas'] ?? true) === false) {
+                    continue;
+                }
+
+                $label = trim((string) ($field['label'] ?? ''));
+
+                if (! str_starts_with($label, self::AWALAN_LINGKUNGAN)) {
+                    continue;
+                }
+
+                $nama = trim((string) (explode('—', $label)[1] ?? ''));
+                $satuan = trim((string) ($field['satuan'] ?? ''));
+
+                // Isian jam nggak punya satuan di profil — di kertas kolomnya
+                // tetap butuh kepala, dan `jam` itu yang tercetak.
+                if ($satuan === '' && ($field['tipe'] ?? null) === 'waktu') {
+                    $satuan = 'jam';
+                }
+
+                if ($nama === '' || $satuan === '') {
+                    continue;
+                }
+
+                $baris[$nama][$satuan] = true;
+            }
+        }
+
+        return $baris;
+    }
+
+    /**
+     * Satu tulisan di tengah selnya — mendatar dan tegak.
+     *
+     * @return array{teks: string, x: int, y: int, w: int}
+     */
+    private function teksLingkungan(string $teks, int $x, int $y, int $lebar, int $tinggi): array
+    {
+        return [
+            'teks' => $teks,
+            'x' => $x,
+            'y' => (int) round($y + max(0, ($tinggi - LetakLabelLembar::TINGGI_TEKS) / 2)),
+            'w' => $lebar,
         ];
     }
 
@@ -355,15 +569,13 @@ class TataLetakLembar
                 $label = trim((string) ($field['label'] ?? $kode));
                 $satuan = trim((string) ($field['satuan'] ?? ''));
 
-                // Empat isian kondisi lingkungan berlabel sama persis dua-dua
-                // (`Env. Condition — First` buat suhu DAN kelembaban). Yang
-                // membedakan cuma satuannya, jadi satuannya ikut dicetak.
-                // Isian jam nggak punya satuan, dan labelnya sama persis dengan
-                // isian suhu/kelembaban sebelum satuannya ditempel — di lembar
-                // Spectrophotometer ada tiga `Env. Condition — First`
-                // berurutan, dan yang pertama itu jamnya.
-                if ($satuan === '' && ($field['tipe'] ?? null) === 'waktu') {
-                    $satuan = 'jam';
+                // Kondisi lingkungan punya tabelnya sendiri di `kondisiLingkungan()`.
+                // Sebagai garis satu-satu, empat isian ini berlabel sama persis
+                // dua-dua (`Env. Condition — First` buat suhu DAN kelembaban)
+                // dan yang membedakan cuma satuan dalam kurung — teknisi harus
+                // membaca ujung barisnya buat tahu yang mana yang suhu.
+                if (str_starts_with($label, self::AWALAN_LINGKUNGAN)) {
+                    continue;
                 }
 
                 $hasil[] = [
