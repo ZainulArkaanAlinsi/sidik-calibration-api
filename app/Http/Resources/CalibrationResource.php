@@ -375,6 +375,23 @@ class CalibrationResource extends JsonResource
             'tanda_nol' => $alat !== null
                 ? (self::profil($alat)?->tandaNolDicetak() ?? true)
                 : true,
+            // Keterangan/kelompok titik ini — kolom "Remark" di sertifikat.
+            // Chlorine misahin `Free Chlorine` dari `Total Chlorine`;
+            // Spectrophotometer misahin tiga blok filter yang tiap kelompoknya
+            // punya SATU U95 bersama.
+            //
+            // Dulu cuma dibekukan ke snapshot sertifikat, jadi layar riwayat &
+            // approval kepaksa nebak kelompok tiap titik dari besar angkanya.
+            // Buat spektro tebakan itu SALAH: rentang Holmium (283–641 nm) dan
+            // Didynium (474–810 nm) tumpang tindih 167 nm, jadi titik yang
+            // paling gampang ketuker justru yang nggak bisa dibedain dari
+            // angkanya.
+            //
+            // `null` buat alat yang titiknya nggak punya keterangan — layar
+            // ngosongin kolomnya, persis kayak sertifikat.
+            'remark' => $alat !== null
+                ? self::profil($alat)?->remarkTitik((float) $titik->titik_ukur)
+                : null,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,

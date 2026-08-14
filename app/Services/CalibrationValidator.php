@@ -451,6 +451,10 @@ class CalibrationValidator
         $temuan = [];
         $alat = $sesi->equipment;
 
+        // Titik dikumpulin dulu, hitung ulangnya belakangan — lihat
+        // [bandingkanHitungUlang].
+        $siapHitung = [];
+
         // Cuma pembacaan SESUDAH adjustment yang masuk hitungan — as-found itu
         // dokumentasi kondisi awal alat, bukan dasar sertifikat.
         $pembacaanPerTitik = $sesi->rawMeasurements
@@ -523,25 +527,26 @@ class CalibrationValidator
                 $this->profil->untukAlat($alat)->standarBerkurvaSuhu(),
             )];
 
-            $ulang = $this->gum->hitungTitik(
-                $ke,
-                (float) $titik->titik_ukur,
-                $pembacaan->sortBy('pembacaan_ke')
+            $siapHitung[] = [
+                'titik_ke' => $ke,
+                'titik_ukur' => (float) $titik->titik_ukur,
+                'pembacaan' => $pembacaan->sortBy('pembacaan_ke')
                     ->map(fn (RawMeasurement $m): float => (float) $m->pembacaan)
                     ->values()
                     ->all(),
-                $alat,
-                $standar,
+                'standard' => $standar,
                 // Suhu larutan yang kecatat di pembacaan, biar hitung ulang di
                 // sini nurunin nilai acuan dengan cara yang SAMA kayak waktu
                 // disimpen. Kalau nggak dikirim, pemeriksaan ini nerima
                 // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
                 // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
-                $this->suhuLarutanRataRata($pembacaan),
-                $suhuRuang,
-            );
+                'suhu_larutan' => $this->suhuLarutanRataRata($pembacaan),
+                'tersimpan' => $titik,
+            ];
+        }
 
-            $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];
+        if ($alat !== null && $siapHitung !== []) {
+            $temuan = [...$temuan, ...$this->bandingkanHitungUlang($siapHitung, $alat, $suhuRuang)];
         }
 
         return $temuan;
@@ -647,6 +652,98 @@ class CalibrationValidator
             ->values();
 
         return $suhu->isEmpty() ? null : (float) $suhu->avg();
+    }
+
+    /**
+     * Hitung ulang SEMUA titik sekaligus, baru diadu satu-satu.
+     *
+     * Sekaligus, bukan satu per satu, karena ada alat yang ketidakpastiannya
+     * lahir per KELOMPOK titik. `GumCalculator::hitungTitik()` cuma lihat satu
+     * titik, jadi buat alat begitu dia mustahil ngasilin angka yang sama kayak
+     * waktu sesinya disimpen — dan bedanya kecetak sebagai peringatan di tiap
+     * approve.
+     *
+     * Kejadian nyatanya Spectrophotometer (sesi `KAL/2026/08/0050`, 14 Agt 2026):
+     * SEMBILAN titik, DELAPAN ke-flag `hitung_ulang_beda` — titik 1 "tersimpan
+     * 0,432557, hitung ulang 0,100167" — padahal angka tersimpannya persis sama
+     * kayak master. Yang beda cuma jalannya: `CalibrationController` nyimpen
+     * lewat `CalibrationProfile::hitungPerGrup()` (budget per kelompok filter,
+     * dari STDEV terbesar kelompok itu), validator ngitung ulang per titik. Jadi
+     * tiap sesi Spectrophotometer cuma bisa disetujui dengan
+     * `abaikan_peringatan: true` — dan begitu tombol "SETUJUI TETAP" jadi
+     * kebiasaan, peringatan yang beneran penting ikut ketelan.
+     *
+     * Makanya di sini jalurnya disamain dengan jalur simpan: tanya profilnya
+     * dulu. Profil yang nggak butuh balikin `null` dan pemeriksaan ini jatuh ke
+     * jalur per-titik, persis kayak sebelumnya.
+     *
+     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard, suhu_larutan: float|null, tersimpan: UncertaintyCalculation}>  $siapHitung
+     * @return list<array<string, mixed>>
+     */
+    private function bandingkanHitungUlang(array $siapHitung, Equipment $alat, ?float $suhuRuang): array
+    {
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup(
+            array_map(
+                static fn (array $t): array => [
+                    'titik_ke' => $t['titik_ke'],
+                    'titik_ukur' => $t['titik_ukur'],
+                    'pembacaan' => $t['pembacaan'],
+                    'standard' => $t['standard'],
+                    'suhu_larutan' => $t['suhu_larutan'],
+                ],
+                $siapHitung,
+            ),
+            $alat,
+        );
+
+        $temuan = [];
+
+        if ($perGrup === null) {
+            foreach ($siapHitung as $t) {
+                $temuan = [...$temuan, ...$this->bandingkanTitik(
+                    $t['titik_ke'],
+                    $t['tersimpan'],
+                    $this->gum->hitungTitik(
+                        $t['titik_ke'],
+                        $t['titik_ukur'],
+                        $t['pembacaan'],
+                        $alat,
+                        $t['standard'],
+                        $t['suhu_larutan'],
+                        $suhuRuang,
+                    ),
+                )];
+            }
+
+            return $temuan;
+        }
+
+        $hitungan = collect($perGrup['hitungan'])->keyBy('titik_ke');
+        $alasan = collect($perGrup['belum_dihitung'])->keyBy('titik_ke');
+
+        foreach ($siapHitung as $t) {
+            $ke = $t['titik_ke'];
+            $ulang = $hitungan->get($ke);
+
+            // Titik yang PUNYA baris hasil hitung tapi sekarang nggak bisa
+            // dihitung ulang itu temuan sendiri, bukan sesuatu yang boleh
+            // didiemin: berarti masternya berubah sesudah sesi disimpen.
+            if ($ulang === null) {
+                $temuan[] = $this->temuan(
+                    self::PERINGATAN,
+                    'hitung_ulang_gagal',
+                    "Titik ke-{$ke}: angkanya tersimpan, tapi sekarang nggak bisa dihitung ulang. "
+                        .($alasan->get($ke)['alasan'] ?? 'Alasannya nggak dilaporin profil alat.'),
+                    ['titik_ke' => $ke],
+                );
+
+                continue;
+            }
+
+            $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $t['tersimpan'], $ulang)];
+        }
+
+        return $temuan;
     }
 
     /**
