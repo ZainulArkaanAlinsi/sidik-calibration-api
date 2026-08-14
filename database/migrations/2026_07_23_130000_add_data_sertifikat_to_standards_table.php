@@ -27,8 +27,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-            // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
-            // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
+        // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
+        // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
         Schema::table('standards', function (Blueprint $table) {
             if (! Schema::hasColumn('standards', 'koefisien_suhu')) {
                 $table->json('koefisien_suhu')->nullable()->after('drift')

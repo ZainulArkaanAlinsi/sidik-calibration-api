@@ -9,6 +9,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\CalibrationValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -233,7 +234,7 @@ class TitikKosongTidakMenggeserTest extends TestCase
     {
         $sesi = $this->kirim();
 
-        $hasil = app(\App\Services\CalibrationValidator::class)->periksa($sesi);
+        $hasil = app(CalibrationValidator::class)->periksa($sesi);
 
         $kode = array_column($hasil['temuan'], 'kode');
 

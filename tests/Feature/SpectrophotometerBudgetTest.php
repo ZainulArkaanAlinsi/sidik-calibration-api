@@ -12,6 +12,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\SpectrophotometerCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -707,7 +708,7 @@ class SpectrophotometerBudgetTest extends TestCase
     /**
      * @param  array<string, mixed>  $spek
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('spekTidakMasukAkal')]
+    #[DataProvider('spekTidakMasukAkal')]
     public function test_spek_tidak_masuk_akal_ditolak(array $spek): void
     {
         $this->expectException(\InvalidArgumentException::class);

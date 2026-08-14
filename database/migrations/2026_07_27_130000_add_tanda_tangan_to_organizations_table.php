@@ -24,8 +24,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-            // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
-            // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
+        // Dijaga `hasColumn`: kolomnya bisa udah kepasang duluan di database
+        // yang dipakai bareng sementara tabel `migrations` nggak nyatetnya.
         Schema::table('organizations', function (Blueprint $table) {
             if (! Schema::hasColumn('organizations', 'tanda_tangan_path')) {
                 $table->string('tanda_tangan_path')->nullable()->after('logo_path');
