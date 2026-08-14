@@ -608,6 +608,68 @@ class WorksheetScanTest extends TestCase
     }
 
     /**
+     * Kiriman `multipart/form-data` — bentuk yang dipakai HP begitu citra audit
+     * ikut dilampirkan.
+     *
+     * **Multipart nggak punya tipe.** `true` nyampe di server sebagai string
+     * `"1"`, dan tahap penjagaannya ngebandingin PAKAI TIPE (`!== true`,
+     * `=== false`). Tanpa perapian di `WorksheetScanRequest::payload()`:
+     *
+     *  - `qr.terbaca` selalu kebaca "nggak terbaca", jadi TIAP pindai bercitra
+     *    ditolak `template_tidak_dikenali` — dan pesannya nyuruh teknisi
+     *    mastiin QR-nya kefoto, padahal QR-nya emang udah kebaca;
+     *  - `kotak_teks_di_dalam_sel: false` nggak pernah kena, jadi angka yang
+     *    MELUBER dari sel sebelah lolos tanpa ditandai. Arah bahayanya kebalik
+     *    dari yang pertama: bukan nolak yang sah, tapi NERIMA yang salah.
+     *
+     * Test lain di berkas ini lewat `postJson`, yang tipenya kejaga — jadi
+     * nggak ada satu pun yang bisa nangkep ini. Yang di bawah sengaja nirukan
+     * bentuk multipart-nya: semua boolean jadi string.
+     */
+    public function test_kiriman_multipart_boolean_string_diterima(): void
+    {
+        $payload = $this->payload();
+
+        $payload['qr']['terbaca'] = '1';
+        $payload['geometri']['grid_tersnap'] = '1';
+
+        foreach ($payload['sel'] as $i => $sel) {
+            $payload['sel'][$i]['kotak_teks_di_dalam_sel'] = '1';
+        }
+
+        foreach ($payload['sel_jangkar'] as $i => $jangkar) {
+            $payload['sel_jangkar'][$i]['cocok'] = '1';
+        }
+
+        $respons = $this->actingAs($this->teknisi)->post(self::URL, $payload);
+
+        $respons->assertCreated();
+        $respons->assertJsonPath('status', 'perlu_review');
+        $respons->assertJsonPath('ringkasan.total_sel', 60);
+    }
+
+    /**
+     * Kebalikannya: `"0"` mesti tetap dibaca sebagai FALSE.
+     *
+     * Sel yang teksnya meluber dari kotaknya divonis MERAH — teknisi ngetik
+     * sendiri. Kalau `"0"` kebaca sebagai "ada isinya" (string nggak kosong di
+     * PHP itu truthy), angka dari kolom sebelah mendarat di sel ini dan
+     * kelihatan sah.
+     */
+    public function test_multipart_false_tetap_false(): void
+    {
+        $payload = $this->payload();
+
+        $payload['qr']['terbaca'] = '1';
+        $payload['sel'][0]['kotak_teks_di_dalam_sel'] = '0';
+
+        $respons = $this->actingAs($this->teknisi)->post(self::URL, $payload);
+
+        $respons->assertCreated();
+        $respons->assertJsonPath('ringkasan.merah', 1);
+    }
+
+    /**
      * Potongan citra per sel itu yang bikin layar review ada gunanya: teknisi
      * bandingin angka hasil baca sama coretan aslinya di layar yang sama. Kalau
      * dia harus buka kertasnya lagi buat ngecek, mending dia ngetik dari awal.
