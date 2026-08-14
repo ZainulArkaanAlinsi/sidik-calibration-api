@@ -135,12 +135,70 @@ class WorksheetScanRequest extends FormRequest
         return [
             'template_id' => $this->string('template_id')->toString(),
             'template_versi' => $this->integer('template_versi'),
-            'qr' => (array) $this->input('qr', []),
-            'geometri' => (array) $this->input('geometri', []),
+            'qr' => $this->bagian('qr', ['terbaca']),
+            'geometri' => $this->bagian('geometri', ['grid_tersnap']),
             'kualitas' => (array) $this->input('kualitas', []),
             'perangkat' => (array) $this->input('perangkat', []),
-            'sel' => array_values((array) $this->input('sel', [])),
-            'sel_jangkar' => array_values((array) $this->input('sel_jangkar', [])),
+            'sel' => array_values(
+                array_map(
+                    fn ($s) => $this->bolean((array) $s, ['kotak_teks_di_dalam_sel']),
+                    (array) $this->input('sel', []),
+                ),
+            ),
+            'sel_jangkar' => array_values(
+                array_map(
+                    fn ($j) => $this->bolean((array) $j, ['cocok']),
+                    (array) $this->input('sel_jangkar', []),
+                ),
+            ),
         ];
+    }
+
+    /**
+     * @param  list<string>  $bool
+     * @return array<string, mixed>
+     */
+    private function bagian(string $kunci, array $bool): array
+    {
+        return $this->bolean((array) $this->input($kunci, []), $bool);
+    }
+
+    /**
+     * Rapikan kolom boolean yang lewat `multipart/form-data`.
+     *
+     * Endpoint ini nerima DUA bentuk kiriman — JSON, dan multipart waktu HP
+     * ikut nglampirin citra audit. Bedanya kelihatan sepele tapi mematikan:
+     * multipart nggak punya tipe, jadi `true` nyampe sebagai string `"1"`.
+     * Tahap penjagaannya ngebandingin PAKAI TIPE (`!== true`, `=== false`),
+     * jadi tanpa perapian ini:
+     *
+     *  - `qr.terbaca` selalu dianggap NGGAK kebaca → tiap pindai bercitra
+     *    ditolak `template_tidak_dikenali`, dan pesannya nyuruh teknisi
+     *    mastiin QR-nya kefoto — padahal QR-nya udah kebaca;
+     *  - `kotak_teks_di_dalam_sel: false` nggak pernah kena, jadi angka yang
+     *    MELUBER dari sel tetangga lolos tanpa ditandai. Yang ini arah
+     *    bahayanya kebalik: bukan nolak yang sah, tapi nerima yang salah.
+     *
+     * Nilai yang nggak dikirim dibiarin nggak ada — `null` (HP versi lama yang
+     * belum ngirim kolomnya) beda artinya dari `false`, dan `ValidasiSel`
+     * emang mbedain keduanya.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $bool
+     * @return array<string, mixed>
+     */
+    private function bolean(array $data, array $bool): array
+    {
+        foreach ($bool as $kunci) {
+            if (array_key_exists($kunci, $data) && $data[$kunci] !== null) {
+                $data[$kunci] = filter_var(
+                    $data[$kunci],
+                    FILTER_VALIDATE_BOOLEAN,
+                    FILTER_NULL_ON_FAILURE,
+                ) ?? false;
+            }
+        }
+
+        return $data;
     }
 }
