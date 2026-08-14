@@ -44,6 +44,7 @@ class CalibrationCapabilitySeeder extends Seeder
      * @var list<string>
      */
     private const DISEED_TERPISAH = ['Spektrofotometer'];
+
     public function run(): void
     {
         $path = database_path('data/kemampuan-kalibrasi.json');

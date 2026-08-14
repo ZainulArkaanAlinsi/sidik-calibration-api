@@ -2,6 +2,7 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\GumCalculator;
 
 /**
@@ -54,7 +55,7 @@ use App\Services\GumCalculator;
  * Yang TIDAK ditiru sama sekali: blok SRE (`PERHITUNGAN U95%` baris 60–76).
  * Lihat [SpectrophotometerProfile] soal itu.
  *
- * @see \App\Services\Calibration\Profiles\SpectrophotometerProfile
+ * @see SpectrophotometerProfile
  * @see docs/handoff-backend-spectrophotometer.md
  */
 class SpectrophotometerCalculator
