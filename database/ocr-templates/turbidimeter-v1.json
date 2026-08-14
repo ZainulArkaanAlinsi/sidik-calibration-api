@@ -1,9 +1,9 @@
 {
-    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "_catatan": "DINYALAKAN buat UJI LAPANGAN 14 Agt 2026 — belum diadu ke >=20 foto nyata. Yang udah kebukti (dijaga test, buat KEENAM alat): kunci sel di kertas sama persis dengan yang dikenal server, tiap kotak sel muat di halaman & nggak tumpang tindih, sel nggak nabrak penanda sudut/QR/blok kepala, dan kotak jangkar menaungi label yang tercetak. Di HP fisik: 4 marker ketemu, warp residual <2px, 80 sel mendarat di dalam kotaknya, QR + kelima label Repeat kebaca ML Kit (diuji di lembar conductivity). Yang BELUM: jepretan kamera dari kertas yang beneran dicetak & diisi tangan. Sampai itu selesai hasil pindai tetap wajib lewat layar review — dan kalau angkanya mendarat di sel yang salah, MATIKAN flag ini lagi.",
     "template_id": "turbidimeter",
     "versi": 1,
     "kode_dokumen": "SIDIK-FM-CAL-0530_Rev.2",
-    "terverifikasi": false,
+    "terverifikasi": true,
     "ukuran_referensi": {
         "w": 1654,
         "h": 2339,
