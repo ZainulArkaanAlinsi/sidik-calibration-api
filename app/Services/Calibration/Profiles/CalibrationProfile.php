@@ -141,12 +141,14 @@ abstract class CalibrationProfile
      *    Chlorine ikut pola yang sama.
      *  - Master Conductivity nyimpen angka yang SAMA PERSIS kayak kita
      *    (`SERTIFIKAT STYLE 1` baris 35: `25` · `25.04` · `-0.03999999999999915`)
-     *    tapi nyetaknya `0,0`, tanpa minus.
+     *    tapi nyetaknya `0,0`, tanpa minus. Master Spectrophotometer sama:
+     *    koreksi titik 0 %T & 100 %T dua-duanya negatif, dua-duanya kecetak
+     *    `0,0`.
      *
      * Jadi jawabannya nggak bisa diturunkan dari nalar "tanda minus itu
      * informasi" — dua dokumen resmi lab jawabnya beda buat angka yang sama.
      * Default `true` (tanda dipertahankan) karena itu yang berlaku di empat
-     * dari lima alat; yang beda cuma override sendiri.
+     * dari enam alat; yang beda cuma override sendiri.
      */
     public function tandaNolDicetak(): bool
     {
@@ -552,6 +554,44 @@ abstract class CalibrationProfile
     public function desimalU95(): ?int
     {
         return null;
+    }
+
+    /**
+     * Desimal angka `k` di kalimat `… Coverage Factor ( k ) = …`.
+     * `null` = perilaku lama, yaitu 2 desimal dengan nol di belakang dibuang
+     * (`1,97`, `2`).
+     *
+     * Ada karena master Spectrophotometer nyimpen `k` presisi penuh
+     * (3,182446…; 2,364624…; 2,008559…) tapi SELNYA diformat 0 desimal, jadi
+     * yang tercetak di sertifikat `3`, `2`, `2`. Sistem sebelumnya nyetak
+     * `3,18` — angka yang bener, tapi bukan angka yang ada di dokumen lab.
+     *
+     * Sengaja per alat, bukan disamain: master alat lain nyimpen `k` yang
+     * mirip-mirip (1,9714 di Turbidimeter, 1,9707 di pH) dan belum pernah diadu
+     * ke cetakannya. Dipukul rata 0 desimal, empat sertifikat yang udah beredar
+     * berubah bunyi tanpa satu pun bukti kertas.
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Kolom **Standard Value** nulis nol di belakang koma atau nggak.
+     *
+     * `true` (bawaan) = nol di belakang dibuang — master Turbidimeter nulis
+     * `1` / `100` / `1000`, bukan `1,00` / `100,0`, karena standarnya emang
+     * angka bulat dan desimalnya nggak membawa informasi apa pun.
+     *
+     * `false` = ditulis penuh sebanyak desimal barisnya. Master
+     * Spectrophotometer nulis `334,0` · `460,0` · `748,0` · `100,0` — kolomnya
+     * ngelapor NILAI ACUAN FILTER, dan di daftar yang tetangganya `287,7` &
+     * `637,9`, angka `334` kebaca kayak titik yang beda formatnya, bukan titik
+     * yang kebetulan bulat.
+     */
+    public function nolBelakangStandarDibuang(): bool
+    {
+        return true;
     }
 
     /**

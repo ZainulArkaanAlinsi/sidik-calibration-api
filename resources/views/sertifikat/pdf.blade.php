@@ -101,6 +101,12 @@
         table.data th, table.data td { border: 1px solid #999; padding: 3px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
+        /*
+          Kolom R² itu SATU kotak setinggi tabelnya (rowspan), niru sel merge di
+          master. Tanpa `middle` angkanya nempel di baris pertama dan kotak
+          setinggi lima baris itu kebaca kayak nilai punya baris pertama doang.
+        */
+        table.data td.r2 { vertical-align: middle; }
 
         /*
           Mode PADAT — buat sertifikat berbaris banyak (Spectrophotometer: 24
@@ -443,22 +449,39 @@
                          itu dibaca dari master masing-masing, bukan dinalar —
                          lihat `CalibrationProfile::tandaNolDicetak()`. --}}
                     @php($tandaNol = $baris['tanda_nol'] ?? true)
+                    {{-- Nol di belakang koma di kolom Standard Value dibuang
+                         (`100`) atau ditulis penuh (`100,0`) — beda per master,
+                         dibaca dari `CalibrationProfile::nolBelakangStandarDibuang()`.
+                         Sertifikat lama yang snapshot-nya belum punya kunci ini
+                         jatuh ke `true`, persis perilaku lamanya. --}}
+                    @php($standarRingkas = $baris['standar_ringkas'] ?? true)
                     <tr>
-                        {{-- `nilaiStandar` buat kolom pertama, `hasil` buat
-                             sisanya: Standard Value nulis nilai NOMINAL
-                             standarnya (`1`, `100`, `1000`), dua kolom lain
-                             ikut desimal barisnya. --}}
-                        <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}</td>
+                        {{-- Standard Value nulis nilai NOMINAL standarnya.
+                             Turbidimeter mau `1` / `100` / `1000` (nol di
+                             belakang dibuang), Spectrophotometer mau `334,0` /
+                             `460,0` — dua kolom lain selalu ikut desimal
+                             barisnya. --}}
+                        <td>{{ $standarRingkas
+                            ? \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db)
+                            : \App\Support\Angka::hasil($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
-                        @if ($r2 !== null)
-                            {{-- Angkanya SATU buat seluruh kelompok, jadi cuma
-                                 ditulis di baris pertama — persis master, yang
-                                 nulis `0,9359` sekali di baris titik 0 %T dan
-                                 ngosongin empat baris sisanya. Diulang tiap
-                                 baris malah kebaca kayak lima R² yang kebetulan
-                                 sama. Empat desimal ngikut sel masternya. --}}
-                            <td>{{ $loop->first ? \App\Support\Angka::id((float) $r2, 4) : '' }}</td>
+                        @if ($r2 !== null && $loop->first)
+                            {{-- Angkanya SATU buat seluruh kelompok, jadi
+                                 selnya di-`rowspan` setinggi tabelnya — persis
+                                 master, yang nge-merge `SERTIFIKAT!R47:R51`
+                                 jadi satu kotak. Diulang tiap baris malah
+                                 kebaca kayak lima R² yang kebetulan sama.
+
+                                 NOL desimal, bukan empat. Sel masternya nyimpen
+                                 `0,9359` tapi diformat 0 desimal, jadi yang
+                                 tercetak `1` — dan `1` itu juga yang keluar
+                                 kalau angkanya dihitung ulang dari data blok
+                                 (`RSQ` = 0,999922). Dua kandidat rumus yang
+                                 belum bisa dibedain itu NYETAK ANGKA YANG SAMA,
+                                 jadi kolomnya nggak lagi nunggu jawaban lab —
+                                 lihat `docs/pertanyaan-lab-r2-spektro.md`. --}}
+                            <td class="r2" rowspan="{{ $barisKelompok->count() }}">{{ \App\Support\Angka::id((float) $r2, 0) }}</td>
                         @endif
                     </tr>
                 @endforeach
@@ -492,10 +515,17 @@
              snapshot-nya belum punya `faktor_cakupan_k` nggak nyetak baris ini
              sama sekali — bukan ngarang angkanya. --}}
         @php($k = $barisKelompok->first()['faktor_cakupan_k'] ?? null)
+        {{-- Desimal `k` punya jalurnya sendiri: master spektro nyimpen
+             3,182446… tapi selnya diformat 0 desimal, jadi yang tercetak `3`.
+             Sertifikat lama (dan alat yang masternya belum diadu ke cetakan)
+             jatuh ke perilaku lama: 2 desimal, nol di belakang dibuang. --}}
+        @php($dbK = $barisKelompok->first()['desimal_k'] ?? null)
         @if ($k !== null)
             <div class="ket-k">
                 The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) =
-                {{ \App\Support\Angka::idRingkas((float) $k, 2) }}
+                {{ $dbK === null
+                    ? \App\Support\Angka::idRingkas((float) $k, 2)
+                    : \App\Support\Angka::id((float) $k, $dbK) }}
             </div>
         @endif
     @empty

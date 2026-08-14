@@ -10,10 +10,15 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
+use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\SpectrophotometerCalculator;
+use App\Services\CalibrationValidator;
+use App\Support\Angka;
+use Database\Seeders\CalibrationCapabilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 /**
@@ -224,9 +229,9 @@ class SpectrophotometerApiTest extends TestCase
      * mentah bikin tes ini cuma jalan di satu dari dua, dan yang jebol justru
      * yang produksi.
      *
-     * @return \Illuminate\Support\Collection<string, \App\Models\UncertaintyCalculation>
+     * @return Collection<string, UncertaintyCalculation>
      */
-    private function titikTersimpan(CalibrationSession $sesi): \Illuminate\Support\Collection
+    private function titikTersimpan(CalibrationSession $sesi): Collection
     {
         return $sesi->uncertaintyCalculations()
             ->orderBy('titik_ke')
@@ -457,7 +462,7 @@ class SpectrophotometerApiTest extends TestCase
      */
     public function test_kemampuan_spektro_nggak_kembar_dua_ejaan(): void
     {
-        $this->seed(\Database\Seeders\CalibrationCapabilitySeeder::class);
+        $this->seed(CalibrationCapabilitySeeder::class);
 
         $this->assertSame(
             0,
@@ -467,11 +472,51 @@ class SpectrophotometerApiTest extends TestCase
     }
 
     /**
-     * Baris `Uncertainty U95% = ±` blok %T dicetak DUA desimal (`0,50`),
-     * sementara kolom UUT & Correction di blok yang sama pakai tiga (`9,665`).
+     * Approve TANPA `abaikan_peringatan` — dan itu inti tesnya.
      *
-     * Dua angka, dua format, satu tabel. Diadu ke `SERTIFIKAT.csv` master —
-     * bukan dinalar dari konsistensi yang kelihatan lebih rapi.
+     * Tiap tes lain di berkas ini nyetel `abaikan_peringatan: true` supaya
+     * fokusnya ke hal yang lagi diuji. Efek sampingnya: seluruh suite hijau
+     * sementara approve normal ternyata NGGAK PERNAH bisa jalan. Sesi nyata
+     * `KAL/2026/08/0050` (14 Agt 2026, MySQL `asmo_db`) ke-flag di 8 dari 9
+     * titik — "Titik ke-1: U95% tersimpan 0,432557, hasil hitung ulang
+     * 0,100167" — padahal angka tersimpannya persis master.
+     *
+     * Sebabnya jalur ganda: `CalibrationController` nyimpen lewat
+     * `CalibrationProfile::hitungPerGrup()` (satu budget per kelompok filter,
+     * dari STDEV terbesar kelompok itu), sementara `CalibrationValidator`
+     * ngitung ulang per titik lewat `GumCalculator::hitungTitik()` — yang buat
+     * alat ini emang sengaja balik null dari `komponenBudget()`. Dua jalur,
+     * dua angka, tiap sesi kena peringatan yang selalu boleh diabaikan; dan
+     * begitu "SETUJUI TETAP" jadi kebiasaan, peringatan yang beneran penting
+     * ikut ketelan.
+     */
+    public function test_approve_polos_nggak_ngeluh_hitung_ulang_beda(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $temuan = $this->actingAs($this->admin)
+            ->postJson('/api/calibrations/'.$sesi->id.'/approve')
+            ->assertOk()
+            ->json('validasi.temuan');
+
+        $kode = collect($temuan)->pluck('kode');
+
+        $this->assertFalse(
+            $kode->contains('hitung_ulang_beda'),
+            'validator ngitung ulang lewat jalur yang beda dari jalur simpan: '
+                .collect($temuan)->where('kode', 'hitung_ulang_beda')->pluck('pesan')->implode(' | '),
+        );
+        $this->assertFalse($kode->contains('hitung_ulang_gagal'));
+
+        $this->assertNotNull(Certificate::where('calibration_session_id', $sesi->id)->first());
+    }
+
+    /**
+     * Baris `Uncertainty U95% = ±` dicetak DUA desimal (`0,50`), sementara
+     * kolom Standard/UUT/Correction di tabel yang sama cuma SATU (`9,7`).
+     *
+     * Dua angka, dua format, satu tabel. Diadu ke workbook master — bukan
+     * dinalar dari konsistensi yang kelihatan lebih rapi.
      */
     public function test_desimal_u95_ikut_master_bukan_desimal_titik(): void
     {
@@ -489,13 +534,14 @@ class SpectrophotometerApiTest extends TestCase
             SpectrophotometerCalculator::GRUP_TRANSMITAN
         ]['judul']);
 
-        // Titiknya sendiri tetap tiga desimal — yang beda cuma baris U95.
-        $this->assertSame(3, $transmitan['desimal']);
+        // Kolom hasilnya SATU desimal (sel `SERTIFIKAT` diformat 1 desimal),
+        // barisnya U95 dua — itu yang beda.
+        $this->assertSame(1, $transmitan['desimal']);
         $this->assertSame(2, $transmitan['desimal_u95']);
 
         $this->assertSame(
             '0,50',
-            \App\Support\Angka::hasil((float) $transmitan['u95'], $transmitan['desimal_u95']),
+            Angka::hasil((float) $transmitan['u95'], $transmitan['desimal_u95']),
         );
     }
 
@@ -527,7 +573,7 @@ class SpectrophotometerApiTest extends TestCase
             $this->payload()['measurements'],
         )]);
 
-        $hasil = app(\App\Services\CalibrationValidator::class)->periksa($sesi);
+        $hasil = app(CalibrationValidator::class)->periksa($sesi);
 
         $this->assertFalse($hasil['boleh_terbit'], 'U95 meledak mestinya nahan penerbitan');
 
@@ -540,7 +586,7 @@ class SpectrophotometerApiTest extends TestCase
     {
         $sesi = $this->simpanSesi();
 
-        $hasil = app(\App\Services\CalibrationValidator::class)->periksa($sesi);
+        $hasil = app(CalibrationValidator::class)->periksa($sesi);
 
         $this->assertNotContains(
             'u95_meledak_dari_cmc',
@@ -784,9 +830,82 @@ class SpectrophotometerApiTest extends TestCase
             array_column($perRemark['Accuracy %T and Linierity at λ = 560nm']->all(), 'satuan'),
         );
 
-        // Desimalnya juga ngikut resolusi kelompoknya: 2 buat nm, 3 buat %T.
-        $this->assertSame(2, $perRemark->first()->first()['desimal']);
-        $this->assertSame(3, $perRemark['Accuracy %T and Linierity at λ = 560nm']->first()['desimal']);
+        // Desimal CETAK-nya SATU di ketiga blok — bukan diturunkan dari
+        // resolusi alat (0,01 nm & 0,001 %T), tapi dari format sel masternya.
+        // Resolusi tetap hidup di jalur input; yang seragam cuma sertifikat.
+        $this->assertSame(1, $perRemark->first()->first()['desimal']);
+        $this->assertSame(1, $perRemark['Accuracy %T and Linierity at λ = 560nm']->first()['desimal']);
+    }
+
+    /**
+     * `remark` yang sama juga dikirim di respons SESI, bukan cuma dibekukan ke
+     * snapshot sertifikat.
+     *
+     * Layar riwayat & approval di HP nampilin tabel Calibration Report yang
+     * sama isinya kayak PDF. Tanpa kunci ini, satu-satunya cara HP nebak
+     * kelompok tiap titik adalah dari besar angkanya — dan buat alat ini
+     * tebakan itu SALAH: rentang Holmium (283-641 nm) dan Didynium (474-810 nm)
+     * tumpang tindih 167 nm, jadi 513,7 nm bakal dilabeli Holmium dan U95 yang
+     * kecetak di layar jadi punya kelompok lain.
+     */
+    public function test_respons_sesi_bawa_remark_kelompok_tiap_titik(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $titik = $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->json('data.titik');
+
+        $perTitik = collect($titik)->keyBy(
+            static fn (array $t): string => (string) round((float) $t['titik_ukur'], 2),
+        );
+
+        $this->assertSame('Wave Length ( λ ) - Filter Holmium', $perTitik['637.9']['remark']);
+        $this->assertSame('Accuracy %T and Linierity at λ = 560nm', $perTitik['9.9']['remark']);
+
+        // Titik yang paling gampang ketuker: 513,7 nm ada di TENGAH rentang
+        // Holmium, tapi dia punya Didynium.
+        $this->assertSame('Wave Length ( λ ) - Filter Didynium', $perTitik['513.7']['remark']);
+
+        $this->assertSame(
+            [
+                'Wave Length ( λ ) - Filter Holmium',
+                'Wave Length ( λ ) - Filter Didynium',
+                'Accuracy %T and Linierity at λ = 560nm',
+            ],
+            collect($titik)->pluck('remark')->unique()->values()->all(),
+        );
+    }
+
+    /**
+     * Label di layar sesi dan label di sertifikat WAJIB satu sumber — kalau
+     * dua-duanya cuma "kebetulan sama", yang ketahuan duluan justru pelanggan
+     * yang ngebandingin PDF-nya sama layar teknisi.
+     */
+    public function test_remark_sesi_sama_persis_dengan_yang_dibekukan_di_sertifikat(): void
+    {
+        $sesi = $this->simpanSesi();
+
+        $titik = $this->actingAs($this->teknisi)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk()
+            ->json('data.titik');
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->assertOk();
+
+        $snapshot = Certificate::latest('id')->firstOrFail()->snapshot;
+
+        if (is_string($snapshot)) {
+            $snapshot = json_decode($snapshot, true);
+        }
+
+        $this->assertSame(
+            array_column($snapshot['hasil'], 'remark'),
+            collect($titik)->sortBy('titik_ke')->pluck('remark')->values()->all(),
+        );
     }
 
     /**

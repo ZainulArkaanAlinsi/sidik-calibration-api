@@ -145,7 +145,7 @@ class SpectrophotometerProfile extends CalibrationProfile
      *
      * Dipilih karena cuma pasangan ini yang punya arti fisika buat linieritas
      * fotometrik — sumbu X nilai benar filternya, sumbu Y yang dibaca alat.
-     * Lihat [koefisienDeterminasi] soal kenapa bawaannya tetap mati.
+     * Ini juga yang jadi bawaan sekarang; lihat [koefisienDeterminasi].
      */
     public const R2_RSQ_STANDAR_UUT = 'rsq_standar_uut';
 
@@ -373,24 +373,26 @@ class SpectrophotometerProfile extends CalibrationProfile
      * Holmium & Didynium selalu balik `null` dan kolomnya nggak kecetak di
      * tabel mereka.
      *
-     * ## Kenapa bawaannya MATI
+     * ## Kenapa sempat MATI, dan kenapa sekarang nyala
      *
      * Angka R² di master `0,9359`, sementara sertifikat cetak yang beredar
      * nulis `1`. Dua-duanya nggak bisa dilahirkan dari data blok ini: RSQ atas
      * seluruh titiknya ngasih 0,999922. Rumus aslinya nggak bisa dibaca karena
      * workbook-nya terenkripsi, dan penyisiran 7 transformasi × 7 transformasi
      * × semua subset titik nggak nemu satu pun kandidat yang masuk akal secara
-     * fisika.
+     * fisika. Selama itu kolomnya nggak dicetak sama sekali.
      *
-     * Selama lab belum mbenerin beda itu secara tertulis, kolomnya nggak
-     * dicetak sama sekali. Nyetak 0,999922 berarti sertifikat terakreditasi
-     * ngeklaim linieritas yang BEDA dari dokumen lab yang udah beredar, dan
-     * nggak ada yang bisa nerangin bedanya waktu diaudit — kolom yang nggak ada
-     * lebih jujur daripada kolom berisi angka yang nggak bisa
-     * dipertanggungjawabkan.
+     * Yang mbukain bukan rumusnya, tapi FORMAT SELNYA: sel R² diformat nol
+     * desimal. `0,9359` kecetak `1`, dan 0,999922 juga kecetak `1`. Jadi dua
+     * kandidat yang belum bisa dibedain itu nyetak angka yang SAMA — nyalain
+     * kolomnya nggak bisa bikin sertifikat ngeklaim linieritas yang beda dari
+     * dokumen lab, apa pun jawaban labnya nanti.
      *
-     * Tiga pertanyaan yang nunggu jawaban lab & seluruh riwayat penelusurannya:
-     * `docs/pertanyaan-lab-r2-spektro.md`. Sakelarnya `config('kalibrasi.r2_spektro')`.
+     * Pertanyaan "0,9359 itu dari mana" tetap dicatat & tetap dikirim ke lab;
+     * yang berubah cuma statusnya — dia nggak lagi ngalangin. Riwayat
+     * lengkapnya: `docs/pertanyaan-lab-r2-spektro.md`. Sakelarnya tetap
+     * `config('kalibrasi.r2_spektro')`, sekarang bawaannya
+     * [R2_RSQ_STANDAR_UUT].
      *
      * @param  list<array{standard_value: float|null, unit_under_test: float|null}>  $baris
      */
@@ -478,6 +480,58 @@ class SpectrophotometerProfile extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 2;
+    }
+
+    /**
+     * Tabel CALIBRATION REPORT ditulis **satu desimal** — ketiga bloknya.
+     *
+     * Ini beda dari resolusi alatnya (0,01 nm & 0,001 %T), dan bedanya disengaja
+     * lab: sel `SERTIFIKAT!C19:Q52` diformat 1 desimal, jadi yang tercetak
+     * `333,7` walau selnya nyimpen `333,74`, dan `9,7` walau selnya nyimpen
+     * `9,665`. Diadu langsung ke workbook master 14 Agt 2026.
+     *
+     * Sistem sebelumnya nurunin desimal dari resolusi (2 buat nm, 3 buat %T) —
+     * aturan umum yang bener buat lembar kerja, tapi salah buat sertifikat:
+     * yang keluar `333,74` & `9,665`, dua digit lebih panjang daripada dokumen
+     * yang dipegang pelanggan buat alat yang sama.
+     *
+     * Yang IKUT resolusi cuma jalur input (lembar kerja & pembacaan mentah);
+     * `TITIK[...]['desimal']` nggak berubah, jadi teknisi tetap ngetik 0,001 %T.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return 1;
+    }
+
+    /**
+     * Master nyetak `3` · `2` · `2`, bukan `3,18` · `2,36` · `2,01` — selnya
+     * diformat 0 desimal. Lihat [CalibrationProfile::desimalFaktorCakupan].
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return 0;
+    }
+
+    /**
+     * Kolom Standard Value nulis `334,0` · `460,0` · `748,0` · `100,0` di
+     * master — nol di belakang DIPERTAHANKAN, beda dari Turbidimeter.
+     */
+    public function nolBelakangStandarDibuang(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Koreksi negatif yang membulat ke nol dicetak TANPA minus, ngikut master.
+     *
+     * Buktinya di blok %T: titik 0 %T koreksinya -0,000666… dan titik 100 %T
+     * koreksinya -0,002666… — dua-duanya negatif, dua-duanya tercetak `0,0` di
+     * `SERTIFIKAT!Q48` & `Q52`. Sama kayak Conductivity, beda dari
+     * Turbidimeter/pH/Chlorine yang nyetak `-0,0`.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
     }
 
     public function punyaToleransi(): bool
