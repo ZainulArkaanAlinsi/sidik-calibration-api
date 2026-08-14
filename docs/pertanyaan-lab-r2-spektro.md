@@ -1,6 +1,13 @@
 # Pertanyaan ke lab — kolom R² blok %T (Spectrophotometer)
 
-Satu kolom di sertifikat Spectrophotometer belum bisa dihasilkan sistem, dan
+> **Status 14 Agt 2026 — kolomnya sudah dicetak.** Pertanyaan di bawah masih
+> berlaku dan masih perlu dijawab, tapi sudah **tidak menahan** apa pun.
+> Sebabnya di [Kenapa akhirnya dicetak](#kenapa-akhirnya-dicetak): sel R² di
+> master diformat nol desimal, jadi kedua kandidat angka yang belum bisa
+> dibedakan (0,9359 dan 0,999922) sama-sama **tercetak `1`**. Apa pun jawaban
+> lab nanti, yang muncul di sertifikat tidak berubah.
+
+Satu kolom di sertifikat Spectrophotometer sempat tidak dihasilkan sistem, dan
 sebabnya bukan teknis. Dokumen ini menuliskan apa yang sudah diperiksa supaya
 yang perlu dijawab lab tinggal satu hal.
 
@@ -23,7 +30,7 @@ Jadi ada dua angka untuk satu kolom, dan keduanya tidak sama:
 | Tersimpan di sel | 0,9359 |
 | Tercetak di sertifikat | 1 |
 
-## Kenapa sistem belum mencetaknya
+## Kenapa sistem sempat tidak mencetaknya
 
 Rumusnya tidak bisa ditelusuri. Workbook aslinya terenkripsi, jadi isi selnya
 tidak bisa dibaca — yang ada cuma nilainya.
@@ -61,50 +68,68 @@ diambil dari sheet lain yang tidak ikut diekspor ke CSV.
 3. Kalau R² memang harus dihitung: **dari besaran apa** — %T, absorbansi, atau
    yang lain — dan **titik mana** yang ikut?
 
-## Kenapa tidak diisi dulu saja
+## Kenapa akhirnya dicetak
 
-R² adalah pernyataan seberapa linier respons alat pelanggan. Mengisinya dengan
-angka yang kami hitung sendiri (0,99992) berarti sertifikat terakreditasi
-memuat klaim yang **berbeda dari dokumen lab yang sudah beredar**, dan tidak
-ada yang bisa menjelaskan bedanya waktu diaudit.
+Keberatan awalnya: R² adalah pernyataan seberapa linier respons alat pelanggan,
+dan mengisinya dengan angka yang kami hitung sendiri (0,99992) berarti
+sertifikat terakreditasi memuat klaim yang **berbeda dari dokumen lab yang
+sudah beredar**. Selama itu kolomnya tidak dicetak sama sekali.
 
-Selama pertanyaan di atas belum terjawab, kolom R² tidak dicetak sama sekali.
-Kolom yang tidak ada lebih jujur daripada kolom berisi angka yang tidak bisa
-dipertanggungjawabkan.
+Yang membuka jalan bukan rumusnya, melainkan **format selnya**. Sel R² di
+master diformat nol desimal — itu yang sudah tercatat di bagian atas dokumen
+ini, tapi konsekuensinya baru ditarik 14 Agt 2026 waktu tampilan workbook-nya
+diadu langsung:
+
+| Kandidat | Nilai | Tercetak (0 desimal) |
+|---|---|---|
+| Isi sel master | 0,9359 | **1** |
+| `RSQ(Standard %T; UUT %T)` | 0,999922 | **1** |
+
+Dua kandidat yang belum bisa dibedakan **mencetak angka yang sama**. Jadi
+menyalakan kolomnya tidak bisa membuat sertifikat mengklaim linieritas yang
+berbeda dari dokumen lab — apa pun jawaban lab nanti. Yang tersisa cuma
+pertanyaan asal-usul angkanya, dan itu tidak perlu menahan satu kolom yang
+hasil cetaknya sudah pasti.
+
+Kolomnya sekarang dicetak **nol desimal**, di PDF maupun Excel. Bukti bentuknya
+dikunci `R2SpektroTest`; kalau jawaban lab ternyata rumus yang berbeda dan
+hasilnya **tidak** membulat ke `1`, tes itu yang merah duluan.
 
 Sisa sertifikatnya tidak terpengaruh: 24 titik lain (Standard/UUT/Correction)
 dan ketiga U95 sudah cocok dengan master sampai batas presisi penyimpanan.
 
 ## Yang sudah terpasang di sistem
 
-Kolomnya sudah dibangun penuh — PDF, Excel, dan halaman verifikasi QR — lalu
-**dimatikan**. Yang menunggu jawaban lab cuma keputusannya, bukan pekerjaannya.
+Kolomnya dibangun penuh — PDF, Excel, dan halaman verifikasi QR — dan sekarang
+**menyala secara bawaan**.
 
-Sakelarnya satu nilai config:
+Sakelarnya satu nilai config, dan tetap ada supaya definisinya bisa diganti
+tanpa menambal kode:
 
 ```php
 // config/kalibrasi.php
-'r2_spektro' => env('SPEKTRO_R2', 'off'),
+'r2_spektro' => env('SPEKTRO_R2', 'rsq_standar_uut'),
 ```
 
 | Nilai | Perilaku |
 |---|---|
-| `off` (bawaan) | Kolom R² tidak ada sama sekali di PDF maupun Excel |
-| `rsq_standar_uut` | Kolom R² = `RSQ(Standard %T; UUT %T)` atas seluruh titik blok %T |
+| `rsq_standar_uut` (bawaan) | Kolom R² = `RSQ(Standard %T; UUT %T)` atas seluruh titik blok %T, dicetak 0 desimal |
+| `off` | Kolom R² tidak ada sama sekali di PDF maupun Excel |
 
 Nilai lain (termasuk salah ketik di `.env`) diperlakukan sebagai `off`, supaya
 isi sertifikat terakreditasi tidak bisa berubah karena typo yang tidak direview.
 
 Kalau nanti jawaban lab ternyata rumus yang berbeda, yang diganti cuma isi
 `SpectrophotometerProfile::koefisienDeterminasi()` — sisanya (pembekuan ke
-snapshot, tata letak kolom, pembulatan 4 desimal) sudah terpasang dan bertes.
+snapshot, tata letak kolom, pembulatan 0 desimal) sudah terpasang dan bertes.
 
 Catatan yang ikut menentukan bentuk kolomnya:
 
 - **Cuma blok %T.** Dua blok panjang gelombang (Holmium & Didynium) tidak punya
   kolom R² di master, jadi tabelnya tidak berubah sama sekali.
-- **Sekali per kelompok.** Nilainya dicetak di baris pertama saja, persis
-  seperti master (`SERTIFIKAT!R47:R51` — empat baris sisanya kosong).
+- **Satu kotak setinggi tabelnya.** Selnya di-`rowspan`, meniru sel merge
+  master (`SERTIFIKAT!R47:R51`) — bukan lima angka yang kebetulan sama.
+- **Nol desimal.** `1`, bukan `0,9999` — mengikuti format sel masternya.
 - **Minimal 3 titik.** Dua titik selalu menghasilkan R² = 1 apa pun datanya,
   jadi angka seperti itu bukan bukti linieritas dan tidak dicetak.
 - **Sertifikat lama aman.** Snapshot yang terbit sebelum kolom ini ada tetap

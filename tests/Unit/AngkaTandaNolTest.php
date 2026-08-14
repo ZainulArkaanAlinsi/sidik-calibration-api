@@ -70,7 +70,7 @@ class AngkaTandaNolTest extends TestCase
     }
 
     /**
-     * Default-nya `true`, dan itu disengaja: empat dari lima alat
+     * Default-nya `true`, dan itu disengaja: empat dari enam alat
      * mempertahankan tandanya. Pemanggil yang lupa ngoper flag-nya jatuh ke
      * perilaku lama, bukan ke perilaku Conductivity.
      */
@@ -85,17 +85,22 @@ class AngkaTandaNolTest extends TestCase
      * ketahuan kalau ada alat baru yang diam-diam ngikut Conductivity — bentuk
      * angka di dokumen terakreditasi nggak boleh berubah karena kelas baru
      * kebetulan mewarisi default yang salah.
+     *
+     * Spectrophotometer pindah ke daftar "ngebuang" 14 Agt 2026, dan bukan
+     * dari nalar: blok %T-nya punya DUA titik yang koreksinya negatif tapi
+     * membulat ke nol (0 %T = -0,000666…, 100 %T = -0,002666…), dan sel
+     * masternya nyetak `0,0` — tanpa minus, dua-duanya.
      */
-    public function test_cuma_conductivity_yang_ngebuang_tandanya(): void
+    public function test_cuma_conductivity_dan_spektro_yang_ngebuang_tandanya(): void
     {
         $this->assertFalse((new ConductivityProfile)->tandaNolDicetak());
+        $this->assertFalse((new SpectrophotometerProfile)->tandaNolDicetak());
 
         $mempertahankan = [
             PhMeterProfile::class,
             TurbidimeterProfile::class,
             ChlorineProfile::class,
             RefractometerProfile::class,
-            SpectrophotometerProfile::class,
         ];
 
         foreach ($mempertahankan as $kelas) {

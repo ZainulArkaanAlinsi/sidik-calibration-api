@@ -19,20 +19,20 @@ use Tests\TestCase;
  *
  * ## Yang dijaga tes ini
  *
- * Bawaannya kolomnya MATI, dan itu bukan kelalaian — itu keputusan. Sel R² di
- * master isinya `0,9359`, sertifikat cetak yang beredar nulis `1`, dan nggak
- * satu pun dari dua angka itu bisa dilahirkan dari data blok tersebut (RSQ atas
- * seluruh titiknya = 0,999922). Selama lab belum jawab dari mana angkanya,
- * kolomnya nggak dicetak sama sekali — kolom yang nggak ada lebih jujur
- * daripada kolom berisi angka yang nggak bisa dipertanggungjawabkan.
+ * Kolomnya sempat MATI: sel R² di master isinya `0,9359`, sertifikat cetak
+ * nulis `1`, dan nggak satu pun dari dua angka itu bisa dilahirkan dari data
+ * blok tersebut (RSQ atas seluruh titiknya = 0,999922).
  *
- * Jadi tes ini punya dua tugas yang sama pentingnya:
+ * Yang mbukain FORMAT SELNYA, bukan rumusnya: sel itu nol desimal, jadi
+ * `0,9359` maupun 0,999922 sama-sama tercetak `1`. Dua kandidat yang belum bisa
+ * dibedain nyetak angka yang sama, jadi kolomnya nyala — dan yang dijaga tes
+ * ini tiga hal:
  *
- *  1. **Mati beneran waktu mati.** Nggak ada header R², nggak ada kolom kosong
- *     yang bikin tabel geser, di PDF maupun Excel.
- *  2. **Bener waktu hidup.** Begitu lab jawab dan satu nilai config dibalik,
- *     angkanya sama persis `RSQ()` Excel, cuma nempel di blok %T, dan kecetak
- *     sekali per kelompok — bukan lima kali.
+ *  1. **Bawaannya nyala & nyetak `1`.** Nol desimal, di PDF maupun Excel.
+ *  2. **Sekali per kelompok.** Satu kotak `rowspan` setinggi tabelnya, niru sel
+ *     merge master — bukan lima angka yang kebetulan sama.
+ *  3. **Mati beneran waktu dimatiin.** `off` (dan salah ketik) = nggak ada
+ *     header R², nggak ada kolom kosong yang bikin tabel geser.
  *
  * @see docs/pertanyaan-lab-r2-spektro.md
  */
@@ -47,36 +47,60 @@ class R2SpektroTest extends TestCase
     private const R2_HARAPAN = 0.9999219438582861;
 
     /**
-     * Bawaan sistem = kolomnya nggak ada. Ini yang bakal jalan di produksi hari
-     * ini, dan yang bikin sertifikat yang udah terbit nggak berubah bentuk.
+     * Bawaan sistem = kolomnya ADA. Ini yang jalan di produksi hari ini.
      */
-    public function test_bawaannya_r2_tidak_dihitung_sama_sekali(): void
+    public function test_bawaannya_kolom_r2_dicetak_di_pdf_dan_excel(): void
     {
+        $this->assertSame(
+            SpectrophotometerProfile::R2_RSQ_STANDAR_UUT,
+            config('kalibrasi.r2_spektro'),
+            'Bawaan config-nya yang bikin kolomnya nyala di produksi.',
+        );
+
+        $sertifikat = $this->terbitkanSpektro();
+
+        $this->assertStringContainsString('R<sup>2</sup>', $this->pdf($sertifikat));
+        $this->assertContains('R2', $this->headerTabelExcel($sertifikat));
+    }
+
+    /**
+     * Angkanya tercetak `1`, BUKAN `0,9999` — sel masternya nol desimal.
+     *
+     * Ini yang bikin kolomnya boleh nyala walau rumus aslinya belum ketahuan:
+     * 0,9359 (isi sel master) dan 0,999922 (hitung ulang) sama-sama jadi `1`.
+     */
+    public function test_r2_dicetak_nol_desimal_persis_master(): void
+    {
+        $html = $this->pdf($this->terbitkanSpektro());
+
+        $this->assertStringNotContainsString('0,9999', $html, 'R² nggak boleh kecetak presisi penuh.');
+        $this->assertMatchesRegularExpression(
+            '/<td class="r2" rowspan="5">1<\/td>/',
+            $html,
+            'R² wajib `1` di satu kotak setinggi lima baris blok %T.',
+        );
+    }
+
+    /** Sakelarnya masih ada — sekali dibalik ke `off`, kolomnya ilang lagi. */
+    public function test_kalau_dimatikan_kolom_r2_tidak_muncul_di_pdf_maupun_excel(): void
+    {
+        $this->matikanR2();
+
         $sertifikat = $this->terbitkanSpektro();
 
         foreach ($sertifikat->snapshot['hasil'] as $baris) {
             // Kuncinya ADA (biar pembaca snapshot nggak perlu nebak), isinya
             // null.
             $this->assertArrayHasKey('r2', $baris);
-            $this->assertNull($baris['r2'], "Titik {$baris['titik_ke']} nggak boleh punya R² selama lab belum jawab.");
+            $this->assertNull($baris['r2'], "Titik {$baris['titik_ke']} nggak boleh punya R² waktu fiturnya mati.");
         }
-    }
-
-    public function test_bawaannya_kolom_r2_tidak_muncul_di_pdf_maupun_excel(): void
-    {
-        $sertifikat = $this->terbitkanSpektro();
 
         $this->assertStringNotContainsString('R<sup>2</sup>', $this->pdf($sertifikat));
         $this->assertNotContains('R2', $this->headerTabelExcel($sertifikat));
     }
 
-    /**
-     * Sekali lab jawab, satu nilai config yang dibalik — bukan tambal kode.
-     */
-    public function test_kalau_dinyalakan_hanya_blok_transmitan_yang_punya_r2(): void
+    public function test_hanya_blok_transmitan_yang_punya_r2(): void
     {
-        $this->nyalakanR2();
-
         $baris = collect($this->terbitkanSpektro()->snapshot['hasil']);
 
         $transmitan = $baris->where('remark', self::BLOK_TRANSMITAN);
@@ -97,42 +121,37 @@ class R2SpektroTest extends TestCase
      * R² itu angka SATU KELOMPOK, bukan angka per titik. Diulang di lima baris,
      * dia kebaca kayak lima R² yang kebetulan sama — padahal cuma ada satu.
      */
-    public function test_kalau_dinyalakan_r2_dicetak_sekali_per_kelompok(): void
+    public function test_r2_dicetak_sekali_per_kelompok(): void
     {
-        $this->nyalakanR2();
-
         $html = $this->pdf($this->terbitkanSpektro());
 
         $this->assertSame(1, substr_count($html, 'R<sup>2</sup>'), 'Header R² cuma boleh di tabel blok %T.');
-        $this->assertSame(1, substr_count($html, '0,9999'), 'Nilainya cuma di baris pertama kelompoknya.');
+        $this->assertSame(1, substr_count($html, 'class="r2"'), 'Selnya cuma satu — di-rowspan, bukan diulang tiap baris.');
     }
 
-    public function test_kalau_dinyalakan_excel_ikut_nyetak_kolom_yang_sama(): void
+    public function test_excel_ikut_nyetak_kolom_yang_sama(): void
     {
-        $this->nyalakanR2();
-
         $sertifikat = $this->terbitkanSpektro();
-        $sel = $this->selExcel($sertifikat);
 
         $this->assertContains('R2', $this->headerTabelExcel($sertifikat));
 
         // Nilainya nempel di baris pertama blok %T aja; baris lain kolomnya
-        // kosong, persis kayak masternya (`SERTIFIKAT!R47:R51`).
-        $angka = collect($sel)
-            ->map(fn (array $b) => end($b))
-            ->filter(fn ($v) => is_float($v) && abs($v - 0.9999) < 1e-9);
+        // kosong, persis kayak masternya (`SERTIFIKAT!R47:R51`) — dan angkanya
+        // `1`, sama kayak PDF & sel master yang nol desimal.
+        $kolom = $this->kolomR2Excel($sertifikat);
 
-        $this->assertCount(1, $angka, 'R² di Excel harus muncul sekali, bukan tiap baris.');
+        $this->assertCount(24, $kolom, '24 titik: 10 Holmium + 9 Didynium + 5 %T.');
+        // `assertEquals`, bukan `assertSame`: Excel nyimpen angka bulat tanpa
+        // desimal, jadi pembacanya balikin `int 1` walau yang ditulis `1.0`.
+        $this->assertEquals([19 => 1], array_filter($kolom, static fn ($v) => $v !== ''));
     }
 
     /**
-     * Alat lain nggak kecipratan walau fiturnya nyala — config-nya khusus
-     * spektro, dan profil lain nggak override hooknya.
+     * Alat lain nggak kecipratan — config-nya khusus spektro, dan profil lain
+     * nggak override hooknya.
      */
     public function test_alat_lain_tidak_terpengaruh(): void
     {
-        $this->nyalakanR2();
-
         $sertifikat = $this->terbitkan($this->sesi('2405.13.A'));
 
         foreach ($sertifikat->snapshot['hasil'] as $baris) {
@@ -149,8 +168,6 @@ class R2SpektroTest extends TestCase
      */
     public function test_snapshot_lama_tanpa_kunci_r2_tetap_bisa_dirender(): void
     {
-        $this->nyalakanR2();
-
         $sertifikat = $this->terbitkanSpektro();
         $snapshot = $sertifikat->snapshot;
         $snapshot['hasil'] = array_map(
@@ -180,9 +197,9 @@ class R2SpektroTest extends TestCase
         }
     }
 
-    private function nyalakanR2(): void
+    private function matikanR2(): void
     {
-        Config::set('kalibrasi.r2_spektro', SpectrophotometerProfile::R2_RSQ_STANDAR_UUT);
+        Config::set('kalibrasi.r2_spektro', 'off');
     }
 
     private function terbitkanSpektro(): Certificate
@@ -234,6 +251,41 @@ class R2SpektroTest extends TestCase
             ->first(fn (array $b) => ($b[0] ?? null) === 'Standard Value');
 
         return array_map(static fn ($v) => (string) $v, $baris ?? []);
+    }
+
+    /**
+     * Isi kolom R² buat SETIAP baris tabel hasil, urut cetak — `''` di baris
+     * yang kolomnya kosong.
+     *
+     * @return list<mixed>
+     */
+    private function kolomR2Excel(Certificate $sertifikat): array
+    {
+        $sel = $this->selExcel($sertifikat);
+        $awal = null;
+
+        foreach ($sel as $i => $baris) {
+            if (($baris[0] ?? null) === 'Standard Value') {
+                $awal = $i + 1;
+                break;
+            }
+        }
+
+        $this->assertNotNull($awal, 'Tabel hasil nggak ketemu di Excel-nya.');
+
+        $kolom = [];
+
+        foreach (array_slice($sel, $awal) as $baris) {
+            // Tabelnya berhenti di baris pertama yang kolom Standard Value-nya
+            // bukan angka (baris kosong pemisah, lalu catatan).
+            if (! is_numeric($baris[0] ?? null)) {
+                break;
+            }
+
+            $kolom[] = end($baris);
+        }
+
+        return $kolom;
     }
 
     /** @return list<list<mixed>> */

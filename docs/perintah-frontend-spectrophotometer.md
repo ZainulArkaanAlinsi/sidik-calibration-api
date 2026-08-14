@@ -72,11 +72,25 @@ Jangan menyediakan dropdown "pilih filter" per titik. Rentang Holmium (283–641
 nm) dan Didynium (474–810 nm) tumpang tindih 167 nm, jadi pemilihan manual
 gampang salah dan salahnya tidak kelihatan dari dokumen hasilnya.
 
-### 5. Desimal berbeda per titik
+### 5. Desimal INPUT dan desimal HASIL tidak sama — jangan disatukan
 
-`baris[].desimal` dan `titik[].desimal`: **2** untuk nm, **3** untuk %T. Pad
-angka ke jumlah desimalnya, jangan buang nol belakang — `279,60` tetap
-`279,60`, `9,900` tetap `9,900`.
+Dua angka berbeda, dan sejak 14 Agt 2026 nilainya memang berbeda:
+
+| Field | Nilai | Dipakai untuk |
+|---|---|---|
+| `baris[].desimal` (lembar kerja) | **2** untuk nm, **3** untuk %T | kotak ketik teknisi — ini resolusi baca alatnya (0,01 nm & 0,001 %T) |
+| `titik[].desimal` (hasil & sertifikat) | **1** untuk ketiganya | tabel hasil, layar approval, tampilan sertifikat |
+
+Pad angka ke jumlah desimalnya, **jangan buang nol belakang** — `279,60` tetap
+`279,60` di kotak input, dan `334,0` tetap `334,0` di tabel hasil (bukan `334`).
+
+Yang hasil ikut 1 desimal bukan penyederhanaan tampilan: sel `SERTIFIKAT` di
+workbook master lab diformat 1 desimal, jadi dokumen yang dipegang pelanggan
+menulis `333,7`, bukan `333,74`. Layar yang menulis lebih panjang dari
+sertifikatnya bikin teknisi ragu waktu mencocokkan.
+
+Baris `Uncertainty U95%` punya angkanya sendiri lagi: `titik[].desimal_u95` =
+**2** (`0,43` · `0,40` · `0,50`).
 
 ### 6. `keputusan` dan `toleransi` SELALU `null`
 

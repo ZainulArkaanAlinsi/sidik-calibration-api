@@ -255,7 +255,13 @@ Snapshot sertifikat, bagian `hasil`, satu baris per titik:
   "correction": -0.4,
   "u95": 0.43255708,
   "satuan": "nm",
-  "desimal": 2,
+  "desimal": 1,
+  "desimal_u95": 2,
+  "desimal_k": 0,
+  "faktor_cakupan_k": 3.18244631,
+  "tanda_nol": false,
+  "standar_ringkas": false,
+  "r2": null,
   "remark": "Wave Length ( λ ) - Filter Holmium"
 }
 ```
@@ -263,9 +269,23 @@ Snapshot sertifikat, bagian `hasil`, satu baris per titik:
 `remark` itu yang memisahkan tiga blok di dokumen cetak — tanpa itu, pembaca
 sertifikat tidak punya cara tahu U95 0,4 nm itu punya Didynium, bukan Holmium.
 
-`satuan` dan `desimal` dibekukan **per titik**, bukan per alat: satu lembar ini
-mencampur nm (2 desimal) dan %T (3 desimal), jadi kolom `equipments.satuan` yang
-tunggal tidak bisa menjawabnya.
+`satuan` dibekukan **per titik**, bukan per alat: satu lembar ini mencampur nm
+dan %T, jadi kolom `equipments.satuan` yang tunggal tidak bisa menjawabnya.
+
+Kunci bentuk cetak juga ikut dibekukan, dan semuanya dibaca dari **format sel
+workbook master**, bukan diturunkan dari resolusi alat (diadu 14 Agt 2026):
+
+| Kunci | Nilai spektro | Artinya |
+|---|---|---|
+| `desimal` | `1` | Standard/UUT/Correction ditulis 1 desimal — `333,7`, bukan `333,74` |
+| `desimal_u95` | `2` | baris `Uncertainty U95% = ±` — `0,43` · `0,40` · `0,50` |
+| `desimal_k` | `0` | `Coverage Factor ( k ) = 3`, bukan `3,18` |
+| `tanda_nol` | `false` | koreksi negatif yang membulat ke nol ditulis `0,0`, tanpa minus |
+| `standar_ringkas` | `false` | nol belakang kolom Standard dipertahankan — `334,0`, bukan `334` |
+| `r2` | angka di blok %T, `null` di dua blok lain | dicetak **0 desimal** (`1`), sekali per blok |
+
+Sertifikat lama yang snapshot-nya belum punya kunci-kunci ini tetap dirender
+dengan perilaku lamanya — kuncinya dibaca dengan default, bukan dipaksa ada.
 
 ---
 

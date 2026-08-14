@@ -205,6 +205,14 @@ class CertificateSnapshotBuilder
                     'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
                         ? null
                         : (float) $titik->faktor_cakupan_k,
+                    // Desimal angka `k` di kalimat di bawah tabel. Master
+                    // spektro nyimpen 3,182446… tapi nyetak `3`.
+                    //
+                    // Ikut DIBEKUKAN sama alasannya kayak `desimal_u95`:
+                    // sertifikat yang udah terbit nggak boleh berubah bunyi
+                    // gara-gara profilnya diedit sesudahnya. `null` = perilaku
+                    // lama (2 desimal, nol di belakang dibuang).
+                    'desimal_k' => $profil?->desimalFaktorCakupan(),
                     // Nilai mentahnya TETAP presisi penuh — ini cuma ngatur
                     // berapa digit yang ditulis. Nggak ada pembulatan data.
                     'desimal' => $desimal,
@@ -232,6 +240,13 @@ class CertificateSnapshotBuilder
                     // pembacanya jatuh ke `true` — persis perilaku lamanya, jadi
                     // dokumen yang udah dipegang pelanggan nggak berubah bentuk.
                     'tanda_nol' => $profil?->tandaNolDicetak() ?? true,
+                    // Kolom Standard Value: nol di belakang dibuang (`100`)
+                    // atau ditulis penuh (`100,0`). Beda per master — lihat
+                    // `CalibrationProfile::nolBelakangStandarDibuang()`.
+                    //
+                    // Ikut dibekukan; sertifikat lama yang belum punya kunci
+                    // ini dibaca `?? true` di PDF, persis perilaku lamanya.
+                    'standar_ringkas' => $profil?->nolBelakangStandarDibuang() ?? true,
                 ];
             })
             ->values()

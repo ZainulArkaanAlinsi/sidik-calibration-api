@@ -261,8 +261,12 @@ class CertificateExcelExporter
                 $this->bulat($baris['correction'] ?? null, $db),
                 $this->bulat($baris['u95'] ?? null, $db),
             ], $adaRemark ? [$baris['remark'] ?? ''] : [], $adaR2 ? [
+                // NOL desimal, sama kayak PDF & sel masternya (`0,9359`
+                // diformat 0 desimal → tercetak `1`). Empat desimal bikin
+                // Excel nulis `0,9359` sementara PDF-nya nulis `1` — dua
+                // dokumen buat sertifikat yang sama.
                 $awalKelompok && ($baris['r2'] ?? null) !== null
-                    ? $this->bulat((float) $baris['r2'], 4)
+                    ? $this->bulat((float) $baris['r2'], 0)
                     : '',
             ] : [])));
         }
