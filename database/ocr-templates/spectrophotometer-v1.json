@@ -1,10 +1,10 @@
 {
-    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "_catatan": "DINYALAKAN buat UJI LAPANGAN 14 Agt 2026 — belum diadu ke >=20 foto nyata. Yang udah kebukti (dijaga test, buat KEENAM alat): kunci sel di kertas sama persis dengan yang dikenal server, tiap kotak sel muat di halaman & nggak tumpang tindih, sel nggak nabrak penanda sudut/QR/blok kepala, dan kotak jangkar menaungi label yang tercetak. Di HP fisik: 4 marker ketemu, warp residual <2px, 80 sel mendarat di dalam kotaknya, QR + kelima label Repeat kebaca ML Kit (diuji di lembar conductivity). Yang BELUM: jepretan kamera dari kertas yang beneran dicetak & diisi tangan. Sampai itu selesai hasil pindai tetap wajib lewat layar review — dan kalau angkanya mendarat di sel yang salah, MATIKAN flag ini lagi.",
     "_catatan_formulir": "Cetakan asli (SIDIK-FM-CAL-0511_Rev.5, LK-285-IDN) diperiksa 13 Agt 2026 dan TIDAK cocok dengan rangka ini: (1) halamannya LANDSCAPE 792x612 pt = 2200x1700 px @200dpi, bukan A4 tegak 1654x2339; (2) tabel Holmium di kertas 9 baris (287,4 sampai 637,2), rangka & profil 10 baris (mulai 279,6); (3) nilai standarnya beda dari master — Didynium kertas 478/513,4/529,4 vs master 475,2/513,7/529,7, dan %T kertas 0/10,0/20,2/30,5/100 vs master 0/9,9/20,0/30,1/100; (4) blok %T di kertas cuma SATU baris X1..X3 (15 sel), rangka bikin 30 sel karena master ngerata-rata 6 pembacaan; (5) formulirnya NGGAK punya marker sudut maupun QR — 14 gambar di berkasnya semuanya melebar (57x36 & 110x38 px), nggak ada yang kotak, padahal mesin pindai nyarinya itu. Jangan diukur ulang sebelum lab nyatain jumlah titik & nilai standar mana yang berlaku (empat selisihnya dicatat di SpectrophotometerProfile, bagian 'Cetakan Rev.5 vs master').",
     "template_id": "spectrophotometer",
     "versi": 1,
     "kode_dokumen": "SIDIK-FM-CAL-0511_Rev.5",
-    "terverifikasi": false,
+    "terverifikasi": true,
     "ukuran_referensi": {
         "w": 1654,
         "h": 2339,

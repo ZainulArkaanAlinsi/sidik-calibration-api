@@ -1,10 +1,10 @@
 {
-    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "_catatan": "DINYALAKAN buat UJI LAPANGAN 14 Agt 2026 — belum diadu ke >=20 foto nyata. Yang udah kebukti (dijaga test, buat KEENAM alat): kunci sel di kertas sama persis dengan yang dikenal server, tiap kotak sel muat di halaman & nggak tumpang tindih, sel nggak nabrak penanda sudut/QR/blok kepala, dan kotak jangkar menaungi label yang tercetak. Di HP fisik: 4 marker ketemu, warp residual <2px, 80 sel mendarat di dalam kotaknya, QR + kelima label Repeat kebaca ML Kit (diuji di lembar conductivity). Yang BELUM: jepretan kamera dari kertas yang beneran dicetak & diisi tangan. Sampai itu selesai hasil pindai tetap wajib lewat layar review — dan kalau angkanya mendarat di sel yang salah, MATIKAN flag ini lagi.",
     "_catatan_formulir": "JANGAN diukur dari cetakan lab `SIDIK-FM-CAL-0510_Rev.5` (PDF 15 Des 2023). Kertas itu lebih tua dari master: kolom larutannya masih 84/1413/5000/80000 (master pindah ke 25/1412/111 pada 3 Apr 2024), readout-nya masih Victor 14+, dan yang paling menentukan — kertas itu NGGAK punya marker sudut maupun QR, jadi mesin pindai nggak akan pernah nemu jangkarnya. Yang dipakai: lembar hasil `php artisan ocr:cetak-lembar conductivity_meter`, yang koordinatnya lahir dari berkas ini sendiri sehingga eksak. Orientasinya sudah ikut kertas (Repeat turun ke bawah) dan kepala kolomnya sudah memakai nama slot cetak. Setel `terverifikasi: true` cuma sesudah lembar itu dicetak, difoto pakai HP, dan angkanya terbukti mendarat di sel yang benar.",
     "template_id": "conductivity_meter",
     "versi": 1,
     "kode_dokumen": "SIDIK-FM-CAL-0510_Rev.5",
-    "terverifikasi": false,
+    "terverifikasi": true,
     "ukuran_referensi": {
         "w": 1654,
         "h": 2339,
