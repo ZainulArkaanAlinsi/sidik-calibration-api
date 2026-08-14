@@ -355,10 +355,34 @@ class CalibrationValidator
      * masukan ngawur nggak bikin hitungannya meledak, cuma bikin hasilnya
      * ngawur dengan rapi. Jadi yang mesti nangkep validator, bukan rumusnya.
      *
-     * PERINGATAN, bukan ERROR — sama alasannya kayak
-     * [periksaPembacaanMustahil]: admin yang mutusin, dan sesi insitu di
-     * gudang tanpa AC beneran bisa lembab ekstrem. Yang nggak boleh cuma
-     * LOLOS DIAM-DIAM.
+     * ## Kenapa naik dari PERINGATAN ke ERROR
+     *
+     * Awalnya peringatan, alasannya masuk akal: admin yang mutusin, dan sesi
+     * insitu di gudang tanpa AC beneran bisa lembab ekstrem.
+     *
+     * Yang nggak diperhitungkan: peringatan yang bisa diabaikan itu, ternyata,
+     * diabaikan. Disisir ke MySQL produksi 14 Agt 2026 — DUA sertifikat sudah
+     * beredar dengan angka yang persis diperingatkan di sini:
+     *
+     *     CAL/2026/08/0022  (KAL/2026/08/0025)  %RH: 28% ± 53,2%
+     *     CAL/2026/08/0027  (KAL/2026/08/0031)  %RH: 27% ± 53,2%
+     *
+     * Ketidakpastian dua kali lipat nilainya sendiri, di dokumen terakreditasi.
+     * Peringatannya nyala di dua-duanya dan tetap di-"SETUJUI TETAP".
+     *
+     * Jadi batasnya digeser ke tempat yang beda: rentang [KELEMBABAN_MIN] –
+     * [KELEMBABAN_MAKS] itu 20–90 %RH, dan di luar itu bukan "ruangan yang
+     * ekstrem" — itu angka yang nggak bisa dibaca thermohygro mana pun di
+     * ruangan berpenghuni. Gudang tanpa AC paling parah masih di dalam rentang.
+     * Yang di luar rentang cuma dua kemungkinan: salah ketik, atau alatnya
+     * rusak. Dua-duanya nggak pantas jadi sertifikat.
+     *
+     * Delta yang ekstrem TETAP peringatan: dua angka yang sama-sama masuk
+     * rentang tapi jauh (30 → 80) beneran bisa kejadian di sesi panjang.
+     *
+     * Cara mbenerin sesi yang ketahan: ralat angkanya di lembar kerja. Kalau
+     * angkanya emang segitu, yang mesti dicek thermohygro-nya — bukan
+     * sertifikatnya yang dipaksa keluar.
      *
      * @return list<array<string, mixed>>
      */
@@ -378,11 +402,12 @@ class CalibrationValidator
             }
 
             $temuan[] = $this->temuan(
-                self::PERINGATAN,
+                self::ERROR,
                 'kelembaban_mustahil',
                 "Kelembaban {$kapan} kecatat {$nilai} %RH — di luar rentang wajar ruang lab ("
                 .self::KELEMBABAN_MIN.'–'.self::KELEMBABAN_MAKS.' %RH). '
-                .'Cek lagi angkanya sebelum sertifikat terbit.',
+                .'Ralat angkanya di lembar kerja; kalau pembacaannya emang segitu, '
+                .'thermohygro-nya yang mesti dicek.',
                 ['kolom' => "kelembaban_{$kapan}", 'nilai' => $nilai],
             );
         }
