@@ -55,6 +55,17 @@ class CertificateSnapshotBuilder
         return [
             'versi' => self::VERSI,
             'desimal' => $desimal,
+            // Judul kolom kedua tabel hasil. Lima master nulis
+            // `Unit Under Test`, master Spectrophotometer nulis `UUT` — di
+            // ketiga bloknya, jadi itu pilihan lab.
+            //
+            // Ikut DIBEKUKAN sama alasannya kayak `desimal`: sertifikat yang
+            // udah terbit nggak boleh ganti judul kolom gara-gara profilnya
+            // diedit sesudahnya. Snapshot lama yang belum punya kunci ini
+            // dibaca `?? 'Unit Under Test'` — persis judul lamanya.
+            'judul_uut' => $alat
+                ? app(CalibrationProfileRegistry::class)->untukAlat($alat)?->judulKolomUut()
+                : null,
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
             'header' => $this->header($sesi, $sertifikat),
             'hasil' => $this->hasil($sesi),

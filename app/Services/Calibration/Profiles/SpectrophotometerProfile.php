@@ -513,6 +513,16 @@ class SpectrophotometerProfile extends CalibrationProfile
     }
 
     /**
+     * `UUT (nm)`, bukan `Unit Under Test (nm)` — dan konsisten begitu di
+     * ketiga blok master (`SERTIFIKAT!L18`, `L33`, `L47`). Lima alat lain tetap
+     * panjang. Lihat [CalibrationProfile::judulKolomUut].
+     */
+    public function judulKolomUut(): string
+    {
+        return 'UUT';
+    }
+
+    /**
      * Kolom Standard Value nulis `334,0` · `460,0` · `748,0` · `100,0` di
      * master — nol di belakang DIPERTAHANKAN, beda dari Turbidimeter.
      */

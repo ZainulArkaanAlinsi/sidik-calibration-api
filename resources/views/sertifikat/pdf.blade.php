@@ -424,11 +424,16 @@
              ini balik null — kolomnya NGGAK MUNCUL, bukan muncul kosong.
              Alasan lengkapnya: docs/pertanyaan-lab-r2-spektro.md. --}}
         @php($r2 = $barisKelompok->first()['r2'] ?? null)
+        {{-- Judul kolom kedua beda per master: lima alat nulis
+             `Unit Under Test`, Spectrophotometer nulis `UUT` (di ketiga
+             bloknya, jadi bukan sel yang kepotong). Sertifikat lama yang
+             snapshot-nya belum punya kunci ini jatuh ke judul lamanya. --}}
+        @php($judulUut = $snapshot['judul_uut'] ?? 'Unit Under Test')
         <table class="data">
             <thead>
                 <tr>
                     <th>Standard{{ $sufiks }}</th>
-                    <th>Unit Under Test{{ $sufiks }}</th>
+                    <th>{{ $judulUut }}{{ $sufiks }}</th>
                     <th>Correction{{ $sufiks }}</th>
                     @if ($r2 !== null)
                         <th>R<sup>2</sup></th>
@@ -530,7 +535,7 @@
         @endif
     @empty
         <table class="data">
-            <thead><tr><th>Standard</th><th>Unit Under Test</th><th>Correction</th></tr></thead>
+            <thead><tr><th>Standard</th><th>{{ $snapshot['judul_uut'] ?? 'Unit Under Test' }}</th><th>Correction</th></tr></thead>
             <tbody><tr><td colspan="3">—</td></tr></tbody>
         </table>
     @endforelse
