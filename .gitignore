@@ -49,3 +49,26 @@ Project-PT-Sidik/Master Data TurbidiMeter_CSV/
 # Idem buat chlorine meter — isinya sertifikat 0189-CAL-624 + nama & alamat
 # pelanggan asli. Angkanya udah masuk ChlorineCapabilitySeeder/ChlorineSeeder.
 Project-PT-Sidik/Chlorine_Meter_CSV/
+# Idem buat spectrophotometer — CSV + .xlsm + lembar kerja asli SIDIK-FM-CAL-0511.
+# Angkanya udah masuk SpectrophotometerCapabilitySeeder/SpectrophotometerSeeder.
+Project-PT-Sidik/Master_Olah_Data_Spectrofotometer_CSV/
+# Idem buat pH, conductivity, dan refractometer — CSV + .xlsm + ringkasan _RAPI
+# semuanya nyebut nama & alamat pelanggan asli (mis. sertifikat 012-CAL-524).
+# Angkanya udah masuk PhMeterSeeder/ThermohygroSeeder lewat database/data/*.json
+# dan ke profil kalibrasi masing-masing alat.
+Project-PT-Sidik/Master Olah Data_pH for trial.xlsm
+Project-PT-Sidik/Master Olah Data_pH for trial_CSV/
+Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/
+Project-PT-Sidik/Master Data Conductivity/
+Project-PT-Sidik/Refractometer_CSV/
+
+# CATATAN/ isinya berkas mentah dari lab: sertifikat terbit (CAL-2026-07-0017),
+# kop surat, dan ekspor CSV workbook pH yang bawa nama & alamat pelanggan.
+# Satu-satunya yang DIKECUALIKAN: DATABASE.csv — itu master internal lab
+# (nomor IK, standar, penandatangan, CMC), nol data pelanggan, DAN dibaca
+# saat runtime oleh MetodeKalibrasiSeeder lewat `base_path()`. Kalau ikut
+# diabaikan, hasil clone bersih nggak dapet satu pun metode kalibrasi.
+CATATAN/*
+!CATATAN/ini-yang-dari-karywan-manual/
+CATATAN/ini-yang-dari-karywan-manual/*
+!CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv

@@ -130,7 +130,7 @@ class SertifikatCocokMasterTest extends TestCase
                 ],
             ],
 
-            // Refractometer_CSV 2/SERTIFIKAT.csv baris 18–19.
+            // Refractometer_CSV/SERTIFIKAT.csv baris 18–19.
             //
             // Unit Under Test-nya BUKAN pembacaan mentah teknisi (1,3362 &
             // 1,3986) — itu pembacaan yang udah dinormalisasi ke suhu acuan
