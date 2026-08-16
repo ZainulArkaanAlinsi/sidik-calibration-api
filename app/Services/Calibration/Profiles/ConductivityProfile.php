@@ -44,7 +44,8 @@ use App\Models\Standard;
  * ## Yang SENGAJA tidak diambil dari master
  *
  * Empat keputusan audit yang menyimpang dari isi sel, semuanya berpijak pada
- * bukti lain di dalam workbook yang sama. Lihat `docs/audit-conductivity.md`
+ * bukti lain di dalam workbook yang sama. Lihat
+ * `docs/audit-sumber-conductivity-refractometer.md`
  * buat dasar lengkapnya; ringkasnya:
  *
  *  - **E-2** `PERHITUNGAN!J34/J47` isinya `=AVERAGE(...)`, bukan selisih.
