@@ -4,6 +4,7 @@ namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -32,5 +33,25 @@ abstract class TestCase extends BaseTestCase
         // nggak bisa ngalahin nilai yang udah nangkring di `$_SERVER`.
         Config::set('services.anthropic.base_url', 'https://api.anthropic.com');
         Config::set('services.gemini.base_url', 'https://generativelanguage.googleapis.com');
+
+        // Disk `local` dipalsuin buat SEMUA test, bukan per berkas.
+        //
+        // phpunit.xml nyetel `QUEUE_CONNECTION=sync`, jadi `GenerateCertificate`
+        // jalan langsung di tengah test dan nulis PDF beneran ke
+        // `storage/app/private/certificates/`. Nama berkasnya `qr_token` acak,
+        // jadi nggak ada yang ketimpa — tiap kali suite jalan, folder itu numpuk
+        // ~99 PDF (@1,3 MB) dan nggak pernah dibersihin. Kekumpul 8.647 berkas /
+        // 11 GB sebelum ketahuan.
+        //
+        // Empat belas berkas test kena, sebagian udah manggil
+        // `Storage::fake('local')` sendiri dan sebagian belum. Nambal satu-satu
+        // cuma nunda masalahnya: test sertifikat berikutnya yang ditulis orang
+        // lain bakal bocor lagi kecuali dia inget manggil fake-nya. Ditaruh di
+        // sini biar bocornya nggak bisa balik.
+        //
+        // `Storage::fake()` ngarahin disk ke folder sementara dan ngosongin
+        // isinya tiap test, jadi test yang emang baca-balik PDF-nya tetap jalan
+        // — yang beda cuma tempat nulisnya.
+        Storage::fake('local');
     }
 }
