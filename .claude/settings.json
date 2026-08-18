@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "token-optimizer@alexgreensh-token-optimizer": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.backup)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./storage/*.key)"
+    ]
+  }
+}
