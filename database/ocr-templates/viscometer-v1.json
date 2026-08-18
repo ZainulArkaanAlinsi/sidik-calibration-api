@@ -1,0 +1,482 @@
+{
+    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "_catatan_formulir": "Rangka ini DITURUNKAN dari bentuk lembar kerja ViscometerProfile, dan tata letaknya SENGAJA beda dari cetakan resmi SIDIK-FM-CAL-0524_Rev.3 dalam empat hal — semuanya dicatat, tidak satu pun mengubah angka. (1) ORIENTASI LANSKAP (2339x1654 @200dpi), sementara Rev.3 dan enam lembar alat lain potret. Alasannya satu angka: baris 60000 cP menulis tujuh karakter (63181.3). Di grid potret kotak pembacaannya 124 px = 15,7 mm, yaitu 2,2 mm per digit tulisan tangan — itu sumber salah baca kamera terbesar di lembar ini. Lanskap memberi 230 px = 29,2 mm (4,2 mm per digit). Kotak suhu sengaja lebih sempit (138 px = 17,5 mm) karena isinya cuma empat karakter; lebar per Repeat tetap 368 px. (2) Rev.3 menggambar ENAM blok terpisah (3 larutan x 2 tahap), rangka ini DUA tabel berisi tiga baris; isinya identik, tapi tiga baris dalam satu grid dapat kotak jauh lebih besar daripada enam blok bertumpuk. (3) Rev.3 mencetak larutan 'Std Visco 100 cP' DUA KALI lalu 30000 & 60000 cP; yang dipakai di sini 100/1000/60000 cP ikut master, DATABASE, dan lampiran KAN — FORM VALIDASI rev.18 (18 Mei 2026) menyebut eksplisit 'Update Standard Viscometer 1000 cP'. Blok 30000 cP tidak digambar sama sekali karena seluruh budgetnya #DIV/0! di master. (4) Kotak Spindle, RPM, dan Resolusi UUT per titik ditambahkan (Rev.3 cuma punya daftar spindle global untuk dilingkari), dicetak sebagai garis isian di blok kepala, TAPI sengaja BUKAN sel pindai: alfabet pembaca angka murni digit sementara kode spindle bentuknya 'HA7'/'CPE-51 or CPA-51Z', jadi sel semacam itu akan selalu MERAH. Yang BELUM diperiksa: formulir cetak Rev.3 belum diukur untuk marker sudut & QR — sama seperti spectrophotometer, cetakan aslinya kemungkinan tidak punya keduanya. Jangan setel terverifikasi:true sebelum kertas hasil `ocr:cetak-lembar` dicetak, diisi tangan, lalu difoto dan diadu.",
+    "template_id": "viscometer",
+    "versi": 1,
+    "kode_dokumen": "SIDIK-FM-CAL-0524_Rev.3",
+    "terverifikasi": false,
+    "ukuran_referensi": {
+        "w": 2339,
+        "h": 1654,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 2249,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 2249,
+            "y": 1564,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 1564,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "viscometer|v1",
+        "kotak": {
+            "x": 1994,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 323,
+                "y": 691,
+                "w": 380,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 691,
+                "y": 691,
+                "w": 380,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 1059,
+                "y": 691,
+                "w": 380,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 4,
+            "teks": "X4",
+            "kotak": {
+                "x": 1427,
+                "y": 691,
+                "w": 380,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 5,
+            "teks": "X5",
+            "kotak": {
+                "x": 1795,
+                "y": 691,
+                "w": 380,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "sebelum_adjustment",
+            "judul": "Before Adjustment",
+            "kiri": 127,
+            "sel": {
+                "sebelum_adjustment|1|1|pembacaan": {
+                    "x": 329,
+                    "y": 787,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|1|pembacaan": {
+                    "x": 329,
+                    "y": 871,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|1|pembacaan": {
+                    "x": 329,
+                    "y": 955,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|1|suhu": {
+                    "x": 559,
+                    "y": 787,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|1|suhu": {
+                    "x": 559,
+                    "y": 871,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|1|suhu": {
+                    "x": 559,
+                    "y": 955,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|2|pembacaan": {
+                    "x": 697,
+                    "y": 787,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|2|pembacaan": {
+                    "x": 697,
+                    "y": 871,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|2|pembacaan": {
+                    "x": 697,
+                    "y": 955,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|2|suhu": {
+                    "x": 927,
+                    "y": 787,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|2|suhu": {
+                    "x": 927,
+                    "y": 871,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|2|suhu": {
+                    "x": 927,
+                    "y": 955,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|3|pembacaan": {
+                    "x": 1065,
+                    "y": 787,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|3|pembacaan": {
+                    "x": 1065,
+                    "y": 871,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|3|pembacaan": {
+                    "x": 1065,
+                    "y": 955,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|3|suhu": {
+                    "x": 1295,
+                    "y": 787,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|3|suhu": {
+                    "x": 1295,
+                    "y": 871,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|3|suhu": {
+                    "x": 1295,
+                    "y": 955,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|4|pembacaan": {
+                    "x": 1433,
+                    "y": 787,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|4|pembacaan": {
+                    "x": 1433,
+                    "y": 871,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|4|pembacaan": {
+                    "x": 1433,
+                    "y": 955,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|4|suhu": {
+                    "x": 1663,
+                    "y": 787,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|4|suhu": {
+                    "x": 1663,
+                    "y": 871,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|4|suhu": {
+                    "x": 1663,
+                    "y": 955,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|5|pembacaan": {
+                    "x": 1801,
+                    "y": 787,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|5|pembacaan": {
+                    "x": 1801,
+                    "y": 871,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|5|pembacaan": {
+                    "x": 1801,
+                    "y": 955,
+                    "w": 230,
+                    "h": 84
+                },
+                "sebelum_adjustment|1|5|suhu": {
+                    "x": 2031,
+                    "y": 787,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|2|5|suhu": {
+                    "x": 2031,
+                    "y": 871,
+                    "w": 138,
+                    "h": 84
+                },
+                "sebelum_adjustment|3|5|suhu": {
+                    "x": 2031,
+                    "y": 955,
+                    "w": 138,
+                    "h": 84
+                }
+            }
+        },
+        {
+            "tabel_id": "sesudah_adjustment",
+            "judul": "After Adjustment",
+            "kiri": 127,
+            "sel": {
+                "sesudah_adjustment|1|1|pembacaan": {
+                    "x": 329,
+                    "y": 1209,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|1|pembacaan": {
+                    "x": 329,
+                    "y": 1293,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|1|pembacaan": {
+                    "x": 329,
+                    "y": 1377,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|1|suhu": {
+                    "x": 559,
+                    "y": 1209,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|1|suhu": {
+                    "x": 559,
+                    "y": 1293,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|1|suhu": {
+                    "x": 559,
+                    "y": 1377,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|2|pembacaan": {
+                    "x": 697,
+                    "y": 1209,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|2|pembacaan": {
+                    "x": 697,
+                    "y": 1293,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|2|pembacaan": {
+                    "x": 697,
+                    "y": 1377,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|2|suhu": {
+                    "x": 927,
+                    "y": 1209,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|2|suhu": {
+                    "x": 927,
+                    "y": 1293,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|2|suhu": {
+                    "x": 927,
+                    "y": 1377,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|3|pembacaan": {
+                    "x": 1065,
+                    "y": 1209,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|3|pembacaan": {
+                    "x": 1065,
+                    "y": 1293,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|3|pembacaan": {
+                    "x": 1065,
+                    "y": 1377,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|3|suhu": {
+                    "x": 1295,
+                    "y": 1209,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|3|suhu": {
+                    "x": 1295,
+                    "y": 1293,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|3|suhu": {
+                    "x": 1295,
+                    "y": 1377,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|4|pembacaan": {
+                    "x": 1433,
+                    "y": 1209,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|4|pembacaan": {
+                    "x": 1433,
+                    "y": 1293,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|4|pembacaan": {
+                    "x": 1433,
+                    "y": 1377,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|4|suhu": {
+                    "x": 1663,
+                    "y": 1209,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|4|suhu": {
+                    "x": 1663,
+                    "y": 1293,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|4|suhu": {
+                    "x": 1663,
+                    "y": 1377,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|5|pembacaan": {
+                    "x": 1801,
+                    "y": 1209,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|5|pembacaan": {
+                    "x": 1801,
+                    "y": 1293,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|5|pembacaan": {
+                    "x": 1801,
+                    "y": 1377,
+                    "w": 230,
+                    "h": 84
+                },
+                "sesudah_adjustment|1|5|suhu": {
+                    "x": 2031,
+                    "y": 1209,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|2|5|suhu": {
+                    "x": 2031,
+                    "y": 1293,
+                    "w": 138,
+                    "h": 84
+                },
+                "sesudah_adjustment|3|5|suhu": {
+                    "x": 2031,
+                    "y": 1377,
+                    "w": 138,
+                    "h": 84
+                }
+            }
+        }
+    ]
+}

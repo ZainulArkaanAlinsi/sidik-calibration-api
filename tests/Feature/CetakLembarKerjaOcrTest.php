@@ -37,6 +37,7 @@ class CetakLembarKerjaOcrTest extends TestCase
             ['refractometer'],
             ['conductivity_meter'],
             ['spectrophotometer'],
+            ['viscometer'],
         ];
     }
 

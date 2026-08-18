@@ -668,6 +668,95 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Batas keberterimaan yang berlaku DI TITIK ini, kalau alatnya nggak punya
+     * satu angka toleransi yang berlaku buat seluruh lembar. `null` = ikut
+     * `equipments.toleransi` seperti biasa.
+     *
+     * ## Kenapa ada
+     *
+     * Enam alat pertama mbandingin hasil ke satu kolom `equipments.toleransi`
+     * yang diisi admin — satu angka per alat, berlaku di semua titik. Itu benar
+     * buat mereka: batas alat pH memang 0,2 pH di titik mana pun.
+     *
+     * Viscometer nggak begitu. Batasnya (MPE Brookfield) LAHIR dari cara alat
+     * itu dipakai di titik tersebut:
+     *
+     *   Fullscale = TK × SMC × 10000 / RPM
+     *   MPE       = 1 % × Fullscale + 1 % × pembacaan
+     *
+     * dan `SMC` (dari spindle) serta `RPM` beda per titik — sesi contoh master
+     * pakai SMC 1 / 4 / 400 dengan 63 / 62 / 62 rpm dalam satu lembar. Batasnya
+     * ikut beda: 4,14 / 22,08 / 1921,84 cP. Dipaksa jadi satu angka, dua dari
+     * tiga titik divonis pakai batas yang bukan miliknya.
+     *
+     * `$konteks` isinya data per titik yang nggak muat di parameter lain —
+     * buat Viscometer `spindle`, `rpm`, dan `tk`. Sengaja array bebas, bukan
+     * parameter bernama: isinya beda per jenis alat, dan alat yang nggak butuh
+     * nggak boleh kepaksa tau bentuknya.
+     *
+     * @param  float  $rataRata  rata-rata pembacaan titik ini (sesudah normalisasi suhu)
+     * @param  array<string, mixed>  $konteks
+     */
+    /**
+     * Pita angka yang MASUK AKAL buat satu sel pembacaan di lembar pindai —
+     * kalau alat ini nggak bisa dilayani aturan umum.
+     *
+     * Aturan umumnya (`TemplateLembarKerja::aturanPembacaan()`): nominal titik
+     * ±10 %, dengan penjaga rasio 0,5–2,0× nominal. Itu benar buat enam alat
+     * pertama karena nilai acuannya DIAM — buffer pH 7 selalu ~7, standar
+     * turbidity 100 NTU selalu ~100.
+     *
+     * Viscometer nggak. Nilai acuannya diinterpolasi dari tabel sertifikat
+     * larutan pada suhu terukur, dan tabelnya curam: larutan 1000 cP itu
+     * 1504 cP di 20 °C dan 419,5 cP di 37,78 °C. Pita ±10 % di sekitar nominal
+     * 25 °C (1018 cP) jadi 916,2–1119,8 — dan pembacaan master yang paling
+     * kecil 916,3, cuma 0,1 cP di atas batasnya. Sesi yang sama diukur di
+     * 30 °C bakal ditolak SELURUH barisnya, dengan alasan yang kelihatan
+     * seperti kegagalan baca kamera padahal angkanya benar.
+     *
+     * Balik `null` (bawaan) = pakai aturan umum. Yang override wajib bawa
+     * alasan fisik, bukan sekadar melonggarkan penjaga.
+     *
+     * @return array{min: float, maks: float, rasio_min: float, rasio_maks: float}|null
+     */
+    public function pitaPembacaan(float $titikUkur): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Batas keberterimaannya dibaca dari kolom `equipments.toleransi`?
+     *
+     * Enam alat pertama: ya. Satu angka di master alat, dipakai semua titik,
+     * dan kalau kolomnya kosong lembar kerjanya MEMANG belum bisa dihitung —
+     * PASS/FAIL tanpa batas itu vonis tanpa dasar.
+     *
+     * Viscometer: nggak. Batasnya MPE, dan MPE lahir dari spindle & RPM titik
+     * itu (`Fullscale = TK × SMC × 10000 / RPM`), jadi kolom alatnya sengaja
+     * NULL. Tanpa hook ini penjaga di `CalibrationController::
+     * alasanBelumBisaDihitung()` nolak SETIAP sesi Viscometer dengan alasan
+     * "Toleransi alat masih kosong" — dan nolaknya rapi: sesinya tersimpan,
+     * pengukurannya tersimpan, cuma nggak ada satu titik pun yang dihitung.
+     *
+     * Titik yang spindle/RPM-nya nggak keisi tetap dihitung, cuma nggak
+     * divonis — lihat `toleransiTitik()`, yang balik `null` di situ. Itu benar:
+     * angkanya ada, vonisnya yang nggak ada dasarnya.
+     */
+    public function toleransiDariKolomAlat(): bool
+    {
+        return true;
+    }
+
+    public function toleransiTitik(
+        float $titikUkur,
+        float $rataRata,
+        Equipment $equipment,
+        array $konteks = [],
+    ): ?float {
+        return null;
+    }
+
+    /**
      * Ubah satu pembacaan ke satuan yang dipakai `equipments.range_min/max`,
      * biar pengecekan "pembacaan di luar rentang" mbandingin dua angka yang
      * SEBANDING.

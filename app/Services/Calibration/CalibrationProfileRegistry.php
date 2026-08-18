@@ -10,6 +10,7 @@ use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
+use App\Services\Calibration\Profiles\ViscometerProfile;
 
 /**
  * Daftar semua profil kalibrasi & pencocokannya ke alat.
@@ -46,6 +47,7 @@ class CalibrationProfileRegistry
             new RefractometerProfile,
             new ConductivityProfile,
             new SpectrophotometerProfile,
+            new ViscometerProfile,
         ];
     }
 

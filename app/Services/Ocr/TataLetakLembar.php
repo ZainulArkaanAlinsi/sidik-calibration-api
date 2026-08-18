@@ -11,8 +11,27 @@ namespace App\Services\Ocr;
  * angkanya ditulis dua kali, cukup satu yang diubah buat bikin judul tabel
  * menimpa barisnya sendiri — persis yang kejadian di lembar Conductivity.
  *
- * Semua konstanta di sini ditulis di ruang piksel 1654x2339 @200dpi (A4), dan
- * diskalakan kalau ukuran referensinya lain.
+ * Semua konstanta di sini ditulis di ruang piksel 1654x2339 @200dpi (A4).
+ *
+ * ## Dua macam konstanta, dan cuma SATU yang diskalakan
+ *
+ * Yang menggambarkan MARGIN & JATAH RUANG halaman ([KIRI], [KANAN],
+ * [Y_ISIAN], [JARAK_TABEL], …) diskalakan lewat [x]/[y] kalau ukuran
+ * referensinya lain — kertas yang lebih lebar memang pantas dapat margin yang
+ * lebih lebar.
+ *
+ * Yang menggambarkan TIPOGRAFI ([LEBAR_LABEL], [PITCH_MIN], [PITCH_MAKS],
+ * [LEBAR_LABEL_BARIS], [TINGGI_SEL_MAKS], [SISA_BAWAH]) TIDAK. Semua lembar
+ * dicetak di 200 dpi dengan font 8 pt yang sama, jadi satu label `Equipment
+ * Name` makan lebar milimeter yang sama di kertas mana pun. Menskalakannya
+ * ikut ukuran halaman itu salah dua arah sekaligus: di lembar lanskap
+ * (2339x1654) kotak labelnya jadi 41 % lebih lebar dari tulisan yang mau
+ * ditaruh — ruang tulis hilang percuma — sementara jarak antar barisnya
+ * menyusut 29 % sampai barisnya saling menempel dan blok isiannya meluber
+ * menimpa judul tabel di bawahnya.
+ *
+ * Buat lembar A4 potret faktor skalanya persis 1,0, jadi enam lembar yang udah
+ * terverifikasi nggak bergeser sepiksel pun.
  */
 class TataLetakLembar
 {
@@ -96,6 +115,19 @@ class TataLetakLembar
     private const LEBAR_LABEL = 340;
 
     /**
+     * Sisa ruang tulis minimal per kolom isian (~34 mm @200dpi).
+     *
+     * Yang nentuin blok isian identitas boleh dipecah jadi tiga kolom atau
+     * nggak. Isian terpanjang yang beneran ditulis tangan di situ nama alat
+     * dan nomor seri — dua-duanya muat di 34 mm dengan tulisan normal.
+     *
+     * Lembar A4 potret cuma nyisain 94 px (12 mm) kalau dipecah tiga, jauh di
+     * bawah ambang ini, jadi keenam lembar yang udah terverifikasi tetap dua
+     * kolom. Lembar lanskap dapat 274 px (35 mm) dan lolos.
+     */
+    private const LEBAR_TULIS_MIN = 270;
+
+    /**
      * Kolom label baris di kiri grid (`X1`, `10,01`, `1,33659`).
      *
      * Dulu grid mulai di 25% lebar kertas (413 px) dan labelnya digambar 300
@@ -155,20 +187,37 @@ class TataLetakLembar
      * seperti sebelum tabelnya ada, jadi berkas geometri yang udah tercetak
      * nggak berubah.
      */
-    public function atasGrid(int $tinggi): int
+    public function atasGrid(int $tinggi, int $bawahKepala = 0): int
     {
-        return $this->y(self::Y_LINGKUNGAN + self::TINGGI_LINGKUNGAN + self::JARAK_KE_GRID, $tinggi);
+        // Lantai kedua: grid nggak boleh mulai di atas blok isian yang masih
+        // menulis. Angka 820 di atas itu JATAH — benar selama blok isiannya
+        // muat di jatah itu, dan diam-diam salah kalau nggak.
+        //
+        // Lembar Viscometer yang bikin ini ketahuan: 28 isian di dua kolom =
+        // 14 baris, dan judul tabel `Before Adjustment` kecetak menimpa baris
+        // isian terakhir. Nggak ada test yang kena — semua penjaga tata letak
+        // ngukur SEL, sementara yang tabrakan label sama judul.
+        //
+        // Buat enam lembar yang udah terverifikasi blok isiannya berhenti jauh
+        // di atas 820, jadi `max()` di sini balik ke angka yang sama persis.
+        return max(
+            $this->y(self::Y_LINGKUNGAN + self::TINGGI_LINGKUNGAN + self::JARAK_KE_GRID, $tinggi),
+            $bawahKepala > 0 ? $bawahKepala + self::JARAK_KE_GRID : 0,
+        );
     }
 
     /** Baris paling bawah yang boleh dipakai grid sel. */
     public function bawahGrid(int $tinggi): int
     {
-        return $tinggi - $this->y(self::SISA_BAWAH, $tinggi);
+        // FISIK: yang harus muat di situ penanda sudut (90 px + napas),
+        // ukurannya sama di kertas mana pun. Diskalakan ikut tinggi halaman,
+        // lembar lanskap cuma nyisain 134 px buat penanda yang butuh 135.
+        return $tinggi - self::SISA_BAWAH;
     }
 
     public function kepalaTabel(int $tinggi): int
     {
-        return $this->y(self::KEPALA_TABEL, $tinggi);
+        return self::KEPALA_TABEL;
     }
 
     /**
@@ -181,7 +230,7 @@ class TataLetakLembar
      */
     public function jarakBarisKepala(int $tinggi): int
     {
-        return $this->y(self::JARAK_BARIS_KEPALA, $tinggi);
+        return self::JARAK_BARIS_KEPALA;
     }
 
     /** Margin kiri halaman — judul, isian, dan label baris berdiri di sini. */
@@ -193,13 +242,13 @@ class TataLetakLembar
     /** Lebar kolom label di kiri grid. */
     public function lebarLabelBaris(int $lebar): int
     {
-        return $this->x(self::LEBAR_LABEL_BARIS, $lebar);
+        return self::LEBAR_LABEL_BARIS;
     }
 
     /** Jarak label baris ke garis sel di kanannya. */
     public function jarakLabelBaris(int $lebar): int
     {
-        return $this->x(self::JARAK_LABEL_BARIS, $lebar);
+        return self::JARAK_LABEL_BARIS;
     }
 
     /** Kolom sel paling kiri: sesudah kolom label, bukan di 25% lebar kertas. */
@@ -227,7 +276,7 @@ class TataLetakLembar
 
     public function tinggiSelMaks(int $tinggi): int
     {
-        return $this->y(self::TINGGI_SEL_MAKS, $tinggi);
+        return self::TINGGI_SEL_MAKS;
     }
 
     /**
@@ -252,20 +301,45 @@ class TataLetakLembar
 
         $kiri = $this->kiri($lebar);
         $kanan = $this->x(self::KANAN, $lebar);
-        $lebarLabel = $this->x(self::LEBAR_LABEL, $lebar);
 
-        // Dua kolom, bukan tiga: labelnya panjang (`Env. Condition — First
-        // (%RH)` = 28 huruf), dan kalau kolomnya tiga sisa ruang buat menulis
-        // tinggal 19 mm — nggak cukup buat nama alat atau nomor seri.
-        $jumlahKolom = 2;
+        // Lebar label FISIK: tulisannya 8 pt di 200 dpi, sama di kertas mana
+        // pun. Dulu ini diskalakan ikut lebar halaman, dan di lembar lanskap
+        // kotaknya melar 481 px buat tulisan yang butuh 340 — 18 mm ruang
+        // tulis hilang tanpa ada yang memakainya.
+        $lebarLabel = self::LEBAR_LABEL;
+
         $jarakKolom = $this->x(40, $lebar);
-        $lebarKolom = intdiv($kanan - $kiri - ($jumlahKolom - 1) * $jarakKolom, $jumlahKolom);
+
+        // Berapa kolom: DUA di A4 potret, TIGA kalau kertasnya cukup lebar.
+        //
+        // Di potret tiga kolom nyisain 12 mm buat menulis — nggak cukup buat
+        // nama alat atau nomor seri, dan itu yang bikin angkanya dipatok dua
+        // sejak awal. Tapi patokan itu ikut kebawa ke lembar lanskap, yang
+        // lebarnya 41 % lebih tapi TINGGINYA 29 % lebih pendek: dua kolom di
+        // situ artinya 14 baris isian yang nggak muat, dan blok kepalanya
+        // meluber menimpa judul tabel.
+        //
+        // Jadi yang dipatok bukan jumlah kolomnya, tapi SYARATNYA: sisa ruang
+        // tulis minimal [LEBAR_TULIS_MIN]. Lembar potret nggak lolos syarat
+        // itu dan tetap dua kolom, persis kayak sebelumnya.
+        $jumlahKolom = 2;
+        $lebarKolom = intdiv($kanan - $kiri - $jarakKolom, 2);
+
+        $lebarKolomTiga = intdiv($kanan - $kiri - 2 * $jarakKolom, 3);
+
+        if ($lebarKolomTiga - $lebarLabel - $this->x(20, $lebar) >= self::LEBAR_TULIS_MIN) {
+            $jumlahKolom = 3;
+            $lebarKolom = $lebarKolomTiga;
+        }
 
         $jumlahBaris = (int) max(1, ceil(count($isian) / $jumlahKolom));
+
+        // Pitch juga FISIK — jarak antar baris tulisan ditentukan tinggi
+        // hurufnya, bukan tinggi kertasnya.
         $pitch = min(
-            $this->y(self::PITCH_MAKS, $tinggi),
+            self::PITCH_MAKS,
             max(
-                $this->y(self::PITCH_MIN, $tinggi),
+                self::PITCH_MIN,
                 intdiv($this->y(self::TINGGI_ISIAN, $tinggi), $jumlahBaris),
             ),
         );
@@ -288,7 +362,7 @@ class TataLetakLembar
                 // Garisnya berhenti sebelum kolom berikutnya, dan turun sedikit
                 // dari label supaya tulisan tangan punya ruang di atasnya.
                 'garis_x' => $x + $lebarLabel + $this->x(10, $lebar),
-                'garis_y' => $y + $pitch - $this->y(16, $tinggi),
+                'garis_y' => $y + $pitch - 16,
                 'garis_w' => $lebarKolom - $lebarLabel - $this->x(20, $lebar),
             ];
         }
@@ -308,6 +382,10 @@ class TataLetakLembar
             'garis_y' => $this->y(self::Y_GARIS, $tinggi),
             'garis_w' => $kanan - $kiri,
             'isian' => $kotak,
+            // Baris paling bawah blok isian. Dipakai [atasGrid] biar grid
+            // selnya nggak pernah mulai di atas isian yang masih menulis —
+            // lihat penjelasan di method itu.
+            'bawah' => $yIsian + $jumlahBaris * $pitch,
         ];
     }
 

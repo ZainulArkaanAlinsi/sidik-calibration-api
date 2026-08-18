@@ -83,6 +83,10 @@ class GumCalculator
      * Hitung satu titik ukur. Balikannya siap di-insert ke `uncertainty_calculations`.
      *
      * @param  list<float>  $pembacaan  hasil pengulangan di titik ini
+     * @param  array<string, mixed>  $konteksTitik  data per titik yang cuma dimengerti
+     *                                              profil alatnya — buat Viscometer
+     *                                              `spindle`, `rpm`, `tk`. Lihat
+     *                                              `CalibrationProfile::toleransiTitik()`.
      * @return array<string, mixed>
      */
     public function hitungTitik(
@@ -93,6 +97,7 @@ class GumCalculator
         Standard $standard,
         ?float $suhuLarutan = null,
         ?float $suhuRuang = null,
+        array $konteksTitik = [],
     ): array {
         // Nilai acuan yang dipakai itu nilai larutan PADA SUHU PENGUKURAN, bukan
         // angka nominal yang tercetak di botol.
@@ -195,7 +200,32 @@ class GumCalculator
         $rataRata = $profil->rataRataPadaSuhuAcuan($rataRata, $suhuLarutan, $equipment);
 
         $error = $rataRata - $titikUkur;
-        $toleransi = (float) $equipment->toleransi;
+
+        // Batas keberterimaan: dari profil dulu, baru `equipments.toleransi`.
+        //
+        // Enam alat pertama balik `null` dari `toleransiTitik()` dan jatuh ke
+        // kolom master alat persis kayak sebelumnya. Yang override cuma alat
+        // yang batasnya beneran beda per titik — Viscometer, yang MPE-nya
+        // lahir dari spindle & RPM titik itu (`ViscometerProfile`).
+        //
+        // Dihitung dari `$rataRata` yang SUDAH dinormalisasi suhu, karena itu
+        // angka yang dipakai `$error` di atas — dua-duanya harus sebanding.
+        //
+        // Soal satuan: `$toleransi` sengaja NGGAK ikut diturunkan di ujung
+        // method (lihat catatan di blok `$skala`), dan itu tetap benar buat
+        // jalur baru ini — satu-satunya alat yang `faktorKanonik()`-nya bukan
+        // 1.0 itu Conductivity, dan dia nggak override `toleransiTitik()`.
+        // Buat alat yang override, kanonik == satuan laporan, jadi `$rataRata`
+        // yang masuk ke sini memang sudah di satuan yang dipakai mbandingin.
+        // `?? (float) $equipment->toleransi` yang lama nge-cast NULL jadi 0.0,
+        // dan 0 di kolom ini kebaca sebagai "batas keberterimaannya nol cP" —
+        // pernyataan yang salah, kesimpen di jejak audit sesi terakreditasi.
+        // Yang benar NULL: alat ini belum punya batas buat titik ini.
+        // Vonisnya sendiri udah bener dari dulu (lihat `keputusan()`), yang
+        // salah cuma angka yang dilaporkannya.
+        $toleransiAlat = $equipment->toleransi === null ? null : (float) $equipment->toleransi;
+        $toleransi = $profil->toleransiTitik($titikUkur, $rataRata, $equipment, $konteksTitik)
+            ?? $toleransiAlat;
 
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
@@ -430,12 +460,22 @@ class GumCalculator
             'vi' => $k['vi'],
         ], $komponen);
 
+        // CMC 0 artinya baris kemampuannya sengaja nggak punya klaim
+        // terakreditasi buat rentang itu (lihat `ViscometerCapabilitySeeder`
+        // baris "di luar lingkup KAN"), BUKAN klaim nol. Jejak auditnya harus
+        // bunyi begitu juga — "vs CMC 0.00000000" kebaca seperti lab ngeklaim
+        // ketidakpastian sempurna, kebalikan dari yang dimaksud.
         $komponenAudit[] = [
             'sumber' => 'perbandingan_cmc',
-            'keterangan' => sprintf(
-                'U hitung %.8f vs CMC %.8f → dilaporkan %s',
-                $uHitung, $cmc, ($cmc > $uHitung) ? 'CMC' : 'hitung',
-            ),
+            'keterangan' => $cmc > 0
+                ? sprintf(
+                    'U hitung %.8f vs CMC %.8f → dilaporkan %s',
+                    $uHitung, $cmc, ($cmc > $uHitung) ? 'CMC' : 'hitung',
+                )
+                : sprintf(
+                    'U hitung %.8f, tanpa lantai CMC (titik di luar rentang terakreditasi) → dilaporkan hitung',
+                    $uHitung,
+                ),
             'distribusi' => '-',
             'nilai' => $cmc,
         ];
@@ -693,9 +733,9 @@ class GumCalculator
      * punya toleransi), jadi ini nutup lubang sebelum keinjek, bukan mbenerin
      * angka yang udah terlanjur kecetak.
      */
-    private function keputusan(float $error, float $diperluas, float $toleransi): ?string
+    private function keputusan(float $error, float $diperluas, ?float $toleransi): ?string
     {
-        if ($toleransi <= 0.0) {
+        if ($toleransi === null || $toleransi <= 0.0) {
             return null;
         }
 

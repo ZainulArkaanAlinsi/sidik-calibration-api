@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'standard_id',
-    'pembacaan', 'suhu', 'satuan', 'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path',
+    'pembacaan', 'suhu', 'satuan', 'spindle', 'rpm', 'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path',
     'is_verified',
 ])]
 class RawMeasurement extends Model
@@ -25,6 +25,10 @@ class RawMeasurement extends Model
             // Suhu larutan waktu pembacaan diambil — pH bergantung suhu, jadi
             // ini bagian dari data, bukan catatan tambahan.
             'suhu' => 'float',
+            // Kecepatan putar titik ini (rpm). Ikut nentuin Fullscale, jadi
+            // bagian dari data hitung — bukan catatan. Lihat migrasi
+            // 2026_08_18_100000.
+            'rpm' => 'float',
             'ocr_confidence' => 'float',
             'is_verified' => 'boolean',
         ];

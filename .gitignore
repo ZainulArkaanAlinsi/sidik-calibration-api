@@ -61,6 +61,11 @@ Project-PT-Sidik/Master Olah Data_pH for trial_CSV/
 Project-PT-Sidik/Master Olah Data_pH for trial_RAPI/
 Project-PT-Sidik/Master Data Conductivity/
 Project-PT-Sidik/Refractometer_CSV/
+# Idem buat viscometer — CSV ekspor workbook + lembar kerja asli
+# SIDIK-FM-CAL-0524_Rev.3. Isinya serial sertifikat larutan standar Paragon
+# dan seluruh riwayat revisi master. Angkanya udah masuk
+# ViscometerCapabilitySeeder/ViscometerSeeder dan ViscometerProfile.
+Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/
 
 # CATATAN/ isinya berkas mentah dari lab: sertifikat terbit (CAL-2026-07-0017),
 # kop surat, dan ekspor CSV workbook pH yang bawa nama & alamat pelanggan.
