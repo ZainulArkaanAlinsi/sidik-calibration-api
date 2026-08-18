@@ -41,9 +41,28 @@ class CalibrationCapabilitySeeder extends Seeder
      * Excel (0,40 nm) — lihat `docs/handoff-backend-spectrophotometer.md` §10.2
      * soal kenapa yang dipakai angka master.
      *
+     * ## Viscometer
+     *
+     * Dua alasan, dan yang kedua bikin baris JSON-nya nggak bisa dipakai
+     * ngitung sama sekali:
+     *
+     *  1. **Satuannya campur.** Dua baris pertama `cP`, baris ketiga `1.4 P`
+     *     (Poise). `1 P = 100 cP`, jadi angkanya sebenernya sama dengan 140 cP
+     *     yang ditulis master — tapi dibaca mentah, lantai CMC titik 60000 cP
+     *     jadi 1,4 cP, seratus kali lebih longgar dari yang diakreditasi.
+     *  2. **Titiknya nggak pernah kena.** JSON nulis titik tunggal 102 / 1028 /
+     *     58021 cP. Nilai acuan viscometer bergeser ikut suhu larutan — sesi
+     *     master jatuh di 93,88 / 910,29 / 61898,12 cP — dan ambang pencocokan
+     *     titik tunggal `GumCalculator::kemampuanUntukTitik()` itu
+     *     `max(0,1 ; 0,5 %)`. Jarak 93,88 ke 102 aja 8,12. Ketiga titik bakal
+     *     diam-diam jatuh ke jalur generik tanpa lantai CMC.
+     *
+     * `ViscometerCapabilitySeeder` nulisnya sebagai RENTANG, seluruhnya dalam
+     * cP.
+     *
      * @var list<string>
      */
-    private const DISEED_TERPISAH = ['Spektrofotometer'];
+    private const DISEED_TERPISAH = ['Spektrofotometer', 'Viscometer'];
 
     public function run(): void
     {

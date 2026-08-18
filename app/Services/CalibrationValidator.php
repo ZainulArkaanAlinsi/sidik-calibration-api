@@ -566,6 +566,17 @@ class CalibrationValidator
                 // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
                 // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
                 'suhu_larutan' => $this->suhuLarutanRataRata($pembacaan),
+                // Dibaca balik dari baris pembacaan & `spesifikasi_alat` sesi,
+                // bukan dikarang: hitung ulang harus dapat batas keberterimaan
+                // yang SAMA kayak waktu sesi ini disimpen. Tanpa ini tiap sesi
+                // Viscometer ke-flag beda vonis padahal angkanya benar — persis
+                // lubang yang dulu bikin semua sertifikat Refractometer
+                // ke-flag `ketidakpastian_beda`.
+                'konteks' => [
+                    'spindle' => $pembacaan->first()?->spindle,
+                    'rpm' => $pembacaan->first()?->rpm,
+                    'tk' => $sesi->spesifikasi_alat['model_visco'] ?? null,
+                ],
                 'tersimpan' => $titik,
             ];
         }
@@ -702,7 +713,7 @@ class CalibrationValidator
      * dulu. Profil yang nggak butuh balikin `null` dan pemeriksaan ini jatuh ke
      * jalur per-titik, persis kayak sebelumnya.
      *
-     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard, suhu_larutan: float|null, tersimpan: UncertaintyCalculation}>  $siapHitung
+     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard, suhu_larutan: float|null, konteks: array<string, mixed>, tersimpan: UncertaintyCalculation}>  $siapHitung
      * @return list<array<string, mixed>>
      */
     private function bandingkanHitungUlang(array $siapHitung, Equipment $alat, ?float $suhuRuang): array
@@ -736,6 +747,7 @@ class CalibrationValidator
                         $t['standard'],
                         $t['suhu_larutan'],
                         $suhuRuang,
+                        $t['konteks'] ?? [],
                     ),
                 )];
             }

@@ -190,7 +190,7 @@ class TemplateLembarKerja
                         'standard_id' => $b['standard_id'] ?? null,
                         'aturan' => $fieldId === 'suhu'
                             ? $this->aturanSuhu()
-                            : $this->aturanPembacaan($titik, $resolusi, $desimal, $satuan),
+                            : $this->aturanPembacaan($profil, $titik, $resolusi, $desimal, $satuan),
                     ];
                 }
             }
@@ -311,8 +311,19 @@ class TemplateLembarKerja
      *
      * @return array<string, mixed>
      */
-    private function aturanPembacaan(float $titik, ?float $resolusi, ?int $desimal, ?string $satuan): array
-    {
+    private function aturanPembacaan(
+        CalibrationProfile $profil,
+        float $titik,
+        ?float $resolusi,
+        ?int $desimal,
+        ?string $satuan,
+    ): array {
+        // Pita milik alat, kalau alatnya punya. Cuma Viscometer yang punya:
+        // nilai acuannya bergerak tiga kali lipat sepanjang suhu kerja, jadi
+        // pita "nominal ±10 %" di bawah nolak angka yang benar. Lihat
+        // `CalibrationProfile::pitaPembacaan()`.
+        $pitaProfil = $profil->pitaPembacaan($titik);
+
         $pitaResolusi = $resolusi === null
             ? null
             : $resolusi * (float) config('ocr.angka.pita_kelipatan_resolusi', 20);
@@ -333,10 +344,10 @@ class TemplateLembarKerja
             'nominal' => $titik,
             'resolusi' => $resolusi,
             'desimal' => $desimal,
-            'min' => $delta === null ? null : max(0.0, $titik - $delta),
-            'maks' => $delta === null ? null : $titik + $delta,
-            'rasio_min' => (float) config('ocr.angka.rasio_min', 0.5),
-            'rasio_maks' => (float) config('ocr.angka.rasio_maks', 2.0),
+            'min' => $pitaProfil['min'] ?? ($delta === null ? null : max(0.0, $titik - $delta)),
+            'maks' => $pitaProfil['maks'] ?? ($delta === null ? null : $titik + $delta),
+            'rasio_min' => $pitaProfil['rasio_min'] ?? (float) config('ocr.angka.rasio_min', 0.5),
+            'rasio_maks' => $pitaProfil['rasio_maks'] ?? (float) config('ocr.angka.rasio_maks', 2.0),
             'maks_digit' => (int) config('ocr.angka.maks_digit', 9),
             // Pembacaan alat di lembar-lembar ini nggak pernah negatif. Koreksi
             // yang negatif itu HASIL HITUNG, bukan yang ditulis teknisi.

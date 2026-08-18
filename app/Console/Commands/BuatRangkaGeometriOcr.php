@@ -86,7 +86,13 @@ class BuatRangkaGeometriOcr extends Command
         }
 
         $definisi = $template->untukKode($kode);
-        $rangka = $this->rangka($kode, $versi, $definisi);
+
+        // Batas bawah blok isian identitas — dihitung dari bentuk lembar yang
+        // SAMA dengan yang dipakai `ocr:cetak-lembar`, biar grid selnya nggak
+        // pernah mulai di atas isian yang masih menulis. Lihat
+        // `TataLetakLembar::atasGrid()`.
+        $bentuk = $registry->untukKode($kode)?->bentukLembarKerja() ?? [];
+        $rangka = $this->rangka($kode, $versi, $definisi, $bentuk);
 
         // Catatan yang ditulis tangan di berkas lama — misalnya kenapa cetakan
         // lab yang beredar TIDAK boleh dipakai sebagai acuan ukur — ikut
@@ -120,14 +126,24 @@ class BuatRangkaGeometriOcr extends Command
 
     /**
      * @param  array<string, mixed>  $definisi
+     * @param  array<string, mixed>  $bentuk  hasil `CalibrationProfile::bentukLembarKerja()`
      * @return array<string, mixed>
      */
-    private function rangka(string $kode, int $versi, array $definisi): array
+    private function rangka(string $kode, int $versi, array $definisi, array $bentuk = []): array
     {
         $lebar = (int) $this->option('lebar');
         $tinggi = (int) $this->option('tinggi');
 
-        $tabel = $this->tabel($definisi, $lebar, $tinggi);
+        $bawahKepala = $bentuk === [] ? 0 : (int) $this->tataLetak->kepala(
+            $bentuk,
+            $lebar,
+            $tinggi,
+            (string) ($definisi['kode_dokumen'] ?? ''),
+            $kode,
+            $versi,
+        )['bawah'];
+
+        $tabel = $this->tabel($definisi, $lebar, $tinggi, $bawahKepala);
 
         return [
             '_catatan' => 'RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, '
@@ -264,7 +280,7 @@ class BuatRangkaGeometriOcr extends Command
      * @param  array<string, mixed>  $definisi
      * @return list<array<string, mixed>>
      */
-    private function tabel(array $definisi, int $lebar, int $tinggi): array
+    private function tabel(array $definisi, int $lebar, int $tinggi, int $bawahKepala = 0): array
     {
         $hasil = [];
         $keBawah = $this->sumbu($definisi) === 'baris';
@@ -299,7 +315,7 @@ class BuatRangkaGeometriOcr extends Command
         // atas kertas kosong melompong sementara selnya sendiri kekecilan, dan
         // di lembar Conductivity baris terakhirnya malah kedorong ke halaman
         // dua.
-        $ruang = $this->tataLetak->bawahGrid($tinggi) - $this->tataLetak->atasGrid($tinggi)
+        $ruang = $this->tataLetak->bawahGrid($tinggi) - $this->tataLetak->atasGrid($tinggi, $bawahKepala)
             - $jumlahPita * $kepalaTabel
             - ($jumlahPita - 1) * $jarakTabel;
 
@@ -311,7 +327,7 @@ class BuatRangkaGeometriOcr extends Command
             $this->tataLetak->tinggiSelMaks($tinggi),
         ));
 
-        $kursor = $this->tataLetak->atasGrid($tinggi);
+        $kursor = $this->tataLetak->atasGrid($tinggi, $bawahKepala);
 
         // Batas kiri & kanan SEMUA pita — sama dengan margin blok kepala di
         // atasnya. Dulu angkanya pecahan lebar kertas (25% mulai, 68% lebar).
