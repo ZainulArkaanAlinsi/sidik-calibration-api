@@ -129,6 +129,11 @@ class CalibrationResource extends JsonResource
             'status' => $this->status,
             'input_method' => $this->input_method,
 
+            // Snapshot hasil olah data Autoklaf (Section A/B/C + budget), kalau
+            // sesi ini Autoklaf. Alat lain nggak punya ini (null) — hasilnya di
+            // `hasil`/`titik`. Layar detail Autoklaf baca dari sini.
+            'hasil_autoclave' => $this->hasil_autoclave,
+
             // Sesi bisa punya banyak titik ukur, tapi kontrak minta SATU objek
             // `hasil`. Yang dikirim adalah titik penentu — yang paling mepet ke
             // batas toleransi. Rincian tiap titik ada di `titik` di bawah.
