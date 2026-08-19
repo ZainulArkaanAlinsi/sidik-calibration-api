@@ -238,7 +238,7 @@ class GumCalculator
         // profil yang konstanta budgetnya udah diturunkan dapat budget penuh,
         // yang belum tetap jalan lewat jalur lama tanpa berubah perilaku.
         if ($komponen !== null && $kemampuan !== null) {
-            $hasil = $this->hitungDariBudget($komponen, $kemampuan, $typeA, $n);
+            $hasil = $this->hitungDariBudget($komponen, $kemampuan, $typeA, $n, $profil->faktorCakupanTetap());
         } elseif ($kemampuan !== null) {
             $hasil = $this->hitungDariKemampuan($kemampuan, $typeA, $n);
         } else {
@@ -437,11 +437,12 @@ class GumCalculator
         CalibrationCapability $kemampuan,
         float $typeA,
         int $n,
+        ?float $kTetap = null,
     ): array {
         $agg = $this->agregasiBudget(array_map(
             fn (array $k): array => ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']],
             $komponen,
-        ));
+        ), $kTetap);
 
         // Aturan akreditasi: lab nggak boleh ngeklaim ketidakpastian lebih baik
         // dari CMC-nya. Kalau U hitung < CMC, yang dilaporkan CMC-nya.
@@ -516,10 +517,15 @@ class GumCalculator
      * t-student (mis. 1.96857 buat veff 277.96). Beda tipis, tapi ikut ke angka
      * U yang dicetak.
      *
+     * Kecuali alat yang masternya emang ngunci k: `$kTetap` diisi dari
+     * `CalibrationProfile::faktorCakupanTetap()` dan menang atas t-student.
+     * Sekarang cuma Viscometer (k=2, ikut `PERHITUNGAN U95%` & sertifikat
+     * masternya).
+     *
      * @param  list<array{u: float, ci: float, vi: float}>  $komponen
      * @return array{ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float}
      */
-    public function agregasiBudget(array $komponen): array
+    public function agregasiBudget(array $komponen, ?float $kTetap = null): array
     {
         $uici = array_map(fn (array $k): float => $k['u'] * $k['ci'], $komponen);
 
@@ -558,9 +564,13 @@ class GumCalculator
         //
         // Minimal 1: v_eff di bawah 1 nggak punya arti fisik, dan t(0.975, 0)
         // itu tak hingga.
-        $k = $veff !== null
-            ? (new StudentTDistribution)->quantile(0.975, max(1.0, floor($veff)))
-            : self::FAKTOR_CAKUPAN;
+        // `$kTetap` menang atas t-student — dan `v_eff` tetap dihitung &
+        // disimpan, karena jejak auditnya masih perlu nunjukin dari mana
+        // angkanya datang walau bukan dia yang dipakai.
+        $k = $kTetap
+            ?? ($veff !== null
+                ? (new StudentTDistribution)->quantile(0.975, max(1.0, floor($veff)))
+                : self::FAKTOR_CAKUPAN);
 
         return [
             'ketidakpastian_gabungan' => $gabungan,
