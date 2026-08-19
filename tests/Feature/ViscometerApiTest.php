@@ -53,7 +53,19 @@ class ViscometerApiTest extends TestCase
 
         // Seeder Viscometer nulis ke `organization_id => 1` (konvensi seluruh
         // seeder proyek ini), jadi organisasi & teknisinya disiapin duluan.
-        $org = Organization::factory()->create();
+        //
+        // **`id` dipatok 1, bukan diserahkan ke autoincrement.** Di SQLite
+        // tiap test mulai dari database baru, jadi baris pertama selalu dapat
+        // id 1 dan seeder-nya cocok tanpa ada yang perlu diminta. MySQL nggak
+        // begitu: `RefreshDatabase` membungkus test dalam transaksi yang
+        // di-rollback, dan rollback TIDAK mengembalikan penghitung
+        // AUTO_INCREMENT. Test kedua dan seterusnya dapat organisasi ber-id 2,
+        // 3, 4, … sementara seeder tetap menulis `organization_id => 1` — dan
+        // FK `equipment_categories.organization_id` menolaknya.
+        //
+        // Yang gagal karenanya cuma di MySQL, yaitu satu-satunya database yang
+        // dipakai produksi. Lihat `phpunit.mysql.xml`.
+        $org = Organization::factory()->create(['id' => 1]);
         User::factory()->create(['organization_id' => $org->id, 'role' => User::ROLE_TEKNISI]);
 
         // Sisanya dibangun lewat SEEDER yang beneran dipakai produksi, bukan
@@ -157,11 +169,77 @@ class ViscometerApiTest extends TestCase
         $sumber = collect($titik->type_b_components)->pluck('sumber');
         $this->assertContains('ketidakpastian_temperature', $sumber);
 
-        $this->assertEqualsWithDelta(72.85796476, (float) $titik->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
-        $this->assertEqualsWithDelta(144.16193105, (float) $titik->ketidakpastian_diperluas, self::TOLERANSI_SIMPAN);
+        // Toleransinya SATU TINGKAT lebih longgar dari `TOLERANSI_SIMPAN`, dan
+        // itu bukan kelonggaran asal — lihat
+        // [test_batas_presisi_u_temperature_nggak_nyampe_angka_cetak].
+        //
+        // Singkatnya: `calibration_capabilities.u_temperature` kolomnya
+        // `decimal(20,8)`, jadi MySQL menyimpan `0,36124784` untuk nilai yang
+        // sebenarnya `0,36124783736376886`. Jalur hitung membacanya kembali
+        // dari sana, jadi `uc` di MySQL 72,85796479 sementara di SQLite —
+        // yang menyimpan angka penuh — 72,85796476. Selisih 2,5e-8.
+        //
+        // Yang dipatok di sini nilai SQLite (= nilai presisi penuh, yang cocok
+        // dengan master), dengan toleransi yang cukup untuk menampung
+        // pembulatan kolomnya. Yang menjaga bahwa selisih itu tidak pernah
+        // tumbuh sampai mengubah sertifikat adalah test di bawah.
+        $this->assertEqualsWithDelta(72.85796476, (float) $titik->ketidakpastian_gabungan, 1e-7);
+        $this->assertEqualsWithDelta(144.16193105, (float) $titik->ketidakpastian_diperluas, 1e-7);
 
         $cmc = collect($titik->type_b_components)->firstWhere('sumber', 'perbandingan_cmc');
         $this->assertSame(0.0, (float) $cmc['nilai'], 'Nol = nggak ada klaim, bukan klaim nol.');
+    }
+
+    /**
+     * Batas presisi `u_temperature` tidak pernah sampai ke angka yang dicetak.
+     *
+     * ## Bug yang dijaga di sini
+     *
+     * `calibration_capabilities.u_temperature` kolomnya `decimal(20,8)`.
+     * Nilainya `√((0,72/2)² + (0,06/2)²) = 0,36124783736376886`, dan MySQL
+     * memotongnya jadi `0,36124784` saat menyimpan. Jalur hitung membaca
+     * kembali dari kolom itu, jadi yang beneran dipakai di **produksi** angka
+     * yang sudah terpotong — bukan angka yang diadu ke workbook master.
+     *
+     * SQLite tidak memotongnya, jadi seluruh suite bisa hijau sementara
+     * produksi menghitung dengan angka yang sedikit berbeda. Itu persis
+     * bentuk kegagalan yang tidak pernah terlihat sampai ada yang
+     * membandingkan sertifikat dengan Excel.
+     *
+     * ## Kenapa dibiarkan, bukan diperbaiki
+     *
+     * Selisihnya 2,5e-8 pada `uc` dan 5e-8 pada `U95` — sekitar 3e-10 relatif.
+     * Sertifikat viscometer dicetak **dua desimal** dan resolusi alatnya
+     * 0,1 cP, jadi selisih itu tidak punya jalan untuk muncul di dokumen.
+     * Menaikkan presisi kolom berarti migrasi tabel produksi demi angka yang
+     * tidak pernah terbaca siapa pun.
+     *
+     * Yang tidak boleh terjadi: selisih itu TUMBUH. Test ini yang menjaganya —
+     * begitu pembulatan kolom mulai menggeser angka cetak, dia merah.
+     */
+    public function test_batas_presisi_u_temperature_nggak_nyampe_angka_cetak(): void
+    {
+        $titik = $this->titikTersimpan($this->simpanSesi());
+
+        // Yang dicetak sertifikat: dua desimal (`ViscometerProfile::DESIMAL_SERTIFIKAT`).
+        $cetak = [
+            1 => ['u95' => '0.63', 'titik' => '93.88'],
+            2 => ['u95' => '2.71', 'titik' => '910.29'],
+            3 => ['u95' => '144.16', 'titik' => '61898.12'],
+        ];
+
+        foreach ($cetak as $ke => $harap) {
+            $this->assertSame(
+                $harap['u95'],
+                number_format((float) $titik[$ke]->ketidakpastian_diperluas, 2, '.', ''),
+                "U95 titik ke-{$ke} berubah di angka cetaknya.",
+            );
+            $this->assertSame(
+                $harap['titik'],
+                number_format((float) $titik[$ke]->titik_ukur, 2, '.', ''),
+                "Nilai acuan titik ke-{$ke} berubah di angka cetaknya.",
+            );
+        }
     }
 
     /** Spindle & RPM nyimpen ke tiap baris pengukuran, bukan cuma dipakai sekilas. */
