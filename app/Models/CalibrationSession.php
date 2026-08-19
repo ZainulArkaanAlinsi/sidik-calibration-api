@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
  * @mixin IdeHelperCalibrationSession
  */
 #[Fillable([
-    'organization_id', 'equipment_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
+    'organization_id', 'equipment_id', 'order_item_id', 'teknisi_id', 'client_request_id', 'standard_id', 'reviewed_by',
     'calibration_method_id', 'thermohygro_standard_id',
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'lokasi_nama', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
@@ -226,6 +226,18 @@ class CalibrationSession extends Model
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(Equipment::class);
+    }
+
+    /**
+     * Alat yang diterima lewat order, kalau sesinya emang lahir dari order.
+     * Nullable: sesi lama (sebelum ada entitas order) dan sesi dadakan yang
+     * dibikin teknisi langsung nggak punya ini.
+     *
+     * @return BelongsTo<OrderItem, $this>
+     */
+    public function orderItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class);
     }
 
     /** @return BelongsTo<User, $this> */
