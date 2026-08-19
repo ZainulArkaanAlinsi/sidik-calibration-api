@@ -8,6 +8,11 @@
     Empat bagian, nggak boleh ditambah: header informasi, tabel hasil kalibrasi
     (+ dua catatan baku), tabel standar yang dipakai, footer. Kalau ada
     permintaan nambah kolom, yang diubah spesifikasinya dulu — bukan file ini.
+
+    Satu pengecualian yang UDAH lewat jalur itu: `catatan_atas_hasil` (baris
+    opsional di atas tabel hasil, `Spindel No.` / `Speed (rpm)` Viscometer) —
+    spesifikasinya `docs/PRD-viscometer.md` §7 & `SERTIFIKAT.csv` baris 18.
+    `null` di enam alat lain, jadi bentuk cetaknya nggak kesenggol sama sekali.
 --}}
 @php
     $header = $snapshot['header'] ?? [];
@@ -90,6 +95,7 @@
         table.info td.val.tumpuk { white-space: pre-line; }
 
         .judul-sub { font-size: 11.5px; font-weight: bold; margin: 10px 0 5px; letter-spacing: .5px; }
+        .catatan-atas-hasil { font-size: 10px; margin: 0 0 5px; }
         table.data { width: 100%; border-collapse: collapse; font-size: 11px; }
         /*
           Padding VERTIKAL sengaja lebih kecil dari horizontal, dan itu yang
@@ -391,6 +397,16 @@
     </table>
 
     <div class="judul-sub">CALIBRATION REPORT</div>
+    {{-- Baris opsional DI ATAS tabel — `catatan_atas_hasil` di snapshot,
+         `null` di enam alat lain, baris nggak dicetak sama sekali. Satu-
+         satunya pengecualian yang dikasih ke aturan "empat bagian, nggak
+         boleh ditambah" di atas: Viscometer butuh nyetak `Spindel No.` &
+         `Speed (rpm)` yang dipakai sesi ini (`SERTIFIKAT.csv` baris 18,
+         `docs/PRD-viscometer.md` §7) — dan itu SPESIFIKASINYA, bukan
+         penambahan sepihak. Alat lain nggak kesenggol sama sekali. --}}
+    @if (filled($snapshot['catatan_atas_hasil'] ?? null))
+        <div class="catatan-atas-hasil">{{ $snapshot['catatan_atas_hasil'] }}</div>
+    @endif
     {{-- Kolom "Remark" cuma dicetak kalau alatnya emang punya keterangan
          parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
          alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
@@ -429,12 +445,25 @@
              bloknya, jadi bukan sel yang kepotong). Sertifikat lama yang
              snapshot-nya belum punya kunci ini jatuh ke judul lamanya. --}}
         @php($judulUut = $snapshot['judul_uut'] ?? 'Unit Under Test')
+        {{-- `U95` jadi kolom keempat (Viscometer) atau satu baris ringkas di
+             bawah tabel (lima alat lain). Sertifikat lama yang snapshot-nya
+             belum punya kunci ini balik `false` — bentuk cetaknya persis kayak
+             waktu diterbitkan. Lihat `CalibrationProfile::u95PerTitik()`. --}}
+        @php($u95Kolom = $snapshot['u95_per_titik'] ?? false)
         <table class="data">
             <thead>
                 <tr>
                     <th>Standard{{ $sufiks }}</th>
                     <th>{{ $judulUut }}{{ $sufiks }}</th>
                     <th>Correction{{ $sufiks }}</th>
+                    {{-- Judulnya nyebut `k=2` persis kayak master
+                         (`SERTIFIKAT.csv` baris 19), bukan `U95%` polos: angka
+                         ketidakpastian tanpa faktor cakupannya nggak berarti
+                         apa-apa, dan di alat ini `k`-nya emang dikunci 2
+                         (`ViscometerProfile::faktorCakupanTetap()`). --}}
+                    @if ($u95Kolom)
+                        <th>U<sub>95%</sub>, k=2{{ $sufiks }}</th>
+                    @endif
                     @if ($r2 !== null)
                         <th>R<sup>2</sup></th>
                     @endif
@@ -471,6 +500,13 @@
                             : \App\Support\Angka::hasil($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
+                        @if ($u95Kolom)
+                            {{-- Desimalnya lewat jalur `desimal_u95` yang sama
+                                 kayak baris ringkas di bawah — bukan `$db` —
+                                 biar alat yang nyetak U95 beda desimal dari
+                                 kolom hasilnya tetap kepegang satu aturan. --}}
+                            <td>{{ \App\Support\Angka::hasil($baris['u95'] === null ? null : (float) $baris['u95'], $baris['desimal_u95'] ?? $db) }}</td>
+                        @endif
                         @if ($r2 !== null && $loop->first)
                             {{-- Angkanya SATU buat seluruh kelompok, jadi
                                  selnya di-`rowspan` setinggi tabelnya — persis
@@ -502,6 +538,10 @@
                      snapshot-nya belum punya kunci ini jatuh ke desimal titik,
                      persis kayak waktu diterbitkan. --}}
                 @php($dbU95 = $barisU95['desimal_u95'] ?? $barisU95['desimal'] ?? $desimal)
+                {{-- Dilewat kalau U95 udah jadi kolom per baris — kalau
+                     dua-duanya digambar, angka titik pertama kecetak dobel dan
+                     kebaca kayak U95 buat seluruh tabel. --}}
+                @if (! $u95Kolom)
                 <tr class="u95">
                     <td colspan="2">Uncertainty U<sub>95%</sub> = &plusmn;</td>
                     <td>{{ \App\Support\Angka::hasil($barisU95['u95'] === null ? null : (float) $barisU95['u95'], $dbU95) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
@@ -512,6 +552,7 @@
                         <td></td>
                     @endif
                 </tr>
+                @endif
             </tbody>
         </table>
 
