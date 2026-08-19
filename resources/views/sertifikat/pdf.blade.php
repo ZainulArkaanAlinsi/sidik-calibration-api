@@ -133,6 +133,15 @@
         body.padat .judul-kelompok { font-size: 9.5px; margin: 5px 0 2px; }
         body.padat .ket-k { font-size: 7.5px; margin: 1px 0 3px; }
         body.padat .judul-sub { margin: 8px 0 4px; }
+
+        /* Pemadatan Autoklaf — lebih lembut dari `padat`. Lihat catatan di
+           dekat `$lembarAutoclave`. */
+        body.lembar-autoclave table.data { font-size: 9.5px; }
+        body.lembar-autoclave table.data th,
+        body.lembar-autoclave table.data td { padding: 2px 6px; line-height: 1.25; }
+        body.lembar-autoclave .judul-kelompok { margin: 6px 0 3px; }
+        body.lembar-autoclave .ket-k { margin: 2px 0 5px; }
+        body.lembar-autoclave .judul-sub { margin: 9px 0 5px; }
         body.padat .catatan { font-size: 8px; margin-top: 4px; line-height: 1.3; }
         body.padat .kode-dokumen { margin-top: 4px; padding-top: 2px; font-size: 8px; }
         /*
@@ -310,7 +319,19 @@
     </style>
 </head>
 @php($padat = ! ($web ?? false) && collect($snapshot['hasil'] ?? [])->count() > 12)
-<body class="{{ $padat ? 'padat' : '' }}">
+{{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
+
+     `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
+     jadi dia menekan sampai 8px dengan padding 0,5px. Autoklaf bentuknya beda —
+     tiga tabel pendek berjudul — dan dipadatkan sekeras itu lembarnya muat satu
+     halaman tapi menyisakan sepertiga kertas kosong, dengan angka yang lebih
+     kecil dari perlunya di dokumen yang justru dibaca buat nyocokin angka.
+
+     Yang ditekan di sini cuma yang perlu: ukuran huruf tabel turun dari 11px ke
+     9,5px dan jarak antar bagian dirapatkan — cukup buat menarik blok tanda
+     tangan balik ke halaman pertama, tanpa bikin tabelnya kelihatan sesak. --}}
+@php($lembarAutoclave = ! ($web ?? false) && ($snapshot['autoclave'] ?? null) !== null)
+<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}">
 @if ($web ?? false)
     <div class="bilah">
         <div class="cap">&#10003; Sertifikat terverifikasi</div>
@@ -422,6 +443,130 @@
          jalur yang SAMA dengan satu kelompok tanpa judul — bentuk cetaknya
          nggak berubah sama sekali. --}}
     @php($kelompok = collect($snapshot['hasil'] ?? [])->groupBy(fn ($b) => $b['remark'] ?? ''))
+
+    {{-- Autoklaf: TIGA bagian, bukan tabel empat kolom.
+
+         Bukan pilihan gaya — master `Autoclave_CSV/SERTIFIKAT.csv` emang
+         mencetak tiga tabel yang strukturnya beda satu sama lain, karena yang
+         diukur juga beda: sebaran suhu antar sensor, kinerja kamar
+         (Keseragaman/Kestabilan/Variasi), dan satu titik tekanan. Dipaksa masuk
+         tabel `Standard | UUT | Correction`, dua dari tiga bagian kehilangan
+         kolomnya.
+
+         Dibaca dari bentuk MENTAH `hasil_autoclave` — keluaran
+         `AutoclaveCalculator` apa adanya. Snapshot membekukannya utuh, jadi
+         sertifikat yang udah terbit tetap kebaca walau kalkulatornya berubah.
+
+         Tujuh alat lain balik `null` di sini dan lewat jalur lama tanpa berubah
+         sama sekali. --}}
+    @php($autoclave = $snapshot['autoclave'] ?? null)
+
+    @if ($autoclave)
+        {{-- Desimal ngikut resolusi alat di master `Capacity/Graduation`:
+             0,01 °C dan 0,001 MPa. Tekanan dikasih 4 desimal karena U95-nya
+             `0,0059 MPa` — 3 desimal bakal mbulatinnya jadi `0,006`.
+
+             Berkas `.xlsm` Autoklaf belum ada di repo, jadi format sel aslinya
+             belum bisa dibaca. Sama posisinya dengan Viscometer; kalau lab
+             ngirim workbook-nya, dua angka di bawah ini yang diganti. --}}
+        @php($dSuhu = 2)
+        @php($dTekan = 4)
+        @php($suhu = $autoclave['suhu'] ?? [])
+        @php($tek = $autoclave['tekanan'] ?? [])
+        @php($angka = fn ($v, $d) => $v === null ? '—' : \App\Support\Angka::id((float) $v, $d))
+
+        <div class="judul-kelompok">A) SEBARAN SUHU</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Pembacaan Indikator Enklosur (°C)</th>
+                    <th>Standar &amp; Koreksi Indikator (°C)</th>
+                    @foreach ($suhu['sensor'] ?? [] as $sensor)
+                        <th>Sensor No. {{ $sensor['no'] ?? '' }} (°C)</th>
+                    @endforeach
+                    <th>U<sub>95%</sub> &plusmn; (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {{-- Kolom indikator & U95 di-`rowspan` dua baris: satu angka
+                         buat blok Terukur + Koreksi, persis sel yang di-merge
+                         di master. --}}
+                    <td rowspan="2">{{ $angka($suhu['indikator_rata'] ?? null, $dSuhu) }}</td>
+                    <td>Terukur</td>
+                    @foreach ($suhu['sensor'] ?? [] as $sensor)
+                        <td>{{ $angka($sensor['standar_terkoreksi'] ?? null, $dSuhu) }}</td>
+                    @endforeach
+                    <td rowspan="2">{{ $angka($suhu['u95'] ?? null, $dSuhu) }}</td>
+                </tr>
+                <tr>
+                    <td>Koreksi</td>
+                    @foreach ($suhu['sensor'] ?? [] as $sensor)
+                        <td>{{ $angka($sensor['koreksi'] ?? null, $dSuhu) }}</td>
+                    @endforeach
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="judul-kelompok">B) KINERJA AUTOCLAVE</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Suhu Setting (°C)</th>
+                    <th>Suhu yang diukur Indikator Autoclave (°C)</th>
+                    <th>Keseragaman (°C)</th>
+                    <th>Kestabilan (°C)</th>
+                    <th>Variasi Keseluruhan (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ $angka($autoclave['set_point'] ?? null, $dSuhu) }}</td>
+                    <td>{{ $angka($suhu['indikator_rata'] ?? null, $dSuhu) }}</td>
+                    <td>{{ $angka($suhu['keseragaman'] ?? null, $dSuhu) }}</td>
+                    <td>{{ $angka($suhu['kestabilan'] ?? null, $dSuhu) }}</td>
+                    <td>{{ $angka($suhu['variasi'] ?? null, $dSuhu) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {{-- Faktor cakupan dicetak PER BAGIAN. Suhu & tekanan punya derajat
+             kebebasan yang beda (v_eff 4 vs 2 di sesi contoh), jadi satu
+             kalimat buat dua-duanya pasti salah untuk salah satunya. --}}
+        @if (($suhu['k'] ?? null) !== null)
+            <div class="ket-k">
+                The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
+                {{ \App\Support\Angka::idRingkas((float) $suhu['k'], 2) }}
+            </div>
+        @endif
+
+        <div class="judul-kelompok">C) TEKANAN ({{ $tek['satuan'] ?? '' }})</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Unit Under Test</th>
+                    <th>Standard Value</th>
+                    <th>Correction</th>
+                    <th>U<sub>95%</sub> &plusmn;</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ $angka($tek['uut_setting'] ?? null, $dTekan) }}</td>
+                    <td>{{ $angka($tek['standar_terkoreksi'] ?? null, $dTekan) }}</td>
+                    <td>{{ $angka($tek['koreksi'] ?? null, $dTekan) }}</td>
+                    <td>{{ $angka($tek['u95'] ?? null, $dTekan) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @if (($tek['k'] ?? null) !== null)
+            <div class="ket-k">
+                The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
+                {{ \App\Support\Angka::idRingkas((float) $tek['k'], 2) }}
+            </div>
+        @endif
+    @else
 
     @forelse ($kelompok as $judulKelompok => $barisKelompok)
         @if (filled($judulKelompok))
@@ -580,13 +725,16 @@
             <tbody><tr><td colspan="3">—</td></tr></tbody>
         </table>
     @endforelse
+    @endif
 
     {{-- Catatan baku dari snapshot. Kalimat "The Uncertainty is taken at a
          Confidence Level…" DILEWATI kalau tiap kelompok udah nyetak kalimatnya
          sendiri: k-nya beda per kelompok (Holmium 3,18; Didynium 2,36; %T
          2,01), jadi kalimat tingkat-sertifikat yang nyebut satu angka bukan
          cuma dobel — dia mbantah tiga baris di atasnya. --}}
-    @php($adaKGrup = collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
+    {{-- `$autoclave` ikut ngitung: tiga bagiannya udah nyetak kalimat faktor
+         cakupannya sendiri, dan k suhu beda dari k tekanan. --}}
+    @php($adaKGrup = $autoclave !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
     <div class="catatan">
         @foreach ($snapshot['catatan'] ?? [] as $catatan)
             @continue ($adaKGrup && str_contains($catatan, 'Coverage Factor'))
@@ -619,7 +767,7 @@
                     <td>{{ $isi($standar['traceable_to'] ?? null) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="{{ $adaRemark ? 5 : 4 }}">—</td></tr>
+                <tr><td colspan="4">—</td></tr>
             @endforelse
         </tbody>
     </table>

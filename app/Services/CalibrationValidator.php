@@ -68,16 +68,23 @@ class CalibrationValidator
             'rawMeasurements', 'uncertaintyCalculations.standard',
         ]);
 
-        $temuan = [
-            ...$this->periksaKelengkapanHitung($sesi),
-            ...$this->periksaPembacaanMustahil($sesi),
-            ...$this->periksaKondisiLingkunganMustahil($sesi),
-            ...$this->periksaTiapTitik($sesi),
-            ...$this->periksaU95MeledakDariCmc($sesi),
-            ...$this->periksaKeputusanSesi($sesi),
-            ...$this->periksaKelengkapanSertifikat($sesi),
-            ...$this->periksaPeringatanProfil($sesi),
-        ];
+        // Autoklaf nggak lewat model titik ukur — hasilnya snapshot JSON yang
+        // deterministik & udah diadu presisi penuh ke master. Cek berbasis titik
+        // (kelengkapan hitung, pembacaan mustahil, per-titik, U95-vs-CMC,
+        // keputusan) nggak berlaku; yang relevan cuma kondisi lingkungan &
+        // kelengkapan snapshot.
+        $temuan = $sesi->adalahAutoclave()
+            ? $this->periksaAutoclave($sesi)
+            : [
+                ...$this->periksaKelengkapanHitung($sesi),
+                ...$this->periksaPembacaanMustahil($sesi),
+                ...$this->periksaKondisiLingkunganMustahil($sesi),
+                ...$this->periksaTiapTitik($sesi),
+                ...$this->periksaU95MeledakDariCmc($sesi),
+                ...$this->periksaKeputusanSesi($sesi),
+                ...$this->periksaKelengkapanSertifikat($sesi),
+                ...$this->periksaPeringatanProfil($sesi),
+            ];
 
         $ringkasan = [
             self::ERROR => 0,
@@ -411,6 +418,33 @@ class CalibrationValidator
      *
      * @return list<array<string, mixed>>
      */
+    /**
+     * Pemeriksaan khusus sesi Autoklaf. Nggak ada titik ukur buat diadu; yang
+     * dijaga: snapshot hasilnya ada isinya, dan kondisi lingkungan masih masuk
+     * akal (dipakai bersama alat lain). Snapshot-nya sendiri deterministik —
+     * dihitung server dari data ukur + tabel kalibrator, bukan diketik.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaAutoclave(CalibrationSession $sesi): array
+    {
+        $temuan = $this->periksaKondisiLingkunganMustahil($sesi);
+
+        $hasil = $sesi->hasil_autoclave;
+        $adaSuhu = is_array($hasil) && ! empty($hasil['suhu']['sensor'] ?? []);
+        $adaTekanan = is_array($hasil) && ! empty($hasil['tekanan'] ?? []);
+
+        if (! $adaSuhu && ! $adaTekanan) {
+            $temuan[] = $this->temuan(
+                self::ERROR,
+                'autoclave_kosong',
+                'Sesi Autoklaf ini nggak punya hasil suhu maupun tekanan — nggak ada yang bisa disertifikasi.',
+            );
+        }
+
+        return $temuan;
+    }
+
     private function periksaKondisiLingkunganMustahil(CalibrationSession $sesi): array
     {
         $temuan = [];
