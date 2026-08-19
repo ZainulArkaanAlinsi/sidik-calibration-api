@@ -70,7 +70,12 @@ class SpectrophotometerApiTest extends TestCase
     {
         parent::setUp();
 
-        $org = Organization::factory()->create();
+        // `id` dipatok 1: satu test di kelas ini menjalankan seeder kemampuan
+        // spektro, dan seeder proyek ini menulis `organization_id => 1`. Di
+        // MySQL rollback `RefreshDatabase` tidak mengembalikan penghitung
+        // AUTO_INCREMENT, jadi organisasi dari factory dapat id lain dan FK-nya
+        // menolak. Lihat catatan panjang di `ViscometerApiTest::setUp()`.
+        $org = Organization::factory()->create(['id' => 1]);
 
         $this->teknisi = User::factory()->create(['organization_id' => $org->id]);
         $this->admin = User::factory()->admin()->create(['organization_id' => $org->id]);
