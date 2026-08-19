@@ -7,12 +7,13 @@ use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
 use App\Services\Calibration\SpectrophotometerCalculator;
+use App\Support\Regresi;
 use Illuminate\Support\Carbon;
 
 /**
- * Profil Visible/UV-Vis Spectrophotometer (alat ke-6). Metode
- * `SIDIK-IK-CAL-0508_Rev.4` (DATABASE row 8), master
- * `Master Olah Data_Spectrofotometer.xlsm`.
+ * Profil Visible/UV-Vis Spectrophotometer (alat ke-6). Formulir
+ * `SIDIK-FM-CAL-0511_Rev.5`, metode `SIDIK-IK-CAL-0508_Rev.4` (DATABASE row 8),
+ * master `Master Olah Data_Spectrofotometer.xlsm`.
  *
  * ## Yang bikin alat ini beda dari lima sebelumnya
  *
@@ -55,13 +56,60 @@ use Illuminate\Support\Carbon;
  * ketidakpastian standarnya), tinggal tambah satu kelompok di [TITIK] + satu
  * baris CMC di seeder-nya.
  *
- * @see \App\Services\Calibration\SpectrophotometerCalculator soal penyimpangan
+ * ## Cetakan Rev.5 vs master: empat selisih yang MENUNGGU LAB
+ *
+ * Cetakan aslinya (`SIDIK-FM-CAL-0511_Rev.5`, diperiksa 13 Agt 2026) nggak
+ * sepenuhnya cocok sama master yang jadi acuan hitungan. Yang cuma soal
+ * penamaan/tata letak sudah disamakan ke kertas. Empat sisanya NGGAK dibetulin
+ * sepihak, karena semuanya mengubah angka yang kecetak di sertifikat:
+ *
+ *  1. **Titik Holmium: 10 di master, 9 di kertas.** Kertas nggak punya 279,6 nm.
+ *     Ngebuang satu titik = satu baris sertifikat hilang, dan U95 kelompoknya
+ *     ikut geser (STDEV terbesar bisa jatuh di titik itu).
+ *  2. **Nilai standar Holmium & Didynium beda tipis** — mis. kertas 287,4 /
+ *     333,6 / 360,6 vs master 287,7 / 334,0 / 360,9; Didynium 478 vs 475,2.
+ *     Selisihnya jauh lebih besar dari [TOLERANSI_TITIK] (0,05 nm), jadi ini
+ *     bukan pembulatan: salah satunya nilai sertifikat filter yang lebih tua.
+ *  3. **Nilai standar %T beda** — kertas 0,0 / 10,0 / 20,2 / 30,5 / 100,0 vs
+ *     master 0,0 / 9,9 / 20,0 / 30,1 / 100,0. Nilai standar itu pembagi koreksi,
+ *     jadi angka mana yang benar langsung nentuin isi kolom Correction.
+ *  4. **Pengulangan blok %T: 6 di master, 3 kotak di kertas** — lihat
+ *     [PENGULANGAN_TRANSMITAN].
+ *
+ * Yang dipakai sistem sekarang: ANGKA MASTER, karena cuma itu yang bisa diadu
+ * ke sertifikat yang sudah beredar. Begitu lab menyatakan revisi mana yang
+ * berlaku, yang diganti cuma isi [TITIK].
+ *
+ * @see SpectrophotometerCalculator soal penyimpangan
  *      master yang sengaja ditiru (pembagi 3^0,25 & jangkauan SUM blok %T).
  * @see docs/handoff-backend-spectrophotometer.md
  */
 class SpectrophotometerProfile extends CalibrationProfile
 {
-    public const KODE_DOKUMEN = 'SIDIK-IK-CAL-0508_Rev.4';
+    /**
+     * Kode FORMULIR lembar kerjanya, bukan kode metodenya.
+     *
+     * Sebelumnya di sini terisi `SIDIK-IK-CAL-0508_Rev.4` — itu nomor instruksi
+     * kerja (IK), sementara `kode_dokumen` di bentuk lembar kerja dipakai
+     * sebagai identitas FORMULIR (FM), sama kayak lima profil lain
+     * (`SIDIK-FM-CAL-0509/0510/0523/0530/0531`). Nomor formulir yang benar
+     * kebaca dari cetakan aslinya, `SIDIK-FM-CAL-0511_Rev.5 - LEMBAR KERJA
+     * SPECTROFOTOMETER.pdf` (footer kanan bawah + `Revise : 5`), yang baru masuk
+     * 13 Agt 2026. Kasusnya persis kayak Conductivity di commit 02d3dcb.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0511_Rev.5';
+
+    /**
+     * Metode kalibrasinya — TERCETAK di lembar kerja ("2. Calibration Methode :
+     * SIDIK-IK-CAL-0508"), jadi teknisi memang melihatnya di kertas. Sengaja
+     * dipisah dari [KODE_DOKUMEN] biar dua nomor yang beda jenis nggak saling
+     * menimpa lagi.
+     *
+     * Ini juga nomor yang dipakai baris CMC di `kemampuan-kalibrasi.json`
+     * ("SIDIK-IK-CAL-0508_Rev.4; SNSU PK.F-01:2020"), jadi seeder kemampuan
+     * nunjuk ke sini — bukan ke nomor formulirnya.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0508_Rev.4';
 
     /**
      * Kolom pengulangan bawaan tabel panjang gelombang (X1..X3). Blok %T pakai
@@ -70,9 +118,16 @@ class SpectrophotometerProfile extends CalibrationProfile
     public const JUMLAH_PENGULANGAN = 3;
 
     /**
-     * Blok %T di master nyetak DUA baris X1..X3 per nilai standar, dan
-     * `PERHITUNGAN` ngerata-rata keenamnya jadi satu (`F47 = SQRT(6)`,
-     * `G47 = 6-1`). Jadi enam kolom, bukan tiga.
+     * Blok %T di master dirata-ratakan dari ENAM pembacaan per nilai standar —
+     * `PERHITUNGAN` mematoknya eksplisit (`F47 = SQRT(6)`, `G47 = 6-1`). Jadi
+     * enam kolom, bukan tiga.
+     *
+     * **Cetakan Rev.5 cuma menggambar SATU baris `X1 X2 X3` untuk seluruh blok
+     * %T** — jadi kertas dan master nggak sepakat, dan ini nggak dibetulin
+     * sepihak. Angka 6 dipertahankan karena dia yang masuk hitungan: nurunin ke
+     * 3 mengubah `n` dan `vi`, artinya U95 blok %T di sertifikat ikut berubah
+     * dan sesi master nggak bisa direproduksi lagi. Yang mana yang berlaku itu
+     * keputusan lab — lihat "Cetakan Rev.5 vs master" di dokumentasi kelas ini.
      *
      * Rumusnya sendiri tetap ngikut berapa kotak yang BENERAN diisi — teknisi
      * yang cuma ngisi tiga tetap dapat n=3 & vi=2, bukan angka master yang
@@ -83,6 +138,16 @@ class SpectrophotometerProfile extends CalibrationProfile
     public const SATUAN_PANJANG_GELOMBANG = 'nm';
 
     public const SATUAN_TRANSMITAN = '%T';
+
+    /**
+     * Satu-satunya definisi R² yang dikenal sistem: `RSQ(Standard %T, UUT %T)`
+     * atas seluruh titik blok %T.
+     *
+     * Dipilih karena cuma pasangan ini yang punya arti fisika buat linieritas
+     * fotometrik — sumbu X nilai benar filternya, sumbu Y yang dibaca alat.
+     * Ini juga yang jadi bawaan sekarang; lihat [koefisienDeterminasi].
+     */
+    public const R2_RSQ_STANDAR_UUT = 'rsq_standar_uut';
 
     /**
      * Sedekat apa `titik_ukur` boleh meleset dari nilai [TITIK] dan masih
@@ -107,37 +172,74 @@ class SpectrophotometerProfile extends CalibrationProfile
      *
      * Resolusi dari `INPUT DATA!G16` (0,01 nm) & `E16` (0,001 %T).
      *
-     * @var array<string, array{judul: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, nilai: list<float>}>
+     * `judul_nilai`, `pengulangan_per_baris`, `kolom_tetap`, dan `catatan`
+     * NIRU LEMBAR CETAKNYA, bukan hiasan: teknisi ngisi sambil ngeliat kertas
+     * yang sama, jadi urutan & kepala kolom di layar wajib sebaris sama di
+     * kertas. `pengulangan_per_baris` yang ngasih tau layar motong barisnya di
+     * mana — bukan ditebak dari jumlah kolom.
+     *
+     * Angka `nilai` di sini SEMUANYA dari master, dan buat tiga blok ini nggak
+     * sama persis sama yang tercetak di Rev.5 — lihat "Cetakan Rev.5 vs master"
+     * di dokumentasi kelas sebelum mengubahnya.
+     *
+     * `pita_cetak` cuma soal LEMBAR CETAK siap pindai: dua blok panjang
+     * gelombang digambar berdampingan (pita 1), blok %T sendirian di bawahnya
+     * (pita 2). Ditumpuk bertiga, 24 barisnya cuma kebagian sel setinggi 4,3 mm
+     * — nggak ada tulisan tangan yang muat. Layar nggak memakai angka ini.
+     *
+     * @var array<string, array{judul: string, judul_nilai: string, satuan: string, resolusi: float, desimal: int, standar: list<string>, parameter_cmc: string, pengulangan: int, pengulangan_per_baris: int, pita_cetak: int, kolom_tetap: ?array{label: string, nilai: string}, catatan: ?string, nilai: list<float>}>
      */
     public const TITIK = [
         SpectrophotometerCalculator::GRUP_HOLMIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Holmium',
+            'judul_nilai' => 'Std Value (λ1)',
+            'kolom_tetap' => null,
+            'catatan' => null,
             'satuan' => self::SATUAN_PANJANG_GELOMBANG,
             'resolusi' => 0.01,
             'desimal' => 2,
             'standar' => ['Filter Standard 1'],
             'parameter_cmc' => 'panjang gelombang (nm)-Holmium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            'pita_cetak' => 1,
             'nilai' => [279.6, 287.7, 334.0, 360.9, 418.6, 445.8, 453.6, 460.0, 536.3, 637.9],
         ],
         SpectrophotometerCalculator::GRUP_DIDYNIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Didynium',
+            'judul_nilai' => 'Std Value (λ1)',
+            'kolom_tetap' => null,
+            // Tercetak persis begini di bawah tabel Didynium.
+            'catatan' => '*) Measured at 25°C and with spectral bandwidth 1 nm.',
             'satuan' => self::SATUAN_PANJANG_GELOMBANG,
             'resolusi' => 0.01,
             'desimal' => 2,
             'standar' => ['Filter Standard 2'],
             'parameter_cmc' => 'panjang gelombang (nm)-Didynium',
             'pengulangan' => self::JUMLAH_PENGULANGAN,
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            // Sepita sama Holmium: dua blok 3 kolom muat berdampingan.
+            'pita_cetak' => 1,
             'nilai' => [475.2, 513.7, 529.7, 572.7, 585.7, 684.9, 738.5, 748.0, 806.1],
         ],
         SpectrophotometerCalculator::GRUP_TRANSMITAN => [
             'judul' => 'Accuracy %T and Linierity at λ = 560nm',
+            'judul_nilai' => 'Std Value',
+            // Kolom kiri yang di kertas kegabung buat SELURUH tabel: panjang
+            // gelombang tempat %T diukur.
+            'kolom_tetap' => ['label' => 'λ (nm)', 'nilai' => '560'],
+            'catatan' => null,
             'satuan' => self::SATUAN_TRANSMITAN,
             'resolusi' => 0.001,
             'desimal' => 3,
             'standar' => ['Filter Standard 3'],
             'parameter_cmc' => 'akurasi (%T)',
             'pengulangan' => self::PENGULANGAN_TRANSMITAN,
+            // 6 kotak dipotong jadi 2 baris X1..X3 di layar. Kertas Rev.5 cuma
+            // nggambar satu barisnya — lihat [PENGULANGAN_TRANSMITAN].
+            'pengulangan_per_baris' => self::JUMLAH_PENGULANGAN,
+            // Sendirian sepita: 6 kolomnya butuh selebar kertas.
+            'pita_cetak' => 2,
             'nilai' => [0.0, 9.9, 20.0, 30.1, 100.0],
         ],
     ];
@@ -157,15 +259,31 @@ class SpectrophotometerProfile extends CalibrationProfile
     /**
      * Sama daftarnya kayak profil lain — TH-1..TH-7, dikelompokkan Insitu vs
      * Inlab. Sesi master pakai TH-2 (`INPUT DATA!E23 = 2`).
+     *
+     * Cetakan Rev.5 cuma NYETAK EMPAT kotak: TH-2, TH-6, TH-7 di kolom
+     * "Insitu:" dan TH-4 di kolom "Inlab:". Itu ditandai `di_kertas` per unit —
+     * bukan dipakai buat mempersempit daftarnya. Mempersempit persis itu yang
+     * pernah dicoba dan gagal: sertifikat pH master `012-CAL-524` memakai TH-3,
+     * TH-3 nggak ada di daftar yang dipersempit, dan teknisi jadi terpaksa milih
+     * unit lain — Env. Condition tiga alat meleset dari master pada 10 Agt 2026
+     * bukan karena salah hitung, tapi karena tabel koreksi unit yang salah.
+     * Lihat [LembarKerjaTemplate::THERMOHYGRO_TERCETAK].
+     *
+     * `grup` juga TETAP ngikut master unitnya, bukan kolom di kertas: cetakan
+     * Rev.5 naruh TH-7 di bawah "Insitu:" padahal di lima lembar lain TH-7 itu
+     * unit Inlab. Yang bener unit mana yang beneran dibawa — itu yang tau
+     * teknisinya, dan `grup` cuma judul kelompok di layar.
+     *
+     * @var list<array{label: string, grup: string, di_kertas: bool}>
      */
     public const THERMOHYGRO_TERCETAK = [
-        ['label' => 'TH-1', 'grup' => 'Inlab'],
-        ['label' => 'TH-3', 'grup' => 'Inlab'],
-        ['label' => 'TH-4', 'grup' => 'Inlab'],
-        ['label' => 'TH-5', 'grup' => 'Inlab'],
-        ['label' => 'TH-7', 'grup' => 'Inlab'],
-        ['label' => 'TH-2', 'grup' => 'Insitu'],
-        ['label' => 'TH-6', 'grup' => 'Insitu'],
+        ['label' => 'TH-1', 'grup' => 'Inlab', 'di_kertas' => false],
+        ['label' => 'TH-3', 'grup' => 'Inlab', 'di_kertas' => false],
+        ['label' => 'TH-4', 'grup' => 'Inlab', 'di_kertas' => true],
+        ['label' => 'TH-5', 'grup' => 'Inlab', 'di_kertas' => false],
+        ['label' => 'TH-7', 'grup' => 'Inlab', 'di_kertas' => true],
+        ['label' => 'TH-2', 'grup' => 'Insitu', 'di_kertas' => true],
+        ['label' => 'TH-6', 'grup' => 'Insitu', 'di_kertas' => true],
     ];
 
     /**
@@ -250,6 +368,73 @@ class SpectrophotometerProfile extends CalibrationProfile
     }
 
     /**
+     * Kolom `R2` di blok %T — SATU-SATUNYA blok yang punya kolom itu di master
+     * (`SERTIFIKAT!R47`). Dua blok panjang gelombang nggak, jadi kelompok
+     * Holmium & Didynium selalu balik `null` dan kolomnya nggak kecetak di
+     * tabel mereka.
+     *
+     * ## Kenapa sempat MATI, dan kenapa sekarang nyala
+     *
+     * Angka R² di master `0,9359`, sementara sertifikat cetak yang beredar
+     * nulis `1`. Dua-duanya nggak bisa dilahirkan dari data blok ini: RSQ atas
+     * seluruh titiknya ngasih 0,999922. Rumus aslinya nggak bisa dibaca karena
+     * workbook-nya terenkripsi, dan penyisiran 7 transformasi × 7 transformasi
+     * × semua subset titik nggak nemu satu pun kandidat yang masuk akal secara
+     * fisika. Selama itu kolomnya nggak dicetak sama sekali.
+     *
+     * Yang mbukain bukan rumusnya, tapi FORMAT SELNYA: sel R² diformat nol
+     * desimal. `0,9359` kecetak `1`, dan 0,999922 juga kecetak `1`. Jadi dua
+     * kandidat yang belum bisa dibedain itu nyetak angka yang SAMA — nyalain
+     * kolomnya nggak bisa bikin sertifikat ngeklaim linieritas yang beda dari
+     * dokumen lab, apa pun jawaban labnya nanti.
+     *
+     * Pertanyaan "0,9359 itu dari mana" tetap dicatat & tetap dikirim ke lab;
+     * yang berubah cuma statusnya — dia nggak lagi ngalangin. Riwayat
+     * lengkapnya: `docs/pertanyaan-lab-r2-spektro.md`. Sakelarnya tetap
+     * `config('kalibrasi.r2_spektro')`, sekarang bawaannya
+     * [R2_RSQ_STANDAR_UUT].
+     *
+     * @param  list<array{standard_value: float|null, unit_under_test: float|null}>  $baris
+     */
+    public function koefisienDeterminasi(array $baris): ?float
+    {
+        if ($baris === []) {
+            return null;
+        }
+
+        $standar = $baris[0]['standard_value'] ?? null;
+
+        if ($standar === null || $this->grupTitik((float) $standar) !== SpectrophotometerCalculator::GRUP_TRANSMITAN) {
+            return null;
+        }
+
+        // Definisi yang nggak dikenal (salah ketik di `.env`) diperlakukan sama
+        // kayak mati. Sertifikat terakreditasi nggak boleh berubah isi gara-gara
+        // typo yang nggak ada yang review.
+        if (config('kalibrasi.r2_spektro') !== self::R2_RSQ_STANDAR_UUT) {
+            return null;
+        }
+
+        // Titik yang salah satu kolomnya kosong dibuang BERPASANGAN, bukan
+        // diisi nol: `0` di kolom UUT itu pembacaan yang sah di blok ini (titik
+        // 0 %T = berkas ditutup), jadi nol pengganti data kosong nggak bisa
+        // dibedain dari nol yang beneran diukur.
+        $x = [];
+        $y = [];
+
+        foreach ($baris as $b) {
+            if ($b['standard_value'] === null || $b['unit_under_test'] === null) {
+                continue;
+            }
+
+            $x[] = (float) $b['standard_value'];
+            $y[] = (float) $b['unit_under_test'];
+        }
+
+        return Regresi::koefisienDeterminasi($x, $y);
+    }
+
+    /**
      * Filter standar dibaca NOMINAL apa adanya — nilai panjang gelombang
      * puncak Holmium/Didynium itu sifat bahan, bukan larutan yang bergeser
      * ikut suhu. Master pun nggak punya satu pun sel koreksi suhu buat nilai
@@ -261,11 +446,104 @@ class SpectrophotometerProfile extends CalibrationProfile
     }
 
     /**
+     * Kertas lembar ini melanggar dua anggapan lembar pH sekaligus.
+     *
+     *  - Tiap sel cuma SATU angka. Nggak ada kolom °C di tabel mana pun; suhu
+     *    ruangnya dicatat sekali di blok `Env. Condition` di kepala lembar.
+     *  - Standarnya turun ke bawah (279,6 nm … 637,9 nm berdiri di kiri tiap
+     *    baris) sementara Repeat X1..X3 berjajar ke kanan.
+     *
+     * Sebelum ini dua-duanya nggak pernah disebut ke pembaca foto, jadi model
+     * dikasih prompt "tiap sel isinya dua angka" plus skema yang MEWAJIBKAN
+     * `suhu` — buat kertas yang nggak punya kolom suhu. Yang keluar bukan
+     * error: modelnya ngarang suhu atau memampatkan tiga Repeat jadi satu
+     * baris, dan di HP kelihatannya cuma "gagal baca, isi manual".
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => true];
+    }
+
+    /**
      * Master Spectrophotometer nggak punya SATU PUN sel yang mbandingin hasil
      * sama batas keberterimaan — sheet `SERTIFIKAT` cuma nyetak Standard / UUT
      * / Correction / U95% lalu berhenti. Sama kayak Conductivity: `toleransi`
      * NULL di sini artinya "emang nggak ada", bukan "belum diisi".
      */
+    /**
+     * Master nyetak `Uncertainty U95% = ± 0,50 %T` — DUA desimal, sementara
+     * kolom UUT & Correction di blok yang sama pakai tiga (`9,665`).
+     *
+     * Sama juga di dua blok panjang gelombang: `0,43 nm` & `0,40 nm`, dua
+     * desimal, ngikut desimal titiknya yang emang 2. Yang beda cuma blok %T.
+     */
+    public function desimalU95(): ?int
+    {
+        return 2;
+    }
+
+    /**
+     * Tabel CALIBRATION REPORT ditulis **satu desimal** — ketiga bloknya.
+     *
+     * Ini beda dari resolusi alatnya (0,01 nm & 0,001 %T), dan bedanya disengaja
+     * lab: sel `SERTIFIKAT!C19:Q52` diformat 1 desimal, jadi yang tercetak
+     * `333,7` walau selnya nyimpen `333,74`, dan `9,7` walau selnya nyimpen
+     * `9,665`. Diadu langsung ke workbook master 14 Agt 2026.
+     *
+     * Sistem sebelumnya nurunin desimal dari resolusi (2 buat nm, 3 buat %T) —
+     * aturan umum yang bener buat lembar kerja, tapi salah buat sertifikat:
+     * yang keluar `333,74` & `9,665`, dua digit lebih panjang daripada dokumen
+     * yang dipegang pelanggan buat alat yang sama.
+     *
+     * Yang IKUT resolusi cuma jalur input (lembar kerja & pembacaan mentah);
+     * `TITIK[...]['desimal']` nggak berubah, jadi teknisi tetap ngetik 0,001 %T.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return 1;
+    }
+
+    /**
+     * Master nyetak `3` · `2` · `2`, bukan `3,18` · `2,36` · `2,01` — selnya
+     * diformat 0 desimal. Lihat [CalibrationProfile::desimalFaktorCakupan].
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return 0;
+    }
+
+    /**
+     * `UUT (nm)`, bukan `Unit Under Test (nm)` — dan konsisten begitu di
+     * ketiga blok master (`SERTIFIKAT!L18`, `L33`, `L47`). Lima alat lain tetap
+     * panjang. Lihat [CalibrationProfile::judulKolomUut].
+     */
+    public function judulKolomUut(): string
+    {
+        return 'UUT';
+    }
+
+    /**
+     * Kolom Standard Value nulis `334,0` · `460,0` · `748,0` · `100,0` di
+     * master — nol di belakang DIPERTAHANKAN, beda dari Turbidimeter.
+     */
+    public function nolBelakangStandarDibuang(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Koreksi negatif yang membulat ke nol dicetak TANPA minus, ngikut master.
+     *
+     * Buktinya di blok %T: titik 0 %T koreksinya -0,000666… dan titik 100 %T
+     * koreksinya -0,002666… — dua-duanya negatif, dua-duanya tercetak `0,0` di
+     * `SERTIFIKAT!Q48` & `Q52`. Sama kayak Conductivity, beda dari
+     * Turbidimeter/pH/Chlorine yang nyetak `-0,0`.
+     */
+    public function tandaNolDicetak(): bool
+    {
+        return false;
+    }
+
     public function punyaToleransi(): bool
     {
         return false;
@@ -583,7 +861,13 @@ class SpectrophotometerProfile extends CalibrationProfile
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
-            'judul' => 'Calibration Worksheet - Spectrophotometer',
+            // Tercetak di kertas sebagai "2. Calibration Methode :
+            // SIDIK-IK-CAL-0508" — teknisi melihatnya, tapi nggak mengisinya.
+            // `calibration_method_id` tetap `hanya_admin` karena yang dipilih
+            // admin itu BARIS master metode, bukan teks ini.
+            'kode_metode' => self::KODE_METODE,
+            // Persis judul di kepala cetakan Rev.5, termasuk "UV/VIS"-nya.
+            'judul' => 'Calibration Worksheet - UV/VIS Spectrophotometer',
             'jumlah_pengulangan' => self::JUMLAH_PENGULANGAN,
             'larutan_standar' => array_merge(...array_map(
                 static fn (array $blok): array => $blok['nilai'],
@@ -610,13 +894,47 @@ class SpectrophotometerProfile extends CalibrationProfile
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
-                        $this->field('alat_model', '3. Type/Model', 'teks'),
-                        $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
-                        $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+                        // DIKETIK TEKNISI, bukan ditarik dari master alat.
+                        //
+                        // Alat ini punya DUA skala — `0–100 %T` dan
+                        // `200–700 nm`, resolusi `0,001 %T` dan `0,01 nm` —
+                        // sementara `equipments` cuma punya satu `satuan` +
+                        // satu pasang range. Apa pun yang dipilih otomatis dari
+                        // situ pasti salah separuh, dan salahnya kecetak di
+                        // sertifikat sebagai Capacity/Graduation.
+                        //
+                        // Dua kolom yang LABEL-nya sama digambar sebaris sama
+                        // layar, persis lembar cetaknya.
+                        $this->field('spesifikasi_alat.rentang_ukur_transmitan', '2. Range', 'teks', satuan: self::SATUAN_TRANSMITAN),
+                        $this->field('spesifikasi_alat.rentang_ukur_panjang_gelombang', '2. Range', 'teks', satuan: self::SATUAN_PANJANG_GELOMBANG),
+                        $this->field('spesifikasi_alat.resolusi_transmitan', '3. Sensitivity/Resolusi', 'teks', satuan: self::SATUAN_TRANSMITAN),
+                        $this->field('spesifikasi_alat.resolusi_panjang_gelombang', '3. Sensitivity/Resolusi', 'teks', satuan: self::SATUAN_PANJANG_GELOMBANG),
+                        $this->field('alat_model', '4. Type/Model', 'teks'),
+                        $this->field('alat_serial_number', '5. Serial Number', 'teks'),
+                        $this->field('alat_merk', '6. Manufacture', 'teks'),
+                        // Kapasitas maksimum NGGAK ada kotaknya di cetakan
+                        // Rev.5 — yang tercetak cuma Range & Sensitivity. Tetap
+                        // disodorkan karena workbook masternya minta
+                        // (`INPUT_DATA` baris "Kapasitas Max. : 100 %T"), tapi
+                        // ditandai supaya layar bisa naruh di luar blok yang
+                        // niru kertas. Nggak nyentuh sertifikat: Capacity/
+                        // Graduation di sertifikat dibaca dari `equipments`
+                        // (CertificateSnapshotBuilder::kapasitasGraduasi()),
+                        // bukan dari sini.
+                        $this->field(
+                            'spesifikasi_alat.kapasitas_maks_transmitan',
+                            'Kapasitas Max.',
+                            'teks',
+                            satuan: self::SATUAN_TRANSMITAN,
+                            diKertas: false,
+                        ),
+                        // "Thermohygro used" di Rev.5 ada di kepala lembar,
+                        // sebaris sama Received/Calibration Date — BUKAN nomor 6
+                        // blok EQUIPMENT (nomor 6 di kertas itu Manufacture).
+                        // Makanya labelnya nggak lagi bernomor.
                         $this->field(
                             'thermohygro_standard_id',
-                            '6. Thermohygro used',
+                            'Thermohygro used',
                             'pilihan',
                             sumber: 'master_thermohygro',
                         ),
@@ -650,6 +968,14 @@ class SpectrophotometerProfile extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'In lab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
+                        // Kalibrasi di tempat pelanggan ditulis `Insitu
+                        // (PT. LDC)` di sertifikat. Nama tempatnya DIKETIK
+                        // teknisi, bukan disalin dari pelanggan pemilik alat:
+                        // satu kunjungan bisa dikerjakan di pabrik lain milik
+                        // grup yang sama, dan yang sah di dokumen adalah tempat
+                        // alatnya beneran diukur.
+                        $this->field('lokasi_nama', 'Nama Lokasi (kalau Insitu)', 'teks'),
+                        $this->field('teknisi.kode', 'Technician ID', 'teks', sumber: 'otomatis'),
                         $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
                         $this->field(
                             'calibration_method_id',
@@ -665,8 +991,15 @@ class SpectrophotometerProfile extends CalibrationProfile
                     'halaman' => 1,
                     'judul' => 'CALIBRATION RESULT',
                     'field' => [
+                        // Urutannya niru tabel Env. Condition di kertas:
+                        // Time | Temperature | Humidity, dua baris First & End.
+                        // `waktu_*` bertipe `waktu` (jam:menit) — tipe baru,
+                        // cuma lembar ini yang punya kolomnya. Lihat migrasi
+                        // 2026_08_13_170000.
+                        $this->field('waktu_awal', 'Env. Condition — First', 'waktu'),
                         $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
+                        $this->field('waktu_akhir', 'Env. Condition — End', 'waktu'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
                     ],
@@ -683,11 +1016,18 @@ class SpectrophotometerProfile extends CalibrationProfile
                     'halaman' => 1,
                     'judul' => 'SRE (Stray Radiant Energy)',
                     'status' => 'sumber_belum_ada',
-                    'catatan' => 'Belum diimplementasikan: di master, nilai standar SRE hilang '
-                        .'(SERTIFIKAT!C57 & O57 = #REF!), budget-nya #DIV/0! (PERHITUNGAN U95%!AA65-AA66), '
-                        .'faktor cakupannya bukan t-student, dan CMC-nya nunjuk balik ke hasil hitungnya '
-                        .'sendiri. Backend nggak nyetak angka SRE sampai lab nyediakan lembar sumber '
-                        .'yang sah.',
+                    // Cetakan Rev.5 juga nggak punya blok ini: yang ada cuma
+                    // "1. Wave Length Calibration" dan "2. Absorbans or
+                    // Transmitan Calibration". Jadi nggak ada kertas yang bisa
+                    // diisi, DAN nggak ada angka master yang sah.
+                    'di_kertas' => false,
+                    'catatan' => 'Belum diimplementasikan, dan nggak ada kotaknya di cetakan '
+                        .'SIDIK-FM-CAL-0511_Rev.5 (CALIBRATION RESULT cuma punya "1. Wave Length '
+                        .'Calibration" & "2. Absorbans or Transmitan Calibration"). Di master, nilai '
+                        .'standar SRE hilang (SERTIFIKAT!C57 & O57 = #REF!), budget-nya #DIV/0! '
+                        .'(PERHITUNGAN U95%!AA65-AA66), faktor cakupannya bukan t-student, dan CMC-nya '
+                        .'nunjuk balik ke hasil hitungnya sendiri. Backend nggak nyetak angka SRE sampai '
+                        .'lab nyediakan lembar sumber yang sah.',
                     'field' => [],
                 ],
                 [
@@ -739,10 +1079,27 @@ class SpectrophotometerProfile extends CalibrationProfile
             'grup' => $grup,
             'judul' => $blok['judul'],
             'satuan' => $blok['satuan'],
+            // Bentuk tabel seperti di lembar cetak — lihat catatan di [TITIK].
+            //
+            // Blok %T NGGAK punya kolom "No." di kertas: kolom kirinya dipakai
+            // `λ (nm)` yang kegabung buat seluruh tabel.
+            'nomor_baris' => $blok['kolom_tetap'] === null,
+            'judul_nilai' => $blok['judul_nilai'],
+            'judul_pengulangan' => 'Measurement Result',
+            'prefiks_pengulangan' => 'X',
+            'pengulangan_per_baris' => $blok['pengulangan_per_baris'],
+            // Cuma dipakai perintah yang menggambar kertasnya — lihat [TITIK].
+            'pita_cetak' => $blok['pita_cetak'],
+            'kolom_tetap' => $blok['kolom_tetap'],
+            'catatan' => $blok['catatan'],
             'baris' => array_map(
                 fn (float $nilai): array => [
                     'titik_ukur' => $nilai,
-                    'label' => number_format($nilai, $blok['desimal'], '.', ''),
+                    // Label ditulis kayak di KERTAS: satu desimal, koma —
+                    // `279,6` & `0,0`, bukan `279.60` & `0.000`. Yang dua/tiga
+                    // desimal itu resolusi PEMBACAAN alatnya (`desimal` di
+                    // bawah), bukan cara nilai standarnya tercetak.
+                    'label' => number_format($nilai, 1, ',', ''),
                     'resolusi' => $blok['resolusi'],
                     'desimal' => $blok['desimal'],
                     'satuan' => $blok['satuan'],
@@ -856,6 +1213,10 @@ class SpectrophotometerProfile extends CalibrationProfile
                 'nilai' => (string) $id,
                 'label' => $unit['label'],
                 'grup' => $unit['grup'],
+                // false = unitnya sah dipilih, cuma kotaknya nggak ada di
+                // cetakan Rev.5. Layar boleh nandain, TAPI jangan nyembunyiin —
+                // lihat [THERMOHYGRO_TERCETAK].
+                'di_kertas' => $unit['di_kertas'],
             ];
         }
 
@@ -882,6 +1243,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        bool $diKertas = true,
     ): array {
         return [
             'kode' => $kode,
@@ -892,6 +1254,11 @@ class SpectrophotometerProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            // false = kotaknya NGGAK ada di cetakan SIDIK-FM-CAL-0511_Rev.5.
+            // Bukan buat disembunyikan — buat dibedakan, biar teknisi yang
+            // ngisi sambil ngeliat kertas nggak nyari kotak yang nggak ada di
+            // tangannya.
+            'di_kertas' => $diKertas,
         ];
     }
 

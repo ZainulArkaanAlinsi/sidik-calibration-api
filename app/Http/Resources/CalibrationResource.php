@@ -66,6 +66,9 @@ class CalibrationResource extends JsonResource
             'alat_model' => $this->alat_model,
             'alat_serial_number' => $this->alat_serial_number,
             'alat_merk' => $this->alat_merk,
+            // Dipulangin apa adanya biar draft yang dibuka lagi keisi persis
+            // kayak waktu ditinggal.
+            'spesifikasi_alat' => $this->spesifikasi_alat,
             'pemilik_nama' => $this->pemilik_nama,
             'pemilik_alamat' => $this->pemilik_alamat,
             // Pelanggan pemilik alat — dipakai layar antrean approval buat
@@ -174,8 +177,13 @@ class CalibrationResource extends JsonResource
             'suhu_akhir' => $this->suhu_akhir,
             'kelembaban_awal' => $this->kelembaban_awal,
             'kelembaban_akhir' => $this->kelembaban_akhir,
+            // Kolom `Time` di tabel Env. Condition, selalu `H:i` (lihat
+            // CalibrationSession::jam()).
+            'waktu_awal' => $this->waktu_awal,
+            'waktu_akhir' => $this->waktu_akhir,
             'catatan_teknisi' => $this->catatan_teknisi,
             'lokasi' => $this->lokasi,
+            'lokasi_nama' => $this->lokasi_nama,
             'ruangan' => $this->room ? [
                 'id' => $this->room->id,
                 'kode' => $this->room->kode,
@@ -341,6 +349,20 @@ class CalibrationResource extends JsonResource
             'desimal' => $alat?->resolusi_rentang
                 ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada((float) $titik->titik_ukur))
                 : ($alat !== null ? self::profil($alat)?->desimalSertifikat() : null),
+            // Desimal KHUSUS kolom U95%, yang buat sebagian alat BEDA dari
+            // kolom di sebelahnya: master Spectrophotometer nulis `0,43 nm`
+            // (dua desimal) sementara Standard/UUT/Correction di tabel yang
+            // sama cuma satu (`333,7`).
+            //
+            // Ikut dikirim ke sini dengan alasan yang sama kayak `tanda_nol` di
+            // bawah: layar riwayat & approval nampilin tabel Calibration Report
+            // yang SAMA kayak PDF-nya. Tanpa field ini layar nulis U95 `0,4`
+            // sementara sertifikatnya `0,43` — dan yang kena duluan justru
+            // teknisi yang lagi ngecek hasilnya sendiri sebelum minta approve.
+            //
+            // `null` buat lima alat lain — mobile jatuh ke `desimal` kayak
+            // biasa, jadi perilakunya nggak berubah.
+            'desimal_u95' => $alat !== null ? self::profil($alat)?->desimalU95() : null,
             // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam satu
             // lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
             //
@@ -367,6 +389,23 @@ class CalibrationResource extends JsonResource
             'tanda_nol' => $alat !== null
                 ? (self::profil($alat)?->tandaNolDicetak() ?? true)
                 : true,
+            // Keterangan/kelompok titik ini — kolom "Remark" di sertifikat.
+            // Chlorine misahin `Free Chlorine` dari `Total Chlorine`;
+            // Spectrophotometer misahin tiga blok filter yang tiap kelompoknya
+            // punya SATU U95 bersama.
+            //
+            // Dulu cuma dibekukan ke snapshot sertifikat, jadi layar riwayat &
+            // approval kepaksa nebak kelompok tiap titik dari besar angkanya.
+            // Buat spektro tebakan itu SALAH: rentang Holmium (283–641 nm) dan
+            // Didynium (474–810 nm) tumpang tindih 167 nm, jadi titik yang
+            // paling gampang ketuker justru yang nggak bisa dibedain dari
+            // angkanya.
+            //
+            // `null` buat alat yang titiknya nggak punya keterangan — layar
+            // ngosongin kolomnya, persis kayak sertifikat.
+            'remark' => $alat !== null
+                ? self::profil($alat)?->remarkTitik((float) $titik->titik_ukur)
+                : null,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,
             'koreksi' => $titik->koreksi,
@@ -394,6 +433,13 @@ class CalibrationResource extends JsonResource
             ], $titik->type_b_components ?? []),
             'ketidakpastian_gabungan' => $titik->ketidakpastian_gabungan,
             'faktor_cakupan_k' => $titik->faktor_cakupan_k,
+            // Derajat kebebasan efektif (Welch–Satterthwaite) — angka yang
+            // NENTUIN k lewat `TINV(0,05; veff)`. Dikirim biar layar detail
+            // bisa nunjukin rantai hitungnya utuh: tanpa veff, `k = 3,18`
+            // muncul tanpa asal-usul dan nggak ada yang bisa ngecek ulang.
+            'derajat_kebebasan_efektif' => $titik->derajat_kebebasan_efektif === null
+                ? null
+                : (float) $titik->derajat_kebebasan_efektif,
             'ketidakpastian_diperluas' => $titik->ketidakpastian_diperluas,
             'toleransi' => $titik->toleransi,
             'keputusan' => $titik->keputusan,

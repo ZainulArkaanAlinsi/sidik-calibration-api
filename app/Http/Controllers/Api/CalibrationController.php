@@ -198,6 +198,11 @@ class CalibrationController extends Controller
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
         }
 
+        // Bentuk kertasnya buat pindai foto ikut dikirim, biar mobile tinggal
+        // meneruskan apa adanya ke endpoint ekstraksi — nggak perlu hafal alat
+        // mana yang kertasnya beda, dan nggak ada daftar kedua yang bisa basi.
+        $bentuk['pindai_foto'] = $profil->bentukPindaiFoto();
+
         return response()->json(['data' => $bentuk]);
     }
 
@@ -950,6 +955,20 @@ class CalibrationController extends Controller
         $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
         $satuanDefault = $alat->satuan;
 
+        // Model viscometer, satu per sesi — nentuin TK (Torque Constant) yang
+        // masuk rumus Fullscale. Dikirim di `spesifikasi_alat`, sama tempatnya
+        // kayak rentang & resolusi versi teknisi. Null buat enam alat lain, dan
+        // profil mereka nggak pernah nengok `$konteks` sama sekali.
+        $modelVisco = $request->input('spesifikasi_alat.model_visco');
+        // Spindle & RPM per titik. Jalur utamanya per baris pengukuran
+        // (`measurements[i].spindle`) — itu yang cocok sama tempat nyimpennya,
+        // `raw_measurements`. Yang di `spesifikasi_alat` jalur cadangan: bentuk
+        // lembar kerja nulisnya sebagai isian bernomor (`spindle_titik_1`)
+        // karena kepala lembar CETAK nggak bisa nggambar field ber-wildcard,
+        // jadi HP yang ngikutin bentuk lembar apa adanya bakal ngirim lewat
+        // situ. Dua-duanya diterima; yang per baris menang.
+        $spesifikasi = (array) $request->input('spesifikasi_alat', []);
+
         $mentah = [];
         $hitungan = [];
         $belumDihitung = [];
@@ -982,6 +1001,8 @@ class CalibrationController extends Controller
         foreach ($titikTerpakai as $index => $titik) {
             $titikKe = $index + 1;
             $satuan = $titik['satuan'] ?? $satuanDefault;
+            $spindle = $titik['spindle'] ?? ($spesifikasi['spindle_titik_'.$titikKe] ?? null);
+            $rpm = $titik['rpm'] ?? ($spesifikasi['rpm_titik_'.$titikKe] ?? null);
             // Metadata OCR sejajar per-index sama pembacaan — boleh nggak ada
             // (input manual). Divalidasi panjangnya di CalibrationRequest.
             $ocr = array_values($titik['ocr'] ?? []);
@@ -1051,6 +1072,12 @@ class CalibrationController extends Controller
                     'pembacaan' => $pembacaan,
                     'suhu' => $this->bulatkanKolom($suhu[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
+                    // Spindle & RPM milik TITIK, ditulis di tiap barisnya —
+                    // pola yang sama kayak `titik_ukur` & `standard_id`. Null
+                    // buat semua alat selain Viscometer. Lihat migrasi
+                    // 2026_08_18_100000.
+                    'spindle' => $spindle,
+                    'rpm' => $rpm,
                     'input_source' => $dariKamera ? $sumberKamera : 'manual',
                     'photo_path' => $meta['photo_path'] ?? null,
                     'ocr_confidence' => $meta['confidence'] ?? null,
@@ -1082,6 +1109,8 @@ class CalibrationController extends Controller
                     'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
                     'suhu' => $this->bulatkanKolom($suhuSebelum[$urutan] ?? null, self::DESIMAL_SUHU),
                     'satuan' => $satuan,
+                    'spindle' => $spindle,
+                    'rpm' => $rpm,
                     'input_source' => 'manual',
                     'is_verified' => true,
                 ];
@@ -1108,6 +1137,14 @@ class CalibrationController extends Controller
                 // ngisi kolom suhu — `hitungTitik()` bakal balik ke nilai
                 // nominal yang diketik, sama kayak perilaku sebelumnya.
                 'suhu_larutan' => $suhuTerisi === [] ? null : array_sum($suhuTerisi) / count($suhuTerisi),
+                // Data per titik yang cuma dimengerti profil alatnya. Isinya
+                // dioper apa adanya ke `CalibrationProfile::toleransiTitik()`;
+                // profil yang nggak butuh nggak pernah bukanya.
+                'konteks' => [
+                    'spindle' => $spindle,
+                    'rpm' => $rpm,
+                    'tk' => $modelVisco,
+                ],
             ];
         }
 
@@ -1134,6 +1171,7 @@ class CalibrationController extends Controller
                     $t['standard'],
                     $t['suhu_larutan'],
                     $suhuRuang,
+                    $t['konteks'],
                 );
             }
         }
@@ -1234,8 +1272,12 @@ class CalibrationController extends Controller
                 GumCalculator::MIN_PENGULANGAN,
             ),
             $standar === null => 'Standar acuan belum dipilih buat titik ini.',
-            $alat->toleransi === null && $this->profil->untukAlat($alat)->punyaToleransi()
-                => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
+            // `toleransiDariKolomAlat()` yang mutusin kolom ini wajib keisi
+            // atau nggak. Viscometer balik false: batasnya MPE per titik, jadi
+            // kolom alatnya memang NULL dan sesinya tetap harus bisa dihitung.
+            $alat->toleransi === null
+                && $this->profil->untukAlat($alat)->punyaToleransi()
+                && $this->profil->untukAlat($alat)->toleransiDariKolomAlat() => 'Toleransi alat masih kosong — isi dulu lewat data Alat, tanpa itu PASS/FAIL nggak ada dasarnya.',
             default => null,
         };
     }
@@ -1388,12 +1430,14 @@ class CalibrationController extends Controller
             // validasi tapi nggak pernah nyampe database. Gejalanya persis
             // kayak field yang dibuang: teknisi ngisi, hasilnya null.
             'thermohygro_standard_id',
-            'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir', 'catatan_teknisi',
+            'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+            'waktu_awal', 'waktu_akhir', 'catatan_teknisi',
             // Identitas alat & pemilik versi teknisi (lembar kerja poin 3-5 &
             // OWNER 1-2). Ikut `$opsional`, bukan blok wajib di atas: yang
             // nggak dikirim TIDAK ditimpa null — teknisi bisa nyimpen draft
             // bertahap tanpa ngosongin yang udah dia isi sebelumnya.
             'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
+            'spesifikasi_alat', 'lokasi_nama',
         ];
 
         foreach ($opsional as $field) {

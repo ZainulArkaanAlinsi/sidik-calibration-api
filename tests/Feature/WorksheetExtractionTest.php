@@ -217,6 +217,52 @@ class WorksheetExtractionTest extends TestCase
         $this->assertNull(WorksheetExtractionLog::sole()->cache_read_input_tokens);
     }
 
+    /**
+     * 429 punya DUA arti yang beda jauh, dan bedanya nggak kelihatan dari kode
+     * statusnya — cuma dari isi pesannya.
+     *
+     * Kredit habis NGGAK sembuh dengan nunggu. Kejadian 13 Agt 2026: teknisi
+     * nyoba jam 11:53 & 13:22, dua-duanya dapat "layanan lagi sibuk, tunggu
+     * beberapa menit", padahal yang perlu dilakuin cuma isi saldo. Sehari
+     * kebuang nungguin sesuatu yang nggak berubah.
+     */
+    public function test_kuota_habis_pesannya_beda_dari_server_sibuk(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'error' => ['message' => 'Your prepayment credits are depleted. Please go to AI Studio to manage billing.'],
+        ], 429)]);
+
+        $respons = $this->kirim($this->teknisi)->assertStatus(422);
+
+        $pesan = (string) $respons->json('message');
+
+        $this->assertStringContainsString('Kuota layanan AI habis', $pesan);
+        $this->assertStringNotContainsString('Tunggu beberapa menit', $pesan);
+
+        // Jalur ketik manual tetap kebuka — gagal baca foto nggak pernah bikin
+        // teknisi buntu.
+        $this->assertTrue($respons->json('fallback_manual'));
+    }
+
+    /** 429 rate limit BIASA tetap dapat saran nunggu — itu emang sembuh sendiri. */
+    public function test_server_sibuk_tetap_disuruh_nunggu(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'error' => ['message' => 'Number of requests has exceeded the rate limit. Please slow down.'],
+        ], 429)]);
+
+        $this->kirim($this->teknisi)
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
+
+        $this->assertStringContainsString(
+            'Tunggu beberapa menit',
+            (string) $this->kirim($this->teknisi)->json('message'),
+        );
+    }
+
     public function test_tanpa_api_key_balik_503(): void
     {
         Config::set('services.anthropic.api_key', '');

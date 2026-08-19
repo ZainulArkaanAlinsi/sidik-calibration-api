@@ -103,7 +103,7 @@ class CertificateExcelExporter
                     $this->bulat($baris['standard_value'] ?? null, $db),
                     $this->bulat($baris['unit_under_test'] ?? null, $db),
                     $this->bulat($baris['correction'] ?? null, $db),
-                    $this->bulat($baris['u95'] ?? null, $db),
+                    $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $s->snapshot ?? [])),
                     // Kolomnya SELALU ada di rekap, beda dari sertifikat satuan:
                     // isinya lintas alat, dan yang punya remark cuma sebagian.
                     // Kolom yang muncul-ilang tergantung isi bikin rekap dua
@@ -190,6 +190,31 @@ class CertificateExcelExporter
     }
 
     /**
+     * Desimal kolom **U95%**, yang buat sebagian alat BEDA dari kolom di
+     * sebelahnya.
+     *
+     * Master Spectrophotometer nulis `0,43 nm` (dua desimal) sementara
+     * Standard/UUT/Correction di tabel yang sama cuma satu (`333,7`). PDF udah
+     * lama baca `desimal_u95`; Excel belum, jadi berkas yang sama nulis `0,4`.
+     * Dua angka, dua berkas, satu sertifikat terakreditasi — persis yang
+     * dilarang docblock [bulat()].
+     *
+     * Bedanya sempat kesembunyi: waktu desimal titik spektro masih 2, `0,43`
+     * kebetulan keluar bener lewat jalur yang salah. Begitu desimalnya turun ke
+     * 1 (ngikut format sel master), Excel-nya langsung meleset.
+     *
+     * `null` = alat ini nggak nyatain apa-apa, jadi ikut desimal barisnya —
+     * persis perilaku lama buat lima alat lain.
+     *
+     * @param  array<string, mixed>  $baris
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function desimalU95Baris(array $baris, array $snapshot): int
+    {
+        return (int) ($baris['desimal_u95'] ?? $this->desimalBaris($baris, $snapshot));
+    }
+
+    /**
      * Bulatkan ke desimal sertifikat, tapi **tetap angka** (bukan teks).
      *
      * Dibulatkan karena Excel itu salinan dokumen yang sama: PDF nulis `1,76`,
@@ -226,23 +251,56 @@ class CertificateExcelExporter
         $adaRemark = collect($snapshot['hasil'] ?? [])
             ->contains(fn ($b) => filled($b['remark'] ?? null));
 
+        // Sama aturannya kayak PDF: kolom R² cuma ada kalau alatnya emang
+        // nyetak kolom itu DAN definisinya udah diputus lab. Selama belum,
+        // nggak ada kolom yang muncul kosong di Excel sementara PDF-nya nggak
+        // punya kolom sama sekali — dua jalur ini wajib nyetak dokumen yang
+        // sama bentuknya.
+        $adaR2 = collect($snapshot['hasil'] ?? [])
+            ->contains(fn ($b) => ($b['r2'] ?? null) !== null);
+
         $writer->addRow(Row::fromValues(
             array_merge(
-                ['Standard Value', 'Unit Under Test', 'Correction', 'U95% (±)'],
+                // Judul kolom ikut snapshot, sama kayak PDF: master
+                // Spectrophotometer nulis `UUT`, lima alat lain `Unit Under
+                // Test`. Excel itu salinan sertifikat yang sama, jadi kepala
+                // kolomnya nggak boleh beda dari PDF-nya.
+                //
+                // Rekap lintas alat SENGAJA nggak ikut (lihat `rekap()`):
+                // kolomnya mesti stabil biar rekap dua bulan bisa ditumpuk.
+                ['Standard Value', $snapshot['judul_uut'] ?? 'Unit Under Test', 'Correction', 'U95% (±)'],
                 $adaRemark ? ['Remark'] : [],
+                $adaR2 ? ['R2'] : [],
             ),
             $this->gayaHeaderTabel(),
         ));
 
+        $remarkTerakhir = null;
+
         foreach ($snapshot['hasil'] ?? [] as $baris) {
             $db = $this->desimalBaris($baris, $snapshot);
+
+            // R² itu angka SATU KELOMPOK, bukan angka per titik — ditulis sekali
+            // di baris pertama kelompoknya, persis kayak PDF & master. Diulang
+            // di lima baris, dia kebaca kayak lima R² yang kebetulan sama.
+            $remark = $baris['remark'] ?? null;
+            $awalKelompok = $remark !== $remarkTerakhir;
+            $remarkTerakhir = $remark;
 
             $writer->addRow(Row::fromValues(array_merge([
                 $this->bulat($baris['standard_value'] ?? null, $db),
                 $this->bulat($baris['unit_under_test'] ?? null, $db),
                 $this->bulat($baris['correction'] ?? null, $db),
-                $this->bulat($baris['u95'] ?? null, $db),
-            ], $adaRemark ? [$baris['remark'] ?? ''] : [])));
+                $this->bulat($baris['u95'] ?? null, $this->desimalU95Baris($baris, $snapshot)),
+            ], $adaRemark ? [$baris['remark'] ?? ''] : [], $adaR2 ? [
+                // NOL desimal, sama kayak PDF & sel masternya (`0,9359`
+                // diformat 0 desimal → tercetak `1`). Empat desimal bikin
+                // Excel nulis `0,9359` sementara PDF-nya nulis `1` — dua
+                // dokumen buat sertifikat yang sama.
+                $awalKelompok && ($baris['r2'] ?? null) !== null
+                    ? $this->bulat((float) $baris['r2'], 0)
+                    : '',
+            ] : [])));
         }
 
         $this->kosong($writer);

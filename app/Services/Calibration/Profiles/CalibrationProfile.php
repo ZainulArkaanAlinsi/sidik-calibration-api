@@ -85,6 +85,49 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Keterangan kolom "Remark" buat titik ini — nama parameter atau judul
+     * kelompoknya. `null` = titiknya nggak punya keterangan, kolomnya kosong.
+     *
+     * Dipakai dua arah: sertifikat ngelompokin barisnya lewat kolom ini
+     * (Chlorine: `Free Chlorine` vs `Total Chlorine`; Spectrophotometer: tiga
+     * blok filter), dan layar riwayat/approval butuh label yang SAMA biar tabel
+     * di HP nggak beda dari PDF-nya.
+     *
+     * Ada di kelas induk — bukan cuma di dua profil yang ngisi — supaya
+     * pemanggilnya bisa nanya satu cara buat semua alat. Sebelumnya
+     * `CertificateSnapshotBuilder` kepaksa `method_exists()`, yang artinya
+     * salah ketik nama method di profil baru nggak bakal ketahuan: kolomnya
+     * cuma kosong diam-diam.
+     */
+    public function remarkTitik(float $titikUkur): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Koefisien determinasi (R²) satu KELOMPOK titik tercetak — kolom `R2` di
+     * blok `%T` sertifikat Spectrophotometer. `null` = alat ini nggak nyetak
+     * kolom itu, dan kolomnya nggak muncul sama sekali (bukan muncul kosong).
+     *
+     * ## Kenapa se-kelompok, bukan per titik kayak `remarkTitik()`
+     *
+     * R² itu pernyataan tentang SEKUMPULAN titik: seberapa rapat pasangan
+     * (nilai standar, pembacaan alat) jatuh di satu garis. Satu titik nggak
+     * punya R², dan nanya "R² titik ke-3 berapa" itu pertanyaan yang nggak ada
+     * jawabannya. Makanya yang masuk seluruh baris kelompoknya sekaligus,
+     * persis kayak U95 & faktor cakupan yang juga lahir per kelompok.
+     *
+     * Barisnya dateng udah dikelompokkan sama pemanggilnya (`remark` yang sama
+     * = satu tabel tercetak), dan urutannya urutan cetak.
+     *
+     * @param  list<array{standard_value: float|null, unit_under_test: float|null}>  $baris
+     */
+    public function koefisienDeterminasi(array $baris): ?float
+    {
+        return null;
+    }
+
+    /**
      * Koreksi negatif yang MEMBULAT KE NOL dicetak pakai tanda minus atau nggak.
      *
      * Ini murni soal cetak — nilai mentahnya nggak kena sama sekali, dan
@@ -98,12 +141,14 @@ abstract class CalibrationProfile
      *    Chlorine ikut pola yang sama.
      *  - Master Conductivity nyimpen angka yang SAMA PERSIS kayak kita
      *    (`SERTIFIKAT STYLE 1` baris 35: `25` · `25.04` · `-0.03999999999999915`)
-     *    tapi nyetaknya `0,0`, tanpa minus.
+     *    tapi nyetaknya `0,0`, tanpa minus. Master Spectrophotometer sama:
+     *    koreksi titik 0 %T & 100 %T dua-duanya negatif, dua-duanya kecetak
+     *    `0,0`.
      *
      * Jadi jawabannya nggak bisa diturunkan dari nalar "tanda minus itu
      * informasi" — dua dokumen resmi lab jawabnya beda buat angka yang sama.
      * Default `true` (tanda dipertahankan) karena itu yang berlaku di empat
-     * dari lima alat; yang beda cuma override sendiri.
+     * dari enam alat; yang beda cuma override sendiri.
      */
     public function tandaNolDicetak(): bool
     {
@@ -157,6 +202,30 @@ abstract class CalibrationProfile
      * @return array<string, mixed>
      */
     abstract public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array;
+
+    /**
+     * Bentuk KERTASNYA buat pindai foto — bukan isinya.
+     *
+     * Dikirim ikut bentuk lembar kerja supaya mobile tinggal meneruskannya ke
+     * `POST /raw-measurements/extract-from-photo` tanpa perlu hafal alat mana
+     * yang kertasnya bentuknya beda.
+     *
+     *  - `kolom_suhu`: tiap sel isinya sepasang angka (pembacaan + suhu °C).
+     *  - `standar_di_baris`: standarnya turun ke bawah & Repeat berjajar ke
+     *    kanan (kebalikan lembar pH).
+     *
+     * Default-nya bentuk lembar pH karena lima profil pertama semuanya begitu.
+     * Yang override cuma yang kertasnya beneran beda — dan bedanya bukan soal
+     * rapi-rapian: prompt & skema JSON yang dikirim ke model dibangun dari dua
+     * penanda ini, jadi salah nilai berarti model diminta membaca kolom suhu
+     * yang nggak pernah ada di kertasnya.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => true, 'standar_di_baris' => false];
+    }
 
     /**
      * Pasangan TERCETAK "titik ukur → larutan standarnya", persis kayak di
@@ -472,6 +541,77 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Desimal khusus baris `Uncertainty U95% = ±`, kalau alat ini nyetaknya
+     * beda dari kolom hasil di atasnya. `null` = ikut desimal titiknya.
+     *
+     * Ada karena master Spectrophotometer nyetak U95 blok %T sebagai `0,50`
+     * sementara kolom UUT & Correction di blok yang sama pakai TIGA desimal
+     * (`9,665`). Dua angka, dua format, satu tabel — dan yang menentukan
+     * dokumen resminya, bukan konsistensi yang kelihatan lebih rapi.
+     *
+     * Lima alat lain balik `null` dan sertifikatnya nggak berubah sama sekali.
+     */
+    public function desimalU95(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Desimal angka `k` di kalimat `… Coverage Factor ( k ) = …`.
+     * `null` = perilaku lama, yaitu 2 desimal dengan nol di belakang dibuang
+     * (`1,97`, `2`).
+     *
+     * Ada karena master Spectrophotometer nyimpen `k` presisi penuh
+     * (3,182446…; 2,364624…; 2,008559…) tapi SELNYA diformat 0 desimal, jadi
+     * yang tercetak di sertifikat `3`, `2`, `2`. Sistem sebelumnya nyetak
+     * `3,18` — angka yang bener, tapi bukan angka yang ada di dokumen lab.
+     *
+     * Sengaja per alat, bukan disamain: master alat lain nyimpen `k` yang
+     * mirip-mirip (1,9714 di Turbidimeter, 1,9707 di pH) dan belum pernah diadu
+     * ke cetakannya. Dipukul rata 0 desimal, empat sertifikat yang udah beredar
+     * berubah bunyi tanpa satu pun bukti kertas.
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Judul kolom kedua tabel CALIBRATION REPORT.
+     *
+     * Lima master nulis `Unit Under Test`; master Spectrophotometer nulis
+     * `UUT` — dan konsisten begitu di KETIGA bloknya (`SERTIFIKAT!L18`, `L33`,
+     * `L47`), jadi itu pilihan lab, bukan sel yang kepotong.
+     *
+     * Yang NGGAK ditiru: spasi yang ilang di `Correction(nm)`. Master spektro
+     * sendiri nulisnya dua cara — `Correction (%T)` di blok %T, `Correction(%T)`
+     * di blok SRE — jadi itu kelalaian ketik, bukan aturan. Niru kelalaian
+     * bikin dokumen resmi kelihatan salah cetak.
+     */
+    public function judulKolomUut(): string
+    {
+        return 'Unit Under Test';
+    }
+
+    /**
+     * Kolom **Standard Value** nulis nol di belakang koma atau nggak.
+     *
+     * `true` (bawaan) = nol di belakang dibuang — master Turbidimeter nulis
+     * `1` / `100` / `1000`, bukan `1,00` / `100,0`, karena standarnya emang
+     * angka bulat dan desimalnya nggak membawa informasi apa pun.
+     *
+     * `false` = ditulis penuh sebanyak desimal barisnya. Master
+     * Spectrophotometer nulis `334,0` · `460,0` · `748,0` · `100,0` — kolomnya
+     * ngelapor NILAI ACUAN FILTER, dan di daftar yang tetangganya `287,7` &
+     * `637,9`, angka `334` kebaca kayak titik yang beda formatnya, bukan titik
+     * yang kebetulan bulat.
+     */
+    public function nolBelakangStandarDibuang(): bool
+    {
+        return true;
+    }
+
+    /**
      * Desimal NILAI suhu & kelembaban di baris `Env. Condition`.
      * `null` = tulis apa adanya (nol di belakang dibuang), padanan format
      * `General` di Excel.
@@ -525,6 +665,95 @@ abstract class CalibrationProfile
     public function punyaToleransi(): bool
     {
         return true;
+    }
+
+    /**
+     * Batas keberterimaan yang berlaku DI TITIK ini, kalau alatnya nggak punya
+     * satu angka toleransi yang berlaku buat seluruh lembar. `null` = ikut
+     * `equipments.toleransi` seperti biasa.
+     *
+     * ## Kenapa ada
+     *
+     * Enam alat pertama mbandingin hasil ke satu kolom `equipments.toleransi`
+     * yang diisi admin — satu angka per alat, berlaku di semua titik. Itu benar
+     * buat mereka: batas alat pH memang 0,2 pH di titik mana pun.
+     *
+     * Viscometer nggak begitu. Batasnya (MPE Brookfield) LAHIR dari cara alat
+     * itu dipakai di titik tersebut:
+     *
+     *   Fullscale = TK × SMC × 10000 / RPM
+     *   MPE       = 1 % × Fullscale + 1 % × pembacaan
+     *
+     * dan `SMC` (dari spindle) serta `RPM` beda per titik — sesi contoh master
+     * pakai SMC 1 / 4 / 400 dengan 63 / 62 / 62 rpm dalam satu lembar. Batasnya
+     * ikut beda: 4,14 / 22,08 / 1921,84 cP. Dipaksa jadi satu angka, dua dari
+     * tiga titik divonis pakai batas yang bukan miliknya.
+     *
+     * `$konteks` isinya data per titik yang nggak muat di parameter lain —
+     * buat Viscometer `spindle`, `rpm`, dan `tk`. Sengaja array bebas, bukan
+     * parameter bernama: isinya beda per jenis alat, dan alat yang nggak butuh
+     * nggak boleh kepaksa tau bentuknya.
+     *
+     * @param  float  $rataRata  rata-rata pembacaan titik ini (sesudah normalisasi suhu)
+     * @param  array<string, mixed>  $konteks
+     */
+    /**
+     * Pita angka yang MASUK AKAL buat satu sel pembacaan di lembar pindai —
+     * kalau alat ini nggak bisa dilayani aturan umum.
+     *
+     * Aturan umumnya (`TemplateLembarKerja::aturanPembacaan()`): nominal titik
+     * ±10 %, dengan penjaga rasio 0,5–2,0× nominal. Itu benar buat enam alat
+     * pertama karena nilai acuannya DIAM — buffer pH 7 selalu ~7, standar
+     * turbidity 100 NTU selalu ~100.
+     *
+     * Viscometer nggak. Nilai acuannya diinterpolasi dari tabel sertifikat
+     * larutan pada suhu terukur, dan tabelnya curam: larutan 1000 cP itu
+     * 1504 cP di 20 °C dan 419,5 cP di 37,78 °C. Pita ±10 % di sekitar nominal
+     * 25 °C (1018 cP) jadi 916,2–1119,8 — dan pembacaan master yang paling
+     * kecil 916,3, cuma 0,1 cP di atas batasnya. Sesi yang sama diukur di
+     * 30 °C bakal ditolak SELURUH barisnya, dengan alasan yang kelihatan
+     * seperti kegagalan baca kamera padahal angkanya benar.
+     *
+     * Balik `null` (bawaan) = pakai aturan umum. Yang override wajib bawa
+     * alasan fisik, bukan sekadar melonggarkan penjaga.
+     *
+     * @return array{min: float, maks: float, rasio_min: float, rasio_maks: float}|null
+     */
+    public function pitaPembacaan(float $titikUkur): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Batas keberterimaannya dibaca dari kolom `equipments.toleransi`?
+     *
+     * Enam alat pertama: ya. Satu angka di master alat, dipakai semua titik,
+     * dan kalau kolomnya kosong lembar kerjanya MEMANG belum bisa dihitung —
+     * PASS/FAIL tanpa batas itu vonis tanpa dasar.
+     *
+     * Viscometer: nggak. Batasnya MPE, dan MPE lahir dari spindle & RPM titik
+     * itu (`Fullscale = TK × SMC × 10000 / RPM`), jadi kolom alatnya sengaja
+     * NULL. Tanpa hook ini penjaga di `CalibrationController::
+     * alasanBelumBisaDihitung()` nolak SETIAP sesi Viscometer dengan alasan
+     * "Toleransi alat masih kosong" — dan nolaknya rapi: sesinya tersimpan,
+     * pengukurannya tersimpan, cuma nggak ada satu titik pun yang dihitung.
+     *
+     * Titik yang spindle/RPM-nya nggak keisi tetap dihitung, cuma nggak
+     * divonis — lihat `toleransiTitik()`, yang balik `null` di situ. Itu benar:
+     * angkanya ada, vonisnya yang nggak ada dasarnya.
+     */
+    public function toleransiDariKolomAlat(): bool
+    {
+        return true;
+    }
+
+    public function toleransiTitik(
+        float $titikUkur,
+        float $rataRata,
+        Equipment $equipment,
+        array $konteks = [],
+    ): ?float {
+        return null;
     }
 
     /**

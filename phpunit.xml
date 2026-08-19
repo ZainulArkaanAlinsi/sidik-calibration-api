@@ -38,6 +38,13 @@
         -->
         <env name="VISION_DRIVER" value="anthropic"/>
         <!--
+          Alamat penyedianya dipatok di `Tests\TestCase::setUp()`, BUKAN di
+          sini. `<env>` nggak bisa dipakai buat itu: PHPUnit cuma nyetel
+          variabel yang belum ada, dan yang bikin masalah justru variabel shell
+          yang udah nangkring duluan (`ANTHROPIC_BASE_URL` ke proxy lokal).
+        -->
+
+        <!--
             Zona waktu HARUS sama kayak produksi (Asia/Jakarta). Kalau test jalan
             di UTC sementara server jalan di Jakarta, seluruh bug tanggal jadi
             nggak kelihatan: kolom bertipe `date` yang di-serialize sebagai ISO

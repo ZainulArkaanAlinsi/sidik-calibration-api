@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\PetunjukLembarKerja;
 use App\Services\WorksheetVisionExtractor;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -184,22 +185,61 @@ class WorksheetExtractionGeminiTest extends TestCase
      */
     public function test_prompt_tetap_bawa_pagar_ketelitian(): void
     {
-        $prompt = (new \ReflectionMethod(WorksheetVisionExtractor::class, 'systemPrompt'))
-            ->invoke(app(WorksheetVisionExtractor::class));
+        $method = new \ReflectionMethod(WorksheetVisionExtractor::class, 'systemPrompt');
 
-        foreach ([
-            'Read EVERY cell independently',
-            'Do NOT copy a value',
-            'Map cells by POSITION',
-            'never "high"',
-            'NEVER correct, round',
-        ] as $wajib) {
-            $this->assertStringContainsString(
-                $wajib,
-                $prompt,
-                "pagar ketelitian '{$wajib}' ilang dari prompt",
-            );
+        // Dicek buat DUA bentuk lembar. Prompt-nya sekarang bercabang di bagian
+        // bentuk tabel, dan cabang yang cuma dipakai Spectrophotometer itu
+        // justru yang paling gampang kelewat: nggak ada satu pun lembar pH yang
+        // bakal ngasih tau kalau pagarnya ilang di sana.
+        $bentuk = [
+            'lembar pH' => new PetunjukLembarKerja(satuan: 'pH'),
+            'lembar Spectrophotometer' => new PetunjukLembarKerja(
+                satuan: 'nm',
+                kolomSuhu: false,
+                standarDiBaris: true,
+            ),
+        ];
+
+        foreach ($bentuk as $nama => $petunjuk) {
+            $prompt = $method->invoke(app(WorksheetVisionExtractor::class), $petunjuk);
+
+            foreach ([
+                'Read EVERY cell independently',
+                'Do NOT copy a value',
+                'Map cells by POSITION',
+                'never "high"',
+                'NEVER correct, round',
+            ] as $wajib) {
+                $this->assertStringContainsString(
+                    $wajib,
+                    $prompt,
+                    "pagar ketelitian '{$wajib}' ilang dari prompt {$nama}",
+                );
+            }
         }
+    }
+
+    /**
+     * Lembar tanpa kolom suhu nggak boleh disuruh baca kolom suhu.
+     *
+     * Ini inti kegagalan Spectrophotometer sebelum ini: prompt-nya bilang "tiap
+     * sel isinya dua angka: pembacaan + suhu °C" ke foto yang tiap selnya cuma
+     * berisi SATU angka. Model nurut — dia ngarang kolom suhu biar jawabannya
+     * cocok sama yang diminta — dan angka karangan itu masuk ke lembar kerja
+     * yang keliatannya sah.
+     */
+    public function test_prompt_spektro_nggak_minta_kolom_suhu(): void
+    {
+        $prompt = (new \ReflectionMethod(WorksheetVisionExtractor::class, 'systemPrompt'))
+            ->invoke(app(WorksheetVisionExtractor::class), new PetunjukLembarKerja(
+                satuan: 'nm',
+                kolomSuhu: false,
+                standarDiBaris: true,
+            ));
+
+        $this->assertStringContainsString('NO temperature column', $prompt);
+        $this->assertStringContainsString('one row per STANDARD', $prompt);
+        $this->assertStringNotContainsString('"suhu"', $prompt);
     }
 
     /**

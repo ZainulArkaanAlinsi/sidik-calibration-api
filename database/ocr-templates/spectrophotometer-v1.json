@@ -1,0 +1,629 @@
+{
+    "_catatan": "DINYALAKAN buat UJI LAPANGAN 14 Agt 2026 — belum diadu ke >=20 foto nyata. Yang udah kebukti (dijaga test, buat KEENAM alat): kunci sel di kertas sama persis dengan yang dikenal server, tiap kotak sel muat di halaman & nggak tumpang tindih, sel nggak nabrak penanda sudut/QR/blok kepala, dan kotak jangkar menaungi label yang tercetak. Di HP fisik: 4 marker ketemu, warp residual <2px, 80 sel mendarat di dalam kotaknya, QR + kelima label Repeat kebaca ML Kit (diuji di lembar conductivity). Yang BELUM: jepretan kamera dari kertas yang beneran dicetak & diisi tangan. Sampai itu selesai hasil pindai tetap wajib lewat layar review — dan kalau angkanya mendarat di sel yang salah, MATIKAN flag ini lagi.",
+    "_catatan_formulir": "Cetakan asli (SIDIK-FM-CAL-0511_Rev.5, LK-285-IDN) diperiksa 13 Agt 2026 dan TIDAK cocok dengan rangka ini: (1) halamannya LANDSCAPE 792x612 pt = 2200x1700 px @200dpi, bukan A4 tegak 1654x2339; (2) tabel Holmium di kertas 9 baris (287,4 sampai 637,2), rangka & profil 10 baris (mulai 279,6); (3) nilai standarnya beda dari master — Didynium kertas 478/513,4/529,4 vs master 475,2/513,7/529,7, dan %T kertas 0/10,0/20,2/30,5/100 vs master 0/9,9/20,0/30,1/100; (4) blok %T di kertas cuma SATU baris X1..X3 (15 sel), rangka bikin 30 sel karena master ngerata-rata 6 pembacaan; (5) formulirnya NGGAK punya marker sudut maupun QR — 14 gambar di berkasnya semuanya melebar (57x36 & 110x38 px), nggak ada yang kotak, padahal mesin pindai nyarinya itu. Jangan diukur ulang sebelum lab nyatain jumlah titik & nilai standar mana yang berlaku (empat selisihnya dicatat di SpectrophotometerProfile, bagian 'Cetakan Rev.5 vs master').",
+    "template_id": "spectrophotometer",
+    "versi": 1,
+    "kode_dokumen": "SIDIK-FM-CAL-0511_Rev.5",
+    "terverifikasi": true,
+    "ukuran_referensi": {
+        "w": 1654,
+        "h": 2339,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 1564,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 1564,
+            "y": 2249,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 2249,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "spectrophotometer|v1",
+        "kotak": {
+            "x": 1309,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 285,
+                "y": 897,
+                "w": 179,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 452,
+                "y": 897,
+                "w": 179,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 619,
+                "y": 897,
+                "w": 179,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "holmium",
+            "judul": "Wave Length ( λ ) - Filter Holmium",
+            "kiri": 90,
+            "sel": {
+                "holmium|1|1|pembacaan": {
+                    "x": 291,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|2|1|pembacaan": {
+                    "x": 291,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|3|1|pembacaan": {
+                    "x": 291,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|4|1|pembacaan": {
+                    "x": 291,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|5|1|pembacaan": {
+                    "x": 291,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|6|1|pembacaan": {
+                    "x": 291,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|7|1|pembacaan": {
+                    "x": 291,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|8|1|pembacaan": {
+                    "x": 291,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|9|1|pembacaan": {
+                    "x": 291,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|10|1|pembacaan": {
+                    "x": 291,
+                    "y": 1558,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|1|2|pembacaan": {
+                    "x": 458,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|2|2|pembacaan": {
+                    "x": 458,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|3|2|pembacaan": {
+                    "x": 458,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|4|2|pembacaan": {
+                    "x": 458,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|5|2|pembacaan": {
+                    "x": 458,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|6|2|pembacaan": {
+                    "x": 458,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|7|2|pembacaan": {
+                    "x": 458,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|8|2|pembacaan": {
+                    "x": 458,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|9|2|pembacaan": {
+                    "x": 458,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|10|2|pembacaan": {
+                    "x": 458,
+                    "y": 1558,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|1|3|pembacaan": {
+                    "x": 625,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|2|3|pembacaan": {
+                    "x": 625,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|3|3|pembacaan": {
+                    "x": 625,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|4|3|pembacaan": {
+                    "x": 625,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|5|3|pembacaan": {
+                    "x": 625,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|6|3|pembacaan": {
+                    "x": 625,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|7|3|pembacaan": {
+                    "x": 625,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|8|3|pembacaan": {
+                    "x": 625,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|9|3|pembacaan": {
+                    "x": 625,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                },
+                "holmium|10|3|pembacaan": {
+                    "x": 625,
+                    "y": 1558,
+                    "w": 167,
+                    "h": 67
+                }
+            }
+        },
+        {
+            "tabel_id": "didynium",
+            "judul": "Wave Length ( λ ) - Filter Didynium",
+            "kiri": 832,
+            "sel": {
+                "didynium|1|1|pembacaan": {
+                    "x": 1033,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|2|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|3|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|4|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|5|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|6|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|7|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|8|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|9|1|pembacaan": {
+                    "x": 1033,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|1|2|pembacaan": {
+                    "x": 1200,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|2|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|3|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|4|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|5|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|6|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|7|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|8|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|9|2|pembacaan": {
+                    "x": 1200,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|1|3|pembacaan": {
+                    "x": 1367,
+                    "y": 955,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|2|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1022,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|3|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1089,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|4|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1156,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|5|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1223,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|6|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1290,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|7|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1357,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|8|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1424,
+                    "w": 167,
+                    "h": 67
+                },
+                "didynium|9|3|pembacaan": {
+                    "x": 1367,
+                    "y": 1491,
+                    "w": 167,
+                    "h": 67
+                }
+            }
+        },
+        {
+            "tabel_id": "akurasi_transmitan",
+            "judul": "Accuracy %T and Linierity at λ = 560nm",
+            "kiri": 90,
+            "sel": {
+                "akurasi_transmitan|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|1|2|pembacaan": {
+                    "x": 499,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|2|pembacaan": {
+                    "x": 499,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|2|pembacaan": {
+                    "x": 499,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|2|pembacaan": {
+                    "x": 499,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|2|pembacaan": {
+                    "x": 499,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|1|3|pembacaan": {
+                    "x": 706,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|3|pembacaan": {
+                    "x": 706,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|3|pembacaan": {
+                    "x": 706,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|3|pembacaan": {
+                    "x": 706,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|3|pembacaan": {
+                    "x": 706,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|1|4|pembacaan": {
+                    "x": 913,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|4|pembacaan": {
+                    "x": 913,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|4|pembacaan": {
+                    "x": 913,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|4|pembacaan": {
+                    "x": 913,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|4|pembacaan": {
+                    "x": 913,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|1|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|5|pembacaan": {
+                    "x": 1120,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|5|pembacaan": {
+                    "x": 1120,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|1|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1810,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|2|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1877,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|3|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1944,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|4|6|pembacaan": {
+                    "x": 1327,
+                    "y": 2011,
+                    "w": 207,
+                    "h": 67
+                },
+                "akurasi_transmitan|5|6|pembacaan": {
+                    "x": 1327,
+                    "y": 2078,
+                    "w": 207,
+                    "h": 67
+                }
+            }
+        }
+    ]
+}

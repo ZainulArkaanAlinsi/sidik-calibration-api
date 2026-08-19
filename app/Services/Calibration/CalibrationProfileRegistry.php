@@ -10,6 +10,7 @@ use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
+use App\Services\Calibration\Profiles\ViscometerProfile;
 
 /**
  * Daftar semua profil kalibrasi & pencocokannya ke alat.
@@ -46,7 +47,23 @@ class CalibrationProfileRegistry
             new RefractometerProfile,
             new ConductivityProfile,
             new SpectrophotometerProfile,
+            new ViscometerProfile,
         ];
+    }
+
+    /**
+     * Semua profil terdaftar.
+     *
+     * Dipakai jalur yang harus nyapu SEMUA jenis alat sekaligus — mis. daftar
+     * template OCR (`App\Services\Ocr\TemplateLembarKerja::daftar()`). Tanpa ini
+     * pemanggilnya kepaksa nyalin daftar profil sendiri, dan salinan itu pasti
+     * ketinggalan waktu alat ke-7 ditambahin di sini.
+     *
+     * @return list<CalibrationProfile>
+     */
+    public function semua(): array
+    {
+        return $this->profil;
     }
 
     /**

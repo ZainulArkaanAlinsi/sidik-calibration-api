@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
+use App\Http\Controllers\Api\WorksheetScanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -197,6 +198,24 @@ Route::middleware('auth:sanctum')->group(function () {
         // Path ngikut SPEC-vision-prompt.md §8 (yang dipanggil mobile).
         Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
             ->middleware('throttle:30,1');
+
+        // OCR TEMPLATE LOKAL — jalur pindai tanpa AI pihak ketiga & tanpa biaya
+        // per foto. Fotonya dibaca di HP; yang nyampe sini teks per sel + mutu
+        // foto + geometri. Sama kayak jalur AI Vision, hasilnya usulan: submit
+        // final tetap lewat POST/PUT /calibrations.
+        Route::get('/worksheet-templates', [WorksheetScanController::class, 'templates']);
+        Route::get('/worksheet-templates/{kode}', [WorksheetScanController::class, 'template']);
+        // Throttle lebih longgar dari AI Vision: nggak ada biaya per panggilan,
+        // dan teknisi wajar ngulang motret beberapa kali sampai lembarnya kebaca.
+        Route::post('/worksheet-scans', [WorksheetScanController::class, 'store'])
+            ->middleware('throttle:60,1');
+        Route::get('/worksheet-scans/{worksheetScan}', [WorksheetScanController::class, 'show']);
+        // Potongan citra per sel — dipanggil sekali per sel yang dicek teknisi,
+        // jadi batasnya jauh lebih tinggi dari endpoint lain.
+        Route::get('/worksheet-scans/{worksheetScan}/sel/{kunci}/crop', [WorksheetScanController::class, 'crop'])
+            ->middleware('throttle:300,1')
+            ->where('kunci', '[A-Za-z0-9_|\-\.]+');
+        Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
 
         // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(

@@ -109,11 +109,138 @@ class Standard extends Model
     {
         $k = $this->koefisien_suhu;
 
-        if ($suhu === null || ! is_array($k) || ! isset($k['a'], $k['b'], $k['c'])) {
+        if ($suhu === null || ! is_array($k)) {
+            return null;
+        }
+
+        // Bentuk TABEL didahulukan — lihat [nilaiDariTabelSuhu]. Standar yang
+        // punya dua-duanya nggak ada, dan kalau suatu saat ada, tabel yang
+        // menang: dia data sertifikat langsung, polinom cuma kecocokan kurva.
+        if (is_array($k['tabel'] ?? null)) {
+            return $this->nilaiDariTabelSuhu($k['tabel'], $suhu);
+        }
+
+        if (! isset($k['a'], $k['b'], $k['c'])) {
             return null;
         }
 
         return (float) $k['a'] * $suhu ** 2 + (float) $k['b'] * $suhu + (float) $k['c'];
+    }
+
+    /**
+     * Bentuk kedua `koefisien_suhu`: TABEL sertifikat, bukan polinom.
+     *
+     * ## Kenapa ada dua bentuk
+     *
+     * Sertifikat buffer pH ngasih persamaan kuadratik jadi — tinggal dimasukin
+     * suhunya. Sertifikat larutan standar viskositas nggak: dia ngasih DAFTAR
+     * pengukuran (20 °C → 134 cP, 25 °C → 99,65 cP, 37,78 °C → 51,1 cP, …),
+     * plus persen ketidakpastian per baris. Master lab bacanya dengan
+     * interpolasi linier antar dua baris pengapit, dan angka itu yang kecetak
+     * di kolom "Standard Value" sertifikat viscometer.
+     *
+     * Master viscometer JUGA nyetak trendline kubik di bawah tabelnya
+     * (`y = -0,0007x³ + 0,1522x² - 11,693x + 313,28`). Itu hiasan grafik dan
+     * BUKAN yang dipakai: pada 26,52 °C dia ngasih 97,16 cP sementara sel
+     * masternya 93,88 cP — beda 3,5 %, cukup buat mbalik vonis MPE. Jangan
+     * kepancing nyocokin ke situ.
+     *
+     * ## Kenapa di luar jangkauan tabel balik null, bukan diekstrapolasi
+     *
+     * Ekstrapolasi linier di ujung kurva viskositas meleset jauh — larutan
+     * 60000 cP jatuh dari 95192 cP (20 °C) ke 411,3 cP (100 °C), jadi
+     * kemiringan di satu ruas nggak berlaku di ruas sebelahnya sama sekali.
+     * Balik `null` bikin pemanggil jatuh ke nilai nominal titiknya, persis
+     * kayak standar yang emang nggak punya kurva. Yang ngasih tau teknisi
+     * KENAPA nilainya nggak kegeser itu `peringatanSesi()` profil alatnya —
+     * bukan angka karangan yang kelihatan sah.
+     *
+     * @param  list<array{suhu: float|int|string, nilai: float|int|string}>  $tabel
+     */
+    private function nilaiDariTabelSuhu(array $tabel, float $suhu): ?float
+    {
+        $baris = [];
+
+        foreach ($tabel as $b) {
+            if (! is_array($b) || ! isset($b['suhu'], $b['nilai'])) {
+                continue;
+            }
+
+            $baris[] = ['suhu' => (float) $b['suhu'], 'nilai' => (float) $b['nilai']];
+        }
+
+        if (count($baris) < 2) {
+            return null;
+        }
+
+        // Diurutkan sendiri, nggak percaya urutan JSON-nya. Tabel yang kebalik
+        // atau keselip satu baris bikin interpolasinya diam-diam salah ruas.
+        usort($baris, static fn (array $a, array $b): int => $a['suhu'] <=> $b['suhu']);
+
+        foreach ($baris as $b) {
+            // Suhu yang PERSIS jatuh di baris tabel dipakai apa adanya —
+            // jangan lewat rumus interpolasi, biar 25,0 °C selalu ngasih
+            // 99,65 dan bukan 99,64999999999999.
+            if ($b['suhu'] === $suhu) {
+                return $b['nilai'];
+            }
+        }
+
+        for ($i = 0; $i < count($baris) - 1; $i++) {
+            $bawah = $baris[$i];
+            $atas = $baris[$i + 1];
+
+            if ($suhu < $bawah['suhu'] || $suhu > $atas['suhu']) {
+                continue;
+            }
+
+            $rentang = $atas['suhu'] - $bawah['suhu'];
+
+            if ($rentang <= 0.0) {
+                continue;
+            }
+
+            return $bawah['nilai']
+                + ($suhu - $bawah['suhu']) / $rentang * ($atas['nilai'] - $bawah['nilai']);
+        }
+
+        return null;
+    }
+
+    /**
+     * Satu BARIS tabel sertifikat pada suhu tertentu, kalau suhunya memang
+     * salah satu titik ukur di tabel itu. `null` kalau standarnya nggak
+     * bertabel atau suhunya nggak ada barisnya.
+     *
+     * Beda dari [nilaiPadaSuhu] yang menginterpolasi: yang ini sengaja NGGAK
+     * mau nebak. Dipakai buat baca angka yang cuma sah di titik tabelnya —
+     * budget ketidakpastian viscometer ngambil `%U` dan nilai acuan dari baris
+     * 25 °C, dan `%U` di tabel itu berubah per baris (0,17 % di 20-25 °C,
+     * 0,15 % di 37,78 °C) tanpa ada dasar buat ngerata-ratain di antaranya.
+     *
+     * @return array<string, float>|null
+     */
+    public function barisTabelSuhu(float $suhu): ?array
+    {
+        $tabel = $this->koefisien_suhu['tabel'] ?? null;
+
+        if (! is_array($tabel)) {
+            return null;
+        }
+
+        foreach ($tabel as $b) {
+            if (! is_array($b) || ! isset($b['suhu'])) {
+                continue;
+            }
+
+            if ((float) $b['suhu'] !== $suhu) {
+                continue;
+            }
+
+            return array_map(static fn ($n): float => (float) $n, $b);
+        }
+
+        return null;
     }
 
     /**

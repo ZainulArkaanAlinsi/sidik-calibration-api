@@ -70,7 +70,14 @@ class SpectrophotometerCapabilitySeeder extends Seeder
 {
     private const NAMA_KELOMPOK = 'Instrumen Analitik';
 
-    private const METODE = SpectrophotometerProfile::KODE_DOKUMEN;
+    /**
+     * Nomor INSTRUKSI KERJA, bukan nomor formulir — itu yang tertulis di baris
+     * CMC `kemampuan-kalibrasi.json` no. 47 ("SIDIK-IK-CAL-0508_Rev.4; SNSU
+     * PK.F-01:2020"). Dulu nunjuk ke `KODE_DOKUMEN` waktu konstanta itu masih
+     * keisi nomor IK; sejak `KODE_DOKUMEN` dibetulin jadi nomor formulir
+     * (`SIDIK-FM-CAL-0511_Rev.5`), yang benar di sini `KODE_METODE`.
+     */
+    private const METODE = SpectrophotometerProfile::KODE_METODE;
 
     public function run(): void
     {

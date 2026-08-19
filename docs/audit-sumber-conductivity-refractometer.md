@@ -27,7 +27,7 @@ mana yang masih inferensi, dan mana yang error sumber.
 ### Conductivity — `Project-PT-Sidik/Master Data Conductivity/`
 
 `.xlsm` ada langsung di folder itu; kedelapan CSV-nya ada di subfolder
-`conductivity_csv 2/`.
+`conductivity_csv/`.
 
 | Berkas | Tipe | Fungsi | Source of Truth? | Memuat Formula Asli? | Catatan / Error |
 |---|---|---|---|---|---|
@@ -41,7 +41,7 @@ mana yang masih inferensi, dan mana yang error sumber.
 | `07 - SERTIFIKAT STYLE 1.csv` | Sertifikat | Keluaran µS·µS·mS | Tidak | Tidak | **3× `#REF!`** — lihat §2.1 |
 | `08 - SERTIFIKAT STYLE 2.csv` | Sertifikat | Keluaran µS·mS·mS | Tidak | Tidak | **3× `#REF!`** — lihat §2.1 |
 
-### Refractometer — `Project-PT-Sidik/Refractometer_CSV 2/`
+### Refractometer — `Project-PT-Sidik/Refractometer_CSV/`
 
 | Berkas | Tipe | Fungsi | Source of Truth? | Memuat Formula Asli? | Catatan / Error |
 |---|---|---|---|---|---|

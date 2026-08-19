@@ -20,6 +20,50 @@ use RuntimeException;
  */
 class CalibrationCapabilitySeeder extends Seeder
 {
+    /**
+     * Alat yang baris CMC-nya PUNYA seeder sendiri, jadi jangan ikut ditulis
+     * dari JSON lampiran akreditasi.
+     *
+     * Tanpa ini alatnya kedaftar DUA KALI di kategori yang sama dengan ejaan
+     * yang beda — `Spektrofotometer` (JSON) dan `Spectrophotometer` (master
+     * Excel) — dan di layar teknisi keduanya muncul sebagai dua kartu berbeda
+     * di Instrumen Analitik. Teknisi nggak punya cara tahu yang mana yang
+     * bener.
+     *
+     * Baris JSON-nya juga NGGAK bisa dipakai jalur hitung: dua rentang panjang
+     * gelombangnya sama-sama berparameter "Panjang Gelombang", jadi Holmium
+     * (283–641 nm) dan Didynium (474–810 nm) nggak bisa dibedain dari situ —
+     * padahal keduanya punya U95 kelompok sendiri. `SpectrophotometerCapability
+     * Seeder` nulis label parameter yang eksplisit buat itu.
+     *
+     * Angka di JSON tetap dipertahankan sebagai catatan akreditasi (KAN
+     * LK-285-IDN no. 47), termasuk CMC Didynium 0,38 nm yang beda dari master
+     * Excel (0,40 nm) — lihat `docs/handoff-backend-spectrophotometer.md` §10.2
+     * soal kenapa yang dipakai angka master.
+     *
+     * ## Viscometer
+     *
+     * Dua alasan, dan yang kedua bikin baris JSON-nya nggak bisa dipakai
+     * ngitung sama sekali:
+     *
+     *  1. **Satuannya campur.** Dua baris pertama `cP`, baris ketiga `1.4 P`
+     *     (Poise). `1 P = 100 cP`, jadi angkanya sebenernya sama dengan 140 cP
+     *     yang ditulis master — tapi dibaca mentah, lantai CMC titik 60000 cP
+     *     jadi 1,4 cP, seratus kali lebih longgar dari yang diakreditasi.
+     *  2. **Titiknya nggak pernah kena.** JSON nulis titik tunggal 102 / 1028 /
+     *     58021 cP. Nilai acuan viscometer bergeser ikut suhu larutan — sesi
+     *     master jatuh di 93,88 / 910,29 / 61898,12 cP — dan ambang pencocokan
+     *     titik tunggal `GumCalculator::kemampuanUntukTitik()` itu
+     *     `max(0,1 ; 0,5 %)`. Jarak 93,88 ke 102 aja 8,12. Ketiga titik bakal
+     *     diam-diam jatuh ke jalur generik tanpa lantai CMC.
+     *
+     * `ViscometerCapabilitySeeder` nulisnya sebagai RENTANG, seluruhnya dalam
+     * cP.
+     *
+     * @var list<string>
+     */
+    private const DISEED_TERPISAH = ['Spektrofotometer', 'Viscometer'];
+
     public function run(): void
     {
         $path = database_path('data/kemampuan-kalibrasi.json');
@@ -41,6 +85,10 @@ class CalibrationCapabilitySeeder extends Seeder
             $category->capabilities()->delete();
 
             foreach ($kelompok['alat'] as $alat) {
+                if (in_array($alat['nama_alat'], self::DISEED_TERPISAH, true)) {
+                    continue;
+                }
+
                 foreach ($alat['rentang'] as $rentang) {
                     CalibrationCapability::create([
                         'equipment_category_id' => $category->id,

@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
 
@@ -54,6 +55,17 @@ class CertificateSnapshotBuilder
         return [
             'versi' => self::VERSI,
             'desimal' => $desimal,
+            // Judul kolom kedua tabel hasil. Lima master nulis
+            // `Unit Under Test`, master Spectrophotometer nulis `UUT` — di
+            // ketiga bloknya, jadi itu pilihan lab.
+            //
+            // Ikut DIBEKUKAN sama alasannya kayak `desimal`: sertifikat yang
+            // udah terbit nggak boleh ganti judul kolom gara-gara profilnya
+            // diedit sesudahnya. Snapshot lama yang belum punya kunci ini
+            // dibaca `?? 'Unit Under Test'` — persis judul lamanya.
+            'judul_uut' => $alat
+                ? app(CalibrationProfileRegistry::class)->untukAlat($alat)?->judulKolomUut()
+                : null,
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
             'header' => $this->header($sesi, $sertifikat),
             'hasil' => $this->hasil($sesi),
@@ -143,7 +155,7 @@ class CertificateSnapshotBuilder
             ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
             : null;
 
-        return $sesi->uncertaintyCalculations
+        $baris = $sesi->uncertaintyCalculations
             ->sortBy('titik_ke')
             ->map(function ($titik) use ($alat, $organisasi, $profil): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
@@ -169,9 +181,7 @@ class CertificateSnapshotBuilder
                         ? $organisasi->desimalSertifikat($resolusi)
                         : Angka::desimalDariResolusi($resolusi));
 
-                $remark = ($profil !== null && method_exists($profil, 'remarkTitik'))
-                    ? $profil->remarkTitik((float) $titik->titik_ukur)
-                    : null;
+                $remark = $profil?->remarkTitik((float) $titik->titik_ukur);
 
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
@@ -182,6 +192,38 @@ class CertificateSnapshotBuilder
                     'unit_under_test' => (float) $titik->rata_rata,
                     'correction' => (float) $titik->koreksi,
                     'u95' => (float) $titik->ketidakpastian_diperluas,
+                    // Faktor cakupan yang dipakai buat U95 titik ini.
+                    //
+                    // Dibekukan karena sertifikat master nyetaknya di bawah
+                    // TIAP tabel hasil: "The Uncertainty is taken at a
+                    // Confidence Level 95 % and Coverage Factor ( k ) = 3".
+                    // Angkanya beda per kelompok (Holmium 3,18; Didynium 2,36;
+                    // %T 2,01), jadi nggak bisa diwakili satu nilai di level
+                    // sertifikat.
+                    //
+                    // Sertifikat yang udah terbit nggak punya kunci ini —
+                    // pembacanya ngosongin barisnya, bukan ngarang k.
+                    // Desimal khusus baris `Uncertainty U95% = ±`, kalau alat
+                    // ini nyetaknya beda dari kolom hasil di atasnya. Master
+                    // spektro nulis `0,50 %T` sementara UUT & Correction di
+                    // blok yang sama pakai tiga desimal (`9,665`).
+                    //
+                    // Ikut DIBEKUKAN, sama alasannya kayak `desimal` & `satuan`:
+                    // sertifikat yang udah terbit nggak boleh berubah bentuk
+                    // gara-gara profilnya diedit sesudahnya. `null` = ikut
+                    // `desimal` titik, persis perilaku lama.
+                    'desimal_u95' => $profil?->desimalU95(),
+                    'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
+                        ? null
+                        : (float) $titik->faktor_cakupan_k,
+                    // Desimal angka `k` di kalimat di bawah tabel. Master
+                    // spektro nyimpen 3,182446… tapi nyetak `3`.
+                    //
+                    // Ikut DIBEKUKAN sama alasannya kayak `desimal_u95`:
+                    // sertifikat yang udah terbit nggak boleh berubah bunyi
+                    // gara-gara profilnya diedit sesudahnya. `null` = perilaku
+                    // lama (2 desimal, nol di belakang dibuang).
+                    'desimal_k' => $profil?->desimalFaktorCakupan(),
                     // Nilai mentahnya TETAP presisi penuh — ini cuma ngatur
                     // berapa digit yang ditulis. Nggak ada pembulatan data.
                     'desimal' => $desimal,
@@ -209,10 +251,63 @@ class CertificateSnapshotBuilder
                     // pembacanya jatuh ke `true` — persis perilaku lamanya, jadi
                     // dokumen yang udah dipegang pelanggan nggak berubah bentuk.
                     'tanda_nol' => $profil?->tandaNolDicetak() ?? true,
+                    // Kolom Standard Value: nol di belakang dibuang (`100`)
+                    // atau ditulis penuh (`100,0`). Beda per master — lihat
+                    // `CalibrationProfile::nolBelakangStandarDibuang()`.
+                    //
+                    // Ikut dibekukan; sertifikat lama yang belum punya kunci
+                    // ini dibaca `?? true` di PDF, persis perilaku lamanya.
+                    'standar_ringkas' => $profil?->nolBelakangStandarDibuang() ?? true,
                 ];
             })
             ->values()
             ->all();
+
+        return $this->bubuhkanR2($baris, $profil);
+    }
+
+    /**
+     * Tempelin R² kelompok ke tiap barisnya.
+     *
+     * Ditempel BERULANG di semua baris sekelompok, sama kayak `u95` &
+     * `faktor_cakupan_k` — bukan karena tiap titik punya R² sendiri (nggak,
+     * lihat `CalibrationProfile::koefisienDeterminasi()`), tapi supaya
+     * pembacanya nggak usah ngerti struktur kelompok buat nemuinnya. Snapshot
+     * ini dibaca PDF, halaman verifikasi QR, dan Excel; tiga-tiganya udah
+     * ngambil angka kelompok dari baris pertama.
+     *
+     * Dikelompokkan pakai `remark`, persis kayak PDF-nya. Alat yang `remark`-nya
+     * null lewat sebagai satu kelompok tanpa judul, dan profilnya balikin null,
+     * jadi lima alat lain nggak kesenggol sama sekali.
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return list<array<string, mixed>>
+     */
+    private function bubuhkanR2(array $baris, ?CalibrationProfile $profil): array
+    {
+        if ($profil === null) {
+            return $baris;
+        }
+
+        $r2 = [];
+
+        foreach ($baris as $b) {
+            $r2[(string) ($b['remark'] ?? '')][] = $b;
+        }
+
+        $r2 = array_map(
+            fn (array $kelompok): ?float => $profil->koefisienDeterminasi($kelompok),
+            $r2,
+        );
+
+        return array_map(
+            // Kunci `r2` SELALU ada begitu alatnya lewat sini, walau isinya
+            // null. Sertifikat lama yang snapshot-nya belum punya kunci ini
+            // dibaca `?? null` di PDF — dokumen yang udah dipegang pelanggan
+            // nggak berubah bentuk gara-gara kolomnya ditambahin sekarang.
+            fn (array $b): array => [...$b, 'r2' => $r2[(string) ($b['remark'] ?? '')]],
+            $baris,
+        );
     }
 
     /**
@@ -283,7 +378,15 @@ class CertificateSnapshotBuilder
         ];
     }
 
-    /** Nama ruangan kalau ada; kalau onsite, alamat pelanggan yang lebih berguna. */
+    /**
+     * Nama ruangan kalau ada; kalau onsite, tempat yang DITULIS TEKNISI.
+     *
+     * `Insitu (PT. LDC)` — persis yang tercetak di sertifikat master. Nama
+     * tempatnya nggak diturunkan dari pelanggan pemilik alat: satu kunjungan
+     * bisa dikerjakan di pabrik lain milik grup yang sama, dan yang sah di
+     * dokumen adalah tempat alatnya beneran diukur. Kalau teknisi nggak nulis
+     * apa-apa, jatuh ke alamat pelanggan seperti sebelumnya.
+     */
     private function lokasiKalibrasi(CalibrationSession $sesi): ?string
     {
         if ($sesi->room) {
@@ -291,6 +394,10 @@ class CertificateSnapshotBuilder
         }
 
         if ($sesi->lokasi === 'onsite') {
+            if (filled($sesi->lokasi_nama)) {
+                return 'Insitu ('.trim((string) $sesi->lokasi_nama).')';
+            }
+
             return $sesi->equipment?->customer?->alamat
                 ? 'Onsite — '.$sesi->equipment->customer->alamat
                 : 'Onsite';

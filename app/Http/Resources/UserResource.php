@@ -21,6 +21,12 @@ class UserResource extends JsonResource
             'nama' => $this->name,
             'email' => $this->email,
             'employee_id' => $this->employee_id,
+            // "Technician ID" yang tercetak di lembar kerja & sertifikat —
+            // inisial (`JO`), bukan `SDK-0001`. Dikirim dari sini biar yang
+            // dilihat teknisi di HP sama persis dengan yang dibekukan di
+            // snapshot: dua-duanya lewat `User::kodeTeknisi()`, bukan dihitung
+            // ulang di layar.
+            'kode_teknisi' => $this->kodeTeknisi(),
             'role' => $this->role,
             'status' => $this->status,
             'department' => $this->department,

@@ -10,7 +10,7 @@ use App\Models\Standard;
 /**
  * Profil Refractometer (alat ke-4). Metode `SIDIK-IK-CAL-0516_Rev.4`
  * (OIML R 142-E:2008), lembar kerja `SIDIK-FM-CAL-0523_Rev.2`, sertifikat
- * `SIDIK-FM-CAL-2403_Rev.0`. Sumber angka: `Project-PT-Sidik/Refractometer_CSV 2/`.
+ * `SIDIK-FM-CAL-2403_Rev.0`. Sumber angka: `Project-PT-Sidik/Refractometer_CSV/`.
  *
  * ## Yang bikin alat ini beda dari tiga sebelumnya
  *

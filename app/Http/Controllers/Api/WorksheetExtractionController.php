@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CalibrationSession;
 use App\Models\User;
 use App\Models\WorksheetExtractionLog;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\WorksheetVisionExtractor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +31,11 @@ use RuntimeException;
  */
 class WorksheetExtractionController extends Controller
 {
-    public function extract(Request $request, WorksheetVisionExtractor $extractor): JsonResponse
-    {
+    public function extract(
+        Request $request,
+        WorksheetVisionExtractor $extractor,
+        CalibrationProfileRegistry $registry,
+    ): JsonResponse {
         // Nama field ngikut yang dikirim mobile (ApiWorksheetVisionService):
         // `foto`, `jumlah_titik`, `jumlah_pengulangan`, `calibration_session_id`.
         $data = $request->validate([
@@ -46,6 +50,20 @@ class WorksheetExtractionController extends Controller
             'titik_nominal.*' => ['numeric'],
             'desimal' => ['sometimes', 'nullable', 'array', 'max:20'],
             'desimal.*' => ['integer', 'between:0,8'],
+            // Bentuk KERTASNYA, bukan isinya. Dua-duanya default ke bentuk
+            // lembar pH biar mobile lama (yang nggak ngirim apa-apa) nggak
+            // berubah perilakunya sama sekali.
+            //
+            // `kolom_suhu=false` + `standar_di_baris=true` = lembar
+            // Spectrophotometer: satu angka per sel (nggak ada kolom °C —
+            // suhu ruang dicatat sekali di Env. Condition) dan standarnya
+            // turun ke bawah sementara Repeat berjajar ke kanan. Tanpa dua
+            // penanda ini, prompt & skema yang dikirim ke model masih
+            // MEWAJIBKAN suhu per sel, jadi modelnya ngarang angka suhu atau
+            // memampatkan tiga Repeat jadi satu baris — dan yang nyampe
+            // teknisi cuma "gagal baca, isi manual".
+            'kolom_suhu' => ['sometimes', 'nullable', 'boolean'],
+            'standar_di_baris' => ['sometimes', 'nullable', 'boolean'],
             // Opsional: sesi baru belum punya id. Kalau dikirim → batasin akses & tautin log.
             'calibration_session_id' => ['sometimes', 'nullable', 'integer'],
         ], [
@@ -56,6 +74,8 @@ class WorksheetExtractionController extends Controller
 
         $user = $request->user();
         $sesi = $this->sesiTervalidasi($data['calibration_session_id'] ?? null, $user);
+
+        $bentukKertas = $this->bentukKertas($data, $sesi, $registry);
 
         $file = $request->file('foto');
 
@@ -72,6 +92,8 @@ class WorksheetExtractionController extends Controller
                 isset($data['desimal'])
                     ? array_map('intval', array_values($data['desimal']))
                     : null,
+                $bentukKertas['kolom_suhu'],
+                $bentukKertas['standar_di_baris'],
             );
         } catch (RuntimeException $e) {
             // Salah setup server (API key kosong) — bukan salah teknisi.
@@ -127,12 +149,54 @@ class WorksheetExtractionController extends Controller
         // `meta` tambahan; key asing diabaikan mobile.
         return response()->json([
             'baris' => $hasil['data']['baris'],
+            // Nilai standar yang KEBACA di kertas, urut sama dengan tiap
+            // `ph`/`suhu` di dalam `baris`. Sebelumnya ini dibaca model, ditulis
+            // ke log, lalu dibuang sebelum sampai ke HP — jadi mobile cuma
+            // punya urutan kolom buat nebak titik mana yang mana. Di lembar
+            // Spectrophotometer tebakan itu nggak bisa dipakai: satu lembar
+            // punya belasan panjang gelombang, dan salah satu baris kelewat
+            // bikin semua sisanya mendarat di panjang gelombang yang salah.
+            'standard_value' => $hasil['data']['standard_value'] ?? [],
             'meta' => [
                 'model' => $hasil['model'],
                 // Ringkasan buat mobile: ada nggak sel yang perlu dicek manual.
                 'perlu_dicek' => $this->adaKeyakinanRendah($hasil['data']['baris'] ?? []),
             ],
         ]);
+    }
+
+    /**
+     * Bentuk kertas: yang dikirim mobile menang, sisanya ditebak dari sesinya.
+     *
+     * Kenapa ada tebakan sama sekali: aplikasi yang udah kepasang di HP teknisi
+     * nggak ngirim dua penanda ini, dan nggak bisa dipaksa update sebelum
+     * kalibrasi berikutnya jalan. Kalau default-nya dibiarin bentuk lembar pH,
+     * tiap foto lembar Spectrophotometer dari aplikasi lama tetap gagal —
+     * padahal sesinya sendiri udah nyebut alatnya apa.
+     *
+     * Yang ditanya profil alatnya, bukan daftar nama alat di sini: profil baru
+     * yang kertasnya beda tinggal override `bentukPindaiFoto()` dan jalur ini
+     * ikut benar tanpa disentuh.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{kolom_suhu: bool, standar_di_baris: bool}
+     */
+    private function bentukKertas(
+        array $data,
+        ?CalibrationSession $sesi,
+        CalibrationProfileRegistry $registry,
+    ): array {
+        $bawaan = ['kolom_suhu' => true, 'standar_di_baris' => false];
+
+        $alat = $sesi?->equipment;
+        if ($alat !== null) {
+            $bawaan = $registry->untukAlat($alat)->bentukPindaiFoto();
+        }
+
+        return [
+            'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? $bawaan['kolom_suhu']),
+            'standar_di_baris' => (bool) ($data['standar_di_baris'] ?? $bawaan['standar_di_baris']),
+        ];
     }
 
     /**
