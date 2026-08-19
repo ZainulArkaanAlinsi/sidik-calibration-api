@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ReminderController;
@@ -150,6 +151,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // teknisi. Didaftarin SEBELUM `/calibrations/{calibration}` biar
     // "lembar-kerja" nggak kebaca sebagai id sesi.
     Route::get('/calibrations/lembar-kerja', [CalibrationController::class, 'lembarKerja']);
+
+    // Order kalibrasi: bacanya semua role — teknisi butuh lihat alat apa aja
+    // yang masuk dan harus dikerjain. Nulisnya admin doang (meja penerimaan),
+    // di blok bawah.
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
 
     // Baca sesi kalibrasi: semua role — tapi teknisi cuma dapat sesi miliknya
     // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
@@ -303,6 +310,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Ruangan: bacanya udah didaftarin di atas buat semua role, di sini
         // tinggal yang nulis.
         Route::apiResource('rooms', RoomController::class)->only(['store', 'update', 'destroy']);
+
+        // Order: bacanya udah didaftarin di atas buat semua role, di sini
+        // tinggal yang nulis — pencatatan alat masuk itu kerjaan meja depan.
+        Route::apiResource('orders', OrderController::class)->only(['store', 'update', 'destroy']);
+        // Bagi-bagi kerjaan ke teknisi tanpa ngirim ulang seluruh order —
+        // aksinya sering, payload `PUT` lengkap kemahalan buat ini.
+        Route::post('/orders/{order}/penugasan', [OrderController::class, 'penugasan']);
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,
