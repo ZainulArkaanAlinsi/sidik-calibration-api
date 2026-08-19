@@ -325,8 +325,15 @@ class ViscometerBudgetTest extends TestCase
         $this->assertEqualsWithDelta(96.72, $hasil['rata_rata'], 1e-9);
         $this->assertEqualsWithDelta(-2.8443348982785324, $hasil['koreksi'], 1e-9);
         $this->assertEqualsWithDelta(0.24649576970552553, $hasil['ketidakpastian_gabungan'], 1e-10);
-        // U hitung 0,6336 > CMC 0,2 → yang dilaporkan hasil hitungnya.
-        $this->assertEqualsWithDelta(0.6336375481662154, $hasil['ketidakpastian_diperluas'], 1e-8);
+        // U hitung 0,4930 > CMC 0,2 → yang dilaporkan hasil hitungnya.
+        //
+        // `0.49299153941105106` COCOK PERSIS sama `PERHITUNGAN U95%` baris 24.
+        // Sebelum `ViscometerProfile::faktorCakupanTetap()` ada, angkanya
+        // 0,6336: `uc` sama persis kayak master, tapi `k`-nya t-student 2,5706
+        // (v_eff 5,376) sementara sel `k` masternya `2`. Lihat method itu soal
+        // kenapa viscometer ngunci k dan lima alat lain nggak.
+        $this->assertEqualsWithDelta(0.49299153941105106, $hasil['ketidakpastian_diperluas'], 1e-8);
+        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-12);
         $this->assertEqualsWithDelta(4.141803174603175, $hasil['toleransi'], 1e-9);
         // Guarded acceptance: |error| 2,844 + U 0,634 = 3,478 <= MPE 4,142.
         $this->assertSame('PASS', $hasil['keputusan']);
@@ -380,7 +387,25 @@ class ViscometerBudgetTest extends TestCase
         $this->assertEqualsWithDelta(128.8499002, $hasil['derajat_kebebasan_efektif'], 1e-6);
 
         // Tanpa lantai: yang dilaporkan hasil hitung apa adanya, bukan 140 cP.
-        $this->assertEqualsWithDelta(144.1619311, $hasil['ketidakpastian_diperluas'], 1e-6);
+        //
+        // `145,7159` = `uc` x 2. Master nulis `142,3405` di titik INI — dan itu
+        // dua selisih yang berdiri sendiri, dua-duanya udah ditelusuri:
+        //
+        //  1. **`k`.** Sel `k` master titik ini `1,9754` (t-student buat v_eff
+        //     168), sementara titik 100 & 1000 cP-nya `2`. Workbook-nya sendiri
+        //     campur. Yang dipakai di sini `2`, ngikutin kalimat sertifikat
+        //     masternya (`Coverage Factor ( k ) = 2`) dan keempat baris CMC
+        //     viscometer (`faktor_cakupan = 2`) — sertifikat yang nyetak k=2
+        //     tapi ngitung pakai 1,9754 itu bantah diri sendiri.
+        //  2. **`uc`.** Master 72,0566, di sini 72,8580. Bedanya CUMA di
+        //     komponen pengulangan: STDEV-nya sama persis (48,19436343252727,
+        //     dari empat pembacaan yang kepakai), tapi master ngebagi √5
+        //     sementara di sini √4. Sel ke-5 master isinya `631.74.2` — teks,
+        //     jadi AVERAGE & STDEV Excel ngelewatin dia, TAPI sel pembagi &
+        //     `vi`-nya kepatok 5 dan 4. Type A yang bener `s/√n` dengan `n`
+        //     yang beneran dirata-rata, yaitu 4.
+        $this->assertEqualsWithDelta(145.71592952342112, $hasil['ketidakpastian_diperluas'], 1e-6);
+        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-12);
         $this->assertSame(0.0, (float) $hasil['type_b_components'][4]['nilai']);
 
         $this->assertEqualsWithDelta(1921.8410806451611, $hasil['toleransi'], 1e-8);

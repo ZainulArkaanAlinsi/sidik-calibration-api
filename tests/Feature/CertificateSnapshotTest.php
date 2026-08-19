@@ -387,4 +387,43 @@ class CertificateSnapshotTest extends TestCase
             $this->assertNull($baris['satuan'] ?? null);
         }
     }
+
+    /**
+     * `Spindel No.` / `Speed (rpm)` di atas tabel hasil — Viscometer doang.
+     *
+     * Angkanya dari `ViscometerSeeder` (HA1@63, HA2@62, HA7@62 rpm), yang
+     * dijalin langsung dari `INPUT DATA.csv` di
+     * `Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/` — bukan angka
+     * karangan test. Lihat `CalibrationProfile::catatanAtasTabelHasil`.
+     */
+    public function test_catatan_atas_hasil_spindel_speed_buat_viscometer(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $visco = CalibrationSession::where('nomor_sesi', 'DEMO-VISCO-BROOKFIELD')->first();
+
+        if ($visco === null) {
+            $this->markTestSkipped('Sesi contoh Viscometer belum diseed.');
+        }
+
+        $snapshot = app(CertificateSnapshotBuilder::class)->bangun(
+            $visco,
+            new Certificate(['nomor' => 'UJI-VISCO', 'qr_token' => 'uji-visco']),
+        );
+
+        $this->assertSame(
+            'Spindel No. : HA1, HA2, HA7 — Speed (rpm) : 63, 62, 62',
+            $snapshot['catatan_atas_hasil'],
+        );
+
+        // Alat lain (pH): `null`, dan baris itu nggak ikut kecetak.
+        $ph = CalibrationSession::where('nomor_sesi', '2405.13.A')->firstOrFail();
+
+        $snapshotPh = app(CertificateSnapshotBuilder::class)->bangun(
+            $ph,
+            new Certificate(['nomor' => 'UJI-PH', 'qr_token' => 'uji-ph']),
+        );
+
+        $this->assertNull($snapshotPh['catatan_atas_hasil']);
+    }
 }

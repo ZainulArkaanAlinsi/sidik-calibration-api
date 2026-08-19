@@ -51,6 +51,7 @@ class CertificateSnapshotBuilder
         $alat = $sesi->equipment;
         $pengaturan = $sesi->organization?->settings ?? [];
         $desimal = $this->desimal($alat, $sesi->organization);
+        $profil = $alat ? app(CalibrationProfileRegistry::class)->untukAlat($alat) : null;
 
         return [
             'versi' => self::VERSI,
@@ -63,9 +64,19 @@ class CertificateSnapshotBuilder
             // udah terbit nggak boleh ganti judul kolom gara-gara profilnya
             // diedit sesudahnya. Snapshot lama yang belum punya kunci ini
             // dibaca `?? 'Unit Under Test'` — persis judul lamanya.
-            'judul_uut' => $alat
-                ? app(CalibrationProfileRegistry::class)->untukAlat($alat)?->judulKolomUut()
-                : null,
+            'judul_uut' => $profil?->judulKolomUut(),
+            // `U95` jadi KOLOM per baris (Viscometer) atau satu baris ringkas
+            // di bawah tabel (lima alat lain). Ikut DIBEKUKAN sama alasannya
+            // kayak `judul_uut`. Snapshot lama yang belum punya kunci ini
+            // dibaca `?? false` — bentuk cetaknya nggak berubah.
+            'u95_per_titik' => $profil?->u95PerTitik() ?? false,
+            // Baris di ATAS tabel hasil — `Spindel No. : 1,2,7` / `Speed
+            // (rpm) : 63,62,62` buat Viscometer. `null` di lima alat lain,
+            // baris nggak muncul. Lihat `CalibrationProfile::catatanAtasTabelHasil`.
+            //
+            // Ikut DIBEKUKAN sama alasannya kayak `judul_uut`: dihitung SEKALI
+            // waktu sertifikat terbit, bukan dibaca ulang tiap cetak.
+            'catatan_atas_hasil' => $profil?->catatanAtasTabelHasil($sesi),
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
             'header' => $this->header($sesi, $sertifikat),
             'hasil' => $this->hasil($sesi),
