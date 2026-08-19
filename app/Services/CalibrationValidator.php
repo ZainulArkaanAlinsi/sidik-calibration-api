@@ -36,6 +36,16 @@ class CalibrationValidator
 
     public const PERINGATAN = 'peringatan';
 
+    /**
+     * Berapa kali lipat CMC sebelum U95 dianggap mustahil.
+     *
+     * 10x sengaja longgar. Alat pelanggan yang bener-bener nggak stabil bisa
+     * keluar 2–3x CMC, dan itu temuan yang sah — bukan sesuatu yang pantas
+     * ditahan. Yang dicari di sini salah ketik, dan salah ketik satu digit
+     * biasanya ngasih puluhan sampai ratusan kali lipat.
+     */
+    private const FAKTOR_U95_MELEDAK = 10.0;
+
     public const INFO = 'info';
 
     public function __construct(
@@ -63,6 +73,7 @@ class CalibrationValidator
             ...$this->periksaPembacaanMustahil($sesi),
             ...$this->periksaKondisiLingkunganMustahil($sesi),
             ...$this->periksaTiapTitik($sesi),
+            ...$this->periksaU95MeledakDariCmc($sesi),
             ...$this->periksaKeputusanSesi($sesi),
             ...$this->periksaKelengkapanSertifikat($sesi),
             ...$this->periksaPeringatanProfil($sesi),
@@ -344,10 +355,34 @@ class CalibrationValidator
      * masukan ngawur nggak bikin hitungannya meledak, cuma bikin hasilnya
      * ngawur dengan rapi. Jadi yang mesti nangkep validator, bukan rumusnya.
      *
-     * PERINGATAN, bukan ERROR — sama alasannya kayak
-     * [periksaPembacaanMustahil]: admin yang mutusin, dan sesi insitu di
-     * gudang tanpa AC beneran bisa lembab ekstrem. Yang nggak boleh cuma
-     * LOLOS DIAM-DIAM.
+     * ## Kenapa naik dari PERINGATAN ke ERROR
+     *
+     * Awalnya peringatan, alasannya masuk akal: admin yang mutusin, dan sesi
+     * insitu di gudang tanpa AC beneran bisa lembab ekstrem.
+     *
+     * Yang nggak diperhitungkan: peringatan yang bisa diabaikan itu, ternyata,
+     * diabaikan. Disisir ke MySQL produksi 14 Agt 2026 — DUA sertifikat sudah
+     * beredar dengan angka yang persis diperingatkan di sini:
+     *
+     *     CAL/2026/08/0022  (KAL/2026/08/0025)  %RH: 28% ± 53,2%
+     *     CAL/2026/08/0027  (KAL/2026/08/0031)  %RH: 27% ± 53,2%
+     *
+     * Ketidakpastian dua kali lipat nilainya sendiri, di dokumen terakreditasi.
+     * Peringatannya nyala di dua-duanya dan tetap di-"SETUJUI TETAP".
+     *
+     * Jadi batasnya digeser ke tempat yang beda: rentang [KELEMBABAN_MIN] –
+     * [KELEMBABAN_MAKS] itu 20–90 %RH, dan di luar itu bukan "ruangan yang
+     * ekstrem" — itu angka yang nggak bisa dibaca thermohygro mana pun di
+     * ruangan berpenghuni. Gudang tanpa AC paling parah masih di dalam rentang.
+     * Yang di luar rentang cuma dua kemungkinan: salah ketik, atau alatnya
+     * rusak. Dua-duanya nggak pantas jadi sertifikat.
+     *
+     * Delta yang ekstrem TETAP peringatan: dua angka yang sama-sama masuk
+     * rentang tapi jauh (30 → 80) beneran bisa kejadian di sesi panjang.
+     *
+     * Cara mbenerin sesi yang ketahan: ralat angkanya di lembar kerja. Kalau
+     * angkanya emang segitu, yang mesti dicek thermohygro-nya — bukan
+     * sertifikatnya yang dipaksa keluar.
      *
      * @return list<array<string, mixed>>
      */
@@ -367,11 +402,12 @@ class CalibrationValidator
             }
 
             $temuan[] = $this->temuan(
-                self::PERINGATAN,
+                self::ERROR,
                 'kelembaban_mustahil',
                 "Kelembaban {$kapan} kecatat {$nilai} %RH — di luar rentang wajar ruang lab ("
                 .self::KELEMBABAN_MIN.'–'.self::KELEMBABAN_MAKS.' %RH). '
-                .'Cek lagi angkanya sebelum sertifikat terbit.',
+                .'Ralat angkanya di lembar kerja; kalau pembacaannya emang segitu, '
+                .'thermohygro-nya yang mesti dicek.',
                 ['kolom' => "kelembaban_{$kapan}", 'nilai' => $nilai],
             );
         }
@@ -439,6 +475,10 @@ class CalibrationValidator
     {
         $temuan = [];
         $alat = $sesi->equipment;
+
+        // Titik dikumpulin dulu, hitung ulangnya belakangan — lihat
+        // [bandingkanHitungUlang].
+        $siapHitung = [];
 
         // Cuma pembacaan SESUDAH adjustment yang masuk hitungan — as-found itu
         // dokumentasi kondisi awal alat, bukan dasar sertifikat.
@@ -512,25 +552,37 @@ class CalibrationValidator
                 $this->profil->untukAlat($alat)->standarBerkurvaSuhu(),
             )];
 
-            $ulang = $this->gum->hitungTitik(
-                $ke,
-                (float) $titik->titik_ukur,
-                $pembacaan->sortBy('pembacaan_ke')
+            $siapHitung[] = [
+                'titik_ke' => $ke,
+                'titik_ukur' => (float) $titik->titik_ukur,
+                'pembacaan' => $pembacaan->sortBy('pembacaan_ke')
                     ->map(fn (RawMeasurement $m): float => (float) $m->pembacaan)
                     ->values()
                     ->all(),
-                $alat,
-                $standar,
+                'standard' => $standar,
                 // Suhu larutan yang kecatat di pembacaan, biar hitung ulang di
                 // sini nurunin nilai acuan dengan cara yang SAMA kayak waktu
                 // disimpen. Kalau nggak dikirim, pemeriksaan ini nerima
                 // `titik_ukur` tersimpan apa adanya — dan `titik_ukur` yang
                 // nggak cocok kurva suhu buffernya nggak akan pernah ketangkep.
-                $this->suhuLarutanRataRata($pembacaan),
-                $suhuRuang,
-            );
+                'suhu_larutan' => $this->suhuLarutanRataRata($pembacaan),
+                // Dibaca balik dari baris pembacaan & `spesifikasi_alat` sesi,
+                // bukan dikarang: hitung ulang harus dapat batas keberterimaan
+                // yang SAMA kayak waktu sesi ini disimpen. Tanpa ini tiap sesi
+                // Viscometer ke-flag beda vonis padahal angkanya benar — persis
+                // lubang yang dulu bikin semua sertifikat Refractometer
+                // ke-flag `ketidakpastian_beda`.
+                'konteks' => [
+                    'spindle' => $pembacaan->first()?->spindle,
+                    'rpm' => $pembacaan->first()?->rpm,
+                    'tk' => $sesi->spesifikasi_alat['model_visco'] ?? null,
+                ],
+                'tersimpan' => $titik,
+            ];
+        }
 
-            $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $titik, $ulang)];
+        if ($alat !== null && $siapHitung !== []) {
+            $temuan = [...$temuan, ...$this->bandingkanHitungUlang($siapHitung, $alat, $suhuRuang)];
         }
 
         return $temuan;
@@ -639,6 +691,99 @@ class CalibrationValidator
     }
 
     /**
+     * Hitung ulang SEMUA titik sekaligus, baru diadu satu-satu.
+     *
+     * Sekaligus, bukan satu per satu, karena ada alat yang ketidakpastiannya
+     * lahir per KELOMPOK titik. `GumCalculator::hitungTitik()` cuma lihat satu
+     * titik, jadi buat alat begitu dia mustahil ngasilin angka yang sama kayak
+     * waktu sesinya disimpen — dan bedanya kecetak sebagai peringatan di tiap
+     * approve.
+     *
+     * Kejadian nyatanya Spectrophotometer (sesi `KAL/2026/08/0050`, 14 Agt 2026):
+     * SEMBILAN titik, DELAPAN ke-flag `hitung_ulang_beda` — titik 1 "tersimpan
+     * 0,432557, hitung ulang 0,100167" — padahal angka tersimpannya persis sama
+     * kayak master. Yang beda cuma jalannya: `CalibrationController` nyimpen
+     * lewat `CalibrationProfile::hitungPerGrup()` (budget per kelompok filter,
+     * dari STDEV terbesar kelompok itu), validator ngitung ulang per titik. Jadi
+     * tiap sesi Spectrophotometer cuma bisa disetujui dengan
+     * `abaikan_peringatan: true` — dan begitu tombol "SETUJUI TETAP" jadi
+     * kebiasaan, peringatan yang beneran penting ikut ketelan.
+     *
+     * Makanya di sini jalurnya disamain dengan jalur simpan: tanya profilnya
+     * dulu. Profil yang nggak butuh balikin `null` dan pemeriksaan ini jatuh ke
+     * jalur per-titik, persis kayak sebelumnya.
+     *
+     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard, suhu_larutan: float|null, konteks: array<string, mixed>, tersimpan: UncertaintyCalculation}>  $siapHitung
+     * @return list<array<string, mixed>>
+     */
+    private function bandingkanHitungUlang(array $siapHitung, Equipment $alat, ?float $suhuRuang): array
+    {
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup(
+            array_map(
+                static fn (array $t): array => [
+                    'titik_ke' => $t['titik_ke'],
+                    'titik_ukur' => $t['titik_ukur'],
+                    'pembacaan' => $t['pembacaan'],
+                    'standard' => $t['standard'],
+                    'suhu_larutan' => $t['suhu_larutan'],
+                ],
+                $siapHitung,
+            ),
+            $alat,
+        );
+
+        $temuan = [];
+
+        if ($perGrup === null) {
+            foreach ($siapHitung as $t) {
+                $temuan = [...$temuan, ...$this->bandingkanTitik(
+                    $t['titik_ke'],
+                    $t['tersimpan'],
+                    $this->gum->hitungTitik(
+                        $t['titik_ke'],
+                        $t['titik_ukur'],
+                        $t['pembacaan'],
+                        $alat,
+                        $t['standard'],
+                        $t['suhu_larutan'],
+                        $suhuRuang,
+                        $t['konteks'] ?? [],
+                    ),
+                )];
+            }
+
+            return $temuan;
+        }
+
+        $hitungan = collect($perGrup['hitungan'])->keyBy('titik_ke');
+        $alasan = collect($perGrup['belum_dihitung'])->keyBy('titik_ke');
+
+        foreach ($siapHitung as $t) {
+            $ke = $t['titik_ke'];
+            $ulang = $hitungan->get($ke);
+
+            // Titik yang PUNYA baris hasil hitung tapi sekarang nggak bisa
+            // dihitung ulang itu temuan sendiri, bukan sesuatu yang boleh
+            // didiemin: berarti masternya berubah sesudah sesi disimpen.
+            if ($ulang === null) {
+                $temuan[] = $this->temuan(
+                    self::PERINGATAN,
+                    'hitung_ulang_gagal',
+                    "Titik ke-{$ke}: angkanya tersimpan, tapi sekarang nggak bisa dihitung ulang. "
+                        .($alasan->get($ke)['alasan'] ?? 'Alasannya nggak dilaporin profil alat.'),
+                    ['titik_ke' => $ke],
+                );
+
+                continue;
+            }
+
+            $temuan = [...$temuan, ...$this->bandingkanTitik($ke, $t['tersimpan'], $ulang)];
+        }
+
+        return $temuan;
+    }
+
+    /**
      * @param  array<string, mixed>  $ulang
      * @return list<array<string, mixed>>
      */
@@ -680,6 +825,108 @@ class CalibrationValidator
         }
 
         return $temuan;
+    }
+
+    /**
+     * U95 yang MELEDAK jauh di atas CMC — hampir selalu satu angka salah ketik.
+     *
+     * ## Kenapa ini penjagaan, bukan sekadar peringatan
+     *
+     * CMC itu ketidakpastian TERBAIK yang diakreditasi lab buat besaran itu.
+     * Sesi normal keluar di sekitar CMC — kadang sedikit di atasnya kalau alat
+     * pelanggannya nggak stabil, dan itu justru temuan kalibrasi yang berharga.
+     *
+     * Tapi U95 belasan sampai ratusan kali CMC bukan "alatnya jelek": itu
+     * aritmetika yang bener di atas angka yang salah. Kejadian nyata
+     * `CAL/2026/08/0043`: satu pembacaan Didynium diketik `783,52` — `738,52`
+     * dengan digit 3 & 8 ketuker. Satu digit, dan U95 kelompoknya lompat dari
+     * 0,40 nm ke 84,84 nm, 212x CMC-nya. Sertifikatnya tetap terbit, dan angka
+     * itu nyampe pelanggan sebagai klaim ketidakpastian resmi.
+     *
+     * Nggak ada satu pun penjagaan lama yang nangkep:
+     *  - `pembacaan_di_luar_rentang` — 783,52 masih di dalam 200–700 nm... eh,
+     *    di luar, tapi titik 738,5 sendiri juga di luar, jadi dia kena
+     *    pengecualian `dekatTitikStandar`;
+     *  - `bukan_kelipatan_resolusi` — 783,52 kelipatan 0,01, lolos;
+     *  - vonis PASS/FAIL — alat ini emang nggak divonis.
+     *
+     * ## Kenapa ERROR, bukan peringatan
+     *
+     * Peringatan bisa di-"SETUJUI TETAP". Sertifikat terakreditasi yang
+     * ngeklaim ketidakpastian 212x kemampuan lab itu dokumen yang salah, dan
+     * yang mbetulin harus balik ke lembar kerjanya — bukan mengakui klaim yang
+     * nggak bisa dipertanggungjawabkan.
+     *
+     * Ambangnya longgar sengaja ([FAKTOR_U95_MELEDAK]): yang dicari salah
+     * ketik, bukan alat pelanggan yang kurang stabil.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaU95MeledakDariCmc(CalibrationSession $sesi): array
+    {
+        $temuan = [];
+
+        foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
+            /** @var UncertaintyCalculation $titik */
+            $cmc = $this->cmcTitik($titik);
+
+            if ($cmc === null || $cmc <= 0) {
+                continue;
+            }
+
+            $u95 = (float) $titik->ketidakpastian_diperluas;
+
+            if ($u95 <= $cmc * self::FAKTOR_U95_MELEDAK) {
+                continue;
+            }
+
+            $temuan[] = $this->temuan(
+                self::ERROR,
+                'u95_meledak_dari_cmc',
+                sprintf(
+                    'Titik ke-%d: U95 %s jauh di atas CMC lab (%s) — %.0fx lipat. '
+                    .'Hampir selalu ada satu pembacaan yang salah ketik; cek lembar kerjanya, '
+                    .'jangan diterbitkan dengan angka ini.',
+                    (int) $titik->titik_ke,
+                    Angka::idRingkas($u95, 4),
+                    Angka::idRingkas($cmc, 4),
+                    $u95 / $cmc,
+                ),
+                [
+                    'titik_ke' => (int) $titik->titik_ke,
+                    'u95' => $u95,
+                    'cmc' => $cmc,
+                ],
+            );
+        }
+
+        return $temuan;
+    }
+
+    /**
+     * CMC yang dipakai waktu titik ini dihitung, dibaca dari jejak auditnya
+     * sendiri — bukan dicari ulang ke master.
+     *
+     * Dibaca dari `type_b_components` karena di situ angkanya BEKU: kalau
+     * baris CMC di master diubah sesudah sesinya dihitung, yang dibandingkan
+     * tetap angka yang beneran dipakai. Ngitung ulang di sini bikin sesi lama
+     * ke-flag gara-gara master yang berubah.
+     */
+    private function cmcTitik(UncertaintyCalculation $titik): ?float
+    {
+        foreach ($titik->type_b_components ?? [] as $k) {
+            if (! is_array($k)) {
+                continue;
+            }
+
+            // `perbandingan_cmc` (jalur per titik) & `cmc` (jalur per kelompok)
+            // sama-sama nyimpen angkanya di `nilai`.
+            if (in_array($k['sumber'] ?? null, ['perbandingan_cmc', 'lantai_cmc', 'cmc'], true)) {
+                return isset($k['nilai']) ? (float) $k['nilai'] : null;
+            }
+        }
+
+        return null;
     }
 
     /**

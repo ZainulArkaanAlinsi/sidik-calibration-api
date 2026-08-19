@@ -12,6 +12,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\SpectrophotometerCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -217,7 +218,7 @@ class SpectrophotometerBudgetTest extends TestCase
                 'ketidakpastian_terbaik' => $c['u'],
                 'satuan_ketidakpastian' => $c['satuan'],
                 'faktor_cakupan' => 2,
-                'metode' => SpectrophotometerProfile::KODE_DOKUMEN,
+                'metode' => SpectrophotometerProfile::KODE_METODE,
             ]);
         }
 
@@ -265,7 +266,11 @@ class SpectrophotometerBudgetTest extends TestCase
 
         $this->assertInstanceOf(SpectrophotometerProfile::class, $profil);
         $this->assertSame('gum-spectro', $profil->kodeFormula());
-        $this->assertSame('SIDIK-IK-CAL-0508_Rev.4', SpectrophotometerProfile::KODE_DOKUMEN);
+        // Dua nomor yang beda jenis: FORMULIR lembar kerjanya vs METODE
+        // kalibrasinya. Sempat ketuker (kode_dokumen keisi nomor IK), jadi
+        // dua-duanya dipatok di sini.
+        $this->assertSame('SIDIK-FM-CAL-0511_Rev.5', SpectrophotometerProfile::KODE_DOKUMEN);
+        $this->assertSame('SIDIK-IK-CAL-0508_Rev.4', SpectrophotometerProfile::KODE_METODE);
     }
 
     /**
@@ -703,7 +708,7 @@ class SpectrophotometerBudgetTest extends TestCase
     /**
      * @param  array<string, mixed>  $spek
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('spekTidakMasukAkal')]
+    #[DataProvider('spekTidakMasukAkal')]
     public function test_spek_tidak_masuk_akal_ditolak(array $spek): void
     {
         $this->expectException(\InvalidArgumentException::class);

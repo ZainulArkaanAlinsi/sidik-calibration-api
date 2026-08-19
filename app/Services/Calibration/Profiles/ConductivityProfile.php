@@ -44,7 +44,8 @@ use App\Models\Standard;
  * ## Yang SENGAJA tidak diambil dari master
  *
  * Empat keputusan audit yang menyimpang dari isi sel, semuanya berpijak pada
- * bukti lain di dalam workbook yang sama. Lihat `docs/audit-conductivity.md`
+ * bukti lain di dalam workbook yang sama. Lihat
+ * `docs/audit-sumber-conductivity-refractometer.md`
  * buat dasar lengkapnya; ringkasnya:
  *
  *  - **E-2** `PERHITUNGAN!J34/J47` isinya `=AVERAGE(...)`, bukan selisih.
@@ -65,13 +66,66 @@ use App\Models\Standard;
  */
 class ConductivityProfile extends CalibrationProfile
 {
-    public const KODE_DOKUMEN = 'SIDIK-IK-CAL-0507_Rev.6';
+    /**
+     * Kode FORMULIR lembar kerjanya, bukan kode metodenya.
+     *
+     * Sebelumnya di sini terisi `SIDIK-IK-CAL-0507_Rev.6` — itu nomor instruksi
+     * kerja (IK), sementara `kode_dokumen` di bentuk lembar kerja dipakai
+     * sebagai identitas FORMULIR (FM), sama kayak empat profil lain
+     * (`SIDIK-FM-CAL-0509/0523/0530/0531`). Nomor formulir yang benar kebaca
+     * dari cetakan aslinya, `SIDIK-FM-CAL-0510_Rev.5 - LEMBAR KERJA
+     * CONDUCTIVITY.pdf` (footer kanan bawah + `Revise : 5`), yang baru masuk
+     * 13 Agt 2026.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0510_Rev.5';
+
+    /**
+     * Metode kalibrasinya — TERCETAK di lembar kerja ("2. Calibration Methode :
+     * SIDIK-IK-CAL-0507"), jadi teknisi memang melihatnya di kertas. Sengaja
+     * dipisah dari [KODE_DOKUMEN] biar dua nomor yang beda jenis nggak saling
+     * menimpa lagi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0507_Rev.6';
 
     public const JUMLAH_PENGULANGAN = 5;
 
     public const SATUAN_MIKRO = 'µS/cm';
 
     public const SATUAN_MILI = 'mS/cm';
+
+    /**
+     * Kepala kolom "Solution Standard" PERSIS seperti tercetak di
+     * `SIDIK-FM-CAL-0510_Rev.5`: empat slot, tiga di antaranya punya kotak
+     * ceklis µS/mS.
+     *
+     * ## Kenapa labelnya nggak sama dengan titik yang dihitung
+     *
+     * Label di kertas itu nominal botol lama. Master pindah ke tiga titik pada
+     * **3 Apr 2024** (`01 - FORM VALIDASI.csv` #8: *"Change point ukur menjadi
+     * 3 (25 uS, 1412 uS, dan 111 mS)"*), sementara PDF formulirnya dibuat
+     * 15 Des 2023 dan belum ikut direvisi. Sheet `INPUT DATA` master sendiri
+     * masih menamai centangnya `Conduct 84/1413/5000/80000` sambil menunjuk ke
+     * tiga larutan yang sekarang — jadi kertas DAN master sama-sama menyimpan
+     * nama slot lama.
+     *
+     * `titik` di bawah = titik yang BENERAN dihitung untuk slot itu, dibaca
+     * dari pemetaan master. Layar menampilkan dua-duanya (nama slot di kertas
+     * + larutan yang sebenarnya) supaya teknisi nggak menuang botol yang salah
+     * gara-gara kepala kolomnya nominal lama.
+     *
+     * Slot keempat `titik` = `null`: `Conduct 80000` dicentang TRUE di master
+     * tapi baris DATABASE-nya kosong — nggak punya nilai acuan, CMC, maupun
+     * kurva suhu (audit E-4 di docblock kelas). Digambar seperti di kertas,
+     * tapi mati.
+     *
+     * @var list<array{label: string, varian: string|null, titik: float|null}>
+     */
+    public const SLOT_CETAK = [
+        ['label' => '84', 'varian' => null, 'titik' => 25.0],
+        ['label' => '1413 µS', 'varian' => '1.413 mS', 'titik' => 1412.0],
+        ['label' => '5000 µS', 'varian' => '5 mS', 'titik' => 111.0],
+        ['label' => '80000 µS', 'varian' => '80 mS', 'titik' => null],
+    ];
 
     /**
      * Titik ukur, dalam satuan NATIVE-nya masing-masing (dua titik pertama
@@ -175,19 +229,26 @@ class ConductivityProfile extends CalibrationProfile
 
     /**
      * Baris tabel STANDARD di lembar kerja: 3 larutan Supelco/Merck (DATABASE
-     * R13/R14/R15) + termometer & sensor + PT100 (R17/S18). Empat baris
-     * pertama itu yang dicentang operator di master (`INPUT DATA` Y19..Y23).
+     * R13/R14/R15) + PT100 dan termometer & sensor (S18/R17). Urutannya ngikut
+     * cetakan `SIDIK-FM-CAL-0510_Rev.5`, yang naruh PRT PT100 di atas.
+     *
+     * `label_cetak` = tulisan di kertas, `label` = nama alat standar yang
+     * sebenarnya di master. Dua-duanya dikirim karena beda: kertas masih
+     * menulis nominal botol lama (84/1413/5000) dan readout lama
+     * ("Victor 14+", sekarang Yokogawa/CA 150 Handy Cal S/N 23P1005). Yang
+     * dicentang teknisi tetap alat yang benar; yang dibacanya tetap tulisan
+     * yang ada di kertas depan mata.
      *
      * `Conduct 80000` sengaja NGGAK ada — lihat E-4 di docblock kelas.
      *
-     * @var list<array{label: string, cocok: list<string>}>
+     * @var list<array{label: string, label_cetak: string, cocok: list<string>}>
      */
     public const STANDARD_TERCETAK = [
-        ['label' => 'Conductivity Std Solution 25 µS/cm', 'cocok' => ['Conductivity Std Solution 25 µS/cm', 'LRAD7693']],
-        ['label' => 'Conductivity Std Solution 1412 µS/cm', 'cocok' => ['Conductivity Std Solution 1412 µS/cm', 'LRAD9052']],
-        ['label' => 'Conductivity Std Solution 111 mS/cm', 'cocok' => ['Conductivity Std Solution 111 mS/cm', 'HC56824055']],
-        ['label' => 'Termometer & Sensor Std.', 'cocok' => ['Termometer & Sensor Std.', '23P1005']],
-        ['label' => 'PT100/SH1', 'cocok' => ['PT100/SH1', 'SH1/20', 'PT100']],
+        ['label' => 'Conductivity Std Solution 25 µS/cm', 'label_cetak' => 'Std Solution 84 µS', 'cocok' => ['Conductivity Std Solution 25 µS/cm', 'LRAD7693']],
+        ['label' => 'Conductivity Std Solution 1412 µS/cm', 'label_cetak' => 'Std Solution 1413 µS', 'cocok' => ['Conductivity Std Solution 1412 µS/cm', 'LRAD9052']],
+        ['label' => 'Conductivity Std Solution 111 mS/cm', 'label_cetak' => 'Std Solution 5000 µS', 'cocok' => ['Conductivity Std Solution 111 mS/cm', 'HC56824055']],
+        ['label' => 'PT100/SH1', 'label_cetak' => 'PRT PT100', 'cocok' => ['PT100/SH1', 'SH1/20', 'PT100']],
+        ['label' => 'Termometer & Sensor Std.', 'label_cetak' => 'Victor 14+', 'cocok' => ['Termometer & Sensor Std.', '23P1005']],
     ];
 
     /**
@@ -201,9 +262,15 @@ class ConductivityProfile extends CalibrationProfile
         ['label' => 'TH-3', 'grup' => 'Inlab'],
         ['label' => 'TH-4', 'grup' => 'Inlab'],
         ['label' => 'TH-5', 'grup' => 'Inlab'],
-        ['label' => 'TH-7', 'grup' => 'Inlab'],
         ['label' => 'TH-2', 'grup' => 'Insitu'],
         ['label' => 'TH-6', 'grup' => 'Insitu'],
+        // TH-7 pindah ke Insitu KHUSUS lembar ini: cetakan
+        // `SIDIK-FM-CAL-0510_Rev.5` menaruhnya di baris Insitu bareng TH-2 &
+        // TH-6, sementara tiga profil lain masih menaruhnya di Inlab. Yang
+        // dipilih teknisi tetap `standard_id` yang sama — ini murni soal di
+        // baris mana kotaknya tercetak. Kalau lab menyatakan Inlab yang benar,
+        // baris ini yang dibalik, bukan daftar di profil lain.
+        ['label' => 'TH-7', 'grup' => 'Insitu'],
     ];
 
     public function kode(): string
@@ -756,6 +823,11 @@ class ConductivityProfile extends CalibrationProfile
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
+            // Tercetak di kertas sebagai "2. Calibration Methode :
+            // SIDIK-IK-CAL-0507" — teknisi melihatnya, tapi nggak mengisinya.
+            // `calibration_method_id` tetap `hanya_admin` karena yang dipilih
+            // admin itu BARIS master metode, bukan teks ini.
+            'kode_metode' => self::KODE_METODE,
             'judul' => 'Calibration Worksheet - Conductivity Meter',
             'jumlah_pengulangan' => self::JUMLAH_PENGULANGAN,
             'larutan_standar' => array_map(fn (array $t): float => $t['nilai'], self::TITIK),
@@ -960,6 +1032,12 @@ class ConductivityProfile extends CalibrationProfile
             'tahap' => $tahap,
             'judul' => $judul,
             'baris' => $baris,
+            // Di kertas Repeat 1..5 jalan KE BAWAH dan larutan berjajar ke
+            // samping — kebalikan lembar pH (`SIDIK-FM-CAL-0509`) yang selama
+            // ini jadi satu-satunya bentuk yang digambar layar. Dikirim sebagai
+            // data biar layar nggak nebak orientasi dari nama alat.
+            'sumbu_pengulangan' => 'baris',
+            'slot_cetak' => $this->slotCetak($baris),
             'kolom' => [
                 // Label satuan dikosongin di level kolom — tiap BARIS bawa
                 // satuannya sendiri (µS/cm atau mS/cm).
@@ -968,6 +1046,68 @@ class ConductivityProfile extends CalibrationProfile
             ],
             'pengulangan' => range(1, self::JUMLAH_PENGULANGAN),
         ];
+    }
+
+    /**
+     * Kepala kolom seperti tercetak, disambungin ke baris yang beneran ada.
+     *
+     * `titik_ukur` sengaja diambil dari `$baris`, bukan dari [SLOT_CETAK]:
+     * titik tengah bisa keluar sebagai `1412` (µS/cm) atau `1,412` (mS/cm)
+     * tergantung satuan alat pelanggan, dan slot harus nunjuk ke baris yang
+     * beneran dikirim. Slot yang nggak ketemu barisnya balik `titik_ukur:
+     * null` — layar menggambarnya mati, bukan menghapusnya, karena kotaknya
+     * ada di kertas.
+     *
+     * Slot yang barisnya dikirim DUA-DUANYA (template generik: `1412 µS/cm`
+     * dan `1,412 mS/cm`) balik dua `titik_ukur` — satu slot di kertas, satu
+     * kotak ceklis, dan layar yang saling mengunci lewat `eksklusif_dengan`
+     * yang udah ada di barisnya.
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return list<array{label: string, varian: string|null, titik_ukur: list<float>, satuan: string|null, resolusi: float|null, desimal: int|null}>
+     */
+    private function slotCetak(array $baris): array
+    {
+        $hasil = [];
+
+        foreach (self::SLOT_CETAK as $slot) {
+            // Nilai yang sah buat slot ini: titik nominalnya + varian mS/cm-nya
+            // kalau ada. Slot tanpa titik (80000) nggak punya kandidat sama
+            // sekali, jadi loop di bawah nggak ketemu apa-apa dan slotnya
+            // keluar kosong — persis yang dimau.
+            $sah = [];
+
+            foreach (self::TITIK as $t) {
+                if ($slot['titik'] === null || $t['nilai'] !== $slot['titik']) {
+                    continue;
+                }
+
+                $sah[] = $t['nilai'];
+
+                if ($t['varian_mili'] !== null) {
+                    $sah[] = $t['varian_mili']['nilai'];
+                }
+            }
+
+            $cocok = array_values(array_filter(
+                $baris,
+                fn (array $b): bool => in_array($b['titik_ukur'], $sah, true),
+            ));
+
+            $hasil[] = [
+                'label' => $slot['label'],
+                'varian' => $slot['varian'],
+                'titik_ukur' => array_map(fn (array $b): float => (float) $b['titik_ukur'], $cocok),
+                // Resolusi & satuan dibaca dari baris PERTAMA yang cocok. Kertas
+                // cuma punya satu baris "Resolusi: ( )" per slot, dan dua varian
+                // satuan nggak pernah keisi berbarengan.
+                'satuan' => $cocok[0]['satuan'] ?? null,
+                'resolusi' => $cocok[0]['resolusi'] ?? null,
+                'desimal' => $cocok[0]['desimal'] ?? null,
+            ];
+        }
+
+        return $hasil;
     }
 
     /**
@@ -995,6 +1135,10 @@ class ConductivityProfile extends CalibrationProfile
 
                     return [
                         'label' => $baris['label'],
+                        // Tulisan yang ada di kertas depan mata teknisi. Beda
+                        // dari `label` (nama alat standar di master) karena
+                        // formulir cetaknya masih pakai nominal & merk lama.
+                        'label_cetak' => $baris['label_cetak'],
                         'standard_id' => $cocok?->id,
                         'serial_number' => $cocok?->serial_number,
                         'no_sertifikat' => $cocok?->no_sertifikat,

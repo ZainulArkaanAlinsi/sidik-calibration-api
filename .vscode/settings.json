@@ -21,6 +21,41 @@
     // sendiri (resources/css/app.css) tetap divalidasi seperti biasa.
     "html.validate.styles": false,
 
+    // Setelan di atas ternyata belum cukup: dia cuma ngatur layanan HTML bawaan
+    // VS Code, yang jalan di file berbahasa `html`. File `.blade.php` kebaca
+    // sebagai `php`, dan yang mvalidasi CSS di dalamnya justru Intelephense —
+    // dia bawa layanan CSS sendiri buat bagian HTML/CSS/JS yang nempel di file
+    // PHP.
+    //
+    // Contoh yang dilaporin merah padahal bener: emails/sertifikat.blade.php
+    // baris 104, `padding-left:{{ $logo ? '14px' : '0' }};` — parser CSS berenti
+    // di `{{` terus ngelapor "identifier expected" plus "} expected" beruntun.
+    // Ada 24 test di KirimEmailSertifikatTest yang ngerender email itu sampai
+    // jadi, dan `php artisan view:cache` juga lolos; jadi yang salah pembacanya,
+    // bukan templatnya.
+    //
+    // Jangan diganti jadi `"files.associations": {"*.blade.php": "blade"}`.
+    // Nggak ada ekstensi terpasang yang ndaftarin bahasa `blade` (dicek 13 Agt
+    // 2026), jadi file-nya jatuh ke plaintext: penanda merahnya ilang karena
+    // editor jadi buta — warna sintaks, lompat ke definisi, dan autocomplete
+    // ikut mati di semua file Blade.
+    "intelephense.diagnostics.embeddedLanguages": false,
+
+    // PHP Tools (DEVSENSE) nebak tipe properti model dari `casts()`, dan buat
+    // cast `date` dia bikin tipe khayalan bernama `date` — bukan Carbon. Jadi
+    // `$sertifikat->diterbitkan_pada?->toDateString()` dilaporin "Call to
+    // unknown method: date::toDateString()" (PHP0418) padahal jalan normal.
+    // Anotasi `@mixin IdeHelperCertificate` sama `_ide_helper_models.php` udah
+    // nulis `\Illuminate\Support\Carbon|null`, tapi tebakan cast-nya menang.
+    //
+    // Cuma kode 418 yang dibungkam, dan cuma dari PHP Tools. Intelephense masih
+    // ngelapor method yang beneran nggak ada lewat
+    // `intelephense.diagnostics.undefinedMethods`, jadi salah ketik nama method
+    // tetap ketahuan.
+    "php.problems.exclude": {
+        "/": [418]
+    },
+
     // `_ide_helper.php` ukurannya ~1,1 MB — lewat tipis dari batas bawaan
     // Intelephense (1 MB), jadi file itu DILEWATI waktu indexing. Akibatnya
     // percuma: `Storage::disk()->download()`, `->url()`, `assertExists()` tetap

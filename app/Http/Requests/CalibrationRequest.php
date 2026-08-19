@@ -108,6 +108,8 @@ class CalibrationRequest extends FormRequest
             // kamera adalah `ai_vision` (Claude Vision di server, ganti OCR).
             'input_method' => ['sometimes', Rule::in(['manual', 'ocr', 'ai_vision'])],
             'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
+            // Nama tempat buat sesi `onsite` — yang tercetak `Insitu (PT. LDC)`.
+            'lokasi_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             // Ruangan lab tempat sesi dikerjain — jadi "Calibration Location"
             // di sertifikat. Kosong buat sesi onsite.
             'room_id' => [
@@ -125,6 +127,12 @@ class CalibrationRequest extends FormRequest
             'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            // Kolom `Time` di tabel yang sama (lembar Spectrophotometer
+            // SIDIK-FM-CAL-0511_Rev.5). `H:i:s` ikut diterima karena itu bentuk
+            // yang dipulangkan kolom `time` MySQL — draft yang dibuka lagi lalu
+            // dikirim balik apa adanya nggak boleh ditolak.
+            'waktu_awal' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
+            'waktu_akhir' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
             // Kolom "Catatan:" di lembar kerja.
             'catatan_teknisi' => ['sometimes', 'nullable', 'string', 'max:2000'],
 
@@ -135,6 +143,12 @@ class CalibrationRequest extends FormRequest
             'alat_model' => ['sometimes', 'nullable', 'string', 'max:255'],
             'alat_serial_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'alat_merk' => ['sometimes', 'nullable', 'string', 'max:255'],
+            // Rentang ukur / kapasitas / resolusi yang DIBACA teknisi dari
+            // badan alat. Kuncinya datang dari bentuk lembar kerja; nilainya
+            // teks apa adanya (`0-100`, `0,001`) karena yang tercetak di
+            // sertifikat juga teks, bukan hasil hitung.
+            'spesifikasi_alat' => ['sometimes', 'nullable', 'array'],
+            'spesifikasi_alat.*' => ['nullable', 'string', 'max:64'],
             'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 
@@ -179,6 +193,19 @@ class CalibrationRequest extends FormRequest
             'measurements.*.pembacaan_sebelum.*' => ['nullable', 'numeric'],
             'measurements.*.suhu_sebelum' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu_sebelum.*' => ['nullable', 'numeric'],
+            // Spindle & kecepatan putar titik ini — cuma Viscometer yang
+            // ngisi. Dua-duanya nentuin Fullscale, jadi ikut nentuin batas
+            // keberterimaan (MPE) titik itu; lihat ViscometerProfile.
+            //
+            // Kode spindle-nya divalidasi APA ADANYA di sini (string pendek),
+            // bukan diadu ke daftar Tabel D-1: alat yang spindle-nya nggak ada
+            // di daftar tetap boleh dicatat apa adanya, dan yang nolak ngitung
+            // MPE-nya nanti profilnya — dengan alasan yang kebaca, bukan 422
+            // yang bikin lembar kerja lapangan nggak bisa dikirim sama sekali.
+            'measurements.*.spindle' => ['sometimes', 'nullable', 'string', 'max:32'],
+            // `gt:0` bukan `min:0`: RPM nol bikin Fullscale bagi nol. Brookfield
+            // DV2T bisa serendah 0,01 rpm, jadi jangan dipaksa bulat.
+            'measurements.*.rpm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             // Sebagian kategori alat (mis. pH) butuh standar BEDA per titik ukur
             // (buffer 4/7/10) — kosong berarti titik ini ikut `standard_id` sesi.
             'measurements.*.standard_id' => [

@@ -51,6 +51,9 @@
         */
         .kop-gambar { margin: -0.85cm -1.05cm 10px; }
         .kop-gambar img { width: 100%; height: auto; display: block; }
+        .judul-kelompok { font-size: 10.5px; font-weight: bold; margin: 8px 0 3px; }
+        .data tr.u95 td { font-weight: bold; text-align: right; }
+        .ket-k { font-size: 8.5px; color: #333; margin: 2px 0 6px; }
         .kop { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 14px; }
         .kop table { width: 100%; border-collapse: collapse; }
         .kop td.logo { width: 84px; vertical-align: middle; }
@@ -98,7 +101,52 @@
         table.data th, table.data td { border: 1px solid #999; padding: 3px 8px; text-align: center; }
         table.data th { background: #efefef; }
         table.data td.kiri { text-align: left; }
+        /*
+          Kolom R² itu SATU kotak setinggi tabelnya (rowspan), niru sel merge di
+          master. Tanpa `middle` angkanya nempel di baris pertama dan kotak
+          setinggi lima baris itu kebaca kayak nilai punya baris pertama doang.
+        */
+        table.data td.r2 { vertical-align: middle; }
 
+        /*
+          Mode PADAT — buat sertifikat berbaris banyak (Spectrophotometer: 24
+          titik dalam tiga kelompok). Sertifikat ini WAJIB satu halaman
+          ("Page 1 of 1" dicetak di headernya), dan ukuran normal cuma muat
+          sampai ±12 baris.
+
+          Yang dikecilin cuma padding & tinggi baris, BUKAN angkanya: lembar
+          master lab juga nyetak 24 baris itu rapat dalam satu halaman. Alat
+          lain nggak kena sama sekali — kelasnya baru nempel kalau barisnya
+          lebih dari 12.
+        */
+        body.padat table.data { font-size: 8px; }
+        body.padat table.data th,
+        body.padat table.data td { padding: 0.5px 6px; }
+        body.padat table.data th,
+        body.padat table.data td { line-height: 1.1; }
+        body.padat .judul-kelompok { font-size: 9.5px; margin: 5px 0 2px; }
+        body.padat .ket-k { font-size: 7.5px; margin: 1px 0 3px; }
+        body.padat .judul-sub { margin: 8px 0 4px; }
+        body.padat .catatan { font-size: 8px; margin-top: 4px; line-height: 1.3; }
+        body.padat .kode-dokumen { margin-top: 4px; padding-top: 2px; font-size: 8px; }
+        /*
+          Blok kepala & tanda tangan ikut dirapetin. Diukur ke kasus terberat
+          yang ada sekarang: Spectrophotometer 24 titik / 3 kelompok / 3 standar.
+          Kalau nanti ada alat yang barisnya lebih banyak lagi, ukur ulang pakai
+          alat ITU — bukan nurunin huruf lagi sampai kebacaan sertifikat rusak.
+        */
+        body.padat .judul { font-size: 14px; margin: 0 0 6px; }
+        body.padat table.info { margin-bottom: 4px; font-size: 8.5px; }
+        body.padat table.info td { padding: 0.5px 6px; line-height: 1.25; }
+        body.padat .judul-sub { font-size: 10.5px; margin: 6px 0 3px; }
+        body.padat table.ttd { margin-top: 6px; font-size: 9.5px; }
+        body.padat table.ttd td { font-size: 9.5px; }
+        body.padat table.ttd td.qr { width: 78px; }
+        body.padat table.ttd td.qr img { width: 66px; height: 66px; }
+        body.padat .ttd .ruang-ttd { height: 24px; }
+        body.padat .ttd td { padding-top: 4px; }
+        body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
+        body.padat .kop-gambar { margin-bottom: 5px; }
         .catatan { font-size: 10px; font-style: italic; color: #444; margin-top: 8px; line-height: 1.5; }
         .catatan div { margin-bottom: 3px; }
 
@@ -255,7 +303,8 @@
         @endif
     </style>
 </head>
-<body>
+@php($padat = ! ($web ?? false) && collect($snapshot['hasil'] ?? [])->count() > 12)
+<body class="{{ $padat ? 'padat' : '' }}">
 @if ($web ?? false)
     <div class="bilah">
         <div class="cap">&#10003; Sertifikat terverifikasi</div>
@@ -346,75 +395,160 @@
          parameter per titik (Chlorine: Free/Total Chlorine). Sertifikat lama &
          alat lain nggak berubah sama sekali — kolomnya nggak muncul, bukan
          muncul kosong. --}}
-    @php($adaRemark = collect($snapshot['hasil'] ?? [])->contains(fn ($b) => filled($b['remark'] ?? null)))
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Standard Value</th>
-                <th>Unit Under Test</th>
-                <th>Correction</th>
-                <th>U95% (&plusmn;)</th>
-                @if ($adaRemark)<th>Remark</th>@endif
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($snapshot['hasil'] ?? [] as $baris)
-                {{-- Desimal diambil PER BARIS dulu, baru jatuh ke $desimal
-                     tingkat-sertifikat. Alat yang resolusinya berubah menurut
-                     rentang (Turbidimeter: 0,01 di bawah 10 NTU, 0,1 di 10–100,
-                     1 di atasnya) nggak bisa diwakili satu angka: dipaksa satu,
-                     titik 100 NTU kecetak `101,00` — dua digit yang alatnya
-                     nggak bisa tampilkan. Di dokumen terakreditasi itu ngaku
-                     ketelitian yang nggak ada; Excel master lab nulisnya `101`.
+    {{-- Alat yang titiknya BERKELOMPOK dicetak per kelompok, persis lembar
+         master: satu tabel per blok, dan `Uncertainty U95% = ±` di bawah tiap
+         tabel. Bukan gaya-gayaan — U95 alat kayak Spectrophotometer lahir per
+         KELOMPOK, jadi sepuluh baris Holmium punya angka yang sama persis. Di
+         tabel datar 24 baris angka itu kebaca kayak muncul acak, dan `0,4 nm`
+         nggak punya cara dibedain punya Didynium apa Holmium.
 
-                     Sertifikat lama yang snapshot-nya belum punya field ini
-                     kecetak persis seperti waktu diterbitkan. --}}
-                @php($db = $baris['desimal'] ?? $desimal)
+         Alat tanpa keterangan titik (pH, Turbidimeter, Refractometer) lewat
+         jalur yang SAMA dengan satu kelompok tanpa judul — bentuk cetaknya
+         nggak berubah sama sekali. --}}
+    @php($kelompok = collect($snapshot['hasil'] ?? [])->groupBy(fn ($b) => $b['remark'] ?? ''))
+
+    @forelse ($kelompok as $judulKelompok => $barisKelompok)
+        @if (filled($judulKelompok))
+            <div class="judul-kelompok">{{ $judulKelompok }}</div>
+        @endif
+
+        {{-- Satuan diambil dari baris pertama kelompoknya: satu kelompok selalu
+             satu satuan (nm buat panjang gelombang, %T buat transmitan), dan
+             lembar master nulisnya di KEPALA kolom — `Standard (nm)`. Alat
+             bersatuan seragam ngirim null dan kepalanya tetap kayak dulu. --}}
+        @php($satKelompok = $barisKelompok->first()['satuan'] ?? null)
+        @php($sufiks = $satKelompok ? ' ('.$satKelompok.')' : '')
+        {{-- Kolom R² cuma ada di blok %T Spectrophotometer, dan cuma kalau
+             definisinya udah diputus lab (`config('kalibrasi.r2_spektro')`).
+             Kelompok lain & sertifikat lama yang snapshot-nya belum punya kunci
+             ini balik null — kolomnya NGGAK MUNCUL, bukan muncul kosong.
+             Alasan lengkapnya: docs/pertanyaan-lab-r2-spektro.md. --}}
+        @php($r2 = $barisKelompok->first()['r2'] ?? null)
+        {{-- Judul kolom kedua beda per master: lima alat nulis
+             `Unit Under Test`, Spectrophotometer nulis `UUT` (di ketiga
+             bloknya, jadi bukan sel yang kepotong). Sertifikat lama yang
+             snapshot-nya belum punya kunci ini jatuh ke judul lamanya. --}}
+        @php($judulUut = $snapshot['judul_uut'] ?? 'Unit Under Test')
+        <table class="data">
+            <thead>
                 <tr>
-                    {{-- `nilaiStandar` buat kolom pertama, `hasil` buat sisanya:
-                         Standard Value nulis nilai NOMINAL standarnya (`1`,
-                         `100`, `1000`), tiga kolom lain ikut desimal barisnya.
-                         Dua-duanya tanpa pemisah ribuan & tanda minus tetap
-                         dipertahankan — lihat docblock `Angka::hasil()`. --}}
-                    {{-- Satuan ikut di kolom pertama buat alat yang nyampur
-                         satuan dalam satu lembar (Conductivity: `25 µS/cm` vs
-                         `111 mS/cm`). Alat bersatuan seragam ngirim null dan
-                         tampilannya nggak berubah — satuannya udah kesebut di
-                         kepala kolom. --}}
-                    @php($sat = $baris['satuan'] ?? null)
+                    <th>Standard{{ $sufiks }}</th>
+                    <th>{{ $judulUut }}{{ $sufiks }}</th>
+                    <th>Correction{{ $sufiks }}</th>
+                    @if ($r2 !== null)
+                        <th>R<sup>2</sup></th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($barisKelompok as $baris)
+                    {{-- Desimal diambil PER BARIS dulu, baru jatuh ke $desimal
+                         tingkat-sertifikat. Alat yang resolusinya berubah
+                         menurut rentang (Turbidimeter: 0,01 di bawah 10 NTU,
+                         0,1 di 10–100, 1 di atasnya) nggak bisa diwakili satu
+                         angka: dipaksa satu, titik 100 NTU kecetak `101,00` —
+                         dua digit yang alatnya nggak bisa tampilkan. --}}
+                    @php($db = $baris['desimal'] ?? $desimal)
                     {{-- Koreksi negatif yang membulat ke nol: `-0,0` di
                          Turbidimeter/pH/Chlorine, `0,0` di Conductivity. Beda
                          itu dibaca dari master masing-masing, bukan dinalar —
-                         lihat `CalibrationProfile::tandaNolDicetak()`.
-                         Sertifikat lama nggak punya kunci ini dan jatuh ke
-                         `true`, persis kayak waktu diterbitkan. --}}
+                         lihat `CalibrationProfile::tandaNolDicetak()`. --}}
                     @php($tandaNol = $baris['tanda_nol'] ?? true)
-                    <td>{{ \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db) }}{{ $sat ? ' '.$sat : '' }}</td>
-                    <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
-                    <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
-                    {{-- U95 ikut desimal alat, SAMA kayak tiga kolom di atas —
-                         ngikut sertifikat asli lab (`0,09` & `0,08`, bukan
-                         `0,091` & `0,080`).
+                    {{-- Nol di belakang koma di kolom Standard Value dibuang
+                         (`100`) atau ditulis penuh (`100,0`) — beda per master,
+                         dibaca dari `CalibrationProfile::nolBelakangStandarDibuang()`.
+                         Sertifikat lama yang snapshot-nya belum punya kunci ini
+                         jatuh ke `true`, persis perilaku lamanya. --}}
+                    @php($standarRingkas = $baris['standar_ringkas'] ?? true)
+                    <tr>
+                        {{-- Standard Value nulis nilai NOMINAL standarnya.
+                             Turbidimeter mau `1` / `100` / `1000` (nol di
+                             belakang dibuang), Spectrophotometer mau `334,0` /
+                             `460,0` — dua kolom lain selalu ikut desimal
+                             barisnya. --}}
+                        <td>{{ $standarRingkas
+                            ? \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db)
+                            : \App\Support\Angka::hasil($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db, tandaNol: $tandaNol) }}</td>
+                        <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
+                        <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
+                        @if ($r2 !== null && $loop->first)
+                            {{-- Angkanya SATU buat seluruh kelompok, jadi
+                                 selnya di-`rowspan` setinggi tabelnya — persis
+                                 master, yang nge-merge `SERTIFIKAT!R47:R51`
+                                 jadi satu kotak. Diulang tiap baris malah
+                                 kebaca kayak lima R² yang kebetulan sama.
 
-                         Sebelumnya pakai `Angka::ketidakpastian()` yang naikin
-                         desimal demi jaga 2 angka penting. Alasannya kuat, tapi
-                         yang dicetak lab bukan itu — dan dokumen yang dipegang
-                         pelanggan harus sama persis dengan yang lab terbitkan.
+                                 NOL desimal, bukan empat. Sel masternya nyimpen
+                                 `0,9359` tapi diformat 0 desimal, jadi yang
+                                 tercetak `1` — dan `1` itu juga yang keluar
+                                 kalau angkanya dihitung ulang dari data blok
+                                 (`RSQ` = 0,999922). Dua kandidat rumus yang
+                                 belum bisa dibedain itu NYETAK ANGKA YANG SAMA,
+                                 jadi kolomnya nggak lagi nunggu jawaban lab —
+                                 lihat `docs/pertanyaan-lab-r2-spektro.md`. --}}
+                            <td class="r2" rowspan="{{ $barisKelompok->count() }}">{{ \App\Support\Angka::id((float) $r2, 0) }}</td>
+                        @endif
+                    </tr>
+                @endforeach
 
-                         KONSEKUENSI yang mesti diketahui: CMC titik 1,74 itu
-                         0,091; dibulatkan jadi 0,09 berarti angka yang tercetak
-                         sedikit DI BAWAH CMC. Keputusan formatnya ada di lab. --}}
-                    <td>{{ \App\Support\Angka::hasil($baris['u95'] === null ? null : (float) $baris['u95'], $db) }}</td>
-                    @if ($adaRemark)<td>{{ $baris['remark'] ?? '—' }}</td>@endif
+                {{-- U95 satu kelompok — diambil dari baris pertama, BUKAN
+                     dihitung ulang. Tiap titik sekelompok emang bawa angka yang
+                     sama; kalau suatu saat beda, yang salah datanya, dan
+                     ngerata-ratain di sini cuma nyembunyiin itu. --}}
+                @php($barisU95 = $barisKelompok->first())
+                {{-- Desimal U95 punya jalurnya sendiri: master nyetak
+                     `0,50 %T` sementara kolom UUT & Correction di blok yang
+                     sama pakai tiga desimal (`9,665`). Sertifikat lama yang
+                     snapshot-nya belum punya kunci ini jatuh ke desimal titik,
+                     persis kayak waktu diterbitkan. --}}
+                @php($dbU95 = $barisU95['desimal_u95'] ?? $barisU95['desimal'] ?? $desimal)
+                <tr class="u95">
+                    <td colspan="2">Uncertainty U<sub>95%</sub> = &plusmn;</td>
+                    <td>{{ \App\Support\Angka::hasil($barisU95['u95'] === null ? null : (float) $barisU95['u95'], $dbU95) }}{{ $satKelompok ? ' '.$satKelompok : '' }}</td>
+                    {{-- Sel kosong biar baris U95 tetap selebar tabelnya waktu
+                         kolom R² muncul. Tanpa ini kolom terakhir kegeser dan
+                         angka U95 mendarat di bawah kepala `R²`. --}}
+                    @if ($r2 !== null)
+                        <td></td>
+                    @endif
                 </tr>
-            @empty
-                <tr><td colspan="{{ $adaRemark ? 5 : 4 }}">—</td></tr>
-            @endforelse
-        </tbody>
-    </table>
+            </tbody>
+        </table>
 
+        {{-- Kalimat faktor cakupan dicetak PER KELOMPOK: k-nya beda-beda
+             (Holmium 3,18; Didynium 2,36; %T 2,01). Sertifikat lama yang
+             snapshot-nya belum punya `faktor_cakupan_k` nggak nyetak baris ini
+             sama sekali — bukan ngarang angkanya. --}}
+        @php($k = $barisKelompok->first()['faktor_cakupan_k'] ?? null)
+        {{-- Desimal `k` punya jalurnya sendiri: master spektro nyimpen
+             3,182446… tapi selnya diformat 0 desimal, jadi yang tercetak `3`.
+             Sertifikat lama (dan alat yang masternya belum diadu ke cetakan)
+             jatuh ke perilaku lama: 2 desimal, nol di belakang dibuang. --}}
+        @php($dbK = $barisKelompok->first()['desimal_k'] ?? null)
+        @if ($k !== null)
+            <div class="ket-k">
+                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) =
+                {{ $dbK === null
+                    ? \App\Support\Angka::idRingkas((float) $k, 2)
+                    : \App\Support\Angka::id((float) $k, $dbK) }}
+            </div>
+        @endif
+    @empty
+        <table class="data">
+            <thead><tr><th>Standard</th><th>{{ $snapshot['judul_uut'] ?? 'Unit Under Test' }}</th><th>Correction</th></tr></thead>
+            <tbody><tr><td colspan="3">—</td></tr></tbody>
+        </table>
+    @endforelse
+
+    {{-- Catatan baku dari snapshot. Kalimat "The Uncertainty is taken at a
+         Confidence Level…" DILEWATI kalau tiap kelompok udah nyetak kalimatnya
+         sendiri: k-nya beda per kelompok (Holmium 3,18; Didynium 2,36; %T
+         2,01), jadi kalimat tingkat-sertifikat yang nyebut satu angka bukan
+         cuma dobel — dia mbantah tiga baris di atasnya. --}}
+    @php($adaKGrup = collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
     <div class="catatan">
         @foreach ($snapshot['catatan'] ?? [] as $catatan)
+            @continue ($adaKGrup && str_contains($catatan, 'Coverage Factor'))
             <div>{{ $catatan }}</div>
         @endforeach
     </div>

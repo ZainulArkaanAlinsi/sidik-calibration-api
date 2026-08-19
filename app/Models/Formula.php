@@ -47,6 +47,15 @@ class Formula extends Model
      */
     public const KODE_GUM_SPECTRO = 'gum-spectro';
 
+    /**
+     * Rumus GUM buat jalur Viscometer. Budgetnya 4 komponen dan lahir PER TITIK
+     * (bukan per kelompok kayak spektro), tapi dua bahannya nggak ada di alat
+     * lain: nilai acuan standar diinterpolasi linier dari tabel sertifikat
+     * larutan pada suhu terukur, dan batas keberterimaannya (MPE) dihitung dari
+     * spindle & RPM titik itu — lihat ViscometerProfile.
+     */
+    public const KODE_GUM_VISCOMETER = 'gum-viscometer';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

@@ -291,6 +291,31 @@ class CalibrationTest extends TestCase
         $this->assertSame(['PASS', 'FAIL'], array_column($response->json('data.titik'), 'keputusan'));
     }
 
+    /**
+     * Alat yang titiknya nggak punya keterangan tetap NGIRIM kunci `remark`
+     * dengan nilai `null` — bukan ngilangin kuncinya.
+     *
+     * Kuncinya dipakai layar riwayat & approval buat misahin blok hasil di alat
+     * yang punya kelompok (Chlorine: Free/Total, Spectrophotometer: tiga
+     * filter). Kalau kuncinya ilang di alat lain, layar yang sama pecah cuma
+     * gara-gara teknisi pindah alat.
+     */
+    public function test_titik_alat_tanpa_keterangan_tetap_bawa_remark_null(): void
+    {
+        $response = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload())
+            ->assertCreated();
+
+        $titik = $response->json('data.titik');
+
+        $this->assertNotEmpty($titik);
+
+        foreach ($titik as $t) {
+            $this->assertArrayHasKey('remark', $t);
+            $this->assertNull($t['remark']);
+        }
+    }
+
     public function test_teknisi_cuma_bisa_lihat_sesi_miliknya_sendiri(): void
     {
         $sesiOrangLain = $this->buatSesi(sebagai: $this->admin);
