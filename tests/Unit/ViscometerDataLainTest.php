@@ -2,9 +2,15 @@
 
 namespace Tests\Unit;
 
+use App\Models\CalibrationCapability;
+use App\Models\Equipment;
+use App\Models\EquipmentCategory;
+use App\Models\Organization;
 use App\Models\Standard;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 use App\Services\GumCalculator;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -26,6 +32,8 @@ use Tests\TestCase;
  */
 class ViscometerDataLainTest extends TestCase
 {
+    use RefreshDatabase;
+
     private ViscometerProfile $profil;
 
     private GumCalculator $gum;
@@ -361,5 +369,291 @@ class ViscometerDataLainTest extends TestCase
                 "Pembacaan {$pembacaan} di titik {$titik} salah vonis.",
             );
         }
+    }
+
+    /**
+     * Sesi UTUH dengan angka yang bukan punya master — hasil akhirnya dihitung
+     * ulang di dalam test, dari rumusnya, tanpa satu pun angka disalin.
+     *
+     * ## Kenapa ini yang paling menentukan
+     *
+     * Test lain di berkas ini menguji POTONGAN: interpolasi, MPE, agregasi GUM.
+     * Tiap potongan bisa benar sendiri-sendiri sementara rangkaiannya salah —
+     * salah urutan, salah yang dipakai jadi masukan potongan berikutnya, atau
+     * satu potongan diam-diam memakai nilai master alih-alih nilai sesi ini.
+     *
+     * Di sini seluruh rantai dijalankan sekaligus lewat `hitungTitik()`, dan
+     * SEMUA keluarannya — nilai acuan, rata-rata, koreksi, uc, k, U95, MPE,
+     * vonis — diadu ke angka yang test ini hitung sendiri dari nol:
+     *
+     *   nilai acuan  = interpolasi linier tabel sertifikat pada suhu sesi
+     *   U95 standar  = nilai acuan x u_persen pada suhu itu
+     *   uc           = akar jumlah kuadrat empat komponen
+     *   U95          = maks(CMC rentangnya, 2 x uc)
+     *   MPE          = 1% UUT + 1% (TK x SMC x 10000 / RPM)
+     *   vonis        = |koreksi| + U95 <= MPE ? PASS : FAIL
+     *
+     * Lima sesi, dan tidak satu pun menyentuh angka master: suhu di ruas tabel
+     * yang berbeda-beda, spindle & RPM di luar yang pernah dipakai lab, jumlah
+     * pengulangan 2 sampai 5, alat yang membaca DI BAWAH standar (koreksi
+     * positif), dan satu alat rusak yang harus jatuh FAIL.
+     *
+     * @param  list<float>  $pembacaan
+     */
+    #[DataProvider('sesiSembarang')]
+    public function test_hasil_akhir_benar_untuk_input_apa_pun(
+        int $titikKe,
+        array $pembacaan,
+        float $suhuLarutan,
+        string $spindle,
+        float $rpm,
+        string $vonisDiharap,
+    ): void {
+        $hasil = $this->gum->hitungTitik(
+            $titikKe,
+            self::NOMINAL[$titikKe],
+            $pembacaan,
+            $this->alatBerkemampuan(),
+            $this->standarKe($titikKe),
+            $suhuLarutan,
+            25.0,
+            ['tk' => 'DV2THA', 'spindle' => $spindle, 'rpm' => $rpm],
+        );
+
+        $harap = $this->hitungTangan($titikKe, $pembacaan, $suhuLarutan, $spindle, $rpm);
+
+        $this->assertEqualsWithDelta($harap['titik_ukur'], $hasil['titik_ukur'], 1e-8, 'nilai acuan');
+        $this->assertEqualsWithDelta($harap['rata_rata'], $hasil['rata_rata'], 1e-9, 'rata-rata');
+        $this->assertEqualsWithDelta($harap['koreksi'], $hasil['koreksi'], 1e-8, 'koreksi');
+        $this->assertEqualsWithDelta($harap['uc'], $hasil['ketidakpastian_gabungan'], 1e-8, 'uc');
+        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-12, 'k');
+        $this->assertEqualsWithDelta($harap['u95'], $hasil['ketidakpastian_diperluas'], 1e-7, 'U95');
+        $this->assertEqualsWithDelta($harap['mpe'], $hasil['toleransi'], 1e-8, 'MPE');
+        $this->assertSame($vonisDiharap, $hasil['keputusan'], 'vonis');
+    }
+
+    /** @return array<string, array{int, list<float>, float, string, float, string}> */
+    public static function sesiSembarang(): array
+    {
+        return [
+            // Ruas tabel 25-37,78 degC, spindle & RPM yang tidak pernah dipakai
+            // lab, tiga pengulangan.
+            'titik 1000 di 30,5 degC, HA3 @ 30 rpm, 3 ulang' => [
+                2, [742.1, 740.8, 743.6], 30.5, 'HA3', 30.0, 'PASS',
+            ],
+            // Ruas 20-25 degC, kemiringannya jauh lebih curam.
+            'titik 100 di 22,0 degC, HA1 @ 100 rpm, 5 ulang' => [
+                1, [119.4, 118.9, 119.8, 119.1, 119.5], 22.0, 'HA1', 100.0, 'PASS',
+            ],
+            // Alat membaca DI BAWAH standar: koreksinya positif, arah yang
+            // tidak pernah muncul di sesi master.
+            'titik 60000 di 25 degC, alat baca rendah' => [
+                3, [58100.0, 58150.0, 58090.0, 58120.0], 25.0, 'HA7', 50.0, 'PASS',
+            ],
+            // Jumlah pengulangan paling sedikit yang masih bisa dihitung.
+            //
+            // RPM-nya 30, bukan 60, dan itu bukan angka asal: Fullscale =
+            // TK x SMC x 10000 / RPM, jadi RPM setengahnya bikin MPE dua kali
+            // lebih longgar (35,98 vs 22,64 cP). Pada 60 rpm sesi ini FAIL —
+            // |koreksi| 21,59 + U95 2,47 = 24,06 lewat dari 22,64 — dan itu
+            // vonis yang benar. Yang mau diuji di sini jalur n=2, bukan
+            // vonisnya, jadi batasnya dibikin cukup buat lolos.
+            'titik 1000 di 26,4 degC, cuma 2 ulang' => [
+                2, [930.5, 931.2], 26.4, 'HA2', 30.0, 'PASS',
+            ],
+            // Alat rusak: melenceng jauh tapi masih dalam satu orde, jadi
+            // penjaga orde di HP meloloskannya dan yang memvonis MPE.
+            'titik 100 di 25 degC, alat rusak -> FAIL' => [
+                1, [88.2, 87.9, 88.6, 88.1, 88.4], 25.0, 'HA1', 60.0, 'FAIL',
+            ],
+        ];
+    }
+
+    /** Nominal @25 degC tiap titik, dipakai sebagai `titik_ukur` yang dikirim. */
+    private const NOMINAL = [1 => 99.65, 2 => 1018.0, 3 => 59003.0];
+
+    /**
+     * Seluruh rantai dihitung ulang DI SINI, dari rumusnya. Tidak ada satu
+     * angka pun yang datang dari `GumCalculator`.
+     *
+     * @param  list<float>  $pembacaan
+     * @return array{titik_ukur: float, rata_rata: float, koreksi: float, uc: float, u95: float, mpe: float}
+     */
+    private function hitungTangan(
+        int $titikKe,
+        array $pembacaan,
+        float $suhu,
+        string $spindle,
+        float $rpm,
+    ): array {
+        $tabel = self::TABEL_STANDAR[$titikKe];
+
+        // Nilai acuan IKUT suhu sesi — itu yang digeser tabel sertifikat.
+        $nilai = $this->interpolasi($tabel, $suhu, 1);
+
+        // Tapi komponen ketidakpastiannya diambil di titik NOMINAL (25 °C),
+        // bukan digeser ikut suhu. Itu cara master menghitung, dan sengaja
+        // ditiru: `U95% Standar` sesi master 0,169405 cP = 99,65 x 0,17 %,
+        // yaitu angka pada 25 °C, padahal sesinya diukur pada 26,52 °C. Sama
+        // untuk `ci` pengaruh suhu — master menulis `(uT/400) x 99,65`, bukan
+        // dikali nilai yang sudah digeser.
+        //
+        // Ini ditulis eksplisit di sini karena gampang ditebak terbalik: dua
+        // dari lima sesi di bawah lolos walaupun ditebak salah, karena suhunya
+        // pas di baris tabel sehingga nominal dan nilai tergeser kebetulan sama.
+        $nominal = self::NOMINAL[$titikKe];
+        $uPersenNominal = $this->interpolasi($tabel, 25.0, 2);
+
+        $n = count($pembacaan);
+        $rata = array_sum($pembacaan) / $n;
+
+        // STDEV sampel (pembagi n-1), lalu Type A = s / akar(n).
+        $jumlahKuadrat = 0.0;
+        foreach ($pembacaan as $p) {
+            $jumlahKuadrat += ($p - $rata) ** 2;
+        }
+        $s = $n > 1 ? sqrt($jumlahKuadrat / ($n - 1)) : 0.0;
+        $uA = $s / sqrt($n);
+
+        $uT = sqrt((0.72 / 2) ** 2 + (0.06 / 2) ** 2);
+
+        $u = [
+            ($nominal * $uPersenNominal / 100) / 2,     // sertifikat kalibrator
+            (0.1 / 2) / sqrt(3),                        // daya baca alat
+            ($uT / sqrt(3)) * (($uT / 400) * $nominal), // pengaruh temperature
+            $uA,                                        // pengulangan
+        ];
+
+        $uc = sqrt(array_sum(array_map(static fn (float $x): float => $x * $x, $u)));
+
+        // Lantai CMC: rentang mana yang memuat nilai acuan ini.
+        $cmc = 0.0;
+        foreach (self::RENTANG_CMC as [$min, $maks, $nilaiCmc]) {
+            if ($nilai >= $min && $nilai <= $maks) {
+                $cmc = $nilaiCmc;
+                break;
+            }
+        }
+
+        $u95 = max($cmc, 2 * $uc);
+
+        $fullscale = 2 * self::SMC[$spindle] * 10000 / $rpm;
+        $mpe = 0.01 * $rata + 0.01 * $fullscale;
+
+        return [
+            'titik_ukur' => $nilai,
+            'rata_rata' => $rata,
+            'koreksi' => $nilai - $rata,
+            'uc' => $uc,
+            'u95' => $u95,
+            'mpe' => $mpe,
+        ];
+    }
+
+    /** Interpolasi linier kolom ke-`$kolom` tabel sertifikat pada `$suhu`. */
+    private function interpolasi(array $tabel, float $suhu, int $kolom): float
+    {
+        for ($i = 0; $i < count($tabel) - 1; $i++) {
+            [$t1, , ] = $tabel[$i];
+            [$t2, , ] = $tabel[$i + 1];
+
+            if ($suhu >= $t1 && $suhu <= $t2) {
+                $a = $tabel[$i][$kolom];
+                $b = $tabel[$i + 1][$kolom];
+
+                return $a + ($b - $a) * (($suhu - $t1) / ($t2 - $t1));
+            }
+        }
+
+        self::fail("Suhu {$suhu} di luar tabel — sesi uji harus di dalam jangkauan.");
+    }
+
+    private const SMC = ['HA1' => 1, 'HA2' => 4, 'HA3' => 10, 'HA7' => 400];
+
+    /**
+     * Sama persis dengan `ViscometerCapabilitySeeder`, URUT sama: tiga rentang
+     * terakreditasi dulu, baru empat rentang tanpa klaim (di bawah, dua celah
+     * antar larutan, dan di atas). Urutannya menentukan — titik yang pas di
+     * batas nyangkut ke baris terakreditasi, bukan ke baris tanpa klaim.
+     */
+    private const RENTANG_CMC = [
+        [51.1, 102.0, 0.2],
+        [419.5, 1028.0, 2.1],
+        [19259.0, 58021.0, 140.0],
+        [58021.0, 95192.0, 0.0],
+        [6.47, 51.1, 0.0],
+        [102.0, 419.5, 0.0],
+        [1028.0, 19259.0, 0.0],
+    ];
+
+    private const TABEL_STANDAR = [
+        1 => [
+            [20.0, 134.0, 0.17], [25.0, 99.65, 0.17], [37.78, 51.1, 0.15], [40.0, 45.97, 0.15],
+            [50.0, 29.75, 0.13], [60.0, 20.32, 0.13], [80.0, 10.75, 0.13], [98.89, 6.638, 0.08],
+            [100.0, 6.47, 0.08],
+        ],
+        2 => [
+            [20.0, 1504.0, 0.23], [25.0, 1018.0, 0.23], [37.78, 419.5, 0.19], [40.0, 364.6, 0.19],
+            [50.0, 203.2, 0.19], [60.0, 121.3, 0.17], [80.0, 51.27, 0.15], [98.89, 26.8, 0.13],
+            [100.0, 25.9, 0.13],
+        ],
+        3 => [
+            [20.0, 95192.0, 0.23], [25.0, 59003.0, 0.23], [37.78, 19259.0, 0.23], [40.0, 16096.0, 0.23],
+            [50.0, 7489.0, 0.22], [60.0, 3732.0, 0.22], [80.0, 1117.0, 0.2], [98.89, 432.7, 0.17],
+            [100.0, 411.3, 0.17],
+        ],
+    ];
+
+    private function standarKe(int $ke): Standard
+    {
+        $tabel = self::TABEL_STANDAR[$ke];
+
+        return new Standard([
+            'nama' => "Viscosity Standard Solution {$ke}",
+            'ketidakpastian' => $tabel[1][1] * $tabel[1][2] / 100,
+            'satuan_ketidakpastian' => 'cP',
+            'faktor_cakupan' => 2,
+            'koefisien_suhu' => [
+                'tabel' => array_map(
+                    static fn (array $b): array => ['suhu' => $b[0], 'nilai' => $b[1], 'u_persen' => $b[2]],
+                    $tabel,
+                ),
+            ],
+        ]);
+    }
+
+    private function alatBerkemampuan(): Equipment
+    {
+        $org = Organization::factory()->create();
+        $kategori = EquipmentCategory::create([
+            'organization_id' => $org->id, 'kode' => 'instrumen-analitik', 'nama' => 'Instrumen Analitik',
+        ]);
+
+        foreach (self::RENTANG_CMC as [$min, $maks, $cmc]) {
+            CalibrationCapability::create([
+                'equipment_category_id' => $kategori->id,
+                'nama_alat' => 'Viscometer',
+                'parameter' => "viskositas (cP)-{$min}",
+                'range_min' => $min,
+                'range_max' => $maks,
+                'satuan' => 'cP',
+                'ketidakpastian_terbaik' => $cmc,
+                'satuan_ketidakpastian' => 'cP',
+                'faktor_cakupan' => 2,
+                'metode' => ViscometerProfile::KODE_METODE,
+                'u_temperature' => sqrt((0.72 / 2) ** 2 + (0.06 / 2) ** 2),
+            ]);
+        }
+
+        $alat = new Equipment([
+            'nama_alat' => 'Viscometer',
+            'nama_alat_kemampuan' => 'Viscometer',
+            'satuan' => 'cP',
+            'resolusi' => 0.1,
+            'toleransi' => null,
+        ]);
+        $alat->equipment_category_id = $kategori->id;
+
+        return $alat;
     }
 }
