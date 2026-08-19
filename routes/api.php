@@ -198,6 +198,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Tabel kalibrator & CMC dari server; body cuma data ukur teknisi.
         Route::post('/calibrations/autoclave/preview', [AutoclaveController::class, 'preview'])
             ->middleware('throttle:120,1');
+        // Simpan sesi Autoklaf (snapshot hasil di kolom JSON, bukan titik ukur).
+        // Masuk riwayat/approval yang sama kayak alat lain.
+        Route::post('/calibrations/autoclave', [CalibrationController::class, 'simpanAutoclave']);
         // Buat ngerjain ulang sesi yang ditolak admin, atau nerusin draft.
         Route::put('/calibrations/{calibration}', [CalibrationController::class, 'update']);
 

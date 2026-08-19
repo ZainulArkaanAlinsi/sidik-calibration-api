@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AutoclaveStoreRequest;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
+use App\Services\Calibration\AutoclaveCalculator;
+use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
@@ -52,6 +55,8 @@ class CalibrationController extends Controller
         private readonly KondisiLingkungan $kondisi,
         private readonly FolderOrganizer $folder,
         private readonly CalibrationProfileRegistry $profil,
+        private readonly AutoclaveCalculator $autoclave,
+        private readonly AutoclaveInputBuilder $perakitAutoclave,
     ) {}
 
     /**
@@ -281,6 +286,74 @@ class CalibrationController extends Controller
         });
 
         $this->siarkan($sesi, 'dibuat');
+
+        return response()->json(['data' => new CalibrationResource($sesi)], 201);
+    }
+
+    /**
+     * Simpan sesi Autoklaf (`POST /calibrations/autoclave`).
+     *
+     * Bentuk data Autoklaf nggak muat di `raw_measurements`/`uncertainty_calculations`
+     * (titik ukur + pengulangan), jadi hasilnya dibekukan utuh sebagai snapshot
+     * JSON `hasil_autoclave`. Sisanya — nomor sesi, kondisi lingkungan,
+     * notifikasi admin, arsip folder, replay `client_request_id` — dipakai ulang
+     * PERSIS kayak `store()`, biar sesi Autoklaf hidup di riwayat/approval yang
+     * sama tanpa jalur kedua yang bisa basi.
+     */
+    public function simpanAutoclave(AutoclaveStoreRequest $request): JsonResponse
+    {
+        $clientRequestId = $request->input('client_request_id');
+
+        if ($clientRequestId !== null) {
+            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
+                ->where('client_request_id', $clientRequestId)
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'data' => new CalibrationResource($existing->load(self::RELASI)),
+                ], 200);
+            }
+        }
+
+        $hasil = $this->autoclave->hitung($this->perakitAutoclave->dari($request->dataUkur()));
+        $draft = $request->string('status')->value() === CalibrationSession::STATUS_DRAFT;
+
+        $sesi = DB::transaction(function () use ($request, $clientRequestId, $hasil, $draft): CalibrationSession {
+            $sesi = CalibrationSession::create([
+                ...$this->atributDariRequest($request),
+                'organization_id' => $request->user()->organization_id,
+                'teknisi_id' => $request->user()->id,
+                'client_request_id' => $clientRequestId,
+                'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
+                'status' => $request->string('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL),
+                'submitted_at' => $draft ? null : now(),
+                // Autoklaf nggak divonis PASS/FAIL (AutoclaveProfile::punyaToleransi=false).
+                'keputusan' => null,
+                'hasil_autoclave' => $hasil,
+            ]);
+
+            // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
+            // pembacaan awal/akhir + koreksi sertifikat thermohygro, sama persis
+            // kayak alat lain.
+            $this->kondisi->terapkan($sesi);
+
+            return $sesi->fresh()->load(self::RELASI);
+        });
+
+        $this->kabarinAdmin($sesi);
+        $this->siarkan($sesi, 'dibuat');
+
+        if ($sesi->submitted_at !== null) {
+            try {
+                $this->folder->tautkanLembarKerja($sesi);
+            } catch (\Throwable $e) {
+                Log::warning('Lembar kerja Autoklaf gagal ditaut ke folder PT.', [
+                    'calibration_session_id' => $sesi->id,
+                    'pesan' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json(['data' => new CalibrationResource($sesi)], 201);
     }
@@ -1406,7 +1479,7 @@ class CalibrationController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function atributDariRequest(CalibrationRequest $request): array
+    private function atributDariRequest(Request $request): array
     {
         $atribut = [
             'equipment_id' => $request->integer('equipment_id'),
