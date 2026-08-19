@@ -105,6 +105,24 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Baris keterangan yang dicetak DI ATAS tabel `CALIBRATION REPORT`, sebelum
+     * kepala kolom Standard/UUT/Correction — beda dari `catatan` di snapshot
+     * (dua baris baku DI BAWAH tabel) dan beda dari [remarkTitik] (per baris,
+     * bukan sekali per sertifikat). `null` = alat ini nggak punya apa-apa buat
+     * dicetak di situ, dan barisnya nggak muncul sama sekali — sertifikat lima
+     * alat lain nggak berubah bentuk.
+     *
+     * Session-aware (bukan cuma `float $titikUkur` kayak [remarkTitik]) karena
+     * isinya bisa beda tiap sesi — Viscometer override ini buat `Spindel No. :
+     * 1,2,7` / `Speed (rpm) : 63,62,62`, dan spindle/rpm yang dipakai beda tiap
+     * kali alat ini dikalibrasi. Lihat `SERTIFIKAT.csv` baris 18.
+     */
+    public function catatanAtasTabelHasil(CalibrationSession $sesi): ?string
+    {
+        return null;
+    }
+
+    /**
      * Koefisien determinasi (R²) satu KELOMPOK titik tercetak — kolom `R2` di
      * blok `%T` sertifikat Spectrophotometer. `null` = alat ini nggak nyetak
      * kolom itu, dan kolomnya nggak muncul sama sekali (bukan muncul kosong).
@@ -574,6 +592,47 @@ abstract class CalibrationProfile
     public function desimalFaktorCakupan(): ?int
     {
         return null;
+    }
+
+    /**
+     * Faktor cakupan `k` yang DIKUNCI buat alat ini, atau `null` kalau `k`
+     * dihitung dari `v_eff` lewat t-student (lihat
+     * `GumCalculator::agregasiBudget()`).
+     *
+     * Bawaannya `null` — dan itu yang bener buat lima alat pertama. Workbook pH
+     * lab nyimpen EMPAT nilai k (1,96856; 1,97066; 1,97076; 2,77645) yang
+     * cocok persis sama t-student dipotong ke bawah, termasuk yang 2,77645
+     * waktu `v_eff`-nya cuma 4,92. Jadi lembar labnya sendiri emang ngitung k,
+     * bukan ngunci 2.
+     *
+     * Viscometer beda, dan bedanya keputusan lab: sel `k` di
+     * `PERHITUNGAN U95%` titik 100 & 1000 cP isinya `2` walau `v_eff`-nya
+     * 5,376 (t-student bakal ngasih 2,5706), dan sertifikat masternya nulis
+     * `Coverage Factor ( k ) = 2` hitam di atas putih. Keempat baris CMC
+     * viscometer di `calibration_capabilities` juga `faktor_cakupan = 2`.
+     */
+    public function faktorCakupanTetap(): ?float
+    {
+        return null;
+    }
+
+    /**
+     * `U95` dicetak sebagai KOLOM sendiri di tiap baris tabel hasil, bukan satu
+     * baris ringkas `Uncertainty U95% = ±` di bawah tabel.
+     *
+     * Bawaannya `false`, dan itu yang bener buat alat yang U95-nya lahir per
+     * KELOMPOK: sepuluh baris Holmium Spectrophotometer bawa angka yang sama
+     * persis, dan nyetak angka yang sama sepuluh kali kebaca kayak sepuluh
+     * hasil yang kebetulan mirip.
+     *
+     * Viscometer beda: tiap titik punya U95 sendiri (0,49 / 2,71 / 145,72 —
+     * beda 300 kali lipat antar titik), dan masternya emang nyetak kolom
+     * keempat `U95%, k=2` dengan satu angka per baris. Diringkas jadi satu
+     * baris, dua dari tiga angka HILANG dari dokumen.
+     */
+    public function u95PerTitik(): bool
+    {
+        return false;
     }
 
     /**

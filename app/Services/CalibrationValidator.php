@@ -123,12 +123,37 @@ class CalibrationValidator
             ? $this->profil->untukAlat($sesi->equipment)
             : null;
 
-        if ($sesi->equipment === null
-            || ($sesi->equipment->toleransi === null && $profilAlat?->punyaToleransi() !== false)) {
+        // Alat yang batasnya lahir PER TITIK juga lewat — `equipments.toleransi`
+        // NULL di situ bukan data kurang, tapi bentuk yang bener.
+        //
+        // Viscometer: MPE-nya `TK x SMC x 10000 / RPM x 0,013`, beda tiap titik
+        // karena spindle & RPM-nya beda (4,14 / 22,08 / 1921,84 cP dalam SATU
+        // sesi). Nggak ada satu angka yang bisa ditaruh di kolom alat tanpa
+        // ngarang. `CalibrationController::alasanBelumBisaDihitung()` udah
+        // ngerti itu lewat `toleransiDariKolomAlat()`; penjaga di sini belum,
+        // jadi sesinya kehitung & kesimpen rapi lalu MENTOK di approve —
+        // `boleh_terbit: false`, sertifikat nggak pernah terbit, dan alasannya
+        // nunjuk kolom yang emang sengaja dikosongin.
+        //
+        // Yang tetap ditahan: profil per titik yang ternyata NGGAK ngasih
+        // toleransi ke satu titik pun. Itu beneran vonis tanpa dasar.
+        $toleransiPerTitik = $profilAlat?->toleransiDariKolomAlat() === false;
+
+        $adaToleransiTitik = $sesi->uncertaintyCalculations
+            ->contains(fn ($t): bool => $t->toleransi !== null);
+
+        $toleransiKosong = $sesi->equipment === null
+            || ($toleransiPerTitik
+                ? ! $adaToleransiTitik
+                : $sesi->equipment->toleransi === null && $profilAlat?->punyaToleransi() !== false);
+
+        if ($toleransiKosong) {
             $temuan[] = $this->temuan(
                 self::ERROR,
                 'toleransi_kosong',
-                'Alat belum punya nilai toleransi, jadi keputusan PASS/FAIL nggak punya dasar.',
+                $toleransiPerTitik
+                    ? 'Nggak ada satu titik pun yang punya batas MPE, jadi keputusan PASS/FAIL nggak punya dasar.'
+                    : 'Alat belum punya nilai toleransi, jadi keputusan PASS/FAIL nggak punya dasar.',
             );
         }
 

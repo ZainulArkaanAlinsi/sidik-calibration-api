@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Support\Angka;
 
 /**
  * Profil Viscometer rotasi Brookfield (alat ke-7). Formulir
@@ -409,6 +410,95 @@ class ViscometerProfile extends CalibrationProfile
     public function desimalSertifikat(): ?int
     {
         return self::DESIMAL_SERTIFIKAT;
+    }
+
+    /**
+     * `k` dikunci 2, nggak dihitung dari `v_eff`.
+     *
+     * Sumbernya dokumen lab, bukan penyederhanaan: sel `k` di
+     * `PERHITUNGAN U95%` isinya `2` buat titik 100 & 1000 cP, sertifikat
+     * masternya nulis `Coverage Factor ( k ) = 2`, dan keempat baris CMC
+     * viscometer di `calibration_capabilities` juga `faktor_cakupan = 2`.
+     *
+     * Tanpa ini, titik 100 cP kena t-student `2,5706` (v_eff cuma 5,376 karena
+     * Type A dominan di 5 pengulangan) dan U95-nya kecetak `0,63` — 28,5% di
+     * atas `0,49` yang ada di lembar lab.
+     *
+     * **Cuma viscometer.** Workbook pH lab ngitung k beneran, termasuk
+     * `2,77645` waktu `v_eff`-nya 4,92 — lihat
+     * `CalibrationProfile::faktorCakupanTetap()`. Dipukul rata ke semua alat,
+     * sertifikat pH yang udah beredar ikut berubah bunyi.
+     */
+    public function faktorCakupanTetap(): ?float
+    {
+        return 2.0;
+    }
+
+    /**
+     * Kolom keempat `U95%, k=2`, satu angka per baris — persis
+     * `SERTIFIKAT.csv` baris 19-22.
+     *
+     * Tiap titik viscometer punya U95 sendiri dan jaraknya jauh: 0,49 cP di
+     * titik 100, 145,72 cP di titik 60000. Waktu lembarnya masih diringkas satu
+     * baris `Uncertainty U95% = ±` (bentuk lima alat lain), yang kecetak cuma
+     * punya titik pertama dan dua angka sisanya nggak muncul di dokumen sama
+     * sekali.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
+    }
+
+    /**
+     * `Spindel No. : HA1, HA2, HA7` — `Speed (rpm) : 63, 62, 62`. Persis
+     * posisinya di `SERTIFIKAT.csv` baris 18: satu baris di atas tabel
+     * `CALIBRATION REPORT`, sekali per sertifikat.
+     *
+     * Master nyetak kolom "No." SEBAGAI ANGKA doang (`1,2,7`, bukan
+     * `HA1,HA2,HA7`) — lihat `INPUT DATA.csv` baris 44, kolom "No.Spindle
+     * (automatic filled)". Itu turunan Excel dari kode spindle, murni
+     * dekorasi: nggak pernah masuk satu sel hitungan pun (SMC dicari dari
+     * KODE spindle lewat [TABEL_SMC], bukan dari angka ini), dan nggak ada
+     * aturan yang jelas buat spindle yang nggak berakhiran satu digit
+     * (`T-A`, `SPIRAL`, `ULA`, dst — 60 dari 63 baris [TABEL_SMC]). Yang
+     * dicetak di sini kode spindle ASLINYA: nggak ambigu, kebaca lengkap,
+     * dan sama persis sama yang dipilih teknisi di layar & yang masuk rumus
+     * MPE.
+     *
+     * Titik yang spindle/RPM-nya belum diisi teknisi dilewati, bukan bikin
+     * seluruh baris gagal cetak — sama semangatnya kayak "belum divonis" di
+     * [toleransiTitik]: yang kosong dilaporkan sebagai kosong, bukan
+     * dihilangkan diam-diam ATAU nge-block baris yang lain.
+     */
+    public function catatanAtasTabelHasil(CalibrationSession $sesi): ?string
+    {
+        $pembacaanPerTitik = $sesi->rawMeasurements
+            ->where('tahap', 'sesudah_adjustment')
+            ->groupBy('titik_ke');
+
+        $spindle = [];
+        $rpm = [];
+
+        foreach ($sesi->uncertaintyCalculations->sortBy('titik_ke') as $titik) {
+            $baris = $pembacaanPerTitik->get((int) $titik->titik_ke)?->first();
+
+            if ($baris === null || $baris->spindle === null || $baris->rpm === null) {
+                continue;
+            }
+
+            $spindle[] = $baris->spindle;
+            $rpm[] = Angka::idRingkas((float) $baris->rpm, 2);
+        }
+
+        if ($spindle === []) {
+            return null;
+        }
+
+        return sprintf(
+            'Spindel No. : %s — Speed (rpm) : %s',
+            implode(', ', $spindle),
+            implode(', ', $rpm),
+        );
     }
 
     /**
