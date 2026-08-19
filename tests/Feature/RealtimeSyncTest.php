@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
 use App\Notifications\AlatJatuhTempo;
+use App\Notifications\Channels\SaluranPush;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -115,12 +116,33 @@ class RealtimeSyncTest extends TestCase
         );
     }
 
-    public function test_notifikasi_sistem_lewat_database_dan_broadcast(): void
+    /**
+     * Tiga saluran, dan ketiganya menutup keadaan yang berbeda:
+     *
+     *  - `database` — jejak permanen; lonceng Filament & halaman notifikasi.
+     *  - `broadcast` — aplikasi lagi JALAN, di HP maupun panel desktop.
+     *  - `push` — HP dengan aplikasi KETUTUP TOTAL, satu-satunya celah yang
+     *    websocket nggak bisa tutup.
+     *
+     * Kalau salah satu kecabut, yang hilang bukan notifikasinya melainkan satu
+     * keadaan — dan itu ketahuannya cuma dari orang yang bilang "kok saya nggak
+     * dikabarin", berbulan-bulan kemudian.
+     */
+    public function test_notifikasi_sistem_lewat_database_broadcast_dan_push(): void
     {
         $notif = new AlatJatuhTempo(1, 2, []);
 
-        $this->assertEqualsCanonicalizing(['database', 'broadcast'], $notif->via($this->admin));
+        $this->assertEqualsCanonicalizing(
+            ['database', 'broadcast', SaluranPush::class],
+            $notif->via($this->admin),
+        );
         $this->assertInstanceOf(BroadcastMessage::class, $notif->toBroadcast($this->admin));
+
+        // Muatan push sengaja TIPIS — dia mendarat di layar kunci, kebaca siapa
+        // pun yang megang HP-nya. Rinciannya ditarik lewat REST sesudah dibuka.
+        $push = $notif->toPush($this->admin);
+        $this->assertArrayHasKey('judul', $push);
+        $this->assertArrayHasKey('isi', $push);
     }
 
     public function test_endpoint_auth_channel_butuh_login(): void
