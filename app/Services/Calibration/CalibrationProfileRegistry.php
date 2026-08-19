@@ -3,6 +3,7 @@
 namespace App\Services\Calibration;
 
 use App\Models\Equipment;
+use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
@@ -48,6 +49,7 @@ class CalibrationProfileRegistry
             new ConductivityProfile,
             new SpectrophotometerProfile,
             new ViscometerProfile,
+            new AutoclaveProfile,
         ];
     }
 

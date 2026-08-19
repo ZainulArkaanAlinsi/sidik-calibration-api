@@ -341,6 +341,72 @@ class ViscometerBudgetTest extends TestCase
     }
 
     /**
+     * Budget titik 100 cP diadu KOMPONEN PER KOMPONEN ke lembar lab.
+     *
+     * ## Kenapa selengkap ini, padahal `U95`-nya udah dites di atas
+     *
+     * 19 Agt 2026 lab menjalankan ulang workbook-nya sendiri dan titik ini
+     * keluar `37,87` cP, sementara app — dan `SERTIFIKAT.csv` yang jadi acuan
+     * di repo ini — nulis `0,49299154`. Beda 77 kali lipat, dan dari angka JADI
+     * doang nggak ada yang bisa mutusin siapa yang salah.
+     *
+     * Yang bisa mutusin cuma budget-nya dibongkar: empat komponen, `uc`,
+     * `v_eff`, `k`. Sekali itu dibandingkan, jawabannya nggak lagi soal
+     * pendapat — `v_eff = 5,376144439` itu angka TURUNAN (Welch-Satterthwaite
+     * dari keempat `uici` beserta `vi`-nya), dan dia nggak bisa cocok sampai
+     * sembilan desimal kalau ada satu komponen pun yang beda.
+     *
+     * Dan `37,87` nggak bisa lahir dari budget ini. Disapu satu per satu, biar
+     * keluar segitu salah satu ini mesti benar: `U95% Standar` 37,867 (master
+     * 0,169405), resolusi 65,587 cP (master 0,1), UTemperature 11,47 °C
+     * (master 0,361), atau STDEV pembacaan 42,34 cP pada rata-rata 96,72.
+     * Nggak ada satu pun yang bisa datang dari sesi ini.
+     *
+     * Pemeriksa terakhir yang paling gampang dilihat: MPE titik ini 4,1418 cP.
+     * `U95` 37,87 berarti ketidakpastiannya SEMBILAN KALI lebih lebar dari
+     * batas keberterimaannya sendiri — titik itu nggak akan pernah bisa lulus,
+     * dan sertifikat kayak gitu nggak pernah terbit.
+     *
+     * Angka acuannya `PERHITUNGAN U95%.csv` baris 18-24, kolom `uici`.
+     */
+    public function test_budget_titik_100_cocok_komponen_per_komponen(): void
+    {
+        $hasil = $this->gum->hitungTitik(
+            1,
+            99.65,
+            [97.3, 96.9, 96.8, 95.9, 96.7],
+            $this->alatDenganKemampuan(),
+            $this->standarLarutan(1),
+            26.52,
+            25.25,
+            ['tk' => 'DV2THA', 'spindle' => 'HA1', 'rpm' => 63.0],
+        );
+
+        $uici = [];
+
+        foreach ($hasil['type_b_components'] as $k) {
+            $uici[$k['sumber']] = (float) $k['nilai'];
+        }
+
+        // Keempat baris budget, urut kayak di lembar lab.
+        $this->assertEqualsWithDelta(0.08470250000000001, $uici['ketidakpastian_standar'], 1e-12);
+        $this->assertEqualsWithDelta(0.02886751345948129, $uici['resolusi_alat'], 1e-12);
+        $this->assertEqualsWithDelta(0.018770126348448452, $uici['ketidakpastian_temperature'], 1e-9);
+        $this->assertEqualsWithDelta(0.22891046284519068, $uici['pengulangan_pembacaan'], 1e-12);
+
+        // Turunannya. `v_eff` yang paling nggak bisa cocok karena kebetulan.
+        $this->assertEqualsWithDelta(0.24649576970552553, $hasil['ketidakpastian_gabungan'], 1e-10);
+        $this->assertEqualsWithDelta(5.376144439333908, $hasil['derajat_kebebasan_efektif'], 1e-8);
+        $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-12);
+        $this->assertEqualsWithDelta(0.49299153941105106, $hasil['ketidakpastian_diperluas'], 1e-10);
+
+        // U95 wajib jauh DI BAWAH MPE. Penjaga kewarasan yang langsung merah
+        // kalau salah satu komponen meledak kayak kasus `37,87`.
+        $this->assertEqualsWithDelta(4.141803174603175, $hasil['toleransi'], 1e-9);
+        $this->assertLessThan($hasil['toleransi'], $hasil['ketidakpastian_diperluas']);
+    }
+
+    /**
      * Titik ketiga jatuh di 61898,12 cP — DI ATAS batas lingkup akreditasi
      * 58021 cP. Dua hal yang harus terjadi bareng, dan gampang cuma kejadian
      * salah satunya:

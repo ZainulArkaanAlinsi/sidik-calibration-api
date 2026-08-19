@@ -80,6 +80,13 @@ class CertificateSnapshotBuilder
             'satuan' => $sesi->rawMeasurements->first()?->satuan ?? $alat?->satuan,
             'header' => $this->header($sesi, $sertifikat),
             'hasil' => $this->hasil($sesi),
+            // Autoklaf nggak punya tabel hasil empat kolom — sertifikatnya TIGA
+            // bagian (A Sebaran Suhu, B Kinerja, C Tekanan) yang bentuknya beda
+            // satu sama lain. `null` di tujuh alat lain, dan waktu null lembar
+            // cetaknya nggak berubah sama sekali. Dibekukan apa adanya:
+            // `AutoclaveCalculator` udah presisi penuh diadu ke master, tinggal
+            // diformat di blade.
+            'autoclave' => $sesi->adalahAutoclave() ? $sesi->hasil_autoclave : null,
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),
             'footer' => $this->footer($sesi, $sertifikat, $pengaturan),
