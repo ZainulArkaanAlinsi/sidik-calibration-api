@@ -141,6 +141,51 @@ class ViscometerCapabilitySeeder extends Seeder
                 'keterangan' => 'Di luar ruang lingkup akreditasi LK-285-IDN no. 44 (batas 58021 cP). '
                     .'Budget ketidakpastian tetap dihitung penuh; U95 dilaporkan apa adanya, tanpa lantai CMC.',
             ],
+            // CELAH ANTAR LARUTAN — alasan yang sama persis dengan baris di
+            // atas, cuma arahnya ke samping, bukan ke atas.
+            //
+            // Nilai acuan tiap titik digeser suhu, dan geserannya gampang
+            // melompati batas rentang terakreditasi ke wilayah yang nggak
+            // dipunyai larutan mana pun. Larutan 100 cP pada 22 °C bernilai
+            // 120,26 cP: di atas batas KAN 102 cP, dan masih jauh dari 419,5 cP
+            // yang punya larutan 1000 cP. Suhu 22 °C itu bukan kasus ekstrem —
+            // lab ber-AC di bawah 25 °C mendarat di situ tiap hari.
+            //
+            // Tanpa baris ini titik itu nggak ketemu kemampuan apa pun dan
+            // jatuh ke `hitungDariStandarDanResolusi()`: budget menyusut jadi
+            // DUA komponen, pengaruh suhu hilang, dan `uc` turun 5 % (0,18058
+            // dari 0,19078 pada sesi uji 22 °C). Sertifikatnya ngeklaim
+            // ketidakpastian lebih baik dari yang bisa dibuktikan — persis
+            // kegagalan yang bikin baris keempat ditulis, cuma di rentang yang
+            // waktu itu belum kepikiran.
+            //
+            // Batas bawah 6,47 cP = jangkauan terbawah tabel larutan 100 cP
+            // (100 °C); batas atas tiap celah nempel ke batas bawah rentang
+            // terakreditasi berikutnya. `cmc => 0` = nggak ada klaim.
+            [
+                'parameter' => 'viskositas (cP)-di bawah lingkup KAN',
+                'min' => 6.47,
+                'maks' => 51.1,
+                'cmc' => 0.0,
+                'keterangan' => 'Di bawah rentang terakreditasi terendah (51,1 cP). Budget dihitung penuh, '
+                    .'U95 dilaporkan apa adanya, tanpa lantai CMC.',
+            ],
+            [
+                'parameter' => 'viskositas (cP)-celah 102-419,5 cP',
+                'min' => 102.0,
+                'maks' => 419.5,
+                'cmc' => 0.0,
+                'keterangan' => 'Celah antara ruang lingkup larutan 100 cP dan 1000 cP. Dicapai larutan '
+                    .'100 cP di bawah ~24 °C. Budget dihitung penuh, tanpa lantai CMC.',
+            ],
+            [
+                'parameter' => 'viskositas (cP)-celah 1028-19259 cP',
+                'min' => 1028.0,
+                'maks' => 19259.0,
+                'cmc' => 0.0,
+                'keterangan' => 'Celah antara ruang lingkup larutan 1000 cP dan 60000 cP. Dicapai larutan '
+                    .'1000 cP di bawah ~24 °C. Budget dihitung penuh, tanpa lantai CMC.',
+            ],
         ];
 
         foreach ($baris as $b) {

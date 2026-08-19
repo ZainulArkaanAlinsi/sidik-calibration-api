@@ -32,6 +32,9 @@ use Illuminate\Support\Carbon;
     // Rentang ukur / kapasitas / resolusi versi teknisi — lihat migrasi
     // 2026_08_13_100000.
     'spesifikasi_alat',
+    // Snapshot hasil olah data Autoklaf (JSON) — alat ke-8 nggak lewat
+    // raw_measurements/uncertainty_calculations. Lihat migrasi 2026_08_19_120000.
+    'hasil_autoclave',
 ])]
 class CalibrationSession extends Model
 {
@@ -67,7 +70,15 @@ class CalibrationSession extends Model
             'suhu_akhir' => 'float',
             'kelembaban_awal' => 'float',
             'kelembaban_akhir' => 'float',
+            // Snapshot hasil olah data Autoklaf (Section A/B/C + budget + input).
+            'hasil_autoclave' => 'array',
         ];
+    }
+
+    /** Sesi Autoklaf — hasilnya di `hasil_autoclave`, bukan di titik ukur. */
+    public function adalahAutoclave(): bool
+    {
+        return $this->hasil_autoclave !== null;
     }
 
     /** Kolom `Time` baris `First` di Env. Condition. */

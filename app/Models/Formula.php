@@ -56,6 +56,16 @@ class Formula extends Model
      */
     public const KODE_GUM_VISCOMETER = 'gum-viscometer';
 
+    /**
+     * Rumus GUM buat jalur Autoklaf. Beda sendiri: satu sesi ngasilin DUA
+     * besaran (Suhu & Tekanan), budget suhu lahir dari 3 disk sensor pada satu
+     * set point (budget 6 komponen, k dari polinomial t-student) dan budget
+     * tekanan dari satu titik dengan konversi satuan (5 komponen, k dari TINV).
+     * Dihitung utuh di `AutoclaveCalculator`, bukan lewat GumCalculator per
+     * titik — lihat AutoclaveProfile.
+     */
+    public const KODE_GUM_AUTOCLAVE = 'gum-autoclave';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

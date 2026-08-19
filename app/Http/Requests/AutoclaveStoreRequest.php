@@ -1,0 +1,104 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\CalibrationSession;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+/**
+ * Simpan sesi Autoklaf (`POST /calibrations/autoclave`). Gabungan identitas sesi
+ * (equipment, tanggal, kondisi lingkungan, thermohygro) + data ukur (set point,
+ * disk suhu, tekanan). Tabel kalibrator & CMC TIDAK diterima — server-side.
+ *
+ * Sengaja longgar kayak lembar kerja alat lain: kolom yang belum keisi tetap
+ * lolos (draft bertahap), yang dijaga penerbitan sertifikatnya di pemeriksaan
+ * admin — bukan kelengkapan formulir.
+ */
+class AutoclaveStoreRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    private function draft(): bool
+    {
+        return $this->string('status')->value() === CalibrationSession::STATUS_DRAFT;
+    }
+
+    /**
+     * @return array<string, array<int, mixed>|string>
+     */
+    public function rules(): array
+    {
+        $org = $this->user()->organization_id;
+
+        return [
+            // ---- Identitas sesi ----
+            'equipment_id' => [
+                'required',
+                Rule::exists('equipments', 'id')->where('organization_id', $org)->whereNull('deleted_at'),
+            ],
+            'client_request_id' => ['sometimes', 'nullable', 'uuid'],
+            'input_method' => ['sometimes', Rule::in(['manual', 'ocr'])],
+            'status' => ['sometimes', Rule::in([
+                CalibrationSession::STATUS_DRAFT,
+                CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+            ])],
+            'tanggal_kalibrasi' => [$this->draft() ? 'nullable' : 'required', 'date', 'before_or_equal:today'],
+            'tanggal_terima' => ['sometimes', 'nullable', 'date', 'before_or_equal:tanggal_kalibrasi'],
+            'nomor_order' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'lokasi' => ['sometimes', Rule::in(['lab', 'onsite'])],
+            'lokasi_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'room_id' => ['sometimes', 'nullable', Rule::exists('rooms', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
+            'calibration_method_id' => ['sometimes', 'nullable', Rule::exists('calibration_methods', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
+            'thermohygro_standard_id' => ['sometimes', 'nullable', Rule::exists('standards', 'id')->where('organization_id', $org)->whereNull('deleted_at')],
+            'suhu_awal' => ['sometimes', 'nullable', 'numeric'],
+            'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
+            'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'waktu_awal' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
+            'waktu_akhir' => ['sometimes', 'nullable', 'date_format:H:i,H:i:s'],
+            'catatan_teknisi' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'alat_model' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'alat_serial_number' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'alat_merk' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
+
+            // ---- Data ukur (identik AutoclaveCalculationRequest) ----
+            'set_point' => [$this->draft() ? 'nullable' : 'required', 'numeric', 'min:0'],
+            'suhu' => ['sometimes', 'array'],
+            'suhu.disk' => ['sometimes', 'array', 'max:3'],
+            'suhu.disk.*' => ['array'],
+            'suhu.disk.*.*' => ['nullable', 'numeric'],
+            'suhu.indikator' => ['sometimes', 'array'],
+            'suhu.indikator.*' => ['nullable', 'numeric'],
+            'suhu.suhu_ruang' => ['sometimes', 'array'],
+            'suhu.suhu_ruang.*' => ['nullable', 'numeric'],
+            'suhu.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'tekanan' => ['sometimes', 'array'],
+            'tekanan.uut_setting' => ['required_with:tekanan', 'numeric'],
+            'tekanan.satuan' => ['sometimes', 'string', 'in:Bar,MPa,kPa,Psi,kg/cm2,inHg,mmHg,Pa'],
+            'tekanan.display' => ['sometimes', 'string', 'in:Digital,Analog 1,Analog 2,Analog 3'],
+            'tekanan.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'tekanan.pembacaan_standar' => ['required_with:tekanan', 'array', 'min:1'],
+            'tekanan.pembacaan_standar.*' => ['nullable', 'numeric'],
+            'tekanan.tekanan_atm_awal' => ['sometimes', 'nullable', 'numeric'],
+        ];
+    }
+
+    /**
+     * Data ukur murni (buat AutoclaveInputBuilder), dipisah dari identitas.
+     *
+     * @return array<string, mixed>
+     */
+    public function dataUkur(): array
+    {
+        return array_filter(
+            $this->only(['set_point', 'suhu', 'tekanan']),
+            static fn ($v): bool => $v !== null,
+        );
+    }
+}
