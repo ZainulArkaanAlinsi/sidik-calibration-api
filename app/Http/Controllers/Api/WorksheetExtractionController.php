@@ -107,7 +107,10 @@ class WorksheetExtractionController extends Controller
             WorksheetExtractionLog::create([
                 'calibration_session_id' => $sesi?->id,
                 'user_id' => $user->id,
-                'model' => (string) config('services.anthropic.model'),
+                // Model penyedia yang AKTIF, bukan Anthropic terus-terusan:
+                // lab ini jalan di `VISION_DRIVER=gemini`, jadi baris lama
+                // nyatat gagalnya `GEMINI_API_KEY` kosong sebagai model Claude.
+                'model' => WorksheetVisionExtractor::modelAktif(),
                 'status' => 'belum_disetel',
                 'error' => $e->getMessage(),
             ]);
