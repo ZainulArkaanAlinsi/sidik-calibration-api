@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -100,9 +101,30 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
     {
         $this->sertifikatTerbit();
 
-        $lain = Certificate::where('status', Certificate::STATUS_TERBIT)
-            ->whereHas('session', fn ($q) => $q->where('nomor_sesi', 'SES/2026/07/0001'))
+        // Sertifikat KEDUA disusun di sini, dari sesi seeder yang lain.
+        //
+        // Dulu dipakai `SES/2026/07/0001` — sesi demo buatan tangan yang
+        // sertifikatnya terbit TANPA `snapshot` sama sekali, dan sudah dibuang
+        // dari `DemoDataSeeder` (lihat `SeederTidakMenanamSertifikatKosongTest`).
+        // Seeder cuma menerbitkan satu sertifikat, jadi pasangan buat menguji
+        // "yang lain jangan kesenggol" memang harus dibikin di test — dan itu
+        // lebih kokoh daripada menumpang data demo yang bisa berubah.
+        $sesiLain = CalibrationSession::where('nomor_sesi', '!=', '2405.13.A')
+            ->whereHas('uncertaintyCalculations')
             ->firstOrFail();
+
+        $lain = Certificate::create([
+            'organization_id' => $sesiLain->organization_id,
+            'calibration_session_id' => $sesiLain->id,
+            'nomor' => 'CAL/UJI/0002',
+            'qr_token' => 'ujilain02',
+            'status' => Certificate::STATUS_TERBIT,
+            'diterbitkan_pada' => now()->subDay(),
+            'berlaku_sampai' => now()->addYear(),
+        ]);
+        $lain->update([
+            'snapshot' => app(CertificateSnapshotBuilder::class)->bangun($sesiLain, $lain),
+        ]);
 
         $basi = $lain->snapshot;
         $basi['header']['env_condition'] = 'JANGAN DISENTUH';

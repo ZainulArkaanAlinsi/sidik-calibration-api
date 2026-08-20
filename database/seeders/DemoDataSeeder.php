@@ -2,13 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\CalibrationSession;
-use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Standard;
-use App\Models\User;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Illuminate\Database\Seeder;
 
@@ -171,56 +168,34 @@ class DemoDataSeeder extends Seeder
                 ],
             );
         }
-
-        $this->seedSertifikatContoh();
     }
 
     /**
-     * Satu sesi kalibrasi + sertifikat "terbit", supaya halaman verifikasi QR
-     * (`/verify/{qr_token}`) bisa dites sekarang — fitur kalibrasi & generator
-     * sertifikat baru dibikin Minggu 4-8.
+     * ## Sertifikat demo `CAL/2026/07/0001` sudah DIHAPUS dari seeder ini
      *
-     * qr_token-nya sengaja dibikin gampang diketik pas dev: `DEMOQR123`.
-     * Yang asli nanti diacak.
+     * Dulu ada satu sesi + sertifikat "terbit" buatan tangan di sini, supaya
+     * halaman verifikasi QR publik (`/verify/{qr_token}`) bisa dicoba waktu
+     * fitur kalibrasi & generator sertifikat belum dibangun.
+     *
+     * Fitur itu sekarang ada, dan data itu berubah dari berguna jadi
+     * menyesatkan. Tiga hal yang salah dengannya:
+     *
+     *  1. **Sesinya `disetujui` dengan keputusan `PASS` tapi NOL pengukuran
+     *     dan NOL hitungan.** Itu persis kelas kekeliruan yang berkali-kali
+     *     ditutup di kode ini — vonis lulus yang tidak pernah lahir dari satu
+     *     pun kriteria yang diperiksa. Di sini dia hidup sebagai data.
+     *  2. **Sertifikatnya `terbit` tanpa `snapshot`.** Satu-satunya dari 40
+     *     sertifikat terbit di database kerja yang begitu.
+     *  3. **Alatnya Jangka Sorong** — alat DIMENSI, yang belum punya profil,
+     *     jadi jatuh ke profil pH sebagai cadangan dan `CalibrationValidator`
+     *     menandainya `titik_kosong` selamanya.
+     *
+     * Buat mencoba halaman verifikasi sekarang, pakai sertifikat NYATA mana
+     * pun dari seeder alat — sembilan alat analitik semuanya menerbitkan
+     * sertifikat lengkap dengan `qr_token` dan `snapshot`-nya. Contoh:
+     * `012-CAL-524` (pH Meter).
+     *
+     * `VerificationTest` tidak terpengaruh: dia menyusun sesi & sertifikatnya
+     * sendiri lewat factory, tidak pernah membaca seeder ini.
      */
-    private function seedSertifikatContoh(): void
-    {
-        $alat = Equipment::where('serial_number', 'MT-500-196-30')->first();
-        $teknisi = User::where('employee_id', 'SDK-0002')->first();
-        $admin = User::where('employee_id', 'SDK-0001')->first();
-
-        if (! $alat || ! $teknisi || ! $admin) {
-            return;
-        }
-
-        $sesi = CalibrationSession::updateOrCreate(
-            ['organization_id' => 1, 'nomor_sesi' => 'SES/2026/07/0001'],
-            [
-                'equipment_id' => $alat->id,
-                'teknisi_id' => $teknisi->id,
-                'reviewed_by' => $admin->id,
-                'input_method' => 'manual',
-                'status' => CalibrationSession::STATUS_DISETUJUI,
-                'keputusan' => 'PASS',
-                'tanggal_kalibrasi' => now()->subMonth(),
-                'lokasi' => 'lab',
-                'suhu_ruang' => 23.5,
-                'kelembaban' => 55.0,
-                'submitted_at' => now()->subMonth(),
-                'reviewed_at' => now()->subMonth()->addDay(),
-            ],
-        );
-
-        Certificate::updateOrCreate(
-            ['organization_id' => 1, 'nomor' => 'CAL/2026/07/0001'],
-            [
-                'calibration_session_id' => $sesi->id,
-                'issued_by' => $admin->id,
-                'qr_token' => 'DEMOQR123',
-                'diterbitkan_pada' => now()->subMonth()->addDay(),
-                'berlaku_sampai' => now()->addMonths(11),
-                'status' => Certificate::STATUS_TERBIT,
-            ],
-        );
-    }
 }
