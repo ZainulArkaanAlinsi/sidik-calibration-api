@@ -255,6 +255,41 @@ class LembarKerjaTest extends TestCase
         );
     }
 
+    /**
+     * DO Meter (alat ke-9): satu titik 8,77 mg/L, before/after adjustment,
+     * kolom pembacaan mg/L + suhu larutan.
+     *
+     * Titiknya 8,77 — BUKAN 0,00 yang tercetak di form Rev.2. Kalau ada yang
+     * "mbenerin" ini ngikut kertasnya, test ini yang teriak.
+     */
+    public function test_lembar_kerja_do_meter_satu_titik_877(): void
+    {
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=do_meter')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', 'mg/L')
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0532_Rev.2')
+            ->json('data');
+
+        $this->assertStringContainsString('DO Meter', $data['judul']);
+        $this->assertEqualsWithDelta([8.77], $data['larutan_standar'], 1e-9);
+
+        $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'];
+        $this->assertSame(
+            ['sebelum_adjustment', 'sesudah_adjustment'],
+            array_column($tabel, 'tahap'),
+        );
+        // Dua kolom per sel: pembacaan mg/L + suhu larutan °C.
+        $this->assertSame(['pembacaan', 'suhu'], array_column($tabel[0]['kolom'], 'kode'));
+        // Satu baris titik.
+        $this->assertEqualsWithDelta([8.77], array_column($tabel[0]['baris'], 'titik_ukur'), 1e-9);
+
+        // Thermohygro DO Meter ada di blok CALIBRATION RESULT (ikut kertas),
+        // bukan EQUIPMENT IDENTITY kayak lembar pH/Chlorine.
+        $hasil = collect($data['bagian'])->firstWhere('kode', 'hasil');
+        $this->assertContains('thermohygro_standard_id', array_column($hasil['field'], 'kode'));
+    }
+
     public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void
     {
         // Mobile lama yang belum ngirim ?profil harus tetap dapat pH persis.
@@ -276,7 +311,7 @@ class LembarKerjaTest extends TestCase
      */
     public function test_jumlah_kolom_pengulangan_bisa_diatur_di_ketiga_alat(): void
     {
-        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer'] as $profil) {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer', 'do_meter'] as $profil) {
             $data = $this->actingAs($this->teknisi)
                 ->getJson("/api/calibrations/lembar-kerja?profil={$profil}&pengulangan=3")
                 ->assertOk()
@@ -298,7 +333,7 @@ class LembarKerjaTest extends TestCase
     public function test_tanpa_parameter_tetap_lima_kolom_kayak_form_kertas(): void
     {
         // Mobile lama yang belum ngirim `pengulangan` nggak boleh ikut berubah.
-        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer'] as $profil) {
+        foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'refractometer', 'do_meter'] as $profil) {
             $this->actingAs($this->teknisi)
                 ->getJson("/api/calibrations/lembar-kerja?profil={$profil}")
                 ->assertOk()
