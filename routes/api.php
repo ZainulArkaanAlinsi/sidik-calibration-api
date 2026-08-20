@@ -356,6 +356,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
         // Alias `/arsip/*` (docs/permintaan-backend-2026-07-24.md §2) — handler sama.
+        //
+        // `store` sempat kelewat di sini sementara `update` & `destroy` didaftar.
+        // Akibatnya tombol "bikin folder" di layar Arsip mobile
+        // (`ApiArsipService.bikinFolder` nembak `POST /api/arsip/folders`) balik
+        // 404 — satu-satunya cara nambah folder arsip mati, sementara ganti nama
+        // dan hapus jalan normal. Ketimpangan itu yang bikin gejalanya kebaca
+        // kayak bug mobile, bukan rute yang hilang.
+        Route::post('/arsip/folders', [FolderController::class, 'store']);
         Route::put('/arsip/folders/{folder}', [FolderController::class, 'update']);
         Route::delete('/arsip/folders/{folder}', [FolderController::class, 'destroy']);
         // Pindahin folder ke induk lain. Kepisah dari `update()` yang cuma rename:
