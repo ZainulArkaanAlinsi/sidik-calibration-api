@@ -442,7 +442,65 @@ class CalibrationValidator
             );
         }
 
+        if ($adaTekanan) {
+            $temuan = [...$temuan, ...$this->periksaKoreksiTekananMustahil($hasil['tekanan'])];
+        }
+
         return $temuan;
+    }
+
+    /**
+     * Koreksi tekanan yang kejauhan dari set point — hampir selalu salah satuan.
+     *
+     * Baris `Pembacaan Standar` itu hasil unduh Pressure Disk Logger dan
+     * SELALU dalam Bar (lihat `AutoclaveProfile::tabelPindai`), sementara
+     * `uut_setting` & `resolusi_alat` ngikut satuan display alatnya (Bar/MPa/
+     * kPa/...). Jadi lembar yang set point-nya 0,11 MPa harus dipasangin
+     * pembacaan standar 1,12 Bar — bukan 0,112.
+     *
+     * Salah ngisi di situ NGGAK bikin error apa pun: hitungannya jalan mulus,
+     * cuma hasilnya lewat. Diuji 20 Agu 2026 — 0,112 diketik di baris Bar
+     * bikin koreksi keluar −0,0988 MPa padahal semestinya +0,002 MPa (meleset
+     * 50 kali), validasinya nol temuan, dan sertifikatnya terbit.
+     *
+     * Ambangnya 25 % dari set point: salah satuan MPa↔Bar ngasih ~90 %, jadi
+     * ketangkep telak, sementara autoklaf yang beneran ngaco pun jarang
+     * meleset seperempat set point-nya (0,275 Bar di 1,1 Bar ≈ 4 psi).
+     * PERINGATAN, bukan error — kalau alatnya emang serusak itu, admin tinggal
+     * lanjut pakai `abaikan_peringatan`.
+     *
+     * @param  array<string, mixed>  $tekanan
+     * @return list<array<string, mixed>>
+     */
+    private function periksaKoreksiTekananMustahil(array $tekanan): array
+    {
+        $setPointBar = (float) ($tekanan['uut_setting_bar'] ?? 0.0);
+        $koreksiBar = (float) ($tekanan['koreksi_bar'] ?? 0.0);
+
+        if ($setPointBar <= 0.0 || abs($koreksiBar) <= abs($setPointBar) * 0.25) {
+            return [];
+        }
+
+        $satuan = (string) ($tekanan['satuan'] ?? 'Bar');
+
+        return [$this->temuan(
+            self::PERINGATAN,
+            'koreksi_tekanan_mustahil',
+            sprintf(
+                'Koreksi tekanan %s Bar itu %d%% dari set point %s Bar — kejauhan buat autoklaf yang jalan. '
+                .'Paling sering sebabnya baris "Pembacaan Standar" keisi dalam %s, padahal baris itu selalu Bar '
+                .'(hasil unduh Pressure Disk Logger). Cocokin dulu ke lembar kerjanya sebelum sertifikatnya terbit.',
+                rtrim(rtrim(number_format($koreksiBar, 4, ',', '.'), '0'), ','),
+                (int) round(abs($koreksiBar) / abs($setPointBar) * 100),
+                rtrim(rtrim(number_format($setPointBar, 4, ',', '.'), '0'), ','),
+                $satuan,
+            ),
+            [
+                'koreksi_bar' => $koreksiBar,
+                'uut_setting_bar' => $setPointBar,
+                'satuan_display' => $satuan,
+            ],
+        )];
     }
 
     private function periksaKondisiLingkunganMustahil(CalibrationSession $sesi): array

@@ -1566,7 +1566,24 @@ class CalibrationController extends Controller
      */
     private function siarkan(CalibrationSession $sesi, string $aksi): void
     {
-        PerubahanDataOrganisasi::dispatch($sesi->organization_id, 'kalibrasi', $aksi, $sesi->id);
+        // `PerubahanDataOrganisasi` itu ShouldBroadcastNow — SINKRON. Artinya
+        // kalau server Reverb-nya lagi mati, yang error bukan cuma siarannya:
+        // exception-nya naik sampai ke respons, dan teknisi yang lembar
+        // kerjanya UDAH kesimpen dapat HTTP 500.
+        //
+        // Siaran itu cuma pemicu refresh layar yang lagi kebuka. Kehilangan
+        // satu siaran artinya admin baru lihat sesinya pas nge-refresh
+        // sendiri; kehilangan pengiriman lembar kerja artinya teknisi ngetik
+        // ulang semuanya dari lapangan. Nggak sebanding.
+        try {
+            PerubahanDataOrganisasi::dispatch($sesi->organization_id, 'kalibrasi', $aksi, $sesi->id);
+        } catch (\Throwable $e) {
+            Log::warning('Siaran perubahan sesi gagal.', [
+                'calibration_session_id' => $sesi->id,
+                'aksi' => $aksi,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -1581,7 +1598,7 @@ class CalibrationController extends Controller
             return;
         }
 
-        $teknisi->notify($notifikasi);
+        $this->kirimKabar($sesi, fn () => $teknisi->notify($notifikasi));
     }
 
     /** Kabarin semua admin aktif kalau ada sesi baru masuk antrean approval. */
@@ -1601,7 +1618,37 @@ class CalibrationController extends Controller
         $notifikasi = SesiMenungguApproval::dariSesi($sesi);
 
         foreach ($admin as $user) {
-            $user->notify($notifikasi);
+            $this->kirimKabar($sesi, fn () => $user->notify($notifikasi));
+        }
+    }
+
+    /**
+     * Kirim satu notifikasi tanpa pernah bikin request pemanggilnya gagal.
+     *
+     * Notifikasi itu KABAR soal pekerjaan yang UDAH selesai & kesimpen —
+     * dipanggil sesudah transaksinya commit. Jadi kalau pengirimannya meledak,
+     * yang bener bukan ngasih 500 ke teknisi: kerjaannya udah aman di DB, tapi
+     * layarnya bilang gagal, dan yang kejadian berikutnya teknisi ngirim ulang
+     * lembar yang sama.
+     *
+     * Bukan skenario karangan. Migrasi `device_tokens` ketinggalan jalan di
+     * satu mesin (20 Agu 2026) dan `SaluranPush` — yang query tabel itu tanpa
+     * penjaga — bikin SETIAP pengiriman lembar kerja balik HTTP 500, sembilan
+     * alat sekaligus, cuma gara-gara saluran push yang belum siap.
+     *
+     * Sejajar sama `folder->tautkanLembarKerja()` beberapa baris di atas:
+     * pekerjaan sampingan sesudah commit, gagalnya dicatat, alurnya jalan
+     * terus.
+     */
+    private function kirimKabar(CalibrationSession $sesi, callable $kirim): void
+    {
+        try {
+            $kirim();
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi sesi gagal dikirim.', [
+                'calibration_session_id' => $sesi->id,
+                'pesan' => $e->getMessage(),
+            ]);
         }
     }
 
