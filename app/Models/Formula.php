@@ -74,6 +74,16 @@ class Formula extends Model
      */
     public const KODE_GUM_DO_METER = 'gum-do-meter';
 
+    /**
+     * Rumus GUM buat jalur Multi Gas Detector (alat ke-10). Budget 5 komponen
+     * per gas, EMPAT gas per sesi (CO/H2S/CH4/O2) dengan satuan berbeda-beda.
+     * Dua komponennya — pengaruh suhu & pengaruh tekanan — `u`-nya lahir dari
+     * PERGESERAN kondisi ruangan selama kerja (|akhir − awal|), bukan dari
+     * ketidakpastian sertifikat kayak sembilan alat lain, dan itu sebabnya
+     * tekanan udara ikut disimpan per sesi. Lihat GasDetectorProfile.
+     */
+    public const KODE_GUM_GAS_DETECTOR = 'gum-gas-detector';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

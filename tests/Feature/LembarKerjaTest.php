@@ -290,6 +290,62 @@ class LembarKerjaTest extends TestCase
         $this->assertContains('thermohygro_standard_id', array_column($hasil['field'], 'kode'));
     }
 
+    /**
+     * Gas Detector (alat ke-10): EMPAT gas dalam satu lembar, tiga satuan
+     * berbeda, dan baris kondisi lingkungan KETIGA — tekanan udara.
+     *
+     * Tiga hal yang dijaga di sini, semuanya cuma dipunyai alat ini:
+     *
+     *  1. **`satuan` lembar `null`.** Alat bersatuan campuran; tiap baris
+     *     membawa satuannya sendiri. Kalau kunci ini keisi, frontend
+     *     menempelkan satu satuan ke semua kolom dan kadar oksigen kecetak
+     *     "16,7 ppm" alih-alih "16,7 %".
+     *  2. **Tiga pengulangan, bukan lima.** `INPUT DATA` D38:D40 cuma punya
+     *     tiga baris Repeat, dan budgetnya ikut (`R9 = 3-1`).
+     *  3. **Tanpa kolom suhu per pembacaan.** Yang masuk budget suhu RUANGAN,
+     *     bukan suhu media yang diukur seperti larutan buffer pH.
+     *
+     * `kode_dokumen` sengaja NULL: nomor formulir lembar kerjanya belum ada di
+     * berkas mana pun, dan menebaknya berarti menaruh nomor dokumen terkendali
+     * yang palsu di kertas yang ikut diaudit.
+     */
+    public function test_lembar_kerja_gas_detector_empat_gas_dan_tekanan(): void
+    {
+        $data = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=gas_detector')
+            ->assertOk()
+            ->assertJsonPath('data.satuan', null)
+            ->assertJsonPath('data.kode_dokumen', null)
+            ->assertJsonPath('data.jumlah_pengulangan', 3)
+            ->assertJsonPath('data.satuan_tekanan', 'hPa')
+            ->json('data');
+
+        $this->assertStringContainsString('Gas Detector', $data['judul']);
+        $this->assertEqualsWithDelta([101.0, 25.0, 50.0, 17.9], $data['larutan_standar'], 1e-9);
+
+        $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'];
+        $this->assertSame(
+            ['sebelum_adjustment', 'sesudah_adjustment'],
+            array_column($tabel, 'tahap'),
+        );
+
+        // Satu kolom saja — nggak ada suhu per pembacaan.
+        $this->assertSame(['pembacaan'], array_column($tabel[0]['kolom'], 'kode'));
+        $this->assertSame([1, 2, 3], $tabel[0]['pengulangan']);
+
+        // Empat baris, masing-masing bawa satuan & resolusinya sendiri.
+        $this->assertSame(['CO', 'H2S', 'CH4', 'O2'], array_column($tabel[0]['baris'], 'label'));
+        $this->assertSame(['ppm', 'ppm', '%LEL', '%'], array_column($tabel[0]['baris'], 'satuan'));
+        $this->assertEqualsWithDelta([1.0, 1.0, 1.0, 0.1], array_column($tabel[0]['baris'], 'resolusi'), 1e-9);
+
+        // Baris kondisi lingkungan ketiga — cuma alat ini yang punya.
+        $hasil = collect($data['bagian'])->firstWhere('kode', 'hasil');
+        $kode = array_column($hasil['field'], 'kode');
+        $this->assertContains('tekanan_awal', $kode);
+        $this->assertContains('tekanan_akhir', $kode);
+        $this->assertContains('thermohygro_standard_id', $kode);
+    }
+
     public function test_lembar_kerja_default_tetap_ph_kalau_tanpa_param(): void
     {
         // Mobile lama yang belum ngirim ?profil harus tetap dapat pH persis.
