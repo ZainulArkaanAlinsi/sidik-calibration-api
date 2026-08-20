@@ -29,7 +29,10 @@ class ValidasiSel
 
     public const KOSONG = 'kosong';
 
-    public function __construct(private readonly NormalisasiAngka $normalisasi) {}
+    public function __construct(
+        private readonly NormalisasiAngka $normalisasi,
+        private readonly NormalisasiJam $jam = new NormalisasiJam,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $template  definisi sel dari `TemplateLembarKerja`
@@ -41,6 +44,13 @@ class ValidasiSel
     {
         $aturan = $template['aturan'];
         $alasan = [];
+
+        // Sel JAM (baris `Time` lembar Autoklaf) punya jalurnya sendiri: dia
+        // nggak punya nilai desimal, jadi seluruh mesin rentang/rasio/kelipatan
+        // di bawah nggak berlaku buat dia.
+        if (($aturan['tipe'] ?? null) === 'jam') {
+            return $this->periksaJam($template, $dariHp, $aturan, $penaltiKualitas);
+        }
 
         $hasil = $this->normalisasi->proses($dariHp['teks_mentah'] ?? null, $aturan);
 
@@ -87,6 +97,78 @@ class ValidasiSel
         $status = $this->status($confidence, $alasan, $aturan);
 
         return $this->hasil($template, $dariHp, $hasil, $nilai, $status, $alasan, $confidence);
+    }
+
+    /**
+     * Sel jam: `02:00:00`, bukan angka.
+     *
+     * Penjagaan yang tetap berlaku cuma dua — kotak teksnya harus duduk di
+     * dalam selnya (itu penjaga "angka nggak nyebrang sel", dan jam pun nggak
+     * boleh nyebrang), dan substitusi karakter menurunkan statusnya. Rentang,
+     * rasio nominal, dan kelipatan resolusi nggak punya arti di sini.
+     *
+     * @param  array<string, mixed>  $template
+     * @param  array<string, mixed>  $dariHp
+     * @param  array<string, mixed>  $aturan
+     * @return array<string, mixed>
+     */
+    private function periksaJam(
+        array $template,
+        array $dariHp,
+        array $aturan,
+        float $penaltiKualitas,
+    ): array {
+        $hasil = $this->jam->proses($dariHp['teks_mentah'] ?? null, $aturan);
+
+        $confidence = max(0.0, min(
+            1.0,
+            $this->angkaConfidence($dariHp['confidence_ocr'] ?? null)
+                - ($hasil['substitusi'] * (float) config('ocr.penalti.substitusi', 0.15))
+                - $penaltiKualitas,
+        ));
+
+        if ($hasil['kosong']) {
+            return $this->hasil(
+                $template,
+                $dariHp,
+                $hasil,
+                null,
+                $aturan['boleh_kosong'] ? self::KOSONG : self::MERAH,
+                $aturan['boleh_kosong'] ? [] : ['wajib_diisi'],
+                null,
+            );
+        }
+
+        if (! $hasil['ok']) {
+            return $this->hasil($template, $dariHp, $hasil, null, self::MERAH, $hasil['alasan'], $confidence);
+        }
+
+        if (($dariHp['kotak_teks_di_dalam_sel'] ?? null) === false) {
+            return $this->hasil($template, $dariHp, $hasil, null, self::MERAH, ['teks_meluber_dari_sel'], $confidence);
+        }
+
+        $alasan = [];
+
+        if ($hasil['substitusi'] > 0) {
+            $alasan[] = 'ada_koreksi_karakter';
+        }
+
+        if (in_array('pemisah_jam_disisipkan', $hasil['catatan'], true)) {
+            // Titik duanya nggak kebaca dan disisipkan mesin. Masuk akal, tapi
+            // tetap tebakan — `0200` bisa 02:00 dan bisa juga 20:0x yang satu
+            // digitnya hilang.
+            $alasan[] = 'pemisah_jam_disisipkan';
+        }
+
+        return $this->hasil(
+            $template,
+            $dariHp,
+            $hasil,
+            null,
+            $this->status($confidence, $alasan, $aturan),
+            $alasan,
+            $confidence,
+        );
     }
 
     /**
