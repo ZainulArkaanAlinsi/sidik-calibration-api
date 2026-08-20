@@ -18,3 +18,13 @@ Schedule::command('alat:cek-jatuh-tempo')->dailyAt('07:00');
 // sama nggak diulang seminggu, tapi begitu ada standar yang statusnya berubah,
 // dikabarin saat itu juga.
 Schedule::command('standar:cek-kadaluarsa')->dailyAt('07:05');
+
+// Buang citra pindai lembar kerja yang lewat batas retensi `config/ocr.php`.
+// Jam 02:30 karena dia menyentuh disk & menghapus berkas: dijalankan waktu
+// tidak ada teknisi yang lagi memindai, dan jauh dari dua pengingat pagi di
+// atas supaya kegagalannya tidak tertimbun di antara notifikasi.
+//
+// `withoutOverlapping`: satu lab bisa punya puluhan ribu pindai, dan jalan
+// dua kali berbarengan berarti dua proses menghapus berkas yang sama —
+// yang kedua melihat berkas hilang dan melaporkannya sebagai anomali.
+Schedule::command('ocr:bersihkan-citra')->dailyAt('02:30')->withoutOverlapping();

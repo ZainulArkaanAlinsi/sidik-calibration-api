@@ -283,6 +283,29 @@ class WorksheetExtractionTest extends TestCase
         $this->assertNull($log->cache_read_input_tokens);
     }
 
+    /**
+     * Model yang dicatat harus MODEL PENYEDIA YANG AKTIF.
+     *
+     * Lab ini jalan di `VISION_DRIVER=gemini`. Jalur "API key belum diisi" dulu
+     * nyatat `services.anthropic.model` apa pun drivernya, jadi kegagalan karena
+     * `GEMINI_API_KEY` kosong kecatat sebagai `claude-opus-4-8` — menyesatkan
+     * persis di penelusuran yang jadi alasan log ini ada. Yang nelusur bakal
+     * ngecek kunci Anthropic yang emang nggak pernah dipakai, dan kunci Gemini
+     * yang beneran kosong nggak kelihatan sama sekali.
+     */
+    public function test_log_belum_disetel_nyatat_model_penyedia_yang_aktif(): void
+    {
+        Config::set('services.vision.driver', 'gemini');
+        Config::set('services.gemini.api_key', '');
+        Config::set('services.gemini.model', 'gemini-3.6-flash');
+
+        $this->kirim($this->teknisi)->assertStatus(503);
+
+        $log = WorksheetExtractionLog::sole();
+        $this->assertSame('belum_disetel', $log->status);
+        $this->assertSame('gemini-3.6-flash', $log->model);
+    }
+
     public function test_refusal_balik_422_dan_fallback_manual(): void
     {
         Config::set('services.anthropic.api_key', 'test-key');

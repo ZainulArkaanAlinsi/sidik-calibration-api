@@ -84,6 +84,32 @@ class WorksheetVisionExtractor
      * }
      */
     /**
+     * Penyedia AI yang BENERAN kepakai sekarang.
+     *
+     * @return 'anthropic'|'gemini'
+     */
+    public static function penyediaAktif(): string
+    {
+        return strtolower((string) config('services.vision.driver', 'anthropic')) === 'gemini'
+            ? 'gemini'
+            : 'anthropic';
+    }
+
+    /**
+     * Nama model yang bakal dipanggil — ngikut penyedia yang aktif.
+     *
+     * Ada supaya jalur GAGAL bisa nyatat model yang sama dengan jalur sukses.
+     * Sebelumnya jalur "API key belum diisi" nyatat `services.anthropic.model`
+     * apa pun drivernya, jadi kegagalan karena `GEMINI_API_KEY` kosong
+     * kecatat sebagai `claude-opus-4-8` — menyesatkan persis di penelusuran
+     * yang jadi alasan log itu ada.
+     */
+    public static function modelAktif(): string
+    {
+        return (string) config('services.'.self::penyediaAktif().'.model');
+    }
+
+    /**
      * @param  int|null  $jumlahTitik  jumlah larutan standar (kolom, mis. 3) — petunjuk buat model
      * @param  int|null  $jumlahPengulangan  jumlah Repeat (baris) yang diharapkan — petunjuk
      * @param  string|null  $satuan  satuan pembacaan (mis. `pH`, `NTU`) — bikin model tau kolom bacaan vs °C
@@ -113,7 +139,7 @@ class WorksheetVisionExtractor
             $standarDiBaris,
         );
 
-        $penyedia = strtolower((string) config('services.vision.driver', 'anthropic'));
+        $penyedia = self::penyediaAktif();
 
         $mimeType = strtolower($mimeType);
         if (! in_array($mimeType, self::MIME_DIDUKUNG, true)) {
