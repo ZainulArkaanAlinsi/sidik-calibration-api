@@ -194,7 +194,14 @@ class CertificateSnapshotBuilder
                 // U95% `0,00053` runtuh jadi `0,0005`, kehilangan angka penting
                 // di kolom yang justru jadi inti sertifikat. Angkanya dari
                 // sertifikat master yang beneran kecetak, bukan diturunkan.
-                $desimal = $profil?->desimalSertifikat()
+                // Per BARIS dulu, baru per alat, baru aturan umum. Yang
+                // butuh per baris cuma Viscometer — master terbarunya
+                // memformat tiap titik beda (`0.00` di 100 cP, `0` di
+                // 3000 cP) karena skalanya beda ratusan kali. Delapan alat
+                // lain balik null di hook pertama dan jatuh ke jalur yang
+                // persis sama seperti sebelumnya.
+                $desimal = $profil?->desimalSertifikatTitik((float) $titik->titik_ukur)
+                    ?? $profil?->desimalSertifikat()
                     ?? ($organisasi
                         ? $organisasi->desimalSertifikat($resolusi)
                         : Angka::desimalDariResolusi($resolusi));

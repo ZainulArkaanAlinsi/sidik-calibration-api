@@ -230,7 +230,7 @@ class GumCalculator
         $kemampuan = $this->kemampuanUntukTitik($equipment, $titikUkur);
 
         $komponen = $kemampuan !== null
-            ? $profil->komponenBudget($kemampuan, $equipment, $standard, $titikUkur, $typeA, $n, $suhuRuang)
+            ? $profil->komponenBudget($kemampuan, $equipment, $standard, $titikUkur, $typeA, $n, $suhuRuang, $konteksTitik)
             : null;
 
         // Tiga jalur, dari yang paling lengkap ke yang paling menyederhanakan.

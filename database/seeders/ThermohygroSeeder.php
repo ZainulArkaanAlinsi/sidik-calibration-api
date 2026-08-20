@@ -83,11 +83,21 @@ class ThermohygroSeeder extends Seeder
         }
 
         $hasil = [];
-        foreach (['suhu', 'kelembaban'] as $parameter) {
+        // `tekanan` cuma dipunyai Thermobarometer Lutron — TH-1..TH-7 nggak
+        // ngukur tekanan sama sekali. Unit tanpa parameter itu dilewati di
+        // dalam loop (daftar kosong + `parameter_kondisi` kosong = key-nya
+        // nggak ditulis), jadi nggak ada baris `tekanan: []` palsu yang bikin
+        // `Standard::parameterKondisi('tekanan')` balik nilai kosong padahal
+        // mestinya null.
+        foreach (['suhu', 'kelembaban', 'tekanan'] as $parameter) {
             $daftar = $titik[$parameter] ?? null;
 
             if (! is_array($daftar) || $daftar === []) {
-                $hasil[$parameter] = $th['parameter_kondisi'][$parameter] ?? [];
+                $cadangan = $th['parameter_kondisi'][$parameter] ?? null;
+
+                if (is_array($cadangan) && $cadangan !== []) {
+                    $hasil[$parameter] = $cadangan;
+                }
 
                 continue;
             }

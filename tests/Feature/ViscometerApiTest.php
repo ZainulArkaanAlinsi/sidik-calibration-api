@@ -3,15 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
-use App\Models\Certificate;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
-use App\Services\DataTampilanSertifikat;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 use App\Services\CalibrationValidator;
+use App\Services\DataTampilanSertifikat;
 use Database\Seeders\ViscometerCapabilitySeeder;
 use Database\Seeders\ViscometerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,7 +47,7 @@ class ViscometerApiTest extends TestCase
 
     private Equipment $alat;
 
-    /** @var array<int, Standard> */
+    /** @var array<string, Standard> */
     private array $standar = [];
 
     protected function setUp(): void
@@ -76,17 +76,26 @@ class ViscometerApiTest extends TestCase
         // yang merah test ini — bukan ketahuan nanti di lab.
         $this->seed([ViscometerCapabilitySeeder::class, ViscometerSeeder::class]);
 
-        $this->alat = Equipment::where('serial_number', '8535682')->firstOrFail();
+        $this->alat = Equipment::where('serial_number', '86068360')->firstOrFail();
         $this->teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
 
-        foreach (ViscometerProfile::TITIK as $i => $t) {
-            $this->standar[$i + 1] = Standard::where('nama', $t['standar'][0])->firstOrFail();
+        // Dikunci lewat LABEL titik ('100', '1000', ...), bukan urutan array.
+        // Waktu master 20 Agt 2026 menyisipkan larutan 3000 cP di posisi
+        // ketiga, indeks numerik bikin sesi uji ini diam-diam memakai botol
+        // 3000 cP untuk titik yang datanya 60000 cP — angkanya jadi salah
+        // tanpa satu pun baris test yang berubah.
+        foreach (ViscometerProfile::TITIK as $t) {
+            $this->standar[$t['label']] = Standard::where('nama', $t['standar'][0])->firstOrFail();
         }
     }
 
     /**
-     * Lembar kerjanya berbentuk seperti kertas Rev.3: dua tahap × tiga titik ×
-     * lima pengulangan, dan tiap sel minta pembacaan DAN suhu larutan.
+     * Lembar kerjanya: dua tahap × LIMA titik × lima pengulangan, dan tiap sel
+     * minta pembacaan DAN suhu larutan.
+     *
+     * Lima, bukan tiga, sejak master 20 Agt 2026 menghidupkan blok 3000 cP
+     * (yang dulu `#DIV/0!` seluruhnya dan dikira "30000") dan menambah larutan
+     * 100000 cP. Kertas Rev.3 masih mencetak tiga — kertasnya yang ketinggalan.
      */
     public function test_lembar_kerja_bentuknya_ikut_kertas_rev3(): void
     {
@@ -102,13 +111,15 @@ class ViscometerApiTest extends TestCase
         $this->assertCount(2, $tabel, 'Before & After Adjustment.');
 
         foreach ($tabel as $t) {
-            $this->assertCount(3, $t['baris'], 'Tiga larutan standar: 100, 1000, 60000 cP.');
+            $this->assertCount(5, $t['baris'], 'Lima larutan standar: 100, 1000, 3000, 60000, 100000 cP.');
             $this->assertCount(5, $t['pengulangan'], 'Lima kolom pengulangan, ngikut kertas.');
         }
 
-        // Blok 30000 cP TIDAK ikut: seluruh budget-nya `#DIV/0!` di master.
+        // Nilai NOMINAL @25 °C tiap larutan (`Tabel Pengaruh Temperature`).
+        // Larutan yang dulu ditulis "30000 cP" di kertas ternyata 3000 cP —
+        // nilainya 3987 pada 25 °C, bukan sesuatu di sekitar 30000.
         $titik = collect($tabel[0]['baris'])->pluck('titik_ukur')->map(fn ($n): float => (float) $n);
-        $this->assertEqualsCanonicalizing([99.65, 1018.0, 59003.0], $titik->all());
+        $this->assertEqualsCanonicalizing([99.65, 1018.0, 3987.0, 59003.0, 99613.0], $titik->all());
 
         $this->assertSame(
             ['pembacaan', 'suhu'],
@@ -148,8 +159,11 @@ class ViscometerApiTest extends TestCase
             $this->assertSame('PASS', $t->keputusan);
         }
 
-        // `uc` cocok persis sama master di dua titik pertama.
-        $this->assertEqualsWithDelta(0.24649577, (float) $titik[1]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
+        // `uc` titik 1 ikut LOT BARU larutan 100 cP: U95 sertifikatnya 0,13 %
+        // (0,129545 cP), bukan 0,17 % (0,169405 cP) seperti lot 1220905085
+        // yang dipakai sampai 19 Agt 2026. Master lama mencetak 0,24649577 di
+        // sel ini; selisihnya murni dari botol yang diganti, bukan dari rumus.
+        $this->assertEqualsWithDelta(0.24037705, (float) $titik[1]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
         $this->assertEqualsWithDelta(1.35600158, (float) $titik[2]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
     }
 
@@ -218,8 +232,9 @@ class ViscometerApiTest extends TestCase
      * ## Kenapa dibiarkan, bukan diperbaiki
      *
      * Selisihnya 2,5e-8 pada `uc` dan 5e-8 pada `U95` — sekitar 3e-10 relatif.
-     * Sertifikat viscometer dicetak **dua desimal** dan resolusi alatnya
-     * 0,1 cP, jadi selisih itu tidak punya jalan untuk muncul di dokumen.
+     * Sertifikat viscometer dicetak paling banyak **dua desimal** dan resolusi
+     * alatnya 0,1 cP, jadi selisih itu tidak punya jalan untuk muncul di
+     * dokumen.
      * Menaikkan presisi kolom berarti migrasi tabel produksi demi angka yang
      * tidak pernah terbaca siapa pun.
      *
@@ -230,22 +245,29 @@ class ViscometerApiTest extends TestCase
     {
         $titik = $this->titikTersimpan($this->simpanSesi());
 
-        // Yang dicetak sertifikat: dua desimal (`ViscometerProfile::DESIMAL_SERTIFIKAT`).
+        // Desimal cetaknya PER BARIS, dari format sel `SERTIFIKAT` C23:R27
+        // master terbaru — `0.00` di baris 100 cP, `0.0` di 1000 & 60000 cP.
+        // Lihat `ViscometerProfile::desimalSertifikatTitik()`.
         $cetak = [
-            1 => ['u95' => '0.49', 'titik' => '93.88'],
-            2 => ['u95' => '2.71', 'titik' => '910.29'],
-            3 => ['u95' => '145.72', 'titik' => '61898.12'],
+            1 => ['desimal' => 2, 'u95' => '0.48', 'titik' => '93.88'],
+            2 => ['desimal' => 1, 'u95' => '2.7', 'titik' => '910.3'],
+            3 => ['desimal' => 1, 'u95' => '145.7', 'titik' => '61898.1'],
         ];
 
+        $profil = new ViscometerProfile;
+
         foreach ($cetak as $ke => $harap) {
+            $desimal = $profil->desimalSertifikatTitik((float) $titik[$ke]->titik_ukur);
+
+            $this->assertSame($harap['desimal'], $desimal, "Desimal cetak titik ke-{$ke} bergeser.");
             $this->assertSame(
                 $harap['u95'],
-                number_format((float) $titik[$ke]->ketidakpastian_diperluas, 2, '.', ''),
+                number_format((float) $titik[$ke]->ketidakpastian_diperluas, $desimal, '.', ''),
                 "U95 titik ke-{$ke} berubah di angka cetaknya.",
             );
             $this->assertSame(
                 $harap['titik'],
-                number_format((float) $titik[$ke]->titik_ukur, 2, '.', ''),
+                number_format((float) $titik[$ke]->titik_ukur, $desimal, '.', ''),
                 "Nilai acuan titik ke-{$ke} berubah di angka cetaknya.",
             );
         }
@@ -298,7 +320,7 @@ class ViscometerApiTest extends TestCase
         $measurements = [
             [
                 'titik_ukur' => 99.65,
-                'standard_id' => $this->standar[1]->id,
+                'standard_id' => $this->standar['100']->id,
                 'satuan' => 'cP',
                 'spindle' => 'HA1',
                 'rpm' => 63,
@@ -307,7 +329,7 @@ class ViscometerApiTest extends TestCase
             ],
             [
                 'titik_ukur' => 1018.0,
-                'standard_id' => $this->standar[2]->id,
+                'standard_id' => $this->standar['1000']->id,
                 'satuan' => 'cP',
                 'spindle' => 'HA2',
                 'rpm' => 62,
@@ -316,7 +338,7 @@ class ViscometerApiTest extends TestCase
             ],
             [
                 'titik_ukur' => 59003.0,
-                'standard_id' => $this->standar[3]->id,
+                'standard_id' => $this->standar['60000']->id,
                 'satuan' => 'cP',
                 'spindle' => 'HA7',
                 'rpm' => 62,
@@ -333,7 +355,7 @@ class ViscometerApiTest extends TestCase
         $id = $this->actingAs($this->teknisi, 'sanctum')
             ->postJson('/api/calibrations', [
                 'equipment_id' => $this->alat->id,
-                'standard_id' => $this->standar[1]->id,
+                'standard_id' => $this->standar['100']->id,
                 'input_method' => 'manual',
                 'tanggal_kalibrasi' => now()->subDay()->toIso8601ZuluString(),
                 'suhu_awal' => 25.2,
@@ -398,11 +420,17 @@ class ViscometerApiTest extends TestCase
      * sepuluh baris Holmium emang bawa angka yang sama persis.
      *
      * Viscometer nggak punya kelompok: ketiga titiknya masuk satu kelompok
-     * tanpa remark, dan U95-nya BEDA-BEDA jauh — 0,49 / 2,71 / 145,72 cP.
-     * Hasilnya cuma `0,49` yang kecetak; dua angka sisanya hilang dari dokumen
-     * tanpa error, tanpa sel kosong, tanpa apa pun yang kelihatan salah.
-     * Master lab sendiri nyetak kolom keempat `U95%, k=2` dengan satu angka per
-     * baris (`SERTIFIKAT.csv` baris 19-22).
+     * tanpa remark, dan U95-nya BEDA-BEDA jauh — 0,48 / 2,7 / 145,7 cP.
+     * Hasilnya cuma yang pertama yang kecetak; dua angka sisanya hilang dari
+     * dokumen tanpa error, tanpa sel kosong, tanpa apa pun yang kelihatan
+     * salah. Master lab sendiri nyetak kolom keempat `U95%, k=2` dengan satu
+     * angka per baris (`SERTIFIKAT` R23:U27).
+     *
+     * Jumlah desimalnya juga per baris, dan itu ikut diadu di sini: `0,00` di
+     * baris 100 cP, `0,0` di dua baris lain — dari format sel masternya, lihat
+     * `ViscometerProfile::desimalSertifikatTitik()`. Angka yang benar dengan
+     * bentuk yang salah tetap dokumen yang beda dari yang selama ini diterima
+     * pelanggan.
      *
      * Diadu ke HTML yang BENERAN dirender, bukan ke snapshot: yang bikin bug
      * ini lolos justru jarak antara "angkanya bener di DB" dan "angkanya
@@ -454,15 +482,17 @@ class ViscometerApiTest extends TestCase
             }
         }
 
+        // Dua desimal cuma di baris pertama — sisanya satu, ikut format sel
+        // masternya. Yang diuji bukan cuma angkanya, tapi juga bentuknya.
         $this->assertSame([
-            ['93,88', '96,72', '-2,84', '0,49'],
-            ['910,29', '917,66', '-7,37', '2,71'],
-            ['61898,12', '63151,85', '-1253,73', '145,72'],
+            ['93,88', '96,72', '-2,84', '0,48'],
+            ['910,3', '917,7', '-7,4', '2,7'],
+            ['61898,1', '63151,9', '-1253,7', '145,7'],
         ], $tabel);
 
         // Baris ringkas lamanya nggak boleh ikut kegambar — kalau dua-duanya
-        // ada, `0,49` kecetak dobel dan yang kedua kebaca kayak U95 buat
-        // SELURUH tabel.
+        // ada, U95 titik pertama kecetak dobel dan yang kedua kebaca kayak U95
+        // buat SELURUH tabel.
         $this->assertStringNotContainsString('Uncertainty U', $html);
     }
 

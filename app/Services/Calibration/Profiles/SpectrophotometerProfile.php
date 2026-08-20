@@ -580,6 +580,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         float $typeA,
         int $n,
         ?float $suhuRuang = null,
+        array $konteksTitik = [],
     ): ?array {
         return null;
     }

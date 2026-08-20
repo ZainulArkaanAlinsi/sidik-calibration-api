@@ -6,11 +6,29 @@ ulang konteksnya.
 
 | | |
 |---|---|
-| Repo API | `sidik-calibration-api`, branch `feat/r2-spektro`, commit `b98c5c6` |
-| Formulir | `SIDIK-FM-CAL-0524_Rev.3` |
+| Repo API | `sidik-calibration-api` |
+| Formulir | `SIDIK-FM-CAL-0524_Rev.3` (kertasnya ketinggalan dua revisi standar — lihat adendum) |
 | Metode | `SIDIK-IK-CAL-0517_Rev.3` |
-| Status backend | Selesai & terverifikasi di MySQL. 1058 test hijau |
+| Master | **20 Agu 2026: `5. Viscometer 86068360 terbaru .xlsm`**, sesi asli `0817-CAL-726` |
+| Status backend | Selesai & terverifikasi di MySQL |
 | Referensi lain (opsional) | `docs/handoff-backend-viscometer.md`, `docs/PRD-viscometer.md`, `docs/pertanyaan-lab-viscometer.md` |
+
+> **ADENDUM 20 Agustus 2026 — baca ini sebelum yang lain.** Lab mengirim master
+> baru dan TIGA hal berubah di API. Kalau layar Viscometer sudah dibuat dari
+> versi dokumen sebelumnya, yang perlu disesuaikan cuma ketiganya:
+>
+> 1. **Lima baris per tabel, bukan tiga.** Larutan yang dulu ditulis "30000 cP"
+>    ternyata **3000 cP**, dan ada satu larutan baru **100000 cP**. Titiknya
+>    sekarang 100 / 1000 / 3000 / 60000 / 100000 cP. Blok nonaktif "30000 cP"
+>    yang dulu diminta ditampilkan **sudah tidak ada** — hapus.
+> 2. **Jumlah desimal cetak BEDA-BEDA per baris** (2 / 1 / 0 / 1 / 1), dibaca
+>    dari format sel master. Jangan pakai satu angka desimal untuk selembar.
+> 3. **Botol larutan 100 cP ganti lot**, jadi `U95` titik pertama bergeser
+>    sedikit (0,49 → 0,48 cP di sesi contoh). Bukan bug.
+>
+> Butir 1 dan 2 itu persis dua hal yang dokumen ini sejak awal minta JANGAN
+> dihardcode. Kalau nasihat itu diikuti, tidak ada kode frontend yang perlu
+> disentuh sama sekali.
 
 ---
 
@@ -77,7 +95,6 @@ Balasannya `data` berisi delapan bagian:
 | `data_kalibrasi` | CALIBRATION DATA | lokasi, teknisi, ruangan |
 | `model_visco` | Model Viscometer (menentukan TK) | **1 field pilihan, 12 model** |
 | `hasil` | Data Result | **13 field + 2 tabel** |
-| `standar_30000` | Larutan Std Visco 30000 cP | **kosong, bertanda `sumber_belum_ada`** |
 | `penutup` | Catatan & Tanda Tangan | catatan teknisi, nama teknisi & reviewer |
 
 Juga ada `kode_dokumen` (`SIDIK-FM-CAL-0524_Rev.3`) dan `kode_metode`
@@ -190,28 +207,29 @@ melesetnya tidak kelihatan sebagai error.
 ### 3.4 Dua tabel: Before dan After Adjustment
 
 `tabel[]` berisi dua blok dengan `tahap` = `sebelum_adjustment` dan
-`sesudah_adjustment`. Masing-masing **3 baris × 5 pengulangan**, bentuknya
-identik. Jumlah kolom pengulangan **wajib** dibaca dari `tabel[].pengulangan`,
-jangan dari konstanta.
+`sesudah_adjustment`. Masing-masing **5 baris × 5 pengulangan**, bentuknya
+identik. Jumlah baris DAN jumlah kolom pengulangan **wajib** dibaca dari
+`tabel[].baris` & `tabel[].pengulangan`, jangan dari konstanta.
 
-### 3.5 Blok 30000 cP ADA tapi tidak menerima input
+### 3.5 Larutan "30000 cP" tidak pernah ada — yang benar 3000 cP
 
-`bagian[kode=standar_30000]` sengaja kosong dan bertanda `sumber_belum_ada`.
+Versi dokumen sebelumnya meminta blok nonaktif `standar_30000` ditampilkan,
+karena seluruh baris budgetnya `#DIV/0!` di master lama dan tidak bisa
+dibedakan dari blok mati. **Master 20 Agu 2026 menjawabnya: larutan itu 3000 cP**
+(Paragon Scientific/N1400, S/N 2241502068), bloknya hidup penuh, dan sekarang
+jadi baris ketiga tabel biasa.
 
-**Tampilkan sebagai blok nonaktif beserta catatannya, jangan disembunyikan.**
-Teknisi yang memegang kertas Rev.3 akan mencarinya — kertas itu masih mencetak
-"Larutan Std Visco 30000 cP" — dan blok yang hilang tanpa penjelasan membuat
-orang mengira aplikasinya rusak. Jangan kirim apa pun untuk blok ini.
-
-Alasannya: seluruh baris budget larutan 30000 cP di workbook master berisi
-`#DIV/0!`. Sumber angkanya sudah hilang dari workbook itu sendiri.
+`bagian[kode=standar_30000]` **sudah tidak dikirim API** — hapus penanganannya.
+Kalau teknisi yang memegang kertas Rev.3 mencari "30000 cP", jawabannya kertas
+itu keliru satu nol; nilainya 3987 cP pada 25 °C, bukan sesuatu di sekitar
+30000.
 
 ### 3.6 Angka di satu lembar bedanya tiga orde magnitudo
 
 Konsekuensi untuk layar:
 
-- Jangan pakai satu lebar kolom untuk ketiga baris. Baris 60000 cP butuh ruang
-  tujuh karakter (`63181.3`); baris 100 cP hanya empat.
+- Jangan pakai satu lebar kolom untuk kelima baris. Baris 100000 cP butuh ruang
+  enam-tujuh karakter (`110487`); baris 100 cP hanya empat.
 - Jangan format angka dengan pemisah ribuan di kotak input. `63.181` ambigu
   buat manusia maupun mesin.
 - Jangan pasang `min`/`max` sendiri di input. Lihat bagian 5.
@@ -219,7 +237,7 @@ Konsekuensi untuk layar:
 ### 3.7 Resolusi ditulis PER TITIK
 
 Kertas Rev.3 eksplisit: *"Resolusi tuliskan pada masing-masing titik
-kalibrasi"*. Tiga field `spesifikasi_alat.resolusi_titik_N` ada di
+kalibrasi"*. Field `spesifikasi_alat.resolusi_titik_N` ada di
 `bagian[kode=hasil]`. Ini catatan lapangan — belum dipakai menghitung sampai lab
 memastikan ada alat yang resolusinya memang berbeda per titik.
 
@@ -266,18 +284,22 @@ Catatan baca:
 - `toleransi` = MPE titik itu. `null` berarti spindle/RPM belum diisi.
 - `keputusan` `null` berarti belum divonis, bukan gagal.
 - `desimal` = jumlah desimal untuk menampilkan angka titik itu. **Pakai ini,
-  jangan hardcode 2.**
+  jangan hardcode 2** — di master sekarang bunyinya BEDA-BEDA per baris
+  (2 / 1 / 0 / 1 / 1), dibaca dari format sel sertifikatnya.
 
-Nilai sesi contoh lab, kalau kamu perlu data uji yang angkanya bisa diadu:
+Nilai sesi contoh lab (`0817-CAL-726`, nomor sesi `2607.59.W` di seeder), kalau
+kamu perlu data uji yang angkanya bisa diadu:
 
-| Titik | Acuan (cP) | UUT (cP) | Koreksi | `U95` | MPE | Vonis |
-|---|---|---|---|---|---|---|
-| 1 | 93,8756651 | 96,72 | −2,8443349 | 0,63363755 | 4,14180317 | PASS |
-| 2 | 910,28873239 | 917,66 | −7,37126761 | 2,712407 | 22,07982581 | PASS |
-| 3 | 61898,12 | 63151,85 | −1253,73 | 144,1619311 | 1921,84108065 | PASS |
+| Titik | Acuan (cP) | UUT (cP) | Koreksi | `U95` | MPE | Vonis | `desimal` |
+|---|---|---|---|---|---|---|---|
+| 1 (100 cP) | 79,8956964 | 79,64 | +0,255696 | 0,20 | 2,46306667 | PASS | 2 |
+| 2 (1000 cP) | 755,74647887 | 779,50 | −23,753521 | 2,3733017 | 24,18844262 | FAIL | 1 |
+| 3 (3000 cP) | 2891,02190923 | 2709,80 | +181,221909 | 10,0881294 | — | *belum divonis* | 0 |
 
-Seeder `ViscometerSeeder` membuat sesi ini dengan nomor
-`DEMO-VISCO-BROOKFIELD`.
+Tiga hal yang sengaja ada di tabel itu dan bagus untuk menguji layar:
+**koreksi POSITIF** (alat membaca rendah), satu titik **FAIL**, dan satu titik
+**tanpa MPE sama sekali** — lembar masternya tidak mengisi spindle & RPM untuk
+titik ketiga, jadi batasnya tidak bisa dihitung dan vonisnya `null`.
 
 ## 5. Pindai foto (OCR) — dan status verifikasinya
 
@@ -342,7 +364,9 @@ frontend memasang validasinya sendiri:
 |---|---|---|
 | 100 cP | 99,65 | 42,58 – 160,80 |
 | 1000 cP | 1018 | 349,58 – 1804,80 |
+| 3000 cP | 3987 | 1344,17 – 6098,40 |
 | 60000 cP | 59003 | 16049,17 – 114230,40 |
+| 100000 cP | 99613 | 59849,21 – 132584,40 |
 
 Pita itu jangkauan tabel sertifikat larutan pada suhu kerja 20–37,78 °C. Pita
 `nominal ±10 %` untuk baris 1000 cP akan jadi 916,2–1119,8 — sementara
@@ -374,23 +398,27 @@ inilah sumbernya, supaya tidak dikira bug frontend. Rinciannya di
 
 | # | Pertanyaan | Yang berubah kalau lab menjawab lain |
 |---|---|---|
-| 1 | Angka asli sel `631.74.2` (pembacaan ke-5 titik 60000 cP) | `jumlah_pengulangan` titik 3 jadi 5, `U95`-nya bergeser |
-| 2 | `k` titik 100 cP: master menulis 2, t-student memberi 2,5706 | `faktor_cakupan_k` dan `U95` titik 1 |
-| 3 | Larutan 30000 cP masih dipakai atau sudah pensiun | Blok `standar_30000` bisa hidup, jadi 4 baris per tabel |
-| 4 | Lingkup KAN diperluas dari 58021 cP ke 95192 cP? | Titik 3 dapat lantai CMC, `U95` jadi 140 bukan 144,16 |
-| 5 | Berapa desimal sertifikat yang benar (`.xlsm` belum ada) | Field `desimal` berubah dari 2 |
+| 1 | Angka asli sel `631.74.2` (pembacaan ke-5 titik 60000 cP, master lama) | `jumlah_pengulangan` titik itu jadi 5, `U95`-nya bergeser |
+| 2 | `k`: dua aturan dalam satu workbook (2 di dua blok, t-student di tiga blok baru) | `faktor_cakupan_k` & `U95` titik 3000/60000/100000 |
+| 4 | Lingkup KAN diperluas dari 58021 cP? | Titik di atas batas dapat lantai CMC |
+| 7 | Dari mana angka ketikan 3437 & 1398 di blok interpolasi 3000 cP | Nilai acuan & **tanda koreksi** titik 3000 cP |
+| 8 | Resolusi alat: `INPUT DATA` menulis 1, empat blok budget memakai 0,1 | `uc` & `U95` titik 1000 cP |
 
-Nomor 3 yang paling berdampak ke layar: kalau larutan 30000 cP dihidupkan,
-jumlah baris per tabel berubah dari 3 jadi 4. **Itu satu alasan lagi kenapa
-jumlah baris wajib dibaca dari `tabel[].baris`, bukan dihardcode.**
+Butir 3 (larutan 30000 cP) dan 5 (desimal sertifikat) **sudah terjawab** oleh
+master 20 Agu 2026 — lihat adendum di kepala dokumen.
+
+Butir 7 yang paling kelihatan di layar kalau lab menjawab lain: koreksi titik
+3000 cP bisa **berbalik tanda** (+181 cP jadi −214 cP). Jangan bikin asumsi arah
+koreksi di frontend.
 
 ## 8. Selesai berarti
 
-1. Lembar kerja Viscometer tampil sesuai bentuk dari API — dua tabel, tiga
+1. Lembar kerja Viscometer tampil sesuai bentuk dari API — dua tabel, **lima**
    baris, lima kolom pengulangan, tiap sel dua angka.
 2. Spindle & model dipilih dari dropdown, bukan diketik.
 3. Titik tanpa spindle/RPM tampil "belum divonis", bukan PASS/FAIL/error.
-4. Blok 30000 cP tampil nonaktif beserta catatannya.
+4. Jumlah desimal tiap baris dibaca dari `desimal` baris itu — **bukan satu
+   angka untuk selembar**. Di master sekarang bunyinya 2 / 1 / 0 / 1 / 1.
 5. Jumlah baris, kolom pengulangan, satuan, dan desimal tidak ada yang
    dihardcode — semuanya dari respons API.
 6. Tidak ada validasi rentang angka buatan frontend.

@@ -53,18 +53,51 @@ use App\Support\Angka;
  * "nilai nominal titik" yang buat alat ini WAJIB nilai @25 °C, bukan nilai
  * hasil interpolasi — lihat [SUHU_ACUAN].
  *
- * ## Cetakan Rev.3 vs master: tiga selisih
+ * ## LIMA titik, bukan tiga — master 20 Agustus 2026
  *
- *  1. **Larutan standar.** Kertas nulis "Larutan Std Visco 100 cP" DUA KALI,
- *     lalu 30000 cP & 60000 cP. Master, `DATABASE`, dan lampiran KAN semuanya
- *     100 / 1000 / 60000 cP, dan `FORM VALIDASI` rev.18 (18 Mei 2026) nyebut
- *     eksplisit "Update Standard Viscometer 1000 cP". Yang dipakai master;
- *     kertasnya ketinggalan satu revisi standar.
- *  2. **Blok 30000 cP nggak diimplementasi.** Budgetnya di `PERHITUNGAN U95%`
- *     `#DIV/0!` di seluruh baris — sumber angkanya sudah hilang dari workbook
- *     itu sendiri. Sama perlakuannya kayak blok SRE di Spectrophotometer:
- *     muncul sebagai bagian `sumber_belum_ada` yang nggak nerima input.
- *  3. **Kotak Spindle & RPM per titik ditambahkan.** Kertas cuma punya daftar
+ * Berkas `5. Viscometer 86068360 terbaru .xlsm` (sesi **0817-CAL-726**, PT
+ * Lamurindo Cikarang, Brookfield DV Plus) menjawab tiga hal yang selama ini
+ * menggantung di `docs/pertanyaan-lab-viscometer.md`:
+ *
+ *  1. **Larutan 30000 cP tidak pernah ada — yang benar 3000 cP.** Blok yang
+ *     dulu seluruh barisnya `#DIV/0!` sekarang hidup penuh, dengan larutan
+ *     Paragon Scientific/N1400 (S/N 2241502068) dan tabel sertifikat suhunya
+ *     sendiri. Kertas Rev.3 yang menulis "30000" yang keliru satu nol.
+ *     Ditambah SATU titik lagi yang belum pernah muncul di berkas mana pun:
+ *     **100000 cP** (Paragon/RT100000, S/N 1251704078).
+ *  2. **Larutan 100 cP ganti lot.** `DATABASE!T13` sekarang 1241202088 dan
+ *     kolom ketidakpastian tabelnya ikut berubah — 0,13 % pada 25 °C, dari
+ *     sebelumnya 0,17 %. (Header S/N di sheet `Tabel Pengaruh Temperature`
+ *     masih menulis lot lama 1220905085; isinya yang sudah baru, dan `DATABASE`
+ *     membacanya lewat `V13 = D41`.)
+ *  3. **Format sel sertifikatnya akhirnya bisa dibaca.** Lihat
+ *     [desimalSertifikatTitik] — dan jawabannya bukan angka seragam.
+ *
+ * Yang TIDAK berubah: kedua tabel suhu 1000 cP & 60000 cP sama persis sampai
+ * digit terakhir, jadi sesi yang sudah dihitung dengan dua larutan itu tidak
+ * bergeser sama sekali.
+ *
+ * ## Yang MASIH menggantung sesudah master baru
+ *
+ * **Sel `k` masih memakai dua aturan sekaligus.** Blok 100 & 1000 cP mematok
+ * `2`; blok 3000, 60000, & 100000 cP memakai pendekatan t-student
+ * `k = (2,35746 × 1,099 + v_eff × 1,9599999) / v_eff`. Sertifikatnya sendiri
+ * mencetak `Coverage Factor ( k ) = 2` (`SERTIFIKAT!U38`, membaca sel blok
+ * 100 cP) DAN memberi judul kolom keempatnya `U95%, k=2`.
+ *
+ * Yang dipakai di sini tetap **k = 2 untuk semua titik** — lihat
+ * [faktorCakupanTetap]. Alasannya sama seperti 19 Agustus: yang mengikat
+ * dokumen yang terbit, dan dokumen itu menulis 2 dua kali. Konsekuensinya
+ * `U95` titik 3000/60000/100000 keluar ~1,4 % lebih besar dari sel masternya
+ * (10,09 vs 9,95 cP di titik 3000) — arah yang aman, dan tercatat di
+ * `docs/pertanyaan-lab-viscometer.md` untuk ditanyakan.
+ *
+ * ## Cetakan Rev.3 vs master: dua selisih yang tersisa
+ *
+ *  1. **Daftar larutan standar.** Kertas menulis "Larutan Std Visco 100 cP"
+ *     DUA KALI, lalu 30000 cP & 60000 cP. Yang berlaku lima larutan di
+ *     [STANDARD_TERCETAK]. Kertasnya ketinggalan dua revisi standar.
+ *  2. **Kotak Spindle & RPM per titik ditambahkan.** Kertas cuma punya daftar
  *     spindle global buat dilingkari — nggak cukup buat MPE. Lihat
  *     [SPINDLE_TIDAK_DIPINDAI] soal kenapa dua kotak ini nggak jadi sel pindai.
  *
@@ -132,25 +165,20 @@ class ViscometerProfile extends CalibrationProfile
     public const PERSEN_MPE = 0.01;
 
     /**
-     * Berapa desimal yang dicetak sertifikat.
+     * Desimal cetak CADANGAN, buat titik yang nggak dikenal [TITIK].
      *
-     * Di alat lain angka ini dibaca dari FORMAT SEL workbook masternya. Berkas
-     * `.xlsm` Viscometer nggak ada di folder — cuma export CSV-nya, dan CSV
-     * nggak nyimpen format sel. Jadi buktinya memang belum ada.
+     * Sampai 19 Agustus 2026 angka ini berlaku seragam untuk seluruh kolom,
+     * karena berkas `.xlsm`-nya belum ada — yang ada cuma export CSV, dan CSV
+     * nggak nyimpen format sel (butir 5 `docs/pertanyaan-lab-viscometer.md`).
      *
-     * Yang dipakai sementara: **dua desimal**, ikut aturan umum enam alat lain
-     * buat alat beresolusi 0,1 cP. Hasilnya `93,88` / `910,29` / `61898,12` cP.
+     * Berkasnya sekarang ada, dan format selnya BUKAN seragam: `SERTIFIKAT`
+     * C23:R27 masing-masing `0.00` · `0.0` · `0` · `0.0` · `0.0`. Yang
+     * berlaku sekarang [desimalSertifikatTitik], per baris; konstanta ini cuma
+     * kepakai kalau ada titik di luar kelima yang dikenal.
+     *
      * Yang dibulatkan CUMA bentuk cetaknya — seluruh rantai hitung (nilai
      * acuan, koreksi, `uc`, `veff`, `U95`, MPE) tetap jalan di presisi penuh
      * dan yang disimpan di `uncertainty_calculations` juga angka penuh.
-     *
-     * Kenapa bukan presisi penuh apa adanya: `93,87566510172147 cP` di
-     * dokumen terakreditasi ngeklaim ketelitian empat belas desimal buat alat
-     * yang resolusinya 0,1 cP. Itu salah baca sendiri, bukan kejujuran.
-     *
-     * Begitu lab ngirim `.xlsm` atau satu sertifikat viscometer yang sudah
-     * tercetak, yang diganti ANGKA INI DOANG — rumusnya nggak tersentuh.
-     * Permintaannya dicatat di `docs/pertanyaan-lab-viscometer.md`.
      */
     public const DESIMAL_SERTIFIKAT = 2;
 
@@ -173,7 +201,7 @@ class ViscometerProfile extends CalibrationProfile
     public const SPINDLE_TIDAK_DIPINDAI = true;
 
     /**
-     * Tiga titik kalibrasi tercetak. `nilai` = viskositas larutan pada
+     * Lima titik kalibrasi. `nilai` = viskositas larutan pada
      * [SUHU_ACUAN] (`Tabel Pengaruh Temperature` baris 25 °C), `u_persen` =
      * ketidakpastian sertifikat larutan di baris yang sama.
      *
@@ -182,9 +210,16 @@ class ViscometerProfile extends CalibrationProfile
      * dipakai dua tempat: pengali `ci` suhu dan pengali `u_persen`. Lihat
      * [SUHU_ACUAN].
      *
-     * `resolusi` 0,1 cP dari `INPUT DATA` ("Resolusi Alat : 0.1") — seragam di
-     * ketiga titik di master, walaupun kertasnya nyediain kotak resolusi
-     * per titik. Lihat [peringatanSesi] kalau sesi nyata ternyata beda.
+     * `resolusi` 0,1 cP — angka CADANGAN, dan angka ini milik ALAT PELANGGAN
+     * bukan milik profil: yang dipakai menghitung `equipments.resolusi`
+     * masing-masing alat, dan [peringatanSesi] yang bilang kalau yang ditulis
+     * teknisi per titik ternyata beda.
+     *
+     * 0,1 dan bukan 1 walau `INPUT DATA!E16` master terbaru menulis 1 —
+     * lihat [resolusiTitik] soal kenapa.
+     *
+     * `desimal_sertifikat` dari FORMAT SEL `SERTIFIKAT` C23:R27 — lihat
+     * [desimalSertifikatTitik].
      *
      * @var list<array{nilai: float, label: string, resolusi: float, desimal: int, u_persen: float, standar: list<string>, cmc_parameter: string}>
      */
@@ -194,7 +229,8 @@ class ViscometerProfile extends CalibrationProfile
             'label' => '100',
             'resolusi' => 0.1,
             'desimal' => 1,
-            'u_persen' => 0.17,
+            'desimal_sertifikat' => 2,
+            'u_persen' => 0.13,
             'standar' => ['Viscosity Standard Solution 100 cP', '1241202088'],
             'cmc_parameter' => 'viskositas (cP)-Std 100 cP',
         ],
@@ -203,20 +239,62 @@ class ViscometerProfile extends CalibrationProfile
             'label' => '1000',
             'resolusi' => 0.1,
             'desimal' => 1,
+            'desimal_sertifikat' => 1,
             'u_persen' => 0.23,
             'standar' => ['Viscosity Standard Solution 1000 cP', '1252905118'],
             'cmc_parameter' => 'viskositas (cP)-Std 1000 cP',
+        ],
+        [
+            'nilai' => 3987.0,
+            'label' => '3000',
+            'resolusi' => 0.1,
+            'desimal' => 1,
+            'desimal_sertifikat' => 0,
+            'u_persen' => 0.25,
+            'standar' => ['Viscosity Standard Solution 3000 cP', '2241502068'],
+            // Sengaja null: `DATABASE!S8` (baris CMC ke-4) kosong. Lihat
+            // [TITIK_TANPA_CMC].
+            'cmc_parameter' => null,
         ],
         [
             'nilai' => 59003.0,
             'label' => '60000',
             'resolusi' => 0.1,
             'desimal' => 1,
+            'desimal_sertifikat' => 1,
             'u_persen' => 0.23,
             'standar' => ['Viscosity Standard Solution 60000 cP', '4230901097'],
             'cmc_parameter' => 'viskositas (cP)-Std 60000 cP',
         ],
+        [
+            'nilai' => 99613.0,
+            'label' => '100000',
+            'resolusi' => 0.1,
+            'desimal' => 1,
+            'desimal_sertifikat' => 1,
+            'u_persen' => 0.46,
+            'standar' => ['Viscosity Standard Solution 100000 cP', '1251704078'],
+            // `DATABASE!S9` juga kosong.
+            'cmc_parameter' => null,
+        ],
     ];
+
+    /**
+     * Titik yang PUNYA larutan standar tapi BELUM punya CMC terakreditasi —
+     * 3000 cP & 100000 cP.
+     *
+     * `DATABASE!S5:S7` cuma berisi tiga angka (102 cP → 0,2 · 1028 cP → 2,1 ·
+     * 58021 cP → 140), sementara baris ke-4 & ke-5 punya nomor tapi kolom
+     * CMC-nya kosong. Sel `CMC Laboratory` di blok 3000 & 100000
+     * (`PERHITUNGAN U95%!AC63` & `AC101`) memang kosong juga, jadi
+     * `MAX(U, kosong)` di sana = U hitung apa adanya.
+     *
+     * Artinya lab MENGUKUR dua titik itu tapi tidak MENGKLAIM kemampuan di
+     * situ — dan itu keadaan yang sah, bukan data bolong. Yang dilaporkan
+     * ketidakpastian hitungnya, tanpa lantai. Sama perlakuannya dengan titik
+     * 61898 cP yang di luar batas lingkup KAN.
+     */
+    public const TITIK_TANPA_CMC = ['3000', '100000'];
 
     /**
      * Tabel D-2 Brookfield (`MPE Visco.csv`) — model alat → TK (Torque
@@ -326,7 +404,9 @@ class ViscometerProfile extends CalibrationProfile
     public const STANDARD_TERCETAK = [
         ['label' => 'Viscosity Standard Solution 100 cP', 'cocok' => ['Viscosity Standard Solution 100 cP', '1241202088']],
         ['label' => 'Viscosity Standard Solution 1000 cP', 'cocok' => ['Viscosity Standard Solution 1000 cP', '1252905118']],
+        ['label' => 'Viscosity Standard Solution 3000 cP', 'cocok' => ['Viscosity Standard Solution 3000 cP', '2241502068']],
         ['label' => 'Viscosity Standard Solution 60000 cP', 'cocok' => ['Viscosity Standard Solution 60000 cP', '4230901097']],
+        ['label' => 'Viscosity Standard Solution 100000 cP', 'cocok' => ['Viscosity Standard Solution 100000 cP', '1251704078']],
         ['label' => 'Termometer & Sensor Std.', 'cocok' => ['Termometer & Sensor Std.', '23P1005', 'SH1/20']],
     ];
 
@@ -406,10 +486,35 @@ class ViscometerProfile extends CalibrationProfile
         return false;
     }
 
-    /** Lihat [DESIMAL_SERTIFIKAT] — dua desimal, menunggu `.xlsm` dari lab. */
+    /**
+     * Cadangan buat titik yang nggak ada di [TITIK] — dua desimal, aturan umum
+     * alat beresolusi kecil. Titik yang dikenal lewat
+     * [desimalSertifikatTitik], yang menang duluan.
+     */
     public function desimalSertifikat(): ?int
     {
         return self::DESIMAL_SERTIFIKAT;
+    }
+
+    /**
+     * Desimal cetak PER BARIS, dibaca dari format sel `SERTIFIKAT` C23:R27
+     * master terbaru: `0.00` · `0.0` · `0` · `0.0` · `0.0`.
+     *
+     * Ini yang menjawab butir 5 `docs/pertanyaan-lab-viscometer.md`. Waktu
+     * dokumen itu ditulis yang ada cuma export CSV — dan CSV nggak nyimpen
+     * format sel, jadi jumlah desimalnya memang belum bisa dibuktikan dan
+     * dipakai dua desimal seragam sementara. Berkas `.xlsm`-nya sekarang ada,
+     * dan bunyinya BUKAN seragam.
+     *
+     * Kenapa beda-beda masuk akal: 79,90 cP dan 2709,8 cP dibaca alat yang
+     * sama dengan resolusi yang sama (1 cP). Menulis `2709,80` mengklaim dua
+     * angka penting yang nggak ada, dan menulis `79,9` membuang satu yang ada.
+     */
+    public function desimalSertifikatTitik(float $titikUkur): ?int
+    {
+        $titik = $this->titikTerdekatRelatif($titikUkur);
+
+        return $titik['desimal_sertifikat'] ?? null;
     }
 
     /**
@@ -513,12 +618,40 @@ class ViscometerProfile extends CalibrationProfile
     }
 
     /**
-     * Resolusi seragam 0,1 cP di ketiga titik (master `INPUT DATA`), jadi balik
-     * `null` dan pemakainya jatuh ke `equipments.resolusi`. Kertas Rev.3
-     * nyediain kotak resolusi per titik ("* Resolusi tuliskan pada masing-masing
-     * titik kalibrasi"); yang diisi teknisi ke situ dicatat di
-     * `spesifikasi_alat` dan dibandingin di [peringatanSesi] — bukan diam-diam
-     * dipakai buat ngitung sebelum lab mastiin ada alat yang beneran begitu.
+     * Resolusi seragam di kelima titik, jadi balik `null` dan pemakainya jatuh
+     * ke `equipments.resolusi`. Kertas Rev.3 nyediain kotak resolusi per titik
+     * ("* Resolusi tuliskan pada masing-masing titik kalibrasi"); yang diisi
+     * teknisi ke situ dicatat di `spesifikasi_alat` dan dibandingin di
+     * [peringatanSesi] — bukan diam-diam dipakai buat ngitung sebelum lab
+     * mastiin ada alat yang beneran begitu.
+     *
+     * Angkanya milik ALAT PELANGGAN, bukan milik profil — yang dipakai
+     * `equipments.resolusi` masing-masing alat.
+     *
+     * ## Kenapa 0,1 dan bukan 1, walau `INPUT DATA!E16` menulis 1
+     *
+     * Master terbaru memakai DUA angka resolusi dalam satu sesi, dan tidak
+     * konsisten ke dua arah sekaligus:
+     *
+     *   blok U95      sel resolusi          pembacaan di lembar     cocok?
+     *   100 cP        `K5` = 0,1            79,7 / 79,6  (0,1)      ya
+     *   1000 cP       `K31` = `E16` = 1     779,5        (0,1)      tidak
+     *   3000 cP       `K50` = `K5` = 0,1    2709 / 2710  (1)        tidak
+     *   60000 cP      `K69` = `K50` = 0,1   —                       —
+     *   100000 cP     `K88` = `K69` = 0,1   —                       —
+     *
+     * Tidak ada satu angka yang mereproduksi kelima blok, jadi yang dipilih
+     * yang paling banyak didukung: **0,1**, dipakai empat dari lima blok DAN
+     * dikonfirmasi pembacaan di dua titik pertama (alat yang resolusinya 1 cP
+     * tidak bisa menampilkan 79,7).
+     *
+     * Konsekuensinya blok 1000 cP kita keluar `uc` 1,1867 sementara sel master
+     * 1,2209 — 2,8 % lebih kecil. Itu satu-satunya titik yang meleset karena
+     * hal ini, dan arahnya diketahui. Ditanyakan ke lab di
+     * `docs/pertanyaan-lab-viscometer.md`: alat DV Plus ini daya bacanya
+     * berubah menurut rentang (0,1 cP di bawah ~1000, 1 cP di atasnya), dan
+     * kalau memang begitu yang perlu ditambah bukan satu angka melainkan
+     * resolusi per titik — kotaknya sudah ada di lembar kerja.
      */
     public function resolusiTitik(float $titikUkur): ?float
     {
@@ -539,7 +672,9 @@ class ViscometerProfile extends CalibrationProfile
         // tetap jalan. Setengah fitur yang kelihatan hidup.
         ['nominal' => 99.65, 'min' => 51.1, 'maks' => 134.0],
         ['nominal' => 1018.0, 'min' => 419.5, 'maks' => 1504.0],
+        ['nominal' => 3987.0, 'min' => 1613.0, 'maks' => 5082.0],
         ['nominal' => 59003.0, 'min' => 19259.0, 'maks' => 95192.0],
+        ['nominal' => 99613.0, 'min' => 71819.056, 'maks' => 110487.0],
     ];
 
     /**
@@ -612,6 +747,7 @@ class ViscometerProfile extends CalibrationProfile
         float $typeA,
         int $n,
         ?float $suhuRuang = null,
+        array $konteksTitik = [],
     ): ?array {
         if ($kemampuan->u_temperature === null) {
             return null;
@@ -872,6 +1008,40 @@ class ViscometerProfile extends CalibrationProfile
         }
 
         return $temuan;
+    }
+
+    /**
+     * Baris [TITIK] yang paling dekat SECARA RELATIF ke satu nilai.
+     *
+     * Relatif, bukan mutlak — dan itu wajib di alat ini: jarak 93,88 ke 99,65
+     * cuma 5,8 sementara jarak 61898 ke 59003 sudah 2895, jadi ambang mutlak
+     * apa pun bakal salah di salah satu ujung.
+     *
+     * Nilai yang masuk ke sini nilai yang SUDAH digeser suhu, jadi dia bisa
+     * jauh dari nominalnya (larutan 60000 cP bernilai 95192 cP pada 20 °C —
+     * cukup dekat ke nominal titik 100000 untuk memenangkannya). Itu aman buat
+     * satu-satunya pemakai method ini, [desimalSertifikatTitik]: dua titik itu
+     * sama-sama dicetak 1 desimal. JANGAN dipakai buat memilih nilai acuan
+     * atau CMC — untuk itu ada [nominalTitik], yang bertanya ke tabel
+     * sertifikat standarnya dulu dan karena itu tidak bisa ketukar.
+     *
+     * @return array<string, mixed>
+     */
+    private function titikTerdekatRelatif(float $nilai): array
+    {
+        $terdekat = self::TITIK[0];
+        $selisihTerkecil = null;
+
+        foreach (self::TITIK as $t) {
+            $selisih = abs($t['nilai'] - $nilai) / max($t['nilai'], 1e-9);
+
+            if ($selisihTerkecil === null || $selisih < $selisihTerkecil) {
+                $selisihTerkecil = $selisih;
+                $terdekat = $t;
+            }
+        }
+
+        return $terdekat;
     }
 
     /**
@@ -1142,21 +1312,6 @@ class ViscometerProfile extends CalibrationProfile
                         $this->tabelHasil('sebelum_adjustment', 'Before Adjustment'),
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment'),
                     ],
-                ],
-                [
-                    // SENGAJA tanpa field input. Lihat "Cetakan Rev.3 vs master"
-                    // di dokumentasi kelas: seluruh budget blok ini `#DIV/0!` di
-                    // master, jadi nggak ada angka yang sah buat diisi.
-                    'kode' => 'standar_30000',
-                    'halaman' => 1,
-                    'judul' => 'Larutan Std Visco 30000 cP',
-                    'status' => 'sumber_belum_ada',
-                    'di_kertas' => true,
-                    'catatan' => 'Tercetak di lembar Rev.3 tapi belum diimplementasi. Di master, seluruh '
-                        .'budget titik ini `#DIV/0!` (PERHITUNGAN U95% blok keempat) dan larutannya sudah '
-                        .'diganti 1000 cP menurut FORM VALIDASI rev.18 (18 Mei 2026). Backend nggak nyetak '
-                        .'angka titik ini sampai lab nyediakan lembar sumber yang sah.',
-                    'field' => [],
                 ],
                 [
                     'kode' => 'penutup',

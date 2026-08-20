@@ -379,6 +379,7 @@ class ConductivityProfile extends CalibrationProfile
         float $typeA,
         int $n,
         ?float $suhuRuang = null,
+        array $konteksTitik = [],
     ): ?array {
         if ($kemampuan->u_temperature === null) {
             return null;
