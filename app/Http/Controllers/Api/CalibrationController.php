@@ -1443,13 +1443,10 @@ class CalibrationController extends Controller
      */
     private static function keputusanSesi($titik): ?string
     {
-        return match (true) {
-            $titik->isEmpty() => null,
-            // Satu titik FAIL bikin seluruh sesi FAIL.
-            $titik->contains('keputusan', 'FAIL') => 'FAIL',
-            $titik->every(fn (UncertaintyCalculation $t): bool => $t->keputusan === null) => null,
-            default => 'PASS',
-        };
+        // Aturannya tinggal di `CalibrationSession` — tiga pemakai (controller
+        // ini, validator, seeder) harus memutuskan dengan cara yang sama, dan
+        // dulu dua di antaranya beda bunyi.
+        return CalibrationSession::keputusanDariTitik($titik);
     }
 
     /**
