@@ -95,24 +95,54 @@ class ViscometerSeeder extends Seeder
         [
             'nama' => 'Viscosity Standard Solution 100 cP',
             'merk' => 'Paragon Scientific/S60',
-            // Lot BARU (master terbaru `DATABASE!T13`). Header S/N di sheet
-            // `Tabel Pengaruh Temperature` masih menulis lot lama
-            // 1220905085; isi tabelnya yang sudah diperbarui, dan `DATABASE`
-            // membacanya lewat `V13 = D41` = 0,13 %.
             'serial' => '1241202088',
             // Kalibrasi 19 Agt 2025, interval 3 tahun.
             'berlaku' => '2028-08-19',
-            'ketidakpastian' => 0.129545,
+            // 0,17 % x 99,65 cP. Lihat catatan panjang di `tabel` di bawah soal
+            // kenapa BUKAN 0,13 % seperti yang tertulis di master terbaru.
+            'ketidakpastian' => 0.169405,
+            // Kolom `u_persen` IKUT MASTER LAMA (CSV), bukan master terbaru.
+            //
+            // ## Kenapa, padahal biasanya berkas terbaru yang menang
+            //
+            // Master 20 Agu 2026 menulis kolom ini terbalik arah dari master
+            // sebelumnya — 0,13 % di 20 degC naik ke 0,17 % di 100 degC,
+            // sementara master lama 0,17 % turun ke 0,08 %. Lima bukti bahwa
+            // yang menyimpang berkas barunya, bukan berkas lamanya:
+            //
+            //  1. **Botolnya sama.** `DATABASE!T13` di KEDUA master menulis
+            //     S/N 1241202088. Ini bukan lot yang diganti.
+            //  2. **Nilai viskositas & densitasnya sama persis** di kedua
+            //     berkas (134 / 99,65 / 51,1 ... dan 0,8585 / 0,8554 / ...).
+            //     Sertifikat larutan yang direvisi tidak mungkin mengubah satu
+            //     kolom saja dan membiarkan dua kolom lain identik.
+            //  3. **Arahnya melawan empat larutan lain di workbook yang sama.**
+            //     1000 cP (0,23 -> 0,13), 3000 cP (0,25 -> 0,17), dan 60000 cP
+            //     (0,23 -> 0,17) semuanya MENURUN dengan suhu. Larutan 100 cP
+            //     satu-satunya yang menaik.
+            //  4. **Header tabelnya sendiri mundur.** Sheet
+            //     `Tabel Pengaruh Temperature` di master baru menulis S/N
+            //     1220905085 — lot yang LEBIH TUA dari yang ada di master lama
+            //     maupun di `DATABASE`-nya sendiri.
+            //  5. **Sertifikat yang sudah terbit mereproduksi angka lama.**
+            //     `CAL/2026/08/0047` (sesi KAL/2026/08/0052) mencetak U95 titik
+            //     100 cP = 0,49299154 cP, dan angka itu cuma bisa lahir dari
+            //     0,17 %. Dengan 0,13 % hasilnya 0,48075411 — dokumen yang
+            //     sudah dipegang pelanggan tidak bisa dihitung ulang.
+            //
+            // Sempat dipakai 0,13 % (20 Agu 2026, commit 1810a99) dengan
+            // anggapan lab mengganti lot. Anggapan itu keliru: serialnya sama.
+            // Ditanyakan ke lab di `docs/pertanyaan-lab-viscometer.md` butir 10.
             'tabel' => [
-                ['suhu' => 20.0, 'nilai' => 134.0, 'u_persen' => 0.13],
-                ['suhu' => 25.0, 'nilai' => 99.65, 'u_persen' => 0.13],
+                ['suhu' => 20.0, 'nilai' => 134.0, 'u_persen' => 0.17],
+                ['suhu' => 25.0, 'nilai' => 99.65, 'u_persen' => 0.17],
                 ['suhu' => 37.78, 'nilai' => 51.1, 'u_persen' => 0.15],
                 ['suhu' => 40.0, 'nilai' => 45.97, 'u_persen' => 0.15],
-                ['suhu' => 50.0, 'nilai' => 29.75, 'u_persen' => 0.15],
-                ['suhu' => 60.0, 'nilai' => 20.32, 'u_persen' => 0.15],
-                ['suhu' => 80.0, 'nilai' => 10.75, 'u_persen' => 0.17],
-                ['suhu' => 98.89, 'nilai' => 6.638, 'u_persen' => 0.17],
-                ['suhu' => 100.0, 'nilai' => 6.47, 'u_persen' => 0.17],
+                ['suhu' => 50.0, 'nilai' => 29.75, 'u_persen' => 0.13],
+                ['suhu' => 60.0, 'nilai' => 20.32, 'u_persen' => 0.13],
+                ['suhu' => 80.0, 'nilai' => 10.75, 'u_persen' => 0.13],
+                ['suhu' => 98.89, 'nilai' => 6.638, 'u_persen' => 0.08],
+                ['suhu' => 100.0, 'nilai' => 6.47, 'u_persen' => 0.08],
             ],
         ],
         [

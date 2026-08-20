@@ -65,11 +65,13 @@ use App\Support\Angka;
  *     sendiri. Kertas Rev.3 yang menulis "30000" yang keliru satu nol.
  *     Ditambah SATU titik lagi yang belum pernah muncul di berkas mana pun:
  *     **100000 cP** (Paragon/RT100000, S/N 1251704078).
- *  2. **Larutan 100 cP ganti lot.** `DATABASE!T13` sekarang 1241202088 dan
- *     kolom ketidakpastian tabelnya ikut berubah — 0,13 % pada 25 °C, dari
- *     sebelumnya 0,17 %. (Header S/N di sheet `Tabel Pengaruh Temperature`
- *     masih menulis lot lama 1220905085; isinya yang sudah baru, dan `DATABASE`
- *     membacanya lewat `V13 = D41`.)
+ *  2. **Kolom ketidakpastian larutan 100 cP berubah — dan perubahan itu TIDAK
+ *     diikuti.** Master baru menulis 0,13 % pada 25 °C, master lama 0,17 %.
+ *     Sempat dibaca sebagai lot yang diganti, ternyata bukan: `DATABASE!T13`
+ *     di KEDUA master menulis S/N yang sama (1241202088), nilai viskositas &
+ *     densitasnya identik, dan arah kolomnya melawan keempat larutan lain di
+ *     workbook yang sama. Yang dipakai angka master lama; lihat butir 10
+ *     `docs/pertanyaan-lab-viscometer.md`.
  *  3. **Format sel sertifikatnya akhirnya bisa dibaca.** Lihat
  *     [desimalSertifikatTitik] — dan jawabannya bukan angka seragam.
  *
@@ -230,7 +232,13 @@ class ViscometerProfile extends CalibrationProfile
             'resolusi' => 0.1,
             'desimal' => 1,
             'desimal_sertifikat' => 2,
-            'u_persen' => 0.13,
+            // 0,17 %, bukan 0,13 % seperti master terbaru — lihat catatan
+            // panjang di `ViscometerSeeder::STANDAR` dan butir 10
+            // `docs/pertanyaan-lab-viscometer.md`. Ringkasnya: serial botolnya
+            // sama di kedua master, nilai & densitasnya identik, arah kolomnya
+            // melawan empat larutan lain, dan sertifikat yang sudah terbit
+            // cuma bisa direproduksi dengan 0,17 %.
+            'u_persen' => 0.17,
             'standar' => ['Viscosity Standard Solution 100 cP', '1241202088'],
             'cmc_parameter' => 'viskositas (cP)-Std 100 cP',
         ],
