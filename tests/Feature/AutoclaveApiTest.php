@@ -230,6 +230,58 @@ class AutoclaveApiTest extends TestCase
             ->assertJsonValidationErrors('tekanan.indikator_pressure');
     }
 
+    /**
+     * Sesi TEKANAN-SAJA harus jalan.
+     *
+     * `AutoclaveCalculationRequest` mengizinkannya (`suhu` cuma `sometimes`),
+     * handoff frontend menjanjikannya, dan layar mobile memang cuma mengirim
+     * blok yang keisi. Tapi `hitungSuhu` dulu melempar `Data suhu kosong`
+     * begitu blok suhunya nggak ada — jadi teknisi yang cuma sempat ngukur
+     * tekanan dapat 500, bukan hasil.
+     *
+     * `hitungTekanan` sejak awal balik `null` kalau blok tekanannya kosong;
+     * yang salah cuma sisi suhunya yang nggak simetris.
+     */
+    public function test_sesi_tekanan_saja_tetap_dihitung(): void
+    {
+        $data = $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave/preview', [
+                'set_point' => 121.0,
+                'tekanan' => [
+                    'indikator_pressure' => [0.112, 0.112, 0.112, 0.112, 0.112],
+                    'satuan' => 'MPa',
+                    'display' => 'Digital',
+                    'pembacaan_standar' => [1.233, 1.231, 1.225, 1.224, 1.242],
+                ],
+            ])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertNull($data['suhu'], 'Blok suhu yang nggak dikirim balik null, bukan bikin gagal.');
+        $this->assertEqualsWithDelta(0.0111, $data['tekanan']['koreksi'], 1e-9);
+        $this->assertEqualsWithDelta(0.0059, $data['tekanan']['u95'], 1e-9);
+    }
+
+    /**
+     * Blok suhu yang DIKIRIM tapi kosong tetap ditolak — beda dari blok yang
+     * memang nggak dikirim. Teknisi yang ngirim blok suhu bermaksud ngukur
+     * suhu; hasil yang hilang tanpa keterangan lebih buruk daripada penolakan.
+     */
+    public function test_blok_suhu_dikirim_tapi_kosong_tetap_ditolak(): void
+    {
+        $this->actingAs($this->teknisi, 'sanctum')
+            ->postJson('/api/calibrations/autoclave/preview', [
+                'set_point' => 121.0,
+                'suhu' => ['disk' => [[null, null]], 'indikator' => [null]],
+                'tekanan' => [
+                    'indikator_pressure' => [0.112, 0.112],
+                    'satuan' => 'MPa',
+                    'pembacaan_standar' => [1.233, 1.231],
+                ],
+            ])
+            ->assertStatus(500);
+    }
+
     public function test_preview_wajib_set_point(): void
     {
         $this->actingAs($this->teknisi, 'sanctum')
