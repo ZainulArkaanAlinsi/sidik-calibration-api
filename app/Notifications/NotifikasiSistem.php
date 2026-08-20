@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Channels\SaluranPush;
 use App\Services\PenjagaNotifikasiUlang;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -31,7 +32,36 @@ abstract class NotifikasiSistem extends Notification
         // `broadcast` = push realtime biar lonceng nyala BARENGAN di HP & desktop
         // tanpa refresh (channel privat App.Models.User.{id}). Butuh driver
         // broadcast aktif (Reverb); dengan driver `log`/`null` aman jadi no-op.
-        return ['database', 'broadcast'];
+        // `push` = notifikasi sistem operasi buat HP yang aplikasinya KETUTUP
+        // TOTAL — satu-satunya celah yang websocket nggak bisa tutup. Tanpa
+        // pengirim yang disetel, saluran ini diam (`PengirimPushMati`).
+        return ['database', 'broadcast', SaluranPush::class];
+    }
+
+    /**
+     * Payload buat notifikasi sistem operasi di HP.
+     *
+     * Sengaja cuma judul, isi, dan tautan — BUKAN seluruh payload database.
+     * Push mendarat di layar kunci, kebaca siapa pun yang megang HP-nya, dan
+     * yang mesti sampai ke situ cuma "ada yang perlu kamu lihat". Rinciannya
+     * ditarik aplikasi lewat REST ber-otorisasi sesudah dibuka, sama seperti
+     * yang sudah berlaku buat payload broadcast.
+     *
+     * @return array{judul: string, isi: string, data: array<string, string>}
+     */
+    public function toPush(object $notifiable): array
+    {
+        $tautan = $this->tautan();
+
+        return [
+            'judul' => $this->judul(),
+            'isi' => $this->isi(),
+            'data' => [
+                'kategori' => $this->kategori(),
+                'tautan_tipe' => (string) ($tautan['tipe'] ?? ''),
+                'tautan_id' => (string) ($tautan['id'] ?? ''),
+            ],
+        ];
     }
 
     /** Payload broadcast = sama persis dengan yang disimpen di database. */

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
@@ -92,6 +93,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+
+    // Perangkat yang boleh dikirimi push. Cuma nutup satu celah yang websocket
+    // nggak bisa: HP dengan aplikasi ketutup total. `DELETE` dipanggil waktu
+    // logout — HP yang dipakai gantian nggak boleh terus nerima notifikasi
+    // kerja orang sebelumnya di layar kuncinya.
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy']);
 
     // Folder Manager (spesifikasi poin 3 & 7). Bacanya semua role — menunya ada
     // di navbar bawah teknisi; isinya disaring per-role di controller.
