@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * @mixin IdeHelperCalibrationSession
@@ -353,6 +354,46 @@ class CalibrationSession extends Model
     public function uncertaintyCalculations(): HasMany
     {
         return $this->hasMany(UncertaintyCalculation::class);
+    }
+
+    /**
+     * Keputusan SESI yang seharusnya, diturunkan dari keputusan titik-titiknya.
+     *
+     * Aturannya cuma empat baris, tapi tiga pemakainya dulu tahu sendiri-
+     * sendiri dan dua di antaranya sempat beda bunyi:
+     *
+     *  - `CalibrationController` waktu menyimpan sesi,
+     *  - `CalibrationValidator` waktu memeriksa sesi tersimpan,
+     *  - seeder yang menyusun sesi contoh tanpa lewat API.
+     *
+     * Validator sempat cuma `contains FAIL ? FAIL : PASS`, jadi sesi yang SEMUA
+     * titiknya tidak divonis dituntut ber-keputusan `PASS` — padahal tidak ada
+     * satu pun kriteria kelulusan yang pernah diperiksa. Itu kelas kekeliruan
+     * yang sama dengan `default => PASS` yang dulu menstempel sesi
+     * Conductivity & Spectrophotometer lulus.
+     *
+     * Empat kemungkinannya:
+     *
+     *  - **`null` kalau belum ada titik yang kehitung.** Lembar setengah jadi
+     *    nggak punya hasil, dan nulis "PASS" di situ jauh lebih berbahaya
+     *    daripada ngosongin.
+     *  - **`FAIL` kalau ADA satu titik yang FAIL.** Satu titik jatuh bikin
+     *    seluruh sesi jatuh.
+     *  - **`null` kalau SEMUA titiknya nggak divonis.** Alat tanpa batas
+     *    keberterimaan (Autoklaf, DO Meter, Gas Detector), atau Viscometer yang
+     *    spindle & RPM-nya belum diisi sehingga MPE-nya nggak bisa dihitung.
+     *  - **`PASS`** buat sisanya.
+     *
+     * @param  Collection<int, UncertaintyCalculation>  $titik
+     */
+    public static function keputusanDariTitik($titik): ?string
+    {
+        return match (true) {
+            $titik->isEmpty() => null,
+            $titik->contains('keputusan', 'FAIL') => 'FAIL',
+            $titik->every(fn (UncertaintyCalculation $t): bool => $t->keputusan === null) => null,
+            default => 'PASS',
+        };
     }
 
     /** @return HasOne<Certificate, $this> */

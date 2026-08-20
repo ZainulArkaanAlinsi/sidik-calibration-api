@@ -1089,7 +1089,18 @@ class CalibrationValidator
             return [];
         }
 
-        $seharusnya = $sesi->uncertaintyCalculations->contains('keputusan', 'FAIL') ? 'FAIL' : 'PASS';
+        // Aturan yang SAMA PERSIS dengan yang dipakai controller waktu
+        // menyimpan — dulu di sini cuma `contains FAIL ? FAIL : PASS`, jadi
+        // sesi yang SEMUA titiknya nggak divonis dituntut ber-keputusan PASS.
+        // Kejadiannya nyata: Viscometer yang spindle & RPM-nya belum diisi
+        // nggak punya MPE di satu titik pun, jadi keputusannya null di
+        // mana-mana — dan sesi seperti itu ke-flag `keputusan_sesi_salah`
+        // padahal justru itu yang benar.
+        $seharusnya = CalibrationSession::keputusanDariTitik($sesi->uncertaintyCalculations);
+
+        if ($sesi->keputusan === null && $seharusnya === null) {
+            return [];
+        }
 
         if ($sesi->keputusan === $seharusnya) {
             return [];
