@@ -159,11 +159,14 @@ class ViscometerApiTest extends TestCase
             $this->assertSame('PASS', $t->keputusan);
         }
 
-        // `uc` titik 1 ikut LOT BARU larutan 100 cP: U95 sertifikatnya 0,13 %
-        // (0,129545 cP), bukan 0,17 % (0,169405 cP) seperti lot 1220905085
-        // yang dipakai sampai 19 Agt 2026. Master lama mencetak 0,24649577 di
-        // sel ini; selisihnya murni dari botol yang diganti, bukan dari rumus.
-        $this->assertEqualsWithDelta(0.24037705, (float) $titik[1]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
+        // `uc` cocok persis sama master di dua titik pertama.
+        //
+        // Titik 1 memakai U95 sertifikat larutan 0,169405 cP (0,17 %). Master
+        // 20 Agt 2026 menulis 0,13 % di kolom itu dan sempat diikuti, tapi
+        // serial botolnya sama di kedua berkas — jadi itu bukan lot baru.
+        // Lihat `ViscometerSeeder::STANDAR` dan butir 10
+        // `docs/pertanyaan-lab-viscometer.md`.
+        $this->assertEqualsWithDelta(0.24649577, (float) $titik[1]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
         $this->assertEqualsWithDelta(1.35600158, (float) $titik[2]->ketidakpastian_gabungan, self::TOLERANSI_SIMPAN);
     }
 
@@ -249,7 +252,7 @@ class ViscometerApiTest extends TestCase
         // master terbaru — `0.00` di baris 100 cP, `0.0` di 1000 & 60000 cP.
         // Lihat `ViscometerProfile::desimalSertifikatTitik()`.
         $cetak = [
-            1 => ['desimal' => 2, 'u95' => '0.48', 'titik' => '93.88'],
+            1 => ['desimal' => 2, 'u95' => '0.49', 'titik' => '93.88'],
             2 => ['desimal' => 1, 'u95' => '2.7', 'titik' => '910.3'],
             3 => ['desimal' => 1, 'u95' => '145.7', 'titik' => '61898.1'],
         ];
@@ -420,7 +423,7 @@ class ViscometerApiTest extends TestCase
      * sepuluh baris Holmium emang bawa angka yang sama persis.
      *
      * Viscometer nggak punya kelompok: ketiga titiknya masuk satu kelompok
-     * tanpa remark, dan U95-nya BEDA-BEDA jauh — 0,48 / 2,7 / 145,7 cP.
+     * tanpa remark, dan U95-nya BEDA-BEDA jauh — 0,49 / 2,7 / 145,7 cP.
      * Hasilnya cuma yang pertama yang kecetak; dua angka sisanya hilang dari
      * dokumen tanpa error, tanpa sel kosong, tanpa apa pun yang kelihatan
      * salah. Master lab sendiri nyetak kolom keempat `U95%, k=2` dengan satu
@@ -485,7 +488,7 @@ class ViscometerApiTest extends TestCase
         // Dua desimal cuma di baris pertama — sisanya satu, ikut format sel
         // masternya. Yang diuji bukan cuma angkanya, tapi juga bentuknya.
         $this->assertSame([
-            ['93,88', '96,72', '-2,84', '0,48'],
+            ['93,88', '96,72', '-2,84', '0,49'],
             ['910,3', '917,7', '-7,4', '2,7'],
             ['61898,1', '63151,9', '-1253,7', '145,7'],
         ], $tabel);

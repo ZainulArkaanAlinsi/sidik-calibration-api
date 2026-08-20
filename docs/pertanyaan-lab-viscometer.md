@@ -7,8 +7,10 @@ Status: sebagian TERJAWAB oleh `5. Viscometer 86068360 terbaru .xlsm` (20 Agu
 **20 Agustus 2026 — berkas `.xlsm` yang diminta sudah dikirim** (sesi
 0817-CAL-726, PT Lamurindo, Brookfield DV Plus S/N 86068360). Butir 3 dan 5
 terjawab; butir 1, 2, 4, 6 tetap sebagaimana adanya (sesi lama tidak ada di
-berkas baru). Tiga pertanyaan BARU muncul dari berkas itu — nomor 7-9 di
-bawah.
+berkas baru). EMPAT pertanyaan BARU muncul dari berkas itu — nomor 7-10 di
+bawah. Nomor 10 yang paling mendesak: satu kolom di berkas baru berselisih
+dengan berkas lama untuk botol yang serialnya sama, dan selisih itu membuat
+sertifikat yang sudah terbit tidak bisa dihitung ulang.
 
 ---
 
@@ -224,6 +226,49 @@ menulis 2 dua kali. Akibatnya `U95` titik 3000 cP keluar 10,088 cP di sini vs
 pendekatan t-student yang benar, kalimat sertifikat & judul kolomnya ikut
 diubah — dan `ViscometerProfile::faktorCakupanTetap()` tinggal dikembalikan ke
 null.
+
+## 10. Kolom ketidakpastian larutan 100 cP berselisih antar berkas, botolnya sama (BARU, 20 Agu 2026)
+
+Kolom `Uncertainty %` untuk larutan 100 cP di sheet `Tabel Pengaruh
+Temperature` berbeda antara dua berkas master:
+
+| Suhu (°C) | 20 | 25 | 37,78 | 40 | 50 | 60 | 80 | 98,89 | 100 |
+|---|---|---|---|---|---|---|---|---|---|
+| Berkas lama | 0,17 | 0,17 | 0,15 | 0,15 | 0,13 | 0,13 | 0,13 | 0,08 | 0,08 |
+| Berkas baru | 0,13 | 0,13 | 0,15 | 0,15 | 0,15 | 0,15 | 0,17 | 0,17 | 0,17 |
+
+Yang membuat ini bukan sekadar "berkas baru menang":
+
+1. **Botolnya sama.** `DATABASE!T13` di KEDUA berkas menulis S/N
+   **1241202088**. Ini bukan lot yang diganti.
+2. **Nilai viskositas & densitasnya identik** di kedua berkas (134 / 99,65 /
+   51,1 … dan 0,8585 / 0,8554 / …). Sertifikat larutan yang direvisi tidak
+   mengubah satu kolom dan membiarkan dua kolom lain sama persis.
+3. **Arahnya melawan keempat larutan lain di berkas baru itu sendiri.**
+   1000 cP (0,23 → 0,13), 3000 cP (0,25 → 0,17), dan 60000 cP (0,23 → 0,17)
+   semuanya menurun dengan suhu. Larutan 100 cP satu-satunya yang menaik.
+4. **Header tabelnya justru mundur.** Sheet `Tabel Pengaruh Temperature` di
+   berkas baru menulis S/N **1220905085** — lebih tua dari yang ada di
+   `DATABASE`-nya sendiri maupun di berkas lama.
+5. **Sertifikat yang sudah terbit hanya cocok dengan 0,17 %.**
+   `CAL/2026/08/0047` (sesi `KAL/2026/08/0052`, 19 Agu 2026) mencetak U95 titik
+   100 cP = **0,49299154 cP**. Dengan 0,13 % hasilnya 0,48075411 — dokumen yang
+   sudah dipegang pelanggan tidak bisa dihitung ulang.
+
+**Yang dipakai sekarang: 0,17 %,** ikut berkas lama. Sempat diikuti 0,13 %
+(20 Agu 2026) dengan anggapan lab mengganti lot; anggapan itu keliru karena
+serialnya sama, dan sudah dikembalikan.
+
+Akibatnya `uc` titik 100 cP di sesi 0817-CAL-726 keluar 0,0947 di sini
+sementara sel `PERHITUNGAN U95%!AC21` berbunyi 0,0773. **Angka yang
+DILAPORKAN tidak bergeser sama sekali** — lantai CMC 0,2 cP menang di titik itu
+pada kedua angka, jadi sel `AC26` tetap direproduksi.
+
+**Yang ditanyakan:** kirimkan sertifikat larutan 100 cP S/N 1241202088 yang
+berlaku. Kalau kolom di berkas baru yang benar, satu hal yang perlu diketahui
+lebih dulu: sertifikat `CAL/2026/08/0047` yang sudah terbit dihitung dengan
+0,17 %, jadi perlu diputuskan apakah dokumen itu diterbitkan ulang atau
+dibiarkan sebagaimana adanya.
 
 ## Tambahan: kertas SIDIK-FM-CAL-0524_Rev.3 ketinggalan
 

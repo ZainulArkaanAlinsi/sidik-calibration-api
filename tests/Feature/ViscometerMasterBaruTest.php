@@ -75,26 +75,52 @@ class ViscometerMasterBaruTest extends TestCase
     }
 
     /**
-     * Lot larutan 100 cP diganti: U95 sertifikatnya 0,13 %, bukan 0,17 %.
+     * Kolom ketidakpastian larutan 100 cP TETAP 0,17 %, walau master terbaru
+     * menulis 0,13 %.
      *
-     * `DATABASE!T13` menunjuk S/N 1241202088 dan `V13 = D41` berbunyi 0,13.
-     * Header S/N di sheet `Tabel Pengaruh Temperature` masih menulis lot lama
-     * 1220905085 — isinya yang sudah diperbarui, headernya yang ketinggalan.
-     * Yang diikuti isinya.
+     * ## Kenapa berkas terbaru justru tidak diikuti di satu kolom ini
+     *
+     * Perubahan itu sempat dibaca sebagai lot botol yang diganti, dan
+     * anggapan itu keliru. Lima bukti bahwa yang menyimpang berkas barunya:
+     *
+     *  1. `DATABASE!T13` di KEDUA master menulis S/N yang sama, 1241202088 —
+     *     botolnya tidak diganti.
+     *  2. Nilai viskositas & densitasnya identik di kedua berkas. Sertifikat
+     *     larutan yang direvisi tidak mengubah satu kolom dan membiarkan dua
+     *     kolom lain sama persis.
+     *  3. Arahnya melawan keempat larutan lain di workbook yang SAMA: 1000,
+     *     3000, dan 60000 cP semuanya menurun dengan suhu; cuma 100 cP yang
+     *     menaik.
+     *  4. Header sheet `Tabel Pengaruh Temperature` di master baru justru
+     *     mundur ke S/N 1220905085 — lebih tua dari yang ada di `DATABASE`-nya
+     *     sendiri.
+     *  5. Sertifikat yang SUDAH TERBIT (`CAL/2026/08/0047`) mencetak U95 titik
+     *     100 cP = 0,49299154 cP, dan angka itu cuma lahir dari 0,17 %.
+     *
+     * Ditanyakan ke lab di butir 10 `docs/pertanyaan-lab-viscometer.md`.
+     * Begitu lab menjawab lain, test ini yang merah lebih dulu.
      */
-    public function test_lot_baru_larutan_100_cp_u95_nol_koma_13_persen(): void
+    public function test_u95_larutan_100_cp_tetap_nol_koma_17_persen(): void
     {
         $this->seed(DatabaseSeeder::class);
 
         $std = Standard::where('nama', 'Viscosity Standard Solution 100 cP')->firstOrFail();
 
         $this->assertSame('1241202088', $std->serial_number);
-        // 0,13 % x 99,65 cP.
-        $this->assertEqualsWithDelta(0.129545, (float) $std->ketidakpastian, 1e-9);
+        // 0,17 % x 99,65 cP.
+        $this->assertEqualsWithDelta(0.169405, (float) $std->ketidakpastian, 1e-9);
 
         $baris = $std->barisTabelSuhu(ViscometerProfile::SUHU_ACUAN);
-        $this->assertEqualsWithDelta(0.13, $baris['u_persen'], 1e-9);
+        $this->assertEqualsWithDelta(0.17, $baris['u_persen'], 1e-9);
         $this->assertEqualsWithDelta(99.65, $baris['nilai'], 1e-9);
+
+        // Kolomnya MENURUN dengan suhu, sama seperti keempat larutan lain.
+        $tabel = collect($std->koefisien_suhu['tabel']);
+        $this->assertGreaterThan(
+            (float) $tabel->last()['u_persen'],
+            (float) $tabel->first()['u_persen'],
+            'Ketidakpastian larutan 100 cP mestinya menurun dengan suhu, seperti empat larutan lain.',
+        );
     }
 
     /**
@@ -178,10 +204,11 @@ class ViscometerMasterBaruTest extends TestCase
     }
 
     /**
-     * Sesi master baru: nilai acuan & `uc` dua titik yang cocok PERSIS.
+     * Sesi master baru: nilai acuan kedua titik pertama, dan `uc` titik
+     * 3000 cP yang cocok PERSIS ke sel `PERHITUNGAN U95%`.
      *
-     * Titik 100 & 3000 cP mereproduksi sel `PERHITUNGAN U95%` sampai digit
-     * terakhir. Titik 1000 cP sengaja tidak — lihat test di bawahnya.
+     * Titik 1000 & 100 cP sengaja TIDAK cocok — dua sebab yang berbeda, dua-
+     * duanya dijaga sebagai angka di test di bawahnya.
      */
     public function test_sesi_master_baru_reproduksi_uc_titik_100_dan_3000(): void
     {
@@ -194,15 +221,19 @@ class ViscometerMasterBaruTest extends TestCase
         $this->assertEqualsWithDelta(79.895696400626, (float) $titik[1]->titik_ukur, 1e-7);
         $this->assertEqualsWithDelta(755.7464788732395, (float) $titik[2]->titik_ukur, 1e-7);
 
-        // `Ketidakpastian Baku Gabungan, Uc` — sel AC21 & AC59.
-        $this->assertEqualsWithDelta(0.07733775101928006, (float) $titik[1]->ketidakpastian_gabungan, 1e-7);
+        // `Ketidakpastian Baku Gabungan, Uc` & `Derajat Kebebasan, v eff` —
+        // sel AC59 & AC60, blok 3000 cP.
         $this->assertEqualsWithDelta(5.044064680830383, (float) $titik[3]->ketidakpastian_gabungan, 1e-7);
-
-        // `Derajat Kebebasan, v eff` — sel AC22 & AC60.
-        $this->assertEqualsWithDelta(198.2005653515736, (float) $titik[1]->derajat_kebebasan_efektif, 1e-6);
         $this->assertEqualsWithDelta(209.3999674977603, (float) $titik[3]->derajat_kebebasan_efektif, 1e-6);
 
-        // Lantai CMC titik 100 cP menang (U hitung 0,1547 < CMC 0,2) — sel AC26.
+        // Titik 100 cP: `uc` kita 0,0947 sementara sel AC21 berbunyi 0,0773 —
+        // selisihnya dari kolom ketidakpastian larutan yang sengaja tidak
+        // diikuti (0,17 % vs 0,13 %, lihat test di atas).
+        //
+        // Yang DILAPORKAN tetap sama persis: lantai CMC 0,2 cP menang di titik
+        // ini pada kedua angka (U hitung 0,1893 dengan 0,17 % dan 0,1547
+        // dengan 0,13 %), jadi sel AC26 master tetap direproduksi.
+        $this->assertEqualsWithDelta(0.09465814535854902, (float) $titik[1]->ketidakpastian_gabungan, 1e-7);
         $this->assertEqualsWithDelta(0.2, (float) $titik[1]->ketidakpastian_diperluas, 1e-7);
     }
 
@@ -244,7 +275,7 @@ class ViscometerMasterBaruTest extends TestCase
     }
 
     /**
-     * DUA selisih yang disengaja terhadap sel master, dijaga sebagai ANGKA —
+     * TIGA selisih yang disengaja terhadap sel master, dijaga sebagai ANGKA —
      * bukan sebagai komentar yang bisa jadi basi tanpa ada yang tahu.
      *
      *  1. **Titik 1000 cP, resolusi.** Master membaca `E16` (= 1) HANYA di
@@ -257,10 +288,16 @@ class ViscometerMasterBaruTest extends TestCase
      *     kolom `U95%, k=2`. Yang diikuti dokumennya: `U` kita 10,088 cP; sel
      *     masternya 9,949 cP — 1,4 % lebih besar, arah yang aman.
      *
-     * Keduanya ditanyakan di `docs/pertanyaan-lab-viscometer.md`. Begitu lab
+     *  3. **Titik 100 cP, kolom ketidakpastian larutan.** Master menulis
+     *     0,13 % di kolom itu; yang dipakai 0,17 % karena serial botolnya sama
+     *     di kedua berkas dan sertifikat terbit cuma bisa direproduksi dengan
+     *     0,17 %. `uc` kita 0,0947; sel masternya 0,0773. Yang DILAPORKAN
+     *     tidak bergeser — lantai CMC 0,2 cP menang pada kedua angka.
+     *
+     * Ketiganya ditanyakan di `docs/pertanyaan-lab-viscometer.md`. Begitu lab
      * menjawab, test ini yang merah lebih dulu.
      */
-    public function test_dua_selisih_yang_disengaja_dari_master(): void
+    public function test_tiga_selisih_yang_disengaja_dari_master(): void
     {
         $titik = $this->sesi()->uncertaintyCalculations
             ->keyBy(fn ($t): int => (int) $t->titik_ke);
@@ -275,6 +312,12 @@ class ViscometerMasterBaruTest extends TestCase
         $this->assertNotEqualsWithDelta(9.948775103079448, (float) $titik[3]->ketidakpastian_diperluas, 1e-3);
 
         $this->assertSame(2.0, (new ViscometerProfile)->faktorCakupanTetap());
+
+        // 3. Kolom ketidakpastian larutan 100 cP 0,17 %, bukan 0,13 %.
+        $this->assertEqualsWithDelta(0.09465814535854902, (float) $titik[1]->ketidakpastian_gabungan, 1e-7);
+        $this->assertNotEqualsWithDelta(0.07733775101928006, (float) $titik[1]->ketidakpastian_gabungan, 1e-4);
+        // Tapi angka yang DILAPORKAN tetap sama dengan master.
+        $this->assertEqualsWithDelta(0.2, (float) $titik[1]->ketidakpastian_diperluas, 1e-7);
     }
 
     /**
