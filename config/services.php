@@ -119,4 +119,24 @@ return [
         'structured_output' => (bool) env('ANTHROPIC_STRUCTURED_OUTPUT', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Firebase Cloud Messaging — push ke HP yang aplikasinya ketutup total
+    |--------------------------------------------------------------------------
+    | Cuma menutup satu celah. Selama aplikasinya jalan, kabar sudah sampai
+    | lewat Reverb, dan itu jalur yang nggak butuh layanan pihak ketiga.
+    |
+    | KOSONG = push mati (`PengirimPushMati`), dan itu keadaan yang sah: mesin
+    | developer, CI, dan test memang nggak punya kredensial ini. Notifikasi
+    | tetap masuk database, tetap muncul di lonceng, tetap disiarkan Reverb.
+    |
+    | `credentials` menunjuk berkas service account JSON. Simpan DI LUAR repo —
+    | itu kunci server, beda dari REVERB_APP_KEY yang memang publik.
+    */
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+        'credentials' => env('FCM_CREDENTIALS'),
+        'timeout' => (int) env('FCM_TIMEOUT', 10),
+    ],
+
 ];
