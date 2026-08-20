@@ -447,5 +447,23 @@ class ViscometerSeeder extends Seeder
                 ...$hasil,
             ]);
         }
+
+        // Keputusan sesi diturunkan dari titik-titiknya, dengan aturan yang
+        // SAMA PERSIS dengan jalur API (`CalibrationSession::keputusanDariTitik`).
+        //
+        // Sebelum ini seeder membiarkannya kosong, dan `CalibrationValidator`
+        // menandainya `keputusan_sesi_salah` — satu-satunya ERROR di sesi
+        // contoh ini, sehingga `boleh_terbit` false. Sesi yang dipakai orang
+        // buat mengenali bentuk data yang benar tidak boleh jadi contoh sesi
+        // yang ditolak validator sendiri.
+        //
+        // Sesi 0817-CAL-726 keluar FAIL: titik 1000 cP koreksinya −23,75 cP
+        // sementara MPE-nya 24,19 cP, dan |koreksi| + U95 (2,37) sudah lewat.
+        // Itu vonis yang benar, bukan data yang perlu dibetulkan.
+        $sesi->update([
+            'keputusan' => CalibrationSession::keputusanDariTitik(
+                $sesi->uncertaintyCalculations()->get(),
+            ),
+        ]);
     }
 }
