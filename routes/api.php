@@ -208,15 +208,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/calibrations/photos', [CalibrationController::class, 'uploadPhoto']);
 
         // AI Vision: foto tabel lembar kerja → { baris: [...] } + skor keyakinan
-        // per sel (gantinya OCR di HP). Hasilnya buat dikonfirmasi teknisi, BUKAN
-        // langsung disimpen — submit final tetap lewat POST/PUT /calibrations.
-        // Path ngikut SPEC-vision-prompt.md §8 (yang dipanggil mobile).
+        // per sel. Hasilnya buat dikonfirmasi teknisi, BUKAN langsung disimpen —
+        // submit final tetap lewat POST/PUT /calibrations.
+        //
+        // JALUR CADANGAN, bukan jalur utama lagi. Aplikasi mobile pindah ke
+        // pindai lokal di bawah dan nggak pernah manggil endpoint ini lagi.
+        // Dimatikan lewat `VISION_AKTIF=false` — dia mengirim foto lembar kerja
+        // pelanggan ke layanan pihak ketiga, jadi lab harus bisa menutupnya
+        // tanpa nunggu rilis. Path ngikut SPEC-vision-prompt.md §8.
         Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
             ->middleware('throttle:30,1');
 
-        // OCR TEMPLATE LOKAL — jalur pindai tanpa AI pihak ketiga & tanpa biaya
-        // per foto. Fotonya dibaca di HP; yang nyampe sini teks per sel + mutu
-        // foto + geometri. Sama kayak jalur AI Vision, hasilnya usulan: submit
+        // OCR TEMPLATE LOKAL — jalur pindai UTAMA. Tanpa AI pihak ketiga & tanpa
+        // biaya per foto: ANGKANYA dibaca di HP, yang nyampe sini teks per sel +
+        // mutu foto + geometri, plus citra lembar yang udah diratakan (dipakai
+        // layar koreksi buat nampilin tulisan aslinya). Jadi citranya memang
+        // keluar HP — retensinya `config/ocr.php`. Sama kayak jalur AI Vision, hasilnya usulan: submit
         // final tetap lewat POST/PUT /calibrations.
         Route::get('/worksheet-templates', [WorksheetScanController::class, 'templates']);
         Route::get('/worksheet-templates/{kode}', [WorksheetScanController::class, 'template']);

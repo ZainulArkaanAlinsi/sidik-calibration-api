@@ -306,6 +306,92 @@ class WorksheetExtractionTest extends TestCase
         $this->assertSame('gemini-3.6-flash', $log->model);
     }
 
+    /**
+     * Lembar Autoklaf bentuknya matriks — tujuh baris besaran campur × lima
+     * titik waktu — dan nggak ada kombinasi `kolom_suhu`/`standar_di_baris`
+     * yang menggambarkannya.
+     *
+     * Yang HARUS terjadi: ditolak sebelum fotonya dikirim ke mana pun. Bukan
+     * dicoba pakai bentuk lembar pH. Yang balik dari percobaan itu bukan error
+     * melainkan angka yang bentuknya wajar tapi mendarat di baris yang salah —
+     * dan itu lolos sampai sertifikat.
+     */
+    public function test_lembar_yang_bentuknya_nggak_didukung_ditolak_sebelum_foto_dikirim(): void
+    {
+        Http::fake();
+        $this->fakeSukses();
+
+        $sesiAutoklaf = CalibrationSession::factory()->create([
+            'teknisi_id' => $this->teknisi->id,
+            'equipment_id' => Equipment::factory()->create([
+                'customer_id' => Customer::factory()->create()->id,
+                'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'autoklaf'])->id,
+                'nama_alat' => 'Autoklaf',
+            ])->id,
+            'status' => CalibrationSession::STATUS_DRAFT,
+        ]);
+
+        $this->kirim($this->teknisi, ['calibration_session_id' => $sesiAutoklaf->id])
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
+
+        // Nggak ada satu pun panggilan keluar: fotonya berhenti di server kita.
+        Http::assertNothingSent();
+
+        $log = WorksheetExtractionLog::sole();
+        $this->assertSame('bentuk_tidak_didukung', $log->status);
+    }
+
+    /**
+     * Penanda `didukung` NGGAK boleh bisa ditimpa pemanggil. Dua penanda bentuk
+     * yang lain soal pilihan; yang ini soal kertas yang nggak bisa digambarkan
+     * sama sekali, dan klien yang ngirim `kolom_suhu` nggak mengubah itu.
+     */
+    public function test_klien_nggak_bisa_maksa_lembar_yang_nggak_didukung(): void
+    {
+        Http::fake();
+        $this->fakeSukses();
+
+        $sesiAutoklaf = CalibrationSession::factory()->create([
+            'teknisi_id' => $this->teknisi->id,
+            'equipment_id' => Equipment::factory()->create([
+                'customer_id' => Customer::factory()->create()->id,
+                'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'autoklaf'])->id,
+                'nama_alat' => 'Autoklaf',
+            ])->id,
+            'status' => CalibrationSession::STATUS_DRAFT,
+        ]);
+
+        $this->kirim($this->teknisi, [
+            'calibration_session_id' => $sesiAutoklaf->id,
+            'kolom_suhu' => true,
+            'standar_di_baris' => false,
+        ])->assertStatus(422);
+
+        Http::assertNothingSent();
+    }
+
+    /**
+     * Jalur ini sekarang CADANGAN — mobile pindah ke pindai lokal dan nggak
+     * pernah manggilnya lagi. Karena dia mengirim foto lembar kerja pelanggan
+     * ke layanan pihak ketiga, lab harus bisa mematikannya lewat satu baris
+     * `.env`, bukan lewat hapus kode.
+     */
+    public function test_saklar_vision_mati_bikin_endpoint_berhenti_di_server(): void
+    {
+        Http::fake();
+        $this->fakeSukses();
+        Config::set('services.vision.aktif', false);
+
+        $this->kirim($this->teknisi)
+            ->assertStatus(503)
+            ->assertJsonPath('fallback_manual', true);
+
+        Http::assertNothingSent();
+
+        $this->assertSame('dimatikan', WorksheetExtractionLog::sole()->status);
+    }
+
     public function test_refusal_balik_422_dan_fallback_manual(): void
     {
         Config::set('services.anthropic.api_key', 'test-key');
