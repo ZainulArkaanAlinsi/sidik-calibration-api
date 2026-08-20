@@ -36,6 +36,24 @@ class GumCalculator
     public const MIN_PENGULANGAN = 2;
 
     /**
+     * Batas atas derajat kebebasan efektif yang boleh disimpen.
+     *
+     * Kolom `uncertainty_calculations.derajat_kebebasan_efektif` itu
+     * decimal(20,8) — bagian bulatnya cuma 12 digit. v_eff di atas itu bikin
+     * MySQL nolak baris (`SQLSTATE[22003] Out of range`) dan pengiriman lembar
+     * kerjanya balik HTTP 500. Sumber utamanya udah ditutup di
+     * [standarDeviasiSampel], tapi penjaganya ditaruh di sini JUGA karena yang
+     * dipertaruhkan bukan angkanya: kalau ada satu jalur budget lain yang
+     * ngasih penyebut Welch-Satterthwaite mendekati nol, yang ilang itu
+     * kerjaan teknisi di lapangan, bukan sekadar satu kolom audit.
+     *
+     * Nilai ini nggak ngubah `k` sama sekali: t(0,975; v) buat v ≥ 1e6 udah
+     * sama dengan t(0,975; ∞) = 1,95996 sampai 10+ digit. Jadi v_eff yang
+     * kepotong artinya "praktis tak hingga", persis kayak sebelumnya.
+     */
+    private const MAKS_V_EFF = 999_999_999_999.0;
+
+    /**
      * Batas geser titik ukur dari titik nominal kemampuan (CMC) sebelum
      * dianggap BUKAN titik yang sama. Nilai sertifikat buffer/standar asli
      * di data pH cuma geser 0.009-0.021 dari nominalnya (3.99 vs 4, 6.9889
@@ -541,7 +559,9 @@ class GumCalculator
             }
         }
 
-        $veff = $penyebutWs > 0.0 ? ($jumlahKuadrat ** 2) / $penyebutWs : null;
+        $veff = $penyebutWs > 0.0
+            ? min(($jumlahKuadrat ** 2) / $penyebutWs, self::MAKS_V_EFF)
+            : null;
 
         // Derajat kebebasan DIPOTONG ke bawah sebelum dicari t-nya.
         //
@@ -820,7 +840,7 @@ class GumCalculator
             return null;
         }
 
-        return $gabungan ** 4 / ($typeA ** 4 / ($n - 1));
+        return min($gabungan ** 4 / ($typeA ** 4 / ($n - 1)), self::MAKS_V_EFF);
     }
 
     /**
@@ -841,7 +861,29 @@ class GumCalculator
             array_map(fn (float $x): float => ($x - $rataRata) ** 2, $pembacaan),
         );
 
-        return sqrt($jumlahKuadratSelisih / ($n - 1));
+        $stdev = sqrt($jumlahKuadratSelisih / ($n - 1));
+
+        // Pembacaan yang SEMUANYA sama persis harus ngasih stdev NOL BULAT,
+        // bukan sisa pembulatan biner.
+        //
+        // Bukan kerapian: lima kali 1,74 mg/L (alat stabil, kejadian paling
+        // biasa di lapangan) bikin `$rataRata` meleset satu bit dari 1,74,
+        // dan stdev-nya keluar 2,48e-16 — bukan nol. Angka sekecil itu lolos
+        // penjaga `typeA > 0` di [derajatKebebasanEfektif], terus dipangkat
+        // empat di penyebut Welch-Satterthwaite sampai v_eff-nya 1,1e59.
+        // Kolom `derajat_kebebasan_efektif` itu decimal(20,8) (maks ~1e12),
+        // jadi MySQL nolak simpanannya dan SELURUH pengiriman lembar kerja
+        // balik HTTP 500 — kerjaan teknisi ilang, tanpa satu pun pesan yang
+        // nyebut sebabnya. Di SQLite (dipakai test) nggak kelihatan sama
+        // sekali: tipenya longgar, angkanya masuk aja.
+        //
+        // Ambangnya RELATIF ke besaran pembacaannya, karena galat pembulatan
+        // biner ikut membesar sama nilainya: 1e-12 dari 60000 cP beda jauh
+        // dari 1e-12 dari 1,74 mg/L. Sebaran sebeneran yang sekecil ini
+        // nggak ada artinya — resolusi alat terhalus di repo ini 1e-5.
+        $skala = max(abs($rataRata), 1.0);
+
+        return $stdev < $skala * 1e-12 ? 0.0 : $stdev;
     }
 
     /**

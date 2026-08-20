@@ -60,9 +60,48 @@ class CalibrationCapabilitySeeder extends Seeder
      * `ViscometerCapabilitySeeder` nulisnya sebagai RENTANG, seluruhnya dalam
      * cP.
      *
+     * ## Enam alat sisanya
+     *
+     * pH Meter, Turbidimeter, Chlorin Meter, Refractometer, Conductivitymeter,
+     * dan DO Meter dulunya NGGAK ada di daftar ini, dan akibatnya dua:
+     *
+     *  1. **Barisnya dobel.** Seeder per-alat nyocokin baris pakai kunci
+     *     `range_min = range_max = titik`; JSON lampiran nulis titik tunggal
+     *     sebagai `range_min = NULL`. Dua kunci itu nggak pernah ketemu, jadi
+     *     `updateOrCreate`-nya selalu bikin baris KEDUA. Yang satu punya
+     *     `u_temperature`, yang satu NULL — dan `kemampuanUntukTitik()` milih
+     *     salah satunya tanpa aturan yang bisa ditebak.
+     *  2. **Konstanta budgetnya kehapus.** Seeder ini mulai dengan
+     *     `capabilities()->delete()` se-KATEGORI. Dijalanin sendirian (mis.
+     *     `db:seed --class=CalibrationCapabilitySeeder`) dia ngosongin
+     *     `u_temperature` sembilan alat sekaligus. Sesudah itu
+     *     `CalibrationProfile::komponenBudget()` balikin null, tiap sesi baru
+     *     diam-diam turun ke jalur satu komponen (CMC/2), dan sertifikatnya
+     *     terbit dengan Uc yang beda dari master — tanpa error di mana pun.
+     *     Ditemukan di DB lokal 20 Agu 2026: delapan dari sembilan alat
+     *     `u_temperature`-nya NULL.
+     *
+     * Angka JSON-nya tetap kejaga sebagai catatan akreditasi lewat berkas
+     * `database/data/kemampuan-kalibrasi.json` — yang berubah cuma: baris DB
+     * buat alat ini punya SATU sumber, yaitu seeder alatnya sendiri.
+     *
+     * Autoklaf sengaja NGGAK ikut: dia belum punya seeder kemampuan sendiri,
+     * dan `AutoclaveCalculator` nggak lewat `komponenBudget()` sama sekali
+     * (konstanta budgetnya ada di kalkulatornya), jadi baris JSON-nya udah
+     * cukup dan satu-satunya.
+     *
      * @var list<string>
      */
-    private const DISEED_TERPISAH = ['Spektrofotometer', 'Viscometer'];
+    private const DISEED_TERPISAH = [
+        'Spektrofotometer',
+        'Viscometer',
+        'pH Meter',
+        'Turbidimeter',
+        'Chlorin Meter',
+        'Refractometer',
+        'Conductivitymeter',
+        'DO Meter',
+    ];
 
     public function run(): void
     {
@@ -81,8 +120,17 @@ class CalibrationCapabilitySeeder extends Seeder
                 ['nama' => $kelompok['kelompok']],
             );
 
-            // Di-seed ulang dari nol biar nggak numpuk kalau seeder dijalanin lagi.
-            $category->capabilities()->delete();
+            // Di-seed ulang dari nol biar nggak numpuk kalau seeder dijalanin
+            // lagi — TAPI cuma baris yang emang milik seeder ini.
+            //
+            // Dulu ini ngehapus se-kategori tanpa syarat, dan itu bikin seeder
+            // ini jadi granat: dijalanin sendirian, dia ngosongin baris CMC
+            // milik delapan seeder per-alat berikut `u_temperature`-nya, dan
+            // seluruh jalur budget master mati diam-diam sampai ada yang
+            // kepikiran nyeed ulang satu-satu. Lihat [DISEED_TERPISAH].
+            $category->capabilities()
+                ->whereNotIn('nama_alat', self::DISEED_TERPISAH)
+                ->delete();
 
             foreach ($kelompok['alat'] as $alat) {
                 if (in_array($alat['nama_alat'], self::DISEED_TERPISAH, true)) {
