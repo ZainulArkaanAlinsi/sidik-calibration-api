@@ -290,7 +290,7 @@ Khusus jalur **pH**, ini yang udah kepasang lengkap:
 | Pembacaan as-found | `measurements[].pembacaan_sebelum` |
 | Idempotency retry submit | `client_request_id` (UUID) |
 | Ruangan di sesi | `room_id` — ikut di request & response (`ruangan.{id,kode,nama}`) |
-| AI Vision baca foto tabel | `POST /raw-measurements/extract-from-photo` |
+| AI Vision baca foto tabel (CADANGAN, mobile sudah pindah ke pindai lokal; saklar `VISION_AKTIF`) | `POST /raw-measurements/extract-from-photo` |
 | Konfirmasi hasil pindai | `POST /calibrations/{id}/measurements/verify` |
 | Hitung ulang & periksa (admin) | `GET /calibrations/{id}/validasi` |
 | Lembar perhitungan (admin) | `GET /calibrations/{id}/perhitungan` |
