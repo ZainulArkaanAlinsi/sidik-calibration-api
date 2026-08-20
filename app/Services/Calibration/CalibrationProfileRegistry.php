@@ -7,6 +7,7 @@ use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
+use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
@@ -50,6 +51,7 @@ class CalibrationProfileRegistry
             new SpectrophotometerProfile,
             new ViscometerProfile,
             new AutoclaveProfile,
+            new DoMeterProfile,
         ];
     }
 

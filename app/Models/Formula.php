@@ -66,6 +66,14 @@ class Formula extends Model
      */
     public const KODE_GUM_AUTOCLAVE = 'gum-autoclave';
 
+    /**
+     * Rumus GUM buat jalur DO Meter (alat ke-9). Budget 5 komponen SATU titik
+     * (larutan standar oksigen 8,77 mg/L), persis pola Chlorin Meter — beda
+     * cuma koefisien sensitivitas komponen pengenceran yang turunan titik
+     * (`ci = Uc_pengenceran/100 · titik`), bukan konstanta. Lihat DoMeterProfile.
+     */
+    public const KODE_GUM_DO_METER = 'gum-do-meter';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {
