@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use InvalidArgumentException;
+
 /**
  * Rakit input `AutoclaveCalculator` dari data ukur teknisi + tabel kalibrator &
  * CMC server-side (`config/autoclave.php`).
@@ -42,13 +44,23 @@ class AutoclaveInputBuilder
             ];
         }
 
-        if (isset($data['tekanan'])) {
+        // Tanpa bacaan Pressure Disk Logger nggak ada yang bisa dihitung —
+        // baris kertasnya tetap kesimpen lewat `dataUkur()`, cuma Section C
+        // sertifikatnya belum kebentuk.
+        $adaBacaanStandar = collect($data['tekanan']['pembacaan_standar'] ?? [])
+            ->contains(fn ($x): bool => $x !== null && $x !== '');
+
+        if (isset($data['tekanan']) && $adaBacaanStandar) {
             $input['tekanan'] = [
-                'uut_setting' => (float) $data['tekanan']['uut_setting'],
+                'uut_setting' => $this->bacaanUut($data['tekanan']),
                 'satuan' => $data['tekanan']['satuan'] ?? 'Bar',
                 'display' => $data['tekanan']['display'] ?? 'Digital',
                 'resolusi_alat' => $data['tekanan']['resolusi_alat'] ?? $config['resolusi_alat']['tekanan'],
                 'pembacaan_standar' => $data['tekanan']['pembacaan_standar'] ?? [],
+                // Dua baris kertas ini nggak ikut ngitung, tapi dibawa terus
+                // supaya yang tersimpan sama persis kayak yang ditulis teknisi.
+                'indikator_pressure' => $data['tekanan']['indikator_pressure'] ?? [],
+                'tekanan_atm_awal' => $data['tekanan']['tekanan_atm_awal'] ?? null,
                 'standar' => [
                     'resolusi' => $config['tekanan']['resolusi'],
                     'tabel' => $config['tekanan']['tabel'],
@@ -56,6 +68,58 @@ class AutoclaveInputBuilder
             ];
         }
 
+        if (isset($data['waktu'])) {
+            $input['waktu'] = $data['waktu'];
+        }
+
         return $input;
+    }
+
+    /**
+     * Angka UUT yang dipakai ngitung tekanan.
+     *
+     * Kertas `SIDIK-FM-CAL-0539_Rev.4` nyediain LIMA kolom "Indikator
+     * Pressure" (satu per titik waktu), sementara master `INPUT_DATA` nyimpen
+     * SATU "UUT Reading" — di sesi master kelima kolomnya emang sama, jadi
+     * nggak pernah ketahuan bedanya.
+     *
+     * Kalau kelima kolom itu ternyata beda, sistem MELEMPAR, bukan ngerata-rata
+     * atau ngambil yang pertama. Merata-rata bacaan manometer itu keputusan
+     * metrologi yang nggak ada di metode `SIDIK-IK-CAL-0531_Rev.4`; angka
+     * karangan yang kelihatan wajar jauh lebih berbahaya daripada kiriman yang
+     * mental, karena dia lolos sampai ke sertifikat.
+     *
+     * @param  array<string, mixed>  $tekanan
+     */
+    private function bacaanUut(array $tekanan): float
+    {
+        if (isset($tekanan['uut_setting'])) {
+            return (float) $tekanan['uut_setting'];
+        }
+
+        $bacaan = array_values(array_unique(array_map(
+            static fn ($x): float => (float) $x,
+            array_filter(
+                $tekanan['indikator_pressure'] ?? [],
+                static fn ($x): bool => $x !== null && $x !== '',
+            ),
+        )));
+
+        if ($bacaan === []) {
+            throw new InvalidArgumentException(
+                'Blok tekanan kosong: butuh baris Indikator Pressure atau tekanan.uut_setting.',
+            );
+        }
+
+        if (count($bacaan) > 1) {
+            throw new InvalidArgumentException(
+                'Indikator Pressure beda antar titik waktu ('.implode(', ', array_map(
+                    static fn (float $x): string => rtrim(rtrim(number_format($x, 6, '.', ''), '0'), '.'),
+                    $bacaan,
+                )).'). Kirim tekanan.uut_setting yang mau dipakai — sistem nggak milih sendiri.',
+            );
+        }
+
+        return $bacaan[0];
     }
 }

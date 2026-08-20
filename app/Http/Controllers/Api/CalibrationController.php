@@ -330,7 +330,12 @@ class CalibrationController extends Controller
                 'submitted_at' => $draft ? null : now(),
                 // Autoklaf nggak divonis PASS/FAIL (AutoclaveProfile::punyaToleransi=false).
                 'keputusan' => null,
-                'hasil_autoclave' => $hasil,
+                // Hasil olah data + LEMBAR MENTAHNYA. Kalkulator cuma balikin
+                // angka olahan, jadi tanpa `lembar` yang ditulis teknisi
+                // (termasuk baris kertas Indikator Pressure, Tekanan atm awal,
+                // dan jam tiap kolom) hilang begitu sesi terkirim — nggak ada
+                // yang bisa ngadu ulang sertifikat ke kertasnya.
+                'hasil_autoclave' => [...$hasil, 'lembar' => $request->dataUkur()],
             ]);
 
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari

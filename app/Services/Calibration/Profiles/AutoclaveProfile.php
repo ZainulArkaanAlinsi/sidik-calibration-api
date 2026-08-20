@@ -76,29 +76,59 @@ class AutoclaveProfile extends CalibrationProfile
         ['nilai' => 'Analog 3', 'label' => 'Analog (rasio jarum:NST 1/10)'],
     ];
 
+    /** Kode lembar yang tercetak di pojok kanan atas formulir. */
+    public const KODE_LEMBAR = 'LK-285-IDN';
+
     /**
-     * Standar yang tercetak di lembar Autoklaf — 3 Temperature Calibrator +
-     * Pressure Disk Logger (Tecnosoft). Dicocokin ke master `standards`
-     * lewat nama/serial. Belum keseed = `terdaftar: false`, layar tetap jalan.
+     * Baris "Standard Used:" PERSIS kayak yang tercetak di kertas — DUA baris
+     * centang, bukan empat. Kertasnya nggabung ketiga disk suhu jadi satu baris
+     * ("Disk 1,2,3") karena teknisi emang naruh ketiganya sekaligus atau nggak
+     * sama sekali.
      *
-     * @var list<array{label: string, cocok: list<string>}>
+     * `anggota` tetap nyimpen ketiga disk satu-satu supaya ketertelusuran
+     * per-disk nggak hilang: satu kotak centang di layar, tiga standar tertaut
+     * di belakangnya.
+     *
+     * @var list<array{label: string, cocok: list<string>, anggota: list<array{label: string, cocok: list<string>}>}>
      */
     public const STANDARD_TERCETAK = [
-        ['label' => 'Temperature Calibrator 1 (Tecnosoft/SterilDisk)', 'cocok' => ['Temperature Calibrator 1', '1011001961']],
-        ['label' => 'Temperature Calibrator 2 (Tecnosoft/TS01SD)', 'cocok' => ['Temperature Calibrator 2', '1011004038']],
-        ['label' => 'Temperature Calibrator 3 (Tecnosoft/TS01SD)', 'cocok' => ['Temperature Calibrator 3', '1011004063']],
-        ['label' => 'Pressure Disk Logger (Tecnosoft/PressureDisk 05)', 'cocok' => ['Pressure Disk', 'Pressure Disk Logger', '3501009550']],
+        [
+            'label' => 'Temperature Calibrator -Technosoft (Disk 1,2,3)',
+            'cocok' => ['Temperature Calibrator 1', '1011001961'],
+            'anggota' => [
+                ['label' => 'Temperature Calibrator 1 (Tecnosoft/SterilDisk)', 'cocok' => ['Temperature Calibrator 1', '1011001961']],
+                ['label' => 'Temperature Calibrator 2 (Tecnosoft/TS01SD)', 'cocok' => ['Temperature Calibrator 2', '1011004038']],
+                ['label' => 'Temperature Calibrator 3 (Tecnosoft/TS01SD)', 'cocok' => ['Temperature Calibrator 3', '1011004063']],
+            ],
+        ],
+        [
+            'label' => 'Pressure Disk Logger-Technosoft',
+            'cocok' => ['Pressure Disk', 'Pressure Disk Logger', '3501009550'],
+            'anggota' => [],
+        ],
     ];
 
-    /** Sama kayak profil lain — semua unit thermohygro lab, Insitu vs Inlab. */
+    /**
+     * Unit thermohygro. Kertas Autoklaf cuma MENCETAK tiga kotak centang —
+     * TH-2, TH-6, TH-7 — dan cuma itu yang ditandai `tercetak`; layar gambar
+     * ketiganya sebagai kotak centang biar sama persis kayak kertasnya.
+     *
+     * Sisanya TETAP dikirim, cuma nggak tercetak. Ini bukan kelonggaran asal:
+     * daftar thermohygro pernah dipersempit "biar teknisi nggak salah pilih",
+     * dan sesi master yang kepakai TH-3 jadi nggak punya pilihan yang benar
+     * sama sekali — teknisi kepaksa milih unit lain, dan Env. Condition-nya
+     * meleset bukan karena salah hitung, tapi karena tabel koreksi unitnya beda.
+     * Kertas yang nggak nyetak satu unit bukan bukti unit itu nggak pernah
+     * dibawa ke lapangan.
+     */
     public const THERMOHYGRO_TERCETAK = [
-        ['label' => 'TH-1', 'grup' => 'Inlab'],
-        ['label' => 'TH-3', 'grup' => 'Inlab'],
-        ['label' => 'TH-4', 'grup' => 'Inlab'],
-        ['label' => 'TH-5', 'grup' => 'Inlab'],
-        ['label' => 'TH-7', 'grup' => 'Inlab'],
-        ['label' => 'TH-2', 'grup' => 'Insitu'],
-        ['label' => 'TH-6', 'grup' => 'Insitu'],
+        ['label' => 'TH-2', 'grup' => 'Insitu', 'tercetak' => true],
+        ['label' => 'TH-6', 'grup' => 'Insitu', 'tercetak' => true],
+        ['label' => 'TH-7', 'grup' => 'Inlab', 'tercetak' => true],
+        ['label' => 'TH-1', 'grup' => 'Inlab', 'tercetak' => false],
+        ['label' => 'TH-3', 'grup' => 'Inlab', 'tercetak' => false],
+        ['label' => 'TH-4', 'grup' => 'Inlab', 'tercetak' => false],
+        ['label' => 'TH-5', 'grup' => 'Inlab', 'tercetak' => false],
     ];
 
     public function kode(): string
@@ -182,12 +212,34 @@ class AutoclaveProfile extends CalibrationProfile
     }
 
     /**
+     * Susunan lembar dibikin PERSIS ngikut kertas `SIDIK-FM-CAL-0539_Rev.4`:
+     * dua panel besar (General Information & Data Result), dan di dalam Data
+     * Result SATU tabel — bukan dua — karena di kertas suhu & tekanan dicatat
+     * berdampingan pada kolom waktu yang sama.
+     *
+     * Susunan sebelumnya dipinjam dari lembar pH: bagian bernomor ("1. Name,
+     * 2. Manufacturer"), OWNER dipisah dari General Information, suhu &
+     * tekanan jadi dua section, dan baris `Indikator Pressure` + `Tekanan atm
+     * awal` nggak ada sama sekali. Rapi, tapi bukan bentuk kertas yang dipegang
+     * teknisi — dan lembar yang bentuknya beda dari kertasnya bikin baris
+     * kebaca geser waktu disalin. Yang geser di sini bukan tata letak: baris
+     * ke-5 di kertas itu Indikator Pressure, di layar lama baris ke-5 itu Suhu
+     * Ruang. Salah salin satu baris = angka sertifikat yang salah.
+     *
+     * `grup` = panel biru di kertas, dipakai layar buat nggambar bannernya.
+     * `kolom` = kertasnya dua kolom sejajar (kiri kondisi, kanan identitas alat).
+     * `di_luar_kertas` = kolom yang MEMANG nggak ada di formulir tapi dibutuhin
+     * olah data; ditandai supaya layar bisa misahin dari blok yang tercetak,
+     * bukan diselipin di tengah tabel kertas.
+     *
      * @return array<string, mixed>
      */
     private function bentukLengkap(): array
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
+            'kode_lembar' => self::KODE_LEMBAR,
+            'penerbit' => 'PT. SIDIK',
             'judul' => 'Calibration Worksheet - Autoclave',
             'metode' => 'SIDIK-IK-CAL-0531_Rev.4',
             'besaran' => ['Suhu', 'Tekanan'],
@@ -202,159 +254,298 @@ class AutoclaveProfile extends CalibrationProfile
                 .'Suhu butuh minimal 1 disk terisi; tekanan butuh minimal 1 pembacaan. '
                 .'Titik waktu yang kosong nggak ikut dirata-rata.',
             'bagian' => [
-                [
-                    'kode' => 'identitas_alat',
-                    'halaman' => 1,
-                    'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
-                    'field' => [
-                        $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                        $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
-                        $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
-                        $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('alat_merk', '2. Manufacturer', 'teks'),
-                        $this->field('alat_model', '3. Type/Model', 'teks'),
-                        $this->field('alat_serial_number', '4. Serial Number', 'teks'),
-                        $this->field('range_suhu', '5. Range Temperature', 'angka', satuan: self::SATUAN_SUHU),
-                        $this->field('resolusi_suhu', '6. Resolution Temperature', 'angka', satuan: self::SATUAN_SUHU),
-                        $this->field('range_tekanan', '7. Range Pressure', 'angka'),
-                        $this->field('resolusi_tekanan', '8. Resolution Pressure', 'angka'),
-                        $this->field('satuan_tekanan', '9. Pressure Unit', 'pilihan', pilihan: self::SATUAN_TEKANAN),
-                        $this->field('display_tekanan', '10. Pressure Display Type', 'pilihan', pilihan: self::DISPLAY_TEKANAN),
-                        $this->field('thermohygro_standard_id', '11. Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
-                    ],
-                ],
-                [
-                    'kode' => 'pemilik',
-                    'halaman' => 1,
-                    'judul' => 'OWNER',
-                    'field' => [
-                        $this->field('pemilik_nama', '1. Name', 'teks'),
-                        $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
-                    ],
-                ],
-                [
-                    'kode' => 'usage_check',
-                    'halaman' => 1,
-                    'judul' => 'STANDARD USED',
-                    'baris' => self::STANDARD_TERCETAK,
-                    'field' => [
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
-                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
-                    ],
-                ],
-                [
-                    'kode' => 'data_kalibrasi',
-                    'halaman' => 1,
-                    'judul' => 'CALIBRATION DATA',
-                    'field' => [
-                        $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
-                            ['nilai' => 'lab', 'label' => 'In lab'],
-                            ['nilai' => 'onsite', 'label' => 'Insitu'],
-                        ]),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
-                        $this->field('calibration_method_id', '2. Calibration Method', 'pilihan', sumber: 'master_metode', hanyaAdmin: true),
-                    ],
-                ],
-                [
-                    'kode' => 'kondisi_lingkungan',
-                    'halaman' => 1,
-                    'judul' => 'ENVIRONMENTAL CONDITION',
-                    'field' => [
-                        $this->field('suhu_awal', 'T — Awal', 'angka', satuan: self::SATUAN_SUHU),
-                        $this->field('suhu_akhir', 'T — Akhir', 'angka', satuan: self::SATUAN_SUHU),
-                        $this->field('kelembaban_awal', 'RH — Awal', 'angka', satuan: '%RH'),
-                        $this->field('kelembaban_akhir', 'RH — Akhir', 'angka', satuan: '%RH'),
-                    ],
-                ],
-                $this->bagianHasilSuhu(),
-                $this->bagianHasilTekanan(),
-                [
-                    'kode' => 'penutup',
-                    'halaman' => 1,
-                    'judul' => 'Catatan & Tanda Tangan',
-                    'field' => [
-                        $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                        $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
-                        $this->field('reviewer.nama', 'Corrected by', 'teks', sumber: 'otomatis'),
-                    ],
-                ],
+                $this->bagianPenerimaan(),
+                $this->bagianKondisiLokasi(),
+                $this->bagianIdentitasAlat(),
+                $this->bagianHasilPengukuran(),
+                $this->bagianStandarDipakai(),
+                $this->bagianPenutup(),
             ],
         ];
     }
 
     /**
-     * Section CALIBRATION RESULT FOR TEMPERATURE — matriks: baris = 3 disk +
-     * Indikator + Suhu Ruang, kolom = titik waktu. `matriks_suhu` adalah kunci
-     * bespoke Autoklaf; frontend render sebagai tabel (lihat handoff).
+     * Blok teratas General Information — empat baris polos di kertas:
+     * Receive Date / Customer / Addresss / Calibration Date.
+     *
+     * "Addresss" emang tiga huruf s. Ditulis apa adanya karena label di layar
+     * harus bisa diadu langsung sama kertasnya waktu lab ngecek; label yang
+     * "dibetulin" diam-diam bikin orang ragu ini lembar yang sama atau bukan.
      *
      * @return array<string, mixed>
      */
-    private function bagianHasilSuhu(): array
+    private function bagianPenerimaan(): array
+    {
+        return [
+            'kode' => 'informasi_umum',
+            'grup' => 'General Information',
+            'halaman' => 1,
+            'judul' => 'General Information',
+            'field' => [
+                $this->field('tanggal_terima', 'Receive Date', 'tanggal'),
+                $this->field('pemilik_nama', 'Customer', 'teks'),
+                $this->field('pemilik_alamat', 'Addresss', 'teks_panjang'),
+                $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+            ],
+        ];
+    }
+
+    /**
+     * Kolom KIRI blok kedua General Information: lokasi, kondisi lingkungan,
+     * dan kotak centang Thermohygro.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianKondisiLokasi(): array
+    {
+        return [
+            'kode' => 'kondisi_lokasi',
+            'grup' => 'General Information',
+            'kolom' => 'kiri',
+            'halaman' => 1,
+            'judul' => 'Location & Environmental Condition',
+            'field' => [
+                $this->field('lokasi', 'Location of Calibration', 'pilihan', pilihan: [
+                    ['nilai' => 'lab', 'label' => 'In lab'],
+                    ['nilai' => 'onsite', 'label' => 'Insitu'],
+                ]),
+                $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                $this->field('suhu_awal', 'T awal', 'angka', satuan: self::SATUAN_SUHU),
+                $this->field('suhu_akhir', 'T akhir', 'angka', satuan: self::SATUAN_SUHU),
+                $this->field('kelembaban_awal', 'RH awal', 'angka', satuan: '%RH'),
+                $this->field('kelembaban_akhir', 'RH akhir', 'angka', satuan: '%RH'),
+                $this->field(
+                    'thermohygro_standard_id',
+                    'Thermohygro used',
+                    'pilihan',
+                    sumber: 'master_thermohygro',
+                    ekstra: ['tampilan' => 'centang'],
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Kolom KANAN blok kedua General Information: identitas alat pelanggan.
+     *
+     * Empat baris terakhir di kertas punya kurung satuan kosong `( )` di
+     * ujungnya — satuannya DITULIS teknisi, nggak dipatok formulir. Range
+     * tekanan autoklaf datang dalam MPa, bar, atau psi tergantung mereknya,
+     * jadi mematok satuan di sini artinya maksa teknisi ngonversi di kepala.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianIdentitasAlat(): array
+    {
+        return [
+            'kode' => 'identitas_alat',
+            'grup' => 'General Information',
+            'kolom' => 'kanan',
+            'halaman' => 1,
+            'judul' => 'Equipment Identity',
+            'field' => [
+                $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment.nama_alat', 'Equipment Name', 'teks', sumber: 'otomatis'),
+                $this->field('alat_merk', 'Manufacturer', 'teks'),
+                $this->field('alat_model', 'Type', 'teks'),
+                $this->field('alat_serial_number', 'SN', 'teks'),
+                $this->field('range_suhu', 'Range Temp.', 'angka', satuan: self::SATUAN_SUHU, ekstra: ['kurung_satuan' => true]),
+                $this->field('resolusi_suhu', 'Resolution Temp.', 'angka', satuan: self::SATUAN_SUHU, ekstra: ['kurung_satuan' => true]),
+                $this->field('range_tekanan', 'Range Pressure', 'angka', ekstra: ['kurung_satuan' => true, 'satuan_dari' => 'satuan_tekanan']),
+                $this->field('resolusi_tekanan', 'Resolution Pressure', 'angka', ekstra: ['kurung_satuan' => true, 'satuan_dari' => 'satuan_tekanan']),
+                $this->field('satuan_tekanan', 'Pressure Unit', 'pilihan', pilihan: self::SATUAN_TEKANAN),
+            ],
+        ];
+    }
+
+    /**
+     * Panel "Data Result" — SATU tabel, tujuh baris, lima kolom waktu, persis
+     * kayak kertasnya:
+     *
+     *   Temp. Disk 1/2/3 → Indikator Suhu → Indikator Pressure →
+     *   Tekanan atm awal → Suhu Ruang
+     *
+     * Dua baris tengah (`Indikator Pressure`, `Tekanan atm awal`) sebelumnya
+     * nggak ada di lembar digital sama sekali; itu bacaan manometer autoklaf
+     * per titik waktu, dan tanpa kolomnya teknisi nggak punya tempat nulis
+     * angka yang udah dia catat di kertas.
+     *
+     * Baris Time di kertas isinya JAM beneran (`__:__:__:__`, master INPUT_DATA
+     * nulis 02:00:00 … 10:00:00), bukan nomor urut 1–5. Nomor urut dipertahanin
+     * cuma sebagai indeks kolom di payload.
+     *
+     * `tabel_tekanan` ditaruh di sini juga tapi ditandai `di_luar_kertas`:
+     * angkanya diunduh dari Pressure Disk Logger, nggak pernah ditulis tangan
+     * di lapangan — tapi olah data tekanan mati tanpa dia.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianHasilPengukuran(): array
     {
         $baris = [];
         for ($d = 1; $d <= self::JUMLAH_DISK; $d++) {
-            $baris[] = ['kode' => "disk_{$d}", 'label' => "Temp. Disk {$d}", 'tipe' => 'disk', 'satuan' => self::SATUAN_SUHU];
+            $baris[] = [
+                'kode' => "disk_{$d}",
+                'label' => "Temp. Disk {$d}",
+                'tipe' => 'disk',
+                'satuan' => self::SATUAN_SUHU,
+                'kode_data' => 'suhu.disk.'.($d - 1),
+            ];
         }
-        $baris[] = ['kode' => 'indikator', 'label' => 'Indikator Suhu', 'tipe' => 'indikator', 'satuan' => self::SATUAN_SUHU];
-        $baris[] = ['kode' => 'suhu_ruang', 'label' => 'Suhu Ruang', 'tipe' => 'suhu_ruang', 'satuan' => self::SATUAN_SUHU];
+        $baris[] = [
+            'kode' => 'indikator_suhu',
+            'label' => 'Indikator Suhu',
+            'tipe' => 'indikator_suhu',
+            'satuan' => self::SATUAN_SUHU,
+            'kode_data' => 'suhu.indikator',
+        ];
+        $baris[] = [
+            'kode' => 'indikator_pressure',
+            'label' => 'Indikator Pressure',
+            'tipe' => 'indikator_tekanan',
+            'satuan' => null,
+            'satuan_dari' => 'satuan_tekanan',
+            'kurung_satuan' => true,
+            'kode_data' => 'tekanan.indikator_pressure',
+        ];
+        $baris[] = [
+            'kode' => 'tekanan_atm_awal',
+            'label' => 'Tekanan atm awal',
+            'tipe' => 'tekanan_atm',
+            'satuan' => null,
+            'satuan_dari' => 'satuan_tekanan',
+            'kurung_satuan' => true,
+            'kode_data' => 'tekanan.tekanan_atm_awal',
+        ];
+        $baris[] = [
+            'kode' => 'suhu_ruang',
+            'label' => 'Suhu Ruang',
+            'tipe' => 'suhu_ruang',
+            'satuan' => self::SATUAN_SUHU,
+            'kode_data' => 'suhu.suhu_ruang',
+        ];
 
         return [
-            'kode' => 'hasil_suhu',
-            'halaman' => 2,
-            'judul' => 'CALIBRATION RESULT FOR TEMPERATURE',
+            'kode' => 'hasil_pengukuran',
+            'grup' => 'Data Result',
+            'halaman' => 1,
+            'judul' => 'Calibration Result for Temperature & Pressure',
             'field' => [
                 $this->field('set_point', 'Set Point', 'angka', satuan: self::SATUAN_SUHU),
             ],
-            'matriks_suhu' => [
+            'matriks' => [
+                'judul_kolom' => 'Pengukuran Berulang UUT Selama Proses Sterilisasi',
                 'titik_waktu' => range(1, self::JUMLAH_TITIK_WAKTU),
-                'label_waktu' => 'Waktu pengambilan data (jam)',
+                'baris_waktu' => [
+                    'kode' => 'waktu',
+                    'label' => 'Time',
+                    'tipe' => 'jam',
+                    'format' => 'HH:mm:ss',
+                    'kode_data' => 'waktu',
+                ],
                 'baris' => $baris,
+            ],
+            'tabel_tekanan' => [
+                'label' => 'Pressure Disk Logger — hasil unduh (Bar)',
+                'di_luar_kertas' => true,
+                'catatan' => 'Nggak ada di kertas: angkanya diunduh dari Pressure Disk Logger, '
+                    .'bukan ditulis teknisi. Tanpa baris ini olah data tekanan nggak jalan.',
+                'kolom' => ['kode' => 'tekanan.pembacaan_standar', 'label' => 'Standar Reading', 'satuan' => 'Bar'],
+                'pengulangan' => range(1, self::JUMLAH_PEMBACAAN_TEKANAN),
+            ],
+            'field_di_luar_kertas' => [
+                $this->field(
+                    'tekanan.uut_setting',
+                    'UUT Reading (dipakai hitung)',
+                    'angka',
+                    ekstra: [
+                        'di_luar_kertas' => true,
+                        'satuan_dari' => 'satuan_tekanan',
+                        'terisi_dari' => 'tekanan.indikator_pressure',
+                        'catatan' => 'Master INPUT_DATA nyimpen SATU UUT Reading, kertas nyediain lima kolom. '
+                            .'Kalau kelima kolom Indikator Pressure isinya sama, angka itu yang kepakai; '
+                            .'kalau beda, harus dipilih di sini — sistem nggak nebak.',
+                    ],
+                ),
+                $this->field('display_tekanan', 'Pressure Display Type', 'pilihan', pilihan: self::DISPLAY_TEKANAN, ekstra: ['di_luar_kertas' => true]),
             ],
         ];
     }
 
     /**
-     * Section CALIBRATION RESULT FOR PRESSURE — satu titik, N pembacaan disk
-     * logger (bar) + UUT setting (satuan alat) + tekanan atm awal.
+     * Blok "Standard Used:" — dua kotak centang, sama kayak kertas.
      *
      * @return array<string, mixed>
      */
-    private function bagianHasilTekanan(): array
+    private function bagianStandarDipakai(): array
     {
         return [
-            'kode' => 'hasil_tekanan',
-            'halaman' => 2,
-            'judul' => 'CALIBRATION RESULT FOR PRESSURE',
+            'kode' => 'usage_check',
+            'grup' => 'Data Result',
+            'halaman' => 1,
+            'judul' => 'Standard Used:',
+            'baris' => self::STANDARD_TERCETAK,
             'field' => [
-                $this->field('tekanan.uut_setting', 'UUT Setting', 'angka'),
-                $this->field('tekanan.tekanan_atm_awal', 'Tekanan atm awal', 'angka'),
-            ],
-            'tabel_tekanan' => [
-                'label' => 'Pengukuran Berulang UUT Selama Proses Sterilisasi (Bar)',
-                'kolom' => ['kode' => 'pembacaan_standar', 'label' => 'Standar Reading', 'satuan' => 'Bar'],
-                'pengulangan' => range(1, self::JUMLAH_PEMBACAAN_TEKANAN),
+                $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
             ],
         ];
     }
 
     /**
+     * Kaki lembar: kotak Catatan, lalu Calibrated by / Corrected by yang
+     * masing-masing punya Name & Sign.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianPenutup(): array
+    {
+        return [
+            'kode' => 'penutup',
+            'grup' => 'Data Result',
+            'halaman' => 1,
+            'judul' => 'Catatan:',
+            'field' => [
+                $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
+                $this->field('teknisi.nama', 'Calibrated by — Name', 'teks', sumber: 'otomatis'),
+                $this->field('teknisi.tanda_tangan', 'Calibrated by — Sign', 'tanda_tangan', sumber: 'otomatis'),
+                $this->field('reviewer.nama', 'Corrected by — Name', 'teks', sumber: 'otomatis'),
+                $this->field('reviewer.tanda_tangan', 'Corrected by — Sign', 'tanda_tangan', sumber: 'otomatis'),
+            ],
+        ];
+    }
+
+    /**
+     * Kolom administratif — semuanya DI LUAR kertas SIDIK-FM-CAL-0539_Rev.4.
+     * Ditaruh di bagian sendiri, bukan diselipin ke blok yang tercetak, biar
+     * lembar admin tetap bisa diadu baris-per-baris sama kertasnya.
+     *
      * @return array<string, mixed>
      */
     private function bagianAdmin(): array
     {
         return [
             'kode' => 'administratif',
+            'grup' => 'Di luar formulir — diisi admin',
             'halaman' => 1,
             'judul' => 'Data Administratif (Admin)',
+            'di_luar_kertas' => true,
             'field' => [
                 $this->field('nomor_order', 'Order Number', 'teks', hanyaAdmin: true),
                 $this->field('certificate.nomor', 'Certificate Number', 'teks', sumber: 'otomatis', hanyaAdmin: true),
+                $this->field('calibration_method_id', 'Calibration Method', 'pilihan', sumber: 'master_metode', hanyaAdmin: true),
+                $this->field('suhu.resolusi_alat', 'Resolusi Alat (suhu)', 'angka', satuan: self::SATUAN_SUHU, hanyaAdmin: true),
+                $this->field('tekanan.resolusi_alat', 'Resolusi Alat (tekanan)', 'angka', hanyaAdmin: true),
+                $this->field('standar_dicek.*.keterangan', 'Keterangan Standar', 'teks', hanyaAdmin: true),
             ],
         ];
     }
 
     /**
      * Cocokin baris STANDARD tercetak ke master `standards` (nama/serial).
+     *
+     * `anggota` ikut ditautkan satu-satu: kertas cuma nyetak satu kotak centang
+     * buat ketiga disk suhu, tapi sertifikat tetap butuh serial & nomor
+     * sertifikat masing-masing disk.
      *
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
@@ -365,26 +556,30 @@ class AutoclaveProfile extends CalibrationProfile
             ->whereNull('parameter_kondisi')
             ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
 
+        $tautkan = function (array $baris) use ($master): array {
+            $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
+                ->contains(fn (string $kunci): bool => $s->nama === $kunci || $s->serial_number === $kunci));
+
+            return [
+                'label' => $baris['label'],
+                'standard_id' => $cocok?->id,
+                'serial_number' => $cocok?->serial_number,
+                'no_sertifikat' => $cocok?->no_sertifikat,
+                'tertelusur_ke' => $cocok?->tertelusur_ke,
+                'terdaftar' => $cocok !== null,
+            ];
+        };
+
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) !== 'usage_check') {
                 continue;
             }
 
             $bentuk['bagian'][$i]['baris'] = array_map(
-                function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
-
-                    return [
-                        'label' => $baris['label'],
-                        'standard_id' => $cocok?->id,
-                        'serial_number' => $cocok?->serial_number,
-                        'no_sertifikat' => $cocok?->no_sertifikat,
-                        'tertelusur_ke' => $cocok?->tertelusur_ke,
-                        'terdaftar' => $cocok !== null,
-                    ];
-                },
+                fn (array $baris): array => [
+                    ...$tautkan($baris),
+                    'anggota' => array_map($tautkan, $baris['anggota'] ?? []),
+                ],
                 $bentuk['bagian'][$i]['baris'],
             );
         }
@@ -412,6 +607,9 @@ class AutoclaveProfile extends CalibrationProfile
                 'nilai' => (string) $id,
                 'label' => $unit['label'],
                 'grup' => $unit['grup'],
+                // Cuma yang `true` yang digambar sebagai kotak centang kertas;
+                // sisanya tetap kekirim buat pilihan "unit lain".
+                'tercetak' => $unit['tercetak'],
             ];
         }
 
@@ -427,7 +625,9 @@ class AutoclaveProfile extends CalibrationProfile
     }
 
     /**
-     * @param  list<array<string, string>>  $pilihan
+     * @param  list<array<string, mixed>>  $pilihan
+     * @param  array<string, mixed>  $ekstra  penanda bentuk kertas (kurung satuan,
+     *                                        kolom di luar formulir, dll)
      * @return array<string, mixed>
      */
     private function field(
@@ -438,6 +638,7 @@ class AutoclaveProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        array $ekstra = [],
     ): array {
         return [
             'kode' => $kode,
@@ -448,6 +649,7 @@ class AutoclaveProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            ...$ekstra,
         ];
     }
 }
