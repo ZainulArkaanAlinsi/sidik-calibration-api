@@ -70,6 +70,19 @@ class CertificateSnapshotBuilder
             // kayak `judul_uut`. Snapshot lama yang belum punya kunci ini
             // dibaca `?? false` — bentuk cetaknya nggak berubah.
             'u95_per_titik' => $profil?->u95PerTitik() ?? false,
+            // Faktor cakupan yang DIKUNCI alat ini, atau null kalau `k`-nya
+            // dihitung per titik dari `v_eff`. Yang membacanya cuma judul
+            // kolom `U95`: Viscometer menulis `U95%, k=2` karena `k`-nya
+            // memang dikunci 2 dan angka ketidakpastian tanpa faktor
+            // cakupannya tidak berarti apa-apa.
+            //
+            // Gas Detector tidak boleh ikut: `k` keempat gasnya 1,9715 /
+            // 2,0106 / 1,9744 / 1,9717, dan judul `k=2` di atas kolom itu
+            // pernyataan yang SALAH di dokumen terakreditasi — masternya
+            // sendiri menulis `U95% (±)`. Snapshot lama yang belum punya
+            // kunci ini dibaca `?? 2.0` di blade, jadi sertifikat Viscometer
+            // yang sudah terbit tidak berubah bentuk.
+            'faktor_cakupan_tetap' => $profil?->faktorCakupanTetap(),
             // Baris di ATAS tabel hasil — `Spindel No. : 1,2,7` / `Speed
             // (rpm) : 63,62,62` buat Viscometer. `null` di lima alat lain,
             // baris nggak muncul. Lihat `CalibrationProfile::catatanAtasTabelHasil`.
@@ -237,7 +250,13 @@ class CertificateSnapshotBuilder
                     // sertifikat yang udah terbit nggak boleh berubah bentuk
                     // gara-gara profilnya diedit sesudahnya. `null` = ikut
                     // `desimal` titik, persis perilaku lama.
-                    'desimal_u95' => $profil?->desimalU95(),
+                    // Per BARIS dulu, baru per alat — sama pola dengan
+                    // `desimal` di atas. Yang butuh per baris cuma Gas
+                    // Detector: master memformat U95 keempat gasnya `0.0` ·
+                    // `0.0` · `0.0` · `0.00`, dan `U95` oksigen 0,887 runtuh
+                    // jadi `0,9` kalau dipukul rata satu desimal.
+                    'desimal_u95' => $profil?->desimalU95Titik((float) $titik->titik_ukur)
+                        ?? $profil?->desimalU95(),
                     'faktor_cakupan_k' => $titik->faktor_cakupan_k === null
                         ? null
                         : (float) $titik->faktor_cakupan_k,

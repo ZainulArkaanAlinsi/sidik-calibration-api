@@ -8,6 +8,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CertificateSnapshotBuilder;
+use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\GasDetectorSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -212,6 +213,108 @@ class GasDetectorSesiTest extends TestCase
         // "Environmental Meter Used" di lembar kerja cuma berisi Lutron.
         $th2 = Standard::where('nama', 'TH-2')->firstOrFail();
         $this->assertNull($th2->parameterKondisi('tekanan', 923.15));
+    }
+
+    /**
+     * Sertifikat yang BENERAN dirender: keempat baris angkanya & BENTUKNYA
+     * cocok master.
+     *
+     * Diadu ke HTML, bukan ke snapshot — yang bikin selisih bentuk lolos
+     * justru jarak antara "angkanya benar di DB" dan "angkanya kecetak".
+     *
+     * Desimalnya beda per baris DAN beda antar kolom di baris yang sama, ikut
+     * format sel `SERTIFIKAT` J24:U27:
+     *
+     *   gas    Standard   UUT   Correction   U95
+     *   CO     0          0     0            1
+     *   H2S    0          0     0            1
+     *   CH4    0          0     0            1
+     *   O2     1          1     1            2
+     *
+     * Oksigen dapat satu desimal lebih karena rentangnya 30 % dengan resolusi
+     * 0,1. Sebelum hook `desimalSertifikatTitik()`/`desimalU95Titik()` ada,
+     * jalur umum menurunkan desimal dari `equipments.resolusi` yang cuma muat
+     * SATU angka (1 ppm, ikut gas berentang terbesar) — baris oksigen kecetak
+     * `18 | 17 | 1 | 1` untuk pengukuran 17,9 % ber-U95 0,887 %.
+     */
+    public function test_sertifikat_kecetak_dengan_desimal_master(): void
+    {
+        $sesi = $this->sesi();
+        $sertifikat = Certificate::create([
+            'organization_id' => $sesi->organization_id,
+            'calibration_session_id' => $sesi->id,
+            'nomor' => '001-CAL-226',
+            'qr_token' => 'uji-gas',
+            'status' => Certificate::STATUS_TERBIT,
+            'tanggal_terbit' => '2026-02-06',
+        ]);
+        $sertifikat->update([
+            'snapshot' => app(CertificateSnapshotBuilder::class)->bangun($sesi, $sertifikat),
+        ]);
+
+        $html = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat->fresh()))->render();
+
+        $tabel = [];
+        preg_match_all('/<tr[^>]*>(.*?)<\/tr>/su', $html, $baris);
+
+        foreach ($baris[1] as $isi) {
+            preg_match_all('/<td[^>]*>(.*?)<\/td>/su', $isi, $sel);
+
+            // Saringannya `!== ''`, BUKAN `array_filter` tanpa callback:
+            // PHP menganggap string `'0'` falsy, dan koreksi CH4 memang
+            // tercetak persis `0`. Tanpa callback baris itu menyusut jadi tiga
+            // sel dan luput dari pemeriksaan — diam-diam.
+            $teks = array_values(array_filter(
+                array_map(
+                    static fn (string $t): string => trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($t)))),
+                    $sel[1],
+                ),
+                static fn (string $t): bool => $t !== '',
+            ));
+
+            $angka = fn (string $t): bool => preg_match('/^-?\d+(,\d+)?$/', $t) === 1;
+
+            if (count($teks) === 4 && count(array_filter($teks, $angka)) === 4) {
+                $tabel[] = $teks;
+            }
+        }
+
+        $this->assertSame([
+            ['101', '100', '1', '5,1'],
+            ['25', '24', '1', '1,5'],
+            ['50', '50', '0', '2,6'],
+            ['17,9', '16,7', '1,2', '0,89'],
+        ], $tabel);
+
+        // Judul kolom keempat TIDAK boleh mengklaim `k=2` — lihat test di bawah.
+        $this->assertStringNotContainsString('k=2', $html);
+    }
+
+    /**
+     * Judul kolom `U95` tidak menyebut `k=2` untuk alat ini.
+     *
+     * Viscometer menulisnya karena `k`-nya memang dikunci 2. Gas Detector
+     * tidak mengunci — keempat gasnya punya `k` sendiri (1,9715 / 2,0106 /
+     * 1,9744 / 1,9717), jadi judul `k=2` di atas kolom itu pernyataan yang
+     * SALAH di dokumen terakreditasi. Masternya sendiri menulis `U95% (±)`.
+     */
+    public function test_judul_kolom_u95_tidak_mengklaim_k_sama_dengan_dua(): void
+    {
+        $sesi = $this->sesi();
+        $snapshot = app(CertificateSnapshotBuilder::class)->bangun(
+            $sesi,
+            new Certificate(['nomor' => 'UJI', 'qr_token' => 'uji']),
+        );
+
+        $this->assertNull($snapshot['faktor_cakupan_tetap']);
+        $this->assertTrue($snapshot['u95_per_titik']);
+
+        // Tiap baris tetap membawa `k`-nya sendiri, dan memang beda-beda.
+        $k = collect($snapshot['hasil'])->pluck('faktor_cakupan_k')->map(
+            fn ($n): float => round((float) $n, 4),
+        );
+        $this->assertCount(4, $k->unique(), 'Keempat gas mestinya punya k yang beda.');
+        $this->assertNotContains(2.0, $k->all());
     }
 
     /**
