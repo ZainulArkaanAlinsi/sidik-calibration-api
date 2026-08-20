@@ -9,7 +9,15 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * CMC Viscometer — TIGA baris, satu per larutan standar.
+ * CMC Viscometer — TIGA baris terakreditasi, satu per larutan standar, plus
+ * beberapa baris ber-CMC nol buat rentang yang lab ukur tapi tidak klaim.
+ *
+ * Master 20 Agustus 2026 menambah DUA larutan (3000 cP & 100000 cP) tapi
+ * TIDAK menambah satu pun baris CMC: `DATABASE!S5:S7` tetap cuma berisi tiga
+ * angka (0,2 · 2,1 · 140), sementara baris ke-4 & ke-5 punya nomor dengan
+ * kolom CMC kosong. Sel `CMC Laboratory` di blok U95 kedua larutan itu juga
+ * kosong. Jadi keduanya masuk lewat baris ber-CMC nol di bawah — diukur,
+ * dihitung penuh, tapi tidak diklaim.
  *
  * ## Angkanya cocok, satuannya nggak
  *
@@ -178,13 +186,31 @@ class ViscometerCapabilitySeeder extends Seeder
                 'keterangan' => 'Celah antara ruang lingkup larutan 100 cP dan 1000 cP. Dicapai larutan '
                     .'100 cP di bawah ~24 °C. Budget dihitung penuh, tanpa lantai CMC.',
             ],
+            // Larutan 100000 cP, seluruh jangkauannya. Nilai terendahnya
+            // (71819 cP @37,78 degC) sudah di atas batas KAN 58021 cP, jadi
+            // tidak ada satu pun titik larutan ini yang punya klaim CMC.
+            // Rentangnya mulai dari 95192 (batas atas baris di atasnya) supaya
+            // tidak tumpang tindih: 71819-95192 sudah dipegang baris larutan
+            // 60000 cP, dan dua-duanya `cmc => 0` jadi mana pun yang menang
+            // hasilnya sama.
+            [
+                'parameter' => 'viskositas (cP)-Std 100000 cP (di luar lingkup KAN)',
+                'min' => 95192.0,
+                'maks' => 110487.0,
+                'cmc' => 0.0,
+                'keterangan' => 'Larutan standar 100000 cP (Paragon/RT100000). Seluruh jangkauannya di '
+                    .'atas batas lingkup LK-285-IDN no. 44 (58021 cP). Budget penuh, tanpa lantai CMC.',
+            ],
             [
                 'parameter' => 'viskositas (cP)-celah 1028-19259 cP',
                 'min' => 1028.0,
                 'maks' => 19259.0,
                 'cmc' => 0.0,
-                'keterangan' => 'Celah antara ruang lingkup larutan 1000 cP dan 60000 cP. Dicapai larutan '
-                    .'1000 cP di bawah ~24 °C. Budget dihitung penuh, tanpa lantai CMC.',
+                // Kolom `keterangan` cuma `string` (255) — teks di sini sengaja
+                // pendek. Yang panjang tempatnya di docblock, bukan di DB.
+                'keterangan' => 'Celah antara lingkup larutan 1000 cP dan 60000 cP. Seluruh jangkauan '
+                    .'kerja larutan 3000 cP (1613-5082 cP) jatuh di sini, dan larutan itu tidak punya '
+                    .'baris CMC. Budget penuh, tanpa lantai CMC.',
             ],
         ];
 

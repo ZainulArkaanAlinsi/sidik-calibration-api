@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             SpectrophotometerCapabilitySeeder::class,
             ViscometerCapabilitySeeder::class,
             DoMeterCapabilitySeeder::class,
+            GasDetectorCapabilitySeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori
             // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
             // ngitung koreksi kondisi lingkungan.
@@ -55,6 +56,7 @@ class DatabaseSeeder extends Seeder
             SpectrophotometerSeeder::class,
             ViscometerSeeder::class,
             DoMeterSeeder::class,
+            GasDetectorSeeder::class,
             // Autoklaf nyimpen olah datanya di `hasil_autoclave`, bukan
             // `uncertainty_calculations` — jadi dia nggak butuh seeder
             // kemampuan sendiri, cukup baris CMC dari lampiran akreditasi.

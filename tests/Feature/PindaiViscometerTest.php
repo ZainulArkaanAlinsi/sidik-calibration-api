@@ -56,7 +56,7 @@ class PindaiViscometerTest extends TestCase
      */
     public function test_titik_desimal_ganda_ditolak_bukan_ditebak(): void
     {
-        $hasil = $this->periksa(3, '631.74.2');
+        $hasil = $this->periksa(4, '631.74.2');
 
         $this->assertSame(ValidasiSel::MERAH, $hasil['status']);
         $this->assertNull($hasil['nilai']);
@@ -66,14 +66,15 @@ class PindaiViscometerTest extends TestCase
     /**
      * `63.181` ambigu SENDIRIAN: bisa 63181 (titik = pemisah ribuan), bisa
      * 63,181. Yang menyingkirkan salah satunya BUKTI, bukan tebakan — pita
-     * baris 60000 cP itu 16049-114230 cP, dan 63,181 nggak masuk.
+     * baris 60000 cP (baris KEEMPAT sejak larutan 3000 cP masuk) itu
+     * 16049-114230 cP, dan 63,181 nggak masuk.
      *
      * Ini beda dari kasus di atas dan bedanya penting: yang punya bukti
      * dibaca, yang nggak punya ditolak.
      */
     public function test_pemisah_ribuan_dibaca_lewat_bukti_pita(): void
     {
-        $hasil = $this->periksa(3, '63.181');
+        $hasil = $this->periksa(4, '63.181');
 
         $this->assertSame(63181.0, $hasil['nilai']);
         $this->assertSame([], $hasil['alasan']);
@@ -85,17 +86,17 @@ class PindaiViscometerTest extends TestCase
      */
     public function test_pembacaan_sah_tetap_kuning_karena_tulisan_tangan(): void
     {
-        $hasil = $this->periksa(3, '63181.3');
+        $hasil = $this->periksa(4, '63181.3');
 
         $this->assertSame(ValidasiSel::KUNING, $hasil['status']);
         $this->assertSame(63181.3, $hasil['nilai']);
     }
 
     /**
-     * Nominal dibaca PER BARIS (99,65 / 1018 / 59003), bukan satu nominal buat
-     * selembar. Kalau dipukul rata, baris 60000 cP bakal dinilai terhadap
-     * 99,65 dan seluruh barisnya ditolak — atau sebaliknya, 96,7 di baris
-     * 60000 cP lolos.
+     * Nominal dibaca PER BARIS (99,65 / 1018 / 3987 / 59003 / 99613), bukan
+     * satu nominal buat selembar. Kalau dipukul rata, baris 60000 cP bakal
+     * dinilai terhadap 99,65 dan seluruh barisnya ditolak — atau sebaliknya,
+     * 96,7 di baris 60000 cP lolos.
      */
     #[DataProvider('angkaNyasar')]
     public function test_angka_yang_nyasar_baris_ditolak(int $baris, string $teks): void
@@ -112,9 +113,11 @@ class PindaiViscometerTest extends TestCase
     {
         return [
             'pembacaan 60000 cP nyasar ke baris 100 cP' => [1, '63181.3'],
-            'pembacaan 100 cP nyasar ke baris 60000 cP' => [3, '96.7'],
+            'pembacaan 100 cP nyasar ke baris 60000 cP' => [4, '96.7'],
             'koma kegeser sepuluh kali di baris 100 cP' => [1, '9.67'],
-            'koma kegeser sepuluh kali di baris 60000 cP' => [3, '631813'],
+            'koma kegeser sepuluh kali di baris 60000 cP' => [4, '631813'],
+            'pembacaan 3000 cP nyasar ke baris 100000 cP' => [5, '2710'],
+            'koma kegeser sepuluh kali di baris 3000 cP' => [3, '27098'],
         ];
     }
 
@@ -147,8 +150,13 @@ class PindaiViscometerTest extends TestCase
             '1000 cP @37,78 °C' => [2, '419.5', 419.5],
             '1000 cP master, dulu 0,1 cP dari batas' => [2, '916.3', 916.3],
             '1000 cP @20 °C' => [2, '1504.0', 1504.0],
-            '60000 cP @37,78 °C' => [3, '19259', 19259.0],
-            '60000 cP @20 °C' => [3, '95192', 95192.0],
+            '3000 cP @37,78 °C' => [3, '1613', 1613.0],
+            '3000 cP master' => [3, '2709', 2709.0],
+            '3000 cP @20 °C' => [3, '5082', 5082.0],
+            '60000 cP @37,78 °C' => [4, '19259', 19259.0],
+            '60000 cP @20 °C' => [4, '95192', 95192.0],
+            '100000 cP @37,78 °C' => [5, '71819', 71819.0],
+            '100000 cP @20 °C' => [5, '110487', 110487.0],
         ];
     }
 

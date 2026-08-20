@@ -391,16 +391,20 @@ class CertificateSnapshotTest extends TestCase
     /**
      * `Spindel No.` / `Speed (rpm)` di atas tabel hasil — Viscometer doang.
      *
-     * Angkanya dari `ViscometerSeeder` (HA1@63, HA2@62, HA7@62 rpm), yang
-     * dijalin langsung dari `INPUT DATA.csv` di
-     * `Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/` — bukan angka
-     * karangan test. Lihat `CalibrationProfile::catatanAtasTabelHasil`.
+     * Angkanya dari `ViscometerSeeder` (RV1@60, RV3@61 rpm), yang dijalin
+     * langsung dari `INPUT DATA` sesi 0817-CAL-726 di
+     * `5. Viscometer 86068360 terbaru .xlsm` — bukan angka karangan test.
+     *
+     * Titik ketiga (3000 cP) TIDAK muncul di baris ini, dan itu memang
+     * benar: lembar masternya tidak mengisi spindle & RPM untuk titik itu,
+     * jadi yang kosong dilaporkan sebagai kosong — bukan ditebak dari titik
+     * tetangganya. Lihat `CalibrationProfile::catatanAtasTabelHasil`.
      */
     public function test_catatan_atas_hasil_spindel_speed_buat_viscometer(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $visco = CalibrationSession::where('nomor_sesi', 'DEMO-VISCO-BROOKFIELD')->first();
+        $visco = CalibrationSession::where('nomor_sesi', '2607.59.W')->first();
 
         if ($visco === null) {
             $this->markTestSkipped('Sesi contoh Viscometer belum diseed.');
@@ -412,7 +416,7 @@ class CertificateSnapshotTest extends TestCase
         );
 
         $this->assertSame(
-            'Spindel No. : HA1, HA2, HA7 — Speed (rpm) : 63, 62, 62',
+            'Spindel No. : RV1, RV3 — Speed (rpm) : 60, 61',
             $snapshot['catatan_atas_hasil'],
         );
 

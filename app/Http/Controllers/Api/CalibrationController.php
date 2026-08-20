@@ -7,8 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AutoclaveStoreRequest;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
-use App\Services\Calibration\AutoclaveCalculator;
-use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
@@ -19,6 +17,8 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Services\Calibration\AutoclaveCalculator;
+use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\CalibrationValidator;
@@ -1015,6 +1015,14 @@ class CalibrationController extends Controller
             ? null
             : array_sum(array_map('floatval', $suhuRuangTerisi)) / count($suhuRuangTerisi);
 
+        // PERGESERAN ruangan selama kerja (|akhir − awal|), bukan rata-ratanya.
+        // Cuma Gas Detector yang mbukanya: budget-nya pakai Δ sebagai `u`
+        // komponen suhu & tekanan — lihat `GasDetectorProfile::komponenBudget()`.
+        // Null kalau salah satu ujungnya belum diisi; Δ dari satu pembacaan
+        // nggak punya arti.
+        $deltaSuhu = $this->deltaKondisi($request->input('suhu_awal'), $request->input('suhu_akhir'));
+        $deltaTekanan = $this->deltaKondisi($request->input('tekanan_awal'), $request->input('tekanan_akhir'));
+
         // Sebagian kategori alat (mis. pH) butuh standar beda per titik ukur
         // (buffer 4/7/10) — dimuat sekaligus di sini biar nggak query per titik.
         $standarPerTitik = Standard::whereIn(
@@ -1222,6 +1230,8 @@ class CalibrationController extends Controller
                     'spindle' => $spindle,
                     'rpm' => $rpm,
                     'tk' => $modelVisco,
+                    'delta_suhu' => $deltaSuhu,
+                    'delta_tekanan' => $deltaTekanan,
                 ],
             ];
         }
@@ -1311,6 +1321,28 @@ class CalibrationController extends Controller
     private function bulatkanKolom(mixed $nilai, int $desimal): ?float
     {
         return $nilai === null || $nilai === '' ? null : round((float) $nilai, $desimal);
+    }
+
+    /**
+     * Pergeseran satu parameter kondisi lingkungan selama kerja: |akhir − awal|.
+     *
+     * Rumus yang sama persis kayak `KondisiLingkungan::hitung()` — dan sengaja
+     * sama, karena angka yang dipakai budget Gas Detector harus angka yang
+     * dicetak di baris Δ lembar perhitungan, bukan turunan lain yang kebetulan
+     * mirip.
+     *
+     * `null` kalau salah satu ujungnya kosong: Δ dari satu pembacaan nggak bisa
+     * bilang ruangannya bergeser apa nggak, dan 0 di situ kebaca sebagai
+     * "ruangannya nggak bergerak sama sekali" — pernyataan yang nggak ada
+     * buktinya.
+     */
+    private function deltaKondisi(mixed $awal, mixed $akhir): ?float
+    {
+        if ($awal === null || $awal === '' || $akhir === null || $akhir === '') {
+            return null;
+        }
+
+        return abs((float) $akhir - (float) $awal);
     }
 
     /**

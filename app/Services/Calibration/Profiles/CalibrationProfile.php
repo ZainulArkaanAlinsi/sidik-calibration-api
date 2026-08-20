@@ -328,8 +328,22 @@ abstract class CalibrationProfile
                     continue;
                 }
 
-                return $master->first(fn (Standard $s): bool => in_array($s->nama, $p['standar'], true)
-                    || in_array($s->serial_number, $p['standar'], true));
+                // NAMA dulu, serial belakangan — dan urutan ini bukan
+                // kosmetik.
+                //
+                // Serial nggak dijamin unik antar standar. Keempat botol gas
+                // Rigas di master Gas Detector ber-S/N `WO0125576` yang SAMA
+                // (satu order pengisian, empat campuran), jadi pencarian yang
+                // menerima serial lebih dulu memulangkan botol yang kebetulan
+                // paling depan di koleksi untuk KEEMPAT titik. Akibatnya
+                // seluruh sertifikat mencetak "Carbon Monoxide (CO)" sebagai
+                // gas acuan keempat barisnya — termasuk baris oksigen.
+                //
+                // Nama selalu lebih spesifik. Buat sembilan alat lain yang
+                // serialnya memang unik hasilnya identik, karena nama mereka
+                // pun cocok.
+                return $master->first(fn (Standard $s): bool => in_array($s->nama, $p['standar'], true))
+                    ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $p['standar'], true));
             }
 
             return null;
@@ -451,6 +465,19 @@ abstract class CalibrationProfile
      *                                 "Pengaruh Perbedaan Temperature"; profil
      *                                 lain mengabaikannya. Lihat
      *                                 `GumCalculator::hitungTitik()`.
+     * @param  array<string, mixed>  $konteksTitik  data per titik & per SESI yang
+     *                                              cuma dimengerti profil alatnya, dioper apa
+     *                                              adanya dari `GumCalculator::hitungTitik()`
+     *                                              — sumber yang sama yang dipakai
+     *                                              [toleransiTitik]. Gas Detector butuh ini
+     *                                              buat `delta_suhu` & `delta_tekanan`:
+     *                                              budget-nya pakai PERGESERAN ruangan
+     *                                              (|akhir − awal|), bukan U95 sertifikat
+     *                                              thermobarometer kayak delapan alat lain,
+     *                                              dan pergeseran itu nggak bisa diturunkan
+     *                                              dari `$suhuRuang` yang cuma bawa
+     *                                              rata-ratanya. Profil yang nggak butuh
+     *                                              nggak pernah bukanya.
      * @return list<array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}>|null
      */
     abstract public function komponenBudget(
@@ -461,6 +488,7 @@ abstract class CalibrationProfile
         float $typeA,
         int $n,
         ?float $suhuRuang = null,
+        array $konteksTitik = [],
     ): ?array;
 
     /**
@@ -572,6 +600,30 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Desimal cetak sertifikat yang berlaku DI TITIK ini, kalau alat ini
+     * memformat tiap barisnya beda. `null` = ikut [desimalSertifikat] lalu
+     * aturan umum, persis perilaku sebelum hook ini ada.
+     *
+     * ## Kenapa per baris, bukan satu angka per alat
+     *
+     * Sembilan alat pertama memformat seluruh kolom hasilnya seragam, dan
+     * [desimalSertifikat] cukup untuk itu. Master Viscometer terbaru
+     * (`5. Viscometer 86068360 terbaru .xlsm`) tidak: sel `SERTIFIKAT` C23:R27
+     * diformat `0.00` · `0.0` · `0` · `0.0` · `0.0` — dua desimal di baris
+     * 100 cP, nol desimal di baris 3000 cP.
+     *
+     * Itu bukan kelalaian ketik, itu skala: `79,90 cP` dan `2709,8 cP` dibaca
+     * alat yang sama dengan resolusi yang sama, dan menulis `2709,80` berarti
+     * mengklaim dua angka penting yang tidak ada. Sama seperti [satuanTitik] &
+     * [resolusiTitik] — begitu satu alat mencampur, yang bertanya harus bisa
+     * bertanya per baris.
+     */
+    public function desimalSertifikatTitik(float $titikUkur): ?int
+    {
+        return null;
+    }
+
+    /**
      * Desimal khusus baris `Uncertainty U95% = ±`, kalau alat ini nyetaknya
      * beda dari kolom hasil di atasnya. `null` = ikut desimal titiknya.
      *
@@ -583,6 +635,26 @@ abstract class CalibrationProfile
      * Lima alat lain balik `null` dan sertifikatnya nggak berubah sama sekali.
      */
     public function desimalU95(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * Desimal kolom `U95%` yang berlaku DI BARIS ini, kalau alat ini
+     * memformat tiap barisnya beda. `null` = ikut [desimalU95] lalu desimal
+     * barisnya — persis perilaku sebelum hook ini ada.
+     *
+     * Pasangan [desimalSertifikatTitik], dan ada karena alasan yang sama:
+     * master Gas Detector memformat `SERTIFIKAT` U24:U27 sebagai `0.0` · `0.0`
+     * · `0.0` · `0.00` — satu desimal untuk tiga gas pertama, DUA untuk
+     * oksigen. Kolom hasil di baris yang sama justru `0`/`0.0`, jadi dua
+     * kolom bersebelahan di satu baris memang beda jumlah desimalnya.
+     *
+     * Bukan kerapian yang bisa diseragamkan: `U95` oksigen 0,887 % runtuh jadi
+     * `0,9` pada satu desimal dan `1` pada nol — di kolom yang justru jadi inti
+     * sertifikat.
+     */
+    public function desimalU95Titik(float $titikUkur): ?int
     {
         return null;
     }

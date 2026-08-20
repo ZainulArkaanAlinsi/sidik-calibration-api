@@ -37,6 +37,10 @@ class KondisiLingkungan
         [$awal, $akhir, $satuan] = match ($parameter) {
             'suhu' => [$sesi->suhu_awal, $sesi->suhu_akhir, '°C'],
             'kelembaban' => [$sesi->kelembaban_awal, $sesi->kelembaban_akhir, '%RH'],
+            // Parameter ketiga, cuma dicatat alat yang pembacaannya kegeser
+            // tekanan barometrik — sejauh ini Gas Detector. Alat lain nggak
+            // ngisi kolomnya dan `hitung()` balik null buat mereka.
+            'tekanan' => [$sesi->tekanan_awal, $sesi->tekanan_akhir, 'hPa'],
             default => [null, null, ''],
         };
 
@@ -84,12 +88,15 @@ class KondisiLingkungan
     {
         $suhu = $this->hitung($sesi, 'suhu');
         $kelembaban = $this->hitung($sesi, 'kelembaban');
+        $tekanan = $this->hitung($sesi, 'tekanan');
 
         $sesi->update(array_filter([
             'suhu_ruang' => $suhu['nilai_terkoreksi'] ?? null,
             'suhu_ketidakpastian' => $suhu['u95_sertifikat'] ?? null,
             'kelembaban' => $kelembaban['nilai_terkoreksi'] ?? null,
             'kelembaban_ketidakpastian' => $kelembaban['u95_sertifikat'] ?? null,
+            'tekanan_udara' => $tekanan['nilai_terkoreksi'] ?? null,
+            'tekanan_ketidakpastian' => $tekanan['u95_sertifikat'] ?? null,
         ], fn ($nilai): bool => $nilai !== null));
     }
 

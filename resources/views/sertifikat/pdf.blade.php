@@ -623,13 +623,34 @@
                     <th>Standard{{ $sufiks }}</th>
                     <th>{{ $judulUut }}{{ $sufiks }}</th>
                     <th>Correction{{ $sufiks }}</th>
-                    {{-- Judulnya nyebut `k=2` persis kayak master
-                         (`SERTIFIKAT.csv` baris 19), bukan `U95%` polos: angka
+                    {{-- Judulnya nyebut `k` cuma kalau alat ini emang
+                         MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis
+                         kayak masternya (`SERTIFIKAT` R21): angka
                          ketidakpastian tanpa faktor cakupannya nggak berarti
-                         apa-apa, dan di alat ini `k`-nya emang dikunci 2
-                         (`ViscometerProfile::faktorCakupanTetap()`). --}}
+                         apa-apa, dan `k`-nya emang dikunci 2.
+
+                         Gas Detector nggak ngunci — `k` keempat gasnya beda
+                         (1,9715 / 2,0106 / 1,9744 / 1,9717), jadi judul `k=2`
+                         di situ pernyataan yang SALAH. Masternya sendiri nulis
+                         `U95% (±)`. Angkanya tetap dilaporkan lengkap di
+                         kalimat `Coverage Factor ( k ) = …` di bawah tabel.
+
+                         Snapshot lama belum punya `faktor_cakupan_tetap`
+                         sama sekali dan jatuh ke 2.0 — sertifikat Viscometer
+                         yang udah terbit nggak berubah bentuk.
+
+                         Dipakai `array_key_exists`, BUKAN `??`: alat yang
+                         `k`-nya nggak dikunci nyimpen null di kunci itu, dan
+                         `??` nggak bisa mbedain "kuncinya belum ada" dari
+                         "kuncinya ada, isinya null" — dua-duanya bakal jatuh
+                         ke 2.0 dan Gas Detector balik nyetak `k=2`. --}}
                     @if ($u95Kolom)
-                        <th>U<sub>95%</sub>, k=2{{ $sufiks }}</th>
+                        @php($kTetap = array_key_exists('faktor_cakupan_tetap', $snapshot)
+                            ? $snapshot['faktor_cakupan_tetap']
+                            : 2.0)
+                        <th>
+                            U<sub>95%</sub>{{ $kTetap === null ? ' (±)' : ', k='.\App\Support\Angka::hasil((float) $kTetap, 0) }}{{ $sufiks }}
+                        </th>
                     @endif
                     @if ($r2 !== null)
                         <th>R<sup>2</sup></th>
