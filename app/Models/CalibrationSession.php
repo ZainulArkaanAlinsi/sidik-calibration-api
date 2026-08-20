@@ -23,6 +23,9 @@ use Illuminate\Support\Carbon;
     'nomor_sesi', 'nomor_order', 'input_method', 'status', 'keputusan', 'tanggal_kalibrasi',
     'tanggal_terima', 'lokasi', 'lokasi_nama', 'room_id', 'suhu_ruang', 'suhu_ketidakpastian', 'kelembaban',
     'kelembaban_ketidakpastian', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+    // Parameter kondisi lingkungan KETIGA, cuma dipakai Gas Detector — lihat
+    // migrasi 2026_08_20_100000.
+    'tekanan_awal', 'tekanan_akhir', 'tekanan_udara', 'tekanan_ketidakpastian',
     // Kolom `Time` di tabel Env. Condition — lihat migrasi 2026_08_13_170000.
     'waktu_awal', 'waktu_akhir',
     'catatan_revisi', 'revisi_field', 'catatan_teknisi', 'submitted_at', 'reviewed_at',
@@ -70,6 +73,10 @@ class CalibrationSession extends Model
             'suhu_akhir' => 'float',
             'kelembaban_awal' => 'float',
             'kelembaban_akhir' => 'float',
+            'tekanan_awal' => 'float',
+            'tekanan_akhir' => 'float',
+            'tekanan_udara' => 'float',
+            'tekanan_ketidakpastian' => 'float',
             // Snapshot hasil olah data Autoklaf (Section A/B/C + budget + input).
             'hasil_autoclave' => 'array',
         ];

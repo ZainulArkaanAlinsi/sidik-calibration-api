@@ -1,13 +1,14 @@
 # Pertanyaan ke Lab — Viscometer
 
-Status: menunggu jawaban · Dibuat 18 Agustus 2026 · Diperbarui 19 Agustus 2026 · Sumber:
+Status: sebagian TERJAWAB oleh `5. Viscometer 86068360 terbaru .xlsm` (20 Agu
+2026) · Dibuat 18 Agustus 2026 · Diperbarui 20 Agustus 2026 · Sumber lama:
 `Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/`
 
-Backend Viscometer sudah jalan penuh dan angkanya sudah diadu ke workbook
-master. Enam hal di bawah **tidak** bisa diputuskan dari berkas yang ada, dan
-semuanya sudah diberi keputusan sementara supaya pekerjaan tidak berhenti.
-Setiap butir menyebut apa yang dipakai sekarang dan apa yang berubah kalau lab
-menjawab lain.
+**20 Agustus 2026 — berkas `.xlsm` yang diminta sudah dikirim** (sesi
+0817-CAL-726, PT Lamurindo, Brookfield DV Plus S/N 86068360). Butir 3 dan 5
+terjawab; butir 1, 2, 4, 6 tetap sebagaimana adanya (sesi lama tidak ada di
+berkas baru). Tiga pertanyaan BARU muncul dari berkas itu — nomor 7-9 di
+bawah.
 
 ---
 
@@ -69,7 +70,16 @@ memakai t-student.
 Viscometer? Kalau ya, sel `k` titik 60000 cP yang berisi 1,9754 justru yang
 perlu diseragamkan — workbook sekarang memakai dua aturan sekaligus.
 
-## 3. Blok larutan standar 30000 cP
+## 3. Blok larutan standar 30000 cP — **TERJAWAB 20 Agu 2026**
+
+**Jawaban dari berkas baru: larutan 30000 cP tidak pernah ada — yang benar
+3000 cP** (Paragon Scientific/N1400, S/N 2241502068), plus SATU larutan lagi
+yang belum pernah muncul: **100000 cP** (Paragon/RT100000, S/N 1251704078).
+Blok yang dulu `#DIV/0!` sekarang hidup penuh dengan tabel sertifikat suhunya
+sendiri. Kelima larutan sudah masuk `ViscometerSeeder` & `ViscometerProfile`;
+kertas Rev.3 yang menulis "30000" ketinggalan dua revisi standar.
+
+Konteks lamanya (untuk jejak):
 
 Seluruh baris budgetnya di `PERHITUNGAN U95%` berisi `#DIV/0!`. Sumber angkanya
 sudah hilang dari workbook itu sendiri.
@@ -101,7 +111,15 @@ mengklaim kemampuan di luar yang diakreditasi.
 yang diukur di bawah 25 °C akan selalu punya satu titik tanpa klaim CMC — dan
 itu perlu diketahui sebelum dicetak, bukan sesudah.
 
-## 5. Berapa desimal yang dicetak sertifikat Viscometer
+## 5. Berapa desimal yang dicetak sertifikat Viscometer — **TERJAWAB 20 Agu 2026**
+
+**Jawaban dari berkas baru: BUKAN angka seragam.** Format sel `SERTIFIKAT`
+C23:R27 berbunyi `0.00` · `0.0` · `0` · `0.0` · `0.0` — dua desimal di baris
+100 cP, satu di 1000/60000/100000, nol di 3000. Diimplementasikan per baris di
+`ViscometerProfile::desimalSertifikatTitik()`; konstanta dua-desimal lama
+tinggal jadi cadangan buat titik tak dikenal.
+
+Konteks lamanya (untuk jejak):
 
 Di enam alat lain jumlah desimal dibaca dari **format sel** workbook masternya.
 Berkas `.xlsm` Viscometer tidak ada di folder — yang ada cuma export CSV, dan
@@ -153,13 +171,67 @@ sana terbaca ~18,93, salah satu dari empat baris komponen di atasnya yang rusak
 
 ---
 
+## 7. Titik 3000 cP: dua sel interpolasi ditimpa angka ketikan (BARU, 20 Agu 2026)
+
+Sel `PERHITUNGAN!T33` & `T34` (nilai larutan 3000 cP pada 25 & 37,78 °C untuk
+interpolasi) berisi **angka mati 3437 & 1398** yang menimpa formulanya. Baris
+pertama blok yang sama (`T32`) masih formula, dan keempat blok larutan lain
+seluruhnya formula ke `Tabel Pengaruh Temperature` — yang untuk larutan ini
+berbunyi **3987** @25 °C dan **1613** @37,78 °C. Sheet `INPUT DATA` (`K34`)
+dan seluruh budget U95 titik itu membaca tabel (0,25 % × 3987 = 9,9675), jadi
+workbook-nya sendiri memakai dua nilai berbeda untuk satu larutan.
+
+**Yang dipakai sekarang: tabel sertifikatnya (3987/1613).** Akibatnya nilai
+acuan titik itu 2891,02 cP pada suhu sesi 30,9 °C — bukan 2495,68 seperti sel
+master — dan koreksinya **berbalik tanda** (+181,22 di sini, −214,12 di
+master). Sertifikat yang memakai dua nilai untuk satu larutan tidak bisa
+dipertahankan di depan asesor, jadi tabel yang menang.
+
+**Yang ditanyakan:** dari mana 3437 & 1398? Kalau itu sertifikat lot lain yang
+lebih baru, kirimkan sertifikatnya — tabel di `Tabel Pengaruh Temperature`
+baris 88-98 yang akan diganti, bukan kodenya.
+
+## 8. Resolusi alat: `INPUT DATA` menulis 1, empat blok budget memakai 0,1 (BARU, 20 Agu 2026)
+
+`INPUT DATA!E16` (Resolusi Alat) = **1** dan blok U95 titik 1000 cP membacanya
+(`K31 = E16`). Tapi empat blok lain mematok **0,1** (`K5`, lalu berantai
+`K50 = K5` dst), dan pembacaan di lembar itu sendiri — 79,7 / 779,5 — hanya
+mungkin dari alat berdaya baca 0,1 cP.
+
+**Yang dipakai sekarang: 0,1 untuk semua titik** (empat lawan satu, plus bukti
+pembacaan). Akibatnya `uc` titik 1000 cP keluar 1,1867 di sini vs 1,2209 di
+master — satu-satunya titik yang bergeser karena ini.
+
+**Yang ditanyakan:** apakah DV Plus ini daya bacanya berubah menurut rentang
+(0,1 cP di bawah ~1000 cP, 1 cP di atasnya)? Kalau ya, yang perlu diisi
+resolusi PER TITIK — kotaknya sudah ada di lembar kerja cetak kita, tinggal
+dipakai; kalau tidak, sel `K31` di master yang perlu dibetulkan ke 0,1.
+
+## 9. Faktor cakupan: dua aturan dalam satu workbook, lagi (BARU, 20 Agu 2026)
+
+Butir 2 dulu menanyakan sel `k` 100 cP yang berisi 2. Berkas baru menjawab
+sebagian — dan menambah bentuk barunya: blok 100 & 1000 cP tetap `k = 2`
+(angka mati), sementara tiga blok baru (3000/60000/100000) memakai pendekatan
+`k = (2,35746 × 1,099 + veff × 1,9599999) / veff` ≈ 1,972-1,973. Sertifikatnya
+sendiri mencetak `Coverage Factor ( k ) = 2` (membaca sel blok 100 cP) DAN
+menjudulkan kolomnya `U95%, k=2`.
+
+**Yang dipakai sekarang: k = 2 untuk semua titik** — dokumen yang terbit
+menulis 2 dua kali. Akibatnya `U95` titik 3000 cP keluar 10,088 cP di sini vs
+9,949 cP di sel master (~1,4 % lebih besar; arah yang aman).
+
+**Yang ditanyakan:** satu aturan yang mana yang dimaksud berlaku? Kalau
+pendekatan t-student yang benar, kalimat sertifikat & judul kolomnya ikut
+diubah — dan `ViscometerProfile::faktorCakupanTetap()` tinggal dikembalikan ke
+null.
+
 ## Tambahan: kertas SIDIK-FM-CAL-0524_Rev.3 ketinggalan
 
 Bukan pertanyaan, tapi perlu diketahui sebelum formulir dicetak ulang:
 
 | Yang tercetak di Rev.3 | Yang berlaku menurut master |
 |---|---|
-| "Larutan Std Visco 100 cP" **dua kali**, lalu 30000 & 60000 cP | 100 / 1000 / 60000 cP |
+| "Larutan Std Visco 100 cP" **dua kali**, lalu 30000 & 60000 cP | 100 / 1000 / **3000** / 60000 / **100000** cP (20 Agu 2026) |
 | Daftar spindle global untuk dilingkari, satu kali | Spindle **berbeda per titik** (sesi master: HA1, HA2, HA7) |
 | Tidak ada kotak RPM | RPM berbeda per titik (63, 62, 62) dan masuk rumus MPE |
 

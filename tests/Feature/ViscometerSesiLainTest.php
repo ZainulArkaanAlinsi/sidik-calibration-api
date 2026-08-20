@@ -47,7 +47,7 @@ class ViscometerSesiLainTest extends TestCase
 
     private Equipment $alat;
 
-    /** @var array<int, Standard> */
+    /** @var array<string, Standard> */
     private array $standar = [];
 
     private ViscometerProfile $profil;
@@ -65,12 +65,14 @@ class ViscometerSesiLainTest extends TestCase
 
         $this->seed([ViscometerCapabilitySeeder::class, ViscometerSeeder::class]);
 
-        $this->alat = Equipment::where('serial_number', '8535682')->firstOrFail();
+        $this->alat = Equipment::where('serial_number', '86068360')->firstOrFail();
         $this->teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
         $this->profil = new ViscometerProfile;
 
-        foreach (ViscometerProfile::TITIK as $i => $t) {
-            $this->standar[$i + 1] = Standard::where('nama', $t['standar'][0])->firstOrFail();
+        // Dikunci lewat LABEL titik, bukan urutan array — lihat alasan yang
+        // sama di `ViscometerApiTest::setUp()`.
+        foreach (ViscometerProfile::TITIK as $t) {
+            $this->standar[$t['label']] = Standard::where('nama', $t['standar'][0])->firstOrFail();
         }
     }
 
@@ -88,7 +90,7 @@ class ViscometerSesiLainTest extends TestCase
         return [
             [
                 'titik_ukur' => 99.65,
-                'standard_id' => $this->standar[1]->id,
+                'standard_id' => $this->standar['100']->id,
                 'satuan' => 'cP',
                 'spindle' => 'RV7',   // SMC 400
                 'rpm' => 30,
@@ -97,7 +99,7 @@ class ViscometerSesiLainTest extends TestCase
             ],
             [
                 'titik_ukur' => 1018.0,
-                'standard_id' => $this->standar[2]->id,
+                'standard_id' => $this->standar['1000']->id,
                 'satuan' => 'cP',
                 'spindle' => 'HB4',   // SMC 20
                 'rpm' => 50,
@@ -106,7 +108,7 @@ class ViscometerSesiLainTest extends TestCase
             ],
             [
                 'titik_ukur' => 59003.0,
-                'standard_id' => $this->standar[3]->id,
+                'standard_id' => $this->standar['60000']->id,
                 'satuan' => 'cP',
                 'spindle' => 'LV5',   // SMC 1280
                 'rpm' => 10,
@@ -121,7 +123,7 @@ class ViscometerSesiLainTest extends TestCase
     {
         return [
             'equipment_id' => $this->alat->id,
-            'standard_id' => $this->standar[1]->id,
+            'standard_id' => $this->standar['100']->id,
             'input_method' => 'manual',
             'tanggal_kalibrasi' => now()->subDay()->toIso8601ZuluString(),
             'suhu_awal' => 23.4,
@@ -162,10 +164,15 @@ class ViscometerSesiLainTest extends TestCase
             ->get()
             ->keyBy(static fn ($t): int => (int) $t->titik_ke);
 
-        $suhuSesi = [1 => 22.0, 2 => 30.0, 3 => 21.5];
+        // `titik_ke` -> [suhu sesi, label larutan yang dipakai baris itu].
+        $suhuSesi = [
+            1 => [22.0, '100'],
+            2 => [30.0, '1000'],
+            3 => [21.5, '60000'],
+        ];
 
-        foreach ($suhuSesi as $ke => $suhu) {
-            $harusnya = $this->standar[$ke]->nilaiPadaSuhu($suhu);
+        foreach ($suhuSesi as $ke => [$suhu, $larutan]) {
+            $harusnya = $this->standar[$larutan]->nilaiPadaSuhu($suhu);
 
             $this->assertNotNull($harusnya, "Suhu {$suhu} °C mestinya masih di dalam tabel.");
             $this->assertEqualsWithDelta(
@@ -303,7 +310,7 @@ class ViscometerSesiLainTest extends TestCase
                     (float) $baris->{$k},
                     (float) $preview[$i][$k],
                     self::TOLERANSI_SIMPAN,
-                    "Kolom `{$k}` titik ke-".($i + 1)." beda antara preview & tersimpan.",
+                    "Kolom `{$k}` titik ke-".($i + 1).' beda antara preview & tersimpan.',
                 );
             }
 

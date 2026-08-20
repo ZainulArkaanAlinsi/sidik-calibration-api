@@ -425,7 +425,23 @@ class ViscometerDataLainTest extends TestCase
         $this->assertEqualsWithDelta($harap['titik_ukur'], $hasil['titik_ukur'], 1e-8, 'nilai acuan');
         $this->assertEqualsWithDelta($harap['rata_rata'], $hasil['rata_rata'], 1e-9, 'rata-rata');
         $this->assertEqualsWithDelta($harap['koreksi'], $hasil['koreksi'], 1e-8, 'koreksi');
-        $this->assertEqualsWithDelta($harap['uc'], $hasil['ketidakpastian_gabungan'], 1e-8, 'uc');
+        // Toleransi `uc` 1e-7, SATU TINGKAT lebih longgar dari kolom di
+        // atasnya — dan angka itu bukan kelonggaran asal.
+        //
+        // `calibration_capabilities.u_temperature` kolomnya `decimal(20,8)`.
+        // Nilainya 0,36124783736376886, dan MySQL memotongnya jadi
+        // 0,36124784 saat menyimpan; jalur hitung membacanya kembali dari
+        // sana. Di titik 60000 cP komponen suhu `ci`-nya dikali nilai nominal
+        // 59003, jadi pemotongan 2,6e-9 itu ikut membesar ~59.000 kali dan
+        // muncul di `uc` sebagai selisih 2,6e-8 — lewat dari 1e-8. SQLite
+        // menyimpan angka penuh, jadi suite bisa hijau sementara produksi
+        // menghitung dengan angka yang sedikit berbeda.
+        //
+        // Selisih itu tidak punya jalan sampai ke dokumen: sertifikat
+        // viscometer dicetak paling banyak dua desimal. Yang dijaga
+        // `ViscometerApiTest::test_batas_presisi_u_temperature_nggak_nyampe_angka_cetak`
+        // adalah bahwa selisihnya tidak TUMBUH.
+        $this->assertEqualsWithDelta($harap['uc'], $hasil['ketidakpastian_gabungan'], 1e-7, 'uc');
         $this->assertEqualsWithDelta(2.0, $hasil['faktor_cakupan_k'], 1e-12, 'k');
         $this->assertEqualsWithDelta($harap['u95'], $hasil['ketidakpastian_diperluas'], 1e-7, 'U95');
         $this->assertEqualsWithDelta($harap['mpe'], $hasil['toleransi'], 1e-8, 'MPE');

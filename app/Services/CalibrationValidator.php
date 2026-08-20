@@ -635,6 +635,13 @@ class CalibrationValidator
                     'spindle' => $pembacaan->first()?->spindle,
                     'rpm' => $pembacaan->first()?->rpm,
                     'tk' => $sesi->spesifikasi_alat['model_visco'] ?? null,
+                    // Δ kondisi lingkungan, dibaca balik dari kolom awal/akhir
+                    // sesi — alasannya sama kayak `spindle`/`rpm` di atas:
+                    // hitung ulang harus dapat komponen budget yang SAMA kayak
+                    // waktu sesi ini disimpen. Tanpa ini tiap sesi Gas Detector
+                    // ke-flag `ketidakpastian_beda` padahal angkanya benar.
+                    'delta_suhu' => $this->deltaKondisi($sesi->suhu_awal, $sesi->suhu_akhir),
+                    'delta_tekanan' => $this->deltaKondisi($sesi->tekanan_awal, $sesi->tekanan_akhir),
                 ],
                 'tersimpan' => $titik,
             ];
@@ -747,6 +754,20 @@ class CalibrationValidator
             ->values();
 
         return $suhu->isEmpty() ? null : (float) $suhu->avg();
+    }
+
+    /**
+     * Pergeseran satu parameter kondisi lingkungan: |akhir − awal|. Kembar
+     * `CalibrationController::deltaKondisi()` — dua jalur yang mesti dapat
+     * komponen budget Gas Detector yang sama.
+     */
+    private function deltaKondisi(?float $awal, ?float $akhir): ?float
+    {
+        if ($awal === null || $akhir === null) {
+            return null;
+        }
+
+        return abs($akhir - $awal);
     }
 
     /**

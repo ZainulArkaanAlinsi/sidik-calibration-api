@@ -18,46 +18,55 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Data Viscometer dari `Master Olah Data_Viscometer` — tiga larutan standar
- * Paragon Scientific, alat Brookfield DV-11 S/N 8535682, dan satu sesi
- * kalibrasi end-to-end yang U95%-nya BENERAN dihitung `GumCalculator`, bukan
- * angka jadi yang ditempel.
+ * Data Viscometer dari `5. Viscometer 86068360 terbaru .xlsm` — LIMA larutan
+ * standar Paragon Scientific, alat Brookfield DV Plus S/N 86068360, dan satu
+ * sesi kalibrasi end-to-end yang U95%-nya BENERAN dihitung `GumCalculator`,
+ * bukan angka jadi yang ditempel.
  *
- * Pembacaannya dari `INPUT DATA` blok "Before/After Adjustment Reading".
+ * Sumbernya sesi asli **0817-CAL-726** (order 2607.59.W, PT Lamurindo
+ * Cikarang, 31 Juli 2026), menggantikan lembar trial tanpa nomor job yang
+ * dipakai sampai 19 Agustus 2026. Pembacaannya dari `INPUT DATA` blok "After
+ * Adjustment Reading" (G48:L52).
  *
- * ## Nomor sesinya SENGAJA bukan nomor job
+ * Sesi ini mengukur TIGA titik (100, 1000, 3000 cP); blok 60000 & 100000 cP
+ * ada di lembarnya tapi tidak diisi. Kelima larutan tetap diseed — teknisi
+ * membawanya, dan sertifikat mencetak seluruh baris "Standard used".
  *
- * `INPUT DATA` Certificate Number & Order Number dua-duanya **kosong**, dan
- * kolom Nama/Alamat Customer juga kosong — workbook-nya lembar kerja trial,
- * bukan job yang pernah terbit. Ngarang nomor job atau nama pelanggan bikin
- * orang ngira ada pekerjaan lab yang nggak pernah ada. Angka kalibrasinya
- * sendiri asli.
+ * ## TIGA tempat angkanya SENGAJA beda dari master, semuanya terlacak
  *
- * ## Dua tempat angkanya SENGAJA beda dari master
+ * **1. Nilai acuan titik 3000 cP: 2891,02 cP, master 2495,68 cP.** Blok
+ * interpolasi 3000 cP di sheet `PERHITUNGAN` (`T33`/`T34`) berisi ANGKA
+ * KETIKAN 3437 & 1398 yang menimpa formulanya. Empat blok lain — termasuk
+ * baris pertama blok yang sama (`T32`) — semuanya formula ke
+ * `Tabel Pengaruh Temperature`, yang untuk larutan ini berbunyi 3987 @25 °C
+ * dan 1613 @37,78 °C. Yang dipakai TABEL SERTIFIKATNYA: itu satu-satunya
+ * sumber yang punya identitas (Paragon Scientific/N1400, S/N 2241502068), dan
+ * sheet `INPUT DATA` maupun budget U95 titik itu juga membacanya (`K34` =
+ * 3987). Sertifikat yang memakai dua nilai berbeda untuk satu larutan tidak
+ * bisa dipertahankan di depan asesor. Akibatnya koreksi titik itu berbalik
+ * tanda: +181,22 cP di sini, −214,12 cP di master.
  *
- * **1. Titik 60000 cP cuma punya EMPAT pembacaan.** Sel pengulangan ke-5 di
- * master isinya teks `631.74.2` — dua titik desimal, jelas salah ketik.
- * Excel melewatkannya waktu AVERAGE & STDEV (makanya rata-ratanya 63151,85 =
- * rata-rata empat angka) **tapi** pembaginya tetap dipatok `√5` dengan
- * `vi = 4`. Dua hal itu nggak bisa dua-duanya benar. Yang diseed empat
- * pembacaan, dan `GumCalculator` ngitung `n = 4` secara konsisten — jadi U95
- * titik ini keluar ~144,16 cP, bukan 142,34 cP kayak master.
+ * **2. Resolusi 0,1 cP, bukan 1.** `INPUT DATA!E16` menulis 1 dan blok 1000 cP
+ * membacanya, tapi empat blok U95 lain mematok 0,1 — dan pembacaan di lembar
+ * itu sendiri (79,7 / 779,5) cuma mungkin dari alat beresolusi 0,1. Akibatnya
+ * `uc` titik 1000 cP keluar 1,1867 di sini, 1,2209 di master.
  *
- * **2. Faktor cakupan titik 100 cP.** `veff`-nya 5,376 dan master nyetak
- * `k = 2`; mesin GUM bersama ngambil `t(0,975 ; 5) = 2,5706`, jadi U95 titik
- * itu 0,6336 cP bukan 0,49299 cP. Master pH lab sendiri pakai t-student
- * (2,77645 buat veff 4,92), jadi yang nyimpang sel viscometer-nya.
+ * **3. Faktor cakupan k=2 untuk SEMUA titik.** Master memakai dua aturan
+ * sekaligus: `2` di blok 100 & 1000 cP, pendekatan t-student di tiga blok
+ * baru. Sertifikatnya mencetak `Coverage Factor ( k ) = 2` dan memberi judul
+ * kolom `U95%, k=2`, jadi yang diikuti dokumennya. Akibatnya U95 titik 3000 cP
+ * keluar 10,088 cP di sini, 9,949 cP di master — 1,4 % lebih besar, arah yang
+ * aman.
  *
- * Dua-duanya dicatat di `docs/pertanyaan-lab-viscometer.md` dan diassert
+ * Ketiganya dicatat di `docs/pertanyaan-lab-viscometer.md` dan diassert
  * EKSPLISIT di `ViscometerBudgetTest` — biar kalau lab menjawab, yang berubah
  * ketahuan langsung, bukan lewat test yang toleransinya kelewat longgar.
  *
- * ## Yang cocok persis sama master
+ * ## Yang cocok PERSIS sama master
  *
- *   titik       Standard Value (interpolasi)   rata-rata UUT   uc                     MPE
- *   100 cP      93,87566510172147              96,72           0,24649576970552553    4,141803174603175
- *   1000 cP     910,2887323943662              917,66          1,356001576327294      22,079825806451613
- *   60000 cP    61898,119999999995             63151,85        (lihat catatan 1)      1921,8410806451611
+ *   titik      Standard Value      uc                     v_eff
+ *   100 cP     79,895696400626     0,07733775101928006    198,2005653515736
+ *   3000 cP    (lihat catatan 1)   5,044064680830383      209,3999674977603
  *
  * WAJIB jalan SETELAH `ViscometerCapabilitySeeder` (butuh CMC + `u_temperature`)
  * dan `ThermohygroSeeder` (TH-2).
@@ -86,20 +95,24 @@ class ViscometerSeeder extends Seeder
         [
             'nama' => 'Viscosity Standard Solution 100 cP',
             'merk' => 'Paragon Scientific/S60',
+            // Lot BARU (master terbaru `DATABASE!T13`). Header S/N di sheet
+            // `Tabel Pengaruh Temperature` masih menulis lot lama
+            // 1220905085; isi tabelnya yang sudah diperbarui, dan `DATABASE`
+            // membacanya lewat `V13 = D41` = 0,13 %.
             'serial' => '1241202088',
             // Kalibrasi 19 Agt 2025, interval 3 tahun.
             'berlaku' => '2028-08-19',
-            'ketidakpastian' => 0.169405,
+            'ketidakpastian' => 0.129545,
             'tabel' => [
-                ['suhu' => 20.0, 'nilai' => 134.0, 'u_persen' => 0.17],
-                ['suhu' => 25.0, 'nilai' => 99.65, 'u_persen' => 0.17],
+                ['suhu' => 20.0, 'nilai' => 134.0, 'u_persen' => 0.13],
+                ['suhu' => 25.0, 'nilai' => 99.65, 'u_persen' => 0.13],
                 ['suhu' => 37.78, 'nilai' => 51.1, 'u_persen' => 0.15],
                 ['suhu' => 40.0, 'nilai' => 45.97, 'u_persen' => 0.15],
-                ['suhu' => 50.0, 'nilai' => 29.75, 'u_persen' => 0.13],
-                ['suhu' => 60.0, 'nilai' => 20.32, 'u_persen' => 0.13],
-                ['suhu' => 80.0, 'nilai' => 10.75, 'u_persen' => 0.13],
-                ['suhu' => 98.89, 'nilai' => 6.638, 'u_persen' => 0.08],
-                ['suhu' => 100.0, 'nilai' => 6.47, 'u_persen' => 0.08],
+                ['suhu' => 50.0, 'nilai' => 29.75, 'u_persen' => 0.15],
+                ['suhu' => 60.0, 'nilai' => 20.32, 'u_persen' => 0.15],
+                ['suhu' => 80.0, 'nilai' => 10.75, 'u_persen' => 0.17],
+                ['suhu' => 98.89, 'nilai' => 6.638, 'u_persen' => 0.17],
+                ['suhu' => 100.0, 'nilai' => 6.47, 'u_persen' => 0.17],
             ],
         ],
         [
@@ -122,6 +135,28 @@ class ViscometerSeeder extends Seeder
             ],
         ],
         [
+            'nama' => 'Viscosity Standard Solution 3000 cP',
+            'merk' => 'Paragon Scientific/N1400',
+            'serial' => '2241502068',
+            // Kalibrasi 19 Jun 2025, interval 3 tahun.
+            'berlaku' => '2028-06-19',
+            // 0,25 % x 3987 (`Tabel Pengaruh Temperature!D91`).
+            'ketidakpastian' => 9.9675,
+            // Tabel INI yang dipakai, bukan angka ketikan 3437/1398 di sel
+            // `PERHITUNGAN!T33`/`T34` — lihat catatan 1 di docblock kelas.
+            'tabel' => [
+                ['suhu' => 20.0, 'nilai' => 5082.0, 'u_persen' => 0.25],
+                ['suhu' => 25.0, 'nilai' => 3987.0, 'u_persen' => 0.25],
+                ['suhu' => 37.78, 'nilai' => 1613.0, 'u_persen' => 0.23],
+                ['suhu' => 40.0, 'nilai' => 1419.0, 'u_persen' => 0.23],
+                ['suhu' => 50.0, 'nilai' => 781.9, 'u_persen' => 0.21],
+                ['suhu' => 60.0, 'nilai' => 458.9, 'u_persen' => 0.19],
+                ['suhu' => 80.0, 'nilai' => 185.7, 'u_persen' => 0.19],
+                ['suhu' => 98.89, 'nilai' => 92.55, 'u_persen' => 0.17],
+                ['suhu' => 100.0, 'nilai' => 89.18, 'u_persen' => 0.17],
+            ],
+        ],
+        [
             'nama' => 'Viscosity Standard Solution 60000 cP',
             'merk' => 'Paragon Scientific/N18000',
             'serial' => '4230901097',
@@ -140,53 +175,82 @@ class ViscometerSeeder extends Seeder
                 ['suhu' => 100.0, 'nilai' => 411.3, 'u_persen' => 0.17],
             ],
         ],
+        [
+            'nama' => 'Viscosity Standard Solution 100000 cP',
+            'merk' => 'Paragon Scientific/RT100000',
+            'serial' => '1251704078',
+            // Kalibrasi 9 Jul 2025, interval 3 tahun.
+            'berlaku' => '2028-07-09',
+            // 0,46 % x 99613 (`Tabel Pengaruh Temperature!D106`).
+            'ketidakpastian' => 458.2198,
+            // TIGA baris, bukan sembilan — sertifikat larutan ini memang cuma
+            // memuat 20 & 25 degC, dan baris 37,78 degC pun diturunkan di
+            // workbook (`B107 = B106 - E107*12,78`), bukan diukur. Diseed apa
+            // adanya: menambah baris yang tidak ada di sertifikatnya berarti
+            // mengarang titik tertelusur. Kolom ketidakpastian baris 37,78
+            // dikosongkan master; diisi 0,46 di sini mengikuti dua baris di
+            // atasnya, dan angka itu tidak pernah dipakai menghitung karena
+            // yang dibaca budget cuma baris 25 degC.
+            'tabel' => [
+                ['suhu' => 20.0, 'nilai' => 110487.0, 'u_persen' => 0.46],
+                ['suhu' => 25.0, 'nilai' => 99613.0, 'u_persen' => 0.46],
+                ['suhu' => 37.78, 'nilai' => 71819.056, 'u_persen' => 0.46],
+            ],
+        ],
     ];
 
     /**
      * Titik sesi contoh, urut kayak lembarnya. `pembacaan` & `suhu` sejajar
-     * per-index.
+     * per-index. Semuanya dari blok "After Adjustment Reading" (`INPUT DATA`
+     * G48:L52).
      *
-     * Titik ketiga sengaja EMPAT pembacaan — lihat docblock kelas.
+     * Titik ketiga (3000 cP) `spindle` & `rpm`-nya NULL — lembar masternya
+     * memang tidak diisi (`INPUT DATA!L42` & `K43` kosong). Tanpa dua itu
+     * Fullscale tidak punya arti, jadi MPE-nya null dan titik itu terbit tanpa
+     * vonis PASS/FAIL. Dilaporkan sebagai kosong, bukan ditebak.
      *
-     * @var list<array{standar: int, spindle: string, rpm: float, pembacaan: list<float>, suhu: list<float>}>
+     * @var list<array{standar: int, spindle: string|null, rpm: float|null, pembacaan: list<float>, suhu: list<float>}>
      */
     private const TITIK = [
         [
             'standar' => 0,
-            'spindle' => 'HA1',
-            'rpm' => 63.0,
-            'pembacaan' => [97.3, 96.9, 96.8, 95.9, 96.7],
-            'suhu' => [26.6, 26.5, 26.5, 26.6, 26.4],
+            // `INPUT DATA!H42` = 1 dengan model layar RV -> spindle RV1.
+            'spindle' => 'RV1',
+            'rpm' => 60.0,
+            'pembacaan' => [79.7, 79.6, 79.7, 79.6, 79.6],
+            'suhu' => [30.2, 30.2, 30.2, 30.2, 30.2],
         ],
         [
             'standar' => 1,
-            'spindle' => 'HA2',
-            'rpm' => 62.0,
-            'pembacaan' => [919.6, 918.7, 917.4, 916.3, 916.3],
-            'suhu' => [27.3, 27.4, 27.2, 27.3, 27.3],
+            // `INPUT DATA!J42` = 3 -> RV3.
+            'spindle' => 'RV3',
+            'rpm' => 61.0,
+            'pembacaan' => [779.5, 779.5, 779.5, 779.5, 779.5],
+            'suhu' => [30.6, 30.6, 30.6, 30.6, 30.6],
         ],
         [
             'standar' => 2,
-            'spindle' => 'HA7',
-            'rpm' => 62.0,
-            'pembacaan' => [63181.3, 63079.8, 63172.1, 63174.2],
-            'suhu' => [24.6, 24.6, 24.6, 24.6],
+            'spindle' => null,
+            'rpm' => null,
+            'pembacaan' => [2709.0, 2710.0, 2710.0, 2710.0, 2710.0],
+            'suhu' => [30.9, 30.9, 30.9, 30.9, 30.9],
         ],
     ];
 
-    /** Model badan alat (`INPUT DATA` "Model visco on body") → TK 2. */
-    private const MODEL_VISCO = 'DV2THA';
+    /**
+     * Model badan alat (`INPUT DATA!AA57`, turunan pilihan `J12` = 6) → TK 1.
+     * Layarnya menampilkan `RV`, dan itu yang menentukan kelompok spindle.
+     */
+    private const MODEL_VISCO = 'DV2TRV';
 
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'Pelanggan Demo Viscometer'],
+            ['organization_id' => 1, 'nama' => 'PT LAMURINDO CIKARANG'],
             [
                 'organization_id' => 1,
-                // Master-nya nggak nyebut pelanggan sama sekali (kolom Nama &
-                // Alamat Customer kosong), jadi nggak ada yang bisa disalin ke
-                // sini tanpa mengarang.
-                'alamat' => '-',
+                'alamat' => 'Jl. Ramin Raya, Sukamahi, Kec. Cikarang Pusat, '
+                    .'Kabupaten Bekasi, Jawa Barat 17530',
             ],
         );
 
@@ -217,7 +281,7 @@ class ViscometerSeeder extends Seeder
             ->firstOrFail();
 
         $equipment = Equipment::updateOrCreate(
-            ['organization_id' => 1, 'serial_number' => '8535682'],
+            ['organization_id' => 1, 'serial_number' => '86068360'],
             [
                 'organization_id' => 1,
                 'customer_id' => $customer->id,
@@ -226,11 +290,14 @@ class ViscometerSeeder extends Seeder
                 // Kunci yang bikin registry milih ViscometerProfile.
                 'nama_alat_kemampuan' => 'Viscometer',
                 'merk' => 'Brookfield',
-                'model' => 'DV-11',
-                // INPUT DATA "Rentang Ukur : 100-65000".
+                'model' => 'DV Plus',
+                // INPUT DATA "Rentang Ukur : 100-3000".
                 'range_min' => 100,
-                'range_max' => 65000,
+                'range_max' => 3000,
                 'satuan' => 'cP',
+                // 0,1 walau `INPUT DATA!E16` menulis 1 — lihat
+                // `ViscometerProfile::resolusiTitik()`. Pembacaan lembarnya
+                // sendiri (79,7 / 779,5) cuma mungkin dari alat 0,1 cP.
                 'resolusi' => 0.1,
                 // SENGAJA null, dan ini BEDA artinya dari Spectrophotometer.
                 // Viscometer punya batas keberterimaan (MPE), tapi batasnya
@@ -254,9 +321,10 @@ class ViscometerSeeder extends Seeder
         $th2 = Standard::where('organization_id', 1)->where('nama', 'TH-2')->first();
 
         $sesi = CalibrationSession::updateOrCreate(
-            ['organization_id' => 1, 'nomor_sesi' => 'DEMO-VISCO-BROOKFIELD'],
+            ['organization_id' => 1, 'nomor_sesi' => '2607.59.W'],
             [
                 'equipment_id' => $equipment->id,
+                'nomor_order' => '2607.59.W',
                 'teknisi_id' => $teknisi->id,
                 'standard_id' => $standar[0]->id,
                 'thermohygro_standard_id' => $th2?->id,
@@ -265,10 +333,9 @@ class ViscometerSeeder extends Seeder
                 'tanggal_terima' => '2026-07-31',
                 'tanggal_kalibrasi' => '2026-07-31',
                 'lokasi' => 'onsite',
-                // Pembacaan thermohygro apa adanya (INPUT DATA). suhu_ruang &
-                // U95-nya JANGAN ditulis di sini — `KondisiLingkungan` yang
-                // ngitung, dan hasilnya harus 25,02 °C / 56,5 %RH persis kayak
-                // PERHITUNGAN.
+                // Pembacaan thermohygro apa adanya (INPUT DATA E22:F23).
+                // suhu_ruang & U95-nya JANGAN ditulis di sini —
+                // `KondisiLingkungan` yang ngitung.
                 'suhu_awal' => 25.2,
                 'suhu_akhir' => 25.3,
                 'kelembaban_awal' => 57.0,
