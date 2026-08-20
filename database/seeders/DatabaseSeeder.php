@@ -57,6 +57,10 @@ class DatabaseSeeder extends Seeder
             ViscometerSeeder::class,
             DoMeterSeeder::class,
             GasDetectorSeeder::class,
+            // Autoklaf nyimpen olah datanya di `hasil_autoclave`, bukan
+            // `uncertainty_calculations` — jadi dia nggak butuh seeder
+            // kemampuan sendiri, cukup baris CMC dari lampiran akreditasi.
+            AutoclaveSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena
