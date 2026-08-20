@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Standard;
+use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\Profiles\ViscometerProfile;
+use App\Services\CalibrationValidator;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -318,6 +321,69 @@ class ViscometerMasterBaruTest extends TestCase
         $this->assertNotEqualsWithDelta(0.07733775101928006, (float) $titik[1]->ketidakpastian_gabungan, 1e-4);
         // Tapi angka yang DILAPORKAN tetap sama dengan master.
         $this->assertEqualsWithDelta(0.2, (float) $titik[1]->ketidakpastian_diperluas, 1e-7);
+    }
+
+    /**
+     * Sesi contoh membawa `keputusan` sesi yang benar, dan lolos validator
+     * tanpa satu pun ERROR.
+     *
+     * ## Bug yang dijaga di sini
+     *
+     * `ViscometerSeeder` dulu tidak pernah menyetel kolom `keputusan` sesi,
+     * jadi `CalibrationValidator` menandainya `keputusan_sesi_salah` —
+     * satu-satunya ERROR di sesi contoh, dan cukup untuk membuat
+     * `boleh_terbit` false. Sesi yang dipakai orang untuk mengenali bentuk
+     * data yang benar tidak boleh jadi contoh sesi yang ditolak validatornya
+     * sendiri.
+     *
+     * FAIL, bukan PASS: titik 1000 cP koreksinya −23,75 cP sementara MPE-nya
+     * 24,19 cP, dan |koreksi| + U95 (2,37) sudah lewat dari batas itu. Vonis
+     * yang benar, bukan data yang perlu dibetulkan.
+     */
+    public function test_sesi_contoh_bawa_keputusan_dan_lolos_validator(): void
+    {
+        $sesi = $this->sesi();
+
+        $this->assertSame('FAIL', $sesi->keputusan);
+
+        // Titik 2 yang menjatuhkannya; titik 3 tanpa vonis (spindle & RPM
+        // kosong di master) dan itu tidak menyeret sesinya.
+        $titik = $sesi->uncertaintyCalculations->keyBy(fn ($t): int => (int) $t->titik_ke);
+        $this->assertSame('FAIL', $titik[2]->keputusan);
+        $this->assertNull($titik[3]->keputusan);
+
+        $temuan = app(CalibrationValidator::class)->periksa($sesi);
+
+        $this->assertSame(
+            [],
+            collect($temuan['temuan'])->where('tingkat', 'error')->pluck('kode')->all(),
+            'Sesi contoh nggak boleh punya satu pun temuan tingkat error.',
+        );
+    }
+
+    /**
+     * Aturan keputusan sesi hidup di SATU tempat, dan `null` bukan `PASS`.
+     *
+     * Tiga pemakainya — controller waktu menyimpan, validator waktu memeriksa,
+     * seeder waktu menyusun sesi contoh — dulu tahu sendiri-sendiri, dan
+     * validator sempat cuma `contains FAIL ? FAIL : PASS`. Akibatnya sesi yang
+     * SEMUA titiknya tidak divonis dituntut ber-keputusan `PASS`, padahal
+     * tidak ada satu pun kriteria kelulusan yang pernah diperiksa.
+     */
+    public function test_keputusan_sesi_satu_aturan_dan_null_bukan_pass(): void
+    {
+        $buat = fn (array $keputusan) => new EloquentCollection(array_map(
+            fn (?string $k): UncertaintyCalculation => new UncertaintyCalculation(['keputusan' => $k]),
+            $keputusan,
+        ));
+
+        $this->assertNull(CalibrationSession::keputusanDariTitik($buat([])));
+        $this->assertSame('FAIL', CalibrationSession::keputusanDariTitik($buat(['PASS', 'FAIL'])));
+        $this->assertSame('FAIL', CalibrationSession::keputusanDariTitik($buat(['FAIL', null])));
+        $this->assertSame('PASS', CalibrationSession::keputusanDariTitik($buat(['PASS', 'PASS'])));
+        // Yang paling gampang salah: semua null BUKAN PASS.
+        $this->assertNull(CalibrationSession::keputusanDariTitik($buat([null, null])));
+        $this->assertSame('PASS', CalibrationSession::keputusanDariTitik($buat(['PASS', null])));
     }
 
     /**
