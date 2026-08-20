@@ -4,10 +4,25 @@
  * Pipeline OCR LOKAL (template-based) buat lembar kerja yang difoto teknisi.
  *
  * Beda tajam sama `services.vision` yang lama: di sini NGGAK ada panggilan ke
- * layanan AI mana pun. Fotonya dibaca di HP (CameraX + OpenCV + OCR on-device),
- * yang nyampe ke server cuma teks per sel + geometri + skor kualitas. Server
- * yang megang artinya: normalisasi angka, validasi, pemetaan ke sel lembar
- * kerja, dan jejak auditnya.
+ * layanan AI pihak ketiga sama sekali. Fotonya DIBACA di HP (CameraX + OpenCV +
+ * OCR on-device); server yang megang artinya — normalisasi angka, validasi,
+ * pemetaan ke sel lembar kerja, dan jejak auditnya.
+ *
+ * TAPI JANGAN SALAH BACA: "dibaca di HP" bukan berarti citranya nggak keluar
+ * HP. Yang dikirim ke server bukan cuma teks per sel + geometri + skor mutu —
+ * `POST /worksheet-scans` juga mengunggah CITRA LEMBAR yang sudah diratakan
+ * (`citra_warp`), disimpan di disk server (`worksheet_scans.citra_warp_path`),
+ * dan disajikan lagi per sel lewat `GET /worksheet-scans/{id}/sel/{kunci}/crop`.
+ * Itu memang disengaja: teknisi harus bisa melihat tulisan aslinya waktu
+ * mengoreksi sel kuning, dan tanpa citranya layar koreksi cuma bisa nampilin
+ * angka tebakan tanpa pembanding.
+ *
+ * Ditulis blak-blakan di sini karena versi sebelumnya bilang yang sampai server
+ * "cuma teks per sel + geometri + skor kualitas" — dan itu keliru. Untuk lab
+ * terakreditasi, selisih antara kebijakan tertulis dan perilaku sistem itu
+ * temuan audit, bukan soal gaya bahasa. Yang keluar HP: lembar kerja pelanggan
+ * dalam bentuk citra. Retensinya diatur di `penyimpanan` di bawah, dan
+ * ditegakkan `php artisan ocr:bersihkan-citra` yang jalan tiap hari 02:30.
  *
  * Alasan angka-angka ambang ada DI SINI, bukan di HP: satu lembar kerja bisa
  * dipindai dari lima versi APK yang beredar bareng. Kalau ambangnya ikut APK,
@@ -193,9 +208,21 @@ return [
     'penyimpanan' => [
         'disk' => env('OCR_DISK', 'local'),
         'folder' => env('OCR_FOLDER', 'worksheet-scans'),
-        // Umur citra sebelum boleh dibersihin. Crop per sel disimpan lebih lama:
-        // dia yang jadi bahan dataset regresi, ukurannya kecil, dan nggak
-        // nampilin identitas pelanggan.
+        // Umur citra sebelum dibersihin. Crop per sel disimpan lebih lama: dia
+        // yang jadi bahan dataset regresi, ukurannya kecil, dan nggak nampilin
+        // identitas pelanggan.
+        //
+        // DITEGAKKAN `php artisan ocr:bersihkan-citra` (terjadwal harian 02:30,
+        // lihat routes/console.php). Dulu dua angka ini nggak dibaca kode mana
+        // pun — jendela retensi yang cuma tertulis itu lebih buruk daripada
+        // nggak punya kebijakan sama sekali, karena yang baca file ini percaya
+        // citranya sudah dibuang padahal masih utuh di disk.
+        //
+        // Catatan buat `umur_crop_hari`: sampai sekarang `crop_path` nggak
+        // pernah diisi — potongan sel dibuat mendadak dari citra warp, bukan
+        // disimpan. Jadi jendela kedua ini belum punya apa-apa buat dibersihin,
+        // dan begitu `citra_warp_path` kena `umur_citra_hari`, potongan selnya
+        // ikut nggak bisa ditampilin lagi.
         'umur_citra_hari' => (int) env('OCR_UMUR_CITRA_HARI', 90),
         'umur_crop_hari' => (int) env('OCR_UMUR_CROP_HARI', 365),
     ],
