@@ -13,7 +13,22 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * AI Vision baca tabel lembar kerja dari foto — GANTINYA OCR di HP.
+ * AI Vision baca tabel lembar kerja dari foto.
+ *
+ * ## Status: CADANGAN, bukan jalur utama
+ *
+ * Dulu ini memang pengganti OCR di HP. Sekarang kebalikannya: aplikasi mobile
+ * memakai jalur pindai LOKAL (`POST /worksheet-scans`, ML Kit on-device) dan
+ * **nggak pernah manggil endpoint ini lagi** — nggak ada satu pun pemanggilan
+ * `raw-measurements/extract-from-photo` yang tersisa di repo mobile.
+ *
+ * Endpointnya sengaja nggak dihapus: dia jalur yang sudah terbukti jalan, dan
+ * enam lembar yang jalur lokalnya hidup itu baru terverifikasi belakangan.
+ * Tapi karena dia MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK KETIGA
+ * (Gemini/Anthropic) dan nggak ada yang memanggilnya, dia jadi jalur keluarnya
+ * data yang nggak terpakai — dan jalur semacam itu paling gampang lolos dari
+ * perhatian waktu ditinjau. Karena itu ada saklarnya: `VISION_AKTIF=false`
+ * mematikan endpoint ini tanpa menghapus kodenya.
  *
  * Berlaku buat SEMUA jenis alat (pH, Turbidimeter, Chlorine, Refractometer),
  * bukan cuma pH: bentuk tabelnya sama, yang beda cuma petunjuk `satuan` /
@@ -75,7 +90,33 @@ class WorksheetExtractionController extends Controller
         $user = $request->user();
         $sesi = $this->sesiTervalidasi($data['calibration_session_id'] ?? null, $user);
 
+        if (! (bool) config('services.vision.aktif', true)) {
+            return $this->tolak(
+                $sesi,
+                $user,
+                'dimatikan',
+                'Pindai AI dimatikan di server (`VISION_AKTIF=false`).',
+                'Pindai AI lagi dimatikan. Pakai pindai lembar penuh atau isi manual.',
+                503,
+            );
+        }
+
         $bentukKertas = $this->bentukKertas($data, $sesi, $registry);
+
+        if (! $bentukKertas['didukung']) {
+            // Ditolak SEBELUM fotonya dikirim ke mana pun. Bentuk kertas yang
+            // nggak bisa dituturkan bukan cuma bikin hasilnya jelek — dia bikin
+            // hasilnya SALAH TAPI WAJAR, dan itu yang lolos sampai sertifikat.
+            return $this->tolak(
+                $sesi,
+                $user,
+                'bentuk_tidak_didukung',
+                'Bentuk kertas alat ini nggak bisa dituturkan ke pembaca foto.',
+                'Lembar kerja alat ini belum bisa dibaca pindai AI — bentuk tabelnya beda dari '
+                    .'yang dimengerti pembaca foto. Pakai pindai lembar penuh atau isi manual.',
+                422,
+            );
+        }
 
         $file = $request->file('foto');
 
@@ -181,25 +222,62 @@ class WorksheetExtractionController extends Controller
      * yang kertasnya beda tinggal override `bentukPindaiFoto()` dan jalur ini
      * ikut benar tanpa disentuh.
      *
+     * `didukung` SENGAJA nggak bisa ditimpa pemanggil. Dua penanda di atas itu
+     * soal bentuk yang bisa dipilih; `didukung` soal bentuk yang nggak bisa
+     * digambarkan sama sekali — dan klien yang keliru ngirim `kolom_suhu` nggak
+     * mengubah kenyataan itu.
+     *
      * @param  array<string, mixed>  $data
-     * @return array{kolom_suhu: bool, standar_di_baris: bool}
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
      */
     private function bentukKertas(
         array $data,
         ?CalibrationSession $sesi,
         CalibrationProfileRegistry $registry,
     ): array {
-        $bawaan = ['kolom_suhu' => true, 'standar_di_baris' => false];
+        $bawaan = ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
 
         $alat = $sesi?->equipment;
         if ($alat !== null) {
-            $bawaan = $registry->untukAlat($alat)->bentukPindaiFoto();
+            $bawaan = [...$bawaan, ...$registry->untukAlat($alat)->bentukPindaiFoto()];
         }
 
         return [
             'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? $bawaan['kolom_suhu']),
             'standar_di_baris' => (bool) ($data['standar_di_baris'] ?? $bawaan['standar_di_baris']),
+            'didukung' => (bool) $bawaan['didukung'],
         ];
+    }
+
+    /**
+     * Tolak sebelum fotonya dikirim ke mana pun — tetap ninggalin jejak.
+     *
+     * Percobaan yang ditolak WAJIB kecatat sama kayak yang gagal di tengah
+     * jalan (SPEC-vision-ai-worksheet-extraction.md §5). Tanpa barisnya, yang
+     * kelihatan cuma "tombol fotonya nggak jalan" tanpa satu pun keterangan
+     * kenapa — dan itu persis keadaan yang bikin fitur ini susah ditelusuri
+     * dulu.
+     */
+    private function tolak(
+        ?CalibrationSession $sesi,
+        User $user,
+        string $status,
+        string $error,
+        string $pesan,
+        int $kode,
+    ): JsonResponse {
+        WorksheetExtractionLog::create([
+            'calibration_session_id' => $sesi?->id,
+            'user_id' => $user->id,
+            'model' => WorksheetVisionExtractor::modelAktif(),
+            'status' => $status,
+            'error' => $error,
+        ]);
+
+        return response()->json([
+            'message' => $pesan,
+            'fallback_manual' => true,
+        ], $kode);
     }
 
     /**

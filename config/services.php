@@ -64,6 +64,24 @@ return [
          * baru ketahuan waktu teknisi udah di lapangan megang alat.
          */
         'driver' => env('VISION_DRIVER', 'gemini'),
+
+        /*
+         * Saklar jalur pindai AI. `false` = `POST /raw-measurements/extract-from-photo`
+         * balik 503 tanpa pernah nyentuh layanan pihak ketiga.
+         *
+         * Ada karena endpoint ini sekarang CADANGAN, bukan jalur utama: aplikasi
+         * mobile pindahnya ke jalur lokal (`POST /worksheet-scans`, ML Kit
+         * on-device) dan nggak pernah manggilnya lagi. Endpointnya sengaja
+         * nggak dihapus — dia jalur yang sudah terbukti jalan — tapi dia
+         * MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK KETIGA, dan
+         * jalur keluarnya data yang nggak dipakai siapa-siapa itu yang paling
+         * gampang lolos dari perhatian waktu ditinjau.
+         *
+         * Bawaannya `true` supaya nyalain PR ini nggak diam-diam mematikan
+         * sesuatu yang mungkin masih dipakai klien lain. Yang mutusin
+         * mematikannya lab, lewat satu baris `.env` — bukan lewat hapus kode.
+         */
+        'aktif' => (bool) env('VISION_AKTIF', true),
     ],
 
     'gemini' => [

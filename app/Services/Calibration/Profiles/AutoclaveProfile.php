@@ -182,6 +182,32 @@ class AutoclaveProfile extends CalibrationProfile
     }
 
     /**
+     * Lembar Autoklaf NGGAK BISA dituturkan ke pembaca foto AI.
+     *
+     * Dua penanda bawaan (`kolom_suhu`, `standar_di_baris`) cuma sanggup
+     * menggambarkan lembar "titik ukur × Repeat". Kertas ini matriks: tujuh
+     * baris yang besarannya campur — tiga disk suhu, indikator suhu, indikator
+     * tekanan, tekanan atmosfer, suhu ruang — plus satu baris JAM, semuanya
+     * melintang lima titik waktu. Nggak ada kombinasi dua penanda itu yang
+     * benar.
+     *
+     * Sebelum ini profil ini nggak override apa pun, jadi dia diam-diam kebagian
+     * bentuk lembar pH. Akibatnya bukan error: model diminta membaca "tiap sel
+     * isinya pembacaan + suhu" untuk kertas yang barisnya bukan titik ukur, dan
+     * yang balik itu angka yang bentuknya wajar tapi mendarat di baris yang
+     * salah — kegagalan paling mahal di fitur ini, dan yang paling nggak
+     * bergejala.
+     *
+     * Ditolak di depan, bukan dicoba. Jalur pindai LOKAL (`POST /worksheet-scans`)
+     * yang memang paham bentuk matriks ini tetap jalan begitu geometri lembarnya
+     * terverifikasi.
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => false];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function bentukLengkap(): array
