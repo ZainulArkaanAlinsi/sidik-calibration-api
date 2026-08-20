@@ -83,7 +83,12 @@ class LembarKerjaTest extends TestCase
         // standarnya jadi KOLOM. Dikirim eksplisit — mobile nerusinnya apa
         // adanya ke endpoint ekstraksi, jadi dia nggak perlu nyimpen daftar
         // alat mana yang kertasnya beda.
-        $this->assertSame(['kolom_suhu' => true, 'standar_di_baris' => false], $data['pindai_foto']);
+        // `didukung` ikut: lembar yang bentuknya nggak bisa dituturkan sama
+        // sekali (Autoklaf) ditolak di depan, bukan dicoba pakai bentuk pH.
+        $this->assertSame(
+            ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true],
+            $data['pindai_foto'],
+        );
     }
 
     /**

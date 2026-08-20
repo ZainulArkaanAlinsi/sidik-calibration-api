@@ -238,11 +238,24 @@ abstract class CalibrationProfile
      * penanda ini, jadi salah nilai berarti model diminta membaca kolom suhu
      * yang nggak pernah ada di kertasnya.
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool}
+     *  - `didukung`: kertasnya masih muat di bentuk yang bisa dituturkan ke
+     *    pembaca foto. `false` = jalur pindai AI DITOLAK buat alat ini, bukan
+     *    dijalankan dengan bentuk yang salah.
+     *
+     * Kenapa `didukung` perlu ada padahal dua penanda di atas kelihatan cukup:
+     * dua-duanya cuma bisa menggambarkan lembar "titik ukur × Repeat". Lembar
+     * Autoklaf bentuknya matriks — tujuh baris besaran campur (suhu, tekanan,
+     * jam) × lima titik waktu — dan nggak ada kombinasi `kolom_suhu` /
+     * `standar_di_baris` yang menggambarkannya. Tanpa penanda ketiga, lembar
+     * itu diam-diam diperlakukan sebagai lembar pH: model diminta membaca tabel
+     * yang nggak pernah ada di kertasnya, dan yang balik ke teknisi cuma angka
+     * ngawur yang kelihatan wajar.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => true, 'standar_di_baris' => false];
+        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
     }
 
     /**
