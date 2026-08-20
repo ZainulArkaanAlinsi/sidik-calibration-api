@@ -156,6 +156,10 @@ class TemplateLembarKerja
                 'baris_ke' => $barisKe,
                 'titik_ukur' => $titik,
                 'label' => $b['label'] ?? null,
+                // Bentuk isi barisnya. `jam` dipakai baris `Time` lembar
+                // Autoklaf: kotaknya tetap digambar & difoto, tapi isinya
+                // bukan angka desimal.
+                'tipe' => (string) ($b['tipe'] ?? 'angka'),
                 'standard_id' => $b['standard_id'] ?? null,
                 'satuan' => $satuan,
                 'resolusi' => $resolusi,
@@ -188,9 +192,7 @@ class TemplateLembarKerja
                         // "nggak ketemu" — gejalanya jauh lebih samar.
                         'titik_ukur' => $titik,
                         'standard_id' => $b['standard_id'] ?? null,
-                        'aturan' => $fieldId === 'suhu'
-                            ? $this->aturanSuhu()
-                            : $this->aturanPembacaan($profil, $titik, $resolusi, $desimal, $satuan),
+                        'aturan' => $this->aturan($profil, $b, $fieldId, $titik, $resolusi, $desimal, $satuan),
                     ];
                 }
             }
@@ -307,8 +309,38 @@ class TemplateLembarKerja
     }
 
     /**
+     * Aturan satu sel: bentuk barisnya menang, baru kolomnya.
+     *
+     * @param  array<string, mixed>  $baris
+     * @return array<string, mixed>
+     */
+    private function aturan(
+        CalibrationProfile $profil,
+        array $baris,
+        string $fieldId,
+        float $titik,
+        ?float $resolusi,
+        ?int $desimal,
+        ?string $satuan,
+    ): array {
+        if (($baris['tipe'] ?? null) === 'jam') {
+            return $this->aturanJam();
+        }
+
+        if ($fieldId === 'suhu') {
+            return $this->aturanSuhu();
+        }
+
+        return $this->aturanPembacaan($profil, $titik, $resolusi, $desimal, $satuan, $baris['pita'] ?? null);
+    }
+
+    /**
      * Aturan angka buat kolom pembacaan di satu titik.
      *
+     * @param  array{min?: float, maks?: float}|null  $pita  rentang yang ditulis
+     *        profilnya per BARIS — dipakai lembar yang nominalnya nggak tercetak
+     *        (Autoklaf: kotak Set Point masih kosong waktu lembarnya dicetak,
+     *        jadi "nominal ±10 %" nggak punya nominal buat dipegang).
      * @return array<string, mixed>
      */
     private function aturanPembacaan(
@@ -317,6 +349,7 @@ class TemplateLembarKerja
         ?float $resolusi,
         ?int $desimal,
         ?string $satuan,
+        ?array $pita = null,
     ): array {
         // Pita milik alat, kalau alatnya punya. Cuma Viscometer yang punya:
         // nilai acuannya bergerak tiga kali lipat sepanjang suhu kerja, jadi
@@ -344,8 +377,8 @@ class TemplateLembarKerja
             'nominal' => $titik,
             'resolusi' => $resolusi,
             'desimal' => $desimal,
-            'min' => $pitaProfil['min'] ?? ($delta === null ? null : max(0.0, $titik - $delta)),
-            'maks' => $pitaProfil['maks'] ?? ($delta === null ? null : $titik + $delta),
+            'min' => $pita['min'] ?? $pitaProfil['min'] ?? ($delta === null ? null : max(0.0, $titik - $delta)),
+            'maks' => $pita['maks'] ?? $pitaProfil['maks'] ?? ($delta === null ? null : $titik + $delta),
             'rasio_min' => $pitaProfil['rasio_min'] ?? (float) config('ocr.angka.rasio_min', 0.5),
             'rasio_maks' => $pitaProfil['rasio_maks'] ?? (float) config('ocr.angka.rasio_maks', 2.0),
             'maks_digit' => (int) config('ocr.angka.maks_digit', 9),
@@ -354,6 +387,42 @@ class TemplateLembarKerja
             'izinkan_minus' => false,
             // Sel kosong SELALU sah — lihat `LembarKerjaTemplate`: nggak ada
             // kolom yang nahan tombol kirim.
+            'boleh_kosong' => true,
+            'tulisan_tangan' => (bool) config('ocr.tulisan_tangan.aktif', true),
+        ];
+    }
+
+    /**
+     * Aturan sel JAM (`__:__:__:__` di lembar Autoklaf).
+     *
+     * Bukan angka desimal, jadi nggak lewat `NormalisasiAngka` sama sekali —
+     * `02:00:00` yang dipaksa jadi angka bakal keluar sebagai `20000` dan itu
+     * lolos semua penjagaan rentang karena rentangnya nggak ada.
+     *
+     * Sel jam nggak punya `nilai` numerik. Konsekuensinya dia nggak ikut jadi
+     * bahan dataset akurasi (`worksheet_scan_cells.nilai_final` itu kolom
+     * desimal): jam yang salah baca dibetulkan teknisi di kolom Time layar
+     * lembar kerjanya, bukan lewat layar koreksi pindai. Ditulis di sini supaya
+     * yang baca angka akurasi nanti tahu jam memang nggak terhitung di situ.
+     *
+     * @return array<string, mixed>
+     */
+    private function aturanJam(): array
+    {
+        return [
+            'tipe' => 'jam',
+            'satuan' => null,
+            'format' => 'HH:mm:ss',
+            'nominal' => null,
+            'resolusi' => null,
+            'desimal' => null,
+            'min' => null,
+            'maks' => null,
+            'rasio_min' => null,
+            'rasio_maks' => null,
+            // `02:00:00` = 6 digit. Lebih dari itu bukan jam.
+            'maks_digit' => 6,
+            'izinkan_minus' => false,
             'boleh_kosong' => true,
             'tulisan_tangan' => (bool) config('ocr.tulisan_tangan.aktif', true),
         ];
