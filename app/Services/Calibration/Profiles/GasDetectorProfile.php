@@ -216,13 +216,28 @@ class GasDetectorProfile extends CalibrationProfile
      *
      * `resolusi` dari `INPUT DATA` E18:E21, `satuan` dari I18:I21.
      *
+     * `desimal_sertifikat` & `desimal_u95` dari FORMAT SEL `SERTIFIKAT`
+     * J24:U27 — dan dua-duanya beda per baris DAN beda antar kolom di baris
+     * yang sama:
+     *
+     *   gas    Standard   UUT     Correction   U95
+     *   CO     `0`        `0`     `0`          `0.0`
+     *   H2S    `0`        `0`     `0`          `0.0`
+     *   CH4    General    `0`     `0`          `0.0`
+     *   O2     General    `0.0`   `0.0`        `0.00`
+     *
+     * Oksigen dapat satu desimal lebih banyak di semua kolom karena rentang
+     * ukurnya 30 % dengan resolusi 0,1 — tiga gas lain rentangnya ratusan
+     * sampai ribuan dengan resolusi 1. Dipukul rata nol desimal, `U95`
+     * oksigen 0,887 % kecetak `1` dan kadar 16,73 % kecetak `17`.
+     *
      * `standar` sengaja cuma berisi NAMA, tanpa serial. Keempat botol Rigas
      * ber-S/N `WO0125576` yang sama — satu order pengisian, empat campuran —
      * jadi serial di sini bukan pembeda melainkan perangkap: pencocokan yang
      * menerimanya memulangkan botol yang sama untuk keempat titik, dan
      * sertifikat mencetak "Carbon Monoxide (CO)" di baris oksigen.
      *
-     * @var list<array{kode: string, nilai: float, label: string, satuan: string, resolusi: float, desimal: int, rentang: float, remark: string, standar: list<string>}>
+     * @var list<array{kode: string, nilai: float, label: string, satuan: string, resolusi: float, desimal: int, desimal_sertifikat: int, desimal_u95: int, rentang: float, remark: string, standar: list<string>}>
      */
     public const GAS = [
         [
@@ -232,6 +247,8 @@ class GasDetectorProfile extends CalibrationProfile
             'satuan' => 'ppm',
             'resolusi' => 1.0,
             'desimal' => 0,
+            'desimal_sertifikat' => 0,
+            'desimal_u95' => 1,
             'rentang' => 1999.0,
             'remark' => 'Carbon Monoxide (CO)',
             'standar' => ['Standar Gas Mixture (CO)'],
@@ -243,6 +260,8 @@ class GasDetectorProfile extends CalibrationProfile
             'satuan' => 'ppm',
             'resolusi' => 1.0,
             'desimal' => 0,
+            'desimal_sertifikat' => 0,
+            'desimal_u95' => 1,
             'rentang' => 200.0,
             'remark' => 'Hydrogen Sulfide (H₂S)',
             'standar' => ['Standar Gas Mixture (H₂S)'],
@@ -254,6 +273,8 @@ class GasDetectorProfile extends CalibrationProfile
             'satuan' => '%LEL',
             'resolusi' => 1.0,
             'desimal' => 0,
+            'desimal_sertifikat' => 0,
+            'desimal_u95' => 1,
             'rentang' => 100.0,
             'remark' => 'Methane (CH4)',
             'standar' => ['Standar Gas Mixture (CH4)'],
@@ -265,6 +286,8 @@ class GasDetectorProfile extends CalibrationProfile
             'satuan' => '%',
             'resolusi' => 0.1,
             'desimal' => 1,
+            'desimal_sertifikat' => 1,
+            'desimal_u95' => 2,
             'rentang' => 30.0,
             'remark' => 'Oxygen (O2)',
             'standar' => ['Standar Gas Mixture (O2)'],
@@ -371,6 +394,33 @@ class GasDetectorProfile extends CalibrationProfile
     public function desimalTitik(float $titikUkur): ?int
     {
         return $this->gasUntukTitik($titikUkur)['desimal'] ?? null;
+    }
+
+    /**
+     * Desimal kolom hasil sertifikat, dari format sel `SERTIFIKAT` J24:R27 —
+     * nol untuk CO/H2S/CH4, SATU untuk O2. Lihat tabel di docblock [GAS].
+     *
+     * Tanpa ini jalur umum menurunkannya dari `equipments.resolusi`, dan kolom
+     * itu cuma muat SATU angka (1 ppm, ikut gas berentang terbesar). Akibatnya
+     * baris oksigen kecetak `18 | 17 | 1` — padahal yang diukur 17,9 % dengan
+     * alat beresolusi 0,1 %.
+     */
+    public function desimalSertifikatTitik(float $titikUkur): ?int
+    {
+        return $this->gasUntukTitik($titikUkur)['desimal_sertifikat'] ?? null;
+    }
+
+    /**
+     * Desimal kolom `U95%`, dari format sel `SERTIFIKAT` U24:U27 — SATU untuk
+     * CO/H2S/CH4, DUA untuk O2.
+     *
+     * Satu lebih banyak dari kolom hasil di baris yang sama, dan itu memang
+     * yang tertulis di master: `U95` di sini angka kecil (0,89-5,05) yang
+     * kehilangan artinya kalau dibulatkan sekasar kolom di sebelahnya.
+     */
+    public function desimalU95Titik(float $titikUkur): ?int
+    {
+        return $this->gasUntukTitik($titikUkur)['desimal_u95'] ?? null;
     }
 
     /** Kolom "Reference Gas" di sertifikat (`SERTIFIKAT!C22`). */
@@ -618,7 +668,7 @@ class GasDetectorProfile extends CalibrationProfile
      * Yang menang gas TERDEKAT dalam [TOLERANSI_TITIK], bukan yang pertama
      * lolos — supaya urutan konstanta tidak diam-diam menentukan hasil.
      *
-     * @return array{kode: string, nilai: float, label: string, satuan: string, resolusi: float, desimal: int, rentang: float, remark: string, standar: list<string>}|null
+     * @return array{kode: string, nilai: float, label: string, satuan: string, resolusi: float, desimal: int, desimal_sertifikat: int, desimal_u95: int, rentang: float, remark: string, standar: list<string>}|null
      */
     public function gasUntukTitik(float $titikUkur): ?array
     {

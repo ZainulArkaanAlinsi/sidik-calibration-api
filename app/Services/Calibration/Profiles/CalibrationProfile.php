@@ -640,6 +640,26 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Desimal kolom `U95%` yang berlaku DI BARIS ini, kalau alat ini
+     * memformat tiap barisnya beda. `null` = ikut [desimalU95] lalu desimal
+     * barisnya — persis perilaku sebelum hook ini ada.
+     *
+     * Pasangan [desimalSertifikatTitik], dan ada karena alasan yang sama:
+     * master Gas Detector memformat `SERTIFIKAT` U24:U27 sebagai `0.0` · `0.0`
+     * · `0.0` · `0.00` — satu desimal untuk tiga gas pertama, DUA untuk
+     * oksigen. Kolom hasil di baris yang sama justru `0`/`0.0`, jadi dua
+     * kolom bersebelahan di satu baris memang beda jumlah desimalnya.
+     *
+     * Bukan kerapian yang bisa diseragamkan: `U95` oksigen 0,887 % runtuh jadi
+     * `0,9` pada satu desimal dan `1` pada nol — di kolom yang justru jadi inti
+     * sertifikat.
+     */
+    public function desimalU95Titik(float $titikUkur): ?int
+    {
+        return null;
+    }
+
+    /**
      * Desimal angka `k` di kalimat `… Coverage Factor ( k ) = …`.
      * `null` = perilaku lama, yaitu 2 desimal dengan nol di belakang dibuang
      * (`1,97`, `2`).
