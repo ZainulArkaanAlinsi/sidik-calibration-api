@@ -51,6 +51,17 @@ class AutoclaveProfile extends CalibrationProfile
     public const SATUAN_SUHU = '°C';
 
     /**
+     * Rentang suhu yang masih punya koreksi kalibrator (`config/autoclave.php`
+     * — tabel ketiga disk berhenti di 21 °C dan 140 °C). Dipakai OCR buat nolak
+     * bacaan yang mustahil; di luar rentang ini angkanya nggak bisa dikoreksi,
+     * jadi lebih baik teknisi yang ngetik.
+     */
+    public const PITA_SUHU_KALIBRATOR = ['min' => 21.0, 'maks' => 140.0];
+
+    /** Suhu ruang kerja — sama dengan ambang bawaan `config/ocr.suhu`. */
+    public const PITA_SUHU_RUANG = ['min' => 5.0, 'maks' => 45.0];
+
+    /**
      * Satuan tekanan yang bisa dipilih teknisi — master `DATABASE!R20:R27`.
      * `faktor` = pengali ke bar (buat referensi frontend; konversi resminya di
      * `AutoclaveCalculator`).
@@ -309,7 +320,10 @@ class AutoclaveProfile extends CalibrationProfile
                     ['nilai' => 'lab', 'label' => 'In lab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
-                $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                // Nggak tercetak di kertas — di situ cuma ada satu garis
+                // "Location of Calibration". Ikut ke layar, nggak ikut ke
+                // lembar cetak.
+                $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan', ekstra: ['di_kertas' => false]),
                 $this->field('suhu_awal', 'T awal', 'angka', satuan: self::SATUAN_SUHU),
                 $this->field('suhu_akhir', 'T akhir', 'angka', satuan: self::SATUAN_SUHU),
                 $this->field('kelembaban_awal', 'RH awal', 'angka', satuan: '%RH'),
@@ -353,7 +367,9 @@ class AutoclaveProfile extends CalibrationProfile
                 $this->field('resolusi_suhu', 'Resolution Temp.', 'angka', satuan: self::SATUAN_SUHU, ekstra: ['kurung_satuan' => true]),
                 $this->field('range_tekanan', 'Range Pressure', 'angka', ekstra: ['kurung_satuan' => true, 'satuan_dari' => 'satuan_tekanan']),
                 $this->field('resolusi_tekanan', 'Resolution Pressure', 'angka', ekstra: ['kurung_satuan' => true, 'satuan_dari' => 'satuan_tekanan']),
-                $this->field('satuan_tekanan', 'Pressure Unit', 'pilihan', pilihan: self::SATUAN_TEKANAN),
+                // Di kertas satuannya ditulis di dalam kurung `( )` milik
+                // Range/Resolution Pressure, bukan sebagai barisnya sendiri.
+                $this->field('satuan_tekanan', 'Pressure Unit', 'pilihan', pilihan: self::SATUAN_TEKANAN, ekstra: ['di_kertas' => false]),
             ],
         ];
     }
@@ -433,6 +449,19 @@ class AutoclaveProfile extends CalibrationProfile
             'field' => [
                 $this->field('set_point', 'Set Point', 'angka', satuan: self::SATUAN_SUHU),
             ],
+            // Bentuk yang SAMA, dituturkan dua kali buat dua pembaca yang beda:
+            // `matriks` buat layar teknisi, `tabel` buat pipeline OCR
+            // (`TemplateLembarKerja`). Pipeline itu cuma ngerti bentuk
+            // "baris × pengulangan × kolom-field", dan sebelum ini Autoklaf
+            // nggak punya bentuk itu sama sekali — hasilnya `jumlah_sel` 0,
+            // yang artinya rangka geometri kosong, lembar cetak tanpa kotak,
+            // dan kamera yang nggak akan pernah bisa dinyalain seberapa pun
+            // telitinya kertasnya diukur.
+            //
+            // Kolomnya SATU (`pembacaan`) karena tiap sel Autoklaf isinya satu
+            // angka; yang berjajar ke kanan itu titik waktu, jadi titik waktu
+            // yang jadi `pengulangan`.
+            'tabel' => [$this->tabelPindai()],
             'matriks' => [
                 'judul_kolom' => 'Pengukuran Berulang UUT Selama Proses Sterilisasi',
                 'titik_waktu' => range(1, self::JUMLAH_TITIK_WAKTU),
@@ -469,6 +498,98 @@ class AutoclaveProfile extends CalibrationProfile
                 ),
                 $this->field('display_tekanan', 'Pressure Display Type', 'pilihan', pilihan: self::DISPLAY_TEKANAN, ekstra: ['di_luar_kertas' => true]),
             ],
+        ];
+    }
+
+    /**
+     * Tabel Data Result dalam bentuk yang dimengerti pipeline OCR.
+     *
+     * Barisnya URUT KERTAS, termasuk baris `Time` di paling atas. Time ikut
+     * digambar karena lembar cetak `ocr:cetak-lembar` menggambar kotaknya dari
+     * daftar sel ini — baris yang nggak ada di sini nggak ada kotaknya di
+     * kertas, dan teknisi kehilangan tempat nulis jam. Bacanya beda: `tipe`
+     * `jam`, bukan angka.
+     *
+     * `pita` diisi per baris, bukan diturunkan dari nominal. Bawaan
+     * `TemplateLembarKerja` bikin rentang "nominal ±10 %", dan lembar ini nggak
+     * punya nominal tercetak sama sekali — kotak Set Point-nya kosong waktu
+     * lembar dicetak. Rentang suhu diambil dari jangkauan tabel kalibrator di
+     * `config/autoclave.php` (21–140 °C): di luar itu koreksinya nggak ada, jadi
+     * angkanya memang nggak bisa dipakai walaupun kebaca benar.
+     *
+     * Dua baris tekanan SENGAJA tanpa rentang. Satuannya beda-beda per alat
+     * (MPa, bar, psi), jadi rentang apa pun yang dipatok di sini bakal nolak
+     * angka yang benar begitu ketemu autoklaf bersatuan lain.
+     *
+     * @return array<string, mixed>
+     */
+    private function tabelPindai(): array
+    {
+        $baris = [
+            [
+                'titik_ukur' => 0.0,
+                'label' => 'Time',
+                'tipe' => 'jam',
+            ],
+        ];
+
+        for ($d = 1; $d <= self::JUMLAH_DISK; $d++) {
+            $baris[] = [
+                'titik_ukur' => 0.0,
+                'label' => "Temp. Disk {$d}",
+                'satuan' => self::SATUAN_SUHU,
+                'resolusi' => 0.01,
+                'desimal' => 2,
+                'pita' => self::PITA_SUHU_KALIBRATOR,
+            ];
+        }
+
+        $baris[] = [
+            'titik_ukur' => 0.0,
+            'label' => 'Indikator Suhu',
+            'satuan' => self::SATUAN_SUHU,
+            // Indikator enclosure autoklaf resolusinya beda-beda per merek
+            // (master `INPUT_DATA` nulis 121 bulat). Dibiarkan terbuka biar
+            // yang beresolusi 0,1 nggak ditolak sebagai "bukan kelipatan".
+            'pita' => self::PITA_SUHU_KALIBRATOR,
+        ];
+
+        foreach (['Indikator Pressure', 'Tekanan atm awal'] as $label) {
+            $baris[] = [
+                'titik_ukur' => 0.0,
+                'label' => $label,
+                // Satuannya dikosongin (beda-beda per autoklaf), tapi jumlah
+                // desimalnya TETAP dikasih tahu — `resolusi_alat.tekanan` di
+                // `config/autoclave.php` itu 0,001. Tanpa petunjuk ini `0.112`
+                // ditolak sebagai `desimal_ambigu`: tiga digit di belakang
+                // pemisah bisa berarti pemisah ribuan, dan sel tanpa rentang
+                // nggak punya bukti buat menyingkirkan salah satunya.
+                //
+                // Cuma `desimal`, BUKAN `resolusi`: resolusi bikin rentang
+                // 0,001 × 20 = ±0,02 di sekitar nol, dan itu nolak 0,112 —
+                // bacaan yang benar di autoklaf bersatuan MPa.
+                'desimal' => 3,
+            ];
+        }
+
+        $baris[] = [
+            'titik_ukur' => 0.0,
+            'label' => 'Suhu Ruang',
+            'satuan' => self::SATUAN_SUHU,
+            'resolusi' => 0.1,
+            'desimal' => 1,
+            'pita' => self::PITA_SUHU_RUANG,
+        ];
+
+        return [
+            'tahap' => 'sesudah_adjustment',
+            'judul' => 'Calibration Result for Temperature & Pressure',
+            'sumbu_pengulangan' => 'kolom',
+            'baris' => $baris,
+            'kolom' => [
+                ['kode' => 'pembacaan', 'label' => 'Nilai', 'satuan' => null],
+            ],
+            'pengulangan' => range(1, self::JUMLAH_TITIK_WAKTU),
         ];
     }
 
