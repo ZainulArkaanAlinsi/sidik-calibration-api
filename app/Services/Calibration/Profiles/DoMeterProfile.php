@@ -165,6 +165,24 @@ class DoMeterProfile extends CalibrationProfile
     }
 
     /**
+     * `k` di sertifikat DO Meter dicetak TANPA desimal.
+     *
+     * Master nyimpen 1,9718365067798587 di sel `SERTIFIKAT!V26`, tapi selnya
+     * diformat `0` — jadi yang kecetak di sertifikat asli **`2`**, bukan
+     * `1,97`. Sama kasusnya kayak Spectrophotometer.
+     *
+     * Nilai cocok ≠ bentuk cocok: tanpa override ini angkanya benar tapi
+     * dokumennya beda dari yang selama ini diterima pelanggan, dan itu jenis
+     * selisih yang baru ketahuan waktu ada yang mbandingin dua sertifikat
+     * berdampingan. Blok hasil lain (`E24`/`N24`/`S24`/`Q25`) formatnya `0.00`
+     * — dua desimal, dan itu sudah ditangani jalur `desimal` biasa.
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return 0;
+    }
+
+    /**
      * Keterangan parameter buat kolom "Remark" sertifikat, dicocokin ke titik
      * terdekat.
      */

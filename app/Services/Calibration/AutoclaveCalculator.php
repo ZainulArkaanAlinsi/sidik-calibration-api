@@ -69,7 +69,14 @@ class AutoclaveCalculator
 
         return [
             'set_point' => $setPoint,
-            'suhu' => $this->hitungSuhu($input['suhu'] ?? [], $setPoint, $cmcSuhu),
+            // `null` kalau blok suhunya nggak dikirim sama sekali — SIMETRIS
+            // sama `hitungTekanan` di bawah. Sesi tekanan-saja itu skenario
+            // nyata: `AutoclaveCalculationRequest` mengizinkannya, handoff
+            // frontend menjanjikannya ("kirim blok suhu saja atau tekanan saja
+            // boleh"), dan layar mobile memang cuma mengirim blok yang keisi.
+            // Sebelum ini jalur itu melempar `Data suhu kosong` dan nyampe ke
+            // teknisi sebagai 500 — bukan pesan yang bisa dia tindaklanjuti.
+            'suhu' => ($input['suhu'] ?? []) === [] ? null : $this->hitungSuhu($input['suhu'], $setPoint, $cmcSuhu),
             'tekanan' => $this->hitungTekanan($input['tekanan'] ?? [], $cmcTekananBar),
         ];
     }
@@ -83,6 +90,10 @@ class AutoclaveCalculator
      */
     private function hitungSuhu(array $suhu, float $setPoint, float $cmc): array
     {
+        // Blok suhu DIKIRIM tapi isinya kosong tetap dilempar (bukan di-null-in
+        // diam-diam): teknisi yang ngirim blok suhu bermaksud ngukur suhu, dan
+        // hasil yang hilang tanpa keterangan lebih buruk daripada penolakan.
+        // Yang di-null-in cuma blok yang memang NGGAK dikirim — lihat `hitung`.
         $disk = $suhu['disk'] ?? [];
         $standar = $suhu['standar'] ?? [];
         $indikator = $this->angkaSaja($suhu['indikator'] ?? []);

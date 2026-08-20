@@ -215,10 +215,25 @@ class AutoclaveCertificateTest extends TestCase
         $this->assertStringContainsString('Koreksi', $html);
         $this->assertStringContainsString('0,44', $html);
 
-        // Bagian C: tekanan EMPAT desimal — tiga desimal mbulatin U95 `0,0059`
-        // jadi `0,006`, dan angka itu nggak ada di dokumen mana pun.
+        // Bagian C: desimalnya IKUT FORMAT SEL master, dan formatnya beda per
+        // kolom — `Master Olah Data_Autoclave.xlsm` sheet SERTIFIKAT:
+        //
+        //   B39 UUT / D39 Standard / K39 Correction = `0.000`  -> 3 desimal
+        //   P39 & K42 U95                           = `0.0000` -> 4 desimal
+        //
+        // Dulu keempat kolom dipukul rata 4 desimal dengan alasan "3 desimal
+        // mbulatin U95 0,0059 jadi 0,006". Alasannya benar buat U95 — dan
+        // U95-nya memang tetap 4 desimal — tapi kebablasan ke tiga kolom
+        // lainnya: koreksi `0,0111` kecetak di tempat master nulis `0,011`.
+        // Waktu itu workbook-nya belum ada di tangan, jadi formatnya ditebak.
         $this->assertStringContainsString('0,0059', $html);
-        $this->assertStringContainsString('0,0111', $html);
+        $this->assertStringContainsString('0,011', $html);
+        $this->assertStringNotContainsString('0,0111', $html);
+
+        // `k` di master diformat `0` (sel P33 & P43) — yang tercetak `2`,
+        // bukan `1,97`/`2,09`.
+        $this->assertStringNotContainsString('1,97', $html);
+        $this->assertStringNotContainsString('2,09', $html);
 
         // Tabel empat kolom milik tujuh alat lain NGGAK ikut kegambar.
         $this->assertStringNotContainsString('Uncertainty U', $html);

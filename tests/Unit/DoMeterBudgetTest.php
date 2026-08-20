@@ -140,6 +140,22 @@ class DoMeterBudgetTest extends TestCase
         $this->assertFalse((new DoMeterProfile)->punyaToleransi());
     }
 
+    /**
+     * `k` di sertifikat dicetak TANPA desimal.
+     *
+     * Master nyimpen 1,9718365067798587 di `SERTIFIKAT!V26` tapi selnya
+     * diformat `0`, jadi yang kecetak `2`. Nilai cocok ≠ bentuk cocok — dan
+     * selisih bentuk cuma ketahuan waktu ada yang mbandingin dua sertifikat
+     * berdampingan, bukan waktu ngecek angkanya.
+     *
+     * Blok hasilnya sendiri (`E24`/`N24`/`S24`/`Q25`) diformat `0.00`, dan itu
+     * ditangani jalur `desimal` biasa — 2 desimal, sama kayak bawaan.
+     */
+    public function test_k_dicetak_tanpa_desimal_ikut_format_sel_master(): void
+    {
+        $this->assertSame(0, (new DoMeterProfile)->desimalFaktorCakupan());
+    }
+
     public function test_registry_nemu_profil_dari_nama_dan_kode(): void
     {
         $registry = new CalibrationProfileRegistry;

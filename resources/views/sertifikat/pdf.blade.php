@@ -462,19 +462,35 @@
     @php($autoclave = $snapshot['autoclave'] ?? null)
 
     @if ($autoclave)
-        {{-- Desimal ngikut resolusi alat di master `Capacity/Graduation`:
-             0,01 °C dan 0,001 MPa. Tekanan dikasih 4 desimal karena U95-nya
-             `0,0059 MPa` — 3 desimal bakal mbulatinnya jadi `0,006`.
+        {{-- Desimal dibaca dari FORMAT SEL master `Master Olah Data_Autoclave.xlsm`
+             (sheet SERTIFIKAT), bukan diturunkan dari resolusi alat. Sampai
+             sebelum ini workbook-nya belum kebaca dan angkanya masih tebakan;
+             sekarang ketiganya diadu langsung ke selnya:
 
-             Berkas `.xlsm` Autoklaf belum ada di repo, jadi format sel aslinya
-             belum bisa dibaca. Sama posisinya dengan Viscometer; kalau lab
-             ngirim workbook-nya, dua angka di bawah ini yang diganti. --}}
+               blok suhu   B26/F26/K26/P26/U26/F27… = `0.00`   -> 2 desimal
+               tekanan     B39/D39/K39              = `0.000`  -> 3 desimal
+               tekanan U95 P39/K42                  = `0.0000` -> 4 desimal
+               faktor k    P33 (suhu) & P43 (tekanan) = `0`    -> 0 desimal
+
+             Tekanan sengaja DIPISAH: nilai & koreksinya 3 desimal, U95-nya 4.
+             Dulu semuanya 4 dengan alasan "3 desimal bakal mbulatin U95 0,0059
+             jadi 0,006" — betul buat U95, tapi kebablasan ke tiga kolom
+             lainnya, jadi `0,112 MPa` kecetak `0,1120` dan `0,0111` jadi
+             `0,0111` di tempat master nulis `0,011`. Nilai cocok, bentuknya
+             yang meleset. --}}
         @php($dSuhu = 2)
-        @php($dTekan = 4)
+        @php($dTekan = 3)
+        @php($dTekanU95 = 4)
         @php($suhu = $autoclave['suhu'] ?? [])
         @php($tek = $autoclave['tekanan'] ?? [])
         @php($angka = fn ($v, $d) => $v === null ? '—' : \App\Support\Angka::id((float) $v, $d))
 
+        {{-- Bagian A & B cuma dicetak kalau suhunya MEMANG diukur. Sesi
+             tekanan-saja itu skenario sah (lihat `AutoclaveCalculator::hitung`),
+             dan tabel suhu berisi `—` semua di sertifikat terakreditasi kebaca
+             seperti data yang HILANG, bukan seperti besaran yang nggak diukur.
+             Dua hal itu ditindaklanjuti orang dengan cara yang berbeda. --}}
+        @if (! empty($suhu))
         <div class="judul-kelompok">A) SEBARAN SUHU</div>
         <table class="data">
             <thead>
@@ -536,10 +552,14 @@
         @if (($suhu['k'] ?? null) !== null)
             <div class="ket-k">
                 The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
-                {{ \App\Support\Angka::idRingkas((float) $suhu['k'], 2) }}
+                {{-- Master format sel `0` -> `2`, bukan `1,97`. --}}
+                {{ \App\Support\Angka::id((float) $suhu['k'], 0) }}
             </div>
         @endif
+        @endif
 
+        {{-- Sebaliknya juga: sesi suhu-saja nggak nyetak blok tekanan kosong. --}}
+        @if (! empty($tek))
         <div class="judul-kelompok">C) TEKANAN ({{ $tek['satuan'] ?? '' }})</div>
         <table class="data">
             <thead>
@@ -555,7 +575,7 @@
                     <td>{{ $angka($tek['uut_setting'] ?? null, $dTekan) }}</td>
                     <td>{{ $angka($tek['standar_terkoreksi'] ?? null, $dTekan) }}</td>
                     <td>{{ $angka($tek['koreksi'] ?? null, $dTekan) }}</td>
-                    <td>{{ $angka($tek['u95'] ?? null, $dTekan) }}</td>
+                    <td>{{ $angka($tek['u95'] ?? null, $dTekanU95) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -563,8 +583,10 @@
         @if (($tek['k'] ?? null) !== null)
             <div class="ket-k">
                 The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
-                {{ \App\Support\Angka::idRingkas((float) $tek['k'], 2) }}
+                {{-- Master format sel `0` -> `2`, bukan `2,09`. --}}
+                {{ \App\Support\Angka::id((float) $tek['k'], 0) }}
             </div>
+        @endif
         @endif
     @else
 
