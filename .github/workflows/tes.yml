@@ -1,13 +1,34 @@
-# Penjaga buat auto-deploy.
+# Test, lalu deploy — dan yang kedua nunggu yang pertama.
 #
-# Render dipasang `autoDeploy: true` — tiap push ke branch yang kesambung
-# langsung kedorong ke server, tanpa nunggu siapa pun. Enak, tapi artinya
-# commit yang rusak juga ikut naik. Workflow ini jalan barengan dan bikin
-# push-nya kelihatan merah di GitHub kalau ada test yang jatuh, jadi ketahuan
-# sebelum ada yang buka aplikasinya di lokasi.
+# ## Kenapa deploy-nya pindah ke sini
 #
-# Ini penanda, BUKAN gerbang: Render nggak nungguin hasil workflow ini. Kalau
-# merah, ya di-revert atau di-fix terus push lagi.
+# `render.yaml` masang `autoDeploy: true`, tapi itu nggak pernah jalan: GitHub
+# App Render nggak kepasang di akun ini, jadi GitHub nggak pernah ngabarin
+# Render kalau ada push. Dibuktikan pada 21 Agu 2026 — PR #73 mendarat di
+# `main`, empat belas menit lewat, nol deploy, dan enam menit ngetuk
+# `/api/health` tiap 15 detik nggak nemu satu pun pergantian container.
+#
+# Gantinya: Deploy Hook Render — URL rahasia yang kalau diketuk bikin Render
+# nge-deploy. Nggak butuh webhook, nggak butuh GitHub App.
+#
+# ## Yang berubah dari sebelumnya
+#
+# Dulu komentar di sini bilang "ini penanda, BUKAN gerbang" — Render deploy
+# sendiri tanpa nungguin test, jadi commit yang test-nya merah tetap naik ke
+# server. Sekarang jalur deploy-nya lewat sini, jadi urutannya bisa dibalik:
+# test dulu, baru deploy. Commit yang merah berhenti di GitHub, nggak nyampe
+# ke server yang dipakai teknisi di lokasi.
+#
+# Harganya beberapa menit tunda tiap deploy. Itu murah dibanding satu jam
+# teknisi yang kadung berangkat bawa aplikasi rusak.
+#
+# ## Yang harus dipasang sekali
+#
+#   Render -> service -> Settings -> Deploy Hook -> salin URL-nya
+#   gh secret set RENDER_DEPLOY_HOOK --body "<url-nya>"
+#
+# URL itu RAHASIA: siapa pun yang punya bisa memicu deploy. Makanya Secret,
+# bukan Variable — Variable kebaca siapa saja yang bisa lihat repo.
 name: Tes
 
 on:
@@ -51,3 +72,46 @@ jobs:
       - run: php artisan key:generate
 
       - run: php artisan test
+
+  deploy:
+    needs: phpunit
+    runs-on: ubuntu-latest
+    name: deploy ke Render
+
+    # Cuma yang mendarat di `main`. Pull request nggak boleh nyentuh server
+    # yang dipakai teknisi — dan `pull_request` dari fork nggak dikasih akses
+    # ke secret sama sekali, jadi tanpa penjagaan ini job-nya bakal merah
+    # tiap PR dari luar, bikin bising tanpa alasan.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      # Dicek duluan, sebelum ngetuk apa pun: kalau hook-nya belum dipasang,
+      # bilang cara masangnya. Jangan biarin curl gagal dengan pesan jaringan
+      # yang nggak nunjuk ke mana-mana.
+      - name: Pastiin Deploy Hook udah dipasang
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::Secret RENDER_DEPLOY_HOOK belum dipasang. Render -> service -> Settings -> Deploy Hook, salin URL-nya, lalu: gh secret set RENDER_DEPLOY_HOOK --body \"<url>\""
+            exit 1
+          fi
+
+      # URL-nya lewat `env`, BUKAN ditempel langsung ke dalam `run:`. Yang
+      # ditempel `${{ }}` disalin mentah jadi teks skrip sebelum shell-nya
+      # jalan — dan URL yang kebetulan bertanda kutip atau `;` bakal kebaca
+      # sebagai perintah.
+      #
+      # `-f` bikin curl balik dengan kode gagal kalau HTTP-nya 4xx/5xx; tanpa
+      # itu curl nganggap "berhasil" asal servernya jawab apa pun, termasuk
+      # 401 karena hook-nya sudah diregenerasi.
+      - name: Ketuk Deploy Hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          KODE=$(curl -s -o /dev/null -w '%{http_code}' -f -X POST "$HOOK") || {
+            echo "::error::Render nolak ketukan (HTTP $KODE). Hook-nya mungkin sudah diregenerasi — salin ulang dari Settings dan pasang lagi secretnya."
+            exit 1
+          }
+          echo "Render mulai deploy (HTTP $KODE)."
+          echo "Pantau di dashboard Render; build ulang biasanya 2-10 menit tergantung lapisan yang kecache."
