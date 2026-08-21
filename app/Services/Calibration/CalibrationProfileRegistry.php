@@ -12,6 +12,7 @@ use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
+use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 
@@ -54,6 +55,7 @@ class CalibrationProfileRegistry
             new AutoclaveProfile,
             new DoMeterProfile,
             new GasDetectorProfile,
+            new TitsProfile,
         ];
     }
 

@@ -113,6 +113,14 @@ class HitungUlangSesi extends Command
                     'standard_id' => $pertama->standard_id,
                     'satuan' => $pertama->satuan,
                     'suhu' => null,
+                    // Mode & tipe sensor TITS, dibaca balik dari kolom sesi.
+                    // Tanpa ini hitung ulang sesi TITS nggak bisa nentuin arah
+                    // koreksi maupun tabel kalibrator, dan seluruh titiknya
+                    // pulang tanpa angka — bukan salah, tapi juga nggak berguna.
+                    'konteks' => [
+                        'mode_tits' => $sesi->mode_kalibrasi,
+                        'tipe_sensor' => $sesi->tipe_sensor,
+                    ],
                 ];
             }
 
@@ -127,7 +135,7 @@ class HitungUlangSesi extends Command
             if ($perGrup === null) {
                 $this->error(
                     "{$sesi->nomor_sesi}: alat ini pakai jalur hitung per-TITIK, dan perintah ini "
-                    .'baru mendukung alat yang hitungnya per-kelompok (Spectrophotometer). '
+                    .'baru mendukung alat yang hitungnya per-kelompok (Spectrophotometer & TITS). '
                     .'Buat alat lain, betulin lewat jalur revisi biasa.'
                 );
                 $gagal++;
