@@ -68,7 +68,12 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
 1. Daftar di [render.com](https://render.com) pakai akun GitHub (gratis, nggak
    perlu kartu kredit).
 2. **New** → **Blueprint** → pilih repo `sidik-calibration-api` → branch
-   **`chore/deploy-gratis-render`**.
+   **`main`**.
+
+   > Dokumen ini awalnya nyebut branch `chore/deploy-gratis-render`. Branch itu
+   > sudah masuk `main` (dicek: `git merge-base --is-ancestor`), dan `main`
+   > sudah jalan jauh di depannya. Pilih `main` — kalau nunjuk ke branch lama,
+   > yang kedeploy backend enam alat yang lalu.
 3. Render baca `render.yaml` dan nanyain semua nilai rahasianya sekaligus:
 
    | Isian | Diambil dari |
@@ -113,17 +118,28 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
    Paket gratis Render nggak ngasih akses shell, jadi jalanin ini dari laptop
    dengan `.env` yang DB-nya diarahin ke Aiven — bukan ke MySQL lokal.
 
-## 5. APK buat HP
+## 5. APK, Windows, macOS buat orang lain
 
-Di repo mobile (branch `chore/apk-rilis-cloud`):
+Nggak ada build manual lagi. Di repo mobile, tempel URL yang barusan dikasih
+Render sebagai repository variable:
 
 ```bash
-./tool/build-apk.sh https://<url>.onrender.com
+gh variable set API_BASE_URL --body "https://<yang-asli>.onrender.com"
 ```
 
-Keluar dua APK di `build/apk-rilis/` — `sidik-cloud.apk` (lewat internet) dan
-`sidik-lokal.apk` (cadangan lewat kabel USB kalau lokasinya ternyata nggak ada
-internet sama sekali). Penjelasannya ada di kepala skripnya.
+Tanpa `/api` di belakang — workflow-nya yang nambahin sendiri.
+
+Sesudah itu tiap push ke `main` membangun ketiga platform sendiri:
+
+- **Android** — workflow "APK rilis (nyambung server)" ngirim APK-nya langsung
+  ke grup tester `teknisi` lewat Firebase App Distribution. Emailnya harus
+  didaftarkan dulu di Console, kalau nggak ya terkirim ke grup kosong.
+- **Windows & macOS** — workflow "Rilis desktop (nyambung server)" naruh kedua
+  zip di halaman unduh Firebase Hosting.
+
+Dua-duanya butuh secret `FIREBASE_SERVICE_ACCOUNT` yang sama. Detailnya di
+[`docs/deploy-firebase.md`](https://github.com/ZainulArkaanAlinsi/sidik-calibration-mobile/blob/main/docs/deploy-firebase.md)
+di repo mobile.
 
 ---
 
