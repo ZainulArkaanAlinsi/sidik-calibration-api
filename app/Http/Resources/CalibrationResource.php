@@ -69,6 +69,12 @@ class CalibrationResource extends JsonResource
             // Dipulangin apa adanya biar draft yang dibuka lagi keisi persis
             // kayak waktu ditinggal.
             'spesifikasi_alat' => $this->spesifikasi_alat,
+            // Mode kalibrasi & tipe sensor (TITS). Null buat sepuluh alat lain.
+            // Wajib dipulangin: dua-duanya nentuin JUDUL KOLOM tabel hasil yang
+            // bertukar sisi antar mode — draft yang dibuka lagi tanpa ini bakal
+            // nampilin "Standard Indication" di kolom yang isinya bacaan UUT.
+            'mode_kalibrasi' => $this->mode_kalibrasi,
+            'tipe_sensor' => $this->tipe_sensor,
             'pemilik_nama' => $this->pemilik_nama,
             'pemilik_alamat' => $this->pemilik_alamat,
             // Pelanggan pemilik alat — dipakai layar antrean approval buat

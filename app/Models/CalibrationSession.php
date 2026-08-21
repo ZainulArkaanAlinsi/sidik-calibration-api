@@ -39,6 +39,10 @@ use Illuminate\Support\Collection;
     // Snapshot hasil olah data Autoklaf (JSON) — alat ke-8 nggak lewat
     // raw_measurements/uncertainty_calculations. Lihat migrasi 2026_08_19_120000.
     'hasil_autoclave',
+    // Mode kalibrasi (measure/source) & tipe sensor termokopel — dua-duanya
+    // nentuin ANGKA di sesi TITS, dan dua-duanya milik sesi bukan alat. Lihat
+    // migrasi 2026_08_21_100000.
+    'mode_kalibrasi', 'tipe_sensor',
 ])]
 class CalibrationSession extends Model
 {

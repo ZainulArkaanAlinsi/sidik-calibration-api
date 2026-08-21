@@ -61,6 +61,10 @@ class DatabaseSeeder extends Seeder
             // `uncertainty_calculations` — jadi dia nggak butuh seeder
             // kemampuan sendiri, cukup baris CMC dari lampiran akreditasi.
             AutoclaveSeeder::class,
+            // TITS juga nggak punya seeder kemampuan sendiri: CMC ketujuh tipe
+            // sensornya sudah ada di lampiran akreditasi, jadi cukup baris dari
+            // `CalibrationCapabilitySeeder`.
+            TitsSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

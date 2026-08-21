@@ -1,0 +1,2011 @@
+{
+  "_sumber": "Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm & fungsi Source utk UUT.xlsm (terkunci sandi), sheet 'STANDAR KALIBRATOR' — blok B8:J27 & B30:J49 (Constant 40T) dan M8:U27 & M30:U49 (Yokogawa CA 150 Handy Cal), tabel drift X5:AA13.",
+  "_catatan": "Dua MODE, dua tabel yang BEDA ISI (135 sel berbeda antar workbook) — bukan salinan. 'measure' = UUT berfungsi sebagai pembaca, kalibrator yang men-source sinyal; 'source' = kebalikannya. Koreksi & U95 kalibrator memang beda per fungsi, jadi tabelnya tidak boleh dipakai silang.",
+  "_kejanggalan": [
+    "Sel #REF! (kolom Type B & Type S Yokogawa di titik >=600) dibuang jadi kosong, bukan dibaca 0.",
+    "Kolom U95 'Type K' Yokogawa di workbook SOURCE berisi angka NEGATIF (-0,06 s/d -0,31) — itu nilai KOREKSI yang tersalin ke tabel U95. Dibiarkan apa adanya di sini supaya tidak mengarang, tapi TitsCalculator menolaknya (U95 tidak boleh negatif) dan sesi Type K mode Source jatuh ke lantai CMC. Ditanyakan ke lab.",
+    "Titik 1400 & 1700 Type N/Type S berisi 0 di kolom koreksi maupun U95 — kemungkinan sel kosong yang diisi nol, bukan koreksi nol yang terukur."
+  ],
+  "mode": {
+    "measure": {
+      "constant": {
+        "drift": {
+          "RTD": 0.125,
+          "Type N": 0.38,
+          "Type K": 0.47,
+          "Type T": 0.07,
+          "Type S": 0.235,
+          "Type R": 0.335
+        },
+        "titik": {
+          "RTD": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.0,
+              "u95": 0.66
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.2,
+              "u95": 0.66
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.225,
+              "u95": 0.66
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.25,
+              "u95": 0.66
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.35,
+              "u95": 0.66
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 700.0,
+              "koreksi": 0.35,
+              "u95": 0.66
+            },
+            {
+              "titik": 800.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            }
+          ],
+          "Type K": [
+            {
+              "titik": -20.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -1.0,
+              "u95": 0.54
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.8,
+              "u95": 0.54
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.6,
+              "u95": 0.54
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            }
+          ],
+          "Type N": [
+            {
+              "titik": -20.0,
+              "koreksi": -0.1,
+              "u95": 0.7
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.3,
+              "u95": 0.7
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.4,
+              "u95": 0.7
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.3,
+              "u95": 0.7
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.4,
+              "u95": 0.7
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.45,
+              "u95": 0.7
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.5,
+              "u95": 0.7
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": 0.0,
+              "u95": null
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": 0.0,
+              "u95": null
+            }
+          ],
+          "Type B": [
+            {
+              "titik": 600.0,
+              "koreksi": -0.4,
+              "u95": 1.0
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.41,
+              "u95": 1.0
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.42,
+              "u95": 1.0
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.48,
+              "u95": 1.0
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.54,
+              "u95": 1.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.66,
+              "u95": 1.0
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": -0.73,
+              "u95": 1.0
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": -0.78,
+              "u95": 1.0
+            }
+          ],
+          "Type T": [
+            {
+              "titik": -100.0,
+              "koreksi": -0.15,
+              "u95": 0.63
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.0,
+              "u95": 0.63
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -0.2,
+              "u95": 0.63
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.2,
+              "u95": 0.63
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.2,
+              "u95": 0.63
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.3,
+              "u95": 0.63
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.2,
+              "u95": 0.63
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.3,
+              "u95": 0.63
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.3,
+              "u95": 0.63
+            }
+          ],
+          "Type R": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.0,
+              "u95": 1.0
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.3,
+              "u95": 1.0
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.25,
+              "u95": 1.0
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.15,
+              "u95": 1.0
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.3,
+              "u95": 1.0
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.2,
+              "u95": 1.0
+            }
+          ],
+          "Type S": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.0,
+              "u95": 1.0
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.05,
+              "u95": 1.0
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.0,
+              "u95": 1.0
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.05,
+              "u95": 1.0
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.1,
+              "u95": 1.0
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.15,
+              "u95": 1.0
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.2,
+              "u95": 1.0
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.25,
+              "u95": 1.0
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.3,
+              "u95": 1.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.4,
+              "u95": 1.0
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            }
+          ]
+        }
+      },
+      "yokogawa": {
+        "drift": {
+          "RTD": 0.11,
+          "Type N": 0.024,
+          "Type K": 0.034,
+          "Type J": 0.027,
+          "Type T": 0.046,
+          "Type S": 0.056,
+          "Type R": 0.072
+        },
+        "titik": {
+          "RTD": [
+            {
+              "titik": -100.0,
+              "koreksi": -0.1,
+              "u95": 1.1
+            },
+            {
+              "titik": -20.0,
+              "koreksi": -0.02,
+              "u95": 1.1
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.0,
+              "u95": 1.1
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.025,
+              "u95": 1.1
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.05,
+              "u95": 1.1
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.1,
+              "u95": 1.1
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.1,
+              "u95": 1.1
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.15,
+              "u95": 1.1
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.2,
+              "u95": 1.1
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.2,
+              "u95": 1.1
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.2,
+              "u95": 1.1
+            },
+            {
+              "titik": 700.0,
+              "koreksi": 0.15,
+              "u95": 1.1
+            },
+            {
+              "titik": 800.0,
+              "koreksi": 0.1,
+              "u95": 1.1
+            }
+          ],
+          "Type K": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.06,
+              "u95": 0.34
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.01,
+              "u95": 0.34
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.01,
+              "u95": 0.34
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.0025,
+              "u95": 0.34
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.015,
+              "u95": 0.34
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.04,
+              "u95": 0.34
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.06,
+              "u95": 0.34
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.125,
+              "u95": 0.34
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.07,
+              "u95": 0.31
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.085,
+              "u95": 0.31
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.14,
+              "u95": 0.3
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.165,
+              "u95": 0.3
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.19,
+              "u95": 0.3
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.245,
+              "u95": 0.3
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.3,
+              "u95": 0.3
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.31,
+              "u95": 0.3
+            }
+          ],
+          "Type N": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.14,
+              "u95": 0.24
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.09,
+              "u95": 0.23
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.07,
+              "u95": 0.23
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.0025,
+              "u95": 0.23
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.05,
+              "u95": 0.23
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.03,
+              "u95": 0.24
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.03,
+              "u95": 0.31
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.0,
+              "u95": 0.31
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.03,
+              "u95": 0.31
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.06,
+              "u95": 0.31
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.09,
+              "u95": 0.34
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.115,
+              "u95": 0.34
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.14,
+              "u95": 0.34
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.165,
+              "u95": 0.34
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.19,
+              "u95": 0.34
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.26,
+              "u95": 0.36
+            }
+          ],
+          "Type T": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.06,
+              "u95": 0.46
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.028,
+              "u95": 0.46
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.02,
+              "u95": 0.46
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.005,
+              "u95": 0.46
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.01,
+              "u95": 0.25
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.01,
+              "u95": 0.25
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.05,
+              "u95": 0.25
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.06,
+              "u95": 0.25
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.08,
+              "u95": 0.35
+            }
+          ],
+          "Type R": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.09,
+              "u95": 0.72
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.14,
+              "u95": 0.72
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.19,
+              "u95": 0.72
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.18,
+              "u95": 0.72
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.14,
+              "u95": 0.72
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.11,
+              "u95": 0.72
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.08,
+              "u95": 0.72
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.045,
+              "u95": 0.72
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.01,
+              "u95": 0.42
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.025,
+              "u95": 0.42
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.06,
+              "u95": 0.42
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.085,
+              "u95": 0.42
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.11,
+              "u95": 0.42
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.16,
+              "u95": 0.42
+            }
+          ],
+          "Type S": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.18,
+              "u95": 0.72
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.165,
+              "u95": 0.72
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.15,
+              "u95": 0.72
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.1,
+              "u95": 0.72
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.08,
+              "u95": 0.73
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.05,
+              "u95": 0.73
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.02,
+              "u95": 0.73
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.015,
+              "u95": 0.73
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.05,
+              "u95": 0.59
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.075,
+              "u95": 0.59
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.1,
+              "u95": 0.59
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.125,
+              "u95": 0.59
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.15,
+              "u95": 0.59
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.2,
+              "u95": 0.56
+            }
+          ],
+          "Type J": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.05,
+              "u95": 0.27
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.01,
+              "u95": 0.27
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.0,
+              "u95": 0.27
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.015,
+              "u95": 0.27
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.03,
+              "u95": 0.25
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.0,
+              "u95": 0.25
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.05,
+              "u95": 0.25
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.065,
+              "u95": 0.25
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.08,
+              "u95": 0.25
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.11,
+              "u95": 0.25
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.14,
+              "u95": 0.25
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.145,
+              "u95": 0.25
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.15,
+              "u95": 0.25
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.185,
+              "u95": 0.25
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.22,
+              "u95": 0.25
+            }
+          ]
+        }
+      }
+    },
+    "source": {
+      "constant": {
+        "drift": {
+          "RTD": 0.125,
+          "Type N": 0.38,
+          "Type K": 0.47,
+          "Type T": 0.07,
+          "Type S": 0.235,
+          "Type R": 0.335
+        },
+        "titik": {
+          "RTD": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.0,
+              "u95": 0.66
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.2,
+              "u95": 0.66
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.225,
+              "u95": 0.66
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.25,
+              "u95": 0.66
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.35,
+              "u95": 0.66
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.4,
+              "u95": 0.66
+            },
+            {
+              "titik": 700.0,
+              "koreksi": 0.35,
+              "u95": 0.66
+            },
+            {
+              "titik": 800.0,
+              "koreksi": 0.3,
+              "u95": 0.66
+            }
+          ],
+          "Type K": [
+            {
+              "titik": -20.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -1.0,
+              "u95": 0.54
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.8,
+              "u95": 0.54
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.6,
+              "u95": 0.54
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.1,
+              "u95": 0.54
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.15,
+              "u95": 0.54
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.2,
+              "u95": 0.54
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            }
+          ],
+          "Type N": [
+            {
+              "titik": -20.0,
+              "koreksi": -0.1,
+              "u95": 0.7
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.2,
+              "u95": 0.7
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.3,
+              "u95": 0.7
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.4,
+              "u95": 0.7
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.3,
+              "u95": 0.7
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.35,
+              "u95": 0.7
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.4,
+              "u95": 0.7
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.45,
+              "u95": 0.7
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.5,
+              "u95": 0.7
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": 0.0,
+              "u95": null
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": 0.0,
+              "u95": null
+            }
+          ],
+          "Type B": [
+            {
+              "titik": 600.0,
+              "koreksi": -0.4,
+              "u95": 1.0
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.41,
+              "u95": 1.0
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.42,
+              "u95": 1.0
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.48,
+              "u95": 1.0
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.54,
+              "u95": 1.0
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.66,
+              "u95": 1.0
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": -0.73,
+              "u95": 1.0
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": -0.78,
+              "u95": 1.0
+            }
+          ],
+          "Type T": [
+            {
+              "titik": -100.0,
+              "koreksi": -0.15,
+              "u95": 0.47
+            },
+            {
+              "titik": -20.0,
+              "koreksi": -0.07,
+              "u95": 0.47
+            },
+            {
+              "titik": 0.0,
+              "koreksi": -0.05,
+              "u95": 0.47
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.045,
+              "u95": 0.47
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.04,
+              "u95": 0.35
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.02,
+              "u95": 0.35
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.09,
+              "u95": 0.35
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.1,
+              "u95": 0.35
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.16,
+              "u95": 0.35
+            }
+          ],
+          "Type R": [
+            {
+              "titik": 0.0,
+              "koreksi": -0.1,
+              "u95": 0.74
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.125,
+              "u95": 0.74
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.15,
+              "u95": 0.74
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.13,
+              "u95": 0.74
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.13,
+              "u95": 0.74
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.175,
+              "u95": 0.74
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.22,
+              "u95": 0.74
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.195,
+              "u95": 0.74
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.17,
+              "u95": 0.74
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.175,
+              "u95": 0.74
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.18,
+              "u95": 0.74
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.175,
+              "u95": 0.74
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.17,
+              "u95": 0.74
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.37,
+              "u95": 0.74
+            }
+          ],
+          "Type S": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.09,
+              "u95": 0.81
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.165,
+              "u95": 0.81
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.24,
+              "u95": 0.81
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.2,
+              "u95": 0.81
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.31,
+              "u95": 0.81
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.315,
+              "u95": 0.81
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.32,
+              "u95": 0.81
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.345,
+              "u95": 0.81
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.37,
+              "u95": 0.81
+            },
+            {
+              "titik": 700.0,
+              "koreksi": 0.395,
+              "u95": 0.81
+            },
+            {
+              "titik": 800.0,
+              "koreksi": 0.42,
+              "u95": 0.81
+            },
+            {
+              "titik": 900.0,
+              "koreksi": 0.45,
+              "u95": 0.81
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": 0.48,
+              "u95": 0.81
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": 0.62,
+              "u95": 0.81
+            },
+            {
+              "titik": 1400.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            },
+            {
+              "titik": 1700.0,
+              "koreksi": 0.0,
+              "u95": 0.0
+            }
+          ]
+        }
+      },
+      "yokogawa": {
+        "drift": {
+          "RTD": 0.072,
+          "Type N": 0.024,
+          "Type K": 0.001,
+          "Type J": 0.027,
+          "Type T": 0.046,
+          "Type S": 0.056,
+          "Type R": 0.072
+        },
+        "titik": {
+          "RTD": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.0,
+              "u95": 0.72
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.16,
+              "u95": 0.72
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.2,
+              "u95": 0.72
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.25,
+              "u95": 0.72
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.3,
+              "u95": 0.72
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.4,
+              "u95": 0.72
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.4,
+              "u95": 0.72
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.45,
+              "u95": 0.72
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.5,
+              "u95": 0.72
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.5,
+              "u95": 0.72
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.5,
+              "u95": 0.72
+            },
+            {
+              "titik": 700.0,
+              "koreksi": 0.45,
+              "u95": 0.72
+            },
+            {
+              "titik": 800.0,
+              "koreksi": 0.4,
+              "u95": 0.72
+            }
+          ],
+          "Type K": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.06,
+              "u95": 0.06
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.01,
+              "u95": 0.01
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.01,
+              "u95": 0.01
+            },
+            {
+              "titik": 25.0,
+              "koreksi": -0.0025,
+              "u95": -0.0025
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.015,
+              "u95": -0.015
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.04,
+              "u95": -0.04
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.06,
+              "u95": -0.06
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.065,
+              "u95": -0.065
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.07,
+              "u95": -0.07
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.105,
+              "u95": -0.105
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.14,
+              "u95": -0.14
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.165,
+              "u95": -0.165
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.19,
+              "u95": -0.19
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.245,
+              "u95": -0.245
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.3,
+              "u95": -0.3
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.31,
+              "u95": -0.31
+            }
+          ],
+          "Type N": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.14,
+              "u95": 0.24
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.09,
+              "u95": 0.23
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.07,
+              "u95": 0.23
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.06,
+              "u95": 0.23
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.05,
+              "u95": 0.23
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.03,
+              "u95": 0.24
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.03,
+              "u95": 0.31
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.0,
+              "u95": 0.31
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.03,
+              "u95": 0.31
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.06,
+              "u95": 0.34
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.09,
+              "u95": 0.34
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.115,
+              "u95": 0.34
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.14,
+              "u95": 0.34
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.165,
+              "u95": 0.34
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.19,
+              "u95": 0.34
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.26,
+              "u95": 0.36
+            }
+          ],
+          "Type T": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.06,
+              "u95": 0.46
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.028,
+              "u95": 0.46
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.02,
+              "u95": 0.46
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.005,
+              "u95": 0.25
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.01,
+              "u95": 0.25
+            },
+            {
+              "titik": 100.0,
+              "koreksi": -0.01,
+              "u95": 0.25
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.05,
+              "u95": 0.25
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.06,
+              "u95": 0.25
+            }
+          ],
+          "Type R": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.09,
+              "u95": 0.72
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.14,
+              "u95": 0.72
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.19,
+              "u95": 0.72
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.18,
+              "u95": 0.72
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.14,
+              "u95": 0.72
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.11,
+              "u95": 0.72
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.08,
+              "u95": 0.72
+            },
+            {
+              "titik": 500.0,
+              "koreksi": 0.045,
+              "u95": 0.72
+            },
+            {
+              "titik": 600.0,
+              "koreksi": 0.01,
+              "u95": 0.42
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.025,
+              "u95": 0.42
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.06,
+              "u95": 0.42
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.085,
+              "u95": 0.42
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.11,
+              "u95": 0.42
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.16,
+              "u95": 0.42
+            }
+          ],
+          "Type S": [
+            {
+              "titik": 0.0,
+              "koreksi": 0.18,
+              "u95": 0.72
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.165,
+              "u95": 0.72
+            },
+            {
+              "titik": 50.0,
+              "koreksi": 0.15,
+              "u95": 0.72
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.1,
+              "u95": 0.72
+            },
+            {
+              "titik": 200.0,
+              "koreksi": 0.08,
+              "u95": 0.73
+            },
+            {
+              "titik": 300.0,
+              "koreksi": 0.05,
+              "u95": 0.73
+            },
+            {
+              "titik": 400.0,
+              "koreksi": 0.02,
+              "u95": 0.73
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.015,
+              "u95": 0.59
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.05,
+              "u95": 0.59
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.075,
+              "u95": 0.59
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.1,
+              "u95": 0.59
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.125,
+              "u95": 0.59
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.15,
+              "u95": 0.59
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.2,
+              "u95": 0.56
+            }
+          ],
+          "Type J": [
+            {
+              "titik": -100.0,
+              "koreksi": 0.05,
+              "u95": 0.27
+            },
+            {
+              "titik": -20.0,
+              "koreksi": 0.0,
+              "u95": 0.27
+            },
+            {
+              "titik": 0.0,
+              "koreksi": 0.0,
+              "u95": 0.27
+            },
+            {
+              "titik": 25.0,
+              "koreksi": 0.0,
+              "u95": 0.25
+            },
+            {
+              "titik": 50.0,
+              "koreksi": -0.03,
+              "u95": 0.25
+            },
+            {
+              "titik": 100.0,
+              "koreksi": 0.0,
+              "u95": 0.25
+            },
+            {
+              "titik": 200.0,
+              "koreksi": -0.05,
+              "u95": 0.25
+            },
+            {
+              "titik": 300.0,
+              "koreksi": -0.065,
+              "u95": 0.25
+            },
+            {
+              "titik": 400.0,
+              "koreksi": -0.08,
+              "u95": 0.25
+            },
+            {
+              "titik": 500.0,
+              "koreksi": -0.11,
+              "u95": 0.25
+            },
+            {
+              "titik": 600.0,
+              "koreksi": -0.14,
+              "u95": 0.25
+            },
+            {
+              "titik": 700.0,
+              "koreksi": -0.145,
+              "u95": 0.25
+            },
+            {
+              "titik": 800.0,
+              "koreksi": -0.15,
+              "u95": 0.25
+            },
+            {
+              "titik": 900.0,
+              "koreksi": -0.185,
+              "u95": 0.25
+            },
+            {
+              "titik": 1000.0,
+              "koreksi": -0.22,
+              "u95": 0.25
+            },
+            {
+              "titik": 1200.0,
+              "koreksi": -0.32,
+              "u95": 0.25
+            }
+          ]
+        }
+      }
+    }
+  }
+}

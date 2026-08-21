@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -271,6 +272,15 @@ class UjiProfilKalibrasi extends Command
 
         if ($profil->kode() === 'viscometer') {
             $payload['spesifikasi_alat'] = ['model_visco' => 'DV2TRV'];
+        }
+
+        // TITS: tanpa mode & tipe sensor, arah perhitungan koreksi dan tabel
+        // kalibrator mana yang dibaca sama-sama nggak ketahuan — profilnya
+        // sengaja nolak nebak, jadi seluruh titik pulang tanpa angka. Dipakai
+        // kombinasi sesi master fungsi Measure.
+        if ($profil->kode() === 'tits') {
+            $payload['mode_kalibrasi'] = TabelKalibratorSuhu::MODE_MEASURE;
+            $payload['tipe_sensor'] = 'Type N';
         }
 
         return $payload;

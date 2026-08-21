@@ -1046,6 +1046,13 @@ class CalibrationController extends Controller
         // kayak rentang & resolusi versi teknisi. Null buat enam alat lain, dan
         // profil mereka nggak pernah nengok `$konteks` sama sekali.
         $modelVisco = $request->input('spesifikasi_alat.model_visco');
+        // Mode kalibrasi & tipe sensor, satu per sesi — cuma TITS yang mbukanya.
+        // Dua-duanya nentuin ANGKA, bukan catatan: mode nentuin arah perhitungan
+        // koreksi (Standard dan UUT bertukar sisi), tipe sensor nentuin tabel
+        // koreksi kalibrator, drift, dan baris CMC mana yang dipakai. Lihat
+        // `TitsProfile::hitungPerGrup()`.
+        $modeKalibrasi = $request->input('mode_kalibrasi');
+        $tipeSensor = $request->input('tipe_sensor');
         // Spindle & RPM per titik. Jalur utamanya per baris pengukuran
         // (`measurements[i].spindle`) — itu yang cocok sama tempat nyimpennya,
         // `raw_measurements`. Yang di `spesifikasi_alat` jalur cadangan: bentuk
@@ -1232,6 +1239,8 @@ class CalibrationController extends Controller
                     'tk' => $modelVisco,
                     'delta_suhu' => $deltaSuhu,
                     'delta_tekanan' => $deltaTekanan,
+                    'mode_tits' => $modeKalibrasi,
+                    'tipe_sensor' => $tipeSensor,
                 ],
             ];
         }
@@ -1545,6 +1554,10 @@ class CalibrationController extends Controller
             // bertahap tanpa ngosongin yang udah dia isi sebelumnya.
             'alat_model', 'alat_serial_number', 'alat_merk', 'pemilik_nama', 'pemilik_alamat',
             'spesifikasi_alat', 'lokasi_nama',
+            // Mode kalibrasi & tipe sensor (TITS). Ikut `$opsional` dengan
+            // alasan yang sama: sepuluh alat lain nggak pernah ngirimnya, dan
+            // yang nggak dikirim nggak boleh nimpa isian sebelumnya.
+            'mode_kalibrasi', 'tipe_sensor',
         ];
 
         foreach ($opsional as $field) {
