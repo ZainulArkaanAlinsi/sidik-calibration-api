@@ -68,6 +68,30 @@ RUN install-php-extensions \
         pcntl \
         opcache
 
+# Cabut file capability dari biner frankenphp.
+#
+# Image bawaannya nyetel CAP_NET_BIND_SERVICE biar bisa nempel ke port 80/443.
+# Render ngejalanin container dengan capability dicabut, dan di lingkungan
+# begitu exec biner bercapability ditolak kernel dengan EPERM:
+#
+#     exec: frankenphp: Operation not permitted
+#     ==> Exited with status 126
+#
+# Bikin bingung karena binernya jelas ada dan jelas executable — yang ditolak
+# capability-nya, bukan berkasnya. Dan gagalnya baru muncul di DETIK TERAKHIR
+# boot, sesudah migrasi dan seeding selesai, jadi kelihatan kayak aplikasinya
+# yang rusak.
+#
+# Capability-nya sendiri nggak kepakai di sini: entrypoint nyetel
+# SERVER_NAME=":${PORT}" dengan PORT=10000, jauh di atas 1024.
+#
+# `cp` lalu `mv` dipakai sebagai cadangan kalau setcap nggak terpasang —
+# menyalin berkas nggak ikut mbawa extended attribute, jadi salinannya bersih.
+RUN (command -v setcap >/dev/null 2>&1 && setcap -r /usr/local/bin/frankenphp) \
+    || (cp /usr/local/bin/frankenphp /tmp/frankenphp.bersih \
+        && mv /tmp/frankenphp.bersih /usr/local/bin/frankenphp \
+        && chmod +x /usr/local/bin/frankenphp)
+
 WORKDIR /app
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
