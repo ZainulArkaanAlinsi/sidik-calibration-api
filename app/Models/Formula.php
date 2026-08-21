@@ -84,6 +84,16 @@ class Formula extends Model
      */
     public const KODE_GUM_GAS_DETECTOR = 'gum-gas-detector';
 
+    /**
+     * Rumus GUM buat jalur TITS — Temperature Indikator Tanpa Sensor (alat
+     * ke-11). SATU budget untuk seluruh sesi (5 komponen di mode Measure, 6 di
+     * mode Source), dengan komponen keterulangan diberi makan STDEV TERBESAR
+     * seluruh titik. Koreksi kalibrator per titik datang dari tabel sertifikat
+     * kalibratornya sendiri, dan arah perhitungan koreksi berbalik antara mode
+     * Measure & Source. Lihat TitsProfile.
+     */
+    public const KODE_GUM_TITS = 'gum-tits';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

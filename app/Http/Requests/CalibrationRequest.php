@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
 use App\Models\Standard;
+use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -149,6 +150,16 @@ class CalibrationRequest extends FormRequest
             // sertifikat juga teks, bukan hasil hitung.
             'spesifikasi_alat' => ['sometimes', 'nullable', 'array'],
             'spesifikasi_alat.*' => ['nullable', 'string', 'max:64'],
+            // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
+            // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana
+            // yang dibaca), jadi nilainya dibatasi ke daftar yang dikenal
+            // ketimbang diterima sebagai teks bebas. Tetap opsional: sepuluh
+            // alat lain nggak punya kolom ini.
+            'mode_kalibrasi' => ['sometimes', 'nullable', Rule::in([
+                TabelKalibratorSuhu::MODE_MEASURE,
+                TabelKalibratorSuhu::MODE_SOURCE,
+            ])],
+            'tipe_sensor' => ['sometimes', 'nullable', Rule::in(TabelKalibratorSuhu::TIPE_SENSOR)],
             'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 

@@ -700,6 +700,13 @@ class CalibrationValidator
                     // ke-flag `ketidakpastian_beda` padahal angkanya benar.
                     'delta_suhu' => $this->deltaKondisi($sesi->suhu_awal, $sesi->suhu_akhir),
                     'delta_tekanan' => $this->deltaKondisi($sesi->tekanan_awal, $sesi->tekanan_akhir),
+                    // Mode & tipe sensor TITS, dibaca balik dari kolom sesi —
+                    // alasannya sama: hitung ulang harus dapat ARAH koreksi &
+                    // tabel kalibrator yang SAMA kayak waktu sesi ini disimpan.
+                    // Tanpa ini tiap sesi TITS ke-flag `ketidakpastian_beda`
+                    // padahal angkanya benar.
+                    'mode_tits' => $sesi->mode_kalibrasi,
+                    'tipe_sensor' => $sesi->tipe_sensor,
                 ],
                 'tersimpan' => $titik,
             ];
