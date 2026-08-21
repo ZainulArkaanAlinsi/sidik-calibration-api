@@ -37,6 +37,19 @@ _ide_helper_models.php
 # server, tapi ukurannya bikin konteks build membengkak.
 Project-PT-Sidik
 CATATAN
+
+# ...KECUALI satu berkas di dalamnya, yang justru dibaca waktu boot.
+#
+# `MetodeKalibrasiSeeder` baca nomor IK berikut revisinya langsung dari lembar
+# master lab. Waktu `CATATAN` dibuang seluruhnya, berkas itu ikut kebuang, dan
+# seeder-nya cuma bilang "Lembar master nggak ketemu — metode dilewati" lalu
+# jalan terus. Deploy tetap hijau, tabel `calibration_methods` tetap kosong,
+# dan yang kelihatan cuma jauh di hilir: kolom "Calibration Method" di
+# sertifikat keluar KOSONG — kolom yang dicocokkan waktu audit.
+#
+# Berkasnya 8,4 KB dan satu-satunya isi `CATATAN` yang di-commit; PDF dan xlsm
+# yang bikin konteks membengkak tetap kebuang.
+!CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv
 daily-reports
 docs
 *.pdf
