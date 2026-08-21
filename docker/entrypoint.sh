@@ -30,16 +30,6 @@ if [ -n "${DB_SSL_CA_B64}" ]; then
     export MYSQL_ATTR_SSL_CA=/tmp/db-ca.pem
 fi
 
-# SEMENTARA — dicabut begitu deploy pertama berhasil.
-#
-# Dashboard Render bilang APP_KEY tersimpan; container bilang kosong. Dua-duanya
-# nggak bisa dibuktikan dari luar, jadi container-nya sendiri yang ditanya.
-# Yang dicetak cuma NAMA variabelnya, nggak pernah nilainya — log Render kebaca
-# siapa pun yang punya akses ke dashboard.
-echo "→ [diagnosa] variabel yang diterima container:"
-env | cut -d= -f1 | sort | sed 's/^/     /'
-echo "→ [diagnosa] APP_KEY: $([ -n "${APP_KEY:-}" ] && echo "ADA, ${#APP_KEY} karakter" || echo "TIDAK ADA / KOSONG")"
-
 # Gagal cepat dengan pesan yang jelas. Tanpa penjagaan ini, APP_KEY kosong
 # munculnya sebagai "Unsupported cipher or incorrect key length" di tengah
 # request — error yang nggak nyebut-nyebut APP_KEY sama sekali.
