@@ -485,7 +485,19 @@ class GasDetectorProfile extends CalibrationProfile
      *     tekanan sama sekali. Lebih baik teknisi tahu sekarang, waktu
      *     barometernya masih di tangan.
      *
-     * @return list<string>
+     * Bentuk kembaliannya `[kode, pesan]`, sama seperti profil lain — BUKAN
+     * daftar string. Sempat berupa string di sini sendirian, dan itu bikin
+     * `CalibrationValidator::periksaPeringatanProfil()` meledak begitu ada sesi
+     * Gas Detector diperiksa:
+     *
+     *     Argument #1 ($p) must be of type array, string given
+     *
+     * Validatornya emang mbungkus tiap temuan lewat `fn (array $p)`, dan dua
+     * profil lain (Viscometer, Conductivity) udah balikin array dari dulu.
+     * Ketahuannya baru waktu ada yang mencet CHECK di lembar Gas Detector —
+     * sampai situ nggak ada yang pernah lewat jalur ini.
+     *
+     * @return list<array{kode: string, pesan: string}>
      */
     public function peringatanSesi(CalibrationSession $sesi): array
     {
@@ -496,13 +508,16 @@ class GasDetectorProfile extends CalibrationProfile
             $gas = $this->gasUntukTitik((float) $titik->titik_ukur);
 
             if ($gas === null) {
-                $peringatan[] = sprintf(
-                    'Titik ke-%d (%s) nggak kena satu pun dari empat gas yang dikenal '
-                    .'(CO ±101, H2S ±25, CH4 ±50, O2 ±17,9). Satuan & resolusi barisnya bakal kosong '
-                    .'di sertifikat — cek angka standarnya.',
-                    $titik->titik_ke,
-                    $titik->titik_ukur,
-                );
+                $peringatan[] = [
+                    'kode' => 'gas_titik_tak_dikenal',
+                    'pesan' => sprintf(
+                        'Titik ke-%d (%s) nggak kena satu pun dari empat gas yang dikenal '
+                        .'(CO ±101, H2S ±25, CH4 ±50, O2 ±17,9). Satuan & resolusi barisnya bakal kosong '
+                        .'di sertifikat — cek angka standarnya.',
+                        $titik->titik_ke,
+                        $titik->titik_ukur,
+                    ),
+                ];
 
                 continue;
             }
@@ -512,19 +527,25 @@ class GasDetectorProfile extends CalibrationProfile
 
         foreach ($terpakai as $kode => $titikKe) {
             if (count($titikKe) > 1) {
-                $peringatan[] = sprintf(
-                    'Titik ke-%s sama-sama kebaca sebagai %s. Satu di antaranya bakal kecetak '
-                    .'pakai satuan yang salah — betulin nilai standarnya dulu sebelum sertifikat terbit.',
-                    implode(' & ke-', $titikKe),
-                    $kode,
-                );
+                $peringatan[] = [
+                    'kode' => 'gas_titik_kembar',
+                    'pesan' => sprintf(
+                        'Titik ke-%s sama-sama kebaca sebagai %s. Satu di antaranya bakal kecetak '
+                        .'pakai satuan yang salah — betulin nilai standarnya dulu sebelum sertifikat terbit.',
+                        implode(' & ke-', $titikKe),
+                        $kode,
+                    ),
+                ];
             }
         }
 
         if ($sesi->tekanan_awal === null || $sesi->tekanan_akhir === null) {
-            $peringatan[] = 'Tekanan udara awal/akhir belum lengkap. Dua dari lima komponen '
-                .'ketidakpastian Gas Detector (pengaruh suhu & tekanan) nggak bisa disusun tanpa itu, '
-                .'jadi U95 yang keluar bukan angka yang dipakai master.';
+            $peringatan[] = [
+                'kode' => 'gas_tekanan_belum_lengkap',
+                'pesan' => 'Tekanan udara awal/akhir belum lengkap. Dua dari lima komponen '
+                    .'ketidakpastian Gas Detector (pengaruh suhu & tekanan) nggak bisa disusun tanpa itu, '
+                    .'jadi U95 yang keluar bukan angka yang dipakai master.',
+            ];
         }
 
         return $peringatan;

@@ -256,8 +256,9 @@ class GasDetectorBudgetTest extends TestCase
         $peringatan = (new GasDetectorProfile)->peringatanSesi($sesi);
 
         $this->assertCount(1, $peringatan);
-        $this->assertStringContainsString('ke-1 & ke-2', $peringatan[0]);
-        $this->assertStringContainsString('H2S', $peringatan[0]);
+        $this->assertSame('gas_titik_kembar', $peringatan[0]['kode']);
+        $this->assertStringContainsString('ke-1 & ke-2', $peringatan[0]['pesan']);
+        $this->assertStringContainsString('H2S', $peringatan[0]['pesan']);
     }
 
     /**
@@ -272,7 +273,8 @@ class GasDetectorBudgetTest extends TestCase
         $peringatan = (new GasDetectorProfile)->peringatanSesi($sesi);
 
         $this->assertCount(1, $peringatan);
-        $this->assertStringContainsString('Tekanan udara', $peringatan[0]);
+        $this->assertSame('gas_tekanan_belum_lengkap', $peringatan[0]['kode']);
+        $this->assertStringContainsString('Tekanan udara', $peringatan[0]['pesan']);
     }
 
     /**
