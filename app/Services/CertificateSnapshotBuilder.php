@@ -587,7 +587,29 @@ class CertificateSnapshotBuilder
             $resolusi = [];
             foreach ($rentang as $band) {
                 if (is_array($band) && isset($band['resolusi'])) {
-                    $resolusi[] = Angka::idRingkas((float) $band['resolusi'], 6).$satuan;
+                    // Satuannya diambil PER BAND, bukan sekali dari alatnya.
+                    //
+                    // Spectrophotometer ngukur dua besaran dengan satu alat: 19
+                    // band panjang gelombang (`nm`, resolusi 0,01) dan 5 band
+                    // transmitansi (`%T`, resolusi 0,001). `equipments.satuan`
+                    // cuma muat satu, dan yang kesimpen di situ `nm`.
+                    //
+                    // Waktu satuan alat dipakai buat semua band, resolusi %T
+                    // kecetak `0,001 nm` di sertifikat — angka yang benar
+                    // dengan satuan yang salah, dan itu bentuk kekeliruan yang
+                    // paling susah ketahuan: nggak ada yang error, dokumennya
+                    // kelihatan rapi, dan yang baca cuma bisa curiga kalau dia
+                    // hafal alatnya nggak punya resolusi 0,001 nm.
+                    //
+                    // Ketemu 21 Agt 2026 waktu CAL/2026/08/0052 diadu ke master
+                    // Excel-nya baris per baris — seluruh 23 baris pengukuran &
+                    // ketiga U95 cocok persis, yang meleset cuma baris ini.
+                    $satuanBand = isset($band['satuan']) && is_string($band['satuan'])
+                        && trim($band['satuan']) !== ''
+                            ? ' '.trim($band['satuan'])
+                            : $satuan;
+
+                    $resolusi[] = Angka::idRingkas((float) $band['resolusi'], 6).$satuanBand;
                 }
             }
             if ($resolusi !== []) {
