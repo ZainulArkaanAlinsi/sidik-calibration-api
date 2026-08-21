@@ -110,6 +110,22 @@ RUN composer install \
 COPY . .
 COPY --from=aset /app/public/build ./public/build
 
+# Bikin aturan pengecualian di .dockerignore memeriksa dirinya sendiri.
+#
+# `MetodeKalibrasiSeeder` nggak meledak kalau lembar masternya hilang — dia
+# cuma bilang "metode dilewati" lalu jalan terus. Itu perilaku yang benar buat
+# seeder, tapi artinya berkas yang hilang NGGAK PERNAH kelihatan waktu deploy:
+# build hijau, boot hijau, dan yang rusak baru ketahuan berbulan-bulan kemudian
+# sebagai kolom kosong di sertifikat yang sudah terbit.
+#
+# Gagal di sini, waktu build, dengan sebab yang jelas. Berkasnya di-commit ke
+# git, jadi satu-satunya cara dia hilang adalah .dockerignore yang salah — dan
+# itu justru yang mau dijaga baris ini.
+RUN test -f CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv || ( \
+      echo "!! Lembar master metode kalibrasi nggak ikut ke image." >&2; \
+      echo "   Cek baris pengecualian CATATAN di .dockerignore." >&2; \
+      exit 1 )
+
 # `--no-scripts` di atas bikin package:discover nggak jalan otomatis, jadi
 # dipanggil manual di sini — sesudah kode lengkap kesalin.
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
