@@ -31,8 +31,8 @@ dulu.** Itu inti dokumen ini.
 | | Sepuluh alat sebelumnya | TITS |
 |---|---|---|
 | Titik ukur | daftar tetap dari backend | **teknisi boleh menambah/menghapus/mengubah** (`titik_bisa_diubah: true`) |
-| Judul kolom tabel | satu string | **peta per mode** — bertukar sisi |
-| Pengulangan | angka polos (`[1,2,3]`) | **objek ber-`arah`** — UP ×3 lalu DOWN ×3 |
+| Judul kolom tabel | satu string | string + **`_per_mode`** — bertukar sisi |
+| Pengulangan | angka polos (`[1,2,3]`) | angka + **`pengulangan_arah`** — UP ×3 lalu DOWN ×3 |
 | Field wajib khusus | — | **`mode_kalibrasi` & `tipe_sensor`** — tanpa keduanya sesi TIDAK dihitung |
 | U95 | per titik (sebagian alat) | **satu untuk seluruh sesi**, dicetak di bawah tabel |
 | Vonis PASS/FAIL | ada (kecuali Autoclave, DO Meter, Gas Detector) | **tidak ada** |
@@ -99,19 +99,22 @@ disimpan, tapi U95-nya tidak terbit — alasannya ikut di `belum_dihitung`.
 
 ## 2. Judul kolom tabel BERTUKAR mengikuti mode
 
-`bagian[kode=hasil].tabel[i].judul_nilai` dan `judul_pengulangan` **bukan
-string** di alat ini, melainkan peta:
+`judul_nilai` & `judul_pengulangan` **tetap string** (tipe lamanya tidak
+berubah — aplikasi versi lama tetap bisa membuka lembarnya). Petanya datang di
+kunci TAMBAHAN `judul_nilai_per_mode` & `judul_pengulangan_per_mode`:
 
 ```json
 {
   "tahap": "sebelum_adjustment",
   "judul": "Before Adjustment Reading",
   "satuan": "°C",
-  "judul_nilai": {
+  "judul_nilai": "Standard Indication",
+  "judul_nilai_per_mode": {
     "measure": "Standard Indication",
     "source": "UUT Indication"
   },
-  "judul_pengulangan": {
+  "judul_pengulangan": "Reading Unit Under Test",
+  "judul_pengulangan_per_mode": {
     "measure": "Reading Unit Under Test",
     "source": "Reading Standard"
   },
@@ -119,8 +122,12 @@ string** di alat ini, melainkan peta:
 }
 ```
 
-Pilih judul menurut `mode_kalibrasi` yang sedang dipilih, dan **perbarui waktu
-teknisi mengganti mode** — jangan dibaca sekali waktu layar dibuka.
+Nilai kunci polosnya varian **measure** — jadi kalau `_per_mode` belum
+ditangani, lembar tetap kebuka dan cuma judulnya yang salah waktu modenya
+`source`.
+
+Pakai `_per_mode` menurut `mode_kalibrasi` yang sedang dipilih, dan **perbarui
+waktu teknisi mengganti mode** — jangan dibaca sekali waktu layar dibuka.
 
 Alasannya bukan kosmetik: di mode `measure` kolom kiri berisi setpoint
 kalibrator dan kolom pengulangan berisi bacaan alat pelanggan; di mode `source`
@@ -136,7 +143,8 @@ String judulNilai(dynamic v, String mode) =>
 
 ## 3. Enam pembacaan per titik, dengan arah
 
-`pengulangan` di alat ini **list objek**, bukan list angka:
+`pengulangan` **tetap list angka** `[1,2,3,4,5,6]` (tipe lamanya tidak
+berubah). Arah & labelnya di kunci tambahan `pengulangan_arah`:
 
 ```json
 [
@@ -148,6 +156,9 @@ String judulNilai(dynamic v, String mode) =>
   { "ke": 6, "arah": "DOWN", "label": "DOWN X3" }
 ]
 ```
+
+Kalau `pengulangan_arah` belum ditangani, kolomnya tetap tergambar enam —
+cuma tanpa label UP/DOWN.
 
 Yang dikirim balik tetap `measurements[i].pembacaan` sebagai **array enam
 angka berurutan** (indeks 0–2 = UP, 3–5 = DOWN) — persis seperti alat lain.

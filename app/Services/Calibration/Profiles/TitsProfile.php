@@ -127,6 +127,26 @@ class TitsProfile extends CalibrationProfile
     public const PENGULANGAN_PER_ARAH = 3;
 
     /**
+     * Judul kolom NILAI per mode — `INPUT DATA` B31 di kedua workbook.
+     *
+     * @var array<string, string>
+     */
+    public const JUDUL_NILAI = [
+        TabelKalibratorSuhu::MODE_MEASURE => 'Standard Indication',
+        TabelKalibratorSuhu::MODE_SOURCE => 'UUT Indication',
+    ];
+
+    /**
+     * Judul kolom PENGULANGAN per mode — `INPUT DATA` D31.
+     *
+     * @var array<string, string>
+     */
+    public const JUDUL_PENGULANGAN = [
+        TabelKalibratorSuhu::MODE_MEASURE => 'Reading Unit Under Test',
+        TabelKalibratorSuhu::MODE_SOURCE => 'Reading Standard',
+    ];
+
+    /**
      * Titik yang muncul sebagai SARAN awal di lembar kerja — dari sesi measure
      * contoh (`INPUT DATA` B33:B49).
      *
@@ -1015,22 +1035,31 @@ class TitsProfile extends CalibrationProfile
      */
     private function tabelHasil(string $tahap, string $judul): array
     {
+        $nomor = range(1, self::PENGULANGAN_PER_ARAH * self::ARAH_PER_TITIK);
+
         return [
             'tahap' => $tahap,
             'judul' => $judul,
             'satuan' => self::SATUAN,
-            // Judul kedua kolom BERTUKAR mengikuti mode, dan yang menukarnya
-            // frontend lewat `mode_kalibrasi` — bukan dua bentuk tabel terpisah.
-            // Master menulisnya `Standard Indication` / `Reading UUT` di mode
-            // measure dan `UUT Indication` / `Reading Standard` di mode source.
-            'judul_nilai' => [
-                TabelKalibratorSuhu::MODE_MEASURE => 'Standard Indication',
-                TabelKalibratorSuhu::MODE_SOURCE => 'UUT Indication',
-            ],
-            'judul_pengulangan' => [
-                TabelKalibratorSuhu::MODE_MEASURE => 'Reading Unit Under Test',
-                TabelKalibratorSuhu::MODE_SOURCE => 'Reading Standard',
-            ],
+            // Judul kedua kolom BERTUKAR mengikuti mode — master menulisnya
+            // `Standard Indication` / `Reading UUT` di mode measure dan
+            // `UUT Indication` / `Reading Standard` di mode source.
+            //
+            // Dikirim DUA KALI, dan itu disengaja. Kunci polos `judul_nilai`
+            // tetap STRING karena sepuluh alat lain mengisinya string dan
+            // aplikasi teknisi membacanya `as String?` — dikirim peta, cast itu
+            // melempar `TypeError` dan yang gagal bukan satu kolom melainkan
+            // SELURUH lembar (`LembarKerja.fromJson` di luar jangkauan
+            // `parseListAman`). Petanya menyusul di kunci `_per_mode`, yang
+            // dibaca layar yang sudah mengerti mode.
+            //
+            // Yang dipakai sebagai nilai polos varian MEASURE, bukan tanda
+            // hubung atau teks netral: aplikasi versi lama tetap menggambar
+            // lembar yang kebaca, cuma judulnya salah kalau modenya source.
+            'judul_nilai' => self::JUDUL_NILAI[TabelKalibratorSuhu::MODE_MEASURE],
+            'judul_nilai_per_mode' => self::JUDUL_NILAI,
+            'judul_pengulangan' => self::JUDUL_PENGULANGAN[TabelKalibratorSuhu::MODE_MEASURE],
+            'judul_pengulangan_per_mode' => self::JUDUL_PENGULANGAN,
             'titik_bisa_diubah' => true,
             'baris' => array_map(
                 static fn (float $t): array => [
@@ -1043,9 +1072,17 @@ class TitsProfile extends CalibrationProfile
             'kolom' => [
                 ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
             ],
-            // Enam pembacaan per titik: 1–3 UP, 4–6 DOWN. Label arahnya dibawa
-            // di sini supaya frontend nggak menghitung sendiri dari indeks.
-            'pengulangan' => array_map(
+            // Enam pembacaan per titik: 1–3 UP, 4–6 DOWN.
+            //
+            // `pengulangan` tetap DAFTAR ANGKA, alasannya sama seperti
+            // `judul_nilai` di atas: aplikasi menyaringnya `whereType<num>()`,
+            // jadi daftar objek lolos tanpa error tapi menghasilkan nol kolom
+            // pembacaan — lembar kerja yang terbuka rapi dan tidak bisa diisi.
+            'pengulangan' => $nomor,
+            // Arah & labelnya menyusul di kunci sendiri, supaya layar tidak
+            // menghitung "1–3 UP, 4–6 DOWN" dari indeks. Kalau lab suatu saat
+            // membaca empat kali per arah, yang berubah cukup di sini.
+            'pengulangan_arah' => array_map(
                 static fn (int $i): array => [
                     'ke' => $i,
                     'arah' => $i <= self::PENGULANGAN_PER_ARAH ? 'UP' : 'DOWN',
@@ -1055,7 +1092,7 @@ class TitsProfile extends CalibrationProfile
                         (($i - 1) % self::PENGULANGAN_PER_ARAH) + 1,
                     ),
                 ],
-                range(1, self::PENGULANGAN_PER_ARAH * self::ARAH_PER_TITIK),
+                $nomor,
             ),
         ];
     }
