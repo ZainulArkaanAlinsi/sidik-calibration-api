@@ -892,6 +892,12 @@ class TitsProfile extends CalibrationProfile
     {
         return [
             'kode_dokumen' => self::KODE_DOKUMEN,
+            // Nomor METODE ikut, walau nomor FORMULIR-nya belum ada. Dua hal
+            // yang beda: yang FM dokumen terkendali yang memang belum terbit,
+            // yang IK sudah dipakai dan tercetak di sertifikat. Tanpa baris ini
+            // kop lembar kerja TITS kosong melompong — satu-satunya dari
+            // sebelas alat — padahal nomor metodenya sudah diketahui.
+            'kode_metode' => self::KODE_METODE,
             'judul' => 'Calibration Worksheet - Temperature Indicator Tanpa Sensor (TITS)',
             'jumlah_pengulangan' => self::PENGULANGAN_PER_ARAH,
             'arah_pembacaan' => ['UP', 'DOWN'],
