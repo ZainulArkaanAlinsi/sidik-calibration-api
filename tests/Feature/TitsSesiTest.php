@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\CertificateSnapshotBuilder;
@@ -81,6 +82,37 @@ class TitsSesiTest extends TestCase
         // jatuh ke profil default (pH) — tanpa error di mana pun.
         $this->assertInstanceOf(TitsProfile::class, $profil);
         $this->assertSame('tits', $profil->kode());
+    }
+
+    /**
+     * `GET /api/calibrations/{id}` memulangkan kode profil yang SUDAH
+     * diresolusi, bukan cuma nama alat pelanggan.
+     *
+     * Tanpa kunci ini mobile kepaksa menebak jenis lembar kerja dari
+     * `equipment.nama_alat` — dan buat TITS tebakan itu tidak pernah bisa
+     * kena: kedua alat di master terdaftar "Temperature Calibrator" dan
+     * "Temperature Recorder Controller", nol kemiripan dengan "Temperature
+     * Indicator tanpa Sensor" yang jadi kunci pencocokan profilnya. Sesi yang
+     * dibuka lagi jatuh ke formulir pH — tiga titik 4/7/10,01 di atas lembar
+     * suhu sembilan titik −20…1000 °C — tanpa satu pun error muncul.
+     */
+    public function test_respons_sesi_bawa_kode_profil(): void
+    {
+        $sesi = $this->sesi('22506.01.A');
+        $admin = User::factory()->admin()->create();
+
+        $respons = $this->actingAs($admin)
+            ->getJson("/api/calibrations/{$sesi->id}")
+            ->assertOk();
+
+        $respons->assertJsonPath('data.equipment.profil', 'tits');
+        $respons->assertJsonPath(
+            'data.equipment.nama_alat_kemampuan',
+            'Temperature Indicator tanpa Sensor',
+        );
+        // Nama alat pelanggan tetap apa adanya — dipakai buat judul, bukan
+        // buat nebak profil.
+        $respons->assertJsonPath('data.equipment.nama_alat', 'Temperature Calibrator');
     }
 
     public function test_sesi_mode_measure_cocok_master(): void
