@@ -726,6 +726,13 @@ class GasDetectorProfile extends CalibrationProfile
             // lewat `tabel.baris[].satuan`. Kunci ini sengaja null biar
             // frontend nggak menempelkan satu satuan ke semua kolom.
             'satuan' => null,
+            // Penanda eksplisit buat aplikasi teknisi: `satuan: null` sendirian
+            // kebaca sebagai string kosong di sana (`as String? ?? ''`), dan
+            // dari situ layar nggak punya cara tahu bedanya "alat ini campur
+            // satuan" dan "backend-nya belum ngisi". Conductivity &
+            // Spectrophotometer sudah mengirimnya dari dulu; alat ini
+            // ketinggalan waktu ditambahkan.
+            'satuan_campuran' => true,
             'satuan_suhu' => '°C',
             'satuan_tekanan' => 'hPa',
             'semua_kolom_opsional' => true,
