@@ -87,5 +87,16 @@ services:
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
+      #
+      # Sandi akun TETAP AMAN kalaupun ini keteken "true" lagi: seeder cuma
+      # masang sandi ke akun yang baru kebentuk, nggak pernah nyetel ulang yang
+      # sudah ada. Yang ketimpa tetap datanya, bukan kredensialnya.
       - key: SEED_ON_BOOT
         value: "false"
+
+      # Sandi awal buat akun yang dibentuk seeder di atas. Dikosongin juga
+      # aman — seeder bikin sandi acak dan nyetak sekali ke log deploy buat
+      # disalin. Yang nggak boleh cuma satu: kepakainya `rahasia123`, karena
+      # sandi itu tercetak di repo yang publik ini.
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
