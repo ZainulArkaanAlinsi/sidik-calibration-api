@@ -19,6 +19,7 @@ use App\Services\KondisiLingkungan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Database\Seeders\Concerns\MenstempelVersiRumus;
+use Database\Seeders\Concerns\MenyetelSandiAwal;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -55,6 +56,7 @@ class PhMeterSeeder extends Seeder
 {
     use MemanjangkanMasaBerlaku;
     use MenstempelVersiRumus;
+    use MenyetelSandiAwal;
 
     public function run(): void
     {
@@ -140,18 +142,28 @@ class PhMeterSeeder extends Seeder
     /** @param  array{employee_id: string, name: string, department: string, email: string}  $orang */
     private function buatUser(array $orang, string $role): User
     {
-        return User::updateOrCreate(
-            ['email' => $orang['email']],
-            [
-                'organization_id' => 1,
-                'employee_id' => $orang['employee_id'],
-                'name' => $orang['name'],
-                'department' => $orang['department'],
-                'role' => $role,
-                'status' => User::STATUS_AKTIF,
-                'password' => 'rahasia123',
-            ],
-        );
+        $user = User::firstOrNew(['email' => $orang['email']]);
+
+        $user->fill([
+            'organization_id' => 1,
+            'employee_id' => $orang['employee_id'],
+            'name' => $orang['name'],
+            'department' => $orang['department'],
+            'role' => $role,
+            'status' => User::STATUS_AKTIF,
+        ]);
+
+        // Dulu ini `updateOrCreate` yang nyetel sandi tiap kali jalan, jadi
+        // seed ulang ngebalikin sandi yang sudah diganti admin ke bawaan.
+        // Sekarang sandi cuma dipasang buat baris baru — lihat
+        // MenyetelSandiAwal.
+        if (! $user->exists) {
+            $user->password = $this->sandiAwal();
+        }
+
+        $user->save();
+
+        return $user;
     }
 
     /**

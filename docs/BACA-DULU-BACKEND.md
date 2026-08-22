@@ -259,7 +259,14 @@ disamain ke dokumen, jadi tabel akun di `kontrak-api.md` udah bener.
 | `SDK-0003` | viewer@sidik.test | viewer | aktif |
 | `SDK-0099` | eko@sidik.test | teknisi | **pending** |
 
-Password semua `rahasia123`. Login pakai ID pegawai **atau** email.
+Password semua `rahasia123` — **berlaku di laptop doang**. Di server seeder
+masang sandi dari `SEED_ADMIN_PASSWORD`, atau sandi acak yang dicetak sekali ke
+log deploy kalau variabel itu kosong; duduk perkaranya di
+`database/seeders/Concerns/MenyetelSandiAwal.php`. Seeder juga nggak pernah
+nyetel ulang sandi akun yang sudah ada, jadi seed ulang aman buat sandi yang
+sudah diganti admin.
+
+Login pakai ID pegawai **atau** email.
 
 Seeder `PhMeterSeeder` juga bikin dua akun PT Sidik asli yang kepakai
 di demo sertifikat pH `012-CAL-524` — belum pernah didokumentasiin sebelumnya:

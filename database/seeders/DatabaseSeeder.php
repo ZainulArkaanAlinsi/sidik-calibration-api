@@ -3,11 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Concerns\MenyetelSandiAwal;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    use MenyetelSandiAwal;
     use WithoutModelEvents;
 
     /**
@@ -77,6 +79,10 @@ class DatabaseSeeder extends Seeder
      * Akun dev buat mobile nyobain login (kredensialnya sesuai tabel di
      * docs/kontrak-api.md — kalau salah satu diubah, ubah dua-duanya).
      *
+     * Sandi `rahasia123` yang ada di tabel itu berlaku di LAPTOP doang. Di
+     * server sandinya dari `SEED_ADMIN_PASSWORD`, atau acak kalau nggak
+     * disetel — lihat `MenyetelSandiAwal` buat duduk perkaranya.
+     *
      * Yang terakhir sengaja `pending` — biar mobile bisa nyobain layar "akun
      * belum disetujui" tanpa harus daftar manual dulu.
      *
@@ -99,13 +105,18 @@ class DatabaseSeeder extends Seeder
             $sebelumnya = $account['sebelumnya'];
             unset($account['sebelumnya']);
 
-            $atribut = [...$account, 'organization_id' => 1, 'password' => 'rahasia123'];
+            $atribut = [...$account, 'organization_id' => 1];
 
             $lama = User::query()
                 ->whereIn('employee_id', [$account['employee_id'], $sebelumnya])
                 ->first();
 
-            $lama ? $lama->update($atribut) : User::create($atribut);
+            // Sandi cuma ikut waktu barisnya BARU. Kalau dia ikut di `update()`
+            // juga, tiap seed ulang ngebalikin sandi yang sudah diganti admin
+            // ke bawaan — diam-diam, tanpa error. Lihat MenyetelSandiAwal.
+            $lama
+                ? $lama->update($atribut)
+                : User::create([...$atribut, 'password' => $this->sandiAwal()]);
         }
     }
 }
