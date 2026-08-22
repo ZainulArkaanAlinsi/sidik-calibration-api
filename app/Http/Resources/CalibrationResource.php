@@ -55,6 +55,27 @@ class CalibrationResource extends JsonResource
             'equipment' => [
                 'id' => $this->equipment?->id,
                 'nama_alat' => $this->equipment?->nama_alat,
+                // Nama JENIS alat menurut lampiran akreditasi, plus kode profil
+                // yang sudah diresolusi dari situ.
+                //
+                // `nama_alat` itu nama alat PELANGGAN dan bentuknya bebas —
+                // "Temperature Calibrator", "Visible Spectrofotometer",
+                // "Turbidimeter Hach". Mobile selama ini menebak jenis lembar
+                // kerja dari string itu, dan tebakan yang meleset jatuh ke
+                // formulir pH tanpa satu pun error muncul. Untuk TITS tebakan
+                // itu SELALU meleset: kedua alat di master bernama
+                // "Temperature Calibrator" dan "Temperature Recorder
+                // Controller", nol kemiripan dengan "Temperature Indicator
+                // tanpa Sensor" yang jadi kunci pencocokan profilnya.
+                //
+                // `profil` dikirim sudah jadi, bukan cuma namanya: registry di
+                // sini yang berhak memutuskan alat ini profil apa, dan tabel
+                // nama tandingan di sisi mobile pasti ketinggalan tiap kali
+                // alat baru masuk.
+                'nama_alat_kemampuan' => $this->equipment?->nama_alat_kemampuan,
+                'profil' => $this->resource->equipment !== null
+                    ? self::profil($this->resource->equipment)?->kode()
+                    : null,
                 'serial_number' => $this->equipment?->serial_number,
             ],
 
