@@ -16,6 +16,10 @@ bawah **tidak** bisa diputuskan dari berkas yang ada; semuanya sudah diberi
 keputusan sementara (reproduksi apa adanya, dengan catatan audit) supaya
 pekerjaan tidak berhenti.
 
+Nomor **1–11** berasal dari isi workbook. Nomor **12–13** beda jenisnya: itu
+pertanyaan yang muncul justru karena master TIDAK memuatnya — lembar kerja yang
+terisi sebagian, yang tidak pernah ada contohnya di berkas.
+
 Ringkasan cara baca: tiap set point enclosure menghitung U95 sendiri dari GRID
 9 termokopel × 5 pembacaan + Indikator enclosure. Karena **U95 yang dilaporkan =
 MAX(U hitung, CMC)** (lantai CMC ILAC-P14), dan di kedua sesi contoh CMC menang
@@ -244,6 +248,70 @@ set point; sesi contoh mengisi 4 (15/35/75/100), dan baris SP5/SP6 kosong keluar
 `#DIV/0!` di `SERTIFIKAT`. Recorder tetap 3 @ 67 °C. Sistem memperlakukan jumlah
 set point sebagai data (bebas per kapasitas alat). Konfirmasi: maksimum set
 point yang benar-benar didukung — 4, 6, atau tergantung jenis enclosure?
+
+---
+
+## 12. Batas kelengkapan grid: berapa pembacaan & berapa termokopel minimum?
+
+Master selalu **9 termokopel × 5 pembacaan**, jadi berkasnya tidak pernah
+menjawab apa yang harus terjadi kalau lembar kerjanya terisi sebagian. Ini bukan
+kasus teoretis: teknisi menyimpan lembar setengah jadi, dan set point yang
+kurang lengkap tetap punya kolom hasil yang TERCETAK di sertifikat (Sebaran
+Suhu, Keseragaman, Kestabilan) — bukan cuma U95 yang bisa tertutup lantai CMC.
+
+**Yang dipakai sekarang — dua ambang, dua-duanya menolak menghitung** (set
+point-nya masuk `belum_dihitung` dengan alasan yang menyebut termokopelnya,
+sisanya di sesi yang sama tetap dihitung):
+
+**(a) Minimal 4 pembacaan per termokopel.** Peta kolom master menyalin
+`[1,2,3,3,4]` — pembacaan ke-5 dibuang, ke-3 digandakan (lihat #4). Jadi grid 4
+pembacaan menghasilkan angka yang **persis sama** dengan grid 5 pembacaan, isi
+kolom kelimanya berapa pun; 4 itu batas alami, bukan pilihan.
+
+Di bawah 4 tidak ada nilai untuk kolom yang hilang selain menebaknya. Kode
+sebelumnya menambal dengan **mengulang pembacaan terakhir** — pada grid 3
+pembacaan itu menggeser rata-rata sensor di orde **0,06 °C**, cukup untuk
+mengubah kolom Sebaran Suhu yang dicetak satu desimal. Sekarang tidak ditambal.
+
+**(b) Minimal 2 termokopel per set point.** Keseragaman & Variasi Keseluruhan
+itu selisih antar-POSISI di dalam chamber. Dengan satu termokopel keduanya
+keluar **0,0** — dan `0,0` di kolom Keseragaman dibaca pelanggan sebagai "sudah
+dibuktikan seragam", padahal yang benar "belum diukur". Dua adalah batas di mana
+besaran itu mulai punya isi sama sekali; bukan batas yang benar secara metrologi.
+
+**Yang ditanyakan:**
+
+1. **Minimum termokopel yang sah menurut lab berapa?** Batas 2 sengaja dipasang
+   longgar supaya chamber kecil yang memang dipetakan dengan titik lebih sedikit
+   tidak terblokir. Kalau IK `SIDIK-IK-CAL-0501` mewajibkan 9 (atau 5, atau
+   bergantung volume chamber), angkanya tinggal diganti — set point dengan
+   termokopel di bawah master sekarang cuma dicatat di jejak audit
+   (`sensor_kurang_dari_master`), tidak ditolak.
+2. **Pembacaan kurang dari 4: tolak (seperti sekarang), atau hitung apa adanya
+   dengan catatan?** Menolak berarti teknisi wajib melengkapi kolomnya. Bisa
+   dibalik jadi peringatan kalau lab memandang 3 pembacaan tetap sah.
+3. **Set point yang cuma terisi baris Indikator** (tanpa termokopel sama sekali)
+   sekarang **tetap disimpan** tapi tidak dihitung — supaya lembar setengah jadi
+   tidak hilang waktu disimpan ulang. Konfirmasi itu perilaku yang diinginkan.
+
+## 13. Sensor Acuan ditentukan dari POSISI, bukan nomor
+
+Keseragaman diukur relatif ke **Sensor Acuan** = baris pertama grid (baris 23
+master). Yang tersimpan cuma nomor termokopelnya, jadi "pertama" itu urutan di
+lembar kerja — dan sensor yang kolomnya kosong dibuang sebelum dihitung. Kalau
+termokopel yang dimaksud jadi acuan kebetulan tidak terisi, **sensor lain naik
+jadi acuan tanpa ada yang tahu**, dan seluruh kolom Keseragaman diukur relatif
+ke titik yang salah.
+
+**Yang dipakai sekarang:** nomor termokopel yang benar-benar dipakai sebagai
+acuan ikut dicetak di jejak audit (`sensor_acuan`) dan di ringkasan sebaran,
+supaya kegeserannya kelihatan waktu diperiksa.
+
+**Yang ditanyakan:** apakah Sensor Acuan itu **posisi tertentu di chamber**
+(mis. selalu titik tengah) yang punya nomor termokopel tetap per sesi? Kalau ya,
+nomornya sebaiknya jadi field sesi sendiri — bukan disimpulkan dari urutan
+baris — supaya sesi yang acuannya tidak terisi ditolak, bukan diam-diam
+memakai sensor lain.
 
 ---
 

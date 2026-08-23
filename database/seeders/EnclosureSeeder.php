@@ -257,6 +257,7 @@ class EnclosureSeeder extends Seeder
                     RawMeasurement::create([
                         'calibration_session_id' => $sesi->id, 'titik_ke' => $titikKe,
                         'pembacaan_ke' => $i + 1, 'sensor_ke' => $s['no'], 'peran_sensor' => 'termokopel',
+                        'channel' => $s['channel'] ?? null,
                         'tahap' => 'sesudah_adjustment', 'titik_ukur' => $sp['setpoint'], 'pembacaan' => $nilai,
                         'satuan' => EnclosureProfileBase::SATUAN, 'standard_id' => $standar->id,
                         'input_source' => 'manual', 'is_verified' => true,

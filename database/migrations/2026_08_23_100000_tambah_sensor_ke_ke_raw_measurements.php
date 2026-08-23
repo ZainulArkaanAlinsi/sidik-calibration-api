@@ -36,13 +36,20 @@ return new class extends Migration
             $table->unsignedTinyInteger('sensor_ke')->nullable()->after('pembacaan_ke');
             // 'termokopel' (dipasangkan sensor_ke 1–9) | 'indikator' | 'suhu_ruang'.
             $table->string('peran_sensor', 20)->nullable()->after('sensor_ke');
+            // Nomor kanal recorder (CH1..CH20) buat termokopel yang dibaca lewat
+            // kalibrator Recorder. WAJIB disimpan, bukan cuma dipakai sekali
+            // waktu menghitung: koreksi meter recorder dibaca PER KANAL, dan
+            // kanal nggak selalu sama dengan nomor termokopel. Tanpa kolom ini
+            // sesi tersimpan kehilangan masukan koreksinya — hitung ulang &
+            // telusur audit nggak bisa memulihkan grid aslinya.
+            $table->unsignedTinyInteger('channel')->nullable()->after('peran_sensor');
         });
     }
 
     public function down(): void
     {
         Schema::table('raw_measurements', function (Blueprint $table): void {
-            $table->dropColumn(['sensor_ke', 'peran_sensor']);
+            $table->dropColumn(['sensor_ke', 'peran_sensor', 'channel']);
         });
     }
 };

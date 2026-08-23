@@ -189,11 +189,22 @@ class TabelKalibratorEnclosure
      */
     private function nilaiTitikTerdekat(array $peta, float $target): ?float
     {
+        // Kunci ASLI disimpan berdampingan dengan nilai float-nya, bukan disusun
+        // ulang dari float-nya sesudah pemenangnya ketemu.
+        //
+        // Susun ulang itu mengandaikan tiap kunci JSON berbentuk kanonis: `"100"`,
+        // bukan `"100.0"` atau `" 100"`. Satu kunci non-kanonis — hasil regenerasi
+        // tabel dari berkas master, atau suntingan tangan — bikin
+        // `$peta[kunci($menang)]` nggak ketemu, dan `(float) null` itu **0,0**:
+        // koreksi nol yang kelihatan sah, persis kasus yang paling ingin dicegah
+        // di seluruh modul ini. Dengan indeks berdampingan, kunci apa pun aman.
         $titik = [];
+        $nilai = [];
 
         foreach ($peta as $t => $v) {
             if ($v !== null) {
                 $titik[] = (float) $t;
+                $nilai[] = (float) $v;
             }
         }
 
@@ -202,8 +213,9 @@ class TabelKalibratorEnclosure
         }
 
         $menang = $this->titikTerdekat($titik, $target);
+        $posisi = array_search($menang, $titik, true);
 
-        return (float) $peta[$this->kunci($menang)];
+        return $posisi === false ? null : $nilai[$posisi];
     }
 
     /**
@@ -233,12 +245,6 @@ class TabelKalibratorEnclosure
         }
 
         return $menang['titik'];
-    }
-
-    /** Kunci JSON untuk sebuah titik: bilangan bulat tanpa `.0`. */
-    private function kunci(float $titik): string
-    {
-        return $titik == (int) $titik ? (string) (int) $titik : (string) $titik;
     }
 
     /**

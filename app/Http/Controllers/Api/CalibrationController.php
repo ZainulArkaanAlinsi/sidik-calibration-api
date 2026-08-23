@@ -1308,12 +1308,34 @@ class CalibrationController extends Controller
         $siapHitung = [];
         $belumDihitung = [];
 
-        // Cuma set point yang punya minimal satu termokopel BERISI pembacaan.
+        // Angka yang datang dari KAMERA wajib dikonfirmasi manusia sebelum sesi
+        // bisa disetujui — sama aturannya dengan sepuluh alat lain (lihat
+        // `approve()` yang menolak sesi ber-`is_verified` false).
+        //
+        // Sebelumnya jalur grid selalu menulis `manual` + `is_verified` true
+        // apa pun `input_method`-nya, jadi gerbang verifikasi itu diam-diam
+        // nggak pernah aktif buat enclosure. Grid 9×5 justru bentuk lembar yang
+        // paling mungkin diisi lewat pemindaian, jadi ini bukan kasus teoretis.
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $terisi = static fn ($v): bool => $v !== null && $v !== '';
+
+        // Set point dianggap terpakai kalau ADA isinya — dari termokopel MAUPUN
+        // dari baris Indikator.
+        //
+        // Dulu cuma termokopel yang dicek, dan itu membuang set point yang
+        // teknisinya baru sempat mengisi Indikator: `store()`/`update()` sudah
+        // menghapus `raw_measurements` lama SEBELUM menyusun yang baru, jadi
+        // pembacaan Indikator-nya hilang permanen — bukan sekadar nggak
+        // kehitung. Lembar setengah jadi harus tetap bisa disimpan.
         $titikTerpakai = array_values(array_filter(
             $request->input('measurements', []),
             static fn (array $t): bool => collect($t['sensor_grid'] ?? [])
                 ->flatMap(static fn (array $s): array => array_values($s['pembacaan'] ?? []))
-                ->contains(static fn ($v): bool => $v !== null && $v !== ''),
+                ->contains($terisi)
+                || collect($t['indikator'] ?? [])->contains($terisi),
         ));
 
         foreach ($titikTerpakai as $index => $titik) {
@@ -1341,13 +1363,17 @@ class CalibrationController extends Controller
                         'pembacaan_ke' => $urutan + 1,
                         'sensor_ke' => $no,
                         'peran_sensor' => 'termokopel',
+                        // Kanal recorder ikut disimpan: koreksi meter recorder
+                        // dibaca per kanal, jadi tanpa ini sesi tersimpan nggak
+                        // bisa dihitung ulang.
+                        'channel' => $kanal,
                         'tahap' => 'sesudah_adjustment',
                         'titik_ukur' => $setpoint,
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $pembacaan,
                         'satuan' => $alat->satuan,
-                        'input_source' => 'manual',
-                        'is_verified' => true,
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $dariKamera,
                     ];
                 }
 
@@ -1377,8 +1403,8 @@ class CalibrationController extends Controller
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $pembacaan,
                     'satuan' => $alat->satuan,
-                    'input_source' => 'manual',
-                    'is_verified' => true,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
                 ];
             }
 
@@ -1399,7 +1425,15 @@ class CalibrationController extends Controller
 
         return [
             'mentah' => $mentah,
-            'hitungan' => $perGrup['hitungan'] ?? [],
+            // Dibulatkan ke presisi kolom `uncertainty_calculations` SEBELUM
+            // dipulangkan — sama seperti jalur per-titik. Tanpa ini `preview`
+            // memulangkan angka presisi penuh sementara yang tersimpan sudah
+            // dibulatkan kolom `decimal`, dan dua angka beda untuk satu
+            // pengukuran itu temuan audit buat lab terakreditasi.
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
             'belum_dihitung' => [...$belumDihitung, ...($perGrup['belum_dihitung'] ?? [])],
         ];
     }

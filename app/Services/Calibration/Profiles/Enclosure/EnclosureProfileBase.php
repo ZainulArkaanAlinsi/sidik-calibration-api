@@ -66,6 +66,17 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     /** Jumlah pengulangan per termokopel di master (`INPUT DATA` kolom 1–5). */
     public const PENGULANGAN = 5;
 
+    /**
+     * Termokopel minimum per set point supaya Keseragaman & Variasi punya arti.
+     *
+     * Bukan [EnclosureCalculator::SENSOR_MASTER]: chamber kecil kadang dipetakan
+     * dengan titik lebih sedikit, dan memblokirnya di 9 bikin sesi yang sah
+     * nggak bisa disimpan — grid yang lebih tipis dari master dicatat di jejak
+     * audit, bukan ditolak. Tapi di bawah DUA keduanya bukan sekadar kurang
+     * teliti: nggak ada selisih antar-posisi buat diukur sama sekali.
+     */
+    public const MIN_SENSOR = 2;
+
     private ?EnclosureCalculator $kalkulator = null;
 
     public function __construct(private readonly TabelKalibratorEnclosure $tabel = new TabelKalibratorEnclosure) {}
@@ -213,7 +224,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             return $this->semuaBelum($titik, $kurang);
         }
 
-        $kemampuan = $this->kemampuanEnclosure();
+        $kemampuan = $this->kemampuanEnclosure($equipment);
 
         if ($kemampuan === null) {
             return $this->semuaBelum($titik, sprintf(
@@ -249,6 +260,27 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                 continue;
             }
 
+            // Keseragaman itu selisih antar-POSISI di dalam chamber. Dengan satu
+            // termokopel selisih itu nggak ada isinya, dan yang tercetak di
+            // kolom Keseragaman jadi `0,0` — dibaca pelanggan sebagai "sudah
+            // dibuktikan seragam" padahal yang benar "belum diukur". Master
+            // pakai 9 titik; di bawah dua nggak bisa dihitung sama sekali.
+            if (count($grid) < self::MIN_SENSOR) {
+                $belumDihitung[] = [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => sprintf(
+                        'Set point %s °C cuma punya %d termokopel. Keseragaman & Variasi butuh minimal %d '
+                        .'posisi (master pakai %d) — dengan satu sensor keduanya keluar 0,0 seolah sudah terbukti.',
+                        $this->angka((float) $t['titik_ukur']),
+                        count($grid),
+                        self::MIN_SENSOR,
+                        EnclosureCalculator::SENSOR_MASTER,
+                    ),
+                ];
+
+                continue;
+            }
+
             $hasil = ($this->kalkulator ??= new EnclosureCalculator($this->tabel))->hitungSetpoint(
                 array_map(static fn (array $s): array => [
                     'no' => (int) $s['no'],
@@ -260,6 +292,51 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                 $spek,
                 (int) $t['titik_ke'],
             );
+
+            // Koreksi yang nggak ketemu di tabel bikin set point ini nggak boleh
+            // terbit — sebaran suhu & keseragaman yang tercetak ikut salah, bukan
+            // cuma U95. Lihat [EnclosureCalculator::hitungSensor].
+            if ($hasil['koreksi_hilang'] !== []) {
+                $belumDihitung[] = [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => sprintf(
+                        'Set point %s °C: sensor %s nggak punya koreksi di tabel kalibrator %s (%s). '
+                        .'Koreksi yang hilang nggak boleh dianggap nol. Cek nomor termokopel%s.',
+                        $this->angka((float) $t['titik_ukur']),
+                        implode(', ', array_map(
+                            static fn (array $h): string => 'no. '.$h['no'],
+                            $hasil['koreksi_hilang'],
+                        )),
+                        TabelKalibratorEnclosure::MERK_TERCETAK[$merk] ?? $merk,
+                        $tipe,
+                        $tipe === 'Type N' ? ' — sertifikat sensor Type N lab mulai dari no. 3' : '',
+                    ),
+                ];
+
+                continue;
+            }
+
+            // Termokopel yang pembacaannya kurang dari 4 nggak bisa dijalankan
+            // lewat peta kolom master tanpa menebak isi kolom yang kosong, dan
+            // tebakan itu mendarat di kolom Sebaran Suhu yang tercetak.
+            // Lihat [EnclosureCalculator::MIN_PEMBACAAN].
+            if ($hasil['pembacaan_kurang'] !== []) {
+                $belumDihitung[] = [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => sprintf(
+                        'Set point %s °C: termokopel %s pembacaannya kurang dari %d. Lengkapi dulu — '
+                        .'kolom yang kosong nggak boleh ditebak dari pembacaan sebelumnya.',
+                        $this->angka((float) $t['titik_ukur']),
+                        implode(', ', array_map(
+                            static fn (array $p): string => sprintf('no. %d (%d pembacaan)', $p['no'], $p['jumlah']),
+                            $hasil['pembacaan_kurang'],
+                        )),
+                        EnclosureCalculator::MIN_PEMBACAAN,
+                    ),
+                ];
+
+                continue;
+            }
 
             $hitungan[] = $this->barisHitungan($hasil, $t['standard'], $kemampuan);
         }
@@ -305,7 +382,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ];
         }
 
-        if ($this->kemampuanEnclosure() === null) {
+        if ($this->kemampuanEnclosure($sesi->equipment) === null) {
             $peringatan[] = [
                 'kode' => 'enclosure_cmc_kosong',
                 'pesan' => sprintf('CMC buat enclosure "%s" belum ada di master kemampuan kalibrasi.', $this->namaAlatKemampuan()),
@@ -445,11 +522,13 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         $audit[] = [
             'sumber' => 'sebaran_sensor',
             'keterangan' => sprintf(
-                'Kestabilan %s °C, Keseragaman %s °C, Variasi %s °C. %d sensor; Indikator enclosure %s °C.',
+                'Kestabilan %s °C, Keseragaman %s °C, Variasi %s °C. %d sensor (acuan: no. %d); '
+                .'Indikator enclosure %s °C.',
                 $this->angka($hasil['kestabilan']),
                 $this->angka($hasil['keseragaman']),
                 $this->angka($hasil['variasi_keseluruhan']),
                 count($hasil['sensor']),
+                $hasil['sensor_acuan'],
                 $this->angka($hasil['indikator_enclosure']),
             ),
             'distribusi' => '-',
@@ -457,6 +536,11 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             'kestabilan' => $hasil['kestabilan'],
             'keseragaman' => $hasil['keseragaman'],
             'variasi_keseluruhan' => $hasil['variasi_keseluruhan'],
+            // Nomor termokopel yang jadi acuan Keseragaman. Dicatat eksplisit
+            // karena "sensor pertama" itu posisi di grid yang terkirim: sensor
+            // yang kosong dibuang sebelum sampai kalkulator, jadi acuannya bisa
+            // bergeser tanpa ada yang menyadari.
+            'sensor_acuan' => $hasil['sensor_acuan'],
             'sensor' => $hasil['sensor'],
         ];
 
@@ -527,11 +611,25 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         ];
     }
 
-    /** CMC untuk enclosure ini, dicocokkan lewat `nama_alat`. */
-    private function kemampuanEnclosure(): ?CalibrationCapability
+    /**
+     * CMC untuk enclosure ini, dicocokkan lewat `nama_alat`.
+     *
+     * Disaring ke KATEGORI alatnya kalau kategorinya diketahui.
+     * `calibration_capabilities` memang tidak punya `organization_id` sendiri
+     * (isinya lampiran akreditasi lab), tapi `equipment_category_id`-nya menunjuk
+     * `equipment_categories` yang DIKUNCI per organisasi. `nama_alat` sendiri
+     * tidak dijamin unik lintas kategori/organisasi, jadi tanpa saringan ini
+     * baris pertama yang kebetulan cocok bisa berasal dari kategori organisasi
+     * lain — dan CMC yang salah langsung mendarat di sertifikat.
+     */
+    private function kemampuanEnclosure(?Equipment $equipment = null): ?CalibrationCapability
     {
         return CalibrationCapability::query()
             ->where('nama_alat', $this->namaAlatKemampuan())
+            ->when(
+                $equipment?->equipment_category_id !== null,
+                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
             ->first();
     }
 

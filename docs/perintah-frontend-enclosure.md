@@ -11,7 +11,7 @@ frontend — tidak perlu membuka dokumen lain.
 | Metode | `SIDIK-IK-CAL-0501_Rev.6` |
 | Master | `…Enclosure_Constant_Yokogawa.xlsm` (sesi `0123-CAL-524`) & `…Enclosure_Recorder.xlsm` (sesi `0304-CAL-624`) |
 | Kode profil | `oven`, `furnace`, `bath`, `inkubator`, `refrigerator` (satu mesin hitung) |
-| Status backend | Kalkulator + profil + ingest grid + olah data **selesai & terverifikasi persis ke kedua master di MySQL** (Uc, v_eff, k, U, sebaran semua cocok) |
+| Status backend | Kalkulator + profil + ingest grid + olah data **selesai & diadu ke kedua master di SQLite + MySQL** — Uc, v_eff, k, U, & sebaran cocok, KECUALI sel master yang memang rusak (Yokogawa SP3 & Recorder SP3, lihat `docs/pertanyaan-lab-enclosure.md` #5); di situ kalkulator menghitung yang benar dan U95 yang dilaporkan tetap sama dengan sertifikat |
 
 ---
 
@@ -84,13 +84,15 @@ Tiap set point diisi:
 `bentukLembarKerja` mengirim ringkasannya di kunci `grid_sensor`:
 
 ```json
-"grid_sensor": {
-  "jumlah_sensor_saran": 9,
-  "pengulangan": [1, 2, 3, 4, 5],
-  "butuh_channel_untuk": "recorder",
-  "baris_indikator": true,
-  "baris_suhu_ruang": true,
-  "catatan_sensor_acuan": "Sensor pertama = Sensor Acuan (keseragaman diukur relatif ke sensor ini)."
+{
+  "grid_sensor": {
+    "jumlah_sensor_saran": 9,
+    "pengulangan": [1, 2, 3, 4, 5],
+    "butuh_channel_untuk": "recorder",
+    "baris_indikator": true,
+    "baris_suhu_ruang": true,
+    "catatan_sensor_acuan": "Sensor pertama = Sensor Acuan (keseragaman diukur relatif ke sensor ini)."
+  }
 }
 ```
 
@@ -114,15 +116,22 @@ Tiap set point diisi:
       "sensor_grid": [
         { "no": 3, "pembacaan": [15.0, 15.1, 15.1, 15.1, 15.1] },
         { "no": 4, "pembacaan": [15.2, 15.3, 15.2, 15.3, 15.2] },
-        { "no": 5, "pembacaan": [15.1, 15.1, 15.1, 15.2, 15.2] }
-        /* … total 9 termokopel … */
+        { "no": 5, "pembacaan": [15.1, 15.1, 15.1, 15.2, 15.2] },
+        { "no": 6, "pembacaan": [15.1, 15.1, 15.2, 15.2, 15.3] },
+        { "no": 7, "pembacaan": [15.0, 14.9, 14.9, 14.9, 14.9] },
+        { "no": 8, "pembacaan": [15.2, 15.2, 15.3, 15.3, 15.4] },
+        { "no": 9, "pembacaan": [15.0, 15.1, 15.1, 15.2, 15.2] },
+        { "no": 10, "pembacaan": [15.1, 15.2, 15.2, 15.2, 15.3] },
+        { "no": 11, "pembacaan": [14.9, 14.9, 14.9, 15.0, 15.0] }
       ],
       "indikator": [15.0, 15.0, 15.0, 15.0, 15.0]
     }
-    /* … set point berikutnya … */
   ]
 }
 ```
+
+Contoh di atas memuat **satu** set point lengkap (9 termokopel). Set point
+berikutnya ditambahkan sebagai entri berikutnya di array `measurements`.
 
 Untuk kalibrator **Recorder**, tiap item `sensor_grid` tambah `"channel"`:
 
@@ -132,10 +141,49 @@ Untuk kalibrator **Recorder**, tiap item `sensor_grid` tambah `"channel"`:
 
 Catatan:
 - `titik_ukur` = set point (°C).
-- Sel kosong boleh dikirim `null` — disaring waktu hitung. Set point yang tidak
-  punya satu pun pembacaan termokopel otomatis diabaikan.
+- Sel kosong boleh dikirim `null` — disaring waktu hitung. Set point yang
+  BENAR-BENAR kosong (tidak ada pembacaan termokopel MAUPUN Indikator) diabaikan;
+  set point yang baru terisi Indikator saja tetap tersimpan.
 - Jumlah set point bebas (ikut kapasitas alat) — sesi contoh 4 (Yokogawa) & 3
-  (Recorder).
+  (Recorder). Batas request: 60 set point, 40 sensor/set point, 20 pembacaan.
+- Nomor termokopel tidak boleh kembar dalam satu set point (ditolak 422).
+- **Nomor termokopel harus ada di sertifikat sensor lab.** Type N mulai dari
+  no. 3 (TCN3…TCN12), Type K dari no. 1. Nomor di luar itu — atau termokopel
+  Recorder tanpa `channel` — bikin set point-nya TIDAK dihitung dan muncul di
+  `belum_dihitung`, bukan dihitung dengan koreksi 0.
+
+### Set point yang DISIMPAN tapi tidak dihitung
+
+Empat hal bikin satu set point pindah ke `belum_dihitung`. Semuanya **tetap
+tersimpan** (pembacaannya tidak hilang) dan **tidak menjatuhkan set point lain**
+di sesi yang sama — jadi ini status per baris, bukan error seluruh request:
+
+| kondisi | kenapa tidak dihitung |
+|---|---|
+| grid termokopel kosong, atau baris Indikator kosong | tidak ada bahan buat sebaran maupun budget |
+| **< 2 termokopel** | Keseragaman & Variasi itu selisih antar-posisi; dengan satu sensor keduanya keluar `0,0` seolah sudah terbukti seragam |
+| **ada termokopel dengan < 4 pembacaan** | master memetakan kolom `[1,2,3,3,4]`; di bawah 4 kolom yang hilang harus ditebak, dan tebakan itu mendarat di kolom Sebaran Suhu yang tercetak |
+| nomor termokopel di luar tabel, atau Recorder tanpa `channel` | koreksinya tidak ketemu — dan koreksi yang hilang tidak boleh dianggap nol |
+
+**Empat pembacaan sudah cukup**, bukan lima: master memang membuang pembacaan
+ke-5 (lihat `docs/pertanyaan-lab-enclosure.md` #4), jadi grid 4 dan grid 5
+memberi angka yang identik. Kolom ke-5 tetap ditampilkan supaya lembar kerjanya
+sama dengan kertasnya.
+
+**Saran UI:** tandai baris termokopel yang pembacaannya masih di bawah 4 SEBELUM
+dikirim — lebih baik teknisi melengkapi di layar daripada set point-nya balik
+sebagai `belum_dihitung` sesudah submit. `alasan` tiap entri `belum_dihitung`
+sudah menyebut nomor termokopel dan jumlah pembacaannya, jadi bisa ditampilkan
+apa adanya.
+
+### Sensor Acuan = termokopel PERTAMA di `sensor_grid`
+
+Keseragaman diukur relatif ke sensor pertama dalam array yang dikirim. Kalau
+termokopel yang dimaksud jadi acuan tidak terisi, dia dibuang dan sensor
+berikutnya naik jadi acuan — **urutan array itu bermakna**. Jaga supaya urutan
+kirimannya sama dengan urutan di lembar kerja, dan tampilkan
+`type_b_components[].sensor_acuan` (kunci `sumber: "sebaran_sensor"`) di layar
+hasil supaya kegeserannya kelihatan.
 
 ## 5. U95 PER SET POINT
 
@@ -182,9 +230,13 @@ Endpoint validasi/approve mengembalikan `validasi.temuan[]`:
 
 ## Catatan untuk backend/lab (bukan pekerjaan frontend)
 
-Ada 11 hal di master yang tidak bisa diputuskan dari berkas dan sudah
-didokumentasikan di **`docs/pertanyaan-lab-enclosure.md`** (pembagi drift `1,73`
-vs √3, √(√3) di Recorder, radiasi 0,6 vs 0,1, blok SP3 kedua master yang salah
-sel, `#REF!` PT100, GL840 expired, dll.). Semuanya ditiru apa adanya dengan
-catatan audit; tidak mengubah angka yang sudah tercetak (lantai CMC menang di
-kedua sesi contoh). Frontend tidak perlu menangani ini.
+Ada 13 hal yang tidak bisa diputuskan dari berkas dan sudah didokumentasikan di
+**`docs/pertanyaan-lab-enclosure.md`** (pembagi drift `1,73` vs √3, √(√3) di
+Recorder, radiasi 0,6 vs 0,1, blok SP3 kedua master yang salah sel, `#REF!`
+PT100, GL840 expired, dll.). Semuanya ditiru apa adanya dengan catatan audit;
+tidak mengubah angka yang sudah tercetak (lantai CMC menang di kedua sesi
+contoh).
+
+Dua di antaranya (**#12 batas kelengkapan grid**, **#13 Sensor Acuan**) BERKAITAN
+dengan frontend — keduanya sudah dijelaskan di bagian 4 di atas. Kalau lab
+menjawab lain, yang berubah cuma ambangnya di backend; bentuk request-nya tetap.
