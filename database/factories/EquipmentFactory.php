@@ -22,7 +22,12 @@ class EquipmentFactory extends Factory
             'organization_id' => fn () => Organization::query()->value('id') ?? Organization::factory(),
             'customer_id' => fn () => Customer::query()->value('id') ?? Customer::factory(),
             'equipment_category_id' => fn () => EquipmentCategory::query()->value('id') ?? EquipmentCategory::factory(),
-            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Micrometer', 'Timbangan', 'Oven']),
+            // Nama generik untuk fixture panjang/massa. JANGAN pakai nama yang
+            // sama dengan `namaAlatKemampuan()` profil mana pun (mis. "Oven",
+            // yang sekarang milik EnclosureProfile) — `untukAlat()` jatuh ke
+            // `nama_alat` waktu `nama_alat_kemampuan` null, jadi alat generik
+            // bakal ketarik ke profil enclosure & nggak kehitung.
+            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Micrometer', 'Timbangan', 'Height Gauge']),
             'merk' => fake()->randomElement(['Mitutoyo', 'Ohaus', 'Memmert']),
             'serial_number' => strtoupper(fake()->unique()->bothify('??-####-##')),
             'satuan' => 'mm',

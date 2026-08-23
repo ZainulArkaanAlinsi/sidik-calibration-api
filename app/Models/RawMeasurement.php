@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @mixin IdeHelperRawMeasurement
  */
 #[Fillable([
-    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'tahap', 'titik_ukur', 'standard_id',
+    'calibration_session_id', 'titik_ke', 'pembacaan_ke', 'sensor_ke', 'peran_sensor', 'tahap', 'titik_ukur', 'standard_id',
     'pembacaan', 'suhu', 'satuan', 'spindle', 'rpm', 'input_source', 'ocr_confidence', 'ocr_raw_text', 'photo_path',
     'is_verified',
 ])]
@@ -22,6 +22,9 @@ class RawMeasurement extends Model
         return [
             'titik_ukur' => 'float',
             'pembacaan' => 'float',
+            // Sumbu sensor buat enclosure (grid 9 termokopel). Null buat sepuluh
+            // alat single-channel lain. Lihat migrasi 2026_08_23_100000.
+            'sensor_ke' => 'integer',
             // Suhu larutan waktu pembacaan diambil — pH bergantung suhu, jadi
             // ini bagian dari data, bukan catatan tambahan.
             'suhu' => 'float',

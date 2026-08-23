@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -143,6 +144,28 @@ class UjiProfilKalibrasi extends Command
      */
     private function ujiSatu(CalibrationProfile $profil, ?Equipment $alat, User $teknisi): array
     {
+        // Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator) tidak lewat
+        // `preview` per titik — tiap set point GRID (9 termokopel × 5) diolah di
+        // `EnclosureCalculator` lewat `hitungPerGrup`. Kelima profil berbagi SATU
+        // mesin hitung; yang diperiksa sesi tersimpannya lengkap. Jenis yang
+        // belum punya sesi demo (Furnace/Bath/Refrigerator) diuji lewat Oven &
+        // Inkubator — bukan kegagalan.
+        if ($profil instanceof EnclosureProfileBase) {
+            if ($alat === null) {
+                return ['-', 'mesin hitung enclosure sama untuk 5 jenis — diuji lewat Oven & Inkubator', true];
+            }
+
+            $sesi = CalibrationSession::where('equipment_id', $alat->id)
+                ->has('uncertaintyCalculations')
+                ->latest('id')
+                ->first();
+            $jumlah = $sesi?->uncertaintyCalculations()->count() ?? 0;
+
+            return $jumlah > 0
+                ? ["{$jumlah}/{$jumlah}", "U95 per set point lengkap (sesi {$sesi->nomor_sesi})", true]
+                : ['-', 'sesi enclosure kosong atau tidak punya hasil hitung', false];
+        }
+
         if ($alat === null) {
             return ['-', 'tidak ada alat contoh di database', false];
         }
