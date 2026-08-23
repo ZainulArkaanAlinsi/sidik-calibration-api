@@ -207,6 +207,28 @@ class EnclosureCalculator
             throw new \InvalidArgumentException("Set point {$setpoint} °C nggak punya satu pun sensor terisi.");
         }
 
+        // Grid DIURUTKAN nomor termokopel di sini, bukan dipakai apa adanya.
+        //
+        // Sensor Acuan = sensor pertama (lihat di bawah), jadi urutan grid
+        // menentukan ANGKA — dan sebelumnya urutannya beda per jalur: jalur
+        // simpan memakai urutan array dari request, sementara jalur validasi &
+        // `kalibrasi:hitung-ulang` menyusun ulang dari `raw_measurements` yang
+        // dikelompokkan per `sensor_ke` (terurut nomor). Satu data mentah, dua
+        // jawaban: pada grid contoh yang urutannya dibalik, Keseragaman jadi
+        // 0,4 °C bukan 0,2 °C — DUA KALI LIPAT — dan U95 ikut bergeser.
+        //
+        // Akibatnya bukan cuma angka beda: `CalibrationValidator` membandingkan
+        // hasil tersimpan vs hitung ulang, jadi tiap sesi yang gridnya nggak
+        // dikirim urut nomor bakal ke-flag "data berubah sesudah submit" padahal
+        // tidak ada yang berubah — dan `kalibrasi:hitung-ulang` diam-diam
+        // menulis angka yang beda dari yang tercetak di sertifikat.
+        //
+        // Diurutkan DI SINI, di titik yang dilewati ketiga jalur, supaya nggak
+        // ada pemanggil yang bisa salah. Nomor terkecil jadi acuan — sama
+        // dengan kedua master (Type N mulai no. 3, Type K mulai no. 1, dan di
+        // dua-duanya baris "Sensor Acuan" itu nomor terkecil).
+        usort($sensors, static fn (array $a, array $b): int => (int) $a['no'] <=> (int) $b['no']);
+
         $berkanal = $merk === TabelKalibratorEnclosure::MERK_BERKANAL;
         $hasilSensor = [];
 
@@ -214,14 +236,14 @@ class EnclosureCalculator
             $hasilSensor[] = $this->hitungSensor($s, $merk, $tipe, $berkanal);
         }
 
-        // Sensor acuan = sensor pertama (baris 23 master, "Sensor Acuan").
+        // Sensor Acuan = sensor pertama SESUDAH diurutkan di atas, alias
+        // termokopel bernomor TERKECIL di set point ini (baris 23 master).
         //
-        // "Pertama" itu POSISI di grid yang dikirim, bukan nomor termokopel
-        // tertentu — dan grid yang dikirim sudah dibuang sensor kosongnya di
-        // controller. Jadi kalau termokopel yang dimaksud jadi acuan kebetulan
-        // nggak keisi, sensor lain naik jadi acuan tanpa ada yang tau, dan
-        // seluruh kolom Keseragaman diukur relatif ke titik yang salah.
-        // Nomornya ikut dipulangkan & dicetak di jejak audit supaya kelihatan.
+        // Yang masih bisa menggeser acuan: sensor kosong dibuang di controller
+        // sebelum sampai sini, jadi kalau termokopel bernomor terkecil kebetulan
+        // nggak keisi, nomor berikutnya yang jadi acuan. Itu nggak bisa
+        // diputuskan di sini — makanya nomornya ikut dipulangkan & dicetak di
+        // jejak audit, supaya kegeserannya kelihatan waktu diperiksa.
         $acuan = $hasilSensor[0]['terkoreksi'];
         $noAcuan = $hasilSensor[0]['no'];
 
@@ -754,15 +776,14 @@ class EnclosureCalculator
             ];
         }
 
-        // 7. Sensor acuan yang dipakai. Dicatat karena "sensor pertama" itu
-        // posisi di grid yang terkirim, bukan nomor tertentu — sensor yang
-        // kosong sudah dibuang sebelum sampai sini.
+        // 7. Sensor acuan yang dipakai. Dicatat karena sensor yang kosong dibuang
+        // sebelum sampai sini, jadi acuannya bisa bergeser ke nomor berikutnya.
         if ($noAcuan !== null) {
             $catatan[] = [
                 'kode' => 'sensor_acuan',
                 'pesan' => sprintf(
-                    'Keseragaman diukur relatif ke termokopel no. %d (sensor pertama di grid yang terkirim). '
-                    .'Pastikan itu memang Sensor Acuan yang dimaksud di lembar kerja.',
+                    'Keseragaman diukur relatif ke termokopel no. %d (nomor terkecil yang terisi di set point '
+                    .'ini). Pastikan itu memang Sensor Acuan yang dimaksud di lembar kerja.',
                     $noAcuan,
                 ),
             ];

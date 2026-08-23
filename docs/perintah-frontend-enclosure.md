@@ -146,7 +146,9 @@ Catatan:
   set point yang baru terisi Indikator saja tetap tersimpan.
 - Jumlah set point bebas (ikut kapasitas alat) — sesi contoh 4 (Yokogawa) & 3
   (Recorder). Batas request: 60 set point, 40 sensor/set point, 20 pembacaan.
-- Nomor termokopel tidak boleh kembar dalam satu set point (ditolak 422).
+- Nomor termokopel tidak boleh kembar **dalam satu set point** (ditolak 422).
+  Nomor yang sama di set point LAIN normal dan diterima — memang begitu cara
+  alat ini dipakai.
 - **Nomor termokopel harus ada di sertifikat sensor lab.** Type N mulai dari
   no. 3 (TCN3…TCN12), Type K dari no. 1. Nomor di luar itu — atau termokopel
   Recorder tanpa `channel` — bikin set point-nya TIDAK dihitung dan muncul di
@@ -176,14 +178,24 @@ sebagai `belum_dihitung` sesudah submit. `alasan` tiap entri `belum_dihitung`
 sudah menyebut nomor termokopel dan jumlah pembacaannya, jadi bisa ditampilkan
 apa adanya.
 
-### Sensor Acuan = termokopel PERTAMA di `sensor_grid`
+### Sensor Acuan = termokopel bernomor TERKECIL
 
-Keseragaman diukur relatif ke sensor pertama dalam array yang dikirim. Kalau
-termokopel yang dimaksud jadi acuan tidak terisi, dia dibuang dan sensor
-berikutnya naik jadi acuan — **urutan array itu bermakna**. Jaga supaya urutan
-kirimannya sama dengan urutan di lembar kerja, dan tampilkan
-`type_b_components[].sensor_acuan` (kunci `sumber: "sebaran_sensor"`) di layar
-hasil supaya kegeserannya kelihatan.
+Keseragaman diukur relatif ke Sensor Acuan, dan acuannya ditentukan dari **nomor
+termokopel terkecil** yang terisi di set point itu — bukan dari urutan array.
+Jadi **urutan `sensor_grid` bebas**: kirim urut nomor, urut posisi di chamber,
+atau urut apa pun, angkanya sama.
+
+Itu disengaja. Backend punya tiga jalur yang menyusun grid (simpan dari request,
+validasi sebelum approve, dan hitung ulang dari data tersimpan), dan dua di
+antaranya membaca balik dari database yang terkelompok per nomor sensor. Kalau
+acuannya ikut urutan array, satu data mentah bisa menghasilkan dua angka
+berbeda — pada grid contoh selisihnya 2× di kolom Keseragaman.
+
+Satu hal yang **masih** bisa menggeser acuan: termokopel yang kolomnya kosong
+dibuang sebelum dihitung, jadi kalau nomor terkecil tidak terisi, nomor
+berikutnya yang jadi acuan. Tampilkan `sensor_acuan` (di
+`type_b_components[]` kunci `sumber: "sebaran_sensor"`) di layar hasil supaya
+kegeserannya kelihatan.
 
 ## 5. U95 PER SET POINT
 

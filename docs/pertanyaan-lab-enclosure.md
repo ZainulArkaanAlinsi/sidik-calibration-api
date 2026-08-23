@@ -294,24 +294,35 @@ besaran itu mulai punya isi sama sekali; bukan batas yang benar secara metrologi
    sekarang **tetap disimpan** tapi tidak dihitung — supaya lembar setengah jadi
    tidak hilang waktu disimpan ulang. Konfirmasi itu perilaku yang diinginkan.
 
-## 13. Sensor Acuan ditentukan dari POSISI, bukan nomor
+## 13. Sensor Acuan disimpulkan, bukan dicatat
 
 Keseragaman diukur relatif ke **Sensor Acuan** = baris pertama grid (baris 23
-master). Yang tersimpan cuma nomor termokopelnya, jadi "pertama" itu urutan di
-lembar kerja — dan sensor yang kolomnya kosong dibuang sebelum dihitung. Kalau
-termokopel yang dimaksud jadi acuan kebetulan tidak terisi, **sensor lain naik
-jadi acuan tanpa ada yang tahu**, dan seluruh kolom Keseragaman diukur relatif
-ke titik yang salah.
+master). Tapi yang tersimpan cuma nomor termokopelnya — tidak ada satu kolom pun
+yang menyatakan "ini acuannya". Jadi acuannya harus DISIMPULKAN, dan aturan
+penyimpulannya wajib sama di ketiga jalur yang menyusun grid (simpan dari
+request, validasi sebelum approve, hitung ulang dari data tersimpan).
 
-**Yang dipakai sekarang:** nomor termokopel yang benar-benar dipakai sebagai
-acuan ikut dicetak di jejak audit (`sensor_acuan`) dan di ringkasan sebaran,
-supaya kegeserannya kelihatan waktu diperiksa.
+**Yang dipakai sekarang:** acuan = **nomor termokopel TERKECIL** yang terisi di
+set point itu, diurutkan di dalam kalkulator supaya ketiga jalur tidak mungkin
+berbeda. Dipilih karena cocok dengan kedua master: baris "Sensor Acuan" di
+dua-duanya memang nomor terkecil (Type N mulai no. 3, Type K mulai no. 1). Nomor
+yang benar-benar dipakai ikut dicetak di jejak audit (`sensor_acuan`).
 
-**Yang ditanyakan:** apakah Sensor Acuan itu **posisi tertentu di chamber**
-(mis. selalu titik tengah) yang punya nomor termokopel tetap per sesi? Kalau ya,
-nomornya sebaiknya jadi field sesi sendiri — bukan disimpulkan dari urutan
-baris — supaya sesi yang acuannya tidak terisi ditolak, bukan diam-diam
-memakai sensor lain.
+Sebelumnya acuannya diambil dari urutan array yang dikirim, dan itu **bug
+nyata**: dua jalur lain membaca balik dari database yang terkelompok per nomor
+sensor, jadi grid yang tidak dikirim urut nomor menghasilkan Keseragaman
+**0,4 °C di satu jalur dan 0,2 °C di jalur lain** — dua kali lipat, dari data
+mentah yang sama.
+
+**Yang ditanyakan (dua hal):**
+
+1. **Apakah acuan memang selalu nomor terkecil?** Kalau Sensor Acuan itu
+   sebenarnya **posisi tertentu di chamber** (mis. selalu titik tengah) yang
+   nomor termokopelnya berganti tiap sesi, aturan "nomor terkecil" bisa salah
+   diam-diam. Kalau begitu, nomornya perlu jadi **field sesi sendiri** — dicatat
+   teknisi, bukan disimpulkan.
+2. **Kalau termokopel acuan tidak terisi**, sekarang nomor berikutnya yang naik
+   jadi acuan. Apakah itu benar, atau set point-nya harus ditolak?
 
 ---
 
