@@ -200,6 +200,167 @@ class EnclosureBudgetTest extends TestCase
         $this->assertJauhDari($rataBersih, $rataMaster, 1e-6, 'contoh ini harus punya ke-5 ≠ ke-3');
     }
 
+    /**
+     * Koreksi yang nggak ketemu di tabel DILAPORKAN, bukan diam-diam jadi nol.
+     *
+     * Dua kasus yang beneran bisa terjadi:
+     *  - grid Type N dinomori mulai 1, padahal sertifikat sensor Type N lab
+     *    mulai dari TCN3 (tabel cuma punya kunci 3..12);
+     *  - sesi Recorder yang termokopelnya nggak bawa nomor kanal.
+     *
+     * Yang dijaga di sini: `koreksi_hilang` keisi. Kalau suatu saat `?? 0.0`
+     * balik lagi, sebaran suhu & keseragaman yang TERCETAK ikut salah tanpa satu
+     * pun angka kelihatan janggal — dan tes ini yang jatuh duluan.
+     */
+    public function test_koreksi_hilang_dilaporkan_bukan_dianggap_nol(): void
+    {
+        $fix = self::fixture()['yokogawa'];
+        $sp = $fix['setpoints'][0];
+
+        // Nomori ulang sensor jadi 1..9 — di luar kunci tabel Type N (3..12).
+        $sensors = [];
+
+        foreach (array_values($sp['sensors']) as $i => $s) {
+            $sensors[] = ['no' => $i + 1, 'pembacaan' => $s['pembacaan']];
+        }
+
+        $hasil = (new EnclosureCalculator)->hitungSetpoint($sensors, $sp['indikator'], (float) $sp['setpoint'], [
+            'merk' => $fix['merk'],
+            'tipe_sensor' => $fix['tipe_sensor'],
+            'cmc' => (float) $fix['cmc'],
+            'resolusi_alat' => 0.1,
+        ]);
+
+        $hilang = collect($hasil['koreksi_hilang']);
+        $this->assertNotEmpty($hilang, 'sensor di luar tabel harus kelaporan, bukan dianggap koreksi 0');
+        $this->assertEqualsCanonicalizing([1, 2], $hilang->pluck('no')->all());
+
+        // Dan catatan auditnya menyebut sensor mana yang kehilangan koreksi.
+        $this->assertNotEmpty(
+            collect($hasil['catatan_audit'])->firstWhere('kode', 'koreksi_hilang'),
+            'harus ada catatan audit `koreksi_hilang`',
+        );
+    }
+
+    /**
+     * Sensor dengan pembacaan kurang dari 4 DILAPORKAN, bukan ditambal.
+     *
+     * Peta kolom master baca indeks 0–3, jadi grid 3 pembacaan dulu ditambal
+     * dengan mengulang pembacaan terakhir — dan tambalan itu masuk ke `AVG
+     * Terkoreksi` yang tercetak di kolom Sebaran Suhu sertifikat.
+     */
+    public function test_pembacaan_kurang_dilaporkan_bukan_ditambal(): void
+    {
+        $fix = self::fixture()['yokogawa'];
+        $sp = $fix['setpoints'][0];
+
+        $utuh = array_map(
+            static fn (array $s): array => ['no' => $s['no'], 'pembacaan' => $s['pembacaan']],
+            $sp['sensors'],
+        );
+
+        $spek = [
+            'merk' => $fix['merk'],
+            'tipe_sensor' => $fix['tipe_sensor'],
+            'cmc' => (float) $fix['cmc'],
+            'resolusi_alat' => 0.1,
+        ];
+
+        // Dua jalan buat sensor pertama, sisanya utuh: TIGA pembacaan (kurang,
+        // dulu ditambal jadi [a,b,c,c,c]) versus EMPAT (cukup, master memang
+        // memetakannya jadi [a,b,c,c,c]). Kalau kode masih menambal, rata-rata
+        // sensor pertama keduanya identik.
+        $tiga = array_slice($utuh[0]['pembacaan'], 0, 3);
+        $empat = array_slice($utuh[0]['pembacaan'], 0, 4);
+
+        $a = $utuh;
+        $a[0]['pembacaan'] = $tiga;
+        $b = $utuh;
+        $b[0]['pembacaan'] = $empat;
+
+        $hasilA = (new EnclosureCalculator)->hitungSetpoint($a, $sp['indikator'], (float) $sp['setpoint'], $spek);
+        $hasilB = (new EnclosureCalculator)->hitungSetpoint($b, $sp['indikator'], (float) $sp['setpoint'], $spek);
+
+        $this->assertSame(
+            [['no' => $utuh[0]['no'], 'jumlah' => 3]],
+            $hasilA['pembacaan_kurang'],
+            'sensor berpembacaan 3 harus kelaporan, bukan ditambal diam-diam',
+        );
+        $this->assertSame([], $hasilB['pembacaan_kurang'], '4 pembacaan itu cukup');
+
+        // Koreksi tabelnya sama di dua jalan (selisih rata-rata mentah jauh di
+        // bawah jarak antar-titik tabel), jadi selisih rata-rata TERKOREKSI-nya
+        // persis selisih rata-rata mentahnya.
+        $mentahA = array_sum($tiga) / 3;
+        $mentahB = array_sum([$tiga[0], $tiga[1], $tiga[2], $tiga[2], $empat[3]]) / 5;
+
+        $this->assertEqualsWithDelta(
+            $mentahA - $mentahB,
+            $hasilA['sensor'][0]['rata_rata_terkoreksi'] - $hasilB['sensor'][0]['rata_rata_terkoreksi'],
+            1e-9,
+            'rata-rata sensor berpembacaan 3 harus dihitung dari 3 angka, bukan 3 + 2 tambalan',
+        );
+    }
+
+    /**
+     * Grid 4 pembacaan = grid 5 pembacaan, apa pun isi kolom kelimanya —
+     * karena master memang membuang kolom ke-5 ([PETA_KOLOM_PEMBACAAN]).
+     */
+    public function test_empat_pembacaan_sama_hasilnya_dengan_lima(): void
+    {
+        $fix = self::fixture()['yokogawa'];
+        $sp = $fix['setpoints'][0];
+
+        $lima = array_map(
+            static fn (array $s): array => ['no' => $s['no'], 'pembacaan' => $s['pembacaan']],
+            $sp['sensors'],
+        );
+
+        $empat = array_map(
+            static fn (array $s): array => ['no' => $s['no'], 'pembacaan' => array_slice($s['pembacaan'], 0, 4)],
+            $lima,
+        );
+
+        $spek = [
+            'merk' => $fix['merk'],
+            'tipe_sensor' => $fix['tipe_sensor'],
+            'cmc' => (float) $fix['cmc'],
+            'resolusi_alat' => 0.1,
+        ];
+
+        $a = (new EnclosureCalculator)->hitungSetpoint($lima, $sp['indikator'], (float) $sp['setpoint'], $spek);
+        $b = (new EnclosureCalculator)->hitungSetpoint($empat, $sp['indikator'], (float) $sp['setpoint'], $spek);
+
+        $this->assertSame([], $b['pembacaan_kurang'], '4 pembacaan itu cukup, bukan kurang');
+        $this->assertEqualsWithDelta($a['ketidakpastian_gabungan'], $b['ketidakpastian_gabungan'], 1e-12);
+        $this->assertEqualsWithDelta($a['keseragaman'], $b['keseragaman'], 1e-12);
+        $this->assertEqualsWithDelta($a['kestabilan'], $b['kestabilan'], 1e-12);
+    }
+
+    /** Sensor acuan yang dipakai ikut dipulangkan & dicatat — nggak cuma posisi. */
+    public function test_sensor_acuan_dilaporkan(): void
+    {
+        $fix = self::fixture()['yokogawa'];
+        $hasil = $this->hitung($fix, $fix['setpoints'][0]);
+
+        $this->assertSame($fix['setpoints'][0]['sensors'][0]['no'], $hasil['sensor_acuan']);
+        $this->assertNotEmpty(
+            collect($hasil['catatan_audit'])->firstWhere('kode', 'sensor_acuan'),
+            'harus ada catatan audit `sensor_acuan`',
+        );
+    }
+
+    /** Grid yang koreksinya LENGKAP nggak melaporkan apa-apa. */
+    public function test_grid_lengkap_tidak_punya_koreksi_hilang(): void
+    {
+        $fix = self::fixture();
+
+        foreach (['yokogawa', 'recorder'] as $wb) {
+            $hasil = $this->hitung($fix[$wb], $fix[$wb]['setpoints'][0]);
+            $this->assertSame([], $hasil['koreksi_hilang'], "{$wb} SP1 mestinya lengkap koreksinya");
+        }
+    }
+
     /** v_eff TIDAK dipotong ke bawah — Recorder v_eff 298,25 (pecahan), bukan 298. */
     public function test_v_eff_tidak_dipotong(): void
     {
@@ -209,6 +370,66 @@ class EnclosureBudgetTest extends TestCase
         $hasil = $this->hitung($fix, $fix['setpoints'][0]);
         $this->assertEqualsWithDelta(298.25471214223484, $hasil['derajat_kebebasan_efektif'], self::TOLERANSI);
         $this->assertGreaterThan(298.0, $hasil['derajat_kebebasan_efektif']);
+    }
+
+    /**
+     * MERK kalibrator yang nggak punya tabel ditolak DI DEPAN — bukan diam-diam
+     * jalan dengan tabel kosong, yang bikin SEMUA koreksi meter/sensor ketemu
+     * `null` dan set point-nya baru ketahuan gagal beberapa lapis kemudian
+     * (`koreksi_hilang` di `EnclosureProfileBase::hitungPerGrup()`), dengan pesan
+     * yang nggak nyebut merk apa yang salah ketik.
+     */
+    public function test_merk_tidak_dikenal_ditolak(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        // Pesannya harus nyebut merk yang salah, biar teknisi tau kolom mana
+        // yang mesti dibetulin — bukan cuma "merk nggak dikenal".
+        $this->expectExceptionMessageMatches('/siemens-xyz/');
+
+        (new EnclosureCalculator)->hitungSetpoint(
+            [['no' => 3, 'pembacaan' => [15.0, 15.1, 15.1, 15.1]]],
+            [15.0, 15.0, 15.0],
+            15.0,
+            ['merk' => 'siemens-xyz', 'tipe_sensor' => 'Type N', 'cmc' => 1.4, 'resolusi_alat' => 0.1],
+        );
+    }
+
+    /**
+     * Sama alasannya dengan merk: TIPE SENSOR yang nggak dikenal (bukan
+     * `Type N`/`Type K`) ditolak di depan, bukan lolos sampai tabel koreksi
+     * balikin null buat semua sensor.
+     */
+    public function test_tipe_sensor_tidak_dikenal_ditolak(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Type Z/');
+
+        (new EnclosureCalculator)->hitungSetpoint(
+            [['no' => 3, 'pembacaan' => [15.0, 15.1, 15.1, 15.1]]],
+            [15.0, 15.0, 15.0],
+            15.0,
+            ['merk' => 'yokogawa', 'tipe_sensor' => 'Type Z', 'cmc' => 1.4, 'resolusi_alat' => 0.1],
+        );
+    }
+
+    /**
+     * Grid tanpa satu pun sensor terisi ditolak eksplisit dengan pesan yang
+     * nyebut SET POINT-nya — bukan lolos sampai `max()`/`min()` atas array
+     * kosong ngelempar `ValueError` PHP native yang nggak nyebut titik mana.
+     */
+    public function test_sensor_kosong_ditolak(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        // Nyebut angka set point-nya, biar teknisi langsung tau baris mana di
+        // lembar kerja yang belum ada satu pun termokopel terisi.
+        $this->expectExceptionMessageMatches('/42\.5/');
+
+        (new EnclosureCalculator)->hitungSetpoint(
+            [],
+            [42.5, 42.5, 42.5],
+            42.5,
+            ['merk' => 'yokogawa', 'tipe_sensor' => 'Type N', 'cmc' => 1.4, 'resolusi_alat' => 0.1],
+        );
     }
 
     /**
