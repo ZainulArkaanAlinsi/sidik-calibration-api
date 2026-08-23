@@ -161,7 +161,7 @@ class OrganizationController extends Controller
         // Nama file diacak, sama alasannya kayak logo — plus di sini lebih penting:
         // nama yang bisa ditebak di gabungan dengan salah konfigurasi disk bikin
         // gambar tanda tangan bisa dicari-cari.
-        $path = $request->file('tanda_tangan')->store("tanda-tangan/{$organization->id}", 'local');
+        $path = $request->file('tanda_tangan')->store("tanda-tangan/{$organization->id}", 'arsip');
 
         // Sama alasannya kayak logo, tapi taruhannya lebih besar: tanda tangan
         // yang gagal kesimpen sementara yang lama kehapus bikin sertifikat
@@ -177,7 +177,7 @@ class OrganizationController extends Controller
         // duluan lalu unggahnya gagal, sertifikat berikutnya terbit tanpa tanda
         // tangan tanpa ada yang sadar.
         if ($lama && $lama !== $path) {
-            Storage::disk('local')->delete($lama);
+            Storage::disk('arsip')->delete($lama);
         }
 
         return response()->json(['data' => new OrganizationResource($organization->fresh())]);
@@ -190,7 +190,7 @@ class OrganizationController extends Controller
         $organization = $request->user()->organization;
 
         if ($organization->tanda_tangan_path) {
-            Storage::disk('local')->delete($organization->tanda_tangan_path);
+            Storage::disk('arsip')->delete($organization->tanda_tangan_path);
             $organization->update(['tanda_tangan_path' => null]);
         }
 
@@ -211,12 +211,12 @@ class OrganizationController extends Controller
 
         abort_unless(
             filled($organization->tanda_tangan_path)
-                && Storage::disk('local')->exists($organization->tanda_tangan_path),
+                && Storage::disk('arsip')->exists($organization->tanda_tangan_path),
             404,
             'Belum ada gambar tanda tangan yang diunggah.',
         );
 
-        return Storage::disk('local')->response(
+        return Storage::disk('arsip')->response(
             $organization->tanda_tangan_path,
             'tanda-tangan.png',
             [

@@ -38,7 +38,7 @@ class CertificateTableActionsTest extends TestCase
     public function test_admin_bisa_unduh_pdf_sertifikat_yang_terbit(): void
     {
         $sertifikat = Certificate::factory()->create(['pdf_path' => 'certificates/abc.pdf']);
-        Storage::disk('local')->put($sertifikat->pdf_path, 'dummy pdf content');
+        Storage::disk('arsip')->put($sertifikat->pdf_path, 'dummy pdf content');
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
@@ -80,7 +80,7 @@ class CertificateTableActionsTest extends TestCase
     public function test_tombol_terbitkan_ulang_disembunyikan_untuk_sertifikat_yang_sudah_terbit(): void
     {
         $sertifikat = Certificate::factory()->create(['pdf_path' => 'certificates/sudah-terbit.pdf']);
-        Storage::disk('local')->put($sertifikat->pdf_path, 'dummy pdf content');
+        Storage::disk('arsip')->put($sertifikat->pdf_path, 'dummy pdf content');
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
