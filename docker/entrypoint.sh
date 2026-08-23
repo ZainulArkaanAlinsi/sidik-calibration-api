@@ -139,5 +139,39 @@ php artisan view:cache
     done
 ) &
 
+# Scheduler nebeng di container yang sama, sama alasannya kayak worker di atas:
+# paket gratis Render cuma ngasih satu service, jadi nggak ada tempat buat cron
+# terpisah.
+#
+# ## Kenapa perlu
+#
+# Tanpa baris ini, `routes/console.php` cuma daftar niat. Tiga perintah
+# terjadwal di situ NGGAK pernah jalan di produksi:
+#
+#   alat:cek-jatuh-tempo      07:00  notifikasi alat mendekati jatuh tempo
+#   standar:cek-kadaluarsa    07:05  notifikasi sertifikat standar acuan
+#   ocr:bersihkan-citra       02:30  retensi citra lembar kerja
+#
+# Yang ketiga yang paling penting, dan alasannya terbalik dari dugaan: selama
+# disknya masih ephemeral, citra lembar kerja pelanggan kehapus sendiri tiap
+# deploy — retensinya ketegakkan tanpa sengaja. Begitu berkas pindah ke
+# penyimpanan persisten (R2), nggak ada lagi yang menghapus, dan retensi 90 hari
+# di config/ocr.php diam-diam berubah jadi SELAMANYA. Itu keputusan soal data
+# pelanggan, bukan cuma soal tagihan penyimpanan.
+#
+# `schedule:work` ngecek tiap menit di proses yang hidup terus — cocok buat
+# container, beda dari `schedule:run` yang mengandaikan ada cron di luar.
+#
+# CATATAN: di paket gratis, container yang ketiduran ikut ngehentikan scheduler,
+# jadi jadwal yang jatuh pas service lagi tidur kelewat. Ping dari luar (lihat
+# docs/deploy-gratis-render.md langkah 7) yang bikin dia melek — jadi ping itu
+# bukan cuma soal responsif, tapi juga syarat jadwal ini kepakai.
+(
+    while true; do
+        php artisan schedule:work || true
+        sleep 2
+    done
+) &
+
 echo "→ server jalan di port ${PORT}"
 exec frankenphp run --config /etc/caddy/Caddyfile
