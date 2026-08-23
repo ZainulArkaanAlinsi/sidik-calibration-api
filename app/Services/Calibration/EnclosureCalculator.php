@@ -57,6 +57,22 @@ use App\Services\StudentTDistribution;
  * Semua penyimpangan mencetak `catatan_audit` yang menyebut hasil versi
  * dibetulkannya, biar manajer teknis lab yang memutuskan — bukan diam-diam kode.
  *
+ * ## Yang TIDAK ditebak: dua hal yang dilaporkan, bukan ditambal
+ *
+ * Master selalu 9 termokopel × 5 pembacaan, jadi berkasnya nggak pernah menjawab
+ * apa yang harus terjadi kalau lembarnya terisi sebagian. Dua lubangnya dijawab
+ * dengan MELAPOR, bukan menebak — pemanggil (`EnclosureProfileBase`) memindahkan
+ * set point-nya ke `belum_dihitung`:
+ *
+ *  - `koreksi_hilang` — sensor/kanal yang koreksinya nggak ada di tabel. Koreksi
+ *    nol itu pernyataan, bukan ketiadaan data.
+ *  - `pembacaan_kurang` — sensor berpembacaan di bawah [MIN_PEMBACAAN].
+ *
+ * Alasannya sama buat dua-duanya, dan lebih keras dari sekadar U95 meleset:
+ * yang salah ikut kolom **Sebaran Suhu, Keseragaman, & Kestabilan** yang
+ * TERCETAK di sertifikat — angka yang dibaca pelanggan sebagai hasil pengukuran,
+ * dan yang nggak ketutup lantai CMC.
+ *
  * @see TabelKalibratorEnclosure
  * @see docs/pertanyaan-lab-enclosure.md
  */
@@ -77,6 +93,20 @@ class EnclosureCalculator
      * @var list<int> index 0-based ke daftar 5 pembacaan mentah
      */
     public const PETA_KOLOM_PEMBACAAN = [0, 1, 2, 2, 3];
+
+    /**
+     * Pembacaan minimum per termokopel supaya [PETA_KOLOM_PEMBACAAN] bisa
+     * dijalankan tanpa menebak: indeks tertinggi yang dibacanya `3`, jadi 4.
+     *
+     * Master sendiri selalu 5 kolom, dan kolom ke-5 memang dibuang — jadi grid
+     * 4 pembacaan menghasilkan angka yang PERSIS SAMA dengan grid 5 pembacaan
+     * yang kolom kelimanya berapa pun. Yang di bawah 4 tidak bisa: tidak ada
+     * nilai buat kolom yang hilang selain menebaknya.
+     */
+    public const MIN_PEMBACAAN = 4;
+
+    /** Jumlah termokopel yang dipakai master per set point (`INPUT DATA` baris 23–36). */
+    public const SENSOR_MASTER = 9;
 
     /**
      * `v_eff` TIDAK dipotong ke bawah sebelum dicari `k` — master pakai
@@ -185,7 +215,15 @@ class EnclosureCalculator
         }
 
         // Sensor acuan = sensor pertama (baris 23 master, "Sensor Acuan").
+        //
+        // "Pertama" itu POSISI di grid yang dikirim, bukan nomor termokopel
+        // tertentu — dan grid yang dikirim sudah dibuang sensor kosongnya di
+        // controller. Jadi kalau termokopel yang dimaksud jadi acuan kebetulan
+        // nggak keisi, sensor lain naik jadi acuan tanpa ada yang tau, dan
+        // seluruh kolom Keseragaman diukur relatif ke titik yang salah.
+        // Nomornya ikut dipulangkan & dicetak di jejak audit supaya kelihatan.
         $acuan = $hasilSensor[0]['terkoreksi'];
+        $noAcuan = $hasilSensor[0]['no'];
 
         // Stabilitas Suhu (R41) = ½ × spread terbesar antar sensor.
         $spreadMaks = max(array_map(static fn (array $h): float => $h['spread'], $hasilSensor));
@@ -199,6 +237,29 @@ class EnclosureCalculator
         $indikator = array_values(array_map('floatval', $indikator));
         $rataIndikator = $this->rataRata($indikator);
         $d41 = $this->standarDeviasiSampel($indikator);
+
+        // Sensor mana saja yang koreksinya nggak ketemu — dikumpulkan sekali,
+        // dipakai dua kali (hasil + catatan audit).
+        $koreksiHilang = [];
+
+        // Sensor yang pembacaannya kurang dari [MIN_PEMBACAAN]. Sama sikapnya
+        // dengan koreksi yang hilang: bukan dibulatkan atau ditambal, tapi
+        // dilaporkan supaya set point-nya nggak diterbitkan.
+        $pembacaanKurang = [];
+
+        foreach ($hasilSensor as $h) {
+            if ($h['koreksi_hilang'] !== []) {
+                $koreksiHilang[] = [
+                    'no' => $h['no'],
+                    'channel' => $h['channel'],
+                    'hilang' => $h['koreksi_hilang'],
+                ];
+            }
+
+            if ($h['pembacaan_kurang'] !== null) {
+                $pembacaanKurang[] = ['no' => $h['no'], 'jumlah' => $h['pembacaan_kurang']];
+            }
+        }
 
         // Sensor U95 terbesar (L37/N37) & index tertinggi (M37) untuk lookup U95
         // kalibrator.
@@ -235,6 +296,9 @@ class EnclosureCalculator
                 'index' => $h['index'],
             ], $hasilSensor),
             'indikator_enclosure' => $rataIndikator,
+            // Nomor termokopel yang jadi Sensor Acuan — lihat [$acuan] di atas.
+            'sensor_acuan' => $noAcuan,
+            'jumlah_sensor' => count($hasilSensor),
             'kestabilan' => $r41,          // Stabilitas Suhu (SS)
             'keseragaman' => $r42,         // Keseragaman Suhu (KS)
             'variasi_keseluruhan' => $this->variasi($hasilSensor),
@@ -247,7 +311,17 @@ class EnclosureCalculator
             // Lantai CMC (ILAC-P14): U dilaporkan = MAX(U hitung, CMC).
             'u95_sertifikat' => max($uHitung, $cmc),
             'sumber_u95' => $cmc > $uHitung ? 'cmc' : 'hitung',
-            'catatan_audit' => $this->catatanAudit($budget, $dipakai, $uHitung, $cmc, $merk),
+            // Sensor yang koreksinya nggak ketemu di tabel — lihat [hitungSensor].
+            // Kosong = semua koreksi lengkap. Pemanggil WAJIB memeriksanya: set
+            // point yang isinya nggak kosong nggak boleh diterbitkan.
+            'koreksi_hilang' => $koreksiHilang,
+            // Sensor yang pembacaannya kurang dari [MIN_PEMBACAAN]. Kosong =
+            // semua sensor cukup. Alasan & kewajiban pemanggilnya sama dengan
+            // `koreksi_hilang` di atas.
+            'pembacaan_kurang' => $pembacaanKurang,
+            'catatan_audit' => $this->catatanAudit(
+                $budget, $dipakai, $uHitung, $cmc, $merk, $koreksiHilang, count($hasilSensor), $noAcuan,
+            ),
         ];
     }
 
@@ -264,18 +338,49 @@ class EnclosureCalculator
         $kanal = isset($s['channel']) ? (int) $s['channel'] : null;
         $mentah = array_values(array_map('floatval', $s['pembacaan']));
 
-        // Peta kolom termokopel master: [1,2,3,3,4] dari 5 pembacaan mentah.
-        $dipetakan = array_map(
-            fn (int $i): float => $mentah[$i] ?? $mentah[array_key_last($mentah)],
-            self::PETA_KOLOM_PEMBACAAN,
-        );
+        // Peta kolom master menyalin `[1,2,3,3,4]`, jadi indeks tertinggi yang
+        // pernah dibaca `3` — butuh MINIMAL 4 pembacaan.
+        //
+        // Yang kurang dari itu dulu ditambal diam-diam dengan mengulang
+        // pembacaan terakhir. Tambalan itu bukan cuma menggeser U95: dia masuk
+        // ke `AVG Terkoreksi` yang TERCETAK di kolom Sebaran Suhu sertifikat,
+        // ke Keseragaman, dan ke Kestabilan — angka yang dibaca pelanggan
+        // sebagai hasil pengukuran. Pada grid 3 pembacaan pergeserannya di
+        // orde 0,06 °C, cukup buat mengubah kolom satu desimal.
+        //
+        // Sekarang: pembacaan dipakai apa adanya (nggak ditambal), dan
+        // sensornya ditandai `pembacaan_kurang` supaya pemanggil memindahkan
+        // set point-nya ke `belum_dihitung`. Teknisi mengisi kolom yang kurang,
+        // bukan sistem menebak isinya.
+        $cukup = count($mentah) >= self::MIN_PEMBACAAN;
+
+        $dipetakan = $cukup
+            ? array_map(fn (int $i): float => $mentah[$i], self::PETA_KOLOM_PEMBACAAN)
+            : $mentah;
 
         $rataMentah = $this->rataRata($dipetakan);
         $index = $this->tabel->index($merk, $rataMentah) ?? $rataMentah;
 
-        $koreksiMeter = $this->tabel->koreksiMeter($merk, $tipe, $index, $berkanal ? $kanal : null) ?? 0.0;
-        $koreksiSensor = $this->tabel->koreksiSensor($merk, $tipe, $no, $index) ?? 0.0;
-        $koreksi = $koreksiMeter + $koreksiSensor;
+        // Koreksi yang TIDAK ketemu di tabel dibiarkan `null`, bukan dijadikan 0.
+        //
+        // Koreksi nol itu PERNYATAAN ("standarnya tepat di titik ini"), bukan
+        // ketiadaan data — sama sikapnya dengan TITS. Bedanya di sini lebih
+        // mahal: `terkoreksi` yang salah tidak cuma menggeser U95, tapi juga
+        // kolom Sebaran Suhu, Keseragaman, dan Kestabilan yang TERCETAK di
+        // sertifikat. Dua kasus yang benar-benar bisa terjadi:
+        //
+        //  1. sesi Recorder yang termokopelnya nggak bawa nomor Channel —
+        //     koreksi meter recorder dibaca per kanal;
+        //  2. grid Type N yang dinomori mulai 1, padahal sertifikat sensor Type N
+        //     lab mulai dari TCN3 (master sendiri menulis "If using Thermocouple
+        //     Type N, No. Thermocouple START FROM 3").
+        //
+        // Keduanya salah input, dan yang benar menolak menghitung — bukan
+        // menerbitkan sertifikat yang kelihatan sah. Pemanggil membaca
+        // `koreksi_hilang` dan memindahkan set point-nya ke `belum_dihitung`.
+        $koreksiMeter = $this->tabel->koreksiMeter($merk, $tipe, $index, $berkanal ? $kanal : null);
+        $koreksiSensor = $this->tabel->koreksiSensor($merk, $tipe, $no, $index);
+        $koreksi = ($koreksiMeter ?? 0.0) + ($koreksiSensor ?? 0.0);
 
         $terkoreksi = array_map(static fn (float $x): float => $x + $koreksi, $dipetakan);
 
@@ -285,8 +390,16 @@ class EnclosureCalculator
             'index' => $index,
             'terkoreksi' => $terkoreksi,
             'rata_rata' => $this->rataRata($terkoreksi),
-            'spread' => max($terkoreksi) - min($terkoreksi),
+            // Sensor tanpa satu pun pembacaan nggak punya spread — `max()`/`min()`
+            // atas array kosong itu ValueError, dan sensor kosong memang bakal
+            // ditolak lewat `pembacaan_kurang` sebelum angkanya kepakai.
+            'spread' => $terkoreksi === [] ? 0.0 : max($terkoreksi) - min($terkoreksi),
             'u95_sensor' => $this->tabel->u95Sensor($merk, $tipe, $no, $index),
+            'koreksi_hilang' => array_values(array_filter([
+                $koreksiMeter === null ? ($berkanal && $kanal === null ? 'meter (kanal kosong)' : 'meter') : null,
+                $koreksiSensor === null ? 'sensor' : null,
+            ])),
+            'pembacaan_kurang' => $cukup ? null : count($mentah),
         ];
     }
 
@@ -529,8 +642,16 @@ class EnclosureCalculator
      * @param  list<array<string, mixed>>  $dipakai
      * @return list<array<string, mixed>>
      */
-    private function catatanAudit(array $budget, array $dipakai, float $uHitung, float $cmc, string $merk): array
-    {
+    private function catatanAudit(
+        array $budget,
+        array $dipakai,
+        float $uHitung,
+        float $cmc,
+        string $merk,
+        array $koreksiHilang = [],
+        int $jumlahSensor = self::SENSOR_MASTER,
+        ?int $noAcuan = null,
+    ): array {
         $gum = $this->gum ??= new GumCalculator;
         $catatan = [];
         $sqrt3 = sqrt(3.0);
@@ -601,7 +722,53 @@ class EnclosureCalculator
                 .'dengan sertifikat yang terbit.',
         ];
 
-        // 5. Komponen tanpa data.
+        // 5. Koreksi sensor/meter yang nggak ketemu di tabel — set point ini
+        // TIDAK boleh diterbitkan; pemanggil memindahkannya ke `belum_dihitung`.
+        foreach ($koreksiHilang as $h) {
+            $catatan[] = [
+                'kode' => 'koreksi_hilang',
+                'pesan' => sprintf(
+                    'Sensor no. %d%s nggak punya koreksi %s di tabel kalibrator — set point ini nggak dihitung. '
+                    .'Koreksi yang hilang nggak boleh dianggap nol: sebaran suhu, keseragaman, & kestabilan yang '
+                    .'tercetak ikut salah, bukan cuma U95.',
+                    $h['no'],
+                    $h['channel'] !== null ? sprintf(' (kanal %d)', $h['channel']) : '',
+                    implode(' & ', $h['hilang']),
+                ),
+            ];
+        }
+
+        // 6. Grid lebih tipis dari master. Bukan penolakan — chamber kecil
+        // kadang dipetakan dengan titik lebih sedikit — tapi Keseragaman &
+        // Variasi turun artinya, dan itu harus kelihatan di jejak audit
+        // ketimbang cuma jadi angka yang lebih kecil di sertifikat.
+        if ($jumlahSensor < self::SENSOR_MASTER) {
+            $catatan[] = [
+                'kode' => 'sensor_kurang_dari_master',
+                'pesan' => sprintf(
+                    'Set point ini dipetakan dengan %d termokopel; master pakai %d. Keseragaman & Variasi '
+                    .'cuma mewakili posisi yang benar-benar diukur — bukan seluruh ruang chamber.',
+                    $jumlahSensor,
+                    self::SENSOR_MASTER,
+                ),
+            ];
+        }
+
+        // 7. Sensor acuan yang dipakai. Dicatat karena "sensor pertama" itu
+        // posisi di grid yang terkirim, bukan nomor tertentu — sensor yang
+        // kosong sudah dibuang sebelum sampai sini.
+        if ($noAcuan !== null) {
+            $catatan[] = [
+                'kode' => 'sensor_acuan',
+                'pesan' => sprintf(
+                    'Keseragaman diukur relatif ke termokopel no. %d (sensor pertama di grid yang terkirim). '
+                    .'Pastikan itu memang Sensor Acuan yang dimaksud di lembar kerja.',
+                    $noAcuan,
+                ),
+            ];
+        }
+
+        // 8. Komponen tanpa data.
         foreach ($budget as $k) {
             if (! $k['disertakan']) {
                 $catatan[] = [

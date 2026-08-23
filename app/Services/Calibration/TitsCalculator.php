@@ -653,7 +653,49 @@ class TitsCalculator
             ),
         ];
 
-        // 3. Komponen drift bersel mati, cuma ada di mode source.
+        // 3. Drift kalibrator dibagi 2 di mode measure, tidak di mode source —
+        // dua workbook, dua perlakuan buat komponen yang sama. Penyimpangan
+        // nomor 3 di docblock kelas.
+        if ($mode === TabelKalibratorSuhu::MODE_MEASURE) {
+            $driftPenuh = array_map(
+                static fn (array $k): array => $k['sumber'] === 'drift_standar'
+                    ? [...$k, 'u' => $k['u'] * 2.0]
+                    : $k,
+                $dipakai,
+            );
+
+            $catatan[] = [
+                'kode' => 'drift_kalibrator_dibagi_dua',
+                'pesan' => sprintf(
+                    'Drift kalibrator dibagi 2 mengikuti master mode measure (sel N20 = VLOOKUP(…)/2); '
+                    .'master mode source memakai nilai penuh buat komponen yang sama. Tanpa pembagi 2 '
+                    .'U95 hitung jadi %s °C, bukan %s °C.',
+                    $this->angka($gum->agregasiBudget(array_map(
+                        static fn (array $k): array => ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']],
+                        $driftPenuh,
+                    ))['ketidakpastian_diperluas']),
+                    $this->angka($uHitung),
+                ),
+            ];
+        }
+
+        // 4. Cara `u` kalibrator diambil berbeda di dua mode. Penyimpangan
+        // nomor 4 di docblock kelas: `measure` MAX seluruh rentang (konservatif),
+        // `source` U95 di index tertinggi sesi (tidak). Yang dicatat cuma cara
+        // pengambilannya — angka tandingannya butuh tabel, dan itu ada di
+        // keterangan komponen `ketidakpastian_standar` yang sudah tercetak.
+        $catatan[] = [
+            'kode' => 'u_kalibrator_beda_cara',
+            'pesan' => $mode === TabelKalibratorSuhu::MODE_MEASURE
+                ? 'u kalibrator diambil MAX seluruh kolom U95 tipe sensor ini mengikuti master mode measure '
+                    .'(sel O19 = MAX(P32:P49)) — konservatif. Master mode source memakai U95 di titik index '
+                    .'TERTINGGI sesi, yang bisa lebih kecil. Dua workbook, dua cara buat komponen yang sama.'
+                : 'u kalibrator diambil dari U95 di titik index TERTINGGI sesi mengikuti master mode source '
+                    .'(sel O19 = VLOOKUP(R17, …), R17 = MAX(P23:P40)) — bukan MAX seluruh rentang seperti '
+                    .'master mode measure, jadi nilainya bisa lebih kecil dari U95 kalibrator di titik lain.',
+        ];
+
+        // 5. Komponen drift bersel mati, cuma ada di mode source.
         if ($mode === TabelKalibratorSuhu::MODE_SOURCE && self::SERTAKAN_DRIFT_MATI) {
             $tanpa = $tanpaKomponen('drift_referensi_mati');
 
@@ -670,7 +712,7 @@ class TitsCalculator
             ];
         }
 
-        // 4. Komponen yang datanya nggak ada — supaya tidak diam-diam hilang.
+        // 6. Komponen yang datanya nggak ada — supaya tidak diam-diam hilang.
         foreach ($budget as $k) {
             if (! $k['disertakan']) {
                 $catatan[] = [

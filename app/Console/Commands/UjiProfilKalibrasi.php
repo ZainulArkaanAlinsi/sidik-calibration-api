@@ -159,11 +159,32 @@ class UjiProfilKalibrasi extends Command
                 ->has('uncertaintyCalculations')
                 ->latest('id')
                 ->first();
-            $jumlah = $sesi?->uncertaintyCalculations()->count() ?? 0;
 
-            return $jumlah > 0
-                ? ["{$jumlah}/{$jumlah}", "U95 per set point lengkap (sesi {$sesi->nomor_sesi})", true]
-                : ['-', 'sesi enclosure kosong atau tidak punya hasil hitung', false];
+            if ($sesi === null) {
+                return ['-', 'sesi enclosure kosong atau tidak punya hasil hitung', false];
+            }
+
+            // Yang dibandingkan JUMLAH HASIL vs JUMLAH SET POINT YANG ADA
+            // DATANYA — bukan sekadar "ada minimal satu hasil".
+            //
+            // Sesi setengah jadi (tiga set point terisi, satu yang kehitung)
+            // dulu dilaporkan `1/1` dan lolos: yang ditanya cuma apakah relasinya
+            // tidak kosong. Laporan yang bilang "jalan" untuk jalur yang
+            // sebenarnya kehilangan dua pertiga hasilnya lebih berbahaya
+            // daripada tidak ada laporan sama sekali.
+            $terisi = $sesi->rawMeasurements()
+                ->whereNotNull('peran_sensor')
+                ->distinct()
+                ->count('titik_ke');
+            $terhitung = $sesi->uncertaintyCalculations()->count();
+
+            return $terhitung > 0 && $terhitung === $terisi
+                ? ["{$terhitung}/{$terisi}", "U95 per set point lengkap (sesi {$sesi->nomor_sesi})", true]
+                : [
+                    "{$terhitung}/{$terisi}",
+                    sprintf('set point terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
+                    false,
+                ];
         }
 
         if ($alat === null) {
