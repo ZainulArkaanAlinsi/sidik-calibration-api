@@ -222,12 +222,17 @@ class CalibrationRequest extends FormRequest
             // tiap sensor jadi 5 baris `raw_measurements`, jadi grid tanpa batas
             // bikin satu request nulis puluhan ribu baris.
             'measurements.*.sensor_grid' => ['sometimes', 'nullable', 'array', 'max:40'],
-            // `distinct` dibatasi ke ARRAY-nya sendiri (bukan global): nomor
-            // termokopel yang sama SAH muncul lagi di set point lain — yang nggak
-            // boleh cuma dua baris bernomor sama dalam SATU set point, karena
-            // satu termokopel fisik jadi kehitung dua kali dan menggeser U95,
-            // keseragaman, & kestabilan.
-            'measurements.*.sensor_grid.*.no' => ['required_with:measurements.*.sensor_grid', 'integer', 'min:1', 'max:99', 'distinct'],
+            // CATATAN: TANPA `distinct` — sengaja. Larangan nomor kembar ada di
+            // `withValidator()`, dicek per set point.
+            //
+            // `distinct` pada wildcard bertingkat membandingkan SELURUH atribut
+            // hasil ekspansi aturan ini, bukan cuma yang satu `sensor_grid`.
+            // Jadi grid normal (sensor 3..11 di TIAP set point) ditolak 422 —
+            // padahal memakai termokopel yang sama di beberapa set point itu
+            // justru cara alat ini dipakai. Yang benar-benar terlarang cuma dua
+            // baris bernomor sama dalam SATU set point: satu termokopel fisik
+            // kehitung dua kali dan menggeser U95, keseragaman, & kestabilan.
+            'measurements.*.sensor_grid.*.no' => ['required_with:measurements.*.sensor_grid', 'integer', 'min:1', 'max:99'],
             // Recorder GL840 punya CH1..CH20 — di luar itu pasti salah ketik,
             // dan kanal yang nggak ada bikin koreksi meter-nya nggak ketemu.
             'measurements.*.sensor_grid.*.channel' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:20'],
@@ -342,7 +347,26 @@ class CalibrationRequest extends FormRequest
             // menyatakannya sendiri.
             $selGrid = 0;
 
-            foreach ((array) $this->input('measurements', []) as $titik) {
+            foreach ((array) $this->input('measurements', []) as $i => $titik) {
+                // Nomor termokopel kembar DALAM SATU set point — satu termokopel
+                // fisik kehitung dua kali dan menggeser U95, keseragaman, &
+                // kestabilan.
+                //
+                // Dicek di sini, bukan lewat aturan `distinct`: pada wildcard
+                // bertingkat `distinct` membandingkan seluruh set point sekaligus,
+                // jadi grid normal yang memakai sensor 3..11 di TIAP set point
+                // ikut ditolak. Yang dilarang cuma kembar di dalam satu grid.
+                $nomor = array_column((array) ($titik['sensor_grid'] ?? []), 'no');
+                $kembar = array_values(array_unique(array_diff_assoc($nomor, array_unique($nomor))));
+
+                if ($kembar !== []) {
+                    $validator->errors()->add("measurements.$i.sensor_grid", sprintf(
+                        'Nomor termokopel %s muncul lebih dari sekali di set point ini. Satu termokopel cuma '
+                        .'boleh sekali per set point — nomor yang sama di set point LAIN nggak masalah.',
+                        implode(', ', $kembar),
+                    ));
+                }
+
                 foreach ((array) ($titik['sensor_grid'] ?? []) as $sensor) {
                     $selGrid += count((array) ($sensor['pembacaan'] ?? []));
                 }
