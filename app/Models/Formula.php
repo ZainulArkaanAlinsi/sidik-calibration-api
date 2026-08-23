@@ -94,6 +94,16 @@ class Formula extends Model
      */
     public const KODE_GUM_TITS = 'gum-tits';
 
+    /**
+     * Rumus GUM buat jalur ENCLOSURE (Oven/Furnace/Bath/Inkubator/Refrigerator).
+     * Budget PER SET POINT dari grid 9 termokopel × 5 pengulangan + Indikator
+     * enclosure. Dua template kalibrator: Constant/Yokogawa (11 komponen) &
+     * Recorder (10 komponen). Lima jenis enclosure berbagi satu kode rumus ini
+     * karena mesin hitungnya sama; yang beda cuma baris CMC per jenis. Lihat
+     * EnclosureCalculator & Profiles\Enclosure.
+     */
+    public const KODE_GUM_ENCLOSURE = 'gum-enclosure';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

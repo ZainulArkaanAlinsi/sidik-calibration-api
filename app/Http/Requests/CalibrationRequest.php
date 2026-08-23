@@ -195,6 +195,17 @@ class CalibrationRequest extends FormRequest
             // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
             // disaring waktu ngitung.
             'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
+            // GRID sensor — cuma enclosure yang ngirim. Tiap set point punya 9
+            // termokopel (`no` 1..N, `channel` opsional buat kalibrator
+            // Recorder) masing-masing 5 pembacaan, plus baris `indikator`
+            // enclosure. Sepuluh alat lain nggak nyentuh field ini.
+            'measurements.*.sensor_grid' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.sensor_grid.*.no' => ['required_with:measurements.*.sensor_grid', 'integer', 'min:1'],
+            'measurements.*.sensor_grid.*.channel' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'measurements.*.sensor_grid.*.pembacaan' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
+            'measurements.*.indikator' => ['sometimes', 'nullable', 'array'],
+            'measurements.*.indikator.*' => ['nullable', 'numeric'],
             // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
             'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu.*' => ['nullable', 'numeric'],

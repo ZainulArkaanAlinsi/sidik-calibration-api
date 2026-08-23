@@ -521,6 +521,21 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah tiap titik ukur berupa GRID sensor (banyak termokopel × pengulangan
+     * + Indikator), bukan satu deret pembacaan datar.
+     *
+     * Default `false` — sepuluh alat single-channel. Cuma enclosure yang `true`
+     * (9 termokopel di dalam chamber). Waktu `true`, `CalibrationController`
+     * membaca `measurements[i].sensor_grid` & `.indikator` dan menyimpannya ke
+     * `raw_measurements` dengan sumbu `sensor_ke`/`peran_sensor`, alih-alih
+     * `measurements[i].pembacaan` yang datar.
+     */
+    public function butuhGridSensor(): bool
+    {
+        return false;
+    }
+
+    /**
      * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
      * ngapa-ngapain — pembacaan dipakai apa adanya.
      *
