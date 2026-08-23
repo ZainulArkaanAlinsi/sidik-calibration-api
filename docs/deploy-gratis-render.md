@@ -117,6 +117,50 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
 
    Paket gratis Render nggak ngasih akses shell, jadi jalanin ini dari laptop
    dengan `.env` yang DB-nya diarahin ke Aiven — bukan ke MySQL lokal.
+6. **Matiin Auto-Deploy di dashboard Render** (Settings → Auto-Deploy → No).
+
+   `render.yaml` di repo ini sudah nyetel `autoDeploy: false`, tapi berkas itu
+   dibaca waktu blueprint DIIMPOR — service yang sudah terlanjur kebentuk nggak
+   ikut berubah cuma karena berkasnya diedit. Jadi saklarnya harus digeser
+   manual sekali.
+
+   Kalau nggak: tiap push memicu dua build sekaligus, dan yang lewat
+   Auto-Deploy naik **tanpa nunggu test** — bikin urutan "test dulu, baru
+   deploy" di workflow jadi sia-sia, karena commit yang merah tetap nyampe
+   server lewat jalur satunya.
+7. **Daftarin ping biar service-nya nggak ketiduran.** Buka
+   [uptimerobot.com](https://uptimerobot.com) (gratis, nggak perlu kartu),
+   New Monitor → tipe **HTTP(s)** → URL
+   `https://<url>.onrender.com/api/health` → interval **5 menit**.
+
+   Tanpa ini, service nganggur 15 menit bakal ditidurin Render, dan permintaan
+   berikutnya makan ~50 detik buat ngebangunin. Di HP kelihatannya persis kayak
+   aplikasi nge-hang.
+8. **Pindahin penyimpanan berkas ke Cloudflare R2** sebelum teknisi mulai
+   masukin data beneran.
+
+   Selama `FILESYSTEM_DISK` masih `local`, tiap kali kamu push kode, foto
+   lembar kerja yang sudah diunggah teknisi ikut kehapus — bukan risiko yang
+   nunggu kejadian, tapi akibat rutin dari kerja normal.
+
+   Adapternya (`league/flysystem-aws-s3-v3`) sudah terpasang di repo, jadi
+   nggak ada kode yang perlu diubah. Langkahnya:
+
+   1. [dash.cloudflare.com](https://dash.cloudflare.com) → **R2** → Create
+      bucket (gratis 10 GB).
+   2. **Manage R2 API Tokens** → bikin token, salin Access Key ID & Secret.
+   3. Di Render → Environment, isi `AWS_ACCESS_KEY_ID`,
+      `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, dan `AWS_ENDPOINT`
+      (`https://<account-id>.r2.cloudflarestorage.com`, tanpa nama bucket di
+      belakangnya). `AWS_DEFAULT_REGION` biarin `auto` — R2 nggak punya region,
+      tapi SDK-nya tetap minta kolom itu terisi.
+   4. Baru sesudah keempatnya keisi, ganti `FILESYSTEM_DISK` jadi `s3`.
+      Dibalik urutannya, unggahan langsung error.
+   5. Uji dengan mengunggah satu foto lembar kerja, lalu deploy ulang. Kalau
+      fotonya masih ada sesudah deploy, berarti sudah kena.
+
+   Kalau unggahan ditolak dengan keluhan soal nama bucket, balik
+   `AWS_USE_PATH_STYLE_ENDPOINT` ke `true`.
 
 ## 5. APK, Windows, macOS buat orang lain
 
@@ -166,8 +210,15 @@ di MySQL Aiven, bukan di disk.
 
 PDF sertifikat bisa dibangun ulang dari data:
 `php artisan sertifikat:bangun-ulang`. Tanda tangan & logo harus diunggah lagi.
-Buat uji coba masih kepakai. Sebelum dipakai beneran, pindahin ke Cloudflare R2
-(gratis 10 GB) — tinggal ganti `FILESYSTEM_DISK` ke `s3`, nggak perlu ubah kode.
+
+Ini yang paling gampang diremehkan dari empat hal di halaman ini, karena
+kerusakannya nggak muncul sebagai error: nggak ada yang merah, nggak ada yang
+gagal — berkasnya cuma nggak ada lagi. Yang nyadar duluan biasanya teknisi yang
+balik ke sesi lamanya dan nemu lembar kerjanya kosong.
+
+Adapternya sudah terpasang di repo, jadi pindah ke R2 nggak butuh ubah kode
+sama sekali. Langkah lengkapnya ada di
+[langkah 8 di atas](#4-sesudah-deploy-pertama).
 
 **3. Jatah kecil.** 512 MB RAM, 0,1 CPU, MySQL 1 GB. Cukup buat beberapa
 teknisi kerja barengan; bukan buat dipakai satu lab penuh sehari-hari.
