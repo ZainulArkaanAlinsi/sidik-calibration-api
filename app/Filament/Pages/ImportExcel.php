@@ -79,6 +79,20 @@ class ImportExcel extends Page
                             ->afterStateUpdated(fn () => $this->hasil = null),
                         FileUpload::make('berkas')
                             ->label('File Excel / CSV')
+                            // Disknya DIPATOK, jangan dihapus.
+                            //
+                            // Tanpa `->disk()`, Filament ngambil disk dari
+                            // `config('filament.default_filesystem_disk')`, dan
+                            // repo ini nggak punya config/filament.php sendiri —
+                            // jadi yang berlaku bawaan vendor: FILESYSTEM_DISK.
+                            //
+                            // Akibatnya berkas naik ke disk mana pun yang lagi
+                            // disetel di environment, sementara `jalankan()` di
+                            // bawah bacanya selalu dari `local`. Waktu dua-duanya
+                            // beda, import mati dengan notifikasi yang nyalahin
+                            // penggunanya — "unggah ulang ya" — dan diunggah
+                            // ulang berapa kali pun hasilnya sama.
+                            ->disk('local')
                             ->acceptedFileTypes([
                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                 'application/vnd.ms-excel',
@@ -133,16 +147,33 @@ class ImportExcel extends Page
             return;
         }
 
-        $absolut = Storage::disk('local')->path($path);
+        // Isinya DISALIN ke berkas sementara, bukan dibaca lewat path disk.
+        //
+        // `Storage::disk(...)->path()` cuma bermakna di driver `local`. Di S3/R2
+        // dia nggak error — dia balikin kunci bucket sebagai string biasa, dan
+        // `is_file()` atas string itu selalu false. Hasilnya import kelihatan
+        // seperti "file hilang" padahal berkasnya ada, cuma bukan di filesystem.
+        //
+        // `get()` jalan di semua driver. PhpSpreadsheet tetap butuh berkas nyata,
+        // makanya disalin ke temp dulu — bukan karena disknya lokal, tapi karena
+        // pembacanya yang minta.
+        $isi = Storage::disk('local')->get($path);
 
-        if (! is_file($absolut)) {
+        if (! filled($isi)) {
             Notification::make()
-                ->title('File-nya nggak ketemu di server. Unggah ulang ya.')
+                ->title('File-nya nggak kebaca di server. Unggah ulang ya.')
                 ->danger()
                 ->send();
 
             return;
         }
+
+        // Ekstensinya ikut dibawa: PhpSpreadsheet milih pembaca dari ekstensi,
+        // dan berkas tanpa ekstensi ditolak sebagai format tak dikenal.
+        $ekstensi = pathinfo($path, PATHINFO_EXTENSION) ?: 'xlsx';
+        $absolut = sys_get_temp_dir().DIRECTORY_SEPARATOR.'import-'.bin2hex(random_bytes(8)).'.'.$ekstensi;
+
+        file_put_contents($absolut, $isi);
 
         try {
             $this->hasil = app(ExcelImporter::class)->jalankan(
@@ -162,6 +193,10 @@ class ImportExcel extends Page
                 ->send();
 
             return;
+        } finally {
+            // Berkas Excel pelanggan nggak boleh ngendon di /tmp sesudah
+            // dipakai. `finally` biar kehapus juga waktu import-nya gagal.
+            @unlink($absolut);
         }
 
         $r = $this->hasil['ringkasan'];

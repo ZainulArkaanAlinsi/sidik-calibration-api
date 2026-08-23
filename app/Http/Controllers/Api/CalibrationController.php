@@ -819,6 +819,14 @@ class CalibrationController extends Controller
 
         $path = $request->file('photo')->store('measurements', 'local');
 
+        // Kalau nulisnya gagal, `false` bakal dikirim balik sebagai
+        // `photo_path` dan mobile nyimpennya ke pembacaan — jadi sesi kalibrasi
+        // bawa rujukan foto yang nggak pernah ada. Lebih baik teknisi tahu
+        // sekarang, waktu alatnya masih di meja.
+        if ($path === false) {
+            return response()->json(['message' => 'Foto gagal disimpan. Coba unggah lagi.'], 500);
+        }
+
         return response()->json(['data' => ['photo_path' => $path]], 201);
     }
 
