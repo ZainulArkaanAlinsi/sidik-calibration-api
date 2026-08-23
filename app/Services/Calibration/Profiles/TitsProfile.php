@@ -223,6 +223,26 @@ class TitsProfile extends CalibrationProfile
         ['label' => 'Temperature Calibrator Yokogawa CA 150 Handy Cal', 'cocok' => ['Temperature Calibrator Yokogawa CA 150 Handy Cal', '23P1005']],
     ];
 
+    /**
+     * Unit thermohygro lab, dikelompokkan Insitu vs Inlab — daftarnya SAMA
+     * dengan sembilan profil lain, dan sengaja memuat ketujuhnya.
+     *
+     * Mempersempitnya "biar teknisi nggak bisa milih unit yang secara prosedur
+     * nggak boleh dipakai" sudah pernah dicoba dan hasilnya kebalikannya:
+     * sertifikat pH master `012-CAL-524` MEMAKAI TH-3, dan TH-3 nggak ada di
+     * daftar yang dipersempit itu. Teknisi jadi nggak punya pilihan yang benar
+     * sama sekali. Lihat `LembarKerjaTemplate::THERMOHYGRO_TERCETAK`.
+     */
+    public const THERMOHYGRO_TERCETAK = [
+        ['label' => 'TH-1', 'grup' => 'Inlab'],
+        ['label' => 'TH-3', 'grup' => 'Inlab'],
+        ['label' => 'TH-4', 'grup' => 'Inlab'],
+        ['label' => 'TH-5', 'grup' => 'Inlab'],
+        ['label' => 'TH-7', 'grup' => 'Inlab'],
+        ['label' => 'TH-2', 'grup' => 'Insitu'],
+        ['label' => 'TH-6', 'grup' => 'Insitu'],
+    ];
+
     private ?TitsCalculator $kalkulator = null;
 
     public function __construct(private readonly TabelKalibratorSuhu $tabel = new TabelKalibratorSuhu) {}
@@ -600,7 +620,9 @@ class TitsProfile extends CalibrationProfile
             $bentuk['bagian'][] = $this->bagianAdmin();
         }
 
-        return $this->tautkanStandarTitik($this->tautkanStandar($bentuk));
+        return $this->isiPilihanThermohygro(
+            $this->tautkanStandarTitik($this->tautkanStandar($bentuk)),
+        );
     }
 
     /**
@@ -1138,6 +1160,51 @@ class TitsProfile extends CalibrationProfile
                 },
                 $bentuk['bagian'][$i]['baris'],
             );
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Isi `pilihan` kolom "Environmental Meter Used" dari master `standards`.
+     *
+     * Tanpa ini kolomnya kekirim dengan `pilihan` KOSONG, dan aplikasi teknisi
+     * nggambarnya sebagai teks mati "Belum ada unit thermohygro terdaftar" —
+     * dropdown-nya nggak bisa dibuka sama sekali. Sesi TITS jadi nggak punya
+     * unit thermohygro, dan koreksi kondisi lingkungan beserta U95-nya nempel
+     * ke unit yang salah atau nggak nempel sama apa pun.
+     *
+     * Sembilan profil lain sudah memanggil ini; TITS ketinggalan waktu
+     * ditambahkan, dan nggak ada yang gagal — kolomnya cuma diam.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function isiPilihanThermohygro(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->pluck('id', 'nama');
+
+        $pilihan = [];
+        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
+            $id = $master[$unit['label']] ?? null;
+            if ($id === null) {
+                continue;
+            }
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $unit['label'],
+                'grup' => $unit['grup'],
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if ($field['kode'] === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
         }
 
         return $bentuk;

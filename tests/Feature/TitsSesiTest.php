@@ -115,6 +115,44 @@ class TitsSesiTest extends TestCase
         $respons->assertJsonPath('data.equipment.nama_alat', 'Temperature Calibrator');
     }
 
+    /**
+     * Kolom "Environmental Meter Used" harus datang dengan pilihannya terisi.
+     *
+     * Kalau `pilihan` kosong, aplikasi teknisi nggambarnya sebagai teks MATI
+     * ("Belum ada unit thermohygro terdaftar") — dropdown-nya nggak bisa
+     * dibuka, jadi sesi TITS nggak punya unit thermohygro sama sekali dan
+     * koreksi kondisi lingkungan nempel ke unit yang salah. Sembilan profil
+     * lain sudah mengisinya; TITS ketinggalan, dan nggak ada yang gagal —
+     * kolomnya cuma diam.
+     */
+    public function test_kolom_thermohygro_bawa_pilihannya(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $teknisi = User::factory()->create();
+
+        $bentuk = $this->actingAs($teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=tits')
+            ->assertOk()
+            ->json('data');
+
+        $kolom = null;
+        foreach ($bentuk['bagian'] as $bagian) {
+            foreach ($bagian['field'] ?? [] as $field) {
+                if ($field['kode'] === 'thermohygro_standard_id') {
+                    $kolom = $field;
+                }
+            }
+        }
+
+        $this->assertNotNull($kolom, 'bentuk TITS nggak punya kolom thermohygro');
+        $this->assertNotEmpty($kolom['pilihan'], 'pilihan thermohygro kosong — dropdown-nya bakal mati');
+
+        // Dikelompokkan Insitu/Inlab persis kayak kertasnya.
+        $grup = array_unique(array_column($kolom['pilihan'], 'grup'));
+        sort($grup);
+        $this->assertSame(['Inlab', 'Insitu'], $grup);
+    }
+
     public function test_sesi_mode_measure_cocok_master(): void
     {
         $sesi = $this->sesi('22506.01.A');
