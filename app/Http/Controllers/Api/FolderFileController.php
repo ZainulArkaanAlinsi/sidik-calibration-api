@@ -76,6 +76,13 @@ class FolderFileController extends Controller
         // download di bawah, yang ngecek hak akses.
         $path = $unggahan->store('folder-files', 'local');
 
+        // Tanpa ini, tulis yang gagal bikin baris FolderFile dengan `path`
+        // berisi `false` — barisnya muncul di daftar folder, keliatan seperti
+        // dokumen yang ada, tapi tiap kali diunduh balik 404.
+        if ($path === false) {
+            return response()->json(['message' => 'File gagal disimpan. Coba unggah lagi.'], 500);
+        }
+
         $file = FolderFile::create([
             'organization_id' => $organizationId,
             'folder_id' => $data['folder_id'],

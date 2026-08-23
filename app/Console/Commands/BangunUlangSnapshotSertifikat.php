@@ -9,6 +9,7 @@ use App\Services\DataTampilanSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -137,7 +138,15 @@ class BangunUlangSnapshotSertifikat extends Command
                 // generate-nya dulu gagal di tengah.
                 if ((string) $sertifikat->pdf_path !== '') {
                     $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat->fresh()));
-                    Storage::disk('local')->put($sertifikat->pdf_path, $pdf->output());
+
+                    // Tulis yang gagal balik `false` tanpa exception (disknya
+                    // `throw => false`). Tanpa penjagaan ini perintahnya
+                    // ngelaporin baris itu sebagai berhasil dibangun ulang,
+                    // padahal PDF lamanya masih yang beredar — dan justru
+                    // ketidakcocokan itu yang perintah ini ada buat mbetulin.
+                    if (Storage::disk('local')->put($sertifikat->pdf_path, $pdf->output()) === false) {
+                        throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
+                    }
                 } else {
                     $this->warn("  {$sertifikat->nomor}: snapshot dibangun ulang, PDF dilewati (pdf_path kosong).");
                 }
