@@ -21,7 +21,21 @@ services:
     # Dipakai Render buat mastiin container-nya beneran hidup, bukan cuma
     # nyala tapi error 500.
     healthCheckPath: /up
-    autoDeploy: true
+    # SENGAJA false, dan ini kebalikan dari nilai sebelumnya.
+    #
+    # Waktu render.yaml ini ditulis, GitHub App Render belum kepasang, jadi
+    # `true` nggak ada efeknya sama sekali. Sekarang App-nya kepasang — dan
+    # riwayat deploy 23 Agt 2026 nunjukin akibatnya: tiap push memicu DUA
+    # build, satu "New commit via Auto-Deploy" dan satu lagi "Triggered via
+    # Deploy Hook" dari workflow.
+    #
+    # Bukan cuma boros jatah build gratis. Yang lewat Auto-Deploy naik TANPA
+    # nunggu test — persis yang bikin urutan "test dulu, baru deploy" di
+    # .github/workflows/tes.yml jadi sia-sia, karena commit yang test-nya merah
+    # tetap nyampe server yang dipakai teknisi lewat jalur satunya.
+    #
+    # Satu jalur saja: Deploy Hook, diketuk workflow SESUDAH test hijau.
+    autoDeploy: false
     envVars:
       - key: APP_NAME
         value: SIDIK Calibration
@@ -70,12 +84,47 @@ services:
       - key: QUEUE_CONNECTION
         value: database
 
-      # Disk container Render itu sementara — kehapus tiap deploy/restart.
-      # Foto lembar kerja & PDF sertifikat ikut hilang. Buat uji coba masih
-      # kepakai (PDF bisa dibangun ulang: php artisan sertifikat:bangun-ulang),
-      # tapi sebelum dipakai beneran pindahin ke Cloudflare R2.
+      # Disk container Render itu sementara — kehapus tiap deploy DAN tiap
+      # container bangun ulang. Yang ikut hilang: foto lembar kerja, tanda
+      # tangan, logo organisasi, PDF sertifikat.
+      #
+      # Bacanya begini: selama nilainya `local`, tiap kali kode di-push, foto
+      # lembar kerja yang sudah diunggah teknisi hilang. Itu bukan risiko yang
+      # nunggu kejadian — itu akibat rutin dari kerja normal.
+      #
+      # Ganti ke `s3` begitu bucket R2 dibuat dan AWS_* di bawah diisi. Nggak
+      # ada kode yang berubah: Laravel bicara ke R2 lewat protokol S3 yang
+      # sama, dan adapternya (league/flysystem-aws-s3-v3) sudah terpasang.
       - key: FILESYSTEM_DISK
         value: local
+
+      # Cloudflare R2 — gratis 10 GB, dipakai kalau FILESYSTEM_DISK=s3.
+      #
+      # Namanya AWS_* karena R2 bicara protokol S3; ini BUKAN Amazon dan nggak
+      # perlu akun AWS. Bikinnya: dash.cloudflare.com → R2 → Create bucket,
+      # lalu "Manage R2 API Tokens" buat kunci aksesnya.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      # Bentuknya: https://<account-id>.r2.cloudflarestorage.com
+      # TANPA nama bucket di belakangnya.
+      - key: AWS_ENDPOINT
+        sync: false
+      # R2 nggak punya konsep region. "auto" itu nilai yang dia minta.
+      - key: AWS_DEFAULT_REGION
+        value: auto
+      # Kalau unggahan ditolak dengan keluhan soal nama bucket, balik nilai ini
+      # ke "true" — dua gaya penamaan sama-sama dilayani R2, dan yang cocok
+      # tergantung cara bucket-nya dibikin.
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "false"
+      # Cuma perlu kalau bucket-nya dibikin publik dan berkasnya mau diakses
+      # lewat URL langsung. Kosongin kalau semua akses lewat backend.
+      - key: AWS_URL
+        sync: false
 
       - key: VISION_DRIVER
         value: gemini
