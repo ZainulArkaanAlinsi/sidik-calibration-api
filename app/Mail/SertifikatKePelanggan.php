@@ -145,8 +145,13 @@ class SertifikatKePelanggan extends Mailable
                     ->withMime('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
             ] : [],
 
+            // Disknya HARUS sama dengan tempat `GenerateCertificate` nulis
+            // PDF-nya. Rujukan disk di sini bentuknya string di argumen, bukan
+            // `Storage::disk(...)`, jadi dia nggak ikut kebawa waktu nama disk
+            // diganti massal — dan salahnya nggak keliatan sebagai error:
+            // emailnya tetap terkirim, cuma tanpa lampiran.
             default => filled($this->sertifikat->pdf_path) ? [
-                Attachment::fromStorageDisk('local', $this->sertifikat->pdf_path)
+                Attachment::fromStorageDisk('arsip', $this->sertifikat->pdf_path)
                     ->as($this->sertifikat->namaFile('pdf'))
                     ->withMime('application/pdf'),
             ] : [],

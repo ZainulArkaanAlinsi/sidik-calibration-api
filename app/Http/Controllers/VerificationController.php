@@ -107,11 +107,11 @@ class VerificationController extends Controller
         }
 
         abort_unless(
-            $certificate->pdf_path && Storage::disk('local')->exists($certificate->pdf_path),
+            $certificate->pdf_path && Storage::disk('arsip')->exists($certificate->pdf_path),
             404,
         );
 
-        return Storage::disk('local')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
+        return Storage::disk('arsip')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
     }
 
     public function beranda(): View

@@ -97,9 +97,9 @@ class CertificateController extends Controller
         );
 
         // Baris di DB bilang terbit tapi file-nya raib (kehapus manual, dsb).
-        abort_unless(Storage::disk('local')->exists($certificate->pdf_path), 404);
+        abort_unless(Storage::disk('arsip')->exists($certificate->pdf_path), 404);
 
-        return Storage::disk('local')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
+        return Storage::disk('arsip')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
     }
 
     /**
@@ -315,7 +315,7 @@ class CertificateController extends Controller
             }
 
             abort_unless(
-                Storage::disk('local')->exists($certificate->pdf_path),
+                Storage::disk('arsip')->exists($certificate->pdf_path),
                 422,
                 'Berkas PDF sertifikatnya nggak ketemu di penyimpanan. Coba terbitkan ulang dulu.',
             );

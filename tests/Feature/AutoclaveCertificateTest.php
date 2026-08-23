@@ -129,7 +129,7 @@ class AutoclaveCertificateTest extends TestCase
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
 
         $this->assertSame(Certificate::STATUS_TERBIT, $sertifikat->status);
-        Storage::disk('local')->assertExists($sertifikat->pdf_path);
+        Storage::disk('arsip')->assertExists($sertifikat->pdf_path);
     }
 
     /** Snapshot beku memuat hasil olah datanya, bukan tabel titik yang kosong. */
@@ -185,7 +185,7 @@ class AutoclaveCertificateTest extends TestCase
             ->assertOk();
 
         $sertifikat = Certificate::where('calibration_session_id', $sesi->id)->firstOrFail();
-        $pdf = Storage::disk('local')->get($sertifikat->pdf_path);
+        $pdf = Storage::disk('arsip')->get($sertifikat->pdf_path);
 
         // `/Type /Page` yang BUKAN `/Type /Pages` — yang kedua itu simpul induk,
         // selalu ada satu, dan bikin hitungan naif selalu kelebihan satu.
