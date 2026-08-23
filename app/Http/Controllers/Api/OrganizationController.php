@@ -94,6 +94,16 @@ class OrganizationController extends Controller
         // satu lab kesenggol yang lain.
         $path = $request->file('logo')->store("logo-organisasi/{$organization->id}", 'public');
 
+        // `store()` balik `false` kalau nulisnya gagal, dan disknya disetel
+        // `throw => false` jadi nggak ada exception yang naik. Tanpa penjagaan
+        // ini `logo_path` keisi `false`, lalu logo lama kehapus di bawah —
+        // org-nya kehilangan logo tanpa gantinya, persis yang komentar di bawah
+        // berusaha cegah. Urutan yang benar aja nggak cukup kalau nggak ada yang
+        // meriksa langkahnya beneran jadi.
+        if ($path === false) {
+            return response()->json(['message' => 'Logo gagal disimpan. Coba unggah lagi.'], 500);
+        }
+
         $organization->update(['logo_path' => $path]);
 
         // Yang lama dihapus SESUDAH yang baru kesimpen & tercatat. Kalau dihapus
@@ -152,6 +162,14 @@ class OrganizationController extends Controller
         // nama yang bisa ditebak di gabungan dengan salah konfigurasi disk bikin
         // gambar tanda tangan bisa dicari-cari.
         $path = $request->file('tanda_tangan')->store("tanda-tangan/{$organization->id}", 'local');
+
+        // Sama alasannya kayak logo, tapi taruhannya lebih besar: tanda tangan
+        // yang gagal kesimpen sementara yang lama kehapus bikin sertifikat
+        // berikutnya terbit dengan kolom tanda tangan kosong — dan itu baru
+        // ketahuan sesudah lembarnya sampai ke pelanggan.
+        if ($path === false) {
+            return response()->json(['message' => 'Tanda tangan gagal disimpan. Coba unggah lagi.'], 500);
+        }
 
         $organization->update(['tanda_tangan_path' => $path]);
 

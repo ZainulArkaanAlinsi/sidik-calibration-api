@@ -122,22 +122,21 @@ class DataTampilanSertifikat
      */
     private function kopDataUri(?Organization $organisasi): ?string
     {
-        $path = null;
         $kop = $organisasi?->settings[Organization::KEY_KOP_PATH] ?? null;
 
-        if ($kop && Storage::disk('public')->exists($kop)) {
-            $path = Storage::disk('public')->path($kop);
-        } elseif (is_file(public_path('images/kop-surat.png'))) {
-            $path = public_path('images/kop-surat.png');
+        if (filled($kop)) {
+            $isi = Storage::disk('public')->get($kop);
+
+            if (filled($isi)) {
+                return self::dataUri($kop, $isi);
+            }
         }
 
-        if ($path === null) {
-            return null;
-        }
+        $bawaan = public_path('images/kop-surat.png');
 
-        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
-
-        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+        return is_file($bawaan)
+            ? self::dataUri($bawaan, (string) file_get_contents($bawaan))
+            : null;
     }
 
     /**
@@ -148,21 +147,60 @@ class DataTampilanSertifikat
      */
     private function logoDataUri(?Organization $organisasi): ?string
     {
-        $path = null;
+        $logo = $organisasi?->logo_path;
 
-        if ($organisasi?->logo_path && Storage::disk('public')->exists($organisasi->logo_path)) {
-            $path = Storage::disk('public')->path($organisasi->logo_path);
-        } elseif (is_file(public_path('images/logo-sidik.png'))) {
-            $path = public_path('images/logo-sidik.png');
+        if (filled($logo)) {
+            $isi = Storage::disk('public')->get($logo);
+
+            if (filled($isi)) {
+                return self::dataUri($logo, $isi);
+            }
         }
 
-        if ($path === null) {
-            return null;
-        }
+        $bawaan = public_path('images/logo-sidik.png');
 
-        $mime = str_ends_with(strtolower($path), '.png') ? 'image/png' : 'image/jpeg';
+        return is_file($bawaan)
+            ? self::dataUri($bawaan, (string) file_get_contents($bawaan))
+            : null;
+    }
 
-        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+    /**
+     * Data URI dari ISI berkas, bukan dari path-nya.
+     *
+     * ## Kenapa isi, bukan path
+     *
+     * `kopDataUri()` & `logoDataUri()` dulu ngambil
+     * `Storage::disk('public')->path()` lalu `file_get_contents()`. Itu jalan
+     * SELAMA disknya masih driver `local`.
+     *
+     * Begitu disknya pindah ke S3/R2, `path()` nggak melempar error — dia
+     * balikin kunci bucket sebagai string biasa. `file_get_contents()` atas
+     * string itu memicu warning, dan Laravel ngubah warning jadi
+     * `ErrorException`.
+     *
+     * Yang bikin mahal: exception-nya kelempar di tengah `GenerateCertificate`,
+     * ketangkep `catch (\Throwable)` di situ, dan sertifikatnya distempel
+     * `gagal`. Jadi pindah disk nggak bikin "kopnya nggak kecetak" — dia bikin
+     * SERTIFIKATNYA BERHENTI TERBIT, buat tiap organisasi yang pernah ngunggah
+     * kop atau logo.
+     *
+     * ## Kenapa fallback-nya `if` terpisah, bukan `elseif`
+     *
+     * Dulu bawaan `public/images` ditaruh di `elseif` sesudah
+     * `Storage::exists()`. Di S3 `exists()` balikin **true** buat berkas yang
+     * nggak beneran kebaca, jadi cabang bawaannya nggak pernah kesentuh —
+     * jaring pengaman yang ada tapi nggak pernah nangkap apa-apa.
+     *
+     * Sekarang: `get()` balikin null kalau nggak kebaca (disknya `throw => false`),
+     * dan bawaannya diperiksa terpisah. Jalan di semua driver.
+     *
+     * Polanya nyontek `tandaTanganDataUri()` di bawah, yang dari awal udah benar.
+     */
+    private static function dataUri(string $nama, string $isi): string
+    {
+        $mime = str_ends_with(strtolower($nama), '.png') ? 'image/png' : 'image/jpeg';
+
+        return 'data:'.$mime.';base64,'.base64_encode($isi);
     }
 
     /**

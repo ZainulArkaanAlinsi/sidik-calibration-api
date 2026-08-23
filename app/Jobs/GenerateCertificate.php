@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Terbitin sertifikat dari sesi kalibrasi yang udah disetujui.
@@ -137,7 +138,22 @@ class GenerateCertificate implements ShouldQueue
             $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat));
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
-            Storage::disk('local')->put($path, $pdf->output());
+
+            // Nilai balik `put()` DIPERIKSA, jangan dihapus penjagaannya.
+            //
+            // Disk di project ini disetel `throw => false`, jadi tulis yang
+            // gagal balik `false` tanpa suara — dan baris di bawah bakal
+            // nyetempel sertifikatnya `terbit` sambil nyimpen `pdf_path` yang
+            // nggak nunjuk ke berkas apa pun.
+            //
+            // Itu kegagalan paling mahal yang bisa terjadi di sini: dari sisi
+            // lab semuanya kelihatan beres, dan baru ketahuan waktu pelanggan
+            // ngeklik unduh. Dilempar ke `catch` di bawah biar dapat perlakuan
+            // yang sama kayak kegagalan render — status `gagal`, admin
+            // dikabarin, tombol retry muncul di mobile.
+            if (Storage::disk('local')->put($path, $pdf->output()) === false) {
+                throw new RuntimeException("Gagal nulis PDF sertifikat ke {$path}.");
+            }
 
             $sertifikat->update([
                 'pdf_path' => $path,
