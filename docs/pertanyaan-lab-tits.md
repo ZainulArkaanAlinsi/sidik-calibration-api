@@ -210,16 +210,33 @@ Rantai kegagalannya lengkap dan diam:
 
 Tidak ada satu pun angka yang terlihat janggal di sertifikat yang terbit.
 
-**Yang dipakai sekarang:** baris ber-nol-berpasangan **dibuang** dari tabel —
-sikap yang sama seperti pada U95 negatif (#7) dan `#REF!`. Pencarian titik
-terdekat lalu jatuh ke titik VALID berikutnya (mis. Type N 1000 → memakai baris
-900), dan itu tercermin di keterangan komponennya.
+Ada juga **empat baris "setengah"** — `koreksi = 0` tapi kolom U95-nya KOSONG,
+semuanya `constant` Type N di **1400 °C & 1700 °C**. Sekilas terlihat seperti
+"koreksinya memang nol, U95-nya belum diisi", tapi rentang akreditasi Type N
+berhenti di 1000 °C: 1400 & 1700 itu wilayah Type S/B. Koreksi nol di titik yang
+tipe sensornya sendiri tidak dipakai itu sel kosong, bukan pengukuran.
+
+**Yang dipakai sekarang:** baris ber-nol-berpasangan **dan** baris ber-koreksi-nol-
+tanpa-U95 dua-duanya **dibuang** dari tabel — sikap yang sama seperti pada U95
+negatif (#7) dan `#REF!`. Pencarian titik terdekat lalu jatuh ke titik VALID
+berikutnya (mis. Type N 1000 → memakai baris 900), dan itu tercermin di
+keterangan komponennya.
+
+Koreksi nol yang PUNYA U95 tetap dipakai apa adanya — aturannya soal sel kosong,
+bukan soal angka nol. Contohnya Yokogawa Type N @300 °C (koreksi 0,0, U95 0,31)
+yang memang terbaca normal.
 
 **Yang diminta:** koreksi & U95 kalibrator `constant` yang sebenarnya untuk
 titik-titik di tabel atas — terutama **Type N @ 1000 °C**. Kalau memang
 kalibratornya tidak pernah disertifikasi di titik itu, konfirmasi bahwa jatuh ke
 titik valid terdekat itu perlakuan yang benar (alternatifnya: menolak sesi yang
 titik tertingginya melewati titik sertifikat terakhir).
+
+Dan untuk keempat baris 1400/1700: konfirmasi bahwa itu memang sel kosong, bukan
+"koreksi nol yang terukur tapi U95-nya lupa diisi". Kalau ternyata pengukuran,
+yang perlu diubah cuma satu cabang di `TabelKalibratorSuhu::baris()` —
+`Tests\Unit\TitsBudgetTest::test_koreksi_nol_tanpa_u95_juga_ditolak` mengunci
+keputusan yang sekarang supaya perubahannya tidak bisa lewat diam-diam.
 
 ---
 
