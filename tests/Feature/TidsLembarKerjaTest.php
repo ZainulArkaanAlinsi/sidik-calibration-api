@@ -160,6 +160,63 @@ class TidsLembarKerjaTest extends TestCase
     }
 
     /**
+     * Bagian admin cuma nongol buat admin — dan isinya ikut dijaga.
+     *
+     * Sebelum ini `administratif` satu-satunya bagian yang lolos dari semua
+     * test: penguncian urutan bagian di atas jalan pakai bentuk TEKNISI, jadi
+     * bagian admin bisa hilang, berubah nama, atau kehilangan field-nya tanpa
+     * satu pun test berubah merah.
+     *
+     * Dua kolom U95 di dalamnya yang bikin ini bukan sekadar kerapian:
+     * `suhu_ketidakpastian` & `kelembaban_ketidakpastian` itu U95 KONDISI
+     * LINGKUNGAN (dari sertifikat thermohygro), BUKAN U95 hasil kalibrasi TIDS
+     * yang memang masih terblokir. Dua hal beda yang gampang ketuker justru
+     * karena namanya mirip — dan yang ketuker bakal kecetak di sertifikat.
+     */
+    public function test_bagian_admin_cuma_buat_admin_dan_isinya_kejaga(): void
+    {
+        $kodeBagian = static fn (array $data): array => array_column($data['bagian'], 'kode');
+
+        // Teknisi: NGGAK dapat bagian admin.
+        $teknisi = $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil=tids')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertNotContains('administratif', $kodeBagian($teknisi));
+
+        // Admin: dapat, dan bagiannya paling belakang.
+        $admin = $this->actingAs($this->admin)
+            ->getJson('/api/calibrations/lembar-kerja?profil=tids')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame(
+            ['identitas_alat', 'pemilik', 'dryblock', 'usage_check', 'titik_es', 'hasil', 'penutup', 'administratif'],
+            $kodeBagian($admin),
+        );
+
+        $bagian = collect($admin['bagian'])->firstWhere('kode', 'administratif');
+
+        $this->assertSame(
+            ['nomor_order', 'certificate.nomor', 'suhu_ketidakpastian', 'kelembaban_ketidakpastian'],
+            array_column($bagian['field'], 'kode'),
+        );
+
+        // Keempatnya WAJIB bertanda admin. Satu saja yang lepas, teknisi bisa
+        // ngetik nomor sertifikat sendiri.
+        foreach ($bagian['field'] as $f) {
+            $this->assertTrue($f['hanya_admin'] ?? false, "Field `{$f['kode']}` lepas dari tanda admin.");
+        }
+
+        // Dua kolom U95 ini U95 KONDISI LINGKUNGAN, bukan U95 kalibrasi TIDS.
+        // Satuannya yang membedakan, dan satuannya nggak boleh ketuker.
+        $satuan = collect($bagian['field'])->keyBy('kode');
+        $this->assertSame('°C', $satuan['suhu_ketidakpastian']['satuan']);
+        $this->assertSame('%RH', $satuan['kelembaban_ketidakpastian']['satuan']);
+    }
+
+    /**
      * Dua tabel, dan kepala kolomnya diambil dari PDF-nya: standar dibaca di
      * detik 0/20/40/60/80, alatnya 10 detik sesudahnya di 10/30/50/70/90.
      */
