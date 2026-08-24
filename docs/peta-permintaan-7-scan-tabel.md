@@ -82,8 +82,24 @@ Perlu diadu ke spesifikasi §-per-§ sebelum bisa disebut selesai:
   Enclosure bentuknya GRID (9 termokopel × 5 pembacaan), dan `pindai_foto.didukung` untuk TIDS
   sudah **`false`** karena kertasnya bukan "titik × Repeat".
 - Apakah ambang lampu kuning/merah cocok dengan yang diminta spesifikasi.
-- Apakah alur "sel merah wajib dikoreksi manusia sebelum approve" sudah ditegakkan di backend,
-  bukan cuma ditampilkan di layar.
+- ~~Apakah alur "sel merah wajib dikoreksi manusia sebelum approve" sudah ditegakkan di
+  backend, bukan cuma ditampilkan di layar.~~ **Sudah diperiksa — ditegakkan, tapi bentuknya
+  perlu diketahui:**
+
+  `approve()` menolak 422 selama masih ada `raw_measurements` dengan `is_verified = false`,
+  dan pembacaan yang datang dari kamera lahir dengan `is_verified = false`
+  (`'is_verified' => ! $dariKamera`). Jadi gerbangnya nyata di backend, bukan cuma di layar.
+
+  Yang perlu diketahui: `POST /calibrations/{id}/verify-measurements` **tanpa
+  `measurement_ids`** menandai SEMUA baris sekaligus. Itu memang disengaja dan tertulis di
+  docblock-nya — artinya "teknisi sudah mencocokkan semuanya" — tapi konsekuensinya:
+  **pembedaan merah/kuning/hijau hidup di `worksheet_scan_cells`, bukan di
+  `raw_measurements`.** Backend menuntut *ada manusia yang bilang iya*, bukan *tiap sel merah
+  sudah disentuh satu per satu*.
+
+  Apakah itu cukup untuk spesifikasi, saya belum bisa jawab tanpa membaca §-nya. Kalau
+  spesifikasi menuntut per-sel, yang perlu ditambah bukan gerbang baru — cukup menolak
+  konfirmasi borongan selama masih ada sel berstatus `merah` yang belum dikoreksi.
 
 ### 3. Yang tidak akan saya kerjakan tanpa persetujuan
 
