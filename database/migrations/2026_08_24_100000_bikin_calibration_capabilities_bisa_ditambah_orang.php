@@ -44,9 +44,14 @@ use Illuminate\Support\Facades\Schema;
  * dan 2026_08_07_150000): ENUM cuma ditegakkan MySQL, SQLite (yang dipakai
  * seluruh test) nerima string apa pun. Jadi nilai baru yang kelupaan didaftarin
  * bakal hijau di 700+ test dan baru nolak di produksi, sebagai `Data truncated`
- * di tengah kerjaan teknisi. Daftar nilainya ditegakkan di
- * `CalibrationCapability::SUMBER` + validasi request — di tempat yang test-nya
- * beneran jalan.
+ * di tengah kerjaan teknisi.
+ *
+ * Yang ngejaga isinya bukan tipe kolomnya, tapi jalur tulisnya: `sumber` sengaja
+ * NGGAK mass-assignable di modelnya dan cuma pernah diisi kode server —
+ * `KemampuanKalibrasiController` (admin/teknisi), `CreateCalibrationCapability`
+ * (admin), dan default kolom ini (seeder). Nggak ada satu pun jalan buat klien
+ * ngirim nilainya, jadi nggak ada yang perlu dienum-kan. Daftar nama yang sah
+ * ada di `CalibrationCapability::SUMBER`.
  *
  * ## Kenapa `ketidakpastian_terbaik` & satuan jadi nullable
  *
@@ -136,10 +141,24 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Baris tanpa angka CMC dibuang duluan. Mustahil ada di skema lama
-        // (kolomnya NOT NULL), jadi ninggalinnya bikin `nullable(false)` di
-        // bawah gagal. Lihat docblock kelas ini.
-        DB::table('calibration_capabilities')->whereNull('ketidakpastian_terbaik')->delete();
+        // Baris yang salah satu dari TIGA kolom ini kosong dibuang duluan.
+        //
+        // Ketiganya mustahil NULL di skema lama, jadi ninggalinnya bikin
+        // `nullable(false)` di bawah mental. Dan ketiganya harus dicek, bukan
+        // cuma `ketidakpastian_terbaik`: baris yang CMC-nya udah diisi admin
+        // tapi kolom satuannya masih kosong lolos saringan satu kolom, lalu
+        // `ALTER` `satuan` yang gagal — di tengah rollback, sesudah dua ALTER
+        // sebelumnya kelewat.
+        //
+        // Yang ke-soft-delete IKUT balik hidup: `deleted_at`-nya dibuang di
+        // bawah, dan skema lama nggak punya tempat buat nyimpen "dinonaktifkan".
+        // Itu konsekuensi yang bener buat rollback — bukan bug — tapi perlu
+        // diketahui sebelum dijalanin di data asli.
+        DB::table('calibration_capabilities')
+            ->whereNull('ketidakpastian_terbaik')
+            ->orWhereNull('satuan')
+            ->orWhereNull('satuan_ketidakpastian')
+            ->delete();
 
         // FK-nya dilepas PALING DULUAN, sebelum indeksnya.
         //

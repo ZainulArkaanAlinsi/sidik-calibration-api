@@ -151,7 +151,20 @@ class CalibrationCapabilityForm
                             ->label('Faktor cakupan (k)')
                             ->numeric()
                             ->minValue(1)
-                            ->disabled(fn (Get $get): bool => ! $get(self::KUNCI)),
+                            ->disabled(fn (Get $get): bool => ! $get(self::KUNCI))
+                            // Kolomnya NOT NULL dengan default 2 di database.
+                            // Form yang ngirim `null` NGGAK jatuh ke default itu
+                            // — dia nulis NULL dan MySQL nolak barisnya
+                            // (`SQLSTATE[23000] ... faktor_cakupan`), jadi
+                            // nyimpen kemampuan baru tanpa nyentuh blok CMC
+                            // gagal total. Ketahuan waktu test panel admin
+                            // ditulis, bukan waktu dipakai admin.
+                            //
+                            // 2 juga bukan angka asal: seluruh lampiran
+                            // akreditasi LK-285-IDN pakai k = 2 (~95%), sama
+                            // kayak `GumCalculator::FAKTOR_CAKUPAN`.
+                            ->default(2)
+                            ->dehydrateStateUsing(fn ($state): float => blank($state) ? 2.0 : (float) $state),
                         Textarea::make('metode')
                             ->label('Metode (nomor IK)')
                             ->rows(2)
