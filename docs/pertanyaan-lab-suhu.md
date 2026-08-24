@@ -387,10 +387,23 @@ Lembar kerja Enclosure menyuruh teknisi mengisi **tiga jenis baris** per set
 point: 9 termokopel, 1 baris Indikator enclosure, dan 1 baris **Suhu Ruang**
 (`bentukLembarKerja()` mengirim `baris_suhu_ruang: true`).
 
-Dua yang pertama masuk perhitungan. Yang ketiga **tidak dipakai di mana pun** —
-dan lebih dari itu, API-nya belum punya tempat buat menerimanya: validasi
-request cuma mengenal `sensor_grid` dan `indikator`. Jadi kalau layar teknisi
-nanti mengirim baris Suhu Ruang, angkanya **hilang tanpa pesan apa pun**.
+Dua yang pertama masuk perhitungan. Yang ketiga tidak — dan ada dua lapis
+masalahnya, yang gampang tertukar:
+
+**(i) Baris Suhu Ruang per set point (5 pembacaan) tidak punya tempat sama
+sekali.** Validasi request cuma mengenal `sensor_grid` dan `indikator`. Kalau
+layar teknisi nanti mengirim baris itu, angkanya **hilang tanpa pesan apa pun**.
+
+**(ii) Suhu ruang tingkat SESI ada, tapi tidak sampai ke hitungan Enclosure.**
+Sesi punya field `suhu_ruang` (satu angka, bukan deret) yang diterima dan
+tersimpan, dan buat sepuluh alat lain angka itu masuk budget lewat
+`komponenBudget(..., $suhuRuang, ...)`. Enclosure tidak lewat jalur itu — dia
+pakai `hitungPerGrup()`, yang tidak menerima suhu ruang sama sekali. Jadi meski
+angkanya tersimpan, dia tidak pernah dipakai menghitung apa pun untuk Enclosure.
+
+Artinya jawaban "sudah ada field `suhu_ruang` kok" **tidak menyelesaikan
+pertanyaan ini** — yang ada itu satu angka per sesi yang tidak terpakai, bukan
+deret per set point yang diminta lembar kerja.
 
 Belum ada korbannya sekarang (layar Enclosure-nya belum dibangun), tapi ini
 harus diputuskan sebelum frontend jadi — bukan sesudah teknisi mengisi kolom
@@ -399,7 +412,8 @@ yang ternyata nggak kesimpan.
 > **Baris Suhu Ruang itu buat apa, Pak?** Tiga kemungkinan, dan tindakannya
 > beda-beda:
 > 1. **Masuk budget ketidakpastian** (mis. sebagai komponen pengaruh lingkungan)
->    — kalau ya, mohon rumusnya, dan saya tambahkan komponennya.
+>    — kalau ya, mohon rumusnya, dan mohon dipastikan: yang dipakai deret per
+>    set point, atau cukup satu angka per sesi yang sudah ada?
 > 2. **Cuma dokumentasi kondisi**, dicetak di sertifikat tapi nggak dihitung —
 >    kalau ya, saya simpan sebagai data dan tampilkan, tapi nggak masuk budget.
 > 3. **Peninggalan lembar lama yang sudah nggak dipakai** — kalau ya, barisnya
