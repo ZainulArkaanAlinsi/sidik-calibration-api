@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\KemampuanLintasOrganisasi;
 use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -79,6 +80,10 @@ class CalibrationCapability extends Model
      *
      * Yang dikirim pemanggil TIDAK pernah ditimpa: panel admin & controller API
      * ngisi eksplisit dari organisasi si pemanggil, dan itu yang harus menang.
+     * Justru karena boleh menang, yang dikirim pemanggil wajib DICOCOKIN dulu ke
+     * organisasi kategorinya — lihat [pastikanSeorganisasiDenganKategori]. Cabang
+     * penambal di atas nggak perlu ikut dicek: nilainya baru aja dibaca DARI
+     * kategori itu, jadi cocoknya dijamin sama konstruksinya.
      *
      * @param  array<string, mixed>  $options
      */
@@ -88,9 +93,90 @@ class CalibrationCapability extends Model
             $this->organization_id = EquipmentCategory::withTrashed()
                 ->whereKey($this->equipment_category_id)
                 ->value('organization_id');
+        } else {
+            $this->pastikanSeorganisasiDenganKategori();
         }
 
         return parent::save($options);
+    }
+
+    /**
+     * PENJAGA DUA SUMBER KEBENARAN. Baris ini nggak boleh punya
+     * `organization_id` yang beda dari organisasi kategorinya.
+     *
+     * ## Kegagalan konkret yang dicegah
+     *
+     * Kepemilikan baris kemampuan dulu ditulis di dua tempat yang nggak pernah
+     * didamaikan: kolom `organization_id` di sini (dipakai panel Filament lewat
+     * `ScopesToOrganization` dan [scopeMilikOrganisasi]) dan
+     * `equipment_categories.organization_id` (dipakai SEMUA jalur baca API dan
+     * `GumCalculator::kemampuanUntukTitik()`, yang nyari kandidat CMC cuma lewat
+     * `where('equipment_category_id', ...)`).
+     *
+     * Selama dua-duanya sama, nggak ada yang kelihatan. Satu baris yang beda
+     * cukup buat bikin ini:
+     *
+     *  1. Admin lab A bikin kemampuan tapi milih kategori milik lab B — dulu
+     *     bisa, karena dropdown kategori di `CalibrationCapabilityForm` nggak
+     *     disaring sementara `organization_id`-nya dicap dari admin yang login.
+     *  2. Teknisi lab B narik `GET /categories/{kode}` dan kebagian nama alat +
+     *     angka CMC lab A.
+     *  3. Alat lab B ditautkan ke nama itu (validasi `Rule::exists` dulu cuma
+     *     per kategori), lalu tiap titik ukurnya dicocokin ke baris lab A.
+     *  4. **Angka ketidakpastian terbaik lab A terbit sebagai lantai U95 di
+     *     sertifikat lab B** — sertifikat yang nyatain dirinya terakreditasi,
+     *     buat kemampuan yang nggak pernah diakreditasi buat lab itu.
+     *
+     * Nggak satu pun langkah di atas ngelempar error. Yang nemuin bedanya
+     * biasanya asesor, waktu surveilan.
+     *
+     * ## Kenapa di `save()`, bukan di observer/event `saving`
+     *
+     * Alasan yang sama persis kayak penambal `organization_id` di atas:
+     * `DatabaseSeeder` pakai `WithoutModelEvents`, yang nyabut dispatcher-nya —
+     * jadi penjaga yang dipasang lewat event mati diam-diam justru di jalur
+     * yang paling ramai nulis. `save()` tetap kepanggil apa pun keadaannya.
+     *
+     * ## Kenapa nolak, bukan nimpa
+     *
+     * Nimpa `organization_id` pakai punya kategorinya kelihatan ramah, tapi
+     * artinya satu baris CMC PINDAH pemilik tanpa ada yang minta. Berhenti dan
+     * bikin pemanggilnya sadar itu yang bener; jalur normal nggak akan pernah
+     * kena karena panel admin & `KemampuanKalibrasiController` sama-sama
+     * nurunin organisasi dari kategori yang udah disaring duluan.
+     *
+     * ## Kenapa cuma waktu kolomnya berubah
+     *
+     * Biar `save()` yang cuma mbenerin salah ketik `nama_alat` nggak nambah
+     * satu query per baris. Kalau dua kolomnya nggak gerak, keadaannya udah
+     * pernah lolos penjaga ini waktu barisnya lahir.
+     */
+    private function pastikanSeorganisasiDenganKategori(): void
+    {
+        if ($this->equipment_category_id === null) {
+            return;
+        }
+
+        if ($this->exists && ! $this->isDirty(['organization_id', 'equipment_category_id'])) {
+            return;
+        }
+
+        // `withTrashed()` sengaja: kategori yang dinonaktifkan admin tetap punya
+        // pemilik yang sah, dan baris kemampuannya masih boleh disunting (mis.
+        // buat dilengkapi CMC-nya) tanpa tiba-tiba kelihatan yatim.
+        $organisasiKategori = EquipmentCategory::withTrashed()
+            ->whereKey($this->equipment_category_id)
+            ->value('organization_id');
+
+        if ($organisasiKategori === null || (int) $organisasiKategori === (int) $this->organization_id) {
+            return;
+        }
+
+        throw KemampuanLintasOrganisasi::untuk(
+            $this->organization_id,
+            (int) $organisasiKategori,
+            $this->equipment_category_id,
+        );
     }
 
     /** @return array<string, string> */

@@ -118,6 +118,7 @@ class TurbidimeterBudgetTest extends TestCase
 
         foreach ([[1, 0.041], [100, 3.1], [1000, 22]] as [$titik, $cmc]) {
             CalibrationCapability::create([
+                'organization_id' => $kategori->organization_id,
                 'equipment_category_id' => $kategori->id,
                 'nama_alat' => 'Turbidimeter',
                 'parameter' => 'Turbidity',
@@ -140,6 +141,10 @@ class TurbidimeterBudgetTest extends TestCase
             'toleransi' => 24,
         ]);
         $equipment->equipment_category_id = $kategori->id;
+        // Alat WAJIB punya organisasi: kandidat CMC disaring per lab, dan alat
+        // tanpa organisasi ditolak keras di GumCalculator. Di produksi kolom ini
+        // nggak pernah kosong; fixture yang ngosongin cuma bikin test bohong.
+        $equipment->organization_id = $kategori->organization_id;
 
         $std1000 = new Standard(['nama' => 'Turbidity 1000', 'ketidakpastian' => 21.0, 'satuan_ketidakpastian' => 'NTU', 'faktor_cakupan' => 2]);
 
@@ -160,6 +165,7 @@ class TurbidimeterBudgetTest extends TestCase
         $org = Organization::factory()->create();
         $kategori = EquipmentCategory::create(['organization_id' => $org->id, 'kode' => 'instrumen-analitik', 'nama' => 'Instrumen Analitik']);
         CalibrationCapability::create([
+            'organization_id' => $kategori->organization_id,
             'equipment_category_id' => $kategori->id,
             'nama_alat' => 'Turbidimeter',
             'parameter' => 'Turbidity',
@@ -179,6 +185,10 @@ class TurbidimeterBudgetTest extends TestCase
             'satuan' => 'NTU', 'resolusi' => 0.01, 'toleransi' => 50,
         ]);
         $equipment->equipment_category_id = $kategori->id;
+        // Alat WAJIB punya organisasi: kandidat CMC disaring per lab, dan alat
+        // tanpa organisasi ditolak keras di GumCalculator. Di produksi kolom ini
+        // nggak pernah kosong; fixture yang ngosongin cuma bikin test bohong.
+        $equipment->organization_id = $kategori->organization_id;
 
         $std = new Standard(['nama' => 'Turbidity 0.04', 'ketidakpastian' => 0.01, 'satuan_ketidakpastian' => 'NTU', 'faktor_cakupan' => 2]);
 

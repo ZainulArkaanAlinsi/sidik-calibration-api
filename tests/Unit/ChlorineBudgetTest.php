@@ -212,6 +212,7 @@ class ChlorineBudgetTest extends TestCase
 
         foreach ([[1.74, 0.091], [1.83, 0.08]] as [$titik, $cmc]) {
             CalibrationCapability::create([
+                'organization_id' => $kategori->organization_id,
                 'equipment_category_id' => $kategori->id,
                 'nama_alat' => 'Chlorin Meter',
                 'parameter' => 'Chlorine',
@@ -234,6 +235,10 @@ class ChlorineBudgetTest extends TestCase
             'toleransi' => 0.15,
         ]);
         $equipment->equipment_category_id = $kategori->id;
+        // Alat WAJIB punya organisasi: kandidat CMC disaring per lab, dan alat
+        // tanpa organisasi ditolak keras di GumCalculator. Di produksi kolom ini
+        // nggak pernah kosong; fixture yang ngosongin cuma bikin test bohong.
+        $equipment->organization_id = $kategori->organization_id;
 
         $standard = new Standard([
             'nama' => 'Chlorine Standar Cuvettes 1.83 mg/L',

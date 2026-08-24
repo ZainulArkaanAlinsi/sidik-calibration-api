@@ -818,6 +818,13 @@ class TitsProfile extends CalibrationProfile
      * ketujuh tipe sensor saling tumpang tindih (Type K −20…1000 dan Type N
      * −20…1000 identik), jadi pencocokan berbasis rentang akan memulangkan baris
      * pertama yang muat dan diam-diam memakai CMC tipe lain.
+     *
+     * `$equipment` dipakai buat MENGUNCI ORGANISASI. Sebelumnya parameter itu
+     * diterima tapi tidak pernah dibaca, jadi pencarian ini menyisir SELURUH
+     * `calibration_capabilities` lintas lab: `first()` memulangkan baris TITS
+     * lab mana pun yang kebetulan lebih dulu ke-insert, dan angka CMC-nya
+     * langsung jadi lantai U95 di sertifikat lab yang lagi kerja. Satu-PT bikin
+     * itu tidak pernah kelihatan; PT kedua bikin dia jadi temuan audit.
      */
     private function kemampuanTipeSensor(Equipment $equipment, string $tipeSensor): ?CalibrationCapability
     {
@@ -830,6 +837,10 @@ class TitsProfile extends CalibrationProfile
         return CalibrationCapability::query()
             ->where('nama_alat', $this->namaAlatKemampuan())
             ->where('parameter', $parameter)
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
             ->first();
     }
 
@@ -984,7 +995,17 @@ class TitsProfile extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        // Kolom teks bebas nama tempat buat sesi Insitu. Tanpa
+                        // dia sertifikat Insitu kecetak nama RUANG LAB — tempat
+                        // yang alatnya nggak pernah ke sana.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         $this->field(
                             'calibration_method_id',
                             '4. Calibration Methode',
@@ -1174,6 +1195,7 @@ class TitsProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -1184,6 +1206,7 @@ class TitsProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

@@ -76,11 +76,17 @@ class GumCalculator
     private const DRIFT_RELATIF_TITIK = 0.005;
 
     /**
-     * Cache kemampuan kalibrasi per `equipment_category_id`, seumur hidup
-     * instance ini (satu request lewat DI, lihat CalibrationController) —
-     * bukan cache lintas-request.
+     * Cache kemampuan kalibrasi per `organization_id:equipment_category_id`,
+     * seumur hidup instance ini (satu request lewat DI, lihat
+     * CalibrationController) — bukan cache lintas-request.
      *
-     * @var array<int, Collection<int, CalibrationCapability>>
+     * Organisasinya IKUT jadi kunci, bukan cuma kategorinya. Isi cache-nya
+     * sekarang hasil saringan per lab (lihat [kemampuanUntukTitik]), jadi kunci
+     * yang cuma kategori bikin daftar kandidat lab pertama kepakai lagi buat
+     * alat lab kedua di request yang sama — persis kebocoran yang saringannya
+     * mau tutup, cuma pindah ke lapisan cache.
+     *
+     * @var array<string, Collection<int, CalibrationCapability>>
      */
     private array $kemampuanPerKategori = [];
 
@@ -679,12 +685,76 @@ class GumCalculator
         }
 
         $kategoriId = $equipment->equipment_category_id;
+        $organisasiAlat = $equipment->organization_id;
 
-        $this->kemampuanPerKategori[$kategoriId] ??= CalibrationCapability::query()
+        // KUNCI ORGANISASI. Kandidat CMC dibatesin ke kemampuan milik lab yang
+        // punya alatnya — bukan cuma se-kategori.
+        //
+        // Kepemilikan baris kemampuan ditulis di dua tempat yang dulu nggak
+        // pernah didamaikan: `calibration_capabilities.organization_id` (dipakai
+        // panel admin) dan `equipment_categories.organization_id` (dipakai
+        // pencarian ini, yang cuma `where('equipment_category_id', ...)`). Satu
+        // baris yang organisasinya beda dari organisasi kategorinya — bentuk
+        // yang bisa lahir dari dropdown kategori panel yang dulu nggak disaring
+        // — bikin rantai ini:
+        //
+        //  1. Baris milik lab A nangkring di kategori milik lab B.
+        //  2. Teknisi lab B lihat namanya di `GET /categories/{kode}` dan
+        //     nautin alat pelanggannya ke situ.
+        //  3. Pencarian ini nemu baris lab A karena kategorinya cocok, dan
+        //     `hitungDariKemampuan()` masang `ketidakpastian_terbaik` lab A
+        //     sebagai LANTAI U95.
+        //  4. Sertifikat lab B terbit dengan angka kemampuan lab A — kemampuan
+        //     yang nggak pernah diakreditasi buat lab B.
+        //
+        // Nggak ada satu pun langkah yang ngelempar error, dan bedanya cuma
+        // ketahuan kalau ada yang ngadu ke lampiran akreditasi baris per baris.
+        //
+        // Disaring ke organisasi ALAT (bukan ke organisasi kategorinya) karena
+        // yang dipertaruhkan itu sertifikat siapa: sertifikat lab X cuma boleh
+        // dilantai sama kemampuan yang lab X sendiri klaim. Efek sampingnya
+        // disengaja — alat yang kategorinya kepunyaan lab lain (keadaan yang
+        // sama rusaknya) sekarang jatuh ke jalur generik, dan jatuhnya nggak
+        // senyap: `CalibrationValidator::periksaAlatTanpaCmc()` ngangkat
+        // peringatan yang harus dilewatin admin secara sadar.
+        //
+        // Kunci cache ikut nyantumin organisasinya. Satu instance kalkulator
+        // bisa dipakai buat lebih dari satu alat dalam satu request (jalur
+        // hitung ulang & pratinjau), dan kunci yang cuma kategori bikin hasil
+        // saringan lab pertama kepakai lagi buat lab kedua.
+        // Alat tanpa organisasi TIDAK BOLEH lewat saringan ini diam-diam.
+        //
+        // `where('organization_id', null)` di SQL nggak cocok sama apa pun —
+        // NULL nggak pernah sama dengan NULL. Jadi alat yang organisasinya
+        // kosong bakal dapat NOL kandidat CMC, jatuh ke jalur generik, dan
+        // sertifikatnya terbit dengan U95 yang LEBIH KECIL daripada yang
+        // diakreditasi. Nggak ada satu pun error, dan bedanya cuma ketahuan
+        // kalau ada yang ngadu angkanya ke lampiran akreditasi.
+        //
+        // Di produksi ini nggak mungkin kejadian — `equipment.organization_id`
+        // wajib, dan migrasi 2026_08_24_100000 udah ngisi kolom kemampuan dari
+        // kategorinya lalu ngunci NOT NULL. Justru karena itu, kalau sampai
+        // nyampe sini dengan null, yang bener bukan "diam-diam nggak ketemu"
+        // tapi berhenti keras: itu bug pemanggil, bukan keadaan sah.
+        //
+        // Ditulis eksplisit karena bentuk kegagalannya persis yang paling
+        // sering lolos di repo ini — jalur yang berhasil, tapi angkanya salah.
+        if ($organisasiAlat === null) {
+            throw new \LogicException(
+                'Alat #'.($equipment->id ?? '?').' nggak punya organization_id, '
+                .'jadi kandidat CMC nggak bisa disaring per lab. Tanpa penjaga '
+                .'ini sesinya bakal terbit tanpa lantai CMC tanpa error apa pun.',
+            );
+        }
+
+        $kunci = $organisasiAlat.':'.$kategoriId;
+
+        $this->kemampuanPerKategori[$kunci] ??= CalibrationCapability::query()
             ->where('equipment_category_id', $kategoriId)
+            ->milikOrganisasi($organisasiAlat)
             ->get();
 
-        $kandidat = $this->kemampuanPerKategori[$kategoriId]
+        $kandidat = $this->kemampuanPerKategori[$kunci]
             ->where('nama_alat', $equipment->nama_alat_kemampuan)
             // PENJAGA: baris yang nggak punya angka CMC dikeluarin dari
             // kandidat. JANGAN dihapus walau kelihatan mubazir.
