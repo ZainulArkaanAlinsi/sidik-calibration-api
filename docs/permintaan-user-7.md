@@ -124,7 +124,7 @@ berkas profil.
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
-| G5 | Scan Tabel (perm. 7) | belum — petakan dulu ke yang sudah ada |
+| G5 | Scan Tabel (perm. 7) | **sudah dipetakan** → `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec SUDAH terbangun (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Menunggu jawaban S1/S2/S3 sebelum satu baris pun ditulis (§12 spec) |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
