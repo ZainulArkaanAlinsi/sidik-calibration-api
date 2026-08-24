@@ -91,7 +91,7 @@ Tiap set point diisi:
     "butuh_channel_untuk": "recorder",
     "baris_indikator": true,
     "baris_suhu_ruang": true,
-    "catatan_sensor_acuan": "Sensor pertama = Sensor Acuan (keseragaman diukur relatif ke sensor ini)."
+    "catatan_sensor_acuan": "Sensor Acuan = termokopel bernomor TERKECIL yang terisi (keseragaman diukur relatif ke sensor itu). Urutan pengisian grid bebas — yang menentukan nomornya, bukan posisinya."
   }
 }
 ```
