@@ -281,6 +281,85 @@ class TitsBudgetTest extends TestCase
     }
 
     /**
+     * Sel ber-`koreksi` 0 DAN `u95` 0 sekaligus itu SEL KOSONG yang diisi nol,
+     * bukan pengukuran — dan dipakai mentah dia MENGECILKAN U95 yang dilaporkan.
+     *
+     * Yang paling berbahaya: kalibrator `constant` + `Type N` @ **1000 °C**,
+     * persis batas atas rentang akreditasi Type N. Jaraknya ke titik tabel nol,
+     * jadi peringatan "titik jauh dari tabel" nggak bunyi, dan komponen
+     * sertifikat kalibrator jadi nol tanpa memicu `komponen_tanpa_data`.
+     * Turunnya U95 lolos dari lantai CMC.
+     */
+    public function test_sel_nol_berpasangan_ditolak(): void
+    {
+        $tabel = new TabelKalibratorSuhu;
+
+        foreach ([TabelKalibratorSuhu::MODE_MEASURE, TabelKalibratorSuhu::MODE_SOURCE] as $mode) {
+            // Sel plasebo dibuang, jadi lookup jatuh ke titik VALID terdekat
+            // (900 °C) — bukan memulangkan nol dari sel 1000 °C.
+            $u95 = $tabel->u95($mode, 'constant', 'Type N', 1000.0);
+            $this->assertNotNull($u95);
+            $this->assertNotSame(1000.0, $u95['titik'], "U95 mode {$mode} nggak boleh diambil dari sel 0/0 @1000");
+            $this->assertGreaterThan(0.0, $u95['nilai'], "U95 mode {$mode} nggak boleh nol");
+
+            $koreksi = $tabel->koreksi($mode, 'constant', 'Type N', 1000.0);
+            $this->assertNotSame(1000.0, $koreksi['titik'] ?? null, "koreksi mode {$mode} nggak boleh dari sel 0/0");
+
+            // Karena titik penggantinya 100 °C jauhnya (> JARAK_TITIK_WAJAR),
+            // sesi yang menyentuh titik ini sekarang memicu peringatan
+            // `tits_titik_jauh_dari_tabel` — dulu senyap total karena jaraknya nol.
+            $this->assertGreaterThan(50.0, abs(($koreksi['titik'] ?? 1000.0) - 1000.0));
+        }
+
+        // Yang datanya beneran ada tetap kebaca — filter ini nggak boleh
+        // menghapus koreksi 0 yang SAH (koreksi nol dengan U95 berisi).
+        $this->assertNotNull($tabel->u95(TabelKalibratorSuhu::MODE_MEASURE, 'constant', 'Type N', 500.0));
+    }
+
+    /**
+     * Baris ber-`koreksi` 0 tapi `u95` KOSONG juga dibuang — dan itu keputusan
+     * tersendiri, bukan efek samping `(float) null === 0.0`.
+     *
+     * Empat baris begitu di berkas tabel, semuanya `constant` Type N @ 1400 &
+     * 1700 °C. Rentang akreditasi Type N berhenti di 1000 °C, jadi 1400/1700 itu
+     * wilayah Type S/B: "koreksi nol" di titik yang tipe sensornya sendiri nggak
+     * dipakai itu sel kosong, bukan pengukuran. Dipakai mentah, sesi Type N yang
+     * kesasar ke sana dapat koreksi 0,0 yang kelihatan sah.
+     *
+     * Kalau lab menjawab lain (`docs/pertanyaan-lab-tits.md` #9), tes ini yang
+     * jatuh duluan — dan memang harus, biar keputusannya kelihatan.
+     */
+    public function test_koreksi_nol_tanpa_u95_juga_ditolak(): void
+    {
+        $tabel = new TabelKalibratorSuhu;
+
+        foreach ([TabelKalibratorSuhu::MODE_MEASURE, TabelKalibratorSuhu::MODE_SOURCE] as $mode) {
+            foreach ([1400.0, 1700.0] as $titik) {
+                $koreksi = $tabel->koreksi($mode, 'constant', 'Type N', $titik);
+
+                $this->assertNotSame(
+                    $titik,
+                    $koreksi['titik'] ?? null,
+                    "koreksi mode {$mode} @{$titik} nggak boleh diambil dari sel ber-U95 kosong",
+                );
+            }
+        }
+
+        // Dan koreksi nol yang PUNYA U95 tetap kepakai apa adanya — aturannya
+        // soal sel kosong, bukan soal angka nol. Yokogawa Type N @300 °C itu
+        // baris asli begitu: koreksi 0,0 dengan U95 0,31.
+        $sah = $tabel->koreksi(TabelKalibratorSuhu::MODE_MEASURE, 'yokogawa', 'Type N', 300.0);
+
+        $this->assertSame(300.0, $sah['titik'] ?? null, 'koreksi 0 yang punya U95 nggak boleh ikut kebuang');
+        $this->assertSame(0.0, (float) $sah['nilai'], 'nilainya tetap nol, bukan diganti titik lain');
+        $this->assertEqualsWithDelta(
+            0.31,
+            $tabel->u95(TabelKalibratorSuhu::MODE_MEASURE, 'yokogawa', 'Type N', 300.0)['nilai'],
+            1e-9,
+        );
+    }
+
+    /**
      * @param  array<string, float>  $harap  sumber komponen → uici (`u · ci`)
      * @param  list<array<string, mixed>>  $budget
      */

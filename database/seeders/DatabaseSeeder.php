@@ -67,6 +67,9 @@ class DatabaseSeeder extends Seeder
             // sensornya sudah ada di lampiran akreditasi, jadi cukup baris dari
             // `CalibrationCapabilitySeeder`.
             TitsSeeder::class,
+            // Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator) — WAJIB abis
+            // `CalibrationCapabilitySeeder` (butuh baris CMC per jenis enclosure).
+            EnclosureSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

@@ -8,6 +8,11 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
+use App\Services\Calibration\Profiles\Enclosure\BathProfile;
+use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
+use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
+use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
+use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
@@ -56,6 +61,13 @@ class CalibrationProfileRegistry
             new DoMeterProfile,
             new GasDetectorProfile,
             new TitsProfile,
+            // Kalibrasi enclosure — lima jenis, satu mesin hitung. Lihat
+            // Profiles\Enclosure\EnclosureProfileBase.
+            new OvenProfile,
+            new FurnaceProfile,
+            new BathProfile,
+            new InkubatorProfile,
+            new RefrigeratorProfile,
         ];
     }
 
