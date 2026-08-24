@@ -230,7 +230,7 @@ class TidsLembarKerjaTest extends TestCase
             ->getJson('/api/calibrations/lembar-kerja?profil=tids')
             ->assertOk()
             ->assertJsonPath('data.budget_ketidakpastian.tersedia', false)
-            ->assertJsonCount(3, 'data.budget_ketidakpastian.butuh');
+            ->assertJsonCount(4, 'data.budget_ketidakpastian.butuh');
     }
 
     /**

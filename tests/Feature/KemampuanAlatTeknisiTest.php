@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\CalibrationCapabilities\Pages\CreateCalibrationCapability;
+use App\Filament\Resources\CalibrationCapabilities\Pages\EditCalibrationCapability;
 use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Customer;
@@ -12,6 +14,7 @@ use App\Models\Standard;
 use App\Models\User;
 use Database\Seeders\CalibrationCapabilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -470,6 +473,107 @@ class KemampuanAlatTeknisiTest extends TestCase
             ->json('data.temuan');
 
         $this->assertNotContains('alat_tanpa_cmc', collect($temuan)->pluck('kode')->all());
+    }
+
+    /**
+     * `ketidakpastian_terbaik = 0` BUKAN "belum ada CMC".
+     *
+     * Ini jebakan yang sempat keinjek waktu penjagaan ini ditulis: godaannya
+     * besar buat nulis `> 0` ("mana ada ketidakpastian terbaik nol"), dan itu
+     * bikin tiga test budget Viscometer merah. Nol di repo ini punya arti yang
+     * udah dipakai beneran — `ViscometerCapabilitySeeder` nulis baris rentang
+     * 58021–95192 cP dengan CMC 0 supaya titik DI LUAR lingkup akreditasi tetap
+     * ketemu kemampuan dan tetap dihitung budget empat komponen. Nyaring baris
+     * itu bikin titiknya jatuh ke jalur cadangan dua komponen yang MEMBUANG
+     * pengaruh suhu, dan `uc`-nya malah mengecil.
+     *
+     * Jadi: NULL = belum diisi siapa pun (disaring). 0 = udah dipikirin, sengaja
+     * nggak ada lantai CMC (tetap dipakai).
+     */
+    public function test_cmc_nol_beda_dari_cmc_kosong(): void
+    {
+        $nol = CalibrationCapability::factory()->create([
+            'equipment_category_id' => $this->kategori->id,
+            'nama_alat' => 'Di Luar Lingkup',
+            'range_min' => 0,
+            'range_max' => 300,
+            'ketidakpastian_terbaik' => 0,
+        ]);
+        $kosong = CalibrationCapability::factory()->tanpaCmc()->create([
+            'equipment_category_id' => $this->kategori->id,
+            'nama_alat' => 'Belum Diisi',
+        ]);
+
+        $this->assertTrue($nol->punyaCmc(), 'CMC nol itu pernyataan sadar, bukan kolom kosong.');
+        $this->assertFalse($kosong->punyaCmc());
+
+        // Dan barisnya BENERAN masih kepakai waktu ngitung.
+        $sesi = $this->sesiUntuk('Di Luar Lingkup', titik: 50.0, pembacaan: [50.02, 50.01, 50.03]);
+
+        $sumberKomponen = collect($sesi->uncertaintyCalculations()->firstOrFail()->type_b_components ?? [])
+            ->pluck('sumber')
+            ->all();
+
+        $this->assertContains(
+            'cmc_kemampuan_kalibrasi',
+            $sumberKomponen,
+            'Baris ber-CMC nol ikut kesaring. Titik di luar lingkup akreditasi bakal jatuh ke jalur '
+                .'cadangan yang membuang komponen suhu, dan uc-nya mengecil.',
+        );
+    }
+
+    // --------------------------------------------------------- panel admin
+
+    /**
+     * Angka CMC nggak boleh berubah waktu admin cuma mbenerin nama alat.
+     *
+     * Blok angkanya dikunci sakelar `izin_ubah_cmc` di form, dan field yang
+     * `disabled()` di Filament NGGAK ikut dikirim waktu simpan — jadi ini bukan
+     * sekadar "nggak bisa diketik", nilainya beneran nggak kesentuh proses
+     * simpan. Satu digit yang kegeser di sini ngubah U95 di semua sertifikat
+     * berikutnya yang pakai baris ini, tanpa error di mana pun.
+     */
+    public function test_ngedit_nama_alat_di_panel_nggak_nyenggol_angka_cmc(): void
+    {
+        $kemampuan = CalibrationCapability::factory()->create([
+            'equipment_category_id' => $this->kategori->id,
+            'nama_alat' => 'Vernier Caliper',
+            'ketidakpastian_terbaik' => 0.02,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(EditCalibrationCapability::class, ['record' => $kemampuan->getRouteKey()])
+            ->fillForm(['nama_alat' => 'Vernier Caliper (Digital)'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $segar = $kemampuan->fresh();
+
+        $this->assertSame('Vernier Caliper (Digital)', $segar->nama_alat);
+        $this->assertSame(
+            0.02,
+            (float) $segar->ketidakpastian_terbaik,
+            'Angka CMC kegeser padahal yang diubah cuma nama alatnya.',
+        );
+    }
+
+    /** Baris yang lahir dari panel admin dicap `admin`, bukan `akreditasi`. */
+    public function test_baris_dari_panel_admin_nggak_ngaku_akreditasi(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(CreateCalibrationCapability::class)
+            ->fillForm([
+                'equipment_category_id' => $this->kategori->id,
+                'nama_alat' => 'Alat Dari Panel',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $baru = CalibrationCapability::firstWhere('nama_alat', 'Alat Dari Panel');
+
+        $this->assertNotNull($baru);
+        $this->assertSame(CalibrationCapability::SUMBER_ADMIN, $baru->sumber);
+        $this->assertSame($this->admin->id, $baru->dibuat_oleh_user_id);
     }
 
     // ------------------------------------------------------------- helpers
