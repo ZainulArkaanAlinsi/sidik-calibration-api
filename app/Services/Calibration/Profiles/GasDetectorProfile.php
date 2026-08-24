@@ -338,6 +338,19 @@ class GasDetectorProfile extends CalibrationProfile
         return 'Gas Detector';
     }
 
+    /**
+     * Lembar kerja & sertifikatnya nyebut "Multi Gas Detector" (dan itu juga
+     * `nama_alat` alat contohnya di `GasDetectorSeeder`), sementara baris
+     * kemampuannya nulis "Gas Detector" — lihat [namaAlatKemampuan]. Sebagian
+     * data alat pelanggan nulisnya nempel tanpa spasi. Ketiganya didaftarin.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Multi Gas Detector', 'GasDetector'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_GAS_DETECTOR;

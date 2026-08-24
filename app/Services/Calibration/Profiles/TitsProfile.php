@@ -244,6 +244,25 @@ class TitsProfile extends CalibrationProfile
         return 'Temperature Indicator tanpa Sensor';
     }
 
+    /**
+     * Lampiran akreditasi LK-285-IDN no. 1 nulis "Indicator" (Inggris, lihat
+     * [namaAlatKemampuan]), sementara judul lembar kerja & dokumen labnya nulis
+     * "Indikator" (Indonesia). Dua-duanya didaftarin.
+     *
+     * Singkatan "TITS" sengaja TIDAK didaftarin. Pencocokan di
+     * `CalibrationProfileRegistry::kodeProfilDariNama()` nerima kunci yang
+     * nempel di TENGAH nama, dan empat huruf itu terlalu pendek buat aman —
+     * satu nama alat yang kebetulan memuatnya bakal diam-diam dapat lembar
+     * suhu. Nama panjangnya sendiri selalu ada: yang dicocokin `nama_alat`
+     * lampiran akreditasi, bukan singkatan yang diketik teknisi.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Temperature Indikator tanpa Sensor'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_TITS;

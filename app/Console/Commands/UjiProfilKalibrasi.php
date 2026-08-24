@@ -187,6 +187,26 @@ class UjiProfilKalibrasi extends Command
                 ];
         }
 
+        // TIDS sengaja BELUM menghasilkan angka — `TidsProfile::hitungPerGrup()`
+        // memblokir seluruh titik sampai workbook olah data TIDS turun dari lab.
+        // Jadi dia harus punya barisnya sendiri di sini, dan barisnya bukan
+        // kegagalan.
+        //
+        // Tanpa cabang ini dia jatuh ke `tidak ada alat contoh di database` di
+        // bawah, dan itu bohong dua kali: bunyinya seperti baris master yang
+        // hilang (padahal yang belum ada rumusnya), dan perintah ini jadi MERAH
+        // permanen. Perintah kesiapan yang selalu merah berhenti dibaca — lalu
+        // alat yang beneran rusak lewat tanpa ada yang sadar. Itu justru
+        // kegagalan yang perintah ini ada buat mencegahnya.
+        if ($profil->kode() === 'tids') {
+            return [
+                '-',
+                'budget ketidakpastian sengaja kosong sampai workbook TIDS turun dari lab; '
+                .'lembar kerja & jalur simpannya jalan',
+                true,
+            ];
+        }
+
         if ($alat === null) {
             return ['-', 'tidak ada alat contoh di database', false];
         }

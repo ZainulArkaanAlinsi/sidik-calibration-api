@@ -430,4 +430,104 @@ class CertificateSnapshotTest extends TestCase
 
         $this->assertNull($snapshotPh['catatan_atas_hasil']);
     }
+
+    /**
+     * Lokasi yang kecetak di sertifikat buat satu kombinasi `lokasi` /
+     * `room_id` / `lokasi_nama`.
+     *
+     * Sesinya dibikin lewat factory dan snapshot-nya dibangun langsung, bukan
+     * lewat `terbitkanSertifikat()`: yang diadu cuma satu field header, dan
+     * `terbitkanSertifikat()` bikin `CalibrationMethod` berkode tetap — jadi
+     * dia cuma bisa dipanggil sekali per test.
+     *
+     * @param  array<string, mixed>  $atribut
+     */
+    private function lokasiSertifikat(array $atribut): ?string
+    {
+        $sesi = CalibrationSession::factory()->create([
+            'equipment_id' => $this->alat->id,
+            'teknisi_id' => $this->teknisi->id,
+            ...$atribut,
+        ]);
+
+        return app(CertificateSnapshotBuilder::class)->bangun(
+            $sesi,
+            new Certificate(['nomor' => 'UJI-LOKASI', 'qr_token' => 'uji-lokasi']),
+        )['header']['calibration_location'];
+    }
+
+    /**
+     * Sesi Insitu NGGAK BOLEH kecetak nama ruang lab, walau `room_id`-nya keisi.
+     *
+     * Dropdown "Ruangan" di HP selalu tampil dan nggak pernah direset waktu
+     * teknisi milih Insitu, jadi sesi kunjungan lumrah bawa `room_id` sisa
+     * pilihan sebelumnya. Waktu `room` diperiksa duluan, sertifikat kunjungan
+     * ke pabrik pelanggan terbit dengan tulisan `Lab. Uji A` — dokumen resmi
+     * yang nyatain alatnya diukur di lab kami, padahal nggak pernah masuk lab.
+     * Nggak ada error, nggak ada yang aneh di layar; ketahuannya cuma kalau ada
+     * yang inget alat itu emang nggak pernah dikirim.
+     */
+    public function test_sesi_insitu_nggak_kecetak_nama_ruang_walau_room_id_keisi(): void
+    {
+        $this->assertSame(
+            'Insitu (PT. LDC)',
+            $this->lokasiSertifikat([
+                'lokasi' => 'onsite',
+                'room_id' => $this->ruangan->id,
+                'lokasi_nama' => 'PT. LDC',
+            ]),
+        );
+    }
+
+    /**
+     * Insitu tanpa nama tempat jatuh ke alamat pelanggan — bukan ke nama ruang.
+     *
+     * Teknisi nggak selalu ngisi nama tempatnya, dan `room_id` sisa dropdown
+     * tetap nempel. Yang kosong dilaporin sebagai lokasi pelanggan seperti
+     * sebelumnya; nyomot nama ruang di sini bikin kekeliruan yang sama persis
+     * kayak kasus di atas, cuma lewat jalur yang lebih gampang kejadian.
+     */
+    public function test_insitu_tanpa_nama_tempat_jatuh_ke_alamat_pelanggan(): void
+    {
+        $this->assertSame(
+            'Onsite — Jl. Arteri Primer A-10, Cicalengka, Kab. Bandung',
+            $this->lokasiSertifikat([
+                'lokasi' => 'onsite',
+                'room_id' => $this->ruangan->id,
+                'lokasi_nama' => null,
+            ]),
+        );
+
+        // Pelanggan yang alamatnya belum keisi pun tetap nggak boleh nyomot
+        // nama ruang — `Onsite` polos lebih jujur daripada `Lab. Uji A`.
+        $this->alat->customer->update(['alamat' => null]);
+
+        $this->assertSame(
+            'Onsite',
+            $this->lokasiSertifikat([
+                'lokasi' => 'onsite',
+                'room_id' => $this->ruangan->id,
+                'lokasi_nama' => '',
+            ]),
+        );
+    }
+
+    /**
+     * Jalur normal nggak boleh kesenggol: sesi lab tetap nyetak nama ruangnya.
+     *
+     * `lokasi_nama` sengaja diisi juga di sini — sama alasannya kayak `room_id`
+     * di sesi insitu, kolomnya bisa nyimpen sisa isian sebelumnya. Yang mutusin
+     * tetap `lokasi`, jadi sesi lab nggak ikut-ikutan kecetak `Insitu (…)`.
+     */
+    public function test_sesi_lab_tetap_kecetak_nama_ruang(): void
+    {
+        $this->assertSame(
+            'Lab. Uji A',
+            $this->lokasiSertifikat([
+                'lokasi' => 'lab',
+                'room_id' => $this->ruangan->id,
+                'lokasi_nama' => 'PT. LDC',
+            ]),
+        );
+    }
 }

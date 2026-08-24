@@ -203,6 +203,21 @@ class ChlorineProfile extends CalibrationProfile
         return 'Chlorin Meter';
     }
 
+    /**
+     * Ejaan lembar kerjanya SIDIK-FM-CAL-0531: "Chlorine Meter" (pakai 'e').
+     * Dua-duanya beredar di data — lampiran akreditasi no. 42 nulis tanpa 'e'
+     * (lihat [namaAlatKemampuan]), form kerjanya pakai 'e' — jadi dua-duanya
+     * harus nunjuk ke profil ini. Dulu daftar ini ada di APK
+     * (`_profilKhusus`), yang artinya ejaan baru nggak bisa dibetulkan tanpa
+     * rilis mobile.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Chlorine Meter'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_CHLORINE;

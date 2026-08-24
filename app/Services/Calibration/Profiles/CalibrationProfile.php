@@ -39,6 +39,31 @@ abstract class CalibrationProfile
      */
     abstract public function namaAlatKemampuan(): string;
 
+    /**
+     * Ejaan LAIN nama alat ini yang beneran muncul di data, di luar
+     * [namaAlatKemampuan] — dipakai [CalibrationProfileRegistry::kodeProfilDariNama]
+     * buat nebak lembar kerja dari teks bebas (`nama_alat` lampiran akreditasi,
+     * `nama_alat` alat pelanggan, judul lembar kerja).
+     *
+     * Kenapa nempel di profil, bukan jadi satu tabel terjemahan terpisah: nambah
+     * alat ke-17 itu bikin SATU file di folder ini, dan tabel terpisah adalah
+     * tempat yang pasti kelupaan diisi. Ejaan alat hidup bareng profilnya.
+     *
+     * Isinya cuma ejaan yang PUNYA BUKTI di data (baris CMC, master Excel, atau
+     * kolom `equipments.nama_alat`), bukan tebakan — tiap alias ditulis berikut
+     * alasannya di profil masing-masing. Dan JANGAN isi singkatan pendek:
+     * pencocokannya nerima kunci yang nempel di tengah nama, jadi "TITS" bakal
+     * diam-diam ngasih lembar suhu ke alat lain yang kebetulan memuatnya.
+     *
+     * Default kosong — profil yang cuma punya satu ejaan nggak perlu override.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return [];
+    }
+
     /** Kode Formula GUM buat besaran ini (`Formula::KODE_GUM_*`). */
     abstract public function kodeFormula(): string;
 

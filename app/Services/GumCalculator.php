@@ -685,7 +685,59 @@ class GumCalculator
             ->get();
 
         $kandidat = $this->kemampuanPerKategori[$kategoriId]
-            ->where('nama_alat', $equipment->nama_alat_kemampuan);
+            ->where('nama_alat', $equipment->nama_alat_kemampuan)
+            // PENJAGA: baris yang nggak punya angka CMC dikeluarin dari
+            // kandidat. JANGAN dihapus walau kelihatan mubazir.
+            //
+            // Sejak teknisi boleh nambah nama alat sendiri dari lapangan
+            // (`POST /api/categories/{kode}/kemampuan`), tabel ini bisa berisi
+            // baris yang cuma punya NAMA — `range_min`, `range_max`, dan
+            // `ketidakpastian_terbaik` semuanya NULL. Tanpa saringan ini baris
+            // kayak gitu MASIH ikut dicocokin, dan hasilnya bukan "nggak
+            // ketemu" melainkan angka yang salah:
+            //
+            //  - Filter titik tunggal generik di bawah nyari `range_min ===
+            //    null`, dan baris tanpa rentang lolos syarat itu.
+            //  - `cocokTitikTunggal()` ngitung `abs($titikUkur - (float)
+            //    $k->range_max)`, dan `(float) null` itu `0.0`. Jadi baris tanpa
+            //    rentang berperilaku sebagai "kemampuan di titik 0" dan nyangkut
+            //    ke tiap titik ukur dalam radius 0,1 dari nol — titik nol jangka
+            //    sorong, 0 mg neraca, blank turbidimeter, semuanya titik yang
+            //    beneran dikalibrasi.
+            //  - Begitu nyangkut, `hitungDariKemampuan()` mbaca
+            //    `ketidakpastian_terbaik` NULL sebagai `0.0`. Lantai CMC-nya
+            //    jadi `max(0.0, k * u_gabungan)` alias nggak ada lantai, dan U95
+            //    yang terbit LEBIH KECIL daripada yang diakreditasi lab.
+            //
+            // Nggak satu pun langkah di atas ngelempar error. Sertifikatnya
+            // terbit normal, PASS/FAIL-nya kelihatan wajar, dan yang salah cuma
+            // angka ketidakpastiannya — di dokumen yang nyatain dirinya
+            // terakreditasi. Buat lab terakreditasi itu temuan audit, dan
+            // rekonstruksinya baru mungkin kalau ada yang ngadu ke lampiran
+            // LK-285-IDN baris per baris.
+            //
+            // Yang disaring cuma CMC **NULL**, bukan CMC nol. Dua-duanya
+            // kelihatan "kosong" tapi artinya berlawanan: nol itu pernyataan
+            // sadar "lab nggak punya klaim buat rentang ini" (baris keempat
+            // `ViscometerCapabilitySeeder`, rentang 58021–95192 cP) yang justru
+            // ADA supaya titik di luar lingkup tetap dapat budget empat
+            // komponen. Nyaring `> 0` di sini bikin titik itu jatuh ke jalur
+            // cadangan dua komponen dan `uc`-nya MENGECIL — persis kesalahan
+            // yang penjaga ini mau cegah, cuma di alat yang lain. Lihat
+            // `CalibrationCapability::punyaCmc()`.
+            //
+            // Dibuang di SINI (bukan di query DB) supaya cache per kategori
+            // tetap berisi SEMUA baris — panel admin & respons `GET
+            // /categories/{kode}` justru butuh lihat baris tanpa CMC biar bisa
+            // dilengkapi. Yang nggak boleh cuma dia ikut nentuin angka.
+            //
+            // Jatuhnya ke jalur generik memang tetap terjadi, dan itu nggak
+            // bisa dihindari — baris tanpa CMC emang nggak punya angka buat
+            // dipakai. Yang bikin ini beda dari kondisi lama: sekarang jatuhnya
+            // NGGAK SENYAP. `CalibrationValidator::periksaAlatTanpaCmc()`
+            // ngangkat peringatan yang harus dilewatin admin secara sadar
+            // sebelum sertifikatnya boleh terbit.
+            ->filter(fn (CalibrationCapability $k): bool => $k->punyaCmc());
 
         // Dicocokin ke NILAI titik kemampuannya langsung (range_max), bukan ke
         // titik ukur yang dibulatkan ke integer. Versi lama pakai
