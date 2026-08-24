@@ -27,6 +27,12 @@ MAX(U hitung, CMC)** (lantai CMC ILAC-P14), dan di kedua sesi contoh CMC menang
 mengubah angka yang tercetak di sertifikat** — tapi akan berpengaruh di sesi
 lain yang U hitungnya melewati CMC. Yang begitu ditandai jelas.
 
+> **Ada versi gabungan.** Beberapa pertanyaan di dokumen ini muncul juga di alat
+> suhu satunya (pembagi akar-ganda, `v_eff`, nomor formulir, desimal `k`).
+> Buat dikirim ke lab, pakai **`docs/pertanyaan-lab-suhu.md`** — di situ yang
+> kembar sudah digabung jadi satu pertanyaan. Berkas ini tetap jadi rujukan
+> teknisnya (nomor sel, rumus, angka pembanding).
+
 ---
 
 ## 1. Dua master, dua budget yang beda STRUKTUR — bukan cuma angka
