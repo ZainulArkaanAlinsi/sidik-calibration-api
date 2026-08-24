@@ -568,11 +568,11 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                     // (efek radiasi 0,6 dan konduksi panas 0,1) plus efek
                     // pembebanan yang diturunkan dari keseragaman TERUKUR.
                     'field' => [
-                        $this->field('dimensi.panjang', 'Panjang (P)', 'angka', satuan: 'm'),
-                        $this->field('dimensi.lebar', 'Lebar (L)', 'angka', satuan: 'm'),
-                        $this->field('dimensi.tinggi', 'Tinggi (T)', 'angka', satuan: 'm'),
-                        $this->field('dimensi.jari_jari', 'Jari-jari (r)', 'angka', satuan: 'm'),
-                        $this->field('dimensi.tinggi_silinder', 'Tinggi silinder (T)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_panjang', 'Panjang (P)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_lebar', 'Lebar (L)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_tinggi', 'Tinggi (T)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_jari_jari', 'Jari-jari (r)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_tinggi_silinder', 'Tinggi silinder (T)', 'angka', satuan: 'm'),
                         // Volume DIHITUNG, bukan diketik — persis kayak masternya:
                         // balok `P × L × T`, silinder `π · r² · t`, dalam METER,
                         // tanpa satu pun faktor konversi.
@@ -585,6 +585,17 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                         // total tapi volumenya terbaca `0 m³`. "Nol meter kubik"
                         // dan "belum diisi" itu dua hal yang beda, dan yang satu
                         // nggak boleh menyamar jadi yang lain.
+                        // Namanya SENGAJA pakai titik sementara lima kotak di
+                        // atasnya nggak. Di repo ini titik di kode kolom itu
+                        // penanda "nilai turunan" — `FieldLembarKerja.turunan`
+                        // baca `kode.contains('.')`, dan kolom turunan nggak
+                        // dikasih kotak isian sama sekali.
+                        //
+                        // Jadi bedanya bukan gaya penamaan: `dimensi_panjang`
+                        // diketik teknisi, `dimensi.volume` dihitung. Kalau
+                        // kelimanya ikut pakai titik, blok dimensinya tampil
+                        // tapi NGGAK BISA DIKETIK — dan nggak ada yang gagal,
+                        // kotaknya cuma diam.
                         $this->field('dimensi.volume', 'Volume', 'angka', sumber: 'otomatis', satuan: 'm³'),
                         $this->field('persyaratan_alat', 'Persyaratan Alat (ΔT)', 'angka', satuan: self::SATUAN),
                     ],

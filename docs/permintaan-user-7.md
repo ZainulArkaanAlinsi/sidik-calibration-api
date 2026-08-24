@@ -120,9 +120,9 @@ berkas profil.
 | Gel. | Isi | Status |
 |---|---|---|
 | G0 | Sertifikat Insitu, draf tanpa tanggal, ruangan ke-16, cabut UI pindai (perm. 3) | **selesai, di PR draft** — belum masuk `main`, jadi belum ada di APK mana pun |
-| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | 1a jalan; perm. 2 belum |
-| G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 belum |
-| G3 | Lembar kerja ikut PDF (perm. 6) | belum |
+| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **selesai, di PR draft** — perm. 2 jalan di 12/12 profil, aturannya datang dari server |
+| G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **selesai, di PR draft** (K10/K11 masih menahan pintu masuk & tombol hapus) |
+| G3 | Lembar kerja ikut PDF (perm. 6) | **jalan** — kop TITS `SIDIK-FM-CAL-0505 Rev.3` + kepala lembar & blok dimensi Enclosure `SIDIK-FM-CAL-0504 Rev.3` sudah ikut PDF; TIDS `0506 Rev.4` belum |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2** |
 | G5 | Scan Tabel (perm. 7) | belum — petakan dulu ke yang sudah ada |
 
@@ -145,9 +145,14 @@ Supaya tidak dibangun ulang:
 - **Jatuh diam-diam ke profil pH.** Nama alat yang tidak cocok memulangkan profil pH tanpa error;
   teknisi mengisi lembar pH untuk alat lain. Ejaan TIDS yang mengikat:
   `Temperatur Indikator dengan Sensor` — "Temperatur" bukan "Temperature", "dengan" huruf kecil.
-- **Enclosure tidak punya `equipment_id`** di bentuk lembar kerjanya, sementara tombol kirim
-  menahan kalau alat belum dipilih. Sesi Enclosure baru **tidak bisa dikirim** sampai ini
-  dibereskan (bagian dari perm. 6).
+- ~~**Enclosure tidak punya `equipment_id`**~~ — sudah dibereskan di `dfe8ef8`; bagian
+  `identitas_alat` sekarang membawanya, dan 15 test di `EnclosureKepalaLembarTest` merah kalau
+  hilang lagi.
+- **Titik di kode kolom = "nilai turunan".** `FieldLembarKerja.turunan` membacanya dari
+  `kode.contains('.')`, dan kolom turunan tidak diberi kotak isian sama sekali. Jadi
+  `dimensi.panjang` tampil di layar tapi **tidak bisa diketik**, tanpa satu pun error. Kolom yang
+  diketik teknisi pakai garis bawah (`dimensi_panjang`), yang dihitung saja yang pakai titik
+  (`dimensi.volume`).
 - **Baris "Suhu Ruang"** di grid Enclosure sudah diisi teknisi tapi dibuang sebelum dikirim —
   backend belum punya tempat menampungnya.
 - **`flutter analyze` mengedit `analysis_options.yaml` sendiri** ("Upgrading analysis_options.yaml

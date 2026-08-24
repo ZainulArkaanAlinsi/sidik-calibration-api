@@ -132,8 +132,8 @@ class EnclosureKepalaLembarTest extends TestCase
             'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
             'thermohygro_standard_id',
             // Dimensi alat
-            'dimensi.panjang', 'dimensi.lebar', 'dimensi.tinggi',
-            'dimensi.jari_jari', 'dimensi.volume',
+            'dimensi_panjang', 'dimensi_lebar', 'dimensi_tinggi',
+            'dimensi_jari_jari', 'dimensi.volume',
             'persyaratan_alat',
             // Penutup
             'catatan_teknisi',
