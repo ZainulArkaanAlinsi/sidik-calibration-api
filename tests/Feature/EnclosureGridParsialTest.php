@@ -327,7 +327,19 @@ class EnclosureGridParsialTest extends TestCase
         $this->assertSame(2, $hasil['belum_dihitung'][0]['titik_ke']);
         $alasan = $hasil['belum_dihitung'][0]['alasan'];
         $this->assertStringContainsString('no. 2', $alasan);
-        $this->assertStringContainsString('nggak punya koreksi', $alasan);
+
+        // Alasannya harus nyebut KANAL, bukan nyuruh cek nomor termokopel.
+        //
+        // Nomor 2 itu nomor Type K yang SAH — yang kosong kolom Channel-nya.
+        // Pesan generik "cek nomor termokopel" bikin teknisi membongkar
+        // penomoran yang nggak ada masalahnya, sementara kolom yang beneran
+        // kosong nggak pernah disebut.
+        $this->assertStringContainsString('Channel', $alasan);
+        $this->assertStringNotContainsString(
+            'Cek nomor termokopel',
+            $alasan,
+            'kanal kosong nggak boleh dikasih instruksi "cek nomor termokopel"',
+        );
     }
 
     /**

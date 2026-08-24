@@ -297,19 +297,52 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             // terbit — sebaran suhu & keseragaman yang tercetak ikut salah, bukan
             // cuma U95. Lihat [EnclosureCalculator::hitungSensor].
             if ($hasil['koreksi_hilang'] !== []) {
+                // Kalibrator sudah tahu KENAPA tiap koreksi hilang — kanal yang
+                // kosong beda sebab dari nomor termokopel yang nggak ada di
+                // tabel — dan sebab itu ikut disebut di sini.
+                //
+                // Sebelumnya cuma nomornya yang dicetak, jadi sesi Recorder yang
+                // termokopelnya lupa diisi Channel dapat pesan "cek nomor
+                // termokopel" — persis instruksi yang SALAH: nomornya sudah
+                // benar, yang kosong kolom Channel-nya. Teknisi disuruh
+                // membongkar penomoran yang nggak ada masalahnya.
+                $kanalKosong = false;
+
+                $rincian = array_map(
+                    static function (array $h) use (&$kanalKosong): string {
+                        $sebab = [];
+
+                        foreach ($h['hilang'] as $apa) {
+                            if ($apa === 'meter (kanal kosong)') {
+                                $kanalKosong = true;
+                                $sebab[] = 'nomor Channel belum diisi';
+
+                                continue;
+                            }
+
+                            $sebab[] = $apa === 'meter'
+                                ? 'koreksi kalibrator nggak ketemu'
+                                : 'koreksi sensor nggak ketemu';
+                        }
+
+                        return sprintf('no. %d (%s)', $h['no'], implode(' & ', $sebab));
+                    },
+                    $hasil['koreksi_hilang'],
+                );
+
                 $belumDihitung[] = [
                     'titik_ke' => (int) $t['titik_ke'],
                     'alasan' => sprintf(
-                        'Set point %s °C: sensor %s nggak punya koreksi di tabel kalibrator %s (%s). '
-                        .'Koreksi yang hilang nggak boleh dianggap nol. Cek nomor termokopel%s.',
+                        'Set point %s °C: termokopel %s di tabel kalibrator %s (%s). '
+                        .'Koreksi yang hilang nggak boleh dianggap nol. %s',
                         $this->angka((float) $t['titik_ukur']),
-                        implode(', ', array_map(
-                            static fn (array $h): string => 'no. '.$h['no'],
-                            $hasil['koreksi_hilang'],
-                        )),
+                        implode(', ', $rincian),
                         TabelKalibratorEnclosure::MERK_TERCETAK[$merk] ?? $merk,
                         $tipe,
-                        $tipe === 'Type N' ? ' — sertifikat sensor Type N lab mulai dari no. 3' : '',
+                        $kanalKosong
+                            ? 'Isi kolom Channel (CH1..CH20) tiap termokopel — koreksi meter Recorder dibaca per kanal.'
+                            : 'Cek nomor termokopelnya'
+                                .($tipe === 'Type N' ? ' — sertifikat sensor Type N lab mulai dari no. 3.' : '.'),
                     ),
                 ];
 

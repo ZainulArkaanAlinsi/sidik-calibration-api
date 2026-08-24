@@ -317,6 +317,49 @@ class TitsBudgetTest extends TestCase
     }
 
     /**
+     * Baris ber-`koreksi` 0 tapi `u95` KOSONG juga dibuang — dan itu keputusan
+     * tersendiri, bukan efek samping `(float) null === 0.0`.
+     *
+     * Empat baris begitu di berkas tabel, semuanya `constant` Type N @ 1400 &
+     * 1700 °C. Rentang akreditasi Type N berhenti di 1000 °C, jadi 1400/1700 itu
+     * wilayah Type S/B: "koreksi nol" di titik yang tipe sensornya sendiri nggak
+     * dipakai itu sel kosong, bukan pengukuran. Dipakai mentah, sesi Type N yang
+     * kesasar ke sana dapat koreksi 0,0 yang kelihatan sah.
+     *
+     * Kalau lab menjawab lain (`docs/pertanyaan-lab-tits.md` #9), tes ini yang
+     * jatuh duluan — dan memang harus, biar keputusannya kelihatan.
+     */
+    public function test_koreksi_nol_tanpa_u95_juga_ditolak(): void
+    {
+        $tabel = new TabelKalibratorSuhu;
+
+        foreach ([TabelKalibratorSuhu::MODE_MEASURE, TabelKalibratorSuhu::MODE_SOURCE] as $mode) {
+            foreach ([1400.0, 1700.0] as $titik) {
+                $koreksi = $tabel->koreksi($mode, 'constant', 'Type N', $titik);
+
+                $this->assertNotSame(
+                    $titik,
+                    $koreksi['titik'] ?? null,
+                    "koreksi mode {$mode} @{$titik} nggak boleh diambil dari sel ber-U95 kosong",
+                );
+            }
+        }
+
+        // Dan koreksi nol yang PUNYA U95 tetap kepakai apa adanya — aturannya
+        // soal sel kosong, bukan soal angka nol. Yokogawa Type N @300 °C itu
+        // baris asli begitu: koreksi 0,0 dengan U95 0,31.
+        $sah = $tabel->koreksi(TabelKalibratorSuhu::MODE_MEASURE, 'yokogawa', 'Type N', 300.0);
+
+        $this->assertSame(300.0, $sah['titik'] ?? null, 'koreksi 0 yang punya U95 nggak boleh ikut kebuang');
+        $this->assertSame(0.0, (float) $sah['nilai'], 'nilainya tetap nol, bukan diganti titik lain');
+        $this->assertEqualsWithDelta(
+            0.31,
+            $tabel->u95(TabelKalibratorSuhu::MODE_MEASURE, 'yokogawa', 'Type N', 300.0)['nilai'],
+            1e-9,
+        );
+    }
+
+    /**
      * @param  array<string, float>  $harap  sumber komponen → uici (`u · ci`)
      * @param  list<array<string, mixed>>  $budget
      */

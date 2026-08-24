@@ -228,17 +228,43 @@ class TabelKalibratorSuhu
         //
         // Yang benar: menolak menghitung, sama seperti sikap tabel ini pada U95
         // negatif dan `#REF!`.
+        //
+        // ## Baris ber-`koreksi` 0 tapi `u95` KOSONG juga dibuang
+        //
+        // Ada empat baris begitu, semuanya `constant` Type N di 1400 & 1700 °C.
+        // Sekilas terlihat seperti "koreksinya memang nol, U95-nya belum diisi" —
+        // tapi rentang akreditasi Type N berhenti di **1000 °C**
+        // (`TitsProfile::CMC_TIPE_SENSOR`), jadi 1400 & 1700 itu wilayah Type S/B,
+        // bukan Type N. Nggak ada sesi Type N sah yang sampai ke sana, dan
+        // "koreksi nol" di titik yang tipe sensornya sendiri nggak dipakai itu
+        // sel kosong, bukan pengukuran.
+        //
+        // Dipisah jadi cabangnya sendiri, BUKAN diserahkan ke `(float) null`
+        // yang kebetulan juga `0.0`: aturan yang tertulis harus sama dengan
+        // aturan yang jalan. Kalau lab menjawab bahwa keempat baris itu memang
+        // pengukuran (`docs/pertanyaan-lab-tits.md` #9), yang diubah cukup
+        // cabang ini.
         return array_values(array_filter(
             $baris,
             static function (array $b): bool {
                 $koreksi = $b['koreksi'] ?? null;
                 $u95 = $b['u95'] ?? null;
 
+                // Sama sekali nggak ada isinya.
                 if ($koreksi === null && $u95 === null) {
                     return false;
                 }
 
-                return ! ((float) $koreksi === 0.0 && (float) $u95 === 0.0);
+                // Nol berpasangan — sel kosong yang diisi nol.
+                if ($koreksi !== null && $u95 !== null) {
+                    return ! ((float) $koreksi === 0.0 && (float) $u95 === 0.0);
+                }
+
+                // Cuma satu kolom yang keisi. Yang keisi bernilai nol berarti
+                // sel kosong juga: koreksi nol tanpa U95 nggak bisa dipakai
+                // (budget-nya nggak punya komponen kalibrator), dan U95 nol
+                // nggak punya arti fisik.
+                return (float) ($koreksi ?? $u95) !== 0.0;
             },
         ));
     }
