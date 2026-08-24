@@ -56,11 +56,22 @@ Kejadian di **empat file**, komponen yang beda tapi polanya persis sama:
 | Alat | Komponen | Sel |
 |---|---|---|
 | TITS (dua-duanya) | AC Pick Up | `Q22 = SQRT(3)` lalu `U22 = N22/SQRT(Q22)` |
-| Enclosure Recorder | Pengulangan Pembacaan Standar | `Q29 = SQRT(3)` lalu `U29 = N29/SQRT(Q29)` |
+| Enclosure Recorder | Pengulangan Pembacaan Standar | `U29`, `U50`, `U71` — `Q = SQRT(3)` lalu `U = N/SQRT(Q)` |
 
 Jadi pembaginya `3^0,25 ≈ 1,316`, bukan `1,732` — padahal labelnya `rect.`.
-Baris atas-bawahnya di workbook yang sama nulisnya benar (`U20 = N20/Q20`).
-Master Enclosure Constant/Yokogawa juga benar di komponen yang sama.
+
+**Koreksi 24 Agustus 2026:** dulu di sini saya cuma menyebut `U29`, seolah satu
+sel yang kelepasan. **Salah** — begitu seluruh kolom `U` disapu, cacatnya ada di
+**ketiga blok set point sekaligus**: `U29`, `U50`, `U71`, semuanya di komponen
+bernama sama dan semuanya bernilai `0,015196713713` (kalau pembaginya `√3`
+mestinya `0,011547`). Jadi ini bukan salah ketik satu sel, tapi pola yang ikut
+tersalin waktu blok set point diduplikasi — dan pembanding yang benar buat `U29`
+itu `U50` & `U71`, bukan baris tetangganya.
+
+Baris komponen LAIN di blok yang sama memang nulisnya benar (`U25`, `U28`,
+`U31`, `U32` semuanya `=N/Q`). Master Enclosure Constant/Yokogawa juga bersih:
+disapu seluruh sheet, **nol** sel berpola `=N/SQRT(Q)` — jadi akar ganda ini
+khas berkas Recorder.
 
 **Dampaknya beda antara dua alat:**
 
@@ -474,8 +485,16 @@ dan `2,7` itu **3,5 kali lipat** `0,76`. Tapi yang mendarat di tabel kami cuma
 > 400 °C sekarang kekecilan.
 
 **(c) Jumlah set point.** Template Constant/Yokogawa menyediakan 6; sesi contoh
-mengisi 4, dan baris SP5/SP6 kosong keluar `#DIV/0!` di sertifikat. **Maksimum
-set point yang benar-benar didukung — 4, 6, atau tergantung jenis enclosure?**
+mengisi 4. **Maksimum set point yang benar-benar didukung — 4, 6, atau
+tergantung jenis enclosure?**
+
+*Koreksi 24 Agustus 2026:* dulu di sini saya tulis baris SP5/SP6 yang kosong
+"keluar `#DIV/0!` di sertifikat". **Itu keliru dan bikin panik tanpa sebab.**
+Keenam sel `#DIV/0!`-nya (`B33`, `U33`, `B35`, `U35`, `E46`, `E47`) memang ada,
+tapi semuanya duduk di **baris yang disembunyikan** (33–36 & 46–47 di Yokogawa;
+Recorder menyembunyikan 31–36 & 44–46 dan malah nggak punya `#DIV/0!` sama
+sekali). Jadi slot yang nggak terpakai memang dirancang buat disembunyikan —
+angkanya nggak pernah tercetak.
 
 **(d) Resolusi Standar di-hardcode.** Budget membaca resolusi kalibrator
 (0,1 °C) tanpa peduli kalibrator mana yang dipakai. Kebetulan Constant maupun
