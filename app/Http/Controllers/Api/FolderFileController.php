@@ -74,7 +74,7 @@ class FolderFileController extends Controller
         // Disk `local` (privat): isi folder ini dokumen kerja lab, bukan
         // konsumsi publik. Satu-satunya jalan ngambilnya lewat endpoint
         // download di bawah, yang ngecek hak akses.
-        $path = $unggahan->store('folder-files', 'local');
+        $path = $unggahan->store('folder-files', 'arsip');
 
         // Tanpa ini, tulis yang gagal bikin baris FolderFile dengan `path`
         // berisi `false` — barisnya muncul di daftar folder, keliatan seperti
@@ -263,9 +263,9 @@ class FolderFileController extends Controller
                 'Sertifikatnya belum punya PDF yang bisa diunduh.',
             );
 
-            abort_unless(Storage::disk('local')->exists($sertifikat->pdf_path), 404);
+            abort_unless(Storage::disk('arsip')->exists($sertifikat->pdf_path), 404);
 
-            return Storage::disk('local')->download($sertifikat->pdf_path, $sertifikat->namaFile('pdf'));
+            return Storage::disk('arsip')->download($sertifikat->pdf_path, $sertifikat->namaFile('pdf'));
         }
 
         // Lembar kerja itu TAUTAN ke record, bukan berkas — `path`-nya memang
@@ -280,9 +280,9 @@ class FolderFileController extends Controller
             .'Buka sesi kalibrasinya buat lihat isinya.',
         );
 
-        abort_unless($folderFile->path && Storage::disk('local')->exists($folderFile->path), 404);
+        abort_unless($folderFile->path && Storage::disk('arsip')->exists($folderFile->path), 404);
 
-        return Storage::disk('local')->download($folderFile->path, $folderFile->nama);
+        return Storage::disk('arsip')->download($folderFile->path, $folderFile->nama);
     }
 
     private function pastikanBolehLihat(Request $request, FolderFile $file): void

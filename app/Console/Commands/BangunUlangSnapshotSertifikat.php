@@ -144,7 +144,7 @@ class BangunUlangSnapshotSertifikat extends Command
                     // ngelaporin baris itu sebagai berhasil dibangun ulang,
                     // padahal PDF lamanya masih yang beredar — dan justru
                     // ketidakcocokan itu yang perintah ini ada buat mbetulin.
-                    if (Storage::disk('local')->put($sertifikat->pdf_path, $pdf->output()) === false) {
+                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $pdf->output()) === false) {
                         throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
                     }
                 } else {

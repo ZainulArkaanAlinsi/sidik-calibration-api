@@ -81,7 +81,7 @@ class TandaTanganSertifikatTest extends TestCase
         $path = $this->org->fresh()->tanda_tangan_path;
 
         $this->assertNotNull($path);
-        Storage::disk('local')->assertExists($path);
+        Storage::disk('arsip')->assertExists($path);
     }
 
     /**
@@ -99,7 +99,7 @@ class TandaTanganSertifikatTest extends TestCase
 
         $path = $this->org->fresh()->tanda_tangan_path;
 
-        Storage::disk('local')->assertExists($path);
+        Storage::disk('arsip')->assertExists($path);
         Storage::disk('public')->assertMissing($path);
 
         // Nggak ada field URL sama sekali — cuma penandanya.
@@ -161,8 +161,8 @@ class TandaTanganSertifikatTest extends TestCase
         $kedua = $this->org->fresh()->tanda_tangan_path;
 
         $this->assertNotSame($pertama, $kedua);
-        Storage::disk('local')->assertMissing($pertama);
-        Storage::disk('local')->assertExists($kedua);
+        Storage::disk('arsip')->assertMissing($pertama);
+        Storage::disk('arsip')->assertExists($kedua);
     }
 
     public function test_hapus_tanda_tangan(): void
@@ -175,7 +175,7 @@ class TandaTanganSertifikatTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.punya_tanda_tangan', false);
 
-        Storage::disk('local')->assertMissing($path);
+        Storage::disk('arsip')->assertMissing($path);
         $this->assertNull($this->org->fresh()->tanda_tangan_path);
     }
 
@@ -455,7 +455,7 @@ class TandaTanganSertifikatTest extends TestCase
 
         $this->assertSame(Certificate::STATUS_TERBIT, $sertifikat->status);
         $this->assertNull($this->org->fresh()->tanda_tangan_path);
-        Storage::disk('local')->assertExists($sertifikat->pdf_path);
+        Storage::disk('arsip')->assertExists($sertifikat->pdf_path);
     }
 
     /** Nama & jabatan penanda tangan tetap kecetak, entah gambarnya ada atau nggak. */

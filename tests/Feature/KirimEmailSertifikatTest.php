@@ -90,7 +90,7 @@ class KirimEmailSertifikatTest extends TestCase
             'pdf_path' => 'certificates/QRKIRIM123.pdf',
         ]);
 
-        Storage::disk('local')->put('certificates/QRKIRIM123.pdf', '%PDF-1.7 palsu buat test');
+        Storage::disk('arsip')->put('certificates/QRKIRIM123.pdf', '%PDF-1.7 palsu buat test');
 
         return $sertifikat->fresh();
     }
@@ -388,7 +388,7 @@ class KirimEmailSertifikatTest extends TestCase
     {
         Mail::fake();
         $sertifikat = $this->sertifikatTerbit();
-        Storage::disk('local')->delete($sertifikat->pdf_path);
+        Storage::disk('arsip')->delete($sertifikat->pdf_path);
 
         $this->actingAs($this->admin)
             ->postJson($this->url($sertifikat), ['ke' => ['pic@tirta.co.id']])

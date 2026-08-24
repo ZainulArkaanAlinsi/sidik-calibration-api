@@ -817,7 +817,7 @@ class CalibrationController extends Controller
             'photo.max' => 'Foto maksimal 8 MB.',
         ]);
 
-        $path = $request->file('photo')->store('measurements', 'local');
+        $path = $request->file('photo')->store('measurements', 'arsip');
 
         // Kalau nulisnya gagal, `false` bakal dikirim balik sebagai
         // `photo_path` dan mobile nyimpennya ke pembacaan — jadi sesi kalibrasi

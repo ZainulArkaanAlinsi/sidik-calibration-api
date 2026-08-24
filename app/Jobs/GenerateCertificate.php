@@ -151,7 +151,7 @@ class GenerateCertificate implements ShouldQueue
             // ngeklik unduh. Dilempar ke `catch` di bawah biar dapat perlakuan
             // yang sama kayak kegagalan render — status `gagal`, admin
             // dikabarin, tombol retry muncul di mobile.
-            if (Storage::disk('local')->put($path, $pdf->output()) === false) {
+            if (Storage::disk('arsip')->put($path, $pdf->output()) === false) {
                 throw new RuntimeException("Gagal nulis PDF sertifikat ke {$path}.");
             }
 
