@@ -73,13 +73,18 @@ Frontend tidak mengirim "merk" terpisah — cukup `standard_id` yang benar.
 
 Tiap set point diisi:
 
-- **9 termokopel** (Type N: nomor 3–11; Type K: nomor 1–9 — ikut master, sensor
-  pertama = **Sensor Acuan**), masing-masing **5 pembacaan**.
+- **9 termokopel** (Type N: nomor 3–11; Type K: nomor 1–9 — ikut master),
+  masing-masing **5 pembacaan**. Yang bernomor **terkecil** jadi **Sensor
+  Acuan** (lihat bagian 4); urutan pengisiannya bebas.
 - **Kalau kalibrator Recorder:** tiap termokopel juga punya **nomor Channel**
   (CH1..CH20) — koreksi recorder dibaca per kanal.
 - **1 baris Indikator enclosure** (pembacaan alat itu sendiri, 5×).
-- **1 baris Suhu Ruang** (opsional, informatif — belum masuk budget; lihat
-  `docs/pertanyaan-lab-enclosure.md` #… ).
+- **1 baris Suhu Ruang** — **JANGAN dikirim dulu.** Backend belum punya tempat
+  buat menampungnya (validasi request cuma mengenal `sensor_grid` & `indikator`),
+  jadi kalau dikirim sekarang angkanya hilang tanpa pesan. Kegunaannya lagi
+  ditanyakan ke lab — lihat `docs/pertanyaan-lab-suhu.md` **C-9**. Barisnya boleh
+  ditampilkan di layar (biar sama dengan kertasnya), tapi jangan diikutkan ke
+  `POST` sampai keputusannya turun.
 
 `bentukLembarKerja` mengirim ringkasannya di kunci `grid_sensor`:
 
