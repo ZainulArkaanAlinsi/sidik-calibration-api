@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\StandardController;
 use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\VersiAplikasiController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
 use App\Http\Controllers\Api\WorksheetScanController;
 use Illuminate\Http\Request;
@@ -53,6 +54,13 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');
+
+// Versi aplikasi mobile terbaru. TANPA auth, dan itu disengaja: layar yang
+// paling butuh tahu "aplikasimu ketinggalan" justru layar LOGIN — dikunci
+// token, teknisi yang aplikasinya terlalu lama nggak akan pernah lihat
+// pemberitahuannya. Lihat docblock controllernya.
+Route::get('/app/versi-terbaru', VersiAplikasiController::class)
+    ->middleware('throttle:60,1');
 
 // Verifikasi QR sertifikat — buat orang luar, tanpa auth (versi JSON-nya;
 // versi halaman webnya ada di routes/web.php).
