@@ -78,9 +78,31 @@ bilang sebaliknya.
 
 Perlu diadu ke spesifikasi §-per-§ sebelum bisa disebut selesai:
 
-- Apakah daftar template yang didukung sudah memuat lembar yang benar-benar dipakai? Lembar
-  Enclosure bentuknya GRID (9 termokopel × 5 pembacaan), dan `pindai_foto.didukung` untuk TIDS
-  sudah **`false`** karena kertasnya bukan "titik × Repeat".
+- ~~Apakah daftar template yang didukung sudah memuat lembar yang benar-benar dipakai?~~
+  **Sudah dihitung, dan jawabannya menentukan ukuran permintaan 7.**
+
+  Ada **8 template** di `database/ocr-templates/`, dan registry punya **17 profil**. Jadi
+  **8 dari 17 lembar bisa dipindai; 9 sisanya tidak punya template sama sekali.**
+
+  | Sudah punya template | Belum punya template |
+  |---|---|
+  | `ph_meter`, `turbidimeter`, `chlorine_meter`, `refractometer`, `conductivity_meter`, `spectrophotometer`, `viscometer`, `autoclave` | `do_meter`, `gas_detector`, **`tits`**, **`tids`**, **`oven`**, **`furnace`**, **`bath`**, **`inkubator`**, **`refrigerator`** |
+
+  Yang harus dibaca dari tabel itu: **kedelapan yang sudah jalan semuanya alat kimia**
+  (plus autoclave). **Tidak satu pun lembar dari permintaan 6 punya template** — TITS, TIDS,
+  dan kelima lembar Enclosure ada di kolom kanan, tujuh dari sembilan yang kosong.
+
+  Artinya fitur pindai yang sudah terbangun itu **nyata dan jalan, tapi untuk alat yang bukan
+  fokus pekerjaan beberapa minggu terakhir.** Menyalakan saklarnya tidak otomatis membuat
+  lembar suhu bisa dipindai.
+
+  Dan tiga bentuk kertas itu memang berbeda, bukan cuma "belum sempat dibuatkan template":
+
+  - **Kimia** (yang sudah jalan) — titik × pengulangan, kotak seragam.
+  - **Enclosure** — GRID 9 termokopel × 5 pembacaan per set point.
+  - **TIDS** — dua tabel interval waktu (standar di detik 0/20/40/60/80, alat di 10/30/50/70/90),
+    lima UUT. `pindai_foto.didukung` untuk TIDS memang sudah `false`, dan itu jujur: kertasnya
+    bukan "titik × Repeat".
 - Apakah ambang lampu kuning/merah cocok dengan yang diminta spesifikasi.
 - ~~Apakah alur "sel merah wajib dikoreksi manusia sebelum approve" sudah ditegakkan di
   backend, bukan cuma ditampilkan di layar.~~ **Sudah diperiksa — ditegakkan, tapi bentuknya
@@ -113,7 +135,7 @@ Membuat `ocr_scans` / `ocr_scan_cells` baru. Alasannya di bagian atas berkas ini
 |---|---|---|
 | S1 | Permintaan 3 (cabut UI pindai) masih berlaku, atau sudah boleh dinyalakan lagi? | Dua permintaan ini bertentangan langsung. Selama 3 berlaku, permintaan 7 tidak punya pintu masuk di layar |
 | S2 | Nama tabel: pakai `worksheet_scans` yang sudah ada, atau tetap ingin `ocr_scans`? | Kalau tetap `ocr_scans`, akan ada dua tabel staging selamanya — dan saya perlu dengar itu memang yang diinginkan |
-| S3 | Lembar mana yang wajib bisa dipindai? | Enclosure (grid) dan TIDS (dua tabel interval waktu) bentuknya jauh berbeda dari "titik × Repeat"; keduanya butuh kerja tersendiri, bukan template tambahan |
+| S3 | Dari **9 lembar yang belum punya template**, mana yang beneran dipindai teknisi di lapangan? | Sekarang 8 dari 17 lembar bisa dipindai, dan kedelapannya alat kimia. Tiap lembar suhu butuh template baru + kerja bentuk (Enclosure grid, TIDS dua tabel waktu) — jadi jawaban "semuanya" dan "cuma Enclosure" beda ukurannya jauh |
 
 ---
 
