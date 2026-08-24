@@ -267,6 +267,51 @@ class ScopeOrganisasiKemampuanTest extends TestCase
         );
     }
 
+    /**
+     * Alat TANPA organisasi harus BERHENTI KERAS, bukan diam-diam kehilangan
+     * lantai CMC-nya.
+     *
+     * Ini bentuk kegagalan yang paling sering lolos di repo ini: jalur yang
+     * berhasil, tapi angkanya salah. `where('organization_id', null)` di SQL
+     * nggak cocok sama apa pun — NULL nggak pernah sama dengan NULL. Jadi alat
+     * yang organisasinya kosong dapat NOL kandidat CMC, jatuh ke jalur generik,
+     * dan sertifikatnya terbit dengan U95 yang LEBIH KECIL daripada yang
+     * diakreditasi. Nol error, dan bedanya cuma ketahuan kalau ada yang ngadu
+     * angkanya ke lampiran akreditasi.
+     *
+     * Penjaganya ada di `GumCalculator`, tapi sampai sekarang nggak ada satu
+     * pun test yang membuktikan dia BENERAN nyala. Kalau ada yang menggantinya
+     * jadi "ya udah, lewat aja" — persis perbaikan yang kelihatan masuk akal
+     * waktu ada fixture merah — nggak ada yang berubah merah, dan kebocorannya
+     * balik tanpa satu pun tanda.
+     */
+    public function test_alat_tanpa_organisasi_berhenti_keras_bukan_kehilangan_lantai_cmc(): void
+    {
+        $pelanggan = Customer::factory()->create(['organization_id' => $this->labB->id]);
+        $standar = Standard::factory()->create(['organization_id' => $this->labB->id]);
+
+        $alat = Equipment::factory()->create([
+            'organization_id' => $this->labB->id,
+            'customer_id' => $pelanggan->id,
+            'equipment_category_id' => $this->kategoriB->id,
+            'nama_alat_kemampuan' => 'Comparator Stand',
+            'satuan' => 'mm',
+            'resolusi' => 0.01,
+            'toleransi' => 0.05,
+        ]);
+
+        // Dikosongkan SESUDAH tersimpan — kolomnya NOT NULL di basis data, jadi
+        // keadaan ini cuma bisa lahir dari bug pemanggil (objek yang disusun di
+        // memori, jalur hitung ulang yang lupa memuat relasinya). Justru itu
+        // yang ditiru: bug pemanggil, bukan baris basis data yang sah.
+        $alat->organization_id = null;
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessageMatches('/organization_id/');
+
+        (new GumCalculator)->hitungTitik(1, 50.0, [50.02, 50.01, 50.03], $alat, $standar);
+    }
+
     // --------------------------------------------- 4. penjaga dua sumber benar
 
     /**
