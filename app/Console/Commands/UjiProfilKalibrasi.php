@@ -7,6 +7,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -143,6 +144,49 @@ class UjiProfilKalibrasi extends Command
      */
     private function ujiSatu(CalibrationProfile $profil, ?Equipment $alat, User $teknisi): array
     {
+        // Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator) tidak lewat
+        // `preview` per titik — tiap set point GRID (9 termokopel × 5) diolah di
+        // `EnclosureCalculator` lewat `hitungPerGrup`. Kelima profil berbagi SATU
+        // mesin hitung; yang diperiksa sesi tersimpannya lengkap. Jenis yang
+        // belum punya sesi demo (Furnace/Bath/Refrigerator) diuji lewat Oven &
+        // Inkubator — bukan kegagalan.
+        if ($profil instanceof EnclosureProfileBase) {
+            if ($alat === null) {
+                return ['-', 'mesin hitung enclosure sama untuk 5 jenis — diuji lewat Oven & Inkubator', true];
+            }
+
+            $sesi = CalibrationSession::where('equipment_id', $alat->id)
+                ->has('uncertaintyCalculations')
+                ->latest('id')
+                ->first();
+
+            if ($sesi === null) {
+                return ['-', 'sesi enclosure kosong atau tidak punya hasil hitung', false];
+            }
+
+            // Yang dibandingkan JUMLAH HASIL vs JUMLAH SET POINT YANG ADA
+            // DATANYA — bukan sekadar "ada minimal satu hasil".
+            //
+            // Sesi setengah jadi (tiga set point terisi, satu yang kehitung)
+            // dulu dilaporkan `1/1` dan lolos: yang ditanya cuma apakah relasinya
+            // tidak kosong. Laporan yang bilang "jalan" untuk jalur yang
+            // sebenarnya kehilangan dua pertiga hasilnya lebih berbahaya
+            // daripada tidak ada laporan sama sekali.
+            $terisi = $sesi->rawMeasurements()
+                ->whereNotNull('peran_sensor')
+                ->distinct()
+                ->count('titik_ke');
+            $terhitung = $sesi->uncertaintyCalculations()->count();
+
+            return $terhitung > 0 && $terhitung === $terisi
+                ? ["{$terhitung}/{$terisi}", "U95 per set point lengkap (sesi {$sesi->nomor_sesi})", true]
+                : [
+                    "{$terhitung}/{$terisi}",
+                    sprintf('set point terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
+                    false,
+                ];
+        }
+
         if ($alat === null) {
             return ['-', 'tidak ada alat contoh di database', false];
         }

@@ -1009,6 +1009,13 @@ class CalibrationController extends Controller
             ? Standard::findOrFail($request->integer('standard_id'))
             : null;
 
+        // Enclosure: tiap titik GRID (9 termokopel × 5 + Indikator), bukan satu
+        // deret pembacaan datar. Jalur terpisah supaya loop per-titik di bawah
+        // — yang dipakai sepuluh alat lain — nggak perlu tahu soal grid.
+        if ($this->profil->untukAlat($alat)->butuhGridSensor()) {
+            return $this->susunGridEnclosure($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1286,6 +1293,157 @@ class CalibrationController extends Controller
         usort($belumDihitung, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
         return ['mentah' => $mentah, 'hitungan' => $hitungan, 'belum_dihitung' => $belumDihitung];
+    }
+
+    /**
+     * Susun pengukuran ENCLOSURE — tiap titik GRID (9 termokopel × 5 pengulangan
+     * + Indikator enclosure), disimpan ke `raw_measurements` dengan sumbu
+     * `sensor_ke`/`peran_sensor`, dan dihitung lewat `hitungPerGrup`.
+     *
+     * Bentuk `measurements[i]`:
+     *   - `titik_ukur`   : set point (°C)
+     *   - `sensor_grid`  : list `{no, channel?, pembacaan: [..]}` (9 termokopel)
+     *   - `indikator`    : list pembacaan Indikator enclosure
+     *
+     * `tipe_sensor` (Type N/Type K) sesi-level; merk kalibrator dari `standards`.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunGridEnclosure(CalibrationRequest $request, Equipment $alat, ?Standard $standarDefault): array
+    {
+        $tipeSensor = $request->input('tipe_sensor');
+        $mentah = [];
+        $siapHitung = [];
+        $belumDihitung = [];
+
+        // Angka yang datang dari KAMERA wajib dikonfirmasi manusia sebelum sesi
+        // bisa disetujui — sama aturannya dengan sepuluh alat lain (lihat
+        // `approve()` yang menolak sesi ber-`is_verified` false).
+        //
+        // Sebelumnya jalur grid selalu menulis `manual` + `is_verified` true
+        // apa pun `input_method`-nya, jadi gerbang verifikasi itu diam-diam
+        // nggak pernah aktif buat enclosure. Grid 9×5 justru bentuk lembar yang
+        // paling mungkin diisi lewat pemindaian, jadi ini bukan kasus teoretis.
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $terisi = static fn ($v): bool => $v !== null && $v !== '';
+
+        // Set point dianggap terpakai kalau ADA isinya — dari termokopel MAUPUN
+        // dari baris Indikator.
+        //
+        // Dulu cuma termokopel yang dicek, dan itu membuang set point yang
+        // teknisinya baru sempat mengisi Indikator: `store()`/`update()` sudah
+        // menghapus `raw_measurements` lama SEBELUM menyusun yang baru, jadi
+        // pembacaan Indikator-nya hilang permanen — bukan sekadar nggak
+        // kehitung. Lembar setengah jadi harus tetap bisa disimpan.
+        $titikTerpakai = array_values(array_filter(
+            $request->input('measurements', []),
+            static fn (array $t): bool => collect($t['sensor_grid'] ?? [])
+                ->flatMap(static fn (array $s): array => array_values($s['pembacaan'] ?? []))
+                ->contains($terisi)
+                || collect($t['indikator'] ?? [])->contains($terisi),
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+            $setpoint = (float) $titik['titik_ukur'];
+
+            $sensorGrid = [];
+
+            foreach (array_values($titik['sensor_grid'] ?? []) as $sensor) {
+                $no = (int) ($sensor['no'] ?? 0);
+                $kanal = isset($sensor['channel']) ? (int) $sensor['channel'] : null;
+
+                $terisi = [];
+
+                foreach (array_values($sensor['pembacaan'] ?? []) as $urutan => $nilai) {
+                    if ($nilai === null || $nilai === '') {
+                        continue;
+                    }
+
+                    $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                    $terisi[] = $pembacaan;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $no,
+                        'peran_sensor' => 'termokopel',
+                        // Kanal recorder ikut disimpan: koreksi meter recorder
+                        // dibaca per kanal, jadi tanpa ini sesi tersimpan nggak
+                        // bisa dihitung ulang.
+                        'channel' => $kanal,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $setpoint,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $pembacaan,
+                        'satuan' => $alat->satuan,
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                if ($terisi !== []) {
+                    $sensorGrid[] = ['no' => $no, 'channel' => $kanal, 'pembacaan' => $terisi];
+                }
+            }
+
+            // Indikator enclosure — satu kanal, sensor_ke null.
+            $indikator = [];
+
+            foreach (array_values($titik['indikator'] ?? []) as $urutan => $nilai) {
+                if ($nilai === null || $nilai === '') {
+                    continue;
+                }
+
+                $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                $indikator[] = $pembacaan;
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => null,
+                    'peran_sensor' => 'indikator',
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $setpoint,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $pembacaan,
+                    'satuan' => $alat->satuan,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $setpoint,
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'konteks' => [
+                    'tipe_sensor' => $tipeSensor,
+                    'sensor_grid' => $sensorGrid,
+                    'indikator' => $indikator,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            // Dibulatkan ke presisi kolom `uncertainty_calculations` SEBELUM
+            // dipulangkan — sama seperti jalur per-titik. Tanpa ini `preview`
+            // memulangkan angka presisi penuh sementara yang tersimpan sudah
+            // dibulatkan kolom `decimal`, dan dua angka beda untuk satu
+            // pengukuran itu temuan audit buat lab terakreditasi.
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDihitung, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
     }
 
     /**

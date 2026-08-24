@@ -9,6 +9,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Support\Angka;
+use App\Support\GridSensorMentah;
 use Illuminate\Support\Collection;
 
 /**
@@ -314,6 +315,20 @@ class CalibrationValidator
                     ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai],
                 );
 
+                continue;
+            }
+
+            // Pembacaan TERMOKOPEL enclosure dilewati: angkanya dibaca di layar
+            // KALIBRATOR/recorder, bukan di layar alat yang dikalibrasi, jadi
+            // `equipments.resolusi` (daya baca indikator enclosure, 0,1 °C) itu
+            // penggaris yang salah. Data master asli memang berpresisi 0,01 °C,
+            // jadi tanpa pengecualian ini tiap sesi enclosure memuntahkan
+            // belasan peringatan palsu — dan peringatan palsu yang selalu muncul
+            // justru melatih admin menekan "setujui tetap" tanpa membaca.
+            //
+            // Baris `indikator` TIDAK dilewati: itu memang pembacaan layar alat,
+            // jadi kelipatan resolusinya tetap wajib masuk akal.
+            if ($m->peran_sensor === 'termokopel') {
                 continue;
             }
 
@@ -671,7 +686,20 @@ class CalibrationValidator
 
             $siapHitung[] = [
                 'titik_ke' => $ke,
-                'titik_ukur' => (float) $titik->titik_ukur,
+                // Setpoint MENTAH dari baris pembacaan, bukan `titik_ukur` hasil
+                // hitung.
+                //
+                // Buat sebagian besar alat keduanya sama, tapi tidak semuanya:
+                // TITS & Enclosure menyimpan `uncertainty_calculations.titik_ukur`
+                // sebagai kolom `Standard Reading` sertifikat — setpoint yang
+                // SUDAH ditambah koreksi kalibrator. Dipakai balik sebagai
+                // setpoint, koreksinya keterapan DUA KALI dan hitung ulang selalu
+                // meleset sebesar FC, lalu dilaporkan sebagai "data berubah
+                // sesudah submit" padahal tidak ada yang berubah.
+                //
+                // Yang mereproduksi hitungan aslinya angka yang dulu diketik
+                // teknisi — dan itu yang tersimpan di `raw_measurements`.
+                'titik_ukur' => (float) ($pembacaan->first()?->titik_ukur ?? $titik->titik_ukur),
                 'pembacaan' => $pembacaan->sortBy('pembacaan_ke')
                     ->map(fn (RawMeasurement $m): float => (float) $m->pembacaan)
                     ->values()
@@ -707,6 +735,14 @@ class CalibrationValidator
                     // padahal angkanya benar.
                     'mode_tits' => $sesi->mode_kalibrasi,
                     'tipe_sensor' => $sesi->tipe_sensor,
+                    // Grid enclosure, disusun ulang dari baris mentah yang
+                    // tersimpan (`sensor_ke`/`peran_sensor`/`channel`). Alasannya
+                    // sama seperti di atas — bedanya di sini pembacaannya BUKAN
+                    // satu deret datar, jadi tanpa rekonstruksi ini profil
+                    // enclosure nggak punya bahan apa pun buat menghitung ulang.
+                    // Kosong buat sepuluh alat lain, dan profilnya nggak
+                    // pernah menengoknya.
+                    ...GridSensorMentah::dari($pembacaan),
                 ],
                 'tersimpan' => $titik,
             ];
@@ -871,6 +907,20 @@ class CalibrationValidator
                     'pembacaan' => $t['pembacaan'],
                     'standard' => $t['standard'],
                     'suhu_larutan' => $t['suhu_larutan'],
+                    // `konteks` WAJIB ikut. Profil ber-budget-kelompok baca mode
+                    // & tipe sensor dari sini; tanpa itu `hitungPerGrup()`
+                    // menolak menghitung dan SETIAP titik pulang sebagai "nggak
+                    // bisa dihitung ulang".
+                    //
+                    // Efeknya bukan satu peringatan yang kelewat, tapi kebalikan
+                    // dari maksud pemeriksaan ini: tiap sesi TITS & Enclosure
+                    // selalu memunculkan `hitung_ulang_gagal` di semua titik,
+                    // jadi admin belajar menekan "setujui tetap" secara refleks —
+                    // pola yang persis bikin dua sertifikat salah lolos di
+                    // insiden yang didokumentasikan di kelas ini. Perbandingan
+                    // yang selalu gagal nggak bisa lagi membedakan data yang
+                    // beneran berubah dari derau.
+                    'konteks' => $t['konteks'] ?? [],
                 ],
                 $siapHitung,
             ),

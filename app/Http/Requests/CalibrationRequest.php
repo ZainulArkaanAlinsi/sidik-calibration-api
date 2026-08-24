@@ -15,6 +15,15 @@ use Illuminate\Validation\Validator;
 class CalibrationRequest extends FormRequest
 {
     /**
+     * Batas total sel grid enclosure (termokopel + Indikator) satu request.
+     *
+     * Longgar 10x dari sesi terbesar yang masuk akal (6 set point × 9 termokopel
+     * × 5 = 270); gunanya menutup beban tulis, bukan membatasi metrologi.
+     * Lihat alasannya di `withValidator()`.
+     */
+    public const MAKS_SEL_GRID = 3000;
+
+    /**
      * Buang field administratif dari kiriman non-admin (spesifikasi poin 1).
      *
      * DIBUANG, bukan ditolak 422: layar teknisi versi lama masih ngirim
@@ -188,13 +197,49 @@ class CalibrationRequest extends FormRequest
             // (lihat CalibrationValidator). Jadi teknisi nggak pernah keblokir
             // di lapangan, tapi angka setengah jadi juga nggak pernah nyampe
             // dokumen resmi.
-            'measurements' => ['sometimes', 'array'],
+            // Dibatasi 60 titik. Alat paling panjang di sistem ini memakai 9–18
+            // titik, jadi 60 longgar sekali buat pemakaian nyata — gunanya
+            // menutup beban, bukan membatasi metrologi.
+            //
+            // Tanpa batas, satu request bisa menulis puluhan ribu baris
+            // `raw_measurements` satu per satu di dalam SATU transaksi. Enclosure
+            // yang bikin ini kerasa: tiap titiknya grid (sensor × pengulangan),
+            // jadi jumlah barisnya perkalian TIGA sisi, bukan dua. Produksi
+            // jalan di satu proses 512 MB yang dipakai semua organisasi.
+            'measurements' => ['sometimes', 'array', 'max:60'],
             'measurements.*.titik_ukur' => ['required', 'numeric'],
             'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
             'measurements.*.pembacaan' => ['sometimes', 'nullable', 'array'],
             // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
             // disaring waktu ngitung.
             'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
+            // GRID sensor — cuma enclosure yang ngirim. Tiap set point punya 9
+            // termokopel (`no` 1..N, `channel` opsional buat kalibrator
+            // Recorder) masing-masing 5 pembacaan, plus baris `indikator`
+            // enclosure. Sepuluh alat lain nggak nyentuh field ini.
+            // Dibatasi 40 sensor per set point: master pakai 9, recorder paling
+            // banyak 20 kanal. Batas ini bukan soal metrologi tapi soal beban —
+            // tiap sensor jadi 5 baris `raw_measurements`, jadi grid tanpa batas
+            // bikin satu request nulis puluhan ribu baris.
+            'measurements.*.sensor_grid' => ['sometimes', 'nullable', 'array', 'max:40'],
+            // CATATAN: TANPA `distinct` — sengaja. Larangan nomor kembar ada di
+            // `withValidator()`, dicek per set point.
+            //
+            // `distinct` pada wildcard bertingkat membandingkan SELURUH atribut
+            // hasil ekspansi aturan ini, bukan cuma yang satu `sensor_grid`.
+            // Jadi grid normal (sensor 3..11 di TIAP set point) ditolak 422 —
+            // padahal memakai termokopel yang sama di beberapa set point itu
+            // justru cara alat ini dipakai. Yang benar-benar terlarang cuma dua
+            // baris bernomor sama dalam SATU set point: satu termokopel fisik
+            // kehitung dua kali dan menggeser U95, keseragaman, & kestabilan.
+            'measurements.*.sensor_grid.*.no' => ['required_with:measurements.*.sensor_grid', 'integer', 'min:1', 'max:99'],
+            // Recorder GL840 punya CH1..CH20 — di luar itu pasti salah ketik,
+            // dan kanal yang nggak ada bikin koreksi meter-nya nggak ketemu.
+            'measurements.*.sensor_grid.*.channel' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:20'],
+            'measurements.*.sensor_grid.*.pembacaan' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
+            'measurements.*.indikator' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.indikator.*' => ['nullable', 'numeric'],
             // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
             'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu.*' => ['nullable', 'numeric'],
@@ -285,6 +330,58 @@ class CalibrationRequest extends FormRequest
             // titiknya disimpen mentah tanpa dihitung, dan penerbitan
             // sertifikatnya ketahan `CalibrationValidator` sampai admin ngisi
             // toleransinya.
+
+            // Batas TOTAL sel grid seluruh request — bukan cuma per set point.
+            //
+            // Batas per-lapis (`measurements` 60 × `sensor_grid` 40 ×
+            // `pembacaan` 20) itu perkalian, jadi masing-masing terlihat wajar
+            // sementara hasil kalinya 48.000 baris `raw_measurements` yang
+            // ditulis satu per satu di dalam SATU transaksi, di satu proses
+            // 512 MB yang dipakai semua organisasi. Nggak ada sesi nyata yang
+            // mendekati itu: master paling besar 6 set point × 9 termokopel × 5
+            // = 270, dan 20 kanal recorder × 60 set point × 20 pembacaan pun
+            // masih 24.000 — jauh di atas kebutuhan lapangan.
+            //
+            // Ditaruh di sini, bukan jadi aturan per-field, karena yang dijaga
+            // hasil kali tiga sisi — nggak ada satu field pun yang bisa
+            // menyatakannya sendiri.
+            $selGrid = 0;
+
+            foreach ((array) $this->input('measurements', []) as $i => $titik) {
+                // Nomor termokopel kembar DALAM SATU set point — satu termokopel
+                // fisik kehitung dua kali dan menggeser U95, keseragaman, &
+                // kestabilan.
+                //
+                // Dicek di sini, bukan lewat aturan `distinct`: pada wildcard
+                // bertingkat `distinct` membandingkan seluruh set point sekaligus,
+                // jadi grid normal yang memakai sensor 3..11 di TIAP set point
+                // ikut ditolak. Yang dilarang cuma kembar di dalam satu grid.
+                $nomor = array_column((array) ($titik['sensor_grid'] ?? []), 'no');
+                $kembar = array_values(array_unique(array_diff_assoc($nomor, array_unique($nomor))));
+
+                if ($kembar !== []) {
+                    $validator->errors()->add("measurements.$i.sensor_grid", sprintf(
+                        'Nomor termokopel %s muncul lebih dari sekali di set point ini. Satu termokopel cuma '
+                        .'boleh sekali per set point — nomor yang sama di set point LAIN nggak masalah.',
+                        implode(', ', $kembar),
+                    ));
+                }
+
+                foreach ((array) ($titik['sensor_grid'] ?? []) as $sensor) {
+                    $selGrid += count((array) ($sensor['pembacaan'] ?? []));
+                }
+
+                $selGrid += count((array) ($titik['indikator'] ?? []));
+            }
+
+            if ($selGrid > self::MAKS_SEL_GRID) {
+                $validator->errors()->add('measurements', sprintf(
+                    'Total pembacaan grid %s sel, melewati batas %s sel per request. Kirim set point-nya '
+                    .'bertahap (satu request per beberapa set point) — sesinya tetap satu.',
+                    number_format($selGrid, 0, ',', '.'),
+                    number_format(self::MAKS_SEL_GRID, 0, ',', '.'),
+                ));
+            }
 
             // Semua standar yang kesebut (sesi + per-titik) dimuat sekaligus di
             // sini, dipakai buat dua-duanya di bawah — biar nggak query

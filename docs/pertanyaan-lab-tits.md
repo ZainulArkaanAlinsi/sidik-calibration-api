@@ -8,9 +8,14 @@ PT GE Nusantara Turbine Services, Siemens Simatic IPC477FE, 10 Juni 2026)
 
 Backend TITS (alat ke-11) sudah jalan penuh. Kedua mode diadu ke workbook
 sampai digit terakhir — `Tests\Unit\TitsBudgetTest` &
-`Tests\Feature\TitsSesiTest`, hijau di SQLite maupun MySQL. Delapan hal di
+`Tests\Feature\TitsSesiTest`, hijau di SQLite maupun MySQL. Sembilan hal di
 bawah **tidak** bisa diputuskan dari berkas yang ada, dan semuanya sudah diberi
 keputusan sementara supaya pekerjaan tidak berhenti.
+
+**Pembaruan 23 Agu 2026** — nomor **9** ditambahkan dari audit ulang. Isinya
+membatalkan satu baris di daftar "tidak ditanyakan" versi sebelumnya: sel
+nol-berpasangan di tabel kalibrator ternyata **terjangkau** sesi nyata (Type N
+@ 1000 °C, batas atas rentang akreditasinya), bukan cuma titik ekstrem 1400/1700.
 
 ---
 
@@ -171,14 +176,72 @@ akreditasi menulis **−20…800 °C**, `DATABASE!T11` master Excel menulis
 **−10…800 °C**. Yang dipakai lampiran (dokumen yang mengikat lab). Mohon
 konfirmasi mana yang berlaku.
 
+## 9. Sel `koreksi = 0` DAN `U95 = 0` berpasangan — termasuk di titik yang terpakai
+
+Beberapa baris tabel kalibrator berisi **nol di kolom koreksi dan nol di kolom
+U95 sekaligus**. Nol berpasangan begitu tidak mungkin jadi hasil pengukuran:
+U95 nol berarti standarnya tanpa ketidakpastian sama sekali. Itu sel kosong yang
+diisi nol waktu master dibuat.
+
+Baris yang begitu, di kalibrator **`constant`**:
+
+| tipe sensor | titik |
+|---|---|
+| Type N | **1000 °C**, 1200 °C |
+| Type K | 1200 °C |
+| Type R | 1200 °C |
+| Type S | 1400 °C, 1700 °C |
+| RTD | −100 °C |
+
+**Dokumen ini sebelumnya menyebut hal itu tidak berdampak karena "tidak ada sesi
+yang mencapai titik-titik itu". Itu keliru, dan ini koreksinya.**
+Type N **1000 °C** adalah **batas atas rentang akreditasi Type N** — bukan titik
+ekstrem yang tak terjangkau, justru titik uji paling wajar untuk tipe itu.
+
+Rantai kegagalannya lengkap dan diam:
+
+1. sesi Type N mode **Source** mengambil U95 kalibrator di titik index
+   TERTINGGI sesi (pertanyaan #5), yang mendarat tepat di sel nol itu;
+2. komponen "sertifikat kalibrator" jadi **0** — dan karena komponennya ADA
+   (cuma bernilai nol), catatan audit `komponen_tanpa_data` **tidak** bunyi;
+3. jarak ke titik tabel juga nol, jadi peringatan `tits_titik_jauh_dari_tabel`
+   **tidak** bunyi;
+4. U95 sesi turun sekitar **17 %**, dan turunnya lolos di bawah lantai CMC.
+
+Tidak ada satu pun angka yang terlihat janggal di sertifikat yang terbit.
+
+Ada juga **empat baris "setengah"** — `koreksi = 0` tapi kolom U95-nya KOSONG,
+semuanya `constant` Type N di **1400 °C & 1700 °C**. Sekilas terlihat seperti
+"koreksinya memang nol, U95-nya belum diisi", tapi rentang akreditasi Type N
+berhenti di 1000 °C: 1400 & 1700 itu wilayah Type S/B. Koreksi nol di titik yang
+tipe sensornya sendiri tidak dipakai itu sel kosong, bukan pengukuran.
+
+**Yang dipakai sekarang:** baris ber-nol-berpasangan **dan** baris ber-koreksi-nol-
+tanpa-U95 dua-duanya **dibuang** dari tabel — sikap yang sama seperti pada U95
+negatif (#7) dan `#REF!`. Pencarian titik terdekat lalu jatuh ke titik VALID
+berikutnya (mis. Type N 1000 → memakai baris 900), dan itu tercermin di
+keterangan komponennya.
+
+Koreksi nol yang PUNYA U95 tetap dipakai apa adanya — aturannya soal sel kosong,
+bukan soal angka nol. Contohnya Yokogawa Type N @300 °C (koreksi 0,0, U95 0,31)
+yang memang terbaca normal.
+
+**Yang diminta:** koreksi & U95 kalibrator `constant` yang sebenarnya untuk
+titik-titik di tabel atas — terutama **Type N @ 1000 °C**. Kalau memang
+kalibratornya tidak pernah disertifikasi di titik itu, konfirmasi bahwa jatuh ke
+titik valid terdekat itu perlakuan yang benar (alternatifnya: menolak sesi yang
+titik tertingginya melewati titik sertifikat terakhir).
+
+Dan untuk keempat baris 1400/1700: konfirmasi bahwa itu memang sel kosong, bukan
+"koreksi nol yang terukur tapi U95-nya lupa diisi". Kalau ternyata pengukuran,
+yang perlu diubah cuma satu cabang di `TabelKalibratorSuhu::baris()` —
+`Tests\Unit\TitsBudgetTest::test_koreksi_nol_tanpa_u95_juga_ditolak` mengunci
+keputusan yang sekarang supaya perubahannya tidak bisa lewat diam-diam.
+
 ---
 
 ## Yang TIDAK ditanyakan karena sudah jelas
 
-- Titik 1400 & 1700 di kolom Type N / Type S berisi `0` di tabel koreksi
-  **maupun** U95. Nol di kedua kolom sekaligus itu sel kosong yang diisi nol,
-  bukan koreksi nol yang terukur — tapi karena tidak ada sesi yang mencapai
-  titik itu, tidak ada dampaknya sekarang. Datanya tetap disimpan apa adanya.
 - Sel `#REF!` (kolom Type B & Type S Yokogawa dari titik 600 ke atas) dibuang
   jadi kosong, bukan dibaca 0.
 - Lab belum punya klaim CMC untuk **Type B** — lampiran akreditasi cuma memuat
