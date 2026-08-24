@@ -278,4 +278,44 @@ class TitsSesiTest extends TestCase
             ->with(['uncertaintyCalculations', 'rawMeasurements'])
             ->firstOrFail();
     }
+
+    /**
+     * Nomor formulir lembar kerja TITS kebaca dari footer PDF-nya:
+     * `Page 1 of 1   Revise : 3   SIDIK-FM-CAL-0505`.
+     *
+     * Dikunci test karena dulu sengaja `null` — dan alasan `null`-nya waktu itu
+     * BENAR (nomor formulir itu dokumen terkendali, nggak boleh ditebak). Jadi
+     * kalau suatu saat ada yang balikin ke null "biar aman", yang hilang bukan
+     * kolom kosong tapi nomor yang beneran punya sumber.
+     */
+    public function test_kop_lembar_bawa_nomor_formulir_dari_pdf(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->getJson('/api/calibrations/lembar-kerja?profil=tits')
+            ->assertOk()
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0505_Rev.3');
+    }
+
+    /**
+     * Standar baris 2 = Yokogawa, BUKAN Victor — walau kertasnya nulis Victor.
+     *
+     * Kertas `SIDIK-FM-CAL-0505 Rev.3` masih memuat
+     * `Temperature Calibrator/Victor/Victor 14+/992613877`, tapi workbook yang
+     * dipakai sekarang sudah membuang Victor (FORM VALIDASI rev. 11, 24 Mei
+     * 2024: "Remove std. Victor / Add std kalibrator yokogawa") dan sheet tabel
+     * koreksinya sudah nggak ada — `Index_Victor_*` semuanya `#REF!`.
+     *
+     * Test ini yang bakal merah kalau ada yang "mbetulin" daftarnya biar cocok
+     * sama kertas. Yang berubah kalau itu kejadian bukan labelnya, tapi tabel
+     * koreksi yang dibaca jadi tabel yang nggak ada.
+     */
+    public function test_standar_baris_dua_yokogawa_bukan_victor(): void
+    {
+        $label = array_column(TitsProfile::STANDARD_TERCETAK, 'label');
+
+        $this->assertStringContainsString('Yokogawa', $label[1]);
+        foreach ($label as $l) {
+            $this->assertStringNotContainsString('Victor', $l);
+        }
+    }
 }
