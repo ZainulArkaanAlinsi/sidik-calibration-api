@@ -1179,9 +1179,19 @@ class CalibrationValidator
             return [];
         }
 
+        // Disaring ke organisasi alatnya, PERSIS kayak
+        // `GumCalculator::kemampuanUntukTitik()`.
+        //
+        // Kalau dua daftar ini beda isinya, penjagaannya malah kebalik: baris
+        // milik lab lain yang nyangkut di kategori yang sama bikin pemeriksaan
+        // ini bilang "tautannya sah, ada CMC-nya" sementara mesin hitung —
+        // yang nyaring per organisasi — nggak nemu apa-apa dan jatuh ke jalur
+        // generik. Hasilnya sesi tanpa lantai CMC yang justru NGGAK diperingatin,
+        // alias lubang yang sama persis kayak sebelum peringatan ini ada.
         $baris = CalibrationCapability::query()
             ->where('equipment_category_id', $alat->equipment_category_id)
             ->where('nama_alat', $alat->nama_alat_kemampuan)
+            ->milikOrganisasi($alat->organization_id)
             ->get();
 
         // Cukup SATU baris punya CMC buat bikin tautannya sah — sisanya

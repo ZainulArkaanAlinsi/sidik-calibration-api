@@ -12,6 +12,7 @@ use App\Models\FormulaVersion;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\RumusKalibrasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -146,7 +147,18 @@ class RumusBerversiTest extends TestCase
      */
     public function test_distempel_versi_yang_berlaku_di_tanggal_kalibrasi(): void
     {
-        $formula = $this->rumus()->formulaGumPh($this->admin->organization_id);
+        // Alat di test ini jangka sorong/mikrometer di kategori `panjang`, dan
+        // `nama_alat_kemampuan`-nya null — alat GENERIK, bukan pH.
+        //
+        // Dulu sesinya distempel `gum-ph` cuma karena pH kebetulan profil
+        // default registry, jadi jejak auditnya ngaku sesi jangka sorong
+        // dihitung pakai aturan pH. Sejak ProfilGenerik ada, stempelnya
+        // `gum-generik` — dan yang diadu di sini harus rumus yang BENERAN
+        // dipakai, bukan yang dulu keliru terpakai.
+        $formula = $this->rumus()->formulaUntukProfil(
+            $this->admin->organization_id,
+            new ProfilGenerik,
+        );
         $v1 = $formula->versiAktif();
 
         // Versi 2 mulai berlaku 1 Juli 2026; versi 1 ditutup 30 Juni.

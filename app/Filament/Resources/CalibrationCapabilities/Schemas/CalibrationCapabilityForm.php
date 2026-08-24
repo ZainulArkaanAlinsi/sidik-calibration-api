@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class CalibrationCapabilityForm
@@ -36,9 +37,39 @@ class CalibrationCapabilityForm
                         .'(kolom "Jenis kemampuan kalibrasi" di master Alat).')
                     ->columns(2)
                     ->schema([
+                        // Dropdown ini DISARING per organisasi, dan saringannya
+                        // bukan kerapian tampilan.
+                        //
+                        // `organization_id` di atas dicap dari admin yang login,
+                        // sementara dropdown ini dulu nawarin SELURUH kategori
+                        // semua lab. Satu klik cukup buat bikin baris yang dua
+                        // sumber kepemilikannya bertentangan: `organization_id`
+                        // lab A, `equipment_category_id` milik lab B. Sesudah
+                        // itu baris tadi kebaca di `GET /categories/{kode}` lab
+                        // B (jalur baca nyaring lewat kategori, bukan lewat
+                        // kolom) dan angka CMC-nya kepasang sebagai lantai U95
+                        // di sertifikat lab B — angka lab lain di dokumen yang
+                        // ngaku terakreditasi.
+                        //
+                        // `modifyQueryUsing` nutup DUA hal sekaligus, dan itu
+                        // yang bikin dia dipilih ketimbang `options()` manual:
+                        // pilihannya disaring, DAN aturan validasi `in` bawaan
+                        // Filament ikut nyempit — `Select` nurunin nilai sahnya
+                        // dari `getOptionLabel()`, yang lewat query yang sama.
+                        // Jadi kiriman Livewire yang dikarang tangan (di luar
+                        // dropdown) tetap ditolak sebagai galat validasi, bukan
+                        // lolos diam-diam ke penjaga model yang bakal ngelempar
+                        // 500 di muka admin.
                         Select::make('equipment_category_id')
                             ->label('Kategori')
-                            ->relationship('category', 'nama')
+                            ->relationship(
+                                'category',
+                                'nama',
+                                fn (Builder $query): Builder => $query->where(
+                                    'organization_id',
+                                    User::yangLogin()?->organization_id,
+                                ),
+                            )
                             ->searchable()
                             ->preload()
                             ->required(),

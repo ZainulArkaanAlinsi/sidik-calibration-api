@@ -21,6 +21,7 @@ use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -172,6 +173,25 @@ class CalibrationController extends Controller
         $profil = ($alat !== null ? $registry->untukAlat($alat) : null)
             ?? ($kode !== '' ? $registry->untukKode($kode) : null)
             ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
+
+        // Alatnya nggak punya lembar khusus — ditolak dengan alasan, BUKAN
+        // dikasih lembar pH.
+        //
+        // Sampai perbaikan routing profil (24 Agt 2026) `untukNamaAlat()`
+        // jatuh ke pH buat nama apa pun yang nggak dikenali, jadi
+        // `?equipment_id=` sebuah Buret mulangin lembar buffer 4/7/10 dengan
+        // status 200. Teknisi ngisi tiga titik pH buat buret, sesinya kekirim,
+        // dan nggak ada satu pun error di sepanjang jalur itu. Padahal
+        // `GET /api/categories/{kode}` buat alat yang sama udah lama jawab
+        // `profil: null` alias "pakai form generik" — dua jawaban yang saling
+        // bertentangan dari server yang sama.
+        if ($profil instanceof ProfilGenerik) {
+            return response()->json([
+                'message' => 'Alat ini nggak punya lembar kerja khusus di server — pakai form generik. '
+                    .'Kalau mestinya punya, betulin "Jenis alat" di data Alat biar cocok sama daftar '
+                    .'kemampuan kalibrasi.',
+            ], 422);
+        }
 
         $bentuk = $profil->bentukLembarKerja(
             untukAdmin: $request->user()->isAdmin(),

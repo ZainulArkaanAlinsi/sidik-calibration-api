@@ -476,6 +476,23 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
+                        // Kelima profil enclosure lahir cuma dengan pilihan
+                        // Inlab/Insitu — pasangan kotaknya nggak pernah ikut.
+                        // Akibatnya sesi enclosure nggak punya tempat nyimpen
+                        // LOKASINYA sama sekali, dan "Calibration Location" di
+                        // sertifikat selalu jatuh ke tebakan
+                        // `CertificateSnapshotBuilder::lokasiKalibrasi()`:
+                        // `Laboratorium` buat yang Inlab, alamat pelanggan buat
+                        // yang Insitu — dua-duanya kalimat yang nggak pernah
+                        // diketik siapa pun.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                     ],
                 ],
             ],
@@ -656,13 +673,17 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     /**
      * CMC untuk enclosure ini, dicocokkan lewat `nama_alat`.
      *
-     * Disaring ke KATEGORI alatnya kalau kategorinya diketahui.
-     * `calibration_capabilities` memang tidak punya `organization_id` sendiri
-     * (isinya lampiran akreditasi lab), tapi `equipment_category_id`-nya menunjuk
-     * `equipment_categories` yang DIKUNCI per organisasi. `nama_alat` sendiri
-     * tidak dijamin unik lintas kategori/organisasi, jadi tanpa saringan ini
-     * baris pertama yang kebetulan cocok bisa berasal dari kategori organisasi
-     * lain — dan CMC yang salah langsung mendarat di sertifikat.
+     * Disaring ke KATEGORI dan ORGANISASI alatnya kalau keduanya diketahui.
+     * `nama_alat` sendiri tidak dijamin unik lintas kategori/organisasi, jadi
+     * tanpa saringan ini baris pertama yang kebetulan cocok bisa berasal dari
+     * lab lain — dan CMC yang salah langsung mendarat di sertifikat.
+     *
+     * Kategori saja TIDAK cukup, dan itu pelajaran yang baru dibayar: sampai
+     * blokir scope organisasi ditutup, `calibration_capabilities` disebut "tidak
+     * punya `organization_id` sendiri" di komentar ini. Kolomnya sudah ada sejak
+     * migrasi 2026_08_24_100000, dan justru karena ada, dia bisa BEDA dari
+     * organisasi kategorinya — baris milik lab A yang nangkring di kategori lab
+     * B. Saringan kategori doang meloloskan baris itu bulat-bulat.
      */
     private function kemampuanEnclosure(?Equipment $equipment = null): ?CalibrationCapability
     {
@@ -671,6 +692,10 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ->when(
                 $equipment?->equipment_category_id !== null,
                 fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
             )
             ->first();
     }
@@ -723,6 +748,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -733,6 +759,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

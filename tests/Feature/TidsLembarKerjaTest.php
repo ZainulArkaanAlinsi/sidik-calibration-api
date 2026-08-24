@@ -351,6 +351,118 @@ class TidsLembarKerjaTest extends TestCase
         $this->assertStringContainsString('600', $luarCmc[0]['pesan']);
     }
 
+    /**
+     * Ejaan TIDS yang BUKAN byte-exact lampiran akreditasi tetap NOL angka.
+     *
+     * Ini lubang yang paling mahal di berkas ini, dan sampai perbaikan routing
+     * profil dia menganga: `kodeProfilDariNama()` nerima alias + kunci yang
+     * nempel di tengah nama, jadi HP dapat lembar TIDS buat "Temperature
+     * Indikator With Sensors" (judul lembar kerjanya SENDIRI). Tapi
+     * `untukNamaAlat()` cocoknya PERSIS dan jatuh ke pH — jadi yang MENGHITUNG
+     * bukan `TidsProfile` melainkan `PhMeterProfile`.
+     *
+     * Akibatnya berantai dan semuanya diam:
+     *
+     *  - `TidsProfile::hitungPerGrup()` — satu-satunya rem yang nahan angka —
+     *    nggak pernah kepanggil;
+     *  - `GumCalculator::hitungTitik()` jalan lewat jalur CMC generik, dan
+     *    baris CMC TIDS SUDAH ter-seed, jadi tiap titik terbit `U95 = CMC`;
+     *  - `peringatanSesi()` yang mestinya masang `tids_budget_belum_ada` ikut
+     *    hilang, jadi nggak ada satu pun tanda yang nahan tombol APPROVE.
+     *
+     * Angka itu lantai kemampuan terbaik lab, bukan hasil hitung sesi ini —
+     * dan dia nggak pernah diturunkan dari workbook mana pun. Sejak endpoint
+     * tambah-alat hidup, tiap teknisi lapangan bisa bikin nama varian sendiri.
+     *
+     * Baris CMC di sini sengaja diseed di KATEGORI YANG SAMA dengan alatnya
+     * dan pakai ejaan varian yang sama — kalau nggak, `kemampuanUntukTitik()`
+     * nggak ketemu apa-apa dan test ini bakal hijau tanpa membuktikan apa pun.
+     *
+     * `toleransi` alatnya juga sengaja DIISI, alasannya sama: selama kolom itu
+     * kosong, jalur pH ketahan lebih dulu di `alasanBelumBisaDihitung()`
+     * ("Toleransi alat masih kosong") dan angkanya nggak sempat terbit —
+     * ketahan gara-gara kolom yang belum diisi, bukan gara-gara ada yang
+     * nahan. Begitu admin ngisi toleransi (dan pesan errornya emang nyuruh
+     * gitu), remnya lepas: dijalanin sebelum perbaikan, sesi ini nerbitin
+     * U95 0,86324967 °C di 100 °C dan 1,40712473 °C di 300 °C — persis lantai
+     * CMC 0,86 & 1,4 dari lampiran akreditasi, bukan hasil hitung sesi.
+     */
+    public function test_sesi_tids_nama_varian_nggak_nerbitin_satu_pun_u95(): void
+    {
+        $kategori = EquipmentCategory::factory()->create(['kode' => 'suhu-dan-kelembapan']);
+
+        // Judul lembar kerja TIDS-nya sendiri (`SIDIK-FM-CAL-0506 Rev.4`) —
+        // ejaan yang paling wajar diketik teknisi, dan beda dari lampiran.
+        $namaVarian = 'Temperature Indikator With Sensors';
+
+        $alat = Equipment::factory()->create([
+            'customer_id' => Customer::factory()->create()->id,
+            'equipment_category_id' => $kategori->id,
+            'nama_alat' => 'Temperature Indicator',
+            'nama_alat_kemampuan' => $namaVarian,
+            'range_min' => -20, 'range_max' => 600,
+            'satuan' => '°C', 'resolusi' => 0.1, 'toleransi' => 1.0,
+        ]);
+
+        foreach ([[-20.0, 150.0, 0.86], [150.0, 400.0, 1.4], [400.0, 600.0, 3.1]] as [$min, $maks, $u]) {
+            CalibrationCapability::factory()->create([
+                'equipment_category_id' => $kategori->id,
+                'nama_alat' => $namaVarian,
+                'range_min' => $min,
+                'range_max' => $maks,
+                'satuan' => '°C',
+                'ketidakpastian_terbaik' => $u,
+                'satuan_ketidakpastian' => '°C',
+                'metode' => TidsProfile::KODE_METODE,
+            ]);
+        }
+
+        $registry = app(CalibrationProfileRegistry::class);
+        $this->assertSame('tids', $registry->kodeProfilDariNama($namaVarian), 'HP dapat lembar TIDS.');
+        $this->assertInstanceOf(
+            TidsProfile::class,
+            $registry->untukAlat($alat),
+            'Dan yang MENGHITUNG harus TidsProfile juga — bukan profil default.',
+        );
+
+        $standar = Standard::factory()->create(['nama' => 'Temperature Calibrator Constant 40T']);
+
+        $respons = $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', [
+                'equipment_id' => $alat->id,
+                'standard_id' => $standar->id,
+                'input_method' => 'manual',
+                'tanggal_kalibrasi' => now()->subDay()->toIso8601ZuluString(),
+                'suhu_ruang' => 23.5,
+                'kelembaban' => 55.0,
+                'measurements' => [
+                    ['titik_ukur' => 100.0, 'satuan' => '°C', 'pembacaan' => [100.1, 100.2, 100.0, 100.1, 100.2]],
+                    ['titik_ukur' => 300.0, 'satuan' => '°C', 'pembacaan' => [300.4, 300.2, 300.3, 300.1, 300.5]],
+                ],
+            ])
+            ->assertCreated();
+
+        $sesi = CalibrationSession::findOrFail($respons->json('data.id'));
+
+        // Kerja lapangannya tetap utuh — yang ditahan angkanya, bukan sesinya.
+        $this->assertSame(10, $sesi->rawMeasurements()->count());
+
+        // Baris yang paling penting: NOL U95, walaupun baris CMC-nya ada dan
+        // jalur generik sanggup memulangkan angka buat kedua titik.
+        $this->assertSame(
+            0,
+            $sesi->uncertaintyCalculations()->count(),
+            'Sesi TIDS bernama varian nggak boleh nerbitin satu pun U95 — angkanya bakal lahir dari '
+            .'lantai CMC, bukan dari budget yang belum pernah disusun.',
+        );
+
+        // Dan remnya kelihatan sebagai peringatan, jadi ada yang nahan APPROVE.
+        $this->assertContains(
+            'tids_budget_belum_ada',
+            array_column($registry->untukAlat($alat)->peringatanSesi($sesi), 'kode'),
+        );
+    }
+
     private function alatTids(): Equipment
     {
         return Equipment::factory()->create([

@@ -116,6 +116,20 @@ class Formula extends Model
      */
     public const KODE_GUM_TIDS = 'gum-tids';
 
+    /**
+     * Rumus GUM buat alat yang **nggak punya profil khusus** — jalur CMC
+     * generik apa adanya (`ProfilGenerik`).
+     *
+     * Kodenya sendiri, bukan numpang `gum-ph`. Sampai sebelum ini tiap sesi
+     * Buret / Termometer Gelas / Pressure Gauge distempel `gum-ph` cuma karena
+     * pH kebetulan profil default registry, dan stempel itu ngaku sesi tadi
+     * dihitung pakai aturan pH — padahal komponen budget pH nggak satu pun
+     * kepakai (baris kemampuan lampiran akreditasi nggak punya konstanta
+     * budget). Jejak audit yang nunjuk aturan alat lain lebih buruk daripada
+     * jejak yang bilang apa adanya "jalur generik". Lihat ProfilGenerik.
+     */
+    public const KODE_GUM_GENERIK = 'gum-generik';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {
