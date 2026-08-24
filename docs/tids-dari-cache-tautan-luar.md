@@ -32,9 +32,12 @@ Cache tautan luar **cuma menyimpan sel yang benar-benar ditarik** berkas pemangg
 seluruh workbook. Jadi yang ada di sini tidak lengkap, dan yang tidak ada BUKAN berarti tidak
 penting — cuma berarti workbook TITS/Enclosure kebetulan tidak merujuknya.
 
+> ⚠️ **Angka "1.488 + 968" di bawah JANGAN dibaca sebagai penjumlahan.** Lihat
+> §"Dua master, dua tabel kalibrator" — dua cache itu tidak boleh digabung.
+
 | Sheet | Status |
 |---|---|
-| `STANDAR KALIBRATOR` | **1.488 + 968 sel** — tabel koreksi kalibrator, ini yang paling utuh |
+| `STANDAR KALIBRATOR` | 1.488 dan 968 sel di DUA master **terpisah** — lihat peringatan di bawah |
 | `DATABASE` | **487 + 362 sel** — jenis sensor + CMC, Inlab/Insitu, daftar pelaksana |
 | `FC` (Melting Point) | **117 sel** — uji titik leleh |
 | `Interpolasi` | 22 sel |
@@ -104,3 +107,63 @@ sah** dan tidak ketahuan salah sampai ada yang mengaudit. Untuk lab terakreditas
 
 Yang tercetak di sertifikat harus mengikuti yang mana? Ini bukan soal pembulatan — dua-duanya
 angka resmi dari sumber berbeda, dan yang menentukan lantai U95 cuma boleh satu.
+
+---
+
+## Dua master, dua tabel kalibrator — JANGAN digabung
+
+Dua master TIDS 2022 diadu sel per sel. Dari 1.202 sel yang ada di dua-duanya,
+**155 berbeda.** Setelah ditelusuri, bedanya BUKAN data rusak dan BUKAN salah ketik —
+tapi memang dua tabel koreksi kalibrator yang berlainan.
+
+Di sheet `STANDAR KALIBRATOR`, susunannya sama (kolom B = titik suhu, nilainya identik:
+−100, −20, 0, 25, 50, 100, …), tapi:
+
+| Blok kolom | Keadaan |
+|---|---|
+| **M–P** | **IDENTIK** di dua master — satu kalibrator yang sama, tidak berubah |
+| **C–J** | **BEDA sistematis** — kalibrator yang lain, nilai koreksinya memang lain |
+
+Contoh baris 0 °C:
+
+| Kolom | Master `TIDS 2022` | Master `TIDS 2022 -20-150` |
+|---|---|---|
+| C | −0,16 | −0,23 |
+| D | 0,09 | 0,12 |
+| E | 0,15 | 0,19 |
+| G | 0,10 | 0,13 |
+| H | 0,20 | 0,35 |
+| I | 0,30 | 0,16 |
+| **N** | **0,02** | **0,02** |
+| **O** | **0,1575** | **0,1575** |
+| **P** | **0,0850** | **0,0850** |
+
+Selisih di blok C–J sekitar 0,03–0,15 °C. Terhadap CMC 1,5 °C itu bukan angka yang bikin
+sertifikat langsung salah vonis — tapi **tetap angka yang salah tercetak di dokumen
+terakreditasi**, dan salahnya diam.
+
+`STANDAR KALIBRATOR` cuma cocok penuh di **19 dari 66 baris**. `DATABASE` cocok penuh di
+34 dari 63 baris (bedanya di baris 22–74, wilayah daftar metode/pelaksana/thermohygro yang
+susunannya memang berlainan antar-master).
+
+### Aturan pakai
+
+1. **Pilih SATU master, dan catat yang mana.** Jangan menggabungkan per alamat sel — dua
+   tabel berbeda di alamat yang sama akan tergabung tanpa ada yang gagal.
+2. **Nama kalibrator tiap blok TIDAK ada di cache.** Baris 1–9 (kepala tabel) nol sel —
+   yang ditarik workbook pemanggil cuma baris datanya. Jadi mana blok C–J milik Constant,
+   mana milik Victor, **belum bisa dipastikan dari sini.** Harus dikonfirmasi ke lab atau
+   dari workbook aslinya.
+3. **Blok M–P aman dipakai** — identik di dua master, jadi tidak ada yang perlu dipilih.
+4. Master A menulis **sel kosong** di tempat master B menulis **`0`**. Kosong dan nol itu
+   dua hal berbeda: kosong = tidak ada datanya, nol = koreksinya memang nol. Jangan
+   diperlakukan sama waktu membaca JSON-nya.
+
+### Yang TIDAK bermasalah
+
+- Blok jenis sensor + CMC (`DATABASE!Q3:S11`) **identik di dua master**, termasuk Type S = 1,6.
+  Temuan itu berdiri kokoh.
+- Tidak ada satu pun baris yang berulang di dalam `STANDAR KALIBRATOR` (diperiksa dengan
+  membandingkan tanda tangan tiap baris) — jadi tidak ada duplikat di dalam satu tabel.
+- Lampiran akreditasi `kemampuan-kalibrasi.json` juga bersih: 48 alat, nol baris identik,
+  nol nama yang muncul di dua kelompok, nol nama yang cuma beda huruf besar/kecil.
