@@ -17,6 +17,12 @@ membatalkan satu baris di daftar "tidak ditanyakan" versi sebelumnya: sel
 nol-berpasangan di tabel kalibrator ternyata **terjangkau** sesi nyata (Type N
 @ 1000 °C, batas atas rentang akreditasinya), bukan cuma titik ekstrem 1400/1700.
 
+> **Ada versi gabungan.** Beberapa pertanyaan di dokumen ini muncul juga di alat
+> suhu satunya (pembagi akar-ganda, `v_eff`, nomor formulir, desimal `k`).
+> Buat dikirim ke lab, pakai **`docs/pertanyaan-lab-suhu.md`** — di situ yang
+> kembar sudah digabung jadi satu pertanyaan. Berkas ini tetap jadi rujukan
+> teknisnya (nomor sel, rumus, angka pembanding).
+
 ---
 
 ## 1. Pembagi AC Pick Up: label `rect.` tapi selnya √(√3)
