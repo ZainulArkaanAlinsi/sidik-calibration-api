@@ -423,20 +423,30 @@ class CertificateSnapshotBuilder
     }
 
     /**
-     * Nama ruangan kalau ada; kalau onsite, tempat yang DITULIS TEKNISI.
+     * Kalau onsite, tempat yang DITULIS TEKNISI; selain itu nama ruangannya.
      *
      * `Insitu (PT. LDC)` — persis yang tercetak di sertifikat master. Nama
      * tempatnya nggak diturunkan dari pelanggan pemilik alat: satu kunjungan
      * bisa dikerjakan di pabrik lain milik grup yang sama, dan yang sah di
      * dokumen adalah tempat alatnya beneran diukur. Kalau teknisi nggak nulis
      * apa-apa, jatuh ke alamat pelanggan seperti sebelumnya.
+     *
+     * `lokasi` DIPERIKSA DULUAN, ruangan belakangan — dan urutan ini yang
+     * bikin benar, bukan sekadar rapi. Dropdown "Ruangan" di HP selalu tampil
+     * dan nggak pernah direset waktu teknisi milih Insitu, jadi sesi kunjungan
+     * lumrah nyimpen `room_id` sisa pilihan sebelumnya. Waktu ruangan dicek
+     * duluan, sisa itu menang: sertifikat kunjungan ke pabrik pelanggan terbit
+     * bertuliskan `Lab. Uji A` — dokumen resmi yang nyatain alatnya diukur di
+     * lab kami, padahal alatnya nggak pernah masuk lab. Nggak ada error, nggak
+     * ada yang aneh di layar, dan yang megang salinannya cuma bisa curiga
+     * kalau dia inget alat itu emang nggak pernah dikirim.
+     *
+     * Jadi ruangan cuma dipakai kalau sesinya BUKAN onsite. Kalau dropdown-nya
+     * nanti beneran direset di HP, baris ini tetap nggak boleh dibalik — dia
+     * yang jaga sertifikat dari data sesi lama yang terlanjur bawa `room_id`.
      */
     private function lokasiKalibrasi(CalibrationSession $sesi): ?string
     {
-        if ($sesi->room) {
-            return $sesi->room->nama;
-        }
-
         if ($sesi->lokasi === 'onsite') {
             if (filled($sesi->lokasi_nama)) {
                 return 'Insitu ('.trim((string) $sesi->lokasi_nama).')';
@@ -445,6 +455,10 @@ class CertificateSnapshotBuilder
             return $sesi->equipment?->customer?->alamat
                 ? 'Onsite — '.$sesi->equipment->customer->alamat
                 : 'Onsite';
+        }
+
+        if ($sesi->room) {
+            return $sesi->room->nama;
         }
 
         return 'Laboratorium';
