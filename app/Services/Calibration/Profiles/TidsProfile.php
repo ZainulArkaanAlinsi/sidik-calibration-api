@@ -18,41 +18,59 @@ use App\Models\Standard;
  * Ini yang paling penting dibaca sebelum menambah apa pun ke file ini. Enam
  * belas profil sebelumnya lahir dengan cara yang sama: workbook master lab
  * dibuka, direproduksi sampai digit terakhir, baru budget-nya ditulis. TIDS
- * TIDAK punya workbook itu. Empat workbook yang ada di tangan
+ * TIDAK punya workbook itu. Empat workbook yang dikirim ke repo
  * (`Master Olah Data_Suhu_TITS fungsi Measure/Source`, `… Enclosure Recorder`,
- * `… Enclosure Constant Yokogawa`) semuanya TITS & Enclosure — sudah diperiksa
- * sampai ke sheet tersembunyi, tidak ada satu pun sel TIDS di dalamnya.
+ * `… Enclosure Constant Yokogawa`) semuanya TITS & Enclosure.
  *
- * Tanpa oracle itu, tiap angka di budget TIDS cuma bisa dikarang. Dan angka
- * ketidakpastian karangan bukan sekadar salah: dia terbit di sertifikat
- * terakreditasi, kelihatan sah, dan yang menemukannya asesor. Jadi
- * [komponenBudget] balik `null` dan [hitungPerGrup] MEMBLOKIR seluruh titik
- * dengan alasan yang kebaca — bukan diam-diam jatuh ke jalur CMC generik yang
- * akan memulangkan U95 yang kelihatan wajar. Uraian lengkapnya di
+ * Yang ADA cuma potongan: `database/data/tids-cache-master.json` — 3.452 sel
+ * lima master TIDS yang terselamatkan dari cache tautan luar keempat workbook
+ * itu (`docs/tids-dari-cache-tautan-luar.md`). Itu angka lab sendiri, bukan
+ * turunan, dan sudah cukup untuk beberapa hal. Yang TIDAK cukup justru
+ * bagiannya yang dibutuhkan di sini: cache tautan luar cuma menyimpan sel yang
+ * benar-benar DITARIK workbook pemanggilnya, dan keempat sheet yang menyusun
+ * budget nol sel semua —
+ *
+ *   `PERHITUNGAN U95%` · `Variasi axial Dryblok A` · `Variasi axial Dryblok B`
+ *   · `stdev drywell`
+ *
+ * Tanpa keempatnya, tiap angka di budget TIDS cuma bisa dikarang atau
+ * dianalogikan dari TITS — dan analogi TITS itu bukan sekadar kurang teliti:
+ * dia terbit di sertifikat terakreditasi, kelihatan sah, dan yang menemukannya
+ * asesor. Jadi [komponenBudget] balik `null` dan [hitungPerGrup] MEMBLOKIR
+ * seluruh titik dengan alasan yang kebaca — bukan diam-diam jatuh ke jalur CMC
+ * generik yang akan memulangkan U95 yang kelihatan wajar. Uraian lengkapnya di
  * [hitungPerGrup].
  *
- * ## Apa yang dibutuhkan supaya bagian itu bisa diisi
+ * ## Apa yang masih harus diminta ke lab
  *
- * Tiga berkas, dan KETIGANYA nol hasil di seluruh repo hari ini (dicek dengan
- * pencarian teks ke seluruh `app/`, `database/`, `docs/`):
- *
- *  1. **Workbook olah data TIDS** — padanan `Master Olah Data_Suhu_TITS…` untuk
- *     alat ini. Dia yang menentukan komponen apa saja yang masuk, pembaginya,
- *     derajat kebebasannya, dan apakah U95-nya lahir per titik atau sekali
- *     untuk seluruh sesi (TITS sekali, Spectrophotometer per kelompok — dua
- *     alat suhu di repo ini saja sudah beda).
- *  2. **Tabel koreksi dryblock Isotech & Techne** — padanan
- *     `TabelKalibratorSuhu` milik TITS. Lembar kerjanya menyuruh teknisi
- *     mencentang salah satu dari dua dryblock, jadi koreksinya jelas beda per
- *     merk; angka bedanya yang belum ada. Kata "Isotech" dan "Techne" belum
- *     pernah muncul sekali pun di repo ini.
- *  3. **Aturan uji titik es 0 °C** — lembarnya minta pembacaan Awal & Akhir di
+ *  1. **Workbook olah data TIDS aslinya**, khusus keempat sheet di atas. Dia
+ *     yang menentukan komponen apa saja yang masuk, pembaginya, derajat
+ *     kebebasannya, dan apakah U95-nya lahir per titik atau sekali untuk
+ *     seluruh sesi (TITS sekali, Spectrophotometer per kelompok — dua alat di
+ *     repo ini saja sudah beda).
+ *  2. **Tabel koreksi dryblock A & B.** Lembar kerjanya menyuruh teknisi
+ *     mencentang `A (Isotech)` atau `B (Techne)`, dan struktur workbook yang
+ *     ke-cache mengonfirmasi dua dryblock itu memang punya sheet variasi
+ *     aksial sendiri-sendiri — dua-duanya nol sel. Kata "Isotech" dan "Techne"
+ *     belum pernah muncul di repo ini di luar file ini.
+ *  3. **Aturan uji titik es 0 °C.** Lembarnya minta pembacaan Awal & Akhir di
  *     titik es, tapi tidak menyebut apa yang dilakukan terhadap dua angka itu:
  *     jadi komponen budget (drift sensor selama sesi), jadi syarat lolos, atau
- *     cuma catatan. Tiga tafsir itu menghasilkan tiga U95 yang berbeda.
+ *     cuma catatan. Tiga tafsir, tiga U95 yang berbeda. Cache-nya memang punya
+ *     117 sel sheet `FC` dari `Melting Point_TIDS_Limas.xlsx`, tapi itu uji
+ *     titik LELEH — barang lain, dan menyamakannya dengan titik es cuma karena
+ *     dua-duanya "titik perubahan fasa" persis jenis lompatan yang bikin angka
+ *     salah kelihatan beralasan.
+ *  4. **CMC mana yang berlaku.** Master TIDS 2022 yang ke-cache menulis 1,5 °C
+ *     rata (1,6 khusus Type S); lampiran akreditasi LK-285-IDN menulis 0,86 /
+ *     1,4 / 3,1 °C per pita, dan itu yang sudah ter-seed di
+ *     `calibration_capabilities`. Yang menentukan lantai U95 cuma boleh satu.
+ *     Yang dipakai di sini lampiran akreditasi — itu dokumen yang mengikat lab
+ *     — tapi selisihnya bukan pembulatan, jadi pertanyaannya tetap terbuka.
  *
- * Sampai ketiganya ada, yang benar adalah lembar kerjanya jalan dan angkanya
- * TIDAK terbit. Itu keadaan yang jujur, bukan pekerjaan setengah jadi.
+ * Sampai keempatnya jelas, yang benar adalah lembar kerjanya jalan dan
+ * angkanya TIDAK terbit. Itu keadaan yang jujur, bukan pekerjaan setengah
+ * jadi.
  *
  * ## Lima UUT sekaligus — sumbu yang belum punya rumah di skema
  *
@@ -81,6 +99,8 @@ use App\Models\Standard;
  * ada — kalaupun workbook-nya datang besok, kolomnya tetap tidak ada di
  * kertasnya.
  *
+ * @see docs/tids-dari-cache-tautan-luar.md — apa yang terselamatkan & apa yang nggak
+ * @see database/data/tids-cache-master.json — 3.452 sel master TIDS 2022
  * @see docs/permintaan-user-7.md — K1 (5 UUT) & K2 (workbook TIDS)
  * @see TitsProfile — saudaranya, "tanpa sensor", yang punya oracle lengkap
  */
@@ -416,9 +436,10 @@ class TidsProfile extends CalibrationProfile
                 static fn (array $t): array => [
                     'titik_ke' => (int) $t['titik_ke'],
                     'alasan' => 'Budget ketidakpastian TIDS belum ada, jadi titik ini sengaja NGGAK dihitung. '
-                        .'Workbook olah data TIDS dari lab belum turun, dan tanpa itu komponen budget-nya cuma '
-                        .'bisa dikarang — angka karangan yang terbit di sertifikat terakreditasi jauh lebih '
-                        .'mahal daripada kolom yang jelas kosong. Pembacaannya tetap tersimpan utuh dan bakal '
+                        .'Sheet PERHITUNGAN U95% & variasi aksial dryblock dari master TIDS belum ada di '
+                        .'sistem (nol sel di cache tautan luar), dan tanpa itu komponen budget-nya cuma bisa '
+                        .'dikarang — angka karangan yang terbit di sertifikat terakreditasi jauh lebih mahal '
+                        .'daripada kolom yang jelas kosong. Pembacaannya tetap tersimpan utuh dan bakal '
                         .'kehitung begitu workbook-nya masuk; yang belum ada cuma rumusnya.',
                 ],
                 array_values($titik),
@@ -461,10 +482,11 @@ class TidsProfile extends CalibrationProfile
     {
         $peringatan = [[
             'kode' => 'tids_budget_belum_ada',
-            'pesan' => 'Sesi TIDS belum bisa menghasilkan angka ketidakpastian. Workbook olah data TIDS, '
-                .'tabel koreksi dryblock Isotech/Techne, dan aturan uji titik es 0 °C belum ada satu pun di '
-                .'sistem, jadi budget-nya sengaja dikosongkan — bukan gagal hitung. Lembar kerjanya tetap '
-                .'boleh disimpan; yang nggak boleh sertifikatnya terbit seolah-olah U95-nya sudah dihitung.',
+            'pesan' => 'Sesi TIDS belum bisa menghasilkan angka ketidakpastian. Sheet PERHITUNGAN U95% & '
+                .'variasi aksial dryblock dari master TIDS, tabel koreksi dryblock Isotech/Techne, dan aturan '
+                .'uji titik es 0 °C belum ada satu pun di sistem, jadi budget-nya sengaja dikosongkan — bukan '
+                .'gagal hitung. Lembar kerjanya tetap boleh disimpan; yang nggak boleh sertifikatnya terbit '
+                .'seolah-olah U95-nya sudah dihitung.',
         ]];
 
         if ($this->dryblockSesi($sesi) === null) {
@@ -566,13 +588,17 @@ class TidsProfile extends CalibrationProfile
             // memulangkan apa-apa dan kelihatan seperti bug.
             'budget_ketidakpastian' => [
                 'tersedia' => false,
-                'alasan' => 'Workbook olah data TIDS dari lab belum ada. Tanpa itu komponen budget-nya cuma '
-                    .'bisa dikarang, dan angka ketidakpastian karangan di sertifikat terakreditasi itu temuan '
-                    .'audit. Pembacaan tetap tersimpan dan bakal kehitung begitu workbook-nya masuk.',
+                'alasan' => 'Workbook olah data TIDS dari lab belum lengkap. Yang ada di sistem baru '
+                    .'potongan dari cache tautan luar, dan justru empat sheet yang menyusun budget '
+                    .'(PERHITUNGAN U95%, Variasi axial Dryblok A & B, stdev drywell) nol sel semua. Tanpa '
+                    .'itu komponen budget-nya cuma bisa dikarang atau dianalogikan dari TITS, dan angka '
+                    .'seperti itu di sertifikat terakreditasi adalah temuan audit. Pembacaan tetap tersimpan '
+                    .'dan bakal kehitung begitu workbook-nya masuk.',
                 'butuh' => [
-                    'Workbook olah data TIDS (padanan Master Olah Data_Suhu_TITS)',
-                    'Tabel koreksi dryblock Isotech & Techne',
+                    'Workbook olah data TIDS asli — sheet PERHITUNGAN U95%, Variasi axial Dryblok A & B, stdev drywell',
+                    'Tabel koreksi dryblock A (Isotech) & B (Techne)',
                     'Aturan uji titik es 0 °C — jadi komponen budget, syarat lolos, atau cuma catatan',
+                    'Kepastian CMC: master 2022 nulis 1,5 °C rata (1,6 Type S), lampiran akreditasi 0,86/1,4/3,1 °C',
                 ],
             ],
             'sumbu_uut' => $this->sumbuUut(),

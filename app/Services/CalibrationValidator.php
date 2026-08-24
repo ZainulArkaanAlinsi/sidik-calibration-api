@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
@@ -74,9 +75,19 @@ class CalibrationValidator
         // (kelengkapan hitung, pembacaan mustahil, per-titik, U95-vs-CMC,
         // keputusan) nggak berlaku; yang relevan cuma kondisi lingkungan &
         // kelengkapan snapshot.
+        //
+        // `periksaAlatTanpaCmc` ikut TERTINGGAL di cabang non-Autoklaf, dan itu
+        // bukan kelalaian: lantai CMC Autoklaf nggak datang dari
+        // `calibration_capabilities` sama sekali, dia dibaca
+        // `AutoclaveInputBuilder` dari `config/autoclave.php`. Jadi baris
+        // kemampuan yang belum lengkap nggak ngubah satu angka pun di sesi
+        // Autoklaf, dan mesangin peringatan di situ cuma bikin tiap sesi
+        // Autoklaf minta konfirmasi buat sesuatu yang nggak ngaruh — persis
+        // cara peringatan berhenti dibaca orang.
         $temuan = $sesi->adalahAutoclave()
             ? $this->periksaAutoclave($sesi)
             : [
+                ...$this->periksaAlatTanpaCmc($sesi),
                 ...$this->periksaKelengkapanHitung($sesi),
                 ...$this->periksaPembacaanMustahil($sesi),
                 ...$this->periksaKondisiLingkunganMustahil($sesi),
@@ -1096,6 +1107,118 @@ class CalibrationValidator
         }
 
         return $temuan;
+    }
+
+    /**
+     * Sesi ini dikerjakan pakai nama alat yang BELUM punya rentang CMC.
+     *
+     * ## Kenapa penjagaan ini ada — tolong baca sebelum menghapusnya
+     *
+     * Teknisi sekarang boleh nambah nama alat sendiri dari lapangan lewat
+     * `POST /api/categories/{kode}/kemampuan`, dan nama itu langsung kepakai
+     * tanpa nunggu admin. Itu keputusan pemilik proyek dan memang benar:
+     * teknisi nggak boleh kejebak nunggu master data buat bisa kerja.
+     *
+     * Tapi baris baru itu cuma punya NAMA. Nggak ada rentang, nggak ada angka
+     * ketidakpastian terbaik. Dan yang nentuin angka ketidakpastian di
+     * sertifikat itu pencocokan titik ukur ke baris CMC
+     * (`GumCalculator::kemampuanUntukTitik()`). Baris tanpa rentang nggak akan
+     * pernah cocok — jadi seluruh titik di sesi ini jatuh ke jalur generik
+     * (Type A dari pengulangan + Type B dari sertifikat standar & resolusi),
+     * TANPA lantai CMC.
+     *
+     * Akibatnya satu kalimat: **U yang terbit bisa lebih KECIL daripada yang
+     * diakreditasi lab, dan nggak ada satu pun error di mana pun.** Sesi
+     * tersimpan normal, PASS/FAIL-nya wajar, sertifikatnya rapi, angkanya
+     * malah kelihatan "bagus". Buat lab terakreditasi, sertifikat yang
+     * ngeklaim ketidakpastian lebih baik dari ruang lingkupnya itu temuan
+     * audit — dan satu-satunya cara nemuinnya kalau nggak ada penjagaan ini
+     * adalah ngadu tiap sertifikat ke lampiran LK-285-IDN baris per baris.
+     *
+     * ## Kenapa PERINGATAN, bukan ERROR, dan bukan juga diam
+     *
+     * Tiga pilihan, dan dua di antaranya salah:
+     *
+     *  - **Diam** (perilaku tanpa penjagaan ini) — yang paling berbahaya.
+     *    Kesalahan yang nggak ninggalin jejak itu kesalahan yang nggak pernah
+     *    diperbaiki.
+     *  - **ERROR** (nahan penerbitan) — kelihatan paling aman, tapi artinya
+     *    teknisi yang nambah nama alat jam 2 siang di lokasi pelanggan bikin
+     *    sertifikatnya mentok sampai ada admin yang ngisi CMC. Itu balik lagi
+     *    ke "teknisi kejebak nunggu master data", cuma pindah tempat mentoknya.
+     *  - **PERINGATAN** — sesinya jalan terus, tapi admin nggak bisa nyetujuin
+     *    tanpa lihat temuannya dulu: `approve` (API maupun panel) nolak selama
+     *    `abaikan_peringatan` belum dicentang. Jadi yang terjadi bukan
+     *    "kelewat", tapi "diputuskan orang, sadar, dan kecatat".
+     *
+     * Ini juga alasan temuannya nggak diturunin jadi INFO: INFO nggak nahan
+     * apa-apa, dan tumpukan INFO itu hal pertama yang berhenti dibaca orang.
+     *
+     * Baris yang `$baris`-nya KOSONG ikut kena, bukan dilewat: alat yang
+     * `nama_alat_kemampuan`-nya nunjuk ke nama yang nggak ada barisnya sama
+     * sekali (nama dihapus admin, salah ketik waktu impor) jatuh ke jalur
+     * generik dengan cara yang persis sama senyapnya.
+     *
+     * `ketidakpastian_terbaik = 0` TIDAK kena — nol itu pernyataan sadar "lab
+     * nggak punya klaim CMC buat rentang ini" dan barisnya tetap dipakai
+     * ngitung budget penuh. Lihat `CalibrationCapability::punyaCmc()`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaAlatTanpaCmc(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        // Alat yang emang NGGAK ditautkan ke kemampuan mana pun bukan urusan
+        // penjagaan ini. Itu keadaan lama yang sah & sengaja (lihat migrasi
+        // `2026_07_18_171904`): kalibrasinya jalan lewat Type A+B generik, dan
+        // nggak ada yang pernah ngeklaim sebaliknya. Yang dijaga di sini kasus
+        // yang BEDA — alat yang KELIHATANNYA punya kemampuan terdaftar padahal
+        // angkanya belum ada.
+        if ($alat === null || $alat->nama_alat_kemampuan === null || $alat->equipment_category_id === null) {
+            return [];
+        }
+
+        $baris = CalibrationCapability::query()
+            ->where('equipment_category_id', $alat->equipment_category_id)
+            ->where('nama_alat', $alat->nama_alat_kemampuan)
+            ->get();
+
+        // Cukup SATU baris punya CMC buat bikin tautannya sah — sisanya
+        // (parameter/rentang lain yang belum keisi) urusan pencocokan titik,
+        // bukan urusan tautan alatnya.
+        if ($baris->contains(fn (CalibrationCapability $k): bool => $k->punyaCmc())) {
+            return [];
+        }
+
+        $nama = (string) $alat->nama_alat_kemampuan;
+
+        $asal = $baris->isEmpty()
+            ? 'nama ini nggak punya satu pun baris kemampuan di kategorinya'
+            : sprintf(
+                'barisnya ada (%d, sumber: %s) tapi rentang & CMC-nya masih kosong',
+                $baris->count(),
+                $baris->pluck('sumber')->filter()->unique()->sort()->implode(', ') ?: '—',
+            );
+
+        return [$this->temuan(
+            self::PERINGATAN,
+            'alat_tanpa_cmc',
+            sprintf(
+                'Alat ini ditautkan ke kemampuan "%s", tapi %s. Semua titik di sesi ini dihitung lewat '
+                .'jalur generik (Type A + Type B) TANPA lantai CMC — jadi U95 yang terbit bisa lebih kecil '
+                .'daripada kemampuan terbaik yang diakreditasi lab. Sertifikatnya boleh terbit, tapi '
+                .'angkanya JANGAN diklaim sebagai hasil di ruang lingkup akreditasi sampai rentang & '
+                .'ketidakpastian terbaiknya dilengkapi di Master Data > Kemampuan Kalibrasi.',
+                $nama,
+                $asal,
+            ),
+            [
+                'nama_alat_kemampuan' => $nama,
+                'jumlah_baris' => $baris->count(),
+                'sumber' => $baris->pluck('sumber')->filter()->unique()->values()->all(),
+            ],
+        )];
     }
 
     /**

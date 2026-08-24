@@ -45,7 +45,19 @@ class EquipmentRequest extends FormRequest
             'nama_alat_kemampuan' => [
                 'sometimes', 'nullable', 'string', 'max:255',
                 Rule::exists('calibration_capabilities', 'nama_alat')
-                    ->where('equipment_category_id', $this->resolveEquipmentCategoryId($organizationId, $equipment)),
+                    ->where('equipment_category_id', $this->resolveEquipmentCategoryId($organizationId, $equipment))
+                    // `deleted_at` disaring TANGAN — `Rule::exists` nembak
+                    // tabelnya langsung, bukan lewat model, jadi saringan
+                    // bawaan `SoftDeletes` nggak ikut. Sejak baris kemampuan
+                    // bisa dinonaktifkan admin (migrasi 2026_08_24_100000),
+                    // tanpa baris ini nama alat yang UDAH dimatiin masih lolos
+                    // validasi dan bisa ditautkan ke alat baru. Yang kejadian
+                    // sesudahnya senyap: `GumCalculator` nggak akan pernah nemu
+                    // barisnya (kefilter `SoftDeletes` di sana), sesinya jatuh
+                    // ke jalur generik tanpa lantai CMC, dan sertifikatnya
+                    // terbit dengan U95 yang lebih kecil dari yang
+                    // diakreditasi.
+                    ->whereNull('deleted_at'),
             ],
             'merk' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],

@@ -76,6 +76,10 @@ class FilamentAccessTest extends TestCase
             '/admin/customers',
             '/admin/standards',
             '/admin/equipment-categories',
+            // Master kemampuan kalibrasi (CMC). Kolom `Rentang` & `CMC (U95)`
+            // di tabelnya dihitung dari method model, bukan kolom mentah — itu
+            // jenis kesalahan yang cuma ketahuan waktu halamannya dibuka.
+            '/admin/calibration-capabilities',
             '/admin/users',
             '/admin/calibration-sessions',
             '/admin/certificates',

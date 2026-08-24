@@ -105,6 +105,22 @@ class CalibrationCapabilitySeeder extends Seeder
 
     public function run(): void
     {
+        // Pencatatan audit dimatikan khusus buat seeder ini.
+        //
+        // Modelnya sekarang pakai trait `Diaudit` — perlu, karena baris yang
+        // ditambah/diubah admin & teknisi HARUS ninggalin jejak. Tapi seeder ini
+        // nulis 151 baris sekaligus tanpa ada manusia yang bisa dituding
+        // (`Auth::id()` null di CLI), dan riwayat perubahan yang isinya 151
+        // baris "dibikin oleh entah siapa" tiap deploy berhenti bisa dibaca —
+        // yang dicari asesor jadi ketimbun. Persis kasus yang disebut docblock
+        // `Diaudit::$auditAktif`.
+        CalibrationCapability::tanpaAudit(function (): void {
+            $this->tulisDariLampiran();
+        });
+    }
+
+    private function tulisDariLampiran(): void
+    {
         $path = database_path('data/kemampuan-kalibrasi.json');
 
         if (! is_file($path)) {
@@ -128,9 +144,31 @@ class CalibrationCapabilitySeeder extends Seeder
             // milik delapan seeder per-alat berikut `u_temperature`-nya, dan
             // seluruh jalur budget master mati diam-diam sampai ada yang
             // kepikiran nyeed ulang satu-satu. Lihat [DISEED_TERPISAH].
+            //
+            // Saringan `sumber` nambal lubang KEDUA yang bentuknya sama persis,
+            // dan yang kali ini korbannya orang, bukan angka. Sejak admin bisa
+            // ngelola daftar nama alat dari panel dan teknisi bisa nambah
+            // sendiri dari lapangan, tabel ini nggak lagi cuma berisi salinan
+            // lampiran akreditasi. Tanpa saringan ini, satu `db:seed
+            // --class=CalibrationCapabilitySeeder` — perintah yang wajar
+            // dijalanin tiap deploy — ngehapus SEMUA nama alat buatan admin &
+            // teknisi di sepuluh kategori sekaligus. Yang kelihatan bukan
+            // error: alat yang kemarin ada di dropdown teknisi hari ini nggak
+            // ada, dan alat pelanggan yang udah nunjuk ke situ
+            // (`equipments.nama_alat_kemampuan`) diam-diam turun ke jalur
+            // hitung generik.
+            //
+            // `forceDelete()`, bukan `delete()`: modelnya udah pakai
+            // `SoftDeletes`. Kalau cuma di-soft-delete, tiap kali seeder
+            // dijalanin dia ninggalin 151 baris mati di tabel, dan
+            // `updateOrCreate()` di seeder per-alat nggak bisa lihat baris
+            // soft-deleted — jadi barisnya numpuk terus tiap deploy. Yang
+            // dibuang di sini emang punya seeder ini sendiri dan ditulis ulang
+            // beberapa baris di bawah, jadi nggak ada riwayat yang hilang.
             $category->capabilities()
+                ->where('sumber', CalibrationCapability::SUMBER_AKREDITASI)
                 ->whereNotIn('nama_alat', self::DISEED_TERPISAH)
-                ->delete();
+                ->forceDelete();
 
             foreach ($kelompok['alat'] as $alat) {
                 if (in_array($alat['nama_alat'], self::DISEED_TERPISAH, true)) {
