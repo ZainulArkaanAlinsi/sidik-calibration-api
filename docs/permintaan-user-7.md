@@ -120,7 +120,7 @@ berkas profil.
 | Gel. | Isi | Status |
 |---|---|---|
 | G0 | Sertifikat Insitu, draf tanpa tanggal, ruangan ke-16, cabut UI pindai (perm. 3) | **TERKIRIM** — di `main`, ada di APK **v1.0.42** |
-| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di 12/12 profil, dijaga `SemuaProfilLembarKerjaTest` |
+| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di **17/17** profil, dijaga `SemuaProfilLembarKerjaTest` (87 test = 17×5 aturan per-profil + 2 aturan lintas-profil) |
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
@@ -133,7 +133,7 @@ Supaya tidak dibangun ulang:
 - Alur berjenjang 2 langkah di HP **sudah jalan** — kategori Suhu sudah menampilkan 11 alat,
   termasuk TITS dan TIDS.
 - `lokasi` (lab/onsite), tabel `rooms`, `room_id` & `lokasi_nama` di sesi, endpoint CRUD ruangan,
-  layar master ruangan di HP. `lokasi_nama` baru terpasang di 2 dari 12 profil.
+  layar master ruangan di HP. `lokasi_nama` baru terpasang di 2 profil waktu permintaan 2 dimulai.
 - Status `draft` + filter `?status=draft` + tombol Simpan Draf di setiap halaman lembar kerja.
 - Seluruh backend OCR (lihat perm. 7).
 - `AppMotion` + `TampilMasuk` — animasi sudah ada dan sudah dijaga test. Aturannya sengaja:
