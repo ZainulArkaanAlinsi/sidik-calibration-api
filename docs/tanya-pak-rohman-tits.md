@@ -43,8 +43,9 @@ Rumusnya harusnya ambil 1000 (koreksi −0,15), tapi hasil di selnya 1200
 **Kalau seri gitu ambil yang mana? Dan titik yang jauh dari tabel sebaiknya
 diinterpolasi nggak?**
 
-**7. Kolom U95 Type K Yokogawa di file Source isinya minus** (−0,06 s/d −0,31) —
-itu deret koreksi yang kesalin ke kolom U95. Sekarang saya tolak, jadi sesi Type
+**7. Kolom U95 Type K Yokogawa di file Source isinya minus** — 13 dari 16 baris,
+dari −0,0025 sampai −0,31 (sel `O35:O47`). Itu deret koreksi yang kesalin ke
+kolom U95. Sekarang saya tolak, jadi sesi Type
 K mode Source jatuh ke CMC.
 **Minta angka U95 yang bener, Pak.**
 

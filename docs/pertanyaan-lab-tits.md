@@ -154,7 +154,9 @@ peringatan kalau jaraknya lebih dari 50 °C.
 
 ## 7. Kolom U95 `Type K` Yokogawa di workbook Source berisi angka negatif
 
-`STANDAR KALIBRATOR!N32:N47` (tabel **U95**) berisi −0,06 sampai −0,31 — itu
+`STANDAR KALIBRATOR!O35:O47` (tabel **U95**, kolom O = Yokogawa Type K) berisi
+**13 dari 16 baris bernilai negatif** — dari −0,0025 di titik 25 °C sampai −0,31 di
+1200 °C. Itu
 persis deret **koreksi** dari tabel di atasnya, tersalin ke kolom yang salah.
 U95 tidak bisa negatif.
 
@@ -191,13 +193,15 @@ diisi nol waktu master dibuat.
 
 Baris yang begitu, di kalibrator **`constant`**:
 
-| tipe sensor | titik |
-|---|---|
-| Type N | **1000 °C**, 1200 °C |
-| Type K | 1200 °C |
-| Type R | 1200 °C |
-| Type S | 1400 °C, 1700 °C |
-| RTD | −100 °C |
+| tipe sensor | titik | isi sel |
+|---|---|---|
+| Type N | **1000 °C**, 1200 °C | koreksi 0 **dan** U95 0 |
+| Type K | 1200 °C | koreksi 0 **dan** U95 0 |
+| Type S | 1400 °C, 1700 °C | koreksi 0 **dan** U95 0 |
+| RTD | −100 °C | koreksi 0 **dan** U95 0 |
+| Type N | 1400 °C, 1700 °C | koreksi 0, kolom U95 **kosong** |
+
+Isinya sama persis di workbook Measure maupun Source.
 
 **Dokumen ini sebelumnya menyebut hal itu tidak berdampak karena "tidak ada sesi
 yang mencapai titik-titik itu". Itu keliru, dan ini koreksinya.**
