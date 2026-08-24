@@ -143,6 +143,18 @@ class DoMeterProfile extends CalibrationProfile
         return 'DO Meter';
     }
 
+    /**
+     * Lampiran akreditasi & DATABASE nulis "DO Meter" (pakai spasi); sebagian
+     * data alat pelanggan nulisnya nempel. Dua-duanya didaftarin — yang nyampe
+     * ke sini teks bebas, bukan enum.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['DOMeter'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_DO_METER;

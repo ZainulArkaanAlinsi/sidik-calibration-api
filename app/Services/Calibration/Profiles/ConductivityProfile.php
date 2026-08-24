@@ -283,6 +283,19 @@ class ConductivityProfile extends CalibrationProfile
         return 'Conductivitymeter';
     }
 
+    /**
+     * Lampiran akreditasi nulis "Conductivitymeter" (satu kata, lihat
+     * [namaAlatKemampuan]) sementara sertifikat & lembar kerjanya nulis
+     * "Conductivity Meter" (dua kata). Alasannya sama kayak Chlorin/Chlorine:
+     * yang nyampe ke sini teks bebas, bukan enum.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Conductivity Meter'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_CONDUCTIVITY;

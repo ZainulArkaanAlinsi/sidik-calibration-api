@@ -152,6 +152,18 @@ class AutoclaveProfile extends CalibrationProfile
         return 'Autoklaf';
     }
 
+    /**
+     * Lampiran akreditasi LK-285-IDN no. 48 nulis "Autoklaf" (Indonesia, lihat
+     * [namaAlatKemampuan]); lembar kerjanya SIDIK-FM-CAL-0539 & DATABASE nulis
+     * "Autoclave" (Inggris). Dua-duanya beredar, jadi dua-duanya didaftarin.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Autoclave'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_AUTOCLAVE;
