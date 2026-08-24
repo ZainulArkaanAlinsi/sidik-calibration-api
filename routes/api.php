@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\FormulaController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\KemampuanKalibrasiController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
@@ -201,6 +202,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
+
+        // Nama alat baru buat master kemampuan kalibrasi, langsung dari HP.
+        //
+        // Ditaruh di blok `role:admin,teknisi` (bukan `role:admin` bareng master
+        // data lain) karena itu SELURUH gunanya: teknisi yang ketemu alat yang
+        // namanya belum kedaftar harus bisa lanjut kerja tanpa nunggu admin.
+        // Yang dibikin cuma NAMA-nya — angka CMC nggak bisa diisi lewat sini
+        // sama sekali (lihat `KemampuanKalibrasiRequest`), jadi teknisi nggak
+        // bisa, sengaja atau nggak, ngubah angka yang kecetak di sertifikat
+        // terakreditasi.
+        Route::post('/categories/{kode}/kemampuan', [KemampuanKalibrasiController::class, 'store']);
 
         Route::post('/calibrations', [CalibrationController::class, 'store']);
         // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja
