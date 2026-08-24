@@ -37,6 +37,7 @@ Yang benar-benar mengubah angka tercetak:
 | **A-5** | Koreksi kalibrator `constant` Type N di 1000 °C | Sel kosong yang diisi nol, **persis di batas atas akreditasi Type N**. Sebelum ditolak, U95 sesi Source turun ~17 % tanpa satu pun peringatan bunyi |
 | **B-5** | Kolom U95 Type K Yokogawa (Source) isinya minus | Sekarang ditolak, jadi sesi Type K mode Source jatuh ke CMC. Butuh angka yang benar |
 | **C-3** | Peta kolom pembacaan Enclosure | Kolom Sebaran Suhu bergeser ~0,02 °C — dan itu tercetak, tidak tertutup CMC |
+| **C-12** | Sertifikat Recorder cetak "Suhu Ruang 67 °C" padahal 24,5 °C | Salah tunjuk baris; angkanya sudah tercetak di sertifikat yang terbit |
 | **C-8** | Sensor Acuan Enclosure: nomor terkecil atau posisi tetap di chamber? | Kalau posisi tetap, aturan yang saya pakai sekarang bisa salah diam-diam di seluruh kolom Keseragaman |
 
 **A-1 dan A-2 saling menarik ke arah berlawanan**, jadi enaknya dijawab
@@ -135,13 +136,15 @@ nol waktu master dibuat.
 
 Di kalibrator `constant`:
 
-| tipe sensor | titik |
-|---|---|
-| Type N | **1000 °C**, 1200 °C |
-| Type K | 1200 °C |
-| Type R | 1200 °C |
-| Type S | 1400 °C, 1700 °C |
-| RTD | −100 °C |
+| tipe sensor | titik | isi sel |
+|---|---|---|
+| Type N | **1000 °C**, 1200 °C | koreksi 0 **dan** U95 0 |
+| Type K | 1200 °C | koreksi 0 **dan** U95 0 |
+| Type S | 1400 °C, 1700 °C | koreksi 0 **dan** U95 0 |
+| RTD | −100 °C | koreksi 0 **dan** U95 0 |
+| Type N | 1400 °C, 1700 °C | koreksi 0, kolom U95 **kosong** |
+
+Isinya sama persis di workbook Measure maupun Source.
 
 Dulu saya kira ini nggak berdampak karena titiknya ekstrem dan nggak pernah
 kepakai. **Itu keliru.** Type N **1000 °C** itu **batas atas rentang akreditasi
@@ -230,7 +233,8 @@ tanpa interpolasi; sistem cuma memunculkan peringatan kalau jaraknya lebih dari
 
 ## B-5. Kolom U95 Type K Yokogawa di file Source isinya MINUS
 
-`STANDAR KALIBRATOR!N32:N47` berisi −0,06 sampai −0,31 — itu persis deret
+`STANDAR KALIBRATOR!O35:O47` (kolom O = Yokogawa Type K) berisi **13 dari 16 baris
+bernilai negatif**, dari −0,0025 sampai −0,31. Itu persis deret
 **koreksi** dari tabel di atasnya, kesalin ke kolom U95. U95 nggak bisa negatif.
 
 **Sekarang:** ditolak. Sesi Type K mode Source nggak menyusun komponen
@@ -373,7 +377,10 @@ cocok dengan kedua master — baris "Sensor Acuan" di dua-duanya memang nomor
 terkecil (Type N mulai no. 3, Type K mulai no. 1).
 
 > Dua pertanyaan:
-> 1. **Apakah acuan memang selalu nomor terkecil?** Kalau Sensor Acuan itu
+> 1. **Kalau teknisi mengisi TIDAK urut nomor, yang jadi acuan yang mana** — yang
+   pertama diisi (sesuai catatan master) atau yang nomornya terkecil (yang dipakai
+   sistem sekarang)? Selama diisi urut, dua-duanya sama; begitu tidak urut, beda.
+2. **Apakah acuan memang selalu nomor terkecil?** Kalau Sensor Acuan itu
 >    sebenarnya **posisi tertentu di chamber** (misalnya selalu titik tengah)
 >    yang nomor termokopelnya berganti tiap sesi, aturan "nomor terkecil" bisa
 >    salah diam-diam — dan yang salah itu seluruh kolom Keseragaman. Kalau
@@ -465,6 +472,44 @@ file-nya, atau konfirmasi nilai cached sudah final.**
 
 ---
 
+## C-12. Sertifikat Recorder mencetak "Suhu Ruang" dari baris yang salah
+
+**Temuan 24 Agustus 2026, waktu menelusuri C-9.** Ini yang paling konkret dari
+seluruh dokumen: angkanya salah dan sudah tercetak di sertifikat yang terbit.
+
+Di `PERHITUNGAN FC` master Recorder ada **dua baris berlabel `"Suhu Ruang (oC)"`**:
+
+| baris | isi | rumus | hasil |
+|---|---|---|---|
+| 38 | suhu ruang **asli** | `='INPUT DATA'!D55:E55` | 24,5–24,6 °C |
+| 40 | berlabel sama | `=MAX(D37:I37)` | **67,4 °C** |
+
+Baris 37 itu **baris Indikator enclosure** — suhu ovennya, bukan suhu ruangan.
+Blok `MAX / MIN / Δt / Nilai Tengah` di baris 39–40 jelas dimaksudkan meringkas
+baris Indikator; labelnya saja yang ikut tersalin dari baris 38.
+
+Lalu sertifikat menarik dari blok itu:
+
+```
+P44 = "Suhu Ruang  :"      R44 = =H40      →  67,35 °C
+```
+
+Jadi sertifikat **0304-CAL-624** mencetak suhu ruang **67,35 °C**, padahal
+ruangannya 24,5 °C.
+
+**Cuma terjadi di master Recorder.** Master Constant/Yokogawa memakai
+`=MAX(D38:I38)` — menunjuk baris 38 yang benar, hasilnya 25,4 °C. Jadi ini
+meleset satu baris, bukan keputusan yang disengaja.
+
+**Yang dipakai sekarang:** sistem tidak menyalin bug ini — kondisi lingkungan
+diambil dari kolom sesi, bukan dari blok itu.
+
+**Yang ditanyakan:** (a) konfirmasi baris 40 master Recorder memang salah
+tunjuk, supaya master-nya dibetulkan; dan (b) apakah sertifikat 0304-CAL-624
+yang sudah terbit perlu direvisi.
+
+---
+
 # D. Di luar dua alat itu — kepakai sebelas alat
 
 ## D-1. Kondisi lingkungan yang tercetak di sertifikat
@@ -501,6 +546,7 @@ akhir**, bukan angka kelembabannya.
 | **A-5** (nol berpasangan Type N @1000) | **Ya** — U95 Source turun ~17 % sebelum diperbaiki |
 | **B-5** (U95 Type K minus) | **Ya** — sesi Type K Source sekarang jatuh ke CMC |
 | **C-3** (peta kolom pembacaan) | **Ya** — kolom Sebaran Suhu bergeser ~0,02 °C |
+| **C-12** (Suhu Ruang salah baris) | **Ya** — sertifikat 0304-CAL-624 cetak 67,35 °C, seharusnya 24,5 °C |
 | **C-7 / C-8** (kelengkapan grid, Sensor Acuan) | **Ya**, kalau jawabannya beda dari yang saya pakai |
 | B-1, B-2, B-3, B-4, C-1, C-2, C-4 | Tidak di sesi contoh — tertutup lantai CMC, tapi berpengaruh di sesi lain |
 | **C-9** (baris Suhu Ruang) | Belum — layarnya belum ada. Tapi kalau nggak diputuskan sebelum frontend jadi, angka teknisi hilang diam-diam |
