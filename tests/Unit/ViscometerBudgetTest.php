@@ -500,6 +500,7 @@ class ViscometerBudgetTest extends TestCase
 
         foreach ($rentang as [$min, $maks, $cmc]) {
             CalibrationCapability::create([
+                'organization_id' => $kategori->organization_id,
                 'equipment_category_id' => $kategori->id,
                 'nama_alat' => 'Viscometer',
                 'parameter' => "viskositas (cP)-{$min}",
@@ -523,6 +524,10 @@ class ViscometerBudgetTest extends TestCase
             'toleransi' => null,
         ]);
         $equipment->equipment_category_id = $kategori->id;
+        // Alat WAJIB punya organisasi: kandidat CMC disaring per lab, dan alat
+        // tanpa organisasi ditolak keras di GumCalculator. Di produksi kolom ini
+        // nggak pernah kosong; fixture yang ngosongin cuma bikin test bohong.
+        $equipment->organization_id = $kategori->organization_id;
 
         return $equipment;
     }

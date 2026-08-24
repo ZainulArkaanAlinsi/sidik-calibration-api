@@ -822,6 +822,15 @@ class SpectrophotometerProfile extends CalibrationProfile
                 $equipment->equipment_category_id !== null,
                 fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
             )
+            // Organisasi disaring juga, bukan cuma kategori. `organization_id`
+            // di baris kemampuan bisa BEDA dari organisasi kategorinya (baris
+            // milik lab A yang nangkring di kategori lab B), dan baris kayak
+            // gitu lolos saringan kategori bulat-bulat — lalu angka CMC lab A
+            // kepasang di sertifikat lab B.
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
             ->whereIn('parameter', $parameter)
             ->get()
             ->keyBy('parameter');
@@ -982,7 +991,7 @@ class SpectrophotometerProfile extends CalibrationProfile
                     'judul' => 'CALIBRATION DATA',
                     'field' => [
                         $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
-                            ['nilai' => 'lab', 'label' => 'In lab'],
+                            ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
                         // Kalibrasi di tempat pelanggan ditulis `Insitu
@@ -991,9 +1000,15 @@ class SpectrophotometerProfile extends CalibrationProfile
                         // satu kunjungan bisa dikerjakan di pabrik lain milik
                         // grup yang sama, dan yang sah di dokumen adalah tempat
                         // alatnya beneran diukur.
-                        $this->field('lokasi_nama', 'Nama Lokasi (kalau Insitu)', 'teks'),
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
                         $this->field('teknisi.kode', 'Technician ID', 'teks', sumber: 'otomatis'),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         $this->field(
                             'calibration_method_id',
                             '2. Calibration Methode',
@@ -1261,6 +1276,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         array $pilihan = [],
         bool $hanyaAdmin = false,
         bool $diKertas = true,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -1276,6 +1292,7 @@ class SpectrophotometerProfile extends CalibrationProfile
             // ngisi sambil ngeliat kertas nggak nyari kotak yang nggak ada di
             // tangannya.
             'di_kertas' => $diKertas,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 

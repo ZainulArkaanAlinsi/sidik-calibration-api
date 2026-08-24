@@ -459,7 +459,17 @@ class DoMeterProfile extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        // Kolom teks bebas nama tempat buat sesi Insitu. Tanpa
+                        // dia sertifikat Insitu kecetak nama RUANG LAB — tempat
+                        // yang alatnya nggak pernah ke sana.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         $this->field(
                             'calibration_method_id',
                             '2. Calibration Methode',
@@ -637,6 +647,7 @@ class DoMeterProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -647,6 +658,7 @@ class DoMeterProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

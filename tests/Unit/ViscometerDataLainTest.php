@@ -200,7 +200,7 @@ class ViscometerDataLainTest extends TestCase
                 $this->profil->toleransiTitik(
                     1000.0,
                     $rataRata,
-                    new \App\Models\Equipment,
+                    new Equipment,
                     ['tk' => $model, 'spindle' => $spindle, 'rpm' => $rpm],
                 ),
                 1e-9,
@@ -217,7 +217,7 @@ class ViscometerDataLainTest extends TestCase
      */
     public function test_tanpa_spindle_atau_rpm_toleransi_null(): void
     {
-        $alat = new \App\Models\Equipment;
+        $alat = new Equipment;
 
         $this->assertNull($this->profil->toleransiTitik(1000.0, 900.0, $alat, [
             'tk' => 'HA', 'spindle' => null, 'rpm' => 62.0,
@@ -570,8 +570,8 @@ class ViscometerDataLainTest extends TestCase
     private function interpolasi(array $tabel, float $suhu, int $kolom): float
     {
         for ($i = 0; $i < count($tabel) - 1; $i++) {
-            [$t1, , ] = $tabel[$i];
-            [$t2, , ] = $tabel[$i + 1];
+            [$t1] = $tabel[$i];
+            [$t2] = $tabel[$i + 1];
 
             if ($suhu >= $t1 && $suhu <= $t2) {
                 $a = $tabel[$i][$kolom];
@@ -647,6 +647,7 @@ class ViscometerDataLainTest extends TestCase
 
         foreach (self::RENTANG_CMC as [$min, $maks, $cmc]) {
             CalibrationCapability::create([
+                'organization_id' => $kategori->organization_id,
                 'equipment_category_id' => $kategori->id,
                 'nama_alat' => 'Viscometer',
                 'parameter' => "viskositas (cP)-{$min}",
@@ -669,6 +670,9 @@ class ViscometerDataLainTest extends TestCase
             'toleransi' => null,
         ]);
         $alat->equipment_category_id = $kategori->id;
+        // Lihat catatan di ChlorineBudgetTest: alat tanpa organisasi bikin
+        // saringan CMC nggak nemu apa-apa, dan angkanya turun tanpa error.
+        $alat->organization_id = $kategori->organization_id;
 
         return $alat;
     }

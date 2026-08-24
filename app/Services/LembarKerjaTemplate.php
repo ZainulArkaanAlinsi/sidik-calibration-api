@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Standard;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 
 /**
  * Bentuk baku Lembar Kerja pH Meter (SIDIK-FM-CAL-0509_Rev.4).
@@ -259,10 +260,22 @@ class LembarKerjaTemplate
                     'judul' => 'CALIBRATION DATA',
                     'field' => [
                         $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
-                            ['nilai' => 'lab', 'label' => 'In lab'],
+                            ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        // Kalibrasi di tempat pelanggan kecetak `Insitu (PT. LDC)`
+                        // di sertifikat, dan nama tempatnya DIKETIK teknisi, bukan
+                        // disalin dari pelanggan pemilik alat: satu kunjungan bisa
+                        // dikerjain di pabrik lain milik grup yang sama, dan yang
+                        // sah di dokumen itu tempat alatnya beneran diukur.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: CalibrationProfile::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: CalibrationProfile::TAMPIL_KALAU_INLAB,
+                        ),
                         // "Calibration Methode" tetap administratif — di kertas
                         // nilainya udah TERCETAK (SIDIK-IK-CAL-0506), bukan
                         // kolom kosong yang diisi teknisi.
@@ -440,6 +453,7 @@ class LembarKerjaTemplate
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -454,6 +468,11 @@ class LembarKerjaTemplate
             // (spesifikasi poin 1), dan kiriman teknisi buat field ini dibuang
             // backend.
             'hanya_admin' => $hanyaAdmin,
+            // Syarat tampil yang GENERIK — bentuknya & alasannya di
+            // `CalibrationProfile::TAMPIL_KALAU_INSITU`. Selalu ikut dikirim
+            // (null = selalu tampil) supaya HP nggak perlu bedain "field ini
+            // belum punya syarat" dari "backendnya versi lama".
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

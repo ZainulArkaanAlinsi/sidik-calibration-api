@@ -98,15 +98,21 @@ use Carbon\Carbon;
 class TitsProfile extends CalibrationProfile
 {
     /**
-     * Nomor formulir LEMBAR KERJA-nya belum ada.
+     * Nomor formulir lembar kerja, dari footer PDF-nya sendiri:
+     * `Page 1 of 1   Revise : 3   SIDIK-FM-CAL-0505`.
      *
-     * Seluruh berkas cuma memuat `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet
-     * `SERTIFIKAT` — itu formulir sertifikat, dipakai bersama semua alat, bukan
-     * lembar kerjanya. Sengaja `null`, bukan ditebak: nomor formulir itu dokumen
-     * terkendali, dan menaruh nomor karangan di lembar yang ikut diaudit lebih
-     * mahal daripada kolom kosong yang jelas kosong. Sama seperti Gas Detector.
+     * Sampai 24 Agustus 2026 ini sengaja `null`, dan alasannya waktu itu benar:
+     * seluruh workbook cuma memuat `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet
+     * `SERTIFIKAT` — itu formulir SERTIFIKAT, dipakai bersama semua alat, bukan
+     * lembar kerjanya. Nomor formulir itu dokumen terkendali, jadi menaruh nomor
+     * karangan di lembar yang ikut diaudit lebih mahal daripada kolom kosong
+     * yang jelas kosong.
+     *
+     * Yang berubah bukan aturannya, tapi buktinya: formulir cetaknya akhirnya
+     * ada, dan nomornya kebaca langsung dari footer-nya. Jadi ini BUKAN tebakan
+     * yang akhirnya diambil — ini nomor yang akhirnya punya sumber.
      */
-    public const KODE_DOKUMEN = null;
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0505_Rev.3';
 
     /** Metode kalibrasi, `DATABASE!C70` baris 2 — yang tercetak di sertifikat. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0502_Rev.3';
@@ -217,6 +223,30 @@ class TitsProfile extends CalibrationProfile
      * yang menentukan tabel koreksi mana yang dibaca ([TabelKalibratorSuhu]).
      *
      * @var list<array{label: string, cocok: list<string>}>
+     */
+    /**
+     * ## JANGAN dibalikin ke Victor walau kertasnya nulis Victor
+     *
+     * Formulir cetak `SIDIK-FM-CAL-0505 Rev.3` masih memuat baris
+     * `Temperature Calibrator/Victor/Victor 14+/992613877`. Yang benar Yokogawa,
+     * dan kertasnya yang ketinggalan revisi. Buktinya berlapis, dari workbook
+     * TITS yang sekarang dipakai:
+     *
+     *  1. Tabel `Standar_Meter` (`DATABASE!Q13:U16`) — satu-satunya tabel yang
+     *     menentukan identitas standar yang dicetak — barisnya Constant/40T dan
+     *     DUA baris Yokogawa CA 150 Handy Cal (23P1005). Victor nggak ada.
+     *  2. `FORM VALIDASI` rev. 11 (24 Mei 2024, PIC "HN") menulis harfiah:
+     *     "Remove std. Victor / Add std kalibrator yokogawa".
+     *  3. Sheet tabel koreksi Victor sudah DIHAPUS: defined name
+     *     `Index_Victor_PT100`, `Index_Victor_TypeK`, `Index_Victor_TypeN`
+     *     semuanya `#REF!`. Secara fisik nggak ada tabel Victor buat dibaca.
+     *  4. "Victor 14+ / 992613877" masih ada di berkas, tapi cuma di CACHE
+     *     tautan luar — snapshot beku dari `Master Olah Data_Suhu_TIDS 2022.xlsm`.
+     *     Nggak ada satu rumus pun yang mbacanya.
+     *
+     * Kalau daftar ini "dibetulkan" biar cocok sama kertas, yang terjadi bukan
+     * label yang berubah — tapi tabel koreksi yang dibaca jadi tabel yang nggak
+     * ada, dan seluruh kolom koreksi ikut salah tanpa satu pun error.
      */
     public const STANDARD_TERCETAK = [
         ['label' => 'Temperature Calibrator Constant 40T', 'cocok' => ['Temperature Calibrator Constant 40T', '99875850']],
@@ -818,6 +848,13 @@ class TitsProfile extends CalibrationProfile
      * ketujuh tipe sensor saling tumpang tindih (Type K −20…1000 dan Type N
      * −20…1000 identik), jadi pencocokan berbasis rentang akan memulangkan baris
      * pertama yang muat dan diam-diam memakai CMC tipe lain.
+     *
+     * `$equipment` dipakai buat MENGUNCI ORGANISASI. Sebelumnya parameter itu
+     * diterima tapi tidak pernah dibaca, jadi pencarian ini menyisir SELURUH
+     * `calibration_capabilities` lintas lab: `first()` memulangkan baris TITS
+     * lab mana pun yang kebetulan lebih dulu ke-insert, dan angka CMC-nya
+     * langsung jadi lantai U95 di sertifikat lab yang lagi kerja. Satu-PT bikin
+     * itu tidak pernah kelihatan; PT kedua bikin dia jadi temuan audit.
      */
     private function kemampuanTipeSensor(Equipment $equipment, string $tipeSensor): ?CalibrationCapability
     {
@@ -830,6 +867,10 @@ class TitsProfile extends CalibrationProfile
         return CalibrationCapability::query()
             ->where('nama_alat', $this->namaAlatKemampuan())
             ->where('parameter', $parameter)
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
             ->first();
     }
 
@@ -984,7 +1025,17 @@ class TitsProfile extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        // Kolom teks bebas nama tempat buat sesi Insitu. Tanpa
+                        // dia sertifikat Insitu kecetak nama RUANG LAB — tempat
+                        // yang alatnya nggak pernah ke sana.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         $this->field(
                             'calibration_method_id',
                             '4. Calibration Methode',
@@ -1174,6 +1225,7 @@ class TitsProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -1184,6 +1236,7 @@ class TitsProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class EquipmentForm
 {
@@ -35,9 +36,28 @@ class EquipmentForm
                             ->searchable()
                             ->preload()
                             ->required(),
+                        // Dua dropdown di bawah DISARING per organisasi. Bukan
+                        // kerapian tampilan.
+                        //
+                        // `organization_id` alat ini dicap dari admin yang login
+                        // (Hidden di atas), sementara dua dropdown ini dulu
+                        // nawarin isi SELURUH lab. Alat lab A yang kategorinya
+                        // milik lab B bikin `GumCalculator::kemampuanUntukTitik()`
+                        // — yang nyaring kandidat CMC ke organisasi ALAT — nggak
+                        // nemu kandidat sama sekali, jadi sesinya jatuh ke jalur
+                        // generik tanpa lantai CMC dan U95 yang terbit lebih
+                        // kecil daripada yang diakreditasi lab. Diam, tanpa
+                        // error, di sertifikat yang ngaku terakreditasi.
                         Select::make('equipment_category_id')
                             ->label('Kategori')
-                            ->relationship('category', 'nama')
+                            ->relationship(
+                                'category',
+                                'nama',
+                                fn (Builder $query): Builder => $query->where(
+                                    'organization_id',
+                                    User::yangLogin()?->organization_id,
+                                ),
+                            )
                             ->searchable()
                             ->preload()
                             ->required()
@@ -50,12 +70,18 @@ class EquipmentForm
                         // alat yang sama, bukan cuma kategori yang sama — lihat
                         // komentar GumCalculator::kemampuanUntukTitik(). Opsinya
                         // dibatasin ke nama_alat yang beneran ada di kategori
-                        // yang lagi dipilih, biar nggak salah link/typo.
+                        // yang lagi dipilih DAN milik organisasi ini, biar nggak
+                        // salah link/typo. Saringan organisasinya bukan dobel:
+                        // baris kemampuan bisa punya `organization_id` lab lain
+                        // sambil nunjuk kategori di sini, dan nama kayak gitu
+                        // yang ketautan bikin angka CMC lab sebelah mendarat di
+                        // sertifikat lab ini.
                         Select::make('nama_alat_kemampuan')
                             ->label('Jenis kemampuan kalibrasi (CMC)')
                             ->helperText('Opsional. Kosongkan kalau alat ini belum punya data kemampuan kalibrasi khusus — kalibrasinya tetap jalan lewat perhitungan Type A+B generik.')
                             ->options(fn (Get $get): array => CalibrationCapability::query()
                                 ->where('equipment_category_id', $get('equipment_category_id'))
+                                ->milikOrganisasi(User::yangLogin()?->organization_id)
                                 ->distinct()
                                 ->pluck('nama_alat', 'nama_alat')
                                 ->all())

@@ -524,7 +524,7 @@ class TidsProfile extends CalibrationProfile
             ];
         }
 
-        if ($this->kemampuanTids() === null) {
+        if ($this->kemampuanTids($sesi->equipment) === null) {
             $peringatan[] = [
                 'kode' => 'tids_cmc_kosong',
                 'pesan' => sprintf(
@@ -703,12 +703,19 @@ class TidsProfile extends CalibrationProfile
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
-                $this->field('room_id', 'Ruangan (Inlab)', 'pilihan', sumber: 'master_ruangan'),
+                $this->field(
+                    'room_id',
+                    'Ruangan (Inlab)',
+                    'pilihan',
+                    sumber: 'master_ruangan',
+                    tampilKalau: self::TAMPIL_KALAU_INLAB,
+                ),
                 // Kolom teks bebas nama tempat buat Insitu. Ikut sejak profil
                 // ini lahir, bukan ditambal belakangan seperti sepuluh profil
                 // lama yang sertifikat Insitu-nya sempat mencetak nama ruang
-                // lab padahal kerjanya di tempat pelanggan.
-                $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks'),
+                // lab padahal kerjanya di tempat pelanggan. Sepuluh itu udah
+                // nyusul — sekarang semua lembar punya pasangan kotak ini.
+                $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
                 $this->field(
                     'thermohygro_standard_id',
                     'Thermohygro Used',
@@ -1101,11 +1108,23 @@ class TidsProfile extends CalibrationProfile
      * bagian dari perhitungan yang belum ada. Menaruh logikanya sekarang
      * berarti menulis separuh jalur budget yang tidak ada yang bisa
      * memverifikasinya.
+     *
+     * Tapi DISARING per organisasi, dan itu wajib biarpun yang dicari cuma
+     * "ada apa nggak". Tanpa saringan, `first()` menyisir seluruh
+     * `calibration_capabilities` lintas lab: lab yang belum punya baris TIDS
+     * sendiri TIDAK akan diperingatkan selama ada lab lain yang punya, dan
+     * lembar kerjanya lolos tanpa satu pun tanda bahwa CMC-nya kosong.
+     * Peringatan yang mendiamkan diri karena data lab sebelah itu lebih buruk
+     * daripada tidak ada peringatan sama sekali.
      */
-    private function kemampuanTids(): ?CalibrationCapability
+    private function kemampuanTids(?Equipment $equipment = null): ?CalibrationCapability
     {
         return CalibrationCapability::query()
             ->where('nama_alat', $this->namaAlatKemampuan())
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
             ->first();
     }
 
@@ -1121,6 +1140,7 @@ class TidsProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -1131,6 +1151,7 @@ class TidsProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

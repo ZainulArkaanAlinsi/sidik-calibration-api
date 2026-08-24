@@ -15,6 +15,7 @@ use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
+use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
@@ -104,10 +105,17 @@ class CalibrationProfileRegistry
     }
 
     /**
-     * Profil default kalau alat/nama nggak ketemu — pH, karena itu jalur yang
-     * paling matang & udah kepakai. Alat lama yang `nama_alat_kemampuan`-nya
-     * kosong nggak boleh bikin request meledak; dia jatuh ke pH apa adanya
-     * (perilaku persis sebelum ada registry).
+     * Profil default buat nama yang KOSONG — pH, karena itu jalur yang paling
+     * matang & udah kepakai. Alat lama yang `nama_alat_kemampuan`-nya kosong
+     * nggak boleh bikin request meledak; dia jatuh ke pH apa adanya (perilaku
+     * persis sebelum ada registry).
+     *
+     * DULU ini juga jadi jawaban buat nama yang keisi tapi nggak dikenali, dan
+     * di situ dia racun: Buret Digital dihitung sebagai pH Meter. Sekarang
+     * yang itu dapat `ProfilGenerik` — lihat [untukNamaAlat]. Yang masih
+     * manggil [default] langsung tinggal jalur yang emang nggak punya alat
+     * sama sekali (`RumusKalibrasi::versiBerlaku()`, `formulaGumPh()`,
+     * `PerhitunganBuilder` buat sesi tanpa `equipment`).
      */
     public function default(): CalibrationProfile
     {
@@ -126,24 +134,49 @@ class CalibrationProfileRegistry
     }
 
     /**
-     * Profil dari nama jenis alat (mis. "Turbidimeter"), tanpa peduli
-     * huruf besar/kecil & spasi pinggir. Balik [default] kalau nggak ketemu.
+     * Profil yang MENGHITUNG sesi buat sebuah nama jenis alat. Selalu balik
+     * profil — nggak pernah null.
      *
-     * Cocoknya HARUS persis (sesudah dirapikan), dan fallback-nya pH. Jangan
-     * pakai ini buat ngasih tau HP lembar kerjanya apa — buat itu ada
-     * [kodeProfilDariNama] yang boleh balik null.
+     * ## Aturan cocoknya SATU, sama persis dengan [kodeProfilDariNama]
+     *
+     * Dua-duanya lewat [cocokkanNama]. Ini bukan kerapian: sampai 24 Agt 2026
+     * masing-masing punya salinan aturan sendiri, dan salinannya BEDA — yang
+     * ini cocok PERSIS & nggak baca `aliasNama()` sama sekali, yang itu baca
+     * alias & nerima kunci yang nempel di tengah nama. Akibatnya diam dan
+     * mahal: buat "Temperature Indikator With Sensors" — judul lembar kerja
+     * TIDS-nya sendiri — HP dapat lembar TIDS sementara server ngitung pakai
+     * PhMeterProfile, jadi `TidsProfile::hitungPerGrup()` yang seluruh
+     * penjagaan angkanya bertumpu di situ nggak pernah kepanggil dan U95
+     * lahir dari lantai CMC. Bentuk yang sama juga kena "Water Bath",
+     * "Turbidimeter Hach", "Incubator", dan tiap nama alat pelanggan yang
+     * nggak byte-exact. Kalau nanti aturannya mau diubah, ubah di
+     * [cocokkanNama] — jangan bikin salinan ketiga.
+     *
+     * ## Bedanya cuma di yang NGGAK ketemu
+     *
+     * [kodeProfilDariNama] balik `null` = "pakai form generik". Di sini nggak
+     * ada null, jadi padanannya dua:
+     *
+     *  - **nama KOSONG** → [default] (pH). Kompatibilitas yang sengaja dijaga:
+     *    alat lama yang `nama_alat_kemampuan`-nya belum pernah keisi udah ada
+     *    di produksi sejak sebelum kolomnya lahir, dan nama kosong itu "belum
+     *    ngaku apa-apa", bukan "jelas bukan pH". Perilakunya persis kayak
+     *    sebelum registry ada.
+     *  - **nama KEISI tapi nggak dikenali** (Buret Digital, Termometer Gelas,
+     *    …) → [ProfilGenerik]. Ini yang DICABUT dari pH: alat yang jelas-jelas
+     *    bukan pH nggak boleh dicap rumus `gum-ph` di jejak audit, apalagi
+     *    dapat lima komponen budget pH. U95-nya sendiri nggak geser — lihat
+     *    docblock `ProfilGenerik`.
      */
     public function untukNamaAlat(string $nama): CalibrationProfile
     {
-        $cari = mb_strtolower(trim($nama));
+        $cocok = $this->cocokkanNama($nama);
 
-        foreach ($this->profil as $p) {
-            if (mb_strtolower($p->namaAlatKemampuan()) === $cari) {
-                return $p;
-            }
+        if ($cocok !== null) {
+            return $cocok;
         }
 
-        return $this->default();
+        return self::rapikanNama($nama) === '' ? $this->default() : new ProfilGenerik;
     }
 
     /**
@@ -167,12 +200,24 @@ class CalibrationProfileRegistry
      * ada yang cocok. Ini yang dikirim `GET /api/categories/{kode}` ke HP lewat
      * field `profil`.
      *
-     * Beda TAJAM dari [untukNamaAlat] yang di atas: yang itu SELALU balik profil
-     * dan jatuh ke pH kalau nggak ketemu (perilaku lama yang sengaja dijaga buat
-     * jalur hitung). Buat mobile fallback itu racun — alat generik bakal dikirim
-     * sebagai `ph_meter`, teknisi dapat lembar pH buat Buret, dan nggak ada satu
-     * pun error yang muncul. `null` di sini artinya "pakai form generik", dan itu
-     * jawaban yang bener, bukan kegagalan.
+     * Aturan cocoknya SAMA PERSIS dengan [untukNamaAlat] — dua-duanya lewat
+     * [cocokkanNama]. Yang beda cuma jawaban waktu nggak ketemu: di sini
+     * `null` ("pakai form generik", jawaban yang bener, bukan kegagalan),
+     * di sana `ProfilGenerik` / pH buat nama kosong. Lihat [untukNamaAlat].
+     */
+    public function kodeProfilDariNama(string $nama): ?string
+    {
+        return $this->cocokkanNama($nama)?->kode();
+    }
+
+    /**
+     * SATU-SATUNYA tempat yang tahu cara nyocokin nama alat ke profil.
+     *
+     * Dipakai [kodeProfilDariNama] (lembar kerja yang dikirim ke HP) DAN
+     * [untukNamaAlat] (profil yang menghitung). Dua pertanyaan itu wajib
+     * dijawab sama — kalau nggak, teknisi ngisi lembar satu alat sementara
+     * server ngitung pakai aturan alat lain, dan nggak ada satu pun error yang
+     * muncul di sepanjang jalur itu.
      *
      * Pencocokannya sengaja dibikin PERSIS sama dengan yang dulu di HP
      * (`profilLembarKerjaUntuk` di `instrument_picker_screen.dart`), karena
@@ -186,7 +231,7 @@ class CalibrationProfileRegistry
      *    Meter Mettler Toledo") — nggak ada satu pun yang cocok persis;
      *  - kunci terpanjang dicoba duluan, lihat [indeksEjaan].
      */
-    public function kodeProfilDariNama(string $nama): ?string
+    private function cocokkanNama(string $nama): ?CalibrationProfile
     {
         $cari = self::rapikanNama($nama);
 
@@ -198,12 +243,12 @@ class CalibrationProfileRegistry
         // seluruh indeks, dan hasilnya nggak mungkin beda dari penelusuran di
         // bawah (kunci itu pasti nempel di dirinya sendiri).
         if (isset($this->indeksEjaan[$cari])) {
-            return $this->indeksEjaan[$cari]->kode();
+            return $this->indeksEjaan[$cari];
         }
 
         foreach ($this->indeksEjaan as $ejaan => $p) {
             if (str_contains($cari, $ejaan)) {
-                return $p->kode();
+                return $p;
             }
         }
 
