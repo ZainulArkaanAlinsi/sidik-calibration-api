@@ -37,7 +37,9 @@ Yang benar-benar mengubah angka tercetak:
 | **A-5** | Koreksi kalibrator `constant` Type N di 1000 °C | Sel kosong yang diisi nol, **persis di batas atas akreditasi Type N**. Sebelum ditolak, U95 sesi Source turun ~17 % tanpa satu pun peringatan bunyi |
 | **B-5** | Kolom U95 Type K Yokogawa (Source) isinya minus | Sekarang ditolak, jadi sesi Type K mode Source jatuh ke CMC. Butuh angka yang benar |
 | **C-3** | Peta kolom pembacaan Enclosure | Kolom Sebaran Suhu bergeser ~0,02 °C — dan itu tercetak, tidak tertutup CMC |
+| **C-12** | Sertifikat Recorder cetak "Suhu Ruang 67 °C" padahal 24,5 °C | Salah tunjuk baris; angkanya sudah tercetak di sertifikat yang terbit |
 | **C-8** | Sensor Acuan Enclosure: nomor terkecil atau posisi tetap di chamber? | Kalau posisi tetap, aturan yang saya pakai sekarang bisa salah diam-diam di seluruh kolom Keseragaman |
+| **C-13** | Kolom koreksi Type K di `STANDAR KALIBRATOR` geser satu baris | Sertifikat Type K punya daftar titik sendiri (nggak ada 25, ada 250). Selisihnya sampai **0,52 °C di 300 °C**, dan koreksi itu dicetak langsung — **nggak tertutup CMC** |
 
 **A-1 dan A-2 saling menarik ke arah berlawanan**, jadi enaknya dijawab
 bareng: betulkan pembagi saja → `0,84`; seragamkan `v_eff` saja → `0,87`;
@@ -54,11 +56,22 @@ Kejadian di **empat file**, komponen yang beda tapi polanya persis sama:
 | Alat | Komponen | Sel |
 |---|---|---|
 | TITS (dua-duanya) | AC Pick Up | `Q22 = SQRT(3)` lalu `U22 = N22/SQRT(Q22)` |
-| Enclosure Recorder | Pengulangan Pembacaan Standar | `Q29 = SQRT(3)` lalu `U29 = N29/SQRT(Q29)` |
+| Enclosure Recorder | Pengulangan Pembacaan Standar | `U29`, `U50`, `U71` — `Q = SQRT(3)` lalu `U = N/SQRT(Q)` |
 
 Jadi pembaginya `3^0,25 ≈ 1,316`, bukan `1,732` — padahal labelnya `rect.`.
-Baris atas-bawahnya di workbook yang sama nulisnya benar (`U20 = N20/Q20`).
-Master Enclosure Constant/Yokogawa juga benar di komponen yang sama.
+
+**Koreksi 24 Agustus 2026:** dulu di sini saya cuma menyebut `U29`, seolah satu
+sel yang kelepasan. **Salah** — begitu seluruh kolom `U` disapu, cacatnya ada di
+**ketiga blok set point sekaligus**: `U29`, `U50`, `U71`, semuanya di komponen
+bernama sama dan semuanya bernilai `0,015196713713` (kalau pembaginya `√3`
+mestinya `0,011547`). Jadi ini bukan salah ketik satu sel, tapi pola yang ikut
+tersalin waktu blok set point diduplikasi — dan pembanding yang benar buat `U29`
+itu `U50` & `U71`, bukan baris tetangganya.
+
+Baris komponen LAIN di blok yang sama memang nulisnya benar (`U25`, `U28`,
+`U31`, `U32` semuanya `=N/Q`). Master Enclosure Constant/Yokogawa juga bersih:
+disapu seluruh sheet, **nol** sel berpola `=N/SQRT(Q)` — jadi akar ganda ini
+khas berkas Recorder.
 
 **Dampaknya beda antara dua alat:**
 
@@ -135,13 +148,15 @@ nol waktu master dibuat.
 
 Di kalibrator `constant`:
 
-| tipe sensor | titik |
-|---|---|
-| Type N | **1000 °C**, 1200 °C |
-| Type K | 1200 °C |
-| Type R | 1200 °C |
-| Type S | 1400 °C, 1700 °C |
-| RTD | −100 °C |
+| tipe sensor | titik | isi sel |
+|---|---|---|
+| Type N | **1000 °C**, 1200 °C | koreksi 0 **dan** U95 0 |
+| Type K | 1200 °C | koreksi 0 **dan** U95 0 |
+| Type S | 1400 °C, 1700 °C | koreksi 0 **dan** U95 0 |
+| RTD | −100 °C | koreksi 0 **dan** U95 0 |
+| Type N | 1400 °C, 1700 °C | koreksi 0, kolom U95 **kosong** |
+
+Isinya sama persis di workbook Measure maupun Source.
 
 Dulu saya kira ini nggak berdampak karena titiknya ekstrem dan nggak pernah
 kepakai. **Itu keliru.** Type N **1000 °C** itu **batas atas rentang akreditasi
@@ -230,7 +245,8 @@ tanpa interpolasi; sistem cuma memunculkan peringatan kalau jaraknya lebih dari
 
 ## B-5. Kolom U95 Type K Yokogawa di file Source isinya MINUS
 
-`STANDAR KALIBRATOR!N32:N47` berisi −0,06 sampai −0,31 — itu persis deret
+`STANDAR KALIBRATOR!O35:O47` (kolom O = Yokogawa Type K) berisi **13 dari 16 baris
+bernilai negatif**, dari −0,0025 sampai −0,31. Itu persis deret
 **koreksi** dari tabel di atasnya, kesalin ke kolom U95. U95 nggak bisa negatif.
 
 **Sekarang:** ditolak. Sesi Type K mode Source nggak menyusun komponen
@@ -372,13 +388,17 @@ yang menyatakan "ini acuannya". Jadi acuannya harus DISIMPULKAN.
 cocok dengan kedua master — baris "Sensor Acuan" di dua-duanya memang nomor
 terkecil (Type N mulai no. 3, Type K mulai no. 1).
 
-> Dua pertanyaan:
-> 1. **Apakah acuan memang selalu nomor terkecil?** Kalau Sensor Acuan itu
+> Tiga pertanyaan:
+> 1. **Kalau teknisi mengisi TIDAK urut nomor, yang jadi acuan yang mana** — yang
+>    pertama diisi (sesuai catatan master) atau yang nomornya terkecil (yang
+>    dipakai sistem sekarang)? Selama diisi urut dua-duanya sama; begitu tidak
+>    urut, beda.
+> 2. **Apakah acuan memang selalu nomor terkecil?** Kalau Sensor Acuan itu
 >    sebenarnya **posisi tertentu di chamber** (misalnya selalu titik tengah)
 >    yang nomor termokopelnya berganti tiap sesi, aturan "nomor terkecil" bisa
 >    salah diam-diam — dan yang salah itu seluruh kolom Keseragaman. Kalau
 >    begitu, nomornya perlu jadi **field sesi sendiri**, dicatat teknisi.
-> 2. **Kalau termokopel acuan nggak terisi**, sekarang nomor berikutnya yang naik
+> 3. **Kalau termokopel acuan nggak terisi**, sekarang nomor berikutnya yang naik
 >    jadi acuan. Betul begitu, atau set point-nya harus ditolak?
 
 ## C-9. Baris "Suhu Ruang" diminta ke teknisi, tapi nggak ada yang menampungnya
@@ -445,14 +465,36 @@ secara umum tanpa tahu ini Enclosure.
 1,5 (−20–10 °C) — satu CMC untuk seluruh rentang. **Memang seragam per lampiran
 akreditasi, atau ada pemecahan sub-rentang yang belum tercermin di Excel?**
 
-**(b) U95 sensor & kalibrator tampak DATAR.** Recorder: Type N seragam `0,83`,
-Type K seragam `0,67` di semua kolom suhu. Yokogawa `U95_Sensor` Type N: `0,76`
-di index 25 maupun 100. **Memang konstan per spesifikasi sertifikat sensor, atau
-kolom lookup yang belum diisi bertingkat?**
+**(b) U95 memang DATAR — tapi tiga konvensi kepakai barengan.** Dulu saya tulis
+pertanyaan ini seolah kolomnya "belum diisi bertingkat". Setelah saya cek ulang
+ke selnya, **itu keliru** — angkanya memang sengaja ditulis datar, cuma caranya
+beda-beda tiap sheet:
+
+| sheet | bentuk U95-nya | isi |
+|---|---|---|
+| `Standar_Kalibrator` (Recorder, jalur hidup) | **satu angka** untuk semua titik & semua kanal | Type N `0,83`; Type K `0,67` |
+| `TERMOCOUPLE TYPE K` | **satu angka** untuk seluruh rentang −20…300 | `0,44` |
+| `TERMOCOUPLE TYPE N` | **bertingkat per rentang** | `<400 → 0,76`; `>400 → 2,7` |
+
+Yang ganjil buat saya yang baris terakhir: Type N **punya** angka bertingkat,
+dan `2,7` itu **3,5 kali lipat** `0,76`. Tapi yang mendarat di tabel kami cuma
+`0,76`, terpasang rata di semua titik — termasuk di 500–1000 °C.
+
+> **Yang benar yang mana, Pak — `0,76` rata, atau `0,76` di bawah 400 °C dan
+> `2,7` di atasnya?** Kalau yang bertingkat, U95 sesi Enclosure Type N di atas
+> 400 °C sekarang kekecilan.
 
 **(c) Jumlah set point.** Template Constant/Yokogawa menyediakan 6; sesi contoh
-mengisi 4, dan baris SP5/SP6 kosong keluar `#DIV/0!` di sertifikat. **Maksimum
-set point yang benar-benar didukung — 4, 6, atau tergantung jenis enclosure?**
+mengisi 4. **Maksimum set point yang benar-benar didukung — 4, 6, atau
+tergantung jenis enclosure?**
+
+*Koreksi 24 Agustus 2026:* dulu di sini saya tulis baris SP5/SP6 yang kosong
+"keluar `#DIV/0!` di sertifikat". **Itu keliru dan bikin panik tanpa sebab.**
+Keenam sel `#DIV/0!`-nya (`B33`, `U33`, `B35`, `U35`, `E46`, `E47`) memang ada,
+tapi semuanya duduk di **baris yang disembunyikan** (33–36 & 46–47 di Yokogawa;
+Recorder menyembunyikan 31–36 & 44–46 dan malah nggak punya `#DIV/0!` sama
+sekali). Jadi slot yang nggak terpakai memang dirancang buat disembunyikan —
+angkanya nggak pernah tercetak.
 
 **(d) Resolusi Standar di-hardcode.** Budget membaca resolusi kalibrator
 (0,1 °C) tanpa peduli kalibrator mana yang dipakai. Kebetulan Constant maupun
@@ -462,6 +504,126 @@ supaya nggak kelewat kalau nanti ada kalibrator beresolusi lain.
 **(e) Referensi workbook eksternal terputus.** Master memuat link `[3]`–`[7]` ke
 file yang nggak ikut dikirim (nilai cached terakhirnya masih terbaca). **Mohon
 file-nya, atau konfirmasi nilai cached sudah final.**
+
+**(f) Titik 1200 °C Recorder terdaftar tapi barisnya kosong melompong.** Di
+`Standar_Kalibrator!B25` ada titik `1200`, tapi seluruh baris koreksinya
+(`D25:M25`) kosong — beda dari nol-berpasangan di A-5, ini benar-benar hampa.
+**Titik 1200 memang di luar rentang Recorder dan sisa ketikan, atau angkanya
+belum diisi?**
+
+---
+
+## C-12. Sertifikat Recorder mencetak "Suhu Ruang" dari baris yang salah
+
+**Temuan 24 Agustus 2026, waktu menelusuri C-9.** Ini yang paling konkret dari
+seluruh dokumen: angkanya salah dan sudah tercetak di sertifikat yang terbit.
+
+Di `PERHITUNGAN FC` master Recorder ada **dua baris berlabel `"Suhu Ruang (oC)"`**:
+
+| baris | isi | rumus | hasil |
+|---|---|---|---|
+| 38 | suhu ruang **asli** | `='INPUT DATA'!D55:E55` | 24,5–24,6 °C |
+| 40 | berlabel sama | `=MAX(D37:I37)` | **67,4 °C** |
+
+Baris 37 itu **baris Indikator enclosure** — suhu ovennya, bukan suhu ruangan.
+Blok `MAX / MIN / Δt / Nilai Tengah` di baris 39–40 jelas dimaksudkan meringkas
+baris Indikator; labelnya saja yang ikut tersalin dari baris 38.
+
+Lalu sertifikat menarik dari blok itu:
+
+```
+P44 = "Suhu Ruang  :"      R44 = =H40      →  67,35 °C
+```
+
+Jadi sertifikat **0304-CAL-624** mencetak suhu ruang **67,35 °C**, padahal
+ruangannya 24,5 °C.
+
+**Cuma terjadi di master Recorder.** Master Constant/Yokogawa memakai
+`=MAX(D38:I38)` — menunjuk baris 38 yang benar, hasilnya 25,4 °C. Jadi ini
+meleset satu baris, bukan keputusan yang disengaja.
+
+**Yang dipakai sekarang:** sistem tidak menyalin bug ini — kondisi lingkungan
+diambil dari kolom sesi, bukan dari blok itu.
+
+**Yang ditanyakan:** (a) konfirmasi baris 40 master Recorder memang salah
+tunjuk, supaya master-nya dibetulkan; dan (b) apakah sertifikat 0304-CAL-624
+yang sudah terbit perlu direvisi.
+
+---
+
+## C-13. Tabel koreksi Type K dipasang di grid titik yang bukan miliknya
+
+**Temuan 24 Agustus 2026**, ketemunya waktu saya cek ulang pertanyaan C-11(b) di
+bawah. Ini yang paling berdampak sesudah C-12.
+
+Sheet `STANDAR KALIBRATOR` di master Constant/Yokogawa itu sumber tabel koreksi
+sensor buat Enclosure — sistem kami baca dari situ. Bentuknya satu grid: kolom
+`B` daftar titik kalibrasi, lalu satu kolom per sensor.
+
+Masalahnya, **tiga sumber sensornya nggak punya daftar titik yang sama**:
+
+| sheet sumber | titik yang ada di sertifikatnya |
+|---|---|
+| `SENSOR PT100` | −20, 0, **25**, 50, 100, 150, 200, 300, 400 |
+| `TERMOCOUPLE TYPE N` | −20, 0, **25**, 50, 100, 150, 200, 300, 400, 500 |
+| `TERMOCOUPLE TYPE K` | −20, 0, 50, 100, 150, 200, **250**, 300 |
+
+Type K **nggak punya titik 25**, dan **punya titik 250** yang dua sensor lain
+nggak punya. Delapan titik, bukan sembilan.
+
+Tapi kolom Type K di grid dipasang baris-per-baris seolah daftarnya sama
+persis. Akibatnya mulai dari 0 °C ke bawah semuanya geser satu baris:
+
+| titik di grid | rumusnya nunjuk | nilai itu sebenarnya milik titik | dipakai | seharusnya | selisih |
+|---|---|---|---|---|---|
+| −20 | *(sel kosong)* | — | — | −0,27 | — |
+| 0 | `TYPE K!N9` | **−20** | −0,27 | −0,08 | 0,19 |
+| 25 | `Interpolasi!$B$67` | *(interpolasi)* | −0,175 | ≈0,10 | ≈0,27 |
+| 50 | `!N10` | **0** | −0,08 | 0,275 | **0,355** |
+| 100 | `!N11` | **50** | 0,275 | 0,455 | 0,18 |
+| 150 | `!N12` | **100** | 0,455 | 0,46 | 0,005 |
+| 200 | `!N13` | **150** | 0,46 | 0,29 | 0,17 |
+| 300 | `!N15` | **250** | −0,055 | −0,575 | **0,52** |
+| 400 | `!N17` | *(baris kosong)* | 0 | di luar sertifikat | — |
+
+Dua hal yang bikin saya cukup yakin ini kekeliruan, bukan disengaja:
+
+1. **Sel `D64` (baris −20 °C) kosong.** Kolom PT100 dan kolom Type N di grid
+   yang SAMA dua-duanya mulai di baris 64 dan lurus terus ke bawah — tiap baris
+   nunjuk titiknya sendiri. Cuma kolom Type K yang mulainya di baris 65.
+2. **Nilai 200 °C Type K (`N14` = 0,29) nggak kepakai sama sekali** — gridnya
+   lompat dari `N13` langsung ke `N15`.
+
+Besarnya bukan main-main: **0,52 °C di titik 300 °C**. Dan koreksi itu angka
+yang **dicetak langsung** di sertifikat — dia bukan komponen ketidakpastian,
+jadi **nggak tertutup lantai CMC**.
+
+**Sistem kami sekarang menyalin tabel ini apa adanya dari master**, jadi hasil
+hitung kami cocok sampai digit terakhir sama Excel — termasuk cocok salahnya.
+Saya sengaja belum betulkan sendiri: kalau saya ubah sepihak, hasil kami jadi
+beda dari master tanpa ada yang mengesahkan angka barunya.
+
+> **Mohon dicek, Pak: kolom Type K di `STANDAR KALIBRATOR` itu memang geser satu
+> baris, atau saya yang salah baca?** Kalau memang geser, saya betulkan
+> pemetaannya jadi per-titik (bukan per-baris). Buat titik **25 °C** dan
+> **400 °C** yang nggak ada di sertifikat Type K saya butuh arahan: diinterpolasi,
+> atau titiknya ditolak saja?
+
+Sekalian dua hal kecil di kolom yang sama:
+
+- **500 °C Type K berisi `0,608`, diketik tangan, bukan rumus** — padahal
+  sertifikat Type K berhentinya di 300 °C. Angka itu dari mana?
+- Dua sel `#REF!` di kolom PT100 (300 & 400 °C) sudah saya laporkan di **C-5**.
+  Tambahannya: kolom `U95` di dua titik yang sama itu isinya **0** juga — jadi
+  itu pasangan nol-plus-`#REF!`, bukan `#REF!` sendirian.
+
+**Yang sudah saya cek dan ternyata BUKAN masalah** — saya tulis biar nggak ikut
+dikejar percuma: sheet `Old_Std Kalibrator` dan blok Type N di sheet
+`Interpolasi` master Recorder dua-duanya punya kekeliruan mirip (`Interpolasi!C16`
+menginterpolasi di 25 °C padahal barisnya titik 10 °C). Saya telusuri satu-satu:
+**nggak ada satu sel pun yang membacanya** — sheet mati, sisa versi lama. Jalur
+hidup Recorder (`Standar_Kalibrator` ← `Interpolasi` baris 33–39) sudah saya
+periksa dan **bersih**.
 
 ---
 
@@ -501,11 +663,14 @@ akhir**, bukan angka kelembabannya.
 | **A-5** (nol berpasangan Type N @1000) | **Ya** — U95 Source turun ~17 % sebelum diperbaiki |
 | **B-5** (U95 Type K minus) | **Ya** — sesi Type K Source sekarang jatuh ke CMC |
 | **C-3** (peta kolom pembacaan) | **Ya** — kolom Sebaran Suhu bergeser ~0,02 °C |
+| **C-12** (Suhu Ruang salah baris) | **Ya** — sertifikat 0304-CAL-624 cetak 67,35 °C, seharusnya 24,5 °C |
+| **C-13** (koreksi Type K geser baris) | **Ya** — koreksi tercetak meleset s/d **0,52 °C**; nggak tertutup CMC |
 | **C-7 / C-8** (kelengkapan grid, Sensor Acuan) | **Ya**, kalau jawabannya beda dari yang saya pakai |
 | B-1, B-2, B-3, B-4, C-1, C-2, C-4 | Tidak di sesi contoh — tertutup lantai CMC, tapi berpengaruh di sesi lain |
 | **C-9** (baris Suhu Ruang) | Belum — layarnya belum ada. Tapi kalau nggak diputuskan sebelum frontend jadi, angka teknisi hilang diam-diam |
 | **C-10** (kolom Koreksi diisi Keseragaman) | Menentukan angka yang muncul di laporan umum yang baca kolom `koreksi` |
-| A-3, A-4, B-6, C-5, C-6, C-11, D-1, D-2 | Administratif / kosmetik / belum kepakai |
+| **C-11(b)** (U95 Type N bertingkat `>400 → 2,7`) | **Mungkin** — kalau yang bertingkat yang benar, U95 Type N di atas 400 °C sekarang kekecilan 3,5× |
+| A-3, A-4, B-6, C-5, C-6, C-11(a,c,d,e,f), D-1, D-2 | Administratif / kosmetik / belum kepakai |
 
 **Nggak buru-buru, Pak — backend dua-duanya sudah jalan dan sudah diuji.** Yang
 penting jawabannya masuk sebelum sertifikat produksi TITS/Enclosure terbit ke
