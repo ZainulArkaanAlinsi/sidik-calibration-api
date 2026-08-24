@@ -240,6 +240,23 @@ class CalibrationRequest extends FormRequest
             'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
             'measurements.*.indikator' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.indikator.*' => ['nullable', 'numeric'],
+            // Baris "Suhu Ruang" di grid — DICATAT, tapi nggak ikut ngitung.
+            //
+            // Di master dia beneran nggak punya konsumen: nol rumus membacanya,
+            // dan di master Recorder rumus ringkasannya bahkan salah baris
+            // (nunjuk baris Indikator) sampai keluar 67 °C padahal suhu ruang
+            // aslinya 24,6 °C. Selisih 43 °C yang nggak pernah ketahuan siapa
+            // pun — cuma mungkin kalau angkanya emang nggak pernah dipakai.
+            //
+            // Jadi kenapa diterima? Karena barisnya ADA di kertas dan teknisi
+            // MENULISNYA di lapangan. Sebelum ini angkanya dibuang diam-diam di
+            // HP, dan "diketik lalu lenyap" itu yang paling jelek dari tiga
+            // pilihan: kertas dan basis data jadi beda tanpa satu pun jejak.
+            //
+            // Yang HIDUP dan kecetak di sertifikat itu `suhu_awal`/`suhu_akhir`
+            // di blok Kondisi Lingkungan — beda hal, nama saja yang mirip.
+            'measurements.*.suhu_ruang' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.suhu_ruang.*' => ['nullable', 'numeric'],
             // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
             'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu.*' => ['nullable', 'numeric'],
