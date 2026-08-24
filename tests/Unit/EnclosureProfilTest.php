@@ -96,6 +96,22 @@ class EnclosureProfilTest extends TestCase
         $this->assertArrayHasKey('grid_sensor', $bentuk, "bentukLembarKerja() {$kelas} nggak punya kunci grid_sensor");
         $this->assertIsArray($bentuk['grid_sensor']);
         $this->assertNotEmpty($bentuk['grid_sensor']);
+
+        // Teks Sensor Acuan yang KEBACA TEKNISI harus menyatakan aturan yang
+        // beneran jalan: acuannya nomor TERKECIL, bukan yang pertama diisi.
+        //
+        // Dulu di sini tertulis "sensor pertama" — sisa dari versi waktu urutan
+        // grid memang menentukan angka. Sesudah kalkulator mengurutkan nomor
+        // sendiri, kalimat itu jadi menyuruh teknisi menjaga sesuatu yang nggak
+        // ngaruh, sekaligus menutupi yang beneran ngaruh. Instruksi layar yang
+        // basi lebih berbahaya daripada nggak ada instruksi.
+        $catatan = $bentuk['grid_sensor']['catatan_sensor_acuan'] ?? '';
+        $this->assertStringContainsString('TERKECIL', $catatan, "catatan Sensor Acuan {$kelas} nggak nyebut aturan nomor terkecil");
+        $this->assertStringNotContainsString(
+            'Sensor pertama =',
+            $catatan,
+            "catatan Sensor Acuan {$kelas} masih pakai aturan lama (urutan grid)",
+        );
     }
 
     /**

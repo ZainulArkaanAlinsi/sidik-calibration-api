@@ -451,7 +451,16 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                 'butuh_channel_untuk' => TabelKalibratorEnclosure::MERK_BERKANAL,
                 'baris_indikator' => true,
                 'baris_suhu_ruang' => true,
-                'catatan_sensor_acuan' => 'Sensor pertama = Sensor Acuan (keseragaman diukur relatif ke sensor ini).',
+                // Teks yang dibaca teknisi di layar. Wajib sama dengan aturan
+                // yang benar-benar dipakai `EnclosureCalculator::hitungSetpoint()`
+                // — dulu di sini tertulis "sensor pertama", padahal urutan grid
+                // sudah tidak menentukan apa pun sejak kalkulator mengurutkan
+                // nomor sendiri. Instruksi layar yang bilang urutan itu penting
+                // membuat teknisi menjaga sesuatu yang tidak berpengaruh, dan
+                // menutupi hal yang benar-benar berpengaruh: nomornya.
+                'catatan_sensor_acuan' => 'Sensor Acuan = termokopel bernomor TERKECIL yang terisi '
+                    .'(keseragaman diukur relatif ke sensor itu). Urutan pengisian grid bebas — yang '
+                    .'menentukan nomornya, bukan posisinya.',
             ],
             'bagian' => [
                 [
