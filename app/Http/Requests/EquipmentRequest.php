@@ -46,6 +46,19 @@ class EquipmentRequest extends FormRequest
                 'sometimes', 'nullable', 'string', 'max:255',
                 Rule::exists('calibration_capabilities', 'nama_alat')
                     ->where('equipment_category_id', $this->resolveEquipmentCategoryId($organizationId, $equipment))
+                    // Organisasi disaring TERPISAH dari kategorinya, walaupun
+                    // kategorinya sendiri udah disaring per organisasi di
+                    // `resolveEquipmentCategoryId()`.
+                    //
+                    // Kelihatan dobel, tapi dua kolom itu dua sumber kepemilikan
+                    // yang beda: baris kemampuan bisa punya `organization_id`
+                    // lab A sambil nunjuk kategori milik lab B (bentuk yang bisa
+                    // lahir dari panel admin sebelum dropdown kategorinya
+                    // disaring). Tanpa baris ini, nama alat milik lab A lolos
+                    // validasi di lab B, alatnya ketautan, dan sesudah itu tiap
+                    // sesi alat itu nyari CMC ke baris lab A — angka lab lain
+                    // jadi lantai U95 di sertifikat lab ini.
+                    ->where('organization_id', $organizationId)
                     // `deleted_at` disaring TANGAN — `Rule::exists` nembak
                     // tabelnya langsung, bukan lewat model, jadi saringan
                     // bawaan `SoftDeletes` nggak ikut. Sejak baris kemampuan

@@ -422,6 +422,36 @@ abstract class CalibrationProfile
     public const MAKS_KOLOM_PENGULANGAN = 10;
 
     /**
+     * Penanda TAMPIL-BERSYARAT di kontrak field — `['kode' => ..., 'nilai' =>
+     * [...]]`, dibaca "tampilkan field ini cuma kalau field `kode` isinya salah
+     * satu dari `nilai`". `null` (bawaan tiap field) artinya selalu tampil.
+     *
+     * Ada karena sebelumnya aplikasi teknisi NGE-HARDCODE nama fieldnya
+     * (`grup.first.kode == 'lokasi_nama'`) buat mutusin kotak itu digambar apa
+     * nggak. Akibatnya field bersyarat berikutnya — nomor Channel yang cuma
+     * berlaku buat kalibrator Recorder, misalnya — nggak bisa dipasang dari
+     * backend doang: satu field baru = satu rilis APK, dan teknisi yang belum
+     * update nggak lihat kotaknya sama sekali. Dengan penanda ini HP cukup
+     * punya SATU aturan yang nggak kenal nama field satu pun.
+     *
+     * APK lama yang belum ngerti kunci ini nggak rusak — dia cuma nampilin
+     * kedua kotaknya sekaligus. Itu sebabnya labelnya tetap bawa "(Inlab)" /
+     * "(Insitu)": di layar lama, label itu satu-satunya yang ngasih tau teknisi
+     * kotak mana yang berlaku buat sesinya.
+     */
+    public const TAMPIL_KALAU_INSITU = ['kode' => 'lokasi', 'nilai' => ['onsite']];
+
+    /**
+     * Pasangannya buat kotak yang cuma berlaku di lab.
+     *
+     * `nilai` di sini nilai ENUM database (`lab`/`onsite`), BUKAN labelnya.
+     * Labelnya yang diseragamkan jadi Inlab/Insitu; ngutak-atik enumnya berarti
+     * migrasi kolom `calibration_sessions.lokasi` sekaligus mutusin semua APK
+     * yang udah beredar.
+     */
+    public const TAMPIL_KALAU_INLAB = ['kode' => 'lokasi', 'nilai' => ['lab']];
+
+    /**
      * Ganti jumlah KOLOM pengulangan di bentuk lembar kerja.
      *
      * Tiap profil punya jumlah bawaannya sendiri (5, ngikut form kertas), tapi

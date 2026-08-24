@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
+use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
@@ -347,6 +348,148 @@ class EnclosureSesiTest extends TestCase
         $this->assertCount(1, $titik);
         $this->assertEqualsWithDelta(15.0, (float) $titik[0]['titik_ukur'], self::TOLERANSI);
         $this->assertEqualsWithDelta(1.4, (float) $titik[0]['ketidakpastian_diperluas'], self::TOLERANSI);
+    }
+
+    /**
+     * Baris "Suhu Ruang" TERCATAT, dan **nggak menggeser satu angka pun**.
+     *
+     * Dua hal yang dijaga sekaligus, dan yang kedua yang lebih penting:
+     *
+     *  1. Angkanya nyampe ke `raw_measurements` — sebelum ini dia dibuang
+     *     diam-diam di HP, jadi kertas dan basis data beda tanpa jejak.
+     *  2. U95-nya PERSIS sama dengan sesi yang nggak ngirim baris itu. Baris
+     *     ini nol konsumen di master; begitu dia mulai mempengaruhi hasil,
+     *     angka yang terbit bukan angka yang lab hitung di kertasnya.
+     *
+     * Nomor 2 dibuktikan dengan MEMBANDINGKAN dua respons, bukan dengan
+     * mencocokkan satu konstanta — supaya kalau nanti U95-nya berubah karena
+     * alasan yang sah, test ini tetap menjawab pertanyaan yang benar: "apakah
+     * baris Suhu Ruang yang menggesernya?"
+     */
+    public function test_baris_suhu_ruang_tercatat_tapi_nggak_menggeser_u95(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $equipment = Equipment::where('serial_number', 'D132469')->firstOrFail();
+        $standar = Standard::where('nama', 'Temperature Calibrator Yokogawa CA 150 Handy Cal')->firstOrFail();
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->where('status', User::STATUS_AKTIF)->firstOrFail();
+
+        $fix = self::fixtureGolden()['yokogawa']['setpoints'][0];
+        $sensorGrid = array_map(
+            static fn (array $s): array => ['no' => $s['no'], 'pembacaan' => $s['pembacaan']],
+            $fix['sensors'],
+        );
+
+        $kirim = function (array $tambahan) use ($teknisi, $equipment, $standar, $sensorGrid, $fix) {
+            return $this->actingAs($teknisi)->postJson('/api/calibrations/preview', [
+                'equipment_id' => $equipment->id,
+                'standard_id' => $standar->id,
+                'input_method' => 'manual',
+                'tanggal_kalibrasi' => '2024-05-02',
+                'tipe_sensor' => 'Type N',
+                'suhu_awal' => 23.7, 'suhu_akhir' => 23.7, 'kelembaban_awal' => 47, 'kelembaban_akhir' => 46,
+                'measurements' => [[
+                    'titik_ukur' => 15.0,
+                    'satuan' => '°C',
+                    'sensor_grid' => $sensorGrid,
+                    'indikator' => $fix['indikator'],
+                ] + $tambahan],
+            ])->assertOk();
+        };
+
+        $tanpa = $kirim([]);
+        // Angka suhu ruang yang JAUH dari set point 15 °C — kalau dia bocor ke
+        // hitungan, hasilnya nggak mungkin tetap sama.
+        $dengan = $kirim(['suhu_ruang' => [24.6, 24.6, 24.7, 24.6, 24.6]]);
+
+        $this->assertSame(
+            $tanpa->json('data.titik.0.ketidakpastian_diperluas'),
+            $dengan->json('data.titik.0.ketidakpastian_diperluas'),
+            'Baris Suhu Ruang menggeser U95 — di master dia nol konsumen.',
+        );
+        $this->assertSame($tanpa->json('data.titik'), $dengan->json('data.titik'));
+    }
+
+    /** Angkanya beneran mendarat di `raw_measurements`, bukan cuma nggak ditolak. */
+    public function test_baris_suhu_ruang_tersimpan_sebagai_peran_sendiri(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $equipment = Equipment::where('serial_number', 'D132469')->firstOrFail();
+        $standar = Standard::where('nama', 'Temperature Calibrator Yokogawa CA 150 Handy Cal')->firstOrFail();
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->where('status', User::STATUS_AKTIF)->firstOrFail();
+
+        $fix = self::fixtureGolden()['yokogawa']['setpoints'][0];
+
+        $respons = $this->actingAs($teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $equipment->id,
+            'standard_id' => $standar->id,
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2024-05-02',
+            'tipe_sensor' => 'Type N',
+            'suhu_awal' => 23.7, 'suhu_akhir' => 23.7, 'kelembaban_awal' => 47, 'kelembaban_akhir' => 46,
+            'measurements' => [[
+                'titik_ukur' => 15.0,
+                'satuan' => '°C',
+                'sensor_grid' => array_map(
+                    static fn (array $s): array => ['no' => $s['no'], 'pembacaan' => $s['pembacaan']],
+                    $fix['sensors'],
+                ),
+                'indikator' => $fix['indikator'],
+                'suhu_ruang' => [24.6, 24.7],
+            ]],
+        ])->assertCreated();
+
+        $baris = RawMeasurement::where('calibration_session_id', $respons->json('data.id'))
+            ->where('peran_sensor', 'suhu_ruang')
+            ->orderBy('pembacaan_ke')
+            ->get();
+
+        $this->assertCount(2, $baris);
+        $this->assertSame([1, 2], $baris->pluck('pembacaan_ke')->all());
+        $this->assertNull($baris[0]->sensor_ke, 'Suhu Ruang satu kanal — sensor_ke harus null.');
+        $this->assertEqualsWithDelta(24.6, (float) $baris[0]->pembacaan, self::TOLERANSI);
+        $this->assertEqualsWithDelta(24.7, (float) $baris[1]->pembacaan, self::TOLERANSI);
+    }
+
+    /**
+     * Set point yang BARU terisi baris Suhu Ruang nggak boleh kebuang.
+     *
+     * Ini pengulangan bug yang dulu kena baris Indikator: `store()` menghapus
+     * `raw_measurements` lama SEBELUM menyusun yang baru, jadi set point yang
+     * kesaring di gerbang "ada isinya" bukan cuma nggak kesimpan — yang lama
+     * ikut hilang permanen.
+     */
+    public function test_set_point_yang_cuma_punya_suhu_ruang_tetap_kesimpan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $equipment = Equipment::where('serial_number', 'D132469')->firstOrFail();
+        $standar = Standard::where('nama', 'Temperature Calibrator Yokogawa CA 150 Handy Cal')->firstOrFail();
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->where('status', User::STATUS_AKTIF)->firstOrFail();
+
+        $respons = $this->actingAs($teknisi)->postJson('/api/calibrations', [
+            'equipment_id' => $equipment->id,
+            'standard_id' => $standar->id,
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2024-05-02',
+            'tipe_sensor' => 'Type N',
+            'status' => 'draft',
+            'suhu_awal' => 23.7, 'suhu_akhir' => 23.7, 'kelembaban_awal' => 47, 'kelembaban_akhir' => 46,
+            'measurements' => [[
+                'titik_ukur' => 15.0,
+                'satuan' => '°C',
+                'suhu_ruang' => [24.6],
+            ]],
+        ])->assertCreated();
+
+        $this->assertSame(
+            1,
+            RawMeasurement::where('calibration_session_id', $respons->json('data.id'))
+                ->where('peran_sensor', 'suhu_ruang')
+                ->count(),
+            'Set point yang cuma punya Suhu Ruang kebuang di gerbang "ada isinya".',
+        );
     }
 
     /** @return array<string, mixed> */

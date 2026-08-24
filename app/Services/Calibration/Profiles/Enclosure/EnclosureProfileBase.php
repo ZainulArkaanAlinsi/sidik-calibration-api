@@ -55,11 +55,20 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     public const KODE_METODE = 'SIDIK-IK-CAL-0501_Rev.6';
 
     /**
-     * Nomor formulir lembar kerja enclosure belum ada — sama temuan TITS: satu-
-     * satunya nomor di berkas `SIDIK-FM-CAL-2403_Rev. 0` itu formulir sertifikat
-     * bersama, bukan lembar kerja. Sengaja `null`, ditanyakan ke lab.
+     * Nomor formulir lembar kerja enclosure — dari kertasnya sendiri.
+     *
+     * Sebelumnya `null` dengan catatan "ditanyakan ke lab", karena satu-satunya
+     * nomor yang kelihatan waktu itu (`SIDIK-FM-CAL-2403_Rev. 0`) ternyata
+     * formulir sertifikat bersama, bukan lembar kerja. Pertanyaannya sekarang
+     * sudah terjawab: pemilik proyek mengirim lembar kerjanya langsung, dan
+     * kop halamannya bernomor `SIDIK-FM-CAL-0504 Rev.3`.
+     *
+     * Sengaja dipisah dari [KODE_METODE]: yang satu menomori LEMBAR KERJANYA,
+     * yang satu menomori INSTRUKSI KERJA di baliknya. Dua-duanya naik revisi
+     * sendiri-sendiri, dan menyamakannya bikin lembar tercetak mengaku ikut
+     * revisi yang bukan revisinya.
      */
-    public const KODE_DOKUMEN = null;
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0504_Rev.3';
 
     public const SATUAN = '°C';
 
@@ -76,6 +85,42 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * teliti: nggak ada selisih antar-posisi buat diukur sama sekali.
      */
     public const MIN_SENSOR = 2;
+
+    /**
+     * Tiga baris "Standar used" yang TERCETAK di formulir
+     * `SIDIK-FM-CAL-0504 Rev.3`, apa adanya dari kertasnya.
+     *
+     * Ditulis di sini, bukan ditarik dari master standar, karena yang dituntut
+     * lembar ini "ceklis mana yang dipakai dari tiga yang tercetak" — bukan
+     * "pilih dari seluruh standar lab". Kalau ditarik dari master, daftarnya
+     * ikut berubah tiap ada standar baru dan lembarnya berhenti cocok sama
+     * kertas yang ditandatangani.
+     *
+     * `cocok` dipakai mencocokkan ke baris master standar lewat nama ATAU
+     * nomor seri — nomor serinya yang paling jarang salah ketik.
+     *
+     * Catatan: Victor 14+ masih tercetak di kertas Rev.3, TAPI di master TITS
+     * yang sekarang Victor sudah dihapus (FORM VALIDASI rev. 11, 24 Mei 2024:
+     * "Remove std. Victor / Add std kalibrator yokogawa"), dan sheet tabel
+     * koreksinya sudah nggak ada — `Index_Victor_*` semuanya `#REF!`. Jadi
+     * baris kedua ini kemungkinan besar sisa cetakan lama. Dibiarkan tampil
+     * karena kertas yang dipegang teknisi memang masih begitu; yang nggak boleh
+     * adalah lembar di HP beda dari lembar di tangan.
+     */
+    public const STANDARD_TERCETAK = [
+        [
+            'label' => 'Temperature Calibrator / Constant / 40T / 99875850',
+            'cocok' => ['Temperature Calibrator Constant 40T', '99875850'],
+        ],
+        [
+            'label' => 'Temperature Calibrator / Victor / Victor 14+ / 992613877',
+            'cocok' => ['Temperature Calibrator Victor 14+', '992613877'],
+        ],
+        [
+            'label' => 'Temperature Recorder / Graptech / GL840-SDWV / C305B1470',
+            'cocok' => ['Temperature Recorder Graptech GL840-SDWV', 'C305B1470'],
+        ],
+    ];
 
     private ?EnclosureCalculator $kalkulator = null;
 
@@ -464,6 +509,107 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ],
             'bagian' => [
                 [
+                    'kode' => 'identitas_alat',
+                    'halaman' => 1,
+                    'judul' => 'Identitas Alat dan Data Customer',
+                    'field' => [
+                        // `equipment_id` INI YANG BIKIN LEMBAR ENCLOSURE HIDUP.
+                        //
+                        // Sampai sebelum ini bentuk lembar enclosure cuma punya
+                        // dua kotak (tipe sensor & lokasi) dan nggak ada satu pun
+                        // tempat milih ALATNYA. Sementara tombol kirim di HP
+                        // nahan kalau `_isian.alat == null`. Jadi sesi enclosure
+                        // baru NGGAK BISA DIKIRIM sama sekali — bukan "kurang
+                        // mirip kertas", tapi fitur mati sejak lahir.
+                        $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
+                        $this->field('equipment.nama_alat', 'Nama Alat (terpilih)', 'teks', sumber: 'otomatis'),
+                        $this->field('alat_merk', 'Merk', 'teks'),
+                        $this->field('alat_model', 'Type', 'teks'),
+                        $this->field('alat_serial_number', 'No. Seri', 'teks'),
+                        $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Alat', 'angka', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
+                        $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
+                        $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
+                    ],
+                ],
+                [
+                    'kode' => 'pemilik',
+                    'halaman' => 1,
+                    'judul' => 'Customer',
+                    'field' => [
+                        $this->field('pemilik_nama', 'Nama Customer', 'teks'),
+                        $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
+                    ],
+                ],
+                [
+                    'kode' => 'usage_check',
+                    'halaman' => 1,
+                    'judul' => 'Standar used',
+                    'baris' => self::STANDARD_TERCETAK,
+                    'field' => [
+                        $this->field('standar_dicek.*.dipakai', 'Dipakai', 'centang'),
+                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
+                    ],
+                ],
+                [
+                    'kode' => 'dimensi',
+                    'halaman' => 1,
+                    'judul' => 'Dimensi Alat',
+                    // ## Blok ini CATATAN, bukan bahan hitung — dan itu dipastikan, bukan diduga
+                    //
+                    // Ditelusuri dua arah di dua master enclosure (15-16 sheet,
+                    // termasuk yang tersembunyi):
+                    //
+                    //  - ke hulu: satu-satunya sel yang merujuk P/L/T & jari-jari
+                    //    adalah dua sel Volume itu sendiri — 11 rujukan, semuanya
+                    //    di dalam `INPUT DATA` baris 32 & 34.
+                    //  - ke hilir: kedua sel Volume punya NOL konsumen. Nggak ada
+                    //    satu pun sel di `PERHITUNGAN U95%`, `PERHITUNGAN FC`,
+                    //    mau pun `SERTIFIKAT` yang mbacanya.
+                    //
+                    // Jadi dimensi nggak pernah nyentuh angka ketidakpastian dan
+                    // nggak pernah kecetak di sertifikat. Ditulis di sini supaya
+                    // yang berikutnya nggak menghabiskan waktu nyari "volume ini
+                    // masuk komponen mana" — jawabannya: nggak masuk mana-mana.
+                    //
+                    // Yang beneran hidup di budget justru dua konstanta mati
+                    // (efek radiasi 0,6 dan konduksi panas 0,1) plus efek
+                    // pembebanan yang diturunkan dari keseragaman TERUKUR.
+                    'field' => [
+                        $this->field('dimensi_panjang', 'Panjang (P)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_lebar', 'Lebar (L)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_tinggi', 'Tinggi (T)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_jari_jari', 'Jari-jari (r)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_tinggi_silinder', 'Tinggi silinder (T)', 'angka', satuan: 'm'),
+                        // Volume DIHITUNG, bukan diketik — persis kayak masternya:
+                        // balok `P × L × T`, silinder `π · r² · t`, dalam METER,
+                        // tanpa satu pun faktor konversi.
+                        //
+                        // Satu hal yang SENGAJA nggak ditiru dari master: di sana
+                        // penjaganya bocor. Rumusnya `IF(AND(r=0,t=0), P*L*T, "-")`
+                        // dan kebalikannya, jadi waktu SEMUA kotak kosong dua-duanya
+                        // kondisinya benar dan hasilnya `0`, bukan `"-"`. Di master
+                        // Recorder itu beneran kejadian: blok dimensinya kosong
+                        // total tapi volumenya terbaca `0 m³`. "Nol meter kubik"
+                        // dan "belum diisi" itu dua hal yang beda, dan yang satu
+                        // nggak boleh menyamar jadi yang lain.
+                        // Namanya SENGAJA pakai titik sementara lima kotak di
+                        // atasnya nggak. Di repo ini titik di kode kolom itu
+                        // penanda "nilai turunan" — `FieldLembarKerja.turunan`
+                        // baca `kode.contains('.')`, dan kolom turunan nggak
+                        // dikasih kotak isian sama sekali.
+                        //
+                        // Jadi bedanya bukan gaya penamaan: `dimensi_panjang`
+                        // diketik teknisi, `dimensi.volume` dihitung. Kalau
+                        // kelimanya ikut pakai titik, blok dimensinya tampil
+                        // tapi NGGAK BISA DIKETIK — dan nggak ada yang gagal,
+                        // kotaknya cuma diam.
+                        $this->field('dimensi.volume', 'Volume', 'angka', sumber: 'otomatis', satuan: 'm³'),
+                        $this->field('persyaratan_alat', 'Persyaratan Alat (ΔT)', 'angka', satuan: self::SATUAN),
+                    ],
+                ],
+                [
                     'kode' => 'data_kalibrasi',
                     'halaman' => 1,
                     'judul' => 'CALIBRATION DATA',
@@ -476,6 +622,74 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
+                        // Kelima profil enclosure lahir cuma dengan pilihan
+                        // Inlab/Insitu — pasangan kotaknya nggak pernah ikut.
+                        // Akibatnya sesi enclosure nggak punya tempat nyimpen
+                        // LOKASINYA sama sekali, dan "Calibration Location" di
+                        // sertifikat selalu jatuh ke tebakan
+                        // `CertificateSnapshotBuilder::lokasiKalibrasi()`:
+                        // `Laboratorium` buat yang Inlab, alamat pelanggan buat
+                        // yang Insitu — dua-duanya kalimat yang nggak pernah
+                        // diketik siapa pun.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
+                        $this->field(
+                            'calibration_method_id',
+                            'Calibration Methode',
+                            'pilihan',
+                            sumber: 'master_metode',
+                            hanyaAdmin: true,
+                        ),
+                    ],
+                ],
+                [
+                    'kode' => 'kondisi_lingkungan',
+                    'halaman' => 1,
+                    // ## Ini "Suhu Ruangan" yang HIDUP — jangan ketuker sama yang di grid
+                    //
+                    // Di lembar enclosure ada DUA hal bernama nyaris sama, dan cuma
+                    // satu yang berpengaruh:
+                    //
+                    //  (a) "Suhu Ruangan" awal/akhir DI SINI — hidup. Di master dia
+                    //      dirata-ratain, dikoreksi pakai sertifikat thermohygro,
+                    //      diturunin U95-nya, lalu KECETAK di sertifikat sebagai
+                    //      Env. Condition.
+                    //  (b) baris "Suhu Ruang" di GRID sensor — mati. Nol konsumen
+                    //      di seluruh workbook.
+                    //
+                    // Bedanya nyata: yang (b) di master Recorder rumus ringkasannya
+                    // bahkan salah baris — nunjuk baris Indikator, bukan baris Suhu
+                    // Ruang — dan keluar 67 °C padahal suhu ruang aslinya 24,6 °C.
+                    // Selisih 43 °C yang nggak pernah ketahuan siapa pun, dan itu
+                    // cuma mungkin kalau angkanya emang nggak pernah dipakai.
+                    'judul' => 'Kondisi Lingkungan',
+                    'field' => [
+                        $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: self::SATUAN),
+                        $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: self::SATUAN),
+                        $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
+                        $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+                        $this->field(
+                            'thermohygro_standard_id',
+                            'Thermohygro used',
+                            'pilihan',
+                            sumber: 'master_thermohygro',
+                        ),
+                    ],
+                ],
+                [
+                    'kode' => 'penutup',
+                    'halaman' => 1,
+                    'judul' => 'Catatan & Tanda Tangan',
+                    'field' => [
+                        $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
+                        $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
+                        $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
                     ],
                 ],
             ],
@@ -656,13 +870,17 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     /**
      * CMC untuk enclosure ini, dicocokkan lewat `nama_alat`.
      *
-     * Disaring ke KATEGORI alatnya kalau kategorinya diketahui.
-     * `calibration_capabilities` memang tidak punya `organization_id` sendiri
-     * (isinya lampiran akreditasi lab), tapi `equipment_category_id`-nya menunjuk
-     * `equipment_categories` yang DIKUNCI per organisasi. `nama_alat` sendiri
-     * tidak dijamin unik lintas kategori/organisasi, jadi tanpa saringan ini
-     * baris pertama yang kebetulan cocok bisa berasal dari kategori organisasi
-     * lain — dan CMC yang salah langsung mendarat di sertifikat.
+     * Disaring ke KATEGORI dan ORGANISASI alatnya kalau keduanya diketahui.
+     * `nama_alat` sendiri tidak dijamin unik lintas kategori/organisasi, jadi
+     * tanpa saringan ini baris pertama yang kebetulan cocok bisa berasal dari
+     * lab lain — dan CMC yang salah langsung mendarat di sertifikat.
+     *
+     * Kategori saja TIDAK cukup, dan itu pelajaran yang baru dibayar: sampai
+     * blokir scope organisasi ditutup, `calibration_capabilities` disebut "tidak
+     * punya `organization_id` sendiri" di komentar ini. Kolomnya sudah ada sejak
+     * migrasi 2026_08_24_100000, dan justru karena ada, dia bisa BEDA dari
+     * organisasi kategorinya — baris milik lab A yang nangkring di kategori lab
+     * B. Saringan kategori doang meloloskan baris itu bulat-bulat.
      */
     private function kemampuanEnclosure(?Equipment $equipment = null): ?CalibrationCapability
     {
@@ -671,6 +889,10 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ->when(
                 $equipment?->equipment_category_id !== null,
                 fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
             )
             ->first();
     }
@@ -723,6 +945,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -733,6 +956,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

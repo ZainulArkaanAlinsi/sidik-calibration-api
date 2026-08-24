@@ -1241,12 +1241,18 @@ class ViscometerProfile extends CalibrationProfile
                     'judul' => 'CALIBRATION DATA',
                     'field' => [
                         $this->field('lokasi', 'Location of Calibration', 'pilihan', pilihan: [
-                            ['nilai' => 'lab', 'label' => 'In lab'],
+                            ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        $this->field('lokasi_nama', 'Nama Lokasi (kalau Insitu)', 'teks'),
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
                         $this->field('teknisi.kode', 'Technician ID', 'teks', sumber: 'otomatis'),
-                        $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan'),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         // Tercetak di kertas sebagai "Methode : SIDIK-IK-CAL-0517"
                         // — teknisi melihatnya, tapi yang MEMILIH baris master
                         // metodenya admin.
@@ -1538,6 +1544,7 @@ class ViscometerProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -1548,6 +1555,7 @@ class ViscometerProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
         ];
     }
 

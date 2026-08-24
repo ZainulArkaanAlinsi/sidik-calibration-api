@@ -356,13 +356,31 @@ class AutoclaveProfile extends CalibrationProfile
             'judul' => 'Location & Environmental Condition',
             'field' => [
                 $this->field('lokasi', 'Location of Calibration', 'pilihan', pilihan: [
-                    ['nilai' => 'lab', 'label' => 'In lab'],
+                    ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
-                // Nggak tercetak di kertas — di situ cuma ada satu garis
-                // "Location of Calibration". Ikut ke layar, nggak ikut ke
+                // Dua-duanya nggak tercetak di kertas — di situ cuma ada satu
+                // garis "Location of Calibration". Ikut ke layar, nggak ikut ke
                 // lembar cetak.
-                $this->field('room_id', 'Ruangan', 'pilihan', sumber: 'master_ruangan', ekstra: ['di_kertas' => false]),
+                //
+                // `lokasi_nama` kolom teks bebas buat sesi Insitu: tanpa dia
+                // sertifikat Insitu kecetak nama RUANG LAB — tempat yang
+                // alatnya nggak pernah ke sana.
+                $this->field(
+                    'lokasi_nama',
+                    'Nama Tempat (Insitu)',
+                    'teks',
+                    ekstra: ['di_kertas' => false],
+                    tampilKalau: self::TAMPIL_KALAU_INSITU,
+                ),
+                $this->field(
+                    'room_id',
+                    'Ruangan (Inlab)',
+                    'pilihan',
+                    sumber: 'master_ruangan',
+                    ekstra: ['di_kertas' => false],
+                    tampilKalau: self::TAMPIL_KALAU_INLAB,
+                ),
                 $this->field('suhu_awal', 'T awal', 'angka', satuan: self::SATUAN_SUHU),
                 $this->field('suhu_akhir', 'T akhir', 'angka', satuan: self::SATUAN_SUHU),
                 $this->field('kelembaban_awal', 'RH awal', 'angka', satuan: '%RH'),
@@ -799,6 +817,7 @@ class AutoclaveProfile extends CalibrationProfile
         array $pilihan = [],
         bool $hanyaAdmin = false,
         array $ekstra = [],
+        ?array $tampilKalau = null,
     ): array {
         return [
             'kode' => $kode,
@@ -809,6 +828,10 @@ class AutoclaveProfile extends CalibrationProfile
             'satuan' => $satuan,
             'pilihan' => $pilihan,
             'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
+            // Tetap paling belakang — `$ekstra` emang jalur buat NIMPA kunci di
+            // atasnya (`di_kertas`), dan itu nggak jalan kalau ada kunci yang
+            // ditulis sesudahnya.
             ...$ekstra,
         ];
     }

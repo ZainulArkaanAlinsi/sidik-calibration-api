@@ -21,6 +21,7 @@ use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -172,6 +173,25 @@ class CalibrationController extends Controller
         $profil = ($alat !== null ? $registry->untukAlat($alat) : null)
             ?? ($kode !== '' ? $registry->untukKode($kode) : null)
             ?? $registry->untukNamaAlat((string) $request->string('instrumen', 'pH Meter'));
+
+        // Alatnya nggak punya lembar khusus — ditolak dengan alasan, BUKAN
+        // dikasih lembar pH.
+        //
+        // Sampai perbaikan routing profil (24 Agt 2026) `untukNamaAlat()`
+        // jatuh ke pH buat nama apa pun yang nggak dikenali, jadi
+        // `?equipment_id=` sebuah Buret mulangin lembar buffer 4/7/10 dengan
+        // status 200. Teknisi ngisi tiga titik pH buat buret, sesinya kekirim,
+        // dan nggak ada satu pun error di sepanjang jalur itu. Padahal
+        // `GET /api/categories/{kode}` buat alat yang sama udah lama jawab
+        // `profil: null` alias "pakai form generik" — dua jawaban yang saling
+        // bertentangan dari server yang sama.
+        if ($profil instanceof ProfilGenerik) {
+            return response()->json([
+                'message' => 'Alat ini nggak punya lembar kerja khusus di server — pakai form generik. '
+                    .'Kalau mestinya punya, betulin "Jenis alat" di data Alat biar cocok sama daftar '
+                    .'kemampuan kalibrasi.',
+            ], 422);
+        }
 
         $bentuk = $profil->bentukLembarKerja(
             untukAdmin: $request->user()->isAdmin(),
@@ -1330,20 +1350,27 @@ class CalibrationController extends Controller
 
         $terisi = static fn ($v): bool => $v !== null && $v !== '';
 
-        // Set point dianggap terpakai kalau ADA isinya — dari termokopel MAUPUN
-        // dari baris Indikator.
+        // Set point dianggap terpakai kalau ADA isinya — dari termokopel,
+        // dari baris Indikator, MAUPUN dari baris Suhu Ruang.
         //
         // Dulu cuma termokopel yang dicek, dan itu membuang set point yang
         // teknisinya baru sempat mengisi Indikator: `store()`/`update()` sudah
         // menghapus `raw_measurements` lama SEBELUM menyusun yang baru, jadi
         // pembacaan Indikator-nya hilang permanen — bukan sekadar nggak
         // kehitung. Lembar setengah jadi harus tetap bisa disimpan.
+        //
+        // Suhu Ruang ikut di gerbang ini karena bahayanya PERSIS sama, walau
+        // angkanya sendiri nggak ikut ngitung apa pun. Kalau dia nggak dihitung
+        // sebagai "ada isinya", set point yang baru terisi baris itu doang
+        // kebuang di sini — dan yang kebuang bukan cuma yang barusan dikirim,
+        // tapi juga baris lama yang sudah telanjur dihapus di atas.
         $titikTerpakai = array_values(array_filter(
             $request->input('measurements', []),
             static fn (array $t): bool => collect($t['sensor_grid'] ?? [])
                 ->flatMap(static fn (array $s): array => array_values($s['pembacaan'] ?? []))
                 ->contains($terisi)
-                || collect($t['indikator'] ?? [])->contains($terisi),
+                || collect($t['indikator'] ?? [])->contains($terisi)
+                || collect($t['suhu_ruang'] ?? [])->contains($terisi),
         ));
 
         foreach ($titikTerpakai as $index => $titik) {
@@ -1416,11 +1443,37 @@ class CalibrationController extends Controller
                 ];
             }
 
+            // Baris Suhu Ruang — dicatat mentah, berhenti di situ.
+            foreach (array_values($titik['suhu_ruang'] ?? []) as $urutan => $nilai) {
+                if ($nilai === null || $nilai === '') {
+                    continue;
+                }
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => null,
+                    'peran_sensor' => 'suhu_ruang',
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $setpoint,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
+                    'satuan' => $alat->satuan,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
             $siapHitung[] = [
                 'titik_ke' => $titikKe,
                 'titik_ukur' => $setpoint,
                 'pembacaan' => [],
                 'standard' => $standarDefault,
+                // `suhu_ruang` SENGAJA nggak ikut ke sini. `konteks` itu yang
+                // dibaca kalkulator, dan baris ini nol konsumen di master —
+                // memasukkannya berarti mengarang pengaruh yang di kertas
+                // aslinya nggak ada. Dia berhenti di `$mentah`, dan itu memang
+                // seluruh tugasnya: tercatat, bukan terhitung.
                 'konteks' => [
                     'tipe_sensor' => $tipeSensor,
                     'sensor_grid' => $sensorGrid,

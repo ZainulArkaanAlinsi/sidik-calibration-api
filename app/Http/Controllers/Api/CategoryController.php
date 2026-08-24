@@ -4,20 +4,54 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Models\CalibrationCapability;
 use App\Models\EquipmentCategory;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use Closure;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CategoryController extends Controller
 {
+    /**
+     * Saringan buat `with('capabilities')` — kategorinya udah disaring per
+     * organisasi, tapi ISI kategorinya harus disaring lagi. Bukan mubazir.
+     *
+     * Kepemilikan baris kemampuan ditulis di dua tempat:
+     * `calibration_capabilities.organization_id` dan
+     * `equipment_categories.organization_id`. Relasi `capabilities` itu
+     * `hasMany` lewat `equipment_category_id` DOANG, jadi begitu ada satu baris
+     * yang organisasinya beda dari organisasi kategorinya — bentuk yang bisa
+     * lahir dari panel admin sebelum dropdown kategorinya disaring — baris lab
+     * lain ikut kebawa ke sini, lengkap dengan angka CMC-nya. Yang kelihatan di
+     * HP teknisi: nama alat + ketidakpastian terbaik milik lab sebelah, tanpa
+     * satu pun tanda kalau itu bukan punya labnya.
+     *
+     * Sesudah itu akibatnya nggak berhenti di layar: nama tadi lolos validasi
+     * `nama_alat_kemampuan`, alatnya ketautan, dan angka CMC lab sebelah jadi
+     * lantai U95 di sertifikat lab ini.
+     *
+     * Penjaga di `CalibrationCapability::save()` nutup pintu LAHIRNYA baris
+     * kayak gitu, tapi nggak nyentuh baris yang udah terlanjur ada di produksi
+     * sebelum penjaganya dipasang. Saringan ini yang ngurus itu.
+     *
+     * @return \Closure(\Illuminate\Database\Eloquent\Relations\HasMany<CalibrationCapability, EquipmentCategory>): void
+     */
+    private function hanyaMilikOrganisasi(?int $organizationId): Closure
+    {
+        return fn (HasMany $relasi) => $relasi->milikOrganisasi($organizationId);
+    }
+
     /** Buat dropdown kategori di mobile. */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $organizationId = $request->user()->organization_id;
+
         $categories = EquipmentCategory::query()
-            ->with('capabilities')
-            ->where('organization_id', $request->user()->organization_id)
+            ->with(['capabilities' => $this->hanyaMilikOrganisasi($organizationId)])
+            ->where('organization_id', $organizationId)
             ->orderBy('nama')
             ->get();
 
@@ -30,9 +64,11 @@ class CategoryController extends Controller
      */
     public function show(Request $request, string $kode, CalibrationProfileRegistry $registry): JsonResponse
     {
+        $organizationId = $request->user()->organization_id;
+
         $category = EquipmentCategory::query()
-            ->with('capabilities')
-            ->where('organization_id', $request->user()->organization_id)
+            ->with(['capabilities' => $this->hanyaMilikOrganisasi($organizationId)])
+            ->where('organization_id', $organizationId)
             ->where('kode', $kode)
             ->firstOrFail();
 
