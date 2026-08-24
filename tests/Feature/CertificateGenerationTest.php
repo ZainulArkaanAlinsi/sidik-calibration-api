@@ -134,7 +134,7 @@ class CertificateGenerationTest extends TestCase
         $this->assertStringStartsWith('CAL/', $sertifikat->nomor);
         $this->assertNotNull($sertifikat->qr_token);
         // PDF beneran ketulis ke disk.
-        Storage::disk('local')->assertExists($sertifikat->pdf_path);
+        Storage::disk('arsip')->assertExists($sertifikat->pdf_path);
     }
 
     public function test_sertifikat_fail_tetap_terbit(): void

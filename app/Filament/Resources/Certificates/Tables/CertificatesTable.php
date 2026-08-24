@@ -82,12 +82,12 @@ class CertificatesTable
                     ->icon('heroicon-o-arrow-down-tray')
                     ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_TERBIT
                         && $record->pdf_path
-                        && Storage::disk('local')->exists($record->pdf_path))
+                        && Storage::disk('arsip')->exists($record->pdf_path))
                     ->action(function (Certificate $record): StreamedResponse {
                         // `nomor` ada slash-nya (CAL/2026/07/0001) — nggak boleh jadi nama file.
                         $namaFile = 'Sertifikat-'.str_replace('/', '-', (string) $record->nomor).'.pdf';
 
-                        return Storage::disk('local')->download($record->pdf_path, $namaFile);
+                        return Storage::disk('arsip')->download($record->pdf_path, $namaFile);
                     }),
 
                 // Export Excel (spesifikasi poin 10). Dibikin on demand dari

@@ -221,10 +221,10 @@ class DataTampilanSertifikat
     {
         $path = $organisasi?->tanda_tangan_path;
 
-        if (! filled($path) || ! Storage::disk('local')->exists($path)) {
+        if (! filled($path) || ! Storage::disk('arsip')->exists($path)) {
             return null;
         }
 
-        return 'data:image/png;base64,'.base64_encode((string) Storage::disk('local')->get($path));
+        return 'data:image/png;base64,'.base64_encode((string) Storage::disk('arsip')->get($path));
     }
 }

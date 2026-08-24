@@ -444,7 +444,7 @@ class CalibrationRequest extends FormRequest
 
                 foreach ($ocr as $j => $meta) {
                     $path = $meta['photo_path'] ?? null;
-                    if ($path !== null && ! Storage::disk('local')->exists($path)) {
+                    if ($path !== null && ! Storage::disk('arsip')->exists($path)) {
                         $validator->errors()->add(
                             "measurements.$i.ocr.$j.photo_path",
                             'Foto yang dirujuk nggak ketemu — upload dulu lewat /calibrations/photos.',

@@ -98,7 +98,21 @@ services:
       - key: FILESYSTEM_DISK
         value: local
 
-      # Cloudflare R2 — gratis 10 GB, dipakai kalau FILESYSTEM_DISK=s3.
+      # Saklar pemindahan berkas awet (PDF sertifikat, tanda tangan, dokumen
+      # Folder Manager, foto titik ukur) ke object storage.
+      #
+      # `local` = disk container, kehapus tiap deploy. `s3` = bucket R2 di
+      # bawah. JANGAN digeser sebelum keempat AWS_* terisi dan berkas lama
+      # disalin — kunci di bucket harus sama persis dengan isi kolom
+      # `pdf_path`/`tanda_tangan_path`/`path` di database.
+      #
+      # Ini saklarnya, BUKAN FILESYSTEM_DISK. Yang terakhir itu cuma dibaca
+      # baris `'default'` di config/filesystems.php, dan nggak ada satu pun
+      # pemakaian Storage:: di app/ yang memakai disk default.
+      - key: ARSIP_DRIVER
+        value: local
+
+      # Cloudflare R2 — gratis 10 GB, dipakai kalau ARSIP_DRIVER=s3.
       #
       # Namanya AWS_* karena R2 bicara protokol S3; ini BUKAN Amazon dan nggak
       # perlu akun AWS. Bikinnya: dash.cloudflare.com → R2 → Create bucket,

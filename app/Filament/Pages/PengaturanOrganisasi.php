@@ -163,7 +163,7 @@ class PengaturanOrganisasi extends Page
                             // Disk `local` (PRIVAT), beda dari logo. Gambar tanda tangan
                             // yang URL-nya bisa diakses siapa pun berarti siapa pun bisa
                             // nempelin ke dokumen palsu.
-                            ->disk('local')
+                            ->disk('arsip')
                             ->directory('tanda-tangan')
                             ->visibility('private')
                             // PNG doang: JPG nggak punya latar transparan, jadi bakal

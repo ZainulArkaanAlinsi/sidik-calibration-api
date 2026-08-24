@@ -139,28 +139,49 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
 8. **Pindahin penyimpanan berkas ke Cloudflare R2** sebelum teknisi mulai
    masukin data beneran.
 
-   Selama `FILESYSTEM_DISK` masih `local`, tiap kali kamu push kode, foto
-   lembar kerja yang sudah diunggah teknisi ikut kehapus — bukan risiko yang
-   nunggu kejadian, tapi akibat rutin dari kerja normal.
+   Tiap kali kamu push kode, berkas yang sudah diunggah ikut kehapus — bukan
+   risiko yang nunggu kejadian, tapi akibat rutin dari kerja normal.
 
-   Adapternya (`league/flysystem-aws-s3-v3`) sudah terpasang di repo, jadi
-   nggak ada kode yang perlu diubah. Langkahnya:
+   **Saklarnya `ARSIP_DRIVER`, BUKAN `FILESYSTEM_DISK`.** Ini pernah salah
+   ditulis di sini, dan salahnya mahal: `FILESYSTEM_DISK` cuma dibaca baris
+   `'default'` di `config/filesystems.php`, sementara nggak ada satu pun
+   pemakaian `Storage::` di `app/` yang memakai disk default — semuanya
+   nyebut disknya langsung. Diisi `s3`, dia nggak memindahkan apa pun, tapi
+   MEMATIKAN Import Excel (`FileUpload` Filament ikut variabel itu, sementara
+   pembacaannya dari disk lain).
+
+   Berkas awet ada di disk bernama **`arsip`** — PDF sertifikat, tanda tangan,
+   dokumen Folder Manager, foto titik ukur. Langkahnya:
 
    1. [dash.cloudflare.com](https://dash.cloudflare.com) → **R2** → Create
       bucket (gratis 10 GB).
-   2. **Manage R2 API Tokens** → bikin token, salin Access Key ID & Secret.
+   2. **Manage R2 API Tokens** → **Create Account API token** (bukan User —
+      yang User mati kalau kamu keluar dari organisasi). Permission **Object
+      Read & Write**, dibatasi ke bucket itu saja. Salin Access Key ID &
+      Secret.
    3. Di Render → Environment, isi `AWS_ACCESS_KEY_ID`,
       `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, dan `AWS_ENDPOINT`
       (`https://<account-id>.r2.cloudflarestorage.com`, tanpa nama bucket di
       belakangnya). `AWS_DEFAULT_REGION` biarin `auto` — R2 nggak punya region,
       tapi SDK-nya tetap minta kolom itu terisi.
-   4. Baru sesudah keempatnya keisi, ganti `FILESYSTEM_DISK` jadi `s3`.
+   4. Salin berkas yang sudah ada dari `storage/app/private` ke bucket, pakai
+      kunci yang sama persis dengan isi kolom `pdf_path`, `tanda_tangan_path`,
+      dan `path`. Dilewati, rujukan di database nunjuk ke berkas yang nggak
+      ada di bucket.
+   5. Baru sesudah semuanya beres, ganti **`ARSIP_DRIVER`** jadi `s3`.
       Dibalik urutannya, unggahan langsung error.
-   5. Uji dengan mengunggah satu foto lembar kerja, lalu deploy ulang. Kalau
-      fotonya masih ada sesudah deploy, berarti sudah kena.
+   6. Uji: unggah tanda tangan, terbitkan satu sertifikat, unduh PDF-nya, lalu
+      deploy ulang dan unduh lagi. Kalau masih kebuka sesudah deploy, berarti
+      sudah kena.
 
    Kalau unggahan ditolak dengan keluhan soal nama bucket, balik
    `AWS_USE_PATH_STYLE_ENDPOINT` ke `true`.
+
+   **Yang BELUM ikut pindah:** logo & kop organisasi (masih di disk `public`)
+   dan citra pindai lembar kerja (disk sendiri, `OCR_DISK`). Dua-duanya sengaja
+   ditunda — logo bawa pertanyaan URL publik, dan citra OCR nggak boleh pindah
+   ke penyimpanan awet sebelum `schedule:work` terbukti jalan, karena tanpa
+   pembersih terjadwal retensi 90 hari berubah jadi selamanya.
 
 ## 5. APK, Windows, macOS buat orang lain
 

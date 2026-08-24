@@ -98,7 +98,7 @@ class OcrMeasurementTest extends TestCase
         $path = $this->uploadFoto($this->teknisi);
 
         $this->assertStringStartsWith('measurements/', $path);
-        Storage::disk('local')->assertExists($path);
+        Storage::disk('arsip')->assertExists($path);
     }
 
     public function test_upload_nolak_file_bukan_gambar(): void

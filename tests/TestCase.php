@@ -53,5 +53,14 @@ abstract class TestCase extends BaseTestCase
         // isinya tiap test, jadi test yang emang baca-balik PDF-nya tetap jalan
         // — yang beda cuma tempat nulisnya.
         Storage::fake('local');
+
+        // Disk `arsip` ikut dipalsuin, bukan cuma `local`.
+        //
+        // Di produksi dua-duanya bisa nunjuk ke tempat yang sama (selama
+        // ARSIP_DRIVER masih `local`), tapi `Storage::fake()` NGGAK begitu: dia
+        // ngeganti disk yang disebut dengan folder sementara sendiri. Kelewat
+        // satu, berkas yang ditulis test bocor ke storage/app/private beneran —
+        // persis kebocoran yang komentar di atas ada buat mencegahnya.
+        Storage::fake('arsip');
     }
 }
