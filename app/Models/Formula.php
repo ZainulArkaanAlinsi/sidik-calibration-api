@@ -104,6 +104,18 @@ class Formula extends Model
      */
     public const KODE_GUM_ENCLOSURE = 'gum-enclosure';
 
+    /**
+     * Rumus GUM buat jalur TIDS — Temperatur Indikator dengan Sensor (alat
+     * ke-17). **Belum punya isi**, dan itu disengaja: workbook olah data TIDS
+     * dari lab belum ada, jadi komponen budget-nya belum bisa disusun tanpa
+     * mengarang. Kodenya tetap didaftarkan sekarang supaya sesi TIDS punya
+     * baris rumus & nomor versinya sendiri sejak hari pertama — kalau
+     * menumpang `gum-tits`, jejak audit sesi TIDS bakal menunjuk versi rumus
+     * alat lain, dan nomor versi yang SALAH di jejak audit lebih buruk
+     * daripada nomor yang belum ada. Lihat TidsProfile.
+     */
+    public const KODE_GUM_TIDS = 'gum-tids';
+
     /** @return HasMany<FormulaVersion, $this> */
     public function versions(): HasMany
     {

@@ -26,8 +26,20 @@ class CategoryResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var Collection<int, CalibrationCapability> $caps */
-        $caps = $this->capabilities;
+        /** @var Collection<int, CalibrationCapability> $semua */
+        $semua = $this->capabilities;
+
+        // Ringkasannya dihitung CUMA dari baris yang punya angka.
+        //
+        // Sejak teknisi bisa nambah nama alat sendiri dari lapangan, satu
+        // kategori gampang punya lebih banyak baris tanpa CMC (satuan & rentang
+        // NULL semua) daripada yang lengkap. `groupBy('satuan')` di bawah bakal
+        // ngitung NULL sebagai satuan "paling banyak dipakai", dan seluruh
+        // ringkasan kategori — rentang ukur, ketidakpastian terbaik, satuan —
+        // pulang kosong buat kategori yang datanya sebenernya lengkap. Yang
+        // kelihatan di HP: kartu kategori yang tiba-tiba nggak punya angka,
+        // tanpa ada yang berubah di data akreditasinya.
+        $caps = $semua->filter(fn (CalibrationCapability $c): bool => $c->punyaCmc());
 
         $satuanDominan = $caps->groupBy('satuan')
             ->sortByDesc(fn (Collection $group) => $group->count())
@@ -45,7 +57,14 @@ class CategoryResource extends JsonResource
             'rentang_ukur' => $this->formatRentang($min, $max, $satuanDominan),
             'ketidakpastian_terbaik' => $sesuaiSatuan->min('ketidakpastian_terbaik'),
             'satuan' => $satuanDominan,
-            'jumlah_kemampuan' => $caps->count(),
+            // Tetap ngitung SEMUA baris, termasuk yang belum punya CMC — ini
+            // jawaban buat "ada berapa jenis alat di kategori ini", dan nama
+            // alat yang baru ditambah teknisi itu jenis alat yang beneran ada.
+            'jumlah_kemampuan' => $semua->count(),
+            // Berapa di antaranya yang angkanya belum diturunkan. Dipisah biar
+            // layar bisa bilang "12 jenis alat, 3 belum ada CMC-nya" tanpa
+            // narik detail kategorinya dulu.
+            'jumlah_tanpa_cmc' => $semua->count() - $caps->count(),
         ];
     }
 

@@ -86,6 +86,11 @@ class MatriksIzin
         'metode.lihat' => ['GET', 'api/calibration-methods'],
         'metode.kelola' => ['POST', 'api/calibration-methods'],
         'kategori.lihat' => ['GET', 'api/categories'],
+        // Beda dari `*.kelola` master data lain yang admin-only: yang ini
+        // TEKNISI juga boleh. Dipetakan biar tombol "+ nama alat baru" di layar
+        // pilih-alat nggak perlu ditebak dari role yang di-hardcode di APK —
+        // pelajaran yang sama kayak `role.bisaInput` dulu.
+        'kategori.kemampuan.tambah' => ['POST', 'api/categories/{kode}/kemampuan'],
         'teknisi.kelola' => ['GET', 'api/technicians'],
 
         // --- organisasi & pengguna

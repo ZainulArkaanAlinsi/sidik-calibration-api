@@ -15,8 +15,16 @@
 - Subagent yang tugasnya menganalisis, mereview, atau menyintesis jalankan dengan `model="sonnet"`.
 - Sisakan Opus untuk thread utama dan keputusan arsitektur.
 
+## Daftar Permintaan
+- Tujuh permintaan besar dari pemilik proyek ada di `docs/permintaan-user-7.md` — itu yang jadi
+  pegangan, bukan ingatan percakapan. Baca dulu sebelum mulai kerja, dan perbarui kolom Status di
+  commit yang sama dengan perubahannya.
+- Berkas itu juga menyimpan keputusan yang SUDAH diambil (jangan ditanya ulang), pertanyaan yang
+  masih menunggu jawaban, dan jebakan yang sudah terbukti bikin salah.
+
 ## Instruksi Compaction
 Saat konteks dipadatkan, pertahankan hal berikut:
+- Penunjuk ke `docs/permintaan-user-7.md` beserta permintaan mana yang sedang dikerjakan.
 - Nama branch yang sedang dipakai dan file yang sudah diubah tapi belum di-commit.
 - Keputusan teknis yang sudah diambil beserta alasannya, bukan proses perdebatannya.
 - Status verifikasi: perintah test/tinker yang sudah dijalankan di MySQL berikut hasilnya.
