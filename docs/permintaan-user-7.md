@@ -119,12 +119,12 @@ berkas profil.
 
 | Gel. | Isi | Status |
 |---|---|---|
-| G0 | Sertifikat Insitu, draf tanpa tanggal, ruangan ke-16, cabut UI pindai (perm. 3) | **selesai, di PR draft** — belum masuk `main`, jadi belum ada di APK mana pun |
-| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **selesai, di PR draft** — perm. 2 jalan di 12/12 profil, aturannya datang dari server |
-| G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **selesai, di PR draft** (K10/K11 masih menahan pintu masuk & tombol hapus) |
-| G3 | Lembar kerja ikut PDF (perm. 6) | **jalan** — kop TITS `SIDIK-FM-CAL-0505 Rev.3` + kepala lembar & blok dimensi Enclosure `SIDIK-FM-CAL-0504 Rev.3` sudah ikut PDF; TIDS `0506 Rev.4` belum |
-| G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2** |
-| G5 | Scan Tabel (perm. 7) | belum — petakan dulu ke yang sudah ada |
+| G0 | Sertifikat Insitu, draf tanpa tanggal, ruangan ke-16, cabut UI pindai (perm. 3) | **TERKIRIM** — di `main`, ada di APK **v1.0.42** |
+| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di 12/12 profil, dijaga `SemuaProfilLembarKerjaTest` |
+| G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
+| G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
+| G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
+| G5 | Scan Tabel (perm. 7) | **sudah dipetakan** → `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec SUDAH terbangun (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Menunggu jawaban S1/S2/S3 sebelum satu baris pun ditulis (§12 spec) |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
@@ -155,6 +155,15 @@ Supaya tidak dibangun ulang:
   (`dimensi.volume`).
 - **Baris "Suhu Ruang"** di grid Enclosure sudah diisi teknisi tapi dibuang sebelum dikirim —
   backend belum punya tempat menampungnya.
+- **`php artisan test -d "DB_CONNECTION=mysql"` DIABAIKAN.** `phpunit.xml` memaksa
+  `sqlite::memory:` lewat `<env>`, dan cuma environment variable yang menimpanya:
+  `DB_CONNECTION=mysql DB_DATABASE=sidik_test php artisan test`. Dengan flag `-d`
+  test-nya tetap jalan di SQLite dan **tetap hijau** — jadi "sudah diverifikasi di
+  MySQL" bisa jadi klaim palsu tanpa satu pun tanda. Buktikan dengan test kecil yang
+  mencetak `DB::connection()->getDriverName()`.
+- **SQLite menyembunyikan FK.** `PRAGMA foreign_keys` diabaikan di dalam transaksi,
+  dan `RefreshDatabase` membungkus tiap test dalam transaksi — jadi FK komposit
+  antar-lab tidak pernah benar-benar diuji di SQLite.
 - **`flutter analyze` mengedit `analysis_options.yaml` sendiri** ("Upgrading analysis_options.yaml
   to exclude build and platform directories"). Selalu keluarkan dari commit.
 - **`flutter test` hijau bukan bukti UI hilang** — sebagian besar test pindai menguji layanan
