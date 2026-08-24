@@ -19,4 +19,18 @@ class InkubatorProfile extends EnclosureProfileBase
     {
         return 'Inkubator';
     }
+
+    /**
+     * Lampiran akreditasi no. 8 nulis "Inkubator" (Indonesia, lihat
+     * [namaAlatKemampuan]); merk alatnya sendiri hampir selalu nulis
+     * "Incubator". Cuma jenis enclosure ini yang ejaannya bercabang — Oven,
+     * Furnace, Bath, & Refrigerator ejaannya tunggal, jadi keempatnya nggak
+     * override [aliasNama].
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Incubator'];
+    }
 }

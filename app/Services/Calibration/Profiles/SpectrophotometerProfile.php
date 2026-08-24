@@ -302,6 +302,22 @@ class SpectrophotometerProfile extends CalibrationProfile
         return 'Spectrophotometer';
     }
 
+    /**
+     * TIGA ejaan, dan ketiganya beneran ada di data lab: master Excel &
+     * `DATABASE.csv` nulis "Spectrophotometer" (itu [namaAlatKemampuan], dan
+     * itu yang diseed `SpectrophotometerCapabilitySeeder`),
+     * `kemampuan-kalibrasi.json` no. 47 nulis "Spektrofotometer" (tiga baris
+     * CMC yang nggak dipakai jalur hitung, tapi KARTUNYA tetap muncul di
+     * picker), dan alat pelanggannya sendiri terdaftar "Visible
+     * Spectrofotometer". Ketiganya satu alat yang sama.
+     *
+     * @return list<string>
+     */
+    public function aliasNama(): array
+    {
+        return ['Spektrofotometer', 'Spectrofotometer'];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_SPECTRO;
