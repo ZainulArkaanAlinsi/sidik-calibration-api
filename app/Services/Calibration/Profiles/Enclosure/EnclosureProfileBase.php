@@ -55,11 +55,20 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     public const KODE_METODE = 'SIDIK-IK-CAL-0501_Rev.6';
 
     /**
-     * Nomor formulir lembar kerja enclosure belum ada — sama temuan TITS: satu-
-     * satunya nomor di berkas `SIDIK-FM-CAL-2403_Rev. 0` itu formulir sertifikat
-     * bersama, bukan lembar kerja. Sengaja `null`, ditanyakan ke lab.
+     * Nomor formulir lembar kerja enclosure — dari kertasnya sendiri.
+     *
+     * Sebelumnya `null` dengan catatan "ditanyakan ke lab", karena satu-satunya
+     * nomor yang kelihatan waktu itu (`SIDIK-FM-CAL-2403_Rev. 0`) ternyata
+     * formulir sertifikat bersama, bukan lembar kerja. Pertanyaannya sekarang
+     * sudah terjawab: pemilik proyek mengirim lembar kerjanya langsung, dan
+     * kop halamannya bernomor `SIDIK-FM-CAL-0504 Rev.3`.
+     *
+     * Sengaja dipisah dari [KODE_METODE]: yang satu menomori LEMBAR KERJANYA,
+     * yang satu menomori INSTRUKSI KERJA di baliknya. Dua-duanya naik revisi
+     * sendiri-sendiri, dan menyamakannya bikin lembar tercetak mengaku ikut
+     * revisi yang bukan revisinya.
      */
-    public const KODE_DOKUMEN = null;
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0504_Rev.3';
 
     public const SATUAN = '°C';
 

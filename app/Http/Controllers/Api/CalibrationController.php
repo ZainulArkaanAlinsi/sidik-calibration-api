@@ -1350,20 +1350,27 @@ class CalibrationController extends Controller
 
         $terisi = static fn ($v): bool => $v !== null && $v !== '';
 
-        // Set point dianggap terpakai kalau ADA isinya — dari termokopel MAUPUN
-        // dari baris Indikator.
+        // Set point dianggap terpakai kalau ADA isinya — dari termokopel,
+        // dari baris Indikator, MAUPUN dari baris Suhu Ruang.
         //
         // Dulu cuma termokopel yang dicek, dan itu membuang set point yang
         // teknisinya baru sempat mengisi Indikator: `store()`/`update()` sudah
         // menghapus `raw_measurements` lama SEBELUM menyusun yang baru, jadi
         // pembacaan Indikator-nya hilang permanen — bukan sekadar nggak
         // kehitung. Lembar setengah jadi harus tetap bisa disimpan.
+        //
+        // Suhu Ruang ikut di gerbang ini karena bahayanya PERSIS sama, walau
+        // angkanya sendiri nggak ikut ngitung apa pun. Kalau dia nggak dihitung
+        // sebagai "ada isinya", set point yang baru terisi baris itu doang
+        // kebuang di sini — dan yang kebuang bukan cuma yang barusan dikirim,
+        // tapi juga baris lama yang sudah telanjur dihapus di atas.
         $titikTerpakai = array_values(array_filter(
             $request->input('measurements', []),
             static fn (array $t): bool => collect($t['sensor_grid'] ?? [])
                 ->flatMap(static fn (array $s): array => array_values($s['pembacaan'] ?? []))
                 ->contains($terisi)
-                || collect($t['indikator'] ?? [])->contains($terisi),
+                || collect($t['indikator'] ?? [])->contains($terisi)
+                || collect($t['suhu_ruang'] ?? [])->contains($terisi),
         ));
 
         foreach ($titikTerpakai as $index => $titik) {
@@ -1436,11 +1443,37 @@ class CalibrationController extends Controller
                 ];
             }
 
+            // Baris Suhu Ruang — dicatat mentah, berhenti di situ.
+            foreach (array_values($titik['suhu_ruang'] ?? []) as $urutan => $nilai) {
+                if ($nilai === null || $nilai === '') {
+                    continue;
+                }
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => null,
+                    'peran_sensor' => 'suhu_ruang',
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $setpoint,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
+                    'satuan' => $alat->satuan,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
             $siapHitung[] = [
                 'titik_ke' => $titikKe,
                 'titik_ukur' => $setpoint,
                 'pembacaan' => [],
                 'standard' => $standarDefault,
+                // `suhu_ruang` SENGAJA nggak ikut ke sini. `konteks` itu yang
+                // dibaca kalkulator, dan baris ini nol konsumen di master —
+                // memasukkannya berarti mengarang pengaruh yang di kertas
+                // aslinya nggak ada. Dia berhenti di `$mentah`, dan itu memang
+                // seluruh tugasnya: tercatat, bukan terhitung.
                 'konteks' => [
                     'tipe_sensor' => $tipeSensor,
                     'sensor_grid' => $sensorGrid,

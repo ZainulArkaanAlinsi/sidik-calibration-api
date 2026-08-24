@@ -202,4 +202,40 @@ class EnclosureKepalaLembarTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.bagian.0.kode', 'identitas_alat');
     }
+
+    /**
+     * Kop lembar bawa nomor formulir dari kertasnya, bukan `null`.
+     *
+     * Dulu `null` karena nomornya beneran belum ketahuan. Sekarang kertasnya
+     * sudah ada di tangan, jadi lembar tercetaknya wajib bernomor — lembar
+     * kerja lab terakreditasi tanpa nomor formulir itu temuan audit.
+     */
+    #[DataProvider('profilEnclosure')]
+    public function test_kop_lembar_bawa_nomor_formulir_dari_pdf(string $profil): void
+    {
+        $this->actingAs($this->teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?profil='.$profil)
+            ->assertOk()
+            ->assertJsonPath('data.kode_dokumen', 'SIDIK-FM-CAL-0504_Rev.3');
+    }
+
+    /**
+     * Nomor LEMBAR KERJA dan nomor INSTRUKSI KERJA nggak boleh disamakan.
+     *
+     * Dua-duanya nempel di halaman yang sama dan mirip bentuknya, jadi gampang
+     * dikira satu. Padahal revisinya jalan sendiri-sendiri: `0504` naik ke
+     * Rev.3 tanpa `0501` ikut pindah. Kalau ada yang menyatukannya, lembar
+     * tercetak bakal mengaku ikut revisi yang bukan revisinya.
+     */
+    #[DataProvider('profilEnclosure')]
+    public function test_nomor_formulir_beda_dari_nomor_metode(string $profil): void
+    {
+        $bentuk = app(CalibrationProfileRegistry::class)
+            ->untukKode($profil)
+            ->bentukLembarKerja();
+
+        $this->assertSame('SIDIK-FM-CAL-0504_Rev.3', $bentuk['kode_dokumen']);
+        $this->assertSame('SIDIK-IK-CAL-0501_Rev.6', $bentuk['kode_metode']);
+        $this->assertNotSame($bentuk['kode_dokumen'], $bentuk['kode_metode']);
+    }
 }
