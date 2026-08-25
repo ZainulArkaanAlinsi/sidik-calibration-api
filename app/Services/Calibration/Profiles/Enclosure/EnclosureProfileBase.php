@@ -136,6 +136,38 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      */
     abstract public function namaAlatKemampuan(): string;
 
+    /**
+     * Jalur foto AI DITOLAK buat kelima lembar Enclosure.
+     *
+     * Dua penanda bentuk (`kolom_suhu`, `standar_di_baris`) cuma sanggup
+     * menggambarkan lembar "titik ukur × Repeat". Kertas Enclosure bentuknya
+     * GRID — 9 termokopel × 5 pembacaan per set point, plus baris Indikator &
+     * Suhu Ruang — dan nggak ada kombinasi dua penanda itu yang
+     * menggambarkannya.
+     *
+     * Tanpa penolakan ini, yang terjadi bukan error. Prompt & skema JSON yang
+     * dikirim ke pembaca foto dibangun dari dua penanda itu, jadi modelnya
+     * diminta membaca tabel yang NGGAK PERNAH ADA di kertasnya — dan yang balik
+     * ke teknisi angka ngawur yang kelihatan wajar, di lembar yang hasilnya
+     * masuk sertifikat terakreditasi.
+     *
+     * Ini penolakan yang sama persis dengan Autoklaf (matriks 7 besaran × 5
+     * titik waktu) dan TIDS (dua tabel interval waktu). Ketiganya sekarang
+     * lengkap; sebelum ini cuma Enclosure yang ketinggalan, dan ketinggalannya
+     * nggak bergejala.
+     *
+     * Yang TIDAK ikut ditolak: jalur OCR template lokal (`PINDAI LEMBAR
+     * KERJA`). Dia nggak pakai dua penanda ini sama sekali — dia pakai berkas
+     * geometri per sel, dan sejak `TemplateLembarKerja` bisa menerjemahkan
+     * grid, kelima lembar ini punya 55 sel yang sah.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => false];
+    }
+
     public function kodeFormula(): string
     {
         return Formula::KODE_GUM_ENCLOSURE;

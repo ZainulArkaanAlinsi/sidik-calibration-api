@@ -1,0 +1,780 @@
+{
+    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "template_id": "tits",
+    "versi": 1,
+    "kode_dokumen": "SIDIK-FM-CAL-0505_Rev.3",
+    "terverifikasi": false,
+    "ukuran_referensi": {
+        "w": 1654,
+        "h": 2339,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 1564,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 1564,
+            "y": 2249,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 2249,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "tits|v1",
+        "kotak": {
+            "x": 1309,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 286,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 493,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 700,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 4,
+            "teks": "X4",
+            "kotak": {
+                "x": 907,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 5,
+            "teks": "X5",
+            "kotak": {
+                "x": 1114,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 6,
+            "teks": "X6",
+            "kotak": {
+                "x": 1321,
+                "y": 897,
+                "w": 219,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "sebelum_adjustment",
+            "judul": "Before Adjustment Reading",
+            "kiri": 90,
+            "sel": {
+                "sebelum_adjustment|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|1|2|pembacaan": {
+                    "x": 499,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|2|pembacaan": {
+                    "x": 499,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|2|pembacaan": {
+                    "x": 499,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|2|pembacaan": {
+                    "x": 499,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|2|pembacaan": {
+                    "x": 499,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|2|pembacaan": {
+                    "x": 499,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|2|pembacaan": {
+                    "x": 499,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|2|pembacaan": {
+                    "x": 499,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|2|pembacaan": {
+                    "x": 499,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|1|3|pembacaan": {
+                    "x": 706,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|3|pembacaan": {
+                    "x": 706,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|3|pembacaan": {
+                    "x": 706,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|3|pembacaan": {
+                    "x": 706,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|3|pembacaan": {
+                    "x": 706,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|3|pembacaan": {
+                    "x": 706,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|3|pembacaan": {
+                    "x": 706,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|3|pembacaan": {
+                    "x": 706,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|3|pembacaan": {
+                    "x": 706,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|1|4|pembacaan": {
+                    "x": 913,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|4|pembacaan": {
+                    "x": 913,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|4|pembacaan": {
+                    "x": 913,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|4|pembacaan": {
+                    "x": 913,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|4|pembacaan": {
+                    "x": 913,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|4|pembacaan": {
+                    "x": 913,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|4|pembacaan": {
+                    "x": 913,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|4|pembacaan": {
+                    "x": 913,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|4|pembacaan": {
+                    "x": 913,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|1|5|pembacaan": {
+                    "x": 1120,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|1|6|pembacaan": {
+                    "x": 1327,
+                    "y": 955,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|2|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1011,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|3|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1067,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|4|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1123,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|5|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1179,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|6|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1235,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|7|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1291,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|8|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1347,
+                    "w": 207,
+                    "h": 56
+                },
+                "sebelum_adjustment|9|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1403,
+                    "w": 207,
+                    "h": 56
+                }
+            }
+        },
+        {
+            "tabel_id": "sesudah_adjustment",
+            "judul": "After Adjustment Reading",
+            "kiri": 90,
+            "sel": {
+                "sesudah_adjustment|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|1|2|pembacaan": {
+                    "x": 499,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|2|pembacaan": {
+                    "x": 499,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|2|pembacaan": {
+                    "x": 499,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|2|pembacaan": {
+                    "x": 499,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|2|pembacaan": {
+                    "x": 499,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|2|pembacaan": {
+                    "x": 499,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|2|pembacaan": {
+                    "x": 499,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|2|pembacaan": {
+                    "x": 499,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|2|pembacaan": {
+                    "x": 499,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|1|3|pembacaan": {
+                    "x": 706,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|3|pembacaan": {
+                    "x": 706,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|3|pembacaan": {
+                    "x": 706,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|3|pembacaan": {
+                    "x": 706,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|3|pembacaan": {
+                    "x": 706,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|3|pembacaan": {
+                    "x": 706,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|3|pembacaan": {
+                    "x": 706,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|3|pembacaan": {
+                    "x": 706,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|3|pembacaan": {
+                    "x": 706,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|1|4|pembacaan": {
+                    "x": 913,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|4|pembacaan": {
+                    "x": 913,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|4|pembacaan": {
+                    "x": 913,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|4|pembacaan": {
+                    "x": 913,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|4|pembacaan": {
+                    "x": 913,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|4|pembacaan": {
+                    "x": 913,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|4|pembacaan": {
+                    "x": 913,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|4|pembacaan": {
+                    "x": 913,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|4|pembacaan": {
+                    "x": 913,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|1|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|5|pembacaan": {
+                    "x": 1120,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|5|pembacaan": {
+                    "x": 1120,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|5|pembacaan": {
+                    "x": 1120,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|1|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1644,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|2|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1700,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|3|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1756,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|4|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1812,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|5|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1868,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|6|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1924,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|7|6|pembacaan": {
+                    "x": 1327,
+                    "y": 1980,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|8|6|pembacaan": {
+                    "x": 1327,
+                    "y": 2036,
+                    "w": 207,
+                    "h": 56
+                },
+                "sesudah_adjustment|9|6|pembacaan": {
+                    "x": 1327,
+                    "y": 2092,
+                    "w": 207,
+                    "h": 56
+                }
+            }
+        }
+    ]
+}
