@@ -27,18 +27,94 @@ class CetakLembarKerjaOcrTest extends TestCase
     // buat koordinatnya, tapi tabelnya tetap mesti ada.
     use RefreshDatabase;
 
-    /** @return list<array{string}> */
+    /**
+     * Dibaca dari berkas geometri yang BENERAN ada, bukan didaftar tangan.
+     *
+     * Daftar tangan itu yang bikin celahnya kebuka: waktu S3 dijawab "semua
+     * lembar aja bisa dipindai", sembilan berkas geometri baru mendarat
+     * (`do_meter`, `gas_detector`, `tits`, `tids`, dan kelima Enclosure) —
+     * tapi daftar di sini tetap tujuh. Jadi tujuh belas lembar bisa dipindai
+     * sementara cuma tujuh yang dijaga, dan yang sepuluh itu justru yang paling
+     * baru.
+     *
+     * Yang lolos di celah itu nggak kelihatan sebagai error:
+     *
+     *  - Kunci ada di template tapi kotaknya nggak kegambar -> teknisi nulis
+     *    angka di tempat yang nggak pernah dipotong. Angkanya hilang, diam.
+     *  - Kotak kegambar tapi kuncinya nggak dikenal server -> SELURUH kiriman
+     *    ditolak, dan yang salah cuma satu kotak.
+     *
+     * `glob` cuma bisa nambah, nggak bisa menyusut diam-diam: berkas geometri
+     * baru langsung ikut kejaga tujuh test di berkas ini tanpa ada yang perlu
+     * ingat memperbarui daftar. Sisi sebaliknya — profil yang PUNYA lembar tapi
+     * belum punya berkas geometri — dijaga
+     * [test_tiap_profil_punya_berkas_geometrinya_sendiri].
+     *
+     * Pakai `__DIR__`, bukan `database_path()`: data provider dipanggil PHPUnit
+     * sebelum aplikasi Laravel di-boot, jadi helper-nya belum ada.
+     *
+     * @return array<string, array{string}>
+     */
     public static function alat(): array
     {
-        return [
-            ['ph_meter'],
-            ['turbidimeter'],
-            ['chlorine_meter'],
-            ['refractometer'],
-            ['conductivity_meter'],
-            ['spectrophotometer'],
-            ['viscometer'],
-        ];
+        $berkas = glob(__DIR__.'/../../database/ocr-templates/*-v1.json');
+
+        // Bukan `assert`: provider jalan di luar test, jadi kegagalannya perlu
+        // meledak sendiri. Nol berkas berarti path-nya salah, dan provider
+        // kosong bikin SEMUA test di berkas ini "lolos" tanpa jalan sekali pun.
+        if ($berkas === false || $berkas === []) {
+            throw new \RuntimeException(
+                'Nol berkas geometri ketemu di database/ocr-templates/. '
+                .'Provider kosong bikin tujuh test di berkas ini lolos tanpa jalan sekali pun.',
+            );
+        }
+
+        $hasil = [];
+        foreach ($berkas as $path) {
+            $kode = str_replace('-v1', '', pathinfo($path, PATHINFO_FILENAME));
+            $hasil[$kode] = [$kode];
+        }
+
+        ksort($hasil);
+
+        return $hasil;
+    }
+
+    /**
+     * Tiap profil di registry WAJIB punya berkas geometrinya, dan sebaliknya.
+     *
+     * Ini sisi yang `glob` di [alat] nggak bisa lihat. Profil baru yang lahir
+     * tanpa berkas geometri nggak bikin satu pun test merah — dia cuma nggak
+     * pernah ikut diuji, dan lembarnya diam-diam jadi satu-satunya yang nggak
+     * bisa dipindai. Itu persis kebalikan dari jawaban S3.
+     *
+     * Arah sebaliknya juga dijaga: berkas geometri yatim (profilnya sudah
+     * dicabut) bikin `ocr:cetak-lembar` masih sanggup nyetak kertas buat lembar
+     * yang servernya sudah nggak kenal.
+     */
+    public function test_tiap_profil_punya_berkas_geometrinya_sendiri(): void
+    {
+        $diRegistry = array_map(
+            static fn (array $t): string => (string) $t['template_id'],
+            app(TemplateLembarKerja::class)->daftar(),
+        );
+
+        $diDisk = array_map(
+            static fn (array $a): string => $a[0],
+            array_values(self::alat()),
+        );
+
+        sort($diRegistry);
+        sort($diDisk);
+
+        $this->assertSame(
+            $diRegistry,
+            $diDisk,
+            'Daftar profil dan daftar berkas geometri nggak sama. Yang kurang di disk '
+            .'artinya lembarnya nggak bisa dipindai sama sekali; yang kurang di registry '
+            .'artinya ada kertas yang masih bisa dicetak buat lembar yang servernya udah '
+            .'nggak kenal.',
+        );
     }
 
     #[DataProvider('alat')]
