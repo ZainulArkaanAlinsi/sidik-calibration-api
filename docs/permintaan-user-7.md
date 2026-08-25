@@ -99,6 +99,8 @@ Jangan ditanyakan ulang.
 | K6 | **Dua** tombol kamera dicabut — `PINDAI LEMBAR KERJA` dan `FOTO TABEL INI` | disetujui lewat "gas G0" |
 | K7 | UI pindai **disembunyikan di balik saklar**, bukan dihapus (`--dart-define=PINDAI_LEMBAR=true`) | idem |
 | — | Isi Excel master dianggap benar & aman; tidak perlu ditanyakan ulang ke lab | pemilik proyek |
+| **S1** | **UI pindai DINYALAKAN lagi** (25 Agt 2026) — ini MEMBALIK permintaan 3, yang dulu minta UI pindai dicabut "untuk sekarang". Saklarnya tetap ada supaya bisa dimatikan lagi tanpa ganti kode | pemilik proyek |
+| **S2** | Pakai tabel `worksheet_scans`/`worksheet_scan_cells` yang sudah ada. **Tidak** membuat `ocr_scans` baru | pemilik proyek |
 
 ## Yang MASIH menunggu jawaban
 
@@ -109,6 +111,7 @@ Jangan ditanyakan ulang.
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
+| S3 | Dari 9 lembar yang belum punya template pindai, mana yang beneran dipotret teknisi di lapangan? | Tiap lembar suhu butuh file geometri baru + kerja bentuk. Sampai dijawab, lembar itu tombolnya tampil MATI berikut alasannya — bukan hilang, bukan ngawur |
 
 ---
 
@@ -124,7 +127,7 @@ berkas profil.
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
-| G5 | Scan Tabel (perm. 7) | **sudah dipetakan** → `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec SUDAH terbangun (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Menunggu jawaban S1/S2/S3 sebelum satu baris pun ditulis (§12 spec) |
+| G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **sudah dipetakan** → `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec SUDAH terbangun (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Menunggu jawaban S1/S2/S3 sebelum satu baris pun ditulis (§12 spec) |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
