@@ -8,7 +8,6 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use ReflectionClass;
 use Tests\TestCase;
 
 /**
@@ -43,24 +42,42 @@ class SemuaProfilLembarKerjaTest extends TestCase
      * diuji sendiri di [test_profil_generik_nggak_punya_lembar_dan_ditolak_endpoint]
      * — bukan dikecualikan diam-diam.
      *
-     * Daftarnya dibaca dari REGISTRY, bukan diketik di sini. Profil ke-13 yang
+     * Daftarnya dibaca dari REGISTRY, bukan diketik di sini. Profil yang
      * ditambahkan besok langsung ikut diuji tanpa ada yang perlu ingat.
      *
      * @return array<string, array{CalibrationProfile}>
      */
     public static function semuaProfil(): array
     {
-        $registry = app(CalibrationProfileRegistry::class);
-
-        $prop = (new ReflectionClass($registry))->getProperty('profil');
-        $prop->setAccessible(true);
-
-        /** @var list<CalibrationProfile> $profil */
-        $profil = $prop->getValue($registry);
+        // `semua()` itu jalan resminya, dan docblock-nya menyebut kasus ini
+        // persis: "dipakai jalur yang harus nyapu SEMUA jenis alat sekaligus".
+        // Dulu di sini Reflection ke properti privat `profil` — memulangkan isi
+        // yang sama, tapi lewat pintu yang nggak dijanjikan siapa-siapa.
+        $profil = app(CalibrationProfileRegistry::class)->semua();
 
         $hasil = [];
         foreach ($profil as $p) {
             $hasil[$p->kode()] = [$p];
+        }
+
+        // Penjaga lantai. Sweep yang daftarnya datang dari luar punya satu cara
+        // gagal yang nggak bersuara: daftarnya menyusut, kasusnya ikut sedikit,
+        // dan PHPUnit tetap menulis "OK" — cuma dengan lebih sedikit yang
+        // diperiksa. Nol profil malah "lolos" paling meyakinkan, karena nggak
+        // ada satu pun assertion yang sempat gagal.
+        //
+        // Angka 17 bukan target yang harus dikejar, tapi LANTAI: registry cuma
+        // boleh nambah. Kalau suatu hari ada profil yang memang dicabut,
+        // turunkan angkanya SEKALIAN dengan pencabutannya — supaya penyusutan
+        // itu jadi keputusan yang tercatat, bukan kejadian yang kelewat.
+        //
+        // Pola ini disalin dari `LokasiLembarKerjaSemuaProfilTest`, yang sudah
+        // memakainya lebih dulu.
+        if (count($hasil) < 17) {
+            throw new \RuntimeException(
+                'Registry cuma memulangkan '.count($hasil).' profil, di bawah lantai 17. '
+                .'Sweep di berkas ini jadi nggak ngecek apa-apa buat yang hilang.',
+            );
         }
 
         return $hasil;
