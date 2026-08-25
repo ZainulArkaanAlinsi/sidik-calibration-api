@@ -178,6 +178,33 @@ Supaya tidak dibangun ulang:
   Konsekuensi yang menempel: **`--update-goldens` hanya boleh dijalankan di macOS**, dengan
   Flutter versi yang sama persis dengan CI (`3.44.6`), dan hanya berkas yang memang berubah yang
   di-commit — sisanya dikembalikan.
+- **`git fetch <branch>` TIDAK memajukan branch lokal.** Dia cuma menulis `FETCH_HEAD`. Dan
+  `git checkout <branch>` waktu kita memang sudah berada di branch itu menjawab `Already on
+  '<branch>'` lalu tidak melakukan apa pun. Gabungan keduanya menghasilkan pohon kerja yang
+  **masih tertinggal padahal kelihatan baru saja disegarkan** — tanpa satu pun peringatan.
+
+  Ini memakan tiga putaran waktu memperbarui golden Chlorin (25 Agt 2026). Urutan
+  `git fetch origin <branch>` → `git checkout <branch>` → `flutter test --update-goldens`
+  merender **kode lama**, lalu menulisnya sebagai golden "baru". Yang lahir bukan error:
+  sebuah PNG yang kelihatan sudah diperbarui tapi memotret tampilan sebelum perubahan.
+  CI menolaknya dengan selisih **7,15%** — praktis sama dengan 7,14% milik golden lama.
+
+  Tanda pengenalnya ada di ukuran berkas. Render ulang yang benar menggeser ukurannya jauh;
+  yang salah cuma meng-encode ulang gambar yang sama:
+
+  | | ukuran | selisih |
+  |---|---|---|
+  | render dari pohon basi | 234.478 → 234.567 | **+89 B** — bohong |
+  | render dari pohon benar | 234.478 → 233.606 | **−872 B** — sah |
+
+  Jadi sebelum commit golden, jalankan `git diff --stat`: pergeseran puluhan byte berarti
+  pohonnya salah, bukan golden-nya. Yang memajukan branch lokal itu `git pull`, atau
+  `git checkout -B <branch> origin/main` kalau memang mau menimpanya.
+- **Dua repo ini punya branch bernama sama (`claude/hai-kp62fs`).** Jadi `git push origin
+  claude/hai-kp62fs` yang dijalankan dari repo yang keliru **berhasil** — dia mendorong branch
+  repo itu, dan yang keluar `Everything up-to-date`. Persis seperti push yang sukses, padahal
+  yang mau didorong ada di repo sebelah dan tidak ke mana-mana. Pastikan `pwd` dulu; kalau
+  ragu, `git log --oneline -1` menunjukkan repo mana yang sedang dipegang.
 - ~~**Enclosure tidak punya `equipment_id`**~~ — sudah dibereskan di `dfe8ef8`; bagian
   `identitas_alat` sekarang membawanya, dan 15 test di `EnclosureKepalaLembarTest` merah kalau
   hilang lagi.
