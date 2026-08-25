@@ -244,6 +244,37 @@ class TidsProfile extends CalibrationProfile
         ['nama' => 'TH-7', 'lokasi' => 'Insitu'],
     ];
 
+    /**
+     * Isi dropdown "Thermohygro Used" — MASTER lengkap, bukan empat di kop.
+     *
+     * Pembagian tugasnya sengaja: `THERMOHYGRO_TERCETAK` di atas empat yang
+     * tercetak di kertas (disodorkan duluan di layar), sedangkan dropdown-nya
+     * harus memuat ketujuh unit yang ada di master. Kalau teknisi kebetulan
+     * memakai TH-1/TH-3/TH-5 di lembar ini, dia tetap bisa memilihnya.
+     *
+     * TH-7 digrup `Insitu` di sini — SENGAJA, dan ikut kop lembar ini sendiri
+     * (`THERMOHYGRO_TERCETAK` di atas: `Insitu : TH-2 / TH-6 / TH-7`). Grup itu
+     * memang beda-beda per lembar karena yang menentukan CETAKANNYA, bukan
+     * tempat unitnya diparkir: `ConductivityProfile` juga menaruh TH-7 di
+     * Insitu mengikuti `SIDIK-FM-CAL-0510_Rev.5`, sementara lembar lain
+     * menaruhnya di Inlab. Yang dipilih teknisi `standard_id` yang sama persis
+     * — ini murni soal di bawah judul mana kotaknya muncul.
+     *
+     * Jadi jangan "diseragamkan" ke satu daftar global: yang bakal terjadi kop
+     * dan dropdown di lembar yang sama saling bertentangan.
+     *
+     * @var list<array{label: string, grup: string}>
+     */
+    public const THERMOHYGRO_PILIHAN = [
+        ['label' => 'TH-1', 'grup' => 'Inlab'],
+        ['label' => 'TH-3', 'grup' => 'Inlab'],
+        ['label' => 'TH-4', 'grup' => 'Inlab'],
+        ['label' => 'TH-5', 'grup' => 'Inlab'],
+        ['label' => 'TH-2', 'grup' => 'Insitu'],
+        ['label' => 'TH-6', 'grup' => 'Insitu'],
+        ['label' => 'TH-7', 'grup' => 'Insitu'],
+    ];
+
     public function kode(): string
     {
         return 'tids';
@@ -546,7 +577,57 @@ class TidsProfile extends CalibrationProfile
             $bentuk['bagian'][] = $this->bagianAdmin();
         }
 
-        return $this->tautkanStandar($bentuk);
+        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk));
+    }
+
+    /**
+     * Isi pilihan "Thermohygro Used".
+     *
+     * Lembar ini punya DUA jalur ke unit thermohygro, dan sebelum ini
+     * dua-duanya mati:
+     *
+     *  1. dropdown `thermohygro_standard_id` — nggak pernah diisi sama sekali,
+     *     jadi `pilihan`-nya `[]` dan layar teknisi jatuh ke teks mati;
+     *  2. `baris_thermohygro` di kop — keisi, tapi dicocokkan ke koleksi
+     *     `whereNull('parameter_kondisi')` milik `tautkanStandar()`, yang
+     *     menurut definisi NGGAK memuat satu pun thermohygro. Keempat barisnya
+     *     selalu pulang `terdaftar: false`.
+     *
+     * Yang kedua lebih halus karena kelihatan bekerja: barisnya ada, labelnya
+     * benar, cuma `standard_id`-nya null. Nomor 2 diperbaiki di
+     * `tautkanStandar()`, nomor 1 di sini.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function isiPilihanThermohygro(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->pluck('id', 'nama');
+
+        $pilihan = [];
+        foreach (self::THERMOHYGRO_PILIHAN as $unit) {
+            $id = $master[$unit['label']] ?? null;
+            if ($id === null) {
+                continue;
+            }
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $unit['label'],
+                'grup' => $unit['grup'],
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if ($field['kode'] === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
+        }
+
+        return $bentuk;
     }
 
     /**
@@ -1014,6 +1095,22 @@ class TidsProfile extends CalibrationProfile
             ->whereNull('parameter_kondisi')
             ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
 
+        // Thermohygro DIAMBIL TERPISAH, dan itu bukan rapi-rapi.
+        //
+        // `$master` di atas sengaja `whereNull('parameter_kondisi')` — itu
+        // saringan buat KALIBRATOR di baris `usage_check`. Tapi
+        // `ThermohygroSeeder` SELALU mengisi `parameter_kondisi` (di situlah
+        // koreksi suhu/kelembapannya disimpan), jadi saringan yang sama
+        // membuang habis TH-1..TH-7.
+        //
+        // Sebelum ini `baris_thermohygro` di kop dicocokkan ke `$master` itu
+        // juga, jadi keempat barisnya mustahil ketemu: labelnya kecetak benar,
+        // tapi `standard_id`-nya selalu null dan `terdaftar` selalu false.
+        // Gagalnya nggak bersuara karena barisnya tetap terkirim utuh.
+        $masterThermohygro = Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->get(['id', 'nama', 'no_sertifikat']);
+
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) === 'usage_check') {
                 $bentuk['bagian'][$i]['baris'] = array_map(
@@ -1050,8 +1147,8 @@ class TidsProfile extends CalibrationProfile
             // sertifikat lewat `tautkanStandarTitik()` (empat botol gas Rigas
             // ber-S/N sama).
             $bentuk['bagian'][$i]['baris_thermohygro'] = array_map(
-                static function (array $baris) use ($master): array {
-                    $cocok = $master->first(static fn (Standard $s): bool => $s->nama === $baris['nama']);
+                static function (array $baris) use ($masterThermohygro): array {
+                    $cocok = $masterThermohygro->first(static fn (Standard $s): bool => $s->nama === $baris['nama']);
 
                     return [
                         'label' => $baris['nama'],
