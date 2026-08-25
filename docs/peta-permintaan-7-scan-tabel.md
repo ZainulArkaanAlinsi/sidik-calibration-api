@@ -4,6 +4,24 @@
 > §12 spesifikasi Scan Tabel mengikat: *"Tunjukkan rencana file yang akan dibuat/diubah lebih
 > dulu, tunggu saya setujui, baru eksekusi."* Berkas ini rencananya. Belum ada yang dikerjakan.
 
+> ## ⚠️ SUDAH TERLAMPAUI — 25 Agt 2026
+>
+> Isi di bawah ini **rencana**, dan rencananya sudah dijalankan. Tiga hal yang sekarang salah
+> kalau dibaca apa adanya:
+>
+> | Yang tertulis di bawah | Keadaan sekarang |
+> |---|---|
+> | "S1/S2/S3 menunggu diputuskan" | **Ketiganya sudah dijawab.** S1 = nyalakan lagi (membalik permintaan 3). S2 = pakai `worksheet_scans` yang sudah ada. S3 = **semua lembar** bisa dipindai |
+> | "8 dari 17 lembar bisa dipindai" | **17/17 punya berkas geometri.** Sembilan yang kurang (`do_meter`, `gas_detector`, `tits`, `tids`, + 5 Enclosure) sudah dibuat |
+> | "UI-nya sedang sengaja dimatikan" | **Sudah nyala lagi.** `AppConfig.pindaiLembarAktif` bawaannya `true`; saklarnya tetap ada supaya bisa dimatikan tanpa ganti kode |
+>
+> Yang **masih** benar dan jadi satu-satunya sisa: **11 dari 17 berkas geometri `terverifikasi:
+> false`** — menunggu satu foto lembar cetak yang sudah diisi (F1 di `permintaan-user-7.md`).
+> Koordinatnya eksak menurut definisi; yang belum pernah diuji rantai kamera → warp → potong sel.
+>
+> Sisanya di bawah dibiarkan apa adanya — alasan di balik tiap keputusan masih berlaku, dan itu
+> yang bikin berkas ini masih berguna dibaca.
+
 Perkiraan pemilik proyek untuk permintaan ini **~14,5 hari kerja**. Angka itu masuk akal untuk
 membangun dari nol. Tapi sebagian besarnya **sudah terbangun**, dengan nama lain, dan sudah
 jalan di produksi sejak 13 Agustus 2026.
