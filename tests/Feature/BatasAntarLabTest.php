@@ -9,14 +9,17 @@ use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Folder;
+use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
+use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -42,7 +45,7 @@ use Tests\TestCase;
  *
  * ## Kenapa 404 yang ditegakkan, bukan 403
  *
- * Seluruh 17 endpoint hari ini SUDAH memulangkan 404 buat akses lintas lab —
+ * Seluruh 20 endpoint di sini SUDAH memulangkan 404 buat akses lintas lab —
  * diukur, bukan dikira. Nol bocor.
  *
  * Dan 404 memang jawaban yang lebih rapat daripada 403. 403 bilang "barangnya
@@ -82,11 +85,30 @@ class BatasAntarLabTest extends TestCase
         'api/categories/{kode}' => 'katalog by kode, bukan data milik lab',
         'api/worksheet-templates/{kode}' => 'katalog by kode, bukan data milik lab',
 
-        // Belum punya factory. Bukan "aman", cuma BELUM DISAPU — dan ditulis di
-        // sini supaya statusnya kelihatan, bukan kelewat.
-        'api/folder-files/{folderFile}/download' => 'BELUM DISAPU — FolderFile belum punya factory',
-        'api/worksheet-scans/{worksheetScan}' => 'BELUM DISAPU — WorksheetScan belum punya factory',
-        'api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop' => 'BELUM DISAPU — WorksheetScan belum punya factory',
+        // ---- Nggak bisa DIBUKTIKAN di sini, tapi sudah DIBACA kodenya. ----
+        //
+        // Keduanya memulangkan 404 buat pemiliknya sendiri, karena yang
+        // ditagih bukan cuma baris DB tapi BERKAS atau SEL yang beneran ada.
+        // Kontrol pemilik di [test_admin_lab_a_nggak_bisa_baca_punya_lab_b]
+        // sengaja meledak buat kasus begitu: 404 yang keluar soal berkas, bukan
+        // soal lab, jadi memasukkannya ke sapuan berarti menanam kasus yang
+        // hijau selamanya tanpa pernah menguji apa pun.
+        //
+        // Karena nggak bisa dibuktikan, penjaganya dibaca langsung:
+        //
+        //  - `CertificateController::download` dan `::exportExcel` sama-sama
+        //    memanggil `pastikanBolehLihat()` di baris PERTAMA, dan di dalamnya
+        //    `pastikanSatuOrganisasi()` membanding `organization_id` — jauh
+        //    sebelum `Storage::exists()` disentuh. Jadi urutannya benar: yang
+        //    beda lab ditolak duluan, bukan sesudah ketahuan berkasnya ada.
+        //  - Kalau suatu hari factory sertifikat sanggup membangkitkan PDF &
+        //    Excel beneran, dua baris ini dipindah balik ke `endpointShow()`.
+        'api/certificates/{certificate}/download' => 'butuh PDF nyata; penjaga dibaca manual — pastikanBolehLihat() di baris pertama',
+        'api/certificates/{certificate}/excel' => 'butuh Excel nyata; penjaga dibaca manual — pastikanBolehLihat() di baris pertama',
+
+        // Butuh satu baris `worksheet_scan_cells` + citra crop-nya. Tanpa itu
+        // 404-nya soal sel, bukan soal lab.
+        'api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop' => 'butuh sel & citra crop nyata',
     ];
 
     /**
@@ -113,10 +135,10 @@ class BatasAntarLabTest extends TestCase
             'calibration validasi' => ['api/calibrations/{calibration}/validasi', 'sesi'],
             'certificate' => ['api/certificates/{certificate}', 'sertifikat'],
             'certificate riwayat-email' => ['api/certificates/{certificate}/riwayat-email', 'sertifikat'],
-            'certificate download' => ['api/certificates/{certificate}/download', 'sertifikat'],
-            'certificate excel' => ['api/certificates/{certificate}/excel', 'sertifikat'],
             'certificate qr' => ['api/certificates/{certificate}/qr', 'sertifikat'],
             'technician' => ['api/technicians/{technician}', 'teknisiB'],
+            'worksheet-scan' => ['api/worksheet-scans/{worksheetScan}', 'pindaian'],
+            'folder-file download' => ['api/folder-files/{folderFile}/download', 'berkasFolder'],
         ];
     }
 
@@ -141,6 +163,31 @@ class BatasAntarLabTest extends TestCase
 
         $jalan = preg_replace('/\{[a-zA-Z_]+\}/', (string) $id, $uri);
         $this->assertIsString($jalan);
+
+        // KONTROL PEMILIK — dan ini bukan basa-basi.
+        //
+        // Tanpa baris ini, 404 buat penyerang bisa berarti "bukan lab kamu"
+        // ATAU "barangnya memang nggak ada" — id salah, route salah ketik,
+        // parameter kedua yang nggak keisi benar. Dua-duanya menghasilkan test
+        // HIJAU, dan yang kedua hijau tanpa pernah menguji apa pun.
+        //
+        // Jadi pemiliknya sendiri ditembak duluan ke URL yang sama persis.
+        // Kalau dia juga 404, kasus ini nggak membuktikan apa-apa dan harus
+        // meledak di sini — bukan lolos diam-diam bareng yang lain.
+        $pemilik = User::factory()->create([
+            'organization_id' => $labB->id,
+            'role' => 'admin',
+            'status' => 'aktif',
+        ]);
+
+        $this->assertNotSame(
+            self::STATUS_TOLAK,
+            $this->actingAs($pemilik)->getJson($jalan)->getStatusCode(),
+            "Pemiliknya sendiri dapat ".self::STATUS_TOLAK." di `{$jalan}`. Berarti kasus ini "
+            .'nggak menguji batas antar-lab sama sekali — 404 buat penyerang bakal keluar '
+            .'walau penjaganya dicabut. Betulkan cara sumber dayanya dibikin, bukan '
+            .'assertion-nya.',
+        );
 
         $respons = $this->actingAs($penyerang)->getJson($jalan);
 
@@ -200,6 +247,27 @@ class BatasAntarLabTest extends TestCase
     }
 
     /**
+     * Berkas folder milik lab B, LENGKAP dengan berkasnya di disk.
+     *
+     * Disknya dipalsukan dan isinya beneran ditulis. Tanpa itu endpoint
+     * download memulangkan 404 "berkas raib" buat pemiliknya sendiri, dan
+     * kontrol pemilik bakal meledak — benar, tapi bukan yang mau diuji di sini.
+     */
+    private function berkasFolderLabB(Organization $labB): int
+    {
+        Storage::fake('arsip');
+
+        $berkas = FolderFile::factory()->create([
+            'organization_id' => $labB->id,
+            'folder_id' => Folder::factory()->create(['organization_id' => $labB->id])->id,
+        ]);
+
+        Storage::disk('arsip')->put($berkas->path, 'isi berkas contoh');
+
+        return $berkas->id;
+    }
+
+    /**
      * Bikin satu sumber daya per jenis, semuanya milik lab B.
      *
      * @return array<string, int|string>
@@ -244,6 +312,11 @@ class BatasAntarLabTest extends TestCase
                 'role' => 'teknisi',
                 'status' => 'aktif',
             ])->id,
+            'pindaian' => WorksheetScan::factory()->create([
+                'organization_id' => $labB->id,
+                'calibration_session_id' => $sesi->id,
+            ])->id,
+            'berkasFolder' => $this->berkasFolderLabB($labB),
         ];
     }
 }
