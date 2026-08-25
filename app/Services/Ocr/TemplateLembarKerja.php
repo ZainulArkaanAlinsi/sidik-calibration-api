@@ -102,6 +102,17 @@ class TemplateLembarKerja
             }
         }
 
+        // Lembar berbentuk GRID sensor (kelima lembar Enclosure) nggak punya
+        // `bagian.tabel` sama sekali, jadi loop di atas memulangkan NOL sel —
+        // dan nol sel artinya `ocr:rangka-geometri` bikin berkas kosong yang
+        // kelihatan sah. Ini yang bikin lembar Enclosure diam-diam nggak pernah
+        // bisa dipindai padahal berkasnya ada.
+        if (is_array($bentuk['grid_sensor'] ?? null)) {
+            $satu = $this->tabel($profil, $alat, $this->gridJadiTabel($bentuk, $alat));
+            $tabel[] = $satu['tabel'];
+            $sel = [...$sel, ...$satu['sel']];
+        }
+
         [$siap, $alasanBelumSiap] = $this->kesiapan($geometri, array_keys($sel));
 
         return [
@@ -245,6 +256,83 @@ class TemplateLembarKerja
      * @param  array<string, mixed>  $definisi
      * @return list<array<string, mixed>>
      */
+    /**
+     * Grid sensor → definisi tabel, supaya lewat `tabel()` yang sudah teruji.
+     *
+     * Sengaja MENERJEMAHKAN, bukan bikin jalur sel kedua. Kunci sel, aturan
+     * angka, dan bentuk kembaliannya harus identik dengan lembar lain — kalau
+     * grid punya jalurnya sendiri, tiap perbaikan di `tabel()` harus diingat
+     * dua kali, dan yang kelupaan nggak bikin error, cuma bikin satu jenis
+     * lembar diam-diam beda perilaku.
+     *
+     * ## Satu lembar cetak = SATU set point
+     *
+     * Grid Enclosure diisi ulang tiap set point, dan jumlah set point-nya
+     * ditentukan teknisi waktu kerja — bukan waktu kertasnya dicetak. Jadi
+     * kertasnya dicetak satu per set point, dan nilai set point-nya sendiri
+     * ditulis tangan di kotaknya.
+     *
+     * Akibatnya `titik_ukur` di sini 0.0 buat SEMUA baris: waktu lembarnya
+     * dicetak, nominalnya memang belum ada. Itu keadaan yang sama persis dengan
+     * lembar Autoklaf, dan ditangani dengan cara yang sama — lewat `pita`.
+     *
+     * ## Kenapa `pita` WAJIB diisi di sini
+     *
+     * Tanpa `pita`, `aturanPembacaan()` menurunkan rentang dari nominal: dengan
+     * `titik_ukur = 0` dan resolusi 0,1 hasilnya 0–2 °C. Oven yang dikalibrasi
+     * di 121 °C bakal ditandai MERAH di setiap sel — pembacaan yang benar
+     * ditolak, dan teknisi belajar mengabaikan lampu merah. Jadi pitanya
+     * diambil dari rentang kerja alatnya sendiri, yang sudah diisi lab.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function gridJadiTabel(array $bentuk, ?Equipment $alat): array
+    {
+        $grid = $bentuk['grid_sensor'];
+        $satuan = $bentuk['satuan'] ?? null;
+
+        // Rentang kerja alatnya. Nggak ada alat = nggak ada pita, dan itu
+        // BUKAN masalah: jalur tanpa alat cuma dipakai `ocr:rangka-geometri`,
+        // yang menulis koordinat doang — aturan angkanya nggak ikut disimpan.
+        $pita = $alat !== null && $alat->range_min !== null && $alat->range_max !== null
+            ? ['min' => (float) $alat->range_min, 'maks' => (float) $alat->range_max]
+            : null;
+
+        $baris = [];
+
+        foreach (range(1, max(1, (int) ($grid['jumlah_sensor_saran'] ?? 9))) as $nomor) {
+            $baris[] = [
+                'titik_ukur' => 0.0,
+                'label' => "Termokopel {$nomor}",
+                'satuan' => $satuan,
+                'pita' => $pita,
+            ];
+        }
+
+        // Dua baris ini beda ARTI dari termokopel di atasnya, dan bedanya nyata
+        // di hasil hitung: indikator itu yang TERTULIS di panel alat, suhu ruang
+        // itu kondisi lingkungan. Keduanya tetap kotak yang difoto.
+        if (($grid['baris_indikator'] ?? false) === true) {
+            $baris[] = ['titik_ukur' => 0.0, 'label' => 'Indikator', 'satuan' => $satuan, 'pita' => $pita];
+        }
+
+        if (($grid['baris_suhu_ruang'] ?? false) === true) {
+            $baris[] = ['titik_ukur' => 0.0, 'label' => 'Suhu Ruang', 'satuan' => $satuan, 'pita' => $pita];
+        }
+
+        return [
+            'grup' => 'grid',
+            'tahap' => 'sesudah_adjustment',
+            'judul' => 'Data Kalibrasi (satu lembar = satu set point)',
+            'baris' => $baris,
+            'pengulangan' => array_values($grid['pengulangan'] ?? range(1, 5)),
+            'kolom' => [['kode' => 'pembacaan', 'label' => 'Pembacaan']],
+            'sumbu_pengulangan' => 'kolom',
+            'satuan' => $satuan,
+        ];
+    }
+
     private function barisTabel(array $definisi): array
     {
         if (isset($definisi['baris']) && is_array($definisi['baris'])) {
