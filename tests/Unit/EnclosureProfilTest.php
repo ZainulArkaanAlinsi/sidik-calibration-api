@@ -13,6 +13,7 @@ use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
 use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -35,6 +36,27 @@ use Tests\TestCase;
  */
 class EnclosureProfilTest extends TestCase
 {
+    /**
+     * Butuh database, padahal ini `tests/Unit` dan sisanya baca JSON.
+     *
+     * Sejak kolom "Thermohygro used" diisi (25 Agt 2026),
+     * `EnclosureProfileBase::bentukLembarKerja()` membaca master `standards`
+     * buat menyusun daftar pilihannya — sama seperti sepuluh profil lain yang
+     * dari dulu memang menyentuh database lewat `tautkanStandar()`. Jadi yang
+     * berubah bukan test ini jadi lebih berat, tapi Enclosure berhenti jadi
+     * satu-satunya lembar yang bentuknya bisa disusun tanpa data.
+     *
+     * Yang dibutuhkan cuma TABELNYA ADA, bukan isinya: test di berkas ini nggak
+     * memeriksa daftar thermohygro sama sekali (itu tugas
+     * `ThermohygroSemuaLembarTest`), jadi tabel kosong hasil migrasi sudah
+     * cukup dan nggak ada seeder yang perlu dipanggil.
+     *
+     * Ketahuan lewat CI, bukan lokal: database MySQL lokal sudah punya tabelnya
+     * dari run sebelumnya, sementara CI jalan di `sqlite::memory:` yang benar-
+     * benar kosong buat test tanpa trait ini.
+     */
+    use RefreshDatabase;
+
     /**
      * @return array<string, array{class-string<EnclosureProfileBase>, string, string}>
      *                                                                                  [kelas, kode_harap, nama_alat_kemampuan_harap]

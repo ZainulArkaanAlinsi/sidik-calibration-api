@@ -255,6 +255,21 @@ Supaya tidak dibangun ulang:
   test-nya tetap jalan di SQLite dan **tetap hijau** — jadi "sudah diverifikasi di
   MySQL" bisa jadi klaim palsu tanpa satu pun tanda. Buktikan dengan test kecil yang
   mencetak `DB::connection()->getDriverName()`.
+- **Verifikasi di MySQL lokal MENYEMBUNYIKAN test yang kurang `RefreshDatabase`.** Kebalikan dari
+  jebakan di atas, dan sama-sama bikin "sudah diverifikasi" jadi klaim yang meleset. Database
+  MySQL lokal (`sidik_test`) **awet** — tabelnya masih ada dari run sebelumnya. Jadi test yang
+  menyentuh database tanpa trait `RefreshDatabase` tetap **hijau di lokal**, karena tabelnya
+  kebetulan ada. CI jalan di `sqlite::memory:` yang benar-benar kosong untuk test semacam itu,
+  dan di sana yang keluar `no such table`.
+
+  Kejadian 25 Agt 2026: `EnclosureProfileBase::bentukLembarKerja()` mulai membaca master
+  `standards` (buat mengisi dropdown thermohygro). `Tests\Unit\EnclosureProfilTest` memanggilnya
+  tanpa `RefreshDatabase` — **1.874 test hijau di MySQL lokal**, lalu **5 error di CI**.
+
+  Jadi kalau perubahannya membuat kode yang tadinya bebas-database jadi menyentuh database,
+  jalankan **dua-duanya**: `php artisan test` (SQLite, sama dengan CI) *dan*
+  `DB_CONNECTION=mysql DB_DATABASE=sidik_test php artisan test`. Yang satu menangkap presisi
+  desimal & FK, yang satu lagi menangkap tabel yang belum dimigrasi.
 - **SQLite menyembunyikan FK.** `PRAGMA foreign_keys` diabaikan di dalam transaksi,
   dan `RefreshDatabase` membungkus tiap test dalam transaksi — jadi FK komposit
   antar-lab tidak pernah benar-benar diuji di SQLite.
