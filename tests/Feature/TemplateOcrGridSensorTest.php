@@ -123,6 +123,39 @@ class TemplateOcrGridSensorTest extends TestCase
     }
 
     /**
+     * Lembar grid HARUS menolak jalur foto AI.
+     *
+     * Dua jalur pindai gerbangnya beda, dan bedanya bukan detail:
+     *
+     *  - `PINDAI LEMBAR KERJA` (OCR template lokal) pakai berkas geometri per
+     *    sel. Sejak grid keterjemahkan, kelima lembar ini punya 55 sel yang
+     *    sah — jadi jalur itu MEMANG boleh.
+     *  - `FOTO TABEL INI` (AI Vision) pakai dua penanda bentuk yang cuma
+     *    sanggup menggambarkan lembar "titik ukur × Repeat". Kertas grid nggak
+     *    muat di situ.
+     *
+     * Kalau `didukung` dibiarkan `true`, yang terjadi bukan error: prompt &
+     * skema JSON yang dikirim ke pembaca foto dibangun dari dua penanda itu,
+     * jadi modelnya diminta membaca tabel yang nggak pernah ada di kertasnya.
+     * Yang balik ke teknisi angka ngawur yang kelihatan wajar.
+     */
+    #[DataProvider('profilEnclosure')]
+    public function test_lembar_grid_nolak_jalur_foto_ai(string $kodeProfil): void
+    {
+        Organization::factory()->create();
+
+        $profil = app(CalibrationProfileRegistry::class)->untukKode($kodeProfil);
+        $this->assertNotNull($profil);
+
+        $this->assertFalse(
+            $profil->bentukPindaiFoto()['didukung'] ?? true,
+            "Lembar `{$kodeProfil}` bentuknya GRID tapi masih ngaku muat di jalur foto AI. "
+            .'Modelnya bakal diminta baca tabel yang nggak ada di kertasnya, dan yang balik '
+            .'bukan error — angka ngawur yang kelihatan wajar.',
+        );
+    }
+
+    /**
      * Pita angkanya WAJIB ikut rentang kerja alat, bukan diturunkan dari
      * nominal.
      *
