@@ -138,9 +138,10 @@ berkas profil.
 | Gel. | Isi | Status |
 |---|---|---|
 | G0 | Sertifikat Insitu, draf tanpa tanggal, ruangan ke-16, cabut UI pindai (perm. 3) | **TERKIRIM** — di `main`, ada di APK **v1.0.42** |
-| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di **17/17** profil, dijaga `SemuaProfilLembarKerjaTest` (87 test = 17×5 aturan per-profil + 2 aturan lintas-profil) |
+| G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di **17/17** profil, dijaga `SemuaProfilLembarKerjaTest` (88 test = 17×5 aturan per-profil + 3 aturan lintas-profil) |
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
+| G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Belum diadu ke layar HP**: yang dibuktikan responsnya sudah berisi, bukan bahwa cabang teks matinya sudah nggak kepakai |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
 
@@ -205,6 +206,39 @@ Supaya tidak dibangun ulang:
   repo itu, dan yang keluar `Everything up-to-date`. Persis seperti push yang sukses, padahal
   yang mau didorong ada di repo sebelah dan tidak ke mana-mana. Pastikan `pwd` dulu; kalau
   ragu, `git log --oneline -1` menunjukkan repo mana yang sedang dipegang.
+- **Kotak yang mendeklarasikan sumbernya tapi tidak ada yang mengisi.** `$this->field(...)`
+  memberi `pilihan` nilai bawaan `[]`. Jadi sebuah kotak bisa lahir lengkap dengan
+  `sumber: 'master_thermohygro'` tanpa satu pun kode yang benar-benar mengisinya — dan itu
+  **bukan error di mana pun**. Layar teknisi menggambar dropdown dari daftar yang dibawa bentuk,
+  daftar kosong bikin dia jatuh ke cabang teks mati, dan sesinya tetap tersimpan dengan
+  `thermohygro_standard_id` **null**.
+
+  Kejadian di **7 dari 17 lembar** sekaligus — TITS, TIDS, dan kelima Enclosure — dan seperti
+  biasa yang bolong justru yang paling baru. Akibatnya bukan kosmetik: koreksi kondisi lingkungan
+  berikut U95-nya tidak menempel ke unit mana pun, kelas kesalahan yang sama dengan Env. Condition
+  tiga alat yang meleset 10 Agustus 2026.
+
+  TIDS bahkan punya jalur cadangan yang **juga** mati, dan yang ini lebih halus karena kelihatan
+  bekerja: `baris_thermohygro` di kop terisi, labelnya benar, tapi dicocokkan ke koleksi
+  `whereNull('parameter_kondisi')` milik `tautkanStandar()` — saringan untuk KALIBRATOR. Karena
+  `ThermohygroSeeder` **selalu** mengisi kolom itu, keempat barisnya mustahil ketemu dan selalu
+  pulang `terdaftar: false` dengan `standard_id` null.
+
+  Dijaga sekarang oleh `ThermohygroSemuaLembarTest` (dropdown wajib berisi, tiap pilihan wajib
+  menunjuk baris `standards` nyata yang memang thermohygro) dan
+  `SemuaProfilLembarKerjaTest::test_tiap_sumber_master_punya_golongan_dan_alasan` — tiap
+  `sumber: master_*` wajib digolongkan **diisi profil** atau **ditarik aplikasi**, berikut
+  alasannya. Sumber master ke-5 tidak bisa lahir tanpa yang menulisnya memutuskan siapa
+  yang mengisinya.
+- **Grup Inlab/Insitu thermohygro memang BEDA per lembar — jangan diseragamkan.** Yang
+  menentukan cetakan formulirnya, bukan tempat unitnya diparkir. `ConductivityProfile` dan
+  `TidsProfile` menaruh TH-7 di **Insitu** mengikuti `SIDIK-FM-CAL-0510_Rev.5` dan kop TIDS,
+  sementara lembar lain menaruhnya di **Inlab**, dan `thermohygro-lab.json` mencatat
+  penempatannya `Inlab (Lab. Gaya)`. Ketiganya benar untuk konteksnya masing-masing —
+  `standard_id` yang tersimpan sama persis, yang beda cuma di bawah judul mana kotaknya muncul.
+  Menyeragamkannya ke satu daftar global akan membuat kop dan dropdown di lembar yang sama
+  saling bertentangan. `ThermohygroSemuaLembarTest` sengaja cuma mengunci **keanggotaan**
+  ketujuh unit, bukan grupnya.
 - ~~**Enclosure tidak punya `equipment_id`**~~ — sudah dibereskan di `dfe8ef8`; bagian
   `identitas_alat` sekarang membawanya, dan 15 test di `EnclosureKepalaLembarTest` merah kalau
   hilang lagi.
@@ -221,6 +255,21 @@ Supaya tidak dibangun ulang:
   test-nya tetap jalan di SQLite dan **tetap hijau** — jadi "sudah diverifikasi di
   MySQL" bisa jadi klaim palsu tanpa satu pun tanda. Buktikan dengan test kecil yang
   mencetak `DB::connection()->getDriverName()`.
+- **Verifikasi di MySQL lokal MENYEMBUNYIKAN test yang kurang `RefreshDatabase`.** Kebalikan dari
+  jebakan di atas, dan sama-sama bikin "sudah diverifikasi" jadi klaim yang meleset. Database
+  MySQL lokal (`sidik_test`) **awet** — tabelnya masih ada dari run sebelumnya. Jadi test yang
+  menyentuh database tanpa trait `RefreshDatabase` tetap **hijau di lokal**, karena tabelnya
+  kebetulan ada. CI jalan di `sqlite::memory:` yang benar-benar kosong untuk test semacam itu,
+  dan di sana yang keluar `no such table`.
+
+  Kejadian 25 Agt 2026: `EnclosureProfileBase::bentukLembarKerja()` mulai membaca master
+  `standards` (buat mengisi dropdown thermohygro). `Tests\Unit\EnclosureProfilTest` memanggilnya
+  tanpa `RefreshDatabase` — **1.874 test hijau di MySQL lokal**, lalu **5 error di CI**.
+
+  Jadi kalau perubahannya membuat kode yang tadinya bebas-database jadi menyentuh database,
+  jalankan **dua-duanya**: `php artisan test` (SQLite, sama dengan CI) *dan*
+  `DB_CONNECTION=mysql DB_DATABASE=sidik_test php artisan test`. Yang satu menangkap presisi
+  desimal & FK, yang satu lagi menangkap tabel yang belum dimigrasi.
 - **SQLite menyembunyikan FK.** `PRAGMA foreign_keys` diabaikan di dalam transaksi,
   dan `RefreshDatabase` membungkus tiap test dalam transaksi — jadi FK komposit
   antar-lab tidak pernah benar-benar diuji di SQLite.
