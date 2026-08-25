@@ -727,6 +727,73 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ],
         ];
 
+        return $this->isiPilihanThermohygro($bentuk);
+    }
+
+    /**
+     * Unit thermohygro yang boleh dipilih di "Thermohygro used".
+     *
+     * Ketujuhnya — master Enclosure (Constant/Yokogawa) mencetak TH-1..TH-7
+     * lengkap. Grup Inlab/Insitu-nya ikut penggolongan kanonik
+     * (`LembarKerjaTemplate`, lembar pH); masternya TIDAK mencetak grup sama
+     * sekali, cuma daftar namanya, jadi grup di sini bawaan dan bukan hasil
+     * baca kertas. Aman: yang tersimpan `standard_id` yang sama apa pun
+     * grupnya — ini cuma soal di bawah judul mana kotaknya muncul.
+     */
+    public const THERMOHYGRO_TERCETAK = [
+        ['label' => 'TH-1', 'grup' => 'Inlab'],
+        ['label' => 'TH-3', 'grup' => 'Inlab'],
+        ['label' => 'TH-4', 'grup' => 'Inlab'],
+        ['label' => 'TH-5', 'grup' => 'Inlab'],
+        ['label' => 'TH-7', 'grup' => 'Inlab'],
+        ['label' => 'TH-2', 'grup' => 'Insitu'],
+        ['label' => 'TH-6', 'grup' => 'Insitu'],
+    ];
+
+    /**
+     * Isi pilihan "Thermohygro used" untuk KELIMA profil Enclosure sekaligus.
+     *
+     * Tanpa ini kolomnya bukan error — cuma diam. `field()` memberi `pilihan`
+     * nilai bawaan `[]`, layar teknisi menggambar dropdown dari daftar yang
+     * dibawa bentuk (bukan dari master standar), dan daftar kosong bikin dia
+     * jatuh ke cabang teks mati. Sesi jalan tanpa unit thermohygro, jadi
+     * koreksi kondisi lingkungan berikut U95-nya nggak nempel ke unit mana pun.
+     *
+     * Lebih pahit di sini daripada di lembar lain: blok "Kondisi Lingkungan"
+     * Enclosure sudah pernah kena kasus angka yang nggak kepakai, dan
+     * komentarnya di atas masih menyimpan ceritanya — 67 °C padahal suhu ruang
+     * aslinya 24,6 °C.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function isiPilihanThermohygro(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->pluck('id', 'nama');
+
+        $pilihan = [];
+        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
+            $id = $master[$unit['label']] ?? null;
+            if ($id === null) {
+                continue;
+            }
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $unit['label'],
+                'grup' => $unit['grup'],
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if ($field['kode'] === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
+        }
+
         return $bentuk;
     }
 
