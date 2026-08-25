@@ -242,6 +242,82 @@ class SemuaProfilLembarKerjaTest extends TestCase
      * ini, jadi inilah lembar yang paling mungkin dibuka tanpa ada yang pernah
      * memeriksanya.
      */
+    /**
+     * Sumber master yang WAJIB diisi profilnya sendiri.
+     *
+     * Cuma satu, dan bedanya penting: daftar thermohygro itu per-LEMBAR —
+     * yang boleh dipilih ditentukan cetakan formulirnya, dan cuma profil yang
+     * tau isinya. Sisanya data per-organisasi yang ditarik aplikasi dari
+     * endpoint master masing-masing.
+     *
+     * @var array<string, string>
+     */
+    private const SUMBER_DIISI_PROFIL = [
+        'master_thermohygro' => 'daftar per-lembar dari cetakan formulir; cuma profil yang tau isinya',
+    ];
+
+    /**
+     * Sumber master yang SENGAJA pulang kosong dari `bentukLembarKerja()`.
+     *
+     * Ketiganya data per-organisasi, jadi bentuk lembar nggak boleh
+     * membawanya: dua lab beda bakal dapat lembar yang sama tapi daftar isi
+     * yang beda, dan itu berarti bentuknya nggak bisa di-cache bareng.
+     *
+     * @var array<string, string>
+     */
+    private const SUMBER_DITARIK_APLIKASI = [
+        'master_alat' => 'alat pelanggan per organisasi — GET /api/equipments',
+        'master_ruangan' => 'ruangan lab per organisasi — GET /api/rooms',
+        'master_metode' => 'metode kalibrasi per organisasi — GET /api/calibration-methods',
+    ];
+
+    /**
+     * Tiap `sumber: master_*` wajib kepilih salah satu: diisi profil, atau
+     * ditarik aplikasi — BERIKUT alasannya.
+     *
+     * Ini penjaga cakupan, bukan penjaga isi. Yang ditahan bukan dropdown yang
+     * kosong hari ini, tapi sumber master KEDELAPAN yang lahir besok tanpa ada
+     * yang memutuskan dia masuk golongan mana — persis cara `master_thermohygro`
+     * di tujuh lembar suhu berakhir nggak pernah diisi siapa pun: nggak ada
+     * yang salah, cuma nggak ada yang merasa kebagian.
+     *
+     * Kalau ini merah, jawabannya bukan menambahkan nama ke daftar biar hijau.
+     * Jawabannya: siapa yang mengisi dropdown ini, dan kalau nggak ada, kenapa.
+     */
+    public function test_tiap_sumber_master_punya_golongan_dan_alasan(): void
+    {
+        $tanpaGolongan = [];
+
+        foreach (app(CalibrationProfileRegistry::class)->semua() as $profil) {
+            foreach ($profil->bentukLembarKerja(true)['bagian'] ?? [] as $bagian) {
+                foreach ($bagian['field'] ?? [] as $field) {
+                    $sumber = $field['sumber'] ?? null;
+
+                    if (! is_string($sumber) || ! str_starts_with($sumber, 'master_')) {
+                        continue;
+                    }
+
+                    if (isset(self::SUMBER_DIISI_PROFIL[$sumber]) || isset(self::SUMBER_DITARIK_APLIKASI[$sumber])) {
+                        continue;
+                    }
+
+                    $tanpaGolongan[] = sprintf('%s.%s (sumber: %s)', $profil->kode(), $field['kode'], $sumber);
+                }
+            }
+        }
+
+        $tanpaGolongan = array_values(array_unique($tanpaGolongan));
+        sort($tanpaGolongan);
+
+        $this->assertSame(
+            [],
+            $tanpaGolongan,
+            "Ada `sumber: master_*` yang belum digolongkan:\n  ".implode("\n  ", $tanpaGolongan)
+            ."\n\nMasukkan ke SUMBER_DIISI_PROFIL (dan beneran isi pilihannya di profilnya) "
+            .'atau ke SUMBER_DITARIK_APLIKASI berikut endpoint yang menyediakannya.',
+        );
+    }
+
     public function test_profil_generik_nggak_punya_lembar_dan_ditolak_endpoint(): void
     {
         $this->expectException(\LogicException::class);
