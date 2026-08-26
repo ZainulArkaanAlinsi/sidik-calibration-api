@@ -61,6 +61,18 @@ class CalibrationController extends Controller
     ) {}
 
     /**
+     * Hasil [standarTurunan] yang sudah dihitung. `false` = belum pernah
+     * dihitung; `null` = sudah dihitung dan memang nggak ada.
+     *
+     * Dibedakan begitu karena "nggak ada kalibrator yang bisa diturunkan" itu
+     * jawaban yang sah dan mahal buat dihitung ulang — dua penggunanya
+     * (`susunPengukuran` & `atributDariRequest`) WAJIB dapat jawaban yang sama,
+     * kalau nggak `raw_measurements` menunjuk kalibrator yang beda dari kolom
+     * sesinya.
+     */
+    private Standard|null|false $standarTurunan = false;
+
+    /**
      * Relasi yang selalu dibutuhin CalibrationResource.
      *
      * `reviewer` ikut karena resource-nya nampilin "Checked by" — tanpa dimuat di
@@ -1039,7 +1051,7 @@ class CalibrationController extends Controller
 
         $standarDefault = $request->filled('standard_id')
             ? Standard::findOrFail($request->integer('standard_id'))
-            : null;
+            : $this->standarTurunan($request);
 
         // Enclosure: tiap titik GRID (9 termokopel × 5 + Indikator), bukan satu
         // deret pembacaan datar. Jalur terpisah supaya loop per-titik di bawah
@@ -1633,6 +1645,80 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Standar acuan sesi yang DITURUNKAN dari baris yang dicentang teknisi.
+     *
+     * Cuma dipakai kalau payloadnya nggak bawa `standard_id` sama sekali —
+     * pilihan eksplisit teknisi selalu menang.
+     *
+     * Kenapa perlu: lembar ENCLOSURE nggak punya kotak "standar acuan" sama
+     * sekali. Yang ada cuma kolom centang "Dipakai", dan sampai sebelum ini
+     * centangan itu mendarat di tabel pivot yang nggak pernah dibaca jalur
+     * hitung. Hasilnya tiap sesi Enclosure berakhir NOL TITIK — dengan pesan
+     * yang justru berbunyi "belum kebaca dari standar yang dicentang", yaitu
+     * menyalahkan kotak yang sudah dicentang teknisi.
+     *
+     * Profil yang mutusin, bukan controller: yang tahu baris mana di antara
+     * belasan centangan itu kalibratornya cuma profilnya. Sepuluh lembar
+     * bertabel datar balikin null dan jalurnya nggak berubah sama sekali.
+     *
+     * Baris centangnya dibaca dari PAYLOAD kalau dikirim, dari pivot tersimpan
+     * kalau nggak — supaya simpan-ulang kepala lembar (yang memang nggak bawa
+     * `standar_dicek`) nggak kehilangan kalibratornya.
+     */
+    private function standarTurunan(Request $request): ?Standard
+    {
+        // Dihitung SEKALI per request: `susunPengukuran()` dan
+        // `atributDariRequest()` dua-duanya butuh jawaban yang sama, dan dua
+        // jawaban berbeda buat satu sesi berarti `raw_measurements` menunjuk
+        // kalibrator yang beda dari kolom sesinya.
+        if ($this->standarTurunan !== false) {
+            return $this->standarTurunan;
+        }
+
+        $this->standarTurunan = null;
+
+        $alat = Equipment::find($request->integer('equipment_id'));
+
+        if ($alat === null) {
+            return null;
+        }
+
+        $profil = $this->profil->untukAlat($alat);
+
+        $id = [];
+
+        if ($request->has('standar_dicek')) {
+            foreach ((array) $request->input('standar_dicek', []) as $baris) {
+                if ((bool) ($baris['dipakai'] ?? true)) {
+                    $id[] = (int) $baris['standard_id'];
+                }
+            }
+        } elseif ($request->filled('calibration_session_id')) {
+            $sesi = CalibrationSession::find($request->integer('calibration_session_id'));
+
+            $id = $sesi === null ? [] : $sesi->standarDicek()
+                ->wherePivot('dipakai', true)
+                ->pluck('standards.id')
+                ->all();
+        }
+
+        if ($id === []) {
+            return null;
+        }
+
+        // Disaring ke organisasi pemilik alat: ID standar datang dari payload,
+        // dan tanpa saringan ini sesi bisa menunjuk kalibrator milik lab lain.
+        $dicentang = Standard::query()
+            ->whereIn('id', $id)
+            ->where('organization_id', $alat->organization_id)
+            ->get();
+
+        return $this->standarTurunan = $dicentang->isEmpty()
+            ? null
+            : $profil->standarSesiDariCentang($dicentang);
+    }
+
+    /**
      * Kolom "Usage Check" di lembar kerja. Nggak dikirim = nggak diapa-apain,
      * biar simpan-header doang nggak ngehapus centang yang udah ada.
      */
@@ -1757,11 +1843,9 @@ class CalibrationController extends Controller
     {
         $atribut = [
             'equipment_id' => $request->integer('equipment_id'),
-            'standard_id' => $request->filled('standard_id') ? $request->integer('standard_id') : null,
             'input_method' => $request->string('input_method', 'manual'),
             'lokasi' => $request->string('lokasi', 'lab'),
             'tanggal_kalibrasi' => $request->date('tanggal_kalibrasi'),
-            'tanggal_terima' => $request->date('tanggal_terima'),
             // Angka yang DICETAK di sertifikat. Biasanya nggak dikirim mobile —
             // dihitung dari pembacaan awal/akhir + koreksi sertifikat
             // thermohygro sesudah sesi disimpen (lihat KondisiLingkungan).
@@ -1795,6 +1879,43 @@ class CalibrationController extends Controller
             if ($request->has($field)) {
                 $atribut[$field] = $request->input($field);
             }
+        }
+
+        // `standard_id` & `tanggal_terima` CUMA ditulis kalau benar-benar
+        // dikirim — dua-duanya dulu ada di blok wajib di atas, dan di situ
+        // "nggak dikirim" berarti "kosongkan".
+        //
+        // Akibatnya: sekali sesi disimpan ulang oleh siapa pun tanpa membawa
+        // kolom itu — simpan draft, revisi kepala lembar, admin membetulkan
+        // nomor order — catatan ketertelusurannya HILANG diam-diam. Sudah
+        // direproduksi di MySQL: sesi Oven #15, standar 46 jadi NULL sesudah
+        // satu kali simpan kepala lembar, tanpa satu pun error. Yang menghapus
+        // bukan orang yang mengisi. Untuk lab terakreditasi itu temuan audit.
+        //
+        // `tanggal_terima` kena hal yang sama, dan yang mengisinya justru admin
+        // — jadi tiap kali teknisi menyimpan revisi, tanggal terima yang sudah
+        // benar terhapus dan muncul lagi sebagai temuan di layar approval.
+        //
+        // Tetangganya (`thermohygro_standard_id`, centang usage check,
+        // pembacaan) sudah dilindungi dari kelas kegagalan ini sejak lama,
+        // lengkap dengan komentarnya. Dua kolom ini cuma nggak ikut.
+        //
+        // Kalau memang perlu dikosongkan, kirim nilai kosong secara EKSPLISIT
+        // — "nggak dikirim" nggak boleh lagi berarti "hapus".
+        if ($request->has('standard_id')) {
+            $atribut['standard_id'] = $request->filled('standard_id')
+                ? $request->integer('standard_id')
+                : null;
+        } elseif (($turunan = $this->standarTurunan($request)) !== null) {
+            // Diturunkan dari baris yang dicentang teknisi (lembar Enclosure
+            // nggak punya kotak `standard_id` sama sekali). Ditulis ke kolom
+            // sesi juga, bukan cuma nempel di `raw_measurements`: ketertelusuran
+            // sesi itu yang dibaca sertifikat & audit.
+            $atribut['standard_id'] = $turunan->id;
+        }
+
+        if ($request->has('tanggal_terima')) {
+            $atribut['tanggal_terima'] = $request->date('tanggal_terima');
         }
 
         return $atribut;

@@ -951,6 +951,46 @@ class TitsProfile extends CalibrationProfile
             ->first();
     }
 
+    /**
+     * TITS **nggak** diadu ke `equipments.resolusi`. Buktinya berlapis:
+     *
+     * 1. **Kolom "Resolusi" di lembar TITS itu isian header, bukan spesifikasi
+     *    per alat.** Dua sesi contoh di master — GL840 dan Siemens Simatic —
+     *    sama-sama tertulis `0,1`, dua merk yang sama sekali beda.
+     *
+     * 2. **Alat di sesi Measure itu Graphtec GL840 s/n C305B1470 — kotak fisik
+     *    yang SAMA dengan Recorder standar lab sendiri.** Dan soal kotak itu
+     *    `CalibrationValidator` sudah menulis, buat jalur Enclosure: *"Data
+     *    master asli memang berpresisi 0,01 °C."* Dua tempat di produk ini
+     *    nggak boleh menyatakan dua daya baca berbeda buat satu alat.
+     *
+     * 3. **Angkanya sendiri berpindah daya baca menurut besarannya.** Di master
+     *    Measure: −20,05 / 9,85 / 50,16 / 199,65 / 399,85 berpresisi 0,01,
+     *    sementara 600,70 / 800,80 / 1000,10 — delapan belas angka beruntun di
+     *    tiga titik teratas — semuanya kelipatan 0,1. Itu indikator yang
+     *    pindah rentang, dan daya baca yang pindah rentang **nggak bisa
+     *    diwakili satu skalar** di `equipments.resolusi`.
+     *
+     * Akibat sebelum ini: 25 dari 54 pembacaan sesi `22506.01.A` ke-flag
+     * "bukan kelipatan resolusi alat, jadi layarnya nggak mungkin nunjukin
+     * angka itu" — menuduh salah ketik atas angka yang disalin apa adanya dari
+     * lembar master lab, tiap kali sesi TITS Measure mau di-approve.
+     *
+     * **Yang TIDAK dilakukan: mengubah `0,1` jadi `0,01` di master.** Angka itu
+     * kecetak di sertifikat dan ikut ngitung budget ketidakpastian (`Z21`);
+     * menggesernya menggeser U95 yang sekarang cocok dengan Excel lab sampai
+     * digit terakhir. Kalau lab memang mau membetulkan angkanya, itu keputusan
+     * lab atas data master — bukan efek samping dari membereskan kebisingan
+     * layar.
+     *
+     * Perlindungan yang beneran penting tetap jalan: `pembacaan_di_luar_rentang`
+     * nggak ikut dimatikan, jadi koma yang kegeser tetap ketangkep.
+     */
+    public function pembacaanDiadukeResolusi(): bool
+    {
+        return false;
+    }
+
     /** Mode sesi, dinormalkan ke `measure`/`source` atau `null`. */
     private function modeSesi(CalibrationSession $sesi): ?string
     {

@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Equipment;
+use App\Models\Organization;
+use App\Models\Standard;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\TabelKalibratorEnclosure;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -222,5 +226,90 @@ class EnclosureStandarTertautTest extends TestCase
             .'menyatukan mereka cuma nomor seri C305B1470. Pencocokan lewat nama saja '
             .'bikin seluruh sesi kalibrator Recorder berhenti terhitung.',
         );
+    }
+
+    /**
+     * Baris Yokogawa tertaut ke KALIBRATORNYA, bukan ke sensor RTD-nya.
+     *
+     * Dua baris master berbagi nomor seri `23P1005`: "Termometer & Sensor Std."
+     * (id lebih kecil) dan "Temperature Calibrator Yokogawa CA 150 Handy Cal" —
+     * memang begitu, sensornya menempel di kalibrator itu. Dengan satu
+     * pencarian yang menerima nama ATAU seri sekaligus, yang menang cuma yang
+     * ID-nya lebih kecil.
+     *
+     * Merknya kebetulan sama-sama Yokogawa, jadi ANGKANYA nggak salah. Yang
+     * salah nomor sertifikat & ketertelusuran yang ikut ke lembar — diambil
+     * dari dokumen sensor, bukan dokumen kalibrator. Buat lab terakreditasi
+     * itu tepat jenis kesalahan yang dicari auditor.
+     */
+    public function test_yokogawa_tertaut_ke_kalibrator_bukan_sensornya(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $kalibrator = Standard::where('nama', 'Temperature Calibrator Yokogawa CA 150 Handy Cal')->firstOrFail();
+        $sensor = Standard::where('nama', 'Termometer & Sensor Std.')->firstOrFail();
+
+        $this->assertSame(
+            $kalibrator->serial_number,
+            $sensor->serial_number,
+            'Nomor serinya nggak lagi kembar — testnya nggak menguji apa pun.',
+        );
+        $this->assertLessThan($kalibrator->id, $sensor->id, 'Urutan ID-nya berubah — testnya jadi tumpul.');
+
+        foreach (array_keys(self::lembarEnclosure()) as $kode) {
+            foreach ($this->barisStandar($kode) as $baris) {
+                if (! str_contains($baris['label'], 'Yokogawa')) {
+                    continue;
+                }
+
+                $this->assertSame(
+                    $kalibrator->id,
+                    $baris['standard_id'],
+                    "Lembar {$kode}: baris Yokogawa nunjuk standar id {$baris['standard_id']}, "
+                    ."bukan kalibrator id {$kalibrator->id}.",
+                );
+            }
+        }
+    }
+
+    /**
+     * Baris standar nggak pernah tertaut ke master milik lab LAIN.
+     *
+     * Hari ini database masih satu organisasi, jadi belum ada yang kena. Yang
+     * dijaga di sini hari onboarding lab kedua: tanpa saringan, nomor
+     * sertifikat & ketertelusuran lab pertama muncul di lembar teknisi lab
+     * kedua — dan `standard_id`-nya dipakai menurunkan kalibrator sesi, jadi
+     * sesinya ditolak sistem dengan pesan menyebut kolom yang nggak pernah dia
+     * ketik.
+     */
+    public function test_standar_lab_lain_nggak_bocor(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $alat = Equipment::where('serial_number', 'D132469')->firstOrFail();
+
+        $milikLabIni = Standard::where('organization_id', $alat->organization_id)->pluck('id')->all();
+
+        // Lab kedua yang beneran ada, lalu alatnya dipindah ke sana: master
+        // lab pertama sekarang milik "lab lain" dari sudut pandang alat ini.
+        $labKedua = Organization::create(['nama' => 'PT Lab Kedua', 'slug' => 'lab-kedua']);
+
+        $alat->forceFill(['organization_id' => $labKedua->id])->save();
+
+        $profil = app(CalibrationProfileRegistry::class)->untukAlat($alat);
+
+        foreach ($profil->bentukLembarKerja(false, $alat)['bagian'] as $bagian) {
+            if (($bagian['kode'] ?? null) !== 'usage_check') {
+                continue;
+            }
+
+            foreach ($bagian['baris'] as $baris) {
+                $this->assertNotContains(
+                    $baris['standard_id'],
+                    $milikLabIni,
+                    "Baris \"{$baris['label']}\" bocor ke standar milik lab lain (id {$baris['standard_id']}).",
+                );
+            }
+        }
     }
 }

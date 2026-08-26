@@ -9,6 +9,7 @@ use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
 use App\Support\KodeSelRevisi;
@@ -188,13 +189,35 @@ class CalibrationValidator
             ->unique();
         $titikTerhitung = $sesi->uncertaintyCalculations->pluck('titik_ke')->unique();
 
+        // Sebab yang disebut harus yang BENERAN berlaku buat lembar ini.
+        //
+        // Dulu kalimatnya menyodorkan tiga tebakan yang sama buat semua alat,
+        // termasuk "toleransi alat kosong". Buat lembar yang memang SENGAJA
+        // tanpa toleransi — kelima Enclosure, TITS, Autoklaf, DO, Gas Detector,
+        // Conductivity, Spectro — sebab itu mustahil, dan menyebutnya
+        // mengarahkan orang mengisi kolom yang sengaja dikosongkan. Mengisi
+        // kolom itu pernah mematikan seluruh sesi Conductivity.
+        //
+        // Kontradiksinya bahkan ada di satu fungsi yang sama: 15 baris di atas,
+        // pemeriksa `toleransi_kosong` TIDAK menyala buat lembar-lembar itu —
+        // benar, mereka memang sengaja tanpa toleransi — lalu kalimat ini tetap
+        // menyebutnya.
+        //
+        // Ambang pengulangannya juga beda per lembar: GUM minta 2, grid
+        // Enclosure minta 4 per sensor. Ditanya ke profilnya, bukan dipatok.
+        $sebab = ['pengulangan kurang dari '.($profilAlat?->minPengulanganPerTitik() ?? GumCalculator::MIN_PENGULANGAN)];
+        $sebab[] = 'standar acuan belum kebaca';
+
+        if ($profilAlat === null || $profilAlat->punyaToleransi()) {
+            $sebab[] = 'toleransi alat kosong';
+        }
+
         foreach ($titikMentah->diff($titikTerhitung)->sort() as $ke) {
             $temuan[] = $this->temuan(
                 self::PERINGATAN,
                 'titik_tidak_terhitung',
-                "Titik ke-{$ke} ada pembacaannya tapi nggak kehitung — datanya belum cukup "
-                    .'(pengulangan kurang dari '.GumCalculator::MIN_PENGULANGAN
-                    .', standar acuan belum dipilih, atau toleransi alat kosong). '
+                "Titik ke-{$ke} ada pembacaannya tapi nggak kehitung — datanya belum cukup ("
+                    .implode(', ', $sebab).'). '
                     .'Titik ini nggak akan muncul di sertifikat.',
                 ['titik_ke' => (int) $ke],
             );
@@ -310,7 +333,23 @@ class CalibrationValidator
 
             $ke = (int) $m->titik_ke;
             $ulang = (int) $m->pembacaan_ke;
-            $di = "Titik ke-{$ke} Repeat {$ulang}";
+            // Baris GRID wajib nyebut PERANNYA. Satu set point Enclosure isinya
+            // 9 termokopel + Indikator + Suhu Ruang, dan tanpa ini kesebelasnya
+            // berlabel sama persis: "Titik ke-1 Repeat 1" — sepuluh sampai
+            // sebelas pesan identik byte per byte buat satu sel.
+            //
+            // Perannya bukan hiasan: begitu ketahuan itu baris Suhu Ruang,
+            // arti peringatannya berubah total. Admin yang nggak bisa tahu baris
+            // mana yang dimaksud nggak punya cara mengembalikannya ke teknisi
+            // dengan jelas.
+            $peran = match ($m->peran_sensor) {
+                'termokopel' => ' Termokopel no. '.($m->sensor_ke ?? '?'),
+                'indikator' => ' Indikator',
+                'suhu_ruang' => ' Suhu Ruang',
+                default => '',
+            };
+
+            $di = "Titik ke-{$ke}{$peran} Repeat {$ulang}";
 
             // Kode SEL buat temuan di baris ini — supaya penolakan admin bisa
             // menandai satu kotak, bukan seluruh tabel. Lihat [KodeSelRevisi].
@@ -362,6 +401,43 @@ class CalibrationValidator
             // masih ke-flag. Kalau titik standarnya sendiri emang di luar
             // kemampuan alat, itu pertanyaan ke master alat — bukan sesuatu
             // yang pantas diteriakin per pembacaan.
+            // Baris SUHU RUANG diadu ke pita ruang lab, bukan ke rentang ukur
+            // chamber. Dia suhu ruangan tempat alatnya berdiri (~25 °C), bukan
+            // pengukuran alat — dan sudah dinyatakan tiga kali oleh kode
+            // Enclosure sendiri: "tercatat, bukan terhitung".
+            //
+            // Sebelum ini dia lolos ke pemeriksaan di bawah, dan penggarisnya
+            // salah ke DUA arah sekaligus:
+            //
+            //   Inkubator 30–300     → 20 peringatan palsu per sesi
+            //   Furnace 300–1000     → 20, SELALU (25 °C nggak akan pernah masuk)
+            //   Refrigerator −20–10  → 20, SELALU
+            //
+            // dan pemeriksaannya TERBALIK: 24,6 °C yang benar diteriakin,
+            // sementara 121 °C (salah salin satu baris) dan 246 °C (koma
+            // kegeser) lolos tanpa suara — dua-duanya kebetulan masuk 30–300.
+            //
+            // Peringatan palsu yang selalu muncul melatih admin menekan
+            // "SETUJUI TETAP" tanpa membaca, lalu peringatan yang benar-benar
+            // penting ikut tenggelam. Pitanya sama dengan yang sudah dipakai
+            // jalur OCR autoklaf — satu angka, satu tempat.
+            if ($m->peran_sensor === 'suhu_ruang') {
+                $pita = AutoclaveProfile::PITA_SUHU_RUANG;
+
+                if ($nilai < $pita['min'] || $nilai > $pita['maks']) {
+                    $temuan[] = $this->temuan(
+                        self::PERINGATAN,
+                        'suhu_ruang_di_luar_pita',
+                        "{$di}: suhu ruang {$nilai} °C di luar pita ruang kerja "
+                            ."({$pita['min']}–{$pita['maks']} °C). "
+                            .'Kemungkinan besar salah salin dari baris lain, atau komanya kegeser.',
+                        ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai, 'kode_sel' => $kodeSel],
+                    );
+                }
+
+                continue;
+            }
+
             if ($this->diLuarRentang($nilaiAlat, $alat)
                 && ! $this->dekatTitikStandar($nilaiAlat, $titikAlat)) {
                 $temuan[] = $this->temuan(
@@ -387,6 +463,13 @@ class CalibrationValidator
             // Baris `indikator` TIDAK dilewati: itu memang pembacaan layar alat,
             // jadi kelipatan resolusinya tetap wajib masuk akal.
             if ($m->peran_sensor === 'termokopel') {
+                continue;
+            }
+
+            // Lembar yang daya bacanya nggak bisa diwakili satu angka nggak
+            // diadu ke sini sama sekali. Lihat [CalibrationProfile::
+            // pembacaanDiadukeResolusi].
+            if (! $profil->pembacaanDiadukeResolusi()) {
                 continue;
             }
 

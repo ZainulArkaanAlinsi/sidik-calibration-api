@@ -132,6 +132,46 @@ sudah berlaku, jadi **tidak ada migrasi**.
 
 ---
 
+## 9. Sesi Enclosure harus bisa bersertifikat, dan layarnya berhenti berisik
+
+Pemeriksaan 26 Agt 2026 (31 dugaan diuji, 11 terkonfirmasi) atas sesi Inkubator yang ditolak
+pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebisingan**.
+
+| Kode | Isi | Status |
+|---|---|---|
+| **A** | Nggak ada satu pun jalan mengisi kalibrator sesi Enclosure | **BERES** — server menurunkannya dari baris yang dicentang |
+| **B** | Simpan sebagian menghapus `standard_id` & `tanggal_terima` senyap | **BERES** — dua-duanya cuma ditulis kalau dikirim |
+| **C** | Pencarian standar nggak disaring per lab | **Enclosure BERES**; 12 profil lain **masih terbuka** |
+| **D** | Baris Suhu Ruang diadu ke rentang chamber — 20 palsu/sesi | **BERES** — pitanya sendiri, 5–45 °C |
+| **E** | Pesan "titik tidak terhitung" menebak tiga sebab | **BERES** — sebabnya ditanya ke profil |
+| **F** | TITS Measure: 25 tuduhan salah ketik per sesi | **BERES** — TITS nggak diadu ke `equipments.resolusi` |
+| **G** | Peringatan grid nggak nyebut baris mana | **BERES** — perannya ikut di label |
+| **H** | Komentar "6 dari 17 lembar tanpa vonis" (sebenarnya 12) | belum |
+
+### Yang TIDAK diubah, dan kenapa
+
+- **`equipments.resolusi` TITS tetap `0,1`.** Angka itu kecetak di sertifikat dan ikut ngitung
+  budget ketidakpastian (`Z21`); menggesernya ke `0,01` menggeser U95 yang sekarang cocok dengan
+  Excel lab sampai digit terakhir. Yang dimatikan pemeriksanya, bukan datanya.
+- **Toleransi Enclosure tetap NULL.** Master enclosure memang nggak punya batas keberterimaan.
+  Sudah dibuktikan nggak memblokir apa pun: sesi Oven `2406.25.AI` bertoleransi NULL menghasilkan
+  3 titik terhitung.
+- **Baris Victor 14+ tetap tercetak** sebagai baris tidak terdaftar.
+
+### Yang MASIH terbuka
+
+- **C di 12 profil lain.** Polanya (`Standard::query()->whereNull('parameter_kondisi')` tanpa
+  saringan organisasi) ada di Refractometer, Spectrophotometer ×2, Viscometer, TITS, TIDS,
+  Conductivity, DO, Chlorine, Autoclave, Turbidimeter, `CalibrationProfile`, dan
+  `LembarKerjaTemplate`. **Wajib beres sebelum lab kedua onboarding** — begitu itu terjadi,
+  teknisi lab kedua nggak bisa menyimpan sesi sama sekali. Hari ini database masih satu
+  organisasi, jadi belum ada yang kena.
+- **Rentang inkubator 30–300 °C** perlu dicek ke spesifikasi unit fisiknya — angka itu lebih
+  mirip oven. Sesudah D, dia nggak lagi memunculkan peringatan palsu, jadi ini bukan lagi
+  penghalang; tetap perlu dibetulkan karena rentang ukur ikut tercetak.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -204,6 +244,33 @@ Supaya tidak dibangun ulang:
 - Baris CMC TIDS **sudah ter-seed**: 3 rentang (0,86 / 1,4 / 3,1 °C).
 
 ### Jebakan yang sudah terbukti — jangan diulang
+
+- **Mesin diberi PREMIS yang salah, lalu hasilnya dipercaya.** Pemeriksa
+  `pembacaan_bukan_kelipatan_resolusi` berdiri di atas satu premis: angka yang dicatat dibaca di
+  layar alat, dan layar itu punya satu daya baca tetap. Buat TITS premisnya nggak berlaku —
+  alatnya pindah rentang (0,01 di bawah ~500 °C, 0,1 di atasnya), dan `equipments.resolusi` cuma
+  satu skalar. Hasilnya 25 tuduhan salah ketik per sesi atas angka yang disalin apa adanya dari
+  master lab. Sama persis dengan baris Suhu Ruang yang diadu ke rentang chamber: penggaris yang
+  salah nggak menghasilkan error, dia menghasilkan **kebenaran yang dibalik** — angka yang benar
+  diteriakin, yang salah lolos.
+
+- **Peringatan palsu yang selalu muncul itu kerusakan, bukan kerapian.** Dia melatih admin
+  menekan "SETUJUI TETAP" tanpa membaca, dan begitu itu jadi kebiasaan, peringatan yang benar
+  ikut tenggelam. Di sesi Inkubator yang ditolak, satu-satunya temuan yang beneran menahan
+  sertifikat berdiri di antara 24 baris yang menunjuk arah salah.
+
+- **"Nggak dikirim" nggak boleh berarti "kosongkan".** `standard_id` & `tanggal_terima` ada di
+  blok yang selalu ditulis, jadi tiap simpan ulang yang nggak membawanya menghapus isinya —
+  tanpa error, dan yang menghapus bukan orang yang mengisi. Tetangganya sudah dilindungi sejak
+  lama lengkap dengan komentarnya; dua kolom ini cuma nggak ikut. Buat lab terakreditasi,
+  ketertelusuran yang hilang senyap itu temuan audit.
+
+- **Satu `first()` yang menerima dua kunci sekaligus memilih diam-diam.** `$s->nama === $k ||
+  $s->serial_number === $k` di dalam satu `first()` bikin yang menang cuma yang ID-nya terkecil.
+  Di lab ini dua baris master berbagi seri `23P1005` — sensor RTD dan kalibrator Yokogawa yang
+  menempel padanya — jadi baris Yokogawa di lembar tertaut ke dokumen sensor. Merknya kebetulan
+  sama, jadi angkanya nggak salah; yang salah nomor sertifikat & ketertelusurannya. Prioritaskan
+  kunci yang lebih spesifik, jangan gabungkan dalam satu lolos.
 
 - **Penanda yang menempel ke POSISI, bukan ke nilai.** `titik_ke` dan indeks baris itu posisi,
   dan posisinya geser tiap bentuk lembar berubah — lembar generik Conductivity menyusut begitu
