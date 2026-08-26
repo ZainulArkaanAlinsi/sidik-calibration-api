@@ -101,9 +101,14 @@ class TidsLembarKerjaTest extends TestCase
             ->json('data');
 
         $this->assertSame(
-            ['identitas_alat', 'pemilik', 'dryblock', 'usage_check', 'titik_es', 'hasil', 'penutup'],
+            ['identitas_alat', 'pemilik', 'usage_check', 'dryblock', 'titik_es', 'hasil', 'penutup'],
             array_column($data['bagian'], 'kode'),
-            'Urutan bagian ngikut urutan kertasnya dibaca dari atas.',
+            'Urutan bagian ngikut POLA BERSAMA semua lembar, bukan urutan kertasnya dibaca dari atas: '
+            .'identitas alat > pemilik > standar yang dipakai > pengukuran > penutup. '
+            .'Di `SIDIK-FM-CAL-0506 Rev.4` kotak dryblock emang tercetak di ATAS blok `Standard used:`, '
+            .'tapi ngikutin itu bikin TIDS satu-satunya dari tujuh belas lembar yang `usage_check`-nya '
+            .'nggak di posisi ketiga. Kertas & lembar cetaknya nggak ikut berubah — yang digeser cuma '
+            .'urutan baca di layar.',
         );
 
         $bagian = collect($data['bagian'])->keyBy('kode');
@@ -192,7 +197,7 @@ class TidsLembarKerjaTest extends TestCase
             ->json('data');
 
         $this->assertSame(
-            ['identitas_alat', 'pemilik', 'dryblock', 'usage_check', 'titik_es', 'hasil', 'penutup', 'administratif'],
+            ['identitas_alat', 'pemilik', 'usage_check', 'dryblock', 'titik_es', 'hasil', 'penutup', 'administratif'],
             $kodeBagian($admin),
         );
 

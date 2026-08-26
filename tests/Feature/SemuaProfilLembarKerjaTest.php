@@ -272,6 +272,117 @@ class SemuaProfilLembarKerjaTest extends TestCase
     ];
 
     /**
+     * Kerangka bagian yang sama di SEMUA lembar: alat > pemilik > standar >
+     * ...pengukuran... > penutup.
+     *
+     * ## Kenapa keseragamannya diuji, bukan dibiarkan
+     *
+     * Tiap lembar lahir dari formulir kertasnya sendiri, dan kalau urutan
+     * bagiannya ikut kertas apa adanya, tiap lembar punya susunan sendiri. Di
+     * kertas itu wajar — orang megang satu formulir. Di layar nggak: teknisi
+     * yang sehari nggarap Bath, TIDS, lalu Autoclave dapat tiga susunan beda,
+     * dan tiap ganti alat dia nyari letak blok standar dari nol.
+     *
+     * Dua yang melenceng, dan dua-duanya ketahuan cuma waktu ditaruh
+     * bersebelahan — bukan dari baca kodenya:
+     *
+     *  - TIDS naruh kotak dryblock SEBELUM blok `Standard used:`, ngikut
+     *    `SIDIK-FM-CAL-0506 Rev.4`.
+     *  - Autoclave naruh General Information paling atas dan blok standar
+     *    SESUDAH tabel hasil — jadi satu-satunya lembar yang identitas alatnya
+     *    bukan yang pertama dibaca, sekaligus satu-satunya yang nanya "standar
+     *    mana yang dipakai" sesudah angkanya terlanjur diketik.
+     *
+     * ## Yang TIDAK berubah
+     *
+     * Kertasnya, dan lembar cetak buat dipindai. Jalur cetak punya definisinya
+     * sendiri (`bentukPindaiFoto()` + template OCR) dan nggak baca urutan array
+     * `bagian` sama sekali. Jadi lembar terkendali tetap kebaca sama persis
+     * kayak dokumen yang didaftarkan; yang diseragamkan cuma urutan baca di
+     * LAYAR.
+     *
+     * ## Kenapa disapu, bukan diuji per profil
+     *
+     * Yang melenceng selalu profil yang nggak lagi disentuh. Dua di atas berdiri
+     * berbulan-bulan tanpa satu pun test berubah merah, karena nggak ada test
+     * yang pernah mengadu satu lembar ke lembar lain.
+     */
+    #[DataProvider('semuaProfil')]
+    public function test_urutan_bagian_seragam_di_semua_lembar(CalibrationProfile $profil): void
+    {
+        $kode = array_column($profil->bentukLembarKerja()['bagian'] ?? [], 'kode');
+
+        $this->assertNotEmpty($kode, "Lembar {$profil->kode()} nggak punya bagian sama sekali.");
+
+        $this->assertSame(
+            'identitas_alat',
+            $kode[0] ?? null,
+            "Bagian pertama lembar {$profil->kode()} bukan `identitas_alat`, tapi `".($kode[0] ?? '(kosong)')."`.\n\n"
+            .'Alat yang dikalibrasi itu yang dipilih paling awal — dropdown-nya yang nentuin bentuk sisa '
+            .'lembarnya. Urutan kebaca: '.implode(' > ', $kode),
+        );
+
+        // Autoclave nyebutnya `informasi_umum` karena di kertasnya blok ini
+        // judulnya "General Information" dan ikut bawa Receive/Calibration Date.
+        // Isinya peran yang sama: pelanggan, alamat, dan lokasi kalibrasi.
+        $this->assertContains(
+            $kode[1] ?? null,
+            ['pemilik', 'informasi_umum'],
+            "Bagian kedua lembar {$profil->kode()} bukan blok pemilik. Urutan kebaca: ".implode(' > ', $kode),
+        );
+
+        $posisiStandar = array_search('usage_check', $kode, true);
+
+        $this->assertNotFalse(
+            $posisiStandar,
+            "Lembar {$profil->kode()} nggak punya bagian `usage_check` — nggak ada tempat milih standar "
+            .'yang dipakai. Urutan kebaca: '.implode(' > ', $kode),
+        );
+
+        // INTI: standar dipilih SEBELUM ngukur, bukan sesudah.
+        //
+        // Bukan cuma soal rapi. Blok `usage_check` itu yang nentuin kalibrator
+        // sesi, dan kalibratornya yang nentuin koreksi tiap pembacaan. Nanya
+        // sesudah tabelnya penuh bikin teknisi ngisi puluhan kotak angka dengan
+        // asumsi standar yang belum pernah dia nyatakan.
+        //
+        // Yang diadu ISI bagian sebelum blok standar, bukan indeks tetap. Dua
+        // alasan indeks tetap nggak kepakai:
+        //
+        //  - Autoclave sah punya DUA blok konteks — `informasi_umum` (pelanggan
+        //    & tanggal) dan `kondisi_lokasi` (lokasi, kondisi lingkungan,
+        //    centang thermohygro) — karena di kertasnya General Information
+        //    emang dua blok. Maksa jadi satu bikin ISI formulir terkendalinya
+        //    berubah, bukan cuma urutannya.
+        //  - "Bagian pengukuran" nggak bisa ditebak dari adanya `tabel`: lima
+        //    lembar Enclosure naruh grid termokopelnya di `grid_sensor` tingkat
+        //    lembar, bukan di dalam bagian mana pun.
+        //
+        // Jadi yang dipatok daftar bagian yang BOLEH duluan — semuanya konteks
+        // yang dibaca sebelum alat pertama disentuh.
+        $konteks = ['identitas_alat', 'pemilik', 'informasi_umum', 'kondisi_lokasi'];
+
+        $duluan = array_slice($kode, 0, $posisiStandar);
+        $bukanKonteks = array_values(array_diff($duluan, $konteks));
+
+        $this->assertSame(
+            [],
+            $bukanKonteks,
+            "Lembar {$profil->kode()} nanya standar SESUDAH bagian yang bukan konteks.\n\n"
+            .'Yang nyelak di depan blok standar: '.implode(', ', $bukanKonteks)."\n"
+            .'Standar dipilih SEBELUM ngukur — dia yang nentuin koreksi tiap pembacaan.'."\n"
+            .'Urutan kebaca: '.implode(' > ', $kode),
+        );
+
+        $this->assertSame(
+            'penutup',
+            $kode[array_key_last($kode)],
+            "Bagian terakhir lembar {$profil->kode()} bukan `penutup` — tanda tangan & catatan selalu "
+            .'di bawah. Urutan kebaca: '.implode(' > ', $kode),
+        );
+    }
+
+    /**
      * Tiap `sumber: master_*` wajib kepilih salah satu: diisi profil, atau
      * ditarik aplikasi — BERIKUT alasannya.
      *

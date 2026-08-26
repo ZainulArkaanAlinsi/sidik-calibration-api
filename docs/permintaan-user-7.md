@@ -204,21 +204,32 @@ Diperiksa kedelapan lembar kategori suhu. Yang benar-benar beda dan aman diserag
 **TITS menaruh dua kotak tanggal di paling atas** sementara tujuh lembar lain menaruhnya di
 bawah blok identitas. Sudah disamakan.
 
-Yang **TIDAK** diseragamkan, dan alasannya:
+Urutan bagian: **SUDAH diseragamkan** (26 Agt 2026, atas keputusan pemilik lab).
 
-- **TIDS menaruh 19 field di `identitas_alat`** (tujuh lembar lain: 10) — kondisi lingkungan,
-  lokasi, dan metode ikut di blok itu. Pernah dicoba dipecah jadi `data_kalibrasi` +
-  `kondisi_lingkungan` seperti lembar Enclosure; **dibatalkan**: `TidsLembarKerjaTest` menjaga
-  urutan bagian dengan alasan *"ngikut urutan kertasnya dibaca dari atas"*, dan pemecahan itu
-  memindahkan kotak yang di `SIDIK-FM-CAL-0506 Rev.4` tercetak di ATAS jadi di bawah
-  `usage_check`. Buat lab terakreditasi, lembar kerja yang urutan bacanya beda dari formulir
-  terkendali itu bukan soal rapi-rapi.
+Pola bersama tujuh belas lembar: `identitas_alat` > blok pemilik & lokasi > `usage_check` >
+...pengukuran... > `penutup`. Dua yang dulu melenceng:
+
+- **TIDS** naruh kotak dryblock SEBELUM blok `Standard used:`, ngikut `SIDIK-FM-CAL-0506 Rev.4`
+  dibaca dari atas — satu-satunya dari tujuh belas yang `usage_check`-nya nggak di posisi ketiga.
 - **Autoclave** membuka dengan `informasi_umum` + `kondisi_lokasi` lalu `identitas_alat` di urutan
-  ketiga. Formulirnya memang begitu.
+  ketiga, dan blok standarnya nongol SESUDAH tabel hasil — jadi satu-satunya lembar yang nanya
+  "standar mana yang dipakai" sesudah angkanya terlanjur diketik.
 
-Kalau pemilik lab memutuskan keseragaman layar lebih penting daripada kesamaan urutan dengan
-kertas, dua-duanya bisa diseragamkan — tapi itu keputusan atas dokumen terkendali, bukan
-keputusan teknis.
+Yang **TIDAK** ikut berubah, dan ini yang bikin keputusannya aman buat lab terakreditasi:
+
+- **Kertasnya.** Formulir terkendalinya nggak disentuh sama sekali.
+- **Lembar cetak buat dipindai.** Jalur cetak punya definisinya sendiri (`bentukPindaiFoto()` +
+  template OCR) dan nggak baca urutan array `bagian`. Yang digeser cuma urutan baca di LAYAR.
+- **Isi tiap bagian.** Yang dipindah blok utuh; nggak ada field yang pindah rumah. Autoclave tetap
+  punya DUA blok konteks karena di kertasnya General Information emang dua blok — maksa jadi satu
+  bakal mengubah isi formulir, bukan cuma urutannya.
+
+Dijaga `SemuaProfilLembarKerjaTest::test_urutan_bagian_seragam_di_semua_lembar()` — sapuan
+registry, jadi profil ke-18 ikut kena tanpa ada yang perlu ingat. Dibuktikan menggigit: dengan
+urutan lama, dua profil itu persis yang merah.
+
+**TIDS masih menaruh 19 field di `identitas_alat`** (tujuh lembar lain: 10) — kondisi lingkungan,
+lokasi, dan metode ikut di blok itu. Itu soal ISI bagian, bukan urutan, dan belum diseragamkan.
 
 ---
 
@@ -309,11 +320,15 @@ Supaya tidak dibangun ulang:
   Tiap saringan yang bisa menghasilkan **himpunan kosong** wajib punya jalan keluar di layar yang
   sama; menyuruh orang keluar ke menu lain dan menebak parameternya bukan jalan keluar.
 
-- **Penjaga yang mengikat kode ke dokumen terkendali jangan ditimpa, walau permintaannya
-  masuk akal.** `TidsLembarKerjaTest` menjaga urutan bagian *"ngikut urutan kertasnya dibaca dari
-  atas"*. Menyeragamkan tata letak antar-lembar terdengar seperti kerapian murni, padahal dia
-  memindahkan kotak relatif terhadap `SIDIK-FM-CAL-0506 Rev.4`. Kalau penjaga semacam itu merah,
-  yang salah biasanya perubahannya — bukan penjaganya.
+- **Penjaga yang mengikat kode ke dokumen terkendali cuma boleh digeser sama pemilik lab, bukan
+  sama yang lagi ngoding.** `TidsLembarKerjaTest` dulu menjaga urutan bagian *"ngikut urutan
+  kertasnya dibaca dari atas"*. Menyeragamkan tata letak antar-lembar terdengar seperti kerapian
+  murni, padahal dia memindahkan kotak relatif terhadap `SIDIK-FM-CAL-0506 Rev.4` — jadi waktu
+  penjaganya merah, yang dibatalkan perubahannya, dan pilihannya diangkat ke pemilik lab.
+  Pemilik memutuskan seragam (26 Agt 2026), dan baru sesudah itu penjaganya diganti — berikut
+  alasan barunya, bukan dihapus. Yang bikin ini aman: kertas dan lembar cetaknya nggak ikut
+  berubah, cuma urutan baca di layar. Kalau penjaga semacam itu merah dan nggak ada keputusan
+  pemilik yang menyertainya, yang salah perubahannya — bukan penjaganya.
 
 - **Mesin diberi PREMIS yang salah, lalu hasilnya dipercaya.** Pemeriksa
   `pembacaan_bukan_kelipatan_resolusi` berdiri di atas satu premis: angka yang dicatat dibaca di
