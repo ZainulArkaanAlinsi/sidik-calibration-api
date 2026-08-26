@@ -106,11 +106,38 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * baris kedua ini kemungkinan besar sisa cetakan lama. Dibiarkan tampil
      * karena kertas yang dipegang teknisi memang masih begitu; yang nggak boleh
      * adalah lembar di HP beda dari lembar di tangan.
+     *
+     * ## Yokogawa DITAMBAHKAN, Victor tetap tinggal
+     *
+     * Kertas Rev.3 nyetak tiga baris dan Yokogawa BUKAN salah satunya — padahal
+     * dia kalibrator enclosure yang paling kepakai: master olah datanya sendiri
+     * bernama `Master Olah Data_Suhu_Enclosure_Constant_Yokogawa.xlsm`, sesi
+     * acuan `EnclosureSesiTest` memakainya, dan `TabelKalibratorEnclosure::MERK`
+     * sudah lama punya tabel koreksinya.
+     *
+     * Akibat kalau dibiarkan: teknisi yang mengalibrasi pakai Yokogawa NGGAK
+     * PUNYA baris buat dicentang. Dia nggak dapat error — dia cuma nggak bisa
+     * menautkan standar, `merkKalibrator()` pulang null, dan SELURUH titiknya
+     * nggak kehitung. Itu persis kegagalan yang dilaporkan 26 Agt 2026.
+     *
+     * Yang menambahkannya bukan tebakan: FORM VALIDASI rev. 11 yang dikutip di
+     * atas berbunyi "Add std kalibrator yokogawa". Jadi ini menjalankan
+     * keputusan lab yang sudah tertulis, cuma belum nyampe ke kertas Rev.3.
+     *
+     * Victor SENGAJA nggak dibuang walau rev. 11 minta dihapus: kertas yang
+     * dipegang teknisi masih memuatnya, dan baris yang hilang dari layar bikin
+     * dia mengira salah lembar. Karena `terdaftar` sekarang dihitung dari master
+     * (lihat `tautkanStandar()`), Victor bakal tampil apa adanya sebagai baris
+     * yang NGGAK terdaftar — jujur, bukan disembunyikan.
      */
     public const STANDARD_TERCETAK = [
         [
             'label' => 'Temperature Calibrator / Constant / 40T / 99875850',
             'cocok' => ['Temperature Calibrator Constant 40T', '99875850'],
+        ],
+        [
+            'label' => 'Temperature Calibrator / Yokogawa / CA 150 Handy Cal / 23P1005',
+            'cocok' => ['Temperature Calibrator Yokogawa CA 150 Handy Cal', '23P1005'],
         ],
         [
             'label' => 'Temperature Calibrator / Victor / Victor 14+ / 992613877',
@@ -727,7 +754,86 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ],
         ];
 
-        return $this->isiPilihanThermohygro($bentuk);
+        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk));
+    }
+
+    /**
+     * Baris "Standar used" yang tercetak DITAUTKAN ke baris `standards` asli.
+     *
+     * ## Kenapa ini ada
+     *
+     * Sampai 26 Agt 2026 lembar Enclosure mengirim baris tercetak apa adanya:
+     * cuma `label` + `cocok`, TANPA `standard_id`. Layar HP membaca
+     * `json['standard_id']` (lihat `lembar_kerja.dart`), dapat null, dan sesi
+     * yang tersimpan `standard_id`-nya kosong.
+     *
+     * Dari situ jatuhnya beruntun dan senyap:
+     * `merkKalibrator(null)` -> null -> `syaratKurang()` -> `semuaBelum()` —
+     * SELURUH titik dicap belum dihitung. Yang dilihat admin bukan "standarnya
+     * belum dipilih", tapi `titik_kosong` + `titik_tidak_terhitung` di tiap
+     * titik: enam peringatan dari satu sebab, dan sebabnya paling nggak
+     * kelihatan di antara semuanya.
+     *
+     * Kelima lembar Enclosure kena sekaligus karena semuanya mewarisi kelas ini.
+     *
+     * ## Kenapa nggak ketahuan test
+     *
+     * `EnclosureSesiTest` menyuapkan `standard_id` LANGSUNG ke payload, diambil
+     * sendiri dari database. Dia nggak pernah lewat bentuk lembar kerja. Jadi
+     * test membuktikan kalkulatornya benar, sementara jalur yang dilewati
+     * manusia nggak pernah bisa sampai ke situ. Penjaganya sekarang ada di
+     * `EnclosureStandarTertautTest`.
+     *
+     * ## Kenapa bentuknya begini
+     *
+     * Sama persis dengan `TitsProfile::tautkanStandar()` — sengaja, karena
+     * dua-duanya menjawab kebutuhan yang sama dan dua bentuk yang beda buat satu
+     * kebutuhan itu yang bikin salah satunya basi diam-diam. `whereNull(
+     * 'parameter_kondisi')` menyaring ke KALIBRATOR: kolom itu cuma terisi di
+     * baris thermohygro, dan tanpa saringan ini thermohygro bisa nyangkut jadi
+     * kalibrator.
+     *
+     * Dicocokkan lewat nama ATAU nomor seri, seperti yang sudah dijanjikan
+     * docblock `STANDARD_TERCETAK`. Nomor seri yang menyelamatkan baris
+     * Recorder: kertas nyetak "Graptech GL840-SDWV" sementara master menulis
+     * "Graphtech GL840" — beda huruf DAN beda model, jadi lewat nama nggak
+     * akan pernah ketemu. Serialnya sama-sama `C305B1470`.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    private function tautkanStandar(array $bentuk): array
+    {
+        $master = Standard::query()
+            ->whereNull('parameter_kondisi')
+            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            if (($bagian['kode'] ?? null) !== 'usage_check') {
+                continue;
+            }
+
+            $bentuk['bagian'][$i]['baris'] = array_map(
+                function (array $baris) use ($master): array {
+                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
+                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
+                            || $s->serial_number === $kunci));
+
+                    return [
+                        'label' => $baris['label'],
+                        'standard_id' => $cocok?->id,
+                        'merk' => $cocok?->merk,
+                        'serial_number' => $cocok?->serial_number,
+                        'no_sertifikat' => $cocok?->no_sertifikat,
+                        'tertelusur_ke' => $cocok?->tertelusur_ke,
+                        'terdaftar' => $cocok !== null,
+                    ];
+                },
+                $bentuk['bagian'][$i]['baris'],
+            );
+        }
+
+        return $bentuk;
     }
 
     /**
