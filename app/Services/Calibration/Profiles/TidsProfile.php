@@ -691,11 +691,26 @@ class TidsProfile extends CalibrationProfile
                 ],
             ],
             'sumbu_uut' => $this->sumbuUut(),
+            // Urutan bagian ngikut POLA BERSAMA semua lembar, bukan urutan
+            // kertasnya dibaca dari atas.
+            //
+            // Di `SIDIK-FM-CAL-0506 Rev.4` kotak dryblock tercetak di atas blok
+            // `Standard used:`. Dulu urutan di sini ngikut itu — satu-satunya
+            // lembar dari tujuh belas yang `usage_check`-nya nggak duduk di
+            // posisi ketiga. Teknisi yang pindah alat jadi harus nyari letak
+            // blok standar dari nol tiap ganti lembar.
+            //
+            // Kertasnya nggak berubah, dan yang dicetak juga nggak: jalur cetak
+            // lembar pindai punya definisinya sendiri (`bentukPindaiFoto()` +
+            // template OCR) dan nggak baca urutan array ini sama sekali. Yang
+            // digeser cuma urutan baca di LAYAR.
+            //
+            // Dijaga `SemuaProfilLembarKerjaTest::test_urutan_bagian_seragam_di_semua_lembar()`.
             'bagian' => [
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
-                $this->bagianDryblock(),
                 $this->bagianStandard(),
+                $this->bagianDryblock(),
                 $this->bagianTitikEs(),
                 $this->bagianDataKalibrasi(),
                 $this->bagianPenutup(),

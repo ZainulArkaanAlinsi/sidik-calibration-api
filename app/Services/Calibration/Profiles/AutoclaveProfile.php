@@ -303,12 +303,30 @@ class AutoclaveProfile extends CalibrationProfile
             'catatan_pengisian' => 'Kolom yang belum bisa diisi di lapangan boleh dikosongin. '
                 .'Suhu butuh minimal 1 disk terisi; tekanan butuh minimal 1 pembacaan. '
                 .'Titik waktu yang kosong nggak ikut dirata-rata.',
+            // Urutan bagian ngikut POLA BERSAMA semua lembar, bukan urutan
+            // kertasnya dibaca dari atas.
+            //
+            // Di kertas Autoclave, General Information tercetak paling atas dan
+            // blok Standard di bawah tabel hasil. Dulu urutan di sini ngikut itu
+            // — dan jadinya lembar Autoclave satu-satunya dari tujuh belas yang
+            // `identitas_alat`-nya BUKAN bagian pertama, sekaligus satu-satunya
+            // yang blok standarnya nongol SESUDAH teknisi selesai ngisi tabel.
+            // Padahal standar itu yang dipilih duluan sebelum ngukur.
+            //
+            // Pola bersamanya: identitas alat > pemilik & lokasi > standar yang
+            // dipakai > pengukuran > penutup.
+            //
+            // Kertasnya nggak berubah, dan yang dicetak juga nggak: jalur cetak
+            // lembar pindai punya definisinya sendiri dan nggak baca urutan
+            // array ini sama sekali. Yang digeser cuma urutan baca di LAYAR.
+            //
+            // Dijaga `SemuaProfilLembarKerjaTest::test_urutan_bagian_seragam_di_semua_lembar()`.
             'bagian' => [
+                $this->bagianIdentitasAlat(),
                 $this->bagianPenerimaan(),
                 $this->bagianKondisiLokasi(),
-                $this->bagianIdentitasAlat(),
-                $this->bagianHasilPengukuran(),
                 $this->bagianStandarDipakai(),
+                $this->bagianHasilPengukuran(),
                 $this->bagianPenutup(),
             ],
         ];
