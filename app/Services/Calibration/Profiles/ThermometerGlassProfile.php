@@ -167,6 +167,26 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
     }
 
     /**
+     * `satu`/`dua` → nama oilbath berikut nomor sertifikatnya.
+     *
+     * Dinormalkan `strtolower` — sama dengan [hitungPerGrup] dan
+     * [peringatanSesi] di berkas ini, yang dua-duanya menurunkan huruf sebelum
+     * mencocokkan.
+     *
+     * Nomor sertifikatnya sengaja ikut kebawa (`SIDIK/079/2022`): itu yang
+     * dipakai admin buat mengadu unit yang dipilih dengan lembar cetak di
+     * mejanya. Nama tanpa nomor bikin dua bath yang mereknya sama nggak
+     * kebedain.
+     */
+    public function labelAlatBantu(?string $kode): ?string
+    {
+        $bath = collect(self::OILBATH)
+            ->firstWhere('nilai', strtolower((string) $kode));
+
+        return $bath['label'] ?? null;
+    }
+
+    /**
      * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard|null, konteks?: array<string, mixed>}>  $titik
      * @return array{hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */

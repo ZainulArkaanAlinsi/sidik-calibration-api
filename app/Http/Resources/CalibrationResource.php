@@ -107,6 +107,20 @@ class CalibrationResource extends JsonResource
             // daftar. Dua di antaranya nentuin komponen budget, jadi yang
             // berubah diam-diam bukan tampilan melainkan U95-nya.
             'alat_bantu' => $this->alat_bantu,
+            // Nama unit-nya ikut, bukan cuma kodenya, dan itu buat pembaca yang
+            // BEDA dari tiga baris di atas. Yang di atas melayani lembar kerja
+            // yang dibuka lagi: dropdown-nya butuh `nilai`, dan nama tiap
+            // pilihan sudah ada di daftar `pilihan` yang datang bareng
+            // templatenya. Layar detail admin nggak memuat template itu, jadi
+            // di sana `A` tetap `A`.
+            //
+            // Petanya nggak disalin ke HP karena daftarnya bertambah begitu lab
+            // beli dryblock baru — dan yang membaca layar ini justru orang yang
+            // lagi memutuskan menerbitkan sertifikat. Lihat
+            // `CalibrationProfile::labelAlatBantu()`.
+            'alat_bantu_label' => $this->resource->equipment !== null
+                ? self::profil($this->resource->equipment)?->labelAlatBantu($this->alat_bantu)
+                : null,
             'tipe_pencelupan' => $this->tipe_pencelupan,
             'titik_es' => $this->titik_es,
             'pemilik_nama' => $this->pemilik_nama,
