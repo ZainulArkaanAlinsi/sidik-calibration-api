@@ -1,0 +1,481 @@
+{
+    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "template_id": "thermocouple",
+    "versi": 1,
+    "kode_dokumen": null,
+    "terverifikasi": false,
+    "ukuran_referensi": {
+        "w": 1654,
+        "h": 2339,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 1564,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 1564,
+            "y": 2249,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 2249,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "thermocouple|v1",
+        "kotak": {
+            "x": 1309,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 288,
+                "y": 897,
+                "w": 260,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 536,
+                "y": 897,
+                "w": 260,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 784,
+                "y": 897,
+                "w": 260,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 4,
+            "teks": "X4",
+            "kotak": {
+                "x": 1032,
+                "y": 897,
+                "w": 260,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 5,
+            "teks": "X5",
+            "kotak": {
+                "x": 1280,
+                "y": 897,
+                "w": 260,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "standar",
+            "judul": "Pembacaan Standard",
+            "kiri": 90,
+            "sel": {
+                "standar|1|1|pembacaan": {
+                    "x": 294,
+                    "y": 955,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|2|1|pembacaan": {
+                    "x": 294,
+                    "y": 1039,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|3|1|pembacaan": {
+                    "x": 294,
+                    "y": 1123,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|4|1|pembacaan": {
+                    "x": 294,
+                    "y": 1207,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|5|1|pembacaan": {
+                    "x": 294,
+                    "y": 1291,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|6|1|pembacaan": {
+                    "x": 294,
+                    "y": 1375,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|1|2|pembacaan": {
+                    "x": 542,
+                    "y": 955,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|2|2|pembacaan": {
+                    "x": 542,
+                    "y": 1039,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|3|2|pembacaan": {
+                    "x": 542,
+                    "y": 1123,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|4|2|pembacaan": {
+                    "x": 542,
+                    "y": 1207,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|5|2|pembacaan": {
+                    "x": 542,
+                    "y": 1291,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|6|2|pembacaan": {
+                    "x": 542,
+                    "y": 1375,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|1|3|pembacaan": {
+                    "x": 790,
+                    "y": 955,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|2|3|pembacaan": {
+                    "x": 790,
+                    "y": 1039,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|3|3|pembacaan": {
+                    "x": 790,
+                    "y": 1123,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|4|3|pembacaan": {
+                    "x": 790,
+                    "y": 1207,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|5|3|pembacaan": {
+                    "x": 790,
+                    "y": 1291,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|6|3|pembacaan": {
+                    "x": 790,
+                    "y": 1375,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|1|4|pembacaan": {
+                    "x": 1038,
+                    "y": 955,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|2|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1039,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|3|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1123,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|4|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1207,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|5|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1291,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|6|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1375,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|1|5|pembacaan": {
+                    "x": 1286,
+                    "y": 955,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|2|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1039,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|3|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1123,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|4|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1207,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|5|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1291,
+                    "w": 248,
+                    "h": 84
+                },
+                "standar|6|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1375,
+                    "w": 248,
+                    "h": 84
+                }
+            }
+        },
+        {
+            "tabel_id": "uut",
+            "judul": "Pembacaan UUT",
+            "kiri": 90,
+            "sel": {
+                "uut|1|1|pembacaan": {
+                    "x": 294,
+                    "y": 1644,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|2|1|pembacaan": {
+                    "x": 294,
+                    "y": 1728,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|3|1|pembacaan": {
+                    "x": 294,
+                    "y": 1812,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|4|1|pembacaan": {
+                    "x": 294,
+                    "y": 1896,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|5|1|pembacaan": {
+                    "x": 294,
+                    "y": 1980,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|6|1|pembacaan": {
+                    "x": 294,
+                    "y": 2064,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|1|2|pembacaan": {
+                    "x": 542,
+                    "y": 1644,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|2|2|pembacaan": {
+                    "x": 542,
+                    "y": 1728,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|3|2|pembacaan": {
+                    "x": 542,
+                    "y": 1812,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|4|2|pembacaan": {
+                    "x": 542,
+                    "y": 1896,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|5|2|pembacaan": {
+                    "x": 542,
+                    "y": 1980,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|6|2|pembacaan": {
+                    "x": 542,
+                    "y": 2064,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|1|3|pembacaan": {
+                    "x": 790,
+                    "y": 1644,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|2|3|pembacaan": {
+                    "x": 790,
+                    "y": 1728,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|3|3|pembacaan": {
+                    "x": 790,
+                    "y": 1812,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|4|3|pembacaan": {
+                    "x": 790,
+                    "y": 1896,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|5|3|pembacaan": {
+                    "x": 790,
+                    "y": 1980,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|6|3|pembacaan": {
+                    "x": 790,
+                    "y": 2064,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|1|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1644,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|2|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1728,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|3|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1812,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|4|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1896,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|5|4|pembacaan": {
+                    "x": 1038,
+                    "y": 1980,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|6|4|pembacaan": {
+                    "x": 1038,
+                    "y": 2064,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|1|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1644,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|2|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1728,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|3|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1812,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|4|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1896,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|5|5|pembacaan": {
+                    "x": 1286,
+                    "y": 1980,
+                    "w": 248,
+                    "h": 84
+                },
+                "uut|6|5|pembacaan": {
+                    "x": 1286,
+                    "y": 2064,
+                    "w": 248,
+                    "h": 84
+                }
+            }
+        }
+    ]
+}

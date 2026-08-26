@@ -96,6 +96,19 @@ class CalibrationResource extends JsonResource
             // nampilin "Standard Indication" di kolom yang isinya bacaan UUT.
             'mode_kalibrasi' => $this->mode_kalibrasi,
             'tipe_sensor' => $this->tipe_sensor,
+            // Alat bantu, tipe pencelupan & uji titik es (alat ke-18..20). Null
+            // buat tujuh belas alat lain.
+            //
+            // Wajib dipulangin dengan alasan yang sama seperti `sensor_ke` grid
+            // Enclosure: sesi yang dikembalikan admin harus pulang UTUH. Tanpa
+            // ketiganya, teknisi membuka lembar revisi dengan dryblock kosong,
+            // tipe pencelupan kosong, dan uji titik es kosong — lalu mengisinya
+            // ulang dari ingatan, atau (lebih sering) memilih yang pertama di
+            // daftar. Dua di antaranya nentuin komponen budget, jadi yang
+            // berubah diam-diam bukan tampilan melainkan U95-nya.
+            'alat_bantu' => $this->alat_bantu,
+            'tipe_pencelupan' => $this->tipe_pencelupan,
+            'titik_es' => $this->titik_es,
             'pemilik_nama' => $this->pemilik_nama,
             'pemilik_alamat' => $this->pemilik_alamat,
             // Pelanggan pemilik alat — dipakai layar antrean approval buat

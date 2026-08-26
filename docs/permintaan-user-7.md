@@ -172,6 +172,98 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
 
 ---
 
+## 10. Tiga alat suhu baru — Thermocouple, Termometer Gelas, Thermohygrometer
+
+Ditambahkan pemilik proyek 26 Agt 2026 bersama tiga workbook master ber-password:
+
+> *"ada 3 alat itu parhatikan buat kanyak biasa nya serta olah data nya … sekrang
+> buatkan bagian backendnya dulu dan juga tolong itu bagian kemera nya juga harus
+> bisa juga"*
+
+| | Isi | Status |
+|---|---|---|
+| **A** | Backend tiga alat (profil, lembar kerja, jalur simpan) | **BERES** — alat ke-18, 19, 20 |
+| **B** | Olah data (koreksi + budget U95) sesuai master | **BERES** — cocok sampai digit terakhir, dijaga `Suhu3AlatMasterTest` |
+| **C** | Bagian kamera (pindai lembar kerja) | **BERES di server** — 20/20 lembar punya berkas geometri; `terverifikasi: false` menunggu F1 |
+| **D** | Excel → CSV | **BERES** — 43 sheet di `sidik-calibration-mobile/Project-PT-Sidik/suhu CSV` |
+| **E** | Sisi mobile (layar lembar kerja) | **belum** — lihat `docs/perintah-frontend-suhu-3alat.md` |
+
+**Ketiganya baris lampiran akreditasi LK-285-IDN yang selama ini kosong:** no. 5
+Thermocouple, no. 4 Termometer Gelas, no. 11 Thermohygrometer. Baris CMC-nya
+sudah ter-seed sejak dulu — yang belum ada cuma profil & mesin hitungnya.
+
+### Bentuk lembarnya BEDA dari 17 alat sebelumnya
+
+Ketiganya membaca **dua deret per titik** — probe standar dan UUT dicelup
+bersamaan lalu dibaca bergantian tiap 10 detik. Jadi nilai standar itu **data
+sesi**, bukan konstanta dari master `standards` seperti buffer pH 4,01. Jalur
+datar `measurements[i].pembacaan` cuma punya tempat buat satu deret, jadi
+ketiganya lewat jalur sendiri (`butuhPasanganStandarUut()` →
+`susunPasanganStandarUut()`), memakai sumbu `peran_sensor` yang sudah ada sejak
+Enclosure. **Nol kolom baru di `raw_measurements`.**
+
+### Yang nyaris salah, dan pantas dicatat
+
+Workbook Thermocouple memuat **persis keempat sheet yang selama ini disebut
+hilang untuk TIDS** — `PERHITUNGAN U95%`, `Variasi axial Dryblok A`, `Variasi
+axial Dryblok B`, `stdev drywell` — lengkap dengan dryblock Isotech & Techne yang
+sebelumnya tidak pernah muncul di repo ini. Dan `PERHITUNGAN U95%!D6` menulis
+persis: *"Temperature indikator dengan sensor"*.
+
+Yang membantahnya angka, bukan label: tabel CMC workbook itu berbunyi **0,84 /
+1,5 / 3,3 °C** — baris **no. 5 Thermocouple**, bukan **no. 2 TIDS** yang berbunyi
+0,86 / 1,4 / 3,1 °C. `D6` itu sisa salinan dari master TIDS.
+
+**Jadi K2 TETAP TERBUKA.** `TidsProfile` tidak disentuh, blokir U95 TIDS tetap
+berdiri, `TidsU95TidakBocorTest` tetap hijau.
+
+### Angka yang dicocokkan ke master
+
+| Alat | Sesi master | U95 terbit | Sumber |
+|---|---|---|---|
+| Thermocouple | `0513-CAL-1124` | **0,84 °C** | lantai CMC (hitungan 0,7686) |
+| Termometer Gelas | `0135-CAL-125` | **1,1174 °C** | hitungan budget (CMC 0,58) |
+| Thermohygro suhu | `0312-CAL-624` | **1,9788 °C** | hitungan budget (CMC 1,7) |
+| Thermohygro RH | idem, 2 chamber | **4,8 %RH** | lantai CMC (hitungan 4,334 & 3,327) |
+
+Tiap kolom `Standard Reading` / `Unit Under Test` / `Correction`, tiap `ui`
+komponen budget, `Uc`, dan `v_eff` cocok dalam 5·10⁻⁶.
+
+### Penyimpangan master yang SENGAJA ditiru
+
+Ketiganya melahirkan catatan audit tiap sesi yang menyebut berapa hasilnya kalau
+dibetulkan — yang memutuskan manajer teknis lab, bukan diam-diam kode.
+
+1. **Thermocouple:** budget sembilan komponen **tanpa keterulangan**, walau
+   STDEV-nya dihitung & dipajang di `M23`.
+2. **Gelas:** keterulangan STANDAR dibagi **5**, bukan √5 — sementara baris
+   keterulangan UUT tepat di atasnya dibagi √5. Dibetulkan, U95 1,1174 → 1,1268.
+3. **Thermohygro:** delapan baris memakai `U = N/SQRT(Q)` padahal `Q` sudah
+   berisi pembaginya (kelas yang sama dengan `PEMBAGI_AC_PICKUP` TITS), dan baris
+   drift budget GEA justru tidak. Tiga perlakuan, satu komponen, satu sheet.
+
+Semuanya beserta enam butir lain ada di `docs/pertanyaan-lab-suhu-3alat.md`.
+
+### Yang TIDAK ditiru: sel kosong dibaca nol
+
+Tiap VLOOKUP master dibungkus `IFNA(…,"")`, jadi kombinasi yang tidak ada di
+tabel pulang KOSONG dan kosong ikut dijumlah sebagai nol — sertifikat terbit
+dengan koreksi yang hilang, tanpa error. Di sini titik seperti itu **diblokir
+dengan alasan yang kebaca**. Bahayanya nyata: tabel Yokogawa Thermocouple datang
+dari cache tautan luar yang memang berlubang (butir 8 dokumen pertanyaan).
+
+### Satu bug yang ditangkap penjaga waktu dikerjakan
+
+`Hydrometer` sempat didaftarkan sebagai alias Thermohygro — kelihatan
+sekeluarga, ternyata alat **DENSITAS**. Ditangkap
+`ProfilDariNamaAlatTest::test_nama_alat_generik_balik_null` sebelum mendarat.
+Kalau lolos: teknisi mengisi tabel suhu & %RH untuk alat yang mengukur berat
+jenis, dan U95-nya terbit berlantai CMC kelembapan 4,8 %RH. Nol error di
+sepanjang jalur itu.
+
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -228,6 +320,7 @@ berkas profil.
 | G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Belum diadu ke layar HP**: yang dibuktikan responsnya sudah berisi, bukan bahwa cabang teks matinya sudah nggak kepakai |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
+| G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (13 test). **Sisi mobile belum** |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
