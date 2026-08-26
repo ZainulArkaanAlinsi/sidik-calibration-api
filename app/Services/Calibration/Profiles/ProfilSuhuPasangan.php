@@ -217,6 +217,7 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
         string $judulPengulangan,
         bool $titikBisaDiubah = true,
         ?string $grup = null,
+        array $labelPengulangan = [],
     ): array {
         return [
             'tahap' => 'sesudah_adjustment',
@@ -233,8 +234,25 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             'peran' => $peran,
             'judul' => $judul,
             'satuan' => $satuan,
-            'judul_nilai' => $judul,
+            // Kepala kolom KIRI. Di lembar ini isinya set point, bukan nilai
+            // standar yang dipatok master — nilai standarnya justru dibaca
+            // teknisi dan masuk tabel di sebelahnya.
+            'judul_nilai' => 'Set Point',
             'judul_pengulangan' => $judulPengulangan,
+            // Label tiap kolom pengulangan — `0" (PRT1)`, `20" (PRT2)`, dst.
+            //
+            // Ditaruh PER KOLOM, bukan disambung jadi satu kalimat panjang di
+            // `judul_pengulangan`: kepala tabel tingginya dipatok, jadi kalimat
+            // yang membungkus jadi tiga baris meluber keluar kotaknya. Dan
+            // memang begitu bentuk kertasnya — detiknya tercetak di atas tiap
+            // kolom, bukan di judul gabungannya.
+            'pengulangan_arah' => array_map(
+                static fn (int $i): array => [
+                    'ke' => $i,
+                    'label' => $labelPengulangan[$i - 1] ?? sprintf('X%d', $i),
+                ],
+                range(1, self::PENGULANGAN),
+            ),
             'titik_bisa_diubah' => $titikBisaDiubah,
             'baris' => array_map(
                 static fn (float $t): array => [

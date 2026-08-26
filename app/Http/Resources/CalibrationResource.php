@@ -343,6 +343,18 @@ class CalibrationResource extends JsonResource
                         // yang paling mahal di produk ini.
                         'sensor_ke' => $m->sensor_ke,
                         'peran_sensor' => $m->peran_sensor,
+                        // Satuan pembacaan ini. Kelihatan berlebihan buat 19
+                        // alat bersatuan seragam — dan memang di sana dia cuma
+                        // mengulang `equipment.satuan`.
+                        //
+                        // Yang butuh Thermohygrometer: satu lembar, dua
+                        // besaran, dan set point `50` ada di DUA-duanya (50 °C
+                        // di blok suhu, 50 %RH di blok kelembapan). Waktu sesi
+                        // yang dikembalikan admin dipulihkan, angka saja nggak
+                        // cukup buat tahu baris mana yang dimaksud — dan yang
+                        // salah tempat bukan sel kosong melainkan angka yang
+                        // kelihatan wajar di blok yang salah.
+                        'satuan' => $m->satuan,
                         // Nomor kanal recorder, alasannya sama persis dan
                         // akibatnya lebih senyap.
                         //

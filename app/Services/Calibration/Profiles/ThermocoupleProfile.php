@@ -127,6 +127,17 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
         ['nilai' => 'B', 'label' => 'B — Techne Tecal 700xs (150…600 °C)', 'min' => 150.0, 'maks' => 600.0],
     ];
 
+    /**
+     * Label kolom pengulangan sisi STANDAR & sisi UUT.
+     *
+     * Detiknya bukan hiasan: standar dan UUT dibaca BERGANTIAN dalam satu
+     * sapuan 90 detik, dan urutan itu yang bikin dua deret bisa dipasangkan
+     * per titik. Tercetak persis begini di `INPUT DATA!D33:K33` & `D50:K50`.
+     */
+    public const LABEL_STANDAR = ['0″', '20″', '40″', '60″', '80″'];
+
+    public const LABEL_UUT = ['10″', '30″', '50″', '70″', '90″'];
+
     private ?ThermocoupleCalculator $kalkulator = null;
 
     public function __construct(private readonly TabelKalibratorSuhu3Alat $tabel = new TabelKalibratorSuhu3Alat) {}
@@ -419,7 +430,8 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard',
                                 self::TITIK_SARAN,
                                 self::SATUAN,
-                                'Data Hasil Pengukuran/Pengulangan — 0″, 20″, 40″, 60″, 80″ (PRT1…PRT5)',
+                                'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                                labelPengulangan: self::LABEL_STANDAR,
                             ),
                             // Kolom tambahan yang cuma alat ini punya: tiap baris
                             // standar menyebut PROBE mana yang dicelup. Tersimpan
@@ -434,7 +446,8 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                             'Pembacaan UUT',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan — 10″, 30″, 50″, 70″, 90″ (PRT1…PRT5)',
+                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            labelPengulangan: self::LABEL_UUT,
                         ),
                     ],
                 ],

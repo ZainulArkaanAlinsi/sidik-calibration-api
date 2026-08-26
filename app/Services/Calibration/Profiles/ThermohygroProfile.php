@@ -358,6 +358,18 @@ class ThermohygroProfile extends ProfilSuhuPasangan
             'larutan_standar' => self::TITIK_SUHU,
             'satuan' => self::SATUAN_SUHU,
             'satuan_suhu' => self::SATUAN_SUHU,
+            // Lembar bersatuan CAMPUR — dan ini bukan penanda kosmetik.
+            //
+            // Tanpa kunci ini, layar teknisi memakai satuan LEMBAR (`°C`) untuk
+            // seluruh baris, termasuk lima baris kelembapan. Yang terjadi bukan
+            // label yang salah: `measurements[].satuan` ikut kekirim `°C` untuk
+            // titik %RH, dan waktu sesi itu dikembalikan admin, kelima baris
+            // kelembapan nggak bisa dibedakan lagi dari baris suhu — set point
+            // `50` ada di dua-duanya.
+            //
+            // Mekanismenya yang sama dipakai Conductivity (µS/cm vs mS/cm) dan
+            // Spectrophotometer (nm vs %T).
+            'satuan_campuran' => true,
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Kolom yang belum bisa diisi di lapangan boleh dikosongin — lembar kerja '
                 .'tetap bisa dikirim. Alat ini punya DUA parameter: suhu (°C) dan kelembapan (%RH), '

@@ -348,9 +348,17 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                     'halaman' => 1,
                     'judul' => '1. Pre-Evaluation (UUT) — Ice Point 30 menit',
                     'field' => [
-                        $this->field('titik_es.0', 'Ice Point X1', 'angka', satuan: self::SATUAN),
-                        $this->field('titik_es.1', 'Ice Point X2', 'angka', satuan: self::SATUAN),
-                        $this->field('titik_es.2', 'Ice Point X3', 'angka', satuan: self::SATUAN),
+                        // Kodenya TANPA titik (`titik_es_1`, bukan
+                        // `titik_es.0`). Kode bertitik punya arti sendiri di
+                        // aplikasi teknisi: `FieldLembarKerja.turunan` membaca
+                        // titik sebagai "kolom TURUNAN yang diisi sistem", dan
+                        // kolom turunan nggak dapat kotak isian sama sekali.
+                        // Ketiganya kegambar rapi sebagai judul bagian, tanpa
+                        // satu pun tempat mengetik — dan uji titik es itu
+                        // komponen budget, bukan catatan.
+                        $this->field('titik_es_1', 'Ice Point X1', 'angka', satuan: self::SATUAN),
+                        $this->field('titik_es_2', 'Ice Point X2', 'angka', satuan: self::SATUAN),
+                        $this->field('titik_es_3', 'Ice Point X3', 'angka', satuan: self::SATUAN),
                     ],
                 ],
                 [
@@ -364,14 +372,16 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                             '2. Pembacaan Standard',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan — 0″, 20″, 40″, 60″, 80″ (PRT1…PRT5)',
+                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            labelPengulangan: ThermocoupleProfile::LABEL_STANDAR,
                         ),
                         $this->tabelPembacaan(
                             'uut',
                             '3. Pembacaan UUT',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan — 10″, 30″, 50″, 70″, 90″ (PRT1…PRT5)',
+                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            labelPengulangan: ThermocoupleProfile::LABEL_UUT,
                         ),
                     ],
                 ],
