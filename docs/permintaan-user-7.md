@@ -287,6 +287,46 @@ Supaya tidak dibangun ulang:
   `composer.lock` ke direktori lain, sisipkan `"platform-overrides": {"ext-intl": false}` ke
   **lock**-nya — bukan ke `composer.json`, karena `install` membaca override dari lock — lalu
   jalankan perintah yang sama persis dengan yang di Dockerfile.
+- **Kotak yang menjanjikan pencocokan di docblock, tapi pencocoknya tidak pernah ditulis.**
+  `EnclosureProfileBase::STANDARD_TERCETAK` punya kunci `cocok` berikut docblock yang menyatakan
+  dia "dipakai mencocokkan ke baris master standar lewat nama ATAU nomor seri". Pencocoknya
+  **tidak pernah ada**. Lembar Enclosure mengirim baris standar apa adanya — cuma `label` +
+  `cocok`, tanpa `standard_id` — sementara `TitsProfile` memanggil `tautkanStandar()` dan
+  karenanya jalan.
+
+  Bandingkan satu baris:
+
+  ```
+  TitsProfile.php:682          return $this->tautkanStandarTitik($this->tautkanStandar(...));
+  EnclosureProfileBase.php:730 return $this->isiPilihanThermohygro($bentuk);
+  ```
+
+  Jatuhnya beruntun dan senyap: HP membaca `json['standard_id']` → null → sesi tersimpan tanpa
+  standar → `merkKalibrator(null)` → null → `syaratKurang()` → `semuaBelum()` → **SELURUH titik
+  dicap belum dihitung**. Yang sampai ke admin bukan "standarnya belum dipilih", tapi
+  `titik_kosong` plus `titik_tidak_terhitung` di tiap titik — enam peringatan dari satu sebab,
+  dan sebabnya yang paling tidak kelihatan di antara semuanya. Kelima lembar Enclosure kena
+  sekaligus karena mewarisi kelas yang sama. Dilaporkan pemilik lab 26 Agt 2026 sebagai sesi
+  Inkubator yang di-reject.
+
+  **`EnclosureSesiTest` hijau selama itu** karena dia menyuapkan `'standard_id' => $standar->id`
+  langsung ke payload, diambil sendiri dari database — tidak pernah lewat `bentukLembarKerja()`.
+  Test membuktikan kalkulatornya benar sambil membiarkan jalur yang dilewati manusia putus.
+  Ini kelas kegagalan yang sama dengan template OCR 7 → 17: penjaga yang menguji dari sisi
+  yang salah.
+
+  Dijaga sekarang oleh `EnclosureStandarTertautTest` — dibuktikan merah dengan mematikan
+  panggilan `tautkanStandar()`: **0 dari 11 lulus**.
+
+  Dua hal ikutan yang ketemu waktu memperbaikinya:
+  - Baris Recorder **cuma bisa tertaut lewat nomor seri**. Kertas nyetak "Graptech GL840-SDWV",
+    master menulis "Graphtech GL840" — beda huruf DAN beda model. Kalau pencocokan seri suatu
+    saat dibuang "biar sederhana", seluruh sesi Recorder diam-diam berhenti terhitung.
+  - **Yokogawa CA 150 tidak tercetak di kertas Rev.3** padahal dia kalibrator enclosure yang
+    paling kepakai (master olah datanya sendiri bernama `..._Constant_Yokogawa.xlsm`).
+    Ditambahkan mengikuti `FORM VALIDASI rev. 11` (24 Mei 2024: *"Remove std. Victor / Add std
+    kalibrator yokogawa"*). Victor sengaja TIDAK dibuang walau rev. 11 memintanya — kertas yang
+    dipegang teknisi masih memuatnya, dan dia tampil sebagai baris `terdaftar: false`.
 - ~~**Enclosure tidak punya `equipment_id`**~~ — sudah dibereskan di `dfe8ef8`; bagian
   `identitas_alat` sekarang membawanya, dan 15 test di `EnclosureKepalaLembarTest` merah kalau
   hilang lagi.
