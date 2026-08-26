@@ -266,6 +266,66 @@ class Suhu3AlatLembarKerjaTest extends TestCase
         // Sesi pulang UTUH — tanpa ini teknisi mengisi ulang dari ingatan.
         $this->assertSame('A', $sesi['alat_bantu']);
         $this->assertSame('Type K', $sesi['tipe_sensor']);
+
+        // Kodenya ikut NAMANYA, buat pembaca yang beda: layar detail admin
+        // nggak memuat template lembar kerja, jadi di sana `A` tetap `A`.
+        $this->assertSame(
+            'A — Isotech Fast Cal Low (−20…150 °C)',
+            $sesi['alat_bantu_label'],
+        );
+    }
+
+    /**
+     * Nama alat bantu diresolusi profilnya, dan yang dijaga di sini bukan
+     * string-nya melainkan siapa yang berhak menulisnya.
+     *
+     * Peta kode→nama gampang sekali disalin ke sisi HP, dan salinan itu gagal
+     * dengan cara yang paling sepi: lab beli dryblock ketiga, seseorang
+     * menambahkannya ke `DRYBLOCK`, dan layar admin menampilkan `C` mentah
+     * tanpa satu pun error — di layar yang justru dipakai memutuskan
+     * penerbitan sertifikat.
+     *
+     * Huruf besar-kecilnya ikut diuji karena dua profil menormalkannya ke arah
+     * BERLAWANAN (`strtoupper` vs `strtolower`), dan sesi lama menyimpan apa
+     * adanya. Yang lolos hitungan budget tapi kosong namanya di layar itu
+     * persis bentuk bug yang dijaga di sini.
+     */
+    public function test_label_alat_bantu_datang_dari_profil_bukan_dari_peta_di_hp(): void
+    {
+        $termokopel = new ThermocoupleProfile;
+        $gelas = new ThermometerGlassProfile;
+
+        $this->assertSame(
+            'A — Isotech Fast Cal Low (−20…150 °C)',
+            $termokopel->labelAlatBantu('A'),
+        );
+        $this->assertSame(
+            'B — Techne Tecal 700xs (150…600 °C)',
+            $termokopel->labelAlatBantu('b'),
+            'Sesi lama menyimpan huruf apa adanya; hitungannya sudah menaikkan huruf, labelnya wajib ikut.',
+        );
+        $this->assertSame(
+            'Oil Bath 1 (SIDIK/079/2022)',
+            $gelas->labelAlatBantu('SATU'),
+        );
+        $this->assertSame(
+            'Oil Bath 2 (SIDIK/080/2022)',
+            $gelas->labelAlatBantu('dua'),
+        );
+
+        // Kode asing dan kosong pulang null — BUKAN pilihan pertama di daftar.
+        // Menebak di sini berarti layar admin memajang dryblock yang tidak
+        // pernah dipakai, dengan keyakinan yang sama seperti kalau benar.
+        $this->assertNull($termokopel->labelAlatBantu('C'));
+        $this->assertNull($termokopel->labelAlatBantu(null));
+        $this->assertNull($gelas->labelAlatBantu(''));
+
+        // Thermohygro sengaja tidak punya alat bantu: chamber-nya diturunkan
+        // server dari set point, dan satu sesi memakai dua-duanya sekaligus.
+        $this->assertNull((new ThermohygroProfile)->labelAlatBantu('A'));
+
+        // Tujuh belas alat lain ikut default null tanpa override kosong.
+        $this->assertNull((new PhMeterProfile)->labelAlatBantu('A'));
     }
 
     /**
