@@ -11,6 +11,7 @@ use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\KodeSelRevisi;
 use Illuminate\Support\Collection;
 
 /**
@@ -277,6 +278,28 @@ class CalibrationValidator
         $satuan = $alat->satuan ?? '';
         $temuan = [];
 
+        // Berapa baris yang menempati tiap (tahap, titik ukur, pengulangan).
+        //
+        // Kode sel cuma jujur kalau tripel itu nunjuk TEPAT SATU baris. Di
+        // matriks Autoklaf nggak: delapan baris besaran (`Temp. Disk 1`,
+        // `Indikator Pressure`, dst.) semuanya ber-`titik_ukur` nol, jadi satu
+        // kode bakal nunjuk delapan kotak sekaligus — dan yang kesorot merah
+        // jadi angka yang justru sudah benar.
+        //
+        // Yang kembar nggak dikasih kode sama sekali. Temuannya tetap muncul
+        // dengan prosa yang menyebut posisinya; yang hilang cuma kemampuan
+        // ngetuknya jadi penanda.
+        $penghuni = [];
+
+        foreach ($sesi->rawMeasurements as $m) {
+            if ($m->peran_sensor !== null) {
+                continue;
+            }
+
+            $kunci = sprintf('%s|%s|%d', $m->tahap, (float) $m->titik_ukur, (int) $m->pembacaan_ke);
+            $penghuni[$kunci] = ($penghuni[$kunci] ?? 0) + 1;
+        }
+
         foreach ($sesi->rawMeasurements->sortBy(['titik_ke', 'pembacaan_ke']) as $m) {
             /** @var RawMeasurement $m */
             $nilai = $m->pembacaan === null ? null : (float) $m->pembacaan;
@@ -288,6 +311,30 @@ class CalibrationValidator
             $ke = (int) $m->titik_ke;
             $ulang = (int) $m->pembacaan_ke;
             $di = "Titik ke-{$ke} Repeat {$ulang}";
+
+            // Kode SEL buat temuan di baris ini — supaya penolakan admin bisa
+            // menandai satu kotak, bukan seluruh tabel. Lihat [KodeSelRevisi].
+            //
+            // `titik_ke` sengaja TIDAK dipakai buat kodenya walau sudah ada di
+            // atas: itu posisi baris, dan posisinya geser tiap bentuk lembar
+            // berubah. Penanda yang menempel ke posisi bakal berpindah ke angka
+            // lain tanpa satu pun error.
+            //
+            // Baris GRID (Enclosure) belum punya kode sel: selnya berkoordinat
+            // (sensor, repeat), bukan (titik, kolom, repeat), jadi kode kolom
+            // datar bakal nunjuk kotak yang salah. Sampai bentuknya ada,
+            // temuannya tetap muncul dengan prosa yang menyebut posisinya —
+            // cuma nggak bisa diketuk jadi penanda.
+            $tripel = sprintf('%s|%s|%d', $m->tahap, (float) $m->titik_ukur, $ulang);
+
+            $kodeSel = $m->peran_sensor !== null || ($penghuni[$tripel] ?? 0) !== 1
+                ? null
+                : KodeSelRevisi::buat(
+                    (string) $m->tahap,
+                    (float) $m->titik_ukur,
+                    'pembacaan',
+                    $ulang,
+                );
 
             // Dibandingin dalam SATUAN ALAT, bukan satuan yang kecatat di baris
             // pembacaan. Buat alat yang lembarnya satu satuan (hampir semuanya)
@@ -323,7 +370,7 @@ class CalibrationValidator
                     "{$di}: pembacaan {$nilai} {$satuan} jauh di luar rentang ukur alat "
                         ."({$alat->range_min}–{$alat->range_max} {$satuan}). "
                         .'Kemungkinan besar komanya kegeser waktu ngetik.',
-                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai],
+                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai, 'kode_sel' => $kodeSel],
                 );
 
                 continue;
@@ -360,7 +407,7 @@ class CalibrationValidator
                     "{$di}: pembacaan {$nilai} {$satuan} bukan kelipatan resolusi alat "
                         ."({$resolusi} {$satuan}), jadi layarnya nggak mungkin nunjukin angka itu. "
                         .'Kemungkinan besar kelebihan digit waktu ngetik.',
-                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai, 'resolusi' => $resolusi],
+                    ['titik_ke' => $ke, 'pembacaan_ke' => $ulang, 'nilai' => $nilai, 'resolusi' => $resolusi, 'kode_sel' => $kodeSel],
                 );
             }
         }

@@ -783,6 +783,18 @@ class CalibrationController extends Controller
             // Opsional: nolak tanpa nunjuk kolom tertentu tetap sah ("hasilnya
             // nggak masuk akal, ulangi seluruh titik 7").
             //
+            // Selain kode kolom, daftar ini juga nerima kode SEL —
+            // `sel:sesudah_adjustment:1412:pembacaan:3` — yang nunjuk satu
+            // kotak di tabel pengukuran. Bentuknya di [KodeSelRevisi], dan
+            // `max:64` di bawah itu batas yang dipatuhi pembuatnya.
+            //
+            // Ini yang bikin penolakan berhenti jadi "ulangi tabelnya": admin
+            // nandain angka yang salah, sisanya tetap berdiri di layar teknisi.
+            // Sebelum ini yang bisa dilakuin cuma nulis prosa dan berharap
+            // teknisi nemu kotaknya pakai mata — atau nandai seluruh tabel, yang
+            // ujungnya teknisi ngetik ulang angka yang udah bener dan bikin
+            // salah ketik BARU di sesi revisi.
+            //
             // Sengaja NGGAK divalidasi terhadap daftar kolom yang ada. Yang
             // ngirim ini layar admin yang bentuk formulirnya juga dari backend,
             // jadi kode asing artinya formulirnya berubah — dan kalau itu bikin
