@@ -62,5 +62,24 @@ abstract class TestCase extends BaseTestCase
         // satu, berkas yang ditulis test bocor ke storage/app/private beneran —
         // persis kebocoran yang komentar di atas ada buat mencegahnya.
         Storage::fake('arsip');
+
+        // Vite dimatikan buat SEMUA test.
+        //
+        // Sejak panel admin punya tema kustom (`->viteTheme(...)`, 26 Agt 2026),
+        // Filament menuntut `public/build/manifest.json` waktu merender halaman
+        // panel mana pun. Manifest itu hasil `npm run build`, dan test nggak
+        // pernah — dan nggak boleh — bergantung pada aset yang sudah dibangun:
+        // CI cuma menyiapkan PHP, nggak ada Node di sana.
+        //
+        // Tanpa baris ini, lima test di `FilamentAccessTest` jatuh ke 500
+        // `ViteManifestNotFoundException`. Bentuk gagalnya nyesatin — kelihatan
+        // seperti halaman panelnya yang rusak, padahal yang kurang cuma berkas
+        // build.
+        //
+        // Yang HILANG karena ini: nggak ada test yang lagi memeriksa aset
+        // beneran kebangun. Penjaganya pindah ke tempat yang lebih tepat —
+        // `npm run build` di tahap `aset` Dockerfile, yang gagal keras waktu
+        // build kalau temanya nggak bisa dikompilasi.
+        $this->withoutVite();
     }
 }
