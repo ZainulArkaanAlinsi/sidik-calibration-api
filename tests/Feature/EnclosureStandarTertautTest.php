@@ -154,6 +154,49 @@ class EnclosureStandarTertautTest extends TestCase
     }
 
     /**
+     * Yokogawa — baris yang BARU ditambahkan — benar-benar tertaut & terpakai.
+     *
+     * Dia ditambahkan mengikuti `FORM VALIDASI rev. 11` ("Add std kalibrator
+     * yokogawa") karena kertas Rev.3 nggak memuatnya, padahal dia kalibrator
+     * enclosure yang paling kepakai: master olah datanya sendiri bernama
+     * `Master Olah Data_Suhu_Enclosure_Constant_Yokogawa.xlsm`.
+     *
+     * Baris yang ditambahkan tapi nggak tertaut LEBIH BURUK daripada nggak
+     * ditambahkan sama sekali: teknisi melihat pilihan yang kelihatan sah,
+     * mencentangnya, dan sesinya tetap nggak kehitung — sekarang tanpa petunjuk
+     * apa pun bahwa yang salah pilihannya. Jadi yang diuji di sini rantai
+     * penuhnya: tertaut, merk-nya kebaca, dan merk itu punya tabel koreksi.
+     */
+    public function test_yokogawa_tertaut_dan_punya_tabel(): void
+    {
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+
+        $yoko = array_values(array_filter(
+            $this->barisStandar('inkubator'),
+            static fn (array $b): bool => str_contains(strtolower((string) ($b['label'] ?? '')), 'yokogawa'),
+        ));
+
+        $this->assertNotEmpty($yoko, 'Baris Yokogawa hilang dari daftar standar tercetak Enclosure.');
+
+        $this->assertNotNull(
+            $yoko[0]['standard_id'],
+            'Baris Yokogawa tampil tapi NGGAK tertaut ke master standar. Teknisi bakal '
+            .'mencentang pilihan yang kelihatan sah, dan sesinya tetap nggak kehitung.',
+        );
+
+        $merk = strtolower(trim((string) ($yoko[0]['merk'] ?? '')));
+
+        $this->assertContains(
+            $merk,
+            TabelKalibratorEnclosure::MERK,
+            "Merk baris Yokogawa (`{$merk}`) nggak dikenal TabelKalibratorEnclosure. "
+            .'Tertaut tapi tanpa tabel koreksi = sesi tetap mati, cuma di langkah berikutnya.',
+        );
+
+        $this->assertSame('yokogawa', $merk, 'Baris Yokogawa tertaut ke standar yang merk-nya bukan Yokogawa.');
+    }
+
+    /**
      * Baris Recorder tertaut lewat NOMOR SERI, bukan nama.
      *
      * Kertas Rev.3 nyetak "Graptech GL840-SDWV"; master menulis "Graphtech
