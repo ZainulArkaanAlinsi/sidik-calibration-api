@@ -160,18 +160,66 @@ class EnclosureKepalaLembarTest extends TestCase
         $this->assertSame('m³', $volume['satuan']);
     }
 
-    /** Tiga baris "Standar used" tercetak apa adanya dari kertasnya. */
-    public function test_standar_tercetak_tiga_baris(): void
+    /**
+     * Baris "Standar used": ketiga baris kertas Rev.3 PLUS Yokogawa.
+     *
+     * ## Kenapa dulu tiga, sekarang empat
+     *
+     * Test ini dulu mengunci TEPAT tiga baris, "apa adanya dari kertasnya".
+     * Maksudnya benar dan tetap dipegang: lembar di HP nggak boleh beda dari
+     * lembar di tangan teknisi. Yang berubah cuma satu hal — kertas Rev.3
+     * ternyata KURANG satu baris, dan kekurangan itu menahan sertifikat.
+     *
+     * Yokogawa CA 150 adalah kalibrator enclosure yang paling kepakai: master
+     * olah datanya bernama `..._Constant_Yokogawa.xlsm`, sesi acuan
+     * `EnclosureSesiTest` memakainya, dan `TabelKalibratorEnclosure::MERK`
+     * sudah lama punya tabel koreksinya. Tapi dia nggak tercetak di Rev.3, jadi
+     * teknisi yang memakainya nggak punya baris buat dicentang — dan sesinya
+     * SELURUH titiknya nggak kehitung, tanpa satu pun pesan yang menyebut
+     * standar. Itu kegagalan yang dilaporkan 26 Agt 2026.
+     *
+     * Menambahkannya bukan karangan: `FORM VALIDASI rev. 11` (24 Mei 2024)
+     * berbunyi "Remove std. Victor / Add std kalibrator yokogawa". Kertas Rev.3
+     * belum menyusul keputusan itu.
+     *
+     * Victor SENGAJA tetap tinggal walau rev. 11 minta dihapus — kertas yang
+     * dipegang teknisi masih memuatnya, dan baris yang hilang dari layar bikin
+     * dia mengira salah lembar. Dia tampil sebagai baris yang `terdaftar: false`.
+     *
+     * ## Kenapa dicek per isi, bukan per indeks
+     *
+     * Versi lama mengunci `baris[0]` dan `baris[2]`. Begitu ada baris disisipkan
+     * di tengah, test-nya merah bukan karena ada yang rusak, tapi karena
+     * nomornya geser — dan yang memperbaiki tergoda menggeser indeksnya tanpa
+     * memeriksa isinya. Sekarang tiap baris dicari lewat labelnya.
+     */
+    public function test_standar_tercetak_lengkap(): void
     {
         $bentuk = app(CalibrationProfileRegistry::class)
             ->untukKode('oven')
             ->bentukLembarKerja();
 
         $usage = collect($bentuk['bagian'])->firstWhere('kode', 'usage_check');
+        $label = collect($usage['baris'])->pluck('label')->implode(' | ');
 
-        $this->assertCount(3, $usage['baris']);
-        $this->assertStringContainsString('Constant', $usage['baris'][0]['label']);
-        $this->assertStringContainsString('Graptech', $usage['baris'][2]['label']);
+        foreach (['Constant', 'Yokogawa', 'Victor', 'Graptech'] as $wajib) {
+            $this->assertStringContainsString(
+                $wajib,
+                $label,
+                "Baris standar `{$wajib}` hilang dari lembar Enclosure.\n\n"
+                .'Tiap baris yang hilang = kalibrator yang nggak bisa dicentang teknisi, '
+                .'dan sesi yang standarnya nggak ketaut SELURUH titiknya nggak kehitung. '
+                ."Yang ada sekarang: {$label}",
+            );
+        }
+
+        $this->assertCount(
+            4,
+            $usage['baris'],
+            "Jumlah baris standar berubah.\n\nKalau nambah: pastikan dia beneran ada di "
+            .'kertas yang dipegang teknisi ATAU di FORM VALIDASI, jangan ditambah dari '
+            ."ingatan. Yang ada sekarang: {$label}",
+        );
     }
 
     /**
