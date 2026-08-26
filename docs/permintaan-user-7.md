@@ -172,7 +172,55 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
 
 ---
 
-## 10. Tiga alat suhu baru — Thermocouple, Termometer Gelas, Thermohygrometer
+## 10. Alat baru bisa didaftarkan dari lembar kerja
+
+Pemilik proyek, 26 Agt 2026, sambil menunjukkan lembar **Bath** yang kotak "Pilih alat"-nya
+berbunyi *"Belum ada alat."*:
+
+> *"kalo semisal nya belum ada alat maka bisa langsung dari situ teknisi bikin sendiri…
+> volume dan Calibration Methode itu nanti di isi nya manual… kalo udah pernah di daftarkan
+> alat nya maka bakal ke isi otomatis"*
+
+| Isi | Status |
+|---|---|
+| Lembar tanpa alat = jalan buntu | **BERES** — tombol "Alat baru", kategori & jenis sudah terisi dari lembar |
+| `calibration_method_id` cuma bisa diisi admin | **BERES** — pindah jadi hak teknisi |
+| Volume enclosure | sudah manual sejak awal — dihitung dari P×L×T / π·r²·t yang diketik teknisi |
+
+**Kenapa buntunya lahir.** Dropdown "Pilih alat" disaring ke lembar yang lagi dibuka (26 Agt,
+permintaan sebelumnya) — dan saringan itu benar: sebelum ada, teknisi yang membuka lembar
+Refrigerator disodori SELURUH alat lab, dan salah pilih di situ tidak menghasilkan error di mana
+pun. Sesinya tersimpan, lalu dihitung pakai aturan alat lain. **Yang ditambah jalan keluarnya,
+bukan saringannya yang dilepas.**
+
+Kategori & nama kemampuan dikirim **server** (`alat_baru` di bentuk lembar), bukan dipetakan di
+HP: nama kemampuan itu satu-satunya kunci yang dipakai registry buat memilih profil, dan daftar
+tandingan di sisi HP pasti ketinggalan begitu alat baru masuk. Alat yang jenisnya meleset satu
+huruf jatuh ke form generik — persis masalah yang saringan tadi mau cegah.
+
+### Urutan lembar suhu
+
+Diperiksa kedelapan lembar kategori suhu. Yang benar-benar beda dan aman diseragamkan **satu**:
+**TITS menaruh dua kotak tanggal di paling atas** sementara tujuh lembar lain menaruhnya di
+bawah blok identitas. Sudah disamakan.
+
+Yang **TIDAK** diseragamkan, dan alasannya:
+
+- **TIDS menaruh 19 field di `identitas_alat`** (tujuh lembar lain: 10) — kondisi lingkungan,
+  lokasi, dan metode ikut di blok itu. Pernah dicoba dipecah jadi `data_kalibrasi` +
+  `kondisi_lingkungan` seperti lembar Enclosure; **dibatalkan**: `TidsLembarKerjaTest` menjaga
+  urutan bagian dengan alasan *"ngikut urutan kertasnya dibaca dari atas"*, dan pemecahan itu
+  memindahkan kotak yang di `SIDIK-FM-CAL-0506 Rev.4` tercetak di ATAS jadi di bawah
+  `usage_check`. Buat lab terakreditasi, lembar kerja yang urutan bacanya beda dari formulir
+  terkendali itu bukan soal rapi-rapi.
+- **Autoclave** membuka dengan `informasi_umum` + `kondisi_lokasi` lalu `identitas_alat` di urutan
+  ketiga. Formulirnya memang begitu.
+
+Kalau pemilik lab memutuskan keseragaman layar lebih penting daripada kesamaan urutan dengan
+kertas, dua-duanya bisa diseragamkan — tapi itu keputusan atas dokumen terkendali, bukan
+keputusan teknis.
+
+## 11. Tiga alat suhu baru — Thermocouple, Termometer Gelas, Thermohygrometer
 
 Ditambahkan pemilik proyek 26 Agt 2026 bersama tiga workbook master ber-password:
 
@@ -261,7 +309,6 @@ Kalau lolos: teknisi mengisi tabel suhu & %RH untuk alat yang mengukur berat
 jenis, dan U95-nya terbit berlantai CMC kelembapan 4,8 %RH. Nol error di
 sepanjang jalur itu.
 
-
 ---
 
 ## Keputusan yang SUDAH diambil
@@ -337,6 +384,26 @@ Supaya tidak dibangun ulang:
 - Baris CMC TIDS **sudah ter-seed**: 3 rentang (0,86 / 1,4 / 3,1 °C).
 
 ### Jebakan yang sudah terbukti — jangan diulang
+
+- **Mengeluarkan field dari `fieldAdmin()` ikut menghapusnya dari daftar yang DISIMPAN.**
+  `$opsional` di `atributDariRequest()` dibuka dengan `...fieldAdmin()`, jadi field yang
+  dikeluarkan dari sana (biar teknisi boleh mengisinya) justru berhenti pernah ditulis ke
+  database. Gejalanya persis seperti field yang dibuang: lolos validasi, respons 200, nilainya
+  tidak pernah sampai. Jebakan ini **sudah tertulis** di komentar `thermohygro_standard_id` tepat
+  di baris itu — dan `calibration_method_id` tetap terperosok ke lubang yang sama, satu baris di
+  bawah peringatannya.
+
+- **Saringan yang benar bisa melahirkan jalan buntu.** Menyaring dropdown alat ke lembar yang
+  sedang dibuka menutup satu kelas kesalahan senyap (sesi dihitung pakai aturan alat lain), tapi
+  membuat kategori yang belum punya alat mustahil dipakai — dropdown mati, tombol kirim menahan.
+  Tiap saringan yang bisa menghasilkan **himpunan kosong** wajib punya jalan keluar di layar yang
+  sama; menyuruh orang keluar ke menu lain dan menebak parameternya bukan jalan keluar.
+
+- **Penjaga yang mengikat kode ke dokumen terkendali jangan ditimpa, walau permintaannya
+  masuk akal.** `TidsLembarKerjaTest` menjaga urutan bagian *"ngikut urutan kertasnya dibaca dari
+  atas"*. Menyeragamkan tata letak antar-lembar terdengar seperti kerapian murni, padahal dia
+  memindahkan kotak relatif terhadap `SIDIK-FM-CAL-0506 Rev.4`. Kalau penjaga semacam itu merah,
+  yang salah biasanya perubahannya — bukan penjaganya.
 
 - **Mesin diberi PREMIS yang salah, lalu hasilnya dipercaya.** Pemeriksa
   `pembacaan_bukan_kelipatan_resolusi` berdiri di atas satu premis: angka yang dicatat dibaca di

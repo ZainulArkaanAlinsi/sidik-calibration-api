@@ -164,8 +164,21 @@ class CalibrationSession extends Model
      */
     public static function fieldAdmin(): array
     {
+        // `calibration_method_id` KELUAR dari daftar ini (26 Agt 2026).
+        //
+        // Metode kalibrasi itu keputusan lapangan: teknisi yang tahu alatnya
+        // dikalibrasi dengan metode mana, dan buat alat yang BARU didaftarkan
+        // dari lembar kerja, nggak ada admin yang bisa mengisinya lebih dulu.
+        // Selama dia di sini, `CalibrationRequest::prepareForValidation()`
+        // membuangnya dari tiap kiriman teknisi — DIAM-DIAM, karena memang
+        // sengaja dibuang bukan ditolak. Teknisi memilih metodenya, menekan
+        // kirim, dan kolomnya sampai di admin dalam keadaan kosong.
+        //
+        // Yang TETAP admin-only: nomor order (nomor administratif lab) dan dua
+        // kolom ketidakpastian kondisi lingkungan (dihitung dari sertifikat
+        // thermohygro, bukan diketik siapa pun).
         return [
-            'nomor_order', 'calibration_method_id',
+            'nomor_order',
             'suhu_ketidakpastian', 'kelembaban_ketidakpastian',
         ];
     }
