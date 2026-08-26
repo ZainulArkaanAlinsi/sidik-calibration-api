@@ -37,10 +37,22 @@ Melihat statusnya: **GitHub → tab Actions → workflow "Tes"** pada commit ter
 di `main`. Job `deploy ke Render` yang hijau artinya Render sudah **diberi tahu**;
 build-nya sendiri dipantau di dashboard Render.
 
-> `render.yaml` memasang `autoDeploy: false`, dan itu bukan kelupaan. GitHub App
-> Render nggak terpasang di akun ini, jadi Render nggak pernah tahu ada push —
-> dibuktikan 21 Agt 2026: PR #73 mendarat, empat belas menit lewat, nol deploy.
-> Gantinya Deploy Hook yang diketuk dari GitHub Actions.
+> `render.yaml` memasang `autoDeploy: false`, dan itu bukan kelupaan — tapi
+> alasannya sudah bukan yang dulu.
+>
+> **Dulu:** waktu `render.yaml` ditulis, GitHub App Render belum terpasang, jadi
+> `autoDeploy: true` nggak ada efeknya sama sekali. Dibuktikan 21 Agt 2026: PR #73
+> mendarat, empat belas menit lewat, nol deploy. Deploy Hook dipasang sebagai
+> gantinya.
+>
+> **Sekarang:** App-nya SUDAH terpasang, dan justru itu yang bikin `false` jadi
+> wajib. Riwayat 23 Agt 2026 nunjukin akibatnya waktu masih `true` — tiap push
+> memicu **dua** build: satu "New commit via Auto-Deploy", satu lagi "Triggered
+> via Deploy Hook" dari workflow. Yang lewat Auto-Deploy naik **tanpa menunggu
+> test**, persis membatalkan gerbang di bagian 1.
+>
+> Jadi kalau suatu saat kepikiran menyalakan `autoDeploy` biar "lebih cepat":
+> itu bukan mempercepat deploy, itu membuka lagi jalur yang nggak lewat test.
 
 ---
 
