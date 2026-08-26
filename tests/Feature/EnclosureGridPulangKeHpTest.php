@@ -45,11 +45,14 @@ class EnclosureGridPulangKeHpTest extends TestCase
     /** Sesi Inkubator dari master `..._Constant_Yokogawa.xlsm`. */
     private const NOMOR_SESI = '2405.03.AV';
 
-    private function sesiEnclosure(): CalibrationSession
+    /** Sesi Oven dari master `..._Recorder.xlsm` — satu-satunya yang berkanal. */
+    private const NOMOR_SESI_RECORDER = '2406.25.AI';
+
+    private function sesiEnclosure(string $nomor = self::NOMOR_SESI): CalibrationSession
     {
         $this->seed(DatabaseSeeder::class);
 
-        return CalibrationSession::where('nomor_sesi', self::NOMOR_SESI)->firstOrFail();
+        return CalibrationSession::where('nomor_sesi', $nomor)->firstOrFail();
     }
 
     private function teknisi(CalibrationSession $sesi): User
@@ -161,5 +164,46 @@ class EnclosureGridPulangKeHpTest extends TestCase
         }
 
         $this->assertNotEmpty($terlihat);
+    }
+
+    /**
+     * Sesi kalibrator RECORDER pulang lengkap dengan nomor kanalnya.
+     *
+     * Kanal bukan hiasan: koreksi meter GL840 dibaca per kanal, jadi tanpa
+     * nomor itu sesinya nggak bisa dihitung ulang. Layar HP pun menuntutnya —
+     * `GridSensorBentuk.butuhChannel('recorder')` bernilai true, dan set point
+     * tanpa kanal langsung diberi peringatan "Channel wajib diisi".
+     *
+     * Jadi sesi Recorder yang dikembalikan tanpa kanal bikin teknisi mengetik
+     * ulang sembilan nomor yang sudah benar. Dan kalau salah ketik, nggak ada
+     * satu pun error: koreksi kanal lain yang kepakai, dan sertifikatnya
+     * terbit dengan angka yang kelihatan wajar.
+     */
+    public function test_kanal_recorder_ikut_pulang(): void
+    {
+        $sesi = $this->sesiEnclosure(self::NOMOR_SESI_RECORDER);
+
+        $termokopel = array_values(array_filter(
+            $this->pembacaan($sesi),
+            static fn (array $b): bool => ($b['peran_sensor'] ?? null) === 'termokopel',
+        ));
+
+        $this->assertNotEmpty($termokopel, 'Sesi Recorder acuan nggak punya baris termokopel.');
+
+        foreach ($termokopel as $i => $b) {
+            $this->assertArrayHasKey('channel', $b, "Baris termokopel ke-{$i} nggak bawa `channel`.");
+        }
+
+        $kanal = array_values(array_unique(array_filter(
+            array_column($termokopel, 'channel'),
+            static fn (mixed $c): bool => $c !== null,
+        )));
+
+        $this->assertNotEmpty(
+            $kanal,
+            'Semua `channel` null di sesi Recorder — nomor kanalnya nggak pernah nyampe ke HP '
+            .'walau kuncinya ada, dan teknisi diteriakin "Channel wajib diisi" buat baris yang '
+            .'sudah dia isi benar.',
+        );
     }
 }

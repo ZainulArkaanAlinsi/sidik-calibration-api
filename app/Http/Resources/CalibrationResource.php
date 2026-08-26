@@ -330,6 +330,19 @@ class CalibrationResource extends JsonResource
                         // yang paling mahal di produk ini.
                         'sensor_ke' => $m->sensor_ke,
                         'peran_sensor' => $m->peran_sensor,
+                        // Nomor kanal recorder, alasannya sama persis dan
+                        // akibatnya lebih senyap.
+                        //
+                        // Koreksi meter Recorder (GL840) dibaca PER KANAL, bukan
+                        // per tipe sensor — makanya `channel` disimpan waktu
+                        // ingest. Sesi Recorder yang pulang tanpa kanal bikin
+                        // teknisi diteriakin "Channel wajib diisi" buat kesembilan
+                        // termokopel, dan dia mengetik ulang nomor yang sudah
+                        // benar dari kertas. Yang lebih bahaya: kalau dia
+                        // mengetiknya salah, nggak ada yang error — koreksi kanal
+                        // lain yang kepakai, dan sertifikatnya terbit dengan angka
+                        // yang kelihatan wajar.
+                        'channel' => $m->channel,
                         'input_source' => $m->input_source,
                         'is_verified' => $m->is_verified,
                         'photo_path' => $m->photo_path,
