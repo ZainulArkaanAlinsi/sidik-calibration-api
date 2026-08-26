@@ -49,7 +49,7 @@ class PhMeterProfile extends CalibrationProfile
      */
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
-        return $this->tautkanStandarTitik($this->template->phMeter($untukAdmin));
+        return $this->tautkanStandarTitik($this->template->phMeter($untukAdmin, $equipment), $equipment);
     }
 
     /**

@@ -577,7 +577,7 @@ class TidsProfile extends CalibrationProfile
             $bentuk['bagian'][] = $this->bagianAdmin();
         }
 
-        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk));
+        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk, $equipment), $equipment);
     }
 
     /**
@@ -600,10 +600,18 @@ class TidsProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];
@@ -808,8 +816,7 @@ class TidsProfile extends CalibrationProfile
                     'Calibration Methode',
                     'pilihan',
                     sumber: 'master_metode',
-                    hanyaAdmin: true,
-                ),
+                                    ),
             ],
             // Empat thermohygro yang TERCETAK di kop, berikut lokasi
             // pemakaiannya. Dikirim terpisah dari dropdown master di atas
@@ -1089,11 +1096,9 @@ class TidsProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         // Thermohygro DIAMBIL TERPISAH, dan itu bukan rapi-rapi.
         //
@@ -1107,16 +1112,13 @@ class TidsProfile extends CalibrationProfile
         // juga, jadi keempat barisnya mustahil ketemu: labelnya kecetak benar,
         // tapi `standard_id`-nya selalu null dan `terdaftar` selalu false.
         // Gagalnya nggak bersuara karena barisnya tetap terkirim utuh.
-        $masterThermohygro = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            ->get(['id', 'nama', 'no_sertifikat']);
+        $masterThermohygro = $this->masterThermohygro($equipment, ['id', 'nama', 'no_sertifikat']);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) === 'usage_check') {
                 $bentuk['bagian'][$i]['baris'] = array_map(
-                    static function (array $baris) use ($master): array {
-                        $cocok = $master->first(static fn (Standard $s): bool => in_array($s->nama, $baris['cocok'], true))
-                            ?? $master->first(static fn (Standard $s): bool => in_array($s->serial_number, $baris['cocok'], true));
+                    function (array $baris) use ($master): array {
+                        $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                         return [
                             'label' => $baris['label'],

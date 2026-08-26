@@ -276,9 +276,9 @@ class DoMeterProfile extends CalibrationProfile
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = $this->bentukLengkap();
-        $bentuk = $this->tautkanStandar($bentuk);
-        $bentuk = $this->tautkanStandarTitik($bentuk);
-        $bentuk = $this->isiPilihanThermohygro($bentuk);
+        $bentuk = $this->tautkanStandar($bentuk, $equipment);
+        $bentuk = $this->tautkanStandarTitik($bentuk, $equipment);
+        $bentuk = $this->isiPilihanThermohygro($bentuk, $equipment);
 
         if ($untukAdmin) {
             $bentuk['bagian'][] = $this->bagianAdmin();
@@ -475,8 +475,7 @@ class DoMeterProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                            hanyaAdmin: true,
-                        ),
+                                                    ),
                     ],
                 ],
                 [
@@ -568,11 +567,9 @@ class DoMeterProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) !== 'usage_check') {
@@ -581,9 +578,7 @@ class DoMeterProfile extends CalibrationProfile
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                     return [
                         'label' => $baris['label'],
@@ -605,10 +600,18 @@ class DoMeterProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];

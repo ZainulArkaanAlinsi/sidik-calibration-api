@@ -570,9 +570,9 @@ class GasDetectorProfile extends CalibrationProfile
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = $this->bentukLengkap();
-        $bentuk = $this->tautkanStandar($bentuk);
-        $bentuk = $this->tautkanStandarTitik($bentuk);
-        $bentuk = $this->isiPilihanThermobarometer($bentuk);
+        $bentuk = $this->tautkanStandar($bentuk, $equipment);
+        $bentuk = $this->tautkanStandarTitik($bentuk, $equipment);
+        $bentuk = $this->isiPilihanThermobarometer($bentuk, $equipment);
 
         if ($untukAdmin) {
             $bentuk['bagian'][] = $this->bagianAdmin();
@@ -823,8 +823,7 @@ class GasDetectorProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                            hanyaAdmin: true,
-                        ),
+                                                    ),
                     ],
                 ],
                 [
@@ -924,9 +923,16 @@ class GasDetectorProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
+        // Sengaja TANPA saringan `parameter_kondisi`: lembar gas mencetak
+        // termohigrometer di blok `usage_check` yang sama dengan botol gasnya.
+        // Yang WAJIB tetap ada saringan organisasinya.
         $master = Standard::query()
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke', 'parameter_kondisi']);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
@@ -936,9 +942,7 @@ class GasDetectorProfile extends CalibrationProfile
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                     return [
                         'label' => $baris['label'],
@@ -968,11 +972,9 @@ class GasDetectorProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermobarometer(array $bentuk): array
+    private function isiPilihanThermobarometer(array $bentuk, ?Equipment $equipment = null): array
     {
-        $pilihan = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            ->get(['id', 'nama', 'parameter_kondisi'])
+        $pilihan = $this->masterThermohygro($equipment, ['id', 'nama', 'parameter_kondisi'])
             ->filter(fn (Standard $s): bool => ($s->parameter_kondisi[self::PARAMETER_KONDISI_WAJIB] ?? null) !== null)
             ->map(fn (Standard $s): array => [
                 'nilai' => (string) $s->id,

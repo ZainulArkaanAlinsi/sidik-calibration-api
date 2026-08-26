@@ -8,6 +8,7 @@ use App\Http\Requests\AutoclaveStoreRequest;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
 use App\Jobs\GenerateCertificate;
+use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
@@ -234,6 +235,24 @@ class CalibrationController extends Controller
         if ($request->filled('pengulangan')) {
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
         }
+
+        // Bekal buat BIKIN ALAT BARU langsung dari lembar ini.
+        //
+        // Kenapa perlu: sejak dropdown "Pilih alat" disaring ke lembar yang
+        // lagi dibuka, kategori yang belum punya satu alat pun jadi BUNTU —
+        // dropdown-nya mati ("Belum ada alat."), dan tombol kirim nahan sesi
+        // yang alatnya belum dipilih. Lembar Bath persis begitu: bisa dibuka,
+        // bisa dibaca, nggak bisa dipakai.
+        //
+        // Jalan keluarnya nggak boleh "buka menu Master Alat, tebak
+        // kategorinya, balik lagi ke sini". Kategori & nama kemampuan itu
+        // properti LEMBAR, dan server yang tahu — jadi server yang mengirimnya,
+        // dan HP tinggal membuka form yang dua kotak teratasnya sudah terisi.
+        //
+        // Ditaruh di sini, bukan di tiap `bentukLembarKerja()`, supaya ketujuh
+        // belas lembar dapat bekal yang sama tanpa satu pun profil perlu
+        // disentuh — termasuk profil ke-18.
+        $bentuk['alat_baru'] = self::bekalAlatBaru($profil, $request->user()->organization_id);
 
         // Bentuk kertasnya buat pindai foto ikut dikirim, biar mobile tinggal
         // meneruskan apa adanya ke endpoint ekstraksi — nggak perlu hafal alat
@@ -1645,6 +1664,37 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Kategori & nama kemampuan buat alat baru yang cocok dengan lembar ini.
+     *
+     * Diambil dari master kemampuan kalibrasi (`calibration_capabilities`),
+     * bukan dipetakan di sini: nama kemampuan itu satu-satunya kunci yang
+     * dipakai registry buat memilih profil, dan daftar tandingan di controller
+     * pasti ketinggalan begitu alat baru masuk.
+     *
+     * `kategori` bisa null kalau lab belum mendaftarkan kemampuan itu. Bukan
+     * error: HP tetap membuka form alat dengan nama kemampuan terisi, teknisi
+     * memilih kategorinya sendiri — lebih baik satu dropdown yang harus diisi
+     * daripada lembar yang buntu.
+     *
+     * @return array{kategori: string|null, nama_alat_kemampuan: string}
+     */
+    private static function bekalAlatBaru(CalibrationProfile $profil, int $organizationId): array
+    {
+        $nama = $profil->namaAlatKemampuan();
+
+        $kategori = CalibrationCapability::query()
+            ->where('nama_alat', $nama)
+            ->where(fn ($q) => $q->where('organization_id', $organizationId)->orWhereNull('organization_id'))
+            ->with('category:id,kode')
+            ->first()?->category?->kode;
+
+        return [
+            'kategori' => $kategori,
+            'nama_alat_kemampuan' => $nama,
+        ];
+    }
+
+    /**
      * Standar acuan sesi yang DITURUNKAN dari baris yang dicentang teknisi.
      *
      * Cuma dipakai kalau payloadnya nggak bawa `standard_id` sama sekali —
@@ -1861,6 +1911,15 @@ class CalibrationController extends Controller
             // validasi tapi nggak pernah nyampe database. Gejalanya persis
             // kayak field yang dibuang: teknisi ngisi, hasilnya null.
             'thermohygro_standard_id',
+            // `calibration_method_id` kena jebakan yang SAMA PERSIS, dan
+            // jebakannya sudah tertulis di komentar tepat di atas ini.
+            //
+            // Waktu dia dikeluarkan dari `fieldAdmin()` (biar teknisi bisa
+            // memilih metodenya), dia ikut hilang dari `$opsional` — karena
+            // `$opsional` dibuka dengan `...fieldAdmin()`. Gejalanya persis
+            // seperti field yang dibuang: kolomnya lolos validasi, respons 200,
+            // dan nilainya nggak pernah nyampe database.
+            'calibration_method_id',
             'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
             'waktu_awal', 'waktu_akhir', 'catatan_teknisi',
             // Identitas alat & pemilik versi teknisi (lembar kerja poin 3-5 &

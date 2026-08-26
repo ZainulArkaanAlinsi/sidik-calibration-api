@@ -59,14 +59,11 @@ class AdminFieldSeparationTest extends TestCase
 
     public function test_field_administratif_dari_teknisi_dibuang_bukan_disimpen(): void
     {
-        $metode = CalibrationMethod::factory()->create();
-
         // Mobile versi lama masih ngirim field ini — request-nya tetap sukses
         // (biar teknisi di lapangan nggak keblokir), tapi nilainya nggak masuk.
         $this->actingAs($this->teknisi)
             ->postJson('/api/calibrations', $this->payload([
                 'nomor_order' => 'DIISI-TEKNISI',
-                'calibration_method_id' => $metode->id,
                 'suhu_ketidakpastian' => 9.9,
             ]))
             ->assertCreated();
@@ -74,8 +71,39 @@ class AdminFieldSeparationTest extends TestCase
         $sesi = CalibrationSession::latest('id')->firstOrFail();
 
         $this->assertNull($sesi->nomor_order);
-        $this->assertNull($sesi->calibration_method_id);
         $this->assertNull($sesi->suhu_ketidakpastian);
+    }
+
+    /**
+     * `calibration_method_id` PINDAH jadi hak teknisi, 26 Agt 2026.
+     *
+     * Pindahnya persis sealasan dengan `thermohygro_standard_id` di bawah ini:
+     * metode kalibrasi itu FAKTA LAPANGAN. Teknisi yang tahu alatnya
+     * dikalibrasi dengan metode mana, dan sejak alat baru bisa didaftarkan
+     * langsung dari lembar kerja, nggak ada admin yang bisa mengisinya lebih
+     * dulu — alat yang lahir hari itu juga selalu lahir tanpa metode.
+     *
+     * Selama kolomnya tertutup, kegagalannya DIAM: kiriman teknisi yang
+     * membawanya dibuang `prepareForValidation()` — sengaja dibuang bukan
+     * ditolak, supaya HP versi lama nggak gagal submit — jadi teknisi memilih
+     * metodenya, menekan kirim, dan kolomnya sampai di admin dalam keadaan
+     * kosong tanpa satu pun pesan.
+     */
+    public function test_metode_kalibrasi_sekarang_hak_teknisi(): void
+    {
+        $metode = CalibrationMethod::factory()->create();
+
+        $this->actingAs($this->teknisi)
+            ->postJson('/api/calibrations', $this->payload([
+                'calibration_method_id' => $metode->id,
+            ]))
+            ->assertCreated();
+
+        $this->assertSame(
+            $metode->id,
+            CalibrationSession::latest('id')->firstOrFail()->calibration_method_id,
+            'Metode yang dipilih teknisi dibuang diam-diam.',
+        );
     }
 
     /**

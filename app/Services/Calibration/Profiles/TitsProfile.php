@@ -679,7 +679,7 @@ class TitsProfile extends CalibrationProfile
             $bentuk['bagian'][] = $this->bagianAdmin();
         }
 
-        return $this->tautkanStandarTitik($this->tautkanStandar($this->isiPilihanThermohygro($bentuk)));
+        return $this->tautkanStandarTitik($this->tautkanStandar($this->isiPilihanThermohygro($bentuk, $equipment), $equipment), $equipment);
     }
 
     /**
@@ -699,10 +699,18 @@ class TitsProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];
@@ -1092,8 +1100,15 @@ class TitsProfile extends CalibrationProfile
                     'halaman' => 1,
                     'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
                     'field' => [
-                        $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                        $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                        // Urutannya sengaja SAMA dengan tujuh lembar suhu yang
+                        // lain: pilih alat dulu, identitas yang keisi otomatis
+                        // menyusul, dua tanggal menutup blok.
+                        //
+                        // Dulu dua tanggal itu ada di PALING ATAS — cuma di
+                        // lembar ini. Teknisi yang pindah antar lembar suhu
+                        // ketemu kotak pertama yang beda tiap kali, dan kotak
+                        // pertama itu justru yang paling sering salah isi:
+                        // matanya sudah hafal "yang atas itu Pilih alat".
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
                         $this->field('alat_merk', '2. Merk/Manufacture', 'teks'),
@@ -1102,6 +1117,8 @@ class TitsProfile extends CalibrationProfile
                         $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'angka', satuan: self::SATUAN),
                         $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka', satuan: self::SATUAN),
                         $this->field('spesifikasi_alat.resolusi', '7. Resolusi Alat', 'angka', satuan: self::SATUAN),
+                        $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                        $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                     ],
                 ],
                 [
@@ -1158,8 +1175,7 @@ class TitsProfile extends CalibrationProfile
                             '4. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                            hanyaAdmin: true,
-                        ),
+                                                    ),
                     ],
                 ],
                 [
@@ -1296,11 +1312,9 @@ class TitsProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) !== 'usage_check') {
@@ -1309,9 +1323,7 @@ class TitsProfile extends CalibrationProfile
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                     return [
                         'label' => $baris['label'],
