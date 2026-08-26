@@ -261,6 +261,32 @@ Supaya tidak dibangun ulang:
   Menyeragamkannya ke satu daftar global akan membuat kop dan dropdown di lembar yang sama
   saling bertentangan. `ThermohygroSemuaLembarTest` sengaja cuma mengunci **keanggotaan**
   ketujuh unit, bukan grupnya.
+- **Tahap build yang butuh `vendor/` jangan bikin `composer install` kedua.** Tahap aset Docker
+  butuh `vendor/filament` (tema Filament v4/v5 mengimpor CSS-nya dari sana), padahal
+  `.dockerignore` membuang `vendor` dari konteks build. Jawaban pertamanya — tahap composer
+  terpisah di atas image `composer:2`, sengaja **bukan** menyalin dari tahap PHP supaya
+  "resolusi platform tidak berubah diam-diam" — justru yang meledak di deploy pertama
+  (26 Agt 2026, commit `3d02d73`):
+
+  ```
+  filament/support v5.6.8 requires ext-intl * -> it is missing from your system.
+  ```
+
+  Image resmi PHP **tidak pernah** membundel `intl`: dia butuh ICU dan harus dipasang eksplisit,
+  dan `composer:2` tidak membutuhkannya untuk kerjanya sendiri. Tahap PHP di Dockerfile sudah
+  memasangnya sejak lama lewat `install-php-extensions` — jadi satu-satunya tahap yang platformnya
+  benar justru yang dihindari. Alasan yang ditulis waktu itu terbalik.
+
+  Yang penting dipegang: kalau sebuah tahap build butuh isi `vendor/`, **ambil dari tahap yang
+  memang menerbitkan `vendor/` itu**, jangan pasang ulang di image lain. Resolusi kedua bukan cuma
+  mubazir — dia berjalan di atas platform yang berbeda dari yang benar-benar dikirim. Sekarang
+  Dockerfile punya tahap `php-dasar` yang jadi dasar image akhir sekaligus sumber
+  `vendor/filament`, dan `composer install` cuma jalan sekali per build.
+
+  Cara membuktikannya tanpa Docker (sandbox tidak punya daemon): salin `composer.json` +
+  `composer.lock` ke direktori lain, sisipkan `"platform-overrides": {"ext-intl": false}` ke
+  **lock**-nya — bukan ke `composer.json`, karena `install` membaca override dari lock — lalu
+  jalankan perintah yang sama persis dengan yang di Dockerfile.
 - ~~**Enclosure tidak punya `equipment_id`**~~ — sudah dibereskan di `dfe8ef8`; bagian
   `identitas_alat` sekarang membawanya, dan 15 test di `EnclosureKepalaLembarTest` merah kalau
   hilang lagi.

@@ -12,88 +12,18 @@
 # sendiri dan cukup dengerin HTTP polos di port itu.
 
 # ─────────────────────────────────────────────────────────────────────
-# Tahap 1 — aset frontend (Vite + Tailwind)
+# Tahap 1 — runtime PHP berikut dependency-nya
 #
-# Dipisah dari tahap PHP biar Node nggak ikut kebawa ke image akhir; yang
-# nyampe cuma hasil build-nya (public/build), bukan node_modules-nya.
-# ─────────────────────────────────────────────────────────────────────
-# Node 22, bukan 20. Vite 8 minta `^20.19.0 || >=22.12.0`, dan Rolldown (mesin
-# barunya) nitip binding native lewat optionalDependencies. Kalau Node-nya nggak
-# masuk syarat itu, npm NGELEWATIN binding-nya tanpa bilang gagal — `npm install`
-# kelihatan sukses, baru `npm run build` mati dengan "Cannot find module
-# '@rolldown/binding-...'". Tag `node:20` nempel di batas persis syarat itu;
-# `node:22` nggak ada urusan sama sekali.
-# Sumber CSS Filament buat tema panel admin.
-#
-# Tahap ini ADA cuma gara-gara satu baris di
-# `resources/css/filament/admin/theme.css`:
-#
-#     @import '../../../../vendor/filament/filament/resources/css/theme.css';
-#
-# Begitulah cara Filament v4/v5 bikin tema kustom — temanya MEMPERLUAS CSS
-# Filament, bukan menggantikannya. Tanpa impor itu panelnya kehilangan seluruh
-# gaya komponennya.
-#
-# Sebelum tema itu ada, tahap aset nggak butuh `vendor/` sama sekali dan
-# `.dockerignore` memang membuangnya. Jadi ini bukan tahap yang kelupaan dari
-# dulu — dia lahir bareng kebutuhannya.
-#
-# Composer-nya dijalanin terpisah, BUKAN disalin dari tahap PHP di bawah:
-# tahap itu install pakai PHP 8.4 milik frankenphp, dan menukarnya jadi salinan
-# dari sini bikin resolusi platform-nya beda tanpa ada yang minta. Yang disalin
-# ke tahap aset juga cuma `vendor/filament`, bukan seluruh vendor.
-FROM composer:2 AS vendor-css
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install \
-        --no-dev \
-        --no-scripts \
-        --no-autoloader \
-        --prefer-dist \
-        --no-interaction \
-        --no-progress
-
-
-FROM node:22-bookworm-slim AS aset
-
-WORKDIR /app
-
-# package-lock.json emang nggak ada di repo, jadi `npm install`, bukan `npm ci`.
-COPY package.json ./
-RUN npm install --no-audit --no-fund
-
-# `artisan` ikut disalin karena laravel-vite-plugin mendeteksi root project
-# lewat berkas itu — tanpa dia, build-nya bingung naruh manifest di mana.
-COPY artisan vite.config.js ./
-COPY resources ./resources
-COPY public ./public
-
-# `app/` buat `@source '../../../../app/Filament'` di tema.
-#
-# Tailwind v4 memindai berkas itu buat nyari nama kelas yang dipakai. Kalau
-# `app/` nggak ada, kelas yang cuma disebut dari PHP — misal `angka-ukur` —
-# hilang dari CSS jadi TANPA satu pun peringatan. Panelnya tetap terbit, cuma
-# sebagian gayanya nggak pernah kepasang.
-COPY app ./app
-
-# Cuma paket Filament-nya, bukan seluruh vendor: yang dibutuhkan build CSS
-# cuma `vendor/filament/filament/resources/css/`.
-COPY --from=vendor-css /app/vendor/filament ./vendor/filament
-
-RUN npm run build
-
-
-# ─────────────────────────────────────────────────────────────────────
-# Tahap 2 — runtime PHP
+# Tahap ini yang jadi DASAR image akhir (lihat `FROM php-dasar` di bawah),
+# sekaligus sumber `vendor/filament` buat tahap aset. Satu kali pasang
+# ekstensi, satu kali `composer install`, dipakai dua-duanya.
 # ─────────────────────────────────────────────────────────────────────
 # PHP 8.4, bukan 8.3, dan itu WAJIB — bukan sekadar "biar baru".
 # config/database.php nyebut `Pdo\Mysql::ATTR_SSL_CA` (bawaan skeleton Laravel
 # 13), dan kelas `Pdo\Mysql` itu baru ada sejak PHP 8.4. Di PHP 8.3 berkas
 # config-nya fatal waktu dimuat — `php artisan package:discover` di bawah mati,
 # jadi build-nya gagal sebelum sempat deploy. Laptop dev juga jalan di 8.4.
-FROM dunglas/frankenphp:1-php8.4-bookworm
+FROM dunglas/frankenphp:1-php8.4-bookworm AS php-dasar
 
 # pdo_mysql : koneksi ke MySQL Aiven
 # gd        : dompdf butuh ini buat gambar (logo & QR di sertifikat)
@@ -141,7 +71,7 @@ WORKDIR /app
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Dependency disalin duluan, terpisah dari kode. Selama composer.lock nggak
+# Dependency dipasang duluan, terpisah dari kode. Selama composer.lock nggak
 # berubah, layer ini kepakai lagi dari cache dan deploy jadi jauh lebih cepat.
 COPY composer.json composer.lock ./
 RUN composer install \
@@ -152,6 +82,86 @@ RUN composer install \
         --no-interaction \
         --no-progress
 
+
+# ─────────────────────────────────────────────────────────────────────
+# Tahap 2 — aset frontend (Vite + Tailwind)
+#
+# Dipisah dari tahap PHP biar Node nggak ikut kebawa ke image akhir; yang
+# nyampe cuma hasil build-nya (public/build), bukan node_modules-nya.
+# ─────────────────────────────────────────────────────────────────────
+# Node 22, bukan 20. Vite 8 minta `^20.19.0 || >=22.12.0`, dan Rolldown (mesin
+# barunya) nitip binding native lewat optionalDependencies. Kalau Node-nya nggak
+# masuk syarat itu, npm NGELEWATIN binding-nya tanpa bilang gagal — `npm install`
+# kelihatan sukses, baru `npm run build` mati dengan "Cannot find module
+# '@rolldown/binding-...'". Tag `node:20` nempel di batas persis syarat itu;
+# `node:22` nggak ada urusan sama sekali.
+FROM node:22-bookworm-slim AS aset
+
+WORKDIR /app
+
+# package-lock.json emang nggak ada di repo, jadi `npm install`, bukan `npm ci`.
+COPY package.json ./
+RUN npm install --no-audit --no-fund
+
+# `artisan` ikut disalin karena laravel-vite-plugin mendeteksi root project
+# lewat berkas itu — tanpa dia, build-nya bingung naruh manifest di mana.
+COPY artisan vite.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+# `app/` buat `@source '../../../../app/Filament'` di tema.
+#
+# Tailwind v4 memindai berkas itu buat nyari nama kelas yang dipakai. Kalau
+# `app/` nggak ada, kelas yang cuma disebut dari PHP — misal `angka-ukur` —
+# hilang dari CSS jadi TANPA satu pun peringatan. Panelnya tetap terbit, cuma
+# sebagian gayanya nggak pernah kepasang.
+COPY app ./app
+
+# Sumber CSS Filament buat tema panel admin.
+#
+# Tema Filament v4/v5 itu MEMPERLUAS CSS Filament, bukan menggantikannya.
+# `resources/css/filament/admin/theme.css` dibuka dengan:
+#
+#     @import '../../../../vendor/filament/filament/resources/css/theme.css';
+#
+# Tanpa impor itu panelnya kehilangan seluruh gaya komponennya. Jadi tahap ini
+# butuh `vendor/filament`, padahal `.dockerignore` memang membuang `vendor`
+# dari konteks build.
+#
+# Percobaan pertama (26 Agt 2026) menjawabnya dengan tahap composer TERPISAH di
+# atas image `composer:2`, sengaja BUKAN menyalin dari tahap PHP. Alasan yang
+# ditulis waktu itu: biar resolusi platform-nya nggak berubah diam-diam. Itu
+# terbalik, dan deploy pertama membuktikannya — build mati sebelum satu berkas
+# pun terunduh:
+#
+#     filament/support v5.6.8 requires ext-intl * -> it is missing from your system.
+#
+# Image resmi PHP nggak pernah membundel intl: dia butuh ICU dan harus dipasang
+# eksplisit. `composer:2` nggak butuh intl buat kerjanya sendiri, jadi nggak ada.
+# Tahap PHP di atas justru SUDAH memasangnya (lihat install-php-extensions).
+#
+# Jadi vendor-nya diambil dari sana, dan itu benar bukan cuma karena jalan:
+# CSS-nya sekarang datang dari pohon vendor yang BENAR-BENAR ikut terbit, bukan
+# dari resolusi kedua yang kebetulan mirip. Dependency juga cuma diunduh sekali
+# per build, bukan dua kali.
+#
+# Yang disalin cuma `vendor/filament`, bukan seluruh vendor — yang dibaca build
+# CSS cuma `vendor/filament/*/resources/css/`.
+COPY --from=php-dasar /app/vendor/filament ./vendor/filament
+
+RUN npm run build
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Tahap 3 — image akhir
+#
+# Nerusin `php-dasar`: ekstensi PHP, capability yang sudah dicabut, composer,
+# dan `vendor/` semuanya sudah ada di sana.
+# ─────────────────────────────────────────────────────────────────────
+FROM php-dasar
+
+# `vendor` ada di .dockerignore, jadi baris ini NGGAK menimpa vendor hasil
+# `composer install` di tahap dasar.
 COPY . .
 COPY --from=aset /app/public/build ./public/build
 
@@ -171,8 +181,8 @@ RUN test -f CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv || ( \
       echo "   Cek baris pengecualian CATATAN di .dockerignore." >&2; \
       exit 1 )
 
-# `--no-scripts` di atas bikin package:discover nggak jalan otomatis, jadi
-# dipanggil manual di sini — sesudah kode lengkap kesalin.
+# `--no-scripts` di tahap dasar bikin package:discover nggak jalan otomatis,
+# jadi dipanggil manual di sini — sesudah kode lengkap kesalin.
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
  && php artisan package:discover --ansi \
  && php artisan filament:assets \
