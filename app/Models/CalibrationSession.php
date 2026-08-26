@@ -43,6 +43,10 @@ use Illuminate\Support\Collection;
     // nentuin ANGKA di sesi TITS, dan dua-duanya milik sesi bukan alat. Lihat
     // migrasi 2026_08_21_100000.
     'mode_kalibrasi', 'tipe_sensor',
+    // Alat bantu (dryblock A/B, oilbath satu/dua), tipe pencelupan termometer
+    // gelas, dan tiga pembacaan uji titik es — tiganya nentuin ANGKA di sesi
+    // alat ke-18..20. Lihat migrasi 2026_08_26_120000.
+    'alat_bantu', 'tipe_pencelupan', 'titik_es',
 ])]
 class CalibrationSession extends Model
 {
@@ -84,6 +88,10 @@ class CalibrationSession extends Model
             'tekanan_ketidakpastian' => 'float',
             // Snapshot hasil olah data Autoklaf (Section A/B/C + budget + input).
             'hasil_autoclave' => 'array',
+            // Tiga pembacaan uji titik es termometer gelas — yang dipakai
+            // rentangnya (Tmax − Tmin), dihitung ulang tiap kali, bukan
+            // disimpan jadi.
+            'titik_es' => 'array',
         ];
     }
 

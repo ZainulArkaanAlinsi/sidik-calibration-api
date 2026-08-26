@@ -169,6 +169,19 @@ class CalibrationRequest extends FormRequest
                 TabelKalibratorSuhu::MODE_SOURCE,
             ])],
             'tipe_sensor' => ['sometimes', 'nullable', Rule::in(TabelKalibratorSuhu::TIPE_SENSOR)],
+            // Alat bantu (dryblock `A`/`B` buat Thermocouple, oilbath
+            // `satu`/`dua` buat Termometer Gelas). Nilainya nentuin DUA
+            // komponen budget, jadi dibatasi ke daftar yang dikenal — teks
+            // bebas di sini berarti sesi tersimpan dengan alat bantu yang nggak
+            // punya tabel, dan itu baru ketahuan waktu dihitung.
+            'alat_bantu' => ['sometimes', 'nullable', Rule::in(['A', 'B', 'satu', 'dua'])],
+            // Tipe pencelupan termometer gelas — tercetak di sertifikat.
+            'tipe_pencelupan' => ['sometimes', 'nullable', 'string', 'max:30'],
+            // Uji titik es termometer gelas: tiga pembacaan, yang dipakai
+            // RENTANGNYA. `max:10` longgar supaya lab yang membaca lebih dari
+            // tiga kali nggak ditolak.
+            'titik_es' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'titik_es.*' => ['nullable', 'numeric'],
             'pemilik_nama' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 
@@ -240,6 +253,21 @@ class CalibrationRequest extends FormRequest
             'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
             'measurements.*.indikator' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.indikator.*' => ['nullable', 'numeric'],
+            // Alat ber-PASANGAN deret (Thermocouple, Termometer Gelas,
+            // Thermohygrometer): tiap titik dibaca dua kali — sisi standar &
+            // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
+            // bisa dikirim dari lapangan.
+            'measurements.*.standar' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.standar.*' => ['nullable', 'numeric'],
+            'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.uut.*' => ['nullable', 'numeric'],
+            // No. Termokopel: probe standar mana yang dicelup di baris ini.
+            // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
+            // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
+            'measurements.*.no_probe' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:28'],
+            // Thermohygro: satu lembar memuat dua parameter, dan baris tabelnya
+            // yang membedakan — bukan alatnya.
+            'measurements.*.parameter' => ['sometimes', 'nullable', Rule::in(['suhu', 'kelembaban'])],
             // Baris "Suhu Ruang" di grid — DICATAT, tapi nggak ikut ngitung.
             //
             // Di master dia beneran nggak punya konsumen: nol rumus membacanya,

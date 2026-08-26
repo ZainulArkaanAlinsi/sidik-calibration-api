@@ -70,6 +70,16 @@ class DatabaseSeeder extends Seeder
             // Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator) — WAJIB abis
             // `CalibrationCapabilitySeeder` (butuh baris CMC per jenis enclosure).
             EnclosureSeeder::class,
+            // Tiga alat suhu ber-PASANGAN deret (Thermocouple, Termometer
+            // Gelas, Thermohygrometer) — alat ke-18..20. Sama seperti TITS &
+            // Enclosure, CMC ketiganya sudah ada di lampiran akreditasi, jadi
+            // cukup baris dari `CalibrationCapabilitySeeder`.
+            //
+            // WAJIB abis `TitsSeeder`: dua kalibrator suhu (Constant &
+            // Yokogawa) dibuat di sana, dan seeder ini menautkan sesinya ke
+            // baris itu — bukan membuat baris kembar yang bikin
+            // `tautkanStandar()` memilih sewenang-wenang.
+            Suhu3AlatSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

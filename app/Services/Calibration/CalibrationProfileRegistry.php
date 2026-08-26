@@ -18,6 +18,9 @@ use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
+use App\Services\Calibration\Profiles\ThermocoupleProfile;
+use App\Services\Calibration\Profiles\ThermohygroProfile;
+use App\Services\Calibration\Profiles\ThermometerGlassProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
@@ -86,6 +89,18 @@ class CalibrationProfileRegistry
             new BathProfile,
             new InkubatorProfile,
             new RefrigeratorProfile,
+            // Tiga alat suhu yang lembar kerjanya berbentuk PASANGAN deret
+            // (standar + UUT dibaca bergantian), lampiran akreditasi
+            // "Suhu dan Kelembapan" no. 5, 4, dan 11. Lihat ProfilSuhuPasangan.
+            //
+            // Urutannya menentukan: `bangunIndeksEjaan()` mengurut kunci dari
+            // yang paling panjang, jadi "Thermocouple Thermometer" dicoba
+            // sebelum "Thermocouple" — tapi `Thermohygrometer` dan
+            // `Thermohygro` juga saling memuat, dan yang panjang harus menang.
+            // Diserahkan ke indeks ejaan, bukan ke urutan baris ini.
+            new ThermocoupleProfile,
+            new ThermometerGlassProfile,
+            new ThermohygroProfile,
         ];
     }
 

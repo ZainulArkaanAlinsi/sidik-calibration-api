@@ -201,7 +201,14 @@ class SemuaProfilLembarKerjaTest extends TestCase
     public function test_nomor_formulir_ada_kecuali_yang_kertasnya_belum_ada(CalibrationProfile $profil): void
     {
         // Kertasnya beneran belum pernah dikirim lab. Bukan kelupaan.
-        $belumAdaKertasnya = ['gas_detector'];
+        //
+        // Ketiga alat suhu yang mendarat 26 Agt 2026 masuk sini dengan alasan
+        // yang SAMA seperti TITS dulu: ketiga workbook master cuma memuat
+        // `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet `SERTIFIKAT`, dan itu
+        // formulir SERTIFIKAT yang dipakai bersama semua alat — bukan nomor
+        // lembar kerjanya. Menaruh nomor karangan di lembar yang ikut diaudit
+        // lebih mahal daripada kolom kosong yang jelas kosong.
+        $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro'];
 
         $nomor = $profil->bentukLembarKerja()['kode_dokumen'] ?? null;
 

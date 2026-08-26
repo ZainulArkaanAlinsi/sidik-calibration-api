@@ -117,6 +117,28 @@ class Formula extends Model
     public const KODE_GUM_TIDS = 'gum-tids';
 
     /**
+     * Rumus GUM **Thermocouple** (lampiran akreditasi no. 5,
+     * `SIDIK-IK-CAL-0529_Rev.2`). Sembilan komponen Type B, tanpa keterulangan —
+     * lihat ThermocoupleCalculator.
+     */
+    public const KODE_GUM_THERMOCOUPLE = 'gum-thermocouple';
+
+    /**
+     * Rumus GUM **Termometer Gelas** (lampiran akreditasi no. 4,
+     * `SIDIK-IK-CAL-0527_Rev.1`). Sebelas komponen, dua di antaranya
+     * keterulangan dengan pembagi yang berbeda — lihat
+     * ThermometerGlassCalculator.
+     */
+    public const KODE_GUM_THERMOMETER_GLASS = 'gum-thermometer-glass';
+
+    /**
+     * Rumus GUM **Thermohygrometer** (lampiran akreditasi no. 11,
+     * `SIDIK-IK-CAL-0518_Rev.4`). TIGA budget dalam satu sesi — suhu, kelembapan
+     * chamber Biobase, kelembapan chamber GEA. Lihat ThermohygroCalculator.
+     */
+    public const KODE_GUM_THERMOHYGRO = 'gum-thermohygro';
+
+    /**
      * Rumus GUM buat alat yang **nggak punya profil khusus** — jalur CMC
      * generik apa adanya (`ProfilGenerik`).
      *

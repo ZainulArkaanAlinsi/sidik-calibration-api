@@ -140,9 +140,11 @@ class ProfilDariNamaAlatTest extends TestCase
         return [
             'TITS (singkatan, sengaja nggak didaftarin)' => ['TITS'],
             'TIDS (singkatan, sengaja nggak didaftarin)' => ['TIDS'],
-            'Termometer Gelas' => ['Termometer Gelas'],
-            'Thermohygrometer' => ['Thermohygrometer'],
-            'Thermocouple' => ['Thermocouple'],
+            // Termometer Gelas, Thermohygrometer & Thermocouple PINDAH dari
+            // sini 26 Agt 2026: ketiganya sekarang punya lembar kerjanya
+            // sendiri (alat ke-18..20), dari tiga workbook master yang turun
+            // dari lab. Yang menjaga arah sebaliknya —
+            // `test_tiga_alat_suhu_dapat_lembarnya_sendiri` di bawah.
             'Buret Digital' => ['Buret Digital'],
             'Gelas Ukur' => ['Gelas Ukur'],
             'Picnometer' => ['Picnometer'],
@@ -322,5 +324,29 @@ class ProfilDariNamaAlatTest extends TestCase
         }
 
         return $nama;
+    }
+
+    /**
+     * Tiga alat suhu yang mendarat 26 Agt 2026 dapat lembarnya SENDIRI.
+     *
+     * Arah sebaliknya dari [test_nama_alat_generik_balik_null], dan sengaja
+     * ditulis eksplisit: sebelum ini ketiganya memang jatuh ke jalur generik,
+     * jadi kalau salah satu profilnya suatu saat dicabut, yang terjadi bukan
+     * error melainkan alat terakreditasi yang diam-diam balik ke CMC generik
+     * dengan U95 lebih kecil daripada yang diakui akreditasi.
+     */
+    public function test_tiga_alat_suhu_dapat_lembarnya_sendiri(): void
+    {
+        foreach ([
+            'Thermocouple' => 'thermocouple',
+            'Termometer Gelas' => 'thermometer_glass',
+            'Thermohygrometer' => 'thermohygro',
+        ] as $nama => $kode) {
+            $this->assertSame(
+                $kode,
+                $this->registry->kodeProfilDariNama($nama),
+                "'{$nama}' harusnya dapat lembar `{$kode}`, bukan jatuh ke jalur generik.",
+            );
+        }
     }
 }

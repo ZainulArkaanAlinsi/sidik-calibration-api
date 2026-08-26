@@ -679,6 +679,27 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah tiap titik ukur berupa DUA deret pembacaan — standar & UUT —
+     * bukan satu deret datar yang diadu ke nilai nominal standar.
+     *
+     * Default `false`. `true` untuk Thermocouple, Termometer Gelas, &
+     * Thermohygrometer: ketiganya mencelup UUT dan probe standar berbarengan
+     * lalu membaca dua-duanya bergantian, jadi pembacaan STANDAR itu data
+     * sesi — bukan konstanta yang bisa diambil dari master `standards`.
+     *
+     * Waktu `true`, `CalibrationController` membaca `measurements[i].standar` &
+     * `.uut` dan menyimpan keduanya ke `raw_measurements` dengan
+     * `peran_sensor` `standar`/`uut`, memakai sumbu yang sudah ada sejak
+     * enclosure. Tanpa hook ini jalur datar cuma menyimpan satu deret, dan
+     * deret standar — yang di master jadi SISI KIRI kolom `Correction` —
+     * hilang tanpa error.
+     */
+    public function butuhPasanganStandarUut(): bool
+    {
+        return false;
+    }
+
+    /**
      * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
      * ngapa-ngapain — pembacaan dipakai apa adanya.
      *

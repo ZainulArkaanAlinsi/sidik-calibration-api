@@ -1079,6 +1079,16 @@ class CalibrationController extends Controller
             return $this->susunGridEnclosure($request, $alat, $standarDefault);
         }
 
+        // Thermocouple / Termometer Gelas / Thermohygrometer: tiap titik DUA
+        // deret pembacaan (standar & UUT), bukan satu deret yang diadu ke nilai
+        // nominal standar. Jalur terpisah dengan alasan yang sama seperti
+        // enclosure — loop per-titik di bawah cuma punya tempat buat satu deret,
+        // dan deret yang nggak kebagian tempat justru sisi kiri kolom
+        // `Correction`. Lihat ProfilSuhuPasangan.
+        if ($this->profil->untukAlat($alat)->butuhPasanganStandarUut()) {
+            return $this->susunPasanganStandarUut($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1543,6 +1553,132 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Susun pengukuran alat ber-PASANGAN deret — Thermocouple, Termometer
+     * Gelas, Thermohygrometer.
+     *
+     * Bentuk `measurements[i]`:
+     *   - `titik_ukur`  : set point (°C / %RH)
+     *   - `standar`     : list 5 pembacaan probe standar
+     *   - `uut`         : list 5 pembacaan UUT
+     *   - `no_probe`    : No. Termokopel baris ini (Thermocouple; opsional)
+     *   - `parameter`   : `suhu` / `kelembaban` (Thermohygro; default `suhu`)
+     *
+     * Dua deret disimpan ke `raw_measurements` lewat sumbu `peran_sensor` yang
+     * sudah ada sejak enclosure — `standar` / `uut`. Nomor probe menumpang
+     * `sensor_ke`, kolom yang artinya memang "pembacaan ini milik sensor yang
+     * mana"; jadi tidak ada kolom baru sama sekali di tabel pengukuran.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunPasanganStandarUut(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDihitung = [];
+
+        // Angka dari KAMERA wajib dikonfirmasi manusia sebelum sesi bisa
+        // disetujui — aturan yang sama dengan sembilan belas alat lain.
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+
+        // Set point dianggap terpakai kalau SALAH SATU sisinya ada isinya.
+        // Kalau cuma sisi UUT yang dicek, set point yang teknisinya baru sempat
+        // mengisi deret standar akan kebuang — dan yang kebuang bukan cuma yang
+        // barusan dikirim, tapi juga baris lama yang sudah telanjur dihapus
+        // `store()`/`update()` sebelum penyusunan ini jalan.
+        $titikTerpakai = array_values(array_filter(
+            $request->input('measurements', []),
+            static fn (array $t): bool => collect($t['standar'] ?? [])->contains($adaIsinya)
+                || collect($t['uut'] ?? [])->contains($adaIsinya),
+        ));
+
+        $titikEs = array_values(array_filter(
+            (array) $request->input('titik_es', []),
+            $adaIsinya,
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+            $setpoint = (float) $titik['titik_ukur'];
+            $noProbe = isset($titik['no_probe']) ? (int) $titik['no_probe'] : null;
+            $parameter = (string) ($titik['parameter'] ?? 'suhu');
+            $satuan = $parameter === 'kelembaban' ? '%RH' : $alat->satuan;
+
+            $deret = [];
+
+            foreach (['standar', 'uut'] as $peran) {
+                $terisi = [];
+
+                foreach (array_values($titik[$peran] ?? []) as $urutan => $nilai) {
+                    if (! $adaIsinya($nilai)) {
+                        continue;
+                    }
+
+                    $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                    $terisi[] = $pembacaan;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        // Nomor probe cuma menempel ke sisi STANDAR — sisi UUT
+                        // memakai probe bawaan alat pelanggan, yang justru
+                        // sedang diukur penyimpangannya.
+                        'sensor_ke' => $peran === 'standar' ? $noProbe : null,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $setpoint,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $pembacaan,
+                        'satuan' => $satuan,
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                $deret[$peran] = $terisi;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $setpoint,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    'standar' => $deret['standar'],
+                    'uut' => $deret['uut'],
+                    'no_probe' => $noProbe,
+                    'parameter' => $parameter,
+                    'tipe_sensor' => $request->input('tipe_sensor'),
+                    'alat_bantu' => $request->input('alat_bantu'),
+                    'tipe_pencelupan' => $request->input('tipe_pencelupan'),
+                    'titik_es' => $titikEs,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDihitung, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
      * Bulatin hasil GUM ke presisi kolom `uncertainty_calculations`.
      *
      * Dilakuin SEBELUM insert, bukan cuma buat preview — supaya dua jalurnya
@@ -1932,6 +2068,13 @@ class CalibrationController extends Controller
             // alasan yang sama: sepuluh alat lain nggak pernah ngirimnya, dan
             // yang nggak dikirim nggak boleh nimpa isian sebelumnya.
             'mode_kalibrasi', 'tipe_sensor',
+            // Alat bantu, tipe pencelupan & uji titik es (alat ke-18..20). Ikut
+            // `$opsional` dengan alasan yang sama seperti dua baris di atas:
+            // tujuh belas alat lain nggak pernah mengirimnya, dan "nggak
+            // dikirim" nggak boleh berarti "kosongkan" — ketiganya nentuin
+            // ANGKA, jadi yang hilang diam-diam bukan kolom kosong di layar
+            // melainkan komponen budget yang berubah tanpa ada yang tahu.
+            'alat_bantu', 'tipe_pencelupan', 'titik_es',
         ];
 
         foreach ($opsional as $field) {

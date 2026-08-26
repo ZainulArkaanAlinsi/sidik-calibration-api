@@ -525,6 +525,72 @@ Bikin sesi kalibrasi + kirim data mentah sekaligus. **Data dari input manual dan
 
 Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 
+> ## ✅ 26 Agt — bentuk PASANGAN buat 3 alat suhu baru
+>
+> **Thermocouple · Termometer Gelas · Thermohygrometer** (alat ke-18, 19, 20) TIDAK
+> memakai `measurements[].pembacaan`. Ketiganya membaca **dua deret per titik** —
+> probe standar lab dan UUT dicelup bersamaan ke dryblock/oilbath/chamber yang
+> sama, lalu dibaca bergantian tiap 10 detik dalam satu sapuan 90 detik:
+>
+> ```
+> 0″ standar · 10″ UUT · 20″ standar · 30″ UUT · … · 80″ standar · 90″ UUT
+> ```
+>
+> Jadi nilai standarnya **data sesi**, bukan konstanta dari master `standards`
+> seperti buffer pH 4,01. Kirim dua-duanya:
+>
+> ```json
+> {
+>   "equipment_id": 31,
+>   "standard_id": 7,
+>   "tipe_sensor": "Type K",
+>   "alat_bantu": "A",
+>   "measurements": [
+>     { "titik_ukur": 50,  "no_probe": 1, "standar": [49.5, 49.5, 49.5, 49.5, 49.5], "uut": [49.9, 49.9, 49.9, 49.9, 49.9] },
+>     { "titik_ukur": 100, "no_probe": 2, "standar": [99, 99, 99, 99, 99],           "uut": [99.9, 99.9, 99.9, 99.9, 99.9] }
+>   ]
+> }
+> ```
+>
+> **Cara tahu lembar mana yang begini:** `GET /api/calibrations/lembar-kerja`
+> memulangkan `bagian[].tabel[]` yang tiap elemennya punya **`peran`**
+> (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
+> Jangan hardcode daftar kode profil — baca `peran`.
+>
+> ### Field per alat
+>
+> | Field | Alat | Isi | Kalau kosong |
+> |---|---|---|---|
+> | `tipe_sensor` | Thermocouple | `RTD` · `Type K` · `Type N` | angkanya DITAHAN, alasannya di `belum_dihitung` |
+> | `alat_bantu` | Thermocouple | `A` (Isotech, −20…150 °C) · `B` (Techne, 150…600 °C) | idem |
+> | `alat_bantu` | Termometer Gelas | `satu` · `dua` (dua oilbath) | idem |
+> | `measurements[].no_probe` | Thermocouple | Type K → 1–16 · Type N → **3–12** · RTD → 17 | titik itu diblokir |
+> | `tipe_pencelupan` | Termometer Gelas | `Partial` / `Total` / `Complete Immersion` | cuma peringatan (tercetak di sertifikat) |
+> | `titik_es` | Termometer Gelas | array 3 angka, uji titik es 30 menit | komponen budget-nya dihitung nol |
+> | `measurements[].parameter` | Thermohygro | `suhu` / `kelembaban` | dianggap `suhu` |
+>
+> **`no_probe` penomorannya BEDA per tipe** dan itu dari kertasnya sendiri: *"If
+> using Thermocouple Type N, No. Thermocouple START FROM 3. If using PRT PT100
+> (RTD), No. Thermocouple ALL 17."* Dropdown-nya sudah dikirim bentuk lembar kerja
+> lengkap dengan `grup` = nama tipe sensornya, jadi saring dari situ — jangan
+> ditulis ulang di HP.
+>
+> **Thermohygro tidak punya `alat_bantu`.** Chamber-nya (Biobase ≥ 50 %RH / GEA
+> < 50 %RH) diturunkan SERVER dari set point, karena satu sesi memakai dua-duanya
+> sekaligus dan masing-masing punya U95 sendiri. Tabel standar kelembapan membawa
+> `chamber_per_baris` supaya HP bisa menuliskannya di sebelah set point.
+>
+> ### Yang balik di `GET /api/calibrations/{id}`
+>
+> `alat_bantu`, `tipe_pencelupan`, `titik_es`, dan `pembacaan_mentah[].peran_sensor`
+> + `.sensor_ke` semuanya ikut. Itu yang bikin sesi yang dikembalikan admin pulang
+> UTUH — tanpa `peran_sensor`, HP tidak punya cara tahu angka mana milik deret yang
+> mana, dan teknisi mengetik ulang dua tabel penuh.
+>
+> **U95-nya SATU per sesi** (Thermohygro: satu per grup parameter+chamber), dicetak
+> sebagai baris di bawah tabel — bukan kolom per titik. `desimal_u95` tetap dibaca
+> dari respons seperti biasa.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;

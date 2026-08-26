@@ -153,7 +153,6 @@ class RoutingProfilSepakatTest extends TestCase
     {
         return [
             'Buret Digital' => ['Buret Digital'],
-            'Termometer Gelas' => ['Termometer Gelas'],
             'Timbangan (Elektronik, mekanik)' => ['Timbangan (Elektronik, mekanik)'],
             'Pressure Gauge' => ['Pressure Gauge'],
             'TIDS (singkatan, sengaja nggak didaftarin)' => ['TIDS'],
