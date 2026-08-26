@@ -23,6 +23,39 @@
 # kelihatan sukses, baru `npm run build` mati dengan "Cannot find module
 # '@rolldown/binding-...'". Tag `node:20` nempel di batas persis syarat itu;
 # `node:22` nggak ada urusan sama sekali.
+# Sumber CSS Filament buat tema panel admin.
+#
+# Tahap ini ADA cuma gara-gara satu baris di
+# `resources/css/filament/admin/theme.css`:
+#
+#     @import '../../../../vendor/filament/filament/resources/css/theme.css';
+#
+# Begitulah cara Filament v4/v5 bikin tema kustom — temanya MEMPERLUAS CSS
+# Filament, bukan menggantikannya. Tanpa impor itu panelnya kehilangan seluruh
+# gaya komponennya.
+#
+# Sebelum tema itu ada, tahap aset nggak butuh `vendor/` sama sekali dan
+# `.dockerignore` memang membuangnya. Jadi ini bukan tahap yang kelupaan dari
+# dulu — dia lahir bareng kebutuhannya.
+#
+# Composer-nya dijalanin terpisah, BUKAN disalin dari tahap PHP di bawah:
+# tahap itu install pakai PHP 8.4 milik frankenphp, dan menukarnya jadi salinan
+# dari sini bikin resolusi platform-nya beda tanpa ada yang minta. Yang disalin
+# ke tahap aset juga cuma `vendor/filament`, bukan seluruh vendor.
+FROM composer:2 AS vendor-css
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+        --no-dev \
+        --no-scripts \
+        --no-autoloader \
+        --prefer-dist \
+        --no-interaction \
+        --no-progress
+
+
 FROM node:22-bookworm-slim AS aset
 
 WORKDIR /app
@@ -36,6 +69,18 @@ RUN npm install --no-audit --no-fund
 COPY artisan vite.config.js ./
 COPY resources ./resources
 COPY public ./public
+
+# `app/` buat `@source '../../../../app/Filament'` di tema.
+#
+# Tailwind v4 memindai berkas itu buat nyari nama kelas yang dipakai. Kalau
+# `app/` nggak ada, kelas yang cuma disebut dari PHP — misal `angka-ukur` —
+# hilang dari CSS jadi TANPA satu pun peringatan. Panelnya tetap terbit, cuma
+# sebagian gayanya nggak pernah kepasang.
+COPY app ./app
+
+# Cuma paket Filament-nya, bukan seluruh vendor: yang dibutuhkan build CSS
+# cuma `vendor/filament/filament/resources/css/`.
+COPY --from=vendor-css /app/vendor/filament ./vendor/filament
 
 RUN npm run build
 
