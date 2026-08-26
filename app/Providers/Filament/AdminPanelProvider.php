@@ -11,7 +11,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -38,8 +37,28 @@ class AdminPanelProvider extends PanelProvider
             // jatuh tempo (command harian) langsung kelihatan.
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            /*
+             * Tema kustom. Filament NGGAK memakai `resources/css/app.css` —
+             * dia punya entry point sendiri, dan sampai tema ini dibuat
+             * panelnya jalan sepenuhnya dengan tampilan bawaan.
+             */
+            ->viteTheme('resources/css/filament/admin/theme.css')
+            /*
+             * Kobalt #043EA1 — diambil langsung dari perisai
+             * `public/images/logo-sidik.png`, bukan dipilih dari daftar warna
+             * Tailwind. Sebelumnya `Color::Blue` (biru-600, #2563EB): biru yang
+             * jauh lebih terang dan generik.
+             *
+             * Warna semantiknya SENGAJA dibiarkan bawaan Filament dan terpisah
+             * dari aksen. `danger` di panel ini artinya "ada yang salah" —
+             * bukan merah KAN. Merah akreditasi (#C8102E) cuma dipakai lewat
+             * kelas `.lencana-kan` di tema, dan cuma buat hal yang benar-benar
+             * menyangkut akreditasi: lencana LK-285-IDN, lantai CMC, ruang
+             * lingkup. Kalau merah yang sama juga jadi warna error, satu-satunya
+             * tanda yang berarti "dokumen ini terakreditasi" ikut luntur.
+             */
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => Color::hex('#043EA1'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -47,9 +66,20 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            /*
+             * `FilamentInfoWidget` DIBUANG, bukan kelupaan.
+             *
+             * Isinya nomor versi Filament berikut tautan ke dokumentasinya —
+             * perancah bawaan `filament:install` yang ikut naik ke produksi.
+             * Admin lab nggak punya kepentingan apa pun dengan itu, dan dia
+             * memakan separuh baris pertama dashboard yang mestinya buat
+             * pekerjaan yang menunggu.
+             *
+             * `RingkasanStats` ketemu sendiri lewat `discoverWidgets()` di
+             * atas, jadi nggak perlu didaftarkan di sini.
+             */
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

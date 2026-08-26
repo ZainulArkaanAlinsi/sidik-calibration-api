@@ -14,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -236,6 +237,12 @@ class CalibrationSessionsTable
                             TableColumn::make('Error'),
                             TableColumn::make('U diperluas'),
                             TableColumn::make('Toleransi'),
+                            // Kolom BENTUK, bukan angka. Angkanya sudah ada di
+                            // dua kolom sebelumnya; yang ini menjawab
+                            // pertanyaan yang beda — ada titik yang mepet batas
+                            // nggak — tanpa admin membandingkan sembilan baris
+                            // di kepala.
+                            TableColumn::make('Posisi'),
                             TableColumn::make('Keputusan'),
                         ])
                         ->schema([
@@ -247,6 +254,8 @@ class CalibrationSessionsTable
                                 ->formatStateUsing(fn (?float $state): string => $state === null ? '—' : '± '.number_format($state, 4)),
                             TextEntry::make('toleransi')
                                 ->formatStateUsing(fn (?float $state): string => $state === null ? '—' : '± '.number_format($state, 4)),
+                            ViewEntry::make('posisi_toleransi')
+                                ->view('filament.pita-toleransi'),
                             TextEntry::make('keputusan')
                                 ->badge()
                                 ->color(fn (?string $state): string => $state === 'PASS' ? 'success' : 'danger'),

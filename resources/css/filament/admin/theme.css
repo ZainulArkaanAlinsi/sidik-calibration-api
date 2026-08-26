@@ -1,0 +1,152 @@
+/*
+ * Tema panel admin SIDIK Kalibrasi.
+ *
+ * Sebelum berkas ini ada, panelnya Filament BAWAAN — `Color::Blue` standar, dan
+ * `resources/css/app.css` (berkas starter Laravel) nggak pernah tersambung ke
+ * Filament sama sekali. Jadi ini tema kustom pertama, bukan penyesuaian.
+ *
+ * ## Warnanya dari logo, bukan dari daftar Tailwind
+ *
+ * Kobalt di bawah diambil langsung dari `public/images/logo-sidik.png` —
+ * #043EA1, warna perisainya. `Color::Blue` bawaan itu biru-600 Tailwind
+ * (#2563EB) yang jauh lebih terang dan generik; kobalt yang lebih dalam ini
+ * yang bikin panelnya terbaca sebagai lab terakreditasi.
+ *
+ * ## Merah KAN BUKAN warna error
+ *
+ * `--warna-kan` cuma boleh dipakai buat hal yang benar-benar menyangkut
+ * akreditasi: lencana LK-285-IDN, lantai CMC, ruang lingkup. Kalau merah yang
+ * sama dipakai buat "kolom wajib diisi", satu-satunya tanda yang berarti
+ * "dokumen ini terakreditasi" jadi luntur. Error dan lewat-tempo pakai
+ * `danger` Filament yang merahnya beda.
+ *
+ * ## Angka punya hurufnya sendiri
+ *
+ * Di produk ini angka ITU isinya — U95, koreksi, nomor sertifikat. Huruf
+ * lebar-tetap bikin kolom beneran lurus dan `0,86` nggak pernah ketuker
+ * `0,B6`. Dipasang lewat `.fi-ta-text-item-label` di kolom bertanda angka dan
+ * kelas `.angka-ukur` buat dipakai manual.
+ */
+
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament';
+@source '../../../../resources/views/filament';
+
+@theme {
+    /*
+     * Merah KAN. Sedikit didalamkan dari #F4131D milik logo supaya kontrasnya
+     * cukup di atas putih — logo dicetak, layar dibaca lama.
+     */
+    --color-kan: #c8102e;
+    --color-kan-tipis: #fdedef;
+
+    /* Huruf angka. Instrument Sans buat bahasa sudah dimuat lewat vite.config.js. */
+    --font-angka: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/*
+ * KOBALT MEREK SENGAJA NGGAK DIDEFINISIKAN DI SINI.
+ *
+ * Sempat ditulis sebagai palet `--color-kobalt-50..950` di blok `@theme` atas,
+ * lalu dibuang setelah hasil kompilasinya diperiksa: nol kemunculan di CSS
+ * jadi. Tailwind v4 membuang token `@theme` yang nggak dipakai kelas mana pun,
+ * dan nggak ada satu pun kelas di sini yang menyebut `kobalt-*`.
+ *
+ * Warna primer panel yang SESUNGGUHNYA datang dari
+ * `AdminPanelProvider::panel()` lewat `Color::hex('#043EA1')` — Filament yang
+ * membangkitkan `--primary-50..950`-nya saat runtime. Menaruh palet kedua di
+ * sini cuma bikin dua sumber kebenaran buat satu warna, dan yang satu nggak
+ * pernah kepakai.
+ *
+ * Jadi kalau warna panel mau diganti: ubah hex di `AdminPanelProvider`, bukan
+ * di berkas ini.
+ */
+
+/*
+ * Angka sejajar di SELURUH tabel.
+ *
+ * `tabular-nums` bikin tiap digit selebar sama, jadi kolom U95 dan koreksi
+ * beneran lurus tanpa perlu rata-kanan manual di tiap kolom. Ini yang paling
+ * kerasa di tabel padat — dan tabel di panel ini semuanya padat.
+ */
+.fi-ta-table,
+.fi-in-entry-value,
+.fi-input {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Dipakai manual buat angka yang harus benar-benar menonjol sebagai angka. */
+.angka-ukur {
+    font-family: var(--font-angka);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+/*
+ * Kartu statistik dapat rel warna di sisi kiri.
+ *
+ * Warna teks saja nggak cukup: yang kesulitan membedakan merah-hijau kehilangan
+ * seluruh sinyalnya. Rel 3px kebaca sekilas tanpa bergantung sama warna, dan
+ * posisinya konsisten jadi mata tau harus lihat ke mana.
+ */
+.fi-wi-stats-overview-stat {
+    position: relative;
+    overflow: hidden;
+}
+
+.fi-wi-stats-overview-stat::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: var(--color-gray-300);
+}
+
+.fi-wi-stats-overview-stat:has(.fi-color-danger)::before {
+    background: var(--color-danger-600);
+}
+
+.fi-wi-stats-overview-stat:has(.fi-color-warning)::before {
+    background: var(--color-warning-600);
+}
+
+.fi-wi-stats-overview-stat:has(.fi-color-success)::before {
+    background: var(--color-success-600);
+}
+
+/*
+ * Lencana akreditasi — satu-satunya tempat merah KAN muncul.
+ */
+.lencana-kan {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--color-kan) 30%, transparent);
+    background: var(--color-kan-tipis);
+    font-size: 0.78rem;
+    line-height: 1.3;
+}
+
+.lencana-kan .tanda {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 0.2rem;
+    background: var(--color-kan);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+    .lencana-kan {
+        background: #2a1418;
+        border-color: color-mix(in srgb, var(--color-kan) 45%, transparent);
+    }
+}
