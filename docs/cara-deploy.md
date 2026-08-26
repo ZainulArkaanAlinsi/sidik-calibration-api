@@ -123,11 +123,31 @@ Salin ulang, pasang ulang seperti di atas.
 yang gagal. Jangan diakali dengan Manual Deploy dari dashboard — itu persis
 menghidupkan lagi lubang yang gerbang ini tutup.
 
-**Build di Render gagal**
-→ Buka tab **Logs** di dashboard Render. Yang paling sering:
+**Build di Render gagal** (`Exited with status 1 while building your code`)
+→ Buka tab **Logs** di dashboard Render, lalu **gulung ke atas sampai ketemu tahap
+mana yang mati** — pesan terakhirnya hampir selalu terlalu umum buat dipakai.
+
+Kabar baiknya: build yang gagal **nggak menjatuhkan situs**. Container lama tetap
+melayani; yang terjadi cuma versi barunya nggak naik. Jadi ini mendesak, tapi
+bukan darurat.
+
+Yang paling sering:
 - `npm run build` gagal → masalah aset frontend
 - `composer install` gagal → `composer.lock` nggak sinkron
 - Extension PHP hilang → `install-php-extensions` di Dockerfile
+
+> **Sudah pernah kejadian (26 Agt 2026, commit `3d02d73`).** Buildnya mati di tahap
+> yang memasang dependency buat CSS Filament:
+>
+> ```
+> filament/support v5.6.8 requires ext-intl * -> it is missing from your system.
+> ```
+>
+> Sebabnya tahap itu jalan di atas image `composer:2`, dan image resmi PHP nggak
+> pernah membundel `intl`. Sekarang Dockerfile cuma punya SATU `composer install`,
+> di tahap `php-dasar` yang ekstensinya lengkap, dan tahap aset menyalin
+> `vendor/filament` dari sana. Kalau nanti ada tahap build baru yang butuh isi
+> `vendor/`, salin dari `php-dasar` — jangan pasang ulang di image lain.
 
 **Build hijau tapi container mati waktu boot**
 → Tetap di **Logs** Render. Entrypoint mencetak sebabnya dengan jelas —
