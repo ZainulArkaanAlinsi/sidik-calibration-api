@@ -754,7 +754,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ],
         ];
 
-        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk));
+        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk), $equipment);
     }
 
     /**
@@ -802,10 +802,28 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNull('parameter_kondisi')
+            // DISARING KE LAB PEMILIK ALAT.
+            //
+            // Tanpa ini, baris standar tercetak di lembar bisa tertaut ke master
+            // milik lab LAIN — dan yang ikut ke layar (lalu berpotensi ke
+            // sertifikat) nomor sertifikat & ketertelusuran lab itu. Buat lab
+            // terakreditasi, ketertelusuran yang menunjuk dokumen milik orang
+            // lain itu temuan audit yang paling mahal jenisnya.
+            //
+            // Lebih buruk lagi: `standard_id` yang bocor dipakai buat
+            // menurunkan kalibrator sesi, jadi teknisi lab kedua bakal ditolak
+            // sistem dengan pesan menyebut kolom yang nggak pernah dia ketik.
+            //
+            // Database hari ini masih satu organisasi, jadi belum ada yang
+            // kena. Yang dijaga di sini hari onboarding lab kedua.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
@@ -815,9 +833,26 @@ abstract class EnclosureProfileBase extends CalibrationProfile
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
+                    $kunci = collect($baris['cocok']);
+
+                    // NAMA duluan, nomor seri belakangan.
+                    //
+                    // Dua baris master bisa berbagi nomor seri — di lab ini
+                    // `23P1005` dipakai baris "Termometer & Sensor Std." (id 13)
+                    // DAN "Temperature Calibrator Yokogawa CA 150 Handy Cal"
+                    // (id 45), karena sensornya memang menempel di kalibrator
+                    // itu. Dengan satu `first()` yang menerima nama ATAU seri,
+                    // yang menang cuma yang ID-nya lebih kecil: baris Yokogawa
+                    // di lembar tertaut ke SENSOR RTD, bukan ke kalibratornya.
+                    //
+                    // Merknya kebetulan sama-sama Yokogawa jadi angkanya nggak
+                    // salah — tapi nomor sertifikat & ketertelusuran yang ikut
+                    // ke lembar diambil dari dokumen alat yang salah.
+                    $cocok = $master->first(
+                        fn (Standard $s): bool => $kunci->contains(fn (string $k): bool => $s->nama === $k),
+                    ) ?? $master->first(
+                        fn (Standard $s): bool => $kunci->contains(fn (string $k): bool => $s->serial_number === $k),
+                    );
 
                     return [
                         'label' => $baris['label'],
@@ -1103,6 +1138,39 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     }
 
     /** Merk kalibrator dari `standards.merk`, jadi kunci tabel. */
+    /**
+     * Grid enclosure minta EMPAT pembacaan per sensor, bukan dua.
+     *
+     * Master memetakan kolom `[1,2,3,3,4]`; di bawah 4 kolom yang hilang harus
+     * ditebak, dan tebakan itu mendarat di kolom Sebaran Suhu yang TERCETAK.
+     */
+    public function minPengulanganPerTitik(): int
+    {
+        return 4;
+    }
+
+    /**
+     * Kalibrator sesi = satu-satunya standar tercentang yang merknya dikenal.
+     *
+     * "Satu-satunya" itu syarat, bukan kelonggaran. Lembar Enclosure mencentang
+     * BANYAK baris — kalibrator, termohigrometer, sensor standar — dan cuma
+     * salah satunya yang menentukan tabel koreksi. Kalau dua baris sama-sama
+     * berbunyi Constant/Yokogawa/Recorder, nggak ada dasar buat memilih, dan
+     * memilih diam-diam berarti sertifikat terbit dengan tabel koreksi yang
+     * mungkin salah tanpa satu pun jejak. Lebih baik sesinya tetap belum
+     * kehitung dengan peringatan yang jujur.
+     *
+     * @param  \Illuminate\Support\Collection<int, Standard>  $dicentang
+     */
+    public function standarSesiDariCentang(\Illuminate\Support\Collection $dicentang): ?Standard
+    {
+        $kalibrator = $dicentang
+            ->filter(fn (Standard $s): bool => $this->merkKalibrator($s) !== null)
+            ->values();
+
+        return $kalibrator->count() === 1 ? $kalibrator->first() : null;
+    }
+
     private function merkKalibrator(?Standard $standar): ?string
     {
         $merk = strtolower(trim((string) ($standar?->merk ?? '')));

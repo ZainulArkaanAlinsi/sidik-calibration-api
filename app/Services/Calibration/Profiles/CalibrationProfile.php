@@ -6,6 +6,7 @@ use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
+use App\Services\GumCalculator;
 
 /**
  * Satu **profil kalibrasi** = satu jenis alat (pH Meter, Turbidimeter, ...),
@@ -876,6 +877,44 @@ abstract class CalibrationProfile
      * Default `true` — keempat profil yang lebih dulu ada semuanya punya
      * toleransi, jadi perilaku mereka nggak berubah sama sekali.
      */
+    /**
+     * Pembacaan lembar ini boleh diadu ke `equipments.resolusi`?
+     *
+     * Pemeriksa `pembacaan_bukan_kelipatan_resolusi` berdiri di atas satu
+     * premis: angka yang dicatat dibaca di LAYAR alat, dan layar itu punya satu
+     * daya baca yang tetap. Buat sepuluh lembar pertama premis itu benar.
+     *
+     * Buat TITS nggak — lihat [TitsProfile::pembacaanDiadukeResolusi].
+     *
+     * Kalau premisnya nggak berlaku, pemeriksanya dimatikan, BUKAN angkanya
+     * yang diubah. `equipments.resolusi` kecetak di sertifikat dan ikut ngitung
+     * budget ketidakpastian; membetulkan kebisingan layar dengan menggeser
+     * angka master berarti menggeser hasil yang sekarang cocok dengan Excel
+     * lab. Perlindungan yang beneran penting — salah ketik yang komanya kegeser
+     * — tetap dipegang `pembacaan_di_luar_rentang`, yang nggak ikut dimatikan.
+     */
+    public function pembacaanDiadukeResolusi(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Berapa pengulangan minimum sebelum satu titik bisa dihitung.
+     *
+     * Dipakai buat MENJELASKAN kenapa satu titik nggak kehitung, bukan buat
+     * menahannya — yang menahan tetap kalkulatornya masing-masing. Ada di sini
+     * supaya pesannya nyebut ambang yang beneran berlaku: GUM minta 2, grid
+     * Enclosure minta 4 pembacaan per sensor karena master memetakan kolom
+     * `[1,2,3,3,4]` dan di bawah 4 kolom yang hilang harus ditebak.
+     *
+     * Pesan yang nyebut angka yang salah bikin teknisi melengkapi sampai 2 lalu
+     * heran kenapa titiknya tetap nggak muncul di sertifikat.
+     */
+    public function minPengulanganPerTitik(): int
+    {
+        return GumCalculator::MIN_PENGULANGAN;
+    }
+
     public function punyaToleransi(): bool
     {
         return true;
@@ -956,6 +995,35 @@ abstract class CalibrationProfile
      * divonis — lihat `toleransiTitik()`, yang balik `null` di situ. Itu benar:
      * angkanya ada, vonisnya yang nggak ada dasarnya.
      */
+    /**
+     * Turunkan standar acuan SESI dari baris standar yang dicentang teknisi.
+     *
+     * Default `null` — sepuluh lembar bertabel datar mengirim `standard_id`
+     * secara eksplisit (pH malah per titik), jadi menebaknya di situ cuma bikin
+     * pilihan teknisi bisa ketimpa diam-diam.
+     *
+     * Yang butuh ini lembar ENCLOSURE. Perhitungannya membaca `standard_id`
+     * tingkat sesi buat tahu tabel koreksi mana yang dipakai
+     * (Constant/Yokogawa/Recorder), tapi lembar kerjanya sama sekali NGGAK
+     * punya kotak buat itu — yang ada cuma kolom centang "Dipakai", dan
+     * centangan itu mendarat di tabel pivot yang nggak pernah dibaca jalur
+     * hitung. Jadi tiap sesi Enclosure berakhir nol titik, dengan pesan yang
+     * justru berbunyi "belum kebaca dari standar yang dicentang" — menyalahkan
+     * kotak yang SUDAH dicentang teknisi.
+     *
+     * Diturunkan di server, bukan ditambah jadi kotak baru di HP, karena dua
+     * alasan: teknisi sudah menyatakan alat mana yang dia pakai (mencentangnya),
+     * dan menambah kotak kedua yang menanyakan hal yang sama membuka jalan
+     * keduanya berbeda — di lab terakreditasi, dua jawaban buat satu pertanyaan
+     * ketertelusuran itu temuan audit.
+     *
+     * @param  \Illuminate\Support\Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     */
+    public function standarSesiDariCentang(\Illuminate\Support\Collection $dicentang): ?Standard
+    {
+        return null;
+    }
+
     public function toleransiDariKolomAlat(): bool
     {
         return true;
