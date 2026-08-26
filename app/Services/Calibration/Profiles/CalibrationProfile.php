@@ -240,6 +240,31 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Nama unit pemanas yang KODE-nya tersimpan di
+     * `calibration_sessions.alat_bantu`.
+     *
+     * Kolomnya menyimpan kode (`A`, `B`, `satu`, `dua`), bukan nama — dan kode
+     * itu cuma punya arti di daftar `pilihan` yang profil ini sendiri yang
+     * menulisnya. Layar detail admin menampilkan pilihan teknisi supaya bisa
+     * diadu dengan lembar cetaknya; tanpa hook ini yang tampil huruf `A`, yang
+     * sama nggak berartinya dengan tidak menampilkan apa pun.
+     *
+     * Diresolusi DI SINI, bukan di sisi HP, dan itu bukan selera. Unit yang
+     * dipilih menentukan dua komponen budget, dan daftarnya bertambah begitu
+     * lab beli dryblock baru. Peta kode→nama yang disalin ke HP bakal
+     * ketinggalan diam-diam: kode baru tampil mentah, nol error, dan yang
+     * membaca layar itu justru orang yang lagi memutuskan menerbitkan
+     * sertifikat.
+     *
+     * Default null — tujuh belas alat lain nggak punya alat bantu, dan
+     * memaksakan mereka mengisi hook ini cuma bikin belasan override kosong.
+     */
+    public function labelAlatBantu(?string $kode): ?string
+    {
+        return null;
+    }
+
+    /**
      * Bentuk lembar kerja (struktur bagian/field/tabel) — yang dulu di
      * `LembarKerjaTemplate::phMeter()`. Dibaca langsung layar input mobile.
      *

@@ -587,6 +587,23 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > UTUH — tanpa `peran_sensor`, HP tidak punya cara tahu angka mana milik deret yang
 > mana, dan teknisi mengetik ulang dua tabel penuh.
 >
+> Plus **`alat_bantu_label`** — nama unitnya, bukan kodenya:
+>
+> ```json
+> { "alat_bantu": "A", "alat_bantu_label": "A — Isotech Fast Cal Low (−20…150 °C)" }
+> ```
+>
+> Ada karena dua pembaca respons ini butuh hal berbeda. Lembar kerja yang dibuka
+> lagi butuh `alat_bantu` mentah — dropdown-nya mencocokkan `nilai`, dan nama tiap
+> pilihan sudah datang bareng `GET /api/calibrations/lembar-kerja`. Layar detail
+> admin tidak memuat template itu, jadi di sana `A` tetap `A`.
+>
+> **Jangan salin peta kode→nama ke HP.** Daftarnya bertambah begitu lab membeli
+> dryblock baru, dan peta yang tertinggal menampilkan kode mentah tanpa satu pun
+> error — di layar yang justru dipakai memutuskan penerbitan sertifikat. `null`
+> untuk alat yang tidak punya alat bantu (termasuk Thermohygro) dan untuk kode
+> yang tidak dikenal profilnya.
+>
 > **U95-nya SATU per sesi** (Thermohygro: satu per grup parameter+chamber), dicetak
 > sebagai baris di bawah tabel — bukan kolom per titik. `desimal_u95` tetap dibaca
 > dari respons seperti biasa.

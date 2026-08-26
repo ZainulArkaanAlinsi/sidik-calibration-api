@@ -204,6 +204,25 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
     }
 
     /**
+     * `A`/`B` → nama dryblock-nya, dibaca dari daftar yang sama dengan yang
+     * dikirim ke dropdown teknisi.
+     *
+     * Dinormalkan `strtoupper` supaya sepakat dengan [hitungPerGrup] dan
+     * [peringatanSesi], yang dua-duanya juga menaikkan huruf sebelum
+     * mencocokkan. Kalau di sini nggak ikut, sesi lama yang menyimpan `a`
+     * kecil bakal dihitung budget-nya dengan benar tapi tampil tanpa nama di
+     * layar admin — beda perilaku yang lahir dari satu pemanggilan yang
+     * kelewat.
+     */
+    public function labelAlatBantu(?string $kode): ?string
+    {
+        $blok = collect(self::DRYBLOCK)
+            ->firstWhere('nilai', strtoupper((string) $kode));
+
+        return $blok['label'] ?? null;
+    }
+
+    /**
      * Hitung seluruh sesi sekaligus — budget-nya satu untuk semua titik.
      *
      * Tipe sensor standar, dryblock, dan merk kalibrator dibaca dari SESI &

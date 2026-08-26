@@ -320,6 +320,26 @@ Kalau lolos: teknisi mengisi tabel suhu & %RH untuk alat yang mengukur berat
 jenis, dan U95-nya terbit berlantai CMC kelembapan 4,8 %RH. Nol error di
 sepanjang jalur itu.
 
+### Susulan: tiga field sesi itu kelihatan admin, bukan cuma teknisi
+
+`alat_bantu`, `tipe_pencelupan`, dan `titik_es` sempat cuma hidup di jalur
+lembar kerja teknisi — dipulangkan supaya draf yang dibuka lagi utuh, tapi tidak
+pernah tergambar di layar detail yang dibaca admin sebelum menerbitkan
+sertifikat. Bukan lubang perhitungan: kontribusi titik es tetap kebaca sebagai
+komponen `stabilitas_titik_es` di tabel Type B. Yang hilang tiga keterangan yang
+justru dipakai mengadu sesi dengan lembar cetak di meja.
+
+Status: **selesai** — API menambah `alat_bantu_label`, layar detail mobile
+menampilkan ketiganya.
+
+Satu keputusan yang pantas dicatat: **nama alat bantu diresolusi di SERVER,
+bukan dipetakan ulang di HP.** Kolomnya menyimpan kode (`A`, `B`, `satu`,
+`dua`) yang cuma punya arti di daftar `pilihan` milik profilnya. Peta kode→nama
+yang disalin ke HP gagal dengan cara paling sepi: lab beli dryblock ketiga,
+seseorang menambahkannya ke `DRYBLOCK`, dan layar admin memajang `C` mentah
+tanpa satu pun error. Hook-nya `CalibrationProfile::labelAlatBantu()`, default
+null buat tujuh belas alat lain.
+
 ---
 
 ## Keputusan yang SUDAH diambil
