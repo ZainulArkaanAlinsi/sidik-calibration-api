@@ -703,8 +703,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                             'Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                            hanyaAdmin: true,
-                        ),
+                                                    ),
                     ],
                 ],
                 [
@@ -754,7 +753,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
             ],
         ];
 
-        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk), $equipment);
+        return $this->tautkanStandar($this->isiPilihanThermohygro($bentuk, $equipment), $equipment);
     }
 
     /**
@@ -804,27 +803,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      */
     private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            // DISARING KE LAB PEMILIK ALAT.
-            //
-            // Tanpa ini, baris standar tercetak di lembar bisa tertaut ke master
-            // milik lab LAIN — dan yang ikut ke layar (lalu berpotensi ke
-            // sertifikat) nomor sertifikat & ketertelusuran lab itu. Buat lab
-            // terakreditasi, ketertelusuran yang menunjuk dokumen milik orang
-            // lain itu temuan audit yang paling mahal jenisnya.
-            //
-            // Lebih buruk lagi: `standard_id` yang bocor dipakai buat
-            // menurunkan kalibrator sesi, jadi teknisi lab kedua bakal ditolak
-            // sistem dengan pesan menyebut kolom yang nggak pernah dia ketik.
-            //
-            // Database hari ini masih satu organisasi, jadi belum ada yang
-            // kena. Yang dijaga di sini hari onboarding lab kedua.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) !== 'usage_check') {
@@ -833,26 +812,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $kunci = collect($baris['cocok']);
-
-                    // NAMA duluan, nomor seri belakangan.
-                    //
-                    // Dua baris master bisa berbagi nomor seri — di lab ini
-                    // `23P1005` dipakai baris "Termometer & Sensor Std." (id 13)
-                    // DAN "Temperature Calibrator Yokogawa CA 150 Handy Cal"
-                    // (id 45), karena sensornya memang menempel di kalibrator
-                    // itu. Dengan satu `first()` yang menerima nama ATAU seri,
-                    // yang menang cuma yang ID-nya lebih kecil: baris Yokogawa
-                    // di lembar tertaut ke SENSOR RTD, bukan ke kalibratornya.
-                    //
-                    // Merknya kebetulan sama-sama Yokogawa jadi angkanya nggak
-                    // salah — tapi nomor sertifikat & ketertelusuran yang ikut
-                    // ke lembar diambil dari dokumen alat yang salah.
-                    $cocok = $master->first(
-                        fn (Standard $s): bool => $kunci->contains(fn (string $k): bool => $s->nama === $k),
-                    ) ?? $master->first(
-                        fn (Standard $s): bool => $kunci->contains(fn (string $k): bool => $s->serial_number === $k),
-                    );
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                     return [
                         'label' => $baris['label'],
@@ -908,10 +868,18 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];

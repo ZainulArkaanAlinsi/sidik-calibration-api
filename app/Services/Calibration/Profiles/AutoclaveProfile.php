@@ -210,8 +210,8 @@ class AutoclaveProfile extends CalibrationProfile
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = $this->bentukLengkap();
-        $bentuk = $this->tautkanStandar($bentuk);
-        $bentuk = $this->isiPilihanThermohygro($bentuk);
+        $bentuk = $this->tautkanStandar($bentuk, $equipment);
+        $bentuk = $this->isiPilihanThermohygro($bentuk, $equipment);
 
         if ($untukAdmin) {
             $bentuk['bagian'][] = $this->bagianAdmin();
@@ -710,7 +710,7 @@ class AutoclaveProfile extends CalibrationProfile
             'field' => [
                 $this->field('nomor_order', 'Order Number', 'teks', hanyaAdmin: true),
                 $this->field('certificate.nomor', 'Certificate Number', 'teks', sumber: 'otomatis', hanyaAdmin: true),
-                $this->field('calibration_method_id', 'Calibration Method', 'pilihan', sumber: 'master_metode', hanyaAdmin: true),
+                $this->field('calibration_method_id', 'Calibration Method', 'pilihan', sumber: 'master_metode'),
                 $this->field('suhu.resolusi_alat', 'Resolusi Alat (suhu)', 'angka', satuan: self::SATUAN_SUHU, hanyaAdmin: true),
                 $this->field('tekanan.resolusi_alat', 'Resolusi Alat (tekanan)', 'angka', hanyaAdmin: true),
                 $this->field('standar_dicek.*.keterangan', 'Keterangan Standar', 'teks', hanyaAdmin: true),
@@ -728,15 +728,12 @@ class AutoclaveProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         $tautkan = function (array $baris) use ($master): array {
-            $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                ->contains(fn (string $kunci): bool => $s->nama === $kunci || $s->serial_number === $kunci));
+            $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
             return [
                 'label' => $baris['label'],
@@ -769,10 +766,18 @@ class AutoclaveProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];
