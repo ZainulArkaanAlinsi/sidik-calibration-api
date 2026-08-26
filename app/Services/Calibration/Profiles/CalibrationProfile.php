@@ -334,7 +334,96 @@ abstract class CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    protected function tautkanStandarTitik(array $bentuk): array
+    /**
+     * Master `standards` yang boleh ditautkan ke lembar alat ini.
+     *
+     * SATU PINTU buat kedua belas profil. Sebelum ini tiap profil menyalin
+     * query yang sama, dan salinannya sama-sama kehilangan dua hal:
+     *
+     * **1. Saringan organisasi.** Baris standar tercetak bisa tertaut ke master
+     * milik lab LAIN — dan yang ikut ke layar (lalu berpotensi ke sertifikat)
+     * nomor sertifikat & ketertelusuran lab itu. Buat lab terakreditasi,
+     * ketertelusuran yang menunjuk dokumen milik orang lain itu temuan audit
+     * yang paling mahal jenisnya. Lebih jauh: `standard_id` yang bocor ikut
+     * dipakai menurunkan kalibrator sesi, jadi teknisi lab kedua bakal ditolak
+     * sistem dengan pesan menyebut kolom yang nggak pernah dia ketik.
+     *
+     * **2. Prioritas nama atas serial** — lihat [cocokkanStandar].
+     *
+     * `$equipment` null (uji bentuk, atau lembar generik sebelum alat dipilih)
+     * berarti nggak ada organisasi buat disaring. Itu sah: yang dipakai cuma
+     * label baris, dan sesi belum bisa disimpan tanpa alat.
+     *
+     * @return \Illuminate\Support\Collection<int, Standard>
+     */
+    protected function masterStandarTertaut(?Equipment $equipment): \Illuminate\Support\Collection
+    {
+        return Standard::query()
+            ->whereNull('parameter_kondisi')
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
+            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+    }
+
+    /**
+     * Unit THERMOHYGRO milik lab pemilik alat — isian dropdown
+     * "Environmental Meter Used".
+     *
+     * Kembarannya [masterStandarTertaut], dan saringannya kebalikan:
+     * thermohygro justru DIKENALI dari `parameter_kondisi` yang terisi (di
+     * situlah koreksi suhu/kelembapannya disimpan).
+     *
+     * Saringan organisasinya sama pentingnya. Dropdown yang menawarkan
+     * termohigrometer milik lab lain bukan cuma salah pilihan: `standard_id`
+     * yang kepilih masuk ke sesi, koreksi kondisi lingkungannya dibaca dari
+     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini.
+     *
+     * @return \Illuminate\Support\Collection<int, Standard>
+     */
+    protected function masterThermohygro(?Equipment $equipment, array $kolom = ['id', 'nama', 'parameter_kondisi']): \Illuminate\Support\Collection
+    {
+        return Standard::query()
+            ->whereNotNull('parameter_kondisi')
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
+            ->get($kolom);
+    }
+
+    /**
+     * Cocokkan satu baris standar tercetak ke master: **NAMA dulu, serial
+     * belakangan.**
+     *
+     * Urutan ini bukan kosmetik, dan pelajarannya sudah dibayar dua kali:
+     *
+     * - Empat botol gas Rigas di master Gas Detector ber-S/N `WO0125576` yang
+     *   SAMA (satu order pengisian, empat campuran). Pencarian yang menerima
+     *   serial lebih dulu memulangkan botol paling depan untuk KEEMPAT titik —
+     *   seluruh sertifikat mencetak "Carbon Monoxide (CO)" sebagai gas acuan,
+     *   termasuk baris oksigen.
+     * - Dua baris master lab ini berbagi seri `23P1005`: sensor RTD dan
+     *   kalibrator Yokogawa CA 150 yang menempel padanya. Satu `first()` yang
+     *   menerima nama ATAU serial sekaligus bikin yang menang cuma yang ID-nya
+     *   terkecil, jadi baris Yokogawa di lembar tertaut ke dokumen SENSOR.
+     *   Merknya kebetulan sama jadi angkanya nggak salah — yang salah nomor
+     *   sertifikat & ketertelusurannya.
+     *
+     * Nama selalu lebih spesifik. Buat baris yang serialnya memang unik
+     * hasilnya identik, karena namanya pun cocok.
+     *
+     * @param  \Illuminate\Support\Collection<int, Standard>  $master
+     * @param  list<string>  $kunci
+     */
+    protected function cocokkanStandar(\Illuminate\Support\Collection $master, array $kunci): ?Standard
+    {
+        return $master->first(fn (Standard $s): bool => in_array($s->nama, $kunci, true))
+            ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $kunci, true));
+    }
+
+    protected function tautkanStandarTitik(array $bentuk, ?Equipment $equipment = null): array
     {
         $pasangan = $this->standarPerTitik();
 
@@ -342,9 +431,7 @@ abstract class CalibrationProfile
             return $bentuk;
         }
 
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'serial_number']);
+        $master = $this->masterStandarTertaut($equipment);
 
         $cocokkan = static function (float $titikUkur) use ($pasangan, $master): ?Standard {
             foreach ($pasangan as $p) {

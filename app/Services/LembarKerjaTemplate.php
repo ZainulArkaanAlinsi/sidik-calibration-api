@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 
@@ -84,11 +85,11 @@ class LembarKerjaTemplate
      * @param  bool  $untukAdmin  true = tampilan admin (superset), false = tampilan teknisi
      * @return array<string, mixed>
      */
-    public function phMeter(bool $untukAdmin = false): array
+    public function phMeter(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = $this->bentukLengkap();
-        $bentuk = $this->tautkanStandar($bentuk);
-        $bentuk = $this->isiPilihanThermohygro($bentuk);
+        $bentuk = $this->tautkanStandar($bentuk, $equipment);
+        $bentuk = $this->isiPilihanThermohygro($bentuk, $equipment);
 
         if ($untukAdmin) {
             // Admin dapat semuanya: kolom lembar kerja + kolom administratif
@@ -284,8 +285,7 @@ class LembarKerjaTemplate
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                            hanyaAdmin: true,
-                        ),
+                                                    ),
                     ],
                 ],
                 [
@@ -339,10 +339,18 @@ class LembarKerjaTemplate
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function tautkanStandar(array $bentuk): array
+    private function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
+        // Disaring ke lab pemilik alat, dan dicocokkan NAMA dulu baru serial —
+        // dua aturan yang sama dengan `CalibrationProfile::masterStandarTertaut()`
+        // & `cocokkanStandar()`. Ditulis di sini karena template ini bukan
+        // turunan profil; kalau suatu hari dia jadi turunan, hapus salinan ini.
         $master = Standard::query()
             ->whereNull('parameter_kondisi')   // thermohygro punya bagiannya sendiri
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->get(['id', 'nama', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
@@ -352,9 +360,8 @@ class LembarKerjaTemplate
 
             $bentuk['bagian'][$i]['baris'] = array_map(
                 function (array $baris) use ($master): array {
-                    $cocok = $master->first(fn (Standard $s): bool => collect($baris['cocok'])
-                        ->contains(fn (string $kunci): bool => $s->nama === $kunci
-                            || $s->serial_number === $kunci));
+                    $cocok = $master->first(fn (Standard $s): bool => in_array($s->nama, $baris['cocok'], true))
+                        ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $baris['cocok'], true));
 
                     return [
                         'label' => $baris['label'],
@@ -386,10 +393,18 @@ class LembarKerjaTemplate
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk): array
+    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
+            // Disaring ke lab pemilik alat: dropdown yang menawarkan
+            // termohigrometer lab lain bikin koreksi kondisi lingkungan
+            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
+            // lab ini.
+            ->when(
+                $equipment?->organization_id !== null,
+                fn ($q) => $q->where('organization_id', $equipment->organization_id),
+            )
             ->pluck('id', 'nama');
 
         $pilihan = [];

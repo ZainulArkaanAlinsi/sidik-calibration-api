@@ -293,12 +293,17 @@ class PerhitunganTest extends TestCase
             ->assertJsonPath('data.untuk', 'teknisi')
             ->json('data.bagian'));
 
-        // Metode kalibrasi & nomor order tetap hak admin (spesifikasi poin 1) —
-        // dua-duanya udah TERCETAK/ditentukan kantor, bukan dibaca di lapangan.
-        $this->assertNotContains('calibration_method_id', $kodeTeknisi);
+        // Nomor order tetap hak admin (spesifikasi poin 1) — itu nomor
+        // administratif kantor, bukan sesuatu yang dibaca di lapangan.
         $this->assertNotContains('nomor_order', $kodeTeknisi);
 
-        // Thermohygro SEBALIKNYA: pindah jadi hak teknisi 29 Juli 2026 — dia
+        // Metode kalibrasi PINDAH jadi hak teknisi 26 Agt 2026, sealasan dengan
+        // thermohygro di bawah: itu fakta lapangan, dan sejak alat baru bisa
+        // didaftarkan langsung dari lembar kerja, nggak ada admin yang bisa
+        // mengisinya lebih dulu. Lihat AdminFieldSeparationTest.
+        $this->assertContains('calibration_method_id', $kodeTeknisi);
+
+        // Thermohygro sama: pindah jadi hak teknisi 29 Juli 2026 — dia
         // yang tau unit mana yang kebawa. Lihat AdminFieldSeparationTest.
         $this->assertContains('thermohygro_standard_id', $kodeTeknisi);
 
