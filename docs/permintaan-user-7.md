@@ -141,7 +141,7 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
 |---|---|---|
 | **A** | Nggak ada satu pun jalan mengisi kalibrator sesi Enclosure | **BERES** — server menurunkannya dari baris yang dicentang |
 | **B** | Simpan sebagian menghapus `standard_id` & `tanggal_terima` senyap | **BERES** — dua-duanya cuma ditulis kalau dikirim |
-| **C** | Pencarian standar nggak disaring per lab | **Enclosure BERES**; 12 profil lain **masih terbuka** |
+| **C** | Pencarian standar nggak disaring per lab | **BERES SELURUHNYA** (27 Agt 2026) — 13 tempat, dijaga `StandarTidakBocorAntarLabTest` yang daftarnya dari registry |
 | **D** | Baris Suhu Ruang diadu ke rentang chamber — 20 palsu/sesi | **BERES** — pitanya sendiri, 5–45 °C |
 | **E** | Pesan "titik tidak terhitung" menebak tiga sebab | **BERES** — sebabnya ditanya ke profil |
 | **F** | TITS Measure: 25 tuduhan salah ketik per sesi | **BERES** — TITS nggak diadu ke `equipments.resolusi` |
@@ -158,14 +158,20 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
   3 titik terhitung.
 - **Baris Victor 14+ tetap tercetak** sebagai baris tidak terdaftar.
 
+### ~~C di 12 profil lain~~ — SUDAH BERES (27 Agt 2026)
+
+Polanya (`Standard::query()->whereNull('parameter_kondisi')` tanpa saringan organisasi) sudah
+ditutup di **ketiga belas** tempatnya: Refractometer, Spectrophotometer, Viscometer, Gas
+Detector, TITS, TIDS, Conductivity, DO, Chlorine, Autoclave, Turbidimeter, `EnclosureProfileBase`,
+`LembarKerjaTemplate` (×2), dan pintu bersamanya `CalibrationProfile::masterStandarTertaut()`.
+
+Dijaga `StandarTidakBocorAntarLabTest` + `BatasAntarLabTest` — 41 test, dan daftar profilnya
+**diambil dari registry, bukan ditulis tangan**, jadi profil ke-18 ikut kesapu tanpa ada yang
+perlu ingat menambahkannya. Itu yang bikin perbaikan ini nggak balik lagi: polanya dulu menyebar
+justru karena disalin satu-satu.
+
 ### Yang MASIH terbuka
 
-- **C di 12 profil lain.** Polanya (`Standard::query()->whereNull('parameter_kondisi')` tanpa
-  saringan organisasi) ada di Refractometer, Spectrophotometer ×2, Viscometer, TITS, TIDS,
-  Conductivity, DO, Chlorine, Autoclave, Turbidimeter, `CalibrationProfile`, dan
-  `LembarKerjaTemplate`. **Wajib beres sebelum lab kedua onboarding** — begitu itu terjadi,
-  teknisi lab kedua nggak bisa menyimpan sesi sama sekali. Hari ini database masih satu
-  organisasi, jadi belum ada yang kena.
 - **Rentang inkubator 30–300 °C** perlu dicek ke spesifikasi unit fisiknya — angka itu lebih
   mirip oven. Sesudah D, dia nggak lagi memunculkan peringatan palsu, jadi ini bukan lagi
   penghalang; tetap perlu dibetulkan karena rentang ukur ikut tercetak.
@@ -395,10 +401,10 @@ berkas profil.
 | G1 | Profil dari server (perm. 1a) + lokasi Inlab/Insitu (perm. 2) | **TERKIRIM** (v1.0.42) — perm. 2 jalan di **17/17** profil, dijaga `SemuaProfilLembarKerjaTest` (88 test = 17×5 aturan per-profil + 3 aturan lintas-profil) |
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
-| G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Belum diadu ke layar HP**: yang dibuktikan responsnya sudah berisi, bukan bahwa cabang teks matinya sudah nggak kepakai |
+| G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Sisi HP menyusul** (27 Agt 2026, mobile#114): `thermohygro_dropdown_hidup_test.dart` menjaga dua arah — ada isi → dropdown kegambar, kosong → pesannya. Cakupannya 12 profil, yaitu yang bentuknya beneran dimodelkan mock; lima sisanya jatuh ke bentuk pH di sana, jadi klaim 17/17 tetap di sisi server. Yang ketangkap waktu penjaganya dipasang: bentuk mock Spectro, Visco & Gas punya kolomnya tapi daftar pilihannya KOSONG — di mode mock ketiga lembar itu memajang "belum ada unit" padahal server ngirim tujuh |
 | G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
-| G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (13 test). **Sisi mobile belum** |
+| G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
