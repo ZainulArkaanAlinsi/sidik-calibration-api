@@ -94,6 +94,44 @@ Bahasa Indonesia."*
 
 ---
 
+## 8. Revisi jangan menghapus satu tabel penuh
+
+Ditambahkan pemilik proyek 26 Agt 2026, sesudah menolak satu sesi Inkubator:
+
+> *"misal kalo ada bagian yang di revisi itu jangan di hapus full satu table tapi kasih aja
+> misal bagian yang merah atau gimana lah intinya jangan asal hapus... perhatikan logic nya
+> serta ui nya"*
+
+Dua bagian, dan **dugaan awal saya soal bagian A keliru** — dicatat di sini supaya tidak
+diulang: `terapkanPembacaan()` di HP **sudah ada, sudah dipanggil**
+(`lembar_kerja_screen.dart:411`), mencocokkan per nilai titik ukur, tidak menimpa sel yang
+sudah diketik, dan bertest penuh. Untuk **sepuluh lembar bertabel datar** pemulihan revisi
+sudah jalan sejak lama. Yang benar-benar bolong jauh lebih sempit.
+
+| | Isi | Status |
+|---|---|---|
+| **A** | Sesi yang dikembalikan pulang dengan isinya utuh | **grid Enclosure ditutup** — lihat di bawah |
+| **B** | Yang salah ditandai per SEL, bukan per tabel | **jalan** — `KodeSelRevisi` + `TandaSel.revisi` |
+
+**A — yang bolong cuma grid Enclosure.** Lembar Enclosure tidak punya kolom
+`pembacaan`/`suhu` yang dicari jalur datar; angkanya duduk di sel *(set point, sensor ke-N,
+repeat ke-M)*, dan yang membedakan satu baris dari yang lain justru `sensor_ke`. Barisnya
+**tersimpan lengkap sejak ingest** — yang hilang cuma jalan pulangnya:
+`CalibrationResource` tidak pernah mengirim `sensor_ke`, `peran_sensor`, maupun `channel`.
+Akibatnya teknisi yang lembarnya dikembalikan mengetik ulang 9 termokopel × 5 repeat × tiap
+set point — **180 sel** untuk sesi Inkubator 4 set point, termasuk angka yang sudah benar.
+
+**B — mekanismenya sudah ada, tinggal sumbernya.** Penanda sel kuning
+(`selRendahKeyakinan` + `kunciSel`) sudah dipakai jalur OCR sejak lama. Yang ditambah cuma
+himpunan sejajar yang diisi dari kode sel di `revisi_field`, plus warna kedua
+(`TandaSel.revisi`, merah) yang menang atas kuning: yang satu tebakan mesin, yang satu
+keputusan orang yang akan menandatangani sertifikatnya.
+
+Bentuk kodenya `sel:<tahap>:<titik_ukur>:<kolom>:<pembacaan_ke>` — muat di `max:64` yang
+sudah berlaku, jadi **tidak ada migrasi**.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -166,6 +204,35 @@ Supaya tidak dibangun ulang:
 - Baris CMC TIDS **sudah ter-seed**: 3 rentang (0,86 / 1,4 / 3,1 °C).
 
 ### Jebakan yang sudah terbukti — jangan diulang
+
+- **Penanda yang menempel ke POSISI, bukan ke nilai.** `titik_ke` dan indeks baris itu posisi,
+  dan posisinya geser tiap bentuk lembar berubah — lembar generik Conductivity menyusut begitu
+  alatnya dipilih. Kode sel revisi karena itu dikunci ke **titik ukur**, dan penandanya
+  **disusun ulang tiap `_bangunTitik()`** jalan. Tanpa yang kedua, teknisi membuka lembar
+  revisi tanpa satu pun kotak merah padahal admin sudah menandai — lalu kembali ke jalan aman:
+  mengosongkan tabel dan mengetik ulang semuanya. Persis yang mau dicegah.
+
+- **Satu kunci pilihan untuk banyak temuan sejenis.** `LembarTolak` mengunci pilihan ke
+  `t.kode`, sementara kode mesinnya memang sama untuk temuan sejenis —
+  `pembacaan_di_luar_rentang` muncul sekali per pembacaan. Empat baris di layar menyala-mati
+  bersamaan. Selama yang disumbang cuma prosa itu cuma berisik; begitu temuan menyumbang
+  **kode sel**, admin yang mau menandai satu kotak diam-diam menandai empat — dan tiga di
+  antaranya angka yang justru sudah benar.
+
+- **Kotak teks terisi, nilai di baliknya belum.** `BarisSensorState.pembacaan` (dan
+  `BarisDeretState.nilai`) baru terisi sesudah `bacaUlang()`. Memulihkan grid dengan hanya
+  menulis `TextEditingController.text` menghasilkan layar penuh angka yang oleh
+  `sensorTerisi`, lencana Sensor Acuan, dan daftar peringatan dibaca sebagai **kosong** —
+  sampai teknisi mengetuk satu sel. Payloadnya sendiri selamat (`toSubmission` memanggil
+  `bacaUlang`), jadi yang rusak cuma apa yang dilihat orang: teknisi diberitahu "belum ada
+  termokopel yang diisi" sambil menatap grid yang penuh.
+
+- **Kode sel cuma jujur kalau menunjuk TEPAT SATU baris.** Matriks Autoklaf menaruh delapan
+  baris besaran (`Temp. Disk 1`, `Indikator Pressure`, …) dengan `titik_ukur` **nol semua**.
+  Satu kode yang cuma menyebut titik akan menunjuk delapan kotak sekaligus. Validator
+  menghitung penghuni tiap (tahap, titik ukur, pengulangan) lebih dulu dan **tidak
+  mengeluarkan kode sama sekali** kalau lebih dari satu — temuannya tetap muncul, yang hilang
+  cuma kemampuan mengetuknya jadi penanda.
 
 - **Jatuh diam-diam ke profil pH.** Nama alat yang tidak cocok memulangkan profil pH tanpa error;
   teknisi mengisi lembar pH untuk alat lain. Ejaan TIDS yang mengikat:
