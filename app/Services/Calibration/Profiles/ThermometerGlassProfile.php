@@ -372,7 +372,7 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                             '2. Pembacaan Standard',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            'Data Hasil Pengukuran',
                             labelPengulangan: ThermocoupleProfile::LABEL_STANDAR,
                         ),
                         $this->tabelPembacaan(
@@ -380,7 +380,7 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                             '3. Pembacaan UUT',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            'Data Hasil Pengukuran',
                             labelPengulangan: ThermocoupleProfile::LABEL_UUT,
                         ),
                     ],

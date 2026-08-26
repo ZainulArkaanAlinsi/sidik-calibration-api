@@ -178,7 +178,13 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             $bentuk['bagian'][] = $this->bagianAdmin();
         }
 
-        return $this->tautkanStandarTitik($this->tautkanStandar($this->isiPilihanThermohygro($bentuk)));
+        // `$equipment` diteruskan ke DUA-DUANYA, dan itu saringan organisasi —
+        // bukan argumen kosmetik. Tanpa dia, baris standar lembar ini tertaut
+        // ke master milik lab LAIN; lihat `masterStandarTertaut()`.
+        return $this->tautkanStandarTitik(
+            $this->tautkanStandar($this->isiPilihanThermohygro($bentuk, $equipment), $equipment),
+            $equipment,
+        );
     }
 
     /**
@@ -282,14 +288,18 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
      * "Belum ada unit thermohygro terdaftar". Sudah pernah kejadian di 7 dari 17
      * lembar sekaligus; dijaga `ThermohygroSemuaLembarTest`.
      *
+     * Daftarnya lewat [masterThermohygro] — TERSARING ORGANISASI. Query
+     * telanjang di sini menawarkan termohigrometer milik lab lain, dan yang
+     * kepilih tidak berhenti di dropdown: `standard_id`-nya masuk ke sesi,
+     * koreksi kondisi lingkungannya dibaca dari sertifikat lab itu, lalu
+     * angkanya kecetak di sertifikat lab INI.
+     *
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    protected function isiPilihanThermohygro(array $bentuk): array
+    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            ->pluck('id', 'nama');
+        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
 
         $pilihan = [];
 
@@ -317,21 +327,25 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
     /**
      * Cocokin baris STANDARD tercetak ke master `standards` lab.
      *
-     * Kunci NAMA dicoba lebih dulu, baru serial — dan itu bukan gaya penulisan.
-     * Satu `first()` yang menerima dua kunci sekaligus memilih yang ID-nya
-     * terkecil, dan di lab ini dua baris master berbagi seri `23P1005` (sensor
-     * RTD dan kalibrator Yokogawa yang menempel padanya). Digabung dalam satu
-     * lolos, baris Yokogawa tertaut ke dokumen sensor: merknya kebetulan sama
-     * jadi angkanya tidak salah, yang salah nomor sertifikat & ketertelusurannya.
+     * Master-nya diambil lewat [masterStandarTertaut], bukan query sendiri.
+     * Versi pertama berkas ini MENYALIN query-nya — dan ikut menyalin lubang
+     * yang sudah ditutup untuk tiga belas profil lain: tanpa saringan
+     * organisasi, baris standar di sini tertaut ke master milik lab LAIN, dan
+     * yang ikut ke layar nomor sertifikat & ketertelusuran lab itu. Persis
+     * kejadian yang diramalkan `StandarTidakBocorAntarLabTest`: *"profil ke-18
+     * bakal menyalin salinan yang mana pun yang kebetulan dia lihat."*
+     *
+     * Pencocokannya juga lewat [cocokkanStandar] — nama dulu, baru serial.
+     * Aturan yang sama, dan alasannya lahir sebagian dari lembar INI: dua baris
+     * master lab berbagi seri `23P1005` (sensor RTD dan kalibrator Yokogawa
+     * yang menempel padanya).
      *
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    protected function tautkanStandar(array $bentuk): array
+    protected function tautkanStandar(array $bentuk, ?Equipment $equipment = null): array
     {
-        $master = Standard::query()
-            ->whereNull('parameter_kondisi')
-            ->get(['id', 'nama', 'merk', 'serial_number', 'no_sertifikat', 'tertelusur_ke']);
+        $master = $this->masterStandarTertaut($equipment);
 
         foreach ($bentuk['bagian'] as $i => $bagian) {
             if (($bagian['kode'] ?? null) !== 'usage_check') {
@@ -339,11 +353,8 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             }
 
             $bentuk['bagian'][$i]['baris'] = array_map(
-                static function (array $baris) use ($master): array {
-                    $kunci = $baris['cocok'];
-
-                    $cocok = $master->first(fn (Standard $s): bool => in_array($s->nama, $kunci, true))
-                        ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $kunci, true));
+                function (array $baris) use ($master): array {
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
 
                     return [
                         'label' => $baris['label'],
@@ -355,10 +366,7 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
                         'terdaftar' => $cocok !== null,
                     ];
                 },
-                array_map(
-                    static fn (array $b): array => $b,
-                    $this->standardTercetak(),
-                ),
+                $this->standardTercetak(),
             );
         }
 

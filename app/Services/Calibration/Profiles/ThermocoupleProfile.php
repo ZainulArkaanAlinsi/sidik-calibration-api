@@ -319,7 +319,15 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
         $blok = collect(self::DRYBLOCK)->firstWhere('nilai', $dryblock);
 
         if ($blok !== null) {
-            $diLuar = $sesi->rawMeasurements()
+            // Relasi dibaca sebagai PROPERTI (`->rawMeasurements`), bukan
+            // dipanggil sebagai method (`->rawMeasurements()`), dan bedanya
+            // bukan gaya. `HasOneOrMany::getResults()` memulangkan koleksi
+            // kosong tanpa nembak database kalau kunci induknya null; method-nya
+            // memulangkan query builder yang melewati penjaga itu, lalu jalan
+            // dengan `where calibration_session_id is null`. Sesi yang belum
+            // tersimpan — persis yang dipakai `PeringatanProfilBentukTest` —
+            // bikin peringatan ini meledak, bukan pulang kosong.
+            $diLuar = $sesi->rawMeasurements
                 ->where('peran_sensor', 'uut')
                 ->pluck('titik_ukur')
                 ->map(static fn ($v): float => (float) $v)
@@ -430,7 +438,7 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard',
                                 self::TITIK_SARAN,
                                 self::SATUAN,
-                                'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                                'Data Hasil Pengukuran',
                                 labelPengulangan: self::LABEL_STANDAR,
                             ),
                             // Kolom tambahan yang cuma alat ini punya: tiap baris
@@ -446,7 +454,7 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                             'Pembacaan UUT',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran/Pengulangan (PRT1…PRT5)',
+                            'Data Hasil Pengukuran',
                             labelPengulangan: self::LABEL_UUT,
                         ),
                     ],

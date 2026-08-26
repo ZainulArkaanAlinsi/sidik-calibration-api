@@ -299,7 +299,15 @@ class ThermohygroProfile extends ProfilSuhuPasangan
         // Titik kelembapan yang jatuh persis di ambang dua chamber. Bukan error,
         // tapi teknisi perlu tahu chamber mana yang budget-nya kepakai.
         $ambang = ThermohygroCalculator::AMBANG_CHAMBER_RH;
-        $diAmbang = $sesi->rawMeasurements()
+        // Relasi dibaca sebagai PROPERTI (`->rawMeasurements`), bukan
+        // dipanggil sebagai method (`->rawMeasurements()`), dan bedanya
+        // bukan gaya. `HasOneOrMany::getResults()` memulangkan koleksi
+        // kosong tanpa nembak database kalau kunci induknya null; method-nya
+        // memulangkan query builder yang melewati penjaga itu, lalu jalan
+        // dengan `where calibration_session_id is null`. Sesi yang belum
+        // tersimpan — persis yang dipakai `PeringatanProfilBentukTest` —
+        // bikin peringatan ini meledak, bukan pulang kosong.
+        $diAmbang = $sesi->rawMeasurements
             ->where('peran_sensor', 'standar')
             ->pluck('titik_ukur')
             ->map(static fn ($v): float => (float) $v)
@@ -402,7 +410,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard [CHAMBER BIOBASE]',
                                 self::TITIK_SUHU,
                                 self::SATUAN_SUHU,
-                                'Data Hasil Pengukuran/Pengulangan (X1…X5)',
+                                'Data Hasil Pengukuran',
                                 grup: 'suhu_standar',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_SUHU,
@@ -413,7 +421,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                                 'Pembacaan UUT',
                                 self::TITIK_SUHU,
                                 self::SATUAN_SUHU,
-                                'Data Hasil Pengukuran/Pengulangan (X1…X5)',
+                                'Data Hasil Pengukuran',
                                 grup: 'suhu_uut',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_SUHU,
@@ -432,7 +440,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard',
                                 self::TITIK_RH,
                                 self::SATUAN_RH,
-                                'Data Hasil Pengukuran/Pengulangan (X1…X5)',
+                                'Data Hasil Pengukuran',
                                 grup: 'kelembaban_standar',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_KELEMBABAN,
@@ -454,7 +462,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                                 'Pembacaan UUT',
                                 self::TITIK_RH,
                                 self::SATUAN_RH,
-                                'Data Hasil Pengukuran/Pengulangan (X1…X5)',
+                                'Data Hasil Pengukuran',
                                 grup: 'kelembaban_uut',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_KELEMBABAN,
