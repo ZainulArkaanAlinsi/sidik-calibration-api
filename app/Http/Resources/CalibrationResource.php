@@ -303,6 +303,33 @@ class CalibrationResource extends JsonResource
                         // Suhu larutan waktu pembacaan diambil — kolom °C di
                         // sebelah kolom pH di lembar kerja.
                         'suhu' => $m->suhu,
+                        // Koordinat GRID buat lembar Enclosure. Tanpa dua kunci
+                        // ini, sesi Enclosure yang dikembalikan admin pulang
+                        // dengan grid KOSONG.
+                        //
+                        // Sepuluh lembar bertabel datar pulih benar sejak lama:
+                        // `terapkanPembacaan()` di HP mencocokkan per titik ukur
+                        // lalu menaruh angkanya di kolom `pembacaan`/`suhu`.
+                        // Lembar Enclosure nggak punya kolom itu — angkanya
+                        // duduk di sel (sensor ke-N, repeat ke-M) di dalam grid
+                        // termokopel, dan yang membedakan baris satu dari yang
+                        // lain justru `sensor_ke`.
+                        //
+                        // Baris grid-nya SUDAH tersimpan lengkap sejak ingest
+                        // (`sensor_ke` + `peran_sensor` ditulis di
+                        // `CalibrationController`), cuma nggak pernah ikut
+                        // pulang. Jadi teknisi yang lembarnya dikembalikan
+                        // mengetik ulang 9 termokopel x 5 repeat x tiap set
+                        // point — 180 sel buat sesi Inkubator 4 set point, dan
+                        // yang diketik ulang termasuk angka yang sudah benar.
+                        //
+                        // `peran_sensor` ikut karena grid nggak cuma termokopel:
+                        // baris Suhu Ruang duduk di tabel yang sama dengan peran
+                        // yang beda, dan menaruhnya di kotak termokopel bikin
+                        // angka mendarat di sel yang salah — persis kegagalan
+                        // yang paling mahal di produk ini.
+                        'sensor_ke' => $m->sensor_ke,
+                        'peran_sensor' => $m->peran_sensor,
                         'input_source' => $m->input_source,
                         'is_verified' => $m->is_verified,
                         'photo_path' => $m->photo_path,
