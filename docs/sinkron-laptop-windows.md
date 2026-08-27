@@ -213,6 +213,61 @@ bukan cuma punyamu. Aturan lengkapnya ada di `README.md` bagian "Kerja Berdua".
 
 ---
 
+## 5b. VS Code melaporkan ratusan "Undefined type" padahal kodenya benar
+
+Gejalanya begini — satu berkas Filament biasa, belasan garis merah:
+
+```
+P1009  Undefined type 'Filament\Resources\Resource'.
+P1009  Undefined type 'Filament\Support\Icons\Heroicon'.
+P1009  Undefined type 'Illuminate\Database\Eloquent\Model'.
+P1037  'App\Filament\Resources\Customers\CustomerResource' does not implement method 'getModel'
+P1013  Undefined method 'route'.
+```
+
+**Berkasnya tidak salah, dan tidak ada yang perlu diubah di kodenya.** Yang salah
+Intelephense belum melihat `vendor/`.
+
+Kuncinya baris `Illuminate\Database\Eloquent\Model`. Itu kelas INTI Laravel — kalau
+satu saja paket di `vendor/` sudah terindeks, dia pasti ketemu. Jadi begitu Laravel
+sendiri dilaporkan "undefined", yang hilang bukan satu paket, tapi seluruh isi
+`vendor/`. Dua turunannya menyusul sendiri dan sama-sama menyesatkan:
+
+- `P1037 does not implement method 'getModel'` — `Resource` induknya tidak terbaca,
+  jadi method abstract-nya dikira belum diimplementasi.
+- `P1013 Undefined method 'route'` — `Pages\CreateCustomer::route()` diwarisi dari
+  `Filament\Resources\Pages\Page`, yang juga di `vendor/`.
+
+`vendor/` memang **tidak ikut `git pull`** (§1) — dan itu yang bikin gejala ini muncul
+persis sesudah clone baru atau sesudah pull yang menyentuh `composer.json`.
+
+Urutan yang membereskannya, dari yang paling sering kena:
+
+```bash
+# 1. Pasang dependency-nya. Ini yang hilang di sebagian besar kasus.
+composer install
+
+# 2. Buktikan berkasnya beneran ada — dua-duanya wajib muncul.
+ls vendor/filament/filament/src/Resources/Resource.php
+ls vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php
+```
+
+Kalau kedua berkas itu ADA tapi merahnya belum hilang, yang tertinggal indeksnya:
+**Ctrl+Shift+P → `Intelephense: Index workspace`**, lalu tunggu sampai bilah statusnya
+selesai. Indeks pertama di repo sebesar ini makan waktu beberapa menit.
+
+> **Jangan** membetulkannya dengan menambah `use` baru, mengganti nama kelas, atau
+> menghapus `abstract`-nya. Garis merahnya milik editor, bukan milik kodenya — dan
+> perubahan yang "menghilangkan merah" di situ justru yang merusak berkas yang tadinya
+> benar. Buktinya murah: `php -l app/Filament/Resources/Customers/CustomerResource.php`
+> dan `php artisan test` dua-duanya hijau di berkas yang sama.
+
+Cara membedakannya dari merah yang BENERAN perlu diurus: yang ini menyebut kelas dari
+`vendor/` (`Filament\…`, `Illuminate\…`). Yang menyebut kelas `App\…` milik kita
+sendiri memang perlu dibaca.
+
+---
+
 ## 6. Kalau mau benar-benar semuanya, termasuk yang di-ignore
 
 Untuk aplikasi berjalan, isi bab ini **tidak diperlukan**. Ini hanya kalau kamu mau
