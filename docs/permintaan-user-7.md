@@ -612,11 +612,42 @@ Ditelusuri, dan gejalanya persis apa adanya. Dari **20 lembar: 7 tidak punya tom
 sekali, 3 punya tombol yang MUSTAHIL menghasilkan satu sel pun, dan 10 sisanya punya jalur jangkar
 yang bisa ketemu.** Tiga sebab yang beda, dan cuma satu yang selama ini tercatat.
 
-> **Batas klaim ini.** Yang bisa dibuktikan dari sini cuma dua yang pertama — keduanya keputusan
-> kode, dan dua-duanya diuji. Buat kesepuluh sisanya, yang dibuktikan cuma "jangkarnya ADA di
-> jalur yang dikenali" (`Xn` / `Repeat n` / deret nomor polos / kepala slot). Apakah tulisan itu
-> beneran kecetak di kertas lab cuma bisa dijawab jepretan nyata; sejauh ini yang diadu ke foto
-> asli baru Viscometer (`integration_test/foto_tabel_viscometer_hp_test.dart`) dan Conductivity.
+> **Batas klaim ini — dibetulkan 27 Agt 2026, karena versi sebelumnya di sini SALAH.**
+>
+> Yang dibuktikan seluruh pekerjaan §12 ini **PENEMPATAN, bukan PEMBACAAN**: kalau ML Kit
+> memulangkan teks `"97,3"` di koordinat tertentu, angka itu pasti mendarat di sel yang benar —
+> atau ditolak dan dilaporkan. Itu yang dijaga delapan berkas test foto.
+>
+> **Bahwa ML Kit bisa membaca tulisan tangan dari foto kertas: NOL bukti.** Kedelapan berkas test
+> itu menyuapkan pasangan `(teks, kotak)` yang **ditulis test itu sendiri** — nggak satu pun lewat
+> OCR beneran.
+>
+> Paragraf ini sebelumnya menulis *"yang diadu ke foto asli baru Viscometer dan Conductivity"*.
+> Itu keliru, dan keliru di dua-duanya:
+>
+> | Aset | Isinya sebenarnya |
+> |---|---|
+> | `test/assets/tabel-viscometer-uji.png` | **Render komputer**, angka KETIKAN, lurus sempurna, latar putih bersih. Bukan foto |
+> | `test/assets/lembar-conductivity-v1.png` | Template bermarker hasil `ocr:cetak-lembar` — **KOSONG**, nol angka di dalamnya |
+>
+> Nggak ada satu pun berkas foto (`.jpg`/`.heic`) di seluruh repo mobile, dan nggak ada satu pun
+> citra bertulisan tangan. Jadi yang belum pernah diuji itu justru **satu-satunya hal yang
+> menentukan fiturnya berguna atau tidak di lapangan.**
+>
+> **Kalau OCR-nya jelek, gagalnya ke arah mana.** Jangkar baris & kolom (`Set point 1`, `X1`,
+> `0" (UUT1)`, `Temp. Disk 1`) itu TERCETAK, jadi besar kemungkinan kebaca; angkanya tulisan
+> tangan. Hasil paling mungkin: tabel dikenali, sedikit/nol sel terisi, dan aplikasi bilang begitu
+> — **bikin kesal, bukan bikin salah**. Yang berbahaya salah baca yang tetap berbentuk angka wajar
+> (`4,04` → `404`, kasus yang docblock `ambil_foto_tabel.dart` sendiri sudah sebut). Penahannya
+> tiga, semuanya heuristik: pemeriksaan beda orde (faktor 10), pemeriksaan satu Repeat menyimpang
+> dari saudaranya, dan tiap sel hasil kamera **ditandai kuning "PERIKSA"**
+> (`_isiSel(..., perluDicek: true)`).
+>
+> Jadi rancangannya: kamera itu **jalan pintas mengetik yang wajib dicek teknisi**, bukan sumber
+> angka yang dipercaya. Klaim yang jujur buat pekerjaan ini **"jalur kameranya lengkap dan
+> penempatannya benar di 20 dari 20 lembar"** — BUKAN "difoto langsung dapat angkanya".
+>
+> **Yang menyelesaikannya tetap F1: satu foto HP dari satu lembar yang sudah diisi tangan.**
 
 ### Yang sebenarnya jalan di HP hari ini — cuma SATU tombol
 
@@ -965,7 +996,7 @@ Jangan ditanyakan ulang.
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
-| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **14 dari 20** berkas geometri. **Berhenti jadi blocker 27 Agt 2026** — jalur lembar bermarker yang digerbanginya sudah tidak punya pintu masuk di aplikasi (§12). Tetap dibutuhkan kalau jalur itu dipasang lagi |
+| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | Berhenti menggerbangi jalur lembar bermarker (sudah dicabut dari aplikasi, §12) — tapi **naik lagi jadi satu-satunya hal yang menahan klaim jalur ML Kit** (§12, "Batas klaim ini"). Nggak ada satu pun foto asli maupun citra bertulisan tangan di repo mobile, jadi yang belum pernah diuji justru yang menentukan fiturnya berguna di lapangan atau tidak |
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
