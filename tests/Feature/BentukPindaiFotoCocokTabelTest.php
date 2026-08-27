@@ -193,6 +193,20 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
      * kali. Yang menjaga sisi HP-nya `foto_tabel_kepala_tercetak_test.dart` di
      * repo mobile; yang dijaga di sini sumbernya, supaya lembar berikutnya
      * nggak lahir dengan dua kolom bernama sama.
+     *
+     * ## DUA kunci dibaca, dan kenapa yang kedua justru yang paling perlu
+     *
+     * Tulisan yang sama dikirim di bawah dua nama kunci: `pengulangan_arah`
+     * (TITS) dan `pengulangan_uut` (TIDS). Isinya konsep yang sama persis —
+     * tulisan yang tercetak di atas tiap kolom pengulangan — dan namanya beda
+     * cuma karena lembar TIDS mendarat belakangan.
+     *
+     * Yang cuma membaca kunci pertama melewat lembar dengan kolom TERBANYAK
+     * (5 per tabel × 2 tabel) — dan itu justru satu-satunya lembar yang
+     * kolomnya TIDAK punya jangkar cadangan: TIDS nggak nyetak `Xn` maupun
+     * nomor polos, jadi label ini satu-satunya yang dipunya. Label kembar di
+     * sana bukan "salah satu jangkar jadi undian", tapi seluruh sumbu
+     * mendatarnya.
      */
     #[DataProvider('semuaProfil')]
     public function test_kepala_kolom_pengulangan_unik_per_tabel(CalibrationProfile $profil): void
@@ -205,9 +219,11 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
             foreach ($bagian['tabel'] ?? [] as $tabel) {
                 $label = [];
 
-                foreach ($tabel['pengulangan_arah'] ?? [] as $arah) {
-                    if (isset($arah['label'])) {
-                        $label[] = $arah['label'];
+                foreach (['pengulangan_arah', 'pengulangan_uut'] as $kunci) {
+                    foreach ($tabel[$kunci] ?? [] as $kolom) {
+                        if (isset($kolom['label'])) {
+                            $label[] = $kolom['label'];
+                        }
                     }
                 }
 
@@ -228,8 +244,53 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
             }
         }
 
-        // Profil yang nggak mengirim `pengulangan_arah` sama sekali memang boleh;
-        // kolomnya dijangkar `Xn` / nomor polos di sisi HP.
+        // Profil yang nggak mengirim satu pun dari dua kunci itu memang boleh;
+        // kolomnya dijangkar `Xn` / nomor polos di sisi HP. Lantai lintas
+        // registry-nya ditegakkan terpisah, di bawah.
         $this->assertGreaterThanOrEqual(0, $diperiksa);
+    }
+
+    /**
+     * Penjaga LANTAI buat sapuan di atas.
+     *
+     * Sapuan yang daftarnya datang dari bentuk lembar punya satu cara gagal
+     * yang nggak bersuara: kunci yang dibacanya diganti nama, tiap profil
+     * pulang nol label, dan PHPUnit tetap menulis "OK" — cuma tanpa memeriksa
+     * apa pun. Sudah nyaris kejadian: sapuan itu semula cuma membaca
+     * `pengulangan_arah`, dan lembar dengan kolom terbanyak (TIDS,
+     * `pengulangan_uut`) diam-diam nggak pernah kesapu.
+     *
+     * Dihitung LINTAS profil, bukan per profil: delapan belas lembar memang
+     * nggak mengirim keduanya, dan menuntut tiap profil punya label bikin test
+     * ini menolak lembar yang benar.
+     */
+    public function test_sapuan_keunikan_beneran_kesampe_tabelnya(): void
+    {
+        Organization::factory()->create();
+
+        $registry = app(CalibrationProfileRegistry::class);
+        $berlabel = [];
+
+        foreach ($registry->semua() as $profil) {
+            foreach ($profil->bentukLembarKerja()['bagian'] ?? [] as $bagian) {
+                foreach ($bagian['tabel'] ?? [] as $tabel) {
+                    foreach (['pengulangan_arah', 'pengulangan_uut'] as $kunci) {
+                        if (($tabel[$kunci] ?? []) !== []) {
+                            $berlabel[] = $profil->kode().'/'.$kunci;
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->assertGreaterThanOrEqual(
+            3,
+            count($berlabel),
+            'Cuma '.count($berlabel).' tabel berlabel kolom yang kesapu ('
+            .implode(', ', array_unique($berlabel)).'), di bawah lantai 3 '
+            .'(TITS `pengulangan_arah`, dua tabel TIDS `pengulangan_uut`). '
+            .'Kalau kuncinya emang diganti nama, ganti juga yang dibaca sapuan '
+            .'di atas — bukan cuma angka ini.',
+        );
     }
 }

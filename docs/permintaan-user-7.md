@@ -775,7 +775,7 @@ kotak `Setpoint` sendiri** yang diisi teknisi — persis kertasnya.
 
 Kenapa pilihan itu tidak bisa diambil sambil ngoding: `titikUkur` di HP yang dikirim sebagai
 `measurements[].titik_ukur`. Menambal parser dengan memberi baris null sebuah angka (nomor
-barisnya, 1..7) **membuat bug yang lebih buruk** — set point sesi terkirim sebagai "1 °C … 7 °C",
+barisnya, 1–7) **membuat bug yang lebih buruk** — set point sesi terkirim sebagai "1 °C … 7 °C",
 angka yang tidak pernah diketik siapa pun dan tidak ditolak apa pun.
 
 Yang dikerjakan:
@@ -898,7 +898,7 @@ Lima yang beneran menggigit, satu yang dipasang sebagai jaring:
 
 | Temuan | Akibat kalau dibiarkan |
 |---|---|
-| **Draf TIDS yang dibuka ulang tampil kosong** | Yang dikirim `titikUkurEfektif` (`121,5`); yang mencari `_titikTerdekat` di kunci `titik` yang isinya NOMOR BARIS (1..7). Tidak pernah ketemu, tiap baris kehitung `kebuang`. Di sesi revisi: yang dikirim balik ke admin cuma sisa yang sempat diketik ulang dari kertas |
+| **Draf TIDS yang dibuka ulang tampil kosong** | Yang dikirim `titikUkurEfektif` (`121,5`); yang mencari `_titikTerdekat` di kunci `titik` yang isinya NOMOR BARIS (1–7). Tidak pernah ketemu, tiap baris kehitung `kebuang`. Di sesi revisi: yang dikirim balik ke admin cuma sisa yang sempat diketik ulang dari kertas |
 | **Penjaga orde menolak angka yang sah** | `adaPembacaanJauhDariTitik` mengadu pembacaan ke nomor baris. Set point 121,5 dengan pembacaan 121,5 kena rasio 121,5 dan barisnya ditahan — penjaga yang melatih teknisi menekan "lanjut" tanpa membaca |
 | **Set point cacat membuang seluruh baris diam-diam** | Kotaknya menerima `12..5` / `1-2` / `--3`; `parseAngka` pulang null, `siapKirim` false, dan kelima kotak pembacaan yang sudah diisi ikut hilang. Sekarang kotaknya dibatasi seperti sel angka lain, DAN ada penjaga yang menahan sebelum kirim |
 | **Set point yang baru diketik hilang tanpa konfirmasi** | `TitikState.adaIsian` tidak membaca kotak `Setpoint`, jadi lembar yang ketujuh set point-nya sudah diisi masih dianggap perawan waktu teknisi menekan back |
