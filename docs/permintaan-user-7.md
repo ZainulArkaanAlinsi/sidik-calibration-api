@@ -673,25 +673,89 @@ Sekarang batasnya setengah lebar kolom, sama dengan jalur ke-bawah. Yang di luar
 ikut kehitung `angkaTakTerpetakan`, jadi teknisi diberitahu ada yang tidak keangkut — persis janji
 yang sudah tertulis di docblock `petakan`: *kolom yang kepalanya nggak kebaca nggak pernah keisi.*
 
-### Sebab 3 — tujuh lembar memang belum punya jalur kamera sama sekali
+### Sebab 3 — tujuh lembar belum punya jalur kamera sama sekali → tinggal SATU
 
 `pindai_foto.didukung = false` di **Autoklaf, TIDS, dan kelima Enclosure** (Oven, Bath, Inkubator,
-Furnace, Refrigerator). Ini **bukan bug** — keputusan yang diambil sadar waktu tombol lembar penuh
-dicabut, dan alasannya berdiri: dua penanda bentuk yang dikirim server cuma sanggup menggambarkan
-lembar "titik ukur × Repeat", sementara kertas ketujuhnya matriks (Autoklaf), dua tabel interval
-(TIDS), atau grid tiga sumbu set point × sensor × repeat (Enclosure).
+Furnace, Refrigerator), dan penanda itu **tetap `false` sampai sekarang** — dengan benar: dia
+menjawab pertanyaan "kertas alat ini muat di bentuk *titik ukur × Repeat* yang bisa dituturkan ke
+pembaca foto?", dan buat ketujuhnya jawabannya memang tidak.
 
-Menyalakannya begitu saja bukan bikin hasilnya jelek — bikin hasilnya **salah tapi wajar**, dan
-itu yang lolos sampai sertifikat. Jadi ketujuhnya butuh sumbu ketiga di pemetanya, bukan saklar
-yang dibalik. **Belum dikerjakan** — lihat §Yang MASIH menunggu, K17.
+Yang dikerjakan bukan membalik penanda itu, tapi **memberi dua bentuk kertas itu jangkar barisnya
+sendiri**:
+
+| Kertas | Sumbu | Jangkar barisnya sekarang |
+|---|---|---|
+| **Grid** (kelima Enclosure) | set point × termokopel × pengulangan | **nomor termokopel** yang sudah diketik teknisi; sumbu KETIGA-nya dari blok tempat tombolnya ditekan, bukan dari citra |
+| **Matriks** (Autoklaf) | besaran × titik waktu | **tulisan nama besaran** (`Temp. Disk 1`, `Indikator Pressure`) di kolom kiri |
+| **Dua tabel interval** (TIDS) | set point × UUT | **belum** — tertahan K18, barisnya sendiri belum sampai ke layar |
+
+Dua hal yang bikin ini aman, dan dua-duanya aturan yang sudah berlaku di seluruh pemeta:
+
+1. **Baris yang jangkarnya nggak kebaca nggak pernah keisi.** Termokopel yang nomornya belum
+   diketik, atau baris matriks yang namanya kepotong dari frame, dilewat — bukan ditarik ke baris
+   terdekat. Yang kebuang dilaporkan sebagai "ada yang nggak keangkut".
+2. **Sumbu yang nggak bisa dibaca aman dari citra diambil dari LAYAR.** Aturan yang sama sudah
+   dipakai lembar Conductivity buat slot bersatuan dobel: yang dituju titik yang lagi dicentang
+   teknisi, bukan ditebak dari angka yang kebaca.
+
+Baris `Time` di matriks Autoklaf ikut jadi jangkar tapi **tidak pernah diisi**: isinya jam
+(`HH:mm:ss`), bukan hasil ukur. Dia ikut justru supaya angka yang kebetulan jatuh di barisnya
+diklaim lalu dibuang — bukan melayang ke baris `Temp. Disk 1` di bawahnya.
+
+Dijaga `foto_grid_enclosure_test.dart` (10 test) & `foto_matriks_autoclave_test.dart` (5 test).
+Dua-duanya dibuktikan menggigit: penanda baris matriks dikembalikan ke `titik_ukur` aslinya (nol
+semua) → **0 dari 5 baris kejangkar**; jalur label kata dimatikan → baris `Indikator` & `Suhu
+Ruang` grid hilang, 15 dari 25 sel.
 
 ### Hitungannya sebelum & sesudah
 
 | | Sebelum | Sesudah |
 |---|---|---|
-| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **13** dari 20 |
+| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **19** dari 20 |
 | Tombol nyala tapi mustahil dapat satu sel pun | 3 (TITS, Thermocouple, Termometer Gelas) | 0 |
-| Belum punya jalur kamera sama sekali | 7 | 7 (butuh pemeta grid/matriks — K17) |
+| Belum punya jalur kamera sama sekali | 7 | **1** (TIDS — tertahan K18, bukan pemetanya) |
+
+### K18 — lembar TIDS terbuka dengan NOL baris, dan itu bukan soal kamera
+
+Ketemu waktu menyiapkan jalur kamera buat ketujuh lembar itu, dan jauh lebih mahal daripada yang
+dicari.
+
+`TidsProfile` mengirim `titik_ukur: null` di **ketujuh** barisnya, di dua tabel sekaligus — dan itu
+disengaja serta terdokumentasi: kertasnya mencetak tujuh baris set point KOSONG, jadi angkanya
+ditentukan teknisi di lapangan (`titik_bisa_diubah: true`).
+
+Sisi HP membacanya `(json['titik_ukur'] as num).toDouble()` — **cast keras**. Baris ber-null bikin
+dia melempar, `parseListAman` menelan lemparannya, dan barisnya **dilewat diam-diam**. Jadi lembar
+TIDS terbuka dengan dua kepala tabel dan nol kotak isian, tanpa satu pun error.
+
+| Yang dicek | Hasil |
+|---|---|
+| `TabelHasil.fromJson` disuapi baris TIDS asli | `baris` → **`[]`** |
+| Kenapa nggak ketangkap penjaga | `MockLembarKerjaService` **nggak punya bentuk TIDS sama sekali** — satu-satunya sumber bentuknya server, dan nggak ada test yang menyuapkan bentuk aslinya ke parser |
+| Kelas kegagalannya | sama persis dengan `CalibrationHistoryItem`: *"draf tanpa tanggal cast-nya melempar, `parseListAman` nelen lemparannya, dan barisnya DILEWAT diam-diam"* |
+
+Dijaga sekarang oleh `tids_baris_tanpa_titik_test.dart` — **MERAH hari ini, sengaja dibiarkan
+merah**: dia menyatakan perilaku yang benar, dan perbaikannya butuh satu keputusan yang bukan
+keputusan yang lagi ngoding.
+
+**Yang perlu diputuskan pemilik lab.** `titikUkur` di HP itu yang dikirim sebagai
+`measurements[].titik_ukur`. Menambal parser dengan memberi baris null sebuah angka (nomor
+barisnya, 1..7) **membuat bug yang lebih buruk**: set point sesi terkirim sebagai "1 °C … 7 °C",
+angka yang tidak pernah diketik siapa pun dan tidak ditolak apa pun. Dua jalan keluar yang benar:
+
+| | Bentuknya di layar | Yang perlu diubah |
+|---|---|---|
+| **A** | Tujuh baris tetap digambar, tiap baris punya kotak `Setpoint` sendiri yang diisi teknisi — persis kertasnya | `titikUkur` jadi nullable sampai ke payload; baris tanpa set point tidak ikut dikirim |
+| **B** | Teknisi menyusun daftar set point lewat `PengaturTitik` (cara TITS), barisnya lahir dari situ | lebih kecil, tapi layarnya berhenti mirip kertas — dan kertas TIDS-nya `SIDIK-FM-CAL-0506 Rev.4`, formulir terkendali |
+
+Jalur B **sudah setengah jalan** hari ini: `titik_bisa_diubah: true` sudah dikirim dan
+`PengaturTitik` sudah digambar. Yang bolong tetap ada walau B dipilih — `barisTabel()` mewarisi
+satuan/desimal/resolusi/standar dari baris CONTOH, dan tanpa satu baris pun dari backend contohnya
+`null`, jadi baris buatan teknisi jatuh ke satuan lembar. Komentarnya sendiri menulis kondisi itu
+*"nggak pernah kejadian"* — untuk TIDS dia kejadian di tiap sesi.
+
+Kamera TIDS menunggu ini, bukan sebaliknya: memfoto tabel yang barisnya belum ada nggak ada
+artinya.
 
 ### Susulan: `kolom_suhu` bohong di lima lembar
 
@@ -744,7 +808,8 @@ Jangan ditanyakan ulang.
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
 | **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
-| **K17** | Tujuh lembar bentuk matriks/grid (Autoklaf, TIDS, kelima Enclosure) belum punya jalur kamera sama sekali — dikerjakan sekarang, atau nunggu? | Kamera di 7 dari 20 lembar. Butuh sumbu KETIGA di pemeta foto (`sensor_ke` buat grid Enclosure, baris besaran buat matriks Autoklaf), bukan saklar yang dibalik — lihat §12 sebab 3 |
+| ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
+| **K18** | **Lembar TIDS: tujuh baris set point kosong digambar apa adanya (tiap baris punya kotak Setpoint sendiri), atau teknisi menyusun daftarnya lewat pengatur titik seperti TITS?** | Seluruh lembar TIDS — hari ini terbuka dengan **nol baris**, dan kameranya nunggu barisnya ada dulu. Menambal parser tanpa keputusan ini menerbitkan set point yang tidak pernah diketik siapa pun. Lihat §12 K18 |
 
 ### K12 — dryblock A memakai angka dryblock B
 
