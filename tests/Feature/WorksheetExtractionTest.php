@@ -125,15 +125,43 @@ class WorksheetExtractionTest extends TestCase
         $this->assertSame(1200, $log->input_tokens);
     }
 
-    public function test_tanpa_session_id_tetap_jalan(): void
+    /**
+     * Tanpa sesi, fotonya DITOLAK — dan itu pembalikan yang disengaja.
+     *
+     * ## Yang berlaku sebelum 27 Agt 2026, dan kenapa dicabut
+     *
+     * Test ini dulu menegakkan kebalikannya: `calibration_session_id: null`
+     * tetap jalan, jejaknya tercatat dengan sesi null. Itu fitur yang memang
+     * dimaui — ekstrak dari foto tanpa perlu punya sesi dulu.
+     *
+     * Yang nggak pernah ditimbang waktu fitur itu dibuat: **gerbang bentuk
+     * kertas ikut terbuka.** Tanpa sesi nggak ada alat, tanpa alat nggak ada
+     * profil, dan tanpa profil bawaan `didukung`-nya `true`. Jadi seluruh
+     * lembar yang sengaja ditolak — Autoklaf, TIDS, kelima Enclosure — bisa
+     * dikirim ke penyedia AI pihak ketiga **cukup dengan menghilangkan satu
+     * kolom opsional dari permintaannya.**
+     *
+     * Pemisahan `didukung`/`lokal` (PR #120) nggak menutup itu; dia cuma
+     * memindahkan pintunya. Sapuan `test_tiap_lembar_tak_didukung_...` juga
+     * nggak: dia SELALU membuat sesi, jadi buta persis di jalur yang nggak
+     * punya profil sama sekali.
+     *
+     * Dicabut atas keputusan pemilik lab (27 Agt 2026), dan biayanya nol nyata:
+     * aplikasi mobile **nggak punya satu pun call site** ke endpoint ini.
+     *
+     * Gagalnya sekarang MENUTUP. "Nggak tahu kertasnya apa" itu bentuk paling
+     * murni dari nggak bisa dibuktikan muat.
+     */
+    public function test_session_id_null_ditolak_sebelum_foto_keluar(): void
     {
+        Http::fake();
         $this->fakeSukses();
 
         $this->kirim($this->teknisi, ['calibration_session_id' => null])
-            ->assertOk()
-            ->assertJsonCount(2, 'baris');
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
 
-        $this->assertNull(WorksheetExtractionLog::query()->firstOrFail()->calibration_session_id);
+        Http::assertNothingSent();
     }
 
     public function test_koma_desimal_dan_keyakinan_pendek_dirapikan(): void
@@ -435,6 +463,53 @@ class WorksheetExtractionTest extends TestCase
         );
 
         // Yang paling menentukan: nggak satu pun fotonya keluar dari server kita.
+        Http::assertNothingSent();
+    }
+
+    /**
+     * TANPA `calibration_session_id`, fotonya DITOLAK — bukan dikirim keluar.
+     *
+     * ## Lubang yang ditutup test ini
+     *
+     * Kolom itu divalidasi `sometimes|nullable`. Dihilangkan dari permintaan,
+     * `sesiTervalidasi` pulang null tanpa error, `bentukKertas` nggak punya
+     * alat buat ditanya, dan bawaannya dulu `didukung: true`.
+     *
+     * Akibatnya: SELURUH lembar yang sengaja ditolak — Autoklaf, TIDS, kelima
+     * Enclosure — bisa dikirim ke penyedia AI pihak ketiga **cukup dengan
+     * menghilangkan satu kolom opsional.** Pemisahan `didukung`/`lokal` yang
+     * baru saja dibuat nggak menutup itu; dia cuma memindahkan pintunya.
+     *
+     * ## Kenapa sapuan sebelumnya nggak menangkapnya
+     *
+     * `test_tiap_lembar_tak_didukung_ditolak_sebelum_foto_keluar` **selalu
+     * membuat sesi** — dia menyapu dua puluh profil dan buta di satu jalur yang
+     * nggak punya profil sama sekali. Persis kelas kebutaan yang dia sendiri
+     * dibuat buat menutup, cuma pindah tempat: yang lama berdiri di satu
+     * profil, yang ini berdiri di satu bentuk permintaan.
+     *
+     * Gagalnya sekarang MENUTUP: yang nggak bisa dibuktikan muat, ditolak.
+     * "Nggak tahu kertasnya apa" itu bentuk paling murni dari nggak bisa
+     * dibuktikan.
+     */
+    public function test_tanpa_kunci_session_id_ditolak_sebelum_foto_keluar(): void
+    {
+        Http::fake();
+        $this->fakeSukses();
+
+        // Lewat `postJson` langsung, BUKAN helper `kirim`: helper itu
+        // `array_merge` sesi bawaan, dan `[]` nggak bisa MENGHILANGKAN kunci —
+        // cuma menimpanya. Bedanya menentukan: yang diuji di sini justru
+        // permintaan yang kuncinya nggak ada sama sekali.
+        $this->actingAs($this->teknisi)
+            ->postJson(self::URL, [
+                'foto' => UploadedFile::fake()->image('lembar.jpg', 1000, 1400),
+                'jumlah_titik' => 3,
+                'jumlah_pengulangan' => 5,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
+
         Http::assertNothingSent();
     }
 

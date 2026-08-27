@@ -227,6 +227,25 @@ class WorksheetExtractionController extends Controller
      * digambarkan sama sekali — dan klien yang keliru ngirim `kolom_suhu` nggak
      * mengubah kenyataan itu.
      *
+     * ## TANPA SESI, `didukung` JATUH KE `false` — dan itu perbaikan keamanan
+     *
+     * `calibration_session_id` divalidasi `sometimes|nullable`, jadi pemanggil
+     * boleh nggak mengirimnya sama sekali. Waktu itu terjadi nggak ada alat,
+     * nggak ada profil, dan **nggak ada yang tahu kertas ini bentuknya apa**.
+     *
+     * Bawaannya dulu `true` di keadaan itu, dan akibatnya bukan sekadar tebakan
+     * bentuk yang meleset: gerbang di bawah ikut terbuka, dan SELURUH lembar
+     * yang sengaja ditolak — Autoklaf, TIDS, kelima Enclosure — bisa dikirim ke
+     * penyedia AI pihak ketiga **cukup dengan menghilangkan satu kolom opsional
+     * dari permintaannya.** Pemisahan `didukung`/`lokal` yang baru saja dibuat
+     * nggak menutup itu; dia cuma memindahkan pintunya.
+     *
+     * Sekarang gagalnya MENUTUP. Yang nggak bisa dibuktikan muat, ditolak —
+     * dan "nggak tahu kertasnya apa" itu bentuk paling murni dari nggak bisa
+     * dibuktikan. Dua penanda bentuk di atas tetap menebak seperti dulu:
+     * salah tebak di sana bikin hasilnya jelek, salah tebak di sini bikin foto
+     * pelanggan keluar.
+     *
      * `lokal` yang ikut pulang dari `bentukPindaiFoto()` SENGAJA dibuang di
      * sini, dan itu inti pemisahannya. Penanda itu menggerbangi tombol kamera
      * ON-DEVICE; jalur ini yang MENGIRIM FOTONYA KELUAR. Membacanya di sini —
@@ -242,12 +261,32 @@ class WorksheetExtractionController extends Controller
         ?CalibrationSession $sesi,
         CalibrationProfileRegistry $registry,
     ): array {
-        $bawaan = ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
-
         $alat = $sesi?->equipment;
-        if ($alat !== null) {
-            $bawaan = [...$bawaan, ...$registry->untukAlat($alat)->bentukPindaiFoto()];
+
+        // TANPA ALAT, GAGALNYA MENUTUP — lihat docblock.
+        //
+        // Ditangani sebagai cabang sendiri, BUKAN dengan menurunkan bawaan
+        // `$bawaan` di bawah jadi `false`. Bedanya kelihatan sepele dan nggak:
+        // `SpectrophotometerProfile` & `ViscometerProfile` override
+        // `bentukPindaiFoto()` TANPA menyebut `didukung`, jadi mereka mewarisi
+        // nilainya dari bawaan gabungan ini. Menurunkan bawaannya diam-diam
+        // mematikan jalur foto dua lembar yang sebenarnya didukung — sudah
+        // kejadian waktu perbaikan ini ditulis, dan yang menangkapnya cuma
+        // `WorksheetExtractionSpektroTest`.
+        if ($alat === null) {
+            return [
+                'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? true),
+                'standar_di_baris' => (bool) ($data['standar_di_baris'] ?? false),
+                'didukung' => false,
+            ];
         }
+
+        $bawaan = [
+            'kolom_suhu' => true,
+            'standar_di_baris' => false,
+            'didukung' => true,
+            ...$registry->untukAlat($alat)->bentukPindaiFoto(),
+        ];
 
         return [
             'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? $bawaan['kolom_suhu']),

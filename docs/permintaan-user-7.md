@@ -950,6 +950,46 @@ pusat dibagi jarak POSISI kolomnya dulu.
 > bertetangga (`X4` & `X5`) — dan jarak tersempitnya jadi satu lebar kolom
 > secara kebetulan. Syaratnya: **tidak boleh ada dua jangkar bertetangga.**
 
+### Susulan: gerbangnya bisa dilewati dengan MENGHILANGKAN satu kolom opsional
+
+Ketemu review CodeRabbit **sesudah PR-nya ke-merge**, dan temuannya benar.
+
+`calibration_session_id` divalidasi `sometimes|nullable`. Dihilangkan dari
+permintaan, `sesiTervalidasi` pulang null tanpa error, `bentukKertas` nggak punya
+alat buat ditanya, dan bawaannya `didukung: true`.
+
+Akibatnya: seluruh lembar yang sengaja ditolak — Autoklaf, TIDS, kelima
+Enclosure — bisa dikirim ke penyedia AI pihak ketiga **cukup dengan
+menghilangkan satu kolom opsional.** Dan `VISION_AKTIF` bawaannya `true`, jadi
+ini lubang yang hidup, bukan teoretis.
+
+**Pemisahan `didukung`/`lokal` nggak menutupnya — dia cuma memindahkan
+pintunya.** Sapuan `test_tiap_lembar_tak_didukung_ditolak_sebelum_foto_keluar`
+juga nggak: dia **selalu membuat sesi**, jadi buta persis di jalur yang nggak
+punya profil sama sekali. Kebutaan yang sama dengan penjaga yang dia gantikan —
+yang lama berdiri di satu profil, yang ini berdiri di satu bentuk permintaan.
+
+Yang bikin ini paling pantas dicatat: **dua penjaga berturut-turut dibuat khusus
+buat menutup kelas kegagalan ini, dan dua-duanya bolong di tempat yang sama.**
+Sapuan lintas profil tidak menjamin apa pun tentang permintaan yang tidak punya
+profil.
+
+**Ditutup atas keputusan pemilik lab: tanpa sesi = ditolak.** Bawaan `didukung`
+jatuh ke `false`; tiap profil menyebutnya eksplisit, jadi yang punya sesi tetap
+dapat nilainya sendiri. Fitur "ekstrak tanpa sesi" berikut testnya dicabut, dan
+biayanya nol nyata — aplikasi mobile **nggak punya satu pun call site** ke
+endpoint ini.
+
+Dua penjaga baru berdiri di dua bentuk permintaan yang beda, karena `nullable`
+bikin keduanya sampai ke jalur yang sama:
+
+| Penjaga | Bentuk permintaannya |
+|---|---|
+| `test_session_id_null_ditolak_sebelum_foto_keluar` | `calibration_session_id: null` eksplisit |
+| `test_tanpa_kunci_session_id_ditolak_sebelum_foto_keluar` | kuncinya **nggak ada sama sekali** |
+
+Dibuktikan merah dengan mengembalikan bawaannya ke `true` — dua-duanya jatuh.
+
 ### Susulan: `kolom_suhu` bohong di lima lembar
 
 Ketemu waktu mengadu tiap profil ke tabel yang benar-benar dikirimnya. `bentukPindaiFoto()`
