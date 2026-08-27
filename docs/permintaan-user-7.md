@@ -170,11 +170,35 @@ Dijaga `StandarTidakBocorAntarLabTest` + `BatasAntarLabTest` — 41 test, dan da
 perlu ingat menambahkannya. Itu yang bikin perbaikan ini nggak balik lagi: polanya dulu menyebar
 justru karena disalin satu-satu.
 
-### Yang MASIH terbuka
+### ~~Rentang inkubator 30–300 °C~~ — HANTU, ditelusuri 27 Agt 2026
 
-- **Rentang inkubator 30–300 °C** perlu dicek ke spesifikasi unit fisiknya — angka itu lebih
-  mirip oven. Sesudah D, dia nggak lagi memunculkan peringatan palsu, jadi ini bukan lagi
-  penghalang; tetap perlu dibetulkan karena rentang ukur ikut tercetak.
+Butir ini berbunyi *"perlu dicek ke spesifikasi unit fisiknya — angka itu lebih mirip oven"*.
+Dugaan itu benar: **angkanya memang punya oven.** Yang salah alamatnya.
+
+| Yang dicek | Hasil |
+|---|---|
+| `equipments` inkubator | INCUCELL LSIS-B2Y/IC 55 → **15–100 °C** |
+| Riwayat `EnclosureSeeder` | `range_min => 15` sejak commit `0247205` yang menambahkannya; `git log -S "'range_min' => 30, 'range_max' => 300"` **nol hasil** |
+| Pemilik angka 30–300 | `Oven Memmert UN55` (alat #4) dari `DemoDataSeeder` — **nol sesi kalibrasi** |
+| Sesi Inkubator yang ditolak (`2405.03.AV`) | pakai alat #19, jadi rentang 15–100; dan **nol baris `suhu_ruang`** |
+
+Jadi kekhawatiran aslinya — "rentang ukur ikut tercetak" — nggak pernah berlaku: nggak ada
+sertifikat yang pernah mencetak 30–300 sebagai rentang inkubator.
+
+**Asal-usulnya komentar ilustrasi yang kebaca sebagai data.**
+`CalibrationValidator` menjelaskan bug D dengan tabel contoh jenis chamber (`Inkubator 30–300`,
+`Furnace 300–1000`, `Refrigerator −20–10`) buat menunjukkan cara gagalnya. Ketiganya hipotetis;
+`EnclosureSeeder` cuma menyemai dua alat, dan **25 °C masuk rentang dua-duanya**. Komentarnya
+sekarang menyatakan itu eksplisit supaya nggak kebaca ulang sebagai data.
+
+Yang TIDAK berubah: perbaikan D tetap benar. Mengadu suhu ruang ke rentang ukur chamber itu
+penggaris yang salah terlepas dari angkanya, dan dia mulai menyala di hari lab mendaftarkan
+furnace atau refrigerator — dua-duanya pekerjaan enclosure biasa. Yang dikoreksi cuma klaim
+bahwa kebakarannya sudah menyala hari ini.
+
+> **Batas bukti ini.** Semuanya dari database dev yang ter-seed. Kalau di produksi ada alat
+> inkubator yang rentangnya beneran 30–300, itu baris data yang perlu dibetulkan di sana — dan
+> nggak akan kelihatan dari sini.
 
 ---
 

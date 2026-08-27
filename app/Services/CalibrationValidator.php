@@ -407,11 +407,26 @@ class CalibrationValidator
             // Enclosure sendiri: "tercatat, bukan terhitung".
             //
             // Sebelum ini dia lolos ke pemeriksaan di bawah, dan penggarisnya
-            // salah ke DUA arah sekaligus:
+            // salah ke DUA arah sekaligus.
+            //
+            // Rentang di tabel berikut CONTOH jenis chamber, BUKAN data alat
+            // yang terdaftar. Perlu ditulis begini karena pernah kebaca sebagai
+            // data, lalu jadi butir terbuka "rentang inkubator 30–300 perlu
+            // dicek ke spesifikasi unit fisiknya" yang menghuni daftar
+            // permintaan — padahal inkubator di database ini 15–100 sejak
+            // commit pertamanya, dan 30–300 itu punya `Oven Memmert UN55` di
+            // `DemoDataSeeder` yang nol sesi.
             //
             //   Inkubator 30–300     → 20 peringatan palsu per sesi
             //   Furnace 300–1000     → 20, SELALU (25 °C nggak akan pernah masuk)
             //   Refrigerator −20–10  → 20, SELALU
+            //
+            // Dua alat enclosure yang BENERAN terdaftar nggak kena satu pun:
+            // Incubator INCUCELL 15–100 dan Oven Memmert UN260 0–300 — 25 °C
+            // masuk dua-duanya. Jadi yang ditutup di sini bukan kebakaran yang
+            // lagi menyala melainkan penggaris yang salah, dan dia mulai
+            // menyala di hari lab mendaftarkan furnace atau refrigerator —
+            // dua-duanya pekerjaan enclosure biasa.
             //
             // dan pemeriksaannya TERBALIK: 24,6 °C yang benar diteriakin,
             // sementara 121 °C (salah salin satu baris) dan 246 °C (koma
