@@ -146,7 +146,7 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
 | **E** | Pesan "titik tidak terhitung" menebak tiga sebab | **BERES** — sebabnya ditanya ke profil |
 | **F** | TITS Measure: 25 tuduhan salah ketik per sesi | **BERES** — TITS nggak diadu ke `equipments.resolusi` |
 | **G** | Peringatan grid nggak nyebut baris mana | **BERES** — perannya ikut di label |
-| **H** | Komentar "6 dari 17 lembar tanpa vonis" (sebenarnya 12) | belum |
+| **H** | Komentar "6 dari 17 lembar tanpa vonis" (sebenarnya 12) | **BERES** (27 Agt 2026) — daftarnya dibuang, bukan dipanjangin; sekarang 15 dari 20, dan dijaga sapuan registry |
 
 ### Yang TIDAK diubah, dan kenapa
 
@@ -170,11 +170,69 @@ Dijaga `StandarTidakBocorAntarLabTest` + `BatasAntarLabTest` — 41 test, dan da
 perlu ingat menambahkannya. Itu yang bikin perbaikan ini nggak balik lagi: polanya dulu menyebar
 justru karena disalin satu-satu.
 
-### Yang MASIH terbuka
+### ~~H · Komentar "lembar tanpa vonis"~~ — BERES 27 Agt 2026
 
-- **Rentang inkubator 30–300 °C** perlu dicek ke spesifikasi unit fisiknya — angka itu lebih
-  mirip oven. Sesudah D, dia nggak lagi memunculkan peringatan palsu, jadi ini bukan lagi
-  penghalang; tetap perlu dibetulkan karena rentang ukur ikut tercetak.
+Butir ini ditulis sebagai "6 dari 17 (sebenarnya 12)". Waktu ditelusuri, **dua-duanya
+sudah basi**: hari ini registry punya 20 profil dan **15** di antaranya
+`punyaToleransi() === false`. Angkanya bergerak tiap kali lembar baru mendarat — tiga alat
+suhu terakhir menggesernya 12 → 15 sendirian.
+
+| Yang dicek | Hasil |
+|---|---|
+| Bunyi komentarnya di `CalibrationValidator` | "kelima Enclosure, TITS, Autoklaf, DO, Gas Detector, Conductivity, Spectro" → **11 nama** |
+| Kebenarannya hari ini | **15** lembar (11 itu + TIDS + Thermocouple + Termometer Gelas + Thermohygro) |
+| Kodenya sendiri | **nggak pernah salah** — dia nanya `punyaToleransi()`, bukan daftar |
+| Test yang menjaganya | cuma `test_sebab_yang_disebut_beneran_berlaku`, dan itu **satu lembar** (Inkubator) |
+
+Jadi ini nggak pernah jadi bug perilaku. Yang bolong: prosa yang basi di sebelah kode yang
+benar, plus klaim luas yang cuma dibuktikan di satu lembar.
+
+**Yang dikerjakan — daftarnya dibuang, bukan dipanjangin.** Menulis ulang "15 lembar" cuma
+memindahkan tanggal kebasiannya ke lembar ke-21. Komentarnya sekarang menyebut PREDIKATNYA
+(`punyaToleransi() === false`) plus satu baris yang beneran bisa dijalankan buat
+menghitungnya, dan cerita kebasiannya ditinggal sebagai alasan kenapa nggak boleh ada
+daftar di situ lagi. Nol baris non-komentar berubah di `CalibrationValidator.php`.
+
+**Penjaganya diperluas dari 1 lembar ke 15, daftarnya dari registry.**
+`test_sebab_toleransi_disaring_dari_registry_bukan_daftar_tulis_tangan` menyapu tiap sesi
+ter-seed dan menurunkan harapannya dari `punyaToleransi()` profil sesi itu — jadi lembar
+ke-21 ikut kesapu tanpa ada yang perlu ingat. Dijaga dua arah: cabut `if`-nya → Conductivity
+merah; hapus sebabnya total → pH merah.
+
+Cakupannya apa adanya: **10 dari 15** lembar tanpa vonis punya sesi contoh buat diadu. TIDS,
+Furnace, Bath, dan Refrigerator belum punya sesi sama sekali; Autoklaf punya sesi tapi nol
+pembacaan mentah, jadi pesannya nggak pernah lahir. Kelima itu ditulis di docblock test-nya,
+bukan didiamkan.
+
+### ~~Rentang inkubator 30–300 °C~~ — HANTU, ditelusuri 27 Agt 2026
+
+Butir ini berbunyi *"perlu dicek ke spesifikasi unit fisiknya — angka itu lebih mirip oven"*.
+Dugaan itu benar: **angkanya memang punya oven.** Yang salah alamatnya.
+
+| Yang dicek | Hasil |
+|---|---|
+| `equipments` inkubator | INCUCELL LSIS-B2Y/IC 55 → **15–100 °C** |
+| Riwayat `EnclosureSeeder` | `range_min => 15` sejak commit `0247205` yang menambahkannya; `git log -S "'range_min' => 30, 'range_max' => 300"` **nol hasil** |
+| Pemilik angka 30–300 | `Oven Memmert UN55` (alat #4) dari `DemoDataSeeder` — **nol sesi kalibrasi** |
+| Sesi Inkubator yang ditolak (`2405.03.AV`) | pakai alat #19, jadi rentang 15–100; dan **nol baris `suhu_ruang`** |
+
+Jadi kekhawatiran aslinya — "rentang ukur ikut tercetak" — nggak pernah berlaku: nggak ada
+sertifikat yang pernah mencetak 30–300 sebagai rentang inkubator.
+
+**Asal-usulnya komentar ilustrasi yang kebaca sebagai data.**
+`CalibrationValidator` menjelaskan bug D dengan tabel contoh jenis chamber (`Inkubator 30–300`,
+`Furnace 300–1000`, `Refrigerator −20–10`) buat menunjukkan cara gagalnya. Ketiganya hipotetis;
+`EnclosureSeeder` cuma menyemai dua alat, dan **25 °C masuk rentang dua-duanya**. Komentarnya
+sekarang menyatakan itu eksplisit supaya nggak kebaca ulang sebagai data.
+
+Yang TIDAK berubah: perbaikan D tetap benar. Mengadu suhu ruang ke rentang ukur chamber itu
+penggaris yang salah terlepas dari angkanya, dan dia mulai menyala di hari lab mendaftarkan
+furnace atau refrigerator — dua-duanya pekerjaan enclosure biasa. Yang dikoreksi cuma klaim
+bahwa kebakarannya sudah menyala hari ini.
+
+> **Batas bukti ini.** Semuanya dari database dev yang ter-seed. Kalau di produksi ada alat
+> inkubator yang rentangnya beneran 30–300, itu baris data yang perlu dibetulkan di sana — dan
+> nggak akan kelihatan dari sini.
 
 ---
 

@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\User;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -247,6 +248,137 @@ class PeringatanPalsuTest extends TestCase
             'pembacaan_bukan_kelipatan_resolusi',
             $this->kode($sesi->fresh()),
             'Pemeriksanya kematian buat semua lembar, bukan cuma TITS.',
+        );
+    }
+
+    /**
+     * H · Sebab "toleransi alat kosong" disaring per lembar, disapu dari REGISTRY.
+     *
+     * ## Kenapa test ini bukan pengulangan test E di atas
+     *
+     * Test E membuktikan satu lembar — Inkubator. Yang diklaim kodenya jauh
+     * lebih luas: sebab itu mesti hilang buat SETIAP lembar yang memang sengaja
+     * tanpa batas keberterimaan. Sampai berkas ini, klaim seluas itu cuma hidup
+     * di komentar, dan komentarnya menuliskan daftar nama — "kelima Enclosure,
+     * TITS, Autoklaf, DO, Gas Detector, Conductivity, Spectro" — yang basi
+     * begitu tiga alat suhu mendarat: sebelas nama buat lima belas lembar, dan
+     * TIDS pun sudah kelewat sebelum itu.
+     *
+     * Kodenya sendiri nggak pernah salah; dia nanya `punyaToleransi()`. Yang
+     * nggak ada cuma sesuatu yang MEMBUKTIKAN itu di lebih dari satu lembar.
+     *
+     * ## Daftarnya dari registry, bukan ditulis tangan di sini
+     *
+     * Kalau test ini nyalin daftar lembar tanpa vonis, dia bakal basi persis
+     * seperti komentar yang dia gantikan — dan lebih jahat, karena test yang
+     * basi kelihatan seperti jaminan. Jadi harapannya DITURUNKAN dari profil
+     * tiap sesi: `punyaToleransi()` yang nentuin sebabnya mesti disebut atau
+     * nggak, per sesi, apa adanya. Lembar ke-21 ikut kesapu tanpa ada yang
+     * perlu ingat menambahkannya ke sini.
+     *
+     * ## Dua arah, supaya penjaganya nggak bisa dihapus diam-diam
+     *
+     * Cuma menegakkan "yang tanpa vonis nggak disebut" bikin `if` di
+     * `periksaKelengkapanHitung()` bisa dihapus total tanpa satu pun test
+     * merah — sebabnya hilang buat SEMUA lembar, dan lembar yang beneran
+     * divonis kehilangan petunjuk yang bener-bener berlaku. Jadi arah
+     * sebaliknya ikut dijaga: pH, Turbidimeter, Chlorine, Refractometer, dan
+     * Viscometer WAJIB tetap disodori sebab itu.
+     *
+     * ## Cakupannya, apa adanya
+     *
+     * Yang disapu sesi yang BENERAN ada di seeder: **10 dari 15** lembar tanpa
+     * vonis — Conductivity, Spectro, DO, Gas Detector, TITS, Inkubator, Oven,
+     * Thermocouple, Termometer Gelas, Thermohygro — plus kelima lembar yang
+     * divonis. Lima sisanya nggak kesapu dan itu ditulis di sini, bukan
+     * didiamkan: TIDS, Furnace, Bath, dan Refrigerator belum punya sesi contoh
+     * sama sekali, sedangkan Autoklaf punya sesi tapi nol pembacaan mentah
+     * sehingga pesannya nggak pernah lahir buat diadu.
+     *
+     * Ambang di bawah (8 dan 3, bukan 10 dan 5) sengaja lebih longgar dari
+     * angka hari ini supaya seeder boleh bergeser sedikit tanpa bikin test ini
+     * merah karena alasan yang salah — tapi tetap nangkep hari seeder-nya
+     * berubah banyak dan test ini diam-diam berhenti menyapu apa pun.
+     */
+    public function test_sebab_toleransi_disaring_dari_registry_bukan_daftar_tulis_tangan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $registry = app(CalibrationProfileRegistry::class);
+        $tanpaVonis = [];
+        $divonis = [];
+
+        foreach (CalibrationSession::with('equipment')->get() as $sesi) {
+            if ($sesi->equipment === null) {
+                continue;
+            }
+
+            $profil = $registry->untukAlat($sesi->equipment);
+
+            // Bikin titiknya nggak kehitung supaya pesan sebabnya lahir.
+            $sesi->uncertaintyCalculations()->delete();
+
+            $pesan = array_column(
+                array_values(array_filter(
+                    $this->temuan($sesi->fresh()),
+                    static fn (array $t): bool => $t['kode'] === 'titik_tidak_terhitung',
+                )),
+                'pesan',
+            );
+
+            if ($pesan === []) {
+                // Sesi tanpa pembacaan mentah (mis. Autoklaf) nggak pernah
+                // melahirkan pesannya. Nggak ada yang bisa diadu di situ.
+                continue;
+            }
+
+            $harusDisebut = $profil->punyaToleransi();
+            $harusDisebut
+                ? $divonis[$profil->kode()] = true
+                : $tanpaVonis[$profil->kode()] = true;
+
+            foreach ($pesan as $p) {
+                if ($harusDisebut) {
+                    $this->assertStringContainsString(
+                        'toleransi alat kosong',
+                        $p,
+                        "{$profil->kode()} ({$sesi->nomor_sesi}) DIVONIS PASS/FAIL, jadi toleransi "
+                        .'kosong beneran salah satu sebabnya. Menyembunyikannya bikin teknisi '
+                        .'nyari-nyari kenapa titiknya nggak kehitung.',
+                    );
+                } else {
+                    $this->assertStringNotContainsString(
+                        'toleransi alat kosong',
+                        $p,
+                        "{$profil->kode()} ({$sesi->nomor_sesi}) sengaja tanpa batas keberterimaan. "
+                        .'Menyebut sebab itu mengarahkan orang mengisi kolom yang sengaja '
+                        .'dikosongkan; mengisi kolom itu pernah mematikan seluruh sesi Conductivity.',
+                    );
+                }
+
+                // Ambangnya juga per lembar, bukan dipatok: GUM minta 2, grid
+                // Enclosure minta 4 per sensor.
+                $this->assertStringContainsString(
+                    'kurang dari '.$profil->minPengulanganPerTitik(),
+                    $p,
+                    "{$profil->kode()}: ambang pengulangan yang disebut bukan punya lembar ini.",
+                );
+            }
+        }
+
+        // Tanpa dua penegakan ini, test bakal hijau di hari seeder-nya berubah
+        // dan nol sesi kesapu — hijau yang nggak membuktikan apa pun.
+        $this->assertGreaterThanOrEqual(
+            8,
+            count($tanpaVonis),
+            'Sesi tanpa vonis yang kesapu terlalu sedikit; seeder-nya berubah dan test ini '
+            .'berhenti membuktikan klaim yang luas itu. Yang kesapu: '.implode(', ', array_keys($tanpaVonis)),
+        );
+        $this->assertGreaterThanOrEqual(
+            3,
+            count($divonis),
+            'Arah sebaliknya nggak kesapu, jadi penjaganya bisa dihapus total tanpa test merah. '
+            .'Yang kesapu: '.implode(', ', array_keys($divonis)),
         );
     }
 }
