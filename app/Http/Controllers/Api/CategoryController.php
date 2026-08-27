@@ -122,6 +122,36 @@ class CategoryController extends Controller
                     // generik". Registry-nya sengaja nggak jatuh ke pH —
                     // lihat `CalibrationProfileRegistry::kodeProfilDariNama()`.
                     'profil' => $registry->kodeProfilDariNama((string) $c->nama_alat),
+
+                    // Apakah jenis alat ini DIVONIS PASS/FAIL — dan ini bukan
+                    // hiasan: form Tambah Alat mewajibkan `toleransi` buat
+                    // SEMUA alat, dengan alasan "alat tanpa toleransi nggak
+                    // bisa dikalibrasi".
+                    //
+                    // Alasan itu keliru buat 15 dari 20 profil. Conductivity,
+                    // Spectro, Autoklaf, DO, Gas Detector, TITS, TIDS, kelima
+                    // Enclosure, dan ketiga alat suhu memang NGGAK punya batas
+                    // keberterimaan di masternya — sertifikatnya berhenti di
+                    // `U95%`. Validator di sini pun sengaja melewatinya (lihat
+                    // `CalibrationValidator::periksaKelengkapanHitung()`), jadi
+                    // 422 yang ditakutkan form itu nggak pernah datang.
+                    //
+                    // Akibat nyatanya: teknisi yang mendaftarkan Thermocouple
+                    // dipaksa MENGARANG angka toleransi — mengarang kriteria
+                    // kelulusan buat alat yang nggak divonis. Mengisi kolom itu
+                    // pernah mematikan seluruh sesi Conductivity.
+                    //
+                    // Dijawab server, bukan dipetakan di HP: daftarnya lahir
+                    // dari registry, jadi profil ke-21 ikut kejawab tanpa rilis
+                    // APK baru — alasan yang sama persis dengan `profil` di
+                    // atas.
+                    //
+                    // `true` juga buat nama alat yang nggak dikenal profil mana
+                    // pun (jalur generik): di situ toleransi memang penentu
+                    // PASS/FAIL-nya.
+                    'punya_toleransi' => $registry
+                        ->untukNamaAlat((string) $c->nama_alat)
+                        ->punyaToleransi(),
                 ]),
             ],
         ]);

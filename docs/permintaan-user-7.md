@@ -448,6 +448,100 @@ yang tersimpan.
 > karena memang tidak pernah disentuh. Test-nya sekarang MERUSAK satu angka dulu sebelum
 > menjalankan perintah: angka yang dirusak cuma balik kalau perintahnya beneran menghitung.
 
+### Susulan 27 Agt — form Tambah Alat: yang perlu saja, sisanya dari data PT Sidik
+
+Permintaan pemilik proyek sambil menunjukkan tangkapan layar form "TAMBAH ALAT" dengan kolom
+TOLERANSI dilingkari:
+
+> *"pas nambah alat itu cuma yang perlu aja kalo yang penting pentign itu bisa kita bikin jadi
+> ootmatis masuk ke dalam sistem … toleransi dan juga rentang min dan juga maks nya kan di
+> tentukan sama si PT sidik dan juga kan udah ada di exel itu … dan juga kalo misal nya nanti
+> beda bisa tuh yang otomatis itu di edit manual"*
+
+**Toleransi berhenti diwajibkan buat alat yang tidak divonis.** Form itu meminta `toleransi` untuk
+SEMUA alat, alasannya ditulis di kodenya sendiri: *"alat tanpa toleransi nggak bisa dikalibrasi —
+422 belakangan"*. Alasan itu keliru untuk **15 dari 20** profil — Conductivity, Spectro, Autoklaf,
+DO, Gas Detector, TITS, TIDS, kelima Enclosure, dan ketiga alat suhu berhenti di `U95%` tanpa batas
+keberterimaan — dan `CalibrationValidator::periksaKelengkapanHitung()` memang melewatinya
+(`$profilAlat?->punyaToleransi() !== false`), jadi 422 yang ditakutkan itu tidak pernah datang.
+
+Yang datang justru sebaliknya: teknisi dipaksa **mengarang angka toleransi** untuk alat yang tidak
+divonis — mengarang kriteria kelulusan. Mengisi kolom itu pernah mematikan seluruh sesi
+Conductivity.
+
+Jawabannya sekarang dituturkan server: `punya_toleransi` per baris kemampuan di
+`GET /api/categories/{kode}`, lahir dari `CalibrationProfileRegistry` — bukan daftar nama alat
+yang disalin ke HP. Alasan yang sama persis dengan `profil` di baris yang sama: **profil ke-21
+ikut terjawab tanpa rilis APK baru.** Field yang tidak ada (server lama) dibaca `true`, yaitu
+perilaku lama — salah di sisi yang aman.
+
+**Rentang & satuan terisi sendiri dari lampiran akreditasi.** Angkanya sudah dikirim server setiap
+kali kategori dibuka; teknisi tidak perlu menyalinnya lagi dari kertas. Yang perlu diputuskan cuma
+satu, dan keputusannya menentukan benar/salahnya angka di sertifikat:
+
+**Baris satu `nama_alat` bisa beda SATUAN, dan yang beda satuan tidak boleh digabung.**
+
+| `nama_alat` | baris master | hasil |
+|---|---|---|
+| Thermocouple | −20–150, 150–400, 400–600 °C | −20–600 °C — **terisi otomatis** |
+| Termometer Gelas | 0–100, 100–200 °C | 0–200 °C — terisi otomatis |
+| Thermohygrometer | Suhu 15–50 °C · Kelembapan 30–90 %RH | **dua tombol**, teknisi yang menekan |
+| Autoklaf | Suhu 105–121 °C · Tekanan 0–4 bar | dua tombol |
+| Mesin UTM | 0–500 kgf · 10–3000 kN | dua tombol |
+
+Kolom `range_min`/`range_max` alat cuma **sepasang**, jadi memilihkan salah satu berarti menebak
+besaran mana yang dimaksud lembarnya. Menggabungnya lebih buruk lagi: Thermohygro jadi "15–90
+tanpa satuan", Autoklaf jadi "0–121" — angka yang tidak ada di master mana pun, dan tidak ada satu
+pun yang menolaknya. Dia lolos ke kolom alat, ikut ke lembar kerja, ikut ke sertifikat. Jadi yang
+satu satuan diisi sendiri; yang lebih dari satu **disodorkan sebagai tombol** berikut angkanya.
+
+Batas yang bukan angka tetap kosong: Oven `range_min`-nya "ambient", dan nol itu **suhu**, bukan
+"tidak ada angkanya".
+
+**Yang sudah diketik teknisi tidak pernah ditimpa.** Isian otomatis cuma menyentuh kotak kosong
+atau kotak yang isinya persis angka yang kita taruh sendiri terakhir kali — jadi ganti pilihan
+tetap memperbarui angkanya, tapi alat pelanggan yang rentangnya memang lain aman.
+
+> **Lubang yang ikut ketutup:** `MockCategoryService` tidak pernah punya baris kemampuan untuk
+> ketiga alat suhu baru. Sama persis dengan yang dulu terjadi pada Viscometer, Spectrophotometer,
+> dan TITS: di build `USE_MOCK=true` kartunya tidak muncul di picker, jadi ketiga lembarnya —
+> yang sudah jadi dan teruji — tidak bisa dibuka lewat jalur mana pun.
+
+### Susulan 27 Agt — pemilih pelanggan: nama besar, alamat kecil, tinggal ditekan
+
+Permintaan yang sama:
+
+> *"kan ini PT nya dari indoenesia semua nay … nama pt nya gede terus bawah nya alamat nya kecil
+> terus tinggla di pencet aja"*
+
+Tampilannya bagian yang gampang. Yang ditemukan waktu mengerjakannya jauh lebih berat: **daftar
+pelanggan di form Tambah Alat selama ini ditarik dari `GET /api/arsip/perusahaan`, yang me-list
+FOLDER, bukan pelanggan.**
+
+| | Akibatnya |
+|---|---|
+| `id` yang datang itu **id folder** | Folder id 1 bisa milik pelanggan id 3. `pelanggan_id` yang terkirim **sah** tetapi menunjuk PT LAIN — alatnya tersimpan ke pelanggan yang salah, nol error di sepanjang jalur |
+| Folder hanya ada untuk PT yang pernah punya sertifikat | Pelanggan **baru** — justru yang paling sering diinput — tidak muncul sama sekali |
+| Daftarnya disaring lagi per-role | Teknisi biasa hanya diberi folder yang ada berkasnya untuk dia; sering **nol baris** — persis dead-end 403 yang dulu mau dihindari |
+| `?search=` diabaikan | Server itu membaca `q`. Daftarnya kembali utuh tiap ketik, terlihat seperti pencariannya rusak |
+
+Yang pantas dicatat: **koreksi ini sudah tertulis di `docs/kontrak-api.md` sejak 25 Juli 2026**,
+lengkap dengan keempat baris tabel di atas, dan `GET /api/customers/lookup` sudah live hari itu
+juga. Yang tidak pernah terjadi cuma satu: sisi mobile-nya tidak pernah pindah. Jadi keempatnya
+berjalan di APK selama sebulan penuh — dokumen yang benar tidak memperbaiki kode dengan
+sendirinya.
+
+Sekarang `ApiCustomerLookupService` menembak `/customers/lookup`: `customers.id` yang benar,
+`alamat` ikut, pelanggan baru muncul, teknisi dapat daftar penuh. Satu tambahan di sisi API —
+`?search=` mencari **nama ATAU alamat**, kurungnya eksplisit supaya saringan organisasinya tidak
+bocor ke lab sebelah. Itu cara teknisi mengingat pelanggannya: satu kawasan industri berisi
+belasan PT bernama mirip, dan yang dia pegang alamat penjemputannya.
+
+**Sumber nama PT di luar data PT Sidik belum dipilih** — lihat K16. Tidak ada API resmi & gratis
+untuk daftar perusahaan Indonesia; yang tersedia sumber peta (Google Places, Nominatim) dengan
+syarat pemakaian & biaya masing-masing. Keputusan pemilik proyek: **internal dulu, luar
+menyusul.**
+
 ---
 
 ## Keputusan yang SUDAH diambil
@@ -476,6 +570,10 @@ Jangan ditanyakan ulang.
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
 | **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **11 dari 17** berkas geometri. Ini bukan pertanyaan, ini kiriman — dan bukan sesuatu yang bisa dikerjakan dari sini |
+| **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
+| **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
+| **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
+| **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
 
 ### K12 — dryblock A memakai angka dryblock B
 
