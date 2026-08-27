@@ -52,7 +52,21 @@ class CustomerController extends Controller
             ->where('organization_id', $request->user()->organization_id)
             ->when(
                 (string) $cari !== '',
-                fn ($query) => $query->where('nama', 'like', '%'.$cari.'%'),
+                // `nama` ATAU `alamat`, DAN kurungnya wajib.
+                //
+                // Tanpa `where(fn ...)` pembungkus, `orWhere` naik ke tingkat
+                // atas dan jadi `organization_id = X AND nama LIKE .. OR alamat
+                // LIKE ..` — pelanggan lab SEBELAH yang alamatnya kena
+                // ikut kebawa. Endpoint ini kebuka semua role.
+                //
+                // Alamat ikut dicari karena begitu cara teknisi mengingat
+                // pelanggannya: satu kawasan industri isinya belasan PT dengan
+                // nama mirip, dan yang dia pegang alamat penjemputannya.
+                fn ($query) => $query->where(
+                    fn ($q) => $q
+                        ->where('nama', 'like', '%'.$cari.'%')
+                        ->orWhere('alamat', 'like', '%'.$cari.'%'),
+                ),
             )
             ->orderBy('nama')
             ->paginate(15)

@@ -330,10 +330,38 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > { "data": { "kode": "panjang", "nama": "Panjang", "kemampuan": [
 >     { "nama_alat": "Micrometer", "parameter": null, "range_min": 0, "range_max": 25,
 >       "range_note": null, "satuan": "mm", "ketidakpastian_terbaik": 0.00083,
->       "satuan_ketidakpastian": "mm", "faktor_cakupan": 2, "metode": "SIDIK-IK-CAL-0515_Rev.3" }
+>       "satuan_ketidakpastian": "mm", "faktor_cakupan": 2, "metode": "SIDIK-IK-CAL-0515_Rev.3",
+>       "sumber": "akreditasi", "tanpa_cmc": false, "alasan_tanpa_cmc": null,
+>       "profil": null, "punya_toleransi": true }
 > ] } }
 > ```
 > **`range_min` bisa `null`** — 59 dari 151 kemampuan emang nggak punya batas bawah numerik: ada yang titik tunggal (buret "25 mL"), ada yang batasnya kata-kata (oven "ambient ~ 300 °C" → teks aslinya ada di `range_note`). Jangan diparse jadi `double` mentah-mentah, nanti crash.
+>
+> ### `punya_toleransi` — Update 27 Agt
+>
+> **`false` = jenis alat ini NGGAK divonis PASS/FAIL, jadi `equipments.toleransi` boleh kosong.** Berlaku buat **15 dari 20** profil: Conductivity, Spectrophotometer, Autoklaf, DO Meter, Gas Detector, TITS, TIDS, kelima Enclosure (Oven/Bath/Inkubator/Furnace/Refrigerator), dan ketiga alat suhu (Thermocouple, Termometer Gelas, Thermohygrometer). Masternya berhenti di `Correction` + `U95%` — nggak ada batas keberterimaan sama sekali di lembar kerjanya.
+>
+> `true` juga buat nama alat yang nggak dikenal profil mana pun (jalur generik): di situ toleransi memang penentu PASS/FAIL-nya.
+>
+> Jawabannya lahir dari `CalibrationProfileRegistry`, jadi profil ke-21 ikut kejawab tanpa rilis APK baru — alasan yang sama persis kayak `profil` di baris yang sama. Jangan bikin daftar nama alat tandingan di sisi mobile.
+>
+> **Yang mobile perlu lakuin:** form Alat berhenti mewajibkan `toleransi` waktu `punya_toleransi: false`. Field yang nggak ada di response (server lama) dianggap `true` — perilaku lama.
+>
+> **Kenapa ini penting, bukan kosmetik:** form Alat dulu mewajibkan `toleransi` buat SEMUA alat, alasannya "nanti kena 422". 422 itu nggak pernah datang (lihat catatan di §4), dan yang datang justru teknisi mengarang angka toleransi — mengarang kriteria kelulusan buat alat yang nggak divonis. Mengisi kolom itu pernah mematikan seluruh sesi Conductivity.
+>
+> ### Rentang master dipecah per GOLONGAN, bukan per alat
+>
+> Satu `nama_alat` biasanya punya beberapa baris. Yang perlu diperhatiin waktu ngerangkumnya jadi satu rentang alat: **baris-baris itu bisa beda SATUAN, dan yang beda satuan nggak boleh digabung.**
+>
+> | `nama_alat` | baris master | rentang alatnya |
+> |---|---|---|
+> | Thermocouple | −20–150, 150–400, 400–600 °C | −20–600 °C ✅ satu satuan, sah digabung |
+> | Termometer Gelas | 0–100, 100–200 °C | 0–200 °C ✅ |
+> | Thermohygrometer | Suhu 15–50 °C, Kelembapan 30–90 %RH | ❌ dua besaran, JANGAN jadi 15–90 |
+> | Autoklaf | Suhu 105–121 °C, Tekanan 0–4 bar | ❌ JANGAN jadi 0–121 |
+> | Mesin UTM | 0–500 kgf, 10–3000 kN | ❌ JANGAN jadi 0–3000 |
+>
+> Angka gabungan lintas satuan kayak gitu nggak ditolak siapa pun — dia lolos ke `range_min`/`range_max` alat, ikut ke lembar kerja, dan ikut ke sertifikat.
 
 ---
 
@@ -361,7 +389,8 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### Aturan lain yang bikin `422` (siapin pesannya di UI)
 > - **Tiap titik ukur minimal 2 pembacaan.** Type A itu standar deviasi antar-pengulangan — dari satu angka nggak ada sebaran yang bisa dihitung. (Aturan "minimal 3" yang kamu tulis di contoh reject itu **nggak** dipaksain backend — biar tetap jadi penilaian admin.)
-> - **Alat yang `toleransi`-nya masih kosong ditolak.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
+> - **Alat yang `toleransi`-nya masih kosong ditolak — TAPI cuma buat alat yang emang divonis PASS/FAIL.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
+>   **⚠️ Update 27 Agt — batasannya:** 15 dari 20 profil (Conductivity, Spectro, Autoklaf, DO, Gas Detector, TITS, TIDS, kelima Enclosure, ketiga alat suhu) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
 > - **Standar yang sertifikatnya kadaluarsa ditolak.** Ketertelusurannya putus.
 > - `tanggal_kalibrasi` nggak boleh di masa depan.
 >
@@ -557,11 +586,36 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
 > Jangan hardcode daftar kode profil — baca `peran`.
 >
+> ### `tipe_sensor` vs `tipe_thermocouple` — dua hal, dan gampang ketuker
+>
+> Namanya mirip, letaknya beda, dan yang satu menggerakkan angka sementara yang
+> satu tidak.
+>
+> | | `tipe_sensor` | `spesifikasi_alat.tipe_thermocouple` |
+> |---|---|---|
+> | Milik siapa | sensor **acuan lab** | alat **pelanggan** yang dikalibrasi |
+> | Di kertas | blok *Pengerjaan* | blok *Identitas Alat dan Data Customer* |
+> | Pilihan | 3 (yang lab punya sertifikatnya) | 10 (sesuai `SIDIK-FM-CAL-0535_Rev.2`) |
+> | Efek ke angka | **memilih tabel koreksi** + 2 komponen budget | **nol** |
+> | Di sertifikat | tercetak di tabel standar | tidak tercetak |
+>
+> Di master dua-duanya ada dan sering bernilai sama — `INPUT DATA!E4`
+> (`Sensor Type (UUT)`) dan `INPUT DATA!O23` (`Standar Sensor`) sama-sama `2` di
+> sesi contoh, dua-duanya Type K. Kebetulan itu yang bikin gampang disangka satu
+> kolom.
+>
+> **Jangan memanjangkan `tipe_sensor` jadi sepuluh** cuma karena kertas UUT-nya
+> sepuluh: lab cuma punya sertifikat & ketertelusuran buat RTD, Type K, dan
+> Type N. Tujuh sisanya di `DATABASE!Q23:Q27` memang tercantum tanpa nomor seri
+> dan tanpa ketertelusuran — lab tidak memilikinya.
+>
 > ### Field per alat
 >
 > | Field | Alat | Isi | Kalau kosong |
 > |---|---|---|---|
 > | `tipe_sensor` | Thermocouple | `RTD` · `Type K` · `Type N` | angkanya DITAHAN, alasannya di `belum_dihitung` |
+> | `spesifikasi_alat.tipe_thermocouple` | Thermocouple | `Type K/N/S/J/B/E/T/R` · `RTD/PT100` · `Lainnya` | tidak menahan apa pun — catatan kerja |
+> | `spesifikasi_alat.tipe_thermocouple_lain` | Thermocouple | teks bebas, cuma waktu pilihannya `Lainnya` | idem |
 > | `alat_bantu` | Thermocouple | `A` (Isotech, −20…150 °C) · `B` (Techne, 150…600 °C) | idem |
 > | `alat_bantu` | Termometer Gelas | `satu` · `dua` (dua oilbath) | idem |
 > | `measurements[].no_probe` | Thermocouple | Type K → 1–16 · Type N → **3–12** · RTD → 17 | titik itu diblokir |
@@ -1190,6 +1244,14 @@ Teknisi & viewer yang nembak endpoint ini dapat `403`.
 >
 > **Pakai ini:** ✅ **`GET /api/customers/lookup`** (live 25 Jul, kebuka semua
 > role) — dibikin persis buat kasus ini. Bentuknya di bawah.
+>
+> **⚠️ Update 27 Agt — mobile baru beneran pindah hari ini.** Koreksi ini ditulis
+> 25 Jul, endpoint-nya jadi hari itu juga, tapi `ApiCustomerLookupService` di
+> repo mobile masih nembak `/arsip/perusahaan?search=` sampai 27 Agt. Jadi
+> keempat baris tabel di atas itu bukan bahaya teoretis — itu yang berjalan di
+> APK selama sebulan. Kalau nemu jalur lain yang masih nembak
+> `/arsip/perusahaan` buat ngisi daftar pelanggan, itu bug yang sama, bukan
+> pilihan lain.
 
 ### `GET /api/customers/lookup` — dropdown pelanggan, semua role
 
@@ -1216,6 +1278,12 @@ GET /api/customers/lookup?search=tirta&page=1
 - **Dipaginasi 15/halaman**, jadi pencariannya dilempar ke server lewat `?search=`
   — nyaring di sisi mobile cuma nyaring halaman pertama, dan pelanggan ke-16 dst.
   jadi nggak kejangkau. `?q=` diterima juga sebagai alias.
+- **Update 27 Agt — `?search=` nyari `nama` ATAU `alamat`.** Begitu cara teknisi
+  mengingat pelanggannya: satu kawasan industri isinya belasan PT bernama mirip,
+  dan yang dia pegang alamat penjemputannya. `?search=Cikarang` mulangin semua PT
+  di Cikarang. Saringan organisasinya tetap kepasang (kurungnya eksplisit di
+  query) — endpoint ini kebuka semua role, dan `orWhere` tanpa kurung bakal
+  nembus ke pelanggan lab sebelah.
 - **Cuma `id`, `nama`, `alamat`.** `contact_person`/`telepon`/`email` sengaja
   nggak ikut: ini dropdown, bukan layar CRUD — role yang nggak boleh ngelola
   pelanggan nggak perlu megang kontaknya. `alamat` ikut karena blok OWNER di
