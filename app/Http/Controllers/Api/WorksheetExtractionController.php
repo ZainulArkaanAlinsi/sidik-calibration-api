@@ -79,7 +79,21 @@ class WorksheetExtractionController extends Controller
             // teknisi cuma "gagal baca, isi manual".
             'kolom_suhu' => ['sometimes', 'nullable', 'boolean'],
             'standar_di_baris' => ['sometimes', 'nullable', 'boolean'],
-            // Opsional: sesi baru belum punya id. Kalau dikirim → batasin akses & tautin log.
+            // Aturannya `nullable`, TAPI jalur ini menolak yang kosong.
+            //
+            // Bentuknya sengaja nggak dinaikkan jadi `required`: yang menolak
+            // `bentukKertas()`, dan penolakannya pulang 422 `fallback_manual`
+            // yang dimengerti aplikasi — bukan 422 validasi yang cuma menyebut
+            // nama kolom. Dinaikkan di sini, klien lama dapat pesan yang nggak
+            // bisa dia terjemahkan jadi "isi manual aja".
+            //
+            // Yang PENTING buat perubahan berikutnya: tanpa sesi nggak ada
+            // alat, tanpa alat nggak ada profil, dan tanpa profil nggak ada
+            // yang tahu kertas ini boleh dikirim ke penyedia AI pihak ketiga
+            // atau nggak. Itu dulu lolos karena bawaannya `didukung: true`, dan
+            // seluruh lembar yang sengaja ditolak bisa dikirim keluar cukup
+            // dengan menghilangkan kolom ini. Jangan dibikin "jalan lagi tanpa
+            // sesi" tanpa menyediakan cara lain buat tahu kertasnya apa.
             'calibration_session_id' => ['sometimes', 'nullable', 'integer'],
         ], [
             'foto.required' => 'Fotonya wajib ada.',
@@ -327,9 +341,19 @@ class WorksheetExtractionController extends Controller
     }
 
     /**
-     * Kalau session dikirim: pastikan seorganisasi & (buat teknisi) miliknya
-     * sendiri. Kalau nggak dikirim: ekstraksi tetap jalan tanpa tautan sesi
-     * (cuma baca foto, nggak buka data apa pun).
+     * Sesi yang dikirim: pastikan seorganisasi & (buat teknisi) miliknya
+     * sendiri. Id yang nggak ketemu di organisasi itu 404; sesi teknisi lain
+     * 403.
+     *
+     * **Nggak dikirim → null, dan pemanggilnya MENOLAK di situ.** Dulu nggak
+     * begitu: ekstraksi tetap jalan tanpa tautan sesi, "cuma baca foto, nggak
+     * buka data apa pun". Yang nggak ikut ditimbang waktu itu — tanpa sesi
+     * nggak ada alat, tanpa alat nggak ada profil, dan gerbang bentuk kertas
+     * ikut terbuka. Seluruh lembar yang sengaja ditolak bisa dikirim ke
+     * penyedia AI pihak ketiga cukup dengan menghilangkan satu kolom opsional.
+     *
+     * Lihat `bentukKertas()`. Null di sini sekarang berarti DITOLAK, bukan
+     * "jalan tanpa tautan".
      */
     private function sesiTervalidasi(?int $sesiId, User $user): ?CalibrationSession
     {
