@@ -307,9 +307,9 @@ Ditambahkan pemilik proyek 26 Agt 2026 bersama tiga workbook master ber-password
 |---|---|---|
 | **A** | Backend tiga alat (profil, lembar kerja, jalur simpan) | **BERES** — alat ke-18, 19, 20 |
 | **B** | Olah data (koreksi + budget U95) sesuai master | **BERES** — cocok sampai digit terakhir, dijaga `Suhu3AlatMasterTest` |
-| **C** | Bagian kamera (pindai lembar kerja) | **BERES di server** — 20/20 lembar punya berkas geometri; `terverifikasi: false` menunggu F1 |
+| **C** | Bagian kamera (pindai lembar kerja) | **BERES 27 Agt 2026** — tombol `FOTO TABEL INI` ketiga lembar dulu selalu pulang nol sel; lihat §12 |
 | **D** | Excel → CSV | **BERES** — 43 sheet di `sidik-calibration-mobile/Project-PT-Sidik/suhu CSV` |
-| **E** | Sisi mobile (layar lembar kerja) | **belum** — lihat `docs/perintah-frontend-suhu-3alat.md` |
+| **E** | Sisi mobile (layar lembar kerja) | **BERES** (26–27 Agt 2026) — baris ini sempat basi, lihat §Gelombang G7 yang sudah mencatatnya selesai: layar tabel pasangan (mobile#108), golden ketiga lembar (mobile#111), dua deret dipecah di layar detail (mobile#112), tiga field sesi kebaca admin (mobile#113) |
 
 **Ketiganya baris lampiran akreditasi LK-285-IDN yang selama ini kosong:** no. 5
 Thermocouple, no. 4 Termometer Gelas, no. 11 Thermohygrometer. Baris CMC-nya
@@ -579,6 +579,141 @@ menyusul.**
 
 ---
 
+## 12. Kamera tiap lembar kerja — audit 27 Agt 2026
+
+Pemilik proyek: *"ini yang ada di dalam bagian kamera nya masing masing lembar kerja nya tolong
+usahakan bisa karena tadi aku coba coba gk bisa, bisa sih bisa tapi kalo nangkap cuma berapa
+table table aja sih."*
+
+Ditelusuri, dan gejalanya persis apa adanya. Dari **20 lembar: 7 tidak punya tombol kamera sama
+sekali, 3 punya tombol yang MUSTAHIL menghasilkan satu sel pun, dan 10 sisanya punya jalur jangkar
+yang bisa ketemu.** Tiga sebab yang beda, dan cuma satu yang selama ini tercatat.
+
+> **Batas klaim ini.** Yang bisa dibuktikan dari sini cuma dua yang pertama — keduanya keputusan
+> kode, dan dua-duanya diuji. Buat kesepuluh sisanya, yang dibuktikan cuma "jangkarnya ADA di
+> jalur yang dikenali" (`Xn` / `Repeat n` / deret nomor polos / kepala slot). Apakah tulisan itu
+> beneran kecetak di kertas lab cuma bisa dijawab jepretan nyata; sejauh ini yang diadu ke foto
+> asli baru Viscometer (`integration_test/foto_tabel_viscometer_hp_test.dart`) dan Conductivity.
+
+### Yang sebenarnya jalan di HP hari ini — cuma SATU tombol
+
+Ini yang paling gampang salah baca dari catatan lama, jadi ditulis eksplisit:
+
+| Tombol | Statusnya |
+|---|---|
+| `PINDAI LEMBAR KERJA` (OCR template lokal, lembar bermarker) | **DICABUT PERMANEN** dari layar, 26 Agt 2026 |
+| `FOTO TABEL INI` (ML Kit, satu jepretan per tabel) | satu-satunya yang tersisa |
+
+Akibat yang perlu dicatat: **F1 sudah tidak menahan apa pun yang bisa disentuh teknisi.**
+`terverifikasi` cuma menggerbangi jalur lembar bermarker, dan `PindaiReviewScreen` — layar review
+per selnya — sekarang tidak pernah dibuka dari mana pun di aplikasi. Jadi "14 dari 20 lembar
+`terverifikasi: false`" itu benar, tapi bukan sebab yang dirasakan pemilik proyek. Foto lembar
+cetak tetap dibutuhkan kalau jalur bermarker suatu saat dipasang lagi; dia bukan blocker hari ini.
+
+### Sebab 1 — tiga lembar yang tombolnya nyala tapi mustahil menghasilkan apa pun
+
+`PetaTabelFoto` mengunci tiap angka ke DUA jangkar sebelum menaruhnya: nilai di kolom kiri
+(baris), dan **tulisan kepala kolom** (kolom). Yang dicarinya `Xn`, `Repeat n`, atau deret nomor
+polos. Tiga lembar tidak mencetak satu pun dari ketiganya:
+
+| Lembar | Kepala kolom yang kecetak |
+|---|---|
+| TITS | `UP X1` `UP X2` `UP X3` `DOWN X1` `DOWN X2` `DOWN X3` |
+| Thermocouple & Termometer Gelas (sisi standar) | `0″` `20″` `40″` `60″` `80″` |
+| idem (sisi UUT) | `10″` `30″` `50″` `70″` `90″` |
+
+Server **sudah** mengirim tulisan itu (`pengulangan_arah[].label`) dan layar **sudah**
+menggambarnya sebagai kepala kolom — cuma pemetanya yang tidak pernah dikasih tahu.
+`_kepalaPengulangan()` di HP membaca `prefiks_pengulangan` saja, dan cuma Spectrophotometer yang
+mengirimnya. Jadi ketiganya pulang **nol sel** di tiap jepretan, sebagus apa pun fotonya.
+
+Yang sampai ke teknisi bukan "kolomnya nggak kebaca" melainkan
+*"tabelnya dikenali, tapi selnya masih kosong — isi dulu lembarnya"* — menyuruh dia mengisi lembar
+yang sudah penuh di tangannya. Itu yang bikin gejalanya kebaca sebagai "kameranya gk bisa".
+
+**Kenapa tulisannya tidak cukup dicocokkan apa adanya.** `MlKitPembacaHalaman` memulangkan hasil
+OCR per **ELEMENT** — kira-kira per kata. `UP X1` tidak pernah datang utuh; yang sampai potongan
+`UP` dan potongan `X1`. Dan `X1` kecetak DUA KALI di lembar TITS. Jadi selama `Xn` ikut jadi
+calon, jangkar Repeat 1 bisa mendarat di kolom **DOWN**, dan yang masuk ke situ pembacaan arah
+sebaliknya — tanpa satu pun error, dengan jumlah sel yang tetap pas dan angka yang tetap wajar.
+
+Diperbaiki dua sisi sekaligus:
+
+- `PetaTabelFoto` sekarang ikut mencocokkan **frasa** — gabungan elemen yang bersebelahan di baris
+  yang sama (tumpang tindih tegak > ½ tinggi huruf, celah mendatar < 1 tinggi huruf). Kotaknya
+  gabungan kotak keduanya, jadi jangkarnya duduk di tengah tulisan yang tercetak. Elemen aslinya
+  tetap ikut, jadi kepala satu kata tidak berubah perilakunya.
+- `_kepalaPengulangan()` memakai `pengulangan_arah[].label`, dan begitu labelnya bukan `Xn`,
+  dia **sendirian** — bawaan `Xn`/`Repeat n` tidak boleh ikut bersuara. Label yang kebetulan `Xn`
+  persis (Thermohygro, yang menerimanya sebagai nilai bawaan `tabelPembacaan`) digabung seperti
+  dulu.
+
+Dijaga `foto_tabel_kepala_tercetak_test.dart`. Dibuktikan menggigit: dengan frasa dimatikan,
+jangkar kolom TITS `[]` — bukan berkurang, **nol**.
+
+### Sebab 2 — kolom yang kepalanya kepotong menyedot kolom sebelahnya, diam-diam
+
+Ini yang paling berbahaya dari ketiganya, dan berlaku di **semua** lembar, bukan cuma yang di
+atas. `petakan()` memanggil `_kolomTerdekat()` **tanpa batas jarak**, padahal jalur ke-bawah
+(Conductivity) sudah memakai batas setengah lebar kolom sejak lama.
+
+Bawaan tanpa batas itu punya alasan yang ditulis di methodnya sendiri — "kolom Repeat selalu
+berdampingan rapat, jadi yang paling dekat memang pemiliknya" — dan premis itu cuma berlaku waktu
+SEMUA kolom kejangkar. Begitu satu kepala kolom kepotong dari frame, dia terbalik jadi bahaya:
+angka di bawah kolom tanpa jangkar ditarik ke jangkar terdekat **sejauh apa pun**.
+
+Akibatnya berlipat, dan dua-duanya senyap:
+
+1. Angka mendarat di Repeat yang bukan miliknya.
+2. Angka itu bentrok dengan angka sah di sel yang sama, lalu `_buangSelKembar` membuang
+   **KEDUANYA** — jadi satu kepala kolom yang kepotong ikut menghapus kolom yang fotonya
+   baik-baik saja.
+
+Sekarang batasnya setengah lebar kolom, sama dengan jalur ke-bawah. Yang di luar itu DIBUANG dan
+ikut kehitung `angkaTakTerpetakan`, jadi teknisi diberitahu ada yang tidak keangkut — persis janji
+yang sudah tertulis di docblock `petakan`: *kolom yang kepalanya nggak kebaca nggak pernah keisi.*
+
+### Sebab 3 — tujuh lembar memang belum punya jalur kamera sama sekali
+
+`pindai_foto.didukung = false` di **Autoklaf, TIDS, dan kelima Enclosure** (Oven, Bath, Inkubator,
+Furnace, Refrigerator). Ini **bukan bug** — keputusan yang diambil sadar waktu tombol lembar penuh
+dicabut, dan alasannya berdiri: dua penanda bentuk yang dikirim server cuma sanggup menggambarkan
+lembar "titik ukur × Repeat", sementara kertas ketujuhnya matriks (Autoklaf), dua tabel interval
+(TIDS), atau grid tiga sumbu set point × sensor × repeat (Enclosure).
+
+Menyalakannya begitu saja bukan bikin hasilnya jelek — bikin hasilnya **salah tapi wajar**, dan
+itu yang lolos sampai sertifikat. Jadi ketujuhnya butuh sumbu ketiga di pemetanya, bukan saklar
+yang dibalik. **Belum dikerjakan** — lihat §Yang MASIH menunggu, K17.
+
+### Hitungannya sebelum & sesudah
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **13** dari 20 |
+| Tombol nyala tapi mustahil dapat satu sel pun | 3 (TITS, Thermocouple, Termometer Gelas) | 0 |
+| Belum punya jalur kamera sama sekali | 7 | 7 (butuh pemeta grid/matriks — K17) |
+
+### Susulan: `kolom_suhu` bohong di lima lembar
+
+Ketemu waktu mengadu tiap profil ke tabel yang benar-benar dikirimnya. `bentukPindaiFoto()`
+bawaannya `kolom_suhu = true` — bentuk lembar pH, yang tiap selnya memuat SEPASANG angka
+(pembacaan + °C dicatat bersamaan). Lima lembar cuma punya kolom `pembacaan` tapi masih mengaku
+punya kolom suhu: **TITS, Gas Detector, Thermocouple, Termometer Gelas, Thermohygrometer**.
+
+Belum pernah menggigit hari ini karena penanda itu cuma memberi makan endpoint AI Vision cloud,
+dan aplikasi mobile tidak pernah memanggilnya lagi. Tapi endpointnya masih hidup, dan yang terjadi
+kalau dipanggil sudah tertulis di docblock bawaannya: modelnya diminta membaca kolom yang tidak
+ada di kertasnya, lalu mengarang angka supaya kolomnya kelihatan terisi.
+
+Seperti biasa yang bolong justru yang paling baru, dan sebabnya penjaganya berdiri di sisi yang
+salah: penanda ini cuma pernah diuji di lembar pH (yang memang benar) dan lembar grid Enclosure.
+Sekarang `BentukPindaiFotoCocokTabelTest` **menurunkan harapannya dari kolom tabel yang beneran
+dikirim** — bukan dari daftar nama alat — jadi profil ke-21 ikut kesapu tanpa ada yang perlu
+ingat. Tiga aturan × 20 profil, dan dibuktikan merah dengan mengembalikan `kolom_suhu` TITS ke
+`true`.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -604,11 +739,12 @@ Jangan ditanyakan ulang.
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
-| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **11 dari 17** berkas geometri. Ini bukan pertanyaan, ini kiriman — dan bukan sesuatu yang bisa dikerjakan dari sini |
+| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **14 dari 20** berkas geometri. **Berhenti jadi blocker 27 Agt 2026** — jalur lembar bermarker yang digerbanginya sudah tidak punya pintu masuk di aplikasi (§12). Tetap dibutuhkan kalau jalur itu dipasang lagi |
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
 | **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
+| **K17** | Tujuh lembar bentuk matriks/grid (Autoklaf, TIDS, kelima Enclosure) belum punya jalur kamera sama sekali — dikerjakan sekarang, atau nunggu? | Kamera di 7 dari 20 lembar. Butuh sumbu KETIGA di pemeta foto (`sensor_ke` buat grid Enclosure, baris besaran buat matriks Autoklaf), bukan saklar yang dibalik — lihat §12 sebab 3 |
 
 ### K12 — dryblock A memakai angka dryblock B
 
@@ -635,7 +771,7 @@ kehilangan satu-satunya oracle yang kita punya.
 Begitu lab mengirim hasil ukur Isotech yang sebenarnya, cukup ekstraksi ulang
 `database/data/tabel-master-suhu-3alat.json`; nol baris kode berubah.
 
-### F1 — kenapa satu foto menahan sebelas lembar
+### F1 — kenapa satu foto dulu menahan sebelas lembar, dan kenapa sekarang tidak lagi
 
 Koordinat di berkas geometri **eksak menurut definisi**: `ocr:cetak-lembar` menggambar kertasnya
 DARI koordinat itu, jadi kotaknya nggak mungkin meleset dari yang tercetak. Yang belum pernah
@@ -644,10 +780,17 @@ kertas yang beneran dicetak, difoto miring, di bawah lampu lab.
 
 `terverifikasi: true` artinya rantai itu **sudah dibuktikan**, bukan "koordinatnya sudah benar".
 Jadi cuma manusia yang boleh menyetelnya, dan bukti yang dibutuhkan cuma satu: satu foto lembar
-cetak yang sudah diisi. Enam lembar kimia sudah punya bukti itu; sebelas sisanya belum.
+cetak yang sudah diisi. Enam lembar kimia sudah punya bukti itu; empat belas sisanya belum.
 
-Sampai foto itu ada, kesebelas lembar tombol pindainya digambar **MATI berikut alasannya** —
-bukan hilang, bukan nyala dengan koordinat karangan.
+**Yang berubah 27 Agt 2026: butir ini berhenti menahan apa pun yang bisa disentuh teknisi.**
+`terverifikasi` cuma menggerbangi tombol `PINDAI LEMBAR KERJA` — jalur lembar bermarker — dan
+tombol itu dicabut permanen dari layar 26 Agt 2026 atas permintaan pemilik lab. `PindaiReviewScreen`
+yang jadi ujungnya sekarang tidak pernah dibuka dari mana pun di aplikasi.
+
+Jadi waktu pemilik proyek melaporkan kameranya "cuma nangkap berapa tabel aja", sebabnya BUKAN ini
+(lihat §12). Mesinnya sengaja ditinggal utuh — dia satu-satunya kode yang sudah terbukti bisa
+memetakan foto kertas bermarker ke sel — jadi butirnya tetap terbuka, cuma turun jadi prasyarat
+kalau jalur itu dipasang lagi, bukan blocker yang berjalan hari ini.
 
 ---
 

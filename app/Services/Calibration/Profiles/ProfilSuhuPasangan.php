@@ -166,6 +166,35 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
     }
 
     /**
+     * Satu angka per sel — TIDAK ada kolom suhu di dalam tiap pengulangan.
+     *
+     * Bawaan [CalibrationProfile::bentukPindaiFoto] `kolom_suhu = true`, dan
+     * itu memang bentuk lima lembar pertama: tiap sel lembar pH memuat SEPASANG
+     * angka (pembacaan + °C yang dicatat bersamaan). Ketiga lembar ini tidak —
+     * [tabelPembacaan] cuma mengirim satu kolom (`pembacaan`), dan suhu ruangnya
+     * dicatat sekali di blok kondisi lingkungan, bukan per sel.
+     *
+     * Bedanya bukan kerapian penulisan: prompt & skema JSON yang dikirim ke
+     * pembaca foto dibangun dari penanda ini. Dibiarkan `true`, modelnya diminta
+     * membaca kolom °C yang tidak pernah ada di kertasnya — dan yang balik bukan
+     * error, tapi angka yang dikarang supaya kolomnya kelihatan terisi. Alasan
+     * yang sama persis dipakai `didukung` menolak lembar Autoklaf & grid
+     * Enclosure; lihat docblock bawaannya.
+     *
+     * `standar_di_baris` tetap `false`: set point turun ke bawah dan
+     * pengulangan berjajar ke kanan, sama seperti lembar pH. Yang berbeda dari
+     * pH cuma dari MANA nilai standarnya datang (dibaca teknisi di tabel
+     * sebelahnya, bukan konstanta master) — dan itu tidak mengubah bentuk
+     * kertas yang dilihat pembaca foto.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => false, 'didukung' => true];
+    }
+
+    /**
      * Bentuk lembar kerja lengkap + penautan master.
      *
      * @return array<string, mixed>
