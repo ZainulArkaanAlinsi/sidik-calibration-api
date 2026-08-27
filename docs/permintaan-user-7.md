@@ -673,7 +673,7 @@ Sekarang batasnya setengah lebar kolom, sama dengan jalur ke-bawah. Yang di luar
 ikut kehitung `angkaTakTerpetakan`, jadi teknisi diberitahu ada yang tidak keangkut — persis janji
 yang sudah tertulis di docblock `petakan`: *kolom yang kepalanya nggak kebaca nggak pernah keisi.*
 
-### Sebab 3 — tujuh lembar belum punya jalur kamera sama sekali → tinggal SATU
+### Sebab 3 — tujuh lembar belum punya jalur kamera sama sekali → **habis**
 
 `pindai_foto.didukung = false` di **Autoklaf, TIDS, dan kelima Enclosure** (Oven, Bath, Inkubator,
 Furnace, Refrigerator), dan penanda itu **tetap `false` sampai sekarang** — dengan benar: dia
@@ -685,9 +685,20 @@ sendiri**:
 
 | Kertas | Sumbu | Jangkar barisnya sekarang |
 |---|---|---|
-| **Grid** (kelima Enclosure) | set point × termokopel × pengulangan | **nomor termokopel** yang sudah diketik teknisi; sumbu KETIGA-nya dari blok tempat tombolnya ditekan, bukan dari citra |
+| **Grid** (kelima Enclosure) | set point × termokopel × pengulangan | **nomor termokopel yang DIBACA DARI FOTO**; sumbu KETIGA-nya dari blok tempat tombolnya ditekan, bukan dari citra |
 | **Matriks** (Autoklaf) | besaran × titik waktu | **tulisan nama besaran** (`Temp. Disk 1`, `Indikator Pressure`) di kolom kiri |
-| **Dua tabel interval** (TIDS) | set point × UUT | **belum** — tertahan K18, barisnya sendiri belum sampai ke layar |
+| **Dua tabel interval** (TIDS) | set point × UUT | **tulisan `Set point 1`…`Set point 7`** di kolom kiri; kolomnya dari `0" (UUT1)`…`90" (UUT5)` yang sudah dikirim `pengulangan_uut[].label` |
+
+> **Keputusan pemilik lab, 27 Agt 2026: teknisi MOTRET DULU, nomornya belakangan.** Rancangan
+> pertama menjangkar baris grid ke nomor termokopel yang sudah diketik di layar — dan itu salah
+> untuk urutan kerja yang sebenarnya: waktu tombolnya ditekan, layarnya memang masih kosong.
+> Nomornya sekarang dibaca dari kolom `No.` di fotonya.
+>
+> Risikonya nyata dan ditanggung sadar: nomor yang salah baca memindahkan SELURUH baris ke
+> termokopel yang salah, dan nomor itu yang menentukan koreksi mana yang dipakai. Yang bikin dia
+> bisa ditanggung — **nomornya ikut ditaruh di kotaknya sendiri dan ikut ditandai kuning**, jadi
+> kelihatan dan bisa dibetulkan di satu tempat; membetulkannya memindahkan barisnya utuh.
+> Yang dijamin utuh **kebersamaan satu baris**, bukan ketepatan nomornya.
 
 Dua hal yang bikin ini aman, dan dua-duanya aturan yang sudah berlaku di seluruh pemeta:
 
@@ -711,11 +722,11 @@ Ruang` grid hilang, 15 dari 25 sel.
 
 | | Sebelum | Sesudah |
 |---|---|---|
-| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **19** dari 20 |
+| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **20 dari 20** |
 | Tombol nyala tapi mustahil dapat satu sel pun | 3 (TITS, Thermocouple, Termometer Gelas) | 0 |
-| Belum punya jalur kamera sama sekali | 7 | **1** (TIDS — tertahan K18, bukan pemetanya) |
+| Belum punya jalur kamera sama sekali | 7 | **0** |
 
-### K18 — lembar TIDS terbuka dengan NOL baris, dan itu bukan soal kamera
+### ~~K18~~ — lembar TIDS terbuka dengan NOL baris — **DIJAWAB & DIKERJAKAN 27 Agt 2026**
 
 Ketemu waktu menyiapkan jalur kamera buat ketujuh lembar itu, dan jauh lebih mahal daripada yang
 dicari.
@@ -734,28 +745,50 @@ TIDS terbuka dengan dua kepala tabel dan nol kotak isian, tanpa satu pun error.
 | Kenapa nggak ketangkap penjaga | `MockLembarKerjaService` **nggak punya bentuk TIDS sama sekali** — satu-satunya sumber bentuknya server, dan nggak ada test yang menyuapkan bentuk aslinya ke parser |
 | Kelas kegagalannya | sama persis dengan `CalibrationHistoryItem`: *"draf tanpa tanggal cast-nya melempar, `parseListAman` nelen lemparannya, dan barisnya DILEWAT diam-diam"* |
 
-Dijaga sekarang oleh `tids_baris_tanpa_titik_test.dart` — **MERAH hari ini, sengaja dibiarkan
-merah**: dia menyatakan perilaku yang benar, dan perbaikannya butuh satu keputusan yang bukan
-keputusan yang lagi ngoding.
+**Pemilik proyek memilih A** (27 Agt 2026): tujuh baris tetap digambar, dan **tiap baris punya
+kotak `Setpoint` sendiri** yang diisi teknisi — persis kertasnya.
 
-**Yang perlu diputuskan pemilik lab.** `titikUkur` di HP itu yang dikirim sebagai
+Kenapa pilihan itu tidak bisa diambil sambil ngoding: `titikUkur` di HP yang dikirim sebagai
 `measurements[].titik_ukur`. Menambal parser dengan memberi baris null sebuah angka (nomor
-barisnya, 1..7) **membuat bug yang lebih buruk**: set point sesi terkirim sebagai "1 °C … 7 °C",
-angka yang tidak pernah diketik siapa pun dan tidak ditolak apa pun. Dua jalan keluar yang benar:
+barisnya, 1..7) **membuat bug yang lebih buruk** — set point sesi terkirim sebagai "1 °C … 7 °C",
+angka yang tidak pernah diketik siapa pun dan tidak ditolak apa pun.
 
-| | Bentuknya di layar | Yang perlu diubah |
-|---|---|---|
-| **A** | Tujuh baris tetap digambar, tiap baris punya kotak `Setpoint` sendiri yang diisi teknisi — persis kertasnya | `titikUkur` jadi nullable sampai ke payload; baris tanpa set point tidak ikut dikirim |
-| **B** | Teknisi menyusun daftar set point lewat `PengaturTitik` (cara TITS), barisnya lahir dari situ | lebih kecil, tapi layarnya berhenti mirip kertas — dan kertas TIDS-nya `SIDIK-FM-CAL-0506 Rev.4`, formulir terkendali |
+Yang dikerjakan:
 
-Jalur B **sudah setengah jalan** hari ini: `titik_bisa_diubah: true` sudah dikirim dan
-`PengaturTitik` sudah digambar. Yang bolong tetap ada walau B dipilih — `barisTabel()` mewarisi
-satuan/desimal/resolusi/standar dari baris CONTOH, dan tanpa satu baris pun dari backend contohnya
-`null`, jadi baris buatan teknisi jatuh ke satuan lembar. Komentarnya sendiri menulis kondisi itu
-*"nggak pernah kejadian"* — untuk TIDS dia kejadian di tiap sesi.
+- Angkanya tetap ada sebagai **penanda posisi** (baris butuh identitas buat dibedakan dari enam
+  tetangganya), ditandai `titikDitentukan: false`. Yang menentukan apa yang DIKIRIM
+  `TitikState.titikUkurEfektif`, dan baris yang kotaknya dibiarkan kosong tidak ikut dikirim
+  sama sekali.
+- `PengaturTitik` tidak digambar untuk lembar begini: dua jalan mengisi satu hal yang sama bikin
+  teknisi tidak tahu yang mana yang berlaku.
+- Set point yang sudah diketik ikut selamat waktu tabelnya dibangun ulang.
 
-Kamera TIDS menunggu ini, bukan sebaliknya: memfoto tabel yang barisnya belum ada nggak ada
-artinya.
+Dijaga `tids_baris_tanpa_titik_test.dart` (8 test), dibuktikan menggigit dengan mengembalikan cast
+lamanya: baris → `[]`.
+
+### Dua lubang lain yang ketemu di lembar yang sama
+
+Keduanya baru **hidup** sesudah barisnya ada — sebelum ini tabelnya kosong, jadi tidak ada yang
+bisa hilang. Ditutup di commit yang sama, bukan ditinggal sebagai utang:
+
+**1 · Kepala kolom TIDS tidak pernah kejangkar.** Kertasnya mencetak `0" (UUT1)`…`90" (UUT5)`, dan
+server sudah mengirimnya di `pengulangan_uut[].label` — tapi sisi HP cuma membaca
+`pengulangan_arah`. Kelas kegagalan yang sama persis dengan TITS & dua lembar suhu di §12 sebab 1.
+Sekarang dua kunci itu dibaca ke peta yang sama.
+
+**2 · Tabel `Pembacaan Standard` isinya tidak punya tempat di server.** Backend menyatakannya
+eksplisit lewat `simpan_ke: null`, lengkap dengan peringatan di docblock-nya: *"Layar HP wajib
+membaca kunci ini sebelum menyalakan tombol kirim untuk tabel ini — kalau tidak, teknisi mengisi
+35 kotak yang hilang tanpa pesan apa pun."* **HP tidak pernah membacanya.**
+
+Kotaknya tidak dimatikan — teknisi memang mencatat deret itu di kertas, dan layar yang menolak
+angka yang sudah ada di tangannya lebih membingungkan daripada layar yang jujur. Yang ditambah
+keterangannya, **di ATAS tabelnya**: yang membaca setelah mengisi 35 kotak sudah terlambat diberi
+tahu.
+
+Baru sesudah ketiganya beres `TidsProfile::bentukPindaiFoto()` dinyalakan (`didukung: true`).
+Menyalakannya lebih dulu cuma menghasilkan tombol yang tiap jepretannya nol sel — dan, lebih
+buruk, kamera yang mempercepat pengisian kotak yang memang belum punya tempat.
 
 ### Susulan: `kolom_suhu` bohong di lima lembar
 
@@ -809,7 +842,7 @@ Jangan ditanyakan ulang.
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
 | **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
 | ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
-| **K18** | **Lembar TIDS: tujuh baris set point kosong digambar apa adanya (tiap baris punya kotak Setpoint sendiri), atau teknisi menyusun daftarnya lewat pengatur titik seperti TITS?** | Seluruh lembar TIDS — hari ini terbuka dengan **nol baris**, dan kameranya nunggu barisnya ada dulu. Menambal parser tanpa keputusan ini menerbitkan set point yang tidak pernah diketik siapa pun. Lihat §12 K18 |
+| ~~**K18**~~ | ~~Lembar TIDS: tujuh baris Setpoint sendiri, atau pengatur titik?~~ | **DIJAWAB: tujuh baris, tiap baris punya kotaknya sendiri** (27 Agt 2026). Sudah dikerjakan berikut dua lubang lain di lembar yang sama — lihat §12 K18 |
 
 ### K12 — dryblock A memakai angka dryblock B
 
