@@ -377,23 +377,45 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
-     * Jalur pindai foto DITOLAK untuk alat ini.
+     * Kertas TIDS: dua tabel `titik ukur × kolom`, dan sekarang BISA difoto.
      *
-     * Bukan karena belum sempat: kedua penanda yang dimengerti pembaca foto
-     * (`kolom_suhu`, `standar_di_baris`) cuma bisa menggambarkan lembar
-     * "titik ukur × Repeat". Kertas TIDS sumbunya set point × LIMA UUT, dengan
-     * dua tabel terpisah yang saling berpasangan per 10 detik. Tidak ada
-     * kombinasi dua penanda itu yang menggambarkannya, dan yang terjadi kalau
-     * dibiarkan default persis kasus Autoklaf: model diminta membaca tabel yang
-     * tidak pernah ada di kertasnya, lalu memulangkan angka ngawur yang
-     * kelihatan wajar.
+     * ## Kenapa dulu ditolak, dan apa yang berubah
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool}
+     * Penanda ini dulu `didukung: false` dengan alasan "dua tabel interval yang
+     * saling berpasangan per 10 detik tidak bisa digambarkan dua penanda
+     * bentuk". Alasan itu benar untuk jalur AI Vision cloud, yang memang cuma
+     * punya dua penanda ini — dan jalur itu sudah tidak dipanggil aplikasi
+     * mobile sejak lama.
+     *
+     * Yang dipakai sekarang jalur LOKAL, dan dia menjangkar per tabel, bukan
+     * per lembar. Dua tabel yang berpasangan itu difoto satu-satu, dan
+     * masing-masing memang berbentuk baris × kolom:
+     *
+     *  - **baris** dijangkar tulisan `Set point 1`…`Set point 7` yang tercetak
+     *    di kolom kiri. Bukan angkanya — set point TIDS memang kosong di
+     *    kertas.
+     *  - **kolom** dijangkar `0" (UUT1)`…`90" (UUT5)`, yang sudah dikirim di
+     *    `pengulangan_uut[].label`.
+     *
+     * ## Yang harus sudah beres di sisi HP sebelum ini dinyalakan
+     *
+     * Tiga hal, dan ketiganya baru mendarat 27 Agt 2026 — menyalakan penanda
+     * ini lebih dulu cuma menghasilkan tombol yang tiap jepretannya nol sel:
+     *
+     *  1. Baris ber-`titik_ukur: null` **kebaca**. Sebelumnya cast keras di HP
+     *     membuangnya diam-diam, jadi lembar ini terbuka tanpa satu pun kotak.
+     *  2. `pengulangan_uut[].label` dipakai sebagai jangkar kolom.
+     *  3. Tabel `Pembacaan Standard` menampilkan keterangan `simpan_ke: null`
+     *     — tanpa itu, kamera cuma mempercepat pengisian 35 kotak yang memang
+     *     belum punya tempat di server.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => false, 'standar_di_baris' => true, 'didukung' => false];
+        return ['kolom_suhu' => false, 'standar_di_baris' => true, 'didukung' => true];
     }
+
 
     /** TIDS tidak punya pasangan titik→standar tetap — set point-nya kosong di kertas. */
     public function standarPerTitik(): array
