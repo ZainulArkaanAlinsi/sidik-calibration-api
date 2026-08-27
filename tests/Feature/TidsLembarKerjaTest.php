@@ -160,8 +160,43 @@ class TidsLembarKerjaTest extends TestCase
             array_column($bagian['penutup']['field'], 'label'),
         );
 
-        // Jalur pindai foto DITOLAK — kertas TIDS bukan "titik × Repeat".
-        $this->assertFalse($data['pindai_foto']['didukung']);
+        // DUA gerbang foto, dan bedanya disengaja:
+        //
+        //  - `lokal` menggerbangi tombol `FOTO TABEL INI` — ML Kit, sepenuhnya
+        //    di HP. DINYALAKAN 27 Agt 2026: dua tabelnya difoto satu-satu, dan
+        //    masing-masing memang baris × kolom. Barisnya dijangkar tulisan
+        //    `Set point N`, kolomnya `0" (UUT1)`.
+        //  - `didukung` menggerbangi `POST /raw-measurements/extract-from-photo`,
+        //    yang MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK KETIGA.
+        //    TETAP DITOLAK.
+        //
+        // Keduanya sempat jadi satu penanda, dan menyalakan yang lokal
+        // diam-diam ikut melebarkan batas datanya. Dua-duanya di-assert di
+        // sini supaya penyatuan itu nggak bisa balik tanpa ketahuan.
+        $this->assertFalse(
+            $data['pindai_foto']['didukung'],
+            'Foto TIDS nggak boleh keluar dari HP. `didukung: true` bikin lembar ini memenuhi '
+            .'syarat dikirim ke penyedia AI pihak ketiga begitu Vision nyala.',
+        );
+        $this->assertTrue($data['pindai_foto']['lokal']);
+
+        // Tulisan kepala kolom yang tercetak WAJIB ikut dikirim — itu
+        // satu-satunya jangkar sumbu mendatar yang dipunya jalur foto. Tanpa
+        // dia, tombolnya nyala dan tiap jepretan pulang nol sel.
+        $tabel = collect($data['bagian'])
+            ->flatMap(static fn (array $b): array => $b['tabel'] ?? [])
+            ->firstWhere('tahap', 'pembacaan_standard');
+        $this->assertNotNull($tabel, 'Tabel Pembacaan Standard hilang dari bentuknya.');
+        $this->assertSame(
+            '0" (UUT1)',
+            $tabel['pengulangan_uut'][0]['label'],
+        );
+
+        // Dan `simpan_ke` tetap dinyatakan eksplisit: tabel Pembacaan Standard
+        // belum punya kolom penampung, dan layar HP menggambar keterangannya
+        // dari kunci ini. Dihilangkan, teknisi mengisi 35 kotak yang hilang
+        // tanpa pesan apa pun.
+        $this->assertArrayHasKey('simpan_ke', $tabel);
     }
 
     /**
