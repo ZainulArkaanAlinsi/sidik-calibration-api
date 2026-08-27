@@ -222,11 +222,26 @@ class LembarKerjaSpektroCocokCetakanTest extends TestCase
      * Isinya buat lembar ini: nggak ada kolom suhu (tiap sel satu angka; suhu
      * ruang dicatat sekali di Env. Condition) dan standarnya turun ke bawah
      * sementara Repeat X1..X3 berjajar ke kanan.
+     *
+     * Dua gerbangnya disebut EKSPLISIT sejak 27 Agt 2026, dan itu bukan
+     * kosmetik. Sebelumnya profil ini nggak menyebut `didukung` sama sekali,
+     * jadi nilainya diwarisi dari bawaan `WorksheetExtractionController`. Waktu
+     * bawaan itu diturunkan buat menutup lubang lain, jalur foto lembar ini
+     * ikut mati tanpa ada yang berniat begitu — dan yang menangkapnya cuma test
+     * lain, kebetulan.
+     *
+     * `assertSame` di sini sengaja seluruh isi array: kunci yang hilang WAJIB
+     * bikin baris ini merah, karena hilangnya kunci itulah bentuk kegagalannya.
      */
     public function test_bentuk_pindai_foto_ikut_dikirim(): void
     {
         $this->assertSame(
-            ['kolom_suhu' => false, 'standar_di_baris' => true],
+            [
+                'kolom_suhu' => false,
+                'standar_di_baris' => true,
+                'didukung' => true,
+                'lokal' => true,
+            ],
             $this->lembar()['pindai_foto'],
         );
     }
