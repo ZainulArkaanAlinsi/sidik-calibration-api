@@ -557,11 +557,36 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
 > Jangan hardcode daftar kode profil — baca `peran`.
 >
+> ### `tipe_sensor` vs `tipe_thermocouple` — dua hal, dan gampang ketuker
+>
+> Namanya mirip, letaknya beda, dan yang satu menggerakkan angka sementara yang
+> satu tidak.
+>
+> | | `tipe_sensor` | `spesifikasi_alat.tipe_thermocouple` |
+> |---|---|---|
+> | Milik siapa | sensor **acuan lab** | alat **pelanggan** yang dikalibrasi |
+> | Di kertas | blok *Pengerjaan* | blok *Identitas Alat dan Data Customer* |
+> | Pilihan | 3 (yang lab punya sertifikatnya) | 10 (sesuai `SIDIK-FM-CAL-0535_Rev.2`) |
+> | Efek ke angka | **memilih tabel koreksi** + 2 komponen budget | **nol** |
+> | Di sertifikat | tercetak di tabel standar | tidak tercetak |
+>
+> Di master dua-duanya ada dan sering bernilai sama — `INPUT DATA!E4`
+> (`Sensor Type (UUT)`) dan `INPUT DATA!O23` (`Standar Sensor`) sama-sama `2` di
+> sesi contoh, dua-duanya Type K. Kebetulan itu yang bikin gampang disangka satu
+> kolom.
+>
+> **Jangan memanjangkan `tipe_sensor` jadi sepuluh** cuma karena kertas UUT-nya
+> sepuluh: lab cuma punya sertifikat & ketertelusuran buat RTD, Type K, dan
+> Type N. Tujuh sisanya di `DATABASE!Q23:Q27` memang tercantum tanpa nomor seri
+> dan tanpa ketertelusuran — lab tidak memilikinya.
+>
 > ### Field per alat
 >
 > | Field | Alat | Isi | Kalau kosong |
 > |---|---|---|---|
 > | `tipe_sensor` | Thermocouple | `RTD` · `Type K` · `Type N` | angkanya DITAHAN, alasannya di `belum_dihitung` |
+> | `spesifikasi_alat.tipe_thermocouple` | Thermocouple | `Type K/N/S/J/B/E/T/R` · `RTD/PT100` · `Lainnya` | tidak menahan apa pun — catatan kerja |
+> | `spesifikasi_alat.tipe_thermocouple_lain` | Thermocouple | teks bebas, cuma waktu pilihannya `Lainnya` | idem |
 > | `alat_bantu` | Thermocouple | `A` (Isotech, −20…150 °C) · `B` (Techne, 150…600 °C) | idem |
 > | `alat_bantu` | Termometer Gelas | `satu` · `dua` (dua oilbath) | idem |
 > | `measurements[].no_probe` | Thermocouple | Type K → 1–16 · Type N → **3–12** · RTD → 17 | titik itu diblokir |

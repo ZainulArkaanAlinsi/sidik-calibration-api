@@ -153,6 +153,55 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
     ];
 
     /**
+     * Tipe termokopel ALAT PELANGGAN — `INPUT DATA!E4` (`Sensor Type (UUT)`).
+     *
+     * ## Beda dari [TabelKalibratorSuhu3Alat::TIPE_SENSOR_STANDAR], dan bedanya penting
+     *
+     * Yang itu sensor ACUAN milik lab: tiga tipe, punya nomor seri dan
+     * ketertelusuran, dan dia yang memilih tabel koreksi plus dua komponen
+     * budget. Yang ini tipe termokopel alat yang SEDANG DIKALIBRASI — punya
+     * pelanggan, dan lab tidak memilikinya.
+     *
+     * Kertas kerja `SIDIK-FM-CAL-0535_Rev.2` menaruhnya di blok *Identitas Alat
+     * dan Data Customer*, bukan di *Pengerjaan* — jadi di sini pun ikut ke
+     * bagian identitas.
+     *
+     * ## Kenapa ini TIDAK menyentuh satu angka pun
+     *
+     * Diadu ke masternya: `SERTIFIKAT` mencetak identitas UUT (`Model/Type`,
+     * `Serial Number`, tanggal, metode) TANPA tipe sensornya, dan tabel standar
+     * di bawahnya mencetak sensor ACUAN (`Thermocouple Type K / -/Type K /
+     * TC-01,02 / LK-064-IDN`) — bukan yang ini. Budget-nya pun nol menyentuh:
+     * kesembilan komponennya soal kalibrator, probe acuan, dryblock, AC pick-up,
+     * dan daya baca.
+     *
+     * Jadi kolom ini CATATAN KERJA, dan disimpan sebagai `spesifikasi_alat`
+     * seperti rentang/kapasitas/resolusi — bukan kolom sesi, karena dia sifat
+     * alat pelanggan, bukan keputusan pengerjaan.
+     *
+     * ## Daftarnya ikut KERTAS, bukan combobox Excel
+     *
+     * Excel (`DATABASE!Q20:Q27`) memuat delapan: N, K, PT100, B, T, R, S, J.
+     * Kertas Rev.2 memuat sepuluh — kedelapan itu plus **E** dan **Others …**.
+     * Yang dipakai daftar kertas: dia superset, dan dia yang dipegang teknisi
+     * waktu mengisi. Kalau dipakai daftar Excel, termokopel Type E yang datang
+     * ke lab tidak punya tempat sama sekali — dan yang hilang catatan alat apa
+     * yang sebenarnya dikalibrasi.
+     */
+    public const TIPE_UUT_LAINNYA = 'Lainnya';
+
+    public const TIPE_THERMOCOUPLE_UUT = [
+        'Type K', 'Type N', 'Type S', 'Type J', 'Type B',
+        'Type E', 'Type T', 'Type R', 'RTD/PT100', self::TIPE_UUT_LAINNYA,
+    ];
+
+    /** Kotak tulis yang cuma muncul waktu [TIPE_UUT_LAINNYA] dipilih. */
+    public const TAMPIL_KALAU_TIPE_UUT_LAIN = [
+        'kode' => 'spesifikasi_alat.tipe_thermocouple',
+        'nilai' => [self::TIPE_UUT_LAINNYA],
+    ];
+
+    /**
      * Label kolom pengulangan sisi STANDAR & sisi UUT.
      *
      * Detiknya bukan hiasan: standar dan UUT dibaca BERGANTIAN dalam satu
@@ -453,6 +502,21 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                     $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'teks', satuan: self::SATUAN),
                     $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka', satuan: self::SATUAN),
                     $this->field('spesifikasi_alat.resolusi', '7. Resolusi Indikator', 'angka', satuan: self::SATUAN),
+                    $this->field(
+                        'spesifikasi_alat.tipe_thermocouple',
+                        '8. Tipe Thermocouple (alat pelanggan)',
+                        'pilihan',
+                        pilihan: array_map(
+                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
+                            self::TIPE_THERMOCOUPLE_UUT,
+                        ),
+                    ),
+                    $this->field(
+                        'spesifikasi_alat.tipe_thermocouple_lain',
+                        '8b. Tipe Thermocouple — sebutkan',
+                        'teks',
+                        tampilKalau: self::TAMPIL_KALAU_TIPE_UUT_LAIN,
+                    ),
                 ]),
                 [
                     'kode' => 'data_kalibrasi',
