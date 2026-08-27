@@ -12,6 +12,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\PasanganStandarUutMentah;
 use App\Support\KodeSelRevisi;
 use Illuminate\Support\Collection;
 
@@ -919,6 +920,22 @@ class CalibrationValidator
                     // Kosong buat sepuluh alat lain, dan profilnya nggak
                     // pernah menengoknya.
                     ...GridSensorMentah::dari($pembacaan),
+                    // Pasangan standar/UUT ketiga alat suhu, disusun ulang dari
+                    // `peran_sensor`/`sensor_ke`/`satuan`. Alasannya sama
+                    // seperti grid enclosure di atas — bedanya ini sudah
+                    // TERBUKTI menggigit: tanpa kunci-kunci ini setiap titik
+                    // Thermocouple, Termometer Gelas, dan Thermohygro pulang
+                    // sebagai `hitung_ulang_gagal`, padahal datanya lengkap di
+                    // database. Kosong buat lima belas alat lain.
+                    ...PasanganStandarUutMentah::dari($pembacaan),
+                    // Tiga kolom SESI (bukan per titik) yang ikut nentuin
+                    // budget: dryblock/oilbath yang dicentang, cara pencelupan,
+                    // dan pembacaan uji titik es. Dibaca balik dari sesinya,
+                    // bukan dikarang — hitung ulang harus dapat komponen yang
+                    // SAMA kayak waktu sesi ini disimpan.
+                    'alat_bantu' => $sesi->alat_bantu,
+                    'tipe_pencelupan' => $sesi->tipe_pencelupan,
+                    'titik_es' => $sesi->titik_es ?? [],
                 ],
                 'tersimpan' => $titik,
             ];
