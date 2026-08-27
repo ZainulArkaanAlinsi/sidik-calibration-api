@@ -121,6 +121,31 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
      *
      * Rentangnya dicetak di lembar kerjanya sendiri (`INPUT DATA!R25`):
      * `A: -20 ~150 °C`, `B: 150~600 °C`.
+     *
+     * ## Angka budget A & B SAMA hari ini, dan itu bukan salah kita
+     *
+     * Sheet `Variasi axial Dryblok A` di workbook master isinya **identik
+     * byte-per-byte** dengan `Variasi axial Dryblok B`, dan dua-duanya menulis
+     * kepala yang sama: *Techne TeCal 700xs, SN `DB-B-2`, kapasitas 0~600 °C* —
+     * itu dryblock **B**. Jadi di master lab sendiri, data Isotech (blok A)
+     * tidak pernah diisi; sheet-nya salinan B.
+     *
+     * Akibatnya `variasi_aksial` (0,2 °C) dan `variasi_antar_lubang` (0,13 °C)
+     * sama buat kedua blok. Kita menyalin master apa adanya — angka kita = angka
+     * Excel, dan test oracle-nya menjaga itu — tapi buat sesi yang memakai blok
+     * A, kedua komponen itu diukur di blok yang BUKAN blok yang dipakai.
+     *
+     * Yang perlu hati-hati waktu membaca kode ini: pesan `syaratKurang()`
+     * menjanjikan komponen itu "diambil dari tabel dryblock-nya masing-masing".
+     * Hari ini janji itu belum bisa ditepati, dan yang menahannya data lab,
+     * bukan kode di sini. Begitu lab mengisi sheet A dengan hasil ukur Isotech
+     * yang sebenarnya, ekstraksi ulang `tabel-master-suhu-3alat.json` langsung
+     * memisahkan keduanya tanpa satu baris pun berubah di berkas ini.
+     *
+     * Jangan "membetulkan" dengan mengarang angka Isotech: itu mengarang
+     * komponen ketidakpastian, dan U95-nya berhenti bisa diadu ke Excel lab.
+     *
+     * @see docs/permintaan-user-7.md — butir terbuka buat lab
      */
     public const DRYBLOCK = [
         ['nilai' => 'A', 'label' => 'A — Isotech Fast Cal Low (−20…150 °C)', 'min' => -20.0, 'maks' => 150.0],

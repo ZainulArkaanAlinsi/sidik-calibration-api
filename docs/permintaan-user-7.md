@@ -404,6 +404,50 @@ seseorang menambahkannya ke `DRYBLOCK`, dan layar admin memajang `C` mentah
 tanpa satu pun error. Hook-nya `CalibrationProfile::labelAlatBantu()`, default
 null buat tujuh belas alat lain.
 
+### Audit ulang 27 Agt 2026 — 43 sheet diadu, satu bug ketemu
+
+Pemilik proyek minta ketiga alat dicek ulang: *"beneran bisa dipakai apa cuma gimmick"*, dan
+apakah ada sheet master yang kelewat. Ketiga workbook dibongkar sheet demi sheet (19 + 15 + 9)
+dan jalur pakainya dijalankan ujung-ke-ujung.
+
+**Olah datanya bersih.** Tiap komponen budget diadu ulang ke kolom `ui` master, bukan cuma angka
+akhirnya: Thermocouple 9 komponen, Termometer Gelas 11, Thermohygro 6 × 3 grup. Semuanya sama
+sampai digit terakhir, termasuk kejanggalan yang gampang kelewat — komponen drift chamber **GEA**
+punya pembagi (√3) DAN `vi` (200) yang beda dari chamber **Biobase** (0,866 dan 10⁶) padahal
+`U`-nya sama-sama 0,635. `Uc` ketiga grup cocok sampai 10 desimal.
+
+**Nol sheet kelewat.** Dua yang tidak diekstrak, dua-duanya benar:
+
+| Sheet | Kenapa tidak dipakai |
+|---|---|
+| `STANDAR-VICTOR` | Sertifikat kalibratornya kedaluwarsa **25 Sep 2021**; Victor memang tidak ditawarkan ketiga profil |
+| `gea_suhu` (blok suhu chamber GEA) | Blok suhu master memakai angka Biobase (0,5 / 0,1), jadi "suhu selalu Biobase" di kode memang ikut master |
+
+Satu temuan data diangkat ke lab sebagai **K12** (sheet dryblock A berisi data blok B).
+
+**Bug yang ketemu: hitung ulang mati buat ketiga alat.** Setiap titik di setiap sesi ketiga alat
+pulang sebagai `hitung_ulang_gagal` — padahal datanya lengkap di database. `CalibrationValidator`
+menyusun `konteks` buat hitung ulang, dan ketiga alat ini tidak kebagian kuncinya
+(`alat_bantu`, `titik_es`, pasangan `standar`/`uut`, `no_probe`, `parameter`).
+
+Ini kejadian **kelima** dengan pola yang sama — sesudah Viscometer, Gas Detector, TITS, dan
+Enclosure — dan bahayanya sudah ditulis di kelas itu sendiri: peringatan yang selalu muncul
+melatih admin menekan "setujui tetap" tanpa membaca. Yang hilang bukan cuma ketenangan layar,
+tapi pemeriksaan "apakah angka tersimpan masih bisa direproduksi" — mati total buat ketiga alat.
+
+Diperbaiki lewat `App\Support\PasanganStandarUutMentah`, saudaranya `GridSensorMentah`, dipakai
+**dua** jalur hitung ulang (validator + `kalibrasi:hitung-ulang`). Sesudahnya ketiga sesi contoh
+pulang `hitung_ulang_gagal = 0` **dan** `hitung_ulang_beda = 0` — jalan, dan hasilnya sama dengan
+yang tersimpan.
+
+> **Jebakan yang nyaris lolos, dan pantas dicatat.** Perbaikan sisi perintah sempat SALAH dan
+> test-nya tetap hijau. Sebabnya `GridSensorMentah::dari()` balik `[]` cuma kalau tidak ada baris
+> ber-`peran_sensor` sama sekali — dan baris ketiga alat suhu PUNYA `peran_sensor`, cuma
+> kosakatanya lain (`standar`/`uut`). Jadi cabang `$grid === []` tidak pernah kena, tiap titik
+> di-`continue`, dan perintahnya "sukses" tanpa menghitung apa pun. Angkanya kelihatan utuh
+> karena memang tidak pernah disentuh. Test-nya sekarang MERUSAK satu angka dulu sebelum
+> menjalankan perintah: angka yang dirusak cuma balik kalau perintahnya beneran menghitung.
+
 ---
 
 ## Keputusan yang SUDAH diambil
@@ -430,7 +474,33 @@ Jangan ditanyakan ulang.
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
+| **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
 | **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **11 dari 17** berkas geometri. Ini bukan pertanyaan, ini kiriman — dan bukan sesuatu yang bisa dikerjakan dari sini |
+
+### K12 — dryblock A memakai angka dryblock B
+
+Ditemukan 27 Agt 2026 waktu mengadu ulang ketiga workbook suhu sheet demi sheet.
+
+`Variasi axial Dryblok A` dan `Variasi axial Dryblok B` **identik byte-per-byte**, dan kepala
+kedua sheet menulis alat yang sama:
+
+| | Isinya |
+|---|---|
+| Kepala sheet A **dan** B | `Techne TeCal 700xs`, SN `DB-B-2`, kapasitas `0~600 °C` |
+| Yang seharusnya di sheet A | `Isotech Fast Cal Low`, rentang −20…150 °C |
+| Angka yang terbawa ke budget | `variasi_aksial` 0,2 °C · `variasi_antar_lubang` 0,13 °C — **sama buat A & B** |
+
+Jadi sesi Thermocouple yang memakai blok **A** (Isotech) mendapat dua komponen ketidakpastian
+yang diukur di blok **B** (Techne). Ini bukan salah hitung sistem: kita menyalin master apa
+adanya, dan `Suhu3AlatMasterTest` menjaga angka kita tetap sama dengan Excel. Yang salah datanya
+di master lab.
+
+**Yang TIDAK dilakukan:** mengarang angka Isotech supaya kelihatan berbeda. Itu mengarang
+komponen ketidakpastian, dan begitu dikarang U95-nya berhenti bisa diadu ke Excel lab —
+kehilangan satu-satunya oracle yang kita punya.
+
+Begitu lab mengirim hasil ukur Isotech yang sebenarnya, cukup ekstraksi ulang
+`database/data/tabel-master-suhu-3alat.json`; nol baris kode berubah.
 
 ### F1 — kenapa satu foto menahan sebelas lembar
 

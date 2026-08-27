@@ -10,6 +10,7 @@ use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\PasanganStandarUutMentah;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -97,7 +98,33 @@ class HitungUlangSesi extends Command
                 // pernah menengok kunci ini.
                 $grid = GridSensorMentah::dari($baris);
 
-                if ($grid === []) {
+                // Pasangan standar/UUT ketiga alat suhu. Sama seperti grid di
+                // atas, bentuk ini nggak punya deret datar — meratakannya bikin
+                // angka standar & UUT campur aduk, dan koreksi yang lahir dari
+                // situ nggak berarti apa-apa. Kosong buat lima belas alat lain.
+                $pasangan = PasanganStandarUutMentah::dari($baris);
+
+                // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
+                // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
+                // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
+                // `peran_sensor`, cuma kosakatanya lain (`standar`/`uut`, bukan
+                // `termokopel`/`indikator`). Jadi buat sesi suhu dia balik
+                // `['sensor_grid' => [], 'indikator' => []]`, yang secara PHP
+                // bukan `[]`. Dites duluan pakai `$grid === []`, ketiga alat
+                // suhu jatuh ke cabang enclosure, ketemu grid kosong, lalu tiap
+                // titiknya di-`continue` — perintahnya "sukses" tanpa
+                // menghitung apa pun, dan angkanya kelihatan utuh karena
+                // memang nggak pernah disentuh.
+                if ($pasangan !== []) {
+                    // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah baris:
+                    // satu titik berisi 5 standar + 5 UUT, jadi hitungan datar
+                    // selalu lolos walau salah satu sisinya kosong.
+                    $nilai = [];
+
+                    if (count($pasangan['standar']) < 2 || count($pasangan['uut']) < 2) {
+                        continue;
+                    }
+                } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak
                     // punya simpangan baku.
@@ -149,6 +176,13 @@ class HitungUlangSesi extends Command
                         'mode_tits' => $sesi->mode_kalibrasi,
                         'tipe_sensor' => $sesi->tipe_sensor,
                         ...$grid,
+                        ...$pasangan,
+                        // Tiga kolom SESI ketiga alat suhu — alasannya sama
+                        // seperti `tipe_sensor` di atas: tanpa ini seluruh
+                        // titiknya pulang tanpa angka.
+                        'alat_bantu' => $sesi->alat_bantu,
+                        'tipe_pencelupan' => $sesi->tipe_pencelupan,
+                        'titik_es' => $sesi->titik_es ?? [],
                     ],
                 ];
             }
