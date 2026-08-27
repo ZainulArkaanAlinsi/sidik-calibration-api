@@ -302,11 +302,36 @@ abstract class CalibrationProfile
      * yang nggak pernah ada di kertasnya, dan yang balik ke teknisi cuma angka
      * ngawur yang kelihatan wajar.
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool}
+     * ## `didukung` vs `lokal` — DUA gerbang, dua akibat yang beda
+     *
+     * Keduanya menjawab pertanyaan yang berbeda, dan menyatukannya pernah
+     * melebarkan batas data tanpa ada yang berniat begitu (27 Agt 2026, waktu
+     * TIDS dinyalakan):
+     *
+     *  - **`didukung`** menggerbangi `POST /raw-measurements/extract-from-photo`
+     *    — jalur AI Vision CLOUD, yang **mengirim foto lembar kerja pelanggan ke
+     *    layanan pihak ketiga** (Gemini/Anthropic). Dia menjawab: "kertas alat
+     *    ini muat di bentuk `titik ukur × Repeat` yang bisa dituturkan lewat dua
+     *    penanda di atas?" Menyetelnya `true` **melebarkan batas data**, jadi
+     *    dia cuma boleh naik kalau jawabannya beneran ya.
+     *  - **`lokal`** menggerbangi tombol `FOTO TABEL INI` di aplikasi — ML Kit,
+     *    **sepenuhnya di perangkat**, citranya tidak pernah keluar HP. Dia
+     *    menjawab pertanyaan yang jauh lebih longgar: "pemeta di HP bisa
+     *    menjangkar baris & kolom kertas ini?" Kertas yang barisnya dijangkar
+     *    TULISAN (`Set point 1`, `Temp. Disk 1`) memenuhi yang kedua tanpa
+     *    memenuhi yang pertama.
+     *
+     * Bawaannya `lokal` mengikuti `didukung`, jadi tujuh belas profil yang tidak
+     * menyebutnya tidak berubah perilakunya. Yang perlu memisahkannya cuma
+     * profil yang jalur lokalnya hidup sementara bentuk dua-penandanya tidak —
+     * dan profil begitu wajib menyebut **dua-duanya**, supaya pilihan itu
+     * tertulis, bukan tersirat.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool, lokal?: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
+        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true, 'lokal' => true];
     }
 
     /**

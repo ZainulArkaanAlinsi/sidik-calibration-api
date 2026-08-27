@@ -701,7 +701,9 @@ yang sudah tertulis di docblock `petakan`: *kolom yang kepalanya nggak kebaca ng
 `pindai_foto.didukung = false` di **Autoklaf, TIDS, dan kelima Enclosure** (Oven, Bath, Inkubator,
 Furnace, Refrigerator), dan penanda itu **tetap `false` sampai sekarang** — dengan benar: dia
 menjawab pertanyaan "kertas alat ini muat di bentuk *titik ukur × Repeat* yang bisa dituturkan ke
-pembaca foto?", dan buat ketujuhnya jawabannya memang tidak.
+pembaca foto CLOUD?", dan buat ketujuhnya jawabannya memang tidak. Yang menyalakan tombol kamera
+di HP penanda yang LAIN (`pindai_foto.lokal`) — lihat susulan "satu penanda menggerbangi DUA hal"
+di bawah, dan kenapa keduanya sempat jadi satu.
 
 Yang dikerjakan bukan membalik penanda itu, tapi **memberi dua bentuk kertas itu jangkar barisnya
 sendiri**:
@@ -809,9 +811,113 @@ angka yang sudah ada di tangannya lebih membingungkan daripada layar yang jujur.
 keterangannya, **di ATAS tabelnya**: yang membaca setelah mengisi 35 kotak sudah terlambat diberi
 tahu.
 
-Baru sesudah ketiganya beres `TidsProfile::bentukPindaiFoto()` dinyalakan (`didukung: true`).
-Menyalakannya lebih dulu cuma menghasilkan tombol yang tiap jepretannya nol sel — dan, lebih
-buruk, kamera yang mempercepat pengisian kotak yang memang belum punya tempat.
+Baru sesudah ketiganya beres `TidsProfile::bentukPindaiFoto()` dinyalakan — lewat `lokal: true`,
+lihat susulan di bawah. Menyalakannya lebih dulu cuma menghasilkan tombol yang tiap jepretannya
+nol sel — dan, lebih buruk, kamera yang mempercepat pengisian kotak yang memang belum punya
+tempat.
+
+### Susulan: satu penanda menggerbangi DUA hal — dan salah satunya mengirim foto pelanggan keluar
+
+Ketemu waktu review PR, dan ini **regresi yang beneran kelepas**, bukan temuan teoretis.
+
+Tombol kamera TIDS dinyalakan dengan menaikkan `pindai_foto.didukung` — satu-satunya gerbang yang
+ada waktu itu. Yang ikut kebawa: penanda yang sama juga menggerbangi
+`POST /raw-measurements/extract-from-photo`, endpoint AI Vision **yang mengirim foto lembar kerja
+pelanggan ke layanan pihak ketiga** (Gemini/Anthropic). Jadi menyalakan kamera on-device buat satu
+lembar diam-diam bikin lembar itu **memenuhi syarat dikirim keluar** begitu Vision di server nyala.
+Tidak ada yang berniat begitu; gerbangnya cuma kebetulan satu.
+
+Penjaga yang ada tidak menangkapnya karena cuma menguji **Autoklaf**, satu-satunya lembar yang
+`didukung`-nya memang `false` waktu test itu ditulis.
+
+Dibetulkan dengan **memisahkan gerbangnya**, bukan menerima pelebarannya:
+
+| Penanda | Menggerbangi | Pertanyaannya | TIDS |
+|---|---|---|---|
+| `didukung` | `raw-measurements/extract-from-photo` — **foto keluar HP** | "kertas ini muat di bentuk *titik ukur × Repeat* yang bisa dituturkan ke pembaca cloud?" | **`false`** (tetap) |
+| `lokal` | tombol `FOTO TABEL INI` — ML Kit, **sepenuhnya di perangkat** | "pemeta di HP bisa menjangkar baris & kolom kertas ini?" | **`true`** |
+
+Bawaan `lokal` mengikuti `didukung`, jadi tujuh belas profil yang tidak menyebutnya tidak berubah
+perilakunya, dan APK baru yang ketemu server lama (cuma mengirim `didukung`) tetap jalan. Yang
+perlu memisahkan cuma profil yang jalur lokalnya hidup sementara bentuk dua-penandanya tidak — dan
+profil begitu wajib menyebut **dua-duanya**, supaya pilihannya tertulis, bukan tersirat.
+
+Empat penjaga baru berdiri di jalur itu, dan yang pertama yang paling penting:
+
+| Penjaga | Yang ditegakkan |
+|---|---|
+| `WorksheetExtractionTest::test_tiap_lembar_tak_didukung_ditolak_sebelum_foto_keluar` | **Sapuan seluruh registry**: tiap profil ber-`didukung: false` ditolak 422 sebelum HTTP apa pun keluar (`Http::assertNothingSent()`). Lantai 7 profil |
+| `BentukPindaiFotoCocokTabelTest` | Lembar tanpa tabel wajib mematikan **dua-duanya**, bukan salah satu |
+| `LembarKerjaTest` + `TidsLembarKerjaTest` | Isi `pindai_foto` diadu utuh; kunci yang hilang atau nambah bikin merah |
+| `pindai_ui_nyala_test.dart` (grup `gerbang lokal vs cloud`) | Di HP: `didukung: false` + `lokal: true` tombolnya **tetap ada**; `didukung: true` + `lokal: false` tombolnya **hilang** |
+
+`WorksheetExtractionController::bentukKertas()` **membuang** `lokal` yang ikut pulang dari profil —
+itu inti pemisahannya, dan alasannya ditulis di docblock-nya supaya tidak disatukan lagi.
+
+### Susulan: angka TIDS yang diketik teknisi nggak pernah nyampe server
+
+Ketemu waktu menulis test bolak-balik buat temuan review di atas — dan ini yang
+**paling dalam dari semuanya**, karena dia bikin seluruh pekerjaan kamera TIDS
+sia-sia tanpa satu pun gejala.
+
+Kunci sel tiap tabel di HP itu `TabelHasil.kunciTabel`, isinya `tahap` yang
+dikirim backend. Sembilan belas lembar mengirim `sesudah_adjustment`. Lembar
+TIDS mengirim **`pembacaan_uut`**. Payload-nya sendiri dirakit
+`TitikState.toSubmission()` dari kunci **MATI** `sesudah_adjustment`.
+
+Dua sisi itu tidak pernah bertemu, dan yang terjadi bukan error:
+
+| | |
+|---|---|
+| Yang diketik teknisi masuk ke | `pembacaan_uut\|pembacaan\|i` |
+| Yang dibaca perakit payload | `sesudah_adjustment\|pembacaan\|i` — tidak pernah ada |
+| Yang terkirim ke server | set point yang benar, `pembacaan` **null semua** |
+
+Lembarnya penuh di layar, tombol kirimnya jalan mulus, kameranya mengisi tiga
+puluh lima kotak — dan tak satu pun angka itu ada di server. Persis kelas
+kegagalan yang §12 ini dibuka untuk menutupnya, cuma satu lapis lebih dalam
+daripada semua yang sudah ketemu.
+
+Tidak ada test yang kena karena tidak ada satu pun fixture TIDS yang memakai
+`tahap` aslinya: yang ada menyalin tabel `Pembacaan Standard` dan memeriksa set
+point-nya saja, tidak pernah angkanya.
+
+**Yang membetulkan: kunci utamanya sekarang datang dari `simpan_ke`**, kunci
+yang backend memang sudah mengirimkannya (`measurements[].pembacaan`) dan yang
+selama ini cuma dibaca null-nya. Lembar ke-21 yang tahapnya beda lagi ikut benar
+tanpa satu berkas pun disentuh; sembilan belas lembar yang tidak mengirim
+`simpan_ke` jatuh ke bawaan `sesudah_adjustment` dan tidak bergeser sedikit pun.
+Tiga tempat yang membaca kunci itu — perakit payload, pemulihan dari server, dan
+ringkasan sebelum kirim — sekarang memakai satu sumber yang sama.
+
+Dibuktikan merah dengan mengembalikan kunci matinya.
+
+### Susulan: enam temuan review di sisi HP
+
+Lima yang beneran menggigit, satu yang dipasang sebagai jaring:
+
+| Temuan | Akibat kalau dibiarkan |
+|---|---|
+| **Draf TIDS yang dibuka ulang tampil kosong** | Yang dikirim `titikUkurEfektif` (`121,5`); yang mencari `_titikTerdekat` di kunci `titik` yang isinya NOMOR BARIS (1..7). Tidak pernah ketemu, tiap baris kehitung `kebuang`. Di sesi revisi: yang dikirim balik ke admin cuma sisa yang sempat diketik ulang dari kertas |
+| **Penjaga orde menolak angka yang sah** | `adaPembacaanJauhDariTitik` mengadu pembacaan ke nomor baris. Set point 121,5 dengan pembacaan 121,5 kena rasio 121,5 dan barisnya ditahan — penjaga yang melatih teknisi menekan "lanjut" tanpa membaca |
+| **Set point cacat membuang seluruh baris diam-diam** | Kotaknya menerima `12..5` / `1-2` / `--3`; `parseAngka` pulang null, `siapKirim` false, dan kelima kotak pembacaan yang sudah diisi ikut hilang. Sekarang kotaknya dibatasi seperti sel angka lain, DAN ada penjaga yang menahan sebelum kirim |
+| **Set point yang baru diketik hilang tanpa konfirmasi** | `TitikState.adaIsian` tidak membaca kotak `Setpoint`, jadi lembar yang ketujuh set point-nya sudah diisi masih dianggap perawan waktu teknisi menekan back |
+| **Kolom grid bernomor tak berurut salah tempat** | `terapkanHasilFoto` memakai `repeatNo - 1`. Kertas bernomor `2, 4, 6` bikin angka kolom `2` mendarat di kolom `4`, dan dua sisanya kebuang di pemeriksaan batas |
+| **Penanda baris kembar menyuruh jepret ulang** | Grid & matriks memperlakukan hasil kosong sebagai salah framing. Baris kembar itu bentuk lembarnya — jepret ulang tidak pernah bisa menolong. (Tidak punya jalan masuk hari ini; dipasang sebagai jaring) |
+
+Ditambah satu di pemeta yang sudah disebut §12 sebab 2, tapi dari sisi yang
+belum ketutup: **`batasKolom` salah waktu kepala kolom yang hilang ada di
+TENGAH.** `X1` & `X4` kejangkar sementara `X2` & `X3` hilang berarti
+satu-satunya jarak yang tersisa **tiga kali** lebar kolom, jadi batasnya ikut
+tiga kali lipat dan angka di bawah `X2` lolos lalu tersimpan sebagai `X1`.
+Kolom tujuannya kosong di baris itu, jadi `_buangSelKembar` tidak punya apa pun
+untuk dibandingkan dan `angkaTakTerpetakan` tetap **nol**. Sekarang tiap selisih
+pusat dibagi jarak POSISI kolomnya dulu.
+
+> **Jebakan yang ikut tercatat:** test pertama untuk temuan itu **hijau walau
+> perbaikannya dicabut**, karena fixture-nya menyisakan dua jangkar yang
+> bertetangga (`X4` & `X5`) — dan jarak tersempitnya jadi satu lebar kolom
+> secara kebetulan. Syaratnya: **tidak boleh ada dua jangkar bertetangga.**
 
 ### Susulan: `kolom_suhu` bohong di lima lembar
 

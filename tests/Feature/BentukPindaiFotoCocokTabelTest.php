@@ -113,10 +113,17 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
 
         $bentuk = $profil->bentukPindaiFoto();
 
-        // Lembar yang jalur fotonya memang ditolak nggak pernah menyusun prompt,
-        // jadi penandanya nggak menentukan apa-apa. Diperiksa cuma yang beneran
-        // ditawarkan ke pembaca foto.
-        if (($bentuk['didukung'] ?? true) !== true) {
+        // Lembar yang KEDUA jalur fotonya ditolak nggak pernah menyusun prompt
+        // maupun menggambar tombol, jadi penandanya nggak menentukan apa-apa.
+        //
+        // Dua gerbang diperiksa, bukan cuma `didukung`: sejak keduanya dipisah
+        // (27 Agt 2026), lembar bisa punya kamera LOKAL sambil jalur cloud-nya
+        // tetap ditolak — TIDS begitu. Diperiksa cuma `didukung` di sini, TIDS
+        // diam-diam keluar dari sapuan ini justru waktu kameranya menyala.
+        $cloud = ($bentuk['didukung'] ?? true) === true;
+        $lokal = ($bentuk['lokal'] ?? $bentuk['didukung'] ?? true) === true;
+
+        if (! $cloud && ! $lokal) {
             $this->assertTrue(true);
 
             return;
@@ -155,11 +162,20 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
             return;
         }
 
+        $bentuk = $profil->bentukPindaiFoto();
+
         $this->assertFalse(
-            $profil->bentukPindaiFoto()['didukung'] ?? true,
+            $bentuk['didukung'] ?? true,
             "Lembar `{$profil->kode()}` nggak mengirim satu pun tabel, tapi masih ngaku muat "
-            .'di jalur foto tabel. Tombolnya bakal digambar di layar yang nggak punya tabel '
-            .'buat diisi hasilnya.',
+            .'di jalur foto CLOUD. Selain nggak ada tabelnya, `didukung: true` melebarkan '
+            .'batas data: dia yang menggerbangi endpoint yang mengirim foto lembar kerja '
+            .'pelanggan ke layanan pihak ketiga.',
+        );
+
+        $this->assertFalse(
+            $bentuk['lokal'] ?? $bentuk['didukung'] ?? true,
+            "Lembar `{$profil->kode()}` nggak mengirim satu pun tabel, tapi tombol foto "
+            .'tabelnya bakal digambar. Layarnya nggak punya tabel buat diisi hasilnya.',
         );
     }
 
