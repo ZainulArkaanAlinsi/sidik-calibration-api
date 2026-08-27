@@ -48,6 +48,11 @@ php artisan serve
 
 API tersedia di `http://localhost:8000/api`. Health check: `GET /up`.
 
+Menyiapkan mesin kedua (laptop Windows) supaya isinya sama persis dengan Mac —
+termasuk toolchain, berkas yang tidak ikut git, dan cara memindahkan isi
+database: lihat [`docs/sinkron-laptop-windows.md`](docs/sinkron-laptop-windows.md).
+Untuk membuktikan dua mesin sudah sama: `./scripts/cek-sinkron.sh`.
+
 > Kalau mobile dites di HP fisik, `API_BASE_URL` di app harus diarahkan ke IP LAN laptop (mis. `http://192.168.1.10:8000/api`), bukan `localhost` — dan server dijalankan dengan `php artisan serve --host=0.0.0.0`.
 
 ## Kerja Berdua — Database Bersama (LAN)
