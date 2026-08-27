@@ -477,7 +477,20 @@ class SpectrophotometerProfile extends CalibrationProfile
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => false, 'standar_di_baris' => true];
+        // `didukung` & `lokal` disebut EKSPLISIT, bukan diwarisi bawaan.
+        //
+        // Dua kunci ini sempat dihilangkan dari sini, dan nilainya diam-diam
+        // datang dari bawaan gabungan di `WorksheetExtractionController`. Itu
+        // berarti gerbang yang menentukan foto lembar ini boleh keluar HP atau
+        // nggak diputuskan di CONTROLLER, bukan di profil yang tahu kertasnya.
+        // Waktu bawaan itu diturunkan buat menutup lubang lain, jalur foto
+        // lembar ini ikut mati tanpa ada yang berniat begitu.
+        return [
+            'kolom_suhu' => false,
+            'standar_di_baris' => true,
+            'didukung' => true,
+            'lokal' => true,
+        ];
     }
 
     /**
