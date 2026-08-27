@@ -9,6 +9,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\WorksheetExtractionLog;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
@@ -340,6 +341,101 @@ class WorksheetExtractionTest extends TestCase
 
         $log = WorksheetExtractionLog::sole();
         $this->assertSame('bentuk_tidak_didukung', $log->status);
+    }
+
+    /**
+     * SAPUAN: tiap lembar yang `didukung`-nya `false` DITOLAK sebelum fotonya
+     * dikirim ke mana pun — bukan cuma Autoklaf.
+     *
+     * ## Kenapa sapuan, dan kenapa ini bukan sekadar kerapian
+     *
+     * `didukung` menggerbangi endpoint INI, yang **mengirim foto lembar kerja
+     * pelanggan ke layanan pihak ketiga** (Gemini/Anthropic). Menaikkannya
+     * bukan cuma memperluas fitur — dia **melebarkan batas data**.
+     *
+     * Test di atas menegakkannya lewat SATU profil (Autoklaf). Itu ternyata
+     * tidak cukup: 27 Agt 2026, `TidsProfile` dinaikkan ke `didukung: true`
+     * supaya tombol kamera LOKAL-nya hidup — dan lembar TIDS diam-diam ikut
+     * memenuhi syarat dikirim keluar begitu `VISION_AKTIF` menyala. Test
+     * Autoklaf tetap hijau selama itu, karena dia berdiri di profil yang salah.
+     *
+     * Yang membetulkannya bukan menerima pelebaran itu, tapi **memisahkan
+     * gerbangnya**: `lokal` buat tombol on-device, `didukung` buat jalur cloud.
+     * Sapuan ini yang menjaga pemisahan itu tetap berlaku — profil ke-21 yang
+     * menaikkan `didukung` cuma buat menyalakan kameranya bakal MERAH di sini.
+     *
+     * `Http::assertNothingSent()` bagian yang paling menentukan: 422 saja bisa
+     * datang sesudah fotonya terlanjur diunggah.
+     */
+    public function test_tiap_lembar_tak_didukung_ditolak_sebelum_foto_keluar(): void
+    {
+        Http::fake();
+        $this->fakeSukses();
+
+        $registry = app(CalibrationProfileRegistry::class);
+
+        // Satu pelanggan & satu kategori dipakai bersama: yang menentukan profil
+        // mana yang kepilih itu NAMA alatnya (`cocokkanNama`), bukan
+        // kategorinya — dan bikin kategori baru per profil menguras nilai unik
+        // factory-nya tanpa menambah apa pun yang diuji.
+        $pelanggan = Customer::factory()->create();
+        $kategori = EquipmentCategory::factory()->create();
+        $diperiksa = [];
+
+        foreach ($registry->semua() as $profil) {
+            if (($profil->bentukPindaiFoto()['didukung'] ?? true) !== false) {
+                continue;
+            }
+
+            $nama = $profil->namaAlatKemampuan();
+            $this->assertNotNull(
+                $nama,
+                "Profil `{$profil->kode()}` nggak punya nama kemampuan, jadi sesi ujinya "
+                .'nggak bisa diarahkan ke profil itu — sapuan ini bakal nguji profil yang salah.',
+            );
+
+            $alat = Equipment::factory()->create([
+                'customer_id' => $pelanggan->id,
+                'equipment_category_id' => $kategori->id,
+                'nama_alat' => $nama,
+                'nama_alat_kemampuan' => $nama,
+            ]);
+
+            // Sanity: sesinya beneran jatuh ke profil yang lagi diuji. Tanpa ini
+            // sapuannya bisa hijau sambil menguji lembar pH tujuh kali.
+            $this->assertSame(
+                $profil->kode(),
+                $registry->untukAlat($alat)->kode(),
+                "Sesi buat `{$nama}` nggak jatuh ke profil `{$profil->kode()}`.",
+            );
+
+            $sesi = CalibrationSession::factory()->create([
+                'teknisi_id' => $this->teknisi->id,
+                'equipment_id' => $alat->id,
+                'status' => CalibrationSession::STATUS_DRAFT,
+            ]);
+
+            $this->kirim($this->teknisi, ['calibration_session_id' => $sesi->id])
+                ->assertStatus(422)
+                ->assertJsonPath('fallback_manual', true);
+
+            $diperiksa[] = $profil->kode();
+        }
+
+        // Penjaga lantai: sapuan yang daftarnya dari registry bisa menyusut jadi
+        // nol dan tetap "lolos" tanpa memeriksa apa pun.
+        $this->assertGreaterThanOrEqual(
+            7,
+            count($diperiksa),
+            'Cuma '.count($diperiksa).' profil ber-`didukung: false` yang kesapu ('
+            .implode(', ', $diperiksa).'), di bawah lantai 7 (Autoklaf, TIDS, kelima '
+            .'Enclosure). Kalau memang ada yang sengaja dinaikkan, turunkan angkanya '
+            .'SEKALIAN — supaya pelebaran batas datanya jadi keputusan yang tercatat, '
+            .'bukan kejadian yang kelewat.',
+        );
+
+        // Yang paling menentukan: nggak satu pun fotonya keluar dari server kita.
+        Http::assertNothingSent();
     }
 
     /**

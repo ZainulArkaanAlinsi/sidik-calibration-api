@@ -334,6 +334,25 @@ class TitsProfile extends CalibrationProfile
     }
 
     /**
+     * Satu angka per sel — TIDAK ada kolom suhu di dalam tiap pengulangan.
+     *
+     * Bawaan [CalibrationProfile::bentukPindaiFoto] `kolom_suhu = true` menuruti
+     * bentuk lembar pH, yang tiap selnya memuat SEPASANG angka (pembacaan + °C).
+     * Lembar ini cuma punya kolom `pembacaan`; suhu ruangnya dicatat sekali di
+     * blok kondisi lingkungan.
+     *
+     * Dibiarkan `true`, pembaca foto diminta membaca kolom °C yang tidak pernah
+     * ada di kertasnya — dan yang balik bukan error, tapi angka yang dikarang
+     * supaya kolomnya kelihatan terisi.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => false, 'didukung' => true];
+    }
+
+    /**
      * Tidak divonis PASS/FAIL — master tidak punya kolom batas keberterimaan.
      * Lihat docblock kelas.
      */

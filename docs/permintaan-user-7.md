@@ -307,9 +307,9 @@ Ditambahkan pemilik proyek 26 Agt 2026 bersama tiga workbook master ber-password
 |---|---|---|
 | **A** | Backend tiga alat (profil, lembar kerja, jalur simpan) | **BERES** — alat ke-18, 19, 20 |
 | **B** | Olah data (koreksi + budget U95) sesuai master | **BERES** — cocok sampai digit terakhir, dijaga `Suhu3AlatMasterTest` |
-| **C** | Bagian kamera (pindai lembar kerja) | **BERES di server** — 20/20 lembar punya berkas geometri; `terverifikasi: false` menunggu F1 |
+| **C** | Bagian kamera (pindai lembar kerja) | **BERES 27 Agt 2026** — tombol `FOTO TABEL INI` ketiga lembar dulu selalu pulang nol sel; lihat §12 |
 | **D** | Excel → CSV | **BERES** — 43 sheet di `sidik-calibration-mobile/Project-PT-Sidik/suhu CSV` |
-| **E** | Sisi mobile (layar lembar kerja) | **belum** — lihat `docs/perintah-frontend-suhu-3alat.md` |
+| **E** | Sisi mobile (layar lembar kerja) | **BERES** (26–27 Agt 2026) — baris ini sempat basi, lihat §Gelombang G7 yang sudah mencatatnya selesai: layar tabel pasangan (mobile#108), golden ketiga lembar (mobile#111), dua deret dipecah di layar detail (mobile#112), tiga field sesi kebaca admin (mobile#113) |
 
 **Ketiganya baris lampiran akreditasi LK-285-IDN yang selama ini kosong:** no. 5
 Thermocouple, no. 4 Termometer Gelas, no. 11 Thermohygrometer. Baris CMC-nya
@@ -448,6 +448,29 @@ yang tersimpan.
 > karena memang tidak pernah disentuh. Test-nya sekarang MERUSAK satu angka dulu sebelum
 > menjalankan perintah: angka yang dirusak cuma balik kalau perintahnya beneran menghitung.
 
+#### Kejadian keenam sudah dicegah, bukan ditunggu (27 Agt 2026)
+
+Lima kali pola yang sama, dan lima kali ditutup dengan test yang menyebut alatnya **satu per
+satu** — jadi tiap kali alat berikutnya jatuh ke lubang yang sama, karena tidak ada yang
+mengingatkan. `HitungUlangTigaAlatSuhuTest` sendiri cuma menyebut tiga nomor sesi; alat ke-21
+tidak akan kesapu olehnya.
+
+`HitungUlangSemuaSesiTest` menutup pengulangannya: daftarnya **seluruh sesi ter-seed yang punya
+titik terhitung**, diambil dari database, bukan diketik. Hari ini 18 sesi, dan tiga penanda
+ditegakkan sekaligus — `hitung_ulang_gagal`, `hitung_ulang_beda`, `keputusan_titik_beda`.
+
+Yang kedua dan ketiga bukan hiasan. `hitung_ulang_gagal` nol cuma membuktikan hitung ulangnya
+JALAN; konteks yang **salah isi** (dryblock B dikirim untuk sesi dryblock A) tetap lolos di situ —
+hitung ulangnya sukses, angkanya saja yang meleset, dan itu justru yang tidak kelihatan sebagai
+kegagalan.
+
+Dibuktikan menggigit dengan mematikan `PasanganStandarUutMentah::dari()`: ketiga sesi suhu langsung
+merah, **disebut nomor sesi dan nama alatnya**, bukan cuma "ada yang gagal".
+
+Test per-alat yang sudah ada TIDAK diganti — keduanya menegakkan hal yang lebih dalam (bentuk yang
+disusun ulang beneran dari baris mentah; perintah `kalibrasi:hitung-ulang` memulihkan angka yang
+sengaja dirusak). Yang baru ini lantainya.
+
 ### Susulan 27 Agt — form Tambah Alat: yang perlu saja, sisanya dari data PT Sidik
 
 Permintaan pemilik proyek sambil menunjukkan tangkapan layar form "TAMBAH ALAT" dengan kolom
@@ -579,6 +602,375 @@ menyusul.**
 
 ---
 
+## 12. Kamera tiap lembar kerja — audit 27 Agt 2026
+
+Pemilik proyek: *"ini yang ada di dalam bagian kamera nya masing masing lembar kerja nya tolong
+usahakan bisa karena tadi aku coba coba gk bisa, bisa sih bisa tapi kalo nangkap cuma berapa
+table table aja sih."*
+
+Ditelusuri, dan gejalanya persis apa adanya. Dari **20 lembar: 7 tidak punya tombol kamera sama
+sekali, 3 punya tombol yang MUSTAHIL menghasilkan satu sel pun, dan 10 sisanya punya jalur jangkar
+yang bisa ketemu.** Tiga sebab yang beda, dan cuma satu yang selama ini tercatat.
+
+> **Batas klaim ini — dibetulkan 27 Agt 2026, karena versi sebelumnya di sini SALAH.**
+>
+> Yang dibuktikan seluruh pekerjaan §12 ini **PENEMPATAN, bukan PEMBACAAN**: kalau ML Kit
+> memulangkan teks `"97,3"` di koordinat tertentu, angka itu pasti mendarat di sel yang benar —
+> atau ditolak dan dilaporkan. Itu yang dijaga delapan berkas test foto.
+>
+> **Bahwa ML Kit bisa membaca tulisan tangan dari foto kertas: NOL bukti.** Kedelapan berkas test
+> itu menyuapkan pasangan `(teks, kotak)` yang **ditulis test itu sendiri** — nggak satu pun lewat
+> OCR beneran.
+>
+> Paragraf ini sebelumnya menulis *"yang diadu ke foto asli baru Viscometer dan Conductivity"*.
+> Itu keliru, dan keliru di dua-duanya:
+>
+> | Aset | Isinya sebenarnya |
+> |---|---|
+> | `test/assets/tabel-viscometer-uji.png` | **Render komputer**, angka KETIKAN, lurus sempurna, latar putih bersih. Bukan foto |
+> | `test/assets/lembar-conductivity-v1.png` | Template bermarker hasil `ocr:cetak-lembar` — **KOSONG**, nol angka di dalamnya |
+>
+> Nggak ada satu pun berkas foto (`.jpg`/`.heic`) di seluruh repo mobile, dan nggak ada satu pun
+> citra bertulisan tangan. Jadi yang belum pernah diuji itu justru **satu-satunya hal yang
+> menentukan fiturnya berguna atau tidak di lapangan.**
+>
+> **Kalau OCR-nya jelek, gagalnya ke arah mana.** Jangkar baris & kolom (`Set point 1`, `X1`,
+> `0" (UUT1)`, `Temp. Disk 1`) itu TERCETAK, jadi besar kemungkinan kebaca; angkanya tulisan
+> tangan. Hasil paling mungkin: tabel dikenali, sedikit/nol sel terisi, dan aplikasi bilang begitu
+> — **bikin kesal, bukan bikin salah**. Yang berbahaya salah baca yang tetap berbentuk angka wajar
+> (`4,04` → `404`, kasus yang docblock `ambil_foto_tabel.dart` sendiri sudah sebut). Penahannya
+> tiga, semuanya heuristik: pemeriksaan beda orde (faktor 10), pemeriksaan satu Repeat menyimpang
+> dari saudaranya, dan tiap sel hasil kamera **ditandai kuning "PERIKSA"**
+> (`_isiSel(..., perluDicek: true)`).
+>
+> Jadi rancangannya: kamera itu **jalan pintas mengetik yang wajib dicek teknisi**, bukan sumber
+> angka yang dipercaya. Klaim yang jujur buat pekerjaan ini **"jalur kameranya lengkap dan
+> penempatannya benar di 20 dari 20 lembar"** — BUKAN "difoto langsung dapat angkanya".
+>
+> **Yang menyelesaikannya tetap F1: satu foto HP dari satu lembar yang sudah diisi tangan.**
+
+### Yang sebenarnya jalan di HP hari ini — cuma SATU tombol
+
+Ini yang paling gampang salah baca dari catatan lama, jadi ditulis eksplisit:
+
+| Tombol | Statusnya |
+|---|---|
+| `PINDAI LEMBAR KERJA` (OCR template lokal, lembar bermarker) | **DICABUT PERMANEN** dari layar, 26 Agt 2026 |
+| `FOTO TABEL INI` (ML Kit, satu jepretan per tabel) | satu-satunya yang tersisa |
+
+Akibat yang perlu dicatat: **F1 sudah tidak menahan apa pun yang bisa disentuh teknisi.**
+`terverifikasi` cuma menggerbangi jalur lembar bermarker, dan `PindaiReviewScreen` — layar review
+per selnya — sekarang tidak pernah dibuka dari mana pun di aplikasi. Jadi "14 dari 20 lembar
+`terverifikasi: false`" itu benar, tapi bukan sebab yang dirasakan pemilik proyek. Foto lembar
+cetak tetap dibutuhkan kalau jalur bermarker suatu saat dipasang lagi; dia bukan blocker hari ini.
+
+### Sebab 1 — tiga lembar yang tombolnya nyala tapi mustahil menghasilkan apa pun
+
+`PetaTabelFoto` mengunci tiap angka ke DUA jangkar sebelum menaruhnya: nilai di kolom kiri
+(baris), dan **tulisan kepala kolom** (kolom). Yang dicarinya `Xn`, `Repeat n`, atau deret nomor
+polos. Tiga lembar tidak mencetak satu pun dari ketiganya:
+
+| Lembar | Kepala kolom yang kecetak |
+|---|---|
+| TITS | `UP X1` `UP X2` `UP X3` `DOWN X1` `DOWN X2` `DOWN X3` |
+| Thermocouple & Termometer Gelas (sisi standar) | `0″` `20″` `40″` `60″` `80″` |
+| idem (sisi UUT) | `10″` `30″` `50″` `70″` `90″` |
+
+Server **sudah** mengirim tulisan itu (`pengulangan_arah[].label`) dan layar **sudah**
+menggambarnya sebagai kepala kolom — cuma pemetanya yang tidak pernah dikasih tahu.
+`_kepalaPengulangan()` di HP membaca `prefiks_pengulangan` saja, dan cuma Spectrophotometer yang
+mengirimnya. Jadi ketiganya pulang **nol sel** di tiap jepretan, sebagus apa pun fotonya.
+
+Yang sampai ke teknisi bukan "kolomnya nggak kebaca" melainkan
+*"tabelnya dikenali, tapi selnya masih kosong — isi dulu lembarnya"* — menyuruh dia mengisi lembar
+yang sudah penuh di tangannya. Itu yang bikin gejalanya kebaca sebagai "kameranya gk bisa".
+
+**Kenapa tulisannya tidak cukup dicocokkan apa adanya.** `MlKitPembacaHalaman` memulangkan hasil
+OCR per **ELEMENT** — kira-kira per kata. `UP X1` tidak pernah datang utuh; yang sampai potongan
+`UP` dan potongan `X1`. Dan `X1` kecetak DUA KALI di lembar TITS. Jadi selama `Xn` ikut jadi
+calon, jangkar Repeat 1 bisa mendarat di kolom **DOWN**, dan yang masuk ke situ pembacaan arah
+sebaliknya — tanpa satu pun error, dengan jumlah sel yang tetap pas dan angka yang tetap wajar.
+
+Diperbaiki dua sisi sekaligus:
+
+- `PetaTabelFoto` sekarang ikut mencocokkan **frasa** — gabungan elemen yang bersebelahan di baris
+  yang sama (tumpang tindih tegak > ½ tinggi huruf, celah mendatar < 1 tinggi huruf). Kotaknya
+  gabungan kotak keduanya, jadi jangkarnya duduk di tengah tulisan yang tercetak. Elemen aslinya
+  tetap ikut, jadi kepala satu kata tidak berubah perilakunya.
+- `_kepalaPengulangan()` memakai `pengulangan_arah[].label`, dan begitu labelnya bukan `Xn`,
+  dia **sendirian** — bawaan `Xn`/`Repeat n` tidak boleh ikut bersuara. Label yang kebetulan `Xn`
+  persis (Thermohygro, yang menerimanya sebagai nilai bawaan `tabelPembacaan`) digabung seperti
+  dulu.
+
+Dijaga `foto_tabel_kepala_tercetak_test.dart`. Dibuktikan menggigit: dengan frasa dimatikan,
+jangkar kolom TITS `[]` — bukan berkurang, **nol**.
+
+### Sebab 2 — kolom yang kepalanya kepotong menyedot kolom sebelahnya, diam-diam
+
+Ini yang paling berbahaya dari ketiganya, dan berlaku di **semua** lembar, bukan cuma yang di
+atas. `petakan()` memanggil `_kolomTerdekat()` **tanpa batas jarak**, padahal jalur ke-bawah
+(Conductivity) sudah memakai batas setengah lebar kolom sejak lama.
+
+Bawaan tanpa batas itu punya alasan yang ditulis di methodnya sendiri — "kolom Repeat selalu
+berdampingan rapat, jadi yang paling dekat memang pemiliknya" — dan premis itu cuma berlaku waktu
+SEMUA kolom kejangkar. Begitu satu kepala kolom kepotong dari frame, dia terbalik jadi bahaya:
+angka di bawah kolom tanpa jangkar ditarik ke jangkar terdekat **sejauh apa pun**.
+
+Akibatnya berlipat, dan dua-duanya senyap:
+
+1. Angka mendarat di Repeat yang bukan miliknya.
+2. Angka itu bentrok dengan angka sah di sel yang sama, lalu `_buangSelKembar` membuang
+   **KEDUANYA** — jadi satu kepala kolom yang kepotong ikut menghapus kolom yang fotonya
+   baik-baik saja.
+
+Sekarang batasnya setengah lebar kolom, sama dengan jalur ke-bawah. Yang di luar itu DIBUANG dan
+ikut kehitung `angkaTakTerpetakan`, jadi teknisi diberitahu ada yang tidak keangkut — persis janji
+yang sudah tertulis di docblock `petakan`: *kolom yang kepalanya nggak kebaca nggak pernah keisi.*
+
+### Sebab 3 — tujuh lembar belum punya jalur kamera sama sekali → **habis**
+
+`pindai_foto.didukung = false` di **Autoklaf, TIDS, dan kelima Enclosure** (Oven, Bath, Inkubator,
+Furnace, Refrigerator), dan penanda itu **tetap `false` sampai sekarang** — dengan benar: dia
+menjawab pertanyaan "kertas alat ini muat di bentuk *titik ukur × Repeat* yang bisa dituturkan ke
+pembaca foto CLOUD?", dan buat ketujuhnya jawabannya memang tidak. Yang menyalakan tombol kamera
+di HP penanda yang LAIN (`pindai_foto.lokal`) — lihat susulan "satu penanda menggerbangi DUA hal"
+di bawah, dan kenapa keduanya sempat jadi satu.
+
+Yang dikerjakan bukan membalik penanda itu, tapi **memberi dua bentuk kertas itu jangkar barisnya
+sendiri**:
+
+| Kertas | Sumbu | Jangkar barisnya sekarang |
+|---|---|---|
+| **Grid** (kelima Enclosure) | set point × termokopel × pengulangan | **nomor termokopel yang DIBACA DARI FOTO**; sumbu KETIGA-nya dari blok tempat tombolnya ditekan, bukan dari citra |
+| **Matriks** (Autoklaf) | besaran × titik waktu | **tulisan nama besaran** (`Temp. Disk 1`, `Indikator Pressure`) di kolom kiri |
+| **Dua tabel interval** (TIDS) | set point × UUT | **tulisan `Set point 1`…`Set point 7`** di kolom kiri; kolomnya dari `0" (UUT1)`…`90" (UUT5)` yang sudah dikirim `pengulangan_uut[].label` |
+
+> **Keputusan pemilik lab, 27 Agt 2026: teknisi MOTRET DULU, nomornya belakangan.** Rancangan
+> pertama menjangkar baris grid ke nomor termokopel yang sudah diketik di layar — dan itu salah
+> untuk urutan kerja yang sebenarnya: waktu tombolnya ditekan, layarnya memang masih kosong.
+> Nomornya sekarang dibaca dari kolom `No.` di fotonya.
+>
+> Risikonya nyata dan ditanggung sadar: nomor yang salah baca memindahkan SELURUH baris ke
+> termokopel yang salah, dan nomor itu yang menentukan koreksi mana yang dipakai. Yang bikin dia
+> bisa ditanggung — **nomornya ikut ditaruh di kotaknya sendiri dan ikut ditandai kuning**, jadi
+> kelihatan dan bisa dibetulkan di satu tempat; membetulkannya memindahkan barisnya utuh.
+> Yang dijamin utuh **kebersamaan satu baris**, bukan ketepatan nomornya.
+
+Dua hal yang bikin ini aman, dan dua-duanya aturan yang sudah berlaku di seluruh pemeta:
+
+1. **Baris yang jangkarnya nggak kebaca nggak pernah keisi.** Termokopel yang nomornya belum
+   diketik, atau baris matriks yang namanya kepotong dari frame, dilewat — bukan ditarik ke baris
+   terdekat. Yang kebuang dilaporkan sebagai "ada yang nggak keangkut".
+2. **Sumbu yang nggak bisa dibaca aman dari citra diambil dari LAYAR.** Aturan yang sama sudah
+   dipakai lembar Conductivity buat slot bersatuan dobel: yang dituju titik yang lagi dicentang
+   teknisi, bukan ditebak dari angka yang kebaca.
+
+Baris `Time` di matriks Autoklaf ikut jadi jangkar tapi **tidak pernah diisi**: isinya jam
+(`HH:mm:ss`), bukan hasil ukur. Dia ikut justru supaya angka yang kebetulan jatuh di barisnya
+diklaim lalu dibuang — bukan melayang ke baris `Temp. Disk 1` di bawahnya.
+
+Dijaga `foto_grid_enclosure_test.dart` (10 test) & `foto_matriks_autoclave_test.dart` (5 test).
+Dua-duanya dibuktikan menggigit: penanda baris matriks dikembalikan ke `titik_ukur` aslinya (nol
+semua) → **0 dari 5 baris kejangkar**; jalur label kata dimatikan → baris `Indikator` & `Suhu
+Ruang` grid hilang, 15 dari 25 sel.
+
+### Hitungannya sebelum & sesudah
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Punya jalur jangkar yang bisa ketemu | **10** dari 20 | **20 dari 20** |
+| Tombol nyala tapi mustahil dapat satu sel pun | 3 (TITS, Thermocouple, Termometer Gelas) | 0 |
+| Belum punya jalur kamera sama sekali | 7 | **0** |
+
+### ~~K18~~ — lembar TIDS terbuka dengan NOL baris — **DIJAWAB & DIKERJAKAN 27 Agt 2026**
+
+Ketemu waktu menyiapkan jalur kamera buat ketujuh lembar itu, dan jauh lebih mahal daripada yang
+dicari.
+
+`TidsProfile` mengirim `titik_ukur: null` di **ketujuh** barisnya, di dua tabel sekaligus — dan itu
+disengaja serta terdokumentasi: kertasnya mencetak tujuh baris set point KOSONG, jadi angkanya
+ditentukan teknisi di lapangan (`titik_bisa_diubah: true`).
+
+Sisi HP membacanya `(json['titik_ukur'] as num).toDouble()` — **cast keras**. Baris ber-null bikin
+dia melempar, `parseListAman` menelan lemparannya, dan barisnya **dilewat diam-diam**. Jadi lembar
+TIDS terbuka dengan dua kepala tabel dan nol kotak isian, tanpa satu pun error.
+
+| Yang dicek | Hasil |
+|---|---|
+| `TabelHasil.fromJson` disuapi baris TIDS asli | `baris` → **`[]`** |
+| Kenapa nggak ketangkap penjaga | `MockLembarKerjaService` **nggak punya bentuk TIDS sama sekali** — satu-satunya sumber bentuknya server, dan nggak ada test yang menyuapkan bentuk aslinya ke parser |
+| Kelas kegagalannya | sama persis dengan `CalibrationHistoryItem`: *"draf tanpa tanggal cast-nya melempar, `parseListAman` nelen lemparannya, dan barisnya DILEWAT diam-diam"* |
+
+**Pemilik proyek memilih A** (27 Agt 2026): tujuh baris tetap digambar, dan **tiap baris punya
+kotak `Setpoint` sendiri** yang diisi teknisi — persis kertasnya.
+
+Kenapa pilihan itu tidak bisa diambil sambil ngoding: `titikUkur` di HP yang dikirim sebagai
+`measurements[].titik_ukur`. Menambal parser dengan memberi baris null sebuah angka (nomor
+barisnya, 1–7) **membuat bug yang lebih buruk** — set point sesi terkirim sebagai "1 °C … 7 °C",
+angka yang tidak pernah diketik siapa pun dan tidak ditolak apa pun.
+
+Yang dikerjakan:
+
+- Angkanya tetap ada sebagai **penanda posisi** (baris butuh identitas buat dibedakan dari enam
+  tetangganya), ditandai `titikDitentukan: false`. Yang menentukan apa yang DIKIRIM
+  `TitikState.titikUkurEfektif`, dan baris yang kotaknya dibiarkan kosong tidak ikut dikirim
+  sama sekali.
+- `PengaturTitik` tidak digambar untuk lembar begini: dua jalan mengisi satu hal yang sama bikin
+  teknisi tidak tahu yang mana yang berlaku.
+- Set point yang sudah diketik ikut selamat waktu tabelnya dibangun ulang.
+
+Dijaga `tids_baris_tanpa_titik_test.dart` (8 test), dibuktikan menggigit dengan mengembalikan cast
+lamanya: baris → `[]`.
+
+### Dua lubang lain yang ketemu di lembar yang sama
+
+Keduanya baru **hidup** sesudah barisnya ada — sebelum ini tabelnya kosong, jadi tidak ada yang
+bisa hilang. Ditutup di commit yang sama, bukan ditinggal sebagai utang:
+
+**1 · Kepala kolom TIDS tidak pernah kejangkar.** Kertasnya mencetak `0" (UUT1)`…`90" (UUT5)`, dan
+server sudah mengirimnya di `pengulangan_uut[].label` — tapi sisi HP cuma membaca
+`pengulangan_arah`. Kelas kegagalan yang sama persis dengan TITS & dua lembar suhu di §12 sebab 1.
+Sekarang dua kunci itu dibaca ke peta yang sama.
+
+**2 · Tabel `Pembacaan Standard` isinya tidak punya tempat di server.** Backend menyatakannya
+eksplisit lewat `simpan_ke: null`, lengkap dengan peringatan di docblock-nya: *"Layar HP wajib
+membaca kunci ini sebelum menyalakan tombol kirim untuk tabel ini — kalau tidak, teknisi mengisi
+35 kotak yang hilang tanpa pesan apa pun."* **HP tidak pernah membacanya.**
+
+Kotaknya tidak dimatikan — teknisi memang mencatat deret itu di kertas, dan layar yang menolak
+angka yang sudah ada di tangannya lebih membingungkan daripada layar yang jujur. Yang ditambah
+keterangannya, **di ATAS tabelnya**: yang membaca setelah mengisi 35 kotak sudah terlambat diberi
+tahu.
+
+Baru sesudah ketiganya beres `TidsProfile::bentukPindaiFoto()` dinyalakan — lewat `lokal: true`,
+lihat susulan di bawah. Menyalakannya lebih dulu cuma menghasilkan tombol yang tiap jepretannya
+nol sel — dan, lebih buruk, kamera yang mempercepat pengisian kotak yang memang belum punya
+tempat.
+
+### Susulan: satu penanda menggerbangi DUA hal — dan salah satunya mengirim foto pelanggan keluar
+
+Ketemu waktu review PR, dan ini **regresi yang beneran kelepas**, bukan temuan teoretis.
+
+Tombol kamera TIDS dinyalakan dengan menaikkan `pindai_foto.didukung` — satu-satunya gerbang yang
+ada waktu itu. Yang ikut kebawa: penanda yang sama juga menggerbangi
+`POST /raw-measurements/extract-from-photo`, endpoint AI Vision **yang mengirim foto lembar kerja
+pelanggan ke layanan pihak ketiga** (Gemini/Anthropic). Jadi menyalakan kamera on-device buat satu
+lembar diam-diam bikin lembar itu **memenuhi syarat dikirim keluar** begitu Vision di server nyala.
+Tidak ada yang berniat begitu; gerbangnya cuma kebetulan satu.
+
+Penjaga yang ada tidak menangkapnya karena cuma menguji **Autoklaf**, satu-satunya lembar yang
+`didukung`-nya memang `false` waktu test itu ditulis.
+
+Dibetulkan dengan **memisahkan gerbangnya**, bukan menerima pelebarannya:
+
+| Penanda | Menggerbangi | Pertanyaannya | TIDS |
+|---|---|---|---|
+| `didukung` | `raw-measurements/extract-from-photo` — **foto keluar HP** | "kertas ini muat di bentuk *titik ukur × Repeat* yang bisa dituturkan ke pembaca cloud?" | **`false`** (tetap) |
+| `lokal` | tombol `FOTO TABEL INI` — ML Kit, **sepenuhnya di perangkat** | "pemeta di HP bisa menjangkar baris & kolom kertas ini?" | **`true`** |
+
+Bawaan `lokal` mengikuti `didukung`, jadi tujuh belas profil yang tidak menyebutnya tidak berubah
+perilakunya, dan APK baru yang ketemu server lama (cuma mengirim `didukung`) tetap jalan. Yang
+perlu memisahkan cuma profil yang jalur lokalnya hidup sementara bentuk dua-penandanya tidak — dan
+profil begitu wajib menyebut **dua-duanya**, supaya pilihannya tertulis, bukan tersirat.
+
+Empat penjaga baru berdiri di jalur itu, dan yang pertama yang paling penting:
+
+| Penjaga | Yang ditegakkan |
+|---|---|
+| `WorksheetExtractionTest::test_tiap_lembar_tak_didukung_ditolak_sebelum_foto_keluar` | **Sapuan seluruh registry**: tiap profil ber-`didukung: false` ditolak 422 sebelum HTTP apa pun keluar (`Http::assertNothingSent()`). Lantai 7 profil |
+| `BentukPindaiFotoCocokTabelTest` | Lembar tanpa tabel wajib mematikan **dua-duanya**, bukan salah satu |
+| `LembarKerjaTest` + `TidsLembarKerjaTest` | Isi `pindai_foto` diadu utuh; kunci yang hilang atau nambah bikin merah |
+| `pindai_ui_nyala_test.dart` (grup `gerbang lokal vs cloud`) | Di HP: `didukung: false` + `lokal: true` tombolnya **tetap ada**; `didukung: true` + `lokal: false` tombolnya **hilang** |
+
+`WorksheetExtractionController::bentukKertas()` **membuang** `lokal` yang ikut pulang dari profil —
+itu inti pemisahannya, dan alasannya ditulis di docblock-nya supaya tidak disatukan lagi.
+
+### Susulan: angka TIDS yang diketik teknisi nggak pernah nyampe server
+
+Ketemu waktu menulis test bolak-balik buat temuan review di atas — dan ini yang
+**paling dalam dari semuanya**, karena dia bikin seluruh pekerjaan kamera TIDS
+sia-sia tanpa satu pun gejala.
+
+Kunci sel tiap tabel di HP itu `TabelHasil.kunciTabel`, isinya `tahap` yang
+dikirim backend. Sembilan belas lembar mengirim `sesudah_adjustment`. Lembar
+TIDS mengirim **`pembacaan_uut`**. Payload-nya sendiri dirakit
+`TitikState.toSubmission()` dari kunci **MATI** `sesudah_adjustment`.
+
+Dua sisi itu tidak pernah bertemu, dan yang terjadi bukan error:
+
+| | |
+|---|---|
+| Yang diketik teknisi masuk ke | `pembacaan_uut\|pembacaan\|i` |
+| Yang dibaca perakit payload | `sesudah_adjustment\|pembacaan\|i` — tidak pernah ada |
+| Yang terkirim ke server | set point yang benar, `pembacaan` **null semua** |
+
+Lembarnya penuh di layar, tombol kirimnya jalan mulus, kameranya mengisi tiga
+puluh lima kotak — dan tak satu pun angka itu ada di server. Persis kelas
+kegagalan yang §12 ini dibuka untuk menutupnya, cuma satu lapis lebih dalam
+daripada semua yang sudah ketemu.
+
+Tidak ada test yang kena karena tidak ada satu pun fixture TIDS yang memakai
+`tahap` aslinya: yang ada menyalin tabel `Pembacaan Standard` dan memeriksa set
+point-nya saja, tidak pernah angkanya.
+
+**Yang membetulkan: kunci utamanya sekarang datang dari `simpan_ke`**, kunci
+yang backend memang sudah mengirimkannya (`measurements[].pembacaan`) dan yang
+selama ini cuma dibaca null-nya. Lembar ke-21 yang tahapnya beda lagi ikut benar
+tanpa satu berkas pun disentuh; sembilan belas lembar yang tidak mengirim
+`simpan_ke` jatuh ke bawaan `sesudah_adjustment` dan tidak bergeser sedikit pun.
+Tiga tempat yang membaca kunci itu — perakit payload, pemulihan dari server, dan
+ringkasan sebelum kirim — sekarang memakai satu sumber yang sama.
+
+Dibuktikan merah dengan mengembalikan kunci matinya.
+
+### Susulan: enam temuan review di sisi HP
+
+Lima yang beneran menggigit, satu yang dipasang sebagai jaring:
+
+| Temuan | Akibat kalau dibiarkan |
+|---|---|
+| **Draf TIDS yang dibuka ulang tampil kosong** | Yang dikirim `titikUkurEfektif` (`121,5`); yang mencari `_titikTerdekat` di kunci `titik` yang isinya NOMOR BARIS (1–7). Tidak pernah ketemu, tiap baris kehitung `kebuang`. Di sesi revisi: yang dikirim balik ke admin cuma sisa yang sempat diketik ulang dari kertas |
+| **Penjaga orde menolak angka yang sah** | `adaPembacaanJauhDariTitik` mengadu pembacaan ke nomor baris. Set point 121,5 dengan pembacaan 121,5 kena rasio 121,5 dan barisnya ditahan — penjaga yang melatih teknisi menekan "lanjut" tanpa membaca |
+| **Set point cacat membuang seluruh baris diam-diam** | Kotaknya menerima `12..5` / `1-2` / `--3`; `parseAngka` pulang null, `siapKirim` false, dan kelima kotak pembacaan yang sudah diisi ikut hilang. Sekarang kotaknya dibatasi seperti sel angka lain, DAN ada penjaga yang menahan sebelum kirim |
+| **Set point yang baru diketik hilang tanpa konfirmasi** | `TitikState.adaIsian` tidak membaca kotak `Setpoint`, jadi lembar yang ketujuh set point-nya sudah diisi masih dianggap perawan waktu teknisi menekan back |
+| **Kolom grid bernomor tak berurut salah tempat** | `terapkanHasilFoto` memakai `repeatNo - 1`. Kertas bernomor `2, 4, 6` bikin angka kolom `2` mendarat di kolom `4`, dan dua sisanya kebuang di pemeriksaan batas |
+| **Penanda baris kembar menyuruh jepret ulang** | Grid & matriks memperlakukan hasil kosong sebagai salah framing. Baris kembar itu bentuk lembarnya — jepret ulang tidak pernah bisa menolong. (Tidak punya jalan masuk hari ini; dipasang sebagai jaring) |
+
+Ditambah satu di pemeta yang sudah disebut §12 sebab 2, tapi dari sisi yang
+belum ketutup: **`batasKolom` salah waktu kepala kolom yang hilang ada di
+TENGAH.** `X1` & `X4` kejangkar sementara `X2` & `X3` hilang berarti
+satu-satunya jarak yang tersisa **tiga kali** lebar kolom, jadi batasnya ikut
+tiga kali lipat dan angka di bawah `X2` lolos lalu tersimpan sebagai `X1`.
+Kolom tujuannya kosong di baris itu, jadi `_buangSelKembar` tidak punya apa pun
+untuk dibandingkan dan `angkaTakTerpetakan` tetap **nol**. Sekarang tiap selisih
+pusat dibagi jarak POSISI kolomnya dulu.
+
+> **Jebakan yang ikut tercatat:** test pertama untuk temuan itu **hijau walau
+> perbaikannya dicabut**, karena fixture-nya menyisakan dua jangkar yang
+> bertetangga (`X4` & `X5`) — dan jarak tersempitnya jadi satu lebar kolom
+> secara kebetulan. Syaratnya: **tidak boleh ada dua jangkar bertetangga.**
+
+### Susulan: `kolom_suhu` bohong di lima lembar
+
+Ketemu waktu mengadu tiap profil ke tabel yang benar-benar dikirimnya. `bentukPindaiFoto()`
+bawaannya `kolom_suhu = true` — bentuk lembar pH, yang tiap selnya memuat SEPASANG angka
+(pembacaan + °C dicatat bersamaan). Lima lembar cuma punya kolom `pembacaan` tapi masih mengaku
+punya kolom suhu: **TITS, Gas Detector, Thermocouple, Termometer Gelas, Thermohygrometer**.
+
+Belum pernah menggigit hari ini karena penanda itu cuma memberi makan endpoint AI Vision cloud,
+dan aplikasi mobile tidak pernah memanggilnya lagi. Tapi endpointnya masih hidup, dan yang terjadi
+kalau dipanggil sudah tertulis di docblock bawaannya: modelnya diminta membaca kolom yang tidak
+ada di kertasnya, lalu mengarang angka supaya kolomnya kelihatan terisi.
+
+Seperti biasa yang bolong justru yang paling baru, dan sebabnya penjaganya berdiri di sisi yang
+salah: penanda ini cuma pernah diuji di lembar pH (yang memang benar) dan lembar grid Enclosure.
+Sekarang `BentukPindaiFotoCocokTabelTest` **menurunkan harapannya dari kolom tabel yang beneran
+dikirim** — bukan dari daftar nama alat — jadi profil ke-21 ikut kesapu tanpa ada yang perlu
+ingat. Tiga aturan × 20 profil, dan dibuktikan merah dengan mengembalikan `kolom_suhu` TITS ke
+`true`.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -604,11 +996,13 @@ Jangan ditanyakan ulang.
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
-| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | `terverifikasi: true` di **11 dari 17** berkas geometri. Ini bukan pertanyaan, ini kiriman — dan bukan sesuatu yang bisa dikerjakan dari sini |
+| **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | Berhenti menggerbangi jalur lembar bermarker (sudah dicabut dari aplikasi, §12) — tapi **naik lagi jadi satu-satunya hal yang menahan klaim jalur ML Kit** (§12, "Batas klaim ini"). Nggak ada satu pun foto asli maupun citra bertulisan tangan di repo mobile, jadi yang belum pernah diuji justru yang menentukan fiturnya berguna di lapangan atau tidak |
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
 | **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
+| ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
+| ~~**K18**~~ | ~~Lembar TIDS: tujuh baris Setpoint sendiri, atau pengatur titik?~~ | **DIJAWAB: tujuh baris, tiap baris punya kotaknya sendiri** (27 Agt 2026). Sudah dikerjakan berikut dua lubang lain di lembar yang sama — lihat §12 K18 |
 
 ### K12 — dryblock A memakai angka dryblock B
 
@@ -635,7 +1029,7 @@ kehilangan satu-satunya oracle yang kita punya.
 Begitu lab mengirim hasil ukur Isotech yang sebenarnya, cukup ekstraksi ulang
 `database/data/tabel-master-suhu-3alat.json`; nol baris kode berubah.
 
-### F1 — kenapa satu foto menahan sebelas lembar
+### F1 — kenapa satu foto dulu menahan sebelas lembar, dan kenapa sekarang tidak lagi
 
 Koordinat di berkas geometri **eksak menurut definisi**: `ocr:cetak-lembar` menggambar kertasnya
 DARI koordinat itu, jadi kotaknya nggak mungkin meleset dari yang tercetak. Yang belum pernah
@@ -644,10 +1038,17 @@ kertas yang beneran dicetak, difoto miring, di bawah lampu lab.
 
 `terverifikasi: true` artinya rantai itu **sudah dibuktikan**, bukan "koordinatnya sudah benar".
 Jadi cuma manusia yang boleh menyetelnya, dan bukti yang dibutuhkan cuma satu: satu foto lembar
-cetak yang sudah diisi. Enam lembar kimia sudah punya bukti itu; sebelas sisanya belum.
+cetak yang sudah diisi. Enam lembar kimia sudah punya bukti itu; empat belas sisanya belum.
 
-Sampai foto itu ada, kesebelas lembar tombol pindainya digambar **MATI berikut alasannya** —
-bukan hilang, bukan nyala dengan koordinat karangan.
+**Yang berubah 27 Agt 2026: butir ini berhenti menahan apa pun yang bisa disentuh teknisi.**
+`terverifikasi` cuma menggerbangi tombol `PINDAI LEMBAR KERJA` — jalur lembar bermarker — dan
+tombol itu dicabut permanen dari layar 26 Agt 2026 atas permintaan pemilik lab. `PindaiReviewScreen`
+yang jadi ujungnya sekarang tidak pernah dibuka dari mana pun di aplikasi.
+
+Jadi waktu pemilik proyek melaporkan kameranya "cuma nangkap berapa tabel aja", sebabnya BUKAN ini
+(lihat §12). Mesinnya sengaja ditinggal utuh — dia satu-satunya kode yang sudah terbukti bisa
+memetakan foto kertas bermarker ke sel — jadi butirnya tetap terbuka, cuma turun jadi prasyarat
+kalau jalur itu dipasang lagi, bukan blocker yang berjalan hari ini.
 
 ---
 

@@ -227,6 +227,13 @@ class WorksheetExtractionController extends Controller
      * digambarkan sama sekali — dan klien yang keliru ngirim `kolom_suhu` nggak
      * mengubah kenyataan itu.
      *
+     * `lokal` yang ikut pulang dari `bentukPindaiFoto()` SENGAJA dibuang di
+     * sini, dan itu inti pemisahannya. Penanda itu menggerbangi tombol kamera
+     * ON-DEVICE; jalur ini yang MENGIRIM FOTONYA KELUAR. Membacanya di sini —
+     * atau menyatukannya lagi dengan `didukung` — bikin tiap lembar yang
+     * kameranya dinyalakan ikut memenuhi syarat dikirim ke penyedia AI pihak
+     * ketiga. Persis yang kejadian 27 Agt 2026 waktu TIDS dinyalakan.
+     *
      * @param  array<string, mixed>  $data
      * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
      */
