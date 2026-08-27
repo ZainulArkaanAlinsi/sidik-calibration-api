@@ -193,15 +193,35 @@ class CalibrationValidator
         //
         // Dulu kalimatnya menyodorkan tiga tebakan yang sama buat semua alat,
         // termasuk "toleransi alat kosong". Buat lembar yang memang SENGAJA
-        // tanpa toleransi — kelima Enclosure, TITS, Autoklaf, DO, Gas Detector,
-        // Conductivity, Spectro — sebab itu mustahil, dan menyebutnya
-        // mengarahkan orang mengisi kolom yang sengaja dikosongkan. Mengisi
-        // kolom itu pernah mematikan seluruh sesi Conductivity.
+        // tanpa toleransi sebab itu mustahil, dan menyebutnya mengarahkan orang
+        // mengisi kolom yang sengaja dikosongkan. Mengisi kolom itu pernah
+        // mematikan seluruh sesi Conductivity.
         //
-        // Kontradiksinya bahkan ada di satu fungsi yang sama: 15 baris di atas,
-        // pemeriksa `toleransi_kosong` TIDAK menyala buat lembar-lembar itu —
-        // benar, mereka memang sengaja tanpa toleransi — lalu kalimat ini tetap
-        // menyebutnya.
+        // Yang dimaksud "lembar tanpa toleransi" TIDAK ditulis sebagai daftar
+        // di sini, dan itu disengaja. Versi sebelumnya menulisnya — "kelima
+        // Enclosure, TITS, Autoklaf, DO, Gas Detector, Conductivity, Spectro" —
+        // dan daftar itu langsung basi begitu Thermocouple, Termometer Gelas,
+        // dan Thermohygrometer mendarat: sebelas nama buat lima belas lembar,
+        // TIDS pun sudah kelewat sejak sebelum itu. Kodenya sendiri nggak
+        // pernah salah — dia nanya `punyaToleransi()`, jadi lembar ke-21 ikut
+        // kesapu tanpa ada yang perlu ingat. Yang basi cuma prosanya, dan prosa
+        // yang basi di sebelah kode yang benar bikin pembaca berikutnya ngira
+        // penjaganya yang bolong.
+        //
+        // Yang berlaku: profil dengan `punyaToleransi() === false`. Buat tahu
+        // isinya hari ini, tanya registry-nya, jangan cari daftar di prosa:
+        //
+        //   collect(app(CalibrationProfileRegistry::class)->semua())
+        //       ->reject->punyaToleransi()->map->kode()
+        //
+        // Bukti bahwa predikat ini yang bener: 15 baris di atas, pemeriksa
+        // `toleransi_kosong` sudah TIDAK menyala buat lembar-lembar itu. Dua
+        // tempat di satu fungsi yang sama pernah beda bunyi — yang satu diam,
+        // yang satu tetap menyebutnya.
+        //
+        // @see PeringatanPalsuTest::test_sebab_toleransi_disaring_dari_registry_bukan_daftar_tulis_tangan
+        //      — nyapu tiap sesi ter-seed, harapannya diturunkan dari profilnya
+        //      masing-masing, dan digigit dua arah.
         //
         // Ambang pengulangannya juga beda per lembar: GUM minta 2, grid
         // Enclosure minta 4 per sensor. Ditanya ke profilnya, bukan dipatok.

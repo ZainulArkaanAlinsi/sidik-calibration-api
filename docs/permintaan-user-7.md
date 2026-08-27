@@ -146,7 +146,7 @@ pemilik lab. 25 baris "Butuh konfirmasi" di layar itu **satu sebab plus kebising
 | **E** | Pesan "titik tidak terhitung" menebak tiga sebab | **BERES** — sebabnya ditanya ke profil |
 | **F** | TITS Measure: 25 tuduhan salah ketik per sesi | **BERES** — TITS nggak diadu ke `equipments.resolusi` |
 | **G** | Peringatan grid nggak nyebut baris mana | **BERES** — perannya ikut di label |
-| **H** | Komentar "6 dari 17 lembar tanpa vonis" (sebenarnya 12) | belum |
+| **H** | Komentar "6 dari 17 lembar tanpa vonis" (sebenarnya 12) | **BERES** (27 Agt 2026) — daftarnya dibuang, bukan dipanjangin; sekarang 15 dari 20, dan dijaga sapuan registry |
 
 ### Yang TIDAK diubah, dan kenapa
 
@@ -169,6 +169,40 @@ Dijaga `StandarTidakBocorAntarLabTest` + `BatasAntarLabTest` — 41 test, dan da
 **diambil dari registry, bukan ditulis tangan**, jadi profil ke-18 ikut kesapu tanpa ada yang
 perlu ingat menambahkannya. Itu yang bikin perbaikan ini nggak balik lagi: polanya dulu menyebar
 justru karena disalin satu-satu.
+
+### ~~H · Komentar "lembar tanpa vonis"~~ — BERES 27 Agt 2026
+
+Butir ini ditulis sebagai "6 dari 17 (sebenarnya 12)". Waktu ditelusuri, **dua-duanya
+sudah basi**: hari ini registry punya 20 profil dan **15** di antaranya
+`punyaToleransi() === false`. Angkanya bergerak tiap kali lembar baru mendarat — tiga alat
+suhu terakhir menggesernya 12 → 15 sendirian.
+
+| Yang dicek | Hasil |
+|---|---|
+| Bunyi komentarnya di `CalibrationValidator` | "kelima Enclosure, TITS, Autoklaf, DO, Gas Detector, Conductivity, Spectro" → **11 nama** |
+| Kebenarannya hari ini | **15** lembar (11 itu + TIDS + Thermocouple + Termometer Gelas + Thermohygro) |
+| Kodenya sendiri | **nggak pernah salah** — dia nanya `punyaToleransi()`, bukan daftar |
+| Test yang menjaganya | cuma `test_sebab_yang_disebut_beneran_berlaku`, dan itu **satu lembar** (Inkubator) |
+
+Jadi ini nggak pernah jadi bug perilaku. Yang bolong: prosa yang basi di sebelah kode yang
+benar, plus klaim luas yang cuma dibuktikan di satu lembar.
+
+**Yang dikerjakan — daftarnya dibuang, bukan dipanjangin.** Menulis ulang "15 lembar" cuma
+memindahkan tanggal kebasiannya ke lembar ke-21. Komentarnya sekarang menyebut PREDIKATNYA
+(`punyaToleransi() === false`) plus satu baris yang beneran bisa dijalankan buat
+menghitungnya, dan cerita kebasiannya ditinggal sebagai alasan kenapa nggak boleh ada
+daftar di situ lagi. Nol baris non-komentar berubah di `CalibrationValidator.php`.
+
+**Penjaganya diperluas dari 1 lembar ke 15, daftarnya dari registry.**
+`test_sebab_toleransi_disaring_dari_registry_bukan_daftar_tulis_tangan` menyapu tiap sesi
+ter-seed dan menurunkan harapannya dari `punyaToleransi()` profil sesi itu — jadi lembar
+ke-21 ikut kesapu tanpa ada yang perlu ingat. Dijaga dua arah: cabut `if`-nya → Conductivity
+merah; hapus sebabnya total → pH merah.
+
+Cakupannya apa adanya: **10 dari 15** lembar tanpa vonis punya sesi contoh buat diadu. TIDS,
+Furnace, Bath, dan Refrigerator belum punya sesi sama sekali; Autoklaf punya sesi tapi nol
+pembacaan mentah, jadi pesannya nggak pernah lahir. Kelima itu ditulis di docblock test-nya,
+bukan didiamkan.
 
 ### ~~Rentang inkubator 30–300 °C~~ — HANTU, ditelusuri 27 Agt 2026
 
