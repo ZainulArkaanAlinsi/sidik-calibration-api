@@ -1245,6 +1245,15 @@ Teknisi & viewer yang nembak endpoint ini dapat `403`.
 > **Pakai ini:** ✅ **`GET /api/customers/lookup`** (live 25 Jul, kebuka semua
 > role) — dibikin persis buat kasus ini. Bentuknya di bawah.
 >
+> **⚠️ Update 27 Agt (2) — baris pertama tabel itu KAMBUH di layar Arsip.**
+> Layar Arsip juga membaca `data[].id` dari `/arsip/perusahaan` dan
+> mengirimnya ke `GET /arsip/perusahaan/{customer}/folder`, yang ngiket ke
+> `Customer`. Hasilnya admin membuka arsip **PT lain** — status 200, nol error,
+> judulnya tetap nama PT yang dipencet. Diuji tiga PT: **dua kebuka arsip PT
+> lain.** Sekarang tiap baris membawa `pelanggan.id` sendiri (lihat §8a), jadi
+> yang membaca nggak perlu menebak dari `id`. Dijaga
+> `IdPelangganDiDaftarArsipTest`.
+>
 > **⚠️ Update 27 Agt — mobile baru beneran pindah hari ini.** Koreksi ini ditulis
 > 25 Jul, endpoint-nya jadi hari itu juga, tapi `ApiCustomerLookupService` di
 > repo mobile masih nembak `/arsip/perusahaan?search=` sampai 27 Agt. Jadi
@@ -1293,6 +1302,34 @@ GET /api/customers/lookup?search=tirta&page=1
 ---
 
 ## 8a. Folder Manager — buka folder satu PT (live 25 Jul)
+
+### Bentuk baris `GET /api/arsip/perusahaan` — DUA id, beda arti
+
+```json
+{ "data": [
+    { "id": 3, "nama": "PT Alfa", "tipe": "sistem", "parent_id": null,
+      "pelanggan": { "id": 1, "nama": "PT Alfa", "alamat": "Jl. Raya Cikarang KM 27, Bekasi" },
+      "jumlah_alat": 4, "jumlah_sertifikat": 2, "jumlah_folder": 3, "jumlah_file": 12 }
+] }
+```
+
+| Kunci | Artinya | Dipakai buat |
+|---|---|---|
+| `id` | **id FOLDER** | `GET /arsip/folders/{id}` |
+| `pelanggan.id` | **id PELANGGAN** | `GET /arsip/perusahaan/{customer}/folder` |
+
+**Dua-duanya sering beda.** Folder akar PT dibikin belakangan (find-or-create
+waktu PT-nya pertama dibuka), jadi urutannya nggak ikut urutan pelanggan.
+Mengirim `id` ke rute pelanggan membuka arsip PT lain yang id-nya kebetulan
+sama — **status 200, nol error**, dan judulnya tetap nama PT yang dipencet.
+
+`pelanggan` **bisa `null`**: `folders.customer_id` boleh kosong (folder akar
+manual, mis. "Dokumen Mutu"). Di situ yang benar dibuka lewat `id` sebagai
+folder biasa — jangan ditebak ke pelanggan.
+
+`pelanggan.alamat` ikut sejak 27 Agt; kartu PT di layar Arsip memang
+menampilkannya (nama tebal, alamat kecil di bawahnya), dan sebelum ini baris
+kecil itu selalu kosong tanpa ada error yang bunyi.
 
 ### `GET /api/arsip/perusahaan/{customer}/folder`
 

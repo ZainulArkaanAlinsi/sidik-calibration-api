@@ -537,6 +537,41 @@ Sekarang `ApiCustomerLookupService` menembak `/customers/lookup`: `customers.id`
 bocor ke lab sebelah. Itu cara teknisi mengingat pelanggannya: satu kawasan industri berisi
 belasan PT bernama mirip, dan yang dia pegang alamat penjemputannya.
 
+### Audit ulang 27 Agt — pola yang sama KAMBUH di layar Arsip
+
+Pemilik proyek minta dicek lagi: *"takutnya masih ada yang kelewat"*. Tiga temuan, dan yang
+pertama bentuknya persis sama dengan yang barusan diperbaiki.
+
+**1 · Layar Arsip membuka arsip PT yang salah.** `GET /arsip/perusahaan` me-list FOLDER;
+`ArsipPerusahaan.fromJson` membaca `json['id']` (id folder) dan layarnya mengirimkannya ke
+`GET /arsip/perusahaan/{customer}/folder`, yang ngiket ke `Customer`. Diuji tiga PT: **dua kebuka
+arsip PT lain** — status 200, nol error, judulnya tetap nama PT yang dipencet, isinya sertifikat
+& alat milik pelanggan lain.
+
+Ini kejadian **kedua** dengan bentuk yang sama dalam satu hari. Yang pertama pemilih pelanggan di
+form Tambah Alat, yang juga menarik id folder dari endpoint yang sama. Satu endpoint salah
+dipahami, dua layar terkena — dan keduanya diam.
+
+Sekarang tiap baris membawa `pelanggan.id` sendiri, dan `ArsipPerusahaan` menyimpan dua id
+terpisah: `id` (folder) dan `pelangganId`. Folder akar tanpa pelanggan (`customer_id` boleh
+kosong) dibuka sebagai folder biasa lewat `id`, bukan ditebak ke pelanggan.
+
+**2 · Alamat di kartu PT tidak pernah muncul.** Kartunya sudah menggambar nama tebal + alamat
+kecil di bawahnya, tapi `FolderResource` tidak pernah mengirim `alamat`, dan modelnya membacanya
+dari tingkat atas. Jadi cabang itu tidak pernah menyala, dan tidak ada satu pun error. Sekarang
+`pelanggan.alamat` ikut dikirim.
+
+**3 · Dua alat kelewat di tabel vonis mock.** `DO Meter` dan `Gas Detector` masih
+`punyaToleransi: true` di `MockCategoryService` padahal registry bilang `false` — di build
+`USE_MOCK=true` dua alat itu masih memaksa teknisi mengisi toleransi yang masternya tidak punya.
+Ketahuan waktu mengadu seluruh 21 nama alat di mock satu per satu ke registry.
+
+> **Yang dipetik.** Salinan tulis tangan ketinggalan tanpa bunyi — itu alasan yang sama yang
+> dipakai menaruh `punya_toleransi` di server, dan tabel di mock ini melanggarnya sendiri. Karena
+> mobile tidak bisa memanggil registry PHP, penjagaannya sekarang `VonisToleransiMockTest`: tabel
+> vonis dipatok eksplisit, dan **nama alat baru yang tidak ada di tabel itu bikin test MERAH** —
+> bukan diam-diam ikut bawaan `true`.
+
 **Sumber nama PT di luar data PT Sidik belum dipilih** — lihat K16. Tidak ada API resmi & gratis
 untuk daftar perusahaan Indonesia; yang tersedia sumber peta (Google Places, Nominatim) dengan
 syarat pemakaian & biaya masing-masing. Keputusan pemilik proyek: **internal dulu, luar

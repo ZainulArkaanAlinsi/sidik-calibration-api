@@ -25,9 +25,22 @@ class FolderResource extends JsonResource
             'tipe' => $this->tipe,
             'parent_id' => $this->parent_id,
             'keterangan' => $this->keterangan,
+            // `id` di sini **id PELANGGAN**, dan itu BUKAN `id` di tingkat atas
+            // (yang id folder). Bedanya menentukan: `GET /arsip/perusahaan/
+            // {customer}/folder` mengikat ke `Customer`, jadi mengirim id folder
+            // ke situ membuka arsip PT LAIN yang id-nya kebetulan sama —
+            // status 200, nol error. Folder akar PT dibikin belakangan &
+            // urutannya nggak ikut urutan pelanggan, jadi dua id itu memang
+            // sering beda.
+            //
+            // `alamat` ikut karena kartu PT di layar Arsip memang menampilkannya
+            // (nama tebal, alamat kecil di bawahnya) — tanpa ini barisnya selalu
+            // kosong, dan yang kelihatan cuma nama. Sama datanya dengan yang
+            // sudah dikirim `CustomerLookupResource`, jadi bukan data baru.
             'pelanggan' => $this->customer ? [
                 'id' => $this->customer->id,
                 'nama' => $this->customer->nama,
+                'alamat' => $this->customer->alamat,
             ] : null,
             // Dua angka yang dipajang di daftar arsip. Dikirim cuma kalau
             // dihitung di controller — folder yang bukan akar PT nggak punya
