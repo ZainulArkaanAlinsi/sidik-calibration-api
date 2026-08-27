@@ -44,6 +44,37 @@ class Folder extends Model
     }
 
     /** @return HasMany<Folder, $this> */
+    /**
+     * Jalur folder ini dari AKAR ke dirinya sendiri — bahan breadcrumb.
+     *
+     * Naik lewat `parent` satu-satu, bukan sekali query rekursif: pohon arsip
+     * dangkal (PT -> tahun -> paling banter satu-dua folder manual), jadi
+     * dalamnya 2-4 baris dan biayanya nggak sepadan dengan CTE.
+     *
+     * Ada penjaga siklus. Folder yang `parent_id`-nya nunjuk balik ke
+     * keturunannya sendiri lepas dari pohon dan HILANG dari semua layar —
+     * `pindah()` udah nolak bentuk itu, tapi baris yang terlanjur ada di
+     * produksi sebelum penjaganya dipasang nggak kesentuh, dan di sini dia
+     * bakal jadi loop tak berujung yang mematikan request-nya.
+     *
+     * @return list<Folder>
+     */
+    public function jalurKeAkar(): array
+    {
+        $jalur = [];
+        $terlihat = [];
+
+        for ($f = $this; $f !== null; $f = $f->parent) {
+            if (isset($terlihat[$f->id])) {
+                break;
+            }
+            $terlihat[$f->id] = true;
+            $jalur[] = $f;
+        }
+
+        return array_reverse($jalur);
+    }
+
     public function children(): HasMany
     {
         return $this->hasMany(Folder::class, 'parent_id');
