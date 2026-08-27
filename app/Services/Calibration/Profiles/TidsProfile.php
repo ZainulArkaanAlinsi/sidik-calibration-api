@@ -377,19 +377,30 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
-     * Kertas TIDS: dua tabel `titik ukur × kolom`, dan sekarang BISA difoto.
+     * Kertas TIDS: dua tabel `titik ukur × kolom`, dan sekarang BISA difoto —
+     * lewat jalur LOKAL saja.
      *
-     * ## Kenapa dulu ditolak, dan apa yang berubah
+     * ## `didukung` TETAP `false`, `lokal` yang dinyalakan
      *
-     * Penanda ini dulu `didukung: false` dengan alasan "dua tabel interval yang
-     * saling berpasangan per 10 detik tidak bisa digambarkan dua penanda
-     * bentuk". Alasan itu benar untuk jalur AI Vision cloud, yang memang cuma
-     * punya dua penanda ini — dan jalur itu sudah tidak dipanggil aplikasi
-     * mobile sejak lama.
+     * **Menaikkan `didukung` bukan cuma soal bentuk.** Penanda itu menggerbangi
+     * `POST /raw-measurements/extract-from-photo`, yang MENGIRIM FOTO LEMBAR
+     * KERJA PELANGGAN KE LAYANAN PIHAK KETIGA (Gemini/Anthropic). Sempat
+     * dinaikkan di sini supaya tombol lokalnya hidup (27 Agt 2026) — dan itu
+     * diam-diam membuat lembar TIDS ikut memenuhi syarat dikirim keluar begitu
+     * `VISION_AKTIF` menyala, padahal yang dimaui cuma kamera on-device.
+     * Ketahuan waktu review, dan dibetulkan dengan MEMISAHKAN gerbangnya, bukan
+     * dengan menerima pelebarannya.
      *
-     * Yang dipakai sekarang jalur LOKAL, dan dia menjangkar per tabel, bukan
-     * per lembar. Dua tabel yang berpasangan itu difoto satu-satu, dan
-     * masing-masing memang berbentuk baris × kolom:
+     * Alasan lama `didukung: false` juga masih berdiri apa adanya: dua tabel
+     * interval yang berpasangan per 10 detik memang tidak bisa digambarkan dua
+     * penanda bentuk yang dipunya jalur cloud.
+     *
+     * ## Yang dinyalakan: `lokal`
+     *
+     * Jalur lokal menjangkar PER TABEL, bukan per lembar — dan di situlah
+     * alasan penolakan jalur cloud berhenti berlaku. Dua tabel yang
+     * berpasangan itu difoto satu-satu, dan masing-masing memang berbentuk
+     * baris × kolom:
      *
      *  - **baris** dijangkar tulisan `Set point 1`…`Set point 7` yang tercetak
      *    di kolom kiri. Bukan angkanya — set point TIDS memang kosong di
@@ -409,11 +420,18 @@ class TidsProfile extends CalibrationProfile
      *     — tanpa itu, kamera cuma mempercepat pengisian 35 kotak yang memang
      *     belum punya tempat di server.
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool, lokal: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => false, 'standar_di_baris' => true, 'didukung' => true];
+        return [
+            'kolom_suhu' => false,
+            'standar_di_baris' => true,
+            // Jalur CLOUD tetap DITOLAK — lihat docblock di atas.
+            'didukung' => false,
+            // Jalur ON-DEVICE hidup.
+            'lokal' => true,
+        ];
     }
 
 

@@ -83,10 +83,26 @@ class LembarKerjaTest extends TestCase
         // standarnya jadi KOLOM. Dikirim eksplisit — mobile nerusinnya apa
         // adanya ke endpoint ekstraksi, jadi dia nggak perlu nyimpen daftar
         // alat mana yang kertasnya beda.
-        // `didukung` ikut: lembar yang bentuknya nggak bisa dituturkan sama
-        // sekali (Autoklaf) ditolak di depan, bukan dicoba pakai bentuk pH.
+        //
+        // Dua gerbang, dan bedanya bukan kosmetik:
+        //
+        //  - `didukung` — jalur CLOUD (`raw-measurements/extract-from-photo`),
+        //    yang MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK
+        //    KETIGA. Lembar yang bentuknya nggak bisa dituturkan sama sekali
+        //    (Autoklaf) ditolak di depan, bukan dicoba pakai bentuk pH.
+        //  - `lokal` — tombol `FOTO TABEL INI` di HP, ML Kit di perangkat.
+        //
+        // `assertSame` di sini SENGAJA seluruh isi array, bukan per kunci:
+        // dua penanda ini pernah disatukan (27 Agt 2026), dan penyatuannya
+        // bikin menyalakan kamera satu lembar diam-diam ikut melebarkan batas
+        // datanya. Kunci yang hilang atau nambah wajib bikin baris ini merah.
         $this->assertSame(
-            ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true],
+            [
+                'kolom_suhu' => true,
+                'standar_di_baris' => false,
+                'didukung' => true,
+                'lokal' => true,
+            ],
             $data['pindai_foto'],
         );
     }

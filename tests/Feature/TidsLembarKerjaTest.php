@@ -160,10 +160,25 @@ class TidsLembarKerjaTest extends TestCase
             array_column($bagian['penutup']['field'], 'label'),
         );
 
-        // Jalur foto tabel DITERIMA sejak 27 Agt 2026 — dua tabelnya difoto
-        // satu-satu, dan masing-masing memang baris × kolom. Barisnya
-        // dijangkar tulisan `Set point N`, kolomnya `0" (UUT1)`.
-        $this->assertTrue($data['pindai_foto']['didukung']);
+        // DUA gerbang foto, dan bedanya disengaja:
+        //
+        //  - `lokal` menggerbangi tombol `FOTO TABEL INI` — ML Kit, sepenuhnya
+        //    di HP. DINYALAKAN 27 Agt 2026: dua tabelnya difoto satu-satu, dan
+        //    masing-masing memang baris × kolom. Barisnya dijangkar tulisan
+        //    `Set point N`, kolomnya `0" (UUT1)`.
+        //  - `didukung` menggerbangi `POST /raw-measurements/extract-from-photo`,
+        //    yang MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK KETIGA.
+        //    TETAP DITOLAK.
+        //
+        // Keduanya sempat jadi satu penanda, dan menyalakan yang lokal
+        // diam-diam ikut melebarkan batas datanya. Dua-duanya di-assert di
+        // sini supaya penyatuan itu nggak bisa balik tanpa ketahuan.
+        $this->assertFalse(
+            $data['pindai_foto']['didukung'],
+            'Foto TIDS nggak boleh keluar dari HP. `didukung: true` bikin lembar ini memenuhi '
+            .'syarat dikirim ke penyedia AI pihak ketiga begitu Vision nyala.',
+        );
+        $this->assertTrue($data['pindai_foto']['lokal']);
 
         // Tulisan kepala kolom yang tercetak WAJIB ikut dikirim — itu
         // satu-satunya jangkar sumbu mendatar yang dipunya jalur foto. Tanpa
