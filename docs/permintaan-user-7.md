@@ -448,6 +448,29 @@ yang tersimpan.
 > karena memang tidak pernah disentuh. Test-nya sekarang MERUSAK satu angka dulu sebelum
 > menjalankan perintah: angka yang dirusak cuma balik kalau perintahnya beneran menghitung.
 
+#### Kejadian keenam sudah dicegah, bukan ditunggu (27 Agt 2026)
+
+Lima kali pola yang sama, dan lima kali ditutup dengan test yang menyebut alatnya **satu per
+satu** — jadi tiap kali alat berikutnya jatuh ke lubang yang sama, karena tidak ada yang
+mengingatkan. `HitungUlangTigaAlatSuhuTest` sendiri cuma menyebut tiga nomor sesi; alat ke-21
+tidak akan kesapu olehnya.
+
+`HitungUlangSemuaSesiTest` menutup pengulangannya: daftarnya **seluruh sesi ter-seed yang punya
+titik terhitung**, diambil dari database, bukan diketik. Hari ini 18 sesi, dan tiga penanda
+ditegakkan sekaligus — `hitung_ulang_gagal`, `hitung_ulang_beda`, `keputusan_titik_beda`.
+
+Yang kedua dan ketiga bukan hiasan. `hitung_ulang_gagal` nol cuma membuktikan hitung ulangnya
+JALAN; konteks yang **salah isi** (dryblock B dikirim untuk sesi dryblock A) tetap lolos di situ —
+hitung ulangnya sukses, angkanya saja yang meleset, dan itu justru yang tidak kelihatan sebagai
+kegagalan.
+
+Dibuktikan menggigit dengan mematikan `PasanganStandarUutMentah::dari()`: ketiga sesi suhu langsung
+merah, **disebut nomor sesi dan nama alatnya**, bukan cuma "ada yang gagal".
+
+Test per-alat yang sudah ada TIDAK diganti — keduanya menegakkan hal yang lebih dalam (bentuk yang
+disusun ulang beneran dari baris mentah; perintah `kalibrasi:hitung-ulang` memulihkan angka yang
+sengaja dirusak). Yang baru ini lantainya.
+
 ### Susulan 27 Agt — form Tambah Alat: yang perlu saja, sisanya dari data PT Sidik
 
 Permintaan pemilik proyek sambil menunjukkan tangkapan layar form "TAMBAH ALAT" dengan kolom
