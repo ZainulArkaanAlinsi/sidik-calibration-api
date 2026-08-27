@@ -251,6 +251,62 @@ class BentukPindaiFotoCocokTabelTest extends TestCase
     }
 
     /**
+     * TIAP profil menyebut `didukung` SENDIRI — nggak mewarisi bawaan.
+     *
+     * ## Kenapa ini layak jadi test, bukan cuma konvensi
+     *
+     * `WorksheetExtractionController::bentukKertas()` menggabungkan hasil
+     * `bentukPindaiFoto()` di atas bawaannya sendiri. Profil yang override
+     * SEBAGIAN — menyebut `kolom_suhu` tapi nggak `didukung` — diam-diam
+     * mengambil nilainya dari bawaan itu.
+     *
+     * Artinya gerbang yang menentukan **foto lembar kerja pelanggan boleh
+     * keluar HP atau nggak** diputuskan di CONTROLLER, bukan di profil yang
+     * tahu kertasnya seperti apa. Dan itu bukan kekhawatiran teoretis:
+     * `SpectrophotometerProfile` & `ViscometerProfile` memang begitu, dan waktu
+     * bawaannya diturunkan buat menutup lubang lain (27 Agt 2026), jalur foto
+     * dua lembar itu ikut mati tanpa ada yang berniat begitu. Yang menangkapnya
+     * cuma `WorksheetExtractionSpektroTest`, kebetulan, dan cuma karena suite
+     * penuh dijalankan.
+     *
+     * Sekarang `didukung` wajib tertulis. Profil ke-21 yang lupa menyebutnya
+     * jatuh di sini — bukan di produksi, dan bukan sebagai lembar yang
+     * diam-diam berubah gerbangnya waktu ada yang menyentuh controller.
+     *
+     * ## Kenapa `lokal` SENGAJA nggak ikut dituntut
+     *
+     * Bawaannya beda asalnya, dan bedanya menentukan. `didukung` diwarisi dari
+     * bawaan CONTROLLER — tempat yang nggak tahu apa-apa soal kertasnya, dan
+     * yang isinya bisa berubah karena alasan yang nggak ada hubungannya.
+     * `lokal` diwarisi dari `didukung` PROFIL ITU SENDIRI, sengaja, supaya
+     * tujuh belas profil yang nggak menyebutnya nggak berubah perilakunya waktu
+     * gerbangnya dipecah — dan sisi HP membacanya dengan aturan yang sama
+     * (`lokal ?? didukung ?? true`).
+     *
+     * Menuntut `lokal` di sini berarti menuntut tujuh belas profil menuliskan
+     * ulang nilai yang sudah benar, dan menukar satu kelas kesalahan dengan
+     * kebisingan. Yang perlu tertulis cuma yang bisa bergeser tanpa ada yang
+     * menyentuhnya.
+     */
+    #[DataProvider('semuaProfil')]
+    public function test_gerbang_pindai_disebut_eksplisit(CalibrationProfile $profil): void
+    {
+        $bentuk = $profil->bentukPindaiFoto();
+
+        $this->assertArrayHasKey(
+            'didukung',
+            $bentuk,
+            "Profil `{$profil->kode()}` nggak menyebut `didukung`, jadi nilainya diambil dari "
+            .'bawaan `WorksheetExtractionController::bentukKertas()`. Gerbang yang nentuin foto '
+            .'lembar pelanggan boleh keluar HP atau nggak wajib diputuskan di profil yang tahu '
+            .'kertasnya, bukan di controller — dan wajib TERTULIS, supaya nggak ikut bergeser '
+            .'waktu ada yang menyentuh bawaannya.',
+        );
+
+        $this->assertIsBool($bentuk['didukung'], '`didukung` wajib bool.');
+    }
+
+    /**
      * Penjaga LANTAI buat sapuan di atas.
      *
      * Sapuan yang daftarnya datang dari bentuk lembar punya satu cara gagal
