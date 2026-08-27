@@ -217,7 +217,7 @@ bukan cuma punyamu. Aturan lengkapnya ada di `README.md` bagian "Kerja Berdua".
 
 Gejalanya begini — satu berkas Filament biasa, belasan garis merah:
 
-```
+```text
 P1009  Undefined type 'Filament\Resources\Resource'.
 P1009  Undefined type 'Filament\Support\Icons\Heroicon'.
 P1009  Undefined type 'Illuminate\Database\Eloquent\Model'.
