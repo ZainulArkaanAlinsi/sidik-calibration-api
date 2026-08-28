@@ -1033,7 +1033,7 @@ percakapan — **jangan ditulis di repo**):
 | | |
 |---|---|
 | `TidsMasterTest` (unit) | 8 test — dua sesi contoh master diadu sel demi sel |
-| Suite API di MySQL | 2266 test |
+| Suite API di MySQL | 2.268 test · 1 gagal, dan gagal yang **sama persis** muncul di HEAD bersih `03a4d1c` (2.257 test, 1 gagal) — `IdPelangganDiDaftarArsipTest`, soal id folder arsip, nol sentuhan ke TIDS. Bukan regresi; sebabnya ada di jebakan AUTO_INCREMENT di bagian jebakan. |
 | `flutter test` | 1240 test · `flutter analyze` bersih |
 | `pint` | bersih untuk seluruh berkas yang disentuh |
 
@@ -1514,3 +1514,25 @@ Supaya tidak dibangun ulang:
   to exclude build and platform directories"). Selalu keluarkan dari commit.
 - **`flutter test` hijau bukan bukti UI hilang** — sebagian besar test pindai menguji layanan
   langsung, tidak lewat tombol.
+- **AUTO_INCREMENT MySQL nggak ikut di-rollback, jadi test yang menyandar ke "dua id berdekatan"
+  merah CUMA di suite penuh.** `RefreshDatabase` di MySQL memigrasi sekali lalu membungkus tiap
+  test dalam transaksi — rollback-nya mengembalikan barisnya, tapi **counter AUTO_INCREMENT-nya
+  nggak ikut balik**. Tiap tabel naik dengan laju berbeda, tergantung berapa baris yang dibikin
+  test-test sebelumnya, jadi `customers` dan `folders` **melar berjauhan** makin ke belakang suite.
+
+  `IdPelangganDiDaftarArsipTest::test_id_folder_yang_dikirim_ke_rute_pelanggan_membuka_pt_lain`
+  berdiri di atas premis "id folder yang dikirim ke rute pelanggan membuka PT LAIN yang ada" —
+  dan premis itu cuma berlaku selama dua rentang id-nya masih bertumpang tindih. Begitu melar,
+  rute pelanggannya balas 404, `continue` melewatinya, `$tertukar` tetap 0, dan
+  `assertGreaterThan(0, ...)` merah. Yang merah **penjaganya, bukan kodenya**.
+
+  Dibuktikan 28 Agt 2026 di HEAD bersih (`03a4d1c`, nol kode TIDS): kelasnya **sendirian → 6/6
+  hijau**; didahului satu kelas lain yang bikin Customer tanpa Folder (`GlobalSearchTest`) →
+  **test yang sama merah**, dengan `folders` berhenti di 17 dan `customers` di 23. Di suite penuh
+  MySQL dia merah baik di HEAD bersih (2.257 test, 1 gagal) maupun di cabang TIDS (2.268 test,
+  1 gagal) — kegagalannya itu-itu juga, jadi **bukan regresi**.
+
+  CI hijau karena jalan di `sqlite::memory:`: di sana `RefreshDatabase` membangun ulang
+  database-nya, id-nya balik ke 1 tiap test, dan premisnya selalu kebetulan berlaku. Jadi ini
+  gerbang MySQL lokal doang. Kalau mau dibereskan, yang dibetulkan **test-nya** — patok id-nya
+  eksplisit atau bandingkan lewat nama, jangan menyandar ke rentang id — bukan endpoint-nya.
