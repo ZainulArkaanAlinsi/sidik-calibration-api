@@ -183,6 +183,10 @@ class HitungUlangSesi extends Command
                         'alat_bantu' => $sesi->alat_bantu,
                         'tipe_pencelupan' => $sesi->tipe_pencelupan,
                         'titik_es' => $sesi->titik_es ?? [],
+                        // Lembar TIDS menaruh dryblock-nya di sini, bukan di
+                        // kolom `alat_bantu`. Ketinggalan = hitung ulang sesi
+                        // TIDS kehilangan dua komponen budget.
+                        'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
                     ],
                 ];
             }

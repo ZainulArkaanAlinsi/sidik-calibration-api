@@ -1587,13 +1587,43 @@ class CalibrationController extends Controller
 
         $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
 
+        // Deret DATAR (`pembacaan`) dipindahkan ke `uut` kalau dua deret
+        // pasangannya nggak ada sama sekali.
+        //
+        // Ini kompatibilitas APK, bukan kenyamanan. Lembar TIDS hidup berbulan-
+        // bulan dengan `simpan_ke: measurements[].pembacaan` di tabel UUT-nya
+        // dan `null` di tabel standar — jadi APK yang sudah terpasang mengirim
+        // deret UUT-nya lewat `pembacaan`. Begitu lembar ini pindah ke jalur
+        // pasangan (28 Agt 2026), payload lama itu berhenti punya `standar`
+        // maupun `uut`, dan saringan di bawah membuangnya BULAT-BULAT: sesi
+        // terkirim `201 Created`, nol baris `raw_measurements`, tanpa satu pun
+        // error. Kerja lapangan hilang diam-diam — kelas kegagalan yang persis
+        // sama dengan yang bikin tabel standar TIDS nggak pernah nyampe server.
+        //
+        // Aman buat tiga lembar pasangan yang lain: mereka lahir langsung di
+        // jalur ini, jadi nggak pernah ada payload datar buat mereka. Kalau
+        // toh ada, angkanya tersimpan sebagai deret UUT — bukan hilang.
+        $measurements = array_map(
+            static function (array $t) use ($adaIsinya): array {
+                $punyaPasangan = collect($t['standar'] ?? [])->contains($adaIsinya)
+                    || collect($t['uut'] ?? [])->contains($adaIsinya);
+
+                if ($punyaPasangan || ! collect($t['pembacaan'] ?? [])->contains($adaIsinya)) {
+                    return $t;
+                }
+
+                return [...$t, 'uut' => array_values((array) $t['pembacaan'])];
+            },
+            (array) $request->input('measurements', []),
+        );
+
         // Set point dianggap terpakai kalau SALAH SATU sisinya ada isinya.
         // Kalau cuma sisi UUT yang dicek, set point yang teknisinya baru sempat
         // mengisi deret standar akan kebuang — dan yang kebuang bukan cuma yang
         // barusan dikirim, tapi juga baris lama yang sudah telanjur dihapus
         // `store()`/`update()` sebelum penyusunan ini jalan.
         $titikTerpakai = array_values(array_filter(
-            $request->input('measurements', []),
+            $measurements,
             static fn (array $t): bool => collect($t['standar'] ?? [])->contains($adaIsinya)
                 || collect($t['uut'] ?? [])->contains($adaIsinya),
         ));
@@ -1662,6 +1692,18 @@ class CalibrationController extends Controller
                     'alat_bantu' => $request->input('alat_bantu'),
                     'tipe_pencelupan' => $request->input('tipe_pencelupan'),
                     'titik_es' => $titikEs,
+                    // Peta bebas `spesifikasi_alat` ikut dioper UTUH.
+                    //
+                    // Bukan kelengkapan: lembar TIDS menaruh dryblock-nya di
+                    // `spesifikasi_alat.dryblock` (nilai `isotech`/`techne`)
+                    // sejak sebelum jalur pasangan ini ada, sementara lembar
+                    // Thermocouple memakai kolom `alat_bantu` (`A`/`B`). Dua
+                    // ejaan untuk satu pilihan, dan yang menentukan APK mana
+                    // yang mengirim. Tanpa peta ini, sesi TIDS dari APK lama
+                    // sampai ke `hitungPerGrup()` tanpa dryblock — dan dryblock
+                    // yang hilang bukan kolom kosong, dia dua komponen budget
+                    // yang nggak punya angka.
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
                 ],
             ];
         }

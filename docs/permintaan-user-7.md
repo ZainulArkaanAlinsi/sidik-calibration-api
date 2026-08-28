@@ -337,8 +337,9 @@ Yang membantahnya angka, bukan label: tabel CMC workbook itu berbunyi **0,84 /
 1,5 / 3,3 °C** — baris **no. 5 Thermocouple**, bukan **no. 2 TIDS** yang berbunyi
 0,86 / 1,4 / 3,1 °C. `D6` itu sisa salinan dari master TIDS.
 
-**Jadi K2 TETAP TERBUKA.** `TidsProfile` tidak disentuh, blokir U95 TIDS tetap
-berdiri, `TidsU95TidakBocorTest` tetap hijau.
+**Waktu itu K2 tetap terbuka** — `TidsProfile` tidak disentuh dan blokir U95 TIDS tetap
+berdiri. **Sehari kemudian (28 Agt 2026) workbook TIDS-nya benar-benar turun**, dan kali ini
+label DAN angkanya cocok: tabel CMC-nya berbunyi 0,86 / 1,4 / 3,1 — baris no. 2 TIDS. Lihat §13.
 
 ### Angka yang dicocokkan ke master
 
@@ -1011,6 +1012,113 @@ ingat. Tiga aturan × 20 profil, dan dibuktikan merah dengan mengembalikan `kolo
 
 ---
 
+## 13. Dua workbook master TIDS — 28 Agt 2026
+
+Ditambahkan pemilik proyek bersama dua berkas ber-password (passwordnya dikirim terpisah di
+percakapan — **jangan ditulis di repo**):
+
+> *"ok jadi gw ada alat baru ini ya tolong cek aja ya terus bikin kanyak alat alat sebelum nya
+> itu ada 2 alat okk okk buatkan dengan baik baik danjuga tolong ini juga hasil dari olah data
+> nya yang bener yaa jangan sampai gk jelas gitu ookk"*
+
+| | Isi | Status |
+|---|---|---|
+| **A** | Cek dua workbook & petakan olah datanya | **BERES** — `docs/pertanyaan-lab-tids-workbook.md` |
+| **B** | Olah data (koreksi + budget U95) sesuai master | **BERES** — cocok sampai digit terakhir di DUA sesi contoh, dijaga `TidsMasterTest` |
+| **C** | Backend "kayak alat-alat sebelumnya" | **BERES** — `TabelStandarTids` + `TidsCalculator`, pola yang sama dengan `TabelKalibratorSuhu3Alat`/`ThermocoupleCalculator` |
+| **D** | Sisi mobile | **BERES** — bentuk mock TIDS, fixture dari server, 9 test, plus SATU BUG diperbaiki (lihat di bawah) |
+
+### Verifikasi
+
+| | |
+|---|---|
+| `TidsMasterTest` (unit) | 8 test — dua sesi contoh master diadu sel demi sel |
+| Suite API di MySQL | 2.268 test · 1 gagal, dan gagal yang **sama persis** muncul di HEAD bersih `03a4d1c` (2.257 test, 1 gagal) — `IdPelangganDiDaftarArsipTest`, soal id folder arsip, nol sentuhan ke TIDS. Bukan regresi; sebabnya ada di jebakan AUTO_INCREMENT di bagian jebakan. |
+| `flutter test` | 1240 test · `flutter analyze` bersih |
+| `pint` | bersih untuk seluruh berkas yang disentuh |
+
+### Bug sisi mobile yang ketangkap gara-gara ini
+
+`toSubmissionPasangan()` mengirim `titikUkur` mentah, bukan `titikUkurEfektif`. Untuk tiga lembar
+pasangan pertama keduanya SELALU sama — set point-nya tercetak di kertas. Lembar TIDS tidak:
+kertasnya mencetak tujuh baris Setpoint **kosong**, dan `titikUkur` di situ cuma nomor barisnya
+(1..7). Dibiarkan, tiap sesi TIDS terkirim dengan set point 1, 2, 3… — angkanya lengkap, kolom
+`Correction` terbit, dan yang salah cuma titik yang diklaim sertifikat. Nol error di sepanjang
+jalurnya.
+
+Yang menemukannya bukan pembacaan kode, tapi **bentuk mock TIDS yang selama ini tidak ada**:
+`MockLembarKerjaService` diam-diam jatuh ke bentuk pH untuk profil `tids`, jadi tidak ada satu
+pun test yang pernah menyuapkan bentuk TIDS asli ke `LembarKerjaState`.
+
+### Dua workbook = dua KELUARGA STANDAR, bukan dua alat baru
+
+Ini yang paling gampang salah baca dari kalimat "ada 2 alat". Dua-duanya berkop
+`KALIBRASI TEMPERATURE INDIKATOR DENGAN SENSOR (TIDS)`, bernomor lingkup `LK-285-IDN`, bermetode
+`SIDIK-IK-CAL-0503_Rev.6`, dan bertabel CMC **0,86 / 1,4 / 3,1 °C** — satu baris lampiran
+akreditasi yang sama. Yang berbeda **standar yang dipakai mengalibrasi**:
+
+| workbook | standar meter | bentuk tabel koreksinya |
+|---|---|---|
+| `… Recorder Graptech.xlsm` | Temperature Recorder Graptech GL840 | per **KANAL** (CH1..CH20) × tipe sensor |
+| `… Yokogawa K,N.xlsm` | Constant 40T & Yokogawa CA 150 | per **tipe sensor** |
+
+Jadi hasilnya SATU profil dengan tiga keluarga standar — pola yang persis sama dengan TITS (dua
+workbook: fungsi Measure & Source) dan Enclosure (dua workbook: Recorder & Constant/Yokogawa).
+Memecahnya jadi dua profil mustahil: `CalibrationProfileRegistry` melempar `LogicException`
+begitu dua profil mengaku ejaan nama alat yang sama.
+
+### Yang dibalik workbook: K1 gugur, bukan terjawab
+
+Kepala kolom PDF berbunyi `0" (UUT1)`…`90" (UUT5)` dan selama ini dibaca sebagai LIMA ALAT dalam
+satu lembar — sampai-sampai keputusan "1 sesi 5 UUT vs 5 sesi terpisah" ditahan menunggu jawaban
+lab. Dua workbook menulis kolom yang sama sebagai `PRT1`…`PRT5` lalu memakainya `AVERAGE(D:I)` +
+`STDEV(D:I)` **per baris**. Satu baris = satu set point; lima kolom = lima ULANGAN.
+
+Akibatnya lembar TIDS ternyata sekeluarga dengan Thermocouple/Gelas/Thermohygro
+(`butuhPasanganStandarUut`), dan **tabel Pembacaan Standard akhirnya punya tempat simpan** —
+sebelumnya `simpan_ke: null`, artinya 35 kotak yang diisi teknisi tidak pernah sampai ke server.
+
+Label cetaknya TIDAK diubah (`0" (UUT1)` tetap): itu yang tertulis di kertas yang dipegang
+teknisi dan yang jadi jangkar sumbu mendatar jalur foto. Yang berubah artinya, dan artinya ditulis
+di `sumbu_uut.keputusan_skema = "lima_ulangan"`.
+
+### Empat penyimpangan master yang DITIRU
+
+Keempatnya menggeser U95 dan tidak satu pun memunculkan error. Aturan repo ini sudah dipakai TITS
+(`SERTAKAN_DRIFT_MATI`) dan Thermocouple (`type_a_tidak_masuk_budget`): **master direproduksi apa
+adanya** karena sertifikat yang sudah diserahkan ke pelanggan lahir dari workbook itu — lalu tiap
+penyimpangan melahirkan catatan audit yang menyebut berapa angkanya kalau dibetulkan, DAN
+peringatan sesi yang menahan tombol APPROVE.
+
+| | Isi | Arah |
+|---|---|---|
+| **D1** | `O24` Recorder menunjuk sel tetap `T30` (0,83) — tabel Type K berbunyi 0,67 | U95 lebih BESAR |
+| **D2** | `O25` Recorder literal 0,14 — tabel berbunyi 0,44 (K) / 0,76 (N) | U95 lebih kecil |
+| **D3** | `N27` Recorder menunjuk `AM9` di tabel KOREKSI (−0,2) — `Tabel_Drift_Recorder` (0,25/0,5) ada & nggak dipakai | U95 lebih kecil |
+| **D4** | `AC36` Constant/Yokogawa cuma menjumlah 9 dari 12 komponen | U95 lebih kecil |
+
+**D4 yang paling mendesak dijawab lab**: workbook Recorder untuk alat yang SAMA menjumlah
+keduabelasnya. Kalau ketiganya ikut, U95 sesi contoh Yokogawa 1,1411 °C, bukan 1,0674.
+
+### Yang TIDAK ditiru
+
+`IFNA(…,"")` yang bikin sel hilang dibaca NOL. Paling nyata di **PRT PT100 + recorder**: cabang
+terakhir kedua rumus jatuh ke `VLOOKUP(…, 100, 0)` di tabel 42 kolom, jadi koreksi meter DAN
+koreksi sensor dua-duanya hilang tanpa satu pun error. Kombinasi itu sekarang DIBLOKIR dengan
+alasan yang kebaca.
+
+### Bonus: K12 punya jawabannya di sini
+
+Sheet `Variasi axial Dryblok A` & `B` di kedua workbook TIDS **berbeda** — A bertitik 0/50/150
+(rentang Isotech −20…150 °C) dengan keseragaman 0,47 & stabilitas 0,0005; B bertitik 300/450/600
+dengan keseragaman 0,1 & stabilitas 0,03. Bandingkan dengan workbook Thermocouple, yang dua
+sheet-nya identik byte-per-byte dan dua-duanya berisi data blok B (itu isi K12). Angka blok A yang
+asli akhirnya ada — **tapi belum dipakai ulang untuk Thermocouple**, karena sertifikat dryblock-nya
+belum tentu sama tanggal. Lihat K12.
+
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -1030,13 +1138,17 @@ Jangan ditanyakan ulang.
 
 | Kode | Pertanyaan | Menahan apa |
 |---|---|---|
-| K1 | TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah? | 70% ukuran pekerjaan TIDS |
-| K2 | Workbook Excel TIDS — kapan dari lab? | **Blocker mutlak** budget ketidakpastian TIDS |
+| ~~K1~~ | ~~TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah?~~ | **GUGUR** (28 Agt 2026) — nggak pernah ada lima UUT. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu memakainya `AVERAGE`+`STDEV` per baris: lima ULANGAN, satu alat, satu baris = satu set point |
+| ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |
 | **K12** | **Sheet `Variasi axial Dryblok A` isinya data blok B** — kapan hasil ukur Isotech yang asli bisa dikirim? | Komponen `variasi_aksial` & `variasi_antar_lubang` sesi Thermocouple yang memakai blok A |
 | **F1** | **Satu foto lembar cetak yang sudah diisi tangan**, dari lembar mana saja | Berhenti menggerbangi jalur lembar bermarker (sudah dicabut dari aplikasi, §12) — tapi **naik lagi jadi satu-satunya hal yang menahan klaim jalur ML Kit** (§12, "Batas klaim ini"). Nggak ada satu pun foto asli maupun citra bertulisan tangan di repo mobile, jadi yang belum pernah diuji justru yang menentukan fiturnya berguna di lapangan atau tidak |
+| **K19** | **Empat penyimpangan master TIDS (D1–D4)** — sel tetap `T30`, literal `0,14`, sel `AM9` di tabel koreksi, dan `SUM` yang berhenti di baris 32 | Angka U95 tiap sertifikat TIDS. Ditiru apa adanya + catatan audit + peringatan sesi; **D4 paling mendesak** karena arahnya bikin U95 lebih kecil. Rinciannya `docs/pertanyaan-lab-tids-workbook.md` |
+| **K20** | Komponen `Interpolasi` TIDS (`0,19788162882115856`) datang dari workbook luar yang tidak ikut dikirim | Konstanta yang ikut tiap budget TIDS tapi sumbernya belum bisa ditelusuri |
+| **K21** | Drift sensor Type K: 0,55 (workbook Recorder) lawan 0,5 (workbook Constant/Yokogawa) | Dua sertifikat berbeda, atau satu angka yang belum diseragamkan |
+| **K22** | PRT PT100 + recorder: master memulangkan koreksi KOSONG (kolom ke-100 di tabel 42 kolom) | Aplikasi memblokir kombinasinya. Perlu konfirmasi: memang nggak pernah dipakai, atau tabelnya yang belum dibuat |
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
@@ -1104,7 +1216,7 @@ berkas profil.
 | G2 | Kelola daftar alat (perm. 1b) + layar Draf (perm. 4) | 1b jalan; perm. 4 **TERKIRIM** (v1.0.42). K10/K11 masih menahan pintu masuk & tombol hapus |
 | G3 | Lembar kerja ikut PDF (perm. 6) | **sebagian TERKIRIM** (v1.0.42) — TITS `0505 Rev.3` & Enclosure `0504 Rev.3` (kepala lembar, `equipment_id`, blok dimensi + volume, nomor formulir, baris Suhu Ruang) sudah ikut PDF. **TIDS `0506 Rev.4` belum dibandingkan field-per-field** |
 | G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Sisi HP menyusul** (27 Agt 2026, mobile#114): `thermohygro_dropdown_hidup_test.dart` menjaga dua arah — ada isi → dropdown kegambar, kosong → pesannya. Cakupannya 12 profil, yaitu yang bentuknya beneran dimodelkan mock; lima sisanya jatuh ke bentuk pH di sana, jadi klaim 17/17 tetap di sisi server. Yang ketangkap waktu penjaganya dipasang: bentuk mock Spectro, Visco & Gas punya kolomnya tapi daftar pilihannya KOSONG — di mode mock ketiga lembar itu memajang "belum ada unit" padahal server ngirim tujuh |
-| G4 | TIDS (perm. 5) | bentuk lembar kerja jalan; **budget ketidakpastian TERBLOKIR K2**. Blokirnya sekarang dijaga `TidsU95TidakBocorTest` — dibuktikan merah dengan melepas blokirnya (U95 langsung lahir dari lantai CMC 0,86 °C) |
+| G4 | TIDS (perm. 5) | **BERES di server** (28 Agt 2026) — dua workbook master turun, `TidsCalculator` lahir, dan angkanya cocok sampai digit terakhir dengan dua sesi contoh (`TidsMasterTest`). Lembarnya pindah ke jalur PASANGAN standar/UUT, jadi tabel Pembacaan Standard akhirnya punya tempat simpan. **Sisi mobile juga BERES** — bentuknya data-driven (`tabel[].peran`), plus bentuk mock TIDS, fixture dari server, 9 test, dan satu bug `titikUkur` vs `titikUkurEfektif` yang ketangkap gara-gara itu |
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 
@@ -1402,3 +1514,25 @@ Supaya tidak dibangun ulang:
   to exclude build and platform directories"). Selalu keluarkan dari commit.
 - **`flutter test` hijau bukan bukti UI hilang** — sebagian besar test pindai menguji layanan
   langsung, tidak lewat tombol.
+- **AUTO_INCREMENT MySQL nggak ikut di-rollback, jadi test yang menyandar ke "dua id berdekatan"
+  merah CUMA di suite penuh.** `RefreshDatabase` di MySQL memigrasi sekali lalu membungkus tiap
+  test dalam transaksi — rollback-nya mengembalikan barisnya, tapi **counter AUTO_INCREMENT-nya
+  nggak ikut balik**. Tiap tabel naik dengan laju berbeda, tergantung berapa baris yang dibikin
+  test-test sebelumnya, jadi `customers` dan `folders` **melar berjauhan** makin ke belakang suite.
+
+  `IdPelangganDiDaftarArsipTest::test_id_folder_yang_dikirim_ke_rute_pelanggan_membuka_pt_lain`
+  berdiri di atas premis "id folder yang dikirim ke rute pelanggan membuka PT LAIN yang ada" —
+  dan premis itu cuma berlaku selama dua rentang id-nya masih bertumpang tindih. Begitu melar,
+  rute pelanggannya balas 404, `continue` melewatinya, `$tertukar` tetap 0, dan
+  `assertGreaterThan(0, ...)` merah. Yang merah **penjaganya, bukan kodenya**.
+
+  Dibuktikan 28 Agt 2026 di HEAD bersih (`03a4d1c`, nol kode TIDS): kelasnya **sendirian → 6/6
+  hijau**; didahului satu kelas lain yang bikin Customer tanpa Folder (`GlobalSearchTest`) →
+  **test yang sama merah**, dengan `folders` berhenti di 17 dan `customers` di 23. Di suite penuh
+  MySQL dia merah baik di HEAD bersih (2.257 test, 1 gagal) maupun di cabang TIDS (2.268 test,
+  1 gagal) — kegagalannya itu-itu juga, jadi **bukan regresi**.
+
+  CI hijau karena jalan di `sqlite::memory:`: di sana `RefreshDatabase` membangun ulang
+  database-nya, id-nya balik ke 1 tiap test, dan premisnya selalu kebetulan berlaku. Jadi ini
+  gerbang MySQL lokal doang. Kalau mau dibereskan, yang dibetulkan **test-nya** — patok id-nya
+  eksplisit atau bandingkan lewat nama, jangan menyandar ke rentang id — bukan endpoint-nya.

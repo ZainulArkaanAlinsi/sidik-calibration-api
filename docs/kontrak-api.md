@@ -554,10 +554,11 @@ Bikin sesi kalibrasi + kirim data mentah sekaligus. **Data dari input manual dan
 
 Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 
-> ## ✅ 26 Agt — bentuk PASANGAN buat 3 alat suhu baru
+> ## ✅ 26 Agt — bentuk PASANGAN buat 3 alat suhu baru (+ TIDS, 28 Agt)
 >
 > **Thermocouple · Termometer Gelas · Thermohygrometer** (alat ke-18, 19, 20) TIDAK
-> memakai `measurements[].pembacaan`. Ketiganya membaca **dua deret per titik** —
+> memakai `measurements[].pembacaan`. **TIDS menyusul 28 Agt** — lihat blok
+> khususnya di bawah. Keempatnya membaca **dua deret per titik** —
 > probe standar lab dan UUT dicelup bersamaan ke dryblock/oilbath/chamber yang
 > sama, lalu dibaca bergantian tiap 10 detik dalam satu sapuan 90 detik:
 >
@@ -583,8 +584,16 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 >
 > **Cara tahu lembar mana yang begini:** `GET /api/calibrations/lembar-kerja`
 > memulangkan `bagian[].tabel[]` yang tiap elemennya punya **`peran`**
-> (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
-> Jangan hardcode daftar kode profil — baca `peran`.
+> (`standar` / `uut`). Lembar datar tidak punya `peran`. Jangan hardcode daftar
+> kode profil — baca `peran`.
+>
+> **`grup` tidak selalu ada.** Tiga lembar pasangan pertama (Thermocouple,
+> Termometer Gelas, Thermohygrometer) mengisinya; **TIDS tidak mengirim kuncinya
+> sama sekali** — hilang dari JSON, bukan berisi `null`. Identitas tabel TIDS
+> dipegang `tahap` (`pembacaan_standard` / `pembacaan_uut`), karena kunci sel
+> berkas geometri OCR-nya dibangun dari situ dan kertasnya sudah tercetak. Jadi
+> yang membaca wajib punya jalur cadangan kunci-hilang (`kunciTabel` di HP jatuh
+> ke `peran`, dan itu tetap unik) — bukan cuma pemeriksaan `=== null`.
 >
 > ### `tipe_sensor` vs `tipe_thermocouple` — dua hal, dan gampang ketuker
 >
@@ -622,12 +631,56 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > | `tipe_pencelupan` | Termometer Gelas | `Partial` / `Total` / `Complete Immersion` | cuma peringatan (tercetak di sertifikat) |
 > | `titik_es` | Termometer Gelas | array 3 angka, uji titik es 30 menit | komponen budget-nya dihitung nol |
 > | `measurements[].parameter` | Thermohygro | `suhu` / `kelembaban` | dianggap `suhu` |
+> | `tipe_sensor` | **TIDS** | `RTD` · `Type K` · `Type N` | angkanya DITAHAN |
+> | `alat_bantu` | **TIDS** | `A` (Isotech) · `B` (Techne) | angkanya DITAHAN |
+> | `measurements[].no_probe` | **TIDS** | Type K → 1–16 · Type N → **3–12** · RTD → 17 | titik itu diblokir |
+> | `titik_es` | **TIDS** | array 2 angka (Awal & Akhir uji titik es 0 °C) | komponen `Drift UUT` jadi nol + peringatan sesi |
 >
 > **`no_probe` penomorannya BEDA per tipe** dan itu dari kertasnya sendiri: *"If
 > using Thermocouple Type N, No. Thermocouple START FROM 3. If using PRT PT100
 > (RTD), No. Thermocouple ALL 17."* Dropdown-nya sudah dikirim bentuk lembar kerja
 > lengkap dengan `grup` = nama tipe sensornya, jadi saring dari situ — jangan
 > ditulis ulang di HP.
+>
+> ### 🆕 28 Agt — TIDS ikut jalur pasangan, dan `pembacaan` datar DIPENSIUNKAN
+>
+> Lembar **Temperatur Indikator dengan Sensor** (`SIDIK-FM-CAL-0506 Rev.4`) pindah
+> ke jalur ini begitu dua workbook master TIDS turun dari lab. Yang berubah buat
+> HP:
+>
+> | | Sebelum | Sesudah |
+> |---|---|---|
+> | Tabel `Pembacaan Standard` | `simpan_ke: null` — **35 kotak yang diisi teknisi nggak pernah nyampe server** | `measurements[].standar` |
+> | Tabel `Pembacaan Alat` | `measurements[].pembacaan` | `measurements[].uut` |
+> | `tabel[].peran` | tidak ada | `standar` / `uut` |
+> | Kolom per baris | tidak ada | `kolom_baris`: `no_probe` (No. Termokopel) |
+> | Uji titik es | `spesifikasi_alat.titik_es_awal` / `.titik_es_akhir` | `titik_es_1` / `titik_es_2` → kolom sesi `titik_es` |
+> | `budget_ketidakpastian.tersedia` | `false` | **`true`** |
+> | `sumbu_uut.keputusan_skema` | `belum_diambil` | **`lima_ulangan`** |
+>
+> **Payload lama tetap tersimpan.** Server memindahkan `measurements[].pembacaan`
+> ke deret `uut` kalau `standar`/`uut` dua-duanya kosong — jadi APK yang belum
+> diperbarui nggak kehilangan kerja lapangannya. Yang HILANG tetap deret
+> standarnya (memang nggak pernah dikirim), dan tanpa itu sesinya nggak kehitung.
+>
+> **Lima kolom itu lima ULANGAN, bukan lima UUT.** Kepala kolom di kertas berbunyi
+> `0" (UUT1)`…`90" (UUT5)` dan dulu dibaca sebagai lima alat pelanggan dalam satu
+> lembar. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu
+> memakainya `AVERAGE`+`STDEV` per baris. Label cetaknya **tidak diubah** (itu
+> jangkar sumbu mendatar jalur foto); yang berubah artinya, dan artinya dikirim di
+> `sumbu_uut.keputusan_skema` + `sumbu_uut.daftar[].label_master`.
+>
+> **Tiga baris `Standard used`, bukan dua.** Baris ketiga Temperature Recorder
+> Graptech GL840 (s/n `C305B1470`) — keluarga standar itu yang menentukan tabel
+> koreksi mana yang dipakai (`recorder` per KANAL, `constant`/`yokogawa` per tipe
+> sensor). Server menurunkannya dari `standard_id` yang dipilih; HP nggak perlu
+> mengirim kode keluarganya.
+>
+> **Peringatan sesi baru yang wajib ditampilkan:**
+> `tids_master_recorder_sel_tetap` & `tids_master_tiga_komponen_tidak_dijumlah` —
+> dua-duanya menyebut penyimpangan workbook master yang ditiru apa adanya, dan
+> tiga dari empat penyimpangan itu bikin U95 lebih KECIL. Ini yang menahan tombol
+> APPROVE sampai ada manusia yang membacanya.
 >
 > **Thermohygro tidak punya `alat_bantu`.** Chamber-nya (Biobase ≥ 50 %RH / GEA
 > < 50 %RH) diturunkan SERVER dari set point, karena satu sesi memakai dua-duanya
