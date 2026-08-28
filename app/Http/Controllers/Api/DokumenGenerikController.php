@@ -9,6 +9,7 @@ use App\Models\DokumenBacaanNilai;
 use App\Models\User;
 use App\Services\Dokumen\EkstraktorDokumenGenerik;
 use App\Services\Dokumen\PembuatSkemaDinamis;
+use App\Services\Dokumen\PenandaDariRiwayat;
 use App\Services\Dokumen\PenyimpanBacaanDokumen;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,6 +62,7 @@ class DokumenGenerikController extends Controller
         EkstraktorDokumenGenerik $ekstraktor,
         PembuatSkemaDinamis $pembuatSkema,
         PenyimpanBacaanDokumen $penyimpan,
+        PenandaDariRiwayat $penanda,
     ): JsonResponse {
         $data = $request->validate([
             'foto' => ['required', 'image', 'max:8192'],
@@ -117,7 +119,12 @@ class DokumenGenerikController extends Controller
             ], 422);
         }
 
-        $skema = $pembuatSkema->dari($hasil['dokumen']);
+        // Riwayat koreksi dipakai SEBELUM skema dibangun, supaya ringkasannya
+        // ikut menghitung yang ditandai. Yang ditandai cuma STATUS-nya —
+        // nilainya nggak pernah disentuh.
+        $skema = $pembuatSkema->dari(
+            $penanda->tandai($hasil['dokumen'], $request->user()->organization_id),
+        );
 
         $bacaan = $penyimpan->simpan(
             $request->user(),

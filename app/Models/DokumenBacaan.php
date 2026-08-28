@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     // Yang DIPILIH teknisi, dipisah dari yang TERBACA di kertas — bedanya
     // yang menunjukkan petunjuknya bikin salah atau nggak.
     'nama_alat_konteks',
-    'judul', 'nama_alat', 'kode_dokumen', 'revisi',
+    'judul', 'nama_alat', 'kode_dokumen', 'revisi', 'pola',
     'keyakinan', 'status', 'pesan',
     'jumlah_field', 'jumlah_sel', 'perlu_review',
     'peringatan', 'skema', 'model', 'usage', 'citra_path',
