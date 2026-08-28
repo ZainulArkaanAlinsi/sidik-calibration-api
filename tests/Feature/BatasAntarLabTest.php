@@ -249,20 +249,56 @@ class BatasAntarLabTest extends TestCase
     /**
      * Berkas folder milik lab B, LENGKAP dengan berkasnya di disk.
      *
-     * Disknya dipalsukan dan isinya beneran ditulis. Tanpa itu endpoint
-     * download memulangkan 404 "berkas raib" buat pemiliknya sendiri, dan
-     * kontrol pemilik bakal meledak — benar, tapi bukan yang mau diuji di sini.
+     * Endpoint unduhan nagih DUA hal: barisnya ada di DB, dan berkasnya ada di
+     * disk `arsip`. Yang kedua gampang bohong, dan bohongnya nggak kelihatan:
+     * 404 "berkas raib" buat pemiliknya berbentuk persis sama dengan 404 "bukan
+     * lab kamu", jadi kasus ini bisa hijau tanpa pernah menguji batas apa pun.
+     *
+     * Dua hal yang dulu bikin bohongnya mungkin, dua-duanya ditutup di sini:
+     *
+     * 1. Nilai balik `put()` dibuang. Disk `arsip` disetel `throw => false`
+     *    (config/filesystems.php), dan `Storage::fake()` MEWARISI setelan itu
+     *    lewat `buildDiskConfiguration()` — dia nyalin `throw` dari config
+     *    aslinya. Jadi tulis yang gagal balik `false` tanpa exception, tanpa
+     *    apa-apa, dan fixture-nya jalan terus seolah berkasnya jadi. Sekarang
+     *    nilai baliknya ditagih, dan berkasnya dibaca balik lewat disk yang
+     *    sama persis dengan yang bakal dipakai controller.
+     *
+     * 2. `Storage::fake('arsip')` dipanggil DI SINI, padahal
+     *    `TestCase::setUp()` sudah memalsukannya buat SETIAP test. Panggilan
+     *    kedua itu bukan bikin folder sementara baru — dia `cleanDirectory()`
+     *    folder yang SAMA dan dipakai bareng seluruh proses
+     *    (`storage/framework/testing/disks/arsip`), di tengah test, SESUDAH
+     *    sumber daya lain di [punyaLabB] terlanjur jadi. Hari ini nggak ada
+     *    yang kehapus cuma karena kebetulan belum ada fixture lain yang nulis
+     *    ke disk; begitu ada (PDF sertifikat, citra pindaian), yang hilang
+     *    bakal muncul sebagai 404 di endpoint yang sama sekali lain dan nggak
+     *    ada yang bakal nyangka penyebabnya ada di sini.
+     *
+     * Yang HILANG kalau dua-duanya kelewat: bukan test yang merah, tapi test
+     * yang hijau padahal penjaganya sudah dicabut.
      */
     private function berkasFolderLabB(Organization $labB): int
     {
-        Storage::fake('arsip');
-
         $berkas = FolderFile::factory()->create([
             'organization_id' => $labB->id,
             'folder_id' => Folder::factory()->create(['organization_id' => $labB->id])->id,
         ]);
 
-        Storage::disk('arsip')->put($berkas->path, 'isi berkas contoh');
+        $arsip = Storage::disk('arsip');
+
+        $this->assertTrue(
+            $arsip->put($berkas->path, 'isi berkas contoh'),
+            "Nulis berkas contoh ke disk `arsip` di `{$berkas->path}` GAGAL. "
+            .'Dibiarkan lewat, pemiliknya bakal dapat 404 "berkas raib" dan kasus '
+            .'`folder-file download` jadi hijau tanpa nguji batas antar-lab.',
+        );
+
+        $this->assertTrue(
+            $arsip->exists($berkas->path),
+            "Berkas contoh nggak kebaca balik di `{$berkas->path}` padahal tulisnya "
+            .'ngaku sukses. Disk `arsip` lagi diubah pihak lain di tengah test.',
+        );
 
         return $berkas->id;
     }
