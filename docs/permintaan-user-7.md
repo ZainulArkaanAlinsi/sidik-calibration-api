@@ -1398,6 +1398,38 @@ Supaya tidak dibangun ulang:
 - **SQLite menyembunyikan FK.** `PRAGMA foreign_keys` diabaikan di dalam transaksi,
   dan `RefreshDatabase` membungkus tiap test dalam transaksi — jadi FK komposit
   antar-lab tidak pernah benar-benar diuji di SQLite.
+- **Test yang menyandar ke rentang AUTO_INCREMENT merah cuma waktu suite PENUH jalan di
+  MySQL.** `RefreshDatabase` di MySQL memigrasi sekali lalu membungkus tiap test dalam
+  transaksi. Rollback mengembalikan barisnya, tapi **counter AUTO_INCREMENT-nya tidak ikut
+  balik** — dan tiap tabel naik dengan laju berbeda tergantung berapa baris yang dibikin
+  test-test *sebelumnya*. Jadi dua tabel yang id-nya berdekatan di awal suite melar berjauhan
+  makin ke belakang.
+
+  `IdPelangganDiDaftarArsipTest::test_id_folder_yang_dikirim_ke_rute_pelanggan_membuka_pt_lain`
+  berdiri di atas premis "id FOLDER yang dikirim ke rute pelanggan membuka PT LAIN yang ADA" —
+  premis yang cuma berlaku selama rentang `folders` dan `customers` bertumpang tindih. Kelasnya
+  hijau 6/6 sendirian; dijalankan sesudah `GlobalSearchTest` (yang bikin Customer tanpa bikin
+  Folder, jadi `customers.AUTO_INCREMENT` = 23 sementara `folders.AUTO_INCREMENT` = 17) rutenya
+  balas 404, `continue` melewatinya, dan assert-nya merah **tanpa satu pun kode produksi yang
+  rusak**. CI tidak pernah melihatnya: `phpunit.xml` jalan di `sqlite::memory:`, yang dibangun
+  ulang tiap test sehingga id-nya selalu balik ke 1 dan premisnya selalu kebetulan berlaku.
+
+  **Sudah dibereskan** (28 Agt 2026), dengan membetulkan test-nya — endpoint-nya memang sudah
+  benar. Dua hal yang dikerjakan, dan dua-duanya perlu:
+
+  1. Id folder **dipatok** ke id pelanggan urutan kebalik (`forceCreate(['id' => ...])`, karena
+     `id` sengaja di luar `#[Fillable]` milik `Folder`), diturunkan dari id pelanggan yang
+     benar-benar terbentuk — bukan angka harfiah, jadi kebal terhadap pergeseran counter.
+  2. `continue` waktu bukan-200 diganti `assertOk()`. Yang bikin ini bertahan lama bukan
+     404-nya, tapi **404 yang dilewat diam-diam**: setup yang bubar kelihatan persis seperti
+     "tidak ada yang tertukar".
+
+  Aturan umumnya: kalau sebuah test perlu id dari dua tabel saling menabrak (atau saling
+  menghindar), **patok id-nya dari nilai yang dibaca saat itu juga** — jangan pernah berharap
+  AUTO_INCREMENT-nya berdekatan, dan jangan `continue` melewati respons tak terduga di dalam
+  loop yang menghitung. Sekaligus: `phpunit.mysql.xml` sudah mewanti "seeder/test yang mematok
+  `id => 1` putus FK-nya di MySQL saja" — mematok **angka harfiah** memang salah; yang benar
+  mematok dari id yang barusan terbentuk.
 - **`flutter analyze` mengedit `analysis_options.yaml` sendiri** ("Upgrading analysis_options.yaml
   to exclude build and platform directories"). Selalu keluarkan dari commit.
 - **`flutter test` hijau bukan bukti UI hilang** — sebagian besar test pindai menguji layanan
