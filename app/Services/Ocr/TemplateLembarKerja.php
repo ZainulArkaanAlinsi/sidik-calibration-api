@@ -577,7 +577,27 @@ class TemplateLembarKerja
     {
         $folder = (string) config('ocr.folder_template', 'ocr-templates');
 
-        return str_starts_with($folder, '/') ? $folder : database_path($folder);
+        return self::jalurAbsolut($folder) ? $folder : database_path($folder);
+    }
+
+    /**
+     * Bentuk path absolut yang dikenali — termasuk yang Windows.
+     *
+     * Dulu penjagaannya cuma `str_starts_with($jalur, '/')`. `C:\lab\geometri`
+     * nggak lolos itu, jadi dia ditempel jadi `database/C:\lab\geometri` —
+     * folder yang nggak pernah ada. Yang lahir bukan error: geometrinya kebaca
+     * `null`, templatenya dianggap `geometri_belum_diukur`, dan teknisi cuma
+     * disuruh "isi manual dulu" — persis seperti template yang memang belum
+     * diukur. Naruh geometri di luar repo itu yang dijanjikan docblock di atas,
+     * jadi yang salah penjagaannya, bukan yang naruh.
+     */
+    private static function jalurAbsolut(string $jalur): bool
+    {
+        return str_starts_with($jalur, '/')
+            // UNC Windows: `\\server\share\geometri`.
+            || str_starts_with($jalur, '\\')
+            // Berhuruf drive: `C:\lab` atau `C:/lab`.
+            || preg_match('#^[A-Za-z]:[\\\\/]#', $jalur) === 1;
     }
 
     /**
