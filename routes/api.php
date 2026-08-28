@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceTokenController;
+use App\Http\Controllers\Api\DokumenGenerikController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
@@ -266,6 +267,21 @@ Route::middleware('auth:sanctum')->group(function () {
             ->middleware('throttle:300,1')
             ->where('kunci', '[A-Za-z0-9_|\-\.]+');
         Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
+
+        // BACA DOKUMEN GENERIK — lembar APA PUN, termasuk yang belum punya
+        // profil dan geometri. Jawaban buat lembar baru, biar jawabannya bukan
+        // "template nggak dikenal".
+        //
+        // Nempel di saklar `VISION_AKTIF` yang SAMA dengan AI Vision di atas,
+        // dan itu disengaja: endpoint ini mengirim SELURUH HALAMAN ke layanan
+        // pihak ketiga — lebih luas dari jalur AI Vision yang cuma mengirim
+        // foto tabel. Saklar kedua berarti lab yang sudah menutup pengiriman
+        // foto tetap mengirim lewat sini tanpa sadar.
+        //
+        // Throttle seketat AI Vision: ada biaya per panggilan, dan gambarnya
+        // lebih besar.
+        Route::post('/dokumen/baca', [DokumenGenerikController::class, 'baca'])
+            ->middleware('throttle:30,1');
 
         // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
