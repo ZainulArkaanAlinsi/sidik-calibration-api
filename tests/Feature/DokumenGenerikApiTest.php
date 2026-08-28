@@ -200,7 +200,7 @@ class DokumenGenerikApiTest extends TestCase
         $this->assertStringContainsString('nggak perlu diulang', $r->json('pesan'));
     }
 
-    public function test_tidak_ada_yang_ditulis_ke_database(): void
+    public function test_tidak_ada_pengukuran_yang_lahir_di_jalur_ini(): void
     {
         $this->pasangJawaban([
             'document' => ['equipment_name' => 'X'],
@@ -214,9 +214,12 @@ class DokumenGenerikApiTest extends TestCase
             ->postJson('/api/dokumen/baca', ['foto' => $this->foto()])
             ->assertOk();
 
-        // Hasilnya USULAN. Penyimpanan final lewat jalur yang sudah ada,
-        // sesudah teknisi mengoreksi.
-        $this->assertDatabaseCount('worksheet_scans', 0);
+        // PEMBACAANNYA memang disimpan (lihat DokumenBacaanSimpanTest) — yang
+        // NGGAK lahir di sini itu pengukurannya. Menyimpan "kamera membaca ini"
+        // bukan mengesahkan "angka ini benar": `raw_measurements` tetap lahir
+        // dari `POST/PUT /calibrations` sesudah teknisi mengoreksi.
         $this->assertDatabaseCount('raw_measurements', 0);
+        // Jalur bertemplate juga nggak ikut kesenggol.
+        $this->assertDatabaseCount('worksheet_scans', 0);
     }
 }

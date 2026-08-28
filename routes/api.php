@@ -282,6 +282,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // lebih besar.
         Route::post('/dokumen/baca', [DokumenGenerikController::class, 'baca'])
             ->middleware('throttle:30,1');
+        // Buka ulang & koreksi hasil baca. Dua-duanya nggak manggil AI, jadi
+        // batasnya jauh lebih longgar dari `baca` — layar review wajar dibuka
+        // berkali-kali sambil teknisi mencocokkan angka sama kertasnya.
+        Route::get('/dokumen/bacaan/{dokumenBacaan}', [DokumenGenerikController::class, 'show'])
+            ->middleware('throttle:120,1');
+        Route::post('/dokumen/bacaan/{dokumenBacaan}/koreksi', [DokumenGenerikController::class, 'koreksi'])
+            ->middleware('throttle:120,1');
 
         // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
