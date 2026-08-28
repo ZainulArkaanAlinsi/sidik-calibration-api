@@ -65,15 +65,41 @@ class IdPelangganDiDaftarArsipTest extends TestCase
     }
 
     /**
-     * Folder akar dibikin URUTAN KEBALIK dari pelanggannya, jadi id folder
-     * nggak pernah sama dengan id pelanggan. Waktu dua-duanya kebetulan sama,
-     * jalur yang salah kelihatan jalan mulus — dan itu yang bikin bug-nya
+     * Tiap folder akar dipatok id-nya ke id pelanggan URUTAN KEBALIK. Dengan
+     * tiga PT, yang tengah kebetulan dapat id-nya sendiri dan dua sisanya
+     * menabrak PT lain — dan waktu id folder kebetulan sama dengan id
+     * pelanggan, jalur yang salah kelihatan jalan mulus. Itu yang bikin bug-nya
      * bertahan.
+     *
+     * ## Kenapa id-nya DIPATOK, bukan diserahkan ke AUTO_INCREMENT
+     *
+     * Premis berkas ini — "id folder membuka PT lain yang ADA" — cuma berlaku
+     * selama rentang id `folders` dan `customers` masih bertumpang tindih.
+     * `RefreshDatabase` di MySQL memigrasi sekali lalu membungkus tiap test
+     * dalam transaksi; rollback mengembalikan barisnya, tapi counter
+     * AUTO_INCREMENT-nya **nggak ikut balik**. Dua tabel itu naik dengan laju
+     * berbeda tergantung berapa baris yang dibikin test-test sebelumnya (mis.
+     * `GlobalSearchTest` bikin Customer tanpa bikin Folder), jadi makin ke
+     * belakang suite rentangnya makin melar berjauhan sampai berhenti
+     * bertumpang tindih. Begitu itu kejadian premisnya bubar: rutenya balas 404
+     * buat semua baris, dan test-nya merah tanpa ada satu pun kode produksi
+     * yang rusak.
+     *
+     * Cuma kelihatan waktu suite PENUH dijalankan di MySQL. Di SQLite (yang
+     * dipakai CI lewat `phpunit.xml`) `RefreshDatabase` membangun ulang
+     * databasenya tiap test, jadi id-nya selalu balik ke 1 dan premisnya selalu
+     * kebetulan berlaku — gerbang yang ketutup cuma yang lokal.
      */
     private function bikinFolderTerbalik(): void
     {
-        foreach (array_reverse($this->pelanggan) as $c) {
-            Folder::query()->create([
+        $pelanggan = array_values($this->pelanggan);
+        $idFolder = array_reverse(array_map(fn (Customer $c): int => $c->id, $pelanggan));
+
+        foreach ($pelanggan as $i => $c) {
+            // `forceCreate`: `id` sengaja di luar `#[Fillable]` milik Folder,
+            // jadi lewat `create()` dia bakal dibuang diam-diam.
+            Folder::query()->forceCreate([
+                'id' => $idFolder[$i],
                 'organization_id' => 1,
                 'customer_id' => $c->id,
                 'nama' => $c->nama,
@@ -143,12 +169,14 @@ class IdPelangganDiDaftarArsipTest extends TestCase
 
         $tertukar = 0;
         foreach ($this->daftar() as $baris) {
+            // `assertOk`, bukan dilewat diam-diam: tiap id folder dipatok
+            // menabrak id pelanggan yang ADA, jadi rutenya wajib ketemu baris.
+            // 404 di sini artinya skenarionya nggak kepasang — dan dulu itu
+            // kelewat lewat `continue`, jadi setup yang bubar kelihatan persis
+            // seperti "nggak ada yang tertukar".
             $respons = $this->actingAs($this->admin)
-                ->getJson('/api/arsip/perusahaan/'.$baris['id'].'/folder');
-
-            if ($respons->status() !== 200) {
-                continue;
-            }
+                ->getJson('/api/arsip/perusahaan/'.$baris['id'].'/folder')
+                ->assertOk();
 
             $kebuka = $respons->json('data.pelanggan.nama') ?? $respons->json('data.nama');
             if ($kebuka !== $baris['nama']) {
