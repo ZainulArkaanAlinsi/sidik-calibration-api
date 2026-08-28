@@ -936,6 +936,10 @@ class CalibrationValidator
                     'alat_bantu' => $sesi->alat_bantu,
                     'tipe_pencelupan' => $sesi->tipe_pencelupan,
                     'titik_es' => $sesi->titik_es ?? [],
+                    // Lembar TIDS menaruh dryblock-nya di sini, bukan di kolom
+                    // `alat_bantu`. Ketinggalan = pemeriksa hitung ulang bilang
+                    // sesi TIDS yang benar itu salah.
+                    'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
                 ],
                 'tersimpan' => $titik,
             ];
