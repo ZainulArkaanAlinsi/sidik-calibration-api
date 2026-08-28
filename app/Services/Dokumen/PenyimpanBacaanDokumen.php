@@ -58,6 +58,12 @@ class PenyimpanBacaanDokumen
                 'nama_alat' => $dokumen['equipment_name'] ?? null,
                 'kode_dokumen' => $dokumen['worksheet_code'] ?? null,
                 'revisi' => $dokumen['revision'] ?? null,
+                // Identitas pola lembar — yang dipakai mencocokkan riwayat
+                // koreksi di pembacaan berikutnya.
+                'pola' => RiwayatKoreksi::pola(
+                    $dokumen['worksheet_code'] ?? null,
+                    $dokumen['revision'] ?? null,
+                ),
                 'keyakinan' => $dokumen['confidence'] ?? null,
                 'status' => ($ringkasan['perlu_review'] ?? 0) > 0
                     ? DokumenBacaan::STATUS_PERLU_REVIEW
