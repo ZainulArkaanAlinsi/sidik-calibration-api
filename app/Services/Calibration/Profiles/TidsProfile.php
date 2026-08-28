@@ -7,88 +7,81 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
+use App\Services\Calibration\TabelStandarTids;
+use App\Services\Calibration\TidsCalculator;
+use Carbon\Carbon;
 
 /**
  * Profil TIDS — **Temperatur Indikator dengan Sensor** (alat ke-17). Metode
  * `SIDIK-IK-CAL-0503_Rev.6`, lembar kerja `SIDIK-FM-CAL-0506 Rev.4`
  * (`LK-285-IDN`, "Calibration Work Sheet - Temperature Indikator With Sensors").
  *
- * ## TAHAP 1 SAJA: bentuk lembar kerja + jalur simpan. BUKAN budget.
+ * ## Workbook master-nya SUDAH ADA (28 Agt 2026) — K2 ditutup
  *
- * Ini yang paling penting dibaca sebelum menambah apa pun ke file ini. Enam
- * belas profil sebelumnya lahir dengan cara yang sama: workbook master lab
- * dibuka, direproduksi sampai digit terakhir, baru budget-nya ditulis. TIDS
- * TIDAK punya workbook itu. Empat workbook yang dikirim ke repo
- * (`Master Olah Data_Suhu_TITS fungsi Measure/Source`, `… Enclosure Recorder`,
- * `… Enclosure Constant Yokogawa`) semuanya TITS & Enclosure.
+ * File ini pernah berisi blok panjang berjudul "TAHAP 1 SAJA: bentuk lembar
+ * kerja + jalur simpan, BUKAN budget", karena TIDS satu-satunya profil yang
+ * lahir tanpa workbook olah data lab. Blok itu dicabut: pemilik proyek
+ * mengirim **dua workbook TIDS ber-password** yang keduanya berkop
+ * `KALIBRASI TEMPERATURE INDIKATOR DENGAN SENSOR (TIDS)` & bernomor lingkup
+ * `LK-285-IDN` —
  *
- * Yang ADA cuma potongan: `database/data/tids-cache-master.json` — 3.452 sel
- * lima master TIDS yang terselamatkan dari cache tautan luar keempat workbook
- * itu (`docs/tids-dari-cache-tautan-luar.md`). Itu angka lab sendiri, bukan
- * turunan, dan sudah cukup untuk beberapa hal. Yang TIDAK cukup justru
- * bagiannya yang dibutuhkan di sini: cache tautan luar cuma menyimpan sel yang
- * benar-benar DITARIK workbook pemanggilnya, dan keempat sheet yang menyusun
- * budget nol sel semua —
+ *   `… TIDS - Recorder Graptech.xlsm`   sesi contoh `071-CAL-325`
+ *   `… TIDS - Yokogawa K,N.xlsm`        sesi contoh Thermometer Bola Basah
  *
- *   `PERHITUNGAN U95%` · `Variasi axial Dryblok A` · `Variasi axial Dryblok B`
- *   · `stdev drywell`
+ * Keempat sheet yang selama ini disebut hilang (`PERHITUNGAN U95%`,
+ * `Variasi axial Dryblok A`, `… B`, `stdev drywell`) ada lengkap di dua-duanya,
+ * dan tabel CMC-nya berbunyi **0,86 / 1,4 / 3,1 °C** — baris no. 2 TIDS di
+ * lampiran akreditasi, bukan no. 5 Thermocouple (0,84 / 1,5 / 3,3) yang 27 Agt
+ * 2026 nyaris dipakai sebagai penggantinya. Kali ini label DAN angkanya cocok.
  *
- * Tanpa keempatnya, tiap angka di budget TIDS cuma bisa dikarang atau
- * dianalogikan dari TITS — dan analogi TITS itu bukan sekadar kurang teliti:
- * dia terbit di sertifikat terakreditasi, kelihatan sah, dan yang menemukannya
- * asesor. Jadi [komponenBudget] balik `null` dan [hitungPerGrup] MEMBLOKIR
- * seluruh titik dengan alasan yang kebaca — bukan diam-diam jatuh ke jalur CMC
- * generik yang akan memulangkan U95 yang kelihatan wajar. Uraian lengkapnya di
- * [hitungPerGrup].
+ * Mesin hitungnya di [TidsCalculator], tabelnya di [TabelStandarTids].
  *
- * ## Apa yang masih harus diminta ke lab
+ * ## DUA workbook = DUA keluarga standar, bukan dua alat baru
  *
- *  1. **Workbook olah data TIDS aslinya**, khusus keempat sheet di atas. Dia
- *     yang menentukan komponen apa saja yang masuk, pembaginya, derajat
- *     kebebasannya, dan apakah U95-nya lahir per titik atau sekali untuk
- *     seluruh sesi (TITS sekali, Spectrophotometer per kelompok — dua alat di
- *     repo ini saja sudah beda).
- *  2. **Tabel koreksi dryblock A & B.** Lembar kerjanya menyuruh teknisi
- *     mencentang `A (Isotech)` atau `B (Techne)`, dan struktur workbook yang
- *     ke-cache mengonfirmasi dua dryblock itu memang punya sheet variasi
- *     aksial sendiri-sendiri — dua-duanya nol sel. Kata "Isotech" dan "Techne"
- *     belum pernah muncul di repo ini di luar file ini.
- *  3. **Aturan uji titik es 0 °C.** Lembarnya minta pembacaan Awal & Akhir di
- *     titik es, tapi tidak menyebut apa yang dilakukan terhadap dua angka itu:
- *     jadi komponen budget (drift sensor selama sesi), jadi syarat lolos, atau
- *     cuma catatan. Tiga tafsir, tiga U95 yang berbeda. Cache-nya memang punya
- *     117 sel sheet `FC` dari `Melting Point_TIDS_Limas.xlsx`, tapi itu uji
- *     titik LELEH — barang lain, dan menyamakannya dengan titik es cuma karena
- *     dua-duanya "titik perubahan fasa" persis jenis lompatan yang bikin angka
- *     salah kelihatan beralasan.
- *  4. **CMC mana yang berlaku.** Master TIDS 2022 yang ke-cache menulis 1,5 °C
- *     rata (1,6 khusus Type S); lampiran akreditasi LK-285-IDN menulis 0,86 /
- *     1,4 / 3,1 °C per pita, dan itu yang sudah ter-seed di
- *     `calibration_capabilities`. Yang menentukan lantai U95 cuma boleh satu.
- *     Yang dipakai di sini lampiran akreditasi — itu dokumen yang mengikat lab
- *     — tapi selisihnya bukan pembulatan, jadi pertanyaannya tetap terbuka.
+ * Yang membedakan kedua workbook bukan alat yang dikalibrasi melainkan standar
+ * yang dipakai mengalibrasinya: Temperature Recorder Graptech GL840 (koreksi
+ * per KANAL) versus kalibrator blok Constant 40T / Yokogawa CA 150 (koreksi per
+ * tipe sensor). Pola yang sama sudah dipakai TITS (dua workbook: fungsi Measure
+ * & Source) dan Enclosure (dua workbook: Recorder & Constant/Yokogawa) — satu
+ * profil, beberapa keluarga standar. Memecahnya jadi dua profil mustahil:
+ * `CalibrationProfileRegistry` melempar `LogicException` begitu dua profil
+ * mengaku ejaan nama alat yang sama, dan lampiran akreditasi cuma punya satu
+ * baris untuk alat ini.
  *
- * Sampai keempatnya jelas, yang benar adalah lembar kerjanya jalan dan
- * angkanya TIDAK terbit. Itu keadaan yang jujur, bukan pekerjaan setengah
- * jadi.
+ * ## Yang dibalik workbook: LIMA ULANGAN, bukan lima UUT
  *
- * ## Lima UUT sekaligus — sumbu yang belum punya rumah di skema
+ * Ini koreksi tafsir, dan datangnya dari master. Kepala kolom PDF
+ * `SIDIK-FM-CAL-0506 Rev.4` berbunyi `0" (UUT1)`…`90" (UUT5)` dan dulu dibaca
+ * sebagai LIMA ALAT dalam satu lembar — sampai-sampai keputusan "1 sesi 5 UUT
+ * vs 5 sesi terpisah" (K1) ditahan menunggu jawaban lab. Dua workbook menulis
+ * kolom yang sama sebagai `0" (PRT1)`…`80" (PRT5)` lalu memakainya sebagai
+ * `AVERAGE` + `STDEV` **per baris**:
  *
- * Tidak ada padanannya di 16 profil lain. Satu lembar TIDS mengalibrasi LIMA
- * alat sekaligus di dryblock yang sama, dan pembacaannya diambil selang-seling
- * tiap 10 detik dalam satu sapuan 90 detik per set point:
+ *   satu baris  = satu set point
+ *   lima kolom  = lima ULANGAN, standar & UUT dibaca bergantian tiap 10 detik
  *
- *   0″ standar(UUT1) · 10″ UUT1 · 20″ standar(UUT2) · 30″ UUT2 · … · 90″ UUT5
+ * Jadi K1 gugur — tidak pernah ada lima UUT — dan bentuk lembarnya ternyata
+ * PASANGAN deret, sekeluarga dengan Thermocouple, Termometer Gelas &
+ * Thermohygrometer ([ProfilSuhuPasangan]). Yang berubah di sini karena itu
+ * bukan bentuk tabelnya (tetap 5 kolom × N baris, label cetaknya tetap `UUT1`
+ * karena itu yang tertulis di kertas yang dipegang teknisi) melainkan ARTINYA:
+ * [butuhPasanganStandarUut] menyala, dan tabel Pembacaan Standard akhirnya
+ * punya tempat simpan — sebelumnya `simpan_ke` `null`, artinya 35 kotak yang
+ * diisi teknisi tidak pernah sampai ke server.
  *
- * Jadi tiap UUT punya pembacaan standarnya SENDIRI, diambil 10 detik sebelum
- * pembacaan alatnya. Itu bukan lima salinan dari satu angka.
+ * ## Uji titik es 0 °C akhirnya punya arti
  *
- * Keputusan arsitekturnya — **1 sesi berisi 5 UUT** vs **5 sesi terpisah** —
- * BELUM diambil, dan sengaja tidak diambil di sini. Yang dikerjakan file ini
- * cuma menuturkan sumbu itu di [bentukLembarKerja] (kunci `sumbu_uut` +
- * `pengulangan_uut`), supaya layar HP bisa menggambar tabelnya sekarang tanpa
- * mengunci keputusan yang belum diambil. `calibration_sessions`,
- * `uncertainty_calculations`, dan `certificates` TIDAK disentuh.
+ * Pertanyaan lama "dua angka titik es itu buat apa" dijawab kedua master dengan
+ * rumus yang sama — `O35 = 0.5 * ABS(awal − akhir)` — dan hasilnya jadi
+ * komponen budget **Drift UUT**, distribusi persegi. Bukan syarat lolos, bukan
+ * sekadar catatan.
+ *
+ * ## Empat penyimpangan master yang DITIRU
+ *
+ * Keempatnya menggeser U95 dan tidak satu pun memunculkan error; uraiannya di
+ * docblock [TidsCalculator]. Yang penting di file ini: keempatnya dinaikkan ke
+ * layar lewat [peringatanSesi], bukan cuma ditinggal di jejak audit — tiga di
+ * antaranya menggeser U95 ke arah lebih KECIL.
  *
  * ## Yang TIDAK divonis
  *
@@ -99,10 +92,11 @@ use App\Models\Standard;
  * ada — kalaupun workbook-nya datang besok, kolomnya tetap tidak ada di
  * kertasnya.
  *
- * @see docs/tids-dari-cache-tautan-luar.md — apa yang terselamatkan & apa yang nggak
- * @see database/data/tids-cache-master.json — 3.452 sel master TIDS 2022
- * @see docs/permintaan-user-7.md — K1 (5 UUT) & K2 (workbook TIDS)
- * @see TitsProfile — saudaranya, "tanpa sensor", yang punya oracle lengkap
+ * @see TidsCalculator — mesin hitungnya, berikut empat penyimpangan master
+ * @see TabelStandarTids — tabel koreksi/U95/drift kedua keluarga standar
+ * @see docs/pertanyaan-lab-tids-workbook.md — yang masih perlu dijawab lab
+ * @see docs/permintaan-user-7.md — K1 & K2, dua-duanya ditutup workbook ini
+ * @see TitsProfile — saudaranya, "tanpa sensor"
  */
 class TidsProfile extends CalibrationProfile
 {
@@ -126,14 +120,15 @@ class TidsProfile extends CalibrationProfile
     public const NOMOR_LINGKUP = 'LK-285-IDN';
 
     /**
-     * Lima UUT dalam satu lembar. Bukan lima pengulangan — lima ALAT.
+     * Lima ULANGAN per deret — bukan lima alat.
      *
-     * Dibedakan tegas dari `jumlah_pengulangan` di profil lain karena artinya
-     * berlawanan: mengecilkan kolom pengulangan cuma mengurangi berapa kali
-     * satu alat dibaca, sementara mengecilkan angka ini berarti ada alat
-     * pelanggan yang hilang dari lembar tanpa jejak.
+     * Konstanta ini dulu bernama `JUMLAH_UUT` dan docblock-nya berbunyi
+     * "bukan lima pengulangan — lima ALAT". Dua workbook master membantahnya:
+     * kolomnya dinamai `PRT1`…`PRT5` dan dipakai `AVERAGE(D:I)` + `STDEV(D:I)`
+     * per BARIS, jadi lima kolom itu memang lima pembacaan berulang atas satu
+     * alat. Lihat blok "LIMA ULANGAN, bukan lima UUT" di docblock kelas.
      */
-    public const JUMLAH_UUT = 5;
+    public const PENGULANGAN = 5;
 
     /**
      * Baris set point yang TERCETAK di kertasnya — tujuh, di kedua tabel.
@@ -204,11 +199,42 @@ class TidsProfile extends CalibrationProfile
         [
             'label' => 'Temperature Calibrator/Constant/40T/99875850',
             'cocok' => ['Temperature Calibrator Constant 40T', '99875850'],
+            'keluarga' => 'constant',
         ],
         [
             'label' => 'Temperature Calibrator/Yokogawa/CA150 Handy Cal/23P1005',
             'cocok' => ['Temperature Calibrator Yokogawa CA 150 Handy Cal', '23P1005'],
+            'keluarga' => 'yokogawa',
         ],
+        // Baris ketiga, ditambahkan 28 Agt 2026 bersama workbook Recorder.
+        //
+        // Dicocokkan lewat SERIAL, bukan nama: kertas TIDS menulis "Graptech",
+        // master `standards` (lewat `EnclosureSeeder`) menulis "Graphtech", dan
+        // dua ejaan itu nggak akan pernah ketemu lewat nama. Serialnya sama —
+        // memang satu kotak fisik yang dipakai tiga lembar (TITS, Enclosure,
+        // TIDS). Pola & alasan yang sama persis dengan
+        // `EnclosureProfileBase::STANDARD_TERCETAK`.
+        [
+            'label' => 'Temperature Recorder/Graptech/GL840/C305B1470',
+            'cocok' => ['C305B1470'],
+            'keluarga' => 'recorder',
+        ],
+    ];
+
+    /**
+     * Ejaan sensor acuan di kertas → kosakata repo (`TabelStandarTids::TIPE_SENSOR`).
+     *
+     * Kertasnya menulis `Thermocouple Type-K` (pakai tanda hubung),
+     * master menulis `Thermocouple Type K` (tanpa), dan berkas data memakai
+     * `Type K`. Tiga ejaan untuk satu barang; petanya tinggal di sini supaya
+     * `normalkanTipeSensor()` nggak jadi tebak-tebakan string.
+     *
+     * @var array<string, string>
+     */
+    public const TIPE_SENSOR_TERCETAK = [
+        'Thermocouple Type-K' => 'Type K',
+        'Thermocouple Type-N' => 'Type N',
+        'Sensor RTD/PT 100' => 'RTD',
     ];
 
     /**
@@ -275,9 +301,115 @@ class TidsProfile extends CalibrationProfile
         ['label' => 'TH-7', 'grup' => 'Insitu'],
     ];
 
+    private ?TidsCalculator $kalkulator = null;
+
+    public function __construct(private readonly TabelStandarTids $tabel = new TabelStandarTids) {}
+
     public function kode(): string
     {
         return 'tids';
+    }
+
+    /**
+     * Dua deret per set point — standar & UUT dibaca bergantian tiap 10 detik.
+     *
+     * Menyala 28 Agt 2026 bersama workbook master. Sebelumnya `false`, dan
+     * akibatnya bukan sekadar bentuk: jalur datar `measurements[].pembacaan`
+     * cuma punya tempat buat SATU deret, jadi seluruh tabel Pembacaan Standard
+     * (35 kotak yang beneran diisi teknisi di lapangan) nggak pernah sampai ke
+     * server. `tabelPembacaan()` waktu itu menyatakannya jujur lewat
+     * `simpan_ke: null`; sekarang tempatnya ada.
+     */
+    public function butuhPasanganStandarUut(): bool
+    {
+        return true;
+    }
+
+    /**
+     * SATU U95 per sesi, dicetak sebagai baris di bawah tabel — bukan kolom per
+     * titik. `SERTIFIKAT!L34 = 'PERHITUNGAN U95%'!AC42`, satu sel.
+     */
+    public function u95PerTitik(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Kolom hasil sertifikat SENGAJA ikut aturan umum (`null`), beda dari TITS
+     * yang memakukannya di satu desimal.
+     *
+     * Dua workbook TIDS memformat kolom yang sama BEDA — `SERTIFIKAT!E20:L33`
+     * `0.00` di workbook Recorder, `0.0` di workbook Constant/Yokogawa — dan
+     * bedanya bukan acak: sel resolusi UUT yang tercetak di baris
+     * `Capacity/Graduation` ikut bergeser bareng (`I14` `0.00` lawan `0.0`,
+     * untuk UUT beresolusi 0,01 lawan 0,2 °C).
+     *
+     * Jadi yang menentukan RESOLUSI ALATNYA, bukan jenis lembarnya — dan itu
+     * persis aturan umum yang sudah dipakai `Organization::desimalSertifikat`.
+     * Memakukannya di sini berarti memilih salah satu dari dua sesi contoh dan
+     * membuat sesi lainnya tercetak beda dari sertifikatnya sendiri.
+     */
+    public function desimalSertifikat(): ?int
+    {
+        return null;
+    }
+
+    /**
+     * `U95` SATU desimal — `SERTIFIKAT!L34` format `0.0` di KEDUA workbook,
+     * termasuk yang kolom hasilnya dua desimal.
+     *
+     * Ini yang bikin hook-nya perlu ada: tanpa dia U95 ikut desimal kolom
+     * hasil, dan sesi ber-UUT resolusi 0,01 mencetak `1,62` di baris yang
+     * master-nya menulis `1,6`.
+     */
+    public function desimalU95(): ?int
+    {
+        return 1;
+    }
+
+    /**
+     * `k` NOL desimal, mengikuti `SERTIFIKAT!O35` (format `0`) di kedua
+     * workbook.
+     *
+     * Ditiru karena itu bentuk sertifikat yang sudah terbit, walau artinya
+     * `k = 1,99` tercetak `2`. Sama seperti TITS & ketiga alat suhu pasangan.
+     */
+    public function desimalFaktorCakupan(): ?int
+    {
+        return 0;
+    }
+
+    /** Suhu ruang SATU desimal — `SERTIFIKAT!P14` format `0.0`, kedua workbook. */
+    public function desimalSuhuEnv(): ?int
+    {
+        return 1;
+    }
+
+    /**
+     * Kelembaban NOL desimal — `SERTIFIKAT!P15` format `0`, kedua workbook.
+     *
+     * Beda dari suhu di baris tepat di atasnya, dan beda dari TITS yang
+     * memakai satu desimal untuk dua-duanya. Yang menentukan selnya.
+     */
+    public function desimalKelembabanEnv(): ?int
+    {
+        return 0;
+    }
+
+    /**
+     * Pemeriksa `pembacaan_bukan_kelipatan_resolusi` DIMATIKAN.
+     *
+     * Alasan yang sama persis dengan [ProfilSuhuPasangan]: setengah dari angka
+     * di lembar ini dibaca di layar STANDAR (recorder 0,01 °C · Constant
+     * 0,1 °C), bukan di layar UUT yang `equipments.resolusi` menggambarkannya.
+     * Diadu ke penggaris yang salah, tiap pembacaan standar jadi tuduhan salah
+     * ketik atas angka yang disalin apa adanya dari kertas — 25 tuduhan per
+     * sesi, kelas kesalahan yang sudah kejadian di TITS dan di baris Suhu Ruang
+     * Enclosure.
+     */
+    public function pembacaanDiadukeResolusi(): bool
+    {
+        return false;
     }
 
     /**
@@ -434,7 +566,6 @@ class TidsProfile extends CalibrationProfile
         ];
     }
 
-
     /** TIDS tidak punya pasangan titik→standar tetap — set point-nya kosong di kertas. */
     public function standarPerTitik(): array
     {
@@ -442,13 +573,14 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
-     * SENGAJA `null` — belum ada satu komponen pun yang bisa dipertanggung-
-     * jawabkan. Lihat docblock kelas & [hitungPerGrup].
+     * SENGAJA `null` — TIDS tidak punya budget per titik. U95-nya lahir sekali
+     * per sesi lewat [hitungPerGrup], persis seperti ketiga alat suhu pasangan
+     * dan TITS.
      *
-     * Balik `null` di sini SAJA tidak cukup untuk menahan angka karangan:
-     * `GumCalculator::hitungTitik()` menganggap `null` sebagai "profil ini
-     * belum punya budget khusus" lalu jatuh ke jalur CMC generik, yang tetap
-     * memulangkan U95. Yang benar-benar menutup pintunya [hitungPerGrup].
+     * Balik `null` bikin `GumCalculator::hitungTitik()` jatuh ke jalur CMC apa
+     * adanya kalau suatu saat terpanggil — bukan menyusun budget karangan yang
+     * kelihatan sah. Jalur itu praktis tidak terpakai: `susunPengukuran()`
+     * memanggil [hitungPerGrup] lebih dulu dan hook itu selalu menjawab.
      */
     public function komponenBudget(
         CalibrationCapability $kemampuan,
@@ -464,58 +596,108 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
-     * Ambil alih perhitungan seluruh sesi — lalu TOLAK semuanya, dengan alasan.
+     * Hitung seluruh sesi sekaligus — budget-nya satu untuk semua titik.
      *
-     * ## Kenapa hook ini di-override padahal tidak menghitung apa pun
+     * Keluarga standar, tipe sensor & dryblock dibaca dari SESI, bukan dari
+     * master alat: satu indikator bisa datang lagi dikalibrasi pakai kalibrator
+     * lain, dan tiap kombinasi punya tabel koreksinya sendiri.
      *
-     * Ini satu-satunya cara menahan angka karangan dari dalam profil.
-     * `CalibrationController::susunPengukuran()` memanggil `hitungPerGrup()`
-     * lebih dulu; hanya kalau hasilnya `null` dia jatuh ke
-     * `GumCalculator::hitungTitik()` per titik. Dan `hitungTitik()` TIDAK
-     * butuh [komponenBudget] untuk memulangkan angka — kalau profilnya balik
-     * `null`, dia memakai jalur CMC generik: `U95 = CMC` baris kemampuan yang
-     * rentangnya memuat titik itu. Baris CMC TIDS sudah ter-seed (0,86 / 1,4 /
-     * 3,1 °C), jadi jalur itu akan sukses, dan tiap sesi TIDS akan menerbitkan
-     * U95 yang kelihatan sah.
+     * Sesi yang syaratnya kurang tidak "gagal" — dia memulangkan `hitungan`
+     * kosong plus alasan per titik yang kebaca teknisi. Pengukuran mentahnya
+     * tetap tersimpan utuh; yang ditahan cuma barisnya di
+     * `uncertainty_calculations`.
      *
-     * Kelihatan sah, tapi bukan hasil perhitungan: CMC itu ketidakpastian
-     * TERBAIK yang bisa dicapai lab pada kondisi terbaik — lantai, bukan
-     * jawaban. Sertifikat yang mencetaknya sebagai U95 sesi ini mengklaim
-     * kondisi terbaik untuk sesi yang komponen budget-nya belum pernah
-     * disusun. Itu temuan audit, dan yang menemukannya bukan kita.
-     *
-     * Jadi yang dipulangkan: `hitungan` KOSONG, dan tiap titik masuk
-     * `belum_dihitung` dengan alasan yang kebaca teknisi. Sesinya tetap
-     * TERSIMPAN — pengukuran mentahnya utuh di `raw_measurements`, lembar
-     * kerjanya tetap bisa dikirim dari lapangan — cuma tidak ada satu baris
-     * `uncertainty_calculations` yang lahir. Persis pola yang sudah dipakai
-     * TITS waktu mode/tipe sensornya belum dipilih: menolak menghitung itu
-     * jawaban, bukan kegagalan.
-     *
-     * Begitu ketiga bahan di docblock kelas ada, yang berubah cukup isi method
-     * ini — bentuk lembar kerja, jalur simpan, registry, dan peringatan sesi
-     * tidak perlu disentuh lagi.
-     *
-     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard}>  $titik
+     * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>, standard: Standard|null, konteks?: array<string, mixed>}>  $titik
      * @return array{hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
     public function hitungPerGrup(array $titik, Equipment $equipment): ?array
     {
-        return [
-            'hitungan' => [],
-            'belum_dihitung' => array_map(
-                static fn (array $t): array => [
-                    'titik_ke' => (int) $t['titik_ke'],
-                    'alasan' => 'Budget ketidakpastian TIDS belum ada, jadi titik ini sengaja NGGAK dihitung. '
-                        .'Sheet PERHITUNGAN U95% & variasi aksial dryblock dari master TIDS belum ada di '
-                        .'sistem (nol sel di cache tautan luar), dan tanpa itu komponen budget-nya cuma bisa '
-                        .'dikarang — angka karangan yang terbit di sertifikat terakreditasi jauh lebih mahal '
-                        .'daripada kolom yang jelas kosong. Pembacaannya tetap tersimpan utuh dan bakal '
-                        .'kehitung begitu workbook-nya masuk; yang belum ada cuma rumusnya.',
-                ],
-                array_values($titik),
+        if ($titik === []) {
+            return ['hitungan' => [], 'belum_dihitung' => []];
+        }
+
+        $titik = array_values($titik);
+        $konteks = $titik[0]['konteks'] ?? [];
+        $standar = $titik[0]['standard'] ?? null;
+
+        // Dua ejaan per pilihan, dan dua-duanya beredar: kolom sesi
+        // (`tipe_sensor` / `alat_bantu`, dipakai lembar TITS & Thermocouple)
+        // dan peta `spesifikasi_alat` (dipakai lembar ini sejak sebelum jalur
+        // pasangan ada). Yang menentukan versi APK teknisi, bukan pilihan kita
+        // — jadi dibaca dua-duanya, kolom sesi menang.
+        $spesifikasi = (array) ($konteks['spesifikasi_alat'] ?? []);
+
+        $keluarga = $this->keluargaStandar($standar);
+        $tipeSensor = $this->normalkanTipeSensor(
+            $konteks['tipe_sensor'] ?? null,
+        ) ?? $this->normalkanTipeSensor($spesifikasi['sensor_standar'] ?? null);
+        $dryblock = $this->kodeDryblock(
+            $konteks['alat_bantu'] ?? null,
+        ) ?? $this->kodeDryblock($spesifikasi['dryblock'] ?? null);
+
+        $kurang = $this->syaratKurang($keluarga, $tipeSensor, $dryblock, $standar, $equipment);
+
+        if ($kurang !== null) {
+            return $this->semuaDitahan($titik, $kurang);
+        }
+
+        $kemampuan = $this->kemampuanUntukTitik($equipment, $titik);
+
+        if ($kemampuan === null) {
+            return [
+                'hitungan' => [],
+                'belum_dihitung' => array_map(
+                    fn (array $t): array => [
+                        'titik_ke' => (int) $t['titik_ke'],
+                        'alasan' => sprintf(
+                            'Lab belum punya baris CMC TIDS yang mencakup set point %s °C — lampiran '
+                            .'akreditasi cuma memuat %s…%s °C dalam tiga pita. Sesinya boleh disimpan, tapi '
+                            .'U95-nya nggak bisa diterbitkan.',
+                            $this->angka((float) $t['titik_ukur']),
+                            $this->angka(self::CMC_MIN),
+                            $this->angka(self::CMC_MAKS),
+                        ),
+                    ],
+                    $titik,
+                ),
+            ];
+        }
+
+        $masukan = array_map(
+            static fn (array $t): array => [
+                'titik_ke' => (int) $t['titik_ke'],
+                'titik_ukur' => (float) $t['titik_ukur'],
+                'standar' => $t['konteks']['standar'] ?? [],
+                'uut' => $t['konteks']['uut'] ?? [],
+                // `no_probe` dipakai apa adanya — kolom yang sama sudah dikirim
+                // jalur pasangan buat Thermocouple, dan artinya identik ("No.
+                // Termokopel baris ini"). Kunci baru cuma akan bikin
+                // `CalibrationController::susunPasanganStandarUut()` punya dua
+                // nama untuk satu kolom `raw_measurements.sensor_ke`.
+                'no_sensor' => (int) ($t['konteks']['no_probe'] ?? 0),
+            ],
+            $titik,
+        );
+
+        $hasil = ($this->kalkulator ??= new TidsCalculator($this->tabel))->hitungSesi($masukan, [
+            'keluarga_standar' => $keluarga,
+            'tipe_sensor' => $tipeSensor,
+            'dryblock' => $dryblock,
+            'resolusi' => (float) $equipment->resolusi,
+            'cmc' => (float) $kemampuan->ketidakpastian_terbaik,
+            // Sama pola dengan tipe sensor & dryblock: kolom sesi `titik_es`
+            // dulu, peta `spesifikasi_alat` sebagai cadangan.
+            'titik_es' => $this->pasanganTitikEs(
+                $konteks['titik_es'] ?? [],
+                $spesifikasi,
             ),
-        ];
+        ]);
+
+        $hitungan = $this->barisHitungan($hasil, $standar, $kemampuan);
+
+        usort($hitungan, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
+
+        return ['hitungan' => $hitungan, 'belum_dihitung' => $hasil['belum_dihitung']];
     }
 
     /**
@@ -524,9 +706,12 @@ class TidsProfile extends CalibrationProfile
      * Empat hal, dan keempatnya jenis kesalahan yang tidak memunculkan error
      * di mana pun kalau lolos:
      *
-     *  1. **Budget belum ada.** Selalu muncul, tanpa syarat, selama file ini
-     *     belum punya rumus. Ini yang menahan tombol APPROVE supaya tidak ada
-     *     sertifikat TIDS terbit tanpa ada manusia yang sadar U95-nya kosong.
+     *  1. **Empat penyimpangan master yang ditiru.** Muncul begitu keluarga
+     *     standar sesi ini diketahui, karena tiga di antaranya menggeser U95 ke
+     *     arah lebih KECIL — dan sertifikat yang understate ketidakpastiannya
+     *     itu temuan asesor, bukan sekadar angka yang kurang rapi. Rinciannya
+     *     di docblock [TidsCalculator]; yang di sini menahan tombol APPROVE
+     *     sampai ada manusia yang membacanya.
      *  2. **Set point di luar rentang CMC (−20…600 °C).** Ini yang diminta
      *     dipasang dari awal, dan alasannya konkret: sensor acuan yang
      *     tercetak di lembar kerjanya sendiri (Thermocouple Type-K & Type-N)
@@ -535,12 +720,19 @@ class TidsProfile extends CalibrationProfile
      *     900 °C, alatnya sanggup, sensornya sanggup — dan yang tidak sanggup
      *     cuma klaim akreditasi lab, satu-satunya hal yang tidak kelihatan dari
      *     meja kerja.
-     *  3. **Dryblock belum dicentang.** Koreksi Isotech dan Techne beda, jadi
-     *     merk yang tidak tercatat berarti pembacaan mentahnya tidak akan bisa
-     *     dikoreksi belakangan — bahkan sesudah workbook-nya datang. Ini
-     *     peringatan yang menyelamatkan data, bukan cuma kerapian.
+     *  3. **Dryblock belum dicentang.** Koreksi Isotech dan Techne beda —
+     *     keseragaman media 0,47 °C lawan 0,1 °C, stabilitas 0,0005 lawan
+     *     0,03 — jadi merk yang tidak tercatat berarti dua komponen budget
+     *     tidak punya angka. Ini peringatan yang menyelamatkan data, bukan cuma
+     *     kerapian.
      *  4. **Baris CMC hilang dari master.** Pola & pesan mengikuti
      *     `enclosure_cmc_kosong` di `EnclosureProfileBase`.
+     *  5. **Tipe sensor standar belum dipilih.** Koreksi meter, koreksi sensor,
+     *     U95 & drift semuanya dibaca per tipe — tanpa itu sesinya nggak
+     *     kehitung sama sekali.
+     *  6. **Uji titik es 0 °C belum diisi.** Komponen `Drift UUT` lahir dari
+     *     selisih Awal–Akhir; kosong bikin komponennya nol, dan nol itu klaim
+     *     ("alatnya nggak drift sama sekali"), bukan ketiadaan data.
      *
      * Cek yang butuh database ditahan di belakang `$sesi->exists`: kontrak
      * `peringatanSesi()` juga dipanggil ke sesi in-memory
@@ -551,26 +743,62 @@ class TidsProfile extends CalibrationProfile
      */
     public function peringatanSesi(CalibrationSession $sesi): array
     {
-        $peringatan = [[
-            'kode' => 'tids_budget_belum_ada',
-            'pesan' => 'Sesi TIDS belum bisa menghasilkan angka ketidakpastian. Sheet PERHITUNGAN U95% & '
-                .'variasi aksial dryblock dari master TIDS, tabel koreksi dryblock Isotech/Techne, dan aturan '
-                .'uji titik es 0 °C belum ada satu pun di sistem, jadi budget-nya sengaja dikosongkan — bukan '
-                .'gagal hitung. Lembar kerjanya tetap boleh disimpan; yang nggak boleh sertifikatnya terbit '
-                .'seolah-olah U95-nya sudah dihitung.',
-        ]];
+        $peringatan = [];
 
         if ($this->dryblockSesi($sesi) === null) {
             $peringatan[] = [
                 'kode' => 'tids_dryblock_kosong',
-                'pesan' => 'Dryblock (A Isotech / B Techne) belum dicentang. Koreksi kedua dryblock beda, dan '
-                    .'kalau merknya nggak kecatat sekarang, pembacaan sesi ini nggak bakal bisa dikoreksi '
-                    .'belakangan — termasuk nanti waktu workbook TIDS-nya sudah masuk.',
+                'pesan' => 'Dryblock (A Isotech / B Techne) belum dicentang. Keseragaman & stabilitas kedua '
+                    .'blok beda jauh (0,47 lawan 0,1 °C · 0,0005 lawan 0,03 °C), dan dua-duanya komponen '
+                    .'budget — tanpa dicentang, sesi ini nggak kehitung sama sekali.',
+            ];
+        }
+
+        if ($this->tipeSensorSesi($sesi) === null) {
+            $peringatan[] = [
+                'kode' => 'tids_tipe_sensor_kosong',
+                'pesan' => 'Tipe sensor STANDAR (Type K / Type N / RTD PT100) belum dipilih. Koreksi meter, '
+                    .'koreksi sensor, U95 sertifikat, dan drift-nya semua dibaca per tipe — tanpa itu sesinya '
+                    .'nggak kehitung sama sekali.',
+            ];
+        }
+
+        if (count($this->titikEsSesi($sesi)) < 2) {
+            $peringatan[] = [
+                'kode' => 'tids_titik_es_kosong',
+                'pesan' => 'Uji titik es 0 °C (Pembacaan Awal & Akhir) belum lengkap. Selisih dua angka itu '
+                    .'jadi komponen budget `Drift UUT` (½ × selisih, ÷√3) di kedua master. Dikosongkan, '
+                    .'komponennya jadi NOL — dan nol di situ artinya "alat ini nggak drift sama sekali", '
+                    .'klaim yang nggak pernah diukur siapa pun.',
             ];
         }
 
         if (! $sesi->exists) {
             return $peringatan;
+        }
+
+        $keluarga = $this->keluargaStandar($sesi->standard);
+
+        if ($keluarga !== null) {
+            $peringatan[] = $keluarga === TidsCalculator::KELUARGA_RECORDER
+                ? [
+                    'kode' => 'tids_master_recorder_sel_tetap',
+                    'pesan' => 'Workbook Recorder mengambil TIGA angka budget dari sel tetap, bukan dari '
+                        .'tabelnya sendiri: U95 kalibrator `T30` = 0,83 °C (tabel Type K berbunyi 0,67), U95 '
+                        .'sensor literal 0,14 °C (tabel berbunyi 0,44 Type K / 0,76 Type N), dan drift '
+                        .'kalibrator `AM9` = −0,2 °C — sel di tabel KOREKSI, bukan di `Tabel_Drift_Recorder` '
+                        .'(0,25 / 0,5) yang ada & nggak dipakai siapa pun. Ditiru apa adanya supaya cocok '
+                        .'dengan sertifikat yang sudah terbit; angka pembandingnya ada di jejak audit sesi '
+                        .'ini. Perlu keputusan manajer teknis sebelum dipakai terus.',
+                ]
+                : [
+                    'kode' => 'tids_master_tiga_komponen_tidak_dijumlah',
+                    'pesan' => 'Workbook Constant/Yokogawa menghitung dua belas komponen budget lalu menjumlah '
+                        .'sembilan — `AC36 = SUM(AC24:AD32)` berhenti sebelum Self Heating, Interpolasi & '
+                        .'Drift UUT. Workbook Recorder untuk alat yang SAMA menjumlah keduabelasnya. Ditiru '
+                        .'per workbook, jadi U95 sesi ini lebih KECIL daripada kalau ketiganya ikut; angka '
+                        .'pembandingnya ada di jejak audit sesi ini. Perlu keputusan manajer teknis.',
+                ];
         }
 
         foreach ($sesi->uncertaintyCalculations as $baris) {
@@ -696,39 +924,26 @@ class TidsProfile extends CalibrationProfile
             'kode_metode' => self::KODE_METODE,
             'nomor_lingkup' => self::NOMOR_LINGKUP,
             'judul' => 'Calibration Work Sheet - Temperature Indikator With Sensors',
-            // Lima UUT, BUKAN lima pengulangan — lihat `sumbu_uut` di bawah.
-            // Tetap dikirim karena aplikasi teknisi membacanya buat menentukan
-            // lebar tabel, dan mengosongkannya bikin tabelnya digambar nol
-            // kolom.
-            'jumlah_pengulangan' => self::JUMLAH_UUT,
+            'jumlah_pengulangan' => self::PENGULANGAN,
             'satuan' => self::SATUAN,
             'satuan_suhu' => self::SATUAN,
             'semua_kolom_opsional' => true,
-            'catatan_pengisian' => 'Satu lembar TIDS mengalibrasi LIMA alat sekaligus di dryblock yang sama. '
-                .'Tiap set point dibaca selang-seling per 10 detik: 0" standar UUT1, 10" UUT1, 20" standar '
-                .'UUT2, 30" UUT2, dan seterusnya sampai 90" UUT5. Kolom yang belum bisa diisi di lapangan '
-                .'boleh dikosongin. DRYBLOCK (A Isotech / B Techne) wajib dicentang — koreksinya beda per '
-                .'merk, dan tanpa itu pembacaannya nggak bisa dikoreksi belakangan.',
-            // Penanda JUJUR buat layar: alat ini belum menerbitkan U95.
-            //
-            // Dikirim sebagai data, bukan cuma ditulis di komentar, supaya HP
-            // bisa menampilkan keadaannya ke teknisi SEBELUM dia mengisi 70
-            // kotak angka — bukan sesudah, waktu tombol hitungnya tidak
-            // memulangkan apa-apa dan kelihatan seperti bug.
+            'catatan_pengisian' => 'Tiap SET POINT dibaca lima kali bergantian per 10 detik: 0" standar, '
+                .'10" alat, 20" standar, 30" alat, dan seterusnya sampai 90". Jadi satu baris = satu set '
+                .'point, dan lima kolomnya lima ULANGAN — bukan lima alat. Kolom yang belum bisa diisi di '
+                .'lapangan boleh dikosongin, KECUALI tiga ini yang nentuin ANGKA: TIPE SENSOR STANDAR, '
+                .'DRYBLOCK (A Isotech / B Techne), dan NO. TERMOKOPEL tiap baris. Uji titik es 0 °C juga '
+                .'diisi — selisih Awal–Akhir jadi komponen budget Drift UUT.',
+            // Penanda buat layar: sejak 28 Agt 2026 alat ini SUDAH menerbitkan
+            // U95. Kuncinya tetap dikirim (bukan dihapus) karena HP membacanya
+            // buat memutuskan apakah panel hasil digambar — dihilangkan, versi
+            // APK lama jatuh ke cabang "belum ada" yang default-nya.
             'budget_ketidakpastian' => [
-                'tersedia' => false,
-                'alasan' => 'Workbook olah data TIDS dari lab belum lengkap. Yang ada di sistem baru '
-                    .'potongan dari cache tautan luar, dan justru empat sheet yang menyusun budget '
-                    .'(PERHITUNGAN U95%, Variasi axial Dryblok A & B, stdev drywell) nol sel semua. Tanpa '
-                    .'itu komponen budget-nya cuma bisa dikarang atau dianalogikan dari TITS, dan angka '
-                    .'seperti itu di sertifikat terakreditasi adalah temuan audit. Pembacaan tetap tersimpan '
-                    .'dan bakal kehitung begitu workbook-nya masuk.',
-                'butuh' => [
-                    'Workbook olah data TIDS asli — sheet PERHITUNGAN U95%, Variasi axial Dryblok A & B, stdev drywell',
-                    'Tabel koreksi dryblock A (Isotech) & B (Techne)',
-                    'Aturan uji titik es 0 °C — jadi komponen budget, syarat lolos, atau cuma catatan',
-                    'Kepastian CMC: master 2022 nulis 1,5 °C rata (1,6 Type S), lampiran akreditasi 0,86/1,4/3,1 °C',
-                ],
+                'tersedia' => true,
+                'sumber' => 'Master_Olah_Data_Suhu_TIDS — Recorder Graptech & Yokogawa K,N (28 Agt 2026)',
+                'catatan' => 'Dua belas komponen, satu budget untuk seluruh sesi, lantai CMC 0,86 / 1,4 / '
+                    .'3,1 °C. Keluarga standar (Recorder / Constant / Yokogawa) nentuin tabel koreksinya. '
+                    .'Empat penyimpangan master ditiru apa adanya dan dilaporkan lewat peringatan sesi.',
             ],
             'sumbu_uut' => $this->sumbuUut(),
             // Urutan bagian ngikut POLA BERSAMA semua lembar, bukan urutan
@@ -759,50 +974,50 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
-     * Sumbu LIMA UUT — kunci BARU, bukan mengubah tipe kunci lama.
+     * Sumbu waktu pembacaan — kunci yang DULU bernama "sumbu lima UUT".
      *
-     * Alasannya sama persis dengan `judul_nilai_per_mode` & `pengulangan_arah`
-     * milik TITS: aplikasi teknisi yang sudah terpasang membaca
-     * `jumlah_pengulangan` sebagai int dan `pengulangan` sebagai daftar angka.
-     * Menaruh keterangan UUT di dua kunci itu bikin lembarnya gagal kebuka
-     * (`as int` melempar `TypeError`) atau kebuka tanpa satu pun kolom
-     * pembacaan (`whereType<num>()` membuang objeknya diam-diam). Yang baru
-     * masuk di kunci sendiri; yang lama tetap bentuknya.
+     * Isinya tidak berubah bentuknya (aplikasi yang sudah terpasang
+     * membacanya), tapi ARTINYA berubah 28 Agt 2026 waktu dua workbook master
+     * turun: kelimanya ULANGAN, bukan lima alat pelanggan. Yang dikoreksi di
+     * sini `keputusan_skema` & `catatan` — dua kunci yang memang ditaruh dulu
+     * supaya jawabannya bisa masuk tanpa mengubah bentuk.
      *
-     * `jumlah` di sini yang OTORITATIF, bukan `jumlah_pengulangan` di atas.
-     * `CalibrationProfile::setelKolomPengulangan()` menulis ulang tiap kunci
-     * bernama `jumlah_pengulangan`/`pengulangan`, jadi permintaan
-     * `?pengulangan=3` akan mengecilkan lembar ini jadi tiga kolom — dan untuk
-     * alat lain itu benar (mengurangi berapa kali satu alat dibaca), sementara
-     * di sini artinya DUA ALAT PELANGGAN hilang dari lembar. `jumlah` tidak
-     * kena penulisan ulang itu karena namanya beda, jadi layar yang menggambar
-     * dari sini selalu dapat lima.
+     * Kunci ini tetap terpisah dari `jumlah_pengulangan`/`pengulangan` karena
+     * alasan yang belum berubah: aplikasi teknisi membaca yang pertama sebagai
+     * int dan yang kedua sebagai daftar angka, jadi keterangan berbentuk objek
+     * di dua kunci itu bikin lembarnya gagal kebuka atau kebuka tanpa satu pun
+     * kolom pembacaan.
      *
      * @return array<string, mixed>
      */
     private function sumbuUut(): array
     {
         return [
-            'jumlah' => self::JUMLAH_UUT,
+            'jumlah' => self::PENGULANGAN,
             'daftar' => array_map(
                 static fn (int $i): array => [
                     'kode' => 'uut_'.$i,
                     'nomor' => $i,
+                    // Label CETAK-nya, bukan label master. Kertas yang dipegang
+                    // teknisi (`SIDIK-FM-CAL-0506 Rev.4`) menulis `UUT1`;
+                    // workbook menulis `PRT1` untuk kolom yang sama. Yang
+                    // menang kertasnya — layar harus bisa diadu dengan kolom
+                    // yang lagi dipandang teknisi, dan jangkar OCR-nya pun
+                    // dicocokkan ke tulisan tercetak itu.
                     'label' => 'UUT'.$i,
+                    'label_master' => 'PRT'.$i,
                     'detik_standard' => self::DETIK_STANDARD[$i - 1],
                     'detik_uut' => self::DETIK_UUT[$i - 1],
                 ],
-                range(1, self::JUMLAH_UUT),
+                range(1, self::PENGULANGAN),
             ),
-            // Keputusan yang BELUM diambil, ditulis di tempat yang kebaca
-            // orang berikutnya alih-alih di riwayat percakapan.
-            'keputusan_skema' => 'belum_diambil',
-            'catatan' => 'Lembar ini menuturkan lima UUT, tapi `calibration_sessions` masih satu sesi = satu '
-                .'alat. Keputusan "1 sesi 5 UUT" vs "5 sesi terpisah" belum diambil, jadi Tahap 1 sengaja '
-                .'berhenti di bentuknya. Perhatikan juga: kertasnya sendiri cuma punya SATU blok identitas '
-                .'alat (Nama Alat / Merk / Type / No. Seri) untuk lima kolom UUT, jadi formulir resminya pun '
-                .'belum bisa mencatat lima nomor seri. Itu pertanyaan buat lab, bukan lubang yang boleh '
-                .'ditambal dengan menebak lima kolom identitas yang nggak pernah dicetak.',
+            'keputusan_skema' => 'lima_ulangan',
+            'catatan' => 'DIJAWAB 28 Agt 2026 oleh workbook master, bukan oleh lab: lima kolom ini lima '
+                .'ULANGAN atas satu alat, bukan lima alat. Dua workbook TIDS menamai kolom yang sama '
+                .'`PRT1`…`PRT5` lalu memakainya sebagai AVERAGE + STDEV per baris, dan satu baris = satu set '
+                .'point. Jadi pertanyaan lama "1 sesi 5 UUT vs 5 sesi terpisah" gugur — nggak pernah ada lima '
+                .'UUT. Yang bikin tafsir lama masuk akal: kertasnya sendiri cuma punya SATU blok identitas '
+                .'alat untuk lima kolom itu; ternyata memang cuma satu alat.',
         ];
     }
 
@@ -871,7 +1086,7 @@ class TidsProfile extends CalibrationProfile
                     'Calibration Methode',
                     'pilihan',
                     sumber: 'master_metode',
-                                    ),
+                ),
             ],
             // Empat thermohygro yang TERCETAK di kop, berikut lokasi
             // pemakaiannya. Dikirim terpisah dari dropdown master di atas
@@ -959,7 +1174,24 @@ class TidsProfile extends CalibrationProfile
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
                 $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
-                $this->field('spesifikasi_alat.sensor_standar', 'Sensor Standard', 'pilihan', pilihan: array_map(
+                // Kolom SESI `tipe_sensor` — kolom yang sama dipakai lembar
+                // TITS & Thermocouple, dan itu yang dibaca `hitungPerGrup()`.
+                // Nilainya kosakata repo (`Type K`), bukan ejaan kertasnya,
+                // karena `CalibrationRequest` menyaringnya lewat
+                // `Rule::in(TabelKalibratorSuhu::TIPE_SENSOR)` — label cetaknya
+                // tetap yang muncul di layar.
+                $this->field('tipe_sensor', 'Sensor Standard', 'pilihan', pilihan: array_map(
+                    static fn (string $cetak): array => [
+                        'nilai' => self::TIPE_SENSOR_TERCETAK[$cetak],
+                        'label' => $cetak,
+                    ],
+                    array_keys(self::TIPE_SENSOR_TERCETAK),
+                )),
+                // Kunci LAMA, tetap dikirim. APK yang sudah terpasang menulis
+                // ke sini, dan `hitungPerGrup()` membacanya sebagai cadangan —
+                // dicabut, sesi dari APK lama sampai ke server tanpa tipe
+                // sensor dan seluruh titiknya ditahan.
+                $this->field('spesifikasi_alat.sensor_standar', 'Sensor Standard (lama)', 'pilihan', pilihan: array_map(
                     static fn (string $nama): array => ['nilai' => $nama, 'label' => $nama],
                     self::SENSOR_STANDAR_TERCETAK,
                 )),
@@ -993,11 +1225,22 @@ class TidsProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Pengujian di titik es 0˚C',
             'field' => [
-                $this->field('spesifikasi_alat.titik_es_awal', 'Awal', 'angka', satuan: self::SATUAN),
-                $this->field('spesifikasi_alat.titik_es_akhir', 'Akhir', 'angka', satuan: self::SATUAN),
+                // Kode `titik_es_N`, bukan `spesifikasi_alat.titik_es_awal`
+                // yang dipakai sampai 27 Agt 2026.
+                //
+                // Kolom sesi `titik_es` itu tempat kanoniknya (dipakai lembar
+                // Termometer Gelas, dibaca `CalibrationResource`, dan ikut
+                // dipulangkan ke jalur hitung ulang), dan HP sudah tahu memetakan
+                // `titik_es_N` ke situ. Peta `spesifikasi_alat` tetap DIBACA
+                // sebagai cadangan di `hitungPerGrup()` — sesi yang sudah
+                // telanjur tersimpan dari APK lama tetap kehitung, bukan
+                // kehilangan komponen `Drift UUT`-nya.
+                $this->field('titik_es_1', 'Awal', 'angka', satuan: self::SATUAN),
+                $this->field('titik_es_2', 'Akhir', 'angka', satuan: self::SATUAN),
             ],
-            'catatan' => 'Dua angka ini disimpan apa adanya. Aturan pemakaiannya (jadi komponen budget, '
-                .'syarat lolos, atau cuma catatan) belum ada dari lab, jadi belum ada yang menghitungnya.',
+            'catatan' => 'Selisih Awal–Akhir jadi komponen budget `Drift UUT` (½ × selisih, distribusi '
+                .'persegi, ÷√3) — `O35 = 0.5 * ABS(awal − akhir)` di kedua workbook master. Dikosongkan, '
+                .'komponennya jadi NOL, dan nol di situ artinya "alat ini nggak drift sama sekali".',
         ];
     }
 
@@ -1015,17 +1258,39 @@ class TidsProfile extends CalibrationProfile
             'judul' => 'Data Kalibrasi',
             'field' => [],
             'tabel' => [
-                $this->tabelPembacaan(
-                    tahap: 'pembacaan_standard',
-                    judul: 'Pembacaan Standard',
-                    detik: self::DETIK_STANDARD,
-                    simpanKe: null,
-                ),
+                [
+                    ...$this->tabelPembacaan(
+                        tahap: 'pembacaan_standard',
+                        judul: 'Pembacaan Standard',
+                        detik: self::DETIK_STANDARD,
+                        peran: 'standar',
+                        simpanKe: 'measurements[].standar',
+                    ),
+                    // Kolom tambahan yang cuma tabel standar punya: tiap baris
+                    // menyebut TERMOKOPEL mana yang dicelup. Tersimpan ke
+                    // `raw_measurements.sensor_ke`, dan dia yang memilih kolom
+                    // tabel koreksi — Type N nomor 3 → kanal CH1, Type K nomor
+                    // 1 → CH1, RTD selalu 17.
+                    //
+                    // `pilihan` WAJIB berisi, dan `grup`-nya WAJIB nama tipe
+                    // sensornya. Layar HP (`_BarisNoProbe`) menggambar kolom
+                    // ini sebagai dropdown yang daftarnya disaring `grup ==
+                    // tipe_sensor` — dikirim kosong, dropdown-nya lahir tanpa
+                    // satu pun pilihan dan lembarnya nggak bisa diisi sama
+                    // sekali, tanpa satu pun error.
+                    'kolom_baris' => [
+                        $this->field('no_probe', 'No. Termokopel', 'pilihan', pilihan: $this->pilihanSensor()),
+                    ],
+                    'catatan' => 'Type N mulai dari nomor 3 (TCN3…TCN12); Type K nomor 1..16 (TCK-01…TCK-16); '
+                        .'PRT PT100 (RTD) selalu nomor 17. Nomornya nentuin kolom tabel koreksi, jadi salah '
+                        .'nomor = salah koreksi, bukan cuma salah catatan.',
+                ],
                 $this->tabelPembacaan(
                     tahap: 'pembacaan_uut',
                     judul: 'Pembacaan Alat yang Dikalibrasi',
                     detik: self::DETIK_UUT,
-                    simpanKe: 'measurements[].pembacaan',
+                    peran: 'uut',
+                    simpanKe: 'measurements[].uut',
                 ),
             ],
         ];
@@ -1050,19 +1315,52 @@ class TidsProfile extends CalibrationProfile
      *
      * ## `pengulangan` tetap daftar angka polos
      *
-     * Isinya nomor UUT (1..5), bukan nomor pengulangan — tapi bentuknya wajib
-     * tetap `list<int>` karena aplikasi teknisi menyaringnya
-     * `whereType<num>()`. Keterangan lengkap tiap kolom (detik + label UUT)
-     * menyusul di `pengulangan_uut`, kunci baru yang boleh diabaikan aplikasi
-     * lama. Lihat `Tests\Feature\BentukLembarKerjaKompatibelTest`.
+     * Isinya nomor ulangan (1..5), dan bentuknya wajib tetap `list<int>` karena
+     * aplikasi teknisi menyaringnya `whereType<num>()`. Keterangan lengkap tiap
+     * kolom (detik + label cetaknya) menyusul di `pengulangan_uut` &
+     * `pengulangan_arah` — dua kunci yang dibaca ke peta yang SAMA di sisi HP
+     * (`lembar_kerja.dart`), jadi dikirim dua-duanya: yang pertama buat APK
+     * yang sudah terpasang, yang kedua nama kanoniknya. Lihat
+     * `Tests\Feature\BentukLembarKerjaKompatibelTest`.
      *
      * @param  list<int>  $detik
      * @return array<string, mixed>
      */
-    private function tabelPembacaan(string $tahap, string $judul, array $detik, ?string $simpanKe): array
+    private function tabelPembacaan(string $tahap, string $judul, array $detik, string $peran, ?string $simpanKe): array
     {
+        $label = array_map(
+            static fn (int $i): array => [
+                'ke' => $i,
+                'uut' => 'UUT'.$i,
+                'detik' => $detik[$i - 1],
+                // Persis seperti tercetak di kepala kolomnya: `0" (UUT1)`.
+                // Workbook menulis `PRT1` untuk kolom yang sama — yang menang
+                // kertasnya, karena ini juga jangkar sumbu mendatar jalur foto.
+                'label' => sprintf('%d" (UUT%d)', $detik[$i - 1], $i),
+            ],
+            range(1, self::PENGULANGAN),
+        );
+
         return [
             'tahap' => $tahap,
+            // `grup` SENGAJA nggak diisi, beda dari ketiga lembar pasangan yang
+            // lain (yang mengisinya `standar`/`uut`).
+            //
+            // `TemplateLembarKerja::tabel()` mengunci identitas tabel ke
+            // `grup ?? tahap`, dan identitas itu masuk ke KUNCI SEL berkas
+            // geometri OCR (`database/ocr-templates/tids-v1.json`) yang sudah
+            // ada, sudah dipakai, dan kertasnya sudah bisa dicetak. Dua tabel
+            // lembar ini `tahap`-nya memang sudah beda, jadi `grup` nggak
+            // dibutuhkan buat memisahkan keduanya — dan mengisinya cuma akan
+            // menulis ulang 70 kunci sel di berkas v1 yang sama, bikin kertas
+            // yang sudah tercetak nggak kebaca lagi tanpa satu pun error.
+            //
+            // `peran` di bawah yang mengangkut arti standar/UUT — itu yang
+            // dibaca `susunPasanganStandarUut()` & layar tabel pasangan di HP.
+            // Beda dari `tahap`: `raw_measurements.tahap` artinya
+            // sebelum/sesudah adjustment, yang dibedakan di sini SIAPA yang
+            // membaca.
+            'peran' => $peran,
             'judul' => $judul,
             'satuan' => self::SATUAN,
             'judul_nilai' => 'Setpoint',
@@ -1080,29 +1378,26 @@ class TidsProfile extends CalibrationProfile
             'kolom' => [
                 ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
             ],
-            'pengulangan' => range(1, self::JUMLAH_UUT),
-            'pengulangan_uut' => array_map(
-                static fn (int $i): array => [
-                    'ke' => $i,
-                    'uut' => 'UUT'.$i,
-                    'detik' => $detik[$i - 1],
-                    // Persis seperti tercetak di kepala kolomnya: `0" (UUT1)`.
-                    'label' => sprintf('%d" (UUT%d)', $detik[$i - 1], $i),
-                ],
-                range(1, self::JUMLAH_UUT),
-            ),
-            // Ke mana kolom tabel ini disimpan hari ini — `null` = BELUM ada
-            // tempatnya.
+            'pengulangan' => range(1, self::PENGULANGAN),
+            // SATU kunci saja, dan sengaja yang lama.
             //
-            // Ditulis eksplisit, bukan dibiarkan tersirat, karena tabel
-            // Pembacaan Standard adalah deret angka yang benar-benar diambil
-            // teknisi di lapangan dan hari ini TIDAK ADA kolom yang
-            // menampungnya: `raw_measurements.tahap` artinya as-found /
-            // as-left (sebelum/sesudah adjustment), bukan standar/UUT, dan
-            // `CalibrationController` memaksa nilainya sendiri. Layar HP wajib
-            // membaca kunci ini sebelum menyalakan tombol kirim untuk tabel
-            // ini — kalau tidak, teknisi mengisi 35 kotak yang hilang tanpa
-            // pesan apa pun.
+            // `pengulangan_arah` (nama kanonik, dipakai TITS & lembar pasangan)
+            // dibaca ke peta yang SAMA di sisi HP, jadi mengirim dua-duanya
+            // nggak menambah apa pun — tapi `BentukPindaiFotoCocokTabelTest`
+            // menyapu kedua kunci lalu menuntut labelnya unik per tabel, dan
+            // daftar yang sama dikirim dua kali kelihatan seperti sepuluh kolom
+            // dengan lima nama kembar. Penjaga itu benar; yang salah kalau kita
+            // mengirim alias.
+            'pengulangan_uut' => $label,
+            // Ke mana kolom tabel ini disimpan.
+            //
+            // Sampai 27 Agt 2026 tabel Pembacaan Standard mengirim `null` di
+            // sini — pernyataan jujur waktu itu: `raw_measurements.tahap`
+            // artinya as-found/as-left, bukan standar/UUT, jadi 35 kotak yang
+            // diisi teknisi memang nggak punya tempat. Sekarang punya:
+            // [butuhPasanganStandarUut] menyala dan `susunPasanganStandarUut()`
+            // menyimpannya lewat sumbu `peran_sensor` yang sudah ada sejak
+            // Enclosure. NOL kolom baru di tabel pengukuran.
             'simpan_ke' => $simpanKe,
         ];
     }
@@ -1238,11 +1533,22 @@ class TidsProfile extends CalibrationProfile
         $spesifikasi = $sesi->spesifikasi_alat;
         $nilai = is_array($spesifikasi) ? ($spesifikasi['dryblock'] ?? null) : null;
 
+        // Kolom `alat_bantu` (`A`/`B`) jadi cadangan: itu ejaan yang dipakai
+        // lembar Thermocouple, dan APK yang sudah menyeragamkan dua lembar suhu
+        // ini mengirimnya lewat situ.
+        if (! is_string($nilai) || trim($nilai) === '') {
+            $nilai = $sesi->getAttribute('alat_bantu');
+        }
+
         if (! is_string($nilai)) {
             return null;
         }
 
         $bersih = strtolower(trim($nilai));
+
+        if ($bersih === 'a' || $bersih === 'b') {
+            return $bersih === 'a' ? 'isotech' : 'techne';
+        }
 
         foreach (self::DRYBLOCK as $d) {
             if ($bersih === $d['nilai'] || str_contains($bersih, $d['nilai'])) {
@@ -1254,14 +1560,458 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
+     * Daftar No. Termokopel yang sah, digrup per TIPE SENSOR.
+     *
+     * Gabungan kedua keluarga standar, dan itu disengaja: keluarga standar baru
+     * ketahuan waktu teknisi mencentang barisnya di blok `Standard used`,
+     * sementara bentuk lembar kerja dikirim sebelum itu. Nomor yang nggak punya
+     * tabel di keluarga yang akhirnya dipilih (mis. RTD 17 di recorder) ditahan
+     * `TidsCalculator::hitungTitik()` dengan alasan yang kebaca — bukan
+     * disembunyikan dari dropdown, karena teknisi yang nggak melihat nomornya
+     * akan mengira alatnya salah, bukan pasangannya.
+     *
+     * `grup` = nama tipe sensornya. Layar HP menyaring daftar ini pakai kunci
+     * itu; aturannya ("Type N mulai dari 3") sengaja TIDAK ditulis ulang di HP.
+     *
+     * @return list<array{nilai: string, label: string, grup: string}>
+     */
+    private function pilihanSensor(): array
+    {
+        $pilihan = [];
+
+        foreach (TabelStandarTids::TIPE_SENSOR as $tipe) {
+            $nomor = [];
+
+            foreach (TabelStandarTids::KELUARGA as $keluarga) {
+                $nomor = [...$nomor, ...$this->tabel->nomorSensorTersedia($keluarga, $tipe)];
+            }
+
+            $nomor = array_values(array_unique($nomor));
+            sort($nomor);
+
+            foreach ($nomor as $n) {
+                $pilihan[] = [
+                    'nilai' => (string) $n,
+                    'label' => sprintf('%d — %s', $n, $tipe === 'RTD' ? 'PRT PT100' : $tipe.' No. '.$n),
+                    'grup' => $tipe,
+                ];
+            }
+        }
+
+        return $pilihan;
+    }
+
+    /**
+     * Semua titik ditahan dengan satu alasan yang sama.
+     *
+     * @param  list<array<string, mixed>>  $titik
+     * @return array{hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function semuaDitahan(array $titik, string $alasan): array
+    {
+        return [
+            'hitungan' => [],
+            'belum_dihitung' => array_map(
+                static fn (array $t): array => ['titik_ke' => (int) $t['titik_ke'], 'alasan' => $alasan],
+                $titik,
+            ),
+        ];
+    }
+
+    /**
+     * Empat hal yang tanpanya hitungan BUKAN sekadar kurang teliti — dia
+     * mengarang. Balik `null` kalau semuanya ada.
+     */
+    private function syaratKurang(
+        ?string $keluarga,
+        ?string $tipeSensor,
+        ?string $dryblock,
+        ?Standard $standar,
+        Equipment $alat,
+    ): ?string {
+        if ($standar === null) {
+            return 'Sesi ini belum menunjuk standar mana pun. Koreksi meter, koreksi sensor, U95 & drift-nya '
+                .'semua dibaca dari sertifikat standar yang dipakai — tanpa itu nggak ada satu angka pun yang '
+                .'bisa dihitung.';
+        }
+
+        if ($keluarga === null) {
+            return sprintf(
+                'Standar "%s" belum dikenali sebagai salah satu dari tiga keluarga yang punya tabel TIDS '
+                .'(Temperature Recorder Graptech GL840 · Constant 40T · Yokogawa CA 150). Pastikan barisnya '
+                .'dicentang di blok "Standard used" lembar kerja ini.',
+                $standar->nama ?? '(tanpa nama)',
+            );
+        }
+
+        if ($tipeSensor === null) {
+            return 'Tipe sensor STANDAR belum dipilih. Koreksi meter, koreksi sensor, U95 sertifikat & '
+                .'drift-nya semua dibaca per tipe (Type K / Type N / RTD PT100) — tanpa itu nggak ada baris '
+                .'tabel yang bisa dibuka.';
+        }
+
+        if ($dryblock === null) {
+            return 'Dryblock belum dicentang (A Isotech / B Techne). Keseragaman & stabilitas media kalibrasi '
+                .'dua-duanya komponen budget, dan angkanya beda jauh antar blok (0,47 lawan 0,1 °C · 0,0005 '
+                .'lawan 0,03 °C).';
+        }
+
+        if (! is_numeric($alat->resolusi) || (float) $alat->resolusi <= 0.0) {
+            return 'Resolusi alat belum keisi di master alat. Komponen `Readability UUT` budget-nya lahir dari '
+                .'situ (resolusi ÷ 2 ÷ √3), jadi nol berarti komponennya hilang tanpa jejak.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Baris CMC yang mencakup SET POINT TERTINGGI sesi ini.
+     *
+     * `AC41` master: `IF(U22<=150, S5, IF(U22<=400, S6, IF(U22<=600, S7, "cek
+     * rentang")))` — dan `U22` itu `MAX` set point UUT, bukan titik per baris.
+     * Jadi satu titik panas menaikkan lantai CMC seluruh sesi; arah konservatif
+     * yang memang dipilih master.
+     *
+     * @param  list<array<string, mixed>>  $titik
+     */
+    private function kemampuanUntukTitik(Equipment $alat, array $titik): ?CalibrationCapability
+    {
+        $maks = max(array_map(static fn (array $t): float => (float) $t['titik_ukur'], $titik));
+
+        return CalibrationCapability::query()
+            ->where('nama_alat', $this->namaAlatKemampuan())
+            ->where('range_min', '<=', $maks)
+            ->where('range_max', '>=', $maks)
+            ->when(
+                $alat->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($alat->organization_id),
+            )
+            // Pita yang bertumpuk di batasnya (150 °C ada di pita −20…150 DAN
+            // 150…400) dimenangkan pita BAWAH — mengikuti rantai `IF` master,
+            // `IF(U22<=150, S5, IF(AND(U22>151,U22<=400), S6, …))`, yang
+            // menyerahkan batas atas ke pita di bawahnya. Aturan & alasan yang
+            // sama persis dengan `ThermocoupleProfile::kemampuanUntukTitik()`.
+            //
+            // Rantai `IF` master sendiri BOLONG di (150, 151] dan (400, 401]:
+            // set point 150,5 °C nggak masuk cabang mana pun dan sel-nya
+            // memulangkan teks "cek rentang". Yang itu TIDAK ditiru — pita
+            // ter-seed nggak punya celah, jadi 150,5 dapat 1,4 °C. Meniru
+            // lubangnya berarti menahan sesi yang sah gara-gara batas pita yang
+            // ditulis dua kali dengan angka beda.
+            ->orderBy('range_max')
+            ->first();
+    }
+
+    /**
+     * Baris `uncertainty_calculations` sesi ini.
+     *
+     * Semua titik membawa `uc`/`v_eff`/`k`/`U95` yang SAMA — itu memang yang
+     * dicetak sertifikatnya (satu baris `Uncertainty 95% ±` di bawah tabel).
+     *
+     * @param  array<string, mixed>  $hasil
+     * @return list<array<string, mixed>>
+     */
+    private function barisHitungan(array $hasil, ?Standard $standar, CalibrationCapability $kemampuan): array
+    {
+        // RSS komponen Type B saja — aturannya identik dengan
+        // `GumCalculator::hitungDariBudget()` supaya dua jalur ini nggak berbeda
+        // arti untuk kolom yang sama.
+        $typeB = sqrt(array_sum(array_map(
+            static fn (array $k): float => ($k['u'] * $k['ci']) ** 2,
+            array_filter(
+                $hasil['budget'],
+                static fn (array $k): bool => $k['disertakan'] && $k['distribusi'] !== 't-student',
+            ),
+        )));
+
+        $typeA = 0.0;
+
+        foreach ($hasil['budget'] as $k) {
+            if ($k['disertakan'] && $k['distribusi'] === 't-student') {
+                $typeA = (float) $k['u'];
+            }
+        }
+
+        $sekarang = Carbon::now();
+        $audit = $this->jejakAudit($hasil, $kemampuan);
+
+        return array_map(static fn (array $t): array => [
+            'standard_id' => $standar?->id,
+            'titik_ke' => $t['titik_ke'],
+            // `titik_ukur` menyimpan nilai STANDAR TERKOREKSI, bukan set point.
+            // Itu kolom yang dicetak sertifikat sebagai `Standard Reading`
+            // (`CertificateSnapshotBuilder`: `standard_value = titik_ukur`), dan
+            // aturannya sama untuk TITS, Enclosure & ketiga alat suhu pasangan.
+            // Set point mentahnya tetap hidup di `raw_measurements.titik_ukur`.
+            'titik_ukur' => $t['standar_terkoreksi'],
+            'rata_rata' => $t['uut_terkoreksi'],
+            'error' => $t['uut_terkoreksi'] - $t['standar_terkoreksi'],
+            // `SERTIFIKAT!L20 = E20−J20` — standar dikurangi UUT.
+            'koreksi' => $t['koreksi'],
+            'standar_deviasi' => $t['standar_deviasi_uut'],
+            'jumlah_pengulangan' => count($t['pembacaan_uut']),
+            // Keterulangan TIDS DIPAKAI (beda dari Thermocouple, yang
+            // menghitungnya lalu membuangnya): `N30 = 'PERHITUNGAN FC'!M23`,
+            // komponen ke-7 budget. Angkanya sama untuk semua titik karena
+            // yang masuk cuma STDEV terbesar sesi ini.
+            'type_a' => $typeA,
+            'type_b_components' => $audit,
+            'type_b' => $typeB,
+            'ketidakpastian_gabungan' => $hasil['ketidakpastian_gabungan'],
+            'faktor_cakupan_k' => $hasil['faktor_cakupan_k'],
+            'derajat_kebebasan_efektif' => $hasil['derajat_kebebasan_efektif'],
+            'ketidakpastian_diperluas' => $hasil['u95_sertifikat'],
+            // Nggak divonis — master nggak punya kolom batas keberterimaan.
+            'toleransi' => null,
+            'keputusan' => null,
+            'calculated_at' => $sekarang,
+        ], $hasil['titik']);
+    }
+
+    /**
+     * Baris `type_b_components`: komponen budget + tiap penyimpangan master yang
+     * ditiru, berikut konteks sesinya.
+     *
+     * @param  array<string, mixed>  $hasil
+     * @return list<array<string, mixed>>
+     */
+    private function jejakAudit(array $hasil, CalibrationCapability $kemampuan): array
+    {
+        $audit = array_map(
+            static fn (array $k): array => [
+                'sumber' => $k['sumber'],
+                'keterangan' => $k['keterangan'],
+                'distribusi' => $k['distribusi'],
+                'nilai' => $k['u'],
+                'ci' => $k['ci'],
+                'vi' => $k['vi'],
+                'disertakan' => $k['disertakan'],
+            ],
+            $hasil['budget'],
+        );
+
+        foreach ($hasil['catatan_audit'] as $catatan) {
+            $audit[] = [
+                'sumber' => $catatan['kode'],
+                'keterangan' => $catatan['pesan'],
+                'distribusi' => '-',
+                'nilai' => $hasil['ketidakpastian_diperluas'],
+            ];
+        }
+
+        $audit[] = [
+            'sumber' => 'konteks_sesi',
+            'keterangan' => sprintf(
+                'STDEV standar terbesar %s °C (masuk budget), STDEV UUT terbesar %s °C (nggak dipakai master). '
+                .'Set point tertinggi %s °C, index tabel %s °C, rentang uji titik es %s °C. CMC %s °C, U95 '
+                .'dilaporkan dari %s.',
+                $this->angka($hasil['standar_deviasi_maks']),
+                $this->angka($hasil['standar_deviasi_maks_uut']),
+                $this->angka($hasil['set_point_maks']),
+                $hasil['index_maks'] === null ? '-' : $this->angka((float) $hasil['index_maks']),
+                $this->angka($hasil['rentang_titik_es']),
+                $this->angka($hasil['cmc']),
+                $hasil['sumber_u95'] === 'cmc' ? 'lantai CMC' : 'hitungan budget',
+            ),
+            'distribusi' => '-',
+            'nilai' => $hasil['ketidakpastian_diperluas'],
+            'cmc' => $hasil['cmc'],
+            'cmc_id' => $kemampuan->id,
+            'index_maks' => $hasil['index_maks'],
+            'sumber_u95' => $hasil['sumber_u95'],
+            'ketidakpastian_diperluas_hitung' => $hasil['ketidakpastian_diperluas'],
+        ];
+
+        return $audit;
+    }
+
+    /**
+     * Keluarga tabel standar dari baris `standards` yang dipakai sesi.
+     *
+     * Dicocokkan lewat SERIAL dulu, baru merk. Serial yang menang bukan
+     * kerapian: recorder yang sama tercatat "Graptech" di kertas TIDS dan
+     * "Graphtech" di master `standards`, jadi pencocokan lewat merk saja
+     * memulangkan `null` untuk standar yang jelas-jelas terdaftar — dan `null`
+     * di situ berarti seluruh sesinya ditahan.
+     */
+    private function keluargaStandar(?Standard $standar): ?string
+    {
+        if ($standar === null) {
+            return null;
+        }
+
+        $serial = strtoupper(trim((string) $standar->serial_number));
+
+        foreach (TabelStandarTids::KELUARGA_SERTIFIKAT as $kode => $sertifikat) {
+            if ($serial !== '' && $serial === strtoupper($sertifikat['serial'])) {
+                return $kode;
+            }
+        }
+
+        $teks = strtolower(trim((string) $standar->merk).' '.trim((string) $standar->nama));
+
+        foreach ([
+            'recorder' => ['recorder', 'graptech', 'graphtech', 'gl840'],
+            'yokogawa' => ['yokogawa'],
+            'constant' => ['constant'],
+        ] as $kode => $kunci) {
+            foreach ($kunci as $k) {
+                if (str_contains($teks, $k)) {
+                    return $kode;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Terima ejaan kertas (`Thermocouple Type-K`, `Sensor RTD/PT 100`), ejaan
+     * master (`Thermocouple Type K`, `PRT PT100`) maupun ejaan repo (`Type K`,
+     * `RTD`) — ketiganya beredar di dokumen lab yang sama.
+     */
+    private function normalkanTipeSensor(mixed $tipe): ?string
+    {
+        if (! is_string($tipe) || trim($tipe) === '') {
+            return null;
+        }
+
+        $rapi = trim((string) preg_replace('/\s+/', ' ', $tipe));
+
+        foreach (self::TIPE_SENSOR_TERCETAK as $cetak => $kanonik) {
+            if (strcasecmp($cetak, $rapi) === 0) {
+                return $kanonik;
+            }
+        }
+
+        $rapi = str_ireplace(
+            ['PRT PT100', 'PT 100', 'PT100', 'Thermocouple ', 'Sensor ', 'Type-'],
+            ['RTD', 'RTD', 'RTD', '', '', 'Type '],
+            $rapi,
+        );
+        $rapi = trim((string) preg_replace('#^RTD/RTD$#i', 'RTD', trim($rapi)));
+
+        foreach (TabelStandarTids::TIPE_SENSOR as $sah) {
+            if (strcasecmp($sah, $rapi) === 0) {
+                return $sah;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Kode dryblock yang dimengerti [TidsCalculator] (`A`/`B`) dari apa pun yang
+     * dikirim HP: slug lembar ini (`isotech`/`techne`), kolom `alat_bantu`
+     * lembar Thermocouple (`A`/`B`), atau label cetaknya (`A (Isotech)`).
+     */
+    private function kodeDryblock(mixed $nilai): ?string
+    {
+        if (! is_string($nilai) || trim($nilai) === '') {
+            return null;
+        }
+
+        $bersih = strtolower(trim($nilai));
+
+        if ($bersih === 'a' || str_contains($bersih, 'isotech')) {
+            return 'A';
+        }
+
+        if ($bersih === 'b' || str_contains($bersih, 'techne')) {
+            return 'B';
+        }
+
+        return null;
+    }
+
+    /**
+     * Dua pembacaan uji titik es yang tercatat di sesi — kolom `titik_es`
+     * (jalur pasangan) dengan cadangan `spesifikasi_alat.titik_es_awal/akhir`
+     * (bentuk lembar TIDS sejak sebelum jalur pasangan ada).
+     *
+     * @return list<float>
+     */
+    private function titikEsSesi(CalibrationSession $sesi): array
+    {
+        $spesifikasi = $sesi->spesifikasi_alat;
+
+        return $this->pasanganTitikEs(
+            (array) ($sesi->getAttribute('titik_es') ?? []),
+            is_array($spesifikasi) ? $spesifikasi : [],
+        );
+    }
+
+    /**
+     * Dua angka uji titik es dari mana pun datangnya.
+     *
+     * @param  array<int|string, mixed>  $daftar
+     * @param  array<string, mixed>  $spesifikasi
+     * @return list<float>
+     */
+    private function pasanganTitikEs(array $daftar, array $spesifikasi): array
+    {
+        $angka = array_values(array_filter($daftar, 'is_numeric'));
+
+        if (count($angka) >= 2) {
+            return array_map('floatval', $angka);
+        }
+
+        $pasangan = array_values(array_filter(
+            [$spesifikasi['titik_es_awal'] ?? null, $spesifikasi['titik_es_akhir'] ?? null],
+            'is_numeric',
+        ));
+
+        return count($pasangan) >= 2 ? array_map('floatval', $pasangan) : [];
+    }
+
+    /**
+     * Tipe sensor standar yang tercatat di sesi — kolom `tipe_sensor` dengan
+     * cadangan `spesifikasi_alat.sensor_standar` (ejaan kertas, dari APK lama).
+     */
+    private function tipeSensorSesi(CalibrationSession $sesi): ?string
+    {
+        $dariKolom = $this->normalkanTipeSensor($this->atributSesi($sesi, 'tipe_sensor'));
+
+        if ($dariKolom !== null) {
+            return $dariKolom;
+        }
+
+        $spesifikasi = $sesi->spesifikasi_alat;
+
+        return $this->normalkanTipeSensor(
+            is_array($spesifikasi) ? ($spesifikasi['sensor_standar'] ?? null) : null,
+        );
+    }
+
+    /**
+     * Ambil nilai atribut sesi, apa pun nama kolomnya menyimpan. Salinan sengaja
+     * dari [ProfilSuhuPasangan::atributSesi] — profil ini bukan turunannya.
+     */
+    private function atributSesi(CalibrationSession $sesi, string $kunci): mixed
+    {
+        $langsung = $sesi->getAttribute($kunci);
+
+        if ($langsung !== null && $langsung !== '') {
+            return $langsung;
+        }
+
+        $tambahan = $sesi->getAttribute('atribut_tambahan');
+
+        return is_array($tambahan) ? ($tambahan[$kunci] ?? null) : null;
+    }
+
+    private function angka(float $nilai): string
+    {
+        return rtrim(rtrim(number_format($nilai, 6, ',', '.'), '0'), ',');
+    }
+
+    /**
      * Satu baris CMC TIDS mana pun dari master, cuma buat menjawab "barisnya
      * ada apa nggak".
      *
-     * Sengaja TIDAK memilih baris per rentang: ketiga pita TIDS (−20…150,
-     * 150…400, 400…600) dipilih berdasarkan set point, dan pemilihan itu
-     * bagian dari perhitungan yang belum ada. Menaruh logikanya sekarang
-     * berarti menulis separuh jalur budget yang tidak ada yang bisa
-     * memverifikasinya.
+     * Sengaja TIDAK memilih baris per rentang — yang memilih pita
+     * [kemampuanUntukTitik], dan yang di sini cuma menjawab pertanyaan
+     * "master-nya ter-seed apa belum" buat peringatan sesi.
      *
      * Tapi DISARING per organisasi, dan itu wajib biarpun yang dicari cuma
      * "ada apa nggak". Tanpa saringan, `first()` menyisir seluruh
