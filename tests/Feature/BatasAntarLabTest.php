@@ -6,6 +6,7 @@ use App\Models\CalibrationMethod;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
+use App\Models\DokumenBacaan;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Folder;
@@ -138,6 +139,7 @@ class BatasAntarLabTest extends TestCase
             'certificate qr' => ['api/certificates/{certificate}/qr', 'sertifikat'],
             'technician' => ['api/technicians/{technician}', 'teknisiB'],
             'worksheet-scan' => ['api/worksheet-scans/{worksheetScan}', 'pindaian'],
+            'dokumen bacaan' => ['api/dokumen/bacaan/{dokumenBacaan}', 'bacaanDokumen'],
             'folder-file download' => ['api/folder-files/{folderFile}/download', 'berkasFolder'],
         ];
     }
@@ -351,6 +353,12 @@ class BatasAntarLabTest extends TestCase
             'pindaian' => WorksheetScan::factory()->create([
                 'organization_id' => $labB->id,
                 'calibration_session_id' => $sesi->id,
+            ])->id,
+            'bacaanDokumen' => DokumenBacaan::create([
+                'organization_id' => $labB->id,
+                'calibration_session_id' => $sesi->id,
+                'status' => DokumenBacaan::STATUS_PERLU_REVIEW,
+                'skema' => ['bagian' => []],
             ])->id,
             'berkasFolder' => $this->berkasFolderLabB($labB),
         ];
