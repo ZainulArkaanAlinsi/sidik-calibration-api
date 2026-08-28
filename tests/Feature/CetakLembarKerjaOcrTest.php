@@ -189,8 +189,17 @@ class CetakLembarKerjaOcrTest extends TestCase
 
         $html = tempnam(sys_get_temp_dir(), 'lembar').'.html';
 
-        $this->artisan("ocr:cetak-lembar {$kode} --keluar=".tempnam(sys_get_temp_dir(), 'lembar').'.pdf'
-            ." --html={$html}")->assertSuccessful();
+        // Argumennya dioper sebagai ARRAY, bukan disisipkan ke string perintah.
+        // Symfony memperlakukan `\` di dalam string perintah sebagai karakter
+        // escape, jadi path Windows (`C:\Users\...\lem12F2.tmp.html`) sampai ke
+        // command dengan backslash-nya hilang — dan yang lahir bukan error yang
+        // menyebut sebabnya, tapi path relatif ngawur yang gagal ditulis. Di
+        // Linux path-nya pakai `/`, jadi CI nggak pernah kelihatan merah.
+        $this->artisan('ocr:cetak-lembar', [
+            'kode' => $kode,
+            '--keluar' => tempnam(sys_get_temp_dir(), 'lembar').'.pdf',
+            '--html' => $html,
+        ])->assertSuccessful();
 
         $isi = (string) File::get($html);
         $dpi = (int) ($geometri['ukuran_referensi']['dpi'] ?? 200);
