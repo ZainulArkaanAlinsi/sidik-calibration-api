@@ -37,7 +37,7 @@ sendiri). Jauh di bawah presisi cetak sertifikat.
 
 ## D1 · `O24` workbook Recorder menunjuk sel TETAP
 
-```
+```text
 PERHITUNGAN U95%!O24  =Standar_Recorder!T30
 ```
 
@@ -70,7 +70,7 @@ kedua workbook.
 
 ## D3 · `N27` workbook Recorder menunjuk sel di tabel KOREKSI
 
-```
+```text
 PERHITUNGAN U95%!N27  =Standar_Recorder!AM9
 ```
 
@@ -86,7 +86,7 @@ bernama itu ada, terdaftar, dan **tidak dipakai satu rumus pun**.
 
 ## D4 · `AC36` workbook Constant/Yokogawa menjumlah 9 dari 12 komponen
 
-```
+```text
 Recorder            AC36 =SUM(AC24:AD35)     ← dua belas komponen
 Constant/Yokogawa   AC36 =SUM(AC24:AD32)     ← berhenti di baris 32
 ```
@@ -108,7 +108,7 @@ jawaban.
 
 ### T1 · Komponen `Interpolasi` datang dari workbook luar
 
-```
+```text
 O34  =[13]Sheet2!$B$7      (Recorder)
 O34  =[7]Sheet2!$B$7       (Yokogawa)
 ```
@@ -135,7 +135,7 @@ baris ke-3 ke bawah lebih panas dari dua baris pertama.
 
 ### T3 · Rantai `IF` pita CMC bolong di dua tempat
 
-```
+```text
 AC41 =IF(U22<=150, S5, IF(AND(U22>151,U22<=400), S6, IF(AND(U22>401,U22<=600), S7, "cek rentang")))
 ```
 

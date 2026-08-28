@@ -584,8 +584,16 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 >
 > **Cara tahu lembar mana yang begini:** `GET /api/calibrations/lembar-kerja`
 > memulangkan `bagian[].tabel[]` yang tiap elemennya punya **`peran`**
-> (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
-> Jangan hardcode daftar kode profil — baca `peran`.
+> (`standar` / `uut`). Lembar datar tidak punya `peran`. Jangan hardcode daftar
+> kode profil — baca `peran`.
+>
+> **`grup` tidak selalu ada.** Tiga lembar pasangan pertama (Thermocouple,
+> Termometer Gelas, Thermohygrometer) mengisinya; **TIDS tidak mengirim kuncinya
+> sama sekali** — hilang dari JSON, bukan berisi `null`. Identitas tabel TIDS
+> dipegang `tahap` (`pembacaan_standard` / `pembacaan_uut`), karena kunci sel
+> berkas geometri OCR-nya dibangun dari situ dan kertasnya sudah tercetak. Jadi
+> yang membaca wajib punya jalur cadangan kunci-hilang (`kunciTabel` di HP jatuh
+> ke `peran`, dan itu tetap unik) — bukan cuma pemeriksaan `=== null`.
 >
 > ### `tipe_sensor` vs `tipe_thermocouple` — dua hal, dan gampang ketuker
 >

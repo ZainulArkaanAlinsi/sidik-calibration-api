@@ -22,7 +22,7 @@ blokir U95 yang berdiri sejak profil ini lahir sudah dicabut.
 | `bagian[hasil].tabel[1].peran` | — | `uut` |
 | `tabel[0].simpan_ke` | **`null`** | `measurements[].standar` |
 | `tabel[1].simpan_ke` | `measurements[].pembacaan` | `measurements[].uut` |
-| `tabel[0].kolom_baris` | — | `[{kode: 'no_probe', label: 'No. Termokopel', tipe: 'angka'}]` |
+| `tabel[0].kolom_baris` | — | `[{kode: 'no_probe', label: 'No. Termokopel', tipe: 'pilihan', pilihan: 27 nomor digrup per tipe sensor}]` |
 | `bagian[titik_es].field[].kode` | `spesifikasi_alat.titik_es_awal` / `_akhir` | `titik_es_1` / `titik_es_2` |
 | `bagian[usage_check].baris` | 2 baris | **3 baris** (+ Temperature Recorder Graptech GL840) |
 | `bagian[usage_check].field[]` | — | + `tipe_sensor` (pilihan `RTD`/`Type K`/`Type N`) |
@@ -31,8 +31,10 @@ blokir U95 yang berdiri sejak profil ini lahir sudah dicabut.
 | `sumbu_uut.keputusan_skema` | `belum_diambil` | **`lima_ulangan`** |
 | `sumbu_uut.daftar[].label_master` | — | `PRT1`…`PRT5` |
 
-`tabel[].grup` **tetap `null`** untuk lembar ini — beda dari tiga lembar pasangan lain yang
-mengisinya `standar`/`uut`. Itu disengaja: identitas tabel TIDS dipegang `tahap`
+`tabel[].grup` **tidak dikirim sama sekali** untuk lembar ini — kuncinya HILANG dari JSON-nya,
+bukan ada berisi `null`. Bedanya penting buat yang membaca: `'grup' in tabel` pulang `false`, jadi
+pakai jalur cadangan kunci-hilang, bukan pemeriksaan `=== null`. Beda dari tiga lembar pasangan
+lain yang mengisinya `standar`/`uut`. Itu disengaja: identitas tabel TIDS dipegang `tahap`
 (`pembacaan_standard` / `pembacaan_uut`), dan kunci sel berkas geometri OCR-nya yang **kertasnya
 sudah tercetak** dibangun dari situ. `LembarKerja.kunciTabel` di HP jatuh ke `peran` waktu `grup`
 null, dan itu tetap unik — tidak ada yang perlu diubah.

@@ -339,7 +339,7 @@ Yang membantahnya angka, bukan label: tabel CMC workbook itu berbunyi **0,84 /
 
 **Waktu itu K2 tetap terbuka** — `TidsProfile` tidak disentuh dan blokir U95 TIDS tetap
 berdiri. **Sehari kemudian (28 Agt 2026) workbook TIDS-nya benar-benar turun**, dan kali ini
-label DAN angkanya cocok: tabel CMC-nya berbunyi 0,86 / 1,4 / 3,1 — baris no. 2 TIDS. Lihat §11.
+label DAN angkanya cocok: tabel CMC-nya berbunyi 0,86 / 1,4 / 3,1 — baris no. 2 TIDS. Lihat §13.
 
 ### Angka yang dicocokkan ke master
 
@@ -1139,7 +1139,7 @@ Jangan ditanyakan ulang.
 | Kode | Pertanyaan | Menahan apa |
 |---|---|---|
 | ~~K1~~ | ~~TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah?~~ | **GUGUR** (28 Agt 2026) — nggak pernah ada lima UUT. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu memakainya `AVERAGE`+`STDEV` per baris: lima ULANGAN, satu alat, satu baris = satu set point |
-| ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §11 |
+| ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
 | K10 | Layar Draf: pintu masuknya di mana; admin boleh lihat draf teknisi lain? | Layar Draf |
 | K11 | Perlu tombol hapus draf? | `DELETE /api/calibrations/{id}` belum ada sama sekali |

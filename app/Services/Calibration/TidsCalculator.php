@@ -97,8 +97,17 @@ use InvalidArgumentException;
  *     Recorder menjumlah keduabelasnya (`SUM(AC24:AD35)`). Dua master, satu
  *     alat, dua jawaban.
  *
- * Ketiga yang pertama & yang keempat sama-sama menggeser U95 ke arah LEBIH
- * KECIL, jadi keempatnya wajib kelihatan sebelum sertifikat disetujui —
+ * Arahnya TIDAK seragam, dan itu penting buat yang membaca jejak auditnya:
+ * penyimpangan 1 menggeser U95 ke arah LEBIH BESAR (0,83 yang ditiru lawan
+ * 0,67 di tabel Type K), sementara 2 & 3 menggeser ke arah LEBIH KECIL —
+ * gabungan ketiganya BERSIH lebih kecil (1,6230 yang terbit lawan 1,6836
+ * kalau ketiganya dibaca dari tabel). Yang keempat berdiri sendiri dan juga
+ * lebih kecil (1,0674 lawan 1,1411).
+ *
+ * Yang paling mendesak tetap yang keempat: dia mengecilkan U95 tanpa ada
+ * penyimpangan lain yang mengimbangi, dan sertifikat yang menyebut
+ * ketidakpastian lebih kecil dari semestinya itu temuan asesor. Keempatnya
+ * wajib kelihatan sebelum sertifikat disetujui —
  * `TidsProfile::peringatanSesi()` menaikkannya ke layar, bukan cuma ke jejak
  * audit.
  *
@@ -215,7 +224,8 @@ class TidsCalculator
      * @param  array{keluarga_standar: string, tipe_sensor: string, dryblock: string, resolusi: float, cmc: float, titik_es?: list<float>}  $spek
      * @return array{
      *     titik: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>,
-     *     standar_deviasi_maks: float, index_maks: float|null, set_point_maks: float, rentang_titik_es: float,
+     *     standar_deviasi_maks: float, standar_deviasi_maks_uut: float,
+     *     index_maks: float|null, set_point_maks: float, rentang_titik_es: float,
      *     budget: list<array<string, mixed>>, ketidakpastian_gabungan: float,
      *     derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float,
      *     cmc: float, u95_sertifikat: float, sumber_u95: string, catatan_audit: list<array<string, mixed>>
