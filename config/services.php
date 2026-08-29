@@ -139,4 +139,32 @@ return [
         'timeout' => (int) env('FCM_TIMEOUT', 10),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Direktori perusahaan — cari nama & alamat PT dari sumber LUAR
+    |--------------------------------------------------------------------------
+    | Dipakai waktu teknisi mendaftarkan pelanggan yang belum ada di master lab.
+    | Sumbernya direktori TEMPAT USAHA, bukan registri badan hukum: AHU
+    | (Kemenkumham) memegang data PT terdaftar tapi nggak membuka API publik,
+    | dan OSS/BKPM cuma buat mitra berizin. Jadi yang ketemu di sini perusahaan
+    | sebagaimana dia muncul di peta — cukup buat mencocokkan papan nama, TIDAK
+    | cukup buat dianggap data akta.
+    |
+    | KOSONG = jalur direktori mati, dan layar HP-nya BILANG "belum disetel" —
+    | bukan diam-diam mulangin daftar kosong. Bedanya penting: yang kedua kebaca
+    | teknisi sebagai "PT-nya nggak ada di direktori", lalu dia mendaftarkan
+    | ulang perusahaan yang sebenarnya ada di sana.
+    |
+    | Key-nya kunci SERVER. Jangan pernah ditaruh di aplikasi HP: key di dalam
+    | APK bisa dicabut siapa pun dari berkasnya lalu dipakai atas tagihan lab
+    | ini. HP nembak endpoint lab, lab yang memegang key-nya.
+    |
+    | Endpoint ini ditagih PER REQUEST — batasi kuotanya di konsol penyedianya,
+    | jangan cuma di sini.
+    */
+    'direktori_perusahaan' => [
+        'key' => env('DIREKTORI_PERUSAHAAN_KEY'),
+        'timeout' => (int) env('DIREKTORI_PERUSAHAAN_TIMEOUT', 8),
+    ],
+
 ];

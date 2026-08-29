@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Direktori\DirektoriPerusahaan;
+use App\Services\Direktori\GooglePlacesDirektori;
 use App\Services\Push\FcmPengirimPush;
 use App\Services\Push\PengirimPush;
 use App\Services\Push\PengirimPushMati;
@@ -47,6 +49,21 @@ class AppServiceProvider extends ServiceProvider
                 (int) config('services.fcm.timeout', 10),
             );
         });
+
+        // Direktori perusahaan luar. Beda dari push di atas, key yang kosong
+        // TIDAK ditukar jadi implementasi diam: dia tetap kelas yang sama,
+        // cuma `tersedia()`-nya false, dan controller yang mengubah itu jadi
+        // kalimat "belum disetel" buat teknisi.
+        //
+        // Kenapa nggak dibikin `DirektoriMati` yang mulangin daftar kosong:
+        // daftar kosong di layar kebaca "PT-nya nggak ada di direktori", dan
+        // teknisi yang percaya itu mendaftarkan ulang perusahaan yang
+        // sebenarnya ada — nambah kembar justru lewat fitur yang dipasang buat
+        // menguranginya.
+        $this->app->bind(DirektoriPerusahaan::class, fn (): DirektoriPerusahaan => new GooglePlacesDirektori(
+            config('services.direktori_perusahaan.key'),
+            (int) config('services.direktori_perusahaan.timeout', 8),
+        ));
     }
 
     /**

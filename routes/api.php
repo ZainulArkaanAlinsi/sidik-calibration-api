@@ -215,6 +215,24 @@ Route::middleware('auth:sanctum')->group(function () {
         // terakreditasi.
         Route::post('/categories/{kode}/kemampuan', [KemampuanKalibrasiController::class, 'store']);
 
+        // PT baru dari lapangan, alasannya persis sama dengan rute di atas:
+        // `pelanggan_id` itu WAJIB di `POST /equipments`, jadi pelanggan yang
+        // belum kedaftar bikin kerjaan teknisi berhenti total sampai ada admin
+        // yang buka laptop. Yang bisa diisi lewat sini cuma nama & alamat —
+        // kontak & seluruh pengelolaan pelanggan tetap di `role:admin`.
+        Route::post('/customers/cepat', [CustomerController::class, 'cepat']);
+
+        // Cari nama & alamat PT di direktori LUAR, buat ngisi rute di atas.
+        //
+        // Di-throttle karena endpoint di baliknya ditagih PER REQUEST ke pihak
+        // ketiga. Batas ini penjaga terakhir, bukan yang utama — yang utama
+        // jeda ketik di sisi HP dan kuota di konsol penyedianya. Tapi klien yang
+        // salah tulis (atau APK lama yang nggak punya jeda) bisa menghabiskan
+        // tagihan lab dalam hitungan menit, dan itu nggak boleh cuma dijaga di
+        // sisi yang nggak kita kendalikan.
+        Route::get('/customers/direktori', [CustomerController::class, 'direktori'])
+            ->middleware('throttle:30,1');
+
         Route::post('/calibrations', [CalibrationController::class, 'store']);
         // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja
         // (docs/permintaan-worksheet-ph.md §4). Body sama persis kayak POST
