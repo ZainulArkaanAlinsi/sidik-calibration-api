@@ -1364,7 +1364,7 @@ GET /api/customers/lookup?search=tirta&page=1
 
 Role: **admin & teknisi**. Di-throttle `30/menit`.
 
-```
+```http
 GET /api/customers/direktori?search=sinar%20rejeki
 ```
 

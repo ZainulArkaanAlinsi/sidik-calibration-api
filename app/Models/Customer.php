@@ -77,11 +77,15 @@ class Customer extends Model
         return trim((string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', Str::lower($nama)));
     }
 
+    /**
+     * Jaga `nama_normal` selalu ikut `nama`.
+     *
+     * Diturunkan di model, bukan di controller: `nama_normal` yang meleset dari
+     * `nama` bikin penjaga kembarnya diam-diam berhenti jalan, dan nggak ada
+     * yang kelihatan salah sampai ada dua folder arsip buat satu PT.
+     */
     protected static function booted(): void
     {
-        // Diturunkan di model, bukan di controller: `nama_normal` yang meleset
-        // dari `nama` bikin penjaga kembarnya diam-diam berhenti jalan, dan
-        // nggak ada yang kelihatan salah sampai ada dua folder buat satu PT.
         static::saving(function (self $pelanggan): void {
             $pelanggan->nama_normal = self::normalkanNama((string) $pelanggan->nama);
         });

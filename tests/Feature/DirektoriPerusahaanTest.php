@@ -54,14 +54,40 @@ class DirektoriPerusahaanTest extends TestCase
         ]);
     }
 
+    /**
+     * Satu tempat seperti yang dipulangkan Places API.
+     *
+     * `addressComponents` selalu ikut karena di situlah saringan negaranya
+     * bekerja — tempat tanpa komponen itu memang dibuang, dan test yang lupa
+     * memasangnya bakal hijau/merah karena sebab yang salah.
+     *
+     * @return array<string, mixed>
+     */
+    private function tempat(
+        string $id,
+        ?string $nama = null,
+        ?string $alamat = null,
+        ?string $negara = 'ID',
+    ): array {
+        return [
+            'id' => $id,
+            ...($nama === null ? [] : ['displayName' => ['text' => $nama]]),
+            ...($alamat === null ? [] : ['formattedAddress' => $alamat]),
+            ...($negara === null ? [] : ['addressComponents' => [
+                ['types' => ['locality', 'political'], 'shortText' => 'Bekasi'],
+                ['types' => ['country', 'political'], 'shortText' => $negara],
+            ]]),
+        ];
+    }
+
     public function test_hasil_direktori_dipulangkan_sebagai_nama_alamat_dan_ref(): void
     {
         $this->jawabanDirektori([
-            [
-                'id' => 'tempat-abc123',
-                'displayName' => ['text' => 'PT Sinar Rejeki'],
-                'formattedAddress' => 'Kawasan Industri MM2100 Blok C-3, Bekasi',
-            ],
+            $this->tempat(
+                'tempat-abc123',
+                'PT Sinar Rejeki',
+                'Kawasan Industri MM2100 Blok C-3, Bekasi',
+            ),
         ]);
 
         $this->actingAs($this->teknisi)
@@ -153,9 +179,11 @@ class DirektoriPerusahaanTest extends TestCase
     public function test_baris_setengah_jadi_dari_direktori_dilewat(): void
     {
         $this->jawabanDirektori([
-            ['displayName' => ['text' => 'PT Tanpa Id'], 'formattedAddress' => 'Jl. Mana Saja'],
-            ['id' => 'tempat-tanpa-nama', 'formattedAddress' => 'Jl. Mana Saja'],
-            ['id' => 'tempat-utuh', 'displayName' => ['text' => 'PT Utuh'], 'formattedAddress' => 'Jl. Ada'],
+            // Tanpa `id` — dan komponen negaranya SENGAJA lengkap, biar yang
+            // membuangnya beneran penjaga id, bukan saringan negara.
+            [...$this->tempat('x', 'PT Tanpa Id', 'Jl. Mana Saja'), 'id' => null],
+            $this->tempat('tempat-tanpa-nama', null, 'Jl. Mana Saja'),
+            $this->tempat('tempat-utuh', 'PT Utuh', 'Jl. Ada'),
         ]);
 
         $this->actingAs($this->teknisi)
@@ -169,7 +197,7 @@ class DirektoriPerusahaanTest extends TestCase
     public function test_tempat_tanpa_alamat_tetap_ikut_dengan_alamat_null(): void
     {
         $this->jawabanDirektori([
-            ['id' => 'tempat-abc', 'displayName' => ['text' => 'PT Tanpa Alamat']],
+            $this->tempat('tempat-abc', 'PT Tanpa Alamat'),
         ]);
 
         $this->actingAs($this->teknisi)
@@ -177,6 +205,48 @@ class DirektoriPerusahaanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.nama', 'PT Tanpa Alamat')
             ->assertJsonPath('data.0.alamat', null);
+    }
+
+    /**
+     * Perusahaan di luar Indonesia DIBUANG, bukan diserahkan ke mata teknisi.
+     *
+     * `regionCode` di badan request cuma mencondongkan, nggak menyaring — jadi
+     * tempat di Johor atau Singapura beneran bisa nongol buat kata kunci yang
+     * mirip. Alamatnya memang ikut dipajang, tapi orang yang lagi buru-buru di
+     * gerbang pabrik membaca nama dulu, dan yang dia pilih mendarat di blok
+     * OWNER sertifikat.
+     */
+    public function test_tempat_luar_negeri_dibuang(): void
+    {
+        $this->jawabanDirektori([
+            $this->tempat('tempat-my', 'Sinar Rejeki Sdn Bhd', 'Johor Bahru, Malaysia', 'MY'),
+            $this->tempat('tempat-id', 'PT Sinar Rejeki', 'Cikarang, Bekasi'),
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Sinar Rejeki')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nama', 'PT Sinar Rejeki');
+    }
+
+    /**
+     * Tempat yang komponen negaranya nggak ada juga dibuang.
+     *
+     * Dua kerugiannya diadu: yang kebuang keliru tinggal diketik tangan — jalur
+     * itu selalu jalan — sementara yang lolos keliru mendarat di sertifikat
+     * sebagai perusahaan yang salah negara.
+     */
+    public function test_tempat_tanpa_komponen_negara_dibuang(): void
+    {
+        $this->jawabanDirektori([
+            $this->tempat('tempat-entah', 'PT Entah Di Mana', 'Jl. Tanpa Negara', null),
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Entah')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 
     /**
@@ -221,7 +291,7 @@ class DirektoriPerusahaanTest extends TestCase
         Http::assertSent(function ($request) {
             return $request['regionCode'] === 'ID'
                 && $request['textQuery'] === 'Sinar Rejeki'
-                && $request->hasHeader('X-Goog-FieldMask', 'places.id,places.displayName,places.formattedAddress')
+                && $request->hasHeader('X-Goog-FieldMask', 'places.id,places.displayName,places.formattedAddress,places.addressComponents')
                 && $request->hasHeader('X-Goog-Api-Key', 'kunci-uji');
         });
     }
