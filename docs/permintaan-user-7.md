@@ -596,10 +596,35 @@ Ketahuan waktu mengadu seluruh 21 nama alat di mock satu per satu ke registry.
 > vonis dipatok eksplisit, dan **nama alat baru yang tidak ada di tabel itu bikin test MERAH** —
 > bukan diam-diam ikut bawaan `true`.
 
-**Sumber nama PT di luar data PT Sidik belum dipilih** — lihat K16. Tidak ada API resmi & gratis
-untuk daftar perusahaan Indonesia; yang tersedia sumber peta (Google Places, Nominatim) dengan
-syarat pemakaian & biaya masing-masing. Keputusan pemilik proyek: **internal dulu, luar
-menyusul.**
+**Sumber nama PT di luar data PT Sidik: SUDAH DIPILIH** (29 Agt 2026) — lihat K16. Tidak ada API
+resmi & gratis untuk daftar perusahaan Indonesia: AHU (Kemenkumham) memegang data PT terdaftar tapi
+tidak membuka API publik, dan OSS/BKPM hanya untuk mitra berizin. Yang tersedia sumber peta dengan
+API key. Dipilih **Google Places (`places:searchText`)** karena cakupan perusahaan Indonesia-nya
+paling tebal termasuk pabrik di kawasan industri — yaitu justru pelanggan lab.
+
+Bentuknya **internal dulu, direktori luar sebagai jalan keluar** — bukan salah satunya:
+
+| Lapis | Yang dipakai |
+|---|---|
+| 1 | `GET /customers/lookup` — master lab, gratis, instan. Sejak 29 Agt tahan tanda baca (`nama_normal`) |
+| 2 | `GET /customers/direktori` — proxy ke Google Places. Dipanggil hanya kalau teknisi menekannya |
+| 3 | Ketik tangan — pabrik yang tidak pernah didaftarkan ke peta memang tidak akan ketemu |
+
+Tiga hal yang **tidak boleh dibongkar tanpa alasan baru**:
+
+1. **API key hidup di server, tidak pernah di APK.** Key di dalam aplikasi bisa dicabut siapa pun
+   dari berkasnya lalu dipakai orang lain atas tagihan lab ini — dan endpointnya ditagih per
+   request. Karena itu HP menembak `/customers/direktori`, bukan Google langsung.
+2. **"Key belum disetel" ≠ "PT tidak ditemukan".** `503` (belum disetel) dan `502` (direktori
+   mati) sengaja dipisah dari `200` + daftar kosong. Diratakan, teknisi membacanya sebagai PT-nya
+   tidak ada di direktori lalu mendaftarkan ulang perusahaan yang sebenarnya ada di sana.
+3. **Hasil direktori bukan data akta.** Nama & alamat di sana perusahaan sebagaimana muncul di
+   peta. Selalu bisa disunting teknisi sebelum tersimpan, dan batas itu ditulis di layar — karena
+   yang dipilih mendarat di blok OWNER sertifikat.
+
+**Yang MASIH menunggu pemilik proyek:** API key-nya sendiri (`DIREKTORI_PERUSAHAAN_KEY` di `.env`
+server) beserta batas kuota di konsol Google. Sampai diisi, lapis 2 mati dan mengatakannya
+terus terang; lapis 1 & 3 jalan penuh.
 
 ---
 
@@ -1152,7 +1177,7 @@ Jangan ditanyakan ulang.
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
-| **K16** | Sumber nama + alamat PT Indonesia untuk pencarian pelanggan: pakai data internal PT Sidik dulu, atau langsung sambung ke sumber luar? | Sudah dijawab: **internal dulu, luar menyusul** — dicatat di sini karena sumber luarnya belum dipilih |
+| ~~**K16**~~ | ~~Sumber nama + alamat PT Indonesia untuk pencarian pelanggan~~ | **BERES** (29 Agt 2026) — internal dulu, direktori Google Places sebagai jalan keluar, ketik tangan sebagai dasar. Teknisi juga boleh mendaftarkan PT sendiri (sejalan K3/K4). Rinciannya di §11. **Sisa: API key dari pemilik proyek**, bukan kode |
 | ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
 | ~~**K18**~~ | ~~Lembar TIDS: tujuh baris Setpoint sendiri, atau pengatur titik?~~ | **DIJAWAB: tujuh baris, tiap baris punya kotaknya sendiri** (27 Agt 2026). Sudah dikerjakan berikut dua lubang lain di lembar yang sama — lihat §12 K18 |
 

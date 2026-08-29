@@ -1351,6 +1351,101 @@ GET /api/customers/lookup?search=tirta&page=1
   pelanggan nggak perlu megang kontaknya. `alamat` ikut karena blok OWNER di
   lembar kerja butuh (dan itu udah kekirim lewat `EquipmentResource.pelanggan`).
 - CRUD pelanggan **tetap admin-only** — endpoint ini bukan pintu belakang ke situ.
+- **Update 29 Agt — tahan tanda baca.** `?search=PT Maju` sekarang juga ketemu
+  `PT. Maju Jaya`, lewat kolom turunan `nama_normal` (huruf kecil semua, tanda
+  baca & spasi ganda diratakan). Bentuk badan usaha **tidak** dibuang: `PT Maju`
+  dan `CV Maju` dua badan hukum berbeda dengan NPWP berbeda. Yang nggak ketemu
+  bakal didaftarkan ulang, dan kembar bikin riwayat kalibrasi satu perusahaan
+  terbelah.
+
+---
+
+### `GET /api/customers/direktori` — cari PT di direktori LUAR (live 29 Agt)
+
+Role: **admin & teknisi**. Di-throttle `30/menit`.
+
+```
+GET /api/customers/direktori?search=sinar%20rejeki
+```
+
+```json
+{
+  "data": [
+    { "ref": "ChIJ...", "nama": "PT Sinar Rejeki Manufaktur", "alamat": "Kawasan Industri MM2100 ..." }
+  ]
+}
+```
+
+Dipakai waktu `/customers/lookup` nol hasil — pelanggannya beneran belum pernah
+masuk master lab. Tanpa ini teknisi mengetik nama & alamat dari ingatan, dan
+alamat yang salah ketik mendarat di blok OWNER sertifikat.
+
+- **Ini proxy, bukan HP nembak penyedianya langsung.** API key-nya cuma ada di
+  `.env` server (`DIREKTORI_PERUSAHAAN_KEY`). Key di dalam APK bisa dicabut siapa
+  pun dari berkasnya lalu dipakai orang lain atas tagihan lab ini — dan
+  endpointnya ditagih **per request**.
+- **`ref` itu id tempat menurut direktorinya, BUKAN `customers.id`.** Dia nggak
+  bisa dipakai jadi `pelanggan_id`. Barisnya baru punya id pelanggan sesudah
+  dikirim ke `POST /customers/cepat`.
+- **Tiga jawaban yang WAJIB dibedakan klien:**
+
+  | Status | Artinya | Yang harus dilakukan layar |
+  |---|---|---|
+  | `200` + daftar (boleh kosong) | Direktorinya menjawab, segitu hasilnya | Pajang apa adanya |
+  | `503` + `tersedia: false` | API key belum disetel di server ini | Bilang belum disetel; **jangan** tawarkan "coba lagi" |
+  | `502` + `tersedia: true` | Direktorinya nggak bisa dihubungi / nolak | Bilang lagi mati, arahkan ke ketik tangan |
+
+  Diratakan jadi "daftar kosong", teknisi membacanya sebagai *PT-nya nggak ada di
+  direktori* lalu mendaftarkan ulang perusahaan yang sebenarnya ada di sana —
+  nambah kembar justru lewat fitur yang dipasang buat menguranginya.
+- **Bukan data akta.** Sumbernya direktori tempat usaha (perusahaan sebagaimana
+  muncul di peta). AHU/OSS tidak membuka API publik. Hasilnya harus tetap bisa
+  disunting teknisi sebelum tersimpan.
+- Pesan error penyedianya **tidak** diteruskan ke klien — bisa memuat potongan
+  key atau id proyek.
+
+---
+
+### `POST /api/customers/cepat` — daftarkan PT baru dari lapangan (live 29 Agt)
+
+Role: **admin & teknisi**. Langsung kepakai, tanpa antrean persetujuan — sejalan
+dengan keputusan K3/K4 buat nama alat.
+
+```json
+{ "nama": "PT Sinar Rejeki", "alamat": "MM2100 Blok C-3", "direktori_ref": "ChIJ...", "tetap_buat": false }
+```
+
+Sukses `201`:
+
+```json
+{ "data": { "id": 42, "nama": "PT Sinar Rejeki", "alamat": "MM2100 Blok C-3" } }
+```
+
+- **Cuma `nama` & `alamat`.** `contact_person`/`telepon`/`email` **tidak
+  diterima** — teknisi di gerbang pabrik nggak punya data itu, dan kolom yang ada
+  di form pasti ada yang mengisinya dengan tebakan.
+- **`sumber` & `organization_id` diisi SERVER, dan payload-nya diabaikan.**
+  `sumber` = `direktori` kalau `direktori_ref` ada, kalau nggak `admin`/`teknisi`
+  menurut role. Kalau `sumber` boleh datang dari klien, satu `{"sumber":"admin"}`
+  dari HP cukup buat bikin baris ketikan lapangan menyamar jadi baris yang sudah
+  diperiksa admin.
+- **`409` = ada yang mirip, dan itu jalan keluarnya, bukan kegagalan:**
+
+  ```json
+  {
+    "message": "Ada pelanggan dengan nama yang mirip. ...",
+    "nama_persis_sudah_ada": false,
+    "kandidat": [ { "id": 7, "nama": "PT. Maju Jaya", "alamat": "..." } ]
+  }
+  ```
+
+  - `nama_persis_sudah_ada: false` → bisa ditembus dengan `tetap_buat: true`.
+  - `nama_persis_sudah_ada: true` → **buntu.** Ditahan unique index di database;
+    `tetap_buat` nggak menembusnya. Layar **tidak boleh** menampilkan tombol
+    tembus di keadaan ini.
+
+  Kemiripannya diadu lewat `nama_normal` **dan** `direktori_ref`, dan keduanya
+  disaring ke organisasi pemanggil.
 
 ---
 
