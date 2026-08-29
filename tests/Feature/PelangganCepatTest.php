@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -256,6 +257,82 @@ class PelangganCepatTest extends TestCase
             'email' => null,
             'telepon' => null,
         ]);
+    }
+
+    /**
+     * BALAPAN: baris kembar masuk di celah antara pemeriksaan kandidat dan
+     * penyimpanan.
+     *
+     * Itu satu-satunya jalan unique index kena — nama yang persis sama pasti
+     * sudah ketahan di pemeriksaan. Jarang, tapi bukan mengada-ada: dua teknisi
+     * yang mendatangi pelanggan BARU yang sama di hari yang sama itu kejadian
+     * biasa. Tanpa penanganan, yang keluar 500, dan di layar HP itu kebaca
+     * "server rusak" — padahal jawabannya justru menyenangkan: barisnya sudah
+     * ada, tinggal dipakai.
+     */
+    public function test_balapan_pendaftaran_jadi_409_bukan_500(): void
+    {
+        $sudahDisisipkan = false;
+
+        // Disisipkan PERSIS sesudah query kandidat jalan (yang mulangin kosong),
+        // sebelum controller menyimpan. Ini yang bikin celahnya bisa diadu
+        // secara pasti, bukan menunggu kebetulan.
+        DB::listen(function ($query) use (&$sudahDisisipkan) {
+            if ($sudahDisisipkan || ! str_contains($query->sql, 'nama_normal')) {
+                return;
+            }
+
+            $sudahDisisipkan = true;
+
+            DB::table('customers')->insert([
+                'organization_id' => $this->teknisi->organization_id,
+                'nama' => 'PT Balapan',
+                'nama_normal' => 'pt balapan',
+                'sumber' => Customer::SUMBER_ADMIN,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $this->actingAs($this->teknisi)
+            ->postJson(self::URL, ['nama' => 'PT Balapan'])
+            ->assertStatus(409)
+            ->assertJsonPath('nama_persis_sudah_ada', true)
+            ->assertJsonPath('kandidat.0.nama', 'PT Balapan');
+
+        $this->assertDatabaseCount('customers', 1);
+    }
+
+    /**
+     * `tetap_buat` melebarkan celah balapannya — pemeriksaan kandidatnya memang
+     * sengaja dilewat — jadi jalur itu diadu terpisah.
+     */
+    public function test_balapan_lewat_tetap_buat_juga_jadi_409(): void
+    {
+        $sudahDisisipkan = false;
+
+        DB::listen(function ($query) use (&$sudahDisisipkan) {
+            if ($sudahDisisipkan || ! str_contains($query->sql, 'nama_normal')) {
+                return;
+            }
+
+            $sudahDisisipkan = true;
+
+            DB::table('customers')->insert([
+                'organization_id' => $this->teknisi->organization_id,
+                'nama' => 'PT Balapan',
+                'nama_normal' => 'pt balapan',
+                'sumber' => Customer::SUMBER_ADMIN,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        $this->actingAs($this->teknisi)
+            ->postJson(self::URL, ['nama' => 'PT Balapan', 'tetap_buat' => true])
+            ->assertStatus(409);
+
+        $this->assertDatabaseCount('customers', 1);
     }
 
     public function test_nama_wajib_diisi(): void

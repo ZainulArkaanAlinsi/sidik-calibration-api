@@ -41,10 +41,29 @@ class GooglePlacesDirektori implements DirektoriPerusahaan
 
     private const MAKS_HASIL = 10;
 
-    public function __construct(
-        private readonly ?string $key,
-        private readonly int $timeoutDetik = 8,
-    ) {}
+    /** Batas bawah & atas waktu tunggu, dalam detik. Lihat konstruktor. */
+    private const TIMEOUT_MIN = 1;
+
+    private const TIMEOUT_MAKS = 30;
+
+    private readonly int $timeoutDetik;
+
+    public function __construct(private readonly ?string $key, int $timeoutDetik = 8)
+    {
+        // Dijepit, bukan dipakai apa adanya.
+        //
+        // `timeout(0)` di Guzzle artinya **TANPA batas waktu**, bukan "cepat".
+        // Dan nol itu justru yang keluar dari setelan yang salah: `.env` yang
+        // isinya kosong, `abc`, atau memang `0` semuanya turun jadi 0 lewat
+        // cast `(int)`. Akibatnya request teknisi menggantung tanpa ujung —
+        // dia nggak pernah sampai ke pesan gagal, dan nggak pernah sampai ke
+        // jalur ketik tangan yang selalu jalan.
+        //
+        // Batas atasnya juga dijepit: teknisi berdiri di lapangan dengan HP di
+        // tangan, dan menunggu semenit buat satu pencarian sama nggak
+        // bergunanya dengan gagal.
+        $this->timeoutDetik = max(self::TIMEOUT_MIN, min($timeoutDetik, self::TIMEOUT_MAKS));
+    }
 
     public function tersedia(): bool
     {
@@ -68,9 +87,17 @@ class GooglePlacesDirektori implements DirektoriPerusahaan
                 ->timeout($this->timeoutDetik)
                 ->post(self::ENDPOINT, [
                     'textQuery' => $kata,
-                    // Dikunci ke Indonesia: tanpa ini "PT Maju" memulangkan
-                    // tempat di negara lain yang nggak mungkin jadi pelanggan
-                    // lab, dan hasil yang benar ketimbun.
+                    // Dicondongkan ke Indonesia — dan `regionCode` memang cuma
+                    // MENCONDONGKAN, bukan menyaring. Tempat di negara lain
+                    // masih bisa nongol, dan itu diterima apa adanya: menyaring
+                    // dari teks alamat gampang membuang hasil yang sah (alamat
+                    // yang nggak menyebut negara, ejaan yang beda), dan yang
+                    // dibuang justru pabrik yang alamatnya paling berantakan.
+                    //
+                    // Yang menjaganya di ujung: alamatnya IKUT dipajang di layar
+                    // pemilihan, jadi tempat di Johor kelihatan salah sebelum
+                    // diketuk. Dan apa pun yang dipilih masih bisa disunting
+                    // sebelum tersimpan.
                     'regionCode' => 'ID',
                     'languageCode' => 'id',
                     'maxResultCount' => self::MAKS_HASIL,

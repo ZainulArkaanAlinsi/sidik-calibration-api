@@ -31,12 +31,27 @@ class Customer extends Model
     public const SUMBER_TEKNISI = 'teknisi';
 
     /**
-     * Dipilih dari hasil pencarian direktori luar, bukan diketik.
+     * Aplikasi menyatakan barisnya dipilih dari hasil pencarian direktori luar.
      *
-     * Dibedakan dari [SUMBER_TEKNISI] karena bobot buktinya beda: nama & alamat
-     * ini datang dari direktori tempat usaha, bukan dari ingatan orang yang
-     * lagi berdiri di gerbang pabrik. Dua-duanya tetap **bukan** data legal —
-     * lihat catatan di `DirektoriPerusahaan`.
+     * **Ini KLAIM klien, bukan fakta yang diverifikasi server.** Nilainya
+     * diturunkan dari ada-tidaknya `direktori_ref` di badan request, dan ref itu
+     * datang dari HP — nggak ada yang mengadu balik ke direktorinya. Klien yang
+     * mengirim ref karangan bareng nama ketikan tangan tetap dapat baris
+     * bertanda `direktori`.
+     *
+     * Dibiarkan begitu, dengan sadar: memverifikasinya berarti satu request
+     * berbayar lagi ke penyedia tiap kali pelanggan didaftarkan, buat menjaga
+     * kolom yang cuma dibaca admin waktu merapikan master — dan yang bisa
+     * mengarangnya cuma teknisi lab ini sendiri, yang memang berhak bikin baris
+     * pelanggan lewat jalur yang sama.
+     *
+     * Jadi baca kolom ini sebagai **petunjuk asal, bukan bukti**. Yang dijamin
+     * server di baris ini `organization_id` dan `dibuat_oleh_user_id` —
+     * dua-duanya diambil dari token, bukan dari payload. Kalau suatu saat
+     * asal-usulnya perlu mengikat (mis. buat audit akreditasi), yang dibutuhkan
+     * verifikasi ref ke penyedianya, bukan konstanta ini.
+     *
+     * Isinya juga tetap **bukan** data legal — lihat `DirektoriPerusahaan`.
      */
     public const SUMBER_DIREKTORI = 'direktori';
 
