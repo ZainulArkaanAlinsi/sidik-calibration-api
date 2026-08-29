@@ -11,6 +11,8 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Services\Direktori\DirektoriGagal;
 use App\Services\Direktori\DirektoriPerusahaan;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -197,8 +199,65 @@ class CustomerController extends Controller
         $ref = trim((string) $request->string('direktori_ref'));
         $ref = $ref === '' ? null : $ref;
 
-        $kandidat = Customer::query()
-            ->where('organization_id', $user->organization_id)
+        $kandidat = $this->kandidatMirip($user->organization_id, $nama, $ref);
+
+        if ($kandidat->isNotEmpty() && ($this->adaNamaPersis($kandidat, $nama) || ! $request->boolean('tetap_buat'))) {
+            return $this->jawabanTabrakan($kandidat, $nama);
+        }
+
+        $pelanggan = new Customer;
+        $pelanggan->fill([
+            'nama' => $nama,
+            'alamat' => $request->filled('alamat') ? trim((string) $request->string('alamat')) : null,
+        ]);
+
+        // Empat kolom di bawah diisi SERVER, dan nggak satu pun boleh datang
+        // dari payload — lihat `PelangganCepatRequest` buat alasan `sumber`.
+        $pelanggan->organization_id = $user->organization_id;
+        $pelanggan->dibuat_oleh_user_id = $user->id;
+        $pelanggan->direktori_ref = $ref;
+        $pelanggan->sumber = match (true) {
+            $ref !== null => Customer::SUMBER_DIREKTORI,
+            $user->isAdmin() => Customer::SUMBER_ADMIN,
+            default => Customer::SUMBER_TEKNISI,
+        };
+
+        try {
+            $pelanggan->save();
+        } catch (UniqueConstraintViolationException) {
+            // BALAPAN. Baris dengan nama yang sama masuk di celah antara
+            // pemeriksaan kandidat di atas dan penyimpanan ini — dan itu satu-
+            // satunya jalan unique index kena, karena nama yang persis sama
+            // pasti sudah ketahan di pemeriksaan tadi.
+            //
+            // Jarang, tapi bukan mengada-ada: dua teknisi yang mendatangi
+            // pelanggan BARU yang sama di hari yang sama itu kejadian biasa,
+            // dan `tetap_buat` bikin celahnya makin lebar karena pemeriksaannya
+            // sengaja dilewat. Tanpa tangkapan ini yang keluar 500, yang di
+            // layar HP kebaca "server rusak" — padahal jawabannya justru
+            // menyenangkan: barisnya sudah ada, tinggal dipakai.
+            return $this->jawabanTabrakan(
+                $this->kandidatMirip($user->organization_id, $nama, $ref),
+                $nama,
+            );
+        }
+
+        // Bentuk lookup, bukan `CustomerResource`: yang manggil ini picker
+        // pelanggan, dan role yang nggak boleh ngelola pelanggan nggak perlu
+        // megang kontaknya.
+        return response()->json(['data' => new CustomerLookupResource($pelanggan)], 201);
+    }
+
+    /**
+     * Pelanggan seorganisasi yang namanya (setelah dinormalkan) sama, atau yang
+     * `direktori_ref`-nya sama persis.
+     *
+     * @return Collection<int, Customer>
+     */
+    private function kandidatMirip(int $organizationId, string $nama, ?string $ref)
+    {
+        return Customer::query()
+            ->where('organization_id', $organizationId)
             // Kurungnya WAJIB. Tanpa `where(fn ...)` pembungkus, `orWhere` naik
             // ke tingkat atas dan pelanggan lab SEBELAH yang `direktori_ref`-nya
             // kena ikut kebawa ke layar teknisi ini.
@@ -215,52 +274,36 @@ class CustomerController extends Controller
             ->orderBy('nama')
             ->limit(5)
             ->get();
+    }
 
-        $namaPersisSudahAda = $kandidat->contains(fn (Customer $ada) => $ada->nama === $nama);
+    /**
+     * @param  Collection<int, Customer>  $kandidat
+     */
+    private function adaNamaPersis($kandidat, string $nama): bool
+    {
+        return $kandidat->contains(fn (Customer $ada) => $ada->nama === $nama);
+    }
 
-        if ($kandidat->isNotEmpty() && ($namaPersisSudahAda || ! $request->boolean('tetap_buat'))) {
-            return response()->json([
-                'message' => $namaPersisSudahAda
-                    ? 'Pelanggan dengan nama ini sudah ada. Buka yang sudah ada, atau bedakan '
-                        .'namanya (mis. tambah kota atau cabangnya).'
-                    : 'Ada pelanggan dengan nama yang mirip. Kalau salah satunya yang kamu maksud, '
-                        .'pilih itu — kalau memang perusahaan lain, lanjutkan.',
-                // Klien butuh bisa membedakan dua keadaan ini: yang pertama
-                // buntu (harus ganti nama), yang kedua bisa dilanjutkan dengan
-                // `tetap_buat`. Tombol "lanjut" yang muncul di keadaan pertama
-                // cuma bikin teknisi menabrak 409 berkali-kali.
-                'nama_persis_sudah_ada' => $namaPersisSudahAda,
-                'kandidat' => CustomerLookupResource::collection($kandidat),
-            ], 409);
-        }
+    /**
+     * @param  Collection<int, Customer>  $kandidat
+     */
+    private function jawabanTabrakan($kandidat, string $nama): JsonResponse
+    {
+        $namaPersisSudahAda = $this->adaNamaPersis($kandidat, $nama);
 
-        $pelanggan = new Customer;
-        $pelanggan->fill([
-            'nama' => $nama,
-            'alamat' => $request->filled('alamat') ? trim((string) $request->string('alamat')) : null,
-        ]);
-
-        // Empat kolom di bawah diisi SERVER, dan nggak satu pun boleh datang
-        // dari payload — lihat `PelangganCepatRequest` buat alasan `sumber`.
-        $pelanggan->organization_id = $user->organization_id;
-        $pelanggan->dibuat_oleh_user_id = $user->id;
-        $pelanggan->direktori_ref = $ref;
-        $pelanggan->sumber = match (true) {
-            // Datang dari direktori itu asal DATA-nya, bukan pangkat yang
-            // mengetik — jadi dia menang atas admin/teknisi. Baris begini
-            // nama & alamatnya dari direktori tempat usaha, dan admin yang
-            // merapikan master berhak tahu itu.
-            $ref !== null => Customer::SUMBER_DIREKTORI,
-            $user->isAdmin() => Customer::SUMBER_ADMIN,
-            default => Customer::SUMBER_TEKNISI,
-        };
-
-        $pelanggan->save();
-
-        // Bentuk lookup, bukan `CustomerResource`: yang manggil ini picker
-        // pelanggan, dan role yang nggak boleh ngelola pelanggan nggak perlu
-        // megang kontaknya.
-        return response()->json(['data' => new CustomerLookupResource($pelanggan)], 201);
+        return response()->json([
+            'message' => $namaPersisSudahAda
+                ? 'Pelanggan dengan nama ini sudah ada. Buka yang sudah ada, atau bedakan '
+                    .'namanya (mis. tambah kota atau cabangnya).'
+                : 'Ada pelanggan dengan nama yang mirip. Kalau salah satunya yang kamu maksud, '
+                    .'pilih itu — kalau memang perusahaan lain, lanjutkan.',
+            // Klien butuh bisa membedakan dua keadaan ini: yang pertama
+            // buntu (harus ganti nama), yang kedua bisa dilanjutkan dengan
+            // `tetap_buat`. Tombol "lanjut" yang muncul di keadaan pertama
+            // cuma bikin teknisi menabrak 409 berkali-kali.
+            'nama_persis_sudah_ada' => $namaPersisSudahAda,
+            'kandidat' => CustomerLookupResource::collection($kandidat),
+        ], 409);
     }
 
     public function index(Request $request): AnonymousResourceCollection
