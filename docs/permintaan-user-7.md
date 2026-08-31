@@ -1157,7 +1157,7 @@ Ditambahkan pemilik proyek 31 Agt 2026 bersama tiga workbook master ber-password
 | **B** | Olah data sesuai master (koreksi + DUA budget U95) | **BERES** — 1.099 angka diadu, cocok sampai digit terakhir; `TimbanganMasterTest` |
 | **C** | Tabel anak timbangan, CMC, drift | **BERES** — `database/data/tabel-standar-timbangan.json`, tiga snapshot |
 | **D** | CMC diadu ke lampiran akreditasi | **BERES** — `TimbanganCmcCocokAkreditasiTest`, 17 pita cocok |
-| **E** | Sisi mobile (layar lembar kerja) | **BELUM** — handoff di `docs/perintah-frontend-timbangan.md` |
+| **E** | Sisi mobile (layar lembar kerja) | **BELUM** — handoff di `docs/perintah-frontend-timbangan.md`; alasannya di bawah |
 | **F** | Jalur kamera / pindai lembar | **SENGAJA belum** — lihat di bawah |
 
 **Baris lampiran akreditasi LK-285-IDN no. 12**, kelompok **Massa**, satu-satunya baris di
@@ -1302,6 +1302,27 @@ Yang bikin ini pantas dicatat: peringatannya **sudah tertulis di berkas itu send
 di atas daftarnya (*"JANGAN pakai nama yang sama dengan `namaAlatKemampuan()` profil mana pun"*) —
 persis bentuk yang sama dengan jebakan `calibration_method_id` di §Jebakan. Diganti
 `Dial Indicator`, dan alasannya ditulis di tempat daftarnya.
+
+### Sisi mobile: kenapa BELUM, dan apa yang sudah siap menerimanya
+
+**Bukan dikecilkan ruang lingkupnya — kepentok alat.** Container sesi ini tidak punya toolchain
+Flutter (`flutter: command not found`), sementara `sidik-calibration-mobile` punya **162 berkas
+test**. Menulis layar baru yang tidak bisa dikompilasi maupun dijalankan test-nya, lalu
+mendorongnya ke suite sebesar itu, lebih berbahaya daripada handoff yang jelas — dan
+`[[sidik-fe-test-generator]]` memang mensyaratkan test menyertai tiap pekerjaan FE.
+
+Yang sudah diperiksa dan **tidak perlu dibangun ulang** di sisi HP:
+
+- **Tabel dua sub-kolom sudah didukung.** `TabelHasil.kolom` (`List<KolomTabelHasil>`) memang
+  lahir buat sel pH yang isinya DUA angka (pembacaan + °C). Blok Keterulangan Timbangan
+  (`zero` + `pembacaan` per pengulangan) memakai bentuk yang sama persis.
+- **`pengulanganArah`, `peran`, `sumbuPengulangan` sudah ada** — dipakai lembar TIDS & ketiga
+  alat suhu. Label `z / m / m' / z'` blok Akurasi tinggal ikut jalur itu.
+- **Payload non-datar sudah punya tempatnya.** `LembarKerjaSubmission.measurementsGrid`
+  (JSON mentah, dipakai Enclosure) yang akan membawa `measurements[].nominal` + empat
+  pembacaannya; `measurements` datar tidak perlu disentuh.
+
+Jadi sisa pekerjaannya pemetaan + layar + test, bukan kemampuan baru di model.
 
 ### Kamera SENGAJA belum
 
