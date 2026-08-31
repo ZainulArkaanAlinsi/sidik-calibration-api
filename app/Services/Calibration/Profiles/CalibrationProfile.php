@@ -715,6 +715,39 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Bagian sertifikat tingkat-SESI yang nggak muat di tabel empat kolom
+     * `Standard | UUT | Correction | U95%`, atau `null` kalau alat ini emang
+     * nyetak tabel itu apa adanya.
+     *
+     * Yang balikin non-null cuma alat yang sertifikat MASTER-nya beneran
+     * berbentuk lain. Timbangan sejauh ini satu-satunya lewat jalur ini:
+     * sertifikatnya DELAPAN bagian (Repeatability, Effect of Tare, Accuracy,
+     * Loading Influence, Hysterisis, Limit of Performance, Weighing
+     * Uncertainty, Standard Used), dan tujuh dari delapan nggak punya kolom
+     * `Standard`/`UUT` sama sekali. Dipaksa masuk tabel empat kolom, tujuh
+     * bagian itu hilang tanpa satu pun error — sertifikatnya tetap terbit
+     * rapi, bernomor, dan kehilangan sebagian besar isinya.
+     *
+     * Bedanya dari `hasil_autoclave` (yang bentuknya sama-sama lain): Autoklaf
+     * punya kolom sendiri di `calibration_sessions`, Timbangan nggak — blok
+     * tingkat-sesinya (keterulangan, eksentrisitas, histeresis) hidup di
+     * `spesifikasi_alat` sebagai MASUKAN, dan angka jadinya nggak pernah
+     * disimpan. Jadi disusun di sini, waktu sertifikat terbit, lalu DIBEKUKAN
+     * ke snapshot — sama persis alasannya kayak `desimal` & `judul_uut`:
+     * cetakan ulang tahun depan harus keluar angka yang sama walau
+     * kalkulatornya udah berubah.
+     *
+     * Balikin `null` = alat ini lewat jalur lama tanpa berubah sama sekali,
+     * dan itu jawaban yang benar buat dua puluh alat lainnya.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ringkasanSertifikat(CalibrationSession $sesi): ?array
+    {
+        return null;
+    }
+
+    /**
      * Apakah tiap titik ukur berupa GRID sensor (banyak termokopel × pengulangan
      * + Indikator), bukan satu deret pembacaan datar.
      *

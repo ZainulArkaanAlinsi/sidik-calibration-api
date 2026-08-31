@@ -267,3 +267,39 @@ berpisah dan yang tercetak di sertifikat (§4) ikut berbeda.
 **Yang ditanyakan:** apakah kolom `Weight mass` (beban uji eksentrisitas) wajib diisi teknisi mulai
 sekarang? Kalau ya, rumusnya dipindah ke `beban − pembacaan` mengikuti master. Kalau tidak,
 pembacaan center tetap jadi acuan dan itu perlu dinyatakan sebagai keputusan, bukan kebetulan.
+
+---
+
+## T14 — Berapa desimal yang benar di sertifikat? Tiga workbook menjawab berbeda
+
+Sel yang sama diformat berbeda di ketiga master, dan bedanya bukan turunan resolusi alat:
+
+| Yang dicetak | kg (res 0,02) | gram (res 0,0001) | substitusi (res 0,1) |
+|---|---|---|---|
+| §1 Deviation Standard | `0.00` | `0.0000` | `0.00` |
+| §1 Maximum Deviation | `0.00` | `0.0000` | `0.0` |
+| §3 Nominal & Correction | `0.00` | `0.0000` | `0.0` |
+| §3 & §7 Uncertainty ± | `0.000` | `0.00000` | `0.0` |
+| §6 Limit of Performance | `0.00` | `0.00000` | **`0`** |
+| §7 Nominal Standard | `0.00` | `0.000` | `0.00` |
+
+Tidak ada satu aturan pun yang meniru ketiganya sekaligus. Yang paling menonjol §6: master
+substitusi memformatnya **nol desimal**, jadi LOP 13,6606 kg terbit sebagai `± 14 kg`; sementara
+master kg memformatnya dua desimal, yang pada lembar gram akan membuat LOP 0,00077 g terbit
+sebagai `± 0,00 g` — angka yang tidak menyatakan apa pun.
+
+**Yang dipakai sekarang** (dan yang perlu dikonfirmasi):
+
+- `d` = desimal dari resolusi → §3 Nominal & Correction, §2, §4, §5, §7 Nominal.
+  Cocok persis di ketiga master.
+- `max(d, 2)` → §1 Deviation Standard. Cocok persis di ketiga master.
+- `d + 1` → §3 & §7 Uncertainty ±, dan §6 LOP. Cocok di gram; satu digit **lebih banyak**
+  daripada kg & substitusi.
+
+Arah pemilihannya sengaja MELEBIH, bukan mengurang: digit tambahan di kolom ketidakpastian tidak
+menyesatkan siapa pun, sementara digit yang hilang menghapus angka pentingnya. Ini juga yang
+membuat **T11** (U95 tercetak satu desimal lebih pendek daripada master) tidak lagi berlaku untuk
+lembar Timbangan.
+
+**Yang ditanyakan:** apakah lab menghendaki format yang seragam untuk ketiga metode? Kalau ya,
+mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitusi memang disengaja?

@@ -275,10 +275,38 @@ Delapan bagian, dan tiap angkanya ditelusuri ke selnya:
 | 7. WEIGHING UNCERTAINTY | Nominal Standard, **Uncertainty ±**, `K =` | `titik_ukur`, `u95_penimbangan`, faktor cakupan |
 | 8. STANDARD USED | Name, Nominal Mass, Merk/Class, SN, Traceability | anak timbangan yang dicentang di `standar_dicek` |
 
+**Status: SUDAH DICETAK.** Kedelapan bagian keluar dari `snapshot['timbangan']` — disusun
+`TimbanganProfile::ringkasanSertifikat()` waktu sertifikat terbit, dibekukan utuh, lalu digambar
+cabang `@elseif ($timbangan)` di `resources/views/sertifikat/pdf.blade.php`. Presedennya Autoklaf
+(`snapshot['autoclave']`). Dua puluh alat lain balik `null` dan lembarnya tidak berubah sama sekali.
+Penjaganya `tests/Feature/TimbanganSertifikatTest.php` — angkanya diadu ke sel master DAN ke HTML
+yang benar-benar dirender, plus satu test yang memastikan lembarnya tetap **satu halaman**.
+
+Empat hal yang berbeda dari master, dan alasannya:
+
+| Yang beda | Master | Yang dicetak | Kenapa |
+|---|---|---|---|
+| §1 baris ke-3 `Penuh` | ada di kg & substitusi, isinya `0 \| 0 \| 0` | tidak dicetak | selnya (`FC!I103`/`M116`/`M117`) menunjuk kolom yang di blok Repeatability-nya **tidak ada** — bloknya berhenti di kolom H, dua kapasitas. Master gram tidak punya baris itu sama sekali. Kerusakan salin-tempel, dan aturannya dihitung benar. |
+| §1 label | kg menulis `Half Capaity` | `Half Capacity` | dua dari tiga master mengejanya benar |
+| §7 kalimat `k` | `mearured` | `measured` | yang ditiru angkanya, bukan salah ejaannya |
+| §8 kolom `Nominal Mass` | ada | belum | tabel `STANDARD USED` itu **bersama** dua puluh alat; menambah kolom di situ menyentuh lembar semua alat. Nominalnya sudah terbaca lewat `Name`/`Merk/Type` anak timbangan. |
+
+**Desimalnya dibekukan, dan ketiga master tidak sepakat** — lihat **T14**. Yang dipakai:
+`d` = desimal dari resolusi (nilai, koreksi, tare, posisi, batas histeresis), `max(d,2)` (STDEV
+keterulangan), `d+1` (U95 §3 & §7, LOP). Kuncinya `desimal`, `desimal_stdev`, `desimal_u95` di
+blok snapshot; sertifikat lama yang belum punya kuncinya jatuh ke turunan `desimal`.
+
+**Kolom `Correction` varian substitusi itu KUMULATIF** (`Cn`), bukan `ΔI` per langkah. Master
+mencetak `FC!T50..T86` — 0,0059 · 1,5118 · 2,4177 … 13,309. Sampai sebelum ini yang tersimpan di
+`uncertainty_calculations.koreksi` adalah `ΔI`, jadi sertifikat, Excel, dan API bertiga menerbitkan
+1,4559 kg di titik terakhir untuk lembar yang masternya menulis 13,309 kg. `ΔI` tetap hidup di
+keluaran `TimbanganCalculator` dan tetap diadu ke master oleh `TimbanganMasterTest`.
+
 Tiga hal yang **tidak** bisa ditebak dari tampilan sertifikatnya, dan sudah salah kalau ditebak:
 
 - **§2 bukan `C = Ms−(M−z)`** seperti tertulis di petunjuk lembar kerjanya. Sel yang dicetak
-  `FC!F44 = ABS(E44−E45)`, yaitu **selisih mutlak dua pembacaan tare** (`|m1 − m2|`). Petunjuk di
+  `FC!F42 = ABS(E42−E43)` (kg & substitusi; `F44` di master gram), yaitu **selisih mutlak dua
+  pembacaan tare** (`|m1 − m2|`). Petunjuk di
   kertas kerja itu untuk besaran lain.
 - **§5 mencetak PERBANDINGAN, bukan nilai.** Selnya `IF(hasil ≤ resolusi, "<", ">")` lalu memajang
   **nilai resolusi** — jadi yang terbit `< 0,0001 g`, bukan angka histeresisnya. Mencetak angka

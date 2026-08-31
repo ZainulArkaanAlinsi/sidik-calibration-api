@@ -9,6 +9,8 @@ use App\Models\Standard;
 use App\Services\Calibration\TabelStandarTimbangan;
 use App\Services\Calibration\TimbanganCalculator;
 use App\Services\Calibration\VarianMasterTimbangan;
+use App\Support\Angka;
+use App\Support\TimbanganMentah;
 use Carbon\Carbon;
 
 /**
@@ -318,8 +320,25 @@ class TimbanganProfile extends CalibrationProfile
                 'titik_ukur' => $t['titik_ukur'],
                 'rata_rata' => $t['rata_beban'],
                 // `Correction = ΣCN − (m̄ − z̄)`, jadi error-nya kebalikannya.
-                'error' => -$t['koreksi'],
-                'koreksi' => $t['koreksi'],
+                'error' => -$this->koreksiTerbit($t),
+                // Varian substitusi menyimpan KUMULATIF (`Cn`), bukan `ΔI`.
+                //
+                // Bukan kerapian: `ΔI` itu besaran ANTARA — selisih satu
+                // langkah substitusi — dan sertifikat masternya mencetak `Cn`
+                // (`SERTIFIKAT!D28..D37` -> `PERHITUNGAN FC!T50..T86`, yaitu
+                // 0,0059 · 1,5118 · 2,4177 …, bukan 0,0059 · 1,5059 · 0,9059).
+                // Menyimpan `ΔI` di kolom yang dibaca sertifikat, Excel, dan
+                // API bikin ketiganya menerbitkan angka yang benar-benar lain
+                // dari lembar master, tanpa satu pun error — koreksi titik
+                // terakhir terbit 1,4559 kg di tempat masternya menulis
+                // 13,309 kg.
+                //
+                // `ΔI` tetap hidup: `TimbanganCalculator` memulangkannya, dan
+                // `TimbanganMasterTest` mengadunya ke master di tingkat
+                // kalkulator. Yang berubah cuma angka mana yang MENDARAT di
+                // `uncertainty_calculations`. Dua varian lain tidak punya
+                // kumulatif dan jatuh ke `koreksi` — persis perilaku lamanya.
+                'koreksi' => $this->koreksiTerbit($t),
                 // `Sr` = STDEV(m, m') satu siklus — dua pembacaan, bukan
                 // sepuluh. Keterulangan sepuluh pengulangan hidup di bloknya
                 // sendiri dan masuk budget lewat komponen `repeatability`.
@@ -349,6 +368,258 @@ class TimbanganProfile extends CalibrationProfile
         }
 
         return ['hitungan' => $hitungan, 'belum_dihitung' => $hasil['belum_dihitung']];
+    }
+
+    /**
+     * Koreksi yang DITERBITKAN buat satu titik — kumulatif di varian
+     * substitusi, langsung di dua varian lain.
+     *
+     * @param  array<string, mixed>  $t  satu baris keluaran TimbanganCalculator
+     */
+    private function koreksiTerbit(array $t): float
+    {
+        return (float) ($t['koreksi_kumulatif'] ?? $t['koreksi']);
+    }
+
+    /**
+     * Delapan bagian sertifikat Timbangan, dibekukan ke snapshot waktu
+     * sertifikat terbit. Lihat [CalibrationProfile::ringkasanSertifikat] soal
+     * kenapa jalur ini ada sama sekali.
+     *
+     * ## Kenapa dihitung ulang di sini, bukan dibaca dari yang tersimpan
+     *
+     * Tiga dari delapan bagian nggak punya tempat penyimpanan: STDEV & maksimum
+     * beda keterulangan (bagian 1), selisih tiap posisi eksentrisitas (bagian
+     * 4), dan perbandingan histeresis (bagian 5) semuanya lahir dari blok
+     * MASUKAN di `spesifikasi_alat` dan nggak pernah mendarat di kolom mana
+     * pun. `uncertainty_calculations` cuma punya baris per TITIK AKURASI.
+     *
+     * Jadi sesinya dihitung ulang utuh — bukan cuma tiga bagian itu — supaya
+     * kedelapan angkanya lahir dari satu lintasan yang sama. Ngambil sebagian
+     * dari hitung ulang dan sebagian dari database bikin satu lembar
+     * sertifikat memuat dua generasi angka kalau kalkulatornya pernah berubah,
+     * dan nggak ada yang bisa lihat bedanya dari lembarnya.
+     *
+     * Amannya dijaga dua hal: sesi cuma bisa disetujui kalau `CalibrationValidator`
+     * udah mengadu hitung ulang ke yang tersimpan (`ketidakpastian_beda` /
+     * `hitung_ulang_gagal`), dan `TimbanganSertifikatTest` mengunci bagian 3
+     * di sini ke isi `uncertainty_calculations`. Begitu keduanya berpisah,
+     * yang merah test — bukan pelanggan yang megang dua lembar beda angka.
+     *
+     * ## Desimalnya dibekukan, dan tiga masternya nggak sepakat
+     *
+     * Tiga workbook memformat sel yang sama dengan jumlah desimal berbeda —
+     * LOP-nya `0` (kg-substitusi), `0.00` (kg), dan `0.00000` (gram) — jadi
+     * nggak ada satu aturan pun yang bisa meniru ketiganya. Yang dipakai:
+     * `d` = desimal dari resolusi (cocok di ketiganya buat nilai & koreksi),
+     * `max(d,2)` buat STDEV (cocok di ketiganya), dan `d+1` buat U95 & LOP —
+     * cocok di gram, satu digit lebih banyak dari kg & substitusi. Dipilih
+     * yang MELEBIH, bukan yang mengurang: `± 0,00 g` di kolom Limit of
+     * Performance itu angka yang nggak menyatakan apa-apa. Diangkat sebagai
+     * T14.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ringkasanSertifikat(CalibrationSession $sesi): ?array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return null;
+        }
+
+        $spek = (array) ($sesi->spesifikasi_alat ?? []);
+        $titik = [];
+
+        foreach ($sesi->rawMeasurements->groupBy('titik_ke') as $titikKe => $baris) {
+            $titik[] = [
+                'titik_ke' => (int) $titikKe,
+                'konteks' => [...TimbanganMentah::dari($baris), 'spesifikasi_alat' => $spek],
+            ];
+        }
+
+        if ($titik === []) {
+            return null;
+        }
+
+        usort($titik, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
+
+        $masukan = $this->susunMasukan($titik, $alat, $titik[0]['konteks']);
+
+        // Alasannya (resolusi/kapasitas kosong) udah muncul sebagai
+        // `belum_dihitung` di layar sesi jauh sebelum sertifikat terbit —
+        // di sini yang benar balik `null`, dan blade jatuh ke tabel empat
+        // kolom biasa alih-alih nyetak delapan bagian berisi tanda pisah.
+        if (is_string($masukan)) {
+            return null;
+        }
+
+        $hasil = $this->kalkulator()->hitung($masukan);
+        $resolusi = (float) $masukan['resolusi'];
+        $desimal = Angka::desimalDariResolusi($resolusi);
+        $ket = $hasil['keterulangan'];
+        $ekc = $hasil['eksentrisitas'];
+
+        // `koreksiTerbit()` yang sama dipakai jalur simpan — kalau angka yang
+        // dicetak sertifikat sampai lahir dari rumus lain, bedanya nggak
+        // kelihatan di mana pun.
+        $titikSertifikat = array_map(fn (array $t): array => [
+            'titik_ke' => (int) $t['titik_ke'],
+            'titik_ukur' => (float) $t['titik_ukur'],
+            'koreksi' => $this->koreksiTerbit($t),
+            'u95_koreksi' => (float) $t['u95_koreksi'],
+            'u95_penimbangan' => (float) $t['u95_penimbangan'],
+        ], $hasil['titik']);
+
+        return [
+            'varian' => $hasil['varian'],
+            'satuan' => $hasil['satuan'],
+            'resolusi' => $resolusi,
+            'desimal' => $desimal,
+            'desimal_stdev' => max($desimal, 2),
+            'desimal_u95' => $desimal + 1,
+            'keterulangan' => $this->bagianSertifikatKeterulangan($ket),
+            'effect_of_tare' => $this->effectOfTare($spek),
+            'eksentrisitas' => $this->bagianSertifikatEksentrisitas($ekc),
+            'histeresis' => $this->bagianSertifikatHisteresis($hasil, $spek, $resolusi),
+            'lop' => $hasil['lop'] === null ? null : (float) $hasil['lop'],
+            'titik' => $titikSertifikat,
+            // SATU `k` buat seluruh bagian 7, diambil dari titik pertama —
+            // persis masternya, yang nunjuk `'PERHITUNGAN U95%-Weighing'!R20`
+            // (blok titik pertama) buat kalimat di bawah tabelnya.
+            'k_penimbangan' => isset($hasil['titik'][0])
+                ? (float) $hasil['titik'][0]['k_penimbangan']
+                : null,
+        ];
+    }
+
+    /**
+     * Bagian 1 — REPEATABILITY. DUA baris, bukan tiga.
+     *
+     * Master kg & substitusi nyetak baris KETIGA berlabel `Penuh` yang isinya
+     * `PERHITUNGAN FC!I103` / `M116` / `M117` — kolom yang di blok
+     * Repeatability workbook itu nggak ada (bloknya berhenti di kolom H, dua
+     * kapasitas: Middle & Miximum). Selnya balik 0, jadi yang tercetak baris
+     * `Penuh | 0 | 0 | 0` di sertifikat terakreditasi. Master gram nggak punya
+     * baris itu sama sekali.
+     *
+     * Itu kerusakan salin-tempel, bukan metode — dan aturannya (CLAUDE.md)
+     * kerusakan salin-tempel dihitung benar, bukan ditiru. Barisnya nggak
+     * dicetak, dan selisihnya ditulis di docs/pertanyaan-lab-timbangan.md.
+     *
+     * Label `Half Capacity` dieja `Half Capaity` di master kg — dua dari tiga
+     * mengejanya benar, jadi yang dipakai ejaan yang benar.
+     *
+     * @param  array<string, mixed>  $ket
+     * @return list<array<string, mixed>>
+     */
+    private function bagianSertifikatKeterulangan(array $ket): array
+    {
+        return [
+            [
+                'label' => 'Half Capacity',
+                'kapasitas' => (float) $ket['nominal_mid'],
+                'stdev' => (float) $ket['stdev_mid'],
+                'maks_beda' => (float) ($ket['mid']['maks_beda'] ?? 0.0),
+            ],
+            [
+                'label' => 'Full Capacity',
+                'kapasitas' => (float) $ket['nominal_maks'],
+                'stdev' => (float) $ket['stdev_maks'],
+                'maks_beda' => (float) ($ket['maks']['maks_beda'] ?? 0.0),
+            ],
+        ];
+    }
+
+    /**
+     * Bagian 2 — EFFECT OF TARE: `|m1 − m2|`, dan cuma itu.
+     *
+     * Petunjuk di lembar kerjanya nulis `C = Ms − (M − z)`; yang dicetak
+     * sertifikat BUKAN itu. Selnya `PERHITUNGAN FC!F42 = ABS(E42−E43)` —
+     * selisih mutlak dua pembacaan tare. Rumus di kertas itu buat besaran
+     * lain, dan kalau ditiru angkanya beda sebesar massa standarnya.
+     *
+     * `null` kalau salah satu kotaknya kosong: nol di sini kebaca sebagai
+     * "tare-nya sempurna", padahal artinya "belum diukur".
+     *
+     * @param  array<string, mixed>  $spek
+     */
+    private function effectOfTare(array $spek): ?float
+    {
+        $tare = (array) ($spek['effect_of_tare'] ?? []);
+        $m1 = $tare['m1'] ?? null;
+        $m2 = $tare['m2'] ?? null;
+
+        if (! is_numeric($m1) || ! is_numeric($m2)) {
+            return null;
+        }
+
+        return abs((float) $m1 - (float) $m2);
+    }
+
+    /**
+     * Bagian 4 — LOADING INFLUENCE. Lima posisi urut kertas, plus
+     * `Maximum Difference` = MAX − MIN.
+     *
+     * Yang dicetak tiap posisi SELISIH (`beban − pembacaan`), bukan
+     * pembacaannya. Nilai acuannya lihat T13: mesin hitung memakai pembacaan
+     * CENTER waktu `beban` kosong. `Maximum Difference` nggak kena selisih itu
+     * — MAX − MIN kebal terhadap pergeseran acuan yang sama besar di kelima
+     * posisi — tapi kelima angka posisinya kena.
+     *
+     * @param  array<string, mixed>  $ekc
+     * @return array<string, mixed>
+     */
+    private function bagianSertifikatEksentrisitas(array $ekc): array
+    {
+        $urut = ['center' => 'Center', 'front' => 'Front', 'back' => 'Back', 'left' => 'Left', 'right' => 'Right'];
+        $selisih = (array) ($ekc['selisih'] ?? []);
+        $posisi = [];
+
+        foreach ($urut as $kunci => $label) {
+            $posisi[] = [
+                'label' => $label,
+                'selisih' => array_key_exists($kunci, $selisih) ? (float) $selisih[$kunci] : null,
+            ];
+        }
+
+        return [
+            'beban' => isset($ekc['beban']) ? (float) $ekc['beban'] : null,
+            'posisi' => $posisi,
+            'maks_beda' => (float) ($ekc['rentang'] ?? 0.0),
+        ];
+    }
+
+    /**
+     * Bagian 5 — HYSTERISIS: yang tercetak PERBANDINGAN, bukan nilainya.
+     *
+     * Sel masternya `IF('PERHITUNGAN FC'!I148 <= resolusi, "<", ">")` lalu
+     * memajang nilai RESOLUSI di sebelahnya — jadi yang terbit `< 0,0001 g`,
+     * bukan angka histeresisnya. Mencetak angka mentahnya berarti sertifikat
+     * menyatakan hal yang berbeda dari yang dimaksud lab.
+     *
+     * Nilai mentahnya tetap ada jejaknya: baris `histeresis` di
+     * `type_b_components` tiap titik.
+     *
+     * @param  array<string, mixed>  $hasil
+     * @param  array<string, mixed>  $spek
+     * @return array<string, mixed>|null
+     */
+    private function bagianSertifikatHisteresis(array $hasil, array $spek, float $resolusi): ?array
+    {
+        if (($hasil['histeresis'] ?? null) === null) {
+            return null;
+        }
+
+        $beban = $spek['histeresis']['m'] ?? null;
+
+        return [
+            'beban' => is_numeric($beban) ? (float) $beban : null,
+            // Perbandingan MENTAH ke resolusi, persis masternya — bukan
+            // `abs()`. Histeresis negatif memang lebih kecil dari resolusi.
+            'pembanding' => (float) $hasil['histeresis'] <= $resolusi ? '<' : '>',
+            'batas' => $resolusi,
+        ];
     }
 
     /**
