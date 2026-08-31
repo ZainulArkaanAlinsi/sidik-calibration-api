@@ -248,9 +248,15 @@ class CalibrationRequest extends FormRequest
             // Dua blok CATATAN — tidak dibaca kalkulator mana pun, tapi tetap
             // wajib punya tempat: teknisi mengisinya dari kertas, dan isian
             // yang tidak punya tempat simpan hilang tanpa satu pun error.
-            // Batasnya menghitung kunci TINGKAT ATAS: `scale_observation`
-            // punya dua (satu per tahap), `effect_of_tare` lima kotak datar.
-            'spesifikasi_alat.scale_observation' => ['sometimes', 'nullable', 'array', 'max:2'],
+            // Batasnya menghitung kunci TINGKAT ATAS: `scale_observation` punya
+            // TIGA — dua tahap (`sebelum_adjustment`, `sesudah_adjustment`)
+            // plus `sd_tahun_lalu` yang berdiri sendiri di bawahnya di kertas.
+            // `effect_of_tare` lima kotak datar.
+            //
+            // Sempat `max:2` sesudah kotak SD ditambah, dan akibatnya bukan
+            // kotak itu yang ditolak melainkan SELURUH sesi — 422 buat semua
+            // yang kebetulan mengisinya.
+            'spesifikasi_alat.scale_observation' => ['sometimes', 'nullable', 'array', 'max:3'],
             'spesifikasi_alat.effect_of_tare' => ['sometimes', 'nullable', 'array', 'max:5'],
             // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
             // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana

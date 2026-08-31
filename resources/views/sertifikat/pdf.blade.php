@@ -142,6 +142,20 @@
         body.lembar-autoclave .judul-kelompok { margin: 6px 0 3px; }
         body.lembar-autoclave .ket-k { margin: 2px 0 5px; }
         body.lembar-autoclave .judul-sub { margin: 9px 0 5px; }
+
+        /* Timbangan nggak punya blok pemadatan sendiri: lembarnya SELALU
+           lewat `padat` (lihat catatan di dekat `$padat`), jadi aturan di sini
+           cuma buat yang `padat` nggak atur. Nambah `body.lembar-timbangan
+           table.data { font-size: … }` di sini justru MELONGGARKAN lembarnya —
+           selektornya sama kuat dengan `body.padat` dan menang karena lebih
+           belakang. */
+        body.lembar-timbangan .judul-kelompok { margin: 4px 0 1px; }
+        /* Bagian yang isinya SATU angka (Effect of Tare, Limit of Performance)
+           — dicetak sebaris sama judulnya, persis masternya, bukan sebagai
+           tabel satu sel. */
+        .baris-angka { margin: 4px 0 1px; font-size: 9.5px; }
+        .baris-angka .nama { font-weight: bold; }
+        body.padat .baris-angka { margin: 2px 0 1px; font-size: 8.5px; }
         body.padat .catatan { font-size: 8px; margin-top: 4px; line-height: 1.3; }
         body.padat .kode-dokumen { margin-top: 4px; padding-top: 2px; font-size: 8px; }
         /*
@@ -318,7 +332,13 @@
         @endif
     </style>
 </head>
-@php($padat = ! ($web ?? false) && collect($snapshot['hasil'] ?? [])->count() > 12)
+{{-- Lembar Timbangan SELALU padat. Pemicu `> 12 baris` nggak kena
+     lembarnya: tabel `hasil` cuma 10 baris, tapi yang dicetak DELAPAN bagian
+     (dua tabel besar, dua tabel kecil, tiga baris satu-angka) — lembar
+     tertinggi yang pernah masuk blade ini. Tanpa ini blok tanda tangan &
+     kode dokumen kedorong ke halaman dua sementara kepalanya tetap nulis
+     `Page : 1 of 1`; jebakan yang persis sama pernah kena Autoklaf. --}}
+@php($padat = ! ($web ?? false) && (collect($snapshot['hasil'] ?? [])->count() > 12 || ($snapshot['timbangan'] ?? null) !== null))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -331,7 +351,8 @@
      9,5px dan jarak antar bagian dirapatkan — cukup buat menarik blok tanda
      tangan balik ke halaman pertama, tanpa bikin tabelnya kelihatan sesak. --}}
 @php($lembarAutoclave = ! ($web ?? false) && ($snapshot['autoclave'] ?? null) !== null)
-<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}">
+@php($lembarTimbangan = ! ($web ?? false) && ($snapshot['timbangan'] ?? null) !== null)
+<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}">
 @if ($web ?? false)
     <div class="bilah">
         <div class="cap">&#10003; Sertifikat terverifikasi</div>
@@ -461,6 +482,20 @@
          sama sekali. --}}
     @php($autoclave = $snapshot['autoclave'] ?? null)
 
+    {{-- Timbangan: DELAPAN bagian, dan cuma bagian 3 yang bentuknya mirip
+         tabel biasa. Alasannya sama persis kayak Autoklaf di atas — master
+         `SERTIFIKAT`-nya emang begitu, dan tujuh bagian lain nggak punya
+         kolom `Standard`/`UUT` sama sekali.
+
+         Dibaca dari `TimbanganProfile::ringkasanSertifikat`, dibekukan utuh ke
+         snapshot waktu terbit. Dua puluh alat lain balik `null` di sini dan
+         lewat jalur lama tanpa berubah sama sekali.
+
+         Bagian 8 (STANDARD USED) nggak dicetak di blok ini: tabel bersama di
+         bawah udah nyetaknya. Yang beda cuma masternya punya kolom `Nominal
+         Mass` — lihat catatan di docs/perintah-frontend-timbangan.md. --}}
+    @php($timbangan = $snapshot['timbangan'] ?? null)
+
     @if ($autoclave)
         {{-- Desimal dibaca dari FORMAT SEL master `Master Olah Data_Autoclave.xlsm`
              (sheet SERTIFIKAT), bukan diturunkan dari resolusi alat. Sampai
@@ -587,6 +622,185 @@
                 {{ \App\Support\Angka::id((float) $tek['k'], 0) }}
             </div>
         @endif
+        @endif
+    @elseif ($timbangan)
+        {{-- Desimal DIBEKUKAN di snapshot, bukan dihitung di sini: tiga
+             workbook master memformat sel yang sama dengan jumlah desimal yang
+             berbeda, jadi aturannya diputus sekali di
+             `TimbanganProfile::ringkasanSertifikat` (dan diangkat sebagai T14),
+             bukan ditebak ulang tiap cetak. Sertifikat lama yang snapshot-nya
+             belum punya kuncinya jatuh ke turunan dari `desimal`. --}}
+        @php($sat = $timbangan['satuan'] ?? '')
+        @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
+        @php($dT = $timbangan['desimal'] ?? $desimal)
+        @php($dS = $timbangan['desimal_stdev'] ?? max($dT, 2))
+        @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
+        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
+
+        <div class="judul-kelompok">1. REPEATABILITY</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Capacity{{ $satKurung }}</th>
+                    <th>Deviation Standard{{ $satKurung }}</th>
+                    <th>Maximum Deviation With the Next Reading{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{-- DUA baris. Master kg & substitusi nyetak baris ketiga
+                     `Penuh` yang nunjuk kolom yang di blok Repeatability-nya
+                     nggak ada, jadi isinya 0 · 0 · 0 — kerusakan salin-tempel,
+                     bukan pengukuran. Lihat `bagianSertifikatKeterulangan`. --}}
+                @foreach ($timbangan['keterulangan'] ?? [] as $rpt)
+                    <tr>
+                        <td class="kiri">
+                            {{ $rpt['label'] ?? '' }} =
+                            {{ \App\Support\Angka::nilaiStandar(
+                                ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
+                                $dT,
+                            ) }}
+                        </td>
+                        <td>{!! $nT($rpt['stdev'] ?? null, $dS) !!}</td>
+                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT) !!}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        {{-- `|m1 − m2|`, BUKAN `C = Ms − (M − z)` yang tertulis di petunjuk
+             lembar kerjanya. Tanda pisah = kotaknya belum diisi; nol di situ
+             kebaca "tare-nya sempurna", yang artinya beda. --}}
+        <div class="baris-angka">
+            <span class="nama">2. EFFECT OF TARE</span>
+            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT) !!} {{ $sat }}
+        </div>
+
+        <div class="judul-kelompok">3. ACCURACY</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Correction{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($timbangan['titik'] ?? [] as $t)
+                    <tr>
+                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($t['koreksi'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU) !!}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3">&mdash;</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        @php($ekc = $timbangan['eksentrisitas'] ?? [])
+        <div class="judul-kelompok">4. LOADING INFLUENCE ON SEVERAL POSITION</div>
+        <div class="ket-k">
+            @if (($ekc['beban'] ?? null) !== null)
+                Weight mass {!! $nT($ekc['beban'], $dT) !!} {{ $sat }} was moved to various position
+            @else
+                {{-- Bebannya nggak dicatat teknisi. Kalimat masternya nyebut
+                     angka; nyetak `—` di tengah kalimat itu kebaca kayak data
+                     yang hilang, jadi kalimatnya yang menyesuaikan. --}}
+                The weight was moved to various position
+            @endif
+            on the pan, the difference of balance reading at each position are given in the table below:
+        </div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    @foreach ($ekc['posisi'] ?? [] as $pos)
+                        <th>{{ $pos['label'] ?? '' }}</th>
+                    @endforeach
+                    <th>Maximum Difference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {{-- `Reading` di master itu SELISIH (`beban − pembacaan`),
+                         bukan pembacaannya. Judul kolomnya ditiru apa adanya —
+                         yang ditiru kertasnya, bukan penamaannya diperbaiki
+                         sepihak. --}}
+                    <td class="kiri">Reading</td>
+                    @foreach ($ekc['posisi'] ?? [] as $pos)
+                        <td>{!! $nT($pos['selisih'] ?? null, $dT) !!}</td>
+                    @endforeach
+                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT) !!}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @php($hys = $timbangan['histeresis'] ?? null)
+        @if ($hys)
+            <div class="judul-kelompok">5. HYSTERISIS</div>
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Load{{ $satKurung }}</th>
+                        <th>Hysterisis{{ $satKurung }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{!! $nT($hys['beban'] ?? null, $dT) !!}</td>
+                        {{-- PERBANDINGAN ke resolusi, bukan nilai histeresisnya
+                             — `IF(hys <= resolusi, "<", ">")` lalu memajang
+                             resolusinya. Nilai mentahnya ada di jejak audit
+                             tiap titik (`type_b_components`, sumber
+                             `histeresis`). --}}
+                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT) !!}</td>
+                    </tr>
+                </tbody>
+            </table>
+        @endif
+
+        <div class="baris-angka">
+            <span class="nama">6. LIMIT OF PERFORMANCE</span>
+            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU) !!} {{ $sat }}
+        </div>
+
+        <div class="judul-kelompok">7. WEIGHING UNCERTAINTY</div>
+        {{-- Dua pasang kolom berdampingan, persis masternya: sepuluh titik
+             sebagai sepuluh baris nambah satu halaman sendiri di lembar yang
+             udah memuat delapan bagian. Titik ganjil bikin pasangan terakhir
+             setengah kosong — itu memang bentuk masternya. --}}
+        @php($tt = array_values($timbangan['titik'] ?? []))
+        @php($separuh = (int) ceil(count($tt) / 2))
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse (array_slice($tt, 0, $separuh) as $i => $kiri)
+                    @php($kanan = $tt[$separuh + $i] ?? null)
+                    <tr>
+                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU) !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU) !!}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4">&mdash;</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+        @if (($timbangan['k_penimbangan'] ?? null) !== null)
+            <div class="ket-k">
+                {{-- Master nulis "mearured"; yang ditiru angkanya, bukan
+                     salah ejaannya. Format sel `k`-nya `0` -> `2`. --}}
+                That weighing uncertainty is measured at confidence level 95 % &amp; coverage factor ( K ) =
+                {{ \App\Support\Angka::id((float) $timbangan['k_penimbangan'], 0) }}
+            </div>
         @endif
     @else
 
@@ -776,8 +990,11 @@
          2,01), jadi kalimat tingkat-sertifikat yang nyebut satu angka bukan
          cuma dobel — dia mbantah tiga baris di atasnya. --}}
     {{-- `$autoclave` ikut ngitung: tiga bagiannya udah nyetak kalimat faktor
-         cakupannya sendiri, dan k suhu beda dari k tekanan. --}}
-    @php($adaKGrup = $autoclave !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
+         cakupannya sendiri, dan k suhu beda dari k tekanan. 
+         `$timbangan` juga: bagian 7-nya nyetak kalimat `coverage factor ( K )`
+         sendiri, dan bagian 3-nya pakai U95 of Correction yang faktor
+         cakupannya lain. --}}
+    @php($adaKGrup = $autoclave !== null || $timbangan !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
     <div class="catatan">
         @foreach ($snapshot['catatan'] ?? [] as $catatan)
             @continue ($adaKGrup && str_contains($catatan, 'Coverage Factor'))

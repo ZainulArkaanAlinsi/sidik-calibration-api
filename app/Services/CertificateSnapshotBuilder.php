@@ -100,6 +100,22 @@ class CertificateSnapshotBuilder
             // `AutoclaveCalculator` udah presisi penuh diadu ke master, tinggal
             // diformat di blade.
             'autoclave' => $sesi->adalahAutoclave() ? $sesi->hasil_autoclave : null,
+            // Timbangan: DELAPAN bagian, dan tujuh di antaranya nggak punya
+            // kolom `Standard`/`UUT` sama sekali (Repeatability, Effect of
+            // Tare, Loading Influence, Hysterisis, Limit of Performance,
+            // Weighing Uncertainty, Standard Used). Dipaksa masuk tabel empat
+            // kolom, tujuh bagian itu hilang tanpa satu pun error.
+            //
+            // Beda dari `autoclave` di atas — yang dibaca dari kolom sesi —
+            // blok ini DISUSUN waktu sertifikat terbit: angka jadinya
+            // (STDEV keterulangan, selisih tiap posisi, perbandingan
+            // histeresis) nggak pernah disimpan di kolom mana pun, cuma
+            // masukannya yang ada di `spesifikasi_alat`. Alasan lengkapnya di
+            // `TimbanganProfile::ringkasanSertifikat`.
+            //
+            // Dua puluh alat lain balik `null` di sini dan lewat jalur lama
+            // tanpa berubah sama sekali.
+            'timbangan' => $profil?->ringkasanSertifikat($sesi),
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),
             'footer' => $this->footer($sesi, $sertifikat, $pengaturan),

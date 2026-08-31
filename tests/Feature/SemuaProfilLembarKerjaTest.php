@@ -257,6 +257,20 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // Nomor lembar kerjanya sendiri memang belum pernah dikirim.
         $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro', 'timbangan'];
 
+        // `timbangan` di daftar itu SETENGAH benar, dan bedanya perlu ditulis.
+        //
+        // Kertasnya sudah ada untuk metode SUBSTITUSI
+        // (`SIDIK-FM-CAL-0508.A_Rev.4`, dikirim 31 Agt 2026), tapi lembar itu
+        // memasang nomor formulirnya PER VARIAN — dan variannya diturunkan dari
+        // alat. Panggilan tanpa alat di baris bawah memang memulangkan null,
+        // jadi dia tetap lolos di sini.
+        //
+        // Yang menjaga sisi satunya `TimbanganSesiTest::
+        // test_nomor_formulir_cuma_di_varian_yang_kertasnya_ada`: di situ
+        // nomornya WAJIB muncul buat alat > 200 kg dan WAJIB null buat kg/gram.
+        // Keluarkan `timbangan` dari daftar ini kalau kertas kg/gram sudah
+        // turun juga — jangan sebelum itu.
+
         $nomor = $profil->bentukLembarKerja()['kode_dokumen'] ?? null;
 
         if (in_array($profil->kode(), $belumAdaKertasnya, true)) {
@@ -269,10 +283,13 @@ class SemuaProfilLembarKerjaTest extends TestCase
         }
 
         $this->assertIsString($nomor, "Profil `{$profil->kode()}` belum punya nomor formulir.");
+        // Akhiran huruf opsional (`0508.A`) — formulir lab ini memakainya buat
+        // membedakan varian metode pada nomor dasar yang sama. Bukan pelonggaran
+        // spekulatif: `SIDIK-FM-CAL-0508.A_Rev.4` ada di tangan.
         $this->assertMatchesRegularExpression(
-            '/^SIDIK-FM-CAL-\d{4}_Rev\.\d+$/',
+            '/^SIDIK-FM-CAL-\d{4}(\.[A-Z])?_Rev\.\d+$/',
             $nomor,
-            "Nomor formulir `{$profil->kode()}` nggak berbentuk `SIDIK-FM-CAL-NNNN_Rev.N`.",
+            "Nomor formulir `{$profil->kode()}` nggak berbentuk `SIDIK-FM-CAL-NNNN[.X]_Rev.N`.",
         );
     }
 

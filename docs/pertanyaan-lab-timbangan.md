@@ -237,3 +237,69 @@ Dua master yang pertama sebenarnya konsisten dengan aturan metrologi yang biasa 
 - **Pita CMC.** Ketujuh belas pita A..Q (0 g s/d 2000 kg) semuanya ADA di lampiran akreditasi
   no. 12 — dicocokkan baris demi baris oleh `TimbanganCmcCocokAkreditasiTest`. Sempat diduga
   hanya delapan yang pertama yang terakreditasi; dugaan itu salah dan sudah dibuang.
+
+---
+
+## T12 — Nomor formulir lembar kerja untuk metode kg & gram
+
+Kertas metode **substitusi** sudah ada: `SIDIK-FM-CAL-0508.A`, Revise 4 (diterima 31 Agt 2026).
+Akhiran `.A` menyiratkan ada saudaranya untuk dua metode lain, tapi menyiratkan bukan mengetahui.
+
+Nomornya **tidak ditebak**: lembar kg & gram terbit dengan `kode_dokumen` null sampai kertasnya
+turun. Nomor formulir karangan di kop lembar lab terakreditasi itu temuan audit.
+
+**Yang ditanyakan:** berapa nomor & revisi formulir lembar kerja Timbangan untuk metode langsung
+(satuan kg) dan satuan gram?
+
+---
+
+## T13 — Selisih eksentrisitas: diukur dari BEBAN atau dari pembacaan CENTER?
+
+Master menghitung penyimpangan tiap posisi sebagai `beban − pembacaan posisi`
+(`FC!D133 = $F$128 − C133`). Mesin hitung kami memakai `pembacaan center − pembacaan posisi`,
+karena kolom `beban` **kosong di ketiga workbook master** — jadi tidak ada angka lain yang bisa
+dipakai.
+
+Di ketiga sesi contoh keduanya menghasilkan angka yang sama persis, karena pembacaan center-nya
+kebetulan sama dengan beban yang dipakai. Begitu ada sesi yang center-nya menyimpang, keduanya
+berpisah dan yang tercetak di sertifikat (§4) ikut berbeda.
+
+**Yang ditanyakan:** apakah kolom `Weight mass` (beban uji eksentrisitas) wajib diisi teknisi mulai
+sekarang? Kalau ya, rumusnya dipindah ke `beban − pembacaan` mengikuti master. Kalau tidak,
+pembacaan center tetap jadi acuan dan itu perlu dinyatakan sebagai keputusan, bukan kebetulan.
+
+---
+
+## T14 — Berapa desimal yang benar di sertifikat? Tiga workbook menjawab berbeda
+
+Sel yang sama diformat berbeda di ketiga master, dan bedanya bukan turunan resolusi alat:
+
+| Yang dicetak | kg (res 0,02) | gram (res 0,0001) | substitusi (res 0,1) |
+|---|---|---|---|
+| §1 Deviation Standard | `0.00` | `0.0000` | `0.00` |
+| §1 Maximum Deviation | `0.00` | `0.0000` | `0.0` |
+| §3 Nominal & Correction | `0.00` | `0.0000` | `0.0` |
+| §3 & §7 Uncertainty ± | `0.000` | `0.00000` | `0.0` |
+| §6 Limit of Performance | `0.00` | `0.00000` | **`0`** |
+| §7 Nominal Standard | `0.00` | `0.000` | `0.00` |
+
+Tidak ada satu aturan pun yang meniru ketiganya sekaligus. Yang paling menonjol §6: master
+substitusi memformatnya **nol desimal**, jadi LOP 13,6606 kg terbit sebagai `± 14 kg`; sementara
+master kg memformatnya dua desimal, yang pada lembar gram akan membuat LOP 0,00077 g terbit
+sebagai `± 0,00 g` — angka yang tidak menyatakan apa pun.
+
+**Yang dipakai sekarang** (dan yang perlu dikonfirmasi):
+
+- `d` = desimal dari resolusi → §3 Nominal & Correction, §2, §4, §5, §7 Nominal.
+  Cocok persis di ketiga master.
+- `max(d, 2)` → §1 Deviation Standard. Cocok persis di ketiga master.
+- `d + 1` → §3 & §7 Uncertainty ±, dan §6 LOP. Cocok di gram; satu digit **lebih banyak**
+  daripada kg & substitusi.
+
+Arah pemilihannya sengaja MELEBIH, bukan mengurang: digit tambahan di kolom ketidakpastian tidak
+menyesatkan siapa pun, sementara digit yang hilang menghapus angka pentingnya. Ini juga yang
+membuat **T11** (U95 tercetak satu desimal lebih pendek daripada master) tidak lagi berlaku untuk
+lembar Timbangan.
+
+**Yang ditanyakan:** apakah lab menghendaki format yang seragam untuk ketiga metode? Kalau ya,
+mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitusi memang disengaja?
