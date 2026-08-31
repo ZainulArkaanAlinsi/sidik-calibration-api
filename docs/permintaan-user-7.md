@@ -598,33 +598,47 @@ Ketahuan waktu mengadu seluruh 21 nama alat di mock satu per satu ke registry.
 
 **Sumber nama PT di luar data PT Sidik: SUDAH DIPILIH** (29 Agt 2026) — lihat K16. Tidak ada API
 resmi & gratis untuk daftar perusahaan Indonesia: AHU (Kemenkumham) memegang data PT terdaftar tapi
-tidak membuka API publik, dan OSS/BKPM hanya untuk mitra berizin. Yang tersedia sumber peta dengan
-API key. Dipilih **Google Places (`places:searchText`)** karena cakupan perusahaan Indonesia-nya
-paling tebal termasuk pabrik di kawasan industri — yaitu justru pelanggan lab.
+tidak membuka API publik, dan OSS/BKPM hanya untuk mitra berizin. Yang tersedia sumber peta.
+
+**Penyedianya diganti 31 Agt 2026 atas keputusan pemilik proyek: nol tagihan.** Yang gratis dan
+bisa dipakai tanpa kunci cuma **OpenStreetMap lewat Nominatim**, dan itu yang jadi bawaan sekarang.
+Google Places tetap ada di balik satu setelan (`DIREKTORI_PERUSAHAAN_DRIVER=google`) — antarmuka
+`DirektoriPerusahaan` memang dipasang untuk ini, jadi controller, layar HP, dan bentuk datanya nol
+berubah.
+
+Harganya nyata dan sudah diterima: cakupan OSM **lebih tipis**, jadi pabrik di kawasan industri
+yang belum ada yang memetakan memang tidak akan ketemu. Lapis 3 ada justru untuk itu.
 
 Bentuknya **internal dulu, direktori luar sebagai jalan keluar** — bukan salah satunya:
 
 | Lapis | Yang dipakai |
 |---|---|
-| 1 | `GET /customers/lookup` — master lab, gratis, instan. Sejak 29 Agt tahan tanda baca (`nama_normal`) |
-| 2 | `GET /customers/direktori` — proxy ke Google Places. Dipanggil hanya kalau teknisi menekannya |
+| 1 | `GET /customers/lookup` — master lab, gratis, instan. Sejak 29 Agt tahan tanda baca (`nama_normal`). Sejak 31 Agt daftar utuhnya disalin ke HP, jadi lapis ini tetap hidup waktu server tak terjangkau |
+| 2 | `GET /customers/direktori` — proxy ke OpenStreetMap (bawaan) atau Google. Dipanggil hanya kalau teknisi menekannya |
 | 3 | Ketik tangan — pabrik yang tidak pernah didaftarkan ke peta memang tidak akan ketemu |
 
-Tiga hal yang **tidak boleh dibongkar tanpa alasan baru**:
+Empat hal yang **tidak boleh dibongkar tanpa alasan baru**:
 
-1. **API key hidup di server, tidak pernah di APK.** Key di dalam aplikasi bisa dicabut siapa pun
-   dari berkasnya lalu dipakai orang lain atas tagihan lab ini — dan endpointnya ditagih per
-   request. Karena itu HP menembak `/customers/direktori`, bukan Google langsung.
-2. **"Key belum disetel" ≠ "PT tidak ditemukan".** `503` (belum disetel) dan `502` (direktori
-   mati) sengaja dipisah dari `200` + daftar kosong. Diratakan, teknisi membacanya sebagai PT-nya
-   tidak ada di direktori lalu mendaftarkan ulang perusahaan yang sebenarnya ada di sana.
+1. **Kredensial hidup di server, tidak pernah di APK.** Berlaku walau sekarang tidak ada kunci sama
+   sekali: kalau penyedianya suatu saat ditukar balik ke yang berbayar, key di dalam aplikasi bisa
+   dicabut siapa pun dari berkasnya lalu dipakai orang lain atas tagihan lab ini. Karena itu HP
+   menembak `/customers/direktori`, bukan penyedianya langsung.
+2. **"Belum disetel" ≠ "PT tidak ditemukan".** `503` (belum disetel) dan `502` (direktori mati)
+   sengaja dipisah dari `200` + daftar kosong. Diratakan, teknisi membacanya sebagai PT-nya tidak
+   ada di direktori lalu mendaftarkan ulang perusahaan yang sebenarnya ada di sana. Dengan driver
+   `osm`, `503` berhenti pernah terjadi — tidak ada yang perlu disetel.
 3. **Hasil direktori bukan data akta.** Nama & alamat di sana perusahaan sebagaimana muncul di
    peta. Selalu bisa disunting teknisi sebelum tersimpan, dan batas itu ditulis di layar — karena
    yang dipilih mendarat di blok OWNER sertifikat.
+4. **Kewajiban ke Nominatim dijaga kode, bukan niat baik.** Layanan sukarela dengan kebijakan
+   tegas, dan melanggarnya memblokir alamat IP server lab tanpa peringatan: User-Agent yang
+   menyebut diri (dijamin `NominatimDirektori`, bukan setelan — setelan kosong mengembalikan
+   string kosong, bukan `null`), limiter `direktori-luar` yang dihitung **global** bukan per-IP,
+   bukan untuk autocomplete, dan atribusi ODbL yang ikut di badan respons.
 
-**Yang MASIH menunggu pemilik proyek:** API key-nya sendiri (`DIREKTORI_PERUSAHAAN_KEY` di `.env`
-server) beserta batas kuota di konsol Google. Sampai diisi, lapis 2 mati dan mengatakannya
-terus terang; lapis 1 & 3 jalan penuh.
+**Yang MASIH tersisa:** satu uji nyata ke Nominatim dari server. Bentuk jawabannya di test ditulis
+dari dokumentasi, bukan dari respons asli — jaringan lingkungan pengembangan tidak bisa menembus ke
+`nominatim.openstreetmap.org`. Parsernya sengaja toleran, tapi itu bukan bukti.
 
 ---
 
@@ -1177,7 +1191,7 @@ Jangan ditanyakan ulang.
 | **K13** | `Multimeter Texio/DL` tercetak di `Standar Used` lembar Thermocouple, tapi tidak ada barisnya di master `standards` | Dropdown standar lembar Thermocouple kurang satu pilihan yang ada di kertas |
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
-| ~~**K16**~~ | ~~Sumber nama + alamat PT Indonesia untuk pencarian pelanggan~~ | **BERES** (29 Agt 2026) — internal dulu, direktori Google Places sebagai jalan keluar, ketik tangan sebagai dasar. Teknisi juga boleh mendaftarkan PT sendiri (sejalan K3/K4). Rinciannya di §11. **Sisa: API key dari pemilik proyek**, bukan kode |
+| ~~**K16**~~ | ~~Sumber nama + alamat PT Indonesia untuk pencarian pelanggan~~ | **BERES** (31 Agt 2026) — internal dulu, direktori luar sebagai jalan keluar, ketik tangan sebagai dasar. Teknisi juga boleh mendaftarkan PT sendiri (sejalan K3/K4). Rinciannya di §11. **Keputusan pemilik proyek 31 Agt: nol tagihan** — penyedianya pindah ke OpenStreetMap/Nominatim, jadi **tidak ada API key sama sekali** dan keadaan "belum disetel" berhenti ada. Google tetap bisa dipilih lewat satu setelan. Daftar pelanggan juga disalin ke HP, jadi pemilihnya tetap jalan waktu server tak terjangkau. **Sisa: satu uji nyata ke Nominatim dari server** — bentuk jawabannya ditulis dari dokumentasi, jaringan lingkungan pengembangan tidak bisa menembus ke sana |
 | ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
 | ~~**K18**~~ | ~~Lembar TIDS: tujuh baris Setpoint sendiri, atau pengatur titik?~~ | **DIJAWAB: tujuh baris, tiap baris punya kotaknya sendiri** (27 Agt 2026). Sudah dikerjakan berikut dua lubang lain di lembar yang sama — lihat §12 K18 |
 
