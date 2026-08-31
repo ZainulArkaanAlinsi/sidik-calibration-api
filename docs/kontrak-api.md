@@ -464,6 +464,10 @@ Yang beda dari dua puluh lembar lain, dan yang wajib dibaca sebelum menggambar l
   Pilihannya dikirim server; **jangan dipetakan ulang di HP.**
 - **Blok tingkat-sesi lewat `spesifikasi_alat`**, bukan `measurements`: `keterulangan`,
   `eksentrisitas`, `histeresis`, plus `varian_master`/`tipe_display`/`tipe_timbangan`/`satuan`.
+- **`measurements[].titik_ukur` tetap wajib** (jumlah nominal keping, = kolom `Nominal` kertas).
+  Massa konvensionalnya diturunkan server dari tabel anak timbangan, jangan dikirim dari HP.
+- **`spesifikasi_alat.keterulangan` / `.eksentrisitas` / `.histeresis` berbentuk OBJEK**, bukan
+  teks — kunci `spesifikasi_alat` lain tetap teks pendek (maks 64 karakter).
 - **`measurements[].nominal` urutannya MENGIKAT** — Mass 1..6 kolom-major. Slot pertama dapat
   `ci` = 10 di varian substitusi; keping yang mendarat di slot salah menggeser budget tanpa error.
 - **DUA ketidakpastian per titik** (NMI Monograph 4). `ketidakpastian_diperluas` = U95% of

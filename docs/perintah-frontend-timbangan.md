@@ -100,7 +100,7 @@ atas 200 kg menggunakan Metode beban substitusi"*).
   "equipment_id": 42,
   "measurements": [
     {
-      "titik_ke": 1,
+      "titik_ukur": 10,           // WAJIB — kolom "Nominal" di kertas (jumlah nominal keping)
       "nominal": [10],            // Mass 1..6, KOLOM-MAJOR (lihat catatan)
       "z1": 0, "m": 10, "m_aksen": 10, "z2": 0
     }
@@ -120,6 +120,12 @@ atas 200 kg menggunakan Metode beban substitusi"*).
 }
 ```
 
+> **`titik_ukur` tetap wajib**, sama seperti dua puluh lembar lain — isinya **jumlah nominal**
+> keping yang dipakai titik itu, yaitu angka yang tercetak di kolom `Nominal` kertasnya. Massa
+> KONVENSIONAL-nya (10,000007 kg untuk keping 10 kg) diturunkan server dari tabel anak timbangan;
+> jangan dikirim dari HP — tabelnya bisa berubah begitu keping dikalibrasi ulang, dan dua angka
+> yang mengaku mewakili hal yang sama itu temuan audit.
+>
 > **`nominal` urutannya MENGIKAT.** Urut **Mass 1..6 kolom-major** seperti master: kolom kiri baris
 > 1..3 dulu, baru kolom kanan baris 1..3. Slot pertama dapat `ci` = 10 di varian substitusi dan
 > jadi satu-satunya sumber `u` standar, jadi keping yang mendarat di slot yang salah menggeser

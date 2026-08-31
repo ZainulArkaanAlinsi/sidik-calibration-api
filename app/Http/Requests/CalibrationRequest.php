@@ -158,7 +158,23 @@ class CalibrationRequest extends FormRequest
             // teks apa adanya (`0-100`, `0,001`) karena yang tercetak di
             // sertifikat juga teks, bukan hasil hitung.
             'spesifikasi_alat' => ['sometimes', 'nullable', 'array'],
-            'spesifikasi_alat.*' => ['nullable', 'string', 'max:64'],
+            // Kebanyakan kunci di sini teks pendek. TIGA kunci milik lembar
+            // Timbangan isinya BLOK — keterulangan (2 kapasitas × 10
+            // pengulangan × 2 angka), eksentrisitas (5 posisi), histeresis
+            // (2 deret × 8). Ketiganya besaran tingkat-SESI yang nggak punya
+            // `titik_ke`, jadi nggak bisa lewat `measurements`.
+            //
+            // Aturan `string|max:64` yang lama nolak ketiganya dengan 422 —
+            // dan yang ketolak bukan cuma bloknya, tapi SELURUH sesi. Ketangkap
+            // `TimbanganSesiTest` waktu jalur simpannya pertama kali diadu ke
+            // endpoint beneran; sebelum itu jalur simpan Timbangan mustahil
+            // dipakai dari HP tanpa satu pun test merah.
+            'spesifikasi_alat.*' => ['nullable', $this->spekBolehBerbentukBlok()],
+            // Batas ukuran tiap blok — bukan metrologi, tapi beban. Tanpa ini
+            // satu request bisa nitip array sebesar apa pun ke kolom JSON.
+            'spesifikasi_alat.keterulangan' => ['sometimes', 'nullable', 'array', 'max:4'],
+            'spesifikasi_alat.eksentrisitas' => ['sometimes', 'nullable', 'array', 'max:4'],
+            'spesifikasi_alat.histeresis' => ['sometimes', 'nullable', 'array', 'max:4'],
             // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
             // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana
             // yang dibaca), jadi nilainya dibatasi ke daftar yang dikenal
@@ -265,6 +281,21 @@ class CalibrationRequest extends FormRequest
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
             'measurements.*.no_probe' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:28'],
+            // Lembar TIMBANGAN — sampai enam nominal anak timbangan per titik
+            // (slot Mass 1..6 master) plus empat pembacaan yang artinya
+            // berbeda-beda: nol sebelum beban, dua pembacaan berbeban, nol
+            // sesudah. Dua puluh alat lain nggak nyentuh field ini.
+            //
+            // `max:6` bukan angka karangan: master menyediakan persis enam
+            // slot, dan slot ketujuh nggak punya baris drift di budget — jadi
+            // kepingnya bakal ikut ke massa total tapi ketidakpastiannya
+            // hilang, tanpa error.
+            'measurements.*.nominal' => ['sometimes', 'nullable', 'array', 'max:6'],
+            'measurements.*.nominal.*' => ['nullable', 'numeric', 'min:0'],
+            'measurements.*.z1' => ['sometimes', 'nullable', 'numeric'],
+            'measurements.*.m' => ['sometimes', 'nullable', 'numeric'],
+            'measurements.*.m_aksen' => ['sometimes', 'nullable', 'numeric'],
+            'measurements.*.z2' => ['sometimes', 'nullable', 'numeric'],
             // Thermohygro: satu lembar memuat dua parameter, dan baris tabelnya
             // yang membedakan — bukan alatnya.
             'measurements.*.parameter' => ['sometimes', 'nullable', Rule::in(['suhu', 'kelembaban'])],
@@ -330,6 +361,49 @@ class CalibrationRequest extends FormRequest
             'measurements.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             'measurements.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    /**
+     * Kunci `spesifikasi_alat` yang isinya BLOK, bukan teks pendek.
+     *
+     * Ketiganya milik lembar Timbangan. Ditulis sebagai daftar tertutup, bukan
+     * "terima array apa saja": kolomnya JSON tanpa skema, jadi tanpa daftar ini
+     * satu kunci salah ketik dari HP mendarat diam-diam dan baru ketahuan waktu
+     * ada yang mencari isinya.
+     */
+    private const SPEK_BERBENTUK_BLOK = ['keterulangan', 'eksentrisitas', 'histeresis'];
+
+    /**
+     * Aturan `spesifikasi_alat.*`: teks pendek buat kunci biasa, array buat
+     * ketiga kunci blok.
+     *
+     * Nggak bisa ditulis sebagai dua baris aturan terpisah — Laravel MENGGABUNG
+     * aturan wildcard dengan aturan kunci spesifik, jadi `string` dan `array`
+     * berlaku bersamaan dan dua-duanya nggak akan pernah lolos.
+     */
+    private function spekBolehBerbentukBlok(): \Closure
+    {
+        return function (string $atribut, mixed $nilai, \Closure $gagal): void {
+            $kunci = (string) mb_substr($atribut, (int) mb_strrpos($atribut, '.') + 1);
+
+            if (in_array($kunci, self::SPEK_BERBENTUK_BLOK, true)) {
+                if (! is_array($nilai)) {
+                    $gagal("Blok `{$kunci}` di spesifikasi alat harus berbentuk objek, bukan teks.");
+                }
+
+                return;
+            }
+
+            if (is_array($nilai)) {
+                $gagal("Kolom `{$kunci}` di spesifikasi alat harus teks, bukan objek.");
+
+                return;
+            }
+
+            if (mb_strlen((string) $nilai) > 64) {
+                $gagal("Kolom `{$kunci}` di spesifikasi alat kepanjangan (maksimal 64 karakter).");
+            }
+        };
     }
 
     /**
