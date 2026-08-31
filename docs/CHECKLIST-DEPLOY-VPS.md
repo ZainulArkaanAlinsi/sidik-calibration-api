@@ -325,3 +325,30 @@ Tiga yang paling gampang kelewat dan paling mahal akibatnya:
    pelanggan menagih.
 3. **`PengaturanSertifikatSeeder` terlewat** → sertifikat terbit dengan penanda
    tangan yang salah. Tidak ada error, tidak ada yang curiga.
+
+## PDF sertifikat & disk yang kehapus tiap deploy
+
+Produksi Render jalan dengan `ARSIP_DRIVER=local`, dan disk container Render itu **sementara** —
+kehapus tiap deploy dan tiap container restart (`docs/deploy-gratis-render.md` §227). Artinya tiap
+deploy menghapus SELURUH PDF sertifikat yang pernah terbit, sementara barisnya di database tetap
+`terbit` dengan `pdf_path` terisi.
+
+Gejalanya khas dan sempat membingungkan: **halaman QR dan unduhan Excel tetap jalan** (dua-duanya
+dirakit dari `certificates.snapshot` di database), **cuma unduhan PDF yang 404** — jadi kelihatan
+seperti "PDF-nya rusak", padahal berkasnya yang tidak ada.
+
+**Jaring pengamannya sudah terpasang:** `App\Services\BerkasPdfSertifikat` membangun ulang PDF dari
+snapshot beku begitu berkasnya tidak ditemukan, dan mencatatnya sebagai `warning` di log. Dipakai
+keempat jalur unduh (QR, API, folder berkas, tombol Filament) plus pemeriksaan lampiran email.
+Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
+
+**Itu jaring, bukan obat.** Obatnya memindahkan disk arsip ke penyimpanan yang awet:
+
+1. Buat bucket Cloudflare R2 (gratis 10 GB) — `dash.cloudflare.com` → R2 → Create bucket.
+2. Isi `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT` di Render.
+3. Salin berkas lama ke bucket dengan kunci yang SAMA PERSIS dengan isi kolom `pdf_path`,
+   `tanda_tangan_path`, dan `path`.
+4. Baru setel `ARSIP_DRIVER=s3`.
+
+Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
+tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).

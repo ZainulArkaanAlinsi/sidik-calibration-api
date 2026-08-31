@@ -251,6 +251,26 @@ turun. Nomor formulir karangan di kop lembar lab terakreditasi itu temuan audit.
 **Yang ditanyakan:** berapa nomor & revisi formulir lembar kerja Timbangan untuk metode langsung
 (satuan kg) dan satuan gram?
 
+> **SEBAGIAN TERJAWAB dari workbook (31 Agt 2026).** Sheet `DATABASE` baris 5 ketiga workbook
+> memuat tabel *Jenis Pengukuran → Metode Kalibrasi (Latest IK)*, dan barisnya:
+>
+> | Jenis Pengukuran | Metode Kalibrasi (Latest IK) |
+> |---|---|
+> | Timbangan | **`SIDIK-IK-CAL-0505-Rev.7`** |
+>
+> Itu nomor **INSTRUKSI KERJA**, dan berlaku untuk **ketiga** metode — ketiga sertifikat master
+> mencetaknya di kolom `Calibration Method` (`INPUT DATA!AD12`). Sudah dipasang lewat
+> `TimbanganProfile::KODE_METODE`.
+>
+> **Jangan tertukar dengan `SIDIK-IK-CAL-0508`** — nomor itu milik **Spectrophotometer**
+> (`DATABASE` baris 8). Kemiripannya dengan nomor FORMULIR lembar kerja Timbangan
+> (`SIDIK-FM-CAL-0508.A_Rev.4`) kebetulan: `FM` dan `IK` dua deret penomoran yang berbeda.
+>
+> **Yang MASIH ditanyakan** cuma nomor **formulir (`FM`)** lembar kerja kg & gram. Workbook tidak
+> memuatnya — satu-satunya nomor `FM` di dalamnya `SIDIK-FM-CAL-2403_Rev. 0`, dan itu formulir
+> SERTIFIKAT (`SERTIFIKAT!C78`), bukan lembar kerja. Kertas metode substitusi turun sebagai PDF
+> terpisah; dua kertas lainnya perlu dikirim dengan cara yang sama.
+
 ---
 
 ## T13 — Selisih eksentrisitas: diukur dari BEBAN atau dari pembacaan CENTER?
@@ -303,3 +323,10 @@ lembar Timbangan.
 
 **Yang ditanyakan:** apakah lab menghendaki format yang seragam untuk ketiga metode? Kalau ya,
 mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitusi memang disengaja?
+
+> **Kenapa ini tidak bisa dijawab dari workbook.** Sudah dibaca — dan justru pembacaannya yang
+> melahirkan pertanyaan ini: tabel di atas ISI format sel ketiga workbook, diambil langsung dari
+> `SERTIFIKAT` masing-masing. Ketiganya saling bertentangan, jadi tidak ada bacaan tambahan yang
+> bisa memutusnya; yang dibutuhkan keputusan lab. Satu pertanyaan saja yang benar-benar mengikat:
+> **§6 Limit of Performance lembar substitusi diformat nol desimal** — disengaja (`± 14 kg`), atau
+> sel yang lupa diformat (`± 13,66 kg`)? Sisanya kami samakan mengikuti dua master lainnya.

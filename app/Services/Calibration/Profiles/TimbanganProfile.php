@@ -126,6 +126,24 @@ class TimbanganProfile extends CalibrationProfile
         return ['Timbangan', 'Neraca', 'Balance', 'Moisture Analyzer'];
     }
 
+    /**
+     * Nomor IK Timbangan, dibaca dari `DATABASE` baris 5 ketiga workbook
+     * master: `Timbangan -> SIDIK-IK-CAL-0505-Rev.7`. Ketiga sertifikat master
+     * mencetaknya di kolom `Calibration Method` (`INPUT DATA!AD12`).
+     *
+     * JANGAN dikira `SIDIK-IK-CAL-0508`: nomor itu milik Spectrophotometer
+     * (DATABASE baris 8). Kemiripannya dengan nomor FORMULIR lembar kerja
+     * Timbangan (`SIDIK-FM-CAL-0508.A_Rev.4`) kebetulan — FM dan IK dua deret
+     * penomoran yang berbeda, dan menyamakannya bikin sertifikat menyebut
+     * metode alat lain.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0505_Rev.7';
+
+    public function kodeMetode(): ?string
+    {
+        return self::KODE_METODE;
+    }
+
     public function kodeFormula(): string
     {
         return 'gum-timbangan';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
 use App\Services\DataTampilanSertifikat;
 use Illuminate\Contracts\View\View;
@@ -85,8 +86,12 @@ class VerificationController extends Controller
      * bukan id berurutan, jadi nggak bisa ditebak/disisir. Siapa pun yang
      * megang QR-nya emang udah dikasih lembar sertifikatnya.
      */
-    public function download(Request $request, string $qrToken, CertificateExcelExporter $excel): mixed
-    {
+    public function download(
+        Request $request,
+        string $qrToken,
+        CertificateExcelExporter $excel,
+        BerkasPdfSertifikat $berkas,
+    ): mixed {
         $certificate = Certificate::query()
             ->with(['session.equipment.customer', 'organization'])
             ->where('qr_token', $qrToken)
@@ -106,12 +111,14 @@ class VerificationController extends Controller
             return response()->download($tmp, $certificate->namaFile('xlsx'))->deleteFileAfterSend();
         }
 
-        abort_unless(
-            $certificate->pdf_path && Storage::disk('arsip')->exists($certificate->pdf_path),
-            404,
-        );
+        // Dibangun ulang dari snapshot kalau berkasnya raib — disk arsip Render
+        // kehapus tiap deploy, dan sebelum ini pemegang QR dapat 404 buat
+        // sertifikat yang datanya lengkap di database. Lihat [BerkasPdfSertifikat].
+        $path = $berkas->pastikanAda($certificate);
 
-        return Storage::disk('arsip')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
+        abort_unless($path !== null, 404);
+
+        return Storage::disk('arsip')->download($path, $certificate->namaFile('pdf'));
     }
 
     public function beranda(): View

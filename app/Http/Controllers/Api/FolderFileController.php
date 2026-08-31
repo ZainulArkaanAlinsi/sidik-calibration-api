@@ -8,6 +8,7 @@ use App\Http\Resources\FolderFileResource;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\FolderFile;
+use App\Services\BerkasPdfSertifikat;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -263,9 +264,12 @@ class FolderFileController extends Controller
                 'Sertifikatnya belum punya PDF yang bisa diunduh.',
             );
 
-            abort_unless(Storage::disk('arsip')->exists($sertifikat->pdf_path), 404);
+            // Dibangun ulang dari snapshot kalau raib — lihat [BerkasPdfSertifikat].
+            $path = app(BerkasPdfSertifikat::class)->pastikanAda($sertifikat);
 
-            return Storage::disk('arsip')->download($sertifikat->pdf_path, $sertifikat->namaFile('pdf'));
+            abort_unless($path !== null, 404);
+
+            return Storage::disk('arsip')->download($path, $sertifikat->namaFile('pdf'));
         }
 
         // Lembar kerja itu TAUTAN ke record, bukan berkas — `path`-nya memang
