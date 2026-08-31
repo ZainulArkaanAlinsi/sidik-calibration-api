@@ -52,4 +52,16 @@ interface DirektoriPerusahaan
      *                        mulangin array kosong — lihat [tersedia].
      */
     public function cari(string $kata): array;
+
+    /**
+     * Kalimat atribusi yang WAJIB dipajang di layar yang memperlihatkan
+     * hasilnya, atau `null` kalau penyedianya nggak menuntut apa-apa.
+     *
+     * Ditaruh di antarmuka, bukan di layar HP, karena kewajibannya melekat ke
+     * PENYEDIANYA — dan penyedianya bisa ditukar. Kalau kalimatnya ditulis di
+     * sisi klien, menukar penyedia diam-diam bikin lab memajang atribusi yang
+     * salah (atau nggak memajangnya sama sekali), dan itu pelanggaran lisensi
+     * yang nggak ninggalin satu pun error.
+     */
+    public function atribusi(): ?string;
 }

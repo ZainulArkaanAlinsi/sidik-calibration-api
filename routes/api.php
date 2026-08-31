@@ -248,7 +248,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // tagihan lab dalam hitungan menit, dan itu nggak boleh cuma dijaga di
         // sisi yang nggak kita kendalikan.
         Route::get('/customers/direktori', [CustomerController::class, 'direktori'])
-            ->middleware('throttle:30,1');
+            ->middleware('throttle:direktori-luar');
 
         Route::post('/calibrations', [CalibrationController::class, 'store']);
         // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja

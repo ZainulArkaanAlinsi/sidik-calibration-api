@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\GooglePlacesDirektori;
+use App\Services\Direktori\NominatimDirektori;
 use App\Services\Push\FcmPengirimPush;
 use App\Services\Push\PengirimPush;
 use App\Services\Push\PengirimPushMati;
@@ -60,10 +61,27 @@ class AppServiceProvider extends ServiceProvider
         // teknisi yang percaya itu mendaftarkan ulang perusahaan yang
         // sebenarnya ada — nambah kembar justru lewat fitur yang dipasang buat
         // menguranginya.
-        $this->app->bind(DirektoriPerusahaan::class, fn (): DirektoriPerusahaan => new GooglePlacesDirektori(
-            config('services.direktori_perusahaan.key'),
-            (int) config('services.direktori_perusahaan.timeout', 8),
-        ));
+        $this->app->bind(DirektoriPerusahaan::class, function (): DirektoriPerusahaan {
+            $timeout = (int) config('services.direktori_perusahaan.timeout', 8);
+
+            // Bawaannya OpenStreetMap: gratis, tanpa key, jadi jalur direktori
+            // hidup di lingkungan mana pun tanpa disetel apa-apa dulu —
+            // termasuk mesin developer dan server yang baru dibangun.
+            //
+            // Yang nggak dikenali jatuh ke sini juga, BUKAN melempar: salah
+            // ketik di `.env` mematikan pendaftaran pelanggan di lapangan, dan
+            // itu hukuman yang jauh lebih besar daripada kesalahannya.
+            return match (config('services.direktori_perusahaan.driver')) {
+                'google' => new GooglePlacesDirektori(
+                    config('services.direktori_perusahaan.key'),
+                    $timeout,
+                ),
+                default => new NominatimDirektori(
+                    (string) config('services.direktori_perusahaan.user_agent'),
+                    $timeout,
+                ),
+            };
+        });
     }
 
     /**
@@ -110,5 +128,26 @@ class AppServiceProvider extends ServiceProvider
         $perMenit('login', 10);
         $perMenit('register', 5);
         $perMenit('password-reset', 5);
+
+        // Direktori perusahaan luar — dihitung GLOBAL, bukan per-IP.
+        //
+        // Ini satu-satunya limiter di berkas ini yang begitu, dan sengaja.
+        // Yang dijaga bukan pemakai kita, tapi KEWAJIBAN KITA ke penyedianya:
+        // Nominatim itu layanan sukarela yang menuntut maksimal satu permintaan
+        // per detik dari satu pemakai, dan yang dia hitung server ini —
+        // bukan teknisi yang menekan tombolnya.
+        //
+        // Dibatasi per-IP seperti yang lain, sepuluh teknisi yang mencari
+        // bareng jadi sepuluh permintaan sedetik, dan yang diblokir alamat IP
+        // server lab — semua orang sekaligus, tanpa peringatan.
+        //
+        // 30/menit = satu per dua detik, separuh dari batasnya. Sisanya buat
+        // gelombang pendek yang nggak terhindarkan.
+        RateLimiter::for('direktori-luar', fn () => Limit::perMinute(30)
+            ->by('direktori-luar')
+            ->response(fn () => response()->json([
+                'message' => 'Pencarian direktori lagi ramai. Tunggu sebentar, '
+                    .'atau ketik nama & alamatnya manual.',
+            ], 429)));
     }
 }

@@ -43,6 +43,11 @@ class DirektoriPerusahaanTest extends TestCase
         $this->teknisi = User::factory()->create();
         $this->viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
 
+        // Driver DIPATOK eksplisit: bawaan aplikasi sekarang OpenStreetMap
+        // (gratis, tanpa key), dan berkas ini menguji jalur Google yang
+        // berbayar. Tanpa patokan ini, test-nya diam-diam menguji driver yang
+        // salah dan tetap hijau buat alasan yang keliru.
+        config()->set('services.direktori_perusahaan.driver', 'google');
         config()->set('services.direktori_perusahaan.key', 'kunci-uji');
     }
 
