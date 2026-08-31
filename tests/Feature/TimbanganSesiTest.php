@@ -214,6 +214,75 @@ class TimbanganSesiTest extends TestCase
     }
 
     /**
+     * Sesi yang DIKEMBALIKAN admin harus pulang dengan isinya utuh —
+     * permintaan 8 pemilik proyek.
+     *
+     * Buat lembar ini "utuh" berarti dua hal sekaligus, dan dua-duanya lewat
+     * jalur yang berbeda: empat pembacaan tiap titik + slot nominalnya lewat
+     * `raw_measurements` (dibedakan `peran_sensor`/`sensor_ke`), sementara
+     * keterulangan, eksentrisitas & histeresis lewat `spesifikasi_alat`.
+     *
+     * Yang bikin ini pantas dijaga: kegagalannya nggak bersuara. Sesi Inkubator
+     * yang dikembalikan dulu memulangkan grid KOSONG — barisnya tersimpan
+     * lengkap sejak ingest, cuma nggak pernah ikut pulang, dan teknisi mengetik
+     * ulang 180 sel termasuk angka yang sudah benar.
+     */
+    public function test_sesi_yang_dibuka_lagi_pulang_utuh(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertCreated()
+            ->json('data.id');
+
+        $data = $this->actingAs($teknisi)
+            ->getJson("/api/calibrations/{$id}")
+            ->assertOk()
+            ->json('data');
+
+        // --- sisi per-titik
+        $baris = collect($data['pembacaan_mentah'] ?? [])
+            ->where('titik_ke', 3)
+            ->keyBy('peran_sensor');
+
+        foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
+            $this->assertArrayHasKey(
+                $peran,
+                $baris->all(),
+                "Pembacaan `{$peran}` nggak ikut pulang — teknisi bakal mengetiknya ulang.",
+            );
+        }
+
+        $nominal = collect($data['pembacaan_mentah'] ?? [])
+            ->where('titik_ke', 3)
+            ->where('peran_sensor', TimbanganMentah::PERAN_NOMINAL)
+            ->sortBy('sensor_ke')
+            ->values();
+
+        $this->assertCount(2, $nominal, 'Slot nominal titik 3 nggak ikut pulang.');
+        $this->assertEqualsWithDelta(20.0, (float) $nominal[0]['pembacaan'], self::TOLERANSI);
+        $this->assertEqualsWithDelta(10.0, (float) $nominal[1]['pembacaan'], self::TOLERANSI);
+
+        // --- sisi tingkat-sesi
+        $spek = $data['spesifikasi_alat'] ?? [];
+
+        foreach (['keterulangan', 'eksentrisitas'] as $blok) {
+            $this->assertArrayHasKey($blok, $spek, "Blok `{$blok}` nggak ikut pulang.");
+            $this->assertIsArray($spek[$blok], "Blok `{$blok}` pulang bukan sebagai objek.");
+        }
+
+        $this->assertCount(10, $spek['keterulangan']['maks']['mi'], 'Sepuluh pengulangan MAX nggak utuh.');
+        $this->assertEqualsWithDelta(
+            20.02,
+            (float) $spek['eksentrisitas']['baca']['back'],
+            self::TOLERANSI,
+            'Angka eksentrisitas berubah waktu pulang.',
+        );
+        $this->assertSame('kg', $spek['varian_master'], 'Varian master nggak ikut pulang — hitung ulang bakal menebak.');
+    }
+
+    /**
      * `tipe_timbangan` memilih tabel anak timbangan, dan itu MENGGESER angka.
      *
      * Diadu lewat endpoint, bukan cuma di kalkulator: dropdown ini gampang
