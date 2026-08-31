@@ -161,6 +161,15 @@ class CustomerController extends Controller
 
         return response()->json([
             'data' => array_map(fn ($perusahaan) => $perusahaan->toArray(), $hasil),
+
+            // Atribusi datang dari PENYEDIANYA, bukan dikarang klien.
+            //
+            // Kewajibannya melekat ke sumber datanya (ODbL buat OpenStreetMap),
+            // dan sumbernya bisa ditukar lewat satu setelan. Kalau kalimatnya
+            // ditulis di sisi HP, menukar penyedia diam-diam bikin lab memajang
+            // atribusi yang salah — pelanggaran lisensi yang nggak ninggalin
+            // satu pun error.
+            'atribusi' => $direktori->atribusi(),
         ]);
     }
 
