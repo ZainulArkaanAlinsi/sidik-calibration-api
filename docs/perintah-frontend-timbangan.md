@@ -275,6 +275,14 @@ Delapan bagian, dan tiap angkanya ditelusuri ke selnya:
 | 7. WEIGHING UNCERTAINTY | Nominal Standard, **Uncertainty ±**, `K =` | `titik_ukur`, `u95_penimbangan`, faktor cakupan |
 | 8. STANDARD USED | Name, Nominal Mass, Merk/Class, SN, Traceability | anak timbangan yang dicentang di `standar_dicek` |
 
+**Nomor metode:** `SIDIK-IK-CAL-0505_Rev.7` — `DATABASE` baris 5, berlaku untuk ketiga varian, dan
+dicetak di kolom `Calibration Method` header sertifikat. Dinyatakan profilnya sendiri lewat
+`TimbanganProfile::KODE_METODE`, **bukan** dicocokkan dari nama alat: cadangan pencocokan nama di
+`CertificateSnapshotBuilder` mencari kata "Timbangan" di dalam nama alat, dan timbangan yang di
+lapangan bernama *Moisture Analyzer* (sesi master gram) tidak memuatnya — sebelum ini kolom
+metodenya terbit berisi `NMI Monograph 4 (CSIRO 2010)`, rujukan pustaka di tempat dokumen
+terakreditasi harus menyebut instruksi kerja lab.
+
 **Status: SUDAH DICETAK.** Kedelapan bagian keluar dari `snapshot['timbangan']` — disusun
 `TimbanganProfile::ringkasanSertifikat()` waktu sertifikat terbit, dibekukan utuh, lalu digambar
 cabang `@elseif ($timbangan)` di `resources/views/sertifikat/pdf.blade.php`. Presedennya Autoklaf

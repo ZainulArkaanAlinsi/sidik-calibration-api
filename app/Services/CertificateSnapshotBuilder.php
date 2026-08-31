@@ -491,6 +491,26 @@ class CertificateSnapshotBuilder
             return $sesi->calibrationMethod->kodeLengkap();
         }
 
+        // Profil alat menang atas cadangan pencocokan nama di bawah.
+        //
+        // Cadangan itu mencocokkan NAMA ALAT ke kolom "Jenis Pengukuran", dan
+        // meleset begitu pelanggan menamai alatnya di luar kosakata master —
+        // timbangan bernama "Moisture Analyzer" tidak memuat kata "Timbangan",
+        // jadi kolom `Calibration Method` sertifikatnya terbit berisi rujukan
+        // pustaka alih-alih nomor IK lab. Lihat `CalibrationProfile::kodeMetode`.
+        //
+        // Dua puluh profil lain balik `null` di sini dan jatuh ke jalur lama
+        // tanpa berubah sama sekali.
+        $alatIni = $sesi->equipment;
+
+        $dariProfil = $alatIni
+            ? app(CalibrationProfileRegistry::class)->untukAlat($alatIni)?->kodeMetode()
+            : null;
+
+        if ($dariProfil !== null) {
+            return $dariProfil;
+        }
+
         // Admin nggak selalu milih metode sebelum approve. Kalau nggak dipilih,
         // yang dipakai IK TERBARU buat jenis pengukurannya — itu persis tabel
         // "Jenis Pengukuran → Metode Kalibrasi (Latest IK)" di lembar master,

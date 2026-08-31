@@ -9,6 +9,7 @@ use App\Mail\SertifikatKePelanggan;
 use App\Models\Certificate;
 use App\Models\CertificateEmailLog;
 use App\Models\User;
+use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
 use App\Services\QrCodeGenerator;
 use App\Support\Mailer;
@@ -96,10 +97,14 @@ class CertificateController extends Controller
             'Sertifikat ini belum punya PDF yang bisa diunduh.',
         );
 
-        // Baris di DB bilang terbit tapi file-nya raib (kehapus manual, dsb).
-        abort_unless(Storage::disk('arsip')->exists($certificate->pdf_path), 404);
+        // Baris di DB bilang terbit tapi file-nya raib — kehapus manual, atau
+        // (yang jauh lebih sering) kebuang deploy karena disk arsip Render itu
+        // sementara. Dibangun ulang dari snapshot alih-alih 404.
+        $path = app(BerkasPdfSertifikat::class)->pastikanAda($certificate);
 
-        return Storage::disk('arsip')->download($certificate->pdf_path, $certificate->namaFile('pdf'));
+        abort_unless($path !== null, 404);
+
+        return Storage::disk('arsip')->download($path, $certificate->namaFile('pdf'));
     }
 
     /**
@@ -314,8 +319,11 @@ class CertificateController extends Controller
                 ], 422);
             }
 
+            // Sama seperti jalur unduh: berkas yang raib dibangun ulang dari
+            // snapshot dulu, baru dinyatakan hilang. Tanpa ini tiap deploy
+            // bikin seluruh kiriman email berlampiran PDF ditolak 422.
             abort_unless(
-                Storage::disk('arsip')->exists($certificate->pdf_path),
+                app(BerkasPdfSertifikat::class)->pastikanAda($certificate) !== null,
                 422,
                 'Berkas PDF sertifikatnya nggak ketemu di penyimpanan. Coba terbitkan ulang dulu.',
             );

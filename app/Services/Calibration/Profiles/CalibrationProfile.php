@@ -748,6 +748,34 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Nomor Instruksi Kerja alat ini apa adanya (`SIDIK-IK-CAL-0505_Rev.7`),
+     * atau `null` kalau profilnya nggak menyatakan.
+     *
+     * ## Kenapa perlu, padahal sudah ada cadangan pencocokan nama
+     *
+     * [\App\Services\CertificateSnapshotBuilder::metodeKalibrasi] mencocokkan
+     * NAMA ALAT ke kolom "Jenis Pengukuran" tabel master. Itu jalan selama nama
+     * alatnya memuat jenis pengukurannya ("Timbangan Elektronik" memuat
+     * "Timbangan"), dan MELESET begitu tidak: timbangan yang di lapangan
+     * bernama "Moisture Analyzer" tidak memuat kata "Timbangan" sama sekali,
+     * jadi cadangannya tidak kena dan kolom `Calibration Method` sertifikat
+     * terbit berisi rujukan pustaka (`NMI Monograph 4`) alih-alih nomor IK lab.
+     *
+     * Di dokumen terakreditasi itu salah menyebut metode — dan tidak ada error
+     * di mana pun, karena kolomnya memang terisi.
+     *
+     * Yang nyatain di sini profilnya sendiri, bukan nama alatnya: satu profil
+     * = satu jenis pengukuran = satu baris IK di master, apa pun nama yang
+     * ditulis pelanggan di badan alatnya.
+     *
+     * Default `null` = alat ini lewat jalur lama tanpa berubah sama sekali.
+     */
+    public function kodeMetode(): ?string
+    {
+        return null;
+    }
+
+    /**
      * Apakah tiap titik ukur berupa GRID sensor (banyak termokopel × pengulangan
      * + Indikator), bukan satu deret pembacaan datar.
      *

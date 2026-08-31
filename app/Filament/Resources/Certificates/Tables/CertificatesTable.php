@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Certificates\Tables;
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -80,14 +81,25 @@ class CertificatesTable
                 Action::make('download')
                     ->label('Unduh PDF')
                     ->icon('heroicon-o-arrow-down-tray')
+                    // Berkas yang RAIB nggak lagi menyembunyikan tombolnya.
+                    //
+                    // Disk arsip Render kehapus tiap deploy, jadi syarat
+                    // `exists()` di sini bikin tombol unduh lenyap dari SELURUH
+                    // baris sehabis tiap deploy — dan admin tidak punya cara
+                    // tahu kenapa. Sekarang yang menentukan cuma status &
+                    // `pdf_path`; berkasnya dibangun ulang dari snapshot waktu
+                    // diklik. Lihat [\App\Services\BerkasPdfSertifikat].
                     ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_TERBIT
-                        && $record->pdf_path
-                        && Storage::disk('arsip')->exists($record->pdf_path))
+                        && $record->pdf_path)
                     ->action(function (Certificate $record): StreamedResponse {
+                        $path = app(BerkasPdfSertifikat::class)->pastikanAda($record);
+
+                        abort_unless($path !== null, 404, 'Berkas PDF-nya nggak bisa dibangun ulang.');
+
                         // `nomor` ada slash-nya (CAL/2026/07/0001) — nggak boleh jadi nama file.
                         $namaFile = 'Sertifikat-'.str_replace('/', '-', (string) $record->nomor).'.pdf';
 
-                        return Storage::disk('arsip')->download($record->pdf_path, $namaFile);
+                        return Storage::disk('arsip')->download($path, $namaFile);
                     }),
 
                 // Export Excel (spesifikasi poin 10). Dibikin on demand dari
