@@ -4,6 +4,7 @@ namespace App\Services\Direktori;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -180,7 +181,58 @@ class NominatimDirektori implements DirektoriPerusahaan
             );
         }
 
+        $this->laporkanKalauSemuaTerbuang($tempat, $hasil);
+
         return $hasil;
+    }
+
+    /**
+     * Direktorinya menjawab, tapi NGGAK satu baris pun lolos pembacaan kita.
+     *
+     * Ini satu-satunya kegagalan di berkas ini yang **nggak kelihatan sama
+     * sekali** dari luar. Semua kegagalan lain melempar [DirektoriGagal] dan
+     * mendarat di layar sebagai 502; yang ini pulang sebagai `200` + daftar
+     * kosong — dan di layar teknisi itu terbaca persis sama dengan
+     * "PT-nya memang belum dipetakan".
+     *
+     * Bedanya besar. Yang pertama berarti pembacaan kita yang salah dan harus
+     * dibetulkan; yang kedua keadaan normal yang jalan keluarnya ketik tangan.
+     * Disamakan, pembacaan yang rusak bisa hidup berbulan-bulan tanpa ada yang
+     * tahu — dan yang kelihatan cuma "direktorinya kok nggak pernah nemu apa-
+     * apa".
+     *
+     * Kenapa dicatat, bukan dilempar: nol hasil TETAP jawaban yang sah, dan
+     * mematikan pencarian gara-gara dugaan bikin teknisi kehilangan lapis yang
+     * masih mungkin benar. Yang dibutuhkan cuma jejak yang bisa dibaca orang
+     * yang memeriksa nanti — berikut kunci yang BENERAN datang, karena itu yang
+     * menjawab "bentuknya berubah di mana".
+     *
+     * Nama tempat & kata kunci pencarian sengaja NGGAK ikut dicatat: yang
+     * dibutuhkan buat memperbaiki pembacaan cuma bentuknya, dan log server
+     * bukan tempat menaruh nama pelanggan.
+     *
+     * @param  array<int, mixed>  $mentah
+     * @param  array<int, PerusahaanDitemukan>  $hasil
+     */
+    private function laporkanKalauSemuaTerbuang(array $mentah, array $hasil): void
+    {
+        if ($mentah === [] || $hasil !== []) {
+            return;
+        }
+
+        $baris = null;
+
+        foreach ($mentah as $satu) {
+            if (is_array($satu)) {
+                $baris = $satu;
+                break;
+            }
+        }
+
+        Log::warning('Direktori OSM menjawab, tapi nol baris lolos dibaca.', [
+            'jumlah_baris' => count($mentah),
+            'kunci_baris_pertama' => $baris === null ? null : array_keys($baris),
+        ]);
     }
 
     /**
