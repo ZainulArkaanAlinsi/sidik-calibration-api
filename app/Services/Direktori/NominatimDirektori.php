@@ -53,6 +53,24 @@ class NominatimDirektori implements DirektoriPerusahaan
 
     private const MAKS_HASIL = 10;
 
+    /**
+     * Dipakai kalau setelannya kosong. BUKAN kemewahan.
+     *
+     * Aturan pertama Nominatim: klien yang nggak menyebut dirinya ditolak, dan
+     * yang kena alamat IP server-nya. Sementara `DIREKTORI_PERUSAHAAN_USER_AGENT=`
+     * yang dibiarkan kosong di `.env` mulangin string kosong, bukan `null` —
+     * jadi nilai bawaan di `config/services.php` NGGAK kepakai, dan yang
+     * berangkat ke sana klien anonim.
+     *
+     * Ketahuan di CI: berkas `.env.example` disalin apa adanya jadi `.env`,
+     * barisnya kosong, dan test yang menjaga aturan ini merah. Di server itu
+     * nggak bakal merah — dia cuma diblokir.
+     *
+     * Jadi jaminannya ditaruh di kelas ini, bukan di setelan: dari mana pun
+     * nilainya datang, yang berangkat selalu menyebut dirinya.
+     */
+    private const USER_AGENT_BAWAAN = 'SidikCalibration/1.0 (+https://github.com/ZainulArkaanAlinsi/sidik-calibration-api)';
+
     /** Batas bawah & atas waktu tunggu, dalam detik. Lihat konstruktor. */
     private const TIMEOUT_MIN = 1;
 
@@ -60,10 +78,18 @@ class NominatimDirektori implements DirektoriPerusahaan
 
     private readonly int $timeoutDetik;
 
+    private readonly string $userAgent;
+
     public function __construct(
-        private readonly string $userAgent,
+        ?string $userAgent = null,
         int $timeoutDetik = 8,
     ) {
+        // Setelan kosong bukan alasan berangkat anonim — lihat
+        // [USER_AGENT_BAWAAN]. `.env` yang barisnya kosong mulangin `''`, dan
+        // `''` lolos dari nilai bawaan mana pun yang ditulis di config.
+        $bersih = trim((string) $userAgent);
+        $this->userAgent = $bersih === '' ? self::USER_AGENT_BAWAAN : $bersih;
+
         // Dijepit, sama alasannya dengan driver satunya: `timeout(0)` di Guzzle
         // artinya menunggu SELAMANYA, dan nol itu justru yang keluar dari
         // setelan `.env` yang kosong atau salah ketik.

@@ -171,6 +171,32 @@ class DirektoriOsmTest extends TestCase
     }
 
     /**
+     * Setelan User-Agent yang KOSONG tetap tidak berangkat anonim.
+     *
+     * Bukan kasus tepi: `DIREKTORI_PERUSAHAAN_USER_AGENT=` yang dibiarkan
+     * kosong di `.env` mulangin string kosong, bukan `null` — jadi nilai bawaan
+     * di `config/services.php` nggak pernah kepakai. Persis itu yang kejadian
+     * di CI, tempat `.env.example` disalin apa adanya.
+     *
+     * Di sini merah. Di server sungguhan nggak ada yang merah — Nominatim cuma
+     * berhenti menjawab, dan alamat IP server labnya diblokir.
+     */
+    public function test_user_agent_kosong_tetap_menyebut_dirinya(): void
+    {
+        config()->set('services.direktori_perusahaan.user_agent', '');
+
+        $this->jawaban([]);
+
+        $this->actingAs($this->teknisi)->getJson(self::URL.'?search=Sinar')->assertOk();
+
+        Http::assertSent(function ($request) {
+            $ua = $request->header('User-Agent')[0] ?? '';
+
+            return $ua !== '' && ! str_starts_with($ua, 'GuzzleHttp');
+        });
+    }
+
+    /**
      * Atribusi ODbL ikut di badan respons, bukan dikarang klien: kewajibannya
      * melekat ke penyedianya, dan penyedianya bisa ditukar lewat satu setelan.
      */
