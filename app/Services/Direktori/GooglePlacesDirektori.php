@@ -73,6 +73,12 @@ class GooglePlacesDirektori implements DirektoriPerusahaan
     }
 
     /** {@inheritDoc} */
+    public function atribusi(): ?string
+    {
+        return 'Powered by Google';
+    }
+
+    /** {@inheritDoc} */
     public function tersedia(): bool
     {
         return $this->key !== null && $this->key !== '';

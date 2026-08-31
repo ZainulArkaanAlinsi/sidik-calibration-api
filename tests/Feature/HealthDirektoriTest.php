@@ -31,6 +31,10 @@ class HealthDirektoriTest extends TestCase
 {
     public function test_key_disetel_dilaporkan_tanpa_membocorkan_nilainya(): void
     {
+        // Driver berbayar dipatok: cuma di situ "disetel" punya dua nilai.
+        // Driver OpenStreetMap (bawaan) nggak punya key, jadi selalu siap —
+        // diuji terpisah di `DirektoriOsmTest`.
+        config()->set('services.direktori_perusahaan.driver', 'google');
         config()->set('services.direktori_perusahaan.key', 'kunci-rahasia-banget');
         Http::fake();
 
@@ -55,6 +59,7 @@ class HealthDirektoriTest extends TestCase
 
     public function test_key_kosong_dilaporkan_belum_disetel(): void
     {
+        config()->set('services.direktori_perusahaan.driver', 'google');
         config()->set('services.direktori_perusahaan.key', null);
 
         $this->getJson('/api/health')
@@ -69,6 +74,7 @@ class HealthDirektoriTest extends TestCase
      */
     public function test_tidak_pernah_menembak_penyedia_berbayar(): void
     {
+        config()->set('services.direktori_perusahaan.driver', 'google');
         config()->set('services.direktori_perusahaan.key', 'kunci-uji');
         Http::fake();
 

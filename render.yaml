@@ -163,6 +163,18 @@ services:
       # Di konsol Google, key ini dipanggil DARI SERVER: pembatasan aplikasi
       # jangan disetel ke "Android apps"/"HTTP referrers" (itu bikin semua
       # permintaan ditolak 403 dan endpointnya memulangkan 502).
+      # `osm` (bawaan) = OpenStreetMap lewat Nominatim: gratis, tanpa API key.
+      # `google` = Places API: cakupan lebih tebal, tapi butuh key & ditagih
+      # per request.
+      - key: DIREKTORI_PERUSAHAAN_DRIVER
+        value: osm
+
+      # Nominatim menolak klien yang nggak menyebut dirinya, dan yang diblokir
+      # alamat IP service ini — bukan satu request.
+      - key: DIREKTORI_PERUSAHAAN_USER_AGENT
+        value: SidikCalibration/1.0 (kalibrasi PT Sidik)
+
+      # Cuma perlu kalau DIREKTORI_PERUSAHAAN_DRIVER=google.
       - key: DIREKTORI_PERUSAHAAN_KEY
         sync: false
 

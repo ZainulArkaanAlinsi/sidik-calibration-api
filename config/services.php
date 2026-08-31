@@ -163,7 +163,25 @@ return [
     | jangan cuma di sini.
     */
     'direktori_perusahaan' => [
+        // `osm` (bawaan) = OpenStreetMap lewat Nominatim: GRATIS, tanpa API key,
+        // tanpa tagihan. Cakupan pabriknya lebih tipis — yang nggak ketemu
+        // diketik tangan, dan jalur itu selalu jalan.
+        //
+        // `google` = Places API: cakupannya lebih tebal, tapi butuh key dan
+        // ditagih per request.
+        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'osm'),
+
+        // Cuma dipakai driver `google`.
         'key' => env('DIREKTORI_PERUSAHAAN_KEY'),
+
+        // Nominatim MENOLAK klien yang nggak menyebut dirinya, dan yang
+        // diblokir alamat IP server-nya — bukan satu request. Isi dengan nama
+        // aplikasi + cara menghubungi yang beneran bisa dihubungi.
+        'user_agent' => env(
+            'DIREKTORI_PERUSAHAAN_USER_AGENT',
+            'SidikCalibration/1.0 (+https://github.com/ZainulArkaanAlinsi/sidik-calibration-api)',
+        ),
+
         'timeout' => (int) env('DIREKTORI_PERUSAHAAN_TIMEOUT', 8),
     ],
 
