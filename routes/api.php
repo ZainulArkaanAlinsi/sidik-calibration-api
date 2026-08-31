@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\VersiAplikasiController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
 use App\Http\Controllers\Api\WorksheetScanController;
+use App\Services\Direktori\DirektoriPerusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -43,10 +44,26 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Dipakai mobile buat mastiin sambungan ke API jalan.
-Route::get('/health', fn () => response()->json([
+Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     'status' => 'ok',
     'app' => config('app.name'),
     'time' => now()->utc()->toIso8601ZuluString(),
+
+    // Setelan yang nggak bisa diperiksa dari luar tanpa login, padahal
+    // pertanyaannya sering: "key-nya udah kebaca server belum?"
+    //
+    // Tanpa ini jawabannya cuma bisa didapat dengan membuka aplikasi, login
+    // sebagai teknisi, dan menekan tombol cari — atau membuka dashboard
+    // penyedia hosting. Dua-duanya butuh orang yang megang akunnya, dan itu
+    // bikin pertanyaan sepele ("sudah nyampe belum?") jadi bolak-balik yang
+    // panjang tiap kali setelannya diubah.
+    //
+    // Yang dilaporkan cuma ADA/TIDAK-nya, dan itu batas yang disengaja:
+    //  - Nilainya sendiri nggak pernah ikut. Nggak juga panjangnya.
+    //  - NOL request ke penyedia. `tersedia()` cuma membaca config, jadi
+    //    endpoint publik ini nggak bisa dipakai orang buat menghabiskan kuota
+    //    berbayar lab — itu yang bikin dia aman dibiarkan tanpa auth.
+    'direktori_perusahaan' => ['disetel' => $direktori->tersedia()],
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
