@@ -180,53 +180,74 @@ class TimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * Lembar ini BELUM punya jalur kamera — dan itu berlaku buat KEDUA
-     * gerbangnya, cloud maupun lokal.
+     * Kamera LOKAL nyala, jalur CLOUD tetap mati — dan yang nyala digerbangi
+     * per TABEL, bukan per lembar.
      *
-     * ## `didukung` (jalur CLOUD) — false
+     * ## `didukung` (jalur CLOUD) — tetap false
      *
      * Tujuh blok yang tidak sebentuk tidak bisa diungkapkan lewat
      * `kolom_suhu` / `standar_di_baris` yang cuma memodelkan satu tabel datar.
      * Dibiarkan `true`, prompt & skema JSON yang dikirim ke pembaca foto
      * dibangun untuk tabel yang tidak ada di kertasnya — dan yang balik bukan
      * error, tapi angka yang dikarang supaya kolomnya kelihatan terisi. Alasan
-     * yang sama persis dipakai lembar Autoklaf & grid Enclosure.
+     * yang sama dipakai lembar Autoklaf & grid Enclosure. Jalur itu juga
+     * MENGIRIM FOTO LEMBAR KERJA PELANGGAN ke layanan pihak ketiga; tidak ada
+     * yang meminta itu untuk lembar ini.
      *
-     * ## `lokal` (tombol `FOTO TABEL INI`, ML Kit di HP) — juga false
+     * ## `lokal` (tombol `FOTO TABEL INI`, ML Kit di perangkat) — true
      *
-     * Ini SUDAH pernah dicoba dinyalakan untuk tabel Repeatability saja
-     * (31 Agt 2026, dibatalkan hari yang sama). Bentuk layarnya memang cocok
-     * — dua baris kapasitas × sepuluh pengulangan — tapi tiga hal
-     * membatalkannya, dan ketiganya bisa dicek tanpa memegang kertasnya:
+     * Sempat dimatikan 31 Agt 2026 dengan tiga alasan. Pemilik proyek lalu
+     * mengirim cetakan `CALIBRATION RESULT` ketiga master, dan cetakan itu
+     * membatalkan dua di antaranya:
      *
-     *  1. **Kertasnya belum ada.** `kode_dokumen` lembar ini `null`: lab belum
-     *     pernah menerbitkan formulirnya. Tombol "foto tabel ini" untuk
-     *     formulir yang belum dicetak menjanjikan sesuatu yang tidak ada.
-     *  2. **Kepala kolomnya tidak terjangkau.** `PetaTabelFoto` menjangkar tiap
-     *     pengulangan ke tulisan kepala kolomnya, dan bawaannya `X1` /
-     *     `Repeat 1`. Tabel ini tidak mengirim `pengulangan_arah` maupun
-     *     `prefiks_pengulangan`, jadi tidak ada satu pun jangkar kolom yang
-     *     cocok — tiap jepretan pulang NOL sel.
-     *  3. **Blok Accuracy tidak sebentuk sama sekali.** Di kertas master dia
-     *     daftar MENURUN (`z1`, `m1`, `m1'`, `z2`, `m2`, …), satu pembacaan
-     *     per baris; grid empat kolom yang digambar layar itu bentuk LAYAR,
-     *     bukan bentuk kertasnya. Jadi menyalakan lembarnya "sebagian" tetap
-     *     meninggalkan blok terbesar tanpa jalur.
+     *  - *"kertasnya belum ada"* — SALAH. `kode_dokumen` memang null (nomor
+     *    formulir lembar kerjanya belum turun), tapi tabel yang difoto teknisi
+     *    itu sheet `INPUT DATA` yang sudah dicetak dan sudah dipakai. Nomor
+     *    formulir dan keberadaan kertas dua hal yang berbeda; menyamakannya
+     *    membuang jalur yang sebenarnya ada.
+     *  - *"kepala kolomnya tidak terjangkau"* — SALAH, dan sebabnya bentuk
+     *    yang dikirim sendiri: tabelnya transposed dari kertasnya. Di kertas
+     *    nomor pengulangan TURUN di kolom `No.` dan kapasitas berjajar ke
+     *    samping. Sesudah `sumbu_pengulangan: 'baris'`, ketiga jangkarnya
+     *    tersedia — nomor 1..10 di kiri, `Middle`/`Maximum Capacity` di atas,
+     *    dan `Zero (kg)` / `Reading (kg)` sebagai pembeda sub-kolom.
      *
-     * Yang sampai ke teknisi kalau ini dipaksakan bukan "kolomnya nggak
-     * kebaca", melainkan *"tabelnya dikenali, tapi selnya masih kosong"* —
-     * gejala yang sudah tercatat di §12 permintaan 7.
+     * Yang TETAP berlaku alasan ketiga, dan itu yang menggerbangi per tabel.
      *
-     * Syarat supaya bisa dinyalakan nanti, berurutan: lab menerbitkan
-     * kertasnya → `pengulangan_arah` diisi dari kepala kolom yang BENAR-BENAR
-     * tercetak → `ocr:rangka-geometri` dijalankan ulang dan templatnya
-     * ditandai `terverifikasi`.
+     * ## Cuma satu dari dua tabelnya yang bisa difoto
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     *  - **Repeatability** — grid sempurna sesudah orientasinya dibetulkan.
+     *    `pindai_foto: true`.
+     *  - **Accuracy** — BUKAN grid. Di kertas master blok ini daftar MENURUN,
+     *    satu pembacaan per baris, dan labelnya yang membedakan:
+     *    `z1, m1, m1', z2, m2, m2', z3…` (kg & gram) atau
+     *    `z1, M1, M1', z1', z2, M2…` (substitusi — huruf besar, dan ada baris
+     *    penutup `z'` yang dua master lain tidak punya). Grid empat kolom yang
+     *    digambar layar itu bentuk LAYAR, bukan bentuk kertasnya. Pemeta yang
+     *    ada menjangkar kolom ke nomor pengulangan; di sini pembedanya TULISAN
+     *    per baris. `pindai_foto: false` sampai jalur jangkar-label itu ada.
+     *
+     * ## Satuan ikut jadi jangkar, dan itu disengaja
+     *
+     * Label sub-kolomnya `Zero (kg)` / `Reading (kg)` di dua master dan
+     * `Zero (g)` / `Reading (g)` di master gram — persis seperti tercetak.
+     * Jadi lembar gram yang difoto ke sesi ber-satuan kg tidak menemukan
+     * jangkarnya dan pulang NOL sel. Gagal berisik, bukan memindahkan
+     * `24,9999 g` ke kotak kilogram.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool, lokal: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => false, 'standar_di_baris' => false, 'didukung' => false];
+        return [
+            // Satu angka per sel — tidak ada kolom °C di dalam tiap
+            // pengulangan. Dibiarkan true, pembaca foto diminta mencari kolom
+            // suhu yang tidak pernah ada di kertasnya.
+            'kolom_suhu' => false,
+            'standar_di_baris' => false,
+            'didukung' => false,
+            'lokal' => true,
+        ];
     }
 
     /** Tujuh blok, bukan tabel titik — lihat docblock kelas & bawaannya. */
@@ -949,6 +970,9 @@ class TimbanganProfile extends CalibrationProfile
                 // Dua tabel yang beda isinya dibedakan `grup`, seperti ketiga
                 // tabel Spectrophotometer.
                 'grup' => 'akurasi',
+                // Blok ini TIDAK bisa difoto — kertasnya daftar menurun, bukan
+                // grid. Alasan lengkapnya di `bentukPindaiFoto()`.
+                'pindai_foto' => false,
                 'judul' => 'Accuracy — pembebanan bertingkat',
                 'satuan' => $satuan,
                 'judul_nilai' => 'Nominal',
@@ -1057,8 +1081,45 @@ class TimbanganProfile extends CalibrationProfile
                 // yang ketinggalan justru yang paling baru. Kunci ini sudah
                 // dipakai lembar TIDS untuk maksud yang serumpun.
                 'simpan_ke' => 'spesifikasi_alat.keterulangan',
+                // Kertasnya menyusun blok ini KE BAWAH: kolom `No.` berisi
+                // 1..10 turun, dan yang berjajar ke samping dua KAPASITAS —
+                // masing-masing dengan sepasang sub-kolom `Zero (zi)` /
+                // `Reading (mi)`. Bentuk yang sebelumnya dikirim di sini
+                // transposed dari itu.
+                //
+                // Bukan soal selera tata letak. Pemeta foto menjangkar tiap
+                // angka ke DUA sumbu, dan dua-duanya diambil dari tulisan yang
+                // TERCETAK: nomor pengulangan di kolom kiri, dan kepala slot
+                // di atas. Dijalankan pada bentuk yang transposed, kedua
+                // jangkarnya ada di sumbu yang salah — hasilnya nol sel, dan
+                // seluruh angka dibuang. Layar pun jadi lebih sulit dibaca:
+                // teknisi memegang kertas yang barisnya turun sementara
+                // layarnya melebar sepuluh kolom.
+                'sumbu_pengulangan' => 'baris',
+                'slot_cetak' => $this->slotKeterulangan($rentang),
+                // Satu-satunya tabel lembar ini yang bentuk kertasnya muat di
+                // pemeta foto — lihat `bentukPindaiFoto()`.
+                'pindai_foto' => true,
+                // Nomor pengulangan seperti TERCETAK: `1`..`10` polos, bukan
+                // `X1`/`Repeat 1`.
+                //
+                // Bedanya menentukan, dan sumbernya beda kertas. `X1` itu
+                // bawaan lembar cetak SIDIK sendiri (`ocr:cetak-lembar`);
+                // yang difoto teknisi di lembar ini kertas MASTER LAB, dan
+                // kolom `No.`-nya menomori polos. Dibiarkan pakai bawaan,
+                // tidak ada satu pun jangkar baris yang ketemu dan tiap
+                // jepretan pulang nol sel.
+                //
+                // Nomor polos aman di sini karena pemetanya menolak
+                // menerimanya satu-satu — yang diterima cuma DERETNYA utuh,
+                // tersusun tegak di satu kolom, di kiri kolom data. Lihat
+                // `_jangkarNomorPolosBaris` di HP.
+                'pengulangan_arah' => array_map(
+                    static fn (int $i): array => ['ke' => $i, 'label' => (string) $i],
+                    range(1, 10),
+                ),
                 'judul_nilai' => 'Kapasitas',
-                'judul_pengulangan' => 'Pengulangan ke-',
+                'judul_pengulangan' => 'No.',
                 // FALSE, dan bedanya dari tabel Accuracy di atas bukan
                 // kelalaian. `titik_bisa_diubah` di HP menggerakkan SATU daftar
                 // titik yang dipakai bersama seluruh lembar (`titikKustom`) —
@@ -1085,14 +1146,122 @@ class TimbanganProfile extends CalibrationProfile
                         'satuan' => $satuan,
                     ],
                 ],
+                // Label kolom ditulis PERSIS seperti tercetak — termasuk
+                // satuannya, dan itu bagian yang menjaga angka tidak ketukar.
+                //
+                // Kertas gram menulis `Zero (g)` / `Reading (g)`; kertas kg dan
+                // substitusi menulis `Zero (kg)` / `Reading (kg)`. Pemeta foto
+                // memakai tulisan ini sebagai jangkar sub-kolom, jadi lembar
+                // gram yang difoto ke sesi ber-satuan kg TIDAK akan menemukan
+                // jangkarnya dan pulang nol sel — gagal dengan berisik, bukan
+                // memindahkan 24,9999 g ke kotak kg. Itu satu-satunya jenis
+                // kegagalan yang bisa ditanggung di sini.
                 'kolom' => [
-                    ['kode' => 'zero', 'label' => 'Zero (zi)', 'tipe' => 'angka', 'satuan' => $satuan],
-                    ['kode' => 'pembacaan', 'label' => 'Reading (mi)', 'tipe' => 'angka', 'satuan' => $satuan],
+                    ['kode' => 'zero', 'label' => sprintf('Zero (%s)', $satuan), 'tipe' => 'angka', 'satuan' => $satuan],
+                    ['kode' => 'pembacaan', 'label' => sprintf('Reading (%s)', $satuan), 'tipe' => 'angka', 'satuan' => $satuan],
                 ],
                 'jumlah_pengulangan' => 10,
                 'pengulangan' => range(1, 10),
             ]],
-            'field' => [],
+            // Dua kotak kapasitas uji — DIKETIK, bukan diturunkan dari rentang
+            // alat. Lihat `fieldKapasitasKeterulangan()`; master gram yang
+            // membuktikan kenapa.
+            'field' => $this->fieldKapasitasKeterulangan($satuan),
+        ];
+    }
+
+    /**
+     * Dua kepala slot Repeatability seperti TERCETAK di kertas.
+     *
+     * Kertasnya menulis dua baris kepala per slot: nama kapasitasnya
+     * (`Middle Capacity` / `Maximum Capacity`) lalu ANGKANYA (`50` / `100`).
+     * Yang dikirim sebagai jangkar cuma NAMANYA.
+     *
+     * ## Kenapa angkanya TIDAK ikut jadi jangkar
+     *
+     * Angka itu tidak kita ketahui. Kelihatannya setengah & penuh dari rentang
+     * alat, dan buat dua master memang begitu — tapi master GRAM membantahnya:
+     * alatnya berkapasitas **54 g** dan keterulangannya diambil di **25 g dan
+     * 50 g**, bukan 27 g dan 54 g. Kapasitas uji itu pilihan teknisi (keping
+     * yang ada di van), bukan turunan spesifikasi alat.
+     *
+     * Menjangkar ke angka yang ditebak lebih buruk daripada tidak menjangkar:
+     * `27` tidak akan ketemu di kertas, dan kolomnya gagal tanpa alasan yang
+     * kebaca. Nama slotnya selalu benar dan selalu ada.
+     *
+     * `titik_ukur` tetap dikirim, tapi tugasnya cuma IDENTITAS BARIS di layar
+     * (dipasangkan lewat urutan: Middle dulu, Maximum kedua). Angka yang
+     * dipakai menghitung datang dari dua kotak isian di `field` bagian ini —
+     * lihat `fieldKapasitasKeterulangan()`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function slotKeterulangan(float $rentang): array
+    {
+        $tengah = $rentang > 0.0 ? round($rentang / 2, 6) : 0.0;
+
+        // `satuan` SENGAJA tidak dikirim per slot.
+        //
+        // HP memakai `slot.satuan ?? kolom.label` untuk DUA hal sekaligus:
+        // tulisan kepala sub-kolom yang digambar, dan jangkar sub-kolom yang
+        // dicari pemeta foto. Diisi `kg`, kedua sub-kolom slot ini berjangkar
+        // tulisan yang SAMA — `Zero` dan `Reading` jadi tak terbedakan, dan
+        // angka nol bisa mendarat di kolom berbeban. Dikosongkan, keduanya
+        // jatuh ke `kolom.label` yang memang sudah membawa satuannya
+        // (`Zero (kg)` / `Reading (kg)`), persis seperti tercetak.
+        return [
+            [
+                'label' => 'Middle Capacity',
+                'titik_ukur' => [$tengah],
+            ],
+            [
+                'label' => 'Maximum Capacity',
+                'titik_ukur' => [$rentang],
+            ],
+        ];
+    }
+
+    /**
+     * Dua kotak KAPASITAS UJI keterulangan — diketik teknisi, bukan diturunkan.
+     *
+     * ## Kenapa ini bukan detail tata letak
+     *
+     * Angka ini masuk rumus, di dua tempat sekaligus:
+     *
+     *  1. `deviasiKurangiNominal` (nyala di varian **gram** dan **substitusi**)
+     *     membuat tiap deviasi jadi `m − z − nominal`. Nominal yang meleset
+     *     2 g menggeser SELURUH sepuluh deviasi, dan lewat situ `Sr`, lantai
+     *     `Sres`, `u`, dan `vi` blok keterulangan.
+     *  2. `srTerdekat($titikAkurasi, $nominal)` memilih titik akurasi mana yang
+     *     `Sr`-nya diadu ke lantai. Nominal yang meleset memilih titik yang
+     *     salah.
+     *
+     * Diturunkan dari `range_max` (setengah & penuh) angkanya SALAH untuk
+     * master gram — 54 g jadi 27/54, sementara kertasnya 25/50 — dan salahnya
+     * tidak memunculkan apa pun: kesepuluh pembacaan tetap masuk, budgetnya
+     * tetap terbit, cuma angkanya bukan angka yang benar.
+     *
+     * Kodenya bersarang di bawah `spesifikasi_alat.keterulangan` supaya
+     * mendarat di blok yang sama dengan pembacaannya, bukan jadi kunci ketiga
+     * yang harus dijahit di sisi server.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fieldKapasitasKeterulangan(string $satuan): array
+    {
+        return [
+            $this->f(
+                'spesifikasi_alat.keterulangan.mid.nominal',
+                'Middle Capacity — beban yang dipakai',
+                'angka',
+                satuan: $satuan,
+            ),
+            $this->f(
+                'spesifikasi_alat.keterulangan.maks.nominal',
+                'Maximum Capacity — beban yang dipakai',
+                'angka',
+                satuan: $satuan,
+            ),
         ];
     }
 

@@ -21,7 +21,7 @@ hitung ulang, tiga sesi contoh ter-seed, dan `TimbanganMasterTest` (1.099 angka)
 | Nama kemampuan | `Timbangan (Elektronik, mekanik)` (ejaan lampiran akreditasi, kurungnya ikut) |
 | Endpoint bentuk | `GET /api/worksheet-schema?equipment_id=…` — sama seperti 20 alat lain |
 | Nomor formulir | **null** — kertas lembar kerjanya belum pernah dikirim lab |
-| Jalur kamera | **BELUM** — `pindai_foto.didukung` DAN `lokal` dua-duanya `false`; lihat §6 |
+| Jalur kamera | **PER TABEL** — `pindai_foto.lokal = true`; Repeatability ON, Accuracy OFF. Lihat §6 |
 
 Alat contoh sudah ter-seed, jadi bisa langsung dicoba:
 
@@ -76,19 +76,52 @@ yang baru cuma tipenya. Kotak ini **bukan pelengkap**: server yang menjumlahkann
 > dia jadi `[20, 5, 10]` — tiga keping, jumlahnya melar 30,5 jadi 35, dan slot Mass-nya geser
 > semua. Nol error. Pemisah yang diterima cuma `+`, `;`, dan spasi.
 
-### `keterulangan` — dua sub-kolom per pengulangan, dan BUKAN titik ukur
+### `keterulangan` — bentuk KERTAS, bukan transposed
 
 ```
-kolom:      [ {kode:"zero", label:"Zero (zi)"}, {kode:"pembacaan", label:"Reading (mi)"} ]
-simpan_ke:  "spesifikasi_alat.keterulangan"
+sumbu_pengulangan: "baris"          <- nomor 1..10 TURUN di kolom `No.`
+slot_cetak:  [ {label:"Middle Capacity"}, {label:"Maximum Capacity"} ]
+kolom:       [ {kode:"zero", label:"Zero (kg)"}, {kode:"pembacaan", label:"Reading (kg)"} ]
+pengulangan_arah: [ {ke:1,label:"1"}, … {ke:10,label:"10"} ]
+pindai_foto: true
+simpan_ke:   "spesifikasi_alat.keterulangan"
 offset_kunci: 1000
 titik_bisa_diubah: false
 ```
 
-Sepuluh pengulangan × dua angka, dua baris (Middle & Maximum Capacity). Widget tabel yang ada sudah
-sanggup dua sub-kolom — lembar pH memakainya buat pH & °C.
+Di kertas master susunannya begini — dan bentuk yang dikirim sekarang mengikutinya persis:
 
-Tiga kunci di atas yang menentukan, dan ketiganya lahir dari kesalahan nyata:
+```
+        |  Middle Capacity   |  Maximum Capacity
+        |        50          |        100
+   No.  | Zero (kg)  Reading (kg) | Zero (kg)  Reading (kg)
+        |   (zi)       (mi)       |   (zi)       (mi)
+        |     1          2        |     1          2         <- penomoran sub-kolom
+    1   |     0        50.02      |     0        100.02
+   ...  |
+   10   |     0        50.02      |     0        100.02
+```
+
+Draf pertama mengirimnya **transposed** (kapasitas jadi baris, pengulangan jadi kolom). Bukan soal
+selera tata letak: pemeta foto menjangkar tiap angka ke dua sumbu, dan dua-duanya diambil dari
+tulisan yang TERCETAK. Dijalankan pada bentuk transposed, kedua jangkarnya ada di sumbu yang salah
+— **tiap jepretan pulang nol sel.**
+
+**Satuan ikut jadi jangkar, dan itu disengaja.** Label sub-kolomnya ditulis persis seperti tercetak
+— `Zero (kg)` di master kg & substitusi, `Zero (g)` di master gram. Jadi lembar gram yang difoto ke
+sesi kilogram tidak menemukan jangkarnya dan pulang nol sel: gagal berisik, bukan memindahkan
+`24,9999 g` ke kotak kilogram.
+
+> `satuan` per slot SENGAJA tidak dikirim. HP memakai `slot.satuan ?? kolom.label` buat jangkar
+> sub-kolom, jadi mengisinya bikin `Zero` dan `Reading` berjangkar tulisan yang sama — dan angka
+> nol bisa mendarat di kolom berbeban.
+
+**Dua kapasitas ujinya DIKETIK**, lewat `spesifikasi_alat.keterulangan.mid.nominal` dan
+`.maks.nominal` di `field` bagian itu. Bukan diturunkan dari rentang alat: master gram punya alat
+berkapasitas **54 g** yang keterulangannya diambil di **25 g & 50 g**. Angka itu masuk rumus lewat
+`deviasiKurangiNominal` (nyala di gram DAN substitusi) dan lewat `srTerdekat()`.
+
+Tiga kunci lain yang menentukan, dan ketiganya lahir dari kesalahan nyata:
 
 - **`simpan_ke`** — isinya besaran satu per SESI, bukan titik yang dikoreksi. Lewat `measurements[]`,
   sertifikatnya terbit dengan dua baris titik tambahan yang nggak pernah diminta siapa pun (50 kg &
@@ -229,31 +262,38 @@ cuma satu, separuh angka yang tercetak tidak punya asal-usul di layar.
 
 ## 6. Yang SENGAJA belum ada
 
-- **Tombol kamera — DUA-DUANYA mati, cloud maupun lokal.**
+- **Tombol kamera — NYALA, tapi cuma di satu tabel.**
 
-  `pindai_foto.didukung = false` (jalur CLOUD): tujuh blok yang tidak sebentuk tidak bisa
-  diungkapkan lewat `kolom_suhu`/`standar_di_baris` yang cuma memodelkan satu tabel datar;
-  dipaksakan, yang balik dari model bukan error melainkan angka karangan. Alasan yang sama dipakai
-  Autoklaf & grid Enclosure.
+  `pindai_foto.lokal = true` (ML Kit di perangkat, citra tidak pernah keluar HP), dan gerbangnya
+  diturunkan ke tabel lewat `tabel[].pindai_foto`:
 
-  `pindai_foto.lokal` juga `false`, dan ini **sudah pernah dicoba dinyalakan** untuk tabel
-  Repeatability saja (31 Agt 2026, dibatalkan hari yang sama). Bentuk layarnya memang cocok — dua
-  baris kapasitas × sepuluh pengulangan — tapi tiga hal membatalkannya:
+  | Blok | Kamera | Sebabnya, dari kertas masternya |
+  |---|---|---|
+  | `keterulangan` | **ON** | Grid sempurna: nomor `1`..`10` turun di kolom `No.`, dua kapasitas berjajar ke samping, sub-kolom `Zero (kg)`/`Reading (kg)`. Ketiga jangkarnya tercetak |
+  | `akurasi` | **OFF** | Bukan grid. Di kertas dia daftar MENURUN — `z1`, `m1`, `m1'`, `z2`, … (kg & gram) atau `z1`, `M1`, `M1'`, `z1'` (substitusi, huruf besar + baris penutup). Pembedanya TULISAN per baris, dan pemeta yang ada menjangkar kolom ke nomor pengulangan |
 
-  1. **Kertasnya belum ada.** `kode_dokumen` lembar ini `null`: lab belum pernah menerbitkan
-     formulirnya. Tombol "foto tabel ini" untuk formulir yang belum dicetak menjanjikan sesuatu
-     yang tidak ada.
-  2. **Kepala kolomnya tidak terjangkau.** `PetaTabelFoto` menjangkar tiap pengulangan ke tulisan
-     kepala kolomnya, dan bawaannya `X1` / `Repeat 1`. Tabel ini tidak mengirim `pengulangan_arah`
-     maupun `prefiks_pengulangan`, jadi tidak ada satu pun jangkar kolom yang cocok — **tiap
-     jepretan pulang NOL sel.**
-  3. **Blok Accuracy tidak sebentuk sama sekali.** Di kertas master dia daftar MENURUN (`z1`, `m1`,
-     `m1'`, `z2`, `m2`, …), satu pembacaan per baris; grid empat kolom yang digambar layar itu
-     bentuk LAYAR, bukan bentuk kertasnya.
+  Menyalakan Accuracy juga tidak balik error — yang muncul *"tabelnya dikenali, tapi selnya masih
+  kosong"*, dan teknisi menyangka fotonya kurang terang lalu mengulang jepretan sampai menyerah.
 
-  Syarat supaya bisa dinyalakan nanti, berurutan: lab menerbitkan kertasnya → `pengulangan_arah`
-  diisi dari kepala kolom yang BENAR-BENAR tercetak → `ocr:rangka-geometri` dijalankan ulang dan
-  `database/ocr-templates/timbangan-v1.json` ditandai `terverifikasi`.
+  **`pindai_foto.didukung` tetap `false`.** Itu gerbang jalur CLOUD, yang MENGIRIM FOTO LEMBAR KERJA
+  PELANGGAN ke layanan pihak ketiga; prompt-nya dibangun untuk satu tabel datar, dan tujuh blok yang
+  tidak sebentuk bikin yang balik bukan error melainkan angka karangan.
+
+  **Nomor polos aman di sini karena dijaga deretnya.** Kertas ini menomori baris `1`..`10` polos,
+  dan angka `1` juga muncul di baris penomoran sub-kolom TEPAT DI ATAS isi tabel. Pencarian teks
+  biasa mengambil kemunculan paling atas — jangkarnya jadi **lengkap tapi salah**, dan seluruh grid
+  bergeser satu baris tanpa satu pun gejala. `_jangkarNomorPolosBaris` di HP menolak itu: nomor
+  polos cuma diterima kalau lembarnya menyatakannya lewat `pengulangan_arah`, dan hanya sebagai
+  DERET UTUH yang tersusun tegak di satu kolom, di kiri kolom data. Kurang satu nomor → nol sel,
+  bukan sembilan baris yang bergeser. Dijaga `test/foto_tabel_timbangan_test.dart`.
+
+- **Pindai SATU HALAMAN PENUH bermarker.** Lembar ini tidak punya berkas geometri
+  (`database/ocr-templates/timbangan-v1.json` sengaja tidak ada), dan `ocr:rangka-geometri`
+  menolaknya: pipeline itu menurunkan tinggi sel, kotak jangkar, dan urutan kunci sel SEKALI untuk
+  satu lembar, sementara lembar ini mencampur dua orientasi tabel. Berkas yang tetap diterbitkan
+  bakal menggambar Repeatability melintang — bertentangan dengan bentuknya sendiri. Jalur per-tabel
+  di atas tidak membutuhkannya: dia menjangkar ke tulisan tercetak, bukan koordinat.
+
 - **Vonis PASS/FAIL.** `punyaToleransi()` = false — batas keberterikan Timbangan datang dari MPE
   kelas (SNSU PK.M-02:2021) yang butuh nilai `e`, dan `e` diisi teknisi. Jangan gambar chip
   lulus/tidak sebelum itu ada.

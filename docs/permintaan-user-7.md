@@ -1158,7 +1158,7 @@ Ditambahkan pemilik proyek 31 Agt 2026 bersama tiga workbook master ber-password
 | **C** | Tabel anak timbangan, CMC, drift | **BERES** — `database/data/tabel-standar-timbangan.json`, tiga snapshot |
 | **D** | CMC diadu ke lampiran akreditasi | **BERES** — `TimbanganCmcCocokAkreditasiTest`, 17 pita cocok |
 | **E** | Sisi mobile (layar lembar kerja) | **BERES** (31 Agt 2026) — lembarnya kegambar & payloadnya sampai; 13 test baru (`timbangan_lembar_test.dart`, `timbangan_layar_test.dart`). Lima cacat sunyi ditemukan & ditutup, lihat di bawah |
-| **F** | Jalur kamera / pindai lembar | **SENGAJA belum** — dicoba dinyalakan lalu dibatalkan hari yang sama; tiga sebabnya di bawah |
+| **F** | Jalur kamera / pindai lembar | **NYALA per tabel** (31 Agt 2026, sesudah kertas masternya dikirim) — Repeatability ON, Accuracy OFF. Tiga cacat sunyi ditutup dulu; lihat di bawah |
 
 ### E — lima cacat SUNYI yang ketemu waktu HP disambungkan
 
@@ -1186,7 +1186,41 @@ Dua kunci bentuk baru lahir dari sini, dua-duanya umum bukan khusus Timbangan:
 - **`tipe: "daftar_angka"`** pada `kolom_baris` — satu kotak, beberapa angka (`20+20+10`). Koma di
   situ koma DESIMAL, bukan pemisah: `20,5+10` wajib jadi dua keping, bukan tiga.
 
-### F — kamera: dicoba, lalu dibatalkan hari yang sama
+### F — kamera: dibatalkan, lalu DIHIDUPKAN LAGI waktu kertasnya dikirim
+
+Pemilik proyek mengirim cetakan `CALIBRATION RESULT` ketiga master (31 Agt 2026, sesudah keputusan
+di bawah), dan cetakan itu membatalkan dua dari tiga alasannya. Yang berlaku sekarang:
+
+| Blok | Kamera | Sebabnya, dari kertasnya |
+|---|---|---|
+| `keterulangan` | **ON** | Grid sempurna: `No.` 1..10 turun, dua kapasitas ke samping, sub-kolom `Zero (kg)`/`Reading (kg)`. Ketiga jangkarnya tercetak |
+| `akurasi` | **OFF** | Daftar MENURUN (`z1`, `m1`, `m1'`, `z2`…), pembedanya tulisan per baris. Pemeta yang ada menjangkar kolom ke nomor pengulangan |
+
+Tiga hal yang harus dibetulkan supaya jangkarnya ada, dan ketiganya cacat SUNYI:
+
+1. **Bentuk tabelnya transposed dari kertasnya.** Kami mengirim kapasitas sebagai baris dan
+   pengulangan sebagai kolom; kertasnya kebalikan. Dua jangkar di sumbu yang salah = nol sel tiap
+   jepretan. Ini juga yang bikin alasan lama *"kepala kolomnya tidak terjangkau"* keliru — yang
+   salah bentuk kami, bukan kertasnya.
+2. **Nomor baris polos bikin jangkar LENGKAP TAPI SALAH.** Kertas menomori `1`..`10`, dan angka `1`
+   juga muncul di baris penomoran sub-kolom TEPAT DI ATAS isi tabel. Pencarian teks memilih
+   kemunculan paling atas → `1` & `2` dari baris itu, `3`..`10` dari kolom `No.` → jumlahnya pas
+   sepuluh, tidak ada penjagaan berbunyi, dan SELURUH grid bergeser satu baris. Ditutup
+   `_jangkarNomorPolosBaris` (deret utuh, tegak satu kolom, di kiri kolom data — atau nol sel).
+3. **Kapasitas uji diturunkan dari `range_max`.** Master gram membantahnya: alat 54 g diuji di
+   25 g & 50 g, bukan 27/54. Angka itu masuk rumus lewat `deviasiKurangiNominal` (gram DAN
+   substitusi) dan `srTerdekat()`. Sekarang diketik lewat `spesifikasi_alat.keterulangan.*.nominal`.
+
+Satuan ikut jadi jangkar: label sub-kolom ditulis persis seperti tercetak (`Zero (g)` di master
+gram), jadi lembar gram yang difoto ke sesi kilogram pulang NOL sel — gagal berisik, bukan
+memindahkan `24,9999 g` ke kotak kilogram.
+
+Yang HILANG: lembar ini tidak punya berkas geometri, jadi tidak bisa dipindai satu-halaman-penuh.
+Pipeline geometri menurunkan tinggi sel & kotak jangkar SEKALI per lembar, sementara lembar ini
+mencampur dua orientasi tabel — `ocr:rangka-geometri` sekarang menolaknya di muka daripada
+menerbitkan kertas yang bertentangan dengan bentuknya sendiri.
+
+### F (lama) — kamera: dicoba, lalu dibatalkan hari yang sama
 
 Sempat dinyalakan per-tabel (`lokal: true` + `tabel[].pindai_foto`) dengan alasan bentuk layar
 Repeatability memang grid sempurna. Dibatalkan setelah tiga hal terbukti, dan ketiganya bisa dicek

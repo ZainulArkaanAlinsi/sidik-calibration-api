@@ -319,6 +319,145 @@ class TimbanganSesiTest extends TestCase
         );
     }
 
+    /**
+     * Tabel Repeatability dikirim dalam bentuk KERTASNYA, bukan transposed.
+     *
+     * Bentuk kertas master: nomor `1`..`10` TURUN di kolom `No.`, dua kapasitas
+     * berjajar KE SAMPING, masing-masing dengan sub-kolom `Zero (…)` &
+     * `Reading (…)`. Draf pertama mengirimnya terbalik.
+     *
+     * Bukan soal selera tata letak — pemeta foto di HP menjangkar tiap angka ke
+     * dua sumbu, dan dua-duanya diambil dari tulisan yang TERCETAK. Dijalankan
+     * pada bentuk transposed, kedua jangkarnya ada di sumbu yang salah dan
+     * tiap jepretan pulang nol sel.
+     */
+    public function test_bentuk_keterulangan_ikut_kertas_bukan_transposed(): void
+    {
+        $tabel = $this->tabelKeterulangan();
+
+        $this->assertSame('baris', $tabel['sumbu_pengulangan'], 'Pengulangan harus TURUN.');
+        $this->assertCount(10, $tabel['pengulangan']);
+        $this->assertCount(2, $tabel['slot_cetak'], 'Dua kapasitas berjajar ke samping.');
+
+        $this->assertSame(
+            ['Middle Capacity', 'Maximum Capacity'],
+            array_column($tabel['slot_cetak'], 'label'),
+            'Urutan slot mengikat: HP memasangkannya ke baris lewat urutan itu.',
+        );
+
+        // Nomor pengulangan seperti tercetak — `1`..`10` polos, bukan `X1`.
+        $this->assertSame(
+            array_map('strval', range(1, 10)),
+            array_column($tabel['pengulangan_arah'], 'label'),
+        );
+    }
+
+    /**
+     * Label sub-kolom membawa SATUANNYA, dan itu yang menjaga gram tidak
+     * ketukar dengan kilogram.
+     *
+     * Pemeta foto memakai tulisan ini sebagai jangkar sub-kolom. Kertas gram
+     * menulis `Zero (g)`; sesi kilogram mencari `Zero (kg)`. Jadi lembar yang
+     * salah satuan pulang NOL sel — gagal berisik, bukan memindahkan
+     * `24,9999 g` ke kotak kilogram.
+     *
+     * `satuan` per slot sengaja TIDAK dikirim: HP memakai
+     * `slot.satuan ?? kolom.label` buat jangkar sub-kolom, jadi mengisinya
+     * bikin `Zero` dan `Reading` berjangkar tulisan yang sama.
+     */
+    public function test_label_sub_kolom_membawa_satuan_yang_benar(): void
+    {
+        foreach ([['kg', 'kg'], ['g', 'g']] as [$satuanAlat, $tercetak]) {
+            $alat = new Equipment(['satuan' => $satuanAlat, 'range_max' => 100.0]);
+            $tabel = $this->tabelKeterulangan($alat);
+
+            $this->assertSame(
+                ["Zero ({$tercetak})", "Reading ({$tercetak})"],
+                array_column($tabel['kolom'], 'label'),
+            );
+
+            foreach ($tabel['slot_cetak'] as $slot) {
+                $this->assertArrayNotHasKey(
+                    'satuan',
+                    $slot,
+                    'Slot ber-`satuan` bikin dua sub-kolomnya berjangkar tulisan yang sama.',
+                );
+            }
+        }
+    }
+
+    /**
+     * Kapasitas uji keterulangan DIKETIK, bukan diturunkan dari rentang alat.
+     *
+     * Master GRAM yang membuktikan: alatnya berkapasitas 54 g dan
+     * keterulangannya diambil di 25 g & 50 g — bukan 27 g & 54 g. Angka itu
+     * masuk rumus lewat `deviasiKurangiNominal` (nyala di varian gram DAN
+     * substitusi) dan lewat `srTerdekat()`, jadi yang meleset bukan cuma
+     * labelnya.
+     */
+    public function test_kapasitas_keterulangan_punya_kotak_isian(): void
+    {
+        $bagian = $this->bagianKeterulangan();
+
+        $this->assertSame(
+            [
+                'spesifikasi_alat.keterulangan.mid.nominal',
+                'spesifikasi_alat.keterulangan.maks.nominal',
+            ],
+            array_column($bagian['field'], 'kode'),
+        );
+    }
+
+    /**
+     * Cuma tabel Repeatability yang boleh difoto — Accuracy tidak.
+     *
+     * Di kertas master, blok Accuracy daftar MENURUN (`z1`, `m1`, `m1'`, `z2`,
+     * …), bukan grid; pembedanya tulisan per baris, bukan nomor kolom. Tombol
+     * yang nyala di situ balik nol sel tiap jepretan, dan yang sampai ke
+     * teknisi *"tabelnya dikenali, tapi selnya masih kosong"*.
+     */
+    public function test_kamera_nyala_cuma_di_tabel_yang_bentuknya_muat(): void
+    {
+        $bentuk = (new TimbanganProfile)->bentukLembarKerja();
+        $pindai = [];
+
+        foreach ($bentuk['bagian'] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                $pindai[$bagian['kode']] = $tabel['pindai_foto'] ?? null;
+            }
+        }
+
+        $this->assertSame(['akurasi' => false, 'keterulangan' => true], $pindai);
+
+        // Jalur CLOUD tetap mati — dia mengirim foto lembar kerja pelanggan ke
+        // layanan pihak ketiga, dan tidak ada yang meminta itu buat lembar ini.
+        $gerbang = (new TimbanganProfile)->bentukPindaiFoto();
+
+        $this->assertFalse($gerbang['didukung']);
+        $this->assertTrue($gerbang['lokal']);
+    }
+
+    /** Tabel keterulangan dari bentuk lembar, buat alat contoh. */
+    private function tabelKeterulangan(?Equipment $alat = null): array
+    {
+        return $this->bagianKeterulangan($alat)['tabel'][0];
+    }
+
+    /** @return array<string, mixed> */
+    private function bagianKeterulangan(?Equipment $alat = null): array
+    {
+        $alat ??= new Equipment(['satuan' => 'kg', 'range_max' => 100.0]);
+        $bentuk = (new TimbanganProfile)->bentukLembarKerja(false, $alat);
+
+        foreach ($bentuk['bagian'] as $bagian) {
+            if ($bagian['kode'] === 'keterulangan') {
+                return $bagian;
+            }
+        }
+
+        $this->fail('Bagian `keterulangan` nggak ada di bentuk lembarnya.');
+    }
+
     /** Angkanya sampai ke mesin hitung, dan yang keluar angka master. */
     public function test_hasil_hitung_cocok_master(): void
     {
