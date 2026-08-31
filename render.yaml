@@ -166,15 +166,26 @@ services:
       # `osm` (bawaan) = OpenStreetMap lewat Nominatim: gratis, tanpa API key.
       # `google` = Places API: cakupan lebih tebal, tapi butuh key & ditagih
       # per request.
+      # `auto` = berlapis: Google duluan kalau DIREKTORI_PERUSAHAAN_KEY di
+      # bawah terisi, OpenStreetMap di belakangnya. Key kosong bukan kerusakan
+      # — jalur direktorinya tetap hidup lewat OSM, cuma cakupannya lebih tipis.
       - key: DIREKTORI_PERUSAHAAN_DRIVER
-        value: osm
+        value: auto
 
       # Nominatim menolak klien yang nggak menyebut dirinya, dan yang diblokir
       # alamat IP service ini — bukan satu request.
       - key: DIREKTORI_PERUSAHAAN_USER_AGENT
         value: SidikCalibration/1.0 (kalibrasi PT Sidik)
 
-      # Cuma perlu kalau DIREKTORI_PERUSAHAAN_DRIVER=google.
+      # Cakupan pabrik Indonesia paling tebal ada di sini, jadi ini yang
+      # dipakai duluan waktu DRIVER=auto. Text Search punya kuota bebas
+      # bulanan (5.000 panggilan/bulan sejak Mar 2025) — jauh di atas
+      # pemakaian satu lab, yang cuma menembak waktu teknisi menekan cari.
+      #
+      # JEBAKAN KONSOL GOOGLE: key ini dipanggil dari SERVER, jadi pembatasan
+      # aplikasinya JANGAN disetel ke "Android apps"/"HTTP referrers".
+      # Instingnya begitu karena ini proyek mobile, dan hasilnya semua
+      # permintaan ditolak 403.
       - key: DIREKTORI_PERUSAHAAN_KEY
         sync: false
 
