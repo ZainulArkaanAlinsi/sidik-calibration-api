@@ -159,7 +159,17 @@ cuma satu, separuh angka yang tercetak tidak punya asal-usul di layar.
   lulus/tidak sebelum itu ada.
 - **Nomor formulir di kop.** `kode_dokumen` null sampai kertasnya turun dari lab.
 
-## 7. Yang perlu ditanyakan balik ke backend kalau kelihatan aneh
+## 7. Desimal U95 di layar & PDF — belum diputus
+
+Master mencetak U95 dengan **satu desimal lebih banyak** daripada kolom pembacaan (kg: 3 vs 2;
+gram: 5 vs 4), sementara aturan bawaan sistem memakai desimal yang sama untuk keduanya. Jadi
+`0,033 kg` bakal tampil `0,03 kg` kalau ikut bawaan.
+
+Sampai **T11** dijawab lab, **jangan** menambal pembulatannya di HP. Angka penuh selalu ada di
+respons; yang belum pasti berapa desimal yang benar untuk DICETAK, dan menambalnya di dua tempat
+(HP & PDF) hampir pasti melahirkan dua angka berbeda untuk satu pengukuran — temuan audit.
+
+## 8. Yang perlu ditanyakan balik ke backend kalau kelihatan aneh
 
 Sepuluh pertanyaan lab yang masih terbuka ada di `docs/pertanyaan-lab-timbangan.md`. Dua yang bisa
 kelihatan di layar:

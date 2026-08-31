@@ -187,6 +187,37 @@ drift di budget datang dari `Tabel_F1drift` kolom 5, bukan dari sini.
 
 > **Ditanyakan:** sel ini sisa revisi lama, atau memang ada tempat yang seharusnya memakainya?
 
+## T11 — U95 tercetak satu desimal lebih pendek daripada masternya
+
+Format angka kolom sertifikat, dibaca dari sheet `SERTIFIKAT` ketiga master:
+
+| Master | resolusi | Nominal & Correction | **Uncertainty** |
+|---|---|---|---|
+| kg | 0,02 | `0.00` (2 desimal) | `0.000` (**3**) |
+| gram | 0,0001 | `0.0000` (4) | `0.00000` (**5**) |
+| substitusi | 0,1 | `0.0` (1) | `0.0` (**1**) |
+
+Aturan bawaan sistem menurunkan desimal dari resolusi alat (`Angka::desimalDariResolusi`), dan
+memakai angka yang sama untuk kolom pembacaan DAN kolom U95. Kolom pembacaannya cocok di ketiga
+varian; **kolom U95-nya yang meleset satu desimal** di dua varian:
+
+- kg: `0,033 kg` bakal tercetak **`0,03 kg`** — mengecilkan ketidakpastian terakreditasi, dan itu
+  arah yang salah;
+- gram: `0,00057 g` bakal tercetak `0,0006 g`.
+
+Dua master yang pertama sebenarnya konsisten dengan aturan metrologi yang biasa dipakai:
+**U dilaporkan 2 angka penting** (0,033 · 0,00057). Yang tidak ikut justru master substitusi —
+`0,52 kg` tercetak `0,5 kg`, satu angka penting.
+
+> **Belum diperbaiki, dan sengaja.** Hook profil yang tersedia
+> (`desimalU95()` / `desimalU95Titik($titikUkur)`) tidak menerima alat maupun nilai U95-nya, jadi
+> "2 angka penting" tidak bisa dinyatakan dari situ tanpa menebak. Menaruh angka tetap juga salah:
+> apa pun yang dipilih bakal bertentangan dengan salah satu dari tiga master.
+>
+> **Ditanyakan:** U95 sertifikat Timbangan dicetak 2 angka penting (ikut master kg & gram), atau
+> ikut desimal resolusi alat (ikut master substitusi)? Begitu dijawab, perbaikannya satu tempat —
+> dan mungkin perlu hook yang menerima nilainya, bukan cuma titik ukurnya.
+
 ---
 
 ## Yang TIDAK ditanyakan karena sudah jelas
