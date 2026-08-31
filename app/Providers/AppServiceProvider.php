@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\GooglePlacesDirektori;
 use App\Services\Direktori\NominatimDirektori;
@@ -64,22 +65,37 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DirektoriPerusahaan::class, function (): DirektoriPerusahaan {
             $timeout = (int) config('services.direktori_perusahaan.timeout', 8);
 
-            // Bawaannya OpenStreetMap: gratis, tanpa key, jadi jalur direktori
-            // hidup di lingkungan mana pun tanpa disetel apa-apa dulu —
-            // termasuk mesin developer dan server yang baru dibangun.
+            $google = fn (): GooglePlacesDirektori => new GooglePlacesDirektori(
+                config('services.direktori_perusahaan.key'),
+                $timeout,
+            );
+
+            $osm = fn (): NominatimDirektori => new NominatimDirektori(
+                (string) config('services.direktori_perusahaan.user_agent'),
+                $timeout,
+            );
+
+            // Bawaannya `auto`: Google duluan kalau key-nya ada, OSM di
+            // belakangnya. Yang nggak dikenali jatuh ke sini juga, BUKAN
+            // melempar — salah ketik di `.env` mematikan pendaftaran pelanggan
+            // di lapangan, dan itu hukuman yang jauh lebih besar daripada
+            // kesalahannya.
             //
-            // Yang nggak dikenali jatuh ke sini juga, BUKAN melempar: salah
-            // ketik di `.env` mematikan pendaftaran pelanggan di lapangan, dan
-            // itu hukuman yang jauh lebih besar daripada kesalahannya.
+            // Kenapa `auto` yang jadi bawaan, bukan salah satu:
+            //
+            //  - Cuma Google → satu setelan yang salah (key kosong, kuota
+            //    habis, key ditolak) mematikan pencarian di lapangan.
+            //  - Cuma OSM → pabrik yang belum pernah dipetakan sukarelawan
+            //    nggak akan pernah ketemu, dan itu justru pelanggan lab ini.
+            //
+            // Urutannya sengaja Google dulu: cakupan pabrik Indonesia-nya jauh
+            // lebih tebal, dan Text Search punya kuota bebas bulanan yang jauh
+            // di atas pemakaian satu lab. OSM di belakangnya yang bikin jalur
+            // ini nggak pernah mati total.
             return match (config('services.direktori_perusahaan.driver')) {
-                'google' => new GooglePlacesDirektori(
-                    config('services.direktori_perusahaan.key'),
-                    $timeout,
-                ),
-                default => new NominatimDirektori(
-                    (string) config('services.direktori_perusahaan.user_agent'),
-                    $timeout,
-                ),
+                'google' => $google(),
+                'osm' => $osm(),
+                default => new DirektoriBerlapis([$google(), $osm()]),
             };
         });
     }

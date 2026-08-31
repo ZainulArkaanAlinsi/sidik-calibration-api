@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\NominatimDirektori;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -66,16 +67,36 @@ class DirektoriOsmTest extends TestCase
         ];
     }
 
-    /** Driver bawaannya OSM — nggak perlu disetel apa-apa buat hidup. */
-    public function test_bawaannya_osm_dan_selalu_siap(): void
+    /**
+     * Bawaannya BERLAPIS, dan tetap hidup tanpa disetel apa-apa.
+     *
+     * Bagian kedua yang penting: `tersedia()` tetap `true` walau key Google
+     * kosong, karena OSM di lapis belakang nggak butuh key. Kalau ini pernah
+     * jadi `false` di lingkungan tanpa key, tombol cari hilang dari layar
+     * teknisi — dan itu keadaan yang paling sering bikin aplikasinya kelihatan
+     * rusak di tengah kerjaan.
+     */
+    public function test_bawaannya_berlapis_dan_tetap_siap_tanpa_key(): void
     {
         config()->offsetUnset('services.direktori_perusahaan.driver');
+        config()->set('services.direktori_perusahaan.key', null);
+
+        $this->assertInstanceOf(
+            DirektoriBerlapis::class,
+            app(DirektoriPerusahaan::class),
+        );
+        $this->assertTrue(app(DirektoriPerusahaan::class)->tersedia());
+    }
+
+    /** Diminta OSM saja → yang lahir OSM saja, tanpa lapis lain di belakangnya. */
+    public function test_driver_osm_eksplisit_cuma_osm(): void
+    {
+        config()->set('services.direktori_perusahaan.driver', 'osm');
 
         $this->assertInstanceOf(
             NominatimDirektori::class,
             app(DirektoriPerusahaan::class),
         );
-        $this->assertTrue(app(DirektoriPerusahaan::class)->tersedia());
     }
 
     /**
@@ -281,16 +302,70 @@ class DirektoriOsmTest extends TestCase
     }
 
     /**
-     * Salah ketik nama driver di `.env` jatuh ke OSM, BUKAN melempar:
-     * mematikan pendaftaran pelanggan di lapangan itu hukuman yang jauh lebih
-     * besar daripada kesalahannya.
+     * Ujung ke ujung: Google terpasang tapi nol hasil → OSM yang menjawab.
+     *
+     * Ini keadaan yang paling sering terjadi di lapangan dan paling gampang
+     * salah dikodekan. Nol hasil dari lapis pertama gampang diperlakukan
+     * sebagai jawaban akhir — dan begitu itu terjadi, lapis kedua jadi hiasan
+     * yang tidak pernah dipakai, persis hal yang bikin cakupannya terasa tipis.
+     *
+     * Atribusinya ikut diuji, dan itu bukan detail administratif: memajang
+     * "Powered by Google" di atas baris yang datang dari OpenStreetMap
+     * menyebut sumber yang salah, dan itu pelanggaran lisensi yang tidak
+     * meninggalkan satu pun error.
      */
-    public function test_driver_yang_tidak_dikenali_jatuh_ke_osm(): void
+    public function test_google_nol_hasil_dilanjut_ke_osm_berikut_atribusinya(): void
+    {
+        config()->set('services.direktori_perusahaan.driver', 'auto');
+        config()->set('services.direktori_perusahaan.key', 'kunci-uji');
+
+        Http::fake([
+            'places.googleapis.com/*' => Http::response(['places' => []]),
+            'nominatim.openstreetmap.org/*' => Http::response([$this->tempat()]),
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Sinar')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nama', 'PT Sinar Rejeki')
+            ->assertJsonPath('atribusi', NominatimDirektori::ATRIBUSI);
+    }
+
+    /**
+     * Google mati total → OSM tetap menjawab, teknisi nggak kehilangan apa pun.
+     *
+     * Tanpa lapis kedua, kuota habis atau key ditolak di tengah hari kerja
+     * mematikan pencarian PT untuk semua teknisi sekaligus.
+     */
+    public function test_google_mati_dilanjut_ke_osm(): void
+    {
+        config()->set('services.direktori_perusahaan.driver', 'auto');
+        config()->set('services.direktori_perusahaan.key', 'kunci-uji');
+
+        Http::fake([
+            'places.googleapis.com/*' => Http::response(['error' => 'kuota habis'], 429),
+            'nominatim.openstreetmap.org/*' => Http::response([$this->tempat()]),
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Sinar')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('atribusi', NominatimDirektori::ATRIBUSI);
+    }
+
+    /**
+     * Salah ketik nama driver di `.env` jatuh ke susunan berlapis, BUKAN
+     * melempar: mematikan pendaftaran pelanggan di lapangan itu hukuman yang
+     * jauh lebih besar daripada kesalahannya.
+     */
+    public function test_driver_yang_tidak_dikenali_jatuh_ke_berlapis(): void
     {
         config()->set('services.direktori_perusahaan.driver', 'salah-ketik');
 
         $this->assertInstanceOf(
-            NominatimDirektori::class,
+            DirektoriBerlapis::class,
             app(DirektoriPerusahaan::class),
         );
     }
