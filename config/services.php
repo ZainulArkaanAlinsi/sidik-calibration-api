@@ -163,13 +163,18 @@ return [
     | jangan cuma di sini.
     */
     'direktori_perusahaan' => [
-        // `osm` (bawaan) = OpenStreetMap lewat Nominatim: GRATIS, tanpa API key,
-        // tanpa tagihan. Cakupan pabriknya lebih tipis — yang nggak ketemu
-        // diketik tangan, dan jalur itu selalu jalan.
+        // `auto` (bawaan) = BERLAPIS: Google duluan kalau key-nya ada, lalu
+        // OpenStreetMap. Dua sumbernya punya kelemahan yang berlawanan, jadi
+        // pasangannya menutup keduanya — lihat `DirektoriBerlapis`.
         //
-        // `google` = Places API: cakupannya lebih tebal, tapi butuh key dan
-        // ditagih per request.
-        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'osm'),
+        // `google` = Places API saja. Cakupan pabrik Indonesia paling tebal.
+        // Text Search punya kuota bebas bulanan (5.000 panggilan/bulan sejak
+        // Maret 2025) yang jauh di atas pemakaian satu lab, tapi tetap butuh
+        // key — dan tanpa key jalur ini mati total.
+        //
+        // `osm` = OpenStreetMap lewat Nominatim saja. Tanpa key, tanpa kuota,
+        // tapi cakupannya tipis: cuma tempat yang pernah dipetakan sukarelawan.
+        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'auto'),
 
         // Cuma dipakai driver `google`.
         'key' => env('DIREKTORI_PERUSAHAAN_KEY'),
