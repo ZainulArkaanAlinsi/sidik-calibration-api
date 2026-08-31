@@ -248,6 +248,39 @@ class TimbanganSertifikatTest extends TestCase
         $this->assertEqualsWithDelta(1.996564418952312, $blok['k_penimbangan'], 1e-3);
     }
 
+    /**
+     * Kolom `Calibration Method` = nomor IK lab, apa pun nama alatnya.
+     *
+     * `DATABASE` baris 5 ketiga workbook: `Timbangan -> SIDIK-IK-CAL-0505-Rev.7`,
+     * dan ketiga sertifikat master mencetaknya.
+     *
+     * Yang dijaga di sini timbangan yang namanya DI LUAR kosakata master.
+     * Cadangan pencocokan nama di `CertificateSnapshotBuilder` mencari kata
+     * "Timbangan" di dalam nama alat; sesi master gram alatnya bernama
+     * "Moisture Analyzer", dan sebelum `kodeMetode()` ada, kolom metodenya
+     * terbit berisi `NMI Monograph 4 (CSIRO 2010)` — rujukan pustaka di tempat
+     * dokumen terakreditasi harus menyebut instruksi kerja lab. Tidak ada error
+     * di mana pun, karena kolomnya memang terisi.
+     */
+    #[DataProvider('sesiTimbangan')]
+    public function test_metode_kalibrasi_selalu_nomor_ik_master(string $nomorSesi): void
+    {
+        $this->assertSame(
+            'SIDIK-IK-CAL-0505_Rev.7',
+            $this->terbitkan($nomorSesi)->snapshot['header']['calibration_method'],
+        );
+    }
+
+    /** @return array<string, array{string}> */
+    public static function sesiTimbangan(): array
+    {
+        return [
+            'kg — alat bernama "Timbangan"' => ['011-CAL-525'],
+            'gram — alat bernama "Moisture Analyzer"' => ['019-CAL-425'],
+            'substitusi — "Timbangan Elektronik"' => [self::SESI_SUB],
+        ];
+    }
+
     /** Kedelapan judul bagian beneran kecetak di HTML yang dirender. */
     public function test_lembar_cetak_bawa_delapan_bagian(): void
     {
