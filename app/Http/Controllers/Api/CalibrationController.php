@@ -29,10 +29,11 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
-use Carbon\Carbon;
+use App\Support\TimbanganMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
 // method `load()` yang cuma ada di Eloquent Collection.
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -1089,6 +1090,16 @@ class CalibrationController extends Controller
             return $this->susunPasanganStandarUut($request, $alat, $standarDefault);
         }
 
+        // Timbangan: satu titik akurasi itu EMPAT pembacaan (z1, m, m', z2)
+        // plus sampai enam nominal anak timbangan — bukan satu deret. Jalur
+        // terpisah dengan alasan yang sama seperti dua di atas: loop per-titik
+        // di bawah cuma punya tempat buat satu deret, dan tiga dari empat
+        // pembacaan tiap titik bakal hilang tanpa error — termasuk kedua
+        // pembacaan NOL yang jadi sisi kiri kolom `Correction`.
+        if ($this->profil->untukAlat($alat)->butuhBlokTimbangan()) {
+            return $this->susunBlokTimbangan($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1570,6 +1581,195 @@ class CalibrationController extends Controller
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
+    /**
+     * Jalur simpan lembar **Timbangan** — tujuh blok, dan cuma satu di
+     * antaranya yang jadi baris titik di sertifikat.
+     *
+     * ## Yang masuk `raw_measurements`, dan yang tidak
+     *
+     * Blok **Accuracy** per titik: empat pembacaan (`z1`, `m`, `m_aksen`,
+     * `z2`) plus sampai enam nominal anak timbangan, dibedakan lewat
+     * `peran_sensor` — sumbu yang sudah ada sejak Enclosure. **Nol kolom baru.**
+     *
+     * Lima blok tingkat-SESI (Repeatability, Loading Influence, Hysterisis,
+     * Scale Observation, Effect of Tare) masuk `spesifikasi_alat`: kelimanya
+     * satu per sesi, bukan per titik, jadi tidak punya `titik_ke` sama sekali.
+     * Memaksakan `titik_ke = 0` bikin jalur hitung ulang — yang mengelompokkan
+     * baris per `titik_ke` — melihatnya sebagai titik hantu, dan tiap sesi
+     * Timbangan bakal melaporkan satu titik gagal yang tidak pernah ada di
+     * sertifikatnya. Batas yang menempel di pilihan ini ditulis di
+     * `App\Support\TimbanganMentah`.
+     *
+     * ## Nominal disimpan sebagai baris, bukan JSON
+     *
+     * Enam slot Mass 1..6 punya `sensor_ke`-nya sendiri karena **urutannya
+     * mengikat**: slot pertama dapat `ci` = 10 di varian substitusi dan jadi
+     * satu-satunya sumber `u` standar. Ditumpuk jadi JSON, urutan itu cuma
+     * dijamin oleh kebiasaan; sebagai baris ber-`sensor_ke` dia bisa diurut
+     * ulang dan diaudit satu per satu.
+     *
+     * @return array{mentah: list<array<string, mixed>>, siap_hitung: list<array<string, mixed>>, belum_dihitung: list<array<string, mixed>>}
+     */
+    /**
+     * Empat pembacaan satu titik Timbangan, dari kunci bernama ATAU dari deret
+     * `pembacaan` menurut posisinya.
+     *
+     * ## Kenapa ada dua jalan masuk
+     *
+     * Kunci bernama (`z1`, `m`, `m_aksen`, `z2`) itu bentuk kontraknya, dan
+     * itu yang dipakai seeder & test. Tapi HP menggambar keempatnya sebagai
+     * **empat kolom pengulangan** — bentuk yang sudah dipakai dua puluh lembar
+     * lain — dan jalur kirim generiknya memulangkan satu deret `pembacaan`
+     * berisi empat angka, urut seperti kolomnya.
+     *
+     * Menyuruh HP menamai keempatnya berarti menaruh kosakata Timbangan
+     * (`m_aksen`) di layar yang menggambar dua puluh lembar; urutan kolomnya
+     * sendiri sudah dipatok bentuk lembar (`pengulangan_arah`: z, m, m', z'),
+     * jadi posisi sudah cukup untuk memetakannya di sini.
+     *
+     * Yang bernama MENANG kalau ada. Deret yang lebih pendek dari empat
+     * mengisi sebanyak yang ada — teknisi yang baru sempat mengisi dua kotak
+     * tidak boleh kehilangan dua-duanya.
+     *
+     * @param  array<string, mixed>  $titik
+     * @return array<string, mixed>
+     */
+    private static function bacaanTimbangan(array $titik): array
+    {
+        $deret = array_values((array) ($titik['pembacaan'] ?? []));
+        $hasil = [];
+
+        foreach (TimbanganMentah::PERAN_PEMBACAAN as $i => $peran) {
+            $hasil[$peran] = $titik[$peran] ?? ($deret[$i] ?? null);
+        }
+
+        return $hasil;
+    }
+
+    private function susunBlokTimbangan(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+        $satuan = (string) ($alat->satuan ?? 'kg');
+
+        // Titik dianggap terpakai kalau SALAH SATU dari empat pembacaannya ada
+        // isinya. Kalau cuma `m` yang dicek, titik yang teknisinya baru sempat
+        // mengisi kolom nol akan kebuang — dan yang kebuang bukan cuma yang
+        // barusan dikirim, tapi juga baris lama yang sudah telanjur dihapus
+        // `store()`/`update()` sebelum penyusunan ini jalan. Kelas kegagalan
+        // yang persis sama sudah kejadian di jalur pasangan standar/UUT.
+        $titikTerpakai = array_values(array_filter(
+            (array) $request->input('measurements', []),
+            static function (array $t) use ($adaIsinya): bool {
+                foreach (self::bacaanTimbangan($t) as $nilai) {
+                    if ($adaIsinya($nilai)) {
+                        return true;
+                    }
+                }
+
+                return collect($t['nominal'] ?? [])->contains($adaIsinya);
+            },
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+
+            // `titik_ukur` diisi JUMLAH NOMINAL, bukan massa konvensionalnya.
+            // Yang konvensional lahir dari tabel anak timbangan waktu dihitung,
+            // dan tabelnya bisa berubah begitu keping dikalibrasi ulang —
+            // menyimpannya di sini bikin dua angka yang mengaku mewakili hal
+            // yang sama, dan yang satu diam-diam basi.
+            $nominal = array_values(array_filter(
+                (array) ($titik['nominal'] ?? []),
+                $adaIsinya,
+            ));
+
+            $titikUkur = array_sum(array_map('floatval', $nominal));
+
+            foreach ($nominal as $slot => $nilai) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $slot + 1,
+                    'sensor_ke' => $slot + 1,
+                    'peran_sensor' => TimbanganMentah::PERAN_NOMINAL,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuan,
+                    'standard_id' => $standarDefault?->id,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            $baca = [];
+            $terbaca = self::bacaanTimbangan($titik);
+
+            foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
+                if (! $adaIsinya($terbaca[$peran] ?? null)) {
+                    continue;
+                }
+
+                $baca[$peran] = (float) $terbaca[$peran];
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => 1,
+                    'sensor_ke' => null,
+                    'peran_sensor' => $peran,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => (float) $terbaca[$peran],
+                    'satuan' => $satuan,
+                    'standard_id' => $standarDefault?->id,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $titikUkur,
+                // Kosong, dan itu disengaja: bentuk ini nggak punya deret datar.
+                // Meratakan empat pembacaan yang artinya beda-beda jadi satu
+                // deret bikin `pembacaan` campur aduk antara nol & berbeban.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'standard_id' => $standarDefault?->id,
+                'satuan' => $satuan,
+                'suhu' => null,
+                'konteks' => [
+                    'nominal' => array_map('floatval', $nominal),
+                    ...$baca,
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            // Dibulatkan ke presisi kolom `uncertainty_calculations` SEBELUM
+            // dipulangkan — sama seperti dua jalur lain. Tanpa ini `preview`
+            // memulangkan angka presisi penuh sementara yang tersimpan sudah
+            // dibulatkan kolom `decimal`, dan dua angka beda untuk satu
+            // pengukuran itu temuan audit buat lab terakreditasi.
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
     private function susunPasanganStandarUut(
         CalibrationRequest $request,
         Equipment $alat,

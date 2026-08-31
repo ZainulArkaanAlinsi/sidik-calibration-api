@@ -80,6 +80,14 @@ class DatabaseSeeder extends Seeder
             // baris itu — bukan membuat baris kembar yang bikin
             // `tautkanStandar()` memilih sewenang-wenang.
             Suhu3AlatSeeder::class,
+            // Alat ke-21 — Timbangan, kelompok Massa, tiga sesi contoh dari
+            // tiga revisi workbook master (kg / gram / substitusi). CMC-nya
+            // sudah ada di lampiran akreditasi no. 12 (17 pita), jadi cukup
+            // baris dari `CalibrationCapabilitySeeder`.
+            //
+            // WAJIB abis `ThermohygroSeeder`: sesinya menautkan TH-2 sebagai
+            // sumber koreksi kondisi lingkungan.
+            TimbanganSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

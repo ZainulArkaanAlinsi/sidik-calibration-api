@@ -446,6 +446,43 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 Tanpa param = pH (default — mobile lama nggak berubah). Detail rumus & arsitektur
 profil: `docs/SPEC-turbidimeter-profile.md`.
 
+### Lembar **Timbangan** (`profil=timbangan`) — alat ke-21, kelompok Massa
+
+✅ **Live 31 Agt 2026.** Satu-satunya lembar yang bentuknya **tujuh blok**, bukan satu tabel
+titik. Handoff lengkap: `docs/perintah-frontend-timbangan.md`.
+
+Yang beda dari dua puluh lembar lain, dan yang wajib dibaca sebelum menggambar layarnya:
+
+- **Dua bagian ber-`tabel`.** `akurasi` (10 baris × 4 kolom) dan `keterulangan` (2 baris × 10
+  pengulangan × **2 sub-kolom**). Bentuknya sama dengan lembar TIDS & ketiga alat suhu, jadi
+  widget tabel yang ada bisa dipakai ulang — yang baru cuma sub-kolom kedua di keterulangan.
+- **Empat kolom `akurasi` BUKAN pengulangan.** `pengulangan_arah` melabelinya `z`, `m`, `m'`,
+  `z'` — nol sebelum, dua pembacaan berbeban, nol sesudah. Jangan ditulis "Pengulangan 1..4".
+- **Empat dropdown menentukan ANGKA**, bukan tampilan: `tipe_timbangan`
+  (`Non-Analytical`/`Analytical` — memilih tabel anak timbangan F1 vs E2), `varian_master`
+  (`kg`/`gram`/`substitusi` — memilih revisi master), `tipe_display`, `jenis_timbangan`.
+  Pilihannya dikirim server; **jangan dipetakan ulang di HP.**
+- **Blok tingkat-sesi lewat `spesifikasi_alat`**, bukan `measurements`: `keterulangan`,
+  `eksentrisitas`, `histeresis`, plus `varian_master`/`tipe_display`/`tipe_timbangan`/`satuan`.
+- **`measurements[].titik_ukur` tetap wajib** (jumlah nominal keping, = kolom `Nominal` kertas).
+  Massa konvensionalnya diturunkan server dari tabel anak timbangan, jangan dikirim dari HP.
+- **`spesifikasi_alat.keterulangan` / `.eksentrisitas` / `.histeresis` berbentuk OBJEK**, bukan
+  teks — kunci `spesifikasi_alat` lain tetap teks pendek (maks 64 karakter).
+- **`measurements[].nominal` urutannya MENGIKAT** — Mass 1..6 kolom-major. Slot pertama dapat
+  `ci` = 10 di varian substitusi; keping yang mendarat di slot salah menggeser budget tanpa error.
+- **DUA ketidakpastian per titik** (NMI Monograph 4). `ketidakpastian_diperluas` = U95% of
+  **Correction** (kolom Correction, bagian 3 sertifikat). U95% of **Weighing** (bagian 7) ikut di
+  `type_b_components` sebagai baris ber-`sumber: "u95_penimbangan"`. Tiap baris budget bawa
+  `budget: "koreksi" | "penimbangan"` — nama komponennya memang bertabrakan antar-budget.
+- **Belum ada jalur kamera** (`bentuk_pindai_foto.didukung = false`) dan **belum ada vonis
+  PASS/FAIL** (`punyaToleransi()` = false; batas keberterimaannya MPE kelas SNSU PK.M-02:2021
+  yang butuh nilai `e` dari teknisi). Jangan gambar tombol foto atau chip lulus/tidak.
+- **`kode_dokumen` null** — kertas lembar kerjanya belum pernah dikirim lab; ketiga workbook cuma
+  memuat `SIDIK-FM-CAL-2403_Rev. 0`, formulir SERTIFIKAT bersama.
+
+Tiga sesi contoh sudah ter-seed: `011-CAL-525` (kg), `019-CAL-425` (gram, Analytical),
+`0136-CAL-123` (substitusi 2000 kg).
+
 ### `status_standar` di respons sesi — banner kepala lembar kerja
 
 ✅ **Live 25 Jul.** Ikut di `GET /api/calibrations` & `GET /api/calibrations/{id}`.
