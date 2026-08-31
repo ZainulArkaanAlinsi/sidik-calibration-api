@@ -240,9 +240,49 @@ class TemplateLembarKerja
                     $definisi['kolom'] ?? [],
                 )),
                 'pengulangan' => array_map('intval', $pengulangan),
+                // Tulisan nomor pengulangan seperti TERCETAK, `{ke: teks}`.
+                //
+                // Kosong = kertasnya memakai penomoran bawaan lembar cetak
+                // SIDIK (`X1`..`Xn`), dan itu berlaku buat hampir semua lembar.
+                // Yang mengisinya lembar yang kertas ACUANNYA bukan cetakan
+                // kita: master Timbangan menomori kolom `No.`-nya `1`..`10`
+                // polos, dan lembar cetak yang tetap menulis `X1` bikin dua
+                // kertas untuk satu tabel yang penomorannya beda.
+                'label_pengulangan' => $this->labelPengulangan($definisi),
             ],
             'sel' => $sel,
         ];
+    }
+
+    /**
+     * Peta `{nomor pengulangan: tulisan tercetak}` dari `pengulangan_arah`.
+     *
+     * Bentuk masukannya `[['ke' => 1, 'label' => '1'], …]` — sama dengan yang
+     * dibaca HP. Baris yang tidak lengkap dibuang, bukan bikin seluruh petanya
+     * gagal: nomor yang hilang tinggal jatuh ke penomoran bawaan.
+     *
+     * @param  array<string, mixed>  $definisi
+     * @return array<int, string>
+     */
+    private function labelPengulangan(array $definisi): array
+    {
+        $peta = [];
+
+        foreach ((array) ($definisi['pengulangan_arah'] ?? []) as $baris) {
+            if (! is_array($baris) || ! isset($baris['ke'], $baris['label'])) {
+                continue;
+            }
+
+            $teks = trim((string) $baris['label']);
+
+            if ($teks === '') {
+                continue;
+            }
+
+            $peta[(int) $baris['ke']] = $teks;
+        }
+
+        return $peta;
     }
 
     /**

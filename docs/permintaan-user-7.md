@@ -1158,6 +1158,293 @@ belum tentu sama tanggal. Lihat K12.
 
 ---
 
+## 14. Alat baru **Timbangan** (Massa) — 31 Agt 2026
+
+Ditambahkan pemilik proyek 31 Agt 2026 bersama tiga workbook master ber-password (pw `spirit285`):
+
+> *"kita ada alat baru lagi yaitu jenis nya TIMBANGAN … pastikan harus beres juga olah data nya
+> gk ada yang error dan juga aneh aneh"*
+
+| | Isi | Status |
+|---|---|---|
+| **A** | Backend alat ke-21 (profil, lembar kerja, registry) | **BERES** — `TimbanganProfile`, alat pertama di kelompok **Massa** |
+| **B** | Olah data sesuai master (koreksi + DUA budget U95) | **BERES** — 1.099 angka diadu, cocok sampai digit terakhir; `TimbanganMasterTest` |
+| **C** | Tabel anak timbangan, CMC, drift | **BERES** — `database/data/tabel-standar-timbangan.json`, tiga snapshot |
+| **D** | CMC diadu ke lampiran akreditasi | **BERES** — `TimbanganCmcCocokAkreditasiTest`, 17 pita cocok |
+| **E** | Sisi mobile (layar lembar kerja) | **BERES** (31 Agt 2026) — lembarnya kegambar & payloadnya sampai; 13 test baru (`timbangan_lembar_test.dart`, `timbangan_layar_test.dart`). Lima cacat sunyi ditemukan & ditutup, lihat di bawah |
+| **F** | Jalur kamera / pindai lembar | **NYALA per tabel** (31 Agt 2026, sesudah kertas masternya dikirim) — Repeatability ON, Accuracy OFF. Tiga cacat sunyi ditutup dulu; lihat di bawah |
+
+### E — lima cacat SUNYI yang ketemu waktu HP disambungkan
+
+Tidak satu pun menghasilkan error. Ini bagian yang paling mahal dari pekerjaan ini, dan urutannya
+urutan ketemunya:
+
+| # | Cacat | Kalau lolos |
+|---|---|---|
+| 1 | Kode kotak empat blok field bertitik **tanpa** awalan `spesifikasi_alat.` | Di HP itu berarti kolom TURUNAN: read-only, tidak pernah ikut payload. **39 kotak** digambar rapi, diisi teknisi dari kertas, lalu hilang waktu tombol kirim ditekan |
+| 2 | Titik di dalam `spesifikasi_alat.*` dikirim DATAR | `spesifikasi_alat` kolom JSON tanpa skema, jadi lolos validasi tanpa keluhan — lalu dibaca **nol** kalkulatornya. Komponen Eccentricity nol di setiap sesi |
+| 3 | Kedua tabel memakai `peran` sebagai nama blok | Di HP `peran` bukan label bebas: nilainya-yang-bukan-null berarti "lembar pasangan standar/UUT". SELURUH lembar belok ke jalur pasangan — payload berangkat berisi `standar`/`uut` **tanpa satu pun nominal** |
+| 4 | Baris Accuracy 50/100 kg bentrok dengan Middle/Maximum Capacity | Empat baris berbagi dua kotak isian; angka yang diketik di satu tabel muncul di tabel satunya |
+| 5 | `titik_bisa_diubah` nyala di DUA tabel | `titikKustom` di HP itu SATU daftar untuk seluruh lembar. Menyusun sepuluh titik Accuracy ikut mengubah tabel Repeatability jadi sepuluh baris Middle/Maximum yang tidak ada di kertas mana pun |
+
+Yang menutupnya: awalan `spesifikasi_alat.` + peta bersarang (1 & 2), `grup` menggantikan `peran`
+(3, dijaga aturan umum `SemuaProfilLembarKerjaTest::test_peran_tabel_cuma_buat_lembar_pasangan`),
+`offset_kunci: 1000` (4), dan `titik_bisa_diubah: false` di Repeatability (5).
+
+Dua kunci bentuk baru lahir dari sini, dua-duanya umum bukan khusus Timbangan:
+
+- **`tabel.simpan_ke: "spesifikasi_alat.<kunci>"`** — isi tabel itu besaran tingkat-SESI, bukan
+  titik. HP mengirimkannya sebagai cerminan tabelnya (`{baris: [{titik_ukur, <kode kolom>: […]}]}`)
+  dan barisnya TIDAK ikut `measurements[]`. Tanpa ini, sertifikat terbit dengan dua baris titik
+  tambahan yang tidak pernah diminta siapa pun — angkanya sah, set point-nya sah, nol error.
+- **`tipe: "daftar_angka"`** pada `kolom_baris` — satu kotak, beberapa angka (`20+20+10`). Koma di
+  situ koma DESIMAL, bukan pemisah: `20,5+10` wajib jadi dua keping, bukan tiga.
+
+### F — kamera: dibatalkan, lalu DIHIDUPKAN LAGI waktu kertasnya dikirim
+
+Pemilik proyek mengirim cetakan `CALIBRATION RESULT` ketiga master (31 Agt 2026, sesudah keputusan
+di bawah), dan cetakan itu membatalkan dua dari tiga alasannya. Yang berlaku sekarang:
+
+| Blok | Kamera | Sebabnya, dari kertasnya |
+|---|---|---|
+| `keterulangan` | **ON** | Grid sempurna: `No.` 1..10 turun, dua kapasitas ke samping, sub-kolom `Zero (kg)`/`Reading (kg)`. Ketiga jangkarnya tercetak |
+| `akurasi` | **OFF** | Daftar MENURUN (`z1`, `m1`, `m1'`, `z2`…), pembedanya tulisan per baris. Pemeta yang ada menjangkar kolom ke nomor pengulangan |
+
+Tiga hal yang harus dibetulkan supaya jangkarnya ada, dan ketiganya cacat SUNYI:
+
+1. **Bentuk tabelnya transposed dari kertasnya.** Kami mengirim kapasitas sebagai baris dan
+   pengulangan sebagai kolom; kertasnya kebalikan. Dua jangkar di sumbu yang salah = nol sel tiap
+   jepretan. Ini juga yang bikin alasan lama *"kepala kolomnya tidak terjangkau"* keliru — yang
+   salah bentuk kami, bukan kertasnya.
+2. **Nomor baris polos bikin jangkar LENGKAP TAPI SALAH.** Kertas menomori `1`..`10`, dan angka `1`
+   juga muncul di baris penomoran sub-kolom TEPAT DI ATAS isi tabel. Pencarian teks memilih
+   kemunculan paling atas → `1` & `2` dari baris itu, `3`..`10` dari kolom `No.` → jumlahnya pas
+   sepuluh, tidak ada penjagaan berbunyi, dan SELURUH grid bergeser satu baris. Ditutup
+   `_jangkarNomorPolosBaris` (deret utuh, tegak satu kolom, di kiri kolom data — atau nol sel).
+3. **Kapasitas uji diturunkan dari `range_max`.** Master gram membantahnya: alat 54 g diuji di
+   25 g & 50 g, bukan 27/54. Angka itu masuk rumus lewat `deviasiKurangiNominal` (gram DAN
+   substitusi) dan `srTerdekat()`. Sekarang diketik lewat `spesifikasi_alat.keterulangan.*.nominal`.
+
+Satuan ikut jadi jangkar: label sub-kolom ditulis persis seperti tercetak (`Zero (g)` di master
+gram), jadi lembar gram yang difoto ke sesi kilogram pulang NOL sel — gagal berisik, bukan
+memindahkan `24,9999 g` ke kotak kilogram.
+
+Yang HILANG: lembar ini tidak punya berkas geometri, jadi tidak bisa dipindai satu-halaman-penuh.
+Pipeline geometri menurunkan tinggi sel & kotak jangkar SEKALI per lembar, sementara lembar ini
+mencampur dua orientasi tabel — `ocr:rangka-geometri` sekarang menolaknya di muka daripada
+menerbitkan kertas yang bertentangan dengan bentuknya sendiri.
+
+### F (lama) — kamera: dicoba, lalu dibatalkan hari yang sama
+
+Sempat dinyalakan per-tabel (`lokal: true` + `tabel[].pindai_foto`) dengan alasan bentuk layar
+Repeatability memang grid sempurna. Dibatalkan setelah tiga hal terbukti, dan ketiganya bisa dicek
+tanpa memegang kertasnya:
+
+1. **Kertasnya belum ada** — `kode_dokumen` lembar ini `null`. Tombol "foto tabel ini" untuk
+   formulir yang belum diterbitkan lab menjanjikan sesuatu yang tidak ada.
+2. **Kepala kolomnya tidak terjangkau** — `PetaTabelFoto` menjangkar tiap pengulangan ke tulisan
+   kepala kolomnya, bawaannya `X1` / `Repeat 1`. Tabel ini tidak mengirim `pengulangan_arah` maupun
+   `prefiks_pengulangan`, jadi tiap jepretan pulang NOL sel.
+3. **Blok Accuracy tidak sebentuk** — di kertas master dia daftar MENURUN (`z1`, `m1`, `m1'`, `z2`,
+   …); grid empat kolom yang digambar layar itu bentuk LAYAR.
+
+Mekanisme per-tabel yang sempat dibuat ikut dibuang: mesin tanpa pemakai lebih buruk daripada tidak
+ada mesinnya. Syarat menyalakannya nanti ada di `docs/perintah-frontend-timbangan.md` §6.
+
+**Baris lampiran akreditasi LK-285-IDN no. 12**, kelompok **Massa**, satu-satunya baris di
+kelompok itu: *"Timbangan (Elektronik, mekanik)"*, 17 pita CMC dari 0–200 g (0,57 mg) sampai
+1800–2000 kg (0,52 kg). Baris CMC-nya sudah ter-seed sejak dulu — yang belum ada cuma profil &
+mesin hitungnya, sama persis seperti ketiga alat suhu di §11.
+
+### Tiga workbook = tiga REVISI, bukan tiga alat
+
+| Berkas | Sesi contoh | Basis | Metode |
+|---|---|---|---|
+| `New_Master_Olda_Timbangan_kg.xlsm` | `011-CAL-525` Bestar 100 kg | kg | langsung |
+| `New_Master_Olda_Timbangan_gram.xlsm` | `019-CAL-425` Moisture Analyzer 54 g | g | langsung |
+| `TERBARU_Master_Olda_Timbangan_Subtitusi_291025.xlsm` | `0136-CAL-123` Dini Argeo 2000 kg | kg | beban substitusi |
+
+Dua yang pertama tinggal di folder yang namanya sendiri berbunyi *"Temuan No. 34 - (blm rampung
+total)"* — kebaca dari tautan luar yang tertanam di workbook ketiga. Yang ketiga bernama "TERBARU"
+dan bertanggal 29 Okt 2025.
+
+Godaannya besar membuat tiga profil. Yang membantahnya lampiran akreditasi: **satu baris, satu
+nama alat**. `CalibrationProfileRegistry` sendiri melempar `LogicException` kalau dua profil
+mengaku ejaan nama yang sama. Jadi: satu profil, tiga varian master
+(`VarianMasterTimbangan`), variannya properti SESI. Pola yang sama sudah dipakai TITS, Enclosure,
+dan TIDS.
+
+### Bentuk lembarnya BEDA dari 20 alat sebelumnya
+
+Dua puluh alat sebelumnya punya SATU tabel: titik ukur turun, pengulangan ke kanan. Timbangan
+punya **tujuh blok** yang tidak sebentuk — Scale Observation, Effect of Tare, Accuracy,
+Repeatability, Loading Influence, Hysterisis, Drift — dan cuma satu (Accuracy) yang jadi baris
+titik di sertifikat. Empat blok lain menyumbang ke budget atau ke pernyataan terpisah (LOP).
+
+Jalur datar `measurements[i].pembacaan` maupun jalur pasangan standar/UUT dua-duanya tidak
+cukup, jadi seluruh sesi dihitung sekali lewat `hitungPerGrup()`. **Nol kolom baru di
+`raw_measurements`.**
+
+### DUA ketidakpastian per titik, dua-duanya tercetak
+
+Acuannya ditulis sendiri di sheet `Sekilas Info` ketiga workbook: **NMI Monograph 4 (CSIRO
+2010)**, yang memisahkan *Uncertainty of Correction* (koreksi kalibrasi, tanpa keterulangan
+pemakaian) dari *Uncertainty of Weighing* (seluruh proses, MEMUAT yang pertama sebagai
+komponen). Sertifikat mencetak keduanya — bagian 3 dan bagian 7.
+
+Urutannya searah dan mengikat: Correction dulu, hasilnya jadi bahan Weighing di titik yang sama.
+
+### Angka yang dicocokkan ke master
+
+| Sesi | Titik | U95 Correction titik 1 | U95 Weighing titik 1 | Sumber |
+|---|---|---|---|---|
+| `011-CAL-525` (kg) | 10 | **0,033 kg** | **0,04251 kg** | lantai CMC / hitungan |
+| `019-CAL-425` (gram) | 10 | **0,00057298 g** | **0,00059956 g** | hitungan budget |
+| `0136-CAL-123` (substitusi) | 10 | **0,52 kg** | **0,52 kg** | lantai CMC (hitungan 0,2801 / 0,3477) |
+
+Yang diadu bukan cuma angka akhirnya: tiap `ui × ci`, tiap `vi`, `uc`, `veff`, `k`, `U`, `U95`
+kedua budget × 10 titik × 3 workbook, plus tiap kolom turunan blok akurasi. **1.099 angka**,
+toleransi 5·10⁻⁶.
+
+Yang ikut terbukti di situ: `GumCalculator::agregasiBudget()` yang sudah ada — dengan `veff`
+DIPOTONG ke bawah lalu t-student — cocok dengan `TINV(0,05; veff)` Excel di keenam puluh budget
+itu. Tidak ada mesin agregasi kedua yang dibuat.
+
+### Penyimpangan master yang SENGAJA ditiru
+
+Sepuluh butir, semuanya di `docs/pertanyaan-lab-timbangan.md`. Yang paling menggeser angka:
+
+1. **`ui` "U of Correction" di budget Weighing** — ketiganya memasukkan ketidakpastian DIPERLUAS
+   sebagai komponen BAKU, lalu memperlakukannya beda: kg memakainya mentah, gram membaginya `k`
+   (yang benar menurut GUM), substitusi membaginya `√3`. Bedanya **hampir dua kali** di U95
+   Weighing (T2).
+2. **`ci = 10`** di baris drift Mref master substitusi, tanpa keterangan (T4).
+3. **Dua sel silang-kabel** master substitusi: `Sres MID` dibaca dari kolom **Maximum**, dan
+   `Sres MAX` dari kolom ketiga yang di workbook itu tidak ada. Menaikkan U95 titik 1 **18%** (T5).
+4. **`Rounding of Final Result`** — kg memakai resolusi alat dibagi `2√3`; dua lainnya angka
+   tetap `0,5/1000` dibagi `√3` (T8).
+5. **Enam baris drift** berlabel pembagi `Ö3` yang rumusnya tidak membagi (T3).
+
+### Yang TIDAK ditiru, dan kenapa
+
+- **Sel kosong dibaca nol.** Tiap `VLOOKUP` dibungkus `IFERROR(…,"")`, jadi nominal anak
+  timbangan yang tidak ada di tabel pulang kosong dan kosong ikut dijumlah sebagai nol —
+  sertifikat terbit dengan massa standar HILANG, tanpa error. Di sini titik seperti itu
+  **diblokir dengan alasan yang kebaca**.
+- **Dua sel yang rusak.** Master gram titik 9 membaca rujukan massa tiga baris terlalu jauh (T6);
+  master substitusi titik 9 membaca komponen `Weight Standard` dari **workbook lain** lewat
+  tautan luar `[3]` yang nilainya tinggal cache (T7). Dua-duanya kerusakan salin-tempel yang
+  perilaku benarnya tidak ambigu — sembilan titik tetangga di berkas yang sama melakukannya
+  dengan benar. Dihitung BENAR, selisihnya ditulis, dan `TimbanganMasterTest` menegakkan arah:
+  hitungan kita harus lebih BESAR, bukan sekadar berbeda.
+
+### Temuan yang paling mahal: tiga snapshot sertifikat anak timbangan
+
+Ketiga workbook memuat **sertifikat anak timbangan yang berbeda untuk keping fisik yang sama**.
+Keping E2 100 g: `100,0004 g` (kg) vs `100,000033 g` (gram) vs `99,999984 g` (substitusi) —
+selisih kg↔gram **16× ketidakpastian keping itu sendiri**. Dan kolom ketidakpastian keping
+0,1 g–500 g di master kg **seribu kali** lebih kecil daripada baris yang sama di master gram,
+sementara baris 1 kg ke atas di berkas yang sama cocok persis.
+
+Ketiganya disimpan dan dipilih per sesi, supaya tiap sesi bisa dihitung ulang jadi angka yang
+sama dengan kertas yang menerbitkannya. Mana yang berlaku = **T1**, dan itu keputusan manajer
+teknis lab.
+
+### Dugaan awal yang KELIRU, dicatat supaya tidak diulang
+
+Sempat disimpulkan bahwa pita CMC I..Q (200–2000 kg) **di luar** lampiran akreditasi, dan
+peringatan sesi sempat ditulis atas dasar itu. **Salah** — bacaan tabel lampiran terpotong di
+baris 45; lampiran no. 12 memang berlanjut sampai 1800–2000 kg, 17 pita, dan cocok angka demi
+angka dengan `DATABASE!R5:T21`. Kalau dibiarkan, tiap sesi kapasitas besar terbit dengan
+peringatan "di luar akreditasi" yang tidak benar — dan peringatan palsu melatih admin menekan
+"setujui tetap" tanpa membaca, kelas kerusakan yang persis sudah ditulis di §9.
+
+Yang menutupnya sekarang `TimbanganCmcCocokAkreditasiTest`: dua berkas diadu baris demi baris,
+jadi salah satu yang digeser tanpa yang lain langsung merah.
+
+### Hitung ulang: kejadian ketujuh dicegah, bukan ditunggu
+
+Pola yang sudah menggigit enam kali (Viscometer, Gas Detector, TITS, Enclosure, tiga alat suhu,
+lalu perintah `kalibrasi:hitung-ulang` yang "sukses" tanpa menghitung apa pun) ditutup
+BERSAMAAN dengan profilnya, bukan ditemukan belakangan:
+`App\Support\TimbanganMentah` disambung ke DUA jalur (`CalibrationValidator` &
+`HitungUlangSesi`), dan di perintah itu blok Timbangan diperiksa **duluan** — `GridSensorMentah`
+balik `[]` cuma kalau tidak ada `peran_sensor` sama sekali, dan kosakata Timbangan
+(`z1`/`m`/`m_aksen`/`z2`/`nominal`) tetap punya `peran_sensor`.
+
+Dibuktikan MENGGIGIT: dengan `TimbanganMentah::dari()` dimatikan,
+`HitungUlangSemuaSesiTest` langsung merah dan menyebut ketiga sesi berikut nama alatnya —
+
+```
+011-CAL-525  [Timbangan (Elektronik, mekanik)] → hitung_ulang_gagal
+019-CAL-425  [Timbangan (Elektronik, mekanik)] → hitung_ulang_gagal
+0136-CAL-123 [Timbangan (Elektronik, mekanik)] → hitung_ulang_gagal
+```
+
+### Satu bug yang ditangkap penjaga waktu dikerjakan
+
+`EquipmentFactory` mengundi `nama_alat` dari empat nama generik, dan salah satunya
+**"Timbangan"** — nama yang sampai hari itu memang tidak diklaim profil mana pun. Begitu
+`TimbanganProfile` lahir, satu dari empat fixture acak mendarat di lembar Timbangan, dan karena
+namanya diundi yang merah **bergantian tiap jalan**: Sertifikat, Masa Berlaku, Pembacaan
+Mustahil — sebelas test yang sama sekali tidak berhubungan dengan Timbangan.
+
+Yang bikin ini pantas dicatat: peringatannya **sudah tertulis di berkas itu sendiri**, satu baris
+di atas daftarnya (*"JANGAN pakai nama yang sama dengan `namaAlatKemampuan()` profil mana pun"*) —
+persis bentuk yang sama dengan jebakan `calibration_method_id` di §Jebakan. Diganti
+`Dial Indicator`, dan alasannya ditulis di tempat daftarnya.
+
+### Dua bug SAYA sendiri di rumus LOP, ketangkap membaca ulang master
+
+Bukan penyimpangan lab — dua-duanya salah saya, dan dua-duanya lolos dari test parity budget
+karena LOP memang tidak diadu di situ. Yang menangkapnya membaca ulang `D155` master sel demi sel
+sesudah semua budget hijau.
+
+1. **`U(C max)` diambil dari U95 yang sudah dilantai CMC.** Master melihat
+   `VLOOKUP(Cmax, Tabel_U_Correction, 3)`, dan kolom ketiga tabel itu berisi `k · uc` — bukan
+   baris `U95% Sertifikat` dua baris di bawahnya. Di sesi kg lantai CMC 0,033 kg menang atas
+   hitungan 0,0240 kg, jadi LOP terbit **0,0885 alih-alih 0,0795 kg — 11% terlalu besar**.
+2. **`Maximun STDEV` diambil dari lantai `Sres` budget.** Di varian substitusi lantai itu memang
+   sengaja disilang-kabel (T5), jadi mencampurnya melesetkan LOP
+   2,26 × (0,041 − 0,0316) = **0,0212 kg**.
+
+Pelajarannya bukan "kurang teliti": budget yang cocok 1.099 angka **tidak** membuktikan angka di
+luar budget benar. Sekarang LOP, rentang eksentrisitas, dan histeresis ikut diadu ke master, plus
+dua test yang MENGGIGIT — satu memastikan titik ber-|C| terbesar sesi kg memang yang U95-nya
+dilantai (kalau tidak, test-nya berhenti membedakan dua angka itu), satu lagi memastikan
+silang-kabel T5 masih ada di lantai budget dan TIDAK bocor ke `stdev_terbesar`.
+
+### Sisi mobile: kenapa BELUM, dan apa yang sudah siap menerimanya
+
+**Bukan dikecilkan ruang lingkupnya — kepentok alat.** Container sesi ini tidak punya toolchain
+Flutter (`flutter: command not found`), sementara `sidik-calibration-mobile` punya **162 berkas
+test**. Menulis layar baru yang tidak bisa dikompilasi maupun dijalankan test-nya, lalu
+mendorongnya ke suite sebesar itu, lebih berbahaya daripada handoff yang jelas — dan
+`[[sidik-fe-test-generator]]` memang mensyaratkan test menyertai tiap pekerjaan FE.
+
+Yang sudah diperiksa dan **tidak perlu dibangun ulang** di sisi HP:
+
+- **Tabel dua sub-kolom sudah didukung.** `TabelHasil.kolom` (`List<KolomTabelHasil>`) memang
+  lahir buat sel pH yang isinya DUA angka (pembacaan + °C). Blok Keterulangan Timbangan
+  (`zero` + `pembacaan` per pengulangan) memakai bentuk yang sama persis.
+- **`pengulanganArah`, `peran`, `sumbuPengulangan` sudah ada** — dipakai lembar TIDS & ketiga
+  alat suhu. Label `z / m / m' / z'` blok Akurasi tinggal ikut jalur itu.
+- **Payload non-datar sudah punya tempatnya.** `LembarKerjaSubmission.measurementsGrid`
+  (JSON mentah, dipakai Enclosure) yang akan membawa `measurements[].nominal` + empat
+  pembacaannya; `measurements` datar tidak perlu disentuh.
+
+Jadi sisa pekerjaannya pemetaan + layar + test, bukan kemampuan baru di model.
+
+### Kamera SENGAJA belum
+
+`bentukPindaiFoto()` memulangkan `didukung: false`. Tujuh blok yang tidak sebentuk tidak bisa
+diungkapkan lewat `kolom_suhu` / `standar_di_baris` yang cuma memodelkan satu tabel datar.
+Dibiarkan `true`, prompt & skema JSON yang dikirim ke pembaca foto dibangun untuk tabel yang
+tidak ada di kertasnya — dan yang balik bukan error, tapi angka yang dikarang supaya kolomnya
+kelihatan terisi. Alasan yang sama persis dipakai lembar Autoklaf & grid Enclosure.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -1257,6 +1544,7 @@ berkas profil.
 | G6 | Kolom "Environmental Meter Used" hidup di **17/17** lembar | **BERES di server** (25 Agt 2026) — TITS, TIDS & kelima Enclosure dropdown-nya nggak pernah diisi siapa pun, dan TIDS jalur cadangannya (`baris_thermohygro`) juga mati. Dijaga `ThermohygroSemuaLembarTest` + penjaga golongan sumber master. **Sisi HP menyusul** (27 Agt 2026, mobile#114): `thermohygro_dropdown_hidup_test.dart` menjaga dua arah — ada isi → dropdown kegambar, kosong → pesannya. Cakupannya 12 profil, yaitu yang bentuknya beneran dimodelkan mock; lima sisanya jatuh ke bentuk pH di sana, jadi klaim 17/17 tetap di sisi server. Yang ketangkap waktu penjaganya dipasang: bentuk mock Spectro, Visco & Gas punya kolomnya tapi daftar pilihannya KOSONG — di mode mock ketiga lembar itu memajang "belum ada unit" padahal server ngirim tujuh |
 | G4 | TIDS (perm. 5) | **BERES di server** (28 Agt 2026) — dua workbook master turun, `TidsCalculator` lahir, dan angkanya cocok sampai digit terakhir dengan dua sesi contoh (`TidsMasterTest`). Lembarnya pindah ke jalur PASANGAN standar/UUT, jadi tabel Pembacaan Standard akhirnya punya tempat simpan. **Sisi mobile juga BERES** — bentuknya data-driven (`tabel[].peran`), plus bentuk mock TIDS, fixture dari server, 9 test, dan satu bug `titikUkur` vs `titikUkurEfektif` yang ketangkap gara-gara itu |
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
+| G8 | Alat baru **Timbangan** (perm. 14) — kelompok Massa, alat ke-21 | **BERES di server** (31 Agt 2026) — satu profil, tiga varian master (kg / gram / substitusi), dua budget U95 per titik ikut NMI Monograph 4. Angkanya cocok sampai digit terakhir dengan ketiga workbook: **1.099 angka** diadu `TimbanganMasterTest` (tiap `ui×ci`, tiap `vi`, `uc`, `veff`, `k`, `U`, `U95`), plus `TimbanganCmcCocokAkreditasiTest` yang mengadu 17 pita CMC ke lampiran akreditasi. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-timbangan.md` — yang terbesar T1 (tiga snapshot sertifikat anak timbangan buat keping fisik yang sama) dan T2 (`ui` U-of-Correction: tiga perlakuan, selisih hampir 2×). **Sisi mobile BERES** (31 Agt 2026): lembarnya kegambar & payloadnya sampai, 13 test baru. Lima cacat SUNYI ketemu waktu disambungkan — 39 kotak yang read-only tanpa sadar, blok bersarang yang dibaca nol, `peran` yang membelokkan seluruh lembar ke jalur pasangan, kunci baris yang bentrok antar tabel, dan pengatur titik yang dipakai bersama; rinciannya di §14 E. Jalur kamera tetap MATI, dan itu keputusan bukan kelupaan (§14 F) |
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai

@@ -22,6 +22,7 @@ use App\Services\Calibration\Profiles\ThermocoupleProfile;
 use App\Services\Calibration\Profiles\ThermohygroProfile;
 use App\Services\Calibration\Profiles\ThermometerGlassProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
+use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
@@ -101,6 +102,11 @@ class CalibrationProfileRegistry
             new ThermocoupleProfile,
             new ThermometerGlassProfile,
             new ThermohygroProfile,
+            // Alat ke-21, dan yang PERTAMA di kelompok Massa — lampiran
+            // akreditasi LK-285-IDN no. 12. Tiga workbook master (kg, gram,
+            // substitusi) jadi SATU profil dengan tiga revisi; lihat
+            // VarianMasterTimbangan.
+            new TimbanganProfile,
         ];
     }
 

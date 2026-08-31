@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\GumCalculator;
+use Illuminate\Support\Collection;
 
 /**
  * Satu **profil kalibrasi** = satu jenis alat (pH Meter, Turbidimeter, ...),
@@ -404,9 +405,9 @@ abstract class CalibrationProfile
      * berarti nggak ada organisasi buat disaring. Itu sah: yang dipakai cuma
      * label baris, dan sesi belum bisa disimpan tanpa alat.
      *
-     * @return \Illuminate\Support\Collection<int, Standard>
+     * @return Collection<int, Standard>
      */
-    protected function masterStandarTertaut(?Equipment $equipment): \Illuminate\Support\Collection
+    protected function masterStandarTertaut(?Equipment $equipment): Collection
     {
         return Standard::query()
             ->whereNull('parameter_kondisi')
@@ -430,9 +431,9 @@ abstract class CalibrationProfile
      * yang kepilih masuk ke sesi, koreksi kondisi lingkungannya dibaca dari
      * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini.
      *
-     * @return \Illuminate\Support\Collection<int, Standard>
+     * @return Collection<int, Standard>
      */
-    protected function masterThermohygro(?Equipment $equipment, array $kolom = ['id', 'nama', 'parameter_kondisi']): \Illuminate\Support\Collection
+    protected function masterThermohygro(?Equipment $equipment, array $kolom = ['id', 'nama', 'parameter_kondisi']): Collection
     {
         return Standard::query()
             ->whereNotNull('parameter_kondisi')
@@ -464,10 +465,10 @@ abstract class CalibrationProfile
      * Nama selalu lebih spesifik. Buat baris yang serialnya memang unik
      * hasilnya identik, karena namanya pun cocok.
      *
-     * @param  \Illuminate\Support\Collection<int, Standard>  $master
+     * @param  Collection<int, Standard>  $master
      * @param  list<string>  $kunci
      */
-    protected function cocokkanStandar(\Illuminate\Support\Collection $master, array $kunci): ?Standard
+    protected function cocokkanStandar(Collection $master, array $kunci): ?Standard
     {
         return $master->first(fn (Standard $s): bool => in_array($s->nama, $kunci, true))
             ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $kunci, true));
@@ -745,6 +746,29 @@ abstract class CalibrationProfile
      * hilang tanpa error.
      */
     public function butuhPasanganStandarUut(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah sesi ini berbentuk TUJUH BLOK lembar Timbangan, bukan tabel titik.
+     *
+     * Default `false`. `true` cuma untuk Timbangan: satu sesi memuat Scale
+     * Observation, Effect of Tare, Accuracy, Repeatability, Loading Influence,
+     * Hysterisis, dan Drift — dan cuma Accuracy yang jadi baris titik di
+     * sertifikat. Empat blok lain menyumbang ke budget atau ke pernyataan
+     * terpisah (LOP), jadi tidak punya `titik_ke` sama sekali.
+     *
+     * Waktu `true`, `CalibrationController` membaca `measurements[i].nominal`
+     * berikut empat pembacaannya (`z1`, `m`, `m_aksen`, `z2`) dan menyimpannya
+     * ke `raw_measurements` lewat sumbu `peran_sensor` yang sudah ada, sementara
+     * blok tingkat-sesi masuk `spesifikasi_alat`.
+     *
+     * Tanpa hook ini jalur datar menyimpan SATU deret per titik, dan tiga dari
+     * empat pembacaan tiap titik hilang tanpa error — termasuk kedua pembacaan
+     * nol yang jadi sisi kiri kolom `Correction`.
+     */
+    public function butuhBlokTimbangan(): bool
     {
         return false;
     }
@@ -1175,9 +1199,9 @@ abstract class CalibrationProfile
      * keduanya berbeda — di lab terakreditasi, dua jawaban buat satu pertanyaan
      * ketertelusuran itu temuan audit.
      *
-     * @param  \Illuminate\Support\Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     * @param  Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
      */
-    public function standarSesiDariCentang(\Illuminate\Support\Collection $dicentang): ?Standard
+    public function standarSesiDariCentang(Collection $dicentang): ?Standard
     {
         return null;
     }
