@@ -260,6 +260,38 @@ Tiap titik di `uncertainty_calculations`:
 Correction, bagian 7 memakai U95 of Weighing. Layar detail harus menampilkan dua-duanya — kalau
 cuma satu, separuh angka yang tercetak tidak punya asal-usul di layar.
 
+### Peta lengkap sertifikat — dibaca dari sheet `SERTIFIKAT` workbook, bukan ditebak
+
+Delapan bagian, dan tiap angkanya ditelusuri ke selnya:
+
+| § Sertifikat | Isi | Dari |
+|---|---|---|
+| 1. REPEATABILITY | Half/Full Capacity, **Deviation Standard**, **Maximum Deviation With the Next Reading** | `keterulangan.nominal_mid/maks`, `stdev_mid/maks`, `mid/maks.maks_beda` |
+| 2. EFFECT OF TARE | satu angka | **`|m1 − m2|`** — lihat catatan di bawah |
+| 3. ACCURACY | Nominal Standard, Correction, **Uncertainty ±** | `titik_ukur` (massa konvensional), `koreksi`, `u95_koreksi` |
+| 4. LOADING INFLUENCE | 5 posisi + **Maximum Difference** | `eksentrisitas.selisih`, `eksentrisitas.rentang` |
+| 5. HYSTERISIS | Load, **Hysterisis** | `histeresis.m`, lalu **perbandingan** — lihat catatan |
+| 6. LIMIT OF PERFORMANCE | satu angka | `lop` |
+| 7. WEIGHING UNCERTAINTY | Nominal Standard, **Uncertainty ±**, `K =` | `titik_ukur`, `u95_penimbangan`, faktor cakupan |
+| 8. STANDARD USED | Name, Nominal Mass, Merk/Class, SN, Traceability | anak timbangan yang dicentang di `standar_dicek` |
+
+Tiga hal yang **tidak** bisa ditebak dari tampilan sertifikatnya, dan sudah salah kalau ditebak:
+
+- **§2 bukan `C = Ms−(M−z)`** seperti tertulis di petunjuk lembar kerjanya. Sel yang dicetak
+  `FC!F44 = ABS(E44−E45)`, yaitu **selisih mutlak dua pembacaan tare** (`|m1 − m2|`). Petunjuk di
+  kertas kerja itu untuk besaran lain.
+- **§5 mencetak PERBANDINGAN, bukan nilai.** Selnya `IF(hasil ≤ resolusi, "<", ">")` lalu memajang
+  **nilai resolusi** — jadi yang terbit `< 0,0001 g`, bukan angka histeresisnya. Mencetak angka
+  mentahnya berarti sertifikat menyatakan hal yang berbeda dari yang dimaksud lab.
+- **§4 "Reading" itu SELISIH, bukan pembacaan.** Selnya `beban − pembacaan posisi`; yang tercetak
+  penyimpangan tiap posisi. `Maximum Difference` = `MAX − MIN` dari kelima selisih itu.
+
+> **Catatan pelaksanaan.** Mesin hitung sekarang menurunkan selisih eksentrisitas dari pembacaan
+> **CENTER**, bukan dari beban — karena `eksentrisitas.beban` kosong di ketiga sesi master. Di
+> ketiganya pembacaan center kebetulan sama dengan bebannya, jadi angkanya identik dan paritasnya
+> hijau. Begitu ada sesi yang center-nya menyimpang dari beban, keduanya berpisah — dan yang benar
+> rumus master (`beban − pembacaan`). Diangkat sebagai **T13**.
+
 ## 6. Yang SENGAJA belum ada
 
 - **Tombol kamera — NYALA, tapi cuma di satu tabel.**

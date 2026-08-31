@@ -435,6 +435,21 @@ class TimbanganProfile extends CalibrationProfile
             ];
         }
 
+        if (($hasil['drift_massa_standar'] ?? null) !== null) {
+            $baris[] = [
+                'budget' => '-',
+                'sumber' => 'drift_massa_standar',
+                'keterangan' => sprintf(
+                    'Drift Massa Standar (d) = %s kg — kotak 7 formulir metode substitusi. '
+                    .'0,1 × MAX(Σ u tiap titik) / 2, dan satuannya kg bahkan untuk timbangan gram. '
+                    .'Tidak masuk budget mana pun, jadi tidak ada test budget yang menjaganya.',
+                    $this->angka((float) $hasil['drift_massa_standar']),
+                ),
+                'distribusi' => '-',
+                'nilai' => $hasil['drift_massa_standar'],
+            ];
+        }
+
         $baris[] = [
             'budget' => '-',
             'sumber' => 'varian_master',
@@ -592,12 +607,21 @@ class TimbanganProfile extends CalibrationProfile
         $bentuk = [
             'profil' => $this->kode(),
             'judul' => 'KALIBRASI MASSA / TIMBANGAN',
+            // Nomor formulir LEMBAR KERJA, dan cuma dipasang di varian yang
+            // kertasnya benar-benar ada di tangan.
+            //
             // Ketiga workbook cuma memuat `SIDIK-FM-CAL-2403_Rev. 0` di footer
             // sheet SERTIFIKAT — itu formulir SERTIFIKAT yang dipakai bersama
-            // semua alat, bukan nomor lembar kerjanya. Alasan yang sama persis
-            // dipakai TITS & ketiga alat suhu; lihat
-            // SemuaProfilLembarKerjaTest::$belumAdaKertasnya.
-            'kode_dokumen' => null,
+            // semua alat, bukan nomor lembar kerjanya. Jadi selama yang ada
+            // cuma workbook, kolom ini memang null.
+            //
+            // 31 Agt 2026 pemilik proyek mengirim kertasnya untuk metode
+            // SUBSTITUSI: `SIDIK-FM-CAL-0508.A`, Revise 4. Yang kg & gram
+            // belum — dan nomornya TIDAK ditebak dari situ. Akhiran `.A`
+            // menyiratkan ada saudaranya, tapi menyiratkan bukan mengetahui,
+            // dan nomor formulir yang salah di kop lembar lab terakreditasi
+            // itu temuan audit. Ditanyakan sebagai T12.
+            'kode_dokumen' => $this->kodeFormulir($equipment),
             'metode' => 'NMI Monograph 4 (CSIRO 2010)',
             'alat_baru' => [
                 'kode_kategori' => 'massa',
@@ -822,6 +846,42 @@ class TimbanganProfile extends CalibrationProfile
         ['kode' => 'AT7', 'nama' => 'Anak Timbangan F1-10', 'nominal' => '10 kg'],
     ];
 
+    /**
+     * Nomor formulir lembar kerja — per VARIAN, dan cuma yang kertasnya ada.
+     *
+     * Variannya diturunkan dari alat (kapasitas & satuan) memakai aturan yang
+     * sama dengan bawaan `varian_master`, jadi lembar yang dibuka untuk
+     * timbangan 2000 kg langsung memajang nomor formulir yang benar. Teknisi
+     * tetap boleh mengganti variannya di dalam lembar; yang berubah cuma
+     * perhitungannya, bukan kop yang sudah tercetak di kertas yang dia pegang.
+     *
+     * Null buat kg & gram, dan itu BUKAN kelupaan: kertasnya belum pernah
+     * sampai. Menebaknya dari `SIDIK-FM-CAL-0508.A` (misal dengan membuang
+     * `.A`) berarti mencetak nomor formulir karangan di kop lembar lab
+     * terakreditasi — persis jenis temuan yang paling mahal.
+     */
+    private function kodeFormulir(?Equipment $equipment): ?string
+    {
+        if ($equipment === null) {
+            return null;
+        }
+
+        // Kapasitas dibawa ke KILOGRAM dulu — ambang `> 200 kg` di
+        // `bawaanUntuk()` bersatuan kg, dan alat gram berkapasitas 54 yang
+        // dilempar mentah ke situ bakal dibaca 54 kg.
+        $kapasitas = (float) ($equipment->range_max ?? 0.0);
+        $gram = strtolower(trim((string) ($equipment->satuan ?? ''))) === 'g';
+
+        $varian = VarianMasterTimbangan::bawaanUntuk(
+            $gram ? $kapasitas / 1000.0 : $kapasitas,
+            $equipment->satuan,
+        );
+
+        return $varian->kode === VarianMasterTimbangan::SUBSTITUSI
+            ? 'SIDIK-FM-CAL-0508.A_Rev.4'
+            : null;
+    }
+
     /** @return array<string, mixed> */
     private function bagianScaleObservation(): array
     {
@@ -838,6 +898,24 @@ class TimbanganProfile extends CalibrationProfile
             'field' => [
                 ...$this->fieldScaleObservation('sebelum_adjustment', 'Before'),
                 ...$this->fieldScaleObservation('sesudah_adjustment', 'After'),
+                // "Standar deviasi yang lalu (SD)" — kotak paling bawah blok
+                // ini di kertas.
+                //
+                // KOSONG di ketiga workbook master, jadi tidak dipakai
+                // perhitungan mana pun; kalau dipakai, salah satu dari 1.127
+                // angka paritas pasti sudah meleset. Kotaknya tetap ada karena
+                // ADA di kertas: lembar yang punya kotak di tangan tapi tidak
+                // punya kotaknya di layar bikin teknisi mencatatnya di
+                // sembarang tempat, atau tidak sama sekali.
+                //
+                // Kalau suatu saat lab mulai mengisinya DAN memakainya, yang
+                // berubah bukan cuma kotak ini — `vi` keterulangan ikut, dan
+                // itu perubahan metode, bukan penambahan kolom.
+                $this->f(
+                    'spesifikasi_alat.scale_observation.sd_tahun_lalu',
+                    'Standar deviasi tahun lalu (s)',
+                    'angka',
+                ),
             ],
         ];
     }
@@ -1216,6 +1294,20 @@ class TimbanganProfile extends CalibrationProfile
             ],
             [
                 'label' => 'Maximum Capacity',
+                // Kertas `SIDIK-FM-CAL-0508.A_Rev.4` mengetik **`Miximum
+                // Capacity`** — salah ketik yang ada di formulir resminya,
+                // bukan di sini.
+                //
+                // Dikirim sebagai jangkar kedua, bukan diperbaiki diam-diam:
+                // pemeta foto mencocokkan tulisan yang TERCETAK, jadi tanpa
+                // ejaan ini slot Maximum tidak pernah ketemu dan SEPARUH tabel
+                // (dua puluh angka) hilang tiap jepretan — sementara slot
+                // Middle tetap kejangkar, jadi hasilnya kelihatan "separuh
+                // kebaca" bukan "gagal".
+                //
+                // Ejaan yang benar tetap dikirim duluan supaya kertas yang
+                // suatu saat direvisi tetap kejangkar tanpa perubahan kode.
+                'varian' => 'Miximum Capacity',
                 'titik_ukur' => [$rentang],
             ],
         ];
@@ -1321,7 +1413,25 @@ class TimbanganProfile extends CalibrationProfile
      */
     private function fieldHisteresis(int $deret): array
     {
-        $posisi = ['M(p1)', "M+M'", 'M(q1)', 'Zero', "M+M'", 'M(q2)', 'Zero', 'M(p2)'];
+        // Nomor p/q BERLANJUT antar deret, tidak mengulang dari 1.
+        //
+        // Kertasnya menomori Reading 1 `p1 q1 q2 p2` dan Reading 2
+        // `p3 q3 q4 p4` — delapan pembebanan yang berbeda, bukan dua kali
+        // empat. Dilabeli sama dua-duanya, teknisi yang mencocokkan layar ke
+        // kertas menemukan `M(p1)` di dua tempat dan harus menebak yang mana.
+        // Rumusnya sendiri membaca POSISI, jadi ini murni soal kotak yang
+        // diisi teknisi mendarat di posisi yang dia kira.
+        $mulai = ($deret - 1) * 2;
+        $posisi = [
+            sprintf('M(p%d)', $mulai + 1),
+            "M+M'",
+            sprintf('M(q%d)', $mulai + 1),
+            'Zero',
+            "M+M'",
+            sprintf('M(q%d)', $mulai + 2),
+            'Zero',
+            sprintf('M(p%d)', $mulai + 2),
+        ];
 
         return array_values(array_map(
             fn (int $i): array => $this->f(

@@ -458,6 +458,90 @@ class TimbanganSesiTest extends TestCase
         $this->fail('Bagian `keterulangan` nggak ada di bentuk lembarnya.');
     }
 
+    /**
+     * Tiap kotak blok yang diisi teknisi WAJIB lolos validasi — termasuk yang
+     * paling jarang diisi.
+     *
+     * Batas ukuran blok `spesifikasi_alat.*` menghitung kunci tingkat atas, dan
+     * batas yang ketinggalan satu tidak menolak kotaknya: dia menolak
+     * **SELURUH sesi** dengan 422. Sempat kejadian waktu kotak
+     * `sd_tahun_lalu` ditambah ke blok `scale_observation` sementara batasnya
+     * masih `max:2` — dan yang kena cuma teknisi yang kebetulan mengisinya,
+     * jadi kegagalannya jarang dan sulit ditiru.
+     *
+     * Yang diuji di sini bentuk TERPENUH tiap blok, bukan bentuk minimum.
+     */
+    public function test_blok_terisi_penuh_lolos_validasi(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat']['scale_observation'] = [
+            'sebelum_adjustment' => ['standar' => 20, 'z1' => 0, 'm1' => 20, 'm2' => 20, 'z2' => 0],
+            'sesudah_adjustment' => ['standar' => 20, 'z1' => 0, 'm1' => 20, 'm2' => 20, 'z2' => 0],
+            'sd_tahun_lalu' => 0.01,
+        ];
+        $payload['spesifikasi_alat']['effect_of_tare'] = [
+            'standar' => 20, 'm1' => 20, 'm2' => 20,
+            'bentuk_pan' => 'kotak', 'ukuran_pan' => '30x30 cm',
+        ];
+        $payload['spesifikasi_alat']['histeresis'] = [
+            'm' => 20, 'm_aksen' => 40,
+            'baca1' => [20, 40, 20, 0, 40, 20, 0.02, 20],
+            'baca2' => [20, 40, 20, 0.02, 40, 20, 0, 20],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertCreated()
+            ->json('data.id');
+
+        $spek = CalibrationSession::findOrFail($id)->spesifikasi_alat;
+
+        // Bukan cuma "nggak ditolak" — isinya harus beneran mendarat.
+        $this->assertSame(0.01, $spek['scale_observation']['sd_tahun_lalu']);
+        $this->assertSame('kotak', $spek['effect_of_tare']['bentuk_pan']);
+        $this->assertCount(8, $spek['histeresis']['baca2']);
+    }
+
+    /**
+     * Nomor formulir cuma dipasang di varian yang kertasnya ADA.
+     *
+     * Kertas metode substitusi (`SIDIK-FM-CAL-0508.A`, Revise 4) dikirim
+     * pemilik proyek 31 Agt 2026; yang kg & gram belum. Menebaknya dari situ —
+     * misal dengan membuang akhiran `.A` — berarti mencetak nomor formulir
+     * karangan di kop lembar lab terakreditasi.
+     */
+    public function test_nomor_formulir_cuma_di_varian_yang_kertasnya_ada(): void
+    {
+        $profil = new TimbanganProfile;
+
+        $sub = new Equipment(['satuan' => 'kg', 'range_max' => 2000.0]);
+        $kg = new Equipment(['satuan' => 'kg', 'range_max' => 100.0]);
+        $gram = new Equipment(['satuan' => 'g', 'range_max' => 54.0]);
+
+        $this->assertSame(
+            'SIDIK-FM-CAL-0508.A_Rev.4',
+            $profil->bentukLembarKerja(false, $sub)['kode_dokumen'],
+        );
+
+        $this->assertNull($profil->bentukLembarKerja(false, $kg)['kode_dokumen']);
+
+        // Alat GRAM berkapasitas 54 g. Tanpa konversi ke kilogram, `54` dibaca
+        // sebagai 54 kg — masih di bawah ambang 200 kg, jadi kebetulan benar.
+        // Yang membuktikan konversinya jalan alat gram di ATAS ambang itu.
+        $this->assertNull($profil->bentukLembarKerja(false, $gram)['kode_dokumen']);
+
+        $gramBesar = new Equipment(['satuan' => 'g', 'range_max' => 500000.0]);
+
+        $this->assertSame(
+            'SIDIK-FM-CAL-0508.A_Rev.4',
+            $profil->bentukLembarKerja(false, $gramBesar)['kode_dokumen'],
+            '500.000 g = 500 kg, di atas ambang 200 kg — kalau ini null, '
+            .'kapasitasnya nggak dikonversi ke kilogram dulu.',
+        );
+    }
+
     /** Angkanya sampai ke mesin hitung, dan yang keluar angka master. */
     public function test_hasil_hitung_cocok_master(): void
     {

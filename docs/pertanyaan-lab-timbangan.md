@@ -237,3 +237,33 @@ Dua master yang pertama sebenarnya konsisten dengan aturan metrologi yang biasa 
 - **Pita CMC.** Ketujuh belas pita A..Q (0 g s/d 2000 kg) semuanya ADA di lampiran akreditasi
   no. 12 — dicocokkan baris demi baris oleh `TimbanganCmcCocokAkreditasiTest`. Sempat diduga
   hanya delapan yang pertama yang terakreditasi; dugaan itu salah dan sudah dibuang.
+
+---
+
+## T12 — Nomor formulir lembar kerja untuk metode kg & gram
+
+Kertas metode **substitusi** sudah ada: `SIDIK-FM-CAL-0508.A`, Revise 4 (diterima 31 Agt 2026).
+Akhiran `.A` menyiratkan ada saudaranya untuk dua metode lain, tapi menyiratkan bukan mengetahui.
+
+Nomornya **tidak ditebak**: lembar kg & gram terbit dengan `kode_dokumen` null sampai kertasnya
+turun. Nomor formulir karangan di kop lembar lab terakreditasi itu temuan audit.
+
+**Yang ditanyakan:** berapa nomor & revisi formulir lembar kerja Timbangan untuk metode langsung
+(satuan kg) dan satuan gram?
+
+---
+
+## T13 — Selisih eksentrisitas: diukur dari BEBAN atau dari pembacaan CENTER?
+
+Master menghitung penyimpangan tiap posisi sebagai `beban − pembacaan posisi`
+(`FC!D133 = $F$128 − C133`). Mesin hitung kami memakai `pembacaan center − pembacaan posisi`,
+karena kolom `beban` **kosong di ketiga workbook master** — jadi tidak ada angka lain yang bisa
+dipakai.
+
+Di ketiga sesi contoh keduanya menghasilkan angka yang sama persis, karena pembacaan center-nya
+kebetulan sama dengan beban yang dipakai. Begitu ada sesi yang center-nya menyimpang, keduanya
+berpisah dan yang tercetak di sertifikat (§4) ikut berbeda.
+
+**Yang ditanyakan:** apakah kolom `Weight mass` (beban uji eksentrisitas) wajib diisi teknisi mulai
+sekarang? Kalau ya, rumusnya dipindah ke `beban − pembacaan` mengikuti master. Kalau tidak,
+pembacaan center tetap jadi acuan dan itu perlu dinyatakan sebagai keputusan, bukan kebetulan.

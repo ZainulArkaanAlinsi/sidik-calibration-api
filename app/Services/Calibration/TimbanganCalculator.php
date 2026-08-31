@@ -185,6 +185,7 @@ class TimbanganCalculator
             'eksentrisitas' => $ekc,
             'histeresis' => $this->histeresis($sesi['histeresis'] ?? []),
             'lop' => $this->limitOfPerformance($hasil, $ket),
+            'drift_massa_standar' => $this->driftMassaStandar($hasil, $satuan),
             'cmc' => $pita === null ? null : [
                 ...$pita,
                 'cmc_satuan' => $this->cmcDalamSatuan($pita['cmc_gram'], $satuan),
@@ -722,6 +723,65 @@ class TimbanganCalculator
         $turun = $b1[2] + $b1[5] + $b2[2] + $b2[5];
 
         return ($naik - $turun) / 4.0;
+    }
+
+    /**
+     * `Drift Massa Standar (d)` — kotak **7. DRIFT** di kertas.
+     *
+     * Master menghitungnya bertingkat, dan tiap tingkat punya jebakannya:
+     *
+     * ```
+     *   E94 = MAX( Σ u tiap blok titik ) / 2      -> gram
+     *   E95 = E94 / 1000                          -> kg
+     *   d   = 0,1 × E95
+     * ```
+     *
+     * Dua hal yang gampang salah kalau ditulis ulang dari ingatan:
+     *
+     *  1. Yang diambil MAKSIMUM antar titik, bukan totalnya.
+     *  2. Pembaginya 2, lalu dikonversi ke kg — dan kertas ini menulis
+     *     satuannya kg bahkan untuk timbangan gram.
+     *
+     * ## Kenapa `u_gram` yang dipakai, dan kapan itu berhenti benar
+     *
+     * Master menjumlahkan `u` SELURUH baris blok titik (`SUM(F50:G53)`),
+     * sementara `u_gram` menuruti `uStandarMrefSaja` — di varian substitusi
+     * cuma slot Mref yang dihitung. Hari ini keduanya sama persis, dan itu
+     * bukan kebetulan: beban substitusi (`Lsub`) tidak punya sertifikat, jadi
+     * baris-baris itu memang menyumbang nol di master maupun di sini.
+     *
+     * Sempat dibuat penjumlah kedua (`u_gram_semua`) untuk membedakannya, lalu
+     * DIBUANG setelah testnya sendiri membuktikan dia selalu sama dengan
+     * `u_gram`. Yang perlu diingat kalau suatu saat `Lsub` mulai bersertifikat:
+     * angka ini yang duluan melenceng, dan dia tidak masuk budget mana pun —
+     * jadi tidak ada satu pun test budget yang bakal merah.
+     *
+     * Cuma formulir metode SUBSTITUSI yang punya kotaknya; dua master lain
+     * tidak mencetak bagian ini. Tetap dihitung untuk semua varian karena
+     * bahannya sama dan nilainya tidak dipakai perhitungan lain — yang
+     * membedakan cuma dicetak atau tidak.
+     *
+     * @param  list<array<string, mixed>>  $titik
+     */
+    private function driftMassaStandar(array $titik, string $satuan): ?float
+    {
+        $perTitik = [];
+
+        foreach ($titik as $t) {
+            if (! isset($t['u_gram'])) {
+                continue;
+            }
+
+            $perTitik[] = (float) $t['u_gram'];
+        }
+
+        if ($perTitik === []) {
+            return null;
+        }
+
+        // `/ 1000` sekali saja: `u` di tabel anak timbangan memang bersatuan
+        // GRAM untuk semua varian, termasuk yang alatnya bersatuan kg.
+        return 0.1 * (max($perTitik) / 2.0) / 1000.0;
     }
 
     /**

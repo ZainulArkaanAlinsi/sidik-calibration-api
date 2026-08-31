@@ -208,6 +208,28 @@ class TimbanganMasterTest extends TestCase
     }
 
     /**
+     * `Drift Massa Standar (d)` — kotak 7 formulir metode substitusi.
+     *
+     * Angkanya diadu ke sel `INPUT DATA` master substitusi apa adanya:
+     * **0,000674048345586123 kg**. Rantainya `MAX(Σ u tiap blok titik) / 2`
+     * (gram) → `/1000` (kg) → `× 0,1`.
+     *
+     * Angka ini tidak masuk budget mana pun, jadi kalau dia melenceng TIDAK
+     * ADA satu pun test budget yang merah — baris ini satu-satunya yang
+     * menahannya.
+     */
+    public function test_drift_massa_standar_cocok_master_substitusi(): void
+    {
+        $hasil = (new TimbanganCalculator)->hitung($this->masukan(self::fixture()['sub']));
+
+        $this->dekat(
+            $hasil['drift_massa_standar'],
+            0.000674048345586123,
+            'Drift Massa Standar (d) sesi substitusi',
+        );
+    }
+
+    /**
      * LOP memakai U yang BELUM dilantai CMC — dibuktikan menggigit.
      *
      * Sesi kg titik 8 punya |C| terbesar dan U95 hitungnya (0,0240 kg) di bawah
