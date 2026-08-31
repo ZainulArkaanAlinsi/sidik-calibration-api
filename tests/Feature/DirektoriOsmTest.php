@@ -8,6 +8,7 @@ use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\NominatimDirektori;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 /**
@@ -194,6 +195,62 @@ class DirektoriOsmTest extends TestCase
 
             return $ua !== '' && ! str_starts_with($ua, 'GuzzleHttp');
         });
+    }
+
+    /**
+     * Direktorinya menjawab tapi nol baris lolos dibaca → dicatat, bukan diam.
+     *
+     * Ini satu-satunya kegagalan yang pulang sebagai `200` + daftar kosong,
+     * jadi di layar teknisi dia terbaca persis sama dengan "PT-nya memang belum
+     * dipetakan". Tanpa jejak ini, pembacaan yang rusak bisa hidup
+     * berbulan-bulan dan yang kelihatan cuma "direktorinya kok nggak pernah
+     * nemu apa-apa".
+     *
+     * Yang dikunci di sini kuncinya ikut tercatat — itu yang menjawab
+     * "bentuknya berubah di mana", dan tanpa itu lognya cuma bikin tahu ada
+     * masalah tanpa tahu di mana.
+     */
+    public function test_semua_baris_terbuang_dicatat_di_log(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function (string $pesan, array $konteks) {
+                return str_contains($pesan, 'nol baris')
+                    && $konteks['jumlah_baris'] === 2
+                    && $konteks['kunci_baris_pertama'] === ['tipe_yang_kita_kenal', 'id'];
+            });
+
+        // Dua baris yang bentuknya nggak dikenali sama sekali — persis yang
+        // terjadi kalau Nominatim mengganti nama fieldnya.
+        $this->jawaban([
+            ['tipe_yang_kita_kenal' => 'way', 'id' => 1],
+            ['tipe_yang_kita_kenal' => 'node', 'id' => 2],
+        ]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Sinar')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    /**
+     * Nol hasil yang SUNGGUHAN nggak ikut dicatat.
+     *
+     * Bedanya itu seluruh gunanya. Log yang ikut menyala tiap kali teknisi
+     * mencari PT yang memang belum dipetakan — kejadian normal, sering — bikin
+     * jejak yang tadi berharga tenggelam, dan orang yang memeriksanya berhenti
+     * membacanya.
+     */
+    public function test_nol_hasil_sungguhan_tidak_dicatat(): void
+    {
+        Log::shouldReceive('warning')->never();
+
+        $this->jawaban([]);
+
+        $this->actingAs($this->teknisi)
+            ->getJson(self::URL.'?search=Sinar')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 
     /**
