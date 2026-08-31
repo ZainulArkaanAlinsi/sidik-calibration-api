@@ -152,12 +152,52 @@ class ProfilDariNamaAlatTest extends TestCase
             'Micrometer' => ['Micrometer'],
             'Dial Indicator' => ['Dial Indicator'],
             'Flow Meter Cairan (Totalizer)' => ['Flow Meter Cairan (Totalizer)'],
-            'Timbangan (Elektronik, mekanik)' => ['Timbangan (Elektronik, mekanik)'],
+            // Timbangan PINDAH dari sini 31 Agt 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-21, kelompok Massa), dari tiga workbook
+            // master yang turun dari lab. Yang menjaga arah sebaliknya —
+            // `test_timbangan_dapat_lembarnya_sendiri` di bawah.
             'Pressure Gauge' => ['Pressure Gauge'],
             'Timer/Stopwatch' => ['Timer/Stopwatch'],
             'kosong' => [''],
             'spasi doang' => ['   '],
         ];
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-21: nama yang HARUS mendarat di `timbangan`.
+     *
+     * Yang paling rawan `Moisture Analyzer` — sesi contoh master gram
+     * (`019-CAL-425`, Mettler Toledo HB53) namanya persis itu, dan tidak ada
+     * satu pun kata "timbangan" di dalamnya. Tanpa alias, alat itu jatuh ke
+     * form generik dan seluruh mesin hitung massanya nggak pernah kepanggil.
+     *
+     * `Hydrometer` ikut diadu DI SINI supaya jelas dia tetap BUKAN timbangan:
+     * dia alat densitas, dan kesalahan sekeluarga persis pernah nyaris lolos
+     * waktu dia didaftarkan sebagai alias Thermohygro (§11).
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaTimbangan(): array
+    {
+        return [
+            'nama lampiran akreditasi' => ['Timbangan (Elektronik, mekanik)', 'timbangan'],
+            'nama pendek' => ['Timbangan', 'timbangan'],
+            'analitik' => ['Timbangan Analitik Ohaus PA224', 'timbangan'],
+            'neraca' => ['Neraca Analitik', 'timbangan'],
+            'balance' => ['Precision Balance', 'timbangan'],
+            'sesi contoh master gram' => ['Moisture Analyzer', 'timbangan'],
+            'densitas, BUKAN timbangan' => ['Hydrometer', null],
+        ];
+    }
+
+    #[DataProvider('namaTimbangan')]
+    public function test_timbangan_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
     }
 
     #[DataProvider('namaGenerik')]

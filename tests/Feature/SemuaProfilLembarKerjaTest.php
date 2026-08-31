@@ -208,7 +208,12 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // formulir SERTIFIKAT yang dipakai bersama semua alat — bukan nomor
         // lembar kerjanya. Menaruh nomor karangan di lembar yang ikut diaudit
         // lebih mahal daripada kolom kosong yang jelas kosong.
-        $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro'];
+        // `timbangan` masuk 31 Agt 2026 dengan alasan yang SAMA, dan sudah
+        // dicek: ketiga workbook master Timbangan disapu buat pola
+        // `SIDIK-FM-…`, dan yang ketemu cuma SATU — `SIDIK-FM-CAL-2403_Rev. 0`
+        // di footer sheet SERTIFIKAT, formulir sertifikat bersama itu lagi.
+        // Nomor lembar kerjanya sendiri memang belum pernah dikirim.
+        $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro', 'timbangan'];
 
         $nomor = $profil->bentukLembarKerja()['kode_dokumen'] ?? null;
 

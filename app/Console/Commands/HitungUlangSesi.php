@@ -11,6 +11,7 @@ use App\Services\RumusKalibrasi;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\TimbanganMentah;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -104,6 +105,15 @@ class HitungUlangSesi extends Command
                 // situ nggak berarti apa-apa. Kosong buat lima belas alat lain.
                 $pasangan = PasanganStandarUutMentah::dari($baris);
 
+                // Blok Timbangan. Dites SEBELUM `$pasangan`/`$grid` dengan
+                // alasan yang persis sama dengan yang sudah ditulis di bawah:
+                // baris Timbangan PUNYA `peran_sensor`, cuma kosakatanya lain
+                // lagi (`z1`/`m`/`m_aksen`/`z2`/`nominal`). Diperiksa
+                // belakangan, tiap titiknya jatuh ke cabang alat lain, ketemu
+                // deret kosong, lalu di-`continue` — perintahnya "sukses"
+                // tanpa menghitung apa pun.
+                $timbangan = TimbanganMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -115,7 +125,24 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($pasangan !== []) {
+                if ($timbangan !== []) {
+                    // Gerbangnya KEEMPAT pembacaan, bukan jumlah baris: satu
+                    // titik berisi 4 pembacaan + sampai 6 baris nominal, jadi
+                    // hitungan datar selalu lolos walau pembacaannya bolong.
+                    $kurang = false;
+
+                    foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
+                        if ($timbangan[$peran] === null) {
+                            $kurang = true;
+                        }
+                    }
+
+                    if ($kurang || $timbangan['nominal'] === []) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($pasangan !== []) {
                     // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah baris:
                     // satu titik berisi 5 standar + 5 UUT, jadi hitungan datar
                     // selalu lolos walau salah satu sisinya kosong.
@@ -177,6 +204,11 @@ class HitungUlangSesi extends Command
                         'tipe_sensor' => $sesi->tipe_sensor,
                         ...$grid,
                         ...$pasangan,
+                        // Empat pembacaan + slot nominal satu titik akurasi
+                        // Timbangan. Blok tingkat-sesinya (keterulangan,
+                        // eksentrisitas, histeresis) ikut lewat
+                        // `spesifikasi_alat` di bawah.
+                        ...$timbangan,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

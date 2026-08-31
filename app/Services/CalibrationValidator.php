@@ -12,8 +12,9 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
-use App\Support\PasanganStandarUutMentah;
 use App\Support\KodeSelRevisi;
+use App\Support\PasanganStandarUutMentah;
+use App\Support\TimbanganMentah;
 use Illuminate\Support\Collection;
 
 /**
@@ -928,6 +929,14 @@ class CalibrationValidator
                     // sebagai `hitung_ulang_gagal`, padahal datanya lengkap di
                     // database. Kosong buat lima belas alat lain.
                     ...PasanganStandarUutMentah::dari($pembacaan),
+                    // Empat pembacaan + slot nominal satu titik akurasi
+                    // Timbangan, disusun ulang dari `peran_sensor`/`sensor_ke`.
+                    // Alasannya sama seperti dua baris di atas — dan ini
+                    // kejadian KETUJUH dengan pola yang sama, jadi ditulis
+                    // bareng profilnya alih-alih ditemukan belakangan lewat
+                    // `hitung_ulang_gagal` di tiap titik. Kosong buat dua puluh
+                    // alat lain.
+                    ...TimbanganMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
