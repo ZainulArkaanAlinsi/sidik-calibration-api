@@ -178,6 +178,97 @@ class TimbanganMasterTest extends TestCase
     }
 
     /**
+     * Limit of Performance & keluaran blok non-titik diadu ke master.
+     *
+     * Diberi test-nya SENDIRI karena parity budget tidak menyentuhnya sama
+     * sekali — dan di situlah satu bug nyata sempat lolos: LOP memakai
+     * `U95 Sertifikat` (yang sudah dilantai CMC) padahal master melihat
+     * `Tabel_U_Correction` kolom 3, yaitu `k · uc` yang BELUM dilantai. Di
+     * sesi kg lantai CMC 0,033 kg menang atas hitungan 0,0240 kg, jadi LOP
+     * terbit 0,0885 alih-alih 0,0795 — **11% terlalu besar**, dan nol test
+     * merah.
+     *
+     * Bug kedua di rumus yang sama: `Maximun STDEV` sempat diambil dari lantai
+     * `Sres` budget yang di varian substitusi memang sengaja disilang-kabel,
+     * bukan dari kolom STDEV tabel keterulangan. Melesetkan LOP substitusi
+     * 2,26 × (0,041 − 0,0316) = 0,0212 kg.
+     */
+    #[DataProvider('varian')]
+    public function test_lop_dan_blok_non_titik_cocok_master(string $tag): void
+    {
+        $sesi = self::fixture()[$tag];
+        $harap = $sesi['_harap'];
+        $hasil = (new TimbanganCalculator)->hitung($this->masukan($sesi));
+
+        $this->dekat($hasil['lop'], $harap['lop'], "{$tag} Limit of Performance");
+        $this->dekat($hasil['eksentrisitas']['rentang'], $harap['ecc_rentang'], "{$tag} rentang eksentrisitas");
+        $this->dekat($hasil['eksentrisitas']['min'], $harap['ecc_min'], "{$tag} min eksentrisitas");
+        $this->dekat($hasil['eksentrisitas']['maks'], $harap['ecc_maks'], "{$tag} maks eksentrisitas");
+        $this->dekat($hasil['histeresis'], $harap['histeresis'], "{$tag} histeresis");
+    }
+
+    /**
+     * LOP memakai U yang BELUM dilantai CMC — dibuktikan menggigit.
+     *
+     * Sesi kg titik 8 punya |C| terbesar dan U95 hitungnya (0,0240 kg) di bawah
+     * lantai CMC (0,033 kg). Kalau suatu saat rumusnya digeser ke angka yang
+     * terbit, selisih 0,0090 kg itu langsung kelihatan di sini — bukan
+     * mengendap sampai ada yang membandingkan ke kertas lagi.
+     */
+    public function test_lop_pakai_u_hitung_bukan_u_yang_terlantai_cmc(): void
+    {
+        $hasil = (new TimbanganCalculator)->hitung($this->masukan(self::fixture()['kg']));
+
+        $puncak = null;
+        foreach ($hasil['titik'] as $t) {
+            if ($puncak === null || $t['koreksi_absolut'] > $puncak['koreksi_absolut']) {
+                $puncak = $t;
+            }
+        }
+
+        $this->assertNotNull($puncak);
+        $this->assertGreaterThan(
+            $puncak['u95_koreksi_hitung'],
+            $puncak['u95_koreksi'],
+            'Titik ber-|C| terbesar sesi kg harus yang U95-nya dilantai CMC — kalau tidak, '
+            .'test ini berhenti membedakan dua angka itu dan berhenti menggigit.',
+        );
+
+        $this->dekat(
+            $hasil['lop'],
+            2.26 * $hasil['keterulangan']['stdev_terbesar']
+                + $puncak['koreksi_absolut']
+                + $puncak['u95_koreksi_hitung'],
+            'LOP harus disusun dari U HITUNG',
+        );
+    }
+
+    /**
+     * `Maximun STDEV` di rumus LOP datang dari kolom STDEV tabel keterulangan,
+     * BUKAN dari lantai `Sres` budget yang di varian substitusi disilang-kabel.
+     */
+    public function test_stdev_terbesar_bukan_lantai_sres_budget(): void
+    {
+        $ket = (new TimbanganCalculator)->hitung($this->masukan(self::fixture()['sub']))['keterulangan'];
+
+        // Silang-kabelnya harus masih ada di lantai budget — kalau tidak, test
+        // ini membandingkan dua angka yang kebetulan sama dan tidak menegakkan apa pun.
+        $this->assertNotEqualsWithDelta(
+            $ket['sres_maks'],
+            $ket['stdev_maks'],
+            1e-12,
+            'Lantai Sres MAX substitusi harusnya beda dari STDEV kolom Maximum (lihat T5).',
+        );
+
+        $this->assertEqualsWithDelta(
+            max($ket['stdev_mid'], $ket['stdev_maks']),
+            $ket['stdev_terbesar'],
+            1e-12,
+            '`stdev_terbesar` kecampuran lantai Sres budget.',
+        );
+    }
+
+    /**
      * Titik yang selnya rusak di master TETAP dihitung — bukan diblokir, dan
      * bukan diam-diam dibiarkan nol.
      */

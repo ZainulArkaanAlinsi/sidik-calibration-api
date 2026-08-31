@@ -578,19 +578,31 @@ class TimbanganCalculator
         // ber-STDEV nol memang ber-STDEV nol.
         $lantai = static fn (float $s): float => ($s === 0.0 && $resolusi > 0.001) ? $sres : $s;
 
-        // SUBSTITUSI: master membaca lantai MID dari kolom STDEV **Maximum**
-        // (`FC!H116`) dan lantai MAX dari kolom ketiga yang tidak ada di
-        // workbook itu — jadi yang MAX selalu jatuh ke `0,82 a`. Ditiru; lihat
-        // catatan silang-kabel di VarianMasterTimbangan.
+        // STDEV tabel keterulangan apa adanya (sesudah lantai "timbangan
+        // kasar"). Ini yang dipakai pemilihan pita varian kg DAN `Maximun
+        // STDEV` di rumus LOP.
+        $stdevMid = $lantai($mid['stdev']);
+        $stdevMaks = $lantai($maks['stdev']);
+
+        // LANTAI budget dua-komponen dipisah dari STDEV di atas, dan itu bukan
+        // kerapian: master substitusi membaca lantai MID dari kolom STDEV
+        // **Maximum** (`FC!H116`) dan lantai MAX dari kolom ketiga yang di
+        // workbook itu tidak ada — jadi yang MAX selalu jatuh ke `0,82 a`.
+        // Ditiru (lihat catatan silang-kabel di VarianMasterTimbangan), TAPI
+        // cuma buat budget.
+        //
+        // Disatukan, `Maximun STDEV` ikut tercemar dan LOP substitusi meleset
+        // 2,26 × (0,041 − 0,0316) = 0,0212 kg. Sempat begitu, dan yang
+        // menangkapnya bukan test budget — LOP-nya sendiri yang harus diadu.
         if ($varian->sumberSr === VarianMasterTimbangan::SR_DUA_PITA) {
-            $sMid = $lantai($maks['stdev']);
-            $sMaks = $sres;
+            $sresMid = $stdevMaks;
+            $sresMaks = $sres;
         } else {
-            $sMid = $lantai($mid['stdev']);
-            $sMaks = $lantai($maks['stdev']);
+            $sresMid = $stdevMid;
+            $sresMaks = $stdevMaks;
         }
 
-        $stdevMaks = max($sMid, $sMaks);
+        $stdevTerbesar = max($stdevMid, $stdevMaks);
 
         // `U Mid` / `U Max` master: Sr dibanding Sres, dan yang lebih besar
         // dibagi √2. Sr di sini simpangan baku SATU siklus akurasi (n = 2),
@@ -612,17 +624,20 @@ class TimbanganCalculator
             'maks' => $maks,
             'nominal_mid' => $nominalMid,
             'nominal_maks' => $nominalMaks,
-            'stdev_mid' => $sMid,
-            'stdev_maks' => $sMaks,
-            'stdev_terbesar' => $stdevMaks,
-            'u_mid' => $uDari($srMid ?? $mid['stdev'], $sMid),
-            'u_maks' => $uDari($srMaks ?? $maks['stdev'], $sMaks),
+            'stdev_mid' => $stdevMid,
+            'stdev_maks' => $stdevMaks,
+            // Yang dipakai rumus LOP (`Maximun STDEV`), BUKAN lantai budget.
+            'stdev_terbesar' => $stdevTerbesar,
+            'sres_mid' => $sresMid,
+            'sres_maks' => $sresMaks,
+            'u_mid' => $uDari($srMid ?? $mid['stdev'], $sresMid),
+            'u_maks' => $uDari($srMaks ?? $maks['stdev'], $sresMaks),
             'sr_mid' => $srMid,
             'sr_maks' => $srMaks,
             // Varian satu-komponen: Sr sesi diadu ke Sres, dibulatkan 4 desimal
             // dulu (master kg) sebelum dibandingkan.
-            'u_gabung' => round($stdevMaks, 4) > round($sres, 4) ? $stdevMaks / sqrt(2.0) : $sres,
-            'vi' => $stdevMaks > $sres ? 9.0 : 1000.0,
+            'u_gabung' => round($stdevTerbesar, 4) > round($sres, 4) ? $stdevTerbesar / sqrt(2.0) : $sres,
+            'vi' => $stdevTerbesar > $sres ? 9.0 : 1000.0,
         ];
     }
 
@@ -710,11 +725,29 @@ class TimbanganCalculator
     }
 
     /**
-     * Limit of Performance: `F = ±(2,26 × Sr max + |C max| + U95%(C max))`.
+     * Limit of Performance: `F = ±(2,26 × STDEV max + |C max| + U(C max))`.
      *
      * 2,26 itu t-student 95% untuk 9 derajat kebebasan (n = 10 pengulangan) —
      * dituliskan tetap di master, bukan dihitung, jadi ditulis tetap di sini
      * juga supaya angkanya sama dengan kertasnya.
+     *
+     * ## `U(C max)` itu U HITUNGAN, bukan U95 yang terbit
+     *
+     * Master melihatnya lewat `VLOOKUP(Cmax, Tabel_U_Correction, 3)`, dan kolom
+     * ketiga tabel itu (`V50 = 'PERHITUNGAN U95% - Correction'!R25`) berisi
+     * **Stretch Uncertainty `k · uc`** — BUKAN baris `U95% Sertifikat` dua baris
+     * di bawahnya yang sudah dilantai CMC.
+     *
+     * Bedanya nyata, bukan desimal terakhir: di sesi kg lantai CMC 0,033 kg
+     * menang atas hitungan 0,0240 kg, jadi memakai angka yang terbit bikin LOP
+     * 0,0885 kg alih-alih 0,0795 kg — **11% terlalu besar**. Sempat salah di
+     * sini, dan yang menangkapnya bukan test parity budget (LOP tidak diadu di
+     * situ) melainkan membaca ulang rumus masternya sel demi sel. Sekarang
+     * diadu juga — lihat `TimbanganMasterTest::test_lop_cocok_master()`.
+     *
+     * `STDEV max` juga bukan `Uncertainty of Repeatability` yang sebaris di
+     * bawahnya: master menunjuk `H109`, baris **Maximun STDEV**, bukan `H110`
+     * yang sudah dibagi √n.
      *
      * @param  list<array<string, mixed>>  $titik
      * @param  array<string, mixed>  $ket
@@ -739,7 +772,7 @@ class TimbanganCalculator
 
         return 2.26 * (float) $ket['stdev_terbesar']
             + (float) $terbesar['koreksi_absolut']
-            + (float) $terbesar['u95_koreksi'];
+            + (float) $terbesar['u95_koreksi_hitung'];
     }
 
     /** CMC master disimpan dalam GRAM; sertifikat mencetaknya dalam satuan alat. */

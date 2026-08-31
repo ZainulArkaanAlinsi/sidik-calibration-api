@@ -1303,6 +1303,26 @@ di atas daftarnya (*"JANGAN pakai nama yang sama dengan `namaAlatKemampuan()` pr
 persis bentuk yang sama dengan jebakan `calibration_method_id` di §Jebakan. Diganti
 `Dial Indicator`, dan alasannya ditulis di tempat daftarnya.
 
+### Dua bug SAYA sendiri di rumus LOP, ketangkap membaca ulang master
+
+Bukan penyimpangan lab — dua-duanya salah saya, dan dua-duanya lolos dari test parity budget
+karena LOP memang tidak diadu di situ. Yang menangkapnya membaca ulang `D155` master sel demi sel
+sesudah semua budget hijau.
+
+1. **`U(C max)` diambil dari U95 yang sudah dilantai CMC.** Master melihat
+   `VLOOKUP(Cmax, Tabel_U_Correction, 3)`, dan kolom ketiga tabel itu berisi `k · uc` — bukan
+   baris `U95% Sertifikat` dua baris di bawahnya. Di sesi kg lantai CMC 0,033 kg menang atas
+   hitungan 0,0240 kg, jadi LOP terbit **0,0885 alih-alih 0,0795 kg — 11% terlalu besar**.
+2. **`Maximun STDEV` diambil dari lantai `Sres` budget.** Di varian substitusi lantai itu memang
+   sengaja disilang-kabel (T5), jadi mencampurnya melesetkan LOP
+   2,26 × (0,041 − 0,0316) = **0,0212 kg**.
+
+Pelajarannya bukan "kurang teliti": budget yang cocok 1.099 angka **tidak** membuktikan angka di
+luar budget benar. Sekarang LOP, rentang eksentrisitas, dan histeresis ikut diadu ke master, plus
+dua test yang MENGGIGIT — satu memastikan titik ber-|C| terbesar sesi kg memang yang U95-nya
+dilantai (kalau tidak, test-nya berhenti membedakan dua angka itu), satu lagi memastikan
+silang-kabel T5 masih ada di lantai budget dan TIDAK bocor ke `stdev_terbesar`.
+
 ### Sisi mobile: kenapa BELUM, dan apa yang sudah siap menerimanya
 
 **Bukan dikecilkan ruang lingkupnya — kepentok alat.** Container sesi ini tidak punya toolchain

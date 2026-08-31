@@ -349,6 +349,38 @@ class TimbanganProfile extends CalibrationProfile
             'nilai' => $t['u95_penimbangan'],
         ];
 
+        // LOP & histeresis dihitung sekali per SESI, tapi disimpan di tiap
+        // titik — `uncertainty_calculations` satu-satunya tempat hasil hitung
+        // mendarat, dan tidak ada baris tingkat-sesi di situ. Diulang, bukan
+        // hilang: sertifikat mencetak dua-duanya (bagian 5 & 6), dan angka yang
+        // tercetak tanpa jejak audit sama saja dengan angka yang dikarang.
+        $baris[] = [
+            'budget' => '-',
+            'sumber' => 'limit_of_performance',
+            'keterangan' => sprintf(
+                'LOP sesi ini ± %s %s = 2,26 × STDEV max + |C max| + U(C max). '
+                .'U-nya HITUNGAN (k · uc), bukan U95 yang sudah dilantai CMC — begitu masternya.',
+                $this->angka((float) $hasil['lop']),
+                $hasil['satuan'],
+            ),
+            'distribusi' => '-',
+            'nilai' => $hasil['lop'],
+        ];
+
+        if ($hasil['histeresis'] !== null) {
+            $baris[] = [
+                'budget' => '-',
+                'sumber' => 'histeresis',
+                'keterangan' => sprintf(
+                    'Histeresis sesi ini %s %s (bagian 5 sertifikat).',
+                    $this->angka((float) $hasil['histeresis']),
+                    $hasil['satuan'],
+                ),
+                'distribusi' => '-',
+                'nilai' => $hasil['histeresis'],
+            ];
+        }
+
         $baris[] = [
             'budget' => '-',
             'sumber' => 'varian_master',
