@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\User;
+use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Support\TimbanganMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -98,6 +100,223 @@ class TimbanganSesiTest extends TestCase
         $this->assertSame([1, 2], $nominal->pluck('sensor_ke')->map(fn ($n) => (int) $n)->all());
         $this->assertEqualsWithDelta(20.0, (float) $nominal[0]->pembacaan, self::TOLERANSI);
         $this->assertEqualsWithDelta(10.0, (float) $nominal[1]->pembacaan, self::TOLERANSI);
+    }
+
+    /**
+     * **Payload yang benar-benar dikirim HP** — bukan bentuk kontrak yang cuma
+     * dipakai seeder & test.
+     *
+     * Bedanya dua hal, dan dua-duanya bentuk GENERIK yang sudah dipakai dua
+     * puluh lembar lain:
+     *
+     *  1. Empat pembacaan datang sebagai satu deret `pembacaan` menurut posisi
+     *     kolomnya (z, m, m', z'), bukan empat kunci bernama. Layar HP
+     *     menggambarnya sebagai empat kolom pengulangan, dan jalur kirim
+     *     generiknya memang memulangkan deret.
+     *  2. Blok keterulangan datang sebagai CERMINAN TABEL (`baris[]` dengan
+     *     kode kolom `zero`/`pembacaan`), bukan `{mid, maks}` — nama slot itu
+     *     kosakata master, dan menaruhnya di HP berarti daftar tulis-tangan di
+     *     layar yang menggambar dua puluh lembar.
+     *
+     * Yang dijaga di sini: kedua bentuk itu mendarat pada angka yang SAMA
+     * PERSIS dengan bentuk kontraknya. Kalau tidak, sesi dari lapangan diam-diam
+     * menghitung nol keterulangan — `Sr` jatuh ke lantai resolusi, tidak ada
+     * error di mana pun, dan sertifikatnya tetap terbit.
+     */
+    public function test_bentuk_kiriman_hp_sama_hasilnya_dengan_bentuk_kontrak(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $kontrak = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertCreated()
+            ->json('data.titik');
+
+        $dariHp = $this->payload($alat, [
+            'measurements' => [
+                ['titik_ukur' => 10, 'nominal' => [10.0], 'pembacaan' => [0, 10, 10, 0]],
+                ['titik_ukur' => 20, 'nominal' => [20.0], 'pembacaan' => [0, 20, 20, 0]],
+                ['titik_ukur' => 30, 'nominal' => [20.0, 10.0], 'pembacaan' => [0, 30, 30, 0]],
+            ],
+        ]);
+        $dariHp['spesifikasi_alat']['keterulangan'] = [
+            'baris' => [
+                ['titik_ukur' => 50, 'zero' => array_fill(0, 10, 0), 'pembacaan' => array_fill(0, 10, 50.02)],
+                ['titik_ukur' => 100, 'zero' => array_fill(0, 10, 0), 'pembacaan' => array_fill(0, 10, 100.02)],
+            ],
+        ];
+
+        $respons = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $dariHp)
+            ->assertCreated();
+
+        $hp = $respons->json('data.titik');
+
+        $this->assertCount(count($kontrak), $hp, 'Jumlah titik yang dihitung beda.');
+
+        foreach ($kontrak as $i => $titik) {
+            foreach (['titik_ukur', 'koreksi', 'ketidakpastian_diperluas'] as $kolom) {
+                $this->assertEqualsWithDelta(
+                    (float) $titik[$kolom],
+                    (float) $hp[$i][$kolom],
+                    self::TOLERANSI,
+                    "Titik {$i}: `{$kolom}` bentuk HP beda dari bentuk kontrak.",
+                );
+            }
+        }
+
+        // Yang TERSIMPAN wajib bentuk baku juga — jalur hitung ulang membaca
+        // kolom itu apa adanya, jadi bentuk mentah yang lolos ke DB bakal
+        // menghitung nol keterulangan tiap kali sesi ini dihitung lagi.
+        $spek = CalibrationSession::findOrFail($respons->json('data.id'))->spesifikasi_alat;
+
+        $this->assertArrayHasKey('mid', $spek['keterulangan']);
+        $this->assertArrayHasKey('maks', $spek['keterulangan']);
+        $this->assertArrayNotHasKey('baris', $spek['keterulangan']);
+        $this->assertEqualsWithDelta(50.0, (float) $spek['keterulangan']['mid']['nominal'], self::TOLERANSI);
+        $this->assertCount(10, $spek['keterulangan']['maks']['mi']);
+    }
+
+    /**
+     * Kunci bernama MENANG kalau dikirim bareng deret — dan bukan sebaliknya.
+     *
+     * Kalau deretnya yang menang, sesi lama yang dibuka lagi di HP (isinya
+     * kunci bernama) lalu dikirim ulang bakal menimpa pembacaannya dengan
+     * deret kosong bawaan layar. Nol error, angka hilang.
+     */
+    public function test_kunci_bernama_menang_atas_deret_pembacaan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat, [
+                'measurements' => [[
+                    'titik_ukur' => 10,
+                    'nominal' => [10.0],
+                    'z1' => 0, 'm' => 10, 'm_aksen' => 10, 'z2' => 0,
+                    'pembacaan' => [99, 99, 99, 99],
+                ]],
+            ]))
+            ->assertCreated()
+            ->json('data.id');
+
+        $m = RawMeasurement::where('calibration_session_id', $id)
+            ->where('peran_sensor', 'm')
+            ->firstOrFail();
+
+        $this->assertEqualsWithDelta(10.0, (float) $m->pembacaan, self::TOLERANSI);
+    }
+
+    /**
+     * Deret yang baru sebagian terisi tidak menghapus yang sudah ada.
+     *
+     * Teknisi mengisi kolom nol duluan lalu menyimpan draft — kalau titiknya
+     * kebuang karena `m` belum ada, yang hilang bukan cuma kiriman itu:
+     * `store()` sudah menghapus baris lamanya sebelum penyusunan ini jalan.
+     */
+    public function test_deret_setengah_terisi_tetap_tersimpan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat, [
+                'measurements' => [
+                    ['titik_ukur' => 10, 'nominal' => [10.0], 'pembacaan' => [0, null, null, null]],
+                ],
+            ]))
+            ->assertCreated()
+            ->json('data.id');
+
+        $baris = RawMeasurement::where('calibration_session_id', $id)
+            ->whereIn('peran_sensor', TimbanganMentah::PERAN_PEMBACAAN)
+            ->get();
+
+        $this->assertCount(1, $baris, 'Cuma kolom nol yang terisi, dan itu yang harus kesimpan.');
+        $this->assertSame('z1', $baris[0]->peran_sensor);
+    }
+
+    /**
+     * Empat blok isian lembar ini punya kode yang BENAR-BENAR bisa dikirim HP.
+     *
+     * Kode bertitik tanpa awalan `spesifikasi_alat.` dibaca HP sebagai kolom
+     * TURUNAN: read-only, dan tidak pernah ikut payload
+     * (`FieldLembarKerja.turunan`). Empat blok ini pernah begitu — tiga puluh
+     * sembilan kotak yang digambar rapi, diisi teknisi dari kertas, lalu hilang
+     * waktu tombol kirim ditekan. Tanpa error, di kedua sisi.
+     *
+     * Dua di antaranya MENGGERAKKAN ANGKA (eksentrisitas → komponen
+     * Eccentricity, histeresis → angka Hysterisis), jadi yang hilang bukan
+     * cuma catatan.
+     */
+    public function test_semua_kotak_blok_punya_kode_yang_bisa_dikirim(): void
+    {
+        $bentuk = (new TimbanganProfile)->bentukLembarKerja();
+
+        $blok = ['scale_observation', 'effect_of_tare', 'eksentrisitas', 'histeresis'];
+        $ketemu = [];
+
+        foreach ($bentuk['bagian'] as $bagian) {
+            if (! in_array($bagian['kode'], $blok, true)) {
+                continue;
+            }
+
+            $this->assertNotEmpty($bagian['field'], "Bagian `{$bagian['kode']}` nggak punya kotak sama sekali.");
+
+            foreach ($bagian['field'] as $f) {
+                $this->assertStringStartsWith(
+                    'spesifikasi_alat.',
+                    $f['kode'],
+                    "Kotak `{$f['kode']}` bakal read-only di HP dan isinya nggak pernah terkirim.",
+                );
+                $this->assertStringNotContainsString(
+                    '*',
+                    $f['kode'],
+                    "Kode ber-wildcard `{$f['kode']}` itu idiom lembar cetak, bukan kunci payload.",
+                );
+            }
+
+            $ketemu[] = $bagian['kode'];
+        }
+
+        $this->assertSame($blok, $ketemu, 'Ada blok yang hilang dari bentuk lembarnya.');
+    }
+
+    /**
+     * Blok eksentrisitas & histeresis yang dikirim lewat kode-kode itu beneran
+     * sampai ke mesin hitung — bukan cuma diterima 201.
+     */
+    public function test_blok_bersarang_dari_kode_field_sampai_ke_hitungan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        // Persis bentuk yang lahir dari kode `spesifikasi_alat.histeresis.baca1.0`
+        // dst waktu HP menyusunnya jadi peta bersarang.
+        $payload['spesifikasi_alat']['histeresis'] = [
+            'm' => 20, 'm_aksen' => 40,
+            'baca1' => [20, 40, 20, 0, 40, 20, 0.02, 20],
+            'baca2' => [20, 40, 20, 0.02, 40, 20, 0, 20],
+        ];
+
+        $respons = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertCreated();
+
+        $jejak = collect($respons->json('data.titik.0.type_b_components'));
+
+        $this->assertTrue(
+            $jejak->contains(fn (array $b): bool => ($b['keterangan'] ?? '') === 'Eccentricity'),
+            'Komponen Eccentricity nggak muncul — blok eksentrisitasnya nggak kebaca.',
+        );
+
+        // Histeresis master: ((p1+p2+q1'+q2') − (…)) / 4 = 0,01 buat deret ini.
+        $sesi = CalibrationSession::findOrFail($respons->json('data.id'));
+
+        $this->assertSame(
+            [20, 40, 20, 0, 40, 20, 0.02, 20],
+            $sesi->spesifikasi_alat['histeresis']['baca1'],
+            'Deret histeresis berubah bentuk waktu disimpan.',
+        );
     }
 
     /** Angkanya sampai ke mesin hitung, dan yang keluar angka master. */

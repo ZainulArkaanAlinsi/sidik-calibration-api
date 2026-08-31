@@ -33,11 +33,81 @@ class CalibrationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $this->bakukanKeterulanganTimbangan();
+
         if ($this->user()?->isAdmin()) {
             return;
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /**
+     * Ubah blok keterulangan bentuk-TABEL dari HP jadi bentuk baku
+     * `{mid, maks}` yang dibaca kalkulator.
+     *
+     * ## Kenapa dua bentuk, dan kenapa yang menerjemahkan di sini
+     *
+     * Tabel Repeatability lembar Timbangan isinya besaran tingkat-SESI, jadi
+     * dia menyatakan `simpan_ke: spesifikasi_alat.keterulangan` dan HP
+     * mengirimkannya sebagai **cerminan tabel yang digambarnya**:
+     *
+     *     keterulangan.baris[] = { titik_ukur, <kode kolom>: [nilai per ulangan] }
+     *
+     * Bentuk itu tidak menyebut "mid" maupun "maks" — dan memang tidak boleh:
+     * kalau HP yang menamai slotnya, nama itu jadi daftar yang ditulis tangan
+     * di layar, persis pola yang sudah bikin lembar lain ketinggalan diam-diam
+     * waktu bentuknya berubah. Yang tahu bahwa baris pertama Middle Capacity
+     * dan kolom `zero` itu `zi` adalah profil alatnya, di sisi ini.
+     *
+     * Bentuk baku `{mid: {nominal, zi, mi}, maks: {...}}` dibiarkan apa adanya
+     * — itu yang tersimpan di sesi-sesi contoh, yang dibaca
+     * `TimbanganCalculator`, dan yang diadu `TimbanganMasterTest` ke master.
+     * Jadi jalur ini murni penerjemah, bukan bentuk ketiga.
+     *
+     * Diletakkan di `prepareForValidation()` supaya yang TERSIMPAN sudah baku:
+     * jalur hitung ulang (`kalibrasi:hitung-ulang`) membaca
+     * `calibration_sessions.spesifikasi_alat` apa adanya, jadi bentuk mentah
+     * yang lolos ke DB bakal menghitung nol keterulangan di setiap sesi —
+     * tanpa error, cuma `Sr` yang diam-diam jatuh ke lantai resolusi.
+     */
+    private function bakukanKeterulanganTimbangan(): void
+    {
+        $baris = $this->input('spesifikasi_alat.keterulangan.baris');
+
+        if (! is_array($baris) || $baris === []) {
+            return;
+        }
+
+        // Urutan baris = urutan di kertas: Middle dulu, Maximum kedua. Itu
+        // urutan yang dikirim `bagianKeterulangan()`, dan HP menggambar tabel
+        // mengikuti `baris` apa adanya.
+        $slot = ['mid', 'maks'];
+        $baku = [];
+
+        foreach (array_values($baris) as $i => $b) {
+            if (! isset($slot[$i]) || ! is_array($b)) {
+                continue;
+            }
+
+            $baku[$slot[$i]] = [
+                'nominal' => $b['titik_ukur'] ?? null,
+                // `zero` & `pembacaan` itu kode KOLOM yang dikirim bentuknya;
+                // `zi` & `mi` nama yang dipakai master. Dipetakan di sini,
+                // satu-satunya tempat kedua kosakata itu bertemu.
+                'zi' => array_values((array) ($b['zero'] ?? [])),
+                'mi' => array_values((array) ($b['pembacaan'] ?? [])),
+            ];
+        }
+
+        if ($baku === []) {
+            return;
+        }
+
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $spek['keterulangan'] = $baku;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
     }
 
     /**
@@ -175,6 +245,13 @@ class CalibrationRequest extends FormRequest
             'spesifikasi_alat.keterulangan' => ['sometimes', 'nullable', 'array', 'max:4'],
             'spesifikasi_alat.eksentrisitas' => ['sometimes', 'nullable', 'array', 'max:4'],
             'spesifikasi_alat.histeresis' => ['sometimes', 'nullable', 'array', 'max:4'],
+            // Dua blok CATATAN — tidak dibaca kalkulator mana pun, tapi tetap
+            // wajib punya tempat: teknisi mengisinya dari kertas, dan isian
+            // yang tidak punya tempat simpan hilang tanpa satu pun error.
+            // Batasnya menghitung kunci TINGKAT ATAS: `scale_observation`
+            // punya dua (satu per tahap), `effect_of_tare` lima kotak datar.
+            'spesifikasi_alat.scale_observation' => ['sometimes', 'nullable', 'array', 'max:2'],
+            'spesifikasi_alat.effect_of_tare' => ['sometimes', 'nullable', 'array', 'max:5'],
             // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
             // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana
             // yang dibaca), jadi nilainya dibatasi ke daftar yang dikenal
@@ -366,12 +443,24 @@ class CalibrationRequest extends FormRequest
     /**
      * Kunci `spesifikasi_alat` yang isinya BLOK, bukan teks pendek.
      *
-     * Ketiganya milik lembar Timbangan. Ditulis sebagai daftar tertutup, bukan
+     * Kelimanya milik lembar Timbangan. Ditulis sebagai daftar tertutup, bukan
      * "terima array apa saja": kolomnya JSON tanpa skema, jadi tanpa daftar ini
      * satu kunci salah ketik dari HP mendarat diam-diam dan baru ketahuan waktu
      * ada yang mencari isinya.
+     *
+     * Tiga yang pertama MENGGERAKKAN ANGKA (Sr/Sres & LOP, komponen
+     * Eccentricity, angka Hysterisis). Dua yang terakhir cuma dicatat — tapi
+     * tetap masuk daftar ini, karena tanpa tempat simpan yang sah kesepuluh
+     * kotak Scale Observation dan kelima kotak Effect of Tare diketik teknisi
+     * lalu hilang waktu tombol kirim ditekan.
      */
-    private const SPEK_BERBENTUK_BLOK = ['keterulangan', 'eksentrisitas', 'histeresis'];
+    private const SPEK_BERBENTUK_BLOK = [
+        'keterulangan',
+        'eksentrisitas',
+        'histeresis',
+        'scale_observation',
+        'effect_of_tare',
+    ];
 
     /**
      * Aturan `spesifikasi_alat.*`: teks pendek buat kunci biasa, array buat

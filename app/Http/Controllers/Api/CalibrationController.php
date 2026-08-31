@@ -1610,6 +1610,42 @@ class CalibrationController extends Controller
      *
      * @return array{mentah: list<array<string, mixed>>, siap_hitung: list<array<string, mixed>>, belum_dihitung: list<array<string, mixed>>}
      */
+    /**
+     * Empat pembacaan satu titik Timbangan, dari kunci bernama ATAU dari deret
+     * `pembacaan` menurut posisinya.
+     *
+     * ## Kenapa ada dua jalan masuk
+     *
+     * Kunci bernama (`z1`, `m`, `m_aksen`, `z2`) itu bentuk kontraknya, dan
+     * itu yang dipakai seeder & test. Tapi HP menggambar keempatnya sebagai
+     * **empat kolom pengulangan** — bentuk yang sudah dipakai dua puluh lembar
+     * lain — dan jalur kirim generiknya memulangkan satu deret `pembacaan`
+     * berisi empat angka, urut seperti kolomnya.
+     *
+     * Menyuruh HP menamai keempatnya berarti menaruh kosakata Timbangan
+     * (`m_aksen`) di layar yang menggambar dua puluh lembar; urutan kolomnya
+     * sendiri sudah dipatok bentuk lembar (`pengulangan_arah`: z, m, m', z'),
+     * jadi posisi sudah cukup untuk memetakannya di sini.
+     *
+     * Yang bernama MENANG kalau ada. Deret yang lebih pendek dari empat
+     * mengisi sebanyak yang ada — teknisi yang baru sempat mengisi dua kotak
+     * tidak boleh kehilangan dua-duanya.
+     *
+     * @param  array<string, mixed>  $titik
+     * @return array<string, mixed>
+     */
+    private static function bacaanTimbangan(array $titik): array
+    {
+        $deret = array_values((array) ($titik['pembacaan'] ?? []));
+        $hasil = [];
+
+        foreach (TimbanganMentah::PERAN_PEMBACAAN as $i => $peran) {
+            $hasil[$peran] = $titik[$peran] ?? ($deret[$i] ?? null);
+        }
+
+        return $hasil;
+    }
+
     private function susunBlokTimbangan(
         CalibrationRequest $request,
         Equipment $alat,
@@ -1634,8 +1670,8 @@ class CalibrationController extends Controller
         $titikTerpakai = array_values(array_filter(
             (array) $request->input('measurements', []),
             static function (array $t) use ($adaIsinya): bool {
-                foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
-                    if ($adaIsinya($t[$peran] ?? null)) {
+                foreach (self::bacaanTimbangan($t) as $nilai) {
+                    if ($adaIsinya($nilai)) {
                         return true;
                     }
                 }
@@ -1675,13 +1711,14 @@ class CalibrationController extends Controller
             }
 
             $baca = [];
+            $terbaca = self::bacaanTimbangan($titik);
 
             foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
-                if (! $adaIsinya($titik[$peran] ?? null)) {
+                if (! $adaIsinya($terbaca[$peran] ?? null)) {
                     continue;
                 }
 
-                $baca[$peran] = (float) $titik[$peran];
+                $baca[$peran] = (float) $terbaca[$peran];
 
                 $mentah[] = [
                     'titik_ke' => $titikKe,
@@ -1689,7 +1726,7 @@ class CalibrationController extends Controller
                     'sensor_ke' => null,
                     'peran_sensor' => $peran,
                     'titik_ukur' => $titikUkur,
-                    'pembacaan' => (float) $titik[$peran],
+                    'pembacaan' => (float) $terbaca[$peran],
                     'satuan' => $satuan,
                     'standard_id' => $standarDefault?->id,
                     'input_source' => $sumberInput,

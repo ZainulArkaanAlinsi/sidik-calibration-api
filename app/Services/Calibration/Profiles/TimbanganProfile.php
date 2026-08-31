@@ -180,14 +180,47 @@ class TimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * Lembar ini BELUM punya jalur kamera.
+     * Lembar ini BELUM punya jalur kamera — dan itu berlaku buat KEDUA
+     * gerbangnya, cloud maupun lokal.
+     *
+     * ## `didukung` (jalur CLOUD) — false
      *
      * Tujuh blok yang tidak sebentuk tidak bisa diungkapkan lewat
      * `kolom_suhu` / `standar_di_baris` yang cuma memodelkan satu tabel datar.
-     * Dibiarkan `didukung: true`, prompt & skema JSON yang dikirim ke pembaca
-     * foto dibangun untuk tabel yang tidak ada di kertasnya — dan yang balik
-     * bukan error, tapi angka yang dikarang supaya kolomnya kelihatan terisi.
-     * Alasan yang sama persis dipakai lembar Autoklaf & grid Enclosure.
+     * Dibiarkan `true`, prompt & skema JSON yang dikirim ke pembaca foto
+     * dibangun untuk tabel yang tidak ada di kertasnya — dan yang balik bukan
+     * error, tapi angka yang dikarang supaya kolomnya kelihatan terisi. Alasan
+     * yang sama persis dipakai lembar Autoklaf & grid Enclosure.
+     *
+     * ## `lokal` (tombol `FOTO TABEL INI`, ML Kit di HP) — juga false
+     *
+     * Ini SUDAH pernah dicoba dinyalakan untuk tabel Repeatability saja
+     * (31 Agt 2026, dibatalkan hari yang sama). Bentuk layarnya memang cocok
+     * — dua baris kapasitas × sepuluh pengulangan — tapi tiga hal
+     * membatalkannya, dan ketiganya bisa dicek tanpa memegang kertasnya:
+     *
+     *  1. **Kertasnya belum ada.** `kode_dokumen` lembar ini `null`: lab belum
+     *     pernah menerbitkan formulirnya. Tombol "foto tabel ini" untuk
+     *     formulir yang belum dicetak menjanjikan sesuatu yang tidak ada.
+     *  2. **Kepala kolomnya tidak terjangkau.** `PetaTabelFoto` menjangkar tiap
+     *     pengulangan ke tulisan kepala kolomnya, dan bawaannya `X1` /
+     *     `Repeat 1`. Tabel ini tidak mengirim `pengulangan_arah` maupun
+     *     `prefiks_pengulangan`, jadi tidak ada satu pun jangkar kolom yang
+     *     cocok — tiap jepretan pulang NOL sel.
+     *  3. **Blok Accuracy tidak sebentuk sama sekali.** Di kertas master dia
+     *     daftar MENURUN (`z1`, `m1`, `m1'`, `z2`, `m2`, …), satu pembacaan
+     *     per baris; grid empat kolom yang digambar layar itu bentuk LAYAR,
+     *     bukan bentuk kertasnya. Jadi menyalakan lembarnya "sebagian" tetap
+     *     meninggalkan blok terbesar tanpa jalur.
+     *
+     * Yang sampai ke teknisi kalau ini dipaksakan bukan "kolomnya nggak
+     * kebaca", melainkan *"tabelnya dikenali, tapi selnya masih kosong"* —
+     * gejala yang sudah tercatat di §12 permintaan 7.
+     *
+     * Syarat supaya bisa dinyalakan nanti, berurutan: lab menerbitkan
+     * kertasnya → `pengulangan_arah` diisi dari kepala kolom yang BENAR-BENAR
+     * tercetak → `ocr:rangka-geometri` dijalankan ulang dan templatnya
+     * ditandai `terverifikasi`.
      *
      * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
      */
@@ -775,21 +808,63 @@ class TimbanganProfile extends CalibrationProfile
             'kode' => 'scale_observation',
             'halaman' => 1,
             'judul' => '1. SCALE OBSERVATION',
-            // Dua tahap yang sudah punya kolomnya sendiri di `raw_measurements`
-            // (`tahap`), dipakai sepuluh alat lain buat hal yang sama persis:
-            // pembacaan as-found yang dicatat tapi tidak ikut GUM.
-            'baris' => [
-                ['kode' => 'sebelum_adjustment', 'label' => 'Before Adjustment'],
-                ['kode' => 'sesudah_adjustment', 'label' => 'After Adjustment'],
-            ],
+            // TIDAK ada `baris` di sini. Kunci itu di HP berarti "baris tabel
+            // STANDARD yang tercetak" (`BagianLembarKerja.baris`), dan
+            // sepasang `{kode, label}` tahap bukan itu — yang digambar bakal
+            // daftar standar hantu. Nama tahapnya sekarang hidup di kode tiap
+            // kotak (`…scale_observation.sebelum_adjustment.z1`), yang lebih
+            // baik: tidak ada urutan yang perlu ditebak dua sisi.
             'field' => [
-                $this->f('scale_observation.*.standar', 'Standar Weight', 'angka'),
-                $this->f('scale_observation.*.z1', 'z1', 'angka'),
-                $this->f('scale_observation.*.m1', 'm1', 'angka'),
-                $this->f('scale_observation.*.m2', 'm2', 'angka'),
-                $this->f('scale_observation.*.z2', 'z2', 'angka'),
+                ...$this->fieldScaleObservation('sebelum_adjustment', 'Before'),
+                ...$this->fieldScaleObservation('sesudah_adjustment', 'After'),
             ],
         ];
+    }
+
+    /**
+     * Lima kotak Scale Observation satu tahap, dengan kode yang BENAR-BENAR
+     * sampai ke server.
+     *
+     * ## Kenapa bukan `scale_observation.*.z1` seperti draf pertama
+     *
+     * Kode ber-wildcard itu idiom lembar CETAK, bukan kunci payload — dan HP
+     * membaca titik di dalam kode sebagai penanda "kolom TURUNAN": read-only,
+     * diisi sistem dari alat yang dipilih, dan **tidak pernah ikut dikirim**
+     * (`FieldLembarKerja.turunan`). Sepuluh kotak ini digambar rapi, teknisi
+     * mengisinya dari kertas, lalu isinya hilang waktu tombol kirim ditekan.
+     * Tanpa satu pun error, di kedua sisi.
+     *
+     * Awalan `spesifikasi_alat.` yang membalikkannya: HP mengecualikan awalan
+     * itu dari aturan turunan (di sana titik artinya PENGELOMPOKAN), jadi
+     * kotaknya bisa diketik dan isinya mendarat di
+     * `calibration_sessions.spesifikasi_alat` — tempat yang sama dengan empat
+     * blok tingkat-sesi lainnya.
+     *
+     * Tahapnya ditulis EKSPLISIT, bukan `*`: dua baris kertasnya memang cuma
+     * dua, dan kunci yang eksplisit bisa divalidasi, bisa dicari, dan tidak
+     * bergantung pada HP menebak urutan `baris`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fieldScaleObservation(string $tahap, string $label): array
+    {
+        $kotak = [
+            'standar' => 'Standar Weight',
+            'z1' => 'z1',
+            'm1' => 'm1',
+            'm2' => 'm2',
+            'z2' => 'z2',
+        ];
+
+        return array_values(array_map(
+            fn (string $judul, string $kunci): array => $this->f(
+                "spesifikasi_alat.scale_observation.{$tahap}.{$kunci}",
+                "{$label} — {$judul}",
+                'angka',
+            ),
+            $kotak,
+            array_keys($kotak),
+        ));
     }
 
     /** @return array<string, mixed> */
@@ -800,14 +875,16 @@ class TimbanganProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => '2. EFFECT OF TARE',
             'field' => [
-                $this->f('effect_of_tare.standar', 'Standar Weight', 'angka'),
-                $this->f('effect_of_tare.m1', 'm1', 'angka'),
-                $this->f('effect_of_tare.m2', 'm2', 'angka'),
-                $this->f('effect_of_tare.bentuk_pan', 'Bentuk Pan', 'pilihan', pilihan: [
+                // Awalan `spesifikasi_alat.` — lihat `fieldScaleObservation()`
+                // soal kenapa kode bertitik tanpa awalan itu read-only di HP.
+                $this->f('spesifikasi_alat.effect_of_tare.standar', 'Standar Weight', 'angka'),
+                $this->f('spesifikasi_alat.effect_of_tare.m1', 'm1', 'angka'),
+                $this->f('spesifikasi_alat.effect_of_tare.m2', 'm2', 'angka'),
+                $this->f('spesifikasi_alat.effect_of_tare.bentuk_pan', 'Bentuk Pan', 'pilihan', pilihan: [
                     ['nilai' => 'kotak', 'label' => 'Kotak'],
                     ['nilai' => 'lingkaran', 'label' => 'Lingkaran'],
                 ]),
-                $this->f('effect_of_tare.ukuran_pan', 'Ukuran / Diameter Pan', 'teks'),
+                $this->f('spesifikasi_alat.effect_of_tare.ukuran_pan', 'Ukuran / Diameter Pan', 'teks'),
             ],
         ];
     }
@@ -838,9 +915,40 @@ class TimbanganProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => '3. ACCURACY',
             'tabel' => [[
+                // Nominal keping PER BARIS, bukan satu kotak untuk selembar.
+                //
+                // Draf pertama menaruhnya sebagai `measurements.*.nominal` di
+                // `field` bagian ini — satu kotak, di luar tabel. Itu tidak
+                // bisa benar: tiap titik punya SUSUNAN kepingnya sendiri
+                // (`20+20+10` di titik 5, `20+20+20+10` di titik 7), dan satu
+                // kotak untuk sepuluh titik tidak punya cara dipetakan balik.
+                //
+                // `kolom_baris` sudah jadi tempat kotak tambahan per baris di
+                // lembar lain (`no_probe` Thermocouple), jadi bentuknya sudah
+                // dikenal HP; yang baru cuma isinya.
+                //
+                // JUMLAH nominal inilah yang jadi `titik_ukur` titik itu —
+                // dihitung server (lihat `susunBlokTimbangan`), bukan dikirim
+                // HP, supaya cuma ada satu angka yang mengaku mewakilinya.
+                'kolom_baris' => [
+                    $this->f(
+                        'nominal',
+                        'Nominal keping (pisahkan dengan +)',
+                        'daftar_angka',
+                        satuan: $satuan,
+                    ),
+                ],
                 'tahap' => 'sesudah_adjustment',
+                // `grup`, dan SENGAJA tanpa `peran`. Di HP `tabel.peran`
+                // bukan label bebas: nilainya-yang-bukan-null berarti "lembar
+                // ini membaca DUA deret per titik (standar & uut)", dan itu
+                // membelokkan SELURUH lembar ke jalur pasangan — payloadnya
+                // berangkat berisi kunci `standar`/`uut` tanpa satu pun
+                // nominal, dan kunci barisnya jatuh ke offset parameter yang
+                // bikin tabel ini bentrok lagi dengan tabel sebelahnya.
+                // Dua tabel yang beda isinya dibedakan `grup`, seperti ketiga
+                // tabel Spectrophotometer.
                 'grup' => 'akurasi',
-                'peran' => 'akurasi',
                 'judul' => 'Accuracy — pembebanan bertingkat',
                 'satuan' => $satuan,
                 'judul_nilai' => 'Nominal',
@@ -858,13 +966,9 @@ class TimbanganProfile extends CalibrationProfile
                 ],
                 'pengulangan' => range(1, 4),
             ]],
-            'field' => [
-                // Nominal anak timbangan per titik, urut Mass 1..6 (KOLOM-MAJOR
-                // seperti master). Dipisah dari tabel karena satu baris titik
-                // bisa memakai sampai enam keping sekaligus, dan urutannya ikut
-                // ke slot drift di budget — lihat TimbanganCalculator.
-                $this->f('measurements.*.nominal', 'Nominal Anak Timbangan (Mass 1..6)', 'daftar_angka'),
-            ],
+            // Kosong: kotak nominalnya sekarang duduk PER BARIS di dalam
+            // tabel (`kolom_baris`), bukan satu kotak untuk selembar.
+            'field' => [],
         ];
     }
 
@@ -927,13 +1031,48 @@ class TimbanganProfile extends CalibrationProfile
             'judul' => '4. REPEATABILITY',
             'tabel' => [[
                 'tahap' => 'sesudah_adjustment',
+                // Tanpa `peran` — lihat alasannya di `bagianAkurasi()`.
                 'grup' => 'keterulangan',
-                'peran' => 'keterulangan',
                 'judul' => 'Repeatability — 10 pengulangan',
                 'satuan' => $satuan,
+                // Geser kunci baris tabel ini di LAYAR supaya tidak rebutan
+                // dengan baris Accuracy. Tabrakannya nyata di sesi contoh kg:
+                // Accuracy memuat titik 50 kg & 100 kg, dan Middle/Maximum di
+                // sini juga 50 kg & 100 kg. Tanpa offset, dua tabel berbagi
+                // satu baris isian — angka yang diketik di salah satunya
+                // muncul di kotak satunya lagi, tanpa error.
+                //
+                // Angkanya cuma harus TIDAK bertabrakan; 1000 dipilih karena
+                // di atas kapasitas titik akurasi mana pun yang masuk akal
+                // (master paling panjang 10 titik).
+                'offset_kunci' => 1000,
+                // Isi tabel ini TIDAK masuk `measurements[]` — dia besaran
+                // tingkat-SESI (dua kapasitas, bukan dua titik ukur), jadi
+                // tempatnya `calibration_sessions.spesifikasi_alat` bareng
+                // empat blok lainnya.
+                //
+                // Dinyatakan lewat `simpan_ke` supaya HP tahu dari BENTUKNYA,
+                // bukan dari daftar kode profil yang ditulis di layar —
+                // daftar begitu menyusut diam-diam tiap ada alat baru, dan
+                // yang ketinggalan justru yang paling baru. Kunci ini sudah
+                // dipakai lembar TIDS untuk maksud yang serumpun.
+                'simpan_ke' => 'spesifikasi_alat.keterulangan',
                 'judul_nilai' => 'Kapasitas',
                 'judul_pengulangan' => 'Pengulangan ke-',
-                'titik_bisa_diubah' => true,
+                // FALSE, dan bedanya dari tabel Accuracy di atas bukan
+                // kelalaian. `titik_bisa_diubah` di HP menggerakkan SATU daftar
+                // titik yang dipakai bersama seluruh lembar (`titikKustom`) —
+                // benar buat lembar yang tabel Before & After-nya memang satu
+                // daftar, salah total di sini: begitu teknisi menyusun sepuluh
+                // titik Accuracy, tabel ini ikut berubah jadi sepuluh baris
+                // Middle/Maximum yang tidak ada di kertas mana pun. Nol error;
+                // yang hilang delapan belas kotak keterulangan.
+                //
+                // Kedua kapasitasnya memang tidak perlu diketik: setengah dan
+                // penuh dari `range_max` alat, sumber yang sama yang dipakai
+                // tangga Accuracy. Kalau angkanya salah, yang dibetulkan master
+                // alatnya — bukan diketik ulang tiap sesi.
+                'titik_bisa_diubah' => false,
                 'baris' => [
                     [
                         'titik_ukur' => $rentang > 0.0 ? round($rentang / 2, 6) : 0.0,
@@ -965,12 +1104,17 @@ class TimbanganProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => '5. LOADING INFLUENCE ON EACH POSITION',
             'field' => [
-                $this->f('eksentrisitas.beban', 'Beban yang dipakai', 'angka'),
-                $this->f('eksentrisitas.baca.center', 'Center', 'angka'),
-                $this->f('eksentrisitas.baca.front', 'Front', 'angka'),
-                $this->f('eksentrisitas.baca.back', 'Back', 'angka'),
-                $this->f('eksentrisitas.baca.left', 'Left', 'angka'),
-                $this->f('eksentrisitas.baca.right', 'Right', 'angka'),
+                // Blok ini MENGGERAKKAN ANGKA: rentang (maks − min) posisinya
+                // jadi komponen Eccentricity di budget U95% of Weighing. Jadi
+                // awalan `spesifikasi_alat.` di sini bukan kerapian — tanpa
+                // itu keenam kotaknya read-only di HP dan komponennya nol
+                // terus, di setiap sesi. Lihat `fieldScaleObservation()`.
+                $this->f('spesifikasi_alat.eksentrisitas.beban', 'Beban yang dipakai', 'angka'),
+                $this->f('spesifikasi_alat.eksentrisitas.baca.center', 'Center', 'angka'),
+                $this->f('spesifikasi_alat.eksentrisitas.baca.front', 'Front', 'angka'),
+                $this->f('spesifikasi_alat.eksentrisitas.baca.back', 'Back', 'angka'),
+                $this->f('spesifikasi_alat.eksentrisitas.baca.left', 'Left', 'angka'),
+                $this->f('spesifikasi_alat.eksentrisitas.baca.right', 'Right', 'angka'),
             ],
         ];
     }
@@ -983,12 +1127,41 @@ class TimbanganProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => '6. HYSTERISIS',
             'field' => [
-                $this->f('histeresis.m', 'M', 'angka'),
-                $this->f('histeresis.m_aksen', "M'", 'angka'),
-                $this->f('histeresis.baca1.*', 'Reading 1', 'angka'),
-                $this->f('histeresis.baca2.*', 'Reading 2', 'angka'),
+                $this->f('spesifikasi_alat.histeresis.m', 'M', 'angka'),
+                $this->f('spesifikasi_alat.histeresis.m_aksen', "M'", 'angka'),
+                // Delapan kotak per deret, bernomor EKSPLISIT — bukan satu
+                // kotak ber-wildcard. Rumusnya membaca posisi tertentu
+                // (`b[0] + b[7] − b[2] − b[5]`), jadi urutannya bagian dari
+                // artinya: satu kotak yang isinya "20 40 20 0 …" tidak punya
+                // cara dipetakan balik ke delapan posisi itu tanpa menebak.
+                ...$this->fieldHisteresis(1),
+                ...$this->fieldHisteresis(2),
             ],
         ];
+    }
+
+    /**
+     * Delapan kotak satu deret Hysterisis, urut seperti tercetak.
+     *
+     * Label posisinya ikut kertas master: `[M(p1), M+M', M(q1), Zero, M+M',
+     * M(q2), Zero, M(p2)]`. Ditulis di label, bukan cuma di komentar, karena
+     * yang mengisinya teknisi yang sedang memegang kertas itu — dan kotak
+     * bernomor 1..8 tanpa nama posisi bikin dia harus menghitung kolom.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fieldHisteresis(int $deret): array
+    {
+        $posisi = ['M(p1)', "M+M'", 'M(q1)', 'Zero', "M+M'", 'M(q2)', 'Zero', 'M(p2)'];
+
+        return array_values(array_map(
+            fn (int $i): array => $this->f(
+                "spesifikasi_alat.histeresis.baca{$deret}.{$i}",
+                sprintf('Reading %d — %s', $deret, $posisi[$i]),
+                'angka',
+            ),
+            range(0, 7),
+        ));
     }
 
     /** @return array<string, mixed> */

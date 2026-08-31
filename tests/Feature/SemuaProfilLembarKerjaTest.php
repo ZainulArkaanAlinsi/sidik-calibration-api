@@ -189,6 +189,48 @@ class SemuaProfilLembarKerjaTest extends TestCase
     }
 
     /**
+     * `tabel[].peran` cuma boleh `standar` atau `uut`.
+     *
+     * ## Kenapa kunci ini nggak boleh dipakai sebagai label bebas
+     *
+     * Di HP, `peran` yang bukan null berarti satu hal yang sangat spesifik:
+     * *"lembar ini membaca DUA deret per titik — standar & UUT"*
+     * (`TabelHasil.berpasangan`, dan lewat dia `LembarKerja.berpasangan`).
+     * Nilainya membelokkan SELURUH lembar ke jalur pasangan, yang mengirim
+     * `standar`/`uut` per titik dan bukan `pembacaan`, DAN mengunci baris ke
+     * offset parameter alih-alih ke titik ukurnya.
+     *
+     * Lembar Timbangan sempat memakainya sebagai nama blok (`akurasi`,
+     * `keterulangan`) — tujuan yang sudah dilayani `grup`, seperti ketiga tabel
+     * Spectrophotometer. Akibatnya dua: payload berangkat tanpa satu pun
+     * nominal, dan kedua tabelnya bentrok kunci baris lagi karena
+     * `_offsetParameter(null)` memulangkan 0 untuk dua-duanya. Nol error di
+     * kedua sisi; ketahuan waktu payload HP-nya diadu ke bentuk lembarnya.
+     *
+     * Ditulis sebagai aturan umum, bukan pengecualian buat satu profil: kunci
+     * ini bakal kelihatan seperti label bebas lagi buat alat ke-22.
+     */
+    #[DataProvider('semuaProfil')]
+    public function test_peran_tabel_cuma_buat_lembar_pasangan(CalibrationProfile $profil): void
+    {
+        foreach ($profil->bentukLembarKerja()['bagian'] ?? [] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                if (! array_key_exists('peran', $tabel) || $tabel['peran'] === null) {
+                    continue;
+                }
+
+                $this->assertContains(
+                    $tabel['peran'],
+                    ['standar', 'uut'],
+                    "Profil `{$profil->kode()}` memakai `peran` = `{$tabel['peran']}` sebagai label blok. "
+                    .'Di HP kunci itu berarti lembar pasangan standar/UUT dan membelokkan seluruh jalur '
+                    .'kirimnya. Pakai `grup`.',
+                );
+            }
+        }
+    }
+
+    /**
      * Nomor formulir ada, atau memang belum ketahuan — dan yang belum ketahuan
      * ditulis di sini, bukan dibiarkan lolos diam-diam.
      *

@@ -6,6 +6,10 @@ percakapan backend.
 **Status backend:** BERES 31 Agt 2026. Profil, lembar kerja, mesin hitung, jalur simpan, jalur
 hitung ulang, tiga sesi contoh ter-seed, dan `TimbanganMasterTest` (1.099 angka) hijau.
 
+**Status HP:** BERES 31 Agt 2026 — lembarnya kegambar, payloadnya sampai, 13 test baru hijau
+(`timbangan_lembar_test.dart` + `timbangan_layar_test.dart`). Bentuk mock-nya ada di
+`lib/services/contoh_lembar_kerja_massa.dart`, disalin apa adanya dari respons server.
+
 ---
 
 ## 1. Yang berubah buat HP
@@ -17,7 +21,7 @@ hitung ulang, tiga sesi contoh ter-seed, dan `TimbanganMasterTest` (1.099 angka)
 | Nama kemampuan | `Timbangan (Elektronik, mekanik)` (ejaan lampiran akreditasi, kurungnya ikut) |
 | Endpoint bentuk | `GET /api/worksheet-schema?equipment_id=…` — sama seperti 20 alat lain |
 | Nomor formulir | **null** — kertas lembar kerjanya belum pernah dikirim lab |
-| Jalur kamera | **BELUM** — `bentuk_pindai_foto.didukung = false`, jangan gambar tombol FOTO TABEL |
+| Jalur kamera | **BELUM** — `pindai_foto.didukung` DAN `lokal` dua-duanya `false`; lihat §6 |
 
 Alat contoh sudah ter-seed, jadi bisa langsung dicoba:
 
@@ -63,14 +67,45 @@ Baris awalnya sudah terisi **10 % s/d 100 % rentang ukur, sepuluh langkah rata**
 true`). Itu pola yang dipakai ketiga master, bukan tebakan. Lembar tidak pernah terbuka dengan nol
 baris — pelajaran K18 dari TIDS.
 
-### `keterulangan` — dua sub-kolom per pengulangan
+Nominal keping tiap titik duduk di **`kolom_baris`** tabel itu — satu kotak per baris, bertipe
+`daftar_angka`, diisi `20+20+10`. Mekanisme `kolom_baris` sudah dipakai `no_probe` Thermocouple;
+yang baru cuma tipenya. Kotak ini **bukan pelengkap**: server yang menjumlahkannya jadi
+`titik_ukur`, jadi titik tanpa isinya bernilai nol dan koreksinya nggak berarti apa-apa.
+
+> **Koma itu koma DESIMAL, bukan pemisah keping.** `20,5+10` = dua keping. Dibaca sebagai pemisah
+> dia jadi `[20, 5, 10]` — tiga keping, jumlahnya melar 30,5 jadi 35, dan slot Mass-nya geser
+> semua. Nol error. Pemisah yang diterima cuma `+`, `;`, dan spasi.
+
+### `keterulangan` — dua sub-kolom per pengulangan, dan BUKAN titik ukur
 
 ```
-kolom: [ {kode:"zero", label:"Zero (zi)"}, {kode:"pembacaan", label:"Reading (mi)"} ]
+kolom:      [ {kode:"zero", label:"Zero (zi)"}, {kode:"pembacaan", label:"Reading (mi)"} ]
+simpan_ke:  "spesifikasi_alat.keterulangan"
+offset_kunci: 1000
+titik_bisa_diubah: false
 ```
 
-Sepuluh pengulangan × dua angka, dua baris (Middle & Maximum Capacity). Kalau widget tabel yang
-ada baru sanggup satu sub-kolom, ini satu-satunya yang perlu ditambah.
+Sepuluh pengulangan × dua angka, dua baris (Middle & Maximum Capacity). Widget tabel yang ada sudah
+sanggup dua sub-kolom — lembar pH memakainya buat pH & °C.
+
+Tiga kunci di atas yang menentukan, dan ketiganya lahir dari kesalahan nyata:
+
+- **`simpan_ke`** — isinya besaran satu per SESI, bukan titik yang dikoreksi. Lewat `measurements[]`,
+  sertifikatnya terbit dengan dua baris titik tambahan yang nggak pernah diminta siapa pun (50 kg &
+  100 kg, angkanya sah, set point-nya sah, nol error).
+- **`offset_kunci`** — baris Accuracy 50 kg & 100 kg BENTROK dengan Middle/Maximum. Tanpa offset,
+  empat baris berbagi dua kotak isian dan angka yang diketik di satu tabel muncul di tabel satunya.
+- **`titik_bisa_diubah: false`** — di HP penanda itu menggerakkan SATU daftar titik untuk seluruh
+  lembar. Nyala di dua tabel sekaligus, menyusun sepuluh titik Accuracy ikut mengubah tabel ini jadi
+  sepuluh baris Middle/Maximum yang nggak ada di kertas mana pun.
+
+### Yang TIDAK boleh dipakai: `peran`
+
+Kedua tabel dibedakan `grup` (`akurasi` / `keterulangan`), **bukan `peran`**. Di HP `peran` yang
+bukan null berarti satu hal yang sangat spesifik: *"lembar ini membaca DUA deret per titik —
+standar & UUT"*, dan nilainya membelokkan SELURUH lembar ke jalur pasangan (payload berangkat
+berisi `standar`/`uut` tanpa satu pun nominal) sekaligus mengunci baris ke offset parameter.
+Dijaga `SemuaProfilLembarKerjaTest::test_peran_tabel_cuma_buat_lembar_pasangan`.
 
 ## 3. Empat dropdown yang MENENTUKAN angka — bukan hiasan
 
@@ -132,8 +167,52 @@ atas 200 kg menggunakan Metode beban substitusi"*).
 > budget **tanpa satu pun error**. Kalau layar cuma menyediakan satu kolom nominal, kirim apa
 > adanya berurutan — itu sudah benar.
 
-Lima blok tingkat-sesi (`keterulangan`, `eksentrisitas`, `histeresis`, dan dua lagi) masuk
-`spesifikasi_alat`, **bukan** `measurements` — kelimanya satu per sesi, bukan per titik.
+Lima blok tingkat-sesi (`keterulangan`, `eksentrisitas`, `histeresis`, `scale_observation`,
+`effect_of_tare`) masuk `spesifikasi_alat`, **bukan** `measurements` — kelimanya satu per sesi,
+bukan per titik.
+
+### Bentuk yang benar-benar dikirim HP — dan kenapa server menerima dua-duanya
+
+Bentuk di atas itu **kontraknya**, dipakai seeder & test. HP mengirim dua bagian dengan bentuk
+GENERIK yang sudah dipakai dua puluh lembar lain, dan server menerjemahkannya:
+
+| Bagian | Bentuk kontrak | Bentuk HP | Diterjemahkan di |
+|---|---|---|---|
+| Empat pembacaan akurasi | `z1`, `m`, `m_aksen`, `z2` | `pembacaan: [z, m, m', z']` menurut posisi kolom | `CalibrationController::bacaanTimbangan()` |
+| Blok keterulangan | `{mid, maks}` dengan `zi`/`mi` | `{baris: [{titik_ukur, zero: [...], pembacaan: [...]}]}` | `CalibrationRequest::bakukanKeterulanganTimbangan()` |
+
+Alasannya satu: nama slot (`m_aksen`, `mid`, `zi`) itu **kosakata master alat ini**, dan menaruhnya
+di layar yang menggambar dua puluh lembar berarti daftar tulis-tangan yang menyusut diam-diam tiap
+ada alat baru. Urutan kolomnya sendiri sudah dipatok bentuk lembar (`pengulangan_arah`: z, m, m',
+z'), dan urutan barisnya sudah dipatok `bagianKeterulangan()` (Middle dulu, Maximum kedua) — jadi
+posisi sudah cukup buat memetakannya di sisi server.
+
+**Kunci bernama MENANG kalau dikirim bareng deret.** Kalau tidak, sesi lama yang dibuka lagi di HP
+lalu dikirim ulang bakal menimpa pembacaannya dengan deret kosong bawaan layar.
+
+Yang TERSIMPAN selalu bentuk baku `{mid, maks}` — jalur hitung ulang (`kalibrasi:hitung-ulang`)
+membaca `calibration_sessions.spesifikasi_alat` apa adanya, jadi bentuk mentah yang lolos ke DB
+bakal menghitung nol keterulangan di setiap sesi. Dijaga
+`TimbanganSesiTest::test_bentuk_kiriman_hp_sama_hasilnya_dengan_bentuk_kontrak`.
+
+### Kode kotak keempat blok field WAJIB berawalan `spesifikasi_alat.`
+
+```
+spesifikasi_alat.scale_observation.sebelum_adjustment.z1
+spesifikasi_alat.effect_of_tare.bentuk_pan
+spesifikasi_alat.eksentrisitas.baca.center
+spesifikasi_alat.histeresis.baca1.0        … sampai .baca2.7
+```
+
+Di HP, kode bertitik **tanpa** awalan itu berarti kolom TURUNAN: read-only, diisi sistem dari alat
+yang dipilih, dan tidak pernah ikut payload (`FieldLembarKerja.turunan`). Keempat blok ini sempat
+begitu — tiga puluh sembilan kotak digambar rapi, diisi teknisi dari kertas, lalu hilang waktu
+tombol kirim ditekan. Tanpa satu pun error, di kedua sisi. Dua di antaranya menggerakkan angka
+(eksentrisitas → komponen Eccentricity, histeresis → angka Hysterisis).
+
+Titik SESUDAH awalan itu berarti **bersarang**, jadi HP menyusunnya jadi objek. Segmen yang
+seluruhnya angka tetap jadi kunci teks (`"0"`, `"7"`); PHP membaca `{"0":…,"7":…}` sebagai array
+berindeks, jadi `count($b) >= 8` dan `$b[0]` di sisi sana tetap benar.
 
 ## 5. Yang dikembalikan
 
@@ -150,10 +229,31 @@ cuma satu, separuh angka yang tercetak tidak punya asal-usul di layar.
 
 ## 6. Yang SENGAJA belum ada
 
-- **Tombol kamera.** `bentuk_pindai_foto.didukung = false`. Tujuh blok yang tidak sebentuk tidak
-  bisa diungkapkan lewat `kolom_suhu`/`standar_di_baris` yang cuma memodelkan satu tabel datar;
+- **Tombol kamera — DUA-DUANYA mati, cloud maupun lokal.**
+
+  `pindai_foto.didukung = false` (jalur CLOUD): tujuh blok yang tidak sebentuk tidak bisa
+  diungkapkan lewat `kolom_suhu`/`standar_di_baris` yang cuma memodelkan satu tabel datar;
   dipaksakan, yang balik dari model bukan error melainkan angka karangan. Alasan yang sama dipakai
   Autoklaf & grid Enclosure.
+
+  `pindai_foto.lokal` juga `false`, dan ini **sudah pernah dicoba dinyalakan** untuk tabel
+  Repeatability saja (31 Agt 2026, dibatalkan hari yang sama). Bentuk layarnya memang cocok — dua
+  baris kapasitas × sepuluh pengulangan — tapi tiga hal membatalkannya:
+
+  1. **Kertasnya belum ada.** `kode_dokumen` lembar ini `null`: lab belum pernah menerbitkan
+     formulirnya. Tombol "foto tabel ini" untuk formulir yang belum dicetak menjanjikan sesuatu
+     yang tidak ada.
+  2. **Kepala kolomnya tidak terjangkau.** `PetaTabelFoto` menjangkar tiap pengulangan ke tulisan
+     kepala kolomnya, dan bawaannya `X1` / `Repeat 1`. Tabel ini tidak mengirim `pengulangan_arah`
+     maupun `prefiks_pengulangan`, jadi tidak ada satu pun jangkar kolom yang cocok — **tiap
+     jepretan pulang NOL sel.**
+  3. **Blok Accuracy tidak sebentuk sama sekali.** Di kertas master dia daftar MENURUN (`z1`, `m1`,
+     `m1'`, `z2`, `m2`, …), satu pembacaan per baris; grid empat kolom yang digambar layar itu
+     bentuk LAYAR, bukan bentuk kertasnya.
+
+  Syarat supaya bisa dinyalakan nanti, berurutan: lab menerbitkan kertasnya → `pengulangan_arah`
+  diisi dari kepala kolom yang BENAR-BENAR tercetak → `ocr:rangka-geometri` dijalankan ulang dan
+  `database/ocr-templates/timbangan-v1.json` ditandai `terverifikasi`.
 - **Vonis PASS/FAIL.** `punyaToleransi()` = false — batas keberterikan Timbangan datang dari MPE
   kelas (SNSU PK.M-02:2021) yang butuh nilai `e`, dan `e` diisi teknisi. Jangan gambar chip
   lulus/tidak sebelum itu ada.
