@@ -147,6 +147,25 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
+      # Direktori perusahaan — cari nama & alamat PT dari sumber LUAR waktu
+      # teknisi mendaftarkan pelanggan yang belum ada di master lab.
+      # Sumbernya Google Places (Places API New).
+      #
+      # KOSONG = jalur direktori mati, dan layar HP-nya BILANG "belum disetel"
+      # apa adanya — bukan diam-diam mulangin daftar kosong. Pencarian di master
+      # lab dan ketik tangan tetap jalan penuh tanpa key ini.
+      #
+      # Ini kunci SERVER. Jangan pernah ditaruh di aplikasi HP: key di dalam APK
+      # bisa dicabut siapa pun dari berkasnya lalu dipakai atas tagihan lab ini.
+      # Endpointnya ditagih PER REQUEST — pasang batas kuotanya di konsol
+      # Google juga, jangan cuma andalkan throttle 30/menit di server.
+      #
+      # Di konsol Google, key ini dipanggil DARI SERVER: pembatasan aplikasi
+      # jangan disetel ke "Android apps"/"HTTP referrers" (itu bikin semua
+      # permintaan ditolak 403 dan endpointnya memulangkan 502).
+      - key: DIREKTORI_PERUSAHAAN_KEY
+        sync: false
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
