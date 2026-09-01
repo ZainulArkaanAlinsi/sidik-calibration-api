@@ -325,6 +325,41 @@ lihat `PeringatanPalsuWaktuFrekuensiTest`.
 
 ---
 
+## §12 — Set point di luar jangkauan sertifikat kalibrator  [SUDAH DIBLOKIR]
+
+Kedua tabel standar memungut nominal sertifikat **terdekat** untuk satu set
+point. Sebelumnya tanpa batas jarak, jadi set point berapa pun mendapat
+padanan — betapa pun jauhnya:
+
+| Alat | Set point | Nominal yang dipungut | Yang terbit |
+|---|---|---|---|
+| Stopwatch | 7200 s | 3600 s | koreksi −20 ms, U95 0,81 s |
+| Stopwatch | 86400 s | 3600 s | sama, jaraknya 23× lipat |
+| Stopwatch | 1 s | 5 s | koreksi +30 ms = 3% penunjukan |
+| Tachometer | 500000 rpm | 30000 rpm | koreksi −2,0 rpm |
+
+Semuanya terbit lengkap dengan U95 dan lantai CMC, tanpa satu pun peringatan.
+Dan **tiga penjagaan yang memang ditulis untuk ini adalah kode mati**:
+`WaktuCalculator` memeriksa `koreksiMs($nominal) === null` dan
+`u95Sertifikat($nominal) === null`, `PutaranCalculator` memeriksa
+`koreksi($nominal) === null` — tapi `$nominal`-nya diambil dari daftar itu
+sendiri, jadi ketiganya selalu ketemu. Cabang yang tak terjangkau itu bahkan
+menyimpan kesalahan fatalnya sendiri (`end()` atas nilai balik fungsi), yang
+baru terbit setelah jalannya dibuka.
+
+Sekarang `nominalTerdekat()` memulangkan `null` di luar `[nominal terkecil,
+nominal terbesar]` sertifikat — 5–3600 detik dan 60–30000 rpm — sehingga
+titiknya masuk `belum_dihitung` dengan alasan yang menyebut jangkauannya.
+Seluruh set point master maupun `TITIK_SARAN` ada di dalam jangkauan itu, jadi
+tidak ada angka yang bergeser. Dijaga `NominalDiLuarSertifikatDitolakTest`.
+
+> **Catatan, bukan pertanyaan terbuka.** Lab tetap boleh mengkalibrasi di luar
+> jangkauan kalibratornya; yang tidak boleh adalah menerbitkan koreksi yang
+> ditebak dari baris terdekat. Kalau lab memang melayani titik di luar itu,
+> yang dibutuhkan baris sertifikat kalibrator baru — bukan pelonggaran di kode.
+
+---
+
 ## Ringkasan status
 
 | § | Pokok | Status | Pengaruh ke angka tercetak |
@@ -340,3 +375,4 @@ lihat `PeringatanPalsuWaktuFrekuensiTest`.
 | 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
 | **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
 | 11 | Data 15000 rpm berdesimal, budgetnya bulat | Budget dituruti | — (1 peringatan/sesi) |
+| 12 | Set point di luar jangkauan sertifikat | **Diblokir** dengan alasan | — (nol set point master kena) |

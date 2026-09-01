@@ -101,10 +101,19 @@ class WaktuCalculator
         $koreksiStdMs = $nominal === null ? null : $this->tabel->koreksiMs($nominal);
 
         if ($koreksiStdMs === null) {
+            // Ditampung dulu — `end()` menerima REFERENSI. Alasan lengkapnya di
+            // `PutaranCalculator`; cabang ini pun dulu nggak pernah punya jalan
+            // masuk, jadi kesalahannya ikut nggak pernah kelihatan.
+            $pita = $this->tabel->sertifikat();
+
             return ['hasil' => null, 'budget' => [], 'alasan' => sprintf(
-                'Set point %s detik nggak punya nominal padanan di sertifikat kalibrator '
-                .'stopwatch — koreksi standarnya nggak ada, jadi titik ini nggak dihitung.',
+                'Set point %s detik ada di luar jangkauan sertifikat kalibrator stopwatch '
+                .'(%s–%s detik) — koreksi standarnya nggak ada, jadi titik ini nggak dihitung. '
+                .'Kalibrasi di luar jangkauan itu keputusan manajer teknis, bukan angka yang '
+                .'boleh ditebak dari baris terdekat.',
                 $setPointDetik,
+                $pita[0]['nominal_detik'] ?? '-',
+                end($pita)['nominal_detik'] ?? '-',
             )];
         }
 

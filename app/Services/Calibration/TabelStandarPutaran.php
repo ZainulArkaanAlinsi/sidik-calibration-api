@@ -100,11 +100,26 @@ class TabelStandarPutaran
      */
     public function nominalTerdekat(float $setPoint): ?float
     {
+        $semua = array_map(
+            static fn (array $baris): float => (float) $baris['nominal'],
+            self::muat()['sertifikat'],
+        );
+
+        // DI LUAR jangkauan sertifikat berarti TIDAK ADA padanan — bukan "ambil
+        // yang paling ujung". Alasan lengkapnya di
+        // [TabelStandarWaktu::nominalTerdekat]; bentuknya sama, dan begitu pula
+        // cacatnya: set point 500000 rpm memungut koreksi baris 30000 rpm, dan
+        // penjagaan `koreksi($nominal) === null` di `PutaranCalculator` tidak
+        // pernah punya jalan masuk karena `$nominal`-nya diambil dari daftar itu
+        // sendiri.
+        if ($setPoint < min($semua) - 1e-9 || $setPoint > max($semua) + 1e-9) {
+            return null;
+        }
+
         $pilih = null;
         $jarak = null;
 
-        foreach (self::muat()['sertifikat'] as $baris) {
-            $nominal = (float) $baris['nominal'];
+        foreach ($semua as $nominal) {
             $d = abs($nominal - $setPoint);
 
             // `>=` bukan `>`: seri dimenangkan nominal yang lebih besar, dan

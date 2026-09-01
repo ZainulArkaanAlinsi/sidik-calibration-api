@@ -114,6 +114,10 @@ class LantaiCmcPutaranTest extends TestCase
      * Tachometer {60, 100, 12000} rpm terbit 5,00 sementara {60, 100, 40000}
      * rpm terbit 4,44. Satu-satunya bedanya titik ketiga yang keluar lingkup,
      * dan yang keluar lingkup justru dapat angka yang lebih bagus.
+     *
+     * Set point yang jauh di luar JANGKAUAN SERTIFIKAT kalibrator (bukan cuma
+     * di luar pita akreditasi) sekarang ditolak sama sekali — itu diuji
+     * tersendiri di `NominalDiLuarSertifikatDitolakTest`.
      */
     #[DataProvider('ambangPitaTeratas')]
     public function test_menyeberang_batas_lingkup_tidak_menurunkan_u95(
@@ -125,7 +129,6 @@ class LantaiCmcPutaranTest extends TestCase
 
         $dalam = $this->u95Blok($nomorSesi, [60.0, 100.0, $dalamPitaTeratas]);
         $luar = $this->u95Blok($nomorSesi, [60.0, 100.0, $diLuar]);
-        $jauh = $this->u95Blok($nomorSesi, [60.0, 100.0, $diLuar * 10]);
 
         $this->assertGreaterThanOrEqual(
             $dalam - 1e-9, $luar,
@@ -133,15 +136,6 @@ class LantaiCmcPutaranTest extends TestCase
                 'Set point %s di LUAR lingkup terbit U95 %s — lebih kecil daripada %s yang terbit '
                 .'buat set point %s yang masih DI DALAM lingkup.',
                 $diLuar, $luar, $dalam, $dalamPitaTeratas,
-            ),
-        );
-
-        $this->assertGreaterThanOrEqual(
-            $luar - 1e-9, $jauh,
-            sprintf(
-                'Set point %s (sepuluh kali lebih jauh di luar lingkup) menurunkan U95 dari %s ke %s — '
-                .'makin jauh dari lingkup akreditasi malah makin bagus sertifikatnya.',
-                $diLuar * 10, $luar, $jauh,
             ),
         );
     }
