@@ -1,0 +1,329 @@
+{
+  "_sumber": "Master Olda Timer dan Stopwatch.xlsm (sheet SERTIFIKAT KALIBRATOR, Drift Stopwatch, Human Reaction).",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu.py",
+  "standar": {
+    "nama": "Stopwatch",
+    "merk": "CASIO",
+    "resolusi": 0.001,
+    "seri": "SW-1",
+    "tanggal_kalibrasi": "2025-12-15"
+  },
+  "sertifikat": [
+    {
+      "nominal_detik": 5.0,
+      "koreksi_ms": 30.0,
+      "u95_detik": 0.14
+    },
+    {
+      "nominal_detik": 10.0,
+      "koreksi_ms": -20.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 30.0,
+      "koreksi_ms": -20.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 60.0,
+      "koreksi_ms": -30.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 120.0,
+      "koreksi_ms": 0.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 180.0,
+      "koreksi_ms": 0.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 240.0,
+      "koreksi_ms": -20.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 300.0,
+      "koreksi_ms": 0.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 600.0,
+      "koreksi_ms": -10.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 1200.0,
+      "koreksi_ms": 0.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 1800.0,
+      "koreksi_ms": -10.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 2400.0,
+      "koreksi_ms": -20.0,
+      "u95_detik": null
+    },
+    {
+      "nominal_detik": 3600.0,
+      "koreksi_ms": -20.0,
+      "u95_detik": null
+    }
+  ],
+  "drift": {
+    "snapshot": [
+      {
+        "kolom": "F",
+        "tanggal": "2022-12-22",
+        "lab": "PT. Indocal"
+      },
+      {
+        "kolom": "G",
+        "tanggal": "2023-12-22",
+        "lab": "PT. Envirotama"
+      },
+      {
+        "kolom": "H",
+        "tanggal": "2024-12-20",
+        "lab": "PT. Envirotama"
+      },
+      {
+        "kolom": "I",
+        "tanggal": "2025-12-15",
+        "lab": "PT. Envirotama"
+      }
+    ],
+    "hari_master": 360,
+    "titik": [
+      {
+        "nominal_detik": 5.0,
+        "koreksi_ms": {
+          "F": 138.0,
+          "G": 105.0,
+          "H": 12.0,
+          "I": 30.0
+        },
+        "rentang_ms": 126.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 10.0,
+        "koreksi_ms": {
+          "F": -73.0,
+          "G": -53.0,
+          "H": -16.0,
+          "I": -20.0
+        },
+        "rentang_ms": 57.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 30.0,
+        "koreksi_ms": {
+          "F": 46.0,
+          "G": 50.0,
+          "H": -36.0,
+          "I": -20.0
+        },
+        "rentang_ms": 86.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 60.0,
+        "koreksi_ms": {
+          "F": -82.0,
+          "G": -68.0,
+          "H": -61.0,
+          "I": -30.0
+        },
+        "rentang_ms": 52.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 120.0,
+        "koreksi_ms": {
+          "F": -17.0,
+          "G": -26.0,
+          "H": -25.0,
+          "I": 0.0
+        },
+        "rentang_ms": 26.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 180.0,
+        "koreksi_ms": {
+          "F": -121.0,
+          "G": -81.0,
+          "H": -72.0,
+          "I": 0.0
+        },
+        "rentang_ms": 121.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 240.0,
+        "koreksi_ms": {
+          "F": -145.0,
+          "G": -165.0,
+          "H": -63.0,
+          "I": -20.0
+        },
+        "rentang_ms": 145.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 300.0,
+        "koreksi_ms": {
+          "F": -30.0,
+          "G": -32.0,
+          "H": -25.0,
+          "I": 0.0
+        },
+        "rentang_ms": 32.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 600.0,
+        "koreksi_ms": {
+          "F": -64.0,
+          "G": -82.0,
+          "H": -81.0,
+          "I": -10.0
+        },
+        "rentang_ms": 72.0,
+        "dihitung_master": true
+      },
+      {
+        "nominal_detik": 1200.0,
+        "koreksi_ms": {
+          "F": 103.0,
+          "G": 117.0,
+          "H": -81.0,
+          "I": 0.0
+        },
+        "rentang_ms": 198.0,
+        "dihitung_master": true
+      },
+      {
+        "nominal_detik": 1800.0,
+        "koreksi_ms": {
+          "F": 273.0,
+          "G": 152.0,
+          "H": -49.0,
+          "I": -10.0
+        },
+        "rentang_ms": 322.0,
+        "dihitung_master": false
+      },
+      {
+        "nominal_detik": 2400.0,
+        "koreksi_ms": {
+          "F": 278.0,
+          "G": 245.0,
+          "H": -10.0,
+          "I": -20.0
+        },
+        "rentang_ms": 298.0,
+        "dihitung_master": true
+      },
+      {
+        "nominal_detik": 3600.0,
+        "koreksi_ms": {
+          "F": 30.0,
+          "G": -7.0,
+          "H": -85.0,
+          "I": -20.0
+        },
+        "rentang_ms": 115.0,
+        "dihitung_master": true
+      }
+    ],
+    "rentang_maks_master_ms": 298.0,
+    "rentang_maks_lengkap_ms": 322.0
+  },
+  "human_reaction": {
+    "operator": [
+      {
+        "inisial": "NR",
+        "nominal_detik": 10.0,
+        "beda": [
+          0.091,
+          0.014,
+          0.019,
+          -0.018,
+          0.018,
+          0.006,
+          0.01,
+          0.018,
+          0.011,
+          0.004
+        ],
+        "rata_rata": 0.0173,
+        "stdev": 0.0280675772
+      },
+      {
+        "inisial": "HN",
+        "nominal_detik": 10.0,
+        "beda": [
+          0.014,
+          0.009,
+          0.016,
+          0.014,
+          0.031,
+          0.047,
+          0.091,
+          -0.015,
+          0.034,
+          0.11
+        ],
+        "rata_rata": 0.0351,
+        "stdev": 0.0385009379
+      },
+      {
+        "inisial": "DT",
+        "nominal_detik": 10.0,
+        "beda": [
+          -0.02,
+          -0.01,
+          0.02,
+          0.034,
+          0.016,
+          -0.011,
+          0.034,
+          0.02,
+          0.013,
+          0.025
+        ],
+        "rata_rata": 0.0121,
+        "stdev": 0.0192032983
+      },
+      {
+        "inisial": "AW",
+        "nominal_detik": 10.0,
+        "beda": [
+          0.007,
+          0.02,
+          0.027,
+          -0.05,
+          0.038,
+          0.035,
+          0.014,
+          0.039,
+          0.03,
+          0.031
+        ],
+        "rata_rata": 0.0191,
+        "stdev": 0.0264089631
+      }
+    ],
+    "rata_maks_master": 0.0191,
+    "rata_maks_lengkap": 0.0351,
+    "stdev_maks": 0.0385009379
+  }
+}

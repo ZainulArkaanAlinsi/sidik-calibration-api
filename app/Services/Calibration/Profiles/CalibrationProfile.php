@@ -842,6 +842,26 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah satu titik sesi ini berisi DUA deret waktu — stopwatch standar dan
+     * alat pelanggan yang ditekan berbarengan.
+     *
+     * Default `false`. `true` cuma untuk Timer/Stopwatch. Waktu `true`,
+     * `CalibrationController` menyimpan tiap ulangan sebagai dua baris
+     * `raw_measurements` ber-`peran_sensor` `waktu_standar`/`waktu_uut`
+     * (nilainya total milidetik, lihat `WaktuMentah::keMilidetik()`), dan jalur
+     * hitung ulang menyusunnya balik lewat `WaktuMentah::dari()`.
+     *
+     * Tanpa hook ini jalur datar menyimpan satu deret campuran per titik, dan
+     * koreksi yang lahir dari situ — selisih rata-rata standar dan UUT — tidak
+     * berarti apa-apa. Tidak ada error yang terbit; yang muncul cuma angka yang
+     * salah.
+     */
+    public function butuhBlokWaktu(): bool
+    {
+        return false;
+    }
+
+    /**
      * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
      * ngapa-ngapain — pembacaan dipakai apa adanya.
      *
