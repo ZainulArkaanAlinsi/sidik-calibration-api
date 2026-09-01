@@ -10,6 +10,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
 use App\Services\Calibration\Profiles\TimbanganProfile;
+use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -262,6 +263,49 @@ class UjiProfilKalibrasi extends Command
                 : [
                     "{$terhitung}/{$terisi}",
                     sprintf('titik akurasi terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
+                    false,
+                ];
+        }
+
+        // Timer/Stopwatch juga tidak lewat `preview` per titik: payload-nya
+        // `measurements[i].standar` + `.uut` — DUA deret waktu yang ditekan
+        // berbarengan — bukan `.pembacaan` yang datar. Diadu ke payload datar
+        // dia memulangkan NOL titik, dan nol titik di sini terbaca seperti
+        // mesin hitungnya rusak padahal yang salah bentuk payload yang disusun
+        // perintah ini.
+        //
+        // Alasan & bentuk pemeriksaannya sama persis dengan Timbangan,
+        // Enclosure, dan ketiga alat suhu di atas: yang diperiksa sesi
+        // tersimpannya lengkap.
+        //
+        // Kedua alat rpm TIDAK ikut cabang ini — bentuk titiknya memang deret
+        // datar, jadi mereka lewat jalur `preview` yang sama dengan sepuluh
+        // alat lain, dan itu yang membuktikan jalur kirimnya benar-benar jalan.
+        if ($profil instanceof TimerStopwatchProfile) {
+            if ($alat === null) {
+                return ['-', 'belum ada alat contoh di database', false];
+            }
+
+            $sesi = CalibrationSession::where('equipment_id', $alat->id)
+                ->has('uncertaintyCalculations')
+                ->latest('id')
+                ->first();
+
+            if ($sesi === null) {
+                return ['-', 'sesi kosong atau tidak punya hasil hitung', false];
+            }
+
+            $terisi = $sesi->rawMeasurements()
+                ->whereNotNull('peran_sensor')
+                ->distinct()
+                ->count('titik_ke');
+            $terhitung = $sesi->uncertaintyCalculations()->count();
+
+            return $terhitung > 0 && $terhitung === $terisi
+                ? ["{$terhitung}/{$terisi}", "U95 per set point lengkap (sesi {$sesi->nomor_sesi})", true]
+                : [
+                    "{$terhitung}/{$terisi}",
+                    sprintf('set point terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
                     false,
                 ];
         }

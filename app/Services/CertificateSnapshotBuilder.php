@@ -237,9 +237,20 @@ class CertificateSnapshotBuilder
 
                 $remark = $profil?->remarkTitik((float) $titik->titik_ukur);
 
+                // Nilai acuan yang TERCETAK di kolom `Standard Value`.
+                //
+                // Buat dua puluh satu alat itu `titik_ukur` apa adanya. Buat
+                // kelompok Waktu dan Frekuensi `titik_ukur` menyimpan SET POINT
+                // — penunjukan alat pelanggan, bukan nilai acuan — sehingga
+                // nilai acuannya harus disusun balik dari koreksinya. Lihat
+                // [CalibrationProfile::nilaiStandarDariKoreksi].
+                $nilaiStandar = $profil?->nilaiStandarDariKoreksi()
+                    ? (float) $titik->rata_rata + (float) $titik->koreksi
+                    : (float) $titik->titik_ukur;
+
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
-                    'standard_value' => (float) $titik->titik_ukur,
+                    'standard_value' => $nilaiStandar,
                     // Kolom "Remark" di sertifikat asli. Null buat alat yang
                     // titiknya nggak punya keterangan parameter.
                     'remark' => $remark,

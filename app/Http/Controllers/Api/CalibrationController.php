@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
@@ -30,6 +31,7 @@ use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
 use App\Support\TimbanganMentah;
+use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
 // method `load()` yang cuma ada di Eloquent Collection.
@@ -207,9 +209,29 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Alat pelanggan belum dipilih, tapi ORGANISASINYA sudah pasti: lembar
+        // ini dilayani buat lab si pemanggil. Alat semu di bawah cuma pembawa
+        // `organization_id`.
+        //
+        // Bukan kerapian — ini lubang lintas-lab. `masterStandarTertaut()` &
+        // `masterThermohygro()` menyaring organisasi lewat `$equipment`, dan
+        // `null` berarti TANPA saringan. Terukur sebelum ini ada: teknisi lab 1
+        // memanggil endpoint ini tanpa `equipment_id` dan lembarnya memuat
+        // nomor sertifikat, ketertelusuran, dan serial kalibrator milik lab 2 —
+        // plus dropdown "Environmental Meter Used" yang menawarkan
+        // `standard_id` lab 2 sebagai pilihan yang bisa diklik. Yang kepilih
+        // masuk ke sesi, koreksi kondisi lingkungannya dibaca dari sertifikat
+        // lab itu, dan angkanya kecetak di sertifikat lab ini.
+        //
+        // Sengaja TIDAK disimpan dan TIDAK ikut memilih profil: pemilihan
+        // profil di atas sudah selesai memakai `$alat` yang sebenarnya.
+        $konteksAlat = $alat ?? new Equipment([
+            'organization_id' => $request->user()->organization_id,
+        ]);
+
         $bentuk = $profil->bentukLembarKerja(
             untukAdmin: $request->user()->isAdmin(),
-            equipment: $alat,
+            equipment: $konteksAlat,
         );
 
         // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan
@@ -1100,6 +1122,15 @@ class CalibrationController extends Controller
             return $this->susunBlokTimbangan($request, $alat, $standarDefault);
         }
 
+        // Timer/Stopwatch: tiap titik DUA deret waktu (stopwatch standar & alat
+        // pelanggan yang ditekan berbarengan), dan tiap ulangan dikirim sebagai
+        // empat kotak jam/menit/detik/milidetik. Alasan jalur terpisahnya sama
+        // dengan tiga di atas — dan di sini deret yang nggak kebagian tempat
+        // justru sisi kanan kolom `Correction`.
+        if ($this->profil->untukAlat($alat)->butuhBlokWaktu()) {
+            return $this->susunBlokWaktu($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1768,6 +1799,159 @@ class CalibrationController extends Controller
             ),
             'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
         ];
+    }
+
+    /**
+     * Susun pengukuran lembar **Timer/Stopwatch**: dua deret waktu per titik.
+     *
+     * Tiap ulangan boleh dikirim dua bentuk, dan dua-duanya diterima:
+     *
+     *  - **objek** `{jam, menit, detik, milidetik}` — bentuk yang dipakai HP,
+     *    sepadan dengan empat kotak `J M S 0.001S` di lembar masternya; dan
+     *  - **angka** — total milidetik, buat pemanggil yang sudah menjumlahkan
+     *    sendiri (mis. seeder & test).
+     *
+     * Yang disimpan selalu satu angka: total milidetik. Pemisahan jam/menit/
+     * detik cuma cara stopwatch menampilkan waktu, bukan empat besaran yang
+     * berbeda — dan menyimpannya terpisah berarti empat baris `raw_measurements`
+     * per ulangan yang tidak satu pun berdiri sendiri.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array<string, mixed>>}
+     */
+    private function susunBlokWaktu(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '' && $v !== [];
+
+        // Set point dianggap terpakai kalau SALAH SATU sisinya ada isinya.
+        // Kalau cuma satu sisi yang dicek, set point yang teknisinya baru sempat
+        // mengisi sisi standar akan kebuang — berikut baris lamanya yang sudah
+        // telanjur dihapus `store()`/`update()` sebelum penyusunan ini jalan.
+        $titikTerpakai = array_values(array_filter(
+            (array) $request->input('measurements', []),
+            static fn (array $t): bool => collect($t['standar'] ?? [])->contains($adaIsinya)
+                || collect($t['uut'] ?? [])->contains($adaIsinya),
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+            $setpoint = (float) $titik['titik_ukur'];
+            $deret = [];
+
+            foreach ([WaktuMentah::PERAN_STANDAR => 'standar', WaktuMentah::PERAN_UUT => 'uut'] as $peran => $kunci) {
+                $terisi = [];
+
+                foreach (array_values((array) ($titik[$kunci] ?? [])) as $urutan => $nilai) {
+                    $ms = $this->waktuKeMilidetik($nilai);
+
+                    if ($ms === null) {
+                        continue;
+                    }
+
+                    $terisi[] = $ms;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        // Nomor ULANGAN, bukan nomor sensor. `WaktuMentah`
+                        // memasangkan standar ke-i dengan UUT ke-i lewat kolom
+                        // ini, dan pasangan yang tertukar menggeser koreksi
+                        // tanpa satu pun error.
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $setpoint,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $ms,
+                        // Yang tersimpan milidetik; kolom sertifikatnya detik.
+                        // Satuannya ditulis apa adanya supaya angka mentahnya
+                        // bisa diadu langsung ke sel workbook waktu ada sengketa.
+                        'satuan' => WaktuMentah::SATUAN,
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                $deret[$peran] = $terisi;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $setpoint,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    WaktuMentah::PERAN_STANDAR => $deret[WaktuMentah::PERAN_STANDAR],
+                    WaktuMentah::PERAN_UUT => $deret[WaktuMentah::PERAN_UUT],
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Satu penunjukan stopwatch → total milidetik, atau `null` kalau kotaknya
+     * kosong seluruhnya.
+     *
+     * `null` (bukan 0) untuk yang kosong: nol itu penunjukan yang SAH, dan
+     * memperlakukan kotak kosong sebagai nol persis kesalahan yang membuat
+     * lima titik kosong di master melahirkan koreksi 30 ms yang tercetak
+     * seperti titik sungguhan.
+     */
+    private function waktuKeMilidetik(mixed $nilai): ?float
+    {
+        if (is_numeric($nilai)) {
+            return (float) $nilai;
+        }
+
+        if (! is_array($nilai)) {
+            return null;
+        }
+
+        // Daftar kotaknya dari [PenunjukanWaktu::KOTAK], BUKAN disalin: aturan
+        // validasi dan konversi ini harus sepakat kotak mana yang sah. Dua
+        // daftar terpisah berarti kotak yang ditambah di satu sisi diterima
+        // validator tapi diam-diam dibuang di sini — waktunya meleset persis
+        // sebesar kotak itu, tanpa satu pun error.
+        $terisi = array_filter(
+            array_map(static fn (string $k): mixed => $nilai[$k] ?? null, PenunjukanWaktu::KOTAK),
+            static fn ($v): bool => $v !== null && $v !== '',
+        );
+
+        if ($terisi === []) {
+            return null;
+        }
+
+        return WaktuMentah::keMilidetik(
+            (int) ($nilai['jam'] ?? 0),
+            (int) ($nilai['menit'] ?? 0),
+            (float) ($nilai['detik'] ?? 0),
+            (float) ($nilai['milidetik'] ?? 0),
+        );
     }
 
     private function susunPasanganStandarUut(

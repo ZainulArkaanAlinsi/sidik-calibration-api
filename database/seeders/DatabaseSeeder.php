@@ -88,6 +88,15 @@ class DatabaseSeeder extends Seeder
             // WAJIB abis `ThermohygroSeeder`: sesinya menautkan TH-2 sebagai
             // sumber koreksi kondisi lingkungan.
             TimbanganSeeder::class,
+            // Alat ke-22..24 — kelompok "Waktu dan Frekuensi", tiga sesi contoh
+            // dari tiga workbook master (Tachometer / Centrifuge / Timer).
+            // CMC ketiganya sudah ada di lampiran akreditasi no. 37, 38, 39,
+            // jadi cukup baris dari `CalibrationCapabilitySeeder` — nggak perlu
+            // seeder kemampuan sendiri.
+            //
+            // WAJIB abis `ThermohygroSeeder`: ketiga sesinya menautkan TH-4
+            // sebagai sumber koreksi kondisi lingkungan.
+            WaktuFrekuensiSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

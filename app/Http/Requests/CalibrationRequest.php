@@ -3,7 +3,12 @@
 namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
+use App\Models\Equipment;
 use App\Models\Standard;
+use App\Rules\AngkaTerhingga;
+use App\Rules\PenunjukanWaktu;
+use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -113,11 +118,42 @@ class CalibrationRequest extends FormRequest
     /**
      * @return array<string, array<int, mixed>>
      */
+    /**
+     * Lembar alat yang dikirim ini dibaca per BLOK WAKTU (Timer/Stopwatch)?
+     *
+     * Dipanggil dari `rules()`, jadi `equipment_id` belum tervalidasi: yang
+     * belum bisa dipastikan dijawab `false` — bentuk objeknya ditolak, persis
+     * perilaku sebelum aturan ini ada. Menolak kiriman yang sah lebih baik
+     * daripada menerima kiriman yang pembacaannya bakal dibuang diam-diam.
+     */
+    private function lembarBerblokWaktu(): bool
+    {
+        $id = $this->input('equipment_id');
+
+        if (! is_numeric($id)) {
+            return false;
+        }
+
+        $alat = Equipment::query()
+            ->where('organization_id', $this->user()->organization_id)
+            ->find((int) $id);
+
+        return $alat !== null
+            && app(CalibrationProfileRegistry::class)->untukAlat($alat)->butuhBlokWaktu();
+    }
+
     public function rules(): array
     {
         $organizationId = $this->user()->organization_id;
 
-        return [
+        // Bentuk objek {jam,menit,detik,milidetik} cuma sah di lembar yang
+        // memang dibaca per BLOK WAKTU. Dibuka buat semua alat, lembar
+        // Thermocouple yang mengirim bentuk itu diterima 200 lalu pembacaannya
+        // dibuang diam-diam — teknisi kehilangan seluruh lembarnya tanpa satu
+        // pun pesan. Lihat docblock `PenunjukanWaktu`.
+        $bolehObjekWaktu = $this->lembarBerblokWaktu();
+
+        $aturan = [
             'equipment_id' => [
                 'required',
                 Rule::exists('equipments', 'id')
@@ -285,7 +321,13 @@ class CalibrationRequest extends FormRequest
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 
             // Kolom "Usage Check": standar mana aja yang dicentang teknisi.
-            'standar_dicek' => ['sometimes', 'array'],
+            //
+            // `max:40` sama dengan batas `sensor_grid`, dan alasannya sama: tiap
+            // elemen memicu satu query `exists` di baris berikutnya, jadi tanpa
+            // batas, jumlah query dan waktu validasi ditentukan pengirim.
+            // Lembar terpanjang di sistem ini mencetak ENAM baris standar, jadi
+            // 40 itu kelonggaran, bukan patokan.
+            'standar_dicek' => ['sometimes', 'array', 'max:40'],
             'standar_dicek.*.standard_id' => [
                 'required',
                 Rule::exists('standards', 'id')
@@ -321,7 +363,20 @@ class CalibrationRequest extends FormRequest
             'measurements' => ['sometimes', 'array', 'max:60'],
             'measurements.*.titik_ukur' => ['required', 'numeric'],
             'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'measurements.*.pembacaan' => ['sometimes', 'nullable', 'array'],
+            // Batasnya `MAKS_KOLOM_PENGULANGAN` — jumlah kolom pengulangan
+            // TERBANYAK yang boleh digambar lembar mana pun (lihat
+            // `bentukLembarKerja()`), jadi kiriman yang sah nggak mungkin
+            // melebihinya; lembar terpanjang di test cuma memakai enam.
+            //
+            // Sebelumnya sumbu ini SATU-SATUNYA yang nggak berbatas, padahal
+            // dia yang paling banyak menulis `raw_measurements` di jalur datar:
+            // satu elemen = satu baris. `measurements` dibatasi 60 justru
+            // dengan alasan itu, dan batas itu jadi nggak ada artinya kalau tiap
+            // titiknya boleh membawa deret sepanjang apa pun.
+            'measurements.*.pembacaan' => [
+                'sometimes', 'nullable', 'array',
+                'max:'.CalibrationProfile::MAKS_KOLOM_PENGULANGAN,
+            ],
             // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
             // disaring waktu ngitung.
             'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
@@ -357,9 +412,14 @@ class CalibrationRequest extends FormRequest
             // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
             // bisa dikirim dari lapangan.
             'measurements.*.standar' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.standar.*' => ['nullable', 'numeric'],
+            // BUKAN `numeric`: kolom ini dipakai DUA bentuk lembar — angka
+            // biasa (ketiga alat suhu berpasangan) dan objek empat kotak
+            // {jam,menit,detik,milidetik} (Timer/Stopwatch). Lihat docblock
+            // `PenunjukanWaktu` buat kegagalan yang ditutupnya: bentuk kedua
+            // dulu SELALU ditolak 422, jadi lembar Timer mustahil dikirim.
+            'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.uut.*' => ['nullable', 'numeric'],
+            'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
@@ -444,6 +504,21 @@ class CalibrationRequest extends FormRequest
             'measurements.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             'measurements.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
         ];
+
+        // Tiap aturan ber-`numeric` ikut dijaga dari INF/NAN, dan penjagaannya
+        // dipasang DI SINI — bukan diketik satu per satu di 26 baris di atas.
+        //
+        // Alasannya bukan kerapian: aturan ke-27 yang ditambahkan besok akan
+        // otomatis ikut terjaga, sementara daftar yang diketik tangan adalah
+        // daftar yang pasti kelupaan. Lihat docblock `AngkaTerhingga` buat
+        // kegagalan yang ditutupnya (HTTP 500 + jejak tumpukan bocor).
+        foreach ($aturan as $kolom => $baris) {
+            if (is_array($baris) && in_array('numeric', $baris, true)) {
+                $aturan[$kolom][] = new AngkaTerhingga;
+            }
+        }
+
+        return $aturan;
     }
 
     /**

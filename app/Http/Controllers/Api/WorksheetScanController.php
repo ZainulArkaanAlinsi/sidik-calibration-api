@@ -68,7 +68,8 @@ class WorksheetScanController extends Controller
 
         $template = $this->template->untukKode(
             $kode,
-            $this->alat($request, $data['equipment_id'] ?? null),
+            $this->alat($request, $data['equipment_id'] ?? null)
+                ?? $this->konteksOrganisasi($request),
             $data['jumlah_pengulangan'] ?? null,
         );
 
@@ -84,7 +85,13 @@ class WorksheetScanController extends Controller
     {
         $user = $request->user();
         $sesi = $this->sesiTervalidasi($request->input('calibration_session_id'), $user);
-        $alat = $this->alat($request, $request->input('equipment_id')) ?? $sesi?->equipment;
+        // Urutannya sengaja: alat yang ditunjuk, lalu alat sesinya, baru
+        // konteks organisasi. Yang terakhir cuma memasok saringan lab — dia
+        // TIDAK boleh mendahului alat sungguhan, karena varian satuan per titik
+        // dibaca dari alat itu.
+        $alat = $this->alat($request, $request->input('equipment_id'))
+            ?? $sesi?->equipment
+            ?? $this->konteksOrganisasi($request);
 
         $template = $this->template->untukKode(
             $request->string('template_id')->toString(),
@@ -402,6 +409,34 @@ class WorksheetScanController extends Controller
         return Equipment::query()
             ->where('organization_id', $request->user()->organization_id)
             ->find((int) $equipmentId);
+    }
+
+    /**
+     * Alat SEMU yang cuma membawa `organization_id` pemanggil.
+     *
+     * ## Kenapa null tidak boleh diteruskan
+     *
+     * `CalibrationProfile::masterStandarTertaut()` menyaring master standar
+     * dengan `when($equipment?->organization_id !== null, ...)`. `when(false,
+     * ...)` TIDAK memasang `where` apa pun, jadi `$alat` null berarti profilnya
+     * memilih baris `standards` milik SEMUA lab — dan baris tabel template
+     * membawa `standard_id` hasil pilihan itu. Teknisi lab A yang memanggil
+     * `GET /api/worksheet-templates/{kode}` tanpa `equipment_id` menerima
+     * template yang barisnya menunjuk kalibrator lab B, dan HP memakai id itu
+     * apa adanya waktu mengirim hasil pindainya.
+     *
+     * Bentuk kebocoran yang SAMA sudah ditutup di
+     * `CalibrationController::lembarKerja()` (lihat `LembarKerjaTidakBocorLintasLabTest`).
+     * Ini pintu keduanya — lolos karena saringannya ada di profil, bukan di
+     * controller, jadi tiap pemanggil baru harus mengingatnya sendiri.
+     *
+     * Sengaja TIDAK disimpan: dia cuma konteks saringan, bukan alat.
+     */
+    private function konteksOrganisasi(Request $request): Equipment
+    {
+        return new Equipment([
+            'organization_id' => $request->user()->organization_id,
+        ]);
     }
 
     /**
