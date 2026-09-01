@@ -53,6 +53,18 @@ class WaktuMentah
     public const PERAN_UUT = 'waktu_uut';
 
     /**
+     * Satuan yang tersimpan di `raw_measurements.satuan` untuk lembar ini.
+     *
+     * Milidetik, bukan detik: begitulah stopwatch menampilkannya, dan begitu
+     * pula angka mentahnya bisa diadu langsung ke sel workbook waktu ada
+     * sengketa. Yang membaca baris ini WAJIB tahu — `equipments.range_min/max`
+     * bersatuan alatnya (detik), dan membandingkan keduanya mentah-mentah
+     * melahirkan peringatan "di luar rentang" di setiap baris. Lihat
+     * [\App\Services\Calibration\Profiles\TimerStopwatchProfile::nilaiDalamSatuanAlat].
+     */
+    public const SATUAN = 'ms';
+
+    /**
      * @param  Collection<int, RawMeasurement>  $baris  baris satu `titik_ke`
      * @return array{waktu_standar: list<float>, waktu_uut: list<float>}|array{}
      */

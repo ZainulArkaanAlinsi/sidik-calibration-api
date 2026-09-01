@@ -355,6 +355,37 @@ abstract class ProfilPutaran extends CalibrationProfile
     }
 
     /**
+     * Daya baca yang berlaku buat pembacaan di titik ini — daya baca
+     * **TACHOMETER STANDAR**, bukan alat pelanggan.
+     *
+     * ## Kegagalan yang ditutup override ini
+     *
+     * `CalibrationValidator` memeriksa tiap pembacaan sebagai kelipatan
+     * resolusi, dan jatuh ke `equipments.resolusi` kalau profilnya diam. Buat
+     * kelompok ini `equipments.resolusi` itu penggaris yang SALAH: yang dicatat
+     * di lembar bukan penunjukan alat pelanggan, tapi lima kali baca tachometer
+     * standar (lihat docblock [PutaranCalculator]).
+     *
+     * Diadu ke sesi master ter-seed, sebelum override ini ada:
+     *
+     *     Tachometer 0140-CAL-424 -> 53 `pembacaan_bukan_kelipatan_resolusi`
+     *     Centrifuge 0133-CAL-324 -> 47 `pembacaan_bukan_kelipatan_resolusi`
+     *
+     * yang isinya `pembacaan 59.9 rpm bukan kelipatan resolusi alat (1 rpm)` —
+     * SETIAP pembacaan di kedua sesi, karena centrifuge pelanggan memang
+     * berdaya baca 1 rpm sementara standarnya membaca 0,1 rpm. Peringatan palsu
+     * yang selalu muncul melatih admin menekan "setujui tetap" tanpa membaca,
+     * dan peringatan yang benar-benar penting ikut tenggelam.
+     *
+     * Pemeriksanya TIDAK dimatikan, cuma diberi penggaris yang benar: salah
+     * ketik yang kelebihan digit (`59,987`) tetap ketahuan.
+     */
+    public function resolusiTitik(float $titikUkur): ?float
+    {
+        return ($this->kalk ??= new PutaranCalculator)->resolusiStandar($titikUkur);
+    }
+
+    /**
      * Baris kemampuan (CMC) yang menaungi titik TERTINGGI di blok — pita yang
      * sama dengan yang dipakai master untuk memilih `DATABASE!S5` vs `S6`.
      *

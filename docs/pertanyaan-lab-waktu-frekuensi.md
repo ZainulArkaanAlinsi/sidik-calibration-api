@@ -300,6 +300,31 @@ pertamanya lawan sel masternya.
 
 ---
 
+## §11 — Data 15000 rpm berdesimal satu, budgetnya bilangan bulat  [PERLU JAWABAN]
+
+Blok budget master memilih daya baca tachometer standar dari nominalnya: blok
+ber-nominal tertinggi 10000 rpm memakai **0,1 rpm**, yang 15000 rpm memakai
+**1 rpm** (`PutaranCalculator::AMBANG_RESOLUSI_STANDAR`). Tapi pembacaan
+masternya di 15000 rpm justru **berdesimal satu** — `15000,4`.
+
+Jadi master menyatakan dua hal yang bertentangan tentang alat yang sama: kalau
+standarnya benar-benar membaca bilangan bulat di atas 10000 rpm, `15000,4` tidak
+mungkin muncul di layarnya; kalau dia membaca 0,1 rpm di sana, komponen resolusi
+budgetnya sepuluh kali terlalu besar.
+
+Yang dilakukan kode: **menuruti budget** (0,1 rpm sampai 10000, 1 rpm di atasnya)
+karena itu yang menentukan angka U95 tercetak, dan membiarkan pemeriksa
+`pembacaan_bukan_kelipatan_resolusi` mengangkat satu peringatan per sesi di titik
+itu. Satu peringatan yang isinya benar, bukan lima puluh tiga yang isinya salah —
+lihat `PeringatanPalsuWaktuFrekuensiTest`.
+
+> **[PERLU JAWABAN]** Berapa daya baca tachometer standar di atas 10000 rpm —
+> 0,1 rpm (dan komponen resolusi blok 5 & 6 terlalu besar), atau 1 rpm (dan
+> desimal di data 15000 rpm salah ketik)? Pengaruhnya ke U95 kecil, tapi dua
+> jawaban itu tidak bisa dua-duanya benar.
+
+---
+
 ## Ringkasan status
 
 | § | Pokok | Status | Pengaruh ke angka tercetak |
@@ -314,3 +339,4 @@ pertamanya lawan sel masternya.
 | 8 | Pembagi drift beda | Ditiru | — |
 | 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
 | **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
+| 11 | Data 15000 rpm berdesimal, budgetnya bulat | Budget dituruti | — (1 peringatan/sesi) |
