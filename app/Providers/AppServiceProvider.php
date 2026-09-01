@@ -85,27 +85,28 @@ class AppServiceProvider extends ServiceProvider
                 ),
             );
 
-            // Bawaannya `auto`: Google duluan kalau key-nya ada, OSM di
-            // belakangnya. Yang nggak dikenali jatuh ke sini juga, BUKAN
-            // melempar — salah ketik di `.env` mematikan pendaftaran pelanggan
-            // di lapangan, dan itu hukuman yang jauh lebih besar daripada
-            // kesalahannya.
+            // Bawaannya `osm`, dan yang NGGAK DIKENALI jatuh ke situ juga —
+            // bukan melempar. Salah ketik di `.env` mematikan pendaftaran
+            // pelanggan di lapangan, dan itu hukuman yang jauh lebih besar
+            // daripada kesalahannya.
             //
-            // Kenapa `auto` yang jadi bawaan, bukan salah satu:
+            // Kenapa jatuhnya ke OSM dan bukan ke berlapis seperti dulu: lapis
+            // berlapis ikut membangun `GooglePlacesDirektori`, jadi satu huruf
+            // yang meleset (`osmm`) diam-diam menyalakan lagi jalur yang
+            // DITAGIH — persis yang disuruh berhenti. OSM memenuhi dua
+            // syaratnya sekaligus: hidup tanpa key, dan nol tagihan.
             //
-            //  - Cuma Google → satu setelan yang salah (key kosong, kuota
-            //    habis, key ditolak) mematikan pencarian di lapangan.
-            //  - Cuma OSM → pabrik yang belum pernah dipetakan sukarelawan
-            //    nggak akan pernah ketemu, dan itu justru pelanggan lab ini.
-            //
-            // Urutannya sengaja Google dulu: cakupan pabrik Indonesia-nya jauh
-            // lebih tebal, dan Text Search punya kuota bebas bulanan yang jauh
-            // di atas pemakaian satu lab. OSM di belakangnya yang bikin jalur
-            // ini nggak pernah mati total.
+            // `auto` tetap ada, tapi sekarang harus DISEBUT. Yang didapat:
+            // Google duluan — cakupan pabrik Indonesia jauh lebih tebal, dan
+            // Text Search punya kuota bebas 5.000 panggilan/bulan — dengan OSM
+            // di belakangnya supaya jalurnya nggak pernah mati total. Bayaran
+            // yang ditukar: kalau kuota bulanannya lewat, tagihannya jalan.
+            // Keputusan sebesar itu layak diketik sendiri, bukan diwarisi dari
+            // pemasangan yang lupa menyetel apa-apa.
             return match (config('services.direktori_perusahaan.driver')) {
                 'google' => $google(),
-                'osm' => $osm(),
-                default => new DirektoriBerlapis([$google(), $osm()]),
+                'auto' => new DirektoriBerlapis([$google(), $osm()]),
+                default => $osm(),
             };
         });
     }

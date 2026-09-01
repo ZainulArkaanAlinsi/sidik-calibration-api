@@ -606,6 +606,19 @@ Google Places tetap ada di balik satu setelan (`DIREKTORI_PERUSAHAAN_DRIVER=goog
 `DirektoriPerusahaan` memang dipasang untuk ini, jadi controller, layar HP, dan bentuk datanya nol
 berubah.
 
+> **Keputusan itu baru benar-benar mendarat di kode 1 Sep 2026.** Paragraf di atas sudah ditulis
+> 31 Agt, tapi nilainya tertinggal di `auto` (Google duluan) di TIGA tempat sekaligus —
+> `config/services.php`, `.env.example`, dan `render.yaml` — jadi Places tetap ditembak tiap
+> teknisi menekan cari. Itu yang jadi tagihan Google Cloud yang masuk 1 Sep 2026.
+>
+> Pelajarannya, dan alasan catatan ini nggak dihapus: **dokumen yang bilang "sekarang bawaannya X"
+> bukan bukti bahwa bawaannya X.** Yang mengikat cuma nilai di berkas setelan dan test yang
+> mengadunya. Sekarang keduanya ada — lihat `test_bawaannya_osm_dan_tetap_siap_tanpa_key`.
+>
+> Ikut dibetulkan sekalian: nilai yang **tidak dikenali** dulu jatuh ke susunan berlapis, yang ikut
+> membangun `GooglePlacesDirektori`. Artinya satu huruf yang meleset di `.env` (`osmm`) menyalakan
+> lagi jalur berbayar tanpa satu pun error. Sekarang jatuhnya ke `osm`.
+
 Harganya nyata dan sudah diterima: cakupan OSM **lebih tipis**, jadi pabrik di kawasan industri
 yang belum ada yang memetakan memang tidak akan ketemu. Lapis 3 ada justru untuk itu.
 
