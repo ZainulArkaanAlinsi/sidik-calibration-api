@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
 use App\Models\Standard;
+use App\Rules\AngkaTerhingga;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -117,7 +118,7 @@ class CalibrationRequest extends FormRequest
     {
         $organizationId = $this->user()->organization_id;
 
-        return [
+        $aturan = [
             'equipment_id' => [
                 'required',
                 Rule::exists('equipments', 'id')
@@ -444,6 +445,21 @@ class CalibrationRequest extends FormRequest
             'measurements.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             'measurements.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
         ];
+
+        // Tiap aturan ber-`numeric` ikut dijaga dari INF/NAN, dan penjagaannya
+        // dipasang DI SINI — bukan diketik satu per satu di 26 baris di atas.
+        //
+        // Alasannya bukan kerapian: aturan ke-27 yang ditambahkan besok akan
+        // otomatis ikut terjaga, sementara daftar yang diketik tangan adalah
+        // daftar yang pasti kelupaan. Lihat docblock `AngkaTerhingga` buat
+        // kegagalan yang ditutupnya (HTTP 500 + jejak tumpukan bocor).
+        foreach ($aturan as $kolom => $baris) {
+            if (is_array($baris) && in_array('numeric', $baris, true)) {
+                $aturan[$kolom][] = new AngkaTerhingga;
+            }
+        }
+
+        return $aturan;
     }
 
     /**
