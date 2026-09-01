@@ -163,23 +163,31 @@ return [
     | jangan cuma di sini.
     */
     'direktori_perusahaan' => [
-        // `auto` (bawaan) = BERLAPIS: Google duluan kalau key-nya ada, lalu
-        // OpenStreetMap. Dua sumbernya punya kelemahan yang berlawanan, jadi
-        // pasangannya menutup keduanya — lihat `DirektoriBerlapis`.
+        // `osm` (bawaan) = OpenStreetMap lewat Nominatim saja. Tanpa key,
+        // tanpa kuota, TANPA TAGIHAN. Harganya cakupan yang lebih tipis: cuma
+        // tempat yang pernah dipetakan sukarelawan, jadi pabrik di kawasan
+        // industri yang belum ada yang memetakan memang tidak akan ketemu.
         //
         // `google` = Places API saja. Cakupan pabrik Indonesia paling tebal.
         // Text Search punya kuota bebas bulanan (5.000 panggilan/bulan sejak
-        // Maret 2025) yang jauh di atas pemakaian satu lab, tapi tetap butuh
-        // key — dan tanpa key jalur ini mati total.
+        // Maret 2025), tapi DI ATAS ITU DITAGIH PER REQUEST — dan tetap butuh
+        // key, jadi tanpa key jalur ini mati total.
         //
-        // `osm` = OpenStreetMap lewat Nominatim saja. Tanpa key, tanpa kuota,
-        // tapi cakupannya tipis: cuma tempat yang pernah dipetakan sukarelawan.
+        // `auto` = BERLAPIS: Google duluan kalau key-nya ada, OpenStreetMap di
+        // belakangnya — lihat `DirektoriBerlapis`.
+        //
+        // Kenapa bawaannya `osm` dan bukan `auto`: bawaan itu yang dipakai
+        // pemasangan yang belum menyetel apa-apa, dan bawaan yang menagih
+        // menagihnya DIAM-DIAM. Keputusan pemilik proyek 31 Agt 2026 (lihat
+        // §K16 `docs/permintaan-user-7.md`) memang nol tagihan; nilai di sini
+        // sempat tertinggal di `auto`, dan itu yang bikin Places tetap
+        // ditembak sampai 1 Sep 2026.
         //
         // Apa pun drivernya, tiap lapis dibungkus `DirektoriBercache` di
         // `AppServiceProvider` — pencarian yang sama tidak menembak penyedia
         // (dan tidak ditagih) dua kali. Kalau hasilnya terasa basi:
         // `php artisan cache:clear`.
-        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'auto'),
+        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'osm'),
 
         // Cuma dipakai driver `google`.
         'key' => env('DIREKTORI_PERUSAHAAN_KEY'),
