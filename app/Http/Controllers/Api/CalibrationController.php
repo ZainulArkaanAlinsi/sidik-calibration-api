@@ -209,9 +209,29 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Alat pelanggan belum dipilih, tapi ORGANISASINYA sudah pasti: lembar
+        // ini dilayani buat lab si pemanggil. Alat semu di bawah cuma pembawa
+        // `organization_id`.
+        //
+        // Bukan kerapian — ini lubang lintas-lab. `masterStandarTertaut()` &
+        // `masterThermohygro()` menyaring organisasi lewat `$equipment`, dan
+        // `null` berarti TANPA saringan. Terukur sebelum ini ada: teknisi lab 1
+        // memanggil endpoint ini tanpa `equipment_id` dan lembarnya memuat
+        // nomor sertifikat, ketertelusuran, dan serial kalibrator milik lab 2 —
+        // plus dropdown "Environmental Meter Used" yang menawarkan
+        // `standard_id` lab 2 sebagai pilihan yang bisa diklik. Yang kepilih
+        // masuk ke sesi, koreksi kondisi lingkungannya dibaca dari sertifikat
+        // lab itu, dan angkanya kecetak di sertifikat lab ini.
+        //
+        // Sengaja TIDAK disimpan dan TIDAK ikut memilih profil: pemilihan
+        // profil di atas sudah selesai memakai `$alat` yang sebenarnya.
+        $konteksAlat = $alat ?? new Equipment([
+            'organization_id' => $request->user()->organization_id,
+        ]);
+
         $bentuk = $profil->bentukLembarKerja(
             untukAdmin: $request->user()->isAdmin(),
-            equipment: $alat,
+            equipment: $konteksAlat,
         );
 
         // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan

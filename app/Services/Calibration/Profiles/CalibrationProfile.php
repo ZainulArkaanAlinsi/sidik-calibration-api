@@ -401,9 +401,17 @@ abstract class CalibrationProfile
      *
      * **2. Prioritas nama atas serial** — lihat [cocokkanStandar].
      *
-     * `$equipment` null (uji bentuk, atau lembar generik sebelum alat dipilih)
-     * berarti nggak ada organisasi buat disaring. Itu sah: yang dipakai cuma
-     * label baris, dan sesi belum bisa disimpan tanpa alat.
+     * > **`$equipment` null berarti TANPA saringan organisasi — dan barisnya
+     * > membawa lebih dari label.** `when(false, ...)` tidak memasang `where`
+     * > apa pun, jadi yang pulang seluruh baris `standards` milik SEMUA lab,
+     * > lengkap dengan `no_sertifikat`, `tertelusur_ke`, `serial_number`, dan
+     * > `id` yang bisa diklik di dropdown. Pemanggil HTTP WAJIB menyertakan
+     * > konteks organisasi: `CalibrationController::lembarKerja()` memakai alat
+     * > semu ber-`organization_id` pemanggil waktu `equipment_id` tidak
+     * > dikirim. Dijaga `LembarKerjaTidakBocorLintasLabTest`.
+     * >
+     * > Null tetap diterima buat uji BENTUK lembar — di sana cuma ada satu
+     * > organisasi, jadi tidak ada yang bisa bocor ke mana pun.
      *
      * @return Collection<int, Standard>
      */
@@ -429,7 +437,9 @@ abstract class CalibrationProfile
      * Saringan organisasinya sama pentingnya. Dropdown yang menawarkan
      * termohigrometer milik lab lain bukan cuma salah pilihan: `standard_id`
      * yang kepilih masuk ke sesi, koreksi kondisi lingkungannya dibaca dari
-     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini.
+     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini. Dan
+     * `$equipment` null mematikan saringan itu — lihat peringatan di
+     * [masterStandarTertaut].
      *
      * @return Collection<int, Standard>
      */
