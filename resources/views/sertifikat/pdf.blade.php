@@ -1085,21 +1085,34 @@
                           sini — `max-height` nggak diandelin dompdf, dan aritmetika di
                           template nggak bisa diuji sendirian.
                         --}}
-                        @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal']
-                            ?? \App\Support\UkuranTandaTangan::pas(
-                                null,
-                                (float) ($posisiTtd['lebar_mm'] ?? 35),
-                                (float) ($posisiTtd['geser_y_mm'] ?? 0),
-                                $padat,
-                            ))
+                        {{--
+                          `$ukuranTtd` dihitung DataTampilanSertifikat dari berkas
+                          gambarnya, dan semua jalur produksi lewat sana.
+
+                          Yang dipanggil langsung `view('sertifikat.pdf', [...])`
+                          dengan array rakitan sendiri (test template) nggak
+                          punya berkasnya, jadi rasio gambarnya nggak ketahuan.
+                          Di situ setelan admin dipakai APA ADANYA — tingginya
+                          nggak ditulis sama sekali.
+
+                          Sengaja BUKAN menjepit ke tinggi kotak: tanpa rasio,
+                          "menjepit" itu menebak, dan tebakannya bikin gambar
+                          gepeng plus geseran admin hilang diam-diam. Lebih baik
+                          jalur non-produksi ini berperilaku persis seperti dulu
+                          daripada berperilaku salah dengan percaya diri.
+                        --}}
+                        @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal'] ?? null)
                         <img
                             src="{{ $tandaTangan }}"
                             alt="Tanda tangan"
                             style="
-                                @if (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;@endif
+                                @if ($ukuran === null)width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                @elseif (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;
                                 height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                @else height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                @endif
                                 left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
-                                bottom: {{ round($ukuran['geser_y_mm'], 2) }}mm;
+                                bottom: {{ $ukuran === null ? ($posisiTtd['geser_y_mm'] ?? 0) : round($ukuran['geser_y_mm'], 2) }}mm;
                             "
                         >
                     @endif

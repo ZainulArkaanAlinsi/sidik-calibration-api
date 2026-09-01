@@ -214,4 +214,37 @@ class UkuranTandaTanganTest extends TestCase
             'TINGGI_KOTAK_PADAT_PX beda dari `body.padat .ttd .ruang-ttd` di blade.',
         );
     }
+
+    /**
+     * Blade wajib mencetak TINGGI gambar, bukan cuma lebar.
+     *
+     * Ini inti perbaikannya, dan penjaga yang paling gampang hilang: seluruh
+     * aritmetika di kelas ini tidak ada gunanya kalau template berhenti
+     * memakainya. Test lain di berkas ini menguji hitungannya; yang ini menguji
+     * bahwa hasilnya benar-benar sampai ke HTML.
+     */
+    public function test_blade_mencetak_tinggi_dan_geseran_yang_dijepit(): void
+    {
+        $blade = (string) file_get_contents(
+            dirname(__DIR__, 2).'/resources/views/sertifikat/pdf.blade.php',
+        );
+
+        $mulai = strpos($blade, '@php($ukuran = ($ukuranTtd');
+        $this->assertNotFalse($mulai, 'Blok ukuran tanda tangan hilang dari blade.');
+
+        $blok = substr($blade, (int) $mulai, 900);
+
+        $this->assertStringContainsString(
+            'height: {{ round(',
+            $blok,
+            'Tinggi gambar berhenti dicetak — penjepitnya jadi sia-sia dan tanda '
+            .'tangan bakal meluber lagi ke tabel di atasnya.',
+        );
+
+        $this->assertStringContainsString(
+            "\$ukuran['geser_y_mm']",
+            $blok,
+            'Geseran vertikal berhenti lewat nilai yang sudah dijepit.',
+        );
+    }
 }
