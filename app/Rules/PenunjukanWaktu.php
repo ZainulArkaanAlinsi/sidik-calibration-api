@@ -6,8 +6,8 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * Satu pembacaan di kolom `standar`/`uut`: **angka biasa** ATAU **objek empat
- * kotak** penunjukan stopwatch.
+ * Satu pembacaan di kolom `standar`/`uut`: **angka biasa** — plus **objek empat
+ * kotak** penunjukan stopwatch, kalau lembarnya memang dibaca per blok waktu.
  *
  * ## Kegagalan yang ditutup aturan ini
  *
@@ -43,11 +43,28 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * Batas atas tiap kotak sengaja TIDAK dipatok. Yang ditolak di sini cuma nilai
  * yang tidak punya arti numerik; batas fisik alatnya urusan profil
  * masing-masing — alasan yang sama dengan yang ditulis di [AngkaTerhingga].
+ *
+ * ## Kenapa bentuk objek harus DIIZINKAN, bukan selalu terbuka
+ *
+ * Kolom ini dipakai bersama tiga alat suhu berpasangan. Dibuka buat semuanya,
+ * lembar Thermocouple yang mengirim `{jam, menit, detik, milidetik}` — entah
+ * salah alat, entah bug klien — diterima **200** lalu pembacaannya dibuang
+ * diam-diam: `titik` pulang kosong dan teknisi kehilangan seluruh lembarnya
+ * tanpa satu pun pesan. Dulu bentuk itu ditolak 422 dengan alasan yang benar.
+ *
+ * Jadi `$bolehObjek` default `false`: yang membukanya cuma
+ * [\App\Http\Requests\CalibrationRequest] setelah memastikan profil alatnya
+ * memang `butuhBlokWaktu()`.
  */
 class PenunjukanWaktu implements ValidationRule
 {
     /** Keempat kotak seperti tercetak di lembar master (`J | M | S | 0.001S`). */
     public const KOTAK = ['jam', 'menit', 'detik', 'milidetik'];
+
+    /**
+     * @param  bool  $bolehObjek  lembar ini dibaca per blok waktu (Timer/Stopwatch)
+     */
+    public function __construct(private readonly bool $bolehObjek = false) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -56,6 +73,13 @@ class PenunjukanWaktu implements ValidationRule
         }
 
         if (is_array($value)) {
+            if (! $this->bolehObjek) {
+                $fail('Kolom :attribute harus angka. Bentuk objek {jam, menit, detik, milidetik} '
+                    .'cuma dipakai lembar Timer/Stopwatch.');
+
+                return;
+            }
+
             $this->periksaObjek($attribute, $value, $fail);
 
             return;

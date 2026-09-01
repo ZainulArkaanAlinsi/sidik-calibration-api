@@ -3,9 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\CalibrationSession;
+use App\Models\Equipment;
 use App\Models\Standard;
 use App\Rules\AngkaTerhingga;
 use App\Rules\PenunjukanWaktu;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
@@ -116,9 +118,40 @@ class CalibrationRequest extends FormRequest
     /**
      * @return array<string, array<int, mixed>>
      */
+    /**
+     * Lembar alat yang dikirim ini dibaca per BLOK WAKTU (Timer/Stopwatch)?
+     *
+     * Dipanggil dari `rules()`, jadi `equipment_id` belum tervalidasi: yang
+     * belum bisa dipastikan dijawab `false` — bentuk objeknya ditolak, persis
+     * perilaku sebelum aturan ini ada. Menolak kiriman yang sah lebih baik
+     * daripada menerima kiriman yang pembacaannya bakal dibuang diam-diam.
+     */
+    private function lembarBerblokWaktu(): bool
+    {
+        $id = $this->input('equipment_id');
+
+        if (! is_numeric($id)) {
+            return false;
+        }
+
+        $alat = Equipment::query()
+            ->where('organization_id', $this->user()->organization_id)
+            ->find((int) $id);
+
+        return $alat !== null
+            && app(CalibrationProfileRegistry::class)->untukAlat($alat)->butuhBlokWaktu();
+    }
+
     public function rules(): array
     {
         $organizationId = $this->user()->organization_id;
+
+        // Bentuk objek {jam,menit,detik,milidetik} cuma sah di lembar yang
+        // memang dibaca per BLOK WAKTU. Dibuka buat semua alat, lembar
+        // Thermocouple yang mengirim bentuk itu diterima 200 lalu pembacaannya
+        // dibuang diam-diam — teknisi kehilangan seluruh lembarnya tanpa satu
+        // pun pesan. Lihat docblock `PenunjukanWaktu`.
+        $bolehObjekWaktu = $this->lembarBerblokWaktu();
 
         $aturan = [
             'equipment_id' => [
@@ -384,9 +417,9 @@ class CalibrationRequest extends FormRequest
             // {jam,menit,detik,milidetik} (Timer/Stopwatch). Lihat docblock
             // `PenunjukanWaktu` buat kegagalan yang ditutupnya: bentuk kedua
             // dulu SELALU ditolak 422, jadi lembar Timer mustahil dikirim.
-            'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu],
+            'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu],
+            'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
