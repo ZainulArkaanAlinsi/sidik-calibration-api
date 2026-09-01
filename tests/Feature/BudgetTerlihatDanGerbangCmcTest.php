@@ -157,8 +157,8 @@ class BudgetTerlihatDanGerbangCmcTest extends TestCase
      */
     private function titikApi(string $nomorSesi): array
     {
-        $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
-        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $sesi = CalibrationSession::query()->where('nomor_sesi', $nomorSesi)->firstOrFail();
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
 
         $measurements = $nomorSesi === '015-CAL-424'
             ? [['titik_ukur' => 60, 'standar' => [60123, 60211, 60045], 'uut' => [60131, 60219, 60061]]]
@@ -184,8 +184,8 @@ class BudgetTerlihatDanGerbangCmcTest extends TestCase
      */
     private function simpanSesiTachometer(array $measurements): CalibrationSession
     {
-        $contoh = CalibrationSession::where('nomor_sesi', '0140-CAL-424')->firstOrFail();
-        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $contoh = CalibrationSession::query()->where('nomor_sesi', '0140-CAL-424')->firstOrFail();
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
 
         $id = $this->actingAs($teknisi)
             ->postJson('/api/calibrations', [

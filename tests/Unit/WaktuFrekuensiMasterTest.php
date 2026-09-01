@@ -56,9 +56,16 @@ class WaktuFrekuensiMasterTest extends TestCase
     /** @return array<string, mixed> */
     private static function fixture(): array
     {
+        // `JSON_THROW_ON_ERROR` biar fixture rusak gagal dengan pesan yang
+        // menyebut berkasnya. Tanpa itu `json_decode` memulangkan null,
+        // `??= null` meninggalkan cache tetap kosong (jadi tiap panggilan baca &
+        // parse ulang), dan yang terbit "Trying to access array offset on null"
+        // di akses pertama — tanpa menyebut berkas mana. Pola yang sama sudah
+        // dipakai `ProfilDariNamaAlatTest::namaAlatLampiran()`.
         return self::$fixture ??= json_decode(
             (string) file_get_contents(base_path('tests/Fixtures/waktu-frekuensi-master.json')),
             true,
+            flags: JSON_THROW_ON_ERROR,
         );
     }
 

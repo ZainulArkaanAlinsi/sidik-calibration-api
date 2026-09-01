@@ -74,8 +74,18 @@ class PeringatanPalsuWaktuFrekuensiTest extends TestCase
     {
         $sesi = $this->sesi($nomorSesi);
         $setPoint = $sesi->rawMeasurements->pluck('titik_ukur', 'titik_ke');
+        $temuan = $this->temuan($sesi, 'pembacaan_bukan_kelipatan_resolusi');
 
-        foreach ($this->temuan($sesi, 'pembacaan_bukan_kelipatan_resolusi') as $t) {
+        // Pemeriksanya TIDAK dimatikan — dia cuma diberi penggaris yang benar.
+        // Tanpa baris ini, loop di bawah justru paling hijau waktu temuannya nol.
+        $this->assertCount(
+            1, $temuan,
+            "Sesi {$nomorSesi}: pemeriksa kelipatan resolusi memulangkan "
+            .count($temuan).' temuan, bukan 1. Nol berarti dia mati total, '
+            .'bukan diperbaiki.',
+        );
+
+        foreach ($temuan as $t) {
             $titikKe = (int) ($t['konteks']['titik_ke'] ?? 0);
             $sp = (float) ($setPoint[$titikKe] ?? 0.0);
 
@@ -182,16 +192,37 @@ class PeringatanPalsuWaktuFrekuensiTest extends TestCase
         // Dua yang tersisa: satu per alat putaran, di titik 15000 rpm yang
         // masternya sendiri berdesimal satu di atas ambang bilangan bulat.
         // Angkanya dipatok supaya kebisingan yang kembali ketahuan — dulu 130.
-        $this->assertLessThanOrEqual(
+        // `assertSame`, bukan `assertLessThanOrEqual`: batas atas saja bikin
+        // pemeriksa yang MATI TOTAL ikut hijau — nol peringatan lolos dengan
+        // mulus, dan yang hilang justru penjagaan yang jadi alasan test ini ada.
+        // Dua yang tersisa isinya benar dan sudah jadi pertanyaan lab §11.
+        $this->assertSame(
             2, $total,
-            "Ketiga sesi master memuntahkan {$total} peringatan pembacaan. Sebelum perbaikan 130 — "
-            .'kalau angkanya naik lagi, penggaris salah satu pemeriksa balik salah.',
+            "Ketiga sesi master memuntahkan {$total} peringatan pembacaan, bukan 2. "
+            .'Sebelum perbaikan 130 — kalau naik lagi, penggaris salah satu pemeriksa '
+            .'balik salah; kalau turun jadi 0, pemeriksanya yang berhenti jalan.',
         );
     }
 
+    /**
+     * Sudah disemai di test ini? `RefreshDatabase` memberi basis data bersih per
+     * test, jadi penanda per-instance cukup.
+     *
+     * Dulu [sesi] memanggil `seed()` tiap kali dipanggil, jadi test yang
+     * memeriksa ketiga sesi menyemai SELURUH basis data tiga kali. Tidak
+     * melahirkan baris ganda — `WaktuFrekuensiSeeder` menghapus pengukuran
+     * sesinya sebelum menulis — tapi mahal, dan seeder bersarang yang suatu saat
+     * tidak idempoten akan muncul sebagai kegagalan yang tampak tidak
+     * berhubungan.
+     */
+    private bool $sudahDisemai = false;
+
     private function sesi(string $nomorSesi): CalibrationSession
     {
-        $this->seed(DatabaseSeeder::class);
+        if (! $this->sudahDisemai) {
+            $this->seed(DatabaseSeeder::class);
+            $this->sudahDisemai = true;
+        }
 
         return CalibrationSession::where('nomor_sesi', $nomorSesi)
             ->with(['equipment', 'rawMeasurements.standard', 'uncertaintyCalculations', 'standard'])

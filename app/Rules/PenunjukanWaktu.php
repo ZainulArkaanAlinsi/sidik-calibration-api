@@ -32,7 +32,15 @@ use Illuminate\Contracts\Validation\ValidationRule;
  *
  * ## Yang diperiksa
  *
- * Bentuk angka: harus terhingga (`INF`/`NAN` ditolak — lihat [AngkaTerhingga]).
+ * Bentuk angka: harus terhingga (`INF`/`NAN` ditolak — lihat [AngkaTerhingga]),
+ * dan — **cuma waktu `$bolehObjek` menyala** — tidak boleh negatif.
+ *
+ * Gerbang negatif itu ikut `$bolehObjek` dan bukan dipasang buat semua, karena
+ * kolom yang sama dipakai ketiga alat suhu berpasangan: di situ −10 °C
+ * pembacaan yang sah. Yang bikin negatif tidak punya arti cuma lembar blok
+ * waktu, yang menyimpan MILIDETIK — dan angka seperti `-1` lolos ke
+ * `CalibrationController::waktuKeMilidetik()` lalu tersimpan apa adanya,
+ * melahirkan koreksi yang bentuknya wajar dari durasi yang mustahil.
  *
  * Bentuk objek: kuncinya harus di dalam `jam`/`menit`/`detik`/`milidetik`,
  * minimal satu terisi, dan tiap yang terisi harus angka terhingga yang tidak
@@ -93,6 +101,16 @@ class PenunjukanWaktu implements ValidationRule
 
         if (! is_finite((float) $value)) {
             $fail('Kolom :attribute berisi angka yang nggak terhingga (INF/NAN).');
+
+            return;
+        }
+
+        // Lihat docblock kelas: negatif cuma ditolak di lembar blok waktu.
+        // Bentuk objeknya sudah menolak kotak negatif sejak awal
+        // ([periksaObjek]); baris ini menutup pintu satunya, yaitu angka datar
+        // milidetik yang dikirim di kolom yang sama.
+        if ($this->bolehObjek && (float) $value < 0) {
+            $fail('Kolom :attribute nggak boleh negatif — penunjukan waktu diukur dalam milidetik.');
         }
     }
 

@@ -196,7 +196,11 @@ class PenunjukanWaktuEmpatKotakTest extends TestCase
         return [
             // Bentuk angka: dipakai ketiga alat suhu berpasangan, WAJIB tetap lolos.
             'angka biasa lolos' => [100.4, true],
-            'angka negatif lolos (suhu di bawah nol)' => [-18.2, true],
+            // Negatif punya dua jawaban yang benar, tergantung lembarnya —
+            // lihat [test_angka_negatif_ditolak_di_lembar_waktu] dan
+            // [test_angka_negatif_tetap_lolos_di_lembar_suhu]. Provider ini
+            // jalan dengan `bolehObjek: true`, jadi jawabannya di sini TOLAK.
+            'angka negatif ditolak di lembar waktu' => [-18.2, false],
             'string angka lolos' => ['60123', true],
             'nol lolos' => [0, true],
             'null dilewatkan' => [null, true],
@@ -262,6 +266,53 @@ class PenunjukanWaktuEmpatKotakTest extends TestCase
         $this->assertTrue(
             Validator::make(['x' => 100.4], ['x' => [new PenunjukanWaktu]])->passes(),
         );
+    }
+
+    /**
+     * Angka datar NEGATIF ditolak di lembar blok waktu.
+     *
+     * Kolomnya menyimpan MILIDETIK, dan durasi negatif tidak punya arti. Tanpa
+     * gerbang ini `-1` lolos validasi, `CalibrationController::waktuKeMilidetik()`
+     * memulangkannya apa adanya, dan yang tersimpan pembacaan `-1 ms` — koreksi
+     * yang bentuknya wajar dari durasi yang mustahil, tanpa satu pun error.
+     */
+    public function test_angka_negatif_ditolak_di_lembar_waktu(): void
+    {
+        $validator = Validator::make(
+            ['x' => -1],
+            ['x' => [new PenunjukanWaktu(bolehObjek: true)]],
+        );
+
+        $this->assertFalse($validator->passes(), 'Milidetik negatif lolos di lembar Timer.');
+        $this->assertStringContainsString('negatif', $validator->errors()->first('x'));
+    }
+
+    /**
+     * Dan TETAP lolos di lembar suhu — kolom yang sama, arti yang beda.
+     *
+     * Ini pasangan wajib test di atas: gerbang negatif yang dipasang buat semua
+     * lembar bikin −18,2 °C ditolak, dan yang hilang bukan angka ngawur tapi
+     * pembacaan freezer yang sah.
+     */
+    public function test_angka_negatif_tetap_lolos_di_lembar_suhu(): void
+    {
+        $this->assertTrue(
+            Validator::make(['x' => -18.2], ['x' => [new PenunjukanWaktu]])->passes(),
+            'Pembacaan suhu di bawah nol ikut ditolak — gerbangnya kelebaran.',
+        );
+    }
+
+    /** Lewat HTTP, di lembar Timer sungguhan. */
+    public function test_milidetik_negatif_ditolak_422(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->pratinjau([
+            'standar' => [-1, 60000],
+            'uut' => [60100, 60137],
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements.0.standar.0');
     }
 
     /**

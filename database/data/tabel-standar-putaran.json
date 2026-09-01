@@ -1,6 +1,6 @@
 {
   "_sumber": "Master Olda Tachometer.xlsm / Master Olda Centrifuge.xlsm (sheet SERTIFIKAT KALIBRATOR & Drift Std Kalibrator) — kedua workbook memuat tabel yang IDENTIK untuk keping standar yang sama.",
-  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-putaran.py",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu-frekuensi.py",
   "standar": {
     "nama": "Infrared Tachometer",
     "merk": "NKTECH",

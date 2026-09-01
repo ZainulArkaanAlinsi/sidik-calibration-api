@@ -67,8 +67,8 @@ class KalibratorTerhapusTidakMematikanHitungUlangTest extends TestCase
     ): void {
         $this->seed(DatabaseSeeder::class);
 
-        $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
-        $pembanding = CalibrationSession::where('nomor_sesi', $nomorPembanding)->firstOrFail();
+        $sesi = CalibrationSession::query()->where('nomor_sesi', $nomorSesi)->firstOrFail();
+        $pembanding = CalibrationSession::query()->where('nomor_sesi', $nomorPembanding)->firstOrFail();
 
         // Titik pembandingnya dikosongkan dulu supaya "dia ikut terhitung"
         // benar-benar dibuktikan perintah ini, bukan sisa hasil seeder.
