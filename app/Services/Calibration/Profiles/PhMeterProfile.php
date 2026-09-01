@@ -22,6 +22,18 @@ use App\Services\LembarKerjaTemplate;
  */
 class PhMeterProfile extends CalibrationProfile
 {
+    /**
+     * Nomor Instruksi Kerja alat ini — `DATABASE` baris 6 (pH Meter).
+     *
+     * Dicetak di kolom `Calibration Method` sertifikat lewat
+     * [CalibrationProfile::kodeMetode]. Dinyatakan di sini, BUKAN dicocokkan
+     * dari nama alat: cadangan pencocokan nama mencari "jenis pengukuran" di
+     * dalam nama alat, dan meleset begitu pelanggan menamai alatnya di luar
+     * kosakata master — yang terbit kolom kosong atau nomor tanpa revisi, di
+     * dokumen terakreditasi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0506_Rev.6';
+
     public function __construct(private readonly LembarKerjaTemplate $template = new LembarKerjaTemplate) {}
 
     public function kode(): string

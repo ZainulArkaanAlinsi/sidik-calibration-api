@@ -37,6 +37,18 @@ use App\Models\Standard;
  */
 class AutoclaveProfile extends CalibrationProfile
 {
+    /**
+     * Nomor Instruksi Kerja alat ini — `DATABASE` baris 31 (Autoclave).
+     *
+     * Dicetak di kolom `Calibration Method` sertifikat lewat
+     * [CalibrationProfile::kodeMetode]. Dinyatakan di sini, BUKAN dicocokkan
+     * dari nama alat: cadangan pencocokan nama mencari "jenis pengukuran" di
+     * dalam nama alat, dan meleset begitu pelanggan menamai alatnya di luar
+     * kosakata master — yang terbit kolom kosong atau nomor tanpa revisi, di
+     * dokumen terakreditasi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0531_Rev.4';
+
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0539_Rev.4';
 
     /** Titik waktu bawaan (2/4/6/8/10 jam) — INPUT DATA D34:K34. */
