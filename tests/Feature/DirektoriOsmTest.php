@@ -93,10 +93,21 @@ class DirektoriOsmTest extends TestCase
     {
         config()->set('services.direktori_perusahaan.driver', 'osm');
 
-        $this->assertInstanceOf(
-            NominatimDirektori::class,
-            app(DirektoriPerusahaan::class),
-        );
+        $direktori = app(DirektoriPerusahaan::class);
+
+        // Diadu ke ATRIBUSI, bukan ke nama kelasnya.
+        //
+        // Yang dijaga test ini "cuma OSM, tanpa lapis lain" — dan itu sifat
+        // yang KEBACA dari luar. Sejak tiap lapis dibungkus `DirektoriBercache`
+        // (biar pencarian yang sama berhenti ditagih dua kali), `assertInstanceOf`
+        // ke kelas konkret ikut menguji pembungkusnya — padahal pembungkus
+        // datang dan pergi, sementara janji "yang menjawab OSM" tidak.
+        //
+        // Atribusi dipilih karena dia justru yang paling mahal kalau salah:
+        // memajang "Powered by Google" di atas data OpenStreetMap itu
+        // pelanggaran lisensi, jadi mengujinya di sini sekalian menjaga hal itu.
+        $this->assertNotInstanceOf(DirektoriBerlapis::class, $direktori);
+        $this->assertSame(NominatimDirektori::ATRIBUSI, $direktori->atribusi());
     }
 
     /**
