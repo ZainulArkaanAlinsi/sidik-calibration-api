@@ -137,6 +137,13 @@ tachometer standar**.
 4. Nominal sertifikat kalibrator **dipilih server** (terdekat, seri ke atas) —
    FE tidak perlu mengirim apa pun soal itu.
 
+5. **Set point wajib di dalam 60–30000 rpm** — jangkauan sertifikat tachometer
+   standar lab. Di luar itu titiknya masuk `belum_dihitung` dengan alasan yang
+   menyebut jangkauannya, bukan dihitung dari baris terdekat. Perhatikan
+   bedanya dengan pita AKREDITASI (Centrifuge berhenti di 9000 rpm, Tachometer
+   di 30000 rpm): set point di antara keduanya tetap DIHITUNG, tapi memunculkan
+   peringatan sesi `<kode alat>_di_luar_akreditasi` yang wajib dibaca admin.
+
 ---
 
 ## 5. Payload — Timer/Stopwatch (dua deret, empat kotak per ulangan)
@@ -184,6 +191,19 @@ Ini satu-satunya yang bentuknya baru.
 4. **Kotak kosong ≠ nol.** Ulangan yang keempat kotaknya kosong dilewati. Titik
    yang semua ulangannya kosong diblokir — di workbook master, lima titik
    kosong justru melahirkan koreksi 30 ms yang tercetak seperti titik sungguhan.
+
+5. **Bentuk objek cuma untuk lembar ini.** Kolom `standar`/`uut` dipakai
+   bersama tiga alat suhu berpasangan (Thermocouple, Termometer Gelas,
+   Thermohygro) yang mengirim ANGKA BIASA. Server menolak 422 kalau bentuk
+   objek dikirim ke lembar mereka — jadi jangan memakai satu komponen input
+   yang sama untuk kedua jenis lembar tanpa memeriksa alatnya dulu.
+
+6. **Set point wajib di dalam 5–3600 detik.** Itu jangkauan sertifikat
+   kalibrator stopwatch lab. Di luar itu titiknya masuk `belum_dihitung`
+   dengan alasan yang menyebut jangkauannya — bukan dihitung dari baris
+   terdekat. (Untuk Centrifuge & Tachometer jangkauannya 60–30000 rpm.)
+   Tampilkan alasannya apa adanya; jangan diam-diam membulatkan set point ke
+   dalam jangkauan.
 
 ### Bentuk layar yang disarankan
 
