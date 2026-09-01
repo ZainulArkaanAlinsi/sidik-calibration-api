@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Certificate;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -80,7 +79,10 @@ class BerkasPdfSertifikat
     /** Detik kunci dipegang. Lebih lama dari render terlama yang masuk akal. */
     private const UMUR_KUNCI = 120;
 
-    public function __construct(private readonly DataTampilanSertifikat $tampilan) {}
+    public function __construct(
+        private readonly DataTampilanSertifikat $tampilan,
+        private readonly SertifikatSatuHalaman $satuHalaman,
+    ) {}
 
     /**
      * Path PDF yang dijamin ada DAN utuh di disk `arsip`, atau `null` kalau
@@ -156,7 +158,7 @@ class BerkasPdfSertifikat
     /** Render dari snapshot beku, lalu pastikan yang mendarat memang utuh. */
     private function tulisUlang(Certificate $sertifikat, string $path): ?string
     {
-        $isi = Pdf::loadView('sertifikat.pdf', $this->tampilan->untuk($sertifikat))->output();
+        $isi = $this->satuHalaman->isi($sertifikat);
 
         // Diperiksa SEBELUM ditulis: menulis keluaran yang cacat berarti
         // menyimpan kerusakan itu secara permanen, karena panggilan berikutnya

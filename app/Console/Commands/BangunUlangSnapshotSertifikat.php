@@ -6,7 +6,7 @@ use App\Models\Certificate;
 use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\SertifikatSatuHalaman;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -63,6 +63,7 @@ class BangunUlangSnapshotSertifikat extends Command
         CertificateSnapshotBuilder $snapshotBuilder,
         CalibrationValidator $validator,
         DataTampilanSertifikat $tampilan,
+        SertifikatSatuHalaman $satuHalaman,
     ): int {
         $nomorSesi = (array) $this->argument('sesi');
         $keringMode = (bool) $this->option('dry-run');
@@ -137,14 +138,14 @@ class BangunUlangSnapshotSertifikat extends Command
                 // tanpa PDF itu wajar ada — sertifikat demo, atau yang
                 // generate-nya dulu gagal di tengah.
                 if ((string) $sertifikat->pdf_path !== '') {
-                    $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat->fresh()));
+                    $isiPdf = $satuHalaman->isi($sertifikat->fresh());
 
                     // Tulis yang gagal balik `false` tanpa exception (disknya
                     // `throw => false`). Tanpa penjagaan ini perintahnya
                     // ngelaporin baris itu sebagai berhasil dibangun ulang,
                     // padahal PDF lamanya masih yang beredar — dan justru
                     // ketidakcocokan itu yang perintah ini ada buat mbetulin.
-                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $pdf->output()) === false) {
+                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
                         throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
                     }
                 } else {
