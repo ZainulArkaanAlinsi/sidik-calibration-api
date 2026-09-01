@@ -6,7 +6,7 @@ use App\Models\Certificate;
 use App\Services\CalibrationValidator;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\SertifikatSatuHalaman;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -55,7 +55,8 @@ class BangunUlangSnapshotSertifikat extends Command
 {
     protected $signature = 'sertifikat:bangun-ulang
         {sesi?* : Nomor sesi tertentu (kosong = semua yang udah terbit)}
-        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa}';
+        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa}
+        {--render-ulang-pdf : Tulis ulang PDF-nya walau snapshot-nya nggak berubah}';
 
     protected $description = 'Bangun ulang snapshot & PDF sertifikat terbit, nomor & QR-nya tetap';
 
@@ -63,9 +64,11 @@ class BangunUlangSnapshotSertifikat extends Command
         CertificateSnapshotBuilder $snapshotBuilder,
         CalibrationValidator $validator,
         DataTampilanSertifikat $tampilan,
+        SertifikatSatuHalaman $satuHalaman,
     ): int {
         $nomorSesi = (array) $this->argument('sesi');
         $keringMode = (bool) $this->option('dry-run');
+        $renderUlangPdf = (bool) $this->option('render-ulang-pdf');
 
         $daftar = Certificate::query()
             ->where('status', Certificate::STATUS_TERBIT)
@@ -117,6 +120,34 @@ class BangunUlangSnapshotSertifikat extends Command
                 $sama ? 'nggak berubah' : "{$lama}  →  {$envBaru}",
             ));
 
+            // Snapshot-nya sama, tapi CARA merendernya berubah.
+            //
+            // Perbaikan tata letak (mis. penjamin satu halaman, atau penjepit
+            // ukuran tanda tangan) nggak menyentuh snapshot sama sekali — jadi
+            // tanpa jalur ini, sertifikat lama yang PDF-nya masih beredar dan
+            // masih dua halaman nggak akan pernah kesentuh perintah ini.
+            //
+            // Yang ditulis ulang CUMA berkasnya. Snapshot-nya sengaja nggak
+            // di-`update`: dia identik, dan menulis ulang baris yang nggak
+            // berubah cuma bikin jejak audit yang membingungkan.
+            if ($sama && $renderUlangPdf && ! $keringMode && (string) $sertifikat->pdf_path !== '') {
+                try {
+                    $isiPdf = $satuHalaman->isi($sertifikat);
+
+                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
+                        throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
+                    }
+
+                    $this->line('  └─ PDF ditulis ulang (snapshot nggak berubah)');
+                    $berubah++;
+                } catch (Throwable $e) {
+                    $this->error("{$sertifikat->nomor}: gagal nulis ulang PDF — {$e->getMessage()}");
+                    $gagal++;
+                }
+
+                continue;
+            }
+
             if ($keringMode || $sama) {
                 continue;
             }
@@ -137,14 +168,14 @@ class BangunUlangSnapshotSertifikat extends Command
                 // tanpa PDF itu wajar ada — sertifikat demo, atau yang
                 // generate-nya dulu gagal di tengah.
                 if ((string) $sertifikat->pdf_path !== '') {
-                    $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat->fresh()));
+                    $isiPdf = $satuHalaman->isi($sertifikat->fresh());
 
                     // Tulis yang gagal balik `false` tanpa exception (disknya
                     // `throw => false`). Tanpa penjagaan ini perintahnya
                     // ngelaporin baris itu sebagai berhasil dibangun ulang,
                     // padahal PDF lamanya masih yang beredar — dan justru
                     // ketidakcocokan itu yang perintah ini ada buat mbetulin.
-                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $pdf->output()) === false) {
+                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
                         throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
                     }
                 } else {
