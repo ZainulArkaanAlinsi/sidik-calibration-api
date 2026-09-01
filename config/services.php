@@ -174,6 +174,11 @@ return [
         //
         // `osm` = OpenStreetMap lewat Nominatim saja. Tanpa key, tanpa kuota,
         // tapi cakupannya tipis: cuma tempat yang pernah dipetakan sukarelawan.
+        //
+        // Apa pun drivernya, tiap lapis dibungkus `DirektoriBercache` di
+        // `AppServiceProvider` — pencarian yang sama tidak menembak penyedia
+        // (dan tidak ditagih) dua kali. Kalau hasilnya terasa basi:
+        // `php artisan cache:clear`.
         'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'auto'),
 
         // Cuma dipakai driver `google`.

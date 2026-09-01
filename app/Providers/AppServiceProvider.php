@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\GooglePlacesDirektori;
@@ -65,14 +66,23 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DirektoriPerusahaan::class, function (): DirektoriPerusahaan {
             $timeout = (int) config('services.direktori_perusahaan.timeout', 8);
 
-            $google = fn (): GooglePlacesDirektori => new GooglePlacesDirektori(
-                config('services.direktori_perusahaan.key'),
-                $timeout,
+            // Tiap lapis dibungkus cache SENDIRI-SENDIRI, bukan hasil
+            // berlapisnya. `DirektoriBerlapis::atribusi()` membaca lapis mana
+            // yang menjawab `cari()` terakhir, jadi cache di luar bikin
+            // cache-hit memulangkan atribusi `null` — layar berhenti memajang
+            // "Powered by Google" tanpa satu pun error. Lihat DirektoriBercache.
+            $google = fn (): DirektoriPerusahaan => new DirektoriBercache(
+                new GooglePlacesDirektori(
+                    config('services.direktori_perusahaan.key'),
+                    $timeout,
+                ),
             );
 
-            $osm = fn (): NominatimDirektori => new NominatimDirektori(
-                (string) config('services.direktori_perusahaan.user_agent'),
-                $timeout,
+            $osm = fn (): DirektoriPerusahaan => new DirektoriBercache(
+                new NominatimDirektori(
+                    (string) config('services.direktori_perusahaan.user_agent'),
+                    $timeout,
+                ),
             );
 
             // Bawaannya `auto`: Google duluan kalau key-nya ada, OSM di
