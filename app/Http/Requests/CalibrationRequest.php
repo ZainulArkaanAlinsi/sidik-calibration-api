@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\CalibrationSession;
 use App\Models\Standard;
 use App\Rules\AngkaTerhingga;
+use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -358,9 +359,14 @@ class CalibrationRequest extends FormRequest
             // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
             // bisa dikirim dari lapangan.
             'measurements.*.standar' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.standar.*' => ['nullable', 'numeric'],
+            // BUKAN `numeric`: kolom ini dipakai DUA bentuk lembar — angka
+            // biasa (ketiga alat suhu berpasangan) dan objek empat kotak
+            // {jam,menit,detik,milidetik} (Timer/Stopwatch). Lihat docblock
+            // `PenunjukanWaktu` buat kegagalan yang ditutupnya: bentuk kedua
+            // dulu SELALU ditolak 422, jadi lembar Timer mustahil dikirim.
+            'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu],
             'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.uut.*' => ['nullable', 'numeric'],
+            'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu],
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.

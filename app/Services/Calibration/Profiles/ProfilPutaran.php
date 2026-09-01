@@ -285,7 +285,12 @@ abstract class ProfilPutaran extends CalibrationProfile
         $sekarang = Carbon::now();
 
         foreach ($blok as $anggota) {
-            $standar = $anggota[0]['standard'];
+            // Null-safe, dan itu bukan kehati-hatian berlebih: `standard` boleh
+            // null (lihat kontrak `TimbanganProfile::hitungPerGrup`), dan sesi
+            // yang kalibratornya di-soft-delete memulangkan null di sini. Tanpa
+            // `?->`, `kalibrasi:hitung-ulang` MATI TOTAL — bukan melewati satu
+            // sesi, tapi menghentikan seluruh perintahnya.
+            $standar = $anggota[0]['standard'] ?? null;
             $kemampuan = $this->kemampuanUntukBlok($equipment, $anggota);
 
             $hasil = $kalk->hitungBlok(
@@ -309,7 +314,7 @@ abstract class ProfilPutaran extends CalibrationProfile
 
             foreach ($hasil['titik'] as $t) {
                 $hitungan[] = [
-                    'standard_id' => $standar->id,
+                    'standard_id' => $standar?->id,
                     'titik_ke' => $t['titik_ke'],
                     'titik_ukur' => $t['titik_ukur'],
                     // Kolom `rata_rata` itu PENUNJUKAN ALAT PELANGGAN menurut
