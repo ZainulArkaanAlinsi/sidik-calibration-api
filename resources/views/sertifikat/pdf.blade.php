@@ -637,6 +637,11 @@
         @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
         @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
 
+        {{-- Bagian 1 nggak dicetak sama sekali kalau nggak ada slot yang diisi.
+             Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
+             dimuat; yang benar bagiannya memang nggak ada. Adminnya sudah
+             diperingatkan sebelum menyetujui (`keterulangan_kosong`). --}}
+        @if (filled($timbangan['keterulangan'] ?? []))
         <div class="judul-kelompok">1. REPEATABILITY</div>
         <table class="data">
             <thead>
@@ -666,6 +671,8 @@
                 @endforeach
             </tbody>
         </table>
+
+        @endif
 
         {{-- `|m1 − m2|`, BUKAN `C = Ms − (M − z)` yang tertulis di petunjuk
              lembar kerjanya. Tanda pisah = kotaknya belum diisi; nol di situ
