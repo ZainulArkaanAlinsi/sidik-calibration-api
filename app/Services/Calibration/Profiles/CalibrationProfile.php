@@ -862,6 +862,40 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Kolom `Standard Value` sertifikat DIHITUNG dari `rata_rata + koreksi`,
+     * bukan diambil dari `titik_ukur`.
+     *
+     * Default `false` — dan buat dua puluh satu alat lain kedua jalur itu
+     * memulangkan angka yang SAMA, karena `GumCalculator` menurunkan
+     * `koreksi = titik_ukur − rata_rata`. Jadi identitas
+     *
+     *     Standard Value ≡ rata_rata + koreksi
+     *
+     * memang berlaku di seluruh sistem; yang beda cuma dari mana angkanya
+     * diambil. Default dibiarkan `false` supaya sertifikat yang sudah terbit
+     * tidak bergeser satu digit pun karena urutan operasi float.
+     *
+     * ## Kenapa ada alat yang butuh `true`
+     *
+     * Sepuluh alat menaruh NILAI ACUAN di `titik_ukur`: buffer pH 4,01 itu
+     * konstanta dari sertifikat larutan, dan yang dibaca berulang alat
+     * pelanggan. Kelompok Waktu dan Frekuensi kebalikannya — yang dibaca
+     * berulang justru STANDARNYA, dan `titik_ukur` menyimpan set point, yaitu
+     * penunjukan alat pelanggan.
+     *
+     * Buat mereka `titik_ukur` bukan nilai acuan, jadi mencetaknya di kolom
+     * `Standard Value` menerbitkan tabel yang tidak konsisten dengan dirinya
+     * sendiri: master Centrifuge mencetak `59,78 | 60 | −0,22`, sedangkan
+     * `titik_ukur` apa adanya menerbitkan `60 | 59,98 | −0,22` — dan
+     * 60 − 59,98 bukan −0,22. Tidak ada error yang terbit; yang terbit
+     * sertifikat yang angkanya tidak menjumlah.
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return false;
+    }
+
+    /**
      * Normalisasi RATA-RATA pembacaan alat ke suhu acuannya. Default: nggak
      * ngapa-ngapain — pembacaan dipakai apa adanya.
      *

@@ -140,6 +140,16 @@ abstract class ProfilPutaran extends CalibrationProfile
         return self::KODE_METODE;
     }
 
+    /**
+     * `titik_ukur` kelompok ini menyimpan SET POINT, bukan nilai acuan — jadi
+     * kolom `Standard Value` sertifikat disusun balik dari koreksinya.
+     * Lihat docblock [CalibrationProfile::nilaiStandarDariKoreksi].
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return true;
+    }
+
     /** Satu U95 per blok tiga titik, jadi angkanya memang beda antar titik. */
     public function u95PerTitik(): bool
     {
@@ -255,6 +265,17 @@ abstract class ProfilPutaran extends CalibrationProfile
         // Blok = tiga `titik_ke` berurutan, geometri lembar masternya. Diurut
         // dulu: urutan baris dari database tidak dijamin, dan blok yang
         // anggotanya berbeda melahirkan U95 yang berbeda.
+        //
+        // > **Batas yang diketahui, bukan kelupaan.** `titik_ke` diberikan
+        // > `CalibrationController` sebagai nomor urut titik yang TERISI, jadi
+        // > informasi "titik ini ada di baris lembar keberapa" tidak tersimpan.
+        // > Untuk pengisian normal (kiri ke kanan, atas ke bawah) pengelompokan
+        // > di bawah menghasilkan blok yang sama persis dengan lembar masternya.
+        // > Untuk pengisian BERLUBANG — mis. dua kolom di baris 1 lalu satu
+        // > kolom di baris 2 — master memecahnya jadi dua blok sementara di
+        // > sini jadi satu. Arah selisihnya selalu aman: satu blok yang lebih
+        // > besar memakai simpangan baku dan pita sertifikat yang lebih besar
+        // > pula, jadi U95 kita >= U95 master, tidak pernah lebih kecil.
         usort($titik, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
         $blok = array_chunk($titik, PutaranCalculator::TITIK_PER_BLOK);
@@ -291,7 +312,16 @@ abstract class ProfilPutaran extends CalibrationProfile
                     'standard_id' => $standar->id,
                     'titik_ke' => $t['titik_ke'],
                     'titik_ukur' => $t['titik_ukur'],
-                    'rata_rata' => $t['rata_rata'],
+                    // Kolom `rata_rata` itu PENUNJUKAN ALAT PELANGGAN menurut
+                    // kontrak `uncertainty_calculations`, dan buat kelompok ini
+                    // penunjukan itu SET POINT-nya — bukan rata-rata pembacaan
+                    // tachometer standar, yang justru nilai acuannya.
+                    //
+                    // Diisi terbalik, sertifikat mencetak `60 | 59,98 | −0,22`
+                    // padahal master menulis `59,78 | 60 | −0,22`: kolomnya
+                    // tertukar DAN angkanya tidak menjumlah. Rata-rata standar
+                    // mentahnya tetap tersimpan di jejak audit `type_b_components`.
+                    'rata_rata' => $t['titik_ukur'],
                     'error' => $t['error'],
                     'koreksi' => $t['koreksi'],
                     'standar_deviasi' => $t['standar_deviasi'],

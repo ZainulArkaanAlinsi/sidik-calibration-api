@@ -253,6 +253,31 @@ Itu yang sebenarnya berubah antar ulangan.
 
 ## 7. Kolom sertifikat
 
+### Kolom `Standard` TIDAK sama dengan set point
+
+Ini beda dari sepuluh alat lain, dan gampang salah digambar.
+
+Buat pH Meter dan kawan-kawan, `titik_ukur` ADALAH nilai acuan (buffer 4,01
+datang dari sertifikat larutan), jadi kolom `Standard` = `titik_ukur`. Buat
+kelompok ini kebalikannya: yang dibaca berulang justru STANDARNYA, dan
+`titik_ukur` menyimpan **set point** — penunjukan alat pelanggan.
+
+Jadi tabel hasilnya:
+
+| Kolom | Isinya | Dari |
+|---|---|---|
+| `Standard Value` | penunjukan standar yang SUDAH dikoreksi | `unit_under_test + correction` |
+| `Unit Under Test` | set point (rpm) / rata-rata penunjukan alat (Timer) | `rata_rata` |
+| `Correction` | nilai benar − penunjukan alat | `koreksi` |
+
+Server sudah mengirim ketiganya jadi di snapshot sertifikat — **FE tidak perlu
+menghitung apa pun**. Yang penting: jangan menggambar `titik_ukur` sebagai
+"Standard" di layar riwayat/preview, karena untuk ketiga alat ini itu bukan
+nilai acuan. Identitas `Standard = UUT + Correction` berlaku di setiap baris;
+kalau layar Anda tidak menjumlah, ada yang salah pemetaan.
+
+
+
 Judul kolom UUT untuk kedua alat rpm adalah **`Setting`**, bukan `UUT` —
 karena yang dicatat di situ penunjukan yang **disetel**, dan kolom `Standard`
 yang berisi hasil ukur standar yang sudah dikoreksi. Server sudah mengirimnya
@@ -287,6 +312,7 @@ Angka acuan yang bisa dipakai menguji, disalin dari workbook master:
 | nilai terkoreksi | 59,78 |
 | **koreksi (tercetak)** | **−0,22** |
 | simpangan baku | 0,0447213595 |
+| kolom sertifikat | `Standard 59,78` · `UUT 60` · `Correction −0,22` |
 
 **Timer titik 1** (set point 60 detik, ms standar `123 211 45`, ms UUT
 `131 219 61`):
@@ -297,4 +323,5 @@ Angka acuan yang bisa dipakai menguji, disalin dari workbook master:
 | koreksi standar | −30 ms |
 | standar terkoreksi | 60096,33 ms |
 | **koreksi (tercetak)** | **−40,667 ms = −0,041 s** |
+| kolom sertifikat | `Standard 60,096 s` · `UUT 60,137 s` · `Correction −0,041 s` |
 | U95 | 0,81 s (lantai CMC menang atas U 0,38 s) |

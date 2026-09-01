@@ -239,6 +239,46 @@ kolom itu.
 
 ---
 
+## §10 — Sheet SERTIFIKAT Tachometer menukar kedua kolomnya  [SUDAH DIHITUNG BENAR]
+
+Ditemukan waktu mengaudit jalur cetak, sesudah §1–§9 ditulis. Ini yang paling
+langsung kelihatan di dokumen yang dipegang pelanggan.
+
+Kedua workbook rpm memakai data contoh yang **sama persis**, tapi sheet
+`SERTIFIKAT`-nya menyusun kolom secara **berlawanan**:
+
+| | Kolom `Standard Value` | Kolom `Unit Under Test` | `Correction` |
+|---|---|---|---|
+| **Centrifuge** `C19`/`J19` | `PERHITUNGAN!G32` — standar terkoreksi **59,78** | `G22` — set point **60** | `C−J` = **−0,22** |
+| **Tachometer** `C19`/`J19` | `PERHITUNGAN!G22` — set point **60** | `G32` — standar terkoreksi **59,78** | `C−J` = **+0,22** |
+
+Data identik, **tanda koreksinya berlawanan**.
+
+Yang benar Centrifuge, dan alasannya bukan selera: `Correction` menurut definisi
+adalah angka yang **ditambahkan ke penunjukan alat** supaya ketemu nilai benar,
+jadi `Correction = nilai benar − penunjukan alat`. Di kolom Centrifuge nilai
+benar (standar terkoreksi) ada di kiri dan penunjukan alat (set point) di kanan —
+sesuai. Tachometer menaruhnya terbalik, sehingga tandanya ikut terbalik.
+
+Bahwa Tachometer disalin dari Centrifuge sudah dibuktikan terpisah (§2: tautan
+luar `[1]` yang masih menunjuk `Master Olda Centrifuge.xlsm`, dan sheet
+`PERHITUNGAN` yang identik baris demi baris). Sheet Timer memakai konvensi yang
+sama dengan Centrifuge (`SERTIFIKAT!E19:L19` menunjuk baris `STD CORRECTED`,
+bukan set point), jadi **dua dari tiga** master sepakat.
+
+Yang dilakukan kode: memakai konvensi Centrifuge/Timer untuk **ketiganya**.
+Dijaga `WaktuFrekuensiSertifikatTest`, yang menegakkan dua hal sekaligus —
+identitas `Standard ≡ UUT + Correction` di setiap titik, dan angka baris
+pertamanya lawan sel masternya.
+
+> **[PERLU JAWABAN]** Sertifikat Tachometer yang **sudah terbit** memakai
+> konvensi terbalik itu, jadi kolom dan tanda koreksinya berbeda dari yang akan
+> diterbitkan sistem ini. Perlu diterbitkan ulang, atau cukup berlaku maju saja?
+> Ini satu-satunya penyimpangan yang benar-benar **mengubah angka tercetak**
+> (bukan cuma ketidakpastian) — §2 sampai §6 semuanya tertutup lantai CMC.
+
+---
+
 ## Ringkasan status
 
 | § | Pokok | Status | Pengaruh ke angka tercetak |
@@ -252,3 +292,4 @@ kolom itu.
 | 7 | Centrifuge di luar lingkup | Peringatan sesi | — |
 | 8 | Pembagi drift beda | Ditiru | — |
 | 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
+| **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
