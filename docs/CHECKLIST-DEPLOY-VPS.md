@@ -352,3 +352,34 @@ Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
 
 Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
 tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).
+
+## Deploy Render timeout — apa yang dibaca duluan
+
+Render memberi **jendela 15 menit** dari `==> Deploying...` sampai health check `/up` harus
+lolos. Seluruh isi `docker/entrypoint.sh` jalan **sebelum** server menerima request pertama, jadi
+tiap menit yang dipakai di situ diambil dari jendela yang sama.
+
+Kejadian 1 Sep 2026: `Deploying...` 01:15:55 → server bind `:10000` **01:22:34** (6 menit 39
+detik terpakai) → `Timed Out` 01:30:57. Aplikasinya sendiri sehat — `/up` menjawab 200 dalam
+208 ms dengan `config:cache` + `view:cache` seperti produksi.
+
+Urutan periksanya:
+
+1. **`SEED_ON_BOOT` masih `true`?** Ini tersangka pertama. Seeder menulis ulang seluruh sesi
+   contoh **tiap container nyala**, dan di MySQL gratis itu bisa makan menit. Dokumennya sendiri
+   bilang "nyalain sekali pas deploy pertama, terus matiin" — kalau tidak pernah dimatikan, tiap
+   deploy membayar ongkosnya lagi. Matikan di Render → Environment.
+2. **Baca penanda tahap di log.** `entrypoint.sh` sekarang mencetak `[HH:MM:SS] → <tahap>` di
+   tiap langkah, jadi tahap yang memakan jendela menyebut dirinya sendiri. Sebelum ini lognya
+   sunyi selama enam menit dan tidak ada yang bisa ditunjuk.
+3. **Ulangi deploy-nya.** Migrasi yang sudah mendarat tidak diulang, jadi percobaan kedua
+   biasanya naik dalam hitungan detik. Dua cara: Render → **Manual Deploy → Deploy latest
+   commit**, atau GitHub → Actions → **Tes** → **Run workflow** (jalur `workflow_dispatch`, tetap
+   lewat gerbang phpunit dulu).
+4. **Kalau tetap timeout sesudah `→ server jalan di port`,** masalahnya bukan lambatnya boot
+   melainkan health check-nya sendiri. Yang dibutuhkan isi tab **Events** Render untuk deploy itu
+   — di situ tertulis alasan probe-nya gagal.
+
+Kalau tahap yang lambat ternyata migrasi dan bukan seeder, pindahkan `php artisan migrate --force`
+ke `preDeployCommand` di `render.yaml`: langkah itu jalan **sebelum** instance baru dinyalakan,
+jadi keluar dari jendela health check sepenuhnya.

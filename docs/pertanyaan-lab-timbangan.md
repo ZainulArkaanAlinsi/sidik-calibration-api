@@ -290,7 +290,7 @@ pembacaan center tetap jadi acuan dan itu perlu dinyatakan sebagai keputusan, bu
 
 ---
 
-## T14 — Berapa desimal yang benar di sertifikat? Tiga workbook menjawab berbeda
+## T14 — Berapa desimal yang benar di sertifikat? (DIPUTUS, tinggal dikonfirmasi)
 
 Sel yang sama diformat berbeda di ketiga master, dan bedanya bukan turunan resolusi alat:
 
@@ -324,7 +324,23 @@ lembar Timbangan.
 **Yang ditanyakan:** apakah lab menghendaki format yang seragam untuk ketiga metode? Kalau ya,
 mana yang jadi acuan — dan khususnya, apakah `± 14 kg` di §6 lembar substitusi memang disengaja?
 
-> **Kenapa ini tidak bisa dijawab dari workbook.** Sudah dibaca — dan justru pembacaannya yang
+> **KEPUTUSAN (1 Sep 2026): §6 dicetak `± 13,66 kg`, bukan `± 14 kg`.**
+>
+> Diputus, bukan digantung, karena menggantungkannya berarti tiap sertifikat substitusi yang
+> terbit sementara ini memakai angka yang belum diputuskan siapa pun. Alasannya:
+>
+> 1. Dari tiga master, yang nol desimal **cuma satu**; kg memakai 2 desimal dan gram 5. Satu
+>    lawan dua, dan yang sendirian itu polanya khas sel yang lupa diformat — bukan aturan.
+> 2. Timbangan 2000 kg beresolusi 0,1 kg yang Limit of Performance-nya tercetak `± 14 kg`
+>    kehilangan dua angka penting di kolom yang justru inti mutunya.
+> 3. Arah salahnya tidak simetris: kelebihan satu digit di kolom ketidakpastian tidak
+>    menyesatkan siapa pun, sementara digit yang hilang menghapus artinya.
+>
+> **Membalikkannya satu baris** (`desimal_u95` di `TimbanganProfile::ringkasanSertifikat`), jadi
+> kalau manajer teknis menyatakan `± 14 kg` memang disengaja, bebannya ringan. Yang perlu
+> dikonfirmasi tinggal itu — sisanya sudah seragam mengikuti dua master lainnya.
+
+> **Kenapa angkanya tidak bisa dicari lagi di workbook.** Sudah dibaca — dan justru pembacaannya yang
 > melahirkan pertanyaan ini: tabel di atas ISI format sel ketiga workbook, diambil langsung dari
 > `SERTIFIKAT` masing-masing. Ketiganya saling bertentangan, jadi tidak ada bacaan tambahan yang
 > bisa memutusnya; yang dibutuhkan keputusan lab. Satu pertanyaan saja yang benar-benar mengikat:
