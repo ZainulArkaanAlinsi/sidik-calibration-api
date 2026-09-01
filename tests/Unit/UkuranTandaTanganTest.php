@@ -73,8 +73,8 @@ class UkuranTandaTanganTest extends TestCase
     /** Mode padat kotaknya separuh, jadi batasnya ikut mengecil. */
     public function test_mode_padat_pakai_kotak_yang_lebih_pendek(): void
     {
-        $normal = UkuranTandaTangan::pas($this->png(800, 800), 35.0, false);
-        $padat = UkuranTandaTangan::pas($this->png(800, 800), 35.0, true);
+        $normal = UkuranTandaTangan::pas($this->png(800, 800), 35.0, 0.0, false);
+        $padat = UkuranTandaTangan::pas($this->png(800, 800), 35.0, 0.0, true);
 
         $this->assertLessThan($normal['tinggi_mm'], $padat['tinggi_mm']);
         $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(true), $padat['tinggi_mm'], 0.01);
@@ -90,7 +90,7 @@ class UkuranTandaTanganTest extends TestCase
         foreach ([[1000, 100], [800, 600], [800, 800], [600, 800], [200, 1000], [50, 4000]] as [$w, $h]) {
             foreach ([10.0, 35.0, 80.0] as $lebarMm) {
                 foreach ([false, true] as $padat) {
-                    $hasil = UkuranTandaTangan::pas($this->png($w, $h), $lebarMm, $padat);
+                    $hasil = UkuranTandaTangan::pas($this->png($w, $h), $lebarMm, 0.0, $padat);
 
                     $this->assertLessThanOrEqual(
                         UkuranTandaTangan::tinggiKotakMm($padat) + 0.01,
@@ -126,5 +126,74 @@ class UkuranTandaTanganTest extends TestCase
         $this->assertArrayHasKey('padat', $hasil);
         $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(false), $hasil['normal']['tinggi_mm'], 0.01);
         $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(true), $hasil['padat']['tinggi_mm'], 0.01);
+    }
+
+    /**
+     * Menjepit TINGGI saja tidak cukup — temuan review sebelum merge.
+     *
+     * Blade menempelkan gambar dengan `bottom: <geser_y>mm`, dan `geser_y_mm`
+     * boleh sampai +40 mm sementara kotaknya cuma 12,17 mm. Jadi gambar yang
+     * sudah pas pun tetap terangkat keluar kotak begitu digeser ke atas —
+     * luapannya persis sebesar geserannya, dan yang ditimpanya tabel di atasnya.
+     */
+    public function test_geser_ke_atas_nggak_bisa_ngangkat_gambar_keluar_kotak(): void
+    {
+        foreach ([[1000, 200], [800, 800], [600, 800]] as [$w, $h]) {
+            foreach ([1.0, 5.0, 40.0] as $geser) {
+                foreach ([false, true] as $padat) {
+                    $hasil = UkuranTandaTangan::pas($this->png($w, $h), 35.0, $geser, $padat);
+
+                    $puncak = $hasil['tinggi_mm'] + $hasil['geser_y_mm'];
+
+                    $this->assertLessThanOrEqual(
+                        UkuranTandaTangan::tinggiKotakMm($padat) + 0.01,
+                        $puncak,
+                        "Puncak gambar keluar kotak: {$w}x{$h}, geser {$geser}mm, padat=".var_export($padat, true),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Geseran ke BAWAH sengaja dibiarkan apa adanya.
+     *
+     * Yang ditimpanya garis tanda tangan dan nama penanda tangan — tanda tangan
+     * yang sedikit memotong garisnya itu wajar, dan menjepitnya bakal merebut
+     * penyetelan halus yang memang hak admin.
+     */
+    public function test_geser_ke_bawah_nggak_dijepit(): void
+    {
+        $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0, -4.0);
+
+        $this->assertSame(-4.0, $hasil['geser_y_mm']);
+    }
+
+    /**
+     * Konstanta di PHP dan angka di CSS blade wajib sama.
+     *
+     * Blade sengaja menulis angkanya literal biar CSS-nya kebaca apa adanya,
+     * jadi tidak ada yang memaksa keduanya sejalan selain test ini. Kalau
+     * kotaknya dikecilkan di CSS tanpa konstanta ini ikut berubah, penjepitnya
+     * memakai ukuran yang salah dan gambarnya meluber lagi — tanpa satu pun
+     * error.
+     */
+    public function test_konstanta_cocok_dengan_css_blade(): void
+    {
+        $css = (string) file_get_contents(
+            dirname(__DIR__, 2).'/resources/views/sertifikat/pdf.blade.php',
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/\.ttd \.ruang-ttd \{ height: '.UkuranTandaTangan::TINGGI_KOTAK_PX.'px;/',
+            $css,
+            'TINGGI_KOTAK_PX beda dari `.ttd .ruang-ttd` di blade.',
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/body\.padat \.ttd \.ruang-ttd \{ height: '.UkuranTandaTangan::TINGGI_KOTAK_PADAT_PX.'px;/',
+            $css,
+            'TINGGI_KOTAK_PADAT_PX beda dari `body.padat .ttd .ruang-ttd` di blade.',
+        );
     }
 }

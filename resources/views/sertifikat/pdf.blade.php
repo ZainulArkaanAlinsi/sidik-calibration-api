@@ -172,7 +172,7 @@
         body.padat table.ttd td { font-size: 9.5px; }
         body.padat table.ttd td.qr { width: 78px; }
         body.padat table.ttd td.qr img { width: 66px; height: 66px; }
-        body.padat .ttd .ruang-ttd { height: {{ \App\Support\UkuranTandaTangan::TINGGI_KOTAK_PADAT_PX }}px; }
+        body.padat .ttd .ruang-ttd { height: 24px; }
         body.padat .ttd td { padding-top: 4px; }
         body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
         body.padat .kop-gambar { margin-bottom: 5px; }
@@ -209,7 +209,7 @@
           ada yang mau ngegedein huruf lagi: ukur ulang pakai sertifikat 3 baris,
           bukan yang 2.
         */
-        .ttd .ruang-ttd { height: {{ \App\Support\UkuranTandaTangan::TINGGI_KOTAK_PX }}px; position: relative; }
+        .ttd .ruang-ttd { height: 46px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
@@ -1086,7 +1086,12 @@
                           template nggak bisa diuji sendirian.
                         --}}
                         @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal']
-                            ?? \App\Support\UkuranTandaTangan::pas(null, (float) ($posisiTtd['lebar_mm'] ?? 35), $padat))
+                            ?? \App\Support\UkuranTandaTangan::pas(
+                                null,
+                                (float) ($posisiTtd['lebar_mm'] ?? 35),
+                                (float) ($posisiTtd['geser_y_mm'] ?? 0),
+                                $padat,
+                            ))
                         <img
                             src="{{ $tandaTangan }}"
                             alt="Tanda tangan"
@@ -1094,7 +1099,7 @@
                                 @if (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;@endif
                                 height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
                                 left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
-                                bottom: {{ $posisiTtd['geser_y_mm'] ?? 0 }}mm;
+                                bottom: {{ round($ukuran['geser_y_mm'], 2) }}mm;
                             "
                         >
                     @endif

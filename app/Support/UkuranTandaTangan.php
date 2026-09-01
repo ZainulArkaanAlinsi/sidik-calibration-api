@@ -40,9 +40,11 @@ final class UkuranTandaTangan
      * Tinggi kotak tanda tangan, dalam piksel CSS.
      *
      * HARUS sama dengan `.ttd .ruang-ttd` di resources/views/sertifikat/pdf.blade.php.
-     * Blade membacanya dari sini supaya dua angka itu tidak bisa berbeda diam-diam:
-     * kalau kotaknya dikecilkan tanpa nilai ini ikut berubah, gambarnya meluber
-     * lagi tanpa satu pun error.
+     *
+     * Blade tetap menulis angkanya literal — bukan menginterpolasi konstanta ini —
+     * supaya CSS-nya kebaca apa adanya. Yang menjaga keduanya tidak melenceng
+     * `UkuranTandaTanganTest::test_konstanta_cocok_dengan_css_blade()`: begitu
+     * salah satunya diubah sendirian, test itu merah dengan alasan yang kebaca.
      */
     public const TINGGI_KOTAK_PX = 46;
 
@@ -60,34 +62,51 @@ final class UkuranTandaTangan
     }
 
     /**
-     * Ukuran cetak untuk kedua mode sekaligus.
+     * Ukuran cetak + geseran vertikal untuk kedua mode sekaligus.
      *
      * Dihitung dua-duanya di sini, bukan di blade, karena blade baru tahu mode
      * padat atau tidak sesudah menghitung jumlah baris hasil — dan menaruh
      * aritmetika itu di template berarti dia tidak bisa diuji sendirian.
      *
-     * @return array{normal: array{lebar_mm: ?float, tinggi_mm: float}, padat: array{lebar_mm: ?float, tinggi_mm: float}}
+     * @return array{normal: array{lebar_mm: ?float, tinggi_mm: float, geser_y_mm: float}, padat: array{lebar_mm: ?float, tinggi_mm: float, geser_y_mm: float}}
      */
-    public static function keduaMode(?string $isiGambar, float $lebarMm): array
+    public static function keduaMode(?string $isiGambar, float $lebarMm, float $geserYMm = 0.0): array
     {
         return [
-            'normal' => self::pas($isiGambar, $lebarMm, false),
-            'padat' => self::pas($isiGambar, $lebarMm, true),
+            'normal' => self::pas($isiGambar, $lebarMm, $geserYMm, false),
+            'padat' => self::pas($isiGambar, $lebarMm, $geserYMm, true),
         ];
     }
 
     /**
-     * Lebar & tinggi cetak yang dijamin muat, rasio asli dijaga.
+     * Lebar, tinggi, dan geseran vertikal yang dijamin muat di kotaknya.
      *
      * Lebar pilihan admin dihormati SELAMA tingginya masih muat. Begitu tidak
      * muat, yang dikorbankan lebarnya — bukan rasionya. Tanda tangan yang
      * gepeng atau melar terbaca sebagai tanda tangan yang berbeda, dan ini
      * dokumen terkendali.
      *
-     * @return array{lebar_mm: ?float, tinggi_mm: float}
+     * ## Kenapa geserannya ikut dihitung di sini
+     *
+     * Menjepit tingginya saja tidak cukup. Blade menempelkan gambar dengan
+     * `bottom: <geser_y>mm`, dan `geser_y_mm` boleh sampai +40 mm
+     * (Organization::MAKS_TTD_GESER_MM) sementara kotaknya cuma 12,17 mm. Jadi
+     * gambar yang sudah pas pun tetap terangkat keluar kotak begitu digeser ke
+     * atas — luapannya persis sebesar geserannya.
+     *
+     * Yang dijepit cuma arah ATAS. Geseran ke bawah (negatif) dibiarkan: yang
+     * ditimpanya garis tanda tangan dan nama penanda tangan, dan tanda tangan
+     * yang sedikit memotong garisnya itu wajar. Yang di ATAS beda — di situ
+     * tabel hasil dan tabel standar, dan menimpanya merusak penyajian data.
+     *
+     * @return array{lebar_mm: ?float, tinggi_mm: float, geser_y_mm: float}
      */
-    public static function pas(?string $isiGambar, float $lebarMm, bool $padat = false): array
-    {
+    public static function pas(
+        ?string $isiGambar,
+        float $lebarMm,
+        float $geserYMm = 0.0,
+        bool $padat = false,
+    ): array {
         $tinggiKotak = self::tinggiKotakMm($padat);
         $rasio = self::rasio($isiGambar);
 
@@ -96,16 +115,35 @@ final class UkuranTandaTangan
         // dilepas, biar dompdf yang menskalakan proporsional. Menebak lebar di
         // sini berarti menerbitkan tanda tangan yang gepeng.
         if ($rasio === null) {
-            return ['lebar_mm' => null, 'tinggi_mm' => $tinggiKotak];
+            return [
+                'lebar_mm' => null,
+                'tinggi_mm' => $tinggiKotak,
+                'geser_y_mm' => self::geserPas($geserYMm, $tinggiKotak, $tinggiKotak),
+            ];
         }
 
         $tinggi = $lebarMm * $rasio;
 
-        if ($tinggi <= $tinggiKotak) {
-            return ['lebar_mm' => $lebarMm, 'tinggi_mm' => $tinggi];
+        if ($tinggi > $tinggiKotak) {
+            $lebarMm = $tinggiKotak / $rasio;
+            $tinggi = $tinggiKotak;
         }
 
-        return ['lebar_mm' => $tinggiKotak / $rasio, 'tinggi_mm' => $tinggiKotak];
+        return [
+            'lebar_mm' => $lebarMm,
+            'tinggi_mm' => $tinggi,
+            'geser_y_mm' => self::geserPas($geserYMm, $tinggi, $tinggiKotak),
+        ];
+    }
+
+    /** Geseran ke atas dibatasi sisa ruang; ke bawah dibiarkan apa adanya. */
+    private static function geserPas(float $geserYMm, float $tinggiMm, float $tinggiKotakMm): float
+    {
+        if ($geserYMm <= 0) {
+            return $geserYMm;
+        }
+
+        return min($geserYMm, max(0.0, $tinggiKotakMm - $tinggiMm));
     }
 
     /** Tinggi dibagi lebar, atau null kalau dimensinya tidak terbaca. */

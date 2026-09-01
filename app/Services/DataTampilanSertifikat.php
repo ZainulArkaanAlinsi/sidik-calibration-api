@@ -65,6 +65,7 @@ class DataTampilanSertifikat
             'ukuranTtd' => UkuranTandaTangan::keduaMode(
                 $ttdIsi,
                 (float) ($posisiTtd['lebar_mm'] ?? Organization::DEFAULT_TTD_LEBAR_MM),
+                (float) ($posisiTtd['geser_y_mm'] ?? 0),
             ),
             'qr' => $this->qrDataUri($organisasi, $sertifikat, $web),
             'keputusan' => $this->tampilkanKeputusan($organisasi)
