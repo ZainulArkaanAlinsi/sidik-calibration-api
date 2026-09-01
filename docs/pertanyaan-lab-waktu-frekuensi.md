@@ -18,6 +18,42 @@ diputuskan sepihak oleh kode (karena perilaku benarnya tidak ambigu) ditandai
 
 ---
 
+## Keputusan pemilik proyek — 1 Sep 2026
+
+> **"Rumus yang ada di Excel itu yang dipakai."**
+
+Arahan itu **menutup empat** pertanyaan sekaligus, dan menutupnya dengan
+membenarkan perilaku yang sudah berjalan — bukan dengan mengubah kode:
+
+| § | Pokok | Kenapa arahan itu menutupnya |
+|---|---|---|
+| §4 | Arah pemutusan seri nominal | Kode sudah meniru **masing-masing kelompok apa adanya**: rpm ke atas, waktu ke bawah. Itu persis "pakai rumus Excel" — dan menyeragamkannya justru melanggarnya |
+| §5 | Timer cuma satu blok hidup | Blok 2–5 bukan metode lain, tapi rumus **rusak** (`#REF!`, dua komponen human reaction terbuang, `k` diketik tangan). Yang tersisa sebagai rumus cuma Set Point 1 — dan itu yang dipakai |
+| §7 | Centrifuge di luar pita akreditasi | Master memakai CMC 1,6 rpm untuk 15000–25000 rpm; kode meminjam pita terdekat, yaitu perilaku yang sama |
+| §11 | 15000 rpm berdesimal vs budget bulat | Yang bentuknya **rumus** itu budget-nya; `15000,4` cuma sel data. Kode menuruti budget |
+
+Keempatnya **tidak berubah**. Yang berubah cuma statusnya di dokumen ini, supaya
+pembaca berikutnya tidak mengira masih ada yang menggantung.
+
+### Yang TIDAK bisa ditutup arahan itu
+
+**§10 dan §13 bukan pertanyaan rumus**, jadi "pakai rumus Excel" tidak
+menjawabnya:
+
+- **§10** — kedua Excel **bertentangan satu sama lain** (Tachometer menukar
+  kolom terhadap Centrifuge & Timer). Tidak ada "rumus Excel" tunggal untuk
+  diikuti. Kode memakai konvensi yang benar menurut definisi `Correction`, dan
+  itu tetap. Yang menggantung bukan kodenya, tapi **sertifikat Tachometer yang
+  sudah terbit** dengan tanda terbalik.
+- **§13** — yang dipersoalkan **kalimat di sertifikat**, bukan perhitungan. Tidak
+  ada rumus Excel yang mengaturnya.
+
+Keduanya menyangkut dokumen yang **sudah dipegang pelanggan** di bawah lingkup
+terakreditasi. Itu keputusan manajer teknis, dan sengaja tidak diputuskan di
+sini.
+
+---
+
 ## §1 — Ketidakpastian sertifikat kalibrator berbentuk pita  [SUDAH DIHITUNG BENAR]
 
 Kolom `Uncertainty` di sheet `SERTIFIKAT KALIBRATOR` (kedua workbook rpm) cuma
@@ -93,7 +129,7 @@ tidak ikut disalin. Dilengkapi, dan arahnya (selalu naik) ditegakkan test.
 
 ---
 
-## §4 — Arah pemutusan seri nominal BERBEDA antar kelompok  [PERLU JAWABAN]
+## §4 — Arah pemutusan seri nominal BERBEDA antar kelompok  [DIPUTUSKAN: TIRU MASTER]
 
 Sel `Indexed Value` tidak punya rumus — teknisi mengetiknya. Aturan yang
 terbukti: **nominal sertifikat terdekat**. Yang tidak sepakat cuma apa yang
@@ -110,7 +146,14 @@ atas, `TabelStandarWaktu` ke bawah. Menyeragamkannya diam-diam **menggeser
 koreksi titik 900 detik sebesar 10 ms** dari yang sudah tercetak di sertifikat
 pelanggan.
 
-> **[PERLU JAWABAN]** Mana yang benar? Tiga kemungkinan:
+> **[DIPUTUSKAN 1 Sep 2026 — tiru master apa adanya.]** Pemilik proyek:
+> "rumus yang ada di Excel itu yang dipakai". Kode sudah begitu, jadi tidak ada
+> yang berubah: rpm memutus ke atas, waktu ke bawah, masing-masing seperti
+> masternya. Menyeragamkannya justru yang akan melanggar arahan itu — dan
+> menggeser koreksi titik 900 detik sebesar 10 ms dari yang sudah tercetak.
+>
+> Pertanyaan aslinya, disimpan karena tetap layak dijawab suatu saat:
+> mana yang benar? Tiga kemungkinan:
 >
 > 1. Seri selalu ke atas → titik 900 s master salah ketik.
 > 2. Seri selalu ke bawah → dua titik rpm master salah ketik.
@@ -123,7 +166,7 @@ pelanggan.
 
 ---
 
-## §5 — Master Timer cuma punya SATU blok yang menghitung  [PERLU JAWABAN]
+## §5 — Master Timer cuma punya SATU blok yang menghitung  [DIPUTUSKAN: BENTUK SP1]
 
 Dari lima blok `Set Point` di `PERHITUNGAN U95%`, **hanya yang pertama utuh.**
 Empat sisanya rusak berlapis:
@@ -143,11 +186,19 @@ dijumlah.
 Kode memakai bentuk **Set Point 1** — enam komponen, `k` dari `TINV` — untuk
 semua titik.
 
-> **[PERLU JAWABAN]** Konsekuensinya perlu disadari: **hitungan kita tidak bisa
-> dibuktikan cocok di titik ke-2 dan seterusnya**, karena masternya sendiri
-> tidak punya angka pembanding di situ. Mohon dikirim **satu workbook Timer yang
-> keempat bloknya hidup** supaya bisa diadu — atau konfirmasi bahwa enam
-> komponen memang bentuk yang benar.
+> **[DIPUTUSKAN 1 Sep 2026 — bentuk Set Point 1 dipakai untuk semua titik.]**
+> Pemilik proyek: "rumus yang ada di Excel itu yang dipakai" — dan di lembar ini
+> yang berbentuk **rumus** cuma Set Point 1. Blok 2–5 bukan metode yang berbeda,
+> tapi rumus yang **rusak**: `#REF!` di pengulangannya, dua komponen human
+> reaction terbuang dari rentang yang dijumlah, dan `k` diketik tangan `2` di
+> tiga blok. Meniru yang rusak bertentangan dengan aturan repo ini sendiri
+> (`CLAUDE.md`: kerusakan salin-tempel dihitung benar, bukan ditiru).
+>
+> **Yang tetap menggantung bukan keputusan, tapi DATA.** Hitungan kita masih
+> tidak bisa dibuktikan cocok di titik ke-2 dan seterusnya, karena masternya
+> tidak punya angka pembanding di situ — dan tidak ada keputusan yang bisa
+> menciptakannya. Mohon tetap dikirim **satu workbook Timer yang keempat bloknya
+> hidup** supaya bisa diadu.
 
 ---
 
@@ -175,7 +226,7 @@ salin-tempel, bukan pilihan metode.
 
 ---
 
-## §7 — Centrifuge diukur di luar pita akreditasi  [PERLU JAWABAN]
+## §7 — Centrifuge diukur di luar pita akreditasi  [DIPUTUSKAN: TIRU MASTER]
 
 Blok 5 `Master Olda Centrifuge.xlsm` mengukur **15000, 20000, dan 25000 rpm**.
 Lampiran akreditasi LK-285-IDN no. 38 (Centrifuge) berhenti di **9000 rpm**:
@@ -215,10 +266,16 @@ dipinjam ikut tertulis di jejak audit `type_b_components`, jadi lantai pinjaman
 bisa dibedakan dari lantai yang benar-benar menaungi titiknya. Dijaga
 `LantaiCmcPutaranTest`.
 
-> **[PERLU JAWABAN]** Dua kemungkinan: (a) blok 5 itu memang milik lembar
-> Tachometer yang ikut tersalin ke workbook Centrifuge, atau (b) lab memang
-> melayani centrifuge sampai 25000 rpm di luar lingkup akreditasi. Kalau (b),
-> bagaimana sertifikatnya harus menandai titik-titik itu?
+> **[DIPUTUSKAN 1 Sep 2026 — pita terdekat dipinjam, seperti master.]** Pemilik
+> proyek: "rumus yang ada di Excel itu yang dipakai". Master memakai CMC 1,6 rpm
+> untuk 15000–25000 rpm, dan itu yang dilakukan kode — ditambah peringatan sesi
+> yang harus dilewati admin secara sadar, dan pita pinjaman yang tercatat di
+> jejak audit supaya bisa dibedakan dari lantai yang benar-benar menaungi.
+>
+> **Satu hal tetap terbuka, dan itu bukan soal rumus:** kalau lab memang
+> melayani centrifuge sampai 25000 rpm di luar lingkup akreditasi, bagaimana
+> **sertifikatnya menandai** titik-titik itu? Penandaan dokumen terakreditasi
+> keputusan manajer teknis.
 
 ---
 
@@ -292,15 +349,25 @@ Dijaga `WaktuFrekuensiSertifikatTest`, yang menegakkan dua hal sekaligus —
 identitas `Standard ≡ UUT + Correction` di setiap titik, dan angka baris
 pertamanya lawan sel masternya.
 
-> **[PERLU JAWABAN]** Sertifikat Tachometer yang **sudah terbit** memakai
-> konvensi terbalik itu, jadi kolom dan tanda koreksinya berbeda dari yang akan
-> diterbitkan sistem ini. Perlu diterbitkan ulang, atau cukup berlaku maju saja?
+> **[PERLU JAWABAN — tidak bisa ditutup arahan "pakai rumus Excel".]** Di sini
+> kedua Excel **bertentangan satu sama lain**: Tachometer menukar kolom terhadap
+> Centrifuge dan Timer. Tidak ada satu "rumus Excel" untuk diikuti, jadi kode
+> memakai konvensi yang benar menurut **definisi** `Correction` (= nilai benar −
+> penunjukan alat), yang kebetulan juga konvensi 2 dari 3 master. Bagian itu
+> sudah selesai dan tidak akan diubah.
+>
+> Yang menggantung bukan kodenya: **sertifikat Tachometer yang sudah terbit**
+> memakai konvensi terbalik, jadi kolom dan tanda koreksinya berbeda dari yang
+> akan diterbitkan sistem ini. Perlu diterbitkan ulang, atau berlaku maju saja?
+>
 > Ini satu-satunya penyimpangan yang benar-benar **mengubah angka tercetak**
-> (bukan cuma ketidakpastian) — §2 sampai §6 semuanya tertutup lantai CMC.
+> (bukan cuma ketidakpastian) — §2 sampai §6 semuanya tertutup lantai CMC. Dan
+> ini menyangkut dokumen yang sudah dipegang pelanggan di bawah lingkup
+> terakreditasi, jadi keputusannya manajer teknis, bukan keputusan kode.
 
 ---
 
-## §11 — Data 15000 rpm berdesimal satu, budgetnya bilangan bulat  [PERLU JAWABAN]
+## §11 — Data 15000 rpm berdesimal satu, budgetnya bilangan bulat  [DIPUTUSKAN: TURUTI BUDGET]
 
 Blok budget master memilih daya baca tachometer standar dari nominalnya: blok
 ber-nominal tertinggi 10000 rpm memakai **0,1 rpm**, yang 15000 rpm memakai
@@ -318,10 +385,16 @@ karena itu yang menentukan angka U95 tercetak, dan membiarkan pemeriksa
 itu. Satu peringatan yang isinya benar, bukan lima puluh tiga yang isinya salah —
 lihat `PeringatanPalsuWaktuFrekuensiTest`.
 
-> **[PERLU JAWABAN]** Berapa daya baca tachometer standar di atas 10000 rpm —
-> 0,1 rpm (dan komponen resolusi blok 5 & 6 terlalu besar), atau 1 rpm (dan
-> desimal di data 15000 rpm salah ketik)? Pengaruhnya ke U95 kecil, tapi dua
-> jawaban itu tidak bisa dua-duanya benar.
+> **[DIPUTUSKAN 1 Sep 2026 — budget yang dituruti.]** Pemilik proyek: "rumus
+> yang ada di Excel itu yang dipakai". Dari dua bukti yang bertentangan, yang
+> berbentuk **rumus** cuma budget-nya (0,1 rpm sampai 10000, 1 rpm di atasnya);
+> `15000,4` cuma sel data yang diketik. Jadi budget yang menang, dan itu yang
+> sudah dilakukan kode.
+>
+> Pemeriksa `pembacaan_bukan_kelipatan_resolusi` tetap mengangkat satu
+> peringatan per sesi rpm di titik itu — **sengaja tidak dimatikan**: isinya
+> benar, dan dia yang membuat pertentangan ini tetap kelihatan kalau suatu saat
+> daya baca standarnya dipastikan.
 
 ---
 
@@ -388,11 +461,23 @@ Kode **tidak diubah**: mengganti kalimat sertifikat terakreditasi — misal jadi
 `k = 1,96–1,97` atau satu kalimat per baris — mengubah bentuk dokumen yang
 sudah terbit, dan itu keputusan manajer teknis, bukan keputusan kode.
 
-> **[PERLU JAWABAN]** Untuk alat yang `k`-nya beda antar blok/baris, kalimat
-> faktor cakupan sebaiknya: (a) menyebut rentang `k = 1,96–1,97`, (b) dicetak
-> per blok seperti Spectrophotometer, atau (c) dibiarkan seperti sekarang
-> karena selisihnya di bawah ketelitian yang berarti? Kalau (c), sebaiknya
-> kalimatnya berbunyi "≈" supaya tidak mengaku presisi yang tidak ada.
+> **[PERLU JAWABAN — tidak bisa ditutup arahan "pakai rumus Excel".]** Yang
+> dipersoalkan di sini **kalimat di sertifikat**, bukan perhitungan. Tidak ada
+> rumus Excel yang mengaturnya, jadi arahan itu tidak menjawabnya.
+>
+> Untuk alat yang `k`-nya beda antar blok/baris, kalimat faktor cakupan
+> sebaiknya: (a) menyebut rentang `k = 1,96–1,97`, (b) dicetak per blok seperti
+> Spectrophotometer, atau (c) dibiarkan seperti sekarang karena selisihnya di
+> bawah ketelitian yang berarti?
+>
+> **Kalau harus memilih yang paling kecil risikonya: (c) dengan "≈".** Menambah
+> satu tanda — `Coverage Factor ( k ) ≈ 1,96` — menghentikan dokumen mengaku
+> presisi yang tidak dia punya, tanpa mengubah bentuk sertifikat yang sudah
+> terbit dan tanpa menyentuh satu pun angka. (a) dan (b) mengubah tata letak
+> dokumen terakreditasi.
+>
+> Tetap **tidak dikerjakan tanpa persetujuan**: mengubah bunyi sertifikat
+> terakreditasi, sekecil apa pun, keputusan manajer teknis.
 
 ---
 
@@ -403,13 +488,13 @@ sudah terbit, dan itu keputusan manajer teknis, bukan keputusan kode.
 | 1 | Pita ketidakpastian sertifikat | Dihitung benar, konfirmasi diminta | — (10/11 blok cocok) |
 | 2 | Blok 5 Tachometer rusak 3x | Dihitung benar | Tidak ada (CMC menang) |
 | 3 | Kolom `K` drift sebagian | Dilengkapi | U95 naik tipis |
-| 4 | Arah seri nominal | **Ditiru per kelompok** | 10 ms di satu titik |
-| 5 | Timer cuma 1 blok hidup | Bentuk SP1 dipakai semua | Belum terbukti di titik 2+ |
+| 4 | Arah seri nominal | ✅ **Diputuskan**: ditiru per kelompok | 10 ms di satu titik |
+| 5 | Timer cuma 1 blok hidup | ✅ **Diputuskan**: bentuk SP1 — tapi **data pembanding masih diminta** | Belum terbukti di titik 2+ |
 | 6 | `uHRTB` 2 dari 4 operator | Dihitung benar | U95 naik tipis |
-| 7 | Centrifuge di luar lingkup | Peringatan sesi (kedua alat) + pita terdekat dipinjam | U95 di luar lingkup **naik** ke lantai CMC |
+| 7 | Centrifuge di luar lingkup | ✅ **Diputuskan**: pita terdekat dipinjam + peringatan sesi. Penandaan di sertifikat masih terbuka | U95 di luar lingkup **naik** ke lantai CMC |
 | 8 | Pembagi drift beda | Ditiru | — |
 | 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
-| **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
-| 11 | Data 15000 rpm berdesimal, budgetnya bulat | Budget dituruti | — (1 peringatan/sesi) |
+| **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | Kode selesai (konvensi Centrifuge/Timer). ⏳ **Terbuka: terbitkan ulang atau berlaku maju?** | **TANDA koreksi berbalik** |
+| 11 | Data 15000 rpm berdesimal, budgetnya bulat | ✅ **Diputuskan**: budget dituruti | — (1 peringatan/sesi) |
 | 12 | Set point di luar jangkauan sertifikat | **Diblokir** dengan alasan | — (nol set point master kena) |
-| 13 | Kalimat `k` satu angka untuk baris ber-`k` beda | **Diangkat, kode tidak diubah** | `k` tercetak 1,96 padahal ada baris 1,97 |
+| 13 | Kalimat `k` satu angka untuk baris ber-`k` beda | ⏳ **Terbuka**: bukan soal rumus. Saran paling kecil risikonya: tambah "≈" | `k` tercetak 1,96 padahal ada baris 1,97 |
