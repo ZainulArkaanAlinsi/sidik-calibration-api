@@ -667,15 +667,28 @@ class TimerStopwatchProfile extends CalibrationProfile
             // tahap — yang beda SIAPA yang membaca, dan itu yang diangkut
             // `grup` di bawah.
             'tahap' => 'sesudah_adjustment',
-            // `grup`, BUKAN `peran`.
+            // KEDUANYA dikirim, dan keduanya perlu.
             //
-            // Di HP kunci `peran` berarti "lembar pasangan standar/UUT" dan
-            // membelokkan seluruh jalur kirimnya ke bentuk yang dipakai ketiga
-            // alat suhu — yang kosakatanya `standar`/`uut` dan yang disusun
-            // `PasanganStandarUutMentah`, bukan `WaktuMentah`. Lembar ini
-            // memang dua deret, tapi deretnya WAKTU dan penyusunnya lain.
+            // `peran` menyatakan ke HP bahwa lembar ini membaca DUA DERET per
+            // titik — dan itu memang benar. Tanpa dia, `LembarKerja.berpasangan`
+            // memulangkan false, jalur kirimnya jatuh ke bentuk datar
+            // `pembacaan`, dan seluruh isian lembar ini berangkat sebagai titik
+            // tanpa satu pun deret. Nilainya WAJIB `standar`/`uut` — kosakata
+            // yang dikenal HP — bukan `waktu_standar`/`waktu_uut`; dijaga
+            // `SemuaProfilLembarKerjaTest::test_peran_tabel_cuma_buat_lembar_pasangan`.
             //
-            // Dijaga `SemuaProfilLembarKerjaTest::test_peran_tabel_cuma_buat_lembar_pasangan`.
+            // > Kekhawatiran yang dulu membuat kunci ini SENGAJA dihilangkan
+            // > ternyata tidak berdasar: `peran` di HP tidak memilih kelas
+            // > penyusun di server. Yang memilihnya `CalibrationController`,
+            // > lewat `butuhBlokWaktu()` milik profil — jadi lembar ini tetap
+            // > disusun `WaktuMentah`, bukan `PasanganStandarUutMentah`,
+            // > walaupun kosakata payload-nya sama-sama `standar`/`uut`.
+            //
+            // `grup` tetap ada karena dia yang memisahkan KUNCI SEL kedua tabel
+            // di HP (`TabelHasil.kunciTabel` = `grup ?? peran`). Tanpa dia
+            // keduanya ber-`tahap` sama dan sel standar & UUT saling menimpa —
+            // teknisi mengetik di tabel bawah, angkanya muncul di tabel atas.
+            'peran' => $peran === WaktuMentah::PERAN_STANDAR ? 'standar' : 'uut',
             'grup' => $peran,
             'judul' => $judul,
             'satuan' => self::SATUAN,
