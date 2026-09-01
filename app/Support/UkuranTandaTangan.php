@@ -94,10 +94,18 @@ final class UkuranTandaTangan
      * gambar yang sudah pas pun tetap terangkat keluar kotak begitu digeser ke
      * atas — luapannya persis sebesar geserannya.
      *
-     * Yang dijepit cuma arah ATAS. Geseran ke bawah (negatif) dibiarkan: yang
-     * ditimpanya garis tanda tangan dan nama penanda tangan, dan tanda tangan
-     * yang sedikit memotong garisnya itu wajar. Yang di ATAS beda — di situ
-     * tabel hasil dan tabel standar, dan menimpanya merusak penyajian data.
+     * Dua arah dijepit, tapi dengan alasan yang BEDA — dan batasnya ikut beda:
+     *
+     *   ATAS  — batasnya ketat, cuma sampai sisa ruang di atas gambar. Di atas
+     *           kotak ada tabel hasil dan tabel standar; menimpanya merusak
+     *           penyajian data.
+     *   BAWAH — batasnya longgar, sampai setinggi kotaknya sendiri. Tanda
+     *           tangan yang sedikit memotong garisnya itu wajar, bahkan
+     *           diinginkan, jadi penyetelan halus ke bawah tetap hak admin.
+     *           Yang dicegah cuma nilai ekstrem: konfigurasinya mengizinkan
+     *           sampai -40 mm, dan di situ tanda tangan mendarat jauh di bawah
+     *           nama penanda tangan — bukan penyetelan halus lagi, tapi salah
+     *           ketik yang tidak ada yang menangkap.
      *
      * @return array{lebar_mm: ?float, tinggi_mm: float, geser_y_mm: float}
      */
@@ -136,11 +144,11 @@ final class UkuranTandaTangan
         ];
     }
 
-    /** Geseran ke atas dibatasi sisa ruang; ke bawah dibiarkan apa adanya. */
+    /** Ke atas dibatasi sisa ruang; ke bawah setinggi kotaknya sendiri. */
     private static function geserPas(float $geserYMm, float $tinggiMm, float $tinggiKotakMm): float
     {
-        if ($geserYMm <= 0) {
-            return $geserYMm;
+        if ($geserYMm < 0) {
+            return max($geserYMm, -$tinggiKotakMm);
         }
 
         return min($geserYMm, max(0.0, $tinggiKotakMm - $tinggiMm));

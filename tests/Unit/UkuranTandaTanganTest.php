@@ -156,17 +156,35 @@ class UkuranTandaTanganTest extends TestCase
     }
 
     /**
-     * Geseran ke BAWAH sengaja dibiarkan apa adanya.
+     * Penyetelan halus ke BAWAH tetap dihormati.
      *
-     * Yang ditimpanya garis tanda tangan dan nama penanda tangan — tanda tangan
-     * yang sedikit memotong garisnya itu wajar, dan menjepitnya bakal merebut
-     * penyetelan halus yang memang hak admin.
+     * Tanda tangan yang sedikit memotong garisnya itu wajar, bahkan diinginkan.
+     * Menjepitnya di sini bakal merebut penyetelan yang memang hak admin.
      */
-    public function test_geser_ke_bawah_nggak_dijepit(): void
+    public function test_geser_ke_bawah_yang_wajar_dihormati(): void
     {
         $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0, -4.0);
 
         $this->assertSame(-4.0, $hasil['geser_y_mm']);
+    }
+
+    /**
+     * Tapi nilai ekstrem ke bawah tetap dibatasi.
+     *
+     * Konfigurasinya mengizinkan sampai -40 mm, dan di situ tanda tangan
+     * mendarat jauh di bawah nama penanda tangan — bukan penyetelan halus lagi,
+     * tapi salah ketik yang tidak ada yang menangkap. Batasnya setinggi
+     * kotaknya sendiri: cukup longgar buat penyetelan wajar, cukup ketat buat
+     * menahan yang ngawur.
+     */
+    public function test_geser_ke_bawah_yang_ekstrem_dibatasi(): void
+    {
+        foreach ([false, true] as $padat) {
+            $kotak = UkuranTandaTangan::tinggiKotakMm($padat);
+            $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0, -40.0, $padat);
+
+            $this->assertEqualsWithDelta(-$kotak, $hasil['geser_y_mm'], 0.01);
+        }
     }
 
     /**
