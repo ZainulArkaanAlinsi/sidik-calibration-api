@@ -68,24 +68,43 @@ class DirektoriOsmTest extends TestCase
     }
 
     /**
-     * Bawaannya BERLAPIS, dan tetap hidup tanpa disetel apa-apa.
+     * Bawaannya OSM SAJA, dan tetap hidup tanpa disetel apa-apa.
+     *
+     * Yang dijaga di sini TAGIHAN. Bawaan itu yang dipakai pemasangan yang
+     * belum menyetel apa-apa, jadi bawaan yang menyentuh Google berarti
+     * menagih diam-diam — persis yang terjadi sampai 1 Sep 2026, waktu nilai
+     * di `config/services.php` masih tertinggal di `auto` padahal keputusan
+     * pemilik proyek (31 Agt 2026) sudah "nol tagihan".
      *
      * Bagian kedua yang penting: `tersedia()` tetap `true` walau key Google
-     * kosong, karena OSM di lapis belakang nggak butuh key. Kalau ini pernah
-     * jadi `false` di lingkungan tanpa key, tombol cari hilang dari layar
-     * teknisi — dan itu keadaan yang paling sering bikin aplikasinya kelihatan
-     * rusak di tengah kerjaan.
+     * kosong, karena OSM nggak butuh key sama sekali. Kalau ini pernah jadi
+     * `false` di lingkungan tanpa key, tombol cari hilang dari layar teknisi —
+     * dan itu keadaan yang paling sering bikin aplikasinya kelihatan rusak di
+     * tengah kerjaan.
      */
-    public function test_bawaannya_berlapis_dan_tetap_siap_tanpa_key(): void
+    public function test_bawaannya_osm_dan_tetap_siap_tanpa_key(): void
     {
         config()->offsetUnset('services.direktori_perusahaan.driver');
         config()->set('services.direktori_perusahaan.key', null);
+
+        $direktori = app(DirektoriPerusahaan::class);
+
+        // Diadu ke ATRIBUSI, bukan nama kelas — alasannya sama dengan
+        // [test_driver_osm_eksplisit_cuma_osm] di bawah.
+        $this->assertNotInstanceOf(DirektoriBerlapis::class, $direktori);
+        $this->assertSame(NominatimDirektori::ATRIBUSI, $direktori->atribusi());
+        $this->assertTrue($direktori->tersedia());
+    }
+
+    /** Diminta berlapis lewat `auto` → yang lahir memang berlapis. */
+    public function test_driver_auto_eksplisit_tetap_berlapis(): void
+    {
+        config()->set('services.direktori_perusahaan.driver', 'auto');
 
         $this->assertInstanceOf(
             DirektoriBerlapis::class,
             app(DirektoriPerusahaan::class),
         );
-        $this->assertTrue(app(DirektoriPerusahaan::class)->tersedia());
     }
 
     /** Diminta OSM saja → yang lahir OSM saja, tanpa lapis lain di belakangnya. */
@@ -367,17 +386,25 @@ class DirektoriOsmTest extends TestCase
     }
 
     /**
-     * Salah ketik nama driver di `.env` jatuh ke susunan berlapis, BUKAN
-     * melempar: mematikan pendaftaran pelanggan di lapangan itu hukuman yang
-     * jauh lebih besar daripada kesalahannya.
+     * Salah ketik nama driver di `.env` jatuh ke OSM, BUKAN melempar dan BUKAN
+     * berlapis.
+     *
+     * Dua sifat sekaligus, dan keduanya gagal diam kalau hilang:
+     *
+     *  - **Nggak melempar.** Mematikan pendaftaran pelanggan di lapangan itu
+     *    hukuman yang jauh lebih besar daripada kesalahannya.
+     *  - **Nggak berlapis.** Susunan berlapis ikut membangun
+     *    `GooglePlacesDirektori`, jadi satu huruf yang meleset (`osmm`) dulu
+     *    diam-diam menyalakan lagi jalur yang DITAGIH. Nol error, nol log —
+     *    yang kelihatan cuma tagihan bulan depan.
      */
-    public function test_driver_yang_tidak_dikenali_jatuh_ke_berlapis(): void
+    public function test_driver_yang_tidak_dikenali_jatuh_ke_osm(): void
     {
-        config()->set('services.direktori_perusahaan.driver', 'salah-ketik');
+        config()->set('services.direktori_perusahaan.driver', 'osmm');
 
-        $this->assertInstanceOf(
-            DirektoriBerlapis::class,
-            app(DirektoriPerusahaan::class),
-        );
+        $direktori = app(DirektoriPerusahaan::class);
+
+        $this->assertNotInstanceOf(DirektoriBerlapis::class, $direktori);
+        $this->assertSame(NominatimDirektori::ATRIBUSI, $direktori->atribusi());
     }
 }
