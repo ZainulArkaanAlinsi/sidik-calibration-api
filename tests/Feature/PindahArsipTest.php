@@ -65,13 +65,22 @@ class PindahArsipTest extends TestCase
         );
     }
 
-    /** Berkas yang sudah ada di tujuan nggak ditimpa diam-diam. */
+    /**
+     * Berkas yang isinya beda di tujuan nggak ditimpa diam-diam — DAN nggak
+     * bikin perintahnya bilang beres.
+     *
+     * Dua-duanya penting, dan yang kedua yang dulu bolong. Menjaga berkasnya
+     * itu benar: perintah ini nggak boleh menghancurkan data yang nggak dia
+     * kenal. Tapi menjaganya sambil keluar dengan kode 0 dan menutup dengan
+     * "Sekarang aman menyetel ARSIP_DRIVER" itu bohong — dan bohongnya persis
+     * di titik yang dipercaya operator buat memutuskan.
+     */
     public function test_yang_sudah_ada_dilewat_bukan_ditimpa(): void
     {
         $this->isiArsip();
         Storage::disk('s3')->put('certificates/abc.pdf', 'versi lama yang nggak boleh hilang');
 
-        $this->artisan('arsip:pindah --jalankan')->assertSuccessful();
+        $this->artisan('arsip:pindah --jalankan')->assertFailed();
 
         $this->assertSame(
             'versi lama yang nggak boleh hilang',
@@ -108,5 +117,62 @@ class PindahArsipTest extends TestCase
     public function test_tujuan_arsip_sendiri_ditolak(): void
     {
         $this->artisan('arsip:pindah --tujuan=arsip --jalankan')->assertFailed();
+    }
+
+    /**
+     * Pindah yang terputus di tengah harus KETAHUAN, bukan dilewat.
+     *
+     * Ini skenario yang wajar, bukan yang aneh: jaringan putus, proses kena
+     * OOM, jatah 512 MB Render kehabisan. Yang ditinggalkan bukan berkas yang
+     * HILANG, tapi berkas yang KEPOTONG.
+     *
+     * Dibaca sebagai "sudah ada, berarti sudah beres", jalan ulang bakal
+     * melewatinya, melaporkan `0 gagal`, dan menutup dengan "Sekarang aman
+     * menyetel ARSIP_DRIVER". Operator menggeser saklarnya sambil merasa sudah
+     * memverifikasi, dan yang diunduh pelanggan PDF yang kepotong — persis
+     * kerusakan yang perintah ini dibikin buat mencegah.
+     *
+     * Jadi yang bikin sebuah berkas boleh dilewat bukan keberadaannya, tapi
+     * ukurannya yang sama dengan sumber.
+     */
+    public function test_berkas_tujuan_yang_kepotong_bikin_gagal(): void
+    {
+        $this->isiArsip();
+
+        // Sisa pindah sebelumnya yang mati di tengah.
+        Storage::disk('s3')->put('certificates/abc.pdf', '%PDF-1.7 is');
+
+        $this->artisan('arsip:pindah --jalankan')
+            ->expectsOutputToContain('BENTROK: certificates/abc.pdf')
+            ->assertFailed();
+
+        // Nggak dihancurkan diam-diam: operator yang memutuskan.
+        $this->assertSame('%PDF-1.7 is', Storage::disk('s3')->get('certificates/abc.pdf'));
+    }
+
+    /** Sesudah bentroknya diperiksa, `--timpa` yang membereskan. */
+    public function test_timpa_membereskan_berkas_yang_kepotong(): void
+    {
+        $this->isiArsip();
+        Storage::disk('s3')->put('certificates/abc.pdf', '%PDF-1.7 is');
+
+        $this->artisan('arsip:pindah --jalankan --timpa')->assertSuccessful();
+
+        $this->assertSame(
+            Storage::disk('arsip')->get('certificates/abc.pdf'),
+            Storage::disk('s3')->get('certificates/abc.pdf'),
+        );
+    }
+
+    /** Berkas yang sudah sama persis tetap dilewat — jalan ulang nggak mahal. */
+    public function test_berkas_tujuan_yang_sudah_sama_tetap_dilewat(): void
+    {
+        $this->isiArsip();
+
+        $this->artisan('arsip:pindah --jalankan')->assertSuccessful();
+
+        $this->artisan('arsip:pindah --jalankan')
+            ->expectsOutputToContain('lewat (sudah sama): certificates/abc.pdf')
+            ->assertSuccessful();
     }
 }

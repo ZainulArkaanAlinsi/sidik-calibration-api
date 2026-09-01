@@ -356,7 +356,14 @@ Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
    Kunci disalin apa adanya dan ukurannya diverifikasi sesudah mendarat. Ini langkah yang paling
    gampang salah: kolom di database menyimpan KUNCI, bukan URL, jadi kunci yang bergeser sedikit
    saja bikin SELURUH berkas lama tidak ketemu — dan gejalanya identik dengan disk yang kehapus.
-4. Baru setel `ARSIP_DRIVER=s3`. Kalau langkah 3 melaporkan ada yang gagal, **jangan digeser**.
+
+   Perintahnya aman diulang, dan yang sudah sama persis dilewat. Kalau dia melaporkan **BENTROK**,
+   itu berkas yang sudah ada di tujuan tapi ukurannya beda dari sumber — biasanya sisa pindah yang
+   mati di tengah. Berkasnya tidak disentuh dan perintahnya keluar gagal, supaya tidak ada yang
+   menggeser `ARSIP_DRIVER` di atas berkas kepotong. Periksa dulu mana yang benar; kalau yang di
+   sumber, jalankan ulang dengan `--timpa`.
+4. Baru setel `ARSIP_DRIVER=s3` — dan cuma kalau langkah 3 keluar **sukses**. Selama masih ada
+   yang gagal atau bentrok, **jangan digeser**.
 
 Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
 tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).

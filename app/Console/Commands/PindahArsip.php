@@ -29,12 +29,24 @@ use Illuminate\Support\Facades\Storage;
  * rawan salah ketik jadi satu perintah yang bisa diulang dan dicoba kering
  * dulu.
  *
+ * ## Tiga keadaan buat berkas yang sudah ada di tujuan
+ *
+ * Bedanya penting, karena "sudah ada" saja bukan kabar baik:
+ *
+ *   - ukurannya SAMA dengan sumber  → dilewat, jalan ulang jadi murah;
+ *   - ukurannya BEDA                → BENTROK: berkasnya nggak disentuh, tapi
+ *                                     perintahnya keluar gagal. Ini sisa
+ *                                     pindah yang mati di tengah, dan kalau
+ *                                     dibaca "sudah beres" operator menggeser
+ *                                     ARSIP_DRIVER di atas berkas kepotong;
+ *   - bentroknya sudah diperiksa    → `--timpa` yang membereskan.
+ *
  * ## Urutan pakainya
  *
  *   1. Isi keempat `AWS_*` di Render (bucket R2 sudah dibuat).
  *   2. `php artisan arsip:pindah` — coba kering, cuma melaporkan.
  *   3. `php artisan arsip:pindah --jalankan` — salin beneran.
- *   4. BARU setel `ARSIP_DRIVER=s3`.
+ *   4. BARU setel `ARSIP_DRIVER=s3` — dan cuma kalau langkah 3 keluar sukses.
  *
  * Digeser sebelum langkah 3 selesai, berkas lama tidak ketemu.
  */
@@ -100,11 +112,39 @@ class PindahArsip extends Command
         $salin = 0;
         $lewat = 0;
         $gagal = 0;
+        $bentrok = 0;
 
         foreach ($berkas as $kunci) {
+            $ukuranSumber = (int) $sumber->size($kunci);
+
+            // Yang bikin sebuah berkas boleh dilewat itu UKURANNYA yang sama,
+            // bukan sekadar keberadaannya.
+            //
+            // Bedanya kelihatan waktu pindah sebelumnya mati di tengah — dan
+            // itu skenario yang wajar, bukan yang aneh: jaringan putus, proses
+            // kena OOM, jatah 512 MB Render kehabisan. Yang ditinggalkan bukan
+            // berkas yang HILANG, tapi berkas yang KEPOTONG.
+            //
+            // Dibaca sebagai "sudah ada", jalan ulang bakal melewatinya,
+            // melaporkan `0 gagal`, dan menutup dengan "Sekarang aman menyetel
+            // ARSIP_DRIVER". Operator menggeser saklarnya sambil merasa sudah
+            // memverifikasi, dan yang diunduh pelanggan PDF yang kepotong —
+            // persis kerusakan yang perintah ini dibikin buat mencegah.
             if ($ke->exists($kunci) && ! $this->option('timpa')) {
-                $this->line("  lewat (sudah ada): {$kunci}");
-                $lewat++;
+                if ((int) $ke->size($kunci) === $ukuranSumber) {
+                    $this->line("  lewat (sudah sama): {$kunci}");
+                    $lewat++;
+
+                    continue;
+                }
+
+                $this->error(sprintf(
+                    '  BENTROK: %s sudah ada di tujuan tapi ukurannya beda (%d B di sana, %d B di sumber).',
+                    $kunci,
+                    (int) $ke->size($kunci),
+                    $ukuranSumber,
+                ));
+                $bentrok++;
 
                 continue;
             }
@@ -138,7 +178,13 @@ class PindahArsip extends Command
             // `true` buat penulisan yang terpotong, dan berkas terpotong di
             // bucket itu kerusakan yang baru ketahuan waktu pelanggan mengunduh.
             if ((int) $ke->size($kunci) !== strlen($isi)) {
-                $this->error("  GAGAL: ukuran nggak cocok sesudah disalin: {$kunci}");
+                // Yang kepotong DIHAPUS, bukan ditinggal. Dua alasannya:
+                // selama dia ada, aplikasi bisa menyajikannya sebagai berkas
+                // yang sah; dan tidak-ada jauh lebih gampang dilihat daripada
+                // ada-tapi-salah.
+                $ke->delete($kunci);
+
+                $this->error("  GAGAL: ukuran nggak cocok sesudah disalin, yang kepotong dihapus: {$kunci}");
                 $gagal++;
 
                 continue;
@@ -148,10 +194,17 @@ class PindahArsip extends Command
         }
 
         $this->newLine();
-        $this->info("Selesai: {$salin} disalin, {$lewat} dilewat, {$gagal} gagal.");
+        $this->info("Selesai: {$salin} disalin, {$lewat} dilewat, {$bentrok} bentrok, {$gagal} gagal.");
 
         if (! $jalankan) {
             $this->warn('Ini COBA KERING. Tambahkan --jalankan buat menyalin beneran.');
+        }
+
+        if ($bentrok > 0) {
+            $this->error('Ada berkas yang isinya beda di tujuan — JANGAN geser ARSIP_DRIVER dulu.');
+            $this->line('  Periksa dulu yang mana yang benar. Kalau yang di sumber, jalankan ulang dengan --timpa.');
+
+            return self::FAILURE;
         }
 
         if ($gagal > 0) {
