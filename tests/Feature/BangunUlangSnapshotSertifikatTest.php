@@ -163,4 +163,55 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
             $this->assertNull($belum->fresh()->certificate);
         }
     }
+
+    /**
+     * Perbaikan TATA LETAK tidak menyentuh snapshot sama sekali.
+     *
+     * Jadi tanpa jalur ini, sertifikat lama yang PDF-nya masih beredar dengan
+     * bentuk lama (mis. dua halaman, atau tanda tangan yang meluber) tidak akan
+     * pernah kesentuh perintah ini — dia `continue` begitu snapshot-nya sama,
+     * dan snapshot-nya memang selalu sama untuk perbaikan semacam itu.
+     */
+    public function test_render_ulang_pdf_nulis_ulang_walau_snapshot_sama(): void
+    {
+        Storage::fake('arsip');
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Dijalankan sekali dulu supaya snapshot-nya pasti sudah mutakhir —
+        // jalan berikutnya dijamin masuk cabang "nggak berubah".
+        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+
+        $sertifikat->forceFill(['pdf_path' => 'certificates/uji.pdf'])->save();
+        Storage::disk('arsip')->put('certificates/uji.pdf', 'BUKAN-PDF');
+
+        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+            ->assertSuccessful();
+
+        $this->assertStringStartsWith(
+            '%PDF',
+            (string) Storage::disk('arsip')->get('certificates/uji.pdf'),
+            'PDF-nya nggak ditulis ulang, padahal --render-ulang-pdf dipasang.',
+        );
+    }
+
+    /** Tanpa flag-nya, berkas yang snapshot-nya sama TIDAK disentuh. */
+    public function test_tanpa_flag_pdf_nggak_disentuh_kalau_snapshot_sama(): void
+    {
+        Storage::fake('arsip');
+        $sertifikat = $this->sertifikatTerbit();
+
+        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+
+        $sertifikat->forceFill(['pdf_path' => 'certificates/uji.pdf'])->save();
+        Storage::disk('arsip')->put('certificates/uji.pdf', 'BUKAN-PDF');
+
+        $this->artisan('sertifikat:bangun-ulang')->assertSuccessful();
+
+        $this->assertSame(
+            'BUKAN-PDF',
+            (string) Storage::disk('arsip')->get('certificates/uji.pdf'),
+            'Berkasnya ditulis ulang tanpa diminta — perintah ini nggak boleh '
+            .'menyentuh yang nggak berubah kecuali disuruh.',
+        );
+    }
 }

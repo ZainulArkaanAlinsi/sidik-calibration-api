@@ -55,7 +55,8 @@ class BangunUlangSnapshotSertifikat extends Command
 {
     protected $signature = 'sertifikat:bangun-ulang
         {sesi?* : Nomor sesi tertentu (kosong = semua yang udah terbit)}
-        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa}';
+        {--dry-run : Cuma nampilin yang bakal berubah, nggak nulis apa-apa}
+        {--render-ulang-pdf : Tulis ulang PDF-nya walau snapshot-nya nggak berubah}';
 
     protected $description = 'Bangun ulang snapshot & PDF sertifikat terbit, nomor & QR-nya tetap';
 
@@ -67,6 +68,7 @@ class BangunUlangSnapshotSertifikat extends Command
     ): int {
         $nomorSesi = (array) $this->argument('sesi');
         $keringMode = (bool) $this->option('dry-run');
+        $renderUlangPdf = (bool) $this->option('render-ulang-pdf');
 
         $daftar = Certificate::query()
             ->where('status', Certificate::STATUS_TERBIT)
@@ -117,6 +119,34 @@ class BangunUlangSnapshotSertifikat extends Command
                 $sesi->nomor_sesi ?? '-',
                 $sama ? 'nggak berubah' : "{$lama}  →  {$envBaru}",
             ));
+
+            // Snapshot-nya sama, tapi CARA merendernya berubah.
+            //
+            // Perbaikan tata letak (mis. penjamin satu halaman, atau penjepit
+            // ukuran tanda tangan) nggak menyentuh snapshot sama sekali — jadi
+            // tanpa jalur ini, sertifikat lama yang PDF-nya masih beredar dan
+            // masih dua halaman nggak akan pernah kesentuh perintah ini.
+            //
+            // Yang ditulis ulang CUMA berkasnya. Snapshot-nya sengaja nggak
+            // di-`update`: dia identik, dan menulis ulang baris yang nggak
+            // berubah cuma bikin jejak audit yang membingungkan.
+            if ($sama && $renderUlangPdf && ! $keringMode && (string) $sertifikat->pdf_path !== '') {
+                try {
+                    $isiPdf = $satuHalaman->isi($sertifikat);
+
+                    if (Storage::disk('arsip')->put($sertifikat->pdf_path, $isiPdf) === false) {
+                        throw new RuntimeException("gagal nulis PDF ke {$sertifikat->pdf_path}");
+                    }
+
+                    $this->line('  └─ PDF ditulis ulang (snapshot nggak berubah)');
+                    $berubah++;
+                } catch (Throwable $e) {
+                    $this->error("{$sertifikat->nomor}: gagal nulis ulang PDF — {$e->getMessage()}");
+                    $gagal++;
+                }
+
+                continue;
+            }
 
             if ($keringMode || $sama) {
                 continue;
