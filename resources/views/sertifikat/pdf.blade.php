@@ -1073,13 +1073,46 @@
                           pertama file ini nge-negate, dan efeknya arah drag di UI
                           kebalik: geser ke atas, tanda tangannya turun.
                         --}}
+                        {{--
+                          TINGGI ikut dicetak, bukan cuma lebar.
+                          Dulu cuma lebarnya yang disetel, dan tingginya dibiarkan
+                          ikut rasio gambar — kotak ini nggak memotong apa pun, jadi
+                          gambar yang nggak lebar-mendatar meluber KE ATAS nimpa tabel
+                          di atasnya. Gambar 800x800 di lebar 35 mm jadi setinggi 35 mm
+                          di kotak yang cuma 12,17 mm: luber 22,8 mm.
+
+                          Angkanya dihitung App\Support\UkuranTandaTangan, bukan di
+                          sini — `max-height` nggak diandelin dompdf, dan aritmetika di
+                          template nggak bisa diuji sendirian.
+                        --}}
+                        {{--
+                          `$ukuranTtd` dihitung DataTampilanSertifikat dari berkas
+                          gambarnya, dan semua jalur produksi lewat sana.
+
+                          Yang dipanggil langsung `view('sertifikat.pdf', [...])`
+                          dengan array rakitan sendiri (test template) nggak
+                          punya berkasnya, jadi rasio gambarnya nggak ketahuan.
+                          Di situ setelan admin dipakai APA ADANYA — tingginya
+                          nggak ditulis sama sekali.
+
+                          Sengaja BUKAN menjepit ke tinggi kotak: tanpa rasio,
+                          "menjepit" itu menebak, dan tebakannya bikin gambar
+                          gepeng plus geseran admin hilang diam-diam. Lebih baik
+                          jalur non-produksi ini berperilaku persis seperti dulu
+                          daripada berperilaku salah dengan percaya diri.
+                        --}}
+                        @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal'] ?? null)
                         <img
                             src="{{ $tandaTangan }}"
                             alt="Tanda tangan"
                             style="
-                                width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                @if ($ukuran === null)width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                @elseif (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;
+                                height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                @else height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                @endif
                                 left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
-                                bottom: {{ $posisiTtd['geser_y_mm'] ?? 0 }}mm;
+                                bottom: {{ $ukuran === null ? ($posisiTtd['geser_y_mm'] ?? 0) : round($ukuran['geser_y_mm'], 2) }}mm;
                             "
                         >
                     @endif
