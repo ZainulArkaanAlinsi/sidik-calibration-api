@@ -25,6 +25,20 @@ class CertificateTableActionsTest extends TestCase
 
     private User $admin;
 
+    /**
+     * PDF palsu yang UKURANNYA masuk akal.
+     *
+     * `BerkasPdfSertifikat` menolak berkas di bawah 1 KB sebagai penulisan yang
+     * TERPOTONG — `Storage::put()` menganggap tulisan kosong sebagai sukses dan
+     * `exists()` sesudahnya balik `true`, jadi "ada" bukan berarti "utuh".
+     * Fixture 17 byte bikin sertifikat ini dinilai rusak lalu dicoba dibangun
+     * ulang, dan itu bukan yang diuji di berkas ini.
+     */
+    private function pdfPalsu(): string
+    {
+        return '%PDF-1.7 dummy pdf content'.str_repeat(' ', 2048);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -38,7 +52,7 @@ class CertificateTableActionsTest extends TestCase
     public function test_admin_bisa_unduh_pdf_sertifikat_yang_terbit(): void
     {
         $sertifikat = Certificate::factory()->create(['pdf_path' => 'certificates/abc.pdf']);
-        Storage::disk('arsip')->put($sertifikat->pdf_path, 'dummy pdf content');
+        Storage::disk('arsip')->put($sertifikat->pdf_path, $this->pdfPalsu());
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)
@@ -80,7 +94,7 @@ class CertificateTableActionsTest extends TestCase
     public function test_tombol_terbitkan_ulang_disembunyikan_untuk_sertifikat_yang_sudah_terbit(): void
     {
         $sertifikat = Certificate::factory()->create(['pdf_path' => 'certificates/sudah-terbit.pdf']);
-        Storage::disk('arsip')->put($sertifikat->pdf_path, 'dummy pdf content');
+        Storage::disk('arsip')->put($sertifikat->pdf_path, $this->pdfPalsu());
 
         Livewire::actingAs($this->admin)
             ->test(ListCertificates::class)

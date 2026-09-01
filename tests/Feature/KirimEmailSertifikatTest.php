@@ -90,7 +90,17 @@ class KirimEmailSertifikatTest extends TestCase
             'pdf_path' => 'certificates/QRKIRIM123.pdf',
         ]);
 
-        Storage::disk('arsip')->put('certificates/QRKIRIM123.pdf', '%PDF-1.7 palsu buat test');
+        // PDF palsu yang UKURANNYA masuk akal, bukan 24 byte.
+        //
+        // `BerkasPdfSertifikat` menolak berkas di bawah 1 KB sebagai penulisan
+        // yang terpotong — penjagaan yang memang diminta, karena `Storage::put()`
+        // menganggap tulisan kosong sebagai sukses dan `exists()` sesudahnya
+        // balik `true`. Fixture 24 byte bikin sertifikat ini dinilai rusak lalu
+        // dibangun ulang, dan itu bukan yang diuji di berkas ini.
+        Storage::disk('arsip')->put(
+            'certificates/QRKIRIM123.pdf',
+            '%PDF-1.7 palsu buat test'.str_repeat(' ', 2048),
+        );
 
         return $sertifikat->fresh();
     }

@@ -528,20 +528,43 @@ class TimbanganProfile extends CalibrationProfile
      */
     private function bagianSertifikatKeterulangan(array $ket): array
     {
-        return [
-            [
-                'label' => 'Half Capacity',
-                'kapasitas' => (float) $ket['nominal_mid'],
-                'stdev' => (float) $ket['stdev_mid'],
-                'maks_beda' => (float) ($ket['mid']['maks_beda'] ?? 0.0),
-            ],
-            [
-                'label' => 'Full Capacity',
-                'kapasitas' => (float) $ket['nominal_maks'],
-                'stdev' => (float) $ket['stdev_maks'],
-                'maks_beda' => (float) ($ket['maks']['maks_beda'] ?? 0.0),
-            ],
+        $slot = [
+            ['Half Capacity', 'mid', 'nominal_mid', 'stdev_mid'],
+            ['Full Capacity', 'maks', 'nominal_maks', 'stdev_maks'],
         ];
+
+        $baris = [];
+
+        foreach ($slot as [$label, $blok, $kunciNominal, $kunciStdev]) {
+            // Slot yang TIDAK diisi teknisi nggak dicetak.
+            //
+            // Ini bukan kerapian, ini menolak mengarang: waktu bloknya kosong,
+            // `keterulangan()` tetap memulangkan STDEV — bukan nol, melainkan
+            // lantai `Sres` (0,82 × resolusi/2), angka yang diturunkan dari
+            // RESOLUSI ALAT dan bukan dari satu pun pembacaan. Lantai itu sah
+            // di dalam budget (timbangan yang sepuluh pembacaannya identik
+            // memang bersebaran nol, dan nol di budget berarti mengaku tidak
+            // punya sebaran sama sekali) — tapi di kolom hasil sertifikat dia
+            // terbaca sebagai "keterulangan diukur, hasilnya 0,01 kg" padahal
+            // tidak ada yang diukur.
+            //
+            // Bentuknya persis jebakan `IFERROR(…,"")` yang dilarang ditiru:
+            // sel kosong yang dibaca sebagai angka. Yang benar barisnya tidak
+            // ada, dan admin diperingatkan sebelum menyetujui — lihat
+            // `peringatanSesi()`.
+            if ((int) ($ket[$blok]['n'] ?? 0) === 0) {
+                continue;
+            }
+
+            $baris[] = [
+                'label' => $label,
+                'kapasitas' => (float) $ket[$kunciNominal],
+                'stdev' => (float) $ket[$kunciStdev],
+                'maks_beda' => (float) ($ket[$blok]['maks_beda'] ?? 0.0),
+            ];
+        }
+
+        return $baris;
     }
 
     /**
@@ -857,6 +880,35 @@ class TimbanganProfile extends CalibrationProfile
         $kapasitas = $sesi->spesifikasi_alat['kapasitas'] ?? $alat?->range_max;
         $kapasitas = $kapasitas === null ? null : (float) $kapasitas;
         $satuan = (string) ($alat?->satuan ?? 'kg');
+
+        // Blok keterulangan yang KOSONG bikin bagian 1 sertifikat nggak punya
+        // baris sama sekali (lihat `bagianSertifikatKeterulangan`). Itu
+        // perilaku yang benar — mengarang angka lebih buruk — tapi kalau
+        // diam-diam, yang terbit lembar terakreditasi tanpa Repeatability dan
+        // nggak ada yang sadar sampai pelanggan bertanya.
+        //
+        // PERINGATAN, bukan error: sesi yang keterulangannya belum diisi tetap
+        // boleh terbit kalau lab memang memutuskan begitu. Yang berubah cuma
+        // keputusannya jadi sadar.
+        $ket = (array) ($sesi->spesifikasi_alat['keterulangan'] ?? []);
+        $adaIsi = false;
+
+        foreach (['mid', 'maks'] as $blok) {
+            if (($ket[$blok]['mi'] ?? []) !== []) {
+                $adaIsi = true;
+            }
+        }
+
+        if (! $adaIsi) {
+            $peringatan[] = [
+                'kode' => 'keterulangan_kosong',
+                'pesan' => 'Blok Repeatability belum diisi sama sekali, jadi bagian 1 sertifikat '
+                    .'terbit TANPA baris. Angkanya sengaja nggak dikarang: waktu bloknya kosong, '
+                    .'STDEV yang keluar itu lantai Sres (0,82 × resolusi/2) — turunan resolusi '
+                    .'alat, bukan hasil ukur. Isi dulu blok itu, atau setujui secara sadar kalau '
+                    .'sesi ini memang nggak menguji keterulangan.',
+            ];
+        }
 
         if ($kapasitas !== null && $kapasitas > 0.0) {
             $kapasitasKg = strtolower(trim($satuan)) === 'g' ? $kapasitas / 1000.0 : $kapasitas;
