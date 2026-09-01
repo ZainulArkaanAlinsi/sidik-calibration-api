@@ -12,6 +12,7 @@ use App\Support\Angka;
 use App\Support\GridSensorMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\TimbanganMentah;
+use App\Support\WaktuMentah;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -114,6 +115,14 @@ class HitungUlangSesi extends Command
                 // tanpa menghitung apa pun.
                 $timbangan = TimbanganMentah::dari($baris);
 
+                // Dua deret waktu lembar Timer/Stopwatch. Diperiksa dengan
+                // alasan yang persis sama dengan Timbangan di atas: barisnya
+                // PUNYA `peran_sensor`, cuma kosakatanya lain lagi
+                // (`waktu_standar`/`waktu_uut`). Kalau tidak dites duluan, tiap
+                // titiknya jatuh ke cabang alat lain, ketemu deret yang bukan
+                // miliknya, dan angkanya salah tanpa satu pun error.
+                $waktu = WaktuMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -125,7 +134,18 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($timbangan !== []) {
+                if ($waktu !== []) {
+                    // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah
+                    // baris: satu titik berisi 3 standar + 3 UUT, jadi hitungan
+                    // datar tetap lolos walau satu sisinya kosong — dan koreksi
+                    // yang lahir dari sisi yang kosong itu justru sebesar
+                    // koreksi standarnya, angka yang kelihatan masuk akal.
+                    if (count($waktu['waktu_standar']) < 2 || count($waktu['waktu_uut']) < 2) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($timbangan !== []) {
                     // Gerbangnya KEEMPAT pembacaan, bukan jumlah baris: satu
                     // titik berisi 4 pembacaan + sampai 6 baris nominal, jadi
                     // hitungan datar selalu lolos walau pembacaannya bolong.
@@ -209,6 +229,12 @@ class HitungUlangSesi extends Command
                         // eksentrisitas, histeresis) ikut lewat
                         // `spesifikasi_alat` di bawah.
                         ...$timbangan,
+                        // Dua deret waktu lembar Timer/Stopwatch. Kejadian
+                        // KEDELAPAN dengan pola yang sama, jadi ditulis bareng
+                        // profilnya alih-alih ditemukan belakangan lewat
+                        // `hitung_ulang_gagal` di tiap titik. Kosong buat dua
+                        // puluh tiga alat lain.
+                        ...$waktu,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Organization;
-use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -255,7 +256,20 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // `SIDIK-FM-…`, dan yang ketemu cuma SATU — `SIDIK-FM-CAL-2403_Rev. 0`
         // di footer sheet SERTIFIKAT, formulir sertifikat bersama itu lagi.
         // Nomor lembar kerjanya sendiri memang belum pernah dikirim.
-        $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro', 'timbangan'];
+        // `timer_stopwatch`, `centrifuge`, dan `tachometer` masuk 1 Sep 2026
+        // dengan alasan yang SAMA, dan sudah dicek dengan cara yang sama:
+        // ketiga workbook master kelompok "Waktu dan Frekuensi" disapu buat
+        // pola `SIDIK-FM-…`, dan yang ketemu cuma SATU di masing-masing —
+        // `SIDIK-FM-CAL-2403_Rev. 0`, formulir sertifikat bersama itu lagi
+        // (Tachometer & Timer di footer sheet `SERTIFIKAT`, Centrifuge di
+        // `INPUT DATA!B78`). Nomor lembar kerjanya sendiri belum pernah
+        // dikirim. Yang ADA cuma nomor Instruksi Kerjanya
+        // (`SIDIK-IK-CAL-0509_Rev.6` & `SIDIK-IK-CAL-0511_Rev.6`), dan itu
+        // masuk lewat `kodeMetode()`, bukan `kode_dokumen`.
+        $belumAdaKertasnya = [
+            'gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro', 'timbangan',
+            'timer_stopwatch', 'centrifuge', 'tachometer',
+        ];
 
         // `timbangan` di daftar itu SETENGAH benar, dan bedanya perlu ditulis.
         //
@@ -505,7 +519,7 @@ class SemuaProfilLembarKerjaTest extends TestCase
         $this->expectException(\LogicException::class);
 
         try {
-            $this->actingAs(\App\Models\User::factory()->create())
+            $this->actingAs(User::factory()->create())
                 ->getJson('/api/calibrations/lembar-kerja?instrumen=Buret+Digital')
                 ->assertStatus(422)
                 ->assertJsonPath('message', fn (string $m): bool => str_contains($m, 'form generik'));

@@ -157,10 +157,59 @@ class ProfilDariNamaAlatTest extends TestCase
             // master yang turun dari lab. Yang menjaga arah sebaliknya —
             // `test_timbangan_dapat_lembarnya_sendiri` di bawah.
             'Pressure Gauge' => ['Pressure Gauge'],
-            'Timer/Stopwatch' => ['Timer/Stopwatch'],
+            // `Timer/Stopwatch` PINDAH dari sini 1 Sep 2026, bareng
+            // `Centrifuge` & `Infrared Tachometer` yang memang belum pernah
+            // ada di daftar ini: ketiganya sekarang punya lembar kerjanya
+            // sendiri (alat ke-22..24, kelompok "Waktu dan Frekuensi"), dari
+            // tiga workbook master yang turun dari lab. Yang menjaga arah
+            // sebaliknya — `test_alat_waktu_frekuensi_dapat_lembarnya_sendiri`.
             'kosong' => [''],
             'spasi doang' => ['   '],
         ];
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-22..24: nama yang HARUS mendarat di ketiga
+     * profil kelompok "Waktu dan Frekuensi".
+     *
+     * Yang paling rawan `Stopwatch` — `INPUT DATA!E10` master menulisnya
+     * begitu, tanpa satu pun kata "Timer" di dalamnya. Tanpa alias, alat itu
+     * jatuh ke form generik dan seluruh mesin hitung waktunya nggak pernah
+     * kepanggil.
+     *
+     * Tiga nama diadu supaya jelas TETAP bukan milik kelompok ini:
+     * `Thermohygrometer` (memuat "meter", bukan alat waktu), `Flow Meter
+     * Cairan (Flowrate)` (satuannya Lpm — per MENIT, tapi besarannya aliran),
+     * dan `Dial Indicator` (panjang).
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaWaktuFrekuensi(): array
+    {
+        return [
+            'lampiran akreditasi no. 37' => ['Timer/Stopwatch', 'timer_stopwatch'],
+            'nama sesi contoh master' => ['Stopwatch', 'timer_stopwatch'],
+            'stopwatch bermerk' => ['Stopwatch Casio HS-80TW', 'timer_stopwatch'],
+            'timer saja' => ['Timer', 'timer_stopwatch'],
+            'lampiran akreditasi no. 38' => ['Centrifuge', 'centrifuge'],
+            'centrifuge bermerk' => ['Centrifuge Hettich EBA 200', 'centrifuge'],
+            'lampiran akreditasi no. 39' => ['Infrared Tachometer', 'tachometer'],
+            'tachometer pendek' => ['Tachometer', 'tachometer'],
+            'tachometer digital' => ['Digital Tachometer', 'tachometer'],
+            'suhu, BUKAN waktu' => ['Thermohygrometer', 'thermohygro'],
+            'aliran per menit, BUKAN waktu' => ['Flow Meter Cairan (Flowrate)', null],
+            'panjang, BUKAN waktu' => ['Dial Indicator', null],
+        ];
+    }
+
+    #[DataProvider('namaWaktuFrekuensi')]
+    public function test_alat_waktu_frekuensi_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
     }
 
     /**

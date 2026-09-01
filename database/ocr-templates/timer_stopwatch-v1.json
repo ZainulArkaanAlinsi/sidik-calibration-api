@@ -1,0 +1,1539 @@
+{
+    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "template_id": "timer_stopwatch",
+    "versi": 1,
+    "kode_dokumen": null,
+    "terverifikasi": false,
+    "ukuran_referensi": {
+        "w": 1654,
+        "h": 2339,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 1564,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 1564,
+            "y": 2249,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 2249,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "timer_stopwatch|v1",
+        "kotak": {
+            "x": 1309,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 292,
+                "y": 859,
+                "w": 424,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 704,
+                "y": 859,
+                "w": 424,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 1116,
+                "y": 859,
+                "w": 424,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "waktu_standar",
+            "judul": "Pembacaan Stopwatch Standar",
+            "kiri": 90,
+            "sel": {
+                "waktu_standar|1|1|jam": {
+                    "x": 298,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|1|jam": {
+                    "x": 298,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|1|jam": {
+                    "x": 298,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|1|jam": {
+                    "x": 298,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|1|jam": {
+                    "x": 298,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|1|jam": {
+                    "x": 298,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|1|jam": {
+                    "x": 298,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|1|jam": {
+                    "x": 298,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|1|jam": {
+                    "x": 298,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|1|jam": {
+                    "x": 298,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|1|menit": {
+                    "x": 401,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|1|menit": {
+                    "x": 401,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|1|menit": {
+                    "x": 401,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|1|menit": {
+                    "x": 401,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|1|menit": {
+                    "x": 401,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|1|menit": {
+                    "x": 401,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|1|menit": {
+                    "x": 401,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|1|menit": {
+                    "x": 401,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|1|menit": {
+                    "x": 401,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|1|menit": {
+                    "x": 401,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|1|detik": {
+                    "x": 504,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|1|detik": {
+                    "x": 504,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|1|detik": {
+                    "x": 504,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|1|detik": {
+                    "x": 504,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|1|detik": {
+                    "x": 504,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|1|detik": {
+                    "x": 504,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|1|detik": {
+                    "x": 504,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|1|detik": {
+                    "x": 504,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|1|detik": {
+                    "x": 504,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|1|detik": {
+                    "x": 504,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|1|milidetik": {
+                    "x": 607,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|1|milidetik": {
+                    "x": 607,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|1|milidetik": {
+                    "x": 607,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|1|milidetik": {
+                    "x": 607,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|1|milidetik": {
+                    "x": 607,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|1|milidetik": {
+                    "x": 607,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|1|milidetik": {
+                    "x": 607,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|1|milidetik": {
+                    "x": 607,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|1|milidetik": {
+                    "x": 607,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|1|milidetik": {
+                    "x": 607,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|2|jam": {
+                    "x": 710,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|2|jam": {
+                    "x": 710,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|2|jam": {
+                    "x": 710,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|2|jam": {
+                    "x": 710,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|2|jam": {
+                    "x": 710,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|2|jam": {
+                    "x": 710,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|2|jam": {
+                    "x": 710,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|2|jam": {
+                    "x": 710,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|2|jam": {
+                    "x": 710,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|2|jam": {
+                    "x": 710,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|2|menit": {
+                    "x": 813,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|2|menit": {
+                    "x": 813,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|2|menit": {
+                    "x": 813,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|2|menit": {
+                    "x": 813,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|2|menit": {
+                    "x": 813,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|2|menit": {
+                    "x": 813,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|2|menit": {
+                    "x": 813,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|2|menit": {
+                    "x": 813,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|2|menit": {
+                    "x": 813,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|2|menit": {
+                    "x": 813,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|2|detik": {
+                    "x": 916,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|2|detik": {
+                    "x": 916,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|2|detik": {
+                    "x": 916,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|2|detik": {
+                    "x": 916,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|2|detik": {
+                    "x": 916,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|2|detik": {
+                    "x": 916,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|2|detik": {
+                    "x": 916,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|2|detik": {
+                    "x": 916,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|2|detik": {
+                    "x": 916,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|2|detik": {
+                    "x": 916,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|2|milidetik": {
+                    "x": 1019,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|2|milidetik": {
+                    "x": 1019,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|2|milidetik": {
+                    "x": 1019,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|2|milidetik": {
+                    "x": 1019,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|2|milidetik": {
+                    "x": 1019,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|2|milidetik": {
+                    "x": 1019,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|2|milidetik": {
+                    "x": 1019,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|2|milidetik": {
+                    "x": 1019,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|2|milidetik": {
+                    "x": 1019,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|2|milidetik": {
+                    "x": 1019,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|3|jam": {
+                    "x": 1122,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|3|jam": {
+                    "x": 1122,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|3|jam": {
+                    "x": 1122,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|3|jam": {
+                    "x": 1122,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|3|jam": {
+                    "x": 1122,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|3|jam": {
+                    "x": 1122,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|3|jam": {
+                    "x": 1122,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|3|jam": {
+                    "x": 1122,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|3|jam": {
+                    "x": 1122,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|3|jam": {
+                    "x": 1122,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|3|menit": {
+                    "x": 1225,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|3|menit": {
+                    "x": 1225,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|3|menit": {
+                    "x": 1225,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|3|menit": {
+                    "x": 1225,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|3|menit": {
+                    "x": 1225,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|3|menit": {
+                    "x": 1225,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|3|menit": {
+                    "x": 1225,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|3|menit": {
+                    "x": 1225,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|3|menit": {
+                    "x": 1225,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|3|menit": {
+                    "x": 1225,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|3|detik": {
+                    "x": 1328,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|3|detik": {
+                    "x": 1328,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|3|detik": {
+                    "x": 1328,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|3|detik": {
+                    "x": 1328,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|3|detik": {
+                    "x": 1328,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|3|detik": {
+                    "x": 1328,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|3|detik": {
+                    "x": 1328,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|3|detik": {
+                    "x": 1328,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|3|detik": {
+                    "x": 1328,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|3|detik": {
+                    "x": 1328,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|1|3|milidetik": {
+                    "x": 1431,
+                    "y": 955,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|2|3|milidetik": {
+                    "x": 1431,
+                    "y": 1005,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|3|3|milidetik": {
+                    "x": 1431,
+                    "y": 1055,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|4|3|milidetik": {
+                    "x": 1431,
+                    "y": 1105,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|5|3|milidetik": {
+                    "x": 1431,
+                    "y": 1155,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|6|3|milidetik": {
+                    "x": 1431,
+                    "y": 1205,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|7|3|milidetik": {
+                    "x": 1431,
+                    "y": 1255,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|8|3|milidetik": {
+                    "x": 1431,
+                    "y": 1305,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|9|3|milidetik": {
+                    "x": 1431,
+                    "y": 1355,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_standar|10|3|milidetik": {
+                    "x": 1431,
+                    "y": 1405,
+                    "w": 103,
+                    "h": 50
+                }
+            }
+        },
+        {
+            "tabel_id": "waktu_uut",
+            "judul": "Pembacaan Alat yang Dikalibrasi",
+            "kiri": 90,
+            "sel": {
+                "waktu_uut|1|1|jam": {
+                    "x": 298,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|1|jam": {
+                    "x": 298,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|1|jam": {
+                    "x": 298,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|1|jam": {
+                    "x": 298,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|1|jam": {
+                    "x": 298,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|1|jam": {
+                    "x": 298,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|1|jam": {
+                    "x": 298,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|1|jam": {
+                    "x": 298,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|1|jam": {
+                    "x": 298,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|1|jam": {
+                    "x": 298,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|1|menit": {
+                    "x": 401,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|1|menit": {
+                    "x": 401,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|1|menit": {
+                    "x": 401,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|1|menit": {
+                    "x": 401,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|1|menit": {
+                    "x": 401,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|1|menit": {
+                    "x": 401,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|1|menit": {
+                    "x": 401,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|1|menit": {
+                    "x": 401,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|1|menit": {
+                    "x": 401,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|1|menit": {
+                    "x": 401,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|1|detik": {
+                    "x": 504,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|1|detik": {
+                    "x": 504,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|1|detik": {
+                    "x": 504,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|1|detik": {
+                    "x": 504,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|1|detik": {
+                    "x": 504,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|1|detik": {
+                    "x": 504,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|1|detik": {
+                    "x": 504,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|1|detik": {
+                    "x": 504,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|1|detik": {
+                    "x": 504,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|1|detik": {
+                    "x": 504,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|1|milidetik": {
+                    "x": 607,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|1|milidetik": {
+                    "x": 607,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|1|milidetik": {
+                    "x": 607,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|1|milidetik": {
+                    "x": 607,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|1|milidetik": {
+                    "x": 607,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|1|milidetik": {
+                    "x": 607,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|1|milidetik": {
+                    "x": 607,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|1|milidetik": {
+                    "x": 607,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|1|milidetik": {
+                    "x": 607,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|1|milidetik": {
+                    "x": 607,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|2|jam": {
+                    "x": 710,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|2|jam": {
+                    "x": 710,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|2|jam": {
+                    "x": 710,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|2|jam": {
+                    "x": 710,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|2|jam": {
+                    "x": 710,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|2|jam": {
+                    "x": 710,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|2|jam": {
+                    "x": 710,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|2|jam": {
+                    "x": 710,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|2|jam": {
+                    "x": 710,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|2|jam": {
+                    "x": 710,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|2|menit": {
+                    "x": 813,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|2|menit": {
+                    "x": 813,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|2|menit": {
+                    "x": 813,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|2|menit": {
+                    "x": 813,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|2|menit": {
+                    "x": 813,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|2|menit": {
+                    "x": 813,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|2|menit": {
+                    "x": 813,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|2|menit": {
+                    "x": 813,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|2|menit": {
+                    "x": 813,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|2|menit": {
+                    "x": 813,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|2|detik": {
+                    "x": 916,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|2|detik": {
+                    "x": 916,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|2|detik": {
+                    "x": 916,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|2|detik": {
+                    "x": 916,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|2|detik": {
+                    "x": 916,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|2|detik": {
+                    "x": 916,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|2|detik": {
+                    "x": 916,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|2|detik": {
+                    "x": 916,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|2|detik": {
+                    "x": 916,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|2|detik": {
+                    "x": 916,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|2|milidetik": {
+                    "x": 1019,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|2|milidetik": {
+                    "x": 1019,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|2|milidetik": {
+                    "x": 1019,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|2|milidetik": {
+                    "x": 1019,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|2|milidetik": {
+                    "x": 1019,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|2|milidetik": {
+                    "x": 1019,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|2|milidetik": {
+                    "x": 1019,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|2|milidetik": {
+                    "x": 1019,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|2|milidetik": {
+                    "x": 1019,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|2|milidetik": {
+                    "x": 1019,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|3|jam": {
+                    "x": 1122,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|3|jam": {
+                    "x": 1122,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|3|jam": {
+                    "x": 1122,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|3|jam": {
+                    "x": 1122,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|3|jam": {
+                    "x": 1122,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|3|jam": {
+                    "x": 1122,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|3|jam": {
+                    "x": 1122,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|3|jam": {
+                    "x": 1122,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|3|jam": {
+                    "x": 1122,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|3|jam": {
+                    "x": 1122,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|3|menit": {
+                    "x": 1225,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|3|menit": {
+                    "x": 1225,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|3|menit": {
+                    "x": 1225,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|3|menit": {
+                    "x": 1225,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|3|menit": {
+                    "x": 1225,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|3|menit": {
+                    "x": 1225,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|3|menit": {
+                    "x": 1225,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|3|menit": {
+                    "x": 1225,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|3|menit": {
+                    "x": 1225,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|3|menit": {
+                    "x": 1225,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|3|detik": {
+                    "x": 1328,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|3|detik": {
+                    "x": 1328,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|3|detik": {
+                    "x": 1328,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|3|detik": {
+                    "x": 1328,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|3|detik": {
+                    "x": 1328,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|3|detik": {
+                    "x": 1328,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|3|detik": {
+                    "x": 1328,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|3|detik": {
+                    "x": 1328,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|3|detik": {
+                    "x": 1328,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|3|detik": {
+                    "x": 1328,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|1|3|milidetik": {
+                    "x": 1431,
+                    "y": 1640,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|2|3|milidetik": {
+                    "x": 1431,
+                    "y": 1690,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|3|3|milidetik": {
+                    "x": 1431,
+                    "y": 1740,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|4|3|milidetik": {
+                    "x": 1431,
+                    "y": 1790,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|5|3|milidetik": {
+                    "x": 1431,
+                    "y": 1840,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|6|3|milidetik": {
+                    "x": 1431,
+                    "y": 1890,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|7|3|milidetik": {
+                    "x": 1431,
+                    "y": 1940,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|8|3|milidetik": {
+                    "x": 1431,
+                    "y": 1990,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|9|3|milidetik": {
+                    "x": 1431,
+                    "y": 2040,
+                    "w": 103,
+                    "h": 50
+                },
+                "waktu_uut|10|3|milidetik": {
+                    "x": 1431,
+                    "y": 2090,
+                    "w": 103,
+                    "h": 50
+                }
+            }
+        }
+    ]
+}
