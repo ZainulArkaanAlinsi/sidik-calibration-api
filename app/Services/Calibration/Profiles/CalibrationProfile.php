@@ -772,7 +772,14 @@ abstract class CalibrationProfile
      */
     public function kodeMetode(): ?string
     {
-        return null;
+        // Dibaca dari konstanta `KODE_METODE` yang sudah jadi konvensi sepuluh
+        // profil sebelum hook ini ada — jadi menyatakannya cukup dengan menulis
+        // konstantanya, dan tidak ada dua cara melakukan hal yang sama.
+        //
+        // `static::`, bukan `self::`: yang dicari konstanta di kelas ANAK.
+        $konstanta = static::class.'::KODE_METODE';
+
+        return defined($konstanta) ? (string) constant($konstanta) : null;
     }
 
     /**

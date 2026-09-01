@@ -139,11 +139,6 @@ class TimbanganProfile extends CalibrationProfile
      */
     public const KODE_METODE = 'SIDIK-IK-CAL-0505_Rev.7';
 
-    public function kodeMetode(): ?string
-    {
-        return self::KODE_METODE;
-    }
-
     public function kodeFormula(): string
     {
         return 'gum-timbangan';
