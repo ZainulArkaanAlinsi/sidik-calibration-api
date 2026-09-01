@@ -27,6 +27,9 @@ namespace App\Services\Calibration\Profiles;
  */
 class TachometerProfile extends ProfilPutaran
 {
+    /** Batas atas pita CMC tertinggi Tachometer di lampiran akreditasi. */
+    private const BATAS_AKREDITASI_RPM = 30000.0;
+
     public function kode(): string
     {
         return 'tachometer';
@@ -65,5 +68,16 @@ class TachometerProfile extends ProfilPutaran
     protected function judulLembar(): string
     {
         return 'Calibration Work Sheet - Infrared Tachometer';
+    }
+
+    /**
+     * Lampiran LK-285-IDN no. 39 berhenti di 30000 rpm — lihat
+     * `ProfilPutaran::peringatanSesi()`.
+     *
+     * @return array{float, int}
+     */
+    protected function batasAkreditasi(): array
+    {
+        return [self::BATAS_AKREDITASI_RPM, 39];
     }
 }

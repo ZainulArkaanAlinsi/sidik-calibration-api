@@ -192,7 +192,28 @@ mencakup.
 
 Kode **tidak menolak** sesinya (lab boleh mengkalibrasi di luar lingkup), tapi
 mengangkat **peringatan sesi** yang harus dilewati admin secara sadar —
-`CentrifugeProfile::peringatanSesi()`.
+`ProfilPutaran::peringatanSesi()`, berlaku untuk Centrifuge **dan** Tachometer.
+
+### Lantai CMC-nya sempat hilang, bukan cuma "di luar lingkup"
+
+Pemilihan pita CMC memakai titik **tertinggi** di blok, dan sebelumnya
+memulangkan `null` kalau tidak ada pita yang memuatnya. `null` berarti
+`max($u95, 0)` — lantainya lenyap untuk **satu blok penuh**, termasuk dua titik
+lain di blok itu yang justru berada di dalam lingkup. Terukur di sistem yang
+berjalan, pembacaan rapat di 60 & 100 rpm:
+
+| Blok (Tachometer) | Pita yang terpilih | U95 tercetak |
+|---|---|---|
+| 60, 100, 12000 rpm | 7000 – 30000 | **5,00 rpm** |
+| 60, 100, 40000 rpm | *(tidak ada)* | **4,44 rpm** |
+
+Makin jauh titik ketiganya keluar lingkup, makin **bagus** ketidakpastian yang
+terbit. Sekarang blok yang titik tertingginya tidak tercakup **meminjam pita
+terdekat** — perilaku master (blok 5 Centrifuge memakai CMC 1,6 rpm untuk 15000–
+25000 rpm) dan yang memang sudah dijanjikan teks peringatannya. Pita yang
+dipinjam ikut tertulis di jejak audit `type_b_components`, jadi lantai pinjaman
+bisa dibedakan dari lantai yang benar-benar menaungi titiknya. Dijaga
+`LantaiCmcPutaranTest`.
 
 > **[PERLU JAWABAN]** Dua kemungkinan: (a) blok 5 itu memang milik lembar
 > Tachometer yang ikut tersalin ke workbook Centrifuge, atau (b) lab memang
@@ -289,7 +310,7 @@ pertamanya lawan sel masternya.
 | 4 | Arah seri nominal | **Ditiru per kelompok** | 10 ms di satu titik |
 | 5 | Timer cuma 1 blok hidup | Bentuk SP1 dipakai semua | Belum terbukti di titik 2+ |
 | 6 | `uHRTB` 2 dari 4 operator | Dihitung benar | U95 naik tipis |
-| 7 | Centrifuge di luar lingkup | Peringatan sesi | — |
+| 7 | Centrifuge di luar lingkup | Peringatan sesi (kedua alat) + pita terdekat dipinjam | U95 di luar lingkup **naik** ke lantai CMC |
 | 8 | Pembagi drift beda | Ditiru | — |
 | 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
 | **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
