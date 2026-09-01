@@ -409,6 +409,16 @@ class TimerStopwatchProfile extends CalibrationProfile
      */
     private function jejakAudit(array $budget, array $h, ?CalibrationCapability $kemampuan): array
     {
+        // Diterjemahkan ke bentuk `nilai`/`u_baku` — lihat [barisAudit]. Tanpa
+        // ini seluruh komponen pulang `"nilai": null` di API.
+        $budget = array_map(fn (array $k): array => $this->barisAudit($k), $budget);
+
+        $budget[] = $this->barisPerbandinganCmc(
+            (float) $h['ketidakpastian_diperluas'],
+            $kemampuan?->ketidakpastian_terbaik === null ? null : (float) $kemampuan->ketidakpastian_terbaik,
+            self::SATUAN,
+        );
+
         $budget[] = [
             'sumber' => 'jejak_titik',
             'keterangan' => sprintf(
@@ -419,7 +429,8 @@ class TimerStopwatchProfile extends CalibrationProfile
                 $h['ketidakpastian_diperluas'], $kemampuan?->ketidakpastian_terbaik ?? '-',
             ),
             'distribusi' => 'jejak',
-            'u' => 0.0,
+            'nilai' => null,
+            'u_baku' => 0.0,
             'ci' => 0.0,
             'vi' => 0.0,
         ];

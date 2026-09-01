@@ -590,7 +590,15 @@ abstract class ProfilPutaran extends CalibrationProfile
      */
     protected function jejakAudit(array $hasil, array $t, ?CalibrationCapability $kemampuan): array
     {
-        $jejak = $hasil['budget'];
+        // Diterjemahkan ke bentuk `nilai`/`u_baku` — lihat [barisAudit]. Tanpa
+        // ini seluruh komponen pulang `"nilai": null` di API.
+        $jejak = array_map(fn (array $k): array => $this->barisAudit($k), $hasil['budget']);
+
+        $jejak[] = $this->barisPerbandinganCmc(
+            (float) $hasil['ketidakpastian_diperluas'],
+            $kemampuan?->ketidakpastian_terbaik === null ? null : (float) $kemampuan->ketidakpastian_terbaik,
+            self::SATUAN,
+        );
 
         $jejak[] = [
             'sumber' => 'jejak_titik',
@@ -605,7 +613,8 @@ abstract class ProfilPutaran extends CalibrationProfile
                 self::sebutKemampuan($kemampuan),
             ),
             'distribusi' => 'jejak',
-            'u' => 0.0,
+            'nilai' => null,
+            'u_baku' => 0.0,
             'ci' => 0.0,
             'vi' => 0.0,
         ];

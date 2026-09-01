@@ -1372,4 +1372,83 @@ abstract class CalibrationProfile
     {
         return $nilai;
     }
+
+    /**
+     * Satu komponen budget → satu baris `type_b_components`.
+     *
+     * ## Kenapa perlu diterjemahkan sama sekali
+     *
+     * Kalkulator menyimpan komponennya sebagai `u`/`ci`/`vi`, sementara
+     * `CalibrationResource::petakanTitik()` membaca kolom **`nilai`** — dan
+     * `?? null` di sana berarti bentuk yang tidak diterjemahkan pulang sebagai
+     *
+     *     {"sumber": "resolusi_standar", "distribusi": "persegi", "nilai": null}
+     *
+     * di SETIAP komponen. Nol error; yang hilang seluruh budget ketidakpastian
+     * dari layar teknisi dan admin — satu-satunya tempat angka U95 bisa
+     * ditelusuri asal-usulnya sebelum disetujui.
+     *
+     * `nilai` = `u · ci` (sumbangan komponen ke `uc`, yang dicetak lembar
+     * budget), `u_baku` = `u` mentahnya. Dua-duanya disimpan: yang pertama buat
+     * dibaca manusia, yang kedua supaya RSS-nya bisa dihitung ulang dari jejak.
+     *
+     * Bentuknya sengaja sama persis dengan [\App\Services\GumCalculator]
+     * supaya satu parser mobile berlaku buat jalur per-titik maupun
+     * per-kelompok. Profil yang butuh kolom tambahan (`disertakan`,
+     * `alasan_dikecualikan`) menggabungnya sendiri.
+     *
+     * @param  array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}  $komponen
+     * @return array<string, mixed>
+     */
+    protected function barisAudit(array $komponen): array
+    {
+        return [
+            'sumber' => $komponen['sumber'],
+            'keterangan' => $komponen['keterangan'],
+            'distribusi' => $komponen['distribusi'],
+            'nilai' => $komponen['u'] * $komponen['ci'],
+            'u_baku' => $komponen['u'],
+            'ci' => $komponen['ci'],
+            'vi' => $komponen['vi'],
+        ];
+    }
+
+    /**
+     * Baris `perbandingan_cmc` — pembanding U95 hitung lawan CMC terakreditasi.
+     *
+     * ## Kenapa baris ini WAJIB ada, bukan hiasan
+     *
+     * `CalibrationValidator::cmcTitik()` mencari CMC titik ini dengan menyapu
+     * `type_b_components` mencari `sumber` `perbandingan_cmc`/`lantai_cmc`/`cmc`.
+     * Tidak ketemu berarti `null`, dan `null` mematikan gerbang ERROR
+     * `u95_meledak_dari_cmc` — penjagaan yang lahir dari `CAL/2026/08/0043`,
+     * satu pembacaan salah ketik yang menerbitkan U95 212x CMC lab.
+     *
+     * Terukur di jalur per-kelompok sebelum baris ini ada: sesi Tachometer
+     * dengan satu pembacaan `60` diketik `6000` terbit ber-U95 **3298,42 rpm
+     * lawan CMC 1,5 rpm — 2199x lipat** — dan lolos tanpa satu pun temuan.
+     *
+     * Diterbitkan SELALU (selama baris kemampuannya ada), bukan cuma waktu
+     * lantainya menggigit: justru waktu U95 hitung jauh DI ATAS CMC gerbang itu
+     * paling dibutuhkan.
+     *
+     * @return array<string, mixed>
+     */
+    protected function barisPerbandinganCmc(float $u95Hitung, ?float $cmc, string $satuan): array
+    {
+        return [
+            'sumber' => 'perbandingan_cmc',
+            'keterangan' => $cmc === null || $cmc <= 0
+                ? sprintf('U hitung %s %s, tanpa lantai CMC (nggak ada baris kemampuan buat titik ini)', $u95Hitung, $satuan)
+                : sprintf(
+                    'U hitung %s %s vs CMC %s %s → dilaporkan %s',
+                    $u95Hitung, $satuan, $cmc, $satuan, $cmc > $u95Hitung ? 'CMC' : 'hitung',
+                ),
+            'distribusi' => '-',
+            'nilai' => $cmc,
+            'u_baku' => $cmc,
+            'ci' => 1.0,
+            'vi' => 0.0,
+        ];
+    }
 }
