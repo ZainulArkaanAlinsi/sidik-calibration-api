@@ -65,6 +65,26 @@ class LantaiCmcPutaranTest extends TestCase
         ];
     }
 
+    /**
+     * Sama seperti [diLuarPitaTeratas] tanpa kolom CMC-nya.
+     *
+     * Provider sendiri, bukan memakai yang di atas langsung: PHPUnit
+     * mengeluarkan WARNING kalau provider memasok lebih banyak argumen daripada
+     * yang diterima method-nya, dan `php artisan test` memulangkan exit 1 pada
+     * warning — suite hijau seluruhnya tapi CI merah, tanpa satu pun baris
+     * `FAIL` untuk dibaca. Sudah menggigit dua kali; diturunkan (bukan disalin)
+     * supaya daftarnya tidak bisa menyimpang dari sumbernya.
+     *
+     * @return array<string, array{string, float, float}>
+     */
+    public static function ambangPitaTeratas(): array
+    {
+        return array_map(
+            static fn (array $baris): array => [$baris[0], $baris[1], $baris[2]],
+            self::diLuarPitaTeratas(),
+        );
+    }
+
     #[DataProvider('diLuarPitaTeratas')]
     public function test_lantai_cmc_tetap_terpasang_di_luar_pita(
         string $nomorSesi,
@@ -95,7 +115,7 @@ class LantaiCmcPutaranTest extends TestCase
      * rpm terbit 4,44. Satu-satunya bedanya titik ketiga yang keluar lingkup,
      * dan yang keluar lingkup justru dapat angka yang lebih bagus.
      */
-    #[DataProvider('diLuarPitaTeratas')]
+    #[DataProvider('ambangPitaTeratas')]
     public function test_menyeberang_batas_lingkup_tidak_menurunkan_u95(
         string $nomorSesi,
         float $dalamPitaTeratas,
@@ -170,7 +190,7 @@ class LantaiCmcPutaranTest extends TestCase
      * dan lantai pinjaman yang tidak diumumkan persis yang bikin sertifikat
      * mengaku terakreditasi di titik yang lampirannya tidak mencakup.
      */
-    #[DataProvider('diLuarPitaTeratas')]
+    #[DataProvider('ambangPitaTeratas')]
     public function test_set_point_di_luar_lingkup_diperingatkan(
         string $nomorSesi,
         float $dalamPitaTeratas,

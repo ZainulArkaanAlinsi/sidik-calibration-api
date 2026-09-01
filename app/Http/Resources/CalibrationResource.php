@@ -431,6 +431,9 @@ class CalibrationResource extends JsonResource
      */
     public static function petakanTitik(UncertaintyCalculation $titik, ?Equipment $alat = null, ?Organization $organisasi = null): array
     {
+        $profil = $alat !== null ? self::profil($alat) : null;
+        $titikUkur = (float) $titik->titik_ukur;
+
         return [
             'titik_ke' => $titik->titik_ke,
             'titik_ukur' => $titik->titik_ukur,
@@ -457,9 +460,17 @@ class CalibrationResource extends JsonResource
             // `desimal` level sesi — kecuali profilnya nyatain angka sendiri
             // (Refractometer 5), yang di level sesi belum tentu kebaca mobile
             // versi lama.
-            'desimal' => $alat?->resolusi_rentang
-                ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada((float) $titik->titik_ukur))
-                : ($alat !== null ? self::profil($alat)?->desimalSertifikat() : null),
+            // Per BARIS dulu, baru per alat — RANTAI YANG SAMA PERSIS dengan
+            // `CertificateSnapshotBuilder`. Dulu hook per barisnya dilewat di
+            // sini, jadi layar dan PDF-nya menulis angka yang berbeda dari data
+            // yang sama: Viscometer `2607.59.W` tercetak `2709,8` di sertifikat
+            // tapi tampil `2709,80` di layar — satu angka penting yang alatnya
+            // nggak punya. Persis kebalikan dari yang dijanjikan catatan
+            // `desimal_u95` & `tanda_nol` di bawah.
+            'desimal' => $profil?->desimalSertifikatTitik($titikUkur)
+                ?? ($alat?->resolusi_rentang
+                    ? self::desimalAlat($alat, $organisasi, $alat->resolusiPada($titikUkur))
+                    : $profil?->desimalSertifikat()),
             // Desimal KHUSUS kolom U95%, yang buat sebagian alat BEDA dari
             // kolom di sebelahnya: master Spectrophotometer nulis `0,43 nm`
             // (dua desimal) sementara Standard/UUT/Correction di tabel yang
@@ -473,7 +484,10 @@ class CalibrationResource extends JsonResource
             //
             // `null` buat lima alat lain — mobile jatuh ke `desimal` kayak
             // biasa, jadi perilakunya nggak berubah.
-            'desimal_u95' => $alat !== null ? self::profil($alat)?->desimalU95() : null,
+            // Per baris dulu juga: master Gas Detector memformat U95 keempat
+            // gasnya `0.0` · `0.0` · `0.0` · `0.00`, dan `U95` oksigen 0,887
+            // runtuh jadi `0,9` kalau dipukul rata satu desimal.
+            'desimal_u95' => $profil?->desimalU95Titik($titikUkur) ?? $profil?->desimalU95(),
             // Satuan DI TITIK INI, buat alat yang nyampur satuan dalam satu
             // lembar (Conductivity: 25 & 1412 µS/cm, 111 mS/cm).
             //
@@ -486,9 +500,7 @@ class CalibrationResource extends JsonResource
             // `null` buat alat bersatuan seragam — mobile jatuh ke
             // `equipment.satuan` kayak biasa, jadi pH/Turbidimeter/Chlorine/
             // Refractometer nggak berubah perilakunya.
-            'satuan' => $alat !== null
-                ? self::profil($alat)?->satuanTitik((float) $titik->titik_ukur, $alat)
-                : null,
+            'satuan' => $profil?->satuanTitik($titikUkur, $alat),
             // Koreksi negatif yang membulat ke nol dicetak `-0,0` atau `0,0` —
             // beda per alat, dibaca dari master masing-masing (lihat
             // `CalibrationProfile::tandaNolDicetak()`).
