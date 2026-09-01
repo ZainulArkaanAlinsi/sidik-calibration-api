@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Support\UkuranTandaTangan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -38,6 +39,14 @@ class DataTampilanSertifikat
         $sertifikat->loadMissing('organization', 'session');
         $organisasi = $sertifikat->organization;
 
+        // Isi berkasnya dibaca SEKALI: dipakai buat data URI-nya sekaligus buat
+        // mengukur rasinya. Membacanya dua kali berarti dua round-trip ke
+        // object storage buat satu gambar yang sama.
+        $ttdIsi = $this->tandaTanganIsi($organisasi);
+
+        $posisiTtd = $organisasi?->pengaturanTandaTangan()
+            ?? ['geser_x_mm' => 0, 'geser_y_mm' => 0, 'lebar_mm' => Organization::DEFAULT_TTD_LEBAR_MM];
+
         return [
             'sertifikat' => $sertifikat,
             'snapshot' => $sertifikat->snapshot,
@@ -48,9 +57,16 @@ class DataTampilanSertifikat
             // `null` kalau belum diunggah — dan itu state yang SAH: sertifikat
             // nyetak garis + nama + jabatan dengan ruang kosong buat tanda
             // tangan basah.
-            'tandaTangan' => $this->tandaTanganDataUri($organisasi),
-            'posisiTtd' => $organisasi?->pengaturanTandaTangan()
-                ?? ['geser_x_mm' => 0, 'geser_y_mm' => 0, 'lebar_mm' => Organization::DEFAULT_TTD_LEBAR_MM],
+            'tandaTangan' => $ttdIsi === null ? null : 'data:image/png;base64,'.base64_encode($ttdIsi),
+            'posisiTtd' => $posisiTtd,
+            // Lebar pilihan admin cuma menyetel LEBAR; tingginya dulu dibiarkan
+            // ikut gambar, dan gambar yang tidak lebar-mendatar meluber ke atas
+            // menimpa tabel di atasnya. Lihat App\Support\UkuranTandaTangan.
+            'ukuranTtd' => UkuranTandaTangan::keduaMode(
+                $ttdIsi,
+                (float) ($posisiTtd['lebar_mm'] ?? Organization::DEFAULT_TTD_LEBAR_MM),
+                (float) ($posisiTtd['geser_y_mm'] ?? 0),
+            ),
             'qr' => $this->qrDataUri($organisasi, $sertifikat, $web),
             'keputusan' => $this->tampilkanKeputusan($organisasi)
                 ? $sertifikat->session?->keputusan
@@ -217,7 +233,7 @@ class DataTampilanSertifikat
      * alpha → kecetak jadi kotak putih yang nutupin garis tanda tangan), jadi
      * nebak cuma nambah cara buat salah.
      */
-    private function tandaTanganDataUri(?Organization $organisasi): ?string
+    private function tandaTanganIsi(?Organization $organisasi): ?string
     {
         $path = $organisasi?->tanda_tangan_path;
 
@@ -225,6 +241,12 @@ class DataTampilanSertifikat
             return null;
         }
 
-        return 'data:image/png;base64,'.base64_encode((string) Storage::disk('arsip')->get($path));
+        $isi = Storage::disk('arsip')->get($path);
+
+        // Disk `arsip` disetel `throw => false`, jadi baca yang gagal balik
+        // null tanpa suara. Dibiarkan lewat, yang tercetak `data:image/png;
+        // base64,` kosong — gambar rusak di dokumen terkendali, bukan ruang
+        // kosong buat tanda tangan basah yang memang state sah.
+        return filled($isi) ? (string) $isi : null;
     }
 }
