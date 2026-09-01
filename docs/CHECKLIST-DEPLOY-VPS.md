@@ -346,9 +346,29 @@ Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
 
 1. Buat bucket Cloudflare R2 (gratis 10 GB) — `dash.cloudflare.com` → R2 → Create bucket.
 2. Isi `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT` di Render.
-3. Salin berkas lama ke bucket dengan kunci yang SAMA PERSIS dengan isi kolom `pdf_path`,
-   `tanda_tangan_path`, dan `path`.
-4. Baru setel `ARSIP_DRIVER=s3`.
+3. Salin berkas lama — **jangan manual**, pakai perintahnya:
+
+   ```
+   php artisan arsip:pindah              # coba kering, cuma melaporkan
+   php artisan arsip:pindah --jalankan   # salin beneran
+   ```
+
+   Kunci disalin apa adanya dan ukurannya diverifikasi sesudah mendarat. Ini langkah yang paling
+   gampang salah: kolom di database menyimpan KUNCI, bukan URL, jadi kunci yang bergeser sedikit
+   saja bikin SELURUH berkas lama tidak ketemu — dan gejalanya identik dengan disk yang kehapus.
+
+   Kalau `ARSIP_PREFIX` diisi (bucket dipakai bareng hal lain), prefiksnya **ikut sendiri** —
+   perintahnya membaca nilai yang sama dengan yang dipakai disk `arsip` sesudah saklarnya digeser,
+   jadi yang menulis dan yang membaca tidak bisa berbeda pendapat. Baris `Prefix bucket:` di awal
+   keluaran yang menunjukkannya.
+
+   Perintahnya aman diulang, dan yang sudah sama persis dilewat. Kalau dia melaporkan **BENTROK**,
+   itu berkas yang sudah ada di tujuan tapi ukurannya beda dari sumber — biasanya sisa pindah yang
+   mati di tengah. Berkasnya tidak disentuh dan perintahnya keluar gagal, supaya tidak ada yang
+   menggeser `ARSIP_DRIVER` di atas berkas kepotong. Periksa dulu mana yang benar; kalau yang di
+   sumber, jalankan ulang dengan `--timpa`.
+4. Baru setel `ARSIP_DRIVER=s3` — dan cuma kalau langkah 3 keluar **sukses**. Selama masih ada
+   yang gagal atau bentrok, **jangan digeser**.
 
 Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
 tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).
@@ -383,3 +403,28 @@ Urutan periksanya:
 Kalau tahap yang lambat ternyata migrasi dan bukan seeder, pindahkan `php artisan migrate --force`
 ke `preDeployCommand` di `render.yaml`: langkah itu jalan **sebelum** instance baru dinyalakan,
 jadi keluar dari jendela health check sepenuhnya.
+
+
+## Tiga pertanyaan operasional yang bisa dijawab tanpa dashboard
+
+`GET /api/health` (tanpa login) sekarang melaporkan:
+
+```json
+"deploy": {
+  "versi": "3e81086…",           // commit yang BENERAN jalan di container ini
+  "arsip": { "awet": false },     // false = berkas kehapus tiap deploy
+  "seed_saat_boot": false         // true = seeder jalan tiap container nyala
+}
+```
+
+Batasnya sama dengan `direktori_perusahaan`: yang dilaporkan **status, bukan nilai**, nol request
+ke penyedia, nol rahasia. Repo ini publik, jadi SHA commit bukan rahasia.
+
+Kegunaannya:
+
+- **"Deploy-nya udah naik belum?"** → cocokkan `versi` dengan commit terakhir di `main`. Sebelum
+  ini jawabannya cuma ada di dashboard Render.
+- **"Kenapa deploy timeout?"** → `seed_saat_boot: true` itu tersangka pertama; seeder menulis ulang
+  seluruh sesi contoh tiap container nyala, dan menitnya diambil dari jendela health check yang
+  cuma 15 menit.
+- **"Tanda tangan hilang lagi?"** → `arsip.awet: false` menjelaskannya, dan obatnya bagian di atas.
