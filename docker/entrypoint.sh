@@ -44,6 +44,33 @@ if [ -z "${DB_HOST}" ] && [ -z "${DB_URL}" ]; then
     exit 1
 fi
 
+# Penanda waktu tiap tahap boot.
+#
+# Render ngasih JENDELA 15 MENIT dari "Deploying..." sampai health check harus
+# lolos, dan semua yang di bawah ini jalan SEBELUM server nerima request
+# pertama. Deploy 1 Sep 2026 timeout dengan 6 menit 39 detik habis di tahap-
+# tahap ini — dan lognya SUNYI selama itu, jadi nggak ada yang bisa nunjuk
+# tahap mana yang lambat.
+#
+# `date` doang, nggak ngubah perilaku apa pun. Yang dibeli: deploy gagal
+# berikutnya nyebutin sendiri tahap yang makan jendelanya.
+tahap() {
+    echo "[$(date -u '+%H:%M:%S')] → $1"
+}
+
+# Seeder di boot itu jebakan yang mahal: DemoDataSeeder nulis ulang SELURUH
+# sesi contoh tiap container nyala, dan di MySQL gratis itu bisa makan menit —
+# menit yang diambil dari jendela health check yang sama. Dokumennya bilang
+# "nyalain sekali pas deploy pertama, terus matiin"; kalau nggak pernah
+# dimatiin, tiap deploy bayar ongkosnya lagi tanpa ada yang tahu.
+if [ "${SEED_ON_BOOT}" = "true" ]; then
+    echo "!! SEED_ON_BOOT=true — seeder jalan tiap container nyala." >&2
+    echo "   Ini nambah menit ke tiap boot dan diambil dari jendela health check" >&2
+    echo "   Render yang cuma 15 menit. Matiin di Render → Environment sesudah" >&2
+    echo "   deploy pertama berhasil." >&2
+fi
+
+tahap "bersihin cache build"
 # Cache lama dari tahap build (kalau ada) dibuang dulu, biar config:cache di
 # bawah baca environment yang sekarang, bukan yang keburu kebekukan pas build.
 php artisan config:clear >/dev/null 2>&1 || true
@@ -101,7 +128,7 @@ until php artisan db:show >/tmp/cek-db.log 2>&1; do
     sleep 10
 done
 
-echo "→ migrasi database"
+tahap "migrasi database"
 php artisan migrate --force
 
 # Sengaja pakai saklar, bukan otomatis: seeder di project ini idempotent
@@ -109,13 +136,15 @@ php artisan migrate --force
 # kalau jalan tiap container bangun, data yang lagi diuji teknisi bisa
 # ketimpa balik ke bawaan. Nyalain sekali pas deploy pertama, terus matiin.
 if [ "${SEED_ON_BOOT}" = "true" ]; then
-    echo "→ seeding data awal"
+    tahap "seeding data awal"
     php artisan db:seed --force
 fi
 
 php artisan storage:link >/dev/null 2>&1 || true
 
+tahap "config:cache"
 php artisan config:cache
+tahap "view:cache"
 php artisan view:cache
 
 # `route:cache` SENGAJA nggak dipanggil. routes/api.php nutup /health pakai
@@ -173,5 +202,5 @@ php artisan view:cache
     done
 ) &
 
-echo "→ server jalan di port ${PORT}"
+tahap "server jalan di port ${PORT} — jendela health check mulai kepakai"
 exec frankenphp run --config /etc/caddy/Caddyfile
