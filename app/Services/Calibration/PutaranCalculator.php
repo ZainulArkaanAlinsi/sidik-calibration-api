@@ -136,13 +136,23 @@ class PutaranCalculator
             $koreksiStd = $nominal === null ? null : $this->tabel->koreksi($nominal);
 
             if ($koreksiStd === null) {
+                // Ditampung dulu: `end()` menerima REFERENSI, jadi
+                // `end($this->tabel->sertifikat())` melempar "Only variables
+                // should be passed by reference". Cabang ini dulu nggak pernah
+                // punya jalan masuk (lihat `TabelStandarPutaran::nominalTerdekat`),
+                // jadi kesalahannya ikut nggak pernah kelihatan.
+                $pita = $this->tabel->sertifikat();
+
                 $ditolak[] = [
                     'titik_ke' => (int) $t['titik_ke'],
                     'alasan' => sprintf(
-                        'Set point %s rpm nggak punya nominal padanan di sertifikat kalibrator '
-                        .'(tabel berhenti di %s rpm) — koreksi standarnya nggak ada, jadi titik '
-                        .'ini nggak dihitung.',
-                        $setPoint, end($this->tabel->sertifikat())['nominal'] ?? '-',
+                        'Set point %s rpm ada di luar jangkauan sertifikat kalibrator '
+                        .'(%s–%s rpm) — koreksi standarnya nggak ada, jadi titik ini nggak '
+                        .'dihitung. Kalibrasi di luar jangkauan itu keputusan manajer teknis, '
+                        .'bukan angka yang boleh ditebak dari baris terdekat.',
+                        $setPoint,
+                        $pita[0]['nominal'] ?? '-',
+                        end($pita)['nominal'] ?? '-',
                     ),
                 ];
 

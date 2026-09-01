@@ -76,17 +76,43 @@ class TabelStandarWaktu
      */
     public function nominalTerdekat(float $setPointDetik): ?float
     {
+        $nominal = array_map(
+            static fn (array $baris): float => (float) $baris['nominal_detik'],
+            self::muat()['sertifikat'],
+        );
+
+        // DI LUAR jangkauan sertifikat berarti TIDAK ADA padanan — bukan "ambil
+        // yang paling ujung".
+        //
+        // > **Kegagalan yang ditutup penjagaan ini.** Tanpa batas ini, set point
+        // > 7200 detik (timer proses dua jam) memungut koreksi baris 3600 detik,
+        // > dan 86400 detik pun sama — nominal yang jaraknya dua puluh tiga kali
+        // > lipat. Set point 1 detik memungut koreksi +30 ms baris 5 detik, tiga
+        // > persen dari penunjukannya sendiri. Ketiganya terbit ber-U95 0,81
+        // > detik: lantai CMC dari pita akreditasi yang berhenti di 3600 detik.
+        // >
+        // > Yang paling menyesatkan: DUA penjagaan yang memang ditulis untuk ini
+        // > jadi kode mati. `WaktuCalculator` memeriksa `koreksiMs($nominal) ===
+        // > null` dan `u95Sertifikat($nominal) === null`, tapi `$nominal`-nya
+        // > diambil dari daftar itu sendiri — jadi dua-duanya selalu ketemu, dan
+        // > cabang penolakannya tidak punya jalan masuk.
+        //
+        // Lembar ini `titik_bisa_diubah`, jadi set point di luar saran bukan
+        // kemungkinan teoretis: teknisi memang boleh mengetiknya.
+        if ($setPointDetik < min($nominal) - 1e-9 || $setPointDetik > max($nominal) + 1e-9) {
+            return null;
+        }
+
         $pilih = null;
         $jarak = null;
 
-        foreach (self::muat()['sertifikat'] as $baris) {
-            $nominal = (float) $baris['nominal_detik'];
-            $d = abs($nominal - $setPointDetik);
+        foreach ($nominal as $n) {
+            $d = abs($n - $setPointDetik);
 
             // `<` saja: daftarnya urut menaik, jadi yang seri dimenangkan
             // nominal yang lebih dulu ditemui — yang lebih KECIL.
             if ($jarak === null || $d < $jarak) {
-                $pilih = $nominal;
+                $pilih = $n;
                 $jarak = $d;
             }
         }
