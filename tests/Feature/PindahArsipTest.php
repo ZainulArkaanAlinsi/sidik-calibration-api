@@ -175,4 +175,72 @@ class PindahArsipTest extends TestCase
             ->expectsOutputToContain('lewat (sudah sama): certificates/abc.pdf')
             ->assertSuccessful();
     }
+
+    /**
+     * Prefix bucket ikut ke kunci tujuan.
+     *
+     * Ini yang paling gampang lolos, karena bawaannya KOSONG — jadi test yang
+     * cuma jalan di bawaan nggak pernah menyentuhnya.
+     *
+     * Begitu ARSIP_DRIVER=s3, disk `arsip` memakai ARSIP_PREFIX sebagai
+     * `root`, dan di S3 `root` artinya PREFIX KUNCI (lihat
+     * config/filesystems.php). Aplikasi sesudah saklarnya digeser mencari
+     * `produksi/certificates/abc.pdf`. Perintah yang menulis tanpa prefix
+     * selesai dengan kode 0 sambil meninggalkan SELURUH arsip di tempat yang
+     * nggak dibaca siapa pun.
+     */
+    public function test_prefix_bucket_ikut_ke_kunci_tujuan(): void
+    {
+        config()->set('filesystems.arsip_prefiks', 'produksi');
+        $this->isiArsip();
+
+        $this->artisan('arsip:pindah --jalankan')->assertSuccessful();
+
+        foreach ([
+            'produksi/certificates/abc.pdf',
+            'produksi/tanda-tangan/1/ttd.png',
+            'produksi/lembar/2026/07/scan.jpg',
+        ] as $kunci) {
+            $this->assertTrue(
+                Storage::disk('s3')->exists($kunci),
+                "Kunci {$kunci} nggak ada di tujuan — prefix-nya nggak ikut.",
+            );
+        }
+
+        // Dan nggak ada yang mendarat TANPA prefix.
+        $this->assertFalse(Storage::disk('s3')->exists('certificates/abc.pdf'));
+    }
+
+    /**
+     * Kunci tujuan harus sama persis dengan yang dibaca disk `arsip` sesudah
+     * saklarnya digeser — diadu ke config-nya, bukan ke string yang diketik
+     * ulang di test.
+     */
+    public function test_kunci_tujuan_cocok_dengan_root_disk_arsip_sesudah_digeser(): void
+    {
+        config()->set('filesystems.arsip_prefiks', 'produksi');
+        $this->isiArsip();
+
+        $this->artisan('arsip:pindah --jalankan')->assertSuccessful();
+
+        // Begini disk `arsip` bakal disetel sesudah ARSIP_DRIVER=s3.
+        $root = config('filesystems.arsip_prefiks');
+
+        $this->assertTrue(
+            Storage::disk('s3')->exists($root.'/certificates/abc.pdf'),
+        );
+    }
+
+    /** Dengan prefix pun perintahnya tetap aman diulang. */
+    public function test_prefix_nggak_bikin_jalan_ulang_nyalin_dua_kali(): void
+    {
+        config()->set('filesystems.arsip_prefiks', 'produksi');
+        $this->isiArsip();
+
+        $this->artisan('arsip:pindah --jalankan')->assertSuccessful();
+
+        $this->artisan('arsip:pindah --jalankan')
+            ->expectsOutputToContain('lewat (sudah sama): produksi/certificates/abc.pdf')
+            ->assertSuccessful();
+    }
 }

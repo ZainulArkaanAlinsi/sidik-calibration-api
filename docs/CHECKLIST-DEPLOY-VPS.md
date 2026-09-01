@@ -357,6 +357,11 @@ Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
    gampang salah: kolom di database menyimpan KUNCI, bukan URL, jadi kunci yang bergeser sedikit
    saja bikin SELURUH berkas lama tidak ketemu — dan gejalanya identik dengan disk yang kehapus.
 
+   Kalau `ARSIP_PREFIX` diisi (bucket dipakai bareng hal lain), prefiksnya **ikut sendiri** —
+   perintahnya membaca nilai yang sama dengan yang dipakai disk `arsip` sesudah saklarnya digeser,
+   jadi yang menulis dan yang membaca tidak bisa berbeda pendapat. Baris `Prefix bucket:` di awal
+   keluaran yang menunjukkannya.
+
    Perintahnya aman diulang, dan yang sudah sama persis dilewat. Kalau dia melaporkan **BENTROK**,
    itu berkas yang sudah ada di tujuan tapi ukurannya beda dari sumber — biasanya sisa pindah yang
    mati di tengah. Berkasnya tidak disentuh dan perintahnya keluar gagal, supaya tidak ada yang

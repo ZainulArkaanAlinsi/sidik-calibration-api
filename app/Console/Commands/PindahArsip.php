@@ -29,6 +29,15 @@ use Illuminate\Support\Facades\Storage;
  * rawan salah ketik jadi satu perintah yang bisa diulang dan dicoba kering
  * dulu.
  *
+ * ## Prefix bucket ikut, dan itu bukan detail
+ *
+ * Begitu ARSIP_DRIVER=s3, disk `arsip` memakai ARSIP_PREFIX sebagai `root` —
+ * dan di S3 `root` artinya PREFIX KUNCI, bukan folder. Jadi yang menulis
+ * (perintah ini) dan yang membaca (aplikasi sesudah saklarnya digeser) harus
+ * memakai prefix yang sama, kalau nggak hasil pindahnya nggak ketemu sama
+ * sekali. Nilainya dihitung sekali di `config/filesystems.php`
+ * (`filesystems.arsip_prefiks`) dan dibaca dua tempat dari sana.
+ *
  * ## Tiga keadaan buat berkas yang sudah ada di tujuan
  *
  * Bedanya penting, karena "sudah ada" saja bukan kabar baik:
@@ -79,6 +88,33 @@ class PindahArsip extends Command
         $sumber = Storage::disk('arsip');
         $ke = Storage::disk($tujuan);
 
+        // Prefix WAJIB ikut, dan ini kesalahan yang paling gampang dibuat di
+        // perintah ini — termasuk oleh yang menulisnya.
+        //
+        // Disk `arsip` memakai ARSIP_PREFIX sebagai `root` begitu drivernya
+        // s3, dan di S3 `root` itu artinya PREFIX KUNCI, bukan folder (lihat
+        // config/filesystems.php). Jadi sesudah saklarnya digeser, aplikasi
+        // mencari `produksi/certificates/abc.pdf`.
+        //
+        // Menulis ke disk `s3` mentah berarti menulis `certificates/abc.pdf` —
+        // tanpa prefix. Perintahnya selesai dengan kode 0, dan SELURUH arsip
+        // yang dipindahkan nggak ketemu. Gejalanya identik dengan disk yang
+        // kehapus, dan itu persis kerusakan yang perintah ini dibikin buat
+        // mencegah.
+        //
+        // Nilainya dihitung sekali di config/filesystems.php dan dibaca dua
+        // tempat dari sana, supaya yang menulis dan yang membaca nggak bisa
+        // berbeda pendapat.
+        $prefiks = config("filesystems.disks.{$tujuan}.driver") === 's3'
+            ? (string) config('filesystems.arsip_prefiks', '')
+            : '';
+
+        $tujuanKunci = fn (string $kunci): string => $prefiks === '' ? $kunci : $prefiks.'/'.$kunci;
+
+        if ($prefiks !== '') {
+            $this->line("Prefix bucket: `{$prefiks}/` (dari ARSIP_PREFIX).");
+        }
+
         // Disk tujuan diuji SEKARANG, bukan waktu berkas pertama gagal
         // mendarat. Kredensial R2 yang belum diisi bikin tiap `put()` balik
         // `false` tanpa suara (disk ini disetel `throw => false`), dan tanpa
@@ -86,13 +122,13 @@ class PindahArsip extends Command
         // satu.
         $uji = '.uji-pindah-arsip';
 
-        if ($jalankan && $ke->put($uji, 'uji') === false) {
+        if ($jalankan && $ke->put($tujuanKunci($uji), 'uji') === false) {
             $this->error("Disk `{$tujuan}` nggak bisa ditulis. Cek kredensialnya (AWS_* buat R2).");
 
             return self::FAILURE;
         }
 
-        $jalankan && $ke->delete($uji);
+        $jalankan && $ke->delete($tujuanKunci($uji));
 
         $berkas = $sumber->allFiles();
 
@@ -116,6 +152,7 @@ class PindahArsip extends Command
 
         foreach ($berkas as $kunci) {
             $ukuranSumber = (int) $sumber->size($kunci);
+            $tujuanKe = $tujuanKunci($kunci);
 
             // Yang bikin sebuah berkas boleh dilewat itu UKURANNYA yang sama,
             // bukan sekadar keberadaannya.
@@ -130,9 +167,9 @@ class PindahArsip extends Command
             // ARSIP_DRIVER". Operator menggeser saklarnya sambil merasa sudah
             // memverifikasi, dan yang diunduh pelanggan PDF yang kepotong —
             // persis kerusakan yang perintah ini dibikin buat mencegah.
-            if ($ke->exists($kunci) && ! $this->option('timpa')) {
-                if ((int) $ke->size($kunci) === $ukuranSumber) {
-                    $this->line("  lewat (sudah sama): {$kunci}");
+            if ($ke->exists($tujuanKe) && ! $this->option('timpa')) {
+                if ((int) $ke->size($tujuanKe) === $ukuranSumber) {
+                    $this->line("  lewat (sudah sama): {$tujuanKe}");
                     $lewat++;
 
                     continue;
@@ -140,8 +177,8 @@ class PindahArsip extends Command
 
                 $this->error(sprintf(
                     '  BENTROK: %s sudah ada di tujuan tapi ukurannya beda (%d B di sana, %d B di sumber).',
-                    $kunci,
-                    (int) $ke->size($kunci),
+                    $tujuanKe,
+                    (int) $ke->size($tujuanKe),
                     $ukuranSumber,
                 ));
                 $bentrok++;
@@ -150,7 +187,7 @@ class PindahArsip extends Command
             }
 
             if (! $jalankan) {
-                $this->line("  salin: {$kunci}");
+                $this->line("  salin: {$kunci} -> {$tujuanKe}");
                 $salin++;
 
                 continue;
@@ -166,8 +203,8 @@ class PindahArsip extends Command
             }
 
             // Kunci dipakai APA ADANYA. Ini inti perintahnya — lihat docblock.
-            if ($ke->put($kunci, $isi) === false) {
-                $this->error("  GAGAL ditulis: {$kunci}");
+            if ($ke->put($tujuanKe, $isi) === false) {
+                $this->error("  GAGAL ditulis: {$tujuanKe}");
                 $gagal++;
 
                 continue;
@@ -177,14 +214,14 @@ class PindahArsip extends Command
             // Alasannya sama seperti di `BerkasPdfSertifikat`: `put()` balik
             // `true` buat penulisan yang terpotong, dan berkas terpotong di
             // bucket itu kerusakan yang baru ketahuan waktu pelanggan mengunduh.
-            if ((int) $ke->size($kunci) !== strlen($isi)) {
+            if ((int) $ke->size($tujuanKe) !== strlen($isi)) {
                 // Yang kepotong DIHAPUS, bukan ditinggal. Dua alasannya:
                 // selama dia ada, aplikasi bisa menyajikannya sebagai berkas
                 // yang sah; dan tidak-ada jauh lebih gampang dilihat daripada
                 // ada-tapi-salah.
-                $ke->delete($kunci);
+                $ke->delete($tujuanKe);
 
-                $this->error("  GAGAL: ukuran nggak cocok sesudah disalin, yang kepotong dihapus: {$kunci}");
+                $this->error("  GAGAL: ukuran nggak cocok sesudah disalin, yang kepotong dihapus: {$tujuanKe}");
                 $gagal++;
 
                 continue;
