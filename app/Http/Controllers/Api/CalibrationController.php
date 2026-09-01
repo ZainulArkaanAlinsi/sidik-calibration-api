@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
@@ -1911,9 +1912,13 @@ class CalibrationController extends Controller
             return null;
         }
 
-        $kotak = ['jam', 'menit', 'detik', 'milidetik'];
+        // Daftar kotaknya dari [PenunjukanWaktu::KOTAK], BUKAN disalin: aturan
+        // validasi dan konversi ini harus sepakat kotak mana yang sah. Dua
+        // daftar terpisah berarti kotak yang ditambah di satu sisi diterima
+        // validator tapi diam-diam dibuang di sini — waktunya meleset persis
+        // sebesar kotak itu, tanpa satu pun error.
         $terisi = array_filter(
-            array_map(static fn (string $k): mixed => $nilai[$k] ?? null, $kotak),
+            array_map(static fn (string $k): mixed => $nilai[$k] ?? null, PenunjukanWaktu::KOTAK),
             static fn ($v): bool => $v !== null && $v !== '',
         );
 

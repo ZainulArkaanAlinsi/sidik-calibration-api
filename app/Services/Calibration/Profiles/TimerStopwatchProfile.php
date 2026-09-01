@@ -312,7 +312,10 @@ class TimerStopwatchProfile extends CalibrationProfile
             $h = $hasil['hasil'];
 
             $hitungan[] = [
-                'standard_id' => $t['standard']->id,
+                // Null-safe — alasan yang sama dengan `ProfilPutaran`: sesi
+                // yang kalibratornya di-soft-delete memulangkan null, dan tanpa
+                // `?->` perintah hitung ulang mati total.
+                'standard_id' => ($t['standard'] ?? null)?->id,
                 'titik_ke' => $h['titik_ke'],
                 'titik_ukur' => $h['titik_ukur'],
                 'rata_rata' => $h['rata_rata'],
