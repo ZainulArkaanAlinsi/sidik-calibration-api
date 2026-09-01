@@ -88,10 +88,15 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // pertama, terus matiin"; kalau tidak pernah dimatikan, tiap deploy
     // membayar ongkosnya lagi — menit yang diambil dari jendela health check
     // Render yang cuma 15 menit, dan itu tersangka utama deploy yang timeout.
+    //
+    // Ketiganya dibaca lewat `config()`, BUKAN `env()` langsung — lihat
+    // config/deploy.php buat alasannya. Singkatnya: entrypoint memanggil
+    // `config:cache` sebelum server nyala, dan sesudah itu `env()` di luar
+    // berkas config berhenti membaca `.env`.
     'deploy' => [
-        'versi' => env('RENDER_GIT_COMMIT') ?: null,
+        'versi' => config('deploy.versi'),
         'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
-        'seed_saat_boot' => filter_var(env('SEED_ON_BOOT', false), FILTER_VALIDATE_BOOL),
+        'seed_saat_boot' => config('deploy.seed_saat_boot'),
     ],
 ]));
 
