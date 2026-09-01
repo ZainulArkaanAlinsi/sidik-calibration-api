@@ -150,6 +150,20 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
+     * `titik_ukur` lembar ini menyimpan SET POINT (60 detik), sedangkan nilai
+     * acuan yang dicetak master di kolom `Standard Value` adalah penunjukan
+     * stopwatch standar yang SUDAH dikoreksi (60,096 detik) — lihat
+     * `SERTIFIKAT!E19:L19` yang menunjuk baris `STD CORRECTED`, bukan set point.
+     *
+     * `rata_rata` di sini sudah benar sejak awal (rata-rata penunjukan alat
+     * pelanggan), jadi yang perlu disusun balik cuma kolom standarnya.
+     */
+    public function nilaiStandarDariKoreksi(): bool
+    {
+        return true;
+    }
+
+    /**
      * Master menyimpan koreksi dalam milidetik tapi mencetak sertifikatnya
      * dalam detik dengan tiga desimal — sepadan dengan resolusi stopwatch
      * (0,001 s). U95 dicetak dua desimal (`0,81`).
