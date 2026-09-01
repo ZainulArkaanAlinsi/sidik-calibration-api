@@ -2,8 +2,6 @@
 
 namespace App\Services\Calibration\Profiles;
 
-use App\Models\CalibrationSession;
-
 /**
  * Profil **Centrifuge** — lampiran akreditasi LK-285-IDN kelompok "Waktu dan
  * Frekuensi" no. 38, pita CMC 60–200 rpm → 1,5 rpm dan 200–9000 rpm → 1,6 rpm.
@@ -54,47 +52,13 @@ class CentrifugeProfile extends ProfilPutaran
     }
 
     /**
-     * Peringatkan admin kalau sesi ini memuat set point DI LUAR pita akreditasi
-     * Centrifuge (60–9000 rpm).
+     * Lampiran LK-285-IDN no. 38 berhenti di 9000 rpm — lihat
+     * `ProfilPutaran::peringatanSesi()`.
      *
-     * Bukan kehati-hatian berlebih: blok 5 `Master Olda Centrifuge.xlsm`
-     * mengukur 15000, 20000, dan 25000 rpm — ketiganya di atas 9000 — dan tetap
-     * memakai CMC 1,6 rpm dari pita `200–9000`. Angka itu lalu tercetak sebagai
-     * ketidakpastian terakreditasi untuk putaran yang lampirannya tidak pernah
-     * mencakup.
-     *
-     * Peringatan, bukan penolakan: lab boleh saja mengkalibrasi di luar lingkup
-     * asal sertifikatnya tidak mengaku terakreditasi di titik itu — dan yang
-     * berhak memutuskan manajer teknis, bukan kode ini. Yang tidak boleh adalah
-     * terbit diam-diam.
-     *
-     * @return list<array<string, mixed>>
+     * @return array{float, int}
      */
-    public function peringatanSesi(CalibrationSession $sesi): array
+    protected function batasAkreditasi(): array
     {
-        $diLuar = $sesi->uncertaintyCalculations
-            ->filter(fn ($u): bool => (float) $u->titik_ukur > self::BATAS_AKREDITASI_RPM)
-            ->map(static fn ($u): string => rtrim(rtrim(number_format((float) $u->titik_ukur, 2, ',', '.'), '0'), ','))
-            ->values()
-            ->all();
-
-        if ($diLuar === []) {
-            return [];
-        }
-
-        return [[
-            'kode' => 'centrifuge_di_luar_akreditasi',
-            'pesan' => sprintf(
-                'Sesi ini memuat %d set point di atas %s rpm (%s) — di luar pita akreditasi '
-                .'Centrifuge LK-285-IDN no. 38 yang berhenti di %s rpm. Lantai CMC yang terpasang '
-                .'diambil dari pita tertinggi yang ada, jadi ketidakpastian di titik-titik itu '
-                .'TIDAK didukung lampiran akreditasi. Pastikan sertifikatnya tidak mengaku '
-                .'terakreditasi di titik tersebut.',
-                count($diLuar),
-                number_format(self::BATAS_AKREDITASI_RPM, 0, ',', '.'),
-                implode(', ', $diLuar),
-                number_format(self::BATAS_AKREDITASI_RPM, 0, ',', '.'),
-            ),
-        ]];
+        return [self::BATAS_AKREDITASI_RPM, 38];
     }
 }

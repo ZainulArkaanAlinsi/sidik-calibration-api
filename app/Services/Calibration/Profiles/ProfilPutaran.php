@@ -3,10 +3,12 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\PutaranCalculator;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Basis bersama kelompok **Putaran** — Infrared Tachometer & Centrifuge.
@@ -356,13 +358,16 @@ abstract class ProfilPutaran extends CalibrationProfile
      * Baris kemampuan (CMC) yang menaungi titik TERTINGGI di blok — pita yang
      * sama dengan yang dipakai master untuk memilih `DATABASE!S5` vs `S6`.
      *
+     * Kalau tidak ada pita yang memuatnya, yang dipulangkan pita TERDEKAT,
+     * bukan `null` — lihat [pitaTerdekat] untuk alasannya.
+     *
      * @param  list<array{titik_ukur: float}>  $anggota
      */
     protected function kemampuanUntukBlok(Equipment $equipment, array $anggota): ?CalibrationCapability
     {
         $tertinggi = max(array_map(static fn (array $t): float => (float) $t['titik_ukur'], $anggota));
 
-        return CalibrationCapability::query()
+        $pita = CalibrationCapability::query()
             ->where('nama_alat', $this->namaAlatKemampuan())
             ->when(
                 $equipment->equipment_category_id !== null,
@@ -378,24 +383,166 @@ abstract class ProfilPutaran extends CalibrationProfile
                 fn ($q) => $q->milikOrganisasi($equipment->organization_id),
             )
             ->orderBy('range_max')
-            ->get()
-            // Pita PERTAMA yang memuat titik tertinggi, dengan daftar terurut
-            // menaik dan KEDUA batas inklusif.
-            //
-            // Lampiran akreditasi menulis pitanya bersambung (60–7000,
-            // 7000–30000), jadi 7000 rpm memenuhi dua pita sekaligus. Yang
-            // menang harus pita BAWAH — master memakai `DATABASE!S5` untuk blok
-            // yang titik tertingginya 7000 — dan urutan menaik + "ambil yang
-            // pertama" yang menegakkannya. Membuat batas bawah eksklusif juga
-            // menyelesaikan tumpang tindih itu, tapi sekalian membuang titik
-            // 60 rpm dari pita pertama: 60 > 60 itu salah, dan titik terendah
-            // yang sah jadi kehilangan lantai CMC-nya tanpa satu pun error.
-            ->first(static function (CalibrationCapability $k) use ($tertinggi): bool {
-                $min = $k->range_min === null ? -INF : (float) $k->range_min;
-                $maks = $k->range_max === null ? INF : (float) $k->range_max;
+            ->get();
 
-                return $tertinggi >= $min - 1e-9 && $tertinggi <= $maks + 1e-9;
-            });
+        // Pita PERTAMA yang memuat titik tertinggi, dengan daftar terurut
+        // menaik dan KEDUA batas inklusif.
+        //
+        // Lampiran akreditasi menulis pitanya bersambung (60–7000, 7000–30000),
+        // jadi 7000 rpm memenuhi dua pita sekaligus. Yang menang harus pita
+        // BAWAH — master memakai `DATABASE!S5` untuk blok yang titik
+        // tertingginya 7000 — dan urutan menaik + "ambil yang pertama" yang
+        // menegakkannya. Membuat batas bawah eksklusif juga menyelesaikan
+        // tumpang tindih itu, tapi sekalian membuang titik 60 rpm dari pita
+        // pertama: 60 > 60 itu salah, dan titik terendah yang sah jadi
+        // kehilangan lantai CMC-nya tanpa satu pun error.
+        $memuat = $pita->first(
+            static fn (CalibrationCapability $k): bool => self::jarakKePita($k, $tertinggi) <= 1e-9,
+        );
+
+        return $memuat ?? self::pitaTerdekat($pita, $tertinggi);
+    }
+
+    /**
+     * Pita CMC terdekat ke `$titik` — dipakai kalau TIDAK ADA pita yang
+     * memuatnya.
+     *
+     * ## Kegagalan yang ditutup method ini
+     *
+     * Sebelumnya yang dipulangkan `null`, dan `null` berarti
+     * `max($u95, (float) (null ?? 0.0))` — lantai CMC-nya **hilang seluruhnya**,
+     * untuk SATU BLOK PENUH. Pemilihan pitanya per blok (titik tertinggi yang
+     * menentukan), jadi satu set point di luar lingkup mencabut lantai CMC dua
+     * titik lain di blok yang sama yang justru berada di dalam lingkup.
+     *
+     * Arah salahnya yang paling buruk: U95 terbit LEBIH KECIL. Diadu ke sistem
+     * yang berjalan, dengan pembacaan rapat di 60 & 100 rpm:
+     *
+     *     blok {60, 100, 12000} rpm  ->  U95 = 5,00 rpm   (pita 7000–30000)
+     *     blok {60, 100, 40000} rpm  ->  U95 = 4,44 rpm   (TANPA lantai)
+     *
+     * Mendorong titik ketiganya makin jauh ke luar lingkup justru memperbaiki
+     * ketidakpastian yang tercetak. Untuk lab terakreditasi itu temuan audit
+     * yang paling mahal jenisnya: sertifikat yang mengaku lebih baik daripada
+     * CMC yang terdaftar di lampiran.
+     *
+     * ## Kenapa "terdekat", bukan menolak titiknya
+     *
+     * Karena begitulah master lab-nya berperilaku, dan begitu pula yang sudah
+     * dijanjikan ke admin. Blok 5 `Master Olda Centrifuge.xlsm` mengukur 15000,
+     * 20000, dan 25000 rpm — ketiganya di atas 9000 — dan tetap memakai CMC
+     * 1,6 rpm dari pita `200–9000`. Teks peringatan
+     * `centrifuge_di_luar_akreditasi` juga sudah menulis "lantai CMC yang
+     * terpasang diambil dari pita tertinggi yang ada". Kode yang memulangkan
+     * `null` menyalahi dua-duanya sekaligus — dan peringatan yang isinya tidak
+     * benar melatih admin menekan "setujui tetap" tanpa membaca.
+     *
+     * Lantai selalu aman searah: dia cuma bisa MENAIKKAN U95, tidak pernah
+     * menurunkan. Yang menjaga titik di luar lingkup tidak terbit sebagai
+     * terakreditasi tetap peringatan sesi, bukan hilangnya lantai ini.
+     *
+     * Seri jarak dimenangkan CMC yang lebih BESAR, dengan alasan yang sama.
+     *
+     * @param  Collection<int, CalibrationCapability>  $pita
+     */
+    private static function pitaTerdekat($pita, float $titik): ?CalibrationCapability
+    {
+        $terdekat = null;
+        $jarakTerdekat = INF;
+
+        foreach ($pita as $k) {
+            $jarak = self::jarakKePita($k, $titik);
+            $cmc = (float) ($k->ketidakpastian_terbaik ?? 0.0);
+            $cmcTerdekat = (float) ($terdekat?->ketidakpastian_terbaik ?? 0.0);
+
+            $lebihDekat = $jarak < $jarakTerdekat - 1e-9;
+            $seriTapiLebihBesar = abs($jarak - $jarakTerdekat) <= 1e-9 && $cmc > $cmcTerdekat;
+
+            if ($lebihDekat || $seriTapiLebihBesar) {
+                $terdekat = $k;
+                $jarakTerdekat = $jarak;
+            }
+        }
+
+        return $terdekat;
+    }
+
+    /**
+     * Jarak `$titik` ke pita `$k` — `0.0` kalau pita itu memuatnya.
+     *
+     * Batas kosong berarti tak terbatas ke arah itu, jadi pita tanpa
+     * `range_min` memuat segala yang di bawah `range_max`.
+     */
+    private static function jarakKePita(CalibrationCapability $k, float $titik): float
+    {
+        $min = $k->range_min === null ? -INF : (float) $k->range_min;
+        $maks = $k->range_max === null ? INF : (float) $k->range_max;
+
+        return max($min - $titik, $titik - $maks, 0.0);
+    }
+
+    /**
+     * Batas atas pita CMC TERTINGGI alat ini di lampiran akreditasi, dan nomor
+     * barisnya di sana.
+     *
+     * @return array{float, int}
+     */
+    abstract protected function batasAkreditasi(): array;
+
+    /**
+     * Peringatkan admin kalau sesi ini memuat set point DI LUAR pita akreditasi
+     * alat ini.
+     *
+     * Bukan kehati-hatian berlebih: blok 5 `Master Olda Centrifuge.xlsm`
+     * mengukur 15000, 20000, dan 25000 rpm — ketiganya di atas 9000 — dan tetap
+     * memakai CMC 1,6 rpm dari pita `200–9000`. Angka itu lalu tercetak sebagai
+     * ketidakpastian terakreditasi untuk putaran yang lampirannya tidak pernah
+     * mencakup. [pitaTerdekat] meniru perilaku itu dengan sengaja, jadi
+     * peringatan ini yang menahannya terbit diam-diam.
+     *
+     * Peringatan, bukan penolakan: lab boleh saja mengkalibrasi di luar lingkup
+     * asal sertifikatnya tidak mengaku terakreditasi di titik itu — dan yang
+     * berhak memutuskan manajer teknis, bukan kode ini.
+     *
+     * Ada di basis, bukan di masing-masing profil: dulu cuma Centrifuge yang
+     * punya, jadi sesi Tachometer di atas 30000 rpm meminjam lantai CMC pita
+     * teratas TANPA satu pun peringatan — persis kebocoran yang peringatan ini
+     * dibuat untuk menutup.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function peringatanSesi(CalibrationSession $sesi): array
+    {
+        [$batas, $nomorLampiran] = $this->batasAkreditasi();
+
+        $diLuar = $sesi->uncertaintyCalculations
+            ->filter(static fn ($u): bool => (float) $u->titik_ukur > $batas)
+            ->map(static fn ($u): string => rtrim(rtrim(number_format((float) $u->titik_ukur, 2, ',', '.'), '0'), ','))
+            ->values()
+            ->all();
+
+        if ($diLuar === []) {
+            return [];
+        }
+
+        $batasTerbaca = number_format($batas, 0, ',', '.');
+
+        return [[
+            'kode' => $this->kode().'_di_luar_akreditasi',
+            'pesan' => sprintf(
+                'Sesi ini memuat %d set point di atas %s rpm (%s) — di luar pita akreditasi '
+                .'%s LK-285-IDN no. %d yang berhenti di %s rpm. Lantai CMC yang terpasang '
+                .'diambil dari pita tertinggi yang ada, jadi ketidakpastian di titik-titik itu '
+                .'TIDAK didukung lampiran akreditasi. Pastikan sertifikatnya tidak mengaku '
+                .'terakreditasi di titik tersebut.',
+                count($diLuar),
+                $batasTerbaca,
+                implode(', ', $diLuar),
+                $this->namaAlatKemampuan(),
+                $nomorLampiran,
+                $batasTerbaca,
+            ),
+        ]];
     }
 
     /**
@@ -424,7 +571,7 @@ abstract class ProfilPutaran extends CalibrationProfile
                 $t['koreksi_standar'], self::SATUAN,
                 $t['rata_rata'], self::SATUAN,
                 $hasil['ketidakpastian_diperluas'],
-                $kemampuan?->ketidakpastian_terbaik ?? '-',
+                self::sebutKemampuan($kemampuan),
             ),
             'distribusi' => 'jejak',
             'u' => 0.0,
@@ -433,6 +580,29 @@ abstract class ProfilPutaran extends CalibrationProfile
         ];
 
         return $jejak;
+    }
+
+    /**
+     * CMC berikut PITA-nya untuk jejak audit — mis. `1,6 (pita 200–9000 rpm)`.
+     *
+     * Pitanya ikut ditulis, bukan cuma angkanya: blok yang titik tertingginya
+     * di luar lingkup meminjam pita terdekat (lihat [pitaTerdekat]), dan tanpa
+     * batas pitanya tertulis, sengketa setahun lagi tidak bisa membedakan
+     * lantai yang memang menaungi titiknya dari lantai pinjaman.
+     */
+    private static function sebutKemampuan(?CalibrationCapability $kemampuan): string
+    {
+        if ($kemampuan === null) {
+            return '-';
+        }
+
+        return sprintf(
+            '%s (pita %s–%s %s)',
+            $kemampuan->ketidakpastian_terbaik ?? '-',
+            $kemampuan->range_min ?? '~',
+            $kemampuan->range_max ?? '~',
+            self::SATUAN,
+        );
     }
 
     /**
