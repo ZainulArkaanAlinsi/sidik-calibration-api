@@ -209,7 +209,7 @@ class WaktuFrekuensiSeeder extends Seeder
                         'tahap' => 'sesudah_adjustment',
                         'titik_ukur' => $setPoint,
                         'pembacaan' => $ms,
-                        'satuan' => 'ms',
+                        'satuan' => WaktuMentah::SATUAN,
                         'standard_id' => $standar->id,
                         'input_source' => 'manual',
                         'is_verified' => true,
@@ -237,6 +237,22 @@ class WaktuFrekuensiSeeder extends Seeder
      *
      * @param  array<string, mixed>  $m
      */
+    /**
+     * Faktor pengali dari satuan spesifikasi master ke satuan HASIL alatnya.
+     *
+     * Cuma tiga satuan yang muncul di ketiga workbook (`Rpm`, `min`, `s`);
+     * yang tidak dikenal dipulangkan 1,0 supaya angka masternya tidak digeser
+     * oleh tebakan.
+     */
+    private static function keSatuanHasil(string $satuanMaster): float
+    {
+        return match (mb_strtolower(trim($satuanMaster))) {
+            'min', 'menit' => 60.0,
+            'jam', 'hour' => 3600.0,
+            default => 1.0,
+        };
+    }
+
     private function seedSesi(
         array $m,
         CalibrationProfile $profil,
@@ -270,7 +286,13 @@ class WaktuFrekuensiSeeder extends Seeder
                 'merk' => $m['merk'],
                 'model' => $m['model'],
                 'range_min' => 0.0,
-                'range_max' => (float) $m['kapasitas'],
+                // `kapasitas` master bersatuan `$m['satuan']` — `min` buat
+                // Stopwatch, `Rpm` buat dua alat putaran — sementara
+                // `equipments.satuan` menyimpan satuan HASIL: detik, karena
+                // tabel sertifikatnya detik. Disalin apa adanya, "60 menit"
+                // jadi "0–60 detik", dan seluruh lembar (set point 300 sampai
+                // 1800 detik) mendarat di luar rentang alatnya sendiri.
+                'range_max' => (float) $m['kapasitas'] * self::keSatuanHasil((string) $m['satuan']),
                 'satuan' => $satuan,
                 'resolusi' => (float) $m['resolusi'],
                 // NULL: kelompok ini nggak divonis PASS/FAIL — lampiran maupun
@@ -304,11 +326,15 @@ class WaktuFrekuensiSeeder extends Seeder
                 'alat_serial_number' => (string) $m['serial'],
                 'pemilik_nama' => $m['pelanggan'],
                 'pemilik_alamat' => $m['alamat'],
+                // Blok spesifikasi TERCETAK di sertifikat, jadi ditulis dalam
+                // satuan MASTERNYA sendiri (`60 min`) — bukan dikonversi. Yang
+                // dikonversi cuma `equipments.range_max` di atas, karena itu
+                // yang diadu ke pembacaan oleh pemeriksa.
                 'spesifikasi_alat' => [
                     'rentang_ukur' => (string) $m['rentang'],
                     'kapasitas' => (string) $m['kapasitas'],
                     'resolusi' => (string) $m['resolusi'],
-                    'satuan' => $satuan,
+                    'satuan' => (string) $m['satuan'],
                 ],
             ],
         );

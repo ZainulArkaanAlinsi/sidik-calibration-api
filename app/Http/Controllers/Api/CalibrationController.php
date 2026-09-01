@@ -1855,7 +1855,7 @@ class CalibrationController extends Controller
                         // Yang tersimpan milidetik; kolom sertifikatnya detik.
                         // Satuannya ditulis apa adanya supaya angka mentahnya
                         // bisa diadu langsung ke sel workbook waktu ada sengketa.
-                        'satuan' => 'ms',
+                        'satuan' => WaktuMentah::SATUAN,
                         'input_source' => $sumberInput,
                         'is_verified' => ! $dariKamera,
                     ];

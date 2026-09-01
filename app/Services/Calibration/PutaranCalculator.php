@@ -79,6 +79,23 @@ class PutaranCalculator
     ) {}
 
     /**
+     * Daya baca TACHOMETER STANDAR di sekitar `$setPoint` — 0,1 rpm sampai
+     * 10000 rpm, 1 rpm di atasnya.
+     *
+     * Publik karena bukan cuma budget yang butuh: yang tercatat di
+     * `raw_measurements` kelompok ini adalah pembacaan STANDARNYA, jadi
+     * pemeriksa "bukan kelipatan resolusi" dan lembar perhitungan harus memakai
+     * penggaris yang sama. Satu tempat yang memutuskan, supaya ambangnya tidak
+     * bisa menyimpang antara budget dan pemeriksa.
+     */
+    public function resolusiStandar(float $setPoint): float
+    {
+        $nominal = $this->tabel->nominalTerdekat($setPoint) ?? $setPoint;
+
+        return $nominal > self::AMBANG_RESOLUSI_STANDAR ? 1.0 : 0.1;
+    }
+
+    /**
      * Hitung satu blok (sampai tiga titik) sekaligus.
      *
      * @param  list<array{titik_ke: int, titik_ukur: float, pembacaan: list<float>}>  $titik
@@ -238,7 +255,9 @@ class PutaranCalculator
         }
 
         $sqrt3 = sqrt(3);
-        $resolusiStandar = $nominalTertinggi > self::AMBANG_RESOLUSI_STANDAR ? 1.0 : 0.1;
+        // Lewat [resolusiStandar] supaya ambangnya satu tempat — `nominal_standar`
+        // memang sudah nominal sertifikat, jadi pemetaan ulangnya no-op di sini.
+        $resolusiStandar = $this->resolusiStandar($nominalTertinggi);
         $resolusiUut = (float) $konteks['resolusi_uut'];
         $satuan = $konteks['satuan'];
 

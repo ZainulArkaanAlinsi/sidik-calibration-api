@@ -344,6 +344,45 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
+     * Milidetik (satuan baris `raw_measurements` lembar ini) → satuan
+     * `equipments.range_min/max`, biar pemeriksa "di luar rentang" mbandingin
+     * dua angka yang SEBANDING.
+     *
+     * ## Kegagalan yang ditutup override ini
+     *
+     * Pembacaan lembar ini disimpan dalam MILIDETIK — begitulah stopwatch
+     * menampilkannya, dan begitu pula angka mentahnya bisa diadu langsung ke sel
+     * workbook waktu ada sengketa. `equipments.range_min/max` sebaliknya
+     * bersatuan alatnya (detik). Tanpa konversi, tiap pembacaan diadu sebagai
+     * kalau dia detik:
+     *
+     *     Timer 015-CAL-424 -> 30 dari 30 baris `pembacaan_di_luar_rentang`
+     *     "pembacaan 60123 s jauh di luar rentang ukur alat (0–60 s)"
+     *
+     * padahal 60123 ms = 60,123 detik. SETIAP pembacaan di SETIAP sesi Timer
+     * kena, dan peringatan palsu yang selalu muncul melatih admin menekan
+     * "setujui tetap" tanpa membaca.
+     *
+     * Bentuknya sama persis dengan yang sudah dipakai
+     * [ConductivityProfile::nilaiDalamSatuanAlat] untuk µS/cm lawan mS/cm.
+     * Satuan alat yang tidak dikenal dipulangkan apa adanya — sama seperti di
+     * sana: menebak faktornya lebih buruk daripada tidak mengubah apa pun.
+     */
+    public function nilaiDalamSatuanAlat(float $nilai, ?string $satuanTitik, Equipment $equipment): float
+    {
+        if (strtolower(trim((string) $satuanTitik)) !== WaktuMentah::SATUAN) {
+            return $nilai;
+        }
+
+        return match (strtolower(trim((string) $equipment->satuan))) {
+            's', 'sec', 'detik' => $nilai / 1000.0,
+            'min', 'menit' => $nilai / 60_000.0,
+            'jam', 'hour', 'h' => $nilai / 3_600_000.0,
+            default => $nilai,
+        };
+    }
+
+    /**
      * Satu-satunya baris CMC alat ini (5–3600 detik → 0,81 detik), disaring
      * organisasi DAN kategori — lihat alasan panjangnya di
      * `ProfilPutaran::kemampuanUntukBlok`.
