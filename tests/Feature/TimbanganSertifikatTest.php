@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -104,6 +105,93 @@ class TimbanganSertifikatTest extends TestCase
         $this->assertEqualsWithDelta(2000.0, $rpt[1]['kapasitas'], self::TOLERANSI);
         $this->assertEqualsWithDelta(0.03162277660165503, $rpt[1]['stdev'], self::TOLERANSI);
         $this->assertEqualsWithDelta(0.09999999999990905, $rpt[1]['maks_beda'], self::TOLERANSI);
+    }
+
+    /**
+     * Blok Repeatability yang KOSONG tidak melahirkan baris karangan.
+     *
+     * Waktu teknisi tidak mengisi bloknya sama sekali, `keterulangan()` tetap
+     * memulangkan STDEV — bukan nol, melainkan lantai `Sres` (0,82 × resolusi/2),
+     * angka yang diturunkan dari RESOLUSI ALAT dan bukan dari satu pun
+     * pembacaan. Sebelum penjagaan ini, bagian 1 sertifikat kg terbit sebagai:
+     *
+     *     Half Capacity = 0 | 0,01 | 0,00
+     *     Full Capacity = 0 | 0,01 | 0,00
+     *
+     * Kapasitas nol dengan simpangan baku yang tidak pernah diukur, di lembar
+     * terakreditasi. Bentuknya persis jebakan `IFERROR(…,"")` yang dilarang
+     * ditiru: sel kosong yang dibaca sebagai angka.
+     */
+    public function test_keterulangan_kosong_tidak_melahirkan_baris_karangan(): void
+    {
+        $sesi = $this->sesi('011-CAL-525');
+        $spek = $sesi->spesifikasi_alat;
+        unset($spek['keterulangan']);
+        $sesi->update(['spesifikasi_alat' => $spek]);
+
+        // Peringatan `keterulangan_kosong` menahan approve sekali — itu memang
+        // maunya. Admin melewatinya secara SADAR, dan di sini test berperan
+        // sebagai admin itu.
+        $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->assertOk();
+
+        $sertifikat = $sesi->fresh()->certificate()->firstOrFail();
+
+        $this->assertSame(
+            [],
+            $sertifikat->snapshot['timbangan']['keterulangan'],
+            'Slot yang nggak diisi tetap dicetak sebagai baris.',
+        );
+
+        $html = view(
+            'sertifikat.pdf',
+            app(DataTampilanSertifikat::class)->untuk($sertifikat),
+        )->render();
+
+        // Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
+        // dimuat — yang benar bagiannya memang tidak ada.
+        $this->assertStringNotContainsString('1. REPEATABILITY', $html);
+        $this->assertStringNotContainsString('Maximum Deviation With the Next Reading', $html);
+
+        // Bagian lain tetap terbit seperti biasa.
+        $this->assertStringContainsString('3. ACCURACY', $html);
+    }
+
+    /**
+     * Dan hilangnya bagian 1 itu DIBERITAHUKAN sebelum admin menyetujui.
+     *
+     * Menghapus baris karangan tanpa memberi tahu siapa pun cuma memindahkan
+     * kegagalannya: yang terbit lembar terakreditasi tanpa Repeatability, dan
+     * tidak ada yang sadar sampai pelanggan bertanya.
+     */
+    public function test_keterulangan_kosong_diperingatkan_sebelum_approve(): void
+    {
+        $sesi = $this->sesi('011-CAL-525');
+        $spek = $sesi->spesifikasi_alat;
+        unset($spek['keterulangan']);
+        $sesi->update(['spesifikasi_alat' => $spek]);
+
+        $kode = array_column(
+            (new TimbanganProfile)->peringatanSesi($sesi->fresh()),
+            'kode',
+        );
+
+        $this->assertContains('keterulangan_kosong', $kode);
+    }
+
+    /** Sesi yang bloknya TERISI tidak ikut kena peringatan itu. */
+    public function test_keterulangan_terisi_tidak_diperingatkan(): void
+    {
+        $kode = array_column(
+            (new TimbanganProfile)
+                ->peringatanSesi($this->sesi(self::SESI_SUB)),
+            'kode',
+        );
+
+        $this->assertNotContains('keterulangan_kosong', $kode);
     }
 
     /**

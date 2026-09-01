@@ -91,10 +91,28 @@ class CertificatesTable
                     // diklik. Lihat [\App\Services\BerkasPdfSertifikat].
                     ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_TERBIT
                         && $record->pdf_path)
-                    ->action(function (Certificate $record): StreamedResponse {
+                    ->action(function (Certificate $record): ?StreamedResponse {
                         $path = app(BerkasPdfSertifikat::class)->pastikanAda($record);
 
-                        abort_unless($path !== null, 404, 'Berkas PDF-nya nggak bisa dibangun ulang.');
+                        // Notifikasi, BUKAN `abort(404)`.
+                        //
+                        // `abort()` di dalam aksi Filament melempar admin ke
+                        // halaman galat mentah dan menelan konteksnya — yang
+                        // dia lihat cuma "404", tanpa tahu bahwa masalahnya
+                        // sertifikat ini nggak punya snapshot buat dibangun
+                        // ulang. Di panel, kegagalan yang bisa ditindaklanjuti
+                        // itu notifikasi yang menyebut langkah berikutnya.
+                        if ($path === null) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Berkas PDF-nya nggak bisa dibangun ulang')
+                                ->body('Sertifikat ini nggak punya data beku (snapshot), jadi '
+                                    .'lembarnya nggak bisa dirender dari mana pun. Jalankan '
+                                    .'`sertifikat:bangun-ulang` atau terbitkan ulang sesinya.')
+                                ->send();
+
+                            return null;
+                        }
 
                         // `nomor` ada slash-nya (CAL/2026/07/0001) — nggak boleh jadi nama file.
                         $namaFile = 'Sertifikat-'.str_replace('/', '-', (string) $record->nomor).'.pdf';

@@ -251,8 +251,11 @@ class FolderFileController extends Controller
      * Unduh isinya. Buat file sertifikat, yang dikirim PDF sertifikat aslinya —
      * jadi selalu versi terbaru yang sah, bukan salinan basi.
      */
-    public function download(Request $request, FolderFile $folderFile): StreamedResponse
-    {
+    public function download(
+        Request $request,
+        FolderFile $folderFile,
+        BerkasPdfSertifikat $berkas,
+    ): StreamedResponse {
         $this->pastikanBolehLihat($request, $folderFile);
 
         if ($folderFile->sumber === FolderFile::SUMBER_SERTIFIKAT) {
@@ -265,7 +268,7 @@ class FolderFileController extends Controller
             );
 
             // Dibangun ulang dari snapshot kalau raib — lihat [BerkasPdfSertifikat].
-            $path = app(BerkasPdfSertifikat::class)->pastikanAda($sertifikat);
+            $path = $berkas->pastikanAda($sertifikat);
 
             abort_unless($path !== null, 404);
 
