@@ -74,13 +74,33 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     }
 
     /**
+     * Nomor sesinya saja, diturunkan dari [barisPertama].
+     *
+     * Provider sendiri, bukan memakai [barisPertama] langsung: PHPUnit
+     * mengeluarkan WARNING kalau provider memasok lebih banyak argumen daripada
+     * yang diterima method-nya, dan `php artisan test` memulangkan exit 1 pada
+     * warning — suite hijau seluruhnya tapi CI merah, tanpa satu pun baris
+     * `FAIL` untuk dibaca. Diturunkan (bukan disalin) supaya daftarnya tidak
+     * bisa menyimpang dari sumbernya.
+     *
+     * @return array<string, array{string}>
+     */
+    public static function nomorSesi(): array
+    {
+        return array_map(
+            static fn (array $baris): array => [$baris[0]],
+            self::barisPertama(),
+        );
+    }
+
+    /**
      * Identitas `Standard ≡ UUT + Correction` di setiap titik ketiga alat.
      *
      * Disapu ke SEMUA titik, bukan cuma yang pertama: cacatnya lahir dari
      * pemetaan kolom, jadi kalau salah dia salah di semua baris — dan kalau
      * suatu saat cuma sebagian yang meleset, itu justru cacat yang lebih halus.
      */
-    #[DataProvider('barisPertama')]
+    #[DataProvider('nomorSesi')]
     public function test_tabel_hasil_menjumlah(string $nomorSesi): void
     {
         $this->seed(DatabaseSeeder::class);
