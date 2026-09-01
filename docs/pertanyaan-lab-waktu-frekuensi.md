@@ -360,6 +360,42 @@ tidak ada angka yang bergeser. Dijaga `NominalDiLuarSertifikatDitolakTest`.
 
 ---
 
+## §13 — Kalimat faktor cakupan menyebut SATU `k` untuk baris yang `k`-nya beda  [PERLU JAWABAN]
+
+`resources/views/sertifikat/pdf.blade.php` mencetak kalimat
+
+> The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) = …
+
+sekali per kelompok `remark`, memakai `k` baris **pertama** kelompok itu. Untuk
+Spectrophotometer itu benar — tiap kelompoknya memang punya satu `k` (Holmium
+3,18; Didynium 2,36; %T 2,01). Untuk alat yang seluruh barisnya ber-`remark`
+kosong, satu kelompok memuat baris ber-`k` berbeda-beda.
+
+Disapu ke seluruh sesi ter-seed, dua di antaranya berbeda **pada presisi yang
+dicetak** (dua desimal):
+
+| Sesi | `k` di kelompok itu | Tercetak | Seharusnya juga |
+|---|---|---|---|
+| Tachometer `0140-CAL-424` | 1,95997 … 1,96879 | **1,96** | 1,97 (blok terakhir) |
+| Centrifuge `0133-CAL-324` | 1,95997 … 1,96879 | **1,96** | 1,97 (blok terakhir) |
+| Thermohygrometer `0312-CAL-624` | 1,96204 … 1,96736 | **1,96** | 1,97 (satu baris) |
+
+Sisanya (pH, Turbidimeter, Refractometer, Conductivity, Incubator, Timbangan,
+Moisture Analyzer, Timer/Stopwatch) berbeda hanya di desimal keempat dan
+membulat ke angka yang sama, jadi kalimatnya kebetulan benar.
+
+Kode **tidak diubah**: mengganti kalimat sertifikat terakreditasi — misal jadi
+`k = 1,96–1,97` atau satu kalimat per baris — mengubah bentuk dokumen yang
+sudah terbit, dan itu keputusan manajer teknis, bukan keputusan kode.
+
+> **[PERLU JAWABAN]** Untuk alat yang `k`-nya beda antar blok/baris, kalimat
+> faktor cakupan sebaiknya: (a) menyebut rentang `k = 1,96–1,97`, (b) dicetak
+> per blok seperti Spectrophotometer, atau (c) dibiarkan seperti sekarang
+> karena selisihnya di bawah ketelitian yang berarti? Kalau (c), sebaiknya
+> kalimatnya berbunyi "≈" supaya tidak mengaku presisi yang tidak ada.
+
+---
+
 ## Ringkasan status
 
 | § | Pokok | Status | Pengaruh ke angka tercetak |
@@ -376,3 +412,4 @@ tidak ada angka yang bergeser. Dijaga `NominalDiLuarSertifikatDitolakTest`.
 | **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | **Konvensi Centrifuge/Timer dipakai** | **TANDA koreksi berbalik** |
 | 11 | Data 15000 rpm berdesimal, budgetnya bulat | Budget dituruti | — (1 peringatan/sesi) |
 | 12 | Set point di luar jangkauan sertifikat | **Diblokir** dengan alasan | — (nol set point master kena) |
+| 13 | Kalimat `k` satu angka untuk baris ber-`k` beda | **Diangkat, kode tidak diubah** | `k` tercetak 1,96 padahal ada baris 1,97 |

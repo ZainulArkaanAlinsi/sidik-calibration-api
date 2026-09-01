@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Standard;
 use App\Rules\AngkaTerhingga;
 use App\Rules\PenunjukanWaktu;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -287,7 +288,13 @@ class CalibrationRequest extends FormRequest
             'pemilik_alamat' => ['sometimes', 'nullable', 'string', 'max:1000'],
 
             // Kolom "Usage Check": standar mana aja yang dicentang teknisi.
-            'standar_dicek' => ['sometimes', 'array'],
+            //
+            // `max:40` sama dengan batas `sensor_grid`, dan alasannya sama: tiap
+            // elemen memicu satu query `exists` di baris berikutnya, jadi tanpa
+            // batas, jumlah query dan waktu validasi ditentukan pengirim.
+            // Lembar terpanjang di sistem ini mencetak ENAM baris standar, jadi
+            // 40 itu kelonggaran, bukan patokan.
+            'standar_dicek' => ['sometimes', 'array', 'max:40'],
             'standar_dicek.*.standard_id' => [
                 'required',
                 Rule::exists('standards', 'id')
@@ -323,7 +330,20 @@ class CalibrationRequest extends FormRequest
             'measurements' => ['sometimes', 'array', 'max:60'],
             'measurements.*.titik_ukur' => ['required', 'numeric'],
             'measurements.*.satuan' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'measurements.*.pembacaan' => ['sometimes', 'nullable', 'array'],
+            // Batasnya `MAKS_KOLOM_PENGULANGAN` — jumlah kolom pengulangan
+            // TERBANYAK yang boleh digambar lembar mana pun (lihat
+            // `bentukLembarKerja()`), jadi kiriman yang sah nggak mungkin
+            // melebihinya; lembar terpanjang di test cuma memakai enam.
+            //
+            // Sebelumnya sumbu ini SATU-SATUNYA yang nggak berbatas, padahal
+            // dia yang paling banyak menulis `raw_measurements` di jalur datar:
+            // satu elemen = satu baris. `measurements` dibatasi 60 justru
+            // dengan alasan itu, dan batas itu jadi nggak ada artinya kalau tiap
+            // titiknya boleh membawa deret sepanjang apa pun.
+            'measurements.*.pembacaan' => [
+                'sometimes', 'nullable', 'array',
+                'max:'.CalibrationProfile::MAKS_KOLOM_PENGULANGAN,
+            ],
             // Sel kosong di lembar kerja dikirim sebagai null — diterima, terus
             // disaring waktu ngitung.
             'measurements.*.pembacaan.*' => ['nullable', 'numeric'],
