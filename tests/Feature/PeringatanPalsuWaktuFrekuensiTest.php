@@ -131,6 +131,43 @@ class PeringatanPalsuWaktuFrekuensiTest extends TestCase
         );
     }
 
+    /**
+     * Kondisi lingkungan ketiga sesi contoh WAJIB terisi.
+     *
+     * Ketiga master mencatat suhu & kelembapan ruang (21,3/21,5 °C dan 53/56
+     * %RH untuk Timer), tapi seeder-nya sempat lupa memanggil
+     * `KondisiLingkungan::terapkan()` — pola yang sudah dipakai tiga seeder
+     * lain dan oleh `POST /calibrations` sendiri. Akibatnya blok "Environmental
+     * Condition" sertifikat contohnya kosong dan validator memunculkan
+     * `env_condition` di SETIAP sesi. Data contoh yang memunculkan temuan palsu
+     * melatih pembacanya mengabaikan temuan.
+     */
+    #[DataProvider('sesiKelompokLengkap')]
+    public function test_kondisi_lingkungan_terisi(string $nomorSesi): void
+    {
+        $sesi = $this->sesi($nomorSesi);
+
+        $this->assertNotNull($sesi->suhu_ruang, "Sesi {$nomorSesi} nggak punya suhu ruang.");
+        $this->assertNotNull($sesi->kelembaban, "Sesi {$nomorSesi} nggak punya kelembaban.");
+
+        $this->assertSame(
+            [], $this->temuan($sesi, 'env_condition'),
+            "Sesi {$nomorSesi} masih memunculkan `env_condition`.",
+        );
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function sesiKelompokLengkap(): array
+    {
+        return [
+            'Tachometer' => ['0140-CAL-424'],
+            'Centrifuge' => ['0133-CAL-324'],
+            'Timer/Stopwatch' => ['015-CAL-424'],
+        ];
+    }
+
     /** Ketiga sesi master harus BERSIH dari kedua peringatan itu digabung. */
     public function test_ketiga_sesi_master_nyaris_bersih(): void
     {

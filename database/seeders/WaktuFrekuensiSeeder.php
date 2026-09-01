@@ -14,6 +14,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\TachometerProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
+use App\Services\KondisiLingkungan;
 use App\Support\WaktuMentah;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
 use Database\Seeders\Concerns\MenstempelVersiRumus;
@@ -233,11 +234,6 @@ class WaktuFrekuensiSeeder extends Seeder
     }
 
     /**
-     * Pelanggan + kategori + alat + sesi, bagian yang sama untuk ketiganya.
-     *
-     * @param  array<string, mixed>  $m
-     */
-    /**
      * Faktor pengali dari satuan spesifikasi master ke satuan HASIL alatnya.
      *
      * Cuma tiga satuan yang muncul di ketiga workbook (`Rpm`, `min`, `s`);
@@ -253,6 +249,11 @@ class WaktuFrekuensiSeeder extends Seeder
         };
     }
 
+    /**
+     * Pelanggan + kategori + alat + sesi, bagian yang sama untuk ketiganya.
+     *
+     * @param  array<string, mixed>  $m
+     */
     private function seedSesi(
         array $m,
         CalibrationProfile $profil,
@@ -359,5 +360,18 @@ class WaktuFrekuensiSeeder extends Seeder
                 'formula_version_id' => $versiRumus,
             ]);
         }
+
+        // Suhu & kelembapan RUANG diturunkan di sini, bukan ditulis tangan —
+        // jalur yang sama persis dengan `POST /calibrations` (lihat
+        // `CalibrationController`), dan pola yang sama dengan tiga seeder lain
+        // (Viscometer, Suhu3Alat, Autoclave).
+        //
+        // Dilupakan, ketiga sesi contoh ini terbit tanpa `suhu_ruang` &
+        // `kelembaban`: blok "Environmental Condition" sertifikatnya kosong,
+        // dan validator memunculkan `env_condition` di setiap sesi — padahal
+        // ketiga master mencatat angkanya (21,3/21,5 °C & 53/56 %RH untuk
+        // Timer). Data contoh yang memunculkan temuan palsu melatih pembacanya
+        // mengabaikan temuan.
+        app(KondisiLingkungan::class)->terapkan($sesi->fresh()->load('thermohygro'));
     }
 }
