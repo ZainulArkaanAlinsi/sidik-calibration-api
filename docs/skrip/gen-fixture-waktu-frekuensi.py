@@ -7,6 +7,12 @@ import openpyxl, json, os
 
 def num(c): return float(c.value) if isinstance(c.value,(int,float)) else None
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Berkas hasil ditulis ke tujuan yang DIPAKAI, bukan di sebelah skrip ini.
+# `os.chdir` di atas ada supaya workbook master kebaca dari folder ini; kalau
+# jalur tulisnya ikut relatif ke situ, skrip ini "berhasil" sambil meninggalkan
+# berkas yang di-commit tidak berubah — dan yang menjalankannya tidak tahu.
+AKAR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 KOLOM = ('G','I','K')
 
@@ -141,7 +147,7 @@ fixture = {
     'timer': waktu(),
 }
 
-p = 'waktu-frekuensi-master.json'
+p = os.path.join(AKAR, 'tests', 'Fixtures', 'waktu-frekuensi-master.json')
 with open(p,'w',encoding='utf-8') as f:
     json.dump(fixture,f,ensure_ascii=False,indent=2); f.write('\n')
 

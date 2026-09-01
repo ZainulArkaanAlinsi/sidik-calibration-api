@@ -154,7 +154,7 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $sesi = CalibrationSession::where('nomor_sesi', '2405.13.A')
+        $sesi = CalibrationSession::query()->where('nomor_sesi', '2405.13.A')
             ->with(['uncertaintyCalculations', 'equipment'])
             ->firstOrFail();
 
@@ -176,7 +176,7 @@ class WaktuFrekuensiSertifikatTest extends TestCase
     /** @return list<array<string, mixed>> */
     private function tabelHasil(string $nomorSesi): array
     {
-        $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)
+        $sesi = CalibrationSession::query()->where('nomor_sesi', $nomorSesi)
             ->with(['uncertaintyCalculations', 'equipment', 'organization'])
             ->firstOrFail();
 

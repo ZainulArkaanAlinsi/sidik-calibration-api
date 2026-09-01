@@ -1,6 +1,6 @@
 {
   "_sumber": "Master Olda Timer dan Stopwatch.xlsm (sheet SERTIFIKAT KALIBRATOR, Drift Stopwatch, Human Reaction).",
-  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu.py",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu-frekuensi.py",
   "standar": {
     "nama": "Stopwatch",
     "merk": "CASIO",

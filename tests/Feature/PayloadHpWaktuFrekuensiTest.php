@@ -128,10 +128,13 @@ class PayloadHpWaktuFrekuensiTest extends TestCase
         $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
 
         // Persis yang dicetak HP: 18 set point saran, tiga terisi.
+        // Kuncinya `int`, bukan `float`: PHP memang melemparkan kunci float
+        // integral ke int, jadi perilakunya sama — tapi ditulis float, analisis
+        // statis melaporkan `array.invalidKey` di berkas yang baru ditambah ini.
         $terisi = [
-            60.0 => [59.9, 60.0, 60.0, 60.0, 60.0],
-            80.0 => [80.2, 80.2, 80.2, 80.1, 80.1],
-            100.0 => [99.8, 99.8, 99.8, 100.0, 99.9],
+            60 => [59.9, 60.0, 60.0, 60.0, 60.0],
+            80 => [80.2, 80.2, 80.2, 80.1, 80.1],
+            100 => [99.8, 99.8, 99.8, 100.0, 99.9],
         ];
         $saran = [60.0, 80.0, 100.0, 120.0, 150.0, 200.0, 500.0, 1000.0, 2000.0,
             3000.0, 5000.0, 7000.0, 10000.0, 12000.0, 14000.0, 15000.0, 20000.0, 25000.0];
@@ -139,7 +142,7 @@ class PayloadHpWaktuFrekuensiTest extends TestCase
         $measurements = array_map(static fn (float $sp): array => [
             'titik_ukur' => $sp,
             'satuan' => 'rpm',
-            'pembacaan' => $terisi[$sp] ?? [null, null, null, null, null],
+            'pembacaan' => $terisi[(int) $sp] ?? [null, null, null, null, null],
         ], $saran);
 
         $data = $this->actingAs($teknisi)
@@ -171,7 +174,16 @@ class PayloadHpWaktuFrekuensiTest extends TestCase
             .json_encode($data['belum_dihitung'] ?? []),
         );
 
-        // §9: rata-rata 59,98 · koreksi −0,22 rpm.
+        // §9: koreksi −0,22 rpm.
+        //
+        // `rata_rata` memang SET POINT (60,0 rpm) — penunjukan alat pelanggan,
+        // sesuai kontrak kolom `uncertainty_calculations`. Rata-rata pembacaan
+        // tachometer standarnya 59,98 rpm dan hidup di jejak audit, BUKAN di
+        // kolom ini. Lihat `ProfilPutaran::hitungPerGrup()`.
+        //
+        // Ditulis begini supaya pembaca berikutnya tidak "membetulkan" angka di
+        // bawah jadi 59,98 — yang justru merusak kontrak kolom sertifikat yang
+        // dijaga test ini.
         $this->assertEqualsWithDelta(60.0, (float) $titik[0]['rata_rata'], 5e-6);
         $this->assertEqualsWithDelta(-0.22, (float) $titik[0]['koreksi'], 5e-6);
     }

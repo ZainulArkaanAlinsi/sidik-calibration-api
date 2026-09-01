@@ -100,6 +100,16 @@ class TabelStandarPutaran
      */
     public function nominalTerdekat(float $setPoint): ?float
     {
+        // SERI dimenangkan nominal yang LEBIH BESAR: set point 80 rpm memilih
+        // 100 (bukan 60), 150 memilih 200 (bukan 100).
+        //
+        // Ditulis di sini, bukan cuma di dalam loop, karena saudaranya
+        // [TabelStandarWaktu::nominalTerdekat] memutuskan KEBALIKANNYA — seri di
+        // sana dimenangkan yang lebih kecil. Dua berkas kembar dengan dua
+        // jawaban yang berbeda: pembaca yang menyamakannya karena "bentuknya
+        // sama" akan salah di salah satunya, dan selisihnya cuma muncul di set
+        // point yang diketik teknisi sendiri.
+
         $semua = array_map(
             static fn (array $baris): float => (float) $baris['nominal'],
             self::muat()['sertifikat'],

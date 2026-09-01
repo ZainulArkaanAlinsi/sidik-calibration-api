@@ -8,6 +8,12 @@ def num(c): return float(c.value) if isinstance(c.value, (int, float)) else None
 def bulat(x, n=10): return None if x is None else round(x, n)
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Berkas hasil ditulis ke tujuan yang DIPAKAI, bukan di sebelah skrip ini.
+# `os.chdir` di atas ada supaya workbook master kebaca dari folder ini; kalau
+# jalur tulisnya ikut relatif ke situ, skrip ini "berhasil" sambil meninggalkan
+# berkas yang di-commit tidak berubah — dan yang menjalankannya tidak tahu.
+AKAR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 # ---------------------------------------------------------------- PUTARAN (rpm)
 wb = openpyxl.load_workbook('tachometer.xlsm', data_only=True)
@@ -50,7 +56,7 @@ putaran = {
     '_sumber': 'Master Olda Tachometer.xlsm / Master Olda Centrifuge.xlsm (sheet '
                'SERTIFIKAT KALIBRATOR & Drift Std Kalibrator) — kedua workbook '
                'memuat tabel yang IDENTIK untuk keping standar yang sama.',
-    '_digenerate_oleh': 'docs/skrip/gen-tabel-standar-putaran.py',
+    '_digenerate_oleh': 'docs/skrip/gen-tabel-standar-waktu-frekuensi.py',
     'standar': {
         'nama': S['C1'].value, 'merk': S['C2'].value,
         'resolusi': S['C3'].value, 'seri': S['C4'].value,
@@ -108,7 +114,7 @@ for r in (19, 20, 21, 22):
 waktu = {
     '_sumber': 'Master Olda Timer dan Stopwatch.xlsm (sheet SERTIFIKAT KALIBRATOR, '
                'Drift Stopwatch, Human Reaction).',
-    '_digenerate_oleh': 'docs/skrip/gen-tabel-standar-waktu.py',
+    '_digenerate_oleh': 'docs/skrip/gen-tabel-standar-waktu-frekuensi.py',
     'standar': {'nama': S2['C1'].value, 'merk': S2['C2'].value, 'resolusi': S2['C3'].value,
                 'seri': S2['C4'].value, 'tanggal_kalibrasi': S2['C5'].value.date().isoformat()},
     'sertifikat': titik2,
@@ -124,7 +130,7 @@ waktu = {
 }
 
 for nama, isi in (('putaran', putaran), ('waktu', waktu)):
-    p = f'tabel-standar-{nama}.json'
+    p = os.path.join(AKAR, 'database', 'data', f'tabel-standar-{nama}.json')
     with open(p, 'w', encoding='utf-8') as f:
         json.dump(isi, f, ensure_ascii=False, indent=2)
         f.write('\n')

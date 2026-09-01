@@ -47,7 +47,7 @@ class LembarKerjaTidakBocorLintasLabTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
         $labLain = Organization::factory()->create(['nama' => 'Lab Sebelah']);
 
         // Namanya sengaja PERSIS seperti yang tercetak di kop master Putaran —
@@ -71,7 +71,7 @@ class LembarKerjaTidakBocorLintasLabTest extends TestCase
 
         // Punya lab sendiri dihapus supaya kalau baris/pilihan itu tetap muncul,
         // yang muncul PASTI milik lab sebelah.
-        Standard::where('organization_id', $teknisi->organization_id)
+        Standard::query()->where('organization_id', $teknisi->organization_id)
             ->where(fn ($q) => $q->where('nama', 'like', '%NK-300%')->orWhere('nama', 'TH-3'))
             ->delete();
 
@@ -102,6 +102,74 @@ class LembarKerjaTidakBocorLintasLabTest extends TestCase
     }
 
     /**
+     * Pintu KEDUA dengan bentuk yang sama: `GET /api/worksheet-templates/{kode}`.
+     *
+     * `WorksheetScanController::alat()` memulangkan `null` waktu `equipment_id`
+     * tidak dikirim — dan `equipment_id` di endpoint itu `sometimes|nullable`.
+     * Null diteruskan ke `TemplateLembarKerja::dariProfil()` lalu ke
+     * `bentukLembarKerja(false, null)`, jadi saringan organisasi di
+     * `masterStandarTertaut()` tidak terpasang sama sekali dan baris template
+     * menunjuk `standard_id` milik lab lain.
+     *
+     * Akibatnya bukan cuma tampilan: HP memakai `standard_id` itu apa adanya
+     * waktu mengirim hasil pindai, jadi ketertelusuran sesi lab ini menunjuk
+     * kalibrator lab sebelah.
+     *
+     * Lolos dari perbaikan pertama karena saringannya duduk di PROFIL, bukan di
+     * controller — jadi tiap pemanggil baru harus mengingatnya sendiri.
+     */
+    public function test_template_pindai_tanpa_equipment_id_tidak_menunjuk_kalibrator_lab_lain(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $labLain = Organization::factory()->create(['nama' => 'Lab Sebelah']);
+
+        $tachoLabLain = Standard::factory()->create([
+            'organization_id' => $labLain->id,
+            'nama' => 'Infrared Tachometer NK-300',
+            'serial_number' => 'BOCOR-SN-2',
+            'no_sertifikat' => 'BOCOR-SERT-777',
+            'parameter_kondisi' => null,
+        ]);
+
+        // Punya lab sendiri dihapus: kalau baris template tetap menunjuk sebuah
+        // standar, yang ditunjuk PASTI milik lab sebelah.
+        Standard::query()->where('organization_id', $teknisi->organization_id)
+            ->where('nama', 'like', '%NK-300%')
+            ->delete();
+
+        $respons = $this->actingAs($teknisi)
+            ->getJson('/api/worksheet-templates/centrifuge')
+            ->assertOk();
+
+        $ditunjuk = collect($respons->json('data.tabel') ?? [])
+            ->flatMap(static fn (array $t): array => $t['baris'] ?? [])
+            ->pluck('standard_id')
+            ->merge(collect($respons->json('data.sel') ?? [])->pluck('standard_id'))
+            ->filter()
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        $this->assertNotContains(
+            $tachoLabLain->id,
+            $ditunjuk->all(),
+            'Template pindai lab 1 menunjuk kalibrator milik lab lain '
+            ."(standard_id {$tachoLabLain->id}). HP memakai id itu apa adanya "
+            .'waktu mengirim hasil pindai.',
+        );
+
+        foreach ($ditunjuk as $id) {
+            $this->assertSame(
+                $teknisi->organization_id,
+                Standard::findOrFail($id)->organization_id,
+                "Baris template menunjuk standar {$id} milik organisasi lain.",
+            );
+        }
+    }
+
+    /**
      * Dan lembarnya tetap BERGUNA: pilihan lab sendiri tidak ikut hilang.
      *
      * Tanpa ini, "menyaring semuanya" jadi hijau — dan dropdown kosong artinya
@@ -111,7 +179,7 @@ class LembarKerjaTidakBocorLintasLabTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
 
         $pilihan = collect(
             $this->actingAs($teknisi)

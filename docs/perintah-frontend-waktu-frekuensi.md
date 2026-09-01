@@ -3,6 +3,10 @@
 Dokumen **berdiri sendiri**: tempel utuh ke sesi kerja frontend/mobile, tidak
 perlu membaca berkas lain.
 
+> Konteksnya, kalau perlu: ini turunan **permintaan ke-7** di
+> `docs/permintaan-user-7.md` (§Gelombang — alat ke-22/23/24). Berkas itu
+> pegangan status & keputusan, BUKAN prasyarat buat mengerjakan dokumen ini.
+
 Backend alat ke-22/23/24 (kelompok akreditasi **"Waktu dan Frekuensi"**,
 LK-285-IDN no. 37, 38, 39) sudah selesai. Kelompok itu sekarang **lengkap** —
 ketiga alat di lampiran sudah punya profil.
@@ -27,17 +31,18 @@ butuh perhatian cuma Timer/Stopwatch.
 Alurnya **sama persis** dengan 21 alat sebelumnya — tidak ada langkah baru.
 Yang berbeda cuma isi lembar kerjanya.
 
-```
+```text
 TEKNISI (HP)                    SERVER                      ADMIN (panel)
 ─────────────                   ──────                      ─────────────
 1. Pilih alat
-   └ GET /worksheets/{kode}  →  bentukLembarKerja()
+   └ GET /api/worksheets/{kode}
+                            →  bentukLembarKerja()
                                  profil dipilih dari
                                  nama_alat_kemampuan
 2. Isi lembar
    (manual / kamera)
 3. Kirim
-   └ POST /calibrations     →  susunBlokWaktu()  atau
+   └ POST /api/calibrations →  susunBlokWaktu()  atau
                                 jalur tabel datar
                                      ↓
                                 simpan raw_measurements
@@ -209,7 +214,7 @@ Ini satu-satunya yang bentuknya baru.
 
 Empat kotak kecil bersebelahan per ulangan, dengan pemisah yang jelas:
 
-```
+```text
 Set point 1 menit (60 detik)
 
   Stopwatch Standar          Alat Pelanggan
@@ -309,10 +314,15 @@ lewat `judul_kolom_uut`; FE tinggal memakai apa adanya, jangan di-hardcode.
 
 - **Tidak ada kolom database baru.** Ketiga alat mendarat dengan nol kolom baru
   di `raw_measurements` — memakai sumbu `peran_sensor`/`sensor_ke` yang sudah ada.
-- **Tidak ada template OCR.** Ketiga lembar belum punya nomor formulir
-  `SIDIK-FM-` sendiri (yang ada di workbook cuma `SIDIK-FM-CAL-2403` = footer
-  sertifikat), jadi jalur kamera belum dibuka. `bentukPindaiFoto()['didukung']`
-  memulangkan `false`. **Input manual dulu.**
+- **Jalur kamera belum dibuka.** `bentukPindaiFoto()['didukung']` memulangkan
+  `false`, jadi tombol kamera mati dan **input manual dulu**.
+
+  Berkas templatenya sendiri SUDAH ada — `database/ocr-templates/timer_stopwatch-v1.json`,
+  `centrifuge-v1.json`, `tachometer-v1.json` — tapi ketiganya lahir
+  `terverifikasi: false` dengan `kode_dokumen: null`. Sebabnya ketiga lembar
+  belum punya nomor formulir `SIDIK-FM-` sendiri (yang ada di workbook cuma
+  `SIDIK-FM-CAL-2403` = footer sertifikat), jadi tidak ada yang bisa dicocokkan
+  ke QR di kertas yang difoto. Template ada ≠ pindai jalan.
 - **Tidak ada perubahan alur approval.** Persis sama dengan 21 alat sebelumnya.
 
 ---

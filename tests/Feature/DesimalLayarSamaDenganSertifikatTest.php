@@ -53,7 +53,7 @@ class DesimalLayarSamaDenganSertifikatTest extends TestCase
 
         $hasil = new ReflectionMethod(CertificateSnapshotBuilder::class, 'hasil');
         $pembangun = app(CertificateSnapshotBuilder::class);
-        $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
+        $admin = User::query()->where('role', User::ROLE_ADMIN)->firstOrFail();
 
         $diperiksa = 0;
         $beda = [];

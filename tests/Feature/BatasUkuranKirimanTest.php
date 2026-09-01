@@ -86,8 +86,8 @@ class BatasUkuranKirimanTest extends TestCase
      */
     private function pratinjau(array $tambahan): TestResponse
     {
-        $sesi = CalibrationSession::where('nomor_sesi', '2405.13.A')->firstOrFail();
-        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $sesi = CalibrationSession::query()->where('nomor_sesi', '2405.13.A')->firstOrFail();
+        $teknisi = User::query()->where('role', User::ROLE_TEKNISI)->firstOrFail();
 
         return $this->actingAs($teknisi)->postJson('/api/calibrations/preview', [
             'equipment_id' => $sesi->equipment_id,
