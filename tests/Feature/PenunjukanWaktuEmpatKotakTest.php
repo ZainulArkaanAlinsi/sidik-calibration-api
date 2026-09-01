@@ -227,13 +227,70 @@ class PenunjukanWaktuEmpatKotakTest extends TestCase
     #[DataProvider('nilai')]
     public function test_aturan_penunjukan_waktu(mixed $nilai, bool $lolos): void
     {
-        $validator = Validator::make(['x' => $nilai], ['x' => [new PenunjukanWaktu]]);
+        $validator = Validator::make(['x' => $nilai], ['x' => [new PenunjukanWaktu(bolehObjek: true)]]);
 
         $this->assertSame(
             $lolos, $validator->passes(),
             'Aturan PenunjukanWaktu memutuskan yang sebaliknya buat '.var_export($nilai, true)
             .' — pesan: '.json_encode($validator->errors()->all()),
         );
+    }
+
+    /**
+     * Bentuk objek DITOLAK kalau lembarnya bukan lembar blok waktu.
+     *
+     * Ini yang menjaga pelonggaran buat Timer/Stopwatch nggak menumpangi ketiga
+     * alat suhu berpasangan yang berbagi kolom `standar`/`uut`. Tanpa gerbang
+     * ini, lembar Thermocouple yang mengirim `{jam, menit, ...}` diterima 200
+     * lalu pembacaannya dibuang diam-diam — `titik` pulang kosong dan teknisi
+     * kehilangan seluruh lembarnya tanpa satu pun pesan.
+     */
+    public function test_bentuk_objek_ditolak_kalau_lembarnya_bukan_blok_waktu(): void
+    {
+        $validator = Validator::make(
+            ['x' => ['jam' => 0, 'menit' => 1, 'detik' => 0, 'milidetik' => 123]],
+            ['x' => [new PenunjukanWaktu]],
+        );
+
+        $this->assertFalse($validator->passes(), 'Bentuk objek lolos di lembar yang bukan blok waktu.');
+        $this->assertStringContainsString('Timer/Stopwatch', $validator->errors()->first('x'));
+    }
+
+    /** Dan angka biasa tetap lolos di lembar mana pun. */
+    public function test_angka_biasa_lolos_walau_objek_ditutup(): void
+    {
+        $this->assertTrue(
+            Validator::make(['x' => 100.4], ['x' => [new PenunjukanWaktu]])->passes(),
+        );
+    }
+
+    /**
+     * Lewat HTTP: lembar alat suhu berpasangan yang mengirim bentuk objek
+     * ditolak 422, bukan diterima lalu dibuang.
+     */
+    public function test_lembar_suhu_menolak_bentuk_objek(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $sesiSuhu = CalibrationSession::query()
+            ->whereHas('equipment', fn ($q) => $q->where('nama_alat', 'like', '%Thermocouple%'))
+            ->firstOrFail();
+
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+
+        $this->actingAs($teknisi)
+            ->postJson('/api/calibrations/preview', [
+                'equipment_id' => $sesiSuhu->equipment_id,
+                'standard_id' => $sesiSuhu->standard_id,
+                'tanggal_kalibrasi' => '2026-09-01',
+                'measurements' => [[
+                    'titik_ukur' => 100,
+                    'standar' => [['jam' => 0, 'menit' => 1, 'detik' => 0, 'milidetik' => 500]],
+                    'uut' => [['jam' => 0, 'menit' => 1, 'detik' => 0, 'milidetik' => 600]],
+                ]],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements.0.standar.0');
     }
 
     /**
