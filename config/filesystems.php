@@ -1,6 +1,34 @@
 <?php
 
+/*
+ * Prefix kunci di bucket, dipakai waktu ARSIP_DRIVER=s3.
+ *
+ * Ditarik keluar jadi variabel karena DUA tempat harus sepakat, dan waktu
+ * mereka nggak sepakat nggak ada satu pun error yang muncul:
+ *
+ *   1. disk `arsip` di bawah — ke sini aplikasi MEMBACA sesudah saklarnya
+ *      digeser;
+ *   2. `arsip:pindah` (App\Console\Commands\PindahArsip) — dari sini berkas
+ *      lama DITULIS sebelum saklarnya digeser.
+ *
+ * Kalau yang menulis nggak memakai prefix yang sama dengan yang membaca,
+ * perintahnya selesai dengan kode 0 dan seluruh arsip yang dipindahkan nggak
+ * ketemu — gejalanya identik dengan disk yang kehapus. Makanya nilainya
+ * dihitung SEKALI di sini, bukan dibaca `env()` dua kali di dua berkas.
+ *
+ * Garis miring di ujung dibuang biar penyambungan kunci di perintahnya aman.
+ * Buat disknya sendiri ini operasi kosong: PathPrefixer menormalkan
+ * 'produksi' dan 'produksi/' jadi kunci yang sama.
+ */
+$arsipPrefiks = trim((string) env('ARSIP_PREFIX', ''), '/');
+
 return [
+
+    /*
+     * Dibaca `arsip:pindah` supaya dia menulis ke tempat yang SAMA PERSIS
+     * dengan yang dibaca disk `arsip` sesudah ARSIP_DRIVER=s3.
+     */
+    'arsip_prefiks' => $arsipPrefiks,
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +119,7 @@ return [
              * bareng hal lain.
              */
             'root' => env('ARSIP_DRIVER', 'local') === 's3'
-                ? env('ARSIP_PREFIX', '')
+                ? $arsipPrefiks
                 : storage_path('app/private'),
 
             /*

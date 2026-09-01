@@ -64,6 +64,40 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     //    endpoint publik ini nggak bisa dipakai orang buat menghabiskan kuota
     //    berbayar lab — itu yang bikin dia aman dibiarkan tanpa auth.
     'direktori_perusahaan' => ['disetel' => $direktori->tersedia()],
+
+    // Tiga pertanyaan yang selama ini cuma bisa dijawab dari dashboard
+    // penyedia hosting — dan karena itu selalu jadi bolak-balik.
+    //
+    // Batasnya SAMA dengan `direktori_perusahaan` di atas: yang dilaporkan
+    // status, bukan nilai. Nol request ke penyedia, nol rahasia, aman
+    // dibiarkan tanpa auth.
+    //
+    // `versi` — commit yang BENERAN jalan di container ini. Sesudah deploy,
+    // "udah naik belum?" cuma bisa dijawab dengan membuka dashboard Render dan
+    // mencocokkan SHA-nya. Repo ini publik, jadi SHA-nya bukan rahasia; yang
+    // dibeli: satu `curl` menjawab pertanyaan yang tadinya butuh akun.
+    //
+    // `arsip.awet` — false artinya berkas (PDF sertifikat, tanda tangan, kop)
+    // tinggal di disk container yang KEHAPUS TIAP DEPLOY. PDF-nya masih bisa
+    // dibangun ulang dari snapshot (lihat App\Services\BerkasPdfSertifikat),
+    // tapi gambar tanda tangan & kop tidak punya sumber beku — sekali hilang,
+    // hilang. Selama ini false, dan nggak ada yang bisa melihatnya dari luar.
+    //
+    // `seed_saat_boot` — true artinya seeder menulis ulang seluruh sesi contoh
+    // TIAP container nyala. Dokumennya bilang "nyalain sekali pas deploy
+    // pertama, terus matiin"; kalau tidak pernah dimatikan, tiap deploy
+    // membayar ongkosnya lagi — menit yang diambil dari jendela health check
+    // Render yang cuma 15 menit, dan itu tersangka utama deploy yang timeout.
+    //
+    // Ketiganya dibaca lewat `config()`, BUKAN `env()` langsung — lihat
+    // config/deploy.php buat alasannya. Singkatnya: entrypoint memanggil
+    // `config:cache` sebelum server nyala, dan sesudah itu `env()` di luar
+    // berkas config berhenti membaca `.env`.
+    'deploy' => [
+        'versi' => config('deploy.versi'),
+        'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
+        'seed_saat_boot' => config('deploy.seed_saat_boot'),
+    ],
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
