@@ -14,7 +14,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
 use App\Services\PenerimaNotifikasi;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\SertifikatSatuHalaman;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -65,6 +65,7 @@ class GenerateCertificate implements ShouldQueue
         $snapshotBuilder = app(CertificateSnapshotBuilder::class);
         $validator = app(CalibrationValidator::class);
         $tampilan = app(DataTampilanSertifikat::class);
+        $satuHalaman = app(SertifikatSatuHalaman::class);
         $folder = app(FolderOrganizer::class);
 
         $sesi = CalibrationSession::with([
@@ -135,7 +136,12 @@ class GenerateCertificate implements ShouldQueue
             // hasil scan QR merender blade yang SAMA dengan bahan yang sama,
             // jadi lembar yang dipegang pelanggan nggak bisa beda dari lembar
             // yang muncul waktu QR-nya discan.
-            $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat));
+            // Dirender lewat SertifikatSatuHalaman, bukan `Pdf::loadView` langsung:
+            // dia menghitung halaman hasil render dan memadatkan ulang kalau
+            // meluap. Headernya mencetak `Page : 1 of 1` — angka itu ditulis mati
+            // di snapshot, jadi lembar dua halaman bikin dokumen terkendali ini
+            // menyatakan hal yang tidak benar tentang dirinya sendiri.
+            $isiPdf = $satuHalaman->isi($sertifikat);
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
 
@@ -151,7 +157,7 @@ class GenerateCertificate implements ShouldQueue
             // ngeklik unduh. Dilempar ke `catch` di bawah biar dapat perlakuan
             // yang sama kayak kegagalan render — status `gagal`, admin
             // dikabarin, tombol retry muncul di mobile.
-            if (Storage::disk('arsip')->put($path, $pdf->output()) === false) {
+            if (Storage::disk('arsip')->put($path, $isiPdf) === false) {
                 throw new RuntimeException("Gagal nulis PDF sertifikat ke {$path}.");
             }
 

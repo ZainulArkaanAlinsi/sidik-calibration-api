@@ -338,7 +338,13 @@
      tertinggi yang pernah masuk blade ini. Tanpa ini blok tanda tangan &
      kode dokumen kedorong ke halaman dua sementara kepalanya tetap nulis
      `Page : 1 of 1`; jebakan yang persis sama pernah kena Autoklaf. --}}
-@php($padat = ! ($web ?? false) && (collect($snapshot['hasil'] ?? [])->count() > 12 || ($snapshot['timbangan'] ?? null) !== null))
+{{-- `paksaPadat` datang dari App\Services\SertifikatSatuHalaman: dia merender
+     sekali, menghitung halamannya, dan kalau meluap merender ULANG dengan ini
+     menyala. Pemicu `> 12 baris` di bawah cuma TEBAKAN — dia memakai jumlah
+     baris sebagai wakil tinggi halaman, dan wakilnya bocor buat apa pun yang
+     nambah tinggi tanpa nambah baris (logo potret, kop tinggi, catatan
+     panjang). Yang ini kenyataan hasil render. --}}
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || collect($snapshot['hasil'] ?? [])->count() > 12 || ($snapshot['timbangan'] ?? null) !== null))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
