@@ -1466,6 +1466,127 @@ jadi LOP 13,66 kg terbit `± 14 kg`).
 
 ---
 
+## 15. Alat baru **kelompok Waktu dan Frekuensi** — 1 Sep 2026
+
+Tiga workbook master turun sekaligus (`Master Olda Tachometer.xlsm`,
+`Master Olda Centrifuge.xlsm`, `Master Olda Timer dan Stopwatch.xlsm`, semuanya
+ber-password). Ketiganya baris lampiran akreditasi LK-285-IDN yang selama ini
+kosong: **no. 37 Timer/Stopwatch, no. 38 Centrifuge, no. 39 Infrared
+Tachometer** — dan dengan ini kelompok "Waktu dan Frekuensi" **lengkap**.
+
+Baris CMC ketiganya **sudah ter-seed sejak dulu** lewat
+`CalibrationCapabilitySeeder` yang membaca lampiran akreditasi, dan angkanya
+cocok persis dengan tabel `DATABASE` di masing-masing workbook. Jadi tidak ada
+seeder kemampuan baru — yang belum ada cuma profil & mesin hitungnya.
+
+### Berkas yang dibuat/diubah
+
+Disebut SEBELUM mengetik, sesuai §12:
+
+| Berkas | Isi |
+|---|---|
+| `database/data/tabel-standar-{putaran,waktu}.json` | tabel sertifikat kalibrator, drift, human reaction — **digenerate skrip** |
+| `database/data/sesi-master-waktu-frekuensi.json` | tiga sesi contoh, digenerate skrip |
+| `app/Services/Calibration/TabelStandar{Putaran,Waktu}.php` | pembaca tabel + penjagaan "tidak ketemu = null" |
+| `app/Services/Calibration/{Putaran,Waktu}Calculator.php` | dua mesin hitung |
+| `app/Services/Calibration/Profiles/ProfilPutaran.php` | basis bersama Tachometer & Centrifuge |
+| `…/Profiles/{Tachometer,Centrifuge,TimerStopwatch}Profile.php` | tiga profil |
+| `app/Support/WaktuMentah.php` | penyusun ulang dua deret waktu |
+| `database/seeders/WaktuFrekuensiSeeder.php` | tiga sesi contoh, angkanya DIHITUNG |
+| `database/ocr-templates/{tachometer,centrifuge,timer_stopwatch}-v1.json` | rangka geometri (`terverifikasi: false`) |
+
+**Nol kolom baru di `raw_measurements`** — sumbu `peran_sensor`/`sensor_ke` yang
+sudah ada cukup, dan blok tingkat-sesi masuk `spesifikasi_alat`. Alat ke-22..24
+berturut-turut mendarat tanpa migrasi.
+
+### Dua bentuk, bukan tiga
+
+Tachometer & Centrifuge berbagi **satu** mesin hitung: sheet `PERHITUNGAN` kedua
+workbook identik baris demi baris, sampai ke data contohnya — workbook Tachometer
+bahkan masih menyimpan tautan luar ke `Master Olda Centrifuge.xlsm` sebagai jejak
+bahwa ia disalin dari sana. Yang benar-benar membedakan cuma pita CMC dan judul
+lembarnya. Titiknya **deret datar**, jadi tidak butuh kelas `*Mentah`.
+
+Timer/Stopwatch berdiri sendiri: satu titiknya **dua deret waktu** yang ditekan
+berbarengan, tiap ulangan ditulis di empat kotak J/M/S/ms. Itu bentuk kedelapan
+yang butuh penyusunan ulang, dan `WaktuMentah` ditulis **bersamaan** dengan
+profilnya — bukan ditemukan belakangan lewat `hitung_ulang_gagal`.
+
+### Pembuktiannya: 464 nilai, 5·10⁻⁶
+
+Reimplementasi Python diadu ke ketiga workbook sel demi sel SEBELUM satu baris
+PHP ditulis. **Setiap** selisih yang muncul punya penjelasan — tidak ada satu pun
+yang dibiarkan. Yang menegakkannya di CI: `WaktuFrekuensiMasterTest` (16 test,
+402 asersi) mengadu tiap kolom turunan tiap titik DAN tiap komponen budget tiap
+blok, bukan cuma U95 akhirnya.
+
+Satu temuan yang menyenangkan: master memakai `TINV(0,05; veff)` dan Excel
+**memotong** derajat kebebasan ke bilangan bulat — jadi `GumCalculator::agregasiBudget()`
+yang sudah memotong ke bawah (GUM G.4.1) cocok dengan master **tanpa satu pun
+penyesuaian**. Dibuktikan di blok 5 Tachometer: `k` master `1,9725950790996611`
+= `TINV(0,05; 189)`, bukan `TINV(0,05; 189,5179)`.
+
+### Empat kerusakan master yang TIDAK ditiru
+
+Semuanya membuat U95 master terbit lebih **kecil**, dan perilaku benarnya tidak
+ambigu — blok tetangga di berkas yang sama, atau workbook saudaranya, melakukannya
+dengan benar:
+
+1. **Blok 5 Tachometer rusak di tiga tempat sekaligus** — pita sertifikat meleset
+   satu baris (`F15` alih-alih `F18`), `u_drift` menunjuk `'[1]Drift Std
+   Kalibrator'!K54` (sel KOSONG di workbook LAIN, ter-cache 0), dan pengulangannya
+   menunjuk baris kosong. U95 master 1,69 rpm lawan 4,04 rpm yang benar.
+2. **Blok 1 Centrifuge** memakai `PERHITUNGAN!G34` (satu sel) sementara sepuluh
+   blok lain memakai `MAX(...)` sebaris penuh — dan workbook Tachometer memakai
+   `MAX(G34:L34)` di blok yang datanya sama persis.
+3. **Kolom `K` tabel drift** cuma berrumus di 5 dari 15 baris (rpm) dan 4 dari 13
+   (waktu). Dilengkapi: 2,25 → 2,75 rpm, 298 → 322 ms.
+4. **`uHRTB` Timer** `MAX(N21:N22)` — dua dari empat operator, sementara sel
+   sebelahnya `P23 = MAX(P19:P22)` mencakup keempatnya.
+
+Arah keempatnya ditegakkan test: hitungan kita wajib **lebih besar**, bukan
+sekadar berbeda.
+
+### Lima titik hantu, diblokir
+
+Master Timer punya sepuluh blok set point; **lima kosong seluruhnya** — dan sel
+kosong yang dibaca nol tetap melahirkan `CORRECTION = 30 ms` yang tercetak persis
+seperti titik sungguhan. Kelimanya diblokir dengan alasan yang kebaca, tidak
+pernah ditiru. Dijaga `test_titik_hantu_timer_diblokir`.
+
+### Yang perlu jawaban lab
+
+Sembilan pertanyaan bernomor di `docs/pertanyaan-lab-waktu-frekuensi.md`. Yang
+terbesar:
+
+- **§4** — arah pemutusan seri nominal **berbeda** antar kelompok: rpm ke atas
+  (80 → 100, 150 → 200), waktu ke bawah (900 s → 600). Ditiru masing-masing;
+  menyeragamkannya menggeser koreksi satu titik sebesar 10 ms.
+- **§5** — master Timer cuma punya SATU blok yang menghitung; empat sisanya
+  `#REF!` dengan penjumlahan yang memotong dua komponen. Artinya hitungan kita
+  **belum bisa dibuktikan** di titik ke-2 dan seterusnya. Diminta satu workbook
+  Timer yang keempat bloknya hidup.
+- **§7** — blok 5 Centrifuge mengukur 15000–25000 rpm, **di luar** pita
+  akreditasi yang berhenti di 9000 rpm, dan master tetap memakai CMC 1,6 rpm.
+  Diangkat jadi peringatan sesi yang harus dilewati admin secara sadar.
+
+### Yang belum: kertas & kamera
+
+Ketiga workbook sudah disapu untuk pola `SIDIK-FM-…` dan yang ketemu cuma
+`SIDIK-FM-CAL-2403_Rev. 0` — footer sertifikat bersama, bukan nomor lembar
+kerjanya. Jadi `bentukPindaiFoto()['didukung'] = false` dan berkas geometrinya
+lahir `terverifikasi: false`. **Input manual dulu**; jalur kamera dibuka begitu
+kertasnya turun.
+
+Untuk Timer ada alasan kedua yang lebih tajam: satu ulangan ditulis di EMPAT
+kotak yang harus dibaca sebagai satu angka, dan satu kotak yang terbaca meleset
+satu kolom mengubah waktunya ribuan kali lipat — tetap kelihatan seperti angka
+yang sah.
+
+Serah-terima frontend: `docs/perintah-frontend-waktu-frekuensi.md`.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -1567,6 +1688,7 @@ berkas profil.
 | G5 | Scan Tabel (perm. 7) — **perm. 3 DIBATALKAN oleh S1, UI pindai nyala lagi** | **S1/S2/S3 semuanya sudah dijawab**, dan kodenya sudah mendarat. Peta: `docs/peta-permintaan-7-scan-tabel.md`. Sebagian besar spec memang SUDAH terbangun sebelum permintaan 7 ditulis (`worksheet_scans`, pipeline 7 tahap, ML Kit, layar review). Yang ditambah: 9 berkas geometri baru (jadi **17/17**), gerbang bentuk kertas buat jalur foto AI, dan alasan pindai jadi kalimat. **Sisa satu-satunya: F1** — nunggu satu foto, bukan nunggu kode |
 | G8 | Alat baru **Timbangan** (perm. 14) — kelompok Massa, alat ke-21 | **BERES di server** (31 Agt 2026) — satu profil, tiga varian master (kg / gram / substitusi), dua budget U95 per titik ikut NMI Monograph 4. Angkanya cocok sampai digit terakhir dengan ketiga workbook: **1.099 angka** diadu `TimbanganMasterTest` (tiap `ui×ci`, tiap `vi`, `uc`, `veff`, `k`, `U`, `U95`), plus `TimbanganCmcCocokAkreditasiTest` yang mengadu 17 pita CMC ke lampiran akreditasi. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-timbangan.md` — yang terbesar T1 (tiga snapshot sertifikat anak timbangan buat keping fisik yang sama) dan T2 (`ui` U-of-Correction: tiga perlakuan, selisih hampir 2×). **Sisi mobile BERES** (31 Agt 2026): lembarnya kegambar & payloadnya sampai, 13 test baru. Lima cacat SUNYI ketemu waktu disambungkan — 39 kotak yang read-only tanpa sadar, blok bersarang yang dibaca nol, `peran` yang membelokkan seluruh lembar ke jalur pasangan, kunci baris yang bentrok antar tabel, dan pengatur titik yang dipakai bersama; rinciannya di §14 E. Jalur kamera per TABEL nyala di blok Keterulangan saja (§14 F). **Sertifikatnya juga BERES** (31 Agt 2026): delapan bagian master (Repeatability · Effect of Tare · Accuracy · Loading Influence · Hysterisis · Limit of Performance · Weighing Uncertainty · Standard Used) dicetak lewat `snapshot['timbangan']` + cabang blade, ikut preseden Autoklaf; sebelumnya tujuh dari delapan bagian hilang diam-diam di tabel empat kolom generik. Dijaga `TimbanganSertifikatTest` (13 test) — angkanya diadu ke sel master DAN ke HTML yang dirender, plus penjaga satu halaman. Satu cacat SUNYI ketemu di situ: kolom `Correction` varian substitusi menyimpan `ΔI`, bukan kumulatif `Cn` yang dicetak master — titik terakhir terbit 1,4559 kg untuk lembar yang masternya menulis 13,309 kg |
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
+| G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Sembilan pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md` — yang terbesar §5 (master Timer cuma punya satu blok yang menghitung, jadi titik ke-2+ belum punya pembanding) dan §7 (Centrifuge diukur di luar pita akreditasi). **Sisi mobile BELUM** — serah-terimanya di `docs/perintah-frontend-waktu-frekuensi.md`; yang butuh layar baru cuma Timer (empat kotak J/M/S/ms per ulangan), dua alat rpm ikut pola tabel yang sudah ada. Jalur kamera sengaja MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 

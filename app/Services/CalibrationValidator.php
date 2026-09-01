@@ -15,6 +15,7 @@ use App\Support\GridSensorMentah;
 use App\Support\KodeSelRevisi;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\TimbanganMentah;
+use App\Support\WaktuMentah;
 use Illuminate\Support\Collection;
 
 /**
@@ -937,6 +938,11 @@ class CalibrationValidator
                     // `hitung_ulang_gagal` di tiap titik. Kosong buat dua puluh
                     // alat lain.
                     ...TimbanganMentah::dari($pembacaan),
+                    // Dua deret waktu satu titik Timer/Stopwatch, disusun ulang
+                    // dari `peran_sensor`/`sensor_ke`. Alasannya sama seperti
+                    // tiga baris di atas — dan ini kejadian KEDELAPAN dengan
+                    // pola yang sama. Kosong buat dua puluh tiga alat lain.
+                    ...WaktuMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

@@ -401,9 +401,17 @@ abstract class CalibrationProfile
      *
      * **2. Prioritas nama atas serial** — lihat [cocokkanStandar].
      *
-     * `$equipment` null (uji bentuk, atau lembar generik sebelum alat dipilih)
-     * berarti nggak ada organisasi buat disaring. Itu sah: yang dipakai cuma
-     * label baris, dan sesi belum bisa disimpan tanpa alat.
+     * > **`$equipment` null berarti TANPA saringan organisasi — dan barisnya
+     * > membawa lebih dari label.** `when(false, ...)` tidak memasang `where`
+     * > apa pun, jadi yang pulang seluruh baris `standards` milik SEMUA lab,
+     * > lengkap dengan `no_sertifikat`, `tertelusur_ke`, `serial_number`, dan
+     * > `id` yang bisa diklik di dropdown. Pemanggil HTTP WAJIB menyertakan
+     * > konteks organisasi: `CalibrationController::lembarKerja()` memakai alat
+     * > semu ber-`organization_id` pemanggil waktu `equipment_id` tidak
+     * > dikirim. Dijaga `LembarKerjaTidakBocorLintasLabTest`.
+     * >
+     * > Null tetap diterima buat uji BENTUK lembar — di sana cuma ada satu
+     * > organisasi, jadi tidak ada yang bisa bocor ke mana pun.
      *
      * @return Collection<int, Standard>
      */
@@ -429,7 +437,9 @@ abstract class CalibrationProfile
      * Saringan organisasinya sama pentingnya. Dropdown yang menawarkan
      * termohigrometer milik lab lain bukan cuma salah pilihan: `standard_id`
      * yang kepilih masuk ke sesi, koreksi kondisi lingkungannya dibaca dari
-     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini.
+     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini. Dan
+     * `$equipment` null mematikan saringan itu — lihat peringatan di
+     * [masterStandarTertaut].
      *
      * @return Collection<int, Standard>
      */
@@ -837,6 +847,60 @@ abstract class CalibrationProfile
      * nol yang jadi sisi kiri kolom `Correction`.
      */
     public function butuhBlokTimbangan(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah satu titik sesi ini berisi DUA deret waktu — stopwatch standar dan
+     * alat pelanggan yang ditekan berbarengan.
+     *
+     * Default `false`. `true` cuma untuk Timer/Stopwatch. Waktu `true`,
+     * `CalibrationController` menyimpan tiap ulangan sebagai dua baris
+     * `raw_measurements` ber-`peran_sensor` `waktu_standar`/`waktu_uut`
+     * (nilainya total milidetik, lihat `WaktuMentah::keMilidetik()`), dan jalur
+     * hitung ulang menyusunnya balik lewat `WaktuMentah::dari()`.
+     *
+     * Tanpa hook ini jalur datar menyimpan satu deret campuran per titik, dan
+     * koreksi yang lahir dari situ — selisih rata-rata standar dan UUT — tidak
+     * berarti apa-apa. Tidak ada error yang terbit; yang muncul cuma angka yang
+     * salah.
+     */
+    public function butuhBlokWaktu(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Kolom `Standard Value` sertifikat DIHITUNG dari `rata_rata + koreksi`,
+     * bukan diambil dari `titik_ukur`.
+     *
+     * Default `false` — dan buat dua puluh satu alat lain kedua jalur itu
+     * memulangkan angka yang SAMA, karena `GumCalculator` menurunkan
+     * `koreksi = titik_ukur − rata_rata`. Jadi identitas
+     *
+     *     Standard Value ≡ rata_rata + koreksi
+     *
+     * memang berlaku di seluruh sistem; yang beda cuma dari mana angkanya
+     * diambil. Default dibiarkan `false` supaya sertifikat yang sudah terbit
+     * tidak bergeser satu digit pun karena urutan operasi float.
+     *
+     * ## Kenapa ada alat yang butuh `true`
+     *
+     * Sepuluh alat menaruh NILAI ACUAN di `titik_ukur`: buffer pH 4,01 itu
+     * konstanta dari sertifikat larutan, dan yang dibaca berulang alat
+     * pelanggan. Kelompok Waktu dan Frekuensi kebalikannya — yang dibaca
+     * berulang justru STANDARNYA, dan `titik_ukur` menyimpan set point, yaitu
+     * penunjukan alat pelanggan.
+     *
+     * Buat mereka `titik_ukur` bukan nilai acuan, jadi mencetaknya di kolom
+     * `Standard Value` menerbitkan tabel yang tidak konsisten dengan dirinya
+     * sendiri: master Centrifuge mencetak `59,78 | 60 | −0,22`, sedangkan
+     * `titik_ukur` apa adanya menerbitkan `60 | 59,98 | −0,22` — dan
+     * 60 − 59,98 bukan −0,22. Tidak ada error yang terbit; yang terbit
+     * sertifikat yang angkanya tidak menjumlah.
+     */
+    public function nilaiStandarDariKoreksi(): bool
     {
         return false;
     }
@@ -1307,5 +1371,84 @@ abstract class CalibrationProfile
     public function nilaiDalamSatuanAlat(float $nilai, ?string $satuanTitik, Equipment $equipment): float
     {
         return $nilai;
+    }
+
+    /**
+     * Satu komponen budget → satu baris `type_b_components`.
+     *
+     * ## Kenapa perlu diterjemahkan sama sekali
+     *
+     * Kalkulator menyimpan komponennya sebagai `u`/`ci`/`vi`, sementara
+     * `CalibrationResource::petakanTitik()` membaca kolom **`nilai`** — dan
+     * `?? null` di sana berarti bentuk yang tidak diterjemahkan pulang sebagai
+     *
+     *     {"sumber": "resolusi_standar", "distribusi": "persegi", "nilai": null}
+     *
+     * di SETIAP komponen. Nol error; yang hilang seluruh budget ketidakpastian
+     * dari layar teknisi dan admin — satu-satunya tempat angka U95 bisa
+     * ditelusuri asal-usulnya sebelum disetujui.
+     *
+     * `nilai` = `u · ci` (sumbangan komponen ke `uc`, yang dicetak lembar
+     * budget), `u_baku` = `u` mentahnya. Dua-duanya disimpan: yang pertama buat
+     * dibaca manusia, yang kedua supaya RSS-nya bisa dihitung ulang dari jejak.
+     *
+     * Bentuknya sengaja sama persis dengan [\App\Services\GumCalculator]
+     * supaya satu parser mobile berlaku buat jalur per-titik maupun
+     * per-kelompok. Profil yang butuh kolom tambahan (`disertakan`,
+     * `alasan_dikecualikan`) menggabungnya sendiri.
+     *
+     * @param  array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}  $komponen
+     * @return array<string, mixed>
+     */
+    protected function barisAudit(array $komponen): array
+    {
+        return [
+            'sumber' => $komponen['sumber'],
+            'keterangan' => $komponen['keterangan'],
+            'distribusi' => $komponen['distribusi'],
+            'nilai' => $komponen['u'] * $komponen['ci'],
+            'u_baku' => $komponen['u'],
+            'ci' => $komponen['ci'],
+            'vi' => $komponen['vi'],
+        ];
+    }
+
+    /**
+     * Baris `perbandingan_cmc` — pembanding U95 hitung lawan CMC terakreditasi.
+     *
+     * ## Kenapa baris ini WAJIB ada, bukan hiasan
+     *
+     * `CalibrationValidator::cmcTitik()` mencari CMC titik ini dengan menyapu
+     * `type_b_components` mencari `sumber` `perbandingan_cmc`/`lantai_cmc`/`cmc`.
+     * Tidak ketemu berarti `null`, dan `null` mematikan gerbang ERROR
+     * `u95_meledak_dari_cmc` — penjagaan yang lahir dari `CAL/2026/08/0043`,
+     * satu pembacaan salah ketik yang menerbitkan U95 212x CMC lab.
+     *
+     * Terukur di jalur per-kelompok sebelum baris ini ada: sesi Tachometer
+     * dengan satu pembacaan `60` diketik `6000` terbit ber-U95 **3298,42 rpm
+     * lawan CMC 1,5 rpm — 2199x lipat** — dan lolos tanpa satu pun temuan.
+     *
+     * Diterbitkan SELALU (selama baris kemampuannya ada), bukan cuma waktu
+     * lantainya menggigit: justru waktu U95 hitung jauh DI ATAS CMC gerbang itu
+     * paling dibutuhkan.
+     *
+     * @return array<string, mixed>
+     */
+    protected function barisPerbandinganCmc(float $u95Hitung, ?float $cmc, string $satuan): array
+    {
+        return [
+            'sumber' => 'perbandingan_cmc',
+            'keterangan' => $cmc === null || $cmc <= 0
+                ? sprintf('U hitung %s %s, tanpa lantai CMC (nggak ada baris kemampuan buat titik ini)', $u95Hitung, $satuan)
+                : sprintf(
+                    'U hitung %s %s vs CMC %s %s → dilaporkan %s',
+                    $u95Hitung, $satuan, $cmc, $satuan, $cmc > $u95Hitung ? 'CMC' : 'hitung',
+                ),
+            'distribusi' => '-',
+            'nilai' => $cmc,
+            'u_baku' => $cmc,
+            'ci' => 1.0,
+            'vi' => 0.0,
+        ];
     }
 }

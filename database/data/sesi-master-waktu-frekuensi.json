@@ -1,0 +1,516 @@
+{
+  "_catatan": "Sesi contoh ketiga workbook master kelompok Waktu dan Frekuensi. Digenerate docs/skrip/gen-sesi-waktu-frekuensi.py — jangan diketik tangan. Titik hantu master (set point kosong yang tetap melahirkan koreksi) TIDAK ikut.",
+  "tachometer": {
+    "_sesi": {
+      "nama_alat": "Digital Tachometer",
+      "merk": "Victor",
+      "model": "DM6234P+",
+      "serial": 998887409,
+      "rentang": 50000,
+      "kapasitas": 100000,
+      "resolusi": 1,
+      "satuan": "Rpm",
+      "pelanggan": "PT. MATRA UNIKATAMA",
+      "alamat": "Jl. Wijaya I No.16 5, RT.2/RW.5, Melawai, Kec. Kby. Baru, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12160",
+      "tanggal_terima": "2024-04-19",
+      "tanggal": "2024-04-22",
+      "lokasi_nama": "Insitu",
+      "nomor_sertifikat": "0140-CAL-424",
+      "nomor_order": "2404.16.A",
+      "suhu_awal": 25.5,
+      "suhu_akhir": 25.7,
+      "rh_awal": 55,
+      "rh_akhir": 58
+    },
+    "titik": [
+      {
+        "titik_ke": 1,
+        "set_point": 60.0,
+        "pembacaan": [
+          59.9,
+          60.0,
+          60.0,
+          60.0,
+          60.0
+        ]
+      },
+      {
+        "titik_ke": 2,
+        "set_point": 80.0,
+        "pembacaan": [
+          80.2,
+          80.2,
+          80.2,
+          80.1,
+          80.1
+        ]
+      },
+      {
+        "titik_ke": 3,
+        "set_point": 100.0,
+        "pembacaan": [
+          99.8,
+          99.8,
+          99.8,
+          100.0,
+          99.9
+        ]
+      },
+      {
+        "titik_ke": 4,
+        "set_point": 120.0,
+        "pembacaan": [
+          120.1,
+          119.8,
+          120.2,
+          119.9,
+          120.0
+        ]
+      },
+      {
+        "titik_ke": 5,
+        "set_point": 150.0,
+        "pembacaan": [
+          150.3,
+          150.3,
+          150.3,
+          150.4,
+          150.4
+        ]
+      },
+      {
+        "titik_ke": 6,
+        "set_point": 200.0,
+        "pembacaan": [
+          200.2,
+          200.1,
+          200.3,
+          199.8,
+          200.2
+        ]
+      },
+      {
+        "titik_ke": 7,
+        "set_point": 500.0,
+        "pembacaan": [
+          500.3,
+          500.2,
+          500.2,
+          500.3,
+          500.2
+        ]
+      },
+      {
+        "titik_ke": 8,
+        "set_point": 1000.0,
+        "pembacaan": [
+          999.9,
+          999.8,
+          1000.1,
+          1000.1,
+          1000.1
+        ]
+      },
+      {
+        "titik_ke": 9,
+        "set_point": 2000.0,
+        "pembacaan": [
+          2000.2,
+          2000.1,
+          2000.3,
+          2000.0,
+          2000.0
+        ]
+      },
+      {
+        "titik_ke": 10,
+        "set_point": 3000.0,
+        "pembacaan": [
+          2999.8,
+          2999.8,
+          2999.9,
+          2999.9,
+          2999.9
+        ]
+      },
+      {
+        "titik_ke": 11,
+        "set_point": 5000.0,
+        "pembacaan": [
+          4999.8,
+          4999.8,
+          4999.7,
+          4999.7,
+          4999.8
+        ]
+      },
+      {
+        "titik_ke": 12,
+        "set_point": 7000.0,
+        "pembacaan": [
+          6999.7,
+          6999.8,
+          6999.9,
+          7000.0,
+          7000.1
+        ]
+      },
+      {
+        "titik_ke": 13,
+        "set_point": 10000.0,
+        "pembacaan": [
+          10000.4,
+          10001.0,
+          10001.0,
+          10001.0,
+          10001.0
+        ]
+      },
+      {
+        "titik_ke": 14,
+        "set_point": 12000.0,
+        "pembacaan": [
+          12001.0,
+          12001.0,
+          12001.0,
+          12001.0,
+          12001.0
+        ]
+      },
+      {
+        "titik_ke": 15,
+        "set_point": 14000.0,
+        "pembacaan": [
+          14001.0,
+          14001.0,
+          14001.0,
+          14001.0,
+          14001.0
+        ]
+      },
+      {
+        "titik_ke": 16,
+        "set_point": 15001.0,
+        "pembacaan": [
+          15000.4,
+          15001.0,
+          15001.0,
+          15001.0,
+          15001.0
+        ]
+      },
+      {
+        "titik_ke": 17,
+        "set_point": 20001.0,
+        "pembacaan": [
+          20001.0,
+          20001.0,
+          20001.0,
+          20001.0,
+          20001.0
+        ]
+      },
+      {
+        "titik_ke": 18,
+        "set_point": 25002.0,
+        "pembacaan": [
+          25002.0,
+          25002.0,
+          25002.0,
+          25002.0,
+          25002.0
+        ]
+      }
+    ]
+  },
+  "centrifuge": {
+    "_sesi": {
+      "nama_alat": "Centrifuge",
+      "merk": "ThermoScientific",
+      "model": "SL-8R",
+      "serial": "41649931/IMTE-FQS-080",
+      "rentang": "200-9000",
+      "kapasitas": 17850,
+      "resolusi": 1,
+      "satuan": "Rpm",
+      "pelanggan": "PT. UNILEVER INDONESIA Tbk (Savoury)",
+      "alamat": "Jl. Jababeka VI Blok L 1-2, Kawasan Industri Jababeka Cikarang, Bekasi 17520",
+      "tanggal_terima": "2024-03-14",
+      "tanggal": "2024-03-14",
+      "lokasi_nama": "Insitu (Lab. Microbiologi)",
+      "nomor_sertifikat": "0133-CAL-324",
+      "nomor_order": "2403.16.AX",
+      "suhu_awal": 21.3,
+      "suhu_akhir": 21.5,
+      "rh_awal": 53,
+      "rh_akhir": 56
+    },
+    "titik": [
+      {
+        "titik_ke": 1,
+        "set_point": 60.0,
+        "pembacaan": [
+          59.9,
+          60.0,
+          60.0,
+          60.0,
+          60.0
+        ]
+      },
+      {
+        "titik_ke": 2,
+        "set_point": 80.0,
+        "pembacaan": [
+          80.2,
+          80.2,
+          80.2,
+          80.1,
+          80.1
+        ]
+      },
+      {
+        "titik_ke": 3,
+        "set_point": 100.0,
+        "pembacaan": [
+          99.8,
+          99.8,
+          99.8,
+          100.0,
+          99.9
+        ]
+      },
+      {
+        "titik_ke": 4,
+        "set_point": 120.0,
+        "pembacaan": [
+          120.1,
+          119.8,
+          120.2,
+          119.9,
+          120.0
+        ]
+      },
+      {
+        "titik_ke": 5,
+        "set_point": 150.0,
+        "pembacaan": [
+          150.3,
+          150.3,
+          150.3,
+          150.4,
+          150.4
+        ]
+      },
+      {
+        "titik_ke": 6,
+        "set_point": 200.0,
+        "pembacaan": [
+          200.2,
+          200.1,
+          200.3,
+          199.8,
+          200.2
+        ]
+      },
+      {
+        "titik_ke": 7,
+        "set_point": 500.0,
+        "pembacaan": [
+          500.3,
+          500.2,
+          500.2,
+          500.3,
+          500.2
+        ]
+      },
+      {
+        "titik_ke": 8,
+        "set_point": 1000.0,
+        "pembacaan": [
+          999.9,
+          999.8,
+          1000.1,
+          1000.1,
+          1000.1
+        ]
+      },
+      {
+        "titik_ke": 9,
+        "set_point": 2000.0,
+        "pembacaan": [
+          2000.2,
+          2000.1,
+          2000.3,
+          2000.0,
+          2000.0
+        ]
+      },
+      {
+        "titik_ke": 10,
+        "set_point": 5000.0,
+        "pembacaan": [
+          4999.8,
+          4999.8,
+          4999.7,
+          4999.7,
+          4999.8
+        ]
+      },
+      {
+        "titik_ke": 11,
+        "set_point": 7000.0,
+        "pembacaan": [
+          6999.7,
+          6999.8,
+          6999.9,
+          7000.0,
+          7000.1
+        ]
+      },
+      {
+        "titik_ke": 12,
+        "set_point": 10000.0,
+        "pembacaan": [
+          10000.0,
+          10001.0,
+          10000.0,
+          10001.0,
+          10000.0
+        ]
+      },
+      {
+        "titik_ke": 13,
+        "set_point": 15000.0,
+        "pembacaan": [
+          15000.4,
+          15001.0,
+          15001.0,
+          15001.0,
+          15001.0
+        ]
+      },
+      {
+        "titik_ke": 14,
+        "set_point": 20000.0,
+        "pembacaan": [
+          20001.0,
+          20001.0,
+          20001.0,
+          20001.0,
+          20001.0
+        ]
+      },
+      {
+        "titik_ke": 15,
+        "set_point": 25000.0,
+        "pembacaan": [
+          25002.0,
+          25002.0,
+          25002.0,
+          25002.0,
+          25002.0
+        ]
+      }
+    ]
+  },
+  "timer": {
+    "_sesi": {
+      "nama_alat": "Stopwatch",
+      "merk": "Casio",
+      "model": "-",
+      "serial": "711Q14R",
+      "rentang": 60,
+      "kapasitas": 60,
+      "resolusi": 0.001,
+      "satuan": "min",
+      "pelanggan": "LPKL PDAM TIRTAWENING",
+      "alamat": "Jl Atlas No. 6 Antapani Kota Bandung ",
+      "tanggal_terima": "2024-04-03",
+      "tanggal": "2024-04-03",
+      "lokasi_nama": "Insitu (LPKL PDAM)",
+      "nomor_sertifikat": "015-CAL-424",
+      "nomor_order": "2404.04.D",
+      "suhu_awal": 21.3,
+      "suhu_akhir": 21.5,
+      "rh_awal": 53,
+      "rh_akhir": 56
+    },
+    "titik": [
+      {
+        "titik_ke": 1,
+        "set_point_menit": 1.0,
+        "set_point_detik": 60.0,
+        "standar_ms": [
+          60123.0,
+          60211.0,
+          60045.0
+        ],
+        "uut_ms": [
+          60131.0,
+          60219.0,
+          60061.0
+        ]
+      },
+      {
+        "titik_ke": 2,
+        "set_point_menit": 5.0,
+        "set_point_detik": 300.0,
+        "standar_ms": [
+          300169.0,
+          300145.0,
+          300043.0
+        ],
+        "uut_ms": [
+          300198.0,
+          300151.0,
+          300054.0
+        ]
+      },
+      {
+        "titik_ke": 3,
+        "set_point_menit": 10.0,
+        "set_point_detik": 600.0,
+        "standar_ms": [
+          600095.0,
+          600073.0,
+          600032.0
+        ],
+        "uut_ms": [
+          600063.0,
+          600066.0,
+          600021.0
+        ]
+      },
+      {
+        "titik_ke": 4,
+        "set_point_menit": 15.0,
+        "set_point_detik": 900.0,
+        "standar_ms": [
+          900093.0,
+          900077.0,
+          900031.0
+        ],
+        "uut_ms": [
+          900067.0,
+          900064.0,
+          900025.0
+        ]
+      },
+      {
+        "titik_ke": 5,
+        "set_point_menit": 30.0,
+        "set_point_detik": 1800.0,
+        "standar_ms": [
+          1800096.0,
+          1800087.0,
+          1800065.0
+        ],
+        "uut_ms": [
+          1800102.0,
+          1800084.0,
+          1800052.0
+        ]
+      }
+    ]
+  }
+}

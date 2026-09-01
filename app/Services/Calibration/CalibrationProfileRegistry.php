@@ -5,6 +5,7 @@ namespace App\Services\Calibration;
 use App\Models\Equipment;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
@@ -18,11 +19,13 @@ use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
+use App\Services\Calibration\Profiles\TachometerProfile;
 use App\Services\Calibration\Profiles\ThermocoupleProfile;
 use App\Services\Calibration\Profiles\ThermohygroProfile;
 use App\Services\Calibration\Profiles\ThermometerGlassProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
+use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
@@ -107,6 +110,17 @@ class CalibrationProfileRegistry
             // substitusi) jadi SATU profil dengan tiga revisi; lihat
             // VarianMasterTimbangan.
             new TimbanganProfile,
+            // Alat ke-22, 23, dan 24 — kelompok "Waktu dan Frekuensi" lampiran
+            // akreditasi LK-285-IDN no. 37, 38, dan 39, dan kelompok itu
+            // sekarang LENGKAP.
+            //
+            // Tachometer & Centrifuge berbagi satu mesin hitung (ProfilPutaran)
+            // karena sheet PERHITUNGAN kedua workbook masternya identik baris
+            // demi baris; yang membedakan cuma pita CMC-nya. Timer/Stopwatch
+            // berdiri sendiri: satu titiknya DUA deret waktu, bukan satu.
+            new TimerStopwatchProfile,
+            new CentrifugeProfile,
+            new TachometerProfile,
         ];
     }
 
