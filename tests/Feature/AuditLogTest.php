@@ -404,6 +404,78 @@ class AuditLogTest extends TestCase
         $this->assertSame(3, count(array_filter(explode("\n", trim($isi)))));
     }
 
+    /**
+     * Ekspor tidak boleh memicu deprecation `fputcsv()`.
+     *
+     * PHP 8.4: *"the $escape parameter must be provided as its default value
+     * will change"*. Di sini deprecation-nya TIDAK KELIHATAN sama sekali —
+     * `config/logging.php` menyetel kanal deprecation ke `null`, jadi dibuang
+     * diam-diam. Yang tersisa cuma perilaku yang **belum dipatok**: begitu PHP
+     * mengganti bawaannya, keluaran ekspor ini berubah tanpa ada satu baris pun
+     * di repo ini yang ikut berubah.
+     *
+     * Bukan soal rapi: berkas ini yang dibawa asesor.
+     */
+    public function test_export_tidak_memicu_deprecation_fputcsv(): void
+    {
+        $this->standar()->update(['nama' => 'Diubah']);
+
+        $deprecation = [];
+
+        set_error_handler(static function (int $no, string $pesan) use (&$deprecation): bool {
+            if ($no === E_DEPRECATED) {
+                $deprecation[] = $pesan;
+
+                return true;
+            }
+
+            return false;
+        });
+
+        try {
+            $this->actingAs($this->admin)->get(self::URL.'/export')->assertOk()->streamedContent();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $deprecation, 'Ekspor audit memicu deprecation PHP: '.implode(' | ', $deprecation));
+    }
+
+    /**
+     * Nilai yang berakhir backslash tidak boleh menggeser kolom sesudahnya.
+     *
+     * `note` itu teks bebas dan `old_data`/`new_data` bisa memuat path Windows,
+     * jadi nilai berakhir `\` bukan mengada-ada. Yang diadu di sini keluarannya
+     * dibaca **seperti Excel membacanya** — RFC 4180, escape kosong — karena itu
+     * yang benar-benar dipakai asesor, bukan pembaca CSV milik PHP.
+     *
+     * Penjaga arah maju: sekarang sudah benar, dan test ini yang bikin dia tetap
+     * benar waktu PHP mengganti bawaan `$escape`-nya.
+     */
+    public function test_export_tetap_terbaca_excel_walau_nilainya_berakhir_backslash(): void
+    {
+        $standar = $this->standar();
+        AuditLog::query()->delete();
+
+        $standar->update(['nama' => 'Kalibrator, Blok C\\']);
+
+        $isi = $this->actingAs($this->admin)->get(self::URL.'/export')->assertOk()->streamedContent();
+
+        $aliran = fopen('php://memory', 'r+');
+        fwrite($aliran, ltrim($isi, "\xEF\xBB\xBF"));
+        rewind($aliran);
+
+        $kepala = fgetcsv($aliran, 0, ',', '"', '');
+        $baris = fgetcsv($aliran, 0, ',', '"', '');
+        fclose($aliran);
+
+        $this->assertNotFalse($baris);
+        $this->assertCount(count($kepala), $baris, 'Kolomnya melebur — nilai berakhir backslash menelan kutip penutupnya.');
+        // Kolom 9 `Nilai Baru`, kolom 10 `Catatan`. Kalau meleburnya kejadian,
+        // yang di indeks 8 memuat isi kolom sesudahnya juga.
+        $this->assertSame('Kalibrator, Blok C\\', $baris[8]);
+    }
+
     public function test_export_ditolak_buat_non_admin(): void
     {
         $this->actingAs(User::factory()->create())->get(self::URL.'/export')->assertForbidden();
