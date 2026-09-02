@@ -43,6 +43,33 @@ Baris direktori baru jadi data lab **setelah teknisi memilihnya**. Saat itu yang
 
 ## 3. Memasang datanya
 
+### Di produksi: OTOMATIS, tidak perlu dikerjakan siapa pun
+
+`docker/entrypoint.sh` memuatnya sendiri tiap container nyala. **Tidak ada langkah manual.**
+
+Alasannya bukan kemewahan: paket gratis Render **tidak menyediakan shell sama sekali** (*"Shell is
+not supported for free compute plans"*), jadi tidak ada tempat lain buat menjalankannya. Tanpa itu
+tabelnya akan kosong selamanya di produksi.
+
+Aman ditaruh di jalur boot karena `--lewati-kalau-terisi` memeriksa isi tabel **sebelum** membaca
+berkas:
+
+| Boot | Yang dibayar |
+|---|---|
+| pertama sesudah deploy | baca 1,3 MB CSV + 22 paket `upsert` — hitungan detik |
+| berikutnya (termasuk tiap Render membangunkan service yang ketiduran) | **dua query `COUNT`** |
+
+Yang diperiksa **isi tabelnya**, bukan penanda "sudah pernah jalan". Database yang direset bikin
+penanda berbohong, dan tanpa shell tidak ada yang bisa membetulkannya — hitungan baris selalu jujur,
+jadi jalur ini memulihkan dirinya sendiri.
+
+Impor yang gagal **tidak menjatuhkan boot** (`|| true`). Direktori ini fitur kenyamanan: tanpa dia
+pendaftaran pelanggan tetap jalan lewat ketik tangan dan OpenStreetMap. Menukar itu dengan seluruh
+server yang dipakai teknisi di lokasi adalah pertukaran yang salah arah. Gagalnya tetap terbaca di
+log Render, dan `GET /api/health` melaporkan jumlah barisnya.
+
+### Di lokal: manual
+
 ```bash
 php artisan direktori:impor-lokal database/direktori/jababeka.csv    --sumber=jababeka
 php artisan direktori:impor-lokal database/direktori/indonetwork.csv --sumber=indonetwork
@@ -56,6 +83,7 @@ apa-apa. Butuh ±2,4 detik untuk 10.320 baris.
 | `berkas` | path CSV. Kolom wajib: `ref`, `nama`. Opsional: `alamat`, `kota`, `provinsi` |
 | `--sumber=` | **wajib**, salah satu dari `jababeka` / `indonetwork` |
 | `--uji-coba` | baca dan tampilkan contoh, tanpa menulis apa pun |
+| `--lewati-kalau-terisi` | keluar tanpa membaca berkas kalau sumbernya sudah berisi. Dipakai `entrypoint.sh`; jarang berguna dijalankan tangan |
 
 **Aman dijalankan berkali-kali.** Kunci uniknya `(sumber, ref)`, jadi jalan kedua memperbarui baris
 yang sama — bukan menggandakannya. Memperbarui satu sumber tidak menyentuh sumber lain.
