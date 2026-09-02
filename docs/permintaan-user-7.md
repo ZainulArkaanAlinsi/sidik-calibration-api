@@ -99,7 +99,12 @@ Bahasa Indonesia."*
 > crop** — koreksi teknisi tidak punya pemanggil. Rantai buktinya, plus rekomendasi penggantinya
 > (perekam ground truth di jalur `FOTO TABEL INI` yang hidup — satu berkas HP + satu perintah
 > artisan, bukan 22 hari model), ada di **`docs/temuan-gerbang0-ocr-model-lokal.md`**.
-> **Rencana berkasnya menunggu persetujuan pemilik proyek** sesuai §7 di atas.
+> **SELESAI 2 Sep 2026.** Disetujui lalu dikerjakan: perekam tebakan mesin tersambung di
+> **keenam** jalur kamera (titik × Repeat, grid Enclosure, matriks Autoklaf, pasangan
+> standar/UUT, keterulangan Timbangan, Timer/Stopwatch), plus `ocr:akurasi-kamera` yang
+> membaca tiga sumber (`raw_measurements`, `hasil_autoclave`, `spesifikasi_alat`).
+> Kontraknya di `docs/kontrak-api.md` §"TEBAKAN MESIN per sel". Empat keputusan yang
+> tersisa cuma bisa dijawab lab — `docs/pertanyaan-lab-akurasi-kamera.md`.
 
 ---
 
