@@ -115,11 +115,11 @@ class CetakLembarKerjaOcrTest extends TestCase
         // per tabel — bukan dengan menerbitkan berkas yang salah.
         $sumbuCampuran = ['timbangan'];
 
+        // `kodeTersedia()`, bukan `daftar()`: yang dibutuhkan cuma nama-namanya.
+        // `daftar()` menuntut konteks organisasi sejak BUG-005 — dan sapuan ini
+        // memang tidak punya lab mana pun buat dijadikan konteks.
         $diRegistry = array_values(array_diff(
-            array_map(
-                static fn (array $t): string => (string) $t['template_id'],
-                app(TemplateLembarKerja::class)->daftar(),
-            ),
+            app(TemplateLembarKerja::class)->kodeTersedia(),
             $sumbuCampuran,
         ));
 
