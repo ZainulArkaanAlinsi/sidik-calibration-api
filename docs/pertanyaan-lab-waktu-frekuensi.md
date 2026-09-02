@@ -18,6 +18,101 @@ diputuskan sepihak oleh kode (karena perilaku benarnya tidak ambigu) ditandai
 
 ---
 
+## Keputusan pemilik proyek — 2 Sep 2026 (putaran kedua)
+
+Pemilik proyek mendelegasikan sisa pertanyaan: *"yang masih nunggu aku itu kamu
+kerjaain aja sesuai rekomendasi dari kamu dan pengetahuan kamu."* Enam yang
+tersisa ditutup di bawah ini, masing-masing dengan alasannya.
+
+**Yang membuat lima dari enam bisa ditutup tanpa manajer teknis:** kelimanya
+tidak mengubah satu pun angka yang tercetak di sertifikat. Yang keenam (§10)
+mengubahnya, dan bagian yang tersisa di situ bukan keputusan teknis melainkan
+tindakan terhadap dokumen yang sudah dipegang pelanggan — lihat di bawah.
+
+| § | Keputusan | Angka tercetak berubah? |
+|---|---|---|
+| §2 | Tidak ada sertifikat yang ditarik | Tidak — lantai CMC menang (5,0 rpm) |
+| §3 | Baris yang tidak berrumus = salin-tempel tidak lengkap; yang sudah dilengkapi kode tetap | Tidak |
+| §8 | Tiru master, tetap konservatif | Tidak — lantai CMC 0,81 s menang |
+| §9 | Dibiarkan, peringatannya dipertahankan | Tidak — kolomnya tidak dipakai budget mana pun |
+| §10 | **Berlaku maju saja**, tidak diterbitkan ulang | **Ya** — satu-satunya |
+| §13 | (c) dengan `≈`, dan hanya kalau `k`-nya memang beda | Tidak — satu tanda, nol angka |
+
+### §2 — tidak ada yang ditarik
+
+Blok 5 Tachometer rusak, tapi lantai CMC menang, jadi yang tercetak tetap
+5,0 rpm. Sertifikat yang sudah terbit memuat angka yang **sama persis** dengan
+yang akan diterbitkan sistem ini. Menariknya berarti menerbitkan ulang dokumen
+yang isinya tidak berubah — biaya dan kebingungan pelanggan tanpa perbaikan.
+
+### §3 — rumusnya memang tidak ikut tersalin
+
+Titik yang berrumus (100, 500, 5000, 10000, 30000 rpm) tidak membentuk pola
+apa pun: bukan kelipatan, bukan ujung rentang, bukan titik akreditasi. Pemilihan
+yang disengaja akan meninggalkan pola. Ditambah §2 sudah membuktikan workbook
+ini korban salin-tempel di tempat lain, penjelasan yang paling sederhana adalah
+rumusnya berhenti disalin di baris tertentu. Kode melengkapinya, dan itu
+**menaikkan** ketidakpastian (2,25 → 2,75 rpm) — arah yang aman.
+
+### §8 — tiru master, dan alasannya bukan malas
+
+Pembagi stopwatch kemungkinan besar kelupaan `/2`. Tapi membetulkannya
+**mengecilkan** ketidakpastian yang sudah terbit, dan itu justru arah yang tidak
+boleh diambil kode sendiri: sertifikat yang sudah dipegang pelanggan jadi
+mengaku lebih teliti daripada waktu diterbitkan. Aturan proyek — *"master lab
+ditiru, bukan dibetulkan diam-diam"* — memang dipasang untuk keadaan ini.
+
+Kalau nanti manajer teknis memutuskan membetulkannya, dampaknya kemungkinan
+besar nol juga: lantai CMC 0,81 s hampir selalu menang.
+
+### §9 — dibiarkan, peringatannya yang penting
+
+Kolom `Drift per hari`/`per tahun` tidak dipakai budget mana pun, jadi tidak ada
+angka yang berubah apa pun keputusannya. Yang berharga di sini catatannya, bukan
+tindakannya: begitu ada yang memakai kolom itu, pembagi satu-interval ini jadi
+jebakan. Dibiarkan apa adanya, catatannya dipertahankan.
+
+### §10 — berlaku maju saja
+
+**Kodenya sudah selesai dan tidak berubah**: konvensi `Correction = nilai benar −
+penunjukan alat` dipakai untuk ketiga alat, sesuai definisi dan sesuai 2 dari 3
+master. Yang diputuskan di sini cuma nasib sertifikat Tachometer yang terlanjur
+terbit dengan kolom tertukar.
+
+**Berlaku maju saja.** Alasannya:
+
+1. Menerbitkan ulang sertifikat berarti menarik dokumen di bawah lingkup
+   terakreditasi dari tangan pelanggan — itu prosedur mutu, bukan perbaikan
+   kode, dan ada aturannya sendiri di sistem mutu lab.
+2. Angkanya tidak salah, **penyajiannya** yang terbalik: besaran koreksinya
+   sama (0,22), tandanya yang berlawanan. Pembaca yang memakai kolomnya sesuai
+   judul tetap sampai ke nilai benar yang sama.
+3. Menerbitkan ulang tanpa kebijakan yang jelas justru menimbulkan dua versi
+   sertifikat bernomor sama di luar sana — risiko yang lebih besar daripada
+   yang diperbaiki.
+
+> **Yang tetap perlu manusia, dan tidak bisa dikerjakan kode:** kalau manajer
+> teknis / KAN menganggap ini ketidaksesuaian yang wajib dilaporkan, laporan
+> dan tindakan koreksinya jalur sistem mutu — bukan sesuatu yang diputuskan
+> atau dijalankan dari repositori ini. Keputusan "berlaku maju" di atas adalah
+> **bawaan** yang dipakai sampai ada arahan lain, bukan penutupan jalur itu.
+
+### §13 — (c) dengan `≈`, bersyarat
+
+Diterapkan, dengan satu penajaman dari usulan awal: `≈` dipakai **hanya kalau
+kelompoknya memang memuat `k` yang beda di presisi yang dicetak**. Kelompok yang
+`k`-nya seragam — tiap kelompok Spectrophotometer — tetap `=`.
+
+Bedanya penting: memakai `≈` di mana-mana melemahkan pernyataan yang sebetulnya
+tepat, dan tanda yang selalu muncul berhenti berarti apa-apa. Yang dilihat
+kode nilai **tercetaknya**, bukan nilai mentahnya, jadi dua `k` yang cuma beda
+di desimal keempat tidak ikut ditandai.
+
+(a) mencetak rentang dan (b) satu kalimat per blok dua-duanya mengubah tata
+letak dokumen terakreditasi; (c) menambah satu tanda, nol angka, nol susunan.
+
+---
+
 ## Keputusan pemilik proyek — 1 Sep 2026
 
 > **"Rumus yang ada di Excel itu yang dipakai."**
@@ -96,7 +191,8 @@ tetangga di berkas yang sama melakukannya dengan benar), jadi **dihitung benar**
 sesuai aturan proyek. Ditegakkan
 `WaktuFrekuensiMasterTest::test_blok_rusak_tachometer_dihitung_lebih_besar`.
 
-> **[PERLU JAWABAN]** Sertifikat Tachometer yang sudah terbit memakai blok ini
+> **[DIJAWAB 2 Sep 2026 — tidak ada yang ditarik; lihat §Keputusan putaran
+> kedua.]** Sertifikat Tachometer yang sudah terbit memakai blok ini
 > — perlu ditarik/diterbitkan ulang, atau cukup dicatat? Karena lantai CMC
 > menang, **angka tercetaknya tidak berubah** (5,0 rpm), jadi kemungkinan besar
 > tidak ada sertifikat yang perlu disentuh. Mohon dikonfirmasi.
@@ -122,7 +218,8 @@ sesuai aturan proyek. Ditegakkan
 Baris yang tidak berrumus bukan baris kosong — datanya lengkap, cuma rumusnya
 tidak ikut disalin. Dilengkapi, dan arahnya (selalu naik) ditegakkan test.
 
-> **[PERLU JAWABAN]** Apakah kelima/keempat baris yang berrumus itu **pilihan
+> **[DIJAWAB 2 Sep 2026 — rumusnya tidak ikut tersalin; yang dilengkapi kode
+> tetap.]** Apakah kelima/keempat baris yang berrumus itu **pilihan
 > sengaja** (mis. cuma titik yang dianggap wakil), atau memang rumusnya tidak
 > ikut tersalin? Kalau sengaja, dasar pemilihannya apa? Titiknya (100, 500,
 > 5000, 10000, 30000 rpm) tidak membentuk pola yang jelas.
@@ -279,7 +376,7 @@ bisa dibedakan dari lantai yang benar-benar menaungi titiknya. Dijaga
 
 ---
 
-## §8 — Pembagi drift beda antar kelompok  [PERLU JAWABAN]
+## §8 — Pembagi drift beda antar kelompok  [DIPUTUSKAN: TIRU MASTER]
 
 | Kelompok | Rumus master | Arti |
 |---|---|---|
@@ -293,14 +390,15 @@ benar adalah **setengah-lebar** — jadi kelompok rpm benar, dan kelompok waktu
 Ditiru apa adanya: mengubahnya **mengecilkan** ketidakpastian yang sudah terbit,
 dan itu bukan keputusan yang boleh diambil kode.
 
-> **[PERLU JAWABAN]** Apakah drift stopwatch memang sengaja dibuat konservatif,
+> **[DIJAWAB 2 Sep 2026 — tiru master, tetap konservatif.]** Apakah drift
+> stopwatch memang sengaja dibuat konservatif,
 > atau `/2`-nya kelupaan? Kalau kelupaan, U95 Timer akan turun — dan karena
 > lantai CMC 0,81 s hampir selalu menang, kemungkinan besar **angka tercetaknya
 > tidak berubah**.
 
 ---
 
-## §9 — Jumlah hari drift memakai satu interval saja  [PERLU JAWABAN]
+## §9 — Jumlah hari drift memakai satu interval saja  [DIPUTUSKAN: DIBIARKAN]
 
 | Kelompok | Rumus | Nilai | Rentang koreksi yang dibaginya |
 |---|---|---|---|
@@ -349,7 +447,8 @@ Dijaga `WaktuFrekuensiSertifikatTest`, yang menegakkan dua hal sekaligus —
 identitas `Standard ≡ UUT + Correction` di setiap titik, dan angka baris
 pertamanya lawan sel masternya.
 
-> **[PERLU JAWABAN — tidak bisa ditutup arahan "pakai rumus Excel".]** Di sini
+> **[DIJAWAB 2 Sep 2026 — berlaku maju saja; jalur sistem mutu tetap terbuka.]**
+> Di sini
 > kedua Excel **bertentangan satu sama lain**: Tachometer menukar kolom terhadap
 > Centrifuge dan Timer. Tidak ada satu "rumus Excel" untuk diikuti, jadi kode
 > memakai konvensi yang benar menurut **definisi** `Correction` (= nilai benar −
@@ -433,7 +532,7 @@ tidak ada angka yang bergeser. Dijaga `NominalDiLuarSertifikatDitolakTest`.
 
 ---
 
-## §13 — Kalimat faktor cakupan menyebut SATU `k` untuk baris yang `k`-nya beda  [PERLU JAWABAN]
+## §13 — Kalimat faktor cakupan menyebut SATU `k` untuk baris yang `k`-nya beda  [DIPUTUSKAN: `≈` BERSYARAT]
 
 `resources/views/sertifikat/pdf.blade.php` mencetak kalimat
 
@@ -461,7 +560,7 @@ Kode **tidak diubah**: mengganti kalimat sertifikat terakreditasi — misal jadi
 `k = 1,96–1,97` atau satu kalimat per baris — mengubah bentuk dokumen yang
 sudah terbit, dan itu keputusan manajer teknis, bukan keputusan kode.
 
-> **[PERLU JAWABAN — tidak bisa ditutup arahan "pakai rumus Excel".]** Yang
+> **[DIJAWAB 2 Sep 2026 — (c) dengan `≈`, bersyarat. SUDAH DITERAPKAN.]** Yang
 > dipersoalkan di sini **kalimat di sertifikat**, bukan perhitungan. Tidak ada
 > rumus Excel yang mengaturnya, jadi arahan itu tidak menjawabnya.
 >
@@ -486,15 +585,15 @@ sudah terbit, dan itu keputusan manajer teknis, bukan keputusan kode.
 | § | Pokok | Status | Pengaruh ke angka tercetak |
 |---|---|---|---|
 | 1 | Pita ketidakpastian sertifikat | Dihitung benar, konfirmasi diminta | — (10/11 blok cocok) |
-| 2 | Blok 5 Tachometer rusak 3x | Dihitung benar | Tidak ada (CMC menang) |
-| 3 | Kolom `K` drift sebagian | Dilengkapi | U95 naik tipis |
+| 2 | Blok 5 Tachometer rusak 3x | Dihitung benar. ✅ **Diputuskan**: tidak ada sertifikat ditarik | Tidak ada (CMC menang) |
+| 3 | Kolom `K` drift sebagian | Dilengkapi. ✅ **Diputuskan**: rumusnya tidak ikut tersalin | U95 naik tipis |
 | 4 | Arah seri nominal | ✅ **Diputuskan**: ditiru per kelompok | 10 ms di satu titik |
 | 5 | Timer cuma 1 blok hidup | ✅ **Diputuskan**: bentuk SP1 — tapi **data pembanding masih diminta** | Belum terbukti di titik 2+ |
 | 6 | `uHRTB` 2 dari 4 operator | Dihitung benar | U95 naik tipis |
 | 7 | Centrifuge di luar lingkup | ✅ **Diputuskan**: pita terdekat dipinjam + peringatan sesi. Penandaan di sertifikat masih terbuka | U95 di luar lingkup **naik** ke lantai CMC |
-| 8 | Pembagi drift beda | Ditiru | — |
-| 9 | Hari drift satu interval | Ditiru (tidak terpakai) | — |
-| **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | Kode selesai (konvensi Centrifuge/Timer). ⏳ **Terbuka: terbitkan ulang atau berlaku maju?** | **TANDA koreksi berbalik** |
+| 8 | Pembagi drift beda | ✅ **Diputuskan**: tiru master, tetap konservatif | — |
+| 9 | Hari drift satu interval | ✅ **Diputuskan**: dibiarkan, peringatan dipertahankan | — |
+| **10** | **Sheet SERTIFIKAT Tachometer menukar kolom** | Kode selesai (konvensi Centrifuge/Timer). ✅ **Diputuskan**: **berlaku maju**, tidak diterbitkan ulang — jalur sistem mutu tetap terbuka | **TANDA koreksi berbalik** |
 | 11 | Data 15000 rpm berdesimal, budgetnya bulat | ✅ **Diputuskan**: budget dituruti | — (1 peringatan/sesi) |
 | 12 | Set point di luar jangkauan sertifikat | **Diblokir** dengan alasan | — (nol set point master kena) |
-| 13 | Kalimat `k` satu angka untuk baris ber-`k` beda | ⏳ **Terbuka**: bukan soal rumus. Saran paling kecil risikonya: tambah "≈" | `k` tercetak 1,96 padahal ada baris 1,97 |
+| 13 | Kalimat `k` satu angka untuk baris ber-`k` beda | ✅ **Diputuskan & DITERAPKAN**: `≈` dipakai **cuma kalau `k`-nya memang beda di presisi tercetak** | Nol angka berubah — satu tanda |
