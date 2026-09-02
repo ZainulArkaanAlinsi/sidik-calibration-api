@@ -476,20 +476,21 @@ class CalibrationRequest extends FormRequest
              * beda, dan menukarnya bikin kolom `Correction` — selisih dua sisi
              * itu — bergeser tanpa satu pun error.
              *
-             * Lembar Timer/Stopwatch NGGAK mengirim kunci ini: satu penunjukan
-             * di sana ditulis di empat kotak (jam/menit/detik/milidetik) dan
-             * disimpan sebagai SATU baris milidetik, jadi empat tebakan nggak
-             * punya satu kolom pun buat ditaruh. Lihat
-             * `docs/temuan-gerbang0-ocr-model-lokal.md`.
+             * BENTUKNYA IKUT DERET NILAINYA, persis seperti
+             * `measurements.*.standar.*` di atas yang dijaga `PenunjukanWaktu`:
+             *
+             *  - lembar satu kolom (ketiga alat suhu) → satu tebakan per
+             *    ulangan: `{raw_text, confidence}`;
+             *  - lembar Timer/Stopwatch → satu penunjukan ditulis di EMPAT
+             *    kotak, jadi tebakannya juga per kotak:
+             *    `{jam: {raw_text, …}, menit: {…}, …}`.
+             *
+             * Dua bentuk, satu sumber kebenaran: `lembarBerblokWaktu()` yang
+             * sama menentukan keduanya. Kalau dipisah jadi dua penanda,
+             * lembar yang berubah bentuk bakal lolos di satu sisi dan ditolak
+             * di sisi lain.
              */
-            'measurements.*.standar_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.standar_ocr.*' => ['nullable', 'array'],
-            'measurements.*.standar_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
-            'measurements.*.standar_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
-            'measurements.*.uut_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
-            'measurements.*.uut_ocr.*' => ['nullable', 'array'],
-            'measurements.*.uut_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
-            'measurements.*.uut_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
+            ...$this->aturanTebakanPasangan($bolehObjekWaktu),
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
@@ -628,6 +629,49 @@ class CalibrationRequest extends FormRequest
      * aturan wildcard dengan aturan kunci spesifik, jadi `string` dan `array`
      * berlaku bersamaan dan dua-duanya nggak akan pernah lolos.
      */
+    /**
+     * Aturan `standar_ocr` / `uut_ocr`, bentuknya ikut deret nilainya.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function aturanTebakanPasangan(bool $bolehObjekWaktu): array
+    {
+        $aturan = [];
+
+        foreach (['standar', 'uut'] as $sisi) {
+            $akar = "measurements.*.{$sisi}_ocr";
+            // Lembar berblok waktu menaruh tebakannya SATU TINGKAT lebih dalam
+            // — per kotak, bukan per ulangan.
+            $daun = $bolehObjekWaktu ? $akar.'.*.*' : $akar.'.*';
+
+            $aturan[$akar] = ['sometimes', 'nullable', 'array', 'max:20'];
+            $aturan[$akar.'.*'] = ['nullable', 'array'];
+
+            if ($bolehObjekWaktu) {
+                // Cuma keempat kotak yang sah. Kunci lain berarti bentuknya
+                // bergeser, dan tebakan yang mendarat di kotak yang nggak ada
+                // bakal hilang tanpa gejala.
+                $aturan[$akar.'.*.*'] = ['nullable', 'array'];
+                $aturan[$akar.'.*'][] = function (string $atribut, mixed $nilai, \Closure $gagal): void {
+                    if (! is_array($nilai)) {
+                        return;
+                    }
+
+                    $asing = array_diff(array_keys($nilai), PenunjukanWaktu::KOTAK);
+
+                    if ($asing !== []) {
+                        $gagal("Tebakan mesin di `{$atribut}` memuat kotak yang nggak dikenal: ".implode(', ', $asing).'.');
+                    }
+                };
+            }
+
+            $aturan[$daun.'.raw_text'] = ['nullable', 'string', 'max:255'];
+            $aturan[$daun.'.confidence'] = ['nullable', 'numeric', 'between:0,1'];
+        }
+
+        return $aturan;
+    }
+
     private function spekBolehBerbentukBlok(): \Closure
     {
         return function (string $atribut, mixed $nilai, \Closure $gagal): void {

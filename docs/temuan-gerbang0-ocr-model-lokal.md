@@ -321,7 +321,7 @@ lembar itu benar-benar mendarat**:
 | Autoklaf | `hasil_autoclave` (JSON) — **nol baris** `raw_measurements` | **tersambung** |
 | Thermocouple, Termometer Gelas, Thermohygro | `standar` / `uut` → `raw_measurements` | **tersambung** |
 | Timbangan | `spesifikasi_alat.keterulangan` (JSON) — **bukan** deret pembacaan | **tersambung** |
-| Timer/Stopwatch | `standar` / `uut`, tapi **empat kotak per satu baris** | **belum, sengaja** |
+| Timer/Stopwatch | `standar` / `uut`, **empat kotak per satu baris** | **tersambung** |
 
 ### Dua dugaan yang meleset, dan kenapa penting
 
@@ -344,23 +344,34 @@ tiap pasangan `<k>` + `<k>_ocr` di mana pun, bukan mengejar satu susunan
 tertentu. Pembaca yang mengejar `baris[]` akan diam-diam pulang kosong begitu
 penerjemahnya berubah — dan kosong di sini kebaca sebagai "kameranya bagus".
 
-### Yang TIDAK dikerjakan: Timer/Stopwatch
+### Timer/Stopwatch: empat kotak, satu penunjukan
 
 Satu penunjukan di lembar itu ditulis di **empat kotak** (jam, menit, detik,
-milidetik) dan server menyimpannya sebagai **satu baris** dalam milidetik
-(`waktuKeMilidetik`). Jadi empat tebakan mesin tidak punya satu kolom pun untuk
-ditaruh: `ocr_raw_text` satu kolom teks, dan nilai final per kotak tidak
-disimpan di mana pun.
+milidetik) dan tersimpan sebagai **satu baris** dalam milidetik. Jadi empat
+tebakan tidak punya empat kolom untuk ditaruh.
 
-Menggabungkan empat bacaan jadi satu teks (`"0:01:00,123"`) berarti **mengarang
-bacaan yang tidak pernah dilihat pengenalnya** — persis larangan §15.7 perintah
-aslinya, dan angka yang keluar dari perbandingannya tidak berarti apa-apa.
+Yang diukur karena itu **penunjukannya**, bukan teks per kotak — dan itu memang
+satuan yang benar: kalau satu kotak salah, seluruh penunjukan salah. HP
+mengirim tebakan **per kotak**, dan yang menyusunnya jadi satu penunjukan
+**server**, lewat `waktuKeMilidetik` yang **sama** dengan yang menyusun nilai
+finalnya. Kalau layar yang menyusunnya, dua sisi memakai jalan yang berbeda —
+dan begitu salah satunya berubah, yang diadu bukan lagi dua besaran yang sama.
 
-Yang dibutuhkan kalau ini mau dikerjakan: menyimpan keempat teks mentahnya apa
-adanya, lalu menyusun ulang tebakannya memakai `waktuKeMilidetik` yang **sama**
-dengan yang menyusun angka finalnya — supaya yang diadu benar-benar
-"pembacaan yang dilihat kamera" lawan "pembacaan yang dikirim teknisi".
-Itu perubahan kontrak tersendiri, dan menunggu keputusan pemilik proyek.
+Empat penolakan yang dijaga, dan semuanya gagal tanpa error kalau dilewat:
+
+| Keadaan | Yang terjadi | Kenapa |
+|---|---|---|
+| Kotak berisi tapi tidak ketebak | tebakannya **dibuang** | Menyusun dari sebagian berarti mencampur tebakan mesin dengan ketikan teknisi jadi satu angka yang tidak pernah dilihat siapa pun |
+| Tebakan bukan angka (`1S`) | **ditolak** | `(int) '1S'` di PHP itu `1` — diam dan salah. Kalau lolos, penunjukannya jadi 60 123 ms: sama persis dengan angka teknisi, jadi terbaca **cocok** padahal mesinnya tidak bisa baca kotak itu |
+| Kotak yang tidak dikenal (`milidetk`) | **422** | Sejalan dengan penjagaan yang sudah ada di deret nilainya |
+| Keyakinan empat kotak | diambil yang **terlemah** | Rata-rata bikin tiga kotak yakin menutupi satu kotak ragu |
+
+**Yang ditanggung sadar:** teks mentah per-kotaknya tidak ikut tersimpan.
+Kolomnya cuma satu, dan menyimpan salah satu kotak berarti memilih satu dari
+empat tanpa alasan. Yang tersimpan penunjukan hasil susun — cukup untuk
+mengukur, tidak cukup untuk menelusuri kotak mana yang salah baca. Kalau
+telusur per kotak suatu saat dibutuhkan, itu kolom baru, bukan tambalan di
+kolom ini.
 
 ### Verifikasi
 
