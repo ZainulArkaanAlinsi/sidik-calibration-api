@@ -196,7 +196,7 @@
         .ttd .garis { border-top: 1px solid #333; padding-top: 3px; }
 
         /*
-          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px -> 80px) — BUKAN
+          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px -> 80px -> 86px) — BUKAN
           ngikut gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama
           jadi beda tata letak cuma gara-gara yang satu diunggahin gambar TTD,
           dan itu nggak boleh buat dokumen berformat baku.
@@ -218,7 +218,8 @@
           Itu sudah nggak benar lagi. Seluruh 24 sesi bawaan diterbitkan lalu
           dirender sambil kotak ini disapu: yang paling mepet **Conductivity
           Meter** — masih muat mode normal di 86px, kedorong ke mode padat di
-          88px. 80px menyisakan margin ~1,6 mm.
+          88px. 86px itu batasnya persis, tanpa margin — disengaja, dan yang
+          menahan kalau ada yang lewat `SertifikatSemuaAlatSatuHalamanTest`.
 
           Yang bikin batas itu halus: kedorong ke mode padat BUKAN kegagalan yang
           kelihatan. `App\Services\SertifikatSatuHalaman` menyelamatkannya, jadi
@@ -239,7 +240,7 @@
           angka konservatif, itu nyaris seluruh margin yang ada. Menukarnya buat
           tanda tangan yang 1 mm lebih besar di enam alat jelas rugi.
         */
-        .ttd .ruang-ttd { height: 80px; position: relative; }
+        .ttd .ruang-ttd { height: 86px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
