@@ -139,6 +139,19 @@ class Organization extends Model
      * naik-turun. Koordinat absolut yang pas di satu sertifikat bakal nimpa tabel di
      * sertifikat lain, dan itu baru ketahuan sesudah PDF-nya nyampe pelanggan.
      */
+    /**
+     * Nama penandatangan sertifikat.
+     *
+     * Dibaca `CertificateSnapshotBuilder` waktu terbit lalu DIBEKUKAN ke
+     * snapshot, sementara gambar tanda tangannya tidak — dia dibaca live tiap
+     * render. Selisih itu yang bikin
+     * [\App\Services\CetakUlangSertifikat] harus membandingkan keduanya
+     * sebelum mencetak ulang, dan dua tempat itu wajib membaca kunci yang sama
+     * persis. Sebagai string lepas, satu salah ketik bikin penjaganya diam-diam
+     * membandingkan dengan yang kosong — lalu meloloskan semuanya.
+     */
+    public const KEY_PENANDATANGAN_NAMA = 'penandatangan_nama';
+
     public const KEY_TTD_GESER_X = 'ttd_geser_x_mm';
 
     /** POSITIF = naik. Lihat catatan arah di `resources/views/sertifikat/pdf.blade.php`. */
