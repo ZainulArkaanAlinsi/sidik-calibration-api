@@ -232,7 +232,7 @@ Alasannya bukan "model itu susah" — rancangan modelnya bagus. Alasannya urutan
    antara yang tercatat dan yang terjadi itu temuan audit** — kalimat yang
    `config/ocr.php` sendiri sudah tulis.
 
-### Rencana berkas — MINTA PERSETUJUAN DULU
+### Rencana berkas — **DISETUJUI & DIKERJAKAN 2 Sep 2026**
 
 Ditulis di sini karena §7 permintaan 7 mengikat: *"Tunjukkan rencana file yang
 akan dibuat/diubah lebih dulu, tunggu saya setujui, baru eksekusi."*
@@ -265,3 +265,53 @@ bukan dibatalkan.** Ditinjau ulang begitu ada **≥2 minggu data akurasi jalur
 hidup**. Waktu itu pertanyaannya bisa dijawab pakai angka: kolom mana yang
 gagal, seberapa sering, dan apakah plafon tulisan tangan memang yang menahan —
 persis yang M1 mau capai, tapi di jalur yang benar-benar dipakai teknisi.
+
+---
+
+## 8. Yang benar-benar dibangun (2 Sep 2026)
+
+Disetujui pemilik proyek, lalu dikerjakan. Yang berubah dari rencana: **nol**
+perubahan di sisi tulis API — ternyata `CalibrationController` sudah menulis
+`ocr_raw_text`, `ocr_confidence`, dan `input_source` sejak lama
+(`:1283-1312`). Yang kurang cuma pengirimnya di HP, dan alat ukurnya.
+
+**Mobile**
+
+| Berkas | Yang dikerjakan |
+|---|---|
+| `lib/models/lembar_kerja_submission.dart` | Kelas `BacaanMesin` + deret `ocr` sejajar indeks dengan `pembacaan`. Kunci `ocr` cuma ikut terkirim kalau ADA yang dari foto |
+| `lib/screens/calibration/lembar_kerja_state.dart` | Peta `bacaanMesinSel` (kunci `kunciSel`, sama seperti `selRendahKeyakinan`), diisi di `_isiSel`, ditempelkan ke payload lewat `_lampirkanBacaanMesin` |
+| `test/tebakan_mesin_ikut_terkirim_test.dart` | 5 test; yang menentukan: sel yang **diketik ulang teknisi** tetap membawa tebakan aslinya |
+
+**API**
+
+| Berkas | Yang dikerjakan |
+|---|---|
+| `app/Console/Commands/AkurasiKamera.php` | `ocr:akurasi-kamera --hari= --kategori=` — akurasi per (kategori alat / Repeat), memisahkan **hijau palsu**, memakai `NormalisasiAngka` yang sama dengan jalur bermarker supaya dua jalur bisa diadu lurus |
+| `tests/Feature/AkurasiKameraTest.php` | 6 test, semuanya hijau |
+| `docs/catatan-cabut-ui-pindai.md` | §Ringkas & §2a dikoreksi — lihat §6 |
+
+### Batas yang TIDAK tercakup, dan kenapa
+
+Jalur foto ada **tiga**, dan yang tersambung baru satu:
+
+| Jalur | Lembar | Status |
+|---|---|---|
+| Tabel titik × Repeat (`terapkanHasilFotoTabel`) | 13 | **tersambung** |
+| Matriks (`terapkanHasilFotoMatriks`) | Autoklaf | belum |
+| Grid sensor (`grid_sensor_state.terapkanHasilFoto`) | 5 Enclosure | belum |
+
+Dua yang belakangan tidak lewat `_isiSel`, dan payloadnya (`measurementsGrid`)
+**tidak punya slot metadata per baris di server sama sekali** — sudah ditulis
+`catatan-cabut-ui-pindai.md` §1b. Menyambungkannya berarti menambah kolom baru
+di kontrak grid, yaitu melebarkan perubahan ini jauh di luar yang disetujui.
+Diangkat sebagai pekerjaan berikutnya, bukan dikerjakan diam-diam.
+
+### Verifikasi
+
+- API: `php artisan test --filter="OcrMeasurementTest|WorksheetScanTest|AkurasiKameraTest"`
+  → **59 test, 58 lulus, 1 skip**. Dijalankan di **SQLite**, bukan MySQL —
+  MySQL tidak tersedia di lingkungan kerja ini, jadi gate MySQL di
+  `CLAUDE.md` **belum terpenuhi** dan wajib dijalankan ulang sebelum rilis.
+- Mobile: **belum dijalankan lokal** — Flutter SDK tidak ada di lingkungan ini.
+  Yang memverifikasi `flutter analyze` + `flutter test` di CI (`periksa-pr.yml`).
