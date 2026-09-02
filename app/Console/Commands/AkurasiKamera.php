@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\CalibrationSession;
 use App\Models\RawMeasurement;
 use App\Services\Ocr\NormalisasiAngka;
 use Illuminate\Console\Command;
@@ -68,7 +69,12 @@ class AkurasiKamera extends Command
             ->with('session.equipment.category')
             ->get();
 
-        if ($baris->isEmpty()) {
+        // Autoklaf punya sumber SENDIRI: dia nggak pernah menulis
+        // `raw_measurements` sama sekali — hasil ukurnya snapshot JSON
+        // `hasil_autoclave`. Ditarik terpisah, lalu dilebur ke tabel yang sama.
+        $autoclave = $this->dariAutoclave($hari);
+
+        if ($baris->isEmpty() && $autoclave->isEmpty()) {
             $this->warn("Belum ada pembacaan hasil kamera dalam {$hari} hari terakhir — nggak ada yang bisa diukur.");
             $this->line('Kalau jalur fotonya dipakai tapi angkanya nol, yang pertama dicek: '
                 .'HP-nya sudah mengirim `measurements[].ocr[]` apa belum. Tanpa itu tebakan '
@@ -79,15 +85,24 @@ class AkurasiKamera extends Command
             return self::SUCCESS;
         }
 
-        $vonis = $baris->map(fn (RawMeasurement $m): array => $this->adu($m));
+        $vonis = $baris
+            ->map(fn (RawMeasurement $m): array => $this->adu($m))
+            ->concat($autoclave);
 
-        $this->info("Pembacaan hasil kamera {$hari} hari terakhir: {$baris->count()}");
+        $this->info("Pembacaan hasil kamera {$hari} hari terakhir: {$vonis->count()}");
 
         // Ditulis terpisah karena artinya beda: yang belum diverifikasi masih
         // ditahan gerbang approve, jadi dia bukan "lolos diam-diam" — dia belum
         // selesai. Yang menyesatkan kalau dua-duanya dilebur jadi satu angka.
         $terverifikasi = $baris->where('is_verified', true)->count();
         $this->line("Sudah lewat gerbang verifikasi teknisi: {$terverifikasi} dari {$baris->count()}");
+
+        if ($autoclave->isNotEmpty()) {
+            // Autoklaf nggak punya kolom `is_verified` sama sekali — angkanya
+            // nggak lewat `raw_measurements`. Ditulis terus terang biar
+            // pembagi di baris atas nggak dikira menghitung semuanya.
+            $this->line("Sel Autoklaf (di luar gerbang itu, sumbernya `hasil_autoclave`): {$autoclave->count()}");
+        }
         $this->newLine();
 
         $this->tabelPerKolom($vonis);
@@ -95,6 +110,106 @@ class AkurasiKamera extends Command
         $this->hijauPalsu($vonis);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Sel Autoklaf, dari `hasil_autoclave` — bukan `raw_measurements`.
+     *
+     * Autoklaf disimpan sebagai snapshot JSON utuh (`simpanAutoclave`), jadi
+     * tanpa pembaca kedua ini seluruh lembarnya nggak akan pernah kehitung —
+     * dan diamnya bakal kebaca sebagai "kameranya bagus di Autoklaf", padahal
+     * artinya nol data.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function dariAutoclave(int $hari): Collection
+    {
+        $sesi = CalibrationSession::query()
+            ->whereNotNull('hasil_autoclave')
+            ->where('created_at', '>=', now()->subDays($hari))
+            ->when($this->option('kategori'), fn ($q) => $q->whereHas(
+                'equipment.category',
+                fn ($c) => $c->where('kode', $this->option('kategori')),
+            ))
+            ->with('equipment.category')
+            ->get();
+
+        $vonis = collect();
+
+        foreach ($sesi as $s) {
+            $hasil = (array) $s->hasil_autoclave;
+            $tebakan = $this->ratakan((array) ($hasil['ocr'] ?? []));
+            $lembar = (array) ($hasil['lembar'] ?? []);
+            $kategori = $s->equipment?->category?->kode ?? '(tanpa kategori)';
+
+            foreach ($tebakan as $jalur => $deret) {
+                // Jalur nilainya SAMA PERSIS, cuma tanpa awalan `ocr.` — itu
+                // yang bikin pasangannya nggak perlu ditebak.
+                $nilai = (array) (data_get($lembar, $jalur) ?? []);
+
+                foreach ($deret as $urutan => $meta) {
+                    if (! is_array($meta)) {
+                        continue;
+                    }
+
+                    $final = $nilai[$urutan] ?? null;
+                    $hasilBaca = $this->normalisasi->proses($meta['raw_text'] ?? null);
+                    $terbaca = $hasilBaca['ok'] && ! $hasilBaca['kosong'] && $hasilBaca['nilai'] !== null;
+
+                    $vonis->push([
+                        // Dikelompokkan per BARIS matriks, bukan per Repeat:
+                        // di kertas Autoklaf yang membedakan besarannya
+                        // (Temp. Disk 1, Indikator Pressure), bukan kolomnya.
+                        'kolom' => $kategori.' / '.$jalur,
+                        'terbaca' => $terbaca,
+                        'cocok' => $terbaca && $final !== null
+                            && abs($hasilBaca['nilai'] - (float) $final) < 1e-9,
+                        'skor' => isset($meta['confidence']) ? (float) $meta['confidence'] : null,
+                        'mentah' => (string) ($meta['raw_text'] ?? ''),
+                        'final' => $final === null ? null : (float) $final,
+                        'sesi' => (int) $s->id,
+                    ]);
+                }
+            }
+        }
+
+        return $vonis;
+    }
+
+    /**
+     * Ratakan blok `ocr` bersarang jadi `jalur => deret tebakan`.
+     *
+     * Sengaja MENELUSURI, bukan memakai daftar jalur yang dipatok: baris baru
+     * di matriks Autoklaf bakal ikut terbaca sendiri. Daftar yang diketik
+     * tangan adalah daftar yang pasti kelupaan, dan yang kelupaan di sini
+     * nggak bikin error — cuma bikin sampelnya diam-diam mengecil.
+     *
+     * @param  array<string, mixed>  $simpul
+     * @return array<string, list<mixed>>
+     */
+    private function ratakan(array $simpul, string $awalan = ''): array
+    {
+        // Daun = deret yang isinya null atau objek tebakan. Cabang = apa pun
+        // yang isinya deret lain (`suhu.disk` berisi tiga deret).
+        $daun = array_is_list($simpul) && ! array_filter(
+            $simpul,
+            static fn ($v): bool => $v !== null
+                && ! (is_array($v) && (array_key_exists('raw_text', $v) || array_key_exists('confidence', $v))),
+        );
+
+        if ($daun) {
+            return $awalan === '' ? [] : [$awalan => array_values($simpul)];
+        }
+
+        $hasil = [];
+
+        foreach ($simpul as $kunci => $isi) {
+            if (is_array($isi)) {
+                $hasil = [...$hasil, ...$this->ratakan($isi, $awalan === '' ? (string) $kunci : $awalan.'.'.$kunci)];
+            }
+        }
+
+        return $hasil;
     }
 
     /**

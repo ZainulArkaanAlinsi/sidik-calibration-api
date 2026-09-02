@@ -405,8 +405,36 @@ class CalibrationRequest extends FormRequest
             'measurements.*.sensor_grid.*.channel' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:20'],
             'measurements.*.sensor_grid.*.pembacaan' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
+            /*
+             * Tebakan mesin per pembacaan grid, SEJAJAR INDEKS sama `pembacaan`
+             * di baris yang sama.
+             *
+             * Kenapa perlu: teknisi mengoreksi angka hasil foto di kotak yang
+             * sama, jadi tanpa ini tebakan mesinnya tertimpa dan akurasi jalur
+             * kamera nggak bisa dihitung — termasuk HIJAU PALSU, satu-satunya
+             * kegagalan yang nggak ada yang lihat sampai sertifikatnya terbit.
+             *
+             * `photo_path` nggak ada di sini, beda dari `measurements.*.ocr`:
+             * jalur foto grid nggak mengunggah citranya ke server sama sekali.
+             */
+            'measurements.*.sensor_grid.*.ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.sensor_grid.*.ocr.*' => ['nullable', 'array'],
+            'measurements.*.sensor_grid.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.sensor_grid.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             'measurements.*.indikator' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.indikator.*' => ['nullable', 'numeric'],
+            /*
+             * Padanan `sensor_grid.*.ocr` buat dua baris yang bentuknya DERET
+             * ANGKA POLOS, bukan objek — jadi tebakannya nggak bisa dititipkan
+             * di dalam barisnya sendiri dan harus jadi kunci sebelah.
+             *
+             * Namanya sengaja beda (`_ocr`) supaya nggak ada yang mengira ini
+             * deret angka biasa dan menjumlahkannya.
+             */
+            'measurements.*.indikator_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.indikator_ocr.*' => ['nullable', 'array'],
+            'measurements.*.indikator_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.indikator_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             // Alat ber-PASANGAN deret (Thermocouple, Termometer Gelas,
             // Thermohygrometer): tiap titik dibaca dua kali — sisi standar &
             // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
@@ -459,6 +487,13 @@ class CalibrationRequest extends FormRequest
             // di blok Kondisi Lingkungan — beda hal, nama saja yang mirip.
             'measurements.*.suhu_ruang' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.suhu_ruang.*' => ['nullable', 'numeric'],
+            // Baris Suhu Ruang nggak ikut menghitung apa pun, tapi teknisi
+            // TETAP memotretnya — jadi tebakan mesinnya tetap bahan ukur yang
+            // sah. Membuangnya berarti diam-diam mengecilkan sampel.
+            'measurements.*.suhu_ruang_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.suhu_ruang_ocr.*' => ['nullable', 'array'],
+            'measurements.*.suhu_ruang_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.suhu_ruang_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
             'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu.*' => ['nullable', 'numeric'],

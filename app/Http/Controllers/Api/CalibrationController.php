@@ -409,7 +409,20 @@ class CalibrationController extends Controller
                 // (termasuk baris kertas Indikator Pressure, Tekanan atm awal,
                 // dan jam tiap kolom) hilang begitu sesi terkirim — nggak ada
                 // yang bisa ngadu ulang sertifikat ke kertasnya.
-                'hasil_autoclave' => [...$hasil, 'lembar' => $request->dataUkur()],
+                'hasil_autoclave' => [
+                    ...$hasil,
+                    'lembar' => $request->dataUkur(),
+                    // Tebakan mesin per sel, kalau ada. Disimpan SEBELAH
+                    // `lembar`, bukan di dalamnya: `lembar` itu yang diumpankan
+                    // ke kalkulator waktu sesi dihitung ulang, dan kunci asing
+                    // di situ nggak punya tempat.
+                    //
+                    // Autoklaf nggak pernah menulis `raw_measurements` — hasil
+                    // ukurnya cuma snapshot JSON ini — jadi tanpa blok ini
+                    // akurasi kameranya nggak punya sumber sama sekali. Yang
+                    // membacanya `ocr:akurasi-kamera`.
+                    ...($request->bacaanMesin() === [] ? [] : ['ocr' => $request->bacaanMesin()]),
+                ],
             ]);
 
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
@@ -1440,8 +1453,23 @@ class CalibrationController extends Controller
         // nggak pernah aktif buat enclosure. Grid 9×5 justru bentuk lembar yang
         // paling mungkin diisi lewat pemindaian, jadi ini bukan kasus teoretis.
         $metodeInput = (string) $request->string('input_method', 'manual');
-        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
-        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        // Nilai yang disimpan di `input_source` kalau metodenya bukan kamera
+        // tapi barisnya bawa metadata OCR — persis aturan jalur umum (:1169).
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+
+        /*
+         * Asal-kamera dihitung PER BARIS, bukan per sesi.
+         *
+         * Sebelum ini grid cuma punya SATU pintu (`input_method`), dan itu
+         * sudah ditulis sebagai kelemahan di `docs/catatan-cabut-ui-pindai.md`
+         * §1b. Begitu tiap baris membawa tebakan mesinnya sendiri, baris yang
+         * BENERAN dari kamera bisa dikenali walau sesinya tercatat manual —
+         * dan baris itulah yang wajib nunggu mata teknisi.
+         *
+         * Tanpa metadata, hasilnya sama persis dengan perilaku lama.
+         */
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
 
         $terisi = static fn ($v): bool => $v !== null && $v !== '';
 
@@ -1479,11 +1507,17 @@ class CalibrationController extends Controller
                 $kanal = isset($sensor['channel']) ? (int) $sensor['channel'] : null;
 
                 $terisi = [];
+                // Sejajar indeks sama `pembacaan` baris ini — bukan sama
+                // seluruh set point. Lihat `measurements.*.sensor_grid.*.ocr`.
+                $ocrSensor = array_values($sensor['ocr'] ?? []);
 
                 foreach (array_values($sensor['pembacaan'] ?? []) as $urutan => $nilai) {
                     if ($nilai === null || $nilai === '') {
                         continue;
                     }
+
+                    $meta = $ocrSensor[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
 
                     $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                     $terisi[] = $pembacaan;
@@ -1502,7 +1536,9 @@ class CalibrationController extends Controller
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $pembacaan,
                         'satuan' => $alat->satuan,
-                        'input_source' => $sumberInput,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_confidence' => $meta['confidence'] ?? null,
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
                         'is_verified' => ! $dariKamera,
                     ];
                 }
@@ -1514,11 +1550,15 @@ class CalibrationController extends Controller
 
             // Indikator enclosure — satu kanal, sensor_ke null.
             $indikator = [];
+            $ocrIndikator = array_values($titik['indikator_ocr'] ?? []);
 
             foreach (array_values($titik['indikator'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
                 }
+
+                $meta = $ocrIndikator[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
 
                 $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                 $indikator[] = $pembacaan;
@@ -1533,16 +1573,23 @@ class CalibrationController extends Controller
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $pembacaan,
                     'satuan' => $alat->satuan,
-                    'input_source' => $sumberInput,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_confidence' => $meta['confidence'] ?? null,
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
                     'is_verified' => ! $dariKamera,
                 ];
             }
 
             // Baris Suhu Ruang — dicatat mentah, berhenti di situ.
+            $ocrSuhuRuang = array_values($titik['suhu_ruang_ocr'] ?? []);
+
             foreach (array_values($titik['suhu_ruang'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
                 }
+
+                $meta = $ocrSuhuRuang[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
 
                 $mentah[] = [
                     'titik_ke' => $titikKe,
@@ -1554,7 +1601,9 @@ class CalibrationController extends Controller
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
                     'satuan' => $alat->satuan,
-                    'input_source' => $sumberInput,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_confidence' => $meta['confidence'] ?? null,
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
                     'is_verified' => ! $dariKamera,
                 ];
             }

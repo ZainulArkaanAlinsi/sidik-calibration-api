@@ -287,25 +287,53 @@ perubahan di sisi tulis API — ternyata `CalibrationController` sudah menulis
 
 | Berkas | Yang dikerjakan |
 |---|---|
-| `app/Console/Commands/AkurasiKamera.php` | `ocr:akurasi-kamera --hari= --kategori=` — akurasi per (kategori alat / Repeat), memisahkan **hijau palsu**, memakai `NormalisasiAngka` yang sama dengan jalur bermarker supaya dua jalur bisa diadu lurus |
-| `tests/Feature/AkurasiKameraTest.php` | 6 test, semuanya hijau |
+| `app/Console/Commands/AkurasiKamera.php` | `ocr:akurasi-kamera --hari= --kategori=` — akurasi per kolom, memisahkan **hijau palsu**, memakai `NormalisasiAngka` yang sama dengan jalur bermarker supaya dua jalur bisa diadu lurus. Membaca DUA sumber: `raw_measurements` dan `hasil_autoclave` |
+| `app/Http/Requests/CalibrationRequest.php` | Slot `sensor_grid.*.ocr`, `indikator_ocr`, `suhu_ruang_ocr` buat lembar grid |
+| `app/Http/Requests/AutoclaveStoreRequest.php` | Blok `ocr` bercermin ke jalur nilainya, plus `bacaanMesin()` yang sengaja dipisah dari `dataUkur()` |
+| `app/Http/Controllers/Api/CalibrationController.php` | `susunGridEnclosure` menulis `ocr_raw_text`/`ocr_confidence` dan menghitung asal-kamera **per baris**; `simpanAutoclave` menyimpan blok `ocr` di sebelah `lembar` |
+| `tests/Feature/AkurasiKameraTest.php` | 6 test |
+| `tests/Feature/TebakanMesinGridEnclosureTest.php` | 5 test |
+| `tests/Feature/TebakanMesinAutoclaveTest.php` | 4 test |
 | `docs/catatan-cabut-ui-pindai.md` | §Ringkas & §2a dikoreksi — lihat §6 |
 
-### Batas yang TIDAK tercakup, dan kenapa
+### Dua hal yang ikut terbetulkan
 
-Jalur foto ada **tiga**, dan yang tersambung baru satu:
+1. **Grid akhirnya punya pintu kedua.** `catatan-cabut-ui-pindai.md` §1b
+   mencatat Enclosure cuma punya SATU gerbang (`input_method`), jadi baris yang
+   beneran dari kamera lolos jadi terverifikasi begitu sesinya tercatat manual.
+   Sekarang baris yang membawa tebakan mesin dikenali sendiri — dan tanpa
+   metadata, perilakunya sama persis seperti sebelumnya.
+2. **Autoklaf akhirnya terukur.** Dia nggak pernah menulis `raw_measurements`,
+   jadi tanpa pembaca kedua seluruh lembarnya hilang dari pengukuran — dan
+   diamnya bakal kebaca sebagai "kameranya bagus di Autoklaf", padahal artinya
+   nol data.
 
-| Jalur | Lembar | Status |
+### Cakupan per jalur — dan koreksi atas klaim sebelumnya
+
+**Koreksi:** laporan pertama menyebut celahnya cuma "matriks + grid". Itu
+**salah**. Ditelusuri lebih jauh, `susunPengukuran()` bercabang ke **lima**
+pembangun baris, dan empat di antaranya cuma punya gerbang tingkat-sesi
+(`input_method`), tanpa slot metadata per baris:
+
+| Pembangun (server) | Lembar | Status |
 |---|---|---|
-| Tabel titik × Repeat (`terapkanHasilFotoTabel`) | 13 | **tersambung** |
-| Matriks (`terapkanHasilFotoMatriks`) | Autoklaf | belum |
-| Grid sensor (`grid_sensor_state.terapkanHasilFoto`) | 5 Enclosure | belum |
+| `susunPengukuran` — jalur umum, `measurements[].pembacaan` | ~13 | **tersambung** |
+| `susunGridEnclosure` | 5 Enclosure | **tersambung** |
+| Autoklaf (`simpanAutoclave`, di luar `raw_measurements`) | Autoklaf | **tersambung** |
+| `susunPasanganStandarUut` | Thermocouple, Termometer Gelas, Thermohygro, TIDS | **belum** |
+| `susunBlokTimbangan` | Timbangan | **belum** |
+| `susunBlokWaktu` | Timer/Stopwatch | **belum** |
 
-Dua yang belakangan tidak lewat `_isiSel`, dan payloadnya (`measurementsGrid`)
-**tidak punya slot metadata per baris di server sama sekali** — sudah ditulis
-`catatan-cabut-ui-pindai.md` §1b. Menyambungkannya berarti menambah kolom baru
-di kontrak grid, yaitu melebarkan perubahan ini jauh di luar yang disetujui.
-Diangkat sebagai pekerjaan berikutnya, bukan dikerjakan diam-diam.
+Ketiga yang belum itu punya jebakan yang sama dan halus: selnya **diisi lewat
+`_isiSel`**, jadi tebakannya SUDAH tersimpan di `bacaanMesinSel` — tapi
+payloadnya lewat `toSubmissionPasangan()` / blok Timbangan / blok Waktu, bukan
+`TitikLembarKerja.ocr`. Jadi tebakannya direkam lalu dibuang diam-diam di
+gerbang terakhir. Itu persis kelas kegagalan yang paling mahal di repo ini:
+tidak ada error, dan yang hilang cuma buktinya.
+
+Menyambungkannya butuh slot baru di tiga bentuk payload yang berbeda-beda
+(`standar`/`uut` berpasangan, empat pembacaan Timbangan, jam/menit/detik
+Waktu). Belum dikerjakan — menunggu keputusan pemilik proyek.
 
 ### Verifikasi
 
