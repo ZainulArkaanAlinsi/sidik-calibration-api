@@ -678,8 +678,12 @@ class CalibrationController extends Controller
         }
 
         if (! $periksa['valid'] && ! $abaikan) {
+            // Judulnya diambil dari peringatan yang BENERAN nyala, bukan
+            // kalimat tetap. Dulu di sini tertulis "Hasil hitung ulang beda
+            // dari yang tersimpan" untuk kelima belas kode peringatan —
+            // alasannya di [CalibrationValidator::judulPeringatan].
             return response()->json([
-                'message' => 'Hasil hitung ulang beda dari yang tersimpan. Periksa dulu; '
+                'message' => CalibrationValidator::judulPeringatan($periksa).' Periksa dulu; '
                     .'kalau memang mau lanjut, kirim ulang dengan `abaikan_peringatan: true`.',
                 'butuh_konfirmasi' => true,
                 'validasi' => $periksa,
