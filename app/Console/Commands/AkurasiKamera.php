@@ -74,7 +74,13 @@ class AkurasiKamera extends Command
         // `hasil_autoclave`. Ditarik terpisah, lalu dilebur ke tabel yang sama.
         $autoclave = $this->dariAutoclave($hari);
 
-        if ($baris->isEmpty() && $autoclave->isEmpty()) {
+        // Sumber KETIGA: blok tabel yang disimpan ke `spesifikasi_alat`
+        // (keterulangan / eksentrisitas / histeresis lembar Timbangan). Kamera
+        // lembar itu mendarat di situ, bukan di deret pembacaan — jadi tanpa
+        // pembaca ini seluruh lembar Timbangan hilang dari pengukuran.
+        $spesifikasi = $this->dariSpesifikasi($hari);
+
+        if ($baris->isEmpty() && $autoclave->isEmpty() && $spesifikasi->isEmpty()) {
             $this->warn("Belum ada pembacaan hasil kamera dalam {$hari} hari terakhir — nggak ada yang bisa diukur.");
             $this->line('Kalau jalur fotonya dipakai tapi angkanya nol, yang pertama dicek: '
                 .'HP-nya sudah mengirim `measurements[].ocr[]` apa belum. Tanpa itu tebakan '
@@ -87,7 +93,8 @@ class AkurasiKamera extends Command
 
         $vonis = $baris
             ->map(fn (RawMeasurement $m): array => $this->adu($m))
-            ->concat($autoclave);
+            ->concat($autoclave)
+            ->concat($spesifikasi);
 
         $this->info("Pembacaan hasil kamera {$hari} hari terakhir: {$vonis->count()}");
 
@@ -96,6 +103,12 @@ class AkurasiKamera extends Command
         // selesai. Yang menyesatkan kalau dua-duanya dilebur jadi satu angka.
         $terverifikasi = $baris->where('is_verified', true)->count();
         $this->line("Sudah lewat gerbang verifikasi teknisi: {$terverifikasi} dari {$baris->count()}");
+
+        if ($spesifikasi->isNotEmpty()) {
+            // Alasan yang sama dengan Autoklaf: angkanya nggak lewat
+            // `raw_measurements`, jadi kolom `is_verified` nggak berlaku.
+            $this->line("Sel blok spesifikasi (di luar gerbang itu, sumbernya `spesifikasi_alat`): {$spesifikasi->count()}");
+        }
 
         if ($autoclave->isNotEmpty()) {
             // Autoklaf nggak punya kolom `is_verified` sama sekali — angkanya
@@ -174,6 +187,105 @@ class AkurasiKamera extends Command
         }
 
         return $vonis;
+    }
+
+    /**
+     * Sel dari blok tabel yang disimpan ke `spesifikasi_alat`.
+     *
+     * Lembar Timbangan memotret blok keterulangan / eksentrisitas /
+     * histeresis, dan angkanya disimpan sebagai JSON di kolom itu — bukan di
+     * `raw_measurements`. Tanpa pembaca ini seluruh lembarnya hilang dari
+     * pengukuran, dan diamnya kebaca sebagai "kameranya bagus di Timbangan"
+     * padahal artinya nol data.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function dariSpesifikasi(int $hari): Collection
+    {
+        $sesi = CalibrationSession::query()
+            ->whereNotNull('spesifikasi_alat')
+            ->where('created_at', '>=', now()->subDays($hari))
+            ->when($this->option('kategori'), fn ($q) => $q->whereHas(
+                'equipment.category',
+                fn ($c) => $c->where('kode', $this->option('kategori')),
+            ))
+            ->with('equipment.category')
+            ->get();
+
+        $vonis = collect();
+
+        foreach ($sesi as $s) {
+            $kategori = $s->equipment?->category?->kode ?? '(tanpa kategori)';
+
+            foreach ($this->pasanganTebakan((array) $s->spesifikasi_alat) as $jalur => $pasangan) {
+                [$tebakan, $nilai] = $pasangan;
+
+                foreach ($tebakan as $urutan => $meta) {
+                    if (! is_array($meta)) {
+                        continue;
+                    }
+
+                    $final = $nilai[$urutan] ?? null;
+                    $hasil = $this->normalisasi->proses($meta['raw_text'] ?? null);
+                    $terbaca = $hasil['ok'] && ! $hasil['kosong'] && $hasil['nilai'] !== null;
+
+                    $vonis->push([
+                        'kolom' => $kategori.' / '.$jalur,
+                        'terbaca' => $terbaca,
+                        'cocok' => $terbaca && $final !== null
+                            && abs($hasil['nilai'] - (float) $final) < 1e-9,
+                        'skor' => isset($meta['confidence']) ? (float) $meta['confidence'] : null,
+                        'mentah' => (string) ($meta['raw_text'] ?? ''),
+                        'final' => $final === null ? null : (float) $final,
+                        'sesi' => (int) $s->id,
+                    ]);
+                }
+            }
+        }
+
+        return $vonis;
+    }
+
+    /**
+     * Cari tiap pasangan `<k>` + `<k>_ocr` di mana pun di dalam struktur.
+     *
+     * Sengaja TAHAN BENTUK, bukan mengejar satu susunan tertentu. Blok
+     * keterulangan berubah bentuk di tengah jalan: HP mengirim
+     * `{baris: [{zero, zero_ocr, …}]}`, lalu `CalibrationRequest` menerjemahkan
+     * jadi `{mid: {zi, zi_ocr, …}}` SEBELUM disimpan. Pembaca yang mengejar
+     * salah satu bentuk bakal diam-diam pulang kosong begitu penerjemahnya
+     * berubah — dan kosong di sini kebaca sebagai "kameranya bagus".
+     *
+     * @param  array<array-key, mixed>  $simpul
+     * @return array<string, array{0: list<mixed>, 1: list<mixed>}>
+     */
+    private function pasanganTebakan(array $simpul, string $awalan = ''): array
+    {
+        $hasil = [];
+
+        foreach ($simpul as $kunci => $isi) {
+            if (! is_array($isi)) {
+                continue;
+            }
+
+            $nama = $awalan === '' ? (string) $kunci : $awalan.'.'.$kunci;
+
+            if (is_string($kunci) && str_ends_with($kunci, '_ocr')) {
+                $kolom = substr($kunci, 0, -4);
+                // Tanpa deret nilainya, tebakannya nggak punya pasangan buat
+                // diadu — dilewat, bukan dihitung sebagai meleset.
+                if (isset($simpul[$kolom]) && is_array($simpul[$kolom])) {
+                    $induk = $awalan === '' ? $kolom : $awalan.'.'.$kolom;
+                    $hasil[$induk] = [array_values($isi), array_values($simpul[$kolom])];
+                }
+
+                continue;
+            }
+
+            $hasil = [...$hasil, ...$this->pasanganTebakan($isi, $nama)];
+        }
+
+        return $hasil;
     }
 
     /**

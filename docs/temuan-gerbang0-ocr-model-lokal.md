@@ -308,32 +308,59 @@ perubahan di sisi tulis API — ternyata `CalibrationController` sudah menulis
    diamnya bakal kebaca sebagai "kameranya bagus di Autoklaf", padahal artinya
    nol data.
 
-### Cakupan per jalur — dan koreksi atas klaim sebelumnya
+### Cakupan per jalur — peta yang sudah dibuktikan
 
-**Koreksi:** laporan pertama menyebut celahnya cuma "matriks + grid". Itu
-**salah**. Ditelusuri lebih jauh, `susunPengukuran()` bercabang ke **lima**
-pembangun baris, dan empat di antaranya cuma punya gerbang tingkat-sesi
-(`input_method`), tanpa slot metadata per baris:
+Ditelusuri sampai ke ujung, dan dua dugaan awal ternyata **salah**. Yang
+menentukan bukan "pembangun baris mana di server", tapi **ke mana kamera
+lembar itu benar-benar mendarat**:
 
-| Pembangun (server) | Lembar | Status |
+| Lembar | Kamera mendarat di | Status |
 |---|---|---|
-| `susunPengukuran` — jalur umum, `measurements[].pembacaan` | ~13 | **tersambung** |
-| `susunGridEnclosure` | 5 Enclosure | **tersambung** |
-| Autoklaf (`simpanAutoclave`, di luar `raw_measurements`) | Autoklaf | **tersambung** |
-| `susunPasanganStandarUut` | Thermocouple, Termometer Gelas, Thermohygro, TIDS | **belum** |
-| `susunBlokTimbangan` | Timbangan | **belum** |
-| `susunBlokWaktu` | Timer/Stopwatch | **belum** |
+| ~13 lembar titik × Repeat | `measurements[].pembacaan` → `raw_measurements` | **tersambung** |
+| 5 Enclosure | `sensor_grid` / `indikator` / `suhu_ruang` → `raw_measurements` | **tersambung** |
+| Autoklaf | `hasil_autoclave` (JSON) — **nol baris** `raw_measurements` | **tersambung** |
+| Thermocouple, Termometer Gelas, Thermohygro | `standar` / `uut` → `raw_measurements` | **tersambung** |
+| Timbangan | `spesifikasi_alat.keterulangan` (JSON) — **bukan** deret pembacaan | **tersambung** |
+| Timer/Stopwatch | `standar` / `uut`, tapi **empat kotak per satu baris** | **belum, sengaja** |
 
-Ketiga yang belum itu punya jebakan yang sama dan halus: selnya **diisi lewat
-`_isiSel`**, jadi tebakannya SUDAH tersimpan di `bacaanMesinSel` — tapi
-payloadnya lewat `toSubmissionPasangan()` / blok Timbangan / blok Waktu, bukan
-`TitikLembarKerja.ocr`. Jadi tebakannya direkam lalu dibuang diam-diam di
-gerbang terakhir. Itu persis kelas kegagalan yang paling mahal di repo ini:
-tidak ada error, dan yang hilang cuma buktinya.
+### Dua dugaan yang meleset, dan kenapa penting
 
-Menyambungkannya butuh slot baru di tiga bentuk payload yang berbeda-beda
-(`standar`/`uut` berpasangan, empat pembacaan Timbangan, jam/menit/detik
-Waktu). Belum dikerjakan — menunggu keputusan pemilik proyek.
+1. **Timbangan bukan `susunBlokTimbangan`.** Deret z1/m/m'/z2 di sana diketik,
+   bukan difoto. Yang difoto blok **Repeatability**, dan blok itu besaran
+   tingkat-sesi yang mendarat di `spesifikasi_alat` — dibuktikan
+   `TimbanganSesiTest`: `['akurasi' => false, 'keterulangan' => true]`.
+   Menyambung `susunBlokTimbangan` berarti menyambung jalur yang kameranya
+   tidak pernah lewat — kesalahan yang sama persis dengan perintah aslinya.
+
+2. **Ada penerjemah bentuk yang membuang kunci asing.**
+   `CalibrationRequest::bakukanKeterulanganTimbangan()` mengubah bentuk-tabel
+   dari HP (`baris[]` berkolom `zero`/`pembacaan`) jadi bentuk baku
+   (`{mid, maks}` berkunci `zi`/`mi`) **sebelum disimpan**, dan membuang kunci
+   yang tidak dikenalnya. Tanpa menerjemahkan tebakannya juga, dia mendarat di
+   HP, terkirim ke server, lalu **lenyap tanpa jejak tepat di situ**.
+
+Karena itu pembaca di `ocr:akurasi-kamera` dibuat **tahan bentuk**: dia mencari
+tiap pasangan `<k>` + `<k>_ocr` di mana pun, bukan mengejar satu susunan
+tertentu. Pembaca yang mengejar `baris[]` akan diam-diam pulang kosong begitu
+penerjemahnya berubah — dan kosong di sini kebaca sebagai "kameranya bagus".
+
+### Yang TIDAK dikerjakan: Timer/Stopwatch
+
+Satu penunjukan di lembar itu ditulis di **empat kotak** (jam, menit, detik,
+milidetik) dan server menyimpannya sebagai **satu baris** dalam milidetik
+(`waktuKeMilidetik`). Jadi empat tebakan mesin tidak punya satu kolom pun untuk
+ditaruh: `ocr_raw_text` satu kolom teks, dan nilai final per kotak tidak
+disimpan di mana pun.
+
+Menggabungkan empat bacaan jadi satu teks (`"0:01:00,123"`) berarti **mengarang
+bacaan yang tidak pernah dilihat pengenalnya** — persis larangan §15.7 perintah
+aslinya, dan angka yang keluar dari perbandingannya tidak berarti apa-apa.
+
+Yang dibutuhkan kalau ini mau dikerjakan: menyimpan keempat teks mentahnya apa
+adanya, lalu menyusun ulang tebakannya memakai `waktuKeMilidetik` yang **sama**
+dengan yang menyusun angka finalnya — supaya yang diadu benar-benar
+"pembacaan yang dilihat kamera" lawan "pembacaan yang dikirim teknisi".
+Itu perubahan kontrak tersendiri, dan menunggu keputusan pemilik proyek.
 
 ### Verifikasi
 

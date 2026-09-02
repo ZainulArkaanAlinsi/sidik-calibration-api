@@ -103,6 +103,27 @@ class CalibrationRequest extends FormRequest
                 'zi' => array_values((array) ($b['zero'] ?? [])),
                 'mi' => array_values((array) ($b['pembacaan'] ?? [])),
             ];
+
+            /*
+             * Tebakan mesin ikut diterjemahkan, dan ini BUKAN kelengkapan.
+             *
+             * Penerjemah ini membuang kunci yang nggak dikenalnya. Jadi tanpa
+             * dua baris di bawah, tebakan kamera lembar Timbangan mendarat di
+             * HP, terkirim ke server, lalu hilang TANPA JEJAK tepat di sini —
+             * dan `ocr:akurasi-kamera` bakal melaporkan nol sel Timbangan,
+             * yang kebaca sebagai "kameranya bagus" padahal artinya nol data.
+             *
+             * Cuma ditulis kalau memang ada isinya: sesi yang seluruhnya
+             * diketik tangan nggak boleh menyimpan kunci kosong di blok yang
+             * dibaca kalkulator.
+             */
+            foreach (['zi' => 'zero_ocr', 'mi' => 'pembacaan_ocr'] as $nama => $kunci) {
+                $tebakan = array_values((array) ($b[$kunci] ?? []));
+
+                if (array_filter($tebakan, static fn ($v): bool => $v !== null) !== []) {
+                    $baku[$slot[$i]][$nama.'_ocr'] = $tebakan;
+                }
+            }
         }
 
         if ($baku === []) {
@@ -448,6 +469,27 @@ class CalibrationRequest extends FormRequest
             'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
+            /*
+             * Tebakan mesin per sisi, SEJAJAR INDEKS sama deret sisinya sendiri.
+             *
+             * Dua sisi dipisah karena sisi standar & sisi UUT punya tebakan yang
+             * beda, dan menukarnya bikin kolom `Correction` — selisih dua sisi
+             * itu — bergeser tanpa satu pun error.
+             *
+             * Lembar Timer/Stopwatch NGGAK mengirim kunci ini: satu penunjukan
+             * di sana ditulis di empat kotak (jam/menit/detik/milidetik) dan
+             * disimpan sebagai SATU baris milidetik, jadi empat tebakan nggak
+             * punya satu kolom pun buat ditaruh. Lihat
+             * `docs/temuan-gerbang0-ocr-model-lokal.md`.
+             */
+            'measurements.*.standar_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.standar_ocr.*' => ['nullable', 'array'],
+            'measurements.*.standar_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.standar_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
+            'measurements.*.uut_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.uut_ocr.*' => ['nullable', 'array'],
+            'measurements.*.uut_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.uut_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.

@@ -2015,8 +2015,13 @@ class CalibrationController extends Controller
         // Angka dari KAMERA wajib dikonfirmasi manusia sebelum sesi bisa
         // disetujui — aturan yang sama dengan sembilan belas alat lain.
         $metodeInput = (string) $request->string('input_method', 'manual');
-        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
-        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        // Asal-kamera dihitung PER BARIS begitu barisnya membawa tebakan
+        // mesinnya sendiri — aturan & alasannya sama persis dengan
+        // `susunGridEnclosure`. Tanpa metadata, hasilnya identik dengan
+        // perilaku lama.
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
 
         $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
 
@@ -2045,7 +2050,14 @@ class CalibrationController extends Controller
                     return $t;
                 }
 
-                return [...$t, 'uut' => array_values((array) $t['pembacaan'])];
+                // Tebakan mesinnya ikut pindah sisi. Kalau nggak, deret
+                // `uut` punya angka tapi tebakannya nyangkut di kunci yang
+                // nggak pernah dibaca — dan hilangnya nggak ngasih gejala.
+                return [
+                    ...$t,
+                    'uut' => array_values((array) $t['pembacaan']),
+                    'uut_ocr' => array_values((array) ($t['ocr'] ?? [])),
+                ];
             },
             (array) $request->input('measurements', []),
         );
@@ -2077,11 +2089,18 @@ class CalibrationController extends Controller
 
             foreach (['standar', 'uut'] as $peran) {
                 $terisi = [];
+                // Sejajar indeks sama deret sisinya sendiri. Sisi standar &
+                // sisi UUT punya tebakan yang beda, dan menukarnya bikin
+                // kolom `Correction` bergeser tanpa satu pun error.
+                $ocrPeran = array_values($titik[$peran.'_ocr'] ?? []);
 
                 foreach (array_values($titik[$peran] ?? []) as $urutan => $nilai) {
                     if (! $adaIsinya($nilai)) {
                         continue;
                     }
+
+                    $meta = $ocrPeran[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
 
                     $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                     $terisi[] = $pembacaan;
@@ -2099,7 +2118,9 @@ class CalibrationController extends Controller
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $pembacaan,
                         'satuan' => $satuan,
-                        'input_source' => $sumberInput,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_confidence' => $meta['confidence'] ?? null,
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
                         'is_verified' => ! $dariKamera,
                     ];
                 }
