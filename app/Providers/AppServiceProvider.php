@@ -7,6 +7,7 @@ use App\Services\Direktori\DirektoriBerlapis;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\GooglePlacesDirektori;
 use App\Services\Direktori\NominatimDirektori;
+use App\Services\Direktori\PilihanDriver;
 use App\Services\Push\FcmPengirimPush;
 use App\Services\Push\PengirimPush;
 use App\Services\Push\PengirimPushMati;
@@ -103,7 +104,13 @@ class AppServiceProvider extends ServiceProvider
             // yang ditukar: kalau kuota bulanannya lewat, tagihannya jalan.
             // Keputusan sebesar itu layak diketik sendiri, bukan diwarisi dari
             // pemasangan yang lupa menyetel apa-apa.
-            return match (config('services.direktori_perusahaan.driver')) {
+            // Terjemahan setelan -> driver dikerjakan [PilihanDriver], bukan
+            // `match` di sini, karena `GET /api/health` MELAPORKAN hasil yang
+            // sama. Dua salinan aturan yang sama cepat atau lambat berbeda,
+            // dan yang terbit bukan sekadar laporan yang salah tapi laporan
+            // yang dipercaya — health bilang "osm" sementara yang dibangun
+            // jalur berbayar.
+            return match (PilihanDriver::sekarang()) {
                 'google' => $google(),
                 'auto' => new DirektoriBerlapis([$google(), $osm()]),
                 default => $osm(),

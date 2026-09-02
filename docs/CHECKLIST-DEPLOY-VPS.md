@@ -433,6 +433,56 @@ jadi keluar dari jendela health check sepenuhnya.
 Batasnya sama dengan `direktori_perusahaan`: yang dilaporkan **status, bukan nilai**, nol request
 ke penyedia, nol rahasia. Repo ini publik, jadi SHA commit bukan rahasia.
 
+### "Direktorinya sedang menagih atau nggak?" (ditambah 2 Sep 2026)
+
+Blok `direktori_perusahaan` sekarang tiga field, bukan satu:
+
+```json
+"direktori_perusahaan": {
+  "disetel": true,          // jalur direktorinya kepakai
+  "driver": "osm",          // yang BENERAN jalan, bukan isi .env apa adanya
+  "bisa_ditagih": false     // true = jalur ini menyentuh Google Places
+}
+```
+
+**Kenapa `disetel` sendirian nggak cukup.** Dia `true` buat `osm` MAUPUN `auto` — yang pertama
+gratis, yang kedua menembak Google duluan dan ditagih begitu kuota bulanannya lewat. Dua keadaan
+yang bedanya uang, dilaporkan dengan angka yang sama persis.
+
+Itu bukan kasus tepi. Waktu bawaan direktori dipindah ke OSM (1 Sep 2026), keputusannya sudah
+tercatat sejak 31 Agt tapi nilainya tertinggal di `auto` — dan **tidak ada satu pun cara
+memeriksanya dari luar**. Yang akhirnya menemukan tagihan Google Cloud, bukan endpoint ini.
+
+**`driver` melaporkan yang EFEKTIF, bukan isi `.env`.** `DIREKTORI_PERUSAHAAN_DRIVER=osmm` yang
+salah ketik jatuh ke `osm`, dan yang dilaporkan `osm` — karena yang perlu diketahui "yang jalan
+yang mana", bukan "yang saya ketik apa".
+
+**Pakainya begini.** Sesudah mengubah setelan direktori:
+
+```
+curl -s https://<domain>/api/health | jq .direktori_perusahaan
+```
+
+`"bisa_ditagih": false` = aman. `true` = jalur berbayar hidup, disengaja atau tidak.
+
+> **Arah penimpaannya KEBALIKAN dari instingnya — dan ini sudah menggigit sekali.**
+>
+> `DIREKTORI_PERUSAHAAN_DRIVER` ditulis `value: osm` di `render.yaml`, jadi dia **dikelola
+> blueprint**: tiap sync, nilai itu menimpa apa pun yang diketik di dashboard. Bukan sebaliknya.
+> Lihat kotak `ARSIP_DRIVER` di atas — persis mekanisme yang bikin arsip produksi diam-diam balik
+> ke disk sementara pada 1 Sep 2026.
+>
+> Buat driver direktori, arah itu justru **yang diinginkan**: bawaan gratis ditegakkan ulang tiap
+> deploy, jadi `auto` yang tertinggal di dashboard tidak bisa diam-diam menyalakan jalur berbayar.
+> Konsekuensinya harus disadari: **memindahkannya ke `google`/`auto` lewat dashboard saja tidak
+> bertahan** — yang harus diubah `render.yaml`, atau kuncinya dipindah ke `sync: false` dulu
+> mengikuti aturan umum di kotak `ARSIP_DRIVER`.
+>
+> Field `driver` di health yang memberi tahu mana yang sebenarnya menang, tanpa perlu menebak.
+
+Nama driver itu **status, bukan rahasia**: nilainya sama saja apakah API key-nya terisi, kosong,
+atau salah. Key-nya sendiri tetap tidak pernah ikut.
+
 Kegunaannya:
 
 - **"Deploy-nya udah naik belum?"** → cocokkan `versi` dengan commit terakhir di `main`. Sebelum
