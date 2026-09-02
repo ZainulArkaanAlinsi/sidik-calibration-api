@@ -38,8 +38,9 @@ namespace App\Support;
  * Batas atas kotaknya DIUKUR, bukan ditebak: seluruh 24 sesi bawaan diterbitkan
  * lalu dirender ulang sambil tinggi kotaknya disapu. Yang paling mepet
  * **Conductivity Meter** — masih muat mode normal di 86px, kedorong ke mode
- * padat di 88px. Yang dipakai 80px, menyisakan margin ~1,6 mm buat catatan yang
- * lebih panjang dari sesi contoh.
+ * padat di 88px. Yang dipakai 86px — batasnya persis, tanpa margin. Itu disengaja:
+ * pemilik proyek minta tanda tangannya sebesar mungkin, dan yang menahan
+ * kalau ada yang lewat batas `SertifikatSemuaAlatSatuHalamanTest`.
  *
  * ## Mode padat TIDAK ikut digedein, dan itu hasil percobaan yang gagal
  *
@@ -65,7 +66,7 @@ namespace App\Support;
 final class UkuranTandaTangan
 {
     /**
-     * Tinggi kotak tanda tangan, dalam piksel CSS. 80px = 21,17 mm @96dpi.
+     * Tinggi kotak tanda tangan, dalam piksel CSS. 86px = 22,75 mm @96dpi.
      *
      * HARUS sama dengan `.ttd .ruang-ttd` di resources/views/sertifikat/pdf.blade.php.
      *
@@ -79,7 +80,7 @@ final class UkuranTandaTangan
      * batas atasnya dipatok sertifikat Conductivity Meter, yang kedorong ke mode
      * padat begitu kotaknya lewat 86px.
      */
-    public const TINGGI_KOTAK_PX = 80;
+    public const TINGGI_KOTAK_PX = 86;
 
     /**
      * Versi mode padat — `body.padat .ttd .ruang-ttd`. 24px = 6,35 mm.

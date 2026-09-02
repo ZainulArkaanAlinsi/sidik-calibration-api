@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Certificate;
 use App\Models\Organization;
+use App\Support\TandaTanganTebal;
 use App\Support\UkuranTandaTangan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -47,6 +48,24 @@ class DataTampilanSertifikat
         $posisiTtd = $organisasi?->pengaturanTandaTangan()
             ?? ['geser_x_mm' => 0, 'geser_y_mm' => 0, 'lebar_mm' => Organization::DEFAULT_TTD_LEBAR_MM];
 
+        $ukuranTtd = UkuranTandaTangan::keduaMode(
+            $ttdIsi,
+            (float) ($posisiTtd['lebar_mm'] ?? Organization::DEFAULT_TTD_LEBAR_MM),
+            (float) ($posisiTtd['geser_y_mm'] ?? 0),
+        );
+
+        // Goresannya ditebalkan SESUDAH ukuran cetaknya diketahui, karena
+        // bobotnya diukur dalam milimeter di kertas — bukan dalam piksel di
+        // berkas. Yang dipakai ukuran mode normal; lembar mode padat mencetak
+        // gambar yang sama lebih kecil, jadi goresannya di sana kembali setipis
+        // sebelum perubahan ini. Itu diterima: keluhannya soal sertifikat
+        // normal, dan menyiapkan dua gambar berarti dua kali ongkos render buat
+        // enam alat.
+        $ttdIsi = $this->tebalkanSekali(
+            $ttdIsi,
+            (float) ($ukuranTtd['normal']['lebar_mm'] ?? $posisiTtd['lebar_mm'] ?? Organization::DEFAULT_TTD_LEBAR_MM),
+        );
+
         return [
             'sertifikat' => $sertifikat,
             'snapshot' => $sertifikat->snapshot,
@@ -62,17 +81,40 @@ class DataTampilanSertifikat
             // Lebar pilihan admin cuma menyetel LEBAR; tingginya dulu dibiarkan
             // ikut gambar, dan gambar yang tidak lebar-mendatar meluber ke atas
             // menimpa tabel di atasnya. Lihat App\Support\UkuranTandaTangan.
-            'ukuranTtd' => UkuranTandaTangan::keduaMode(
-                $ttdIsi,
-                (float) ($posisiTtd['lebar_mm'] ?? Organization::DEFAULT_TTD_LEBAR_MM),
-                (float) ($posisiTtd['geser_y_mm'] ?? 0),
-            ),
+            'ukuranTtd' => $ukuranTtd,
             'qr' => $this->qrDataUri($organisasi, $sertifikat, $web),
             'keputusan' => $this->tampilkanKeputusan($organisasi)
                 ? $sertifikat->session?->keputusan
                 : null,
             'web' => $web,
         ];
+    }
+
+    /**
+     * Penebalan goresan, dihitung SEKALI per gambar dalam satu proses.
+     *
+     * Tanda tangan itu milik organisasi, bukan milik sertifikat: satu gambar
+     * yang sama dipakai semua lembarnya, dan ukuran cetaknya juga sama. Tanpa
+     * ingatan ini, aksi massal "Cetak ulang PDF" membayar penebalan yang sama
+     * berulang-ulang — dua puluh baris berarti dua puluh kali kerja yang
+     * hasilnya identik, di kotak yang CPU-nya memang sudah sempit.
+     *
+     * Kuncinya ikut menyertakan lebar cetak: bobotnya diukur dalam milimeter di
+     * kertas, jadi gambar yang sama pada lebar berbeda memang hasil berbeda.
+     *
+     * @var array<string, ?string>
+     */
+    private array $ttdTebal = [];
+
+    private function tebalkanSekali(?string $isi, float $lebarMm): ?string
+    {
+        if ($isi === null) {
+            return null;
+        }
+
+        $kunci = md5($isi).':'.round($lebarMm, 2);
+
+        return $this->ttdTebal[$kunci] ??= TandaTanganTebal::pena($isi, $lebarMm);
     }
 
     /**
