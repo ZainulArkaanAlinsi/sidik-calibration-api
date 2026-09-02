@@ -622,6 +622,44 @@ berubah.
 Harganya nyata dan sudah diterima: cakupan OSM **lebih tipis**, jadi pabrik di kawasan industri
 yang belum ada yang memetakan memang tidak akan ketemu. Lapis 3 ada justru untuk itu.
 
+### `DIREKTORI_PERUSAHAAN_DRIVER` SENGAJA dipatok `value:` di blueprint — jangan "dibetulkan"
+
+**Keputusan pemilik proyek 2 Sep 2026.** Ditulis di sini justru karena membalikkannya kelihatan
+seperti perbaikan.
+
+`render.yaml` menulis `value: osm`, artinya **blueprint yang menang**: tiap sync, nilai itu menimpa
+apa pun yang diketik di dashboard Render. Aturan umum yang lahir dari insiden `ARSIP_DRIVER`
+(PR #145) berbunyi *"apa pun yang diputuskan operator, bukan kode, jangan dipatok `value:` di
+blueprint"* — jadi siapa pun yang membaca aturan itu lalu melihat baris ini akan mengira ini
+pelanggaran yang belum dibereskan.
+
+**Bukan.** Aturan yang sama menghasilkan jawaban berbeda karena yang dipatok berbeda sifatnya:
+
+| | Kalau blueprint menang | Akibatnya |
+|---|---|---|
+| `ARSIP_DRIVER: local` | menimpa `s3` | **berkas arsip hilang** tiap deploy |
+| `DIREKTORI_PERUSAHAAN_DRIVER: osm` | menimpa `auto`/`google` | cakupan pabrik lebih tipis |
+
+`ARSIP_DRIVER` dipatok ke nilai yang **merusak**; yang ini dipatok ke nilai yang **aman**.
+
+Yang lebih menentukan, bandingkan bentuk kegagalannya:
+
+- **Dengan `value: osm`** → gagalnya *kelihatan*: ada yang mencoba menyalakan Google, lalu balik
+  sendiri sesudah deploy. Menjengkelkan, nol rupiah.
+- **Dengan `sync: false`** → gagalnya *diam*: `auto` tertinggal di dashboard, tidak ada yang
+  menimpanya, tagihan jalan. **Itu persis yang sudah terjadi**, dan yang menemukannya tagihan
+  Google Cloud — bukan seorang pun.
+
+Kegagalan yang kelihatan jauh lebih murah daripada kegagalan yang diam.
+
+**Harga yang sudah diterima:** kalau suatu hari OSM memblokir alamat IP server dan pencarian
+direktori mati, jalur cepatnya **tidak bisa** dipindah ke Google lewat dashboard — harus ubah
+`render.yaml` lalu deploy. Dampaknya terbatas: pendaftaran manual dan pencarian master lab tetap
+jalan penuh, jadi yang hilang jalan pintasnya, bukan kemampuan kerjanya.
+
+Mana yang sebenarnya menang bisa diperiksa tanpa dashboard:
+`curl -s https://<domain>/api/health | jq .direktori_perusahaan` → `"bisa_ditagih": false` = aman.
+
 Bentuknya **internal dulu, direktori luar sebagai jalan keluar** — bukan salah satunya:
 
 | Lapis | Yang dipakai |
