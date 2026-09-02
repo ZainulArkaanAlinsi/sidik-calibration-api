@@ -116,6 +116,16 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2606.08.C (Temperature Recorder Controller)',
     ];
 
+    /**
+     * Tiga hal sekaligus, dan namanya cuma menyebut yang pertama:
+     *
+     *   1. Tiap sesi bawaan BISA diterbitkan — daftarnya dipatok di `DIPERIKSA`.
+     *   2. Nggak ada lembar yang meluap, bahkan sesudah mode padat dipaksa.
+     *   3. Daftar alat yang BUTUH mode padat nggak berubah.
+     *
+     * Yang ketiga yang paling gampang jebol tanpa suara, dan alasannya ada di
+     * docblock kelas.
+     */
     public function test_semua_sertifikat_bawaan_muat_satu_halaman(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -177,7 +187,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         );
     }
 
-    /** @param  array<string, mixed>  $bahan */
+    /**
+     * Jumlah halaman hasil render — angka dari dompdf, bukan perkiraan.
+     *
+     * @param  array<string, mixed>  $bahan
+     */
     private function halaman(array $bahan, bool $paksaPadat): int
     {
         $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => $paksaPadat]);
