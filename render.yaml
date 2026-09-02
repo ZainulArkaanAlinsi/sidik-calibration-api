@@ -109,8 +109,27 @@ services:
       # Ini saklarnya, BUKAN FILESYSTEM_DISK. Yang terakhir itu cuma dibaca
       # baris `'default'` di config/filesystems.php, dan nggak ada satu pun
       # pemakaian Storage:: di app/ yang memakai disk default.
+      #
+      # ## Kenapa `sync: false`, bukan `value: local`
+      #
+      # 1 Sep 2026, kejadian nyata: saklarnya digeser ke `s3` di dashboard,
+      # arsipnya pindah ke R2, `/api/health` melaporkan `arsip.awet: true`.
+      # Deploy berikutnya menyinkronkan blueprint ini, dan `value: local`
+      # MENIMPA BALIK setelan itu. Produksi diam-diam kembali menulis ke disk
+      # container yang kehapus tiap deploy — tanpa satu pun error, dan yang
+      # kelihatan cuma satu huruf berubah di endpoint health.
+      #
+      # Keempat AWS_* di bawah selamat justru karena `sync: false`. Bedanya
+      # bukan soal rahasia atau bukan: `value:` artinya "blueprint yang
+      # menentukan", dan ARSIP_DRIVER itu KEPUTUSAN OPERASIONAL — tergantung
+      # bucket sudah ada atau belum, berkas lama sudah disalin atau belum.
+      # Blueprint nggak bisa tahu itu, jadi dia nggak boleh memutuskan.
+      #
+      # Dikosongkan waktu impor blueprint tetap aman: `env('ARSIP_DRIVER',
+      # 'local')` di config/filesystems.php jatuh ke `local`, persis bawaan
+      # yang lama.
       - key: ARSIP_DRIVER
-        value: local
+        sync: false
 
       # Cloudflare R2 — gratis 10 GB, dipakai kalau ARSIP_DRIVER=s3.
       #
