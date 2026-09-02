@@ -79,17 +79,34 @@ final class UkuranTandaTangan
      * besar tanda tangan tercetak — 46px bikin dia cuma 19% lebar garisnya — dan
      * batas atasnya dipatok sertifikat Conductivity Meter, yang kedorong ke mode
      * padat begitu kotaknya lewat 86px.
+     *
+     * Yang mengikat DEMOSI, bukan halaman kedua. Disapu ulang atas 24 sertifikat
+     * bawaan pada 86 / 90 / 94 / 98 / 104px: nol yang meluap ke dua halaman di
+     * angka mana pun — jaring `padat` menangkap semuanya. Yang naik cuma cacah
+     * yang turun ke mode padat: 6 → 8 (90px, dua Conductivity Meter) → 9 (94px,
+     * plus Viscometer), lalu datar sampai 104px.
+     *
+     * Karena itu 86px DIPERTAHANKAN meski ada ruang. Naik ke 94px menukar
+     * tanda tangan lima belas sertifikat dari 22,75 jadi 24,87 mm (+9%) dengan
+     * tiga sertifikat yang jatuh dari 22,75 ke 7,41 mm (-67%) — plus seluruh
+     * lembarnya ikut mengecil. Itu rugi, bukan untung.
      */
     public const TINGGI_KOTAK_PX = 86;
 
     /**
-     * Versi mode padat — `body.padat .ttd .ruang-ttd`. 24px = 6,35 mm.
+     * Versi mode padat — `body.padat .ttd .ruang-ttd`. 28px = 7,41 mm.
      *
-     * Sengaja TIDAK ikut naik waktu kotak normal digedein: sertifikat Visible
-     * Spectrofotometer meluap ke halaman dua begitu angka ini lewat 30px, dan
-     * mode padat nggak punya jaring pengaman lagi di bawahnya.
+     * Plafonnya DIUKUR, bukan ditebak: sapuan seluruh 24 sertifikat bawaan pada
+     * 24 / 28 / 32 / 36 / 44px menaruh batasnya di antara 28 dan 32 — Visible
+     * Spectrofotometer meluap ke halaman dua begitu lewat 28px, dan mode padat
+     * nggak punya jaring pengaman lagi di bawahnya.
+     *
+     * Dulu 24px dengan catatan "sengaja nggak ikut naik". Alasan itu benar buat
+     * pertanyaannya waktu itu (ikut naik ke 44px), tapi jadi terlalu berhati-hati
+     * begitu diukur: 28px aman, dan buat enam sertifikat yang memang jalan di
+     * mode padat itu tanda tangannya 17% lebih besar tanpa risiko apa pun.
      */
-    public const TINGGI_KOTAK_PADAT_PX = 24;
+    public const TINGGI_KOTAK_PADAT_PX = 28;
 
     /** dompdf memetakan 1 px CSS pada 96 dpi. */
     private const DPI = 96;

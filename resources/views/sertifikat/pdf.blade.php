@@ -172,7 +172,7 @@
         body.padat table.ttd td { font-size: 9.5px; }
         body.padat table.ttd td.qr { width: 78px; }
         body.padat table.ttd td.qr img { width: 66px; height: 66px; }
-        body.padat .ttd .ruang-ttd { height: 24px; }
+        body.padat .ttd .ruang-ttd { height: 28px; }
         body.padat .ttd td { padding-top: 4px; }
         body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
         body.padat .kop-gambar { margin-bottom: 5px; }
@@ -229,19 +229,40 @@
           Jadi kalau ada yang mau ngegedein huruf atau kotak ini lagi: ukur ulang
           pakai Conductivity Meter, bukan pH.
 
-          ## Kenapa versi PADAT-nya (24px, di atas) TIDAK ikut digedein
+          ## Kenapa versi PADAT-nya berhenti di 28px
 
           Percobaan pertama menaikkannya ke 44px, dan itu bikin sertifikat
           **Visible Spectrofotometer** jadi DUA HALAMAN — dia lembar terpadat di
           sistem (24 titik ketidakpastian) dan mode padat nggak punya jaring
           pengaman lagi di bawahnya.
 
-          Disapu ulang: 30px masih muat, 32px sudah meluap. Jadi 24px itu bukan
-          angka konservatif, itu nyaris seluruh margin yang ada. Menukarnya buat
-          tanda tangan yang 1 mm lebih besar di enam alat jelas rugi.
+          Disapu 24 / 28 / 32 / 36 / 44px atas seluruh 24 sertifikat bawaan:
+          **28px masih muat, 32px sudah meluap.** Jadi 28px bukan angka yang
+          dipilih, itu batasnya.
         */
         .ttd .ruang-ttd { height: 86px; position: relative; }
-        .ttd .ruang-ttd img { position: absolute; bottom: 0; }
+
+        /*
+          Gambarnya DITENGAHKAN di atas garis, bukan nempel ke tepi kiri.
+          Diukur di sertifikat 012-CAL-524: garisnya 10,76 → 82,06 mm, tapi
+          gambarnya mendarat 10,76 → 29,98 mm — 26,0 mm di kiri dari tengah
+          garis. Sebabnya `left: 0` pada gambar yang `position: absolute`.
+
+          Yang ditengahkan pembungkusnya, BUKAN gambarnya lewat margin negatif:
+          `lebar_mm` boleh `null` (lihat [UkuranTandaTangan]) waktu tingginya
+          dijepit ke kotak dan lebarnya ikut rasio gambar. Tanpa lebar yang
+          diketahui, margin negatif setengah-lebar nggak bisa dihitung sama
+          sekali; `text-align` nggak butuh tahu lebarnya.
+
+          `bottom` tetap di pembungkus supaya jangkar bawahnya nggak berubah —
+          gambar tumbuh ke ATAS, dan `geser_y_mm` tetap berarti sama.
+        */
+        .ttd .ruang-ttd .letak-ttd {
+          position: absolute; left: 0; width: 100%; text-align: center;
+        }
+
+        /* `geser_x_mm` jadi geseran RELATIF dari tengah, bukan dari tepi kiri. */
+        .ttd .ruang-ttd img { position: relative; }
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
 
@@ -1165,19 +1186,23 @@
                           daripada berperilaku salah dengan percaya diri.
                         --}}
                         @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal'] ?? null)
-                        <img
-                            src="{{ $tandaTangan }}"
-                            alt="Tanda tangan"
-                            style="
-                                @if ($ukuran === null)width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
-                                @elseif (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;
-                                height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
-                                @else height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
-                                @endif
-                                left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
-                                bottom: {{ $ukuran === null ? ($posisiTtd['geser_y_mm'] ?? 0) : round($ukuran['geser_y_mm'], 2) }}mm;
-                            "
+                        <div
+                            class="letak-ttd"
+                            style="bottom: {{ $ukuran === null ? ($posisiTtd['geser_y_mm'] ?? 0) : round($ukuran['geser_y_mm'], 2) }}mm;"
                         >
+                            <img
+                                src="{{ $tandaTangan }}"
+                                alt="Tanda tangan"
+                                style="
+                                    @if ($ukuran === null)width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                    @elseif (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;
+                                    height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                    @else height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                    @endif
+                                    left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
+                                "
+                            >
+                        </div>
                     @endif
                 </div>
 
