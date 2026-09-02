@@ -59,9 +59,21 @@ class HealthDirektoriTest extends TestCase
         // `kunci-rahasia-banget`, kosong, atau salah. Itu garis yang
         // membedakan "status" dari "rahasia", dan daftar ini yang menjaganya —
         // menambah field baru ke blok ini WAJIB lewat sini dulu.
+        //
+        // `lokal` lolos garis yang sama, dan sengaja diperiksa isinya juga:
+        // dia `{aktif, baris}` yang diturunkan dari JUMLAH BARIS tabel
+        // direktori rujukan — nol hubungannya dengan key, dan nilainya tidak
+        // berubah sedikit pun kalau key-nya diganti. Yang TIDAK boleh nyelip ke
+        // sini nama perusahaannya: sepuluh ribu nama PT di endpoint tanpa login
+        // itu jalur ekspor diam-diam, bukan laporan status.
         $this->assertSame(
-            ['disetel', 'driver', 'bisa_ditagih'],
+            ['disetel', 'driver', 'bisa_ditagih', 'lokal'],
             array_keys($respons->json('direktori_perusahaan')),
+        );
+
+        $this->assertSame(
+            ['aktif', 'baris'],
+            array_keys($respons->json('direktori_perusahaan.lokal')),
         );
     }
 

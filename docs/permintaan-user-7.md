@@ -1770,6 +1770,51 @@ data sungguhan. Rinciannya di `docs/pertanyaan-lab-data-pelanggan.md`.
 `certificates.snapshot`. Sertifikat yang sudah terbit tetap memuat data lama — itu benar, bukan
 bug.
 
+### F. Direktori lokal — 10.320 PT bisa dicari tanpa keluar server (2 Sep 2026)
+
+Pemilik proyek mengirim dua berkas: **Kawasan Industri Jababeka** (450 PT, sumbernya blog
+Rotogravure bertanggal 4 Okt 2020) dan **Indonetwork Jawa Barat** (9.870 PT, hasil pengambilan 333
+halaman situs Indonetwork, 2 Sep 2026). Permintaannya: teknisi & admin tinggal cari nama PT,
+alamatnya ikut — **tanpa bikin APK maupun panel admin berat**.
+
+**Rancangan yang paling kelihatan benar justru yang paling merusak.** Menyeed 10.320 baris ke
+`customers` akan lolos semua test dan kelihatan berhasil, lalu:
+`lib/services/simpanan_pelanggan.dart` menyalin SELURUH daftar pelanggan ke SharedPreferences HP
+tiap teknisi (supaya pemilih pelanggan jalan di pabrik nol sinyal), dan SharedPreferences dibaca
+**utuh ke memori tiap aplikasi nyala**. Diukur dari berkas aslinya: **1,36 MB JSON**, diurai tiap
+buka aplikasi, selamanya. Ukuran unduhan APK tidak berubah — yang berubah waktu nyalanya, dan itu
+tidak kelihatan dari mana pun sampai ada yang mengeluh lemot.
+
+Yang dibangun: tabel rujukan **terpisah** `direktori_lokal` (tanpa `organization_id` — isinya data
+publik, bukan data lab), dibaca lewat driver baru yang **memenuhi kontrak `DirektoriPerusahaan`
+yang sudah ada**. Akibatnya **nol berkas berubah di sisi HP**: `GET /customers/direktori` sudah
+dipanggil `cariDirektori()`, dan atribusinya sudah dirender di `pelanggan_baru_screen.dart:458`.
+
+Lapis lokal ditaruh **paling depan, selalu**, apa pun setelan drivernya. Aman karena tiga hal: nol
+jaringan/kuota/tagihan; nol hasil bukan jawaban akhir buat `DirektoriBerlapis` jadi cakupan tidak
+berkurang; dan tabel kosong bikin `tersedia()` false sehingga pemasangan yang belum mengimpor
+berperilaku **sama persis** seperti sebelum fitur ini ada. Yang ikut didapat: pencarian yang ketemu
+lokal tidak pernah sampai ke Google, jadi lapis ini justru **mengurangi** request berbayar.
+
+**Satu bug nyata ketemu waktu membangunnya, dan bentuk gagalnya paling buruk:**
+`AppServiceProvider` memanggil `tersedia()` waktu membangun `DirektoriPerusahaan`, dan
+`GET /api/health` menyelesaikan `DirektoriPerusahaan` — jadi pemasangan yang migrasinya belum jalan
+bikin **health membalas 500**, endpoint yang justru dipakai buat mendiagnosis kenapa pemasangannya
+belum benar. Ditutup dengan menelan kegagalan BACA jadi 0, dan test-nya dibuktikan merah dulu.
+
+Isinya **petunjuk, bukan kebenaran** — kedua sumber memperingatkan dirinya sendiri (Jababeka: "banyak
+perusahaan sudah pindah, berganti nama, atau tutup"; Indonetwork: "keakuratannya bervariasi"). Layar
+teknisi memajang "Belum diverifikasi — cocokkan dengan surat pesanan sebelum dipakai di sertifikat",
+dan itu bukan hiasan: `certificates.snapshot` bikin alamat salah **tidak bisa ditarik**.
+
+Baris jadi data lab HANYA setelah teknisi memilihnya — lahir sebagai `customers` baru dengan
+`sumber`, `dibuat_oleh_user_id`, dan `direktori_ref` berawalan `lokal:`.
+
+**Catatan kepatuhan, diangkat bukan didiamkan:** data Indonetwork hasil pengambilan 333 halaman
+situs, sementara §10 no. 3 dokumen strategi pelanggan melarang scraping situs direktori. Berkasnya
+sudah ada di tangan pemilik proyek dan pemakaiannya keputusan dia; dicatat di sini supaya kalau
+ditanya asesor jawabannya sudah tertulis. Serah-terima: `docs/perintah-direktori-lokal.md`.
+
 ---
 
 ## Keputusan yang SUDAH diambil
@@ -1878,7 +1923,7 @@ berkas profil.
 | G8 | Alat baru **Timbangan** (perm. 14) — kelompok Massa, alat ke-21 | **BERES di server** (31 Agt 2026) — satu profil, tiga varian master (kg / gram / substitusi), dua budget U95 per titik ikut NMI Monograph 4. Angkanya cocok sampai digit terakhir dengan ketiga workbook: **1.099 angka** diadu `TimbanganMasterTest` (tiap `ui×ci`, tiap `vi`, `uc`, `veff`, `k`, `U`, `U95`), plus `TimbanganCmcCocokAkreditasiTest` yang mengadu 17 pita CMC ke lampiran akreditasi. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-timbangan.md` — yang terbesar T1 (tiga snapshot sertifikat anak timbangan buat keping fisik yang sama) dan T2 (`ui` U-of-Correction: tiga perlakuan, selisih hampir 2×). **Sisi mobile BERES** (31 Agt 2026): lembarnya kegambar & payloadnya sampai, 13 test baru. Lima cacat SUNYI ketemu waktu disambungkan — 39 kotak yang read-only tanpa sadar, blok bersarang yang dibaca nol, `peran` yang membelokkan seluruh lembar ke jalur pasangan, kunci baris yang bentrok antar tabel, dan pengatur titik yang dipakai bersama; rinciannya di §14 E. Jalur kamera per TABEL nyala di blok Keterulangan saja (§14 F). **Sertifikatnya juga BERES** (31 Agt 2026): delapan bagian master (Repeatability · Effect of Tare · Accuracy · Loading Influence · Hysterisis · Limit of Performance · Weighing Uncertainty · Standard Used) dicetak lewat `snapshot['timbangan']` + cabang blade, ikut preseden Autoklaf; sebelumnya tujuh dari delapan bagian hilang diam-diam di tabel empat kolom generik. Dijaga `TimbanganSertifikatTest` (13 test) — angkanya diadu ke sel master DAN ke HTML yang dirender, plus penjaga satu halaman. Satu cacat SUNYI ketemu di situ: kolom `Correction` varian substitusi menyimpan `ΔI`, bukan kumulatif `Cn` yang dicetak master — titik terakhir terbit 1,4559 kg untuk lembar yang masternya menulis 13,309 kg |
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 | G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Tiga belas pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md`; §4/§5/§7/§11 **ditutup 1 Sep 2026** oleh arahan pemilik proyek "pakai rumus Excel", menyisakan §8/§9 dan dua yang menyangkut dokumen terbit (§10 tanda koreksi, §13 kalimat `k`) plus satu permintaan data (workbook Timer yang keempat bloknya hidup). **Sisi mobile BERES** (1 Sep 2026, PR mobile #139) — ketiga lembar bisa diisi & dikirim dari HP tanpa layar baru; menyambungkannya membongkar tiga cacat lama yang gagal tanpa error: lembar Thermohygro terkirim KOSONG, tombol FOTO TABEL INI mengisi nol sel di lima lembar berpasangan, dan kolom U95 memakai desimal kolom hasil. Jalur kamera cloud tetap MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
-| G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B |
+| G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B  **Ditambah 2 Sep 2026: direktori lokal** — 10.320 PT (Jababeka 450 + Indonetwork 9.870) bisa dicari ±10 ms tanpa keluar server, lewat tabel rujukan terpisah `direktori_lokal` dan driver baru yang memenuhi kontrak `DirektoriPerusahaan` yang sudah ada. **Nol berkas berubah di sisi HP, nol tambahan ukuran APK.** Menyeed ke `customers` sengaja DITOLAK: `SimpananPelanggan` menyalin seluruh daftar pelanggan ke SharedPreferences yang dibaca utuh ke memori tiap aplikasi nyala — diukur **1,36 MB JSON** per buka aplikasi. Satu bug ketemu & dikunci test: `tersedia()` di service provider bikin **`/api/health` 500** waktu tabelnya belum ada. 22 test baru. Rinciannya §16 F |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 

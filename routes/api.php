@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\VersiAplikasiController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
 use App\Http\Controllers\Api\WorksheetScanController;
+use App\Services\Direktori\DirektoriLokalDb;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\PilihanDriver;
 use Illuminate\Http\Request;
@@ -83,6 +84,31 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         'disetel' => $direktori->tersedia(),
         'driver' => PilihanDriver::sekarang(),
         'bisa_ditagih' => PilihanDriver::bisaDitagih(PilihanDriver::sekarang()),
+
+        // Lapis direktori LOKAL, dilaporkan terpisah dari `driver`.
+        //
+        // Sengaja tidak dilebur ke `driver`: pertanyaan yang dijawab `driver`
+        // itu "lab ini sedang ditagih atau nggak", dan lapis lokal nggak
+        // mengubah jawabannya — dia nol jaringan, nol kuota. Meleburnya bikin
+        // `bisa_ditagih` kehilangan artinya.
+        //
+        // Tapi dia WAJIB kelihatan, karena dia menjawab pertanyaan lain yang
+        // sama seringnya: "kenapa PT ini ketemu di HP saya tapi nggak di HP
+        // teman saya" — jawabannya hampir selalu impornya belum jalan di
+        // container ini. Tanpa `baris`, satu-satunya cara memeriksanya masuk ke
+        // database produksi.
+        // Satu query, bukan `exists()` + `count()`. Endpoint ini publik tanpa
+        // auth dan dibatasi per menit per IP — menggandakan kerja database di
+        // jalur yang siapa pun boleh ketuk itu ongkos yang nggak dibeli
+        // apa-apa, karena `aktif` bisa diturunkan dari angkanya.
+        'lokal' => (fn (int $baris) => ['aktif' => $baris > 0, 'baris' => $baris])(
+            // Lewat driver, BUKAN query model langsung: di sana kegagalan baca
+            // ditelan jadi 0. Kalau health mengintip tabelnya sendiri,
+            // pemasangan yang migrasinya belum jalan bikin endpoint ini
+            // membalas 500 — endpoint yang justru dipakai buat mendiagnosis
+            // kenapa pemasangannya belum benar.
+            DirektoriLokalDb::jumlah(),
+        ),
     ],
 
     // Tiga pertanyaan yang selama ini cuma bisa dijawab dari dashboard
