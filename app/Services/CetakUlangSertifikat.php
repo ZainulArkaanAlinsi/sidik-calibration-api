@@ -75,7 +75,32 @@ class CetakUlangSertifikat
                 continue;
             }
 
-            if ($this->berkas->cetakUlang($sertifikat) === null) {
+            // Exception DITANGKAP per sertifikat, bukan dibiarkan naik.
+            //
+            // Temuan review, dan dia benar: tanpa ini satu dompdf yang meledak
+            // menghentikan seluruh batch di tengah jalan — sisanya nggak
+            // diproses, dan log rekapnya di bawah nggak pernah kejalan. Yang
+            // dilihat admin cuma layar galat, tanpa tahu mana yang keburu
+            // jadi dan mana yang belum.
+            //
+            // Itu juga melanggar janji docblock fungsi ini sendiri: "yang
+            // ditolak nggak menghentikan sisanya" cuma berlaku buat penolakan,
+            // sementara yang melempar justru menghentikannya.
+            try {
+                $path = $this->berkas->cetakUlang($sertifikat);
+            } catch (\Throwable $e) {
+                Log::error('Cetak ulang PDF sertifikat melempar exception.', [
+                    'certificate_id' => $sertifikat->getKey(),
+                    'nomor' => $nomor,
+                    'exception' => $e,
+                ]);
+
+                $ditolak[] = ['nomor' => $nomor, 'alasan' => 'render PDF-nya meledak, cek log server'];
+
+                continue;
+            }
+
+            if ($path === null) {
                 // Sebabnya sudah dicatat [BerkasPdfSertifikat] berikut
                 // konteksnya; di sini yang perlu cuma admin tahu mana yang
                 // gagal.
@@ -142,11 +167,29 @@ class CetakUlangSertifikat
         $sertifikat->loadMissing('organization');
         $sekarang = trim((string) ($sertifikat->organization?->settings[Organization::KEY_PENANDATANGAN_NAMA] ?? ''));
 
-        // Setelannya kosong: yang dipakai waktu terbit dulu nama reviewer, dan
-        // yang bakal dipakai sekarang juga bukan nama dari setelan. Tidak ada
-        // pergantian orang yang bisa dibuktikan dari sini.
+        // Setelan organisasinya kosong. Itu konfigurasi yang SAH — waktu terbit
+        // namanya jatuh ke reviewer sesi (lihat `CertificateSnapshotBuilder`),
+        // bukan ke setelan — jadi yang dibandingkan ikut pindah ke sana.
+        //
+        // Temuan review sebelumnya minta kasus ini DITOLAK karena identitas
+        // penandatangan aktif tidak bisa dibuktikan. Arahnya benar, tapi
+        // menolak mentah-mentah bikin fiturnya mati total buat organisasi yang
+        // memang memakai jalur reviewer — dan itu mayoritas sesi di repo ini.
+        // Yang diambil jalan tengahnya: dibandingkan ke sumber yang SAMA dengan
+        // yang dipakai waktu membekukan namanya.
         if ($sekarang === '') {
-            return null;
+            $sertifikat->loadMissing('session.reviewer');
+            $sekarang = trim((string) ($sertifikat->session?->reviewer?->name ?? ''));
+        }
+
+        // Dua-duanya kosong: tidak ada satu pun sumber yang bisa menyebut siapa
+        // pemilik tanda tangan yang berlaku sekarang. DI SINI baru ditolak —
+        // mencetak ulang berarti menempelkan gambar yang tidak bisa
+        // dipertanggungjawabkan ke bawah nama yang beku.
+        if ($sekarang === '') {
+            return 'nama penandatangan yang berlaku sekarang nggak bisa dipastikan '
+                .'(setelan organisasi kosong dan reviewer sesinya nggak ketemu). '
+                .'Isi dulu nama penandatangan di Pengaturan → Organisasi.';
         }
 
         if (mb_strtolower($beku) === mb_strtolower($sekarang)) {

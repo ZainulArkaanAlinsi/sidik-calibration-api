@@ -11,7 +11,10 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\BerkasPdfSertifikat;
 use App\Services\CetakUlangSertifikat;
+use App\Services\DataTampilanSertifikat;
+use App\Services\SertifikatSatuHalaman;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -103,7 +106,17 @@ class CetakUlangSertifikatTest extends TestCase
         ])->assertCreated();
 
         $sesi = CalibrationSession::latest('id')->firstOrFail();
-        $sesi->update(['status' => CalibrationSession::STATUS_DISETUJUI]);
+
+        // `reviewed_by` ikut diisi, bukan cuma statusnya. Tanpa itu
+        // `CertificateSnapshotBuilder` membekukan nama penandatangan sebagai
+        // NULL — dan penjaga kesinambungan penandatangan lolos begitu saja
+        // lewat cabang "nggak ada nama beku", bukan lewat perbandingan
+        // sungguhan. Versi pertama berkas ini kena persis itu: hijau tanpa
+        // pernah menguji yang dimaksud.
+        $sesi->update([
+            'status' => CalibrationSession::STATUS_DISETUJUI,
+            'reviewed_by' => $this->admin->id,
+        ]);
 
         (new GenerateCertificate($sesi->id, $this->admin->id))->handle();
 
@@ -318,5 +331,104 @@ class CetakUlangSertifikatTest extends TestCase
         $hasil = $this->layanan()->jalankan([$sertifikat->fresh()]);
 
         $this->assertSame([], $hasil['ditolak']);
+    }
+
+    /**
+     * Satu render yang MELEDAK nggak boleh menghentikan batch — temuan review.
+     *
+     * Bedanya dari `test_yang_ditolak_nggak_ngerusak_yang_lain`: yang itu soal
+     * penolakan yang memang direncanakan, yang ini soal exception. Tanpa
+     * penanganan per iterasi, satu dompdf yang meledak bikin sisanya nggak
+     * diproses sama sekali dan log rekapnya nggak pernah kejalan — admin cuma
+     * lihat layar galat tanpa tahu mana yang keburu jadi.
+     */
+    public function test_render_yang_meledak_nggak_menghentikan_batch(): void
+    {
+        $meledak = $this->sertifikatTerbit();
+        $baik = $this->sertifikatTerbit();
+
+        $palsu = new class(app(DataTampilanSertifikat::class), app(SertifikatSatuHalaman::class)) extends BerkasPdfSertifikat
+        {
+            public array $diminta = [];
+
+            public function cetakUlang(Certificate $sertifikat): ?string
+            {
+                $this->diminta[] = $sertifikat->getKey();
+
+                // Yang pertama meledak, sisanya jalan normal.
+                if (count($this->diminta) === 1) {
+                    throw new \RuntimeException('dompdf meledak');
+                }
+
+                return parent::cetakUlang($sertifikat);
+            }
+        };
+
+        $hasil = (new CetakUlangSertifikat($palsu))->jalankan([$meledak->fresh(), $baik->fresh()]);
+
+        $this->assertSame(
+            [$baik->nomor],
+            $hasil['berhasil'],
+            'Sertifikat sesudah yang meledak nggak ikut diproses — batch-nya berhenti di tengah.',
+        );
+        $this->assertCount(1, $hasil['ditolak']);
+        $this->assertSame($meledak->nomor, $hasil['ditolak'][0]['nomor']);
+    }
+
+    /**
+     * Nggak ada satu pun sumber nama penandatangan aktif → DITOLAK.
+     *
+     * Temuan review, dan alasannya sah: kalau setelan organisasi kosong DAN
+     * reviewer sesinya nggak keteumu, tidak ada yang bisa menyebut siapa pemilik
+     * gambar tanda tangan yang berlaku sekarang. Mencetak ulang berarti
+     * menempelkan gambar yang tidak bisa dipertanggungjawabkan ke bawah nama
+     * yang beku.
+     */
+    public function test_tanpa_sumber_nama_penandatangan_ditolak(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Setelan organisasi kosong (bawaan), dan reviewer-nya dilepas.
+        $sertifikat->session->update(['reviewed_by' => null]);
+
+        $hasil = $this->layanan()->jalankan([$sertifikat->fresh()]);
+
+        $this->assertSame([], $hasil['berhasil']);
+        $this->assertStringContainsString('nggak bisa dipastikan', $hasil['ditolak'][0]['alasan']);
+    }
+
+    /**
+     * Setelan kosong TAPI reviewer-nya masih ada: dibandingkan ke sana.
+     *
+     * Ini konfigurasi yang sah — nama beku memang diambil dari reviewer waktu
+     * setelan organisasi kosong — dan menolaknya bakal mematikan fitur ini buat
+     * mayoritas sesi.
+     */
+    public function test_setelan_kosong_dibandingkan_ke_reviewer(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $this->assertSame(
+            $this->admin->name,
+            $sertifikat->snapshot['footer']['penandatangan'],
+            'Prasyarat test ini: nama beku memang datang dari reviewer.',
+        );
+
+        $hasil = $this->layanan()->jalankan([$sertifikat->fresh()]);
+
+        $this->assertSame([$sertifikat->nomor], $hasil['berhasil']);
+    }
+
+    /** Reviewer yang ganti nama juga pergantian orang — ikut ditolak. */
+    public function test_reviewer_yang_ganti_nama_ditolak(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $this->admin->update(['name' => 'Orang Yang Beda Sekali']);
+
+        $hasil = $this->layanan()->jalankan([$sertifikat->fresh()]);
+
+        $this->assertSame([], $hasil['berhasil']);
+        $this->assertStringContainsString('Orang Yang Beda Sekali', $hasil['ditolak'][0]['alasan']);
     }
 }
