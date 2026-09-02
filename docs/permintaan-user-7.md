@@ -1655,6 +1655,109 @@ Serah-terima frontend: `docs/perintah-frontend-waktu-frekuensi.md`.
 
 ---
 
+## 16. Data pelanggan — nama PT & alamat (2 Sep 2026)
+
+Permintaannya: teknisi berhenti mengetik ulang nama & alamat PT, **tanpa** memasukkan data yang
+tidak bisa dipertanggungjawabkan ke sertifikat.
+
+### A. Yang sudah ada — jangan dibangun ulang
+
+Ditelusuri sebelum menulis kode, dan **seluruh rangkanya sudah lengkap server→HP**: enam kelas di
+`app/Services/Direktori/` (kontrak, driver Google Places, driver Nominatim, berlapis, bercache,
+pemilih driver), tiga endpoint (`GET /customers/direktori`, `GET /customers/lookup`,
+`POST /customers/cepat`), `config/services.php:165`, dan di sisi HP
+`customer_lookup_service.dart` + `pelanggan_baru_screen.dart` lengkap dengan string l10n ID & EN.
+
+Skema `customers` juga sudah punya penjaganya: `nama_normal` (penjaga kembar), `sumber`,
+`dibuat_oleh_user_id`, `direktori_ref`.
+
+**Yang kurang isinya, bukan kodenya.**
+
+### B. Yang tidak bisa disediakan, dan kenapa
+
+Permintaan awalnya memuat "daftar nama PT beserta alamat lengkap seluruh Indonesia untuk ditanam
+sebagai data awal". Itu **tidak bisa dipenuhi**, dan alasannya bukan formalitas:
+
+- **AHU Online** (Kemenkumham) memegang nama badan hukum resmi, tapi **tidak punya API publik**;
+  scraping-nya melanggar ketentuan pemakaian.
+- **Google Places** dan **OpenStreetMap** punya API, tapi isinya **alamat peta, bukan alamat
+  akta** — persis yang sudah ditulis komentar `config/services.php:147`.
+- **OSS/BKPM** cuma buat mitra berizin.
+
+Jadi tidak ada sumber yang bisa dikueri yang memuat nama badan hukum **sekaligus** alamat
+terverifikasi. Yang bisa ditulis dari ingatan itu **karangan** — dan karangannya berbentuk wajar
+(`Jl. Raya … KM 27, Kawasan Industri …`), jadi tidak ada yang curiga saat diperiksa.
+
+Yang mengunci semuanya: `certificates.snapshot` membekukan data pelanggan saat sertifikat terbit,
+jadi **alamat salah tidak bisa ditarik**. Memperbaiki `customers` besok tidak memperbaiki
+sertifikat yang sudah dipegang pelanggan. Untuk lab terakreditasi SNI ISO/IEC 17025 itu temuan
+audit, dan kelas kesalahan yang paling sulit ketahuan karena kelihatan benar.
+
+### C. Milestone A — impor pelanggan historis lab · **BERES** (2 Sep 2026)
+
+`php artisan customers:impor {berkas} --organization= --oleh= --sumber= --uji-coba --laporan=`
+
+Tiga keranjang, dan yang meragukan **berhenti di laporan, bukan di database**: `baru` (ditulis),
+`kembar_pasti` (dilewati), `perlu_tinjau` (TIDAK ditulis), plus `ditolak` untuk baris yang tidak
+terbaca. Serah-terima operator: `docs/perintah-impor-pelanggan.md`.
+
+Nol kolom baru, nol dependensi baru, nol perubahan di jalur tulis yang sudah ada.
+
+**Enam jebakan yang dijaga test, semuanya gagal TANPA error kalau lolos:**
+
+1. **Pemisah `;`.** Excel berlokal Indonesia menulis begitu. Dibaca dengan `,`, seluruh berkas jadi
+   SATU kolom bernama `nama;alamat;telepon` dan yang lahir 300 pelanggan bernama sampah. Pemisahnya
+   ditebak dari **baris header saja** — alamat penuh koma bikin `,` menang telak di seluruh berkas.
+2. **`levenshtein()` PHP menyerah di atas 255 byte dan mengembalikan −1.** Dan `−1 <= 2` itu BENAR,
+   jadi tanpa penjaga tiap nama panjang jadi "mirip" dengan tiap nama panjang lain.
+3. **`PT` vs `CV` jaraknya cuma 2** (`UD` vs `PD` cuma 1). Tanpa penjaga bentuk badan usaha,
+   keduanya muncul berpasangan di layar tinjauan sebagai "nyaris sama" — dan itu yang paling
+   gampang di-"gabung saja". Dua badan hukum, dua NPWP.
+4. **Soft delete tetap memegang unique index.** `customers_organization_id_nama_unique` jalan di
+   baris yang `deleted_at`-nya terisi juga. Tanpa `withTrashed()`, pelanggan yang pernah dihapus
+   terbaca "belum ada", lalu database menolak insert-nya di tengah transaksi dan **semua** baris
+   lain ikut batal.
+5. **Telepon jadi notasi ilmiah.** Excel menyimpan `081234567890` sebagai angka →
+   `8.1234567890E+11`. Dikosongkan + peringatan, bukan disimpan: yang tersimpan kelihatan wajar di
+   kolom sempit, tapi tidak ada nomor di baliknya.
+6. **Riwayat audit tanpa penanggung jawab.** `Diaudit` mengambil pelakunya dari `Auth::id()`, dan
+   di baris perintah itu selalu kosong. `--oleh` diteruskan ke sana, kalau tidak impor 500
+   pelanggan mendarat di `audit_logs` sebagai 500 pembuatan "oleh entah siapa".
+
+**Tiga janji yang dikunci test:** idempoten (jalan kedua nol baris baru), `perlu_tinjau` tidak
+pernah menyentuh database, dan impor **tidak pernah meng-update** baris yang sudah ada — satu
+jalan ulang dengan berkas lama tidak boleh menimpa alamat yang sudah dibetulkan admin.
+
+**Kenapa CSV saja, bukan xlsx.** Membaca xlsx butuh PhpSpreadsheet, dan yang dibeli cuma satu
+langkah manual ("Save As CSV") untuk perintah yang jalan beberapa kali seumur hidup lab. Kalau
+suatu saat lab memintanya, yang ditambah pembaca baru — pemilah, laporan, dan perintahnya tidak
+perlu berubah.
+
+### D. Milestone B — nyalakan driver direktori · **MENUNGGU KEPUTUSAN BIAYA**
+
+**Nol kode.** Keempat variabel `DIREKTORI_PERUSAHAAN_*` sudah ada di `.env.example`, dan `auto`
+(Google dulu, OSM di belakang) sudah didukung `PilihanDriver`. Yang tersisa satu baris `.env` plus
+API key Places.
+
+Tapi itu **membatalkan K16** ("keputusan pemilik proyek 31 Agt: nol tagihan"), jadi bukan keputusan
+yang boleh diambil sendiri. Lihat pertanyaan P1 di `docs/pertanyaan-lab-data-pelanggan.md`.
+
+Kalau disetujui, yang **wajib** menyertainya: batas kuota dipasang di konsol penyedia (cache cuma
+melindungi dari pencarian berulang, bukan dari pencarian baru yang membanjir), key tidak pernah
+masuk APK, dan harga/kuota diverifikasi **saat itu** — angka di komentar config ditulis per Maret
+2025.
+
+### E. Milestone C & D — belum dikerjakan
+
+C (perapian & penggabungan kembar) dan D (status verifikasi alamat) menunggu A dipakai dulu dengan
+data sungguhan. Rinciannya di `docs/pertanyaan-lab-data-pelanggan.md`.
+
+**Yang tidak boleh dilanggar waktu C dikerjakan:** penggabungan **tidak menyentuh**
+`certificates.snapshot`. Sertifikat yang sudah terbit tetap memuat data lama — itu benar, bukan
+bug.
+
+---
+
 ## Keputusan yang SUDAH diambil
 
 Jangan ditanyakan ulang.
@@ -1689,6 +1792,10 @@ Jangan ditanyakan ulang.
 | **K14** | Nomor seri standar di kertas beda dari yang tersimpan (`TN-02`/`TCK-02` lawan `TCN-06`, `TCN-11`, `TC-01`, `TC-02`) | Teknisi mengadu lembar cetak dengan dropdown dan menemukan nomor yang tidak cocok |
 | **K15** | Lembar Termometer Gelas mencantumkan `Sensor Termocouple Type N` & `Type K` di `Standar Used`, sementara pemeriksaan pakai kita belum mengenalinya | Peringatan "standar tidak dipakai" bisa menyala untuk pemakaian yang sah |
 | ~~**K16**~~ | ~~Sumber nama + alamat PT Indonesia untuk pencarian pelanggan~~ | **BERES** (31 Agt 2026) — internal dulu, direktori luar sebagai jalan keluar, ketik tangan sebagai dasar. Teknisi juga boleh mendaftarkan PT sendiri (sejalan K3/K4). Rinciannya di §11. **Keputusan pemilik proyek 31 Agt: nol tagihan** — penyedianya pindah ke OpenStreetMap/Nominatim, jadi **tidak ada API key sama sekali** dan keadaan "belum disetel" berhenti ada. Google tetap bisa dipilih lewat satu setelan. Daftar pelanggan juga disalin ke HP, jadi pemilihnya tetap jalan waktu server tak terjangkau. **Sisa: satu uji nyata ke Nominatim dari server** — bentuk jawabannya ditulis dari dokumentasi, jaringan lingkungan pengembangan tidak bisa menembus ke sana |
+| ~~**K23**~~ | ~~Direktori luar: tetap `osm`, atau pindah ke `auto` dengan tagihan?~~ | **DIJAWAB: TETAP `osm`** (2 Sep 2026) — menegaskan K16, bukan mengubahnya. **Nol perubahan kode**: `config/services.php:190`, `.env.example:255`, dan `render.yaml:189` ketiganya sudah `osm`, dan yang terakhir memakunya lewat `value:` bukan `sync: false`. Konsekuensi yang ikut disetujui: pabrik yang belum dipetakan sukarelawan memang tidak ketemu, ditutup teknisi lewat `POST /customers/cepat`; jalur Google mati total selama `DIREKTORI_PERUSAHAAN_KEY` kosong. Bahan peninjauan ulang tetap disimpan di P1 `docs/pertanyaan-lab-data-pelanggan.md` |
+| **K24** | **Berkas arsip pelanggan lab + ID user penanggung jawab impornya** | `customers:impor` sudah jalan tapi belum ada yang diimpor. Tanpa `--oleh`, 500 baris mendarat di `audit_logs` tanpa penanggung jawab — persis yang ditanya asesor. P2 |
+| **K25** | **Siapa yang memutuskan baris `perlu_tinjau`?** | Menentukan apakah Milestone C (aksi gabung di panel admin) perlu dibangun, atau laporan CSV sudah cukup. P3 |
+| **K26** | **Perlu status verifikasi alamat + peringatan saat terbit sertifikat?** | Milestone D. Cuma layak kalau alamatnya memang akan diverifikasi — peringatan yang selalu menyala melatih admin menekan "terbitkan saja", dan itu lebih buruk daripada tidak ada peringatan. P4 |
 | ~~**K17**~~ | ~~Tujuh lembar bentuk matriks/grid belum punya jalur kamera~~ | **SUDAH DIKERJAKAN** (27 Agt 2026) — grid kelima Enclosure & matriks Autoklaf punya jangkar barisnya sendiri; sisa satu (TIDS) tertahan K18. Lihat §12 sebab 3 |
 | ~~**K18**~~ | ~~Lembar TIDS: tujuh baris Setpoint sendiri, atau pengatur titik?~~ | **DIJAWAB: tujuh baris, tiap baris punya kotaknya sendiri** (27 Agt 2026). Sudah dikerjakan berikut dua lubang lain di lembar yang sama — lihat §12 K18 |
 
@@ -1757,6 +1864,7 @@ berkas profil.
 | G8 | Alat baru **Timbangan** (perm. 14) — kelompok Massa, alat ke-21 | **BERES di server** (31 Agt 2026) — satu profil, tiga varian master (kg / gram / substitusi), dua budget U95 per titik ikut NMI Monograph 4. Angkanya cocok sampai digit terakhir dengan ketiga workbook: **1.099 angka** diadu `TimbanganMasterTest` (tiap `ui×ci`, tiap `vi`, `uc`, `veff`, `k`, `U`, `U95`), plus `TimbanganCmcCocokAkreditasiTest` yang mengadu 17 pita CMC ke lampiran akreditasi. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-timbangan.md` — yang terbesar T1 (tiga snapshot sertifikat anak timbangan buat keping fisik yang sama) dan T2 (`ui` U-of-Correction: tiga perlakuan, selisih hampir 2×). **Sisi mobile BERES** (31 Agt 2026): lembarnya kegambar & payloadnya sampai, 13 test baru. Lima cacat SUNYI ketemu waktu disambungkan — 39 kotak yang read-only tanpa sadar, blok bersarang yang dibaca nol, `peran` yang membelokkan seluruh lembar ke jalur pasangan, kunci baris yang bentrok antar tabel, dan pengatur titik yang dipakai bersama; rinciannya di §14 E. Jalur kamera per TABEL nyala di blok Keterulangan saja (§14 F). **Sertifikatnya juga BERES** (31 Agt 2026): delapan bagian master (Repeatability · Effect of Tare · Accuracy · Loading Influence · Hysterisis · Limit of Performance · Weighing Uncertainty · Standard Used) dicetak lewat `snapshot['timbangan']` + cabang blade, ikut preseden Autoklaf; sebelumnya tujuh dari delapan bagian hilang diam-diam di tabel empat kolom generik. Dijaga `TimbanganSertifikatTest` (13 test) — angkanya diadu ke sel master DAN ke HTML yang dirender, plus penjaga satu halaman. Satu cacat SUNYI ketemu di situ: kolom `Correction` varian substitusi menyimpan `ΔI`, bukan kumulatif `Cn` yang dicetak master — titik terakhir terbit 1,4559 kg untuk lembar yang masternya menulis 13,309 kg |
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 | G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Tiga belas pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md`; §4/§5/§7/§11 **ditutup 1 Sep 2026** oleh arahan pemilik proyek "pakai rumus Excel", menyisakan §8/§9 dan dua yang menyangkut dokumen terbit (§10 tanda koreksi, §13 kalimat `k`) plus satu permintaan data (workbook Timer yang keempat bloknya hidup). **Sisi mobile BERES** (1 Sep 2026, PR mobile #139) — ketiga lembar bisa diisi & dikirim dari HP tanpa layar baru; menyambungkannya membongkar tiga cacat lama yang gagal tanpa error: lembar Thermohygro terkirim KOSONG, tombol FOTO TABEL INI mengisi nol sel di lima lembar berpasangan, dan kolom U95 memakai desimal kolom hasil. Jalur kamera cloud tetap MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
+| G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
