@@ -172,7 +172,7 @@
         body.padat table.ttd td { font-size: 9.5px; }
         body.padat table.ttd td.qr { width: 78px; }
         body.padat table.ttd td.qr img { width: 66px; height: 66px; }
-        body.padat .ttd .ruang-ttd { height: 44px; }
+        body.padat .ttd .ruang-ttd { height: 24px; }
         body.padat .ttd td { padding-top: 4px; }
         body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
         body.padat .kop-gambar { margin-bottom: 5px; }
@@ -216,9 +216,9 @@
 
           Catatan lama di sini bilang kasus terberatnya sertifikat pH 3 baris.
           Itu sudah nggak benar lagi. Seluruh 24 sesi bawaan diterbitkan lalu
-          dirender sambil kotak ini disapu 46 -> 136px: pH aman sampai 106px,
-          yang paling mepet **Conductivity Meter** — masih muat mode normal di
-          86px, kedorong ke mode padat di 88px. 80px menyisakan margin ~1,6 mm.
+          dirender sambil kotak ini disapu: yang paling mepet **Conductivity
+          Meter** — masih muat mode normal di 86px, kedorong ke mode padat di
+          88px. 80px menyisakan margin ~1,6 mm.
 
           Yang bikin batas itu halus: kedorong ke mode padat BUKAN kegagalan yang
           kelihatan. `App\Services\SertifikatSatuHalaman` menyelamatkannya, jadi
@@ -227,6 +227,17 @@
 
           Jadi kalau ada yang mau ngegedein huruf atau kotak ini lagi: ukur ulang
           pakai Conductivity Meter, bukan pH.
+
+          ## Kenapa versi PADAT-nya (24px, di atas) TIDAK ikut digedein
+
+          Percobaan pertama menaikkannya ke 44px, dan itu bikin sertifikat
+          **Visible Spectrofotometer** jadi DUA HALAMAN — dia lembar terpadat di
+          sistem (24 titik ketidakpastian) dan mode padat nggak punya jaring
+          pengaman lagi di bawahnya.
+
+          Disapu ulang: 30px masih muat, 32px sudah meluap. Jadi 24px itu bukan
+          angka konservatif, itu nyaris seluruh margin yang ada. Menukarnya buat
+          tanda tangan yang 1 mm lebih besar di enam alat jelas rugi.
         */
         .ttd .ruang-ttd { height: 80px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }

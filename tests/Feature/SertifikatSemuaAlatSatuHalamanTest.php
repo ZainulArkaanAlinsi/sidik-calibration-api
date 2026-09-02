@@ -49,13 +49,57 @@ use Tests\TestCase;
  *
  * ## Ambang yang berlaku sekarang
  *
- * Disapu 1 Sep 2026 dengan tinggi `.ttd .ruang-ttd` 46 -> 136px. Yang paling
- * mepet **Conductivity Meter**: masih normal di 86px, kena demosi ke padat di
- * 88px. Nilai yang dipakai 80px.
+ * Kotak normal: yang paling mepet **Conductivity Meter** — masih normal di
+ * 86px, kena demosi ke padat di 88px. Nilai yang dipakai 80px.
+ *
+ * Kotak padat: **Visible Spectrofotometer** meluap ke halaman dua begitu lewat
+ * 30px, jadi 24px dipertahankan. Dia lembar terpadat di sistem (24 titik
+ * ketidakpastian), dan di bawah mode padat nggak ada jaring pengaman lagi.
+ *
+ * Ambang kedua itu cuma ketahuan sesudah sapuannya berhenti melewat diam-diam —
+ * lihat `terbitkan()`.
  */
 class SertifikatSemuaAlatSatuHalamanTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Semua sesi bawaan yang harus keterbit, `nomor_sesi (nama alat)`.
+     *
+     * Dipatok, bukan dihitung. Sapuan yang daftarnya datang dari database punya
+     * satu cara gagal yang nggak bersuara: sesi yang berhenti bisa disetujui
+     * hilang dari daftar, dan test-nya tetap hijau — cuma memeriksa lebih
+     * sedikit. Nama yang HILANG dari daftar ini berarti sertifikat alat itu
+     * berhenti terbit, dan itu jauh lebih besar dari urusan tata letak.
+     *
+     * @var list<string>
+     */
+    private const DIPERIKSA = [
+        '011-CAL-525 (Timbangan)',
+        '0133-CAL-324 (Centrifuge)',
+        '0135-CAL-125 (Thermometer Glass)',
+        '0136-CAL-123 (Timbangan Elektronik)',
+        '0140-CAL-424 (Digital Tachometer)',
+        '015-CAL-424 (Stopwatch)',
+        '019-CAL-425 (Moisture Analyzer)',
+        '0312-CAL-624 (Thermohygrometer)',
+        '0513-CAL-1124 (Thermocouple Thermometer)',
+        '2211.11.R (Refractometer)',
+        '22506.01.A (Temperature Calibrator)',
+        '2405.03.AV (Incubator)',
+        '2405.13.A (pH Meter)',
+        '2405.32.A.NK (Conductivity Meter)',
+        '2406.25.AI (Oven)',
+        '2406.32.A (Turbidimeter)',
+        '2406.32.C (Chlorine Meter)',
+        '2406.50.S (DO Meter)',
+        '2406.51.S (Autoclave)',
+        '2602.03.A (Multi Gas Detector)',
+        '2606.08.C (Temperature Recorder Controller)',
+        '2607.59.W (Viscometer)',
+        'DEMO-COND-MSCM (Conductivity Meter)',
+        'DEMO-SPECTRO-LDC (Visible Spectrofotometer)',
+    ];
 
     /**
      * Alat yang lembarnya memang nggak muat di mode normal, dan sudah begitu
@@ -64,10 +108,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const BUTUH_PADAT = [
-        'Autoclave',
-        'Chlorine Meter',
-        'Multi Gas Detector',
-        'Temperature Calibrator',
+        '0312-CAL-624 (Thermohygrometer)',
+        '22506.01.A (Temperature Calibrator)',
+        '2406.32.C (Chlorine Meter)',
+        '2406.51.S (Autoclave)',
+        '2602.03.A (Multi Gas Detector)',
+        '2606.08.C (Temperature Recorder Controller)',
     ];
 
     public function test_semua_sertifikat_bawaan_muat_satu_halaman(): void
@@ -78,18 +124,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         $tampilan = app(DataTampilanSertifikat::class);
         $meluap = [];
         $padat = [];
-        $diperiksa = 0;
+        $diperiksa = [];
 
         foreach (CalibrationSession::query()->get() as $sesi) {
             $sertifikat = $this->terbitkan($sesi);
 
-            if (! $sertifikat instanceof Certificate) {
-                continue;
-            }
-
-            $diperiksa++;
+            $diperiksa[] = $this->sebut($sesi, $sertifikat);
             $bahan = $tampilan->untuk($sertifikat);
-            $alat = (string) ($sertifikat->snapshot['header']['equipment_name'] ?? "sertifikat #{$sertifikat->getKey()}");
+            $alat = $this->sebut($sesi, $sertifikat);
 
             // Urutan yang sama persis dengan SertifikatSatuHalaman. Disalin —
             // bukan dipanggil — karena yang dicari di sini justru CABANG MANA
@@ -106,10 +148,15 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(
-            10,
+        sort($diperiksa);
+
+        $this->assertSame(
+            self::DIPERIKSA,
             $diperiksa,
-            'Sesi bawaannya nggak keterbit — test ini jadi hijau tanpa memeriksa apa pun.',
+            "Daftar sertifikat yang diperiksa berubah.\n"
+            .'Nama yang HILANG = sesi itu berhenti bisa diterbitkan, dan sapuan ini jadi diam-diam '
+            ."memeriksa lebih sedikit — persis cara test sapuan gagal tanpa bersuara.\n"
+            .'Nama BARU = seeder nambah sesi; perbarui DIPERIKSA.',
         );
 
         $this->assertSame(
@@ -142,7 +189,40 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         return (int) $pdf->getDomPDF()->getCanvas()->get_page_count();
     }
 
-    private function terbitkan(CalibrationSession $sesi): ?Certificate
+    /** `nomor_sesi (nama alat)` — unik, dan kebaca waktu test-nya merah. */
+    private function sebut(CalibrationSession $sesi, Certificate $sertifikat): string
+    {
+        $alat = $sertifikat->snapshot['header']['equipment_name'] ?? '(alat?)';
+
+        return "{$sesi->nomor_sesi} ({$alat})";
+    }
+
+    /**
+     * Terbitkan sertifikatnya, dan GAGALKAN test kalau nggak bisa.
+     *
+     * Versi pertama fungsi ini membungkus `postJson()` dengan try/catch lalu
+     * mengembalikan null. Itu dua kesalahan sekaligus, dan CodeRabbit yang
+     * menangkapnya: `postJson()` **nggak melempar** pada 422, jadi catch-nya
+     * praktis mati — dan yang gagal disetujui dilewat diam-diam, sementara
+     * ambang lama (`> 10`) bikin test tetap hijau walau tinggal 11 sertifikat
+     * yang benar-benar diperiksa.
+     *
+     * ## Kenapa `abaikan_peringatan: true`
+     *
+     * Tujuh sesi bawaan (Viscometer, Spectro, Thermohygrometer, Digital
+     * Tachometer, Centrifuge, Temperature Recorder, dan Conductivity kedua)
+     * balik 422 `butuh_konfirmasi` — BUKAN karena hitung ulangnya beda, tapi
+     * karena punya peringatan domain seperti `pembacaan_di_luar_rentang` atau
+     * `centrifuge_di_luar_akreditasi`. Di alur aslinya admin menyetujuinya
+     * dengan konfirmasi eksplisit, dan itu yang ditiru di sini.
+     *
+     * Yang dibeli: sapuannya naik dari 17 jadi 24 sertifikat — tujuh alat yang
+     * tadinya nggak pernah dirender sekali pun sekarang ikut dijaga.
+     *
+     * `boleh_terbit: false` tetap bikin merah, dan memang harus: itu penolakan
+     * keras, bukan peringatan yang boleh dikonfirmasi.
+     */
+    private function terbitkan(CalibrationSession $sesi): Certificate
     {
         $ada = $sesi->certificate()->first();
 
@@ -150,14 +230,17 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
             return $ada;
         }
 
-        // Sesi bawaan nggak semuanya siap terbit (ada yang sengaja ditinggal
-        // draft). Yang nggak bisa disetujui dilewat, bukan bikin test merah.
-        try {
-            $this->postJson("/api/calibrations/{$sesi->id}/approve");
-        } catch (\Throwable $e) {
-            return null;
-        }
+        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+            ->assertOk();
 
-        return $sesi->fresh()->certificate()->first();
+        $sertifikat = $sesi->fresh()->certificate()->first();
+
+        $this->assertInstanceOf(
+            Certificate::class,
+            $sertifikat,
+            "Sesi {$sesi->nomor_sesi} disetujui tapi sertifikatnya nggak kebentuk.",
+        );
+
+        return $sertifikat;
     }
 }

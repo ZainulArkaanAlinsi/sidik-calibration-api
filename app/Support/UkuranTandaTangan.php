@@ -36,14 +36,24 @@ namespace App\Support;
  * lebarnya sampai tinggal 13,3 mm.
  *
  * Batas atas kotaknya DIUKUR, bukan ditebak: seluruh 24 sesi bawaan diterbitkan
- * lalu dirender ulang sambil tinggi kotaknya disapu 46 -> 136px. Yang paling
- * mepet **Conductivity Meter** — masih muat mode normal di 86px, kedorong ke
- * mode padat di 88px. Yang dipakai 80px, menyisakan margin ~1,6 mm buat catatan
- * yang lebih panjang dari sesi contoh.
+ * lalu dirender ulang sambil tinggi kotaknya disapu. Yang paling mepet
+ * **Conductivity Meter** — masih muat mode normal di 86px, kedorong ke mode
+ * padat di 88px. Yang dipakai 80px, menyisakan margin ~1,6 mm buat catatan yang
+ * lebih panjang dari sesi contoh.
  *
- * Mode padat disapu bareng dan NGGAK pernah meluap sampai 71px, jadi 44px di
- * sana masih jauh dari batas. Itu penting karena padat nggak punya jaring
- * pengaman lagi di bawahnya (lihat `App\Services\SertifikatSatuHalaman`).
+ * ## Mode padat TIDAK ikut digedein, dan itu hasil percobaan yang gagal
+ *
+ * Percobaan pertama menaikkannya 24 -> 44px. Sapuan waktu itu bilang aman —
+ * tapi sapuannya bohong: tujuh sesi bawaan nggak pernah keterbit karena
+ * approve-nya balik 422 minta konfirmasi, dan sapuannya melewatinya diam-diam.
+ * Salah satu yang kelewat **Visible Spectrofotometer**, lembar terpadat di
+ * sistem (24 titik ketidakpastian) — dan di 44px dia jadi DUA HALAMAN.
+ *
+ * Disapu ulang dengan semua 24 sesi: 30px masih muat, 32px sudah meluap. Jadi
+ * 24px bukan angka konservatif, itu nyaris seluruh margin yang ada — dan mode
+ * padat nggak punya jaring pengaman lagi di bawahnya (lihat
+ * `App\Services\SertifikatSatuHalaman`). Menukar margin itu buat tanda tangan
+ * yang 1 mm lebih besar di enam alat jelas rugi.
  *
  * ## Kenapa dihitung di PHP, bukan `max-height` di CSS
  *
@@ -71,8 +81,14 @@ final class UkuranTandaTangan
      */
     public const TINGGI_KOTAK_PX = 80;
 
-    /** Versi mode padat — `body.padat .ttd .ruang-ttd`. 44px = 11,64 mm. */
-    public const TINGGI_KOTAK_PADAT_PX = 44;
+    /**
+     * Versi mode padat — `body.padat .ttd .ruang-ttd`. 24px = 6,35 mm.
+     *
+     * Sengaja TIDAK ikut naik waktu kotak normal digedein: sertifikat Visible
+     * Spectrofotometer meluap ke halaman dua begitu angka ini lewat 30px, dan
+     * mode padat nggak punya jaring pengaman lagi di bawahnya.
+     */
+    public const TINGGI_KOTAK_PADAT_PX = 24;
 
     /** dompdf memetakan 1 px CSS pada 96 dpi. */
     private const DPI = 96;
