@@ -64,6 +64,14 @@ class CalibrationValidator
      */
     private const PANJANG_JUDUL = 120;
 
+    /**
+     * Lantai jatah kalimat, dipakai kalau ekornya makan hampir semua jatah.
+     *
+     * Tanpa lantai ini judulnya bisa jadi "… (+N titik lain yang sama)" — nol
+     * kata soal APA yang salah, yang justru isi utamanya.
+     */
+    private const PANJANG_JUDUL_MINIMUM = 40;
+
     public function __construct(
         private readonly GumCalculator $gum,
         private readonly CalibrationProfileRegistry $profil,
@@ -1639,40 +1647,55 @@ class CalibrationValidator
             );
         }
 
-        $judul = self::kalimatPertama((string) $peringatan[0]['pesan']);
-
         // Satu jenis di banyak titik: kalimat pertamanya sudah mewakili, tinggal
         // disebut berapa titik lain yang kena hal yang sama. Tanpa ini admin
         // membaca "Titik ke-3" dan mengira cuma satu titik yang bermasalah.
-        if ($jumlah > 1) {
-            $judul .= sprintf(' (+%d titik lain yang sama)', $jumlah - 1);
-        }
+        $ekor = $jumlah > 1
+            ? sprintf(' (+%d titik lain yang sama)', $jumlah - 1)
+            : '';
 
-        return $judul;
+        // Ekornya dipotong dari jatah DULUAN, bukan ditempel sesudah kalimatnya
+        // dipangkas. Temuan review, dan dia benar: menempel belakangan bikin
+        // judulnya lewat batas, dan yang keguntingnya tata letak justru ekor itu
+        // sendiri — cacahnya hilang, tinggal kalimat yang kelihatan seperti satu
+        // titik doang. Persis salah baca yang mau dicegah ekornya.
+        return self::kalimatPertama(
+            (string) $peringatan[0]['pesan'],
+            self::PANJANG_JUDUL - mb_strlen($ekor),
+        ).$ekor;
     }
 
     /**
-     * Kalimat pertama sebuah pesan temuan, dipotong kalau kepanjangan.
+     * Kalimat pertama sebuah pesan temuan, dipotong kalau lewat `$batas`.
+     *
+     * `$batas` dikirim pemanggilnya, bukan dibaca dari [PANJANG_JUDUL] langsung:
+     * yang berhak atas sisa jatahnya cuma pemanggil, karena dia yang tahu ada
+     * ekor "(+N titik lain)" yang mau ditempel sesudah ini.
      *
      * Pemisahnya titik-lalu-spasi, BUKAN titik saja: angka di pesan peringatan
      * lewat [Angka::idRingkas] yang memakai titik sebagai pemisah ribuan
      * (`1.234,5`), jadi memecah pada titik saja bikin judul terpenggal di
      * tengah angka.
      */
-    private static function kalimatPertama(string $pesan): string
+    private static function kalimatPertama(string $pesan, int $batas): string
     {
         $pesan = trim(preg_replace('/\s+/', ' ', $pesan) ?? $pesan);
 
         $potong = preg_split('/(?<=\.)\s+/', $pesan, 2);
         $kalimat = $potong[0] ?? $pesan;
 
-        if (mb_strlen($kalimat) <= self::PANJANG_JUDUL) {
+        // Jatah nggak boleh nol atau minus: ekor yang panjangnya nggak wajar
+        // bakal bikin `mb_substr` balik string kosong, dan judulnya jadi cuma
+        // "…" tanpa satu kata pun.
+        $batas = max(self::PANJANG_JUDUL_MINIMUM, $batas);
+
+        if (mb_strlen($kalimat) <= $batas) {
             return $kalimat;
         }
 
         // Dipotong di batas kata biar nggak berhenti di tengah satuan atau
         // angka — judul yang putus di "0–10" kebaca seperti rentang lain.
-        $pendek = mb_substr($kalimat, 0, self::PANJANG_JUDUL);
+        $pendek = mb_substr($kalimat, 0, $batas);
         $spasi = mb_strrpos($pendek, ' ');
 
         return rtrim($spasi !== false ? mb_substr($pendek, 0, $spasi) : $pendek, ' ,;:.').'…';

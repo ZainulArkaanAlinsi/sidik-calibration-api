@@ -17,7 +17,15 @@ use PHPUnit\Framework\TestCase;
  */
 class JudulPeringatanTest extends TestCase
 {
-    /** @param list<array{kode: string, pesan: string}> $peringatan */
+    /**
+     * Bentuk keluaran `periksa()` seadanya — cuma `temuan`, semuanya PERINGATAN.
+     *
+     * Sengaja nggak lewat validator sungguhan: yang diuji di sini perakitan
+     * judulnya, dan membangun sesi beneran buat tiap bentuk bikin test-nya
+     * bergantung pada aturan alat yang nggak ada hubungannya.
+     *
+     * @param  list<array{kode: string, pesan: string}>  $peringatan
+     */
     private function hasil(array $peringatan): array
     {
         return [
@@ -32,6 +40,7 @@ class JudulPeringatanTest extends TestCase
         ];
     }
 
+    /** Satu peringatan: judulnya pesan itu sendiri, utuh, tanpa dibungkus apa pun. */
     public function test_satu_peringatan_judulnya_pesan_peringatan_itu_sendiri(): void
     {
         $judul = CalibrationValidator::judulPeringatan($this->hasil([[
@@ -66,6 +75,12 @@ class JudulPeringatanTest extends TestCase
         $this->assertStringNotContainsString('kegeser', $judul);
     }
 
+    /**
+     * Satu jenis di banyak titik: cacah titik lainnya ikut disebut.
+     *
+     * Pesan peringatan selalu dibuka "Titik ke-N", jadi tanpa ekor ini admin
+     * membacanya sebagai satu titik bermasalah dan menutup sisanya tanpa lihat.
+     */
     public function test_satu_jenis_di_banyak_titik_nyebut_berapa_titik_lain(): void
     {
         $judul = CalibrationValidator::judulPeringatan($this->hasil([
@@ -82,9 +97,9 @@ class JudulPeringatanTest extends TestCase
     }
 
     /**
-     * Beda JENIS: nggak ada satu kalimat yang jujur mewakili semuanya, jadi
-     * yang disebut cacahnya. Memilih salah satu pesan di sini bakal
-     * menyembunyikan yang lain — persis cacat yang lagi diperbaiki.
+     * Beda JENIS: nggak ada satu kalimat yang jujur mewakili semuanya, jadi yang
+     * disebut cacahnya. Memilih salah satu pesan bakal menyembunyikan yang lain —
+     * persis cacat yang lagi diperbaiki, cuma bentuknya lain.
      */
     public function test_lebih_dari_satu_jenis_nyebut_cacahnya(): void
     {
@@ -132,6 +147,43 @@ class JudulPeringatanTest extends TestCase
         // memang ada di pesan aslinya.
         $tanpaElipsis = rtrim($judul, '…');
         $this->assertStringContainsString($tanpaElipsis, $panjang);
+    }
+
+    /**
+     * Ekor "(+N titik lain)" dipotong dari JATAH, bukan ditempel sesudahnya.
+     *
+     * Temuan review. Menempel belakangan bikin judulnya 143 karakter padahal
+     * batasnya 120 — dan yang keguntingnya tata letak justru ekor itu sendiri.
+     * Hasilnya kalimat yang kelihatan seperti satu titik doang: salah baca yang
+     * persis mau dicegah ekornya.
+     *
+     * Cacahnya sampai lima digit karena panjang ekor ikut tumbuh sama cacahnya —
+     * jatahnya wajib menyesuaikan, bukan dipatok. Nggak lebih besar dari itu:
+     * versi sejuta titik bikin PHPUnit kehabisan memori dan mati sebelum satu
+     * asersi pun jalan, jadi yang merah test-nya, bukan kodenya.
+     */
+    public function test_ekor_cacah_nggak_bikin_judul_lewat_batas(): void
+    {
+        $panjang = 'Titik ke-1: koreksi tekanan 12,5 Bar itu 340% dari set point 3,5 Bar dan itu '
+            .'kejauhan buat autoklaf yang masih jalan normal di ruang uji nomor tujuh belas';
+
+        foreach ([2, 4, 12345] as $titik) {
+            $judul = CalibrationValidator::judulPeringatan($this->hasil(array_map(
+                fn (): array => ['kode' => 'koreksi_tekanan_mustahil', 'pesan' => $panjang],
+                range(1, $titik),
+            )));
+
+            $this->assertLessThanOrEqual(120, mb_strlen($judul), "cacah titik: {$titik}");
+
+            // Yang wajib selamat justru ekornya — dia alasan potongannya ada.
+            $this->assertStringEndsWith(
+                sprintf('(+%d titik lain yang sama)', $titik - 1),
+                $judul,
+            );
+
+            // Dan kalimatnya nggak boleh habis kepotong jadi elipsis doang.
+            $this->assertStringContainsString('koreksi tekanan', $judul);
+        }
     }
 
     /** Cabang ini cuma nyala kalau ada peringatan — tapi kalau kosong, jangan nuduh. */
