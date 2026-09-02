@@ -92,6 +92,20 @@ Bahasa Indonesia."*
 > baru berarti dua tabel staging yang saling menyaingi selamanya. Petakan dulu, jangan
 > membangun ulang.
 
+> **Susulan 2 Sep 2026 — perintah "model pembaca sel buatan sendiri" BERHENTI di Gerbang 0.**
+> Perintah itu minta mengganti `MlKitPembacaSel`. Ditelusuri, komponen itu **tidak pernah
+> dipanggil aplikasi**: tombol `PINDAI LEMBAR KERJA` dicabut permanen 26 Agt 2026, dan
+> `JalankanPindai` cuma diinstansiasi di test. Jadi M0 "selamatkan dataset" mengumpulkan **nol
+> crop** — koreksi teknisi tidak punya pemanggil. Rantai buktinya, plus rekomendasi penggantinya
+> (perekam ground truth di jalur `FOTO TABEL INI` yang hidup — satu berkas HP + satu perintah
+> artisan, bukan 22 hari model), ada di **`docs/temuan-gerbang0-ocr-model-lokal.md`**.
+> **SELESAI 2 Sep 2026.** Disetujui lalu dikerjakan: perekam tebakan mesin tersambung di
+> **keenam** jalur kamera (titik × Repeat, grid Enclosure, matriks Autoklaf, pasangan
+> standar/UUT, keterulangan Timbangan, Timer/Stopwatch), plus `ocr:akurasi-kamera` yang
+> membaca tiga sumber (`raw_measurements`, `hasil_autoclave`, `spesifikasi_alat`).
+> Kontraknya di `docs/kontrak-api.md` §"TEBAKAN MESIN per sel". Empat keputusan yang
+> tersisa cuma bisa dijawab lab — `docs/pertanyaan-lab-akurasi-kamera.md`.
+
 ---
 
 ## 8. Revisi jangan menghapus satu tabel penuh
