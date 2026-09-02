@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Direktori\DirektoriBercache;
 use App\Services\Direktori\DirektoriBerlapis;
+use App\Services\Direktori\DirektoriLokalDb;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\GooglePlacesDirektori;
 use App\Services\Direktori\NominatimDirektori;
@@ -110,11 +111,44 @@ class AppServiceProvider extends ServiceProvider
             // dan yang terbit bukan sekadar laporan yang salah tapi laporan
             // yang dipercaya — health bilang "osm" sementara yang dibangun
             // jalur berbayar.
-            return match (PilihanDriver::sekarang()) {
+            $luar = match (PilihanDriver::sekarang()) {
                 'google' => $google(),
                 'auto' => new DirektoriBerlapis([$google(), $osm()]),
                 default => $osm(),
             };
+
+            // Direktori lokal SELALU jadi lapis pertama, apa pun setelan
+            // drivernya — dan itu keputusan, bukan kelalaian.
+            //
+            // Kalau dia cuma nyala lewat nilai driver sendiri (`lokal`),
+            // pemasangan yang tidak mengubah apa-apa TIDAK akan memakai data
+            // yang sudah susah payah diimpor — padahal itu satu-satunya alasan
+            // datanya ada. Bawaan yang mengabaikan isi database sendiri sama
+            // buruknya dengan bawaan yang menagih diam-diam.
+            //
+            // Aman ditaruh di depan karena tiga hal:
+            //  1. Nol jaringan, nol kuota, nol tagihan — tidak ada yang bisa
+            //     dibuat lebih mahal olehnya.
+            //  2. Nol hasil BUKAN jawaban akhir buat `DirektoriBerlapis` (butir
+            //     2 aturannya), jadi PT yang tidak ada di sini tetap dicari ke
+            //     luar. Cakupan tidak berkurang sedikit pun.
+            //  3. Tabel kosong bikin `tersedia()` false, jadi pemasangan yang
+            //     belum mengimpor apa-apa berperilaku SAMA PERSIS seperti
+            //     sebelum fitur ini ada.
+            //
+            // Yang ikut didapat: pencarian yang ketemu di sini tidak pernah
+            // sampai ke Google, jadi lapis ini justru MENGURANGI request
+            // berbayar buat lab yang memilih `auto`.
+            //
+            // `PilihanDriver::sekarang()` sengaja tetap melaporkan driver LUAR
+            // saja, karena yang dijawabnya pertanyaan "lab ini sedang ditagih
+            // atau nggak". Keberadaan lapis lokal dilaporkan terpisah di
+            // `GET /api/health` — lihat routes/api.php.
+            $lokal = new DirektoriLokalDb;
+
+            return $lokal->tersedia()
+                ? new DirektoriBerlapis([$lokal, $luar])
+                : $luar;
         });
     }
 
