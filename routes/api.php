@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\VersiAplikasiController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
 use App\Http\Controllers\Api\WorksheetScanController;
 use App\Services\Direktori\DirektoriPerusahaan;
+use App\Services\Direktori\PilihanDriver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -63,7 +64,26 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     //  - NOL request ke penyedia. `tersedia()` cuma membaca config, jadi
     //    endpoint publik ini nggak bisa dipakai orang buat menghabiskan kuota
     //    berbayar lab — itu yang bikin dia aman dibiarkan tanpa auth.
-    'direktori_perusahaan' => ['disetel' => $direktori->tersedia()],
+    //
+    // `driver` & `bisa_ditagih` ditambah 2 Sep 2026, dan sebabnya nyata:
+    // `disetel` SENDIRIAN nggak bisa menjawab pertanyaan yang paling mahal.
+    // Dia `true` buat `osm` MAUPUN `auto` — yang pertama gratis, yang kedua
+    // menembak Google duluan. Waktu bawaan direktori dipindah ke OSM, nilainya
+    // sempat tertinggal di `auto` selama sehari dan nggak ada satu pun cara
+    // memeriksanya dari luar; yang menemukan akhirnya tagihan Google Cloud,
+    // bukan endpoint ini.
+    //
+    // Yang dilaporkan driver EFEKTIF, bukan isi `.env` apa adanya: `osmm` yang
+    // salah ketik jatuh ke `osm`, dan yang membaca perlu tahu yang jalan yang
+    // mana — bukan yang diketik. Lihat [PilihanDriver].
+    //
+    // Batasnya nggak berubah: nama driver itu STATUS, bukan rahasia. Key-nya
+    // tetap nggak pernah ikut, dan tetap nol request ke penyedia.
+    'direktori_perusahaan' => [
+        'disetel' => $direktori->tersedia(),
+        'driver' => PilihanDriver::sekarang(),
+        'bisa_ditagih' => PilihanDriver::bisaDitagih(PilihanDriver::sekarang()),
+    ],
 
     // Tiga pertanyaan yang selama ini cuma bisa dijawab dari dashboard
     // penyedia hosting — dan karena itu selalu jadi bolak-balik.
