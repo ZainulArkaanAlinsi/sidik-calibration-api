@@ -92,6 +92,15 @@ Bahasa Indonesia."*
 > baru berarti dua tabel staging yang saling menyaingi selamanya. Petakan dulu, jangan
 > membangun ulang.
 
+> **Susulan 2 Sep 2026 — perintah "model pembaca sel buatan sendiri" BERHENTI di Gerbang 0.**
+> Perintah itu minta mengganti `MlKitPembacaSel`. Ditelusuri, komponen itu **tidak pernah
+> dipanggil aplikasi**: tombol `PINDAI LEMBAR KERJA` dicabut permanen 26 Agt 2026, dan
+> `JalankanPindai` cuma diinstansiasi di test. Jadi M0 "selamatkan dataset" mengumpulkan **nol
+> crop** — koreksi teknisi tidak punya pemanggil. Rantai buktinya, plus rekomendasi penggantinya
+> (perekam ground truth di jalur `FOTO TABEL INI` yang hidup — satu berkas HP + satu perintah
+> artisan, bukan 22 hari model), ada di **`docs/temuan-gerbang0-ocr-model-lokal.md`**.
+> **Rencana berkasnya menunggu persetujuan pemilik proyek** sesuai §7 di atas.
+
 ---
 
 ## 8. Revisi jangan menghapus satu tabel penuh
