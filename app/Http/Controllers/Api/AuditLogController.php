@@ -44,6 +44,26 @@ class AuditLogController extends Controller
     }
 
     /**
+     * Escape KOSONG, yaitu RFC 4180 — dilewatkan EKSPLISIT, bukan diandalkan.
+     *
+     * PHP 8.4 mendeprekasi bawaannya dengan alasan yang gamblang: *"the $escape
+     * parameter must be provided as its default value will change"*. Di aplikasi
+     * ini peringatannya TIDAK KELIHATAN sama sekali — `config/logging.php`
+     * menyetel kanal deprecation ke `null`, jadi ketiga puluh peringatan per
+     * ekspor dibuang diam-diam.
+     *
+     * Yang tersisa perilaku yang belum dipatok: begitu PHP mengganti bawaannya,
+     * keluaran berkas ini berubah tanpa ada satu baris pun di repo ini yang ikut
+     * berubah. Berkas ini yang dibawa asesor, jadi perilakunya dipatok di sini.
+     *
+     * Yang TIDAK berubah karena ini: hasil bacanya di Excel. Kedua mode
+     * sama-sama menghasilkan CSV yang sah menurut RFC 4180 — yang berbeda cuma
+     * apakah nilai yang tidak butuh kutip ikut dikutip. Dijaga
+     * `AuditLogTest::test_export_tetap_terbaca_excel_walau_nilainya_berakhir_backslash`.
+     */
+    private const ESCAPE = '';
+
+    /**
      * Ekspor riwayat ke CSV ("Bisa dilihat dan diekspor" — Keputusan 4).
      *
      * CSV, bukan xlsx: yang dibawa asesor biasanya dibuka di apa pun yang ada di
@@ -70,7 +90,7 @@ class AuditLogController extends Controller
 
             fputcsv($keluaran, [
                 'Waktu', 'Entitas', 'ID', 'Aksi', 'Pelaku', 'Role', 'Kolom', 'Nilai Lama', 'Nilai Baru', 'Catatan',
-            ]);
+            ], ',', '"', self::ESCAPE);
 
             // `chunkById`, bukan `get()`: 10 ribu baris audit yang bawa dua kolom
             // JSON itu berat kalau ditarik sekaligus.
@@ -80,7 +100,7 @@ class AuditLogController extends Controller
                     $baris = $this->barisCsv($log);
 
                     foreach ($baris as $b) {
-                        fputcsv($keluaran, $b);
+                        fputcsv($keluaran, $b, ',', '"', self::ESCAPE);
                     }
                 }
             });

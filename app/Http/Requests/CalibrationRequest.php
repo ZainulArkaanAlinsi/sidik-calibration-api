@@ -103,6 +103,27 @@ class CalibrationRequest extends FormRequest
                 'zi' => array_values((array) ($b['zero'] ?? [])),
                 'mi' => array_values((array) ($b['pembacaan'] ?? [])),
             ];
+
+            /*
+             * Tebakan mesin ikut diterjemahkan, dan ini BUKAN kelengkapan.
+             *
+             * Penerjemah ini membuang kunci yang nggak dikenalnya. Jadi tanpa
+             * dua baris di bawah, tebakan kamera lembar Timbangan mendarat di
+             * HP, terkirim ke server, lalu hilang TANPA JEJAK tepat di sini —
+             * dan `ocr:akurasi-kamera` bakal melaporkan nol sel Timbangan,
+             * yang kebaca sebagai "kameranya bagus" padahal artinya nol data.
+             *
+             * Cuma ditulis kalau memang ada isinya: sesi yang seluruhnya
+             * diketik tangan nggak boleh menyimpan kunci kosong di blok yang
+             * dibaca kalkulator.
+             */
+            foreach (['zi' => 'zero_ocr', 'mi' => 'pembacaan_ocr'] as $nama => $kunci) {
+                $tebakan = array_values((array) ($b[$kunci] ?? []));
+
+                if (array_filter($tebakan, static fn ($v): bool => $v !== null) !== []) {
+                    $baku[$slot[$i]][$nama.'_ocr'] = $tebakan;
+                }
+            }
         }
 
         if ($baku === []) {
@@ -405,8 +426,36 @@ class CalibrationRequest extends FormRequest
             'measurements.*.sensor_grid.*.channel' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:20'],
             'measurements.*.sensor_grid.*.pembacaan' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.sensor_grid.*.pembacaan.*' => ['nullable', 'numeric'],
+            /*
+             * Tebakan mesin per pembacaan grid, SEJAJAR INDEKS sama `pembacaan`
+             * di baris yang sama.
+             *
+             * Kenapa perlu: teknisi mengoreksi angka hasil foto di kotak yang
+             * sama, jadi tanpa ini tebakan mesinnya tertimpa dan akurasi jalur
+             * kamera nggak bisa dihitung — termasuk HIJAU PALSU, satu-satunya
+             * kegagalan yang nggak ada yang lihat sampai sertifikatnya terbit.
+             *
+             * `photo_path` nggak ada di sini, beda dari `measurements.*.ocr`:
+             * jalur foto grid nggak mengunggah citranya ke server sama sekali.
+             */
+            'measurements.*.sensor_grid.*.ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.sensor_grid.*.ocr.*' => ['nullable', 'array'],
+            'measurements.*.sensor_grid.*.ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.sensor_grid.*.ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             'measurements.*.indikator' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.indikator.*' => ['nullable', 'numeric'],
+            /*
+             * Padanan `sensor_grid.*.ocr` buat dua baris yang bentuknya DERET
+             * ANGKA POLOS, bukan objek — jadi tebakannya nggak bisa dititipkan
+             * di dalam barisnya sendiri dan harus jadi kunci sebelah.
+             *
+             * Namanya sengaja beda (`_ocr`) supaya nggak ada yang mengira ini
+             * deret angka biasa dan menjumlahkannya.
+             */
+            'measurements.*.indikator_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.indikator_ocr.*' => ['nullable', 'array'],
+            'measurements.*.indikator_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.indikator_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             // Alat ber-PASANGAN deret (Thermocouple, Termometer Gelas,
             // Thermohygrometer): tiap titik dibaca dua kali — sisi standar &
             // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
@@ -420,6 +469,28 @@ class CalibrationRequest extends FormRequest
             'measurements.*.standar.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
             'measurements.*.uut' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.uut.*' => ['nullable', new PenunjukanWaktu($bolehObjekWaktu)],
+            /*
+             * Tebakan mesin per sisi, SEJAJAR INDEKS sama deret sisinya sendiri.
+             *
+             * Dua sisi dipisah karena sisi standar & sisi UUT punya tebakan yang
+             * beda, dan menukarnya bikin kolom `Correction` — selisih dua sisi
+             * itu — bergeser tanpa satu pun error.
+             *
+             * BENTUKNYA IKUT DERET NILAINYA, persis seperti
+             * `measurements.*.standar.*` di atas yang dijaga `PenunjukanWaktu`:
+             *
+             *  - lembar satu kolom (ketiga alat suhu) → satu tebakan per
+             *    ulangan: `{raw_text, confidence}`;
+             *  - lembar Timer/Stopwatch → satu penunjukan ditulis di EMPAT
+             *    kotak, jadi tebakannya juga per kotak:
+             *    `{jam: {raw_text, …}, menit: {…}, …}`.
+             *
+             * Dua bentuk, satu sumber kebenaran: `lembarBerblokWaktu()` yang
+             * sama menentukan keduanya. Kalau dipisah jadi dua penanda,
+             * lembar yang berubah bentuk bakal lolos di satu sisi dan ditolak
+             * di sisi lain.
+             */
+            ...$this->aturanTebakanPasangan($bolehObjekWaktu),
             // No. Termokopel: probe standar mana yang dicelup di baris ini.
             // Batas 28 = jumlah kolom tabel koreksi probe (RTD + TCK-01..16 +
             // TCN3..12); nomor di luar itu nggak menunjuk probe mana pun.
@@ -459,6 +530,13 @@ class CalibrationRequest extends FormRequest
             // di blok Kondisi Lingkungan — beda hal, nama saja yang mirip.
             'measurements.*.suhu_ruang' => ['sometimes', 'nullable', 'array', 'max:20'],
             'measurements.*.suhu_ruang.*' => ['nullable', 'numeric'],
+            // Baris Suhu Ruang nggak ikut menghitung apa pun, tapi teknisi
+            // TETAP memotretnya — jadi tebakan mesinnya tetap bahan ukur yang
+            // sah. Membuangnya berarti diam-diam mengecilkan sampel.
+            'measurements.*.suhu_ruang_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'measurements.*.suhu_ruang_ocr.*' => ['nullable', 'array'],
+            'measurements.*.suhu_ruang_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+            'measurements.*.suhu_ruang_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
             // Suhu larutan per pembacaan, sejajar per-index sama `pembacaan`.
             'measurements.*.suhu' => ['sometimes', 'nullable', 'array'],
             'measurements.*.suhu.*' => ['nullable', 'numeric'],
@@ -551,6 +629,49 @@ class CalibrationRequest extends FormRequest
      * aturan wildcard dengan aturan kunci spesifik, jadi `string` dan `array`
      * berlaku bersamaan dan dua-duanya nggak akan pernah lolos.
      */
+    /**
+     * Aturan `standar_ocr` / `uut_ocr`, bentuknya ikut deret nilainya.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function aturanTebakanPasangan(bool $bolehObjekWaktu): array
+    {
+        $aturan = [];
+
+        foreach (['standar', 'uut'] as $sisi) {
+            $akar = "measurements.*.{$sisi}_ocr";
+            // Lembar berblok waktu menaruh tebakannya SATU TINGKAT lebih dalam
+            // — per kotak, bukan per ulangan.
+            $daun = $bolehObjekWaktu ? $akar.'.*.*' : $akar.'.*';
+
+            $aturan[$akar] = ['sometimes', 'nullable', 'array', 'max:20'];
+            $aturan[$akar.'.*'] = ['nullable', 'array'];
+
+            if ($bolehObjekWaktu) {
+                // Cuma keempat kotak yang sah. Kunci lain berarti bentuknya
+                // bergeser, dan tebakan yang mendarat di kotak yang nggak ada
+                // bakal hilang tanpa gejala.
+                $aturan[$akar.'.*.*'] = ['nullable', 'array'];
+                $aturan[$akar.'.*'][] = function (string $atribut, mixed $nilai, \Closure $gagal): void {
+                    if (! is_array($nilai)) {
+                        return;
+                    }
+
+                    $asing = array_diff(array_keys($nilai), PenunjukanWaktu::KOTAK);
+
+                    if ($asing !== []) {
+                        $gagal("Tebakan mesin di `{$atribut}` memuat kotak yang nggak dikenal: ".implode(', ', $asing).'.');
+                    }
+                };
+            }
+
+            $aturan[$daun.'.raw_text'] = ['nullable', 'string', 'max:255'];
+            $aturan[$daun.'.confidence'] = ['nullable', 'numeric', 'between:0,1'];
+        }
+
+        return $aturan;
+    }
+
     private function spekBolehBerbentukBlok(): \Closure
     {
         return function (string $atribut, mixed $nilai, \Closure $gagal): void {

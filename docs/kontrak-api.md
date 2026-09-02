@@ -752,6 +752,86 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > sebagai baris di bawah tabel — bukan kolom per titik. `desimal_u95` tetap dibaca
 > dari respons seperti biasa.
 
+> ## ✅ 2 Sep — TEBAKAN MESIN per sel (`*_ocr`), buat mengukur akurasi kamera
+>
+> Kunci OPSIONAL. Lembar yang seluruhnya diketik tangan tidak mengirimnya sama
+> sekali, dan tanpa kunci ini perilaku server sama persis seperti sebelumnya.
+>
+> ### Kenapa ada
+>
+> Teknisi mengoreksi angka hasil foto **di kotak yang sama**. Begitu dia mengetik
+> ulang, tebakan mesinnya tertimpa — dan yang sampai server cuma angka akhir.
+> Akibatnya akurasi kamera **tidak bisa dihitung sama sekali**, termasuk metrik
+> yang paling menentukan: sel yang keisi otomatis dengan keyakinan tinggi padahal
+> salah. Itu satu-satunya kegagalan yang tidak ada yang lihat sampai sertifikatnya
+> terbit.
+>
+> Yang membacanya `php artisan ocr:akurasi-kamera`.
+>
+> ### Bentuk dasarnya
+>
+> ```json
+> { "raw_text": "5O.O2", "confidence": 0.93 }
+> ```
+>
+> - `raw_text` — teks **APA ADANYA** dari pengenal, maksimal 255 karakter.
+>   Jangan dibersihkan, jangan ditambah koma, jangan ditebak desimalnya.
+>   Yang jelas ngawur justru contoh paling berharga.
+> - `confidence` — 0..1, **boleh tidak ada**. ML Kit cuma menyetel skor di
+>   sebagian versi & perangkat. Yang tidak diketahui **jangan diisi angka
+>   karangan**: kunci `confidence`-nya dihilangkan saja. Skor karangan persis
+>   yang bikin sel salah divonis hijau.
+>
+> ### Enam bentuk, ikut bentuk deret nilainya
+>
+> | Lembar | Kunci | Bentuk |
+> |---|---|---|
+> | ~13 lembar titik × Repeat | `measurements[].ocr` | deret, sejajar `pembacaan` |
+> | Thermocouple, T. Gelas, Thermohygro | `measurements[].standar_ocr` · `.uut_ocr` | deret, sejajar deret sisinya |
+> | Timer/Stopwatch | `measurements[].standar_ocr` · `.uut_ocr` | deret berisi **objek per kotak**: `{jam: {...}, menit: {...}, detik: {...}, milidetik: {...}}` |
+> | 5 Enclosure (grid) | `measurements[].sensor_grid[].ocr` | deret, sejajar `pembacaan` baris itu |
+> | 5 Enclosure (dua baris deret) | `measurements[].indikator_ocr` · `.suhu_ruang_ocr` | deret, sejajar deret angkanya |
+> | Timbangan (blok Repeatability) | `spesifikasi_alat.keterulangan.baris[].<kolom>_ocr` | deret, sejajar `<kolom>` |
+> | Autoklaf (`POST /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
+>
+> ### Aturan yang MENGIKAT
+>
+> 1. **Panjangnya selalu sepanjang deret nilainya**, termasuk `null`-nya. Server
+>    membaca `$ocr[$urutan]` dengan indeks `pembacaan` yang **sama persis**, jadi
+>    deret yang dirapatkan bikin tebakan Repeat 3 tercatat sebagai tebakan
+>    Repeat 1 — pasangan yang salah, tanpa satu pun error.
+> 2. **Sisi standar & sisi UUT tidak boleh tertukar.** Yang tercetak di sertifikat
+>    `Correction`, yaitu SELISIH keduanya; tebakan yang tertukar sisi menggeser
+>    selisih itu sementara kedua angkanya tetap wajar.
+> 3. **Jangan kirim kunci kosong.** Deret berisi `null` semua bikin pembacanya
+>    mengira ada jalur kamera di kolom itu. Satu set point grid bisa punya 40
+>    baris; kunci kosong di tiap baris itu beban yang tidak dibayar apa pun.
+> 4. **Timer/Stopwatch: jangan gabungkan empat kotak jadi satu teks.** Server yang
+>    menyusunnya jadi satu penunjukan, lewat jalur yang **sama** dengan yang
+>    menyusun nilai finalnya. Kalau HP yang menyusun, dua sisi memakai jalan
+>    berbeda — dan begitu salah satunya berubah, yang diadu bukan lagi dua besaran
+>    yang sama.
+>
+> ### Yang ditolak server
+>
+> | Keadaan | Akibat |
+> |---|---|
+> | Kotak Timer yang tidak dikenal (mis. `milidetk`) | **422** |
+> | `confidence` di luar 0..1, `raw_text` > 255 karakter | **422** |
+> | Timer: ada kotak berisi yang tidak ketebak | tebakannya **dibuang** — menyusun dari sebagian berarti mencampur tebakan mesin dengan ketikan teknisi |
+> | Timer: tebakan bukan angka (mis. `1S`) | **ditolak**, tidak dibulatkan. `(int) '1S'` di PHP itu `1` — diam dan salah |
+>
+> ### Efek sampingnya ke gerbang verifikasi
+>
+> Baris yang **membawa tebakan** lahir `is_verified: false` dan
+> `input_source: "ocr"` — **walaupun `input_method` sesinya `manual`**. Ini
+> disengaja: sebelumnya beberapa jalur cuma punya satu gerbang (`input_method`),
+> jadi baris yang benar-benar dari kamera lolos jadi terverifikasi begitu sesinya
+> tercatat manual, dan gerbang approve tidak pernah bunyi.
+>
+> Konsekuensi buat HP: sesi yang mengirim tebakan **wajib** melewati
+> `POST /calibrations/{id}/measurements/verify` sebelum bisa disetujui admin.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;

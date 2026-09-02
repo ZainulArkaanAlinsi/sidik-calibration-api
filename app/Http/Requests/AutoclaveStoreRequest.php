@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Models\CalibrationSession;
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
+use App\Models\CalibrationSession;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Simpan sesi Autoklaf (`POST /calibrations/autoclave`). Gabungan identitas sesi
@@ -38,7 +38,7 @@ class AutoclaveStoreRequest extends FormRequest
     {
         $org = $this->user()->organization_id;
 
-        return [
+        $aturan = [
             // ---- Identitas sesi ----
             'equipment_id' => [
                 'required',
@@ -107,6 +107,57 @@ class AutoclaveStoreRequest extends FormRequest
             // satu angka. Dua-duanya diterima supaya klien lama nggak patah.
             'tekanan.tekanan_atm_awal' => ['sometimes', 'nullable', $this->angkaAtauDeretAngka()],
         ];
+
+        /*
+         * ---- Tebakan mesin per sel (blok `ocr`) ----
+         *
+         * Bercermin PERSIS ke jalur nilainya, cuma berawalan `ocr.`:
+         * `suhu.disk.0` nilainya, `ocr.suhu.disk.0` tebakannya, sejajar indeks.
+         *
+         * Kenapa bercermin dan bukan kunci datar: jalur nilainya sudah jadi
+         * kontrak yang dipatok `BarisMatriks.kodeData` di server, dan HP menulis
+         * ke jalur itu apa adanya. Bentuk kedua yang harus diurai ulang cuma
+         * nambah tempat buat salah alamat — dan di data latih, salah alamat
+         * nggak pernah kelihatan.
+         *
+         * Baris "Time" nggak punya padanan di sini: dia jam, bukan angka ukur,
+         * dan jalur fotonya memang melewatinya.
+         */
+        $jalurOcr = [
+            // Tiga disk suhu — satu tingkat lebih dalam dari yang lain.
+            'ocr.suhu.disk.*',
+            'ocr.suhu.indikator',
+            'ocr.suhu.suhu_ruang',
+            'ocr.tekanan.indikator_pressure',
+            'ocr.tekanan.pembacaan_standar',
+        ];
+
+        $aturan['ocr'] = ['sometimes', 'nullable', 'array'];
+        $aturan['ocr.suhu.disk'] = ['sometimes', 'nullable', 'array', 'max:3'];
+
+        foreach ($jalurOcr as $jalur) {
+            $aturan[$jalur] = ['sometimes', 'nullable', 'array', 'max:20'];
+            $aturan[$jalur.'.*'] = ['nullable', 'array'];
+            $aturan[$jalur.'.*.raw_text'] = ['nullable', 'string', 'max:255'];
+            $aturan[$jalur.'.*.confidence'] = ['nullable', 'numeric', 'between:0,1'];
+        }
+
+        return $aturan;
+    }
+
+    /**
+     * Tebakan mesin per sel, DIPISAH dari [dataUkur()] dengan sengaja.
+     *
+     * `dataUkur()` diumpankan ke `AutoclaveInputBuilder` — kalkulatornya. Blok
+     * ini bukan data ukur: dia catatan asal-usul. Menitipkannya di sana berarti
+     * kalkulator menerima kunci yang nggak dia kenal, dan angka sertifikat
+     * bukan tempat buat mencoba-coba.
+     *
+     * @return array<string, mixed>
+     */
+    public function bacaanMesin(): array
+    {
+        return (array) $this->input('ocr', []);
     }
 
     /**
