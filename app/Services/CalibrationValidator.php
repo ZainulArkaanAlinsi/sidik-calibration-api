@@ -55,6 +55,15 @@ class CalibrationValidator
 
     public const INFO = 'info';
 
+    /**
+     * Batas panjang judul peringatan sebelum dipotong.
+     *
+     * Judul notifikasi Filament satu baris; lewat dari ini dia terpotong sendiri
+     * oleh tata letaknya, dan yang hilang justru ekor kalimat — bagian yang
+     * paling sering memuat satuan dan rentangnya.
+     */
+    private const PANJANG_JUDUL = 120;
+
     public function __construct(
         private readonly GumCalculator $gum,
         private readonly CalibrationProfileRegistry $profil,
@@ -1567,6 +1576,106 @@ class CalibrationValidator
     private function samaDengan(float $a, float $b): bool
     {
         return abs($a - $b) <= max(1e-8, 1e-6 * max(abs($a), abs($b)));
+    }
+
+    /**
+     * Judul yang menyebut sebab peringatan yang BENERAN nyala.
+     *
+     * ## Kenapa ini ada
+     *
+     * Dua pintu approve — endpoint API dan tombol di panel — dulu sama-sama
+     * memasang satu kalimat tetap: *"Hasil hitung ulang beda dari yang
+     * tersimpan."* Padahal cabang yang memunculkannya nyala buat **lima belas**
+     * kode peringatan, dan `hitung_ulang_beda` cuma salah satunya. Sesi yang
+     * ketahan gara-gara standar acuannya nggak ketemu, atau suhu ruang di luar
+     * pita, tetap dilaporkan sebagai selisih hitung ulang.
+     *
+     * Yang rusak bukan tata bahasanya. Admin yang membaca "hitung ulang beda"
+     * lalu membuka datanya dan menemukan hitung ulangnya baik-baik saja belajar
+     * satu hal: peringatan di sistem ini bohong. Sesudah itu `abaikan_peringatan`
+     * ditekan tanpa dibaca — termasuk waktu peringatannya benar. Itu jebakan
+     * yang sama yang sudah tertulis di `CLAUDE.md`: peringatan palsu melatih
+     * admin menyetujui tanpa membaca.
+     *
+     * ## Kenapa TIDAK pakai peta kode → label
+     *
+     * Peta semacam itu daftar kedua yang wajib ikut berubah tiap ada kode
+     * peringatan baru — dan kalau ketinggalan, dia gagal SUNYI: kodenya nggak
+     * ketemu, labelnya jatuh ke teks bawaan, dan yang muncul kalimat umum lagi.
+     * Persis jenis kegagalan yang mau ditutup fungsi ini.
+     *
+     * Jadi judulnya dirakit dari temuannya sendiri — `pesan` yang sudah ditulis
+     * manusia di tempat peringatannya lahir. Kode peringatan baru ikut terbawa
+     * tanpa menyentuh berkas ini.
+     *
+     * @param  array<string, mixed>  $hasil  keluaran [periksa()]
+     */
+    public static function judulPeringatan(array $hasil): string
+    {
+        $peringatan = array_values(array_filter(
+            $hasil['temuan'] ?? [],
+            fn (array $t): bool => ($t['tingkat'] ?? null) === self::PERINGATAN,
+        ));
+
+        // Dipanggil di cabang yang syaratnya `! valid`, jadi seharusnya nggak
+        // pernah kosong. Kalau toh kosong, yang dipilih kalimat yang nggak
+        // menuduh apa pun — bukan menebak sebab.
+        if ($peringatan === []) {
+            return 'Ada peringatan di sesi ini yang perlu diperiksa dulu.';
+        }
+
+        $kode = array_unique(array_column($peringatan, 'kode'));
+        $jumlah = count($peringatan);
+
+        // Lebih dari satu JENIS: nggak ada satu kalimat yang jujur mewakili
+        // semuanya, jadi yang disebut cacahnya dan detailnya diserahkan ke
+        // badan pesan (panel) atau payload `validasi` (API) yang memang memuat
+        // seluruh temuan.
+        if (count($kode) > 1) {
+            return sprintf(
+                'Ada %d peringatan dari %d hal berbeda di sesi ini.',
+                $jumlah,
+                count($kode),
+            );
+        }
+
+        $judul = self::kalimatPertama((string) $peringatan[0]['pesan']);
+
+        // Satu jenis di banyak titik: kalimat pertamanya sudah mewakili, tinggal
+        // disebut berapa titik lain yang kena hal yang sama. Tanpa ini admin
+        // membaca "Titik ke-3" dan mengira cuma satu titik yang bermasalah.
+        if ($jumlah > 1) {
+            $judul .= sprintf(' (+%d titik lain yang sama)', $jumlah - 1);
+        }
+
+        return $judul;
+    }
+
+    /**
+     * Kalimat pertama sebuah pesan temuan, dipotong kalau kepanjangan.
+     *
+     * Pemisahnya titik-lalu-spasi, BUKAN titik saja: angka di pesan peringatan
+     * lewat [Angka::idRingkas] yang memakai titik sebagai pemisah ribuan
+     * (`1.234,5`), jadi memecah pada titik saja bikin judul terpenggal di
+     * tengah angka.
+     */
+    private static function kalimatPertama(string $pesan): string
+    {
+        $pesan = trim(preg_replace('/\s+/', ' ', $pesan) ?? $pesan);
+
+        $potong = preg_split('/(?<=\.)\s+/', $pesan, 2);
+        $kalimat = $potong[0] ?? $pesan;
+
+        if (mb_strlen($kalimat) <= self::PANJANG_JUDUL) {
+            return $kalimat;
+        }
+
+        // Dipotong di batas kata biar nggak berhenti di tengah satuan atau
+        // angka — judul yang putus di "0–10" kebaca seperti rentang lain.
+        $pendek = mb_substr($kalimat, 0, self::PANJANG_JUDUL);
+        $spasi = mb_strrpos($pendek, ' ');
+
+        return rtrim($spasi !== false ? mb_substr($pendek, 0, $spasi) : $pendek, ' ,;:.').'…';
     }
 
     /**
