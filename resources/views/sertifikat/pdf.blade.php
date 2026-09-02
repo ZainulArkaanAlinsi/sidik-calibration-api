@@ -1011,8 +1011,8 @@
             ->count() > 1)
         @if ($k !== null)
             <div class="ket-k">
-                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k )
-                {{ $kBeda ? '≈' : '=' }} {{ $cetakK($k) }}
+                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) {{ $kBeda ? '≈' : '=' }}
+                {{ $cetakK($k) }}
             </div>
         @endif
     @empty
