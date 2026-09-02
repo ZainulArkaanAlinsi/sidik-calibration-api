@@ -145,7 +145,15 @@ class TandaTanganDitengahkanTest extends TestCase
         return [$gambar, $garis];
     }
 
-    /** @return list<string> */
+    /**
+     * Potongan mentah tiap `stream … endstream` di berkas PDF.
+     *
+     * Dipotong sendiri, bukan pakai pustaka: yang dibutuhkan cuma isi stream
+     * apa adanya buat di-inflate, dan menambah dependensi pengurai PDF penuh
+     * demi satu test bikin ongkos rawatnya jauh lebih besar daripada gunanya.
+     *
+     * @return list<string>
+     */
     private static function potongStream(string $pdf): array
     {
         $keluar = [];

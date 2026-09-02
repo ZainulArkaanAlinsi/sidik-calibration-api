@@ -229,16 +229,16 @@
           Jadi kalau ada yang mau ngegedein huruf atau kotak ini lagi: ukur ulang
           pakai Conductivity Meter, bukan pH.
 
-          ## Kenapa versi PADAT-nya (24px, di atas) TIDAK ikut digedein
+          ## Kenapa versi PADAT-nya berhenti di 28px
 
           Percobaan pertama menaikkannya ke 44px, dan itu bikin sertifikat
           **Visible Spectrofotometer** jadi DUA HALAMAN — dia lembar terpadat di
           sistem (24 titik ketidakpastian) dan mode padat nggak punya jaring
           pengaman lagi di bawahnya.
 
-          Disapu ulang: 30px masih muat, 32px sudah meluap. Jadi 24px itu bukan
-          angka konservatif, itu nyaris seluruh margin yang ada. Menukarnya buat
-          tanda tangan yang 1 mm lebih besar di enam alat jelas rugi.
+          Disapu 24 / 28 / 32 / 36 / 44px atas seluruh 24 sertifikat bawaan:
+          **28px masih muat, 32px sudah meluap.** Jadi 28px bukan angka yang
+          dipilih, itu batasnya.
         */
         .ttd .ruang-ttd { height: 86px; position: relative; }
 
