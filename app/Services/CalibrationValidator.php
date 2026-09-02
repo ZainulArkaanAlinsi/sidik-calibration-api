@@ -55,6 +55,23 @@ class CalibrationValidator
 
     public const INFO = 'info';
 
+    /**
+     * Batas panjang judul peringatan sebelum dipotong.
+     *
+     * Judul notifikasi Filament satu baris; lewat dari ini dia terpotong sendiri
+     * oleh tata letaknya, dan yang hilang justru ekor kalimat — bagian yang
+     * paling sering memuat satuan dan rentangnya.
+     */
+    private const PANJANG_JUDUL = 120;
+
+    /**
+     * Lantai jatah kalimat, dipakai kalau ekornya makan hampir semua jatah.
+     *
+     * Tanpa lantai ini judulnya bisa jadi "… (+N titik lain yang sama)" — nol
+     * kata soal APA yang salah, yang justru isi utamanya.
+     */
+    private const PANJANG_JUDUL_MINIMUM = 40;
+
     public function __construct(
         private readonly GumCalculator $gum,
         private readonly CalibrationProfileRegistry $profil,
@@ -1567,6 +1584,121 @@ class CalibrationValidator
     private function samaDengan(float $a, float $b): bool
     {
         return abs($a - $b) <= max(1e-8, 1e-6 * max(abs($a), abs($b)));
+    }
+
+    /**
+     * Judul yang menyebut sebab peringatan yang BENERAN nyala.
+     *
+     * ## Kenapa ini ada
+     *
+     * Dua pintu approve — endpoint API dan tombol di panel — dulu sama-sama
+     * memasang satu kalimat tetap: *"Hasil hitung ulang beda dari yang
+     * tersimpan."* Padahal cabang yang memunculkannya nyala buat **lima belas**
+     * kode peringatan, dan `hitung_ulang_beda` cuma salah satunya. Sesi yang
+     * ketahan gara-gara standar acuannya nggak ketemu, atau suhu ruang di luar
+     * pita, tetap dilaporkan sebagai selisih hitung ulang.
+     *
+     * Yang rusak bukan tata bahasanya. Admin yang membaca "hitung ulang beda"
+     * lalu membuka datanya dan menemukan hitung ulangnya baik-baik saja belajar
+     * satu hal: peringatan di sistem ini bohong. Sesudah itu `abaikan_peringatan`
+     * ditekan tanpa dibaca — termasuk waktu peringatannya benar. Itu jebakan
+     * yang sama yang sudah tertulis di `CLAUDE.md`: peringatan palsu melatih
+     * admin menyetujui tanpa membaca.
+     *
+     * ## Kenapa TIDAK pakai peta kode → label
+     *
+     * Peta semacam itu daftar kedua yang wajib ikut berubah tiap ada kode
+     * peringatan baru — dan kalau ketinggalan, dia gagal SUNYI: kodenya nggak
+     * ketemu, labelnya jatuh ke teks bawaan, dan yang muncul kalimat umum lagi.
+     * Persis jenis kegagalan yang mau ditutup fungsi ini.
+     *
+     * Jadi judulnya dirakit dari temuannya sendiri — `pesan` yang sudah ditulis
+     * manusia di tempat peringatannya lahir. Kode peringatan baru ikut terbawa
+     * tanpa menyentuh berkas ini.
+     *
+     * @param  array<string, mixed>  $hasil  keluaran [periksa()]
+     */
+    public static function judulPeringatan(array $hasil): string
+    {
+        $peringatan = array_values(array_filter(
+            $hasil['temuan'] ?? [],
+            fn (array $t): bool => ($t['tingkat'] ?? null) === self::PERINGATAN,
+        ));
+
+        // Dipanggil di cabang yang syaratnya `! valid`, jadi seharusnya nggak
+        // pernah kosong. Kalau toh kosong, yang dipilih kalimat yang nggak
+        // menuduh apa pun — bukan menebak sebab.
+        if ($peringatan === []) {
+            return 'Ada peringatan di sesi ini yang perlu diperiksa dulu.';
+        }
+
+        $kode = array_unique(array_column($peringatan, 'kode'));
+        $jumlah = count($peringatan);
+
+        // Lebih dari satu JENIS: nggak ada satu kalimat yang jujur mewakili
+        // semuanya, jadi yang disebut cacahnya dan detailnya diserahkan ke
+        // badan pesan (panel) atau payload `validasi` (API) yang memang memuat
+        // seluruh temuan.
+        if (count($kode) > 1) {
+            return sprintf(
+                'Ada %d peringatan dari %d hal berbeda di sesi ini.',
+                $jumlah,
+                count($kode),
+            );
+        }
+
+        // Satu jenis di banyak titik: kalimat pertamanya sudah mewakili, tinggal
+        // disebut berapa titik lain yang kena hal yang sama. Tanpa ini admin
+        // membaca "Titik ke-3" dan mengira cuma satu titik yang bermasalah.
+        $ekor = $jumlah > 1
+            ? sprintf(' (+%d titik lain yang sama)', $jumlah - 1)
+            : '';
+
+        // Ekornya dipotong dari jatah DULUAN, bukan ditempel sesudah kalimatnya
+        // dipangkas. Temuan review, dan dia benar: menempel belakangan bikin
+        // judulnya lewat batas, dan yang keguntingnya tata letak justru ekor itu
+        // sendiri — cacahnya hilang, tinggal kalimat yang kelihatan seperti satu
+        // titik doang. Persis salah baca yang mau dicegah ekornya.
+        return self::kalimatPertama(
+            (string) $peringatan[0]['pesan'],
+            self::PANJANG_JUDUL - mb_strlen($ekor),
+        ).$ekor;
+    }
+
+    /**
+     * Kalimat pertama sebuah pesan temuan, dipotong kalau lewat `$batas`.
+     *
+     * `$batas` dikirim pemanggilnya, bukan dibaca dari [PANJANG_JUDUL] langsung:
+     * yang berhak atas sisa jatahnya cuma pemanggil, karena dia yang tahu ada
+     * ekor "(+N titik lain)" yang mau ditempel sesudah ini.
+     *
+     * Pemisahnya titik-lalu-spasi, BUKAN titik saja: angka di pesan peringatan
+     * lewat [Angka::idRingkas] yang memakai titik sebagai pemisah ribuan
+     * (`1.234,5`), jadi memecah pada titik saja bikin judul terpenggal di
+     * tengah angka.
+     */
+    private static function kalimatPertama(string $pesan, int $batas): string
+    {
+        $pesan = trim(preg_replace('/\s+/', ' ', $pesan) ?? $pesan);
+
+        $potong = preg_split('/(?<=\.)\s+/', $pesan, 2);
+        $kalimat = $potong[0] ?? $pesan;
+
+        // Jatah nggak boleh nol atau minus: ekor yang panjangnya nggak wajar
+        // bakal bikin `mb_substr` balik string kosong, dan judulnya jadi cuma
+        // "…" tanpa satu kata pun.
+        $batas = max(self::PANJANG_JUDUL_MINIMUM, $batas);
+
+        if (mb_strlen($kalimat) <= $batas) {
+            return $kalimat;
+        }
+
+        // Dipotong di batas kata biar nggak berhenti di tengah satuan atau
+        // angka — judul yang putus di "0–10" kebaca seperti rentang lain.
+        $pendek = mb_substr($kalimat, 0, $batas);
+        $spasi = mb_strrpos($pendek, ' ');
+
+        return rtrim($spasi !== false ? mb_substr($pendek, 0, $spasi) : $pendek, ' ,;:.').'…';
     }
 
     /**

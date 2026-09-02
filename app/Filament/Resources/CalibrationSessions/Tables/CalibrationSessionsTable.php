@@ -161,8 +161,13 @@ class CalibrationSessionsTable
                         }
 
                         if (! $hasil['valid'] && ! ($data['abaikan_peringatan'] ?? false)) {
+                            // Judulnya nyebut peringatan yang beneran nyala.
+                            // Badannya tetap muat SEMUA temuan — judul cuma
+                            // nentuin apa yang kebaca duluan, dan yang kebaca
+                            // duluan itu yang nempel. Lihat
+                            // [CalibrationValidator::judulPeringatan].
                             Notification::make()
-                                ->title('Hasil hitung ulang beda dari yang tersimpan.')
+                                ->title(CalibrationValidator::judulPeringatan($hasil))
                                 ->body(self::ringkasTemuan($hasil)
                                     ."\n\nKalau memang mau lanjut, centang \"Saya sudah periksa\" lalu setujui lagi.")
                                 ->warning()
