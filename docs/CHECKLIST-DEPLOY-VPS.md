@@ -465,10 +465,20 @@ curl -s https://<domain>/api/health | jq .direktori_perusahaan
 
 `"bisa_ditagih": false` = aman. `true` = jalur berbayar hidup, disengaja atau tidak.
 
-> **Jebakan Render yang paling mungkin kena.** Kalau `DIREKTORI_PERUSAHAAN_DRIVER` pernah diketik
-> **manual** di dashboard Render, Render menandainya sebagai override dan nilai dari `render.yaml`
-> **tidak** menimpanya waktu deploy. Blueprint bilang `osm`, yang jalan tetap yang lama — dan
-> justru buat memergoki keadaan inilah field `driver` ada.
+> **Arah penimpaannya KEBALIKAN dari instingnya — dan ini sudah menggigit sekali.**
+>
+> `DIREKTORI_PERUSAHAAN_DRIVER` ditulis `value: osm` di `render.yaml`, jadi dia **dikelola
+> blueprint**: tiap sync, nilai itu menimpa apa pun yang diketik di dashboard. Bukan sebaliknya.
+> Lihat kotak `ARSIP_DRIVER` di atas — persis mekanisme yang bikin arsip produksi diam-diam balik
+> ke disk sementara pada 1 Sep 2026.
+>
+> Buat driver direktori, arah itu justru **yang diinginkan**: bawaan gratis ditegakkan ulang tiap
+> deploy, jadi `auto` yang tertinggal di dashboard tidak bisa diam-diam menyalakan jalur berbayar.
+> Konsekuensinya harus disadari: **memindahkannya ke `google`/`auto` lewat dashboard saja tidak
+> bertahan** — yang harus diubah `render.yaml`, atau kuncinya dipindah ke `sync: false` dulu
+> mengikuti aturan umum di kotak `ARSIP_DRIVER`.
+>
+> Field `driver` di health yang memberi tahu mana yang sebenarnya menang, tanpa perlu menebak.
 
 Nama driver itu **status, bukan rahasia**: nilainya sama saja apakah API key-nya terisi, kosong,
 atau salah. Key-nya sendiri tetap tidak pernah ikut.
