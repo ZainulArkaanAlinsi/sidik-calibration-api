@@ -443,7 +443,7 @@ class CertificateSnapshotBuilder
     {
         return [
             'issuance_date' => $sertifikat->diterbitkan_pada?->toDateString(),
-            'penandatangan' => $pengaturan['penandatangan_nama'] ?? $sesi->reviewer?->name,
+            'penandatangan' => $pengaturan[Organization::KEY_PENANDATANGAN_NAMA] ?? $sesi->reviewer?->name,
             'jabatan' => $pengaturan['penandatangan_jabatan'] ?? $sesi->reviewer?->department ?? 'Technical Manager',
             'kode_dokumen' => $pengaturan['kode_dokumen_form'] ?? self::KODE_DOKUMEN_DEFAULT,
         ];

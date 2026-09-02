@@ -119,13 +119,50 @@ class BerkasPdfSertifikat
     }
 
     /**
+     * Render ULANG walaupun berkasnya masih sehat.
+     *
+     * Bedanya dengan [pastikanAda] cuma satu: di sana berkas yang sehat
+     * dilayani apa adanya, di sini justru itu yang mau diganti. Kunci,
+     * pemeriksaan keutuhan, dan penghapusan keluaran cacat tetap yang sama —
+     * yang dilewat cuma jalan pintasnya.
+     *
+     * ## Kenapa ini perlu ada
+     *
+     * PDF sertifikat itu turunan, tapi dia turunan yang DISIMPAN. Gambar tanda
+     * tangan, logo, dan kop dibaca dari pengaturan organisasi yang berlaku saat
+     * render — jadi mengganti gambar tanda tangan di panel TIDAK menyentuh
+     * sertifikat yang berkasnya sudah jadi. Buat admin itu kelihatan seperti
+     * setelan yang diabaikan; sebenarnya berkasnya memang tidak pernah
+     * disentuh lagi.
+     *
+     * SIAPA yang boleh memicu ini bukan urusan kelas ini. Penjaganya —
+     * termasuk penolakan waktu penandatangannya sudah ganti orang — ada di
+     * [\App\Services\CetakUlangSertifikat], karena itu keputusan dokumen,
+     * bukan keputusan berkas.
+     */
+    public function cetakUlang(Certificate $sertifikat): ?string
+    {
+        $path = (string) ($sertifikat->pdf_path ?? '');
+
+        if ($path === '' || $sertifikat->status !== Certificate::STATUS_TERBIT) {
+            return null;
+        }
+
+        if (blank($sertifikat->snapshot)) {
+            return null;
+        }
+
+        return $this->bangunSekaliSaja($sertifikat, $path, paksa: true);
+    }
+
+    /**
      * Render DIKUNCI per sertifikat, dan pemenangnya cuma satu.
      *
      * Pola periksa-dua-kali: yang menunggu memeriksa ulang sesudah dapat
      * giliran, karena besar kemungkinan yang duluan sudah selesai dan tidak ada
      * lagi yang perlu dirender.
      */
-    private function bangunSekaliSaja(Certificate $sertifikat, string $path): ?string
+    private function bangunSekaliSaja(Certificate $sertifikat, string $path, bool $paksa = false): ?string
     {
         $kunci = Cache::lock('sertifikat-pdf:'.$sertifikat->getKey(), self::UMUR_KUNCI);
 
@@ -141,22 +178,24 @@ class BerkasPdfSertifikat
                 'detik' => self::TUNGGU_KUNCI,
             ]);
 
-            return $this->sehat($path) ? $path : null;
+            return ! $paksa && $this->sehat($path) ? $path : null;
         }
 
         try {
-            if ($this->sehat($path)) {
+            // Yang DIPAKSA melewati jalan pintas ini — berkas sehat justru yang
+            // mau diganti di situ.
+            if (! $paksa && $this->sehat($path)) {
                 return $path;
             }
 
-            return $this->tulisUlang($sertifikat, $path);
+            return $this->tulisUlang($sertifikat, $path, $paksa);
         } finally {
             $kunci->release();
         }
     }
 
     /** Render dari snapshot beku, lalu pastikan yang mendarat memang utuh. */
-    private function tulisUlang(Certificate $sertifikat, string $path): ?string
+    private function tulisUlang(Certificate $sertifikat, string $path, bool $paksa = false): ?string
     {
         $isi = $this->satuHalaman->isi($sertifikat);
 
@@ -201,6 +240,20 @@ class BerkasPdfSertifikat
             ]);
 
             return null;
+        }
+
+        if ($paksa) {
+            // Bukan `warning`: dicetak ulang atas permintaan, bukan karena ada
+            // yang rusak. Tapi tetap DICATAT — berkas yang dipegang pelanggan
+            // sekarang beda dari yang tadi, dan buat dokumen terkendali selisih
+            // itu harus ada jejaknya.
+            Log::info('PDF sertifikat dicetak ulang atas permintaan.', [
+                'certificate_id' => $sertifikat->getKey(),
+                'nomor' => $sertifikat->nomor,
+                'path' => $path,
+            ]);
+
+            return $path;
         }
 
         Log::warning(
