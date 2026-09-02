@@ -140,6 +140,42 @@ if [ "${SEED_ON_BOOT}" = "true" ]; then
     php artisan db:seed --force
 fi
 
+# Direktori perusahaan rujukan (10.320 PT) dimuat di sini, bukan lewat shell.
+#
+# ## Kenapa di boot, bukan sekali manual
+#
+# Paket gratis Render TIDAK menyediakan shell sama sekali ("Shell is not
+# supported for free compute plans"), jadi tidak ada tempat lain buat
+# menjalankannya. Tanpa baris ini, tabelnya selamanya kosong di produksi dan
+# pencarian PT jatuh ke OpenStreetMap saja — yang cakupannya tipis buat pabrik
+# di kawasan industri, persis masalah yang mau ditutup.
+#
+# ## Kenapa ini aman ditaruh di jendela health check
+#
+# `--lewati-kalau-terisi` memeriksa isi tabel SEBELUM membaca berkas. Boot
+# pertama sesudah deploy membayar penuh (baca 1,3 MB CSV + 22 paket upsert,
+# hitungan detik); boot kedua dan seterusnya — termasuk tiap Render
+# membangunkan service yang ketiduran — cuma membayar satu query COUNT.
+#
+# Yang diperiksa ISI tabelnya, bukan penanda "sudah pernah jalan": database
+# yang direset bikin penanda berbohong, dan tanpa shell tidak ada yang bisa
+# membetulkannya. Hitungan baris selalu jujur, jadi jalur ini memulihkan
+# dirinya sendiri.
+#
+# ## `|| true` di sini BUKAN kelalaian
+#
+# Direktori ini fitur kenyamanan: tanpa dia, pendaftaran pelanggan tetap jalan
+# lewat ketik tangan dan OSM. Membiarkan impor yang gagal menjatuhkan boot
+# berarti menukar fitur kenyamanan dengan SELURUH server yang dipakai teknisi
+# di lokasi — dan itu pertukaran yang salah arah. Gagalnya tetap kelihatan di
+# log, dan `GET /api/health` melaporkan `direktori_perusahaan.lokal.baris`
+# supaya keadaannya bisa diperiksa dari luar tanpa masuk ke mana pun.
+tahap "muat direktori perusahaan (dilewati kalau sudah terisi)"
+php artisan direktori:impor-lokal database/direktori/jababeka.csv \
+    --sumber=jababeka --lewati-kalau-terisi || true
+php artisan direktori:impor-lokal database/direktori/indonetwork.csv \
+    --sumber=indonetwork --lewati-kalau-terisi || true
+
 php artisan storage:link >/dev/null 2>&1 || true
 
 tahap "config:cache"

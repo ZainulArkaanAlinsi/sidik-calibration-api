@@ -1810,6 +1810,16 @@ dan itu bukan hiasan: `certificates.snapshot` bikin alamat salah **tidak bisa di
 Baris jadi data lab HANYA setelah teknisi memilihnya — lahir sebagai `customers` baru dengan
 `sumber`, `dibuat_oleh_user_id`, dan `direktori_ref` berawalan `lokal:`.
 
+**Pemasangan di produksi terpaksa lewat boot, dan sebabnya di luar kendali kode.** Rencana awalnya
+satu perintah manual sekali seumur hidup lewat Render Shell — ternyata **paket gratis Render tidak
+menyediakan shell sama sekali** (*"Shell is not supported for free compute plans"*). Jadi impornya
+disambungkan ke `docker/entrypoint.sh` di belakang `--lewati-kalau-terisi`, yang memeriksa ISI tabel
+sebelum membaca berkas: boot pertama membayar penuh, boot berikutnya cuma dua query `COUNT`.
+Diperiksa isinya, bukan penanda "sudah pernah jalan", supaya database yang direset terisi lagi
+sendiri — tanpa shell, tidak ada jalan lain membetulkannya. Impor yang gagal **tidak menjatuhkan
+boot**: direktori ini fitur kenyamanan, dan menukarnya dengan seluruh server yang dipakai teknisi di
+lokasi adalah pertukaran yang salah arah.
+
 **Catatan kepatuhan, diangkat bukan didiamkan:** data Indonetwork hasil pengambilan 333 halaman
 situs, sementara §10 no. 3 dokumen strategi pelanggan melarang scraping situs direktori. Berkasnya
 sudah ada di tangan pemilik proyek dan pemakaiannya keputusan dia; dicatat di sini supaya kalau

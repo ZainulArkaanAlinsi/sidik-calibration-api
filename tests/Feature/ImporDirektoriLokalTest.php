@@ -159,6 +159,65 @@ class ImporDirektoriLokalTest extends TestCase
         $this->assertSame('PT Pelanggan Asli', Customer::sole()->nama);
     }
 
+    public function test_lewati_kalau_terisi_tidak_membaca_berkas_waktu_sumbernya_sudah_ada(): void
+    {
+        // Dipanggil `docker/entrypoint.sh` tiap container nyala — termasuk tiap
+        // Render membangunkan service yang ketiduran — dan semua yang di
+        // entrypoint jalan SEBELUM server menerima request, di dalam jendela
+        // health check 15 menit yang pernah kehabisan waktu.
+        //
+        // Buktinya dia benar-benar tidak menyentuh berkas: path-nya sengaja
+        // menunjuk ke berkas yang TIDAK ADA. Kalau suatu saat penjagaannya
+        // pindah ke belakang pembacaan berkas, test ini merah dengan
+        // "Berkas tidak ketemu".
+        $this->artisan('direktori:impor-lokal', [
+            'berkas' => $this->csv("ref,nama\njbk-1,PT Maju Jaya\n"),
+            '--sumber' => 'jababeka',
+        ])->assertSuccessful();
+
+        $this->artisan('direktori:impor-lokal', [
+            'berkas' => '/tmp/berkas-ini-tidak-ada-sama-sekali.csv',
+            '--sumber' => 'jababeka',
+            '--lewati-kalau-terisi' => true,
+        ])->assertSuccessful();
+
+        $this->assertSame(1, DirektoriLokal::count());
+    }
+
+    public function test_lewati_kalau_terisi_tetap_mengimpor_waktu_sumbernya_kosong(): void
+    {
+        // Sisi sebaliknya, dan ini yang bikin jalur produksi memulihkan dirinya
+        // sendiri: database yang direset harus terisi lagi sendiri saat boot,
+        // karena paket gratis Render tidak punya shell buat membetulkannya.
+        $this->artisan('direktori:impor-lokal', [
+            'berkas' => $this->csv("ref,nama\njbk-1,PT Maju Jaya\njbk-2,PT Sinar Abadi\n"),
+            '--sumber' => 'jababeka',
+            '--lewati-kalau-terisi' => true,
+        ])->assertSuccessful();
+
+        $this->assertSame(2, DirektoriLokal::count());
+    }
+
+    public function test_lewati_kalau_terisi_dihitung_per_sumber_bukan_seluruh_tabel(): void
+    {
+        // Kalau dihitung seluruh tabel, Jababeka yang sudah masuk duluan bikin
+        // Indonetwork DILEWATI selamanya — dan 9.870 baris tidak pernah lahir,
+        // tanpa satu pun error.
+        $this->artisan('direktori:impor-lokal', [
+            'berkas' => $this->csv("ref,nama\njbk-1,PT Dari Jababeka\n"),
+            '--sumber' => 'jababeka',
+        ])->assertSuccessful();
+
+        $this->artisan('direktori:impor-lokal', [
+            'berkas' => $this->csv("ref,nama\nidn-1,PT Dari Indonetwork\n"),
+            '--sumber' => 'indonetwork',
+            '--lewati-kalau-terisi' => true,
+        ])->assertSuccessful();
+
+        $this->assertSame(2, DirektoriLokal::count());
+        $this->assertTrue(DirektoriLokal::where('sumber', 'indonetwork')->exists());
+    }
+
     public function test_berkas_tidak_ada_gagal_dengan_pesan_bukan_exception(): void
     {
         $this->artisan('direktori:impor-lokal', [

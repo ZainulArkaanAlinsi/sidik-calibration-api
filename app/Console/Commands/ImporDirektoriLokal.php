@@ -36,7 +36,8 @@ class ImporDirektoriLokal extends Command
     protected $signature = 'direktori:impor-lokal
         {berkas : Path CSV (kolom: ref, nama, alamat, kota, provinsi)}
         {--sumber= : Penanda sumber, salah satu dari: '.self::DAFTAR_SUMBER.'}
-        {--uji-coba : Baca dan laporkan tanpa menulis apa pun}';
+        {--uji-coba : Baca dan laporkan tanpa menulis apa pun}
+        {--lewati-kalau-terisi : Keluar diam-diam kalau sumbernya sudah berisi (dipakai entrypoint saat boot)}';
 
     protected $description = 'Muat direktori perusahaan ke tabel rujukan direktori_lokal';
 
@@ -53,6 +54,33 @@ class ImporDirektoriLokal extends Command
             $this->error('--sumber wajib salah satu dari: '.implode(', ', DirektoriLokal::SUMBER).'.');
 
             return self::FAILURE;
+        }
+
+        // Diperiksa SEBELUM berkasnya dibaca, dan urutan itu yang jadi
+        // seluruh gunanya. Dipanggil `docker/entrypoint.sh` tiap container
+        // nyala — termasuk tiap Render membangunkan service yang ketiduran —
+        // dan semua yang di entrypoint jalan SEBELUM server menerima request,
+        // di dalam jendela health check 15 menit yang pernah kehabisan waktu
+        // pada deploy 1 Sep 2026.
+        //
+        // Dengan penjagaan di sini, boot kedua dan seterusnya cuma membayar
+        // SATU query `COUNT`, bukan membaca 1,3 MB CSV lalu menembakkan 22
+        // paket `upsert` ke database yang ada di seberang jaringan.
+        //
+        // Sengaja memeriksa ISI, bukan menyimpan penanda "sudah pernah
+        // jalan": database produksi yang direset (atau dipindah) bikin
+        // penanda berbohong, sementara hitungan baris selalu jujur — dan
+        // jalur ini memulihkan dirinya sendiri tanpa ada yang perlu masuk
+        // shell. Itu penting justru karena paket gratis Render TIDAK
+        // menyediakan shell sama sekali.
+        if ($this->option('lewati-kalau-terisi')) {
+            $terisi = DirektoriLokal::query()->where('sumber', $sumber)->count();
+
+            if ($terisi > 0) {
+                $this->line("Direktori `{$sumber}` sudah berisi {$terisi} baris — impor dilewati.");
+
+                return self::SUCCESS;
+            }
         }
 
         try {
