@@ -7,9 +7,25 @@ dipakai hari ini — lihat `docs/perintah-impor-pelanggan.md`. Yang di bawah ini
 buat itu. Ini hal-hal yang cuma pemilik lab yang boleh memutuskan, dan sampai diputuskan kode
 **tidak menebak**.
 
+**P1 sudah dijawab 2 Sep 2026** (tetap `osm`). Sisa yang menunggu: P2, P3, P4.
+
 ---
 
-## P1 — Direktori luar: tetap `osm`, atau pindah ke `auto` dengan tagihan?
+## ~~P1~~ — Direktori luar: tetap `osm`, atau pindah ke `auto` dengan tagihan?
+
+> **DIJAWAB 2 Sep 2026 — TETAP `osm`.** Keputusan pemilik proyek, menegaskan K16 (nol tagihan),
+> bukan mengubahnya. **Nol perubahan kode**: ketiga tempat yang menentukan sudah `osm` dan
+> diverifikasi hari itu juga — `config/services.php:190` (bawaan `'osm'`), `.env.example:255`, dan
+> `render.yaml:189` yang **memaku** `value: osm` alih-alih `sync: false`.
+>
+> Yang ikut disetujui bersama keputusan ini, supaya tidak dilaporkan sebagai kerusakan nanti:
+> pabrik di kawasan industri yang belum dipetakan sukarelawan **memang tidak akan ketemu**, dan
+> teknisi menutupinya lewat `POST /customers/cepat`. Jalur Google tetap mati total selama
+> `DIREKTORI_PERUSAHAAN_KEY` kosong.
+>
+> Isi §di bawah ini disimpan **apa adanya** sebagai bahan kalau suatu saat keputusannya ditinjau
+> ulang — terutama tiga syarat wajib yang menyertai `auto`.
+
 
 **Keadaan sekarang:** `DIREKTORI_PERUSAHAAN_DRIVER=osm`. Nol tagihan, tapi cakupannya tipis —
 pabrik di kawasan industri yang belum dipetakan sukarelawan memang tidak akan ketemu. Itu
