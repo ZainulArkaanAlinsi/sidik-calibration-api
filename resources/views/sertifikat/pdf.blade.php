@@ -1011,12 +1011,38 @@
              Sertifikat lama (dan alat yang masternya belum diadu ke cetakan)
              jatuh ke perilaku lama: 2 desimal, nol di belakang dibuang. --}}
         @php($dbK = $barisKelompok->first()['desimal_k'] ?? null)
+        {{-- `=` jadi `≈` kalau kelompok ini memuat `k` yang BEDA di presisi yang
+             dicetak.
+
+             Kalimat ini dicetak sekali per kelompok `remark`, memakai `k` baris
+             PERTAMA. Buat Spektro itu benar — tiap kelompoknya memang satu `k`
+             (Holmium 3,18; Didynium 2,36; %T 2,01). Tapi alat yang seluruh
+             barisnya ber-`remark` kosong punya SATU kelompok berisi banyak `k`:
+             di Tachometer & Centrifuge rentangnya 1,95997…1,96879, dan blok
+             terakhir membulat ke 1,97 sementara yang tercetak 1,96.
+
+             Yang diubah cuma satu tanda, dan sengaja: (a) mencetak rentang atau
+             (b) satu kalimat per blok mengubah TATA LETAK dokumen terakreditasi
+             yang sudah terbit. `≈` menghentikan dokumen mengaku presisi yang
+             nggak dia punya tanpa menyentuh satu pun angka maupun susunannya.
+
+             Dihitung dari yang TERCETAK, bukan dari nilai mentahnya: dua `k`
+             yang beda di desimal keempat tapi membulat ke angka yang sama
+             memang bukan ketidakcocokan yang kebaca pelanggan, dan menandainya
+             `≈` cuma bikin tanda itu murah. --}}
+        @php($cetakK = fn ($nilai) => $dbK === null
+            ? \App\Support\Angka::idRingkas((float) $nilai, 2)
+            : \App\Support\Angka::id((float) $nilai, $dbK))
+        @php($kBeda = $barisKelompok
+            ->pluck('faktor_cakupan_k')
+            ->filter(fn ($n) => $n !== null)
+            ->map($cetakK)
+            ->unique()
+            ->count() > 1)
         @if ($k !== null)
             <div class="ket-k">
-                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) =
-                {{ $dbK === null
-                    ? \App\Support\Angka::idRingkas((float) $k, 2)
-                    : \App\Support\Angka::id((float) $k, $dbK) }}
+                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) {{ $kBeda ? '≈' : '=' }}
+                {{ $cetakK($k) }}
             </div>
         @endif
     @empty

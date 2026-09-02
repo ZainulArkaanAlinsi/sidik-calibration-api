@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
+use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
+use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -123,6 +125,35 @@ class WaktuFrekuensiSertifikatTest extends TestCase
         }
     }
 
+    /**
+     * Kalimat faktor cakupan memakai `≈`, bukan `=` — §13.
+     *
+     * Tachometer & Centrifuge seluruh barisnya ber-`remark` kosong, jadi SATU
+     * kelompok memuat `k` 1,95997…1,96879: yang tercetak `1,96` padahal blok
+     * terakhir membulat ke `1,97`. Kalimatnya dulu mengaku presisi yang nggak
+     * dia punya.
+     *
+     * Yang berubah CUMA tandanya. Diadu di sini juga bahwa angkanya tetap
+     * `1,96` dan tata letaknya tidak bergeser — kalau `≈` sampai datang bareng
+     * angka yang berubah, yang terjadi bukan lagi penajaman kalimat tapi
+     * perubahan isi dokumen terakreditasi.
+     */
+    public function test_faktor_cakupan_pakai_kira_kira_kalau_k_nya_beda(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $html = $this->htmlSertifikat('0140-CAL-424');
+
+        // Diadu lewat regex, bukan string mati: Blade menyisipkan baris baru
+        // antara tanda dan angkanya, dan yang dijaga di sini BUNYI kalimatnya —
+        // bukan spasi di HTML-nya.
+        $this->assertMatchesRegularExpression(
+            '/Coverage Factor \( k \) ≈\s*1,96/u', $html,
+            'Satu kelompok memuat k 1,96 dan 1,97, tapi kalimatnya masih mengaku persis.',
+        );
+        $this->assertDoesNotMatchRegularExpression('/Coverage Factor \( k \) =/u', $html);
+    }
+
     /** Baris pertama tiap alat diadu ke sel `SERTIFIKAT` masternya. */
     #[DataProvider('barisPertama')]
     public function test_baris_pertama_cocok_master(
@@ -185,5 +216,19 @@ class WaktuFrekuensiSertifikatTest extends TestCase
         $metode = new ReflectionMethod(CertificateSnapshotBuilder::class, 'hasil');
 
         return $metode->invoke(app(CertificateSnapshotBuilder::class), $sesi);
+    }
+
+    /** HTML sertifikat satu sesi, lewat jalur terbit yang sama dengan produksi. */
+    private function htmlSertifikat(string $nomorSesi): string
+    {
+        $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
+
+        $sertifikat = $sesi->certificate()->first() ?? tap(null, function () use ($sesi) {
+            $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
+                ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+                ->assertOk();
+        }) ?? $sesi->fresh()->certificate()->firstOrFail();
+
+        return view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat))->render();
     }
 }
