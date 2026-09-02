@@ -8,24 +8,42 @@ namespace App\Support;
  * ## Cacat yang bikin ini ada
  *
  * Blade sertifikat menyetel LEBAR gambar saja (`lebar_mm`, diatur admin), lalu
- * menempelkannya `position: absolute; bottom: 0` di dalam kotak setinggi 46px.
- * Tingginya tidak pernah dibatasi, dan kotaknya tidak memotong apa pun — jadi
- * gambar yang rasionya tidak lebar-mendatar meluber KE ATAS, menimpa tabel di
- * atasnya.
+ * menempelkannya `position: absolute; bottom: 0` di dalam kotaknya. Tingginya
+ * tidak pernah dibatasi, dan kotaknya tidak memotong apa pun — jadi gambar yang
+ * rasionya tidak lebar-mendatar meluber KE ATAS, menimpa tabel di atasnya.
  *
- * Angkanya bukan selisih tipis. Kotaknya cuma 12,17 mm (46px @96dpi):
+ * Angkanya bukan selisih tipis. Waktu kotaknya masih 46px (12,17 mm):
  *
  *   800x600  di lebar 35 mm -> tinggi 26,2 mm  -> luber 14,1 mm
  *   800x800  di lebar 35 mm -> tinggi 35,0 mm  -> luber 22,8 mm
  *   600x800  di lebar 35 mm -> tinggi 46,7 mm  -> luber 34,5 mm
  *
- * Di mode padat kotaknya cuma 24px (6,35 mm), jadi luapannya lebih parah lagi —
- * dan mode padat itu yang dipakai sertifikat Timbangan serta semua sertifikat
- * dengan lebih dari 12 baris hasil.
- *
  * Docblock di blade sudah menyatakan niatnya sejak awal: *"Tingginya DIPATOK —
  * BUKAN ngikut gambar."* Yang dipatok ternyata cuma KOTAKNYA, bukan gambarnya,
  * jadi niat itu tidak pernah benar-benar ditegakkan.
+ *
+ * ## Kenapa kotaknya sendiri ikut digedein (1 Sep 2026)
+ *
+ * Menjepitnya saja malah melahirkan cacat kedua, dan kali ini kelihatan:
+ * sertifikat CAL-2026-08-0003 mencetak tanda tangan **13,33 x 12,17 mm** di
+ * bawah garis tanda tangan yang **71,3 mm** — 19% lebar garisnya. Bukan lagi
+ * merusak tabel, tapi jelas bukan tanda tangan dokumen resmi.
+ *
+ * Sebabnya kotak 46px itu terlalu pendek buat tanda tangan mana pun yang bukan
+ * lebar-mendatar. Tanda tangan aslinya 2248x2052 px (rasio 0,91 — ada ekor
+ * turun panjang, dan mengkropnya malah bikin rasionya makin tinggi: kotak
+ * tintanya 1475x1746). Di lebar 35 mm dia butuh 31,9 mm, jadi yang dikorbankan
+ * lebarnya sampai tinggal 13,3 mm.
+ *
+ * Batas atas kotaknya DIUKUR, bukan ditebak: seluruh 24 sesi bawaan diterbitkan
+ * lalu dirender ulang sambil tinggi kotaknya disapu 46 -> 136px. Yang paling
+ * mepet **Conductivity Meter** — masih muat mode normal di 86px, kedorong ke
+ * mode padat di 88px. Yang dipakai 80px, menyisakan margin ~1,6 mm buat catatan
+ * yang lebih panjang dari sesi contoh.
+ *
+ * Mode padat disapu bareng dan NGGAK pernah meluap sampai 71px, jadi 44px di
+ * sana masih jauh dari batas. Itu penting karena padat nggak punya jaring
+ * pengaman lagi di bawahnya (lihat `App\Services\SertifikatSatuHalaman`).
  *
  * ## Kenapa dihitung di PHP, bukan `max-height` di CSS
  *
@@ -37,7 +55,7 @@ namespace App\Support;
 final class UkuranTandaTangan
 {
     /**
-     * Tinggi kotak tanda tangan, dalam piksel CSS.
+     * Tinggi kotak tanda tangan, dalam piksel CSS. 80px = 21,17 mm @96dpi.
      *
      * HARUS sama dengan `.ttd .ruang-ttd` di resources/views/sertifikat/pdf.blade.php.
      *
@@ -45,11 +63,16 @@ final class UkuranTandaTangan
      * supaya CSS-nya kebaca apa adanya. Yang menjaga keduanya tidak melenceng
      * `UkuranTandaTanganTest::test_konstanta_cocok_dengan_css_blade()`: begitu
      * salah satunya diubah sendirian, test itu merah dengan alasan yang kebaca.
+     *
+     * Jangan dikecilkan tanpa mengukur ulang. Angka ini yang menentukan seberapa
+     * besar tanda tangan tercetak — 46px bikin dia cuma 19% lebar garisnya — dan
+     * batas atasnya dipatok sertifikat Conductivity Meter, yang kedorong ke mode
+     * padat begitu kotaknya lewat 86px.
      */
-    public const TINGGI_KOTAK_PX = 46;
+    public const TINGGI_KOTAK_PX = 80;
 
-    /** Versi mode padat — `body.padat .ttd .ruang-ttd`. */
-    public const TINGGI_KOTAK_PADAT_PX = 24;
+    /** Versi mode padat — `body.padat .ttd .ruang-ttd`. 44px = 11,64 mm. */
+    public const TINGGI_KOTAK_PADAT_PX = 44;
 
     /** dompdf memetakan 1 px CSS pada 96 dpi. */
     private const DPI = 96;

@@ -188,6 +188,41 @@ class UkuranTandaTanganTest extends TestCase
     }
 
     /**
+     * Tanda tangan asli PT Sidik wajib tercetak SEUKURAN TANDA TANGAN.
+     *
+     * Penjepit tinggi yang dipasang buat menahan luapan malah melahirkan cacat
+     * kebalikannya, dan cacat itu sampai ke pelanggan: sertifikat
+     * CAL-2026-08-0003 mencetak tanda tangan 13,33 mm di bawah garis tanda
+     * tangan 71,3 mm — 19% lebar garisnya. Nggak ada yang error; PDF-nya cuma
+     * kelihatan salah.
+     *
+     * Sebabnya kotaknya (waktu itu 46px = 12,17 mm) terlalu pendek buat tanda
+     * tangan yang bukan lebar-mendatar. Yang asli 2248x2052 (rasio 0,91, ada
+     * ekor turun panjang) butuh 31,9 mm di lebar setelan 35 mm, jadi lebarnya
+     * yang dikorbankan.
+     *
+     * Test lain di berkas ini menjaga batas ATAS — gambar nggak boleh keluar
+     * kotak. Yang ini menjaga batas BAWAH, dan tanpa dia nggak ada apa pun yang
+     * menahan kotaknya dikecilkan lagi: semua penjaga lain justru makin hijau
+     * makin kecil kotaknya.
+     *
+     * Ambang 20 mm bukan angka cantik: itu di bawah 23,19 mm yang keluar
+     * sekarang, tapi di atas 13,33 mm yang bikin sertifikatnya ditolak.
+     */
+    public function test_tanda_tangan_asli_nggak_tercetak_kekecilan(): void
+    {
+        // Dimensi persis berkas TTD PT Sidik, dibaca dari PDF terbitannya.
+        $hasil = UkuranTandaTangan::pas($this->png(2248, 2052), 35.0);
+
+        $this->assertGreaterThan(
+            20.0,
+            $hasil['lebar_mm'],
+            'Tanda tangan tercetak kekecilan lagi. Tersangkanya TINGGI_KOTAK_PX yang dikecilkan '
+            .'— dia yang jadi plafon ukuran gambar, bukan cuma jarak kosong.',
+        );
+    }
+
+    /**
      * Konstanta di PHP dan angka di CSS blade wajib sama.
      *
      * Blade sengaja menulis angkanya literal biar CSS-nya kebaca apa adanya,

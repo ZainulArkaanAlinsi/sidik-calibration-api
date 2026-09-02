@@ -172,7 +172,7 @@
         body.padat table.ttd td { font-size: 9.5px; }
         body.padat table.ttd td.qr { width: 78px; }
         body.padat table.ttd td.qr img { width: 66px; height: 66px; }
-        body.padat .ttd .ruang-ttd { height: 24px; }
+        body.padat .ttd .ruang-ttd { height: 44px; }
         body.padat .ttd td { padding-top: 4px; }
         body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
         body.padat .kop-gambar { margin-bottom: 5px; }
@@ -196,20 +196,39 @@
         .ttd .garis { border-top: 1px solid #333; padding-top: 3px; }
 
         /*
-          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px) — BUKAN ngikut
-          gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama jadi
-          beda tata letak cuma gara-gara yang satu diunggahin gambar TTD, dan
-          itu nggak boleh buat dokumen berformat baku.
+          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px -> 80px) — BUKAN
+          ngikut gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama
+          jadi beda tata letak cuma gara-gara yang satu diunggahin gambar TTD,
+          dan itu nggak boleh buat dokumen berformat baku.
 
-          SEMUA angka di blok cetak ini (skala huruf, padding, jarak TTD) diukur
-          ke KASUS TERBERAT: sertifikat pH 3 baris hasil + 3 standar. Percobaan
-          pertama naikin huruf ke 12px dan jarak TTD ke 46px — turbidimeter yang
-          cuma 2 baris tetap muat, tapi pH-nya jadi DUA HALAMAN. Sertifikat ini
-          wajib satu halaman ('Page 1 of 1' dicetak di headernya), jadi kalau
-          ada yang mau ngegedein huruf lagi: ukur ulang pakai sertifikat 3 baris,
-          bukan yang 2.
+          Angkanya HARUS sama dengan App\Support\UkuranTandaTangan — dia yang
+          ngitung ukuran cetak gambarnya, dan dijaga
+          `UkuranTandaTanganTest::test_konstanta_cocok_dengan_css_blade()`.
+
+          ## Kenapa 46px naik ke 80px
+
+          Kotak ini bukan cuma jarak kosong: dia PLAFON ukuran gambar TTD, karena
+          gambar yang lebih tinggi dari kotaknya dikecilkan sampai muat. Di 46px
+          (12,17 mm) tanda tangan PT Sidik — 2248x2052, ada ekor turun panjang —
+          tercetak 13,33 mm di bawah garis 71,3 mm. 19% lebar garisnya.
+
+          ## Batasnya diukur, bukan ditebak
+
+          Catatan lama di sini bilang kasus terberatnya sertifikat pH 3 baris.
+          Itu sudah nggak benar lagi. Seluruh 24 sesi bawaan diterbitkan lalu
+          dirender sambil kotak ini disapu 46 -> 136px: pH aman sampai 106px,
+          yang paling mepet **Conductivity Meter** — masih muat mode normal di
+          86px, kedorong ke mode padat di 88px. 80px menyisakan margin ~1,6 mm.
+
+          Yang bikin batas itu halus: kedorong ke mode padat BUKAN kegagalan yang
+          kelihatan. `App\Services\SertifikatSatuHalaman` menyelamatkannya, jadi
+          lembarnya tetap satu halaman — cuma hurufnya mengecil, dan sertifikat
+          alat itu jadi beda bentuk dari alat lain di lab yang sama.
+
+          Jadi kalau ada yang mau ngegedein huruf atau kotak ini lagi: ukur ulang
+          pakai Conductivity Meter, bukan pH.
         */
-        .ttd .ruang-ttd { height: 46px; position: relative; }
+        .ttd .ruang-ttd { height: 80px; position: relative; }
         .ttd .ruang-ttd img { position: absolute; bottom: 0; }
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
