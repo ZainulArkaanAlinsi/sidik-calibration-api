@@ -373,6 +373,19 @@ Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
 Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
 tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).
 
+> **Kalau `arsip.awet` tiba-tiba balik `false` sesudah pernah `true`, periksa `render.yaml` duluan.**
+>
+> 1 Sep 2026 ini benar-benar terjadi. Saklarnya digeser ke `s3` di dashboard dan berhasil, lalu
+> deploy berikutnya menyinkronkan blueprint — dan `ARSIP_DRIVER` yang waktu itu ditulis
+> `value: local` **menimpa balik** setelan dashboard-nya. Produksi diam-diam kembali menulis ke
+> disk container yang kehapus tiap deploy, tanpa satu pun error.
+>
+> Kuncinya beda antara `value:` dan `sync: false`. Yang `value:` **dikelola blueprint** dan
+> ditimpa tiap sync; yang `sync: false` dikelola manual dan selamat. Itu sebabnya keempat `AWS_*`
+> bertahan sementara `ARSIP_DRIVER` tidak. Sekarang `ARSIP_DRIVER` sudah `sync: false`, tapi
+> aturan umumnya berlaku buat setelan lain: **apa pun yang diputuskan operator, bukan kode,
+> jangan dipatok `value:` di blueprint.**
+
 ## Deploy Render timeout — apa yang dibaca duluan
 
 Render memberi **jendela 15 menit** dari `==> Deploying...` sampai health check `/up` harus
