@@ -220,6 +220,27 @@ services:
       - key: SEED_ON_BOOT
         value: "false"
 
+      # Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit, sekali di
+      # boot berikutnya. Nyalain sesudah deploy yang MENGUBAH BENTUK SNAPSHOT
+      # (mis. U95 per titik, urutan tabel ketertelusuran), baca hasilnya di
+      # deploy log, terus balikin ke "false".
+      #
+      # Ini satu-satunya cara menjalankannya di produksi: paket gratis Render
+      # nggak punya shell sama sekali. Tombol "Cetak ulang PDF" di panel admin
+      # BUKAN penggantinya — dia sengaja nggak menyentuh snapshot, jadi
+      # perbaikan yang hidup di dalam snapshot nggak bakal muncul lewat situ.
+      #
+      # `sync: false`, bukan `value: "false"`, dan alasannya sama dengan
+      # ARSIP_DRIVER di atas: ini KEPUTUSAN OPERASIONAL yang digeser lewat
+      # dashboard. Kalau blueprint yang menentukan, deploy berikutnya bakal
+      # menyinkronkan nilainya dan mematikan saklar yang baru saja dinyalakan —
+      # persis kejadian 1 Sep 2026 waktu ARSIP_DRIVER ketimpa balik ke `local`.
+      #
+      # Dikosongin waktu impor blueprint tetap aman: yang dibaca
+      # docker/entrypoint.sh cuma persamaan dengan string "true".
+      - key: BANGUN_ULANG_ON_BOOT
+        sync: false
+
       # Sandi awal buat akun yang dibentuk seeder di atas. Dikosongin juga
       # aman — seeder bikin sandi acak dan nyetak sekali ke log deploy buat
       # disalin. Yang nggak boleh cuma satu: kepakainya `rahasia123`, karena
