@@ -105,7 +105,23 @@ class GenerateCertificate implements ShouldQueue
             // arsitektur.
             CalibrationSession::whereKey($sesi->id)->lockForUpdate()->first();
 
-            if ($sesi->certificate()->exists()) {
+            // Syaratnya `STATUS_TERBIT`, BUKAN "ada barisnya".
+            //
+            // Sempat saya tulis `certificate()->exists()` waktu menambal
+            // balapan ini, dan itu kebablasan: baris sertifikat yang `gagal`
+            // juga "ada", jadi tombol "Terbitkan ulang" milik admin —
+            // satu-satunya jalan keluar dari sertifikat yang gagal dirender —
+            // ikut mati. Ketahuan `CertificateApiTest::test_admin_retry_
+            // sertifikat_gagal_nerbitin_ulang_langsung`, bukan oleh saya.
+            //
+            // Yang menutup balapannya lock di atas, bukan syarat ini. Dua
+            // permintaan berbarengan diserialkan di sana; yang kedua lalu
+            // sampai ke `updateOrCreate` di bawah, menemukan barisnya sudah
+            // ada, dan MENGUBAHnya — bukan menyisipkan baris kedua. Itu yang
+            // dulu tidak terjadi: tanpa lock, dua transaksi sama-sama tidak
+            // melihat baris apa pun di snapshot masing-masing dan sama-sama
+            // menyisipkan.
+            if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
                 return null;
             }
 

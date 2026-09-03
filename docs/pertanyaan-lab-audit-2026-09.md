@@ -1,8 +1,8 @@
 # Pertanyaan lab dari audit bug 2 Sep 2026
 
-Dua hal yang **tidak bisa diputuskan dari kode**. Keduanya menyangkut angka atau
-tulisan di dokumen terakreditasi, dan menebaknya berarti menulis sesuatu ke
-sertifikat pelanggan berdasarkan tebakan.
+Tiga hal yang **tidak bisa diputuskan dari kode**. Dua yang pertama menyangkut angka
+atau tulisan di dokumen terakreditasi, dan menebaknya berarti menulis sesuatu ke
+sertifikat pelanggan berdasarkan tebakan. Yang ketiga soal kapasitas server.
 
 Status: **menunggu jawaban.** Selama belum dijawab, kodenya berperilaku seperti
 yang ditulis di bawah — dan perilaku itu dipilih supaya yang salah kelihatan,
@@ -73,6 +73,57 @@ formatnya salah lebih buruk daripada tidak mencetak.
 
 Yang perlu dari lab: satu contoh sertifikat Gas Detector yang sudah terbit, atau
 baris Environmental Condition dari master-nya.
+
+---
+
+## T3 — Realtime: plan Render-nya sanggup menahan satu proses WebSocket lagi?
+
+**Ini pertanyaan infrastruktur, bukan pertanyaan lab** — ditaruh di sini karena
+tempatnya sama: yang menahannya bukan kode.
+
+**Konteks.** `laravel/reverb` terpasang di `composer.json:14`, tapi rollout-nya
+berhenti di tengah — dependency masuk, konfigurasi produksi dan proses server
+tidak menyusul:
+
+```
+grep -c "REVERB\|BROADCAST" render.yaml        → 0   (sebelum audit)
+grep -c "reverb"           docker/entrypoint.sh → 0
+config/broadcasting.php:17   'default' => env('BROADCAST_CONNECTION', 'log')
+```
+
+Akibatnya fitur "realtime sync mobile ↔ desktop" **tidak berfungsi di deployment
+Render**, dan degradasinya senyap: tidak ada error, pengguna cuma tidak pernah
+melihat pembaruan sampai menarik data manual.
+
+**Yang sudah dilakukan, dan sengaja berhenti di situ.** Nilainya tidak diubah —
+`BROADCAST_CONNECTION=log` sekarang ditulis **eksplisit** di `render.yaml`
+dengan alasannya, jadi keadaannya keputusan yang kebaca, bukan bawaan yang
+kebetulan. Dan statusnya bisa diperiksa dari luar:
+
+```bash
+curl -s https://<api>/api/health | jq .realtime
+# → { "driver": "log", "nyala": false, "paket_terpasang": true }
+```
+
+Klaim usang di `docs/realtime-sync.md` ("paketnya belum terpasang di repo ini")
+ikut dibetulkan.
+
+**Yang ditanyakan.** Plan Render yang dipakai sanggup menahan **satu proses
+WebSocket panjang tambahan** di container yang sama — di samping `queue:work`
+dan `schedule:work` yang sudah jalan?
+
+- **Kalau IYA** — tiga hal harus jalan bareng, dan satu saja kurang berarti
+  gagalnya senyap lagi:
+  1. `BROADCAST_CONNECTION=reverb` di `render.yaml`;
+  2. `REVERB_APP_ID` / `REVERB_APP_KEY` / `REVERB_APP_SECRET` (`sync: false`,
+     diisi lewat dashboard);
+  3. `php artisan reverb:start` ikut di-loop `docker/entrypoint.sh`.
+- **Kalau TIDAK** — pilihannya layanan terkelola (`pusher`; catatan:
+  `pusher/pusher-php-server` **belum** terpasang, jadi itu satu langkah lagi),
+  atau realtime-nya memang ditunda dan `docs/realtime-sync.md` diberi tanggal
+  keputusannya.
+
+Yang perlu: nama plan Render-nya, atau satu kalimat "boleh/tidak nambah proses".
 
 ---
 

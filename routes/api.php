@@ -37,6 +37,7 @@ use App\Services\Direktori\PilihanDriver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use Laravel\Reverb\ReverbServiceProvider;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,6 +145,48 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
         'seed_saat_boot' => config('deploy.seed_saat_boot'),
     ],
+
+    // Realtime sync — pertanyaan yang selama ini nggak bisa dijawab dari luar
+    // SAMA SEKALI, dan degradasinya senyap.
+    //
+    // `laravel/reverb` terpasang di `composer.json`, tapi `render.yaml` nggak
+    // punya satu pun `BROADCAST_CONNECTION` atau `REVERB_*`. Jadi produksi
+    // jatuh ke bawaan `log`: event broadcast ditulis ke berkas log dan nggak
+    // pernah nyampe ke klien. Nggak ada error, nggak ada yang gagal — pengguna
+    // cuma nggak pernah lihat pembaruan sampai dia menarik data manual.
+    //
+    // Itu bentuk kegagalan yang paling mahal dilacak: fiturnya ada di kode,
+    // ada di dokumen, dan "kelihatan" terpasang. Satu-satunya cara memeriksanya
+    // sebelum ini adalah masuk ke dashboard Render dan membaca env var-nya.
+    //
+    // Batasnya SAMA dengan dua blok di atas: yang dilaporkan status, bukan
+    // nilai. Nama driver itu status; `REVERB_APP_SECRET` nggak pernah ikut,
+    // nggak juga panjangnya. Nol request ke mana pun.
+    //
+    // Ini TIDAK menyalakan realtime-nya. Menyalakannya butuh jawaban
+    // infrastruktur yang bukan urusan kode — apakah plan Render yang dipakai
+    // sanggup menahan satu proses WebSocket panjang lagi di container yang
+    // sama. Lihat `docs/pertanyaan-lab-audit-2026-09.md` T3. Yang dibeli blok
+    // ini: keadaannya berhenti tak terlihat.
+    'realtime' => (function (): array {
+        $driver = (string) config('broadcasting.default');
+
+        return [
+            // Driver EFEKTIF, bukan isi `.env` apa adanya — alasan yang sama
+            // dengan `direktori_perusahaan.driver` di atas.
+            'driver' => $driver,
+
+            // `log` dan `null` dua-duanya berarti "nggak nyampe klien". Yang
+            // pertama nulis ke berkas log, yang kedua buang diam-diam.
+            'nyala' => ! in_array($driver, ['log', 'null'], true),
+
+            // Dipisah dari `nyala` karena dua-duanya bisa salah sendiri-sendiri:
+            // driver `reverb` tanpa paketnya bikin `/api/broadcasting/auth`
+            // gagal dengan `Class not found`, dan paket terpasang tanpa driver
+            // itu keadaan hari ini.
+            'paket_terpasang' => class_exists(ReverbServiceProvider::class),
+        ];
+    })(),
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.

@@ -248,7 +248,44 @@ class ApproveDuaKaliSatuSertifikatTest extends TestCase
     }
 
     /**
-     * JANGAN kebablasan #2: sesi yang statusnya BUKAN `menunggu_approval` tetap
+     * JANGAN kebablasan #2: sertifikat yang GAGAL tetap bisa diterbitkan ulang.
+     *
+     * Ini yang penjagaan saya sendiri sempat rusak. Syarat balapannya sempat
+     * saya tulis `certificate()->exists()`, dan baris sertifikat yang `gagal`
+     * juga "ada" — jadi tombol "Terbitkan ulang" milik admin, satu-satunya
+     * jalan keluar dari sertifikat yang gagal dirender, ikut mati.
+     *
+     * Yang menutup balapannya lock di baris sesi, bukan syarat itu. Jadi
+     * syaratnya kembali ke `STATUS_TERBIT` dan retry-nya hidup lagi.
+     *
+     * Ketahuan `CertificateApiTest::test_admin_retry_sertifikat_gagal_
+     * nerbitin_ulang_langsung` waktu suite penuh dijalankan — bukan oleh
+     * berkas ini. Test ini yang menutup lubang itu supaya tidak perlu suite
+     * penuh lagi buat menemukannya.
+     */
+    public function test_sertifikat_gagal_tetap_bisa_diterbitkan_ulang(): void
+    {
+        $this->setujui()->assertSuccessful();
+
+        $sertifikat = Certificate::where('calibration_session_id', $this->sesi->id)->firstOrFail();
+        $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
+
+        app()->call([new GenerateCertificate($this->sesi->id, $this->admin->id, null), 'handle']);
+
+        $this->assertSame(
+            Certificate::STATUS_TERBIT,
+            $sertifikat->fresh()->status,
+            'Sertifikat yang gagal nggak bisa diterbitkan ulang — penjagaan balapannya kebablasan.'
+        );
+        $this->assertSame(
+            1,
+            Certificate::where('calibration_session_id', $this->sesi->id)->count(),
+            'Terbit ulang bikin baris kedua, bukan mengubah yang ada.'
+        );
+    }
+
+    /**
+     * JANGAN kebablasan #3: sesi yang statusnya BUKAN `menunggu_approval` tetap
      * ditolak dengan pesan yang lama (422), bukan tertelan jadi 409.
      *
      * Dua kondisi ini beda artinya buat admin: "belum siap disetujui" lawan

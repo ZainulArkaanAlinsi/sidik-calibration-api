@@ -58,6 +58,33 @@ services:
       - key: APP_KEY
         sync: false
 
+      # Realtime sync MATI di produksi, dan itu ditulis EKSPLISIT di sini.
+      #
+      # `laravel/reverb` terpasang di composer.json, tapi blueprint ini nggak
+      # pernah punya `BROADCAST_CONNECTION` maupun `REVERB_*` — jadi produksi
+      # jatuh ke bawaan `log`: event broadcast ditulis ke berkas log dan nggak
+      # pernah nyampe ke klien. Nggak ada error; pengguna cuma nggak pernah
+      # lihat pembaruan sampai dia menarik data manual.
+      #
+      # Nilainya nggak berubah dari yang selama ini berlaku. Yang berubah:
+      # keadaannya sekarang KEPUTUSAN yang kebaca waktu blueprint ini dibuka,
+      # bukan bawaan yang kebetulan. Statusnya juga kelihatan dari luar lewat
+      # `GET /api/health` -> `realtime`.
+      #
+      # Buat menyalakannya, TIGA hal harus jalan bareng — satu saja kurang,
+      # gagalnya senyap lagi:
+      #   1. `BROADCAST_CONNECTION=reverb` di sini;
+      #   2. `REVERB_APP_ID` / `REVERB_APP_KEY` / `REVERB_APP_SECRET`
+      #      (`sync: false`, diisi lewat dashboard);
+      #   3. `php artisan reverb:start` dijalanin di container — `entrypoint.sh`
+      #      sekarang cuma nge-loop `queue:work` & `schedule:work`.
+      #
+      # Yang belum dipastikan dan BUKAN urusan kode: apakah plan Render yang
+      # dipakai sanggup menahan satu proses WebSocket panjang lagi di container
+      # yang sama. Lihat docs/pertanyaan-lab-audit-2026-09.md T3.
+      - key: BROADCAST_CONNECTION
+        value: log
+
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
