@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Organization;
 use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,6 +37,69 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         return Certificate::where('status', Certificate::STATUS_TERBIT)
             ->whereHas('session', fn ($q) => $q->where('nomor_sesi', '2405.13.A'))
             ->firstOrFail();
+    }
+
+    /**
+     * Sertifikat yang penandatangannya sudah ganti orang DILEWATI, bukan ditimpa.
+     *
+     * Temuan review 3 Sep 2026. `CertificateSnapshotBuilder::footer()` mengambil
+     * nama penandatangan dari setelan organisasi YANG BERLAKU SEKARANG, jadi
+     * tanpa penjaga ini sapuan massal diam-diam mengganti nama di sertifikat
+     * yang sudah terbit — dokumen menyatakan seseorang menandatangani sesuatu
+     * yang tidak pernah dia tandatangani, dan nol error muncul.
+     *
+     * Tombol "Cetak ulang PDF" di panel sudah menolak kasus ini; perintah
+     * inilah yang dipakai buat sapuan massal, jadi justru di sini kerusakannya
+     * paling luas.
+     */
+    public function test_sertifikat_yang_penandatangannya_ganti_dilewati(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Bekukan nama lama ke snapshot-nya, lalu ganti setelan organisasinya —
+        // persis keadaan waktu Technical Manager berganti orang.
+        $snapshot = $sertifikat->snapshot;
+        $snapshot['footer']['penandatangan'] = 'Budi Penandatangan Lama';
+        $sertifikat->snapshot = $snapshot;
+        $sertifikat->save();
+
+        $organisasi = $sertifikat->session->organization;
+        $organisasi->settings = [
+            ...($organisasi->settings ?? []),
+            Organization::KEY_PENANDATANGAN_NAMA => 'Alex Penandatangan Baru',
+        ];
+        $organisasi->save();
+
+        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+            ->expectsOutputToContain('penandatangannya sudah ganti')
+            ->assertSuccessful();
+
+        // Yang beku TETAP beku — nama lamanya nggak boleh ketimpa.
+        $this->assertSame(
+            'Budi Penandatangan Lama',
+            $sertifikat->fresh()->snapshot['footer']['penandatangan'],
+            'Nama penandatangan di sertifikat terbit ketimpa setelan yang berlaku sekarang.',
+        );
+    }
+
+    /** Nama yang SAMA tetap jalan — itu justru kasus yang paling sering. */
+    public function test_penandatangan_yang_sama_tetap_dibangun_ulang(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $beku = $sertifikat->snapshot['footer']['penandatangan'] ?? null;
+        $this->assertNotNull($beku, 'Fixture-nya nggak punya nama penandatangan, penjaganya nggak keuji.');
+
+        $organisasi = $sertifikat->session->organization;
+        $organisasi->settings = [
+            ...($organisasi->settings ?? []),
+            Organization::KEY_PENANDATANGAN_NAMA => $beku,
+        ];
+        $organisasi->save();
+
+        $this->artisan('sertifikat:bangun-ulang', ['--render-ulang-pdf' => true])
+            ->doesntExpectOutputToContain('penandatangannya sudah ganti')
+            ->assertSuccessful();
     }
 
     public function test_nomor_dan_qr_token_nggak_ikut_berubah(): void

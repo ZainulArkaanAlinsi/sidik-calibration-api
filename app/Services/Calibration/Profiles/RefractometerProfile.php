@@ -600,7 +600,7 @@ class RefractometerProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -839,5 +839,32 @@ class RefractometerProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return 0;
+    }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,000527 / 0,00053 nD.
+     *
+     * JUJURNYA: di lima desimal cetaknya dua-duanya jadi 0,00053, jadi buat sesi
+     * contoh ini kolomnya nggak menambah informasi yang kelihatan. Tetap
+     * dinyalakan karena yang menentukan sifat ALATNYA — U95-nya memang lahir
+     * per titik, dan sesi lain dengan rentang indeks bias yang lebih lebar
+     * bakal memisah. Menyetelnya per sesi malah bikin bentuk sertifikat alat
+     * yang sama berubah-ubah tanpa alasan yang kebaca pelanggan.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 }

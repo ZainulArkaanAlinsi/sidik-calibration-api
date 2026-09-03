@@ -169,4 +169,27 @@ class PhMeterProfile extends CalibrationProfile
     {
         return null;
     }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,023 / 0,021 / 0,031 pH.
+     *
+     * Di dua desimal cetaknya jadi 0,02 / 0,02 / 0,03 — titik ketiga hilang
+     * kalau diringkas.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
+    }
 }

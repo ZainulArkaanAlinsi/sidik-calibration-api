@@ -1842,6 +1842,64 @@ Jangan ditanyakan ulang.
 | **S2** | Pakai tabel `worksheet_scans`/`worksheet_scan_cells` yang sudah ada. **Tidak** membuat `ocr_scans` baru | pemilik proyek |
 | **S3** | **SEMUA lembar bisa dipindai** (25 Agt 2026) — bukan cuma Enclosure, bukan cuma yang kimia. Kesembilan berkas geometri yang kurang sudah dibuat, jadi **17/17 punya template** | pemilik proyek |
 
+## Permintaan 16 — U95 per titik di sertifikat instrumen analitik
+
+Dari pemilik lab (Pak Rohman) lewat pemilik proyek, 3 September 2026: di
+sertifikat **instrumen analitik**, nilai Uncertainty harus muncul di **tiap titik
+pengukuran**, bukan satu angka untuk seluruh tabel.
+
+Pertanyaan yang menyertainya — "cuma di analitik saja atau ada di yang lain
+juga?" — dijawab dengan **mengukur**, bukan menebak: seluruh 24 sertifikat
+bawaan disapu, dibandingkan bentuk cetaknya (`u95_per_titik`) dengan apakah U95
+memang berbeda antar titik dalam satu kelompok cetak.
+
+### Yang ditemukan
+
+Empat alat analitik kehilangan informasi — U95-nya beda tiap titik, tapi
+tercetak satu angka:
+
+| alat | U95 tiap titik | akibat |
+|---|---|---|
+| Turbidimeter | 0,041 / 3,1 / 22 NTU | rentang **537×** diringkas jadi satu angka |
+| Conductivity Meter | 0,499 / 8,109 / 1,7 µS/cm | selisih 16× |
+| pH Meter | 0,023 / 0,021 / 0,031 pH | titik ketiga (0,03) hilang |
+| Refractometer | 0,000527 / 0,00053 nD | beda di bawah presisi cetak |
+
+Yang **tidak** perlu diubah, dan alasannya diukur bukan diasumsikan:
+
+- **Autoclave, DO Meter, Chlorine Meter, Spectrophotometer** — analitik, tapi
+  U95-nya memang sama di dalam tiap kelompok cetaknya. Spectrophotometer
+  sempat kelihatan bermasalah (3 nilai beda dari 24 titik) sampai
+  pengelompokannya diperiksa: ketiganya jatuh di tiga blok `remark` yang
+  berbeda, dan masing-masing sudah mencetak U95-nya sendiri.
+- **Gas Detector & Viscometer** — analitik, sudah per titik sejak awal.
+- **Massa, Waktu-Frekuensi, Enclosure** — sudah per titik.
+
+### Jawaban untuk "apa ada di yang lain juga"
+
+**Ada satu, dan bukan soal U95.** Thermohygrometer (kelompok
+`suhu-dan-kelembapan`) mencetak lima baris **kelembaban** di bawah kepala kolom
+**°C**, dan U95 RH-nya (4,8) tidak muncul sama sekali. Itu lebih berat daripada
+U95 yang diringkas, dan **sengaja tidak ikut diperbaiki di sini** — bentuk
+dokumen terkendali itu keputusan pemilik lab. Rinciannya beserta tiga pertanyaan
+bernomor: `docs/pertanyaan-lab-thermohygro-satuan.md`.
+
+### Status
+
+**BERES di server** (3 Sep 2026) — `u95PerTitik()` dinyalakan di keempat profil,
+dijaga `U95PerTitikInstrumenAnalitikTest` yang mengadu tiap nilai U95 per titik
+ke HTML sertifikat yang dirender (bukan sekadar memeriksa flag-nya menyala).
+Faktor cakupan sengaja tidak ikut dikunci: `k` keempat alat ini lahir per titik,
+jadi judul `k=2` bakal jadi pernyataan yang salah — yang tercetak `U95% (±)`,
+preseden Gas Detector.
+
+Sertifikat yang sudah terbit membekukan bentuk cetaknya di
+`snapshot['u95_per_titik']`, jadi tidak berubah sendiri. Keputusan pemilik
+proyek 3 Sep 2026: **dibangun ulang semuanya** lewat `sertifikat:bangun-ulang
+--render-ulang-pdf`. Peringatan yang menyertainya ada di §Jebakan.
+
+---
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
@@ -1950,6 +2008,17 @@ Supaya tidak dibangun ulang:
 - Baris CMC TIDS **sudah ter-seed**: 3 rentang (0,86 / 1,4 / 3,1 °C).
 
 ### Jebakan yang sudah terbukti — jangan diulang
+
+- **`sertifikat:bangun-ulang` TIDAK punya penjaga penandatangan.** Tombol
+  "Cetak ulang PDF" di panel menolak sertifikat yang penandatangan bekunya beda
+  dari yang berlaku sekarang (lihat `CetakUlangSertifikat`); perintah artisan-nya
+  tidak. Lebih jauh: dia menyusun ulang snapshot, dan `footer.penandatangan`
+  diambil dari **setelan organisasi yang berlaku saat itu**
+  (`CertificateSnapshotBuilder` baris 446). Jadi sertifikat yang dulu
+  ditandatangani orang lain akan diam-diam berganti nama jadi penandatangan
+  sekarang — dokumen menyatakan seseorang menandatangani sesuatu yang tidak
+  pernah dia tandatangani, dan nol error muncul. Periksa dulu sebelum
+  menjalankannya di server.
 
 - **Mengeluarkan field dari `fieldAdmin()` ikut menghapusnya dari daftar yang DISIMPAN.**
   `$opsional` di `atributDariRequest()` dibuka dengan `...fieldAdmin()`, jadi field yang
