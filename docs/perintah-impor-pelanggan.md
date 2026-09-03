@@ -66,6 +66,46 @@ Yang tidak perlu dipikirkan, karena sudah ditangani sendiri:
 
 ## 4. Jalankan
 
+### 4.0 Pastikan dulu database mana yang kena — ini bukan formalitas
+
+Server Render paket gratis **tidak punya Shell**, jadi perintah ini dijalankan dari laptop. Dan
+`.env` laptop biasanya menunjuk MySQL laptop, bukan database yang dipakai teknisi.
+
+Kalau itu yang terjadi, impornya **tetap berhasil**: laporannya hijau, "142 pelanggan masuk",
+tidak ada satu pun pesan error — tapi barisnya mendarat di laptop dan teknisi tidak melihat
+apa-apa.
+
+```bash
+php artisan db:show
+```
+
+Lihat baris **Host**. `127.0.0.1` atau `localhost` = MySQL laptop.
+
+Perintah impornya juga menyebutkan tujuannya sendiri di baris pertama, setiap kali dijalankan:
+
+```
+Tujuan: koneksi `mysql` — host 127.0.0.1, database sidik_db.
+```
+
+Baca baris itu sebelum melanjutkan.
+
+### 4.1 Menulis ke database produksi
+
+Isi kunci `DB_PRODUKSI_*` di `.env` **laptop** (nilainya dari dashboard Render → service →
+Environment; `DB_PRODUKSI_SSL_CA` menunjuk berkas `.pem` dari penyedia database). Lalu tambahkan
+`--koneksi=produksi`.
+
+`.env` utama tidak perlu diubah sama sekali — itu justru alasan opsi ini ada. Menukar `DB_*`
+sebentar juga bisa, tapi selama tertukar **setiap** perintah artisan dari laptop mengenai database
+asli, termasuk `migrate:fresh` yang tidak sengaja, dan tidak ada yang mengingatkan kalau lupa
+dikembalikan.
+
+Kalau kuncinya belum diisi, `--koneksi=produksi` **berhenti** dan menyebutkan kunci mana yang
+kosong. Sengaja begitu: koneksi `produksi` ditulis tanpa nilai bawaan supaya tidak bisa diam-diam
+jatuh ke MySQL laptop.
+
+### 4.2 Perintahnya
+
 **Selalu `--uji-coba` dulu.** Sekali. Lalu baca laporannya.
 
 ```bash
@@ -86,6 +126,7 @@ Kalau laporannya sudah benar, jalankan lagi **tanpa** `--uji-coba`.
 | `--sumber=` | tidak | `admin` (bawaan), `teknisi`, atau `direktori` |
 | `--laporan=` | tidak | path CSV hasil tinjauan. **Isi selalu** |
 | `--uji-coba` | tidak | jalan tanpa menulis apa pun |
+| `--koneksi=` | tidak | koneksi database tujuan. Kosong = koneksi default `.env`. Pakai `produksi` untuk menulis ke database server dari laptop — lihat §4.1 |
 
 ---
 
@@ -140,6 +181,8 @@ namanya cuma beda dua huruf. Hal yang sama berlaku untuk `UD`/`PD`, `Firma`, `Ko
 | Pesan | Sebabnya | Obatnya |
 |---|---|---|
 | `tidak punya kolom nama` | judul kolomnya tidak dikenali | samakan dengan tabel §3.2, atau ganti jadi `nama` |
+| `Koneksi X belum disetel: host, database, username masih kosong` | `--koneksi=produksi` dipakai tapi `DB_PRODUKSI_*` belum diisi | isi kuncinya di `.env` laptop, §4.1. **Nol baris ditulis** |
+| `Koneksi X tidak ada di config/database.php` | nama koneksinya salah ketik | yang dikenal: `mysql`, `produksi` |
 | `--organization wajib diisi` | opsinya tidak diisi | isi ID organisasinya |
 | `Organisasi N tidak ada` | ID-nya salah | cek daftar organisasi |
 | `User N tidak ada di organisasi N` | `--oleh` orang dari lab lain | pakai user dari organisasi tujuan |

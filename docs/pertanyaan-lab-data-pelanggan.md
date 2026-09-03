@@ -62,6 +62,24 @@ Nominatim. Mengubahnya ke `auto` membatalkan keputusan itu dan memunculkan tagih
 
 `customers:impor` sudah siap, tapi belum ada yang bisa diimpor sampai berkasnya ada.
 
+> **Jalur ke produksi sudah dibereskan 3 Sep 2026** — bagian ini tadinya belum tertulis di mana
+> pun, dan diam-diam bikin P2 tidak bisa dituntaskan meski berkasnya sudah ada.
+>
+> Render paket gratis tidak punya Shell, jadi perintahnya jalan dari laptop. `php artisan db:show`
+> di laptop pemilik proyek menjawab `Host 127.0.0.1, Database sidik_db` — **MySQL laptop, bukan
+> produksi**. Impor yang dijalankan begitu saja akan berhasil, laporannya hijau, dan teknisi tidak
+> melihat apa-apa. Nol pesan error.
+>
+> Solusinya koneksi `produksi` terpisah + opsi `--koneksi=` (keputusan pemilik proyek, memilihnya
+> di atas "tukar `DB_*` sebentar" karena `.env` yang lupa dikembalikan bikin **setiap** perintah
+> artisan berikutnya mengenai database asli). Lihat `docs/perintah-impor-pelanggan.md` §4.0–4.1.
+>
+> Yang **ditolak** dan jangan diusulkan lagi: menaruh CSV pelanggan di repo lalu diimpor saat boot,
+> meniru direktori perusahaan. Untuk direktori itu benar — datanya publik. Untuk pelanggan tidak:
+> §9.1 strategi menyebut `contact_person`/`telepon`/`email` sebagai data pribadi (UU 27/2022), dan
+> §10 poin 9 melarang mengeluarkannya dari kendali lab. Repo git + image Docker di infrastruktur
+> penyedia adalah persis itu, dan riwayat git-nya permanen.
+
 **Yang dibutuhkan dari lab:**
 
 1. **Berkas daftar pelanggan** (Excel/CSV). Minimum satu kolom `nama`. Kalau ada alamat, ikut.
