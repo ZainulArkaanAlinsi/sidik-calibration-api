@@ -339,6 +339,32 @@ class ExcelImporter
             ];
         }
 
+        // Resolusi nol/negatif DILEWATI, bukan dikosongkan diam-diam.
+        //
+        // `filled(0.0)` di Laravel bernilai TRUE, jadi nol lolos `array_filter`
+        // di bawah dan mendarat apa adanya. Sesudah itu
+        // `Angka::desimalDariResolusi()` menyamakan nol dengan null, dan
+        // sertifikatnya mencetak empat desimal buat alat yang nggak punya
+        // presisi segitu. Jalur API sudah menolaknya (`gt:0` di
+        // `EquipmentRequest`); impor nggak lewat FormRequest, jadi penjagaannya
+        // ditulis di sini.
+        //
+        // Dilewati, bukan ditebak — alasannya sama persis dengan penjaga
+        // kategori di atas: nilai yang bikin angka sertifikat salah
+        // dikembalikan ke pemilik berkas. Barisnya nggak hilang diam-diam:
+        // mode `uji_coba` sudah menampilkannya berikut alasan ini sebelum ada
+        // yang ditulis ke database.
+        $resolusi = $this->angka($nilai['resolusi'] ?? null);
+
+        if ($resolusi !== null && $resolusi <= 0) {
+            return [
+                'tindakan' => 'dilewati',
+                'alasan' => "Resolusi alat \"{$nama}\" nol atau negatif. "
+                    .'Kosongin selnya kalau resolusinya nggak diketahui — nol bikin sertifikatnya '
+                    .'ngaku empat desimal yang alatnya nggak punya.',
+            ];
+        }
+
         $serial = trim((string) ($nilai['serial_number'] ?? ''));
 
         $atribut = array_filter([
@@ -348,7 +374,7 @@ class ExcelImporter
             'range_min' => $this->angka($nilai['range_min'] ?? null),
             'range_max' => $this->angka($nilai['range_max'] ?? null),
             'satuan' => $nilai['satuan'] ?? null,
-            'resolusi' => $this->angka($nilai['resolusi'] ?? null),
+            'resolusi' => $resolusi,
             'toleransi' => $this->angka($nilai['toleransi'] ?? null),
             'lokasi' => $nilai['lokasi'] ?? null,
             'tanggal_kalibrasi_terakhir' => $this->tanggal($nilai['tanggal_kalibrasi_terakhir'] ?? null),
