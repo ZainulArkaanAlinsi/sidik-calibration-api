@@ -60,6 +60,19 @@ class BangunUlangSnapshotSertifikat extends Command
 
     protected $description = 'Bangun ulang snapshot & PDF sertifikat terbit, nomor & QR-nya tetap';
 
+    /** Kunci yang dapat bentuk panah `lama → baru`, bukan cuma disebut namanya. */
+    private const JALUR_ENV = 'header.env_condition';
+
+    /**
+     * Berapa nama kunci yang muat sebelum sisanya diringkas jadi "+N lagi".
+     *
+     * Snapshot punya 15 kunci tingkat-atas dan `header` sendiri belasan. Sapuan
+     * yang menyusul perubahan format bisa menyentuh hampir semuanya sekaligus,
+     * dan satu baris sepanjang itu berhenti dibaca orang — persis lawan dari
+     * yang perbaikan ini kejar.
+     */
+    private const KUNCI_DITAMPILKAN = 6;
+
     public function handle(
         CertificateSnapshotBuilder $snapshotBuilder,
         CalibrationValidator $validator,
@@ -151,7 +164,9 @@ class BangunUlangSnapshotSertifikat extends Command
                 '%-18s %-14s %s',
                 $sertifikat->nomor,
                 $sesi->nomor_sesi ?? '-',
-                $sama ? 'nggak berubah' : "{$lama}  →  {$envBaru}",
+                $sama
+                    ? 'nggak berubah'
+                    : self::ringkasanPerubahan($sertifikat->snapshot, $baru, $lama, $envBaru),
             ));
 
             // Snapshot-nya sama, tapi CARA merendernya berubah.
@@ -229,6 +244,112 @@ class BangunUlangSnapshotSertifikat extends Command
             : "{$berubah} sertifikat dibangun ulang, {$dilewati} dilewati, {$gagal} gagal.");
 
         return $gagal > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Apa yang berubah di snapshot, dalam satu baris.
+     *
+     * ## Kenapa bukan cuma Env. Condition
+     *
+     * Versi pertama SELALU mencetak `{env lama}  →  {env baru}`, padahal yang
+     * menentukan berubah-atau-nggak itu perbandingan SELURUH snapshot. Jadi
+     * tiap perubahan di luar kondisi lingkungan tercetak sebagai dua sisi yang
+     * IDENTIK — dan "berubah, tapi kiri-kanan sama persis" itu wajar dibaca
+     * sebagai perintahnya yang rusak.
+     *
+     * Kejadian 3 Sep 2026, sapuan yang menyalakan U95 per titik: lima baris
+     * keluar dengan panah yang dua sisinya sama, dan setengah jam habis cuma
+     * buat memastikan itu bukan bug. Nol error muncul — dan itu justru sebabnya
+     * ditulis di sini. Keluaran yang menyesatkan tidak pernah merah.
+     *
+     * @param  array<string, mixed>|null  $snapLama
+     * @param  array<string, mixed>  $snapBaru
+     */
+    private static function ringkasanPerubahan(
+        ?array $snapLama,
+        array $snapBaru,
+        string $envLama,
+        string $envBaru,
+    ): string {
+        $kunci = self::kunciBerubah((array) $snapLama, $snapBaru);
+
+        // Kondisi lingkungan tetap dapat bentuk panah, bukan cuma disebut
+        // namanya: dia yang paling sering berubah, dan nilainya yang bikin
+        // barisnya berguna dibaca sekilas.
+        if (in_array(self::JALUR_ENV, $kunci, true)) {
+            $lainnya = array_values(array_diff($kunci, [self::JALUR_ENV]));
+
+            return "{$envLama}  →  {$envBaru}"
+                .($lainnya === [] ? '' : '  (+ '.self::daftarKunci($lainnya).')');
+        }
+
+        // Mustahil kosong selama perbandingannya sama-sama `==`, tapi kalau
+        // suatu saat beda, yang keluar tetap kalimat yang jujur — bukan panah
+        // yang dua sisinya sama, persis yang perbaikan ini hapus.
+        return $kunci === []
+            ? 'berubah (kuncinya sama, isinya beda tipe)'
+            : 'berubah: '.self::daftarKunci($kunci);
+    }
+
+    /**
+     * Jalur kunci yang isinya beda antara dua snapshot.
+     *
+     * Turun ke dalam SELAMA kedua sisi masih array berkunci-nama. Array
+     * berindeks angka — `hasil`, yang isinya baris tabel — dilaporkan utuh
+     * sebagai satu nama: yang dicari orang waktu membaca baris ini "bagian
+     * mana yang berubah", bukan "sel mana", dan `hasil.7.u95` cuma bikin satu
+     * baris ringkasan jadi sepanjang tabelnya.
+     *
+     * Pembandingnya `==`, sama persis dengan yang dipakai memutuskan
+     * berubah-atau-nggak di `handle()`. Kalau dua-duanya tidak sama, ringkasan
+     * ini bisa bilang "berubah" tanpa bisa menyebut apa.
+     *
+     * @param  array<string, mixed>  $lama
+     * @param  array<string, mixed>  $baru
+     * @return list<string>
+     */
+    private static function kunciBerubah(array $lama, array $baru, string $awalan = ''): array
+    {
+        $keluar = [];
+
+        foreach (array_keys($lama + $baru) as $kunci) {
+            $jalur = $awalan === '' ? (string) $kunci : "{$awalan}.{$kunci}";
+            $a = $lama[$kunci] ?? null;
+            $b = $baru[$kunci] ?? null;
+
+            if ($a == $b) {
+                continue;
+            }
+
+            if (self::berkunciNama($a) && self::berkunciNama($b)) {
+                $keluar = array_merge($keluar, self::kunciBerubah($a, $b, $jalur));
+
+                continue;
+            }
+
+            $keluar[] = $jalur;
+        }
+
+        return $keluar;
+    }
+
+    /** Array yang kuncinya nama, bukan indeks angka berurutan. */
+    private static function berkunciNama(mixed $nilai): bool
+    {
+        return is_array($nilai) && $nilai !== [] && ! array_is_list($nilai);
+    }
+
+    /**
+     * Daftar kunci, dipotong biar barisnya tetap muat dibaca sekilas.
+     *
+     * @param  list<string>  $kunci
+     */
+    private static function daftarKunci(array $kunci): string
+    {
+        $tampil = array_slice($kunci, 0, self::KUNCI_DITAMPILKAN);
+        $sisa = count($kunci) - count($tampil);
+
+        return implode(', ', $tampil).($sisa > 0 ? " (+{$sisa} lagi)" : '');
     }
 
     /**
