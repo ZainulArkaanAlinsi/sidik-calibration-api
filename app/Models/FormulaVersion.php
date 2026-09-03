@@ -164,9 +164,47 @@ class FormulaVersion extends Model
             .'bisa dijelasin pakai versi mana.';
     }
 
-    /** Nomor versi berikutnya buat satu rumus. */
+    /**
+     * Nomor versi berikutnya buat satu rumus.
+     *
+     * `lockForUpdate()` bukan kehati-hatian berlebihan — dia menyamakan berkas
+     * ini dengan dua penomoran sejenis di repo yang sudah mengunci lebih dulu:
+     * `GenerateCertificate::nomorBerikutnya()` dan penomoran sesi di
+     * `CalibrationController`. Ini satu-satunya yang tidak.
+     *
+     * Tanpa lock, dua admin yang menyimpan versi baru berbarengan membaca
+     * `max()` yang sama dan menulis nomor yang sama. Unique index
+     * `fversi_formula_nomor_unik` menahan duplikatnya tersimpan — jadi DATANYA
+     * tidak pernah rusak — tapi yang gagal keluar sebagai 500 generik, dan
+     * admin yang kalah balapan tidak punya cara tahu bahwa yang perlu dia
+     * lakukan cuma menyimpan ulang.
+     *
+     * WAJIB dipanggil di dalam transaksi. Di luar transaksi, `FOR UPDATE`
+     * dilepas begitu query-nya selesai dan locknya tidak menjaga apa pun.
+     * Pemanggil satu-satunya (`FormulaController::store()`) sudah di dalam
+     * `DB::transaction()`.
+     */
     public static function nomorBerikutnya(int $formulaId): int
     {
-        return (int) static::where('formula_id', $formulaId)->max('nomor_versi') + 1;
+        return (int) static::queryNomorTerpakai($formulaId)->max('nomor_versi') + 1;
+    }
+
+    /**
+     * Query pembaca nomor terpakai — DIPISAH supaya locknya bisa dibuktikan.
+     *
+     * Publik dengan alasan yang sama seperti `PengingatStandar::tandaTangan()`:
+     * penjagaan yang hilang di sini tidak menerbitkan error apa pun, jadi
+     * satu-satunya cara menahannya adalah test yang bisa melihatnya. CI repo
+     * ini jalan di SQLite, dan grammar SQLite MEMBUANG `FOR UPDATE` diam-diam
+     * — jadi memeriksa SQL yang benar-benar dieksekusi tidak membuktikan apa
+     * pun. Yang bisa dibuktikan: SQL ini waktu dikompilasi grammar MySQL.
+     *
+     * @return Builder<static>
+     */
+    public static function queryNomorTerpakai(int $formulaId): Builder
+    {
+        return static::query()
+            ->where('formula_id', $formulaId)
+            ->lockForUpdate();
     }
 }
