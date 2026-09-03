@@ -25,6 +25,13 @@ class EntrypointBootTest extends TestCase
 {
     private const ENTRYPOINT = 'docker/entrypoint.sh';
 
+    /**
+     * Tiap `php artisan <x>` di entrypoint harus perintah yang benar-benar ada.
+     *
+     * Menjaga LEBIH dari satu saklar: yang diperiksa seluruh isi berkasnya,
+     * jadi perintah apa pun yang ditambahkan ke jalur boot nanti ikut terjaga
+     * tanpa test baru.
+     */
     public function test_semua_perintah_artisan_di_entrypoint_beneran_terdaftar(): void
     {
         $terdaftar = array_keys(Artisan::all());
@@ -52,20 +59,55 @@ class EntrypointBootTest extends TestCase
      */
     public function test_saklar_boot_terdaftar_di_env_example_dan_blueprint(): void
     {
+        $envExample = (string) file_get_contents(base_path('.env.example'));
+        $blueprint = (string) file_get_contents(base_path('render.yaml'));
+
         foreach (['SEED_ON_BOOT', 'BANGUN_ULANG_ON_BOOT'] as $key) {
-            $this->assertStringContainsString(
-                $key,
-                (string) file_get_contents(base_path('.env.example')),
-                "{$key} nggak ada di .env.example.",
+            // Diadu ke BARIS PENUGASANNYA, bukan ke kemunculan namanya.
+            //
+            // Temuan review: versi pertama memakai `assertStringContainsString`,
+            // dan komentar penjelas di atas baris itu — yang ditulis di commit
+            // yang sama — sudah cukup memuaskannya. Penugasannya bisa dihapus
+            // dan test tetap hijau.
+            $this->assertMatchesRegularExpression(
+                '/^'.preg_quote($key, '/').'=/m',
+                $envExample,
+                "{$key} nggak punya baris penugasan di .env.example — kesebut di "
+                .'komentar doang nggak bikin dia kebaca siapa pun.',
             );
 
             $this->assertStringContainsString(
                 "key: {$key}",
-                (string) file_get_contents(base_path('render.yaml')),
+                $blueprint,
                 "{$key} nggak ada di render.yaml — pemasangan lewat blueprint bakal "
                 .'kehilangan saklarnya tanpa satu pun error.',
             );
         }
+
+        // `sync: false` DIWAJIBKAN, dan cuma buat saklar bangun ulang.
+        //
+        // Bedanya bukan gaya penulisan. `value:` artinya BLUEPRINT yang
+        // menentukan, jadi deploy berikutnya menyinkronkan nilainya dan
+        // mematikan saklar yang baru saja dinyalakan lewat dashboard — persis
+        // kejadian 1 Sep 2026 waktu ARSIP_DRIVER ketimpa balik ke `local`, dan
+        // produksi diam-diam kembali menulis ke disk yang kehapus tiap deploy.
+        //
+        // Di sini akibatnya lebih halus tapi arahnya sama: saklar yang mati
+        // duluan berarti sertifikat yang sudah terbit TIDAK ikut dibangun ulang,
+        // dan deploy-nya kelihatan berhasil.
+        //
+        // SEED_ON_BOOT sengaja TIDAK ikut dijaga di sini. Dia memang
+        // `value: "false"` di blueprint, dan itu bukan kelalaian yang mau
+        // dibetulkan sambil lalu: arah timpanya aman (mati = seeder nggak
+        // jalan), sementara di sini arah timpanya merugikan. Kalau suatu saat
+        // mau diseragamkan, itu perubahan tersendiri dengan alasannya sendiri.
+        $this->assertMatchesRegularExpression(
+            '/-\s*key:\s*BANGUN_ULANG_ON_BOOT\s*\n\s*sync:\s*false/',
+            $blueprint,
+            'BANGUN_ULANG_ON_BOOT di render.yaml nggak `sync: false`. Dengan `value:`, '
+            .'deploy berikutnya nimpa balik saklar yang baru disetel lewat dashboard, '
+            .'dan sertifikat lama diam-diam nggak ikut dibangun ulang.',
+        );
     }
 
     /**
@@ -80,14 +122,21 @@ class EntrypointBootTest extends TestCase
         $isi = (string) file_get_contents(base_path(self::ENTRYPOINT));
 
         $posisiGerbang = strpos($isi, 'if [ "${BANGUN_ULANG_ON_BOOT}" = "true" ]');
-        $posisiPerintah = strpos($isi, 'php artisan sertifikat:bangun-ulang');
-
         $this->assertNotFalse($posisiGerbang, 'Gerbang BANGUN_ULANG_ON_BOOT hilang dari entrypoint.');
-        $this->assertNotFalse($posisiPerintah, 'Panggilan sertifikat:bangun-ulang hilang dari entrypoint.');
-        $this->assertLessThan(
-            $posisiPerintah,
-            $posisiGerbang,
-            'Bangun ulang jalan DI LUAR gerbangnya — tiap boot bakal nulis ulang semua PDF.',
+
+        // Isi blok `if … fi`-nya, bukan "apa pun yang muncul sesudah gerbang".
+        //
+        // Temuan review: versi pertama cuma membandingkan posisi, jadi blok
+        // `if` KOSONG yang diikuti perintah tak berpagar tetap lolos — bentuk
+        // yang justru paling gampang lahir dari penyuntingan yang salah.
+        $posisiTutup = strpos($isi, "\nfi\n", $posisiGerbang);
+        $this->assertNotFalse($posisiTutup, 'Blok gerbangnya nggak pernah ditutup `fi`.');
+
+        $this->assertStringContainsString(
+            'php artisan sertifikat:bangun-ulang',
+            substr($isi, $posisiGerbang, $posisiTutup - $posisiGerbang),
+            'Bangun ulang jalan DI LUAR gerbangnya — tiap boot, termasuk tiap Render '
+            .'membangunkan service yang ketiduran, bakal nulis ulang semua PDF.',
         );
     }
 

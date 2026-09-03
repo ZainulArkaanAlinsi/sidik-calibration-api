@@ -207,7 +207,7 @@ Caranya:
 3. Buka **Logs**, cari tahap `bangun ulang snapshot & PDF sertifikat`. Di situ
    tercetak satu baris per sertifikat:
 
-   ```
+   ```text
    012-CAL-524   2405.13.A   berubah: u95_per_titik, standar_digunakan
    CAL/2026/08/0001  2406.51.S   nggak berubah
      └─ PDF ditulis ulang (snapshot nggak berubah)
@@ -227,7 +227,7 @@ service yang ketiduran. Menit itu diambil dari jendela health check yang cuma
 
 Perhatikan juga baris yang berbunyi:
 
-```
+```text
 DILEWATI — penandatangannya sudah ganti. Beku atas nama "…", yang berlaku
 sekarang "…".
 ```
