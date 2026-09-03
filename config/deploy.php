@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\SaklarBoot;
+
 /*
  * Tiga hal tentang container yang SEDANG jalan, dibaca lewat GET /api/health.
  *
@@ -49,7 +51,20 @@ return [
      * Saklarnya sendiri dibaca docker/entrypoint.sh langsung dari shell; yang
      * di sini cuma buat MELAPORKAN, bukan buat menyalakan.
      */
-    'seed_saat_boot' => filter_var(env('SEED_ON_BOOT', false), FILTER_VALIDATE_BOOL),
+    /*
+     * DIBACA LEWAT [SaklarBoot], bukan `filter_var(..., FILTER_VALIDATE_BOOL)`.
+     *
+     * Gerbang di entrypoint cuma mengenal string `true` huruf kecil. Filter
+     * bawaan jauh lebih murah hati (`1`, `yes`, `on`), dan `env()` meng-cast
+     * `TRUE` jadi boolean lebih dulu — empat nilai yang bikin health melapor
+     * nyala sementara tidak ada yang jalan.
+     *
+     * `seed_saat_boot` ikut diperbaiki walau bukan lahir di perubahan ini:
+     * cacatnya sama persis, di berkas yang sama, dan membiarkannya berarti
+     * endpoint yang tujuannya "jangan ada yang perlu menebak" tetap berbohong
+     * di separuh isinya.
+     */
+    'seed_saat_boot' => SaklarBoot::nyala('SEED_ON_BOOT'),
 
     /*
      * Apakah snapshot & PDF sertifikat dibangun ulang tiap container nyala.
@@ -70,6 +85,6 @@ return [
      * langsung dari shell; yang di sini cuma buat MELAPORKAN, bukan buat
      * menyalakan.
      */
-    'bangun_ulang_saat_boot' => filter_var(env('BANGUN_ULANG_ON_BOOT', false), FILTER_VALIDATE_BOOL),
+    'bangun_ulang_saat_boot' => SaklarBoot::nyala('BANGUN_ULANG_ON_BOOT'),
 
 ];
