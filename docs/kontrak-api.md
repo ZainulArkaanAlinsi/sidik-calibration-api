@@ -787,7 +787,7 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > | Lembar | Kunci | Bentuk |
 > |---|---|---|
 > | ~13 lembar titik × Repeat | `measurements[].ocr` | deret, sejajar `pembacaan` |
-> | Thermocouple, T. Gelas, Thermohygro | `measurements[].standar_ocr` · `.uut_ocr` | deret, sejajar deret sisinya |
+> | Thermocouple, T. Gelas, Thermohygro, **TIDS** | `measurements[].standar_ocr` · `.uut_ocr` | deret, sejajar deret sisinya |
 > | Timer/Stopwatch | `measurements[].standar_ocr` · `.uut_ocr` | deret berisi **objek per kotak**: `{jam: {...}, menit: {...}, detik: {...}, milidetik: {...}}` |
 > | 5 Enclosure (grid) | `measurements[].sensor_grid[].ocr` | deret, sejajar `pembacaan` baris itu |
 > | 5 Enclosure (dua baris deret) | `measurements[].indikator_ocr` · `.suhu_ruang_ocr` | deret, sejajar deret angkanya |
@@ -1503,7 +1503,7 @@ alamat yang salah ketik mendarat di blok OWNER sertifikat.
   endpointnya ditagih **per request**.
 - **`ref` itu id tempat menurut direktorinya, BUKAN `customers.id`.** Dia nggak
   bisa dipakai jadi `pelanggan_id`. Barisnya baru punya id pelanggan sesudah
-  dikirim ke `POST /customers/cepat`.
+  dikirim ke `POST /api/customers/cepat`.
 - **Tiga jawaban yang WAJIB dibedakan klien:**
 
   | Status | Artinya | Yang harus dilakukan layar |

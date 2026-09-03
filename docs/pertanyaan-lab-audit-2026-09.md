@@ -1,8 +1,10 @@
 # Pertanyaan lab dari audit bug 2 Sep 2026
 
-Tiga hal yang **tidak bisa diputuskan dari kode**. Dua yang pertama menyangkut angka
-atau tulisan di dokumen terakreditasi, dan menebaknya berarti menulis sesuatu ke
-sertifikat pelanggan berdasarkan tebakan. Yang ketiga soal kapasitas server.
+Empat hal yang **tidak bisa diputuskan dari kode**. Dua yang pertama menyangkut
+angka atau tulisan di dokumen terakreditasi, dan menebaknya berarti menulis
+sesuatu ke sertifikat pelanggan berdasarkan tebakan. Dua terakhir soal
+infrastruktur dan desain backend — T4 menyusul dari review otomatis pada PR
+audit ini.
 
 Status: **menunggu jawaban.** Selama belum dijawab, kodenya berperilaku seperti
 yang ditulis di bawah — dan perilaku itu dipilih supaya yang salah kelihatan,
@@ -124,6 +126,75 @@ dan `schedule:work` yang sudah jalan?
   keputusannya.
 
 Yang perlu: nama plan Render-nya, atau satu kalimat "boleh/tidak nambah proses".
+
+---
+
+## T4 — `sumber=direktori` boleh dipercaya tanpa diverifikasi?
+
+**Ini pertanyaan desain backend, bukan pertanyaan lab** — sama seperti T3,
+ditaruh di sini karena yang menahannya bukan kode.
+
+**Datangnya dari mana.** Review otomatis (CodeRabbit) pada PR audit ini,
+ditandai CWE-345 (*Insufficient Verification of Data Authenticity*).
+
+**Konteks.** `CustomerController::cepat()` menentukan asal-usul baris pelanggan
+dari ADA-TIDAKNYA `direktori_ref`, bukan dari apakah ref itu benar-benar
+menunjuk hasil direktori:
+
+```php
+$pelanggan->sumber = match (true) {
+    $ref !== null   => Customer::SUMBER_DIREKTORI,
+    $user->isAdmin() => Customer::SUMBER_ADMIN,
+    default          => Customer::SUMBER_TEKNISI,
+};
+```
+
+Jadi satu `{"direktori_ref": "apa-saja"}` dari HP cukup buat menempelkan label
+`direktori` pada baris yang diketik tangan. Bentuknya persis kekhawatiran yang
+sudah ditulis di kontrak untuk `sumber` sendiri — cuma lewat pintu sebelah.
+
+**Yang TIDAK bocor, dan sudah diperiksa.** `kandidatMirip()` menyaring
+`organization_id` dengan benar, dan `orWhere('direktori_ref', …)`-nya terbungkus
+`where(fn …)`. Jadi ref tebakan **tidak** bisa menarik pelanggan lab lain ke
+layar teknisi ini. Yang dipertaruhkan cuma label asal-usulnya.
+
+**Kenapa tidak langsung dibetulkan.** Perbaikan yang diminta review — "pastikan
+`direktori_ref` benar-benar menunjuk hasil direktori" — berarti server memanggil
+penyedianya lagi waktu pelanggan disimpan, dan itu menabrak dua hal yang sudah
+diputuskan:
+
+1. **Endpointnya ditagih per request.** Menyimpan satu pelanggan jadi dua
+   panggilan berbayar, bukan satu — dan yang kedua tidak menghasilkan data baru
+   apa pun.
+2. **Ketersediaannya jadi ikut menentukan.** Kontrak sengaja membedakan `503`
+   (key belum disetel) dari `502` (direktorinya mati) supaya layar bisa
+   **mengarahkan teknisi ke ketik tangan** waktu direktorinya mati. Kalau
+   penyimpanan ikut menunggu penyedia, direktori yang mati bikin pendaftaran
+   pelanggan ikut mati — jalan keluarnya yang justru tertutup.
+
+**Yang berlaku sekarang.** Tidak ada yang berubah. Melabeli sesuatu
+"terverifikasi" berdasarkan pemeriksaan yang sebenarnya tidak dilakukan lebih
+buruk daripada tidak memverifikasi sama sekali — dan validasi BENTUK ref
+(misalnya "harus mulai `ChIJ`") persis jenis pemeriksaan palsu itu: dia menahan
+salah ketik, bukan pemalsuan, sambil terbaca seperti menahan dua-duanya.
+
+**Yang ditanyakan.** Label `direktori` dipakai buat apa — dan seberapa dalam?
+
+- **Kalau cuma catatan asal-usul** (siapa mengetik dari mana, buat menelusuri
+  data kembar) — tidak ada yang perlu diubah. Teknisi memang boleh menyunting
+  hasil direktori sebelum menyimpan, jadi labelnya sejak awal tidak pernah
+  menjanjikan isinya tidak disentuh.
+- **Kalau dia pernah dipakai memutuskan sesuatu** — baris `direktori` dianggap
+  lebih tepercaya, dilewatkan dari peninjauan admin, atau ikut menentukan
+  tampilan — maka harus diverifikasi, dan cara yang tidak menambah tagihan
+  maupun ketergantungan: **server mengingat ref yang baru saja ia berikan**
+  lewat `GET /api/customers/direktori` (per pengguna, umur pendek), lalu
+  `cepat()` mengadu ke ingatan itu. Ref yang tidak dikenali turun ke
+  `admin`/`teknisi` — **bukan ditolak**, supaya pendaftarannya tetap jalan.
+
+Yang perlu: satu kalimat "label itu dipakai buat apa". Kalau jawabannya "belum
+dipakai apa-apa", tulis begitu — supaya yang berikutnya tidak memakainya sebagai
+jaminan yang tidak pernah ada.
 
 ---
 

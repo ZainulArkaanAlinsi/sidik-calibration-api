@@ -99,6 +99,57 @@ class KontrakApiSesuaiRegistryTest extends TestCase
     }
 
     /**
+     * Baris OCR jalur PASANGAN harus menyebut semua alat yang memakai jalur
+     * itu — dan registry-nya yang menghitung, bukan ingatan.
+     *
+     * Ditambahkan sesudah review menemukan barisnya menyebut tiga alat
+     * sementara profilnya sudah empat: TIDS pindah ke jalur pasangan 28 Agt,
+     * dan barisnya tidak ikut. Aturan `standar_ocr`/`uut_ocr` di
+     * `CalibrationRequest` berlaku tanpa syarat, jadi kirimannya SELALU
+     * diterima — yang salah cuma dokumennya, dan akibatnya klien tidak pernah
+     * mengirim tebakan mesin untuk alat yang sebenarnya mendukungnya.
+     *
+     * Kegagalan yang paling mahal dari kelas ini: tidak ada yang error, tidak
+     * ada yang merah, fiturnya cuma tidak pernah dipakai di satu alat.
+     */
+    public function test_baris_ocr_pasangan_nyebut_semua_alat_pasangan(): void
+    {
+        $registry = app(CalibrationProfileRegistry::class);
+
+        $pasangan = collect($registry->semua())
+            ->filter(fn ($profil): bool => $profil->butuhPasanganStandarUut())
+            ->count();
+
+        $this->assertGreaterThan(0, $pasangan, 'Nggak ada profil pasangan sama sekali — testnya yang salah.');
+
+        // Baris Timer/Stopwatch memakai kunci yang sama tapi bentuk yang
+        // berbeda (objek per kotak), jadi dibedakan lewat kolom bentuknya.
+        $baris = collect(preg_split('/\R/', $this->kontrak()))
+            ->filter(fn (string $b): bool => str_contains($b, '`measurements[].standar_ocr`')
+                && str_contains($b, 'sejajar deret sisinya'))
+            ->values();
+
+        $this->assertCount(
+            1,
+            $baris,
+            'Baris OCR pasangan nggak ketemu atau lebih dari satu — bentuk tabelnya berubah?',
+        );
+
+        $kolom = array_values(array_filter(
+            array_map(trim(...), explode('|', ltrim($baris[0], '> '))),
+            fn (string $k): bool => $k !== '',
+        ));
+
+        $alat = array_filter(array_map(trim(...), explode(',', $kolom[0])));
+
+        $this->assertCount(
+            $pasangan,
+            $alat,
+            "Baris OCR pasangan nyebut {$kolom[0]} — padahal ada {$pasangan} profil yang pakai jalur itu.",
+        );
+    }
+
+    /**
      * Dokumen tidak boleh berbeda dari dirinya sendiri.
      *
      * Ini yang paling murah dan paling sering bocor: satu angka diperbarui di
