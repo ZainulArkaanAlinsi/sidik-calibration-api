@@ -237,11 +237,24 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
         $sertifikat = $this->sertifikatTerbit();
 
         $basi = $sertifikat->snapshot;
-        $this->assertNotEmpty($basi['hasil'] ?? [], 'Sesi ujinya nggak punya tabel hasil.');
+
+        // Premisnya DITEGASKAN, bukan diandaikan.
+        //
+        // Temuan review: `assertNotEmpty` cuma membuktikan tabelnya ada. Kalau
+        // baris `1` tidak ada, penugasan di bawah MEMBUAT baris baru dan yang
+        // dilaporkan `hasil.1`, bukan `hasil.1.u95`. Kalau `u95` yang tidak
+        // ada, yang diuji jadi penambahan kolom, bukan perubahan nilai.
+        // Dua-duanya menguji hal lain dari yang tertulis di nama test.
+        $this->assertArrayHasKey(1, $basi['hasil'] ?? [], 'Sesi ujinya kurang dari dua titik.');
+        $this->assertArrayHasKey('u95', $basi['hasil'][1], 'Titik ujinya nggak punya kolom u95.');
 
         // Satu sel di satu baris, sisanya dibiarkan — persis bentuk kasus yang
         // bikin `berubah: hasil` nggak bisa dipakai.
-        $basi['hasil'][1]['u95'] = 99.9;
+        //
+        // Nilainya diturunkan dari yang asli, bukan angka mati: angka mati bisa
+        // kebetulan sama dengan isinya, dan test-nya lalu hijau tanpa ada yang
+        // berubah sama sekali.
+        $basi['hasil'][1]['u95'] = (float) $basi['hasil'][1]['u95'] + 1.0;
         $sertifikat->update(['snapshot' => $basi]);
 
         $keluaran = $this->keluaranBangunUlang();
