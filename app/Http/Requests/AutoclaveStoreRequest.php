@@ -201,6 +201,9 @@ class AutoclaveStoreRequest extends FormRequest
      */
     public function after(): array
     {
-        return [fn (Validator $validator) => $this->pastikanAdaBacaanUut($validator)];
+        return [
+            fn (Validator $validator) => $this->pastikanAdaBacaanUut($validator),
+            fn (Validator $validator) => $this->pastikanAdaBacaanSuhu($validator),
+        ];
     }
 }
