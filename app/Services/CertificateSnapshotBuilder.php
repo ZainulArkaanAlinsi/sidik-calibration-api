@@ -394,6 +394,26 @@ class CertificateSnapshotBuilder
     {
         /** @var Collection<int, Standard> $standar */
         $standar = $sesi->uncertaintyCalculations
+            // Diurutkan DI SINI, bukan cuma diandalkan ke relasinya.
+            //
+            // Relasi [CalibrationSession::uncertaintyCalculations] memang sudah
+            // ber-`ORDER BY` sejak 3 Sep 2026, tapi itu cuma menjaga jalur baca
+            // dari database. Koleksinya bisa sampai ke sini lewat jalan lain —
+            // `setRelation` di test, hasil `map`/`merge` di pemanggil, relasi
+            // yang sudah nempel di memori dari query lain — dan tabel yang
+            // dihasilkan di bawah dicetak APA ADANYA jadi "Standards Used" di
+            // sertifikat terakreditasi.
+            //
+            // Yang bikin ini wajib ganda: urutannya bergeser TANPA error. 3 Sep
+            // 2026, dua kali `sertifikat:bangun-ulang` berturut-turut di MySQL
+            // yang sama dengan kode yang sama memberi hasil beda-beda, dan tiap
+            // jalan menulis ulang PDF sertifikat yang sudah dipegang pelanggan.
+            //
+            // `titik_ke` di depan itu pilihan pemilik lab: tabel ketertelusuran
+            // mengikuti urutan titik ukur, sama seperti lembar kerjanya. `id`
+            // pemecah serinya, buat alat yang satu titiknya punya beberapa
+            // baris (Chlorine Free/Total, Spectrophotometer tiga blok).
+            ->sortBy([['titik_ke', 'asc'], ['id', 'asc']])
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn (Collection $c) => $c->push($sesi->standard))
@@ -415,7 +435,14 @@ class CertificateSnapshotBuilder
             // teknisi tapi nggak nempel ke titik hitung mana pun (mis. RTD
             // Sensor buat baca suhu larutan) tetap harus tercatat — itu bagian
             // dari ketertelusuran, bukan pelengkap.
-            ->concat($sesi->standarDicek->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai))
+            // `sortBy('id')` alasannya sama dengan sortBy di atas: ekor daftar
+            // ini pun ikut tercetak, jadi urutannya nggak boleh diserahkan ke
+            // urutan baris yang kebetulan dikembalikan database.
+            ->concat(
+                $sesi->standarDicek
+                    ->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai)
+                    ->sortBy('id')
+            )
             ->unique('id')
             ->values();
 
