@@ -300,9 +300,23 @@ class ImporPelangganTest extends TestCase
      */
     public function test_koneksi_produksi_yang_belum_disetel_ditolak_bukan_jatuh_ke_bawaan(): void
     {
+        // `assertNull`, bukan "null atau string kosong" — dan bedanya menentukan
+        // apakah baris ini menjaga apa pun.
+        //
+        // Kunci yang ADA TAPI KOSONG di `.env` menang atas nilai bawaan di
+        // `env()`; bawaan cuma terpicu kalau kuncinya tidak ada sama sekali.
+        // Jadi kalau `.env.example` memuat `DB_PRODUKSI_HOST=`, bawaan
+        // `'127.0.0.1'` yang berbahaya TIDAK PERNAH terpicu di CI (workflow-nya
+        // `cp .env.example .env`), nilainya `''`, dan assertion yang menerima
+        // string kosong akan hijau sambil membiarkan bahayanya lewat.
+        //
+        // Itu bukan dugaan: versi longgar pernah ditulis di sini dan lulus
+        // dengan bawaan berbahaya terpasang. Karena itu kuncinya dikomentari di
+        // `.env.example`, dan assertion-nya dikembalikan ketat.
         $this->assertNull(
             config('database.connections.produksi.host'),
-            'Koneksi `produksi` tidak boleh punya host bawaan — lihat config/database.php.',
+            'Koneksi `produksi` tidak boleh punya host bawaan — lihat config/database.php. '
+            .'Kalau ini merah karena `\'\'`, kunci DB_PRODUKSI_* di .env.example tidak lagi dikomentari.',
         );
 
         $org = $this->organisasi();
