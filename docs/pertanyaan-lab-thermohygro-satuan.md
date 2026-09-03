@@ -18,7 +18,7 @@ barisnya jatuh ke **satu kelompok**.
 
 Satu kelompok = satu satuan, dan satuannya diambil dari **baris pertama**:
 
-```
+```text
 Standard (°C) | Unit Under Test (°C) | Correction (°C)
         15,77 |               14,36 |            1,41
         25,60 |               24,40 |            1,20

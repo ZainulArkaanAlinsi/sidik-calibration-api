@@ -93,29 +93,65 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
                 'paksaPadat' => false,
             ])->render();
 
-            $bersih = html_entity_decode(strip_tags($html));
+            // Judul kolomnya diadu HARFIAH. Tanpa ini, kolom U95 bisa hilang
+            // sama sekali dan test tetap hijau selama angkanya kebetulan muncul
+            // di tempat lain di halaman.
+            $this->assertStringContainsString(
+                'U<sub>95%</sub> (±)',
+                $html,
+                "{$alat}: kepala kolom `U95% (±)` nggak ada di sertifikatnya.",
+            );
+
+            // Tiap nilai dicari DI DALAM barisnya sendiri, bukan di seluruh
+            // dokumen. Versi pertama test ini menyapu seluruh halaman — dan di
+            // situ satu angka yang kebetulan tercetak di baris lain bisa
+            // memuaskan beberapa titik sekaligus, jadi yang terbukti cuma
+            // "angkanya ada di suatu tempat".
+            $baris = self::barisTabel($html);
+            $titik = 0;
 
             foreach ($snapshot['hasil'] ?? [] as $hasil) {
-                if (($hasil['u95'] ?? null) === null) {
-                    continue;
-                }
+                $ke = $hasil['titik_ke'] ?? null;
+
+                // Null DIHITUNG, bukan dilewati diam-diam: sertifikat yang
+                // seluruh U95-nya null bakal bikin loop ini nol putaran dan
+                // test-nya hijau tanpa menguji apa pun.
+                $this->assertNotNull(
+                    $hasil['u95'] ?? null,
+                    "{$alat} titik ke-{$ke}: U95-nya null, padahal alat ini wajib punya U95 tiap titik.",
+                );
 
                 $tercetak = Angka::hasil(
                     (float) $hasil['u95'],
                     $hasil['desimal_u95'] ?? $hasil['desimal'] ?? 4,
                 );
 
+                $this->assertArrayHasKey(
+                    $titik,
+                    $baris,
+                    "{$alat}: baris tabel ke-{$titik} nggak ada di HTML-nya.",
+                );
+
                 $this->assertStringContainsString(
                     $tercetak,
-                    $bersih,
+                    $baris[$titik],
                     sprintf(
-                        '%s titik ke-%s: U95 %s nggak kecetak di sertifikatnya.',
+                        '%s titik ke-%s: U95 %s nggak kecetak DI BARISNYA sendiri (baris: %s).',
                         $alat,
-                        $hasil['titik_ke'] ?? '?',
+                        $ke ?? '?',
                         $tercetak,
+                        trim(preg_replace('/\s+/', ' ', $baris[$titik]) ?? ''),
                     ),
                 );
+
+                $titik++;
             }
+
+            $this->assertGreaterThan(
+                1,
+                $titik,
+                "{$alat}: cuma {$titik} titik kesapu — U95 per titik nggak berarti apa-apa di satu titik.",
+            );
 
             $diperiksa[] = $alat;
         }
@@ -151,5 +187,39 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail();
+    }
+
+    /**
+     * Isi tiap `<tr>` di tabel hasil, sudah dibuang tag-nya.
+     *
+     * Dipakai supaya nilai U95 tiap titik diadu ke BARISNYA sendiri. Mencari ke
+     * seluruh dokumen bikin satu angka bisa memuaskan beberapa titik sekaligus
+     * — yang terbukti cuma angkanya ada di suatu tempat, bukan di tempat yang
+     * benar.
+     *
+     * @return list<string>
+     */
+    private static function barisTabel(string $html): array
+    {
+        $awal = strpos($html, '<table class="data"');
+
+        if ($awal === false) {
+            return [];
+        }
+
+        preg_match_all('#<tr[^>]*>(.*?)</tr>#s', substr($html, $awal), $cocok);
+
+        $baris = [];
+
+        foreach ($cocok[1] ?? [] as $isi) {
+            // Baris kepala tabel dilewati — yang dicari baris DATA.
+            if (str_contains($isi, '<th')) {
+                continue;
+            }
+
+            $baris[] = html_entity_decode(strip_tags($isi));
+        }
+
+        return $baris;
     }
 }

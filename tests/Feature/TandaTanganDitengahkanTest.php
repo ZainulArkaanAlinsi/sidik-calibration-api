@@ -108,16 +108,30 @@ class TandaTanganDitengahkanTest extends TestCase
             $cocok,
             PREG_SET_ORDER,
         );
+        // Dikenali dari RASIO-nya, bukan "yang penting lebih sempit dari
+        // halaman". Temuan review: QR sertifikat lebarnya 24 mm — lolos saringan
+        // lebar, dan karena yang diambil kecocokan TERAKHIR, dia bisa menimpa
+        // tanda tangannya. Test-nya lalu mengukur posisi QR terhadap garis tanda
+        // tangan: bisa hijau atau merah, dua-duanya dengan alasan yang salah.
+        //
+        // Rasio tinggi/lebar coretan fixture ini 1746/1475 = 1,184; QR selalu
+        // bujur sangkar (1,000). Jaraknya jauh, jadi ambangnya longgar pun aman.
+        $rasioCoretan = 1746 / 1475;
+
         foreach ($cocok as $c) {
             $lebar = (float) $c[1] / $pt;
-            if ($lebar < 100) {
-                $gambar = [
-                    'lebar' => $lebar,
-                    'tinggi' => (float) $c[2] / $pt,
-                    'x' => (float) $c[3] / $pt,
-                    'y' => (float) $c[4] / $pt,
-                ];
+            $tinggi = (float) $c[2] / $pt;
+
+            if ($lebar <= 0 || abs($tinggi / $lebar - $rasioCoretan) > 0.05) {
+                continue;
             }
+
+            $gambar = [
+                'lebar' => $lebar,
+                'tinggi' => $tinggi,
+                'x' => (float) $c[3] / $pt,
+                'y' => (float) $c[4] / $pt,
+            ];
         }
 
         // Garis tanda tangan: horizontal, dan yang paling DEKAT ke dasar
