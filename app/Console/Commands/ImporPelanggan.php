@@ -51,12 +51,17 @@ class ImporPelanggan extends Command
         {--sumber=admin : Nilai kolom `sumber` untuk baris hasil impor}
         {--oleh= : ID user yang bertanggung jawab atas impor ini}
         {--uji-coba : Jalan tanpa menulis apa pun, cuma laporan}
-        {--laporan= : Path CSV hasil tinjauan}';
+        {--laporan= : Path CSV hasil tinjauan}
+        {--koneksi= : Koneksi database tujuan, mis. `produksi`. Kosong = koneksi default aplikasi}';
 
     protected $description = 'Impor pelanggan historis lab dari CSV, dengan pemilahan kembar';
 
     public function handle(): int
     {
+        if (! $this->pakaiKoneksi()) {
+            return self::FAILURE;
+        }
+
         $organization = $this->organisasi();
 
         if ($organization === null) {
@@ -110,6 +115,81 @@ class ImporPelanggan extends Command
         }
 
         return $this->tulis($keranjang['baru'], $organization->id, $sumber, $oleh);
+    }
+
+    /**
+     * Pasang koneksi tujuan, dan umumkan tujuannya apa pun pilihannya.
+     *
+     * ## Kenapa tujuannya SELALU dicetak, bukan cuma waktu `--koneksi` dipakai
+     *
+     * Kegagalan yang bikin opsi ini lahir bukan "salah ketik nama koneksi".
+     * Yang terjadi: impor dijalankan dari laptop yang `.env`-nya menunjuk MySQL
+     * lokal, perintahnya sukses, laporannya hijau, "142 pelanggan masuk" —
+     * dan teknisi tidak melihat satu pun, karena barisnya mendarat di laptop.
+     * Nol pesan error, di mana pun.
+     *
+     * Satu baris yang menyebutkan host + database sebelum apa pun ditulis
+     * menutup seluruh kelas kesalahan itu, dan harganya nol.
+     *
+     * ## Kenapa `database.default` yang ditukar, bukan koneksi per query
+     *
+     * Impor ini menyentuh empat model (`Organization`, `User`, `Customer`,
+     * plus `audit_logs` lewat `Diaudit`) dan satu transaksi. Menyetel koneksi
+     * satu per satu berarti satu yang terlewat menulis ke database yang beda
+     * dari yang lain — separuh di produksi, separuh di laptop, dan transaksinya
+     * tidak melindungi apa-apa karena bukan satu koneksi.
+     */
+    private function pakaiKoneksi(): bool
+    {
+        $nama = (string) ($this->option('koneksi') ?? '');
+
+        if ($nama !== '') {
+            if (config("database.connections.{$nama}") === null) {
+                $this->error("Koneksi `{$nama}` tidak ada di config/database.php.");
+
+                return false;
+            }
+
+            $kosong = array_keys(array_filter(
+                [
+                    'host' => config("database.connections.{$nama}.host"),
+                    'database' => config("database.connections.{$nama}.database"),
+                    'username' => config("database.connections.{$nama}.username"),
+                ],
+                fn ($nilai): bool => $nilai === null || $nilai === '',
+            ));
+
+            if ($kosong !== []) {
+                // Sengaja berhenti, bukan jatuh ke bawaan. Koneksi `produksi`
+                // memang ditulis tanpa nilai bawaan supaya sampai di sini —
+                // lihat alasannya di config/database.php.
+                $this->error(sprintf(
+                    'Koneksi `%s` belum disetel: %s masih kosong. Isi %s di .env laptop '
+                    .'(ambil nilainya dari dashboard Render, jangan dimasukkan ke repo).',
+                    $nama,
+                    implode(', ', $kosong),
+                    implode(', ', array_map(
+                        fn (string $k): string => 'DB_'.strtoupper($nama).'_'.strtoupper($k),
+                        $kosong,
+                    )),
+                ));
+
+                return false;
+            }
+
+            config(['database.default' => $nama]);
+        }
+
+        $aktif = (string) config('database.default');
+
+        $this->line(sprintf(
+            'Tujuan: koneksi `%s` — host %s, database %s.',
+            $aktif,
+            (string) config("database.connections.{$aktif}.host"),
+            (string) config("database.connections.{$aktif}.database"),
+        ));
+
+        return true;
     }
 
     private function organisasi(): ?Organization

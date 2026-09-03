@@ -273,6 +273,103 @@ class ImporPelangganTest extends TestCase
         $this->assertSame(0, Customer::where('organization_id', $org->id)->count());
     }
 
+    public function test_koneksi_yang_tidak_terdaftar_ditolak(): void
+    {
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+            '--koneksi' => 'produks',
+        ])->assertFailed();
+
+        $this->assertSame(0, Customer::where('organization_id', $org->id)->count());
+    }
+
+    /**
+     * Penjaga yang jadi alasan seluruh opsi `--koneksi` ada.
+     *
+     * `produksi` sengaja ditulis TANPA nilai bawaan di config/database.php.
+     * Kalau suatu saat ada yang "merapikannya" jadi `env('DB_PRODUKSI_HOST',
+     * '127.0.0.1')` seperti koneksi `mysql` di atasnya, perintah ini akan jalan
+     * mulus ke MySQL laptop sambil dikira menulis ke produksi — persis kejadian
+     * yang bikin opsi ini dibuat, dan nol error yang muncul.
+     *
+     * Test ini merah kalau bawaan itu dipasang.
+     */
+    public function test_koneksi_produksi_yang_belum_disetel_ditolak_bukan_jatuh_ke_bawaan(): void
+    {
+        // `assertNull`, bukan "null atau string kosong" — dan bedanya menentukan
+        // apakah baris ini menjaga apa pun.
+        //
+        // Kunci yang ADA TAPI KOSONG di `.env` menang atas nilai bawaan di
+        // `env()`; bawaan cuma terpicu kalau kuncinya tidak ada sama sekali.
+        // Jadi kalau `.env.example` memuat `DB_PRODUKSI_HOST=`, bawaan
+        // `'127.0.0.1'` yang berbahaya TIDAK PERNAH terpicu di CI (workflow-nya
+        // `cp .env.example .env`), nilainya `''`, dan assertion yang menerima
+        // string kosong akan hijau sambil membiarkan bahayanya lewat.
+        //
+        // Itu bukan dugaan: versi longgar pernah ditulis di sini dan lulus
+        // dengan bawaan berbahaya terpasang. Karena itu kuncinya dikomentari di
+        // `.env.example`, dan assertion-nya dikembalikan ketat.
+        $this->assertNull(
+            config('database.connections.produksi.host'),
+            'Koneksi `produksi` tidak boleh punya host bawaan — lihat config/database.php. '
+            .'Kalau ini merah karena `\'\'`, kunci DB_PRODUKSI_* di .env.example tidak lagi dikomentari.',
+        );
+
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+            '--koneksi' => 'produksi',
+        ])->assertFailed();
+
+        $this->assertSame(0, Customer::where('organization_id', $org->id)->count());
+    }
+
+    /**
+     * Koneksinya diperiksa SEBELUM berkasnya dibuka.
+     *
+     * Path-nya sengaja menunjuk berkas yang tidak ada: kalau pemeriksaan
+     * koneksi dipindah ke belakang pembacaan berkas, yang gagal duluan adalah
+     * pembacaannya, dan pesan yang sampai ke admin bicara soal berkas padahal
+     * masalahnya koneksi.
+     */
+    public function test_koneksi_diperiksa_sebelum_berkas_dibaca(): void
+    {
+        $org = $this->organisasi();
+
+        $this->artisan('customers:impor', [
+            'berkas' => '/tmp/tidak-ada-berkas-ini-juga.csv',
+            '--organization' => $org->id,
+            '--koneksi' => 'produksi',
+        ])
+            ->expectsOutputToContain('belum disetel')
+            ->assertFailed();
+    }
+
+    public function test_tanpa_koneksi_jalan_seperti_biasa_dan_menyebut_tujuannya(): void
+    {
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        // Tujuannya dicetak di SETIAP jalan, bukan cuma waktu `--koneksi`
+        // dipakai — admin yang tidak tahu `.env`-nya menunjuk ke mana justru
+        // yang tidak akan menuliskan opsinya.
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+        ])
+            ->expectsOutputToContain('Tujuan: koneksi')
+            ->assertSuccessful();
+
+        $this->assertSame(1, Customer::where('organization_id', $org->id)->count());
+    }
+
     public function test_berkas_tidak_ada_gagal_dengan_pesan_bukan_exception(): void
     {
         $org = $this->organisasi();

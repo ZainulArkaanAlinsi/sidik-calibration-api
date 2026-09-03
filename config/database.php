@@ -64,6 +64,58 @@ return [
             ]) : [],
         ],
 
+        /*
+         * Database produksi, dipakai DARI LAPTOP — bukan dari server.
+         *
+         * Render paket gratis tidak punya Shell, jadi perintah sekali-seumur-
+         * hidup seperti `customers:impor` tidak bisa dijalankan di server.
+         * Jalannya dari laptop admin, menembak database yang sama dengan yang
+         * dipakai server.
+         *
+         * Alternatifnya — menukar `DB_*` di `.env` sebentar — pernah nyaris
+         * dipakai dan ditolak: selama tertukar, SETIAP perintah artisan dari
+         * laptop mengenai database asli, termasuk `migrate:fresh` yang tidak
+         * sengaja, dan tidak ada yang mengingatkan kalau lupa dikembalikan.
+         * Koneksi terpisah bikin mengenai produksi harus DISEBUTKAN.
+         *
+         * ## Kenapa tidak ada satu pun nilai bawaan di sini
+         *
+         * `mysql` di atas punya `env('DB_HOST', '127.0.0.1')`. Kalau pola itu
+         * ditiru, `DB_PRODUKSI_HOST` yang lupa diisi berarti koneksi ini
+         * diam-diam menunjuk MySQL laptop — dan impornya "berhasil", laporannya
+         * hijau, tapi teknisi tidak melihat apa-apa. Itu persis kegagalan yang
+         * koneksi ini ada untuk mencegahnya.
+         *
+         * Tanpa bawaan, `host` jadi null, dan `customers:impor` menolak jalan
+         * dengan pesan yang menyebutkan kunci mana yang kosong.
+         *
+         * Kuncinya TIDAK ada di `render.yaml`, dan itu disengaja: server tidak
+         * butuh jalur "ke produksi" dari dalam produksi.
+         */
+        'produksi' => [
+            'driver' => 'mysql',
+            'url' => env('DB_PRODUKSI_URL'),
+            'host' => env('DB_PRODUKSI_HOST'),
+            'port' => env('DB_PRODUKSI_PORT'),
+            'database' => env('DB_PRODUKSI_DATABASE'),
+            'username' => env('DB_PRODUKSI_USERNAME'),
+            'password' => env('DB_PRODUKSI_PASSWORD', ''),
+            'unix_socket' => '',
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                // Aiven menolak sambungan tanpa TLS. Di server, `entrypoint.sh`
+                // membongkar `DB_SSL_CA_B64` jadi berkas lalu mengekspor
+                // `MYSQL_ATTR_SSL_CA`; di laptop lebih sederhana menunjuk
+                // berkas .pem-nya langsung.
+                Mysql::ATTR_SSL_CA => env('DB_PRODUKSI_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
