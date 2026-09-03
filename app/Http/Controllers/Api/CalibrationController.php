@@ -324,21 +324,9 @@ class CalibrationController extends Controller
     {
         $clientRequestId = $request->input('client_request_id');
 
-        // Replay: teknisi di lapangan submit, sinyal putus pas nunggu respons
-        // (padahal request-nya udah sampe ke server), mobile nganggep gagal &
-        // retry begitu koneksi balik. Tanpa ini, retry-nya bikin sesi dobel
-        // buat 1 kejadian kalibrasi yang sama. `client_request_id` di-scope ke
-        // organisasi, sama kayak constraint DB-nya.
-        if ($clientRequestId !== null) {
-            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
-                ->where('client_request_id', $clientRequestId)
-                ->first();
-
-            if ($existing) {
-                return response()->json([
-                    'data' => new CalibrationResource($existing->load(self::RELASI)),
-                ], 200);
-            }
+        // Retry sesudah sinyal putus — alasannya lengkap di `replay()`.
+        if (($replay = $this->replay($request, $clientRequestId)) !== null) {
+            return $replay;
         }
 
         $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
@@ -378,16 +366,8 @@ class CalibrationController extends Controller
     {
         $clientRequestId = $request->input('client_request_id');
 
-        if ($clientRequestId !== null) {
-            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
-                ->where('client_request_id', $clientRequestId)
-                ->first();
-
-            if ($existing) {
-                return response()->json([
-                    'data' => new CalibrationResource($existing->load(self::RELASI)),
-                ], 200);
-            }
+        if (($replay = $this->replay($request, $clientRequestId)) !== null) {
+            return $replay;
         }
 
         $hasil = $this->autoclave->hitung($this->perakitAutoclave->dari($request->dataUkur()));
@@ -706,13 +686,37 @@ class CalibrationController extends Controller
         // Sesi FAIL tetap boleh disetujui — hasil FAIL itu temuan yang sah dan
         // sertifikatnya tetap terbit (isinya "tidak laik pakai"). Yang beda cuma
         // keputusannya, bukan boleh/nggaknya terbit.
-        $calibration->update([
-            'status' => CalibrationSession::STATUS_DISETUJUI,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-            'catatan_revisi' => null,
-            'revisi_field' => null,
-        ]);
+        //
+        // Transisinya BERSYARAT (`where status = menunggu_approval`), bukan
+        // `update()` polos. Pemeriksaan status di awal method ini dilakukan
+        // jauh sebelum baris ini — di antaranya ada validasi, pemeriksaan OCR,
+        // dan `CalibrationValidator::periksa()` yang menyentuh database. Dua
+        // klik "Setujui" yang berdekatan sama-sama lolos pemeriksaan awal itu,
+        // lalu sama-sama sampai ke sini.
+        //
+        // Yang kalah balapan mendapat 0 baris terpengaruh dan berhenti di sini,
+        // jadi `GenerateCertificate` di bawah cuma dipanggil sekali. Ini yang
+        // pertama dari dua lapis; lapis keduanya lock di job-nya sendiri, buat
+        // pemanggil yang tidak lewat sini.
+        $berhasilDisetujui = CalibrationSession::whereKey($calibration->id)
+            ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->update([
+                'status' => CalibrationSession::STATUS_DISETUJUI,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'catatan_revisi' => null,
+                'revisi_field' => null,
+                'updated_at' => now(),
+            ]);
+
+        if ($berhasilDisetujui === 0) {
+            return response()->json([
+                'message' => 'Sesi ini barusan sudah disetujui lewat permintaan lain — '
+                    .'sertifikatnya nggak dibikin dua kali. Muat ulang halamannya.',
+            ], 409);
+        }
+
+        $calibration->refresh();
 
         $job = new GenerateCertificate(
             $calibration->id,
@@ -2850,6 +2854,60 @@ class CalibrationController extends Controller
      * Teknisi cuma boleh buka sesi miliknya sendiri. Tanpa ini, `GET /calibrations`
      * udah difilter tapi `GET /calibrations/{id}` masih bocor — tinggal tebak ID.
      */
+    /**
+     * Cabang replay: kiriman yang `client_request_id`-nya sudah pernah masuk.
+     *
+     * Teknisi di lapangan submit, sinyal putus pas nunggu respons (padahal
+     * request-nya sudah sampai ke server), mobile menganggapnya gagal dan retry
+     * begitu koneksi balik. Tanpa ini, retry-nya bikin sesi dobel buat satu
+     * kejadian kalibrasi yang sama. `client_request_id` di-scope ke organisasi,
+     * sama seperti constraint DB-nya.
+     *
+     * ## Kenapa `pastikanBolehLihat()` dipanggil di sini
+     *
+     * Cabang ini memulangkan `CalibrationResource` LENGKAP, dan dulu dia
+     * satu-satunya jalur baca `CalibrationSession` di controller ini yang lolos
+     * dari aturan "teknisi cuma lihat sesi miliknya sendiri". Pemeriksaannya
+     * cuma `organization_id + client_request_id`.
+     *
+     * Yang perlu ditulis jujur: ini **bukan lubang yang terbuka**. Menembusnya
+     * menuntut menebak `client_request_id` orang lain, dan itu tidak mungkin —
+     * mobile membangkitkannya dengan `Random.secure()`, UUIDv4 penuh (122 bit),
+     * dan `grep -rn client_request_id app/Http/Resources/` nol hasil: nilainya
+     * tidak pernah dikembalikan ke klien mana pun, jadi tidak ada tempat untuk
+     * mengintipnya.
+     *
+     * Diperbaiki karena dia satu-satunya pengecualian dari pola yang konsisten
+     * di seluruh controller — dan pengecualian yang tidak punya alasan tertulis
+     * itu yang biasanya disalin ke tempat berikutnya.
+     *
+     * ## Kenapa dijadikan satu fungsi
+     *
+     * Dua pemanggilnya (`store()` & `simpanAutoclave()`) dulu memuat blok yang
+     * sama persis, disalin. Penjagaan yang disalin cuma dijaga ingatan; yang
+     * ketiga nanti lahir tanpa penjagaannya lagi.
+     */
+    private function replay(Request $request, ?string $clientRequestId): ?JsonResponse
+    {
+        if ($clientRequestId === null) {
+            return null;
+        }
+
+        $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
+            ->where('client_request_id', $clientRequestId)
+            ->first();
+
+        if ($existing === null) {
+            return null;
+        }
+
+        $this->pastikanBolehLihat($request, $existing);
+
+        return response()->json([
+            'data' => new CalibrationResource($existing->load(self::RELASI)),
+        ], 200);
+    }
+
     private function pastikanBolehLihat(Request $request, CalibrationSession $sesi): void
     {
         $this->pastikanSatuOrganisasi($request, $sesi);

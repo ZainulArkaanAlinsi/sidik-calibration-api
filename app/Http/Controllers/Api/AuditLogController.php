@@ -88,9 +88,9 @@ class AuditLogController extends Controller
             // karakter non-ASCII jadi kacau, dan itu yang dibaca asesor.
             fwrite($keluaran, "\xEF\xBB\xBF");
 
-            fputcsv($keluaran, [
+            $this->tulisBaris($keluaran, [
                 'Waktu', 'Entitas', 'ID', 'Aksi', 'Pelaku', 'Role', 'Kolom', 'Nilai Lama', 'Nilai Baru', 'Catatan',
-            ], ',', '"', self::ESCAPE);
+            ]);
 
             // `chunkById`, bukan `get()`: 10 ribu baris audit yang bawa dua kolom
             // JSON itu berat kalau ditarik sekaligus.
@@ -100,7 +100,7 @@ class AuditLogController extends Controller
                     $baris = $this->barisCsv($log);
 
                     foreach ($baris as $b) {
-                        fputcsv($keluaran, $b, ',', '"', self::ESCAPE);
+                        $this->tulisBaris($keluaran, $b);
                     }
                 }
             });
@@ -109,6 +109,64 @@ class AuditLogController extends Controller
         }, $namaFile, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * SATU pintu tulis, supaya netralisasinya nggak bisa dilewat baris baru.
+     *
+     * Ditaruh di sini, bukan di `teks()`, karena `teks()` cuma menyentuh isi
+     * `old_data`/`new_data`. Empat kolom lain di baris yang sama juga datang
+     * dari isian orang — `Pelaku` itu `users.name` yang diisi sendiri waktu
+     * mendaftar, `Catatan` itu `audit_logs.note`, dan `Entitas`/`Kolom` ikut
+     * apa pun yang dicatat trait `Diaudit`.
+     *
+     * @param  resource  $keluaran
+     * @param  list<string>  $baris
+     */
+    private function tulisBaris($keluaran, array $baris): void
+    {
+        fputcsv($keluaran, array_map($this->netral(...), $baris), ',', '"', self::ESCAPE);
+    }
+
+    /**
+     * Nahan sel CSV supaya nggak dieksekusi sebagai rumus waktu dibuka.
+     *
+     * Excel, LibreOffice dan Google Sheets memperlakukan sel yang diawali `=`,
+     * `+`, `-` atau `@` sebagai RUMUS, bukan teks — termasuk kalau isinya
+     * datang dari kolom yang boleh diisi teknisi. `Customer::nama` lewat
+     * `POST /customers/cepat`, `catatan_teknisi`, `pemilik_nama`: semuanya
+     * mendarat di sini lewat trait `Diaudit`.
+     *
+     * Beda dari ekspor XLSX (`CertificateExcelExporter`, `LaporanExcelExporter`)
+     * yang lewat OpenSpout dan menulis TIPE SEL eksplisit — CSV ditafsir murni
+     * dari isi teksnya, jadi penjagaannya harus di teksnya.
+     *
+     * ## Kenapa angka negatif dikecualikan
+     *
+     * Ini bagian yang paling gampang salah, dan salahnya nggak menerbitkan
+     * error: `-0,02` itu nilai koreksi yang sah dan diawali `-`. Kalau ikut
+     * diberi awalan kutip, Excel membacanya sebagai TEKS — dan seluruh alasan
+     * ekspor ini berbentuk CSV, yaitu supaya bisa disaring dan di-pivot,
+     * langsung batal. Jadi yang dikecualikan cuma yang beneran angka, dan
+     * `is_numeric()` yang memutuskannya: `-0.02` lolos, `-1+1` tidak.
+     *
+     * Awalan yang dipakai kutip tunggal, bukan tab: Excel & LibreOffice
+     * memperlakukannya sebagai penanda teks dan TIDAK menampilkannya di sel,
+     * jadi yang dibaca asesor tetap nilai aslinya.
+     */
+    private function netral(string $nilai): string
+    {
+        if ($nilai === '' || ! str_contains("=+-@\t\r", $nilai[0])) {
+            return $nilai;
+        }
+
+        // Angka negatif (dan `+5`) itu nilai yang sah dan harus tetap kebaca
+        // sebagai angka. Lihat docblock.
+        if (is_numeric($nilai)) {
+            return $nilai;
+        }
+
+        return "'".$nilai;
     }
 
     /**

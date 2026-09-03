@@ -181,6 +181,38 @@ class AppServiceProvider extends ServiceProvider
      * padahal dia belum pernah manggil endpoint itu sama sekali.
      *
      * Dengan limiter bernama, tiap endpoint punya ember sendiri.
+     *
+     * ## Yang SUDAH LOGIN kena bentuk cacat yang sama, lewat cabang yang lain
+     *
+     * Paragraf di atas berhenti di cabang tamu, dan itu setengah ceritanya.
+     * `resolveRequestSignature()` punya DUA cabang, dan nama route tidak ikut
+     * di kedua-duanya:
+     *
+     *     if ($user = $request->user()) return formatIdentifier($user->getAuthIdentifier());
+     *     elseif ($route = $request->route()) return formatIdentifier($route->getDomain().'|'.$request->ip());
+     *
+     * Jadi `throttle:20,1` di dalam `auth:sanctum` menabung ke SATU counter per
+     * user — dipakai bersama dua belas endpoint yang batasnya beda-beda, dari
+     * 300/menit sampai 20/menit. Teknisi memindai satu lembar kerja (satu
+     * panggilan `crop` PER SEL, jatahnya 300) menghabiskan counter itu, lalu
+     * `extract-from-photo` (30) dan semua endpoint 20/menit ikut mati sampai
+     * menitnya lewat. Yang muncul di HP-nya "Kebanyakan percobaan" — untuk
+     * tombol yang belum pernah dia tekan.
+     *
+     * Jalur tamu juga masih menyisakan empat: halaman verifikasi QR dan tombol
+     * unduhnya berbagi ember, jadi pelanggan yang membuka sertifikatnya sebelas
+     * kali menemukan tombol unduhnya mati tanpa pernah menekannya.
+     *
+     * Angkanya TIDAK diubah satu pun di sini — yang diperbaiki cuma embernya.
+     * Dijaga `JatahThrottleTerpisahPerEndpointTest`.
+     *
+     * ## Kenapa yang sudah login dikunci per ORANG, bukan per IP
+     *
+     * Sepuluh teknisi satu lab keluar lewat satu alamat IP. Kunci per-IP di
+     * jalur yang sudah login berarti teknisi pertama yang sibuk mengunci
+     * sembilan temannya — jatah yang benar per-orang jadi dibagi sepuluh tanpa
+     * ada yang tahu sebabnya. Yang tamu tetap per-IP: di sana memang tidak ada
+     * orang yang bisa dihitung.
      */
     private function rateLimiters(): void
     {
@@ -196,6 +228,55 @@ class AppServiceProvider extends ServiceProvider
         $perMenit('login', 10);
         $perMenit('register', 5);
         $perMenit('password-reset', 5);
+
+        // Jalur yang SUDAH LOGIN — dikunci per orang, bukan per IP.
+        //
+        // `?? $request->ip()` cuma jaring pengaman: rute-rute ini semuanya di
+        // balik `auth:sanctum`, jadi `user()` tidak pernah null di sana. Kalau
+        // suatu hari salah satunya dipindah ke luar, dia jatuh ke per-IP —
+        // bukan ke satu ember global untuk semua orang.
+        $perMenitPengguna = fn (string $nama, int $jumlah) => RateLimiter::for(
+            $nama,
+            fn (Request $request) => Limit::perMinute($jumlah)
+                ->by($nama.'|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+                ->response(fn () => response()->json([
+                    'message' => 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.',
+                ], 429)),
+        );
+
+        // Angkanya persis seperti sebelum perbaikan ini — lihat riwayat git
+        // kalau ada yang perlu disetel ulang; menyetelnya di sini keputusan
+        // terpisah, bukan bagian dari perbaikan embernya.
+        $perMenitPengguna('laporan-export', 20);
+        $perMenitPengguna('pratinjau-hitung', 120);
+        $perMenitPengguna('pratinjau-autoclave', 120);
+        $perMenitPengguna('ekstrak-foto', 30);
+        $perMenitPengguna('pindai-lembar', 60);
+        $perMenitPengguna('pindai-crop', 300);
+        $perMenitPengguna('dokumen-baca', 30);
+        $perMenitPengguna('dokumen-bacaan', 120);
+        $perMenitPengguna('dokumen-koreksi', 120);
+        $perMenitPengguna('sertifikat-kirim-email', 20);
+        $perMenitPengguna('sertifikat-catat-whatsapp', 20);
+        $perMenitPengguna('audit-export', 20);
+
+        // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
+        $perMenit('versi-aplikasi', 60);
+        $perMenit('verifikasi-json', 30);
+
+        // Dua halaman WEB publik (QR sertifikat discan orang luar pakai browser).
+        //
+        // Sengaja TANPA `->response()` JSON: yang membukanya browser, bukan
+        // aplikasi kita. Tanpa callback, Laravel melempar
+        // `ThrottleRequestsException` dan merendernya sebagai halaman 429 biasa
+        // — persis perilaku sebelum perbaikan ini. Yang berubah cuma embernya.
+        $perMenitTamuHalaman = fn (string $nama, int $jumlah) => RateLimiter::for(
+            $nama,
+            fn (Request $request) => Limit::perMinute($jumlah)->by($nama.'|'.$request->ip()),
+        );
+
+        $perMenitTamuHalaman('verifikasi-halaman', 30);
+        $perMenitTamuHalaman('verifikasi-unduh', 10);
 
         // Direktori perusahaan luar — dihitung GLOBAL, bukan per-IP.
         //

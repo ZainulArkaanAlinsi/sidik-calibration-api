@@ -37,6 +37,7 @@ use App\Services\Direktori\PilihanDriver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use Laravel\Reverb\ReverbServiceProvider;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,6 +145,48 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
         'seed_saat_boot' => config('deploy.seed_saat_boot'),
     ],
+
+    // Realtime sync — pertanyaan yang selama ini nggak bisa dijawab dari luar
+    // SAMA SEKALI, dan degradasinya senyap.
+    //
+    // `laravel/reverb` terpasang di `composer.json`, tapi `render.yaml` nggak
+    // punya satu pun `BROADCAST_CONNECTION` atau `REVERB_*`. Jadi produksi
+    // jatuh ke bawaan `log`: event broadcast ditulis ke berkas log dan nggak
+    // pernah nyampe ke klien. Nggak ada error, nggak ada yang gagal — pengguna
+    // cuma nggak pernah lihat pembaruan sampai dia menarik data manual.
+    //
+    // Itu bentuk kegagalan yang paling mahal dilacak: fiturnya ada di kode,
+    // ada di dokumen, dan "kelihatan" terpasang. Satu-satunya cara memeriksanya
+    // sebelum ini adalah masuk ke dashboard Render dan membaca env var-nya.
+    //
+    // Batasnya SAMA dengan dua blok di atas: yang dilaporkan status, bukan
+    // nilai. Nama driver itu status; `REVERB_APP_SECRET` nggak pernah ikut,
+    // nggak juga panjangnya. Nol request ke mana pun.
+    //
+    // Ini TIDAK menyalakan realtime-nya. Menyalakannya butuh jawaban
+    // infrastruktur yang bukan urusan kode — apakah plan Render yang dipakai
+    // sanggup menahan satu proses WebSocket panjang lagi di container yang
+    // sama. Lihat `docs/pertanyaan-lab-audit-2026-09.md` T3. Yang dibeli blok
+    // ini: keadaannya berhenti tak terlihat.
+    'realtime' => (function (): array {
+        $driver = (string) config('broadcasting.default');
+
+        return [
+            // Driver EFEKTIF, bukan isi `.env` apa adanya — alasan yang sama
+            // dengan `direktori_perusahaan.driver` di atas.
+            'driver' => $driver,
+
+            // `log` dan `null` dua-duanya berarti "nggak nyampe klien". Yang
+            // pertama nulis ke berkas log, yang kedua buang diam-diam.
+            'nyala' => ! in_array($driver, ['log', 'null'], true),
+
+            // Dipisah dari `nyala` karena dua-duanya bisa salah sendiri-sendiri:
+            // driver `reverb` tanpa paketnya bikin `/api/broadcasting/auth`
+            // gagal dengan `Class not found`, dan paket terpasang tanpa driver
+            // itu keadaan hari ini.
+            'paket_terpasang' => class_exists(ReverbServiceProvider::class),
+        ];
+    })(),
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
@@ -159,16 +202,26 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middl
 // token, teknisi yang aplikasinya terlalu lama nggak akan pernah lihat
 // pemberitahuannya. Lihat docblock controllernya.
 Route::get('/app/versi-terbaru', VersiAplikasiController::class)
-    ->middleware('throttle:60,1');
+    ->middleware('throttle:versi-aplikasi');
 
 // Verifikasi QR sertifikat — buat orang luar, tanpa auth (versi JSON-nya;
 // versi halaman webnya ada di routes/web.php).
-Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:30,1');
+Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:verifikasi-json');
 
 /*
 |--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
+|
+| Throttle di blok ini pakai limiter BERNAMA, sama alasannya dengan blok
+| publik di atas — dan angka jatahnya ada di `AppServiceProvider::rateLimiters()`,
+| bukan di baris rutenya. Sengaja: `throttle:20,1` yang kelihatan jelas di sini
+| ternyata TIDAK memisahkan jatah per endpoint. Buat request yang sudah login
+| Laravel menyusun kuncinya dari id user saja — nama route-nya nggak ikut — jadi
+| kedua belas endpoint di bawah menabung ke SATU ember dengan batas beda-beda,
+| dan yang jatahnya kecil habis gara-gara yang jatahnya besar. Lihat docblock
+| `rateLimiters()` dan `JatahThrottleTerpisahPerEndpointTest`.
+|
 */
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -260,7 +313,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan/kalibrasi/export', [LaporanController::class, 'export'])
         // Bikin file (PDF/Excel) dari sampai 5000 baris — jauh lebih berat dari
         // baca biasa, jadi jatahnya dipisah & lebih sedikit.
-        ->middleware('throttle:20,1');
+        ->middleware('throttle:laporan-export');
     Route::get('/laporan/kalibrasi', [LaporanController::class, 'kalibrasi']);
 
     // Bentuk baku lembar kerja (SIDIK-FM-CAL-0509_Rev.4) buat layar input
@@ -337,11 +390,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // selesai ngisi satu baris, bukan sekali per sesi — tapi tetap ada
         // batasnya, soalnya tiap panggilan mutar perhitungan GUM penuh.
         Route::post('/calibrations/preview', [CalibrationController::class, 'preview'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:pratinjau-hitung');
         // Olah data Autoklaf (bentuk data beda — 3 disk suhu + 1 titik tekanan).
         // Tabel kalibrator & CMC dari server; body cuma data ukur teknisi.
         Route::post('/calibrations/autoclave/preview', [AutoclaveController::class, 'preview'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:pratinjau-autoclave');
         // Simpan sesi Autoklaf (snapshot hasil di kolom JSON, bukan titik ukur).
         // Masuk riwayat/approval yang sama kayak alat lain.
         Route::post('/calibrations/autoclave', [CalibrationController::class, 'simpanAutoclave']);
@@ -361,7 +414,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // pelanggan ke layanan pihak ketiga, jadi lab harus bisa menutupnya
         // tanpa nunggu rilis. Path ngikut SPEC-vision-prompt.md §8.
         Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
-            ->middleware('throttle:30,1');
+            ->middleware('throttle:ekstrak-foto');
 
         // OCR TEMPLATE LOKAL — jalur pindai UTAMA. Tanpa AI pihak ketiga & tanpa
         // biaya per foto: ANGKANYA dibaca di HP, yang nyampe sini teks per sel +
@@ -374,12 +427,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Throttle lebih longgar dari AI Vision: nggak ada biaya per panggilan,
         // dan teknisi wajar ngulang motret beberapa kali sampai lembarnya kebaca.
         Route::post('/worksheet-scans', [WorksheetScanController::class, 'store'])
-            ->middleware('throttle:60,1');
+            ->middleware('throttle:pindai-lembar');
         Route::get('/worksheet-scans/{worksheetScan}', [WorksheetScanController::class, 'show']);
         // Potongan citra per sel — dipanggil sekali per sel yang dicek teknisi,
         // jadi batasnya jauh lebih tinggi dari endpoint lain.
         Route::get('/worksheet-scans/{worksheetScan}/sel/{kunci}/crop', [WorksheetScanController::class, 'crop'])
-            ->middleware('throttle:300,1')
+            ->middleware('throttle:pindai-crop')
             ->where('kunci', '[A-Za-z0-9_|\-\.]+');
         Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
 
@@ -396,14 +449,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // Throttle seketat AI Vision: ada biaya per panggilan, dan gambarnya
         // lebih besar.
         Route::post('/dokumen/baca', [DokumenGenerikController::class, 'baca'])
-            ->middleware('throttle:30,1');
+            ->middleware('throttle:dokumen-baca');
         // Buka ulang & koreksi hasil baca. Dua-duanya nggak manggil AI, jadi
         // batasnya jauh lebih longgar dari `baca` — layar review wajar dibuka
         // berkali-kali sambil teknisi mencocokkan angka sama kertasnya.
         Route::get('/dokumen/bacaan/{dokumenBacaan}', [DokumenGenerikController::class, 'show'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:dokumen-bacaan');
         Route::post('/dokumen/bacaan/{dokumenBacaan}/koreksi', [DokumenGenerikController::class, 'koreksi'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:dokumen-koreksi');
 
         // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
@@ -438,7 +491,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
         // dokumen resmi ke luar, bukan baca data.
         Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:sertifikat-kirim-email');
         // Catat pengiriman lewat WhatsApp. Pesannya sendiri dikirim dari HP
         // admin (buka WhatsApp lewat `wa.me`), BUKAN dari server — makanya
         // endpoint-nya cuma nyatet, nggak ngirim.
@@ -448,7 +501,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // nomor mana, sama siapa" — dan itu nggak bisa dijawab kalau jejaknya
         // cuma ada di HP satu orang.
         Route::post('/certificates/{certificate}/catat-whatsapp', [CertificateController::class, 'catatWhatsapp'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:sertifikat-catat-whatsapp');
         Route::get('/certificates/{certificate}/riwayat-email', [CertificateController::class, 'riwayatEmail']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
@@ -558,7 +611,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // tangan berhenti jadi bukti.
         // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
         Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:audit-export');
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
         Route::get('/users', [UserController::class, 'index']);

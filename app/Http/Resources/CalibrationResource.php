@@ -231,11 +231,28 @@ class CalibrationResource extends JsonResource
             'suhu_ketidakpastian' => $this->suhu_ketidakpastian,
             'kelembaban' => $this->kelembaban,
             'kelembaban_ketidakpastian' => $this->kelembaban_ketidakpastian,
+            // Parameter kondisi KETIGA, cuma terisi buat Gas Detector: sensor
+            // elektrokimianya membaca tekanan parsial, jadi konsentrasi yang
+            // ditampilkan bergerak mengikuti tekanan ruangan.
+            //
+            // Ikut di sini karena kolomnya pernah lahir TANPA baris ini —
+            // tersimpan, dipakai kalkulator, tapi tidak pernah pulang. Yang
+            // rusak diam-diam: sesi yang di-reject lalu dibuka lagi kehilangan
+            // angka yang sudah diketik teknisi, dan kotak "U95% Tekanan" di
+            // blok admin kosong sementara dua saudaranya terisi.
+            //
+            // Sembilan alat lain memulangkan `null` — dan itu bukan 0. Nol hPa
+            // itu ruang hampa; "tidak diukur" tidak boleh kelihatan seperti
+            // pembacaan yang sah.
+            'tekanan_udara' => $this->tekanan_udara,
+            'tekanan_ketidakpastian' => $this->tekanan_ketidakpastian,
             // "Env. Condition" di lembar kerja: dicatat di awal & akhir kerja.
             'suhu_awal' => $this->suhu_awal,
             'suhu_akhir' => $this->suhu_akhir,
             'kelembaban_awal' => $this->kelembaban_awal,
             'kelembaban_akhir' => $this->kelembaban_akhir,
+            'tekanan_awal' => $this->tekanan_awal,
+            'tekanan_akhir' => $this->tekanan_akhir,
             // Kolom `Time` di tabel Env. Condition, selalu `H:i` (lihat
             // CalibrationSession::jam()).
             'waktu_awal' => $this->waktu_awal,
