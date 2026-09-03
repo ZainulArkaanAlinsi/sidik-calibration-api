@@ -51,8 +51,12 @@ class DaftarTemplateOcrTidakBocorLintasLabTest extends TestCase
      */
     private function duaLab(): array
     {
-        $labSaya = Organization::factory()->create();
-        $labLain = Organization::factory()->create();
+        // `createOne()`, bukan `create()`: yang kedua bertipe
+        // `TModel|Collection<TModel>`, jadi tipe kembalian `duaLab()` tidak bisa
+        // dibuktikan alat analisis mana pun. Bedanya cuma ketepatan tipe —
+        // perilakunya sama persis.
+        $labSaya = Organization::factory()->createOne();
+        $labLain = Organization::factory()->createOne();
 
         // Baris milik lab lain, lengkap dengan identitas yang tidak boleh
         // sampai ke mana pun: nomor sertifikat & ketertelusurannya.
@@ -62,7 +66,7 @@ class DaftarTemplateOcrTidakBocorLintasLabTest extends TestCase
             'no_sertifikat' => 'JANGAN-SAMPAI-KELUAR/2026',
         ]);
 
-        $teknisi = User::factory()->create([
+        $teknisi = User::factory()->createOne([
             'organization_id' => $labSaya->id,
             'role' => User::ROLE_TEKNISI,
             'status' => 'aktif',
@@ -110,23 +114,45 @@ class DaftarTemplateOcrTidakBocorLintasLabTest extends TestCase
     {
         [$teknisi, $labLain] = $this->duaLab();
 
-        $organisasiTersaring = [];
-        DB::listen(function ($q) use (&$organisasiTersaring): void {
+        // Bindings dikumpulkan PER QUERY, bukan dituang ke satu keranjang.
+        //
+        // Satu keranjang bikin penjagaannya bocor ke arah yang halus: query yang
+        // disaring ke lab KETIGA tetap lolos, asal query LAIN di permintaan yang
+        // sama kebetulan menyebut id lab pemanggil. Yang harus benar tiap query
+        // sendiri-sendiri, bukan gabungannya.
+        $perQuery = [];
+        DB::listen(function ($q) use (&$perQuery): void {
             $dariStandards = str_contains($q->sql, 'from "standards"')
                 || str_contains($q->sql, 'from `standards`');
 
             if ($dariStandards && str_contains($q->sql, 'organization_id')) {
-                $organisasiTersaring = [...$organisasiTersaring, ...$q->bindings];
+                $perQuery[] = array_map(
+                    intval(...),
+                    array_filter($q->bindings, is_numeric(...)),
+                );
             }
         });
 
         $this->actingAs($teknisi)->getJson('/api/worksheet-templates')->assertOk();
 
-        $this->assertNotContains(
-            $labLain->id,
-            array_map(intval(...), array_filter($organisasiTersaring, is_numeric(...))),
-            'Ada query `standards` yang disaring ke `organization_id` milik lab LAIN.',
+        $this->assertNotEmpty(
+            $perQuery,
+            'Nggak ada satu pun query `standards` bersaringan yang ketangkep — testnya nggak nguji apa-apa.',
         );
+
+        foreach ($perQuery as $ke => $bindings) {
+            $this->assertContains(
+                $teknisi->organization_id,
+                $bindings,
+                "Query `standards` ke-{$ke} nyaring `organization_id`, tapi bukan ke lab pemanggil.",
+            );
+
+            $this->assertNotContains(
+                $labLain->id,
+                $bindings,
+                "Query `standards` ke-{$ke} disaring ke `organization_id` milik lab LAIN.",
+            );
+        }
     }
 
     /**

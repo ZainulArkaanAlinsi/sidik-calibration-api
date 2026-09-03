@@ -18,12 +18,19 @@ namespace App\Notifications;
 class AlatJatuhTempo extends NotifikasiSistem
 {
     /**
-     * @param  list<array<string, mixed>>  $alat  ringkasan alat yang kena
+     * @param  list<array<string, mixed>>  $alat  ringkasan alat yang kena, DIPOTONG
+     *                                            buat ditampilkan
+     * @param  list<array<string, mixed>>|null  $sumbu  seluruh alat yang kena, tanpa
+     *                                                  dipotong — cuma buat tanda
+     *                                                  tangan. Null = pakai [$alat]
+     *                                                  (pemanggil yang tidak
+     *                                                  memotong apa-apa).
      */
     public function __construct(
         private readonly int $jumlahOverdue,
         private readonly int $jumlahMendekati,
         private readonly array $alat = [],
+        private readonly ?array $sumbu = null,
     ) {}
 
     protected function judul(): string
@@ -56,12 +63,24 @@ class AlatJatuhTempo extends NotifikasiSistem
      *
      * Tanggal jatuh temponya sengaja NGGAK ikut: dia nggak bergerak sendiri,
      * dan kalau admin menggesernya sehari, itu bukan kabar baru buat siapa pun.
+     *
+     * ## Kenapa `$sumbu`, bukan `$alat`
+     *
+     * `$alat` sudah DIPOTONG 20 baris buat ditampilkan. Menghitung tanda tangan
+     * dari daftar yang terpotong bikin perubahan pada alat ke-21 dan seterusnya
+     * TIDAK KELIHATAN: `isi()`-nya berubah ("N alat sudah lewat jatuh tempo"),
+     * tanda tangannya tidak, dan `PenjagaNotifikasiUlang` menahan kabar itu
+     * tujuh hari.
+     *
+     * Arah salahnya yang paling mahal: yang ketahan justru kabar BARU, dan
+     * lab dengan lebih dari 20 alat kena persis itu — yaitu lab yang paling
+     * butuh pengingatnya.
      */
     protected function tandaTangan(): string
     {
         $bagian = array_map(
             fn (array $a): string => ($a['id'] ?? '?').':'.(($a['overdue'] ?? false) ? '1' : '0'),
-            $this->alat,
+            $this->sumbu ?? $this->alat,
         );
 
         sort($bagian);

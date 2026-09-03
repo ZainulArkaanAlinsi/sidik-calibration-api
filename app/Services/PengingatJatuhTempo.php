@@ -95,6 +95,23 @@ class PengingatJatuhTempo
         // cara paling gampang bikin salah satunya lupa nyaring `status = aktif`.
         $admins = $this->penerima->adminAktifOrganisasi($org);
 
+        // DUA daftar, dan bedanya menentukan:
+        //
+        //  - `$rincian` dipotong 20 — itu yang ditampilkan di lonceng, dan
+        //    payload notifikasi bukan tempat menaruh ratusan baris;
+        //  - `$sumbu` UTUH — itu yang jadi tanda tangan.
+        //
+        // Waktu tanda tangannya ikut dihitung dari daftar yang terpotong,
+        // perubahan pada alat ke-21 dan seterusnya tidak kelihatan sama sekali:
+        // `isi()`-nya berubah, tanda tangannya tidak, dan penjaga masa tenang
+        // menahan kabar itu tujuh hari. Yang ketahan justru kabar BARU — dan
+        // yang kena cuma lab dengan lebih dari 20 alat, yaitu lab yang paling
+        // butuh pengingatnya.
+        $sumbu = $alatList->map(fn (Equipment $a): array => [
+            'id' => $a->id,
+            'overdue' => $a->isOverdue(),
+        ])->values()->all();
+
         $rincian = $alatList->take(20)->map(fn (Equipment $a): array => [
             'id' => $a->id,
             'nama_alat' => $a->nama_alat,
@@ -105,9 +122,9 @@ class PengingatJatuhTempo
 
         // Ditulis lewat kelas notifikasi aplikasi biar baris yang sama kebaca di
         // lonceng panel admin DAN di halaman notifikasi mobile (spec poin 4 & 6).
-        $notifikasi = new AlatJatuhTempo($overdue, $mendekati, $rincian);
+        $notifikasi = new AlatJatuhTempo($overdue, $mendekati, $rincian, $sumbu);
 
-        $tandaTangan = $this->tandaTangan($rincian);
+        $tandaTangan = $this->tandaTangan($sumbu);
         $dikabarin = 0;
         $dilewat = 0;
 

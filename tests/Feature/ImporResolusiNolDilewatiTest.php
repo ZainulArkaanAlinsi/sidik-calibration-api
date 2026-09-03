@@ -9,6 +9,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -114,6 +115,52 @@ class ImporResolusiNolDilewatiTest extends TestCase
             ->assertJsonPath('data.ringkasan.dilewati', 1);
 
         $this->assertSame(0, Equipment::count());
+    }
+
+    /**
+     * Minus "cantik" tetap minus — dan ini yang paling mudah lolos.
+     *
+     * `−` (U+2212, dari salin-tempel PDF), `–`/`—` (autocorrect Excel), dan
+     * `－` (papan ketik non-latin) semuanya dulu DIBUANG oleh regex pembersih
+     * angka, dan yang tersisa bilangan POSITIF. Jadi penjaga di atas tidak
+     * pernah kena: `−0,5` mendarat di database sebagai resolusi `0,5` yang
+     * kelihatan sah sepenuhnya, dan sertifikatnya mencetak presisi yang
+     * alatnya tidak punya.
+     *
+     * Tidak ada yang error waktu itu terjadi — persis kelas kegagalan yang
+     * seluruh audit ini kejar.
+     *
+     * @param  string  $resolusi  ditulis pakai varian minus yang berbeda-beda
+     */
+    #[DataProvider('variasiMinus')]
+    public function test_minus_bukan_hyphen_ascii_juga_dilewati(string $resolusi): void
+    {
+        $this->actingAs($this->admin)
+            ->post('/api/imports/excel', [
+                'file' => $this->berkasResolusi($resolusi),
+                'tipe' => 'equipments',
+                'uji_coba' => false,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.ringkasan.dilewati', 1)
+            ->assertJsonPath('data.baris.0.alasan', self::ALASAN);
+
+        $this->assertSame(
+            0,
+            Equipment::count(),
+            "Resolusi {$resolusi} mendarat di database — minusnya kebuang, angkanya jadi positif.",
+        );
+    }
+
+    /** @return array<string, array{string}> */
+    public static function variasiMinus(): array
+    {
+        return [
+            'minus sign U+2212' => ["\u{2212}0.5"],
+            'en dash U+2013' => ["\u{2013}0.5"],
+            'em dash U+2014' => ["\u{2014}0.5"],
+            'fullwidth hyphen U+FF0D' => ["\u{FF0D}0.5"],
+        ];
     }
 
     /**

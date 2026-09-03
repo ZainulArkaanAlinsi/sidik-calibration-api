@@ -6,6 +6,7 @@ use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\RumusKalibrasi;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -171,6 +172,107 @@ class NomorVersiRumusTidakBentrokTest extends TestCase
      * Pesan yang salah lebih berbahaya daripada pesan generik: dia menyuruh
      * admin mengulang sesuatu yang tidak akan pernah berhasil.
      */
+    /**
+     * Versi 1 yang lahir dari balapan: yang kalah memakai punya PEMENANG.
+     *
+     * ## Jalur yang berbeda dari test-test di atas
+     *
+     * Yang di atas menguji `FormulaController::store()` — admin menyimpan versi
+     * baru, di dalam `DB::transaction()`, locknya menjaga. Yang ini menguji
+     * kelahiran versi **pertama**, dan itu terjadi di tempat lain sama sekali:
+     * `RumusKalibrasi::formulaUntukProfil()`, yang dipanggil dari
+     * `FormulaController::index()` dan `HitungUlangSesi` — dua-duanya di LUAR
+     * transaksi.
+     *
+     * Di luar transaksi, `lockForUpdate()` dilepas begitu query-nya selesai.
+     * Jadi dua permintaan pertama yang datang bersamaan untuk lab yang sama
+     * sama-sama membaca "belum ada versi", sama-sama menghitung nomor 1, dan
+     * yang kalah dulu keluar sebagai **500 generik**.
+     *
+     * Sekali seumur hidup sebuah rumus — jadi tidak pernah bisa diulang siapa
+     * pun yang mencoba melacaknya nanti.
+     *
+     * ## Kenapa "pakai punya pemenang", bukan "coba nomor berikutnya"
+     *
+     * Dua "versi 1" untuk rumus yang sama persis yang ditahan unique index-nya.
+     * Versi 2 yang lahir dari balapan berarti dua sesi yang dihitung dengan
+     * aturan yang SAMA distempel versi yang berbeda — dan versi rumus itu yang
+     * dirujuk sertifikat waktu ada yang menanyakan angkanya dari mana.
+     */
+    public function test_versi_satu_yang_kalah_balapan_pakai_punya_pemenang(): void
+    {
+        $org = Organization::factory()->create();
+
+        // Pemenang menyisipkan versinya PERSIS di celah antara
+        // `nomorBerikutnya()` dan insert milik yang kalah.
+        $sekali = true;
+        FormulaVersion::creating(function (FormulaVersion $versi) use (&$sekali): void {
+            if (! $sekali) {
+                return;
+            }
+
+            $sekali = false;
+
+            FormulaVersion::withoutEvents(function () use ($versi): void {
+                $pemenang = $versi->replicate();
+                $pemenang->catatan = 'PEMENANG BALAPAN';
+                $pemenang->save();
+            });
+        });
+
+        $formula = app(RumusKalibrasi::class)->formulaGumPh($org->id);
+
+        $versi = $formula->versions()->get();
+
+        $this->assertCount(
+            1,
+            $versi,
+            'Balapan versi 1 melahirkan dua baris — yang kalah nyoba nomor berikutnya.',
+        );
+        $this->assertSame(1, (int) $versi->first()->nomor_versi);
+        $this->assertSame(
+            'PEMENANG BALAPAN',
+            $versi->first()->catatan,
+            'Yang kepakai bukan versi milik pemenang balapannya.',
+        );
+    }
+
+    /**
+     * JANGAN kebablasan: bentrokan yang BUKAN balapan ini tetap dilempar.
+     *
+     * Pemulihan di atas mengenali pemenangnya dari "ada versi aktif sesudah
+     * bentrokan". Kalau syarat itu dilonggarkan jadi "tangkap semua
+     * `UniqueConstraintViolationException`", kegagalan lain ikut tertelan dan
+     * menyamar jadi keadaan normal — jebakan yang sudah menggigit sekali di
+     * penjagaan 409 milik `FormulaController`.
+     *
+     * Di sini pemenangnya sengaja disisipkan dengan status BUKAN aktif, jadi
+     * pemulihannya tidak menemukan siapa-siapa dan harus melempar ulang.
+     */
+    public function test_bentrokan_tanpa_versi_aktif_tetap_dilempar(): void
+    {
+        $org = Organization::factory()->create();
+
+        $sekali = true;
+        FormulaVersion::creating(function (FormulaVersion $versi) use (&$sekali): void {
+            if (! $sekali) {
+                return;
+            }
+
+            $sekali = false;
+
+            FormulaVersion::withoutEvents(function () use ($versi): void {
+                $penghalang = $versi->replicate();
+                $penghalang->status = FormulaVersion::STATUS_ARSIP;
+                $penghalang->save();
+            });
+        });
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        app(RumusKalibrasi::class)->formulaGumPh($org->id);
+    }
+
     public function test_pelanggaran_constraint_lain_tetap_dilempar(): void
     {
         // SQL-nya SENGAJA memuat daftar kolom lengkap — persis seperti SQL

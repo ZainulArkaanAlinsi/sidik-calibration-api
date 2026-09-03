@@ -561,7 +561,28 @@ class ExcelImporter
             return (float) $nilai;
         }
 
-        $teks = preg_replace('/[^0-9,.\-]/', '', (string) $nilai) ?? '';
+        // Tanda minus "cantik" DISERAGAMKAN dulu jadi `-` ASCII.
+        //
+        // Kalau tidak, regex di bawah membuangnya bersama huruf dan spasi — dan
+        // yang tersisa angka POSITIF. Untuk kolom resolusi itu bukan sekadar
+        // salah baca satu sel: penjaga "resolusi nol atau negatif dilewati" di
+        // atas jadi tidak pernah kena, dan `−0,5` mendarat di database sebagai
+        // `0,5` yang kelihatan sah sepenuhnya.
+        //
+        // Keempatnya nyata di berkas dari lapangan: U+2212 datang dari salin-
+        // tempel PDF, en/em dash dari autocorrect Excel, dan hyphen fullwidth
+        // dari papan ketik yang bukan latin.
+        //
+        // Rentang seperti `1–5` ikut kena, dan itu justru membaik: sesudah
+        // diseragamkan dia jadi `1-5`, gagal `is_numeric`, lalu pulang `null` —
+        // sebelumnya dashnya dibuang dan hasilnya angka karangan `15`.
+        $mentah = str_replace(
+            ["\u{2212}", "\u{2013}", "\u{2014}", "\u{FF0D}"],
+            '-',
+            (string) $nilai,
+        );
+
+        $teks = preg_replace('/[^0-9,.\-]/', '', $mentah) ?? '';
 
         if ($teks === '' || $teks === '-') {
             return null;

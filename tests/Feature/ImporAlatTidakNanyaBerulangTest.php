@@ -96,11 +96,21 @@ class ImporAlatTidakNanyaBerulangTest extends TestCase
         return $sql;
     }
 
+    /**
+     * Nama tabelnya dicocokkan dalam DUA gaya kutip, dan itu bukan kerapian.
+     *
+     * SQLite (test) membungkus identifier pakai `"`, MySQL (produksi, dan gate
+     * verifikasi repo ini) pakai backtick. Pencocok satu gaya memulangkan NOL
+     * di gate-nya — dan `assertLessThanOrEqual(2, 0)` hijau tanpa menguji apa
+     * pun. Test yang berhenti menguji diam-diam lebih buruk daripada test yang
+     * tidak ada: yang ini mengaku masih menjaga.
+     */
     private function hitung(array $sql, string $tabel): int
     {
         return count(array_filter(
             $sql,
-            fn (string $s): bool => str_starts_with($s, 'select') && str_contains($s, "\"{$tabel}\""),
+            fn (string $s): bool => str_starts_with($s, 'select')
+                && (str_contains($s, "\"{$tabel}\"") || str_contains($s, "`{$tabel}`")),
         ));
     }
 

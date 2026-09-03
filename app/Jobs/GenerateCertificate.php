@@ -125,8 +125,32 @@ class GenerateCertificate implements ShouldQueue
                 return null;
             }
 
-            $nomor = $this->nomorBerikutnya($sesi->organization_id);
-            $token = $this->tokenUnik();
+            // Identitasnya DICETAK SEKALI per baris sertifikat, bukan tiap
+            // percobaan.
+            //
+            // Dua hal yang diperbaiki sekaligus, dan yang kedua yang berbahaya:
+            //
+            // 1. Retry sertifikat yang gagal dulu menghabiskan satu nomor dari
+            //    urutan lab tiap kali dicoba — untuk dokumen yang tidak pernah
+            //    terbit sama sekali.
+            //
+            // 2. Dua `handle()` yang jalan bersamaan (dua klik "Terbitkan
+            //    ulang", atau dua worker antrean yang mengambil job yang sama)
+            //    dulu MENCETAK NOMOR SENDIRI-SENDIRI. Lock di atas cuma
+            //    menyerialkan penulisan barisnya: yang kedua menimpa nomor &
+            //    token yang pertama, lalu keduanya merender PDF DI LUAR
+            //    transaksi ini memakai nilai yang dipegang masing-masing. Baris
+            //    yang tersisa bisa menyimpan nomor milik yang satu sambil
+            //    `pdf_path`-nya menunjuk PDF berisi nomor yang lain — dan itu
+            //    dokumen terakreditasi yang isinya tidak sama dengan catatannya.
+            //
+            // Dengan identitas yang dipakai ulang, dua pemanggil menghasilkan
+            // PDF yang identik di jalur yang identik. Yang tersisa cuma
+            // pekerjaan ganda, dan itu tidak merusak apa pun.
+            $sudahAda = $sesi->certificate()->first();
+
+            $nomor = $sudahAda?->nomor ?: $this->nomorBerikutnya($sesi->organization_id);
+            $token = $sudahAda?->qr_token ?: $this->tokenUnik();
 
             return $sesi->certificate()->updateOrCreate(
                 ['calibration_session_id' => $sesi->id],

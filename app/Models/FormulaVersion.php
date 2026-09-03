@@ -179,10 +179,19 @@ class FormulaVersion extends Model
      * admin yang kalah balapan tidak punya cara tahu bahwa yang perlu dia
      * lakukan cuma menyimpan ulang.
      *
-     * WAJIB dipanggil di dalam transaksi. Di luar transaksi, `FOR UPDATE`
+     * SEBAIKNYA dipanggil di dalam transaksi. Di luar transaksi, `FOR UPDATE`
      * dilepas begitu query-nya selesai dan locknya tidak menjaga apa pun.
-     * Pemanggil satu-satunya (`FormulaController::store()`) sudah di dalam
-     * `DB::transaction()`.
+     *
+     * Dua pemanggil, dan cuma satu yang memenuhinya:
+     *
+     *  - `FormulaController::store()` — di dalam `DB::transaction()`, jadi
+     *    locknya menjaga sampai commit;
+     *  - `RumusKalibrasi::bikinVersiSatu()` — DI LUAR transaksi, dan sengaja.
+     *    Jalur itu dipanggil dari `FormulaController::index()` serta
+     *    `HitungUlangSesi`, dan membungkusnya transaksi berarti menahan lock
+     *    baris sepanjang seluruh permintaan yang bukan tentang menulis rumus.
+     *    Balapannya diselesaikan di sana dengan cara lain: yang kalah memakai
+     *    versi milik pemenang, bukan mencoba nomor berikutnya.
      */
     public static function nomorBerikutnya(int $formulaId): int
     {

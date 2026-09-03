@@ -57,8 +57,12 @@ class PengingatJatuhTempoTidakBanjirTest extends TestCase
     {
         parent::setUp();
 
-        $this->org = Organization::factory()->create();
-        $this->admin = User::factory()->admin()->create();
+        // `createOne()`, bukan `create()`: yang kedua bertipe
+        // `TModel|Collection<TModel>`, jadi properti bertipe `Organization` /
+        // `Equipment` tidak bisa dibuktikan alat analisis mana pun. Perilakunya
+        // sama persis; yang berubah cuma ketepatan tipenya.
+        $this->org = Organization::factory()->createOne();
+        $this->admin = User::factory()->admin()->createOne();
     }
 
     /**
@@ -67,7 +71,7 @@ class PengingatJatuhTempoTidakBanjirTest extends TestCase
      */
     private function alat(int $hari, string $nama = 'pH Meter'): Equipment
     {
-        return Equipment::factory()->create([
+        return Equipment::factory()->createOne([
             'organization_id' => $this->org->id,
             'nama_alat' => $nama,
             'status' => Equipment::STATUS_AKTIF,
@@ -195,6 +199,83 @@ class PengingatJatuhTempoTidakBanjirTest extends TestCase
         $this->assertSame(1, $hasil['admin_dilewat']);
         $this->assertSame(1, $adminBaru->fresh()->notifications()->count());
         $this->assertSame(1, $this->admin->fresh()->notifications()->count());
+    }
+
+    /**
+     * Alat ke-21 dan seterusnya IKUT menentukan tanda tangannya.
+     *
+     * Payloadnya sengaja dipotong 20 baris — lonceng bukan tempat menaruh
+     * ratusan alat. Tapi tanda tangannya sempat ikut dihitung dari daftar yang
+     * SUDAH terpotong itu, dan akibatnya persis kebalikan dari maksud
+     * penjaganya: alat di luar 20 pertama yang bergeser dari "mendekati" jadi
+     * "sudah lewat" bikin `isi()` berubah tanpa tanda tangannya ikut berubah,
+     * jadi kabar barunya ketahan tujuh hari.
+     *
+     * Yang kena cuma lab dengan lebih dari 20 alat — yaitu lab yang paling
+     * butuh pengingatnya. Dan tidak ada yang error waktu itu terjadi.
+     *
+     * Alat yang digeser dipilih dari yang TIDAK muncul di payload, bukan dari
+     * urutan sisipan: urutan `get()` tanpa `orderBy` bukan janji, dan test yang
+     * bergantung padanya hijau/merah bergantian tiap ganti database.
+     */
+    public function test_alat_di_luar_20_pertama_tetap_bikin_kabar_baru(): void
+    {
+        for ($i = 1; $i <= 21; $i++) {
+            $this->alat(10, "pH Meter {$i}");
+        }
+
+        $pertama = $this->pengingat()->untukOrganisasi($this->org);
+        $this->assertSame(1, $pertama['admin_dikabarin']);
+        $this->assertSame(21, $pertama['mendekati']);
+
+        $notifikasi = $this->admin->fresh()->notifications()->first();
+        $ditampilkan = array_column($notifikasi->data['tautan']['alat'], 'id');
+
+        $this->assertCount(20, $ditampilkan, 'Payloadnya nggak lagi dipotong 20 — testnya yang basi.');
+
+        // Alat yang TIDAK ikut ditampilkan. Dulu dia tak terlihat sama sekali
+        // oleh penjaganya.
+        $diLuarDaftar = Equipment::query()
+            ->where('organization_id', $this->org->id)
+            ->whereNotIn('id', $ditampilkan)
+            ->firstOrFail();
+
+        // Dia bergeser jadi sudah lewat jatuh tempo — kabar baru, dan justru
+        // saat yang paling nggak boleh ketahan masa tenang.
+        $diLuarDaftar->update(['tanggal_jatuh_tempo' => now()->subDay()->toDateString()]);
+
+        $kedua = $this->pengingat()->untukOrganisasi($this->org);
+
+        $this->assertSame(1, $kedua['overdue']);
+        $this->assertSame(
+            1,
+            $kedua['admin_dikabarin'],
+            'Alat ke-21 berubah jadi overdue tapi kabarnya ketahan masa tenang — '
+                .'tanda tangannya dihitung dari daftar yang sudah dipotong.',
+        );
+
+        $this->assertSame(2, $this->admin->fresh()->notifications()->count());
+    }
+
+    /**
+     * JANGAN kebablasan: yang di dalam 20 pertama pun tetap tidak boleh
+     * mengulang kalau memang tidak ada yang berubah.
+     */
+    public function test_lab_besar_yang_nggak_berubah_tetap_nggak_diulang(): void
+    {
+        for ($i = 1; $i <= 25; $i++) {
+            $this->alat(10, "pH Meter {$i}");
+        }
+
+        $this->assertSame(1, $this->pengingat()->untukOrganisasi($this->org)['admin_dikabarin']);
+
+        $this->travel(1)->days();
+
+        $this->assertSame(
+            0,
+            $this->pengingat()->untukOrganisasi($this->org)['admin_dikabarin'],
+            'Lab 25 alat kebanjiran baris yang sama tiap pagi.',
+        );
     }
 
     /**

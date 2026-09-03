@@ -1,10 +1,10 @@
 # Pertanyaan lab dari audit bug 2 Sep 2026
 
-Empat hal yang **tidak bisa diputuskan dari kode**. Dua yang pertama menyangkut
+Lima hal yang **tidak bisa diputuskan dari kode**. Dua yang pertama menyangkut
 angka atau tulisan di dokumen terakreditasi, dan menebaknya berarti menulis
-sesuatu ke sertifikat pelanggan berdasarkan tebakan. Dua terakhir soal
-infrastruktur dan desain backend — T4 menyusul dari review otomatis pada PR
-audit ini.
+sesuatu ke sertifikat pelanggan berdasarkan tebakan. Tiga terakhir soal
+infrastruktur dan desain backend — T4 & T5 menyusul dari review otomatis pada
+PR audit ini.
 
 Status: **menunggu jawaban.** Selama belum dijawab, kodenya berperilaku seperti
 yang ditulis di bawah — dan perilaku itu dipilih supaya yang salah kelihatan,
@@ -195,6 +195,64 @@ salah ketik, bukan pemalsuan, sambil terbaca seperti menahan dua-duanya.
 Yang perlu: satu kalimat "label itu dipakai buat apa". Kalau jawabannya "belum
 dipakai apa-apa", tulis begitu — supaya yang berikutnya tidak memakainya sebagai
 jaminan yang tidak pernah ada.
+
+---
+
+## T5 — Pengingat kembar: dikunci, atau dibiarkan?
+
+**Pertanyaan infrastruktur, sama seperti T3 dan T4.**
+
+**Datangnya dari mana.** Review otomatis (CodeRabbit) pada PR audit ini.
+
+**Konteks.** `PenjagaNotifikasiUlang::bolehKirim()` **membaca** notifikasi
+terakhir, lalu pemanggilnya mengirim. Di antara dua langkah itu tidak ada apa
+pun yang menahan pemanggil kedua:
+
+```
+scheduler harian  ──► bolehKirim() = true ──┐
+                                            ├─► dua baris yang sama di lonceng
+tombol manual admin ► bolehKirim() = true ──┘
+```
+
+Dua pemicunya nyata: `CekJatuhTempo` (scheduler) dan
+`ReminderController::jatuhTempo()` (tombol admin). Tabel `notifications` tidak
+punya unique index yang menahan pasangan (penerima, kelas, tanda tangan).
+
+**Yang berlaku sekarang, dan kenapa berhenti di situ.** Tidak ada yang berubah.
+Tiga alasan, dan yang ketiga yang menentukan:
+
+1. **Akibatnya satu baris kembar di lonceng** — bukan angka yang salah, bukan
+   sertifikat, bukan pekerjaan yang hilang. Dan kembarnya tidak berulang:
+   pengiriman berikutnya sudah melihat keduanya.
+2. **Jendelanya menuntut kebetulan** — admin harus menekan tombol manual persis
+   pada milidetik scheduler mengerjakan organisasi yang sama.
+3. **Penjagaannya tidak bisa dibuktikan di repo ini.** `phpunit.xml` menyetel
+   `CACHE_STORE=array`, dan lock pada store itu tidak pernah berebut dengan
+   siapa pun. Jadi `Cache::lock` yang ditambahkan ke sini akan hijau di semua
+   test tanpa satu pun di antaranya benar-benar menjalankan locknya —
+   penjagaan yang tidak ada yang tahu bekerja atau tidak, dipasang di jalur
+   yang dipanggil scheduler tiap pagi.
+
+Menukar satu baris kembar yang jarang dengan lock yang tak teruji di jalur
+terjadwal bukan pertukaran yang jelas menguntungkan. Itu keputusan pemilik
+proyek, bukan keputusan yang pantas diambil diam-diam di PR perbaikan bug.
+
+**Yang ditanyakan.** Baris pengingat kembar yang sesekali itu masalah nyata
+buat admin, atau bukan?
+
+- **Kalau BUKAN** — tulis begitu di sini, dan tidak ada yang perlu diubah.
+- **Kalau IYA** — bentuknya sudah jelas dan ongkosnya kecil, tinggal
+  diputuskan:
+  1. `Cache::lock("pengingat-jatuh-tempo:{org}")` di sekeliling
+     `untukOrganisasi()`. Produksi memakai `CACHE_STORE=database`, jadi
+     `cache_locks` sudah ada dan locknya atomik lintas proses;
+  2. `phpunit.xml` disetel `CACHE_STORE=database` **untuk berkas test itu
+     saja**, supaya locknya benar-benar dijalankan sesuatu;
+  3. keputusan apa yang terjadi waktu locknya tidak didapat — didiamkan
+     (organisasi itu dilewat ronde ini) atau ditunggu. Yang pertama lebih aman
+     buat scheduler: pekerjaan yang dilewat toh diulang besok pagi.
+
+Yang perlu: satu kalimat "kembarnya mengganggu / tidak".
 
 ---
 

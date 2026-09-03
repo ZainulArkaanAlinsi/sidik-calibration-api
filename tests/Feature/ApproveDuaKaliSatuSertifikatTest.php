@@ -285,6 +285,66 @@ class ApproveDuaKaliSatuSertifikatTest extends TestCase
     }
 
     /**
+     * Terbit ulang MEMAKAI ULANG nomor & token yang sudah dicetak.
+     *
+     * ## Kenapa ini penting, dan bukan sekadar hemat nomor
+     *
+     * Dua `handle()` yang jalan bersamaan — dua klik "Terbitkan ulang", atau
+     * dua worker antrean yang mengambil job yang sama — dulu masing-masing
+     * mencetak nomor & token SENDIRI. Lock di baris sesi cuma menyerialkan
+     * penulisan barisnya: yang kedua menimpa nilai yang pertama, lalu
+     * **keduanya merender PDF di luar transaksi** memakai nilai yang dipegang
+     * masing-masing di memori.
+     *
+     * Hasilnya baris sertifikat yang menyimpan nomor milik yang satu sambil
+     * `pdf_path`-nya menunjuk berkas berisi nomor yang lain — dokumen
+     * terakreditasi yang isinya tidak sama dengan catatannya. Tidak ada error,
+     * tidak ada yang gagal; yang salah baru ketahuan waktu ada yang membandingkan
+     * lembar di tangan pelanggan dengan barisnya di sistem.
+     *
+     * Dengan identitas yang dipakai ulang, dua pemanggil menghasilkan PDF yang
+     * identik di jalur yang identik — jadi urutan siapa menang tidak lagi
+     * menentukan apa pun.
+     *
+     * Efek sampingnya ikut benar: retry berhenti menghabiskan satu nomor dari
+     * urutan lab tiap kali dicoba, untuk dokumen yang belum pernah terbit.
+     */
+    public function test_terbit_ulang_nggak_nyetak_nomor_baru(): void
+    {
+        $this->setujui()->assertSuccessful();
+
+        $sertifikat = Certificate::where('calibration_session_id', $this->sesi->id)->firstOrFail();
+        $nomorAwal = $sertifikat->nomor;
+        $tokenAwal = $sertifikat->qr_token;
+
+        $this->assertNotNull($nomorAwal);
+        $this->assertNotNull($tokenAwal);
+
+        $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
+
+        app()->call([new GenerateCertificate($this->sesi->id, $this->admin->id, null), 'handle']);
+
+        $sesudah = $sertifikat->fresh();
+
+        $this->assertSame(Certificate::STATUS_TERBIT, $sesudah->status);
+        $this->assertSame(
+            $nomorAwal,
+            $sesudah->nomor,
+            'Terbit ulang nyetak nomor BARU — dua percobaan berbarengan bakal '
+                .'pegang nomor beda dan merender PDF yang beda.',
+        );
+        $this->assertSame(
+            $tokenAwal,
+            $sesudah->qr_token,
+            'Terbit ulang nyetak token BARU — `pdf_path` bisa nunjuk berkas '
+                .'berisi identitas yang bukan milik baris ini.',
+        );
+
+        // Dan PDF-nya memang yang ditunjuk barisnya, bukan sisa percobaan lama.
+        $this->assertSame("certificates/{$tokenAwal}.pdf", $sesudah->pdf_path);
+    }
+
+    /**
      * JANGAN kebablasan #3: sesi yang statusnya BUKAN `menunggu_approval` tetap
      * ditolak dengan pesan yang lama (422), bukan tertelan jadi 409.
      *
