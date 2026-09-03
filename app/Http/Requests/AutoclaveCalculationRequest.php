@@ -40,7 +40,19 @@ class AutoclaveCalculationRequest extends FormRequest
             'suhu.indikator.*' => ['nullable', 'numeric'],
             'suhu.suhu_ruang' => ['sometimes', 'array'],
             'suhu.suhu_ruang.*' => ['nullable', 'numeric'],
-            'suhu.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            // `gt:0`, bukan `min:0` — nol di sini bukan "belum diisi".
+            //
+            // Angkanya jadi komponen budget di `EnclosureCalculator`
+            // (`u = (resolusi_alat / 2) / sqrt(3)`), jadi nol MENGHAPUS komponen
+            // daya-baca alat dari budget dan bikin U95 yang tercetak lebih kecil
+            // dari yang seharusnya — sertifikat yang mengklaim ketidakpastian
+            // lebih baik daripada yang alatnya sanggup.
+            //
+            // Yang belum diisi itu `null`/absen, dan itu tetap sah: cadangan dari
+            // `config/autoclave.php` (master INPUT DATA E16/H16, dua-duanya
+            // positif) yang dipakai lewat `??` di `AutoclaveInputBuilder`.
+            // Dijaga `ResolusiAlatAutoklafNolDitolakTest`.
+            'suhu.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
 
             // Baris "Time" di kertas — jam pengambilan tiap kolom (02:00:00,
             // 04:00:00, ...). Nggak ikut ngitung, tapi tetap disimpan: tanpa
@@ -57,7 +69,7 @@ class AutoclaveCalculationRequest extends FormRequest
             'tekanan.indikator_pressure.*' => ['nullable', 'numeric'],
             'tekanan.satuan' => ['sometimes', 'string', 'in:Bar,MPa,kPa,Psi,kg/cm2,inHg,mmHg,Pa'],
             'tekanan.display' => ['sometimes', 'string', 'in:Digital,Analog 1,Analog 2,Analog 3'],
-            'tekanan.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'tekanan.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             // Angka Pressure Disk Logger nggak ada di kertas — teknisi ngisinya
             // sesudah disk-nya diunduh. Jadi blok tekanan boleh kekirim tanpa
             // baris ini; yang kesimpan tetap utuh, cuma olah data tekanannya
@@ -67,6 +79,17 @@ class AutoclaveCalculationRequest extends FormRequest
             // Kertas nyediain LIMA kolom buat baris ini; payload lama ngirim
             // satu angka. Dua-duanya diterima supaya klien lama nggak patah.
             'tekanan.tekanan_atm_awal' => ['sometimes', 'nullable', $this->angkaAtauDeretAngka()],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'suhu.resolusi_alat.gt' => 'Resolusi alat harus lebih besar dari nol.',
+            'tekanan.resolusi_alat.gt' => 'Resolusi alat harus lebih besar dari nol.',
         ];
     }
 
