@@ -90,6 +90,13 @@ class BangunUlangSnapshotSertifikat extends Command
         $berubah = 0;
         $gagal = 0;
 
+        // Dihitung TERPISAH dari `$gagal`, dan sengaja tidak ikut menentukan
+        // kode keluar: dilewati-dengan-sengaja bukan kegagalan. Menyamakannya
+        // bikin sapuan massal yang berjalan persis seperti seharusnya keluar
+        // dengan status error — dan status error yang rutin muncul berhenti
+        // dibaca orang.
+        $dilewati = 0;
+
         foreach ($daftar as $sertifikat) {
             $sesi = $sertifikat->session;
 
@@ -106,6 +113,33 @@ class BangunUlangSnapshotSertifikat extends Command
             } catch (Throwable $e) {
                 $this->error("{$sertifikat->nomor}: gagal nyusun snapshot — {$e->getMessage()}");
                 $gagal++;
+
+                continue;
+            }
+
+            // PENJAGA PENANDATANGAN — dipasang sesudah temuan review 3 Sep 2026.
+            //
+            // `footer()` di [CertificateSnapshotBuilder] mengambil nama
+            // penandatangan dari setelan organisasi YANG BERLAKU SEKARANG. Jadi
+            // sertifikat yang dulu ditandatangani orang lain, kalau dibangun
+            // ulang, diam-diam berganti nama jadi penandatangan sekarang —
+            // dokumen menyatakan seseorang menandatangani sesuatu yang tidak
+            // pernah dia tandatangani, dan nol error muncul.
+            //
+            // Tombol "Cetak ulang PDF" di panel sudah menolak kasus ini
+            // ([CetakUlangSertifikat]); perintah ini dulu tidak, padahal dia
+            // yang dipakai buat sapuan massal — persis di mana kerusakannya
+            // paling luas.
+            //
+            // DITOLAK, bukan dipertahankan diam-diam: gambar tanda tangannya
+            // dibaca live tiap render, jadi mempertahankan nama lama justru
+            // menempelkan tanda tangan orang baru di atas nama lama. Melewati
+            // yang bentrok tidak mengerjakan apa-apa; itu yang aman.
+            $alasanTtd = self::penandatanganBeda($sertifikat->snapshot, $baru);
+
+            if ($alasanTtd !== null) {
+                $this->warn("{$sertifikat->nomor}: {$alasanTtd}");
+                $dilewati++;
 
                 continue;
             }
@@ -192,8 +226,46 @@ class BangunUlangSnapshotSertifikat extends Command
         $this->newLine();
         $this->info($keringMode
             ? 'Dry run — nggak ada yang ditulis.'
-            : "{$berubah} sertifikat dibangun ulang, {$gagal} gagal.");
+            : "{$berubah} sertifikat dibangun ulang, {$dilewati} dilewati, {$gagal} gagal.");
 
         return $gagal > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Kenapa sertifikat ini tidak boleh dibangun ulang, atau `null` kalau boleh.
+     *
+     * Yang dibandingkan NAMA-nya saja, bukan jabatannya: jabatan berganti tanpa
+     * ganti orang itu wajar (promosi, penataan ulang struktur) dan tidak bikin
+     * tanda tangannya jadi milik orang lain. Alasan yang sama dipakai
+     * [\App\Services\CetakUlangSertifikat].
+     *
+     * Snapshot lama yang footernya belum punya nama dibiarkan lewat: menolak
+     * berdasarkan data yang memang tidak pernah ada cuma memblokir sertifikat
+     * yang sebenarnya baik-baik saja.
+     *
+     * @param  array<string, mixed>|null  $lama
+     * @param  array<string, mixed>  $baru
+     */
+    private static function penandatanganBeda(?array $lama, array $baru): ?string
+    {
+        $beku = trim((string) ($lama['footer']['penandatangan'] ?? ''));
+
+        if ($beku === '') {
+            return null;
+        }
+
+        $sekarang = trim((string) ($baru['footer']['penandatangan'] ?? ''));
+
+        if ($sekarang === '' || mb_strtolower($beku) === mb_strtolower($sekarang)) {
+            return null;
+        }
+
+        return sprintf(
+            'DILEWATI — penandatangannya sudah ganti. Beku atas nama "%s", '
+            .'yang berlaku sekarang "%s". Membangun ulang bakal nimpa nama di '
+            .'dokumen yang sudah terbit.',
+            $beku,
+            $sekarang,
+        );
     }
 }
