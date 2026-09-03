@@ -456,10 +456,16 @@ class CalibrationRequest extends FormRequest
             'measurements.*.indikator_ocr.*' => ['nullable', 'array'],
             'measurements.*.indikator_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
             'measurements.*.indikator_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
-            // Alat ber-PASANGAN deret (Thermocouple, Termometer Gelas,
-            // Thermohygrometer): tiap titik dibaca dua kali — sisi standar &
-            // sisi UUT. Dua-duanya opsional supaya lembar setengah jadi tetap
-            // bisa dikirim dari lapangan.
+            // Alat ber-PASANGAN deret — keempat profil yang
+            // `butuhPasanganStandarUut()`-nya menyala (Thermocouple, Termometer
+            // Gelas, Thermohygrometer, TIDS): tiap titik dibaca dua kali — sisi
+            // standar & sisi UUT. Dua-duanya opsional supaya lembar setengah
+            // jadi tetap bisa dikirim dari lapangan.
+            //
+            // Daftarnya disebut lewat predikatnya, bukan cuma dieja: TIDS
+            // menyusul 28 Agt dan ejaan di komentar ini ketinggalan berminggu-
+            // minggu tanpa satu pun test merah — aturannya memang berlaku tanpa
+            // syarat, jadi yang basi cuma keterangannya.
             'measurements.*.standar' => ['sometimes', 'nullable', 'array', 'max:20'],
             // BUKAN `numeric`: kolom ini dipakai DUA bentuk lembar — angka
             // biasa (ketiga alat suhu berpasangan) dan objek empat kotak

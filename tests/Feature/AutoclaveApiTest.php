@@ -266,6 +266,19 @@ class AutoclaveApiTest extends TestCase
      * Blok suhu yang DIKIRIM tapi kosong tetap ditolak — beda dari blok yang
      * memang nggak dikirim. Teknisi yang ngirim blok suhu bermaksud ngukur
      * suhu; hasil yang hilang tanpa keterangan lebih buruk daripada penolakan.
+     *
+     * **422, bukan 500.** Test ini dulu mematok 500, dan angka itu bukan
+     * keputusan — itu `InvalidArgumentException` dari kalkulator yang nggak
+     * ada yang menangkap. Penolakannya sendiri benar dan tetap; yang berubah
+     * cuma teknisi sekarang dapat pesan yang bisa dia tindaklanjuti, bukan
+     * "Server Error". Penjagaannya pindah ke `pastikanAdaBacaanSuhu()` —
+     * sejajar dengan `pastikanAdaBacaanUut()` yang sudah lama ada buat blok
+     * tekanan, lengkap dengan alasan yang sama persis: *"ditolak di sini (422)
+     * biar teknisi dapat pesan yang jelas, bukan 500 dari kalkulator."*
+     *
+     * Penjagaan kalkulatornya TIDAK dihapus — dia tetap jadi lapis kedua buat
+     * pemanggil yang nggak lewat FormRequest (`HitungUlangSesi`), dan diuji
+     * langsung di `BlokSuhuAutoklafKosongDitolakTest`.
      */
     public function test_blok_suhu_dikirim_tapi_kosong_tetap_ditolak(): void
     {
@@ -279,7 +292,8 @@ class AutoclaveApiTest extends TestCase
                     'pembacaan_standar' => [1.233, 1.231],
                 ],
             ])
-            ->assertStatus(500);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['suhu.disk']);
     }
 
     public function test_preview_wajib_set_point(): void
