@@ -112,7 +112,7 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         ),
     ],
 
-    // Tiga pertanyaan yang selama ini cuma bisa dijawab dari dashboard
+    // Empat pertanyaan yang selama ini cuma bisa dijawab dari dashboard
     // penyedia hosting — dan karena itu selalu jadi bolak-balik.
     //
     // Batasnya SAMA dengan `direktori_perusahaan` di atas: yang dilaporkan
@@ -136,7 +136,18 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // membayar ongkosnya lagi — menit yang diambil dari jendela health check
     // Render yang cuma 15 menit, dan itu tersangka utama deploy yang timeout.
     //
-    // Ketiganya dibaca lewat `config()`, BUKAN `env()` langsung — lihat
+    // `bangun_ulang_saat_boot` — saudara kembar `seed_saat_boot`, dan sampai
+    // sekarang cuma satu dari keduanya yang kelihatan dari luar. Sifatnya sama
+    // persis: `sync: false`, disetel lewat dashboard, kerja berat tiap boot.
+    // Yang berbeda cuma frekuensinya — dia dinyalakan tiap deploy yang
+    // mengubah bentuk snapshot, jadi peluang lupa mematikannya jauh lebih
+    // besar. Dokumennya menyuruh tiga langkah (nyalakan → baca deploy log →
+    // balikin ke `false`), dan langkah ketiga yang paling gampang terlupa.
+    // Lupanya senyap: tiap deploy berikutnya membangun ulang SELURUH
+    // sertifikat yang sudah terbit lagi, memakan menit dari jendela health
+    // check yang sama.
+    //
+    // Keempatnya dibaca lewat `config()`, BUKAN `env()` langsung — lihat
     // config/deploy.php buat alasannya. Singkatnya: entrypoint memanggil
     // `config:cache` sebelum server nyala, dan sesudah itu `env()` di luar
     // berkas config berhenti membaca `.env`.
@@ -144,6 +155,7 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         'versi' => config('deploy.versi'),
         'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
         'seed_saat_boot' => config('deploy.seed_saat_boot'),
+        'bangun_ulang_saat_boot' => config('deploy.bangun_ulang_saat_boot'),
     ],
 
     // Realtime sync — pertanyaan yang selama ini nggak bisa dijawab dari luar
