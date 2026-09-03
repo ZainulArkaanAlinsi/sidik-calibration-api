@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\UncertaintyCalculation;
 use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -89,6 +90,70 @@ class SnapshotSertifikatTahanUrutanTest extends TestCase
             'Ada bagian LAIN dari snapshot yang ikut bergeser gara-gara urutan. '
             .'Yang ketahuan 3 Sep 2026 baru `standar_digunakan`.',
         );
+    }
+
+    /**
+     * Baris yang `titik_ke`-nya KEMBAR tetap urut, bukan ikut urutan datangnya.
+     *
+     * Temuan review 3 Sep 2026, dan benar. `sortBy` itu stabil: baris kembar
+     * mempertahankan urutan koleksinya — yaitu urutan yang tidak dijanjikan
+     * siapa pun. Perbaikan pertama cuma memasang sumbu kedua di
+     * `standarDigunakan()`, sementara `hasil()` — tabel hasil kalibrasi itu
+     * sendiri — masih `sortBy('titik_ke')` saja.
+     *
+     * Yang paling kena alat yang satu titiknya memang punya beberapa baris:
+     * Chlorine Meter (Free/Total) dan Spectrophotometer (tiga blok). Sesi contoh
+     * bawaan tidak punya titik kembar, jadi keadaannya dibikin di sini.
+     */
+    public function test_titik_ke_kembar_tetap_urut_walau_koleksinya_dibalik(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $sertifikat = Certificate::query()
+            ->where('status', Certificate::STATUS_TERBIT)
+            ->firstOrFail();
+
+        $this->kembarkanTitikPertama($sertifikat->calibration_session_id);
+
+        $builder = app(CertificateSnapshotBuilder::class);
+        $asli = $builder->bangun($this->sesiSegar($sertifikat->calibration_session_id), $sertifikat);
+
+        $dibalik = $this->sesiSegar($sertifikat->calibration_session_id);
+        $dibalik->setRelation(
+            'uncertaintyCalculations',
+            $dibalik->uncertaintyCalculations->reverse()->values(),
+        );
+
+        $this->assertEquals(
+            $asli,
+            $builder->bangun($dibalik, $sertifikat),
+            'Titik kembar bergeser urutannya cuma gara-gara koleksinya datang '
+            .'terbalik. `sortBy` stabil tidak cukup — sumbu keduanya wajib.',
+        );
+    }
+
+    /**
+     * Bikin satu titik ukur punya DUA baris, dengan `id` yang lebih besar.
+     *
+     * Nilainya sengaja dibedakan: kalau dua barisnya identik, tertukar pun
+     * snapshot-nya sama dan test ini hijau tanpa menguji apa pun. Versi
+     * pertama kena persis itu — kolomnya diketik `pembacaan_rata`, padahal
+     * namanya `rata_rata`; atribut yang bukan kolom dibuang mass-assignment
+     * tanpa satu pun error, dan kembarannya lahir identik.
+     */
+    private function kembarkanTitikPertama(int $sesiId): void
+    {
+        $pertama = UncertaintyCalculation::query()
+            ->where('calibration_session_id', $sesiId)
+            ->orderBy('titik_ke')
+            ->firstOrFail();
+
+        $kembar = $pertama->getAttributes();
+        unset($kembar['id']);
+        $kembar['rata_rata'] = (float) $pertama->rata_rata + 0.01;
+        $kembar['koreksi'] = (float) $pertama->koreksi - 0.01;
+
+        UncertaintyCalculation::query()->create($kembar);
     }
 
     /**
