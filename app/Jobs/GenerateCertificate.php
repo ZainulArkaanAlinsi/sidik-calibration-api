@@ -77,13 +77,38 @@ class GenerateCertificate implements ShouldQueue
             return;
         }
 
-        // Idempoten: kalau udah pernah terbit, jangan bikin dobel (job bisa
-        // ke-retry, atau admin approve dua kali).
+        // Penjagaan cepat di luar transaksi — nahan retry job yang jelas-jelas
+        // sudah selesai tanpa membuka transaksi sama sekali. BUKAN penjagaan
+        // yang sebenarnya: lihat lock di dalam transaksi di bawah.
         if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
             return;
         }
 
-        $sertifikat = DB::transaction(function () use ($sesi): Certificate {
+        $sertifikat = DB::transaction(function () use ($sesi): ?Certificate {
+            // Penjagaan yang sebenarnya, dan sebabnya perlu dua.
+            //
+            // Penjagaan di atas cuma menahan sertifikat yang SUDAH `terbit` —
+            // status yang baru tercapai sesudah transaksi ini selesai DAN
+            // PDF-nya berhasil ditulis. Selama jendela itu, permintaan kedua
+            // melihat "belum terbit" dan masuk juga.
+            //
+            // Yang menyerialkan dua permintaan itu lock di baris SESI-nya:
+            // yang kedua menunggu di sini sampai yang pertama commit, lalu
+            // menemukan sertifikatnya sudah ada dan berhenti.
+            //
+            // Kenapa lock di baris sesi, bukan unique index di
+            // `certificates.calibration_session_id`: kolom `revision_of` di
+            // tabel itu menyiratkan satu sesi suatu hari punya lebih dari satu
+            // baris sertifikat (yang asli + revisinya). Unique index bakal
+            // menutup jalan itu untuk menyelesaikan balapan yang bisa
+            // diselesaikan lock — menukar satu masalah dengan batasan
+            // arsitektur.
+            CalibrationSession::whereKey($sesi->id)->lockForUpdate()->first();
+
+            if ($sesi->certificate()->exists()) {
+                return null;
+            }
+
             $nomor = $this->nomorBerikutnya($sesi->organization_id);
             $token = $this->tokenUnik();
 
@@ -121,6 +146,13 @@ class GenerateCertificate implements ShouldQueue
                 ],
             );
         });
+
+        // `null` = permintaan lain menang balapannya dan sertifikatnya sudah
+        // dibikin di dalam transaksi yang barusan kita tunggu. Berhenti di
+        // sini — bukan error, dan bukan alasan buat menulis apa pun lagi.
+        if ($sertifikat === null) {
+            return;
+        }
 
         try {
             // Hasil pemeriksaan disimpan APA ADANYA, termasuk kalau ada temuan.
