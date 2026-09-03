@@ -216,6 +216,45 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
     }
 
     /**
+     * Perubahan DI DALAM tabel hasil disebut sampai baris & kolomnya.
+     *
+     * Kejadian 3 Sep 2026, sapuan pertama di produksi: satu sertifikat
+     * Spectrophotometer dilaporkan `berubah: hasil` DUA jalan berturut-turut —
+     * tidak pernah konvergen — sementara delapan lainnya diam.
+     *
+     * `hasil` menyebut bagiannya, dan berhenti di situ. Tabel itu 24 baris
+     * dengan sepuluh kolom; tanpa menyebut sel mana, tidak ada yang bisa
+     * dikerjakan dari keluaran itu. Diagnosisnya mentok di baris yang justru
+     * ada buat menolong.
+     *
+     * Batas itu dipasang sengaja sehari sebelumnya, dengan alasan `hasil.7.u95`
+     * bikin barisnya sepanjang tabel. Kekhawatirannya benar, tempatnya yang
+     * salah — yang memotong panjang seharusnya `daftarKunci`, bukan penelusuran
+     * yang berhenti sebelum sampai.
+     */
+    public function test_perubahan_di_dalam_tabel_hasil_disebut_sampai_selnya(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $basi = $sertifikat->snapshot;
+        $this->assertNotEmpty($basi['hasil'] ?? [], 'Sesi ujinya nggak punya tabel hasil.');
+
+        // Satu sel di satu baris, sisanya dibiarkan — persis bentuk kasus yang
+        // bikin `berubah: hasil` nggak bisa dipakai.
+        $basi['hasil'][1]['u95'] = 99.9;
+        $sertifikat->update(['snapshot' => $basi]);
+
+        $keluaran = $this->keluaranBangunUlang();
+
+        $this->assertStringContainsString(
+            'hasil.1.u95',
+            $keluaran,
+            'Sel yang berubah nggak kesebut. `berubah: hasil` doang nggak bisa '
+            .'dipakai mendiagnosis tabel 24 baris.',
+        );
+    }
+
+    /**
      * Keluaran perintah apa adanya, buat asersi yang bentuknya "TIDAK boleh
      * ada". `expectsOutputToContain` cuma bisa menegaskan yang ada.
      */
