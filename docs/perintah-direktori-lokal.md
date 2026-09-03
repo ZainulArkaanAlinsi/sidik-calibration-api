@@ -90,8 +90,13 @@ yang sama — bukan menggandakannya. Memperbarui satu sumber tidak menyentuh sum
 
 ## 4. Memastikan sudah terpasang
 
+Alamatnya ada di dashboard Render, di bagian atas halaman service `sidik-calibration-api`
+— bentuknya `https://<sesuatu>.onrender.com`. Jangan pakai `api.pt-sidik.com`: itu cuma
+*contoh* domain di `CHECKLIST-DEPLOY-VPS.md` §0 untuk jalur VPS yang belum pernah ditempuh,
+dan DNS-nya memang tidak ada (`NXDOMAIN`).
+
 ```bash
-curl -s https://api.pt-sidik.com/api/health | jq .direktori_perusahaan
+curl -s https://<url>.onrender.com/api/health | jq .direktori_perusahaan
 ```
 
 ```json
