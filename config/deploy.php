@@ -51,4 +51,25 @@ return [
      */
     'seed_saat_boot' => filter_var(env('SEED_ON_BOOT', false), FILTER_VALIDATE_BOOL),
 
+    /*
+     * Apakah snapshot & PDF sertifikat dibangun ulang tiap container nyala.
+     *
+     * Saudara kembarnya `seed_saat_boot`: sama-sama `sync: false` di
+     * render.yaml, sama-sama disetel lewat dashboard, sama-sama kerja berat di
+     * boot. Bedanya cuma satu, dan itu yang bikin dia perlu ikut dilaporkan:
+     * dia dinyalakan JAUH lebih sering — tiap deploy yang mengubah bentuk
+     * snapshot — jadi peluang lupa mematikannya jauh lebih besar.
+     *
+     * `docs/deploy-gratis-render.md` menyuruh tiga langkah: nyalakan, baca
+     * hasilnya di deploy log, lalu balikin ke `false`. Langkah ketiga tidak
+     * menerbitkan error kalau terlupa; yang terjadi cuma tiap deploy
+     * berikutnya membangun ulang SELURUH sertifikat yang sudah terbit lagi,
+     * memakan menit dari jendela health check Render yang cuma 15 menit.
+     *
+     * Sama seperti `seed_saat_boot`: saklarnya dibaca docker/entrypoint.sh
+     * langsung dari shell; yang di sini cuma buat MELAPORKAN, bukan buat
+     * menyalakan.
+     */
+    'bangun_ulang_saat_boot' => filter_var(env('BANGUN_ULANG_ON_BOOT', false), FILTER_VALIDATE_BOOL),
+
 ];
