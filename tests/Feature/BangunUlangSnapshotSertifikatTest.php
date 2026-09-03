@@ -7,8 +7,10 @@ use App\Models\Certificate;
 use App\Models\Organization;
 use App\Services\CertificateSnapshotBuilder;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\TestCase;
 
 /**
@@ -142,6 +144,92 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
             'T: 21,0°C ± 1,7°C — %RH: 51,95% ± 5,7%',
             $sertifikat->fresh()->snapshot['header']['env_condition'],
         );
+    }
+
+    /**
+     * Perubahan DI LUAR kondisi lingkungan disebut namanya, bukan dicetak
+     * sebagai panah yang dua sisinya sama.
+     *
+     * Kejadian 3 Sep 2026: sapuan yang menyalakan U95 per titik mengeluarkan
+     * lima baris `T: 21,0°C … → T: 21,0°C …` — identik kiri-kanan, sambil
+     * dihitung sebagai berubah. Yang dibanding memang seluruh snapshot, tapi
+     * yang dicetak cuma `env_condition`, jadi tiap perubahan di luar itu
+     * kelihatan seperti operasi kosong. Nol error, dan setengah jam habis buat
+     * memastikan perintahnya tidak rusak.
+     *
+     * Yang dijaga di sini BUKAN kalimatnya, tapi dua hal yang bikin baris itu
+     * bisa dipercaya: kunci yang berubah kesebut, dan panah dengan dua sisi
+     * yang sama tidak bisa muncul.
+     */
+    public function test_perubahan_di_luar_env_condition_disebut_kuncinya(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Cuma `u95_per_titik` yang digeser. Kondisi lingkungannya sengaja
+        // dibiarkan apa adanya — persis bentuk kasus yang bikin bingung.
+        $basi = $sertifikat->snapshot;
+        $envSebelum = $basi['header']['env_condition'];
+        $basi['u95_per_titik'] = ! ($basi['u95_per_titik'] ?? false);
+        $sertifikat->update(['snapshot' => $basi]);
+
+        // SATU kali jalan, dua asersi diadu ke keluaran yang sama.
+        //
+        // Versi pertama menjalankannya DUA kali — `$this->artisan()` buat asersi
+        // "harus ada", lalu sekali lagi buat mengambil teksnya. Jalan kedua
+        // sudah melihat snapshot yang barusan dibetulkan jalan pertama, jadi
+        // dia melaporkan "nggak berubah", dan penjaga panahnya lolos di
+        // baseline: hijau tanpa menguji apa pun.
+        $keluaran = $this->keluaranBangunUlang();
+
+        $this->assertStringContainsString(
+            'berubah: u95_per_titik',
+            $keluaran,
+            'Kunci yang berubah nggak kesebut, jadi barisnya nggak bisa dipakai '
+            .'mastiin sapuannya ngerjain yang bener.',
+        );
+
+        $this->assertStringNotContainsString(
+            "{$envSebelum}  →  {$envSebelum}",
+            $keluaran,
+            'Panah dengan dua sisi identik muncul lagi — itu bentuk yang bikin '
+            .'"berubah" kebaca sebagai "nggak ngapa-ngapain".',
+        );
+    }
+
+    /**
+     * Kondisi lingkungan TETAP dapat bentuk panah. Ini penjaga arah sebaliknya:
+     * perbaikan di atas gampang kebablasan jadi "semua cuma disebut namanya",
+     * dan nilai T/%RH yang kebaca sekilas itu yang bikin sapuan format lama
+     * berguna ditonton.
+     */
+    public function test_env_condition_tetap_ditampilkan_sebagai_panah(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $basi = $sertifikat->snapshot;
+        $basi['header']['env_condition'] = 'T: 99,9°C ± 9,9°C — %RH: 99% ± 9%';
+        $sertifikat->update(['snapshot' => $basi]);
+
+        $this->artisan('sertifikat:bangun-ulang')
+            ->expectsOutputToContain('T: 99,9°C ± 9,9°C — %RH: 99% ± 9%  →  ')
+            ->assertSuccessful();
+    }
+
+    /**
+     * Keluaran perintah apa adanya, buat asersi yang bentuknya "TIDAK boleh
+     * ada". `expectsOutputToContain` cuma bisa menegaskan yang ada.
+     */
+    private function keluaranBangunUlang(): string
+    {
+        $keluar = new BufferedOutput;
+
+        $this->app->make(Kernel::class)->call(
+            'sertifikat:bangun-ulang',
+            [],
+            $keluar,
+        );
+
+        return $keluar->fetch();
     }
 
     public function test_dry_run_nggak_nulis_apa_apa(): void
