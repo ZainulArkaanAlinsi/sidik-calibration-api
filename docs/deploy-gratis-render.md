@@ -183,6 +183,63 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
    ke penyimpanan awet sebelum `schedule:work` terbukti jalan, karena tanpa
    pembersih terjadwal retensi 90 hari berubah jadi selamanya.
 
+## 4b. Membangun ulang sertifikat yang sudah terbit
+
+Kapan ini perlu: sesudah deploy yang **mengubah bentuk snapshot** — mis. U95
+dicetak per titik, atau urutan tabel ketertelusuran dipatok. Perbaikan seperti
+itu hidup DI DALAM snapshot, dan snapshot dibekukan waktu sertifikat terbit.
+Sertifikat yang terlanjur terbit tidak ikut betul sampai dibangun ulang.
+
+**Tombol "Cetak ulang PDF" di panel admin bukan penggantinya.** Dia sengaja
+tidak menyentuh snapshot — yang dirender ulang cuma lembarnya, dari snapshot
+yang sama persis. Itu penjagaan, bukan keterbatasan: sertifikat itu dokumen
+terkendali, mencetak ulang boleh, mengarang ulang isinya tidak.
+
+**Dan Shell Render tidak tersedia di paket gratis.** Membuka tab Shell cuma
+memunculkan dialog "Shell is not supported for free compute plans". Jadi
+`php artisan sertifikat:bangun-ulang` tidak punya tempat untuk dijalankan —
+kecuali lewat boot.
+
+Caranya:
+
+1. Render → service → **Environment** → setel `BANGUN_ULANG_ON_BOOT` = `true`
+2. **Manual Deploy** → *Deploy latest commit* (atau Restart service)
+3. Buka **Logs**, cari tahap `bangun ulang snapshot & PDF sertifikat`. Di situ
+   tercetak satu baris per sertifikat:
+
+   ```
+   012-CAL-524   2405.13.A   berubah: u95_per_titik, standar_digunakan
+   CAL/2026/08/0001  2406.51.S   nggak berubah
+     └─ PDF ditulis ulang (snapshot nggak berubah)
+
+   8 sertifikat dibangun ulang, 0 dilewati, 0 gagal.
+   ```
+
+4. **Restart sekali lagi** dan baca lagi. Jalan kedua harus **"nggak berubah"
+   semua** — itu buktinya pergeserannya berhenti. Kalau masih ada yang berubah,
+   masih ada sumber ketidakstabilan, dan barisnya menyebut kunci mana.
+5. Setel `BANGUN_ULANG_ON_BOOT` balik ke `false`.
+
+Langkah 5 bukan formalitas. Perintahnya aman diulang, tapi dia menulis ulang
+SETIAP berkas PDF tiap kali jalan — termasuk tiap kali Render membangunkan
+service yang ketiduran. Menit itu diambil dari jendela health check yang cuma
+15 menit, dan ongkosnya tumbuh seiring jumlah sertifikat.
+
+Perhatikan juga baris yang berbunyi:
+
+```
+DILEWATI — penandatangannya sudah ganti. Beku atas nama "…", yang berlaku
+sekarang "…".
+```
+
+Itu bukan kegagalan, dan tidak mempengaruhi kode keluar. Gambar tanda tangan
+dibaca live tiap render sementara namanya beku di snapshot, jadi membangun ulang
+sertifikat yang penandatangannya sudah berganti orang akan menempelkan tanda
+tangan orang baru di atas nama lama. Yang bentrok dilewati dengan kedua namanya
+disebut — keputusan berikutnya milik pemilik lab, bukan perintahnya.
+
+---
+
 ## 5. APK, Windows, macOS buat orang lain
 
 Nggak ada build manual lagi. Di repo mobile, tempel URL yang barusan dikasih
