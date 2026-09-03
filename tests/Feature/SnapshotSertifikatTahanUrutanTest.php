@@ -133,6 +133,98 @@ class SnapshotSertifikatTahanUrutanTest extends TestCase
     }
 
     /**
+     * Snapshot tidak bergeser walau SELURUH relasinya datang teracak.
+     *
+     * ## Kenapa test ini ada, padahal sudah ada dua di atas
+     *
+     * Dua test di atas menutup jalur yang sudah terbukti menggigit. Tapi
+     * keduanya punya tiga batas yang sama, dan ketiganya cocok dengan satu
+     * gejala yang sampai sekarang belum ketemu sebabnya — sertifikat
+     * Spectrophotometer yang masih bergeser tiap `sertifikat:bangun-ulang`
+     * sementara delapan alat lain diam:
+     *
+     *   1. Yang dipermutasi cuma `uncertaintyCalculations`. Builder juga
+     *      membaca `rawMeasurements` (baris `satuan`) dan `standarDicek`
+     *      (tabel "Standards Used") — dua-duanya tidak pernah diadu teracak.
+     *   2. Permutasinya cuma DIBALIK. Urutan yang tidak dijanjikan siapa pun
+     *      tidak selalu "kebalikan"; MySQL bisa memulangkan urutan apa saja.
+     *   3. Titik kembarnya cuma DUA baris. Spectrophotometer punya TIGA blok
+     *      per titik, dan seri bertiga punya lebih banyak cara tertukar
+     *      daripada seri berdua.
+     *
+     * Jadi yang diadu di sini sifat yang sebenarnya dibutuhkan, bukan satu
+     * kasus yang kebetulan pernah terjadi: **snapshot itu fungsi dari DATA,
+     * dan urutan koleksi yang sampai ke builder tidak boleh ikut menentukan
+     * apa pun.**
+     *
+     * Permutasinya dibikin dari `md5(benih|id)` — deterministik, jadi kegagalan
+     * bisa diulang persis dengan menyebut benihnya, bukan "kadang merah".
+     */
+    public function test_snapshot_tahan_semua_relasi_teracak_pada_titik_tiga_blok(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $sertifikat = Certificate::query()
+            ->where('status', Certificate::STATUS_TERBIT)
+            ->firstOrFail();
+
+        $this->jadikanTitikTigaBlok($sertifikat->calibration_session_id);
+
+        $builder = app(CertificateSnapshotBuilder::class);
+        $acuan = $builder->bangun(
+            $this->sesiSegar($sertifikat->calibration_session_id),
+            $sertifikat,
+        );
+
+        foreach (range(1, 12) as $benih) {
+            $sesi = $this->sesiSegar($sertifikat->calibration_session_id);
+
+            foreach (['uncertaintyCalculations', 'rawMeasurements', 'standarDicek'] as $relasi) {
+                $sesi->setRelation(
+                    $relasi,
+                    $sesi->getRelation($relasi)
+                        ->sortBy(fn ($baris): string => md5($benih.'|'.$baris->getKey()))
+                        ->values(),
+                );
+            }
+
+            $this->assertEquals(
+                $acuan,
+                $builder->bangun($sesi, $sertifikat),
+                'Snapshot bergeser cuma gara-gara urutan koleksinya diacak '
+                ."(benih {$benih}). Urutan itu tidak dijanjikan siapa pun — di "
+                .'MySQL dia bergantung pilihan indeks, dan itu bisa berubah '
+                .'sesudah UPDATE. Yang tercetak ke sertifikat terakreditasi '
+                .'tidak boleh ikut bergeser.',
+            );
+        }
+    }
+
+    /**
+     * Bikin satu titik ukur punya TIGA baris — bentuk Spectrophotometer.
+     *
+     * Nilainya dibedakan satu sama lain dengan alasan yang sama seperti
+     * [kembarkanTitikPertama]: kalau ketiganya identik, tertukar pun
+     * snapshot-nya sama dan test ini hijau tanpa menguji apa pun.
+     */
+    private function jadikanTitikTigaBlok(int $sesiId): void
+    {
+        $pertama = UncertaintyCalculation::query()
+            ->where('calibration_session_id', $sesiId)
+            ->orderBy('titik_ke')
+            ->firstOrFail();
+
+        foreach ([1, 2] as $ke) {
+            $blok = $pertama->getAttributes();
+            unset($blok['id']);
+            $blok['rata_rata'] = (float) $pertama->rata_rata + (0.01 * $ke);
+            $blok['koreksi'] = (float) $pertama->koreksi - (0.01 * $ke);
+
+            UncertaintyCalculation::query()->create($blok);
+        }
+    }
+
+    /**
      * Bikin satu titik ukur punya DUA baris, dengan `id` yang lebih besar.
      *
      * Nilainya sengaja dibedakan: kalau dua barisnya identik, tertukar pun
