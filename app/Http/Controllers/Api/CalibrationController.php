@@ -24,12 +24,14 @@ use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
+use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Support\MicrometerMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
@@ -1152,6 +1154,16 @@ class CalibrationController extends Controller
             return $this->susunBlokWaktu($request, $alat, $standarDefault);
         }
 
+        // Micrometer: satu titik itu TUMPUKAN balok ukur (sampai tiga keping
+        // di-wringing) plus deret pembacaan alat — dua hal yang beda, bukan
+        // satu deret. Alasan jalur terpisahnya sama dengan empat di atas: loop
+        // per-titik di bawah cuma punya tempat buat satu deret, dan nominal
+        // balok ukur yang ikut masuk ke situ menggeser rata-rata pembacaan
+        // tanpa satu pun error.
+        if ($this->profil->untukAlat($alat)->butuhBlokMicrometer()) {
+            return $this->susunBlokMicrometer($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1990,6 +2002,221 @@ class CalibrationController extends Controller
                 $perGrup['hitungan'] ?? [],
             ),
             'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Susun sesi **Micrometer**: sebelas titik ber-nominal PRA-CETAK, lima
+     * pembacaan tiap titik.
+     *
+     * ## Tumpukan balok ukur DITURUNKAN, bukan dikirim HP
+     *
+     * Kertas lembar kerja (`SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`) cuma mencetak
+     * nominal totalnya; tumpukan keping yang membentuknya ditentukan Instruksi
+     * Kerja. Jadi yang dikirim HP cuma pembacaannya, dan tumpukannya diambil
+     * dari varian di sini lalu ikut disimpan ke `raw_measurements`.
+     *
+     * Disimpan, bukan dibaca ulang dari tabel waktu menghitung: kalau set balok
+     * ukur lab berganti tahun depan, sesi lama harus tetap menghitung ulang
+     * dengan keping yang BENAR-BENAR dipakai waktu itu. Alasan yang sama
+     * dengan snapshot sertifikat.
+     *
+     * ## Satuan dikonversi SEKALI, di sini
+     *
+     * Yang tersimpan selalu milimeter, walau alatnya berskala inch. Master
+     * menyimpan penunjukan dalam satuan alat lalu mengalikannya 25,4 di dalam
+     * rumus, dan itulah yang melahirkan sesi 0-25 mm yang koreksinya terbit
+     * −61 mm. Nominal balok ukur TIDAK ikut dikonversi — sertifikatnya memang
+     * selalu mm.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokMicrometer(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[MicrometerMentah::KUNCI_SESI] ?? []);
+
+        // Satuan ALAT, dipakai buat mengubah penunjukan ke mm SAAT DIHITUNG —
+        // bukan saat disimpan. Yang tersimpan angka mentah yang diketik
+        // teknisi, dan `raw_measurements.satuan` menyebutkan satuannya.
+        // Alasannya di [MicrometerMentah::keMm]: mengonversi di ujung masuk
+        // tidak idempoten, dan jalur draft mengalikannya lagi tiap simpan.
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
+
+        $tabel = new TabelStandarMicrometer;
+        $varian = $tabel->pitaCmc((float) ($blok['kapasitas_mm'] ?? $alat->range_max ?? 0));
+
+        $suhuRata = MicrometerMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $bawaan = $varian['titik'][$index] ?? null;
+
+            // Titik di luar sebelas baris kertas dibuang — bukan disimpan
+            // sebagai titik ke-12 yang tidak punya nominal. Bentuk lembar
+            // mengunci barisnya (`titik_bisa_diubah = false`), jadi kelebihan
+            // baris cuma bisa datang dari payload yang salah bentuk.
+            if ($bawaan === null) {
+                continue;
+            }
+
+            $nominalCetak = (float) $bawaan['nominal_cetak_mm'];
+
+            // Baris dipetakan lewat POSISI, dan itu cuma benar selama HP
+            // mengirim kesebelas barisnya utuh dan berurutan. Hari ini memang
+            // begitu (`TitikState.siapKirim` true buat tiap baris ber-set
+            // point, termasuk yang belum disentuh), tapi itu jaminan yang
+            // hidup di repo LAIN.
+            //
+            // Kalau suatu saat HP membuang baris kosong, seluruh baris
+            // sesudahnya bergeser satu: pembacaan yang diambil di 35,3 mm
+            // tersimpan sebagai titik 31,0 mm, koreksinya meleset ~4 mm, dan
+            // tidak ada satu pun error di kedua sisi. Sertifikatnya terbit
+            // dengan angka yang kelihatan wajar di nominal yang salah.
+            //
+            // Jadi `titik_ukur` kiriman HP dipakai sebagai PEMERIKSA: dia tidak
+            // menentukan nominalnya (varian tetap yang menang — lihat
+            // `test_nominal_dari_varian_menang_atas_yang_dikirim_hp`), tapi
+            // kalau dia menunjuk baris yang berbeda jauh, pemetaannya sudah
+            // salah dan titiknya ditolak dengan alasan yang kebaca.
+            //
+            // Ambangnya longgar (0,05 mm) supaya pembulatan HP tidak pernah
+            // menolak titik yang benar: dua nominal pra-cetak yang paling
+            // berdekatan pun terpisah 1,7 mm.
+            $dikirim = $titik['titik_ukur'] ?? null;
+
+            if (is_numeric($dikirim) && abs((float) $dikirim - $nominalCetak) > 0.05) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Baris ke-%d mengirim nominal %s mm, tapi baris itu di kertas %s mm. '
+                        .'Urutan baris tidak cocok dengan lembarnya — titik tidak disimpan '
+                        .'supaya pembacaannya tidak mendarat di nominal yang salah.',
+                        $titikKe,
+                        rtrim(rtrim(number_format((float) $dikirim, 4, ',', '.'), '0'), ','),
+                        rtrim(rtrim(number_format($nominalCetak, 4, ',', '.'), '0'), ','),
+                    ),
+                ];
+
+                continue;
+            }
+            $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
+
+            $pembacaan = [];
+
+            // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh empat
+            // lembar lain — bukan kosakata `mikro_*` sendiri.
+            //
+            // `mikro_pembacaan` sempat dipakai di sini, dan itu tidak pernah
+            // menerima satu angka pun: HP menyusun tabel satu-kolom lewat jalur
+            // datarnya (`TitikState.toSubmission()` membaca kolom `pembacaan`),
+            // jadi seluruh isian teknisi mendarat di `pembacaan` sementara sisi
+            // ini menengok kunci yang tidak pernah ada. Yang tersimpan NOL baris
+            // dan nol hitungan, tanpa satu pun error di kedua sisi. Ketahuan
+            // waktu payload HP-nya diadu ke sini, bukan waktu ada test merah.
+            //
+            // `mikro_pembacaan` tetap hidup sebagai `peran_sensor` di
+            // `raw_measurements` — di situ dia memang membedakan deret
+            // pembacaan dari nominal balok ukur.
+            $ocrPeran = array_values((array) ($titik['ocr'] ?? []));
+
+            foreach (array_values((array) ($titik['pembacaan'] ?? [])) as $urutan => $nilai) {
+                if (! is_numeric($nilai)) {
+                    continue;
+                }
+
+                $meta = $ocrPeran[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
+                // Yang DIHITUNG mm; yang DISIMPAN mentah + satuannya.
+                $pembacaan[] = MicrometerMentah::keMm($nilai, $satuanAlat);
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_PEMBACAAN,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuanAlat,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            // Titik yang belum diisi sama sekali tidak menyimpan tumpukannya
+            // juga: baris balok ukur tanpa satu pun pembacaan melahirkan titik
+            // yang "ada" di database tapi tidak punya angka, dan itu tercetak
+            // di sertifikat sebagai baris kosong yang kelihatan seperti data
+            // hilang.
+            if ($pembacaan === []) {
+                continue;
+            }
+
+            foreach ($tumpukan as $urutan => $nominal) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_BALOK,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $nominal,
+                    'satuan' => MicrometerMentah::SATUAN_BALOK,
+                    // Diturunkan server dari varian kertas, bukan diketik
+                    // teknisi maupun dibaca kamera.
+                    'input_source' => 'manual',
+                    'is_verified' => true,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominalCetak,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    MicrometerMentah::PERAN_BALOK => $tumpukan,
+                    MicrometerMentah::PERAN_PEMBACAAN => $pembacaan,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
         ];
     }
 

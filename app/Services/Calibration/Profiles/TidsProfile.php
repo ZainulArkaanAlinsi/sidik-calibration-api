@@ -849,6 +849,20 @@ class TidsProfile extends CalibrationProfile
     }
 
     /**
+     * Override, dan sebabnya BUKAN gaya.
+     *
+     * [CalibrationProfile::isiPilihanThermohygro] membaca
+     * `static::THERMOHYGRO_TERCETAK`, dan di kelas ini konstanta bernama sama
+     * sudah dipakai untuk hal yang BERBEDA — daftar ber-kunci `nama`/`lokasi`
+     * yang menjadi baris tabel kondisi lingkungan lembar TIDS, bukan pilihan
+     * dropdown. Daftar dropdown-nya tinggal di [THERMOHYGRO_PILIHAN].
+     *
+     * Jadi yang dipakai di sini konstanta yang benar, bukan yang kebetulan
+     * bernama sama. Menyeragamkan namanya berarti menyentuh dua bentuk data
+     * sekaligus di lembar yang angkanya sudah terbukti cocok master; itu
+     * pekerjaan tersendiri, bukan efek samping pengangkatan helper.
+     */
+    /**
      * Isi pilihan "Thermohygro Used".
      *
      * Lembar ini punya DUA jalur ke unit thermohygro, dan sebelum ini
@@ -868,7 +882,7 @@ class TidsProfile extends CalibrationProfile
      * @param  array<string, mixed>  $bentuk
      * @return array<string, mixed>
      */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
+    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
     {
         $master = Standard::query()
             ->whereNotNull('parameter_kondisi')
@@ -2030,32 +2044,5 @@ class TidsProfile extends CalibrationProfile
                 fn ($q) => $q->milikOrganisasi($equipment->organization_id),
             )
             ->first();
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }

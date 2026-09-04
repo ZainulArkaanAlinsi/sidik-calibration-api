@@ -9,7 +9,9 @@ use App\Rules\AngkaTerhingga;
 use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -39,6 +41,7 @@ class CalibrationRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->bakukanKeterulanganTimbangan();
+        $this->bakukanPraEvaluasiMicrometer();
 
         if ($this->user()?->isAdmin()) {
             return;
@@ -132,6 +135,93 @@ class CalibrationRequest extends FormRequest
 
         $spek = (array) $this->input('spesifikasi_alat', []);
         $spek['keterulangan'] = $baku;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * Ratakan baris `Evaluasi` ke deret angka, dan konversikan satuannya ke mm.
+     *
+     * ## 1. Bentuknya — kenapa ada dua
+     *
+     * Tabel `Evaluasi` menyatakan
+     * `simpan_ke: spesifikasi_alat.micrometer.pra_evaluasi`, dan HP mengirim
+     * SETIAP tabel ber-`simpan_ke` sebagai cerminan tabel yang digambarnya —
+     * sama seperti Repeatability Timbangan di atas:
+     *
+     *     pra_evaluasi = { baris: [ { titik_ukur, pembacaan: [10 angka] } ] }
+     *
+     * (Kode kolomnya `pembacaan`, sama seperti dua puluh empat lembar
+     * lain.) Yang dibaca [MicrometerMentah::blokSesi] deret angka DATAR. Tanpa
+     * perataan ini bentuk HP kena aturan
+     * `spesifikasi_alat.micrometer.pra_evaluasi.* => numeric` dan pulang
+     * **422** — jadi kegagalannya memang kelihatan, tapi yang gagal SETIAP
+     * sesi Micrometer dari HP, dengan keluhan yang menunjuk sepuluh angka yang
+     * sudah benar diisi teknisi.
+     *
+     * ## 2. Satuannya — dan kenapa dikonversi di KEDUA bentuk
+     *
+     * Pembacaan baris Evaluasi diketik dalam satuan ALAT, persis seperti lima
+     * pembacaan tiap titik — dan yang itu dikonversi
+     * `CalibrationController::susunBlokMicrometer()`. Blok ini lewat jalur lain
+     * (`spesifikasi_alat` ikut apa adanya ke `konteks`), jadi konversinya harus
+     * terjadi di sini.
+     *
+     * Deret datar ikut dikonversi, bukan dilewati. Melewatkannya bikin dua
+     * bentuk yang membawa angka SAMA berarti beda — nested dibaca satuan alat,
+     * datar dibaca mm — dan tidak ada satu pun error yang membedakannya. Satuan
+     * itu sifat SESI-nya, bukan sifat pembungkus payload-nya.
+     *
+     * Akibat kalau ini luput: simpangan bakunya ~25× terlalu kecil pada sesi
+     * `inch`, komponen pengulangan nyaris hilang dari budget, dan U95 mendarat
+     * di lantai CMC — **kelihatan wajar**. Persis rantai yang bikin master lab
+     * menerbitkan 0,735 µm di bawah pitanya sendiri.
+     *
+     * Yang TIDAK lewat sini: sesi contoh ter-seed. Seeder menulis langsung ke
+     * `calibration_sessions`, sudah dalam mm, tanpa menyentuh FormRequest —
+     * jadi `MicrometerMasterTest` tetap mengadu angka master apa adanya.
+     *
+     * Diletakkan di `prepareForValidation()` dengan alasan yang sama seperti
+     * Timbangan: yang TERSIMPAN harus sudah baku, karena
+     * `kalibrasi:hitung-ulang` membaca `spesifikasi_alat` apa adanya.
+     */
+    private function bakukanPraEvaluasiMicrometer(): void
+    {
+        $pra = $this->input('spesifikasi_alat.micrometer.pra_evaluasi');
+
+        if (! is_array($pra) || $pra === []) {
+            return;
+        }
+
+        // Bentuk tabel HP diratakan; deret datar dipakai apa adanya. Kode
+        // kolomnya `pembacaan`, dari `MicrometerProfile::bagianEvaluasi()`.
+        // Kertasnya cuma punya satu baris, tapi baris kedua dan seterusnya
+        // (kalau kertas revisi berikutnya menambahnya) ikut disambung — bukan
+        // dibuang diam-diam.
+        $mentah = isset($pra['baris'])
+            ? array_merge(...array_map(
+                static fn ($b): array => array_values((array) (is_array($b) ? ($b['pembacaan'] ?? []) : [])),
+                array_values((array) $pra['baris']) ?: [[]],
+            ))
+            : array_values($pra);
+
+        $nilai = array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v)));
+
+        $spek = (array) $this->input('spesifikasi_alat', []);
+
+        // Diratakan saja — TIDAK dikonversi. Satuannya sudah ikut di blok yang
+        // sama (`spesifikasi_alat.micrometer.satuan`), dan yang mengubahnya ke
+        // mm `MicrometerMentah::blokSesi()` waktu dipakai menghitung.
+        //
+        // Versi pertama mengalikan di sini, dan itu tidak idempoten: teknisi
+        // yang menyimpan draft lalu membukanya lagi mengirimkan kembali angka
+        // yang sudah dikonversi (HP tidak punya konversi balik), jadi tiap
+        // simpan mengalikannya 25,4 lagi. Terbukti sampai 1290,32 mm untuk
+        // pembacaan 2 inch pada simpanan kedua. Lihat [MicrometerMentah::keMm].
+        $spek['micrometer']['pra_evaluasi'] = array_map(
+            static fn ($v): float => (float) $v,
+            $nilai,
+        );
 
         $this->merge(['spesifikasi_alat' => $spek]);
     }
@@ -315,6 +405,30 @@ class CalibrationRequest extends FormRequest
             // yang kebetulan mengisinya.
             'spesifikasi_alat.scale_observation' => ['sometimes', 'nullable', 'array', 'max:3'],
             'spesifikasi_alat.effect_of_tare' => ['sometimes', 'nullable', 'array', 'max:5'],
+            // Blok Micrometer: empat kunci tingkat atas (satuan, kapasitas,
+            // resolusi, deret pra-evaluasi). Batasnya dilonggarkan ke 12 supaya
+            // kunci kelima yang menyusul tidak menolak SELURUH sesi —
+            // kesalahan yang sudah kejadian pada `scale_observation`.
+            'spesifikasi_alat.micrometer' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.micrometer.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.micrometer.pra_evaluasi.*' => ['nullable', 'numeric'],
+            // Satuan alat MEMILIH faktor konversi ke mm, jadi nilainya dibatasi
+            // ke daftar yang dikenal — bukan teks bebas. Satuan yang tidak
+            // dikenal jatuh ke faktor 1,0 dan angkanya salah diam-diam.
+            'spesifikasi_alat.micrometer.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
+            'spesifikasi_alat.micrometer.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            // Deret pembacaan per titik. Tumpukan balok ukurnya TIDAK diterima
+            // dari HP: nominalnya dipatok kertas dan tumpukannya diturunkan
+            // server dari varian — lihat
+            // `CalibrationController::susunBlokMicrometer()`. Menerimanya dari
+            // luar berarti membuka jalan buat sesi yang balok ukurnya berbeda
+            // dari yang tercetak di lembarnya sendiri.
+            // Tidak ada aturan `measurements.*.mikro_pembacaan` di sini, dan itu
+            // disengaja: tabel `Data Kalibrasi` satu kolom, jadi HP mengirimnya
+            // lewat jalur DATAR `measurements.*.pembacaan` yang sudah punya
+            // aturannya sendiri di bawah. Kosakata `mikro_*` cuma hidup sebagai
+            // `peran_sensor` di `raw_measurements`.
             // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
             // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana
             // yang dibaca), jadi nilainya dibatasi ke daftar yang dikenal
@@ -608,16 +722,21 @@ class CalibrationRequest extends FormRequest
     /**
      * Kunci `spesifikasi_alat` yang isinya BLOK, bukan teks pendek.
      *
-     * Kelimanya milik lembar Timbangan. Ditulis sebagai daftar tertutup, bukan
-     * "terima array apa saja": kolomnya JSON tanpa skema, jadi tanpa daftar ini
-     * satu kunci salah ketik dari HP mendarat diam-diam dan baru ketahuan waktu
-     * ada yang mencari isinya.
+     * Lima yang pertama milik lembar Timbangan, yang keenam milik Micrometer.
+     * Ditulis sebagai daftar tertutup, bukan "terima array apa saja": kolomnya
+     * JSON tanpa skema, jadi tanpa daftar ini satu kunci salah ketik dari HP
+     * mendarat diam-diam dan baru ketahuan waktu ada yang mencari isinya.
      *
      * Tiga yang pertama MENGGERAKKAN ANGKA (Sr/Sres & LOP, komponen
-     * Eccentricity, angka Hysterisis). Dua yang terakhir cuma dicatat — tapi
+     * Eccentricity, angka Hysterisis). Dua berikutnya cuma dicatat — tapi
      * tetap masuk daftar ini, karena tanpa tempat simpan yang sah kesepuluh
      * kotak Scale Observation dan kelima kotak Effect of Tare diketik teknisi
      * lalu hilang waktu tombol kirim ditekan.
+     *
+     * `micrometer` menggerakkan angka paling banyak di antara semuanya: SELURUH
+     * budget lembar itu lahir dari situ — pengulangan (pra-evaluasi), suhu,
+     * kapasitas (yang memilih pita CMC), dan resolusi. Tanpa tempat simpan yang
+     * sah, tiap sesi Micrometer pulang tanpa satu pun titik terhitung.
      */
     private const SPEK_BERBENTUK_BLOK = [
         'keterulangan',
@@ -625,6 +744,7 @@ class CalibrationRequest extends FormRequest
         'histeresis',
         'scale_observation',
         'effect_of_tare',
+        'micrometer',
     ];
 
     /**

@@ -383,26 +383,6 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
-     * Satu-satunya baris CMC alat ini (5–3600 detik → 0,81 detik), disaring
-     * organisasi DAN kategori — lihat alasan panjangnya di
-     * `ProfilPutaran::kemampuanUntukBlok`.
-     */
-    private function kemampuanSesi(Equipment $equipment): ?CalibrationCapability
-    {
-        return CalibrationCapability::query()
-            ->where('nama_alat', $this->namaAlatKemampuan())
-            ->when(
-                $equipment->equipment_category_id !== null,
-                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
-            )
-            ->when(
-                $equipment->organization_id !== null,
-                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
-            )
-            ->first();
-    }
-
-    /**
      * @param  list<array<string, mixed>>  $budget
      * @param  array<string, mixed>  $h
      * @return list<array<string, mixed>>
@@ -485,78 +465,6 @@ class TimerStopwatchProfile extends CalibrationProfile
             ),
             $equipment,
         );
-    }
-
-    /**
-     * Tautkan baris `Standard Used` tercetak ke master milik LAB PEMILIK ALAT,
-     * lewat `masterStandarTertaut()` — bukan query sendiri. Alasan panjangnya
-     * sama dengan `ProfilPutaran::tautkanStandarTercetak()`.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function tautkanStandarTercetak(array $bentuk, ?Equipment $equipment): array
-    {
-        $master = $this->masterStandarTertaut($equipment);
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            if (($bagian['kode'] ?? null) !== 'usage_check') {
-                continue;
-            }
-
-            $bentuk['bagian'][$i]['baris'] = array_map(
-                function (array $baris) use ($master): array {
-                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
-
-                    return [
-                        'label' => $baris['label'],
-                        'standard_id' => $cocok?->id,
-                        'serial_number' => $cocok?->serial_number,
-                        'no_sertifikat' => $cocok?->no_sertifikat,
-                        'tertelusur_ke' => $cocok?->tertelusur_ke,
-                        'terdaftar' => $cocok !== null,
-                    ];
-                },
-                $bentuk['bagian'][$i]['baris'],
-            );
-        }
-
-        return $bentuk;
-    }
-
-    /**
-     * Isi dropdown "Environmental Meter Used" dengan ketujuh unit yang tercetak
-     * di kop master (`INPUT DATA!W15` menawarkan TH-1..TH-7), disaring ke lab
-     * pemilik alat.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (self::THERMOHYGRO_TERCETAK as $label) {
-            $id = $master[$label] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = ['nilai' => (string) $id, 'label' => $label, 'grup' => 'Thermohygro lab'];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if (($field['kode'] ?? null) === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
     }
 
     /** @return array<string, mixed> */
@@ -729,30 +637,6 @@ class TimerStopwatchProfile extends CalibrationProfile
                 $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
                 $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
             ],
-        ];
-    }
-
-    /** @return array<string, mixed> */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
         ];
     }
 }
