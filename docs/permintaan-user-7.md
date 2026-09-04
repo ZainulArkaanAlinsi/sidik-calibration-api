@@ -1859,7 +1859,7 @@ Disebut SEBELUM mengetik, sesuai §12:
 | `app/Services/Calibration/MicrometerCalculator.php` | mesin hitung, 9 komponen tingkat-sesi |
 | `app/Services/Calibration/Profiles/MicrometerProfile.php` | bentuk lembar + `hitungPerGrup()` |
 | `app/Support/MicrometerMentah.php` | penyusun ulang tumpukan balok + deret pembacaan |
-| `database/seeders/MicrometerSeeder.php` | empat sesi contoh, angkanya DIHITUNG |
+| `database/seeders/MicrometerSeeder.php` | **tiga** sesi contoh (dari empat varian — §21), angkanya DIHITUNG |
 | `database/ocr-templates/micrometer-v1.json` | rangka geometri, digenerate `ocr:rangka-geometri` |
 | `CalibrationProfileRegistry`, `CalibrationValidator`, `HitungUlangSesi`, `CalibrationController` | pendaftaran + dua jalur hitung ulang + jalur simpan |
 | `tests/Unit/MicrometerMasterTest.php` + `tests/Fixtures/micrometer-master.json` | adu ke empat master |
@@ -2111,6 +2111,49 @@ payload yang sama dua kali sekarang menghasilkan baris yang sama persis.
 
 ---
 
+## 21. Cuma SATU dari empat rentang Micrometer yang ter-seed — 4 Sep 2026
+
+Pemilik proyek bertanya lurus: *"empat yang saya kirim itu udah bener-bener apa
+cuma gimmick, ada yang bolong?"* Jawabannya ada yang bolong, dan bolongnya di
+tempat yang tidak berbunyi.
+
+**Yang ketemu.** `MicrometerSeeder` menanam **satu** sesi (`_dipakai_seeder:
+"2550"`), padahal `TimbanganSeeder` — pola yang seharusnya diikuti — menanam
+ketiga variannya. Tiga pita CMC sisanya lolos SELURUH sapuan registry tanpa
+pernah dijalankan ujung ke ujung sekali pun. Bukan test yang merah: test-nya
+memang tidak pernah menyentuh varian itu.
+
+Ini juga membuat catatan §17 dan `docs/perintah-frontend-micrometer.md` **salah**:
+keduanya menulis "empat sesi contoh ter-seed". Keduanya sudah dikoreksi.
+
+**Yang ditambal.** Varian C (50-75 mm, `002-UB.P-11-20`, Mahr) dan D (75-100 mm,
+`003-UB.P-11-20`, Mitutoyo) sekarang ikut ditanam. Keduanya lengkap: 11 titik
+ukur, sertifikat terbit, dan U95 masing-masing 0,00091 mm — di atas lantai CMC
+pitanya. `MicrometerSertifikatTest` sekarang mengadu **ketiganya** ke sheet
+`SERTIFIKAT` masternya lewat DataProvider, bukan cuma varian B.
+
+**Yang TIDAK ditambal, dan kenapa.** Varian A (0-25 mm, `095-CAL-324`) tetap
+tidak ditanam. Sebabnya bukan label satuannya — itu bisa dibetulkan — melainkan
+blok pra-evaluasinya: **635,0 sepuluh kali**, nilai kapasitas hasil bug inch
+yang bocor ke sana. Simpangan bakunya NOL. Menanamnya berarti menerbitkan sesi
+yang komponen keterulangannya nol lalu ditutupi lantai CMC dan tampak wajar —
+persis jebakan yang dijaga seluruh alat ini (§20 cacat no. 3, bentuk yang sama).
+Membetulkannya berarti MENGARANG data keterulangan, dan keterulangan itu yang
+jadi dasar seluruh budget.
+
+Jalur blokirnya sendiri tidak bergantung pada sesi ter-seed:
+`MicrometerMasterTest::test_kapasitas_di_luar_pita_cmc_diblokir_bukan_diterbitkan`
+dan `MicrometerSesiTest::test_kapasitas_di_luar_pita_cmc_diblokir` menegakkannya
+dari fixture.
+
+**Pelajaran yang mahal.** Sapuan yang daftarnya datang dari database gagal tanpa
+bersuara: `SertifikatSemuaAlatSatuHalamanTest` hijau dengan satu sertifikat
+Micrometer persis seperti dia hijau dengan tiga. Yang menangkapnya cuma
+pertanyaan manusia. Untuk alat berikutnya: **jumlah sesi ter-seed per varian
+adalah angka yang harus dipatok di test**, bukan diserahkan ke seeder.
+
+---
+
 ## Permintaan 16 — U95 per titik di sertifikat instrumen analitik
 
 Dari pemilik lab (Pak Rohman) lewat pemilik proyek, 3 September 2026: di
@@ -2261,7 +2304,7 @@ berkas profil.
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 | G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Tiga belas pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md`; §4/§5/§7/§11 **ditutup 1 Sep 2026** oleh arahan pemilik proyek "pakai rumus Excel", menyisakan §8/§9 dan dua yang menyangkut dokumen terbit (§10 tanda koreksi, §13 kalimat `k`) plus satu permintaan data (workbook Timer yang keempat bloknya hidup). **Sisi mobile BERES** (1 Sep 2026, PR mobile #139) — ketiga lembar bisa diisi & dikirim dari HP tanpa layar baru; menyambungkannya membongkar tiga cacat lama yang gagal tanpa error: lembar Thermohygro terkirim KOSONG, tombol FOTO TABEL INI mengisi nol sel di lima lembar berpasangan, dan kolom U95 memakai desimal kolom hasil. Jalur kamera cloud tetap MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
 | G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B  **Ditambah 2 Sep 2026: direktori lokal** — 10.320 PT (Jababeka 450 + Indonetwork 9.870) bisa dicari ±10 ms tanpa keluar server, lewat tabel rujukan terpisah `direktori_lokal` dan driver baru yang memenuhi kontrak `DirektoriPerusahaan` yang sudah ada. **Nol berkas berubah di sisi HP, nol tambahan ukuran APK.** Menyeed ke `customers` sengaja DITOLAK: `SimpananPelanggan` menyalin seluruh daftar pelanggan ke SharedPreferences yang dibaca utuh ke memori tiap aplikasi nyala — diukur **1,36 MB JSON** per buka aplikasi. Satu bug ketemu & dikunci test: `tersedia()` di service provider bikin **`/api/health` 500** waktu tabelnya belum ada. 22 test baru. Rinciannya §16 F |
-| G11 | Alat baru **Micrometer** (Panjang, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. Lembar lalu **disetel ulang ke kertas resmi** `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` yang turun belakangan: nomor formulir per rentang, 6 bagian, 11 nominal pra-cetak, suhu balok/UUT diturunkan dari suhu ruangan. **Sisi HP BERES** juga (§19) — dan justru dari situ tiga cacat server ketahuan, ketiganya lolos 3.128 test backend karena test backend memakai payload yang ditulis backend sendiri |
+| G11 | Alat baru **Micrometer** (Panjang, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. Lembar lalu **disetel ulang ke kertas resmi** `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` yang turun belakangan: nomor formulir per rentang, 6 bagian, 11 nominal pra-cetak, suhu balok/UUT diturunkan dari suhu ruangan. **Sisi HP BERES** juga (§19) — dan justru dari situ tiga cacat server ketahuan, ketiganya lolos 3.128 test backend karena test backend memakai payload yang ditulis backend sendiri. **Sapuan lanjutan (§21):** seeder ternyata cuma menanam SATU dari empat rentang; varian C & D sekarang ikut, varian A tetap tidak (pra-evaluasinya 635,0 sepuluh kali → simpangan baku nol) |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai

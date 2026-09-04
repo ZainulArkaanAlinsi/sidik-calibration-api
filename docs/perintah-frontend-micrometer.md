@@ -4,8 +4,9 @@ Dokumen berdiri sendiri. Tempel ke sesi kerja `sidik-calibration-mobile`; tidak 
 percakapan backend.
 
 **Status backend:** BERES 4 Sep 2026, lalu **disetel ulang ke kertas resmi** hari yang sama.
-Profil, lembar kerja, mesin hitung, jalur simpan, jalur hitung ulang, empat sesi contoh
-ter-seed, template OCR, dan `MicrometerMasterTest` (diadu ke empat workbook master) hijau.
+Profil, lembar kerja, mesin hitung, jalur simpan, jalur hitung ulang, **tiga** sesi contoh
+ter-seed (dari empat rentang — yang keempat sengaja tidak, §1), template OCR, dan
+`MicrometerMasterTest` (diadu ke empat workbook master) hijau.
 
 **Status HP:** BERES 4 Sep 2026 — mock lembar, cabang mode mock, pertanyaan satuan, dan `test/micrometer_lembar_test.dart` (9 test) hijau; `flutter test` penuh 1.530 test hijau, `flutter analyze` bersih.
 
@@ -29,18 +30,29 @@ ter-seed, template OCR, dan `MicrometerMasterTest` (diadu ke empat workbook mast
 | Nomor formulir | **empat, dipilih dari kapasitas alat** — lihat §2 |
 | Satuan simpan | **selalu `mm`**, apa pun skala alatnya. Lihat §5 — ini yang paling gampang salah |
 
-Empat sesi contoh sudah ter-seed, satu per rentang:
+**TIGA** sesi contoh ter-seed, dari empat workbook master yang dikirim lab:
 
-| Sesi | Alat | Serial | Kapasitas | Varian | Terbit? |
+| Sesi | Alat | Serial | Kapasitas | Varian | Ter-seed? |
 |---|---|---|---|---|---|
-| `095-CAL-324` | Micrometer (Mitutoyo Analog) | `IMTE-FQS-015` | **635 mm** (satuan `inch`) | — | **DIBLOKIR**, lihat §7 |
-| `0106-CAL-1023` | Micrometer Digital (Mitutoyo IP65) | `ZQ-100` | 50 mm | B | ya |
-| `002-UB.P-11-20` | Outside Micrometer (Mahr) | `61010481` | 75 mm | C | ya |
-| `003-UB.P-11-20` | Digital Outside Micrometer (Mitutoyo) | `67426681` | 100 mm | D | ya |
+| `0106-CAL-1023` | Micrometer Digital (Mitutoyo IP65) | `ZQ-100` | 50 mm | B | ya, terbit |
+| `002-UB.P-11-20` | Outside Micrometer (Mahr) | `61010481` | 75 mm | C | ya, terbit |
+| `003-UB.P-11-20` | Digital Outside Micrometer (Mitutoyo) | `67426681` | 100 mm | D | ya, terbit |
+| `095-CAL-324` | Micrometer (Mitutoyo Analog) | `IMTE-FQS-015` | 25 mm | A | **tidak**, lihat di bawah |
 
-Pakai `ZQ-100` sebagai sumber mock (§9). Sesi `IMTE-FQS-015` sengaja dibiarkan cacat — dia
-salinan apa adanya dari master yang satuannya salah pilih, dan dia yang membuktikan jalur
-blokirnya jalan.
+Pakai `ZQ-100` sebagai sumber mock (§9).
+
+**Kenapa varian A tidak ditanam.** Datanya ada utuh di
+`database/data/sesi-master-micrometer.json`, jadi bukan soal berkas yang hilang. Yang bikin
+dia tidak layak jadi sesi contoh: blok pra-evaluasinya berisi **635,0 sepuluh kali** — nilai
+kapasitas hasil salah pilih satuan (`inch`) yang bocor ke sana. Simpangan bakunya NOL, jadi
+sesi itu bakal terbit dengan komponen keterulangan nol yang lalu ditutupi lantai CMC dan
+tampak wajar (§7 sebab no. 2). Membetulkannya berarti MENGARANG data keterulangan, dan
+keterulangan itu yang jadi dasar seluruh budget.
+
+Jalur blokirnya tetap terjaga tanpa sesi ini: `MicrometerMasterTest` dan `MicrometerSesiTest`
+menegakkan ketiga sebab §7 dari fixture, bukan dari sesi ter-seed. Buat HP artinya cuma satu
+hal: **jangan berharap ada sesi berstatus DIBLOKIR di database contoh** — status itu lahir dari
+data yang dikirim teknisi, bukan dari sesi bawaan.
 
 ## 1a. TIDAK ada kategori baru — Micrometer sudah ada di **Panjang**
 
