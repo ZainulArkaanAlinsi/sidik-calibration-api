@@ -990,49 +990,6 @@ class TimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * Isi dropdown "Thermohygro Used" dari master `standards` — TERSARING
-     * ORGANISASI lewat [masterThermohygro], bukan query telanjang.
-     *
-     * Query sendiri di sini menawarkan termohigrometer milik lab LAIN, dan yang
-     * kepilih tidak berhenti di dropdown: `standard_id`-nya masuk ke sesi,
-     * koreksi kondisi lingkungannya dibaca dari sertifikat lab itu, lalu
-     * angkanya kecetak di sertifikat lab INI. Itu temuan audit paling mahal
-     * jenisnya, dan `StandarTidakBocorAntarLabTest` menyapunya ke semua profil.
-     *
-     * Daftarnya diambil dari MASTER, bukan dari daftar nama tercetak: begitu
-     * lab menambah TH-8, unit itu muncul di sini tanpa berkas ini disentuh.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (self::THERMOHYGRO_TERCETAK as $label) {
-            $id = $master[$label] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = ['nilai' => (string) $id, 'label' => $label, 'grup' => 'Thermohygro lab'];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if (($field['kode'] ?? null) === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
      * Tautkan ketujuh baris "Standar Anak Timbangan" ke master `standards`.
      *
      * Lewat [masterStandarTertaut] — saringan organisasi yang sama, dan alasan

@@ -149,7 +149,10 @@ class ProfilDariNamaAlatTest extends TestCase
             'Gelas Ukur' => ['Gelas Ukur'],
             'Picnometer' => ['Picnometer'],
             'Hydrometer' => ['Hydrometer'],
-            'Micrometer' => ['Micrometer'],
+            // Micrometer PINDAH dari sini 4 Sep 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-25, kelompok Dimensi), dari EMPAT
+            // workbook master yang turun dari lab. Yang menjaga arah
+            // sebaliknya — `test_micrometer_dapat_lembarnya_sendiri` di bawah.
             'Dial Indicator' => ['Dial Indicator'],
             'Flow Meter Cairan (Totalizer)' => ['Flow Meter Cairan (Totalizer)'],
             // Timbangan PINDAH dari sini 31 Agt 2026: sekarang punya lembar
@@ -204,6 +207,47 @@ class ProfilDariNamaAlatTest extends TestCase
 
     #[DataProvider('namaWaktuFrekuensi')]
     public function test_alat_waktu_frekuensi_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-25: nama yang HARUS mendarat di `micrometer`
+     * — dan tetangga sekelompoknya yang HARUS tetap null.
+     *
+     * Yang paling rawan ejaan Indonesia `Mikrometer` (dengan k): sesi lab
+     * menulisnya begitu separuh waktu, dan tanpa alias alat itu jatuh ke form
+     * generik — seluruh mesin hitung dimensinya nggak pernah kepanggil dan U95
+     * lahir dari lantai CMC.
+     *
+     * Tiga tetangga diadu supaya jelas TETAP bukan milik profil ini: `Jangka
+     * Sorong` dan `Vernier Caliper` (lampiran no. 35, alat yang beda) serta
+     * `Dial Indicator` (no. 36). Ketiganya sekelompok Dimensi dan belum punya
+     * lembar; kalau salah satu mulai mendarat di `micrometer`, sesinya dihitung
+     * dengan tabel balok ukur yang bukan miliknya.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaDimensi(): array
+    {
+        return [
+            'lampiran akreditasi no. 34' => ['Micrometer', 'micrometer'],
+            'ejaan Indonesia' => ['Mikrometer', 'micrometer'],
+            'bermerk + rentang' => ['Micrometer Mitutoyo 0-25mm', 'micrometer'],
+            'outside micrometer' => ['Outside Micrometer', 'micrometer'],
+            'mikrometer luar' => ['Mikrometer Luar', 'micrometer'],
+            'jangka sorong, BUKAN micrometer' => ['Jangka Sorong', null],
+            'vernier caliper, BUKAN micrometer' => ['Vernier Caliper', null],
+            'dial indicator, BUKAN micrometer' => ['Dial Indicator', null],
+        ];
+    }
+
+    #[DataProvider('namaDimensi')]
+    public function test_micrometer_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
     {
         $this->assertSame(
             $harap,

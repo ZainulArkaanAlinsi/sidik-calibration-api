@@ -309,51 +309,6 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
     }
 
     /**
-     * Isi pilihan "Environmental Meter Used".
-     *
-     * Tanpa ini kolomnya BUKAN error — cuma diam. `field()` memberi `pilihan`
-     * nilai bawaan `[]`, layar teknisi menggambar dropdown dari daftar yang
-     * dibawa bentuk, dan daftar kosong bikin dia jatuh ke cabang teks mati
-     * "Belum ada unit thermohygro terdaftar". Sudah pernah kejadian di 7 dari 17
-     * lembar sekaligus; dijaga `ThermohygroSemuaLembarTest`.
-     *
-     * Daftarnya lewat [masterThermohygro] — TERSARING ORGANISASI. Query
-     * telanjang di sini menawarkan termohigrometer milik lab lain, dan yang
-     * kepilih tidak berhenti di dropdown: `standard_id`-nya masuk ke sesi,
-     * koreksi kondisi lingkungannya dibaca dari sertifikat lab itu, lalu
-     * angkanya kecetak di sertifikat lab INI.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (static::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = ['nilai' => (string) $id, 'label' => $unit['label'], 'grup' => $unit['grup']];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
      * Cocokin baris STANDARD tercetak ke master `standards` lab.
      *
      * Master-nya diambil lewat [masterStandarTertaut], bukan query sendiri.
@@ -538,32 +493,5 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
         $tambahan = $sesi->getAttribute('atribut_tambahan');
 
         return is_array($tambahan) ? ($tambahan[$kunci] ?? null) : null;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $pilihan
-     * @return array<string, mixed>
-     */
-    protected function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }

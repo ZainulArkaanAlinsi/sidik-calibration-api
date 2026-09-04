@@ -23,6 +23,7 @@ use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
@@ -30,6 +31,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Support\MicrometerMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
@@ -1152,6 +1154,16 @@ class CalibrationController extends Controller
             return $this->susunBlokWaktu($request, $alat, $standarDefault);
         }
 
+        // Micrometer: satu titik itu TUMPUKAN balok ukur (sampai tiga keping
+        // di-wringing) plus deret pembacaan alat — dua hal yang beda, bukan
+        // satu deret. Alasan jalur terpisahnya sama dengan empat di atas: loop
+        // per-titik di bawah cuma punya tempat buat satu deret, dan nominal
+        // balok ukur yang ikut masuk ke situ menggeser rata-rata pembacaan
+        // tanpa satu pun error.
+        if ($this->profil->untukAlat($alat)->butuhBlokMicrometer()) {
+            return $this->susunBlokMicrometer($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1977,6 +1989,130 @@ class CalibrationController extends Controller
                     WaktuMentah::PERAN_STANDAR => $deret[WaktuMentah::PERAN_STANDAR],
                     WaktuMentah::PERAN_UUT => $deret[WaktuMentah::PERAN_UUT],
                     'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Susun sesi **Micrometer**: tiap titik = tumpukan balok ukur + deret
+     * pembacaan, disimpan sebagai baris ber-`peran_sensor` yang terpisah.
+     *
+     * Blok tingkat-SESI (pra-evaluasi, suhu balok/UUT, kapasitas, resolusi)
+     * tidak lewat sini — dia hidup di `spesifikasi_alat` dan ikut apa adanya ke
+     * `konteks`. Memaksanya jadi `titik_ke` melahirkan titik hantu yang selalu
+     * gagal hitung ulang; lihat `MicrometerMentah::blokSesi()`.
+     *
+     * ## Satuan dikonversi SEKALI, di sini
+     *
+     * Yang tersimpan selalu milimeter, walau alatnya berskala inch. Master
+     * menyimpan penunjukan dalam satuan alat lalu mengalikannya 25,4 di dalam
+     * rumus, dan itulah yang melahirkan sesi 0-25 mm yang koreksinya terbit
+     * −61 mm: satuannya tersetel `inch` sementara angkanya diketik dalam mm,
+     * dan tidak ada satu pun sel yang memprotes.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokMicrometer(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '' && $v !== [];
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[MicrometerMentah::KUNCI_SESI] ?? []);
+        $faktor = MicrometerProfile::SATUAN_PILIHAN[(string) ($blok['satuan'] ?? 'mm')] ?? 1.0;
+
+        // Titik dianggap terpakai kalau SALAH SATU sisinya ada isinya. Kalau
+        // cuma satu sisi yang dicek, titik yang teknisinya baru sempat mengisi
+        // tumpukan baloknya akan kebuang — berikut baris lamanya yang sudah
+        // telanjur dihapus `store()`/`update()` sebelum penyusunan ini jalan.
+        $titikTerpakai = array_values(array_filter(
+            (array) $request->input('measurements', []),
+            static fn (array $t): bool => collect($t[MicrometerMentah::PERAN_BALOK] ?? [])->contains($adaIsinya)
+                || collect($t[MicrometerMentah::PERAN_PEMBACAAN] ?? [])->contains($adaIsinya),
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+            $deret = [];
+
+            foreach ([MicrometerMentah::PERAN_BALOK, MicrometerMentah::PERAN_PEMBACAAN] as $peran) {
+                $terisi = [];
+                $ocrPeran = array_values((array) ($titik[$peran.'_ocr'] ?? []));
+
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    // Nominal balok ukur DITULIS APA ADANYA (dia selalu mm —
+                    // sertifikat balok ukurnya mm, apa pun skala mikrometernya);
+                    // yang dikonversi cuma penunjukan alat.
+                    $mm = $peran === MicrometerMentah::PERAN_PEMBACAAN
+                        ? (float) $nilai * $faktor
+                        : (float) $nilai;
+
+                    $meta = $ocrPeran[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
+
+                    $terisi[] = $mm;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        // Urutan keping dalam tumpukan / nomor ulangan.
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => (float) ($titik['titik_ukur'] ?? 0),
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $mm,
+                        'satuan' => MicrometerMentah::SATUAN,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
+                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                $deret[$peran] = $terisi;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => (float) ($titik['titik_ukur'] ?? 0),
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    MicrometerMentah::PERAN_BALOK => $deret[MicrometerMentah::PERAN_BALOK],
+                    MicrometerMentah::PERAN_PEMBACAAN => $deret[MicrometerMentah::PERAN_PEMBACAAN],
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
                 ],
             ];
         }

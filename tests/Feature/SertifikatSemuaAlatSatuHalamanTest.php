@@ -75,6 +75,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const DIPERIKSA = [
+        '0106-CAL-1023 (Micrometer Digital)',
         '011-CAL-525 (Timbangan)',
         '0133-CAL-324 (Centrifuge)',
         '0135-CAL-125 (Thermometer Glass)',
@@ -108,6 +109,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const BUTUH_PADAT = [
+        // Micrometer masuk daftar ini 4 Sep 2026, dan sebabnya jumlah baris:
+        // sertifikat masternya mencetak SEBELAS titik ukur, kedua terbanyak
+        // sesudah Thermohygrometer. Bukan gejala tata letak yang menyusut —
+        // lembarnya memang panjang sejak sesi contohnya lahir.
+        '0106-CAL-1023 (Micrometer Digital)',
         '0312-CAL-624 (Thermohygrometer)',
         '22506.01.A (Temperature Calibrator)',
         '2406.32.C (Chlorine Meter)',

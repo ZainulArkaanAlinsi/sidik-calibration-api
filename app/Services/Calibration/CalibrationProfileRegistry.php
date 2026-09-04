@@ -15,6 +15,7 @@ use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
@@ -121,6 +122,11 @@ class CalibrationProfileRegistry
             new TimerStopwatchProfile,
             new CentrifugeProfile,
             new TachometerProfile,
+            // Alat ke-25, dan yang PERTAMA di kelompok Dimensi — lampiran
+            // akreditasi LK-285-IDN no. 34. Empat workbook master (0-25, 25-50,
+            // 50-75, 75-100 mm) yang rumusnya identik baris demi baris jadi
+            // SATU profil dengan empat pita CMC; lihat TabelStandarMicrometer.
+            new MicrometerProfile,
         ];
     }
 

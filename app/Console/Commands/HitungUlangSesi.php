@@ -10,6 +10,7 @@ use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
@@ -123,6 +124,15 @@ class HitungUlangSesi extends Command
                 // miliknya, dan angkanya salah tanpa satu pun error.
                 $waktu = WaktuMentah::dari($baris);
 
+                // Tumpukan balok ukur + deret pembacaan lembar Micrometer.
+                // Diperiksa dengan alasan yang persis sama dengan Timbangan &
+                // Timer di atas: barisnya PUNYA `peran_sensor`, cuma
+                // kosakatanya lain lagi (`mikro_balok`/`mikro_pembacaan`).
+                // Kalau tidak dites duluan, tiap titiknya jatuh ke cabang alat
+                // lain, ketemu deret yang bukan miliknya, dan angkanya salah
+                // tanpa satu pun error.
+                $mikro = MicrometerMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -134,7 +144,23 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($waktu !== []) {
+                if ($mikro !== []) {
+                    // Gerbangnya jumlah pembacaan, bukan jumlah baris: satu
+                    // titik berisi sampai 3 nominal balok + 5 pembacaan, jadi
+                    // hitungan datar tetap lolos walau sisi pembacaannya
+                    // kosong — dan "koreksi" yang lahir dari sisi kosong itu
+                    // justru sebesar total nominalnya, angka yang kelihatan
+                    // masuk akal.
+                    //
+                    // Titik NOL (rahang tertutup, tanpa balok ukur) sah dan
+                    // memang bernominal kosong, jadi yang diwajibkan cuma sisi
+                    // pembacaannya.
+                    if (count($mikro[MicrometerMentah::PERAN_PEMBACAAN]) < 2) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($waktu !== []) {
                     // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah
                     // baris: satu titik berisi 3 standar + 3 UUT, jadi hitungan
                     // datar tetap lolos walau satu sisinya kosong — dan koreksi
@@ -235,6 +261,12 @@ class HitungUlangSesi extends Command
                         // `hitung_ulang_gagal` di tiap titik. Kosong buat dua
                         // puluh tiga alat lain.
                         ...$waktu,
+                        // Tumpukan balok ukur + deret pembacaan lembar
+                        // Micrometer. Kejadian KESEMBILAN dengan pola yang
+                        // sama. Blok tingkat-sesinya (pra-evaluasi, suhu,
+                        // kapasitas, resolusi) ikut lewat `spesifikasi_alat`
+                        // di bawah. Kosong buat dua puluh empat alat lain.
+                        ...$mikro,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.
@@ -245,6 +277,11 @@ class HitungUlangSesi extends Command
                         // kolom `alat_bantu`. Ketinggalan = hitung ulang sesi
                         // TIDS kehilangan dua komponen budget.
                         'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
+                        // Titik nol umur drift standar Micrometer — dibaca
+                        // balik dari sesinya, bukan `now()`. Master memakai
+                        // `NOW()`, dan karena itu U95 sesi yang sama tidak
+                        // pernah terulang. Diabaikan profil lain.
+                        'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
                     ],
                 ];
             }

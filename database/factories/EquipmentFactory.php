@@ -36,7 +36,11 @@ class EquipmentFactory extends Factory
             // ini WAJIB berisi nama yang tidak diklaim profil mana pun;
             // `ProfilDariNamaAlatTest::test_nama_alat_generik_balik_null`
             // memelihara daftar resminya.
-            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Micrometer', 'Dial Indicator', 'Height Gauge']),
+            // `Micrometer` DICABUT 4 Sep 2026 — dia sekarang punya
+            // `MicrometerProfile` (alat ke-25), jadi persis kejadian Timbangan
+            // di atas terulang: satu dari empat fixture acak mendarat di lembar
+            // Micrometer, dan yang merah test lain yang bergantian tiap jalan.
+            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Dial Indicator', 'Height Gauge']),
             'merk' => fake()->randomElement(['Mitutoyo', 'Ohaus', 'Memmert']),
             'serial_number' => strtoupper(fake()->unique()->bothify('??-####-##')),
             'satuan' => 'mm',

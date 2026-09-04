@@ -13,6 +13,7 @@ use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
 use App\Support\KodeSelRevisi;
+use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
@@ -989,6 +990,12 @@ class CalibrationValidator
                     // tiga baris di atas — dan ini kejadian KEDELAPAN dengan
                     // pola yang sama. Kosong buat dua puluh tiga alat lain.
                     ...WaktuMentah::dari($pembacaan),
+                    // Tumpukan balok ukur + deret pembacaan satu titik
+                    // Micrometer, disusun ulang dari `peran_sensor`/`sensor_ke`.
+                    // Alasannya sama seperti empat baris di atas — dan ini
+                    // kejadian KESEMBILAN dengan pola yang sama. Kosong buat dua
+                    // puluh empat alat lain.
+                    ...MicrometerMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
@@ -1001,6 +1008,12 @@ class CalibrationValidator
                     // `alat_bantu`. Ketinggalan = pemeriksa hitung ulang bilang
                     // sesi TIDS yang benar itu salah.
                     'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
+                    // Titik nol umur drift standar Micrometer. Dibaca balik
+                    // dari sesinya, bukan `now()`: master memakai `NOW()` dan
+                    // karena itu U95 sesi yang sama tidak pernah terulang —
+                    // keempat workbook-nya disimpan selang dua menit dan umur
+                    // driftnya beda. Diabaikan profil lain.
+                    'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
                 ],
                 'tersimpan' => $titik,
             ];
