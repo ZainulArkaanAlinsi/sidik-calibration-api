@@ -97,6 +97,14 @@ class DatabaseSeeder extends Seeder
             // WAJIB abis `ThermohygroSeeder`: ketiga sesinya menautkan TH-4
             // sebagai sumber koreksi kondisi lingkungan.
             WaktuFrekuensiSeeder::class,
+            // Alat ke-25 — kelompok Panjang, sesi contoh dari workbook master
+            // 25-50 mm. CMC-nya sudah ada di lampiran akreditasi no. 34, jadi
+            // cukup baris dari `CalibrationCapabilitySeeder` — nggak perlu
+            // seeder kemampuan sendiri.
+            //
+            // WAJIB abis `ThermohygroSeeder`: sesinya menautkan TH-3 sebagai
+            // sumber koreksi kondisi lingkungan.
+            MicrometerSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

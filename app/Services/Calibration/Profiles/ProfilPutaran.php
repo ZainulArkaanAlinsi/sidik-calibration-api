@@ -694,86 +694,6 @@ abstract class ProfilPutaran extends CalibrationProfile
         );
     }
 
-    /**
-     * Tautkan baris `Standard Used` tercetak ke master milik LAB PEMILIK ALAT.
-     *
-     * Lewat [masterStandarTertaut], bukan query sendiri: sembilan tempat pernah
-     * menyalin `Standard::whereNull('parameter_kondisi')` tanpa saringan
-     * organisasi, dan yang terbit bukan error melainkan nomor sertifikat &
-     * ketertelusuran milik lab lain di lembar lab ini.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    protected function tautkanStandarTercetak(array $bentuk, ?Equipment $equipment): array
-    {
-        $master = $this->masterStandarTertaut($equipment);
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            if (($bagian['kode'] ?? null) !== 'usage_check') {
-                continue;
-            }
-
-            $bentuk['bagian'][$i]['baris'] = array_map(
-                function (array $baris) use ($master): array {
-                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
-
-                    return [
-                        'label' => $baris['label'],
-                        'standard_id' => $cocok?->id,
-                        'serial_number' => $cocok?->serial_number,
-                        'no_sertifikat' => $cocok?->no_sertifikat,
-                        'tertelusur_ke' => $cocok?->tertelusur_ke,
-                        'terdaftar' => $cocok !== null,
-                    ];
-                },
-                $bentuk['bagian'][$i]['baris'],
-            );
-        }
-
-        return $bentuk;
-    }
-
-    /**
-     * Isi dropdown "Environmental Meter Used" dengan ketujuh unit yang tercetak
-     * di kop master, disaring ke lab pemilik alat lewat [masterThermohygro].
-     *
-     * Disaring ke daftar TERCETAK, bukan ke semua baris ber-`parameter_kondisi`:
-     * di lab ini yang terakhir itu termasuk Thermobarometer Lutron — unit
-     * TEKANAN yang tidak pernah muncul di kertas kelompok Putaran. Membiarkannya
-     * lolos berarti teknisi bisa memilih barometer sebagai sumber koreksi suhu
-     * & kelembapan ruangan.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (self::THERMOHYGRO_TERCETAK as $label) {
-            $id = $master[$label] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = ['nilai' => (string) $id, 'label' => $label, 'grup' => 'Thermohygro lab'];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if (($field['kode'] ?? null) === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
     /** @return array<string, mixed> */
     protected function bagianIdentitas(): array
     {
@@ -916,30 +836,6 @@ abstract class ProfilPutaran extends CalibrationProfile
                 $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
                 $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
             ],
-        ];
-    }
-
-    /** @return array<string, mixed> */
-    protected function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
         ];
     }
 }

@@ -702,61 +702,6 @@ class TitsProfile extends CalibrationProfile
     }
 
     /**
-     * Isi pilihan "Environmental Meter Used".
-     *
-     * Tanpa ini kolomnya BUKAN error — cuma diam. `field()` memberi `pilihan`
-     * nilai bawaan `[]`, layar teknisi menggambar dropdown dari daftar yang
-     * dibawa bentuk (bukan dari master standar), dan daftar kosong bikin dia
-     * jatuh ke cabang teks mati "Belum ada unit thermohygro terdaftar".
-     * Akibatnya sesi TITS berjalan tanpa unit thermohygro sama sekali, jadi
-     * koreksi kondisi lingkungan berikut U95-nya nggak nempel ke unit mana pun.
-     *
-     * Thermohygro dikenali lewat `parameter_kondisi` yang terisi — itu yang
-     * membedakannya dari kalibrator di tabel `standards` yang sama, dan itu
-     * juga yang dipakai sembilan profil lain.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
      * Kalibrator yang menempel ke tiap baris tabel sebagai NILAI AWAL.
      *
      * Beda arti dari sembilan alat lain: di sana tiap titik memang punya
@@ -1194,7 +1139,7 @@ class TitsProfile extends CalibrationProfile
                             '4. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -1359,32 +1304,5 @@ class TitsProfile extends CalibrationProfile
         }
 
         return $bentuk;
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }
