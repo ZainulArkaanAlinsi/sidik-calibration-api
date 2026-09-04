@@ -416,9 +416,27 @@ class TimbanganMasterTest extends TestCase
 
     private function dekat(mixed $dapat, mixed $harap, string $pesan): void
     {
-        if (! is_numeric($harap) || ! is_numeric($dapat)) {
-            return;
-        }
+        // Dulu di sini `return;` diam-diam kalau salah satu sisi bukan angka.
+        //
+        // Itu yang bikin `test_drift_massa_standar_cocok_master_substitusi`
+        // hijau sambil memeriksa NOL hal: kalkulator memulangkan `null`, helper
+        // ini pulang tanpa mengassert apa pun, dan test yang docblock-nya
+        // sendiri menulis "baris ini satu-satunya yang menahannya" berhenti
+        // menahan apa pun. Satu-satunya jejak yang tersisa cuma penanda "risky"
+        // PHPUnit — yang nggak bikin siapa pun merah.
+        //
+        // Sekarang non-angka itu KEGAGALAN. Nilai yang hilang dari sisi hitung
+        // wajib kelihatan merah, bukan lewat. Ini bentuk yang sama dengan
+        // larangan meniru `IFERROR(…,"")` di CLAUDE.md: yang kosong diblokir
+        // dengan alasan yang kebaca, bukan diam-diam dianggap beres.
+        $this->assertIsNumeric(
+            $dapat,
+            "{$pesan}: nilai hitung bukan angka (".get_debug_type($dapat).').',
+        );
+        $this->assertIsNumeric(
+            $harap,
+            "{$pesan}: angka acuan master bukan angka (".get_debug_type($harap).').',
+        );
 
         $this->assertEqualsWithDelta(
             (float) $harap,

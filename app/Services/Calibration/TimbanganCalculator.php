@@ -119,12 +119,24 @@ class TimbanganCalculator
             $siap[] = ['titik_ke' => (int) $titik['titik_ke'], 'hitung' => $satu];
         }
 
+        // Hasil hitung MENTAH tiap titik — dipisah jadi variabel karena dipakai
+        // dua kali, dan yang kedua sempat salah alamat.
+        //
+        // `$hasil` yang dirakit di bawah menyalin kolom satu per satu, dan
+        // `u_gram` sengaja TIDAK ikut ke sana (dia bukan kolom lembar). Jadi
+        // `driftMassaStandar($hasil, …)` mencari kunci yang tidak pernah ada
+        // dan selalu memulangkan null — di KETIGA varian, bukan cuma
+        // substitusi. Sunyi total: nol error, dan blok cetak "Drift Massa
+        // Standar (d)" di `TimbanganProfile` dijaga `!== null`, jadi dia cuma
+        // berhenti muncul.
+        $perTitik = array_map(static fn (array $x): array => $x['hitung'], $siap);
+
         $ket = $this->keterulangan(
             $sesi['keterulangan'] ?? [],
             $varian,
             $resolusi,
             $digital,
-            array_map(static fn (array $x): array => $x['hitung'], $siap),
+            $perTitik,
         );
 
         $hasil = [];
@@ -185,7 +197,7 @@ class TimbanganCalculator
             'eksentrisitas' => $ekc,
             'histeresis' => $this->histeresis($sesi['histeresis'] ?? []),
             'lop' => $this->limitOfPerformance($hasil, $ket),
-            'drift_massa_standar' => $this->driftMassaStandar($hasil, $satuan),
+            'drift_massa_standar' => $this->driftMassaStandar($perTitik, $satuan),
             'cmc' => $pita === null ? null : [
                 ...$pita,
                 'cmc_satuan' => $this->cmcDalamSatuan($pita['cmc_gram'], $satuan),
