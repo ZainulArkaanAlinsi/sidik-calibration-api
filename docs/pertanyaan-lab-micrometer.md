@@ -13,6 +13,11 @@ plus rumus drift dari tanggalnya sendiri). Semuanya cocok. **Setiap** selisih
 yang muncul sesudah itu tercatat di sini — tidak ada satu pun yang dibiarkan
 tanpa penjelasan.
 
+> **Ada usulan jawabannya.** `docs/analisis-pertanyaan-lab-micrometer.md`
+> memuat analisis + rekomendasi untuk §1, §9, dan §11 (yang terakhir temuan
+> baru). Isinya USULAN, bukan keputusan — tapi tiga dari sepuluh pertanyaan di
+> sini sudah punya bahan untuk diputuskan, bukan cuma pertanyaannya.
+
 Yang butuh keputusan manajer teknis ditandai **[PERLU JAWABAN]**. Yang sudah
 diputuskan sepihak oleh kode (karena perilaku benarnya tidak ambigu) ditandai
 **[SUDAH DIHITUNG BENAR]** — tetap perlu dibaca, karena angkanya bergerak.
@@ -40,6 +45,7 @@ mengikuti kertas, bukan sheet `INPUT DATA`; rinciannya di
 | §8 | Komponen ke-9 nol menurut konstruksi — kertas tidak memungut suhunya | Metode | Tidak — ditiru |
 | §9 | Sertifikat master berformat `0.000` — koreksi tercetak nol di SEBELAS titik | Kerusakan | **Ya** — 0,000 → 0,00027 |
 | §10 | Kertas Rev.1 membuang Kerataan/Kesejajaran Muka Ukur, sertifikat masih mencetaknya | Dokumen | Belum — tidak dicetak |
+| §11 | Komponen termal menyumbang **0,000%** karena `ci` bersatuan mm di budget µm | Kerusakan | Belum — **kalau dibetulkan, U95 naik DI ATAS CMC** |
 
 ---
 
@@ -380,6 +386,44 @@ diisi dari data yang tidak pernah dipungut siapa pun.
    berlaku untuk kedua puluh lima alat, bukan cuma Micrometer.
 
 Sampai dijawab, sertifikat Micrometer terbit tanpa dua baris itu.
+
+---
+
+## §11 — Komponen termal lenyap karena satuan `ci` **[PERLU JAWABAN]**
+
+Budget bekerja dalam **µm**, tapi `ci` kedua komponen termal dihitung dengan L
+dalam **milimeter**:
+
+```
+suhu_ruang        u=0,3175      ci=0,00025      u·ci = 7,94e-5 µm    0,000% dari uc²
+koefisien_muai    u=5,77e-6     ci=13,75        u·ci = 7,94e-5 µm    0,000% dari uc²
+```
+
+Seluruh `uc` berdiri di atas enam komponen lain. Dengan rumus yang PERSIS SAMA
+tapi `ci` dalam µm, sumbangan masing-masing jadi 0,1588 µm dan U95 sesi 25-50 mm
+naik **0,872 → 0,978 µm** — yaitu **di atas** pita CMC 0,87 µm.
+
+Ini membalik arah §1: bukan cuma "pernahkah kita menerbitkan di bawah CMC?",
+tapi "**apakah CMC-nya sendiri tercapai** dengan metode sebagaimana tertulis?"
+
+**Yang dilakukan kode:** ditiru apa adanya, dan ketiadaan sumbangannya
+DITEGAKKAN test (`test_komponen_termal_menyumbang_nol_karena_satuan_ci`) supaya
+tidak ada yang membetulkannya diam-diam tanpa membaca akibatnya.
+
+**Belum diubah** karena `u` kedua komponen juga belum benar — master memakai
+besaran itu sendiri sebagai ketidakpastiannya. Membetulkan satuan tanpa
+membetulkan `u` menukar satu kesalahan dengan kesalahan yang lebih besar.
+
+**Yang perlu dijawab lab, dan keduanya menentukan angkanya:**
+
+1. Berapa ketidakpastian PENGUKURAN suhu di Lab Dimensi (ketelitian thermohygro
+   + gradien ruang + beda suhu balok/UUT)? Master memakai Δϴ, simpangan dari
+   20 °C, sebagai ketidakpastiannya sendiri.
+2. `delta_alpha_per_c = 1e-5` itu α baja (≈11,5e-6/°C) atau δα, beda koefisien
+   balok ukur vs rangka mikrometer (lazimnya ~1e-6/°C)? Besarnya sekarang mirip
+   α, bukan mirip selisih dua benda baja.
+
+Analisis lengkap + tiga skenario angkanya: `docs/analisis-pertanyaan-lab-micrometer.md` §11.
 
 ---
 
