@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -36,31 +37,74 @@ class MicrometerSertifikatTest extends TestCase
     private const TOLERANSI = 5e-6;
 
     /**
-     * Sebelas baris `SERTIFIKAT!D18:L28` master, apa adanya.
+     * Sebelas baris `SERTIFIKAT!D18:L28` master, apa adanya — TIGA rentang.
      *
-     * @return list<array{float, float, float}> [Standar Reading, UUT, Correction]
+     * Kenapa tiga dan bukan satu: satu sesi contoh cuma membuktikan satu pita
+     * CMC, satu nomor formulir, dan satu susunan sebelas nominal. Tiga pita
+     * sisanya lolos seluruh sapuan tanpa pernah dijalankan ujung ke ujung —
+     * dan varian C justru yang memuat titik 51,0 mm, nominal yang keluar dari
+     * pola +2,6 mm dan paling gampang disangka salah ketik.
+     *
+     * Varian A (0-25 mm) TIDAK ada di sini, dan itu disengaja: blok
+     * pra-evaluasi masternya berisi 635,0 sepuluh kali — nilai kapasitas hasil
+     * bug inch yang bocor ke sana — jadi simpangan bakunya nol dan sesinya
+     * tidak bisa ditanam tanpa mengarang data keterulangan. Lihat
+     * `docs/pertanyaan-lab-micrometer.md` §3.
+     *
+     * @return array<string, array{string, list<array{float, float, float}>, float}>
      */
-    private const BARIS_MASTER = [
-        [25.00027, 25.0, 0.00027],
-        [27.50041, 27.5002, 0.00021],
-        [30.99997, 31.0, -0.00003],
-        [32.70044, 32.7, 0.00044],
-        [35.3001, 35.3, 0.00010],
-        [37.9002, 37.9, 0.00020],
-        [40.00014, 40.0, 0.00014],
-        [42.59983, 42.6, -0.00017],
-        [45.20007, 45.2, 0.00007],
-        [47.80041, 47.8, 0.00041],
-        [49.9999, 49.9996, 0.00030],
-    ];
+    public static function rentang(): array
+    {
+        return [
+            '25-50 mm' => ['0106-CAL-1023', [
+                [25.00027, 25.0, 0.00027],
+                [27.50041, 27.5002, 0.00021],
+                [30.99997, 31.0, -0.00003],
+                [32.70044, 32.7, 0.00044],
+                [35.3001, 35.3, 0.00010],
+                [37.9002, 37.9, 0.00020],
+                [40.00014, 40.0, 0.00014],
+                [42.59983, 42.6, -0.00017],
+                [45.20007, 45.2, 0.00007],
+                [47.80041, 47.8, 0.00041],
+                [49.9999, 49.9996, 0.00030],
+            ], 0.87],
+            '50-75 mm' => ['002-UB.P-11-20', [
+                [49.9999, 50.0022, -0.0023],
+                [52.50004, 52.5018, -0.00176],
+                [51.00025, 51.003, -0.00275],
+                [57.70019, 57.7028, -0.00261],
+                [60.2999, 60.3022, -0.0023],
+                [62.90012, 62.9022, -0.00208],
+                [65.00018, 65.0022, -0.00202],
+                [67.60044, 67.6024, -0.00196],
+                [70.20009, 70.2028, -0.00271],
+                [72.79993, 72.8022, -0.00227],
+                [74.9999, 75.0022, -0.0023],
+            ], 0.91],
+            '75-100 mm' => ['003-UB.P-11-20', [
+                [74.9999, 75.0002, -0.0003],
+                [77.4998, 77.5002, -0.0004],
+                [80.09971, 80.1002, -0.00049],
+                [82.70002, 82.7002, -0.00018],
+                [85.30032, 85.3, 0.00032],
+                [87.9006, 87.9002, 0.0004],
+                [90.00015, 90.0002, -0.00005],
+                [92.6, 92.6, 0.0],
+                [95.20037, 95.2002, 0.00017],
+                [97.80039, 97.8002, 0.00019],
+                [100.00012, 100.0002, -0.00008],
+            ], 0.91],
+        ];
+    }
 
     /** @return array{CalibrationSession, array<string, mixed>} */
-    private function terbitkan(): array
+    private function terbitkan(string $nomorSesi = '0106-CAL-1023'): array
     {
         $this->seed(DatabaseSeeder::class);
         $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail());
 
-        $sesi = CalibrationSession::where('nomor_sesi', '0106-CAL-1023')->firstOrFail();
+        $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
 
         $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
@@ -68,19 +112,100 @@ class MicrometerSertifikatTest extends TestCase
         return [$sesi->fresh(), $sesi->fresh()->certificate()->firstOrFail()->snapshot];
     }
 
-    public function test_sebelas_baris_cocok_sertifikat_master(): void
-    {
-        [, $snapshot] = $this->terbitkan();
+    /**
+     * @param  list<array{float, float, float}>  $master
+     */
+    #[DataProvider('rentang')]
+    public function test_sebelas_baris_cocok_sertifikat_master(
+        string $nomorSesi,
+        array $master,
+        float $cmcUm,
+    ): void {
+        [, $snapshot] = $this->terbitkan($nomorSesi);
 
         $this->assertCount(11, $snapshot['hasil'], 'Sertifikat master mencetak SEBELAS titik.');
 
         foreach ($snapshot['hasil'] as $i => $baris) {
-            [$standar, $uut, $koreksi] = self::BARIS_MASTER[$i];
+            [$standar, $uut, $koreksi] = $master[$i];
 
             $this->assertEqualsWithDelta($standar, $baris['standard_value'], self::TOLERANSI, "Standar baris {$i}");
             $this->assertEqualsWithDelta($uut, $baris['unit_under_test'], self::TOLERANSI, "UUT baris {$i}");
             $this->assertEqualsWithDelta($koreksi, $baris['correction'], self::TOLERANSI, "Koreksi baris {$i}");
         }
+    }
+
+    /**
+     * U95 tiap rentang berada DI ATAS lantai CMC pitanya sendiri, dan dalam mm.
+     *
+     * Menggabungkan dua penjagaan yang tadinya cuma jalan di satu rentang:
+     * satuannya (mm, bukan µm) dan lantainya (pita masing-masing 0,87 / 0,91 /
+     * 0,91 µm). Yang di bawah lantai berarti mengklaim kemampuan di luar
+     * lingkup akreditasi — lihat `docs/analisis-pertanyaan-lab-micrometer.md` §1.
+     *
+     * @param  list<array{float, float, float}>  $master
+     */
+    #[DataProvider('rentang')]
+    public function test_u95_tiap_rentang_dalam_mm_dan_di_atas_lantai_cmc(
+        string $nomorSesi,
+        array $master,
+        float $cmcUm,
+    ): void {
+        [, $snapshot] = $this->terbitkan($nomorSesi);
+
+        $u95 = (float) $snapshot['hasil'][0]['u95'];
+
+        // Orde besaran: nilai dalam µm bakal ~1000× lebih besar dan tetap lolos
+        // ambang mana pun yang cuma "lebih besar dari nol".
+        $this->assertLessThan(
+            0.01,
+            $u95,
+            'U95 tercetak dalam µm, bukan mm — di kolom yang sama dengan koreksi '
+            .'angka itu terbaca seribu kali lebih besar dari sebenarnya.',
+        );
+
+        $this->assertGreaterThanOrEqual(
+            $cmcUm / 1000,
+            $u95,
+            "U95 jatuh di bawah lantai CMC {$cmcUm} µm pita ini.",
+        );
+    }
+
+    /**
+     * Seeder menanam PERSIS tiga rentang — dipatok di sini, bukan dihitung.
+     *
+     * Ini test yang seharusnya sudah ada sejak awal. Seeder sempat menanam
+     * SATU varian saja (`_dipakai_seeder: "2550"`) sementara `TimbanganSeeder`
+     * — pola yang diikuti — menanam ketiganya. Tiga pita CMC sisanya lolos
+     * SELURUH sapuan registry tanpa pernah dijalankan ujung ke ujung, dan
+     * nggak ada satu pun test yang merah: sapuan yang daftarnya datang dari
+     * database hijau dengan satu sertifikat persis seperti dia hijau dengan
+     * tiga. Yang menangkapnya cuma pertanyaan manusia.
+     *
+     * Nomor sesi yang HILANG dari daftar ini berarti satu pita CMC berhenti
+     * dibuktikan ujung ke ujung. Nomor BARU berarti varian A ikut ditanam —
+     * dan itu justru yang harus ditahan: pra-evaluasinya 635,0 sepuluh kali,
+     * simpangan bakunya nol.
+     */
+    public function test_seeder_menanam_persis_tiga_rentang(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $tertanam = CalibrationSession::query()
+            ->whereHas('equipment', fn ($q) => $q->where('nama_alat_kemampuan', 'Micrometer'))
+            ->orderBy('nomor_sesi')
+            ->pluck('nomor_sesi')
+            ->all();
+
+        $this->assertSame(
+            ['002-UB.P-11-20', '003-UB.P-11-20', '0106-CAL-1023'],
+            $tertanam,
+            "Jumlah sesi Micrometer ter-seed berubah.\n"
+            .'HILANG = satu pita CMC berhenti dijalankan ujung ke ujung, dan sapuan lain '
+            ."tetap hijau sambil diam-diam memeriksa lebih sedikit.\n"
+            .'BARU `095-CAL-324` = varian 0-25 mm ikut ditanam padahal pra-evaluasinya '
+            .'berisi 635,0 sepuluh kali — simpangan baku nol, dan U95-nya bakal ditutupi '
+            .'lantai CMC sehingga tampak wajar. Lihat docs/permintaan-user-7.md §21.',
+        );
     }
 
     /**

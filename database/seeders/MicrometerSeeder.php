@@ -84,12 +84,25 @@ class MicrometerSeeder extends Seeder
             true,
         );
 
-        $this->seedSesi(
-            $data['sesi'][$data['_dipakai_seeder']],
-            $teknisi,
-            $standar,
-            $thermohygro,
-        );
+        // TIGA varian ditanam, bukan satu — sama seperti `TimbanganSeeder` yang
+        // menanam ketiga variannya. Satu sesi contoh cuma membuktikan satu pita
+        // CMC, satu nomor formulir, dan satu susunan sebelas nominal; tiga pita
+        // sisanya lolos seluruh sapuan tanpa pernah dijalankan ujung ke ujung.
+        //
+        // Varian A (`025`) sengaja TIDAK ikut, dan sebabnya bukan cuma label
+        // satuannya: blok pra-evaluasinya berisi 635,0 sepuluh kali — nilai
+        // kapasitas hasil bug inch yang bocor ke sana. Simpangan bakunya NOL,
+        // jadi sesi itu bakal terbit dengan komponen keterulangan nol yang
+        // ditutupi lantai CMC. Membetulkannya berarti mengarang data
+        // keterulangan, dan keterulangan itu dasar seluruh budget alat ini.
+        // Lihat `docs/pertanyaan-lab-micrometer.md` §3.
+        //
+        // Jalur blokirnya sendiri tetap terjaga tanpa sesi ter-seed:
+        // `MicrometerMasterTest::test_kapasitas_di_luar_pita_cmc_diblokir_bukan_diterbitkan`
+        // dan `MicrometerSesiTest::test_kapasitas_di_luar_pita_cmc_diblokir`.
+        foreach ($data['_ditanam_seeder'] as $varian) {
+            $this->seedSesi($data['sesi'][$varian], $teknisi, $standar, $thermohygro);
+        }
     }
 
     private function seedStandar(): Standard
@@ -180,14 +193,20 @@ class MicrometerSeeder extends Seeder
                 'nama_alat_kemampuan' => $profil->namaAlatKemampuan(),
                 'merk' => $m['merk'],
                 'model' => $m['model'],
-                // Rentang alat dalam mm — satuan yang sama dengan pembacaan
-                // tersimpan. Master menyimpan penunjukan dalam satuan ALAT lalu
-                // mengalikannya di dalam rumus, dan itu yang melahirkan sesi
-                // 0-25 mm yang kapasitasnya 635 mm; di sini konversi terjadi
-                // sekali, di ujung masuk.
+                // Rentang alat SELALU mm, apa pun skala alatnya — kolom ini
+                // bukan tempat satuan teknisi hidup. Master menyimpan
+                // penunjukan dalam satuan ALAT lalu mengalikannya di dalam
+                // rumus, dan itu yang melahirkan sesi 0-25 mm berkapasitas
+                // 635 mm.
+                //
+                // Pembacaan teknisi mengambil jalan yang BERBEDA: dia disimpan
+                // mentah berikut `raw_measurements.satuan`, dan baru diubah ke
+                // mm di tempat pakai (`MicrometerMentah::keMm()`). Mengubahnya
+                // di ujung masuk pernah dicoba dan ternyata tidak idempoten —
+                // simpan draft dua kali mengalikan 25,4 tiap kali.
                 //
                 // Batas bawah DITURUNKAN dari `rentang` ("25-50"), bukan
-                // dipatok 25: begitu `_dipakai_seeder` diganti ke varian lain,
+                // dipatok 25: tiap varian punya batas bawahnya sendiri, dan
                 // angka yang dipatok diam-diam jadi salah — dan yang muncul
                 // bukan error melainkan peringatan "di luar rentang" di tiap
                 // baris sesi contohnya.

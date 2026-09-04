@@ -1,7 +1,13 @@
 # Pertanyaan Lab — Micrometer
 
 Alat ke-25: **Micrometer** (lampiran akreditasi LK-285-IDN no. 34, kelompok
-Dimensi — dan yang pertama di kelompok itu).
+**Panjang** — bareng Sieve, Vernier Caliper, dan Dial Indicator).
+
+> Revisi awal dokumen ini menulis "kelompok Dimensi". Salah: `Dimensi` bukan
+> salah satu dari sepuluh kelompok lampiran, dan kategori itu sempat lahir jadi
+> kartu HANTU di layar pilih kategori — kosong waktu dibuka, sementara alat
+> contohnya justru duduk di dalamnya. Sekarang dijaga
+> `KategoriAlatIkutLampiranTest`.
 
 Sumber: empat workbook master ber-password yang turun 4 Sep 2026 —
 `Master_Olah_Data_Micrometer_025mm.xlsm`, `_2550mm`, `_5075mm`, `_75100mm`.
@@ -15,7 +21,7 @@ tanpa penjelasan.
 
 > **Ada usulan jawabannya.** `docs/analisis-pertanyaan-lab-micrometer.md`
 > memuat analisis + rekomendasi untuk §1, §9, dan §11 (yang terakhir temuan
-> baru). Isinya USULAN, bukan keputusan — tapi tiga dari sepuluh pertanyaan di
+> baru). Isinya USULAN, bukan keputusan — tapi tiga dari sebelas pertanyaan di
 > sini sudah punya bahan untuk diputuskan, bukan cuma pertanyaannya.
 
 Yang butuh keputusan manajer teknis ditandai **[PERLU JAWABAN]**. Yang sudah
@@ -37,7 +43,7 @@ mengikuti kertas, bukan sheet `INPUT DATA`; rinciannya di
 |---|---|---|---|
 | §1 | Sesi 0-25 mm terbit **di bawah lantai CMC-nya sendiri** | Kerusakan | **Ya** — 0,735 → ditolak |
 | §2 | Umur drift dari `NOW()`, bukan tanggal kalibrasi | Kerusakan | **Ya** — kecil, tapi tiap kali beda |
-| §3 | Satuan sesi 0-25 mm `inch` sementara angkanya milimeter | Data | **Ya** — koreksi −61 mm |
+| §3 | Satuan sesi 0-25 mm `inch` sementara angkanya milimeter, **dan** pra-evaluasinya berisi kapasitas sepuluh kali | Data | **Ya** — koreksi −61 mm; keterulangan nol |
 | §4 | `ci` memakai keping pertama tumpukan, bukan total nominal | Kerusakan | Tidak — ~5·10⁻¹⁰ dari `uc²` |
 | §5 | Komponen suhu & muai kembar menurut konstruksi | Metode | Tidak — ditiru |
 | §6 | `vi = 200` untuk semua komponen Type B | Metode | Tidak — ditiru |
@@ -165,16 +171,43 @@ Penyebabnya kolom standar dan kolom pembacaan tidak diperlakukan sama: nilai
 balok ukur datang dari sertifikatnya (selalu mm), sementara pembacaan dikalikan
 25,4 karena dropdown-nya `inch`.
 
-**Yang dilakukan kode:** satuan jadi dropdown yang diisi lebih dulu dan
-konversinya terjadi **sekali**, di ujung masuk — yang tersimpan di
-`raw_measurements` selalu mm. Nominal balok ukur tidak pernah dikonversi,
-karena sertifikat balok ukur memang selalu mm apa pun skala mikrometernya.
+**Yang dilakukan kode:** satuan jadi dropdown yang diisi lebih dulu, dan yang
+TERSIMPAN di `raw_measurements` angka mentah yang diketik teknisi berikut
+satuannya — konversi ke mm terjadi di tempat pakai (`MicrometerMentah::keMm()`),
+bukan di ujung masuk. Bedanya bukan gaya: konversi di ujung masuk **tidak
+idempoten**, dan simpan-draft dua kali mengalikan 25,4 tiap kali. Nominal balok
+ukur tidak pernah dikonversi, karena sertifikat balok ukur memang selalu mm apa
+pun skala mikrometernya.
 
 **Yang perlu diputuskan lab:** apakah mikrometer `IMTE-FQS-015` (Mitutoyo
 Analog, PT Unilever) benar berskala **inch** dengan resolusi 0,00001", atau
 berskala **mm** 0,001 dan dropdown-nya salah pilih? Dua kemungkinan itu
 menghasilkan sertifikat yang berbeda, dan datanya sendiri tidak bisa
 membedakan.
+
+### Kerusakan kedua di sesi yang sama: pra-evaluasi berisi kapasitas
+
+Blok pra-evaluasi (sepuluh pembacaan berulang yang jadi dasar komponen
+keterulangan) berisi **635,0 sepuluh kali** — dan 635 itu 25 × 25,4, yaitu
+kapasitas alat yang ikut terkonversi. Bukan sepuluh pembacaan; satu nilai
+disalin sepuluh kali.
+
+Akibatnya simpangan bakunya **nol**, jadi komponen keterulangan hilang dari
+budget dan U95 jatuh sampai ditutupi lantai CMC — bentuk kegagalan yang sama
+dengan resolusi kosong (§ audit no. 3): hasilnya tampak wajar dan tidak ada
+error di mana pun.
+
+**Yang dilakukan kode:** sesi ini **tidak ditanam** sebagai sesi contoh.
+Menanamnya berarti menerbitkan sesi dengan keterulangan nol; memperbaikinya
+berarti mengarang data keterulangan, dan keterulangan itu dasar seluruh budget.
+Datanya tetap disimpan utuh di `database/data/sesi-master-micrometer.json`
+supaya bisa diadu ulang begitu lab menjawab. Lihat `docs/permintaan-user-7.md`
+§21.
+
+**Yang perlu diputuskan lab (tambahan):** apakah masih ada lembar kerja asli
+sesi ini, sehingga sepuluh pembacaan pra-evaluasinya bisa dimasukkan kembali —
+dan kalau tidak ada, apakah sertifikat `095-CAL-324` yang sudah terbit ke PT
+Unilever perlu ditinjau, mengingat komponen keterulangannya nol.
 
 ---
 
