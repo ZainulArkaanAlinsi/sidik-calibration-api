@@ -214,7 +214,9 @@ class SemuaProfilLembarKerjaTest extends TestCase
     #[DataProvider('semuaProfil')]
     public function test_peran_tabel_cuma_buat_lembar_pasangan(CalibrationProfile $profil): void
     {
-        foreach ($profil->bentukLembarKerja()['bagian'] ?? [] as $bagian) {
+        $bagianLembar = $profil->bentukLembarKerja()['bagian'] ?? [];
+
+        foreach ($bagianLembar as $bagian) {
             foreach ($bagian['tabel'] ?? [] as $tabel) {
                 if (! array_key_exists('peran', $tabel) || $tabel['peran'] === null) {
                     continue;
@@ -229,6 +231,24 @@ class SemuaProfilLembarKerjaTest extends TestCase
                 );
             }
         }
+
+        // Profil yang nggak punya tabel bikin aturan di atas lolos TANPA
+        // memeriksa apa pun — dan lolos hampa nggak bisa dibedakan dari lolos
+        // beneran. Buat lembar Timbangan, yang justru jadi alasan test ini ada
+        // (lihat docblock), loopnya memang nol putaran; PHPUnit menandainya
+        // "risky" dan penanda itu satu-satunya jejaknya.
+        //
+        // Yang diadu di sini BUKAN "harus punya tabel". Kelima lembar Enclosure
+        // sah-sah saja tanpa tabel — bentuknya grid, bagiannya memakai
+        // `baris`/`field`. Yang dijaga cuma satu: bentuk lembarnya tidak
+        // KOSONG. Dengan begitu profil yang `bentukLembarKerja()`-nya runtuh
+        // atau berganti nama kunci jatuh sebagai merah, bukan lewat diam-diam.
+        $this->assertNotEmpty(
+            $bagianLembar,
+            "Profil `{$profil->kode()}` nggak memulangkan satu pun bagian di "
+            .'`bentukLembarKerja()[bagian]`, jadi aturan `peran` di atas lewat tanpa memeriksa '
+            .'apa pun. Yang salah bentuk lembarnya, bukan test ini.',
+        );
     }
 
     /**
