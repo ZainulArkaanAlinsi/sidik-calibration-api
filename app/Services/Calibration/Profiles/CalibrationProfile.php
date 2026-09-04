@@ -455,6 +455,184 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Satu field lembar kerja, bentuk baku yang dibaca HP.
+     *
+     * Dulu disalin `private` di enam belas profil — identik semua kecuali dua.
+     * Yang menyalinnya bukan kecerobohan: waktu profil pertama ditulis belum
+     * kelihatan bakal ada enam belas. Yang membuatnya berbahaya baru muncul
+     * belakangan — perbaikan pada satu salinan tidak pernah sampai ke lima
+     * belas lainnya, dan bentuk yang lama-lama menyimpang tidak menerbitkan
+     * satu pun error. Persis yang sudah kejadian pada aturan pencocokan nama
+     * alat; lihat docblock [CalibrationProfileRegistry::untukNamaAlat].
+     *
+     * `$ekstra` disebar PALING BELAKANG. Cuma Autoklaf yang mengisinya
+     * (`di_kertas`), dan buat dua puluh empat profil lain sebaran larik kosong
+     * tidak menambah kunci apa pun — bentuk keluarannya sama persis seperti
+     * sebelum helper ini diangkat.
+     *
+     * @param  list<array<string, mixed>>  $pilihan
+     * @param  array{kode: string, nilai: list<string>}|null  $tampilKalau
+     * @param  array<string, mixed>  $ekstra  kunci tambahan khas satu lembar
+     * @return array<string, mixed>
+     */
+    protected function field(
+        string $kode,
+        string $label,
+        string $tipe,
+        ?string $sumber = null,
+        ?string $satuan = null,
+        array $pilihan = [],
+        bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
+        array $ekstra = [],
+    ): array {
+        return [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'wajib' => false,
+            'sumber' => $sumber,
+            'satuan' => $satuan,
+            'pilihan' => $pilihan,
+            'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
+            ...$ekstra,
+        ];
+    }
+
+    /**
+     * Isi dropdown "Environmental Meter Used" dengan unit yang tercetak di kop
+     * master lembar ini, disaring ke lab pemilik alat.
+     *
+     * ## Dua bentuk `THERMOHYGRO_TERCETAK`, dan dua-duanya sah
+     *
+     * Konstanta itu ditulis dua gaya di repo ini, dan bedanya bukan
+     * kecerobohan — dia mengikuti masternya:
+     *
+     *  - **larik string** (`['TH-1', 'TH-2', …]`) untuk lembar yang kop
+     *    masternya cuma menawarkan daftar unit tanpa membedakan Inlab/Insitu;
+     *  - **larik objek** (`[['label' => 'TH-1', 'grup' => 'Inlab'], …]`) untuk
+     *    lembar yang kopnya memisahkan keduanya.
+     *
+     * Yang objek boleh membawa kunci TAMBAHAN, dan kunci itu diteruskan apa
+     * adanya ke belakang `grup` — `di_kertas` (Spektrofotometer, Viscometer)
+     * dan `tercetak` (Autoklaf) lahir dari situ. Menyeragamkan konstantanya
+     * berarti mengubah data yang menuruti kertas lab, jadi yang diseragamkan
+     * pembacanya, bukan datanya.
+     *
+     * Profil yang konstantanya bernama lain tetap override — lihat
+     * [Profiles\TidsProfile::isiPilihanThermohygro], yang `THERMOHYGRO_TERCETAK`
+     * miliknya sudah dipakai untuk hal yang BERBEDA.
+     *
+     * ## Syarat pakai
+     *
+     * Profil yang memanggil ini WAJIB punya `THERMOHYGRO_TERCETAK` sendiri.
+     * Kelas ini SENGAJA tidak menyediakan nilai bawaan: bawaan larik kosong
+     * bikin dropdown-nya terbit kosong tanpa satu pun error, dan lembar
+     * terakreditasi yang kehilangan kolom "Environmental Meter Used" itu temuan
+     * audit. Yang menjaganya lebih dulu `ThermohygroSemuaLembarTest`, yang
+     * menyapu SEMUA profil terdaftar dan menuntut dropdown-nya terisi.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
+    {
+        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
+
+        $pilihan = [];
+
+        foreach (static::THERMOHYGRO_TERCETAK as $unit) {
+            $label = is_array($unit) ? $unit['label'] : $unit;
+            $id = $master[$label] ?? null;
+
+            if ($id === null) {
+                continue;
+            }
+
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $label,
+                'grup' => is_array($unit) ? $unit['grup'] : 'Thermohygro lab',
+                ...(is_array($unit) ? array_diff_key($unit, ['label' => null, 'grup' => null]) : []),
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if (($field['kode'] ?? null) === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Tempelkan standar terdaftar ke baris `Standard Used` yang TERCETAK di
+     * lembar, lewat `STANDARD_TERCETAK` milik profilnya.
+     *
+     * `terdaftar => false` sengaja tetap dikirim untuk baris yang tidak ketemu
+     * di master: barisnya memang tercetak di kertas, jadi menghilangkannya dari
+     * bentuk lembar membuat teknisi mengira kertasnya berubah.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    protected function tautkanStandarTercetak(array $bentuk, ?Equipment $equipment): array
+    {
+        $master = $this->masterStandarTertaut($equipment);
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            if (($bagian['kode'] ?? null) !== 'usage_check') {
+                continue;
+            }
+
+            $bentuk['bagian'][$i]['baris'] = array_map(
+                function (array $baris) use ($master): array {
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
+
+                    return [
+                        'label' => $baris['label'],
+                        'standard_id' => $cocok?->id,
+                        'serial_number' => $cocok?->serial_number,
+                        'no_sertifikat' => $cocok?->no_sertifikat,
+                        'tertelusur_ke' => $cocok?->tertelusur_ke,
+                        'terdaftar' => $cocok !== null,
+                    ];
+                },
+                $bentuk['bagian'][$i]['baris'],
+            );
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Baris CMC lampiran akreditasi buat alat ini, disaring ke lab pemiliknya.
+     *
+     * Dicocokkan lewat [namaAlatKemampuan] — ejaan lampiran, bukan
+     * `nama_alat` yang diketik teknisi. Balik `null` kalau labnya belum punya
+     * barisnya; pemanggil wajib memperlakukan itu sebagai "tidak ada lantai
+     * CMC", bukan nol.
+     */
+    protected function kemampuanSesi(Equipment $equipment): ?CalibrationCapability
+    {
+        return CalibrationCapability::query()
+            ->where('nama_alat', $this->namaAlatKemampuan())
+            ->when(
+                $equipment->equipment_category_id !== null,
+                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
+            ->first();
+    }
+
+    /**
      * Cocokkan satu baris standar tercetak ke master: **NAMA dulu, serial
      * belakangan.**
      *
@@ -867,6 +1045,25 @@ abstract class CalibrationProfile
      * salah.
      */
     public function butuhBlokWaktu(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah satu titik sesi ini berisi TUMPUKAN balok ukur plus deret
+     * pembacaan yang terpisah.
+     *
+     * Default `false`. `true` cuma untuk Micrometer. Waktu `true`,
+     * `CalibrationController` menyimpan tiap keping dan tiap pembacaan sebagai
+     * baris `raw_measurements` ber-`peran_sensor`
+     * `mikro_balok`/`mikro_pembacaan`, dan jalur hitung ulang menyusunnya balik
+     * lewat `MicrometerMentah::dari()`.
+     *
+     * Tanpa hook ini jalur datar menyimpan satu deret campuran per titik —
+     * nominal balok ukur berbaur dengan penunjukan alat — dan rata-rata yang
+     * lahir dari situ menggeser koreksi tanpa satu pun error.
+     */
+    public function butuhBlokMicrometer(): bool
     {
         return false;
     }

@@ -1,0 +1,833 @@
+{
+  "_catatan": "Sesi contoh dari empat workbook master Micrometer. Yang DITANAM MicrometerSeeder cuma `2550` — lihat `_dipakai_seeder`. Tiga sisanya disimpan sebagai pembanding; `025` khususnya CACAT (satuan tersetel `inch` sementara angkanya milimeter) dan sengaja TIDAK ditanam.",
+  "_digenerate_oleh": "docs/skrip/gen-sesi-micrometer.py",
+  "_dipakai_seeder": "2550",
+  "sesi": {
+    "025": {
+      "label": "0-25 mm",
+      "_sesi": {
+        "nama_alat": "Micrometer",
+        "merk": "Mitutoyo",
+        "model": "Analog",
+        "serial": "IMTE-FQS-015",
+        "rentang": "0-25",
+        "satuan_alat": "inch",
+        "kapasitas_mm": 635.0,
+        "resolusi_mm": 0.000254,
+        "pelanggan": "PT. UNILEVER INDONESIA TBK (Savoury)",
+        "alamat": "Jl. Jababeka VI Blok L 1-2, Kawasan Industri Jababeka Cikarang, Bekasi 17520",
+        "tanggal_terima": "2024-03-12",
+        "tanggal": "2024-03-14",
+        "nomor_sertifikat": "095-CAL-324",
+        "nomor_order": "2403.16.L",
+        "suhu_awal": 20.6,
+        "suhu_akhir": 20.7,
+        "rh_awal": 54.0,
+        "rh_akhir": 55.0,
+        "thermohygro": "TH-3",
+        "suhu_balok_c": 20.65,
+        "suhu_uut_c": 20.65,
+        "kerataan_muka": "Baik",
+        "kesejajaran_muka": "Baik"
+      },
+      "pra_evaluasi_mm": [
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0,
+        635.0
+      ],
+      "balok_pra_evaluasi_mm": [
+        20.0,
+        5.0
+      ],
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal_mm": [
+            0.0
+          ],
+          "pembacaan_mm": []
+        },
+        {
+          "titik_ke": 2,
+          "nominal_mm": [
+            2.5
+          ],
+          "pembacaan_mm": [
+            63.5,
+            63.5,
+            63.5,
+            63.5,
+            63.5
+          ]
+        },
+        {
+          "titik_ke": 3,
+          "nominal_mm": [
+            1.1,
+            2.5,
+            1.5
+          ],
+          "pembacaan_mm": [
+            129.54,
+            129.54,
+            129.54,
+            129.54,
+            129.54
+          ]
+        },
+        {
+          "titik_ke": 4,
+          "nominal_mm": [
+            1.7,
+            6.0
+          ],
+          "pembacaan_mm": [
+            195.57999999999998,
+            195.57999999999998,
+            195.57999999999998,
+            195.57999999999998,
+            195.57999999999998
+          ]
+        },
+        {
+          "titik_ke": 5,
+          "nominal_mm": [
+            2.5,
+            1.8,
+            6.0
+          ],
+          "pembacaan_mm": [
+            261.62,
+            261.62,
+            261.62,
+            261.62,
+            261.62
+          ]
+        },
+        {
+          "titik_ke": 6,
+          "nominal_mm": [
+            1.9,
+            11.0
+          ],
+          "pembacaan_mm": [
+            327.65999999999997,
+            327.65999999999997,
+            327.65999999999997,
+            327.65999999999997,
+            327.65999999999997
+          ]
+        },
+        {
+          "titik_ke": 7,
+          "nominal_mm": [
+            6.0,
+            9.0
+          ],
+          "pembacaan_mm": [
+            381.0,
+            381.0,
+            381.0,
+            381.0,
+            381.0
+          ]
+        },
+        {
+          "titik_ke": 8,
+          "nominal_mm": [
+            1.6,
+            16.0
+          ],
+          "pembacaan_mm": [
+            447.04,
+            447.04,
+            447.04,
+            447.04,
+            447.04
+          ]
+        },
+        {
+          "titik_ke": 9,
+          "nominal_mm": [
+            1.2,
+            19.0
+          ],
+          "pembacaan_mm": [
+            513.0799999999999,
+            513.0799999999999,
+            513.0799999999999,
+            513.0799999999999,
+            513.0799999999999
+          ]
+        },
+        {
+          "titik_ke": 10,
+          "nominal_mm": [
+            1.8,
+            21.0
+          ],
+          "pembacaan_mm": [
+            579.12,
+            579.12,
+            579.12,
+            579.12,
+            579.12
+          ]
+        },
+        {
+          "titik_ke": 11,
+          "nominal_mm": [
+            6.0,
+            19.0
+          ],
+          "pembacaan_mm": [
+            635.0254,
+            635.0254,
+            635.0254,
+            635.0254,
+            635.0254
+          ]
+        }
+      ]
+    },
+    "2550": {
+      "label": "25-50 mm",
+      "_sesi": {
+        "nama_alat": "Micrometer Digital",
+        "merk": "Mitutoyo",
+        "model": "IP65",
+        "serial": "ZQ-100",
+        "rentang": "25-50",
+        "satuan_alat": "mm",
+        "kapasitas_mm": 50.0,
+        "resolusi_mm": 0.001,
+        "pelanggan": "PT Unilever Indonesia Tbk, (Skin Care Factory)",
+        "alamat": "Jl. Jababeka Ⅴ Blok U No.14-16, Karangbaru, Kec. Cikarang Utara, Bekasi, Jawa Barat 17530",
+        "tanggal_terima": "2023-10-09",
+        "tanggal": "2023-10-10",
+        "nomor_sertifikat": "0106-CAL-1023",
+        "nomor_order": "2310.22.P",
+        "suhu_awal": 20.5,
+        "suhu_akhir": 20.6,
+        "rh_awal": 41.0,
+        "rh_akhir": 40.0,
+        "thermohygro": "TH-3",
+        "suhu_balok_c": 20.55,
+        "suhu_uut_c": 20.55,
+        "kerataan_muka": "Baik",
+        "kesejajaran_muka": "Buruk"
+      },
+      "pra_evaluasi_mm": [
+        50.0,
+        50.0,
+        50.0,
+        49.999,
+        50.0,
+        50.0,
+        50.0,
+        50.0,
+        50.0,
+        50.0
+      ],
+      "balok_pra_evaluasi_mm": [
+        50.0
+      ],
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal_mm": [
+            6.0,
+            19.0
+          ],
+          "pembacaan_mm": [
+            25.0,
+            25.0,
+            25.0,
+            25.0,
+            25.0
+          ]
+        },
+        {
+          "titik_ke": 2,
+          "nominal_mm": [
+            2.5,
+            6.0,
+            19.0
+          ],
+          "pembacaan_mm": [
+            27.501,
+            27.5,
+            27.5,
+            27.5,
+            27.5
+          ]
+        },
+        {
+          "titik_ke": 3,
+          "nominal_mm": [
+            14.0,
+            17.0
+          ],
+          "pembacaan_mm": [
+            31.0,
+            31.0,
+            31.0,
+            31.0,
+            31.0
+          ]
+        },
+        {
+          "titik_ke": 4,
+          "nominal_mm": [
+            1.8,
+            16.0,
+            1.9,
+            13.0
+          ],
+          "pembacaan_mm": [
+            32.7,
+            32.7,
+            32.7,
+            32.7,
+            32.7
+          ]
+        },
+        {
+          "titik_ke": 5,
+          "nominal_mm": [
+            1.3,
+            13.0,
+            21.0
+          ],
+          "pembacaan_mm": [
+            35.3,
+            35.3,
+            35.3,
+            35.3,
+            35.3
+          ]
+        },
+        {
+          "titik_ke": 6,
+          "nominal_mm": [
+            1.3,
+            19.0,
+            1.6,
+            16.0
+          ],
+          "pembacaan_mm": [
+            37.9,
+            37.9,
+            37.9,
+            37.9,
+            37.9
+          ]
+        },
+        {
+          "titik_ke": 7,
+          "nominal_mm": [
+            40.0
+          ],
+          "pembacaan_mm": [
+            40.0,
+            40.0,
+            40.0,
+            40.0,
+            40.0
+          ]
+        },
+        {
+          "titik_ke": 8,
+          "nominal_mm": [
+            1.1,
+            21.0,
+            1.5,
+            19.0
+          ],
+          "pembacaan_mm": [
+            42.6,
+            42.6,
+            42.6,
+            42.6,
+            42.6
+          ]
+        },
+        {
+          "titik_ke": 9,
+          "nominal_mm": [
+            1.1,
+            40.0,
+            1.6,
+            2.5
+          ],
+          "pembacaan_mm": [
+            45.2,
+            45.2,
+            45.2,
+            45.2,
+            45.2
+          ]
+        },
+        {
+          "titik_ke": 10,
+          "nominal_mm": [
+            1.8,
+            6.0,
+            40.0
+          ],
+          "pembacaan_mm": [
+            47.8,
+            47.8,
+            47.8,
+            47.8,
+            47.8
+          ]
+        },
+        {
+          "titik_ke": 11,
+          "nominal_mm": [
+            50.0
+          ],
+          "pembacaan_mm": [
+            50.0,
+            50.0,
+            50.0,
+            49.998,
+            50.0
+          ]
+        }
+      ]
+    },
+    "5075": {
+      "label": "50-75 mm",
+      "_sesi": {
+        "nama_alat": "Outside Micrometer",
+        "merk": "Mahr",
+        "model": "-",
+        "serial": "61010481",
+        "rentang": "50-75",
+        "satuan_alat": "mm",
+        "kapasitas_mm": 75.0,
+        "resolusi_mm": 0.001,
+        "pelanggan": "PT. JABIL CIRCUIT INDONESIA",
+        "alamat": "Jl. Soekarno Hatta No.35 Blok Gempol Rt 04 Rw 05, Mekar Mulya Panyileukan",
+        "tanggal_terima": "2020-11-30",
+        "tanggal": "2020-12-05",
+        "nomor_sertifikat": "002-UB.P-11-20",
+        "nomor_order": "002-UBPK-1120",
+        "suhu_awal": 20.5,
+        "suhu_akhir": 20.6,
+        "rh_awal": 55.0,
+        "rh_akhir": 56.0,
+        "thermohygro": "TH-3",
+        "suhu_balok_c": 20.55,
+        "suhu_uut_c": 20.55,
+        "kerataan_muka": "Baik",
+        "kesejajaran_muka": "Buruk"
+      },
+      "pra_evaluasi_mm": [
+        75.002,
+        75.003,
+        75.003,
+        75.002,
+        75.003,
+        75.003,
+        75.002,
+        75.003,
+        75.002,
+        75.003
+      ],
+      "balok_pra_evaluasi_mm": [
+        75.0
+      ],
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal_mm": [
+            50.0
+          ],
+          "pembacaan_mm": [
+            50.002,
+            50.002,
+            50.002,
+            50.002,
+            50.003
+          ]
+        },
+        {
+          "titik_ke": 2,
+          "nominal_mm": [
+            2.5,
+            50.0
+          ],
+          "pembacaan_mm": [
+            52.502,
+            52.502,
+            52.501,
+            52.502,
+            52.502
+          ]
+        },
+        {
+          "titik_ke": 3,
+          "nominal_mm": [
+            1.5,
+            6.0,
+            1.6,
+            40.0,
+            1.9
+          ],
+          "pembacaan_mm": [
+            51.003,
+            51.003,
+            51.003,
+            51.003,
+            51.003
+          ]
+        },
+        {
+          "titik_ke": 4,
+          "nominal_mm": [
+            1.7,
+            6.0,
+            50.0
+          ],
+          "pembacaan_mm": [
+            57.703,
+            57.703,
+            57.702,
+            57.703,
+            57.703
+          ]
+        },
+        {
+          "titik_ke": 5,
+          "nominal_mm": [
+            1.3,
+            9.0,
+            50.0
+          ],
+          "pembacaan_mm": [
+            60.302,
+            60.302,
+            60.302,
+            60.302,
+            60.303
+          ]
+        },
+        {
+          "titik_ke": 6,
+          "nominal_mm": [
+            1.7,
+            7.5,
+            1.8,
+            50.0,
+            1.9
+          ],
+          "pembacaan_mm": [
+            62.902,
+            62.902,
+            62.902,
+            62.903,
+            62.902
+          ]
+        },
+        {
+          "titik_ke": 7,
+          "nominal_mm": [
+            1.1,
+            11.0,
+            1.2,
+            50.0,
+            1.7
+          ],
+          "pembacaan_mm": [
+            65.002,
+            65.002,
+            65.002,
+            65.002,
+            65.003
+          ]
+        },
+        {
+          "titik_ke": 8,
+          "nominal_mm": [
+            1.5,
+            2.5,
+            1.7,
+            60.0,
+            1.9
+          ],
+          "pembacaan_mm": [
+            67.602,
+            67.603,
+            67.602,
+            67.603,
+            67.602
+          ]
+        },
+        {
+          "titik_ke": 9,
+          "nominal_mm": [
+            1.2,
+            60.0,
+            1.5,
+            7.5
+          ],
+          "pembacaan_mm": [
+            70.203,
+            70.202,
+            70.203,
+            70.203,
+            70.203
+          ]
+        },
+        {
+          "titik_ke": 10,
+          "nominal_mm": [
+            1.2,
+            1.6,
+            70.0
+          ],
+          "pembacaan_mm": [
+            72.802,
+            72.802,
+            72.803,
+            72.802,
+            72.802
+          ]
+        },
+        {
+          "titik_ke": 11,
+          "nominal_mm": [
+            75.0
+          ],
+          "pembacaan_mm": [
+            75.002,
+            75.002,
+            75.002,
+            75.002,
+            75.003
+          ]
+        }
+      ]
+    },
+    "75100": {
+      "label": "75-100 mm",
+      "_sesi": {
+        "nama_alat": "Digital Outside Micrometer",
+        "merk": "Mitutoyo",
+        "model": "422-333-30",
+        "serial": "67426681",
+        "rentang": "75-100",
+        "satuan_alat": "mm",
+        "kapasitas_mm": 100.0,
+        "resolusi_mm": 0.001,
+        "pelanggan": "PT. JABIL CIRCUIT INDONESIA",
+        "alamat": "Jl. Soekarno Hatta No.35 Blok Gempol Rt 04 Rw 05, Mekar Mulya Panyileukan",
+        "tanggal_terima": "2023-03-30",
+        "tanggal": "2023-04-05",
+        "nomor_sertifikat": "003-UB.P-11-20",
+        "nomor_order": "003-UBPK-1120",
+        "suhu_awal": 20.6,
+        "suhu_akhir": 20.2,
+        "rh_awal": 55.0,
+        "rh_akhir": 56.0,
+        "thermohygro": "TH-3",
+        "suhu_balok_c": 20.4,
+        "suhu_uut_c": 20.4,
+        "kerataan_muka": "Baik",
+        "kesejajaran_muka": "Buruk"
+      },
+      "pra_evaluasi_mm": [
+        100.001,
+        100.0,
+        100.001,
+        100.0,
+        100.001,
+        100.001,
+        100.0,
+        100.001,
+        100.0,
+        100.0
+      ],
+      "balok_pra_evaluasi_mm": [
+        100.0
+      ],
+      "titik": [
+        {
+          "titik_ke": 1,
+          "nominal_mm": [
+            75.0
+          ],
+          "pembacaan_mm": [
+            75.0,
+            75.0,
+            75.0,
+            75.0,
+            75.001
+          ]
+        },
+        {
+          "titik_ke": 2,
+          "nominal_mm": [
+            7.5,
+            70.0
+          ],
+          "pembacaan_mm": [
+            77.5,
+            77.5,
+            77.5,
+            77.501,
+            77.5
+          ]
+        },
+        {
+          "titik_ke": 3,
+          "nominal_mm": [
+            1.1,
+            9.0,
+            70.0
+          ],
+          "pembacaan_mm": [
+            80.1,
+            80.1,
+            80.101,
+            80.1,
+            80.1
+          ]
+        },
+        {
+          "titik_ke": 4,
+          "nominal_mm": [
+            1.8,
+            70.0,
+            1.9,
+            9.0
+          ],
+          "pembacaan_mm": [
+            82.7,
+            82.7,
+            82.7,
+            82.7,
+            82.701
+          ]
+        },
+        {
+          "titik_ke": 5,
+          "nominal_mm": [
+            1.3,
+            80.0,
+            1.5,
+            2.5
+          ],
+          "pembacaan_mm": [
+            85.3,
+            85.3,
+            85.3,
+            85.3,
+            85.3
+          ]
+        },
+        {
+          "titik_ke": 6,
+          "nominal_mm": [
+            1.7,
+            2.5,
+            1.8,
+            80.0,
+            1.9
+          ],
+          "pembacaan_mm": [
+            87.9,
+            87.9,
+            87.901,
+            87.9,
+            87.9
+          ]
+        },
+        {
+          "titik_ke": 7,
+          "nominal_mm": [
+            90.0
+          ],
+          "pembacaan_mm": [
+            90.0,
+            90.0,
+            90.0,
+            90.001,
+            90.0
+          ]
+        },
+        {
+          "titik_ke": 8,
+          "nominal_mm": [
+            1.1,
+            1.5,
+            90.0
+          ],
+          "pembacaan_mm": [
+            92.6,
+            92.6,
+            92.6,
+            92.6,
+            92.6
+          ]
+        },
+        {
+          "titik_ke": 9,
+          "nominal_mm": [
+            1.2,
+            90.0,
+            1.5,
+            2.5
+          ],
+          "pembacaan_mm": [
+            95.2,
+            95.2,
+            95.201,
+            95.2,
+            95.2
+          ]
+        },
+        {
+          "titik_ke": 10,
+          "nominal_mm": [
+            1.6,
+            2.5,
+            1.8,
+            90.0,
+            1.9
+          ],
+          "pembacaan_mm": [
+            97.8,
+            97.8,
+            97.8,
+            97.801,
+            97.8
+          ]
+        },
+        {
+          "titik_ke": 11,
+          "nominal_mm": [
+            100.0
+          ],
+          "pembacaan_mm": [
+            100.0,
+            100.0,
+            100.001,
+            100.0,
+            100.0
+          ]
+        }
+      ]
+    }
+  }
+}

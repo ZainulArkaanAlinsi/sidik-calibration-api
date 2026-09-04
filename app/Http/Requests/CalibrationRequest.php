@@ -10,6 +10,7 @@ use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -315,6 +316,31 @@ class CalibrationRequest extends FormRequest
             // yang kebetulan mengisinya.
             'spesifikasi_alat.scale_observation' => ['sometimes', 'nullable', 'array', 'max:3'],
             'spesifikasi_alat.effect_of_tare' => ['sometimes', 'nullable', 'array', 'max:5'],
+            // Blok Micrometer: sembilan kunci tingkat atas (satuan, kapasitas,
+            // resolusi, dua suhu, dua deret pra-evaluasi, dua pemeriksaan muka
+            // ukur). Batasnya dilonggarkan ke 12 supaya kunci ke-10 yang
+            // menyusul tidak menolak SELURUH sesi — kesalahan yang sudah
+            // kejadian pada `scale_observation`.
+            'spesifikasi_alat.micrometer' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.micrometer.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.micrometer.pra_evaluasi.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.balok_pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:6'],
+            'spesifikasi_alat.micrometer.balok_pra_evaluasi.*' => ['nullable', 'numeric'],
+            // Satuan alat MEMILIH faktor konversi ke mm, jadi nilainya dibatasi
+            // ke daftar yang dikenal — bukan teks bebas. Satuan yang tidak
+            // dikenal jatuh ke faktor 1,0 dan angkanya salah diam-diam.
+            'spesifikasi_alat.micrometer.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
+            'spesifikasi_alat.micrometer.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.suhu_balok_c' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.suhu_uut_c' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.micrometer.kerataan_muka' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
+            'spesifikasi_alat.micrometer.kesejajaran_muka' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
+            // Tumpukan balok ukur & deret pembacaan per titik.
+            'measurements.*.'.MicrometerMentah::PERAN_BALOK => ['sometimes', 'nullable', 'array', 'max:3'],
+            'measurements.*.'.MicrometerMentah::PERAN_BALOK.'.*' => ['nullable', 'numeric'],
+            'measurements.*.'.MicrometerMentah::PERAN_PEMBACAAN => ['sometimes', 'nullable', 'array', 'max:5'],
+            'measurements.*.'.MicrometerMentah::PERAN_PEMBACAAN.'.*' => ['nullable', 'numeric'],
             // Mode kalibrasi & tipe sensor — cuma TITS yang mengirimnya, dan
             // dua-duanya nentuin ANGKA (arah koreksi & tabel kalibrator mana
             // yang dibaca), jadi nilainya dibatasi ke daftar yang dikenal
@@ -608,16 +634,21 @@ class CalibrationRequest extends FormRequest
     /**
      * Kunci `spesifikasi_alat` yang isinya BLOK, bukan teks pendek.
      *
-     * Kelimanya milik lembar Timbangan. Ditulis sebagai daftar tertutup, bukan
-     * "terima array apa saja": kolomnya JSON tanpa skema, jadi tanpa daftar ini
-     * satu kunci salah ketik dari HP mendarat diam-diam dan baru ketahuan waktu
-     * ada yang mencari isinya.
+     * Lima yang pertama milik lembar Timbangan, yang keenam milik Micrometer.
+     * Ditulis sebagai daftar tertutup, bukan "terima array apa saja": kolomnya
+     * JSON tanpa skema, jadi tanpa daftar ini satu kunci salah ketik dari HP
+     * mendarat diam-diam dan baru ketahuan waktu ada yang mencari isinya.
      *
      * Tiga yang pertama MENGGERAKKAN ANGKA (Sr/Sres & LOP, komponen
-     * Eccentricity, angka Hysterisis). Dua yang terakhir cuma dicatat — tapi
+     * Eccentricity, angka Hysterisis). Dua berikutnya cuma dicatat — tapi
      * tetap masuk daftar ini, karena tanpa tempat simpan yang sah kesepuluh
      * kotak Scale Observation dan kelima kotak Effect of Tare diketik teknisi
      * lalu hilang waktu tombol kirim ditekan.
+     *
+     * `micrometer` menggerakkan angka paling banyak di antara semuanya: SELURUH
+     * budget lembar itu lahir dari situ — pengulangan (pra-evaluasi), suhu,
+     * kapasitas (yang memilih pita CMC), dan resolusi. Tanpa tempat simpan yang
+     * sah, tiap sesi Micrometer pulang tanpa satu pun titik terhitung.
      */
     private const SPEK_BERBENTUK_BLOK = [
         'keterulangan',
@@ -625,6 +656,7 @@ class CalibrationRequest extends FormRequest
         'histeresis',
         'scale_observation',
         'effect_of_tare',
+        'micrometer',
     ];
 
     /**

@@ -1,0 +1,109 @@
+{
+  "_sumber": "Master_Olah_Data_Micrometer_{025,2550,5075,75100}mm.xlsm (sheet Standar_GB & DATABASE) — keempat workbook memuat tabel balok ukur yang IDENTIK, sudah diadu oleh skrip generator ini.",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-micrometer.py",
+  "standar": {
+    "nama": "Gauge Block Standard",
+    "merk_tipe": "Metrology/GB-9122-0",
+    "seri": "160006",
+    "traceability": "LK-410-IDN",
+    "tanggal_kalibrasi": "2024-01-24"
+  },
+  "balok_ukur": {
+    "1.0": 1.00011,
+    "1.1": 1.09989,
+    "1.2": 1.20012,
+    "1.3": 1.30009,
+    "1.5": 1.49996,
+    "1.6": 1.5999,
+    "1.7": 1.70013,
+    "1.8": 1.80011,
+    "1.9": 1.90009,
+    "2.5": 2.50014,
+    "5.0": 5.00009,
+    "6.0": 6.00016,
+    "7.5": 7.49989,
+    "9.0": 8.99991,
+    "11.0": 11.00014,
+    "13.0": 13.00014,
+    "14.0": 14.00009,
+    "16.0": 16.0001,
+    "17.0": 16.99988,
+    "19.0": 19.00011,
+    "21.0": 20.99987,
+    "76.2": 76.2002,
+    "101.6": 101.60026,
+    "40.0": 40.00014,
+    "50.0": 49.9999,
+    "60.0": 60.00012,
+    "70.0": 69.99991,
+    "75.0": 74.9999,
+    "80.0": 80.00013,
+    "90.0": 90.00015,
+    "100.0": 100.00012,
+    "200.0": 200.00017
+  },
+  "ketidakpastian_balok_um": {
+    "aturan": [
+      {
+        "maks": 10.0,
+        "u": 0.12
+      },
+      {
+        "maks": 21.0,
+        "u": 0.14
+      },
+      {
+        "maks": 50.0,
+        "u": 0.25
+      },
+      {
+        "maks": 100.0,
+        "u": 0.26
+      }
+    ],
+    "persis": {
+      "101.6": 0.26,
+      "200": 0.73
+    },
+    "lainnya": 0.0
+  },
+  "cmc": [
+    {
+      "kode": "A",
+      "label": "CMC 0-25mm",
+      "kapasitas_min_mm": 0.0,
+      "kapasitas_maks_mm": 25.0,
+      "u95_um": 0.83
+    },
+    {
+      "kode": "B",
+      "label": "CMC 25-50mm",
+      "kapasitas_min_mm": 25.0,
+      "kapasitas_maks_mm": 50.0,
+      "u95_um": 0.87
+    },
+    {
+      "kode": "C",
+      "label": "CMC 50-75mm",
+      "kapasitas_min_mm": 50.0,
+      "kapasitas_maks_mm": 75.0,
+      "u95_um": 0.91
+    },
+    {
+      "kode": "D",
+      "label": "CMC 75-100mm",
+      "kapasitas_min_mm": 75.0,
+      "kapasitas_maks_mm": 100.0,
+      "u95_um": 0.91
+    }
+  ],
+  "konstanta": {
+    "delta_alpha_per_c": 1e-05,
+    "wringing_um": 0.111803398875,
+    "geometri_um": 0.5,
+    "drift_a_um": 0.02,
+    "drift_b_um_per_mm": 0.00025,
+    "suhu_acuan_c": 20.0,
+    "vi_type_b": 200
+  }
+}

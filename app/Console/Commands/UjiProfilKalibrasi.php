@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
@@ -306,6 +307,45 @@ class UjiProfilKalibrasi extends Command
                 : [
                     "{$terhitung}/{$terisi}",
                     sprintf('set point terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
+                    false,
+                ];
+        }
+
+        // Micrometer juga tidak lewat `preview` per titik: payload-nya
+        // `measurements[i].mikro_balok` (tumpukan balok ukur) + `.mikro_pembacaan`,
+        // bukan `.pembacaan` yang datar — dan SELURUH budget-nya lahir dari blok
+        // tingkat-sesi di `spesifikasi_alat.micrometer` (pra-evaluasi, suhu,
+        // kapasitas, resolusi). Diadu ke payload datar dia memulangkan NOL titik,
+        // dan nol titik di sini terbaca seperti mesin hitungnya rusak padahal yang
+        // salah bentuk payload yang disusun perintah ini.
+        //
+        // Alasan & bentuk pemeriksaannya sama persis dengan Timbangan dan
+        // Timer/Stopwatch di atas: yang diperiksa sesi tersimpannya lengkap.
+        if ($profil instanceof MicrometerProfile) {
+            if ($alat === null) {
+                return ['-', 'belum ada alat contoh di database', false];
+            }
+
+            $sesi = CalibrationSession::where('equipment_id', $alat->id)
+                ->has('uncertaintyCalculations')
+                ->latest('id')
+                ->first();
+
+            if ($sesi === null) {
+                return ['-', 'sesi kosong atau tidak punya hasil hitung', false];
+            }
+
+            $terisi = $sesi->rawMeasurements()
+                ->whereNotNull('peran_sensor')
+                ->distinct()
+                ->count('titik_ke');
+            $terhitung = $sesi->uncertaintyCalculations()->count();
+
+            return $terhitung > 0 && $terhitung === $terisi
+                ? ["{$terhitung}/{$terisi}", "U95 sesi lengkap (sesi {$sesi->nomor_sesi})", true]
+                : [
+                    "{$terhitung}/{$terisi}",
+                    sprintf('titik terisi %d tapi kehitung %d (sesi %s)', $terisi, $terhitung, $sesi->nomor_sesi),
                     false,
                 ];
         }

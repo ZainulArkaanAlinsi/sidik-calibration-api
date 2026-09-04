@@ -266,9 +266,15 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // dikirim. Yang ADA cuma nomor Instruksi Kerjanya
         // (`SIDIK-IK-CAL-0509_Rev.6` & `SIDIK-IK-CAL-0511_Rev.6`), dan itu
         // masuk lewat `kodeMetode()`, bukan `kode_dokumen`.
+        // `micrometer` ikut daftar ini 4 Sep 2026 dengan bukti yang sama:
+        // sapuan `SIDIK-FM-` ke DELAPAN sheet × EMPAT workbook master
+        // (0-25/25-50/50-75/75-100 mm) cuma memulangkan satu nomor —
+        // `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet `SERTIFIKAT`, formulir
+        // sertifikat bersama itu lagi. Nomor lembar kerjanya sendiri belum
+        // pernah dikirim.
         $belumAdaKertasnya = [
             'gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro', 'timbangan',
-            'timer_stopwatch', 'centrifuge', 'tachometer',
+            'timer_stopwatch', 'centrifuge', 'tachometer', 'micrometer',
         ];
 
         // `timbangan` di daftar itu SETENGAH benar, dan bedanya perlu ditulis.
