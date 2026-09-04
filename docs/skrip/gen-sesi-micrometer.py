@@ -28,11 +28,17 @@ BARIS_TITIK = list(range(31, 62, 3))
 
 hasil = {
     '_catatan': 'Sesi contoh dari empat workbook master Micrometer. Yang DITANAM '
-                'MicrometerSeeder cuma `2550` — lihat `_dipakai_seeder`. Tiga sisanya '
-                'disimpan sebagai pembanding; `025` khususnya CACAT (satuan tersetel '
-                '`inch` sementara angkanya milimeter) dan sengaja TIDAK ditanam.',
+                'MicrometerSeeder TIGA: 2550, 5075, 75100 — lihat `_ditanam_seeder`. '
+                'Varian A (025) sengaja TIDAK ditanam, dan sebabnya BUKAN cuma label '
+                'satuannya: blok pra-evaluasinya berisi 635,0 sepuluh kali (nilai '
+                'kapasitas hasil bug inch yang bocor ke sana), jadi simpangan bakunya '
+                'NOL. Menanamnya berarti menerbitkan sesi yang komponen keterulangannya '
+                'nol lalu ditutupi lantai CMC — persis jebakan yang dijaga seluruh alat '
+                'ini. Memperbaikinya berarti MENGARANG data keterulangan, dan '
+                'keterulangan itu justru yang jadi dasar seluruh budget. Lihat '
+                'docs/pertanyaan-lab-micrometer.md §3.',
     '_digenerate_oleh': 'docs/skrip/gen-sesi-micrometer.py',
-    '_dipakai_seeder': '2550',
+    '_ditanam_seeder': ['2550', '5075', '75100'],
     'sesi': {},
 }
 
