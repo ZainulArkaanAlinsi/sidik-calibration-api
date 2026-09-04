@@ -304,6 +304,87 @@ class MicrometerMasterTest extends TestCase
      *
      * Selisih yang tercetak 0,25 %, dan tidak ada satu pun error di jalurnya.
      */
+    /**
+     * Kedua komponen termal menyumbang NOL ke budget — dan itu temuan, bukan
+     * fisika.
+     *
+     * Budget bekerja dalam µm, tapi `ci` kedua komponen termal dihitung dengan
+     * L dalam MILIMETER (`ci_suhu = α × L`, `ci_muai = L × Δϴ`). Akibatnya
+     * sumbangan keduanya seribu kali lebih kecil daripada rumus yang sama di
+     * satuan yang konsisten, dan `uc` seluruhnya berdiri di atas enam komponen
+     * lain.
+     *
+     * Ditiru dari master — dan test ini yang MEMBUKTIKAN kita menirunya, bukan
+     * memperbaikinya diam-diam. Kalau suatu saat satuannya dikonsistenkan, test
+     * ini merah dan yang membacanya diarahkan ke
+     * `docs/analisis-pertanyaan-lab-micrometer.md` §11: U95 sesi 25-50 mm naik
+     * 0,872 → 0,978 µm, yaitu DI ATAS pita CMC 0,87 µm yang diakui lampiran
+     * akreditasi. Jadi yang perlu ditinjau bukan cuma angkanya, tapi apakah
+     * CMC-nya sendiri tercapai.
+     *
+     * Belum diubah karena `u` kedua komponen juga belum benar (master memakai
+     * besaran itu sendiri sebagai ketidakpastiannya). Membetulkan satuan tanpa
+     * membetulkan `u` menukar satu kesalahan dengan kesalahan yang lebih besar.
+     */
+    public function test_komponen_termal_menyumbang_nol_karena_satuan_ci(): void
+    {
+        $kalk = new MicrometerCalculator;
+
+        $hasil = $kalk->hitungSesi(
+            [[
+                'titik_ke' => 1,
+                'nominal' => [6.0, 19.0],
+                'pembacaan' => [25.001, 25.0, 25.001, 25.0, 25.001],
+            ]],
+            [
+                'kapasitas_mm' => 50.0,
+                'resolusi_mm' => 0.001,
+                'tanggal_kalibrasi' => new DateTimeImmutable('2025-05-02'),
+                'pra_evaluasi' => [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0],
+                'balok_pra_evaluasi' => [50.0],
+                'suhu_ruang_rata_c' => 20.55,
+            ],
+        );
+
+        $sumbangan = [];
+        foreach ($hasil['budget'] as $b) {
+            $sumbangan[$b['sumber']] = $b['u'] * $b['ci'];
+        }
+
+        $uc = (float) $hasil['ketidakpastian_gabungan'];
+
+        foreach (['suhu_ruang', 'koefisien_muai'] as $termal) {
+            $porsi = ($sumbangan[$termal] ** 2) / ($uc ** 2);
+
+            $this->assertLessThan(
+                1e-6,
+                $porsi,
+                "Komponen `{$termal}` sekarang menyumbang nyata ke uc. Kalau satuan `ci`-nya "
+                .'baru dikonsistenkan ke µm, baca docs/analisis-pertanyaan-lab-micrometer.md §11 '
+                .'lebih dulu: U95 naik ke ~0,978 µm, DI ATAS pita CMC 0,87 µm.',
+            );
+        }
+
+        // `uc` berdiri utuh di atas enam komponen non-termal.
+        $tanpaTermal = 0.0;
+        foreach ($sumbangan as $nama => $nilai) {
+            if (! in_array($nama, ['suhu_ruang', 'koefisien_muai', 'selisih_suhu'], true)) {
+                $tanpaTermal += $nilai ** 2;
+            }
+        }
+
+        // Bukan nol MUTLAK — sumbangannya 7,9e-5 µm, jadi bedanya ~1,4e-8 pada
+        // uc. Ambangnya ditulis longgar sedikit dari itu, bukan dipaksa nol:
+        // yang diklaim "tidak menyumbang secara berarti", dan angka yang jujur
+        // lebih berguna daripada nol yang dibulatkan.
+        $this->assertEqualsWithDelta(
+            sqrt($tanpaTermal),
+            $uc,
+            1e-7,
+            'uc tanpa termal harus praktis sama dengan uc penuh.',
+        );
+    }
+
     public function test_resolusi_kosong_memblokir_penerbitan(): void
     {
         $kalk = new MicrometerCalculator;
@@ -315,7 +396,7 @@ class MicrometerMasterTest extends TestCase
         ]];
         $konteks = [
             'kapasitas_mm' => 50.0,
-            'tanggal_kalibrasi' => new \DateTimeImmutable('2025-05-02'),
+            'tanggal_kalibrasi' => new DateTimeImmutable('2025-05-02'),
             'pra_evaluasi' => [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0],
             'balok_pra_evaluasi' => [50.0],
             'suhu_ruang_rata_c' => 20.55,
