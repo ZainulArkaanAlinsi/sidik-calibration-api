@@ -7,6 +7,7 @@ use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 
 /**
@@ -91,8 +92,12 @@ class RumusKalibrasi
 
     /**
      * Rumus GUM buat satu profil alat milik satu organisasi — dibikin kalau
-     * belum ada. `firstOrCreate` aman di-retry: unique index
-     * `(organization_id, kode)` & `(formula_id, nomor_versi)` yang nahan.
+     * belum ada.
+     *
+     * Dua unique index yang menahan balapannya: `(organization_id, kode)` buat
+     * formulanya, `(formula_id, nomor_versi)` buat versinya. Yang ditahan index
+     * itu **kerusakan datanya**, bukan kegagalannya — pemanggil yang kalah tetap
+     * menerima pengecualian. Pemulihannya ada di [bikinVersiSatu].
      */
     public function formulaUntukProfil(int $organizationId, CalibrationProfile $profil): Formula
     {
@@ -132,6 +137,46 @@ class RumusKalibrasi
      * itu ya aturan yang sama ini.
      */
     private function bikinVersiSatu(Formula $formula): FormulaVersion
+    {
+        try {
+            return $this->sisipkanVersiSatu($formula);
+        } catch (UniqueConstraintViolationException $e) {
+            // KALAH BALAPAN, dan itu keadaan yang sah.
+            //
+            // Jalur ini dipanggil dari `FormulaController::index()` dan
+            // `HitungUlangSesi` — dua-duanya DI LUAR transaksi, jadi
+            // `lockForUpdate()` di `nomorBerikutnya()` dilepas begitu query-nya
+            // selesai dan tidak menjaga apa pun di antara baca dan tulis. Dua
+            // permintaan pertama yang datang bersamaan untuk lab yang sama
+            // sama-sama membaca "belum ada versi", sama-sama menghitung nomor
+            // 1, dan salah satunya ditolak unique index.
+            //
+            // Yang benar memakai VERSI MILIK PEMENANG, bukan mencoba lagi
+            // dengan nomor berikutnya: dua "versi 1" untuk rumus yang sama
+            // persis yang ditahan index itu, dan versi 2 yang lahir dari
+            // balapan berarti dua sesi yang dihitung dengan aturan yang sama
+            // distempel versi yang berbeda.
+            //
+            // Sebelum ini yang keluar 500 generik, dan sekali seumur hidup
+            // sebuah rumus — jadi tidak pernah bisa diulang siapa pun yang
+            // mencoba melacaknya.
+            $pemenang = $formula->versions()
+                ->where('status', FormulaVersion::STATUS_AKTIF)
+                ->first();
+
+            // Tidak ada pemenang berarti bentrokannya BUKAN balapan ini.
+            // Menelannya di sini bikin kegagalan lain menyamar jadi keadaan
+            // normal — persis jebakan yang sudah menggigit sekali di penjagaan
+            // 409 `FormulaController`.
+            if ($pemenang === null) {
+                throw $e;
+            }
+
+            return $pemenang;
+        }
+    }
+
+    private function sisipkanVersiSatu(Formula $formula): FormulaVersion
     {
         return $formula->versions()->create([
             'organization_id' => $formula->organization_id,

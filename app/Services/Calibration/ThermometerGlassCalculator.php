@@ -198,9 +198,30 @@ class ThermometerGlassCalculator
         $uut = array_values(array_map('floatval', $t['uut']));
         $alat = TabelKalibratorSuhu3Alat::ALAT_GLASS;
 
-        if (count($standar) < 2 || count($uut) < 1) {
+        // `< 2` di KEDUA sisi, sama dengan `ThermocoupleCalculator` dan
+        // `ThermohygroCalculator`. Sebelum ini sisi UUT-nya `< 1`, dan itu
+        // satu-satunya dari empat kalkulator suhu yang begitu.
+        //
+        // Yang dihasilkan asimetri itu bukan penolakan, tapi ANGKA: `stdev()`
+        // memulangkan `0.0` untuk n < 2, dan nilai itu masuk komponen budget
+        // `pengulangan_uut` yang `disertakan => true` TANPA SYARAT. Jadi satu
+        // pembacaan UUT tidak menghasilkan "tidak ada sebaran" — dia
+        // menghasilkan "sebarannya nol", dan U95 di sertifikat jadi lebih kecil
+        // dari yang bisa dipertanggungjawabkan.
+        //
+        // Kelas kesalahan ini sudah dijelaskan panjang di `GumCalculator`:
+        // *"Satu pembacaan nggak punya sebaran… sertifikatnya bakal ngeklaim
+        // ketidakpastian lebih bagus dari yang bisa dibuktiin. Salah yang
+        // diam-diam."* Penjaganya ada di sana; yang tidak ada jalannya ke sisi
+        // UUT kalkulator ini.
+        //
+        // Ini TIDAK memblokir teknisi di lapangan: titiknya ditahan dengan
+        // alasan yang kebaca, sesinya tetap tersimpan, dan penerbitan
+        // sertifikatnya yang ketahan `CalibrationValidator` — pola yang sama
+        // dengan tiga penjagaan lain di method ini.
+        if (count($standar) < 2 || count($uut) < 2) {
             return ['alasan' => sprintf(
-                'Titik %s °C baru punya %d pembacaan standar & %d pembacaan UUT — standar butuh minimal 2 '
+                'Titik %s °C baru punya %d pembacaan standar & %d pembacaan UUT — tiap sisi butuh minimal 2 '
                 .'biar STDEV-nya ada artinya.',
                 $this->angka((float) $t['titik_ukur']),
                 count($standar),

@@ -18,12 +18,12 @@ Route::get('/', [VerificationController::class, 'beranda']);
 // Tanpa auth — memang buat orang luar. Dibatesin 30/menit per IP biar nggak
 // dipakai nyisir nomor sertifikat.
 Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:verifikasi-halaman')
     ->name('verify');
 
 // Unduh sertifikat langsung dari hasil scan QR (?format=pdf|xlsx). Jatahnya
 // dipisah & lebih sedikit dari halaman verifikasi: yang ini bikin file, bukan
 // cuma baca satu baris.
 Route::get('/verify/{qr_token}/download', [VerificationController::class, 'download'])
-    ->middleware('throttle:10,1')
+    ->middleware('throttle:verifikasi-unduh')
     ->name('verify.download');

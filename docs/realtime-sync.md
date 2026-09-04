@@ -48,10 +48,28 @@ php artisan queue:work         # broadcast & notifikasi jalan lewat queue
 
 Alternatif tanpa self-host: `pusher` (isi `PUSHER_*`, set `BROADCAST_CONNECTION=pusher`).
 
-> ⚠️ **`composer require laravel/reverb` itu WAJIB dijalanin duluan.** Paketnya
-> (termasuk `pusher/pusher-php-server`) belum terpasang di repo ini. Kalau
-> `BROADCAST_CONNECTION` diset ke `reverb`/`pusher` sebelum itu, `/api/broadcasting/auth`
-> gagal dengan `Class "Pusher\Pusher" not found` — itu bukan salah kodenya.
+> ⚠️ **Status per 3 Sep 2026: paketnya SUDAH terpasang, realtime-nya BELUM nyala.**
+>
+> `laravel/reverb` ada di `composer.json:14`. Yang belum: `render.yaml` menyetel
+> `BROADCAST_CONNECTION=log` (eksplisit, sejak audit — sebelumnya jatuh ke bawaan yang
+> sama tanpa ada yang menulisnya), dan `docker/entrypoint.sh` tidak menjalankan
+> `reverb:start` sama sekali; yang di-loop cuma `queue:work` & `schedule:work`.
+>
+> Akibatnya: event broadcast ditulis ke berkas log dan **tidak pernah sampai ke klien** —
+> tanpa error, tanpa gagal. Fitur "realtime sync mobile ↔ desktop" tidak berfungsi di
+> deployment Render, dan degradasinya senyap.
+>
+> Keadaannya sekarang bisa diperiksa dari luar: `GET /api/health` → `realtime`
+> (`driver`, `nyala`, `paket_terpasang`).
+>
+> Yang menahan penyalaannya bukan kode, tapi satu pertanyaan infrastruktur: apakah plan
+> Render yang dipakai sanggup menahan satu proses WebSocket panjang lagi di container yang
+> sama. Ditulis sebagai T3 di `pertanyaan-lab-audit-2026-09.md`, lengkap dengan tiga hal
+> yang harus jalan bareng waktu jawabannya datang.
+>
+> `pusher/pusher-php-server` masih belum terpasang. Jadi kalau `BROADCAST_CONNECTION`
+> diset ke `pusher` (bukan `reverb`), `/api/broadcasting/auth` tetap gagal dengan
+> `Class "Pusher\Pusher" not found` — itu bukan salah kodenya.
 
 > ### Catatan 25 Juli 2026 — bug di `/api/broadcasting/auth`, udah dibetulin
 >

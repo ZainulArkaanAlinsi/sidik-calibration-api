@@ -50,9 +50,15 @@ class WorksheetScanController extends Controller
      * Dipakai HP buat mutusin tombol kamera nyala atau nggak — jangan hardcode
      * daftarnya di aplikasi, soalnya alat baru nambah terus.
      */
-    public function templates(): JsonResponse
+    public function templates(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->template->daftar()]);
+        // Alat semu pembawa `organization_id`, sama seperti `template()` di
+        // bawah. Tanpa ini `daftar()` membangun kedua puluh empat lembar tanpa
+        // konteks, dan saringan organisasi di profil mati untuk semuanya
+        // sekaligus — lihat [konteksOrganisasi] & `daftar()`.
+        return response()->json([
+            'data' => $this->template->daftar($this->konteksOrganisasi($request)),
+        ]);
     }
 
     /**

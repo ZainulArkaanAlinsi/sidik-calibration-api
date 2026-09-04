@@ -50,17 +50,57 @@ class TemplateLembarKerja
     }
 
     /**
+     * Kode template yang dikenal sistem — NOL sentuhan database.
+     *
+     * Kembarannya [daftar] yang membangun template lengkap buat tiap profil.
+     * Ada terpisah karena pemanggil yang cuma butuh NAMA-namanya (pesan error
+     * `ocr:rangka-geometri` "Yang ada: …") tidak punya alasan membayar dua
+     * puluh empat pembangunan lembar berikut query masternya — dan lebih
+     * penting: tidak punya alasan menyediakan konteks organisasi yang memang
+     * tidak dia miliki.
+     *
+     * @return list<string>
+     */
+    public function kodeTersedia(): array
+    {
+        return array_map(
+            static fn (CalibrationProfile $profil): string => $profil->kode(),
+            $this->registry->semua(),
+        );
+    }
+
+    /**
      * Semua template yang dikenal sistem, ringkas — buat layar "pilih lembar
      * kerja" di HP & buat ngecek mana yang geometrinya belum diukur.
      *
+     * ## `$konteks` WAJIB, dan itu yang memperbaiki BUG-005
+     *
+     * Dulu parameter ini tidak ada, jadi `dariProfil($profil)` jalan tanpa alat
+     * — dan `CalibrationProfile::masterStandarTertaut()` menyaring organisasi
+     * lewat `when($equipment?->organization_id !== null, …)`. `when(false, …)`
+     * tidak memasang `where` apa pun, jadi kedua puluh empat profil memilih
+     * baris `standards` milik SEMUA lab: terukur 65 query tanpa saringan dalam
+     * satu panggilan.
+     *
+     * Yang bikin cacat ini bertahan lama: `daftar()` membuang kolom-kolom itu
+     * dan cuma memulangkan hitungan sel, jadi tidak ada satu pun respons yang
+     * kelihatan salah. Yang memisahkan aman dari belum-terlihat cuma satu baris
+     * `$hasil[]` yang kebetulan tidak menyalin field apa pun dari `$template`.
+     *
+     * Dibikin WAJIB, bukan `= null`: dua pintu sebelumnya ditutup dengan
+     * mengandalkan tiap pemanggil ingat menyertakan alat semu, dan pintu ketiga
+     * ini lahir justru karena ada yang tidak ingat. Parameter wajib memindahkan
+     * penjagaannya dari ingatan ke tanda tangan fungsi.
+     *
+     * @param  Equipment  $konteks  alat semu pembawa `organization_id` pemanggil
      * @return list<array<string, mixed>>
      */
-    public function daftar(): array
+    public function daftar(Equipment $konteks): array
     {
         $hasil = [];
 
         foreach ($this->registry->semua() as $profil) {
-            $template = $this->dariProfil($profil);
+            $template = $this->dariProfil($profil, $konteks);
 
             $hasil[] = [
                 'template_id' => $template['template_id'],
@@ -466,9 +506,9 @@ class TemplateLembarKerja
      * Aturan angka buat kolom pembacaan di satu titik.
      *
      * @param  array{min?: float, maks?: float}|null  $pita  rentang yang ditulis
-     *        profilnya per BARIS — dipakai lembar yang nominalnya nggak tercetak
-     *        (Autoklaf: kotak Set Point masih kosong waktu lembarnya dicetak,
-     *        jadi "nominal ±10 %" nggak punya nominal buat dipegang).
+     *                                                       profilnya per BARIS — dipakai lembar yang nominalnya nggak tercetak
+     *                                                       (Autoklaf: kotak Set Point masih kosong waktu lembarnya dicetak,
+     *                                                       jadi "nominal ±10 %" nggak punya nominal buat dipegang).
      * @return array<string, mixed>
      */
     private function aturanPembacaan(

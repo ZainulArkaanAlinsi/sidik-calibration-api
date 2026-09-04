@@ -294,11 +294,24 @@ class BangunUlangSnapshotSertifikat extends Command
     /**
      * Jalur kunci yang isinya beda antara dua snapshot.
      *
-     * Turun ke dalam SELAMA kedua sisi masih array berkunci-nama. Array
-     * berindeks angka — `hasil`, yang isinya baris tabel — dilaporkan utuh
-     * sebagai satu nama: yang dicari orang waktu membaca baris ini "bagian
-     * mana yang berubah", bukan "sel mana", dan `hasil.7.u95` cuma bikin satu
-     * baris ringkasan jadi sepanjang tabelnya.
+     * Turun ke dalam SELAMA kedua sisi masih array — termasuk array berindeks
+     * angka seperti `hasil`, yang isinya baris tabel.
+     *
+     * ## Kenapa baris tabel ikut ditelusuri, padahal semula sengaja tidak
+     *
+     * Versi pertama berhenti di array berindeks angka, dengan alasan
+     * `hasil.7.u95` bikin satu baris ringkasan jadi sepanjang tabelnya. Alasan
+     * itu terdengar masuk akal sampai dipakai.
+     *
+     * 3 Sep 2026, sapuan pertama di produksi: satu sertifikat Spectrophotometer
+     * dilaporkan `berubah: hasil` dua jalan berturut-turut — tidak pernah
+     * konvergen — sementara delapan lainnya diam. `hasil` menyebut BAGIAN-nya,
+     * tapi tabel itu 24 baris dengan sepuluh kolom, dan tanpa menyebut sel mana
+     * tidak ada yang bisa dikerjakan dari situ. Diagnosisnya berhenti di
+     * keluaran yang seharusnya menolong.
+     *
+     * Kekhawatiran soal panjang tetap ditangani, tapi di tempat yang benar:
+     * [daftarKunci] memotong di [KUNCI_DITAMPILKAN] nama pertama.
      *
      * Pembandingnya `==`, sama persis dengan yang dipakai memutuskan
      * berubah-atau-nggak di `handle()`. Kalau dua-duanya tidak sama, ringkasan
@@ -321,7 +334,7 @@ class BangunUlangSnapshotSertifikat extends Command
                 continue;
             }
 
-            if (self::berkunciNama($a) && self::berkunciNama($b)) {
+            if (is_array($a) && is_array($b) && $a !== [] && $b !== []) {
                 $keluar = array_merge($keluar, self::kunciBerubah($a, $b, $jalur));
 
                 continue;
@@ -331,12 +344,6 @@ class BangunUlangSnapshotSertifikat extends Command
         }
 
         return $keluar;
-    }
-
-    /** Array yang kuncinya nama, bukan indeks angka berurutan. */
-    private static function berkunciNama(mixed $nilai): bool
-    {
-        return is_array($nilai) && $nilai !== [] && ! array_is_list($nilai);
     }
 
     /**

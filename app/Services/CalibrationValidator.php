@@ -645,6 +645,35 @@ class CalibrationValidator
         $adaSuhu = is_array($hasil) && ! empty($hasil['suhu']['sensor'] ?? []);
         $adaTekanan = is_array($hasil) && ! empty($hasil['tekanan'] ?? []);
 
+        // "Blok suhu nggak dikirim" dan "blok suhu dikirim tapi kosong total"
+        // BUKAN dua kondisi yang sama, walaupun `$adaSuhu` bernilai `false` di
+        // dua-duanya.
+        //
+        // Yang pertama sah: sesi tekanan-saja itu skenario nyata, dan blok
+        // suhunya di-null-in `AutoclaveCalculator::hitung()`. Yang kedua berarti
+        // teknisi bermaksud mengukur suhu dan hasilnya raib — dan sebelum ini
+        // sesi seperti itu lolos tanpa peringatan APA PUN selama blok tekanannya
+        // berisi data valid, karena penjagaannya `! $adaSuhu && ! $adaTekanan`.
+        //
+        // Sekarang jalur masuknya sudah ditutup (`pastikanAdaBacaanSuhu()` +
+        // penjagaan kalkulator), jadi ini menjaga BARIS LAMA yang terlanjur
+        // tersimpan sebelum perbaikan itu — dan jalur mana pun yang suatu hari
+        // menulis `hasil_autoclave` tanpa lewat keduanya.
+        $suhuKosongPadahalAda = is_array($hasil)
+            && array_key_exists('suhu', $hasil)
+            && is_array($hasil['suhu'])
+            && ! $adaSuhu;
+
+        if ($suhuKosongPadahalAda) {
+            $temuan[] = $this->temuan(
+                self::ERROR,
+                'autoclave_suhu_kosong',
+                'Blok suhu sesi ini ada tapi nol sensor — Kestabilan, Keseragaman & Variasi '
+                    .'kecatat 0 padahal nggak ada yang diukur. Ukur ulang suhunya, atau buang '
+                    .'blok suhunya kalau sesi ini emang cuma tekanan.',
+            );
+        }
+
         if (! $adaSuhu && ! $adaTekanan) {
             $temuan[] = $this->temuan(
                 self::ERROR,

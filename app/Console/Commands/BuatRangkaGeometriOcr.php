@@ -64,7 +64,11 @@ class BuatRangkaGeometriOcr extends Command
 
         if ($registry->untukKode($kode) === null) {
             $this->error("Kode alat `{$kode}` nggak dikenal.");
-            $this->line('Yang ada: '.implode(', ', array_column($template->daftar(), 'template_id')));
+            // `kodeTersedia()`, bukan `daftar()`: yang dibutuhkan cuma nama-namanya.
+            // `daftar()` membangun dua puluh empat lembar lengkap berikut query
+            // masternya, dan sekarang menuntut konteks organisasi yang perintah
+            // CLI ini memang tidak punya.
+            $this->line('Yang ada: '.implode(', ', $template->kodeTersedia()));
 
             return self::FAILURE;
         }

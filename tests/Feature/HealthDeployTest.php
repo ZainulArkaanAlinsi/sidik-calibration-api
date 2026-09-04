@@ -5,16 +5,17 @@ namespace Tests\Feature;
 use Tests\TestCase;
 
 /**
- * `GET /api/health` melaporkan tiga hal tentang container yang SEDANG jalan.
+ * `GET /api/health` melaporkan empat hal tentang container yang SEDANG jalan.
  *
  * ## Kenapa ada
  *
- * Tiga pertanyaan yang selama ini cuma bisa dijawab dengan membuka dashboard
+ * Empat pertanyaan yang selama ini cuma bisa dijawab dengan membuka dashboard
  * penyedia hosting, dan karena itu selalu jadi bolak-balik:
  *
  *   - "build-nya udah naik belum?"            → `deploy.versi`
  *   - "berkasnya masih ilang tiap deploy?"    → `deploy.arsip.awet`
  *   - "seeder masih jalan tiap boot?"         → `deploy.seed_saat_boot`
+ *   - "bangun-ulang masih nyala?"             → `deploy.bangun_ulang_saat_boot`
  *
  * ## Batas yang bikin dia aman dibiarkan tanpa auth
  *
@@ -93,6 +94,37 @@ class HealthDeployTest extends TestCase
         $this->getJson('/api/health')
             ->assertOk()
             ->assertJsonPath('deploy.seed_saat_boot', false);
+    }
+
+    /**
+     * Saklar bangun-ulang dilaporkan apa adanya — dua-duanya diadu.
+     *
+     * Sifatnya sama persis dengan `seed_saat_boot` di atas: `sync: false`,
+     * disetel lewat dashboard Render, dan kerja berat tiap container nyala.
+     * Tapi sampai sekarang cuma satu dari keduanya yang kelihatan dari luar,
+     * dan yang tidak kelihatan justru yang punya tiga langkah:
+     * `docs/deploy-gratis-render.md` menyuruh nyalakan → baca hasilnya di
+     * deploy log → **balikin ke `false`**. Langkah ketiga yang paling gampang
+     * terlupa, dan lupanya tidak menerbitkan error apa pun.
+     *
+     * Yang dibayar kalau terlupa sama persis dengan `seed_saat_boot`: menit
+     * yang diambil dari jendela health check Render yang cuma 15 menit, tiap
+     * deploy, diam-diam. Bedanya cuma ini lebih mahal — dia membangun ulang
+     * snapshot & PDF SELURUH sertifikat yang sudah terbit, bukan sesi contoh.
+     */
+    public function test_bangun_ulang_saat_boot_dilaporkan_dua_duanya(): void
+    {
+        config()->set('deploy.bangun_ulang_saat_boot', true);
+
+        $this->getJson('/api/health')
+            ->assertOk()
+            ->assertJsonPath('deploy.bangun_ulang_saat_boot', true);
+
+        config()->set('deploy.bangun_ulang_saat_boot', false);
+
+        $this->getJson('/api/health')
+            ->assertOk()
+            ->assertJsonPath('deploy.bangun_ulang_saat_boot', false);
     }
 
     /**

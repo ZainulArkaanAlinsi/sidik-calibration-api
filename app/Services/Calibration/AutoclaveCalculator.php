@@ -98,8 +98,33 @@ class AutoclaveCalculator
         $standar = $suhu['standar'] ?? [];
         $indikator = $this->angkaSaja($suhu['indikator'] ?? []);
 
-        if ($disk === [] || $indikator === []) {
-            throw new InvalidArgumentException('Data suhu kosong: butuh minimal 1 disk & indikator.');
+        // `$disk === []` cuma menjaga DAFTARNYA kosong. Tiap SEL boleh `null`
+        // (dan itu benar — sel kosong di tengah lembar memang wajar), jadi tiga
+        // disk berisi lima `null` lolos penjagaan itu: loop di bawah `continue`
+        // di semua iterasi, `$sensor` tetap `[]`, dan Kestabilan, Keseragaman &
+        // Variasi keluar NOL.
+        //
+        // Nol bukan "tidak ada" — nol itu angka yang sangat bagus. Autoklaf
+        // dengan kestabilan 0 °C artinya sempurna, dan angka itu ikut ke
+        // sertifikat terakreditasi tanpa satu pun error di jalan.
+        //
+        // Penjagaan yang dilihat teknisi ada di `pastikanAdaBacaanSuhu()`
+        // (422, pesannya kebaca). Yang di sini lapis kedua buat pemanggil yang
+        // nggak lewat FormRequest — `HitungUlangSesi` salah satunya.
+        $adaAngkaDisk = false;
+
+        foreach ($disk as $bacaanMentah) {
+            if ($this->angkaSaja($bacaanMentah) !== []) {
+                $adaAngkaDisk = true;
+
+                break;
+            }
+        }
+
+        if ($disk === [] || $indikator === [] || ! $adaAngkaDisk) {
+            throw new InvalidArgumentException(
+                'Data suhu kosong: butuh minimal 1 disk & indikator yang ada angkanya.',
+            );
         }
 
         $indikatorRata = $this->rata($indikator);

@@ -216,6 +216,58 @@ class BangunUlangSnapshotSertifikatTest extends TestCase
     }
 
     /**
+     * Perubahan DI DALAM tabel hasil disebut sampai baris & kolomnya.
+     *
+     * Kejadian 3 Sep 2026, sapuan pertama di produksi: satu sertifikat
+     * Spectrophotometer dilaporkan `berubah: hasil` DUA jalan berturut-turut —
+     * tidak pernah konvergen — sementara delapan lainnya diam.
+     *
+     * `hasil` menyebut bagiannya, dan berhenti di situ. Tabel itu 24 baris
+     * dengan sepuluh kolom; tanpa menyebut sel mana, tidak ada yang bisa
+     * dikerjakan dari keluaran itu. Diagnosisnya mentok di baris yang justru
+     * ada buat menolong.
+     *
+     * Batas itu dipasang sengaja sehari sebelumnya, dengan alasan `hasil.7.u95`
+     * bikin barisnya sepanjang tabel. Kekhawatirannya benar, tempatnya yang
+     * salah — yang memotong panjang seharusnya `daftarKunci`, bukan penelusuran
+     * yang berhenti sebelum sampai.
+     */
+    public function test_perubahan_di_dalam_tabel_hasil_disebut_sampai_selnya(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        $basi = $sertifikat->snapshot;
+
+        // Premisnya DITEGASKAN, bukan diandaikan.
+        //
+        // Temuan review: `assertNotEmpty` cuma membuktikan tabelnya ada. Kalau
+        // baris `1` tidak ada, penugasan di bawah MEMBUAT baris baru dan yang
+        // dilaporkan `hasil.1`, bukan `hasil.1.u95`. Kalau `u95` yang tidak
+        // ada, yang diuji jadi penambahan kolom, bukan perubahan nilai.
+        // Dua-duanya menguji hal lain dari yang tertulis di nama test.
+        $this->assertArrayHasKey(1, $basi['hasil'] ?? [], 'Sesi ujinya kurang dari dua titik.');
+        $this->assertArrayHasKey('u95', $basi['hasil'][1], 'Titik ujinya nggak punya kolom u95.');
+
+        // Satu sel di satu baris, sisanya dibiarkan — persis bentuk kasus yang
+        // bikin `berubah: hasil` nggak bisa dipakai.
+        //
+        // Nilainya diturunkan dari yang asli, bukan angka mati: angka mati bisa
+        // kebetulan sama dengan isinya, dan test-nya lalu hijau tanpa ada yang
+        // berubah sama sekali.
+        $basi['hasil'][1]['u95'] = (float) $basi['hasil'][1]['u95'] + 1.0;
+        $sertifikat->update(['snapshot' => $basi]);
+
+        $keluaran = $this->keluaranBangunUlang();
+
+        $this->assertStringContainsString(
+            'hasil.1.u95',
+            $keluaran,
+            'Sel yang berubah nggak kesebut. `berubah: hasil` doang nggak bisa '
+            .'dipakai mendiagnosis tabel 24 baris.',
+        );
+    }
+
+    /**
      * Keluaran perintah apa adanya, buat asersi yang bentuknya "TIDAK boleh
      * ada". `expectsOutputToContain` cuma bisa menegaskan yang ada.
      */
