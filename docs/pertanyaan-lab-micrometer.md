@@ -17,6 +17,13 @@ Yang butuh keputusan manajer teknis ditandai **[PERLU JAWABAN]**. Yang sudah
 diputuskan sepihak oleh kode (karena perilaku benarnya tidak ambigu) ditandai
 **[SUDAH DIHITUNG BENAR]** — tetap perlu dibaca, karena angkanya bergerak.
 
+**Tambahan 4 Sep 2026:** kertas lembar kerja resmi turun sesudah keempat
+workbook dibedah — `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`, satu per rentang.
+Kertas itu **menjawab sebagian** yang tadinya mau ditanyakan (§8) dan
+**mempersempit** §3, jadi dibaca bareng dokumen ini. Bentuk lembarnya sekarang
+mengikuti kertas, bukan sheet `INPUT DATA`; rinciannya di
+`docs/perintah-frontend-micrometer.md`.
+
 ---
 
 ## Ringkasan
@@ -30,6 +37,7 @@ diputuskan sepihak oleh kode (karena perilaku benarnya tidak ambigu) ditandai
 | §5 | Komponen suhu & muai kembar menurut konstruksi | Metode | Tidak — ditiru |
 | §6 | `vi = 200` untuk semua komponen Type B | Metode | Tidak — ditiru |
 | §7 | Sheet `Perhitungan koef. Sensitivitas` mati & salah | Tidak dipakai | Tidak |
+| §8 | Komponen ke-9 nol menurut konstruksi — kertas tidak memungut suhunya | Metode | Tidak — ditiru |
 
 ---
 
@@ -263,6 +271,44 @@ sebagai coretan.
 
 ---
 
+## §8 — Komponen "selisih suhu mikrometer–balok ukur" nol menurut konstruksi **[PERLU JAWABAN]**
+
+Komponen ke-9 budget adalah `|suhu_uut − suhu_balok|`. Di keempat workbook
+master angkanya **nol**, dan bukan kebetulan: kedua suhu itu diisi dengan
+bilangan yang sama, dan bilangan itu rata-rata suhu ruangan.
+
+| Workbook | `suhu_awal` | `suhu_akhir` | rata-rata | `suhu_balok` (O31) | `suhu_uut` (P31) |
+|---|---|---|---|---|---|
+| 0-25 mm | 20,6 | 20,7 | **20,65** | 20,65 | 20,65 |
+| 25-50 mm | 20,5 | 20,6 | **20,55** | 20,55 | 20,55 |
+| 50-75 mm | 20,5 | 20,6 | **20,55** | 20,55 | 20,55 |
+| 75-100 mm | 20,6 | 20,2 | **20,40** | 20,40 | 20,40 |
+
+Empat dari empat. Dan kertas lembar kerja **tidak punya kotak** untuk kedua
+suhu itu — yang dipungut cuma suhu ruangan awal & akhir. Jadi keduanya memang
+diturunkan, bukan diukur terpisah.
+
+**Yang dilakukan kode:** identitas itu diberlakukan — `suhu_balok = suhu_uut =
+(suhu_awal + suhu_akhir) / 2` — dan komponen ke-9 karenanya selalu nol. Dia
+tetap ditulis ke budget supaya susunannya cocok baris demi baris dengan master,
+bukan dibuang. Ditegakkan oleh
+`MicrometerMasterTest::test_suhu_balok_dan_uut_sama_dengan_rata_rata_suhu_ruangan`.
+
+Kenapa tidak dijadikan kotak isian saja "untuk jaga-jaga": dua kotak kembar yang
+bisa diisi beda melahirkan komponen ketidakpastian yang tidak bersumber dari
+pengukuran apa pun. Teknisi yang mengetik 20,6 dan 20,4 karena merasa itu lebih
+teliti akan menaikkan U95 tanpa dasar, dan tidak ada satu pun sel yang memprotes.
+
+**Yang perlu diputuskan lab:** kalau memang mikrometer dan balok ukur pernah
+diukur suhunya terpisah — mis. UUT baru datang dari lapangan dan belum
+menyesuaikan diri — komponen ini punya arti dan kertasnya perlu tambah dua
+kotak. Kalau praktiknya selalu direndam dulu sampai kedua benda satu suhu
+ruangan (yang tersirat dari keempat master), komponen ke-9 sebaiknya **dihapus
+dari budget**, bukan dibiarkan nol: komponen yang selalu nol melatih pembacanya
+melewati kolom itu.
+
+---
+
 ## Lampiran — yang sudah dicocokkan dan COCOK
 
 Supaya jelas apa yang **tidak** dipertanyakan:
@@ -278,3 +324,14 @@ Supaya jelas apa yang **tidak** dipertanyakan:
   pemotongan, `k` meleset 1,8·10⁻⁶; dengan pemotongan, cocok sampai ~10⁻¹⁴.
 - **Rumus drift.** Direproduksi dari tanggalnya sendiri di keempat workbook,
   termasuk pecahan harinya.
+- **44 nominal pra-cetak kertas vs total tumpukan master.** Sebelas titik kali
+  empat rentang, diadu ke total nominal tumpukan balok ukur masing-masing pada
+  toleransi 0,06 mm — nol selisih. Generator
+  `docs/skrip/gen-tabel-standar-micrometer.py` menolak menulis kalau ada satu
+  pun yang meleset.
+
+  Termasuk **titik 3 varian 25-50 mm (31 mm) dan 50-75 mm (51 mm)**, yang
+  keluar dari pola +2,6 mm dan sempat disangka salah ketik kertas. Bukan:
+  totalnya 30,99997 mm dan 51,00025 mm di master. Yang menentukan nominal
+  adalah tumpukan keping yang tersedia di set balok ukur, bukan deret
+  aritmetika.

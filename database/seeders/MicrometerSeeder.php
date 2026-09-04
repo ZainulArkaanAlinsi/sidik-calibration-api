@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Services\Calibration\Profiles\MicrometerProfile;
+use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\KondisiLingkungan;
 use App\Support\MicrometerMentah;
 use Database\Seeders\Concerns\MemanjangkanMasaBerlaku;
@@ -19,7 +20,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Sesi contoh **Micrometer** — alat ke-25, kelompok Dimensi, lampiran
+ * Sesi contoh **Micrometer** — alat ke-25, kelompok Panjang, lampiran
  * akreditasi LK-285-IDN no. 34.
  *
  * ## Kenapa yang ditanam cuma SATU dari empat sesi master
@@ -147,9 +148,23 @@ class MicrometerSeeder extends Seeder
             ['organization_id' => 1, 'alamat' => $m['alamat']],
         );
 
+        // **Panjang**, bukan "Dimensi" — dan bedanya bukan selera penamaan.
+        //
+        // Kategori alat itu yang dipungut `GET /api/categories`, dan daftarnya
+        // HARUS sepuluh kelompok pengukuran lampiran akreditasi, tidak lebih.
+        // Micrometer ada di baris no. 34, kelompok **Panjang**, dan baris
+        // CMC-nya sudah ditaruh di situ oleh `CalibrationCapabilitySeeder`.
+        //
+        // Seeder ini sempat membuat kategori `dimensi` sendiri. Yang lahir dari
+        // situ kategori HANTU: kelompok kesebelas, nol kemampuan kalibrasi di
+        // dalamnya, sementara alat contohnya duduk di sana dan Micrometer tetap
+        // terdaftar di Panjang. Di HP teknisi melihat sebelas kartu kategori
+        // dan satu di antaranya kosong. Nol error di mana pun.
+        //
+        // Dijaga `KategoriAlatIkutLampiranTest`.
         $kategori = EquipmentCategory::updateOrCreate(
-            ['organization_id' => 1, 'kode' => Str::slug('Dimensi')],
-            ['organization_id' => 1, 'nama' => 'Dimensi'],
+            ['organization_id' => 1, 'kode' => Str::slug('Panjang')],
+            ['organization_id' => 1, 'nama' => 'Panjang'],
         );
 
         $alat = Equipment::updateOrCreate(
@@ -218,16 +233,15 @@ class MicrometerSeeder extends Seeder
                     // Blok tingkat-SESI. Pra-evaluasi, suhu, kapasitas, dan
                     // resolusi bukan titik ukur — memaksanya jadi `titik_ke`
                     // melahirkan titik hantu yang selalu gagal hitung ulang.
+                    // Empat kunci saja — yang dipungut KERTAS. Suhu balok ukur
+                    // & suhu UUT diturunkan dari suhu ruangan, dan balok ukur
+                    // pra-evaluasi ditentukan varian; tidak satu pun disimpan
+                    // lagi di sini.
                     MicrometerMentah::KUNCI_SESI => [
                         'satuan' => $m['satuan_alat'],
                         'kapasitas_mm' => (float) $m['kapasitas_mm'],
                         'resolusi_mm' => (float) $m['resolusi_mm'],
-                        'suhu_balok_c' => (float) $m['suhu_balok_c'],
-                        'suhu_uut_c' => (float) $m['suhu_uut_c'],
                         'pra_evaluasi' => array_map('floatval', $data['pra_evaluasi_mm']),
-                        'balok_pra_evaluasi' => array_map('floatval', $data['balok_pra_evaluasi_mm']),
-                        'kerataan_muka' => Str::lower((string) $m['kerataan_muka']),
-                        'kesejajaran_muka' => Str::lower((string) $m['kesejajaran_muka']),
                     ],
                 ],
             ],
@@ -238,14 +252,27 @@ class MicrometerSeeder extends Seeder
 
         $siapHitung = [];
 
-        foreach ($data['titik'] as $titik) {
+        // Nominal & tumpukan datang dari VARIAN kertas, bukan dari sesi master
+        // — jalur yang sama persis dengan `susunBlokMicrometer()`. Angkanya
+        // memang sama (dua-duanya lahir dari workbook yang sama), dan
+        // memakainya dari satu sumber yang sama itu yang menjaga keduanya tidak
+        // menyimpang diam-diam.
+        $tabel = new TabelStandarMicrometer;
+        $varian = $tabel->pitaCmc((float) $m['kapasitas_mm']);
+        $suhuRata = MicrometerMentah::rataSuhuRuang($m['suhu_awal'], $m['suhu_akhir']);
+
+        foreach ($data['titik'] as $i => $titik) {
             $titikKe = (int) $titik['titik_ke'];
-            // Titik ukur = total nominal CETAK tumpukan. Nilai terkoreksinya
-            // datang dari tabel standar waktu dihitung, bukan disimpan di sini.
-            $titikUkur = array_sum(array_map('floatval', $titik['nominal_mm']));
+            $bawaan = $varian['titik'][$i] ?? null;
+
+            if ($bawaan === null) {
+                continue;
+            }
+
+            $titikUkur = (float) $bawaan['nominal_cetak_mm'];
 
             $deret = [
-                MicrometerMentah::PERAN_BALOK => array_map('floatval', $titik['nominal_mm']),
+                MicrometerMentah::PERAN_BALOK => array_map('floatval', $bawaan['tumpukan_mm']),
                 MicrometerMentah::PERAN_PEMBACAAN => array_map('floatval', $titik['pembacaan_mm']),
             ];
 
@@ -286,6 +313,7 @@ class MicrometerSeeder extends Seeder
                     MicrometerMentah::PERAN_PEMBACAAN => $deret[MicrometerMentah::PERAN_PEMBACAAN],
                     'spesifikasi_alat' => $sesi->spesifikasi_alat,
                     'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
+                    'suhu_ruang_rata' => $suhuRata,
                 ],
             ];
         }

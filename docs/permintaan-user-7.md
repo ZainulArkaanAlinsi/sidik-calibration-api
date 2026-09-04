@@ -1827,13 +1827,13 @@ ditanya asesor jawabannya sudah tertulis. Serah-terima: `docs/perintah-direktori
 
 ---
 
-## 17. Alat baru **Micrometer** (Dimensi) — 4 Sep 2026
+## 17. Alat baru **Micrometer** (Panjang) — 4 Sep 2026
 
 Empat workbook master turun sekaligus (`Master_Olah_Data_Micrometer_025mm.xlsm`,
 `_2550mm`, `_5075mm`, `_75100mm`, semuanya ber-password). Pemilik proyek
 menyebutnya "4 alat baru" — **ternyata satu alat, empat rentang ukur**: baris
-lampiran akreditasi LK-285-IDN **no. 34 Micrometer**, dan ini yang PERTAMA di
-kelompok Dimensi.
+lampiran akreditasi LK-285-IDN **no. 34 Micrometer**, kelompok **Panjang** — dan
+yang pertama BERPROFIL di kelompok itu.
 
 Yang membuktikan itu satu alat: sheet `PERHITUNGAN` dan `PERHITUNGAN U95%`
 keempat workbook identik baris demi baris, tabel balok ukurnya identik (32
@@ -1859,7 +1859,7 @@ Disebut SEBELUM mengetik, sesuai §12:
 | `app/Services/Calibration/MicrometerCalculator.php` | mesin hitung, 9 komponen tingkat-sesi |
 | `app/Services/Calibration/Profiles/MicrometerProfile.php` | bentuk lembar + `hitungPerGrup()` |
 | `app/Support/MicrometerMentah.php` | penyusun ulang tumpukan balok + deret pembacaan |
-| `database/seeders/MicrometerSeeder.php` | satu sesi contoh, angkanya DIHITUNG |
+| `database/seeders/MicrometerSeeder.php` | empat sesi contoh, angkanya DIHITUNG |
 | `database/ocr-templates/micrometer-v1.json` | rangka geometri, digenerate `ocr:rangka-geometri` |
 | `CalibrationProfileRegistry`, `CalibrationValidator`, `HitungUlangSesi`, `CalibrationController` | pendaftaran + dua jalur hitung ulang + jalur simpan |
 | `tests/Unit/MicrometerMasterTest.php` + `tests/Fixtures/micrometer-master.json` | adu ke empat master |
@@ -1890,7 +1890,51 @@ Lengkapnya di `docs/pertanyaan-lab-micrometer.md`. Dua yang paling tajam:
    Keempat workbook disimpan selang dua menit dan umur driftnya sudah beda
    (695,4212 vs 695,4225 hari). Kode memakai tanggal kalibrasi sesi.
 
-Serah-terima frontend: `docs/perintah-frontend-micrometer.md`.
+### Kertasnya turun belakangan — lembar disetel ulang ke kertas
+
+Sesudah semuanya di atas hijau, pemilik proyek mengirim **kertas lembar kerja
+resminya**: `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`, empat, satu per rentang. Bentuk
+lembar yang tadinya ditebak dari sheet `INPUT DATA` Excel disetel ulang
+mengikuti kertas — permintaan 6 memang memerintahkan lembar mengikuti PDF resmi.
+
+Yang berubah:
+
+| | Sebelum (dari `INPUT DATA`) | Sesudah (dari kertas) |
+|---|---|---|
+| Nomor formulir | `null` — dikira belum ada kertasnya | **empat**, dipilih dari `equipments.range_max` |
+| Bagian | 7 | **6** — `pra_evaluasi` & `pemeriksaan_muka` hilang |
+| Tabel `hasil` | 2 (`mikro_balok` + `mikro_pembacaan`) | **1**, 11 baris **pra-cetak**, `titik_bisa_diubah = false` |
+| Nominal titik | diketik teknisi | **dipatok kertas** — server memenangkannya atas kiriman HP |
+| Tumpukan balok ukur | dikirim HP | **disusun server** dari varian |
+| Blok pra-evaluasi | 2 tabel + 2 field suhu | **1 baris `Evaluasi`** (X1..X10) |
+| Suhu balok ukur & UUT | 2 kotak isian | **diturunkan** dari rata-rata suhu ruangan |
+| Template OCR | field datar | **2 tabel / 65 sel** |
+
+Dua yang perlu dicatat karena keduanya keputusan, bukan penyesuaian mekanis:
+
+1. **Suhu balok ukur & UUT diturunkan, tidak diminta.** Kertas tidak punya
+   kotaknya, dan di **keempat** workbook master `suhu_balok = suhu_uut =
+   (suhu_awal + suhu_akhir) / 2`. Jadi identitas itu diberlakukan dan
+   ditegakkan test. Akibatnya komponen ke-9 budget ("selisih suhu mikrometer
+   dengan balok ukur") selalu nol menurut konstruksi — ditiru apa adanya, dan
+   diangkat sebagai pertanyaan lab §8.
+2. **Kategori alatnya `Panjang`, bukan "Dimensi".** Seeder-nya sempat membuat
+   kategori sendiri bernama Dimensi — kelompok yang tidak ada di lampiran.
+   Yang lahir dari situ kategori HANTU: kartu kesebelas di layar pilih
+   kategori HP, nol kemampuan kalibrasi di dalamnya, sementara alat contohnya
+   duduk di sana dan baris CMC Micrometer tetap di Panjang. Nol error di kedua
+   sisi; ketahuan waktu daftar kategori HP diadu ke lampiran. Sekarang dijaga
+   `KategoriAlatIkutLampiranTest`, yang menyapu SEMUA kategori ter-seed, bukan
+   cuma Micrometer.
+3. **44 nominal pra-cetak diadu ke total tumpukan master**, toleransi 0,06 mm,
+   nol selisih — generatornya menolak menulis kalau ada yang meleset. Termasuk
+   titik 3 varian 25-50 mm (31 mm) dan 50-75 mm (51 mm), yang keluar dari pola
+   +2,6 mm dan sempat disangka salah ketik kertas. **Kertasnya benar**: total
+   masternya 30,99997 dan 51,00025 mm. Yang menentukan nominal adalah tumpukan
+   keping yang tersedia, bukan deret aritmetika.
+
+Serah-terima frontend: `docs/perintah-frontend-micrometer.md` — **ditulis ulang
+penuh** untuk bentuk kertas ini; revisi lamanya sudah tidak berlaku.
 
 ---
 
@@ -1948,6 +1992,71 @@ Jangan ditanyakan ulang.
 | **S1** | **UI pindai DINYALAKAN lagi** (25 Agt 2026) — ini MEMBALIK permintaan 3, yang dulu minta UI pindai dicabut "untuk sekarang". Saklarnya tetap ada supaya bisa dimatikan lagi tanpa ganti kode | pemilik proyek |
 | **S2** | Pakai tabel `worksheet_scans`/`worksheet_scan_cells` yang sudah ada. **Tidak** membuat `ocr_scans` baru | pemilik proyek |
 | **S3** | **SEMUA lembar bisa dipindai** (25 Agt 2026) — bukan cuma Enclosure, bukan cuma yang kimia. Kesembilan berkas geometri yang kurang sudah dibuat, jadi **17/17 punya template** | pemilik proyek |
+
+## 19. Sisi HP lembar Micrometer — 4 Sep 2026
+
+Diminta pemilik proyek langsung sesudah §17: *"sekarang kerjain sisi mobile nya ya"*.
+
+### Yang ternyata TIDAK perlu dibuat
+
+Penggambar lembar di HP jauh lebih data-driven daripada dugaan awal. Empat hal
+yang disangka pekerjaan baru sudah ada dan generik: `titik_bisa_diubah` (bawaan
+`false`, jadi baris terkunci jalan sendiri), `simpan_ke`, `offset_kunci`, dan
+render `belum_dihitung`. Kategorinya pun tidak perlu ditambah — lihat catatan
+kategori hantu di §17.
+
+Yang dikerjakan tinggal empat: mock lembar (**digenerate** dari respons server,
+bukan diketik), cabang `'micrometer'` di `lembar_kerja_service.dart`, satuan
+alat masuk `_kodePenentuAngka` supaya teknisi DITANYA kalau belum memilihnya,
+dan `test/micrometer_lembar_test.dart` (9 test).
+
+### Tiga cacat SERVER yang ketahuan justru dari sini
+
+Ini nilai sebenarnya dari mengerjakan sisi HP-nya. Ketiganya lolos seluruh
+sapuan backend — 3.128 test hijau — karena test backend memakai payload yang
+DITULIS backend sendiri. Yang menangkapnya cuma mengadu payload HP yang asli ke
+bentuk lembarnya:
+
+1. **Kode kolom tabel `nilai`.** Dua puluh empat lembar lain memakai
+   `pembacaan`, dan itu satu-satunya kode yang dibaca jalur datar HP
+   (`TitikState.toSubmission()` membacanya harfiah). Server menengok
+   `measurements[].mikro_pembacaan` yang tidak pernah dikirim siapa pun:
+   **nol baris tersimpan, nol hitungan**, tanpa satu pun error di kedua sisi.
+   Sesi yang dikirim teknisi bakal sampai ke admin sebagai lembar KOSONG.
+2. **Blok Evaluasi bentuk tabel.** HP mengirim setiap tabel ber-`simpan_ke`
+   sebagai cerminan tabelnya (`{baris: [{titik_ukur, pembacaan: […]}]}`), bukan
+   larik datar — sama seperti blok keterulangan Timbangan. Server menuntut
+   larik datar, jadi **setiap sesi Micrometer dari HP pulang 422**, dengan
+   keluhan yang menunjuk sepuluh angka yang sudah benar diisi teknisi.
+3. **Pembacaan Evaluasi tidak ikut dikonversi satuan.** Sekarang dikonversi, dan
+   di **kedua** bentuk (tabel maupun datar). Melewatkan yang datar berarti dua
+   bentuk yang membawa angka sama berarti beda, tanpa ada error yang
+   membedakannya — satuan itu sifat SESI, bukan sifat pembungkus payload.
+
+Ketiganya ditambal di sisi server, dan yang menjaganya sekarang test di KEDUA
+repo: `MicrometerSesiTest` mengirim bentuk HP yang asli, `micrometer_lembar_test.dart`
+mengunci bentuk yang dikirim HP. Satu test saja di salah satu sisi tidak cukup —
+itu yang membuat ketiganya bisa lolos sejak awal.
+
+### Dua sapuan umum yang lahir dari sini
+
+Ditulis sebagai ATURAN, bukan tambalan satu profil — keduanya kelas kegagalan
+yang sudah berulang:
+
+- **`SemuaProfilLembarKerjaTest::test_tabel_sekunci_tidak_berbagi_kunci_baris`.**
+  Dua tabel yang di HP berbagi `kunciTabel` tidak boleh berbagi kunci baris.
+  Sudah tiga kali: Thermohygrometer (set point 50 di dua blok), Timbangan
+  (Accuracy vs Repeatability), Micrometer (Evaluasi vs Data Kalibrasi — belum
+  sempat menggigit, cuma karena tidak ada nominal 1,0 mm). Sapuan ini
+  membuktikan gigitannya dengan mencabut `offset_kunci` Timbangan: merah, lalu
+  hijau lagi sesudah dikembalikan.
+- **`KategoriAlatIkutLampiranTest`.** Kategori alat = sepuluh kelompok
+  pengukuran lampiran akreditasi, titik. Menyapu SEMUA kategori ter-seed, bukan
+  cuma Micrometer.
+
+Serah-terima lengkapnya: `docs/perintah-frontend-micrometer.md` §9 & §9a.
+
+---
 
 ## Permintaan 16 — U95 per titik di sertifikat instrumen analitik
 
@@ -2099,7 +2208,7 @@ berkas profil.
 | G7 | Tiga alat suhu baru (perm. 10) — Thermocouple, Termometer Gelas, Thermohygrometer | **BERES di server** (26 Agt 2026) — profil + olah data + geometri OCR + CSV. Angkanya cocok sama ketiga workbook master sampai digit terakhir; dijaga `Suhu3AlatMasterTest` (15 test) & `Suhu3AlatLembarKerjaTest` (14 test). **Sisi mobile BERES** (26–27 Agt 2026): layar lembar kerja tabel pasangan (mobile#108), golden ketiga lembar + generator golden tanpa Mac (mobile#111), dua deret pembacaan dipecah di layar detail (mobile#112), dan tiga field sesi (`alat_bantu`, `tipe_pencelupan`, `titik_es`) kebaca admin (api#111 + mobile#113). Nama alat bantu diresolusi SERVER lewat `CalibrationProfile::labelAlatBantu()` — kodenya (`A`/`satu`) cuma punya arti di daftar `pilihan` milik profilnya, jadi peta kode→nama JANGAN disalin ke HP |
 | G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Tiga belas pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md`; §4/§5/§7/§11 **ditutup 1 Sep 2026** oleh arahan pemilik proyek "pakai rumus Excel", menyisakan §8/§9 dan dua yang menyangkut dokumen terbit (§10 tanda koreksi, §13 kalimat `k`) plus satu permintaan data (workbook Timer yang keempat bloknya hidup). **Sisi mobile BERES** (1 Sep 2026, PR mobile #139) — ketiga lembar bisa diisi & dikirim dari HP tanpa layar baru; menyambungkannya membongkar tiga cacat lama yang gagal tanpa error: lembar Thermohygro terkirim KOSONG, tombol FOTO TABEL INI mengisi nol sel di lima lembar berpasangan, dan kolom U95 memakai desimal kolom hasil. Jalur kamera cloud tetap MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
 | G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B  **Ditambah 2 Sep 2026: direktori lokal** — 10.320 PT (Jababeka 450 + Indonetwork 9.870) bisa dicari ±10 ms tanpa keluar server, lewat tabel rujukan terpisah `direktori_lokal` dan driver baru yang memenuhi kontrak `DirektoriPerusahaan` yang sudah ada. **Nol berkas berubah di sisi HP, nol tambahan ukuran APK.** Menyeed ke `customers` sengaja DITOLAK: `SimpananPelanggan` menyalin seluruh daftar pelanggan ke SharedPreferences yang dibaca utuh ke memori tiap aplikasi nyala — diukur **1,36 MB JSON** per buka aplikasi. Satu bug ketemu & dikunci test: `tersedia()` di service provider bikin **`/api/health` 500** waktu tabelnya belum ada. 22 test baru. Rinciannya §16 F |
-| G11 | Alat baru **Micrometer** (Dimensi, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. **Sisi HP belum dikerjakan** — `docs/perintah-frontend-micrometer.md` |
+| G11 | Alat baru **Micrometer** (Panjang, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. Lembar lalu **disetel ulang ke kertas resmi** `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` yang turun belakangan: nomor formulir per rentang, 6 bagian, 11 nominal pra-cetak, suhu balok/UUT diturunkan dari suhu ruangan. **Sisi HP BERES** juga (§19) — dan justru dari situ tiga cacat server ketahuan, ketiganya lolos 3.128 test backend karena test backend memakai payload yang ditulis backend sendiri |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai

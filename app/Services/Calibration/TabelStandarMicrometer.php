@@ -112,7 +112,19 @@ class TabelStandarMicrometer
      * `null` BUKAN "pakai angka generik": pemanggil wajib memblokir titiknya
      * dengan alasan kebaca, bukan meneruskan.
      *
-     * @return array{kode: string, label: string, kapasitas_min_mm: float, kapasitas_maks_mm: float, u95_um: float}|null
+     * Pita yang dipulangkan juga membawa bentuk KERTASnya — nomor formulir,
+     * judul rentang, sebelas nominal pra-cetak, dan balok ukur pra-evaluasi.
+     * Satu daftar, bukan dua: pita CMC dan varian kertas itu pembagian yang
+     * SAMA (0-25/25-50/50-75/75-100 mm), dan memisahkannya jadi dua tabel
+     * berarti dua tempat yang harus ingat diperbarui bareng.
+     *
+     * Tiap titik membawa `nominal_cetak_mm` DAN `tumpukan_mm` — sampai lima
+     * keping (51,0 varian C dibentuk 1,5 + 6,0 + 1,6 + 40,0 + 1,9). Yang
+     * disimpan ke `raw_measurements` tumpukannya, bukan cuma nominal cetaknya:
+     * kalau set balok ukur lab berganti tahun depan, sesi lama harus tetap
+     * menghitung ulang dengan keping yang BENAR-BENAR dipakai waktu itu.
+     *
+     * @return array{kode: string, label: string, kode_dokumen: string, judul_rentang: string, kapasitas_min_mm: float, kapasitas_maks_mm: float, u95_um: float, balok_pra_evaluasi_mm: list<float>, titik: list<array{nominal_cetak_mm: float, tumpukan_mm: list<float>}>}|null
      */
     public function pitaCmc(float $kapasitasMm): ?array
     {

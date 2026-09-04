@@ -282,6 +282,9 @@ class HitungUlangSesi extends Command
                         // `NOW()`, dan karena itu U95 sesi yang sama tidak
                         // pernah terulang. Diabaikan profil lain.
                         'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
+                        // Rata-rata suhu ruangan MENTAH — sumber suhu balok
+                        // ukur & suhu UUT Micrometer. Diabaikan profil lain.
+                        'suhu_ruang_rata' => MicrometerMentah::rataSuhuRuang($sesi->suhu_awal, $sesi->suhu_akhir),
                     ],
                 ];
             }

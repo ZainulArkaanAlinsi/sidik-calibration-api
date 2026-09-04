@@ -71,30 +71,400 @@
     {
       "kode": "A",
       "label": "CMC 0-25mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.A_Rev.1",
+      "judul_rentang": "0-25 mm",
       "kapasitas_min_mm": 0.0,
       "kapasitas_maks_mm": 25.0,
-      "u95_um": 0.83
+      "u95_um": 0.83,
+      "balok_pra_evaluasi_mm": [
+        20.0,
+        5.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 0.0,
+          "tumpukan_mm": []
+        },
+        {
+          "nominal_cetak_mm": 2.5,
+          "tumpukan_mm": [
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 5.1,
+          "tumpukan_mm": [
+            1.1,
+            2.5,
+            1.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 7.7,
+          "tumpukan_mm": [
+            1.7,
+            6.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 10.3,
+          "tumpukan_mm": [
+            2.5,
+            1.8,
+            6.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 12.9,
+          "tumpukan_mm": [
+            1.9,
+            11.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 15.0,
+          "tumpukan_mm": [
+            6.0,
+            9.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 17.6,
+          "tumpukan_mm": [
+            1.6,
+            16.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 20.2,
+          "tumpukan_mm": [
+            1.2,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 22.8,
+          "tumpukan_mm": [
+            1.8,
+            21.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 25.0,
+          "tumpukan_mm": [
+            6.0,
+            19.0
+          ]
+        }
+      ]
     },
     {
       "kode": "B",
       "label": "CMC 25-50mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.B_Rev.1",
+      "judul_rentang": "25-50 mm",
       "kapasitas_min_mm": 25.0,
       "kapasitas_maks_mm": 50.0,
-      "u95_um": 0.87
+      "u95_um": 0.87,
+      "balok_pra_evaluasi_mm": [
+        50.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 25.0,
+          "tumpukan_mm": [
+            6.0,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 27.5,
+          "tumpukan_mm": [
+            2.5,
+            6.0,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 31.0,
+          "tumpukan_mm": [
+            14.0,
+            17.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 32.7,
+          "tumpukan_mm": [
+            1.8,
+            16.0,
+            1.9,
+            13.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 35.3,
+          "tumpukan_mm": [
+            1.3,
+            13.0,
+            21.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 37.9,
+          "tumpukan_mm": [
+            1.3,
+            19.0,
+            1.6,
+            16.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 40.0,
+          "tumpukan_mm": [
+            40.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 42.6,
+          "tumpukan_mm": [
+            1.1,
+            21.0,
+            1.5,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 45.2,
+          "tumpukan_mm": [
+            1.1,
+            40.0,
+            1.6,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 47.8,
+          "tumpukan_mm": [
+            1.8,
+            6.0,
+            40.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 50.0,
+          "tumpukan_mm": [
+            50.0
+          ]
+        }
+      ]
     },
     {
       "kode": "C",
       "label": "CMC 50-75mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.C_Rev.1",
+      "judul_rentang": "50-75 mm",
       "kapasitas_min_mm": 50.0,
       "kapasitas_maks_mm": 75.0,
-      "u95_um": 0.91
+      "u95_um": 0.91,
+      "balok_pra_evaluasi_mm": [
+        75.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 50.0,
+          "tumpukan_mm": [
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 52.5,
+          "tumpukan_mm": [
+            2.5,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 51.0,
+          "tumpukan_mm": [
+            1.5,
+            6.0,
+            1.6,
+            40.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 57.7,
+          "tumpukan_mm": [
+            1.7,
+            6.0,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 60.3,
+          "tumpukan_mm": [
+            1.3,
+            9.0,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 62.9,
+          "tumpukan_mm": [
+            1.7,
+            7.5,
+            1.8,
+            50.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 65.0,
+          "tumpukan_mm": [
+            1.1,
+            11.0,
+            1.2,
+            50.0,
+            1.7
+          ]
+        },
+        {
+          "nominal_cetak_mm": 67.6,
+          "tumpukan_mm": [
+            1.5,
+            2.5,
+            1.7,
+            60.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 70.2,
+          "tumpukan_mm": [
+            1.2,
+            60.0,
+            1.5,
+            7.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 72.8,
+          "tumpukan_mm": [
+            1.2,
+            1.6,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 75.0,
+          "tumpukan_mm": [
+            75.0
+          ]
+        }
+      ]
     },
     {
       "kode": "D",
       "label": "CMC 75-100mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.D_Rev.1",
+      "judul_rentang": "75-100 mm",
       "kapasitas_min_mm": 75.0,
       "kapasitas_maks_mm": 100.0,
-      "u95_um": 0.91
+      "u95_um": 0.91,
+      "balok_pra_evaluasi_mm": [
+        100.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 75.0,
+          "tumpukan_mm": [
+            75.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 77.5,
+          "tumpukan_mm": [
+            7.5,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 80.1,
+          "tumpukan_mm": [
+            1.1,
+            9.0,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 82.7,
+          "tumpukan_mm": [
+            1.8,
+            70.0,
+            1.9,
+            9.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 85.3,
+          "tumpukan_mm": [
+            1.3,
+            80.0,
+            1.5,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 87.9,
+          "tumpukan_mm": [
+            1.7,
+            2.5,
+            1.8,
+            80.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 90.0,
+          "tumpukan_mm": [
+            90.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 92.6,
+          "tumpukan_mm": [
+            1.1,
+            1.5,
+            90.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 95.2,
+          "tumpukan_mm": [
+            1.2,
+            90.0,
+            1.5,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 97.8,
+          "tumpukan_mm": [
+            1.6,
+            2.5,
+            1.8,
+            90.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 100.0,
+          "tumpukan_mm": [
+            100.0
+          ]
+        }
+      ]
     }
   ],
   "konstanta": {

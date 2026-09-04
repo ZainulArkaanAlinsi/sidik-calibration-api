@@ -10,6 +10,7 @@ use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Support\MicrometerMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -48,35 +49,27 @@ class MicrometerSesiTest extends TestCase
             'tanggal_kalibrasi' => '2025-05-02',
             'suhu_awal' => 20.5, 'suhu_akhir' => 20.6,
             'kelembaban_awal' => 41, 'kelembaban_akhir' => 40,
+            // Tiga baris PERTAMA kertas varian B (25,0 / 27,5 / 31,0 mm).
+            // Nominalnya tidak dikirim — dia dipatok kertas, dan urutan baris
+            // yang menentukan titik mana. Tumpukan baloknya diturunkan server.
+            // `titik_ukur` ikut dikirim karena HP memang menggambarnya dari
+            // bentuk lembar — tapi yang DIPAKAI server nominal varian, bukan
+            // yang dikirim. Lihat
+            // `test_nominal_dari_varian_menang_atas_yang_dikirim_hp`.
             'measurements' => [
-                [
-                    'titik_ukur' => 25.0,
-                    MicrometerMentah::PERAN_BALOK => [25.0],
-                    MicrometerMentah::PERAN_PEMBACAAN => [25.001, 25.0, 25.001, 25.0, 25.001],
-                ],
-                [
-                    'titik_ukur' => 40.0,
-                    MicrometerMentah::PERAN_BALOK => [40.0],
-                    MicrometerMentah::PERAN_PEMBACAAN => [40.002, 40.001, 40.002, 40.001, 40.002],
-                ],
-                // Titik BERTUMPUK — dua keping di-wringing. Ini bentuk yang
-                // menyingkap `ci` master memakai keping pertama, bukan total.
-                [
-                    'titik_ukur' => 50.0,
-                    MicrometerMentah::PERAN_BALOK => [40.0, 9.0],
-                    MicrometerMentah::PERAN_PEMBACAAN => [49.003, 49.002, 49.003, 49.002, 49.003],
-                ],
+                ['titik_ukur' => 25.0, 'pembacaan' => [25.001, 25.0, 25.001, 25.0, 25.001]],
+                ['titik_ukur' => 27.5, 'pembacaan' => [27.502, 27.501, 27.502, 27.501, 27.502]],
+                ['titik_ukur' => 31.0, 'pembacaan' => [31.003, 31.002, 31.003, 31.002, 31.003]],
             ],
             'spesifikasi_alat' => [
                 'rentang_ukur' => '25-50', 'kapasitas' => '50', 'resolusi' => '0.001',
+                // Empat kunci saja — yang dipungut kertas. Suhu balok ukur &
+                // suhu UUT diturunkan dari `suhu_awal`/`suhu_akhir` di atas.
                 MicrometerMentah::KUNCI_SESI => [
                     'satuan' => 'mm',
                     'kapasitas_mm' => 50.0,
                     'resolusi_mm' => 0.001,
-                    'suhu_balok_c' => 20.55,
-                    'suhu_uut_c' => 20.55,
                     'pra_evaluasi' => [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.001, 50.0, 50.0],
-                    'balok_pra_evaluasi' => [50.0],
                 ],
             ],
             ...$ganti,
@@ -95,8 +88,13 @@ class MicrometerSesiTest extends TestCase
     }
 
     /**
-     * Tumpukan balok ukur dan deret pembacaan disimpan sebagai baris
-     * ber-`peran_sensor` yang TERPISAH — bukan satu deret campuran.
+     * Tumpukan balok ukur DITURUNKAN server dari varian kertas, lalu disimpan
+     * bersama pembacaannya sebagai baris ber-`peran_sensor` yang TERPISAH.
+     *
+     * Titik 3 varian B nominalnya 31,0 mm dan tumpukannya 14 + 17 — angka yang
+     * tidak pernah dikirim HP. Kalau suatu saat tumpukan itu ikut dikirim dari
+     * luar, sesi bisa lahir dengan balok ukur yang berbeda dari yang tercetak
+     * di lembarnya sendiri.
      */
     public function test_payload_hp_tersimpan_sebagai_dua_peran(): void
     {
@@ -116,12 +114,190 @@ class MicrometerSesiTest extends TestCase
         $baca = $baris->where('peran_sensor', MicrometerMentah::PERAN_PEMBACAAN)
             ->sortBy('sensor_ke')->pluck('pembacaan')->map('floatval')->all();
 
-        $this->assertSame([40.0, 9.0], array_values($balok), 'tumpukan balok ukur titik 3');
+        $this->assertSame([14.0, 17.0], array_values($balok), 'tumpukan balok ukur titik 3 varian B');
         $this->assertCount(5, $baca);
-        $this->assertEqualsWithDelta(49.003, $baca[0], self::TOLERANSI);
+        $this->assertEqualsWithDelta(31.003, $baca[0], self::TOLERANSI);
+
+        // Titik ukur yang tersimpan = nominal PRA-CETAK kertas, bukan angka
+        // yang dikirim HP.
+        $this->assertEqualsWithDelta(31.0, (float) $baris->first()->titik_ukur, self::TOLERANSI);
 
         // Satuan simpan SELALU mm — lihat MicrometerMentah::SATUAN.
         $this->assertSame([MicrometerMentah::SATUAN], $baris->pluck('satuan')->unique()->all());
+    }
+
+    /**
+     * Nominal yang DIPAKAI datang dari varian kertas, bukan dari `titik_ukur`
+     * yang dikirim HP.
+     *
+     * Bedanya menentukan: nominal itu yang jadi kolom `Standard` di sertifikat.
+     * Kalau HP yang menentukannya, satu payload salah bentuk — atau satu versi
+     * HP yang bentuk lembarnya sudah basi — menerbitkan sertifikat dengan
+     * nominal yang tidak pernah ada di kertas manapun, dan tidak ada satu pun
+     * error yang muncul.
+     */
+    public function test_nominal_dari_varian_menang_atas_yang_dikirim_hp(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        // Angka ngawur dari HP.
+        $payload['measurements'][2]['titik_ukur'] = 999.0;
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $titikUkur = RawMeasurement::where('calibration_session_id', $id)
+            ->where('titik_ke', 3)
+            ->value('titik_ukur');
+
+        $this->assertEqualsWithDelta(31.0, (float) $titikUkur, self::TOLERANSI);
+    }
+
+    /**
+     * Bentuk yang BENAR-BENAR dikirim HP untuk baris `Evaluasi` diterima, dan
+     * pembacaannya dikonversi ke mm.
+     *
+     * ## Kenapa test ini ada
+     *
+     * Tabel `Evaluasi` menyatakan `simpan_ke:
+     * spesifikasi_alat.micrometer.pra_evaluasi`, dan HP mengirim SETIAP tabel
+     * ber-`simpan_ke` sebagai cerminan tabel yang digambarnya —
+     * `{ baris: [ { titik_ukur, nilai: [...] } ] }` — bukan deret datar.
+     * (`LembarKerjaState._tanamTabelSpesifikasi()` di repo HP; Timbangan sudah
+     * memakai bentuk yang sama untuk blok keterulangannya.)
+     *
+     * Payload `payload()` di atas memakai bentuk DATAR, yaitu bentuk yang
+     * ditulis seeder — jadi seluruh test lain di berkas ini tetap hijau
+     * sekalipun jalur HP-nya putus. Dua kegagalan yang lolos dari situ, dan
+     * dua-duanya tanpa satu pun error:
+     *
+     *  1. Deret bersarang kena aturan `pra_evaluasi.* => numeric` dan pulang
+     *     **422**. Kegagalannya memang kelihatan — tapi yang gagal SETIAP sesi
+     *     Micrometer dari HP, dengan keluhan yang menunjuk sepuluh angka yang
+     *     sudah benar diisi teknisi.
+     *  2. Pembacaannya tidak ikut dikonversi satuan → sesi `inch` menghitung
+     *     simpangan baku ~25× terlalu kecil, komponen pengulangan nyaris
+     *     hilang, dan U95 mendarat di lantai CMC — dan yang ini **tanpa satu
+     *     pun error**.
+     */
+    public function test_baris_evaluasi_bentuk_tabel_hp_diterima_dan_dikonversi(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $bacaan = [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.001, 50.0, 50.0];
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'] = [
+            'baris' => [
+                ['titik_ukur' => 1.0, 'pembacaan' => $bacaan],
+            ],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $tersimpan = CalibrationSession::findOrFail($id)
+            ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi'];
+
+        // Yang TERSIMPAN sudah datar — jalur hitung ulang membaca kolom ini apa
+        // adanya, jadi bentuk mentah yang lolos ke DB bakal memblokir sesinya
+        // tiap kali dihitung ulang.
+        $this->assertCount(10, $tersimpan);
+        $this->assertEqualsWithDelta($bacaan, array_map('floatval', $tersimpan), self::TOLERANSI);
+
+        // Dan sesinya beneran TERBIT — bukan nol baris hitungan.
+        $this->assertNotEmpty(
+            CalibrationSession::findOrFail($id)->uncertaintyCalculations,
+            'Sesi terbit dengan nol baris hitungan — pra-evaluasi tidak terbaca.',
+        );
+    }
+
+    /**
+     * Bentuk tabel HP + satuan `inch`: yang tersimpan mm.
+     *
+     * Dipisah dari test di atas supaya kegagalannya bisa dibedakan — bentuk
+     * yang tidak terbaca dan satuan yang tidak dikonversi punya tambalan yang
+     * beda, dan satu test yang menguji dua-duanya cuma bilang "ada yang salah".
+     */
+    public function test_baris_evaluasi_bentuk_tabel_hp_ikut_konversi_satuan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['satuan'] = 'inch';
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'] = [
+            'baris' => [
+                ['titik_ukur' => 1.0, 'pembacaan' => array_fill(0, 10, 2.0)],
+            ],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $tersimpan = CalibrationSession::findOrFail($id)
+            ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi'];
+
+        // 2 inch = 50,8 mm. Tanpa konversi yang tersimpan tetap 2.
+        $this->assertEqualsWithDelta(array_fill(0, 10, 50.8), array_map('floatval', $tersimpan), self::TOLERANSI);
+    }
+
+    /**
+     * Nomor formulir ikut VARIAN, dan variannya dipilih dari kapasitas alat.
+     *
+     * Empat kertas, empat nomor. Salah varian berarti kop lembar terakreditasi
+     * mencetak nomor formulir yang bukan miliknya — temuan audit yang tidak
+     * menghasilkan satu pun error.
+     *
+     * Keempatnya diadu, bukan cuma varian alat contoh. Test ini yang DITUNJUK
+     * `SemuaProfilLembarKerjaTest::test_nomor_formulir_ada_kecuali_yang_kertasnya_belum_ada`
+     * waktu memaklumi `kode_dokumen` null pada panggilan tanpa alat: di sapuan
+     * itu `micrometer` terdaftar sebagai nomor-per-varian, dan yang menjaga
+     * sisi terisinya cuma di sini. Kalau tabel variannya suatu saat gagal
+     * termuat, sapuan itu tetap hijau — yang merah harus test ini.
+     *
+     * Batas pitanya `<=`, jadi 25 mm masuk varian A dan bukan B; itu ditiru
+     * dari `INPUT DATA!F5` master, bukan dipilih di sini.
+     *
+     * @return list<array{float, ?string, string}>
+     */
+    public static function kapasitasVarian(): array
+    {
+        return [
+            'batas atas A' => [25.0, 'SIDIK-FM-CAL-0522.A_Rev.1', 'Calibration Work Sheet - Micrometer (0-25 mm)'],
+            'tengah B' => [50.0, 'SIDIK-FM-CAL-0522.B_Rev.1', 'Calibration Work Sheet - Micrometer (25-50 mm)'],
+            'batas atas C' => [75.0, 'SIDIK-FM-CAL-0522.C_Rev.1', 'Calibration Work Sheet - Micrometer (50-75 mm)'],
+            'batas atas D' => [100.0, 'SIDIK-FM-CAL-0522.D_Rev.1', 'Calibration Work Sheet - Micrometer (75-100 mm)'],
+            // Di luar keempat pita: kop lembar TIDAK boleh mencetak nomor
+            // formulir mana pun. Ini bentuk sesi 0-25 mm master yang satuannya
+            // `inch` — kapasitas 635 mm — dan sesi seperti itu memang diblokir.
+            'di luar pita' => [635.0, null, 'Calibration Work Sheet - Micrometer'],
+        ];
+    }
+
+    #[DataProvider('kapasitasVarian')]
+    public function test_nomor_formulir_ikut_varian_kapasitas(
+        float $kapasitasMm,
+        ?string $nomor,
+        string $judul,
+    ): void {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $alat->update(['range_max' => $kapasitasMm]);
+
+        $bentuk = $this->actingAs($teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$alat->id)
+            ->assertSuccessful()
+            ->json('data');
+
+        $this->assertSame($nomor, $bentuk['kode_dokumen'] ?? null);
+        $this->assertSame($judul, $bentuk['judul']);
     }
 
     /**
@@ -160,12 +336,11 @@ class MicrometerSesiTest extends TestCase
 
         $payload = $this->payload($alat);
         $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['satuan'] = 'inch';
+        // Baris pertama varian B: nominal 25,0 mm, tumpukan 6 + 19.
         // 1 inch = 25,4 mm.
-        $payload['measurements'] = [[
-            'titik_ukur' => 25.4,
-            MicrometerMentah::PERAN_BALOK => [25.0],
-            MicrometerMentah::PERAN_PEMBACAAN => [1.0, 1.0],
-        ]];
+        $payload['measurements'] = [
+            ['titik_ukur' => 25.0, 'pembacaan' => [1.0, 1.0]],
+        ];
 
         $id = $this->actingAs($teknisi)
             ->postJson('/api/calibrations', $payload)
@@ -180,11 +355,28 @@ class MicrometerSesiTest extends TestCase
             self::TOLERANSI,
             'pembacaan 1 inch harus tersimpan 25,4 mm',
         );
-        $this->assertEqualsWithDelta(
-            25.0,
-            (float) $baris->firstWhere('peran_sensor', MicrometerMentah::PERAN_BALOK)->pembacaan,
-            self::TOLERANSI,
+        $this->assertSame(
+            [6.0, 19.0],
+            $baris->where('peran_sensor', MicrometerMentah::PERAN_BALOK)
+                ->sortBy('sensor_ke')->pluck('pembacaan')->map('floatval')->values()->all(),
             'nominal balok ukur JANGAN ikut dikonversi — sertifikatnya selalu mm',
+        );
+
+        // Baris Evaluasi ikut dikonversi juga, dan itu BUKAN kelengkapan:
+        // `payload()` mengirimnya bentuk DATAR sementara HP mengirim bentuk
+        // tabel. Kalau cuma bentuk tabel yang dikonversi, dua bentuk yang
+        // membawa angka sama berarti beda — dan tidak ada satu pun error yang
+        // membedakannya. Satuan itu sifat SESI-nya, bukan sifat pembungkus
+        // payload-nya. Lihat `CalibrationRequest::bakukanPraEvaluasiMicrometer()`.
+        $this->assertEqualsWithDelta(
+            array_map(
+                static fn (float $v): float => $v * 25.4,
+                $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'],
+            ),
+            array_map('floatval', CalibrationSession::findOrFail($id)
+                ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi']),
+            self::TOLERANSI,
+            'baris Evaluasi harus ikut dikonversi, sama seperti pembacaan tiap titik',
         );
     }
 

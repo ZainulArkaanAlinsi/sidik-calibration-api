@@ -1014,6 +1014,11 @@ class CalibrationValidator
                     // keempat workbook-nya disimpan selang dua menit dan umur
                     // driftnya beda. Diabaikan profil lain.
                     'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
+                    // Rata-rata suhu ruangan MENTAH. Micrometer menurunkan suhu
+                    // balok ukur & suhu UUT dari sini alih-alih memintanya
+                    // terpisah — di keempat workbook masternya ketiganya memang
+                    // angka yang sama. Diabaikan profil lain.
+                    'suhu_ruang_rata' => MicrometerMentah::rataSuhuRuang($sesi->suhu_awal, $sesi->suhu_akhir),
                 ],
                 'tersimpan' => $titik,
             ];

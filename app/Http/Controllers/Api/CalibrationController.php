@@ -25,6 +25,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
+use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -2006,21 +2007,28 @@ class CalibrationController extends Controller
     }
 
     /**
-     * Susun sesi **Micrometer**: tiap titik = tumpukan balok ukur + deret
-     * pembacaan, disimpan sebagai baris ber-`peran_sensor` yang terpisah.
+     * Susun sesi **Micrometer**: sebelas titik ber-nominal PRA-CETAK, lima
+     * pembacaan tiap titik.
      *
-     * Blok tingkat-SESI (pra-evaluasi, suhu balok/UUT, kapasitas, resolusi)
-     * tidak lewat sini — dia hidup di `spesifikasi_alat` dan ikut apa adanya ke
-     * `konteks`. Memaksanya jadi `titik_ke` melahirkan titik hantu yang selalu
-     * gagal hitung ulang; lihat `MicrometerMentah::blokSesi()`.
+     * ## Tumpukan balok ukur DITURUNKAN, bukan dikirim HP
+     *
+     * Kertas lembar kerja (`SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`) cuma mencetak
+     * nominal totalnya; tumpukan keping yang membentuknya ditentukan Instruksi
+     * Kerja. Jadi yang dikirim HP cuma pembacaannya, dan tumpukannya diambil
+     * dari varian di sini lalu ikut disimpan ke `raw_measurements`.
+     *
+     * Disimpan, bukan dibaca ulang dari tabel waktu menghitung: kalau set balok
+     * ukur lab berganti tahun depan, sesi lama harus tetap menghitung ulang
+     * dengan keping yang BENAR-BENAR dipakai waktu itu. Alasan yang sama
+     * dengan snapshot sertifikat.
      *
      * ## Satuan dikonversi SEKALI, di sini
      *
      * Yang tersimpan selalu milimeter, walau alatnya berskala inch. Master
      * menyimpan penunjukan dalam satuan alat lalu mengalikannya 25,4 di dalam
      * rumus, dan itulah yang melahirkan sesi 0-25 mm yang koreksinya terbit
-     * −61 mm: satuannya tersetel `inch` sementara angkanya diketik dalam mm,
-     * dan tidak ada satu pun sel yang memprotes.
+     * −61 mm. Nominal balok ukur TIDAK ikut dikonversi — sertifikatnya memang
+     * selalu mm.
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
@@ -2037,71 +2045,108 @@ class CalibrationController extends Controller
         $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
         $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
 
-        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '' && $v !== [];
-
         $spek = (array) $request->input('spesifikasi_alat', []);
         $blok = (array) ($spek[MicrometerMentah::KUNCI_SESI] ?? []);
         $faktor = MicrometerProfile::SATUAN_PILIHAN[(string) ($blok['satuan'] ?? 'mm')] ?? 1.0;
 
-        // Titik dianggap terpakai kalau SALAH SATU sisinya ada isinya. Kalau
-        // cuma satu sisi yang dicek, titik yang teknisinya baru sempat mengisi
-        // tumpukan baloknya akan kebuang — berikut baris lamanya yang sudah
-        // telanjur dihapus `store()`/`update()` sebelum penyusunan ini jalan.
-        $titikTerpakai = array_values(array_filter(
-            (array) $request->input('measurements', []),
-            static fn (array $t): bool => collect($t[MicrometerMentah::PERAN_BALOK] ?? [])->contains($adaIsinya)
-                || collect($t[MicrometerMentah::PERAN_PEMBACAAN] ?? [])->contains($adaIsinya),
-        ));
+        $tabel = new TabelStandarMicrometer;
+        $varian = $tabel->pitaCmc((float) ($blok['kapasitas_mm'] ?? $alat->range_max ?? 0));
 
-        foreach ($titikTerpakai as $index => $titik) {
+        $suhuRata = MicrometerMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
             $titikKe = $index + 1;
-            $deret = [];
+            $bawaan = $varian['titik'][$index] ?? null;
 
-            foreach ([MicrometerMentah::PERAN_BALOK, MicrometerMentah::PERAN_PEMBACAAN] as $peran) {
-                $terisi = [];
-                $ocrPeran = array_values((array) ($titik[$peran.'_ocr'] ?? []));
+            // Titik di luar sebelas baris kertas dibuang — bukan disimpan
+            // sebagai titik ke-12 yang tidak punya nominal. Bentuk lembar
+            // mengunci barisnya (`titik_bisa_diubah = false`), jadi kelebihan
+            // baris cuma bisa datang dari payload yang salah bentuk.
+            if ($bawaan === null) {
+                continue;
+            }
 
-                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
-                    if (! is_numeric($nilai)) {
-                        continue;
-                    }
+            $nominalCetak = (float) $bawaan['nominal_cetak_mm'];
+            $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
 
-                    // Nominal balok ukur DITULIS APA ADANYA (dia selalu mm —
-                    // sertifikat balok ukurnya mm, apa pun skala mikrometernya);
-                    // yang dikonversi cuma penunjukan alat.
-                    $mm = $peran === MicrometerMentah::PERAN_PEMBACAAN
-                        ? (float) $nilai * $faktor
-                        : (float) $nilai;
+            $pembacaan = [];
 
-                    $meta = $ocrPeran[$urutan] ?? null;
-                    $dariKamera = $asalKamera($meta);
+            // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh empat
+            // lembar lain — bukan kosakata `mikro_*` sendiri.
+            //
+            // `mikro_pembacaan` sempat dipakai di sini, dan itu tidak pernah
+            // menerima satu angka pun: HP menyusun tabel satu-kolom lewat jalur
+            // datarnya (`TitikState.toSubmission()` membaca kolom `pembacaan`),
+            // jadi seluruh isian teknisi mendarat di `pembacaan` sementara sisi
+            // ini menengok kunci yang tidak pernah ada. Yang tersimpan NOL baris
+            // dan nol hitungan, tanpa satu pun error di kedua sisi. Ketahuan
+            // waktu payload HP-nya diadu ke sini, bukan waktu ada test merah.
+            //
+            // `mikro_pembacaan` tetap hidup sebagai `peran_sensor` di
+            // `raw_measurements` — di situ dia memang membedakan deret
+            // pembacaan dari nominal balok ukur.
+            $ocrPeran = array_values((array) ($titik['ocr'] ?? []));
 
-                    $terisi[] = $mm;
-
-                    $mentah[] = [
-                        'titik_ke' => $titikKe,
-                        'pembacaan_ke' => $urutan + 1,
-                        // Urutan keping dalam tumpukan / nomor ulangan.
-                        'sensor_ke' => $urutan + 1,
-                        'peran_sensor' => $peran,
-                        'tahap' => 'sesudah_adjustment',
-                        'titik_ukur' => (float) ($titik['titik_ukur'] ?? 0),
-                        'standard_id' => $standarDefault?->id,
-                        'pembacaan' => $mm,
-                        'satuan' => MicrometerMentah::SATUAN,
-                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
-                        'ocr_raw_text' => $meta['raw_text'] ?? null,
-                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
-                        'is_verified' => ! $dariKamera,
-                    ];
+            foreach (array_values((array) ($titik['pembacaan'] ?? [])) as $urutan => $nilai) {
+                if (! is_numeric($nilai)) {
+                    continue;
                 }
 
-                $deret[$peran] = $terisi;
+                $meta = $ocrPeran[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
+                $mm = (float) $nilai * $faktor;
+                $pembacaan[] = $mm;
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_PEMBACAAN,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $mm,
+                    'satuan' => MicrometerMentah::SATUAN,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            // Titik yang belum diisi sama sekali tidak menyimpan tumpukannya
+            // juga: baris balok ukur tanpa satu pun pembacaan melahirkan titik
+            // yang "ada" di database tapi tidak punya angka, dan itu tercetak
+            // di sertifikat sebagai baris kosong yang kelihatan seperti data
+            // hilang.
+            if ($pembacaan === []) {
+                continue;
+            }
+
+            foreach ($tumpukan as $urutan => $nominal) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_BALOK,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $nominal,
+                    'satuan' => MicrometerMentah::SATUAN,
+                    // Diturunkan server dari varian kertas, bukan diketik
+                    // teknisi maupun dibaca kamera.
+                    'input_source' => 'manual',
+                    'is_verified' => true,
+                ];
             }
 
             $siapHitung[] = [
                 'titik_ke' => $titikKe,
-                'titik_ukur' => (float) ($titik['titik_ukur'] ?? 0),
+                'titik_ukur' => $nominalCetak,
                 // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
                 // suatu saat ada yang membacanya, yang keluar kosong — bukan
                 // separuh data yang kelihatan lengkap.
@@ -2109,10 +2154,11 @@ class CalibrationController extends Controller
                 'standard' => $standarDefault,
                 'suhu_larutan' => null,
                 'konteks' => [
-                    MicrometerMentah::PERAN_BALOK => $deret[MicrometerMentah::PERAN_BALOK],
-                    MicrometerMentah::PERAN_PEMBACAAN => $deret[MicrometerMentah::PERAN_PEMBACAAN],
+                    MicrometerMentah::PERAN_BALOK => $tumpukan,
+                    MicrometerMentah::PERAN_PEMBACAAN => $pembacaan,
                     'spesifikasi_alat' => $spek,
                     'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
                 ],
             ];
         }
