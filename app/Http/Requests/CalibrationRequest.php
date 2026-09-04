@@ -208,10 +208,18 @@ class CalibrationRequest extends FormRequest
         $nilai = array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v)));
 
         $spek = (array) $this->input('spesifikasi_alat', []);
-        $faktor = MicrometerProfile::SATUAN_PILIHAN[(string) ($spek['micrometer']['satuan'] ?? 'mm')] ?? 1.0;
 
+        // Diratakan saja — TIDAK dikonversi. Satuannya sudah ikut di blok yang
+        // sama (`spesifikasi_alat.micrometer.satuan`), dan yang mengubahnya ke
+        // mm `MicrometerMentah::blokSesi()` waktu dipakai menghitung.
+        //
+        // Versi pertama mengalikan di sini, dan itu tidak idempoten: teknisi
+        // yang menyimpan draft lalu membukanya lagi mengirimkan kembali angka
+        // yang sudah dikonversi (HP tidak punya konversi balik), jadi tiap
+        // simpan mengalikannya 25,4 lagi. Terbukti sampai 1290,32 mm untuk
+        // pembacaan 2 inch pada simpanan kedua. Lihat [MicrometerMentah::keMm].
         $spek['micrometer']['pra_evaluasi'] = array_map(
-            static fn ($v): float => (float) $v * $faktor,
+            static fn ($v): float => (float) $v,
             $nilai,
         );
 

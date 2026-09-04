@@ -193,7 +193,7 @@ class MicrometerSeeder extends Seeder
                 // baris sesi contohnya.
                 'range_min' => self::batasBawah((string) $m['rentang']),
                 'range_max' => (float) $m['kapasitas_mm'],
-                'satuan' => MicrometerMentah::SATUAN,
+                'satuan' => 'mm',
                 'resolusi' => (float) $m['resolusi_mm'],
                 // NULL: lampiran maupun keempat master nggak menyebut satu pun
                 // batas keberterimaan, jadi sesi ini nggak divonis PASS/FAIL.
@@ -229,7 +229,7 @@ class MicrometerSeeder extends Seeder
                     'rentang_ukur' => (string) $m['rentang'],
                     'kapasitas' => (string) $m['kapasitas_mm'],
                     'resolusi' => (string) $m['resolusi_mm'],
-                    'satuan' => MicrometerMentah::SATUAN,
+                    'satuan' => 'mm',
                     // Blok tingkat-SESI. Pra-evaluasi, suhu, kapasitas, dan
                     // resolusi bukan titik ukur — memaksanya jadi `titik_ke`
                     // melahirkan titik hantu yang selalu gagal hitung ulang.
@@ -238,7 +238,22 @@ class MicrometerSeeder extends Seeder
                     // pra-evaluasi ditentukan varian; tidak satu pun disimpan
                     // lagi di sini.
                     MicrometerMentah::KUNCI_SESI => [
-                        'satuan' => $m['satuan_alat'],
+                        // `mm`, BUKAN `$m['satuan_alat']` — dan bedanya penting.
+                        //
+                        // Satuan blok ini menyatakan angka pra-evaluasi di
+                        // bawahnya ditulis dalam satuan apa, dan yang disalin
+                        // seeder ini angka master: semuanya MILIMETER, termasuk
+                        // sesi 0-25 mm yang di masternya berlabel `inch`.
+                        // Menyalin label `inch`-nya bikin
+                        // `MicrometerMentah::blokSesi()` mengalikan angka yang
+                        // sudah mm dengan 25,4.
+                        //
+                        // Kejanggalan `inch` masternya sendiri TIDAK hilang dari
+                        // demo: dia tetap muncul lewat kapasitas 635 mm yang
+                        // menjatuhkan sesi itu ke luar keempat pita CMC —
+                        // persis rantai yang dibahas di
+                        // `docs/pertanyaan-lab-micrometer.md` §3.
+                        'satuan' => 'mm',
                         'kapasitas_mm' => (float) $m['kapasitas_mm'],
                         'resolusi_mm' => (float) $m['resolusi_mm'],
                         'pra_evaluasi' => array_map('floatval', $data['pra_evaluasi_mm']),
@@ -288,8 +303,11 @@ class MicrometerSeeder extends Seeder
                         'peran_sensor' => $peran,
                         'tahap' => 'sesudah_adjustment',
                         'titik_ukur' => $titikUkur,
+                        // Angka master semuanya MILIMETER — termasuk sesi 0-25 mm
+                        // yang di masternya berlabel `inch`. Lihat blok
+                        // `micrometer.satuan` di atas.
                         'pembacaan' => $angka,
-                        'satuan' => MicrometerMentah::SATUAN,
+                        'satuan' => 'mm',
                         'standard_id' => $standar->id,
                         'input_source' => 'manual',
                         // Diketik tangan, bukan kamera. Tanpa penanda ini

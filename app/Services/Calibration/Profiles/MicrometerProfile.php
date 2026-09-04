@@ -375,13 +375,15 @@ class MicrometerProfile extends CalibrationProfile
                 'standar_deviasi' => $h['simpangan_baku'],
                 'jumlah_pengulangan' => $h['jumlah_pengulangan'],
                 // Type A sesi, bukan titik: pengulangan lahir dari pra-evaluasi.
-                'type_a' => $this->typeASesi($hasil['budget']),
+                'type_a' => self::umKeMm($this->typeASesi($hasil['budget'])),
+                // Jejak audit TETAP µm — itu satuan sheet `PERHITUNGAN U95%`
+                // master, dan tiap barisnya menyebut satuannya sendiri.
                 'type_b_components' => $this->jejakAudit($hasil, $h, $kemampuan),
-                'type_b' => $hasil['type_b'],
-                'ketidakpastian_gabungan' => $hasil['ketidakpastian_gabungan'],
+                'type_b' => self::umKeMm($hasil['type_b']),
+                'ketidakpastian_gabungan' => self::umKeMm($hasil['ketidakpastian_gabungan']),
                 'faktor_cakupan_k' => $hasil['faktor_cakupan_k'],
                 'derajat_kebebasan_efektif' => $hasil['derajat_kebebasan_efektif'],
-                'ketidakpastian_diperluas' => $hasil['u95_sertifikat'],
+                'ketidakpastian_diperluas' => self::umKeMm($hasil['u95_sertifikat']),
                 'toleransi' => null,
                 'keputusan' => null,
                 'metode' => $kemampuan?->metode,
@@ -446,6 +448,26 @@ class MicrometerProfile extends CalibrationProfile
         ]];
     }
 
+    /**
+     * Satuan kolom tabel sertifikat — `mm`, dan ini WAJIB terisi.
+     *
+     * Blade mencetak satuan sebagai sufiks kepala kolom (`Standard (mm)`) cuma
+     * kalau baris menyebutkannya; yang memulangkan null mencetak `Standard`
+     * telanjang. Buat lembar ini kolom telanjang berbahaya: tabelnya mm
+     * (koreksi 0,00027) sementara baris `Uncertainty U95%` di bawahnya dulu
+     * mencetak µm (0,871) di KOLOM YANG SAMA. Pembaca yang melihat 0,00027 dan
+     * 0,871 bersebelahan tanpa satuan akan membaca U95-nya seribu kali lebih
+     * besar dari yang sebenarnya — di angka yang justru jadi inti sertifikat
+     * terakreditasi.
+     *
+     * Master pun mencetak baris satuan sendiri (`SERTIFIKAT!D17/I17/L17`, tiga
+     * sel `=F11` yang isinya `mm`).
+     */
+    public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): ?string
+    {
+        return self::SATUAN;
+    }
+
     public function desimalSertifikat(): ?int
     {
         // Lima desimal mm — nilai terkoreksi balok ukur master (`2.50014`,
@@ -456,7 +478,17 @@ class MicrometerProfile extends CalibrationProfile
 
     public function desimalU95(): ?int
     {
-        return 3;
+        // LIMA desimal, sama dengan kolom hasil di atasnya — karena angkanya
+        // sekarang mm, bukan µm. U95 sesi contoh 0,00087 mm; di tiga desimal
+        // dia runtuh jadi `0,001` dan kehilangan seluruh angka pentingnya.
+        //
+        // Master justru begitu: `SERTIFIKAT!J29` berformat `0.000`, jadi
+        // sertifikat cetaknya menampilkan `0.001 mm` — dan kolom Correction-nya
+        // (format `0.000` juga) menampilkan `0.000` di KESEBELAS titik.
+        // Itu tidak ditiru: kolom koreksi yang seluruhnya nol memberi tahu
+        // pelanggan alatnya sempurna di tiap titik. Lihat
+        // `docs/pertanyaan-lab-micrometer.md` §9.
+        return 5;
     }
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
@@ -547,6 +579,26 @@ class MicrometerProfile extends CalibrationProfile
     }
 
     /** @param  list<array<string, mixed>>  $budget */
+    /**
+     * µm → mm untuk kolom `uncertainty_calculations` yang bersanding dengan
+     * `koreksi`.
+     *
+     * Budget alat ini hidup dalam µm — itu satuan sheet `PERHITUNGAN U95%`
+     * master, dan `MicrometerMasterTest` mengadu tiap komponennya ke sana dalam
+     * µm. Tapi KOLOM tabelnya (`titik_ukur`, `rata_rata`, `koreksi`) mm, dan di
+     * 24 alat lain kolom ketidakpastian selalu sesatuan dengan koreksi. Lembar
+     * ini sempat jadi satu-satunya yang tidak, dan akibatnya sertifikat
+     * mencetak `0,00027` dan `0,871` di kolom yang sama.
+     *
+     * Konversinya di SINI, di ujung tulis — bukan di kalkulator — supaya
+     * pembanding lantai CMC (yang memang µm) dan jejak auditnya tetap apa
+     * adanya seperti master.
+     */
+    private static function umKeMm(float $um): float
+    {
+        return $um / 1000.0;
+    }
+
     private function typeASesi(array $budget): float
     {
         foreach ($budget as $k) {

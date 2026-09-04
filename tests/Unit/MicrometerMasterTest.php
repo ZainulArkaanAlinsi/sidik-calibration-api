@@ -290,6 +290,60 @@ class MicrometerMasterTest extends TestCase
      * terangkat ke lantai 0,83 µm — bukti bahwa master menerbitkan angka di
      * bawah lantainya sendiri.
      */
+    /**
+     * Resolusi yang belum diisi MEMBLOKIR penerbitan, bukan diterbitkan lebih
+     * kecil lalu ditutupi lantai CMC.
+     *
+     * Kotak resolusi boleh kosong di lembar (`semua_kolom_opsional`), dan yang
+     * kosong terbaca 0 — komponen resolusi jadi `(0 × 1000 / 2) / √3` alias
+     * nol. Yang bikin ini paling licin dari ketiga gerbang: lantai CMC yang
+     * seharusnya jadi penjaga malah MENYAMARKAN komponen yang hilang.
+     *
+     *   resolusi 0,001 mm -> uc 0,4439 -> U95 0,8722 -> terbit 0,8722
+     *   resolusi kosong   -> uc 0,3372 -> U95 0,6638 -> terbit 0,8700 (lantai)
+     *
+     * Selisih yang tercetak 0,25 %, dan tidak ada satu pun error di jalurnya.
+     */
+    public function test_resolusi_kosong_memblokir_penerbitan(): void
+    {
+        $kalk = new MicrometerCalculator;
+
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal' => [6.0, 19.0],
+            'pembacaan' => [25.001, 25.0, 25.001, 25.0, 25.001],
+        ]];
+        $konteks = [
+            'kapasitas_mm' => 50.0,
+            'tanggal_kalibrasi' => new \DateTimeImmutable('2025-05-02'),
+            'pra_evaluasi' => [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0],
+            'balok_pra_evaluasi' => [50.0],
+            'suhu_ruang_rata_c' => 20.55,
+        ];
+
+        $isi = $kalk->hitungSesi($titik, [...$konteks, 'resolusi_mm' => 0.001]);
+        $this->assertTrue($isi['boleh_terbit'], 'Resolusi terisi harus boleh terbit.');
+
+        $kosong = $kalk->hitungSesi($titik, [...$konteks, 'resolusi_mm' => 0.0]);
+
+        $this->assertFalse(
+            $kosong['boleh_terbit'],
+            'Resolusi kosong tetap terbit — U95-nya lebih kecil dan lantai CMC menyamarkannya.',
+        );
+
+        // Dan bedanya memang tersamarkan kalau gerbangnya tidak ada: yang
+        // terbit sama-sama ~0,87 walau `uc`-nya beda jauh.
+        $this->assertGreaterThan(
+            $kosong['ketidakpastian_gabungan'],
+            $isi['ketidakpastian_gabungan'],
+            'Komponen resolusi harusnya menaikkan uc.',
+        );
+        $this->assertEqualsWithDelta(0.87, $kosong['u95_sertifikat'], 1e-9, 'Lantai CMC yang menyamarkan.');
+
+        $alasan = implode(' ', array_column($kosong['ditolak'], 'alasan'));
+        $this->assertStringContainsString('Resolusi alat belum diisi', $alasan);
+    }
+
     public function test_u95_terangkat_ke_lantai_cmc_saat_kapasitas_benar(): void
     {
         [$titik, $konteks] = $this->masukan('025');

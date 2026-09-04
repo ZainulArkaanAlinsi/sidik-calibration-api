@@ -337,7 +337,22 @@ class MicrometerCalculator
             // bentuk "sel kosong dibaca nol" yang aturan proyek larang ditiru —
             // U95-nya jatuh ke lantai CMC dan kelihatan wajar, padahal sesi itu
             // belum pernah diuji keterulangannya.
-            'boleh_terbit' => $pita !== null && count($konteks['pra_evaluasi']) >= 2,
+            //
+            // RESOLUSI ikut jadi syarat, dan bentuknya paling licin dari
+            // ketiganya. Kotak resolusi boleh kosong (`semua_kolom_opsional`),
+            // dan yang kosong terbaca 0 — komponen resolusi jadi
+            // `(0 × 1000 / 2) / √3` alias nol. Diukur pada sesi contoh 25-50 mm:
+            //
+            //   resolusi 0,001 mm -> uc 0,4439 µm -> U95 0,8722 µm (terbit 0,8722)
+            //   resolusi kosong   -> uc 0,3372 µm -> U95 0,6638 µm (terbit 0,8700)
+            //
+            // Yang terbit berubah 0,8722 → 0,8700, dan angka kedua itu PERSIS
+            // lantai CMC pita B. Jadi lantai yang seharusnya jadi penjaga malah
+            // menyamarkan komponen yang hilang: selisihnya 0,25 %, dan tidak
+            // ada satu pun error di sepanjang jalurnya.
+            'boleh_terbit' => $pita !== null
+                && count($konteks['pra_evaluasi']) >= 2
+                && (float) $konteks['resolusi_mm'] > 0.0,
             'ditolak' => $ditolak,
         ];
     }
@@ -408,6 +423,15 @@ class MicrometerCalculator
             $ditolak[] = [
                 'titik_ke' => 0,
                 'alasan' => 'Pra-evaluasi butuh minimal dua pembacaan berulang untuk simpangan baku.',
+            ];
+        }
+
+        if ((float) $konteks['resolusi_mm'] <= 0.0) {
+            $ditolak[] = [
+                'titik_ke' => 0,
+                'alasan' => 'Resolusi alat belum diisi. Tanpa resolusi, komponen resolusi budget '
+                    .'bernilai nol dan U95 terbit lebih kecil dari seharusnya — pada sesi 25-50 mm '
+                    .'0,8722 µm jadi 0,6638 µm, lalu ditutupi lantai CMC 0,87 µm sehingga tampak wajar.',
             ];
         }
 

@@ -240,27 +240,32 @@ Makanya server menolak menerbitkannya sama sekali, bukan menerbitkan angka yang 
 
 ## 7. Sesi bisa DIBLOKIR, dan itu disengaja
 
-Ada **dua** sebabnya, dan server memperlakukan keduanya sama:
+Ada **tiga** sebabnya, dan server memperlakukan ketiganya sama:
 
 1. Kapasitas alat jatuh di luar keempat pita CMC terakreditasi (§2) — tidak ada lantai
    ketidakpastian yang bisa dipertanggungjawabkan.
 2. Baris Evaluasi berisi kurang dari dua pembacaan (§6) — tidak ada simpangan baku, jadi
    komponen pengulangan tidak punya dasar.
+3. **Resolusi alat belum diisi.** Kotaknya opsional di lembar, dan yang kosong terbaca nol —
+   komponen resolusi budget ikut jadi nol. Pada sesi 25-50 mm U95 turun dari 0,8722 µm ke
+   0,6638 µm, lalu **ditutupi lantai CMC 0,87 µm** sehingga yang tercetak 0,8700 dan tampak
+   wajar. Selisihnya 0,25 %. Jadi UI sebaiknya menyorot kotak resolusi yang kosong sebelum
+   kirim, sama seperti dropdown satuan (§5).
 
 Yang **TIDAK** memblokir, walau ikut muncul di `belum_dihitung`: tanggal kalibrasi sesi lebih
 awal dari sertifikat balok ukur standar yang tersimpan. Itu sesi historis — driftnya dianggap
 nol, alasannya dicatat, dan sesinya tetap terbit di atas lantai CMC. Bedanya prinsipil:
 pengulangan mengukur alat pelanggan itu sendiri, drift itu sifat standarnya.
 
-Dalam dua sebab yang memblokir, server:
+Dalam ketiga sebab itu, server:
 
 - memulangkan **`hitungan` KOSONG** — nol baris, bukan baris ber-U95 nol,
 - memindahkan **semua** titik ke `belum_dihitung`, masing-masing dengan alasannya.
 
 Khusus sebab no. 1, ada tambahan: temuan peringatan sesi berkode `micrometer_di_luar_cmc` yang
-menyebut dugaan penyebabnya (satuan salah pilih). Sebab no. 2 tidak punya peringatan sesi
-tersendiri — alasannya cuma ada di `belum_dihitung`, jadi UI **harus** menampilkan daftar itu,
-bukan cuma mengandalkan panel peringatan.
+menyebut dugaan penyebabnya (satuan salah pilih). Sebab no. 2 dan no. 3 tidak punya peringatan
+sesi tersendiri — alasannya cuma ada di `belum_dihitung`, jadi UI **harus** menampilkan daftar
+itu, bukan cuma mengandalkan panel peringatan.
 
 **Kenapa nol baris, bukan U95 = 0.** Baris ber-`ketidakpastian_diperluas` nol tetap tercetak di
 sertifikat sebagai `± 0,000` — klaim pengukuran **sempurna**, yang lebih buruk daripada angka
@@ -331,7 +336,11 @@ Yang menangkap ketiganya: payload HP diadu ke bentuk lembarnya, bukan test yang 
   bernilai `false`, dan nominal yang diketik ulang teknisi tetap kalah di server — jadi yang
   dilihat teknisi beda dari yang tercetak di sertifikat, tanpa satu pun error.
 - **Jangan** "membetulkan" nominal titik 3 varian B (31) dan C (51). Lihat §4.
-- **Jangan** mengonversi nominal balok ukur dengan faktor satuan. Cuma pembacaan alat.
+- **Jangan** mengonversi apa pun di HP. Yang dikirim angka MENTAH yang diketik teknisi; server
+  yang mengubahnya ke mm memakai `spesifikasi_alat.micrometer.satuan`, dan dia melakukannya di
+  tempat pakai — bukan waktu menyimpan. Kalau HP ikut mengonversi, angkanya dikali dua kali.
+  (Server sempat mengonversi waktu menyimpan, dan itu bikin simpan-draft-lalu-simpan-lagi
+  mengalikan 25,4 tiap kali: 1 inch → 25,4 → 645,16 mm. Sekarang tidak lagi.)
 - **Jangan** mengirim baris Evaluasi sebagai `measurements` ber-`titik_ke`. Dia
   `spesifikasi_alat.micrometer.pra_evaluasi`, lihat `simpan_ke` (§6).
 - **Jangan** mengganti kode kolom tabelnya jadi selain `pembacaan`. Jalur datar HP
