@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 /**
  * Lembar & hitungan **Micrometer** — lampiran akreditasi LK-285-IDN no. 34,
- * kelompok Dimensi, dan yang PERTAMA di kelompok itu.
+ * kelompok Panjang.
  *
  * Empat workbook master turun bersamaan (0-25, 25-50, 50-75, 75-100 mm) dan
  * keempatnya identik baris demi baris — yang membedakan cuma pita CMC-nya. Jadi
@@ -26,25 +26,40 @@ use Carbon\Carbon;
  * mencetak satu baris `Uncertainty U95% = ±` di bawah sebelas titik. Makanya
  * [hitungPerGrup] yang dipakai, dan [komponenBudget] memulangkan `null` —
  * bukan karena belum ditulis, tapi karena bentuk per titik tidak ada di alat
- * ini. Dua komponennya memang tidak bisa dinyatakan per titik: pengulangan
- * datang dari PRA-EVALUASI (sepuluh pembacaan berulang di satu titik) dan suhu
- * diisi sekali per sesi.
+ * ini. Pengulangannya sendiri memang tidak bisa dinyatakan per titik: dia
+ * datang dari baris `Evaluasi` (sepuluh pembacaan berulang di satu titik),
+ * bukan dari sebaran lima pembacaan tiap titik.
  *
  * ## Blok tingkat-sesi tinggal di `spesifikasi_alat`
  *
- * Pra-evaluasi, balok ukur pra-evaluasi, suhu balok/UUT, kapasitas, dan
- * resolusi bukan titik ukur — memaksanya jadi `titik_ke` melahirkan titik hantu
- * yang selalu gagal hitung ulang. Lihat [MicrometerMentah::blokSesi].
+ * Pra-evaluasi, kapasitas, dan resolusi bukan titik ukur — memaksanya jadi
+ * `titik_ke` melahirkan titik hantu yang selalu gagal hitung ulang. Lihat
+ * [MicrometerMentah::blokSesi].
  *
- * ## Nomor formulir lembar kerjanya belum ada
+ * ## Bentuk lembarnya mengikuti KERTAS, bukan `INPUT DATA` Excel
  *
- * Sapuan `SIDIK-FM-` ke delapan sheet × empat workbook cuma memulangkan SATU
- * nomor: `SIDIK-FM-CAL-2403_Rev. 0`, di footer sheet `SERTIFIKAT`. Itu nomor
- * formulir SERTIFIKAT bersama — Tachometer, Timer, dan Centrifuge memakai nomor
- * yang sama persis. Nomor lembar kerjanya sendiri belum pernah dikirim, jadi
- * `kode_dokumen` null dan `micrometer` masuk daftar `belumAdaKertasnya` di
- * `SemuaProfilLembarKerjaTest`. Keluarkan dia dari daftar itu begitu kertasnya
- * turun — jangan sebelum.
+ * Kertasnya turun 4 Sep 2026 — empat, satu per rentang
+ * (`SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`) — dan bentuknya jauh lebih ramping
+ * daripada sheet `INPUT DATA` master:
+ *
+ *  - **Nominal balok ukurnya PRA-CETAK**, sebelas baris tetap per rentang.
+ *    Teknisi tidak memilih tumpukan keping; itu ditentukan Instruksi Kerja.
+ *  - **Satu tabel pembacaan** (X1..X5), plus **satu baris `Evaluasi`**
+ *    (X1..X10) yang jadi sumber pengulangan.
+ *  - **Tidak ada** kotak suhu balok ukur maupun suhu UUT, dan tidak ada
+ *    bagian pemeriksaan muka ukur.
+ *
+ * Ketiadaan kotak suhu itu bukan kelalaian kertas — di KEEMPAT workbook master
+ * `suhu_balok = suhu_uut = (suhu_awal + suhu_akhir) / 2`, jadi keduanya
+ * DITURUNKAN dari suhu ruangan yang memang dipungut kertas. Itu juga sebabnya
+ * komponen "selisih suhu mikrometer dengan balok ukur" selalu nol: dia
+ * `|suhu_uut − suhu_balok|` dari dua angka yang sama menurut konstruksi.
+ *
+ * Permintaan 6 memang memerintahkan lembar mengikuti PDF resmi; dua hal yang
+ * TETAP menyimpang dari kertas, dan sengaja: kotak Inlab/Insitu (kertas
+ * mencetak "Inlab (Lab. Dimensi PT SIDIK)" mati, permintaan 2 memintanya bisa
+ * dipilih di semua lembar) dan dropdown Thermohygro (kertas mencetak `TH-1`
+ * mati, `ThermohygroSemuaLembarTest` menuntutnya terisi dari master lab).
  */
 class MicrometerProfile extends CalibrationProfile
 {
@@ -53,11 +68,12 @@ class MicrometerProfile extends CalibrationProfile
 
     public const SATUAN_BUDGET = 'µm';
 
-    /** Sebelas titik, sesuai sertifikat master (baris 18..28). */
+    /**
+     * Sebelas titik — dan angkanya dipatok KERTAS, bukan pilihan teknisi.
+     * Sama di keempat varian, dan cocok baris demi baris dengan sertifikat
+     * master (baris 18..28).
+     */
     public const BARIS_KERTAS = 11;
-
-    /** Sampai tiga keping balok ukur di-*wringing* jadi satu tumpukan. */
-    public const KEPING_TUMPUKAN = 3;
 
     /** Lima pembacaan per titik (`PERHITUNGAN` kolom I..M). */
     public const PENGULANGAN = 5;
@@ -66,9 +82,11 @@ class MicrometerProfile extends CalibrationProfile
     public const PRA_EVALUASI = 10;
 
     /**
-     * Instruksi Kerja-nya, dari lampiran akreditasi baris no. 34. Ini BUKAN
-     * nomor formulir lembar kerja — yang itu belum pernah dikirim, lihat
-     * docblock kelas.
+     * Instruksi Kerja-nya, dari lampiran akreditasi baris no. 34 — dan tercetak
+     * juga di kop kertas (`Metode : SIDIK-IK-CAL-0515`).
+     *
+     * Ini BUKAN nomor formulir lembar kerja: yang itu ada EMPAT, satu per
+     * rentang, dan dipilih per alat di [bentukLembarKerja].
      */
     public const KODE_METODE = 'SIDIK-IK-CAL-0515_Rev.3';
 
@@ -118,7 +136,14 @@ class MicrometerProfile extends CalibrationProfile
 
     public function besaran(): string
     {
-        return 'dimensi';
+        // `panjang`, mengikuti nama kelompok pengukuran lampiran akreditasi —
+        // sama seperti `massa`, `suhu`, `waktu` di profil lain.
+        //
+        // Sempat `dimensi`, dan itu ikut menyeret seeder-nya membuat kategori
+        // alat `Dimensi` yang tidak ada di lampiran. Kelompok no. 34 namanya
+        // **Panjang**; nama kedua untuk hal yang sama cuma menunggu ada yang
+        // memakainya sebagai kunci.
+        return 'panjang';
     }
 
     public function kodeMetode(): ?string
@@ -155,11 +180,14 @@ class MicrometerProfile extends CalibrationProfile
      * pembaca foto meminta model membaca kolom yang tidak ada di kertasnya, dan
      * yang balik bukan error melainkan angka karangan yang wajar.
      *
-     * `didukung = false`: kertas lembar kerjanya belum pernah dikirim lab, jadi
-     * geometri di `database/ocr-templates/micrometer-v1.json` masih grid rata
-     * hasil generator (`terverifikasi: false`) — belum pernah diadu ke formulir
-     * cetak asli. Jalur kamera dibuka begitu kertasnya turun; input manual
-     * dulu.
+     * `didukung = false`: kertasnya memang sudah turun, tapi geometri di
+     * `database/ocr-templates/micrometer-v1.json` masih grid rata hasil
+     * generator (`terverifikasi: false`) — koordinatnya belum pernah DIUKUR
+     * dari formulir cetak asli dan belum pernah diadu ke foto nyata. Membuka
+     * jalur kamera dengan geometri karangan berarti pembaca foto memungut sel
+     * yang salah, dan yang balik bukan error melainkan angka yang wajar di
+     * baris yang keliru. Input manual dulu; jalur kamera dibuka begitu
+     * geometrinya diukur.
      */
     public function bentukPindaiFoto(): array
     {
@@ -281,7 +309,19 @@ class MicrometerProfile extends CalibrationProfile
                 'nominal' => $m['nominal'],
                 'pembacaan' => $m['pembacaan'],
             ], $masukan),
-            $blok + ['tanggal_kalibrasi' => $this->tanggalKalibrasi($konteksSesi)],
+            $blok + [
+                'tanggal_kalibrasi' => $this->tanggalKalibrasi($konteksSesi),
+                // Diturunkan dari suhu ruangan, tidak diminta terpisah — lihat
+                // [MicrometerCalculator::budget].
+                'suhu_ruang_rata_c' => (float) ($konteksSesi['suhu_ruang_rata'] ?? 0.0),
+                // Balok ukur pra-evaluasi ditentukan VARIAN kertas, bukan
+                // diketik teknisi: kertasnya cuma menyediakan satu baris
+                // Evaluasi tanpa kolom nominal.
+                'balok_pra_evaluasi' => array_map(
+                    'floatval',
+                    $this->varian($equipment)['balok_pra_evaluasi_mm'] ?? [],
+                ),
+            ],
         );
 
         $standarPerTitik = collect($masukan)->keyBy('titik_ke');
@@ -421,22 +461,33 @@ class MicrometerProfile extends CalibrationProfile
 
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
+        $varian = $this->varian($equipment);
+
         $bentuk = [
-            'kode_dokumen' => null,
+            // Nomor formulir per VARIAN — kertasnya empat, satu per rentang
+            // (`SIDIK-FM-CAL-0522.A/B/C/D_Rev.1`, turun 4 Sep 2026). Polanya
+            // sama dengan Timbangan, yang juga memasang nomor per varian.
+            //
+            // `null` waktu alatnya belum diketahui (panggilan tanpa
+            // `$equipment`, mis. sapuan bentuk lembar): varian belum bisa
+            // ditentukan, dan menebak salah satunya berarti mencetak nomor
+            // formulir yang bukan miliknya di kop lembar terakreditasi.
+            'kode_dokumen' => $varian['kode_dokumen'] ?? null,
             'kode_metode' => self::KODE_METODE,
             'nomor_lingkup' => 'LK-285-IDN',
-            'judul' => 'Calibration Work Sheet - Micrometer',
+            'judul' => $varian === null
+                ? 'Calibration Work Sheet - Micrometer'
+                : "Calibration Work Sheet - Micrometer ({$varian['judul_rentang']})",
             'jumlah_pengulangan' => self::PENGULANGAN,
             'satuan' => self::SATUAN,
             'satuan_suhu' => '°C',
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Isi SATUAN alat lebih dulu — dia yang mengubah semua angka '
-                .'lembar ini ke mm. Tiap titik: tumpuk balok ukur (sampai tiga keping, '
-                .'di-wringing) lalu baca mikrometernya lima kali. Titik yang nggak dipakai '
-                .'dikosongin — jangan diisi nol, karena nominal nol tetap melahirkan koreksi '
-                .'sebesar rata-rata pembacaannya dan tercetak seperti titik sungguhan. Blok '
-                .'pra-evaluasi (sepuluh pembacaan berulang) WAJIB diisi: dari situ '
-                .'pengulangannya lahir, bukan dari lima pembacaan tiap titik.',
+                .'lembar ini ke mm. Nominal balok ukurnya SUDAH DIPATOK kertas (sebelas titik '
+                .'per rentang) dan tidak bisa diubah: tumpukan keping yang membentuknya '
+                .'ditentukan Instruksi Kerja, bukan dipilih di lapangan. Baris Evaluasi WAJIB '
+                .'diisi sepuluh-duanya — dari situ pengulangannya lahir, bukan dari lima '
+                .'pembacaan tiap titik.',
             'budget_ketidakpastian' => [
                 'tersedia' => true,
                 'sumber' => 'Master_Olah_Data_Micrometer_{025,2550,5075,75100}mm.xlsm',
@@ -448,9 +499,8 @@ class MicrometerProfile extends CalibrationProfile
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
-                $this->bagianPraEvaluasi(),
-                $this->bagianDataKalibrasi(),
-                $this->bagianPemeriksaanMuka(),
+                $this->bagianDataKalibrasi($varian),
+                $this->bagianEvaluasi(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -459,6 +509,24 @@ class MicrometerProfile extends CalibrationProfile
             $this->tautkanStandarTercetak($bentuk, $equipment),
             $equipment,
         );
+    }
+
+    /**
+     * Varian kertas yang berlaku buat satu alat, dipilih dari KAPASITASnya.
+     *
+     * `null` kalau alatnya belum diketahui atau kapasitasnya di luar keempat
+     * pita terakreditasi — dan di kasus kedua itu sesinya memang tidak boleh
+     * terbit, lihat [TabelStandarMicrometer::pitaCmc].
+     *
+     * @return array<string, mixed>|null
+     */
+    private function varian(?Equipment $equipment): ?array
+    {
+        $kapasitas = (float) ($equipment?->range_max ?? 0.0);
+
+        return $kapasitas > 0.0
+            ? (new TabelStandarMicrometer)->pitaCmc($kapasitas)
+            : null;
     }
 
     /**
@@ -609,65 +677,64 @@ class MicrometerProfile extends CalibrationProfile
     }
 
     /**
-     * Blok pra-evaluasi — tingkat SESI, bukan titik.
+     * Baris `Evaluasi` kertas — sepuluh pembacaan berulang, satu baris.
      *
-     * Dari sini pengulangan (Type A) dan suhu lahir. Sepuluh pembacaan berulang
-     * di SATU titik, ditambah tumpukan balok ukur yang dipakai untuk
-     * pembacaan itu.
+     * Dari sini pengulangan (Type A) lahir, BUKAN dari lima pembacaan tiap
+     * titik. Kertas menaruhnya sebagai satu baris ber-kolom X1..X10 di bawah
+     * tabel utama, dan balok ukur yang dipakainya ditentukan varian — teknisi
+     * tidak memilihnya, sama seperti nominal titik.
      *
      * @return array<string, mixed>
      */
-    private function bagianPraEvaluasi(): array
+    private function bagianEvaluasi(): array
     {
         return [
-            'kode' => 'pra_evaluasi',
+            'kode' => 'evaluasi',
             'halaman' => 1,
-            'judul' => 'Pre-Evaluation (Outside Measurement)',
-            'field' => [
-                $this->field('spesifikasi_alat.micrometer.suhu_balok_c', 'Suhu Balok Ukur', 'angka', satuan: '°C'),
-                $this->field('spesifikasi_alat.micrometer.suhu_uut_c', 'Suhu Mikrometer', 'angka', satuan: '°C'),
-            ],
+            'judul' => 'Evaluasi',
+            'field' => [],
             'tabel' => [
                 [
                     'tahap' => 'sesudah_adjustment',
-                    'grup' => 'pra_balok',
-                    'judul' => 'Balok Ukur Pra-Evaluasi',
-                    'satuan' => self::SATUAN,
-                    'judul_nilai' => 'Keping',
-                    'judul_pengulangan' => 'Nominal',
-                    'titik_bisa_diubah' => false,
-                    'simpan_ke' => 'spesifikasi_alat.micrometer.balok_pra_evaluasi',
-                    'baris' => array_map(
-                        static fn (int $n): array => [
-                            'nomor' => $n,
-                            'titik_ukur' => null,
-                            'label' => 'Keping '.$n,
-                            'satuan' => self::SATUAN,
-                        ],
-                        range(1, 6),
-                    ),
-                    'kolom' => [
-                        ['kode' => 'nominal', 'label' => 'Nominal', 'tipe' => 'angka', 'satuan' => self::SATUAN],
-                    ],
-                    'pengulangan' => [1],
-                ],
-                [
-                    'tahap' => 'sesudah_adjustment',
                     'grup' => 'pra_pembacaan',
-                    'judul' => 'Pembacaan Berulang (X1…X10)',
+                    'judul' => 'Evaluasi (pembacaan berulang)',
                     'satuan' => self::SATUAN,
-                    'judul_nilai' => 'Pembacaan',
-                    'judul_pengulangan' => 'Ulangan',
+                    'judul_nilai' => 'Evaluasi',
+                    'judul_pengulangan' => 'Pembacaan',
                     'titik_bisa_diubah' => false,
+                    // Geser kunci baris tabel ini DI LAYAR supaya tidak pernah
+                    // rebutan dengan sebelas baris `Data Kalibrasi`, yang
+                    // ber-`tahap` sama persis dan karena itu ber-`kunciTabel`
+                    // sama juga (`peran` null → kuncinya jatuh ke `tahap`).
+                    //
+                    // Hari ini keduanya kebetulan tidak bertabrakan: baris ini
+                    // `titik_ukur`-nya null, jadi HP memakai `nomor` = 1
+                    // sebagai kuncinya, dan 1,0 mm tidak ada di keempat puluh
+                    // empat nominal pra-cetak. Itu KEBETULAN, bukan jaminan —
+                    // balok ukur 1 mm ada di set 32 keping, dan kertas revisi
+                    // berikutnya bisa memakainya kapan saja.
+                    //
+                    // Tabrakannya sudah pernah nyata di Timbangan (Accuracy
+                    // 50 kg vs Repeatability Middle 50 kg): dua tabel berbagi
+                    // satu baris isian, angka yang diketik di salah satunya
+                    // muncul di kotak satunya lagi, tanpa satu pun error. Di
+                    // sini akibatnya lebih mahal — baris Evaluasi yang
+                    // tertimpa membuat pengulangan lahir dari angka titik ukur,
+                    // dan U95 seluruh sesi ikut salah.
+                    //
+                    // Angkanya cuma harus TIDAK bertabrakan; 1000 mengikuti
+                    // Timbangan, dan jauh di atas kapasitas terakreditasi
+                    // paling besar (100 mm).
+                    'offset_kunci' => 1000,
                     'simpan_ke' => 'spesifikasi_alat.micrometer.pra_evaluasi',
                     'baris' => [[
                         'nomor' => 1,
                         'titik_ukur' => null,
-                        'label' => 'Pembacaan berulang',
+                        'label' => 'Evaluasi',
                         'satuan' => self::SATUAN,
                     ]],
                     'kolom' => [
-                        ['kode' => 'nilai', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
+                        ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                     ],
                     'pengulangan' => range(1, self::PRA_EVALUASI),
                 ],
@@ -676,94 +743,59 @@ class MicrometerProfile extends CalibrationProfile
     }
 
     /**
-     * Dua tabel bersisian: tumpukan balok ukur dan deret pembacaan.
+     * Tabel `Data Kalibrasi` kertas: sebelas nominal balok ukur PRA-CETAK,
+     * lima pembacaan alat tiap barisnya.
      *
-     * `grup` — bukan `peran` — yang memisahkan keduanya. Di HP `peran` berarti
-     * lembar pasangan standar/UUT dan membelokkan seluruh jalur kirimnya;
-     * Micrometer bukan lembar pasangan.
+     * `titik_bisa_diubah = false` — dan itu inti bedanya dari lembar lain.
+     * Nominalnya dipatok kertas per rentang, dan tumpukan keping yang
+     * membentuknya ditentukan Instruksi Kerja. Teknisi tidak memilih, tidak
+     * menambah, tidak mengurangi; yang dia isi cuma pembacaannya.
      *
+     * Waktu alatnya belum diketahui (panggilan tanpa `$equipment`), barisnya
+     * tetap sebelas tapi `titik_ukur`-nya null — bentuk lembarnya benar,
+     * angkanya menyusul begitu alatnya dipilih.
+     *
+     * @param  array<string, mixed>|null  $varian
      * @return array<string, mixed>
      */
-    private function bagianDataKalibrasi(): array
+    private function bagianDataKalibrasi(?array $varian): array
     {
+        $titik = $varian['titik'] ?? [];
+
         return [
             'kode' => 'hasil',
             'halaman' => 1,
-            'judul' => 'Data Hasil Kalibrasi',
+            'judul' => 'Data Kalibrasi',
             'field' => [],
             'tabel' => [
                 [
                     'tahap' => 'sesudah_adjustment',
-                    'grup' => MicrometerMentah::PERAN_BALOK,
-                    'judul' => 'Nominal Balok Ukur (tumpukan)',
-                    'satuan' => self::SATUAN,
-                    'judul_nilai' => 'Titik',
-                    'judul_pengulangan' => 'Keping',
-                    'titik_bisa_diubah' => true,
-                    'baris' => $this->barisTitik(),
-                    'kolom' => [
-                        ['kode' => 'nominal', 'label' => 'Nominal', 'tipe' => 'angka', 'satuan' => self::SATUAN],
-                    ],
-                    'pengulangan' => range(1, self::KEPING_TUMPUKAN),
-                ],
-                [
-                    'tahap' => 'sesudah_adjustment',
                     'grup' => MicrometerMentah::PERAN_PEMBACAAN,
-                    'judul' => 'Pembacaan Mikrometer',
+                    'judul' => 'Pembacaan Alat',
                     'satuan' => self::SATUAN,
-                    'judul_nilai' => 'Titik',
-                    'judul_pengulangan' => 'Ulangan',
-                    'titik_bisa_diubah' => true,
-                    'baris' => $this->barisTitik(),
+                    'judul_nilai' => 'Nominal Balok Ukur',
+                    'judul_pengulangan' => 'Pembacaan Alat',
+                    'titik_bisa_diubah' => false,
+                    'baris' => array_map(
+                        static fn (int $n): array => [
+                            'nomor' => $n,
+                            'titik_ukur' => isset($titik[$n - 1])
+                                ? (float) $titik[$n - 1]['nominal_cetak_mm']
+                                : null,
+                            'label' => isset($titik[$n - 1])
+                                ? rtrim(rtrim(number_format(
+                                    (float) $titik[$n - 1]['nominal_cetak_mm'], 1, ',', '.'
+                                ), '0'), ',')
+                                : 'Titik '.$n,
+                            'satuan' => self::SATUAN,
+                        ],
+                        range(1, self::BARIS_KERTAS),
+                    ),
                     'kolom' => [
-                        ['kode' => 'nilai', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
+                        ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                     ],
                     'pengulangan' => range(1, self::PENGULANGAN),
                 ],
-            ],
-        ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function barisTitik(): array
-    {
-        return array_map(
-            static fn (int $n): array => [
-                'nomor' => $n,
-                'titik_ukur' => null,
-                'label' => 'Titik '.$n,
-                'satuan' => self::SATUAN,
-            ],
-            range(1, self::BARIS_KERTAS),
-        );
-    }
-
-    /**
-     * Pemeriksaan muka ukur — tercetak di sertifikat sebagai Baik/Buruk
-     * (`SERTIFIKAT!G32` & `G33`), bukan angka.
-     *
-     * @return array<string, mixed>
-     */
-    private function bagianPemeriksaanMuka(): array
-    {
-        $pilihan = [
-            ['nilai' => 'baik', 'label' => 'Baik'],
-            ['nilai' => 'buruk', 'label' => 'Buruk'],
-        ];
-
-        return [
-            'kode' => 'pemeriksaan_muka',
-            'halaman' => 1,
-            'judul' => 'Pemeriksaan Muka Ukur',
-            'field' => [
-                $this->field(
-                    'spesifikasi_alat.micrometer.kerataan_muka',
-                    'Kerataan Muka Ukur (Optical Flat)', 'pilihan', pilihan: $pilihan,
-                ),
-                $this->field(
-                    'spesifikasi_alat.micrometer.kesejajaran_muka',
-                    'Kesejajaran Muka Ukur (Gauge Block)', 'pilihan', pilihan: $pilihan,
-                ),
             ],
         ];
     }

@@ -108,6 +108,10 @@ class MicrometerMentah
      * titik yang dipaksa masuk ke situ lahir sebagai titik hantu yang selalu
      * gagal — persis yang sudah terjadi pada blok keterulangan Timbangan.
      *
+     * Yang TIDAK ada di sini, dan sengaja: suhu balok ukur & suhu UUT
+     * (diturunkan dari suhu ruangan, lihat [MicrometerCalculator]) serta balok
+     * ukur pra-evaluasi (ditentukan varian kertas, bukan diketik teknisi).
+     *
      * Balik `null` kalau bloknya belum ada: sesi Micrometer tanpa pra-evaluasi
      * tidak bisa dihitung, dan menebak nilainya berarti menerbitkan
      * ketidakpastian yang tidak bersumber.
@@ -119,7 +123,7 @@ class MicrometerMentah
      * satunya — diam-diam, tanpa error, di jalur yang tidak pernah dites.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat  isi `calibration_sessions.spesifikasi_alat`
-     * @return array{kapasitas_mm: float, resolusi_mm: float, suhu_balok_c: float, suhu_uut_c: float, pra_evaluasi: list<float>, balok_pra_evaluasi: list<float>}|null
+     * @return array{kapasitas_mm: float, resolusi_mm: float, pra_evaluasi: list<float>}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -140,11 +144,33 @@ class MicrometerMentah
         return [
             'kapasitas_mm' => $angka($blok['kapasitas_mm'] ?? null),
             'resolusi_mm' => $angka($blok['resolusi_mm'] ?? null),
-            'suhu_balok_c' => $angka($blok['suhu_balok_c'] ?? null),
-            'suhu_uut_c' => $angka($blok['suhu_uut_c'] ?? null),
             'pra_evaluasi' => $deret($blok['pra_evaluasi'] ?? null),
-            'balok_pra_evaluasi' => $deret($blok['balok_pra_evaluasi'] ?? null),
         ];
+    }
+
+    /**
+     * Rata-rata suhu ruangan MENTAH — sumber suhu balok ukur dan suhu UUT.
+     *
+     * Ditaruh di sini, bukan disalin di tiga jalur yang memanggilnya (simpan,
+     * validator, hitung ulang), karena yang diangkut BUKAN sekadar rata-rata:
+     * dia pernyataan bahwa untuk lembar ini suhu balok ukur = suhu UUT =
+     * rata-rata suhu ruangan. Terbukti di keempat workbook master; lihat
+     * [\App\Services\Calibration\MicrometerCalculator::budget].
+     *
+     * Ujung yang kosong dilewati, bukan dibaca nol: satu ujung yang belum
+     * diisi bikin rata-ratanya separuh, dan suhu 10 °C di ruang berpendingin
+     * 20 °C menggeser komponen suhu tanpa satu pun error.
+     */
+    public static function rataSuhuRuang(mixed $awal, mixed $akhir): float
+    {
+        $terisi = array_values(array_filter(
+            [$awal, $akhir],
+            static fn ($s): bool => is_numeric($s),
+        ));
+
+        return $terisi === []
+            ? 0.0
+            : array_sum(array_map('floatval', $terisi)) / count($terisi);
     }
 
     /**

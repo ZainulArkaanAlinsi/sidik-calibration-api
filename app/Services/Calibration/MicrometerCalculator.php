@@ -210,7 +210,7 @@ class MicrometerCalculator
      * titiknya hilang dari sertifikat tanpa jejak.
      *
      * @param  list<array{titik_ke: int, nominal: list<float|null>, pembacaan: list<float>}>  $titik
-     * @param  array{kapasitas_mm: float, resolusi_mm: float, tanggal_kalibrasi: \DateTimeInterface, pra_evaluasi: list<float>, balok_pra_evaluasi: list<float|null>, suhu_balok_c: float, suhu_uut_c: float}  $konteks
+     * @param  array{kapasitas_mm: float, resolusi_mm: float, tanggal_kalibrasi: \DateTimeInterface, pra_evaluasi: list<float>, balok_pra_evaluasi: list<float|null>, suhu_ruang_rata_c: float}  $konteks
      * @return array{titik: list<array<string, mixed>>, budget: list<array<string, mixed>>, ketidakpastian_gabungan: float, derajat_kebebasan_efektif: float|null, faktor_cakupan_k: float, ketidakpastian_diperluas: float, u95_sertifikat: float, type_b: float, pita_cmc: array<string, mixed>|null, boleh_terbit: bool, ditolak: list<array{titik_ke: int, alasan: string}>}
      */
     public function hitungSesi(array $titik, array $konteks): array
@@ -364,9 +364,31 @@ class MicrometerCalculator
             $dihitung,
         ));
 
-        $suhuRata = ((float) $konteks['suhu_balok_c'] + (float) $konteks['suhu_uut_c']) / 2;
+        // Suhu balok ukur & suhu UUT DITURUNKAN dari rata-rata suhu ruangan,
+        // tidak diminta terpisah — dan itu bukan penyederhanaan kita.
+        //
+        // Di KEEMPAT workbook master `O31` (suhu balok) dan `P31` (suhu UUT)
+        // berisi angka yang SAMA, dan angka itu persis `(suhu_awal +
+        // suhu_akhir) / 2`:
+        //
+        //   0-25 mm    20,6 & 20,7 -> 20,65   O31 = P31 = 20,65
+        //   25-50 mm   20,5 & 20,6 -> 20,55   O31 = P31 = 20,55
+        //   50-75 mm   20,5 & 20,6 -> 20,55   O31 = P31 = 20,55
+        //   75-100 mm  20,6 & 20,2 -> 20,40   O31 = P31 = 20,40
+        //
+        // Itu sebabnya kertas lembar kerja (`SIDIK-FM-CAL-0522`) tidak punya
+        // kotak untuk keduanya: yang dipungut cuma suhu ruangan. Meminta
+        // keduanya lagi berarti membuka jalan buat teknisi mengisi angka yang
+        // BERTENTANGAN dengan suhu ruangan yang dia tulis sendiri.
+        $suhuRata = (float) $konteks['suhu_ruang_rata_c'];
         $deltaSuhu = $suhuRata - (float) $k['suhu_acuan_c'];
-        $selisihSuhu = abs((float) $konteks['suhu_uut_c'] - (float) $konteks['suhu_balok_c']);
+
+        // Konsekuensinya komponen ke-9 selalu NOL — dia `|suhu_uut − suhu_balok|`
+        // dari dua angka yang sama menurut konstruksi. Ditiru apa adanya (master
+        // juga selalu memulangkan nol di sini) supaya urutan sembilan komponen
+        // budget tetap sama dengan sheet `PERHITUNGAN U95%`, dan supaya begitu
+        // lab mulai mengukur keduanya terpisah, tempatnya sudah ada.
+        $selisihSuhu = 0.0;
         $deltaAlpha = (float) $k['delta_alpha_per_c'];
 
         // ci suku termal: ∂L/∂ϴ = Δα · L untuk komponen suhu, dan L · Δϴ untuk

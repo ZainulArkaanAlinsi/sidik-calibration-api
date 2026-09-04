@@ -90,8 +90,9 @@ class MicrometerMasterTest extends TestCase
         return [$titik, [
             'kapasitas_mm' => $wb['masukan']['kapasitas_mm'],
             'resolusi_mm' => $wb['masukan']['resolusi_mm'],
-            'suhu_balok_c' => $wb['masukan']['suhu_balok_c'],
-            'suhu_uut_c' => $wb['masukan']['suhu_uut_c'],
+            // Keduanya sama, dan sama dengan rata-rata suhu ruangan — dijaga
+            // `test_suhu_balok_dan_uut_sama_dengan_rata_rata_suhu_ruangan`.
+            'suhu_ruang_rata_c' => $wb['masukan']['suhu_balok_c'],
             'pra_evaluasi' => $wb['masukan']['pra_evaluasi_mm'],
             'balok_pra_evaluasi' => $wb['masukan']['balok_pra_evaluasi_mm'],
             'tanggal_kalibrasi' => new DateTimeImmutable($wb['masukan']['saat_master_dihitung']),
@@ -300,6 +301,72 @@ class MicrometerMasterTest extends TestCase
         $this->assertSame('A', $hasil['pita_cmc']['kode']);
         $this->assertSame(0.83, $hasil['pita_cmc']['u95_um']);
         $this->assertGreaterThanOrEqual(0.83, $hasil['u95_sertifikat']);
+    }
+
+    /**
+     * Suhu balok ukur dan suhu UUT SAMA, dan sama dengan rata-rata suhu
+     * ruangan — di keempat workbook master.
+     *
+     * Ini yang membuat kertas lembar kerja (`SIDIK-FM-CAL-0522`) tidak punya
+     * kotak untuk keduanya, dan yang membuat komponen budget ke-9 ("selisih
+     * suhu mikrometer dengan balok ukur") selalu nol. Kalau identitas ini
+     * runtuh, dua keputusan itu ikut runtuh — jadi dia dijaga di sini, bukan
+     * cuma ditulis di komentar.
+     */
+    #[DataProvider('workbook')]
+    public function test_suhu_balok_dan_uut_sama_dengan_rata_rata_suhu_ruangan(string $kode): void
+    {
+        $m = self::fixture()['workbook'][$kode]['masukan'];
+        $sesi = json_decode(
+            (string) file_get_contents(base_path('database/data/sesi-master-micrometer.json')),
+            true,
+        )['sesi'][$kode]['_sesi'];
+
+        $rata = ((float) $sesi['suhu_awal'] + (float) $sesi['suhu_akhir']) / 2;
+
+        $this->assertEqualsWithDelta($m['suhu_balok_c'], $m['suhu_uut_c'], 1e-12, 'suhu balok vs UUT');
+        $this->assertEqualsWithDelta($rata, (float) $m['suhu_balok_c'], 1e-12, 'suhu balok vs rata-rata ruangan');
+        $this->assertEqualsWithDelta($rata, (float) $m['suhu_uut_c'], 1e-12, 'suhu UUT vs rata-rata ruangan');
+    }
+
+    /**
+     * Sebelas nominal PRA-CETAK tiap varian cocok dengan total nominal yang
+     * benar-benar dihitung master.
+     *
+     * Deretnya bukan aritmetika, dan itu bukan salah cetak: nominal ketiga
+     * varian B (31,0) dan C (51,0) melanggar pola +2,55 yang diikuti A dan D,
+     * tapi keduanya cocok dengan master (30,99997 dan 51,00025). Tumpukan balok
+     * yang tersedia yang menentukan.
+     */
+    #[DataProvider('workbook')]
+    public function test_nominal_pracetak_cocok_total_nominal_master(string $kode): void
+    {
+        $wb = self::fixture()['workbook'][$kode];
+        $kapasitas = $wb['masukan']['kapasitas_mm'];
+
+        // Varian 0-25 mm kapasitasnya cacat di master (635 mm, satuan `inch`),
+        // jadi dipilih lewat nominal titik terakhirnya.
+        $varian = (new TabelStandarMicrometer)->pitaCmc(
+            $kapasitas > 100.0 ? 25.0 : (float) $kapasitas,
+        );
+
+        $this->assertNotNull($varian, "varian {$kode} tidak ketemu");
+        $this->assertCount(11, $varian['titik']);
+
+        foreach ($varian['titik'] as $i => $titik) {
+            $master = $wb['titik'][$i]['total_nominal_master_mm'];
+
+            if ($master === null) {
+                continue;
+            }
+
+            $this->assertEqualsWithDelta(
+                $master,
+                (float) $titik['nominal_cetak_mm'],
+                0.06,
+                "nominal pra-cetak titik {$i} varian {$kode}",
+            );
+        }
     }
 
     /**
