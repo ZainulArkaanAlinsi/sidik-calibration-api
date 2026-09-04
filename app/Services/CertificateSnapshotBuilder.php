@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
+use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Support\Angka;
@@ -202,8 +203,7 @@ class CertificateSnapshotBuilder
             ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
             : null;
 
-        $baris = $sesi->uncertaintyCalculations
-            ->sortBy('titik_ke')
+        $baris = self::titikUrut($sesi)
             ->map(function ($titik) use ($alat, $organisasi, $profil): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
                 //
@@ -390,10 +390,49 @@ class CertificateSnapshotBuilder
      *
      * @return list<array<string, string|null>>
      */
+    /**
+     * Titik ukur dalam urutan cetaknya: `titik_ke` dulu, `id` pemecah serinya.
+     *
+     * ## Kenapa diurutkan di sini, bukan cuma diandalkan ke relasinya
+     *
+     * Relasi [CalibrationSession::uncertaintyCalculations] memang sudah
+     * ber-`ORDER BY` sejak 3 Sep 2026, tapi itu cuma menjaga jalur baca dari
+     * database. Koleksinya bisa sampai ke sini lewat jalan lain — `setRelation`
+     * di test, hasil `map`/`merge` di pemanggil, relasi yang sudah nempel di
+     * memori dari query sebelumnya — dan yang dihasilkan dicetak APA ADANYA ke
+     * sertifikat terakreditasi.
+     *
+     * Yang bikin lapis kedua ini wajib: urutannya bergeser TANPA error. 3 Sep
+     * 2026, dua kali `sertifikat:bangun-ulang` berturut-turut di MySQL yang sama
+     * dengan kode yang sama memberi hasil beda-beda, dan tiap jalan menulis
+     * ulang PDF sertifikat yang sudah dipegang pelanggan.
+     *
+     * ## Kenapa `id` ikut, bukan cuma `titik_ke`
+     *
+     * `sortBy` itu stabil: baris yang `titik_ke`-nya KEMBAR mempertahankan
+     * urutan datangnya — yaitu urutan yang tidak dijanjikan siapa pun. Alat yang
+     * satu titiknya punya beberapa baris (Chlorine Free/Total, Spectrophotometer
+     * tiga blok) justru yang paling kena.
+     *
+     * Temuan review 3 Sep 2026, dan benar: perbaikan pertama cuma memasang sumbu
+     * kedua di `standarDigunakan()`, sementara `hasil()` — tabel hasil kalibrasi
+     * itu sendiri — dan pemilihan kode metode masih `sortBy('titik_ke')` saja.
+     * Ketiganya sekarang lewat satu pintu supaya tidak ada lagi yang tertinggal.
+     *
+     * `titik_ke` di depan itu pilihan pemilik lab: tabelnya mengikuti urutan
+     * titik ukur, sama seperti lembar kerjanya.
+     *
+     * @return Collection<int, UncertaintyCalculation>
+     */
+    private static function titikUrut(CalibrationSession $sesi): Collection
+    {
+        return $sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]);
+    }
+
     private function standarDigunakan(CalibrationSession $sesi): array
     {
         /** @var Collection<int, Standard> $standar */
-        $standar = $sesi->uncertaintyCalculations
+        $standar = self::titikUrut($sesi)
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn (Collection $c) => $c->push($sesi->standard))
@@ -415,7 +454,14 @@ class CertificateSnapshotBuilder
             // teknisi tapi nggak nempel ke titik hitung mana pun (mis. RTD
             // Sensor buat baca suhu larutan) tetap harus tercatat — itu bagian
             // dari ketertelusuran, bukan pelengkap.
-            ->concat($sesi->standarDicek->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai))
+            // `sortBy('id')` alasannya sama dengan sortBy di atas: ekor daftar
+            // ini pun ikut tercetak, jadi urutannya nggak boleh diserahkan ke
+            // urutan baris yang kebetulan dikembalikan database.
+            ->concat(
+                $sesi->standarDicek
+                    ->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai)
+                    ->sortBy('id')
+            )
             ->unique('id')
             ->values();
 
@@ -561,8 +607,7 @@ class CertificateSnapshotBuilder
         // Terakhir: kode yang kesimpen di baris perhitungan. Ini nggak bawa
         // revisi, jadi sengaja jadi cadangan paling akhir — sertifikat yang
         // nyebut IK tanpa revisi nggak bisa dicocokin ke dokumen mutu mana.
-        return $sesi->uncertaintyCalculations
-            ->sortBy('titik_ke')
+        return self::titikUrut($sesi)
             ->first(fn ($titik): bool => filled($titik->metode))?->metode;
     }
 

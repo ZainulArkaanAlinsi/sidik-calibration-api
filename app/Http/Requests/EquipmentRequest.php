@@ -78,7 +78,15 @@ class EquipmentRequest extends FormRequest
             'range_min' => ['nullable', 'numeric'],
             'range_max' => ['nullable', 'numeric', 'gte:range_min'],
             'satuan' => ['nullable', 'string', 'max:50'],
-            'resolusi' => ['nullable', 'numeric', 'min:0'],
+            // `gt:0`, bukan `min:0` — aturan yang SAMA dengan
+            // `resolusi_rentang.*.resolusi` 22 baris di bawah, dan alasannya
+            // ditulis lengkap di sana.
+            //
+            // Dua baris ini sempat berbeda: yang bawah sudah `gt:0` sementara
+            // yang ini masih `min:0`, jadi nol tetap punya pintu masuk lewat
+            // kolom resolusi utama. Nol bukan "belum diisi" — yang belum diisi
+            // itu `null`, dan `null` tetap diterima.
+            'resolusi' => ['nullable', 'numeric', 'gt:0'],
 
             // Band resolusi/satuan per titik — dua bentuk baris, dan keduanya
             // harus lolos lewat kolom yang sama (lihat `Equipment::bandResolusi()`):
@@ -128,6 +136,7 @@ class EquipmentRequest extends FormRequest
             'nama_alat_kemampuan.exists' => 'Jenis alat itu nggak ada di kemampuan kalibrasi kategori ini. '
                 .'Ambil daftarnya dari GET /api/categories/{kode}.',
             'range_max.gte' => 'Batas atas rentang ukur nggak boleh lebih kecil dari batas bawah.',
+            'resolusi.gt' => 'Resolusi harus lebih besar dari nol.',
             'resolusi_rentang.*.resolusi.required' => 'Tiap baris resolusi per titik wajib punya angka resolusi.',
             'resolusi_rentang.*.resolusi.gt' => 'Resolusi harus lebih besar dari nol.',
             'tanggal_jatuh_tempo.after_or_equal' => 'Tanggal jatuh tempo nggak boleh sebelum tanggal kalibrasi terakhir.',

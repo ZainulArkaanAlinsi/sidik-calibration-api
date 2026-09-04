@@ -140,6 +140,48 @@ if [ "${SEED_ON_BOOT}" = "true" ]; then
     php artisan db:seed --force
 fi
 
+# Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit.
+#
+# ## Kenapa lewat boot, bukan dijalankan sekali lewat shell
+#
+# Alasannya sama persis dengan impor direktori di bawah: paket gratis Render
+# TIDAK menyediakan shell sama sekali ("Shell is not supported for free compute
+# plans" — dialog upgrade-nya muncul begitu tab Shell dibuka). Tanpa jalur ini,
+# `sertifikat:bangun-ulang` sama sekali tidak bisa dijalankan di produksi, dan
+# perbaikan yang menyentuh SNAPSHOT tidak akan pernah sampai ke sertifikat yang
+# terlanjur terbit.
+#
+# Tombol "Cetak ulang PDF" di panel admin bukan penggantinya, dan itu disengaja:
+# dia sengaja TIDAK menyentuh snapshot ([CetakUlangSertifikat]) — yang
+# dirender ulang cuma lembarnya, dari snapshot yang sama persis. Perbaikan
+# seperti U95 per titik atau urutan tabel ketertelusuran hidup DI DALAM
+# snapshot, jadi tombol itu tidak memunculkannya.
+#
+# ## Kenapa saklar, dan kenapa harus dimatikan lagi
+#
+# Perintahnya aman diulang — hasilnya cuma bergantung data sesi + kode yang
+# lagi jalan — tapi dia menulis ulang setiap berkas PDF tiap kali jalan. Di
+# paket gratis itu menit yang diambil dari jendela health check Render yang
+# cuma 15 menit, dan ongkosnya tumbuh seiring jumlah sertifikat. Nyalakan
+# sesudah deploy yang mengubah bentuk snapshot, baca hasilnya di deploy log,
+# lalu matikan lagi.
+#
+# ## `|| true` di sini BUKAN kelalaian
+#
+# Sama alasannya dengan impor direktori: sertifikat yang gagal dibangun ulang
+# tetap punya snapshot & PDF lamanya — dokumennya masih utuh, cuma belum ikut
+# betul. Menjatuhkan boot karena itu berarti menukar satu berkas yang
+# ketinggalan dengan SELURUH server yang dipakai teknisi di lokasi. Gagalnya
+# tetap kelihatan di log, dan perintahnya sendiri sudah memisahkan "dilewati"
+# dari "gagal" di kode keluarnya.
+if [ "${BANGUN_ULANG_ON_BOOT}" = "true" ]; then
+    tahap "bangun ulang snapshot & PDF sertifikat"
+    echo "!! BANGUN_ULANG_ON_BOOT=true — jalan tiap container nyala." >&2
+    echo "   Matikan lagi di Render → Environment sesudah hasilnya kebaca di" >&2
+    echo "   log ini, biar tiap boot berikutnya nggak nulis ulang semua PDF." >&2
+    php artisan sertifikat:bangun-ulang --render-ulang-pdf || true
+fi
+
 # Direktori perusahaan rujukan (10.320 PT) dimuat di sini, bukan lewat shell.
 #
 # ## Kenapa di boot, bukan sekali manual

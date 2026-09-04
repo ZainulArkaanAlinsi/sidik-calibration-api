@@ -7,6 +7,7 @@ use App\Http\Resources\FormulaVersionResource;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Services\RumusKalibrasi;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -149,38 +150,83 @@ class FormulaController extends Controller
         $langsungAktif = (bool) ($data['langsung_aktif'] ?? false);
         $mulai = Carbon::parse($data['berlaku_dari'])->startOfDay();
 
-        $versi = DB::transaction(function () use ($formula, $data, $mulai, $langsungAktif, $request): FormulaVersion {
-            $sebelumnya = $langsungAktif
-                ? $formula->versions()
-                    ->where('status', FormulaVersion::STATUS_AKTIF)
-                    ->whereNull('effective_until')
-                    ->orderByDesc('effective_from')
-                    ->lockForUpdate()
-                    ->first()
-                : null;
+        // Lapis kedua di belakang `lockForUpdate()` di `nomorBerikutnya()`.
+        //
+        // Locknya yang menyerialkan penomoran; try/catch ini yang memastikan
+        // sisa kemungkinan apa pun — beda isolation level, transaksi yang
+        // dimulai dari jalur lain — keluar sebagai jawaban yang bisa
+        // dimengerti, bukan 500 generik. Admin yang kalah balapan cuma perlu
+        // tahu satu hal: simpan ulang.
+        try {
+            $versi = DB::transaction(function () use ($formula, $data, $mulai, $langsungAktif, $request): FormulaVersion {
+                $sebelumnya = $langsungAktif
+                    ? $formula->versions()
+                        ->where('status', FormulaVersion::STATUS_AKTIF)
+                        ->whereNull('effective_until')
+                        ->orderByDesc('effective_from')
+                        ->lockForUpdate()
+                        ->first()
+                    : null;
 
-            // Tutup rentang versi sebelumnya SEHARI SEBELUM versi baru mulai —
-            // bukan di hari yang sama. Kalau di hari yang sama, tanggal itu punya
-            // dua versi aktif.
-            if ($sebelumnya !== null) {
-                $sebelumnya->update([
-                    'effective_until' => $mulai->copy()->subDay()->toDateString(),
+                // Tutup rentang versi sebelumnya SEHARI SEBELUM versi baru mulai —
+                // bukan di hari yang sama. Kalau di hari yang sama, tanggal itu punya
+                // dua versi aktif.
+                if ($sebelumnya !== null) {
+                    $sebelumnya->update([
+                        'effective_until' => $mulai->copy()->subDay()->toDateString(),
+                    ]);
+                }
+
+                return $formula->versions()->create([
+                    'organization_id' => $formula->organization_id,
+                    'nomor_versi' => FormulaVersion::nomorBerikutnya($formula->id),
+                    'sumber' => $data['sumber'],
+                    'parameter' => $data['parameter'] ?? null,
+                    'ekspresi' => $data['ekspresi'] ?? null,
+                    'status' => $langsungAktif ? FormulaVersion::STATUS_AKTIF : FormulaVersion::STATUS_DRAFT,
+                    'effective_from' => $mulai->toDateString(),
+                    'effective_until' => null,
+                    'catatan' => $data['catatan'] ?? null,
+                    'created_by' => $request->user()->id,
                 ]);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // Yang dijaga di sini CUMA tabrakan nomor versi; pelanggaran lain
+            // diteruskan apa adanya supaya nggak ada kegagalan yang tersamar
+            // jadi pesan yang salah — pesan yang salah lebih berbahaya
+            // daripada pesan generik, karena dia nyuruh admin ngulang sesuatu
+            // yang nggak akan pernah berhasil.
+            //
+            // Dua ejaan, karena dua mesin menyebut pelanggaran yang SAMA
+            // dengan cara yang beda:
+            //   MySQL  : Duplicate entry '1-1' for key 'fversi_formula_nomor_unik'
+            //   SQLite : UNIQUE constraint failed: formula_versions.formula_id,
+            //            formula_versions.nomor_versi
+            // Produksi MySQL, CI SQLite. Cuma memeriksa nama index-nya bikin
+            // penjagaan ini kelihatan jalan padahal cuma jalan di separuh
+            // tempat — dan separuh yang nggak jalan justru yang diuji CI.
+            // Yang dibaca pesan PDO-nya, BUKAN `$e->getMessage()`.
+            //
+            // `QueryException::getMessage()` menempelkan SQL-nya, dan SQL insert
+            // itu memuat daftar kolom — termasuk `nomor_versi`. Jadi memeriksa
+            // pesan lengkapnya bikin kegagalan APA PUN di insert ini kebaca
+            // sebagai tabrakan nomor, dan admin disuruh mengulang sesuatu yang
+            // nggak akan pernah berhasil. Pesan PDO cuma memuat constraint yang
+            // beneran dilanggar.
+            $rinci = $e->getPrevious()?->getMessage() ?? '';
+
+            $tabrakanNomor = str_contains($rinci, 'fversi_formula_nomor_unik')
+                || str_contains($rinci, 'nomor_versi');
+
+            if (! $tabrakanNomor) {
+                throw $e;
             }
 
-            return $formula->versions()->create([
-                'organization_id' => $formula->organization_id,
-                'nomor_versi' => FormulaVersion::nomorBerikutnya($formula->id),
-                'sumber' => $data['sumber'],
-                'parameter' => $data['parameter'] ?? null,
-                'ekspresi' => $data['ekspresi'] ?? null,
-                'status' => $langsungAktif ? FormulaVersion::STATUS_AKTIF : FormulaVersion::STATUS_DRAFT,
-                'effective_from' => $mulai->toDateString(),
-                'effective_until' => null,
-                'catatan' => $data['catatan'] ?? null,
-                'created_by' => $request->user()->id,
-            ]);
-        });
+            return response()->json([
+                'message' => 'Ada versi lain yang tersimpan barengan buat rumus ini. '
+                    .'Nomor versinya bentrok — coba simpan lagi, nomornya bakal naik sendiri.',
+            ], 409);
+        }
 
         // Diperiksa SESUDAH dibikin, di dalam pemeriksaan yang sama dengan
         // `bentrokRentang()` — jadi aturannya cuma ditulis sekali dan nggak bisa
