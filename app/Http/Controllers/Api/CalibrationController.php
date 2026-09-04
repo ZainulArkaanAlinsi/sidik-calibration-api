@@ -23,7 +23,6 @@ use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
-use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\CalibrationValidator;
@@ -2039,6 +2038,7 @@ class CalibrationController extends Controller
     ): array {
         $mentah = [];
         $siapHitung = [];
+        $belumDipetakan = [];
 
         $metodeInput = (string) $request->string('input_method', 'manual');
         $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
@@ -2047,7 +2047,13 @@ class CalibrationController extends Controller
 
         $spek = (array) $request->input('spesifikasi_alat', []);
         $blok = (array) ($spek[MicrometerMentah::KUNCI_SESI] ?? []);
-        $faktor = MicrometerProfile::SATUAN_PILIHAN[(string) ($blok['satuan'] ?? 'mm')] ?? 1.0;
+
+        // Satuan ALAT, dipakai buat mengubah penunjukan ke mm SAAT DIHITUNG —
+        // bukan saat disimpan. Yang tersimpan angka mentah yang diketik
+        // teknisi, dan `raw_measurements.satuan` menyebutkan satuannya.
+        // Alasannya di [MicrometerMentah::keMm]: mengonversi di ujung masuk
+        // tidak idempoten, dan jalur draft mengalikannya lagi tiap simpan.
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
 
         $tabel = new TabelStandarMicrometer;
         $varian = $tabel->pitaCmc((float) ($blok['kapasitas_mm'] ?? $alat->range_max ?? 0));
@@ -2070,6 +2076,45 @@ class CalibrationController extends Controller
             }
 
             $nominalCetak = (float) $bawaan['nominal_cetak_mm'];
+
+            // Baris dipetakan lewat POSISI, dan itu cuma benar selama HP
+            // mengirim kesebelas barisnya utuh dan berurutan. Hari ini memang
+            // begitu (`TitikState.siapKirim` true buat tiap baris ber-set
+            // point, termasuk yang belum disentuh), tapi itu jaminan yang
+            // hidup di repo LAIN.
+            //
+            // Kalau suatu saat HP membuang baris kosong, seluruh baris
+            // sesudahnya bergeser satu: pembacaan yang diambil di 35,3 mm
+            // tersimpan sebagai titik 31,0 mm, koreksinya meleset ~4 mm, dan
+            // tidak ada satu pun error di kedua sisi. Sertifikatnya terbit
+            // dengan angka yang kelihatan wajar di nominal yang salah.
+            //
+            // Jadi `titik_ukur` kiriman HP dipakai sebagai PEMERIKSA: dia tidak
+            // menentukan nominalnya (varian tetap yang menang — lihat
+            // `test_nominal_dari_varian_menang_atas_yang_dikirim_hp`), tapi
+            // kalau dia menunjuk baris yang berbeda jauh, pemetaannya sudah
+            // salah dan titiknya ditolak dengan alasan yang kebaca.
+            //
+            // Ambangnya longgar (0,05 mm) supaya pembulatan HP tidak pernah
+            // menolak titik yang benar: dua nominal pra-cetak yang paling
+            // berdekatan pun terpisah 1,7 mm.
+            $dikirim = $titik['titik_ukur'] ?? null;
+
+            if (is_numeric($dikirim) && abs((float) $dikirim - $nominalCetak) > 0.05) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Baris ke-%d mengirim nominal %s mm, tapi baris itu di kertas %s mm. '
+                        .'Urutan baris tidak cocok dengan lembarnya — titik tidak disimpan '
+                        .'supaya pembacaannya tidak mendarat di nominal yang salah.',
+                        $titikKe,
+                        rtrim(rtrim(number_format((float) $dikirim, 4, ',', '.'), '0'), ','),
+                        rtrim(rtrim(number_format($nominalCetak, 4, ',', '.'), '0'), ','),
+                    ),
+                ];
+
+                continue;
+            }
             $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
 
             $pembacaan = [];
@@ -2097,8 +2142,8 @@ class CalibrationController extends Controller
 
                 $meta = $ocrPeran[$urutan] ?? null;
                 $dariKamera = $asalKamera($meta);
-                $mm = (float) $nilai * $faktor;
-                $pembacaan[] = $mm;
+                // Yang DIHITUNG mm; yang DISIMPAN mentah + satuannya.
+                $pembacaan[] = MicrometerMentah::keMm($nilai, $satuanAlat);
 
                 $mentah[] = [
                     'titik_ke' => $titikKe,
@@ -2108,8 +2153,8 @@ class CalibrationController extends Controller
                     'tahap' => 'sesudah_adjustment',
                     'titik_ukur' => $nominalCetak,
                     'standard_id' => $standarDefault?->id,
-                    'pembacaan' => $mm,
-                    'satuan' => MicrometerMentah::SATUAN,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuanAlat,
                     'input_source' => $dariKamera ? $sumberKamera : 'manual',
                     'ocr_raw_text' => $meta['raw_text'] ?? null,
                     'ocr_confidence' => $this->keyakinanTerlemah($meta),
@@ -2136,7 +2181,7 @@ class CalibrationController extends Controller
                     'titik_ukur' => $nominalCetak,
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $nominal,
-                    'satuan' => MicrometerMentah::SATUAN,
+                    'satuan' => MicrometerMentah::SATUAN_BALOK,
                     // Diturunkan server dari varian kertas, bukan diketik
                     // teknisi maupun dibaca kamera.
                     'input_source' => 'manual',
@@ -2171,7 +2216,7 @@ class CalibrationController extends Controller
                 fn (array $h): array => $this->bulatkanHitungan($h),
                 $perGrup['hitungan'] ?? [],
             ),
-            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
         ];
     }
 

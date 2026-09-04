@@ -122,8 +122,9 @@ class MicrometerSesiTest extends TestCase
         // yang dikirim HP.
         $this->assertEqualsWithDelta(31.0, (float) $baris->first()->titik_ukur, self::TOLERANSI);
 
-        // Satuan simpan SELALU mm — lihat MicrometerMentah::SATUAN.
-        $this->assertSame([MicrometerMentah::SATUAN], $baris->pluck('satuan')->unique()->all());
+        // Tiap baris menyebutkan satuannya sendiri. Sesi contoh ini `mm`, jadi
+        // penunjukan dan nominal balok sama-sama mm.
+        $this->assertSame(['mm'], $baris->pluck('satuan')->unique()->all());
     }
 
     /**
@@ -141,8 +142,14 @@ class MicrometerSesiTest extends TestCase
         [$alat, $teknisi] = $this->siapkan();
 
         $payload = $this->payload($alat);
-        // Angka ngawur dari HP.
-        $payload['measurements'][2]['titik_ukur'] = 999.0;
+        // Selisih skala PEMBULATAN — HP menggambar 31,0004 dari bentuk lembar
+        // sementara varian memegang 31,0. Yang menang varian.
+        //
+        // Selisih BESAR bukan pembulatan, itu salah pemetaan baris, dan sejak
+        // penjaga di `susunBlokMicrometer` ada titiknya ditolak — bukan
+        // disimpan di nominal yang salah. Lihat
+        // `test_baris_yang_bergeser_ditolak_bukan_disimpan_salah`.
+        $payload['measurements'][2]['titik_ukur'] = 31.0004;
 
         $id = $this->actingAs($teknisi)
             ->postJson('/api/calibrations', $payload)
@@ -218,13 +225,13 @@ class MicrometerSesiTest extends TestCase
     }
 
     /**
-     * Bentuk tabel HP + satuan `inch`: yang tersimpan mm.
+     * Bentuk tabel HP + satuan `inch`: yang tersimpan MENTAH, bukan mm.
      *
      * Dipisah dari test di atas supaya kegagalannya bisa dibedakan — bentuk
-     * yang tidak terbaca dan satuan yang tidak dikonversi punya tambalan yang
-     * beda, dan satu test yang menguji dua-duanya cuma bilang "ada yang salah".
+     * yang tidak terbaca dan satuan yang salah tempat punya tambalan yang beda,
+     * dan satu test yang menguji dua-duanya cuma bilang "ada yang salah".
      */
-    public function test_baris_evaluasi_bentuk_tabel_hp_ikut_konversi_satuan(): void
+    public function test_baris_evaluasi_bentuk_tabel_hp_disimpan_mentah(): void
     {
         [$alat, $teknisi] = $this->siapkan();
 
@@ -244,8 +251,180 @@ class MicrometerSesiTest extends TestCase
         $tersimpan = CalibrationSession::findOrFail($id)
             ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi'];
 
-        // 2 inch = 50,8 mm. Tanpa konversi yang tersimpan tetap 2.
-        $this->assertEqualsWithDelta(array_fill(0, 10, 50.8), array_map('floatval', $tersimpan), self::TOLERANSI);
+        // Tersimpan MENTAH: 2,0 apa adanya, bukan 50,8. Satuannya ikut di blok
+        // yang sama, dan `MicrometerMentah::blokSesi()` yang mengubahnya ke mm
+        // waktu dipakai menghitung.
+        $this->assertEqualsWithDelta(array_fill(0, 10, 2.0), array_map('floatval', $tersimpan), self::TOLERANSI);
+
+        $blok = MicrometerMentah::blokSesi(CalibrationSession::findOrFail($id)->spesifikasi_alat);
+        $this->assertEqualsWithDelta(array_fill(0, 10, 50.8), $blok['pra_evaluasi'], self::TOLERANSI, '2 inch = 50,8 mm waktu dihitung');
+    }
+
+    /**
+     * Menyimpan payload yang SAMA dua kali menghasilkan data yang sama.
+     *
+     * ## Kegagalan yang ditutup — data rusak berlipat, tanpa satu pun error
+     *
+     * Versi pertama mengonversi satuan di ujung MASUK: penunjukan dikalikan
+     * 25,4 lalu disimpan dalam mm. HP tidak punya konversi balik sama sekali —
+     * dia menggambar ulang lembar dari angka yang dia terima. Jadi alur kerja
+     * lapangan yang paling biasa merusak datanya sendiri:
+     *
+     *  1. Teknisi simpan DRAFT di dekat alatnya. 1 inch → tersimpan 25,4 mm.
+     *  2. Dia buka lagi lembarnya buat melanjutkan. Kotaknya terisi 25,4.
+     *  3. Dia simpan lagi. 25,4 × 25,4 = **645,16 mm**.
+     *
+     * Dan berlipat tiap simpan. Baris `Evaluasi` ikut: 2 inch jadi 50,8 lalu
+     * **1290,32**. Yang terbit sertifikat dengan koreksi salah ratusan kali
+     * lipat, dari lembar yang di layar kelihatan wajar.
+     *
+     * Ditutup dengan berhenti mengonversi di ujung masuk: yang tersimpan angka
+     * MENTAH plus satuannya, dan yang mengubah ke mm
+     * [\App\Support\MicrometerMentah::keMm] di tempat pakai.
+     *
+     * Diuji lewat DRAFT, bukan sesi final: sesi `menunggu_approval` menolak
+     * PUT dari teknisi, jadi test yang lewat jalur final bakal hijau tanpa
+     * pernah menyentuh bug-nya.
+     */
+    public function test_simpan_draft_dua_kali_tidak_mengonversi_satuan_dua_kali(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat, ['status' => 'draft']);
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['satuan'] = 'inch';
+        $payload['measurements'] = [
+            ['titik_ukur' => 25.0, 'pembacaan' => array_fill(0, 5, 1.0)],
+        ];
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'] = [
+            'baris' => [['titik_ukur' => 1.0, 'pembacaan' => array_fill(0, 10, 2.0)]],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $bacaan = static fn (int $id): array => [
+            (float) RawMeasurement::where('calibration_session_id', $id)
+                ->where('peran_sensor', MicrometerMentah::PERAN_PEMBACAAN)
+                ->orderBy('sensor_ke')->value('pembacaan'),
+            (float) CalibrationSession::findOrFail($id)
+                ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi'][0],
+        ];
+
+        $pertama = $bacaan($id);
+
+        // HP membuka draft lagi lalu menyimpan: yang dikirim ulang persis yang
+        // dia terima dari server.
+        $sesi = CalibrationSession::findOrFail($id);
+        $ulang = $payload;
+        $ulang['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'] = [
+            'baris' => [[
+                'titik_ukur' => 1.0,
+                'pembacaan' => array_values($sesi->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi']),
+            ]],
+        ];
+        $ulang['measurements'] = [[
+            'titik_ukur' => 25.0,
+            'pembacaan' => array_fill(0, 5, $pertama[0]),
+        ]];
+
+        $this->actingAs($teknisi)
+            ->putJson("/api/calibrations/{$id}", $ulang)
+            ->assertSuccessful();
+
+        $this->assertEqualsWithDelta(
+            $pertama,
+            $bacaan($id),
+            self::TOLERANSI,
+            'Simpanan kedua mengubah angkanya — satuan dikonversi dua kali.',
+        );
+
+        // Dan yang tersimpan memang MENTAH: 1.0 apa adanya, bukan 25,4.
+        $this->assertEqualsWithDelta([1.0, 2.0], $pertama, self::TOLERANSI);
+    }
+
+    /**
+     * Yang DIHITUNG tetap mm walau yang disimpan mentah dalam inch.
+     *
+     * Pasangan test di atas: berhenti mengonversi di ujung masuk tidak boleh
+     * berarti berhenti mengonversi sama sekali.
+     */
+    public function test_pembacaan_inch_tetap_dihitung_dalam_mm(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['satuan'] = 'inch';
+        // Baris pertama varian B: nominal 25,0 mm. 1 inch = 25,4 mm, jadi
+        // koreksinya 25,00027 − 25,4 = −0,39973 mm.
+        $payload['measurements'] = [
+            ['titik_ukur' => 25.0, 'pembacaan' => array_fill(0, 5, 1.0)],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $hitung = CalibrationSession::findOrFail($id)
+            ->uncertaintyCalculations()->where('titik_ke', 1)->firstOrFail();
+
+        $this->assertEqualsWithDelta(25.4, (float) $hitung->rata_rata, self::TOLERANSI, 'rata-rata harus mm');
+        $this->assertEqualsWithDelta(-0.39973, (float) $hitung->koreksi, self::TOLERANSI, 'koreksi harus mm');
+    }
+
+    /**
+     * Baris yang urutannya bergeser DITOLAK, bukan disimpan di nominal salah.
+     *
+     * Server memetakan baris lewat POSISI — baris ke-N payload jadi titik ke-N
+     * kertas. Itu benar selama HP mengirim kesebelas barisnya utuh dan
+     * berurutan, dan hari ini memang begitu. Tapi jaminan itu hidup di repo
+     * LAIN (`TitikState.siapKirim`), dan kalau suatu saat HP membuang baris
+     * kosong, seluruh baris sesudahnya bergeser satu: pembacaan yang diambil
+     * di 35,3 mm tersimpan sebagai titik 31,0 mm — koreksinya meleset ~4 mm,
+     * dan tidak ada satu pun error di kedua sisi.
+     *
+     * `titik_ukur` kiriman HP dipakai sebagai pemeriksa. Dia tidak menentukan
+     * nominalnya (varian tetap menang), cuma membuktikan bahwa baris yang
+     * dikirim memang baris yang dimaksud.
+     */
+    public function test_baris_yang_bergeser_ditolak_bukan_disimpan_salah(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        // Baris kedua kertas 27,5 mm. HP mengirim 35,3 di posisi itu — persis
+        // yang terjadi kalau dua baris kosong di antaranya dibuang.
+        $payload = $this->payload($alat);
+        $payload['measurements'][1]['titik_ukur'] = 35.3;
+
+        // Teknisi melihat alasannya di pratinjau, SEBELUM sesinya terkirim.
+        $alasan = implode(' ', array_column(
+            $this->actingAs($teknisi)
+                ->postJson('/api/calibrations/preview', $payload)
+                ->assertSuccessful()
+                ->json('data.belum_dihitung') ?? [],
+            'alasan',
+        ));
+
+        $this->assertStringContainsString(
+            'Urutan baris tidak cocok',
+            $alasan,
+            'Baris yang bergeser harus ditolak dengan alasan yang kebaca.',
+        );
+
+        // Dan kalau tetap dikirim, pembacaannya TIDAK mendarat di titik 27,5.
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertSame(
+            0,
+            RawMeasurement::where('calibration_session_id', $id)
+                ->where('titik_ke', 2)->count(),
+            'Pembacaan baris yang bergeser tetap tersimpan — di nominal yang salah.',
+        );
     }
 
     /**
@@ -323,14 +502,24 @@ class MicrometerSesiTest extends TestCase
     }
 
     /**
-     * Satuan `inch` dikonversi SEKALI di ujung masuk: yang tersimpan mm, dan
-     * nominal balok ukur TIDAK ikut dikonversi.
+     * Sesi `inch`: yang TERSIMPAN angka mentah + satuannya, dan nominal balok
+     * ukur tetap mm.
      *
-     * Ini yang membedakan kita dari master, yang mengalikan pembacaan 25,4 di
-     * dalam rumus sementara kolom standarnya tetap mm — dan karena itu
-     * menerbitkan koreksi −61 mm pada balok ukur 2,5 mm.
+     * Dua hal yang dijaga sekaligus:
+     *
+     *  1. **Penunjukan disimpan mentah** (1,0) dengan `satuan = inch`, bukan
+     *     dikonversi lebih dulu. Itu yang bikin simpan berulang idempoten —
+     *     lihat `test_simpan_draft_dua_kali_...`. Yang mengubahnya ke mm
+     *     `MicrometerMentah::keMm()` di tempat pakai, dan itu diuji
+     *     `test_pembacaan_inch_tetap_dihitung_dalam_mm`.
+     *  2. **Nominal balok ukur TIDAK ikut satuan alat.** Sertifikat balok ukur
+     *     selalu mm apa pun skala mikrometernya, jadi barisnya tetap
+     *     ber-`satuan = mm` walau di titik yang sama penunjukannya inch.
+     *     Ini yang membedakan kita dari master, yang mengalikan pembacaan 25,4
+     *     di dalam rumus sementara kolom standarnya tetap mm — dan karena itu
+     *     menerbitkan koreksi −61 mm pada balok ukur 2,5 mm.
      */
-    public function test_satuan_inch_dikonversi_sekali_dan_hanya_pembacaan(): void
+    public function test_satuan_inch_disimpan_mentah_dan_balok_tetap_mm(): void
     {
         [$alat, $teknisi] = $this->siapkan();
 
@@ -349,34 +538,32 @@ class MicrometerSesiTest extends TestCase
 
         $baris = RawMeasurement::where('calibration_session_id', $id)->get();
 
+        $bacaan = $baris->firstWhere('peran_sensor', MicrometerMentah::PERAN_PEMBACAAN);
+
         $this->assertEqualsWithDelta(
-            25.4,
-            (float) $baris->firstWhere('peran_sensor', MicrometerMentah::PERAN_PEMBACAAN)->pembacaan,
+            1.0,
+            (float) $bacaan->pembacaan,
             self::TOLERANSI,
-            'pembacaan 1 inch harus tersimpan 25,4 mm',
+            'pembacaan disimpan MENTAH — konversi terjadi di tempat pakai',
         );
+        $this->assertSame('inch', $bacaan->satuan, 'baris menyebut satuannya sendiri');
+        $balok = $baris->where('peran_sensor', MicrometerMentah::PERAN_BALOK)->sortBy('sensor_ke');
+
         $this->assertSame(
             [6.0, 19.0],
-            $baris->where('peran_sensor', MicrometerMentah::PERAN_BALOK)
-                ->sortBy('sensor_ke')->pluck('pembacaan')->map('floatval')->values()->all(),
-            'nominal balok ukur JANGAN ikut dikonversi — sertifikatnya selalu mm',
+            $balok->pluck('pembacaan')->map('floatval')->values()->all(),
+            'nominal balok ukur JANGAN ikut satuan alat — sertifikatnya selalu mm',
         );
+        $this->assertSame(['mm'], $balok->pluck('satuan')->unique()->values()->all());
 
-        // Baris Evaluasi ikut dikonversi juga, dan itu BUKAN kelengkapan:
-        // `payload()` mengirimnya bentuk DATAR sementara HP mengirim bentuk
-        // tabel. Kalau cuma bentuk tabel yang dikonversi, dua bentuk yang
-        // membawa angka sama berarti beda — dan tidak ada satu pun error yang
-        // membedakannya. Satuan itu sifat SESI-nya, bukan sifat pembungkus
-        // payload-nya. Lihat `CalibrationRequest::bakukanPraEvaluasiMicrometer()`.
+        // Baris Evaluasi juga tersimpan MENTAH — bentuk datar maupun bentuk
+        // tabel diperlakukan sama, dan dua-duanya baru jadi mm di tempat pakai.
         $this->assertEqualsWithDelta(
-            array_map(
-                static fn (float $v): float => $v * 25.4,
-                $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'],
-            ),
+            $payload['spesifikasi_alat'][MicrometerMentah::KUNCI_SESI]['pra_evaluasi'],
             array_map('floatval', CalibrationSession::findOrFail($id)
                 ->spesifikasi_alat[MicrometerMentah::KUNCI_SESI]['pra_evaluasi']),
             self::TOLERANSI,
-            'baris Evaluasi harus ikut dikonversi, sama seperti pembacaan tiap titik',
+            'baris Evaluasi disimpan mentah, sama seperti pembacaan tiap titik',
         );
     }
 

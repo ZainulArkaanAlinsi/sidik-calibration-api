@@ -38,6 +38,8 @@ mengikuti kertas, bukan sheet `INPUT DATA`; rinciannya di
 | §6 | `vi = 200` untuk semua komponen Type B | Metode | Tidak — ditiru |
 | §7 | Sheet `Perhitungan koef. Sensitivitas` mati & salah | Tidak dipakai | Tidak |
 | §8 | Komponen ke-9 nol menurut konstruksi — kertas tidak memungut suhunya | Metode | Tidak — ditiru |
+| §9 | Sertifikat master berformat `0.000` — koreksi tercetak nol di SEBELAS titik | Kerusakan | **Ya** — 0,000 → 0,00027 |
+| §10 | Kertas Rev.1 membuang Kerataan/Kesejajaran Muka Ukur, sertifikat masih mencetaknya | Dokumen | Belum — tidak dicetak |
 
 ---
 
@@ -309,6 +311,78 @@ melewati kolom itu.
 
 ---
 
+## §9 — Sertifikat master mencetak koreksi `0,000` di kesebelas titik **[PERLU JAWABAN]**
+
+Sel `SERTIFIKAT!D18:L28` keempat workbook berformat **`0.000`** — tiga desimal.
+Koreksi mikrometer ini besarnya ~0,0003 mm. Jadi sertifikat CETAK master
+menampilkan:
+
+| Standard (mm) | Unit Under Test (mm) | Correction (mm) |
+|---|---|---|
+| 25.000 | 25.000 | 0.000 |
+| 27.500 | 27.500 | 0.000 |
+| 31.000 | 31.000 | -0.000 |
+| … | … | 0.000 |
+
+**Kesebelas koreksinya nol.** Baris `Uncertainty U95%` (`J29`, format `0.000`
+juga) menampilkan **0.001 mm** untuk nilai sebenarnya 0,00087 mm.
+
+Nilai di dalam selnya benar — 0,00027000000000043656 dan
+0,0008737653585539594. Yang hilang cuma di lapisan tampilan. Tapi yang
+diterima pelanggan lembar cetaknya, bukan selnya.
+
+**Yang dilakukan kode:** TIDAK ditiru. Kolom hasil lima desimal (`0,00027`),
+U95 lima desimal (`0,00087`). Alasannya sama persis dengan larangan meniru
+`IFERROR(…,"")`: kolom koreksi yang seluruhnya nol memberi tahu pelanggan
+alatnya sempurna di tiap titik — klaim yang lebih berbahaya daripada angka
+yang sedang diperbaiki. Ditegakkan
+`MicrometerSertifikatTest::test_desimal_cukup_untuk_koreksi_mikrometer`.
+
+**Yang perlu diputuskan lab:** sertifikat yang SUDAH TERBIT dari master ini
+memuat kolom koreksi bernilai 0,000 semua. Perlu ditinjau/diterbitkan ulang,
+atau dibiarkan? Dan apakah format selnya di master mau dibetulkan supaya
+workbook dan sistem tidak lagi mencetak angka yang berbeda.
+
+---
+
+## §10 — Kertas Rev.1 membuang pemeriksaan Muka Ukur, sertifikat masih mencetaknya **[PERLU JAWABAN]**
+
+Sheet `SERTIFIKAT` master mencetak dua baris di bawah `Note :` —
+
+    Kerataan Muka Ukur dalam Kondisi    : Baik
+    Kesejajaran Muka Ukur dalam Kondisi : Buruk
+
+— dan sheet `INPUT DATA` memungutnya lewat dua dropdown.
+
+**Kertas lembar kerja `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` tidak punya kotak
+itu.** Yang ada cuma kotak **Catatan** bebas di kaki lembar, bareng
+Dikalibrasi Oleh & Diperiksa Oleh. Sudah diperiksa ulang di keempat PDF-nya.
+
+Jadi ada dua dokumen lab yang tidak sejalan: kertas kerja Rev.1 (September
+2026) membuang pemeriksaannya, sementara formulir sertifikat
+`SIDIK-FM-CAL-2403_Rev. 0` masih menyediakan tempatnya.
+
+**Yang dilakukan kode:** mengikuti KERTAS. Lembar kerja tidak memungutnya,
+tidak ada jalur datanya, dan sertifikat tidak mencetaknya. Tidak ada kotak
+yang dikarang di lembar yang ikut diaudit, dan tidak ada baris sertifikat yang
+diisi dari data yang tidak pernah dipungut siapa pun.
+
+**Yang perlu diputuskan lab, dan ini menentukan:**
+
+1. Pemeriksaan muka ukur memang **dihapus** dari metode → sertifikat perlu
+   berhenti menyediakan barisnya juga. Tidak ada perubahan kode.
+2. Pemeriksaan itu **masih dilakukan**, cuma kotaknya lupa ikut ke kertas
+   Rev.1 → kertasnya perlu Rev.2, dan baru sesudah itu lembar & sertifikat
+   kita menambahkannya. Menambahkannya SEKARANG berarti mengarang kotak yang
+   tidak ada di formulir terakreditasi.
+3. Pemeriksaan dicatat di kotak **Catatan** bebas → perlu diputuskan apakah
+   isi Catatan teknisi ikut tercetak di sertifikat. Saat ini TIDAK, dan itu
+   berlaku untuk kedua puluh lima alat, bukan cuma Micrometer.
+
+Sampai dijawab, sertifikat Micrometer terbit tanpa dua baris itu.
+
+---
+
 ## Lampiran — yang sudah dicocokkan dan COCOK
 
 Supaya jelas apa yang **tidak** dipertanyakan:
@@ -324,6 +398,19 @@ Supaya jelas apa yang **tidak** dipertanyakan:
   pemotongan, `k` meleset 1,8·10⁻⁶; dengan pemotongan, cocok sampai ~10⁻¹⁴.
 - **Rumus drift.** Direproduksi dari tanggalnya sendiri di keempat workbook,
   termasuk pecahan harinya.
+- **Tiga gerbang `boleh_terbit`.** Sesi TIDAK menerbitkan satu pun baris
+  hitungan kalau: kapasitasnya di luar keempat pita CMC, baris Evaluasi berisi
+  kurang dari dua pembacaan, ATAU resolusi alat belum diisi. Ketiganya bentuk
+  yang sama — komponen budget yang hilang lalu ditutupi lantai CMC sehingga
+  angkanya tampak wajar.
+- **Sebelas baris tabel sertifikat.** `SERTIFIKAT!D18:L28` (Standar Reading /
+  Unit Under Test / Correction) diadu ke sertifikat terbitan sistem pada
+  toleransi 5·10⁻⁶ — nol selisih di ketiga kolom, kesebelas baris. Dijaga
+  `MicrometerSertifikatTest`.
+- **U95 sertifikat.** Master 0,00087377 mm, sistem 0,00087097 mm. Selisihnya
+  PERSIS komponen drift yang di-nol-kan karena sesi contoh mendahului
+  sertifikat balok ukurnya (0,06192/√3 = 0,03575 µm dalam kuadratur) — lihat
+  §2. Di lima desimal keduanya tercetak `0,00087`.
 - **44 nominal pra-cetak kertas vs total tumpukan master.** Sebelas titik kali
   empat rentang, diadu ke total nominal tumpukan balok ukur masing-masing pada
   toleransi 0,06 mm — nol selisih. Generator

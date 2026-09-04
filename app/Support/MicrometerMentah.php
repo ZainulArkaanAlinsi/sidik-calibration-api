@@ -62,17 +62,46 @@ class MicrometerMentah
 
     public const PERAN_PEMBACAAN = 'mikro_pembacaan';
 
+    /** Satuan nominal balok ukur — SELALU mm, apa pun skala mikrometernya. */
+    public const SATUAN_BALOK = 'mm';
+
     /**
-     * Satuan yang tersimpan di `raw_measurements.satuan` untuk lembar ini.
+     * Faktor pengali tiap satuan alat ke mm.
      *
-     * Milimeter, SELALU — walau alatnya berskala inch. Master menyimpan
-     * penunjukan dalam satuan alat lalu mengalikannya 25,4 di dalam rumus, dan
-     * itulah yang melahirkan sesi 0-25 mm yang koreksinya terbit −61 mm:
-     * satuannya tersetel `inch` sementara angkanya diketik dalam mm, dan tidak
-     * ada satu pun sel yang memprotes. Di sini konversi terjadi SEKALI, di
-     * ujung masuk, dan yang tersimpan sudah dalam mm.
+     * Disalin dari `MicrometerProfile::SATUAN_PILIHAN` — ditaruh di sini juga
+     * supaya jalur hitung ulang tidak perlu memuat kelas profil cuma untuk
+     * mengalikan satu angka.
      */
-    public const SATUAN = 'mm';
+    public const FAKTOR_KE_MM = ['mm' => 1.0, 'inch' => 25.4, 'µm' => 0.001];
+
+    /**
+     * Ubah satu penunjukan ke mm.
+     *
+     * ## Kenapa konversinya di TEMPAT PAKAI, bukan di ujung masuk
+     *
+     * Versi pertama mengalikan di `CalibrationController` dan menyimpan mm.
+     * Itu TIDAK IDEMPOTEN, dan jalur draft membuktikannya: teknisi menyimpan
+     * draft (1 inch → tersimpan 25,4 mm), membuka lagi lembarnya, lalu
+     * menyimpan lagi. HP tidak punya konversi balik sama sekali — dia
+     * mengirimkan kembali angka yang dia terima — jadi 25,4 dikali 25,4 lagi
+     * jadi **645,16 mm**, dan berlipat tiap kali disimpan.
+     *
+     * Nol error di seluruh jalur: payloadnya sah, kolomnya lengkap, dan
+     * sertifikatnya terbit dengan koreksi yang salah ratusan kali lipat.
+     *
+     * Yang tersimpan sekarang ANGKA MENTAH yang diketik teknisi, berikut
+     * satuannya di `raw_measurements.satuan`. Menyimpan payload yang sama dua
+     * kali menghasilkan baris yang sama persis, dan tiap baris menyebutkan
+     * sendiri satuannya — jadi hitung ulang tahun depan tidak perlu menebak.
+     *
+     * Satuan yang tidak dikenali dibaca `mm` (faktor 1), sama seperti kolom
+     * kosong: menebak 25,4 untuk satuan yang tidak jelas jauh lebih berbahaya
+     * daripada membiarkan angkanya apa adanya.
+     */
+    public static function keMm(mixed $nilai, ?string $satuan): float
+    {
+        return (float) $nilai * (self::FAKTOR_KE_MM[(string) $satuan] ?? 1.0);
+    }
 
     /** Kunci blok tingkat-sesi di `calibration_sessions.spesifikasi_alat`. */
     public const KUNCI_SESI = 'micrometer';
@@ -141,10 +170,17 @@ class MicrometerMentah
             ))
             : [];
 
+        // Pra-evaluasi tersimpan MENTAH dalam satuan alat; diubah ke mm di
+        // sini, satu-satunya tempat blok ini dibaca oleh kedua jalur hitung.
+        $satuan = (string) ($blok['satuan'] ?? 'mm');
+
         return [
             'kapasitas_mm' => $angka($blok['kapasitas_mm'] ?? null),
             'resolusi_mm' => $angka($blok['resolusi_mm'] ?? null),
-            'pra_evaluasi' => $deret($blok['pra_evaluasi'] ?? null),
+            'pra_evaluasi' => array_map(
+                static fn (float $v): float => self::keMm($v, $satuan),
+                $deret($blok['pra_evaluasi'] ?? null),
+            ),
         ];
     }
 
@@ -183,7 +219,11 @@ class MicrometerMentah
             ->filter(static fn ($b): bool => (string) $b->peran_sensor === $peran)
             // Diurut EKSPLISIT — lihat docblock kelas.
             ->sortBy(static fn ($b): int => (int) ($b->sensor_ke ?? $b->pembacaan_ke ?? 0))
-            ->map(static fn ($b): float => (float) $b->pembacaan)
+            // Tiap baris menyebutkan satuannya sendiri: penunjukan alat bisa
+            // inch/µm, nominal balok ukur selalu mm. Dibaca dari barisnya, bukan
+            // dari satu satuan tingkat-sesi, supaya sesi lama yang tersimpan
+            // dalam mm tetap terbaca benar sesudah perubahan ini.
+            ->map(static fn ($b): float => self::keMm($b->pembacaan, $b->satuan))
             ->values()
             ->all();
     }

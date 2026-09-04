@@ -2058,6 +2058,59 @@ Serah-terima lengkapnya: `docs/perintah-frontend-micrometer.md` §9 & §9a.
 
 ---
 
+## 20. Audit adversarial Micrometer — 4 Sep 2026
+
+Diminta pemilik proyek: selesaikan sampai sertifikat terbit, lalu jalankan Bug
+Hunter Protocol. Keduanya dikerjakan berurutan.
+
+### Sertifikat diadu ke sheet `SERTIFIKAT` master
+
+Sesi contoh `0106-CAL-1023` diterbitkan sungguhan, HTML-nya dirender, lalu
+diadu baris demi baris ke `SERTIFIKAT!D18:L28`. Kesebelas baris
+(Standar Reading / Unit Under Test / Correction) **cocok pada 5·10⁻⁶**.
+
+U95 kita 0,00087097 mm vs master 0,00087377 mm. Selisihnya PERSIS komponen
+drift yang di-nol-kan karena sesi contoh mendahului sertifikat balok ukurnya
+(0,06192/√3 = 0,03575 µm dalam kuadratur) — penyimpangan §2 yang memang
+disengaja. Di lima desimal keduanya tercetak `0,00087`.
+
+Dijaga `MicrometerSertifikatTest` (5 test), yang merender HTML-nya, bukan cuma
+memeriksa snapshot.
+
+### Empat cacat yang ketemu — semuanya TANPA error
+
+| # | Cacat | Dampak | Terbukti lewat |
+|---|---|---|---|
+| 1 | U95 disimpan µm, dicetak di kolom mm tanpa label satuan | Sertifikat menampilkan `0,00027` dan `0,871` di kolom yang SAMA — pembaca membaca U95 **1000× lebih besar** | render HTML diadu ke kertas master |
+| 2 | Konversi satuan di ujung MASUK tidak idempoten | Simpan draft → buka → simpan lagi mengalikan 25,4 **tiap kali**: 1 inch → 25,4 → **645,16 mm** | reproduksi jalur draft PUT |
+| 3 | Resolusi kosong menghapus komponen budget | U95 0,8722 → 0,6638 µm, lalu **ditutupi lantai CMC 0,87** jadi tercetak 0,8700 — selisih 0,25 % | dihitung dua kali dengan/tanpa resolusi |
+| 4 | Baris dipetakan lewat POSISI indeks | Kalau HP membuang baris kosong, pembacaan mendarat di nominal yang salah (~4 mm meleset) | pembacaan kode lintas repo |
+
+Cacat 1–3 sudah ditambal; cacat 4 dijaga dengan pemeriksa `titik_ukur` yang
+mengubah salah-pemetaan jadi penolakan yang kebaca.
+
+**Cacat 2 yang paling mahal**, dan cara ketemunya yang layak dicatat: dia cuma
+muncul di jalur DRAFT. Sesi final berstatus `menunggu_approval` menolak PUT
+dari teknisi, jadi test apa pun yang lewat jalur final hijau tanpa pernah
+menyentuh bug-nya. Reproduksinya wajib memakai `status: draft`.
+
+Akar sebabnya sekarang dihapus, bukan ditambal: **konversi satuan tidak lagi
+terjadi waktu menyimpan.** Yang tersimpan angka mentah yang diketik teknisi
+berikut satuannya (`raw_measurements.satuan`, `spesifikasi_alat.micrometer.satuan`),
+dan yang mengubahnya ke mm `MicrometerMentah::keMm()` di tempat pakai. Menyimpan
+payload yang sama dua kali sekarang menghasilkan baris yang sama persis.
+
+### Dua pertanyaan lab baru
+
+- **§9** — sel sertifikat master berformat `0.000`, jadi cetakannya menampilkan
+  koreksi `0.000` di kesebelas titik dan U95 `0.001`. TIDAK ditiru (kita lima
+  desimal); perlu diputuskan apakah sertifikat lama ditinjau.
+- **§10** — kertas Rev.1 membuang Kerataan/Kesejajaran Muka Ukur, sementara
+  formulir sertifikat masih menyediakan barisnya. Kode mengikuti KERTAS; lab
+  yang memutuskan mana yang menyusul.
+
+---
+
 ## Permintaan 16 — U95 per titik di sertifikat instrumen analitik
 
 Dari pemilik lab (Pak Rohman) lewat pemilik proyek, 3 September 2026: di
