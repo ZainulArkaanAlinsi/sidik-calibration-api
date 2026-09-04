@@ -424,6 +424,63 @@ class CertificateSnapshotBuilder
      *
      * @return Collection<int, UncertaintyCalculation>
      */
+    /**
+     * IK yang mewakili satu nama alat — dari kandidat yang disodorkan.
+     *
+     * ## Kenapa menerima koleksi, bukan menembak database sendiri
+     *
+     * Supaya urutannya bisa DIADU. Bug yang ditutup di sini cuma muncul kalau
+     * kandidatnya datang dalam urutan tertentu, dan urutan itu tidak bisa
+     * dipaksa lewat query — persis alasan yang sama dengan
+     * `SnapshotSertifikatTahanUrutanTest`, yang versi pertamanya menyusun ulang
+     * baris di database dan LOLOS tanpa menguji apa pun.
+     *
+     * ## Bug-nya
+     *
+     * Pemanggilnya memakai `->get()` TANPA `ORDER BY`. Dua `sortByDesc`
+     * berantai itu stabil, jadi kandidat yang panjang namanya sama DAN
+     * revisinya sama mempertahankan urutan datangnya — yaitu urutan yang tidak
+     * dijanjikan siapa pun. Di MySQL itu bergantung pilihan indeks, dan itu
+     * bisa berubah sesudah `UPDATE`.
+     *
+     * Yang tercetak dari sini masuk sertifikat terakreditasi sebagai kode IK.
+     * Dua sertifikat untuk alat yang sama bisa menyebut IK berbeda tanpa satu
+     * pun error, dan tanpa ada yang berubah di data.
+     *
+     * ## Urutan yang berlaku sekarang
+     *
+     * `sortBy` Laravel stabil, jadi yang dipanggil TERAKHIR jadi kunci utama:
+     *
+     *   1. panjang nama, terpanjang menang — supaya "Thermometer Glass" tidak
+     *      kalah oleh jenis lain yang kebetulan jadi bagian namanya;
+     *   2. revisi, tertinggi menang;
+     *   3. **`id` terkecil** — pemecah seri terakhir, dan yang ditambahkan di
+     *      sini.
+     *
+     * Nomor tiga itu sengaja dipilih karena STABIL, bukan karena benar. Kalau
+     * dua IK aktif benar-benar seri di panjang nama dan revisi, mana yang
+     * seharusnya menang itu keputusan pemilik lab dan **belum diputuskan** —
+     * yang pasti salah cuma membiarkannya ditentukan urutan baris database.
+     *
+     * ## Kenapa `public`
+     *
+     * Diuji langsung. Fungsinya murni — masuk koleksi, keluar satu baris — dan
+     * yang dipertaruhkan justru urutannya, yang cuma bisa diadu kalau
+     * kandidatnya bisa disodorkan teracak dari test.
+     *
+     * @param  Collection<int, CalibrationMethod>  $kandidat
+     */
+    public static function metodeTerpilih(Collection $kandidat, string $namaAlat): ?CalibrationMethod
+    {
+        return $kandidat
+            ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
+                && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
+            ->sortBy(fn (CalibrationMethod $m): int => (int) $m->getKey())
+            ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
+            ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
+            ->first();
+    }
+
     private static function titikUrut(CalibrationSession $sesi): Collection
     {
         return $sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]);
@@ -586,18 +643,13 @@ class CertificateSnapshotBuilder
             //
             // Yang dipilih kecocokan TERPANJANG, supaya "Thermometer Glass"
             // nggak kalah sama jenis lain yang kebetulan jadi bagian namanya.
-            $metode = CalibrationMethod::query()
-                ->where('organization_id', $sesi->organization_id)
-                ->where('aktif', true)
-                ->get()
-                ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
-                    && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
-                // Urutannya: revisi dulu, PANJANG NAMA belakangan. `sortBy`
-                // Laravel stabil, jadi yang dipanggil terakhir jadi kunci
-                // utama — panjang nama menang, revisi jadi pemecah seri.
-                ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
-                ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
-                ->first();
+            $metode = self::metodeTerpilih(
+                CalibrationMethod::query()
+                    ->where('organization_id', $sesi->organization_id)
+                    ->where('aktif', true)
+                    ->get(),
+                $namaAlat,
+            );
 
             if ($metode !== null) {
                 return $metode->kodeLengkap();
