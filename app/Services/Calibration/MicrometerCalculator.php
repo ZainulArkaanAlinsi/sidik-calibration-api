@@ -352,6 +352,10 @@ class MicrometerCalculator
             // ada satu pun error di sepanjang jalurnya.
             'boleh_terbit' => $pita !== null
                 && count($konteks['pra_evaluasi']) >= 2
+                && $this->simpanganBaku(array_map(
+                    static fn ($x): float => (float) $x,
+                    $konteks['pra_evaluasi'],
+                )) > 0.0
                 && (float) $konteks['resolusi_mm'] > 0.0,
             'ditolak' => $ditolak,
         ];
@@ -423,6 +427,49 @@ class MicrometerCalculator
             $ditolak[] = [
                 'titik_ke' => 0,
                 'alasan' => 'Pra-evaluasi butuh minimal dua pembacaan berulang untuk simpangan baku.',
+            ];
+        }
+
+        // Sepuluh pembacaan yang SEMUANYA sama persis lolos penjaga `n >= 2` di
+        // atas, dan itu yang bikin penjaga ini perlu berdiri sendiri.
+        //
+        // Diukur pada sesi 25-50 mm, satu-satunya yang berubah pra-evaluasinya:
+        //
+        //   pra-evaluasi beragam  -> uc 0,4439 µm -> U95 0,8722 µm
+        //   sepuluh nilai identik -> uc 0,4325 µm -> U95 0,8700 µm
+        //
+        // Angka kedua PERSIS lantai CMC pita B (0,87 µm). Jadi lantai yang
+        // seharusnya jadi penjaga malah menyamarkan komponen yang lenyap —
+        // bentuk kegagalan yang sama persis dengan resolusi kosong, dan sama
+        // sunyinya: nol error di sepanjang jalur.
+        //
+        // Ini BUKAN kasus hipotetis. Workbook master 0-25 mm memuat 635,0
+        // sepuluh kali — nilai kapasitas hasil bug satuan inch yang bocor ke
+        // blok pra-evaluasi. Menariknya, penjaga "pembacaan harus di dalam
+        // rentang alat" TIDAK menangkapnya: kapasitas di workbook itu ikut
+        // terkonversi jadi 635, jadi 635 memang "di dalam rentang". Simpangan
+        // baku nol satu-satunya sinyal yang membedakannya dari tiga varian lain
+        // (stdev 3,2e-4 sampai 5,3e-4 mm).
+        //
+        // Dibandingkan `> 0.0` PERSIS, bukan ke ambang: nol eksak itu tanda
+        // tangan "satu nilai disalin n kali". Sebaran nyata yang lebih halus
+        // dari resolusi tetap menghasilkan stdev bukan-nol, dan itu memang
+        // bukan urusan penjaga ini.
+        //
+        // TIDAK diganti lantai keterulangan berbasis resolusi, walau itu
+        // perlakuan yang lazim waktu sebaran memang di bawah resolusi:
+        // memilih lantai berarti MENGUBAH U95 yang terbit, dan itu keputusan
+        // metode milik manajer teknis. Lihat `docs/pertanyaan-lab-micrometer.md`
+        // §3 — sampai dijawab, yang benar menahan, bukan mengarang.
+        if ($nUlang >= 2 && $stdevUm <= 0.0) {
+            $ditolak[] = [
+                'titik_ke' => 0,
+                'alasan' => 'Sepuluh pembacaan pra-evaluasi seluruhnya bernilai sama, jadi simpangan '
+                    .'bakunya nol dan komponen keterulangan hilang dari budget — U95 jatuh ke lantai '
+                    .'CMC dan tampak wajar (pada sesi 25-50 mm 0,8722 µm jadi 0,8700 µm). Ulangi '
+                    .'pra-evaluasi dan catat tiap pembacaan apa adanya. Kalau alatnya memang tidak '
+                    .'menunjukkan sebaran sama sekali pada resolusinya, perlakuannya keputusan manajer '
+                    .'teknis — bukan diterbitkan sebagai keterulangan nol.',
             ];
         }
 
