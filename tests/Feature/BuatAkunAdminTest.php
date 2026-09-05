@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -208,6 +210,47 @@ class BuatAkunAdminTest extends TestCase
         $akun = User::where('email', 'rohman@sidik.test')->firstOrFail();
 
         $this->assertFalse(Hash::check('rahasia123', $akun->password));
+    }
+
+    /**
+     * Kalau pencatatan audit gagal, akunnya TIDAK boleh tersisa.
+     *
+     * `User::create()` menulis baris `users` dulu, baru event `created`
+     * menulis `audit_logs`. Tanpa transaksi, kegagalan yang kedua
+     * meninggalkan akun admin yang sudah jadi tanpa jejak audit — dan
+     * `Diaudit` menyatakan itu justru keadaan yang paling harus dicegah:
+     * "perubahan yang nggak kecatat lebih berbahaya daripada perubahan yang
+     * gagal."
+     *
+     * Mencabut `|| true` dari entrypoint saja tidak menutup ini. Itu bikin
+     * kegagalannya kelihatan; akunnya tetap terlanjur ada. Yang menghapusnya
+     * cuma rollback.
+     *
+     * Yang dilempar di sini pendengar `created` mana pun, bukan `AuditLog`
+     * betulan — yang diuji mekanismenya (apa pun yang gagal di rantai
+     * `created` ikut membatalkan barisnya), bukan satu penyebab tertentu.
+     */
+    public function test_akun_tidak_tersisa_kalau_pencatatan_gagal(): void
+    {
+        $this->lab();
+        $this->setelEnv('rohman@sidik.test');
+
+        Event::listen('eloquent.created: '.User::class, function (): void {
+            throw new RuntimeException('pencatatan audit gagal');
+        });
+
+        try {
+            $this->artisan('akun:admin')->run();
+            $this->fail('Galat pencatatan tidak sampai ke luar — boot akan lanjut seolah beres.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('pencatatan audit gagal', $e->getMessage());
+        }
+
+        $this->assertSame(
+            0,
+            User::count(),
+            'Akun admin tersisa tanpa jejak audit.',
+        );
     }
 
     /**
