@@ -127,7 +127,11 @@ class BuatAkunAdminTest extends TestCase
         $this->lab();
         $this->setelEnv('rohman[at]sidik.test');
 
-        $this->artisan('akun:admin')->assertFailed();
+        // Pulang SUKSES, bukan gagal: setelan yang salah tidak boleh mematikan
+        // API. Yang jadi sinyalnya alasan di log, dan akun yang tidak jadi.
+        $this->artisan('akun:admin')
+            ->expectsOutputToContain('bukan email yang sah')
+            ->assertSuccessful();
 
         $this->assertSame(0, User::count());
     }
@@ -141,7 +145,9 @@ class BuatAkunAdminTest extends TestCase
 
         $this->setelEnv('rohman@sidik.test', 'Pak Rohman', 'SDK-0100');
 
-        $this->artisan('akun:admin')->assertFailed();
+        $this->artisan('akun:admin')
+            ->expectsOutputToContain('sudah dipakai akun lain')
+            ->assertSuccessful();
 
         $this->assertNull(User::where('email', 'rohman@sidik.test')->first());
     }
@@ -153,7 +159,7 @@ class BuatAkunAdminTest extends TestCase
 
         $this->artisan('akun:admin')
             ->expectsOutputToContain('SEED_ON_BOOT')
-            ->assertFailed();
+            ->assertSuccessful();
 
         $this->assertSame(0, User::count());
     }
@@ -202,6 +208,44 @@ class BuatAkunAdminTest extends TestCase
         $akun = User::where('email', 'rohman@sidik.test')->firstOrFail();
 
         $this->assertFalse(Hash::check('rahasia123', $akun->password));
+    }
+
+    /**
+     * `akun:admin` di entrypoint TIDAK boleh dibungkus `|| true`.
+     *
+     * Diadu ke berkasnya karena yang dijaga bukan perilaku PHP-nya melainkan
+     * satu keputusan yang gampang "dirapikan" balik oleh orang berikutnya —
+     * dan kalau itu terjadi, tidak ada satu pun test lain yang merah.
+     *
+     * Yang dipertaruhkan: `User` memakai trait `Diaudit`, dan aturannya sudah
+     * tertulis di sana — kalau mencatat audit gagal, perubahannya ikut gagal,
+     * karena perubahan yang tidak tercatat lebih berbahaya daripada perubahan
+     * yang gagal. `User::create()` menulis barisnya DULU, baru event `created`
+     * menulis `audit_logs`. Dengan `|| true`, akun admin yang terlanjur ada
+     * tanpa jejak audit lolos begitu saja dan boot-nya lanjut seolah beres.
+     *
+     * Setelan yang salah tetap tidak mematikan API — itu diurus di dalam
+     * perintahnya (pulang sukses dengan alasan di log), bukan dengan menelan
+     * semua galat di sini.
+     */
+    public function test_entrypoint_tidak_menelan_galat_akun_admin(): void
+    {
+        $entrypoint = (string) file_get_contents(base_path('docker/entrypoint.sh'));
+
+        $this->assertStringContainsString(
+            'php artisan akun:admin',
+            $entrypoint,
+            'Panggilan `akun:admin` hilang dari entrypoint — akunnya tidak akan pernah dibuat.',
+        );
+
+        $this->assertStringNotContainsString(
+            'php artisan akun:admin || true',
+            $entrypoint,
+            'Galat `akun:admin` ditelan lagi. Yang ikut tertelan bukan cuma setelan '
+            .'yang salah (itu sudah pulang sukses sendiri), tapi kegagalan menulis '
+            .'audit — dan akun admin tanpa jejak audit itu temuan buat lab '
+            .'terakreditasi. Lihat trait Diaudit.',
+        );
     }
 
     public function test_nama_kosong_jatuh_ke_email_bukan_baris_kosong(): void

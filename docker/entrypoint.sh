@@ -148,12 +148,25 @@ fi
 # waktu yang megang panelnya lagi nggak bisa membukanya. Paket gratis Render
 # nggak punya shell sama sekali, jadi `tinker` juga bukan jalan keluar.
 #
-# `|| true` DISENGAJA. Environment akun yang salah (email salah ketik, ID
-# pegawai kembar) itu masalah satu akun; matiin seluruh API karenanya nukar
-# masalah kecil sama masalah besar. Alasannya kebaca di deploy log, dan
-# perintahnya sendiri nggak pernah menyentuh akun yang sudah ada.
+# SENGAJA TANPA `|| true`, dan itu keputusan — bukan kelalaian.
+#
+# Environment akun yang salah (email salah ketik, organisasi belum di-seed, ID
+# pegawai kembar) emang nggak boleh matiin API, dan itu udah diurus DI DALAM
+# perintahnya: ketiganya nulis alasannya lalu pulang sukses. Jadi nggak ada
+# lagi yang perlu ditelan di sini.
+#
+# Yang tersisa cuma kegagalan tak terduga, dan yang itu HARUS mematikan boot.
+# `User` pakai trait Diaudit, dan aturannya udah tertulis di sana: "Kalau
+# nyatet audit gagal, perubahannya ikut gagal … perubahan yang nggak kecatat
+# lebih berbahaya daripada perubahan yang gagal." `User::create()` nulis
+# barisnya DULU, baru event `created` nulis `audit_logs` — jadi kalau yang
+# kedua gagal sementara galatnya ditelan, akun admin udah terlanjur ada tanpa
+# jejak audit dan nggak ada satu pun yang tahu. Buat lab terakreditasi itu
+# temuan, bukan ketidaknyamanan.
+#
+# Temuan review CodeRabbit di PR #175.
 tahap "akun admin dari environment"
-php artisan akun:admin || true
+php artisan akun:admin
 
 # Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit.
 #
