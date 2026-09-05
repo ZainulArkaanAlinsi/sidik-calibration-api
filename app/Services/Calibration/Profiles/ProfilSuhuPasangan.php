@@ -166,6 +166,35 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
     }
 
     /**
+     * Satu angka per sel — TIDAK ada kolom suhu di dalam tiap pengulangan.
+     *
+     * Bawaan [CalibrationProfile::bentukPindaiFoto] `kolom_suhu = true`, dan
+     * itu memang bentuk lima lembar pertama: tiap sel lembar pH memuat SEPASANG
+     * angka (pembacaan + °C yang dicatat bersamaan). Ketiga lembar ini tidak —
+     * [tabelPembacaan] cuma mengirim satu kolom (`pembacaan`), dan suhu ruangnya
+     * dicatat sekali di blok kondisi lingkungan, bukan per sel.
+     *
+     * Bedanya bukan kerapian penulisan: prompt & skema JSON yang dikirim ke
+     * pembaca foto dibangun dari penanda ini. Dibiarkan `true`, modelnya diminta
+     * membaca kolom °C yang tidak pernah ada di kertasnya — dan yang balik bukan
+     * error, tapi angka yang dikarang supaya kolomnya kelihatan terisi. Alasan
+     * yang sama persis dipakai `didukung` menolak lembar Autoklaf & grid
+     * Enclosure; lihat docblock bawaannya.
+     *
+     * `standar_di_baris` tetap `false`: set point turun ke bawah dan
+     * pengulangan berjajar ke kanan, sama seperti lembar pH. Yang berbeda dari
+     * pH cuma dari MANA nilai standarnya datang (dibaca teknisi di tabel
+     * sebelahnya, bukan konstanta master) — dan itu tidak mengubah bentuk
+     * kertas yang dilihat pembaca foto.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => false, 'didukung' => true];
+    }
+
+    /**
      * Bentuk lembar kerja lengkap + penautan master.
      *
      * @return array<string, mixed>
@@ -277,51 +306,6 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             // dan tidak bisa diisi.
             'pengulangan' => range(1, self::PENGULANGAN),
         ];
-    }
-
-    /**
-     * Isi pilihan "Environmental Meter Used".
-     *
-     * Tanpa ini kolomnya BUKAN error — cuma diam. `field()` memberi `pilihan`
-     * nilai bawaan `[]`, layar teknisi menggambar dropdown dari daftar yang
-     * dibawa bentuk, dan daftar kosong bikin dia jatuh ke cabang teks mati
-     * "Belum ada unit thermohygro terdaftar". Sudah pernah kejadian di 7 dari 17
-     * lembar sekaligus; dijaga `ThermohygroSemuaLembarTest`.
-     *
-     * Daftarnya lewat [masterThermohygro] — TERSARING ORGANISASI. Query
-     * telanjang di sini menawarkan termohigrometer milik lab lain, dan yang
-     * kepilih tidak berhenti di dropdown: `standard_id`-nya masuk ke sesi,
-     * koreksi kondisi lingkungannya dibaca dari sertifikat lab itu, lalu
-     * angkanya kecetak di sertifikat lab INI.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (static::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = ['nilai' => (string) $id, 'label' => $unit['label'], 'grup' => $unit['grup']];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
     }
 
     /**
@@ -509,32 +493,5 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
         $tambahan = $sesi->getAttribute('atribut_tambahan');
 
         return is_array($tambahan) ? ($tambahan[$kunci] ?? null) : null;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $pilihan
-     * @return array<string, mixed>
-     */
-    protected function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }

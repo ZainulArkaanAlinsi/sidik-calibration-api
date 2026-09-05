@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Standard;
+use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Support\Angka;
@@ -100,6 +101,22 @@ class CertificateSnapshotBuilder
             // `AutoclaveCalculator` udah presisi penuh diadu ke master, tinggal
             // diformat di blade.
             'autoclave' => $sesi->adalahAutoclave() ? $sesi->hasil_autoclave : null,
+            // Timbangan: DELAPAN bagian, dan tujuh di antaranya nggak punya
+            // kolom `Standard`/`UUT` sama sekali (Repeatability, Effect of
+            // Tare, Loading Influence, Hysterisis, Limit of Performance,
+            // Weighing Uncertainty, Standard Used). Dipaksa masuk tabel empat
+            // kolom, tujuh bagian itu hilang tanpa satu pun error.
+            //
+            // Beda dari `autoclave` di atas — yang dibaca dari kolom sesi —
+            // blok ini DISUSUN waktu sertifikat terbit: angka jadinya
+            // (STDEV keterulangan, selisih tiap posisi, perbandingan
+            // histeresis) nggak pernah disimpan di kolom mana pun, cuma
+            // masukannya yang ada di `spesifikasi_alat`. Alasan lengkapnya di
+            // `TimbanganProfile::ringkasanSertifikat`.
+            //
+            // Dua puluh alat lain balik `null` di sini dan lewat jalur lama
+            // tanpa berubah sama sekali.
+            'timbangan' => $profil?->ringkasanSertifikat($sesi),
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),
             'footer' => $this->footer($sesi, $sertifikat, $pengaturan),
@@ -186,8 +203,7 @@ class CertificateSnapshotBuilder
             ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
             : null;
 
-        $baris = $sesi->uncertaintyCalculations
-            ->sortBy('titik_ke')
+        $baris = self::titikUrut($sesi)
             ->map(function ($titik) use ($alat, $organisasi, $profil): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
                 //
@@ -221,9 +237,20 @@ class CertificateSnapshotBuilder
 
                 $remark = $profil?->remarkTitik((float) $titik->titik_ukur);
 
+                // Nilai acuan yang TERCETAK di kolom `Standard Value`.
+                //
+                // Buat dua puluh satu alat itu `titik_ukur` apa adanya. Buat
+                // kelompok Waktu dan Frekuensi `titik_ukur` menyimpan SET POINT
+                // — penunjukan alat pelanggan, bukan nilai acuan — sehingga
+                // nilai acuannya harus disusun balik dari koreksinya. Lihat
+                // [CalibrationProfile::nilaiStandarDariKoreksi].
+                $nilaiStandar = $profil?->nilaiStandarDariKoreksi()
+                    ? (float) $titik->rata_rata + (float) $titik->koreksi
+                    : (float) $titik->titik_ukur;
+
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
-                    'standard_value' => (float) $titik->titik_ukur,
+                    'standard_value' => $nilaiStandar,
                     // Kolom "Remark" di sertifikat asli. Null buat alat yang
                     // titiknya nggak punya keterangan parameter.
                     'remark' => $remark,
@@ -363,10 +390,106 @@ class CertificateSnapshotBuilder
      *
      * @return list<array<string, string|null>>
      */
+    /**
+     * Titik ukur dalam urutan cetaknya: `titik_ke` dulu, `id` pemecah serinya.
+     *
+     * ## Kenapa diurutkan di sini, bukan cuma diandalkan ke relasinya
+     *
+     * Relasi [CalibrationSession::uncertaintyCalculations] memang sudah
+     * ber-`ORDER BY` sejak 3 Sep 2026, tapi itu cuma menjaga jalur baca dari
+     * database. Koleksinya bisa sampai ke sini lewat jalan lain — `setRelation`
+     * di test, hasil `map`/`merge` di pemanggil, relasi yang sudah nempel di
+     * memori dari query sebelumnya — dan yang dihasilkan dicetak APA ADANYA ke
+     * sertifikat terakreditasi.
+     *
+     * Yang bikin lapis kedua ini wajib: urutannya bergeser TANPA error. 3 Sep
+     * 2026, dua kali `sertifikat:bangun-ulang` berturut-turut di MySQL yang sama
+     * dengan kode yang sama memberi hasil beda-beda, dan tiap jalan menulis
+     * ulang PDF sertifikat yang sudah dipegang pelanggan.
+     *
+     * ## Kenapa `id` ikut, bukan cuma `titik_ke`
+     *
+     * `sortBy` itu stabil: baris yang `titik_ke`-nya KEMBAR mempertahankan
+     * urutan datangnya — yaitu urutan yang tidak dijanjikan siapa pun. Alat yang
+     * satu titiknya punya beberapa baris (Chlorine Free/Total, Spectrophotometer
+     * tiga blok) justru yang paling kena.
+     *
+     * Temuan review 3 Sep 2026, dan benar: perbaikan pertama cuma memasang sumbu
+     * kedua di `standarDigunakan()`, sementara `hasil()` — tabel hasil kalibrasi
+     * itu sendiri — dan pemilihan kode metode masih `sortBy('titik_ke')` saja.
+     * Ketiganya sekarang lewat satu pintu supaya tidak ada lagi yang tertinggal.
+     *
+     * `titik_ke` di depan itu pilihan pemilik lab: tabelnya mengikuti urutan
+     * titik ukur, sama seperti lembar kerjanya.
+     *
+     * @return Collection<int, UncertaintyCalculation>
+     */
+    /**
+     * IK yang mewakili satu nama alat — dari kandidat yang disodorkan.
+     *
+     * ## Kenapa menerima koleksi, bukan menembak database sendiri
+     *
+     * Supaya urutannya bisa DIADU. Bug yang ditutup di sini cuma muncul kalau
+     * kandidatnya datang dalam urutan tertentu, dan urutan itu tidak bisa
+     * dipaksa lewat query — persis alasan yang sama dengan
+     * `SnapshotSertifikatTahanUrutanTest`, yang versi pertamanya menyusun ulang
+     * baris di database dan LOLOS tanpa menguji apa pun.
+     *
+     * ## Bug-nya
+     *
+     * Pemanggilnya memakai `->get()` TANPA `ORDER BY`. Dua `sortByDesc`
+     * berantai itu stabil, jadi kandidat yang panjang namanya sama DAN
+     * revisinya sama mempertahankan urutan datangnya — yaitu urutan yang tidak
+     * dijanjikan siapa pun. Di MySQL itu bergantung pilihan indeks, dan itu
+     * bisa berubah sesudah `UPDATE`.
+     *
+     * Yang tercetak dari sini masuk sertifikat terakreditasi sebagai kode IK.
+     * Dua sertifikat untuk alat yang sama bisa menyebut IK berbeda tanpa satu
+     * pun error, dan tanpa ada yang berubah di data.
+     *
+     * ## Urutan yang berlaku sekarang
+     *
+     * `sortBy` Laravel stabil, jadi yang dipanggil TERAKHIR jadi kunci utama:
+     *
+     *   1. panjang nama, terpanjang menang — supaya "Thermometer Glass" tidak
+     *      kalah oleh jenis lain yang kebetulan jadi bagian namanya;
+     *   2. revisi, tertinggi menang;
+     *   3. **`id` terkecil** — pemecah seri terakhir, dan yang ditambahkan di
+     *      sini.
+     *
+     * Nomor tiga itu sengaja dipilih karena STABIL, bukan karena benar. Kalau
+     * dua IK aktif benar-benar seri di panjang nama dan revisi, mana yang
+     * seharusnya menang itu keputusan pemilik lab dan **belum diputuskan** —
+     * yang pasti salah cuma membiarkannya ditentukan urutan baris database.
+     *
+     * ## Kenapa `public`
+     *
+     * Diuji langsung. Fungsinya murni — masuk koleksi, keluar satu baris — dan
+     * yang dipertaruhkan justru urutannya, yang cuma bisa diadu kalau
+     * kandidatnya bisa disodorkan teracak dari test.
+     *
+     * @param  Collection<int, CalibrationMethod>  $kandidat
+     */
+    public static function metodeTerpilih(Collection $kandidat, string $namaAlat): ?CalibrationMethod
+    {
+        return $kandidat
+            ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
+                && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
+            ->sortBy(fn (CalibrationMethod $m): int => (int) $m->getKey())
+            ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
+            ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
+            ->first();
+    }
+
+    private static function titikUrut(CalibrationSession $sesi): Collection
+    {
+        return $sesi->uncertaintyCalculations->sortBy([['titik_ke', 'asc'], ['id', 'asc']]);
+    }
+
     private function standarDigunakan(CalibrationSession $sesi): array
     {
         /** @var Collection<int, Standard> $standar */
-        $standar = $sesi->uncertaintyCalculations
+        $standar = self::titikUrut($sesi)
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn (Collection $c) => $c->push($sesi->standard))
@@ -388,7 +511,14 @@ class CertificateSnapshotBuilder
             // teknisi tapi nggak nempel ke titik hitung mana pun (mis. RTD
             // Sensor buat baca suhu larutan) tetap harus tercatat — itu bagian
             // dari ketertelusuran, bukan pelengkap.
-            ->concat($sesi->standarDicek->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai))
+            // `sortBy('id')` alasannya sama dengan sortBy di atas: ekor daftar
+            // ini pun ikut tercetak, jadi urutannya nggak boleh diserahkan ke
+            // urutan baris yang kebetulan dikembalikan database.
+            ->concat(
+                $sesi->standarDicek
+                    ->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai)
+                    ->sortBy('id')
+            )
             ->unique('id')
             ->values();
 
@@ -416,7 +546,7 @@ class CertificateSnapshotBuilder
     {
         return [
             'issuance_date' => $sertifikat->diterbitkan_pada?->toDateString(),
-            'penandatangan' => $pengaturan['penandatangan_nama'] ?? $sesi->reviewer?->name,
+            'penandatangan' => $pengaturan[Organization::KEY_PENANDATANGAN_NAMA] ?? $sesi->reviewer?->name,
             'jabatan' => $pengaturan['penandatangan_jabatan'] ?? $sesi->reviewer?->department ?? 'Technical Manager',
             'kode_dokumen' => $pengaturan['kode_dokumen_form'] ?? self::KODE_DOKUMEN_DEFAULT,
         ];
@@ -475,6 +605,26 @@ class CertificateSnapshotBuilder
             return $sesi->calibrationMethod->kodeLengkap();
         }
 
+        // Profil alat menang atas cadangan pencocokan nama di bawah.
+        //
+        // Cadangan itu mencocokkan NAMA ALAT ke kolom "Jenis Pengukuran", dan
+        // meleset begitu pelanggan menamai alatnya di luar kosakata master —
+        // timbangan bernama "Moisture Analyzer" tidak memuat kata "Timbangan",
+        // jadi kolom `Calibration Method` sertifikatnya terbit berisi rujukan
+        // pustaka alih-alih nomor IK lab. Lihat `CalibrationProfile::kodeMetode`.
+        //
+        // Dua puluh profil lain balik `null` di sini dan jatuh ke jalur lama
+        // tanpa berubah sama sekali.
+        $alatIni = $sesi->equipment;
+
+        $dariProfil = $alatIni
+            ? app(CalibrationProfileRegistry::class)->untukAlat($alatIni)?->kodeMetode()
+            : null;
+
+        if ($dariProfil !== null) {
+            return $dariProfil;
+        }
+
         // Admin nggak selalu milih metode sebelum approve. Kalau nggak dipilih,
         // yang dipakai IK TERBARU buat jenis pengukurannya — itu persis tabel
         // "Jenis Pengukuran → Metode Kalibrasi (Latest IK)" di lembar master,
@@ -493,18 +643,13 @@ class CertificateSnapshotBuilder
             //
             // Yang dipilih kecocokan TERPANJANG, supaya "Thermometer Glass"
             // nggak kalah sama jenis lain yang kebetulan jadi bagian namanya.
-            $metode = CalibrationMethod::query()
-                ->where('organization_id', $sesi->organization_id)
-                ->where('aktif', true)
-                ->get()
-                ->filter(fn (CalibrationMethod $m): bool => filled($m->nama)
-                    && str_contains($namaAlat, mb_strtolower(trim($m->nama))))
-                // Urutannya: revisi dulu, PANJANG NAMA belakangan. `sortBy`
-                // Laravel stabil, jadi yang dipanggil terakhir jadi kunci
-                // utama — panjang nama menang, revisi jadi pemecah seri.
-                ->sortByDesc(fn (CalibrationMethod $m): int => (int) $m->revisi)
-                ->sortByDesc(fn (CalibrationMethod $m): int => mb_strlen((string) $m->nama))
-                ->first();
+            $metode = self::metodeTerpilih(
+                CalibrationMethod::query()
+                    ->where('organization_id', $sesi->organization_id)
+                    ->where('aktif', true)
+                    ->get(),
+                $namaAlat,
+            );
 
             if ($metode !== null) {
                 return $metode->kodeLengkap();
@@ -514,8 +659,7 @@ class CertificateSnapshotBuilder
         // Terakhir: kode yang kesimpen di baris perhitungan. Ini nggak bawa
         // revisi, jadi sengaja jadi cadangan paling akhir — sertifikat yang
         // nyebut IK tanpa revisi nggak bisa dicocokin ke dokumen mutu mana.
-        return $sesi->uncertaintyCalculations
-            ->sortBy('titik_ke')
+        return self::titikUrut($sesi)
             ->first(fn ($titik): bool => filled($titik->metode))?->metode;
     }
 

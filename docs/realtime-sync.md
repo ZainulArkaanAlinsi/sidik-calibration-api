@@ -48,10 +48,46 @@ php artisan queue:work         # broadcast & notifikasi jalan lewat queue
 
 Alternatif tanpa self-host: `pusher` (isi `PUSHER_*`, set `BROADCAST_CONNECTION=pusher`).
 
-> ⚠️ **`composer require laravel/reverb` itu WAJIB dijalanin duluan.** Paketnya
-> (termasuk `pusher/pusher-php-server`) belum terpasang di repo ini. Kalau
-> `BROADCAST_CONNECTION` diset ke `reverb`/`pusher` sebelum itu, `/api/broadcasting/auth`
-> gagal dengan `Class "Pusher\Pusher" not found` — itu bukan salah kodenya.
+> ⚠️ **Status per 3 Sep 2026: paketnya SUDAH terpasang, realtime-nya BELUM nyala.**
+>
+> `laravel/reverb` ada di `composer.json:14`. Yang belum: `render.yaml` menyetel
+> `BROADCAST_CONNECTION=log` (eksplisit, sejak audit — sebelumnya jatuh ke bawaan yang
+> sama tanpa ada yang menulisnya), dan `docker/entrypoint.sh` tidak menjalankan
+> `reverb:start` sama sekali; yang di-loop cuma `queue:work` & `schedule:work`.
+>
+> Akibatnya: event broadcast ditulis ke berkas log dan **tidak pernah sampai ke klien** —
+> tanpa error, tanpa gagal. Fitur "realtime sync mobile ↔ desktop" tidak berfungsi di
+> deployment Render, dan degradasinya senyap.
+>
+> Keadaannya sekarang bisa diperiksa dari luar: `GET /api/health` → `realtime`
+> (`driver`, `nyala`, `paket_terpasang`).
+>
+> **Keputusan 4 Sep 2026 — realtime DITUNDA, dan ini bukan penundaan tanpa batas
+> waktu: dia punya syarat pembalik yang jelas.**
+>
+> Yang menahan penyalaannya bukan kode, tapi plan Render-nya. `render.yaml:16` menulis
+> `plan: free`, dan instance free **tidur sesudah tidak ada lalu lintas**. Proses
+> WebSocket panjang di instance yang tidur bukan "realtime" — dia socket yang mati tiap
+> kali sepi, lalu klien menyambung ke sesuatu yang tidak ada. Menyalakan Reverb di plan
+> ini menghasilkan fitur yang gagalnya lebih membingungkan daripada sekarang: bukan
+> "tidak pernah update", tapi "kadang update, kadang tidak".
+>
+> Jadi `BROADCAST_CONNECTION=log` itu sekarang **pilihan yang tercatat, bukan bawaan
+> yang kebetulan.** Ditulis lengkap sebagai T3 di `pertanyaan-lab-audit-2026-09.md`.
+>
+> **Yang membalik keputusan ini cuma satu hal: plan berbayar yang tidak tidur.** Bukan
+> permintaan fitur, bukan tenggat — plannya. Begitu itu terjadi, tiga hal di daftar
+> "Ngaktifin realtime" di atas harus jalan bareng, dan satu saja kurang berarti gagalnya
+> senyap lagi.
+>
+> Catatan buat yang membaca `render.yaml` nanti: `plan: free` itu yang tertulis di
+> blueprint. Kalau service-nya pernah dinaikkan lewat dashboard tanpa memperbarui
+> blueprintnya, yang basi blueprintnya — betulkan itu dulu, jangan diam-diam memakai
+> plan sebenarnya sebagai alasan menyalakan Reverb tanpa mengubah keputusan ini.
+>
+> `pusher/pusher-php-server` masih belum terpasang. Jadi kalau `BROADCAST_CONNECTION`
+> diset ke `pusher` (bukan `reverb`), `/api/broadcasting/auth` tetap gagal dengan
+> `Class "Pusher\Pusher" not found` — itu bukan salah kodenya.
 
 > ### Catatan 25 Juli 2026 — bug di `/api/broadcasting/auth`, udah dibetulin
 >

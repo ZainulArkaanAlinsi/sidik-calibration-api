@@ -325,3 +325,169 @@ Tiga yang paling gampang kelewat dan paling mahal akibatnya:
    pelanggan menagih.
 3. **`PengaturanSertifikatSeeder` terlewat** → sertifikat terbit dengan penanda
    tangan yang salah. Tidak ada error, tidak ada yang curiga.
+
+## PDF sertifikat & disk yang kehapus tiap deploy
+
+Produksi Render jalan dengan `ARSIP_DRIVER=local`, dan disk container Render itu **sementara** —
+kehapus tiap deploy dan tiap container restart (`docs/deploy-gratis-render.md` §227). Artinya tiap
+deploy menghapus SELURUH PDF sertifikat yang pernah terbit, sementara barisnya di database tetap
+`terbit` dengan `pdf_path` terisi.
+
+Gejalanya khas dan sempat membingungkan: **halaman QR dan unduhan Excel tetap jalan** (dua-duanya
+dirakit dari `certificates.snapshot` di database), **cuma unduhan PDF yang 404** — jadi kelihatan
+seperti "PDF-nya rusak", padahal berkasnya yang tidak ada.
+
+**Jaring pengamannya sudah terpasang:** `App\Services\BerkasPdfSertifikat` membangun ulang PDF dari
+snapshot beku begitu berkasnya tidak ditemukan, dan mencatatnya sebagai `warning` di log. Dipakai
+keempat jalur unduh (QR, API, folder berkas, tombol Filament) plus pemeriksaan lampiran email.
+Dijaga `tests/Feature/PdfSertifikatSelamatDariDeployTest.php`.
+
+**Itu jaring, bukan obat.** Obatnya memindahkan disk arsip ke penyimpanan yang awet:
+
+1. Buat bucket Cloudflare R2 (gratis 10 GB) — `dash.cloudflare.com` → R2 → Create bucket.
+2. Isi `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, `AWS_ENDPOINT` di Render.
+3. Salin berkas lama — **jangan manual**, pakai perintahnya:
+
+   ```
+   php artisan arsip:pindah              # coba kering, cuma melaporkan
+   php artisan arsip:pindah --jalankan   # salin beneran
+   ```
+
+   Kunci disalin apa adanya dan ukurannya diverifikasi sesudah mendarat. Ini langkah yang paling
+   gampang salah: kolom di database menyimpan KUNCI, bukan URL, jadi kunci yang bergeser sedikit
+   saja bikin SELURUH berkas lama tidak ketemu — dan gejalanya identik dengan disk yang kehapus.
+
+   Kalau `ARSIP_PREFIX` diisi (bucket dipakai bareng hal lain), prefiksnya **ikut sendiri** —
+   perintahnya membaca nilai yang sama dengan yang dipakai disk `arsip` sesudah saklarnya digeser,
+   jadi yang menulis dan yang membaca tidak bisa berbeda pendapat. Baris `Prefix bucket:` di awal
+   keluaran yang menunjukkannya.
+
+   Perintahnya aman diulang, dan yang sudah sama persis dilewat. Kalau dia melaporkan **BENTROK**,
+   itu berkas yang sudah ada di tujuan tapi ukurannya beda dari sumber — biasanya sisa pindah yang
+   mati di tengah. Berkasnya tidak disentuh dan perintahnya keluar gagal, supaya tidak ada yang
+   menggeser `ARSIP_DRIVER` di atas berkas kepotong. Periksa dulu mana yang benar; kalau yang di
+   sumber, jalankan ulang dengan `--timpa`.
+4. Baru setel `ARSIP_DRIVER=s3` — dan cuma kalau langkah 3 keluar **sukses**. Selama masih ada
+   yang gagal atau bentrok, **jangan digeser**.
+
+Sebelum langkah 3 selesai, jangan geser `ARSIP_DRIVER` — kunci yang tidak cocok bikin berkas lama
+tidak ketemu, dan bangun ulang cuma menolong PDF (tanda tangan & kop tidak punya sumber beku).
+
+> **Kalau `arsip.awet` tiba-tiba balik `false` sesudah pernah `true`, periksa `render.yaml` duluan.**
+>
+> 1 Sep 2026 ini benar-benar terjadi. Saklarnya digeser ke `s3` di dashboard dan berhasil, lalu
+> deploy berikutnya menyinkronkan blueprint — dan `ARSIP_DRIVER` yang waktu itu ditulis
+> `value: local` **menimpa balik** setelan dashboard-nya. Produksi diam-diam kembali menulis ke
+> disk container yang kehapus tiap deploy, tanpa satu pun error.
+>
+> Kuncinya beda antara `value:` dan `sync: false`. Yang `value:` **dikelola blueprint** dan
+> ditimpa tiap sync; yang `sync: false` dikelola manual dan selamat. Itu sebabnya keempat `AWS_*`
+> bertahan sementara `ARSIP_DRIVER` tidak. Sekarang `ARSIP_DRIVER` sudah `sync: false`, tapi
+> aturan umumnya berlaku buat setelan lain: **apa pun yang diputuskan operator, bukan kode,
+> jangan dipatok `value:` di blueprint.**
+
+## Deploy Render timeout — apa yang dibaca duluan
+
+Render memberi **jendela 15 menit** dari `==> Deploying...` sampai health check `/up` harus
+lolos. Seluruh isi `docker/entrypoint.sh` jalan **sebelum** server menerima request pertama, jadi
+tiap menit yang dipakai di situ diambil dari jendela yang sama.
+
+Kejadian 1 Sep 2026: `Deploying...` 01:15:55 → server bind `:10000` **01:22:34** (6 menit 39
+detik terpakai) → `Timed Out` 01:30:57. Aplikasinya sendiri sehat — `/up` menjawab 200 dalam
+208 ms dengan `config:cache` + `view:cache` seperti produksi.
+
+Urutan periksanya:
+
+1. **`SEED_ON_BOOT` masih `true`?** Ini tersangka pertama. Seeder menulis ulang seluruh sesi
+   contoh **tiap container nyala**, dan di MySQL gratis itu bisa makan menit. Dokumennya sendiri
+   bilang "nyalain sekali pas deploy pertama, terus matiin" — kalau tidak pernah dimatikan, tiap
+   deploy membayar ongkosnya lagi. Matikan di Render → Environment.
+2. **Baca penanda tahap di log.** `entrypoint.sh` sekarang mencetak `[HH:MM:SS] → <tahap>` di
+   tiap langkah, jadi tahap yang memakan jendela menyebut dirinya sendiri. Sebelum ini lognya
+   sunyi selama enam menit dan tidak ada yang bisa ditunjuk.
+3. **Ulangi deploy-nya.** Migrasi yang sudah mendarat tidak diulang, jadi percobaan kedua
+   biasanya naik dalam hitungan detik. Dua cara: Render → **Manual Deploy → Deploy latest
+   commit**, atau GitHub → Actions → **Tes** → **Run workflow** (jalur `workflow_dispatch`, tetap
+   lewat gerbang phpunit dulu).
+4. **Kalau tetap timeout sesudah `→ server jalan di port`,** masalahnya bukan lambatnya boot
+   melainkan health check-nya sendiri. Yang dibutuhkan isi tab **Events** Render untuk deploy itu
+   — di situ tertulis alasan probe-nya gagal.
+
+Kalau tahap yang lambat ternyata migrasi dan bukan seeder, pindahkan `php artisan migrate --force`
+ke `preDeployCommand` di `render.yaml`: langkah itu jalan **sebelum** instance baru dinyalakan,
+jadi keluar dari jendela health check sepenuhnya.
+
+
+## Tiga pertanyaan operasional yang bisa dijawab tanpa dashboard
+
+`GET /api/health` (tanpa login) sekarang melaporkan:
+
+```json
+"deploy": {
+  "versi": "3e81086…",           // commit yang BENERAN jalan di container ini
+  "arsip": { "awet": false },     // false = berkas kehapus tiap deploy
+  "seed_saat_boot": false         // true = seeder jalan tiap container nyala
+}
+```
+
+Batasnya sama dengan `direktori_perusahaan`: yang dilaporkan **status, bukan nilai**, nol request
+ke penyedia, nol rahasia. Repo ini publik, jadi SHA commit bukan rahasia.
+
+### "Direktorinya sedang menagih atau nggak?" (ditambah 2 Sep 2026)
+
+Blok `direktori_perusahaan` sekarang tiga field, bukan satu:
+
+```json
+"direktori_perusahaan": {
+  "disetel": true,          // jalur direktorinya kepakai
+  "driver": "osm",          // yang BENERAN jalan, bukan isi .env apa adanya
+  "bisa_ditagih": false     // true = jalur ini menyentuh Google Places
+}
+```
+
+**Kenapa `disetel` sendirian nggak cukup.** Dia `true` buat `osm` MAUPUN `auto` — yang pertama
+gratis, yang kedua menembak Google duluan dan ditagih begitu kuota bulanannya lewat. Dua keadaan
+yang bedanya uang, dilaporkan dengan angka yang sama persis.
+
+Itu bukan kasus tepi. Waktu bawaan direktori dipindah ke OSM (1 Sep 2026), keputusannya sudah
+tercatat sejak 31 Agt tapi nilainya tertinggal di `auto` — dan **tidak ada satu pun cara
+memeriksanya dari luar**. Yang akhirnya menemukan tagihan Google Cloud, bukan endpoint ini.
+
+**`driver` melaporkan yang EFEKTIF, bukan isi `.env`.** `DIREKTORI_PERUSAHAAN_DRIVER=osmm` yang
+salah ketik jatuh ke `osm`, dan yang dilaporkan `osm` — karena yang perlu diketahui "yang jalan
+yang mana", bukan "yang saya ketik apa".
+
+**Pakainya begini.** Sesudah mengubah setelan direktori:
+
+```
+curl -s https://<domain>/api/health | jq .direktori_perusahaan
+```
+
+`"bisa_ditagih": false` = aman. `true` = jalur berbayar hidup, disengaja atau tidak.
+
+> **Arah penimpaannya KEBALIKAN dari instingnya — dan ini sudah menggigit sekali.**
+>
+> `DIREKTORI_PERUSAHAAN_DRIVER` ditulis `value: osm` di `render.yaml`, jadi dia **dikelola
+> blueprint**: tiap sync, nilai itu menimpa apa pun yang diketik di dashboard. Bukan sebaliknya.
+> Lihat kotak `ARSIP_DRIVER` di atas — persis mekanisme yang bikin arsip produksi diam-diam balik
+> ke disk sementara pada 1 Sep 2026.
+>
+> Buat driver direktori, arah itu justru **yang diinginkan**: bawaan gratis ditegakkan ulang tiap
+> deploy, jadi `auto` yang tertinggal di dashboard tidak bisa diam-diam menyalakan jalur berbayar.
+> Konsekuensinya harus disadari: **memindahkannya ke `google`/`auto` lewat dashboard saja tidak
+> bertahan** — yang harus diubah `render.yaml`, atau kuncinya dipindah ke `sync: false` dulu
+> mengikuti aturan umum di kotak `ARSIP_DRIVER`.
+>
+> Field `driver` di health yang memberi tahu mana yang sebenarnya menang, tanpa perlu menebak.
+
+Nama driver itu **status, bukan rahasia**: nilainya sama saja apakah API key-nya terisi, kosong,
+atau salah. Key-nya sendiri tetap tidak pernah ikut.
+
+Kegunaannya:
+
+- **"Deploy-nya udah naik belum?"** → cocokkan `versi` dengan commit terakhir di `main`. Sebelum
+  ini jawabannya cuma ada di dashboard Render.
+- **"Kenapa deploy timeout?"** → `seed_saat_boot: true` itu tersangka pertama; seeder menulis ulang
+  seluruh sesi contoh tiap container nyala, dan menitnya diambil dari jendela health check yang
+  cuma 15 menit.
+- **"Tanda tangan hilang lagi?"** → `arsip.awet: false` menjelaskannya, dan obatnya bagian di atas.

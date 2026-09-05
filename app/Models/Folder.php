@@ -43,7 +43,6 @@ class Folder extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    /** @return HasMany<Folder, $this> */
     /**
      * Jalur folder ini dari AKAR ke dirinya sendiri — bahan breadcrumb.
      *
@@ -75,6 +74,7 @@ class Folder extends Model
         return array_reverse($jalur);
     }
 
+    /** @return HasMany<Folder, $this> */
     public function children(): HasMany
     {
         return $this->hasMany(Folder::class, 'parent_id');

@@ -5,6 +5,7 @@ namespace App\Services\Calibration;
 use App\Models\Equipment;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
@@ -14,14 +15,18 @@ use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
+use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
+use App\Services\Calibration\Profiles\TachometerProfile;
 use App\Services\Calibration\Profiles\ThermocoupleProfile;
 use App\Services\Calibration\Profiles\ThermohygroProfile;
 use App\Services\Calibration\Profiles\ThermometerGlassProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
+use App\Services\Calibration\Profiles\TimbanganProfile;
+use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
@@ -101,6 +106,29 @@ class CalibrationProfileRegistry
             new ThermocoupleProfile,
             new ThermometerGlassProfile,
             new ThermohygroProfile,
+            // Alat ke-21, dan yang PERTAMA di kelompok Massa — lampiran
+            // akreditasi LK-285-IDN no. 12. Tiga workbook master (kg, gram,
+            // substitusi) jadi SATU profil dengan tiga revisi; lihat
+            // VarianMasterTimbangan.
+            new TimbanganProfile,
+            // Alat ke-22, 23, dan 24 — kelompok "Waktu dan Frekuensi" lampiran
+            // akreditasi LK-285-IDN no. 37, 38, dan 39, dan kelompok itu
+            // sekarang LENGKAP.
+            //
+            // Tachometer & Centrifuge berbagi satu mesin hitung (ProfilPutaran)
+            // karena sheet PERHITUNGAN kedua workbook masternya identik baris
+            // demi baris; yang membedakan cuma pita CMC-nya. Timer/Stopwatch
+            // berdiri sendiri: satu titiknya DUA deret waktu, bukan satu.
+            new TimerStopwatchProfile,
+            new CentrifugeProfile,
+            new TachometerProfile,
+            // Alat ke-25, dan yang pertama BERPROFIL di kelompok Panjang —
+            // lampiran akreditasi LK-285-IDN no. 34. Ketiga saudaranya di
+            // kelompok itu (Sieve, Vernier Caliper, Dial Indicator) masih
+            // jatuh ke ProfilGenerik. Empat workbook master (0-25, 25-50,
+            // 50-75, 75-100 mm) yang rumusnya identik baris demi baris jadi
+            // SATU profil dengan empat pita CMC; lihat TabelStandarMicrometer.
+            new MicrometerProfile,
         ];
     }
 

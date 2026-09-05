@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Models\CalibrationSession;
 use App\Http\Requests\Concerns\AturanUkurAutoclave;
+use App\Models\CalibrationSession;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Simpan sesi Autoklaf (`POST /calibrations/autoclave`). Gabungan identitas sesi
@@ -38,7 +38,7 @@ class AutoclaveStoreRequest extends FormRequest
     {
         $org = $this->user()->organization_id;
 
-        return [
+        $aturan = [
             // ---- Identitas sesi ----
             'equipment_id' => [
                 'required',
@@ -81,7 +81,19 @@ class AutoclaveStoreRequest extends FormRequest
             'suhu.indikator.*' => ['nullable', 'numeric'],
             'suhu.suhu_ruang' => ['sometimes', 'array'],
             'suhu.suhu_ruang.*' => ['nullable', 'numeric'],
-            'suhu.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            // `gt:0`, bukan `min:0` — nol di sini bukan "belum diisi".
+            //
+            // Angkanya jadi komponen budget di `EnclosureCalculator`
+            // (`u = (resolusi_alat / 2) / sqrt(3)`), jadi nol MENGHAPUS komponen
+            // daya-baca alat dari budget dan bikin U95 yang tercetak lebih kecil
+            // dari yang seharusnya — sertifikat yang mengklaim ketidakpastian
+            // lebih baik daripada yang alatnya sanggup.
+            //
+            // Yang belum diisi itu `null`/absen, dan itu tetap sah: cadangan dari
+            // `config/autoclave.php` (master INPUT DATA E16/H16, dua-duanya
+            // positif) yang dipakai lewat `??` di `AutoclaveInputBuilder`.
+            // Dijaga `ResolusiAlatAutoklafNolDitolakTest`.
+            'suhu.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             // Baris "Time" di kertas — jam pengambilan tiap kolom (02:00:00,
             // 04:00:00, ...). Nggak ikut ngitung, tapi tetap disimpan: tanpa
             // jamnya, lima kolom angka nggak bisa diadu balik ke rekaman disk.
@@ -96,7 +108,7 @@ class AutoclaveStoreRequest extends FormRequest
             'tekanan.indikator_pressure.*' => ['nullable', 'numeric'],
             'tekanan.satuan' => ['sometimes', 'string', 'in:Bar,MPa,kPa,Psi,kg/cm2,inHg,mmHg,Pa'],
             'tekanan.display' => ['sometimes', 'string', 'in:Digital,Analog 1,Analog 2,Analog 3'],
-            'tekanan.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'tekanan.resolusi_alat' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
             // Angka Pressure Disk Logger nggak ada di kertas — teknisi ngisinya
             // sesudah disk-nya diunduh. Jadi blok tekanan boleh kekirim tanpa
             // baris ini; yang kesimpan tetap utuh, cuma olah data tekanannya
@@ -107,6 +119,68 @@ class AutoclaveStoreRequest extends FormRequest
             // satu angka. Dua-duanya diterima supaya klien lama nggak patah.
             'tekanan.tekanan_atm_awal' => ['sometimes', 'nullable', $this->angkaAtauDeretAngka()],
         ];
+
+        /*
+         * ---- Tebakan mesin per sel (blok `ocr`) ----
+         *
+         * Bercermin PERSIS ke jalur nilainya, cuma berawalan `ocr.`:
+         * `suhu.disk.0` nilainya, `ocr.suhu.disk.0` tebakannya, sejajar indeks.
+         *
+         * Kenapa bercermin dan bukan kunci datar: jalur nilainya sudah jadi
+         * kontrak yang dipatok `BarisMatriks.kodeData` di server, dan HP menulis
+         * ke jalur itu apa adanya. Bentuk kedua yang harus diurai ulang cuma
+         * nambah tempat buat salah alamat — dan di data latih, salah alamat
+         * nggak pernah kelihatan.
+         *
+         * Baris "Time" nggak punya padanan di sini: dia jam, bukan angka ukur,
+         * dan jalur fotonya memang melewatinya.
+         */
+        $jalurOcr = [
+            // Tiga disk suhu — satu tingkat lebih dalam dari yang lain.
+            'ocr.suhu.disk.*',
+            'ocr.suhu.indikator',
+            'ocr.suhu.suhu_ruang',
+            'ocr.tekanan.indikator_pressure',
+            'ocr.tekanan.pembacaan_standar',
+        ];
+
+        $aturan['ocr'] = ['sometimes', 'nullable', 'array'];
+        $aturan['ocr.suhu.disk'] = ['sometimes', 'nullable', 'array', 'max:3'];
+
+        foreach ($jalurOcr as $jalur) {
+            $aturan[$jalur] = ['sometimes', 'nullable', 'array', 'max:20'];
+            $aturan[$jalur.'.*'] = ['nullable', 'array'];
+            $aturan[$jalur.'.*.raw_text'] = ['nullable', 'string', 'max:255'];
+            $aturan[$jalur.'.*.confidence'] = ['nullable', 'numeric', 'between:0,1'];
+        }
+
+        return $aturan;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'suhu.resolusi_alat.gt' => 'Resolusi alat harus lebih besar dari nol.',
+            'tekanan.resolusi_alat.gt' => 'Resolusi alat harus lebih besar dari nol.',
+        ];
+    }
+
+    /**
+     * Tebakan mesin per sel, DIPISAH dari [dataUkur()] dengan sengaja.
+     *
+     * `dataUkur()` diumpankan ke `AutoclaveInputBuilder` — kalkulatornya. Blok
+     * ini bukan data ukur: dia catatan asal-usul. Menitipkannya di sana berarti
+     * kalkulator menerima kunci yang nggak dia kenal, dan angka sertifikat
+     * bukan tempat buat mencoba-coba.
+     *
+     * @return array<string, mixed>
+     */
+    public function bacaanMesin(): array
+    {
+        return (array) $this->input('ocr', []);
     }
 
     /**
@@ -127,6 +201,9 @@ class AutoclaveStoreRequest extends FormRequest
      */
     public function after(): array
     {
-        return [fn (Validator $validator) => $this->pastikanAdaBacaanUut($validator)];
+        return [
+            fn (Validator $validator) => $this->pastikanAdaBacaanUut($validator),
+            fn (Validator $validator) => $this->pastikanAdaBacaanSuhu($validator),
+        ];
     }
 }

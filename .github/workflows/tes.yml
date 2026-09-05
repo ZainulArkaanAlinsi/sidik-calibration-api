@@ -37,6 +37,14 @@ on:
       - main
       - chore/deploy-gratis-render
   pull_request:
+  # Biar deploy bisa diulang TANPA bikin commit kosong.
+  #
+  # Deploy Render bisa gagal karena hal yang nggak ada hubungannya sama kode —
+  # 1 Sep 2026 satu deploy timeout gara-gara jendela health check kehabisan
+  # waktu, dan satu-satunya cara ngetuk ulang dari sini dulu ya push commit
+  # baru. Commit kosong buat mancing CI itu justru yang dilarang di tempat lain
+  # di repo ini, jadi jalurnya disediain di sini.
+  workflow_dispatch:
 
 jobs:
   phpunit:
@@ -82,7 +90,9 @@ jobs:
     # yang dipakai teknisi — dan `pull_request` dari fork nggak dikasih akses
     # ke secret sama sekali, jadi tanpa penjagaan ini job-nya bakal merah
     # tiap PR dari luar, bikin bising tanpa alasan.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      && github.ref == 'refs/heads/main'
 
     steps:
       # Dicek duluan, sebelum ngetuk apa pun: kalau hook-nya belum dipasang,

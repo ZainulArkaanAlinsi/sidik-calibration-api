@@ -93,6 +93,18 @@ use App\Models\Standard;
  */
 class RefractometerProfile extends CalibrationProfile
 {
+    /**
+     * Nomor Instruksi Kerja alat ini — `DATABASE` baris 16 (Refractometer).
+     *
+     * Dicetak di kolom `Calibration Method` sertifikat lewat
+     * [CalibrationProfile::kodeMetode]. Dinyatakan di sini, BUKAN dicocokkan
+     * dari nama alat: cadangan pencocokan nama mencari "jenis pengukuran" di
+     * dalam nama alat, dan meleset begitu pelanggan menamai alatnya di luar
+     * kosakata master — yang terbit kolom kosong atau nomor tanpa revisi, di
+     * dokumen terakreditasi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0516_Rev.4';
+
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0523_Rev.2';
 
     public const JUMLAH_PENGULANGAN = 5;
@@ -588,7 +600,7 @@ class RefractometerProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -727,75 +739,6 @@ class RefractometerProfile extends CalibrationProfile
     }
 
     /**
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
-    }
-
-    /**
      * **5 desimal, bukan 4** — satu-satunya alat yang nyimpang dari aturan
      * umum, dan angkanya diambil dari sertifikat master yang beneran kecetak.
      *
@@ -827,5 +770,32 @@ class RefractometerProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return 0;
+    }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,000527 / 0,00053 nD.
+     *
+     * JUJURNYA: di lima desimal cetaknya dua-duanya jadi 0,00053, jadi buat sesi
+     * contoh ini kolomnya nggak menambah informasi yang kelihatan. Tetap
+     * dinyalakan karena yang menentukan sifat ALATNYA — U95-nya memang lahir
+     * per titik, dan sesi lain dengan rentang indeks bias yang lebih lebar
+     * bakal memisah. Menyetelnya per sesi malah bikin bentuk sertifikat alat
+     * yang sama berubah-ubah tanpa alasan yang kebaca pelanggan.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 }

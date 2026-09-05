@@ -58,6 +58,33 @@ services:
       - key: APP_KEY
         sync: false
 
+      # Realtime sync MATI di produksi, dan itu ditulis EKSPLISIT di sini.
+      #
+      # `laravel/reverb` terpasang di composer.json, tapi blueprint ini nggak
+      # pernah punya `BROADCAST_CONNECTION` maupun `REVERB_*` — jadi produksi
+      # jatuh ke bawaan `log`: event broadcast ditulis ke berkas log dan nggak
+      # pernah nyampe ke klien. Nggak ada error; pengguna cuma nggak pernah
+      # lihat pembaruan sampai dia menarik data manual.
+      #
+      # Nilainya nggak berubah dari yang selama ini berlaku. Yang berubah:
+      # keadaannya sekarang KEPUTUSAN yang kebaca waktu blueprint ini dibuka,
+      # bukan bawaan yang kebetulan. Statusnya juga kelihatan dari luar lewat
+      # `GET /api/health` -> `realtime`.
+      #
+      # Buat menyalakannya, TIGA hal harus jalan bareng — satu saja kurang,
+      # gagalnya senyap lagi:
+      #   1. `BROADCAST_CONNECTION=reverb` di sini;
+      #   2. `REVERB_APP_ID` / `REVERB_APP_KEY` / `REVERB_APP_SECRET`
+      #      (`sync: false`, diisi lewat dashboard);
+      #   3. `php artisan reverb:start` dijalanin di container — `entrypoint.sh`
+      #      sekarang cuma nge-loop `queue:work` & `schedule:work`.
+      #
+      # Yang belum dipastikan dan BUKAN urusan kode: apakah plan Render yang
+      # dipakai sanggup menahan satu proses WebSocket panjang lagi di container
+      # yang sama. Lihat docs/pertanyaan-lab-audit-2026-09.md T3.
+      - key: BROADCAST_CONNECTION
+        value: log
+
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
@@ -109,8 +136,27 @@ services:
       # Ini saklarnya, BUKAN FILESYSTEM_DISK. Yang terakhir itu cuma dibaca
       # baris `'default'` di config/filesystems.php, dan nggak ada satu pun
       # pemakaian Storage:: di app/ yang memakai disk default.
+      #
+      # ## Kenapa `sync: false`, bukan `value: local`
+      #
+      # 1 Sep 2026, kejadian nyata: saklarnya digeser ke `s3` di dashboard,
+      # arsipnya pindah ke R2, `/api/health` melaporkan `arsip.awet: true`.
+      # Deploy berikutnya menyinkronkan blueprint ini, dan `value: local`
+      # MENIMPA BALIK setelan itu. Produksi diam-diam kembali menulis ke disk
+      # container yang kehapus tiap deploy — tanpa satu pun error, dan yang
+      # kelihatan cuma satu huruf berubah di endpoint health.
+      #
+      # Keempat AWS_* di bawah selamat justru karena `sync: false`. Bedanya
+      # bukan soal rahasia atau bukan: `value:` artinya "blueprint yang
+      # menentukan", dan ARSIP_DRIVER itu KEPUTUSAN OPERASIONAL — tergantung
+      # bucket sudah ada atau belum, berkas lama sudah disalin atau belum.
+      # Blueprint nggak bisa tahu itu, jadi dia nggak boleh memutuskan.
+      #
+      # Dikosongkan waktu impor blueprint tetap aman: `env('ARSIP_DRIVER',
+      # 'local')` di config/filesystems.php jatuh ke `local`, persis bawaan
+      # yang lama.
       - key: ARSIP_DRIVER
-        value: local
+        sync: false
 
       # Cloudflare R2 — gratis 10 GB, dipakai kalau ARSIP_DRIVER=s3.
       #
@@ -147,6 +193,50 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
+      # Direktori perusahaan — cari nama & alamat PT dari sumber LUAR waktu
+      # teknisi mendaftarkan pelanggan yang belum ada di master lab.
+      #
+      # Pencarian di master lab dan ketik tangan SELALU jalan penuh, apa pun
+      # isi tiga baris di bawah. Yang disetel di sini cuma lapis tambahannya.
+      #
+      # `osm` (bawaan) = OpenStreetMap lewat Nominatim: gratis, tanpa API key,
+      # NOL TAGIHAN. Bayarannya cakupan lebih tipis — cuma tempat yang pernah
+      # dipetakan sukarelawan.
+      # `google` = Places API: cakupan pabrik Indonesia lebih tebal, tapi butuh
+      # key DAN ditagih per request begitu kuota bebas bulanannya lewat.
+      # `auto` = berlapis: Google duluan kalau DIREKTORI_PERUSAHAAN_KEY di
+      # bawah terisi, OpenStreetMap di belakangnya.
+      #
+      # Dipindah ke `osm` 1 Sep 2026 atas keputusan pemilik proyek: nol
+      # tagihan. Keputusannya sendiri sudah diambil 31 Agt 2026, cuma nilai di
+      # sini yang tertinggal di `auto` — dan selama itu Places tetap ditembak.
+      # Pindah balik ke `google`/`auto` = menyalakan lagi jalur yang ditagih;
+      # kalau memang mau, pasang batas kuotanya di konsol Google dulu, jangan
+      # cuma andalkan throttle 30/menit di server.
+      - key: DIREKTORI_PERUSAHAAN_DRIVER
+        value: osm
+
+      # Nominatim menolak klien yang nggak menyebut dirinya, dan yang diblokir
+      # alamat IP service ini — bukan satu request. Sejak DRIVER=osm jadi
+      # bawaan, baris ini satu-satunya yang menjaga jalur direktori tetap
+      # hidup: nggak ada lapis Google di belakangnya yang menampung kalau
+      # Nominatim menutup pintu. Makanya cara menghubunginya ikut disebut,
+      # bukan cuma nama aplikasinya.
+      - key: DIREKTORI_PERUSAHAAN_USER_AGENT
+        value: SidikCalibration/1.0 (+https://github.com/ZainulArkaanAlinsi/sidik-calibration-api)
+
+      # Cakupan pabrik Indonesia paling tebal ada di sini, jadi ini yang
+      # dipakai duluan waktu DRIVER=auto. Text Search punya kuota bebas
+      # bulanan (5.000 panggilan/bulan sejak Mar 2025) — jauh di atas
+      # pemakaian satu lab, yang cuma menembak waktu teknisi menekan cari.
+      #
+      # JEBAKAN KONSOL GOOGLE: key ini dipanggil dari SERVER, jadi pembatasan
+      # aplikasinya JANGAN disetel ke "Android apps"/"HTTP referrers".
+      # Instingnya begitu karena ini proyek mobile, dan hasilnya semua
+      # permintaan ditolak 403.
+      - key: DIREKTORI_PERUSAHAAN_KEY
+        sync: false
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.
@@ -156,6 +246,65 @@ services:
       # sudah ada. Yang ketimpa tetap datanya, bukan kredensialnya.
       - key: SEED_ON_BOOT
         value: "false"
+
+      # Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit, sekali di
+      # boot berikutnya. Nyalain sesudah deploy yang MENGUBAH BENTUK SNAPSHOT
+      # (mis. U95 per titik, urutan tabel ketertelusuran), baca hasilnya di
+      # deploy log, terus balikin ke "false".
+      #
+      # Ini satu-satunya cara menjalankannya di produksi: paket gratis Render
+      # nggak punya shell sama sekali. Tombol "Cetak ulang PDF" di panel admin
+      # BUKAN penggantinya — dia sengaja nggak menyentuh snapshot, jadi
+      # perbaikan yang hidup di dalam snapshot nggak bakal muncul lewat situ.
+      #
+      # `sync: false`, bukan `value: "false"`, dan alasannya sama dengan
+      # ARSIP_DRIVER di atas: ini KEPUTUSAN OPERASIONAL yang digeser lewat
+      # dashboard. Kalau blueprint yang menentukan, deploy berikutnya bakal
+      # menyinkronkan nilainya dan mematikan saklar yang baru saja dinyalakan —
+      # persis kejadian 1 Sep 2026 waktu ARSIP_DRIVER ketimpa balik ke `local`.
+      #
+      # Dikosongin waktu impor blueprint tetap aman: yang dibaca
+      # docker/entrypoint.sh cuma persamaan dengan string "true".
+      - key: BANGUN_ULANG_ON_BOOT
+        sync: false
+
+      # Satu akun admin yang dibikin sendiri waktu boot, kalau emailnya belum
+      # kedaftar. Kosongin kalau nggak dipakai — perintahnya diam total.
+      #
+      # Gunanya: ngasih orang akses penuh tanpa ada yang perlu buka /admin.
+      # Form Filament punya dua bawaan yang dua-duanya salah buat keperluan itu
+      # (status `pending`, role `teknisi`), dan akun yang kena dua-duanya
+      # kelihatan jadi tapi nolak orangnya masuk tanpa pesan yang njelasin.
+      # Perintahnya nulis role `admin` + status `aktif` sendiri.
+      #
+      # Sandinya ikut SEED_ADMIN_PASSWORD di atas; kalau itu kosong, dibikin
+      # acak dan dicetak SEKALI ke deploy log. Salin dari situ.
+      #
+      # Akun yang SUDAH ada nggak pernah disentuh — bukan role-nya, bukan
+      # status-nya, apalagi sandinya. Ninggalin variabel ini keisi itu aman;
+      # yang nggak aman kalau dia ikut naikin role, karena orang yang sengaja
+      # diturunin lewat panel bakal naik lagi sendiri tiap deploy.
+      #
+      # `sync: false` karena isinya alamat surel orang, dan blueprint ini ikut
+      # ke repo publik.
+      - key: AKUN_ADMIN_EMAIL
+        sync: false
+
+      # Nama yang tampil buat akun di atas. Dikosongin = emailnya yang dipakai
+      # sebagai nama, biar barisnya di daftar pengguna nggak kosong.
+      - key: AKUN_ADMIN_NAMA
+        sync: false
+
+      # ID pegawai buat akun di atas. Boleh dikosongin — login nerima email
+      # ATAU ID pegawai (yang ada '@' dianggap email), jadi tanpa ini dia tetap
+      # bisa masuk pakai emailnya. Kalau diisi, harus unik; yang kembar ditolak
+      # dengan alasan yang kebaca di deploy log.
+      - key: AKUN_ADMIN_ID_PEGAWAI
+        sync: false
+
+      # Departemen buat akun di atas. Kosmetik; boleh dikosongin.
+      - key: AKUN_ADMIN_DEPARTEMEN
+        sync: false
 
       # Sandi awal buat akun yang dibentuk seeder di atas. Dikosongin juga
       # aman — seeder bikin sandi acak dan nyetak sekali ke log deploy buat

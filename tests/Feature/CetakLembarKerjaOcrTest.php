@@ -94,10 +94,44 @@ class CetakLembarKerjaOcrTest extends TestCase
      */
     public function test_tiap_profil_punya_berkas_geometrinya_sendiri(): void
     {
-        $diRegistry = array_map(
-            static fn (array $t): string => (string) $t['template_id'],
-            app(TemplateLembarKerja::class)->daftar(),
-        );
+        // Lembar yang tabelnya BEDA-BEDA orientasi nggak bisa punya berkas
+        // geometri, dan itu batas yang diketahui — bukan berkas yang kelupaan.
+        //
+        // Seluruh pipeline geometri menurunkan tinggi sel, kotak jangkar, dan
+        // urutan kunci sel SEKALI buat satu lembar. Lembar Timbangan yang
+        // pertama mencampur dua orientasi: blok Accuracy berjajar ke kanan,
+        // blok Repeatability turun ke bawah (itu bentuk kertas masternya).
+        // Berkas yang tetap diterbitkan bakal menggambar Repeatability
+        // MELINTANG — bertentangan dengan bentuk lembarnya sendiri — dan
+        // salahnya nggak punya gejala sampai ada yang memindainya.
+        // `ocr:rangka-geometri` sekarang menolaknya di muka.
+        //
+        // Yang HILANG dari sini cuma jalur pindai SATU HALAMAN PENUH bermarker.
+        // Jalur kamera per-tabel (`FOTO TABEL INI`) tetap jalan dan justru
+        // itu yang dipakai lembar ini: dia menjangkar ke tulisan yang tercetak,
+        // bukan ke koordinat, jadi nggak butuh berkas ini sama sekali.
+        //
+        // Dikeluarkan dari daftar wajib begitu pipeline geometrinya sanggup
+        // per tabel — bukan dengan menerbitkan berkas yang salah.
+        $sumbuCampuran = ['timbangan'];
+
+        // `kodeTersedia()`, bukan `daftar()`: yang dibutuhkan cuma nama-namanya.
+        // `daftar()` menuntut konteks organisasi sejak BUG-005 — dan sapuan ini
+        // memang tidak punya lab mana pun buat dijadikan konteks.
+        $diRegistry = array_values(array_diff(
+            app(TemplateLembarKerja::class)->kodeTersedia(),
+            $sumbuCampuran,
+        ));
+
+        foreach ($sumbuCampuran as $kode) {
+            $this->assertFileDoesNotExist(
+                database_path("ocr-templates/{$kode}-v1.json"),
+                "Lembar `{$kode}` bersumbu campuran, jadi berkas geometrinya bakal ".
+                'bertentangan dengan bentuk lembarnya. Kalau pipeline geometrinya sudah '.
+                'sanggup per tabel, keluarkan dia dari $sumbuCampuran — jangan diterbitkan '.
+                'berkasnya sambil membiarkan daftar ini.',
+            );
+        }
 
         $diDisk = array_map(
             static fn (array $a): string => $a[0],
@@ -189,8 +223,17 @@ class CetakLembarKerjaOcrTest extends TestCase
 
         $html = tempnam(sys_get_temp_dir(), 'lembar').'.html';
 
-        $this->artisan("ocr:cetak-lembar {$kode} --keluar=".tempnam(sys_get_temp_dir(), 'lembar').'.pdf'
-            ." --html={$html}")->assertSuccessful();
+        // Argumennya dioper sebagai ARRAY, bukan disisipkan ke string perintah.
+        // Symfony memperlakukan `\` di dalam string perintah sebagai karakter
+        // escape, jadi path Windows (`C:\Users\...\lem12F2.tmp.html`) sampai ke
+        // command dengan backslash-nya hilang — dan yang lahir bukan error yang
+        // menyebut sebabnya, tapi path relatif ngawur yang gagal ditulis. Di
+        // Linux path-nya pakai `/`, jadi CI nggak pernah kelihatan merah.
+        $this->artisan('ocr:cetak-lembar', [
+            'kode' => $kode,
+            '--keluar' => tempnam(sys_get_temp_dir(), 'lembar').'.pdf',
+            '--html' => $html,
+        ])->assertSuccessful();
 
         $isi = (string) File::get($html);
         $dpi = (int) ($geometri['ukuran_referensi']['dpi'] ?? 200);

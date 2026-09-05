@@ -132,9 +132,22 @@ class SertifikatSpektroCocokMasterTest extends TestCase
     {
         $html = $this->pdf();
 
-        preg_match_all('/Coverage Factor \( k \) =\s*([^<\s]+)/u', $html, $cocok);
+        // Tanda pemisahnya `[=≈]`, bukan `=` mati: sejak §13 ditutup, kalimatnya
+        // memakai `≈` kalau satu kelompok memuat `k` yang beda di presisi yang
+        // dicetak. Spektro justru yang HARUS tetap `=` — tiap kelompoknya satu
+        // `k` — dan itu ditegakkan tepat di bawah.
+        preg_match_all('/Coverage Factor \( k \)\s*[=≈]\s*([^<\s]+)/u', $html, $cocok);
 
         $this->assertSame(['3', '2', '2'], $cocok[1]);
+
+        // Dan tandanya `=`, BUKAN `≈`. Tiap kelompok Spektro memang punya satu
+        // `k` (Holmium 3,18; Didynium 2,36; %T 2,01), jadi kalimatnya memang
+        // tepat — memakai `≈` di sini melemahkan pernyataan yang benar, dan
+        // tanda yang selalu muncul berhenti berarti apa-apa.
+        $this->assertStringNotContainsString(
+            'Coverage Factor ( k ) ≈', $html,
+            'Kelompok yang `k`-nya seragam ikut ditandai perkiraan.',
+        );
     }
 
     /**

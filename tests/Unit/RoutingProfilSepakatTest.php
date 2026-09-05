@@ -153,7 +153,8 @@ class RoutingProfilSepakatTest extends TestCase
     {
         return [
             'Buret Digital' => ['Buret Digital'],
-            'Timbangan (Elektronik, mekanik)' => ['Timbangan (Elektronik, mekanik)'],
+            // Timbangan dicabut 31 Agt 2026 — punya `TimbanganProfile` sejak
+            // alat ke-21 ditambahkan.
             'Pressure Gauge' => ['Pressure Gauge'],
             'TIDS (singkatan, sengaja nggak didaftarin)' => ['TIDS'],
         ];

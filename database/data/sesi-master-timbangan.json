@@ -1,0 +1,3732 @@
+{
+ "kg": {
+  "varian": "kg",
+  "resolusi": 0.02,
+  "kapasitas": 100,
+  "satuan": "kg",
+  "tipe_display": "Digital",
+  "akurasi": [
+   {
+    "titik_ke": 1,
+    "nominal": [
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 10,
+     "m_aksen": 10,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 2,
+    "nominal": [
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 20,
+     "m_aksen": 20,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 3,
+    "nominal": [
+     20,
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 30,
+     "m_aksen": 30,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 4,
+    "nominal": [
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 40.02,
+     "m_aksen": 40.02,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 5,
+    "nominal": [
+     20,
+     20,
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 50.02,
+     "m_aksen": 50.02,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 6,
+    "nominal": [
+     20,
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 60.02,
+     "m_aksen": 60.02,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 7,
+    "nominal": [
+     20,
+     20,
+     20,
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 70.02,
+     "m_aksen": 70.02,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 8,
+    "nominal": [
+     20,
+     20,
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 80.04,
+     "m_aksen": 80.04,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 9,
+    "nominal": [
+     10,
+     20,
+     20,
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 90.04,
+     "m_aksen": 90.04,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 10,
+    "nominal": [
+     20,
+     20,
+     20,
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 100.02,
+     "m_aksen": 100.02,
+     "z2": 0
+    }
+   }
+  ],
+  "keterulangan": {
+   "mid": {
+    "nominal": 50,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     50.02,
+     50.02,
+     50.02,
+     50.04,
+     50.02,
+     50.02,
+     50.02,
+     50.02,
+     50.02,
+     50.02
+    ]
+   },
+   "maks": {
+    "nominal": 100,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     100.02,
+     100.02,
+     100.02,
+     100.02,
+     100.02,
+     100.02,
+     100.02,
+     100.04,
+     100.02,
+     100.02
+    ]
+   }
+  },
+  "eksentrisitas": {
+   "beban": null,
+   "baca": {
+    "center": 20,
+    "front": 20,
+    "back": 20.02,
+    "left": 20,
+    "right": 20
+   }
+  },
+  "histeresis": {
+   "m": 20,
+   "m_aksen": 20,
+   "baca1": [
+    20,
+    40,
+    20,
+    0,
+    40,
+    20,
+    0.02,
+    20
+   ],
+   "baca2": [
+    20,
+    40,
+    20,
+    0.02,
+    40,
+    20,
+    0,
+    20
+   ]
+  },
+  "_harap": {
+   "koreksi": [
+    7.000000000090267e-06,
+    -0.0002999999999993008,
+    -0.00029299999999921056,
+    -0.020600000000001728,
+    -0.020592999999998085,
+    -0.02090000000000458,
+    -0.020892999999986728,
+    -0.041200000000003456,
+    -0.04119299999999271,
+    -0.021499999999988972
+   ],
+   "kumulatif": null,
+   "sr": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "total_cn": [
+    10.000007,
+    19.9997,
+    29.999707,
+    39.9994,
+    49.999407000000005,
+    59.9991,
+    69.99910700000001,
+    79.9988,
+    89.99880700000001,
+    99.9985
+   ],
+   "lop": 0.07953615325627225,
+   "ecc_rentang": 0.019999999999999574,
+   "ecc_min": -0.019999999999999574,
+   "ecc_maks": 0,
+   "histeresis": 0
+  },
+  "tipe_timbangan": "Non Analytical",
+  "_budget": {
+   "koreksi": [
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 7.499999999999999e-06,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 2.3094010767038932e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.010028630315253872,
+     "veff": 1795.884227399033,
+     "k": 1.9612864605548013,
+     "U": 0.019669016855216846,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0003,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.010616468739652909,
+     "veff": 1488.4583759690072,
+     "k": 1.9615595283744562,
+     "U": 0.020824835413955717,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0003075,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 2.3094010767038932e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.010616683572724618,
+     "veff": 1488.5764159956084,
+     "k": 1.9615595283744562,
+     "U": 0.020825256821814537,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0006,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.011181478103692697,
+     "veff": 1366.523934866135,
+     "k": 1.961702153538187,
+     "U": 0.021934729675754047,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0006075,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 2.3094010767038932e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.011181883301425237,
+     "veff": 1366.708879793288,
+     "k": 1.961702153538187,
+     "U": 0.02193552455301858,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0008999999999999999,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.011726955984682938,
+     "veff": 1317.9485774639895,
+     "k": 1.9617668819066945,
+     "U": 0.023005553876328497,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0009075,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 2.3094010767038932e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.011727534193086982,
+     "veff": 1318.1746232468065,
+     "k": 1.9617655127673463,
+     "U": 0.02300667212979787,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0012,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.012255510627877681,
+     "veff": 1305.8578284790835,
+     "k": 1.961783475395178,
+     "U": 0.024042658232300416,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0012075,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 2.3094010767038932e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.012256247481727682,
+     "veff": 1306.1059744965853,
+     "k": 1.9617820809470934,
+     "U": 0.024044086689306306,
+     "cmc": 0.033,
+     "u95": 0.033
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.0015,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.003470741143233213,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 0.008199999999999999,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00577350538379377,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.012769243706396812,
+     "veff": 1314.3775533203946,
+     "k": 1.9617710018395609,
+     "U": 0.02505033201863158,
+     "cmc": 0.033,
+     "u95": 0.033
+    }
+   ],
+   "penimbangan": [
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.019669016855216846,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.02129640558210398,
+     "veff": 67.71171177793616,
+     "k": 1.9960083540252964,
+     "U": 0.042507803452590504,
+     "cmc": 0.033,
+     "u95": 0.042507803452590504
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 2",
+       "ui": 0.020824835413955717,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.022368290875366615,
+     "veff": 65.7769097319246,
+     "k": 1.9971379083920051,
+     "U": 0.04467256165313366,
+     "cmc": 0.033,
+     "u95": 0.04467256165313366
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 3",
+       "ui": 0.020825256821814537,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.022368683205794618,
+     "veff": 65.77626251583393,
+     "k": 1.9971379083920051,
+     "U": 0.04467334519110403,
+     "cmc": 0.033,
+     "u95": 0.04467334519110403
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 4",
+       "ui": 0.021934729675754047,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.023405106977219106,
+     "veff": 64.19987181274155,
+     "k": 1.9977296543176954,
+     "U": 0.04675707627086861,
+     "cmc": 0.033,
+     "u95": 0.04675707627086861
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 5",
+       "ui": 0.02193552455301858,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.02340585191961075,
+     "veff": 64.19882782589292,
+     "k": 1.9977296543176954,
+     "U": 0.04675856446437515,
+     "cmc": 0.033,
+     "u95": 0.04675856446437515
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 6",
+       "ui": 0.023005553876328497,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.024411517278188966,
+     "veff": 62.89071142574504,
+     "k": 1.9989715170333793,
+     "U": 0.048797927726667946,
+     "cmc": 0.033,
+     "u95": 0.048797927726667946
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 7",
+       "ui": 0.02300667212979787,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.024412571129536587,
+     "veff": 62.88943980490608,
+     "k": 1.9989715170333793,
+     "U": 0.04880003434549503,
+     "cmc": 0.033,
+     "u95": 0.04880003434549503
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.024042658232300416,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.025391259943962376,
+     "veff": 61.78717567611904,
+     "k": 1.9996235849949404,
+     "U": 0.050772962236684475,
+     "cmc": 0.033,
+     "u95": 0.050772962236684475
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.024044086689306306,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.025392612535726646,
+     "veff": 61.7857544255583,
+     "k": 1.9996235849949404,
+     "U": 0.050775666911077176,
+     "cmc": 0.033,
+     "u95": 0.050775666911077176
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.005773502691896258,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.005773502691896135,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.02505033201863158,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.02634740596169467,
+     "veff": 60.84481072013547,
+     "k": 2.000297822014261,
+     "U": 0.0527026587609034,
+     "cmc": 0.033,
+     "u95": 0.0527026587609034
+    }
+   ]
+  },
+  "_sesi": {
+   "nomor_sesi": "011-CAL-525",
+   "nomor_order": "2505.03.A",
+   "tanggal": "2025-05-02",
+   "nama_alat": "Timbangan",
+   "merk": "Bestar",
+   "model": "-",
+   "serial": "TB-100",
+   "pelanggan": "PT Trimandiri Plasindo",
+   "alamat": "Jl. Industri IV No. 1 Leuwi Gajah, Kota Cimahi",
+   "suhu_awal": 26.1,
+   "suhu_akhir": 26.0,
+   "rh_awal": 53.0,
+   "rh_akhir": 52.0,
+   "lokasi": "onsite",
+   "lokasi_nama": "PT Trimandiri Plasindo"
+  }
+ },
+ "gram": {
+  "varian": "gram",
+  "resolusi": 0.0001,
+  "kapasitas": 54,
+  "satuan": "g",
+  "tipe_display": "Digital",
+  "akurasi": [
+   {
+    "titik_ke": 1,
+    "nominal": [
+     5
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 5,
+     "m_aksen": 5,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 2,
+    "nominal": [
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 9.9999,
+     "m_aksen": 9.9998,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 3,
+    "nominal": [
+     10,
+     5
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 15,
+     "m_aksen": 15,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 4,
+    "nominal": [
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 20,
+     "m_aksen": 20,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 5,
+    "nominal": [
+     20,
+     5
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 25,
+     "m_aksen": 25,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 6,
+    "nominal": [
+     20,
+     10
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 30,
+     "m_aksen": 30,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 7,
+    "nominal": [
+     20,
+     10,
+     5
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 35,
+     "m_aksen": 35,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 8,
+    "nominal": [
+     20,
+     20
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 40,
+     "m_aksen": 40,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 9,
+    "nominal": [
+     20,
+     20,
+     5
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 45,
+     "m_aksen": 45,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 10,
+    "nominal": [
+     50
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 50,
+     "m_aksen": 50,
+     "z2": 0
+    }
+   }
+  ],
+  "keterulangan": {
+   "mid": {
+    "nominal": 25,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     24.9999,
+     24.9999,
+     24.9999,
+     24.9999,
+     25,
+     24.9999,
+     24.9999,
+     24.9999,
+     24.9999,
+     24.9999
+    ]
+   },
+   "maks": {
+    "nominal": 50,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     49.9999,
+     50,
+     50
+    ]
+   }
+  },
+  "eksentrisitas": {
+   "beban": null,
+   "baca": {
+    "center": 10,
+    "front": 10,
+    "back": 10,
+    "left": 9.9999,
+    "right": 10
+   }
+  },
+  "histeresis": {
+   "m": 20,
+   "m_aksen": 20,
+   "baca1": [
+    20,
+    40,
+    20,
+    0,
+    40,
+    20,
+    0,
+    20
+   ],
+   "baca2": [
+    20,
+    40,
+    20,
+    0,
+    40,
+    20,
+    0,
+    20
+   ]
+  },
+  "_harap": {
+   "koreksi": [
+    3.2000000000032e-05,
+    0.00012199999999928934,
+    4.000000000559112e-06,
+    1.0000000010279564e-06,
+    3.300000000194814e-05,
+    -2.6999999999333113e-05,
+    5.000000001587068e-06,
+    2.0000000020559128e-06,
+    3.399999999942338e-05,
+    7.999999999697138e-05
+   ],
+   "kumulatif": null,
+   "sr": [
+    0,
+    7.071067811848996e-05,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "total_cn": [
+    5.000032,
+    9.999972,
+    15.000004,
+    20.000001,
+    25.000033000000002,
+    29.999973,
+    35.000005,
+    40.000002,
+    45.000034,
+    50.00008
+   ],
+   "lop": 0.0007697925606457936,
+   "ecc_rentang": 9.999999999976694e-05,
+   "ecc_min": 0,
+   "ecc_maks": 9.999999999976694e-05,
+   "histeresis": 0
+  },
+  "tipe_timbangan": "Analytical",
+  "_budget": {
+   "koreksi": [
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 5.5e-06,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 4.7920072343796425e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.000292002117724227,
+     "veff": 1041.527993740364,
+     "k": 1.9622454301923922,
+     "U": 0.0005729798211108653,
+     "cmc": 0.00057,
+     "u95": 0.0005729798211108653
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 6.5e-06,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 1.3250188677882312e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.9999999999883464e-05,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.00029368152975985194,
+     "veff": 969.5458714539202,
+     "k": 1.9624151576559707,
+     "U": 0.0005763250855243265,
+     "cmc": 0.00057,
+     "u95": 0.0005763250855243265
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 1.2e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 1.3250188677882312e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 4.7920072343796425e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002924971012769747,
+     "veff": 1048.4658836706594,
+     "k": 1.9622301742181212,
+     "U": 0.0005739466379970136,
+     "cmc": 0.00057,
+     "u95": 0.0005739466379970136
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 8.5e-06,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.00029208703091789645,
+     "veff": 1042.7280801067602,
+     "k": 1.9622432382037425,
+     "U": 0.0005731458013856497,
+     "cmc": 0.00057,
+     "u95": 0.0005731458013856497
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 1.4e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 4.7920072343796425e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002923380696450029,
+     "veff": 1046.23295404245,
+     "k": 1.9622345122084197,
+     "U": 0.0005736358494898132,
+     "cmc": 0.00057,
+     "u95": 0.0005736358494898132
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 1.4999999999999999e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 1.3250188677882312e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002926485112390488,
+     "veff": 1050.5623194164555,
+     "k": 1.9622258527722363,
+     "U": 0.0005742424745285679,
+     "cmc": 0.00057,
+     "u95": 0.0005742424745285679
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 2.0499999999999997e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 1.3250188677882312e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 4.7920072343796425e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.00029302109900784627,
+     "veff": 1055.6036059701898,
+     "k": 1.9622151209211887,
+     "U": 0.0005749704312221406,
+     "cmc": 0.00057,
+     "u95": 0.0005749704312221406
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 1.7e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002925100747645548,
+     "veff": 1048.5833079027245,
+     "k": 1.9622301742181212,
+     "U": 0.000573972094965808,
+     "cmc": 0.00057,
+     "u95": 0.000573972094965808
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 2.2499999999999998e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.528128827481373e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002928290177397592,
+     "veff": 1052.7327869741644,
+     "k": 1.9622215477763136,
+     "U": 0.0005745954084231279,
+     "cmc": 0.00057,
+     "u95": 0.0005745954084231279
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 1.15e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 1",
+       "ui": 5.340489989853139e-06,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability",
+       "ui": 4.1e-05,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.0002921862321455799,
+     "veff": 1044.1151362935793,
+     "k": 1.9622388668382955,
+     "U": 0.0005733391810710938,
+     "cmc": 0.00057,
+     "u95": 0.0005733391810710938
+    }
+   ],
+   "penimbangan": [
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.000292002117724227,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002990516734982175,
+     "veff": 54.91693575599386,
+     "k": 2.0048792881880577,
+     "U": 0.0005995625062945537,
+     "cmc": 0.00057,
+     "u95": 0.0005995625062945537
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 2",
+       "ui": 0.00029368152975985194,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0003006917151980379,
+     "veff": 54.86061038619371,
+     "k": 2.0048792881880577,
+     "U": 0.0006028505919302884,
+     "cmc": 0.00057,
+     "u95": 0.0006028505919302884
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 3",
+       "ui": 0.0002924971012769748,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002995350078406262,
+     "veff": 54.90023336665613,
+     "k": 2.0048792881880577,
+     "U": 0.0006005315333069189,
+     "cmc": 0.00057,
+     "u95": 0.0006005315333069189
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 4",
+       "ui": 0.00029208703091789645,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002991345855916419,
+     "veff": 54.91406444461633,
+     "k": 2.0048792881880577,
+     "U": 0.0005997287350334007,
+     "cmc": 0.00057,
+     "u95": 0.0005997287350334007
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 5",
+       "ui": 0.0002923380696450029,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002993797147944691,
+     "veff": 54.905590337474244,
+     "k": 2.0048792881880577,
+     "U": 0.000600220189495079,
+     "cmc": 0.00057,
+     "u95": 0.000600220189495079
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 6",
+       "ui": 0.0002926485112390488,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.00029968286203432257,
+     "veff": 54.89514127574682,
+     "k": 2.0048792881880577,
+     "U": 0.0006008279631175325,
+     "cmc": 0.00057,
+     "u95": 0.0006008279631175325
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 7",
+       "ui": 0.00029302109900784627,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.00030004671491355673,
+     "veff": 54.88264444453163,
+     "k": 2.0048792881880577,
+     "U": 0.0006015574442190567,
+     "cmc": 0.00057,
+     "u95": 0.0006015574442190567
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 8",
+       "ui": 0.0002925100747645548,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002995476765148022,
+     "veff": 54.89979674241847,
+     "k": 2.0048792881880577,
+     "U": 0.0006005569324693832,
+     "cmc": 0.00057,
+     "u95": 0.0006005569324693832
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 9",
+       "ui": 0.0002928290177397592,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.0002998591340897978,
+     "veff": 54.889080992793744,
+     "k": 2.0048792881880577,
+     "U": 0.0006011813673106411,
+     "cmc": 0.00057,
+     "u95": 0.0006011813673106411
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 2.8867513459481293e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 5.773502691882802e-05,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 10",
+       "ui": 0.0002921862321455799,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.00029923145042271514,
+     "veff": 54.910713170329714,
+     "k": 2.0048792881880577,
+     "U": 0.0005999229373269732,
+     "cmc": 0.00057,
+     "u95": 0.0005999229373269732
+    }
+   ]
+  },
+  "_sesi": {
+   "nomor_sesi": "019-CAL-425",
+   "nomor_order": "2504.04.G",
+   "tanggal": "2025-04-04",
+   "nama_alat": "Moisture Analyzer",
+   "merk": "Mettler Toledo",
+   "model": "HB53",
+   "serial": "101866053",
+   "pelanggan": "PT Kaldu Sari Nabati Indonesia",
+   "alamat": "Jl. Raya Cirebon-Bandung KM. 24, Majalengka",
+   "suhu_awal": 20.4,
+   "suhu_akhir": 20.5,
+   "rh_awal": 54.0,
+   "rh_akhir": 54.0,
+   "lokasi": "onsite",
+   "lokasi_nama": "PT Kaldu Sari Nabati Indonesia"
+  }
+ },
+ "sub": {
+  "varian": "substitusi",
+  "resolusi": 0.1,
+  "kapasitas": 2000,
+  "satuan": "kg",
+  "tipe_display": "Digital",
+  "akurasi": [
+   {
+    "titik_ke": 1,
+    "nominal": [
+     200
+    ],
+    "baca": {
+     "z1": 0,
+     "m": 200,
+     "m_aksen": 200,
+     "z2": 0
+    }
+   },
+   {
+    "titik_ke": 2,
+    "nominal": [
+     200,
+     204.1
+    ],
+    "baca": {
+     "z1": 204.1,
+     "m": 402.59999999999997,
+     "m_aksen": 402.59999999999997,
+     "z2": 204.1
+    }
+   },
+   {
+    "titik_ke": 3,
+    "nominal": [
+     200,
+     401.7
+    ],
+    "baca": {
+     "z1": 401.7,
+     "m": 600.8,
+     "m_aksen": 600.8,
+     "z2": 401.7
+    }
+   },
+   {
+    "titik_ke": 4,
+    "nominal": [
+     200,
+     602.1
+    ],
+    "baca": {
+     "z1": 602.1,
+     "m": 800.4,
+     "m_aksen": 800.4,
+     "z2": 602.1
+    }
+   },
+   {
+    "titik_ke": 5,
+    "nominal": [
+     200,
+     801.9
+    ],
+    "baca": {
+     "z1": 801.9,
+     "m": 1000.4,
+     "m_aksen": 1000.4,
+     "z2": 802
+    }
+   },
+   {
+    "titik_ke": 6,
+    "nominal": [
+     200,
+     1002.6
+    ],
+    "baca": {
+     "z1": 1002.6,
+     "m": 1201,
+     "m_aksen": 1201,
+     "z2": 1002.6
+    }
+   },
+   {
+    "titik_ke": 7,
+    "nominal": [
+     200,
+     1201.9
+    ],
+    "baca": {
+     "z1": 1201.9,
+     "m": 1400.4,
+     "m_aksen": 1400.4,
+     "z2": 1202
+    }
+   },
+   {
+    "titik_ke": 8,
+    "nominal": [
+     200,
+     1401.4
+    ],
+    "baca": {
+     "z1": 1401.4,
+     "m": 1600,
+     "m_aksen": 1600,
+     "z2": 1401.4
+    }
+   },
+   {
+    "titik_ke": 9,
+    "nominal": [
+     200,
+     1602.2
+    ],
+    "baca": {
+     "z1": 1602.2,
+     "m": 1800.7,
+     "m_aksen": 1800.6000000000001,
+     "z2": 1602.3000000000002
+    }
+   },
+   {
+    "titik_ke": 10,
+    "nominal": [
+     200,
+     1802.5
+    ],
+    "baca": {
+     "z1": 1802.5,
+     "m": 2001,
+     "m_aksen": 2001.1000000000001,
+     "z2": 1802.5
+    }
+   }
+  ],
+  "keterulangan": {
+   "mid": {
+    "nominal": 1000,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4,
+     1000.4
+    ]
+   },
+   "maks": {
+    "nominal": 2000,
+    "zi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "mi": [
+     2001.1,
+     2001,
+     2001,
+     2001,
+     2001,
+     2001,
+     2001,
+     2001,
+     2001,
+     2001
+    ]
+   }
+  },
+  "eksentrisitas": {
+   "beban": null,
+   "baca": {
+    "center": 200,
+    "front": 200.1,
+    "back": 199.9,
+    "left": 200,
+    "right": 200.1
+   }
+  },
+  "histeresis": {
+   "m": 200,
+   "m_aksen": 200,
+   "baca1": [
+    200,
+    400,
+    200,
+    0,
+    400,
+    200,
+    0.02,
+    200
+   ],
+   "baca2": [
+    200,
+    400,
+    200,
+    0.02,
+    400,
+    200,
+    0,
+    200
+   ]
+  },
+  "_harap": {
+   "koreksi": [
+    0.005900000000025329,
+    1.5059000000000538,
+    0.9059000000000594,
+    1.7059000000000708,
+    1.5559000000000935,
+    1.605900000000048,
+    1.5558999999999799,
+    1.4059000000001163,
+    1.6058999999999344,
+    1.4558999999998434
+   ],
+   "kumulatif": [
+    0.005900000000025329,
+    1.511800000000079,
+    2.4177000000001385,
+    4.123600000000209,
+    5.679500000000303,
+    7.285400000000351,
+    8.84130000000033,
+    10.247200000000447,
+    11.853100000000381,
+    13.309000000000225
+   ],
+   "sr": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.07071067811859044,
+    0.07071067811875122
+   ],
+   "total_cn": [
+    200.00590000000003,
+    404.1059,
+    601.7059,
+    802.1059,
+    1001.9059,
+    1202.6059,
+    1401.9059000000002,
+    1601.4059000000002,
+    1802.2059000000002,
+    2002.5059
+   ],
+   "lop": 13.660610503200731,
+   "ecc_rentang": 0.19999999999998863,
+   "ecc_min": -0.09999999999999432,
+   "ecc_maks": 0.09999999999999432,
+   "histeresis": 0
+  },
+  "tipe_timbangan": "Non Analytical",
+  "_budget": {
+   "koreksi": [
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 2.4055e-05,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13260961808892813,
+     "veff": 17.78664420107453,
+     "k": 2.109815577833317,
+     "U": 0.27978183801454737,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Weight Standard (Calibrated Mass)",
+       "ui": 0.006740483455861229,
+       "ci": 1.0,
+       "vi": 60.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass Mref",
+       "ui": 0.0009231830804337789,
+       "ci": 10.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 2",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 3",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 4",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 5",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Mass Instability (Drift)-Mass 6",
+       "ui": 0.0,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Repeatability MID-range",
+       "ui": 0.07071067811859044,
+       "ci": 1.0,
+       "vi": 1000.0
+      },
+      {
+       "nama": "Repeatability MAX-range",
+       "ui": 0.111803398875142,
+       "ci": 1.0,
+       "vi": 9.0
+      },
+      {
+       "nama": "Rounding of Final Result",
+       "ui": 0.00028901734104046245,
+       "ci": 1.0,
+       "vi": 1000.0
+      }
+     ],
+     "uc": 0.13278081317821144,
+     "veff": 17.878634958776964,
+     "k": 2.109815577833317,
+     "U": 0.2801430280807659,
+     "cmc": 0.52,
+     "u95": 0.52
+    }
+   ],
+   "penimbangan": [
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 1",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 2",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 3",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 4",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 5",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 6",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 7",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 8",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 9",
+       "ui": 0.1615321194920672,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.1739519827258826,
+     "veff": 66.09761975985384,
+     "k": 1.996564418952312,
+     "U": 0.3473063393167044,
+     "cmc": 0.52,
+     "u95": 0.52
+    },
+    {
+     "komponen": [
+      {
+       "nama": "Resolution",
+       "ui": 0.02886751345948129,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Eccentricity",
+       "ui": 0.0577350269189593,
+       "ci": 1.0,
+       "vi": 50.0
+      },
+      {
+       "nama": "Uncertainty of Correction - Point 10",
+       "ui": 0.1617406526740271,
+       "ci": 1.0,
+       "vi": 50.0
+      }
+     ],
+     "uc": 0.17414564420072803,
+     "veff": 66.05651486888364,
+     "k": 1.996564418952312,
+     "U": 0.34769299692670264,
+     "cmc": 0.52,
+     "u95": 0.52
+    }
+   ]
+  },
+  "_sesi": {
+   "nomor_sesi": "0136-CAL-123",
+   "nomor_order": "2301.10.A",
+   "tanggal": "2023-01-12",
+   "nama_alat": "Timbangan Elektronik",
+   "merk": "Dini Argeo",
+   "model": "DFWLB-3",
+   "serial": "0792531584",
+   "pelanggan": "PT Sistem Dirgantara Inovasi Teknologi (SIDIK)",
+   "alamat": "Kawasan Niaga MTC/MIM Blok J No.25 Bandung",
+   "suhu_awal": 24.0,
+   "suhu_akhir": 24.7,
+   "rh_awal": 55.0,
+   "rh_akhir": 51.0,
+   "lokasi": "lab",
+   "lokasi_nama": null
+  }
+ },
+ "_sumber": "Tiga sesi contoh dari workbook master Timbangan ber-password (lab, 31 Agt 2026). Dibaca DUA pihak: TimbanganSeeder (data demo) dan TimbanganMasterTest (adu angka). Satu berkas supaya sesi demo dan angka acuan nggak pernah bisa berbeda diam-diam. `_harap` & `_budget` = nilai yang DIHARAPKAN dari master, bukan masukan."
+}

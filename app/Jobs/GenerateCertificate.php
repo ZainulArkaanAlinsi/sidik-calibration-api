@@ -14,7 +14,7 @@ use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
 use App\Services\PenerimaNotifikasi;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\SertifikatSatuHalaman;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -65,6 +65,7 @@ class GenerateCertificate implements ShouldQueue
         $snapshotBuilder = app(CertificateSnapshotBuilder::class);
         $validator = app(CalibrationValidator::class);
         $tampilan = app(DataTampilanSertifikat::class);
+        $satuHalaman = app(SertifikatSatuHalaman::class);
         $folder = app(FolderOrganizer::class);
 
         $sesi = CalibrationSession::with([
@@ -76,15 +77,80 @@ class GenerateCertificate implements ShouldQueue
             return;
         }
 
-        // Idempoten: kalau udah pernah terbit, jangan bikin dobel (job bisa
-        // ke-retry, atau admin approve dua kali).
+        // Penjagaan cepat di luar transaksi — nahan retry job yang jelas-jelas
+        // sudah selesai tanpa membuka transaksi sama sekali. BUKAN penjagaan
+        // yang sebenarnya: lihat lock di dalam transaksi di bawah.
         if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
             return;
         }
 
-        $sertifikat = DB::transaction(function () use ($sesi): Certificate {
-            $nomor = $this->nomorBerikutnya($sesi->organization_id);
-            $token = $this->tokenUnik();
+        $sertifikat = DB::transaction(function () use ($sesi): ?Certificate {
+            // Penjagaan yang sebenarnya, dan sebabnya perlu dua.
+            //
+            // Penjagaan di atas cuma menahan sertifikat yang SUDAH `terbit` —
+            // status yang baru tercapai sesudah transaksi ini selesai DAN
+            // PDF-nya berhasil ditulis. Selama jendela itu, permintaan kedua
+            // melihat "belum terbit" dan masuk juga.
+            //
+            // Yang menyerialkan dua permintaan itu lock di baris SESI-nya:
+            // yang kedua menunggu di sini sampai yang pertama commit, lalu
+            // menemukan sertifikatnya sudah ada dan berhenti.
+            //
+            // Kenapa lock di baris sesi, bukan unique index di
+            // `certificates.calibration_session_id`: kolom `revision_of` di
+            // tabel itu menyiratkan satu sesi suatu hari punya lebih dari satu
+            // baris sertifikat (yang asli + revisinya). Unique index bakal
+            // menutup jalan itu untuk menyelesaikan balapan yang bisa
+            // diselesaikan lock — menukar satu masalah dengan batasan
+            // arsitektur.
+            CalibrationSession::whereKey($sesi->id)->lockForUpdate()->first();
+
+            // Syaratnya `STATUS_TERBIT`, BUKAN "ada barisnya".
+            //
+            // Sempat saya tulis `certificate()->exists()` waktu menambal
+            // balapan ini, dan itu kebablasan: baris sertifikat yang `gagal`
+            // juga "ada", jadi tombol "Terbitkan ulang" milik admin —
+            // satu-satunya jalan keluar dari sertifikat yang gagal dirender —
+            // ikut mati. Ketahuan `CertificateApiTest::test_admin_retry_
+            // sertifikat_gagal_nerbitin_ulang_langsung`, bukan oleh saya.
+            //
+            // Yang menutup balapannya lock di atas, bukan syarat ini. Dua
+            // permintaan berbarengan diserialkan di sana; yang kedua lalu
+            // sampai ke `updateOrCreate` di bawah, menemukan barisnya sudah
+            // ada, dan MENGUBAHnya — bukan menyisipkan baris kedua. Itu yang
+            // dulu tidak terjadi: tanpa lock, dua transaksi sama-sama tidak
+            // melihat baris apa pun di snapshot masing-masing dan sama-sama
+            // menyisipkan.
+            if ($sesi->certificate()->where('status', Certificate::STATUS_TERBIT)->exists()) {
+                return null;
+            }
+
+            // Identitasnya DICETAK SEKALI per baris sertifikat, bukan tiap
+            // percobaan.
+            //
+            // Dua hal yang diperbaiki sekaligus, dan yang kedua yang berbahaya:
+            //
+            // 1. Retry sertifikat yang gagal dulu menghabiskan satu nomor dari
+            //    urutan lab tiap kali dicoba — untuk dokumen yang tidak pernah
+            //    terbit sama sekali.
+            //
+            // 2. Dua `handle()` yang jalan bersamaan (dua klik "Terbitkan
+            //    ulang", atau dua worker antrean yang mengambil job yang sama)
+            //    dulu MENCETAK NOMOR SENDIRI-SENDIRI. Lock di atas cuma
+            //    menyerialkan penulisan barisnya: yang kedua menimpa nomor &
+            //    token yang pertama, lalu keduanya merender PDF DI LUAR
+            //    transaksi ini memakai nilai yang dipegang masing-masing. Baris
+            //    yang tersisa bisa menyimpan nomor milik yang satu sambil
+            //    `pdf_path`-nya menunjuk PDF berisi nomor yang lain — dan itu
+            //    dokumen terakreditasi yang isinya tidak sama dengan catatannya.
+            //
+            // Dengan identitas yang dipakai ulang, dua pemanggil menghasilkan
+            // PDF yang identik di jalur yang identik. Yang tersisa cuma
+            // pekerjaan ganda, dan itu tidak merusak apa pun.
+            $sudahAda = $sesi->certificate()->first();
+
+            $nomor = $sudahAda?->nomor ?: $this->nomorBerikutnya($sesi->organization_id);
+            $token = $sudahAda?->qr_token ?: $this->tokenUnik();
 
             return $sesi->certificate()->updateOrCreate(
                 ['calibration_session_id' => $sesi->id],
@@ -121,6 +187,13 @@ class GenerateCertificate implements ShouldQueue
             );
         });
 
+        // `null` = permintaan lain menang balapannya dan sertifikatnya sudah
+        // dibikin di dalam transaksi yang barusan kita tunggu. Berhenti di
+        // sini — bukan error, dan bukan alasan buat menulis apa pun lagi.
+        if ($sertifikat === null) {
+            return;
+        }
+
         try {
             // Hasil pemeriksaan disimpan APA ADANYA, termasuk kalau ada temuan.
             // Approve udah nahan yang fatal; yang nyampe sini paling banter
@@ -135,7 +208,12 @@ class GenerateCertificate implements ShouldQueue
             // hasil scan QR merender blade yang SAMA dengan bahan yang sama,
             // jadi lembar yang dipegang pelanggan nggak bisa beda dari lembar
             // yang muncul waktu QR-nya discan.
-            $pdf = Pdf::loadView('sertifikat.pdf', $tampilan->untuk($sertifikat));
+            // Dirender lewat SertifikatSatuHalaman, bukan `Pdf::loadView` langsung:
+            // dia menghitung halaman hasil render dan memadatkan ulang kalau
+            // meluap. Headernya mencetak `Page : 1 of 1` — angka itu ditulis mati
+            // di snapshot, jadi lembar dua halaman bikin dokumen terkendali ini
+            // menyatakan hal yang tidak benar tentang dirinya sendiri.
+            $isiPdf = $satuHalaman->isi($sertifikat);
 
             $path = "certificates/{$sertifikat->qr_token}.pdf";
 
@@ -151,7 +229,7 @@ class GenerateCertificate implements ShouldQueue
             // ngeklik unduh. Dilempar ke `catch` di bawah biar dapat perlakuan
             // yang sama kayak kegagalan render — status `gagal`, admin
             // dikabarin, tombol retry muncul di mobile.
-            if (Storage::disk('arsip')->put($path, $pdf->output()) === false) {
+            if (Storage::disk('arsip')->put($path, $isiPdf) === false) {
                 throw new RuntimeException("Gagal nulis PDF sertifikat ke {$path}.");
             }
 

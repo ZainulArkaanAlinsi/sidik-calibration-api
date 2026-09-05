@@ -1,0 +1,479 @@
+{
+  "_sumber": "Master_Olah_Data_Micrometer_{025,2550,5075,75100}mm.xlsm (sheet Standar_GB & DATABASE) — keempat workbook memuat tabel balok ukur yang IDENTIK, sudah diadu oleh skrip generator ini.",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-micrometer.py",
+  "standar": {
+    "nama": "Gauge Block Standard",
+    "merk_tipe": "Metrology/GB-9122-0",
+    "seri": "160006",
+    "traceability": "LK-410-IDN",
+    "tanggal_kalibrasi": "2024-01-24"
+  },
+  "balok_ukur": {
+    "1.0": 1.00011,
+    "1.1": 1.09989,
+    "1.2": 1.20012,
+    "1.3": 1.30009,
+    "1.5": 1.49996,
+    "1.6": 1.5999,
+    "1.7": 1.70013,
+    "1.8": 1.80011,
+    "1.9": 1.90009,
+    "2.5": 2.50014,
+    "5.0": 5.00009,
+    "6.0": 6.00016,
+    "7.5": 7.49989,
+    "9.0": 8.99991,
+    "11.0": 11.00014,
+    "13.0": 13.00014,
+    "14.0": 14.00009,
+    "16.0": 16.0001,
+    "17.0": 16.99988,
+    "19.0": 19.00011,
+    "21.0": 20.99987,
+    "76.2": 76.2002,
+    "101.6": 101.60026,
+    "40.0": 40.00014,
+    "50.0": 49.9999,
+    "60.0": 60.00012,
+    "70.0": 69.99991,
+    "75.0": 74.9999,
+    "80.0": 80.00013,
+    "90.0": 90.00015,
+    "100.0": 100.00012,
+    "200.0": 200.00017
+  },
+  "ketidakpastian_balok_um": {
+    "aturan": [
+      {
+        "maks": 10.0,
+        "u": 0.12
+      },
+      {
+        "maks": 21.0,
+        "u": 0.14
+      },
+      {
+        "maks": 50.0,
+        "u": 0.25
+      },
+      {
+        "maks": 100.0,
+        "u": 0.26
+      }
+    ],
+    "persis": {
+      "101.6": 0.26,
+      "200": 0.73
+    },
+    "lainnya": 0.0
+  },
+  "cmc": [
+    {
+      "kode": "A",
+      "label": "CMC 0-25mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.A_Rev.1",
+      "judul_rentang": "0-25 mm",
+      "kapasitas_min_mm": 0.0,
+      "kapasitas_maks_mm": 25.0,
+      "u95_um": 0.83,
+      "balok_pra_evaluasi_mm": [
+        20.0,
+        5.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 0.0,
+          "tumpukan_mm": []
+        },
+        {
+          "nominal_cetak_mm": 2.5,
+          "tumpukan_mm": [
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 5.1,
+          "tumpukan_mm": [
+            1.1,
+            2.5,
+            1.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 7.7,
+          "tumpukan_mm": [
+            1.7,
+            6.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 10.3,
+          "tumpukan_mm": [
+            2.5,
+            1.8,
+            6.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 12.9,
+          "tumpukan_mm": [
+            1.9,
+            11.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 15.0,
+          "tumpukan_mm": [
+            6.0,
+            9.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 17.6,
+          "tumpukan_mm": [
+            1.6,
+            16.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 20.2,
+          "tumpukan_mm": [
+            1.2,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 22.8,
+          "tumpukan_mm": [
+            1.8,
+            21.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 25.0,
+          "tumpukan_mm": [
+            6.0,
+            19.0
+          ]
+        }
+      ]
+    },
+    {
+      "kode": "B",
+      "label": "CMC 25-50mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.B_Rev.1",
+      "judul_rentang": "25-50 mm",
+      "kapasitas_min_mm": 25.0,
+      "kapasitas_maks_mm": 50.0,
+      "u95_um": 0.87,
+      "balok_pra_evaluasi_mm": [
+        50.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 25.0,
+          "tumpukan_mm": [
+            6.0,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 27.5,
+          "tumpukan_mm": [
+            2.5,
+            6.0,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 31.0,
+          "tumpukan_mm": [
+            14.0,
+            17.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 32.7,
+          "tumpukan_mm": [
+            1.8,
+            16.0,
+            1.9,
+            13.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 35.3,
+          "tumpukan_mm": [
+            1.3,
+            13.0,
+            21.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 37.9,
+          "tumpukan_mm": [
+            1.3,
+            19.0,
+            1.6,
+            16.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 40.0,
+          "tumpukan_mm": [
+            40.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 42.6,
+          "tumpukan_mm": [
+            1.1,
+            21.0,
+            1.5,
+            19.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 45.2,
+          "tumpukan_mm": [
+            1.1,
+            40.0,
+            1.6,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 47.8,
+          "tumpukan_mm": [
+            1.8,
+            6.0,
+            40.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 50.0,
+          "tumpukan_mm": [
+            50.0
+          ]
+        }
+      ]
+    },
+    {
+      "kode": "C",
+      "label": "CMC 50-75mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.C_Rev.1",
+      "judul_rentang": "50-75 mm",
+      "kapasitas_min_mm": 50.0,
+      "kapasitas_maks_mm": 75.0,
+      "u95_um": 0.91,
+      "balok_pra_evaluasi_mm": [
+        75.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 50.0,
+          "tumpukan_mm": [
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 52.5,
+          "tumpukan_mm": [
+            2.5,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 51.0,
+          "tumpukan_mm": [
+            1.5,
+            6.0,
+            1.6,
+            40.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 57.7,
+          "tumpukan_mm": [
+            1.7,
+            6.0,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 60.3,
+          "tumpukan_mm": [
+            1.3,
+            9.0,
+            50.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 62.9,
+          "tumpukan_mm": [
+            1.7,
+            7.5,
+            1.8,
+            50.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 65.0,
+          "tumpukan_mm": [
+            1.1,
+            11.0,
+            1.2,
+            50.0,
+            1.7
+          ]
+        },
+        {
+          "nominal_cetak_mm": 67.6,
+          "tumpukan_mm": [
+            1.5,
+            2.5,
+            1.7,
+            60.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 70.2,
+          "tumpukan_mm": [
+            1.2,
+            60.0,
+            1.5,
+            7.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 72.8,
+          "tumpukan_mm": [
+            1.2,
+            1.6,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 75.0,
+          "tumpukan_mm": [
+            75.0
+          ]
+        }
+      ]
+    },
+    {
+      "kode": "D",
+      "label": "CMC 75-100mm",
+      "kode_dokumen": "SIDIK-FM-CAL-0522.D_Rev.1",
+      "judul_rentang": "75-100 mm",
+      "kapasitas_min_mm": 75.0,
+      "kapasitas_maks_mm": 100.0,
+      "u95_um": 0.91,
+      "balok_pra_evaluasi_mm": [
+        100.0
+      ],
+      "titik": [
+        {
+          "nominal_cetak_mm": 75.0,
+          "tumpukan_mm": [
+            75.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 77.5,
+          "tumpukan_mm": [
+            7.5,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 80.1,
+          "tumpukan_mm": [
+            1.1,
+            9.0,
+            70.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 82.7,
+          "tumpukan_mm": [
+            1.8,
+            70.0,
+            1.9,
+            9.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 85.3,
+          "tumpukan_mm": [
+            1.3,
+            80.0,
+            1.5,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 87.9,
+          "tumpukan_mm": [
+            1.7,
+            2.5,
+            1.8,
+            80.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 90.0,
+          "tumpukan_mm": [
+            90.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 92.6,
+          "tumpukan_mm": [
+            1.1,
+            1.5,
+            90.0
+          ]
+        },
+        {
+          "nominal_cetak_mm": 95.2,
+          "tumpukan_mm": [
+            1.2,
+            90.0,
+            1.5,
+            2.5
+          ]
+        },
+        {
+          "nominal_cetak_mm": 97.8,
+          "tumpukan_mm": [
+            1.6,
+            2.5,
+            1.8,
+            90.0,
+            1.9
+          ]
+        },
+        {
+          "nominal_cetak_mm": 100.0,
+          "tumpukan_mm": [
+            100.0
+          ]
+        }
+      ]
+    }
+  ],
+  "konstanta": {
+    "delta_alpha_per_c": 1e-05,
+    "wringing_um": 0.111803398875,
+    "geometri_um": 0.5,
+    "drift_a_um": 0.02,
+    "drift_b_um_per_mm": 0.00025,
+    "suhu_acuan_c": 20.0,
+    "vi_type_b": 200
+  }
+}

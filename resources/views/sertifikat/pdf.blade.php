@@ -142,6 +142,20 @@
         body.lembar-autoclave .judul-kelompok { margin: 6px 0 3px; }
         body.lembar-autoclave .ket-k { margin: 2px 0 5px; }
         body.lembar-autoclave .judul-sub { margin: 9px 0 5px; }
+
+        /* Timbangan nggak punya blok pemadatan sendiri: lembarnya SELALU
+           lewat `padat` (lihat catatan di dekat `$padat`), jadi aturan di sini
+           cuma buat yang `padat` nggak atur. Nambah `body.lembar-timbangan
+           table.data { font-size: … }` di sini justru MELONGGARKAN lembarnya —
+           selektornya sama kuat dengan `body.padat` dan menang karena lebih
+           belakang. */
+        body.lembar-timbangan .judul-kelompok { margin: 4px 0 1px; }
+        /* Bagian yang isinya SATU angka (Effect of Tare, Limit of Performance)
+           — dicetak sebaris sama judulnya, persis masternya, bukan sebagai
+           tabel satu sel. */
+        .baris-angka { margin: 4px 0 1px; font-size: 9.5px; }
+        .baris-angka .nama { font-weight: bold; }
+        body.padat .baris-angka { margin: 2px 0 1px; font-size: 8.5px; }
         body.padat .catatan { font-size: 8px; margin-top: 4px; line-height: 1.3; }
         body.padat .kode-dokumen { margin-top: 4px; padding-top: 2px; font-size: 8px; }
         /*
@@ -158,7 +172,7 @@
         body.padat table.ttd td { font-size: 9.5px; }
         body.padat table.ttd td.qr { width: 78px; }
         body.padat table.ttd td.qr img { width: 66px; height: 66px; }
-        body.padat .ttd .ruang-ttd { height: 24px; }
+        body.padat .ttd .ruang-ttd { height: 28px; }
         body.padat .ttd td { padding-top: 4px; }
         body.padat .kop { padding-bottom: 5px; margin-bottom: 8px; }
         body.padat .kop-gambar { margin-bottom: 5px; }
@@ -182,21 +196,73 @@
         .ttd .garis { border-top: 1px solid #333; padding-top: 3px; }
 
         /*
-          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px) — BUKAN ngikut
-          gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama jadi
-          beda tata letak cuma gara-gara yang satu diunggahin gambar TTD, dan
-          itu nggak boleh buat dokumen berformat baku.
+          Ruang tanda tangan. Tingginya DIPATOK (44px -> 46px -> 80px -> 86px) — BUKAN
+          ngikut gambar. Kalau ikut, dua sertifikat dengan format resmi yang sama
+          jadi beda tata letak cuma gara-gara yang satu diunggahin gambar TTD,
+          dan itu nggak boleh buat dokumen berformat baku.
 
-          SEMUA angka di blok cetak ini (skala huruf, padding, jarak TTD) diukur
-          ke KASUS TERBERAT: sertifikat pH 3 baris hasil + 3 standar. Percobaan
-          pertama naikin huruf ke 12px dan jarak TTD ke 46px — turbidimeter yang
-          cuma 2 baris tetap muat, tapi pH-nya jadi DUA HALAMAN. Sertifikat ini
-          wajib satu halaman ('Page 1 of 1' dicetak di headernya), jadi kalau
-          ada yang mau ngegedein huruf lagi: ukur ulang pakai sertifikat 3 baris,
-          bukan yang 2.
+          Angkanya HARUS sama dengan App\Support\UkuranTandaTangan — dia yang
+          ngitung ukuran cetak gambarnya, dan dijaga
+          `UkuranTandaTanganTest::test_konstanta_cocok_dengan_css_blade()`.
+
+          ## Kenapa 46px naik ke 80px
+
+          Kotak ini bukan cuma jarak kosong: dia PLAFON ukuran gambar TTD, karena
+          gambar yang lebih tinggi dari kotaknya dikecilkan sampai muat. Di 46px
+          (12,17 mm) tanda tangan PT Sidik — 2248x2052, ada ekor turun panjang —
+          tercetak 13,33 mm di bawah garis 71,3 mm. 19% lebar garisnya.
+
+          ## Batasnya diukur, bukan ditebak
+
+          Catatan lama di sini bilang kasus terberatnya sertifikat pH 3 baris.
+          Itu sudah nggak benar lagi. Seluruh 24 sesi bawaan diterbitkan lalu
+          dirender sambil kotak ini disapu: yang paling mepet **Conductivity
+          Meter** — masih muat mode normal di 86px, kedorong ke mode padat di
+          88px. 86px itu batasnya persis, tanpa margin — disengaja, dan yang
+          menahan kalau ada yang lewat `SertifikatSemuaAlatSatuHalamanTest`.
+
+          Yang bikin batas itu halus: kedorong ke mode padat BUKAN kegagalan yang
+          kelihatan. `App\Services\SertifikatSatuHalaman` menyelamatkannya, jadi
+          lembarnya tetap satu halaman — cuma hurufnya mengecil, dan sertifikat
+          alat itu jadi beda bentuk dari alat lain di lab yang sama.
+
+          Jadi kalau ada yang mau ngegedein huruf atau kotak ini lagi: ukur ulang
+          pakai Conductivity Meter, bukan pH.
+
+          ## Kenapa versi PADAT-nya berhenti di 28px
+
+          Percobaan pertama menaikkannya ke 44px, dan itu bikin sertifikat
+          **Visible Spectrofotometer** jadi DUA HALAMAN — dia lembar terpadat di
+          sistem (24 titik ketidakpastian) dan mode padat nggak punya jaring
+          pengaman lagi di bawahnya.
+
+          Disapu 24 / 28 / 32 / 36 / 44px atas seluruh 24 sertifikat bawaan:
+          **28px masih muat, 32px sudah meluap.** Jadi 28px bukan angka yang
+          dipilih, itu batasnya.
         */
-        .ttd .ruang-ttd { height: 46px; position: relative; }
-        .ttd .ruang-ttd img { position: absolute; bottom: 0; }
+        .ttd .ruang-ttd { height: 86px; position: relative; }
+
+        /*
+          Gambarnya DITENGAHKAN di atas garis, bukan nempel ke tepi kiri.
+          Diukur di sertifikat 012-CAL-524: garisnya 10,76 → 82,06 mm, tapi
+          gambarnya mendarat 10,76 → 29,98 mm — 26,0 mm di kiri dari tengah
+          garis. Sebabnya `left: 0` pada gambar yang `position: absolute`.
+
+          Yang ditengahkan pembungkusnya, BUKAN gambarnya lewat margin negatif:
+          `lebar_mm` boleh `null` (lihat [UkuranTandaTangan]) waktu tingginya
+          dijepit ke kotak dan lebarnya ikut rasio gambar. Tanpa lebar yang
+          diketahui, margin negatif setengah-lebar nggak bisa dihitung sama
+          sekali; `text-align` nggak butuh tahu lebarnya.
+
+          `bottom` tetap di pembungkus supaya jangkar bawahnya nggak berubah —
+          gambar tumbuh ke ATAS, dan `geser_y_mm` tetap berarti sama.
+        */
+        .ttd .ruang-ttd .letak-ttd {
+          position: absolute; left: 0; width: 100%; text-align: center;
+        }
+
+        /* `geser_x_mm` jadi geseran RELATIF dari tengah, bukan dari tepi kiri. */
+        .ttd .ruang-ttd img { position: relative; }
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
 
@@ -318,7 +384,19 @@
         @endif
     </style>
 </head>
-@php($padat = ! ($web ?? false) && collect($snapshot['hasil'] ?? [])->count() > 12)
+{{-- Lembar Timbangan SELALU padat. Pemicu `> 12 baris` nggak kena
+     lembarnya: tabel `hasil` cuma 10 baris, tapi yang dicetak DELAPAN bagian
+     (dua tabel besar, dua tabel kecil, tiga baris satu-angka) — lembar
+     tertinggi yang pernah masuk blade ini. Tanpa ini blok tanda tangan &
+     kode dokumen kedorong ke halaman dua sementara kepalanya tetap nulis
+     `Page : 1 of 1`; jebakan yang persis sama pernah kena Autoklaf. --}}
+{{-- `paksaPadat` datang dari App\Services\SertifikatSatuHalaman: dia merender
+     sekali, menghitung halamannya, dan kalau meluap merender ULANG dengan ini
+     menyala. Pemicu `> 12 baris` di bawah cuma TEBAKAN — dia memakai jumlah
+     baris sebagai wakil tinggi halaman, dan wakilnya bocor buat apa pun yang
+     nambah tinggi tanpa nambah baris (logo potret, kop tinggi, catatan
+     panjang). Yang ini kenyataan hasil render. --}}
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || collect($snapshot['hasil'] ?? [])->count() > 12 || ($snapshot['timbangan'] ?? null) !== null))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -331,7 +409,8 @@
      9,5px dan jarak antar bagian dirapatkan — cukup buat menarik blok tanda
      tangan balik ke halaman pertama, tanpa bikin tabelnya kelihatan sesak. --}}
 @php($lembarAutoclave = ! ($web ?? false) && ($snapshot['autoclave'] ?? null) !== null)
-<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}">
+@php($lembarTimbangan = ! ($web ?? false) && ($snapshot['timbangan'] ?? null) !== null)
+<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}">
 @if ($web ?? false)
     <div class="bilah">
         <div class="cap">&#10003; Sertifikat terverifikasi</div>
@@ -461,6 +540,20 @@
          sama sekali. --}}
     @php($autoclave = $snapshot['autoclave'] ?? null)
 
+    {{-- Timbangan: DELAPAN bagian, dan cuma bagian 3 yang bentuknya mirip
+         tabel biasa. Alasannya sama persis kayak Autoklaf di atas — master
+         `SERTIFIKAT`-nya emang begitu, dan tujuh bagian lain nggak punya
+         kolom `Standard`/`UUT` sama sekali.
+
+         Dibaca dari `TimbanganProfile::ringkasanSertifikat`, dibekukan utuh ke
+         snapshot waktu terbit. Dua puluh alat lain balik `null` di sini dan
+         lewat jalur lama tanpa berubah sama sekali.
+
+         Bagian 8 (STANDARD USED) nggak dicetak di blok ini: tabel bersama di
+         bawah udah nyetaknya. Yang beda cuma masternya punya kolom `Nominal
+         Mass` — lihat catatan di docs/perintah-frontend-timbangan.md. --}}
+    @php($timbangan = $snapshot['timbangan'] ?? null)
+
     @if ($autoclave)
         {{-- Desimal dibaca dari FORMAT SEL master `Master Olah Data_Autoclave.xlsm`
              (sheet SERTIFIKAT), bukan diturunkan dari resolusi alat. Sampai
@@ -587,6 +680,192 @@
                 {{ \App\Support\Angka::id((float) $tek['k'], 0) }}
             </div>
         @endif
+        @endif
+    @elseif ($timbangan)
+        {{-- Desimal DIBEKUKAN di snapshot, bukan dihitung di sini: tiga
+             workbook master memformat sel yang sama dengan jumlah desimal yang
+             berbeda, jadi aturannya diputus sekali di
+             `TimbanganProfile::ringkasanSertifikat` (dan diangkat sebagai T14),
+             bukan ditebak ulang tiap cetak. Sertifikat lama yang snapshot-nya
+             belum punya kuncinya jatuh ke turunan dari `desimal`. --}}
+        @php($sat = $timbangan['satuan'] ?? '')
+        @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
+        @php($dT = $timbangan['desimal'] ?? $desimal)
+        @php($dS = $timbangan['desimal_stdev'] ?? max($dT, 2))
+        @php($dU = $timbangan['desimal_u95'] ?? $dT + 1)
+        @php($nT = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
+
+        {{-- Bagian 1 nggak dicetak sama sekali kalau nggak ada slot yang diisi.
+             Kepala tabel tanpa satu pun baris kebaca seperti tabel yang gagal
+             dimuat; yang benar bagiannya memang nggak ada. Adminnya sudah
+             diperingatkan sebelum menyetujui (`keterulangan_kosong`). --}}
+        @if (filled($timbangan['keterulangan'] ?? []))
+        <div class="judul-kelompok">1. REPEATABILITY</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Capacity{{ $satKurung }}</th>
+                    <th>Deviation Standard{{ $satKurung }}</th>
+                    <th>Maximum Deviation With the Next Reading{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{-- DUA baris. Master kg & substitusi nyetak baris ketiga
+                     `Penuh` yang nunjuk kolom yang di blok Repeatability-nya
+                     nggak ada, jadi isinya 0 · 0 · 0 — kerusakan salin-tempel,
+                     bukan pengukuran. Lihat `bagianSertifikatKeterulangan`. --}}
+                @foreach ($timbangan['keterulangan'] ?? [] as $rpt)
+                    <tr>
+                        <td class="kiri">
+                            {{ $rpt['label'] ?? '' }} =
+                            {{ \App\Support\Angka::nilaiStandar(
+                                ($rpt['kapasitas'] ?? null) === null ? null : (float) $rpt['kapasitas'],
+                                $dT,
+                            ) }}
+                        </td>
+                        <td>{!! $nT($rpt['stdev'] ?? null, $dS) !!}</td>
+                        <td>{!! $nT($rpt['maks_beda'] ?? null, $dT) !!}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        @endif
+
+        {{-- `|m1 − m2|`, BUKAN `C = Ms − (M − z)` yang tertulis di petunjuk
+             lembar kerjanya. Tanda pisah = kotaknya belum diisi; nol di situ
+             kebaca "tare-nya sempurna", yang artinya beda. --}}
+        <div class="baris-angka">
+            <span class="nama">2. EFFECT OF TARE</span>
+            = {!! $nT($timbangan['effect_of_tare'] ?? null, $dT) !!} {{ $sat }}
+        </div>
+
+        <div class="judul-kelompok">3. ACCURACY</div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Correction{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($timbangan['titik'] ?? [] as $t)
+                    <tr>
+                        <td>{!! $nT($t['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($t['koreksi'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($t['u95_koreksi'] ?? null, $dU) !!}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3">&mdash;</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        @php($ekc = $timbangan['eksentrisitas'] ?? [])
+        <div class="judul-kelompok">4. LOADING INFLUENCE ON SEVERAL POSITION</div>
+        <div class="ket-k">
+            @if (($ekc['beban'] ?? null) !== null)
+                Weight mass {!! $nT($ekc['beban'], $dT) !!} {{ $sat }} was moved to various position
+            @else
+                {{-- Bebannya nggak dicatat teknisi. Kalimat masternya nyebut
+                     angka; nyetak `—` di tengah kalimat itu kebaca kayak data
+                     yang hilang, jadi kalimatnya yang menyesuaikan. --}}
+                The weight was moved to various position
+            @endif
+            on the pan, the difference of balance reading at each position are given in the table below:
+        </div>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    @foreach ($ekc['posisi'] ?? [] as $pos)
+                        <th>{{ $pos['label'] ?? '' }}</th>
+                    @endforeach
+                    <th>Maximum Difference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {{-- `Reading` di master itu SELISIH (`beban − pembacaan`),
+                         bukan pembacaannya. Judul kolomnya ditiru apa adanya —
+                         yang ditiru kertasnya, bukan penamaannya diperbaiki
+                         sepihak. --}}
+                    <td class="kiri">Reading</td>
+                    @foreach ($ekc['posisi'] ?? [] as $pos)
+                        <td>{!! $nT($pos['selisih'] ?? null, $dT) !!}</td>
+                    @endforeach
+                    <td>{!! $nT($ekc['maks_beda'] ?? null, $dT) !!}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @php($hys = $timbangan['histeresis'] ?? null)
+        @if ($hys)
+            <div class="judul-kelompok">5. HYSTERISIS</div>
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Load{{ $satKurung }}</th>
+                        <th>Hysterisis{{ $satKurung }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{!! $nT($hys['beban'] ?? null, $dT) !!}</td>
+                        {{-- PERBANDINGAN ke resolusi, bukan nilai histeresisnya
+                             — `IF(hys <= resolusi, "<", ">")` lalu memajang
+                             resolusinya. Nilai mentahnya ada di jejak audit
+                             tiap titik (`type_b_components`, sumber
+                             `histeresis`). --}}
+                        <td>{{ $hys['pembanding'] ?? '' }} {!! $nT($hys['batas'] ?? null, $dT) !!}</td>
+                    </tr>
+                </tbody>
+            </table>
+        @endif
+
+        <div class="baris-angka">
+            <span class="nama">6. LIMIT OF PERFORMANCE</span>
+            = &plusmn; {!! $nT($timbangan['lop'] ?? null, $dU) !!} {{ $sat }}
+        </div>
+
+        <div class="judul-kelompok">7. WEIGHING UNCERTAINTY</div>
+        {{-- Dua pasang kolom berdampingan, persis masternya: sepuluh titik
+             sebagai sepuluh baris nambah satu halaman sendiri di lembar yang
+             udah memuat delapan bagian. Titik ganjil bikin pasangan terakhir
+             setengah kosong — itu memang bentuk masternya. --}}
+        @php($tt = array_values($timbangan['titik'] ?? []))
+        @php($separuh = (int) ceil(count($tt) / 2))
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                    <th>Nominal Standard{{ $satKurung }}</th>
+                    <th>Uncertainty &plusmn;{{ $satKurung }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse (array_slice($tt, 0, $separuh) as $i => $kiri)
+                    @php($kanan = $tt[$separuh + $i] ?? null)
+                    <tr>
+                        <td>{!! $nT($kiri['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $nT($kiri['u95_penimbangan'] ?? null, $dU) !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['titik_ukur'] ?? null, $dT) !!}</td>
+                        <td>{!! $kanan === null ? '' : $nT($kanan['u95_penimbangan'] ?? null, $dU) !!}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4">&mdash;</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+        @if (($timbangan['k_penimbangan'] ?? null) !== null)
+            <div class="ket-k">
+                {{-- Master nulis "mearured"; yang ditiru angkanya, bukan
+                     salah ejaannya. Format sel `k`-nya `0` -> `2`. --}}
+                That weighing uncertainty is measured at confidence level 95 % &amp; coverage factor ( K ) =
+                {{ \App\Support\Angka::id((float) $timbangan['k_penimbangan'], 0) }}
+            </div>
         @endif
     @else
 
@@ -754,12 +1033,38 @@
              Sertifikat lama (dan alat yang masternya belum diadu ke cetakan)
              jatuh ke perilaku lama: 2 desimal, nol di belakang dibuang. --}}
         @php($dbK = $barisKelompok->first()['desimal_k'] ?? null)
+        {{-- `=` jadi `≈` kalau kelompok ini memuat `k` yang BEDA di presisi yang
+             dicetak.
+
+             Kalimat ini dicetak sekali per kelompok `remark`, memakai `k` baris
+             PERTAMA. Buat Spektro itu benar — tiap kelompoknya memang satu `k`
+             (Holmium 3,18; Didynium 2,36; %T 2,01). Tapi alat yang seluruh
+             barisnya ber-`remark` kosong punya SATU kelompok berisi banyak `k`:
+             di Tachometer & Centrifuge rentangnya 1,95997…1,96879, dan blok
+             terakhir membulat ke 1,97 sementara yang tercetak 1,96.
+
+             Yang diubah cuma satu tanda, dan sengaja: (a) mencetak rentang atau
+             (b) satu kalimat per blok mengubah TATA LETAK dokumen terakreditasi
+             yang sudah terbit. `≈` menghentikan dokumen mengaku presisi yang
+             nggak dia punya tanpa menyentuh satu pun angka maupun susunannya.
+
+             Dihitung dari yang TERCETAK, bukan dari nilai mentahnya: dua `k`
+             yang beda di desimal keempat tapi membulat ke angka yang sama
+             memang bukan ketidakcocokan yang kebaca pelanggan, dan menandainya
+             `≈` cuma bikin tanda itu murah. --}}
+        @php($cetakK = fn ($nilai) => $dbK === null
+            ? \App\Support\Angka::idRingkas((float) $nilai, 2)
+            : \App\Support\Angka::id((float) $nilai, $dbK))
+        @php($kBeda = $barisKelompok
+            ->pluck('faktor_cakupan_k')
+            ->filter(fn ($n) => $n !== null)
+            ->map($cetakK)
+            ->unique()
+            ->count() > 1)
         @if ($k !== null)
             <div class="ket-k">
-                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) =
-                {{ $dbK === null
-                    ? \App\Support\Angka::idRingkas((float) $k, 2)
-                    : \App\Support\Angka::id((float) $k, $dbK) }}
+                The Uncertainty is taken at a Confidence Level 95 % and Coverage Factor ( k ) {{ $kBeda ? '≈' : '=' }}
+                {{ $cetakK($k) }}
             </div>
         @endif
     @empty
@@ -776,8 +1081,11 @@
          2,01), jadi kalimat tingkat-sertifikat yang nyebut satu angka bukan
          cuma dobel — dia mbantah tiga baris di atasnya. --}}
     {{-- `$autoclave` ikut ngitung: tiga bagiannya udah nyetak kalimat faktor
-         cakupannya sendiri, dan k suhu beda dari k tekanan. --}}
-    @php($adaKGrup = $autoclave !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
+         cakupannya sendiri, dan k suhu beda dari k tekanan. 
+         `$timbangan` juga: bagian 7-nya nyetak kalimat `coverage factor ( K )`
+         sendiri, dan bagian 3-nya pakai U95 of Correction yang faktor
+         cakupannya lain. --}}
+    @php($adaKGrup = $autoclave !== null || $timbangan !== null || collect($snapshot['hasil'] ?? [])->contains(fn ($b) => ($b['faktor_cakupan_k'] ?? null) !== null))
     <div class="catatan">
         @foreach ($snapshot['catatan'] ?? [] as $catatan)
             @continue ($adaKGrup && str_contains($catatan, 'Coverage Factor'))
@@ -849,15 +1157,52 @@
                           pertama file ini nge-negate, dan efeknya arah drag di UI
                           kebalik: geser ke atas, tanda tangannya turun.
                         --}}
-                        <img
-                            src="{{ $tandaTangan }}"
-                            alt="Tanda tangan"
-                            style="
-                                width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
-                                left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
-                                bottom: {{ $posisiTtd['geser_y_mm'] ?? 0 }}mm;
-                            "
+                        {{--
+                          TINGGI ikut dicetak, bukan cuma lebar.
+                          Dulu cuma lebarnya yang disetel, dan tingginya dibiarkan
+                          ikut rasio gambar — kotak ini nggak memotong apa pun, jadi
+                          gambar yang nggak lebar-mendatar meluber KE ATAS nimpa tabel
+                          di atasnya. Gambar 800x800 di lebar 35 mm jadi setinggi 35 mm
+                          di kotak yang cuma 12,17 mm: luber 22,8 mm.
+
+                          Angkanya dihitung App\Support\UkuranTandaTangan, bukan di
+                          sini — `max-height` nggak diandelin dompdf, dan aritmetika di
+                          template nggak bisa diuji sendirian.
+                        --}}
+                        {{--
+                          `$ukuranTtd` dihitung DataTampilanSertifikat dari berkas
+                          gambarnya, dan semua jalur produksi lewat sana.
+
+                          Yang dipanggil langsung `view('sertifikat.pdf', [...])`
+                          dengan array rakitan sendiri (test template) nggak
+                          punya berkasnya, jadi rasio gambarnya nggak ketahuan.
+                          Di situ setelan admin dipakai APA ADANYA — tingginya
+                          nggak ditulis sama sekali.
+
+                          Sengaja BUKAN menjepit ke tinggi kotak: tanpa rasio,
+                          "menjepit" itu menebak, dan tebakannya bikin gambar
+                          gepeng plus geseran admin hilang diam-diam. Lebih baik
+                          jalur non-produksi ini berperilaku persis seperti dulu
+                          daripada berperilaku salah dengan percaya diri.
+                        --}}
+                        @php($ukuran = ($ukuranTtd ?? [])[$padat ? 'padat' : 'normal'] ?? null)
+                        <div
+                            class="letak-ttd"
+                            style="bottom: {{ $ukuran === null ? ($posisiTtd['geser_y_mm'] ?? 0) : round($ukuran['geser_y_mm'], 2) }}mm;"
                         >
+                            <img
+                                src="{{ $tandaTangan }}"
+                                alt="Tanda tangan"
+                                style="
+                                    @if ($ukuran === null)width: {{ $posisiTtd['lebar_mm'] ?? 35 }}mm;
+                                    @elseif (($ukuran['lebar_mm'] ?? null) !== null)width: {{ round($ukuran['lebar_mm'], 2) }}mm;
+                                    height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                    @else height: {{ round($ukuran['tinggi_mm'], 2) }}mm;
+                                    @endif
+                                    left: {{ $posisiTtd['geser_x_mm'] ?? 0 }}mm;
+                                "
+                            >
+                        </div>
                     @endif
                 </div>
 

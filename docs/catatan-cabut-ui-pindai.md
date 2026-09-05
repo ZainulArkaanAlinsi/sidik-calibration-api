@@ -4,6 +4,30 @@
 **Dari:** telusur backend, 24 Agustus 2026
 **Status:** dokumentasi doang — **nol baris kode PHP diubah** waktu catatan ini ditulis
 
+> ## KOREKSI 2 September 2026 — §Ringkas & §2a sudah tidak benar
+>
+> Catatan ini benar **pada 24 Agustus 2026**. Tiga hari kemudian jalur
+> `FOTO TABEL INI` mendarat di HP, dan dia **mengirim `input_method: 'ocr'`**
+> waktu ada sel yang keisi dari foto
+> (`lembar_kerja_submission.dart`, ditegaskan `lembar_kerja_state.dart`).
+>
+> Jadi kalimat "mobile selalu ngirim `input_method: manual`" **tidak berlaku
+> lagi**, dan seluruh §2a yang berdiri di atasnya ikut gugur: gerbang approve
+> `is_verified` **aktif**, temuan `ocr_belum_diverifikasi` **muncul lagi**, dan
+> `perlu_verifikasi` di detail sesi **tidak selalu `false`**.
+>
+> Yang **tetap benar**: seluruh §2b (jalur lembar bermarker memang tidak punya
+> pemanggil), §3 (endpointnya terbuka tanpa pemanggil), dan §1a–1d (mekanisme
+> dua pintunya).
+>
+> Dibiarkan tertulis di sini, bukan dihapus, karena §1a sudah memperingatkan
+> persis skenario ini — "kalau ada jalur lain yang bisa nulis `is_verified:
+> false`, gerbangnya masih bisa nyala" — dan yang menutup jalurnya memang
+> `$meta !== null` di pintu kedua. Peringatan yang terbukti benar lebih berguna
+> utuh daripada dirapikan.
+>
+> Rantai buktinya di `docs/temuan-gerbang0-ocr-model-lokal.md` §6.
+
 ---
 
 ## Ringkas
@@ -116,6 +140,11 @@ susunan yang nyampe ke situ selalu nyetel `is_verified` eksplisit.
 ## 2. Yang mati, yang tetap hidup
 
 ### 2a. Mati karena nggak ada lagi baris `is_verified: false`
+
+> **SUDAH TIDAK BERLAKU sejak 27 Agt 2026** — lihat koreksi di kepala berkas.
+> `FOTO TABEL INI` mengirim `input_method: 'ocr'`, jadi baris
+> `is_verified: false` lahir lagi dan seluruh tabel di bawah ini kembali aktif.
+> Dipertahankan sebagai catatan sejarah, bukan sebagai keadaan sekarang.
 
 | Apa | Alamat | Yang terjadi |
 |---|---|---|

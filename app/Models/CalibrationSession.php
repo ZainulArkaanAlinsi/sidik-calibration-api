@@ -363,22 +363,65 @@ class CalibrationSession extends Model
      */
     public function standarDicek(): BelongsToMany
     {
+        // Urutannya DIPATOK, alasannya sama dengan [uncertaintyCalculations]:
+        // standar "Usage Check" ikut masuk tabel ketertelusuran sertifikat, di
+        // ekor daftar yang lahir dari titik ukur. Diurutkan `standards.id` —
+        // urutan standar itu didaftarkan di master lab, yang stabil dan tidak
+        // ikut berubah waktu barisnya di-update.
         return $this->belongsToMany(Standard::class, 'calibration_session_standard')
             ->withPivot(['dipakai', 'keterangan'])
             ->withTimestamps()
-            ->withoutGlobalScope(SoftDeletingScope::class);
+            ->withoutGlobalScope(SoftDeletingScope::class)
+            ->orderBy('standards.id');
     }
 
-    /** @return HasMany<RawMeasurement, $this> */
+    /**
+     * @return HasMany<RawMeasurement, $this>
+     *
+     * Urutannya DIPATOK, lihat alasan panjangnya di [uncertaintyCalculations].
+     * Yang kena di sini `snapshot['satuan']`, yang diambil dari
+     * `rawMeasurements->first()?->satuan`: tanpa urutan pasti, "baris pertama"
+     * itu baris mana pun yang kebetulan dikembalikan database.
+     */
     public function rawMeasurements(): HasMany
     {
-        return $this->hasMany(RawMeasurement::class);
+        return $this->hasMany(RawMeasurement::class)
+            ->orderBy('titik_ke')
+            ->orderBy('pembacaan_ke')
+            ->orderBy('id');
     }
 
-    /** @return HasMany<UncertaintyCalculation, $this> */
+    /**
+     * @return HasMany<UncertaintyCalculation, $this>
+     *
+     * ## Kenapa urutannya dipatok
+     *
+     * SQL tidak menjamin urutan baris tanpa `ORDER BY` — dan MySQL memang
+     * memakai kebebasan itu; urutannya bisa bergeser sesudah `UPDATE`.
+     *
+     * Itu bocor ke dokumen yang sudah terbit. `CertificateSnapshotBuilder::
+     * standarDigunakan()` membaca relasi ini apa adanya, dan hasilnya dicetak
+     * apa adanya jadi tabel "Standards Used" di sertifikat terakreditasi. 3 Sep
+     * 2026, dua kali `sertifikat:bangun-ulang` berturut-turut di MySQL yang sama
+     * dengan kode yang sama memberi hasil beda-beda: tiga sertifikat berpindah
+     * antara "berubah" dan "nggak berubah" tiap jalan, dan tiap jalan menulis
+     * ulang PDF-nya. Dibuktikan dengan membalik urutan koleksinya: snapshot-nya
+     * ikut berubah, cuma di kunci `standar_digunakan`.
+     *
+     * Nol error muncul, dan 2.938 test tetap hijau — karena test jalan di
+     * SQLite, yang urutannya kebetulan stabil. Produksi MySQL, tidak.
+     *
+     * `titik_ke` yang di depan itu pilihan pemilik lab: tabel ketertelusuran
+     * mengikuti urutan titik ukur, sama seperti lembar kerjanya. `id` cuma
+     * pemecah seri — alat yang satu titiknya punya beberapa baris (Chlorine
+     * Free/Total, Spectrophotometer tiga blok) butuh itu supaya `sortBy`
+     * yang stabil tidak jatuh balik ke urutan database.
+     */
     public function uncertaintyCalculations(): HasMany
     {
-        return $this->hasMany(UncertaintyCalculation::class);
+        return $this->hasMany(UncertaintyCalculation::class)
+            ->orderBy('titik_ke')
+            ->orderBy('id');
     }
 
     /**

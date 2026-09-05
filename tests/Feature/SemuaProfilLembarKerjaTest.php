@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Organization;
-use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -189,6 +190,202 @@ class SemuaProfilLembarKerjaTest extends TestCase
     }
 
     /**
+     * `tabel[].peran` cuma boleh `standar` atau `uut`.
+     *
+     * ## Kenapa kunci ini nggak boleh dipakai sebagai label bebas
+     *
+     * Di HP, `peran` yang bukan null berarti satu hal yang sangat spesifik:
+     * *"lembar ini membaca DUA deret per titik — standar & UUT"*
+     * (`TabelHasil.berpasangan`, dan lewat dia `LembarKerja.berpasangan`).
+     * Nilainya membelokkan SELURUH lembar ke jalur pasangan, yang mengirim
+     * `standar`/`uut` per titik dan bukan `pembacaan`, DAN mengunci baris ke
+     * offset parameter alih-alih ke titik ukurnya.
+     *
+     * Lembar Timbangan sempat memakainya sebagai nama blok (`akurasi`,
+     * `keterulangan`) — tujuan yang sudah dilayani `grup`, seperti ketiga tabel
+     * Spectrophotometer. Akibatnya dua: payload berangkat tanpa satu pun
+     * nominal, dan kedua tabelnya bentrok kunci baris lagi karena
+     * `_offsetParameter(null)` memulangkan 0 untuk dua-duanya. Nol error di
+     * kedua sisi; ketahuan waktu payload HP-nya diadu ke bentuk lembarnya.
+     *
+     * Ditulis sebagai aturan umum, bukan pengecualian buat satu profil: kunci
+     * ini bakal kelihatan seperti label bebas lagi buat alat ke-22.
+     */
+    #[DataProvider('semuaProfil')]
+    public function test_peran_tabel_cuma_buat_lembar_pasangan(CalibrationProfile $profil): void
+    {
+        $bagianLembar = $profil->bentukLembarKerja()['bagian'] ?? [];
+
+        foreach ($bagianLembar as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                if (! array_key_exists('peran', $tabel) || $tabel['peran'] === null) {
+                    continue;
+                }
+
+                $this->assertContains(
+                    $tabel['peran'],
+                    ['standar', 'uut'],
+                    "Profil `{$profil->kode()}` memakai `peran` = `{$tabel['peran']}` sebagai label blok. "
+                    .'Di HP kunci itu berarti lembar pasangan standar/UUT dan membelokkan seluruh jalur '
+                    .'kirimnya. Pakai `grup`.',
+                );
+            }
+        }
+
+        // Profil yang nggak punya tabel bikin aturan di atas lolos TANPA
+        // memeriksa apa pun — dan lolos hampa nggak bisa dibedakan dari lolos
+        // beneran. Buat lembar Timbangan, yang justru jadi alasan test ini ada
+        // (lihat docblock), loopnya memang nol putaran; PHPUnit menandainya
+        // "risky" dan penanda itu satu-satunya jejaknya.
+        //
+        // Yang diadu di sini BUKAN "harus punya tabel". Kelima lembar Enclosure
+        // sah-sah saja tanpa tabel — bentuknya grid, bagiannya memakai
+        // `baris`/`field`. Yang dijaga cuma satu: bentuk lembarnya tidak
+        // KOSONG. Dengan begitu profil yang `bentukLembarKerja()`-nya runtuh
+        // atau berganti nama kunci jatuh sebagai merah, bukan lewat diam-diam.
+        $this->assertNotEmpty(
+            $bagianLembar,
+            "Profil `{$profil->kode()}` nggak memulangkan satu pun bagian di "
+            .'`bentukLembarKerja()[bagian]`, jadi aturan `peran` di atas lewat tanpa memeriksa '
+            .'apa pun. Yang salah bentuk lembarnya, bukan test ini.',
+        );
+    }
+
+    /**
+     * Dua tabel yang di HP berbagi `kunciTabel` TIDAK boleh berbagi kunci baris.
+     *
+     * ## Bentuk kegagalannya
+     *
+     * HP menyimpan isian per titik di satu `Map<double, TitikState>`. Kuncinya
+     * `LembarKerjaState.kunciBaris()`, dan dua tabel yang jatuh ke kunci tabel
+     * yang sama (`TabelHasil.kunciTabel`) mengambil `TitikState` dari peta yang
+     * sama juga. Kalau kunci barisnya ikut sama, kedua tabel berbagi satu kotak
+     * isian: angka yang diketik di salah satunya muncul di kotak satunya lagi,
+     * dan yang terkirim salah satunya saja.
+     *
+     * **Nol error di kedua sisi.** Payloadnya sah, kolomnya lengkap, tombol
+     * kirimnya jalan mulus.
+     *
+     * ## Sudah tiga kali
+     *
+     *  1. **Thermohygrometer** — set point `50` ada di blok suhu (50 °C) DAN
+     *     blok kelembapan (50 %RH). Ditutup lewat offset dari urutan parameter,
+     *     yang terikat ke lembar pasangan.
+     *  2. **Timbangan** — Accuracy 50 kg & 100 kg vs Repeatability Middle
+     *     50 kg & Maximum 100 kg. Ditutup lewat `offset_kunci`, bentuk umumnya.
+     *  3. **Micrometer** — baris `Evaluasi` ber-`tahap` sama dengan sebelas
+     *     baris `Data Kalibrasi`. Belum sempat menggigit: `titik_ukur`-nya null
+     *     jadi HP memakai `nomor` = 1, dan 1,0 mm kebetulan tidak ada di
+     *     keempat puluh empat nominal pra-cetak. **Kebetulan**, bukan jaminan.
+     *
+     * Ketiganya ditutup satu per satu sesudah ketahuan. Test ini menutupnya
+     * sebagai ATURAN, jadi alat ke-26 ikut terjaga tanpa ada yang perlu ingat.
+     *
+     * ## Yang SENGAJA berbagi kunci, dan kenapa tidak kena
+     *
+     *  - Deret standar & UUT lembar pasangan — memang set point yang sama,
+     *    dibaca bergantian. `kunciTabel`-nya sudah beda (`grup ?? peran`).
+     *  - Tabel `sebelum_adjustment` vs `sesudah_adjustment` — barisnya sejajar
+     *    dengan sengaja. `kunciTabel`-nya beda karena `tahap`-nya beda.
+     *
+     * Keduanya lolos tanpa pengecualian yang ditulis tangan; itu yang bikin
+     * aturan ini murah dijaga.
+     */
+    #[DataProvider('semuaProfil')]
+    public function test_tabel_sekunci_tidak_berbagi_kunci_baris(CalibrationProfile $profil): void
+    {
+        /** @var array<string, array<string, string>> $terpakai kunci tabel => kunci baris => judul tabel */
+        $terpakai = [];
+
+        foreach ($profil->bentukLembarKerja()['bagian'] ?? [] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                $kunciTabel = self::kunciTabelHp($tabel);
+                $judul = (string) ($tabel['judul'] ?? $tabel['grup'] ?? $tabel['tahap'] ?? '?');
+
+                foreach (self::kunciBarisHp($tabel) as $kunciBaris) {
+                    $bentrok = $terpakai[$kunciTabel][$kunciBaris] ?? null;
+
+                    // Tabel yang sama menabrak dirinya sendiri itu bentuk lain
+                    // lagi (baris kembar), dan sudah jatuh ke mode indeks di
+                    // `kunciBaris()` HP. Yang dicari di sini tabrakan
+                    // ANTAR-tabel.
+                    $this->assertTrue(
+                        $bentrok === null || $bentrok === $judul,
+                        "Profil `{$profil->kode()}`: tabel `{$judul}` dan `{$bentrok}` sama-sama berkunci "
+                        ."tabel `{$kunciTabel}` DAN berbagi kunci baris `{$kunciBaris}`. Di HP keduanya "
+                        .'menulis ke kotak isian yang sama, tanpa satu pun error. Beri salah satunya '
+                        .'`offset_kunci` yang tidak dipakai tabel lain di lembar ini.',
+                    );
+
+                    $terpakai[$kunciTabel][$kunciBaris] = $judul;
+                }
+            }
+        }
+    }
+
+    /**
+     * `TabelHasil.kunciTabel` HP: `berpasangan ? (grup ?? peran) : tahap`.
+     *
+     * @param  array<string, mixed>  $tabel
+     */
+    private static function kunciTabelHp(array $tabel): string
+    {
+        $peran = $tabel['peran'] ?? null;
+
+        return $peran === null
+            ? (string) ($tabel['tahap'] ?? '')
+            : (string) ($tabel['grup'] ?? $peran);
+    }
+
+    /**
+     * `LembarKerjaState.kunciBaris()` HP, ditiru persis.
+     *
+     * Lembar PASANGAN dilewati: kuncinya dihitung dari urutan parameter di
+     * seluruh lembar, dan deret standar/UUT-nya memang sengaja berbagi kunci.
+     * Yang menjaga blok itu `_offsetParameter()` di HP sendiri.
+     *
+     * @param  array<string, mixed>  $tabel
+     * @return list<string>
+     */
+    private static function kunciBarisHp(array $tabel): array
+    {
+        if (($tabel['peran'] ?? null) !== null) {
+            return [];
+        }
+
+        $baris = array_values($tabel['baris'] ?? []);
+
+        if ($baris === []) {
+            return [];
+        }
+
+        // `BarisTabelHasil.fromJson`: `titik_ukur` null jatuh ke `nomor`, lalu
+        // ke 0. Ditiru apa adanya — kalau tidak, kunci yang dihitung di sini
+        // beda dari yang dipakai HP dan test ini menjaga lembar yang salah.
+        $titik = array_map(
+            static fn (array $b): float => is_numeric($b['titik_ukur'] ?? null)
+                ? (float) $b['titik_ukur']
+                : (float) ($b['nomor'] ?? 0),
+            $baris,
+        );
+
+        if (isset($tabel['offset_kunci'])) {
+            return array_map(
+                static fn (int $i): string => (string) ((int) $tabel['offset_kunci'] + $i),
+                array_keys($baris),
+            );
+        }
+
+        // Titik kembar bikin HP jatuh ke mode indeks buat SELURUH tabel.
+        $unik = count(array_unique($titik)) === count($titik);
+
+        return array_map(
+            static fn (int $i): string => $unik ? (string) $titik[$i] : (string) $i,
+            array_keys($baris),
+        );
+    }
+
+    /**
      * Nomor formulir ada, atau memang belum ketahuan — dan yang belum ketahuan
      * ditulis di sini, bukan dibiarkan lolos diam-diam.
      *
@@ -208,7 +405,53 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // formulir SERTIFIKAT yang dipakai bersama semua alat — bukan nomor
         // lembar kerjanya. Menaruh nomor karangan di lembar yang ikut diaudit
         // lebih mahal daripada kolom kosong yang jelas kosong.
-        $belumAdaKertasnya = ['gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro'];
+        // `timbangan` masuk 31 Agt 2026 dengan alasan yang SAMA, dan sudah
+        // dicek: ketiga workbook master Timbangan disapu buat pola
+        // `SIDIK-FM-…`, dan yang ketemu cuma SATU — `SIDIK-FM-CAL-2403_Rev. 0`
+        // di footer sheet SERTIFIKAT, formulir sertifikat bersama itu lagi.
+        // Nomor lembar kerjanya sendiri memang belum pernah dikirim.
+        // `timer_stopwatch`, `centrifuge`, dan `tachometer` masuk 1 Sep 2026
+        // dengan alasan yang SAMA, dan sudah dicek dengan cara yang sama:
+        // ketiga workbook master kelompok "Waktu dan Frekuensi" disapu buat
+        // pola `SIDIK-FM-…`, dan yang ketemu cuma SATU di masing-masing —
+        // `SIDIK-FM-CAL-2403_Rev. 0`, formulir sertifikat bersama itu lagi
+        // (Tachometer & Timer di footer sheet `SERTIFIKAT`, Centrifuge di
+        // `INPUT DATA!B78`). Nomor lembar kerjanya sendiri belum pernah
+        // dikirim. Yang ADA cuma nomor Instruksi Kerjanya
+        // (`SIDIK-IK-CAL-0509_Rev.6` & `SIDIK-IK-CAL-0511_Rev.6`), dan itu
+        // masuk lewat `kodeMetode()`, bukan `kode_dokumen`.
+        $belumAdaKertasnya = [
+            'gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro',
+            'timer_stopwatch', 'centrifuge', 'tachometer',
+        ];
+
+        // Kertasnya ADA, tapi nomornya dipilih dari ALATnya — jadi panggilan
+        // tanpa alat di baris bawah memang memulangkan null.
+        //
+        // Dipisah dari `$belumAdaKertasnya` karena kedua sebabnya cuma
+        // kelihatan sama dari sini, dan artinya berlawanan: yang satu kolom
+        // kosong yang menunggu kertas, yang satu lagi kolom yang terisi begitu
+        // alatnya dipilih. `timbangan` sempat dicampur ke daftar pertama dengan
+        // catatan "SETENGAH benar" — dan daftar yang namanya berbohong tentang
+        // salah satu anggotanya berhenti dibaca sebagai daftar audit.
+        //
+        // Bedanya juga bukan kosmetik: profil yang DIAM-DIAM kehilangan nomor
+        // formulirnya (mis. tabel variannya gagal termuat) kelihatan persis
+        // seperti anggota sah daftar ini. Makanya tiap anggota WAJIB menyebut
+        // test yang menjaga sisi terisinya — kalau tidak ada, dia bukan anggota
+        // daftar ini, dia bug.
+        //
+        //  - `timbangan` → `TimbanganSesiTest::
+        //    test_nomor_formulir_cuma_di_varian_yang_kertasnya_ada`. Nomornya
+        //    WAJIB muncul buat alat > 200 kg (`SIDIK-FM-CAL-0508.A_Rev.4`,
+        //    metode substitusi) dan WAJIB null buat kg/gram — kertas kedua
+        //    varian itu memang belum turun. Pindahkan dia ke daftar penuh
+        //    kalau sudah.
+        //  - `micrometer` → `MicrometerSesiTest::
+        //    test_nomor_formulir_ikut_varian_kapasitas`. Keempat kertasnya ada
+        //    (`SIDIK-FM-CAL-0522.A/B/C/D_Rev.1`, turun 4 Sep 2026), satu per
+        //    rentang, dan yang dipilih ditentukan kapasitas alat.
+        $nomorPerVarian = ['timbangan', 'micrometer'];
 
         $nomor = $profil->bentukLembarKerja()['kode_dokumen'] ?? null;
 
@@ -221,11 +464,25 @@ class SemuaProfilLembarKerjaTest extends TestCase
             return;
         }
 
+        if (in_array($profil->kode(), $nomorPerVarian, true)) {
+            $this->assertNull(
+                $nomor,
+                "Profil `{$profil->kode()}` sekarang memulangkan nomor formulir TANPA alat. "
+                .'Dia terdaftar sebagai nomor-per-varian, jadi salah satunya harus dibetulkan: '
+                .'keluarkan dia dari `$nomorPerVarian`, atau kembalikan pemilihan variannya ke alat.',
+            );
+
+            return;
+        }
+
         $this->assertIsString($nomor, "Profil `{$profil->kode()}` belum punya nomor formulir.");
+        // Akhiran huruf opsional (`0508.A`) — formulir lab ini memakainya buat
+        // membedakan varian metode pada nomor dasar yang sama. Bukan pelonggaran
+        // spekulatif: `SIDIK-FM-CAL-0508.A_Rev.4` ada di tangan.
         $this->assertMatchesRegularExpression(
-            '/^SIDIK-FM-CAL-\d{4}_Rev\.\d+$/',
+            '/^SIDIK-FM-CAL-\d{4}(\.[A-Z])?_Rev\.\d+$/',
             $nomor,
-            "Nomor formulir `{$profil->kode()}` nggak berbentuk `SIDIK-FM-CAL-NNNN_Rev.N`.",
+            "Nomor formulir `{$profil->kode()}` nggak berbentuk `SIDIK-FM-CAL-NNNN[.X]_Rev.N`.",
         );
     }
 
@@ -441,7 +698,7 @@ class SemuaProfilLembarKerjaTest extends TestCase
         $this->expectException(\LogicException::class);
 
         try {
-            $this->actingAs(\App\Models\User::factory()->create())
+            $this->actingAs(User::factory()->create())
                 ->getJson('/api/calibrations/lembar-kerja?instrumen=Buret+Digital')
                 ->assertStatus(422)
                 ->assertJsonPath('message', fn (string $m): bool => str_contains($m, 'form generik'));

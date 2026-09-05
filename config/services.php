@@ -139,4 +139,68 @@ return [
         'timeout' => (int) env('FCM_TIMEOUT', 10),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Direktori perusahaan — cari nama & alamat PT dari sumber LUAR
+    |--------------------------------------------------------------------------
+    | Dipakai waktu teknisi mendaftarkan pelanggan yang belum ada di master lab.
+    | Sumbernya direktori TEMPAT USAHA, bukan registri badan hukum: AHU
+    | (Kemenkumham) memegang data PT terdaftar tapi nggak membuka API publik,
+    | dan OSS/BKPM cuma buat mitra berizin. Jadi yang ketemu di sini perusahaan
+    | sebagaimana dia muncul di peta — cukup buat mencocokkan papan nama, TIDAK
+    | cukup buat dianggap data akta.
+    |
+    | KOSONG = jalur direktori mati, dan layar HP-nya BILANG "belum disetel" —
+    | bukan diam-diam mulangin daftar kosong. Bedanya penting: yang kedua kebaca
+    | teknisi sebagai "PT-nya nggak ada di direktori", lalu dia mendaftarkan
+    | ulang perusahaan yang sebenarnya ada di sana.
+    |
+    | Key-nya kunci SERVER. Jangan pernah ditaruh di aplikasi HP: key di dalam
+    | APK bisa dicabut siapa pun dari berkasnya lalu dipakai atas tagihan lab
+    | ini. HP nembak endpoint lab, lab yang memegang key-nya.
+    |
+    | Endpoint ini ditagih PER REQUEST — batasi kuotanya di konsol penyedianya,
+    | jangan cuma di sini.
+    */
+    'direktori_perusahaan' => [
+        // `osm` (bawaan) = OpenStreetMap lewat Nominatim saja. Tanpa key,
+        // tanpa kuota, TANPA TAGIHAN. Harganya cakupan yang lebih tipis: cuma
+        // tempat yang pernah dipetakan sukarelawan, jadi pabrik di kawasan
+        // industri yang belum ada yang memetakan memang tidak akan ketemu.
+        //
+        // `google` = Places API saja. Cakupan pabrik Indonesia paling tebal.
+        // Text Search punya kuota bebas bulanan (5.000 panggilan/bulan sejak
+        // Maret 2025), tapi DI ATAS ITU DITAGIH PER REQUEST — dan tetap butuh
+        // key, jadi tanpa key jalur ini mati total.
+        //
+        // `auto` = BERLAPIS: Google duluan kalau key-nya ada, OpenStreetMap di
+        // belakangnya — lihat `DirektoriBerlapis`.
+        //
+        // Kenapa bawaannya `osm` dan bukan `auto`: bawaan itu yang dipakai
+        // pemasangan yang belum menyetel apa-apa, dan bawaan yang menagih
+        // menagihnya DIAM-DIAM. Keputusan pemilik proyek 31 Agt 2026 (lihat
+        // §K16 `docs/permintaan-user-7.md`) memang nol tagihan; nilai di sini
+        // sempat tertinggal di `auto`, dan itu yang bikin Places tetap
+        // ditembak sampai 1 Sep 2026.
+        //
+        // Apa pun drivernya, tiap lapis dibungkus `DirektoriBercache` di
+        // `AppServiceProvider` — pencarian yang sama tidak menembak penyedia
+        // (dan tidak ditagih) dua kali. Kalau hasilnya terasa basi:
+        // `php artisan cache:clear`.
+        'driver' => env('DIREKTORI_PERUSAHAAN_DRIVER', 'osm'),
+
+        // Cuma dipakai driver `google`.
+        'key' => env('DIREKTORI_PERUSAHAAN_KEY'),
+
+        // Nominatim MENOLAK klien yang nggak menyebut dirinya, dan yang
+        // diblokir alamat IP server-nya — bukan satu request. Isi dengan nama
+        // aplikasi + cara menghubungi yang beneran bisa dihubungi.
+        'user_agent' => env(
+            'DIREKTORI_PERUSAHAAN_USER_AGENT',
+            'SidikCalibration/1.0 (+https://github.com/ZainulArkaanAlinsi/sidik-calibration-api)',
+        ),
+
+        'timeout' => (int) env('DIREKTORI_PERUSAHAAN_TIMEOUT', 8),
+    ],
+
 ];

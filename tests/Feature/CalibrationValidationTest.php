@@ -71,6 +71,47 @@ class CalibrationValidationTest extends TestCase
             ->assertJsonPath('data.ringkasan.peringatan', 0);
     }
 
+    /**
+     * Peringatan yang BUKAN selisih hitung ulang nggak boleh dilaporin sebagai
+     * selisih hitung ulang.
+     *
+     * Cabang `! valid` nyala buat lima belas kode peringatan, tapi judulnya dulu
+     * satu kalimat tetap: *"Hasil hitung ulang beda dari yang tersimpan."*
+     * Sesi ini ketahan karena pembacaan mentahnya hilang — hitung ulangnya
+     * sendiri nggak pernah menghasilkan selisih apa pun.
+     *
+     * Yang rusak bukan kalimatnya. Admin yang membuka datanya, menemukan hitung
+     * ulangnya baik-baik saja, lalu menekan `abaikan_peringatan`, belajar bahwa
+     * peringatan di sini bohong — dan sesudah itu menekannya juga waktu
+     * peringatannya benar.
+     */
+    public function test_peringatan_bukan_hitung_ulang_nggak_dilaporin_sebagai_hitung_ulang(): void
+    {
+        Queue::fake();
+        $sesi = $this->buatSesi();
+
+        // Angka hasilnya dibiarkan utuh — yang dihapus cuma pembacaan mentahnya,
+        // jadi yang nyala `pembacaan_mentah_hilang`, bukan `hitung_ulang_beda`.
+        $sesi->rawMeasurements()->delete();
+
+        $respons = $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$sesi->id}/approve")
+            ->assertStatus(422)
+            ->assertJsonPath('butuh_konfirmasi', true);
+
+        $kode = array_column($respons->json('validasi.temuan'), 'kode');
+        $this->assertContains('pembacaan_mentah_hilang', $kode);
+        $this->assertNotContains('hitung_ulang_beda', $kode);
+
+        $pesan = $respons->json('message');
+        $this->assertStringContainsString('pembacaan mentahnya nggak ada', $pesan);
+        $this->assertStringNotContainsString('hitung ulang beda', $pesan);
+
+        // Jalan keluarnya tetap disebut — tanpa ini admin tahu apa yang salah
+        // tapi nggak tahu cara melanjutkannya.
+        $this->assertStringContainsString('abaikan_peringatan', $pesan);
+    }
+
     public function test_angka_yang_diutak_atik_langsung_ketahuan_waktu_dihitung_ulang(): void
     {
         Queue::fake();
@@ -90,6 +131,11 @@ class CalibrationValidationTest extends TestCase
             'hitung_ulang_beda',
             array_column($respons->json('validasi.temuan'), 'kode'),
         );
+
+        // Sesudah judulnya berhenti jadi kalimat tetap, kasus ini yang menjaga
+        // informasinya nggak malah hilang: yang MEMANG selisih hitung ulang
+        // tetap disebut selisih hitung ulang.
+        $this->assertStringContainsString('hitung ulang', $respons->json('message'));
 
         // Ketahan beneran: statusnya nggak pindah & sertifikat nggak diantre.
         // (Sinyal broadcast realtime boleh jalan — yang dijaga cuma jangan sampai

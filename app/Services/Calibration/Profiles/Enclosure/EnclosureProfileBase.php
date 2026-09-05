@@ -11,6 +11,7 @@ use App\Services\Calibration\EnclosureCalculator;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\TabelKalibratorEnclosure;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Induk profil kalibrasi ENCLOSURE — logika bersama untuk kelima jenis enclosure
@@ -703,7 +704,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                             'Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -850,61 +851,6 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         ['label' => 'TH-2', 'grup' => 'Insitu'],
         ['label' => 'TH-6', 'grup' => 'Insitu'],
     ];
-
-    /**
-     * Isi pilihan "Thermohygro used" untuk KELIMA profil Enclosure sekaligus.
-     *
-     * Tanpa ini kolomnya bukan error — cuma diam. `field()` memberi `pilihan`
-     * nilai bawaan `[]`, layar teknisi menggambar dropdown dari daftar yang
-     * dibawa bentuk (bukan dari master standar), dan daftar kosong bikin dia
-     * jatuh ke cabang teks mati. Sesi jalan tanpa unit thermohygro, jadi
-     * koreksi kondisi lingkungan berikut U95-nya nggak nempel ke unit mana pun.
-     *
-     * Lebih pahit di sini daripada di lembar lain: blok "Kondisi Lingkungan"
-     * Enclosure sudah pernah kena kasus angka yang nggak kepakai, dan
-     * komentarnya di atas masih menyimpan ceritanya — 67 °C padahal suhu ruang
-     * aslinya 24,6 °C.
-     *
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
 
     /**
      * Baris `uncertainty_calculations` untuk satu set point.
@@ -1128,9 +1074,9 @@ abstract class EnclosureProfileBase extends CalibrationProfile
      * mungkin salah tanpa satu pun jejak. Lebih baik sesinya tetap belum
      * kehitung dengan peringatan yang jujur.
      *
-     * @param  \Illuminate\Support\Collection<int, Standard>  $dicentang
+     * @param  Collection<int, Standard>  $dicentang
      */
-    public function standarSesiDariCentang(\Illuminate\Support\Collection $dicentang): ?Standard
+    public function standarSesiDariCentang(Collection $dicentang): ?Standard
     {
         $kalibrator = $dicentang
             ->filter(fn (Standard $s): bool => $this->merkKalibrator($s) !== null)
@@ -1172,32 +1118,5 @@ abstract class EnclosureProfileBase extends CalibrationProfile
     private function angka(float $nilai): string
     {
         return rtrim(rtrim(number_format($nilai, 8, '.', ''), '0'), '.') ?: '0';
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }

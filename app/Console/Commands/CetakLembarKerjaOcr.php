@@ -133,6 +133,9 @@ class CetakLembarKerjaOcr extends Command
                 'baris' => $labelBaris,
                 'kolom' => array_column($t['kolom'], 'label', 'field_id'),
                 'ke_bawah' => ($t['sumbu_pengulangan'] ?? 'kolom') === 'baris',
+                // Penomoran pengulangan seperti tercetak di kertas ACUAN.
+                // Kosong = pakai `X1`..`Xn` bawaan lembar cetak ini.
+                'label_pengulangan' => $t['label_pengulangan'] ?? [],
             ];
         }
 
@@ -178,6 +181,7 @@ class CetakLembarKerjaOcr extends Command
                     $dariTemplate[$t['tabel_id']]['ke_bawah'] ?? false,
                     $kiriTabel,
                     $this->tataLetak->jarakLabelBaris($lebar),
+                    $dariTemplate[$t['tabel_id']]['label_pengulangan'] ?? [],
                 ),
                 'label_kolom' => $this->labelKolom(
                     $sel,
@@ -294,6 +298,7 @@ class CetakLembarKerjaOcr extends Command
         bool $keBawah = false,
         int $kiri = 90,
         int $jarak = 24,
+        array $labelPengulangan = [],
     ): array {
         // Bagian ke-1 kunci = nomor baris titik, ke-2 = nomor Repeat. Yang mana
         // yang jadi baris di kertas tergantung orientasinya.
@@ -302,8 +307,13 @@ class CetakLembarKerjaOcr extends Command
 
         foreach ($letak as $baris => $kotak) {
             $label[] = [
+                // Di lembar ke-bawah yang kertas ACUANNYA bukan cetakan kita,
+                // penomorannya ikut kertas itu — master Timbangan menomori
+                // `1`..`10` polos. `X1` bawaan cuma dipakai kalau lembarnya
+                // tidak menyebut apa-apa; dua kertas untuk satu tabel dengan
+                // penomoran berbeda bikin teknisi menghitung baris sendiri.
                 'teks' => $keBawah
-                    ? 'X'.$baris
+                    ? (string) ($labelPengulangan[$baris] ?? 'X'.$baris)
                     : (string) ($labelTemplate[$baris] ?? $baris),
                 'x' => $kotak['x'],
                 'y' => $kotak['y'],

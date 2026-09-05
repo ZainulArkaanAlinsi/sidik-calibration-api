@@ -142,7 +142,33 @@ class ExcelImporter
         $hasil = [];
         $ringkasan = ['dibaca' => 0, 'dibuat' => 0, 'diperbarui' => 0, 'dilewati' => 0];
 
-        $proses = function () use ($baris, $peta, $tipe, $organizationId, &$hasil, &$ringkasan): void {
+        // Ingatan pencarian, umurnya satu kali impor.
+        //
+        // Impor `equipments` menembak DUA query per baris — satu buat PT
+        // pemilik, satu buat kategori — dan dua-duanya menanyakan hal yang sama
+        // berulang-ulang: satu berkas 500 alat biasanya cuma menyebut belasan
+        // PT dan segelintir kategori. Dengan `MAX_BARIS` 5000 itu sampai 10.000
+        // round-trip berurutan di dalam SATU transaksi yang ditahan terbuka
+        // sepanjang loop.
+        //
+        // Yang disimpan termasuk hasil KOSONG. Itu bagian yang paling banyak
+        // menolong dan paling gampang kelewat: berkas yang salah ketik satu
+        // nama PT mengulang pencarian yang pasti gagal itu di tiap barisnya.
+        //
+        // ## Kenapa ini tidak mengubah perilaku
+        //
+        // Cache-nya cuma menyimpan jawaban query yang MEMANG dijalankan, dengan
+        // kunci persis nilai yang dicari. Pencarian pertama tiap nilai tetap
+        // query yang sama seperti sebelumnya — termasuk urusan collation, yang
+        // beda antara MySQL (produksi) dan SQLite (test). Jadi tidak ada
+        // pencocokan baru yang lahir dari sini, dan tidak ada yang hilang.
+        //
+        // Sengaja BUKAN memuat seluruh tabel ke memori di depan: cara itu lebih
+        // cepat lagi, tapi menuntut kuncinya menirukan collation database, dan
+        // menirunya salah berarti impor diam-diam bikin PT kembar.
+        $ingatan = [];
+
+        $proses = function () use ($baris, $peta, $tipe, $organizationId, &$hasil, &$ringkasan, &$ingatan): void {
             foreach ($baris as $i => $isi) {
                 // +1 karena header udah diambil, +1 lagi karena Excel mulai dari 1.
                 $nomorBaris = $i + 2;
@@ -153,7 +179,7 @@ class ExcelImporter
                 }
 
                 $ringkasan['dibaca']++;
-                $catatan = $this->proses($tipe, $nilai, $organizationId);
+                $catatan = $this->proses($tipe, $nilai, $organizationId, $ingatan);
 
                 $ringkasan[$catatan['tindakan']] = ($ringkasan[$catatan['tindakan']] ?? 0) + 1;
                 $hasil[] = ['baris' => $nomorBaris, ...$catatan];
@@ -191,12 +217,12 @@ class ExcelImporter
      * @param  array<string, mixed>  $nilai
      * @return array<string, mixed>
      */
-    private function proses(string $tipe, array $nilai, int $organizationId): array
+    private function proses(string $tipe, array $nilai, int $organizationId, array &$ingatan): array
     {
         return match ($tipe) {
             'customers' => $this->prosesPelanggan($nilai, $organizationId),
             'standards' => $this->prosesStandar($nilai, $organizationId),
-            'equipments' => $this->prosesAlat($nilai, $organizationId),
+            'equipments' => $this->prosesAlat($nilai, $organizationId, $ingatan),
             default => ['tindakan' => 'dilewati', 'alasan' => 'Tipe import nggak dikenal.'],
         };
     }
@@ -288,10 +314,29 @@ class ExcelImporter
     }
 
     /**
+     * Jawaban query yang sudah pernah ditanyakan di impor ini.
+     *
+     * `array_key_exists`, BUKAN `??`: hasil kosong (`null`) juga diingat, dan
+     * itu justru yang paling banyak menolong — berkas yang salah ketik satu
+     * nama PT mengulang pencarian yang pasti gagal itu di tiap barisnya.
+     *
+     * @param  array<string, mixed>  $ingatan
+     */
+    private function diingat(array &$ingatan, string $kunci, callable $cari): mixed
+    {
+        if (! array_key_exists($kunci, $ingatan)) {
+            $ingatan[$kunci] = $cari();
+        }
+
+        return $ingatan[$kunci];
+    }
+
+    /**
      * @param  array<string, mixed>  $nilai
+     * @param  array<string, mixed>  $ingatan
      * @return array<string, mixed>
      */
-    private function prosesAlat(array $nilai, int $organizationId): array
+    private function prosesAlat(array $nilai, int $organizationId, array &$ingatan = []): array
     {
         $nama = trim((string) ($nilai['nama_alat'] ?? ''));
 
@@ -305,9 +350,13 @@ class ExcelImporter
             return ['tindakan' => 'dilewati', 'alasan' => "Alat \"{$nama}\" nggak punya kolom pemilik/PT."];
         }
 
-        $pelanggan = Customer::where('organization_id', $organizationId)
-            ->where('nama', $namaPelanggan)
-            ->first();
+        $pelanggan = $this->diingat(
+            $ingatan,
+            "pelanggan:{$namaPelanggan}",
+            fn () => Customer::where('organization_id', $organizationId)
+                ->where('nama', $namaPelanggan)
+                ->first(),
+        );
 
         if ($pelanggan === null) {
             // Sengaja NGGAK bikin PT baru diam-diam: salah ketik nama PT di satu
@@ -322,9 +371,13 @@ class ExcelImporter
 
         $kategori = $namaKategori === ''
             ? null
-            : EquipmentCategory::where('organization_id', $organizationId)
-                ->where(fn ($q) => $q->where('kode', $namaKategori)->orWhere('nama', $namaKategori))
-                ->first();
+            : $this->diingat(
+                $ingatan,
+                "kategori:{$namaKategori}",
+                fn () => EquipmentCategory::where('organization_id', $organizationId)
+                    ->where(fn ($q) => $q->where('kode', $namaKategori)->orWhere('nama', $namaKategori))
+                    ->first(),
+            );
 
         // Kategori itu yang nyambungin alat ke kemampuan kalibrasi (CMC) lab.
         // Nebak kategori dari nama alat gampang meleset dan hasilnya
@@ -339,6 +392,32 @@ class ExcelImporter
             ];
         }
 
+        // Resolusi nol/negatif DILEWATI, bukan dikosongkan diam-diam.
+        //
+        // `filled(0.0)` di Laravel bernilai TRUE, jadi nol lolos `array_filter`
+        // di bawah dan mendarat apa adanya. Sesudah itu
+        // `Angka::desimalDariResolusi()` menyamakan nol dengan null, dan
+        // sertifikatnya mencetak empat desimal buat alat yang nggak punya
+        // presisi segitu. Jalur API sudah menolaknya (`gt:0` di
+        // `EquipmentRequest`); impor nggak lewat FormRequest, jadi penjagaannya
+        // ditulis di sini.
+        //
+        // Dilewati, bukan ditebak — alasannya sama persis dengan penjaga
+        // kategori di atas: nilai yang bikin angka sertifikat salah
+        // dikembalikan ke pemilik berkas. Barisnya nggak hilang diam-diam:
+        // mode `uji_coba` sudah menampilkannya berikut alasan ini sebelum ada
+        // yang ditulis ke database.
+        $resolusi = $this->angka($nilai['resolusi'] ?? null);
+
+        if ($resolusi !== null && $resolusi <= 0) {
+            return [
+                'tindakan' => 'dilewati',
+                'alasan' => "Resolusi alat \"{$nama}\" nol atau negatif. "
+                    .'Kosongin selnya kalau resolusinya nggak diketahui — nol bikin sertifikatnya '
+                    .'ngaku empat desimal yang alatnya nggak punya.',
+            ];
+        }
+
         $serial = trim((string) ($nilai['serial_number'] ?? ''));
 
         $atribut = array_filter([
@@ -348,7 +427,7 @@ class ExcelImporter
             'range_min' => $this->angka($nilai['range_min'] ?? null),
             'range_max' => $this->angka($nilai['range_max'] ?? null),
             'satuan' => $nilai['satuan'] ?? null,
-            'resolusi' => $this->angka($nilai['resolusi'] ?? null),
+            'resolusi' => $resolusi,
             'toleransi' => $this->angka($nilai['toleransi'] ?? null),
             'lokasi' => $nilai['lokasi'] ?? null,
             'tanggal_kalibrasi_terakhir' => $this->tanggal($nilai['tanggal_kalibrasi_terakhir'] ?? null),
@@ -482,7 +561,28 @@ class ExcelImporter
             return (float) $nilai;
         }
 
-        $teks = preg_replace('/[^0-9,.\-]/', '', (string) $nilai) ?? '';
+        // Tanda minus "cantik" DISERAGAMKAN dulu jadi `-` ASCII.
+        //
+        // Kalau tidak, regex di bawah membuangnya bersama huruf dan spasi — dan
+        // yang tersisa angka POSITIF. Untuk kolom resolusi itu bukan sekadar
+        // salah baca satu sel: penjaga "resolusi nol atau negatif dilewati" di
+        // atas jadi tidak pernah kena, dan `−0,5` mendarat di database sebagai
+        // `0,5` yang kelihatan sah sepenuhnya.
+        //
+        // Keempatnya nyata di berkas dari lapangan: U+2212 datang dari salin-
+        // tempel PDF, en/em dash dari autocorrect Excel, dan hyphen fullwidth
+        // dari papan ketik yang bukan latin.
+        //
+        // Rentang seperti `1–5` ikut kena, dan itu justru membaik: sesudah
+        // diseragamkan dia jadi `1-5`, gagal `is_numeric`, lalu pulang `null` —
+        // sebelumnya dashnya dibuang dan hasilnya angka karangan `15`.
+        $mentah = str_replace(
+            ["\u{2212}", "\u{2013}", "\u{2014}", "\u{FF0D}"],
+            '-',
+            (string) $nilai,
+        );
+
+        $teks = preg_replace('/[^0-9,.\-]/', '', $mentah) ?? '';
 
         if ($teks === '' || $teks === '-') {
             return null;
