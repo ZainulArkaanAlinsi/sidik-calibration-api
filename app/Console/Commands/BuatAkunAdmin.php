@@ -52,6 +52,25 @@ use Illuminate\Console\Command;
  * `SEED_ADMIN_PASSWORD` kalau disetel, kalau tidak dibuat acak 32 karakter dan
  * dicetak SEKALI ke log deploy. Log Render tidak abadi — salin waktu deploy,
  * lalu suruh orangnya ganti lewat `/admin`.
+ *
+ * ## Kenapa environment yang salah pulang SUKSES
+ *
+ * Email salah ketik, organisasi belum di-seed, ID pegawai kembar — ketiganya
+ * salah SETELAN, bukan sistem yang rusak, dan tidak satu pun boleh mematikan
+ * API. Jadi ketiganya menulis alasannya lalu pulang sukses; akunnya memang
+ * tidak jadi, dan itu yang dilaporkan ke log.
+ *
+ * Yang TIDAK ikut ditelan: apa pun di luar ketiga itu. Exception dibiarkan
+ * naik, dan `docker/entrypoint.sh` sengaja TIDAK memakai `|| true` di sini —
+ * boot-nya berhenti dan deploy-nya kelihatan gagal.
+ *
+ * Itu bukan kehati-hatian umum, tapi mengikuti aturan yang sudah tertulis di
+ * [\App\Models\Concerns\Diaudit]: *"Kalau nyatet audit gagal, perubahannya
+ * ikut gagal … perubahan yang nggak kecatat lebih berbahaya daripada perubahan
+ * yang gagal."* `User::create()` menulis barisnya DULU, baru event `created`
+ * menulis `audit_logs`. Kalau yang kedua gagal, akun admin sudah terlanjur
+ * ada tanpa jejak audit — dan menelan galatnya berarti tidak ada satu pun yang
+ * tahu. Buat lab terakreditasi itu persis temuan yang paling mahal.
  */
 class BuatAkunAdmin extends Command
 {
@@ -91,9 +110,9 @@ class BuatAkunAdmin extends Command
             // Diperiksa karena email yang salah ketik TIDAK menghasilkan error
             // di mana pun: akunnya kebentuk, lalu orangnya tidak pernah bisa
             // login dan tidak ada yang tahu kenapa.
-            $this->error("AKUN_ADMIN_EMAIL bukan email yang sah: {$email}");
+            $this->error("AKUN_ADMIN_EMAIL bukan email yang sah: {$email} — akun tidak dibuat.");
 
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $sudahAda = User::query()->where('email', $email)->first();
@@ -129,7 +148,7 @@ class BuatAkunAdmin extends Command
                 .'dibuat. Nyalakan SEED_ON_BOOT sekali dulu biar master datanya keisi.'
             );
 
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $idPegawai = trim((string) config('seeding.akun_admin.id_pegawai')) ?: null;
@@ -139,9 +158,9 @@ class BuatAkunAdmin extends Command
             // ID pegawai juga dipakai buat login (`AuthController` memilih
             // kolomnya dari ada-tidaknya '@'), jadi yang kembar bukan sekadar
             // data kotor — dia bikin dua orang berebut satu identitas login.
-            $this->error("ID pegawai {$idPegawai} sudah dipakai akun lain.");
+            $this->error("ID pegawai {$idPegawai} sudah dipakai akun lain — akun tidak dibuat.");
 
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $akun = User::create([
