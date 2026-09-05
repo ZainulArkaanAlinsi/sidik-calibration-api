@@ -183,6 +183,47 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
    ke penyimpanan awet sebelum `schedule:work` terbukti jalan, karena tanpa
    pembersih terjadwal retensi 90 hari berubah jadi selamanya.
 
+## 4a. Ngasih orang akses admin tanpa buka panel
+
+Sehari-hari, nambah orang lewat `/admin` → **Users** → **New**. Itu tetap jalan
+yang benar dan nggak diganti.
+
+Yang di sini buat satu keadaan: waktu yang megang panelnya lagi nggak bisa
+membukanya. Isi empat variabel ini di Render → Environment, lalu deploy:
+
+| Key | Isi |
+|---|---|
+| `AKUN_ADMIN_EMAIL` | email orangnya — **ini yang menyalakan**, sisanya pelengkap |
+| `AKUN_ADMIN_NAMA` | nama yang tampil; kosong = emailnya yang dipakai |
+| `AKUN_ADMIN_ID_PEGAWAI` | boleh kosong; login nerima email **atau** ID pegawai |
+| `AKUN_ADMIN_DEPARTEMEN` | kosmetik |
+
+Waktu boot, kalau emailnya belum kedaftar, akunnya dibikin dengan role
+**admin** dan status **aktif**. Dua-duanya ditulis perintahnya sendiri, dan itu
+memang alasan fitur ini ada: form Filament memberi bawaan `teknisi` +
+`pending`, `AuthController` menolak akun pending SEBELUM sandinya dicek, dan
+`User::canAccessPanel()` menuntut admin DAN aktif. Salah satu keliru saja bikin
+akunnya kelihatan jadi tapi menolak orangnya masuk — tanpa pesan yang
+menjelaskan kenapa.
+
+Sandinya ikut `SEED_ADMIN_PASSWORD`. Kalau itu kosong, sandinya dibikin acak 32
+karakter dan **dicetak sekali ke deploy log** — cari baris `→ akun admin dari
+environment`. Log Render nggak abadi: salin waktu deploy, lalu suruh orangnya
+ganti lewat `/admin`.
+
+**Akun yang SUDAH ada nggak pernah disentuh** — bukan role-nya, bukan
+status-nya, apalagi sandinya. Jadi variabel ini aman ditinggal keisi. Kalau dia
+ikut menaikkan role, orang yang sengaja diturunkan lewat panel (berhenti kerja,
+pindah bagian) bakal naik lagi sendiri tiap deploy — diam-diam, tanpa ada yang
+menyetujuinya. Buat lab terakreditasi itu temuan audit.
+
+Akibatnya juga jelas: kalau akunnya terlanjur kebentuk salah, betulin lewat
+`/admin`, bukan dengan mengutak-atik variabel ini. Log deploy nyebutin role &
+status akun yang sudah ada tiap boot, jadi yang salah kelihatan tanpa dicari.
+
+Kalau `AKUN_ADMIN_EMAIL` dikosongin, perintahnya diam total dan nggak nambah
+waktu boot sama sekali.
+
 ## 4b. Membangun ulang sertifikat yang sudah terbit
 
 Kapan ini perlu: sesudah deploy yang **mengubah bentuk snapshot** — mis. U95

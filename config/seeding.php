@@ -40,4 +40,26 @@ return [
      */
     'sandi_awal' => env('SEED_ADMIN_PASSWORD'),
 
+    /*
+     * Satu akun admin yang dibentuk `akun:admin` di boot — buat memberi orang
+     * akses penuh tanpa ada yang perlu membuka panel.
+     *
+     * Kosong = fiturnya tidak dipakai, dan itu keadaan bawaannya. Yang
+     * menyalakannya cuma `AKUN_ADMIN_EMAIL`; tiga sisanya pelengkap.
+     *
+     * Emailnya lewat environment dan BUKAN ditulis di sini, alasannya sama
+     * dengan sandi di atas: berkas ini masuk git, dan repo ini publik. Alamat
+     * surel orang bukan milik repo ini untuk diterbitkan.
+     *
+     * Akun yang sudah ada tidak pernah disentuh perintah itu — lihat
+     * docblock-nya buat kenapa menaikkan role di boot itu lubang, bukan
+     * kemudahan.
+     */
+    'akun_admin' => [
+        'email' => env('AKUN_ADMIN_EMAIL'),
+        'nama' => env('AKUN_ADMIN_NAMA'),
+        'id_pegawai' => env('AKUN_ADMIN_ID_PEGAWAI'),
+        'departemen' => env('AKUN_ADMIN_DEPARTEMEN'),
+    ],
+
 ];

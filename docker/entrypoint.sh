@@ -140,6 +140,21 @@ if [ "${SEED_ON_BOOT}" = "true" ]; then
     php artisan db:seed --force
 fi
 
+# Akun admin dari environment — dibikin kalau AKUN_ADMIN_EMAIL keisi dan
+# emailnya belum kedaftar. Diam kalau nggak disetel.
+#
+# Kenapa lewat boot: menambah orang normalnya lewat /admin, dan itu tetap jalan
+# yang benar buat sehari-hari. Yang nggak bisa lewat situ cuma satu keadaan —
+# waktu yang megang panelnya lagi nggak bisa membukanya. Paket gratis Render
+# nggak punya shell sama sekali, jadi `tinker` juga bukan jalan keluar.
+#
+# `|| true` DISENGAJA. Environment akun yang salah (email salah ketik, ID
+# pegawai kembar) itu masalah satu akun; matiin seluruh API karenanya nukar
+# masalah kecil sama masalah besar. Alasannya kebaca di deploy log, dan
+# perintahnya sendiri nggak pernah menyentuh akun yang sudah ada.
+tahap "akun admin dari environment"
+php artisan akun:admin || true
+
 # Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit.
 #
 # ## Kenapa lewat boot, bukan dijalankan sekali lewat shell
