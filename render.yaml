@@ -268,6 +268,44 @@ services:
       - key: BANGUN_ULANG_ON_BOOT
         sync: false
 
+      # Satu akun admin yang dibikin sendiri waktu boot, kalau emailnya belum
+      # kedaftar. Kosongin kalau nggak dipakai — perintahnya diam total.
+      #
+      # Gunanya: ngasih orang akses penuh tanpa ada yang perlu buka /admin.
+      # Form Filament punya dua bawaan yang dua-duanya salah buat keperluan itu
+      # (status `pending`, role `teknisi`), dan akun yang kena dua-duanya
+      # kelihatan jadi tapi nolak orangnya masuk tanpa pesan yang njelasin.
+      # Perintahnya nulis role `admin` + status `aktif` sendiri.
+      #
+      # Sandinya ikut SEED_ADMIN_PASSWORD di atas; kalau itu kosong, dibikin
+      # acak dan dicetak SEKALI ke deploy log. Salin dari situ.
+      #
+      # Akun yang SUDAH ada nggak pernah disentuh — bukan role-nya, bukan
+      # status-nya, apalagi sandinya. Ninggalin variabel ini keisi itu aman;
+      # yang nggak aman kalau dia ikut naikin role, karena orang yang sengaja
+      # diturunin lewat panel bakal naik lagi sendiri tiap deploy.
+      #
+      # `sync: false` karena isinya alamat surel orang, dan blueprint ini ikut
+      # ke repo publik.
+      - key: AKUN_ADMIN_EMAIL
+        sync: false
+
+      # Nama yang tampil buat akun di atas. Dikosongin = emailnya yang dipakai
+      # sebagai nama, biar barisnya di daftar pengguna nggak kosong.
+      - key: AKUN_ADMIN_NAMA
+        sync: false
+
+      # ID pegawai buat akun di atas. Boleh dikosongin — login nerima email
+      # ATAU ID pegawai (yang ada '@' dianggap email), jadi tanpa ini dia tetap
+      # bisa masuk pakai emailnya. Kalau diisi, harus unik; yang kembar ditolak
+      # dengan alasan yang kebaca di deploy log.
+      - key: AKUN_ADMIN_ID_PEGAWAI
+        sync: false
+
+      # Departemen buat akun di atas. Kosmetik; boleh dikosongin.
+      - key: AKUN_ADMIN_DEPARTEMEN
+        sync: false
+
       # Sandi awal buat akun yang dibentuk seeder di atas. Dikosongin juga
       # aman — seeder bikin sandi acak dan nyetak sekali ke log deploy buat
       # disalin. Yang nggak boleh cuma satu: kepakainya `rahasia123`, karena
