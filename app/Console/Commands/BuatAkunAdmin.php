@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Database\Seeders\Concerns\MenyetelSandiAwal;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Bikin SATU akun admin dari environment — buat memberi orang akses penuh
@@ -163,7 +164,20 @@ class BuatAkunAdmin extends Command
             return self::SUCCESS;
         }
 
-        $akun = User::create([
+        // Dibungkus transaksi supaya baris `users` TIDAK bertahan kalau
+        // pencatatan auditnya gagal.
+        //
+        // `User::create()` menulis barisnya DULU, baru event `created` menulis
+        // `audit_logs`. Tanpa transaksi, kegagalan yang kedua meninggalkan akun
+        // admin yang sudah jadi tanpa jejak audit — persis keadaan yang
+        // [\App\Models\Concerns\Diaudit] menyatakan tidak boleh ada:
+        // *"perubahan yang nggak kecatat lebih berbahaya daripada perubahan
+        // yang gagal."*
+        //
+        // Mencabut `|| true` dari entrypoint saja tidak cukup: itu bikin
+        // kegagalannya KELIHATAN, tapi akunnya tetap terlanjur ada. Yang
+        // menghapusnya cuma rollback ini.
+        $akun = DB::transaction(fn (): User => User::create([
             'organization_id' => self::ORGANISASI,
             'name' => trim((string) config('seeding.akun_admin.nama')) ?: $email,
             'email' => $email,
@@ -175,7 +189,7 @@ class BuatAkunAdmin extends Command
             'status' => User::STATUS_AKTIF,
 
             'password' => $this->sandiAwal(),
-        ]);
+        ]));
 
         $this->info("Akun admin dibuat: {$akun->email} (role: admin, status: aktif).");
 
