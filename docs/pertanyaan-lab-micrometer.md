@@ -19,6 +19,11 @@ plus rumus drift dari tanggalnya sendiri). Semuanya cocok. **Setiap** selisih
 yang muncul sesudah itu tercatat di sini — tidak ada satu pun yang dibiarkan
 tanpa penjelasan.
 
+> **Ada formulir keputusannya.** `docs/keputusan-lab-micrometer.md` — satu
+> halaman, isinya cuma yang perlu diputuskan manajer teknis untuk §1, §3 dan §9,
+> lengkap dengan kotak centang dan blok tanda tangan. Mulai dari situ kalau yang
+> dicari "apa yang harus gw putuskan", bukan "kenapa".
+>
 > **Ada usulan jawabannya.** `docs/analisis-pertanyaan-lab-micrometer.md`
 > memuat analisis + rekomendasi untuk §1, §9, dan §11 (yang terakhir temuan
 > baru). Isinya USULAN, bukan keputusan — tapi tiga dari sebelas pertanyaan di
@@ -43,7 +48,7 @@ mengikuti kertas, bukan sheet `INPUT DATA`; rinciannya di
 |---|---|---|---|
 | §1 | Sesi 0-25 mm terbit **di bawah lantai CMC-nya sendiri** | Kerusakan | **Ya** — 0,735 → ditolak |
 | §2 | Umur drift dari `NOW()`, bukan tanggal kalibrasi | Kerusakan | **Ya** — kecil, tapi tiap kali beda |
-| §3 | Satuan sesi 0-25 mm `inch` sementara angkanya milimeter, **dan** pra-evaluasinya berisi kapasitas sepuluh kali | Data | **Ya** — koreksi −61 mm; keterulangan nol |
+| §3 | Satuan sesi 0-25 mm `inch` sementara angkanya milimeter, **dan** pra-evaluasinya berisi kapasitas sepuluh kali | Data | **Ya** — koreksi −61 mm; keterulangan nol. Sesi baru sudah DITAHAN kode; sisa keputusan cuma soal sertifikat lama |
 | §4 | `ci` memakai keping pertama tumpukan, bukan total nominal | Kerusakan | Tidak — ~5·10⁻¹⁰ dari `uc²` |
 | §5 | Komponen suhu & muai kembar menurut konstruksi | Metode | Tidak — ditiru |
 | §6 | `vi = 200` untuk semua komponen Type B | Metode | Tidak — ditiru |
@@ -197,12 +202,30 @@ budget dan U95 jatuh sampai ditutupi lantai CMC — bentuk kegagalan yang sama
 dengan resolusi kosong (§ audit no. 3): hasilnya tampak wajar dan tidak ada
 error di mana pun.
 
-**Yang dilakukan kode:** sesi ini **tidak ditanam** sebagai sesi contoh.
-Menanamnya berarti menerbitkan sesi dengan keterulangan nol; memperbaikinya
-berarti mengarang data keterulangan, dan keterulangan itu dasar seluruh budget.
-Datanya tetap disimpan utuh di `database/data/sesi-master-micrometer.json`
-supaya bisa diadu ulang begitu lab menjawab. Lihat `docs/permintaan-user-7.md`
-§21.
+**Yang dilakukan kode — DUA hal, dan yang kedua baru 5 Sep 2026:**
+
+1. Sesi ini **tidak ditanam** sebagai sesi contoh. Menanamnya berarti
+   menerbitkan sesi dengan keterulangan nol; memperbaikinya berarti mengarang
+   data keterulangan, dan keterulangan itu dasar seluruh budget. Datanya tetap
+   disimpan utuh di `database/data/sesi-master-micrometer.json` supaya bisa
+   diadu ulang begitu lab menjawab. Lihat `docs/permintaan-user-7.md` §21.
+
+2. **Sesi BARU dengan bentuk yang sama sekarang DITAHAN.** Gerbang lama cuma
+   menghitung `n >= 2` — sepuluh nilai identik lolos mulus. Sekarang simpangan
+   baku nol memblokir penerbitan, dengan alasan yang kebaca di `belum_dihitung`.
+
+   Kenapa penjaganya bukan "pembacaan harus di dalam rentang alat", yang lebih
+   jelas kedengarannya: **itu tidak menangkap kasus ini.** Kapasitas di workbook
+   0-25 mm ikut terkonversi jadi 635, jadi 635 memang di dalam rentangnya
+   sendiri — bug-nya konsisten dengan dirinya. Stdev nol satu-satunya sinyal
+   yang membedakannya dari tiga varian sehat (3,2e-4 sampai 5,3e-4 mm).
+
+   Dijaga `MicrometerMasterTest::test_pra_evaluasi_seragam_memblokir_penerbitan`.
+
+**Yang SENGAJA tidak dilakukan:** memberi keterulangan lantai berbasis resolusi
+waktu sebarannya memang nol — perlakuan yang lazim di EA-4/02. Memilih lantai
+berarti MENGUBAH U95 yang terbit, dan itu keputusan metode milik manajer teknis.
+Sampai dijawab, yang benar menahan, bukan mengarang.
 
 **Yang perlu diputuskan lab (tambahan):** apakah masih ada lembar kerja asli
 sesi ini, sehingga sepuluh pembacaan pra-evaluasinya bisa dimasukkan kembali —

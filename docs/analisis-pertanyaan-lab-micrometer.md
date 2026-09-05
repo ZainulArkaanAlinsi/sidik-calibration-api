@@ -29,6 +29,7 @@ Manajer teknis perlu mencocokkannya ke terbitan KAN/ILAC yang berlaku sekarang.
 | § | Pertanyaan | Usulan singkat | Kelas |
 |---|---|---|---|
 | §1 | Sertifikat lama terbit di bawah lantai CMC | **Ya, tinjau** — angkat sebagai ketidaksesuaian, lalu lingkup & nilai dampaknya | [KEPUTUSAN LAB] |
+| §3 | **BARU dianalisis** — pra-evaluasi 0-25 mm berisi 635,0 sepuluh kali | **Sudah ditambal di kode** (blokir stdev nol); yang tersisa keputusan sertifikat lama | [TERUKUR] + [KEPUTUSAN LAB] |
 | §9 | Sertifikat master cetak koreksi `0,000` | **Terbitkan ulang atas permintaan**, dan betulkan format sel master | [KEPUTUSAN LAB] |
 | §11 | **BARU** — komponen termal lenyap karena satuan `ci` | **Betulkan satuannya**, lalu tinjau ulang apakah CMC 0,87 µm masih tercapai | [TERUKUR] + [KEPUTUSAN LAB] |
 
@@ -168,6 +169,99 @@ Yang bisa gw bantu kerjakan kalau diminta: menyiapkan kueri/laporan untuk
 melingkupi sesi yang sudah masuk sistem, dan menyusun draf catatan
 ketidaksesuaiannya untuk ditinjau manajer teknis. Yang tidak bisa: memutuskan
 lingkup penarikan, dan menandatanganinya.
+
+---
+
+## §3 — Pra-evaluasi 0-25 mm berisi 635,0 sepuluh kali
+
+### Apa yang sebenarnya terjadi **[TERUKUR]**
+
+Blok pra-evaluasi sesi `095-CAL-324` berisi satu nilai, disalin sepuluh kali:
+
+```
+635.0  635.0  635.0  635.0  635.0  635.0  635.0  635.0  635.0  635.0
+```
+
+635 = 25 × 25,4. Itu **kapasitas alat** yang sudah terkonversi bug satuan inch
+(§3 lama), bocor ke blok yang seharusnya berisi sepuluh pembacaan berulang.
+
+Dibandingkan ketiga varian lain, sesi ini satu-satunya yang sebarannya nol:
+
+| Varian | n | Simpangan baku (mm) | Rentang nilai |
+|---|---|---|---|
+| **0-25 mm** | 10 | **0,000000000** | 635,000 – 635,000 |
+| 25-50 mm | 10 | 0,000316228 | 49,999 – 50,000 |
+| 50-75 mm | 10 | 0,000516398 | 75,002 – 75,003 |
+| 75-100 mm | 10 | 0,000527046 | 100,000 – 100,001 |
+
+### Kenapa ini lolos semua penjagaan **[TERUKUR]**
+
+Gerbang yang ada menghitung **berapa** pembacaan (`n >= 2`), bukan apakah
+pembacaannya **beragam**. Sepuluh nilai identik lolos dengan mulus.
+
+Akibatnya, diukur pada sesi 25-50 mm dengan hanya blok pra-evaluasinya diganti:
+
+| Pra-evaluasi | `uc` | U95 terbit |
+|---|---|---|
+| beragam (asli) | 0,4439 µm | **0,8722 µm** |
+| sepuluh nilai identik | 0,4325 µm | **0,8700 µm** |
+
+Angka kedua **persis lantai CMC pita B** (0,87 µm). Jadi lantai yang seharusnya
+jadi penjaga justru **menyamarkan** komponen yang lenyap. Selisihnya 0,25 % dan
+nol error di sepanjang jalur — bentuk kegagalan yang sama persis dengan resolusi
+kosong.
+
+### Penjaga yang TIDAK bekerja, dan ini yang penting **[TERUKUR]**
+
+Refleks pertama adalah menolak pembacaan yang jatuh di luar rentang alat. **Itu
+tidak menangkap kasus ini.** Kapasitas di workbook 0-25 mm ikut terkonversi jadi
+635, jadi 635 memang berada "di dalam rentang" 0–635 versi berkas itu sendiri.
+Bug-nya konsisten dengan dirinya sendiri.
+
+Yang benar-benar membedakan sesi cacat ini dari tiga sesi sehat cuma satu:
+**simpangan bakunya nol.**
+
+### Yang sudah dikerjakan di kode **[TERUKUR]**
+
+`MicrometerCalculator` sekarang menahan penerbitan waktu `n >= 2` tapi simpangan
+bakunya nol, dengan alasan yang kebaca di `belum_dihitung`. Dikunci
+`MicrometerMasterTest::test_pra_evaluasi_seragam_memblokir_penerbitan`.
+
+Dibandingkan `> 0` persis, bukan ke ambang: nol eksak itu tanda tangan "satu
+nilai disalin n kali". Sebaran nyata yang lebih halus dari resolusi tetap
+menghasilkan stdev bukan-nol.
+
+### Yang sengaja TIDAK dikerjakan **[PRINSIP]**
+
+Waktu sebaran memang di bawah resolusi alat, praktik lazim (EA-4/02 dan
+turunannya) memberi keterulangan **lantai berbasis resolusi**, bukan nol.
+
+Itu **tidak** dipasang, dan alasannya bukan kemalasan: memilih lantai berarti
+**mengubah U95 yang terbit**. Itu keputusan metode milik manajer teknis, bukan
+keputusan yang boleh diambil diam-diam oleh kode — persis aturan "master lab
+ditiru, bukan dibetulkan diam-diam". Sampai dijawab, yang benar **menahan**,
+bukan mengarang angka.
+
+### Usulan **[KEPUTUSAN LAB]**
+
+1. **Untuk sesi baru:** sudah beres. Sepuluh pembacaan identik sekarang ditahan
+   dengan alasan yang kebaca. Tidak ada yang perlu diputuskan.
+
+2. **Untuk `095-CAL-324` yang sudah terbit:** ini **satu sertifikat yang sama**
+   dengan §1. Jangan diperlakukan sebagai dua temuan terpisah — satu tinjauan
+   ketidaksesuaian mencakup keduanya, dan §1 yang memimpin karena dampaknya
+   lebih besar.
+
+3. **Yang perlu dijawab lab:** apakah lembar kerja asli sesi itu masih ada,
+   sehingga sepuluh pembacaan pra-evaluasi yang sebenarnya bisa dimasukkan
+   kembali? Kalau ada, sesi itu bisa dihitung ulang dengan benar dan §1 ikut
+   terjawab dengan angka, bukan dengan perkiraan. Kalau tidak ada, sesi itu
+   **tidak bisa** dipulihkan secara metrologis — keterulangan adalah dasar
+   seluruh budget, dan menggantinya berarti mengarang.
+
+4. **Yang perlu diputuskan lab:** perlakuan resmi waktu sebaran pra-evaluasi
+   memang nol pada resolusi alat — lantai berbasis resolusi, atau ulangi
+   pengukuran. Sekali diputuskan, kode mengikuti; sampai itu, ditahan.
 
 ---
 

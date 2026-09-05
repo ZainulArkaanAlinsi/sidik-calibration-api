@@ -385,6 +385,78 @@ class MicrometerMasterTest extends TestCase
         );
     }
 
+    /**
+     * Pra-evaluasi yang SEMUA nilainya sama memblokir penerbitan.
+     *
+     * Penjaga `n >= 2` yang sudah ada menghitung BERAPA pembacaan, bukan apakah
+     * pembacaannya beragam — jadi sepuluh nilai identik lolos, simpangan
+     * bakunya nol, dan komponen keterulangan lenyap dari budget.
+     *
+     * Bukan kasus karangan: workbook master 0-25 mm memuat 635,0 sepuluh kali,
+     * nilai kapasitas hasil bug satuan inch yang bocor ke blok pra-evaluasi.
+     * Dan penjaga "pembacaan harus di dalam rentang alat" TIDAK menangkapnya —
+     * kapasitas di workbook itu ikut terkonversi jadi 635, jadi 635 memang di
+     * dalam rentangnya sendiri. Stdev nol satu-satunya yang membedakan varian
+     * itu dari tiga lainnya (3,2e-4 sampai 5,3e-4 mm).
+     *
+     * Yang dikunci di sini SEKALIGUS alasan penjaganya perlu ada: tanpa dia,
+     * yang terbit 0,8700 µm — PERSIS lantai CMC pita B, jadi lantai yang
+     * seharusnya menjaga malah menyamarkan komponen yang hilang.
+     */
+    public function test_pra_evaluasi_seragam_memblokir_penerbitan(): void
+    {
+        $kalk = new MicrometerCalculator;
+
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal' => [6.0, 19.0],
+            'pembacaan' => [25.001, 25.0, 25.001, 25.0, 25.001],
+        ]];
+        $konteks = [
+            'kapasitas_mm' => 50.0,
+            'resolusi_mm' => 0.001,
+            'tanggal_kalibrasi' => new DateTimeImmutable('2025-05-02'),
+            'balok_pra_evaluasi' => [50.0],
+            'suhu_ruang_rata_c' => 20.55,
+        ];
+
+        $beragam = $kalk->hitungSesi($titik, [
+            ...$konteks,
+            'pra_evaluasi' => [50.0, 50.0, 50.0, 49.999, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0],
+        ]);
+        $this->assertTrue($beragam['boleh_terbit'], 'Pra-evaluasi beragam harus boleh terbit.');
+
+        $seragam = $kalk->hitungSesi($titik, [
+            ...$konteks,
+            'pra_evaluasi' => array_fill(0, 10, 50.0),
+        ]);
+
+        $this->assertFalse(
+            $seragam['boleh_terbit'],
+            'Sepuluh pembacaan identik tetap terbit — keterulangannya nol dan lantai CMC menutupinya.',
+        );
+
+        // Alasannya harus KEBACA di `belum_dihitung`, bukan cuma jadi baris
+        // yang hilang: peringatan yang tidak menyebutkan sebabnya melatih admin
+        // menekan "setujui tetap" tanpa membaca.
+        $this->assertNotEmpty($seragam['ditolak'], 'Blokirnya wajib menyertakan alasan.');
+        $this->assertStringContainsString(
+            'simpangan',
+            mb_strtolower(implode(' ', array_column($seragam['ditolak'], 'alasan'))),
+            'Alasan penolakan harus menyebut simpangan baku, bukan sekadar "tidak bisa dihitung".',
+        );
+
+        // Dan inilah kenapa gerbangnya perlu: `uc`-nya BEDA, tapi yang terbit
+        // sama-sama mendarat di ~0,87 karena lantai CMC. Tanpa gerbang, yang
+        // tercetak kelihatan wajar.
+        $this->assertGreaterThan(
+            $seragam['ketidakpastian_gabungan'],
+            $beragam['ketidakpastian_gabungan'],
+            'Tanpa keterulangan, uc justru lebih KECIL — itu arah bahayanya.',
+        );
+        $this->assertEqualsWithDelta(0.87, $seragam['u95_sertifikat'], 5e-4, 'U95 seragam mendarat di lantai CMC');
+    }
+
     public function test_resolusi_kosong_memblokir_penerbitan(): void
     {
         $kalk = new MicrometerCalculator;
