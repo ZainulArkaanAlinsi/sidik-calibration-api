@@ -136,7 +136,16 @@ class FolderController extends Controller
                 // `calibrationSession` ikut karena `FolderFileResource` nyebut
                 // nomor sesi buat baris lembar kerja — tanpa dimuat di sini,
                 // folder yang isinya 30 lembar kerja jadi 30 query tambahan.
-                ->with(['certificate', 'uploader', 'calibrationSession'])
+                // `equipment` & `teknisi` ikut karena `FolderFileResource`
+                // nyebut nama alat dan nama teknisi di tiap baris lembar
+                // kerja — tanpa dimuat di sini, folder berisi 30 lembar jadi
+                // 60 query tambahan.
+                ->with([
+                    'certificate',
+                    'uploader',
+                    'calibrationSession.equipment',
+                    'calibrationSession.teknisi',
+                ])
                 ->orderByDesc('id'),
         ]);
 
@@ -156,7 +165,15 @@ class FolderController extends Controller
             ]);
         }
 
-        return response()->json(['data' => new FolderResource($folder)]);
+        // Rantai induk dimuat sekaligus buat breadcrumb — `jalurKeAkar()`
+        // manjat lewat `parent`, dan tanpa ini tiap langkah jadi satu query
+        // lazy sendiri. Empat tingkat cukup: pohon arsipnya PT -> tahun ->
+        // paling banter satu-dua folder manual.
+        $folder->load('parent.parent.parent.parent');
+
+        return response()->json([
+            'data' => (new FolderResource($folder))->denganBreadcrumb(),
+        ]);
     }
 
     /** Admin doang (dijaga `role:admin` di routes). */

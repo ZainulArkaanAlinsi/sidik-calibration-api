@@ -1605,6 +1605,60 @@ Balikannya **bentuk yang sama persis** kayak `GET /api/arsip/folders/{id}`
 (breadcrumb + `sub_folder[]` + `file[]`), karena handler-nya memang yang sama.
 Jadi **parser folder yang udah ada bisa dipakai apa adanya.**
 
+### Bentuk isi folder — Update 27 Agt, bentuknya sempat NGGAK NYAMBUNG
+
+```json
+{ "data": {
+    "id": 2, "nama": "2026", "tipe": "sistem", "parent_id": 1,
+    "pelanggan": { "id": 1, "nama": "PT Alfa", "alamat": "Jl. Raya Cikarang KM 27" },
+    "breadcrumb": [
+      { "id": 1, "nama": "PT Alfa", "is_root": true },
+      { "id": 2, "nama": "2026",    "is_root": false }
+    ],
+    "sub_folder": [ { "id": 3, "nama": "Revisi", "tipe": "manual", "parent_id": 2 } ],
+    "file": [
+      { "id": 1, "nama": "Lembar kerja", "sumber": "lembar_kerja", "sertifikat": null,
+        "lembar_kerja": {
+          "calibration_session_id": 5, "nomor_sesi": "KAL/2026/08/0005",
+          "status": "disetujui", "keputusan": "PASS",
+          "tanggal_kalibrasi": "2026-08-26",
+          "equipment": { "nama_alat": "Thermocouple Fluke 51-II" },
+          "teknisi": { "nama": "Budi Teknisi" }
+        } }
+    ]
+} }
+```
+
+> **⛔ Sampai 27 Agt 2026 sisi mobile membaca bentuk yang beda sama sekali** —
+> `json['folder']`, `json['subfolder']`, dan `json['data']` sebagai daftar
+> berkas. Nggak satu pun kunci itu pernah ada. Yang menentukan: `json['data']`
+> yang sebenarnya OBJEK bikin `as List` di Dart **ngelempar**, jadi tiap folder
+> yang dibuka lawan server asli gagal dan layar Arsip berhenti di pesan error.
+> Nol test nangkep itu di kedua repo — semua test arsip lewat mock yang bikin
+> objeknya langsung, jadi parser-nya nggak pernah sekali pun dilewati.
+> Sekarang dijaga `BentukIsiFolderArsipTest` (sisi API) dan
+> `arsip_bentuk_asli_test.dart` (sisi mobile, nyuapin JSON rekaman asli).
+
+**Tiga hal yang perlu diperhatiin waktu membacanya:**
+
+| | |
+|---|---|
+| `data[].file[].id` | id baris **`folder_files`** |
+| `data[].file[].lembar_kerja.calibration_session_id` | id **SESI KALIBRASI** — ini yang dipakai buka detail sesi & yang diminta `PUT /arsip/berkas/{sesiId}/pindah` |
+| `is_root` | **nggak dikirim**; turunin dari `parent_id === null` |
+
+- **`breadcrumb` cuma ada di sini, nggak di `GET /arsip/perusahaan`.** Daftar
+  akar bisa berisi ratusan PT dan tiap baris bakal manjat `parent` sendiri buat
+  jalur yang selalu satu langkah. Yang butuh jejaknya cuma layar yang lagi
+  berdiri di DALAM satu folder.
+- **`lembar_kerja` bawa `equipment`, `teknisi`, `tanggal_kalibrasi`, `keputusan`**
+  sejak 27 Agt. Keempatnya yang dipajang kartu berkas, dan nggak satu pun bisa
+  diturunkan dari baris `folder_files` — di situ cuma ada nama berkas dan
+  penunjuk sesinya.
+- **`lembar_kerja` `null`** buat berkas yang bukan lembar kerja (sertifikat
+  unggahan, berkas manual). Barisnya tetap dikirim; yang nggak punya sesi emang
+  nggak bisa dibuka ke layar detail sesi.
+
 Bedanya sama `GET /api/arsip/folders/{id}`: yang ini **find-or-create** — PT yang
 belum pernah punya sertifikat pun tetap kebuka, folder akarnya dibikin saat itu.
 Tanpa ini tap PT mentok `404` padahal PT-nya jelas ada.
