@@ -44,6 +44,33 @@ if [ -z "${DB_HOST}" ] && [ -z "${DB_URL}" ]; then
     exit 1
 fi
 
+# Penanda waktu tiap tahap boot.
+#
+# Render ngasih JENDELA 15 MENIT dari "Deploying..." sampai health check harus
+# lolos, dan semua yang di bawah ini jalan SEBELUM server nerima request
+# pertama. Deploy 1 Sep 2026 timeout dengan 6 menit 39 detik habis di tahap-
+# tahap ini — dan lognya SUNYI selama itu, jadi nggak ada yang bisa nunjuk
+# tahap mana yang lambat.
+#
+# `date` doang, nggak ngubah perilaku apa pun. Yang dibeli: deploy gagal
+# berikutnya nyebutin sendiri tahap yang makan jendelanya.
+tahap() {
+    echo "[$(date -u '+%H:%M:%S')] → $1"
+}
+
+# Seeder di boot itu jebakan yang mahal: DemoDataSeeder nulis ulang SELURUH
+# sesi contoh tiap container nyala, dan di MySQL gratis itu bisa makan menit —
+# menit yang diambil dari jendela health check yang sama. Dokumennya bilang
+# "nyalain sekali pas deploy pertama, terus matiin"; kalau nggak pernah
+# dimatiin, tiap deploy bayar ongkosnya lagi tanpa ada yang tahu.
+if [ "${SEED_ON_BOOT}" = "true" ]; then
+    echo "!! SEED_ON_BOOT=true — seeder jalan tiap container nyala." >&2
+    echo "   Ini nambah menit ke tiap boot dan diambil dari jendela health check" >&2
+    echo "   Render yang cuma 15 menit. Matiin di Render → Environment sesudah" >&2
+    echo "   deploy pertama berhasil." >&2
+fi
+
+tahap "bersihin cache build"
 # Cache lama dari tahap build (kalau ada) dibuang dulu, biar config:cache di
 # bawah baca environment yang sekarang, bukan yang keburu kebekukan pas build.
 php artisan config:clear >/dev/null 2>&1 || true
@@ -101,7 +128,7 @@ until php artisan db:show >/tmp/cek-db.log 2>&1; do
     sleep 10
 done
 
-echo "→ migrasi database"
+tahap "migrasi database"
 php artisan migrate --force
 
 # Sengaja pakai saklar, bukan otomatis: seeder di project ini idempotent
@@ -109,13 +136,121 @@ php artisan migrate --force
 # kalau jalan tiap container bangun, data yang lagi diuji teknisi bisa
 # ketimpa balik ke bawaan. Nyalain sekali pas deploy pertama, terus matiin.
 if [ "${SEED_ON_BOOT}" = "true" ]; then
-    echo "→ seeding data awal"
+    tahap "seeding data awal"
     php artisan db:seed --force
 fi
 
+# Akun admin dari environment — dibikin kalau AKUN_ADMIN_EMAIL keisi dan
+# emailnya belum kedaftar. Diam kalau nggak disetel.
+#
+# Kenapa lewat boot: menambah orang normalnya lewat /admin, dan itu tetap jalan
+# yang benar buat sehari-hari. Yang nggak bisa lewat situ cuma satu keadaan —
+# waktu yang megang panelnya lagi nggak bisa membukanya. Paket gratis Render
+# nggak punya shell sama sekali, jadi `tinker` juga bukan jalan keluar.
+#
+# SENGAJA TANPA `|| true`, dan itu keputusan — bukan kelalaian.
+#
+# Environment akun yang salah (email salah ketik, organisasi belum di-seed, ID
+# pegawai kembar) emang nggak boleh matiin API, dan itu udah diurus DI DALAM
+# perintahnya: ketiganya nulis alasannya lalu pulang sukses. Jadi nggak ada
+# lagi yang perlu ditelan di sini.
+#
+# Yang tersisa cuma kegagalan tak terduga, dan yang itu HARUS mematikan boot.
+# `User` pakai trait Diaudit, dan aturannya udah tertulis di sana: "Kalau
+# nyatet audit gagal, perubahannya ikut gagal … perubahan yang nggak kecatat
+# lebih berbahaya daripada perubahan yang gagal." `User::create()` nulis
+# barisnya DULU, baru event `created` nulis `audit_logs` — jadi kalau yang
+# kedua gagal sementara galatnya ditelan, akun admin udah terlanjur ada tanpa
+# jejak audit dan nggak ada satu pun yang tahu. Buat lab terakreditasi itu
+# temuan, bukan ketidaknyamanan.
+#
+# Temuan review CodeRabbit di PR #175.
+tahap "akun admin dari environment"
+php artisan akun:admin
+
+# Bangun ulang snapshot & PDF sertifikat yang SUDAH terbit.
+#
+# ## Kenapa lewat boot, bukan dijalankan sekali lewat shell
+#
+# Alasannya sama persis dengan impor direktori di bawah: paket gratis Render
+# TIDAK menyediakan shell sama sekali ("Shell is not supported for free compute
+# plans" — dialog upgrade-nya muncul begitu tab Shell dibuka). Tanpa jalur ini,
+# `sertifikat:bangun-ulang` sama sekali tidak bisa dijalankan di produksi, dan
+# perbaikan yang menyentuh SNAPSHOT tidak akan pernah sampai ke sertifikat yang
+# terlanjur terbit.
+#
+# Tombol "Cetak ulang PDF" di panel admin bukan penggantinya, dan itu disengaja:
+# dia sengaja TIDAK menyentuh snapshot ([CetakUlangSertifikat]) — yang
+# dirender ulang cuma lembarnya, dari snapshot yang sama persis. Perbaikan
+# seperti U95 per titik atau urutan tabel ketertelusuran hidup DI DALAM
+# snapshot, jadi tombol itu tidak memunculkannya.
+#
+# ## Kenapa saklar, dan kenapa harus dimatikan lagi
+#
+# Perintahnya aman diulang — hasilnya cuma bergantung data sesi + kode yang
+# lagi jalan — tapi dia menulis ulang setiap berkas PDF tiap kali jalan. Di
+# paket gratis itu menit yang diambil dari jendela health check Render yang
+# cuma 15 menit, dan ongkosnya tumbuh seiring jumlah sertifikat. Nyalakan
+# sesudah deploy yang mengubah bentuk snapshot, baca hasilnya di deploy log,
+# lalu matikan lagi.
+#
+# ## `|| true` di sini BUKAN kelalaian
+#
+# Sama alasannya dengan impor direktori: sertifikat yang gagal dibangun ulang
+# tetap punya snapshot & PDF lamanya — dokumennya masih utuh, cuma belum ikut
+# betul. Menjatuhkan boot karena itu berarti menukar satu berkas yang
+# ketinggalan dengan SELURUH server yang dipakai teknisi di lokasi. Gagalnya
+# tetap kelihatan di log, dan perintahnya sendiri sudah memisahkan "dilewati"
+# dari "gagal" di kode keluarnya.
+if [ "${BANGUN_ULANG_ON_BOOT}" = "true" ]; then
+    tahap "bangun ulang snapshot & PDF sertifikat"
+    echo "!! BANGUN_ULANG_ON_BOOT=true — jalan tiap container nyala." >&2
+    echo "   Matikan lagi di Render → Environment sesudah hasilnya kebaca di" >&2
+    echo "   log ini, biar tiap boot berikutnya nggak nulis ulang semua PDF." >&2
+    php artisan sertifikat:bangun-ulang --render-ulang-pdf || true
+fi
+
+# Direktori perusahaan rujukan (10.320 PT) dimuat di sini, bukan lewat shell.
+#
+# ## Kenapa di boot, bukan sekali manual
+#
+# Paket gratis Render TIDAK menyediakan shell sama sekali ("Shell is not
+# supported for free compute plans"), jadi tidak ada tempat lain buat
+# menjalankannya. Tanpa baris ini, tabelnya selamanya kosong di produksi dan
+# pencarian PT jatuh ke OpenStreetMap saja — yang cakupannya tipis buat pabrik
+# di kawasan industri, persis masalah yang mau ditutup.
+#
+# ## Kenapa ini aman ditaruh di jendela health check
+#
+# `--lewati-kalau-terisi` memeriksa isi tabel SEBELUM membaca berkas. Boot
+# pertama sesudah deploy membayar penuh (baca 1,3 MB CSV + 22 paket upsert,
+# hitungan detik); boot kedua dan seterusnya — termasuk tiap Render
+# membangunkan service yang ketiduran — cuma membayar satu query COUNT.
+#
+# Yang diperiksa ISI tabelnya, bukan penanda "sudah pernah jalan": database
+# yang direset bikin penanda berbohong, dan tanpa shell tidak ada yang bisa
+# membetulkannya. Hitungan baris selalu jujur, jadi jalur ini memulihkan
+# dirinya sendiri.
+#
+# ## `|| true` di sini BUKAN kelalaian
+#
+# Direktori ini fitur kenyamanan: tanpa dia, pendaftaran pelanggan tetap jalan
+# lewat ketik tangan dan OSM. Membiarkan impor yang gagal menjatuhkan boot
+# berarti menukar fitur kenyamanan dengan SELURUH server yang dipakai teknisi
+# di lokasi — dan itu pertukaran yang salah arah. Gagalnya tetap kelihatan di
+# log, dan `GET /api/health` melaporkan `direktori_perusahaan.lokal.baris`
+# supaya keadaannya bisa diperiksa dari luar tanpa masuk ke mana pun.
+tahap "muat direktori perusahaan (dilewati kalau sudah terisi)"
+php artisan direktori:impor-lokal database/direktori/jababeka.csv \
+    --sumber=jababeka --lewati-kalau-terisi || true
+php artisan direktori:impor-lokal database/direktori/indonetwork.csv \
+    --sumber=indonetwork --lewati-kalau-terisi || true
+
 php artisan storage:link >/dev/null 2>&1 || true
 
+tahap "config:cache"
 php artisan config:cache
+tahap "view:cache"
 php artisan view:cache
 
 # `route:cache` SENGAJA nggak dipanggil. routes/api.php nutup /health pakai
@@ -173,5 +308,5 @@ php artisan view:cache
     done
 ) &
 
-echo "→ server jalan di port ${PORT}"
+tahap "server jalan di port ${PORT} — jendela health check mulai kepakai"
 exec frankenphp run --config /etc/caddy/Caddyfile

@@ -10,7 +10,10 @@ use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\TimbanganMentah;
+use App\Support\WaktuMentah;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -104,6 +107,32 @@ class HitungUlangSesi extends Command
                 // situ nggak berarti apa-apa. Kosong buat lima belas alat lain.
                 $pasangan = PasanganStandarUutMentah::dari($baris);
 
+                // Blok Timbangan. Dites SEBELUM `$pasangan`/`$grid` dengan
+                // alasan yang persis sama dengan yang sudah ditulis di bawah:
+                // baris Timbangan PUNYA `peran_sensor`, cuma kosakatanya lain
+                // lagi (`z1`/`m`/`m_aksen`/`z2`/`nominal`). Diperiksa
+                // belakangan, tiap titiknya jatuh ke cabang alat lain, ketemu
+                // deret kosong, lalu di-`continue` — perintahnya "sukses"
+                // tanpa menghitung apa pun.
+                $timbangan = TimbanganMentah::dari($baris);
+
+                // Dua deret waktu lembar Timer/Stopwatch. Diperiksa dengan
+                // alasan yang persis sama dengan Timbangan di atas: barisnya
+                // PUNYA `peran_sensor`, cuma kosakatanya lain lagi
+                // (`waktu_standar`/`waktu_uut`). Kalau tidak dites duluan, tiap
+                // titiknya jatuh ke cabang alat lain, ketemu deret yang bukan
+                // miliknya, dan angkanya salah tanpa satu pun error.
+                $waktu = WaktuMentah::dari($baris);
+
+                // Tumpukan balok ukur + deret pembacaan lembar Micrometer.
+                // Diperiksa dengan alasan yang persis sama dengan Timbangan &
+                // Timer di atas: barisnya PUNYA `peran_sensor`, cuma
+                // kosakatanya lain lagi (`mikro_balok`/`mikro_pembacaan`).
+                // Kalau tidak dites duluan, tiap titiknya jatuh ke cabang alat
+                // lain, ketemu deret yang bukan miliknya, dan angkanya salah
+                // tanpa satu pun error.
+                $mikro = MicrometerMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -115,7 +144,51 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($pasangan !== []) {
+                if ($mikro !== []) {
+                    // Gerbangnya jumlah pembacaan, bukan jumlah baris: satu
+                    // titik berisi sampai 3 nominal balok + 5 pembacaan, jadi
+                    // hitungan datar tetap lolos walau sisi pembacaannya
+                    // kosong — dan "koreksi" yang lahir dari sisi kosong itu
+                    // justru sebesar total nominalnya, angka yang kelihatan
+                    // masuk akal.
+                    //
+                    // Titik NOL (rahang tertutup, tanpa balok ukur) sah dan
+                    // memang bernominal kosong, jadi yang diwajibkan cuma sisi
+                    // pembacaannya.
+                    if (count($mikro[MicrometerMentah::PERAN_PEMBACAAN]) < 2) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($waktu !== []) {
+                    // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah
+                    // baris: satu titik berisi 3 standar + 3 UUT, jadi hitungan
+                    // datar tetap lolos walau satu sisinya kosong — dan koreksi
+                    // yang lahir dari sisi yang kosong itu justru sebesar
+                    // koreksi standarnya, angka yang kelihatan masuk akal.
+                    if (count($waktu['waktu_standar']) < 2 || count($waktu['waktu_uut']) < 2) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($timbangan !== []) {
+                    // Gerbangnya KEEMPAT pembacaan, bukan jumlah baris: satu
+                    // titik berisi 4 pembacaan + sampai 6 baris nominal, jadi
+                    // hitungan datar selalu lolos walau pembacaannya bolong.
+                    $kurang = false;
+
+                    foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
+                        if ($timbangan[$peran] === null) {
+                            $kurang = true;
+                        }
+                    }
+
+                    if ($kurang || $timbangan['nominal'] === []) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($pasangan !== []) {
                     // Gerbangnya jumlah pembacaan PER PERAN, bukan jumlah baris:
                     // satu titik berisi 5 standar + 5 UUT, jadi hitungan datar
                     // selalu lolos walau salah satu sisinya kosong.
@@ -177,12 +250,41 @@ class HitungUlangSesi extends Command
                         'tipe_sensor' => $sesi->tipe_sensor,
                         ...$grid,
                         ...$pasangan,
+                        // Empat pembacaan + slot nominal satu titik akurasi
+                        // Timbangan. Blok tingkat-sesinya (keterulangan,
+                        // eksentrisitas, histeresis) ikut lewat
+                        // `spesifikasi_alat` di bawah.
+                        ...$timbangan,
+                        // Dua deret waktu lembar Timer/Stopwatch. Kejadian
+                        // KEDELAPAN dengan pola yang sama, jadi ditulis bareng
+                        // profilnya alih-alih ditemukan belakangan lewat
+                        // `hitung_ulang_gagal` di tiap titik. Kosong buat dua
+                        // puluh tiga alat lain.
+                        ...$waktu,
+                        // Tumpukan balok ukur + deret pembacaan lembar
+                        // Micrometer. Kejadian KESEMBILAN dengan pola yang
+                        // sama. Blok tingkat-sesinya (pra-evaluasi, suhu,
+                        // kapasitas, resolusi) ikut lewat `spesifikasi_alat`
+                        // di bawah. Kosong buat dua puluh empat alat lain.
+                        ...$mikro,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.
                         'alat_bantu' => $sesi->alat_bantu,
                         'tipe_pencelupan' => $sesi->tipe_pencelupan,
                         'titik_es' => $sesi->titik_es ?? [],
+                        // Lembar TIDS menaruh dryblock-nya di sini, bukan di
+                        // kolom `alat_bantu`. Ketinggalan = hitung ulang sesi
+                        // TIDS kehilangan dua komponen budget.
+                        'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
+                        // Titik nol umur drift standar Micrometer — dibaca
+                        // balik dari sesinya, bukan `now()`. Master memakai
+                        // `NOW()`, dan karena itu U95 sesi yang sama tidak
+                        // pernah terulang. Diabaikan profil lain.
+                        'tanggal_kalibrasi' => $sesi->tanggal_kalibrasi,
+                        // Rata-rata suhu ruangan MENTAH — sumber suhu balok
+                        // ukur & suhu UUT Micrometer. Diabaikan profil lain.
+                        'suhu_ruang_rata' => MicrometerMentah::rataSuhuRuang($sesi->suhu_awal, $sesi->suhu_akhir),
                     ],
                 ];
             }

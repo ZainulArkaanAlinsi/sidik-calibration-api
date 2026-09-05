@@ -32,6 +32,21 @@ use App\Models\Standard;
  */
 class TurbidimeterProfile extends CalibrationProfile
 {
+    /**
+     * Nomor Instruksi Kerja alat ini — `DATABASE` baris 23, yang di lembar master dieja *Turbidy
+     * Meter*. Nama alat `Turbidimeter` tidak memuat ejaan itu, jadi cadangan
+     * pencocokan nama meleset dan yang terbit `SIDIK-IK-CAL-0523` TANPA
+     * revisinya.
+     *
+     * Dicetak di kolom `Calibration Method` sertifikat lewat
+     * [CalibrationProfile::kodeMetode]. Dinyatakan di sini, BUKAN dicocokkan
+     * dari nama alat: cadangan pencocokan nama mencari "jenis pengukuran" di
+     * dalam nama alat, dan meleset begitu pelanggan menamai alatnya di luar
+     * kosakata master — yang terbit kolom kosong atau nomor tanpa revisi, di
+     * dokumen terakreditasi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0523_Rev.1';
+
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0530_Rev.2';
 
     public const JUMLAH_PENGULANGAN = 5;
@@ -370,7 +385,7 @@ class TurbidimeterProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -488,75 +503,6 @@ class TurbidimeterProfile extends CalibrationProfile
         return $bentuk;
     }
 
-    /**
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
-    }
-
     /** Master Turbidimeter: sel T format `General` → `23,07`. */
     public function desimalSuhuEnv(): ?int
     {
@@ -567,5 +513,29 @@ class TurbidimeterProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return 0;
+    }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,041 / 3,1 / 22 NTU.
+     *
+     * Rentangnya 537 KALI LIPAT. Satu angka buat seluruh tabel di sini bukan
+     * sekadar kehilangan detail — dia menyatakan ketidakpastian titik 0,041
+     * NTU sebesar 22 NTU, atau sebaliknya.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 }

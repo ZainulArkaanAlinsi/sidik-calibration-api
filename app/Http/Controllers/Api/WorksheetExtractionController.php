@@ -79,7 +79,21 @@ class WorksheetExtractionController extends Controller
             // teknisi cuma "gagal baca, isi manual".
             'kolom_suhu' => ['sometimes', 'nullable', 'boolean'],
             'standar_di_baris' => ['sometimes', 'nullable', 'boolean'],
-            // Opsional: sesi baru belum punya id. Kalau dikirim → batasin akses & tautin log.
+            // Aturannya `nullable`, TAPI jalur ini menolak yang kosong.
+            //
+            // Bentuknya sengaja nggak dinaikkan jadi `required`: yang menolak
+            // `bentukKertas()`, dan penolakannya pulang 422 `fallback_manual`
+            // yang dimengerti aplikasi — bukan 422 validasi yang cuma menyebut
+            // nama kolom. Dinaikkan di sini, klien lama dapat pesan yang nggak
+            // bisa dia terjemahkan jadi "isi manual aja".
+            //
+            // Yang PENTING buat perubahan berikutnya: tanpa sesi nggak ada
+            // alat, tanpa alat nggak ada profil, dan tanpa profil nggak ada
+            // yang tahu kertas ini boleh dikirim ke penyedia AI pihak ketiga
+            // atau nggak. Itu dulu lolos karena bawaannya `didukung: true`, dan
+            // seluruh lembar yang sengaja ditolak bisa dikirim keluar cukup
+            // dengan menghilangkan kolom ini. Jangan dibikin "jalan lagi tanpa
+            // sesi" tanpa menyediakan cara lain buat tahu kertasnya apa.
             'calibration_session_id' => ['sometimes', 'nullable', 'integer'],
         ], [
             'foto.required' => 'Fotonya wajib ada.',
@@ -227,6 +241,32 @@ class WorksheetExtractionController extends Controller
      * digambarkan sama sekali — dan klien yang keliru ngirim `kolom_suhu` nggak
      * mengubah kenyataan itu.
      *
+     * ## TANPA SESI, `didukung` JATUH KE `false` — dan itu perbaikan keamanan
+     *
+     * `calibration_session_id` divalidasi `sometimes|nullable`, jadi pemanggil
+     * boleh nggak mengirimnya sama sekali. Waktu itu terjadi nggak ada alat,
+     * nggak ada profil, dan **nggak ada yang tahu kertas ini bentuknya apa**.
+     *
+     * Bawaannya dulu `true` di keadaan itu, dan akibatnya bukan sekadar tebakan
+     * bentuk yang meleset: gerbang di bawah ikut terbuka, dan SELURUH lembar
+     * yang sengaja ditolak — Autoklaf, TIDS, kelima Enclosure — bisa dikirim ke
+     * penyedia AI pihak ketiga **cukup dengan menghilangkan satu kolom opsional
+     * dari permintaannya.** Pemisahan `didukung`/`lokal` yang baru saja dibuat
+     * nggak menutup itu; dia cuma memindahkan pintunya.
+     *
+     * Sekarang gagalnya MENUTUP. Yang nggak bisa dibuktikan muat, ditolak —
+     * dan "nggak tahu kertasnya apa" itu bentuk paling murni dari nggak bisa
+     * dibuktikan. Dua penanda bentuk di atas tetap menebak seperti dulu:
+     * salah tebak di sana bikin hasilnya jelek, salah tebak di sini bikin foto
+     * pelanggan keluar.
+     *
+     * `lokal` yang ikut pulang dari `bentukPindaiFoto()` SENGAJA dibuang di
+     * sini, dan itu inti pemisahannya. Penanda itu menggerbangi tombol kamera
+     * ON-DEVICE; jalur ini yang MENGIRIM FOTONYA KELUAR. Membacanya di sini —
+     * atau menyatukannya lagi dengan `didukung` — bikin tiap lembar yang
+     * kameranya dinyalakan ikut memenuhi syarat dikirim ke penyedia AI pihak
+     * ketiga. Persis yang kejadian 27 Agt 2026 waktu TIDS dinyalakan.
+     *
      * @param  array<string, mixed>  $data
      * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
      */
@@ -235,12 +275,32 @@ class WorksheetExtractionController extends Controller
         ?CalibrationSession $sesi,
         CalibrationProfileRegistry $registry,
     ): array {
-        $bawaan = ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
-
         $alat = $sesi?->equipment;
-        if ($alat !== null) {
-            $bawaan = [...$bawaan, ...$registry->untukAlat($alat)->bentukPindaiFoto()];
+
+        // TANPA ALAT, GAGALNYA MENUTUP — lihat docblock.
+        //
+        // Ditangani sebagai cabang sendiri, BUKAN dengan menurunkan bawaan
+        // `$bawaan` di bawah jadi `false`. Bedanya kelihatan sepele dan nggak:
+        // `SpectrophotometerProfile` & `ViscometerProfile` override
+        // `bentukPindaiFoto()` TANPA menyebut `didukung`, jadi mereka mewarisi
+        // nilainya dari bawaan gabungan ini. Menurunkan bawaannya diam-diam
+        // mematikan jalur foto dua lembar yang sebenarnya didukung — sudah
+        // kejadian waktu perbaikan ini ditulis, dan yang menangkapnya cuma
+        // `WorksheetExtractionSpektroTest`.
+        if ($alat === null) {
+            return [
+                'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? true),
+                'standar_di_baris' => (bool) ($data['standar_di_baris'] ?? false),
+                'didukung' => false,
+            ];
         }
+
+        $bawaan = [
+            'kolom_suhu' => true,
+            'standar_di_baris' => false,
+            'didukung' => true,
+            ...$registry->untukAlat($alat)->bentukPindaiFoto(),
+        ];
 
         return [
             'kolom_suhu' => (bool) ($data['kolom_suhu'] ?? $bawaan['kolom_suhu']),
@@ -281,9 +341,19 @@ class WorksheetExtractionController extends Controller
     }
 
     /**
-     * Kalau session dikirim: pastikan seorganisasi & (buat teknisi) miliknya
-     * sendiri. Kalau nggak dikirim: ekstraksi tetap jalan tanpa tautan sesi
-     * (cuma baca foto, nggak buka data apa pun).
+     * Sesi yang dikirim: pastikan seorganisasi & (buat teknisi) miliknya
+     * sendiri. Id yang nggak ketemu di organisasi itu 404; sesi teknisi lain
+     * 403.
+     *
+     * **Nggak dikirim → null, dan pemanggilnya MENOLAK di situ.** Dulu nggak
+     * begitu: ekstraksi tetap jalan tanpa tautan sesi, "cuma baca foto, nggak
+     * buka data apa pun". Yang nggak ikut ditimbang waktu itu — tanpa sesi
+     * nggak ada alat, tanpa alat nggak ada profil, dan gerbang bentuk kertas
+     * ikut terbuka. Seluruh lembar yang sengaja ditolak bisa dikirim ke
+     * penyedia AI pihak ketiga cukup dengan menghilangkan satu kolom opsional.
+     *
+     * Lihat `bentukKertas()`. Null di sini sekarang berarti DITOLAK, bukan
+     * "jalan tanpa tautan".
      */
     private function sesiTervalidasi(?int $sesiId, User $user): ?CalibrationSession
     {

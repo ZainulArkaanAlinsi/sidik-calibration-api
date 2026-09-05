@@ -14,6 +14,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
+use App\Services\Calibration\TabelStandarTids;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -140,19 +141,38 @@ class TidsLembarKerjaTest extends TestCase
         $dryblock = collect($bagian['dryblock']['field'])->firstWhere('kode', 'spesifikasi_alat.dryblock');
         $this->assertSame(['A (Isotech)', 'B (Techne)'], array_column($dryblock['pilihan'], 'label'));
 
-        // Blok `Standard used:` — dua kalibrator + tiga sensor acuan.
-        $this->assertCount(2, $bagian['usage_check']['baris']);
+        // Blok `Standard used:` — TIGA kalibrator + tiga sensor acuan.
+        //
+        // Baris ketiga (Temperature Recorder Graptech GL840, s/n C305B1470)
+        // masuk 28 Agt 2026 bersama workbook Recorder. Dicocokkan lewat SERIAL:
+        // kertas TIDS nulis "Graptech", master `standards` nulis "Graphtech",
+        // dan dua ejaan itu nggak akan pernah ketemu lewat nama.
+        $this->assertSame(
+            [
+                'Temperature Calibrator/Constant/40T/99875850',
+                'Temperature Calibrator/Yokogawa/CA150 Handy Cal/23P1005',
+                'Temperature Recorder/Graptech/GL840/C305B1470',
+            ],
+            array_column($bagian['usage_check']['baris'], 'label'),
+        );
         $this->assertSame(
             ['Thermocouple Type-K', 'Thermocouple Type-N', 'Sensor RTD/PT 100'],
             array_column($bagian['usage_check']['baris_sensor_standar'], 'label'),
         );
 
         // Uji titik es 0 °C — Awal & Akhir.
+        //
+        // Kodenya pindah ke `titik_es_N` (kolom sesi kanonik, sama dengan
+        // lembar Termometer Gelas) 28 Agt 2026, waktu selisih dua angka ini
+        // akhirnya punya arti: komponen budget `Drift UUT`. Peta
+        // `spesifikasi_alat` yang lama tetap DIBACA sebagai cadangan supaya
+        // sesi yang sudah tersimpan dari APK lama nggak kehilangan komponennya.
         $this->assertSame('Pengujian di titik es 0˚C', $bagian['titik_es']['judul']);
         $this->assertSame(
-            ['spesifikasi_alat.titik_es_awal', 'spesifikasi_alat.titik_es_akhir'],
+            ['titik_es_1', 'titik_es_2'],
             array_column($bagian['titik_es']['field'], 'kode'),
         );
+        $this->assertSame(['Awal', 'Akhir'], array_column($bagian['titik_es']['field'], 'label'));
 
         // Penutup: Catatan + dua tanda tangan.
         $this->assertSame(
@@ -160,8 +180,43 @@ class TidsLembarKerjaTest extends TestCase
             array_column($bagian['penutup']['field'], 'label'),
         );
 
-        // Jalur pindai foto DITOLAK — kertas TIDS bukan "titik × Repeat".
-        $this->assertFalse($data['pindai_foto']['didukung']);
+        // DUA gerbang foto, dan bedanya disengaja:
+        //
+        //  - `lokal` menggerbangi tombol `FOTO TABEL INI` — ML Kit, sepenuhnya
+        //    di HP. DINYALAKAN 27 Agt 2026: dua tabelnya difoto satu-satu, dan
+        //    masing-masing memang baris × kolom. Barisnya dijangkar tulisan
+        //    `Set point N`, kolomnya `0" (UUT1)`.
+        //  - `didukung` menggerbangi `POST /raw-measurements/extract-from-photo`,
+        //    yang MENGIRIM FOTO LEMBAR KERJA PELANGGAN KE LAYANAN PIHAK KETIGA.
+        //    TETAP DITOLAK.
+        //
+        // Keduanya sempat jadi satu penanda, dan menyalakan yang lokal
+        // diam-diam ikut melebarkan batas datanya. Dua-duanya di-assert di
+        // sini supaya penyatuan itu nggak bisa balik tanpa ketahuan.
+        $this->assertFalse(
+            $data['pindai_foto']['didukung'],
+            'Foto TIDS nggak boleh keluar dari HP. `didukung: true` bikin lembar ini memenuhi '
+            .'syarat dikirim ke penyedia AI pihak ketiga begitu Vision nyala.',
+        );
+        $this->assertTrue($data['pindai_foto']['lokal']);
+
+        // Tulisan kepala kolom yang tercetak WAJIB ikut dikirim — itu
+        // satu-satunya jangkar sumbu mendatar yang dipunya jalur foto. Tanpa
+        // dia, tombolnya nyala dan tiap jepretan pulang nol sel.
+        $tabel = collect($data['bagian'])
+            ->flatMap(static fn (array $b): array => $b['tabel'] ?? [])
+            ->firstWhere('tahap', 'pembacaan_standard');
+        $this->assertNotNull($tabel, 'Tabel Pembacaan Standard hilang dari bentuknya.');
+        $this->assertSame(
+            '0" (UUT1)',
+            $tabel['pengulangan_uut'][0]['label'],
+        );
+
+        // Dan `simpan_ke` tetap dinyatakan eksplisit: tabel Pembacaan Standard
+        // belum punya kolom penampung, dan layar HP menggambar keterangannya
+        // dari kunci ini. Dihilangkan, teknisi mengisi 35 kotak yang hilang
+        // tanpa pesan apa pun.
+        $this->assertArrayHasKey('simpan_ke', $tabel);
     }
 
     /**
@@ -237,9 +292,17 @@ class TidsLembarKerjaTest extends TestCase
             ['UUT1', 'UUT2', 'UUT3', 'UUT4', 'UUT5'],
             array_column($data['sumbu_uut']['daftar'], 'label'),
         );
-        // Keputusan skema sengaja belum diambil, dan itu dinyatakan sebagai
-        // data — bukan cuma di komentar yang nggak kebaca sisi HP.
-        $this->assertSame('belum_diambil', $data['sumbu_uut']['keputusan_skema']);
+        // DIJAWAB workbook master 28 Agt 2026: lima kolom itu lima ULANGAN,
+        // bukan lima alat. Dinyatakan sebagai data — bukan cuma di komentar
+        // yang nggak kebaca sisi HP.
+        $this->assertSame('lima_ulangan', $data['sumbu_uut']['keputusan_skema']);
+        // Label CETAK-nya tetap `UUT1` (itu yang tertulis di kertas yang
+        // dipegang teknisi & jadi jangkar OCR); label master-nya ikut dikirim
+        // supaya dua dokumen itu bisa diadu tanpa nebak.
+        $this->assertSame(
+            ['PRT1', 'PRT2', 'PRT3', 'PRT4', 'PRT5'],
+            array_column($data['sumbu_uut']['daftar'], 'label_master'),
+        );
 
         $tabel = collect($data['bagian'])->firstWhere('kode', 'hasil')['tabel'];
         $this->assertCount(2, $tabel);
@@ -273,38 +336,68 @@ class TidsLembarKerjaTest extends TestCase
             $this->assertTrue($t['titik_bisa_diubah']);
         }
 
-        // Tabel Pembacaan Standard BELUM punya kolom penyimpanan.
-        // `raw_measurements.tahap` artinya as-found/as-left, bukan
-        // standar/UUT — dan `CalibrationController` maksa nilainya sendiri.
-        $this->assertNull($tabel[0]['simpan_ke']);
-        $this->assertSame('measurements[].pembacaan', $tabel[1]['simpan_ke']);
+        // Tabel Pembacaan Standard AKHIRNYA punya kolom penyimpanan.
+        // Sampai 27 Agt 2026 kuncinya `null` — pernyataan jujur waktu itu, dan
+        // artinya 35 kotak yang diisi teknisi nggak pernah nyampe server.
+        // Sekarang dua-duanya lewat sumbu `peran_sensor` yang sudah ada sejak
+        // Enclosure; nol kolom baru di `raw_measurements`.
+        $this->assertSame('measurements[].standar', $tabel[0]['simpan_ke']);
+        $this->assertSame('measurements[].uut', $tabel[1]['simpan_ke']);
+        $this->assertSame('standar', $tabel[0]['peran']);
+        $this->assertSame('uut', $tabel[1]['peran']);
     }
 
     /**
-     * Lembar kerjanya MENYATAKAN budget-nya kosong, dan menyatakannya sebagai
-     * data — supaya HP bisa nunjukin keadaannya ke teknisi SEBELUM dia ngisi
-     * puluhan kotak angka, bukan sesudah waktu tombol hitungnya nggak
-     * memulangkan apa-apa dan kelihatan kayak bug.
+     * Lembar kerjanya MENYATAKAN budget-nya sudah ada, dan menyatakannya
+     * sebagai data.
+     *
+     * Kuncinya dipertahankan (bukan dihapus) waktu jawabannya berubah dari
+     * `false` ke `true` 28 Agt 2026: HP membacanya buat memutuskan apakah panel
+     * hasil digambar, dan kunci yang hilang bikin APK lama jatuh ke cabang
+     * "belum ada" — lembar yang sebenarnya sudah bisa menghitung tampil seperti
+     * masih terblokir.
      */
-    public function test_lembar_kerja_ngaku_budget_ketidakpastiannya_belum_ada(): void
+    public function test_lembar_kerja_ngaku_budget_ketidakpastiannya_sudah_ada(): void
     {
-        $this->actingAs($this->teknisi)
+        $data = $this->actingAs($this->teknisi)
             ->getJson('/api/calibrations/lembar-kerja?profil=tids')
             ->assertOk()
-            ->assertJsonPath('data.budget_ketidakpastian.tersedia', false)
-            ->assertJsonCount(4, 'data.budget_ketidakpastian.butuh');
+            ->assertJsonPath('data.budget_ketidakpastian.tersedia', true)
+            ->json('data.budget_ketidakpastian');
+
+        $this->assertStringContainsString('Recorder Graptech', $data['sumber']);
+        $this->assertStringContainsString('Yokogawa', $data['sumber']);
+
+        // Kunci `butuh` — daftar bahan yang dulu kurang — HARUS ilang, bukan
+        // ditinggal berisi daftar basi. Daftar yang sudah nggak berlaku lebih
+        // buruk dari nggak ada daftar: yang membacanya nyari barang yang sudah
+        // di tangan.
+        $this->assertArrayNotHasKey('butuh', $data);
     }
 
     /**
-     * INTI test ini: sesi TIDS tersimpan utuh, dan NOL angka ketidakpastian.
+     * INTI test ini: sesi TIDS yang BAHANNYA KURANG tersimpan utuh, dan NOL
+     * angka ketidakpastian.
+     *
+     * Sampai 28 Agt 2026 judulnya "budget-nya belum ada"; sekarang budget-nya
+     * ada, dan yang dijaga di sini justru jadi lebih tajam: sesi ini nggak
+     * menyebut tipe sensor standar maupun dryblock, dan tanpa dua itu koreksi
+     * meter, koreksi sensor, U95 & drift-nya nggak punya baris tabel sama
+     * sekali.
      *
      * Yang dilawan bukan pengecualian yang meledak, tapi jalur yang berhasil
      * diam-diam. Baris CMC TIDS sudah ter-seed, jadi tanpa
-     * `TidsProfile::hitungPerGrup()` yang memblokir, `GumCalculator` bakal
+     * `TidsProfile::hitungPerGrup()` yang menahan, `GumCalculator` bakal
      * memulangkan `U95 = CMC` buat tiap titik — angka yang kelihatan sah dan
      * lolos ke sertifikat.
+     *
+     * Deret DATAR-nya juga dijaga di sini: payload ini bentuk lama
+     * (`measurements[].pembacaan`, tanpa `standar`/`uut`), dan sepuluh baris
+     * mentahnya WAJIB tetap tersimpan sesudah lembar ini pindah ke jalur
+     * pasangan. Kalau `assertSame(10, …)` di bawah jadi nol, APK yang sudah
+     * terpasang kehilangan seluruh kerja lapangannya tanpa satu pun error.
      */
-    public function test_sesi_tids_nggak_ngeluarin_angka_ketidakpastian_karangan(): void
+    public function test_sesi_tids_bahan_kurang_nggak_ngeluarin_angka_karangan(): void
     {
         $alat = $this->alatTids();
         $standar = Standard::factory()->create(['nama' => 'Temperature Calibrator Constant 40T']);
@@ -335,8 +428,8 @@ class TidsLembarKerjaTest extends TestCase
         $this->assertSame(
             0,
             $sesi->uncertaintyCalculations()->count(),
-            'Sesi TIDS nggak boleh punya satu pun baris ketidakpastian — budget-nya belum ada, '
-            .'dan jalur CMC generik bakal ngasih angka yang kelihatan sah.',
+            'Sesi TIDS yang tipe sensor & dryblock-nya kosong nggak boleh punya satu pun baris '
+            .'ketidakpastian — jalur CMC generik bakal ngasih angka yang kelihatan sah.',
         );
 
         // Dan alasannya kebaca teknisi SEBELUM dia kirim, lewat jalur "hitung
@@ -354,7 +447,7 @@ class TidsLembarKerjaTest extends TestCase
             ->json('data.belum_dihitung');
 
         $this->assertCount(1, $alasan);
-        $this->assertStringContainsString('Budget ketidakpastian TIDS belum ada', $alasan[0]['alasan']);
+        $this->assertStringContainsString('Tipe sensor STANDAR belum dipilih', $alasan[0]['alasan']);
     }
 
     /**
@@ -372,15 +465,114 @@ class TidsLembarKerjaTest extends TestCase
         $sesi = new CalibrationSession(['spesifikasi_alat' => []]);
         $kode = array_column((new TidsProfile)->peringatanSesi($sesi), 'kode');
 
-        $this->assertContains('tids_budget_belum_ada', $kode);
+        // Tiga bahan yang tanpanya sesi TIDS nggak kehitung sama sekali.
+        // `tids_budget_belum_ada` DICABUT 28 Agt 2026 — budget-nya sudah ada,
+        // dan peringatan yang bilang sebaliknya bikin admin nahan sesi yang
+        // sebenarnya sudah lengkap.
         $this->assertContains('tids_dryblock_kosong', $kode);
+        $this->assertContains('tids_tipe_sensor_kosong', $kode);
+        $this->assertContains('tids_titik_es_kosong', $kode);
+        $this->assertNotContains('tids_budget_belum_ada', $kode);
 
-        // Dryblock yang UDAH dicentang nggak diperingatin lagi.
-        $sesiBerdryblock = new CalibrationSession(['spesifikasi_alat' => ['dryblock' => 'isotech']]);
-        $this->assertNotContains(
-            'tids_dryblock_kosong',
-            array_column((new TidsProfile)->peringatanSesi($sesiBerdryblock), 'kode'),
-        );
+        // Yang UDAH diisi nggak diperingatin lagi — tiga-tiganya, dan dryblock
+        // sengaja diisi lewat ejaan kolom `alat_bantu` (`A`) buat mbuktiin
+        // jalur cadangannya hidup.
+        $lengkap = new CalibrationSession([
+            'spesifikasi_alat' => ['titik_es_awal' => 0.2, 'titik_es_akhir' => 0.4],
+            'alat_bantu' => 'A',
+            'tipe_sensor' => 'Type K',
+        ]);
+        $kodeLengkap = array_column((new TidsProfile)->peringatanSesi($lengkap), 'kode');
+
+        $this->assertNotContains('tids_dryblock_kosong', $kodeLengkap);
+        $this->assertNotContains('tids_tipe_sensor_kosong', $kodeLengkap);
+        $this->assertNotContains('tids_titik_es_kosong', $kodeLengkap);
+    }
+
+    /**
+     * Kolom `No. Termokopel` per baris tabel standar — berikut DAFTAR
+     * PILIHANNYA.
+     *
+     * Yang dijaga bukan keberadaan kolomnya, tapi isi `pilihan`-nya. Layar HP
+     * (`_BarisNoProbe`) menggambar kolom ini sebagai dropdown yang daftarnya
+     * disaring `grup == tipe_sensor`; dikirim kosong, dropdown-nya lahir tanpa
+     * satu pun pilihan dan lembar TIDS nggak bisa diisi sama sekali — tanpa
+     * satu pun error di jalur mana pun. Sudah kejadian sekali di sini, di
+     * jam yang sama dengan lembar ini pindah ke jalur pasangan.
+     */
+    public function test_kolom_no_termokopel_bawa_daftar_pilihannya(): void
+    {
+        $tabel = collect(
+            $this->actingAs($this->teknisi)
+                ->getJson('/api/calibrations/lembar-kerja?profil=tids')
+                ->assertOk()
+                ->json('data.bagian'),
+        )->firstWhere('kode', 'hasil')['tabel'];
+
+        // Cuma tabel STANDAR yang punya kolomnya — UUT membawa sensor bawaan
+        // alat pelanggan, yang justru sedang diukur penyimpangannya.
+        $this->assertArrayNotHasKey('kolom_baris', $tabel[1]);
+        $this->assertCount(1, $tabel[0]['kolom_baris']);
+
+        $kolom = $tabel[0]['kolom_baris'][0];
+        $this->assertSame('no_probe', $kolom['kode']);
+        $this->assertSame('pilihan', $kolom['tipe']);
+        $this->assertNotEmpty($kolom['pilihan'], 'Dropdown tanpa pilihan = lembar yang nggak bisa diisi.');
+
+        // Penomorannya BEDA per tipe, dan itu dari kertasnya sendiri: "If
+        // using Thermocouple Type N, No. Thermocouple START FROM 3. If using
+        // PRT PT100 (RTD), No. Thermocouple ALL 17."
+        $perGrup = [];
+        foreach ($kolom['pilihan'] as $p) {
+            $perGrup[$p['grup']][] = (int) $p['nilai'];
+        }
+
+        $this->assertSame(['RTD', 'Type K', 'Type N'], array_keys($perGrup));
+        $this->assertSame([TabelStandarTids::NOMOR_RTD], $perGrup['RTD']);
+        $this->assertSame(range(1, 16), $perGrup['Type K']);
+        $this->assertSame(range(3, 12), $perGrup['Type N']);
+    }
+
+    /**
+     * Empat penyimpangan master yang ditiru NAIK KE LAYAR, bukan cuma ke jejak
+     * audit.
+     *
+     * Tiga di antaranya menggeser U95 ke arah lebih KECIL, dan sertifikat yang
+     * understate ketidakpastiannya itu temuan asesor. Jadi tiap sesi TIDS yang
+     * standarnya sudah dikenali WAJIB membawa peringatannya — itu yang menahan
+     * tombol APPROVE sampai ada manusia yang membacanya.
+     */
+    public function test_penyimpangan_master_naik_jadi_peringatan_sesi(): void
+    {
+        $recorder = Standard::factory()->create([
+            'nama' => 'Temperature Recorder Graphtech GL840',
+            'merk' => 'Graphtech',
+            'serial_number' => 'C305B1470',
+        ]);
+        $yokogawa = Standard::factory()->create([
+            'nama' => 'Temperature Calibrator Yokogawa CA 150 Handy Cal',
+            'merk' => 'Yokogawa',
+            'serial_number' => '23P1005',
+        ]);
+
+        // SATU alat buat dua sesi — `alatTids()` bikin kategori
+        // `suhu-dan-kelembapan` sendiri tiap dipanggil, dan kodenya unik per
+        // organisasi.
+        $alat = $this->alatTids();
+
+        $sesiRecorder = CalibrationSession::factory()->create([
+            'equipment_id' => $alat->id,
+            'standard_id' => $recorder->id,
+        ]);
+        $kode = array_column((new TidsProfile)->peringatanSesi($sesiRecorder->fresh()), 'kode');
+        $this->assertContains('tids_master_recorder_sel_tetap', $kode);
+
+        $sesiYokogawa = CalibrationSession::factory()->create([
+            'equipment_id' => $alat->id,
+            'standard_id' => $yokogawa->id,
+        ]);
+        $kodeYoko = array_column((new TidsProfile)->peringatanSesi($sesiYokogawa->fresh()), 'kode');
+        $this->assertContains('tids_master_tiga_komponen_tidak_dijumlah', $kodeYoko);
     }
 
     public function test_set_point_di_atas_600_derajat_diperingatin(): void
@@ -429,7 +621,7 @@ class TidsLembarKerjaTest extends TestCase
      *    nggak pernah kepanggil;
      *  - `GumCalculator::hitungTitik()` jalan lewat jalur CMC generik, dan
      *    baris CMC TIDS SUDAH ter-seed, jadi tiap titik terbit `U95 = CMC`;
-     *  - `peringatanSesi()` yang mestinya masang `tids_budget_belum_ada` ikut
+     *  - `peringatanSesi()` yang mestinya masang peringatan bahan-kurang ikut
      *    hilang, jadi nggak ada satu pun tanda yang nahan tombol APPROVE.
      *
      * Angka itu lantai kemampuan terbaik lab, bukan hasil hitung sesi ini —
@@ -519,10 +711,11 @@ class TidsLembarKerjaTest extends TestCase
         );
 
         // Dan remnya kelihatan sebagai peringatan, jadi ada yang nahan APPROVE.
-        $this->assertContains(
-            'tids_budget_belum_ada',
-            array_column($registry->untukAlat($alat)->peringatanSesi($sesi), 'kode'),
-        );
+        // Sejak budget-nya ada (28 Agt 2026) yang menahan bukan lagi
+        // "budget belum ada" melainkan bahan yang memang kurang di sesi ini.
+        $kode = array_column($registry->untukAlat($alat)->peringatanSesi($sesi), 'kode');
+        $this->assertContains('tids_tipe_sensor_kosong', $kode);
+        $this->assertContains('tids_dryblock_kosong', $kode);
     }
 
     private function alatTids(): Equipment

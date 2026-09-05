@@ -1,0 +1,328 @@
+{
+  "_sumber": "Master Olda Tachometer.xlsm / Master Olda Centrifuge.xlsm (sheet SERTIFIKAT KALIBRATOR & Drift Std Kalibrator) — kedua workbook memuat tabel yang IDENTIK untuk keping standar yang sama.",
+  "_digenerate_oleh": "docs/skrip/gen-tabel-standar-waktu-frekuensi.py",
+  "standar": {
+    "nama": "Infrared Tachometer",
+    "merk": "NKTECH",
+    "resolusi": "0.1 & 1",
+    "seri": "1186.01.23-1",
+    "tanggal_kalibrasi": "2025-07-04",
+    "traceability": "LK-305-IDN"
+  },
+  "sertifikat": [
+    {
+      "nominal": 60.0,
+      "uut": 60.2,
+      "koreksi": -0.2,
+      "u95": 0.21
+    },
+    {
+      "nominal": 100.0,
+      "uut": 100.2,
+      "koreksi": -0.2,
+      "u95": null
+    },
+    {
+      "nominal": 200.0,
+      "uut": 200.2,
+      "koreksi": -0.2,
+      "u95": 0.2
+    },
+    {
+      "nominal": 300.0,
+      "uut": 300.2,
+      "koreksi": -0.2,
+      "u95": 1.5
+    },
+    {
+      "nominal": 500.0,
+      "uut": 500.2,
+      "koreksi": -0.2,
+      "u95": null
+    },
+    {
+      "nominal": 2000.0,
+      "uut": 2000.3,
+      "koreksi": -0.3,
+      "u95": null
+    },
+    {
+      "nominal": 5000.0,
+      "uut": 5000.4,
+      "koreksi": -0.4,
+      "u95": 1.6
+    },
+    {
+      "nominal": 7000.0,
+      "uut": 7000.5,
+      "koreksi": -0.5,
+      "u95": null
+    },
+    {
+      "nominal": 10000.0,
+      "uut": 10001.0,
+      "koreksi": -1.0,
+      "u95": null
+    },
+    {
+      "nominal": 15000.0,
+      "uut": 15001.0,
+      "koreksi": -1.0,
+      "u95": 3.1
+    },
+    {
+      "nominal": 20000.0,
+      "uut": 20001.0,
+      "koreksi": -1.0,
+      "u95": null
+    },
+    {
+      "nominal": 25000.0,
+      "uut": 25001.0,
+      "koreksi": -1.0,
+      "u95": null
+    },
+    {
+      "nominal": 30000.0,
+      "uut": 30002.0,
+      "koreksi": -2.0,
+      "u95": null
+    }
+  ],
+  "drift": {
+    "snapshot": [
+      {
+        "kolom": "D",
+        "tanggal": "2019-05-13",
+        "lab": "PT. Eastern"
+      },
+      {
+        "kolom": "E",
+        "tanggal": "2020-06-22",
+        "lab": "PT. Eastern"
+      },
+      {
+        "kolom": "F",
+        "tanggal": "2021-04-05",
+        "lab": "PT. Eastern"
+      },
+      {
+        "kolom": "G",
+        "tanggal": "2022-05-30",
+        "lab": "PT. Eastern"
+      },
+      {
+        "kolom": "H",
+        "tanggal": "2023-05-30",
+        "lab": "PT. Heksa"
+      },
+      {
+        "kolom": "I",
+        "tanggal": "2024-06-14",
+        "lab": "PT. GIN"
+      },
+      {
+        "kolom": "J",
+        "tanggal": "2025-07-04",
+        "lab": "PT. GIN"
+      }
+    ],
+    "hari_master": 420,
+    "titik": [
+      {
+        "nominal": 5.0,
+        "koreksi": {
+          "D": 0.0,
+          "F": 0.2,
+          "G": 0.0
+        },
+        "rentang": 0.2,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 50.0,
+        "koreksi": {
+          "F": 0.3,
+          "G": 0.0,
+          "H": -0.2,
+          "I": 0.1,
+          "J": -0.2
+        },
+        "rentang": 0.5,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 100.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 0.6,
+          "F": 0.5,
+          "G": 0.0,
+          "H": -0.3,
+          "I": 0.1,
+          "J": -0.2
+        },
+        "rentang": 0.9,
+        "dihitung_master": true
+      },
+      {
+        "nominal": 200.0,
+        "koreksi": {
+          "E": 1.0,
+          "F": 0.7,
+          "G": 0.0,
+          "H": -0.2,
+          "I": 0.1,
+          "J": -0.2
+        },
+        "rentang": 1.2,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 300.0,
+        "koreksi": {
+          "E": 0.6,
+          "F": 0.9,
+          "G": 0.0,
+          "H": -0.3,
+          "I": 0.1,
+          "J": -0.2
+        },
+        "rentang": 1.2,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 500.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 0.7,
+          "F": 0.8,
+          "G": 0.0,
+          "H": -0.4,
+          "I": 0.1,
+          "J": -0.2
+        },
+        "rentang": 1.2,
+        "dihitung_master": true
+      },
+      {
+        "nominal": 1000.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 0.4
+        },
+        "rentang": 0.4,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 2000.0,
+        "koreksi": {
+          "E": 0.5,
+          "F": 0.6,
+          "G": 0.0,
+          "H": -0.6,
+          "I": 0.1,
+          "J": -0.3
+        },
+        "rentang": 1.2,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 5000.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 0.6,
+          "F": 0.8,
+          "G": 0.0,
+          "H": -0.6,
+          "I": 0.1,
+          "J": -0.4
+        },
+        "rentang": 1.4,
+        "dihitung_master": true
+      },
+      {
+        "nominal": 7000.0,
+        "koreksi": {
+          "E": 0.4,
+          "F": 0.7,
+          "G": 0.0,
+          "H": -0.8,
+          "I": 0.1,
+          "J": -0.5
+        },
+        "rentang": 1.5,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 10000.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 1.1,
+          "F": 0.9,
+          "G": 0.0,
+          "H": -1.0,
+          "I": 0.0,
+          "J": -1.0
+        },
+        "rentang": 2.1,
+        "dihitung_master": true
+      },
+      {
+        "nominal": 15000.0,
+        "koreksi": {
+          "E": 1.4,
+          "F": 1.1,
+          "G": 0.0,
+          "H": -2.0,
+          "I": 0.0,
+          "J": -1.0
+        },
+        "rentang": 3.4,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 20000.0,
+        "koreksi": {
+          "E": 1.7,
+          "F": 1.2,
+          "G": 0.0,
+          "H": -3.0,
+          "I": 0.0,
+          "J": -1.0
+        },
+        "rentang": 4.7,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 25000.0,
+        "koreksi": {
+          "E": 1.5,
+          "F": 1.4,
+          "G": 0.0,
+          "H": -4.0,
+          "I": 0.0,
+          "J": -1.0
+        },
+        "rentang": 5.5,
+        "dihitung_master": false
+      },
+      {
+        "nominal": 30000.0,
+        "koreksi": {
+          "D": 0.0,
+          "E": 1.4,
+          "F": 1.5,
+          "G": -2.0,
+          "H": -3.0,
+          "I": 0.0,
+          "J": -2.0
+        },
+        "rentang": 4.5,
+        "dihitung_master": true
+      }
+    ],
+    "rentang_maks_master": 4.5,
+    "rentang_maks_lengkap": 5.5
+  }
+}

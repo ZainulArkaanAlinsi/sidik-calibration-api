@@ -1,0 +1,285 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Support\UkuranTandaTangan;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Gambar tanda tangan tidak boleh meluber keluar kotaknya.
+ *
+ * ## Cacat yang dijaga di sini
+ *
+ * Blade cuma menyetel LEBAR gambar dan menempelkannya `bottom: 0` di kotak
+ * setinggi 46px. Tingginya dibiarkan ikut rasio gambar, dan kotaknya tidak
+ * memotong apa pun — jadi gambar yang tidak lebar-mendatar meluber KE ATAS,
+ * menimpa tabel STANDARD USED di atasnya. Persis yang terjadi di produksi 1 Sep
+ * 2026: tanda tangan tercetak melayang di tengah tabel standar.
+ *
+ * Yang bikin dia lolos selama ini: dengan gambar contoh yang lebar-mendatar,
+ * tingginya kebetulan muat. Baru gambar asli yang mendekati persegi yang
+ * memunculkannya — dan waktu itu tidak ada satu pun error, cuma PDF yang jelek.
+ */
+class UkuranTandaTanganTest extends TestCase
+{
+    /** PNG polos dengan dimensi yang diminta. */
+    private function png(int $lebar, int $tinggi): string
+    {
+        $gambar = imagecreatetruecolor($lebar, $tinggi);
+        ob_start();
+        imagepng($gambar);
+        $isi = (string) ob_get_clean();
+        imagedestroy($gambar);
+
+        return $isi;
+    }
+
+    /** Tanda tangan lebar-mendatar memang muat — lebar pilihan admin dihormati. */
+    public function test_gambar_mendatar_dipakai_apa_adanya(): void
+    {
+        $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0);
+
+        $this->assertSame(35.0, $hasil['lebar_mm']);
+        $this->assertEqualsWithDelta(7.0, $hasil['tinggi_mm'], 0.01);
+    }
+
+    /**
+     * Gambar persegi: inilah kasus yang merusak sertifikat di produksi.
+     *
+     * 800x800 di lebar 35 mm = tinggi 35 mm, sementara kotaknya cuma 12,17 mm.
+     */
+    public function test_gambar_persegi_dikecilkan_sampai_muat(): void
+    {
+        $kotak = UkuranTandaTangan::tinggiKotakMm();
+        $hasil = UkuranTandaTangan::pas($this->png(800, 800), 35.0);
+
+        $this->assertEqualsWithDelta($kotak, $hasil['tinggi_mm'], 0.01);
+        $this->assertLessThan(35.0, $hasil['lebar_mm']);
+    }
+
+    /** Rasio asli dijaga — tanda tangan yang gepeng terbaca sebagai tanda tangan lain. */
+    public function test_rasio_asli_dijaga_waktu_dikecilkan(): void
+    {
+        $hasil = UkuranTandaTangan::pas($this->png(600, 800), 35.0);
+
+        // Aslinya tinggi/lebar = 800/600.
+        $this->assertEqualsWithDelta(
+            800 / 600,
+            $hasil['tinggi_mm'] / $hasil['lebar_mm'],
+            0.001,
+        );
+    }
+
+    /** Mode padat kotaknya separuh, jadi batasnya ikut mengecil. */
+    public function test_mode_padat_pakai_kotak_yang_lebih_pendek(): void
+    {
+        $normal = UkuranTandaTangan::pas($this->png(800, 800), 35.0, 0.0, false);
+        $padat = UkuranTandaTangan::pas($this->png(800, 800), 35.0, 0.0, true);
+
+        $this->assertLessThan($normal['tinggi_mm'], $padat['tinggi_mm']);
+        $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(true), $padat['tinggi_mm'], 0.01);
+    }
+
+    /**
+     * Penjaga yang sebenarnya: apa pun rasionya, apa pun lebar yang disetel
+     * admin, tingginya TIDAK PERNAH melewati kotak. Satu saja yang lolos,
+     * sertifikatnya rusak tanpa satu pun error.
+     */
+    public function test_apa_pun_rasionya_nggak_pernah_lewat_kotak(): void
+    {
+        foreach ([[1000, 100], [800, 600], [800, 800], [600, 800], [200, 1000], [50, 4000]] as [$w, $h]) {
+            foreach ([10.0, 35.0, 80.0] as $lebarMm) {
+                foreach ([false, true] as $padat) {
+                    $hasil = UkuranTandaTangan::pas($this->png($w, $h), $lebarMm, 0.0, $padat);
+
+                    $this->assertLessThanOrEqual(
+                        UkuranTandaTangan::tinggiKotakMm($padat) + 0.01,
+                        $hasil['tinggi_mm'],
+                        "Luber: {$w}x{$h} pada lebar {$lebarMm}mm, padat=".var_export($padat, true),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Dimensinya tidak terbaca (berkas rusak): tingginya dipatok ke kotak dan
+     * LEBARNYA dilepas, biar dompdf menskalakan proporsional. Menebak lebar di
+     * sini berarti menerbitkan tanda tangan yang gepeng.
+     */
+    public function test_berkas_rusak_nggak_bikin_tanda_tangan_gepeng(): void
+    {
+        foreach ([null, '', 'ini-bukan-gambar'] as $isi) {
+            $hasil = UkuranTandaTangan::pas($isi, 35.0);
+
+            $this->assertNull($hasil['lebar_mm']);
+            $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(), $hasil['tinggi_mm'], 0.01);
+        }
+    }
+
+    /** Kedua mode dihitung sekaligus, karena blade baru tahu modenya belakangan. */
+    public function test_kedua_mode_dihitung_sekaligus(): void
+    {
+        $hasil = UkuranTandaTangan::keduaMode($this->png(800, 800), 35.0);
+
+        $this->assertArrayHasKey('normal', $hasil);
+        $this->assertArrayHasKey('padat', $hasil);
+        $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(false), $hasil['normal']['tinggi_mm'], 0.01);
+        $this->assertEqualsWithDelta(UkuranTandaTangan::tinggiKotakMm(true), $hasil['padat']['tinggi_mm'], 0.01);
+    }
+
+    /**
+     * Menjepit TINGGI saja tidak cukup — temuan review sebelum merge.
+     *
+     * Blade menempelkan gambar dengan `bottom: <geser_y>mm`, dan `geser_y_mm`
+     * boleh sampai +40 mm sementara kotaknya cuma 12,17 mm. Jadi gambar yang
+     * sudah pas pun tetap terangkat keluar kotak begitu digeser ke atas —
+     * luapannya persis sebesar geserannya, dan yang ditimpanya tabel di atasnya.
+     */
+    public function test_geser_ke_atas_nggak_bisa_ngangkat_gambar_keluar_kotak(): void
+    {
+        foreach ([[1000, 200], [800, 800], [600, 800]] as [$w, $h]) {
+            foreach ([1.0, 5.0, 40.0] as $geser) {
+                foreach ([false, true] as $padat) {
+                    $hasil = UkuranTandaTangan::pas($this->png($w, $h), 35.0, $geser, $padat);
+
+                    $puncak = $hasil['tinggi_mm'] + $hasil['geser_y_mm'];
+
+                    $this->assertLessThanOrEqual(
+                        UkuranTandaTangan::tinggiKotakMm($padat) + 0.01,
+                        $puncak,
+                        "Puncak gambar keluar kotak: {$w}x{$h}, geser {$geser}mm, padat=".var_export($padat, true),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Penyetelan halus ke BAWAH tetap dihormati.
+     *
+     * Tanda tangan yang sedikit memotong garisnya itu wajar, bahkan diinginkan.
+     * Menjepitnya di sini bakal merebut penyetelan yang memang hak admin.
+     */
+    public function test_geser_ke_bawah_yang_wajar_dihormati(): void
+    {
+        $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0, -4.0);
+
+        $this->assertSame(-4.0, $hasil['geser_y_mm']);
+    }
+
+    /**
+     * Tapi nilai ekstrem ke bawah tetap dibatasi.
+     *
+     * Konfigurasinya mengizinkan sampai -40 mm, dan di situ tanda tangan
+     * mendarat jauh di bawah nama penanda tangan — bukan penyetelan halus lagi,
+     * tapi salah ketik yang tidak ada yang menangkap. Batasnya setinggi
+     * kotaknya sendiri: cukup longgar buat penyetelan wajar, cukup ketat buat
+     * menahan yang ngawur.
+     */
+    public function test_geser_ke_bawah_yang_ekstrem_dibatasi(): void
+    {
+        foreach ([false, true] as $padat) {
+            $kotak = UkuranTandaTangan::tinggiKotakMm($padat);
+            $hasil = UkuranTandaTangan::pas($this->png(1000, 200), 35.0, -40.0, $padat);
+
+            $this->assertEqualsWithDelta(-$kotak, $hasil['geser_y_mm'], 0.01);
+        }
+    }
+
+    /**
+     * Tanda tangan asli PT Sidik wajib tercetak SEUKURAN TANDA TANGAN.
+     *
+     * Penjepit tinggi yang dipasang buat menahan luapan malah melahirkan cacat
+     * kebalikannya, dan cacat itu sampai ke pelanggan: sertifikat
+     * CAL-2026-08-0003 mencetak tanda tangan 13,33 mm di bawah garis tanda
+     * tangan 71,3 mm — 19% lebar garisnya. Nggak ada yang error; PDF-nya cuma
+     * kelihatan salah.
+     *
+     * Sebabnya kotaknya (waktu itu 46px = 12,17 mm) terlalu pendek buat tanda
+     * tangan yang bukan lebar-mendatar. Yang asli 2248x2052 (rasio 0,91, ada
+     * ekor turun panjang) butuh 31,9 mm di lebar setelan 35 mm, jadi lebarnya
+     * yang dikorbankan.
+     *
+     * Test lain di berkas ini menjaga batas ATAS — gambar nggak boleh keluar
+     * kotak. Yang ini menjaga batas BAWAH, dan tanpa dia nggak ada apa pun yang
+     * menahan kotaknya dikecilkan lagi: semua penjaga lain justru makin hijau
+     * makin kecil kotaknya.
+     *
+     * Ambang 20 mm bukan angka cantik: itu di bawah 23,19 mm yang keluar
+     * sekarang, tapi di atas 13,33 mm yang bikin sertifikatnya ditolak.
+     */
+    public function test_tanda_tangan_asli_nggak_tercetak_kekecilan(): void
+    {
+        // Dimensi persis berkas TTD PT Sidik, dibaca dari PDF terbitannya.
+        $hasil = UkuranTandaTangan::pas($this->png(2248, 2052), 35.0);
+
+        $this->assertGreaterThan(
+            20.0,
+            $hasil['lebar_mm'],
+            'Tanda tangan tercetak kekecilan lagi. Tersangkanya TINGGI_KOTAK_PX yang dikecilkan '
+            .'— dia yang jadi plafon ukuran gambar, bukan cuma jarak kosong.',
+        );
+    }
+
+    /**
+     * Konstanta di PHP dan angka di CSS blade wajib sama.
+     *
+     * Blade sengaja menulis angkanya literal biar CSS-nya kebaca apa adanya,
+     * jadi tidak ada yang memaksa keduanya sejalan selain test ini. Kalau
+     * kotaknya dikecilkan di CSS tanpa konstanta ini ikut berubah, penjepitnya
+     * memakai ukuran yang salah dan gambarnya meluber lagi — tanpa satu pun
+     * error.
+     */
+    public function test_konstanta_cocok_dengan_css_blade(): void
+    {
+        $css = (string) file_get_contents(
+            dirname(__DIR__, 2).'/resources/views/sertifikat/pdf.blade.php',
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/\.ttd \.ruang-ttd \{ height: '.UkuranTandaTangan::TINGGI_KOTAK_PX.'px;/',
+            $css,
+            'TINGGI_KOTAK_PX beda dari `.ttd .ruang-ttd` di blade.',
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/body\.padat \.ttd \.ruang-ttd \{ height: '.UkuranTandaTangan::TINGGI_KOTAK_PADAT_PX.'px;/',
+            $css,
+            'TINGGI_KOTAK_PADAT_PX beda dari `body.padat .ttd .ruang-ttd` di blade.',
+        );
+    }
+
+    /**
+     * Blade wajib mencetak TINGGI gambar, bukan cuma lebar.
+     *
+     * Ini inti perbaikannya, dan penjaga yang paling gampang hilang: seluruh
+     * aritmetika di kelas ini tidak ada gunanya kalau template berhenti
+     * memakainya. Test lain di berkas ini menguji hitungannya; yang ini menguji
+     * bahwa hasilnya benar-benar sampai ke HTML.
+     */
+    public function test_blade_mencetak_tinggi_dan_geseran_yang_dijepit(): void
+    {
+        $blade = (string) file_get_contents(
+            dirname(__DIR__, 2).'/resources/views/sertifikat/pdf.blade.php',
+        );
+
+        $mulai = strpos($blade, '@php($ukuran = ($ukuranTtd');
+        $this->assertNotFalse($mulai, 'Blok ukuran tanda tangan hilang dari blade.');
+
+        $blok = substr($blade, (int) $mulai, 900);
+
+        $this->assertStringContainsString(
+            'height: {{ round(',
+            $blok,
+            'Tinggi gambar berhenti dicetak — penjepitnya jadi sia-sia dan tanda '
+            .'tangan bakal meluber lagi ke tabel di atasnya.',
+        );
+
+        $this->assertStringContainsString(
+            "\$ukuran['geser_y_mm']",
+            $blok,
+            'Geseran vertikal berhenti lewat nilai yang sudah dijepit.',
+        );
+    }
+}

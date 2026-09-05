@@ -362,6 +362,22 @@ class GasDetectorProfile extends CalibrationProfile
     }
 
     /**
+     * Satu angka per sel — TIDAK ada kolom suhu di dalam tiap pengulangan.
+     *
+     * Sama alasannya dengan TITS & ketiga lembar suhu pasangan: bawaan
+     * `kolom_suhu = true` menuruti bentuk lembar pH (sepasang angka per sel),
+     * sementara tabel lembar ini cuma mengirim kolom `pembacaan`. Dibiarkan
+     * `true`, pembaca foto diminta membaca kolom °C yang tidak ada di kertasnya
+     * — dan yang balik bukan error, tapi angka karangan yang kelihatan wajar.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung: bool}
+     */
+    public function bentukPindaiFoto(): array
+    {
+        return ['kolom_suhu' => false, 'standar_di_baris' => false, 'didukung' => true];
+    }
+
+    /**
      * Tidak divonis PASS/FAIL — master tidak punya kolom batas keberterimaan
      * dan sertifikatnya berhenti di `U95%`. Lihat docblock kelas.
      */
@@ -823,7 +839,7 @@ class GasDetectorProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -993,32 +1009,5 @@ class GasDetectorProfile extends CalibrationProfile
         }
 
         return $bentuk;
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 }

@@ -44,6 +44,26 @@ class AuditLogController extends Controller
     }
 
     /**
+     * Escape KOSONG, yaitu RFC 4180 — dilewatkan EKSPLISIT, bukan diandalkan.
+     *
+     * PHP 8.4 mendeprekasi bawaannya dengan alasan yang gamblang: *"the $escape
+     * parameter must be provided as its default value will change"*. Di aplikasi
+     * ini peringatannya TIDAK KELIHATAN sama sekali — `config/logging.php`
+     * menyetel kanal deprecation ke `null`, jadi ketiga puluh peringatan per
+     * ekspor dibuang diam-diam.
+     *
+     * Yang tersisa perilaku yang belum dipatok: begitu PHP mengganti bawaannya,
+     * keluaran berkas ini berubah tanpa ada satu baris pun di repo ini yang ikut
+     * berubah. Berkas ini yang dibawa asesor, jadi perilakunya dipatok di sini.
+     *
+     * Yang TIDAK berubah karena ini: hasil bacanya di Excel. Kedua mode
+     * sama-sama menghasilkan CSV yang sah menurut RFC 4180 — yang berbeda cuma
+     * apakah nilai yang tidak butuh kutip ikut dikutip. Dijaga
+     * `AuditLogTest::test_export_tetap_terbaca_excel_walau_nilainya_berakhir_backslash`.
+     */
+    private const ESCAPE = '';
+
+    /**
      * Ekspor riwayat ke CSV ("Bisa dilihat dan diekspor" — Keputusan 4).
      *
      * CSV, bukan xlsx: yang dibawa asesor biasanya dibuka di apa pun yang ada di
@@ -68,7 +88,7 @@ class AuditLogController extends Controller
             // karakter non-ASCII jadi kacau, dan itu yang dibaca asesor.
             fwrite($keluaran, "\xEF\xBB\xBF");
 
-            fputcsv($keluaran, [
+            $this->tulisBaris($keluaran, [
                 'Waktu', 'Entitas', 'ID', 'Aksi', 'Pelaku', 'Role', 'Kolom', 'Nilai Lama', 'Nilai Baru', 'Catatan',
             ]);
 
@@ -80,7 +100,7 @@ class AuditLogController extends Controller
                     $baris = $this->barisCsv($log);
 
                     foreach ($baris as $b) {
-                        fputcsv($keluaran, $b);
+                        $this->tulisBaris($keluaran, $b);
                     }
                 }
             });
@@ -89,6 +109,64 @@ class AuditLogController extends Controller
         }, $namaFile, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * SATU pintu tulis, supaya netralisasinya nggak bisa dilewat baris baru.
+     *
+     * Ditaruh di sini, bukan di `teks()`, karena `teks()` cuma menyentuh isi
+     * `old_data`/`new_data`. Empat kolom lain di baris yang sama juga datang
+     * dari isian orang — `Pelaku` itu `users.name` yang diisi sendiri waktu
+     * mendaftar, `Catatan` itu `audit_logs.note`, dan `Entitas`/`Kolom` ikut
+     * apa pun yang dicatat trait `Diaudit`.
+     *
+     * @param  resource  $keluaran
+     * @param  list<string>  $baris
+     */
+    private function tulisBaris($keluaran, array $baris): void
+    {
+        fputcsv($keluaran, array_map($this->netral(...), $baris), ',', '"', self::ESCAPE);
+    }
+
+    /**
+     * Nahan sel CSV supaya nggak dieksekusi sebagai rumus waktu dibuka.
+     *
+     * Excel, LibreOffice dan Google Sheets memperlakukan sel yang diawali `=`,
+     * `+`, `-` atau `@` sebagai RUMUS, bukan teks — termasuk kalau isinya
+     * datang dari kolom yang boleh diisi teknisi. `Customer::nama` lewat
+     * `POST /customers/cepat`, `catatan_teknisi`, `pemilik_nama`: semuanya
+     * mendarat di sini lewat trait `Diaudit`.
+     *
+     * Beda dari ekspor XLSX (`CertificateExcelExporter`, `LaporanExcelExporter`)
+     * yang lewat OpenSpout dan menulis TIPE SEL eksplisit — CSV ditafsir murni
+     * dari isi teksnya, jadi penjagaannya harus di teksnya.
+     *
+     * ## Kenapa angka negatif dikecualikan
+     *
+     * Ini bagian yang paling gampang salah, dan salahnya nggak menerbitkan
+     * error: `-0,02` itu nilai koreksi yang sah dan diawali `-`. Kalau ikut
+     * diberi awalan kutip, Excel membacanya sebagai TEKS — dan seluruh alasan
+     * ekspor ini berbentuk CSV, yaitu supaya bisa disaring dan di-pivot,
+     * langsung batal. Jadi yang dikecualikan cuma yang beneran angka, dan
+     * `is_numeric()` yang memutuskannya: `-0.02` lolos, `-1+1` tidak.
+     *
+     * Awalan yang dipakai kutip tunggal, bukan tab: Excel & LibreOffice
+     * memperlakukannya sebagai penanda teks dan TIDAK menampilkannya di sel,
+     * jadi yang dibaca asesor tetap nilai aslinya.
+     */
+    private function netral(string $nilai): string
+    {
+        if ($nilai === '' || ! str_contains("=+-@\t\r", $nilai[0])) {
+            return $nilai;
+        }
+
+        // Angka negatif (dan `+5`) itu nilai yang sah dan harus tetap kebaca
+        // sebagai angka. Lihat docblock.
+        if (is_numeric($nilai)) {
+            return $nilai;
+        }
+
+        return "'".$nilai;
     }
 
     /**

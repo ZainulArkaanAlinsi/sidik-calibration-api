@@ -22,6 +22,18 @@ use App\Services\LembarKerjaTemplate;
  */
 class PhMeterProfile extends CalibrationProfile
 {
+    /**
+     * Nomor Instruksi Kerja alat ini — `DATABASE` baris 6 (pH Meter).
+     *
+     * Dicetak di kolom `Calibration Method` sertifikat lewat
+     * [CalibrationProfile::kodeMetode]. Dinyatakan di sini, BUKAN dicocokkan
+     * dari nama alat: cadangan pencocokan nama mencari "jenis pengukuran" di
+     * dalam nama alat, dan meleset begitu pelanggan menamai alatnya di luar
+     * kosakata master — yang terbit kolom kosong atau nomor tanpa revisi, di
+     * dokumen terakreditasi.
+     */
+    public const KODE_METODE = 'SIDIK-IK-CAL-0506_Rev.6';
+
     public function __construct(private readonly LembarKerjaTemplate $template = new LembarKerjaTemplate) {}
 
     public function kode(): string
@@ -156,5 +168,28 @@ class PhMeterProfile extends CalibrationProfile
     public function desimalKelembabanEnv(): ?int
     {
         return null;
+    }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,023 / 0,021 / 0,031 pH.
+     *
+     * Di dua desimal cetaknya jadi 0,02 / 0,02 / 0,03 — titik ketiga hilang
+     * kalau diringkas.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 }

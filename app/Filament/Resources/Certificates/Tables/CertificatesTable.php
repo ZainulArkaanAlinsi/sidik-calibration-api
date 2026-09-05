@@ -5,8 +5,11 @@ namespace App\Filament\Resources\Certificates\Tables;
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
+use App\Services\CetakUlangSertifikat;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -14,6 +17,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -80,14 +84,43 @@ class CertificatesTable
                 Action::make('download')
                     ->label('Unduh PDF')
                     ->icon('heroicon-o-arrow-down-tray')
+                    // Berkas yang RAIB nggak lagi menyembunyikan tombolnya.
+                    //
+                    // Disk arsip Render kehapus tiap deploy, jadi syarat
+                    // `exists()` di sini bikin tombol unduh lenyap dari SELURUH
+                    // baris sehabis tiap deploy — dan admin tidak punya cara
+                    // tahu kenapa. Sekarang yang menentukan cuma status &
+                    // `pdf_path`; berkasnya dibangun ulang dari snapshot waktu
+                    // diklik. Lihat [\App\Services\BerkasPdfSertifikat].
                     ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_TERBIT
-                        && $record->pdf_path
-                        && Storage::disk('arsip')->exists($record->pdf_path))
-                    ->action(function (Certificate $record): StreamedResponse {
+                        && $record->pdf_path)
+                    ->action(function (Certificate $record): ?StreamedResponse {
+                        $path = app(BerkasPdfSertifikat::class)->pastikanAda($record);
+
+                        // Notifikasi, BUKAN `abort(404)`.
+                        //
+                        // `abort()` di dalam aksi Filament melempar admin ke
+                        // halaman galat mentah dan menelan konteksnya — yang
+                        // dia lihat cuma "404", tanpa tahu bahwa masalahnya
+                        // sertifikat ini nggak punya snapshot buat dibangun
+                        // ulang. Di panel, kegagalan yang bisa ditindaklanjuti
+                        // itu notifikasi yang menyebut langkah berikutnya.
+                        if ($path === null) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Berkas PDF-nya nggak bisa dibangun ulang')
+                                ->body('Sertifikat ini nggak punya data beku (snapshot), jadi '
+                                    .'lembarnya nggak bisa dirender dari mana pun. Jalankan '
+                                    .'`sertifikat:bangun-ulang` atau terbitkan ulang sesinya.')
+                                ->send();
+
+                            return null;
+                        }
+
                         // `nomor` ada slash-nya (CAL/2026/07/0001) — nggak boleh jadi nama file.
                         $namaFile = 'Sertifikat-'.str_replace('/', '-', (string) $record->nomor).'.pdf';
 
-                        return Storage::disk('arsip')->download($record->pdf_path, $namaFile);
+                        return Storage::disk('arsip')->download($path, $namaFile);
                     }),
 
                 // Export Excel (spesifikasi poin 10). Dibikin on demand dari
@@ -118,6 +151,76 @@ class CertificatesTable
                         $record->update(['status' => Certificate::STATUS_MENUNGGU_GENERATE]);
                         GenerateCertificate::dispatch($record->calibration_session_id, User::yangLogin()?->id);
                         Notification::make()->title('Sertifikat sedang diterbitkan ulang.')->success()->send();
+                    }),
+            ])
+            ->toolbarActions([
+                /*
+                  Cetak ulang PDF sertifikat TERPILIH pakai tanda tangan terbaru.
+
+                  ## Kenapa perlu dipilih satu-satu, bukan tombol "semua"
+
+                  Yang sudah ada cuma `sertifikat:bangun-ulang --render-ulang-pdf`:
+                  baris perintah, dan semua-atau-tidak-sama-sekali. Admin yang cuma
+                  mau membetulkan lima sertifikat kepaksa mencetak ulang ratusan,
+                  dan tiap berkas yang ditulis ulang itu berkas yang berubah tanpa
+                  ada yang memintanya.
+
+                  ## Kenapa dia ada di toolbar, bukan per baris
+
+                  Kasus nyatanya jamak: satu gambar tanda tangan diganti, lalu
+                  sekumpulan sertifikat menyusul. Sebagai aksi per baris, admin
+                  mengulang alur konfirmasi yang sama sepuluh kali dan berhenti di
+                  tengah.
+
+                  Penjaganya — termasuk penolakan waktu penandatangannya sudah ganti
+                  orang — ada di [\App\Services\CetakUlangSertifikat], bukan di
+                  sini. Yang di sini cuma memilih dan melaporkan.
+                */
+                BulkAction::make('cetak-ulang-pdf')
+                    ->label('Cetak ulang PDF')
+                    ->icon('heroicon-o-arrow-path-rounded-square')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cetak ulang PDF sertifikat terpilih')
+                    ->modalDescription(
+                        'Lembarnya dirender ulang dari data beku yang sama, pakai gambar tanda '
+                        .'tangan, logo, dan kop yang BERLAKU SEKARANG. Angka, nomor, tanggal, dan '
+                        .'nama penandatangannya nggak berubah sama sekali. Berkas PDF yang lama '
+                        .'ditimpa dan nggak bisa dibalikin.'
+                    )
+                    ->modalSubmitActionLabel('Cetak ulang')
+                    ->action(function (Collection $records): void {
+                        $hasil = app(CetakUlangSertifikat::class)->jalankan($records);
+
+                        $jumlahBerhasil = count($hasil['berhasil']);
+                        $ditolak = $hasil['ditolak'];
+
+                        if ($jumlahBerhasil > 0) {
+                            Notification::make()
+                                ->success()
+                                ->title("{$jumlahBerhasil} sertifikat dicetak ulang.")
+                                ->body('Unduh ulang PDF-nya buat lihat hasilnya.')
+                                ->send();
+                        }
+
+                        if ($ditolak === []) {
+                            return;
+                        }
+
+                        // Yang ditolak DISEBUT satu per satu berikut alasannya.
+                        // "3 gagal" tanpa nomornya bikin admin mencetak ulang
+                        // semuanya lagi buat menebak yang mana — persis yang
+                        // ingin dihindari fitur ini.
+                        $rincian = collect($ditolak)
+                            ->map(fn (array $baris): string => "• {$baris['nomor']} — {$baris['alasan']}")
+                            ->implode("\n");
+
+                        Notification::make()
+                            ->warning()
+                            ->title(count($ditolak).' sertifikat dilewat')
+                            ->body($rincian)
+                            ->persistent()
+                            ->send();
                     }),
             ]);
     }

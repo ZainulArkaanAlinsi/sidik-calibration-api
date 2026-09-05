@@ -339,7 +339,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### `punya_toleransi` — Update 27 Agt
 >
-> **`false` = jenis alat ini NGGAK divonis PASS/FAIL, jadi `equipments.toleransi` boleh kosong.** Berlaku buat **15 dari 20** profil: Conductivity, Spectrophotometer, Autoklaf, DO Meter, Gas Detector, TITS, TIDS, kelima Enclosure (Oven/Bath/Inkubator/Furnace/Refrigerator), dan ketiga alat suhu (Thermocouple, Termometer Gelas, Thermohygrometer). Masternya berhenti di `Correction` + `U95%` — nggak ada batas keberterimaan sama sekali di lembar kerjanya.
+> **`false` = jenis alat ini NGGAK divonis PASS/FAIL, jadi `equipments.toleransi` boleh kosong.** Berlaku buat **20 dari 25** profil — yang DIVONIS justru minoritas: cuma pH Meter, Turbidimeter, Chlorine Meter, Refractometer, dan Viscometer. Sisanya (Conductivity, Spectrophotometer, Autoklaf, DO Meter, Gas Detector, TITS, TIDS, Timbangan, kelima Enclosure, ketiga alat suhu, ketiga alat Waktu & Frekuensi, dan Micrometer) masternya berhenti di `Correction` + `U95%` — nggak ada batas keberterimaan sama sekali di lembar kerjanya.
 >
 > `true` juga buat nama alat yang nggak dikenal profil mana pun (jalur generik): di situ toleransi memang penentu PASS/FAIL-nya.
 >
@@ -390,7 +390,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Aturan lain yang bikin `422` (siapin pesannya di UI)
 > - **Tiap titik ukur minimal 2 pembacaan.** Type A itu standar deviasi antar-pengulangan — dari satu angka nggak ada sebaran yang bisa dihitung. (Aturan "minimal 3" yang kamu tulis di contoh reject itu **nggak** dipaksain backend — biar tetap jadi penilaian admin.)
 > - **Alat yang `toleransi`-nya masih kosong ditolak — TAPI cuma buat alat yang emang divonis PASS/FAIL.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
->   **⚠️ Update 27 Agt — batasannya:** 15 dari 20 profil (Conductivity, Spectro, Autoklaf, DO, Gas Detector, TITS, TIDS, kelima Enclosure, ketiga alat suhu) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
+>   **⚠️ Update 27 Agt — batasannya:** 20 dari 25 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
 > - **Standar yang sertifikatnya kadaluarsa ditolak.** Ketertelusurannya putus.
 > - `tanggal_kalibrasi` nggak boleh di masa depan.
 >
@@ -445,6 +445,43 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 (titik 1/100/1000, resolusi per-titik di `bagian[].tabel[].baris[].desimal`).
 Tanpa param = pH (default — mobile lama nggak berubah). Detail rumus & arsitektur
 profil: `docs/SPEC-turbidimeter-profile.md`.
+
+### Lembar **Timbangan** (`profil=timbangan`) — alat ke-21, kelompok Massa
+
+✅ **Live 31 Agt 2026.** Satu-satunya lembar yang bentuknya **tujuh blok**, bukan satu tabel
+titik. Handoff lengkap: `docs/perintah-frontend-timbangan.md`.
+
+Yang beda dari dua puluh lembar lain, dan yang wajib dibaca sebelum menggambar layarnya:
+
+- **Dua bagian ber-`tabel`.** `akurasi` (10 baris × 4 kolom) dan `keterulangan` (2 baris × 10
+  pengulangan × **2 sub-kolom**). Bentuknya sama dengan lembar TIDS & ketiga alat suhu, jadi
+  widget tabel yang ada bisa dipakai ulang — yang baru cuma sub-kolom kedua di keterulangan.
+- **Empat kolom `akurasi` BUKAN pengulangan.** `pengulangan_arah` melabelinya `z`, `m`, `m'`,
+  `z'` — nol sebelum, dua pembacaan berbeban, nol sesudah. Jangan ditulis "Pengulangan 1..4".
+- **Empat dropdown menentukan ANGKA**, bukan tampilan: `tipe_timbangan`
+  (`Non-Analytical`/`Analytical` — memilih tabel anak timbangan F1 vs E2), `varian_master`
+  (`kg`/`gram`/`substitusi` — memilih revisi master), `tipe_display`, `jenis_timbangan`.
+  Pilihannya dikirim server; **jangan dipetakan ulang di HP.**
+- **Blok tingkat-sesi lewat `spesifikasi_alat`**, bukan `measurements`: `keterulangan`,
+  `eksentrisitas`, `histeresis`, plus `varian_master`/`tipe_display`/`tipe_timbangan`/`satuan`.
+- **`measurements[].titik_ukur` tetap wajib** (jumlah nominal keping, = kolom `Nominal` kertas).
+  Massa konvensionalnya diturunkan server dari tabel anak timbangan, jangan dikirim dari HP.
+- **`spesifikasi_alat.keterulangan` / `.eksentrisitas` / `.histeresis` berbentuk OBJEK**, bukan
+  teks — kunci `spesifikasi_alat` lain tetap teks pendek (maks 64 karakter).
+- **`measurements[].nominal` urutannya MENGIKAT** — Mass 1..6 kolom-major. Slot pertama dapat
+  `ci` = 10 di varian substitusi; keping yang mendarat di slot salah menggeser budget tanpa error.
+- **DUA ketidakpastian per titik** (NMI Monograph 4). `ketidakpastian_diperluas` = U95% of
+  **Correction** (kolom Correction, bagian 3 sertifikat). U95% of **Weighing** (bagian 7) ikut di
+  `type_b_components` sebagai baris ber-`sumber: "u95_penimbangan"`. Tiap baris budget bawa
+  `budget: "koreksi" | "penimbangan"` — nama komponennya memang bertabrakan antar-budget.
+- **Belum ada jalur kamera** (`bentuk_pindai_foto.didukung = false`) dan **belum ada vonis
+  PASS/FAIL** (`punyaToleransi()` = false; batas keberterimaannya MPE kelas SNSU PK.M-02:2021
+  yang butuh nilai `e` dari teknisi). Jangan gambar tombol foto atau chip lulus/tidak.
+- **`kode_dokumen` null** — kertas lembar kerjanya belum pernah dikirim lab; ketiga workbook cuma
+  memuat `SIDIK-FM-CAL-2403_Rev. 0`, formulir SERTIFIKAT bersama.
+
+Tiga sesi contoh sudah ter-seed: `011-CAL-525` (kg), `019-CAL-425` (gram, Analytical),
+`0136-CAL-123` (substitusi 2000 kg).
 
 ### `status_standar` di respons sesi — banner kepala lembar kerja
 
@@ -554,10 +591,11 @@ Bikin sesi kalibrasi + kirim data mentah sekaligus. **Data dari input manual dan
 
 Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 
-> ## ✅ 26 Agt — bentuk PASANGAN buat 3 alat suhu baru
+> ## ✅ 26 Agt — bentuk PASANGAN buat 3 alat suhu baru (+ TIDS, 28 Agt)
 >
 > **Thermocouple · Termometer Gelas · Thermohygrometer** (alat ke-18, 19, 20) TIDAK
-> memakai `measurements[].pembacaan`. Ketiganya membaca **dua deret per titik** —
+> memakai `measurements[].pembacaan`. **TIDS menyusul 28 Agt** — lihat blok
+> khususnya di bawah. Keempatnya membaca **dua deret per titik** —
 > probe standar lab dan UUT dicelup bersamaan ke dryblock/oilbath/chamber yang
 > sama, lalu dibaca bergantian tiap 10 detik dalam satu sapuan 90 detik:
 >
@@ -583,8 +621,16 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 >
 > **Cara tahu lembar mana yang begini:** `GET /api/calibrations/lembar-kerja`
 > memulangkan `bagian[].tabel[]` yang tiap elemennya punya **`peran`**
-> (`standar` / `uut`) dan **`grup`** sendiri. Lembar datar tidak punya `peran`.
-> Jangan hardcode daftar kode profil — baca `peran`.
+> (`standar` / `uut`). Lembar datar tidak punya `peran`. Jangan hardcode daftar
+> kode profil — baca `peran`.
+>
+> **`grup` tidak selalu ada.** Tiga lembar pasangan pertama (Thermocouple,
+> Termometer Gelas, Thermohygrometer) mengisinya; **TIDS tidak mengirim kuncinya
+> sama sekali** — hilang dari JSON, bukan berisi `null`. Identitas tabel TIDS
+> dipegang `tahap` (`pembacaan_standard` / `pembacaan_uut`), karena kunci sel
+> berkas geometri OCR-nya dibangun dari situ dan kertasnya sudah tercetak. Jadi
+> yang membaca wajib punya jalur cadangan kunci-hilang (`kunciTabel` di HP jatuh
+> ke `peran`, dan itu tetap unik) — bukan cuma pemeriksaan `=== null`.
 >
 > ### `tipe_sensor` vs `tipe_thermocouple` — dua hal, dan gampang ketuker
 >
@@ -622,12 +668,56 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > | `tipe_pencelupan` | Termometer Gelas | `Partial` / `Total` / `Complete Immersion` | cuma peringatan (tercetak di sertifikat) |
 > | `titik_es` | Termometer Gelas | array 3 angka, uji titik es 30 menit | komponen budget-nya dihitung nol |
 > | `measurements[].parameter` | Thermohygro | `suhu` / `kelembaban` | dianggap `suhu` |
+> | `tipe_sensor` | **TIDS** | `RTD` · `Type K` · `Type N` | angkanya DITAHAN |
+> | `alat_bantu` | **TIDS** | `A` (Isotech) · `B` (Techne) | angkanya DITAHAN |
+> | `measurements[].no_probe` | **TIDS** | Type K → 1–16 · Type N → **3–12** · RTD → 17 | titik itu diblokir |
+> | `titik_es` | **TIDS** | array 2 angka (Awal & Akhir uji titik es 0 °C) | komponen `Drift UUT` jadi nol + peringatan sesi |
 >
 > **`no_probe` penomorannya BEDA per tipe** dan itu dari kertasnya sendiri: *"If
 > using Thermocouple Type N, No. Thermocouple START FROM 3. If using PRT PT100
 > (RTD), No. Thermocouple ALL 17."* Dropdown-nya sudah dikirim bentuk lembar kerja
 > lengkap dengan `grup` = nama tipe sensornya, jadi saring dari situ — jangan
 > ditulis ulang di HP.
+>
+> ### 🆕 28 Agt — TIDS ikut jalur pasangan, dan `pembacaan` datar DIPENSIUNKAN
+>
+> Lembar **Temperatur Indikator dengan Sensor** (`SIDIK-FM-CAL-0506 Rev.4`) pindah
+> ke jalur ini begitu dua workbook master TIDS turun dari lab. Yang berubah buat
+> HP:
+>
+> | | Sebelum | Sesudah |
+> |---|---|---|
+> | Tabel `Pembacaan Standard` | `simpan_ke: null` — **35 kotak yang diisi teknisi nggak pernah nyampe server** | `measurements[].standar` |
+> | Tabel `Pembacaan Alat` | `measurements[].pembacaan` | `measurements[].uut` |
+> | `tabel[].peran` | tidak ada | `standar` / `uut` |
+> | Kolom per baris | tidak ada | `kolom_baris`: `no_probe` (No. Termokopel) |
+> | Uji titik es | `spesifikasi_alat.titik_es_awal` / `.titik_es_akhir` | `titik_es_1` / `titik_es_2` → kolom sesi `titik_es` |
+> | `budget_ketidakpastian.tersedia` | `false` | **`true`** |
+> | `sumbu_uut.keputusan_skema` | `belum_diambil` | **`lima_ulangan`** |
+>
+> **Payload lama tetap tersimpan.** Server memindahkan `measurements[].pembacaan`
+> ke deret `uut` kalau `standar`/`uut` dua-duanya kosong — jadi APK yang belum
+> diperbarui nggak kehilangan kerja lapangannya. Yang HILANG tetap deret
+> standarnya (memang nggak pernah dikirim), dan tanpa itu sesinya nggak kehitung.
+>
+> **Lima kolom itu lima ULANGAN, bukan lima UUT.** Kepala kolom di kertas berbunyi
+> `0" (UUT1)`…`90" (UUT5)` dan dulu dibaca sebagai lima alat pelanggan dalam satu
+> lembar. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu
+> memakainya `AVERAGE`+`STDEV` per baris. Label cetaknya **tidak diubah** (itu
+> jangkar sumbu mendatar jalur foto); yang berubah artinya, dan artinya dikirim di
+> `sumbu_uut.keputusan_skema` + `sumbu_uut.daftar[].label_master`.
+>
+> **Tiga baris `Standard used`, bukan dua.** Baris ketiga Temperature Recorder
+> Graptech GL840 (s/n `C305B1470`) — keluarga standar itu yang menentukan tabel
+> koreksi mana yang dipakai (`recorder` per KANAL, `constant`/`yokogawa` per tipe
+> sensor). Server menurunkannya dari `standard_id` yang dipilih; HP nggak perlu
+> mengirim kode keluarganya.
+>
+> **Peringatan sesi baru yang wajib ditampilkan:**
+> `tids_master_recorder_sel_tetap` & `tids_master_tiga_komponen_tidak_dijumlah` —
+> dua-duanya menyebut penyimpangan workbook master yang ditiru apa adanya, dan
+> tiga dari empat penyimpangan itu bikin U95 lebih KECIL. Ini yang menahan tombol
+> APPROVE sampai ada manusia yang membacanya.
 >
 > **Thermohygro tidak punya `alat_bantu`.** Chamber-nya (Biobase ≥ 50 %RH / GEA
 > < 50 %RH) diturunkan SERVER dari set point, karena satu sesi memakai dua-duanya
@@ -661,6 +751,86 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > **U95-nya SATU per sesi** (Thermohygro: satu per grup parameter+chamber), dicetak
 > sebagai baris di bawah tabel — bukan kolom per titik. `desimal_u95` tetap dibaca
 > dari respons seperti biasa.
+
+> ## ✅ 2 Sep — TEBAKAN MESIN per sel (`*_ocr`), buat mengukur akurasi kamera
+>
+> Kunci OPSIONAL. Lembar yang seluruhnya diketik tangan tidak mengirimnya sama
+> sekali, dan tanpa kunci ini perilaku server sama persis seperti sebelumnya.
+>
+> ### Kenapa ada
+>
+> Teknisi mengoreksi angka hasil foto **di kotak yang sama**. Begitu dia mengetik
+> ulang, tebakan mesinnya tertimpa — dan yang sampai server cuma angka akhir.
+> Akibatnya akurasi kamera **tidak bisa dihitung sama sekali**, termasuk metrik
+> yang paling menentukan: sel yang keisi otomatis dengan keyakinan tinggi padahal
+> salah. Itu satu-satunya kegagalan yang tidak ada yang lihat sampai sertifikatnya
+> terbit.
+>
+> Yang membacanya `php artisan ocr:akurasi-kamera`.
+>
+> ### Bentuk dasarnya
+>
+> ```json
+> { "raw_text": "5O.O2", "confidence": 0.93 }
+> ```
+>
+> - `raw_text` — teks **APA ADANYA** dari pengenal, maksimal 255 karakter.
+>   Jangan dibersihkan, jangan ditambah koma, jangan ditebak desimalnya.
+>   Yang jelas ngawur justru contoh paling berharga.
+> - `confidence` — 0..1, **boleh tidak ada**. ML Kit cuma menyetel skor di
+>   sebagian versi & perangkat. Yang tidak diketahui **jangan diisi angka
+>   karangan**: kunci `confidence`-nya dihilangkan saja. Skor karangan persis
+>   yang bikin sel salah divonis hijau.
+>
+> ### Enam bentuk, ikut bentuk deret nilainya
+>
+> | Lembar | Kunci | Bentuk |
+> |---|---|---|
+> | ~13 lembar titik × Repeat | `measurements[].ocr` | deret, sejajar `pembacaan` |
+> | Thermocouple, T. Gelas, Thermohygro, **TIDS** | `measurements[].standar_ocr` · `.uut_ocr` | deret, sejajar deret sisinya |
+> | Timer/Stopwatch | `measurements[].standar_ocr` · `.uut_ocr` | deret berisi **objek per kotak**: `{jam: {...}, menit: {...}, detik: {...}, milidetik: {...}}` |
+> | 5 Enclosure (grid) | `measurements[].sensor_grid[].ocr` | deret, sejajar `pembacaan` baris itu |
+> | 5 Enclosure (dua baris deret) | `measurements[].indikator_ocr` · `.suhu_ruang_ocr` | deret, sejajar deret angkanya |
+> | Timbangan (blok Repeatability) | `spesifikasi_alat.keterulangan.baris[].<kolom>_ocr` | deret, sejajar `<kolom>` |
+> | Autoklaf (`POST /calibrations/autoclave`) | `ocr.<jalur nilainya>` | bercermin ke jalur nilainya, berawalan `ocr.` |
+>
+> ### Aturan yang MENGIKAT
+>
+> 1. **Panjangnya selalu sepanjang deret nilainya**, termasuk `null`-nya. Server
+>    membaca `$ocr[$urutan]` dengan indeks `pembacaan` yang **sama persis**, jadi
+>    deret yang dirapatkan bikin tebakan Repeat 3 tercatat sebagai tebakan
+>    Repeat 1 — pasangan yang salah, tanpa satu pun error.
+> 2. **Sisi standar & sisi UUT tidak boleh tertukar.** Yang tercetak di sertifikat
+>    `Correction`, yaitu SELISIH keduanya; tebakan yang tertukar sisi menggeser
+>    selisih itu sementara kedua angkanya tetap wajar.
+> 3. **Jangan kirim kunci kosong.** Deret berisi `null` semua bikin pembacanya
+>    mengira ada jalur kamera di kolom itu. Satu set point grid bisa punya 40
+>    baris; kunci kosong di tiap baris itu beban yang tidak dibayar apa pun.
+> 4. **Timer/Stopwatch: jangan gabungkan empat kotak jadi satu teks.** Server yang
+>    menyusunnya jadi satu penunjukan, lewat jalur yang **sama** dengan yang
+>    menyusun nilai finalnya. Kalau HP yang menyusun, dua sisi memakai jalan
+>    berbeda — dan begitu salah satunya berubah, yang diadu bukan lagi dua besaran
+>    yang sama.
+>
+> ### Yang ditolak server
+>
+> | Keadaan | Akibat |
+> |---|---|
+> | Kotak Timer yang tidak dikenal (mis. `milidetk`) | **422** |
+> | `confidence` di luar 0..1, `raw_text` > 255 karakter | **422** |
+> | Timer: ada kotak berisi yang tidak ketebak | tebakannya **dibuang** — menyusun dari sebagian berarti mencampur tebakan mesin dengan ketikan teknisi |
+> | Timer: tebakan bukan angka (mis. `1S`) | **ditolak**, tidak dibulatkan. `(int) '1S'` di PHP itu `1` — diam dan salah |
+>
+> ### Efek sampingnya ke gerbang verifikasi
+>
+> Baris yang **membawa tebakan** lahir `is_verified: false` dan
+> `input_source: "ocr"` — **walaupun `input_method` sesinya `manual`**. Ini
+> disengaja: sebelumnya beberapa jalur cuma punya satu gerbang (`input_method`),
+> jadi baris yang benar-benar dari kamera lolos jadi terverifikasi begitu sesinya
+> tercatat manual, dan gerbang approve tidak pernah bunyi.
+>
+> Konsekuensi buat HP: sesi yang mengirim tebakan **wajib** melewati
+> `POST /calibrations/{id}/measurements/verify` sebelum bisa disetujui admin.
 
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
@@ -1298,6 +1468,101 @@ GET /api/customers/lookup?search=tirta&page=1
   pelanggan nggak perlu megang kontaknya. `alamat` ikut karena blok OWNER di
   lembar kerja butuh (dan itu udah kekirim lewat `EquipmentResource.pelanggan`).
 - CRUD pelanggan **tetap admin-only** — endpoint ini bukan pintu belakang ke situ.
+- **Update 29 Agt — tahan tanda baca.** `?search=PT Maju` sekarang juga ketemu
+  `PT. Maju Jaya`, lewat kolom turunan `nama_normal` (huruf kecil semua, tanda
+  baca & spasi ganda diratakan). Bentuk badan usaha **tidak** dibuang: `PT Maju`
+  dan `CV Maju` dua badan hukum berbeda dengan NPWP berbeda. Yang nggak ketemu
+  bakal didaftarkan ulang, dan kembar bikin riwayat kalibrasi satu perusahaan
+  terbelah.
+
+---
+
+### `GET /api/customers/direktori` — cari PT di direktori LUAR (live 29 Agt)
+
+Role: **admin & teknisi**. Di-throttle `30/menit`.
+
+```http
+GET /api/customers/direktori?search=sinar%20rejeki
+```
+
+```json
+{
+  "data": [
+    { "ref": "ChIJ...", "nama": "PT Sinar Rejeki Manufaktur", "alamat": "Kawasan Industri MM2100 ..." }
+  ]
+}
+```
+
+Dipakai waktu `/customers/lookup` nol hasil — pelanggannya beneran belum pernah
+masuk master lab. Tanpa ini teknisi mengetik nama & alamat dari ingatan, dan
+alamat yang salah ketik mendarat di blok OWNER sertifikat.
+
+- **Ini proxy, bukan HP nembak penyedianya langsung.** API key-nya cuma ada di
+  `.env` server (`DIREKTORI_PERUSAHAAN_KEY`). Key di dalam APK bisa dicabut siapa
+  pun dari berkasnya lalu dipakai orang lain atas tagihan lab ini — dan
+  endpointnya ditagih **per request**.
+- **`ref` itu id tempat menurut direktorinya, BUKAN `customers.id`.** Dia nggak
+  bisa dipakai jadi `pelanggan_id`. Barisnya baru punya id pelanggan sesudah
+  dikirim ke `POST /api/customers/cepat`.
+- **Tiga jawaban yang WAJIB dibedakan klien:**
+
+  | Status | Artinya | Yang harus dilakukan layar |
+  |---|---|---|
+  | `200` + daftar (boleh kosong) | Direktorinya menjawab, segitu hasilnya | Pajang apa adanya |
+  | `503` + `tersedia: false` | API key belum disetel di server ini | Bilang belum disetel; **jangan** tawarkan "coba lagi" |
+  | `502` + `tersedia: true` | Direktorinya nggak bisa dihubungi / nolak | Bilang lagi mati, arahkan ke ketik tangan |
+
+  Diratakan jadi "daftar kosong", teknisi membacanya sebagai *PT-nya nggak ada di
+  direktori* lalu mendaftarkan ulang perusahaan yang sebenarnya ada di sana —
+  nambah kembar justru lewat fitur yang dipasang buat menguranginya.
+- **Bukan data akta.** Sumbernya direktori tempat usaha (perusahaan sebagaimana
+  muncul di peta). AHU/OSS tidak membuka API publik. Hasilnya harus tetap bisa
+  disunting teknisi sebelum tersimpan.
+- Pesan error penyedianya **tidak** diteruskan ke klien — bisa memuat potongan
+  key atau id proyek.
+
+---
+
+### `POST /api/customers/cepat` — daftarkan PT baru dari lapangan (live 29 Agt)
+
+Role: **admin & teknisi**. Langsung kepakai, tanpa antrean persetujuan — sejalan
+dengan keputusan K3/K4 buat nama alat.
+
+```json
+{ "nama": "PT Sinar Rejeki", "alamat": "MM2100 Blok C-3", "direktori_ref": "ChIJ...", "tetap_buat": false }
+```
+
+Sukses `201`:
+
+```json
+{ "data": { "id": 42, "nama": "PT Sinar Rejeki", "alamat": "MM2100 Blok C-3" } }
+```
+
+- **Cuma `nama` & `alamat`.** `contact_person`/`telepon`/`email` **tidak
+  diterima** — teknisi di gerbang pabrik nggak punya data itu, dan kolom yang ada
+  di form pasti ada yang mengisinya dengan tebakan.
+- **`sumber` & `organization_id` diisi SERVER, dan payload-nya diabaikan.**
+  `sumber` = `direktori` kalau `direktori_ref` ada, kalau nggak `admin`/`teknisi`
+  menurut role. Kalau `sumber` boleh datang dari klien, satu `{"sumber":"admin"}`
+  dari HP cukup buat bikin baris ketikan lapangan menyamar jadi baris yang sudah
+  diperiksa admin.
+- **`409` = ada yang mirip, dan itu jalan keluarnya, bukan kegagalan:**
+
+  ```json
+  {
+    "message": "Ada pelanggan dengan nama yang mirip. ...",
+    "nama_persis_sudah_ada": false,
+    "kandidat": [ { "id": 7, "nama": "PT. Maju Jaya", "alamat": "..." } ]
+  }
+  ```
+
+  - `nama_persis_sudah_ada: false` → bisa ditembus dengan `tetap_buat: true`.
+  - `nama_persis_sudah_ada: true` → **buntu.** Ditahan unique index di database;
+    `tetap_buat` nggak menembusnya. Layar **tidak boleh** menampilkan tombol
+    tembus di keadaan ini.
+
+  Kemiripannya diadu lewat `nama_normal` **dan** `direktori_ref`, dan keduanya
+  disaring ke organisasi pemanggil.
 
 ---
 

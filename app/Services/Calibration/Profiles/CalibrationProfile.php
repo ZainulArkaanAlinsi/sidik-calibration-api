@@ -7,6 +7,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\GumCalculator;
+use Illuminate\Support\Collection;
 
 /**
  * Satu **profil kalibrasi** = satu jenis alat (pH Meter, Turbidimeter, ...),
@@ -302,11 +303,36 @@ abstract class CalibrationProfile
      * yang nggak pernah ada di kertasnya, dan yang balik ke teknisi cuma angka
      * ngawur yang kelihatan wajar.
      *
-     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool}
+     * ## `didukung` vs `lokal` — DUA gerbang, dua akibat yang beda
+     *
+     * Keduanya menjawab pertanyaan yang berbeda, dan menyatukannya pernah
+     * melebarkan batas data tanpa ada yang berniat begitu (27 Agt 2026, waktu
+     * TIDS dinyalakan):
+     *
+     *  - **`didukung`** menggerbangi `POST /raw-measurements/extract-from-photo`
+     *    — jalur AI Vision CLOUD, yang **mengirim foto lembar kerja pelanggan ke
+     *    layanan pihak ketiga** (Gemini/Anthropic). Dia menjawab: "kertas alat
+     *    ini muat di bentuk `titik ukur × Repeat` yang bisa dituturkan lewat dua
+     *    penanda di atas?" Menyetelnya `true` **melebarkan batas data**, jadi
+     *    dia cuma boleh naik kalau jawabannya beneran ya.
+     *  - **`lokal`** menggerbangi tombol `FOTO TABEL INI` di aplikasi — ML Kit,
+     *    **sepenuhnya di perangkat**, citranya tidak pernah keluar HP. Dia
+     *    menjawab pertanyaan yang jauh lebih longgar: "pemeta di HP bisa
+     *    menjangkar baris & kolom kertas ini?" Kertas yang barisnya dijangkar
+     *    TULISAN (`Set point 1`, `Temp. Disk 1`) memenuhi yang kedua tanpa
+     *    memenuhi yang pertama.
+     *
+     * Bawaannya `lokal` mengikuti `didukung`, jadi tujuh belas profil yang tidak
+     * menyebutnya tidak berubah perilakunya. Yang perlu memisahkannya cuma
+     * profil yang jalur lokalnya hidup sementara bentuk dua-penandanya tidak —
+     * dan profil begitu wajib menyebut **dua-duanya**, supaya pilihan itu
+     * tertulis, bukan tersirat.
+     *
+     * @return array{kolom_suhu: bool, standar_di_baris: bool, didukung?: bool, lokal?: bool}
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true];
+        return ['kolom_suhu' => true, 'standar_di_baris' => false, 'didukung' => true, 'lokal' => true];
     }
 
     /**
@@ -375,13 +401,21 @@ abstract class CalibrationProfile
      *
      * **2. Prioritas nama atas serial** — lihat [cocokkanStandar].
      *
-     * `$equipment` null (uji bentuk, atau lembar generik sebelum alat dipilih)
-     * berarti nggak ada organisasi buat disaring. Itu sah: yang dipakai cuma
-     * label baris, dan sesi belum bisa disimpan tanpa alat.
+     * > **`$equipment` null berarti TANPA saringan organisasi — dan barisnya
+     * > membawa lebih dari label.** `when(false, ...)` tidak memasang `where`
+     * > apa pun, jadi yang pulang seluruh baris `standards` milik SEMUA lab,
+     * > lengkap dengan `no_sertifikat`, `tertelusur_ke`, `serial_number`, dan
+     * > `id` yang bisa diklik di dropdown. Pemanggil HTTP WAJIB menyertakan
+     * > konteks organisasi: `CalibrationController::lembarKerja()` memakai alat
+     * > semu ber-`organization_id` pemanggil waktu `equipment_id` tidak
+     * > dikirim. Dijaga `LembarKerjaTidakBocorLintasLabTest`.
+     * >
+     * > Null tetap diterima buat uji BENTUK lembar — di sana cuma ada satu
+     * > organisasi, jadi tidak ada yang bisa bocor ke mana pun.
      *
-     * @return \Illuminate\Support\Collection<int, Standard>
+     * @return Collection<int, Standard>
      */
-    protected function masterStandarTertaut(?Equipment $equipment): \Illuminate\Support\Collection
+    protected function masterStandarTertaut(?Equipment $equipment): Collection
     {
         return Standard::query()
             ->whereNull('parameter_kondisi')
@@ -403,11 +437,13 @@ abstract class CalibrationProfile
      * Saringan organisasinya sama pentingnya. Dropdown yang menawarkan
      * termohigrometer milik lab lain bukan cuma salah pilihan: `standard_id`
      * yang kepilih masuk ke sesi, koreksi kondisi lingkungannya dibaca dari
-     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini.
+     * sertifikat lab itu, dan angkanya kecetak di sertifikat lab ini. Dan
+     * `$equipment` null mematikan saringan itu — lihat peringatan di
+     * [masterStandarTertaut].
      *
-     * @return \Illuminate\Support\Collection<int, Standard>
+     * @return Collection<int, Standard>
      */
-    protected function masterThermohygro(?Equipment $equipment, array $kolom = ['id', 'nama', 'parameter_kondisi']): \Illuminate\Support\Collection
+    protected function masterThermohygro(?Equipment $equipment, array $kolom = ['id', 'nama', 'parameter_kondisi']): Collection
     {
         return Standard::query()
             ->whereNotNull('parameter_kondisi')
@@ -416,6 +452,184 @@ abstract class CalibrationProfile
                 fn ($q) => $q->where('organization_id', $equipment->organization_id),
             )
             ->get($kolom);
+    }
+
+    /**
+     * Satu field lembar kerja, bentuk baku yang dibaca HP.
+     *
+     * Dulu disalin `private` di enam belas profil — identik semua kecuali dua.
+     * Yang menyalinnya bukan kecerobohan: waktu profil pertama ditulis belum
+     * kelihatan bakal ada enam belas. Yang membuatnya berbahaya baru muncul
+     * belakangan — perbaikan pada satu salinan tidak pernah sampai ke lima
+     * belas lainnya, dan bentuk yang lama-lama menyimpang tidak menerbitkan
+     * satu pun error. Persis yang sudah kejadian pada aturan pencocokan nama
+     * alat; lihat docblock [CalibrationProfileRegistry::untukNamaAlat].
+     *
+     * `$ekstra` disebar PALING BELAKANG. Cuma Autoklaf yang mengisinya
+     * (`di_kertas`), dan buat dua puluh empat profil lain sebaran larik kosong
+     * tidak menambah kunci apa pun — bentuk keluarannya sama persis seperti
+     * sebelum helper ini diangkat.
+     *
+     * @param  list<array<string, mixed>>  $pilihan
+     * @param  array{kode: string, nilai: list<string>}|null  $tampilKalau
+     * @param  array<string, mixed>  $ekstra  kunci tambahan khas satu lembar
+     * @return array<string, mixed>
+     */
+    protected function field(
+        string $kode,
+        string $label,
+        string $tipe,
+        ?string $sumber = null,
+        ?string $satuan = null,
+        array $pilihan = [],
+        bool $hanyaAdmin = false,
+        ?array $tampilKalau = null,
+        array $ekstra = [],
+    ): array {
+        return [
+            'kode' => $kode,
+            'label' => $label,
+            'tipe' => $tipe,
+            'wajib' => false,
+            'sumber' => $sumber,
+            'satuan' => $satuan,
+            'pilihan' => $pilihan,
+            'hanya_admin' => $hanyaAdmin,
+            'tampil_kalau' => $tampilKalau,
+            ...$ekstra,
+        ];
+    }
+
+    /**
+     * Isi dropdown "Environmental Meter Used" dengan unit yang tercetak di kop
+     * master lembar ini, disaring ke lab pemilik alat.
+     *
+     * ## Dua bentuk `THERMOHYGRO_TERCETAK`, dan dua-duanya sah
+     *
+     * Konstanta itu ditulis dua gaya di repo ini, dan bedanya bukan
+     * kecerobohan — dia mengikuti masternya:
+     *
+     *  - **larik string** (`['TH-1', 'TH-2', …]`) untuk lembar yang kop
+     *    masternya cuma menawarkan daftar unit tanpa membedakan Inlab/Insitu;
+     *  - **larik objek** (`[['label' => 'TH-1', 'grup' => 'Inlab'], …]`) untuk
+     *    lembar yang kopnya memisahkan keduanya.
+     *
+     * Yang objek boleh membawa kunci TAMBAHAN, dan kunci itu diteruskan apa
+     * adanya ke belakang `grup` — `di_kertas` (Spektrofotometer, Viscometer)
+     * dan `tercetak` (Autoklaf) lahir dari situ. Menyeragamkan konstantanya
+     * berarti mengubah data yang menuruti kertas lab, jadi yang diseragamkan
+     * pembacanya, bukan datanya.
+     *
+     * Profil yang konstantanya bernama lain tetap override — lihat
+     * [Profiles\TidsProfile::isiPilihanThermohygro], yang `THERMOHYGRO_TERCETAK`
+     * miliknya sudah dipakai untuk hal yang BERBEDA.
+     *
+     * ## Syarat pakai
+     *
+     * Profil yang memanggil ini WAJIB punya `THERMOHYGRO_TERCETAK` sendiri.
+     * Kelas ini SENGAJA tidak menyediakan nilai bawaan: bawaan larik kosong
+     * bikin dropdown-nya terbit kosong tanpa satu pun error, dan lembar
+     * terakreditasi yang kehilangan kolom "Environmental Meter Used" itu temuan
+     * audit. Yang menjaganya lebih dulu `ThermohygroSemuaLembarTest`, yang
+     * menyapu SEMUA profil terdaftar dan menuntut dropdown-nya terisi.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    protected function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
+    {
+        $master = $this->masterThermohygro($equipment)->pluck('id', 'nama');
+
+        $pilihan = [];
+
+        foreach (static::THERMOHYGRO_TERCETAK as $unit) {
+            $label = is_array($unit) ? $unit['label'] : $unit;
+            $id = $master[$label] ?? null;
+
+            if ($id === null) {
+                continue;
+            }
+
+            $pilihan[] = [
+                'nilai' => (string) $id,
+                'label' => $label,
+                'grup' => is_array($unit) ? $unit['grup'] : 'Thermohygro lab',
+                ...(is_array($unit) ? array_diff_key($unit, ['label' => null, 'grup' => null]) : []),
+            ];
+        }
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            foreach ($bagian['field'] ?? [] as $j => $field) {
+                if (($field['kode'] ?? null) === 'thermohygro_standard_id') {
+                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
+                }
+            }
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Tempelkan standar terdaftar ke baris `Standard Used` yang TERCETAK di
+     * lembar, lewat `STANDARD_TERCETAK` milik profilnya.
+     *
+     * `terdaftar => false` sengaja tetap dikirim untuk baris yang tidak ketemu
+     * di master: barisnya memang tercetak di kertas, jadi menghilangkannya dari
+     * bentuk lembar membuat teknisi mengira kertasnya berubah.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    protected function tautkanStandarTercetak(array $bentuk, ?Equipment $equipment): array
+    {
+        $master = $this->masterStandarTertaut($equipment);
+
+        foreach ($bentuk['bagian'] as $i => $bagian) {
+            if (($bagian['kode'] ?? null) !== 'usage_check') {
+                continue;
+            }
+
+            $bentuk['bagian'][$i]['baris'] = array_map(
+                function (array $baris) use ($master): array {
+                    $cocok = $this->cocokkanStandar($master, $baris['cocok']);
+
+                    return [
+                        'label' => $baris['label'],
+                        'standard_id' => $cocok?->id,
+                        'serial_number' => $cocok?->serial_number,
+                        'no_sertifikat' => $cocok?->no_sertifikat,
+                        'tertelusur_ke' => $cocok?->tertelusur_ke,
+                        'terdaftar' => $cocok !== null,
+                    ];
+                },
+                $bentuk['bagian'][$i]['baris'],
+            );
+        }
+
+        return $bentuk;
+    }
+
+    /**
+     * Baris CMC lampiran akreditasi buat alat ini, disaring ke lab pemiliknya.
+     *
+     * Dicocokkan lewat [namaAlatKemampuan] — ejaan lampiran, bukan
+     * `nama_alat` yang diketik teknisi. Balik `null` kalau labnya belum punya
+     * barisnya; pemanggil wajib memperlakukan itu sebagai "tidak ada lantai
+     * CMC", bukan nol.
+     */
+    protected function kemampuanSesi(Equipment $equipment): ?CalibrationCapability
+    {
+        return CalibrationCapability::query()
+            ->where('nama_alat', $this->namaAlatKemampuan())
+            ->when(
+                $equipment->equipment_category_id !== null,
+                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
+            ->first();
     }
 
     /**
@@ -439,10 +653,10 @@ abstract class CalibrationProfile
      * Nama selalu lebih spesifik. Buat baris yang serialnya memang unik
      * hasilnya identik, karena namanya pun cocok.
      *
-     * @param  \Illuminate\Support\Collection<int, Standard>  $master
+     * @param  Collection<int, Standard>  $master
      * @param  list<string>  $kunci
      */
-    protected function cocokkanStandar(\Illuminate\Support\Collection $master, array $kunci): ?Standard
+    protected function cocokkanStandar(Collection $master, array $kunci): ?Standard
     {
         return $master->first(fn (Standard $s): bool => in_array($s->nama, $kunci, true))
             ?? $master->first(fn (Standard $s): bool => in_array($s->serial_number, $kunci, true));
@@ -689,6 +903,74 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Bagian sertifikat tingkat-SESI yang nggak muat di tabel empat kolom
+     * `Standard | UUT | Correction | U95%`, atau `null` kalau alat ini emang
+     * nyetak tabel itu apa adanya.
+     *
+     * Yang balikin non-null cuma alat yang sertifikat MASTER-nya beneran
+     * berbentuk lain. Timbangan sejauh ini satu-satunya lewat jalur ini:
+     * sertifikatnya DELAPAN bagian (Repeatability, Effect of Tare, Accuracy,
+     * Loading Influence, Hysterisis, Limit of Performance, Weighing
+     * Uncertainty, Standard Used), dan tujuh dari delapan nggak punya kolom
+     * `Standard`/`UUT` sama sekali. Dipaksa masuk tabel empat kolom, tujuh
+     * bagian itu hilang tanpa satu pun error — sertifikatnya tetap terbit
+     * rapi, bernomor, dan kehilangan sebagian besar isinya.
+     *
+     * Bedanya dari `hasil_autoclave` (yang bentuknya sama-sama lain): Autoklaf
+     * punya kolom sendiri di `calibration_sessions`, Timbangan nggak — blok
+     * tingkat-sesinya (keterulangan, eksentrisitas, histeresis) hidup di
+     * `spesifikasi_alat` sebagai MASUKAN, dan angka jadinya nggak pernah
+     * disimpan. Jadi disusun di sini, waktu sertifikat terbit, lalu DIBEKUKAN
+     * ke snapshot — sama persis alasannya kayak `desimal` & `judul_uut`:
+     * cetakan ulang tahun depan harus keluar angka yang sama walau
+     * kalkulatornya udah berubah.
+     *
+     * Balikin `null` = alat ini lewat jalur lama tanpa berubah sama sekali,
+     * dan itu jawaban yang benar buat dua puluh alat lainnya.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function ringkasanSertifikat(CalibrationSession $sesi): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Nomor Instruksi Kerja alat ini apa adanya (`SIDIK-IK-CAL-0505_Rev.7`),
+     * atau `null` kalau profilnya nggak menyatakan.
+     *
+     * ## Kenapa perlu, padahal sudah ada cadangan pencocokan nama
+     *
+     * [\App\Services\CertificateSnapshotBuilder::metodeKalibrasi] mencocokkan
+     * NAMA ALAT ke kolom "Jenis Pengukuran" tabel master. Itu jalan selama nama
+     * alatnya memuat jenis pengukurannya ("Timbangan Elektronik" memuat
+     * "Timbangan"), dan MELESET begitu tidak: timbangan yang di lapangan
+     * bernama "Moisture Analyzer" tidak memuat kata "Timbangan" sama sekali,
+     * jadi cadangannya tidak kena dan kolom `Calibration Method` sertifikat
+     * terbit berisi rujukan pustaka (`NMI Monograph 4`) alih-alih nomor IK lab.
+     *
+     * Di dokumen terakreditasi itu salah menyebut metode — dan tidak ada error
+     * di mana pun, karena kolomnya memang terisi.
+     *
+     * Yang nyatain di sini profilnya sendiri, bukan nama alatnya: satu profil
+     * = satu jenis pengukuran = satu baris IK di master, apa pun nama yang
+     * ditulis pelanggan di badan alatnya.
+     *
+     * Default `null` = alat ini lewat jalur lama tanpa berubah sama sekali.
+     */
+    public function kodeMetode(): ?string
+    {
+        // Dibaca dari konstanta `KODE_METODE` yang sudah jadi konvensi sepuluh
+        // profil sebelum hook ini ada — jadi menyatakannya cukup dengan menulis
+        // konstantanya, dan tidak ada dua cara melakukan hal yang sama.
+        //
+        // `static::`, bukan `self::`: yang dicari konstanta di kelas ANAK.
+        $konstanta = static::class.'::KODE_METODE';
+
+        return defined($konstanta) ? (string) constant($konstanta) : null;
+    }
+
+    /**
      * Apakah tiap titik ukur berupa GRID sensor (banyak termokopel × pengulangan
      * + Indikator), bukan satu deret pembacaan datar.
      *
@@ -720,6 +1002,102 @@ abstract class CalibrationProfile
      * hilang tanpa error.
      */
     public function butuhPasanganStandarUut(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah sesi ini berbentuk TUJUH BLOK lembar Timbangan, bukan tabel titik.
+     *
+     * Default `false`. `true` cuma untuk Timbangan: satu sesi memuat Scale
+     * Observation, Effect of Tare, Accuracy, Repeatability, Loading Influence,
+     * Hysterisis, dan Drift — dan cuma Accuracy yang jadi baris titik di
+     * sertifikat. Empat blok lain menyumbang ke budget atau ke pernyataan
+     * terpisah (LOP), jadi tidak punya `titik_ke` sama sekali.
+     *
+     * Waktu `true`, `CalibrationController` membaca `measurements[i].nominal`
+     * berikut empat pembacaannya (`z1`, `m`, `m_aksen`, `z2`) dan menyimpannya
+     * ke `raw_measurements` lewat sumbu `peran_sensor` yang sudah ada, sementara
+     * blok tingkat-sesi masuk `spesifikasi_alat`.
+     *
+     * Tanpa hook ini jalur datar menyimpan SATU deret per titik, dan tiga dari
+     * empat pembacaan tiap titik hilang tanpa error — termasuk kedua pembacaan
+     * nol yang jadi sisi kiri kolom `Correction`.
+     */
+    public function butuhBlokTimbangan(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah satu titik sesi ini berisi DUA deret waktu — stopwatch standar dan
+     * alat pelanggan yang ditekan berbarengan.
+     *
+     * Default `false`. `true` cuma untuk Timer/Stopwatch. Waktu `true`,
+     * `CalibrationController` menyimpan tiap ulangan sebagai dua baris
+     * `raw_measurements` ber-`peran_sensor` `waktu_standar`/`waktu_uut`
+     * (nilainya total milidetik, lihat `WaktuMentah::keMilidetik()`), dan jalur
+     * hitung ulang menyusunnya balik lewat `WaktuMentah::dari()`.
+     *
+     * Tanpa hook ini jalur datar menyimpan satu deret campuran per titik, dan
+     * koreksi yang lahir dari situ — selisih rata-rata standar dan UUT — tidak
+     * berarti apa-apa. Tidak ada error yang terbit; yang muncul cuma angka yang
+     * salah.
+     */
+    public function butuhBlokWaktu(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah satu titik sesi ini berisi TUMPUKAN balok ukur plus deret
+     * pembacaan yang terpisah.
+     *
+     * Default `false`. `true` cuma untuk Micrometer. Waktu `true`,
+     * `CalibrationController` menyimpan tiap keping dan tiap pembacaan sebagai
+     * baris `raw_measurements` ber-`peran_sensor`
+     * `mikro_balok`/`mikro_pembacaan`, dan jalur hitung ulang menyusunnya balik
+     * lewat `MicrometerMentah::dari()`.
+     *
+     * Tanpa hook ini jalur datar menyimpan satu deret campuran per titik —
+     * nominal balok ukur berbaur dengan penunjukan alat — dan rata-rata yang
+     * lahir dari situ menggeser koreksi tanpa satu pun error.
+     */
+    public function butuhBlokMicrometer(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Kolom `Standard Value` sertifikat DIHITUNG dari `rata_rata + koreksi`,
+     * bukan diambil dari `titik_ukur`.
+     *
+     * Default `false` — dan buat dua puluh satu alat lain kedua jalur itu
+     * memulangkan angka yang SAMA, karena `GumCalculator` menurunkan
+     * `koreksi = titik_ukur − rata_rata`. Jadi identitas
+     *
+     *     Standard Value ≡ rata_rata + koreksi
+     *
+     * memang berlaku di seluruh sistem; yang beda cuma dari mana angkanya
+     * diambil. Default dibiarkan `false` supaya sertifikat yang sudah terbit
+     * tidak bergeser satu digit pun karena urutan operasi float.
+     *
+     * ## Kenapa ada alat yang butuh `true`
+     *
+     * Sepuluh alat menaruh NILAI ACUAN di `titik_ukur`: buffer pH 4,01 itu
+     * konstanta dari sertifikat larutan, dan yang dibaca berulang alat
+     * pelanggan. Kelompok Waktu dan Frekuensi kebalikannya — yang dibaca
+     * berulang justru STANDARNYA, dan `titik_ukur` menyimpan set point, yaitu
+     * penunjukan alat pelanggan.
+     *
+     * Buat mereka `titik_ukur` bukan nilai acuan, jadi mencetaknya di kolom
+     * `Standard Value` menerbitkan tabel yang tidak konsisten dengan dirinya
+     * sendiri: master Centrifuge mencetak `59,78 | 60 | −0,22`, sedangkan
+     * `titik_ukur` apa adanya menerbitkan `60 | 59,98 | −0,22` — dan
+     * 60 − 59,98 bukan −0,22. Tidak ada error yang terbit; yang terbit
+     * sertifikat yang angkanya tidak menjumlah.
+     */
+    public function nilaiStandarDariKoreksi(): bool
     {
         return false;
     }
@@ -1150,9 +1528,9 @@ abstract class CalibrationProfile
      * keduanya berbeda — di lab terakreditasi, dua jawaban buat satu pertanyaan
      * ketertelusuran itu temuan audit.
      *
-     * @param  \Illuminate\Support\Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     * @param  Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
      */
-    public function standarSesiDariCentang(\Illuminate\Support\Collection $dicentang): ?Standard
+    public function standarSesiDariCentang(Collection $dicentang): ?Standard
     {
         return null;
     }
@@ -1190,5 +1568,84 @@ abstract class CalibrationProfile
     public function nilaiDalamSatuanAlat(float $nilai, ?string $satuanTitik, Equipment $equipment): float
     {
         return $nilai;
+    }
+
+    /**
+     * Satu komponen budget → satu baris `type_b_components`.
+     *
+     * ## Kenapa perlu diterjemahkan sama sekali
+     *
+     * Kalkulator menyimpan komponennya sebagai `u`/`ci`/`vi`, sementara
+     * `CalibrationResource::petakanTitik()` membaca kolom **`nilai`** — dan
+     * `?? null` di sana berarti bentuk yang tidak diterjemahkan pulang sebagai
+     *
+     *     {"sumber": "resolusi_standar", "distribusi": "persegi", "nilai": null}
+     *
+     * di SETIAP komponen. Nol error; yang hilang seluruh budget ketidakpastian
+     * dari layar teknisi dan admin — satu-satunya tempat angka U95 bisa
+     * ditelusuri asal-usulnya sebelum disetujui.
+     *
+     * `nilai` = `u · ci` (sumbangan komponen ke `uc`, yang dicetak lembar
+     * budget), `u_baku` = `u` mentahnya. Dua-duanya disimpan: yang pertama buat
+     * dibaca manusia, yang kedua supaya RSS-nya bisa dihitung ulang dari jejak.
+     *
+     * Bentuknya sengaja sama persis dengan [\App\Services\GumCalculator]
+     * supaya satu parser mobile berlaku buat jalur per-titik maupun
+     * per-kelompok. Profil yang butuh kolom tambahan (`disertakan`,
+     * `alasan_dikecualikan`) menggabungnya sendiri.
+     *
+     * @param  array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float}  $komponen
+     * @return array<string, mixed>
+     */
+    protected function barisAudit(array $komponen): array
+    {
+        return [
+            'sumber' => $komponen['sumber'],
+            'keterangan' => $komponen['keterangan'],
+            'distribusi' => $komponen['distribusi'],
+            'nilai' => $komponen['u'] * $komponen['ci'],
+            'u_baku' => $komponen['u'],
+            'ci' => $komponen['ci'],
+            'vi' => $komponen['vi'],
+        ];
+    }
+
+    /**
+     * Baris `perbandingan_cmc` — pembanding U95 hitung lawan CMC terakreditasi.
+     *
+     * ## Kenapa baris ini WAJIB ada, bukan hiasan
+     *
+     * `CalibrationValidator::cmcTitik()` mencari CMC titik ini dengan menyapu
+     * `type_b_components` mencari `sumber` `perbandingan_cmc`/`lantai_cmc`/`cmc`.
+     * Tidak ketemu berarti `null`, dan `null` mematikan gerbang ERROR
+     * `u95_meledak_dari_cmc` — penjagaan yang lahir dari `CAL/2026/08/0043`,
+     * satu pembacaan salah ketik yang menerbitkan U95 212x CMC lab.
+     *
+     * Terukur di jalur per-kelompok sebelum baris ini ada: sesi Tachometer
+     * dengan satu pembacaan `60` diketik `6000` terbit ber-U95 **3298,42 rpm
+     * lawan CMC 1,5 rpm — 2199x lipat** — dan lolos tanpa satu pun temuan.
+     *
+     * Diterbitkan SELALU (selama baris kemampuannya ada), bukan cuma waktu
+     * lantainya menggigit: justru waktu U95 hitung jauh DI ATAS CMC gerbang itu
+     * paling dibutuhkan.
+     *
+     * @return array<string, mixed>
+     */
+    protected function barisPerbandinganCmc(float $u95Hitung, ?float $cmc, string $satuan): array
+    {
+        return [
+            'sumber' => 'perbandingan_cmc',
+            'keterangan' => $cmc === null || $cmc <= 0
+                ? sprintf('U hitung %s %s, tanpa lantai CMC (nggak ada baris kemampuan buat titik ini)', $u95Hitung, $satuan)
+                : sprintf(
+                    'U hitung %s %s vs CMC %s %s → dilaporkan %s',
+                    $u95Hitung, $satuan, $cmc, $satuan, $cmc > $u95Hitung ? 'CMC' : 'hitung',
+                ),
+            'distribusi' => '-',
+            'nilai' => $cmc,
+            'u_baku' => $cmc,
+            'ci' => 1.0,
+            'vi' => 0.0,
+        ];
     }
 }

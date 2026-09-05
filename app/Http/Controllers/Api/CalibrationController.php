@@ -18,21 +18,26 @@ use App\Models\User;
 use App\Notifications\SesiDisetujui;
 use App\Notifications\SesiMenungguApproval;
 use App\Notifications\SesiPerluRevisi;
+use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
+use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
-use Carbon\Carbon;
+use App\Support\MicrometerMentah;
+use App\Support\TimbanganMentah;
+use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
 // method `load()` yang cuma ada di Eloquent Collection.
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -206,9 +211,29 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Alat pelanggan belum dipilih, tapi ORGANISASINYA sudah pasti: lembar
+        // ini dilayani buat lab si pemanggil. Alat semu di bawah cuma pembawa
+        // `organization_id`.
+        //
+        // Bukan kerapian — ini lubang lintas-lab. `masterStandarTertaut()` &
+        // `masterThermohygro()` menyaring organisasi lewat `$equipment`, dan
+        // `null` berarti TANPA saringan. Terukur sebelum ini ada: teknisi lab 1
+        // memanggil endpoint ini tanpa `equipment_id` dan lembarnya memuat
+        // nomor sertifikat, ketertelusuran, dan serial kalibrator milik lab 2 —
+        // plus dropdown "Environmental Meter Used" yang menawarkan
+        // `standard_id` lab 2 sebagai pilihan yang bisa diklik. Yang kepilih
+        // masuk ke sesi, koreksi kondisi lingkungannya dibaca dari sertifikat
+        // lab itu, dan angkanya kecetak di sertifikat lab ini.
+        //
+        // Sengaja TIDAK disimpan dan TIDAK ikut memilih profil: pemilihan
+        // profil di atas sudah selesai memakai `$alat` yang sebenarnya.
+        $konteksAlat = $alat ?? new Equipment([
+            'organization_id' => $request->user()->organization_id,
+        ]);
+
         $bentuk = $profil->bentukLembarKerja(
             untukAdmin: $request->user()->isAdmin(),
-            equipment: $alat,
+            equipment: $konteksAlat,
         );
 
         // Alat udah ditunjuk tapi lembarnya MASIH nyodorin dua varian satuan
@@ -301,21 +326,9 @@ class CalibrationController extends Controller
     {
         $clientRequestId = $request->input('client_request_id');
 
-        // Replay: teknisi di lapangan submit, sinyal putus pas nunggu respons
-        // (padahal request-nya udah sampe ke server), mobile nganggep gagal &
-        // retry begitu koneksi balik. Tanpa ini, retry-nya bikin sesi dobel
-        // buat 1 kejadian kalibrasi yang sama. `client_request_id` di-scope ke
-        // organisasi, sama kayak constraint DB-nya.
-        if ($clientRequestId !== null) {
-            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
-                ->where('client_request_id', $clientRequestId)
-                ->first();
-
-            if ($existing) {
-                return response()->json([
-                    'data' => new CalibrationResource($existing->load(self::RELASI)),
-                ], 200);
-            }
+        // Retry sesudah sinyal putus — alasannya lengkap di `replay()`.
+        if (($replay = $this->replay($request, $clientRequestId)) !== null) {
+            return $replay;
         }
 
         $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
@@ -355,16 +368,8 @@ class CalibrationController extends Controller
     {
         $clientRequestId = $request->input('client_request_id');
 
-        if ($clientRequestId !== null) {
-            $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
-                ->where('client_request_id', $clientRequestId)
-                ->first();
-
-            if ($existing) {
-                return response()->json([
-                    'data' => new CalibrationResource($existing->load(self::RELASI)),
-                ], 200);
-            }
+        if (($replay = $this->replay($request, $clientRequestId)) !== null) {
+            return $replay;
         }
 
         $hasil = $this->autoclave->hitung($this->perakitAutoclave->dari($request->dataUkur()));
@@ -386,7 +391,20 @@ class CalibrationController extends Controller
                 // (termasuk baris kertas Indikator Pressure, Tekanan atm awal,
                 // dan jam tiap kolom) hilang begitu sesi terkirim — nggak ada
                 // yang bisa ngadu ulang sertifikat ke kertasnya.
-                'hasil_autoclave' => [...$hasil, 'lembar' => $request->dataUkur()],
+                'hasil_autoclave' => [
+                    ...$hasil,
+                    'lembar' => $request->dataUkur(),
+                    // Tebakan mesin per sel, kalau ada. Disimpan SEBELAH
+                    // `lembar`, bukan di dalamnya: `lembar` itu yang diumpankan
+                    // ke kalkulator waktu sesi dihitung ulang, dan kunci asing
+                    // di situ nggak punya tempat.
+                    //
+                    // Autoklaf nggak pernah menulis `raw_measurements` — hasil
+                    // ukurnya cuma snapshot JSON ini — jadi tanpa blok ini
+                    // akurasi kameranya nggak punya sumber sama sekali. Yang
+                    // membacanya `ocr:akurasi-kamera`.
+                    ...($request->bacaanMesin() === [] ? [] : ['ocr' => $request->bacaanMesin()]),
+                ],
             ]);
 
             // Kondisi lingkungan yang DICETAK di sertifikat: dihitung dari
@@ -655,8 +673,12 @@ class CalibrationController extends Controller
         }
 
         if (! $periksa['valid'] && ! $abaikan) {
+            // Judulnya diambil dari peringatan yang BENERAN nyala, bukan
+            // kalimat tetap. Dulu di sini tertulis "Hasil hitung ulang beda
+            // dari yang tersimpan" untuk kelima belas kode peringatan —
+            // alasannya di [CalibrationValidator::judulPeringatan].
             return response()->json([
-                'message' => 'Hasil hitung ulang beda dari yang tersimpan. Periksa dulu; '
+                'message' => CalibrationValidator::judulPeringatan($periksa).' Periksa dulu; '
                     .'kalau memang mau lanjut, kirim ulang dengan `abaikan_peringatan: true`.',
                 'butuh_konfirmasi' => true,
                 'validasi' => $periksa,
@@ -666,13 +688,37 @@ class CalibrationController extends Controller
         // Sesi FAIL tetap boleh disetujui — hasil FAIL itu temuan yang sah dan
         // sertifikatnya tetap terbit (isinya "tidak laik pakai"). Yang beda cuma
         // keputusannya, bukan boleh/nggaknya terbit.
-        $calibration->update([
-            'status' => CalibrationSession::STATUS_DISETUJUI,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-            'catatan_revisi' => null,
-            'revisi_field' => null,
-        ]);
+        //
+        // Transisinya BERSYARAT (`where status = menunggu_approval`), bukan
+        // `update()` polos. Pemeriksaan status di awal method ini dilakukan
+        // jauh sebelum baris ini — di antaranya ada validasi, pemeriksaan OCR,
+        // dan `CalibrationValidator::periksa()` yang menyentuh database. Dua
+        // klik "Setujui" yang berdekatan sama-sama lolos pemeriksaan awal itu,
+        // lalu sama-sama sampai ke sini.
+        //
+        // Yang kalah balapan mendapat 0 baris terpengaruh dan berhenti di sini,
+        // jadi `GenerateCertificate` di bawah cuma dipanggil sekali. Ini yang
+        // pertama dari dua lapis; lapis keduanya lock di job-nya sendiri, buat
+        // pemanggil yang tidak lewat sini.
+        $berhasilDisetujui = CalibrationSession::whereKey($calibration->id)
+            ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+            ->update([
+                'status' => CalibrationSession::STATUS_DISETUJUI,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'catatan_revisi' => null,
+                'revisi_field' => null,
+                'updated_at' => now(),
+            ]);
+
+        if ($berhasilDisetujui === 0) {
+            return response()->json([
+                'message' => 'Sesi ini barusan sudah disetujui lewat permintaan lain — '
+                    .'sertifikatnya nggak dibikin dua kali. Muat ulang halamannya.',
+            ], 409);
+        }
+
+        $calibration->refresh();
 
         $job = new GenerateCertificate(
             $calibration->id,
@@ -1089,6 +1135,35 @@ class CalibrationController extends Controller
             return $this->susunPasanganStandarUut($request, $alat, $standarDefault);
         }
 
+        // Timbangan: satu titik akurasi itu EMPAT pembacaan (z1, m, m', z2)
+        // plus sampai enam nominal anak timbangan — bukan satu deret. Jalur
+        // terpisah dengan alasan yang sama seperti dua di atas: loop per-titik
+        // di bawah cuma punya tempat buat satu deret, dan tiga dari empat
+        // pembacaan tiap titik bakal hilang tanpa error — termasuk kedua
+        // pembacaan NOL yang jadi sisi kiri kolom `Correction`.
+        if ($this->profil->untukAlat($alat)->butuhBlokTimbangan()) {
+            return $this->susunBlokTimbangan($request, $alat, $standarDefault);
+        }
+
+        // Timer/Stopwatch: tiap titik DUA deret waktu (stopwatch standar & alat
+        // pelanggan yang ditekan berbarengan), dan tiap ulangan dikirim sebagai
+        // empat kotak jam/menit/detik/milidetik. Alasan jalur terpisahnya sama
+        // dengan tiga di atas — dan di sini deret yang nggak kebagian tempat
+        // justru sisi kanan kolom `Correction`.
+        if ($this->profil->untukAlat($alat)->butuhBlokWaktu()) {
+            return $this->susunBlokWaktu($request, $alat, $standarDefault);
+        }
+
+        // Micrometer: satu titik itu TUMPUKAN balok ukur (sampai tiga keping
+        // di-wringing) plus deret pembacaan alat — dua hal yang beda, bukan
+        // satu deret. Alasan jalur terpisahnya sama dengan empat di atas: loop
+        // per-titik di bawah cuma punya tempat buat satu deret, dan nominal
+        // balok ukur yang ikut masuk ke situ menggeser rata-rata pembacaan
+        // tanpa satu pun error.
+        if ($this->profil->untukAlat($alat)->butuhBlokMicrometer()) {
+            return $this->susunBlokMicrometer($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -1398,8 +1473,23 @@ class CalibrationController extends Controller
         // nggak pernah aktif buat enclosure. Grid 9×5 justru bentuk lembar yang
         // paling mungkin diisi lewat pemindaian, jadi ini bukan kasus teoretis.
         $metodeInput = (string) $request->string('input_method', 'manual');
-        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
-        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        // Nilai yang disimpan di `input_source` kalau metodenya bukan kamera
+        // tapi barisnya bawa metadata OCR — persis aturan jalur umum (:1169).
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+
+        /*
+         * Asal-kamera dihitung PER BARIS, bukan per sesi.
+         *
+         * Sebelum ini grid cuma punya SATU pintu (`input_method`), dan itu
+         * sudah ditulis sebagai kelemahan di `docs/catatan-cabut-ui-pindai.md`
+         * §1b. Begitu tiap baris membawa tebakan mesinnya sendiri, baris yang
+         * BENERAN dari kamera bisa dikenali walau sesinya tercatat manual —
+         * dan baris itulah yang wajib nunggu mata teknisi.
+         *
+         * Tanpa metadata, hasilnya sama persis dengan perilaku lama.
+         */
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
 
         $terisi = static fn ($v): bool => $v !== null && $v !== '';
 
@@ -1437,11 +1527,17 @@ class CalibrationController extends Controller
                 $kanal = isset($sensor['channel']) ? (int) $sensor['channel'] : null;
 
                 $terisi = [];
+                // Sejajar indeks sama `pembacaan` baris ini — bukan sama
+                // seluruh set point. Lihat `measurements.*.sensor_grid.*.ocr`.
+                $ocrSensor = array_values($sensor['ocr'] ?? []);
 
                 foreach (array_values($sensor['pembacaan'] ?? []) as $urutan => $nilai) {
                     if ($nilai === null || $nilai === '') {
                         continue;
                     }
+
+                    $meta = $ocrSensor[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
 
                     $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                     $terisi[] = $pembacaan;
@@ -1460,7 +1556,9 @@ class CalibrationController extends Controller
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $pembacaan,
                         'satuan' => $alat->satuan,
-                        'input_source' => $sumberInput,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_confidence' => $meta['confidence'] ?? null,
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
                         'is_verified' => ! $dariKamera,
                     ];
                 }
@@ -1472,11 +1570,15 @@ class CalibrationController extends Controller
 
             // Indikator enclosure — satu kanal, sensor_ke null.
             $indikator = [];
+            $ocrIndikator = array_values($titik['indikator_ocr'] ?? []);
 
             foreach (array_values($titik['indikator'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
                 }
+
+                $meta = $ocrIndikator[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
 
                 $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                 $indikator[] = $pembacaan;
@@ -1491,16 +1593,23 @@ class CalibrationController extends Controller
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $pembacaan,
                     'satuan' => $alat->satuan,
-                    'input_source' => $sumberInput,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_confidence' => $meta['confidence'] ?? null,
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
                     'is_verified' => ! $dariKamera,
                 ];
             }
 
             // Baris Suhu Ruang — dicatat mentah, berhenti di situ.
+            $ocrSuhuRuang = array_values($titik['suhu_ruang_ocr'] ?? []);
+
             foreach (array_values($titik['suhu_ruang'] ?? []) as $urutan => $nilai) {
                 if ($nilai === null || $nilai === '') {
                     continue;
                 }
+
+                $meta = $ocrSuhuRuang[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
 
                 $mentah[] = [
                     'titik_ke' => $titikKe,
@@ -1512,7 +1621,9 @@ class CalibrationController extends Controller
                     'standard_id' => $standarDefault?->id,
                     'pembacaan' => $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN),
                     'satuan' => $alat->satuan,
-                    'input_source' => $sumberInput,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_confidence' => $meta['confidence'] ?? null,
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
                     'is_verified' => ! $dariKamera,
                 ];
             }
@@ -1570,6 +1681,677 @@ class CalibrationController extends Controller
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
+    /**
+     * Jalur simpan lembar **Timbangan** — tujuh blok, dan cuma satu di
+     * antaranya yang jadi baris titik di sertifikat.
+     *
+     * ## Yang masuk `raw_measurements`, dan yang tidak
+     *
+     * Blok **Accuracy** per titik: empat pembacaan (`z1`, `m`, `m_aksen`,
+     * `z2`) plus sampai enam nominal anak timbangan, dibedakan lewat
+     * `peran_sensor` — sumbu yang sudah ada sejak Enclosure. **Nol kolom baru.**
+     *
+     * Lima blok tingkat-SESI (Repeatability, Loading Influence, Hysterisis,
+     * Scale Observation, Effect of Tare) masuk `spesifikasi_alat`: kelimanya
+     * satu per sesi, bukan per titik, jadi tidak punya `titik_ke` sama sekali.
+     * Memaksakan `titik_ke = 0` bikin jalur hitung ulang — yang mengelompokkan
+     * baris per `titik_ke` — melihatnya sebagai titik hantu, dan tiap sesi
+     * Timbangan bakal melaporkan satu titik gagal yang tidak pernah ada di
+     * sertifikatnya. Batas yang menempel di pilihan ini ditulis di
+     * `App\Support\TimbanganMentah`.
+     *
+     * ## Nominal disimpan sebagai baris, bukan JSON
+     *
+     * Enam slot Mass 1..6 punya `sensor_ke`-nya sendiri karena **urutannya
+     * mengikat**: slot pertama dapat `ci` = 10 di varian substitusi dan jadi
+     * satu-satunya sumber `u` standar. Ditumpuk jadi JSON, urutan itu cuma
+     * dijamin oleh kebiasaan; sebagai baris ber-`sensor_ke` dia bisa diurut
+     * ulang dan diaudit satu per satu.
+     *
+     * @return array{mentah: list<array<string, mixed>>, siap_hitung: list<array<string, mixed>>, belum_dihitung: list<array<string, mixed>>}
+     */
+    /**
+     * Empat pembacaan satu titik Timbangan, dari kunci bernama ATAU dari deret
+     * `pembacaan` menurut posisinya.
+     *
+     * ## Kenapa ada dua jalan masuk
+     *
+     * Kunci bernama (`z1`, `m`, `m_aksen`, `z2`) itu bentuk kontraknya, dan
+     * itu yang dipakai seeder & test. Tapi HP menggambar keempatnya sebagai
+     * **empat kolom pengulangan** — bentuk yang sudah dipakai dua puluh lembar
+     * lain — dan jalur kirim generiknya memulangkan satu deret `pembacaan`
+     * berisi empat angka, urut seperti kolomnya.
+     *
+     * Menyuruh HP menamai keempatnya berarti menaruh kosakata Timbangan
+     * (`m_aksen`) di layar yang menggambar dua puluh lembar; urutan kolomnya
+     * sendiri sudah dipatok bentuk lembar (`pengulangan_arah`: z, m, m', z'),
+     * jadi posisi sudah cukup untuk memetakannya di sini.
+     *
+     * Yang bernama MENANG kalau ada. Deret yang lebih pendek dari empat
+     * mengisi sebanyak yang ada — teknisi yang baru sempat mengisi dua kotak
+     * tidak boleh kehilangan dua-duanya.
+     *
+     * @param  array<string, mixed>  $titik
+     * @return array<string, mixed>
+     */
+    private static function bacaanTimbangan(array $titik): array
+    {
+        $deret = array_values((array) ($titik['pembacaan'] ?? []));
+        $hasil = [];
+
+        foreach (TimbanganMentah::PERAN_PEMBACAAN as $i => $peran) {
+            $hasil[$peran] = $titik[$peran] ?? ($deret[$i] ?? null);
+        }
+
+        return $hasil;
+    }
+
+    private function susunBlokTimbangan(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+        $satuan = (string) ($alat->satuan ?? 'kg');
+
+        // Titik dianggap terpakai kalau SALAH SATU dari empat pembacaannya ada
+        // isinya. Kalau cuma `m` yang dicek, titik yang teknisinya baru sempat
+        // mengisi kolom nol akan kebuang — dan yang kebuang bukan cuma yang
+        // barusan dikirim, tapi juga baris lama yang sudah telanjur dihapus
+        // `store()`/`update()` sebelum penyusunan ini jalan. Kelas kegagalan
+        // yang persis sama sudah kejadian di jalur pasangan standar/UUT.
+        $titikTerpakai = array_values(array_filter(
+            (array) $request->input('measurements', []),
+            static function (array $t) use ($adaIsinya): bool {
+                foreach (self::bacaanTimbangan($t) as $nilai) {
+                    if ($adaIsinya($nilai)) {
+                        return true;
+                    }
+                }
+
+                return collect($t['nominal'] ?? [])->contains($adaIsinya);
+            },
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+
+            // `titik_ukur` diisi JUMLAH NOMINAL, bukan massa konvensionalnya.
+            // Yang konvensional lahir dari tabel anak timbangan waktu dihitung,
+            // dan tabelnya bisa berubah begitu keping dikalibrasi ulang —
+            // menyimpannya di sini bikin dua angka yang mengaku mewakili hal
+            // yang sama, dan yang satu diam-diam basi.
+            $nominal = array_values(array_filter(
+                (array) ($titik['nominal'] ?? []),
+                $adaIsinya,
+            ));
+
+            $titikUkur = array_sum(array_map('floatval', $nominal));
+
+            foreach ($nominal as $slot => $nilai) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $slot + 1,
+                    'sensor_ke' => $slot + 1,
+                    'peran_sensor' => TimbanganMentah::PERAN_NOMINAL,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuan,
+                    'standard_id' => $standarDefault?->id,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            $baca = [];
+            $terbaca = self::bacaanTimbangan($titik);
+
+            foreach (TimbanganMentah::PERAN_PEMBACAAN as $peran) {
+                if (! $adaIsinya($terbaca[$peran] ?? null)) {
+                    continue;
+                }
+
+                $baca[$peran] = (float) $terbaca[$peran];
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => 1,
+                    'sensor_ke' => null,
+                    'peran_sensor' => $peran,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => (float) $terbaca[$peran],
+                    'satuan' => $satuan,
+                    'standard_id' => $standarDefault?->id,
+                    'input_source' => $sumberInput,
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $titikUkur,
+                // Kosong, dan itu disengaja: bentuk ini nggak punya deret datar.
+                // Meratakan empat pembacaan yang artinya beda-beda jadi satu
+                // deret bikin `pembacaan` campur aduk antara nol & berbeban.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'standard_id' => $standarDefault?->id,
+                'satuan' => $satuan,
+                'suhu' => null,
+                'konteks' => [
+                    'nominal' => array_map('floatval', $nominal),
+                    ...$baca,
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            // Dibulatkan ke presisi kolom `uncertainty_calculations` SEBELUM
+            // dipulangkan — sama seperti dua jalur lain. Tanpa ini `preview`
+            // memulangkan angka presisi penuh sementara yang tersimpan sudah
+            // dibulatkan kolom `decimal`, dan dua angka beda untuk satu
+            // pengukuran itu temuan audit buat lab terakreditasi.
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Susun pengukuran lembar **Timer/Stopwatch**: dua deret waktu per titik.
+     *
+     * Tiap ulangan boleh dikirim dua bentuk, dan dua-duanya diterima:
+     *
+     *  - **objek** `{jam, menit, detik, milidetik}` — bentuk yang dipakai HP,
+     *    sepadan dengan empat kotak `J M S 0.001S` di lembar masternya; dan
+     *  - **angka** — total milidetik, buat pemanggil yang sudah menjumlahkan
+     *    sendiri (mis. seeder & test).
+     *
+     * Yang disimpan selalu satu angka: total milidetik. Pemisahan jam/menit/
+     * detik cuma cara stopwatch menampilkan waktu, bukan empat besaran yang
+     * berbeda — dan menyimpannya terpisah berarti empat baris `raw_measurements`
+     * per ulangan yang tidak satu pun berdiri sendiri.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array<string, mixed>>}
+     */
+    private function susunBlokWaktu(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        // Asal-kamera per BARIS — aturan & alasannya sama dengan jalur lain.
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '' && $v !== [];
+
+        // Set point dianggap terpakai kalau SALAH SATU sisinya ada isinya.
+        // Kalau cuma satu sisi yang dicek, set point yang teknisinya baru sempat
+        // mengisi sisi standar akan kebuang — berikut baris lamanya yang sudah
+        // telanjur dihapus `store()`/`update()` sebelum penyusunan ini jalan.
+        $titikTerpakai = array_values(array_filter(
+            (array) $request->input('measurements', []),
+            static fn (array $t): bool => collect($t['standar'] ?? [])->contains($adaIsinya)
+                || collect($t['uut'] ?? [])->contains($adaIsinya),
+        ));
+
+        foreach ($titikTerpakai as $index => $titik) {
+            $titikKe = $index + 1;
+            $setpoint = (float) $titik['titik_ukur'];
+            $deret = [];
+
+            foreach ([WaktuMentah::PERAN_STANDAR => 'standar', WaktuMentah::PERAN_UUT => 'uut'] as $peran => $kunci) {
+                $terisi = [];
+                $ocrPeran = array_values((array) ($titik[$kunci.'_ocr'] ?? []));
+
+                foreach (array_values((array) ($titik[$kunci] ?? [])) as $urutan => $nilai) {
+                    $ms = $this->waktuKeMilidetik($nilai);
+
+                    if ($ms === null) {
+                        continue;
+                    }
+
+                    $meta = $ocrPeran[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
+                    $tebakanMs = $this->tebakanWaktuKeMilidetik($meta, $nilai);
+
+                    $terisi[] = $ms;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        // Nomor ULANGAN, bukan nomor sensor. `WaktuMentah`
+                        // memasangkan standar ke-i dengan UUT ke-i lewat kolom
+                        // ini, dan pasangan yang tertukar menggeser koreksi
+                        // tanpa satu pun error.
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $setpoint,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $ms,
+                        // Yang tersimpan milidetik; kolom sertifikatnya detik.
+                        // Satuannya ditulis apa adanya supaya angka mentahnya
+                        // bisa diadu langsung ke sel workbook waktu ada sengketa.
+                        'satuan' => WaktuMentah::SATUAN,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        /*
+                         * Yang disimpan penunjukan hasil SUSUN, bukan teks satu
+                         * kotak — karena yang diukur memang penunjukannya, dan
+                         * itu yang jadi `pembacaan`. Disusun pakai
+                         * `waktuKeMilidetik` yang SAMA dengan nilai finalnya,
+                         * jadi yang diadu nanti benar-benar "penunjukan yang
+                         * dilihat kamera" lawan "penunjukan yang dikirim
+                         * teknisi" — bukan dua besaran yang beda.
+                         *
+                         * Konsekuensi yang ditanggung sadar: teks mentah
+                         * per-kotaknya nggak ikut tersimpan. Kolomnya cuma
+                         * satu, dan menyimpan salah satu kotak berarti memilih
+                         * satu dari empat tanpa alasan.
+                         */
+                        'ocr_raw_text' => $tebakanMs === null ? null : (string) $tebakanMs,
+                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                $deret[$peran] = $terisi;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $setpoint,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    WaktuMentah::PERAN_STANDAR => $deret[WaktuMentah::PERAN_STANDAR],
+                    WaktuMentah::PERAN_UUT => $deret[WaktuMentah::PERAN_UUT],
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Susun sesi **Micrometer**: sebelas titik ber-nominal PRA-CETAK, lima
+     * pembacaan tiap titik.
+     *
+     * ## Tumpukan balok ukur DITURUNKAN, bukan dikirim HP
+     *
+     * Kertas lembar kerja (`SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1`) cuma mencetak
+     * nominal totalnya; tumpukan keping yang membentuknya ditentukan Instruksi
+     * Kerja. Jadi yang dikirim HP cuma pembacaannya, dan tumpukannya diambil
+     * dari varian di sini lalu ikut disimpan ke `raw_measurements`.
+     *
+     * Disimpan, bukan dibaca ulang dari tabel waktu menghitung: kalau set balok
+     * ukur lab berganti tahun depan, sesi lama harus tetap menghitung ulang
+     * dengan keping yang BENAR-BENAR dipakai waktu itu. Alasan yang sama
+     * dengan snapshot sertifikat.
+     *
+     * ## Satuan dikonversi SEKALI, di sini
+     *
+     * Yang tersimpan selalu milimeter, walau alatnya berskala inch. Master
+     * menyimpan penunjukan dalam satuan alat lalu mengalikannya 25,4 di dalam
+     * rumus, dan itulah yang melahirkan sesi 0-25 mm yang koreksinya terbit
+     * −61 mm. Nominal balok ukur TIDAK ikut dikonversi — sertifikatnya memang
+     * selalu mm.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokMicrometer(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[MicrometerMentah::KUNCI_SESI] ?? []);
+
+        // Satuan ALAT, dipakai buat mengubah penunjukan ke mm SAAT DIHITUNG —
+        // bukan saat disimpan. Yang tersimpan angka mentah yang diketik
+        // teknisi, dan `raw_measurements.satuan` menyebutkan satuannya.
+        // Alasannya di [MicrometerMentah::keMm]: mengonversi di ujung masuk
+        // tidak idempoten, dan jalur draft mengalikannya lagi tiap simpan.
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
+
+        $tabel = new TabelStandarMicrometer;
+        $varian = $tabel->pitaCmc((float) ($blok['kapasitas_mm'] ?? $alat->range_max ?? 0));
+
+        $suhuRata = MicrometerMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $bawaan = $varian['titik'][$index] ?? null;
+
+            // Titik di luar sebelas baris kertas dibuang — bukan disimpan
+            // sebagai titik ke-12 yang tidak punya nominal. Bentuk lembar
+            // mengunci barisnya (`titik_bisa_diubah = false`), jadi kelebihan
+            // baris cuma bisa datang dari payload yang salah bentuk.
+            if ($bawaan === null) {
+                continue;
+            }
+
+            $nominalCetak = (float) $bawaan['nominal_cetak_mm'];
+
+            // Baris dipetakan lewat POSISI, dan itu cuma benar selama HP
+            // mengirim kesebelas barisnya utuh dan berurutan. Hari ini memang
+            // begitu (`TitikState.siapKirim` true buat tiap baris ber-set
+            // point, termasuk yang belum disentuh), tapi itu jaminan yang
+            // hidup di repo LAIN.
+            //
+            // Kalau suatu saat HP membuang baris kosong, seluruh baris
+            // sesudahnya bergeser satu: pembacaan yang diambil di 35,3 mm
+            // tersimpan sebagai titik 31,0 mm, koreksinya meleset ~4 mm, dan
+            // tidak ada satu pun error di kedua sisi. Sertifikatnya terbit
+            // dengan angka yang kelihatan wajar di nominal yang salah.
+            //
+            // Jadi `titik_ukur` kiriman HP dipakai sebagai PEMERIKSA: dia tidak
+            // menentukan nominalnya (varian tetap yang menang — lihat
+            // `test_nominal_dari_varian_menang_atas_yang_dikirim_hp`), tapi
+            // kalau dia menunjuk baris yang berbeda jauh, pemetaannya sudah
+            // salah dan titiknya ditolak dengan alasan yang kebaca.
+            //
+            // Ambangnya longgar (0,05 mm) supaya pembulatan HP tidak pernah
+            // menolak titik yang benar: dua nominal pra-cetak yang paling
+            // berdekatan pun terpisah 1,7 mm.
+            $dikirim = $titik['titik_ukur'] ?? null;
+
+            if (is_numeric($dikirim) && abs((float) $dikirim - $nominalCetak) > 0.05) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Baris ke-%d mengirim nominal %s mm, tapi baris itu di kertas %s mm. '
+                        .'Urutan baris tidak cocok dengan lembarnya — titik tidak disimpan '
+                        .'supaya pembacaannya tidak mendarat di nominal yang salah.',
+                        $titikKe,
+                        rtrim(rtrim(number_format((float) $dikirim, 4, ',', '.'), '0'), ','),
+                        rtrim(rtrim(number_format($nominalCetak, 4, ',', '.'), '0'), ','),
+                    ),
+                ];
+
+                continue;
+            }
+            $tumpukan = array_map('floatval', $bawaan['tumpukan_mm']);
+
+            $pembacaan = [];
+
+            // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh empat
+            // lembar lain — bukan kosakata `mikro_*` sendiri.
+            //
+            // `mikro_pembacaan` sempat dipakai di sini, dan itu tidak pernah
+            // menerima satu angka pun: HP menyusun tabel satu-kolom lewat jalur
+            // datarnya (`TitikState.toSubmission()` membaca kolom `pembacaan`),
+            // jadi seluruh isian teknisi mendarat di `pembacaan` sementara sisi
+            // ini menengok kunci yang tidak pernah ada. Yang tersimpan NOL baris
+            // dan nol hitungan, tanpa satu pun error di kedua sisi. Ketahuan
+            // waktu payload HP-nya diadu ke sini, bukan waktu ada test merah.
+            //
+            // `mikro_pembacaan` tetap hidup sebagai `peran_sensor` di
+            // `raw_measurements` — di situ dia memang membedakan deret
+            // pembacaan dari nominal balok ukur.
+            $ocrPeran = array_values((array) ($titik['ocr'] ?? []));
+
+            foreach (array_values((array) ($titik['pembacaan'] ?? [])) as $urutan => $nilai) {
+                if (! is_numeric($nilai)) {
+                    continue;
+                }
+
+                $meta = $ocrPeran[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
+                // Yang DIHITUNG mm; yang DISIMPAN mentah + satuannya.
+                $pembacaan[] = MicrometerMentah::keMm($nilai, $satuanAlat);
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_PEMBACAAN,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuanAlat,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            // Titik yang belum diisi sama sekali tidak menyimpan tumpukannya
+            // juga: baris balok ukur tanpa satu pun pembacaan melahirkan titik
+            // yang "ada" di database tapi tidak punya angka, dan itu tercetak
+            // di sertifikat sebagai baris kosong yang kelihatan seperti data
+            // hilang.
+            if ($pembacaan === []) {
+                continue;
+            }
+
+            foreach ($tumpukan as $urutan => $nominal) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => MicrometerMentah::PERAN_BALOK,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalCetak,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $nominal,
+                    'satuan' => MicrometerMentah::SATUAN_BALOK,
+                    // Diturunkan server dari varian kertas, bukan diketik
+                    // teknisi maupun dibaca kamera.
+                    'input_source' => 'manual',
+                    'is_verified' => true,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominalCetak,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    MicrometerMentah::PERAN_BALOK => $tumpukan,
+                    MicrometerMentah::PERAN_PEMBACAAN => $pembacaan,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Satu penunjukan stopwatch → total milidetik, atau `null` kalau kotaknya
+     * kosong seluruhnya.
+     *
+     * `null` (bukan 0) untuk yang kosong: nol itu penunjukan yang SAH, dan
+     * memperlakukan kotak kosong sebagai nol persis kesalahan yang membuat
+     * lima titik kosong di master melahirkan koreksi 30 ms yang tercetak
+     * seperti titik sungguhan.
+     */
+    private function waktuKeMilidetik(mixed $nilai): ?float
+    {
+        if (is_numeric($nilai)) {
+            return (float) $nilai;
+        }
+
+        if (! is_array($nilai)) {
+            return null;
+        }
+
+        // Daftar kotaknya dari [PenunjukanWaktu::KOTAK], BUKAN disalin: aturan
+        // validasi dan konversi ini harus sepakat kotak mana yang sah. Dua
+        // daftar terpisah berarti kotak yang ditambah di satu sisi diterima
+        // validator tapi diam-diam dibuang di sini — waktunya meleset persis
+        // sebesar kotak itu, tanpa satu pun error.
+        $terisi = array_filter(
+            array_map(static fn (string $k): mixed => $nilai[$k] ?? null, PenunjukanWaktu::KOTAK),
+            static fn ($v): bool => $v !== null && $v !== '',
+        );
+
+        if ($terisi === []) {
+            return null;
+        }
+
+        return WaktuMentah::keMilidetik(
+            (int) ($nilai['jam'] ?? 0),
+            (int) ($nilai['menit'] ?? 0),
+            (float) ($nilai['detik'] ?? 0),
+            (float) ($nilai['milidetik'] ?? 0),
+        );
+    }
+
+    /**
+     * Susun penunjukan yang DILIHAT KAMERA dari tebakan per kotak.
+     *
+     * ## Kenapa disusun, bukan disimpan mentah per kotak
+     *
+     * Satu penunjukan stopwatch ditulis di empat kotak, tapi yang tersimpan
+     * SATU baris `raw_measurements` dalam milidetik. Yang mau diukur karena itu
+     * penunjukannya — dan penunjukan yang dilihat kamera cuma bisa dibandingkan
+     * dengan penunjukan yang dikirim teknisi kalau dua-duanya disusun dengan
+     * cara yang sama. Karena itu jalurnya `waktuKeMilidetik` yang SAMA, bukan
+     * salinan aturannya.
+     *
+     * ## Tiga hal yang bikin balik `null`, dan semuanya disengaja
+     *
+     *  1. **Bentuknya bukan objek per kotak.** Lembar satu-kolom lewat jalur
+     *     lain; tebakan datar di sini berarti bentuknya salah alamat.
+     *  2. **Ada kotak berisi yang NGGAK ketebak.** Menyusun dari sebagian kotak
+     *     berarti mencampur tebakan mesin dengan ketikan teknisi jadi satu
+     *     angka yang nggak pernah dilihat siapa pun.
+     *  3. **Tebakannya bukan angka.** `(int) '1S'` di PHP itu `1` — diam, dan
+     *     salah. Yang nggak lolos `is_numeric` ditolak di sini, bukan dibiarkan
+     *     jatuh ke pembulatan yang kelihatan wajar.
+     *
+     * @param  array<string, mixed>|null  $meta  tebakan per kotak
+     * @param  mixed  $nilaiFinal  penunjukan yang dikirim teknisi
+     */
+    private function tebakanWaktuKeMilidetik(?array $meta, mixed $nilaiFinal): ?float
+    {
+        if ($meta === null || ! is_array($nilaiFinal)) {
+            return null;
+        }
+
+        $teks = [];
+
+        foreach (PenunjukanWaktu::KOTAK as $kotak) {
+            $final = $nilaiFinal[$kotak] ?? null;
+            $adaFinal = $final !== null && $final !== '';
+            $tebakan = $meta[$kotak]['raw_text'] ?? null;
+
+            if ($tebakan === null || $tebakan === '') {
+                // Kotak yang final-nya kosong memang nggak perlu ditebak.
+                if ($adaFinal) {
+                    return null;
+                }
+
+                continue;
+            }
+
+            $angka = str_replace(',', '.', trim((string) $tebakan));
+
+            if (! is_numeric($angka)) {
+                return null;
+            }
+
+            $teks[$kotak] = $angka;
+        }
+
+        return $teks === [] ? null : $this->waktuKeMilidetik($teks);
+    }
+
+    /**
+     * Keyakinan satu penunjukan = keyakinan kotak TERLEMAH.
+     *
+     * Satu kotak salah bikin seluruh penunjukan salah, jadi yang menentukan
+     * kotak yang paling nggak diyakini — bukan rata-ratanya, yang bikin tiga
+     * kotak yakin menutupi satu kotak ragu.
+     *
+     * `null` kalau nggak ada satu pun kotak yang melaporkan skor. Yang nggak
+     * diketahui tetap nggak diisi angka karangan.
+     *
+     * @param  array<string, mixed>|null  $meta
+     */
+    private function keyakinanTerlemah(?array $meta): ?float
+    {
+        if ($meta === null) {
+            return null;
+        }
+
+        $skor = [];
+
+        foreach (PenunjukanWaktu::KOTAK as $kotak) {
+            $nilai = $meta[$kotak]['confidence'] ?? null;
+
+            if (is_numeric($nilai)) {
+                $skor[] = (float) $nilai;
+            }
+        }
+
+        return $skor === [] ? null : min($skor);
+    }
+
     private function susunPasanganStandarUut(
         CalibrationRequest $request,
         Equipment $alat,
@@ -1582,10 +2364,52 @@ class CalibrationController extends Controller
         // Angka dari KAMERA wajib dikonfirmasi manusia sebelum sesi bisa
         // disetujui — aturan yang sama dengan sembilan belas alat lain.
         $metodeInput = (string) $request->string('input_method', 'manual');
-        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
-        $sumberInput = $dariKamera ? $metodeInput : 'manual';
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        // Asal-kamera dihitung PER BARIS begitu barisnya membawa tebakan
+        // mesinnya sendiri — aturan & alasannya sama persis dengan
+        // `susunGridEnclosure`. Tanpa metadata, hasilnya identik dengan
+        // perilaku lama.
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
 
         $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+
+        // Deret DATAR (`pembacaan`) dipindahkan ke `uut` kalau dua deret
+        // pasangannya nggak ada sama sekali.
+        //
+        // Ini kompatibilitas APK, bukan kenyamanan. Lembar TIDS hidup berbulan-
+        // bulan dengan `simpan_ke: measurements[].pembacaan` di tabel UUT-nya
+        // dan `null` di tabel standar — jadi APK yang sudah terpasang mengirim
+        // deret UUT-nya lewat `pembacaan`. Begitu lembar ini pindah ke jalur
+        // pasangan (28 Agt 2026), payload lama itu berhenti punya `standar`
+        // maupun `uut`, dan saringan di bawah membuangnya BULAT-BULAT: sesi
+        // terkirim `201 Created`, nol baris `raw_measurements`, tanpa satu pun
+        // error. Kerja lapangan hilang diam-diam — kelas kegagalan yang persis
+        // sama dengan yang bikin tabel standar TIDS nggak pernah nyampe server.
+        //
+        // Aman buat tiga lembar pasangan yang lain: mereka lahir langsung di
+        // jalur ini, jadi nggak pernah ada payload datar buat mereka. Kalau
+        // toh ada, angkanya tersimpan sebagai deret UUT — bukan hilang.
+        $measurements = array_map(
+            static function (array $t) use ($adaIsinya): array {
+                $punyaPasangan = collect($t['standar'] ?? [])->contains($adaIsinya)
+                    || collect($t['uut'] ?? [])->contains($adaIsinya);
+
+                if ($punyaPasangan || ! collect($t['pembacaan'] ?? [])->contains($adaIsinya)) {
+                    return $t;
+                }
+
+                // Tebakan mesinnya ikut pindah sisi. Kalau nggak, deret
+                // `uut` punya angka tapi tebakannya nyangkut di kunci yang
+                // nggak pernah dibaca — dan hilangnya nggak ngasih gejala.
+                return [
+                    ...$t,
+                    'uut' => array_values((array) $t['pembacaan']),
+                    'uut_ocr' => array_values((array) ($t['ocr'] ?? [])),
+                ];
+            },
+            (array) $request->input('measurements', []),
+        );
 
         // Set point dianggap terpakai kalau SALAH SATU sisinya ada isinya.
         // Kalau cuma sisi UUT yang dicek, set point yang teknisinya baru sempat
@@ -1593,7 +2417,7 @@ class CalibrationController extends Controller
         // barusan dikirim, tapi juga baris lama yang sudah telanjur dihapus
         // `store()`/`update()` sebelum penyusunan ini jalan.
         $titikTerpakai = array_values(array_filter(
-            $request->input('measurements', []),
+            $measurements,
             static fn (array $t): bool => collect($t['standar'] ?? [])->contains($adaIsinya)
                 || collect($t['uut'] ?? [])->contains($adaIsinya),
         ));
@@ -1614,11 +2438,18 @@ class CalibrationController extends Controller
 
             foreach (['standar', 'uut'] as $peran) {
                 $terisi = [];
+                // Sejajar indeks sama deret sisinya sendiri. Sisi standar &
+                // sisi UUT punya tebakan yang beda, dan menukarnya bikin
+                // kolom `Correction` bergeser tanpa satu pun error.
+                $ocrPeran = array_values($titik[$peran.'_ocr'] ?? []);
 
                 foreach (array_values($titik[$peran] ?? []) as $urutan => $nilai) {
                     if (! $adaIsinya($nilai)) {
                         continue;
                     }
+
+                    $meta = $ocrPeran[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
 
                     $pembacaan = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
                     $terisi[] = $pembacaan;
@@ -1636,7 +2467,9 @@ class CalibrationController extends Controller
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $pembacaan,
                         'satuan' => $satuan,
-                        'input_source' => $sumberInput,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_confidence' => $meta['confidence'] ?? null,
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
                         'is_verified' => ! $dariKamera,
                     ];
                 }
@@ -1662,6 +2495,18 @@ class CalibrationController extends Controller
                     'alat_bantu' => $request->input('alat_bantu'),
                     'tipe_pencelupan' => $request->input('tipe_pencelupan'),
                     'titik_es' => $titikEs,
+                    // Peta bebas `spesifikasi_alat` ikut dioper UTUH.
+                    //
+                    // Bukan kelengkapan: lembar TIDS menaruh dryblock-nya di
+                    // `spesifikasi_alat.dryblock` (nilai `isotech`/`techne`)
+                    // sejak sebelum jalur pasangan ini ada, sementara lembar
+                    // Thermocouple memakai kolom `alat_bantu` (`A`/`B`). Dua
+                    // ejaan untuk satu pilihan, dan yang menentukan APK mana
+                    // yang mengirim. Tanpa peta ini, sesi TIDS dari APK lama
+                    // sampai ke `hitungPerGrup()` tanpa dryblock — dan dryblock
+                    // yang hilang bukan kolom kosong, dia dua komponen budget
+                    // yang nggak punya angka.
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
                 ],
             ];
         }
@@ -2236,6 +3081,60 @@ class CalibrationController extends Controller
      * Teknisi cuma boleh buka sesi miliknya sendiri. Tanpa ini, `GET /calibrations`
      * udah difilter tapi `GET /calibrations/{id}` masih bocor — tinggal tebak ID.
      */
+    /**
+     * Cabang replay: kiriman yang `client_request_id`-nya sudah pernah masuk.
+     *
+     * Teknisi di lapangan submit, sinyal putus pas nunggu respons (padahal
+     * request-nya sudah sampai ke server), mobile menganggapnya gagal dan retry
+     * begitu koneksi balik. Tanpa ini, retry-nya bikin sesi dobel buat satu
+     * kejadian kalibrasi yang sama. `client_request_id` di-scope ke organisasi,
+     * sama seperti constraint DB-nya.
+     *
+     * ## Kenapa `pastikanBolehLihat()` dipanggil di sini
+     *
+     * Cabang ini memulangkan `CalibrationResource` LENGKAP, dan dulu dia
+     * satu-satunya jalur baca `CalibrationSession` di controller ini yang lolos
+     * dari aturan "teknisi cuma lihat sesi miliknya sendiri". Pemeriksaannya
+     * cuma `organization_id + client_request_id`.
+     *
+     * Yang perlu ditulis jujur: ini **bukan lubang yang terbuka**. Menembusnya
+     * menuntut menebak `client_request_id` orang lain, dan itu tidak mungkin —
+     * mobile membangkitkannya dengan `Random.secure()`, UUIDv4 penuh (122 bit),
+     * dan `grep -rn client_request_id app/Http/Resources/` nol hasil: nilainya
+     * tidak pernah dikembalikan ke klien mana pun, jadi tidak ada tempat untuk
+     * mengintipnya.
+     *
+     * Diperbaiki karena dia satu-satunya pengecualian dari pola yang konsisten
+     * di seluruh controller — dan pengecualian yang tidak punya alasan tertulis
+     * itu yang biasanya disalin ke tempat berikutnya.
+     *
+     * ## Kenapa dijadikan satu fungsi
+     *
+     * Dua pemanggilnya (`store()` & `simpanAutoclave()`) dulu memuat blok yang
+     * sama persis, disalin. Penjagaan yang disalin cuma dijaga ingatan; yang
+     * ketiga nanti lahir tanpa penjagaannya lagi.
+     */
+    private function replay(Request $request, ?string $clientRequestId): ?JsonResponse
+    {
+        if ($clientRequestId === null) {
+            return null;
+        }
+
+        $existing = CalibrationSession::where('organization_id', $request->user()->organization_id)
+            ->where('client_request_id', $clientRequestId)
+            ->first();
+
+        if ($existing === null) {
+            return null;
+        }
+
+        $this->pastikanBolehLihat($request, $existing);
+
+        return response()->json([
+            'data' => new CalibrationResource($existing->load(self::RELASI)),
+        ], 200);
+    }
+
     private function pastikanBolehLihat(Request $request, CalibrationSession $sesi): void
     {
         $this->pastikanSatuOrganisasi($request, $sesi);

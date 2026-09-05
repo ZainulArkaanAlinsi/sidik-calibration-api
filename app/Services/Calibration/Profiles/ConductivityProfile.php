@@ -933,7 +933,7 @@ class ConductivityProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -1173,75 +1173,6 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
-     * @param  list<array<string, string>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
-    }
-
-    /**
      * Baris "Resolusi Alat" milik ALAT PELANGGAN buat titik ini — resolusi +
      * satuan yang beneran tampil di layar alatnya.
      *
@@ -1309,5 +1240,28 @@ class ConductivityProfile extends CalibrationProfile
         }
 
         return $terdekat;
+    }
+
+    /**
+     * U95 dicetak PER TITIK, bukan satu angka buat seluruh tabel.
+     *
+     * Permintaan pemilik lab (Pak Rohman, 3 Sep 2026) buat kelompok
+     * `instrumen-analitik`. Diukur dulu sebelum disetel — U95 tiap titik di
+     * sesi contoh: 0,499 / 8,109 / 1,7 µS/cm.
+     *
+     * Selisihnya 16 kali lipat antar titik. Diringkas jadi satu baris, dua dari
+     * tiga angka hilang dari dokumen.
+     *
+     * Faktor cakupannya SENGAJA nggak ikut dikunci ([faktorCakupanTetap] tetap
+     * `null`): `k` di sini lahir per titik juga, jadi judul kolom `k=2` bakal
+     * jadi pernyataan yang salah. Yang tercetak `U95% (±)`, dan `k`-nya
+     * dilaporkan lengkap di kalimat di bawah tabel — preseden Gas Detector.
+     *
+     * Sertifikat yang SUDAH terbit nggak ikut berubah sendiri: bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 }

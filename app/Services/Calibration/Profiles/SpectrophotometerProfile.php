@@ -477,7 +477,20 @@ class SpectrophotometerProfile extends CalibrationProfile
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => false, 'standar_di_baris' => true];
+        // `didukung` & `lokal` disebut EKSPLISIT, bukan diwarisi bawaan.
+        //
+        // Dua kunci ini sempat dihilangkan dari sini, dan nilainya diam-diam
+        // datang dari bawaan gabungan di `WorksheetExtractionController`. Itu
+        // berarti gerbang yang menentukan foto lembar ini boleh keluar HP atau
+        // nggak diputuskan di CONTROLLER, bukan di profil yang tahu kertasnya.
+        // Waktu bawaan itu diturunkan buat menutup lubang lain, jalur foto
+        // lembar ini ikut mati tanpa ada yang berniat begitu.
+        return [
+            'kolom_suhu' => false,
+            'standar_di_baris' => true,
+            'didukung' => true,
+            'lokal' => true,
+        ];
     }
 
     /**
@@ -1014,7 +1027,7 @@ class SpectrophotometerProfile extends CalibrationProfile
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -1218,56 +1231,23 @@ class SpectrophotometerProfile extends CalibrationProfile
     }
 
     /**
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
+     * Override, dan sebabnya URUTAN KUNCI.
+     *
+     * Lembar ini menandai field yang tidak tercetak di kertas lewat
+     * `di_kertas`, dan di keluarannya kunci itu duduk SEBELUM `tampil_kalau`.
+     * Jalur `$ekstra` milik [CalibrationProfile::field] menyebar isinya paling
+     * belakang, jadi memakainya menggeser urutan kunci — dan bentuk field ini
+     * ikut tercetak ke bentuk lembar yang dibandingkan utuh oleh test.
+     *
+     * `$diKertas` ditaruh paling belakang di TANDA TANGAN (bukan di keluaran)
+     * supaya sejalan dengan induknya; semua pemanggilnya memakai argumen
+     * bernama, jadi urutan parameter tidak menyentuh satu pun pemanggil.
      */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-            if ($id === null) {
-                continue;
-            }
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-                // false = unitnya sah dipilih, cuma kotaknya nggak ada di
-                // cetakan Rev.5. Layar boleh nandain, TAPI jangan nyembunyiin —
-                // lihat [THERMOHYGRO_TERCETAK].
-                'di_kertas' => $unit['di_kertas'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
     /**
      * @param  list<array<string, string>>  $pilihan
      * @return array<string, mixed>
      */
-    private function field(
+    protected function field(
         string $kode,
         string $label,
         string $tipe,
@@ -1275,8 +1255,9 @@ class SpectrophotometerProfile extends CalibrationProfile
         ?string $satuan = null,
         array $pilihan = [],
         bool $hanyaAdmin = false,
-        bool $diKertas = true,
         ?array $tampilKalau = null,
+        array $ekstra = [],
+        bool $diKertas = true,
     ): array {
         return [
             'kode' => $kode,

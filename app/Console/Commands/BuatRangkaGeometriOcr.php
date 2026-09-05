@@ -64,7 +64,11 @@ class BuatRangkaGeometriOcr extends Command
 
         if ($registry->untukKode($kode) === null) {
             $this->error("Kode alat `{$kode}` nggak dikenal.");
-            $this->line('Yang ada: '.implode(', ', array_column($template->daftar(), 'template_id')));
+            // `kodeTersedia()`, bukan `daftar()`: yang dibutuhkan cuma nama-namanya.
+            // `daftar()` membangun dua puluh empat lembar lengkap berikut query
+            // masternya, dan sekarang menuntut konteks organisasi yang perintah
+            // CLI ini memang tidak punya.
+            $this->line('Yang ada: '.implode(', ', $template->kodeTersedia()));
 
             return self::FAILURE;
         }
@@ -86,6 +90,28 @@ class BuatRangkaGeometriOcr extends Command
         }
 
         $definisi = $template->untukKode($kode);
+
+        // Lembar bersumbu CAMPURAN ditolak sebelum satu koordinat pun ditulis —
+        // lihat `sumbuCampuran()`.
+        $campur = $this->sumbuCampuran($definisi);
+
+        if ($campur !== []) {
+            $this->error(
+                "Lembar `{$kode}` mencampur dua orientasi tabel (".implode(' + ', $campur).').'
+            );
+            $this->line(
+                'Berkas geometri di sini menurunkan tinggi sel, kotak jangkar, dan urutan kunci '
+                .'sel SEKALI buat seluruh lembar, jadi yang terbit bakal bertentangan dengan '
+                .'bentuk lembarnya sendiri — dan salahnya nggak kelihatan sampai ada yang '
+                .'memindainya.'
+            );
+            $this->line(
+                'Jalur kamera per-tabel (`FOTO TABEL INI`) nggak butuh berkas ini: dia '
+                .'menjangkar ke tulisan yang tercetak, bukan ke koordinat.'
+            );
+
+            return self::FAILURE;
+        }
 
         // Batas bawah blok isian identitas — dihitung dari bentuk lembar yang
         // SAMA dengan yang dipakai `ocr:cetak-lembar`, biar grid selnya nggak
@@ -199,8 +225,8 @@ class BuatRangkaGeometriOcr extends Command
     /**
      * Arah nomor Repeat di lembar cetak, diambil dari tabel PERTAMA.
      *
-     * Satu lembar nggak pernah mencampur dua orientasi — kalau suatu saat ada
-     * yang begitu, ini titik yang harus dilonggarin jadi per tabel.
+     * Seluruh berkas ini menganggap satu lembar punya SATU orientasi: tinggi
+     * sel, kotak jangkar, dan kunci selnya diturunkan sekali buat semua tabel.
      *
      * @param  array<string, mixed>  $definisi
      */
@@ -209,6 +235,39 @@ class BuatRangkaGeometriOcr extends Command
         $sumbu = $definisi['tabel'][0]['sumbu_pengulangan'] ?? 'kolom';
 
         return in_array($sumbu, ['baris', 'kolom'], true) ? $sumbu : 'kolom';
+    }
+
+    /**
+     * Lembar yang tabelnya BEDA-BEDA orientasi ditolak, bukan digambar
+     * memakai orientasi tabel pertama.
+     *
+     * Lembar Timbangan yang pertama begitu: blok Accuracy berjajar ke kanan,
+     * blok Repeatability turun ke bawah. Digambar apa adanya, yang terbit
+     * kertas yang BERTENTANGAN dengan bentuk lembarnya sendiri — sepuluh
+     * pengulangan keterulangan tercetak melintang padahal bentuknya menyatakan
+     * menurun. Kertas begitu lebih berbahaya daripada tidak ada kertas: teknisi
+     * mengisi kotak yang letaknya tidak sama dengan yang dipetakan HP, dan yang
+     * keluar bukan error melainkan angka di baris yang salah.
+     *
+     * Ditolak di sini, bukan dibiarkan lolos dengan catatan, karena berkas
+     * geometri yang salah tidak punya gejala sampai ada yang memindainya.
+     *
+     * Melonggarkannya jadi per tabel berarti menurunkan tinggi sel, kotak
+     * jangkar, dan urutan kunci sel per tabel — bukan satu baris di sini.
+     *
+     * @param  array<string, mixed>  $definisi
+     * @return list<string> sumbu unik yang ketemu, buat pesan errornya
+     */
+    private function sumbuCampuran(array $definisi): array
+    {
+        $sumbu = [];
+
+        foreach ($definisi['tabel'] ?? [] as $t) {
+            $s = $t['sumbu_pengulangan'] ?? 'kolom';
+            $sumbu[in_array($s, ['baris', 'kolom'], true) ? $s : 'kolom'] = true;
+        }
+
+        return count($sumbu) > 1 ? array_keys($sumbu) : [];
     }
 
     /**

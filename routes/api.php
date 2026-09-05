@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeviceTokenController;
+use App\Http\Controllers\Api\DokumenGenerikController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
@@ -30,9 +31,13 @@ use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\VersiAplikasiController;
 use App\Http\Controllers\Api\WorksheetExtractionController;
 use App\Http\Controllers\Api\WorksheetScanController;
+use App\Services\Direktori\DirektoriLokalDb;
+use App\Services\Direktori\DirektoriPerusahaan;
+use App\Services\Direktori\PilihanDriver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use Laravel\Reverb\ReverbServiceProvider;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,10 +47,158 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Dipakai mobile buat mastiin sambungan ke API jalan.
-Route::get('/health', fn () => response()->json([
+Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     'status' => 'ok',
     'app' => config('app.name'),
     'time' => now()->utc()->toIso8601ZuluString(),
+
+    // Setelan yang nggak bisa diperiksa dari luar tanpa login, padahal
+    // pertanyaannya sering: "key-nya udah kebaca server belum?"
+    //
+    // Tanpa ini jawabannya cuma bisa didapat dengan membuka aplikasi, login
+    // sebagai teknisi, dan menekan tombol cari — atau membuka dashboard
+    // penyedia hosting. Dua-duanya butuh orang yang megang akunnya, dan itu
+    // bikin pertanyaan sepele ("sudah nyampe belum?") jadi bolak-balik yang
+    // panjang tiap kali setelannya diubah.
+    //
+    // Yang dilaporkan cuma ADA/TIDAK-nya, dan itu batas yang disengaja:
+    //  - Nilainya sendiri nggak pernah ikut. Nggak juga panjangnya.
+    //  - NOL request ke penyedia. `tersedia()` cuma membaca config, jadi
+    //    endpoint publik ini nggak bisa dipakai orang buat menghabiskan kuota
+    //    berbayar lab — itu yang bikin dia aman dibiarkan tanpa auth.
+    //
+    // `driver` & `bisa_ditagih` ditambah 2 Sep 2026, dan sebabnya nyata:
+    // `disetel` SENDIRIAN nggak bisa menjawab pertanyaan yang paling mahal.
+    // Dia `true` buat `osm` MAUPUN `auto` — yang pertama gratis, yang kedua
+    // menembak Google duluan. Waktu bawaan direktori dipindah ke OSM, nilainya
+    // sempat tertinggal di `auto` selama sehari dan nggak ada satu pun cara
+    // memeriksanya dari luar; yang menemukan akhirnya tagihan Google Cloud,
+    // bukan endpoint ini.
+    //
+    // Yang dilaporkan driver EFEKTIF, bukan isi `.env` apa adanya: `osmm` yang
+    // salah ketik jatuh ke `osm`, dan yang membaca perlu tahu yang jalan yang
+    // mana — bukan yang diketik. Lihat [PilihanDriver].
+    //
+    // Batasnya nggak berubah: nama driver itu STATUS, bukan rahasia. Key-nya
+    // tetap nggak pernah ikut, dan tetap nol request ke penyedia.
+    'direktori_perusahaan' => [
+        'disetel' => $direktori->tersedia(),
+        'driver' => PilihanDriver::sekarang(),
+        'bisa_ditagih' => PilihanDriver::bisaDitagih(PilihanDriver::sekarang()),
+
+        // Lapis direktori LOKAL, dilaporkan terpisah dari `driver`.
+        //
+        // Sengaja tidak dilebur ke `driver`: pertanyaan yang dijawab `driver`
+        // itu "lab ini sedang ditagih atau nggak", dan lapis lokal nggak
+        // mengubah jawabannya — dia nol jaringan, nol kuota. Meleburnya bikin
+        // `bisa_ditagih` kehilangan artinya.
+        //
+        // Tapi dia WAJIB kelihatan, karena dia menjawab pertanyaan lain yang
+        // sama seringnya: "kenapa PT ini ketemu di HP saya tapi nggak di HP
+        // teman saya" — jawabannya hampir selalu impornya belum jalan di
+        // container ini. Tanpa `baris`, satu-satunya cara memeriksanya masuk ke
+        // database produksi.
+        // Satu query, bukan `exists()` + `count()`. Endpoint ini publik tanpa
+        // auth dan dibatasi per menit per IP — menggandakan kerja database di
+        // jalur yang siapa pun boleh ketuk itu ongkos yang nggak dibeli
+        // apa-apa, karena `aktif` bisa diturunkan dari angkanya.
+        'lokal' => (fn (int $baris) => ['aktif' => $baris > 0, 'baris' => $baris])(
+            // Lewat driver, BUKAN query model langsung: di sana kegagalan baca
+            // ditelan jadi 0. Kalau health mengintip tabelnya sendiri,
+            // pemasangan yang migrasinya belum jalan bikin endpoint ini
+            // membalas 500 — endpoint yang justru dipakai buat mendiagnosis
+            // kenapa pemasangannya belum benar.
+            DirektoriLokalDb::jumlah(),
+        ),
+    ],
+
+    // Empat pertanyaan yang selama ini cuma bisa dijawab dari dashboard
+    // penyedia hosting — dan karena itu selalu jadi bolak-balik.
+    //
+    // Batasnya SAMA dengan `direktori_perusahaan` di atas: yang dilaporkan
+    // status, bukan nilai. Nol request ke penyedia, nol rahasia, aman
+    // dibiarkan tanpa auth.
+    //
+    // `versi` — commit yang BENERAN jalan di container ini. Sesudah deploy,
+    // "udah naik belum?" cuma bisa dijawab dengan membuka dashboard Render dan
+    // mencocokkan SHA-nya. Repo ini publik, jadi SHA-nya bukan rahasia; yang
+    // dibeli: satu `curl` menjawab pertanyaan yang tadinya butuh akun.
+    //
+    // `arsip.awet` — false artinya berkas (PDF sertifikat, tanda tangan, kop)
+    // tinggal di disk container yang KEHAPUS TIAP DEPLOY. PDF-nya masih bisa
+    // dibangun ulang dari snapshot (lihat App\Services\BerkasPdfSertifikat),
+    // tapi gambar tanda tangan & kop tidak punya sumber beku — sekali hilang,
+    // hilang. Selama ini false, dan nggak ada yang bisa melihatnya dari luar.
+    //
+    // `seed_saat_boot` — true artinya seeder menulis ulang seluruh sesi contoh
+    // TIAP container nyala. Dokumennya bilang "nyalain sekali pas deploy
+    // pertama, terus matiin"; kalau tidak pernah dimatikan, tiap deploy
+    // membayar ongkosnya lagi — menit yang diambil dari jendela health check
+    // Render yang cuma 15 menit, dan itu tersangka utama deploy yang timeout.
+    //
+    // `bangun_ulang_saat_boot` — saudara kembar `seed_saat_boot`, dan sampai
+    // sekarang cuma satu dari keduanya yang kelihatan dari luar. Sifatnya sama
+    // persis: `sync: false`, disetel lewat dashboard, kerja berat tiap boot.
+    // Yang berbeda cuma frekuensinya — dia dinyalakan tiap deploy yang
+    // mengubah bentuk snapshot, jadi peluang lupa mematikannya jauh lebih
+    // besar. Dokumennya menyuruh tiga langkah (nyalakan → baca deploy log →
+    // balikin ke `false`), dan langkah ketiga yang paling gampang terlupa.
+    // Lupanya senyap: tiap deploy berikutnya membangun ulang SELURUH
+    // sertifikat yang sudah terbit lagi, memakan menit dari jendela health
+    // check yang sama.
+    //
+    // Keempatnya dibaca lewat `config()`, BUKAN `env()` langsung — lihat
+    // config/deploy.php buat alasannya. Singkatnya: entrypoint memanggil
+    // `config:cache` sebelum server nyala, dan sesudah itu `env()` di luar
+    // berkas config berhenti membaca `.env`.
+    'deploy' => [
+        'versi' => config('deploy.versi'),
+        'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
+        'seed_saat_boot' => config('deploy.seed_saat_boot'),
+        'bangun_ulang_saat_boot' => config('deploy.bangun_ulang_saat_boot'),
+    ],
+
+    // Realtime sync — pertanyaan yang selama ini nggak bisa dijawab dari luar
+    // SAMA SEKALI, dan degradasinya senyap.
+    //
+    // `laravel/reverb` terpasang di `composer.json`, tapi `render.yaml` nggak
+    // punya satu pun `BROADCAST_CONNECTION` atau `REVERB_*`. Jadi produksi
+    // jatuh ke bawaan `log`: event broadcast ditulis ke berkas log dan nggak
+    // pernah nyampe ke klien. Nggak ada error, nggak ada yang gagal — pengguna
+    // cuma nggak pernah lihat pembaruan sampai dia menarik data manual.
+    //
+    // Itu bentuk kegagalan yang paling mahal dilacak: fiturnya ada di kode,
+    // ada di dokumen, dan "kelihatan" terpasang. Satu-satunya cara memeriksanya
+    // sebelum ini adalah masuk ke dashboard Render dan membaca env var-nya.
+    //
+    // Batasnya SAMA dengan dua blok di atas: yang dilaporkan status, bukan
+    // nilai. Nama driver itu status; `REVERB_APP_SECRET` nggak pernah ikut,
+    // nggak juga panjangnya. Nol request ke mana pun.
+    //
+    // Ini TIDAK menyalakan realtime-nya. Menyalakannya butuh jawaban
+    // infrastruktur yang bukan urusan kode — apakah plan Render yang dipakai
+    // sanggup menahan satu proses WebSocket panjang lagi di container yang
+    // sama. Lihat `docs/pertanyaan-lab-audit-2026-09.md` T3. Yang dibeli blok
+    // ini: keadaannya berhenti tak terlihat.
+    'realtime' => (function (): array {
+        $driver = (string) config('broadcasting.default');
+
+        return [
+            // Driver EFEKTIF, bukan isi `.env` apa adanya — alasan yang sama
+            // dengan `direktori_perusahaan.driver` di atas.
+            'driver' => $driver,
+
+            // `log` dan `null` dua-duanya berarti "nggak nyampe klien". Yang
+            // pertama nulis ke berkas log, yang kedua buang diam-diam.
+            'nyala' => ! in_array($driver, ['log', 'null'], true),
+
+            // Dipisah dari `nyala` karena dua-duanya bisa salah sendiri-sendiri:
+            // driver `reverb` tanpa paketnya bikin `/api/broadcasting/auth`
+            // gagal dengan `Class not found`, dan paket terpasang tanpa driver
+            // itu keadaan hari ini.
+            'paket_terpasang' => class_exists(ReverbServiceProvider::class),
+        ];
+    })(),
 ]));
 
 // Limiter-nya BERNAMA (didaftarin di AppServiceProvider), bukan `throttle:5,1`.
@@ -61,16 +214,26 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middl
 // token, teknisi yang aplikasinya terlalu lama nggak akan pernah lihat
 // pemberitahuannya. Lihat docblock controllernya.
 Route::get('/app/versi-terbaru', VersiAplikasiController::class)
-    ->middleware('throttle:60,1');
+    ->middleware('throttle:versi-aplikasi');
 
 // Verifikasi QR sertifikat — buat orang luar, tanpa auth (versi JSON-nya;
 // versi halaman webnya ada di routes/web.php).
-Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:30,1');
+Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middleware('throttle:verifikasi-json');
 
 /*
 |--------------------------------------------------------------------------
 | Butuh login
 |--------------------------------------------------------------------------
+|
+| Throttle di blok ini pakai limiter BERNAMA, sama alasannya dengan blok
+| publik di atas — dan angka jatahnya ada di `AppServiceProvider::rateLimiters()`,
+| bukan di baris rutenya. Sengaja: `throttle:20,1` yang kelihatan jelas di sini
+| ternyata TIDAK memisahkan jatah per endpoint. Buat request yang sudah login
+| Laravel menyusun kuncinya dari id user saja — nama route-nya nggak ikut — jadi
+| kedua belas endpoint di bawah menabung ke SATU ember dengan batas beda-beda,
+| dan yang jatahnya kecil habis gara-gara yang jatahnya besar. Lihat docblock
+| `rateLimiters()` dan `JatahThrottleTerpisahPerEndpointTest`.
+|
 */
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -162,7 +325,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan/kalibrasi/export', [LaporanController::class, 'export'])
         // Bikin file (PDF/Excel) dari sampai 5000 baris — jauh lebih berat dari
         // baca biasa, jadi jatahnya dipisah & lebih sedikit.
-        ->middleware('throttle:20,1');
+        ->middleware('throttle:laporan-export');
     Route::get('/laporan/kalibrasi', [LaporanController::class, 'kalibrasi']);
 
     // Bentuk baku lembar kerja (SIDIK-FM-CAL-0509_Rev.4) buat layar input
@@ -214,6 +377,24 @@ Route::middleware('auth:sanctum')->group(function () {
         // terakreditasi.
         Route::post('/categories/{kode}/kemampuan', [KemampuanKalibrasiController::class, 'store']);
 
+        // PT baru dari lapangan, alasannya persis sama dengan rute di atas:
+        // `pelanggan_id` itu WAJIB di `POST /equipments`, jadi pelanggan yang
+        // belum kedaftar bikin kerjaan teknisi berhenti total sampai ada admin
+        // yang buka laptop. Yang bisa diisi lewat sini cuma nama & alamat —
+        // kontak & seluruh pengelolaan pelanggan tetap di `role:admin`.
+        Route::post('/customers/cepat', [CustomerController::class, 'cepat']);
+
+        // Cari nama & alamat PT di direktori LUAR, buat ngisi rute di atas.
+        //
+        // Di-throttle karena endpoint di baliknya ditagih PER REQUEST ke pihak
+        // ketiga. Batas ini penjaga terakhir, bukan yang utama — yang utama
+        // jeda ketik di sisi HP dan kuota di konsol penyedianya. Tapi klien yang
+        // salah tulis (atau APK lama yang nggak punya jeda) bisa menghabiskan
+        // tagihan lab dalam hitungan menit, dan itu nggak boleh cuma dijaga di
+        // sisi yang nggak kita kendalikan.
+        Route::get('/customers/direktori', [CustomerController::class, 'direktori'])
+            ->middleware('throttle:direktori-luar');
+
         Route::post('/calibrations', [CalibrationController::class, 'store']);
         // Hitung tanpa nyimpen — "hitung sambil ngetik" di lembar kerja
         // (docs/permintaan-worksheet-ph.md §4). Body sama persis kayak POST
@@ -221,11 +402,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // selesai ngisi satu baris, bukan sekali per sesi — tapi tetap ada
         // batasnya, soalnya tiap panggilan mutar perhitungan GUM penuh.
         Route::post('/calibrations/preview', [CalibrationController::class, 'preview'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:pratinjau-hitung');
         // Olah data Autoklaf (bentuk data beda — 3 disk suhu + 1 titik tekanan).
         // Tabel kalibrator & CMC dari server; body cuma data ukur teknisi.
         Route::post('/calibrations/autoclave/preview', [AutoclaveController::class, 'preview'])
-            ->middleware('throttle:120,1');
+            ->middleware('throttle:pratinjau-autoclave');
         // Simpan sesi Autoklaf (snapshot hasil di kolom JSON, bukan titik ukur).
         // Masuk riwayat/approval yang sama kayak alat lain.
         Route::post('/calibrations/autoclave', [CalibrationController::class, 'simpanAutoclave']);
@@ -245,7 +426,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // pelanggan ke layanan pihak ketiga, jadi lab harus bisa menutupnya
         // tanpa nunggu rilis. Path ngikut SPEC-vision-prompt.md §8.
         Route::post('/raw-measurements/extract-from-photo', [WorksheetExtractionController::class, 'extract'])
-            ->middleware('throttle:30,1');
+            ->middleware('throttle:ekstrak-foto');
 
         // OCR TEMPLATE LOKAL — jalur pindai UTAMA. Tanpa AI pihak ketiga & tanpa
         // biaya per foto: ANGKANYA dibaca di HP, yang nyampe sini teks per sel +
@@ -258,14 +439,36 @@ Route::middleware('auth:sanctum')->group(function () {
         // Throttle lebih longgar dari AI Vision: nggak ada biaya per panggilan,
         // dan teknisi wajar ngulang motret beberapa kali sampai lembarnya kebaca.
         Route::post('/worksheet-scans', [WorksheetScanController::class, 'store'])
-            ->middleware('throttle:60,1');
+            ->middleware('throttle:pindai-lembar');
         Route::get('/worksheet-scans/{worksheetScan}', [WorksheetScanController::class, 'show']);
         // Potongan citra per sel — dipanggil sekali per sel yang dicek teknisi,
         // jadi batasnya jauh lebih tinggi dari endpoint lain.
         Route::get('/worksheet-scans/{worksheetScan}/sel/{kunci}/crop', [WorksheetScanController::class, 'crop'])
-            ->middleware('throttle:300,1')
+            ->middleware('throttle:pindai-crop')
             ->where('kunci', '[A-Za-z0-9_|\-\.]+');
         Route::post('/worksheet-scans/{worksheetScan}/koreksi', [WorksheetScanController::class, 'koreksi']);
+
+        // BACA DOKUMEN GENERIK — lembar APA PUN, termasuk yang belum punya
+        // profil dan geometri. Jawaban buat lembar baru, biar jawabannya bukan
+        // "template nggak dikenal".
+        //
+        // Nempel di saklar `VISION_AKTIF` yang SAMA dengan AI Vision di atas,
+        // dan itu disengaja: endpoint ini mengirim SELURUH HALAMAN ke layanan
+        // pihak ketiga — lebih luas dari jalur AI Vision yang cuma mengirim
+        // foto tabel. Saklar kedua berarti lab yang sudah menutup pengiriman
+        // foto tetap mengirim lewat sini tanpa sadar.
+        //
+        // Throttle seketat AI Vision: ada biaya per panggilan, dan gambarnya
+        // lebih besar.
+        Route::post('/dokumen/baca', [DokumenGenerikController::class, 'baca'])
+            ->middleware('throttle:dokumen-baca');
+        // Buka ulang & koreksi hasil baca. Dua-duanya nggak manggil AI, jadi
+        // batasnya jauh lebih longgar dari `baca` — layar review wajar dibuka
+        // berkali-kali sambil teknisi mencocokkan angka sama kertasnya.
+        Route::get('/dokumen/bacaan/{dokumenBacaan}', [DokumenGenerikController::class, 'show'])
+            ->middleware('throttle:dokumen-bacaan');
+        Route::post('/dokumen/bacaan/{dokumenBacaan}/koreksi', [DokumenGenerikController::class, 'koreksi'])
+            ->middleware('throttle:dokumen-koreksi');
 
         // Konfirmasi pembacaan hasil pindai (is_verified) — syarat sebelum approve.
         Route::post(
@@ -300,7 +503,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
         // dokumen resmi ke luar, bukan baca data.
         Route::post('/certificates/{certificate}/kirim-email', [CertificateController::class, 'kirimEmail'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:sertifikat-kirim-email');
         // Catat pengiriman lewat WhatsApp. Pesannya sendiri dikirim dari HP
         // admin (buka WhatsApp lewat `wa.me`), BUKAN dari server — makanya
         // endpoint-nya cuma nyatet, nggak ngirim.
@@ -310,7 +513,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // nomor mana, sama siapa" — dan itu nggak bisa dijawab kalau jejaknya
         // cuma ada di HP satu orang.
         Route::post('/certificates/{certificate}/catat-whatsapp', [CertificateController::class, 'catatWhatsapp'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:sertifikat-catat-whatsapp');
         Route::get('/certificates/{certificate}/riwayat-email', [CertificateController::class, 'riwayatEmail']);
 
         Route::get('/organization', [OrganizationController::class, 'show']);
@@ -420,7 +623,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // tangan berhenti jadi bukti.
         // `/export` didaftarin SEBELUM yang tanpa suffix biar urutannya jelas.
         Route::get('/audit-logs/export', [AuditLogController::class, 'export'])
-            ->middleware('throttle:20,1');
+            ->middleware('throttle:audit-export');
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
         Route::get('/users', [UserController::class, 'index']);

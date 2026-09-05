@@ -622,7 +622,20 @@ class ViscometerProfile extends CalibrationProfile
      */
     public function bentukPindaiFoto(): array
     {
-        return ['kolom_suhu' => true, 'standar_di_baris' => false];
+        // `didukung` & `lokal` disebut EKSPLISIT, bukan diwarisi bawaan.
+        //
+        // Dua kunci ini sempat dihilangkan dari sini, dan nilainya diam-diam
+        // datang dari bawaan gabungan di `WorksheetExtractionController`. Itu
+        // berarti gerbang yang menentukan foto lembar ini boleh keluar HP atau
+        // nggak diputuskan di CONTROLLER, bukan di profil yang tahu kertasnya.
+        // Waktu bawaan itu diturunkan buat menutup lubang lain, jalur foto
+        // lembar ini ikut mati tanpa ada yang berniat begitu.
+        return [
+            'kolom_suhu' => true,
+            'standar_di_baris' => false,
+            'didukung' => true,
+            'lokal' => true,
+        ];
     }
 
     /**
@@ -1261,7 +1274,7 @@ class ViscometerProfile extends CalibrationProfile
                             'Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -1440,55 +1453,6 @@ class ViscometerProfile extends CalibrationProfile
     }
 
     /**
-     * @param  array<string, mixed>  $bentuk
-     * @return array<string, mixed>
-     */
-    private function isiPilihanThermohygro(array $bentuk, ?Equipment $equipment = null): array
-    {
-        $master = Standard::query()
-            ->whereNotNull('parameter_kondisi')
-            // Disaring ke lab pemilik alat: dropdown yang menawarkan
-            // termohigrometer lab lain bikin koreksi kondisi lingkungan
-            // dibaca dari sertifikat lab itu, lalu kecetak di sertifikat
-            // lab ini.
-            ->when(
-                $equipment?->organization_id !== null,
-                fn ($q) => $q->where('organization_id', $equipment->organization_id),
-            )
-            ->pluck('id', 'nama');
-
-        $pilihan = [];
-
-        foreach (self::THERMOHYGRO_TERCETAK as $unit) {
-            $id = $master[$unit['label']] ?? null;
-
-            if ($id === null) {
-                continue;
-            }
-
-            $pilihan[] = [
-                'nilai' => (string) $id,
-                'label' => $unit['label'],
-                'grup' => $unit['grup'],
-                // false = unitnya sah dipilih, cuma kotaknya nggak digambar di
-                // cetakan Rev.3. Layar boleh nandain, TAPI jangan nyembunyiin —
-                // lihat [THERMOHYGRO_TERCETAK].
-                'di_kertas' => $unit['di_kertas'],
-            ];
-        }
-
-        foreach ($bentuk['bagian'] as $i => $bagian) {
-            foreach ($bagian['field'] ?? [] as $j => $field) {
-                if ($field['kode'] === 'thermohygro_standard_id') {
-                    $bentuk['bagian'][$i]['field'][$j]['pilihan'] = $pilihan;
-                }
-            }
-        }
-
-        return $bentuk;
-    }
-
-    /**
      * Tiga isian per titik: Spindle, RPM, dan Resolusi UUT.
      *
      * Dibangkitkan dari [TITIK], bukan ditulis sembilan kali — kalau lab nambah
@@ -1533,33 +1497,6 @@ class ViscometerProfile extends CalibrationProfile
         }
 
         return $field;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $pilihan
-     * @return array<string, mixed>
-     */
-    private function field(
-        string $kode,
-        string $label,
-        string $tipe,
-        ?string $sumber = null,
-        ?string $satuan = null,
-        array $pilihan = [],
-        bool $hanyaAdmin = false,
-        ?array $tampilKalau = null,
-    ): array {
-        return [
-            'kode' => $kode,
-            'label' => $label,
-            'tipe' => $tipe,
-            'wajib' => false,
-            'sumber' => $sumber,
-            'satuan' => $satuan,
-            'pilihan' => $pilihan,
-            'hanya_admin' => $hanyaAdmin,
-            'tampil_kalau' => $tampilKalau,
-        ];
     }
 
     /** Master Viscometer: `PERHITUNGAN!G14` format `General` → `25,02`. */

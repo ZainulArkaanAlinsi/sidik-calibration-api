@@ -149,15 +149,148 @@ class ProfilDariNamaAlatTest extends TestCase
             'Gelas Ukur' => ['Gelas Ukur'],
             'Picnometer' => ['Picnometer'],
             'Hydrometer' => ['Hydrometer'],
-            'Micrometer' => ['Micrometer'],
+            // Micrometer PINDAH dari sini 4 Sep 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-25, kelompok Dimensi), dari EMPAT
+            // workbook master yang turun dari lab. Yang menjaga arah
+            // sebaliknya — `test_micrometer_dapat_lembarnya_sendiri` di bawah.
             'Dial Indicator' => ['Dial Indicator'],
             'Flow Meter Cairan (Totalizer)' => ['Flow Meter Cairan (Totalizer)'],
-            'Timbangan (Elektronik, mekanik)' => ['Timbangan (Elektronik, mekanik)'],
+            // Timbangan PINDAH dari sini 31 Agt 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-21, kelompok Massa), dari tiga workbook
+            // master yang turun dari lab. Yang menjaga arah sebaliknya —
+            // `test_timbangan_dapat_lembarnya_sendiri` di bawah.
             'Pressure Gauge' => ['Pressure Gauge'],
-            'Timer/Stopwatch' => ['Timer/Stopwatch'],
+            // `Timer/Stopwatch` PINDAH dari sini 1 Sep 2026, bareng
+            // `Centrifuge` & `Infrared Tachometer` yang memang belum pernah
+            // ada di daftar ini: ketiganya sekarang punya lembar kerjanya
+            // sendiri (alat ke-22..24, kelompok "Waktu dan Frekuensi"), dari
+            // tiga workbook master yang turun dari lab. Yang menjaga arah
+            // sebaliknya — `test_alat_waktu_frekuensi_dapat_lembarnya_sendiri`.
             'kosong' => [''],
             'spasi doang' => ['   '],
         ];
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-22..24: nama yang HARUS mendarat di ketiga
+     * profil kelompok "Waktu dan Frekuensi".
+     *
+     * Yang paling rawan `Stopwatch` — `INPUT DATA!E10` master menulisnya
+     * begitu, tanpa satu pun kata "Timer" di dalamnya. Tanpa alias, alat itu
+     * jatuh ke form generik dan seluruh mesin hitung waktunya nggak pernah
+     * kepanggil.
+     *
+     * Tiga nama diadu supaya jelas TETAP bukan milik kelompok ini:
+     * `Thermohygrometer` (memuat "meter", bukan alat waktu), `Flow Meter
+     * Cairan (Flowrate)` (satuannya Lpm — per MENIT, tapi besarannya aliran),
+     * dan `Dial Indicator` (panjang).
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaWaktuFrekuensi(): array
+    {
+        return [
+            'lampiran akreditasi no. 37' => ['Timer/Stopwatch', 'timer_stopwatch'],
+            'nama sesi contoh master' => ['Stopwatch', 'timer_stopwatch'],
+            'stopwatch bermerk' => ['Stopwatch Casio HS-80TW', 'timer_stopwatch'],
+            'timer saja' => ['Timer', 'timer_stopwatch'],
+            'lampiran akreditasi no. 38' => ['Centrifuge', 'centrifuge'],
+            'centrifuge bermerk' => ['Centrifuge Hettich EBA 200', 'centrifuge'],
+            'lampiran akreditasi no. 39' => ['Infrared Tachometer', 'tachometer'],
+            'tachometer pendek' => ['Tachometer', 'tachometer'],
+            'tachometer digital' => ['Digital Tachometer', 'tachometer'],
+            'suhu, BUKAN waktu' => ['Thermohygrometer', 'thermohygro'],
+            'aliran per menit, BUKAN waktu' => ['Flow Meter Cairan (Flowrate)', null],
+            'panjang, BUKAN waktu' => ['Dial Indicator', null],
+        ];
+    }
+
+    #[DataProvider('namaWaktuFrekuensi')]
+    public function test_alat_waktu_frekuensi_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-25: nama yang HARUS mendarat di `micrometer`
+     * — dan tetangga sekelompoknya yang HARUS tetap null.
+     *
+     * Yang paling rawan ejaan Indonesia `Mikrometer` (dengan k): sesi lab
+     * menulisnya begitu separuh waktu, dan tanpa alias alat itu jatuh ke form
+     * generik — seluruh mesin hitung dimensinya nggak pernah kepanggil dan U95
+     * lahir dari lantai CMC.
+     *
+     * Tiga tetangga diadu supaya jelas TETAP bukan milik profil ini: `Jangka
+     * Sorong` dan `Vernier Caliper` (lampiran no. 35, alat yang beda) serta
+     * `Dial Indicator` (no. 36). Ketiganya sekelompok Dimensi dan belum punya
+     * lembar; kalau salah satu mulai mendarat di `micrometer`, sesinya dihitung
+     * dengan tabel balok ukur yang bukan miliknya.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaDimensi(): array
+    {
+        return [
+            'lampiran akreditasi no. 34' => ['Micrometer', 'micrometer'],
+            'ejaan Indonesia' => ['Mikrometer', 'micrometer'],
+            'bermerk + rentang' => ['Micrometer Mitutoyo 0-25mm', 'micrometer'],
+            'outside micrometer' => ['Outside Micrometer', 'micrometer'],
+            'mikrometer luar' => ['Mikrometer Luar', 'micrometer'],
+            'jangka sorong, BUKAN micrometer' => ['Jangka Sorong', null],
+            'vernier caliper, BUKAN micrometer' => ['Vernier Caliper', null],
+            'dial indicator, BUKAN micrometer' => ['Dial Indicator', null],
+        ];
+    }
+
+    #[DataProvider('namaDimensi')]
+    public function test_micrometer_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-21: nama yang HARUS mendarat di `timbangan`.
+     *
+     * Yang paling rawan `Moisture Analyzer` — sesi contoh master gram
+     * (`019-CAL-425`, Mettler Toledo HB53) namanya persis itu, dan tidak ada
+     * satu pun kata "timbangan" di dalamnya. Tanpa alias, alat itu jatuh ke
+     * form generik dan seluruh mesin hitung massanya nggak pernah kepanggil.
+     *
+     * `Hydrometer` ikut diadu DI SINI supaya jelas dia tetap BUKAN timbangan:
+     * dia alat densitas, dan kesalahan sekeluarga persis pernah nyaris lolos
+     * waktu dia didaftarkan sebagai alias Thermohygro (§11).
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaTimbangan(): array
+    {
+        return [
+            'nama lampiran akreditasi' => ['Timbangan (Elektronik, mekanik)', 'timbangan'],
+            'nama pendek' => ['Timbangan', 'timbangan'],
+            'analitik' => ['Timbangan Analitik Ohaus PA224', 'timbangan'],
+            'neraca' => ['Neraca Analitik', 'timbangan'],
+            'balance' => ['Precision Balance', 'timbangan'],
+            'sesi contoh master gram' => ['Moisture Analyzer', 'timbangan'],
+            'densitas, BUKAN timbangan' => ['Hydrometer', null],
+        ];
+    }
+
+    #[DataProvider('namaTimbangan')]
+    public function test_timbangan_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
     }
 
     #[DataProvider('namaGenerik')]
