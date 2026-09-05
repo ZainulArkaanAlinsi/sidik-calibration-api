@@ -12,6 +12,24 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FolderResource extends JsonResource
 {
     /**
+     * Breadcrumb cuma ikut di tampilan ISI folder, bukan di daftar.
+     *
+     * Bedanya biaya: daftar akar Arsip bisa berisi ratusan PT, dan tiap baris
+     * bakal manjat `parent` sendiri-sendiri buat jalur yang selalu sepanjang
+     * satu langkah (folder akar induknya null). Yang butuh jejaknya cuma layar
+     * yang lagi berdiri DI DALAM satu folder.
+     */
+    private bool $denganBreadcrumb = false;
+
+    /** Dipanggil `show()` & `folderPelanggan()`. */
+    public function denganBreadcrumb(): static
+    {
+        $this->denganBreadcrumb = true;
+
+        return $this;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -58,6 +76,22 @@ class FolderResource extends JsonResource
             'jumlah_folder' => $this->whenCounted('children'),
             'jumlah_file' => $this->whenCounted('files'),
             'dibuat_pada' => $this->created_at?->toIso8601ZuluString(),
+
+            // Jejak AKAR -> folder yang lagi dibuka, tiap langkah bisa ditap
+            // buat lompat balik.
+            //
+            // Nggak bisa diturunkan di HP: yang dipegang layar cuma folder yang
+            // lagi terbuka, dan `parent_id` doang nggak cukup — namanya ada di
+            // baris induk yang nggak ikut terkirim. Tanpa ini, satu-satunya
+            // jalan keluar dari folder dalam itu tombol back beruntun.
+            'breadcrumb' => $this->when(
+                $this->denganBreadcrumb,
+                fn () => array_map(fn (Folder $f) => [
+                    'id' => $f->id,
+                    'nama' => $f->nama,
+                    'is_root' => $f->parent_id === null,
+                ], $this->jalurKeAkar()),
+            ),
 
             'sub_folder' => FolderResource::collection($this->whenLoaded('children')),
             'file' => FolderFileResource::collection($this->whenLoaded('files')),

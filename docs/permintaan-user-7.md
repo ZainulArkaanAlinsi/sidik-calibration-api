@@ -610,6 +610,50 @@ Ketahuan waktu mengadu seluruh 21 nama alat di mock satu per satu ke registry.
 > vonis dipatok eksplisit, dan **nama alat baru yang tidak ada di tabel itu bikin test MERAH** —
 > bukan diam-diam ikut bawaan `true`.
 
+### Audit ulang 27 Agt (2) — layar Arsip nggak bisa membuka folder sama sekali
+
+Pemilik proyek minta dicek sekali lagi. Yang ketemu jauh lebih besar dari empat temuan sebelumnya,
+dan bentuknya beda: bukan angka yang salah, tapi **dua repo yang bicara bahasa berbeda.**
+
+`GET /arsip/folders/{id}` mengirim `{data: {…, sub_folder[], file[]}}`. Parser mobile membaca
+`{folder, subfolder, data[]}` — nggak satu pun kunci itu ada. Yang menentukan: `json['data']` yang
+sebenarnya OBJEK bikin `as List` di Dart **melempar**, jadi **tiap folder yang dibuka gagal** dan
+layarnya berhenti di pesan error. Dibuktikan dengan menyuapkan respons rekaman asli ke parser-nya:
+
+```
+NGELEMPAR: type '_Map<String, dynamic>' is not a subtype of type 'List<dynamic>?'
+```
+
+Hidup di APK rilis: `apk-rilis-cloud.yml` & `rilis-desktop.yml` nggak menyetel `USE_MOCK`, jadi yang
+jalan `ApiArsipService`. Layarnya kejangkau dari Profil dan navbar desktop.
+
+**Kenapa nol test menangkapnya, di kedua repo.** Semua test arsip lewat `MockArsipService`, yang
+membangun `ArsipIsiFolder` lewat konstruktor. Parser JSON-nya nggak pernah sekali pun dilewati —
+mock yang memulangkan objek jadi memang nggak bisa menguji pembacaan JSON. Itu bukan kelalaian
+kecil; itu lubang berbentuk kelas, dan kelas yang sama masih dipakai di tempat lain.
+
+**Keputusan pemilik proyek: dua-duanya menyesuaikan, seperlunya.**
+
+| Sisi | Yang berubah |
+|---|---|
+| **API** | Tambah `breadcrumb` (cuma di tampilan isi folder, bukan di daftar akar), dan lengkapi `lembar_kerja` tiap berkas dengan `equipment`, `teknisi`, `tanggal_kalibrasi`, `keputusan` |
+| **Mobile** | Ikut penamaan server: envelope `data`, `sub_folder`, `file`. `is_root` diturunkan dari `parent_id`. `ArsipBerkas.id` diambil dari `lembar_kerja.calibration_session_id` |
+
+Pembagiannya bukan selera: yang ditambahkan di API cuma yang **mustahil diturunkan di HP** — nama
+folder induk ada di baris induk yang nggak ikut terkirim, dan empat field kartu itu nggak ada di
+baris `folder_files` sama sekali. Sisanya penamaan, dan penamaan lebih murah diikuti klien.
+
+Penjaganya sekarang `BentukIsiFolderArsipTest` (API) dan `arsip_bentuk_asli_test.dart` (mobile,
+menyuapkan **JSON rekaman respons sungguhan**, bukan objek buatan mock).
+
+> **Jebakan yang nyaris lolos.** Dua dari empat penjaga di sisi mobile awalnya **nggak gigit**:
+> fixture-nya kebetulan punya id sesi = id berkas (jadi "pakai id yang salah" nggak kelihatan
+> bedanya), dan folder yang dipakai kebetulan bukan akar (jadi `is_root` yang diturunkan maupun
+> yang dibaca dari kunci-yang-nggak-ada sama-sama `false`). Ketahuannya cuma karena tiap penjaga
+> dibalikin dulu ke bentuk lama dan dicek beneran merah. **Fixture yang nggak bisa membedakan itu
+> test yang lulus tanpa menguji apa pun** — dan lebih berbahaya daripada nggak ada test, karena
+> dia bikin orang berhenti mencari.
+
 **Sumber nama PT di luar data PT Sidik: SUDAH DIPILIH** (29 Agt 2026) — lihat K16. Tidak ada API
 resmi & gratis untuk daftar perusahaan Indonesia: AHU (Kemenkumham) memegang data PT terdaftar tapi
 tidak membuka API publik, dan OSS/BKPM hanya untuk mitra berizin. Yang tersedia sumber peta.
