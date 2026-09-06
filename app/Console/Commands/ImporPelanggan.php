@@ -49,7 +49,8 @@ class ImporPelanggan extends Command
         {berkas : Path CSV daftar pelanggan (export dari Excel lab)}
         {--organization= : ID organisasi tujuan (wajib)}
         {--sumber=admin : Nilai kolom `sumber` untuk baris hasil impor}
-        {--oleh= : ID user yang bertanggung jawab atas impor ini}
+        {--oleh= : ID user yang bertanggung jawab atas impor ini (wajib saat menulis)}
+        {--tanpa-penanggung-jawab : Tulis walau --oleh kosong. Harus diketik sadar; baris hasilnya tidak bisa ditelusuri ke siapa pun}
         {--uji-coba : Jalan tanpa menulis apa pun, cuma laporan}
         {--laporan= : Path CSV hasil tinjauan}
         {--koneksi= : Koneksi database tujuan, mis. `produksi`. Kosong = koneksi default aplikasi}';
@@ -112,6 +113,10 @@ class ImporPelanggan extends Command
             $this->info('Tidak ada baris baru untuk ditulis.');
 
             return self::SUCCESS;
+        }
+
+        if (! $this->bolehMenulisTanpaPenanggungJawab($oleh, count($keranjang['baru']))) {
+            return self::FAILURE;
         }
 
         return $this->tulis($keranjang['baru'], $organization->id, $sumber, $oleh);
@@ -215,6 +220,35 @@ class ImporPelanggan extends Command
     }
 
     /**
+     * Gerbang terakhir sebelum menulis: impor tanpa penanggung jawab harus
+     * DIKETIK, bukan cuma kejadian karena `--oleh` lupa diisi.
+     *
+     * Sebelumnya di sini cuma ada peringatan, dan peringatan di baris perintah
+     * itu tergulung keluar layar oleh ringkasan pemilahan yang panjang. Yang
+     * mendarat: ratusan baris `audit_logs` "dibuat oleh entah siapa" — persis
+     * riwayat tanpa penanggung jawab yang ditanya asesor.
+     *
+     * Sengaja gagal-tertutup DENGAN jalan keluar, bukan wajib mutlak: baris
+     * lama memang lahir sebelum kolomnya ada, jadi impor arsip bersejarah
+     * kadang memang tidak punya penanggung jawab yang jujur. Bedanya sekarang
+     * itu keputusan yang diketik, dan namanya kebaca di riwayat shell.
+     */
+    private function bolehMenulisTanpaPenanggungJawab(?User $oleh, int $jumlahBaris): bool
+    {
+        if ($oleh !== null || $this->option('tanpa-penanggung-jawab')) {
+            return true;
+        }
+
+        $this->error(sprintf(
+            '%d baris siap ditulis tapi --oleh kosong, jadi tidak ada yang bisa ditelusuri sebagai penanggung jawabnya.',
+            $jumlahBaris,
+        ));
+        $this->line('  Isi --oleh=<id user>, atau ketik --tanpa-penanggung-jawab kalau memang disengaja.');
+
+        return false;
+    }
+
+    /**
      * @return User|null|false `false` = gagal, `null` = sengaja dikosongkan
      */
     private function pembuat(int $organizationId): User|null|false
@@ -226,7 +260,8 @@ class ImporPelanggan extends Command
             // baris lama yang lahir sebelum kolom ini ada. Penanggung jawab yang
             // dikarang lebih buruk daripada yang kosong: yang kosong kelihatan
             // sebagai "tidak diketahui", yang dikarang kelihatan sebagai fakta.
-            $this->warn('--oleh tidak diisi: baris impor lahir tanpa penanggung jawab.');
+            $this->warn('--oleh tidak diisi: baris impor bakal lahir tanpa penanggung jawab.');
+            $this->warn('  Penulisan akan ditolak kecuali --tanpa-penanggung-jawab ikut diketik.');
 
             return null;
         }
