@@ -53,6 +53,17 @@ class ImporPelangganTest extends TestCase
         return Organization::factory()->create();
     }
 
+    /**
+     * Penanggung jawab sekali pakai buat test yang subjeknya BUKAN kepemilikan.
+     * Sejak `--oleh` gagal-tertutup, impor yang menulis wajib menyebut orangnya —
+     * dan test soal idempotensi/parsing nama tetap harus lewat jalur normal,
+     * bukan lewat jalan keluar `--tanpa-penanggung-jawab`.
+     */
+    private function penanggungJawab(Organization $org): int
+    {
+        return User::factory()->admin()->create(['organization_id' => $org->id])->id;
+    }
+
     public function test_pelanggan_baru_masuk_dengan_nama_normal_sumber_dan_penanggung_jawab(): void
     {
         $org = $this->organisasi();
@@ -107,10 +118,10 @@ class ImporPelangganTest extends TestCase
         $org = $this->organisasi();
         $berkas = $this->berkas("nama\nPT Maju Jaya\nPT Sinar Abadi\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
         $this->assertSame(2, Customer::where('organization_id', $org->id)->count());
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
         $this->assertSame(2, Customer::where('organization_id', $org->id)->count());
     }
 
@@ -121,7 +132,7 @@ class ImporPelangganTest extends TestCase
 
         $berkas = $this->berkas("nama\nPT Maju Raya\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
 
         $this->assertSame(1, Customer::where('organization_id', $org->id)->count());
         $this->assertFalse(Customer::where('nama', 'PT Maju Raya')->exists());
@@ -134,7 +145,7 @@ class ImporPelangganTest extends TestCase
 
         $berkas = $this->berkas("nama\nCV Maju Jaya\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
 
         $this->assertTrue(Customer::where('nama', 'CV Maju Jaya')->exists());
         $this->assertSame(2, Customer::where('organization_id', $org->id)->count());
@@ -154,6 +165,57 @@ class ImporPelangganTest extends TestCase
         $this->assertSame(0, Customer::where('organization_id', $org->id)->count());
     }
 
+    public function test_menulis_tanpa_oleh_ditolak_bukan_cuma_diperingatkan(): void
+    {
+        // Sebelumnya di sini cuma ada `warn`, dan peringatan baris perintah
+        // tergulung keluar layar oleh ringkasan pemilahan. Yang mendarat:
+        // ratusan baris audit "dibuat oleh entah siapa" — riwayat tanpa
+        // penanggung jawab yang persis ditanya asesor.
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+        ])->assertFailed();
+
+        $this->assertSame(0, Customer::where('organization_id', $org->id)->count());
+    }
+
+    public function test_tanpa_penanggung_jawab_boleh_kalau_diketik_sadar(): void
+    {
+        // Jalan keluarnya sengaja ADA: baris arsip bersejarah memang lahir
+        // sebelum kolomnya ada, jadi kadang tidak punya penanggung jawab yang
+        // jujur. Bedanya sekarang itu keputusan yang diketik, dan namanya
+        // kebaca di riwayat shell.
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+            '--tanpa-penanggung-jawab' => true,
+        ])->assertSuccessful();
+
+        $pelanggan = Customer::where('organization_id', $org->id)->sole();
+        $this->assertNull($pelanggan->dibuat_oleh_user_id);
+    }
+
+    public function test_uji_coba_tanpa_oleh_tetap_boleh(): void
+    {
+        // Gerbangnya duduk SESUDAH cabang --uji-coba, bukan sebelum: dry run
+        // tidak menulis satu baris audit pun, jadi memblokirnya cuma bikin
+        // orang berhenti memakai laporan pratinjaunya.
+        $org = $this->organisasi();
+        $berkas = $this->berkas("nama\nPT Maju Jaya\n");
+
+        $this->artisan('customers:impor', [
+            'berkas' => $berkas,
+            '--organization' => $org->id,
+            '--uji-coba' => true,
+        ])->assertSuccessful();
+    }
+
     public function test_pelanggan_yang_sudah_dihapus_dikenali_bukan_ditabrak(): void
     {
         // Soft delete cuma mengisi `deleted_at` — barisnya masih ada dan unique
@@ -166,7 +228,7 @@ class ImporPelangganTest extends TestCase
 
         $berkas = $this->berkas("nama\nPT Maju Jaya\nPT Sinar Abadi\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])
             ->assertSuccessful();
 
         $this->assertTrue(Customer::where('nama', 'PT Sinar Abadi')->exists());
@@ -206,7 +268,7 @@ class ImporPelangganTest extends TestCase
 
         $berkas = $this->berkas("nama,alamat\nPT Maju Jaya,Jl. Lama Yang Salah 1\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
 
         $this->assertSame(
             'Jl. Yang Sudah Dibetulkan 99',
@@ -219,7 +281,7 @@ class ImporPelangganTest extends TestCase
         $org = $this->organisasi();
         $berkas = $this->berkas("nama,alamat\nPT Maju Jaya,\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
 
         $this->assertNull(Customer::where('nama', 'PT Maju Jaya')->value('alamat'));
     }
@@ -363,6 +425,7 @@ class ImporPelangganTest extends TestCase
         $this->artisan('customers:impor', [
             'berkas' => $berkas,
             '--organization' => $org->id,
+            '--oleh' => $this->penanggungJawab($org),
         ])
             ->expectsOutputToContain('Tujuan: koneksi')
             ->assertSuccessful();
@@ -436,7 +499,7 @@ class ImporPelangganTest extends TestCase
 
         $berkas = $this->berkas("nama\nPT Maju Jaya\n");
 
-        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id])->assertSuccessful();
+        $this->artisan('customers:impor', ['berkas' => $berkas, '--organization' => $org->id, '--oleh' => $this->penanggungJawab($org)])->assertSuccessful();
 
         $this->assertSame(1, Customer::where('organization_id', $org->id)->count());
     }

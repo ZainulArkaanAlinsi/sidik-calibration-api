@@ -162,6 +162,14 @@ class TidsCalculator
      *
      * Divisornya `Q34 = 1` — satu-satunya komponen persegi yang TIDAK dibagi
      * √3 di seluruh tabel. Ditiru; catatan auditnya menyebut ini.
+     *
+     * Sudah dicoba dibongkar dari angkanya sendiri (6 Sep 2026) dan GAGAL: dia
+     * bukan konvensi apa pun yang bisa diturunkan tanpa workbook sumbernya.
+     * Diadu ke `x·√3`, `x·√12`, `x·√6`, `x·√2`, `x·2`, kuadrat dan akarnya —
+     * tidak satu pun mendarat di angka bulat; pecahan terdekat berpenyebut di
+     * bawah 10⁵ pun meleset. Artinya dia angka TURUNAN DATA, bukan tetapan
+     * metode. Ditulis di sini supaya jalan buntu ini tidak ditempuh dua kali:
+     * satu-satunya cara menelusurinya adalah meminta workbook `[13]`-nya.
      */
     public const KETIDAKPASTIAN_INTERPOLASI = 0.19788162882115856;
 
