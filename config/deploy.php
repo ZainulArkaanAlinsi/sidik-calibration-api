@@ -30,14 +30,34 @@ return [
     /*
      * Commit yang benar-benar jalan di container ini.
      *
-     * Render menyuntik RENDER_GIT_COMMIT sendiri; di luar Render nilainya
-     * kosong dan itu wajar — yang dilaporkan `null`, bukan tebakan.
+     * Render menyuntik RENDER_GIT_COMMIT sendiri, jadi di sana nol setelan.
      *
-     * Repo ini publik, jadi SHA-nya bukan rahasia. Yang dibeli: "build-nya
-     * udah naik belum?" dijawab satu `curl`, bukan dengan membuka dashboard
-     * dan mencocokkan SHA pakai mata.
+     * APP_COMMIT jalur cadangan buat pemasangan yang BUKAN Render — VPS,
+     * Docker sendiri, mesin lab. Diisi skrip deploy:
+     *
+     *     APP_COMMIT=$(git rev-parse HEAD)
+     *
+     * Ditambah karena "di luar Render nilainya kosong dan itu wajar" berhenti
+     * wajar begitu produksinya pindah: endpoint ini ADA supaya "build-nya udah
+     * naik belum?" tidak perlu ditebak, dan di VPS dia justru selalu `null` —
+     * pertanyaannya balik tak terjawab persis di tempat yang paling sulit
+     * diperiksa, karena di sana tidak ada dashboard yang bisa dibuka.
+     *
+     * Urutannya Render DULU: di Render kedua variabel bisa sama-sama terisi
+     * (mis. APP_COMMIT ikut tersalin waktu blueprint dicontek), dan yang benar
+     * selalu yang disuntik platform — APP_COMMIT bisa basi kalau skrip
+     * deploy-nya gagal memperbaruinya.
+     *
+     * Tetap `null` kalau dua-duanya kosong, dan itu disengaja: server yang
+     * TIDAK TAHU harus bilang tidak tahu. Sengaja tidak jatuh ke `git
+     * rev-parse` saat runtime — di produksi `.git` sering tidak ikut, dan
+     * kalau ikut pun isinya bisa lebih baru daripada kode yang benar-benar
+     * jalan. Tebakan yang kelihatan seperti fakta lebih buruk daripada kosong.
+     *
+     * SHA-nya bukan rahasia. Yang dibeli: "build-nya udah naik belum?" dijawab
+     * satu `curl`, bukan dengan membuka dashboard dan mencocokkan pakai mata.
      */
-    'versi' => env('RENDER_GIT_COMMIT') ?: null,
+    'versi' => env('RENDER_GIT_COMMIT') ?: (env('APP_COMMIT') ?: null),
 
     /*
      * Apakah seeder jalan tiap container nyala.
