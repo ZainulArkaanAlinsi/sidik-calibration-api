@@ -272,8 +272,11 @@ tidak masalah — semuanya data demo, belum ada yang keluar ke pelanggan.
 ## 12. Verifikasi pasca-deploy
 
 - [ ] `curl https://<domain>/api/health` → 200
-- [ ] `curl -s https://<domain>/api/health | jq .deploy.versi` → **tujuh karakter
-      pertama commit yang barusan di-deploy**, bukan `null`.
+- [ ] `curl -s https://<domain>/api/health | jq .deploy.versi` → **SHA penuh
+      (40 karakter) commit yang barusan di-deploy**, bukan `null`.
+      Dilaporkan utuh, tidak dipotong — jadi adu tujuh karakter DEPANNYA ke SHA
+      yang kamu lihat di GitHub. Diperiksa di produksi 7 Sep 2026: keluarannya
+      `b1dc6b29e3d2abe6b498ce40a9fa4ec2ec4d9bbb` untuk commit `b1dc6b2`.
       `null` artinya `APP_COMMIT` belum ikut disetel, dan mulai sekarang itu
       satu-satunya cara memastikan versi yang jalan tanpa punya shell ke server.
       Setel di skrip deploy, bukan diketik tangan — yang diketik tangan basi
