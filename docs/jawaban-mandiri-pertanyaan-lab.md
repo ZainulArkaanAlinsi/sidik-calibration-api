@@ -235,13 +235,16 @@ sungguh penting. Ini kegagalan yang sudah terbukti di proyek ini.
 
 ## Yang TIDAK bisa dijawab dari sini **[TIDAK BISA]**
 
-Bukan karena malas — karena jawabannya berupa fakta yang cuma ada di lab, dan
-mengarangnya menghasilkan angka yang kelihatan wajar tapi salah.
+Bukan karena malas — karena jawabannya berupa **fakta yang cuma ada di lab**
+atau **keputusan yang cuma boleh diambil Manajer Teknis**. Mengarang yang
+pertama menghasilkan angka yang kelihatan wajar tapi salah; mengambil sendiri
+yang kedua berarti menggeser metode tanpa sepengetahuan yang berwenang.
 
 | | Kenapa mustahil dari sini |
 |---|---|
 | **§1 §3 §9** tanda tangan | Perlakuan atas sertifikat yang sudah di tangan pelanggan adalah tindakan Manajer Teknis di bawah klausa Pekerjaan Tidak Sesuai ISO/IEC 17025. Analisis & rekomendasinya sudah siap di `docs/keputusan-lab-micrometer.md` |
 | **§10** Muka Ukur | "Dihapus dari metode" lawan "lupa ikut ke kertas Rev.1" — itu riwayat keputusan lab, tidak ada jejaknya di data |
+| **§11** satuan `ci` termal | Membetulkannya menaikkan U95 SEMUA rentang, jadi sertifikat baru tidak sebanding dengan yang lama — itu perubahan metode. Nol paparan sertifikat: sapuan sensitivitasnya membuktikan tidak ada sesi yang bisa terbit di bawah CMC gara-gara komponen ini |
 | **K13 K14 K15** standar | Menambah baris standar kalibrasi atau menebak nomor seri = mengarang telusur. Ini jenis karangan yang paling berbahaya: kelihatan wajar dan lolos semua pemeriksaan |
 | **K19** empat penyimpangan TIDS | Sudah ditiru + catatan audit + peringatan. Yang tersisa keputusan apakah dipertahankan — dan itu wewenang Manajer Teknis |
 | **K20** konstanta Interpolasi | **Sudah dicoba dibongkar dari angkanya.** `0,19788162882115856` tidak terurai jadi konvensi apa pun — bukan `x/√3`, `x/√12`, bukan pecahan sederhana (penyebut < 10⁵ meleset). Artinya dia **angka turunan data**, jadi cuma bisa dari workbook sumbernya |
@@ -252,9 +255,18 @@ mengarangnya menghasilkan angka yang kelihatan wajar tapi salah.
 
 ## Ringkasan perubahan
 
+Jumlahnya ditulis sebagai **daftar**, bukan sebagai angka — supaya bisa dihitung
+ulang sambil dibaca, bukan dipercaya begitu saja:
+
+| Kelas | Jumlah | Butirnya |
+|---|---|---|
+| **Tertutup** — terjawab di sini, tidak butuh lab | **8** | §5 §6 K21 · K8 K10 K11 K25 K26 |
+| **Bawaannya bisa dipertahankan** — lab boleh membatalkan, tapi tidak ada yang menunggu | **2** | §7 §8 |
+| **Masih menunggu lab** | **15** | §1 §3 §9 §10 §11 · K12 K13 K14 K15 K19 K20 K22 K24 · F1 G3 |
+| **Jumlah** | **25** | |
+
 | Sebelum | Sesudah |
 |---|---|
-| 23 butir terbuka | **12 butir terbuka** |
 | 2 butir "bisa menggeser lampiran akreditasi" | **1** — §11 gugur sebagai temuan akreditasi |
 | §6 menunggu jawaban | Terjawab: konvensi GUM G.4.2, nol perubahan |
 | §5 menunggu jawaban | Terjawab: kesalahan kategori, bukan pilihan |
