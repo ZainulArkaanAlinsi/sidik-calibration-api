@@ -75,6 +75,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const DIPERIKSA = [
+        '001-UBLK-05.26 (Height Gauge)',
         '002-UB.P-11-20 (Outside Micrometer)',
         '003-UB.P-11-20 (Digital Outside Micrometer)',
         '0106-CAL-1023 (Micrometer Digital)',
@@ -111,6 +112,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const BUTUH_PADAT = [
+        // Height Gauge (alat ke-26) masuk daftar ini sejak sesi contohnya
+        // lahir, dan sebabnya sama dengan ketiga Micrometer di bawah: jumlah
+        // baris. Sertifikat masternya mencetak SEPULUH titik ukur — satu
+        // kurangnya dari Micrometer — plus blok catatan kaki Paralelisme yang
+        // tidak dipunyai alat lain. Bukan gejala tata letak yang menyusut.
+        '001-UBLK-05.26 (Height Gauge)',
         // KETIGA sesi Micrometer masuk daftar ini, dan sebabnya jumlah baris:
         // sertifikat masternya mencetak SEBELAS titik ukur, kedua terbanyak
         // sesudah Thermohygrometer. Bukan gejala tata letak yang menyusut —

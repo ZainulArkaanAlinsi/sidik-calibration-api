@@ -24,6 +24,7 @@ use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
+use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
@@ -31,6 +32,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
@@ -1164,6 +1166,20 @@ class CalibrationController extends Controller
             return $this->susunBlokMicrometer($request, $alat, $standarDefault);
         }
 
+        // Height Gauge: satu titik itu SLOT NOMINAL Caliper Checker plus deret
+        // pembacaan alat — dua hal yang beda, bukan satu deret. Alasan jalur
+        // terpisahnya sama dengan lima di atas.
+        //
+        // Bedanya dari Micrometer, dan kenapa cabangnya sendiri: di sana satu
+        // titik bisa berisi tiga keping balok ukur yang di-wringing, di sini
+        // satu nominal Caliper Checker per titik — dan kosakata
+        // `peran_sensor`-nya lain (`hg_*`, bukan `mikro_*`). Dipaksa lewat
+        // cabang Micrometer, barisnya tersimpan dengan peran alat lain dan
+        // jalur hitung ulang memulangkan deret kosong tanpa satu pun error.
+        if ($this->profil->untukAlat($alat)->butuhBlokHeightGauge()) {
+            return $this->susunBlokHeightGauge($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -2201,6 +2217,212 @@ class CalibrationController extends Controller
                 'konteks' => [
                     MicrometerMentah::PERAN_BALOK => $tumpukan,
                     MicrometerMentah::PERAN_PEMBACAAN => $pembacaan,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Susun sesi **Height Gauge**: sepuluh titik ber-nominal PRA-CETAK, tiga
+     * pembacaan tiap titik.
+     *
+     * ## Nominal Caliper Checker DITURUNKAN, bukan dikirim HP
+     *
+     * Kesepuluh nominalnya ditentukan Instruksi Kerja dan sama persis dengan
+     * sepuluh baris tabel Outside `Std_CaliperCek`. Jadi yang dikirim HP cuma
+     * pembacaannya, dan nominalnya diambil dari tabel di sini lalu ikut
+     * disimpan ke `raw_measurements`.
+     *
+     * Disimpan, bukan dibaca ulang dari tabel waktu menghitung: kalau lab
+     * mengirim sertifikat Caliper Checker baru tahun depan, sesi lama harus
+     * tetap menghitung ulang dengan nominal yang BENAR-BENAR dipakai waktu itu.
+     * Alasan yang sama dengan snapshot sertifikat.
+     *
+     * ## Satuan TIDAK dikonversi di sini
+     *
+     * Yang tersimpan angka MENTAH yang diketik teknisi, berikut satuannya di
+     * `raw_measurements.satuan`; yang mengubahnya ke mm
+     * [HeightGaugeMentah::keMm] waktu dipakai menghitung. Mengonversi di ujung
+     * masuk tidak idempoten, dan jalur draft mengalikannya lagi tiap simpan —
+     * bug nyata yang sudah terjadi di Micrometer (1 inch jadi 645,16 mm pada
+     * simpanan kedua). Slot nominal memang selalu mm dan disimpan begitu.
+     *
+     * ## Dua blok tingkat-SESI lewat jalur lain
+     *
+     * Paralelisme dan blok Evaluation TIDAK disusun di sini — keduanya bukan
+     * titik ukur. Mereka ikut apa adanya lewat `spesifikasi_alat` ke `konteks`,
+     * dan `CalibrationRequest` yang meratakan bentuk tabel HP-nya. Memaksanya
+     * jadi `titik_ke` melahirkan titik hantu yang selalu gagal hitung ulang.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokHeightGauge(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[HeightGaugeMentah::KUNCI_SESI] ?? []);
+
+        // Satuan ALAT, dipakai buat mengubah penunjukan ke mm SAAT DIHITUNG —
+        // bukan saat disimpan. Lihat docblock.
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
+
+        $nominalCetak = (new TabelStandarHeightGauge)->titikPraCetak();
+
+        $suhuRata = HeightGaugeMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $bawaan = $nominalCetak[$index] ?? null;
+
+            // Titik di luar sepuluh baris lembar dibuang — bukan disimpan
+            // sebagai titik ke-11 yang tidak punya nominal. Bentuk lembar
+            // mengunci barisnya (`titik_bisa_diubah = false`), jadi kelebihan
+            // baris cuma bisa datang dari payload yang salah bentuk.
+            if ($bawaan === null) {
+                continue;
+            }
+
+            // Baris dipetakan lewat POSISI, dan itu cuma benar selama HP
+            // mengirim kesepuluh barisnya utuh dan berurutan. Kalau suatu saat
+            // HP membuang baris kosong, seluruh baris sesudahnya bergeser satu:
+            // pembacaan yang diambil di 300 mm tersimpan sebagai titik 200 mm,
+            // koreksinya meleset ~100 mm, dan tidak ada satu pun error di kedua
+            // sisi.
+            //
+            // Jadi `titik_ukur` kiriman HP dipakai sebagai PEMERIKSA: dia tidak
+            // menentukan nominalnya (tabel standar tetap yang menang), tapi
+            // kalau dia menunjuk baris yang berbeda jauh, pemetaannya sudah
+            // salah dan titiknya ditolak dengan alasan yang kebaca.
+            //
+            // Ambangnya longgar (0,05 mm) supaya pembulatan HP tidak pernah
+            // menolak titik yang benar: dua nominal pra-cetak yang paling
+            // berdekatan pun terpisah 25 mm.
+            $dikirim = $titik['titik_ukur'] ?? null;
+
+            if (is_numeric($dikirim) && abs((float) $dikirim - $bawaan) > 0.05) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Baris ke-%d mengirim nominal %s mm, tapi baris itu di lembar %s mm. '
+                        .'Urutan baris tidak cocok dengan lembarnya — titik tidak disimpan '
+                        .'supaya pembacaannya tidak mendarat di nominal yang salah.',
+                        $titikKe,
+                        rtrim(rtrim(number_format((float) $dikirim, 4, ',', '.'), '0'), ','),
+                        rtrim(rtrim(number_format($bawaan, 4, ',', '.'), '0'), ','),
+                    ),
+                ];
+
+                continue;
+            }
+
+            $pembacaan = [];
+
+            // Kunci `pembacaan`/`ocr` yang DATAR, sama seperti dua puluh lima
+            // lembar lain — bukan kosakata `hg_*` sendiri. HP menyusun tabel
+            // satu-kolom lewat jalur datarnya (`TitikState.toSubmission()`
+            // membaca kolom `pembacaan`), jadi sisi yang menengok kosakata
+            // sendiri tidak akan pernah menerima satu angka pun — dan yang
+            // tersimpan NOL baris, tanpa satu pun error di kedua sisi. Sudah
+            // kejadian di Micrometer.
+            //
+            // `hg_pembacaan` tetap hidup sebagai `peran_sensor` di
+            // `raw_measurements` — di situ dia memang membedakan deret
+            // pembacaan dari slot nominal.
+            $ocrPeran = array_values((array) ($titik['ocr'] ?? []));
+
+            foreach (array_values((array) ($titik['pembacaan'] ?? [])) as $urutan => $nilai) {
+                if (! is_numeric($nilai)) {
+                    continue;
+                }
+
+                $meta = $ocrPeran[$urutan] ?? null;
+                $dariKamera = $asalKamera($meta);
+                // Yang DIHITUNG mm; yang DISIMPAN mentah + satuannya.
+                $pembacaan[] = HeightGaugeMentah::keMm($nilai, $satuanAlat);
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => HeightGaugeMentah::PERAN_PEMBACAAN,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $bawaan,
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuanAlat,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            // Titik yang belum diisi sama sekali tidak menyimpan nominalnya
+            // juga: baris nominal tanpa satu pun pembacaan melahirkan titik yang
+            // "ada" di database tapi tidak punya angka, dan itu tercetak di
+            // sertifikat sebagai baris kosong yang kelihatan seperti data hilang.
+            if ($pembacaan === []) {
+                continue;
+            }
+
+            $mentah[] = [
+                'titik_ke' => $titikKe,
+                'pembacaan_ke' => 1,
+                'sensor_ke' => 1,
+                'peran_sensor' => HeightGaugeMentah::PERAN_NOMINAL,
+                'tahap' => 'sesudah_adjustment',
+                'titik_ukur' => $bawaan,
+                'standard_id' => $standarDefault?->id,
+                'pembacaan' => $bawaan,
+                // SELALU mm — nominalnya nilai sertifikat Caliper Checker, dan
+                // sertifikat itu terbit dalam mm apa pun skala alat pelanggan.
+                'satuan' => HeightGaugeMentah::SATUAN_NOMINAL,
+                // Diturunkan server dari tabel standar, bukan diketik teknisi
+                // maupun dibaca kamera.
+                'input_source' => 'manual',
+                'is_verified' => true,
+            ];
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $bawaan,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    HeightGaugeMentah::PERAN_NOMINAL => [$bawaan],
+                    HeightGaugeMentah::PERAN_PEMBACAAN => $pembacaan,
                     'spesifikasi_alat' => $spek,
                     'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
                     'suhu_ruang_rata' => $suhuRata,

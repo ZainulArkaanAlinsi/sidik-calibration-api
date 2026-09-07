@@ -1069,6 +1069,65 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah satu titik sesi ini berisi SLOT NOMINAL Caliper Checker plus deret
+     * pembacaan yang terpisah.
+     *
+     * Default `false`. `true` cuma untuk Height Gauge. Waktu `true`,
+     * `CalibrationController` menyimpan tiap slot nominal dan tiap pembacaan
+     * sebagai baris `raw_measurements` ber-`peran_sensor`
+     * `hg_nominal`/`hg_pembacaan`, dan jalur hitung ulang menyusunnya balik
+     * lewat `HeightGaugeMentah::dari()`.
+     *
+     * Bentuknya mirip [butuhBlokMicrometer] tapi TIDAK bisa dipakai bareng: di
+     * sana satu titik itu tumpukan sampai tiga keping balok ukur yang
+     * di-*wringing*, di sini satu nominal Caliper Checker per titik dan
+     * kosakata `peran_sensor`-nya lain. Digabung jadi satu hook, sesi salah
+     * satunya disusun ulang dengan kosakata alat yang lain — dan yang balik
+     * bukan error melainkan deret kosong.
+     */
+    public function butuhBlokHeightGauge(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
+     *
+     * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah
+     * sertifikat yang terbit boleh membawa klaim "Terakreditasi … No.
+     * LK-285-IDN". Mencetak klaim itu untuk lingkup yang tidak diakreditasi
+     * adalah temuan audit KAN — bukan bug tampilan.
+     *
+     * Bawaannya `true`, dan itu disengaja: 24 dari 26 profil memang ada di
+     * lampiran, dan alat tanpa profil (`ProfilGenerik`) mempertahankan
+     * perilaku lama. Membalik bawaannya jadi `false` berarti mencabut klaim
+     * dari alat yang HAKNYA ada — kesalahan yang arahnya jauh lebih merugikan
+     * daripada kelebihan klaim, karena pelanggan kehilangan bukti keterlusuran
+     * yang sudah dibayar.
+     *
+     * ## Kenapa dipatok per profil, bukan dicocokkan namanya ke lampiran
+     *
+     * Pernah dirancang membaca `database/data/kemampuan-kalibrasi.json` dan
+     * mencocokkan `nama_alat_kemampuan`. Itu SALAH, dan salahnya sunyi:
+     * lampiran menulis ejaan Indonesia "Spektrofotometer" sementara profil &
+     * master Excel menulis "Spectrophotometer". Pencocokan nama bakal
+     * menyimpulkan Spectrophotometer di luar lingkup dan mencabut klaim
+     * akreditasi dari alat yang sah terakreditasi — tanpa satu pun error.
+     *
+     * Dipatok di profilnya, jawabannya eksplisit, bisa di-grep, dan tiap
+     * pengecualian membawa alasannya sendiri di tempat yang dibaca orang
+     * berikutnya.
+     *
+     * Dijaga `KlaimAkreditasiIkutLingkupTest`, yang mengadu daftar ini ke
+     * `CmcSemuaProfilTest::DILUAR_LAMPIRAN` supaya dua daftar itu tidak
+     * menyimpang diam-diam.
+     */
+    public function dalamLingkupAkreditasi(): bool
+    {
+        return true;
+    }
+
+    /**
      * Kolom `Standard Value` sertifikat DIHITUNG dari `rata_rata + koreksi`,
      * bukan diambil dari `titik_ukur`.
      *

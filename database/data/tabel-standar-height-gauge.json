@@ -1,0 +1,134 @@
+{
+    "_sumber": "Master_olda_Height_Gauge_600_mm_2026.xlsm (sheet Std_CaliperCek & DATABASE), password spirit285. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin hitung — seluruh VLOOKUP jalur Height Gauge memakai Nom_Outside.",
+    "_digenerate_oleh": "docs/skrip/gen-tabel-standar-height-gauge.py",
+    "standar": {
+        "nama": "Caliper Checker",
+        "merk": "Metrology",
+        "tipe": "CMG-9060C",
+        "merk_tipe": "Metrology/CMG-9060C",
+        "seri": "800035",
+        "tanggal_kalibrasi": "2026-01-09",
+        "tertelusur": "LK-404-IDN",
+        "rentang": "0-600 mm",
+        "u95_um": 4.1
+    },
+    "outside": [
+        {
+            "nominal_mm": 25.0,
+            "nilai_terkoreksi_mm": 25.0008,
+            "koreksi_um": 0.8
+        },
+        {
+            "nominal_mm": 50.0,
+            "nilai_terkoreksi_mm": 50.0004,
+            "koreksi_um": 0.4
+        },
+        {
+            "nominal_mm": 100.0,
+            "nilai_terkoreksi_mm": 100.0005,
+            "koreksi_um": 0.5
+        },
+        {
+            "nominal_mm": 150.0,
+            "nilai_terkoreksi_mm": 150.0003,
+            "koreksi_um": 0.3
+        },
+        {
+            "nominal_mm": 200.0,
+            "nilai_terkoreksi_mm": 199.9993,
+            "koreksi_um": -0.7
+        },
+        {
+            "nominal_mm": 300.0,
+            "nilai_terkoreksi_mm": 299.99955,
+            "koreksi_um": -0.45
+        },
+        {
+            "nominal_mm": 400.0,
+            "nilai_terkoreksi_mm": 399.9982,
+            "koreksi_um": -1.8
+        },
+        {
+            "nominal_mm": 500.0,
+            "nilai_terkoreksi_mm": 499.99865,
+            "koreksi_um": -1.35
+        },
+        {
+            "nominal_mm": 550.0,
+            "nilai_terkoreksi_mm": 549.9978,
+            "koreksi_um": -2.2
+        },
+        {
+            "nominal_mm": 600.0,
+            "nilai_terkoreksi_mm": 599.9973,
+            "koreksi_um": -2.7
+        }
+    ],
+    "inside": [
+        {
+            "nominal_mm": 25.0,
+            "nilai_terkoreksi_mm": 25.0003,
+            "koreksi_um": 0.3
+        },
+        {
+            "nominal_mm": 50.0,
+            "nilai_terkoreksi_mm": 50.0006,
+            "koreksi_um": 0.6
+        },
+        {
+            "nominal_mm": 100.0,
+            "nilai_terkoreksi_mm": 100.0011,
+            "koreksi_um": 1.1
+        },
+        {
+            "nominal_mm": 150.0,
+            "nilai_terkoreksi_mm": 150.0006,
+            "koreksi_um": 0.6
+        },
+        {
+            "nominal_mm": 200.0,
+            "nilai_terkoreksi_mm": 199.99975,
+            "koreksi_um": -0.25
+        },
+        {
+            "nominal_mm": 300.0,
+            "nilai_terkoreksi_mm": 300.002,
+            "koreksi_um": 2.0
+        },
+        {
+            "nominal_mm": 400.0,
+            "nilai_terkoreksi_mm": 399.99885,
+            "koreksi_um": -1.15
+        },
+        {
+            "nominal_mm": 500.0,
+            "nilai_terkoreksi_mm": 499.9991,
+            "koreksi_um": -0.9
+        },
+        {
+            "nominal_mm": 550.0,
+            "nilai_terkoreksi_mm": 549.9987,
+            "koreksi_um": -1.3
+        },
+        {
+            "nominal_mm": 600.0,
+            "nilai_terkoreksi_mm": 599.9989,
+            "koreksi_um": -1.1
+        }
+    ],
+    "konstanta": {
+        "suhu_acuan_c": 20.0,
+        "alpha_per_c": 1.2e-06,
+        "delta_alpha_per_c": 2e-06,
+        "drift_a_mm": 0.02,
+        "drift_b_mm_per_mm": 0.00025,
+        "drift_pembagi_umur": 12,
+        "geometri_mm": 0.0005,
+        "meja_granit_mm": 0.0044,
+        "batas_paralelisme_mm": 0.01,
+        "vi_type_b_normal": 200,
+        "vi_type_b_rect": 60,
+        "vi_repeatability": 9,
+        "pembagi_muai": 2.449489742783178
+    }
+}

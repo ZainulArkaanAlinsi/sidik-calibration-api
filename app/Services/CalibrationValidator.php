@@ -12,6 +12,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\HeightGaugeMentah;
 use App\Support\KodeSelRevisi;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
@@ -996,6 +997,12 @@ class CalibrationValidator
                     // kejadian KESEMBILAN dengan pola yang sama. Kosong buat dua
                     // puluh empat alat lain.
                     ...MicrometerMentah::dari($pembacaan),
+                    // Slot nominal Caliper Checker + deret pembacaan satu titik
+                    // Height Gauge, disusun ulang dari `peran_sensor`/`sensor_ke`.
+                    // Alasannya sama seperti lima baris di atas — dan ini
+                    // kejadian KESEPULUH dengan pola yang sama. Kosong buat dua
+                    // puluh lima alat lain.
+                    ...HeightGaugeMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

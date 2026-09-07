@@ -15,6 +15,7 @@ use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
+use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
@@ -129,6 +130,14 @@ class CalibrationProfileRegistry
             // 50-75, 75-100 mm) yang rumusnya identik baris demi baris jadi
             // SATU profil dengan empat pita CMC; lihat TabelStandarMicrometer.
             new MicrometerProfile,
+            // Alat ke-26, kelompok Panjang — dan yang PERTAMA di kelompok itu
+            // yang berprofil tapi TIDAK terakreditasi. Height Gauge tidak ada
+            // di lampiran LK-285-IDN (kelompok Panjang cuma memuat Sieve,
+            // Micrometer, Vernier Caliper, Dial Indicator), dan masternya
+            // sendiri mengakuinya: sel lantai CMC-nya kosong, jadi U95 terbit
+            // telanjang. Preseden perlakuannya Gas Detector; lihat
+            // HeightGaugeCalculator.
+            new HeightGaugeProfile,
         ];
     }
 

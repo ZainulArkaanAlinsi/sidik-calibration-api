@@ -10,6 +10,7 @@ use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\Angka;
 use App\Support\GridSensorMentah;
+use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\TimbanganMentah;
@@ -133,6 +134,14 @@ class HitungUlangSesi extends Command
                 // tanpa satu pun error.
                 $mikro = MicrometerMentah::dari($baris);
 
+                // Slot nominal + deret pembacaan lembar Height Gauge.
+                // Diperiksa dengan alasan yang persis sama dengan tiga di atas:
+                // barisnya PUNYA `peran_sensor`, cuma kosakatanya lain lagi
+                // (`hg_nominal`/`hg_pembacaan`). Kalau tidak dites duluan, tiap
+                // titiknya jatuh ke cabang alat lain, ketemu deret yang bukan
+                // miliknya, dan angkanya salah tanpa satu pun error.
+                $heightGauge = HeightGaugeMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -144,7 +153,23 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($mikro !== []) {
+                if ($heightGauge !== []) {
+                    // Gerbangnya jumlah PEMBACAAN, bukan jumlah baris: satu
+                    // titik berisi sampai 3 slot nominal + 3 pembacaan, jadi
+                    // hitungan datar tetap lolos walau sisi pembacaannya
+                    // kosong — dan "koreksi" yang lahir dari sisi kosong itu
+                    // justru sebesar total nominalnya, angka yang kelihatan
+                    // masuk akal.
+                    //
+                    // Dua, bukan tiga: master menyediakan tiga kolom tapi
+                    // simpangan baku sudah punya arti mulai dari dua, dan titik
+                    // yang cuma sempat dibaca dua kali tetap titik yang sah.
+                    if (count($heightGauge[HeightGaugeMentah::PERAN_PEMBACAAN]) < 2) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($mikro !== []) {
                     // Gerbangnya jumlah pembacaan, bukan jumlah baris: satu
                     // titik berisi sampai 3 nominal balok + 5 pembacaan, jadi
                     // hitungan datar tetap lolos walau sisi pembacaannya
@@ -267,6 +292,12 @@ class HitungUlangSesi extends Command
                         // kapasitas, resolusi) ikut lewat `spesifikasi_alat`
                         // di bawah. Kosong buat dua puluh empat alat lain.
                         ...$mikro,
+                        // Slot nominal + deret pembacaan lembar Height Gauge.
+                        // Kejadian KESEPULUH dengan pola yang sama. Blok
+                        // tingkat-sesinya (paralelisme, blok Evaluation,
+                        // kapasitas, resolusi) ikut lewat `spesifikasi_alat`
+                        // di bawah. Kosong buat dua puluh lima alat lain.
+                        ...$heightGauge,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

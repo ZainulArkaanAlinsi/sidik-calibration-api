@@ -72,7 +72,16 @@ class DataTampilanSertifikat
             'logo' => $this->logoDataUri($organisasi),
             // Kop surat selebar halaman. Kalau ada, dia GANTIIN kop teks — bukan
             // ditambahin di atasnya (lihat `kopDataUri()`).
-            'kop' => $this->kopDataUri($organisasi),
+            //
+            // DISETOP untuk sertifikat di luar lingkup akreditasi, dan itu bukan
+            // kehati-hatian berlebih: `public/images/kop-surat.png` memuat nomor
+            // `LK-285-IDN` DI DALAM GAMBARNYA. Menyembunyikan klaim di kop teks
+            // sambil tetap memasang banner-nya berarti klaimnya tetap tercetak —
+            // cuma jadi lebih sulit dilihat pembaca kode. Tanpa banner, lembarnya
+            // jatuh ke kop teks yang klaimnya memang sudah bersyarat.
+            'kop' => ($sertifikat->snapshot['meta']['organization']['dalam_lingkup_akreditasi'] ?? true)
+                ? $this->kopDataUri($organisasi)
+                : null,
             // `null` kalau belum diunggah — dan itu state yang SAH: sertifikat
             // nyetak garis + nama + jabatan dengan ruang kosong buat tanda
             // tangan basah.

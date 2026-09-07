@@ -423,6 +423,15 @@ class SemuaProfilLembarKerjaTest extends TestCase
         $belumAdaKertasnya = [
             'gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro',
             'timer_stopwatch', 'centrifuge', 'tachometer',
+            // Height Gauge — dan buktinya bukan "belum sempat dicari": sapuan
+            // `SIDIK-FM-` di SELURUH workbook master
+            // (`Master_olda_Height_Gauge_600_mm_2026.xlsm`, tujuh sheet)
+            // menemukan tepat SATU nomor, `SIDIK-FM-CAL-2403_Rev. 0` di
+            // `SERTIFIKAT!A59` — dan itu formulir SERTIFIKAT bersama, bukan
+            // lembar kerja. Menebak nomor berikutnya dari deret yang ada
+            // berarti mencetak nomor formulir karangan di kop lembar yang
+            // dipakai teknisi dan diaudit.
+            'height_gauge',
         ];
 
         // Kertasnya ADA, tapi nomornya dipilih dari ALATnya — jadi panggilan

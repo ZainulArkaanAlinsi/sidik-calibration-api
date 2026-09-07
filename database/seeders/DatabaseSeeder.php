@@ -37,6 +37,10 @@ class DatabaseSeeder extends Seeder
             ViscometerCapabilitySeeder::class,
             DoMeterCapabilitySeeder::class,
             GasDetectorCapabilitySeeder::class,
+            // CMC nol — Height Gauge di luar lampiran LK-285-IDN, dan
+            // barisnya tetap perlu ada supaya jalur budget penuh jalan.
+            // Pola & alasannya sama persis dengan Gas Detector di atas.
+            HeightGaugeCapabilitySeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori
             // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
             // ngitung koreksi kondisi lingkungan.
@@ -105,6 +109,7 @@ class DatabaseSeeder extends Seeder
             // WAJIB abis `ThermohygroSeeder`: sesinya menautkan TH-3 sebagai
             // sumber koreksi kondisi lingkungan.
             MicrometerSeeder::class,
+            HeightGaugeSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

@@ -55,6 +55,16 @@ class CmcSemuaProfilTest extends TestCase
      * @var array<string, string>
      */
     private const DILUAR_LAMPIRAN = [
+        'Height Gauge' => 'KAN belum mengakreditasi height gauge sama sekali — kelompok Panjang di '
+            .'`kemampuan-kalibrasi.json` cuma memuat Sieve, Micrometer, Vernier Caliper, dan Dial '
+            .'Indicator. Masternya sendiri mengakuinya: sel lantai CMC `PERHITUNGAN U95%!AA19` di '
+            .'`Master_olda_Height_Gauge_600_mm_2026.xlsm` KOSONG, jadi `AA20 = MAX(AA18:AA19)` '
+            .'selalu memulangkan U hitung telanjang. `DATABASE!S5:T5` memang memuat '
+            .'`CMC 0-300mm = 15 um` (defined name CMC_UTM) tapi itu warisan master Jangka Sorong: '
+            .'tidak tersambung ke sheet U95 mana pun, dan alatnya 600 mm — di luar pita itu sendiri. '
+            .'Barisnya tetap ada dengan CMC nol supaya jalur budget penuh tetap jalan; lihat '
+            .'`HeightGaugeCapabilitySeeder`.',
+
         'Gas Detector' => 'KAN belum mengakreditasi gas detector sama sekali — kolom CMC di '
             .'`Gas Detector Uli Skin (std Rigaz).xlsm` (DATABASE!S5:S8) kosong seluruhnya. Barisnya tetap '
             .'ada dengan CMC nol supaya jalur budget penuh tetap jalan; lihat `GasDetectorCapabilitySeeder`.',

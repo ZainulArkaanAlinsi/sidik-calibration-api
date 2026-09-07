@@ -333,6 +333,20 @@ class GasDetectorProfile extends CalibrationProfile
         return 'gas_detector';
     }
 
+    /**
+     * KAN belum mengakreditasi gas detector sama sekali — dia tidak punya baris
+     * di lampiran LK-285-IDN, dan kolom CMC di `DATABASE!S5:S8` masternya
+     * kosong seluruhnya.
+     *
+     * Sertifikatnya karena itu TIDAK boleh membawa klaim akreditasi. Sampai
+     * 7 Sep 2026 dia membawanya — klaim itu dicetak tanpa syarat di tingkat
+     * organisasi, tanpa satu pun pemeriksaan alat.
+     */
+    public function dalamLingkupAkreditasi(): bool
+    {
+        return false;
+    }
+
     public function namaAlatKemampuan(): string
     {
         return 'Gas Detector';

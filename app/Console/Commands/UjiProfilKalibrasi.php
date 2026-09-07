@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
+use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
 use App\Services\Calibration\Profiles\TimbanganProfile;
@@ -321,7 +322,15 @@ class UjiProfilKalibrasi extends Command
         //
         // Alasan & bentuk pemeriksaannya sama persis dengan Timbangan dan
         // Timer/Stopwatch di atas: yang diperiksa sesi tersimpannya lengkap.
-        if ($profil instanceof MicrometerProfile) {
+        //
+        // Height Gauge ikut cabang yang SAMA, dan bentuknya memang sama persis:
+        // payload-nya `measurements[i].pembacaan` yang dipasangkan ke slot
+        // nominal turunan server, dan seluruh budget-nya lahir dari blok
+        // tingkat-sesi `spesifikasi_alat.height_gauge` (paralelisme, blok
+        // Evaluation, kapasitas, resolusi). Yang berbeda cuma kosakata
+        // `peran_sensor`-nya, dan pemeriksaan di bawah tidak menyentuh itu — dia
+        // menghitung titik ber-`peran_sensor` apa pun.
+        if ($profil instanceof MicrometerProfile || $profil instanceof HeightGaugeProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];
             }

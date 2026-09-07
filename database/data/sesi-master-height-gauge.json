@@ -1,0 +1,251 @@
+{
+    "_catatan": "Sesi contoh dari Master_olda_Height_Gauge_600_mm_2026.xlsm (pw spirit285). Yang ditanam HeightGaugeSeeder cuma MASUKANNYA; koreksi & budget dihitung profilnya. `_acuan_master` dipakai HeightGaugeMasterTest, bukan seeder.",
+    "_digenerate_oleh": "docs/skrip/gen-sesi-height-gauge.py",
+    "_sesi": {
+        "nama_alat": "Height Gauge",
+        "merk": "Insize",
+        "model": "Digital",
+        "serial": "1610232804",
+        "rentang": "0-600",
+        "satuan_alat": "mm",
+        "kapasitas_mm": 600.0,
+        "resolusi_mm": 0.01,
+        "pelanggan": "PT GE Nusantara Turbine Services",
+        "alamat": "Jl. Pajajaran No. 154, KP IV-Bandung 40174",
+        "tanggal_terima": "2026-05-05",
+        "tanggal": "2026-05-05",
+        "nomor_sertifikat": "001-UBLK-05.26",
+        "nomor_order": "UBLK-1-5.2026",
+        "suhu_awal": 20.2,
+        "suhu_akhir": 20.3,
+        "rh_awal": 44.0,
+        "rh_akhir": 55.0,
+        "thermohygro": "TH-1",
+        "kerataan_muka_ukur": "baik"
+    },
+    "paralelisme_mm": [
+        0.0,
+        0.001,
+        0.002
+    ],
+    "pra_evaluasi_mm": [
+        599.97,
+        599.92,
+        599.98,
+        599.95,
+        599.95,
+        599.97,
+        599.94,
+        599.98,
+        599.97,
+        599.95
+    ],
+    "titik": [
+        {
+            "titik_ke": 1,
+            "nominal_mm": 25.0,
+            "pembacaan_mm": [
+                24.99,
+                24.99,
+                24.98
+            ]
+        },
+        {
+            "titik_ke": 2,
+            "nominal_mm": 50.0,
+            "pembacaan_mm": [
+                49.99,
+                49.99,
+                49.98
+            ]
+        },
+        {
+            "titik_ke": 3,
+            "nominal_mm": 100.0,
+            "pembacaan_mm": [
+                99.98,
+                99.98,
+                99.98
+            ]
+        },
+        {
+            "titik_ke": 4,
+            "nominal_mm": 150.0,
+            "pembacaan_mm": [
+                149.97,
+                149.98,
+                149.98
+            ]
+        },
+        {
+            "titik_ke": 5,
+            "nominal_mm": 200.0,
+            "pembacaan_mm": [
+                199.98,
+                199.98,
+                199.99
+            ]
+        },
+        {
+            "titik_ke": 6,
+            "nominal_mm": 300.0,
+            "pembacaan_mm": [
+                299.97,
+                299.98,
+                299.98
+            ]
+        },
+        {
+            "titik_ke": 7,
+            "nominal_mm": 400.0,
+            "pembacaan_mm": [
+                399.98,
+                399.97,
+                399.97
+            ]
+        },
+        {
+            "titik_ke": 8,
+            "nominal_mm": 500.0,
+            "pembacaan_mm": [
+                499.97,
+                499.97,
+                499.97
+            ]
+        },
+        {
+            "titik_ke": 9,
+            "nominal_mm": 550.0,
+            "pembacaan_mm": [
+                549.97,
+                549.97,
+                549.96
+            ]
+        },
+        {
+            "titik_ke": 10,
+            "nominal_mm": 600.0,
+            "pembacaan_mm": [
+                599.97,
+                599.96,
+                599.96
+            ]
+        }
+    ],
+    "_acuan_master": {
+        "_catatan": "Angka yang tercetak di masternya sendiri. Umur drift 153,6637324074108 hari itu NOW() master (DATABASE!X11 = 2026-06-11 15:55:46,48) dikurangi tanggal kalibrasi Caliper Checker (W13 = 2026-01-09) — bukan tanggal sesinya. HeightGaugeMasterTest mengoper angka itu apa adanya supaya aggregat master bisa direproduksi; sesi ter-seed memakai tanggal kalibrasi sesi (116 hari) dan karena itu U-nya sedikit berbeda.",
+        "umur_drift_hari": 153.6637324074108,
+        "paralelisme_hasil_mm": 0.001414213562373095,
+        "stdev_pra_evaluasi_mm": 0.019321835661593185,
+        "koreksi_mm": [
+            0.014133333333337106,
+            0.01373333333332738,
+            0.02049999999999841,
+            0.023633333333350492,
+            0.015966666666656693,
+            0.022883333333311384,
+            0.024866666666639503,
+            0.028649999999970532,
+            0.031133333333286828,
+            0.03396666666662895
+        ],
+        "komponen": [
+            {
+                "nama": "Repeatability  (Urep)",
+                "satuan": "mm",
+                "distribusi": "t-student",
+                "u": 0.019321835661593185,
+                "pembagi": 3.1622776601683795,
+                "vi": 9.0,
+                "ui": 0.006110100926610084,
+                "ci": 1.0
+            },
+            {
+                "nama": "Resolusi  (U rnd)",
+                "satuan": "mm",
+                "distribusi": "rect.",
+                "u": 0.005,
+                "pembagi": 1.7320508075688772,
+                "vi": 200.0,
+                "ui": 0.002886751345948129,
+                "ci": 1.0
+            },
+            {
+                "nama": "Standard Caliper Checker  ( U ls)",
+                "satuan": "mm",
+                "distribusi": "normal",
+                "u": 0.0040999999999999995,
+                "pembagi": 2.0,
+                "vi": 200.0,
+                "ui": 0.0020499999999999997,
+                "ci": 1.0
+            },
+            {
+                "nama": "Perubahan suhu terhadap suhu acuan 200c",
+                "satuan": "/⁰C",
+                "distribusi": "rect.",
+                "u": 0.25,
+                "pembagi": 1.7320508075688772,
+                "vi": 60.0,
+                "ui": 0.14433756729740646,
+                "ci": 0.0012
+            },
+            {
+                "nama": "Koefisien muai thermal",
+                "satuan": "/⁰C",
+                "distribusi": "rect.",
+                "u": 2e-06,
+                "pembagi": 2.449489742783178,
+                "vi": 60.0,
+                "ui": 8.164965809277261e-07,
+                "ci": 150.0
+            },
+            {
+                "nama": "Drift standard",
+                "satuan": "mm/th",
+                "distribusi": "rect.",
+                "u": 0.0021769028757716536,
+                "pembagi": 1.7320508075688772,
+                "vi": 60.0,
+                "ui": 0.0012568354613264347,
+                "ci": 1.0
+            },
+            {
+                "nama": "Kesalahan Geometri",
+                "satuan": "mm",
+                "distribusi": "rect.",
+                "u": 0.0005,
+                "pembagi": 1.7320508075688772,
+                "vi": 60.0,
+                "ui": 0.0002886751345948129,
+                "ci": 1.0
+            },
+            {
+                "nama": "Meja Granit (meja Rata)",
+                "satuan": "mm",
+                "distribusi": "normal",
+                "u": 0.0044,
+                "pembagi": 2.0,
+                "vi": 200.0,
+                "ui": 0.0022,
+                "ci": 1.0
+            },
+            {
+                "nama": "Selisih suhu Height Gauge dengan Caliper Checker",
+                "satuan": "⁰C",
+                "distribusi": "rect.",
+                "u": 0.0,
+                "pembagi": 1.7320508075688772,
+                "vi": 60.0,
+                "ui": 0.0,
+                "ci": 0.0012
+            }
+        ],
+        "jumlah_uici_kuadrat": 5.6417135376875704e-05,
+        "jumlah_uici_pangkat4_per_vi": 1.554585747407065e-10,
+        "uc_mm": 0.0075111340939218825,
+        "veff": 20.474220669021,
+        "k": 2.085963447265865,
+        "u_diperluas_mm": 0.01566795116743346
+    }
+}

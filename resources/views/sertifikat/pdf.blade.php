@@ -447,10 +447,25 @@
                 @endif
                 <td class="teks">
                     <h1>{{ $organisasi['nama'] ?? 'Laboratorium Kalibrasi' }}</h1>
+                    {{--
+                      Baris akreditasi cuma dicetak kalau nomornya ADA di
+                      snapshot. Yang mengosongkannya `CertificateSnapshotBuilder`,
+                      buat alat yang di luar lampiran LK-285-IDN.
+
+                      Bawaan `?? 'KAN'` dan `?? '—'` yang dulu ada di sini
+                      DICABUT: keduanya membuat sertifikat alat di luar lingkup
+                      tetap mencetak "Terakreditasi KAN &middot; No. —", yaitu
+                      klaim yang sama cuma tanpa nomornya. Alamatnya tetap
+                      dicetak — dia bukan klaim akreditasi.
+                    --}}
                     <div class="akr">
-                        Terakreditasi {{ $organisasi['standar_akreditasi'] ?? 'KAN' }}
-                        &middot; No. {{ $organisasi['no_akreditasi'] ?? '—' }}
-                        @if (! empty($organisasi['alamat'])) <br>{{ $organisasi['alamat'] }} @endif
+                        @if (! empty($organisasi['no_akreditasi']))
+                            Terakreditasi {{ $organisasi['standar_akreditasi'] ?? 'KAN' }}
+                            &middot; No. {{ $organisasi['no_akreditasi'] }}
+                            @if (! empty($organisasi['alamat'])) <br>{{ $organisasi['alamat'] }} @endif
+                        @elseif (! empty($organisasi['alamat']))
+                            {{ $organisasi['alamat'] }}
+                        @endif
                     </div>
                 </td>
             </tr>

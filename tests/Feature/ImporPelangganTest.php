@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 /**
@@ -362,8 +363,8 @@ class ImporPelangganTest extends TestCase
      */
     public function test_koneksi_produksi_yang_belum_disetel_ditolak_bukan_jatuh_ke_bawaan(): void
     {
-        // `assertNull`, bukan "null atau string kosong" — dan bedanya menentukan
-        // apakah baris ini menjaga apa pun.
+        // `assertNull`, bukan "null atau string kosong" — dan bedanya
+        // menentukan apakah baris ini menjaga apa pun.
         //
         // Kunci yang ADA TAPI KOSONG di `.env` menang atas nilai bawaan di
         // `env()`; bawaan cuma terpicu kalau kuncinya tidak ada sama sekali.
@@ -373,13 +374,61 @@ class ImporPelangganTest extends TestCase
         // string kosong akan hijau sambil membiarkan bahayanya lewat.
         //
         // Itu bukan dugaan: versi longgar pernah ditulis di sini dan lulus
-        // dengan bawaan berbahaya terpasang. Karena itu kuncinya dikomentari di
-        // `.env.example`, dan assertion-nya dikembalikan ketat.
+        // dengan bawaan berbahaya terpasang.
+        //
+        // ## Kenapa kuncinya DICABUT dulu, bukan dibaca apa adanya
+        //
+        // Versi sebelumnya membaca `config('database.connections.produksi.host')`
+        // langsung. Itu menguji hal yang SALAH: yang mau dijaga
+        // "config/database.php tidak menyediakan bawaan", bukan "mesin ini
+        // belum menyetel koneksi produksi". Di laptop admin yang memang sudah
+        // mengisi `DB_PRODUKSI_*` untuk menjalankan impornya — persis kegunaan
+        // koneksi ini — test-nya merah padahal tidak ada yang rusak.
+        //
+        // Lebih buruk dari sekadar merah: `--koneksi=produksi` di bawah jadi
+        // LOLOS penjaganya, dan perintahnya benar-benar menyasar database
+        // PRODUKSI dari dalam test. Sesudah itu pembukuan transaksi
+        // `RefreshDatabase` rusak, test berikutnya memicu `migrate:fresh` ->
+        // `vacuum` di dalam transaksi, dan SELURUH sisa proses gagal dengan
+        // `table "migrations" already exists`. Terukur 7 Sep 2026: 1.300+ error
+        // beruntun yang menyembunyikan kegagalan lain di suite penuh.
+        //
+        // Jadi kuncinya dicabut dari repository env, `config/database.php`
+        // dievaluasi ulang, dan yang diperiksa nilai BAWAANnya. Invariannya
+        // sama, tapi jawabannya tidak lagi tergantung isi `.env` mesin
+        // penjalan.
+        $repo = Env::getRepository();
+        $kunci = [
+            'DB_PRODUKSI_URL', 'DB_PRODUKSI_HOST', 'DB_PRODUKSI_PORT',
+            'DB_PRODUKSI_DATABASE', 'DB_PRODUKSI_USERNAME',
+        ];
+        $asli = [];
+
+        foreach ($kunci as $k) {
+            $asli[$k] = $repo->get($k);
+            $repo->clear($k);
+        }
+
+        try {
+            $bawaan = require base_path('config/database.php');
+        } finally {
+            foreach ($asli as $k => $nilai) {
+                if ($nilai !== null) {
+                    $repo->set($k, $nilai);
+                }
+            }
+        }
+
         $this->assertNull(
-            config('database.connections.produksi.host'),
+            $bawaan['connections']['produksi']['host'],
             'Koneksi `produksi` tidak boleh punya host bawaan — lihat config/database.php. '
-            .'Kalau ini merah karena `\'\'`, kunci DB_PRODUKSI_* di .env.example tidak lagi dikomentari.',
+            .'Merah di sini artinya ada yang menambahkan argumen kedua ke env(DB_PRODUKSI_HOST), '
+            .'dan kunci yang lupa diisi bakal diam-diam menunjuk MySQL laptop.',
         );
+
+        // Koneksinya DIKOSONGKAN untuk sisa test ini, apa pun isi `.env` mesin
+        // penjalan — supaya yang diuji penjaganya, bukan kebetulan lingkungan.
+        $this->kosongkanKoneksiProduksi();
 
         $org = $this->organisasi();
         $berkas = $this->berkas("nama\nPT Maju Jaya\n");
@@ -403,6 +452,12 @@ class ImporPelangganTest extends TestCase
      */
     public function test_koneksi_diperiksa_sebelum_berkas_dibaca(): void
     {
+        // Dikosongkan eksplisit — lihat alasannya di test sebelumnya. Tanpa ini
+        // test-nya cuma hijau di mesin yang kebetulan belum menyetel
+        // `DB_PRODUKSI_*`, dan di mesin yang sudah, perintahnya benar-benar
+        // menyasar produksi.
+        $this->kosongkanKoneksiProduksi();
+
         $org = $this->organisasi();
 
         $this->artisan('customers:impor', [
@@ -412,6 +467,24 @@ class ImporPelangganTest extends TestCase
         ])
             ->expectsOutputToContain('belum disetel')
             ->assertFailed();
+    }
+
+    /**
+     * Kosongkan koneksi `produksi` di config runtime.
+     *
+     * Keempat kunci yang dibaca `ImporPelanggan` disetel null sekaligus —
+     * bukan `host` saja: perintahnya memeriksa `host`, `database`, DAN
+     * `username`, jadi mengosongkan satu di antaranya membuat test lolos lewat
+     * jalan yang berbeda dari yang dimaksud.
+     */
+    private function kosongkanKoneksiProduksi(): void
+    {
+        config([
+            'database.connections.produksi.url' => null,
+            'database.connections.produksi.host' => null,
+            'database.connections.produksi.database' => null,
+            'database.connections.produksi.username' => null,
+        ]);
     }
 
     public function test_tanpa_koneksi_jalan_seperti_biasa_dan_menyebut_tujuannya(): void

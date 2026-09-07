@@ -183,6 +183,24 @@ class MicrometerCalculator
     }
 
     /**
+     * Apakah deret ini punya SEBARAN sama sekali — yaitu bukan satu nilai yang
+     * disalin berkali-kali.
+     *
+     * Diuji `max !== min`, bukan lewat simpangan bakunya: simpangan baku n
+     * angka identik cuma nol EKSAK kalau nilainya bisa direpresentasikan persis
+     * dalam biner. Lihat [budget].
+     *
+     * Deret berisi kurang dari dua angka balik `false` — satu pembacaan memang
+     * belum punya sebaran yang bisa dinilai.
+     *
+     * @param  list<float>  $nilai
+     */
+    private function punyaSebaran(array $nilai): bool
+    {
+        return count($nilai) >= 2 && max($nilai) !== min($nilai);
+    }
+
+    /**
      * Simpangan baku contoh (n-1), sama dengan `STDEV()` Excel.
      *
      * @param  list<float>  $nilai
@@ -352,10 +370,13 @@ class MicrometerCalculator
             // ada satu pun error di sepanjang jalurnya.
             'boleh_terbit' => $pita !== null
                 && count($konteks['pra_evaluasi']) >= 2
-                && $this->simpanganBaku(array_map(
+                // `punyaSebaran`, bukan `stdev > 0` — lihat [budget]. Yang
+                // kedua diam-diam tidak pernah menyala untuk nilai yang tidak
+                // bisa direpresentasikan persis dalam biner.
+                && $this->punyaSebaran(array_map(
                     static fn ($x): float => (float) $x,
                     $konteks['pra_evaluasi'],
-                )) > 0.0
+                ))
                 && (float) $konteks['resolusi_mm'] > 0.0,
             'ditolak' => $ditolak,
         ];
@@ -451,17 +472,37 @@ class MicrometerCalculator
         // baku nol satu-satunya sinyal yang membedakannya dari tiga varian lain
         // (stdev 3,2e-4 sampai 5,3e-4 mm).
         //
-        // Dibandingkan `> 0.0` PERSIS, bukan ke ambang: nol eksak itu tanda
-        // tangan "satu nilai disalin n kali". Sebaran nyata yang lebih halus
-        // dari resolusi tetap menghasilkan stdev bukan-nol, dan itu memang
-        // bukan urusan penjaga ini.
+        // Yang dibandingkan `max === min`, BUKAN `stdev <= 0` — dan bedanya
+        // bukan gaya penulisan.
+        //
+        // Versi pertama memakai `$stdevUm <= 0.0`, dan itu diam-diam TIDAK
+        // PERNAH menyala untuk sebagian nilai. Simpangan baku n angka identik
+        // cuma nol EKSAK kalau nilainya bisa direpresentasikan persis dalam
+        // biner; kalau tidak, akumulasi galat pembulatan menyisakan sisa
+        // sekitar 1e-13 yang lolos `> 0`:
+        //
+        //   sepuluh kali 50,000  -> stdev 0,0e+0    (penjaga menyala)
+        //   sepuluh kali 599,95  -> stdev 1,2e-13   (penjaga TIDAK menyala)
+        //
+        // Ketahuan 7 Sep 2026 waktu Height Gauge menyalin penjaga ini —
+        // pra-evaluasi masternya 599,95, dan test yang seharusnya merah lulus.
+        // Di sini kebetulan belum menggigit karena varian yang cacat
+        // (0-25 mm) berisi 635,0 sepuluh kali, dan 635,0 kebetulan
+        // representable. Kebetulan itu bukan penjagaan.
+        //
+        // `max === min` menguji hal yang SAMA (sebaran nol) tapi eksak apa pun
+        // nilainya, karena dia perbandingan nilai — bukan hasil aritmetika yang
+        // mengakumulasi galat.
+        //
+        // Sebaran nyata yang lebih halus dari resolusi tetap punya
+        // `max !== min`, dan itu memang bukan urusan penjaga ini.
         //
         // TIDAK diganti lantai keterulangan berbasis resolusi, walau itu
         // perlakuan yang lazim waktu sebaran memang di bawah resolusi:
         // memilih lantai berarti MENGUBAH U95 yang terbit, dan itu keputusan
         // metode milik manajer teknis. Lihat `docs/pertanyaan-lab-micrometer.md`
         // §3 — sampai dijawab, yang benar menahan, bukan mengarang.
-        if ($nUlang >= 2 && $stdevUm <= 0.0) {
+        if ($nUlang >= 2 && ! $this->punyaSebaran($praEvaluasi)) {
             $ditolak[] = [
                 'titik_ke' => 0,
                 'alasan' => 'Sepuluh pembacaan pra-evaluasi seluruhnya bernilai sama, jadi simpangan '

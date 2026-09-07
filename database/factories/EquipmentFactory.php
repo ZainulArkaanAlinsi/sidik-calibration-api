@@ -40,7 +40,12 @@ class EquipmentFactory extends Factory
             // `MicrometerProfile` (alat ke-25), jadi persis kejadian Timbangan
             // di atas terulang: satu dari empat fixture acak mendarat di lembar
             // Micrometer, dan yang merah test lain yang bergantian tiap jalan.
-            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Dial Indicator', 'Height Gauge']),
+            // `Height Gauge` DICABUT 7 Sep 2026 — sebab yang sama, kejadian
+            // KETIGA: `HeightGaugeProfile` (alat ke-26) sekarang mengklaim nama
+            // itu, jadi satu dari TIGA fixture acak mendarat di lembar Height
+            // Gauge. Bedanya cuma peluangnya yang lebih besar dari dua kejadian
+            // sebelumnya, bukan bentuk kegagalannya.
+            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Dial Indicator']),
             'merk' => fake()->randomElement(['Mitutoyo', 'Ohaus', 'Memmert']),
             'serial_number' => strtoupper(fake()->unique()->bothify('??-####-##')),
             'satuan' => 'mm',

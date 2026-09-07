@@ -54,6 +54,11 @@ class CertificateSnapshotBuilder
         $desimal = $this->desimal($alat, $sesi->organization);
         $profil = $alat ? app(CalibrationProfileRegistry::class)->untukAlat($alat) : null;
 
+        // Sesi tanpa alat sama sekali dianggap DI DALAM lingkup — perilaku lama
+        // dipertahankan. Yang mencabut klaim harus pernyataan eksplisit sebuah
+        // profil, bukan ketiadaan data.
+        $dalamLingkup = $profil?->dalamLingkupAkreditasi() ?? true;
+
         return [
             'versi' => self::VERSI,
             'desimal' => $desimal,
@@ -127,11 +132,27 @@ class CertificateSnapshotBuilder
                 'keputusan' => $sesi->keputusan,
                 'qr_token' => $sertifikat->qr_token,
                 'qr_payload' => $sertifikat->qr_payload,
+                // Klaim akreditasinya BERSYARAT — lihat
+                // `CalibrationProfile::dalamLingkupAkreditasi()`.
+                //
+                // Dibekukan di snapshot, bukan dievaluasi ulang waktu cetak:
+                // begitu KAN menambah satu jenis alat ke lampiran, sertifikat
+                // LAMA untuk alat itu tidak boleh mendadak mengklaim akreditasi
+                // surut. Alasannya sama dengan `desimal` & `judul_uut` —
+                // cetakan ulang tahun depan harus keluar sama.
+                //
+                // Nilainya `null`, bukan string kosong: blade membedakan
+                // keduanya lewat `! empty()`, dan `''` yang lolos sebagai "ada"
+                // mencetak "Terakreditasi KAN · No. —".
                 'organization' => [
                     'nama' => $sesi->organization?->nama,
                     'alamat' => $sesi->organization?->alamat,
-                    'no_akreditasi' => $sesi->organization?->no_akreditasi,
-                    'standar_akreditasi' => $sesi->organization?->standar_akreditasi,
+                    'no_akreditasi' => $dalamLingkup ? $sesi->organization?->no_akreditasi : null,
+                    'standar_akreditasi' => $dalamLingkup ? $sesi->organization?->standar_akreditasi : null,
+                    // Dipisah dari kedua kunci di atas supaya pembaca snapshot
+                    // bisa membedakan "di luar lingkup" dari "organisasinya
+                    // memang belum mengisi nomor akreditasi".
+                    'dalam_lingkup_akreditasi' => $dalamLingkup,
                 ],
             ],
         ];

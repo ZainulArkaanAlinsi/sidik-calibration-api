@@ -42,6 +42,7 @@ class CalibrationRequest extends FormRequest
     {
         $this->bakukanKeterulanganTimbangan();
         $this->bakukanPraEvaluasiMicrometer();
+        $this->bakukanBlokHeightGauge();
 
         if ($this->user()?->isAdmin()) {
             return;
@@ -224,6 +225,85 @@ class CalibrationRequest extends FormRequest
         );
 
         $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * Ratakan DUA tabel tingkat-sesi lembar Height Gauge jadi deret angka.
+     *
+     * ## Kenapa dua, dan kenapa keduanya lewat sini
+     *
+     * Tabel `Paralelisme` dan `Evaluation` sama-sama menyatakan `simpan_ke:
+     * spesifikasi_alat.height_gauge.*`, dan HP mengirim SETIAP tabel
+     * ber-`simpan_ke` sebagai cerminan tabel yang digambarnya:
+     *
+     *     paralelisme = { baris: [ { titik_ukur, pembacaan: [3 angka] } ] }
+     *
+     * Yang dibaca [\App\Support\HeightGaugeMentah::blokSesi] deret angka
+     * DATAR. Tanpa perataan ini bentuk HP kena aturan
+     * `spesifikasi_alat.height_gauge.paralelisme.* => numeric` dan pulang
+     * **422** — jadi kegagalannya memang kelihatan, tapi yang gagal SETIAP
+     * sesi Height Gauge dari HP, dengan keluhan yang menunjuk angka yang sudah
+     * benar diisi teknisi.
+     *
+     * ## Diratakan saja — TIDAK dikonversi
+     *
+     * Satuannya sudah ikut di blok yang sama
+     * (`spesifikasi_alat.height_gauge.satuan`), dan yang mengubah pra-evaluasi
+     * ke mm `HeightGaugeMentah::blokSesi()` waktu dipakai menghitung.
+     *
+     * Mengalikan di sini tidak idempoten: teknisi yang menyimpan draft lalu
+     * membukanya lagi mengirimkan kembali angka yang sudah dikonversi (HP tidak
+     * punya konversi balik), jadi tiap simpan mengalikannya 25,4 lagi. Terbukti
+     * sampai 1290,32 mm untuk pembacaan 2 inch pada simpanan kedua di
+     * Micrometer.
+     *
+     * Paralelisme memang TIDAK pernah dikonversi di mana pun — dia dibaca pada
+     * Dial Indicator standar dan selalu mm; lihat `HeightGaugeMentah::blokSesi`.
+     *
+     * Diletakkan di `prepareForValidation()` dengan alasan yang sama seperti
+     * dua saudaranya: yang TERSIMPAN harus sudah baku, karena
+     * `kalibrasi:hitung-ulang` membaca `spesifikasi_alat` apa adanya.
+     */
+    private function bakukanBlokHeightGauge(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek['height_gauge'] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        $berubah = false;
+
+        foreach (['paralelisme', 'pra_evaluasi'] as $kunci) {
+            $nilai = $blok[$kunci] ?? null;
+
+            if (! is_array($nilai) || $nilai === []) {
+                continue;
+            }
+
+            // Bentuk tabel HP diratakan; deret datar dipakai apa adanya. Kode
+            // kolomnya `pembacaan`, dari `HeightGaugeProfile::bagianEvaluasi()`
+            // dan `bagianParalelisme()`. Kertasnya cuma punya satu baris, tapi
+            // baris kedua dan seterusnya (kalau revisi berikutnya menambahnya)
+            // ikut disambung — bukan dibuang diam-diam.
+            $mentah = isset($nilai['baris'])
+                ? array_merge(...array_map(
+                    static fn ($b): array => array_values((array) (is_array($b) ? ($b['pembacaan'] ?? []) : [])),
+                    array_values((array) $nilai['baris']) ?: [[]],
+                ))
+                : array_values($nilai);
+
+            $spek['height_gauge'][$kunci] = array_map(
+                static fn ($v): float => (float) $v,
+                array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v))),
+            );
+            $berubah = true;
+        }
+
+        if ($berubah) {
+            $this->merge(['spesifikasi_alat' => $spek]);
+        }
     }
 
     /**
@@ -418,6 +498,33 @@ class CalibrationRequest extends FormRequest
             'spesifikasi_alat.micrometer.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
             'spesifikasi_alat.micrometer.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
             'spesifikasi_alat.micrometer.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            // Blok Height Gauge: enam kunci tingkat atas (satuan, kapasitas,
+            // resolusi, paralelisme, blok Evaluation, kerataan muka ukur).
+            // Batasnya dilonggarkan ke 12 dengan alasan yang sama seperti
+            // `micrometer`: kunci ketujuh yang menyusul tidak boleh menolak
+            // SELURUH sesi.
+            'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.height_gauge.paralelisme' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'spesifikasi_alat.height_gauge.paralelisme.*' => ['nullable', 'numeric'],
+            // Satuan alat MEMILIH faktor konversi ke mm, jadi nilainya dibatasi
+            // ke daftar yang dikenal — bukan teks bebas. Satuan yang tidak
+            // dikenal jatuh ke faktor 1,0 dan angkanya salah diam-diam, dan di
+            // alat ini tidak ada lantai CMC yang menahannya.
+            'spesifikasi_alat.height_gauge.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
+            'spesifikasi_alat.height_gauge.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.height_gauge.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            // SATU pilihan, bukan dua centang — master mencentang `Good` dan
+            // `Not Good` sekaligus di sesi contohnya, dan tidak ada satu pun sel
+            // yang memprotes. Dua boolean yang saling meniadakan tidak bisa
+            // divalidasi; yang ini bisa.
+            'spesifikasi_alat.height_gauge.kerataan_muka_ukur' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
+            // Slot nominal Caliper Checker TIDAK diterima dari HP: nominalnya
+            // dipatok Instruksi Kerja dan diturunkan server dari tabel standar —
+            // lihat `CalibrationController::susunBlokHeightGauge()`. Menerimanya
+            // dari luar berarti membuka jalan buat sesi yang nominalnya berbeda
+            // dari yang tercetak di lembarnya sendiri.
             // Deret pembacaan per titik. Tumpukan balok ukurnya TIDAK diterima
             // dari HP: nominalnya dipatok kertas dan tumpukannya diturunkan
             // server dari varian — lihat
@@ -745,6 +852,12 @@ class CalibrationRequest extends FormRequest
         'scale_observation',
         'effect_of_tare',
         'micrometer',
+        // Height Gauge menggerakkan angka sebanyak `micrometer`, dan satu hal
+        // lagi: paralelisme, yang bukan angka budget melainkan VONIS kelulusan
+        // yang tercetak di kaki sertifikat. Tanpa tempat simpan yang sah,
+        // ketiga pembacaan paralelisme dan sepuluh pembacaan blok Evaluation
+        // diketik teknisi lalu hilang waktu tombol kirim ditekan.
+        'height_gauge',
     ];
 
     /**

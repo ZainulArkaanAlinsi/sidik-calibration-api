@@ -2276,6 +2276,166 @@ formulir siap teken. Yang tidak: tanda tangannya.
 
 ---
 
+## 23. Alat baru **Height Gauge 600 mm** (Panjang) — 7 Sep 2026
+
+Satu workbook master turun (`Master_olda_Height_Gauge_600_mm_2026.xlsm`,
+password `spirit285`), sudah diekspor ke CSV di
+`Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/Height_Gauge_600mm_CSV/`. Alat
+ke-26, kelompok **Panjang** — yang KEDUA berprofil di kelompok itu sesudah
+Micrometer.
+
+Ekstensinya `.xlsm` tapi **tidak ada `vbaProject.bin`**: checkbox
+"Good / Not Good"-nya Form Control biasa, jadi tidak ada logika tersembunyi.
+Ada dua tautan luar (`SERTIFIKAT!Q11` dan `D34`) tapi keduanya cuma LABEL
+(`⁰C`, `Uncertainty U95% = ±`) — literalnya ditulis di profil, bukan ditiru.
+
+### Yang membuat alat ini beda dari 25 lainnya
+
+**Dia DI LUAR lampiran akreditasi LK-285-IDN.** Kelompok Panjang di
+`kemampuan-kalibrasi.json` cuma memuat Sieve, Micrometer, Vernier Caliper, dan
+Dial Indicator. Masternya sendiri mengakuinya: sel lantai CMC
+(`PERHITUNGAN U95%!AA19`) **kosong**, jadi `U95 = U` telanjang.
+
+Itu membalik taruhan penjagaan komponen. Di Micrometer, budget yang kehilangan
+komponen mendarat di lantai CMC dan hasilnya masih di atas kemampuan
+terakreditasi — salah, tapi tertampung, dan justru lantai itu yang
+menyamarkannya. Di sini **tidak ada yang menampung maupun menahan**: U95
+langsung terbit terlalu kecil, tanpa satu pun angka yang terlihat ganjil. Jadi
+gerbang penerbitannya dipatok eksplisit (tiga syarat) dan yang menahan
+**ketiadaan baris hitungan**, bukan peringatan sesi.
+
+Perlakuannya ikut preseden **Gas Detector**: baris kemampuan tetap dibuat
+dengan CMC nol supaya jalur budget penuh tetap jalan.
+
+### Tiga blok yang TIDAK sebangun
+
+Yang paling membedakan bentuknya: satu sesi punya tiga blok pengukuran, dan
+cuma satu di antaranya berbentuk titik ukur.
+
+| Blok | Bentuk | Tempat simpan |
+|---|---|---|
+| 1. Paralelisme Ujung Scriber | 3 pembacaan, tingkat SESI | `spesifikasi_alat.height_gauge.paralelisme` |
+| 2. Evaluation (pra-evaluasi) | 10 pembacaan berulang, tingkat SESI | `spesifikasi_alat.height_gauge.pra_evaluasi` |
+| 3. Measurement | 10 titik ber-nominal PRA-CETAK × 3 pembacaan | `raw_measurements` |
+
+Blok 1 tidak masuk budget dan tidak melahirkan titik ukur — dia catatan
+kelulusan di kaki sertifikat. Blok 2 satu-satunya sumber Repeatability seluruh
+sesi. **Nol kolom baru** di `raw_measurements`.
+
+### Berkas yang dibuat/diubah
+
+Disebut SEBELUM mengetik, sesuai §12:
+
+| Berkas | Isi |
+|---|---|
+| `database/data/tabel-standar-height-gauge.json` | tabel Caliper Checker (Outside + Inside) & tetapan — **digenerate skrip** |
+| `database/data/sesi-master-height-gauge.json` | sesi contoh + `_acuan_master`, digenerate skrip |
+| `docs/skrip/gen-tabel-standar-height-gauge.py` | generator tabel standar |
+| `docs/skrip/gen-sesi-height-gauge.py` | generator sesi contoh |
+| `app/Services/Calibration/TabelStandarHeightGauge.php` | pembaca tabel, "nominal tidak ketemu = `null`" |
+| `app/Services/Calibration/HeightGaugeCalculator.php` | 10 titik + 9 komponen budget (satuan **mm**) |
+| `app/Services/Calibration/Profiles/HeightGaugeProfile.php` | bentuk lembar + `hitungPerGrup()` |
+| `app/Support/HeightGaugeMentah.php` | susun ulang baris mentah + blok sesi |
+| `database/seeders/HeightGaugeCapabilitySeeder.php` | baris kemampuan CMC nol (pola Gas Detector) |
+| `database/seeders/HeightGaugeSeeder.php` | sesi contoh `001-UBLK-05.26`, angkanya DIHITUNG |
+| `database/ocr-templates/height_gauge-v1.json` | digenerate `ocr:rangka-geometri`, `terverifikasi: false` |
+| `tests/Unit/HeightGaugeMasterTest.php` | 17 test / 87 asersi, toleransi 5·10⁻⁶ |
+| `tests/Feature/HeightGaugeSesiTest.php` | jalur simpan → hitung ulang + gerbang `boleh_terbit` |
+| `tests/Feature/HeightGaugeSertifikatTest.php` | yang TERCETAK, termasuk satu temuan terbuka |
+| `docs/pertanyaan-lab-height-gauge.md` | sepuluh butir bernomor |
+| `docs/perintah-frontend-height-gauge.md` | kontrak buat repo mobile |
+
+Yang **diubah** di luar berkas baru — dan semuanya satu baris/blok:
+`CalibrationProfileRegistry` (satu `new HeightGaugeProfile`),
+`CalibrationProfile` (hook `butuhBlokHeightGauge()`), `CalibrationValidator` +
+`HitungUlangSesi` + `CalibrationController` + `CalibrationRequest` (wiring
+`HeightGaugeMentah`), `UjiProfilKalibrasi` (ikut cabang Micrometer),
+`DatabaseSeeder`, `EquipmentFactory` (cabut `'Height Gauge'`), plus tiga daftar
+pengecualian sapuan dan hitungan profil di `docs/kontrak-api.md`.
+
+### Angkanya dibuktikan SEBELUM PHP ditulis
+
+Reimplementasi Python diadu ke workbook sel demi sel lebih dulu: kesepuluh
+koreksi, kesembilan `ui`/`ci`/`vi`, dan kelima agregat — **nol beda** pada
+5·10⁻⁶. Satu-satunya yang tidak cocok justru kontrol yang benar: `veff` harus
+**dipotong ke bawah** sebelum `TINV`, persis yang sudah dilakukan
+`GumCalculator::agregasiBudget()`.
+
+```
+Σ(ui·ci)² = 5,6417135376875704e-05
+uc        = 0,0075111340939218825 mm
+veff      = 20,474220669021
+k         = 2,085963447265865
+U         = 0,01566795116743346   mm
+```
+
+### Penyimpangan master — tiga ditiru, tiga tidak
+
+**Ditiru** (kejanggalan METODE, diangkat jadi pertanyaan lab): pembagi drift
+`/12` padahal selisihnya HARI (§1 — dipertahankan karena `/365` membuat U
+**lebih kecil**, dan aturan proyek melarang penyimpangan yang mengecilkan
+ketidakpastian); pembagi `√6` pada komponen berlabel `rect.` (§2); paralelisme
+`STDEV(Max; Min)` alih-alih `Max − Min` (§5).
+
+**Tidak ditiru** (kerusakan yang menggeser angka):
+
+1. **Kolom termal cuma terisi di baris 35.** Baris 38..62 kosong dan rumus
+   `Y`-nya membaca sel kosong sebagai nol. Hari ini tidak menggeser apa pun
+   (`T35 = 0` juga), tapi begitu lab mencatat suhu UUT ≠ suhu standar, **cuma
+   titik pertama yang terkoreksi**. Suku termal kami hidup di kesepuluh titik;
+   arahnya ditegakkan test.
+2. **Umur drift dari `NOW()`** — dipakai tanggal kalibrasi sesi. Akibatnya sesi
+   contoh terbit `0,0156260 mm`, bukan `0,0156680 mm`; selisih 0,27 % yang
+   seluruhnya berasal dari tanggal.
+3. **`SERTIFIKAT!L27` cabang `inch` menunjuk kolom `M`** (rata-rata pembacaan)
+   alih-alih `AA` (koreksi) — salin-tempel murni; kolom koreksi kami satu jalur.
+
+Dua lagi yang **tidak dicetak** karena tidak bisa dikarang: tabel "Kesejajaran
+Muka Ukur" Atas/Tengah/Bawah yang sembilan selnya `#REF!` (§4), dan checkbox
+Kerataan Muka Ukur yang **dua-duanya tercentang** di sesi contoh — di lembar
+kami dia satu field pilihan, karena dua boolean yang saling meniadakan tidak
+bisa divalidasi.
+
+### Satu bug SUNYI yang ketemu waktu test ditulis
+
+Gerbang "sepuluh pembacaan identik ditolak" ditulis `stdev > 0` mengikuti
+Micrometer — dan **diam-diam tidak pernah menyala**. Simpangan baku sepuluh
+nilai identik cuma nol EKSAK kalau nilainya bisa direpresentasikan persis dalam
+biner:
+
+```
+sepuluh kali 50,00  -> stdev 0,0e+0    (penjaga menyala)
+sepuluh kali 599,95 -> stdev 1,2e-13   (penjaga TIDAK menyala)
+```
+
+599,95 justru nilai yang dipakai blok Evaluation sesi contoh. Jadi versi
+`stdev > 0` lolos di test berangka bulat dan diam di data sungguhan.
+Diganti `max !== min`, yang menguji hal yang sama tapi eksak apa pun nilainya.
+
+> Penjaga yang sama di `MicrometerCalculator` **belum disentuh** — di luar
+> lingkup permintaan ini, dan di sana lantai CMC masih menampungnya. Perlu
+> dijadwalkan tersendiri.
+
+### Status
+
+**BERES di server** (7 Sep 2026). Sisi mobile belum — kontraknya di
+`docs/perintah-frontend-height-gauge.md`.
+
+**Klaim akreditasi diperbaiki di hari yang sama.** Sertifikat sempat membawa
+`Terakreditasi … No. LK-285-IDN` untuk alat yang tidak diakreditasi, karena
+klaim itu dicetak **tanpa syarat** di tingkat organisasi — dan **Gas Detector
+sudah kena hal yang sama sejak alat ke-10**. Sekarang bersyarat lewat
+`CalibrationProfile::dalamLingkupAkreditasi()` (bawaan `true`, `false` untuk dua
+alat itu), dibekukan ke snapshot, dan kop banner ikut disetop karena
+`kop-surat.png` memuat nomornya di dalam gambar. Dijaga
+`KlaimAkreditasiIkutLingkupTest`.
+
+Yang **belum** dan memang bukan keputusan kode: sertifikat kedua alat yang
+**sudah terbit** tetap membawa klaim lamanya (snapshot-nya beku). Pertanyaan lab
+§6 sekarang menanyakan perlakuannya, bukan lagi apakah klaimnya boleh dicetak.
+
+---
+
 ## Permintaan 16 — U95 per titik di sertifikat instrumen analitik
 
 Dari pemilik lab (Pak Rohman) lewat pemilik proyek, 3 September 2026: di
@@ -2427,6 +2587,7 @@ berkas profil.
 | G9 | Alat baru **kelompok Waktu dan Frekuensi** (perm. 15) — Timer/Stopwatch, Centrifuge, Infrared Tachometer; alat ke-22..24 | **BERES di server** (1 Sep 2026) — dua mesin hitung untuk tiga alat, nol kolom baru di `raw_measurements`, dan lampiran akreditasi kelompok "Waktu dan Frekuensi" jadi LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: **464 nilai** diadu sel demi sel ke ketiga workbook pada 5·10⁻⁶, dan setiap selisih punya penjelasan. Dijaga `WaktuFrekuensiMasterTest` (16 test, 402 asersi) yang mengadu tiap kolom turunan DAN tiap komponen budget, bukan cuma U95 akhirnya. Empat kerusakan master dihitung benar (arahnya ditegakkan test: kita wajib lebih BESAR) dan lima titik hantu diblokir. Tiga belas pertanyaan lab di `docs/pertanyaan-lab-waktu-frekuensi.md`; §4/§5/§7/§11 **ditutup 1 Sep 2026** oleh arahan pemilik proyek "pakai rumus Excel", menyisakan §8/§9 dan dua yang menyangkut dokumen terbit (§10 tanda koreksi, §13 kalimat `k`) plus satu permintaan data (workbook Timer yang keempat bloknya hidup). **Sisi mobile BERES** (1 Sep 2026, PR mobile #139) — ketiga lembar bisa diisi & dikirim dari HP tanpa layar baru; menyambungkannya membongkar tiga cacat lama yang gagal tanpa error: lembar Thermohygro terkirim KOSONG, tombol FOTO TABEL INI mengisi nol sel di lima lembar berpasangan, dan kolom U95 memakai desimal kolom hasil. Jalur kamera cloud tetap MATI sampai kertas ber-nomor `SIDIK-FM-` turun |
 | G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B  **Ditambah 2 Sep 2026: direktori lokal** — 10.320 PT (Jababeka 450 + Indonetwork 9.870) bisa dicari ±10 ms tanpa keluar server, lewat tabel rujukan terpisah `direktori_lokal` dan driver baru yang memenuhi kontrak `DirektoriPerusahaan` yang sudah ada. **Nol berkas berubah di sisi HP, nol tambahan ukuran APK.** Menyeed ke `customers` sengaja DITOLAK: `SimpananPelanggan` menyalin seluruh daftar pelanggan ke SharedPreferences yang dibaca utuh ke memori tiap aplikasi nyala — diukur **1,36 MB JSON** per buka aplikasi. Satu bug ketemu & dikunci test: `tersedia()` di service provider bikin **`/api/health` 500** waktu tabelnya belum ada. 22 test baru. Rinciannya §16 F |
 | G11 | Alat baru **Micrometer** (Panjang, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. Lembar lalu **disetel ulang ke kertas resmi** `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` yang turun belakangan: nomor formulir per rentang, 6 bagian, 11 nominal pra-cetak, suhu balok/UUT diturunkan dari suhu ruangan. **Sisi HP BERES** juga (§19) — dan justru dari situ tiga cacat server ketahuan, ketiganya lolos 3.128 test backend karena test backend memakai payload yang ditulis backend sendiri. **Sapuan lanjutan (§21):** seeder ternyata cuma menanam SATU dari empat rentang; varian C & D sekarang ikut, varian A tetap tidak (pra-evaluasinya 635,0 sepuluh kali → simpangan baku nol). **§22:** stdev nol itu ternyata juga lolos gerbang penerbitan untuk sesi BARU — sekarang ditahan, plus `micrometer:audit-cmc` buat melingkupi arsip dan formulir keputusan siap teken |
+| G13 | Alat baru **Height Gauge 600 mm** (Panjang, DI LUAR lampiran akreditasi) — §23 | **BERES di server** (7 Sep 2026) — alat ke-26, satu workbook master, **nol kolom baru** di `raw_measurements`. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: kesepuluh koreksi, kesembilan `ui`/`ci`/`vi`, dan kelima agregat cocok pada 5·10⁻⁶ — nol beda. Dijaga `HeightGaugeMasterTest` (17 test / 87 asersi). Bentuknya paling tidak biasa dari 26: **tiga blok yang tidak sebangun**, dan cuma satu yang berbentuk titik ukur. Yang membalik taruhannya — alat ini **tidak punya lantai CMC** (di luar LK-285-IDN, dan sel lantai masternya memang kosong), jadi komponen budget yang hilang tidak tertampung apa pun; gerbang penerbitannya dipatok tiga syarat dan yang menahan ketiadaan baris hitungan, bukan peringatan sesi. Tiga kejanggalan metode ditiru + diangkat (`/12` untuk selisih HARI, `√6` pada komponen `rect.`, paralelisme `STDEV(Max;Min)`), tiga kerusakan dihitung benar (suku termal yang di master cuma hidup di titik pertama, umur drift dari `NOW()`, rujukan sel `L27` yang meleset). Satu bug SUNYI ketemu waktu test ditulis: gerbang "sepuluh nilai identik" yang ditulis `stdev > 0` **tidak pernah menyala** untuk nilai yang tidak bisa direpresentasikan persis dalam biner (599,95 → stdev 1,2e-13) — diganti `max !== min`. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-height-gauge.md`; §6 **prioritas satu** (sertifikat masih membawa klaim akreditasi untuk lingkup yang tidak diakreditasi — Gas Detector pun sudah begitu sejak alat ke-10). **Sisi mobile BELUM** — kontraknya di `docs/perintah-frontend-height-gauge.md` |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai

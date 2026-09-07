@@ -53,6 +53,13 @@ class ProfilDariNamaAlatTest extends TestCase
      */
     private const LUAR_LAMPIRAN = [
         'gas_detector' => 'Gas Detector',
+        // Height Gauge dikalibrasi lab ini tapi belum diakreditasi — kelompok
+        // Panjang di lampiran cuma memuat Sieve, Micrometer, Vernier Caliper,
+        // dan Dial Indicator. Barisnya lahir dari
+        // `HeightGaugeCapabilitySeeder` dengan CMC nol, persis pola Gas
+        // Detector di atas, dan masternya sendiri mengakuinya: sel lantai CMC
+        // `PERHITUNGAN U95%!AA19` kosong.
+        'height_gauge' => 'Height Gauge',
     ];
 
     /**
