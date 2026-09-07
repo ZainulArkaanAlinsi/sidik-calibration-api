@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Env;
 use Tests\TestCase;
 
 /**
@@ -155,5 +156,55 @@ class HealthDeployTest extends TestCase
         ] as $rahasia) {
             $this->assertStringNotContainsString($rahasia, $isi);
         }
+    }
+
+    /**
+     * Tiga test di bawah mengadu RESOLUSI ENV-nya, bukan `config()->set()`.
+     *
+     * Bedanya penting: yang berubah 7 Sep 2026 justru URUTAN pembacaan env,
+     * dan `config()->set('deploy.versi', ...)` melompati bagian itu — dia
+     * menulis hasil akhirnya, jadi dia tetap hijau walau urutannya dibalik.
+     *
+     * Jadi berkas config-nya dimuat ulang dengan env yang disetel di sini,
+     * lewat repository yang sama dengan yang dibaca `env()`.
+     */
+    private function versiDenganEnv(?string $render, ?string $app): mixed
+    {
+        $repo = Env::getRepository();
+
+        foreach (['RENDER_GIT_COMMIT' => $render, 'APP_COMMIT' => $app] as $kunci => $nilai) {
+            $nilai === null ? $repo->clear($kunci) : $repo->set($kunci, $nilai);
+        }
+
+        try {
+            return (require base_path('config/deploy.php'))['versi'];
+        } finally {
+            $repo->clear('RENDER_GIT_COMMIT');
+            $repo->clear('APP_COMMIT');
+        }
+    }
+
+    /** VPS: tidak ada yang menyuntik RENDER_GIT_COMMIT, jadi APP_COMMIT yang dipakai. */
+    public function test_app_commit_dipakai_di_luar_render(): void
+    {
+        $this->assertSame('abc1234def', $this->versiDenganEnv(null, 'abc1234def'));
+    }
+
+    /**
+     * Kalau dua-duanya terisi, yang menang RENDER_GIT_COMMIT.
+     *
+     * Bukan selera urutan: yang disuntik platform selalu benar, sedangkan
+     * APP_COMMIT bisa basi kalau skrip deploy gagal memperbaruinya. Versi yang
+     * basi TAPI terlihat pasti justru kegagalan yang mau dicegah endpoint ini.
+     */
+    public function test_render_menang_kalau_dua_duanya_terisi(): void
+    {
+        $this->assertSame('render99', $this->versiDenganEnv('render99', 'appcommit11'));
+    }
+
+    /** Dua-duanya kosong = server memang tidak tahu, dan itu dilaporkan apa adanya. */
+    public function test_null_kalau_dua_duanya_kosong(): void
+    {
+        $this->assertNull($this->versiDenganEnv(null, null));
     }
 }

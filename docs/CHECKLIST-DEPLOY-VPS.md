@@ -75,6 +75,7 @@ Yang **wajib** beda dari `.env.example`:
 | `VISION_DRIVER` | `gemini` | |
 | `GEMINI_API_KEY` | key produksi | **bikin key BARU** — jangan pakai key dev |
 | `GEMINI_MODEL` | `gemini-3.6-flash` | cek dulu masih hidup; nama model Gemini mati tanpa aba-aba |
+| `APP_COMMIT` | `$(git rev-parse HEAD)` | biar `/api/health` bisa menjawab "deploy-nya udah nyampe belum?". Di Render diisi otomatis; **di VPS tidak ada yang mengisinya kalau skrip deploy tidak melakukannya** |
 
 - [ ] `APP_DEBUG=false` — cek ulang, ini yang paling sering kelewat
 - [ ] `APP_URL` pakai **https** dan **tanpa** garis miring di belakang
@@ -271,6 +272,12 @@ tidak masalah — semuanya data demo, belum ada yang keluar ke pelanggan.
 ## 12. Verifikasi pasca-deploy
 
 - [ ] `curl https://<domain>/api/health` → 200
+- [ ] `curl -s https://<domain>/api/health | jq .deploy.versi` → **tujuh karakter
+      pertama commit yang barusan di-deploy**, bukan `null`.
+      `null` artinya `APP_COMMIT` belum ikut disetel, dan mulai sekarang itu
+      satu-satunya cara memastikan versi yang jalan tanpa punya shell ke server.
+      Setel di skrip deploy, bukan diketik tangan — yang diketik tangan basi
+      diam-diam pada deploy berikutnya dan melapor versi lama dengan yakin.
 - [ ] Login panel `/admin` berhasil, aset tampil rapi (bukan HTML polos)
 - [ ] Login API dari mobile berhasil
 - [ ] **Uji rantai penuh:** buat sesi → approve → PDF terbit (bukti worker jalan)
