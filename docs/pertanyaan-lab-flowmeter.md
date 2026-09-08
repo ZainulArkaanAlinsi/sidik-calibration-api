@@ -72,6 +72,32 @@ titik 2 naik dari **3,2512388 → 3,7277107 Lpm** (tepat 1,200 %OR). Tiga titik 
 bergerak. Titik yang jatuh di luar KEDUA pita **diblokir**, bukan diterbitkan tanpa
 lantai. Arahnya ditegakkan `FlowmeterLantaiCmcTest`.
 
+**Daftarnya sudah bisa diambil sendiri.** Supaya butir ini tidak perlu menunggu
+seseorang membuka arsip satu per satu:
+
+```
+php artisan flowmeter:audit-cmc                       # seluruh arsip
+php artisan flowmeter:audit-cmc --org=1               # satu lab saja
+php artisan flowmeter:audit-cmc --csv=tinjauan.csv    # buat ditandatangani
+```
+
+Perintahnya **read-only** dan melingkupi **per TITIK**, bukan per sesi — satu sesi bisa
+punya tiga titik yang aman dan satu yang di bawah pita, persis yang terjadi di sesi
+contoh. Tiga temuan yang dibedakan:
+
+| Temuan | Artinya |
+|---|---|
+| `di_bawah_cmc` | sertifikatnya mengklaim ketidakpastian **lebih baik** dari yang diakui KAN |
+| `di_luar_pita` | sertifikatnya membawa nomor lingkup LK-285-IDN untuk pengukuran yang **tidak** diakreditasi |
+| `jarak_tabel_NNpct` | koreksi titik tabel yang jauh dipakai utuh (lihat §4) |
+
+Keluarannya **bahan tinjauan, bukan daftar penarikan**: tiap baris masih perlu dinilai —
+sertifikatnya sudah di tangan pelanggan atau belum, dan dengan U yang berlantai CMC
+apakah pernyataan kesesuaiannya bisa berbalik.
+
+Presedennya `micrometer:audit-cmc`, yang lahir dari persoalan yang sama persis di alat
+ke-25.
+
 **Pertanyaan:** sertifikat yang sudah terbit dengan angka di bawah pita — perlu ditarik
 atau direvisi?
 

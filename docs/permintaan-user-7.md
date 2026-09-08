@@ -2683,9 +2683,33 @@ weighing method* `Rev.4`, master memakai `Rev.6`, kertasnya *"Perbandingan
 Langsung dengan UFM"* — apakah metode yang dikerjakan tercakup akreditasi yang
 sekarang?).
 
-### Sisi mobile
+### Pelingkup arsip untuk §2
 
-Kontraknya di `docs/perintah-frontend-flowmeter.md`.
+`php artisan flowmeter:audit-cmc` (`--org=`, `--csv=`) menyapu SELURUH arsip dan
+menyodorkan daftar titik yang perlu ditinjau, per TITIK bukan per sesi. Tiga
+temuan dibedakan: `di_bawah_cmc` (mengklaim ketidakpastian lebih baik dari yang
+diakui KAN), `di_luar_pita` (membawa nomor lingkup untuk pengukuran yang tidak
+diakreditasi), dan `jarak_tabel_NNpct`. Read-only, dan sengaja exit 0 walau ada
+temuan — perintah kesiapan yang selalu merah berhenti dibaca. Presedennya
+`micrometer:audit-cmc`. Dijaga `AuditFlowmeterCmcTest` (6 test).
+
+### Sisi mobile — BERES (9 Sep 2026)
+
+`dart analyze` bersih, `flutter test` **1627/1627**. Yang mendarat: berkas contoh
+`contoh_lembar_kerja_aliran.dart` (1.762 baris, **digenerate**
+`docs/skrip/gen-contoh-lembar-kerja-flowmeter.php` dari bentuk yang beneran
+dikirim server — bukan disusun tangan), dua cabang di `lembar_kerja_service.dart`
+(dipilih dari **kode profil**, bukan nama alat), lima kode penentu angka di
+`lembar_kerja_state.dart`, dan empat baris kemampuan di `category_service.dart`
+(dua alat × dua pita CMC, satuannya `% of reading`).
+
+Ikon `Icons.waves_outlined` ternyata sudah benar tanpa disentuh — cabang
+`contains('flow')` sudah ada dan tidak ada cabang `contains('meter')` telanjang
+yang mendahuluinya.
+
+Satu test ikut diperbarui: `vonis_toleransi_mock_test.dart` menuntut tiap baris
+kemampuan mock punya padanan vonis di server. Kontraknya di
+`docs/perintah-frontend-flowmeter.md`.
 
 ---
 

@@ -7,6 +7,16 @@ sendiri: tidak ada satu pun hal di bawah yang perlu dicari balik ke repo backend
 hitung ulang tersambung, sertifikat mencetak blok spesifikasi pipa, dan seluruh angka
 sesi contohnya sudah diadu sel demi sel ke kedua workbook master (5·10⁻⁶).
 
+> **STATUS SISI MOBILE: SUDAH DIKERJAKAN, 9 September 2026.** `dart analyze` bersih,
+> `flutter test` **1627/1627** hijau. Dokumen ini sekarang jadi CATATAN apa yang
+> mendarat — bukan lagi daftar tugas. Yang mengerjakannya ulang dari nol tetap bisa
+> memakainya sebagai panduan.
+>
+> Satu berkas test ikut diperbarui di luar kelima butir di bawah:
+> `test/vonis_toleransi_mock_test.dart` — tabel vonisnya menuntut TIAP baris kemampuan
+> mock punya padanan di server, jadi kedua alat baru harus didaftarkan (keduanya
+> `false`, masternya berhenti di `U95%`).
+
 Lembar kerjanya digerakkan JSON dari server, jadi sebagian besar jalan sendiri — yang
 perlu disentuh cuma **lima** hal, dan **empat di antaranya menggerakkan ANGKA**.
 
@@ -61,15 +71,14 @@ lapangan.
 Tanpa ini, mode mock memajang lembar pH tiga titik buffer untuk alat flowmeter: **tidak
 ada error, cuma lembar yang salah**.
 
-Cabangnya dipilih dari `equipment.nama_alat_kemampuan`, ejaannya **persis**:
+Cabangnya dipilih dari **kode profil**, bukan dari nama alat — `switch` yang sudah ada di
+berkas itu memang berjalan di atas kode profil, dan itu justru yang aman: kedua nama
+alatnya saling memuat sebagian ("Flow Meter Cairan"), sementara kodenya tidak.
 
-| `nama_alat_kemampuan` | fungsi contoh |
+| kode profil | fungsi contoh |
 |---|---|
-| `Flow Meter Cairan (Totalizer)` | `contohBentukLembarKerjaFlowmeterTotalizer()` |
-| `Flow Meter Cairan (Flowrate)` | `contohBentukLembarKerjaFlowmeterFlowrate()` |
-
-> Kedua nama saling memuat sebagian ("Flow Meter Cairan"). Urutkan pencocokan dari yang
-> **paling panjang**, atau cocokkan penuh — bukan `contains('Flow Meter Cairan')`.
+| `flowmeter_totalizer` | `contohBentukLembarKerjaFlowmeterTotalizer()` |
+| `flowmeter_flowrate` | `contohBentukLembarKerjaFlowmeterFlowrate()` |
 
 ---
 
