@@ -2418,8 +2418,25 @@ Diganti `max !== min`, yang menguji hal yang sama tapi eksak apa pun nilainya.
 
 ### Status
 
-**BERES di server** (7 Sep 2026). Sisi mobile belum — kontraknya di
-`docs/perintah-frontend-height-gauge.md`.
+**BERES di server** (7 Sep 2026), **dan sisi mobile juga** (7 Sep 2026, PR
+mobile #161) — lembarnya kegambar, payload-nya sampai, 8 test baru. Menyambungkannya
+membongkar satu drift lama: `Micrometer` masih ditulis `punyaToleransi=true` di
+mock DAN di tabel vonisnya padahal server berbalik ke `false` sejak 4 Sep, jadi
+di build `USE_MOCK=true` Micrometer memaksa teknisi mengisi toleransi yang
+masternya tidak punya.
+
+**Ekor 8 Sep 2026 — ritual `SEED_ON_BOOT` dicabut.** Menaruh baris kemampuan
+Height Gauge ke produksi ternyata butuh menyalakan `SEED_ON_BOOT=true`,
+redeploy, lalu mematikannya lagi — dan itu menjalankan `db:seed` PENUH (4,5
+menit, plus data demo 26 alat), sementara langkah "matikan lagi" tidak
+menerbitkan error kalau terlupa. Sekarang `entrypoint.sh` menjalankan
+`kemampuan:pastikan` tiap boot: menanam baris kemampuan & nomor IK profil yang
+belum ada, dan CUMA itu. Pemeriksaannya satu query, jadi boot yang sudah lengkap
+tidak membayar apa-apa — penting, karena `CalibrationCapabilitySeeder` sendiri
+makan 24,5 detik di produksi. Ikut ketahuan di situ: nomor IK
+`SIDIK-IK-CAL-0539` tidak pernah ada di master `calibration_methods`, karena
+`MetodeKalibrasiSeeder` membaca CSV ekspor manual berisi 34 baris yang lahir
+sebelum alat ini.
 
 **Klaim akreditasi diperbaiki di hari yang sama.** Sertifikat sempat membawa
 `Terakreditasi … No. LK-285-IDN` untuk alat yang tidak diakreditasi, karena

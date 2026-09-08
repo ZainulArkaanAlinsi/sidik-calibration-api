@@ -102,6 +102,15 @@ Salin hasilnya (bentuknya `base64:....`). **Jangan** pakai APP_KEY yang di
 3. **Balikin `SEED_ON_BOOT` ke `false`** (Environment → Save). Kalau ketinggalan
    `true`, tiap kali service bangun dari tidur, data uji yang baru dimasukin
    teknisi bisa ketimpa balik ke bawaan seeder.
+
+   > **Alat BARU nggak butuh langkah ini lagi** (sejak 8 Sep 2026). `entrypoint.sh`
+   > menjalankan `kemampuan:pastikan` tiap boot: dia nanam baris kemampuan &
+   > nomor IK profil yang belum ada, dan CUMA itu — data demo, organisasi, dan
+   > standar nggak disentuh. Kalau semuanya sudah lengkap dia keluar sesudah satu
+   > query, jadi nggak nambah waktu boot.
+   >
+   > `SEED_ON_BOOT` sekarang cuma buat DEPLOY PERTAMA ke database kosong, yaitu
+   > langkah 4 di atas.
 4. Ganti password akun demo. Seeder nulis `admin@sidik.test` / `rahasia123`, dan
    URL Render itu kebuka buat siapa pun yang tahu alamatnya. Login ke
    `https://<url>.onrender.com/admin`, ganti password semua akun — atau hapus

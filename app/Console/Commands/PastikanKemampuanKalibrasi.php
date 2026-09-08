@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationMethod;
 use App\Models\Organization;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use Database\Seeders\KemampuanKalibrasiSeeder;
@@ -56,7 +57,7 @@ class PastikanKemampuanKalibrasi extends Command
     protected $signature = 'kemampuan:pastikan
         {--uji-coba : Laporkan yang kurang tanpa menanam apa pun}';
 
-    protected $description = 'Pastikan tiap profil kalibrasi punya baris kemampuan; menanam cuma kalau ada yang kurang';
+    protected $description = 'Pastikan tiap profil kalibrasi punya baris kemampuan & metode; menanam cuma kalau ada yang kurang';
 
     /**
      * Organisasi yang dituju seeder kemampuan.
@@ -99,6 +100,7 @@ class PastikanKemampuanKalibrasi extends Command
 
         if ($kurang === []) {
             $this->info("Kemampuan kalibrasi: {$jumlah}/{$jumlah} profil sudah punya barisnya — seeding dilewati.");
+            $this->pastikanMetode($registry);
 
             return self::SUCCESS;
         }
@@ -140,8 +142,94 @@ class PastikanKemampuanKalibrasi extends Command
         }
 
         $this->info("Kemampuan kalibrasi: {$jumlah}/{$jumlah} lengkap.");
+        $this->pastikanMetode($registry);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Pastikan nomor IK tiap profil ada di `calibration_methods`.
+     *
+     * ## Kenapa ini perlu, padahal sertifikatnya sudah benar
+     *
+     * `MetodeKalibrasiSeeder` membaca daftar metode dari CSV ekspor manual
+     * (`CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv`) yang berisi 34
+     * baris. Alat yang lahir SESUDAH ekspor itu tidak ada di sana — Height
+     * Gauge (`SIDIK-IK-CAL-0539_Rev.0`) yang pertama ketahuan, 8 Sep 2026.
+     *
+     * Sertifikatnya sendiri TIDAK terpengaruh:
+     * `CertificateSnapshotBuilder::metodeKalibrasi()` jatuh ke
+     * `CalibrationProfile::kodeMetode()`, jadi nomor IK-nya tetap tercetak
+     * benar. Yang hilang barisnya di master data — daftar yang dipungut panel
+     * admin dan `GET /api/calibration-methods`.
+     *
+     * ## `firstOrCreate`, BUKAN `updateOrCreate`
+     *
+     * Bedanya menentukan, dan arahnya cuma satu yang aman. Tabel ini boleh
+     * disunting admin lewat Filament, dan CSV lab adalah sumber resmi nomor
+     * revisinya. `updateOrCreate` di jalur boot berarti tiap container bangun
+     * mengembalikan revisi & nama yang barusan dibetulkan admin ke nilai yang
+     * ditebak dari konstanta profil — tanpa satu pun error.
+     *
+     * Jadi yang ditambah cuma baris yang BELUM ADA. Baris yang sudah ada tidak
+     * pernah disentuh, termasuk kalau revisinya berbeda dari konstanta profil.
+     *
+     * Dua profil boleh berbagi satu nomor IK (Centrifuge & Tachometer sama-sama
+     * `0511`, kelima Enclosure sama-sama `0501`). Yang pertama membuat barisnya
+     * menang; sisanya jadi no-op. Itu benar — barisnya memang satu per IK,
+     * bukan satu per profil.
+     */
+    private function pastikanMetode(CalibrationProfileRegistry $registry): void
+    {
+        $kurang = [];
+
+        foreach ($registry->semua() as $profil) {
+            $penuh = (string) $profil->kodeMetode();
+
+            // Bentuknya sudah dijaga `MetodeKalibrasiSemuaProfilTest`
+            // (`SIDIK-IK-CAL-NNNN_Rev.N`). Yang tidak cocok DILEWATI, bukan
+            // ditebak: nomor IK karangan di master data lebih buruk daripada
+            // barisnya tidak ada.
+            if (preg_match('/^(SIDIK-IK-CAL-\d+)_Rev\.(\d+)$/', $penuh, $cocok) !== 1) {
+                continue;
+            }
+
+            [, $kode, $revisi] = $cocok;
+
+            $sudahAda = CalibrationMethod::query()
+                ->where('organization_id', self::ORGANISASI)
+                ->where('kode', $kode)
+                ->exists();
+
+            if ($sudahAda) {
+                continue;
+            }
+
+            $kurang[$kode] = [$profil->namaAlatKemampuan(), (int) $revisi];
+        }
+
+        if ($kurang === []) {
+            $this->info('Metode kalibrasi: nomor IK tiap profil sudah ada.');
+
+            return;
+        }
+
+        $this->warn('Metode kalibrasi kurang: '.implode(', ', array_keys($kurang)));
+
+        if ($this->option('uji-coba')) {
+            $this->line('(--uji-coba: tidak ada yang ditanam)');
+
+            return;
+        }
+
+        foreach ($kurang as $kode => [$nama, $revisi]) {
+            CalibrationMethod::firstOrCreate(
+                ['organization_id' => self::ORGANISASI, 'kode' => $kode],
+                ['nama' => $nama, 'revisi' => $revisi, 'aktif' => true],
+            );
+        }
+
+        $this->info('Metode kalibrasi: '.count($kurang).' nomor IK ditambahkan.');
     }
 
     /**

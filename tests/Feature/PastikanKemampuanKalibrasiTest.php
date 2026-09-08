@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationMethod;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\KemampuanKalibrasiSeeder;
@@ -213,6 +214,65 @@ class PastikanKemampuanKalibrasiTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame($sebelum, CalibrationCapability::count());
+    }
+
+    /**
+     * Nomor IK tiap profil dipastikan ada di `calibration_methods`.
+     *
+     * `MetodeKalibrasiSeeder` membacanya dari CSV ekspor manual berisi 34
+     * baris; alat yang lahir sesudah ekspor itu tidak ada di sana. Height Gauge
+     * (`SIDIK-IK-CAL-0539`) yang pertama ketahuan.
+     */
+    public function test_nomor_ik_tiap_profil_dipastikan_ada(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->artisan('kemampuan:pastikan')->assertSuccessful();
+
+        foreach (app(CalibrationProfileRegistry::class)->semua() as $profil) {
+            $penuh = (string) $profil->kodeMetode();
+
+            $this->assertSame(
+                1,
+                preg_match('/^(SIDIK-IK-CAL-\d+)_Rev\.(\d+)$/', $penuh, $cocok),
+                "Nomor IK profil `{$profil->kode()}` bentuknya tidak dikenali: {$penuh}",
+            );
+
+            $this->assertTrue(
+                CalibrationMethod::where('kode', $cocok[1])->exists(),
+                "Nomor IK `{$cocok[1]}` (profil `{$profil->kode()}`) tidak ada di master "
+                .'`calibration_methods` — dia hilang dari panel admin dan '
+                .'`GET /api/calibration-methods`.',
+            );
+        }
+    }
+
+    /**
+     * Baris metode yang SUDAH ada tidak pernah ditimpa.
+     *
+     * `calibration_methods` boleh disunting admin, dan CSV lab sumber resmi
+     * nomor revisinya. Kalau jalur boot memakai `updateOrCreate`, tiap container
+     * bangun mengembalikan revisi & nama yang barusan dibetulkan admin ke nilai
+     * yang ditebak dari konstanta profil — tanpa satu pun error.
+     */
+    public function test_metode_yang_sudah_ada_tidak_ditimpa(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        // Dijalankan DULU supaya barisnya ada. `db:seed` penuh TIDAK
+        // membuatnya: `MetodeKalibrasiSeeder` membaca CSV ekspor manual yang
+        // tidak memuat `0539`, dan itu justru celah yang perintah ini tutup.
+        $this->artisan('kemampuan:pastikan')->assertSuccessful();
+
+        $metode = CalibrationMethod::where('kode', 'SIDIK-IK-CAL-0539')->firstOrFail();
+        $metode->update(['nama' => 'Disunting Admin', 'revisi' => 9]);
+
+        $this->artisan('kemampuan:pastikan')->assertSuccessful();
+
+        $sesudah = $metode->fresh();
+
+        $this->assertSame('Disunting Admin', $sesudah->nama, 'Nama yang disunting admin ketimpa.');
+        $this->assertSame(9, (int) $sesudah->revisi, 'Revisi yang disunting admin ketimpa.');
     }
 
     /**
