@@ -67,6 +67,51 @@ Project-PT-Sidik/Refractometer_CSV/
 # ViscometerCapabilitySeeder/ViscometerSeeder dan ViscometerProfile.
 Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/
 
+# ---------------------------------------------------------------------------
+# Tata letak BARU: semua master dipindah ke `alat-alat-Pt-Sidik/`
+# ---------------------------------------------------------------------------
+#
+# Sepuluh aturan di atas nyebut jalur DATAR (`Project-PT-Sidik/<Alat>_CSV/`).
+# Waktu master dirapikan ke `alat-alat-Pt-Sidik/<kelompok>/<Alat>/`, jalur itu
+# nggak cocok lagi — dan yang bikin bahaya: **nggak ada error sama sekali**.
+# Yang kejadian cuma berkas yang selama ini sengaja ditahan jadi ikut kebawa
+# `git add`, ke repo yang PUBLIK.
+#
+# Yang disapu ke sini bukan dugaan. Dua belas direktori alat di pohon baru,
+# dua belas nama + alamat pelanggan asli — Unilever, LDC, Magnum Ice Cream,
+# Gunung Madu, PDAM Tirtawening, IPB, sampai Lembaga Biologi Vaksin Puskesad.
+# Alasannya sama persis kayak sepuluh aturan di atas: angkanya udah masuk
+# `*CapabilitySeeder`/`*Seeder` dan profil masing-masing alat, jadi CSV
+# mentahnya nggak nambah apa-apa selain data pelanggan.
+#
+# Ditulis per-isi (`/*`), bukan `alat-alat-Pt-Sidik/`, supaya Height Gauge di
+# bawah masih bisa di-include balik — git nggak bisa nge-include file yang
+# folder induknya diabaikan.
+Project-PT-Sidik/alat-alat-Pt-Sidik/*
+#
+# SATU pengecualian: Height Gauge, satu-satunya yang udah terlanjur ke-commit
+# (alat ke-26, 7 Sep 2026). Blok identitas pelanggannya udah DIREDAKSI jadi
+# `[NAMA PELANGGAN DIREDAKSI]`/`[ALAMAT PELANGGAN DIREDAKSI]` — nol angka
+# bergeser, dan `gen-tabel-standar-height-gauge.py` tetap keluarin JSON yang
+# identik byte-per-byte. Dipertahankan karena dua skrip generator di
+# `docs/skrip/` baca direktori ini, jadi clone bersih masih bisa hitung ulang
+# tabel standarnya sendiri.
+#
+# Kalau nambah alat baru: JANGAN commit CSV masternya. Redaksi dulu blok
+# `Nama Custromer`/`Alamat Customer`/`Owner`/`Address`, atau biarin diabaikan.
+!Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/
+Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/*
+!Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/Height_Gauge_600mm_CSV/
+
+# Berkas kerja yang nyangkut di akar waktu ngerjain impor pelanggan (3 Sep 2026).
+# `daftar-pelanggan.csv` isinya nama + alamat 20-an pelanggan asli yang dipakai
+# `php artisan pelanggan:impor` — persis kategori yang ditahan di blok atas.
+# `hasil-impor.txt` cuma dump pesan error PowerShell (UTF-16), nol nilai.
+daftar-pelanggan.csv
+hasil-impor.txt
+# Estimasi harga project — dokumen komersial, bukan bagian aplikasi.
+Estimasi-Harga-Project-SIDIK.pdf
+
 # CATATAN/ isinya berkas mentah dari lab: sertifikat terbit (CAL-2026-07-0017),
 # kop surat, dan ekspor CSV workbook pH yang bawa nama & alamat pelanggan.
 # Satu-satunya yang DIKECUALIKAN: DATABASE.csv — itu master internal lab

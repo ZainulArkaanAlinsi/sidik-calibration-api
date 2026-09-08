@@ -2511,10 +2511,78 @@ proyek 3 Sep 2026: **dibangun ulang semuanya** lewat `sertifikat:bangun-ulang
 
 ---
 
+## 24. Master dirapikan ke `alat-alat-Pt-Sidik/`, dan `.gitignore` yang jadi tumpul — 8 Sep 2026
+
+Pemilik proyek merapikan seluruh master lab dari jalur **datar**
+(`Project-PT-Sidik/<Alat>_CSV/`) ke pohon berkelompok
+(`Project-PT-Sidik/alat-alat-Pt-Sidik/<kelompok>/<Alat>/`). Rapi — tapi
+memindahkannya **mematikan sepuluh aturan `.gitignore` sekaligus**, dan itu
+terjadi **tanpa satu pun error**.
+
+### Kenapa ini kelas jebakan, bukan sekadar rapi-rapi
+
+Sepuluh aturan itu ditulis dengan alasan yang sama, tercatat di komentarnya
+masing-masing: **CSV master membawa nama & alamat pelanggan asli**, sementara
+angkanya sudah masuk `*CapabilitySeeder`/`*Seeder`. Begitu jalurnya bergeser,
+polanya tidak cocok lagi — dan yang tersisa cuma `git status` yang menawarkan
+97 berkas baru sebagai "untracked", persis seperti berkas biasa.
+
+Repo ini **PUBLIK** (`github.com/ZainulArkaanAlinsi/sidik-calibration-api`).
+
+Yang tertahan gara-gara aturan barunya, dihitung bukan dikira-kira: **12
+direktori alat, 12 nama + alamat pelanggan** — Unilever, LDC, Magnum Ice Cream,
+Gunung Madu, PDAM Tirtawening, IPB, Lamurindo, HI-CAL, sampai Lembaga Biologi
+Vaksin Puskesad.
+
+### Yang sudah dikerjakan
+
+- `.gitignore` ditulis ulang untuk tata letak baru, pakai pola `/*` + `!` supaya
+  Height Gauge (satu-satunya yang sudah terlanjur ke-commit) tetap bisa
+  di-*include* balik. Diuji satu per satu dengan `git check-ignore`.
+- CSV Height Gauge **diredaksi**: `Nama Custromer`/`Alamat Customer`/`Owner`/
+  `Address` jadi `[NAMA PELANGGAN DIREDAKSI]`/`[ALAMAT PELANGGAN DIREDAKSI]`.
+  Tepat 6 baris, **nol angka bergeser**, dan `gen-tabel-standar-height-gauge.py`
+  tetap keluarkan JSON identik byte-per-byte.
+- Ekspor ulang Autoclave & DO Meter diadu sel-demi-sel ke versi lama: **nol
+  angka kalibrasi berubah.** Delapan sel yang bergeser semuanya hitung-mundur
+  `Due Date − NOW()` (ekspor lama 13 Jan 2026, baru 21 Agt 2026, selisih persis
+  220 hari), dan status `VALID → WARNING/EXPIRED` mengikuti sebab yang sama.
+- Lima sel `#REF!`/`#DIV/0!` yang dulu disembunyikan eksportir lama kini
+  kelihatan. Ketiganya terbukti **di luar rantai hitung** — pada baris
+  "Ketidakpastian Baku Daya Baca", `ui = 0,005/1,7320508 = 0,0028867513` tetap
+  benar dan `#REF!`-nya duduk di kolom yang pada baris tetangga kosong.
+
+### K27 — paparan yang JAUH lebih luas dari CSV, dan bukan keputusan kami
+
+Redaksi di atas cuma menutup CSV. Sapuan ke seluruh repo menemukan nama &
+alamat pelanggan yang sama di **~30 berkas terlacak lain**, sudah lama ter-push:
+
+| Tempat | Contoh |
+|---|---|
+| Seeder sesi contoh | `AutoclaveSeeder`, `SpectrophotometerSeeder`, `GasDetectorSeeder`, `TitsSeeder`, `Suhu3AlatSeeder`, `EnclosureSeeder`, `ViscometerSeeder`, `RefractometerSeeder`, `ConductivitySeeder`, `DoMeterSeeder`, `DemoDataSeeder` |
+| Data JSON | `sesi-master-height-gauge.json`, `sesi-master-micrometer.json`, `sesi-master-waktu-frekuensi.json` |
+| Docblock profil | `DoMeterProfile`, `GasDetectorProfile`, `ThermohygroProfile`, `ThermometerGlassProfile`, `TitsProfile`, `ViscometerProfile` |
+| Direktori perusahaan | `database/direktori/jababeka.csv` |
+| Dokumen | 9 berkas `docs/` termasuk `pertanyaan-lab-*.md` |
+
+**Kenapa tidak kami sapu sendiri:** seeder itu **membutuhkan** nama pelanggan
+untuk membuat baris `customers` sesi demo. Menggantinya dengan nama sintetis
+mengubah data demo yang dipakai belasan test, dan itu perubahan yang harus
+disengaja — bukan efek samping dari commit rapi-rapi. Kemungkinan juga ini
+memang diterima: nama PT pelanggan lab kalibrasi bukan rahasia dagang.
+
+> **K27:** repo ini dibiarkan publik dengan nama & alamat pelanggan di dalamnya,
+> atau (a) repo dijadikan privat, atau (b) nama pelanggan diganti sintetis di
+> seeder & dokumen? Kalau (b), riwayat git tetap memuat yang lama — membersihkan
+> riwayat berarti **force-push**, dan itu tidak diambil tanpa perintah eksplisit.
+
+---
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
 |---|---|---|
+| **K27** | **Repo PUBLIK memuat nama & alamat ~13 pelanggan di ~30 berkas terlacak** (seeder sesi contoh, JSON master, docblock profil, `jababeka.csv`, 9 dokumen). CSV master sudah ditahan `.gitignore` + Height Gauge diredaksi 8 Sep 2026, tapi sisanya butuh keputusan | Tidak menahan fitur apa pun. Menahan **keputusan**: dibiarkan, repo dijadikan privat, atau nama diganti sintetis. Membersihkan riwayat butuh force-push — perlu perintah eksplisit |
 | ~~K1~~ | ~~TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah?~~ | **GUGUR** (28 Agt 2026) — nggak pernah ada lima UUT. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu memakainya `AVERAGE`+`STDEV` per baris: lima ULANGAN, satu alat, satu baris = satu set point |
 | ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |

@@ -233,6 +233,152 @@ sungguh penting. Ini kegagalan yang sudah terbukti di proyek ini.
 
 ---
 
+## HG§2 Height Gauge — pembagi `√6` di komponen berlabel `rect.` **[TERBUKTI: labelnya yang salah, bukan pembaginya]**
+
+Pertanyaan aslinya: *"`√6` itu disengaja, atau salah ketik dari `√3`?"*
+
+Itu bisa dijawab tanpa lab, karena `√6` **bukan angka yang lahir dari salah
+ketik** — dia pembagi bernama di GUM/EA-4/02:
+
+| Distribusi | Pembagi | Nilai |
+|---|---|---|
+| rectangular | √3 | 1,7320508 |
+| **triangular** | **√6** | **2,4494897** |
+| U-shaped | √2 | 1,4142136 |
+
+`√3` dan `√6` tidak bertetangga di papan ketik dan tidak mirip di layar. Yang
+mengetik `SQRT(6)` sedang menyebut **distribusi segitiga** — pilihan yang wajar
+untuk selisih muai dua benda sejenis, karena nilai di tengah rentang lebih
+mungkin daripada nilai di ujung.
+
+**Kesimpulan:** pembaginya konsisten dengan sebuah distribusi nyata; yang tidak
+konsisten adalah **label `rect.` di kolom J9**. Pertanyaannya turun kelas dari
+*"mana yang benar?"* jadi *"tolong betulkan labelnya jadi `tri.`"*.
+
+**Nol perubahan angka.** Sumbangannya ke `Σ(ui·ci)²` tetap ~1,5·10⁻⁸ dari total
+5,64·10⁻⁵ — U yang terbit tidak bergeser di digit mana pun yang tercetak.
+
+---
+
+## HG§9 Height Gauge — tabel **Inside** yang tidak terpakai **[TERBUKTI: milik standarnya, bukan milik metodenya]**
+
+Pertanyaan aslinya: *"tabel Inside tidak dipakai, atau ada mode kalibrasi yang
+belum masuk master?"*
+
+Terjawab dari struktur workbook-nya sendiri, tiga langkah:
+
+1. Tabel itu duduk di sheet **`Std_CaliperCek`** — sheet **standarnya**, bukan
+   sheet perhitungan Height Gauge.
+2. Standarnya bernama **Caliper Checker** (Metrology/CMG-9060C). Alat itu
+   standar **bersama**: dipakai mengkalibrasi jangka sorong *dan* height gauge.
+3. Jangka sorong punya rahang **dalam** dan **luar** — makanya sertifikat
+   standarnya memuat dua tabel. Height gauge mengukur tinggi dengan scriber di
+   atas meja rata; **tidak punya rahang dalam sama sekali**.
+
+Jadi tabel Inside itu bagian dari **sertifikat standarnya**, yang disalin utuh
+apa adanya. Ketiadaan pemakaian bukan kelalaian — memang tidak ada yang bisa
+memakainya di jalur Height Gauge.
+
+**Yang sudah benar:** tabelnya tetap disalin ke
+`database/data/tabel-standar-height-gauge.json` tapi tidak disambungkan. Itu
+perlakuan yang tepat dan tidak perlu diubah.
+
+---
+
+## HG§3 Height Gauge — dua nilai muai **[TERBUKTI: dua besaran BERBEDA, dan satu di antaranya 10× kekecilan]**
+
+Pertanyaan aslinya menduga keduanya mungkin besaran berbeda. **Benar** — dan itu
+bisa dibuktikan dari sifat bahan, persis seperti §11 Micrometer di atas.
+
+| Sel | Nilai | Orde yang wajar | Vonis |
+|---|---|---|---|
+| `INPUT DATA!S24` → Δα | 2,0·10⁻⁶ /°C | δα dua benda baja ~1·10⁻⁶ | **duduk pas — ini δα yang benar** |
+| `PERHITUNGAN!P35`=`Q35` → αs, αt | 1,2·10⁻⁶ /°C | α baja **11,5·10⁻⁶** | **10× kekecilan** |
+
+`P35`/`Q35` dipakai sebagai **α mutlak** (koefisien muai bahannya), bukan
+selisih. Nilai α untuk baja perkakas 11,5–12 × 10⁻⁶ /°C. Yang tertulis
+1,2 × 10⁻⁶ — dan **1,2 × 10⁻⁵ = 12 × 10⁻⁶ duduk persis di angka baja.**
+Pola kesalahannya sama persis dengan §11 Micrometer: pangkat sepuluh meleset satu.
+
+**Kenapa ini belum menggigit hari ini:** `αs` dan `αt` diisi nilai yang **sama**,
+dan `δϴ = 0` (lihat HG§10). Suku `αs·Δϴs − αt·Δϴt` karena itu nol menurut
+konstruksi — besar α-nya tidak berpengaruh selama kedua sisinya kembar.
+
+**Kapan ini menggigit:** begitu lab mulai mencatat suhu UUT terpisah dari suhu
+standar (pertanyaan HG§10), suku itu hidup — dan koreksi tiap titik jadi
+**10× lebih kecil dari yang seharusnya**. Dua pertanyaan itu karena itu **satu
+paket**: jangan jawab HG§10 "diukur terpisah" tanpa membetulkan HG§3 di kalimat
+yang sama.
+
+> **Yang perlu dikonfirmasi lab tinggal satu kalimat:** apakah `P35`/`Q35`
+> dimaksud 1,2·10⁻⁵. Kalau ya, itu perbaikan sebelum jalur suhu terpisah dinyalakan.
+
+---
+
+## HG§5 Height Gauge — paralelisme `STDEV` lawan `Max − Min` **[USULAN kuat: ini satu-satunya yang arah salahnya merugikan]**
+
+Sepuluh pertanyaan Height Gauge, sembilan di antaranya soal seberapa besar angka
+yang **terbit**. Yang ini beda sendiri: dia menentukan **vonis lulus/tidak**, dan
+arah kesalahannya menguntungkan alat yang seharusnya gagal.
+
+**Bukti dari definisi besarannya.** Paralelisme/kerataan di metrologi dimensi
+(ISO 1101, dan JIS B 7517 untuk keluarga jangka sorong/height gauge) didefinisikan
+sebagai **jarak dua bidang sejajar yang mengapit permukaannya** — yaitu
+**rentang**, `Max − Min`. Simpangan baku bukan definisi yang dipakai di mana pun
+untuk besaran ini; dia besaran sebaran, bukan besaran geometri.
+
+**Besarnya penyimpangan bisa dihitung tepat.** `STDEV` atas dua angka =
+`|Max − Min| / √2`, jadi rumus master **selalu melaporkan 29,3 % lebih kecil**
+dari rentang sebenarnya — bukan kadang-kadang, tapi setiap kali, dengan faktor
+tetap.
+
+**Akibatnya pada vonis** (batas 0,01 mm):
+
+| Rentang sebenarnya | `Max − Min` | `STDEV` | Vonis berbeda? |
+|---|---|---|---|
+| 0,008 mm | Good | Good | — |
+| **0,012 mm** | **Not Good** | Good (0,0085) | **ya** |
+| **0,014 mm** | **Not Good** | Good (0,0099) | **ya** |
+| 0,015 mm | Not Good | Not Good | — |
+
+Ada pita **0,0100–0,0141 mm** tempat alat yang menurut definisi standar
+**gagal** diluluskan oleh master.
+
+**Kenapa tetap ditandai [USULAN], bukan langsung diubah:** mengubahnya menggeser
+vonis kelulusan — itu perubahan metode, wewenang Manajer Teknis. Yang sudah
+dikerjakan: ditiru apa adanya, dan **selisihnya ditulis** supaya keputusannya
+bisa diambil dengan angka di tangan, bukan dengan kesan.
+
+> **Rekomendasi:** dari sepuluh butir Height Gauge, **prioritaskan yang ini
+> sesudah HG§6 (akreditasi)**. Sembilan lainnya menggeser angka; yang ini
+> meluluskan alat yang seharusnya ditolak.
+
+---
+
+## HG§1 Height Gauge — pembagi drift `/12` lawan `/365` **[USULAN: labelnya sendiri menunjuk `/365`, tapi tetap pertahankan `/12`]**
+
+Tidak butuh lab untuk menunjukkan **arah** ketidakkonsistenannya — workbook itu
+membantah dirinya sendiri di tiga tempat:
+
+1. **Satuan komponennya sendiri** ditulis `mm/th` — laju drift per **tahun**.
+   Laju per tahun dikali umur harus memakai umur dalam **tahun** supaya hasilnya
+   mm. Argumennya (`X11 − W13`) menghasilkan **hari**. Pembagi yang membuat
+   satuannya menutup adalah **`/365`**; `/12` cuma benar kalau argumennya bulan.
+2. **Master Micrometer dari lab yang sama** memakai `/365` untuk komponen yang
+   sebangun.
+3. `12` adalah angka yang wajar tertinggal dari templat berbasis **bulan** —
+   pola salin-tempel, bukan pilihan metode.
+
+**Tapi rekomendasinya tetap: pertahankan `/12`.** Alasannya aturan proyek, bukan
+metrologi — `/365` membuat U yang terbit **lebih kecil** (0,0154996 vs
+0,0156680 mm, −1,1 %), dan penyimpangan yang diam-diam mengecilkan ketidakpastian
+tidak boleh diambil sendiri. Versi konservatif dipertahankan sampai lab memutuskan.
+
+**Nol paparan:** Height Gauge di luar lingkup akreditasi, jadi tidak ada lantai
+CMC yang bisa ditembus dari arah mana pun oleh selisih 1,1 % ini.
+
+---
+
 ## Yang TIDAK bisa dijawab dari sini **[TIDAK BISA]**
 
 Bukan karena malas — karena jawabannya berupa **fakta yang cuma ada di lab**
@@ -250,6 +396,11 @@ yang kedua berarti menggeser metode tanpa sepengetahuan yang berwenang.
 | **K20** konstanta Interpolasi | **Sudah dicoba dibongkar dari angkanya.** `0,19788162882115856` tidak terurai jadi konvensi apa pun — bukan `x/√3`, `x/√12`, bukan pecahan sederhana (penyebut < 10⁵ meleset). Artinya dia **angka turunan data**, jadi cuma bisa dari workbook sumbernya |
 | **K22** PRT PT100 + recorder | Apakah kombinasi itu pernah dipakai adalah riwayat pemakaian. Blokirnya sudah benar sebagai bawaan |
 | **F1 K12 G3 K24** | Barang fisik: foto, hasil ukur, kertas, berkas arsip. Tidak ada penggantinya |
+| **HG§4** tabel Muka Ukur `#REF!` | Sembilan sel menunjuk blok yang **sudah tidak ada** di sheet `PERHITUNGAN`. Yang hilang bukan angkanya — blok pengambilannya. Mengarang tiga posisi Atas/Tengah/Bawah berarti mengarang hasil ukur |
+| **HG§6** sertifikat yang sudah terbit | Snapshot beku, dan cetak ulang membaca snapshot. Perlakuan atas dokumen yang sudah di tangan pelanggan adalah tindakan Manajer Teknis di bawah klausa Pekerjaan Tidak Sesuai ISO/IEC 17025 — sama kelasnya dengan §1 §3 §9 Micrometer di atas |
+| **HG§7** jeda terbit 4 atau 9 hari | Tiga tanggal di master (05 Mei sidik, 11 Mei Presisi, 14 Mei terbit) tidak menentukan mana yang jadi acuan jeda. Itu praktik penomoran lab |
+| **HG§8** empat catatan lepas | `global 1.7 um`, `bblm 4.4 um`, `gmi 2.5 mm/m`, `gis 0.57 mm` — **sudah dicoba diurai.** Keempatnya tidak cocok dengan komponen budget mana pun, tidak dengan CMC lampiran, dan tidak dengan spesifikasi pabrikan Insize. Singkatannya kemungkinan nama merek/standar pembanding; tanpa itu cuma tebakan |
+| **HG§10** suhu UUT diturunkan atau diukur | Riwayat praktik lapangan. Jalur suhu terpisah sudah hidup & teruji di kode, jadi jawabannya cuma menyalakan sisi pemanggil — **tapi baca HG§3 dulu**, keduanya satu paket |
 
 ---
 
@@ -260,10 +411,10 @@ ulang sambil dibaca, bukan dipercaya begitu saja:
 
 | Kelas | Jumlah | Butirnya |
 |---|---|---|
-| **Tertutup** — terjawab di sini, tidak butuh lab | **8** | §5 §6 K21 · K8 K10 K11 K25 K26 |
-| **Bawaannya bisa dipertahankan** — lab boleh membatalkan, tapi tidak ada yang menunggu | **2** | §7 §8 |
-| **Masih menunggu lab** | **15** | §1 §3 §9 §10 §11 · K12 K13 K14 K15 K19 K20 K22 K24 · F1 G3 |
-| **Jumlah** | **25** | |
+| **Tertutup** — terjawab di sini, tidak butuh lab | **11** | §5 §6 K21 · K8 K10 K11 K25 K26 · **HG§2 HG§9 HG§3** |
+| **Bawaannya bisa dipertahankan** — lab boleh membatalkan, tapi tidak ada yang menunggu | **4** | §7 §8 · **HG§1 HG§5** |
+| **Masih menunggu lab** | **20** | §1 §3 §9 §10 §11 · K12 K13 K14 K15 K19 K20 K22 K24 · F1 G3 · **HG§4 HG§6 HG§7 HG§8 HG§10** |
+| **Jumlah** | **35** | |
 
 | Sebelum | Sesudah |
 |---|---|
@@ -272,6 +423,20 @@ ulang sambil dibaca, bukan dipercaya begitu saja:
 | §5 menunggu jawaban | Terjawab: kesalahan kategori, bukan pilihan |
 | K21 menunggu jawaban | Terjawab dari keputusan proyek yang sudah ada |
 | 5 keputusan produk menggantung | Diputuskan, siap dikerjakan |
+| 10 butir Height Gauge menunggu semua | **5 menunggu** — HG§2 HG§9 HG§3 tertutup, HG§1 HG§5 punya bawaan yang bisa dipertahankan |
 
 **Nol baris kode diubah.** Semua yang di atas temuan dan keputusan; yang
 menyentuh angka tercetak tetap menunggu lab, sesuai aturan proyek.
+
+## Yang paling layak dikerjakan lab duluan
+
+Dari 20 yang masih menunggu, dua yang **bukan sekadar menggeser angka**:
+
+1. **HG§6** — sertifikat Height Gauge & Gas Detector yang sudah terbit membawa
+   klaim akreditasi untuk lingkup yang di luar LK-285-IDN. Kodenya sudah
+   diperbaiki 7 Sep 2026; yang tersisa perlakuan atas dokumen yang sudah beredar.
+2. **HG§5** — paralelisme `STDEV` meluluskan alat pada pita 0,0100–0,0141 mm yang
+   menurut definisi ISO 1101 seharusnya ditolak. Satu-satunya butir di seluruh
+   berkas ini yang arah kesalahannya **merugikan penerima sertifikat**.
+
+Sisanya bisa menunggu revisi master berikutnya tanpa risiko.
