@@ -161,7 +161,11 @@ class ProfilDariNamaAlatTest extends TestCase
             // workbook master yang turun dari lab. Yang menjaga arah
             // sebaliknya — `test_micrometer_dapat_lembarnya_sendiri` di bawah.
             'Dial Indicator' => ['Dial Indicator'],
-            'Flow Meter Cairan (Totalizer)' => ['Flow Meter Cairan (Totalizer)'],
+            // Kedua Flow Meter Cairan PINDAH dari sini 8 Sep 2026: sekarang
+            // punya lembar kerjanya sendiri (alat ke-27 & ke-28, kelompok
+            // Aliran, lampiran akreditasi no. 30 & 31), dari dua workbook
+            // master yang turun dari lab. Yang menjaga arah sebaliknya —
+            // `test_flowmeter_dapat_lembarnya_sendiri` di bawah.
             // Timbangan PINDAH dari sini 31 Agt 2026: sekarang punya lembar
             // kerjanya sendiri (alat ke-21, kelompok Massa), dari tiga workbook
             // master yang turun dari lab. Yang menjaga arah sebaliknya —
@@ -207,7 +211,12 @@ class ProfilDariNamaAlatTest extends TestCase
             'tachometer pendek' => ['Tachometer', 'tachometer'],
             'tachometer digital' => ['Digital Tachometer', 'tachometer'],
             'suhu, BUKAN waktu' => ['Thermohygrometer', 'thermohygro'],
-            'aliran per menit, BUKAN waktu' => ['Flow Meter Cairan (Flowrate)', null],
+            // Namanya memuat "per menit", tapi dia ALIRAN — bukan Waktu &
+            // Frekuensi. Sampai 8 Sep 2026 harapannya `null` (belum ada
+            // profilnya); sekarang dia wajib mendarat di `flowmeter_flowrate`,
+            // dan yang dijaga di sini tetap hal yang sama: dia tidak boleh
+            // nyasar ke `timer_stopwatch`.
+            'aliran per menit, BUKAN waktu' => ['Flow Meter Cairan (Flowrate)', 'flowmeter_flowrate'],
             'panjang, BUKAN waktu' => ['Dial Indicator', null],
         ];
     }
@@ -292,6 +301,46 @@ class ProfilDariNamaAlatTest extends TestCase
 
     #[DataProvider('namaTimbangan')]
     public function test_timbangan_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    /**
+     * Alat ke-27 & ke-28 — kelompok Aliran, lampiran akreditasi no. 30 & 31.
+     *
+     * Yang dijaga di sini bukan cuma "ketemu profil", tapi **ketemu profil yang
+     * BENAR di antara dua bersaudara**. Kedua alat berbagi kertas, Instruksi
+     * Kerja, dan mesin hitung; yang membedakan cuma jumlah komponen budgetnya
+     * (8 lawan 9) dan pita CMC-nya. Nyasar ke saudaranya karena itu **tidak
+     * menerbitkan satu pun error** — sesinya tetap terhitung, cuma dengan
+     * budget generasi yang salah.
+     *
+     * `Ultrasonic Flowmeter` sengaja diadu: itu nama STANDAR-nya (Krohne
+     * UFC300) yang juga dipakai pelanggan buat menyebut alatnya sendiri, dan
+     * dia terdaftar sebagai alias Flowrate.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaAliran(): array
+    {
+        return [
+            'lampiran akreditasi no. 30' => ['Flow Meter Cairan (Totalizer)', 'flowmeter_totalizer'],
+            'lampiran akreditasi no. 31' => ['Flow Meter Cairan (Flowrate)', 'flowmeter_flowrate'],
+            'totalizer tanpa kurung' => ['Flowmeter Totalizer', 'flowmeter_totalizer'],
+            'flowrate tanpa kurung' => ['Flowmeter Flowrate', 'flowmeter_flowrate'],
+            'nama standarnya' => ['Ultrasonic Flowmeter', 'flowmeter_flowrate'],
+            'water meter itu totalizer' => ['Water Meter', 'flowmeter_totalizer'],
+            // Bukan aliran: dia alat TEKANAN, dan namanya memuat "Meter".
+            'tekanan, BUKAN aliran' => ['Pressure Gauge', null],
+        ];
+    }
+
+    #[DataProvider('namaAliran')]
+    public function test_flowmeter_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
     {
         $this->assertSame(
             $harap,

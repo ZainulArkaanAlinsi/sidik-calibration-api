@@ -11,6 +11,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
 
@@ -122,6 +123,24 @@ class CertificateSnapshotBuilder
             // Dua puluh alat lain balik `null` di sini dan lewat jalur lama
             // tanpa berubah sama sekali.
             'timbangan' => $profil?->ringkasanSertifikat($sesi),
+            // Flowmeter: spesifikasi pipa & pemasangan sensor. Blok kecil, tapi
+            // dia satu-satunya bagian sertifikat alat ini yang TIDAK punya
+            // padanan di master — sertifikat Flowrate punya labelnya (`B19`
+            // Material of pipe .. `B22` Methode UFM Clamp On, hasil revisi
+            // 20 Mei 2026) dengan sel isi KOSONG tanpa rumus, dan sertifikat
+            // Totalizer bahkan tidak punya labelnya.
+            //
+            // Dipisah dari kunci `timbangan` di atas dengan sengaja: kunci itu
+            // terikat ke bagian blade bergaya Timbangan, dan isi Flowmeter yang
+            // masuk ke situ bakal dirender sebagai delapan bagian penimbangan —
+            // nol error, lembar yang salah.
+            //
+            // `instanceof`, bukan hook boolean baru di `CalibrationProfile`:
+            // yang butuh cuma dua profil, dan hook di sana berarti dua puluh
+            // enam alat lain ikut membawa method yang selalu `null`.
+            'flowmeter' => $profil instanceof FlowmeterProfile
+                ? $profil->spesifikasiPipaSertifikat($sesi)
+                : null,
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),
             'footer' => $this->footer($sesi, $sertifikat, $pengaturan),

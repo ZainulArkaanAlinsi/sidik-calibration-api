@@ -102,6 +102,12 @@ class DatabaseSeeder extends Seeder
             // sumber koreksi kondisi lingkungan.
             MicrometerSeeder::class,
             HeightGaugeSeeder::class,
+            // Alat ke-27 & ke-28 — dua sesi contoh dalam satu seeder, karena
+            // kedua master lab memang satu order yang sama (Totalizer dan
+            // Flowrate, selang sehari). Baris kemampuan CMC-nya SUDAH ditanam
+            // `CalibrationCapabilitySeeder` dari lampiran no. 30 & 31; jangan
+            // bikin seeder kemampuan terpisah.
+            FlowmeterSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

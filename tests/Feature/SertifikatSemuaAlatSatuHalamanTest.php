@@ -102,6 +102,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2606.08.C (Temperature Recorder Controller)',
         '2607.59.W (Viscometer)',
         'DEMO-COND-MSCM (Conductivity Meter)',
+        // Alat ke-27 & ke-28 — sertifikatnya membawa satu blok tambahan
+        // (`PIPE SPECIFICATION & SENSOR MOUNTING`) yang alat lain tidak punya,
+        // jadi justru keduanya yang paling perlu diperiksa muat satu halaman.
+        'DEMO-FM-FLW-001 (Flow Meter Cairan (Flowrate))',
+        'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-SPECTRO-LDC (Visible Spectrofotometer)',
     ];
 

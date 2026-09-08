@@ -32,6 +32,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Support\FlowmeterMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
 use App\Support\TimbanganMentah;
@@ -1178,6 +1179,21 @@ class CalibrationController extends Controller
         // jalur hitung ulang memulangkan deret kosong tanpa satu pun error.
         if ($this->profil->untukAlat($alat)->butuhBlokHeightGauge()) {
             return $this->susunBlokHeightGauge($request, $alat, $standarDefault);
+        }
+
+        // Flowmeter: satu titik berisi LIMA deret dengan arti yang beda —
+        // pembacaan UUT, pembacaan standar, suhu air awal & akhir, dan densitas
+        // fluida. Alasan jalur terpisahnya sama dengan enam di atas.
+        //
+        // Bedanya dari jalur pasangan standar/UUT, dan kenapa cabangnya
+        // sendiri: di sana dua deret datar, di sini deret UUT-nya BERSARANG
+        // pada mode `flowrate` (satu ulangan berisi tiga durasi). Dipaksa lewat
+        // cabang pasangan, ketiga durasi itu tersimpan sebagai tiga ulangan
+        // terpisah — simpangan bakunya berubah dari sebaran antar-durasi jadi
+        // sebaran antar-ulangan, dan komponen budget ke-9 keluar jauh lebih
+        // besar tanpa satu pun error.
+        if ($this->profil->untukAlat($alat)->butuhBlokFlowmeter()) {
+            return $this->susunBlokFlowmeter($request, $alat, $standarDefault);
         }
 
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
@@ -2439,6 +2455,190 @@ class CalibrationController extends Controller
                 $perGrup['hitungan'] ?? [],
             ),
             'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Lembar **Flowmeter** — lima deret per titik, plus blok geometri pipa
+     * tingkat-sesi.
+     *
+     * ## Kenapa nilainya DISIMPAN MENTAH
+     *
+     * Pembacaan disimpan dalam satuan yang diketik teknisi (`m3`, `usg`,
+     * `kg/h`, …), dan konversinya baru terjadi di TEMPAT PAKAI
+     * (`FlowmeterCalculator::konversi()`). Mengalikan di sini lalu menyimpan
+     * hasilnya TIDAK idempoten: jalur draft membuat HP mengirim kembali angka
+     * yang dia terima, jadi faktornya kena dua kali dan pembacaan `10 m3` jadi
+     * `10.000.000 L` pada simpan kedua. Sudah terbukti di Micrometer.
+     *
+     * ## Sumbu penyimpanannya
+     *
+     * `pembacaan_ke` = ULANGAN, `sensor_ke` = DURASI. Pada mode `totalizer`
+     * satu ulangan cuma punya satu angka, jadi `sensor_ke` ikut nomor
+     * ulangannya. Pada `flowrate` satu ulangan berisi tiga durasi, dan urutan
+     * itulah yang menentukan komponen budget ke-9 — lihat
+     * `FlowmeterMentah::deretBersarang()`.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokFlowmeter(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta) => $sesiKamera || $meta !== null;
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[FlowmeterMentah::KUNCI_SESI] ?? []);
+        $satuanAlat = (string) ($blok['satuan'] ?? '');
+
+        // Keempat deret datar dipetakan seragam: kunci payload = `grup` tabel di
+        // bentuk lembar, jadi bentuk lembar dan jalur simpan tidak bisa
+        // berselisih diam-diam.
+        $deretDatar = [
+            FlowmeterMentah::PERAN_STD => $satuanAlat,
+            FlowmeterMentah::PERAN_SUHU_AWAL => '°C',
+            FlowmeterMentah::PERAN_SUHU_AKHIR => '°C',
+            FlowmeterMentah::PERAN_DENSITAS => 'kg/L',
+        ];
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+
+            // Satu ulangan bisa berupa ANGKA (totalizer) atau LIST durasi
+            // (flowrate). Dua-duanya diterima di sini dan dinormalkan jadi
+            // list, supaya satu jalur simpan melayani kedua mode — bentuk
+            // lembarnya yang sudah memisahkan keduanya lewat jumlah kolom.
+            $uutMentah = array_values((array) ($titik[FlowmeterMentah::PERAN_UUT] ?? []));
+            $ocrUut = array_values((array) ($titik[FlowmeterMentah::PERAN_UUT.'_ocr'] ?? []));
+
+            $uut = [];
+
+            foreach ($uutMentah as $ulangan => $isi) {
+                $durasi = is_array($isi) ? array_values($isi) : [$isi];
+                $terisi = [];
+
+                foreach ($durasi as $ke => $nilai) {
+                    if (! $adaIsinya($nilai) || ! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $meta = (is_array($ocrUut[$ulangan] ?? null) && is_array($isi))
+                        ? ($ocrUut[$ulangan][$ke] ?? null)
+                        : ($ocrUut[$ulangan] ?? null);
+                    $dariKamera = $asalKamera($meta);
+                    $angka = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                    $terisi[] = $angka;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $ulangan + 1,
+                        // Durasi ke-berapa dalam ulangan ITU. Pada totalizer
+                        // cuma ada satu, jadi dia ikut nomor ulangannya —
+                        // `deretBersarang()` mengurut pakai kunci ini, dan
+                        // nilai yang sama untuk semua baris membuat urutannya
+                        // tidak ditentukan.
+                        'sensor_ke' => is_array($isi) ? $ke + 1 : $ulangan + 1,
+                        'peran_sensor' => FlowmeterMentah::PERAN_UUT,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => is_numeric($titik['titik_ukur'] ?? null) ? (float) $titik['titik_ukur'] : 0.0,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $angka,
+                        'satuan' => $satuanAlat,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
+                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                if ($terisi !== []) {
+                    $uut[] = $terisi;
+                }
+            }
+
+            $konteks = [FlowmeterMentah::PERAN_UUT => $uut];
+
+            foreach ($deretDatar as $peran => $satuan) {
+                $ocrPeran = array_values((array) ($titik[$peran.'_ocr'] ?? []));
+                $nilaiPeran = [];
+
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! $adaIsinya($nilai) || ! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $meta = $ocrPeran[$urutan] ?? null;
+                    $dariKamera = $asalKamera($meta);
+                    $angka = $this->bulatkanKolom($nilai, self::DESIMAL_PEMBACAAN);
+                    $nilaiPeran[] = $angka;
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => is_numeric($titik['titik_ukur'] ?? null) ? (float) $titik['titik_ukur'] : 0.0,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $angka,
+                        'satuan' => $satuan,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
+                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                $konteks[$peran] = $nilaiPeran;
+            }
+
+            // Titik yang KEDUA sisinya kosong dilewati sepenuhnya — termasuk
+            // baris suhu & densitasnya. Titik yang cuma punya suhu tanpa satu
+            // pun pembacaan lahir sebagai baris kosong di sertifikat, yang
+            // terbaca seperti data hilang.
+            if ($uut === [] && $konteks[FlowmeterMentah::PERAN_STD] === []) {
+                $mentah = array_values(array_filter(
+                    $mentah,
+                    static fn (array $m): bool => $m['titik_ke'] !== $titikKe,
+                ));
+
+                continue;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => is_numeric($titik['titik_ukur'] ?? null) ? (float) $titik['titik_ukur'] : 0.0,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    ...$konteks,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
         ];
     }
 

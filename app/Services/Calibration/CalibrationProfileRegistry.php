@@ -14,6 +14,8 @@ use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
 use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
+use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
+use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
@@ -138,6 +140,21 @@ class CalibrationProfileRegistry
             // telanjang. Preseden perlakuannya Gas Detector; lihat
             // HeightGaugeCalculator.
             new HeightGaugeProfile,
+            // Alat ke-27 & ke-28, dan yang PERTAMA di kelompok Aliran —
+            // lampiran akreditasi LK-285-IDN no. 30 & 31. Dua workbook master
+            // yang budgetnya BEDA GENERASI (8 komponen lawan 9, karena revisi
+            // 20 Mei 2026 baru masuk ke Flowrate) jadi satu kelas dasar dengan
+            // dua subkelas tipis; lihat FlowmeterProfile.
+            //
+            // Urutannya menentukan lewat `bangunIndeksEjaan()`, yang mengurut
+            // kunci dari yang paling panjang. "Flow Meter Cairan (Totalizer)"
+            // dan "(Flowrate)" tidak saling memuat, jadi keduanya aman
+            // berdampingan. Yang TIDAK aman: alias "Ultrasonic Flowmeter" di
+            // FlowmeterFlowrateProfile memuat kata "Flowmeter", jadi jangan
+            // tambahkan alias telanjang "Flowmeter" ke salah satunya tanpa
+            // mengadu ulang ProfilDariNamaAlatTest.
+            new FlowmeterTotalizerProfile,
+            new FlowmeterFlowrateProfile,
         ];
     }
 

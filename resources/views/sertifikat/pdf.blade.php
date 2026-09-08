@@ -569,6 +569,73 @@
          Mass` — lihat catatan di docs/perintah-frontend-timbangan.md. --}}
     @php($timbangan = $snapshot['timbangan'] ?? null)
 
+    {{-- Flowmeter Ultrasonic: spesifikasi pipa & pemasangan sensor.
+
+         Blok ini SATU-SATUNYA bagian sertifikat alat ini yang nggak punya
+         padanan yang jalan di master. Sertifikat Flowrate punya LABEL-nya
+         (`B19` Material of pipe, `B20` Outside Diameter, `B21` Thickness of
+         Pipe, `B22` Methode UFM Clamp On — hasil revisi 20 Mei 2026) tapi sel
+         isinya KOSONG tanpa rumus, dan sertifikat Totalizer bahkan nggak punya
+         labelnya. Jadi kertas `SIDIK-FM-CAL-0538` memungut keempatnya,
+         sertifikat nyediain tempatnya, dan nggak ada yang nyambungin.
+
+         Dicetak DI ATAS tabel hasil, ngikutin posisi `B19:B22` master.
+
+         Diameter DALAM & luas penampang ikut dicetak walau kertasnya nggak
+         minta: keduanya yang beneran masuk hitungan (`u_A` dan `ci` komponen
+         cross sectional area). Nyetak diameter LUAR doang bikin pembaca
+         sertifikat nggak punya jalan meriksa ulang angkanya.
+
+         Dua puluh enam alat lain balik `null` di sini — termasuk seluruh
+         sertifikat yang udah terbit sebelum kunci ini ada — dan blok ini nggak
+         dicetak sama sekali. --}}
+    @php($flowmeter = $snapshot['flowmeter'] ?? null)
+
+    @if ($flowmeter)
+        @php($mm = fn ($v) => $v === null ? '—' : \App\Support\Angka::id((float) $v, 2).' mm')
+        <div class="judul-sub">PIPE SPECIFICATION &amp; SENSOR MOUNTING</div>
+        <table class="data">
+            <tbody>
+                <tr>
+                    <td class="kiri">Material of pipe</td>
+                    <td class="kiri">{{ $isi($flowmeter['material_pipa'] ?? null) }}</td>
+                    <td class="kiri">Outside diameter of pipe</td>
+                    <td class="kiri">{{ $mm($flowmeter['diameter_luar_mm'] ?? null) }}</td>
+                </tr>
+                <tr>
+                    <td class="kiri">Fluid</td>
+                    <td class="kiri">{{ $isi($flowmeter['jenis_fluida'] ?? null) }}</td>
+                    <td class="kiri">Thickness of pipe</td>
+                    <td class="kiri">{{ $mm($flowmeter['ketebalan_mm'] ?? null) }}</td>
+                </tr>
+                <tr>
+                    {{-- Master menamainya "Methode UFM Clamp On"; kertasnya
+                         "Path Configuration (Sensor Mounting Methode)". Yang
+                         dicetak nama kertasnya, karena itu yang dilihat teknisi
+                         waktu mencentangnya. --}}
+                    <td class="kiri">Path configuration</td>
+                    <td class="kiri">
+                        {{ $flowmeter['path_configuration'] ? $flowmeter['path_configuration'].'-Methode' : '—' }}
+                    </td>
+                    <td class="kiri">Inside diameter of pipe</td>
+                    <td class="kiri">{{ $mm($flowmeter['diameter_dalam_mm'] ?? null) }}</td>
+                </tr>
+                {{-- Liner cuma dicetak kalau pipanya MEMANG berpelapis. Baris
+                     berisi `—` di sertifikat terakreditasi kebaca seperti data
+                     yang HILANG, bukan seperti pipa yang emang nggak berliner —
+                     dan dua hal itu ditindaklanjuti orang dengan cara berbeda. --}}
+                @if (filled($flowmeter['liner_material'] ?? null))
+                    <tr>
+                        <td class="kiri">Liner material</td>
+                        <td class="kiri">{{ $isi($flowmeter['liner_material']) }}</td>
+                        <td class="kiri">Liner thickness</td>
+                        <td class="kiri">{{ $mm($flowmeter['liner_ketebalan_mm'] ?? null) }}</td>
+                    </tr>
+                @endif
+            </tbody>
+        </table>
+    @endif
+
     @if ($autoclave)
         {{-- Desimal dibaca dari FORMAT SEL master `Master Olah Data_Autoclave.xlsm`
              (sheet SERTIFIKAT), bukan diturunkan dari resolusi alat. Sampai

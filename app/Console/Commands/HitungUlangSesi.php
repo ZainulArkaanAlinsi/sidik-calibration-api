@@ -9,6 +9,7 @@ use App\Services\CalibrationValidator;
 use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\Angka;
+use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
@@ -142,6 +143,15 @@ class HitungUlangSesi extends Command
                 // miliknya, dan angkanya salah tanpa satu pun error.
                 $heightGauge = HeightGaugeMentah::dari($baris);
 
+                // Deret UUT + standar + suhu air + densitas lembar Flowmeter.
+                // Diperiksa dengan alasan yang persis sama dengan empat di
+                // atas: barisnya PUNYA `peran_sensor`, cuma kosakatanya lain
+                // lagi (`flow_uut_pembacaan`/`flow_std_pembacaan`/...). Kalau
+                // tidak dites duluan, tiap titiknya jatuh ke cabang alat lain,
+                // ketemu deret yang bukan miliknya, dan angkanya salah tanpa
+                // satu pun error.
+                $flow = FlowmeterMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -153,7 +163,29 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($heightGauge !== []) {
+                if ($flow !== []) {
+                    // Gerbangnya jumlah ULANGAN UUT, bukan jumlah baris: satu
+                    // titik berisi sampai 3 ulangan UUT + 3 pembacaan standar +
+                    // 6 suhu + 1 densitas, jadi hitungan datar tetap lolos
+                    // walau sisi UUT-nya kosong — dan "deviasi" yang lahir dari
+                    // sisi kosong itu justru sebesar seluruh pembacaan
+                    // standarnya, angka yang kelihatan masuk akal.
+                    //
+                    // Dua, bukan tiga: master menyediakan tiga kolom tapi
+                    // simpangan baku sudah punya arti mulai dari dua, dan titik
+                    // yang cuma sempat dibaca dua kali tetap titik yang sah.
+                    if (count($flow[FlowmeterMentah::PERAN_UUT]) < 2) {
+                        continue;
+                    }
+
+                    // Deret datar sengaja DIKOSONGKAN, sama seperti enclosure &
+                    // Height Gauge di bawah: satu titik flowmeter punya dua
+                    // deret yang artinya beda (UUT dan standar), dan
+                    // meratakannya jadi satu `pembacaan` membuat rata-ratanya
+                    // campur aduk lintas peran. Yang dibaca profilnya
+                    // `konteks.flow_*`.
+                    $nilai = [];
+                } elseif ($heightGauge !== []) {
                     // Gerbangnya jumlah PEMBACAAN, bukan jumlah baris: satu
                     // titik berisi sampai 3 slot nominal + 3 pembacaan, jadi
                     // hitungan datar tetap lolos walau sisi pembacaannya
@@ -298,6 +330,15 @@ class HitungUlangSesi extends Command
                         // kapasitas, resolusi) ikut lewat `spesifikasi_alat`
                         // di bawah. Kosong buat dua puluh lima alat lain.
                         ...$heightGauge,
+                        // Deret UUT + standar + suhu air + densitas lembar
+                        // Flowmeter. Kejadian KESEBELAS dengan pola yang sama.
+                        // Blok tingkat-sesinya (mode, satuan, geometri pipa,
+                        // resolusi) ikut lewat `spesifikasi_alat` di bawah —
+                        // dan tanpa `mode` di situ seluruh titiknya pulang
+                        // "belum dihitung", karena mode yang menentukan
+                        // budgetnya 8 komponen atau 9. Kosong buat dua puluh
+                        // enam alat lain.
+                        ...$flow,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

@@ -740,12 +740,26 @@ class SemuaProfilLembarKerjaTest extends TestCase
             $pakai[$nomor][] = $profil->kode();
         }
 
-        // Kelima profil enclosure memang SATU formulir (`0504`) — itu yang
-        // tertulis di kertasnya, bukan kelalaian. Yang dilarang: dua ALAT BEDA
-        // berbagi nomor.
+        // Dua nomor yang memang SATU kertas untuk beberapa profil — dan
+        // keduanya dibuktikan berkasnya, bukan diasumsikan:
+        //
+        //  - `0504` — kelima profil enclosure (Oven, Furnace, Bath, Inkubator,
+        //    Refrigerator).
+        //  - `0538` — Flowmeter Totalizer & Flowrate. Kertasnya ada di repo:
+        //    `SIDIK-FM-CAL-0538-Rev.0 LEMBAR KERJA FLOWMETER (Perbandingan
+        //    Langsung dengan UFM).pdf`, satu formulir yang kotak modenya
+        //    dicentang teknisi. Keduanya juga berbagi Instruksi Kerja
+        //    (`SIDIK-IK-CAL-0528_Rev.4`) dan kelima standar yang sama.
+        //
+        // Yang tetap dilarang: dua alat yang kertasnya BEDA tapi nomornya
+        // kembar — itu membuat lembar tercetak mengaku formulir yang bukan
+        // dirinya, dan yang ketahuan duluan biasanya auditor.
+        $satuKertasBeberapaProfil = ['SIDIK-FM-CAL-0504_Rev.3', 'SIDIK-FM-CAL-0538_Rev.0'];
+
         $kembar = array_filter(
             $pakai,
-            static fn (array $kode, string $nomor): bool => count($kode) > 1 && $nomor !== 'SIDIK-FM-CAL-0504_Rev.3',
+            static fn (array $kode, string $nomor): bool => count($kode) > 1
+                && ! in_array($nomor, $satuKertasBeberapaProfil, true),
             ARRAY_FILTER_USE_BOTH,
         );
 

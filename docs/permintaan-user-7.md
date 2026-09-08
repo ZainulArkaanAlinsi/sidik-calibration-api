@@ -2578,6 +2578,117 @@ memang diterima: nama PT pelanggan lab kalibrasi bukan rahasia dagang.
 
 ---
 
+## 25. Alat baru **Flowmeter Ultrasonic** (Aliran) — 8 Sep 2026
+
+Dua workbook master turun (`1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer
+(1000-1900L) 2026.xlsm` dan `Master olda Ultrasonic Flowrate (100-300 lpm)
+2026.xlsm`, password `spirit285`), plus kertas lembar kerjanya
+`SIDIK-FM-CAL-0538_Rev.0`. Alat **ke-27 dan ke-28**, kelompok **Aliran** —
+kelompok yang sebelumnya belum punya satu pun profil, dan sekarang LENGKAP
+(lampiran akreditasi cuma memuat no. 30 & 31).
+
+Dua profil, satu mesin hitung, satu tabel standar, satu kertas. Presedennya
+`ProfilPutaran` (Centrifuge + Tachometer).
+
+### Yang membuat alat ini beda dari 26 lainnya
+
+**Satu titik punya DUA deret berdampingan** — pembacaan UUT dan pembacaan
+totalizer standar UFM — dan pada varian Flowrate deret UUT-nya **bersarang**
+(tiga ulangan × tiga durasi 20″/40″/60″). Kalau keduanya tertukar atau saling
+tertimpa, yang terbit bukan error melainkan **deviasi nol di setiap titik**:
+sertifikat yang mencetak koreksi 0,000 dan terlihat seperti alat yang sangat
+akurat.
+
+**Budget-nya PER TITIK**, bukan per sesi — tiap titik punya blok penuh sendiri,
+jadi `k` dan `U95` juga per titik.
+
+**Dua workbook, dua GENERASI budget.** Totalizer 8 komponen, Flowrate 9.
+Bukan karena besarannya beda: `FORM VALIDASI` Flowrate punya baris kedua
+(20 Mei 2026) yang menambahkan komponen "Pengulangan Pembacaan UUT", dan
+Totalizer belum ikut revisi itu. Ditiru masing-masing.
+
+### Bukti sebelum kode
+
+Reimplementasi Python independen membaca sel `INPUT DATA` MENTAH dan menghitung
+ulang dari nol, lalu diadu ke `PERHITUNGAN FC` / `PERHITUNGAN U95%` **sel demi
+sel**: tiap kolom turunan, tiap `u`/`ci`/`vi`, `uc`, `veff`, `k`, `U`. **Semua
+cocok pada 5·10⁻⁶** di keempat blok titik kedua workbook, sebelum satu baris PHP
+ditulis. Dijaga `FlowmeterMasterTest` (9 test / 213 asersi).
+
+`k` cocok HANYA kalau `veff` dipotong ke bawah sebelum `TINV` — perilaku yang
+sudah dimiliki `GumCalculator::agregasiBudget()`.
+
+### Tiga kerusakan master yang dihitung benar
+
+Ketiganya membesarkan angkanya atau menolak menerbitkan — tidak pernah diam-diam
+mengecilkan:
+
+1. **Lantai CMC hilang, dan sudah menerbitkan angka di bawah akreditasi.** Sel
+   U95 sertifikat berbunyi `=MAX(J60:K61)` dengan `K61` **kosong**. Sertifikat
+   Flowrate titik 2 terbit **1,0466 %OR** pada pita terakreditasi **1,2 %** —
+   0,153 poin persen di bawah yang diakui KAN, tanpa satu pun sel yang
+   memprotes. Lantainya dipasang: **3,2512388 → 3,7277107 Lpm**. Arahnya
+   ditegakkan `FlowmeterLantaiCmcTest` (kita wajib lebih BESAR, bukan sekadar
+   beda).
+2. **Rentang densitas Totalizer melenceng satu kolom.** `PERHITUNGAN FC!H64`
+   (titik 2) membaca `H44:K46`, dan kolom `K` itu titik 3. Deviasi titik 2
+   bergeser **−18,907204 → −18,890667 L**. Workbook Flowrate tidak punya cacat
+   ini.
+3. **`Ut-water` menunjuk sel KOSONG** — `I24 = Q52−Q54` (Totalizer) dan
+   `P53−P55` (Flowrate), keduanya satu kolom di luar blok suhu. Suku itu selalu
+   nol padahal labelnya `(Tmax−Tmin)Water`. `U_temperature` **0,2780288 →
+   0,2795234 °C**.
+
+### Dua cacat SUNYI yang ketemu waktu test ditulis
+
+- **Tanda kolom `Correction` terbalik** — profil menyimpan `koreksi = −deviasi`,
+  padahal sertifikat master menamainya `Correction` dan mengisinya `=H26-E26`
+  (Standard − UUT). Besarnya tetap benar, jadi tidak ada satu pun angka yang
+  terlihat ganjil; yang terbit menyuruh pelanggan menggeser alatnya ke arah yang
+  salah.
+- **Resolusi satuan massa dikonversi tanpa densitas** — dikonversi di tingkat
+  sesi dengan densitas `null`, resolusinya selalu pulang `null` dan SELURUH sesi
+  ber-`kg/min` ditolak dengan alasan "resolusi belum diisi", padahal resolusinya
+  ada dan densitasnya juga.
+
+### Yang ditiru walau janggal
+
+π = 3,14; pembagi `1,73` alih-alih `√3`; `vi` suhu 2 (Totalizer) vs 50
+(Flowrate); pembagi cross-sectional 2 vs 1,73; pencocokan tabel standar
+TERDEKAT bukan interpolasi (ditambah **peringatan sesi** waktu jaraknya > 10 % —
+di sesi contoh Flowrate 23,8 %). Semuanya diangkat bernomor.
+
+### Sertifikat
+
+Blok **PIPE SPECIFICATION & SENSOR MOUNTING** baru: material pipa, jenis fluida,
+path configuration (Z/V/W), diameter luar/dalam, ketebalan, liner. Sertifikat
+Flowrate master punya **labelnya** (`B19`..`B22`, hasil revisi 20 Mei) tapi sel
+isinya **kosong tanpa rumus**; sertifikat Totalizer tidak punya labelnya sama
+sekali. `k` dicetak per titik (master mencetak `k` Titik 1 untuk semua titik —
+di sesi contoh 2,1009 vs 1,9908, beda 5,5 %).
+
+### Nol kolom baru
+
+Alat kelima berturut-turut yang mendarat tanpa satu pun kolom baru di
+`raw_measurements` — sumbu `peran_sensor`/`pembacaan_ke`/`sensor_ke` cukup, dan
+blok tingkat-sesi masuk `spesifikasi_alat.flowmeter`.
+
+### Pertanyaan lab
+
+Tujuh belas butir di `docs/pertanyaan-lab-flowmeter.md`. Yang paling mendesak
+**§1** (kedua master kolom VALIDATION-nya KOSONG — belum ditandatangani
+Technical Manager), **§2** (sertifikat yang sudah terbit di bawah pita CMC:
+ditarik atau direvisi?), dan **§16** (lampiran akreditasi menyebut *static
+weighing method* `Rev.4`, master memakai `Rev.6`, kertasnya *"Perbandingan
+Langsung dengan UFM"* — apakah metode yang dikerjakan tercakup akreditasi yang
+sekarang?).
+
+### Sisi mobile
+
+Kontraknya di `docs/perintah-frontend-flowmeter.md`.
+
+---
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
@@ -2673,6 +2784,7 @@ berkas profil.
 | G10 | Data pelanggan — nama PT & alamat (perm. 16) | **A BERES di server** (2 Sep 2026) — `customers:impor` mendarat dengan **43 test** (17 perintah + 15 pembaca CSV + 11 pemilah kembar), nol kolom baru dan nol dependensi baru. Rangka direktorinya ternyata **sudah lengkap server→HP** sejak sebelumnya; yang kurang isinya. Enam jebakan sunyi dikunci test — pemisah `;` Excel lokal ID, `levenshtein()` yang balik −1 di atas 255 byte, `PT`/`CV` yang jaraknya cuma 2, soft delete yang tetap memegang unique index, telepon yang jadi `8.12E+11`, dan riwayat audit tanpa penanggung jawab. **B menunggu keputusan biaya** (membatalkan K16, nol kode). **C & D belum** — nunggu A dipakai dengan data sungguhan. Daftar PT nasional **tidak bisa disediakan**: AHU punya datanya tanpa API, Places/OSM punya API tapi alamat peta bukan alamat akta — rinciannya §16 B  **Ditambah 2 Sep 2026: direktori lokal** — 10.320 PT (Jababeka 450 + Indonetwork 9.870) bisa dicari ±10 ms tanpa keluar server, lewat tabel rujukan terpisah `direktori_lokal` dan driver baru yang memenuhi kontrak `DirektoriPerusahaan` yang sudah ada. **Nol berkas berubah di sisi HP, nol tambahan ukuran APK.** Menyeed ke `customers` sengaja DITOLAK: `SimpananPelanggan` menyalin seluruh daftar pelanggan ke SharedPreferences yang dibaca utuh ke memori tiap aplikasi nyala — diukur **1,36 MB JSON** per buka aplikasi. Satu bug ketemu & dikunci test: `tersedia()` di service provider bikin **`/api/health` 500** waktu tabelnya belum ada. 22 test baru. Rinciannya §16 F |
 | G11 | Alat baru **Micrometer** (Panjang, lampiran no. 34) — §17 | **BERES di server** (4 Sep 2026) — empat workbook master jadi SATU profil empat pita CMC; 53 nilai diadu ke keempat master pada 5·10⁻⁶, nol beda. Nol kolom baru di `raw_measurements`. Dua temuan yang mengubah angka tercetak (U95 terbit di bawah lantai CMC, umur drift dari `NOW()`) ditambal + diangkat jadi pertanyaan lab bernomor. Lembar lalu **disetel ulang ke kertas resmi** `SIDIK-FM-CAL-0522.{A,B,C,D}_Rev.1` yang turun belakangan: nomor formulir per rentang, 6 bagian, 11 nominal pra-cetak, suhu balok/UUT diturunkan dari suhu ruangan. **Sisi HP BERES** juga (§19) — dan justru dari situ tiga cacat server ketahuan, ketiganya lolos 3.128 test backend karena test backend memakai payload yang ditulis backend sendiri. **Sapuan lanjutan (§21):** seeder ternyata cuma menanam SATU dari empat rentang; varian C & D sekarang ikut, varian A tetap tidak (pra-evaluasinya 635,0 sepuluh kali → simpangan baku nol). **§22:** stdev nol itu ternyata juga lolos gerbang penerbitan untuk sesi BARU — sekarang ditahan, plus `micrometer:audit-cmc` buat melingkupi arsip dan formulir keputusan siap teken |
 | G13 | Alat baru **Height Gauge 600 mm** (Panjang, DI LUAR lampiran akreditasi) — §23 | **BERES di server** (7 Sep 2026) — alat ke-26, satu workbook master, **nol kolom baru** di `raw_measurements`. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: kesepuluh koreksi, kesembilan `ui`/`ci`/`vi`, dan kelima agregat cocok pada 5·10⁻⁶ — nol beda. Dijaga `HeightGaugeMasterTest` (17 test / 87 asersi). Bentuknya paling tidak biasa dari 26: **tiga blok yang tidak sebangun**, dan cuma satu yang berbentuk titik ukur. Yang membalik taruhannya — alat ini **tidak punya lantai CMC** (di luar LK-285-IDN, dan sel lantai masternya memang kosong), jadi komponen budget yang hilang tidak tertampung apa pun; gerbang penerbitannya dipatok tiga syarat dan yang menahan ketiadaan baris hitungan, bukan peringatan sesi. Tiga kejanggalan metode ditiru + diangkat (`/12` untuk selisih HARI, `√6` pada komponen `rect.`, paralelisme `STDEV(Max;Min)`), tiga kerusakan dihitung benar (suku termal yang di master cuma hidup di titik pertama, umur drift dari `NOW()`, rujukan sel `L27` yang meleset). Satu bug SUNYI ketemu waktu test ditulis: gerbang "sepuluh nilai identik" yang ditulis `stdev > 0` **tidak pernah menyala** untuk nilai yang tidak bisa direpresentasikan persis dalam biner (599,95 → stdev 1,2e-13) — diganti `max !== min`. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-height-gauge.md`; §6 **prioritas satu** (sertifikat masih membawa klaim akreditasi untuk lingkup yang tidak diakreditasi — Gas Detector pun sudah begitu sejak alat ke-10). **Sisi mobile BELUM** — kontraknya di `docs/perintah-frontend-height-gauge.md` |
+| G14 | Alat baru **Flowmeter Ultrasonic** (Aliran, lampiran no. 30 & 31) — §25 | **BERES di server** (8 Sep 2026) — alat ke-27 & ke-28, dua workbook master jadi DUA profil + satu mesin hitung, **nol kolom baru** di `raw_measurements`. Kelompok Aliran sekarang LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: tiap kolom turunan, tiap `u`/`ci`/`vi`, `uc`, `veff`, `k`, `U` keempat blok titik kedua workbook cocok pada 5·10⁻⁶ — nol beda. Dijaga `FlowmeterMasterTest` (9 test / 213 asersi). Bentuknya paling berbahaya dari 28: **satu titik punya DUA deret berdampingan** (UUT + totalizer standar), dan pada Flowrate deret UUT-nya **bersarang** tiga durasi per ulangan — tertukar atau tertimpa, yang terbit bukan error melainkan **deviasi nol di setiap titik**. Tiga kerusakan master dihitung benar dan arahnya ditegakkan test: lantai CMC yang hilang (**sertifikat lab sudah terbit 1,0466 % pada pita terakreditasi 1,2 %** → 3,2512 naik ke **3,7277 Lpm**), rentang densitas Totalizer yang melenceng satu kolom ke titik 3 (deviasi −18,9072 → **−18,8907 L**), dan `Ut-water` yang menunjuk sel kosong (`U_temperature` 0,27803 → **0,27952 °C**). Dua workbook ternyata **dua generasi budget** (8 vs 9 komponen) — ditiru masing-masing, bukan diseragamkan. Dua cacat SUNYI ketemu waktu test ditulis: tanda kolom `Correction` terbalik, dan resolusi satuan massa yang dikonversi tanpa densitas sehingga seluruh sesi `kg/min` ditolak. Sertifikatnya dapat blok **PIPE SPECIFICATION & SENSOR MOUNTING** yang di master ada labelnya tapi sel isinya kosong, plus `k` per titik. Tujuh belas pertanyaan lab di `docs/pertanyaan-lab-flowmeter.md`; **§1 prioritas satu** (kedua master kolom VALIDATION-nya KOSONG) dan **§16** (lampiran menyebut *static weighing method*, yang dikerjakan perbandingan langsung dengan UFM). **Sisi mobile BELUM** — kontraknya di `docs/perintah-frontend-flowmeter.md` |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai

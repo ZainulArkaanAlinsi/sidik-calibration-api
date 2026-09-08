@@ -1091,6 +1091,35 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah satu titik sesi ini berisi DUA deret berdampingan — pembacaan UUT
+     * dan pembacaan standar — plus deret suhu air dan densitas fluida.
+     *
+     * Default `false`. `true` cuma untuk kedua profil Flowmeter. Waktu `true`,
+     * `CalibrationController` menyimpan tiap deret sebagai baris
+     * `raw_measurements` ber-`peran_sensor` `flow_uut_pembacaan`,
+     * `flow_std_pembacaan`, `flow_suhu_awal`, `flow_suhu_akhir`, dan
+     * `flow_densitas_uut`; jalur hitung ulang menyusunnya balik lewat
+     * `FlowmeterMentah::dari()`.
+     *
+     * Dua hal yang membedakannya dari [butuhBlokHeightGauge] dan
+     * [butuhPasanganStandarUut], dan keduanya alasan kenapa dia hook sendiri:
+     *
+     *  1. Deret UUT-nya **bersarang** pada mode `flowrate` — `pembacaan_ke` itu
+     *     ulangan, `sensor_ke` itu durasi, dan simpangan bakunya dihitung atas
+     *     ketiga durasi ulangan ITU. Disusun ulang dengan kosakata alat lain,
+     *     yang balik bukan error melainkan sebaran antar-ulangan yang jauh
+     *     lebih besar.
+     *  2. Blok tingkat-sesinya (`spesifikasi_alat.flowmeter`) memuat `mode` yang
+     *     menentukan budgetnya 8 komponen atau 9. Tanpa itu sesinya tidak bisa
+     *     dihitung sama sekali, dan menebaknya berarti menerbitkan budget
+     *     generasi yang salah tanpa satu pun penanda.
+     */
+    public function butuhBlokFlowmeter(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
      *
      * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
+use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
@@ -330,7 +331,20 @@ class UjiProfilKalibrasi extends Command
         // Evaluation, kapasitas, resolusi). Yang berbeda cuma kosakata
         // `peran_sensor`-nya, dan pemeriksaan di bawah tidak menyentuh itu — dia
         // menghitung titik ber-`peran_sensor` apa pun.
-        if ($profil instanceof MicrometerProfile || $profil instanceof HeightGaugeProfile) {
+        //
+        // Kedua profil Flowmeter ikut cabang yang SAMA, dengan alasan yang sama
+        // dan satu tambahan: payload-nya `measurements[i].flow_uut_pembacaan`
+        // (BERSARANG ulangan × durasi pada varian Flowrate) plus empat deret
+        // lain, dan budget-nya butuh blok tingkat-sesi
+        // `spesifikasi_alat.flowmeter` — `mode` di situ yang menentukan
+        // budgetnya 8 komponen atau 9.
+        //
+        // Diadu ke payload datar `preview`, keduanya memulangkan NOL titik, dan
+        // nol titik di sini terbaca seperti mesin hitungnya rusak padahal yang
+        // salah bentuk payload yang disusun perintah ini.
+        if ($profil instanceof MicrometerProfile
+            || $profil instanceof HeightGaugeProfile
+            || $profil instanceof FlowmeterProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];
             }

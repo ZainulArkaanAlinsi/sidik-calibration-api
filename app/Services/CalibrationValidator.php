@@ -11,6 +11,7 @@ use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\Angka;
+use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\KodeSelRevisi;
@@ -1003,6 +1004,20 @@ class CalibrationValidator
                     // kejadian KESEPULUH dengan pola yang sama. Kosong buat dua
                     // puluh lima alat lain.
                     ...HeightGaugeMentah::dari($pembacaan),
+                    // Deret UUT + deret standar + suhu air + densitas satu
+                    // titik Flowmeter, disusun ulang dari
+                    // `peran_sensor`/`pembacaan_ke`/`sensor_ke`. Alasannya sama
+                    // seperti enam baris di atas — dan ini kejadian KESEBELAS
+                    // dengan pola yang sama. Kosong buat dua puluh enam alat
+                    // lain.
+                    //
+                    // Satu hal yang BEDA dari sepuluh sebelumnya: deret UUT-nya
+                    // bersarang pada mode `flowrate` (`pembacaan_ke` = ulangan,
+                    // `sensor_ke` = durasi). Diratakan, simpangan bakunya
+                    // berubah dari sebaran antar-DURASI jadi sebaran
+                    // antar-ULANGAN, dan komponen ke-9 keluar jauh lebih besar
+                    // tanpa satu pun error.
+                    ...FlowmeterMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
