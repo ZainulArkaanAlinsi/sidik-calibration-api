@@ -240,6 +240,26 @@ fi
 # di lokasi — dan itu pertukaran yang salah arah. Gagalnya tetap kelihatan di
 # log, dan `GET /api/health` melaporkan `direktori_perusahaan.lokal.baris`
 # supaya keadaannya bisa diperiksa dari luar tanpa masuk ke mana pun.
+# Baris kemampuan tiap profil — ditanam CUMA kalau ada yang kurang.
+#
+# Menggantikan ritual "SEED_ON_BOOT=true -> redeploy -> matiin lagi" yang selama
+# ini jadi satu-satunya cara menaruh kemampuan alat baru ke produksi (paket
+# gratis Render nggak punya Shell). Ritual itu menjalankan `db:seed` PENUH —
+# 4,5 menit, plus DemoDataSeeder dan sesi contoh 26 alat — dan langkah
+# "matiin lagi" nggak nerbitin error kalau kelupaan.
+#
+# Perintah ini nyeed HANYA `calibration_capabilities`, dan cuma waktu ada nama
+# profil yang belum punya baris. Kalau lengkap, dia satu query lalu keluar —
+# penting, karena `CalibrationCapabilitySeeder` sendiri makan 24,5 detik dan
+# cold start di Render sering.
+#
+# `|| true` dengan alasan yang sama persis kayak direktori di bawah: baris
+# kemampuan yang gagal ditanam bikin alat baru nggak muncul di HP, dan itu jauh
+# lebih murah daripada SELURUH server nggak nyala. Gagalnya tetap kelihatan di
+# log deploy.
+tahap "pastikan baris kemampuan tiap profil (dilewati kalau sudah lengkap)"
+php artisan kemampuan:pastikan || true
+
 tahap "muat direktori perusahaan (dilewati kalau sudah terisi)"
 php artisan direktori:impor-lokal database/direktori/jababeka.csv \
     --sumber=jababeka --lewati-kalau-terisi || true

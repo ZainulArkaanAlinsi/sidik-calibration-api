@@ -25,22 +25,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OrganizationSeeder::class,
             MetodeKalibrasiSeeder::class,
-            CalibrationCapabilitySeeder::class,
-            PhMeterCapabilitySeeder::class,
-            // Turbidimeter (alat ke-2) — WAJIB abis CalibrationCapabilitySeeder
-            // dengan alasan sama kayak PhMeterCapabilitySeeder.
-            TurbidimeterCapabilitySeeder::class,
-            ConductivityCapabilitySeeder::class,
-            ChlorineCapabilitySeeder::class,
-            RefractometerCapabilitySeeder::class,
-            SpectrophotometerCapabilitySeeder::class,
-            ViscometerCapabilitySeeder::class,
-            DoMeterCapabilitySeeder::class,
-            GasDetectorCapabilitySeeder::class,
-            // CMC nol — Height Gauge di luar lampiran LK-285-IDN, dan
-            // barisnya tetap perlu ada supaya jalur budget penuh jalan.
-            // Pola & alasannya sama persis dengan Gas Detector di atas.
-            HeightGaugeCapabilitySeeder::class,
+            // Kesebelas seeder kemampuan, daftarnya diangkat ke SATU tempat.
+            //
+            // Bukan kerapian: perintah boot `kemampuan:pastikan` butuh daftar
+            // yang sama persis, dan dua salinan tulis tangan selalu berakhir
+            // menyimpang — yang satu diperbarui waktu alat baru lahir, yang
+            // satu ketinggalan. Bedanya tidak menerbitkan error; alatnya cuma
+            // tidak pernah muncul di HP.
+            KemampuanKalibrasiSeeder::class,
             // Master data standar yang berdiri sendiri — nggak butuh kategori
             // atau alat, tapi harus ada sebelum sesi kalibrasi mana pun bisa
             // ngitung koreksi kondisi lingkungan.
