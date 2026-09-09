@@ -64,5 +64,52 @@
     // Gejalanya nyesatin — file-nya ada, isinya bener, tapi nggak kebaca. Yang
     // ngasih tau cuma log Intelephense ("is over the maximum file size"), dan
     // nggak ada yang buka log itu.
-    "intelephense.files.maxSize": 5000000
+    "intelephense.files.maxSize": 5000000,
+
+    // ---------------------------------------------------------------------
+    // Beban indexing. Ditulis sesudah VS Code kedapatan berat di repo ini.
+    // ---------------------------------------------------------------------
+    //
+    // Yang bikin berat BUKAN berkas sampah yang bisa dihapus — tiga penyumbang
+    // terbesarnya justru wajib ada: `vendor/` (194 MB) dipakai buat jalan DAN
+    // dibaca Intelephense buat autocomplete Laravel, `node_modules/` (43 MB)
+    // dipakai `npm run build`, dan `storage/app/private/certificates/` (54 MB,
+    // 41 PDF) itu sertifikat terbit — dokumen resmi, bukan cache.
+    //
+    // Jadi yang dikurangi beban BACA-nya, bukan berkasnya. Dua setelan di
+    // bawah sengaja dipisah karena efeknya beda:
+    //
+    //  - `files.watcherExclude` — berhenti masang file watcher OS. Ini yang
+    //    paling kerasa: tiap berkas di bawah direktori ini butuh satu handle,
+    //    dan `vendor/` sendirian isinya puluhan ribu berkas. Nol kerugian —
+    //    watcher cuma buat mendeteksi perubahan dari luar editor, dan nggak
+    //    ada yang menyunting vendor dengan tangan.
+    //
+    //  - `search.exclude` — buang dari Ctrl+Shift+F. Ini ADA kerugiannya:
+    //    sesekali kita emang perlu ngintip sumber Laravel. Makanya vendor
+    //    TIDAK dibuang dari sini; yang dibuang cuma keluaran yang digenerate
+    //    (build Vite, storage, helper IDE) yang hasil carinya selalu palsu —
+    //    `_ide_helper_models.php` bikin tiap nama kolom kena dua kali.
+    //
+    // Yang TIDAK boleh ditambahin ke sini: `vendor/` di `files.exclude` atau
+    // di setelan Intelephense. Itu bikin autocomplete & "go to definition"
+    // seluruh Laravel mati — hemat memori, tapi editornya jadi buta.
+    "files.watcherExclude": {
+        "**/vendor/**": true,
+        "**/node_modules/**": true,
+        "**/storage/app/**": true,
+        "**/storage/framework/**": true,
+        "**/storage/logs/**": true,
+        "**/public/build/**": true,
+        "**/.git/objects/**": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/public/build": true,
+        "**/storage/app": true,
+        "**/storage/framework": true,
+        "**/storage/logs": true,
+        "_ide_helper.php": true,
+        "_ide_helper_models.php": true
+    }
 }
