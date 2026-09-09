@@ -416,7 +416,7 @@ class SpectrophotometerApiTest extends TestCase
      * Lokasi insitu ditulis lengkap sama nama tempatnya, dan Technician ID
      * ngikut akun yang login.
      *
-     * Sertifikat master nulis `Insitu (PT. LDC)` — tanpa nama tempat, dokumen
+     * Sertifikat master nulis `Insitu (PT. Niaga Contoh)` — tanpa nama tempat, dokumen
      * nggak bisa ditelusuri balik ke kunjungan mana. Nama itu DIKETIK teknisi,
      * bukan disalin dari pelanggan pemilik alat: satu kunjungan bisa dikerjakan
      * di pabrik lain milik grup yang sama.
@@ -437,9 +437,9 @@ class SpectrophotometerApiTest extends TestCase
         $this->assertSame('otomatis', $id['sumber']);
         $this->assertSame('Technician ID', $id['label']);
 
-        $sesi = $this->simpanSesi(['lokasi' => 'onsite', 'lokasi_nama' => 'PT. LDC']);
+        $sesi = $this->simpanSesi(['lokasi' => 'onsite', 'lokasi_nama' => 'PT. Niaga Contoh']);
 
-        $this->assertSame('PT. LDC', $sesi->lokasi_nama);
+        $this->assertSame('PT. Niaga Contoh', $sesi->lokasi_nama);
 
         $this->actingAs($this->admin)
             ->postJson('/api/calibrations/'.$sesi->id.'/approve', ['abaikan_peringatan' => true])
@@ -449,7 +449,7 @@ class SpectrophotometerApiTest extends TestCase
             ->firstOrFail()
             ->snapshot;
 
-        $this->assertSame('Insitu (PT. LDC)', $snapshot['header']['calibration_location']);
+        $this->assertSame('Insitu (PT. Niaga Contoh)', $snapshot['header']['calibration_location']);
         $this->assertSame(
             $this->teknisi->kodeTeknisi(),
             $snapshot['header']['technician_id'],

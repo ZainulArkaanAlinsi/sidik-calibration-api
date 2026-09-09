@@ -78,8 +78,11 @@ Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/
 # `git add`, ke repo yang PUBLIK.
 #
 # Yang disapu ke sini bukan dugaan. Dua belas direktori alat di pohon baru,
-# dua belas nama + alamat pelanggan asli — Unilever, LDC, Magnum Ice Cream,
-# Gunung Madu, PDAM Tirtawening, IPB, sampai Lembaga Biologi Vaksin Puskesad.
+# dua belas nama + alamat pelanggan asli — pabrik consumer goods, perusahaan
+# niaga komoditas, pabrik es krim, perkebunan tebu, PDAM kota, satu kampus,
+# sampai lembaga biologi militer. Namanya sengaja TIDAK ditulis di sini: berkas
+# ini terlacak, jadi mendaftar nama pelanggan di komentar aturan yang tugasnya
+# menyembunyikan nama pelanggan itu membatalkan aturannya sendiri.
 # Alasannya sama persis kayak sepuluh aturan di atas: angkanya udah masuk
 # `*CapabilitySeeder`/`*Seeder` dan profil masing-masing alat, jadi CSV
 # mentahnya nggak nambah apa-apa selain data pelanggan.

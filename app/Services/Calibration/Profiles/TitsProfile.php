@@ -19,7 +19,7 @@ use Carbon\Carbon;
  * Master: `Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm` (sesi
  * **01-CAL-625**, order 22506.01.A, PT Sistem Dirgantara Inovasi Teknologi,
  * Graphtech GL840, 8 Mei 2025) dan `… fungsi Source utk UUT.xlsm` (sesi
- * **0159-CAL-626**, order 2606.08.C, PT GE Nusantara Turbine Services, Siemens
+ * **0159-CAL-626**, order 2606.08.C, PT Turbin Contoh Nusantara, Siemens
  * Simatic IPC477FE, 10 Juni 2026).
  *
  * ## "Tanpa sensor" itu bagian dari nama alat, bukan keterangan

@@ -11,7 +11,7 @@ use App\Models\Standard;
  * Profil DO Meter (alat ke-9). Metode `SIDIK-IK-CAL-0530_Rev.2`, form
  * `SIDIK-FM-CAL-0532_Rev.2` — satu halaman (`Page 1 of 1`). Master
  * `Master Olah Data_DO Meter.xlsm` (LK-285-IDN), sesi asli **0566-CAL-624**
- * (LPKL PDAM Tirtawening, Mettler Toledo Five Go, Juni 2024).
+ * (LPKL PDAM Kota Contoh, Mettler Toledo Five Go, Juni 2024).
  *
  * ## TITIK = 8,77 mg/L — BUKAN 0,00 yang tercetak di form
  *

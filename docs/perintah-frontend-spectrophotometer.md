@@ -240,7 +240,7 @@ mengurangi dasar hitung kelompoknya — itu sebabnya alasannya dikirim per titik
 
 ## DATA UJI YANG SUDAH TER-SEED
 
-Sesi `DEMO-SPECTRO-LDC`, data asli: PT LDC Indonesia, Perkin Elmer Lambda 25 s/n
+Sesi `DEMO-SPECTRO-NIAGA`, data asli: PT Niaga Contoh Indonesia, Perkin Elmer Lambda 25 s/n
 `501S13102801`, 21 Juli 2023, 24 titik. Statusnya `menunggu_approval`, jadi
 alur approve → sertifikat bisa diuji sampai habis.
 
@@ -265,7 +265,7 @@ rata-rata 9,665, koreksi 0,235.
    Satu komponen tabel yang menerima `tabel[]`, bukan tiga layar hardcode.
 2. Kerjakan layar teknisi dulu (isi + preview), baru layar approval admin, baru
    tampilan sertifikat.
-3. Uji dengan sesi `DEMO-SPECTRO-LDC` dan adu ke tabel acuan di atas.
+3. Uji dengan sesi `DEMO-SPECTRO-NIAGA` dan adu ke tabel acuan di atas.
 4. Kalau ada angka yang berbeda dari tabel acuan itu, **jangan perbaiki
    tampilannya** — laporkan selisihnya.
 

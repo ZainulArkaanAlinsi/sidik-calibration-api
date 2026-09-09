@@ -70,7 +70,7 @@ class TurbidimeterSeeder extends Seeder
     {
         $customer = Customer::updateOrCreate(
             ['organization_id' => 1, 'nama' => 'PUSAT AIR TANAH DAN GEOLOGI TATA LINGKUNGAN'],
-            ['organization_id' => 1, 'alamat' => 'Jl. Diponegoro No.57 Bandung'],
+            ['organization_id' => 1, 'alamat' => 'Jl. Contoh No.57 Bandung'],
         );
 
         $standar = [];

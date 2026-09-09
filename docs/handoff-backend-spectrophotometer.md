@@ -76,7 +76,7 @@ ada satu implementasi aturan GUM. Yang dipisah cuma daftar & sumber komponennya.
 | `app/Services/Calibration/CalibrationProfileRegistry.php`     | Pendaftaran profil.                                                |
 | `app/Models/Formula.php`                                      | Konstanta `KODE_GUM_SPECTRO = 'gum-spectro'`.                      |
 | `database/seeders/SpectrophotometerCapabilitySeeder.php`      | Tiga baris CMC.                                                    |
-| `database/seeders/SpectrophotometerSeeder.php`                | Sesi demo 24 titik, data asli PT LDC Indonesia.                    |
+| `database/seeders/SpectrophotometerSeeder.php`                | Sesi demo 24 titik, data asli PT Niaga Contoh Indonesia.                    |
 | `tests/Feature/SpectrophotometerBudgetTest.php`               | Golden test hitungan murni (toleransi `1e-12`).                    |
 | `tests/Feature/SpectrophotometerApiTest.php`                  | Test jalur API end-to-end (toleransi `1e-8`).                      |
 
@@ -399,7 +399,7 @@ ditolak backend saat approve, dan teknisi baru tahu setelah pekerjaannya selesai
 
 ## 8. Golden values
 
-Dari sesi master (PT LDC Indonesia, alat Perkin Elmer Lambda 25 s/n
+Dari sesi master (PT Niaga Contoh Indonesia, alat Perkin Elmer Lambda 25 s/n
 `501S13102801`, 21 Juli 2023). Dikunci di
 `tests/Feature/SpectrophotometerBudgetTest.php`.
 
@@ -563,8 +563,8 @@ yang diganti hanya isi `SpectrophotometerProfile::TITIK`.
 
 ## 11. Seeder demo
 
-`database/seeders/SpectrophotometerSeeder.php` — sesi `DEMO-SPECTRO-LDC`, data
-asli: PT LDC Indonesia, Perkin Elmer Lambda 25 s/n `501S13102801`, 21 Juli 2023,
+`database/seeders/SpectrophotometerSeeder.php` — sesi `DEMO-SPECTRO-NIAGA`, data
+asli: PT Niaga Contoh Indonesia, Perkin Elmer Lambda 25 s/n `501S13102801`, 21 Juli 2023,
 onsite, 24 titik.
 
 Kondisi lingkungan hasil koreksi thermohygro: suhu ruang **21,61 °C**

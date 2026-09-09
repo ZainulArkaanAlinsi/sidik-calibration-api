@@ -264,7 +264,7 @@ class LembarKerjaTemplate
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
-                        // Kalibrasi di tempat pelanggan kecetak `Insitu (PT. LDC)`
+                        // Kalibrasi di tempat pelanggan kecetak `Insitu (PT. Niaga Contoh)`
                         // di sertifikat, dan nama tempatnya DIKETIK teknisi, bukan
                         // disalin dari pelanggan pemilik alat: satu kunjungan bisa
                         // dikerjain di pabrik lain milik grup yang sama, dan yang

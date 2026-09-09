@@ -53,7 +53,7 @@ class FolderPelangganTest extends TestCase
         $this->teknisi = User::factory()->create();
         $this->viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
 
-        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
     }
 
     private function url(?int $customerId = null): string
@@ -64,7 +64,7 @@ class FolderPelangganTest extends TestCase
     private function folderAkar(): Folder
     {
         return Folder::factory()->create([
-            'nama' => 'PT Tirta Gracia',
+            'nama' => 'PT Tirta Contoh Mandiri',
             'parent_id' => null,
             'customer_id' => $this->pelanggan->id,
             'tipe' => Folder::TIPE_SISTEM,
@@ -92,7 +92,7 @@ class FolderPelangganTest extends TestCase
         $this->actingAs($this->admin)
             ->getJson($this->url())
             ->assertOk()
-            ->assertJsonPath('data.nama', 'PT Tirta Gracia')
+            ->assertJsonPath('data.nama', 'PT Tirta Contoh Mandiri')
             ->assertJsonPath('data.parent_id', null)
             // `sistem` = kebentuk otomatis; mobile pakai ini buat nyembunyiin
             // tombol rename/hapus.

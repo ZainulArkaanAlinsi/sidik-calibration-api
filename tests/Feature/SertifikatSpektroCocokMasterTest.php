@@ -325,7 +325,7 @@ class SertifikatSpektroCocokMasterTest extends TestCase
             $this->seed(DatabaseSeeder::class);
         }
 
-        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-SPECTRO-LDC')->firstOrFail();
+        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-SPECTRO-NIAGA')->firstOrFail();
 
         return $sesi->certificate()->first() ?? $this->terbitkanSesi($sesi);
     }

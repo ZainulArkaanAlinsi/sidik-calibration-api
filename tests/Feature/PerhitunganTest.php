@@ -48,8 +48,8 @@ class PerhitunganTest extends TestCase
 
         $this->alat = Equipment::factory()->create([
             'customer_id' => Customer::factory()->create([
-                'nama' => 'PT TIRTA GRACIA SEMESTA MANDIRI',
-                'alamat' => 'Jl. Arteri Primer A-10 RT. 01 RW.12 Nyalindung Kec. Cicalengka, Kab. Bandung, Jawa Barat',
+                'nama' => 'PT TIRTA CONTOH MANDIRI',
+                'alamat' => 'Jl. Contoh Primer A-10, Kec. Cicalengka, Kab. Bandung, Jawa Barat',
             ])->id,
             'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'ph'])->id,
             'nama_alat' => 'pH Meter',
@@ -271,7 +271,7 @@ class PerhitunganTest extends TestCase
             ->assertJsonPath('data.identitas_alat.type', 'Five Easy')
             ->assertJsonPath('data.identitas_alat.no_seri', 'B628755900')
             ->assertJsonPath('data.identitas_alat.rentang_ukur', '0-14')
-            ->assertJsonPath('data.identitas_customer.nama', 'PT TIRTA GRACIA SEMESTA MANDIRI')
+            ->assertJsonPath('data.identitas_customer.nama', 'PT TIRTA CONTOH MANDIRI')
             ->assertJsonPath('data.identitas_customer.tanggal_kalibrasi', '2024-05-26');
     }
 

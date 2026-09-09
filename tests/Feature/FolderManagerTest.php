@@ -40,7 +40,7 @@ class FolderManagerTest extends TestCase
         Organization::factory()->create();
         $this->admin = User::factory()->admin()->create();
         $this->teknisi = User::factory()->create();
-        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         $this->standar = Standard::factory()->create();
     }
 
@@ -74,7 +74,7 @@ class FolderManagerTest extends TestCase
         $this->terbitkanSertifikatUntuk($this->teknisi);
 
         $akar = Folder::whereNull('parent_id')->firstOrFail();
-        $this->assertSame('PT Tirta Gracia', $akar->nama);
+        $this->assertSame('PT Tirta Contoh Mandiri', $akar->nama);
         $this->assertSame(Folder::TIPE_SISTEM, $akar->tipe);
 
         $tahun = $akar->children()->firstOrFail();
@@ -118,7 +118,7 @@ class FolderManagerTest extends TestCase
             ->getJson('/api/folders')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia')
+            ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri')
             ->assertJsonPath('data.0.tipe', 'sistem')
             ->assertJsonPath('data.0.jumlah_folder', 1);
     }
@@ -137,7 +137,7 @@ class FolderManagerTest extends TestCase
         // yang dia punya — nggak perlu pindah ke layar Alat lalu nyaring PT-nya
         // lagi.
         $this->assertNotEmpty($data['alat'] ?? []);
-        $this->assertSame('PT Tirta Gracia', $data['pelanggan']['nama']);
+        $this->assertSame('PT Tirta Contoh Mandiri', $data['pelanggan']['nama']);
         $this->assertArrayHasKey('tanggal_jatuh_tempo', $data['alat'][0]);
         $this->assertSame(1, $data['alat'][0]['jumlah_kalibrasi']);
     }
@@ -263,7 +263,7 @@ class FolderManagerTest extends TestCase
             ->getJson('/api/folders')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia');
+            ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri');
     }
 
     public function test_teknisi_nggak_bisa_unduh_file_punya_orang_lain(): void

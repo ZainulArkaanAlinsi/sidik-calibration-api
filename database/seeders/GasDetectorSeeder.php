@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
  * kalibrasi end-to-end yang ketidakpastiannya BENERAN dihitung `GumCalculator`
  * (bukan angka jadi ditempel), sama polanya kayak `DoMeterSeeder`.
  *
- * Sumbernya sesi asli **001-CAL-226** (order 2602.03.A.NK, PT Unilever
+ * Sumbernya sesi asli **001-CAL-226** (order 2602.03.A.NK, PT Nusantara Perawatan Kulit
  * Indonesia Skin Care Factory, 2 Februari 2026). Pembacaan dari blok "After
  * Adjustment Reading" (`INPUT DATA` G45:M47) — yang sama persis dengan blok
  * Before di sesi ini, karena alatnya nggak perlu di-adjust.
@@ -117,10 +117,10 @@ class GasDetectorSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'PT UNILEVER INDONESIA (SKIN CARE FACTORY)'],
+            ['organization_id' => 1, 'nama' => 'PT NUSANTARA PERAWATAN KULIT (SKIN CARE FACTORY)'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Jababeka V blok U no.14-16, Cikarang, Bekasi',
+                'alamat' => 'Jl. Contoh V blok U no.14-16, Cikarang, Bekasi',
             ],
         );
 

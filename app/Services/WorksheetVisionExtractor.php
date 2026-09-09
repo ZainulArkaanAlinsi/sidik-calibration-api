@@ -25,7 +25,7 @@ use RuntimeException;
  * - Structured Output (`output_config.format`) MENJAMIN bentuk JSON — ini
  *   pengganti `temperature: 0` yang udah dihapus di Opus 4.8. `temperature` &
  *   `budget_tokens` sengaja NGGAK dikirim (error 400 di 4.8).
- * - Few-shot dari worksheet Tirta Gracia asli (cert 012-CAL-524) + prompt
+ * - Few-shot dari worksheet Tirta Contoh asli (cert 012-CAL-524) + prompt
  *   caching biar system + contoh (foto besar) nggak diproses ulang tiap panggil.
  *
  * Model NGGAK menghitung apa pun — cuma nyalin angka apa adanya (termasuk
@@ -590,7 +590,7 @@ class WorksheetVisionExtractor
      * Contoh foto + JSON yang dilampirkan sebelum foto lapangan.
      *
      * Kosong buat lembar yang bentuknya bukan bentuk pH. Contoh yang ada cuma
-     * lembar pH asli (Tirta Gracia, cert 012-CAL-524), dan buat lembar
+     * lembar pH asli (Tirta Contoh, cert 012-CAL-524), dan buat lembar
      * Spectrophotometer contoh itu memperagakan tepat dua hal yang nggak ada di
      * kertasnya: kolom suhu di tiap sel, dan standar sebagai kolom. Model yang
      * dikasih dua contoh begitu lalu disuruh baca tabel yang bentuknya lain

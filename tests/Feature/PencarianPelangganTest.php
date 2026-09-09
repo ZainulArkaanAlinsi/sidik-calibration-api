@@ -65,7 +65,7 @@ class PencarianPelangganTest extends TestCase
         $this->gamma = Customer::factory()->create([
             'organization_id' => 1,
             'nama' => 'CV Gamma Kalibrasi',
-            'alamat' => 'Jl. Industri Cikarang Selatan No. 88, Bekasi',
+            'alamat' => 'Jl. Contoh Cikarang Selatan No. 88, Bekasi',
         ]);
     }
 

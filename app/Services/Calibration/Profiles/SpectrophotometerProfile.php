@@ -1008,7 +1008,7 @@ class SpectrophotometerProfile extends CalibrationProfile
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
                         // Kalibrasi di tempat pelanggan ditulis `Insitu
-                        // (PT. LDC)` di sertifikat. Nama tempatnya DIKETIK
+                        // (PT. Niaga Contoh)` di sertifikat. Nama tempatnya DIKETIK
                         // teknisi, bukan disalin dari pelanggan pemilik alat:
                         // satu kunjungan bisa dikerjakan di pabrik lain milik
                         // grup yang sama, dan yang sah di dokumen adalah tempat

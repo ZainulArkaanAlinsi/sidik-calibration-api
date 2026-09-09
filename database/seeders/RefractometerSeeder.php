@@ -132,7 +132,7 @@ class RefractometerSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'Pusat Kesehatan Angkatan Darat Lembaga Biologi Vaksin'],
+            ['organization_id' => 1, 'nama' => 'Lembaga Biologi Vaksin Contoh'],
             [
                 'organization_id' => 1,
                 'alamat' => 'Jl. Gudang Selatan No.26, Merdeka, Kec. Sumur Bandung, '

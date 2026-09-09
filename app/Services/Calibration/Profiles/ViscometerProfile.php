@@ -56,7 +56,7 @@ use App\Support\Angka;
  * ## LIMA titik, bukan tiga — master 20 Agustus 2026
  *
  * Berkas `5. Viscometer 86068360 terbaru .xlsm` (sesi **0817-CAL-726**, PT
- * Lamurindo Cikarang, Brookfield DV Plus) menjawab tiga hal yang selama ini
+ * Logam Contoh Cikarang, Brookfield DV Plus) menjawab tiga hal yang selama ini
  * menggantung di `docs/pertanyaan-lab-viscometer.md`:
  *
  *  1. **Larutan 30000 cP tidak pernah ada — yang benar 3000 cP.** Blok yang

@@ -130,7 +130,7 @@ dengan bawaan backend.
 Ada alat & pelanggan baru di data demo, diambil dari lembar olah data manual lab
 (sertifikat `0558-CAL-525`):
 
-- **PT THE MAGNUM ICE CREAM INDONESIA**
+- **PT ES KRIM CONTOH INDONESIA**
 - **pH Meter · SI Analytics · Lab. 855 · `IMTE-WQ-129`** — resolusi **0,001**,
   toleransi 0,2
 

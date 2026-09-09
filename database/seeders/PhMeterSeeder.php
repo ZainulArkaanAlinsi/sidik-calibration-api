@@ -29,7 +29,7 @@ use RuntimeException;
 
 /**
  * Satu record kalibrasi ASLI, lengkap, end-to-end — bukan angka contoh kayak
- * `DemoDataSeeder`. Sumbernya sertifikat 012-CAL-524 (PT Tirta Gracia Semesta
+ * `DemoDataSeeder`. Sumbernya sertifikat 012-CAL-524 (PT Tirta Contoh Mandiri
  * Mandiri, pH Meter Mettler Toledo Five Easy S/N B628755900), dari
  * `Master Olah Data_pH for trial_CSV/` — workbook `.xlsm` aslinya ter-password
  * protect, jadi nggak bisa dibaca langsung. Dirapikan dulu di

@@ -22,10 +22,10 @@ use Illuminate\Support\Str;
  * workbook master ber-password yang turun dari lab 31 Agt 2026:
  *
  *  - **011-CAL-525** — Timbangan Bestar 100 kg / 0,02 kg, pembebanan langsung
- *    (`New_Master_Olda_Timbangan_kg.xlsm`, PT Trimandiri Plasindo, 2 Mei 2025).
+ *    (`New_Master_Olda_Timbangan_kg.xlsm`, PT Plastik Contoh Mandiri, 2 Mei 2025).
  *  - **019-CAL-425** — Moisture Analyzer Mettler Toledo HB53 54 g / 0,0001 g,
  *    pembebanan langsung, timbangan ANALYTICAL
- *    (`New_Master_Olda_Timbangan_gram.xlsm`, PT Kaldu Sari Nabati, 4 Apr 2025).
+ *    (`New_Master_Olda_Timbangan_gram.xlsm`, PT Pangan Contoh, 4 Apr 2025).
  *  - **0136-CAL-123** — Timbangan Elektronik Dini Argeo 2000 kg / 0,1 kg,
  *    metode beban SUBSTITUSI
  *    (`TERBARU_Master_Olda_Timbangan_Subtitusi_291025.xlsm`, PT Sidik, 12 Jan 2023).

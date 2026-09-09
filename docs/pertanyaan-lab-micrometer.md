@@ -97,7 +97,7 @@ admin lewat `abaikan_peringatan`. Yang menahan harus ketiadaan barisnya.
 **Yang perlu diputuskan lab:**
 
 - (a) Apakah sertifikat yang sudah terbit dari workbook 0-25 mm perlu ditinjau?
-  Kalau sesi contoh `095-CAL-324` (PT Unilever, 14 Mar 2024) pernah dikirim ke
+  Kalau sesi contoh `095-CAL-324` (PT Nusantara Perawatan Kulit, 14 Mar 2024) pernah dikirim ke
   pelanggan, angka U95-nya lebih kecil daripada yang diakreditasi.
 - (b) Apakah ada mikrometer di lab yang kapasitasnya **memang** di atas 100 mm?
   Kalau ada, alat itu di luar akreditasi dan sesinya harus ditandai
@@ -185,7 +185,7 @@ ukur tidak pernah dikonversi, karena sertifikat balok ukur memang selalu mm apa
 pun skala mikrometernya.
 
 **Yang perlu diputuskan lab:** apakah mikrometer `IMTE-FQS-015` (Mitutoyo
-Analog, PT Unilever) benar berskala **inch** dengan resolusi 0,00001", atau
+Analog, PT Nusantara Perawatan Kulit) benar berskala **inch** dengan resolusi 0,00001", atau
 berskala **mm** 0,001 dan dropdown-nya salah pilih? Dua kemungkinan itu
 menghasilkan sertifikat yang berbeda, dan datanya sendiri tidak bisa
 membedakan.
@@ -230,7 +230,7 @@ Sampai dijawab, yang benar menahan, bukan mengarang.
 **Yang perlu diputuskan lab (tambahan):** apakah masih ada lembar kerja asli
 sesi ini, sehingga sepuluh pembacaan pra-evaluasinya bisa dimasukkan kembali —
 dan kalau tidak ada, apakah sertifikat `095-CAL-324` yang sudah terbit ke PT
-Unilever perlu ditinjau, mengingat komponen keterulangannya nol.
+Nusantara Perawatan Kulit perlu ditinjau, mengingat komponen keterulangannya nol.
 
 ---
 

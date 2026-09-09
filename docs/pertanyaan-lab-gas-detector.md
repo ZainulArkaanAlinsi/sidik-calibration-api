@@ -1,7 +1,7 @@
 # Pertanyaan ke Lab — Gas Detector
 
 Status: menunggu jawaban · Dibuat 20 Agustus 2026 · Sumber:
-`Gas Detector Uli Skin (std Rigaz).xlsm` (sesi 001-CAL-226, PT Unilever
+`Gas Detector Uli Skin (std Rigaz).xlsm` (sesi 001-CAL-226, PT Nusantara Perawatan Kulit
 Indonesia Skin Care Factory, Honeywell Microclip XL, 2 Februari 2026)
 
 Backend Gas Detector (alat ke-10) sudah jalan penuh dan keempat gasnya

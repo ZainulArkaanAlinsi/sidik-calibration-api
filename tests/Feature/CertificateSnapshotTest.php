@@ -54,8 +54,8 @@ class CertificateSnapshotTest extends TestCase
         $this->ruangan = Room::factory()->create(['nama' => 'Lab. Uji A']);
 
         $pelanggan = Customer::factory()->create([
-            'nama' => 'PT TIRTA GRACIA SEMESTA MANDIRI',
-            'alamat' => 'Jl. Arteri Primer A-10, Cicalengka, Kab. Bandung',
+            'nama' => 'PT TIRTA CONTOH MANDIRI',
+            'alamat' => 'Jl. Contoh Primer A-10, Cicalengka, Kab. Bandung',
         ]);
 
         $this->alat = Equipment::factory()->create([
@@ -137,7 +137,7 @@ class CertificateSnapshotTest extends TestCase
         sort($aktual);
         $this->assertSame($harapan, $aktual);
 
-        $this->assertSame('PT TIRTA GRACIA SEMESTA MANDIRI', $header['owner']);
+        $this->assertSame('PT TIRTA CONTOH MANDIRI', $header['owner']);
         $this->assertSame('2405.13.A', $header['order_number']);
         $this->assertSame('pH Meter', $header['equipment_name']);
         $this->assertSame('Mettler Toledo', $header['manufacturer']);
@@ -470,11 +470,11 @@ class CertificateSnapshotTest extends TestCase
     public function test_sesi_insitu_nggak_kecetak_nama_ruang_walau_room_id_keisi(): void
     {
         $this->assertSame(
-            'Insitu (PT. LDC)',
+            'Insitu (PT. Niaga Contoh)',
             $this->lokasiSertifikat([
                 'lokasi' => 'onsite',
                 'room_id' => $this->ruangan->id,
-                'lokasi_nama' => 'PT. LDC',
+                'lokasi_nama' => 'PT. Niaga Contoh',
             ]),
         );
     }
@@ -490,7 +490,7 @@ class CertificateSnapshotTest extends TestCase
     public function test_insitu_tanpa_nama_tempat_jatuh_ke_alamat_pelanggan(): void
     {
         $this->assertSame(
-            'Onsite — Jl. Arteri Primer A-10, Cicalengka, Kab. Bandung',
+            'Onsite — Jl. Contoh Primer A-10, Cicalengka, Kab. Bandung',
             $this->lokasiSertifikat([
                 'lokasi' => 'onsite',
                 'room_id' => $this->ruangan->id,
@@ -526,7 +526,7 @@ class CertificateSnapshotTest extends TestCase
             $this->lokasiSertifikat([
                 'lokasi' => 'lab',
                 'room_id' => $this->ruangan->id,
-                'lokasi_nama' => 'PT. LDC',
+                'lokasi_nama' => 'PT. Niaga Contoh',
             ]),
         );
     }

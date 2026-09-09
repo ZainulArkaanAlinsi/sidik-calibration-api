@@ -107,7 +107,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // jadi justru keduanya yang paling perlu diperiksa muat satu halaman.
         'DEMO-FM-FLW-001 (Flow Meter Cairan (Flowrate))',
         'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
-        'DEMO-SPECTRO-LDC (Visible Spectrofotometer)',
+        'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
     ];
 
     /**

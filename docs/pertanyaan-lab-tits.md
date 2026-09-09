@@ -4,7 +4,7 @@ Status: menunggu jawaban · Dibuat 21 Agustus 2026 · Sumber:
 `Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm` (sesi 01-CAL-625,
 PT Sistem Dirgantara Inovasi Teknologi, Graphtech GL840, 8 Mei 2025) dan
 `Master Olah Data_Suhu_TITS fungsi Source utk UUT.xlsm` (sesi 0159-CAL-626,
-PT GE Nusantara Turbine Services, Siemens Simatic IPC477FE, 10 Juni 2026)
+PT Turbin Contoh Nusantara, Siemens Simatic IPC477FE, 10 Juni 2026)
 
 Backend TITS (alat ke-11) sudah jalan penuh. Kedua mode diadu ke workbook
 sampai digit terakhir — `Tests\Unit\TitsBudgetTest` &

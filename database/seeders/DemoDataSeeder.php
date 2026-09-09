@@ -22,11 +22,11 @@ class DemoDataSeeder extends Seeder
     {
         $pelanggan = collect([
             ['nama' => 'PT Maju Jaya', 'alamat' => 'Jl. Soekarno Hatta No. 12, Bandung', 'contact_person' => 'Rina', 'telepon' => '0812-1111-2222'],
-            ['nama' => 'PT Karya Logam', 'alamat' => 'Kawasan Industri Cimahi Blok C5', 'contact_person' => 'Dedi', 'telepon' => '0813-3333-4444'],
+            ['nama' => 'PT Karya Logam', 'alamat' => 'Kawasan Industri Contoh Blok C5', 'contact_person' => 'Dedi', 'telepon' => '0813-3333-4444'],
             // Pelanggan & alat NYATA dari lembar olah data manual lab
             // (sertifikat 0558-CAL-525). Ditaruh di sini biar hasil sistem bisa
             // dicocokin ke lembar itu tanpa ngarang data.
-            ['nama' => 'PT THE MAGNUM ICE CREAM INDONESIA', 'alamat' => 'Jababeka Industrial Estate, Jl. Jababeka IX-B No.29 Blok D1, Wangunharja, Kec. Cikarang Utara, Kabupaten Bekasi, Jawa Barat 17531', 'contact_person' => null, 'telepon' => null],
+            ['nama' => 'PT ES KRIM CONTOH INDONESIA', 'alamat' => 'Kawasan Industri Contoh, Jl. Contoh IX-B No.29 Blok D1, Kec. Cikarang Utara, Kabupaten Bekasi, Jawa Barat 17531', 'contact_person' => null, 'telepon' => null],
         ])->map(fn (array $c) => Customer::updateOrCreate(
             ['organization_id' => 1, 'nama' => $c['nama']],
             [...$c, 'organization_id' => 1],
@@ -123,7 +123,7 @@ class DemoDataSeeder extends Seeder
             [
                 // Alat NYATA dari lembar olah data manual lab (sertifikat
                 // 0558-CAL-525). Ini alat yang beda dari pH Meter punya
-                // PT Tirta Gracia di `PhMeterSeeder` — beda pemilik,
+                // PT Tirta Contoh Mandiri di `PhMeterSeeder` — beda pemilik,
                 // beda merk, dan beda resolusi. Dua-duanya perlu ada supaya
                 // hasil sistem bisa dicocokin ke lembar manual masing-masing.
                 //

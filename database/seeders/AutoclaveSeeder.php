@@ -151,10 +151,10 @@ class AutoclaveSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'LPKL PDAM TIRTAWENING'],
+            ['organization_id' => 1, 'nama' => 'LPKL PDAM KOTA CONTOH'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Atlas No. 6 Antapani Kota Bandung',
+                'alamat' => 'Jl. Contoh No. 6 Antapani Kota Bandung',
             ],
         );
 
@@ -236,7 +236,7 @@ class AutoclaveSeeder extends Seeder
                 'tanggal_kalibrasi' => '2024-06-18',
                 'tanggal_terima' => '2024-06-18',
                 'lokasi' => 'onsite',
-                'lokasi_nama' => 'LPKL PDAM Tirtawening',
+                'lokasi_nama' => 'LPKL PDAM Kota Contoh',
                 'alat_merk' => 'Hirayama',
                 'alat_model' => 'HVE-50',
                 'alat_serial_number' => 'AC-2119-0847',

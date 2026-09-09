@@ -1,7 +1,7 @@
 # Pertanyaan lab — Height Gauge 600 mm
 
 **Sumber:** `Master_olda_Height_Gauge_600_mm_2026.xlsm` (sesi contoh `001-UBLK-05.26`,
-PT GE Nusantara Turbine Services, kalibrasi 5 Mei 2026).
+PT Turbin Contoh Nusantara, kalibrasi 5 Mei 2026).
 **Untuk:** Manajer Teknis Lab.
 **Dari:** tim backend SIDIK, 7 September 2026.
 

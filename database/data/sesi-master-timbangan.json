@@ -1216,14 +1216,14 @@
    "merk": "Bestar",
    "model": "-",
    "serial": "TB-100",
-   "pelanggan": "PT Trimandiri Plasindo",
-   "alamat": "Jl. Industri IV No. 1 Leuwi Gajah, Kota Cimahi",
+   "pelanggan": "PT Plastik Contoh Mandiri",
+   "alamat": "Jl. Contoh IV No. 1, Kota Cimahi",
    "suhu_awal": 26.1,
    "suhu_akhir": 26.0,
    "rh_awal": 53.0,
    "rh_akhir": 52.0,
    "lokasi": "onsite",
-   "lokasi_nama": "PT Trimandiri Plasindo"
+   "lokasi_nama": "PT Plastik Contoh Mandiri"
   }
  },
  "gram": {
@@ -2431,14 +2431,14 @@
    "merk": "Mettler Toledo",
    "model": "HB53",
    "serial": "101866053",
-   "pelanggan": "PT Kaldu Sari Nabati Indonesia",
-   "alamat": "Jl. Raya Cirebon-Bandung KM. 24, Majalengka",
+   "pelanggan": "PT Pangan Contoh Indonesia",
+   "alamat": "Jl. Raya Contoh KM. 24, Majalengka",
    "suhu_awal": 20.4,
    "suhu_akhir": 20.5,
    "rh_awal": 54.0,
    "rh_akhir": 54.0,
    "lokasi": "onsite",
-   "lokasi_nama": "PT Kaldu Sari Nabati Indonesia"
+   "lokasi_nama": "PT Pangan Contoh Indonesia"
   }
  },
  "sub": {

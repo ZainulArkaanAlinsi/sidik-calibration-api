@@ -42,7 +42,7 @@ class ExcelImportTest extends TestCase
 
     public function test_uji_coba_nggak_nulis_apa_apa_ke_database(): void
     {
-        $file = $this->csv("Nama PT,Alamat,Telepon\nPT Tirta Gracia,Jl. Arteri Primer A-10,022-1234\n");
+        $file = $this->csv("Nama PT,Alamat,Telepon\nPT Tirta Contoh Mandiri,Jl. Contoh Primer A-10,022-1234\n");
 
         $this->actingAs($this->admin)
             ->post('/api/imports/excel', ['file' => $file, 'tipe' => 'customers'])
@@ -55,7 +55,7 @@ class ExcelImportTest extends TestCase
 
     public function test_import_beneran_ngisi_database(): void
     {
-        $file = $this->csv("Nama PT,Alamat,Telepon\nPT Tirta Gracia,Jl. Arteri Primer A-10,022-1234\n");
+        $file = $this->csv("Nama PT,Alamat,Telepon\nPT Tirta Contoh Mandiri,Jl. Contoh Primer A-10,022-1234\n");
 
         $this->actingAs($this->admin)
             ->post('/api/imports/excel', ['file' => $file, 'tipe' => 'customers', 'uji_coba' => false])
@@ -63,16 +63,16 @@ class ExcelImportTest extends TestCase
             ->assertJsonPath('data.ringkasan.dibuat', 1);
 
         $this->assertDatabaseHas('customers', [
-            'nama' => 'PT Tirta Gracia',
-            'alamat' => 'Jl. Arteri Primer A-10',
+            'nama' => 'PT Tirta Contoh Mandiri',
+            'alamat' => 'Jl. Contoh Primer A-10',
         ]);
     }
 
     public function test_baris_yang_udah_ada_diperbarui_bukan_dikembarin(): void
     {
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia', 'alamat' => 'Alamat lama']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri', 'alamat' => 'Alamat lama']);
 
-        $file = $this->csv("Nama PT,Alamat\nPT Tirta Gracia,Alamat baru\n");
+        $file = $this->csv("Nama PT,Alamat\nPT Tirta Contoh Mandiri,Alamat baru\n");
 
         $this->actingAs($this->admin)
             ->post('/api/imports/excel', ['file' => $file, 'tipe' => 'customers', 'uji_coba' => false])
@@ -137,10 +137,10 @@ class ExcelImportTest extends TestCase
 
     public function test_alat_kepasang_ke_pt_dan_kategori_yang_bener(): void
     {
-        $pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         $kategori = EquipmentCategory::factory()->create(['kode' => 'ph', 'nama' => 'Derajat Keasaman']);
 
-        $file = $this->csv("Nama Alat,Pemilik,Kategori,Serial Number,Merk,Resolusi,Toleransi\npH Meter,PT Tirta Gracia,Derajat Keasaman,B628755900,Mettler Toledo,0.01,0.2\n");
+        $file = $this->csv("Nama Alat,Pemilik,Kategori,Serial Number,Merk,Resolusi,Toleransi\npH Meter,PT Tirta Contoh Mandiri,Derajat Keasaman,B628755900,Mettler Toledo,0.01,0.2\n");
 
         $this->actingAs($this->admin)
             ->post('/api/imports/excel', ['file' => $file, 'tipe' => 'equipments', 'uji_coba' => false])
@@ -156,8 +156,8 @@ class ExcelImportTest extends TestCase
 
     public function test_alat_tanpa_kategori_yang_dikenal_dilewati_bukan_ditebak(): void
     {
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
-        $file = $this->csv("Nama Alat,Pemilik,Kategori,Serial Number\npH Meter,PT Tirta Gracia,Kategori Ngawur,B628755900\n");
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
+        $file = $this->csv("Nama Alat,Pemilik,Kategori,Serial Number\npH Meter,PT Tirta Contoh Mandiri,Kategori Ngawur,B628755900\n");
 
         $this->actingAs($this->admin)
             ->post('/api/imports/excel', ['file' => $file, 'tipe' => 'equipments', 'uji_coba' => false])

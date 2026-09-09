@@ -86,7 +86,7 @@ class Folder extends Model
         return $this->hasMany(FolderFile::class);
     }
 
-    /** Jalur yang dibaca manusia: `PT Tirta Gracia / 2026`. */
+    /** Jalur yang dibaca manusia: `PT Tirta Contoh Mandiri / 2026`. */
     public function jalur(): string
     {
         $bagian = [$this->nama];

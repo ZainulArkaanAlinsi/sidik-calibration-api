@@ -16,7 +16,7 @@ use Carbon\Carbon;
  * "Suhu dan Kelembapan" no. 4, metode `SIDIK-IK-CAL-0527`.
  *
  * Master: `Master_Olah_Data_Suhu_Thermometer_Glass.xlsm`, sesi **0135-CAL-125**
- * (order 2501.16.G, PT Unilever Indonesia Tbk Skin Care Factory, Alla France
+ * (order 2501.16.G, PT Nusantara Perawatan Kulit, Alla France
  * analog s/n IND-140, 31 Januari 2025, lima titik 30…100 °C).
  *
  * ## Satu-satunya alat di repo ini yang UUT-nya tanpa elektronik

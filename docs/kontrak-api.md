@@ -1046,7 +1046,7 @@ Tiga lapis, dari yang paling spesifik:
 3. organisasi belum nyetel → **12 bulan**
 
 - **Dihitung dari `tanggal_kalibrasi`, bukan tanggal terbit.** Sertifikat bisa
-  terbit beberapa hari sesudah alat dikerjain (contoh Tirta Gracia: kalibrasi
+  terbit beberapa hari sesudah alat dikerjain (contoh Tirta Contoh: kalibrasi
   26 Mei, terbit 30 Mei). Kalau dihitung dari tanggal terbit, masa berlakunya
   diam-diam kepanjangan dan alat lewat jatuh tempo tanpa ada yang sadar.
 - Harus **sesudah** `tanggal_kalibrasi` → kalau nggak, `422`.
@@ -1444,7 +1444,7 @@ GET /api/customers/lookup?search=tirta&page=1
 ```json
 {
   "data": [
-    { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI", "alamat": "Jl. Arteri Primer A-10 ..." }
+    { "id": 3, "nama": "PT TIRTA CONTOH MANDIRI", "alamat": "Jl. Contoh Primer A-10 ..." }
   ],
   "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 }
 }
@@ -1846,7 +1846,7 @@ Semua opsional. `sampai` lebih awal dari `dari` → `422`.
       "id": 2,
       "nomor_sesi": "2405.13.A",
       "tanggal_kalibrasi": "2024-05-26",
-      "pelanggan": { "id": 3, "nama": "PT TIRTA GRACIA SEMESTA MANDIRI" },
+      "pelanggan": { "id": 3, "nama": "PT TIRTA CONTOH MANDIRI" },
       "alat": { "id": 6, "nama_alat": "pH Meter", "serial_number": "B628755900" },
       "kategori": { "kode": "instrumen-analitik", "nama": "Instrumen Analitik" },
       "teknisi": { "id": 5, "nama": "Dwi Rahayu", "kode_teknisi": "DR" },
@@ -1862,7 +1862,7 @@ Semua opsional. `sampai` lebih awal dari `dari` → `422`.
   },
   "penyaring": {
     "Dari tanggal": "2026-07-01", "Sampai tanggal": "2026-07-31",
-    "Pelanggan": "PT Tirta Gracia", "Teknisi": null,
+    "Pelanggan": "PT Tirta Contoh Mandiri", "Teknisi": null,
     "Kategori": "Instrumen Analitik", "Status": "disetujui", "Keputusan": "PASS"
   },
   "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 4 }

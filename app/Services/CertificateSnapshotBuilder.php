@@ -595,7 +595,7 @@ class CertificateSnapshotBuilder
     /**
      * Kalau onsite, tempat yang DITULIS TEKNISI; selain itu nama ruangannya.
      *
-     * `Insitu (PT. LDC)` — persis yang tercetak di sertifikat master. Nama
+     * `Insitu (PT. Niaga Contoh)` — persis yang tercetak di sertifikat master. Nama
      * tempatnya nggak diturunkan dari pelanggan pemilik alat: satu kunjungan
      * bisa dikerjakan di pabrik lain milik grup yang sama, dan yang sah di
      * dokumen adalah tempat alatnya beneran diukur. Kalau teknisi nggak nulis

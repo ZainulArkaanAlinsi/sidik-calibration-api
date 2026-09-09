@@ -5,7 +5,7 @@ Status: sebagian TERJAWAB oleh `5. Viscometer 86068360 terbaru .xlsm` (20 Agu
 `Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/`
 
 **20 Agustus 2026 — berkas `.xlsm` yang diminta sudah dikirim** (sesi
-0817-CAL-726, PT Lamurindo, Brookfield DV Plus S/N 86068360). Butir 3 dan 5
+0817-CAL-726, PT Logam Contoh, Brookfield DV Plus S/N 86068360). Butir 3 dan 5
 terjawab; butir 1, 2, 4, 6 tetap sebagaimana adanya (sesi lama tidak ada di
 berkas baru). EMPAT pertanyaan BARU muncul dari berkas itu — nomor 7-10 di
 bawah. Nomor 10 yang paling mendesak: satu kolom di berkas baru berselisih

@@ -6,7 +6,7 @@ order 2405.03.AV, PT Freshland Inovasi Sejahtera, Incubator-02 INCUCELL
 LSIS-B2Y/IC 55, kalibrator **Yokogawa CA 150** + Thermocouple **Type N**, 4 set
 point 15/35/75/100 °C) dan
 `Master Olah Data_Suhu_Enclosure_Recorder.xlsm` (sesi **0304-CAL-624**, order
-2406.25.AI, PT Gunung Madu Plantations, Oven Memmert UN260, kalibrator
+2406.25.AI, PT Perkebunan Contoh Lestari, Oven Memmert UN260, kalibrator
 **Recorder Graphtech GL840** + Thermocouple **Type K**, 3 set point @ 67 °C).
 
 Backend Enclosure (alat ke-12, lima jenis) sudah jalan penuh. Budget kedua

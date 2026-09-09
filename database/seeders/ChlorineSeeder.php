@@ -106,7 +106,7 @@ class ChlorineSeeder extends Seeder
             ['organization_id' => 1, 'nama' => 'LABORATORIUM LINGKUNGAN PPLH - INSTITUT PERTANIAN BOGOR'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Lingkar Akademik Kampus IPB Darmaga, Bogor',
+                'alamat' => 'Jl. Lingkar Akademik Kampus Institut Contoh, Bogor',
             ],
         );
 

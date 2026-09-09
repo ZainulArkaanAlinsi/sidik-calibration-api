@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * Nama tempat kalibrasi dikerjakan, buat sesi `onsite`.
  *
  * Kolom `lokasi` cuma bisa jawab `lab` atau `onsite`, sementara sertifikat
- * nyetak `Insitu (PT. LDC)` — nama tempatnya ikut, dan itu yang bikin dokumen
+ * nyetak `Insitu (PT. Niaga Contoh)` — nama tempatnya ikut, dan itu yang bikin dokumen
  * bisa ditelusuri balik ke kunjungan mana.
  *
  * Nggak diturunkan dari pelanggan pemilik alat: satu kunjungan bisa dikerjakan

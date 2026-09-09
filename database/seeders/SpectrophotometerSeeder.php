@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 
 /**
  * Data Visible Spectrophotometer dari `Master Olah Data_Spectrofotometer.xlsm`
- * — tiga filter standar PG.Instrument, alat Perkin Elmer Lambda 25 milik PT LDC
+ * — tiga filter standar PG.Instrument, alat Perkin Elmer Lambda 25 milik PT Niaga Contoh
  * Indonesia, dan satu sesi kalibrasi end-to-end yang U95%-nya BENERAN dihitung
  * `SpectrophotometerProfile::hitungPerGrup()`, bukan angka jadi ditempel.
  *
@@ -139,10 +139,10 @@ class SpectrophotometerSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'PT LDC INDONESIA'],
+            ['organization_id' => 1, 'nama' => 'PT NIAGA CONTOH INDONESIA'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Soekarno Hatta KM 10, LK II, RT 023, Way Lunik, Panjang, '
+                'alamat' => 'Jl. Contoh KM 10, Panjang, '
                     .'Kota Bandar Lampung',
             ],
         );
@@ -207,7 +207,7 @@ class SpectrophotometerSeeder extends Seeder
                 // hasil sama batas keberterimaan, dan sertifikatnya nggak nyetak
                 // vonis PASS/FAIL. Lihat SpectrophotometerProfile::punyaToleransi().
                 'toleransi' => null,
-                'lokasi' => 'Insitu (PT. LDC)',
+                'lokasi' => 'Insitu (PT. Niaga Contoh)',
                 'status' => Equipment::STATUS_AKTIF,
             ],
         );
@@ -224,7 +224,7 @@ class SpectrophotometerSeeder extends Seeder
         $th2 = Standard::where('organization_id', 1)->where('nama', 'TH-2')->first();
 
         $sesi = CalibrationSession::updateOrCreate(
-            ['organization_id' => 1, 'nomor_sesi' => 'DEMO-SPECTRO-LDC'],
+            ['organization_id' => 1, 'nomor_sesi' => 'DEMO-SPECTRO-NIAGA'],
             [
                 'equipment_id' => $equipment->id,
                 'teknisi_id' => $teknisi->id,

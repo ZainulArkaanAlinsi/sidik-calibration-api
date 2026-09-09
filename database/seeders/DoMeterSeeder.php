@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
  * (bukan angka jadi ditempel), sama polanya kayak `ChlorineSeeder`.
  *
  * Sumbernya sesi asli **0566-CAL-624** (order 2406.50.S.NK, LPKL PDAM
- * Tirtawening, Juni 2024). Pembacaan dari blok "After Adjustment Reading":
+ * Kota Contoh, Juni 2024). Pembacaan dari blok "After Adjustment Reading":
  * 8,82 ×3 + 8,83 ×2 (STDEV 0,005477225575051544, sel PERHITUNGAN G44), suhu
  * larutan 23,7 °C.
  *
@@ -73,10 +73,10 @@ class DoMeterSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'LPKL PDAM TIRTAWENING'],
+            ['organization_id' => 1, 'nama' => 'LPKL PDAM KOTA CONTOH'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Atlas No. 6 Antapani Kota Bandung',
+                'alamat' => 'Jl. Contoh No. 6 Antapani Kota Bandung',
             ],
         );
 

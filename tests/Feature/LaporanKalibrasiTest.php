@@ -52,7 +52,7 @@ class LaporanKalibrasiTest extends TestCase
         $this->teknisiA = User::factory()->create(['name' => 'Dwi Rahayu']);
         $this->teknisiB = User::factory()->create(['name' => 'Teknisi Lain']);
 
-        $this->pelangganA = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $this->pelangganA = Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         $this->pelangganB = Customer::factory()->create(['nama' => 'PT Maju Jaya']);
 
         $this->kategoriPh = EquipmentCategory::factory()->create([
@@ -153,7 +153,7 @@ class LaporanKalibrasiTest extends TestCase
             ->getJson(self::URL."?pelanggan_id={$this->pelangganA->id}")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.pelanggan.nama', 'PT Tirta Gracia');
+            ->assertJsonPath('data.0.pelanggan.nama', 'PT Tirta Contoh Mandiri');
     }
 
     public function test_saring_per_teknisi(): void
@@ -268,7 +268,7 @@ class LaporanKalibrasiTest extends TestCase
         $this->actingAs($this->admin)
             ->getJson(self::URL."?pelanggan_id={$this->pelangganA->id}&kategori=instrumen-analitik")
             ->assertOk()
-            ->assertJsonPath('penyaring.Pelanggan', 'PT Tirta Gracia')
+            ->assertJsonPath('penyaring.Pelanggan', 'PT Tirta Contoh Mandiri')
             ->assertJsonPath('penyaring.Kategori', 'Instrumen Analitik')
             ->assertJsonPath('penyaring.Teknisi', null);
     }
@@ -394,7 +394,7 @@ class LaporanKalibrasiTest extends TestCase
             ->getJson(self::URL)
             ->assertOk()
             ->assertJsonPath('data.0.nomor_sesi', $sesi->nomor_sesi)
-            ->assertJsonPath('data.0.pelanggan.nama', 'PT Tirta Gracia')
+            ->assertJsonPath('data.0.pelanggan.nama', 'PT Tirta Contoh Mandiri')
             ->assertJsonPath('data.0.kategori.nama', 'Instrumen Analitik')
             ->assertJsonPath('data.0.teknisi.kode_teknisi', 'DR')
             ->assertJsonPath('data.0.keputusan', 'PASS')

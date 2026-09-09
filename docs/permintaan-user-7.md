@@ -2267,7 +2267,7 @@ manajer teknis menjalankannya buat rapat. (Kejadian, dan ketangkap di sini.)
 ### Batas yang tidak dilanggar
 
 Ketiga temuan menunjuk ke satu sertifikat yang sudah di tangan pelanggan
-(`095-CAL-324`, PT Unilever, terbit 14 Mar 2024). Menarik atau menerbitkan ulang
+(`095-CAL-324`, PT Nusantara Perawatan Kulit, terbit 14 Mar 2024). Menarik atau menerbitkan ulang
 sertifikat itu tindakan formal manajer teknis di bawah klausa Pekerjaan Tidak
 Sesuai ISO/IEC 17025 — **tidak diputuskan sistem**, dan tidak akan.
 
@@ -2530,9 +2530,9 @@ polanya tidak cocok lagi — dan yang tersisa cuma `git status` yang menawarkan
 Repo ini **PUBLIK** (`github.com/ZainulArkaanAlinsi/sidik-calibration-api`).
 
 Yang tertahan gara-gara aturan barunya, dihitung bukan dikira-kira: **12
-direktori alat, 12 nama + alamat pelanggan** — Unilever, LDC, Magnum Ice Cream,
-Gunung Madu, PDAM Tirtawening, IPB, Lamurindo, HI-CAL, sampai Lembaga Biologi
-Vaksin Puskesad.
+direktori alat, 12 nama + alamat pelanggan** — pabrik consumer goods, perusahaan niaga komoditas,
+pabrik es krim, perkebunan tebu, PDAM kota, kampus, pabrik logam, sampai lembaga biologi
+militer.
 
 ### Yang sudah dikerjakan
 

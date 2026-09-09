@@ -17,7 +17,7 @@ dan tiap butirnya sudah punya usulan yang tinggal disetujui atau ditolak.
 Sisanya sudah dikerjakan sistem dan tidak perlu keputusan siapa pun.
 
 Ketiga temuan menunjuk ke **satu sertifikat yang sama**: `095-CAL-324`
-(Micrometer Mitutoyo Analog, serial `IMTE-FQS-015`, PT Unilever Indonesia Tbk,
+(Micrometer Mitutoyo Analog, serial `IMTE-FQS-015`, PT Nusantara Perawatan Kulit,
 terbit 14 Maret 2024).
 
 ---

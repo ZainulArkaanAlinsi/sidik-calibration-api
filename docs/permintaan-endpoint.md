@@ -207,7 +207,7 @@ PUT    /api/orders/{id}
   "nomor_order": "ORD-2026-07-001",
   "tanggal": "2026-07-20",
   "tanggal_terima": "2026-07-18",
-  "customer": { "id": 3, "nama": "PT Tirta Gracia" },
+  "customer": { "id": 3, "nama": "PT Tirta Contoh Mandiri" },
   "equipment": {
     "id": 5,
     "nama_alat": "pH Meter Bench",
@@ -297,7 +297,7 @@ baris di `CalibrationResource`.
   "serial_number": "B628755900",
   "range_min": 0, "range_max": 14, "satuan": "pH",
   "resolusi": 0.01,
-  "pelanggan": { "nama": "PT TIRTA GRACIA SEMESTA MANDIRI", "alamat": "Jl. Arteri Primer A-10 ..." }
+  "pelanggan": { "nama": "PT TIRTA CONTOH MANDIRI", "alamat": "Jl. Contoh Primer A-10 ..." }
 }
 ```
 

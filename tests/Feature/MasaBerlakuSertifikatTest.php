@@ -121,7 +121,7 @@ class MasaBerlakuSertifikatTest extends TestCase
      * Dihitung dari TANGGAL KALIBRASI, bukan tanggal terbit.
      *
      * Sertifikat bisa terbit beberapa hari sesudah alat dikerjain (contoh Tirta
-     * Gracia: kalibrasi 26 Mei, terbit 30 Mei). Kalau dihitung dari tanggal
+     * Tirta Contoh: kalibrasi 26 Mei, terbit 30 Mei). Kalau dihitung dari tanggal
      * terbit, masa berlakunya diam-diam kepanjangan dan alat lewat jatuh tempo
      * tanpa ada yang sadar.
      */

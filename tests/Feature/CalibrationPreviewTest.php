@@ -52,7 +52,7 @@ class CalibrationPreviewTest extends TestCase
 
         $this->alat = Equipment::factory()->create([
             'nama_alat' => 'pH Meter Mettler Toledo',
-            'customer_id' => Customer::factory()->create(['nama' => 'PT Tirta Gracia'])->id,
+            'customer_id' => Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri'])->id,
             'equipment_category_id' => EquipmentCategory::factory()->create(['kode' => 'ph'])->id,
             'satuan' => 'pH',
             'resolusi' => 0.01,

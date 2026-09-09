@@ -9,7 +9,20 @@ Dijalankan sekali; keluarannya ikut commit. JANGAN diketik tangan.
 Pakai:
     python3 gen-sesi-micrometer.py <dir-berisi-mikro-*.xlsm>
 """
+#
+# CATATAN: keluaran skrip ini SENGAJA beda dari berkas yang ter-commit.
+# Berkas JSON di `database/data/` memakai nama sintetis yang BERBEDA per sesi
+# (mis. "PT Sirkuit Contoh Indonesia"), karena data demo yang bisa dibedakan
+# lebih berguna daripada satu placeholder seragam. Skrip ini memulangkan
+# placeholder karena itu default yang AMAN buat siapa pun yang menjalankannya
+# ulang dari workbook asli. Jadi kalau kamu regenerate lalu lihat diff di kolom
+# pelanggan/alamat: itu BUKAN bug, dan JANGAN di-commit — ambil angkanya saja.
+
 import openpyxl, json, os, sys
+
+# Pengganti identitas pelanggan. Lihat komentar di titik pemakaiannya.
+REDAKSI_NAMA = '[NAMA PELANGGAN DIREDAKSI]'
+REDAKSI_ALAMAT = '[ALAMAT PELANGGAN DIREDAKSI]'
 
 def num(c):
     return float(c.value) if isinstance(c.value, (int, float)) else None
@@ -72,8 +85,13 @@ for kode, label in VARIAN.items():
             'satuan_alat': teks(P['F7']),
             'kapasitas_mm': num(P['G8']),
             'resolusi_mm': num(P['G9']),
-            'pelanggan': teks(P['R3']),
-            'alamat': teks(P['R5']),
+            # DIREDAKSI, bukan disalin. Repo ini PUBLIK dan keluaran skrip ini
+            # (`database/data/sesi-master-micrometer.json`) ikut ter-commit.
+            # Menyalin sel identitas pelanggan apa adanya sudah pernah bikin nama
+            # + alamat pelanggan asli terbit ke publik, dan nol error muncul.
+            # Angka kalibrasinya nggak butuh identitas ini sama sekali.
+            'pelanggan': REDAKSI_NAMA,
+            'alamat': REDAKSI_ALAMAT,
             'tanggal_terima': tgl(P['R8']),
             'tanggal': tgl(P['R9']),
             'nomor_sertifikat': teks(I['R5']),

@@ -321,7 +321,7 @@ class GenerateCertificate implements ShouldQueue
      * `CalibrationController::approve()`); angkanya milik admin.
      *
      * Dihitung dari TANGGAL KALIBRASI, bukan tanggal terbit. Sertifikat bisa
-     * terbit beberapa hari sesudah alat dikerjain (di contoh Tirta Gracia:
+     * terbit beberapa hari sesudah alat dikerjain (di contoh Tirta Contoh:
      * kalibrasi 26 Mei, terbit 30 Mei) — kalau dihitung dari tanggal terbit,
      * masa berlakunya diam-diam kepanjangan, dan alat lewat jatuh tempo tanpa
      * ada yang sadar.

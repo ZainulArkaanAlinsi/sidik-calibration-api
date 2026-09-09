@@ -2,7 +2,7 @@
 
 Pendamping teknis `SPEC-vision-ai-worksheet-extraction.md`. Berisi: model, cara
 "melatih" yang benar, JSON schema, system prompt final, **few-shot dari data
-Tirta Gracia asli**, dan contoh kode Laravel. Endpoint yang dipanggil mobile:
+Tirta Contoh asli**, dan contoh kode Laravel. Endpoint yang dipanggil mobile:
 `POST /api/raw-measurements/extract-from-photo` (lihat
 `docs/permintaan-backend-2026-07-24.md` §4).
 
@@ -110,7 +110,7 @@ Rules:
 - Do not invent rows or cells beyond what the photographed table contains.
 ```
 
-## 4. Few-shot — data Tirta Gracia ASLI (cert 012-CAL-524)
+## 4. Few-shot — data Tirta Contoh ASLI (cert 012-CAL-524)
 
 Sumber: `Master Olah Data_pH for trial_CSV/INPUT DATA.csv`, tabel **Before
 Adjustment Reading**, buffer 3.99 / 7 / 10.01. **Lampirkan foto worksheet tabel
@@ -147,7 +147,7 @@ Tabel **After Adjustment** yang sama (buat contoh ke-2 kalau mau — lampirkan f
 ```
 
 > **Tugas transisi buat Arkaan:** foto tabel Before & After di worksheet fisik
-> Tirta Gracia, simpan 2 file gambar itu (mis. `few_shot_before.jpg`,
+> Tirta Contoh, simpan 2 file gambar itu (mis. `few_shot_before.jpg`,
 > `few_shot_after.jpg`), lampirkan di prompt bersama JSON di atas. Idealnya 2–3
 > few-shot dari worksheet berbeda supaya AI kenal variasi tulisan tangan.
 
@@ -315,7 +315,7 @@ AI/LLM.** Lihat contoh angka di `SERTIFIKAT.csv`: `Standard Value 4.009244572`,
    `0.02343221021262627`.
 
 Backend **sudah punya** mesin ini (GumCalculator / UncertaintyCalculation —
-pipeline Tirta Gracia sudah terbukti end-to-end). **Jangan diganti AI.**
+pipeline Tirta Contoh sudah terbukti end-to-end). **Jangan diganti AI.**
 
 **Di mana AI boleh dipakai di sisi admin (di ATAS mesin hitung, bukan
 menggantikan):**

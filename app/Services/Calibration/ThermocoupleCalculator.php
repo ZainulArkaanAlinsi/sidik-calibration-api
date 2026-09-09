@@ -12,7 +12,7 @@ use InvalidArgumentException;
  * menyentuh DB, request, atau Eloquent.
  *
  * Master: `Master_Olah_Data_Suhu_Thermocouple.xlsm`, sesi **0513-CAL-1124**
- * (order 2411.50.I, PT Kaldu Sari Nabati Indonesia, Hanna HI93530 s/n J0037794,
+ * (order 2411.50.I, PT Pangan Contoh Indonesia, Hanna HI93530 s/n J0037794,
  * 3 Desember 2024), sheet `PERHITUNGAN FC` + `PERHITUNGAN U95%`.
  *
  * ## Yang dikalibrasi: termokopel BESERTA indikatornya

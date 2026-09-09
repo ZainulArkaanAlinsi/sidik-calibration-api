@@ -48,13 +48,13 @@ class CustomerLookupTest extends TestCase
     /** Ini inti endpoint-nya: teknisi harus bisa, dan sebelumnya nggak bisa. */
     public function test_teknisi_boleh_ambil_daftar_pelanggan(): void
     {
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia', 'alamat' => 'Jl. Arteri Primer A-10']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri', 'alamat' => 'Jl. Contoh Primer A-10']);
 
         $this->actingAs($this->teknisi)
             ->getJson(self::URL)
             ->assertOk()
-            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia')
-            ->assertJsonPath('data.0.alamat', 'Jl. Arteri Primer A-10');
+            ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri')
+            ->assertJsonPath('data.0.alamat', 'Jl. Contoh Primer A-10');
     }
 
     /**
@@ -121,14 +121,14 @@ class CustomerLookupTest extends TestCase
 
     public function test_nyaring_pakai_search(): void
     {
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         Customer::factory()->create(['nama' => 'PT Maju Jaya']);
 
         $this->actingAs($this->teknisi)
             ->getJson(self::URL.'?search=Tirta')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.nama', 'PT Tirta Gracia');
+            ->assertJsonPath('data.0.nama', 'PT Tirta Contoh Mandiri');
     }
 
     /**
@@ -138,7 +138,7 @@ class CustomerLookupTest extends TestCase
      */
     public function test_nyaring_pakai_q_juga_jalan(): void
     {
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         Customer::factory()->create(['nama' => 'PT Maju Jaya']);
 
         $this->actingAs($this->teknisi)

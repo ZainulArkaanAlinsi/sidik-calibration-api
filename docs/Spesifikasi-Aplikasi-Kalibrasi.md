@@ -58,9 +58,9 @@ Notifikasi digunakan sebagai pengingat otomatis untuk:
 |---|---|
 | Certificate Number | 012-CAL-524 |
 | Page | 1 of 1 |
-| Owner | PT TIRTA GRACIA SEMESTA MANDIRI |
+| Owner | PT TIRTA CONTOH MANDIRI |
 | Order Number | 2405.13.A |
-| Address | Jl. Arteri Primer A-10 RT. 01 RW.12 Nyalindung Kec. Cicalengka, Kab. Bandung, Jawa Barat |
+| Address | Jl. Contoh Primer A-10, Kec. Cicalengka, Kab. Bandung, Jawa Barat |
 | Received Date | 26 Mei 2024 |
 | Equipment Name | pH Meter |
 | Manufacturer | Mettler Toledo |

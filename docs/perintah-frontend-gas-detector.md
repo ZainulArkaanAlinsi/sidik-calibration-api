@@ -191,7 +191,7 @@ kuncinya terisi sendiri tanpa frontend berubah.
 
 ## Angka acuan untuk mencocokkan tampilan
 
-Sesi master `001-CAL-226` (order `2602.03.A.NK`, PT Unilever Skin Care Factory,
+Sesi master `001-CAL-226` (order `2602.03.A.NK`, PT Nusantara Perawatan Kulit Skin Care Factory,
 2 Februari 2026). Sudah terseed — `nomor_sesi` = `2602.03.A`.
 
 Kondisi lingkungan:

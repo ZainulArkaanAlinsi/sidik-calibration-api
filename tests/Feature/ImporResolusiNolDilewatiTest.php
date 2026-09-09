@@ -64,7 +64,7 @@ class ImporResolusiNolDilewatiTest extends TestCase
 
         Organization::factory()->create();
         $this->admin = User::factory()->admin()->create();
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         EquipmentCategory::factory()->create(['kode' => 'ph', 'nama' => 'Derajat Keasaman']);
     }
 
@@ -80,7 +80,7 @@ class ImporResolusiNolDilewatiTest extends TestCase
     {
         return $this->csv(
             "Nama Alat,Pemilik,Kategori,Serial Number,Merk,Resolusi\n"
-            ."pH Meter,PT Tirta Gracia,Derajat Keasaman,B628755900,Mettler Toledo,{$resolusi}\n"
+            ."pH Meter,PT Tirta Contoh Mandiri,Derajat Keasaman,B628755900,Mettler Toledo,{$resolusi}\n"
         );
     }
 

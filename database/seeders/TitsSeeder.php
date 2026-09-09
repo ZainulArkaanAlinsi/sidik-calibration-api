@@ -167,8 +167,8 @@ class TitsSeeder extends Seeder
 
         $this->seedSesi(
             customer: [
-                'nama' => 'PT GE Nusantara Turbine Services',
-                'alamat' => 'Jl. Pajajaran No. 154, KP IV Bandung 40174',
+                'nama' => 'PT Turbin Contoh Nusantara',
+                'alamat' => 'Jl. Contoh No. 154, KP IV Bandung 40174',
             ],
             alat: [
                 'nama_alat' => 'Temperature Recorder Controller',

@@ -17,7 +17,7 @@ use Carbon\Carbon;
  * `SIDIK-IK-CAL-0518_Rev.4 (Perbandingan langsung)`.
  *
  * Master: `Master_Olah_Data_Suhu__Kelembapan.xlsm`, sesi **0312-CAL-624**
- * (order 2406.25.AR, PT Gunung Madu Plantations, NOKLEAD NK5253 s/n TR-001,
+ * (order 2406.25.AR, PT Perkebunan Contoh Lestari, NOKLEAD NK5253 s/n TR-001,
  * 2 Juli 2024).
  *
  * ## Alat yang dikalibrasi lab, dan alat yang dipakai lab

@@ -25,13 +25,13 @@ use Illuminate\Support\Str;
  * Data tiga alat suhu yang mendarat bareng (alat ke-18…20), dari tiga master:
  *
  *  - **0513-CAL-1124** — Thermocouple, `Master_Olah_Data_Suhu_Thermocouple.xlsm`
- *    (order 2411.50.I, PT Kaldu Sari Nabati Indonesia, 3 Des 2024, 3 titik).
+ *    (order 2411.50.I, PT Pangan Contoh Indonesia, 3 Des 2024, 3 titik).
  *  - **0135-CAL-125** — Termometer Gelas,
  *    `Master_Olah_Data_Suhu_Thermometer_Glass.xlsm` (order 2501.16.G,
- *    PT Unilever Indonesia Tbk Skin Care Factory, 31 Jan 2025, 5 titik).
+ *    PT Nusantara Perawatan Kulit, 31 Jan 2025, 5 titik).
  *  - **0312-CAL-624** — Thermohygrometer,
  *    `Master_Olah_Data_Suhu__Kelembapan.xlsm` (order 2406.25.AR,
- *    PT Gunung Madu Plantations, 2 Jul 2024, 5 titik suhu + 5 titik RH).
+ *    PT Perkebunan Contoh Lestari, 2 Jul 2024, 5 titik suhu + 5 titik RH).
  *
  * Sama seperti sebelas seeder sesi lain, ketidakpastiannya BENERAN dihitung
  * lewat jalur produksi (`…Profile::hitungPerGrup()`), bukan angka jadi yang
@@ -137,7 +137,7 @@ class Suhu3AlatSeeder extends Seeder
         ];
 
         $sesi = $this->bikinSesi(
-            customer: ['nama' => 'PT. Kaldu Sari Nabati Indonesia', 'alamat' => 'Jl. Raya Cirebon-Bandung KM. 24 Kel. Banjaran Kec. Sumber Jaya Kab. Majalengka 45468'],
+            customer: ['nama' => 'PT. Pangan Contoh Indonesia', 'alamat' => 'Jl. Raya Contoh KM. 24, Kab. Majalengka 45468'],
             alat: [
                 'nama_alat' => 'Thermocouple Thermometer', 'nama_alat_kemampuan' => 'Thermocouple',
                 'merk' => 'Hanna Instrument', 'model' => 'HI93530', 'serial_number' => 'J0037794',
@@ -172,7 +172,7 @@ class Suhu3AlatSeeder extends Seeder
         ];
 
         $sesi = $this->bikinSesi(
-            customer: ['nama' => 'PT. Unilever Indonesia Tbk (Skin Care Factory)', 'alamat' => 'Jl. Jababeka V Blok U No.14-16, Karangbaru, Kec. Cikarang Utara, Bekasi, Jawa Barat 17538'],
+            customer: ['nama' => 'PT. Nusantara Perawatan Kulit Indonesia Tbk (Skin Care Factory)', 'alamat' => 'Jl. Contoh V Blok U No.14-16, Kec. Cikarang Utara, Bekasi, Jawa Barat 17538'],
             alat: [
                 'nama_alat' => 'Thermometer Glass', 'nama_alat_kemampuan' => 'Termometer Gelas',
                 'merk' => 'Alla France', 'model' => 'Analog', 'serial_number' => 'IND-140',
@@ -219,7 +219,7 @@ class Suhu3AlatSeeder extends Seeder
         ];
 
         $sesi = $this->bikinSesi(
-            customer: ['nama' => 'PT. Gunung Madu Plantations', 'alamat' => 'KM 90 Terbanggi Besar Gunung Batin udik, Terusan Nunyai, Lampung Tengah'],
+            customer: ['nama' => 'PT. Perkebunan Contoh Plantations', 'alamat' => 'KM 90 Terbanggi Besar, Terusan Nunyai, Lampung Tengah'],
             alat: [
                 'nama_alat' => 'Thermohygrometer', 'nama_alat_kemampuan' => 'Thermohygrometer',
                 'merk' => 'NOKLEAD', 'model' => 'NK5253', 'serial_number' => 'TR-001',

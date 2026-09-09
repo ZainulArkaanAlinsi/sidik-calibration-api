@@ -188,9 +188,9 @@ class UncertaintyBudgetTest extends TestCase
         $stdev = sqrt(array_sum(array_map(fn (float $x): float => ($x - $rata) ** 2, $pembacaan)) / ($n - 1));
 
         // Komponennya disusun EKSPLISIT di sini, bukan lewat `komponen()` di
-        // atas: helper itu buat lembar PT Tirta Gracia (termometer 0,72 °C,
+        // atas: helper itu buat lembar PT Tirta Contoh Mandiri (termometer 0,72 °C,
         // alat resolusi 0,01), sementara angka acuan di test ini dari lembar
-        // PT Magnum (termometer 0,5 °C, alat SI Analytics resolusi 0,001).
+        // PT Es Krim Contoh (termometer 0,5 °C, alat SI Analytics resolusi 0,001).
         // Dua lembar beda, dua alat beda — dicampur, hasilnya nggak reproducible
         // ke mana pun.
         $sqrt3 = sqrt(3);

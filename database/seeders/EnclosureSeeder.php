@@ -170,7 +170,7 @@ class EnclosureSeeder extends Seeder
         );
 
         $this->seedSesi(
-            customer: ['nama' => 'PT. Freshland Inovasi Sejahtera', 'alamat' => 'Jl. Cimerang No. 170, Padalarang, Kab. Bandung Barat, Jawa Barat 40553'],
+            customer: ['nama' => 'PT. Freshland Inovasi Sejahtera', 'alamat' => 'Jl. Contoh No. 170, Padalarang, Kab. Bandung Barat, Jawa Barat 40553'],
             alat: ['nama_alat' => 'Incubator', 'nama_alat_kemampuan' => 'Inkubator', 'merk' => 'INCUCELL', 'model' => 'LSIS-B2Y/IC 55', 'serial_number' => 'D132469', 'range_min' => 15, 'range_max' => 100, 'kapasitas' => '100'],
             sesi: ['nomor_sesi' => '2405.03.AV', 'nomor_order' => '2405.03.AV', 'tanggal' => '2024-05-02', 'tipe_sensor' => 'Type N'],
             grid: self::GRID_YOKO,
@@ -179,7 +179,7 @@ class EnclosureSeeder extends Seeder
         );
 
         $this->seedSesi(
-            customer: ['nama' => 'PT. Gunung Madu Plantations', 'alamat' => 'KM 90 Terbanggi Besar, Terusan Nunyai, Lampung Tengah'],
+            customer: ['nama' => 'PT. Perkebunan Contoh Plantations', 'alamat' => 'KM 90 Terbanggi Besar, Terusan Nunyai, Lampung Tengah'],
             alat: ['nama_alat' => 'Oven', 'nama_alat_kemampuan' => 'Oven', 'merk' => 'Memmert', 'model' => 'UN260', 'serial_number' => 'B616-0871', 'range_min' => 0, 'range_max' => 300, 'kapasitas' => '300'],
             sesi: ['nomor_sesi' => '2406.25.AI', 'nomor_order' => '2406.25.AI', 'tanggal' => '2024-06-27', 'tipe_sensor' => 'Type K'],
             grid: self::GRID_RECORDER,

@@ -9,7 +9,7 @@
 
 - Existing record flow: `Customer → Equipment → CalibrationSession → RawMeasurement → GumCalculator → UncertaintyCalculation → Certificate`
 - Technicians currently take a photo of a physical/paper calibration worksheet and rely on traditional OCR (Tesseract / ML Kit style text extraction) to populate `RawMeasurement` fields. This OCR step fails/errors frequently on every capture attempt.
-- Known real reference dataset for validation: pH Meter, Mettler Toledo Five Easy, S/N `B628755900`, customer `PT Tirta Gracia Semesta Mandiri`, certificate No. `012-CAL-524`. Use this as one of the few-shot / test examples.
+- Known real reference dataset for validation: pH Meter, Mettler Toledo Five Easy, S/N `B628755900`, customer `PT Tirta Contoh Mandiri`, certificate No. `012-CAL-524`. Use this as one of the few-shot / test examples.
 - Goal: replace the OCR step with a **vision-capable LLM** call (Anthropic Claude API, multimodal) that returns structured JSON matching the `RawMeasurement` schema, with a mandatory human confirmation step before persisting to the database (this data feeds official certificates, so accuracy + human sign-off is non-negotiable).
 
 ## 2. Non-goals
@@ -54,7 +54,7 @@ Return ONLY valid JSON matching this exact schema:
 Use Indonesian decimal convention (comma as decimal separator) if that's how it's written, but return all numbers in this JSON as standard numeric type (period decimal).
 If a field is illegible or missing, set its value to null and mark its confidence as "low".
 
-Reference example (few-shot) — [attach one known-good worksheet photo + its correct JSON output here, using the Tirta Gracia pH Meter cert 012-CAL-524 data as ground truth].
+Reference example (few-shot) — [attach one known-good worksheet photo + its correct JSON output here, using the Tirta Contoh pH Meter cert 012-CAL-524 data as ground truth].
 ```
 - Attach 2–3 real worksheet photos + verified correct JSON as few-shot examples directly in the prompt/message history to anchor accuracy to this project's actual worksheet format.
 
@@ -84,7 +84,7 @@ Reference example (few-shot) — [attach one known-good worksheet photo + its co
 - [ ] No `RawMeasurement` record is created without explicit technician confirmation.
 - [ ] Extraction logs are written for every attempt (success or failure) for later prompt tuning.
 - [ ] Manual entry fallback remains fully functional if extraction fails or is skipped.
-- [ ] Tested against the known Tirta Gracia pH Meter worksheet (cert 012-CAL-524) with 100% field match before considered done.
+- [ ] Tested against the known Tirta Contoh pH Meter worksheet (cert 012-CAL-524) with 100% field match before considered done.
 
 ## 6. Open Questions (resolve before/during implementation)
 - Which Claude model to use for cost/accuracy balance (test Sonnet vs Haiku tier on real worksheet photos)?

@@ -12,7 +12,7 @@ use App\Models\Standard;
  * Profil Multi Gas Detector (alat ke-10). Metode `SIDIK-IK-CAL-0536_Rev.0`
  * (DATABASE baris 36), form sertifikat `SIDIK-FM-CAL-2403_Rev. 0`. Master
  * `Gas Detector Uli Skin (std Rigaz).xlsm` (LK-285-IDN), sesi asli
- * **001-CAL-226** (order 2602.03.A.NK, PT Unilever Indonesia Skin Care
+ * **001-CAL-226** (order 2602.03.A.NK, PT Nusantara Perawatan Kulit
  * Factory, Honeywell Microclip XL, 2 Februari 2026).
  *
  * ## EMPAT gas sekaligus, empat satuan berbeda

@@ -1,4 +1,13 @@
 """Generate database/data/sesi-master-waktu-frekuensi.json — sesi contoh ketiga master."""
+#
+# CATATAN: keluaran skrip ini SENGAJA beda dari berkas yang ter-commit.
+# Berkas JSON di `database/data/` memakai nama sintetis yang BERBEDA per sesi
+# (mis. "PT Sirkuit Contoh Indonesia"), karena data demo yang bisa dibedakan
+# lebih berguna daripada satu placeholder seragam. Skrip ini memulangkan
+# placeholder karena itu default yang AMAN buat siapa pun yang menjalankannya
+# ulang dari workbook asli. Jadi kalau kamu regenerate lalu lihat diff di kolom
+# pelanggan/alamat: itu BUKAN bug, dan JANGAN di-commit — ambil angkanya saja.
+
 import openpyxl, json, os, datetime
 def val(c):
     v = c.value
@@ -13,7 +22,20 @@ AKAR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 
 def meta(I, peta):
-    return {k: val(I[sel]) for k, sel in peta.items()}
+    hasil = {k: val(I[sel]) for k, sel in peta.items()}
+
+    # DIREDAKSI, bukan disalin. Repo ini PUBLIK dan keluaran skrip ini
+    # (`database/data/sesi-master-waktu-frekuensi.json`) ikut ter-commit.
+    # Menyalin sel identitas pelanggan apa adanya sudah pernah bikin nama +
+    # alamat pelanggan asli terbit ke publik, dan nol error muncul. Angka
+    # kalibrasinya nggak butuh identitas ini sama sekali.
+    for kunci, ganti in (('pelanggan', '[NAMA PELANGGAN DIREDAKSI]'),
+                         ('alamat', '[ALAMAT PELANGGAN DIREDAKSI]'),
+                         ('lokasi_nama', '[NAMA PELANGGAN DIREDAKSI]')):
+        if kunci in hasil:
+            hasil[kunci] = ganti
+
+    return hasil
 
 PETA_RPM = dict(nama_alat='E10', merk='E11', model='E12', serial='E13',
                 rentang='E14', kapasitas='E15', resolusi='E16', satuan='I14',

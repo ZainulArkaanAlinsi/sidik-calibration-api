@@ -45,7 +45,7 @@ class ArsipPindahTest extends TestCase
         Organization::factory()->create();
         $this->admin = User::factory()->admin()->create();
         $this->teknisi = User::factory()->create();
-        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        $this->pelanggan = Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
     }
 
     private function folder(string $nama, ?int $parentId = null, string $tipe = Folder::TIPE_MANUAL): Folder
@@ -150,7 +150,7 @@ class ArsipPindahTest extends TestCase
     public function test_folder_sistem_nggak_bisa_dipindah(): void
     {
         $tujuan = $this->folder('Arsip Manual');
-        $sistem = $this->folder('PT Tirta Gracia', null, Folder::TIPE_SISTEM);
+        $sistem = $this->folder('PT Tirta Contoh Mandiri', null, Folder::TIPE_SISTEM);
 
         $this->actingAs($this->admin)
             ->putJson($this->urlFolder($sistem), ['parent_id' => $tujuan->id])

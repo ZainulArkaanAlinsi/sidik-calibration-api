@@ -70,7 +70,7 @@ class EksporAuditTidakJadiRumusTest extends TestCase
             'entity_id' => 1,
             'action' => AuditLog::ACTION_DIUBAH,
             'changed_by' => $this->admin->id,
-            'old_data' => ['nama' => 'PT Tirta Gracia'],
+            'old_data' => ['nama' => 'PT Tirta Contoh Mandiri'],
             'new_data' => ['nama' => $nilaiBaru],
         ]);
 
@@ -188,8 +188,8 @@ class EksporAuditTidakJadiRumusTest extends TestCase
     public function test_teks_biasa_nggak_disentuh(): void
     {
         $this->assertSame(
-            'PT Tirta Gracia',
-            $this->selNilaiBaru($this->csv('PT Tirta Gracia')),
+            'PT Tirta Contoh Mandiri',
+            $this->selNilaiBaru($this->csv('PT Tirta Contoh Mandiri')),
         );
     }
 
@@ -204,7 +204,7 @@ class EksporAuditTidakJadiRumusTest extends TestCase
         $this->assertStringContainsString('Waktu', $csv);
         $this->assertStringContainsString('Nilai Baru', $csv);
         $this->assertStringContainsString('Budi Santoso', $csv);
-        $this->assertStringContainsString('PT Tirta Gracia', $csv);
+        $this->assertStringContainsString('PT Tirta Contoh Mandiri', $csv);
         $this->assertSame('PT Baru', $this->selNilaiBaru($csv));
 
         // BOM UTF-8 tetap di depan — tanpa itu nama PT non-ASCII kacau di Excel

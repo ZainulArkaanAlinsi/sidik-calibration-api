@@ -68,7 +68,7 @@ class KirimEmailSertifikatTest extends TestCase
 
         $alat = Equipment::factory()->create([
             'customer_id' => Customer::factory()->create([
-                'nama' => 'PT Tirta Gracia',
+                'nama' => 'PT Tirta Contoh Mandiri',
                 'email' => 'pic@tirta.co.id',
             ])->id,
             'equipment_category_id' => EquipmentCategory::factory()->create()->id,

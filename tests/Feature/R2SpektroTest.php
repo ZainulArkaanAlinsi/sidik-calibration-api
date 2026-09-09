@@ -204,7 +204,7 @@ class R2SpektroTest extends TestCase
 
     private function terbitkanSpektro(): Certificate
     {
-        return $this->terbitkan($this->sesi('DEMO-SPECTRO-LDC'));
+        return $this->terbitkan($this->sesi('DEMO-SPECTRO-NIAGA'));
     }
 
     private function sesi(string $nomorSesi): CalibrationSession

@@ -11,7 +11,7 @@ use InvalidArgumentException;
  * "Suhu dan Kelembapan" no. 11) — MURNI: masuk array, keluar array.
  *
  * Master: `Master_Olah_Data_Suhu__Kelembapan.xlsm`, sesi **0312-CAL-624**
- * (order 2406.25.AR, PT Gunung Madu Plantations, NOKLEAD NK5253 s/n TR-001,
+ * (order 2406.25.AR, PT Perkebunan Contoh Lestari, NOKLEAD NK5253 s/n TR-001,
  * 2 Juli 2024).
  *
  * ## Satu-satunya alat suhu berparameter DUA

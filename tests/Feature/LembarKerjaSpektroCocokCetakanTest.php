@@ -38,7 +38,7 @@ class LembarKerjaSpektroCocokCetakanTest extends TestCase
 
         $this->seed(DatabaseSeeder::class);
 
-        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-SPECTRO-LDC')->firstOrFail();
+        $sesi = CalibrationSession::where('nomor_sesi', 'DEMO-SPECTRO-NIAGA')->firstOrFail();
         $this->equipmentId = $sesi->equipment_id;
         $this->teknisi = User::findOrFail($sesi->teknisi_id);
     }

@@ -317,7 +317,7 @@ def kirim_lembar_kerja(
         "alat_model": "Five Easy",
         "alat_serial_number": SERIAL_ALAT,
         "alat_merk": "Mettler Toledo",
-        "pemilik_nama": "PT Tirta Gracia",
+        "pemilik_nama": "PT Tirta Contoh Mandiri",
         "pemilik_alamat": "Jl. Uji Rantai No. 1",
         "suhu_awal": 24.5,
         "suhu_akhir": 25.1,

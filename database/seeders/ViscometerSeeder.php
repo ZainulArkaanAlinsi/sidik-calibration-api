@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
  * sesi kalibrasi end-to-end yang U95%-nya BENERAN dihitung `GumCalculator`,
  * bukan angka jadi yang ditempel.
  *
- * Sumbernya sesi asli **0817-CAL-726** (order 2607.59.W, PT Lamurindo
+ * Sumbernya sesi asli **0817-CAL-726** (order 2607.59.W, PT Logam Contoh
  * Cikarang, 31 Juli 2026), menggantikan lembar trial tanpa nomor job yang
  * dipakai sampai 19 Agustus 2026. Pembacaannya dari `INPUT DATA` blok "After
  * Adjustment Reading" (G48:L52).
@@ -276,10 +276,10 @@ class ViscometerSeeder extends Seeder
     public function run(): void
     {
         $customer = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'PT LAMURINDO CIKARANG'],
+            ['organization_id' => 1, 'nama' => 'PT LOGAM CONTOH CIKARANG'],
             [
                 'organization_id' => 1,
-                'alamat' => 'Jl. Ramin Raya, Sukamahi, Kec. Cikarang Pusat, '
+                'alamat' => 'Jl. Contoh Raya, Kec. Cikarang Pusat, '
                     .'Kabupaten Bekasi, Jawa Barat 17530',
             ],
         );

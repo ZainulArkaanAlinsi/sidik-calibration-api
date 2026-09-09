@@ -53,7 +53,7 @@ class ImporAlatTidakNanyaBerulangTest extends TestCase
 
         Organization::factory()->create();
         $this->admin = User::factory()->admin()->create();
-        Customer::factory()->create(['nama' => 'PT Tirta Gracia']);
+        Customer::factory()->create(['nama' => 'PT Tirta Contoh Mandiri']);
         EquipmentCategory::factory()->create(['kode' => 'ph', 'nama' => 'Derajat Keasaman']);
     }
 
@@ -66,7 +66,7 @@ class ImporAlatTidakNanyaBerulangTest extends TestCase
     }
 
     /** Berkas berisi [$jumlah] alat, semuanya milik PT & kategori yang sama. */
-    private function berkas(int $jumlah, string $pt = 'PT Tirta Gracia'): UploadedFile
+    private function berkas(int $jumlah, string $pt = 'PT Tirta Contoh Mandiri'): UploadedFile
     {
         $baris = "Nama Alat,Pemilik,Kategori,Serial Number,Merk\n";
 
@@ -182,9 +182,9 @@ class ImporAlatTidakNanyaBerulangTest extends TestCase
             ->post('/api/imports/excel', [
                 'file' => $this->csv(
                     "Nama Alat,Pemilik,Kategori,Serial Number\n"
-                    ."pH Meter A,PT Tirta Gracia,Derajat Keasaman,SN-A\n"
+                    ."pH Meter A,PT Tirta Contoh Mandiri,Derajat Keasaman,SN-A\n"
                     ."pH Meter B,PT Sumber Jaya,Derajat Keasaman,SN-B\n"
-                    ."pH Meter C,PT Tirta Gracia,Derajat Keasaman,SN-C\n"
+                    ."pH Meter C,PT Tirta Contoh Mandiri,Derajat Keasaman,SN-C\n"
                 ),
                 'tipe' => 'equipments',
                 'uji_coba' => false,
@@ -192,7 +192,7 @@ class ImporAlatTidakNanyaBerulangTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.ringkasan.dibuat', 3);
 
-        $tirta = Customer::where('nama', 'PT Tirta Gracia')->firstOrFail();
+        $tirta = Customer::where('nama', 'PT Tirta Contoh Mandiri')->firstOrFail();
         $sumber = Customer::where('nama', 'PT Sumber Jaya')->firstOrFail();
 
         $this->assertSame(2, Equipment::where('customer_id', $tirta->id)->count());
