@@ -4,9 +4,9 @@ Ditemukan 9 September 2026 waktu seluruh isi `Project-PT-Sidik/alat-alat-Pt-Sidi
 diaudit ulang lawan yang sudah dibangun.
 
 Sistem **belum mengubah satu angka pun** karena temuan ini. Yang berubah cuma
-komentar yang salah menjelaskannya, dan satu test baru yang mengunci kedua
-master. Yang dibutuhkan sekarang pernyataan lab tentang mana yang berlaku untuk
-sesi baru.
+komentar yang menjelaskannya setengah, plus satu test yang menutup dua celah
+penjagaan. Yang dibutuhkan sekarang pernyataan lab tentang mana yang berlaku
+untuk sesi baru.
 
 Pesan siap kirim ada di bagian paling bawah.
 
@@ -35,23 +35,33 @@ baris demi baris:
 | pH 10 | 0,01021 | 0,05 | 0,00949 |
 
 Jadi yang ikut perangkat cuma `UTemperature` (dan resolusi, yang memang sudah
-diambil per alat). Keenam titik dari kedua workbook reproduksi di 5·10⁻⁶ lewat
-mesin yang sama — `tests/Unit/PhMeterMasterTest.php`.
+diambil per alat). Keenam titik dari kedua workbook reproduksi lewat mesin yang
+sama — dijaga `tests/Unit/UncertaintyBudgetTest.php` (sejak lama) dan
+`tests/Unit/PhMeterMasterTest.php` (9 Sep 2026).
 
-## Yang sempat salah dicatat di sistem
+## Yang sudah dijaga, dan yang belum
 
+Angka kedua lembar ini **sudah** diadu ke workbook aslinya sejak lama oleh
+`tests/Unit/UncertaintyBudgetTest.php` — dan docblock-nya sudah membedakan
+keduanya dengan benar (*"Dua lembar beda, dua alat beda"*). Yang belum dijaga
+cuma `k` eksak & `U` untuk lembar IMTE-WQ-129, plus perilaku lantai CMC; itu
+yang ditambahkan `tests/Unit/PhMeterMasterTest.php`.
+
+Yang perlu dirapikan penjelasannya, bukan angkanya:
 `database/seeders/PhMeterCapabilitySeeder.php` menyimpan yang Yokogawa
-(0,36124783736376886), dan komentarnya dulu menyebut angka satunya sebagai
+(0,36124783736376886), dan komentarnya menjelaskan angka satunya sebagai
 **salah baca**:
 
 > *"Sebelumnya di sini kesimpen 0.25179356624028343 = sqrt(0.25² + 0.03²) —
 > angka termometernya kebaca 0.25, bukan 0.36."*
 
-Itu keliru. Workbook IMTE-WQ-129 menulis `U95% Thermometer : 0.5` dan
-`UTemperature : 0.25179356624028343` di kepala sheet `PERHITUNGAN U95%`-nya
-sendiri. Dua angka sah dari dua alat berbeda, bukan satu angka yang salah ketik.
-Komentarnya sudah dibetulkan; nilainya sengaja **tidak** ditukar, karena
-menukarnya cuma memindahkan ketidakcocokannya ke master satunya.
+Kesimpulannya benar — baris kemampuan itu memang harus yang Yokogawa — tapi
+sebabnya tidak lengkap. 0,25179356624028343 bukan angka karangan: workbook
+IMTE-WQ-129 menuliskannya sendiri di kepala sheet `PERHITUNGAN U95%`, lengkap
+dengan asalnya (`U95% Thermometer : 0.5`, `k : 2`). Jadi yang salah bukan
+angkanya melainkan lembarnya — nilai lembar B masuk ke baris yang memodelkan
+lembar A. Penjelasannya sudah dilengkapi; nilainya sengaja **tidak** ditukar,
+karena menukarnya cuma memindahkan ketidakcocokannya ke lembar satunya.
 
 ## §1. UTemperature mestinya ikut standar suhu sesi — belum ada jalurnya
 

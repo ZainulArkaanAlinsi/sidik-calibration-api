@@ -122,12 +122,18 @@ class PhMeterCapabilitySeeder extends Seeder
         //                                    U95 0,5  -> UTemperature
         //                                    0.25179356624028343, resolusi 0,001
         //
-        // Di komentar ini dulu tertulis bahwa 0.25179356624028343 itu SALAH
-        // BACA ("angka termometernya kebaca 0.25, bukan 0.36"). Itu keliru,
-        // dan dikoreksi 9 Sep 2026 waktu master kedua diaudit: workbook
-        // IMTE-WQ-129 menulis `U95% Thermometer 0.5` dan `UTemperature
-        // 0.25179356624028343` di kepala sheetnya sendiri. Dua-duanya angka
-        // sah dari dua alat berbeda — bukan satu angka yang salah ketik.
+        // Komentar ini dulu menjelaskan 0.25179356624028343 sebagai SALAH BACA
+        // ("angka termometernya kebaca 0.25, bukan 0.36"). Kesimpulannya benar
+        // — baris kemampuan ini memang harus yang Yokogawa — tapi sebabnya
+        // TIDAK LENGKAP, dan itu dilengkapi 9 Sep 2026 waktu master kedua
+        // diaudit: 0.25179356624028343 bukan angka karangan, dia nilai SAH
+        // lembar IMTE-WQ-129, yang menulis `U95% Thermometer 0.5` di kepala
+        // sheetnya sendiri. Jadi yang salah bukan angkanya, melainkan
+        // lembarnya: nilai lembar B masuk ke baris yang memodelkan lembar A.
+        //
+        // Bedanya penting. "Salah ketik" mengundang orang membetulkannya balik
+        // begitu dia menemukan 0.25179 tertulis hitam di atas putih di salah
+        // satu workbook — dan dia PASTI menemukannya.
         //
         // Nilai yang dipakai di sini tetap yang Yokogawa. JANGAN ditukar ke
         // 0.25179356624028343 "biar cocok sama master baru": itu cuma

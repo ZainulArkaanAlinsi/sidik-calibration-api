@@ -7,37 +7,45 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * pH Meter diadu ke **KEDUA** workbook masternya, bukan salah satu.
+ * Melengkapi `UncertaintyBudgetTest` untuk pH: `k` eksak, `U`, dan lantai CMC.
  *
- * ## Kenapa dua, dan kenapa itu bukan kemewahan
+ * ## Baca ini dulu supaya nggak dikira kembar
  *
- * Lab punya dua master olah data pH, dan dua-duanya asli — bedanya bukan revisi
- * melainkan PERANGKAT yang dipakai waktu sesi itu dikerjakan:
+ * `UncertaintyBudgetTest` SUDAH mengadu kedua lembar pH ke workbook aslinya, dan
+ * sudah lebih dulu membedakan keduanya dengan benar — docblock-nya menulis
+ * sendiri *"Dua lembar beda, dua alat beda — dicampur, hasilnya nggak
+ * reproducible ke mana pun"*:
  *
- *  - `Master Olah Data_pH for trial` — termometer standar Yokogawa CA 150 Handy
- *    Cal, U95 0,72 °C, jadi UTemperature 0,36124783736376886. Alat yang
- *    dikalibrasi resolusinya 0,01 pH.
- *  - `pH_meter_IMTE-WQ-129` — termometer standar Constant/SH 10 (S/N
- *    99875850/20), U95 0,5 °C, jadi UTemperature 0,25179356624028343. Alatnya
- *    resolusi 0,001 pH.
+ *  - lembar `Master Olah Data_pH for trial` (termometer Yokogawa CA 150, U95
+ *    0,72 °C → UTemperature 0,36124783736376886; UUT resolusi 0,01 pH) — tiga
+ *    test, `Uc` + `v_eff` + `U95` sampai 6 desimal;
+ *  - lembar `pH_meter_IMTE-WQ-129` (termometer Constant/SH 10 S/N 99875850/20,
+ *    U95 0,5 °C → UTemperature 0,25179356624028343; UUT resolusi 0,001 pH) —
+ *    satu data provider, `Uc` (1e-9) + `v_eff` (1e-6) + `k` longgar (±5e-3).
  *
- * Selama ini cuma yang pertama yang pernah diadu, dan angka yang kedua sempat
- * DICATAT SEBAGAI SALAH BACA di komentar `PhMeterCapabilitySeeder` ("angka
- * termometernya kebaca 0.25, bukan 0.36"). Itu keliru: workbook IMTE-WQ-129
- * menulis `U95% Thermometer 0.5` dan `UTemperature 0.25179356624028343` di
- * kepala sheetnya sendiri. Satu angka sah yang dikira salah ketik adalah cara
- * paling sunyi buat kehilangan master — berikutnya dia "dirapikan" dan tidak
- * ada yang merah.
+ * Yang BELUM dijaga di sana, dan itu isi berkas ini:
  *
- * Berkas ini yang menahannya: BENTUK budgetnya satu, ISI-nya dua, dan keduanya
- * wajib reproduksi lembar manualnya di 5·10⁻⁶.
+ *  1. **`k` eksak dan `U` untuk lembar IMTE-WQ-129.** Di sana `k` cuma dipatok
+ *     `assertEqualsWithDelta(1.97, …, 5e-3)` dan `U` tidak diperiksa sama
+ *     sekali. Padahal `U` yang menentukan angka tercetak, dan `k` bergantung
+ *     pada `floor(v_eff)` — pemotongan yang meleset satu derajat kebebasan lolos
+ *     dari toleransi 5e-3 tanpa jejak.
+ *  2. **Lantai CMC, dua arah.** Lembar LAMA menembus CMC di pH 4 & pH 7 —
+ *     sertifikatnya memang mencetak 0,02343221 & 0,02110895, bukan 0,023 &
+ *     0,021. Lembar BARU ketutup CMC di ketiga titiknya. Dua sifat berlawanan
+ *     yang tidak boleh diam-diam bertukar, dan tidak ada test yang memegangnya.
  *
- * ## Yang TIDAK boleh disimpulkan dari sini
+ * ## Kenapa dua UTemperature, dan kenapa keduanya benar
  *
- * Bahwa salah satu UTemperature "yang benar". Keduanya benar untuk sesinya
- * masing-masing. Yang disimpan `PhMeterCapabilitySeeder` cuma yang Yokogawa,
- * dan itu keputusan sadar sampai lab memutuskan apakah UTemperature ikut
- * standar suhu sesi — `docs/pertanyaan-lab-ph-dua-master.md` §1.
+ * Bedanya bukan revisi, melainkan PERANGKAT: termometer standar yang dipakai
+ * sesi itu. `ci_suhu`, `u_perbedaan_suhu`, dan `ci_perbedaan_suhu` sudah diadu
+ * baris demi baris di kedua sheet dan **identik** — jadi cuma `UTemperature`
+ * (dan resolusi UUT) yang ikut perangkat, bukan seluruh bloknya.
+ *
+ * `PhMeterCapabilitySeeder` menyimpan yang Yokogawa, dan itu keputusan sadar:
+ * menukarnya cuma memindahkan ketidakcocokannya ke lembar satunya. Yang benar
+ * `UTemperature` ikut standar suhu sesi, dan jalurnya belum ada —
+ * `docs/pertanyaan-lab-ph-dua-master.md` §1.
  */
 class PhMeterMasterTest extends TestCase
 {
@@ -136,9 +144,10 @@ class PhMeterMasterTest extends TestCase
 
         // `Master Olah Data_pH for trial_CSV/PERHITUNGAN U95%.csv`. Berkasnya
         // sudah dikeluarkan dari repo (commit 4427494, "buang berkas mati,
-        // keluarin data pelanggan dari git") — angkanya dipatok di sini justru
-        // KARENA itu: master yang tidak ada berkasnya dan tidak ada testnya
-        // sama saja dengan master yang hilang.
+        // keluarin data pelanggan dari git"), jadi angkanya cuma hidup di test.
+        // `UncertaintyBudgetTest` sudah memegang `Uc`/`v_eff`/`U95` lembar ini;
+        // yang ditambah di sini `k` eksaknya, dan lantai CMC di test terpisah
+        // bawah.
         //
         // Dua titiknya ber-`typeA` NOL: sesi contoh itu mencatat pembacaan yang
         // identik semua, jadi simpangan bakunya memang 0. Bukan sel kosong yang
