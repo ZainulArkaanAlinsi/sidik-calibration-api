@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
 use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
@@ -201,7 +202,45 @@ $kepalaAnalitik = <<<'DART'
 library;
 DART;
 
+$kepalaAutoclave = <<<'DART'
+/// Bentuk lembar kerja contoh **Autoklaf**.
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan.
+///
+/// ## Kenapa Autoklaf punya berkasnya sendiri
+///
+/// Besarannya SUHU dan TEKANAN sekaligus, jadi dia nggak duduk di
+/// `contoh_lembar_kerja_suhu.dart` bareng ketiga alat suhu. Lembarnya juga
+/// membawa kunci tingkat-atas yang nggak dipunyai lembar mana pun:
+/// `jumlah_disk`, `jumlah_titik_waktu`, `jumlah_pembacaan_tekanan`,
+/// `satuan_tekanan_pilihan`, dan `display_tekanan_pilihan`.
+///
+/// ## Utang terakhir yang dilunasi
+///
+/// Sampai 9 September 2026 Autoklaf jatuh ke bentuk pH di mode mock — utang
+/// TERAKHIR dari tujuh yang ditemukan `bentuk_mock_semua_profil_test.dart`.
+/// Yang bikin dia ditinggal paling belakang: sertifikatnya TIGA bagian yang
+/// nggak sebangun (Sebaran Suhu, Kinerja, Tekanan), dan bentuk pH nggak punya
+/// satu pun di antaranya — bukan "sebagian kolomnya salah", tapi tiga blok yang
+/// hilang seluruhnya.
+///
+/// Perlu dicatat supaya nggak salah baca: jalur mock Autoklaf di HP SUDAH
+/// teruji lewat `autoclave_matriks_lembar_generik_test.dart` dan
+/// `autoclave_payload_matriks_test.dart`. Yang belum ada cuma bentuk lembarnya
+/// sendiri — dan itu justru yang bikin ketiga test itu jalan di atas bentuk
+/// yang bukan miliknya.
+library;
+DART;
+
 $kelompok = [
+    'autoclave' => [
+        'berkas' => 'contoh_lembar_kerja_autoclave.dart',
+        'kepala' => $kepalaAutoclave,
+        'profil' => [
+            'Autoklaf' => AutoclaveProfile::class,
+        ],
+    ],
     'analitik' => [
         'berkas' => 'contoh_lembar_kerja_analitik.dart',
         'kepala' => $kepalaAnalitik,
