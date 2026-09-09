@@ -1,4 +1,154 @@
-# Instruksi Project
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+> `AGENTS.md` cuma berisi penunjuk ke berkas ini. Satu sumber, jangan dikembar.
+
+Backend REST API kalibrasi alat ukur & sertifikat digital PT Sidik (Laravel 13 +
+Filament 5). Klien utamanya repo terpisah `sidik-calibration-mobile` — tidak ada
+frontend web sendiri di luar panel admin Filament.
+
+## Perintah
+
+```bash
+composer setup                      # install + .env + key + migrate + npm build
+composer dev                        # serve + queue:listen + pail + vite, sekaligus
+php artisan serve --host=0.0.0.0    # kalau mobile dites dari HP fisik lewat LAN
+```
+
+### Test
+
+```bash
+php artisan test                                  # SQLite in-memory (phpunit.xml) — dipakai sehari-hari
+php artisan test --filter=NamaTest                # satu kelas test
+php artisan test --filter='NamaTest::nama_metode' # satu metode
+php artisan test tests/Feature/AutoclaveApiTest.php
+php artisan test -c phpunit.mysql.xml             # suite yang sama di MySQL
+```
+
+**Dua suite itu bukan pilihan — dua-duanya wajib hijau sebelum modul disebut
+selesai.** Produksi jalan di MySQL; SQLite membaca `decimal(20,8)` sebagai float
+sementara MySQL memberi string, `AUTO_INCREMENT`-nya beda, dan strict mode-nya
+beda. Empat bug pernah bersembunyi di celah itu. Alasan lengkapnya ditulis di
+kepala `phpunit.mysql.xml`.
+
+Sekali seumur mesin, buat database khusus test (BUKAN database kerja —
+`RefreshDatabase` menghapus isinya):
+
+```sql
+CREATE DATABASE asmo_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### Format & bantu ketik
+
+```bash
+vendor/bin/pint app/Services/Foo.php   # HANYA berkas yang kamu sentuh — lihat §Alur Kerja poin 10
+composer ide-helper                    # regenerate _ide_helper.php + mixin model
+```
+
+### Perintah artisan milik proyek ini
+
+```bash
+php artisan kalibrasi:hitung-ulang     # hitung ulang sesi dari pembacaan mentah
+php artisan kalibrasi:uji-profil       # sapu profil alat lawan datanya
+php artisan kalibrasi:sapu-sesi
+php artisan kemampuan:pastikan         # tegakkan baris CMC dari lampiran akreditasi
+php artisan akun:admin
+php artisan flowmeter:audit-cmc
+```
+
+Daftar lengkapnya di `app/Console/Commands/` (20 perintah).
+
+### Generator — jangan diketik tangan, dijalankan
+
+```bash
+php docs/skrip/gen-contoh-lembar-kerja.php   # tulis contoh_lembar_kerja_*.dart ke repo mobile
+php docs/skrip/gen-kode-profil-mobile.php    # ekspor daftar kode profil ke mobile
+```
+
+`docs/skrip/gen-tabel-standar-*.py` dan `gen-sesi-*.py` membangun tabel standar &
+fixture dari workbook master. Keluarannya disalin apa adanya — menyunting
+hasilnya dengan tangan berarti berkasnya menyimpang diam-diam dari server, dan
+itu sudah tiga kali meloloskan bug (TIDS, Timbangan, Micrometer).
+
+### Yang bikin CI beda dari lokal
+
+CI memakai **PHP 8.4**, bukan 8.3 yang tertulis di `composer.json`. Itu batas
+bawah beneran: `config/database.php` menyebut `Pdo\Mysql::ATTR_SSL_CA`, kelas
+yang baru ada di 8.4 — di 8.3 config-nya fatal sebelum satu test pun jalan.
+`.github/workflows/tes.yml` menjalankan test dulu, lalu mengetuk Deploy Hook
+Render; commit merah berhenti di GitHub dan tidak sampai ke server yang dipakai
+teknisi di lokasi.
+
+## Arsitektur
+
+### Profil kalibrasi — sumbu utama repo ini
+
+Satu jenis alat = satu berkas di `app/Services/Calibration/Profiles/`, turunan
+`CalibrationProfile`. Lab menargetkan 48 jenis alat; 32 profil konkret sudah
+mendarat. Nambah alat = **satu subclass + satu seeder CMC + satu baris di
+`CalibrationProfileRegistry::daftarProfil()`** — bukan `if (besaran == ...)` di
+kelas bersama.
+
+Pencocokan alat → profil lewat `equipments.nama_alat_kemampuan` (+ `aliasNama()`),
+**bukan kategori**: pH dan Turbidimeter satu kategori yang sama, jadi kategori
+tidak cukup memisahkan.
+
+Yang **tetap** di kelas bersama dan tidak boleh pindah ke profil: agregasi budget
+(u_c, Welch–Satterthwaite, k), lantai CMC, dan keputusan PASS/FAIL. Profil cuma
+menyetor DAFTAR KOMPONEN lewat `komponenBudget()`.
+
+### Jalur angka, dari pembacaan sampai sertifikat
+
+```
+raw_measurements                      sumbu: peran_sensor / sensor_ke / tahap
+      │                               blok tingkat-sesi → spesifikasi_alat
+      ├─ App\Support\*Mentah          bentuk ulang baris mentah per keluarga alat
+      ▼
+GumCalculator                         JCGM 100:2008 — Type A+B → u_c → U = k·u_c
+      │                               k dikunci 2 (lampiran akreditasi LK-285-IDN)
+      ▼
+uncertainty_calculations              DISIMPAN, tidak pernah dihitung ulang saat dibaca
+      │                               sertifikat 5 tahun lalu wajib tetap sama angkanya
+      ▼
+CalibrationValidator                  sebelum terbit: hitung ULANG dari mentah, adu
+      │                               ke yang tersimpan → error / peringatan / info
+      ▼
+PerhitunganBuilder → CertificateSnapshotBuilder → BerkasPdfSertifikat (dompdf)
+                                      + QrCodeGenerator → endpoint verifikasi publik
+```
+
+PASS/FAIL memakai *guarded acceptance* (ILAC-G8): lulus kalau |error| **ditambah
+U** masih masuk toleransi — bukan |error| saja. Keputusan lab, 14 Jul.
+
+`php artisan kalibrasi:hitung-ulang` adalah jalur kedua yang menghitung hal yang
+sama. Itu sebabnya alat baru wajib menyambung `*Mentah`-nya ke
+`CalibrationValidator` **dan** `HitungUlangSesi` — pola ini sudah menggigit tujuh
+kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
+
+### Lapisan lain
+
+| Lapisan | Tempat | Catatan |
+|---|---|---|
+| Rute API | `routes/api.php` (satu berkas, ~640 baris) | Sanctum + `role:admin,teknisi`; hampir tiap aksi tulis punya `throttle:` sendiri |
+| Panel admin | `app/Filament/` | Filament 5; `Concerns/ScopesToOrganization` yang menyaring per organisasi |
+| Model | `app/Models/` | Semua data lab disaring `organization_id` — lihat skill `[[sidik-query-organisasi]]` |
+| OCR / Vision | `app/Services/Ocr/`, `WorksheetVisionExtractor` | `VISION_DRIVER` dipatok ke `anthropic` di kedua phpunit.xml, jangan diwarisi dari `.env` |
+| Realtime | Laravel Reverb, `routes/channels.php` | `docs/realtime-sync.md` |
+| Migrasi | `database/migrations/` (86) | Kolom baru itu pilihan TERAKHIR — lihat §Alur Kerja poin 4 |
+
+### Data sumber & dokumen
+
+- `Project-PT-Sidik/alat-alat-Pt-Sidik/` — workbook master lab per alat. Ini
+  kebenaran untuk rumus; **repo ini PUBLIK**, jadi sapu nama/alamat pelanggan
+  sebelum `git add` apa pun dari direktori ini.
+- Nilai CMC berasal dari lampiran akreditasi **LK-285-IDN**, diseed lewat
+  `*CapabilitySeeder`, diringkas di `docs/Rekap-Data-Kemampuan-Kalibrasi.md`.
+- `docs/BACA-DULU-BACKEND.md` — **satu-satunya dokumen status yang boleh
+  dipercaya**. Berkas `docs/permintaan-*.md` itu permintaan dari mobile, dan
+  beberapa tanda ✅-nya salah.
+- Komentar `spesifikasi poin N` yang tersebar di ~45 tempat merujuk ke
+  `docs/Spesifikasi-Aplikasi-Kalibrasi.md`.
 
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.
