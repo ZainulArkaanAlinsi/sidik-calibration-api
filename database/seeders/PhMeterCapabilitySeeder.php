@@ -110,11 +110,41 @@ class PhMeterCapabilitySeeder extends Seeder
         //   sensor      U95 0.06, k=2  ->  u = 0.03
         //   UTemperature = sqrt(0.36^2 + 0.03^2) = 0.36124783736376886
         //
-        // Sebelumnya di sini kesimpen 0.25179356624028343 = sqrt(0.25^2 +
-        // 0.03^2) — angka termometernya kebaca 0.25, bukan 0.36. Efeknya
-        // `u_c` dan `v_eff` meleset di desimal ke-7 lawan lembar manual, dan
-        // itu KETUTUP lantai CMC selama CMC-nya diisi jawaban jadi (lihat
-        // bawah). Begitu pembacaannya lebih berisik, selisihnya kebuka.
+        // ⚠ INI SATU-SATUNYA ANGKA DI BLOK INI YANG BUKAN SIFAT pH-nya.
+        //
+        // Dia sifat TERMOMETER STANDAR yang dipakai sesi itu, dan lab punya
+        // lebih dari satu. Ada DUA workbook master pH, dan keduanya asli:
+        //
+        //   `Master Olah Data_pH for trial`  Yokogawa CA 150 Handy Cal,
+        //                                    U95 0,72 -> UTemperature
+        //                                    0.36124783736376886, resolusi 0,01
+        //   `pH_meter_IMTE-WQ-129`           Constant/SH 10 (S/N 99875850/20),
+        //                                    U95 0,5  -> UTemperature
+        //                                    0.25179356624028343, resolusi 0,001
+        //
+        // Di komentar ini dulu tertulis bahwa 0.25179356624028343 itu SALAH
+        // BACA ("angka termometernya kebaca 0.25, bukan 0.36"). Itu keliru,
+        // dan dikoreksi 9 Sep 2026 waktu master kedua diaudit: workbook
+        // IMTE-WQ-129 menulis `U95% Thermometer 0.5` dan `UTemperature
+        // 0.25179356624028343` di kepala sheetnya sendiri. Dua-duanya angka
+        // sah dari dua alat berbeda — bukan satu angka yang salah ketik.
+        //
+        // Nilai yang dipakai di sini tetap yang Yokogawa. JANGAN ditukar ke
+        // 0.25179356624028343 "biar cocok sama master baru": itu cuma
+        // memindahkan ketidakcocokannya ke master satunya. Yang benar
+        // UTemperature ikut standar suhu sesi — dan itu belum ada jalurnya,
+        // jadi diangkat sebagai pertanyaan lab §1 di
+        // `docs/pertanyaan-lab-ph-dua-master.md`.
+        //
+        // Selisihnya nggak mengubah satu pun angka yang tercetak hari ini:
+        // buat alat resolusi 0,001 ketiga titiknya jatuh di bawah CMC dengan
+        // UTemperature mana pun (0,022757 vs 0,022756 di pH 4; 0,019772 vs
+        // 0,019752 di pH 7; 0,029842 vs 0,029730 di pH 10 — CMC 0,023/0,021/
+        // 0,031). Yang menahan supaya tetap begitu `PhMeterMasterTest`.
+        //
+        // Sisa konstanta di bawah IDENTIK di kedua workbook — `ci_suhu`,
+        // `u_perbedaan_suhu`, dan `ci_perbedaan_suhu` sudah diadu baris demi
+        // baris. Itu yang bikin yakin cuma UTemperature yang ikut perangkat.
         $uTemperature = sqrt(0.36 ** 2 + 0.03 ** 2);
 
         // `ketidakpastian_terbaik` = CMC Laboratory apa adanya (baris "CMC

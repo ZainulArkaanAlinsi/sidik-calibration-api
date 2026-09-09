@@ -2713,11 +2713,87 @@ kemampuan mock punya padanan vonis di server. Kontraknya di
 
 ---
 
+## §26 — Audit 33 master lab lawan yang sudah dibangun (9 Sep 2026)
+
+Permintaan pemilik proyek: *"kamu buka itu isi alat alat yang udha kita pernah
+buat okk tapi kammu cek semua nya okk kalo ada salah langusng benarkan okk"*.
+
+Yang disapu enam dimensi, bukan satu:
+
+| Dimensi | Cara | Hasil |
+|---|---|---|
+| Nomor metode | 33 master → `INPUT DATA` atau footer `SERTIFIKAT`, diadu ke `kodeMetode()` tiap profil | 30 cocok, 3 beda **dan ketiganya sudah tercatat sebelum audit ini** |
+| Pita CMC | tabel `Jenis UTM`/`CMC` di sheet `DATABASE` → `database/data/kemampuan-kalibrasi.json` | 4 master memuatnya eksplisit; keempatnya cocok persis |
+| Nomor formulir | sapuan `SIDIK-FM-` seluruh CSV | tidak ada di workbook olah data — adanya di PDF lembar kerja. Yang muncul (`SIDIK-FM-CAL-2403_Rev. 0`) formulir SERTIFIKAT bersama, sudah dikenali `SemuaProfilLembarKerjaTest` |
+| Cakupan | tiap direktori master → profil | 33/33 punya profil; nol master yatim |
+| Varian | alat bermaster jamak (Micrometer 4, Timbangan 3, TITS 2, TIDS 2, Enclosure 2, Flowmeter 2, Viscometer 2) | semua varian terwakili di `*MasterTest` masing-masing |
+| **Bukti angka** | tiap snapshot punya test yang mengadunya? | **satu bolong: pH** |
+
+### Yang benar-benar salah: satu, dan bentuknya komentar
+
+pH satu-satunya alat tanpa `*BudgetTest`/`*MasterTest`. Angkanya bukan tak
+teruji sama sekali — `SertifikatCocokMasterTest` mengadu tiga nilai
+sertifikatnya — tapi **budget lima komponennya tidak pernah**, dan snapshot
+keduanya (`instrument-analiitk/pH_meter_IMTE-WQ-129`) tidak pernah dibuka.
+
+Waktu dibuka, isinya bertentangan dengan komentar yang sudah ada di
+`PhMeterCapabilitySeeder`: komentar itu menyebut `0.25179356624028343` sebagai
+**salah baca** (*"angka termometernya kebaca 0.25, bukan 0.36"*). Workbook itu
+menuliskannya sendiri di kepala sheet, lengkap dengan asalnya — `U95%
+Thermometer : 0.5`, `k : 2`. Termometer standarnya memang beda benda:
+
+| | `…pH for trial` | `pH_meter_IMTE-WQ-129` |
+|---|---|---|
+| Termometer | Yokogawa CA 150 | Constant/SH 10 (S/N 99875850/20) |
+| U95 | 0,72 °C | 0,5 °C |
+| UTemperature | 0,36124783736376886 | 0,25179356624028343 |
+| Resolusi UUT | 0,01 pH | 0,001 pH |
+
+Sisa konstantanya (`ci_suhu`, `u_perbedaan_suhu`, `ci_perbedaan_suhu` — ketiga
+titik) **identik** di kedua workbook. Itu yang membuktikan cuma `UTemperature`
+yang ikut perangkat, bukan seluruh bloknya.
+
+### Kenapa angkanya TIDAK ditukar
+
+Menukar 0,36 → 0,25 cuma memindahkan ketidakcocokannya ke master satunya. Yang
+benar `UTemperature` ikut standar suhu sesi, dan jalurnya belum ada — jadi
+diangkat jadi **K28** + `docs/pertanyaan-lab-ph-dua-master.md`.
+
+Dampaknya hari ini nol, dan itu diukur bukan dikira: untuk alat resolusi 0,001
+ketiga titiknya di bawah CMC dengan UTemperature mana pun (0,022757/0,019772/
+0,029842 lawan CMC 0,023/0,021/0,031), dan yang dipakai sistem selalu yang
+**lebih besar** — arah aman, sistem tidak pernah melaporkan U lebih kecil dari
+yang lab hitung sendiri.
+
+Tapi itu kebetulan, dan `PhMeterMasterTest` menahannya sebagai kebetulan: satu
+test menuntut master LAMA **tetap menembus** CMC di pH 4 & pH 7 (sertifikatnya
+memang mencetak 0,02343221 & 0,02110895, bukan CMC), satu lagi menuntut master
+BARU tetap ketutup di ketiga titik. Yang pertama runtuh kalau budgetnya diam-diam
+menyusut; yang kedua runtuh kalau pilihan UTemperature mulai menentukan angka
+tercetak. Dua-duanya menyebut §1 pertanyaan labnya di pesan gagalnya, supaya
+yang menemukan merahnya tidak "membetulkan" batasnya.
+
+### Yang dikonfirmasi BENAR dan sengaja dibiarkan
+
+- **Flowmeter** — profil `0528_Rev.4`, master `0528_Rev.6`. Profil ikut
+  **lampiran akreditasi**; Rev.6 belum masuk lingkup. Sertifikat tidak boleh
+  mengklaim revisi metode di luar yang diakreditasi. (§16 pertanyaan flowmeter.)
+- **Thermocouple** — master men-VLOOKUP `Calibration Method : 2` ke baris TITS
+  (`0502_Rev.3`), padahal barisnya sendiri ada di nomor 29 (`0529_Rev.2`).
+  `ThermocoupleProfile` sudah memakai yang benar sejak awal; kerusakan
+  salin-tempel ini tercatat `pertanyaan-lab-suhu-3alat.md` §1.
+- **Timbangan** — master menulis `SIDIK-IK-CAL-0505-Rev.7` (tanda hubung)
+  sendirian di antara 30+ IK ber-garis bawah. Sudah tercatat di docblock
+  `TimbanganProfile`.
+- **Centrifuge & Tachometer berbagi `0511_Rev.6`** — bukan cacat: keduanya
+  memang satu Instruksi Kerja dan satu `ProfilPutaran`.
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
 |---|---|---|
 | **K27** | **Repo PUBLIK memuat nama & alamat ~13 pelanggan di ~30 berkas terlacak** (seeder sesi contoh, JSON master, docblock profil, `jababeka.csv`, 9 dokumen). CSV master sudah ditahan `.gitignore` + Height Gauge diredaksi 8 Sep 2026, tapi sisanya butuh keputusan | Tidak menahan fitur apa pun. Menahan **keputusan**: dibiarkan, repo dijadikan privat, atau nama diganti sintetis. Membersihkan riwayat butuh force-push — perlu perintah eksplisit |
+| **K28** | **pH Meter punya DUA master, dan `UTemperature` beda karena TERMOMETERNYA beda** (Yokogawa CA 150 U95 0,72 °C → 0,36125; Constant/SH 10 U95 0,5 °C → 0,25179). Sistem memakai yang Yokogawa untuk semua sesi | Tidak menahan apa pun **hari ini** — buat alat resolusi 0,001 ketiga titiknya di bawah CMC dengan angka mana pun, jadi yang tercetak tetap CMC, dan yang dipakai sistem yang lebih BESAR (arah aman). Tapi master LAMA membuktikan itu kebetulan: di resolusi 0,01 hasil hitungnya menembus CMC di dua titik dan sertifikatnya mencetak angka hitung (0,02343221 & 0,02110895), bukan CMC. Menahan **keputusan**: `UTemperature` ikut standar suhu sesi, atau tetap dipatok per jenis alat. Rinciannya `docs/pertanyaan-lab-ph-dua-master.md` |
 | ~~K1~~ | ~~TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah?~~ | **GUGUR** (28 Agt 2026) — nggak pernah ada lima UUT. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu memakainya `AVERAGE`+`STDEV` per baris: lima ULANGAN, satu alat, satu baris = satu set point |
 | ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
 | K8 | Inlab: ruangan wajib dipilih atau boleh kosong? | Kalau wajib penuh, semua APK lama ditolak 422 |
@@ -2810,6 +2886,7 @@ berkas profil.
 | G13 | Alat baru **Height Gauge 600 mm** (Panjang, DI LUAR lampiran akreditasi) — §23 | **BERES di server** (7 Sep 2026) — alat ke-26, satu workbook master, **nol kolom baru** di `raw_measurements`. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: kesepuluh koreksi, kesembilan `ui`/`ci`/`vi`, dan kelima agregat cocok pada 5·10⁻⁶ — nol beda. Dijaga `HeightGaugeMasterTest` (17 test / 87 asersi). Bentuknya paling tidak biasa dari 26: **tiga blok yang tidak sebangun**, dan cuma satu yang berbentuk titik ukur. Yang membalik taruhannya — alat ini **tidak punya lantai CMC** (di luar LK-285-IDN, dan sel lantai masternya memang kosong), jadi komponen budget yang hilang tidak tertampung apa pun; gerbang penerbitannya dipatok tiga syarat dan yang menahan ketiadaan baris hitungan, bukan peringatan sesi. Tiga kejanggalan metode ditiru + diangkat (`/12` untuk selisih HARI, `√6` pada komponen `rect.`, paralelisme `STDEV(Max;Min)`), tiga kerusakan dihitung benar (suku termal yang di master cuma hidup di titik pertama, umur drift dari `NOW()`, rujukan sel `L27` yang meleset). Satu bug SUNYI ketemu waktu test ditulis: gerbang "sepuluh nilai identik" yang ditulis `stdev > 0` **tidak pernah menyala** untuk nilai yang tidak bisa direpresentasikan persis dalam biner (599,95 → stdev 1,2e-13) — diganti `max !== min`. Sepuluh pertanyaan lab di `docs/pertanyaan-lab-height-gauge.md`; §6 **prioritas satu** (sertifikat masih membawa klaim akreditasi untuk lingkup yang tidak diakreditasi — Gas Detector pun sudah begitu sejak alat ke-10). **Sisi mobile BERES** (7 Sep 2026) — `height_gauge_lembar_test.dart` ada dan hijau, dan `docs/perintah-frontend-height-gauge.md` sendiri sudah berstatus "SUDAH DIKERJAKAN". Baris ini tertinggal menulis "BELUM" sampai 9 Sep 2026: tabel Gelombang yang berkata sebaliknya dari badan dokumen mengembalikan persis masalah yang bikin dokumen ini ada, cuma arah kebalikannya |
 | G14 | Alat baru **Flowmeter Ultrasonic** (Aliran, lampiran no. 30 & 31) — §25 | **BERES di server** (8 Sep 2026) — alat ke-27 & ke-28, dua workbook master jadi DUA profil + satu mesin hitung, **nol kolom baru** di `raw_measurements`. Kelompok Aliran sekarang LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: tiap kolom turunan, tiap `u`/`ci`/`vi`, `uc`, `veff`, `k`, `U` keempat blok titik kedua workbook cocok pada 5·10⁻⁶ — nol beda. Dijaga `FlowmeterMasterTest` (9 test / 213 asersi). Bentuknya paling berbahaya dari 28: **satu titik punya DUA deret berdampingan** (UUT + totalizer standar), dan pada Flowrate deret UUT-nya **bersarang** tiga durasi per ulangan — tertukar atau tertimpa, yang terbit bukan error melainkan **deviasi nol di setiap titik**. Tiga kerusakan master dihitung benar dan arahnya ditegakkan test: lantai CMC yang hilang (**sertifikat lab sudah terbit 1,0466 % pada pita terakreditasi 1,2 %** → 3,2512 naik ke **3,7277 Lpm**), rentang densitas Totalizer yang melenceng satu kolom ke titik 3 (deviasi −18,9072 → **−18,8907 L**), dan `Ut-water` yang menunjuk sel kosong (`U_temperature` 0,27803 → **0,27952 °C**). Dua workbook ternyata **dua generasi budget** (8 vs 9 komponen) — ditiru masing-masing, bukan diseragamkan. Dua cacat SUNYI ketemu waktu test ditulis: tanda kolom `Correction` terbalik, dan resolusi satuan massa yang dikonversi tanpa densitas sehingga seluruh sesi `kg/min` ditolak. Sertifikatnya dapat blok **PIPE SPECIFICATION & SENSOR MOUNTING** yang di master ada labelnya tapi sel isinya kosong, plus `k` per titik. Tujuh belas pertanyaan lab di `docs/pertanyaan-lab-flowmeter.md`; **§1 prioritas satu** (kedua master kolom VALIDATION-nya KOSONG) dan **§16** (lampiran menyebut *static weighing method*, yang dikerjakan perbandingan langsung dengan UFM). **Sisi mobile BERES** (9 Sep 2026) — `dart analyze` bersih, `flutter test` 1627/1627; bentuk contohnya DIGENERATE dari respons server, bukan disusun tangan. Kontraknya di `docs/perintah-frontend-flowmeter.md`. **Plus satu penjaga yang bukan milik alat ini:** `bentuk_mock_semua_profil_test.dart` menyapu daftar kode profil yang digenerate registry server (`docs/skrip/gen-kode-profil-mobile.php`) dan menuntut tiap kode punya bentuk mock-nya sendiri. Waktu dipasang dia menemukan **tujuh** profil yang selama ini diam-diam memajang lembar pH di mode mock — `autoclave`, `conductivity_meter`, dan kelima Enclosure (lembar GRID 9 termokopel, yang bentuk pH-nya nggak punya satu pun kotak yang cocok). Ketujuhnya terdaftar sebagai UTANG berikut akibatnya, dan penjaganya menggigit dua arah: kode baru tanpa cabang merah, dan entri utang yang sudah lunas wajib dicabut. **Lima di antaranya — kelima Enclosure — DILUNASI hari yang sama** (9 Sep 2026): bentuknya digenerate dari server ke `contoh_lembar_kerja_enclosure.dart` (2.824 baris, 5 profil), dan generator contohnya sekalian disatukan jadi `gen-contoh-lembar-kerja.php` supaya emitter Dart-nya nggak digandakan per kelompok — pola yang §18 sudah cabut sekali. `conductivity_meter` menyusul lunas hari itu juga (`contoh_lembar_kerja_analitik.dart`) — dan sambil melunasinya ketahuan bahwa alasan utang yang pertama ditulis KELIRU: dia disebut "divonis PASS/FAIL", padahal `punyaToleransi()`-nya `false` dan `kontrak-api.md` sudah menempatkannya di kelompok yang berhenti di `U95%`. `autoclave` — utang terakhir — ikut lunas hari itu juga (`contoh_lembar_kerja_autoclave.dart`), jadi **ketujuh utangnya NOL**. Petanya sengaja dibiarkan ada walau kosong: dia tempat utang berikutnya mendarat, dan ketiga test menggantung padanya. Dihapus, profil ke-29 yang belum punya bentuk mock nggak punya jalan mendarat selain bikin sapuannya merah tanpa tempat mencatat alasannya — dan yang biasanya terjadi berikutnya bukan bentuk mock-nya dibuat, tapi sapuannya dilonggarkan. Itu jawaban atas pola yang berulang di dokumen ini — penjaga yang daftarnya diambil dari registry bertahan, yang ditulis tangan selalu ketinggalan |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
+| G15 | **Audit seluruh 33 master di `alat-alat-Pt-Sidik` lawan yang sudah dibangun** — §26 | **BERES** (9 Sep 2026) — enam dimensi disapu: nomor metode ke-33 master, pita CMC, nomor formulir, cakupan profil, varian per alat, dan apakah tiap snapshot punya test yang mengadu angkanya. **Nol kode produksi berubah** — dan itu hasilnya, bukan kemalasan. Yang ketemu: **pH satu-satunya alat yang masternya tidak pernah diadu**, dan snapshot keduanya (`pH_meter_IMTE-WQ-129`) sempat DICATAT SEBAGAI SALAH BACA di komentar seeder. Bukan salah baca — termometer standarnya memang beda benda (U95 0,5 lawan 0,72 °C), dan `ci_suhu`/`u_perbedaan_suhu`/`ci_perbedaan_suhu` ternyata IDENTIK di kedua workbook, jadi cuma `UTemperature` yang ikut perangkat. Ditutup `PhMeterMasterTest` (4 test / 36 asersi): keenam titik dua workbook reproduksi di 5·10⁻⁶, plus penjaga dua arah — master lama WAJIB tetap menembus CMC di dua titik, master baru WAJIB tetap ketutup di tiga. Konstantanya sengaja **tidak** ditukar (K28). Yang dikonfirmasi BENAR dan dibiarkan: Flowmeter `0528_Rev.4` (profil ikut lampiran akreditasi, master sudah Rev.6 yang belum diakreditasi — §16 pertanyaan flowmeter), Thermocouple `0529_Rev.2` (master men-VLOOKUP indeks 2 → metode TITS `0502_Rev.3`; sudah tercatat `pertanyaan-lab-suhu-3alat.md` §1), Timbangan `0505-Rev.7` yang bertanda hubung sendirian di antara 30+ IK ber-garis bawah, dan `SIDIK-FM-CAL-2403_Rev. 0` yang muncul di banyak master karena dia formulir SERTIFIKAT bersama, bukan lembar kerja. Keempat tabel CMC master yang eksplisit (Conductivity, Refractometer, Turbidimeter, pH) cocok persis dengan lampiran LK-285-IDN |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
