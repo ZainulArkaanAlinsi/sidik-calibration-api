@@ -43,6 +43,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanKeterulanganTimbangan();
         $this->bakukanPraEvaluasiMicrometer();
         $this->bakukanBlokHeightGauge();
+        $this->bakukanBlokFlowmeter();
 
         if ($this->user()?->isAdmin()) {
             return;
@@ -287,17 +288,85 @@ class CalibrationRequest extends FormRequest
             // dan `bagianParalelisme()`. Kertasnya cuma punya satu baris, tapi
             // baris kedua dan seterusnya (kalau revisi berikutnya menambahnya)
             // ikut disambung — bukan dibuang diam-diam.
-            $mentah = isset($nilai['baris'])
-                ? array_merge(...array_map(
-                    static fn ($b): array => array_values((array) (is_array($b) ? ($b['pembacaan'] ?? []) : [])),
-                    array_values((array) $nilai['baris']) ?: [[]],
-                ))
-                : array_values($nilai);
+            $spek['height_gauge'][$kunci] = self::ratakanDeretTabel($nilai);
+            $berubah = true;
+        }
 
-            $spek['height_gauge'][$kunci] = array_map(
-                static fn ($v): float => (float) $v,
-                array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v))),
-            );
+        if ($berubah) {
+            $this->merge(['spesifikasi_alat' => $spek]);
+        }
+    }
+
+    /**
+     * Ratakan deret tabel bentuk HP jadi deret angka datar.
+     *
+     * Bentuk yang datang dari `simpan_ke: 'spesifikasi_alat.…'`:
+     *
+     *     ['baris' => [['pembacaan' => [50.81, 50.82, 50.81]]]]
+     *
+     * Deret yang SUDAH datar dipakai apa adanya — jalur seeder & test lama
+     * mengirimnya begitu, dan keduanya harus tetap jalan.
+     *
+     * Baris kedua dan seterusnya ikut DISAMBUNG, bukan dibuang: kertas yang ada
+     * sekarang cuma punya satu baris, tapi revisi berikutnya yang menambahnya
+     * tidak boleh kehilangan angkanya diam-diam.
+     *
+     * Yang bukan angka dilewati, bukan dibaca nol — satu kotak kosong yang
+     * dipaksa `0.0` di antara tiga pembacaan diameter menarik rata-ratanya
+     * turun sepertiga, dan `u_A` yang lahir dari situ salah tanpa satu pun
+     * error.
+     *
+     * @param  array<int|string, mixed>  $nilai
+     * @return list<float>
+     */
+    private static function ratakanDeretTabel(array $nilai): array
+    {
+        $mentah = isset($nilai['baris'])
+            ? array_merge(...array_map(
+                static fn ($b): array => array_values((array) (is_array($b) ? ($b['pembacaan'] ?? []) : [])),
+                array_values((array) $nilai['baris']) ?: [[]],
+            ))
+            : array_values($nilai);
+
+        return array_map(
+            static fn ($v): float => (float) $v,
+            array_values(array_filter($mentah, static fn ($v): bool => is_numeric($v))),
+        );
+    }
+
+    /**
+     * Ratakan blok tingkat-sesi **Flowmeter** yang datang dari lembar HP.
+     *
+     * Dua tabel geometri pipa (`pipa_diameter`, `pipa_ketebalan`) menyatakan
+     * tujuannya `spesifikasi_alat.flowmeter.…`, jadi HP mengirimnya sebagai
+     * bentuk tabel bersarang. `FlowmeterMentah::blokSesi()` menunggu deret
+     * angka datar.
+     *
+     * Tanpa perataan ini `deretAngka()` di sana memulangkan `[]` untuk
+     * keduanya, `geometriPipa()` balik `null`, dan SETIAP titik diblokir dengan
+     * alasan "diameter dan ketebalan pipa belum terisi" — padahal teknisi sudah
+     * mengisinya. Alasannya kebaca, jadi ini bukan kegagalan sunyi; tapi dia
+     * menahan sesi yang datanya lengkap.
+     */
+    private function bakukanBlokFlowmeter(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek['flowmeter'] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        $berubah = false;
+
+        foreach (['diameter_pipa_mm', 'ketebalan_pipa_mm'] as $kunci) {
+            $nilai = $blok[$kunci] ?? null;
+
+            if (! is_array($nilai) || $nilai === []) {
+                continue;
+            }
+
+            $spek['flowmeter'][$kunci] = self::ratakanDeretTabel($nilai);
             $berubah = true;
         }
 
@@ -503,6 +572,47 @@ class CalibrationRequest extends FormRequest
             // Batasnya dilonggarkan ke 12 dengan alasan yang sama seperti
             // `micrometer`: kunci ketujuh yang menyusul tidak boleh menolak
             // SELURUH sesi.
+            // Blok Flowmeter: sebelas kunci tingkat atas. Tanpa aturan ini
+            // `spesifikasi_alat.*` jatuh ke penjaga "harus teks, bukan objek"
+            // dan SELURUH sesi Flowmeter dari HP ditolak 422 — teknisi nggak
+            // bisa mengirim lembar yang datanya lengkap.
+            //
+            // Batasnya 16, bukan 11: kunci berikutnya yang menyusul (liner,
+            // path configuration lanjutan) nggak boleh menolak seluruh sesi.
+            // Alasannya sama seperti `micrometer` & `height_gauge`.
+            'spesifikasi_alat.flowmeter' => ['sometimes', 'nullable', 'array', 'max:16'],
+            // `mode` yang menentukan budgetnya 8 komponen atau 9. Dibatasi ke
+            // dua yang sah — mode yang nggak dikenal bikin
+            // `FlowmeterMentah::blokSesi()` balik null dan seluruh titiknya
+            // pulang "belum dihitung", sementara mode yang SALAH menerbitkan
+            // budget generasi yang keliru tanpa satu pun penanda.
+            'spesifikasi_alat.flowmeter.mode' => ['sometimes', 'nullable', 'string', 'in:totalizer,flowrate'],
+            // Satuan MENGALIKAN seluruh pembacaan (`m3/h` vs `LPM` beda
+            // 16,67x). Daftarnya gabungan kedua varian; yang nggak cocok dengan
+            // mode-nya ditolak di `TabelStandarFlowmeter::faktorSatuan()`
+            // dengan alasan yang kebaca.
+            'spesifikasi_alat.flowmeter.satuan' => [
+                'sometimes', 'nullable', 'string',
+                'in:L,m3,usg,ml,kg,LPM,m3/h,usg/min,m3/min,kg/h,kg/min',
+            ],
+            'spesifikasi_alat.flowmeter.kapasitas' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.flowmeter.resolusi' => ['sometimes', 'nullable', 'numeric'],
+            // Geometri pipa: dari keduanya lahir `u_A`, dan salah satunya
+            // kosong bikin DUA komponen budget lenyap sekaligus. Bentuk tabel
+            // bersarang dari HP sudah diratakan `bakukanBlokFlowmeter()`
+            // sebelum sampai sini.
+            'spesifikasi_alat.flowmeter.diameter_pipa_mm' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'spesifikasi_alat.flowmeter.diameter_pipa_mm.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.flowmeter.ketebalan_pipa_mm' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'spesifikasi_alat.flowmeter.ketebalan_pipa_mm.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.flowmeter.material_pipa' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'spesifikasi_alat.flowmeter.jenis_fluida' => ['sometimes', 'nullable', 'string', 'max:120'],
+            // SATU pilihan, bukan tiga centang — tiga boolean yang saling
+            // meniadakan nggak bisa divalidasi, dan kertasnya sendiri mencetak
+            // ketiganya berdampingan.
+            'spesifikasi_alat.flowmeter.path_configuration' => ['sometimes', 'nullable', 'string', 'in:Z,V,W'],
+            'spesifikasi_alat.flowmeter.liner_material' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'spesifikasi_alat.flowmeter.liner_ketebalan_mm' => ['sometimes', 'nullable', 'numeric'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],

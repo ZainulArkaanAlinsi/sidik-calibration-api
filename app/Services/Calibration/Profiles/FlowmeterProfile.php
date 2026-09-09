@@ -894,6 +894,17 @@ abstract class FlowmeterProfile extends CalibrationProfile
             'titik_bisa_diubah' => true,
             'pita_cetak' => $pita,
             'offset_kunci' => $offset,
+            // Tujuan isinya dinyatakan EKSPLISIT, dan tanpa ini angkanya hilang
+            // diam-diam. Sisi HP data-driven: dia menyusun `measurements[]`
+            // dari tabel yang menyebut tujuannya, dan tabel yang diam dianggap
+            // nggak punya tempat simpan — kotaknya kegambar, teknisi ngisi
+            // penuh, payloadnya terkirim tanpa satu pun pembacaan.
+            //
+            // Kunci di sini sama persis dengan yang dibaca
+            // `CalibrationController::susunBlokFlowmeter()` dan
+            // `FlowmeterMentah::dari()`. Ketiganya harus sepakat; yang menjaga
+            // kesepakatannya `flowmeter_lembar_test.dart` di repo mobile.
+            'simpan_ke' => 'measurements[].'.$grup,
             'baris' => $baris,
             'kolom' => [[
                 'kode' => 'pembacaan', 'label' => 'Nilai',
@@ -933,6 +944,12 @@ abstract class FlowmeterProfile extends CalibrationProfile
                     // Di lembar ini akibatnya pembacaan standar tertimpa
                     // pembacaan UUT, dan deviasinya jadi NOL di seluruh sesi.
                     'offset_kunci' => 0,
+                    // Sama seperti keempat tabel di bawah — lihat
+                    // `$tabelSederhana`. Bedanya cuma bentuk yang lahir di
+                    // sisi HP: tabel ini punya TIGA kolom durasi pada varian
+                    // Flowrate, jadi deretnya BERSARANG (ulangan → durasi),
+                    // sementara yang berkolom satu keluar datar.
+                    'simpan_ke' => 'measurements[].'.FlowmeterMentah::PERAN_UUT,
                     'baris' => $baris,
                     'kolom' => $kolomUut,
                     'pengulangan' => range(1, self::PENGULANGAN),
