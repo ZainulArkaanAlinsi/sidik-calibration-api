@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
 use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
 use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
@@ -169,7 +170,45 @@ $kepalaEnclosure = <<<'DART'
 library;
 DART;
 
+$kepalaAnalitik = <<<'DART'
+/// Bentuk lembar kerja contoh **instrumen analitik** — untuk sekarang baru
+/// Conductivitymeter.
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan.
+///
+/// ## Kenapa berkas ini baru ada sekarang, dan kenapa cuma berisi satu
+///
+/// Kedelapan contoh instrumen analitik lain (pH, Turbidimeter, Chlorine,
+/// Refractometer, Spectro, Visco, DO, Gas Detector) masih tinggal DI DALAM
+/// `lembar_kerja_service.dart` — bentuk lama, sebelum contoh dipisah per
+/// kelompok pengukuran. Conductivity penghuni pertama berkas ini; sisanya
+/// menyusul kalau ada yang memindahkan, dan tempatnya sudah disiapkan.
+///
+/// Yang bikin Conductivity dikerjakan duluan: dia satu-satunya profil analitik
+/// yang **nggak punya bentuk mock sama sekali** sampai 9 September 2026, jadi
+/// di mode mock dia diam-diam memajang lembar pH — tanpa error di mana pun.
+/// Yang menemukannya `bentuk_mock_semua_profil_test.dart`, sapuan yang daftar
+/// profilnya diambil dari registry server.
+///
+/// ## Bukan alat yang divonis PASS/FAIL
+///
+/// Catatan utang yang pertama ditulis sempat menyebut Conductivity "DIVONIS
+/// PASS/FAIL"; itu KELIRU. `ConductivityProfile::punyaToleransi()` memulangkan
+/// `false`, dan `docs/kontrak-api.md` maupun tabel vonis mock sama-sama sudah
+/// menempatkannya di kelompok yang berhenti di `U95%`. Dicatat di sini supaya
+/// keliru itu nggak dipungut ulang dari riwayat.
+library;
+DART;
+
 $kelompok = [
+    'analitik' => [
+        'berkas' => 'contoh_lembar_kerja_analitik.dart',
+        'kepala' => $kepalaAnalitik,
+        'profil' => [
+            'Conductivity' => ConductivityProfile::class,
+        ],
+    ],
     'aliran' => [
         'berkas' => 'contoh_lembar_kerja_aliran.dart',
         'kepala' => $kepalaAliran,
