@@ -140,8 +140,10 @@ kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
 ### Data sumber & dokumen
 
 - `Project-PT-Sidik/alat-alat-Pt-Sidik/` — workbook master lab per alat. Ini
-  kebenaran untuk rumus; **repo ini PUBLIK**, jadi sapu nama/alamat pelanggan
-  sebelum `git add` apa pun dari direktori ini.
+  kebenaran untuk rumus. Repo **sekarang PRIVAT** (dicek 10 Sep 2026 lewat
+  `gh repo view --json visibility`) — sempat PUBLIK sampai K27 dijawab, dan
+  status itu bukan alasan longgar: tetap sapu nama/alamat pelanggan sebelum
+  `git add` apa pun dari direktori ini. Lihat §Sebelum repo dibalik jadi PUBLIK.
 - Nilai CMC berasal dari lampiran akreditasi **LK-285-IDN**, diseed lewat
   `*CapabilitySeeder`, diringkas di `docs/Rekap-Data-Kemampuan-Kalibrasi.md`.
 - `docs/BACA-DULU-BACKEND.md` — **satu-satunya dokumen status yang boleh
@@ -149,6 +151,38 @@ kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
   beberapa tanda ✅-nya salah.
 - Komentar `spesifikasi poin N` yang tersebar di ~45 tempat merujuk ke
   `docs/Spesifikasi-Aplikasi-Kalibrasi.md`.
+
+### Sebelum repo dibalik jadi PUBLIK — yang menghalangi RIWAYAT, bukan berkasnya
+
+Berkas kerjanya sudah bersih: nama & alamat pelanggan diganti sintetis di 81
+berkas, commit `c0645f6`. **Riwayat git-nya belum.** Rewrite 10 Sep cuma
+mencabut atribusi, dan tree `main` sebelum/sesudah sengaja diadu sampai identik
+byte-per-byte — nol byte isi berubah, jadi commit lama masih memuat isinya yang
+dulu. Dihitung ulang 10 Sep 2026 dengan `git log -S ... --all`:
+
+| Yang masih terbaca di riwayat | Jumlah commit |
+|---|---|
+| Password MySQL LAN user `asmo_dev` | 3 |
+| Password admin seed `rahasia123` | 46 |
+| Nama pelanggan asli (sebelum `c0645f6`) | 3+ |
+
+Menjadikan repo publik menerbitkan **seluruh riwayat**, bukan cuma keadaan
+terakhir. `git log -S` bisa dijalankan siapa pun yang meng-clone. Urutan yang
+mengikat:
+
+1. **Ganti dua password itu di MySQL lebih dulu.** Keduanya sudah harus dianggap
+   bocor ke siapa pun yang pernah punya akses repo — dan itu berlaku sekarang,
+   tidak menunggu repo jadi publik.
+2. Putuskan nasib yang **sengaja dibiarkan** waktu K27 dijawab: nama laboratorium
+   lain di field `"lab"`, direktori bisnis `database/direktori/*.csv`, dan nomor
+   seri alat. Ketiganya lolos sanitasi karena dinilai bukan data pelanggan —
+   penilaian itu perlu diulang kalau pembacanya jadi umum.
+3. **Baru** bahas menulis ulang riwayat. Itu butuh force-push, dan force-push
+   **tidak boleh dijalankan tanpa perintah eksplisit** — lihat §Git Workflow.
+
+Jangan menyimpulkan status repo dari ingatan atau dari dokumen ini; jalankan
+`gh repo view --json visibility`. Berkas ini sendiri sempat salah menulis
+"PUBLIK" selama dua hari setelah statusnya dibalik, dan tidak ada yang error.
 
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.

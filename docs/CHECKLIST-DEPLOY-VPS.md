@@ -93,7 +93,8 @@ php artisan migrate --force
 manggil seeder demo, yang bikin:
 
 - 4 akun demo (`admin@sidik.test`, `teknisi@sidik.test`, …) berpassword
-  **`rahasia123`** — akun admin aktif dengan password yang tertulis di repo publik
+  **`rahasia123`** — akun admin aktif dengan password yang tertulis di repo, dan
+  password itu masih terbaca di 46 commit riwayat sekalipun repo sekarang privat
 - sesi kalibrasi & sertifikat palsu (pH, turbidimeter, chlorine) yang bercampur
   dengan data pelanggan asli, lengkap dengan pelanggan fiktif
 
@@ -441,7 +442,7 @@ jadi keluar dari jendela health check sepenuhnya.
 ```
 
 Batasnya sama dengan `direktori_perusahaan`: yang dilaporkan **status, bukan nilai**, nol request
-ke penyedia, nol rahasia. Repo ini publik, jadi SHA commit bukan rahasia.
+ke penyedia, nol rahasia. SHA commit sendiri bukan rahasia.
 
 ### "Direktorinya sedang menagih atau nggak?" (ditambah 2 Sep 2026)
 
