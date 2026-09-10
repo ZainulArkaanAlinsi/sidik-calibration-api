@@ -114,7 +114,7 @@
 
       <text class="fam masuk3" x="2" y="80" font-size="18" fill="#94a3b8">Backend kalibrasi alat ukur <tspan fill="#475569">·</tspan> sertifikat digital PT Sidik</text>
 
-      <g class="masuk4" transform="translate(2, 114)">
+      <g transform="translate(2, 114)"><g class="masuk4">
         <text class="mono" x="0"   y="0" font-size="15" fill="#7dd3fc">u_c → U = k·u_c</text>
         <text class="mono" x="140" y="0" font-size="15" fill="#475569">|</text>
         <text class="mono" x="158" y="0" font-size="15" fill="#c4b5fd">k = 2</text>
@@ -123,10 +123,10 @@
         <text class="mono" x="373" y="0" font-size="15" fill="#475569">|</text>
         <text class="mono" x="391" y="0" font-size="15" fill="#fca5a5">ILAC-G8</text>
         <rect class="kursor" x="472" y="-13" width="9" height="17" fill="#22d3ee"/>
-      </g>
+      </g></g>
     </g>
 
-    <g class="masuk4 fam" transform="translate(824, 108)">
+    <g transform="translate(824, 108)"><g class="masuk4 fam">
       <rect x="0"   y="0"  width="112" height="34" rx="17" fill="#ff2d20" fill-opacity="0.14" stroke="#ff2d20" stroke-opacity="0.45"/>
       <text x="56"  y="22" font-size="14" font-weight="600" fill="#fca5a5" text-anchor="middle">Laravel 13</text>
 
@@ -138,7 +138,7 @@
 
       <rect x="124" y="46" width="112" height="34" rx="17" fill="#4479a1" fill-opacity="0.20" stroke="#60a5fa" stroke-opacity="0.45"/>
       <text x="180" y="68" font-size="14" font-weight="600" fill="#bfdbfe" text-anchor="middle">MySQL 8</text>
-    </g>
+    </g></g>
 
     <rect class="sapu" x="0" y="-40" width="180" height="420" fill="url(#shine)"/>
 

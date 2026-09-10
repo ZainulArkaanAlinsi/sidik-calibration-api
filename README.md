@@ -9,10 +9,10 @@
 [![Filament](https://img.shields.io/badge/Filament-5-FDAE4B?style=for-the-badge&logo=laravel&logoColor=white)](https://filamentphp.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://mysql.com)
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/ZainulArkaanAlinsi/sidik-calibration-api/tes.yml?branch=main&style=flat-square&label=tests&logo=github)](../../actions)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](../../actions)
 ![Profil alat](https://img.shields.io/badge/profil%20alat-28%20%2F%2048-blue?style=flat-square)
 ![Akreditasi](https://img.shields.io/badge/CMC-LK--285--IDN-success?style=flat-square)
-![Lisensi](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)
+![Repo](https://img.shields.io/badge/repo-privat-64748b?style=flat-square)
 
 <br>
 
@@ -374,8 +374,10 @@ Untuk membuktikan dua mesin sudah sama: `./scripts/cek-sinkron.sh`.
 - Key `.env` baru wajib ikut ke `.env.example` **dan** `render.yaml`.
 
 > [!CAUTION]
-> **Repo ini PUBLIK.** Sapu nama/alamat pelanggan sebelum `git add` apa pun dari
-> `Project-PT-Sidik/`, dan jangan pernah menulis kredensial asli di berkas yang ikut git.
+> Repo ini **privat**, tapi jangan dijadikan alasan longgar: `Project-PT-Sidik/` berisi
+> workbook master lab dengan nama/alamat pelanggan. Sapu dulu sebelum `git add`, dan
+> jangan pernah menulis kredensial asli di berkas yang ikut git — repo bisa dibuka
+> sewaktu-waktu, dan riwayat git tidak ikut bersih waktu berkasnya dihapus.
 
 ---
 
