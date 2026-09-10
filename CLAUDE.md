@@ -160,19 +160,27 @@ mencabut atribusi, dan tree `main` sebelum/sesudah sengaja diadu sampai identik
 byte-per-byte — nol byte isi berubah, jadi commit lama masih memuat isinya yang
 dulu. Dihitung ulang 10 Sep 2026 dengan `git log -S ... --all`:
 
-| Yang masih terbaca di riwayat | Jumlah commit |
-|---|---|
-| Password MySQL LAN user `asmo_dev` | 3 |
-| Password admin seed `rahasia123` | 46 |
-| Nama pelanggan asli (sebelum `c0645f6`) | 3+ |
+| Yang masih terbaca di riwayat | Jumlah commit | Rahasia beneran? |
+|---|---|---|
+| Password MySQL LAN user `asmo_dev` | 3 | **YA** — kredensial asli |
+| Nama pelanggan asli (sebelum `c0645f6`) | 3+ | **YA** |
+| `rahasia123` | 46 | **BUKAN** — lihat bawah |
+
+`rahasia123` **bukan** rahasia dan tidak perlu diganti. `MenyetelSandiAwal::sandiAwal()`
+memulangkannya hanya kalau `app()->environment(['local','testing'])`; di luar itu
+nilainya dari `SEED_ADMIN_PASSWORD`, dan kalau kosong seeder bikin acak 32 karakter.
+Seeder juga tidak pernah menyetel ulang sandi baris yang sudah ada. Dia fixture lokal
+yang disengaja — dokumentasi, `docs/skrip/e2e-ph.py`, dan delapan berkas test bersandar
+padanya, jadi menggantinya memecahkan test tanpa menutup apa pun.
 
 Menjadikan repo publik menerbitkan **seluruh riwayat**, bukan cuma keadaan
 terakhir. `git log -S` bisa dijalankan siapa pun yang meng-clone. Urutan yang
 mengikat:
 
-1. **Ganti dua password itu di MySQL lebih dulu.** Keduanya sudah harus dianggap
-   bocor ke siapa pun yang pernah punya akses repo — dan itu berlaku sekarang,
-   tidak menunggu repo jadi publik.
+1. **Ganti password `asmo_dev` di MySQL lebih dulu** — dan itu berlaku sekarang,
+   tidak menunggu repo jadi publik: nilainya pernah tertulis polos di README dan
+   sudah harus dianggap bocor ke siapa pun yang pernah punya akses repo. Kalau
+   jalur LAN memang sudah pensiun, `DROP USER` lebih baik daripada ganti sandi.
 2. Putuskan nasib yang **sengaja dibiarkan** waktu K27 dijawab: nama laboratorium
    lain di field `"lab"`, direktori bisnis `database/direktori/*.csv`, dan nomor
    seri alat. Ketiganya lolos sanitasi karena dinilai bukan data pelanggan —
