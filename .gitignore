@@ -125,3 +125,23 @@ CATATAN/*
 !CATATAN/ini-yang-dari-karywan-manual/
 CATATAN/ini-yang-dari-karywan-manual/*
 !CATATAN/ini-yang-dari-karywan-manual/DATABASE.csv
+
+# ---------------------------------------------------------------------------
+# Lembar kerja CETAK (41 PDF) — formulir kosong, tapi tetap ditahan
+# ---------------------------------------------------------------------------
+#
+# Ditemukan 10 Sep 2026 waktu repo disapu dari nama pelanggan: direktori ini
+# TIDAK terlacak dan TIDAK ada aturannya di sini, jadi satu `git add` polos
+# menerbitkan keempat puluh satu PDF sekaligus.
+#
+# Isinya formulir KOSONG, jadi kemungkinan besar nol data pelanggan — dan itu
+# justru alasan aturan ini ditulis sekarang, bukan alasan untuk melewatkannya.
+# Pola yang sama sudah menggigit dua kali di berkas ini: aturan lama menyebut
+# jalur DATAR, master dipindah ke `alat-alat-Pt-Sidik/`, dan yang selama ini
+# ditahan ikut kebawa TANPA satu pun error. Direktori tak-terlacak yang tidak
+# punya aturan itu bom waktu yang menunggu satu `git add -A`.
+#
+# Kalau suatu saat salah satu PDF-nya perlu ikut (mis. jadi acuan bentuk lembar
+# kerja), kecualikan SATU berkas dengan `!`, jangan cabut aturannya — dan
+# periksa dulu kop/footer-nya tidak memuat nama pelanggan.
+Project-PT-Sidik/worksheet_alat_calibration/

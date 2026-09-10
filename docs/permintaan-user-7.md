@@ -2576,6 +2576,63 @@ memang diterima: nama PT pelanggan lab kalibrasi bukan rahasia dagang.
 > seeder & dokumen? Kalau (b), riwayat git tetap memuat yang lama — membersihkan
 > riwayat berarti **force-push**, dan itu tidak diambil tanpa perintah eksplisit.
 
+#### DIJAWAB 10 Sep 2026 — (a) DAN (b), dua-duanya
+
+Pemilik proyek memilih **keduanya**, dijalankan berurutan hari itu juga.
+
+**(a) Repo dijadikan PRIVAT.** Dilakukan pemilik proyek sendiri lewat setelan
+GitHub. Ini yang membalikkan risiko terbesar dalam hitungan detik, dan sengaja
+didahulukan supaya (b) tidak dikerjakan sambil dikejar waktu. Efeknya ke deploy
+**nol** — `render.yaml` memakai `autoDeploy: false` dan deploy dipicu Deploy
+Hook Render (URL rahasia di GitHub Secrets), yang tidak peduli visibility. Yang
+berubah cuma kuota GitHub Actions: repo privat kena jatah 2.000 menit/bulan,
+dan satu run suite ini 12–17 menit — jadi ±130 push/bulan.
+
+**(b) Nama pelanggan diganti sintetis.** Empat gelombang sapuan, karena tiap
+gelombang menemukan yang tidak terlihat dari gelombang sebelumnya:
+
+| Gel. | Temuan |
+|---|---|
+| 1 | delapan identitas yang terdaftar di komentar `.gitignore` + 24 alamat jalan — 65 berkas |
+| 2 | **enam nama yang TIDAK ada di daftar itu** (GE Nusantara Turbine, Kaldu Sari Nabati, JABIL Circuit, MATRA Unikatama, Lamurindo, Trimandiri Plasindo) + varian `PT.` bertitik yang lolos peta pertama |
+| 3 | `Puskesad` yang dieja panjang jadi "Pusat Kesehatan Angkatan Darat …" |
+| 4 | `LDC` & `IPB` telanjang — termasuk penanda sesi `DEMO-SPECTRO-LDC` yang dipakai seeder + empat test, diganti serentak jadi `DEMO-SPECTRO-NIAGA` |
+
+Total 81 berkas, commit `c0645f6`. Daftar di `.gitignore` sendiri ternyata
+**tidak lengkap**, dan berkas itu terlacak — mendaftar nama pelanggan di
+komentar aturan yang tugasnya menyembunyikan nama pelanggan membatalkan
+aturannya sendiri. Sekarang digenerikkan.
+
+**Celah yang bikin semua ini bisa batal dalam sekali jalan, ikut ditutup:**
+`gen-sesi-micrometer.py` dan `gen-sesi-waktu-frekuensi.py` menyalin sel
+identitas pelanggan langsung ke `database/data/*.json` yang ter-commit.
+Keduanya sekarang meredaksi. Fixture-nya sengaja tetap memakai nama sintetis
+yang berbeda per sesi — data demo yang bisa dibedakan lebih berguna daripada
+satu placeholder seragam — dan perbedaan yang disengaja itu ditulis di skripnya
+supaya tidak "dibetulkan" dengan regenerate lalu commit.
+
+**Yang sengaja TIDAK diubah, dan alasannya:**
+
+- empat nama di field `"lab"` (Eastern, Envirotama, GIN, Heksa) itu
+  **laboratorium lain** dalam rantai ketertelusuran, bukan pelanggan —
+  mengubahnya merusak logika batas antar-lab;
+- `database/direktori/*.csv` itu **direktori bisnis publik**; isinya memang
+  ribuan nama PT, dan itu justru gunanya fitur itu;
+- nomor seri alat pelanggan (tag alat, bukan nama).
+
+**Riwayat git juga ditulis ulang** — lihat §27.
+
+#### Aturan `.gitignore` yang lahir dari sapuan ini
+
+`Project-PT-Sidik/worksheet_alat_calibration/` (41 PDF lembar kerja) ternyata
+**tidak terlacak dan tidak punya aturan** di `.gitignore`. Isinya formulir
+kosong, jadi kemungkinan nol data pelanggan — dan itu justru alasan aturannya
+ditulis, bukan alasan melewatkannya. Pola yang sama sudah menggigit dua kali:
+aturan lama menyebut jalur DATAR, master dipindah ke `alat-alat-Pt-Sidik/`, dan
+yang selama ini ditahan ikut kebawa **tanpa satu pun error**. Direktori
+tak-terlacak yang tidak punya aturan itu bom waktu yang menunggu satu
+`git add -A`.
+
 ---
 
 ## 25. Alat baru **Flowmeter Ultrasonic** (Aliran) — 8 Sep 2026
@@ -2829,11 +2886,90 @@ yang menemukan merahnya tidak "membetulkan" batasnya.
 - **Centrifuge & Tachometer berbagi `0511_Rev.6`** — bukan cacat: keduanya
   memang satu Instruksi Kerja dan satu `ProfilPutaran`.
 
+## §27 — Riwayat git ditulis ulang: atribusi Claude dicabut (10 Sep 2026)
+
+Permintaan pemilik proyek: dia tidak mau Claude tampil di GitHub. Dikerjakan
+sesudah repo diprivatkan (K27), supaya tidak dikejar waktu.
+
+### Jejaknya empat bentuk, bukan satu
+
+Rencana awal cuma menyasar trailer `Co-Authored-By`. Hitungan sebenarnya atas
+686 commit:
+
+| Jejak | Jumlah | Ditangani rencana awal? |
+|---|---|---|
+| `Co-Authored-By: Claude` | 440 commit | ya |
+| `Claude-Session:` | 164 commit | **tidak** |
+| Commit ber-**author** `Claude <noreply@anthropic.com>` | **143 commit** | **tidak — dan ini yang paling menentukan** |
+| Deskripsi PR memuat Claude | 137 dari 181 PR | **tidak — ini tidak ada di git sama sekali** |
+| Branch bernama `claude/*` | 37 branch | **tidak — dan ini yang paling kelihatan** |
+
+Daftar Contributors GitHub dibaca terutama dari **author**, bukan trailer.
+`--message-callback` saja tidak akan menyentuhnya — "claude" tetap muncul walau
+seluruh trailer bersih. Itu perlu `--mailmap`.
+
+### Cara
+
+1. **Cadangan mirror dulu** — `backup-sidik-api-20260910-0927.git`, 686 commit,
+   semua ref. Wajib, dan jadi satu-satunya jalan pulang.
+2. **Klon terpisah** `rw-sidik`, ditarik dari GitHub supaya ke-91 branch ikut.
+   Rewrite TIDAK pernah menyentuh repo kerja — waktu itu sesi Claude lain masih
+   menggarap fitur Flowmeter Gravimetri yang belum ter-commit di situ.
+3. `git filter-repo` dua pass: `--mailmap` (author Claude → pemilik proyek) +
+   `--message-callback` (lima pola trailer), lalu pass kedua menetralkan rujukan
+   nama branch `claude/…` → `work/…`.
+4. **Branch diganti nama, BUKAN dihapus.** 32 dari 37 bukan leluhur `main`, dan
+   menebak mana yang aman dibuang itu taruhan yang tidak perlu. Ke-37 disalin
+   utuh ke `work/<nama-sama>` dan diverifikasi ada di origin, baru nama lamanya
+   dilepas. Nol commit hilang.
+5. Deskripsi 181 PR disapu lewat `gh pr edit` — 137 disunting, sisa nol.
+6. Tag `arsip/ph-lengkap-dan-order` ikut dipindah. **Tanpa ini rewrite-nya
+   bocor:** tag yang masih menunjuk commit lama membuat seluruh riwayat lama
+   tetap terjangkau di GitHub.
+7. Tiga branch **lokal** basi (`claude/ocr-jalur-windows`,
+   `claude/recursing-borg-fa0373`, `claude/upbeat-almeida-602947`) dibuang —
+   sekali di-push, branch `claude/*` lahir lagi berikut atribusinya.
+
+### Gerbang yang menahan sebelum push
+
+Tree `main` sebelum dan sesudah rewrite diadu: **`b349453c…` identik
+byte-per-byte**. Nol byte kode berubah; yang berubah cuma metadata. Push tidak
+dilakukan sebelum angka itu cocok.
+
+### Hasil
+
+Contributors GitHub tinggal dua orang. Trailer 0, author Claude 0, branch
+`claude/*` 0, deskripsi PR 0. Commit 686 dan branch 91 utuh. `main` = `1cbfa548`.
+
+### Yang TIDAK dihapus, dan kenapa itu benar
+
+Tiga belas pesan commit masih menyebut "Claude". Itu **arsitektur, bukan
+atribusi**: `claude-opus-4-8` adalah model yang dipanggil fitur Vision aplikasi
+ini (`VISION_DRIVER=anthropic`), dan `CLAUDE.md` adalah nama berkas instruksi
+proyek. Menghapusnya membuat pesan commit berbohong tentang kodenya sendiri.
+Kalau `CLAUDE.md` pun harus hilang, repo ini sudah punya `AGENTS.md` yang cuma
+menunjuk ke sana — tinggal dibalik.
+
+### Pencegahan
+
+`~/.claude/settings.json` → `"includeCoAuthoredBy": false`. Setelan resmi Claude
+Code; commit berikutnya tidak menambah trailer lagi. Setelan `{"attribution":
+{…}}` yang sempat diusulkan **bukan** setelan yang dikenal Claude Code dan tidak
+akan berefek.
+
+### Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri
+
+`~/.claude/settings.json` menyimpan **Personal Access Token GitHub polos** di
+blok `env`. Dilaporkan ke pemilik proyek, dicabut olehnya di GitHub, lalu
+dihapus dari berkas berikut kedua cadangannya.
+
+---
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
 |---|---|---|
-| **K27** | **Repo PUBLIK memuat nama & alamat ~13 pelanggan di ~30 berkas terlacak** (seeder sesi contoh, JSON master, docblock profil, `jababeka.csv`, 9 dokumen). CSV master sudah ditahan `.gitignore` + Height Gauge diredaksi 8 Sep 2026, tapi sisanya butuh keputusan | Tidak menahan fitur apa pun. Menahan **keputusan**: dibiarkan, repo dijadikan privat, atau nama diganti sintetis. Membersihkan riwayat butuh force-push — perlu perintah eksplisit |
+| ~~**K27**~~ | ~~Repo PUBLIK memuat nama & alamat ~13 pelanggan di ~30 berkas terlacak~~ | **DIJAWAB: (a) DAN (b)** (10 Sep 2026). Repo **dijadikan PRIVAT** oleh pemilik proyek — nol efek ke deploy (`autoDeploy: false`, deploy lewat Deploy Hook), yang berubah cuma kuota Actions repo privat (2.000 menit/bulan; satu run 12–17 menit). Lalu nama pelanggan **diganti sintetis**, empat gelombang, 81 berkas, commit `c0645f6` — dan gelombang kedua menemukan **enam nama yang tidak ada di daftar `.gitignore`**, jadi daftar itu sendiri tidak lengkap. Celah generator (`gen-sesi-micrometer.py`, `gen-sesi-waktu-frekuensi.py` menyalin identitas pelanggan ke JSON ter-commit) ikut ditutup. **Riwayat git juga ditulis ulang** — §27. Sisa yang sengaja dibiarkan: nama laboratorium lain di field `"lab"`, direktori bisnis publik `database/direktori/*.csv`, dan nomor seri alat |
 | **K28** | **pH Meter punya DUA master, dan `UTemperature` beda karena TERMOMETERNYA beda** (Yokogawa CA 150 U95 0,72 °C → 0,36125; Constant/SH 10 U95 0,5 °C → 0,25179). Sistem memakai yang Yokogawa untuk semua sesi | Tidak menahan apa pun **hari ini** — buat alat resolusi 0,001 ketiga titiknya di bawah CMC dengan angka mana pun, jadi yang tercetak tetap CMC, dan yang dipakai sistem yang lebih BESAR (arah aman). Tapi master LAMA membuktikan itu kebetulan: di resolusi 0,01 hasil hitungnya menembus CMC di dua titik dan sertifikatnya mencetak angka hitung (0,02343221 & 0,02110895), bukan CMC. Menahan **keputusan**: `UTemperature` ikut standar suhu sesi, atau tetap dipatok per jenis alat. Rinciannya `docs/pertanyaan-lab-ph-dua-master.md` |
 | ~~K1~~ | ~~TIDS: 5 UUT jadi 1 sesi, atau 5 sesi terpisah?~~ | **GUGUR** (28 Agt 2026) — nggak pernah ada lima UUT. Dua workbook master menamai kolom yang sama `PRT1`…`PRT5` lalu memakainya `AVERAGE`+`STDEV` per baris: lima ULANGAN, satu alat, satu baris = satu set point |
 | ~~K2~~ | ~~Workbook Excel TIDS — kapan dari lab?~~ | **BERES** (28 Agt 2026) — dua workbook turun, budget-nya jalan, blokir U95 dicabut. Lihat §13 |
@@ -2928,6 +3064,7 @@ berkas profil.
 | G14 | Alat baru **Flowmeter Ultrasonic** (Aliran, lampiran no. 30 & 31) — §25 | **BERES di server** (8 Sep 2026) — alat ke-27 & ke-28, dua workbook master jadi DUA profil + satu mesin hitung, **nol kolom baru** di `raw_measurements`. Kelompok Aliran sekarang LENGKAP. Rumusnya dibuktikan di Python SEBELUM PHP ditulis: tiap kolom turunan, tiap `u`/`ci`/`vi`, `uc`, `veff`, `k`, `U` keempat blok titik kedua workbook cocok pada 5·10⁻⁶ — nol beda. Dijaga `FlowmeterMasterTest` (9 test / 213 asersi). Bentuknya paling berbahaya dari 28: **satu titik punya DUA deret berdampingan** (UUT + totalizer standar), dan pada Flowrate deret UUT-nya **bersarang** tiga durasi per ulangan — tertukar atau tertimpa, yang terbit bukan error melainkan **deviasi nol di setiap titik**. Tiga kerusakan master dihitung benar dan arahnya ditegakkan test: lantai CMC yang hilang (**sertifikat lab sudah terbit 1,0466 % pada pita terakreditasi 1,2 %** → 3,2512 naik ke **3,7277 Lpm**), rentang densitas Totalizer yang melenceng satu kolom ke titik 3 (deviasi −18,9072 → **−18,8907 L**), dan `Ut-water` yang menunjuk sel kosong (`U_temperature` 0,27803 → **0,27952 °C**). Dua workbook ternyata **dua generasi budget** (8 vs 9 komponen) — ditiru masing-masing, bukan diseragamkan. Dua cacat SUNYI ketemu waktu test ditulis: tanda kolom `Correction` terbalik, dan resolusi satuan massa yang dikonversi tanpa densitas sehingga seluruh sesi `kg/min` ditolak. Sertifikatnya dapat blok **PIPE SPECIFICATION & SENSOR MOUNTING** yang di master ada labelnya tapi sel isinya kosong, plus `k` per titik. Tujuh belas pertanyaan lab di `docs/pertanyaan-lab-flowmeter.md`; **§1 prioritas satu** (kedua master kolom VALIDATION-nya KOSONG) dan **§16** (lampiran menyebut *static weighing method*, yang dikerjakan perbandingan langsung dengan UFM). **Sisi mobile BERES** (9 Sep 2026) — `dart analyze` bersih, `flutter test` 1627/1627; bentuk contohnya DIGENERATE dari respons server, bukan disusun tangan. Kontraknya di `docs/perintah-frontend-flowmeter.md`. **Plus satu penjaga yang bukan milik alat ini:** `bentuk_mock_semua_profil_test.dart` menyapu daftar kode profil yang digenerate registry server (`docs/skrip/gen-kode-profil-mobile.php`) dan menuntut tiap kode punya bentuk mock-nya sendiri. Waktu dipasang dia menemukan **tujuh** profil yang selama ini diam-diam memajang lembar pH di mode mock — `autoclave`, `conductivity_meter`, dan kelima Enclosure (lembar GRID 9 termokopel, yang bentuk pH-nya nggak punya satu pun kotak yang cocok). Ketujuhnya terdaftar sebagai UTANG berikut akibatnya, dan penjaganya menggigit dua arah: kode baru tanpa cabang merah, dan entri utang yang sudah lunas wajib dicabut. **Lima di antaranya — kelima Enclosure — DILUNASI hari yang sama** (9 Sep 2026): bentuknya digenerate dari server ke `contoh_lembar_kerja_enclosure.dart` (2.824 baris, 5 profil), dan generator contohnya sekalian disatukan jadi `gen-contoh-lembar-kerja.php` supaya emitter Dart-nya nggak digandakan per kelompok — pola yang §18 sudah cabut sekali. `conductivity_meter` menyusul lunas hari itu juga (`contoh_lembar_kerja_analitik.dart`) — dan sambil melunasinya ketahuan bahwa alasan utang yang pertama ditulis KELIRU: dia disebut "divonis PASS/FAIL", padahal `punyaToleransi()`-nya `false` dan `kontrak-api.md` sudah menempatkannya di kelompok yang berhenti di `U95%`. `autoclave` — utang terakhir — ikut lunas hari itu juga (`contoh_lembar_kerja_autoclave.dart`), jadi **ketujuh utangnya NOL**. Petanya sengaja dibiarkan ada walau kosong: dia tempat utang berikutnya mendarat, dan ketiga test menggantung padanya. Dihapus, profil ke-29 yang belum punya bentuk mock nggak punya jalan mendarat selain bikin sapuannya merah tanpa tempat mencatat alasannya — dan yang biasanya terjadi berikutnya bukan bentuk mock-nya dibuat, tapi sapuannya dilonggarkan. Itu jawaban atas pola yang berulang di dokumen ini — penjaga yang daftarnya diambil dari registry bertahan, yang ditulis tangan selalu ketinggalan |
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 | G15 | **Audit seluruh 33 master di `alat-alat-Pt-Sidik` lawan yang sudah dibangun** — §26 | **BERES** (9 Sep 2026) — enam dimensi disapu: nomor metode ke-33 master, pita CMC, nomor formulir, cakupan profil, varian per alat, dan apakah tiap snapshot punya test yang mengadu angkanya. **Nol kode produksi berubah** — dan itu hasilnya, bukan kemalasan. **Klaim pertama audit ini SALAH dan dicabut hari yang sama:** sempat disimpulkan "pH satu-satunya alat yang masternya tidak pernah diadu". Tidak benar — `UncertaintyBudgetTest` sudah mengadu KEDUA lembar pH ke workbook aslinya sejak lama, dan docblock-nya sudah membedakan kedua termometernya dengan benar. Sapuan yang melewatkannya cacat sendiri: `grep -lі` yang diketik memakai huruf `і` Kiril, jadi diam-diam memulangkan nol berkas. **Pelajarannya bukan soal pH** — sapuan yang memulangkan "tidak ada" wajib dibuktikan dulu bisa memulangkan "ada", karena hasil nol dari perintah yang rusak kelihatan persis seperti temuan. Yang TERSISA sebagai celah nyata dan ditutup `PhMeterMasterTest` (4 test / 36 asersi) cuma dua: `k` eksak + `U` lembar IMTE-WQ-129 (di sana `k` cuma dipatok ±5e-3 dan `U` tidak diperiksa sama sekali), dan lantai CMC dua arah — lembar lama WAJIB tetap menembus CMC di pH 4 & pH 7, lembar baru WAJIB tetap ketutup di tiga. Yang tetap berdiri dari temuan awal: termometer standarnya memang beda benda (U95 0,5 lawan 0,72 °C) dan `ci_suhu`/`u_perbedaan_suhu`/`ci_perbedaan_suhu` IDENTIK di kedua workbook, jadi cuma `UTemperature` yang ikut perangkat. Konstantanya sengaja **tidak** ditukar (K28). Sapuan lanjutan: ketujuh `*CapabilitySeeder` ber-`u_temperature` diadu ke kepala sheet masternya — **ketujuhnya cocok**, jadi kelas cacat ini tidak menyebar ke alat lain. Yang dikonfirmasi BENAR dan dibiarkan: Flowmeter `0528_Rev.4` (profil ikut lampiran akreditasi, master sudah Rev.6 yang belum diakreditasi — §16 pertanyaan flowmeter), Thermocouple `0529_Rev.2` (master men-VLOOKUP indeks 2 → metode TITS `0502_Rev.3`; sudah tercatat `pertanyaan-lab-suhu-3alat.md` §1), Timbangan `0505-Rev.7` yang bertanda hubung sendirian di antara 30+ IK ber-garis bawah, dan `SIDIK-FM-CAL-2403_Rev. 0` yang muncul di banyak master karena dia formulir SERTIFIKAT bersama, bukan lembar kerja. Keempat tabel CMC master yang eksplisit (Conductivity, Refractometer, Turbidimeter, pH) cocok persis dengan lampiran LK-285-IDN |
+| G16 | **Data pelanggan disapu + riwayat git ditulis ulang** — §27 & K27 | **BERES** (10 Sep 2026) — dua pekerjaan yang saling mengunci. **(1) Sanitasi:** 81 berkas, commit `c0645f6`, empat gelombang — dan tiap gelombang menemukan yang tidak terlihat dari sebelumnya, termasuk **enam nama pelanggan yang tidak ada di daftar `.gitignore`** (jadi daftar itu sendiri tidak lengkap) dan `Puskesad` yang dieja panjang. Celah yang bisa membatalkan semuanya dalam sekali jalan ikut ditutup: dua generator menyalin sel identitas pelanggan langsung ke `database/data/*.json` yang ter-commit. **(2) Rewrite:** 686 commit, 91 branch. Jejaknya empat bentuk, bukan satu — 440 trailer `Co-Authored-By`, 164 `Claude-Session`, **143 commit ber-AUTHOR Claude** (ini yang menentukan daftar Contributors, dan `--message-callback` tidak menyentuhnya), 137 deskripsi PR (tidak ada di git sama sekali), dan 37 branch `claude/*` (yang paling kelihatan). Gerbang sebelum push: tree `main` sebelum/sesudah diadu dan **identik byte-per-byte** — nol byte kode berubah. Branch **diganti nama, bukan dihapus**, karena 32 dari 37 bukan leluhur `main`. Tag ikut dipindah — tanpa itu seluruh riwayat lama tetap terjangkau lewat tag. Hasil: Contributors tinggal dua orang. **Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri:** `~/.claude/settings.json` menyimpan Personal Access Token GitHub polos — dilaporkan, dicabut, dihapus |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
