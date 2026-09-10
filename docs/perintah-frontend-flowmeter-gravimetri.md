@@ -235,39 +235,46 @@ Yang menjaga kesepakatan ini di sisi server:
 
 ---
 
-## 6. Sapuan yang HARUS dipasang di sisi HP sebelum cabang varian dikerjakan
+## 6. Keadaan sisi HP per 10 Sep 2026 — dan apa yang tersisa
 
-Ini yang lebih besar dari alat ini sendiri, dan mendahului pekerjaan di atas.
+**Koreksi atas versi pertama dokumen ini.** Bagian ini semula menulis bahwa repo
+mobile "belum punya penjaga sapuan registry" dan bahwa `flowmeter_lembar_test.dart`
+"belum ada sama sekali". **Dua-duanya sudah tidak benar** — keduanya mendarat
+8–9 Sep 2026, sebelum dokumen ini ditulis. Klaimnya diwarisi dari brief pekerjaan
+ini tanpa diadu ke repo mobile. Diperiksa ulang:
 
-`sidik-calibration-mobile` **belum punya penjaga sapuan registry**. Dari 28 kode
-profil server, **tujuh** jatuh ke lembar pH di `lembar_kerja_service.dart` —
-`conductivity_meter`, `autoclave`, dan kelima Enclosure. Tidak ada satu test pun
-yang menyebutnya.
+| Yang sudah ADA | Berkas |
+|---|---|
+| Sapuan mock seluruh kode profil | `test/bentuk_mock_semua_profil_test.dart` — menjaga daftarnya tidak menyusut, tiap profil server punya bentuk mock sendiri, dan tiap entri utang menyebut alasannya |
+| Test lembar Flowmeter | `test/flowmeter_lembar_test.dart` |
+| Cabang lembar Flowmeter | `lembar_kerja_service.dart:305-308` — `flowmeter_totalizer` / `flowmeter_flowrate` |
 
-Pasang dulu: **satu test yang memuat daftar kode profil dari berkas yang
-digenerate server** (`docs/skrip/gen-kode-profil-mobile.php`), lalu menuntut tiap
-kode punya bentuk mock-nya sendiri. Penjaga yang menyebut nama alat satu per satu
-akan ketinggalan — dan itu persis kenapa kelasnya berulang.
+**Yang SUDAH dikerjakan 10 Sep 2026** (satu berkas, di repo mobile):
 
-Tanpa itu, varian gravimetri diam-diam memajang lembar UFM: bentuk yang sah,
-kolom yang salah, nol error.
+`lembar_kerja_state.dart` `_kodePenentuAngka` bertambah dua kunci —
+`spesifikasi_alat.flowmeter.varian_metode` dan `.kode_timbangan`. Itu yang paling
+menentukan dari ketujuh kode Flowmeter, karena varian memilih **rantai
+hitungnya**, bukan satu angka. Tanpa ini, teknisi menyelesaikan seluruh lembar,
+mengirim, lalu baru tahu titiknya tidak terbit — dan saat itu dia sudah tidak di
+depan alatnya.
 
-Sesudah sapuannya terpasang:
+**Yang TERSISA di sisi HP:**
 
-1. `contoh_lembar_kerja_aliran.dart` — dua fungsi baru, **digenerate** dari
-   respons server sungguhan (`docs/skrip/gen-contoh-lembar-kerja.php`), bukan
-   disusun tangan.
+1. `contoh_lembar_kerja_aliran.dart` — mock-nya belum memuat satu pun kunci baru
+   (`varian_metode`, `kode_timbangan`, `flow_berat_isi`, `flow_berat_kosong`,
+   `flow_waktu_menit`, `kode_dokumen_varian`, `tampil_kalau` pada tabel).
+   **Digenerate** dari respons server sungguhan
+   (`docs/skrip/gen-contoh-lembar-kerja.php`), bukan disusun tangan.
 2. `lembar_kerja_service.dart` — cabang varian dipilih dari
-   `spesifikasi_alat.flowmeter.varian_metode`, bukan dari nama alat.
-3. `lembar_kerja_state.dart` `_kodePenentuAngka` — tambah
-   `spesifikasi_alat.flowmeter.varian_metode` **dan** `.kode_timbangan`.
-   Keduanya MENENTUKAN ANGKA; lihat §3.
-4. `flowmeter_lembar_test.dart` — **belum ada sama sekali**, padahal Micrometer,
-   Timbangan, dan Height Gauge masing-masing punya. Dan Flowmeter yang bentuknya
-   paling berbahaya: dua deret berdampingan yang kalau tertukar menerbitkan
-   deviasi nol di setiap titik, bukan error.
-
----
+   `spesifikasi_alat.flowmeter.varian_metode`, bukan dari nama alat. Nama alatnya
+   IDENTIK untuk kedua varian; memilih dari nama berarti selalu memajang cabang
+   yang sama.
+3. Penyaring tabel ber-`tampil_kalau` — tabel yang syaratnya tidak terpenuhi
+   tidak digambar, dan yang lebih penting: **tidak ikut terkirim** di
+   `measurements[]`. Tabel gravimetri yang ikut terkirim di sesi UFM mengisi
+   kolom yang tidak dibaca siapa pun.
+4. Nomor formulir cetak diambil dari `kode_dokumen_varian`, bukan `kode_dokumen`
+   saja — lihat §1.1 dan §5.
 
 ## 7. Yang BELUM dikerjakan, dan kenapa
 
