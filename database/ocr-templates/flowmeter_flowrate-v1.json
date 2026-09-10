@@ -2,7 +2,7 @@
     "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
     "template_id": "flowmeter_flowrate",
     "versi": 1,
-    "kode_dokumen": "SIDIK-FM-CAL-0538_Rev.0",
+    "kode_dokumen": "SIDIK-FM-CAL-0538.A_Rev.3",
     "terverifikasi": false,
     "ukuran_referensi": {
         "w": 1654,

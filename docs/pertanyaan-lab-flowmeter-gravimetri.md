@@ -365,8 +365,18 @@ Memilih salah satu sebagai "yang benar" akan diam-diam menggeser angka yang suda
 tercetak. Selain itu titik tabel gram dikonversi ke kilogram sebelum dicocokkan,
 supaya penimbangan 27 kg tidak memungut koreksi titik 27 g.
 
-**Pertanyaan:** timbangan ke-3 itu SATU alat atau DUA? Dan tabel koreksi
-Totalizer-nya bersatuan gram atau kilogram?
+**Dan kertasnya menyebut nama KETIGA.** `SIDIK-FM-CAL-0538.B_Rev.3` mendaftar
+empat checkbox: `Timbangan Elektronik (Dini Argeo)`, `(Sartorius)`,
+**`(Excellent)`**, `(Fujitsu)` — bukan "Mettler". Sejalan dengan `FORM VALIDASI`
+26 Jul 2024 yang berbunyi *"Adding balance **excellent**, dan fujitsu (baru)"*.
+Jadi slot ke-3 lahir bernama Excellent, dan kedua sheet workbook sekarang
+menyebutnya Mettler.
+
+**Pertanyaan:** timbangan ke-3 itu SATU alat atau DUA? Kalau satu, "Excellent"
+nama lama dan kertas Rev.3 yang belum menyusul — server memakai label workbook
+(Mettler) dan mencatat aliasnya. Kalau dua, kertas dan workbook menunjuk
+timbangan yang BERBEDA untuk slot yang sama, dan U95 yang masuk perhitungan ikut
+berbeda. Dan tabel koreksi Totalizer-nya bersatuan gram atau kilogram?
 
 ---
 

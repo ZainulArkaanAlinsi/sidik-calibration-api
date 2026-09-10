@@ -125,6 +125,60 @@ class FlowmeterVarianTest extends TestCase
     }
 
     /**
+     * Nomor formulir cetak BEDA per varian — dan kertasnya memang tiga berkas.
+     *
+     * Ada di `Project-PT-Sidik/worksheet_alat_calibration/`:
+     *
+     *   SIDIK-FM-CAL-0538-Rev.0   FLOWMETER (Perbandingan Langsung dengan UFM)
+     *   SIDIK-FM-CAL-0538.A-Rev.3 FLOWMETER-FLOWRATE
+     *   SIDIK-FM-CAL-0538.B-Rev.3 FLOWMETER-TOTALIZER
+     *
+     * Varian UFM berbagi SATU kertas untuk dua mode (kotak modenya dicentang
+     * teknisi); varian gravimetri punya kertas SENDIRI per mode, dan isinya
+     * memang beda — Totalizer tidak punya kolom durasi maupun baris `Time ( )`.
+     *
+     * Yang dijaga di sini: `kode_dokumen` bawaan mengikuti varian BAWAAN.
+     * Kalau tidak, lembar yang dicetak tanpa memilih apa pun menyebut nomor
+     * formulir kertas yang kotaknya beda isi — dan lembar tercetak yang mengaku
+     * formulir yang bukan dirinya adalah temuan auditor, bukan salah ketik.
+     */
+    public function test_nomor_formulir_beda_per_varian(): void
+    {
+        $harap = [
+            'flowmeter_totalizer' => 'SIDIK-FM-CAL-0538.B_Rev.3',
+            'flowmeter_flowrate' => 'SIDIK-FM-CAL-0538.A_Rev.3',
+        ];
+
+        foreach ($harap as $kode => $nomorGravimetri) {
+            $profil = app(CalibrationProfileRegistry::class)->untukKode($kode);
+            $bentuk = $profil->bentukLembarKerja();
+            $peta = $bentuk['kode_dokumen_varian'];
+
+            $this->assertSame(
+                'SIDIK-FM-CAL-0538_Rev.0',
+                $peta[VarianMetodeFlowmeter::UFM->value],
+                "{$kode}: kertas UFM satu untuk dua mode.",
+            );
+            $this->assertSame(
+                $nomorGravimetri,
+                $peta[VarianMetodeFlowmeter::GRAVIMETRI->value],
+                "{$kode}: kertas gravimetri punya nomor SENDIRI per mode.",
+            );
+
+            // Bawaan mengikuti varian bawaan, bukan dipatok.
+            $this->assertSame(
+                $peta[VarianMetodeFlowmeter::bawaan()->value],
+                $bentuk['kode_dokumen'],
+                "{$kode}: `kode_dokumen` bawaan wajib ikut varian bawaan.",
+            );
+        }
+
+        // Dua mode TIDAK boleh berbagi nomor kertas gravimetri — kertasnya
+        // memang dua berkas terpisah dengan isi yang berbeda.
+        $this->assertNotSame($harap['flowmeter_totalizer'], $harap['flowmeter_flowrate']);
+    }
+
+    /**
      * `peringatanSesi()` memulangkan `['kode' => ..., 'pesan' => ...]`.
      *
      * Penjaga untuk bug yang HIDUP DIAM-DIAM sampai 10 Sep 2026: sebelumnya

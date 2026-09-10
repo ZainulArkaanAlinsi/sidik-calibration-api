@@ -219,9 +219,19 @@ Yang menjaga kesepakatan ini di sisi server:
   diisi orang, dan angkanya tidak akan dibaca siapa pun.
 - **Kotak geometri pipa & path configuration TIDAK muncul di varian
   gravimetri.** Varian ini tidak punya komponen `u_A`.
-- **Nomor formulir cetaknya BEDA:** varian UFM `SIDIK-FM-CAL-0538_Rev.0`, varian
-  gravimetri `SIDIK-FM-CAL-2403_Rev. 0`. Server masih menyebut yang pertama
-  untuk kedua varian — belum dipisah, lihat §7.
+- **Nomor formulir cetaknya BEDA, dan sudah dipisah di server.** Kertasnya tiga
+  berkas, semuanya ada di `Project-PT-Sidik/worksheet_alat_calibration/`:
+
+  | Varian | Mode | Nomor formulir |
+  |---|---|---|
+  | `ufm` | Totalizer & Flowrate (satu kertas, kotak modenya dicentang) | `SIDIK-FM-CAL-0538_Rev.0` |
+  | `gravimetri` | Totalizer | `SIDIK-FM-CAL-0538.B_Rev.3` |
+  | `gravimetri` | Flowrate | `SIDIK-FM-CAL-0538.A_Rev.3` |
+
+  Server mengirimnya di `kode_dokumen_varian` (peta varian → nomor), dan
+  `kode_dokumen` berisi nomor varian BAWAAN. **Jangan menyalin tabel ini ke sisi
+  HP** — ambil dari respons. Kertas gravimetri revisinya tiga tingkat di depan
+  kertas UFM, dan lab merevisi kertas lebih sering daripada aplikasi rilis.
 
 ---
 
@@ -263,12 +273,19 @@ Sesudah sapuannya terpasang:
 
 Ditulis terang supaya tidak diam-diam dianggap selesai:
 
-- **Nomor formulir cetak belum dipisah per varian.** Server masih memulangkan
-  `SIDIK-FM-CAL-0538_Rev.0` untuk kedua varian, padahal sertifikat master
-  gravimetri menyebut `SIDIK-FM-CAL-2403_Rev. 0`. Memisahnya menyentuh
-  `SemuaProfilLembarKerjaTest::test_nomor_formulir_nggak_dipakai_dua_profil`
-  (yang menuntut nomor unik antar-profil dengan pengecualian di-hardcode), jadi
-  ditunda sampai lab mengonfirmasi kertas mana yang dipakai teknisi.
+- **Dua kotak di kertas `Rev.3` belum punya tempat simpan.** Kertas Totalizer
+  `0538.B` punya baris **`Set Point UUT ( )`** dan **`Floware ( )`** yang belum
+  dipungut server. `Floware` itu blok `Flowrate on Software (kg/s)` di master —
+  kosong di seluruh sesi, dan sel sertifikat yang membacanya memulangkan `0`
+  (pertanyaan lab §7). Kotaknya sengaja BELUM dibuat: menaruh kotak yang isinya
+  tidak dibaca siapa pun justru bikin teknisi mengira angkanya terpakai. Dibuka
+  begitu lab menjawab §7.
+- **Kotak `Berat Wadah Kosong` ADA di server tapi TIDAK ada di kertas `Rev.3`.**
+  Sengaja: blok `Empty Container Weight` ada di master (`INPUT DATA!D41:H43`),
+  bernilai nol di seluruh sesi, jadi jalur pengurangannya nol kali teruji. Tanpa
+  kotaknya, sesi pertama yang benar-benar memakai wadah akan menuliskan berat
+  KOTOR ke kolom isi — dan massanya kelebihan 8,9 % tanpa satu pun error.
+  Pertanyaan lab §11.
 - **Koordinat geometri OCR masih TEBAKAN.** `flowmeter_totalizer-v1.json` dan
   `flowmeter_flowrate-v1.json` sudah diregenerasi (63 dan 90 sel), tapi
   `terverifikasi` masih `false` — koordinatnya harus diukur dari formulir cetak

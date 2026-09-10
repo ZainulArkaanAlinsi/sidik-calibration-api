@@ -85,6 +85,24 @@ abstract class FlowmeterProfile extends CalibrationProfile
      */
     public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0538_Rev.0';
 
+    /**
+     * Kertas varian GRAVIMETRI — satu per mode, dan Rev.**3**, bukan Rev.0.
+     *
+     * Ketiganya ada di `Project-PT-Sidik/worksheet_alat_calibration/`:
+     *
+     *   SIDIK-FM-CAL-0538-Rev.0   LEMBAR KERJA FLOWMETER (Perbandingan Langsung dengan UFM)
+     *   SIDIK-FM-CAL-0538.A-Rev.3 LEMBAR KERJA FLOWMETER-FLOWRATE
+     *   SIDIK-FM-CAL-0538.B-Rev.3 LEMBAR KERJA FLOWMETER-TOTALIZER
+     *
+     * Jadi varian gravimetri BUKAN cuma metode lain — dia punya kertas sendiri,
+     * satu per mode, dan revisinya tiga tingkat di depan kertas UFM. Sempat
+     * ditulis di dokumen serah-terima bahwa nomornya "belum bisa dipisah"; itu
+     * salah, nomornya sudah ada sejak awal dan cuma belum dibuka.
+     */
+    public const KODE_DOKUMEN_GRAVIMETRI_TOTALIZER = 'SIDIK-FM-CAL-0538.B_Rev.3';
+
+    public const KODE_DOKUMEN_GRAVIMETRI_FLOWRATE = 'SIDIK-FM-CAL-0538.A_Rev.3';
+
     /** Tiga ulangan tiap titik — `PERHITUNGAN` kedua master punya tiga kolom. */
     public const PENGULANGAN = 3;
 
@@ -838,7 +856,17 @@ abstract class FlowmeterProfile extends CalibrationProfile
         $flowrate = $this->mode() === TabelStandarFlowmeter::MODE_FLOWRATE;
 
         $bentuk = [
-            'kode_dokumen' => self::KODE_DOKUMEN,
+            // Nomor formulir BAWAAN = varian bawaan = gravimetri. Sesi baru
+            // memakai gravimetri, jadi lembar yang dicetak tanpa memilih apa
+            // pun harus menyebut kertas gravimetri — bukan kertas UFM yang
+            // kotaknya beda isi.
+            'kode_dokumen' => $this->kodeDokumenVarian()[VarianMetodeFlowmeter::bawaan()->value],
+            // Peta lengkapnya ikut dikirim: sisi HP memilihnya dari varian yang
+            // dipilih teknisi. Diturunkan di SERVER, bukan disalin ke HP —
+            // daftar nomor formulir yang disalin selalu ketinggalan begitu lab
+            // merevisi kertasnya, dan gagalnya diam: lembar tercetak mengaku
+            // formulir yang bukan dirinya, dan yang ketahuan duluan auditor.
+            'kode_dokumen_varian' => $this->kodeDokumenVarian(),
             'kode_metode' => self::KODE_METODE,
             // Nomor LINGKUP yang tercetak di kop kertas (`LK-285-IDN`), bukan
             // nomor BARIS lampiran (30/31) yang dipulangkan
@@ -1320,6 +1348,26 @@ abstract class FlowmeterProfile extends CalibrationProfile
     protected function kalkGravimetri(): FlowmeterGravimetriCalculator
     {
         return $this->kalkGravimetri ??= new FlowmeterGravimetriCalculator;
+    }
+
+    /**
+     * Nomor formulir per VARIAN — kertasnya memang beda, bukan cuma metodenya.
+     *
+     * Varian UFM: satu kertas untuk dua mode, kotak modenya dicentang teknisi.
+     * Varian gravimetri: satu kertas per mode, dan isinya memang beda —
+     * Totalizer punya baris `Floware` dan blok `Reading of Standard` tanpa
+     * durasi, Flowrate punya `Time ( )` dan tiga kolom durasi per set point.
+     *
+     * @return array<string, string>
+     */
+    public function kodeDokumenVarian(): array
+    {
+        return [
+            VarianMetodeFlowmeter::UFM->value => self::KODE_DOKUMEN,
+            VarianMetodeFlowmeter::GRAVIMETRI->value => $this->mode() === TabelStandarFlowmeter::MODE_FLOWRATE
+                ? self::KODE_DOKUMEN_GRAVIMETRI_FLOWRATE
+                : self::KODE_DOKUMEN_GRAVIMETRI_TOTALIZER,
+        ];
     }
 
     /** Tabel standar varian gravimetri — malas, alasannya sama dengan [kalk]. */

@@ -456,13 +456,25 @@ class FlowmeterGravimetriCalculator
         $stdevWaktu = 0.0;
 
         if ($flowrate) {
-            if (count($waktu) < 2) {
-                return ['alasan' => sprintf(
-                    'Mode flowrate butuh minimal dua pencatatan waktu; yang ada %d. Waktu masuk hasil '
-                    .'akhir sebagai pembagi dan masuk budget lewat DUA komponen (stopwatch dan '
-                    .'driftnya).',
-                    count($waktu),
-                )];
+            // SATU cukup, bukan dua — dan angkanya datang dari kertas, bukan
+            // selera. `SIDIK-FM-CAL-0538.A_Rev.3` cuma punya SATU baris
+            // `Time ( )` di bawah blok `STANDARD READING`, satu kotak per set
+            // point; yang tiga baris cuma penimbangannya. Master workbook
+            // memang mengisi tiga (`INPUT DATA!D49:D51`), tapi kertas Rev.3
+            // yang dipegang teknisi hanya menyediakan satu.
+            //
+            // Menuntut dua berarti setiap sesi yang diisi dari kertas Rev.3
+            // diblokir dengan alasan yang TIDAK BISA dipenuhi teknisi — kotaknya
+            // memang tidak ada. Dan simpangan baku waktu tidak masuk satu pun
+            // komponen budget (yang masuk U95 stopwatch dan driftnya, keduanya
+            // dari sertifikat standar), jadi satu nilai tidak menghilangkan apa
+            // pun dari perhitungan.
+            if ($waktu === []) {
+                return ['alasan' => 'Mode flowrate butuh pencatatan waktu, dan tidak ada satu pun yang terisi. '
+                    .'Waktu masuk hasil akhir sebagai PEMBAGI dan masuk budget lewat dua komponen '
+                    .'(ketidakpastian stopwatch dan driftnya) — tanpa dia hasilnya bukan sekadar '
+                    .'kurang teliti, melainkan tidak terdefinisi.',
+                ];
             }
 
             if (min($waktu) <= 0.0) {
