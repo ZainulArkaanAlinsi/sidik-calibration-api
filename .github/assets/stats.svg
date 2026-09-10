@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 170" width="1200" height="170" role="img" aria-label="28 dari 48 profil alat terdaftar, 263 berkas test, 86 migrasi, 20 perintah artisan">
+  <title>Statistik repo — profil alat, test, migrasi, perintah</title>
+  <defs>
+    <linearGradient id="sbg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#111a30"/>
+    </linearGradient>
+
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#22d3ee"/>
+      <stop offset="55%"  stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+
+    <linearGradient id="kilau" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="sround"><rect x="0" y="0" width="1200" height="170" rx="18"/></clipPath>
+    <clipPath id="barclip"><rect x="0" y="0" width="520" height="18" rx="9"/></clipPath>
+
+    <style>
+      .fam  { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+      @keyframes isi    { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      @keyframes lewat  { 0% { transform: translateX(-120px); } 100% { transform: translateX(560px); } }
+      @keyframes muncul { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes napas  { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+
+      .isi    { transform-box: fill-box; transform-origin: left center;
+                animation: isi 1.6s cubic-bezier(.22,.9,.28,1) .25s both; }
+      .kilau  { animation: lewat 2.8s ease-in-out 1.6s infinite; }
+      .muncul { animation: muncul .6s ease-out both; }
+      .m1 { animation-delay: .35s; } .m2 { animation-delay: .5s; }
+      .m3 { animation-delay: .65s; } .m4 { animation-delay: .8s; }
+      .napas  { animation: napas 2.4s ease-in-out infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .isi, .kilau, .muncul, .napas { animation: none; }
+        .isi { transform: scaleX(1); }
+        .muncul { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <g clip-path="url(#sround)">
+    <rect width="1200" height="170" fill="url(#sbg)"/>
+    <rect x="0.5" y="0.5" width="1199" height="169" rx="18" fill="none" stroke="#1e293b"/>
+
+    <g transform="translate(40, 40)">
+      <text class="mono" x="0" y="0" font-size="11.5" fill="#64748b" letter-spacing="2">PROFIL ALAT TERDAFTAR</text>
+
+      <text class="fam muncul m1" x="0"   y="42" font-size="34" font-weight="800" fill="#e2e8f0">28</text>
+      <text class="fam muncul m1" x="46"  y="42" font-size="20" font-weight="600" fill="#475569">/ 48</text>
+      <text class="fam muncul m2" x="112" y="42" font-size="12.5" fill="#64748b">jenis alat yang ditargetkan lab</text>
+
+      <g transform="translate(0, 62)">
+        <rect x="0" y="0" width="520" height="18" rx="9" fill="#1e293b"/>
+        <g clip-path="url(#barclip)">
+          <rect class="isi"   x="0" y="0" width="303" height="18" rx="9" fill="url(#bar)"/>
+          <rect class="kilau" x="0" y="0" width="90"  height="18" fill="url(#kilau)"/>
+        </g>
+        <g fill="#334155">
+          <rect x="130" y="2" width="1" height="14"/>
+          <rect x="260" y="2" width="1" height="14"/>
+          <rect x="390" y="2" width="1" height="14"/>
+        </g>
+        <text class="mono" x="520" y="34" font-size="11" fill="#475569" text-anchor="end">1 alat = 1 subclass + 1 seeder CMC + 1 baris registry</text>
+      </g>
+    </g>
+
+    <line x1="612" y1="34" x2="612" y2="136" stroke="#1e293b" stroke-width="1"/>
+
+    <g transform="translate(652, 46)">
+      <g class="muncul m2">
+        <rect x="0" y="0" width="160" height="80" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.35"/>
+        <rect x="0" y="0" width="160" height="3" rx="2" fill="#38bdf8"/>
+        <text class="fam"  x="80" y="42" font-size="28" font-weight="800" fill="#7dd3fc" text-anchor="middle">263</text>
+        <text class="mono" x="80" y="62" font-size="10.5" fill="#64748b" text-anchor="middle">BERKAS TEST</text>
+      </g>
+
+      <g class="muncul m3">
+        <rect x="176" y="0" width="160" height="80" rx="12" fill="#0f172a" stroke="#a855f7" stroke-opacity="0.35"/>
+        <rect x="176" y="0" width="160" height="3" rx="2" fill="#a855f7"/>
+        <text class="fam"  x="256" y="42" font-size="28" font-weight="800" fill="#d8b4fe" text-anchor="middle">86</text>
+        <text class="mono" x="256" y="62" font-size="10.5" fill="#64748b" text-anchor="middle">MIGRASI</text>
+      </g>
+
+      <g class="muncul m4">
+        <rect x="352" y="0" width="160" height="80" rx="12" fill="#0f172a" stroke="#4ade80" stroke-opacity="0.35"/>
+        <rect x="352" y="0" width="160" height="3" rx="2" fill="#4ade80"/>
+        <text class="fam"  x="432" y="42" font-size="28" font-weight="800" fill="#86efac" text-anchor="middle">20</text>
+        <text class="mono" x="432" y="62" font-size="10" fill="#64748b" text-anchor="middle">PERINTAH ARTISAN</text>
+      </g>
+    </g>
+
+    <g transform="translate(1136, 32)">
+      <circle class="napas" cx="0" cy="-4" r="4" fill="#4ade80"/>
+      <text class="mono" x="-14" y="0" font-size="10.5" fill="#4ade80" text-anchor="end">CI</text>
+    </g>
+  </g>
+</svg>

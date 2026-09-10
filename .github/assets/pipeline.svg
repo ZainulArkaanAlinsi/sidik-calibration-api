@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="Jalur angka: raw_measurements ke GumCalculator ke uncertainty_calculations ke CalibrationValidator ke sertifikat PDF">
+  <title>Jalur angka — dari pembacaan mentah sampai sertifikat</title>
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#111a30"/>
+    </linearGradient>
+
+    <marker id="panah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="panahUlang" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f472b6"/>
+    </marker>
+
+    <clipPath id="pround"><rect x="0" y="0" width="1200" height="320" rx="18"/></clipPath>
+
+    <style>
+      .fam  { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+      @keyframes alir   {   0% { transform: translateX(0);    opacity: 0; }
+                           18% { opacity: 1; }
+                           82% { opacity: 1; }
+                          100% { transform: translateX(44px); opacity: 0; } }
+      @keyframes putus  { to { stroke-dashoffset: -24; } }
+      @keyframes denyut { 0%,100% { opacity: .25; } 50% { opacity: .8; } }
+
+      .alir   { animation: alir 2.4s linear infinite; }
+      .garis  { stroke-dasharray: 6 6; animation: putus 1.2s linear infinite; }
+      .denyut { animation: denyut 2.6s ease-in-out infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .alir, .garis, .denyut { animation: none; }
+        .alir { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <g clip-path="url(#pround)">
+    <rect width="1200" height="320" fill="url(#pbg)"/>
+    <rect x="0.5" y="0.5" width="1199" height="319" rx="18" fill="none" stroke="#1e293b"/>
+
+    <text class="mono" x="30" y="34" font-size="12" fill="#475569" letter-spacing="2">JALUR ANGKA — PEMBACAAN MENTAH KE SERTIFIKAT</text>
+    <text class="fam" x="1170" y="34" font-size="11" fill="#475569" text-anchor="end">ILAC-G8 guarded acceptance: |error| + U masuk toleransi</text>
+
+    <g>
+      <line class="garis" x1="218" y1="132" x2="262" y2="132" stroke="#475569" stroke-width="2" marker-end="url(#panah)"/>
+      <line class="garis" x1="456" y1="132" x2="500" y2="132" stroke="#475569" stroke-width="2" marker-end="url(#panah)"/>
+      <line class="garis" x1="694" y1="132" x2="738" y2="132" stroke="#475569" stroke-width="2" marker-end="url(#panah)"/>
+      <line class="garis" x1="932" y1="132" x2="976" y2="132" stroke="#475569" stroke-width="2" marker-end="url(#panah)"/>
+
+      <circle class="alir" cx="218" cy="132" r="4" fill="#38bdf8" style="animation-delay:0s"/>
+      <circle class="alir" cx="456" cy="132" r="4" fill="#fb923c" style="animation-delay:.6s"/>
+      <circle class="alir" cx="694" cy="132" r="4" fill="#22d3ee" style="animation-delay:1.2s"/>
+      <circle class="alir" cx="932" cy="132" r="4" fill="#facc15" style="animation-delay:1.8s"/>
+    </g>
+
+    <g transform="translate(30, 78)">
+      <rect width="188" height="108" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.45"/>
+      <rect width="188" height="3" rx="2" fill="#38bdf8"/>
+      <circle cx="24" cy="30" r="11" fill="#38bdf8" fill-opacity="0.15" stroke="#38bdf8" stroke-opacity="0.5"/>
+      <text class="mono" x="24" y="34" font-size="12" font-weight="700" fill="#7dd3fc" text-anchor="middle">1</text>
+      <text class="mono" x="43" y="34" font-size="12" font-weight="700" fill="#e2e8f0">raw_measurements</text>
+      <text class="fam"  x="16" y="62" font-size="11" fill="#64748b">sumbu: peran_sensor ·</text>
+      <text class="fam"  x="16" y="78" font-size="11" fill="#64748b">sensor_ke · tahap</text>
+      <text class="fam"  x="16" y="96" font-size="10.5" fill="#475569">blok sesi ke spesifikasi_alat</text>
+    </g>
+
+    <g transform="translate(268, 78)">
+      <rect width="188" height="108" rx="12" fill="#0f172a" stroke="#fb923c" stroke-opacity="0.45"/>
+      <rect width="188" height="3" rx="2" fill="#fb923c"/>
+      <circle cx="24" cy="30" r="11" fill="#fb923c" fill-opacity="0.15" stroke="#fb923c" stroke-opacity="0.5"/>
+      <text class="mono" x="24" y="34" font-size="12" font-weight="700" fill="#fdba74" text-anchor="middle">2</text>
+      <text class="mono" x="43" y="34" font-size="12" font-weight="700" fill="#e2e8f0">GumCalculator</text>
+      <text class="fam"  x="16" y="62" font-size="11" fill="#64748b">JCGM 100:2008</text>
+      <text class="mono" x="16" y="80" font-size="11.5" fill="#fdba74">Type A+B → u_c</text>
+      <text class="mono" x="16" y="97" font-size="11.5" fill="#fdba74">U = k·u_c  (k = 2)</text>
+    </g>
+
+    <g transform="translate(506, 78)">
+      <rect width="188" height="108" rx="12" fill="#0f172a" stroke="#22d3ee" stroke-opacity="0.45"/>
+      <rect width="188" height="3" rx="2" fill="#22d3ee"/>
+      <circle cx="24" cy="30" r="11" fill="#22d3ee" fill-opacity="0.15" stroke="#22d3ee" stroke-opacity="0.5"/>
+      <text class="mono" x="24" y="34" font-size="12" font-weight="700" fill="#67e8f9" text-anchor="middle">3</text>
+      <text class="mono" x="43" y="34" font-size="11.5" font-weight="700" fill="#e2e8f0">uncertainty_calc.</text>
+      <ellipse class="denyut" cx="162" cy="88" rx="15" ry="5" fill="#22d3ee"/>
+      <text class="fam"  x="16" y="62" font-size="11" fill="#67e8f9">DISIMPAN — tidak pernah</text>
+      <text class="fam"  x="16" y="78" font-size="11" fill="#67e8f9">dihitung ulang saat dibaca</text>
+      <text class="fam"  x="16" y="96" font-size="10.5" fill="#475569">sertifikat 5 th lalu tetap sama</text>
+    </g>
+
+    <g transform="translate(744, 78)">
+      <rect width="188" height="108" rx="12" fill="#0f172a" stroke="#facc15" stroke-opacity="0.45"/>
+      <rect width="188" height="3" rx="2" fill="#facc15"/>
+      <circle cx="24" cy="30" r="11" fill="#facc15" fill-opacity="0.15" stroke="#facc15" stroke-opacity="0.5"/>
+      <text class="mono" x="24" y="34" font-size="12" font-weight="700" fill="#fde047" text-anchor="middle">4</text>
+      <text class="mono" x="43" y="34" font-size="11" font-weight="700" fill="#e2e8f0">CalibrationValidator</text>
+      <text class="fam"  x="16" y="62" font-size="11" fill="#64748b">sebelum terbit: hitung ULANG</text>
+      <text class="fam"  x="16" y="78" font-size="11" fill="#64748b">dari mentah, adu ke tersimpan</text>
+      <text class="fam"  x="16" y="96" font-size="10.5" fill="#fde047">error · peringatan · info</text>
+    </g>
+
+    <g transform="translate(982, 78)">
+      <rect width="188" height="108" rx="12" fill="#0f172a" stroke="#4ade80" stroke-opacity="0.45"/>
+      <rect width="188" height="3" rx="2" fill="#4ade80"/>
+      <circle cx="24" cy="30" r="11" fill="#4ade80" fill-opacity="0.15" stroke="#4ade80" stroke-opacity="0.5"/>
+      <text class="mono" x="24" y="34" font-size="12" font-weight="700" fill="#86efac" text-anchor="middle">5</text>
+      <text class="mono" x="43" y="34" font-size="12" font-weight="700" fill="#e2e8f0">Sertifikat</text>
+      <text class="fam"  x="16" y="62" font-size="11" fill="#64748b">Snapshot → PDF (dompdf)</text>
+      <text class="fam"  x="16" y="78" font-size="11" fill="#64748b">+ QR code</text>
+      <text class="fam"  x="16" y="96" font-size="10.5" fill="#86efac">verifikasi publik, tanpa login</text>
+    </g>
+
+    <path d="M 124 186 C 124 258, 420 266, 800 258 C 860 254, 862 218, 838 192"
+          fill="none" stroke="#f472b6" stroke-opacity="0.55" stroke-width="2"
+          class="garis" marker-end="url(#panahUlang)"/>
+    <text class="mono" x="300" y="248" font-size="11.5" fill="#f9a8d4">php artisan kalibrasi:hitung-ulang</text>
+    <text class="fam"  x="300" y="292" font-size="11.5" fill="#64748b">jalur KEDUA yang menghitung hal yang sama — alat baru wajib menyambung ke dua-duanya</text>
+  </g>
+</svg>
