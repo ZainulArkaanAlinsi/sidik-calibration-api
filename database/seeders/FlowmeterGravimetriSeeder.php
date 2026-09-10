@@ -32,11 +32,17 @@ use Illuminate\Support\Str;
  *
  * ## Identitas pelanggannya SINTETIS, angkanya ASLI
  *
- * Repo ini publik. Nama, alamat, nomor sertifikat, nomor order, dan serial alat
- * pelanggan di kedua master **tidak** disalin ke sini; yang dipakai identitas
- * contoh yang sama dengan [FlowmeterSeeder]. Yang asli cuma angka UKUR-nya —
- * pembacaan UUT, penimbangan, waktu, dan suhu air — karena justru itu yang
- * membuat sesi ini berguna sebagai penjaga.
+ * Nama, alamat, nomor sertifikat, nomor order, dan serial alat pelanggan di
+ * kedua master **tidak** disalin ke sini; yang dipakai identitas contoh yang
+ * sama dengan [FlowmeterSeeder]. Yang asli cuma angka UKUR-nya — pembacaan UUT,
+ * penimbangan, waktu, dan suhu air — karena justru itu yang membuat sesi ini
+ * berguna sebagai penjaga.
+ *
+ * Alasannya BUKAN status repo. Repo sempat publik dan sekarang privat (dicek
+ * 10 Sep 2026); yang menentukan bukan itu, melainkan bahwa riwayat git menyimpan
+ * apa pun yang pernah masuk — `git log -S` bisa dijalankan siapa pun yang punya
+ * akses, sekarang atau nanti. Identitas sintetis tetap wajib walau repo tertutup.
+ * Lihat CLAUDE.md §Sebelum repo dibalik jadi PUBLIK.
  *
  * ## SATU sesi yang di-seed, bukan dua — dan kenapa
  *
