@@ -20,7 +20,23 @@ Urutannya bukan urutan penting. Yang paling mendesak **§1**, **§2**, dan **§1
 
 ---
 
-## §1 — Kedua master BELUM DIVALIDASI · **prioritas satu**
+## §1 — ~~Kedua master BELUM DIVALIDASI~~ · **GUGUR 10 Sep 2026**
+
+> **GUGUR.** Butir ini benar untuk kedua master **UFM**, dan tetap benar. Yang
+> membatalkannya sebagai pertanyaan: dua workbook master **gravimetri** yang
+> turun 10 Sep 2026 mengukur alat yang sama, besaran yang sama, dan pita CMC yang
+> sama — dan `FORM VALIDASI`-nya punya **23 baris revisi (Totalizer)** serta
+> **21 baris (Flowrate)** sejak April 2023, dengan baris terakhir 21 Mei 2026
+> terisi lengkap: PIC `NR`, CHECK `AM`, **VALIDATION `AM`**.
+>
+> Jadi jawabannya bukan "tunggu validasi", melainkan "**jalur produksinya yang
+> lain**". Varian gravimetri sekarang jadi bawaan; varian UFM ini tetap bisa
+> dihitung ulang supaya sertifikat yang sudah terbit tidak bergeser, tapi sesi
+> yang memilihnya melahirkan peringatan yang menyebut status validasinya.
+> Lihat `docs/pertanyaan-lab-flowmeter-gravimetri.md` §14.
+
+<details><summary>Isi butir aslinya</summary>
+
 
 `FORM VALIDASI` kolom `VALIDATION` (`J7`) dan `Position` (`K8`) **kosong di
 kedua workbook**. Yang terisi cuma `PIC` (`DR`) dan `CHECK` (`NR`).
@@ -39,6 +55,10 @@ lolos validasi internalnya sendiri. Admin harus melewatinya secara sadar.
 
 **Pertanyaan:** apakah kedua master ini sudah boleh dipakai menerbitkan sertifikat, dan
 kalau sudah — siapa yang menandatangani kolom VALIDATION-nya?
+
+---
+
+</details>
 
 ---
 
@@ -346,7 +366,25 @@ bukan pemblokir, karena menjadikannya pemblokir mengubah kebijakan lab.
 
 ---
 
-## §16 — Metode di lampiran vs metode di kertas · **prioritas tinggi**
+## §16 — ~~Metode di lampiran vs metode di kertas~~ · **GUGUR 10 Sep 2026**
+
+> **GUGUR — dan jawabannya ditemukan, bukan diputuskan.** Butir ini bertanya
+> kenapa lampiran akreditasi menyebut *static weighing method* (ISO 4185 / NIST
+> SP 250) sementara yang dikerjakan perbandingan langsung dengan UFM.
+>
+> Jawabannya: **static weighing method-nya ada, di workbook lain.** Master
+> gravimetri yang turun 10 Sep 2026 menulis judulnya sendiri di
+> `PERHITUNGAN FC!B74`: `ISO 4185`, `Laju alir masa`. Bukan dua metode untuk satu
+> alat yang saling bertentangan — dua metode yang memang dipakai lab, dan yang
+> disebut lampiran akreditasi adalah yang gravimetri.
+>
+> Yang TERSISA dari butir ini dan pindah ke dokumen baru: nomor Instruksi Kerja
+> masih berselisih antar-sheet (`INPUT DATA` menulis Rev.6, `SERTIFIKAT` mencetak
+> **Rev.7**, lampiran menyebut Rev.4). Lihat
+> `docs/pertanyaan-lab-flowmeter-gravimetri.md` §Butir kecil.
+
+<details><summary>Isi butir aslinya</summary>
+
 
 | Sumber | Metode |
 |---|---|
@@ -369,6 +407,10 @@ yang benar-benar tercetak di baris `metode` tiap titik diambil dari baris kemamp
 **Pertanyaan:** apakah perbandingan langsung dengan UFM tercakup akreditasi yang
 sekarang? **Butir ini yang paling mahal kalau salah, dan tidak boleh diputuskan di
 kode.**
+
+---
+
+</details>
 
 ---
 

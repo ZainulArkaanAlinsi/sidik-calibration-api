@@ -1,0 +1,540 @@
+{
+  "_sumber": "1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm & 2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm (password spirit285). Digenerate docs/skrip/gen-tabel-standar-flowmeter-gravimetri.py — jangan diketik tangan.",
+  "_metode": "ISO 4185 — static weighing method. PERHITUNGAN FC!B74 menulis judulnya sendiri.",
+  "_penyimpangan": {
+    "timbangan_3_beda_alat": "Kedua workbook menyimpan timbangan ke-3 dengan tipe, S/N, nomor akreditasi, tanggal kalibrasi, DAN satuan tabel koreksi yang berbeda. Keduanya disimpan; dipilih per mode. Pertanyaan lab §15.",
+    "drift_tanpa_akar3": "Judul kolom sheet drift menulis 0,5·ΔC/√3, kolom yang dihitung cuma 0,5·ΔC. Ditiru; pertanyaan lab §17.",
+    "drift_mettler_tak_bersumber": "Sheet `Drift Timbangan Mettler` seluruhnya nol, tapi tabel drift berbunyi 8,5e-05 kg. Yang dipakai budget 8,5e-05. Pertanyaan lab §18.",
+    "u95_timbangan_beda_sheet": "DATABASE menulis U95 Mettler 0,05 dan Fujitsu 0,016; STANDAR KALIBRATOR menulis 0,00017 dan 1,6e-05. Yang dipakai budget dari STANDAR KALIBRATOR. Pertanyaan lab §19.",
+    "densitas_diukur_setelah_sesi": "Pengukuran densitas piknometer bertanggal 18 Mei 2026, sesi contoh 5 Jan 2026. Pertanyaan lab §20."
+  },
+  "timbangan": {
+    "totalizer": {
+      "1": {
+        "kode": 1,
+        "nama": "Timbangan Elektronik",
+        "merk": "Dini Argeo",
+        "tipe": "DFWLB-3",
+        "seri": "0792531584",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2025-08-08",
+        "tanggal_jatuh_tempo": "2026-08-08",
+        "u95_kg": 0.52,
+        "resolusi_kg": 0.1,
+        "satuan_tabel_koreksi": "kg",
+        "kestabilan_kg": 0.8000000000000114,
+        "drift_kg": 0.2,
+        "koreksi": [
+          {
+            "titik": 200,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 400,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 600,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 800,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1000,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1200,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1400,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1600,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1800,
+            "koreksi_kg": 0.1
+          },
+          {
+            "titik": 2000,
+            "koreksi_kg": 0.1
+          }
+        ]
+      },
+      "2": {
+        "kode": 2,
+        "nama": "Timbangan Elektronik",
+        "merk": "Sartorius",
+        "tipe": "150GF",
+        "seri": "34166240",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2025-07-07",
+        "tanggal_jatuh_tempo": "2026-07-07",
+        "u95_kg": 0.033,
+        "resolusi_kg": 0.01,
+        "satuan_tabel_koreksi": "kg",
+        "kestabilan_kg": 0.04999999999999716,
+        "drift_kg": 0.025,
+        "koreksi": [
+          {
+            "titik": 15,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 30,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 45,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 60,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 75,
+            "koreksi_kg": -0.01
+          },
+          {
+            "titik": 90,
+            "koreksi_kg": -0.01
+          },
+          {
+            "titik": 105,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 120,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 135,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 150,
+            "koreksi_kg": 0.0
+          }
+        ]
+      },
+      "3": {
+        "kode": 3,
+        "nama": "Timbangan Elektronik",
+        "merk": "Mettler",
+        "tipe": "DJ Series",
+        "seri": "HSEX1403752",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2024-07-22",
+        "tanggal_jatuh_tempo": "2025-07-22",
+        "u95_kg": 0.00017,
+        "resolusi_kg": 0.0001,
+        "satuan_tabel_koreksi": "g",
+        "kestabilan_kg": 0.0387000000000004,
+        "drift_kg": 8.5e-05,
+        "koreksi": [
+          {
+            "titik": 3,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 6,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 9,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 12,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 15,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 18,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 21,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 24,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 27,
+            "koreksi_kg": 0.1
+          },
+          {
+            "titik": 30,
+            "koreksi_kg": 0.1
+          }
+        ]
+      },
+      "4": {
+        "kode": 4,
+        "nama": "Timbangan Elektronik",
+        "merk": "Fujitsu",
+        "tipe": "FSR-A",
+        "seri": "SIDIK/134/2024",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2024-06-16",
+        "tanggal_jatuh_tempo": "2025-06-16",
+        "u95_kg": 1.6e-05,
+        "resolusi_kg": 1e-06,
+        "satuan_tabel_koreksi": "g",
+        "kestabilan_kg": 6.999999999999318e-05,
+        "drift_kg": 7.999999999999999e-09,
+        "koreksi": [
+          {
+            "titik": 120,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 240,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 360,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 500,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 600,
+            "koreksi_kg": 1e-06
+          },
+          {
+            "titik": 720,
+            "koreksi_kg": 1e-06
+          },
+          {
+            "titik": 840,
+            "koreksi_kg": 1e-06
+          },
+          {
+            "titik": 900,
+            "koreksi_kg": 1e-06
+          },
+          {
+            "titik": 1000,
+            "koreksi_kg": 1e-06
+          },
+          {
+            "titik": 1200,
+            "koreksi_kg": 1e-06
+          }
+        ]
+      }
+    },
+    "flowrate": {
+      "1": {
+        "kode": 1,
+        "nama": "Timbangan Elektronik",
+        "merk": "Dini Argeo",
+        "tipe": "DFWLB-3",
+        "seri": "0792531584",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2025-08-08",
+        "tanggal_jatuh_tempo": "2026-08-08",
+        "u95_kg": 0.52,
+        "resolusi_kg": 0.1,
+        "satuan_tabel_koreksi": "kg",
+        "kestabilan_kg": 0.6999999999999886,
+        "drift_kg": 0.2,
+        "koreksi": [
+          {
+            "titik": 200,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 400,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 600,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 800,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1000,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1200,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1400,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1600,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 1800,
+            "koreksi_kg": 0.1
+          },
+          {
+            "titik": 2000,
+            "koreksi_kg": 0.1
+          }
+        ]
+      },
+      "2": {
+        "kode": 2,
+        "nama": "Timbangan Elektronik",
+        "merk": "Sartorius",
+        "tipe": "150GF",
+        "seri": "34166240",
+        "tertelusur": "LK-285-IDN",
+        "tanggal_kalibrasi": "2025-07-07",
+        "tanggal_jatuh_tempo": "2026-07-07",
+        "u95_kg": 0.033,
+        "resolusi_kg": 0.01,
+        "satuan_tabel_koreksi": "kg",
+        "kestabilan_kg": 0.04999999999999716,
+        "drift_kg": 0.025,
+        "koreksi": [
+          {
+            "titik": 15,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 30,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 45,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 60,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 75,
+            "koreksi_kg": -0.01
+          },
+          {
+            "titik": 90,
+            "koreksi_kg": -0.01
+          },
+          {
+            "titik": 105,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 120,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 135,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 150,
+            "koreksi_kg": 0.0
+          }
+        ]
+      },
+      "3": {
+        "kode": 3,
+        "nama": "Timbangan Elektronik",
+        "merk": "Mettler",
+        "tipe": "DFWLB-3",
+        "seri": "0792531584",
+        "tertelusur": "LK-305-IDN",
+        "tanggal_kalibrasi": "2026-01-19",
+        "tanggal_jatuh_tempo": "2027-01-19",
+        "u95_kg": 0.00017,
+        "resolusi_kg": 0.0001,
+        "satuan_tabel_koreksi": "kg",
+        "kestabilan_kg": 0.0387000000000004,
+        "drift_kg": 8.5e-05,
+        "koreksi": [
+          {
+            "titik": 3,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 6,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 9,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 12,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 15,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 18,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 21,
+            "koreksi_kg": -0.001
+          },
+          {
+            "titik": 24,
+            "koreksi_kg": 0.0
+          },
+          {
+            "titik": 27,
+            "koreksi_kg": 0.001
+          },
+          {
+            "titik": 30,
+            "koreksi_kg": 0.001
+          }
+        ]
+      }
+    }
+  },
+  "densitas_air": {
+    "volume_piknometer_ml": 50.3139,
+    "tanggal_ukur": "2026-05-18",
+    "pic": "NR",
+    "tertelusur": "LK-285-IDN",
+    "interpolasi": "linier",
+    "titik": [
+      {
+        "suhu_c": 20.0,
+        "tertimbang_g": 50.2242,
+        "densitas_kg_per_l": 0.9982171924657005
+      },
+      {
+        "suhu_c": 27.0,
+        "tertimbang_g": 50.102,
+        "densitas_kg_per_l": 0.9957884401725965
+      },
+      {
+        "suhu_c": 30.0,
+        "tertimbang_g": 50.0951,
+        "densitas_kg_per_l": 0.9956513011314966
+      },
+      {
+        "suhu_c": 50.5,
+        "tertimbang_g": 49.6516,
+        "densitas_kg_per_l": 0.9868366395767374
+      }
+    ]
+  },
+  "kalibrator_suhu": {
+    "nama": "Temperature Calibrator",
+    "merk": "Yokogawa",
+    "tipe": "CA 150 Handy Cal",
+    "seri": "23P1005",
+    "tertelusur": "LK-241-IDN",
+    "tanggal_kalibrasi": "2025-08-12",
+    "tanggal_jatuh_tempo": "2026-08-12",
+    "drift_c": 0.06,
+    "titik": [
+      {
+        "pembacaan_c": -100.0,
+        "koreksi_c": 0.0,
+        "u95_c": 0.35
+      },
+      {
+        "pembacaan_c": -20.0,
+        "koreksi_c": 0.0,
+        "u95_c": 0.35
+      },
+      {
+        "pembacaan_c": 0.0,
+        "koreksi_c": 0.0,
+        "u95_c": 0.34
+      },
+      {
+        "pembacaan_c": 25.0,
+        "koreksi_c": -0.02,
+        "u95_c": 0.34
+      },
+      {
+        "pembacaan_c": 50.0,
+        "koreksi_c": -0.05,
+        "u95_c": 0.34
+      },
+      {
+        "pembacaan_c": 100.1,
+        "koreksi_c": -0.09999999999999432,
+        "u95_c": 0.34
+      }
+    ]
+  },
+  "sensor_suhu": {
+    "nama": "Thermocouple",
+    "tipe": "Type K",
+    "seri": "TC-01,02",
+    "tertelusur": "LK-064-IDN",
+    "tanggal_kalibrasi": "2024-09-06",
+    "tanggal_jatuh_tempo": "2026-09-06",
+    "u95_c": 0.44
+  },
+  "timer": {
+    "nama": "Stopwatch",
+    "merk": "Weight Scale",
+    "tipe": "Timer.FM.1",
+    "seri": "SW-1",
+    "tertelusur": "LK-361-IDN",
+    "tanggal_kalibrasi": "2025-04-25",
+    "tanggal_jatuh_tempo": "2026-04-25",
+    "u95_s": 0.14,
+    "u95_min": 0.0023333333333333335,
+    "drift_min": 0.0003,
+    "titik": [
+      {
+        "titik_min": 1.0,
+        "koreksi_min": 0.0035
+      },
+      {
+        "titik_min": 5.0,
+        "koreksi_min": 0.00135
+      },
+      {
+        "titik_min": 10.0,
+        "koreksi_min": 0.0009666666666666667
+      },
+      {
+        "titik_min": 30.0,
+        "koreksi_min": 0.0005333333333333334
+      }
+    ]
+  },
+  "konstanta": {
+    "densitas_udara_kg_per_l": 0.0012,
+    "densitas_anak_timbang_kg_per_l": 8.0,
+    "u95_densitas_air_kg_per_l": 0.0005,
+    "koefisien_muai_air_per_c": 0.00021,
+    "persen_bouyancy": 0.0005,
+    "pembagi_rect": 1.73,
+    "pembagi_normal": 2.0,
+    "pembagi_drift": 2.0,
+    "pembagi_ut_water": 3.4641016151377544,
+    "vi_type_b": 50.0,
+    "vi_normal": 60.0,
+    "volume_pipa_l": 0.10129012000000001
+  }
+}

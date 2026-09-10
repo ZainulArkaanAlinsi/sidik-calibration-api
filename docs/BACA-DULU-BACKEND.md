@@ -43,6 +43,8 @@ Biar jelas mana yang dibaca buat apa:
 | [`SPEC-vision-prompt.md`](SPEC-vision-prompt.md) | Prompt & implementasi AI Vision | ✅ ya, kecuali klaim caching (lihat §4) |
 | [`Rekap-Data-Kemampuan-Kalibrasi.md`](Rekap-Data-Kemampuan-Kalibrasi.md) | Data CMC dari lampiran akreditasi LK-285-IDN | ✅ ya (data sumber) |
 | [`infrastruktur-vps-produksi.md`](infrastruktur-vps-produksi.md) | Rencana deploy VPS | ✅ ya (usulan) |
+| [`pertanyaan-lab-flowmeter-gravimetri.md`](pertanyaan-lab-flowmeter-gravimetri.md) | 23 butir pertanyaan + formulir keputusan untuk varian metode kedua Flowmeter (ISO 4185), 10 Sep 2026 | ✅ ya — tiap butir menyebut sel masternya dan angka sebelum/sesudah |
+| [`perintah-frontend-flowmeter-gravimetri.md`](perintah-frontend-flowmeter-gravimetri.md) | Kontrak serah-terima varian gravimetri ke repo mobile | ✅ ya — §7 menulis terang yang BELUM dikerjakan |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
 

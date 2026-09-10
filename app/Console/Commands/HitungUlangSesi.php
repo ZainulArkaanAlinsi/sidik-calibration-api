@@ -143,13 +143,20 @@ class HitungUlangSesi extends Command
                 // miliknya, dan angkanya salah tanpa satu pun error.
                 $heightGauge = HeightGaugeMentah::dari($baris);
 
-                // Deret UUT + standar + suhu air + densitas lembar Flowmeter.
+                // Deret UUT + standar + suhu air + densitas lembar Flowmeter,
+                // DUA varian metode sekaligus: varian UFM memungut
+                // `flow_std_pembacaan`, varian gravimetri (ISO 4185) memungut
+                // `flow_berat_isi`/`flow_berat_kosong`/`flow_waktu_menit`.
+                // `FlowmeterMentah::dari()` memulangkan kedelapan kunci apa pun
+                // variannya — yang tidak dipakai pulang deret kosong, bukan
+                // kunci yang hilang; profil yang memilih cabangnya dari
+                // `spesifikasi_alat.flowmeter.varian_metode`.
+                //
                 // Diperiksa dengan alasan yang persis sama dengan empat di
                 // atas: barisnya PUNYA `peran_sensor`, cuma kosakatanya lain
-                // lagi (`flow_uut_pembacaan`/`flow_std_pembacaan`/...). Kalau
-                // tidak dites duluan, tiap titiknya jatuh ke cabang alat lain,
-                // ketemu deret yang bukan miliknya, dan angkanya salah tanpa
-                // satu pun error.
+                // lagi. Kalau tidak dites duluan, tiap titiknya jatuh ke cabang
+                // alat lain, ketemu deret yang bukan miliknya, dan angkanya
+                // salah tanpa satu pun error.
                 $flow = FlowmeterMentah::dari($baris);
 
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.

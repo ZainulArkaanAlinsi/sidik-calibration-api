@@ -2965,6 +2965,121 @@ dihapus dari berkas berikut kedua cadangannya.
 
 ---
 
+---
+
+## §28 — Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** — 10 Sep 2026
+
+Dua workbook master turun (password `spirit285`):
+
+- `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
+- `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm`
+
+Berkas ketiga yang ikut terkirim, `Master olda Height Gauge 600 mm 2026 (1).xlsm`,
+identik dengan yang sudah dikerjakan 7 Sep (alat ke-26). Tidak dibongkar ulang.
+
+### Ini BUKAN alat ke-29
+
+Keduanya mengukur **alat yang sama, besaran yang sama, pita CMC yang sama**
+dengan alat ke-27 & ke-28 — dengan metode yang sama sekali lain: penimbangan
+statis menurut ISO 4185, timbangan digital sebagai standar.
+`PERHITUNGAN FC!B74` menulis judulnya sendiri: `ISO 4185`, `Laju alir masa`.
+
+Memecahnya jadi profil ketiga & keempat tidak bisa: `CalibrationProfileRegistry`
+melempar `LogicException` begitu dua profil mengaku ejaan nama alat yang sama,
+dan lampiran akreditasi LK-285-IDN cuma punya SATU baris per mode. Jadi yang
+dibangun **sumbu `varian_metode`** di dua profil yang sudah ada. Presedennya
+tiga: `TimbanganProfile` (kg/gram/substitusi), TITS (Measure/Source), TIDS
+(Recorder/Constant-Yokogawa).
+
+### Bukti sebelum kode
+
+Reimplementasi mandiri di Python diadu ke KEDUA workbook sel demi sel sebelum
+satu baris PHP ditulis: **107 pengaduan, nol beda** pada toleransi 5·10⁻⁶ —
+tiap kolom turunan, tiap `u`/`ci`/`vi` kesembilan dan kesebelas komponen, lalu
+`uc`, `veff`, `k`, dan `U`. `k` cocok hanya kalau `veff` dipotong ke bawah
+sebelum `TINV`, perilaku yang sudah dimiliki `GumCalculator::agregasiBudget()`.
+
+**Temuan terbesar pembongkaran, dan yang prompt-nya sendiri salah:** densitas air
+di master gravimetri **bukan rumus**. Prompt menyebut "tabel densitas
+`STANDAR KALIBRATOR!P73:P80`, salin ke JSON". Yang ada di situ kolom TURUNAN per
+titik sesi. Tabel sesungguhnya `N61:P65`: piknometer **50,3139 ml** ditimbang di
+empat suhu (20 / 27 / 30 / 50,5 °C), densitasnya `gram / volume`, dan suhu di
+antaranya **diinterpolasi linier**. Memakai Tanaka/Kell (yang dipakai varian UFM)
+menggeser tiap sertifikat gravimetri di digit belakang — kecil, dan justru karena
+itu tidak akan pernah terlihat.
+
+### Delapan penyimpangan master yang DIBETULKAN
+
+Tiap-tiapnya terukur, dan arahnya ditegakkan test:
+
+1. **Koreksi timer dihitung lalu dibuang.** `D48` (waktu terkoreksi) tidak dibaca
+   satu sel pun; laju alir massa memakai `D45` mentah. Deviasi titik 1 bergerak
+   −0,0041534 → −0,0101469 Lpm, dan **deviasi titik 2 BERGANTI TANDA**:
+   +0,0299162 → −0,0011816. Alat berubah dari membaca rendah jadi membaca tinggi.
+2. **Dua rumus koreksi apung dalam satu sheet** — `M·(1+E)` di titik 1,
+   `M/(1−ρa/ρw)` di titik 2 & 3. Dipilih bentuk KALI (mayoritas + konsisten
+   dengan Totalizer). Mt titik 2: 9,9410046 → 9,9394996 kg.
+3. **Suhu terkoreksi Flowrate memakai INDEX, bukan rata-rata** (`D66 = D64+D65`).
+   ρ_air 0,9964893 → 0,9959691 kg/L. Workbook Totalizer melakukannya benar.
+4. **`Ut-water` menunjuk sel kosong** — sama persis dengan master UFM.
+   `U_temperature` 0,2780288 → 0,3437053 °C (Totalizer), 0,2795234 °C (Flowrate).
+5. **Komponen Koreksi Bouyancy lenyap di titik 2, 3, 4 Totalizer** — rumusnya
+   tidak ikut tersalin dari titik 1.
+6. **Tabel koreksi timbangan bersatuan gram dicocokkan ke penimbangan kilogram.**
+   Tanpa konversi, penimbangan 27 kg memungut koreksi titik 27 g sebesar 0,1 kg —
+   588 kali U95 timbangannya sendiri.
+7. **Lantai CMC tidak pernah dipasang.** Keempat sel `CMC` kosong, tabelnya
+   lengkap di `DATABASE!R5:S6`. Titik 1 naik 1,06076 → **1,68128 L**.
+8. **Sel U95 sertifikat berhenti dikonversi di titik 3 & 4** — mencetak kilogram
+   di kolom berjudul liter.
+
+### Sepuluh yang DITIRU walau janggal
+
+Pembagi `1,73` alih-alih `√3`; komponen suhu `normal`/2/vi 60 di Flowrate lawan
+`rectangular`/1,73/vi 50 di Totalizer; drift dibagi 2 lagi sesudah sheet-nya
+sendiri sudah memotong `0,5·ΔC` (dan `√3` yang dijanjikan judul kolomnya tidak
+pernah dipakai); `ci` suhu ber-`0,00021` tanpa sumber; densitas anak timbang
+8 kg/L dan densitas udara 1,2 g/L nominal; `vi` blok titik 2–4 yang tidak
+sebangun dengan titik 1 (blok titik 1 yang diikuti); timbangan ke-3 yang **beda
+alat** di kedua workbook (keduanya disimpan, dipilih per mode).
+
+Seluruhnya diangkat jadi **23 butir** di
+`docs/pertanyaan-lab-flowmeter-gravimetri.md`, berikut formulir keputusan.
+
+### Yang TIDAK ditiru: titik di luar lingkup
+
+Titik 4 Totalizer (2.498 L, pita berhenti 1.991 L) dan **seluruh sesi Flowrate**
+(2 dan 10 Lpm, pita mulai 75 Lpm) **DIBLOKIR**, bukan diterbitkan dengan
+peringatan. Peringatan yang bisa dilewati admin adalah persis kelas kerusakan
+yang sudah ditulis di §9 dokumen ini.
+
+### Satu bug LAMA ikut ketemu
+
+`FlowmeterProfile::peringatanSesi()` memulangkan deret **string**, sementara
+`CalibrationValidator::periksaPeringatanProfil()` memetakannya dengan
+`fn (array $p)`. Begitu satu cabang peringatan menyala, seluruh endpoint
+`/validasi` pulang **500**. Hidup diam-diam sejak 8 Sep karena kedua sesi contoh
+UFM selalu punya geometri pipa DAN path configuration — tanpa keduanya tidak ada
+cabang yang menyala. Ketahuan karena sesi gravimetri memang tidak punya geometri
+pipa. Dibetulkan, dijaga
+`FlowmeterVarianTest::test_peringatan_sesi_berbentuk_kode_dan_pesan`.
+
+### Nol kolom baru
+
+Tiga peran `raw_measurements` baru (`flow_berat_isi`, `flow_berat_kosong`,
+`flow_waktu_menit`) memakai sumbu `peran_sensor`/`pembacaan_ke`/`sensor_ke` yang
+sudah ada. `varian_metode`, `kode_timbangan`, dan `volume_pipa_l` masuk
+`spesifikasi_alat.flowmeter`. Alat keenam berturut-turut tanpa satu pun kolom
+baru.
+
+### Sisi mobile — BELUM
+
+`docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: repo
+mobile belum punya penjaga sapuan registry (tujuh dari 28 kode profil jatuh ke
+lembar pH tanpa satu test pun menyebutnya). Sapuan itu dipasang DULU, baru
+cabang varian — kalau tidak, varian gravimetri diam-diam memajang lembar UFM:
+bentuk yang sah, kolom yang salah, nol error.
+
 ## Yang MASIH menunggu jawaban
 
 | Kode | Pertanyaan | Menahan apa |
@@ -3065,6 +3180,7 @@ berkas profil.
 | G12 | Angkat helper profil terduplikasi ke kelas induk — §18 | **BERES** (4 Sep 2026) — 37 salinan jadi 6; lapisan profil menyusut 1.109 baris. Dua override dipertahankan karena menyimpang bersebab (Tids konstantanya berarti lain, Spectro urutan kuncinya beda), masing-masing dengan komentar WHY. Perilaku tidak berubah — dijaga sapuan lembar kerja & thermohygro yang menyapu SEMUA profil |
 | G15 | **Audit seluruh 33 master di `alat-alat-Pt-Sidik` lawan yang sudah dibangun** — §26 | **BERES** (9 Sep 2026) — enam dimensi disapu: nomor metode ke-33 master, pita CMC, nomor formulir, cakupan profil, varian per alat, dan apakah tiap snapshot punya test yang mengadu angkanya. **Nol kode produksi berubah** — dan itu hasilnya, bukan kemalasan. **Klaim pertama audit ini SALAH dan dicabut hari yang sama:** sempat disimpulkan "pH satu-satunya alat yang masternya tidak pernah diadu". Tidak benar — `UncertaintyBudgetTest` sudah mengadu KEDUA lembar pH ke workbook aslinya sejak lama, dan docblock-nya sudah membedakan kedua termometernya dengan benar. Sapuan yang melewatkannya cacat sendiri: `grep -lі` yang diketik memakai huruf `і` Kiril, jadi diam-diam memulangkan nol berkas. **Pelajarannya bukan soal pH** — sapuan yang memulangkan "tidak ada" wajib dibuktikan dulu bisa memulangkan "ada", karena hasil nol dari perintah yang rusak kelihatan persis seperti temuan. Yang TERSISA sebagai celah nyata dan ditutup `PhMeterMasterTest` (4 test / 36 asersi) cuma dua: `k` eksak + `U` lembar IMTE-WQ-129 (di sana `k` cuma dipatok ±5e-3 dan `U` tidak diperiksa sama sekali), dan lantai CMC dua arah — lembar lama WAJIB tetap menembus CMC di pH 4 & pH 7, lembar baru WAJIB tetap ketutup di tiga. Yang tetap berdiri dari temuan awal: termometer standarnya memang beda benda (U95 0,5 lawan 0,72 °C) dan `ci_suhu`/`u_perbedaan_suhu`/`ci_perbedaan_suhu` IDENTIK di kedua workbook, jadi cuma `UTemperature` yang ikut perangkat. Konstantanya sengaja **tidak** ditukar (K28). Sapuan lanjutan: ketujuh `*CapabilitySeeder` ber-`u_temperature` diadu ke kepala sheet masternya — **ketujuhnya cocok**, jadi kelas cacat ini tidak menyebar ke alat lain. Yang dikonfirmasi BENAR dan dibiarkan: Flowmeter `0528_Rev.4` (profil ikut lampiran akreditasi, master sudah Rev.6 yang belum diakreditasi — §16 pertanyaan flowmeter), Thermocouple `0529_Rev.2` (master men-VLOOKUP indeks 2 → metode TITS `0502_Rev.3`; sudah tercatat `pertanyaan-lab-suhu-3alat.md` §1), Timbangan `0505-Rev.7` yang bertanda hubung sendirian di antara 30+ IK ber-garis bawah, dan `SIDIK-FM-CAL-2403_Rev. 0` yang muncul di banyak master karena dia formulir SERTIFIKAT bersama, bukan lembar kerja. Keempat tabel CMC master yang eksplisit (Conductivity, Refractometer, Turbidimeter, pH) cocok persis dengan lampiran LK-285-IDN |
 | G16 | **Data pelanggan disapu + riwayat git ditulis ulang** — §27 & K27 | **BERES** (10 Sep 2026) — dua pekerjaan yang saling mengunci. **(1) Sanitasi:** 81 berkas, commit `c0645f6`, empat gelombang — dan tiap gelombang menemukan yang tidak terlihat dari sebelumnya, termasuk **enam nama pelanggan yang tidak ada di daftar `.gitignore`** (jadi daftar itu sendiri tidak lengkap) dan `Puskesad` yang dieja panjang. Celah yang bisa membatalkan semuanya dalam sekali jalan ikut ditutup: dua generator menyalin sel identitas pelanggan langsung ke `database/data/*.json` yang ter-commit. **(2) Rewrite:** 686 commit, 91 branch. Jejaknya empat bentuk, bukan satu — 440 trailer `Co-Authored-By`, 164 `Claude-Session`, **143 commit ber-AUTHOR Claude** (ini yang menentukan daftar Contributors, dan `--message-callback` tidak menyentuhnya), 137 deskripsi PR (tidak ada di git sama sekali), dan 37 branch `claude/*` (yang paling kelihatan). Gerbang sebelum push: tree `main` sebelum/sesudah diadu dan **identik byte-per-byte** — nol byte kode berubah. Branch **diganti nama, bukan dihapus**, karena 32 dari 37 bukan leluhur `main`. Tag ikut dipindah — tanpa itu seluruh riwayat lama tetap terjangkau lewat tag. Hasil: Contributors tinggal dua orang. **Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri:** `~/.claude/settings.json` menyimpan Personal Access Token GitHub polos — dilaporkan, dicabut, dihapus |
+| G17 | Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** untuk alat ke-27 & ke-28 — §27 | **BERES di server** (10 Sep 2026) — bukan alat ke-29: dua workbook master baru mengukur alat, besaran, dan pita CMC yang SAMA dengan varian UFM, dengan metode yang sama sekali lain. Yang dibangun sumbu `varian_metode` di dua profil yang sudah ada, presedennya TimbanganProfile / TITS / TIDS. Rumusnya dibuktikan di Python SEBELUM PHP: **107 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶ — termasuk tabel densitas yang ternyata BUKAN rumus melainkan piknometer 50,3139 ml di empat suhu plus interpolasi linier. Delapan penyimpangan master dibetulkan dengan arah yang ditegakkan test, sepuluh ditiru + diangkat jadi 23 pertanyaan lab. Yang paling menentukan: koreksi timer yang dihitung lalu dibuang **membalik TANDA** deviasi Flowrate titik 2 (+0,0299 → −0,0012 Lpm), dan lantai CMC yang tidak pernah dipasang membuat keempat titik terbit di bawah pita — titik 3 mengklaim ketidakpastian sebelas kali lebih baik dari yang diakui KAN. **Nol kolom baru** di `raw_measurements`. Satu bug LAMA ikut ketemu: `peringatanSesi()` memulangkan deret string sementara `CalibrationValidator` menuntut `['kode','pesan']`, jadi endpoint `/validasi` pulang **500** untuk sesi UFM mana pun yang geometri pipanya kosong — hidup diam-diam sejak 8 Sep karena kedua sesi contoh selalu punya geometri pipa. **Sisi mobile BELUM** — `docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: sapuan mock registry dulu, baru cabang varian |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 

@@ -106,6 +106,10 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // (`PIPE SPECIFICATION & SENSOR MOUNTING`) yang alat lain tidak punya,
         // jadi justru keduanya yang paling perlu diperiksa muat satu halaman.
         'DEMO-FM-FLW-001 (Flow Meter Cairan (Flowrate))',
+        // Alat yang SAMA dengan baris di bawah, metode yang lain: varian
+        // gravimetri (ISO 4185). Tiga titik terbit, titik keempat diblokir
+        // karena di luar pita CMC — sertifikatnya tetap satu halaman.
+        'DEMO-FM-GRAV-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
     ];

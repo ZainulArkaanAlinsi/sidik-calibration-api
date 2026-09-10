@@ -108,6 +108,10 @@ class DatabaseSeeder extends Seeder
             // `CalibrationCapabilitySeeder` dari lampiran no. 30 & 31; jangan
             // bikin seeder kemampuan terpisah.
             FlowmeterSeeder::class,
+            // Varian metode kedua alat ke-27 & ke-28 — SESUDAH FlowmeterSeeder:
+            // keduanya memakai pelanggan & kategori contoh yang sama, dan yang
+            // jalan belakangan cuma menemukan barisnya sudah ada.
+            FlowmeterGravimetriSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

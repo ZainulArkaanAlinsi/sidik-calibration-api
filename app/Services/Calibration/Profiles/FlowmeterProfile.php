@@ -7,7 +7,10 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Services\Calibration\FlowmeterCalculator;
+use App\Services\Calibration\FlowmeterGravimetriCalculator;
 use App\Services\Calibration\TabelStandarFlowmeter;
+use App\Services\Calibration\TabelStandarFlowmeterGravimetri;
+use App\Services\Calibration\VarianMetodeFlowmeter;
 use App\Support\FlowmeterMentah;
 use Carbon\Carbon;
 
@@ -168,10 +171,26 @@ abstract class FlowmeterProfile extends CalibrationProfile
 
     public const OFFSET_PIPA = 5000;
 
+    /**
+     * Tiga tabel varian GRAVIMETRI. Offsetnya lanjut dari 5000, bukan memakai
+     * ulang 1000/4000 milik tabel varian UFM — kedua varian hidup di satu blok
+     * `tahap` yang sama, dan kunci baris yang bertabrakan memindahkan angka
+     * antar-tabel tanpa satu pun error.
+     */
+    public const OFFSET_BERAT_ISI = 6000;
+
+    public const OFFSET_BERAT_KOSONG = 7000;
+
+    public const OFFSET_WAKTU = 8000;
+
     /** Berapa kali diameter & ketebalan pipa dibaca — `u_A` lahir dari sebarannya. */
     public const BACAAN_PIPA = 3;
 
     private ?FlowmeterCalculator $kalk = null;
+
+    private ?FlowmeterGravimetriCalculator $kalkGravimetri = null;
+
+    private ?TabelStandarFlowmeterGravimetri $tabelGravimetri = null;
 
     private ?TabelStandarFlowmeter $tabel = null;
 
@@ -313,15 +332,48 @@ abstract class FlowmeterProfile extends CalibrationProfile
             ];
         }
 
+        // Varian metode MENENTUKAN ANGKA — dan salah pilih tidak menghasilkan
+        // error, cuma budget generasi lain dengan rantai hitung yang lain.
+        // `blokSesi()` sudah memulangkan `null` untuk nilai yang ADA tapi tidak
+        // dikenal; sesi begitu diblokir, tidak jatuh ke bawaan.
+        $varian = $blok['varian_metode'] === null
+            ? null
+            : VarianMetodeFlowmeter::from($blok['varian_metode']);
+
+        if ($varian === null) {
+            return [
+                'hitungan' => [],
+                'belum_dihitung' => array_map(static fn (array $t): array => [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => sprintf(
+                        'Varian metode Flowmeter di `spesifikasi_alat.%s.varian_metode` tidak dikenal. '
+                        .'Yang sah: `%s` (perbandingan langsung UFM) dan `%s` (penimbangan statis '
+                        .'ISO 4185). Varian menentukan budgetnya 8/9 komponen atau 9/11 DAN rantai '
+                        .'hitungnya — menebaknya berarti menerbitkan angka dari metode yang tidak '
+                        .'dipakai teknisi.',
+                        FlowmeterMentah::KUNCI_SESI,
+                        VarianMetodeFlowmeter::UFM->value,
+                        VarianMetodeFlowmeter::GRAVIMETRI->value,
+                    ),
+                ], $titik),
+            ];
+        }
+
+        $gravimetri = $varian === VarianMetodeFlowmeter::GRAVIMETRI;
         $masukan = [];
         $belumDihitung = [];
 
         foreach ($titik as $t) {
-            // Kelima deret datang lewat `konteks`, bukan level atas — jalur
-            // simpan dan jalur hitung ulang sama-sama menaruhnya di situ.
+            // Deretnya datang lewat `konteks`, bukan level atas — jalur simpan
+            // dan jalur hitung ulang sama-sama menaruhnya di situ.
             $k = $t['konteks'] ?? [];
             $uut = $k[FlowmeterMentah::PERAN_UUT] ?? [];
-            $std = $k[FlowmeterMentah::PERAN_STD] ?? [];
+            // Sisi standar bercabang varian: UFM membaca totalizer standar,
+            // gravimetri MENIMBANG. Perannya beda supaya sesi yang variannya
+            // tertukar berhenti di sini, bukan menghitung kilogram sebagai liter.
+            $std = $gravimetri
+                ? ($k[FlowmeterMentah::PERAN_BERAT_ISI] ?? [])
+                : ($k[FlowmeterMentah::PERAN_STD] ?? []);
 
             // Sesi yang baris mentahnya belum ber-`peran_sensor` DITOLAK dengan
             // alasan yang kebaca, bukan diam-diam dihitung dari `pembacaan`
@@ -336,7 +388,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                         .'UUT dan deret standar terpisah — deret datar nggak bisa dipakai.',
                         $t['titik_ke'],
                         FlowmeterMentah::PERAN_UUT,
-                        FlowmeterMentah::PERAN_STD,
+                        $gravimetri ? FlowmeterMentah::PERAN_BERAT_ISI : FlowmeterMentah::PERAN_STD,
                     ),
                 ];
 
@@ -350,6 +402,8 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 'suhu_awal' => $k[FlowmeterMentah::PERAN_SUHU_AWAL] ?? [],
                 'suhu_akhir' => $k[FlowmeterMentah::PERAN_SUHU_AKHIR] ?? [],
                 'densitas_uut' => $k[FlowmeterMentah::PERAN_DENSITAS] ?? [],
+                'berat_kosong' => $k[FlowmeterMentah::PERAN_BERAT_KOSONG] ?? [],
+                'waktu_menit' => $k[FlowmeterMentah::PERAN_WAKTU] ?? [],
                 'standard' => $t['standard'] ?? null,
             ];
         }
@@ -361,23 +415,50 @@ abstract class FlowmeterProfile extends CalibrationProfile
         }
 
         $kemampuan = $this->kemampuanSesi($equipment);
-        $hasil = $this->kalk()->hitungSesi(
-            array_map(static fn (array $m): array => [
-                'titik_ke' => $m['titik_ke'],
-                'uut' => $m['uut'],
-                'std' => $m['std'],
-                'suhu_awal' => $m['suhu_awal'],
-                'suhu_akhir' => $m['suhu_akhir'],
-                'densitas_uut' => $m['densitas_uut'],
-            ], $masukan),
-            [
-                'mode' => $blok['mode'],
-                'satuan' => $blok['satuan'],
-                'resolusi' => $blok['resolusi'],
-                'diameter_pipa_mm' => $blok['diameter_pipa_mm'],
-                'ketebalan_pipa_mm' => $blok['ketebalan_pipa_mm'],
-            ],
-        );
+
+        // Dua varian, dua mesin. Yang TIDAK dilakukan: menumpuk sumbu ketiga ke
+        // dalam `FlowmeterCalculator`. Rantai gravimetri tidak berbagi satu pun
+        // besaran turunan dengan rantai UFM — tidak ada geometri pipa, tidak ada
+        // Tanaka/Kell, tidak ada tabel sertifikat UFM — jadi menggabungkannya
+        // berarti satu kelas dengan dua jalur yang cuma bertemu di namanya, dan
+        // tiap perbaikan di satu jalur harus dibaca ulang untuk memastikan tidak
+        // menyenggol jalur lain. Sertifikat UFM yang sudah terbit wajib tetap
+        // menghasilkan angka yang sama persis.
+        $hasil = $gravimetri
+            ? $this->kalkGravimetri()->hitungSesi(
+                array_map(static fn (array $m): array => [
+                    'titik_ke' => $m['titik_ke'],
+                    'uut' => $m['uut'],
+                    'berat_isi' => $m['std'],
+                    'berat_kosong' => $m['berat_kosong'],
+                    'waktu_menit' => $m['waktu_menit'],
+                    'suhu_awal' => $m['suhu_awal'],
+                    'suhu_akhir' => $m['suhu_akhir'],
+                ], $masukan),
+                [
+                    'mode' => $blok['mode'],
+                    'satuan' => $blok['satuan'],
+                    'resolusi' => $blok['resolusi'],
+                    'kode_timbangan' => $blok['kode_timbangan'],
+                ],
+            )
+            : $this->kalk()->hitungSesi(
+                array_map(static fn (array $m): array => [
+                    'titik_ke' => $m['titik_ke'],
+                    'uut' => $m['uut'],
+                    'std' => $m['std'],
+                    'suhu_awal' => $m['suhu_awal'],
+                    'suhu_akhir' => $m['suhu_akhir'],
+                    'densitas_uut' => $m['densitas_uut'],
+                ], $masukan),
+                [
+                    'mode' => $blok['mode'],
+                    'satuan' => $blok['satuan'],
+                    'resolusi' => $blok['resolusi'],
+                    'diameter_pipa_mm' => $blok['diameter_pipa_mm'],
+                    'ketebalan_pipa_mm' => $blok['ketebalan_pipa_mm'],
+                ],
+            );
 
         $standarPerTitik = collect($masukan)->keyBy('titik_ke');
         $sekarang = Carbon::now();
@@ -408,7 +489,9 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 'standar_deviasi' => $h['simpangan_baku_standar'],
                 'jumlah_pengulangan' => $h['jumlah_pengulangan'],
                 'type_a' => $h['type_a'],
-                'type_b_components' => $this->jejakAudit($hasil, $h),
+                'type_b_components' => $gravimetri
+                    ? $this->jejakAuditGravimetri($hasil, $h)
+                    : $this->jejakAudit($hasil, $h),
                 'type_b' => $h['type_b'],
                 'ketidakpastian_gabungan' => $h['ketidakpastian_gabungan'],
                 'faktor_cakupan_k' => $h['faktor_cakupan_k'],
@@ -439,6 +522,83 @@ abstract class FlowmeterProfile extends CalibrationProfile
      * @param  array<string, mixed>  $h  satu titik dari `$hasil['titik']`
      * @return list<array<string, mixed>>
      */
+    /**
+     * Jejak audit varian GRAVIMETRI — besaran turunannya lain sama sekali.
+     *
+     * Bukan cabang `if` di dalam [jejakAudit]: yang dicetak di situ (rata-rata
+     * standar, baris tabel sertifikat UFM, geometri pipa) tidak punya padanan
+     * di sini, dan yang dicetak di sini (massa bersih, koreksi apung, waktu
+     * terkoreksi, kode timbangan) tidak punya padanan di sana. Satu fungsi
+     * dengan dua nasib berarti separuh barisnya selalu bohong.
+     *
+     * @param  array<string, mixed>  $hasil
+     * @param  array<string, mixed>  $h
+     * @return list<array<string, mixed>>
+     */
+    private function jejakAuditGravimetri(array $hasil, array $h): array
+    {
+        $budget = array_map(fn (array $k): array => $this->barisAudit($k), $h['budget']);
+
+        // Baris `perbandingan_cmc` WAJIB ada — lihat alasannya di [jejakAudit].
+        // Yang dibandingkan `U` yang SUDAH dikonversi ke satuan volume, bukan
+        // `U` dalam kilogram: lantainya persen dari nilai bersatuan volume, dan
+        // mengadu kilogram ke liter menggeser perbandingannya 0,36 %.
+        $budget[] = $this->barisPerbandinganCmc(
+            (float) $h['ketidakpastian_diperluas_terkonversi'],
+            (float) $h['lantai_cmc'],
+            $this->satuanHasil(),
+        );
+
+        $timbangan = $hasil['timbangan'] ?? [];
+
+        $budget[] = [
+            'sumber' => 'jejak_titik',
+            'keterangan' => sprintf(
+                'Rata-rata UUT %s %s · berat isi %s kg · wadah kosong %s kg · massa bersih %s kg · '
+                .'koreksi titik tabel %s kg (titik %s kg) · massa terkoreksi %s kg · koreksi apung E %s '
+                .'· Mt %s kg · densitas air %s kg/L%s · hasil %s %s · deviasi %s · U %s kg -> %s %s · '
+                .'lantai CMC %s %s%s · timbangan %s %s (%s, U95 %s kg, kestabilan %s kg, drift %s kg) '
+                .'· u(suhu) %s °C',
+                $h['uut_rata'], $this->satuanHasil(),
+                $h['berat_isi_rata'],
+                $h['berat_kosong_rata'],
+                $h['massa_bersih'],
+                $h['koreksi_standar'],
+                $h['titik_tabel'],
+                $h['std_terkoreksi'],
+                $h['koreksi_apung'],
+                $h['massa_terapung'],
+                $h['densitas_standar'],
+                $h['waktu_terkoreksi'] === null
+                    ? ''
+                    : sprintf(
+                        ' · waktu %s min + koreksi %s = %s min',
+                        $h['waktu_rata'], $h['koreksi_timer'], $h['waktu_terkoreksi'],
+                    ),
+                $h['hasil'], $this->satuanHasil(),
+                $h['deviasi'],
+                $h['ketidakpastian_diperluas'],
+                $h['ketidakpastian_diperluas_terkonversi'], $this->satuanHasil(),
+                $h['lantai_cmc'], $this->satuanHasil(),
+                $h['lantai_cmc_dipakai'] ? ' — DIPAKAI, budget hitung di bawahnya' : '',
+                $timbangan['merk'] ?? '?',
+                $timbangan['tipe'] ?? '?',
+                $timbangan['seri'] ?? '?',
+                $timbangan['u95_kg'] ?? '?',
+                $timbangan['kestabilan_kg'] ?? '?',
+                $timbangan['drift_kg'] ?? '?',
+                $hasil['u_temperature'],
+            ),
+            'distribusi' => 'jejak',
+            'nilai' => null,
+            'u_baku' => 0.0,
+            'ci' => 0.0,
+            'vi' => 0.0,
+        ];
+
+        return $budget;
+    }
+
     private function jejakAudit(array $hasil, array $h): array
     {
         $budget = array_map(fn (array $k): array => $this->barisAudit($k), $h['budget']);
@@ -514,18 +674,71 @@ abstract class FlowmeterProfile extends CalibrationProfile
             return [];
         }
 
+        $varian = $blok['varian_metode'] === null
+            ? null
+            : VarianMetodeFlowmeter::from($blok['varian_metode']);
+
+        // Bentuknya `['kode' => ..., 'pesan' => ...]`, BUKAN deret string.
+        // `CalibrationValidator::periksaPeringatanProfil()` memetakannya dengan
+        // `fn (array $p) => temuan(..., $p['kode'], $p['pesan'])`, jadi deret
+        // string melempar `TypeError` dan seluruh endpoint `/validasi` pulang
+        // 500. Sampai 10 Sep 2026 tidak ada yang tahu: kedua sesi contoh varian
+        // UFM selalu punya geometri pipa DAN path configuration, jadi kedua
+        // cabang di bawah tidak pernah menyala sekali pun.
         $pesan = [];
 
+        if ($varian === null) {
+            return [[
+                'kode' => 'flowmeter_varian_tak_dikenal',
+                'pesan' => 'Varian metode Flowmeter tidak dikenal, jadi sesi ini tidak bisa dihitung sama '
+                    .'sekali. Yang sah `ufm` atau `gravimetri`.',
+            ]];
+        }
+
+        if ($varian === VarianMetodeFlowmeter::GRAVIMETRI) {
+            // Geometri pipa dan path configuration milik varian UFM. Menuntutnya
+            // di sesi gravimetri melahirkan peringatan yang TIDAK BISA dipenuhi
+            // teknisi — kotaknya memang tidak ada di lembarnya — dan peringatan
+            // yang tidak bisa dipenuhi persis yang melatih admin menekan
+            // "setujui tetap" tanpa membaca.
+            if (($blok['kode_timbangan'] ?? 0) <= 0) {
+                $pesan[] = [
+                    'kode' => 'flowmeter_timbangan_belum_dipilih',
+                    'pesan' => 'Timbangan standar belum dipilih. Kode timbangan menentukan tabel koreksi, '
+                        .'U95, kestabilan, DAN drift sekaligus — tanpa dia tidak ada satu titik pun '
+                        .'yang bisa dihitung.',
+                ];
+            }
+
+            return $pesan;
+        }
+
+        // --- varian UFM ------------------------------------------------------
+        $pesan[] = [
+            'kode' => 'flowmeter_varian_ufm_belum_divalidasi',
+            'pesan' => 'Sesi ini memakai varian metode UFM (perbandingan langsung dengan Krohne UFC300). '
+                .'Kolom VALIDATION kedua workbook masternya KOSONG, sementara master gravimetri '
+                .'(ISO 4185) sudah divalidasi Technical Manager 21 Mei 2026 — dan lampiran '
+                .'akreditasi LK-285-IDN menyebut static weighing method, bukan perbandingan '
+                .'langsung. Lihat docs/pertanyaan-lab-flowmeter-gravimetri.md §14.',
+        ];
+
         if ($blok['diameter_pipa_mm'] === [] || $blok['ketebalan_pipa_mm'] === []) {
-            $pesan[] = 'Geometri pipa (diameter luar & ketebalan) belum diisi. Komponen '
-                .'`Cross Section Area` lahir dari sebarannya, jadi tanpa itu budget kehilangan satu '
-                .'komponen — dan U95 yang terbit lebih KECIL dari yang seharusnya.';
+            $pesan[] = [
+                'kode' => 'flowmeter_geometri_pipa_kosong',
+                'pesan' => 'Geometri pipa (diameter luar & ketebalan) belum diisi. Komponen '
+                    .'`Cross Section Area` lahir dari sebarannya, jadi tanpa itu budget kehilangan '
+                    .'satu komponen — dan U95 yang terbit lebih KECIL dari yang seharusnya.',
+            ];
         }
 
         if ($blok['path_configuration'] === null) {
-            $pesan[] = 'Path Configuration (Z/V/W) belum dipilih. Dia tidak masuk budget, tapi '
-                .'tercetak di sertifikat sebagai cara pemasangan sensor — dan sertifikat tanpa itu '
-                .'tidak bisa diulang orang lain.';
+            $pesan[] = [
+                'kode' => 'flowmeter_path_configuration_kosong',
+                'pesan' => 'Path Configuration (Z/V/W) belum dipilih. Dia tidak masuk budget, tapi '
+                    .'tercetak di sertifikat sebagai cara pemasangan sensor — dan sertifikat tanpa '
+                    .'itu tidak bisa diulang orang lain.',
+            ];
         }
 
         return $pesan;
@@ -699,6 +912,32 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 $this->field(
                     'spesifikasi_alat.flowmeter.mode', 'Mode', 'pilihan',
                     pilihan: [['nilai' => $this->mode(), 'label' => $flowrate ? 'Flowrate' : 'Totalizer']],
+                ),
+                // VARIAN METODE — kotak yang MENENTUKAN ANGKA, dan yang paling
+                // gampang dilewati karena bawaannya sudah benar. Gravimetri
+                // memakai 9/11 komponen budget dan rantai penimbangan; UFM
+                // memakai 8/9 komponen dan rantai perbandingan langsung.
+                // Kelupaan diisi tidak menghasilkan error — cuma angka dari
+                // metode yang tidak dipakai teknisi.
+                $this->field(
+                    'spesifikasi_alat.flowmeter.varian_metode', 'Metode Kalibrasi', 'pilihan',
+                    pilihan: array_map(
+                        static fn (VarianMetodeFlowmeter $v): array => [
+                            'nilai' => $v->value,
+                            'label' => $v->label().($v->tervalidasi() ? '' : ' — master BELUM divalidasi'),
+                        ],
+                        VarianMetodeFlowmeter::cases(),
+                    ),
+                ),
+                // Kode timbangan cuma punya arti di varian gravimetri, dan dia
+                // memilih tabel koreksi, U95, kestabilan, DAN drift sekaligus.
+                $this->field(
+                    'spesifikasi_alat.flowmeter.kode_timbangan', 'Timbangan Standar', 'pilihan',
+                    pilihan: $this->pilihanTimbangan(),
+                    tampilKalau: [
+                        'kode' => 'spesifikasi_alat.flowmeter.varian_metode',
+                        'nilai' => [VarianMetodeFlowmeter::GRAVIMETRI->value],
+                    ],
                 ),
                 $this->field(
                     'spesifikasi_alat.flowmeter.satuan', 'Satuan Alat', 'pilihan',
@@ -954,10 +1193,28 @@ abstract class FlowmeterProfile extends CalibrationProfile
                     'kolom' => $kolomUut,
                     'pengulangan' => range(1, self::PENGULANGAN),
                 ],
-                $tabelSederhana(
+                // --- varian UFM ---------------------------------------------
+                $this->hanyaVarian($tabelSederhana(
                     FlowmeterMentah::PERAN_STD, 'Pembacaan Standar (Krohne UFC300)',
                     self::OFFSET_STD, $satuan, self::PENGULANGAN, 3,
-                ),
+                ), VarianMetodeFlowmeter::UFM),
+                // --- varian GRAVIMETRI (ISO 4185) ----------------------------
+                // Satuannya KILOGRAM, bukan satuan aliran alat. Itu sebabnya
+                // perannya baru dan bukan memakai ulang `flow_std_pembacaan`:
+                // dua deret bersatuan beda di kunci yang sama menerbitkan liter
+                // yang sebenarnya kilogram, tanpa satu pun error.
+                $this->hanyaVarian($tabelSederhana(
+                    FlowmeterMentah::PERAN_BERAT_ISI, 'Berat Isi (air tertimbang)',
+                    self::OFFSET_BERAT_ISI, 'kg', self::PENGULANGAN, 3,
+                ), VarianMetodeFlowmeter::GRAVIMETRI),
+                // Blok yang di master bernilai NOL di seluruh sesi, jadi jalur
+                // pengurangannya nol kali teruji di sana. Kotaknya tetap ada:
+                // sesi pertama yang benar-benar memakai wadah harus punya tempat
+                // menuliskannya, bukan menuliskan berat kotor ke kolom isi.
+                $this->hanyaVarian($tabelSederhana(
+                    FlowmeterMentah::PERAN_BERAT_KOSONG, 'Berat Wadah Kosong (tara)',
+                    self::OFFSET_BERAT_KOSONG, 'kg', self::PENGULANGAN, 3,
+                ), VarianMetodeFlowmeter::GRAVIMETRI),
                 // Ketiganya berdampingan di satu pita: dua tabel suhu bentuknya
                 // kembar, dan densitas cuma satu kolom.
                 $tabelSederhana(
@@ -970,13 +1227,78 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ),
                 // Densitas SATU nilai per titik — dia sifat fluida, bukan
                 // pembacaan berulang. Wajib kalau satuannya berbasis massa.
-                $tabelSederhana(
+                //
+                // Varian GRAVIMETRI tidak punya kotak ini: fluidanya air dan
+                // densitasnya sudah DIUKUR piknometer di lab (50,3139 ml, empat
+                // titik suhu), bukan diketik teknisi. Kotak yang tetap muncul
+                // di situ akan diisi orang, dan angkanya tidak akan dibaca
+                // siapa pun.
+                $this->hanyaVarian($tabelSederhana(
                     FlowmeterMentah::PERAN_DENSITAS,
                     'Densitas Fluida UUT (wajib kalau satuan berbasis massa)',
                     self::OFFSET_DENSITAS, 'kg/L', 1, 4,
-                ),
+                ), VarianMetodeFlowmeter::UFM),
+                ...($flowrate ? [$this->hanyaVarian($tabelSederhana(
+                    FlowmeterMentah::PERAN_WAKTU, 'Durasi Penimbangan',
+                    self::OFFSET_WAKTU, 'menit', self::PENGULANGAN, 4,
+                ), VarianMetodeFlowmeter::GRAVIMETRI)] : []),
             ],
         ];
+    }
+
+    /**
+     * Tandai satu tabel cuma muncul di varian tertentu.
+     *
+     * Sisi HP memilih cabangnya dari `spesifikasi_alat.flowmeter.varian_metode`,
+     * BUKAN dari nama alat: nama alatnya sama persis untuk kedua varian, dan
+     * memilih dari nama berarti selalu memajang cabang yang sama.
+     *
+     * Kuncinya `tampil_kalau` dengan bentuk yang PERSIS sama dengan yang
+     * dipakai `field()` — satu kosakata untuk field dan tabel, supaya sisi HP
+     * tidak perlu dua penafsir.
+     *
+     * @param  array<string, mixed>  $tabel
+     * @return array<string, mixed>
+     */
+    private function hanyaVarian(array $tabel, VarianMetodeFlowmeter $varian): array
+    {
+        $tabel['tampil_kalau'] = [
+            'kode' => 'spesifikasi_alat.flowmeter.varian_metode',
+            // Bentuknya `['kode' => .., 'nilai' => [..]]`, bukan `sama_dengan`:
+            // itu kontrak yang sudah dipakai `field()` dan ditegakkan
+            // `LokasiLembarKerjaSemuaProfilTest`. `nilai` DAFTAR, bukan skalar —
+            // varian ketiga yang mendarat nanti tinggal menambah anggotanya.
+            'nilai' => [$varian->value],
+        ];
+
+        return $tabel;
+    }
+
+    /**
+     * Timbangan standar yang tersedia untuk MODE ini.
+     *
+     * Diturunkan dari tabel, bukan diketik: daftar yang ditulis tangan akan
+     * ketinggalan begitu lab menambah timbangan, dan yang ketinggalan tidak
+     * menerbitkan error — teknisi cuma tidak menemukan alat yang dia pakai lalu
+     * memilih yang lain.
+     *
+     * Mode Totalizer punya empat, Flowrate cuma tiga — Fujitsu tidak ada di
+     * workbook Flowrate.
+     *
+     * @return list<array{nilai: int, label: string}>
+     */
+    private function pilihanTimbangan(): array
+    {
+        $pilihan = [];
+
+        foreach ($this->tabelGravimetri()->semuaTimbangan($this->mode()) as $t) {
+            $pilihan[] = [
+                'nilai' => (int) $t['kode'],
+                'label' => sprintf('%d — %s %s (U95 %s kg)', $t['kode'], $t['merk'], $t['tipe'], $t['u95_kg']),
+            ];
+        }
+
+        return $pilihan;
     }
 
     /** @return array<string, mixed> */
@@ -992,6 +1314,18 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
             ],
         ];
+    }
+
+    /** Mesin varian gravimetri — malas, alasannya sama dengan [kalk]. */
+    protected function kalkGravimetri(): FlowmeterGravimetriCalculator
+    {
+        return $this->kalkGravimetri ??= new FlowmeterGravimetriCalculator;
+    }
+
+    /** Tabel standar varian gravimetri — malas, alasannya sama dengan [kalk]. */
+    protected function tabelGravimetri(): TabelStandarFlowmeterGravimetri
+    {
+        return $this->tabelGravimetri ??= new TabelStandarFlowmeterGravimetri;
     }
 
     protected function kalk(): FlowmeterCalculator

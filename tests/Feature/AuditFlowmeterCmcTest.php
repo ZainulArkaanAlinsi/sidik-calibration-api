@@ -26,10 +26,20 @@ class AuditFlowmeterCmcTest extends TestCase
     /**
      * Sesi contoh yang SEHAT tidak ditandai `di_bawah_cmc`.
      *
-     * Ini kontrol positifnya. Keempat titik sesi contoh sudah berlantai CMC
-     * (titik 2 Flowrate justru mendarat PERSIS di 1,2 %), jadi tidak satu pun
-     * boleh muncul sebagai di bawah pita — kalau muncul, berarti lantainya
+     * Ini kontrol positifnya. Seluruh titik sesi contoh sudah berlantai CMC
+     * (titik 2 Flowrate UFM justru mendarat PERSIS di 1,2 %), jadi tidak satu
+     * pun boleh muncul sebagai di bawah pita — kalau muncul, berarti lantainya
      * tidak terpasang di jalur simpan.
+     *
+     * **TIGA sesi, bukan dua**, sejak varian gravimetri mendarat 10 Sep 2026: dua
+     * sesi varian UFM (`FlowmeterSeeder`) dan satu varian gravimetri
+     * (`FlowmeterGravimetriSeeder` — sesi Flowrate master sengaja tidak di-seed,
+     * alasannya di docblock seeder itu). Angkanya ditulis di sini apa adanya
+     * karena itu bagian dari yang dijaga: sesi baru yang tidak ikut terlingkupi
+     * adalah persis kegagalan yang perintah ini ada untuk mencegahnya.
+     *
+     * Tujuh titik: 2 + 2 dari varian UFM, 3 dari gravimetri — titik 4 Totalizer
+     * gravimetri diblokir (di luar rentang tabel timbangan DAN di luar pita CMC).
      */
     public function test_sesi_contoh_tidak_ditandai_di_bawah_cmc(): void
     {
@@ -37,9 +47,31 @@ class AuditFlowmeterCmcTest extends TestCase
 
         $keluaran = $this->jalankan();
 
-        $this->assertStringContainsString('Sesi Flowmeter diperiksa: 2', $keluaran);
+        $this->assertStringContainsString('Sesi Flowmeter diperiksa: 3 (7 titik)', $keluaran);
         $this->assertStringNotContainsString('di_bawah_cmc', $keluaran);
         $this->assertStringNotContainsString('di_luar_pita', $keluaran);
+    }
+
+    /**
+     * Sesi varian GRAVIMETRI ikut tersapu perintah yang sama.
+     *
+     * Perintahnya menyapu lewat profil, bukan lewat daftar nama sesi — jadi
+     * varian ketiga yang mendarat nanti ikut terlingkupi tanpa menyentuh
+     * perintahnya. Yang dijaga di sini bahwa itu benar-benar terjadi.
+     *
+     * Titik 1 Totalizer gravimetri memungut koreksi dari titik tabel 200 kg
+     * untuk penimbangan 139,87 kg — jaraknya 29 %, dan koreksinya dipakai utuh.
+     * Itu temuan yang benar, bukan derau: master melakukan hal yang sama tanpa
+     * satu pun sel yang memprotes.
+     */
+    public function test_sesi_gravimetri_ikut_tersapu(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $keluaran = $this->jalankan();
+
+        $this->assertStringContainsString('DEMO-FM-GRAV-TOT-001', $keluaran);
+        $this->assertStringContainsString('jarak_tabel_29pct', $keluaran);
     }
 
     /**

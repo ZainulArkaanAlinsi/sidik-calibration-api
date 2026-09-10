@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\RawMeasurement;
+use App\Services\Calibration\VarianMetodeFlowmeter;
 use Illuminate\Support\Collection;
 
 /**
@@ -20,22 +21,32 @@ use Illuminate\Support\Collection;
  *
  * Ditulis BERSAMAAN dengan profilnya, bukan ditemukan belakangan.
  *
- * ## Satu kelas, DUA varian
+ * ## Satu kelas, DUA MODE dan DUA VARIAN METODE
  *
  * Totalizer dan Flowrate memakai kosakata `peran_sensor` yang SAMA. Yang
  * membedakannya `mode` di blok sesi, bukan kelas mentah kedua — dua kelas yang
  * 90 % sama berarti dua tempat yang harus ingat diperbarui bareng, dan yang
  * ketinggalan tidak menerbitkan error.
  *
+ * Sumbu kedua lahir 10 Sep 2026: `varian_metode` (lihat [VarianMetodeFlowmeter]).
+ * Varian **UFM** membandingkan pembacaan alat dengan pembacaan totalizer standar
+ * Krohne; varian **GRAVIMETRI** (ISO 4185) menimbang airnya dan mengukur
+ * durasinya. Keduanya memungut deret UUT dan suhu air yang sama, lalu
+ * bercabang: UFM memakai `flow_std_pembacaan`, gravimetri memakai
+ * `flow_berat_isi` / `flow_berat_kosong` / `flow_waktu_menit`.
+ *
  * ## Bentuk yang disusun ulang
  *
  *   peran_sensor        pembacaan_ke  sensor_ke   arti
  *   flow_uut_pembacaan  1..3 ulangan  1..3 durasi Flowrate: 20"/40"/60"
  *                                     1           Totalizer: tanpa durasi
- *   flow_std_pembacaan  1..3 ulangan  1           pembacaan totalizer standar UFM
+ *   flow_std_pembacaan  1..3 ulangan  1           UFM: pembacaan totalizer standar
  *   flow_suhu_awal      1..3 ulangan  1           suhu air awal (°C)
  *   flow_suhu_akhir     1..3 ulangan  1           suhu air akhir (°C)
- *   flow_densitas_uut   1..3 ulangan  1           densitas fluida UUT (kg/L), OPSIONAL
+ *   flow_densitas_uut   1..3 ulangan  1           UFM: densitas fluida UUT (kg/L), OPSIONAL
+ *   flow_berat_isi      1..3 ulangan  1           GRAVIMETRI: berat isi (kg)
+ *   flow_berat_kosong   1..3 ulangan  1           GRAVIMETRI: berat wadah kosong (kg), OPSIONAL
+ *   flow_waktu_menit    1..3 ulangan  1           GRAVIMETRI Flowrate: durasi (menit)
  *
  * Sisi UUT sengaja BERSARANG (ulangan → durasi). Meratakannya jadi satu deret
  * datar menghancurkan komponen "Pengulangan Pembacaan UUT" varian Flowrate,
@@ -53,9 +64,15 @@ use Illuminate\Support\Collection;
  * `'Lookup status timbangan'` di `X20` yang sebenarnya memantau UFM.
  *
  * Di sini perannya `flow_std_pembacaan` dan lembarnya menulis *"Pembacaan
- * Totalizer Standar"*. Blok **Empty Container Weight** (`B35:P37`) tidak
- * dipungut sama sekali — kertas `SIDIK-FM-CAL-0538` tidak punya kotaknya, dan
- * tidak ada satu pun rumus yang membacanya.
+ * Totalizer Standar"*.
+ *
+ * Blok **Empty Container Weight** yang di varian UFM tidak dipungut sama sekali
+ * (kertas `SIDIK-FM-CAL-0538` tidak punya kotaknya) SEKARANG DIPUNGUT untuk
+ * varian gravimetri, lewat `flow_berat_kosong`. Di master gravimetri blok itu
+ * ada di `INPUT DATA!D41:H43` dan bernilai nol di seluruh sesi kedua workbook —
+ * jadi jalur pengurangannya nol kali teruji di sana. Kalau perannya tidak ada,
+ * sesi pertama yang benar-benar memakai wadah terbit dengan massa kelebihan
+ * berat wadahnya, tanpa satu pun error. Pertanyaan lab §11.
  *
  * ## NOL kolom baru
  *
@@ -87,13 +104,34 @@ class FlowmeterMentah
 
     public const PERAN_DENSITAS = 'flow_densitas_uut';
 
-    /** Kelima peran lembar ini — dipakai penjaga "ini titik flowmeter atau bukan". */
+    /**
+     * Tiga peran yang cuma hidup di varian GRAVIMETRI (ISO 4185).
+     *
+     * Varian UFM membandingkan pembacaan totalizer alat dengan pembacaan
+     * totalizer standar; varian gravimetri MENIMBANG airnya. Jadi ketiga peran
+     * ini tidak punya padanan di varian UFM, dan `flow_std_pembacaan` tidak
+     * punya padanan di gravimetri.
+     *
+     * Sengaja peran BARU, bukan memakai ulang `flow_std_pembacaan`: satuannya
+     * beda (kilogram lawan satuan aliran alat), dan sesi yang variannya salah
+     * pilih akan menghitung kilogram sebagai liter tanpa satu pun error.
+     */
+    public const PERAN_BERAT_ISI = 'flow_berat_isi';
+
+    public const PERAN_BERAT_KOSONG = 'flow_berat_kosong';
+
+    public const PERAN_WAKTU = 'flow_waktu_menit';
+
+    /** Kedelapan peran lembar ini — dipakai penjaga "ini titik flowmeter atau bukan". */
     public const SEMUA_PERAN = [
         self::PERAN_UUT,
         self::PERAN_STD,
         self::PERAN_SUHU_AWAL,
         self::PERAN_SUHU_AKHIR,
         self::PERAN_DENSITAS,
+        self::PERAN_BERAT_ISI,
+        self::PERAN_BERAT_KOSONG,
+        self::PERAN_WAKTU,
     ];
 
     /** Kunci blok tingkat-sesi di `calibration_sessions.spesifikasi_alat`. */
@@ -116,7 +154,7 @@ class FlowmeterMentah
 
     /**
      * @param  Collection<int, RawMeasurement>  $baris  baris satu `titik_ke`
-     * @return array{flow_uut_pembacaan: list<list<float>>, flow_std_pembacaan: list<float>, flow_suhu_awal: list<float>, flow_suhu_akhir: list<float>, flow_densitas_uut: list<float>}|array{}
+     * @return array{flow_uut_pembacaan: list<list<float>>, flow_std_pembacaan: list<float>, flow_suhu_awal: list<float>, flow_suhu_akhir: list<float>, flow_densitas_uut: list<float>, flow_berat_isi: list<float>, flow_berat_kosong: list<float>, flow_waktu_menit: list<float>}|array{}
      */
     public static function dari(Collection $baris): array
     {
@@ -136,6 +174,13 @@ class FlowmeterMentah
             self::PERAN_SUHU_AWAL => self::deret($milikKita, self::PERAN_SUHU_AWAL),
             self::PERAN_SUHU_AKHIR => self::deret($milikKita, self::PERAN_SUHU_AKHIR),
             self::PERAN_DENSITAS => self::deret($milikKita, self::PERAN_DENSITAS),
+            // Ketiganya SELALU ikut dipulangkan, juga di sesi varian UFM yang
+            // pasti mengosongkannya. Kunci yang kadang ada kadang tidak memaksa
+            // tiap pembacanya menulis `?? []` sendiri, dan yang lupa membaca nol
+            // — bukan error.
+            self::PERAN_BERAT_ISI => self::deret($milikKita, self::PERAN_BERAT_ISI),
+            self::PERAN_BERAT_KOSONG => self::deret($milikKita, self::PERAN_BERAT_KOSONG),
+            self::PERAN_WAKTU => self::deret($milikKita, self::PERAN_WAKTU),
         ];
     }
 
@@ -158,7 +203,7 @@ class FlowmeterMentah
      * yang menengok relasi sesi cuma jalan di salah satunya.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat  isi `calibration_sessions.spesifikasi_alat`
-     * @return array{mode: string, satuan: string, kapasitas: float, resolusi: float, diameter_pipa_mm: list<float>, ketebalan_pipa_mm: list<float>, material_pipa: string|null, jenis_fluida: string|null, path_configuration: string|null, liner_material: string|null, liner_ketebalan_mm: float|null}|null
+     * @return array{mode: string, varian_metode: string|null, kode_timbangan: int, volume_pipa_l: float|null, satuan: string, kapasitas: float, resolusi: float, diameter_pipa_mm: list<float>, ketebalan_pipa_mm: list<float>, material_pipa: string|null, jenis_fluida: string|null, path_configuration: string|null, liner_material: string|null, liner_ketebalan_mm: float|null}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -176,6 +221,23 @@ class FlowmeterMentah
 
         return [
             'mode' => $mode,
+            // Varian metode MENENTUKAN ANGKA: gravimetri 9/11 komponen budget,
+            // UFM 8/9, dan rantai hitungnya sama sekali lain. Nilai yang ada
+            // tapi tidak dikenal pulang `null` dari [VarianMetodeFlowmeter],
+            // dan profil memblokir sesinya — TIDAK jatuh diam-diam ke bawaan.
+            'varian_metode' => VarianMetodeFlowmeter::dariBlok($blok)?->value,
+            // Kode timbangan juga MENENTUKAN ANGKA: dia memilih tabel koreksi,
+            // U95, kestabilan, DAN drift sekaligus. Bawaannya 0 (tidak dipilih),
+            // bukan 1 — kode yang tidak diisi harus berhenti, bukan diam-diam
+            // memakai Dini Argeo yang U95-nya 3.000 kali Mettler.
+            'kode_timbangan' => (int) self::angka($blok['kode_timbangan'] ?? null),
+            // Volume pipa UUT→standar. Dihitung kedua workbook master
+            // (`INPUT DATA!P32`/`Q32` = 0,10129012 L) dan dibaca NOL sel.
+            // Disimpan sebagai besaran sesi supaya tidak hilang, tapi TIDAK
+            // masuk hitungan tanpa perintah lab — pertanyaan lab §5.
+            'volume_pipa_l' => is_numeric($blok['volume_pipa_l'] ?? null)
+                ? (float) $blok['volume_pipa_l']
+                : null,
             'satuan' => (string) ($blok['satuan'] ?? ($mode === self::MODE_FLOWRATE ? 'LPM' : 'L')),
             'kapasitas' => self::angka($blok['kapasitas'] ?? null),
             'resolusi' => self::angka($blok['resolusi'] ?? null),
