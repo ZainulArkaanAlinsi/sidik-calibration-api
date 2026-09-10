@@ -186,10 +186,24 @@ METTLER_FLO = dict(
 )
 
 
+# Nama yang TERCETAK di kertas lembar kerja `SIDIK-FM-CAL-0538.A/B_Rev.3`,
+# kalau berbeda dari nama di workbook. Kertas mendaftar empat checkbox:
+# Dini Argeo / Sartorius / **Excellent** / Fujitsu — sementara kedua sheet
+# workbook menyebut slot ketiga "Mettler".
+#
+# Keduanya dibawa, bukan dipilih salah satu. Teknisi memegang KERTAS; kalau
+# dropdown cuma menyebut "Mettler", dia tidak menemukan nama yang dia lihat dan
+# memilih yang lain — dan pilihan timbangan menentukan tabel koreksi, U95,
+# kestabilan, DAN drift sekaligus. Angkanya tetap keluar dan tetap terlihat
+# wajar. Mana yang benar diangkat sebagai pertanyaan lab §15.
+NAMA_KERTAS = {3: "Excellent"}
+
+
 def susun(kode: int, dasar: dict, kestabilan_kg: float, drift_kg: float) -> dict:
     return {
         "kode": kode,
         "nama": dasar["nama"],
+        "nama_kertas": NAMA_KERTAS.get(kode),
         "merk": dasar["merk"],
         "tipe": dasar["tipe"],
         "seri": dasar["seri"],
@@ -328,7 +342,8 @@ data = {
         "timbangan_3_beda_alat": (
             "Kedua workbook menyimpan timbangan ke-3 dengan tipe, S/N, nomor akreditasi, "
             "tanggal kalibrasi, DAN satuan tabel koreksi yang berbeda. Keduanya disimpan; "
-            "dipilih per mode. Pertanyaan lab §15."
+            "dipilih per mode. Ditambah nama KETIGA: kertas lembar kerja Rev.3 menyebutnya "
+            "`Excellent`, bukan `Mettler` — disimpan di `nama_kertas`. Pertanyaan lab §15."
         ),
         "drift_tanpa_akar3": (
             "Judul kolom sheet drift menulis 0,5·ΔC/√3, kolom yang dihitung cuma 0,5·ΔC. "

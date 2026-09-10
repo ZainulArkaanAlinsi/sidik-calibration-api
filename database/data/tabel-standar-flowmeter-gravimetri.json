@@ -2,7 +2,7 @@
   "_sumber": "1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm & 2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm (password spirit285). Digenerate docs/skrip/gen-tabel-standar-flowmeter-gravimetri.py — jangan diketik tangan.",
   "_metode": "ISO 4185 — static weighing method. PERHITUNGAN FC!B74 menulis judulnya sendiri.",
   "_penyimpangan": {
-    "timbangan_3_beda_alat": "Kedua workbook menyimpan timbangan ke-3 dengan tipe, S/N, nomor akreditasi, tanggal kalibrasi, DAN satuan tabel koreksi yang berbeda. Keduanya disimpan; dipilih per mode. Pertanyaan lab §15.",
+    "timbangan_3_beda_alat": "Kedua workbook menyimpan timbangan ke-3 dengan tipe, S/N, nomor akreditasi, tanggal kalibrasi, DAN satuan tabel koreksi yang berbeda. Keduanya disimpan; dipilih per mode. Ditambah nama KETIGA: kertas lembar kerja Rev.3 menyebutnya `Excellent`, bukan `Mettler` — disimpan di `nama_kertas`. Pertanyaan lab §15.",
     "drift_tanpa_akar3": "Judul kolom sheet drift menulis 0,5·ΔC/√3, kolom yang dihitung cuma 0,5·ΔC. Ditiru; pertanyaan lab §17.",
     "drift_mettler_tak_bersumber": "Sheet `Drift Timbangan Mettler` seluruhnya nol, tapi tabel drift berbunyi 8,5e-05 kg. Yang dipakai budget 8,5e-05. Pertanyaan lab §18.",
     "u95_timbangan_beda_sheet": "DATABASE menulis U95 Mettler 0,05 dan Fujitsu 0,016; STANDAR KALIBRATOR menulis 0,00017 dan 1,6e-05. Yang dipakai budget dari STANDAR KALIBRATOR. Pertanyaan lab §19.",
@@ -13,6 +13,7 @@
       "1": {
         "kode": 1,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": null,
         "merk": "Dini Argeo",
         "tipe": "DFWLB-3",
         "seri": "0792531584",
@@ -70,6 +71,7 @@
       "2": {
         "kode": 2,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": null,
         "merk": "Sartorius",
         "tipe": "150GF",
         "seri": "34166240",
@@ -127,6 +129,7 @@
       "3": {
         "kode": 3,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": "Excellent",
         "merk": "Mettler",
         "tipe": "DJ Series",
         "seri": "HSEX1403752",
@@ -184,6 +187,7 @@
       "4": {
         "kode": 4,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": null,
         "merk": "Fujitsu",
         "tipe": "FSR-A",
         "seri": "SIDIK/134/2024",
@@ -243,6 +247,7 @@
       "1": {
         "kode": 1,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": null,
         "merk": "Dini Argeo",
         "tipe": "DFWLB-3",
         "seri": "0792531584",
@@ -300,6 +305,7 @@
       "2": {
         "kode": 2,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": null,
         "merk": "Sartorius",
         "tipe": "150GF",
         "seri": "34166240",
@@ -357,6 +363,7 @@
       "3": {
         "kode": 3,
         "nama": "Timbangan Elektronik",
+        "nama_kertas": "Excellent",
         "merk": "Mettler",
         "tipe": "DFWLB-3",
         "seri": "0792531584",

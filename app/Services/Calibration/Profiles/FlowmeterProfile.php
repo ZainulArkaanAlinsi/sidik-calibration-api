@@ -1320,9 +1320,26 @@ abstract class FlowmeterProfile extends CalibrationProfile
         $pilihan = [];
 
         foreach ($this->tabelGravimetri()->semuaTimbangan($this->mode()) as $t) {
+            // Nama KERTAS ikut dicetak kalau berbeda dari nama workbook.
+            // Kertas `SIDIK-FM-CAL-0538.A/B_Rev.3` menyebut slot ketiga
+            // `Excellent`; kedua sheet workbook menyebutnya `Mettler`. Teknisi
+            // memegang kertas — dropdown yang cuma menyebut satu nama membuat
+            // dia tidak menemukan yang dia lihat lalu memilih yang lain, dan
+            // pilihan timbangan menentukan tabel koreksi, U95, kestabilan, DAN
+            // drift sekaligus. Angkanya tetap keluar dan tetap terlihat wajar.
+            // Mana yang benar: pertanyaan lab §15.
+            $kertas = $t['nama_kertas'] ?? null;
+
             $pilihan[] = [
                 'nilai' => (int) $t['kode'],
-                'label' => sprintf('%d — %s %s (U95 %s kg)', $t['kode'], $t['merk'], $t['tipe'], $t['u95_kg']),
+                'label' => sprintf(
+                    '%d — %s %s%s (U95 %s kg)',
+                    $t['kode'],
+                    $t['merk'],
+                    $t['tipe'],
+                    $kertas === null ? '' : sprintf(' / di kertas: %s', $kertas),
+                    $t['u95_kg'],
+                ),
             ];
         }
 
