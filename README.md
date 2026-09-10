@@ -1,4 +1,5 @@
-# ASMO API
+# SIDIK API
+
 
 Backend REST API (Laravel) untuk aplikasi kalibrasi alat ukur & sertifikat digital PT ASMO. Melayani aplikasi mobile [`asmo-mobile`](https://github.com/ZainulArkaanAlinsi/asmo-mobile) — tidak ada web admin panel terpisah, semua konsumsi data lewat API ini.
 
