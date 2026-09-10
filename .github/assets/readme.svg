@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="SIDIK Calibration API — backend kalibrasi alat ukur dan sertifikat digital PT Sidik, dengan grafik titik ukur terhadap pita toleransi dan diagram jalur angka dari pembacaan mentah sampai sertifikat.">
+  <title>SIDIK Calibration API</title>
+  <desc>Bagian atas: identitas dan enam titik ukur dengan error bar U terhadap pita toleransi; titik kelima keluar pita karena |error| ditambah U melewati batas. Bagian bawah: lima tahap jalur angka, plus jalur kedua kalibrasi:hitung-ulang yang kembali ke validator.</desc>
+
+  <defs>
+    <style>
+      /* ══════════════════════════════════════════════════════════════════
+         PALET — SATU-SATUNYA TEMPAT WARNA DITENTUKAN DI BERKAS INI.
+         Mau ganti tampilan? Ubah di sini saja, jangan di bawah.
+
+           latar     dasar gelap, sekaligus penutup garis di belakang bulatan
+           judul     teks paling terang
+           data      angka dan rumus
+           teks      keterangan
+           samar     keterangan tingkat dua
+           redup     nomor urut, sumbu, label kecil
+           garis     rel, sumbu, pemisah
+           titik     titik ukur dan penanda tahap
+           aksen     jalur kedua, penekanan (amber instrumen)
+           lolos     pita toleransi
+           gagal     titik yang |error|+U-nya melewati batas
+         ══════════════════════════════════════════════════════════════════ */
+      .latar    { fill: #0e1116; }
+      .judul    { fill: #e9e6e0; }
+      .data     { fill: #93a2b5; }
+      .teks     { fill: #7b8899; }
+      .samar    { fill: #5d6b7f; }
+      .redup    { fill: #4d5869; }
+      .aksen    { fill: #c39b62; }
+      .lolos    { fill: #6f8f6a; }
+
+      .g-garis  { stroke: #2b3340; }
+      .g-halus  { stroke: #232a35; }
+      .g-nol    { stroke: #3a4453; }
+      .g-titik  { stroke: #8fb0d6; }
+      .g-aksen  { stroke: #c39b62; }
+      .g-lolos  { stroke: #6f8f6a; }
+      .g-gagal  { stroke: #c9713f; }
+      .f-titik  { fill:   #8fb0d6; }
+      .f-gagal  { fill:   #c9713f; }
+      .f-pita   { fill:   #6f8f6a; }
+      /* ══════════════════════════════════════════════════════════════════ */
+
+      .sans { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+      /* Gerak di berkas ini HIASAN semua, dan itu aturan yang ditegakkan:
+         tidak ada satu pun teks atau angka yang baru terlihat karena animasi.
+         Versi lama memakai animasi masuk dari opacity 0 dengan fill-mode both —
+         begitu animasinya tidak dijalankan di render GitHub, SELURUH teks
+         banner hilang, diam-diam, tanpa error. */
+      @keyframes sapu  { 0% { transform: translateX(0); } 100% { transform: translateX(474px); } }
+      @keyframes tera  { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+      @keyframes jalan {   0% { transform: translateX(0);      opacity: 0; }
+                           8% { opacity: 1; }
+                          92% { opacity: 1; }
+                         100% { transform: translateX(1080px); opacity: 0; } }
+      @keyframes putus { to { stroke-dashoffset: -20; } }
+
+      .sapu  { animation: sapu 7s cubic-bezier(.45,0,.55,1) infinite; }
+      .tera  { animation: tera 3.4s ease-in-out infinite; }
+      .jalan { animation: jalan 9s linear infinite; }
+      .putus { animation: putus 1.6s linear infinite; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sapu, .tera, .putus { animation: none; }
+        .jalan { animation: none; opacity: 1; }
+      }
+    </style>
+
+    <pattern id="milimeter" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0 H0 V20" fill="none" stroke="#8fa3bf" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <pattern id="milimeterBesar" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M100 0 H0 V100" fill="none" stroke="#8fa3bf" stroke-opacity="0.09" stroke-width="1"/>
+    </pattern>
+
+    <linearGradient id="sorot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#cfe3ff" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#cfe3ff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#cfe3ff" stop-opacity="0"/>
+    </linearGradient>
+
+    <marker id="ujung" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c39b62"/>
+    </marker>
+  </defs>
+
+  <rect class="latar" width="1200" height="600"/>
+  <rect width="1200" height="600" fill="url(#milimeter)"/>
+  <rect width="1200" height="600" fill="url(#milimeterBesar)"/>
+
+  <!-- ═══════════════════ ATAS — identitas & kurva kalibrasi ═══════════════════ -->
+
+  <g transform="translate(64, 92)">
+    <text class="mono aksen" x="0" y="0" font-size="11.5" letter-spacing="3.2">LK-285-IDN</text>
+    <line class="g-aksen" x1="98" y1="-4" x2="150" y2="-4" stroke-opacity="0.4"/>
+    <text class="mono samar" x="160" y="0" font-size="11.5" letter-spacing="1.6">LAB TERAKREDITASI</text>
+
+    <text class="sans judul" x="-2" y="52" font-size="43" font-weight="650" letter-spacing="-0.9">SIDIK Calibration API</text>
+    <text class="sans teks"  x="0"  y="84" font-size="15.5">Backend kalibrasi alat ukur dan sertifikat digital — PT Sidik</text>
+
+    <line class="g-halus" x1="0" y1="110" x2="470" y2="110"/>
+
+    <text class="mono samar" x="0" y="132" font-size="12.5">
+      <tspan class="data">U = k·u_c</tspan><tspan fill="#39424f">   ·   </tspan>k = 2<tspan fill="#39424f">   ·   </tspan>JCGM 100:2008<tspan fill="#39424f">   ·   </tspan>ILAC-G8
+    </text>
+  </g>
+
+  <g>
+    <rect class="f-pita" x="646" y="106" width="454" height="96" fill-opacity="0.10"/>
+    <line class="g-lolos" x1="646" y1="106" x2="1100" y2="106" stroke-opacity="0.45"/>
+    <line class="g-lolos" x1="646" y1="202" x2="1100" y2="202" stroke-opacity="0.45"/>
+    <text class="mono lolos" x="1100" y="100" font-size="10" text-anchor="end" letter-spacing="1.2">BATAS TOLERANSI</text>
+
+    <line class="g-nol" x1="646" y1="154" x2="1100" y2="154" stroke-dasharray="3 4"/>
+    <text class="mono redup" x="638" y="158" font-size="10.5" text-anchor="end">0</text>
+
+    <line class="g-garis" x1="646" y1="64" x2="646" y2="230"/>
+    <line class="g-garis" x1="646" y1="230" x2="1100" y2="230"/>
+    <text class="mono redup" x="646"  y="248" font-size="10" letter-spacing="1.2">TITIK UKUR</text>
+    <text class="mono redup" x="1100" y="248" font-size="10" text-anchor="end" letter-spacing="1.2">error ± U</text>
+
+    <g class="g-titik f-titik" stroke-width="1.4">
+      <g><line x1="706" y1="122" x2="706" y2="158"/><line x1="701" y1="122" x2="711" y2="122"/><line x1="701" y1="158" x2="711" y2="158"/><circle cx="706" cy="140" r="3.4" stroke="none"/></g>
+      <g><line x1="781" y1="148" x2="781" y2="176"/><line x1="776" y1="148" x2="786" y2="148"/><line x1="776" y1="176" x2="786" y2="176"/><circle cx="781" cy="162" r="3.4" stroke="none"/></g>
+      <g><line x1="856" y1="112" x2="856" y2="152"/><line x1="851" y1="112" x2="861" y2="112"/><line x1="851" y1="152" x2="861" y2="152"/><circle cx="856" cy="132" r="3.4" stroke="none"/></g>
+      <g><line x1="931" y1="147" x2="931" y2="171"/><line x1="926" y1="147" x2="936" y2="147"/><line x1="926" y1="171" x2="936" y2="171"/><circle cx="931" cy="159" r="3.4" stroke="none"/></g>
+      <g><line x1="1081" y1="134" x2="1081" y2="164"/><line x1="1076" y1="134" x2="1086" y2="134"/><line x1="1076" y1="164" x2="1086" y2="164"/><circle cx="1081" cy="149" r="3.4" stroke="none"/></g>
+    </g>
+
+    <g class="g-gagal f-gagal" stroke-width="1.6">
+      <line x1="1006" y1="184" x2="1006" y2="216"/>
+      <line x1="1001" y1="184" x2="1011" y2="184"/>
+      <line x1="1001" y1="216" x2="1011" y2="216"/>
+      <circle class="tera" cx="1006" cy="200" r="3.8" stroke="none"/>
+    </g>
+    <text class="mono f-gagal" x="1006" y="228" font-size="9.5" text-anchor="middle">|e|+U &gt; batas</text>
+
+    <rect class="sapu" x="646" y="64" width="26" height="166" fill="url(#sorot)"/>
+  </g>
+
+  <line class="g-halus" x1="64" y1="290" x2="1136" y2="290"/>
+
+  <!-- ═══════════════════ BAWAH — jalur angka ═══════════════════ -->
+
+  <g transform="translate(0, 300)">
+    <text class="mono redup" x="64"   y="34" font-size="10.5" letter-spacing="2.6">JALUR ANGKA — PEMBACAAN MENTAH KE SERTIFIKAT</text>
+    <text class="mono redup" x="1136" y="34" font-size="10.5" text-anchor="end">guarded acceptance: |error| + U masuk toleransi</text>
+
+    <line class="g-garis" x1="64" y1="140" x2="1136" y2="140" stroke-width="1.5"/>
+    <circle class="jalan f-titik" cx="64" cy="140" r="3"/>
+
+    <g>
+      <text class="mono redup" x="64" y="94"  font-size="10">01</text>
+      <text class="mono judul" x="64" y="116" font-size="13" font-weight="600">raw_measurements</text>
+      <circle class="latar g-titik" cx="64" cy="140" r="5.5" stroke-width="1.6"/>
+      <text class="sans teks"  x="64" y="170" font-size="11.5">peran_sensor · sensor_ke · tahap</text>
+      <text class="sans samar" x="64" y="187" font-size="11.5">blok tingkat-sesi ke spesifikasi_alat</text>
+    </g>
+
+    <g>
+      <text class="mono redup" x="288" y="94"  font-size="10">02</text>
+      <text class="mono judul" x="288" y="116" font-size="13" font-weight="600">GumCalculator</text>
+      <circle class="latar g-titik" cx="288" cy="140" r="5.5" stroke-width="1.6"/>
+      <text class="mono data"  x="288" y="170" font-size="11.5">Type A + Type B → u_c</text>
+      <text class="mono data"  x="288" y="187" font-size="11.5">U = k·u_c</text>
+      <text class="sans samar" x="288" y="204" font-size="11">Welch–Satterthwaite, k dikunci 2</text>
+    </g>
+
+    <g>
+      <text class="mono redup" x="512" y="94"  font-size="10">03</text>
+      <text class="mono judul" x="512" y="116" font-size="13" font-weight="600">uncertainty_calculations</text>
+      <rect class="latar g-titik" x="506.5" y="134.5" width="11" height="11" stroke-width="1.6"/>
+      <text class="sans teks"  x="512" y="170" font-size="11.5">disimpan — tidak pernah dihitung</text>
+      <text class="sans teks"  x="512" y="187" font-size="11.5">ulang saat dibaca</text>
+      <text class="sans samar" x="512" y="204" font-size="11">sertifikat lima tahun lalu tetap sama</text>
+    </g>
+
+    <g>
+      <text class="mono redup" x="736" y="94"  font-size="10">04</text>
+      <text class="mono judul" x="736" y="116" font-size="13" font-weight="600">CalibrationValidator</text>
+      <circle class="latar g-titik" cx="736" cy="140" r="5.5" stroke-width="1.6"/>
+      <text class="sans teks"  x="736" y="170" font-size="11.5">sebelum terbit: hitung ULANG dari</text>
+      <text class="sans teks"  x="736" y="187" font-size="11.5">mentah, adu ke yang tersimpan</text>
+      <text class="mono aksen" x="736" y="204" font-size="11">error · peringatan · info</text>
+    </g>
+
+    <g>
+      <text class="mono redup" x="960" y="94"  font-size="10">05</text>
+      <text class="mono judul" x="960" y="116" font-size="13" font-weight="600">Sertifikat</text>
+      <circle class="latar g-titik" cx="960" cy="140" r="5.5" stroke-width="1.6"/>
+      <text class="sans teks"  x="960" y="170" font-size="11.5">snapshot dibekukan → PDF + QR</text>
+      <text class="sans samar" x="960" y="187" font-size="11.5">verifikasi publik, tanpa login</text>
+    </g>
+
+    <path class="putus g-aksen" d="M 64 222 L 64 252 L 736 252 L 736 216"
+          fill="none" stroke-opacity="0.7" stroke-width="1.4"
+          stroke-dasharray="5 5" marker-end="url(#ujung)"/>
+    <rect class="latar" x="292" y="242" width="186" height="18"/>
+    <text class="mono aksen" x="300" y="256" font-size="11">kalibrasi:hitung-ulang</text>
+    <text class="sans samar" x="500" y="256" font-size="11">jalur kedua yang menghitung hal yang sama — alat baru wajib menyambung ke dua-duanya</text>
+  </g>
+</svg>
