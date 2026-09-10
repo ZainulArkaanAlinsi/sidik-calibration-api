@@ -87,7 +87,7 @@ class StandarTercetakTerdaftarTest extends TestCase
         }
 
         $this->assertSame([], $belum, sprintf(
-            "Baris `STANDARD USED` tercetak tapi tidak ada di master `standards` — di HP baris ini "
+            'Baris `STANDARD USED` tercetak tapi tidak ada di master `standards` — di HP baris ini '
             ."muncul merah dan kotaknya mati:\n  %s\n\nKalau alatnya memang sudah dicabut lab, "
             .'tambahkan serialnya ke BOLEH_TIDAK_TERDAFTAR berikut alasannya. Kalau tidak, seed '
             .'standarnya.',
