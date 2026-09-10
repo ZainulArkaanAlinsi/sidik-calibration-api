@@ -23,29 +23,29 @@
          terbaca tanpa perlu bayangan: atas paling terang, kiri sedang,
          kanan paling gelap.
          ══════════════════════════════════════════════════════════════════ */
-      .latar    { fill: #0e1116; }
-      .judul    { fill: #e9e6e0; }
-      .data     { fill: #93a2b5; }
-      .teks     { fill: #7b8899; }
-      .samar    { fill: #5d6b7f; }
-      .redup    { fill: #4d5869; }
-      .aksen    { fill: #c39b62; }
-      .lolos    { fill: #6f8f6a; }
+      .latar    { fill: #f7f5ef; }
+      .judul    { fill: #12171f; }
+      .data     { fill: #2f4a6d; }
+      .teks     { fill: #4b5563; }
+      .samar    { fill: #6b7480; }
+      .redup    { fill: #8d95a1; }
+      .aksen    { fill: #9a6a24; }
+      .lolos    { fill: #4a7345; }
 
-      .muka-atas  { fill: #1b2531; }
-      .muka-kiri  { fill: #141c26; }
-      .muka-kanan { fill: #0f151d; }
+      .muka-atas  { fill: #ffffff; }
+      .muka-kiri  { fill: #e7e3d8; }
+      .muka-kanan { fill: #d3cdbf; }
 
-      .g-garis  { stroke: #2b3340; }
-      .g-halus  { stroke: #232a35; }
-      .g-nol    { stroke: #3a4453; }
-      .g-titik  { stroke: #8fb0d6; }
-      .g-aksen  { stroke: #c39b62; }
-      .g-lolos  { stroke: #6f8f6a; }
-      .g-gagal  { stroke: #c9713f; }
-      .f-titik  { fill:   #8fb0d6; }
-      .f-gagal  { fill:   #c9713f; }
-      .f-pita   { fill:   #6f8f6a; }
+      .g-garis  { stroke: #c2bcae; }
+      .g-halus  { stroke: #d8d3c6; }
+      .g-nol    { stroke: #a8a293; }
+      .g-titik  { stroke: #3f6ea8; }
+      .g-aksen  { stroke: #9a6a24; }
+      .g-lolos  { stroke: #4a7345; }
+      .g-gagal  { stroke: #b0511f; }
+      .f-titik  { fill:   #3f6ea8; }
+      .f-gagal  { fill:   #b0511f; }
+      .f-pita   { fill:   #4a7345; }
       /* ══════════════════════════════════════════════════════════════════ */
 
       .sans { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -76,20 +76,20 @@
     </style>
 
     <pattern id="milimeter" width="20" height="20" patternUnits="userSpaceOnUse">
-      <path d="M20 0 H0 V20" fill="none" stroke="#8fa3bf" stroke-opacity="0.05" stroke-width="1"/>
+      <path d="M20 0 H0 V20" fill="none" stroke="#2f4a6d" stroke-opacity="0.07" stroke-width="1"/>
     </pattern>
     <pattern id="milimeterBesar" width="100" height="100" patternUnits="userSpaceOnUse">
-      <path d="M100 0 H0 V100" fill="none" stroke="#8fa3bf" stroke-opacity="0.09" stroke-width="1"/>
+      <path d="M100 0 H0 V100" fill="none" stroke="#2f4a6d" stroke-opacity="0.13" stroke-width="1"/>
     </pattern>
 
     <linearGradient id="sorot" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#cfe3ff" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="#cfe3ff" stop-opacity="0.085"/>
-      <stop offset="100%" stop-color="#cfe3ff" stop-opacity="0"/>
+      <stop offset="0%"   stop-color="#2f4a6d" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#2f4a6d" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#2f4a6d" stop-opacity="0"/>
     </linearGradient>
 
     <marker id="ujung" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#c39b62"/>
+      <path d="M0 0 L10 5 L0 10 z" fill="#9a6a24"/>
     </marker>
   </defs>
 
@@ -110,7 +110,7 @@
     <line class="g-halus" x1="0" y1="110" x2="470" y2="110"/>
 
     <text class="mono samar" x="0" y="132" font-size="12.5">
-      <tspan class="data">U = k·u_c</tspan><tspan fill="#39424f">   ·   </tspan>k = 2<tspan fill="#39424f">   ·   </tspan>JCGM 100:2008<tspan fill="#39424f">   ·   </tspan>ILAC-G8
+      <tspan class="data">U = k·u_c</tspan><tspan fill="#a8a293">   ·   </tspan>k = 2<tspan fill="#a8a293">   ·   </tspan>JCGM 100:2008<tspan fill="#a8a293">   ·   </tspan>ILAC-G8
     </text>
   </g>
 

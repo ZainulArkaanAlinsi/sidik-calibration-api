@@ -70,6 +70,21 @@ Yang tetap tinggal di kelas bersama dan tidak boleh pindah ke profil: agregasi b
 (`u_c`, Welch–Satterthwaite, `k`), lantai CMC, dan keputusan PASS/FAIL. Profil hanya
 menyetor daftar komponen lewat `komponenBudget()`.
 
+```mermaid
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
+flowchart LR
+  A["equipments.nama_alat_kemampuan"] --> B{"CalibrationProfileRegistry"}
+  B -- cocok --> C["XxxProfile"]
+  B -- tidak cocok --> D["ProfilGenerik"]
+  C --> E["komponenBudget()"]
+  D --> E
+  E --> F["agregasi u_c · Welch-Satterthwaite · lantai CMC · PASS/FAIL"]
+```
+
+Kotak paling kanan sengaja di luar profil: itu yang tetap tinggal di kelas
+bersama, dan memindahkannya ke profil berarti tiap alat boleh punya definisi
+kelulusan sendiri.
+
 ### Peta lapisan
 
 | Lapisan      | Tempat                  | Catatan                                                |
@@ -176,6 +191,17 @@ tidak pernah sampai ke server yang dipakai teknisi di lokasi.
 
 ---
 
+```mermaid
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
+flowchart LR
+  A["php artisan test<br/>SQLite in-memory"] --> G{"dua-duanya hijau?"}
+  B["phpunit.mysql.xml<br/>MySQL 8"] --> G
+  G -- ya --> C["CI, PHP 8.4"]
+  C --> D["Deploy Hook Render"]
+  D --> E["server yang dipakai teknisi di lokasi"]
+  G -- tidak --> S["berhenti di GitHub"]
+```
+
 ## Kerja berdua: database bersama lewat LAN
 
 Tim ini memakai satu database bersama di laptop Zainul, supaya data yang dilihat berdua
@@ -209,6 +235,17 @@ Kalau muncul `SQLSTATE[HY000] [2002]` di sisi Raihan, urutan mengeceknya: laptop
 menyala dan sejaringan? lalu, `DB_HOST` masih IP yang benar?
 
 ---
+
+```mermaid
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
+flowchart LR
+  subgraph satu["satu router yang sama"]
+    R["laptop Raihan<br/>php artisan serve"]
+    Z["laptop Zainul<br/>php artisan serve + MySQL :3306"]
+  end
+  R -- "DB_HOST = IP LAN Zainul" --> Z
+  L["beda rumah, beda router"] -- "terhalang NAT" --x Z
+```
 
 ## Konvensi API
 
