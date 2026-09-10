@@ -2582,11 +2582,43 @@ Pemilik proyek memilih **keduanya**, dijalankan berurutan hari itu juga.
 
 **(a) Repo dijadikan PRIVAT.** Dilakukan pemilik proyek sendiri lewat setelan
 GitHub. Ini yang membalikkan risiko terbesar dalam hitungan detik, dan sengaja
-didahulukan supaya (b) tidak dikerjakan sambil dikejar waktu. Efeknya ke deploy
-**nol** — `render.yaml` memakai `autoDeploy: false` dan deploy dipicu Deploy
-Hook Render (URL rahasia di GitHub Secrets), yang tidak peduli visibility. Yang
-berubah cuma kuota GitHub Actions: repo privat kena jatah 2.000 menit/bulan,
-dan satu run suite ini 12–17 menit — jadi ±130 push/bulan.
+didahulukan supaya (b) tidak dikerjakan sambil dikejar waktu.
+
+> ⚠️ **KOREKSI 10 Sep 2026 — di sini dulu tertulis "efeknya ke deploy NOL".**
+> **Itu salah, dan sempat dicabut lalu ditegakkan lagi sebelum akhirnya
+> terbukti.** Repo privat **mematahkan deploy Render**: Deploy Hook memulangkan
+> **HTTP 400**. Alasan yang dulu ditulis benar sejauh yang disebutnya —
+> `render.yaml` memang `autoDeploy: false`, dan Deploy Hook memang URL rahasia
+> yang tidak peduli visibility — tapi tidak lengkap: Render tetap harus
+> **menarik kode**, dan izin GitHub App-nya tidak mencakup repo privat ini.
+>
+> Buktinya garis waktu, dua konfirmasi ke masing-masing arah:
+>
+> | Waktu (WIB) | Commit | Repo | Hook |
+> |---|---|---|---|
+> | 9 Sep 18:33–20:55 | `c89d31e`, `ed2ea0f`, `8f266ed` | publik | ✅ |
+> | 10 Sep 06:58 | `c0645f6` | publik | ✅ |
+> | 10 Sep 09:46 | `1cbfa548` | **privat** | ❌ 400 |
+> | 10 Sep 11:22 | `c02004e` | **privat** | ❌ 400 |
+> | 10 Sep 13:08 | `41de058` | publik | ✅ |
+>
+> Sepanjang privat, `phpunit` SELALU hijau — yang gagal cuma langkah
+> "Ketuk Deploy Hook". Jadi gejalanya CI merah padahal kodenya sehat, dan
+> server tetap melayani versi lama tanpa satu pun tanda di aplikasi.
+>
+> **Jebakan pengukurannya, supaya tidak terulang:** koreksi ini sempat DICABUT
+> karena run `a0bfa531` terlihat "success" sesudah repo privat. Ternyata run
+> itu jalan di branch `chore/deploy-gratis-render` dan job `deploy ke Render`-nya
+> **tidak ikut jalan sama sekali** — "success" di situ artinya test lulus, bukan
+> deploy berhasil. Jangan membaca kesimpulan status run tanpa memeriksa job
+> mana yang benar-benar jalan.
+>
+> **Keputusan pemilik proyek (10 Sep 2026):** tetap privat, dan Render diberi
+> akses ke repo privatnya — GitHub → Settings → Applications → Render →
+> Configure → masukkan `sidik-calibration-api` ke daftar repo yang diizinkan.
+
+Yang berubah selain itu cuma kuota GitHub Actions: repo privat kena jatah
+2.000 menit/bulan, dan satu run suite ini 12–17 menit — jadi ±130 push/bulan.
 
 **(b) Nama pelanggan diganti sintetis.** Empat gelombang sapuan, karena tiap
 gelombang menemukan yang tidak terlihat dari gelombang sebelumnya:
