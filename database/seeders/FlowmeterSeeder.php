@@ -398,8 +398,54 @@ class FlowmeterSeeder extends Seeder
         ];
     }
 
+    /**
+     * Caliper & thickness gauge — standar yang TERCETAK di kertas tapi tidak
+     * pernah dibuatkan barisnya di master `standards`.
+     *
+     * Keduanya bukan pelengkap: diameter luar dan ketebalan pipa yang mereka
+     * ukur melahirkan `u_A`, dan `u_A` masuk DUA komponen budget varian UFM
+     * (cross sectional area dan koefisien sensitivitasnya). Standar yang masuk
+     * perhitungan tapi tidak ada di master berarti sertifikat menyebut
+     * ketertelusuran yang tidak bisa ditunjukkan dokumennya.
+     *
+     * Gejalanya kelihatan di HP, bukan di server: baris `STANDARD USED` lembar
+     * kerja muncul merah dengan tulisan "belum terdaftar di master standar",
+     * dan teknisi tidak bisa mencentangnya.
+     *
+     * Yang TIDAK ikut diseed: Victor 14+ (S/N 992613877). Alatnya sudah dicabut
+     * lab — `FORM VALIDASI` TITS rev. 11 (24 Mei 2024) berbunyi *"Remove std.
+     * Victor / Add std kalibrator yokogawa"*, dan tabel koreksinya sudah
+     * `#REF!` semua. Barisnya tetap tercetak karena kertasnya memang masih
+     * memuatnya; label merahnya JUJUR, dan menyeed dia berarti menghidupkan
+     * kembali ketertelusuran ke alat yang tidak dipakai. Lihat
+     * `EnclosureProfileBase` untuk ceritanya.
+     */
+    private function seedStandarPendukung(TabelStandarFlowmeter $tabel): void
+    {
+        foreach (['caliper', 'thickness_gauge'] as $kunci) {
+            $s = $tabel->standar()[$kunci];
+
+            Standard::updateOrCreate(
+                ['organization_id' => 1, 'nama' => $s['nama'], 'serial_number' => $s['seri']],
+                [
+                    'organization_id' => 1,
+                    'merk' => $s['merk'] === '-' ? null : $s['merk'],
+                    'model' => $s['tipe'],
+                    'no_sertifikat' => $s['seri'],
+                    'tertelusur_ke' => $s['tertelusur'],
+                    'berlaku_sampai' => $this->berlakuSampaiDemo($s['nama'], $s['tanggal_jatuh_tempo']),
+                    'ketidakpastian' => (float) $s['u95_mm'],
+                    'satuan_ketidakpastian' => 'mm',
+                    'faktor_cakupan' => 2,
+                ],
+            );
+        }
+    }
+
     private function seedStandar(TabelStandarFlowmeter $tabel): Standard
     {
+        $this->seedStandarPendukung($tabel);
+
         $ufm = $tabel->standar()['ufm'];
 
         return Standard::updateOrCreate(

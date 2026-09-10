@@ -3072,6 +3072,35 @@ sudah ada. `varian_metode`, `kode_timbangan`, dan `volume_pipa_l` masuk
 `spesifikasi_alat.flowmeter`. Alat keenam berturut-turut tanpa satu pun kolom
 baru.
 
+### Susulan — "belum terdaftar di master standar" di layar HP
+
+Dilaporkan pemilik proyek lewat tangkapan layar lembar Flow Meter Cairan
+(Totalizer): tiga dari lima baris `STANDARD USED` merah. Disapu ke seluruh
+registry: **13 baris di 13 profil**, dan ternyata cuma **tiga alat fisik**.
+
+Yang diseed (2 alat, menutup 4 baris): **Digital Caliper Tesa Cal-IP67** dan
+**Ultrasonic Thickness Gauge TM-8812**. Keduanya bukan pelengkap — diameter luar
+dan ketebalan pipa yang mereka ukur melahirkan `u_A`, dan `u_A` masuk DUA
+komponen budget varian UFM. Datanya sudah ada di `tabel-standar-flowmeter.json`
+sejak alat ke-27; yang tidak ada cuma baris `standards`-nya.
+
+Yang TIDAK diseed (1 alat, 9 baris): **Victor 14+ / 992613877**. Label merahnya
+JUJUR. `FORM VALIDASI` TITS rev. 11 (24 Mei 2024) berbunyi *"Remove std. Victor /
+Add std kalibrator yokogawa"*, tabel koreksinya sudah `#REF!` semua, dan
+penggantinya Yokogawa CA 150 (23P1005) yang justru sudah terdaftar. Menyeed
+Victor berarti menghidupkan kembali ketertelusuran ke alat yang sudah dicabut
+lab. Barisnya tetap tercetak karena kertasnya memang masih memuatnya.
+
+Penjaganya `StandarTercetakTerdaftarTest`, daftarnya dari registry bukan diketik,
+dengan `BOLEH_TIDAK_TERDAFTAR` yang punya test kedua untuk memastikan
+pengecualiannya benar-benar terpakai — pengecualian mati bikin sapuan terlihat
+lebih ketat daripada yang sebenarnya. Dibuktikan menggigit: seed dicabut, sapuan
+menyebut keempat barisnya berikut kode profilnya.
+
+Catatan penamaan: serial `992613877` yang sama tercatat sebagai **"Victor 14+"**
+di sebelas profil dan **"Constant 40T"** di master Flowmeter — satu alat, dua
+nama. Belum diangkat jadi pertanyaan lab karena alatnya sudah pensiun.
+
 ### Sisi mobile — BELUM
 
 `docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: repo
