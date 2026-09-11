@@ -66,6 +66,17 @@ class DatabaseSeeder extends Seeder
             // Enclosure (Oven/Furnace/Bath/Inkubator/Refrigerator) — WAJIB abis
             // `CalibrationCapabilitySeeder` (butuh baris CMC per jenis enclosure).
             EnclosureSeeder::class,
+            // Alat ke-12 — TIDS. Seeder ini menyusul 11 Sep 2026: rumusnya
+            // lengkap sejak kedua workbook masternya turun 28 Agt 2026, tapi
+            // sesi contohnya tidak pernah dibuat, dan TIDS jadi satu-satunya
+            // dari 29 alat yang jalur simpan-hitung-sertifikatnya tidak pernah
+            // dilalui data demo. `kalibrasi:uji-profil` melewatinya, dan
+            // `HitungUlangSemuaSesiTest` tidak pernah menyentuh jalur hitung
+            // ulangnya.
+            //
+            // WAJIB abis `ThermohygroSeeder`: sesinya menautkan TH-2 sebagai
+            // sumber koreksi kondisi lingkungan.
+            TidsSeeder::class,
             // Tiga alat suhu ber-PASANGAN deret (Thermocouple, Termometer
             // Gelas, Thermohygrometer) — alat ke-18..20. Sama seperti TITS &
             // Enclosure, CMC ketiganya sudah ada di lampiran akreditasi, jadi
@@ -112,6 +123,15 @@ class DatabaseSeeder extends Seeder
             // keduanya memakai pelanggan & kategori contoh yang sama, dan yang
             // jalan belakangan cuma menemukan barisnya sudah ada.
             FlowmeterGravimetriSeeder::class,
+            // Alat ke-29 — Anak Timbangan (OIML R111), kelompok Massa. Baris
+            // kemampuannya (CMC nol, di luar lampiran) ditanam
+            // `KemampuanKalibrasiSeeder`, bukan di sini — semua seeder
+            // kemampuan tinggal di daftar itu.
+            //
+            // WAJIB abis `TimbanganSeeder`: keduanya memakai kategori Massa
+            // yang sama, dan yang jalan belakangan cuma menemukan barisnya
+            // sudah ada.
+            AnakTimbanganSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

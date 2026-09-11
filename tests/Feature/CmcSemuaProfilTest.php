@@ -65,6 +65,18 @@ class CmcSemuaProfilTest extends TestCase
             .'Barisnya tetap ada dengan CMC nol supaya jalur budget penuh tetap jalan; lihat '
             .'`HeightGaugeCapabilitySeeder`.',
 
+        'Anak Timbangan' => 'KAN belum mengakreditasi kalibrasi anak timbangan — kelompok Massa di '
+            .'`kemampuan-kalibrasi.json` cuma memuat SATU baris, no. 12 "Timbangan (Elektronik, '
+            .'mekanik)", yaitu alat yang MENIMBANG, bukan keping yang ditimbangkan padanya. Kertas '
+            .'lembar kerjanya sendiri sudah menyatakannya: `SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA '
+            .'ANAK TIMBANGAN (Non KAN)`. Masternya juga mengakuinya — sel `CMC PT. SIDIK` KOSONG di '
+            .'kedua puluh blok budget, dan `U95% Sertifikat` selalu sama persis dengan `U = k.Uc`. '
+            .'`DATABASE` memang memuat sembilan pita di bawah defined name `CMC_AT`, tapi labelnya '
+            .'sendiri berbunyi "Jenis Timbangan" dan namanya menunjuk workbook LAIN lewat tautan '
+            .'luar — itu pita CMC alat ke-21, dipinjam. Barisnya tetap ada dengan CMC nol supaya '
+            .'jalur budget penuh tetap jalan; lihat `AnakTimbanganCapabilitySeeder`. Pertanyaan lab '
+            .'§15 di `docs/pertanyaan-lab-anak-timbangan.md`.',
+
         'Gas Detector' => 'KAN belum mengakreditasi gas detector sama sekali — kolom CMC di '
             .'`Gas Detector Uli Skin (std Rigaz).xlsm` (DATABASE!S5:S8) kosong seluruhnya. Barisnya tetap '
             .'ada dengan CMC nol supaya jalur budget penuh tetap jalan; lihat `GasDetectorCapabilitySeeder`.',

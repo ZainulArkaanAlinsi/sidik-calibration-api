@@ -203,8 +203,38 @@ sertifikatnya perlu ditandai.
 - **Label `"Temperature indikator dengan sensor"` di budget Thermocouple.**
   Sudah terbukti label basi lewat tabel CMC-nya sendiri — lihat docblock
   `ThermocoupleProfile`. Bukan pertanyaan, sudah terjawab.
-- **Nomor formulir lembar kerja.** Ketiganya `null` dengan alasan yang sama
-  seperti TITS dulu: workbook cuma memuat `SIDIK-FM-CAL-2403_Rev. 0`, formulir
-  SERTIFIKAT yang dipakai bersama semua alat. Yang dibutuhkan formulir cetaknya,
-  bukan keputusan — begitu kertasnya ada, nomornya kebaca dari footer-nya
-  sendiri.
+- **Nomor formulir lembar kerja.** ~~Ketiganya `null`~~ — **TERJAWAB 11 Sep
+  2026 oleh kertasnya sendiri.** Formulir cetaknya ada di
+  `Project-PT-Sidik/worksheet_alat_calibration/`, dan seperti yang ditulis di
+  sini dulu, nomornya memang kebaca dari kaki halamannya sendiri:
+  Thermocouple `SIDIK-FM-CAL-0535_Rev.2`, Termometer Gelas
+  `SIDIK-FM-CAL-0537_Rev.2`, Thermohygrometer `SIDIK-FM-CAL-0525_Rev.2`.
+  Ketiganya dicocokkan silang ke nomor Instruksi Kerja yang tercetak di kertas
+  yang sama. Ketiganya sudah dipasang di profilnya. Satu sisa, lihat §7.
+
+---
+
+## §7 — Berkas Thermohygro menyebut DUA nomor revisi yang berbeda
+
+Satu-satunya dari sebelas formulir yang diperiksa 11 Sep 2026 yang tidak
+konsisten dengan dirinya sendiri:
+
+| Tempat | Yang tertulis |
+|---|---|
+| Nama berkas | `SIDIK-FM-CAL-0525_Rev.3 - LEMBAR KERJA THERMOHYGRO.pdf` |
+| Kaki halaman **di dalam** dokumennya | `SIDIK-FM-CAL-0525` · **`Revise : 2`** |
+
+Sepuluh formulir lain yang dibaca hari yang sama cocok antara nama berkas dan
+kaki halamannya — Thermocouple `Rev.2`/`Revise : 2`, Micrometer `Rev.1`/
+`Revise : 1`, Timbangan `Rev.6`/`Revise : 6`, dan seterusnya. Cuma yang ini
+yang berselisih.
+
+**Yang dipakai server sekarang: `Rev.2`**, yaitu yang dinyatakan di dalam
+dokumen terkendalinya. Alasannya bukan selera — nomor revisi yang dicetak di
+kop lembar kerja ikut diaudit, dan mengklaim revisi yang tidak bisa dibuktikan
+dari isi dokumennya sendiri lebih berisiko daripada mengutip yang tertulis.
+
+**Pertanyaan:** revisi yang berlaku Rev.2 atau Rev.3? Kalau Rev.3, berarti kaki
+halaman formulirnya yang belum diperbarui — dan itu perlu dibetulkan di kertasnya
+juga, bukan cuma di server. Yang perlu diubah di sini satu baris:
+`ThermohygroProfile::KODE_DOKUMEN`.

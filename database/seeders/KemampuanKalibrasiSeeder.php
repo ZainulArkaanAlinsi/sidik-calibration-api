@@ -75,10 +75,14 @@ class KemampuanKalibrasiSeeder extends Seeder
         SpectrophotometerCapabilitySeeder::class,
         ViscometerCapabilitySeeder::class,
         DoMeterCapabilitySeeder::class,
-        // Dua alat DI LUAR lampiran, CMC nol. Barisnya tetap perlu ada supaya
+        // TIGA alat DI LUAR lampiran, CMC nol. Barisnya tetap perlu ada supaya
         // jalur budget penuh jalan — lihat docblock masing-masing seeder.
         GasDetectorCapabilitySeeder::class,
         HeightGaugeCapabilitySeeder::class,
+        // Alat ke-29. Kelompok Massa di lampiran cuma memuat "Timbangan
+        // (Elektronik, mekanik)"; kalibrasi anak timbangan tidak ada di situ,
+        // dan nama lembar kerjanya sendiri menyebut (Non KAN).
+        AnakTimbanganCapabilitySeeder::class,
     ];
 
     public function run(): void

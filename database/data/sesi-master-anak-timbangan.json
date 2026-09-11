@@ -1,0 +1,265 @@
+{
+  "_sumber": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx, sertifikat 001-CAL-126",
+  "_catatan": "Identitas pelanggan SINTETIS. Enam dari dua puluh keping master sengaja tidak ikut — lihat docblock gen-sesi-anak-timbangan.py.",
+  "_digenerate_oleh": "docs/skrip/gen-sesi-anak-timbangan.py",
+  "sesi": {
+    "nomor_sertifikat": "DEMO-AT-001",
+    "nomor_order": "DEMO-AT-ORD-001",
+    "pelanggan": "PT Contoh Kalibrasi Nusantara",
+    "alamat": "Kawasan Industri Contoh Blok A No. 1, Indonesia",
+    "nama_alat": "Anak Timbangan",
+    "merk": "Delima Scientific",
+    "serial": "202501022",
+    "kelas_uut": "F1",
+    "kelas_standar": "E2",
+    "kapasitas_g": 200.0,
+    "rentang": "0,1 g - 200 g",
+    "timbangan": "Analytical Balance",
+    "meter_lingkungan": "Thermobarometer",
+    "thermohygro": "Thermobarometer",
+    "tanggal_terima": "2026-01-26",
+    "tanggal": "2026-01-27",
+    "suhu_awal": 23.1,
+    "suhu_akhir": 23.0,
+    "kelembaban_awal": 55.0,
+    "kelembaban_akhir": 56.0,
+    "tekanan_awal": 933.2,
+    "tekanan_akhir": 933.1
+  },
+  "identitas": {
+    "2": "AT-200-1",
+    "3": "AT-200-2",
+    "5": "AT-0p2-1",
+    "6": "AT-0p2-2",
+    "9": "AT-2-1",
+    "10": "AT-2-2",
+    "12": "AT-20-1",
+    "13": "AT-20-2"
+  },
+  "titik": [
+    {
+      "titik_ke": 1,
+      "nominal_g": 100.0,
+      "at_s1": [
+        100.0
+      ],
+      "at_t1": [
+        99.9999
+      ],
+      "at_t2": [
+        99.9999
+      ],
+      "at_s2": [
+        100.0
+      ]
+    },
+    {
+      "titik_ke": 2,
+      "nominal_g": 200.0,
+      "at_s1": [
+        199.9999
+      ],
+      "at_t1": [
+        199.9999
+      ],
+      "at_t2": [
+        199.9999
+      ],
+      "at_s2": [
+        199.9999
+      ]
+    },
+    {
+      "titik_ke": 3,
+      "nominal_g": 200.0,
+      "at_s1": [
+        199.9999
+      ],
+      "at_t1": [
+        199.9999
+      ],
+      "at_t2": [
+        199.9999
+      ],
+      "at_s2": [
+        199.9999
+      ]
+    },
+    {
+      "titik_ke": 4,
+      "nominal_g": 0.1,
+      "at_s1": [
+        0.1
+      ],
+      "at_t1": [
+        0.1
+      ],
+      "at_t2": [
+        0.1
+      ],
+      "at_s2": [
+        0.1
+      ]
+    },
+    {
+      "titik_ke": 5,
+      "nominal_g": 0.2,
+      "at_s1": [
+        0.2
+      ],
+      "at_t1": [
+        0.2
+      ],
+      "at_t2": [
+        0.2
+      ],
+      "at_s2": [
+        0.2
+      ]
+    },
+    {
+      "titik_ke": 6,
+      "nominal_g": 0.2,
+      "at_s1": [
+        0.2
+      ],
+      "at_t1": [
+        0.2
+      ],
+      "at_t2": [
+        0.2
+      ],
+      "at_s2": [
+        0.2
+      ]
+    },
+    {
+      "titik_ke": 7,
+      "nominal_g": 0.5,
+      "at_s1": [
+        0.5
+      ],
+      "at_t1": [
+        0.5
+      ],
+      "at_t2": [
+        0.5
+      ],
+      "at_s2": [
+        0.5
+      ]
+    },
+    {
+      "titik_ke": 8,
+      "nominal_g": 1.0,
+      "at_s1": [
+        1.0
+      ],
+      "at_t1": [
+        1.0002
+      ],
+      "at_t2": [
+        0.9999
+      ],
+      "at_s2": [
+        1.0
+      ]
+    },
+    {
+      "titik_ke": 9,
+      "nominal_g": 2.0,
+      "at_s1": [
+        2.0002
+      ],
+      "at_t1": [
+        2.0005
+      ],
+      "at_t2": [
+        2.0003
+      ],
+      "at_s2": [
+        2.0002
+      ]
+    },
+    {
+      "titik_ke": 10,
+      "nominal_g": 2.0,
+      "at_s1": [
+        2.0001
+      ],
+      "at_t1": [
+        2.0003
+      ],
+      "at_t2": [
+        2.0004
+      ],
+      "at_s2": [
+        2.0001
+      ]
+    },
+    {
+      "titik_ke": 11,
+      "nominal_g": 5.0,
+      "at_s1": [
+        5.0002
+      ],
+      "at_t1": [
+        5.0003
+      ],
+      "at_t2": [
+        5.0003
+      ],
+      "at_s2": [
+        5.0003
+      ]
+    },
+    {
+      "titik_ke": 12,
+      "nominal_g": 20.0,
+      "at_s1": [
+        20.0002
+      ],
+      "at_t1": [
+        20.0
+      ],
+      "at_t2": [
+        20.0001
+      ],
+      "at_s2": [
+        20.0004
+      ]
+    },
+    {
+      "titik_ke": 13,
+      "nominal_g": 20.0,
+      "at_s1": [
+        20.0
+      ],
+      "at_t1": [
+        20.0003
+      ],
+      "at_t2": [
+        20.0005
+      ],
+      "at_s2": [
+        20.0001
+      ]
+    },
+    {
+      "titik_ke": 14,
+      "nominal_g": 50.0,
+      "at_s1": [
+        50.0003
+      ],
+      "at_t1": [
+        50.0003
+      ],
+      "at_t2": [
+        50.0003
+      ],
+      "at_s2": [
+        50.0002
+      ]
+    }
+  ]
+}

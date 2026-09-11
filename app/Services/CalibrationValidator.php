@@ -10,6 +10,7 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
+use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
@@ -1018,6 +1019,19 @@ class CalibrationValidator
                     // antar-ULANGAN, dan komponen ke-9 keluar jauh lebih besar
                     // tanpa satu pun error.
                     ...FlowmeterMentah::dari($pembacaan),
+                    // Empat penimbangan ABBA satu keping Anak Timbangan,
+                    // disusun ulang dari `peran_sensor`/`pembacaan_ke`.
+                    // Alasannya sama seperti tujuh baris di atas — dan ini
+                    // kejadian KEDUA BELAS dengan pola yang sama. Kosong buat
+                    // dua puluh tujuh alat lain.
+                    //
+                    // Satu hal yang BEDA dari sebelas sebelumnya: keempat
+                    // perannya punya TANDA yang berbeda di `de = (T1 − S1 − S2
+                    // + T2)/2`. Diratakan jadi satu deret, urutan baris dari
+                    // database yang menentukan mana S mana T — dan sesi yang
+                    // barisnya kebetulan pulang terbalik menghasilkan koreksi
+                    // keping yang BERLAWANAN ARAH, tanpa satu pun error.
+                    ...AnakTimbanganMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

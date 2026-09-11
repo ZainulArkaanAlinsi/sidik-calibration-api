@@ -85,7 +85,7 @@ teknisi di lokasi.
 ### Profil kalibrasi — sumbu utama repo ini
 
 Satu jenis alat = satu berkas di `app/Services/Calibration/Profiles/`, turunan
-`CalibrationProfile`. Lab menargetkan 48 jenis alat; 32 profil konkret sudah
+`CalibrationProfile`. Lab menargetkan 48 jenis alat; 29 profil konkret sudah
 mendarat. Nambah alat = **satu subclass + satu seeder CMC + satu baris di
 `CalibrationProfileRegistry::daftarProfil()`** — bukan `if (besaran == ...)` di
 kelas bersama.

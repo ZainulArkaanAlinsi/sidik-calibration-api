@@ -1148,10 +1148,24 @@ class TimbanganProfile extends CalibrationProfile
      * tetap boleh mengganti variannya di dalam lembar; yang berubah cuma
      * perhitungannya, bukan kop yang sudah tercetak di kertas yang dia pegang.
      *
-     * Null buat kg & gram, dan itu BUKAN kelupaan: kertasnya belum pernah
-     * sampai. Menebaknya dari `SIDIK-FM-CAL-0508.A` (misal dengan membuang
-     * `.A`) berarti mencetak nomor formulir karangan di kop lembar lab
-     * terakreditasi — persis jenis temuan yang paling mahal.
+     * Kertasnya DUA, dan revisinya berbeda — itu sebabnya tidak boleh
+     * diturunkan satu dari yang lain:
+     *
+     *   metode normal      `SIDIK-FM-CAL-0508_Rev.6`
+     *   metode substitusi  `SIDIK-FM-CAL-0508.A_Rev.4`
+     *
+     * Sampai 11 Sep 2026 yang normal `null`, dan docblock ini menulis bahwa
+     * menebaknya dengan membuang `.A` berarti mencetak nomor karangan di kop
+     * lembar terakreditasi. Penilaian itu tetap benar — yang berubah, nomornya
+     * sekarang **tidak ditebak**: `SIDIK-FM-CAL-0508_Rev.6 - LEMBAR KERJA
+     * TIMBANGAN.pdf` ada di `Project-PT-Sidik/worksheet_alat_calibration/`,
+     * kaki halamannya menyatakan `SIDIK-FM-CAL-0508` / `Revise : 6`, dan isinya
+     * memang ketujuh blok lembar ini (Scale Observation, Effect of Tare,
+     * Accuracy, Repeatability, Loading Influence, Hysterisis, Drift).
+     *
+     * Perhatikan nomor revisinya: kalau `.A` dipakai sebagai dasar tebakan,
+     * yang keluar `Rev.4` — dan yang benar `Rev.6`. Tebakannya akan meleset
+     * dua revisi tanpa satu pun error.
      */
     private function kodeFormulir(?Equipment $equipment): ?string
     {
@@ -1172,7 +1186,7 @@ class TimbanganProfile extends CalibrationProfile
 
         return $varian->kode === VarianMasterTimbangan::SUBSTITUSI
             ? 'SIDIK-FM-CAL-0508.A_Rev.4'
-            : null;
+            : 'SIDIK-FM-CAL-0508_Rev.6';
     }
 
     /** @return array<string, mixed> */

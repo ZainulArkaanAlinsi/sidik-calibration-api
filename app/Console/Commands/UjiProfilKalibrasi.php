@@ -6,12 +6,14 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
+use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
@@ -342,9 +344,30 @@ class UjiProfilKalibrasi extends Command
         // Diadu ke payload datar `preview`, keduanya memulangkan NOL titik, dan
         // nol titik di sini terbaca seperti mesin hitungnya rusak padahal yang
         // salah bentuk payload yang disusun perintah ini.
+        //
+        // Anak Timbangan ikut cabang yang SAMA, dan alasannya paling tajam di
+        // antara semuanya: payload-nya `measurements[i].at_s1`/`at_t1`/`at_t2`/
+        // `at_s2` — EMPAT peran yang tandanya berbeda di
+        // `de = (T1 - S1 - S2 + T2)/2` — plus blok tingkat-sesi
+        // `spesifikasi_alat.anak_timbangan` (kelas OIML, neraca, meter, dan
+        // keenam ujung kondisi ruangan, yang darinya densitas udara lahir).
+        //
+        // Diadu ke payload datar `preview`, dia memulangkan NOL titik, dan nol
+        // titik di sini terbaca seperti mesin hitungnya rusak padahal yang
+        // salah bentuk payload yang disusun perintah ini.
+        //
+        // TIDS masuk cabang ini 11 Sep 2026, begitu `TidsSeeder` menanam sesi
+        // contohnya. Bentuk payload-nya sama dengan ketiga alat suhu di atas
+        // (`measurements[i].standar` & `.uut`, bukan `.pembacaan` datar), dan
+        // dia BUKAN turunan `ProfilSuhuPasangan` — jadi cabang itu tidak
+        // menangkapnya. Sebelum ini dia punya baris kekecualiannya sendiri yang
+        // memulangkan `-` tanpa memeriksa apa pun; kekecualian yang dipelihara
+        // lebih lama dari sebabnya berubah jadi tempat sembunyi.
         if ($profil instanceof MicrometerProfile
             || $profil instanceof HeightGaugeProfile
-            || $profil instanceof FlowmeterProfile) {
+            || $profil instanceof FlowmeterProfile
+            || $profil instanceof AnakTimbanganProfile
+            || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];
             }
@@ -373,25 +396,18 @@ class UjiProfilKalibrasi extends Command
                 ];
         }
 
-        // TIDS sengaja BELUM menghasilkan angka — `TidsProfile::hitungPerGrup()`
-        // memblokir seluruh titik sampai workbook olah data TIDS turun dari lab.
-        // Jadi dia harus punya barisnya sendiri di sini, dan barisnya bukan
-        // kegagalan.
+        // TIDS DICABUT dari daftar kekecualian 11 Sep 2026.
         //
-        // Tanpa cabang ini dia jatuh ke `tidak ada alat contoh di database` di
-        // bawah, dan itu bohong dua kali: bunyinya seperti baris master yang
-        // hilang (padahal yang belum ada rumusnya), dan perintah ini jadi MERAH
-        // permanen. Perintah kesiapan yang selalu merah berhenti dibaca — lalu
-        // alat yang beneran rusak lewat tanpa ada yang sadar. Itu justru
-        // kegagalan yang perintah ini ada buat mencegahnya.
-        if ($profil->kode() === 'tids') {
-            return [
-                '-',
-                'budget ketidakpastian sengaja kosong sampai workbook TIDS turun dari lab; '
-                .'lembar kerja & jalur simpannya jalan',
-                true,
-            ];
-        }
+        // Dia dulu punya barisnya sendiri di sini karena tidak ada sesi contoh
+        // yang bisa diperiksa — dan sebelum itu lagi, dengan alasan yang sudah
+        // basi ("budget sengaja kosong sampai workbook TIDS turun dari lab",
+        // padahal workbook-nya datang 28 Agt 2026).
+        //
+        // `TidsSeeder` sekarang menanam sesi `DEMO-TIDS-001` (4 titik, keluarga
+        // standar Recorder Graptech), jadi TIDS diperiksa dengan cara yang sama
+        // dengan dua puluh delapan alat lain: jumlah hasil hitung diadu ke
+        // jumlah titik terisi. Kekecualian yang dipelihara lebih lama dari
+        // sebabnya berubah jadi tempat sembunyi.
 
         if ($alat === null) {
             return ['-', 'tidak ada alat contoh di database', false];

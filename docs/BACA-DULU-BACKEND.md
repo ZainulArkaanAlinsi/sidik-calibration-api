@@ -45,6 +45,8 @@ Biar jelas mana yang dibaca buat apa:
 | [`infrastruktur-vps-produksi.md`](infrastruktur-vps-produksi.md) | Rencana deploy VPS | ✅ ya (usulan) |
 | [`pertanyaan-lab-flowmeter-gravimetri.md`](pertanyaan-lab-flowmeter-gravimetri.md) | 23 butir pertanyaan + formulir keputusan untuk varian metode kedua Flowmeter (ISO 4185), 10 Sep 2026 | ✅ ya — tiap butir menyebut sel masternya dan angka sebelum/sesudah |
 | [`perintah-frontend-flowmeter-gravimetri.md`](perintah-frontend-flowmeter-gravimetri.md) | Kontrak serah-terima varian gravimetri ke repo mobile | ✅ ya — §7 menulis terang yang BELUM dikerjakan |
+| [`pertanyaan-lab-anak-timbangan.md`](pertanyaan-lab-anak-timbangan.md) | 23 butir pertanyaan + formulir keputusan untuk alat ke-29 Anak Timbangan (OIML R111), 10 Sep 2026 | ✅ ya — tiap butir membawa angka hasil hitung ulang, bukan kutipan; §1 & §2 yang paling menentukan |
+| [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 menulis terang lima butir yang BELUM dikerjakan |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
 

@@ -72,16 +72,21 @@ use Carbon\Carbon;
 class ThermocoupleProfile extends ProfilSuhuPasangan
 {
     /**
-     * Nomor formulir lembar kerja — SENGAJA `null`.
+     * Nomor formulir lembar kerja, dari kertasnya sendiri.
      *
-     * Seluruh workbook cuma memuat `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet
-     * `SERTIFIKAT`, dan itu formulir SERTIFIKAT yang dipakai bersama semua alat,
-     * bukan lembar kerjanya. Nomor formulir dokumen terkendali; menaruh nomor
-     * karangan di lembar yang ikut diaudit lebih mahal daripada kolom kosong
-     * yang jelas kosong. Sama persis alasan TITS `null` sampai formulir cetaknya
-     * ketemu.
+     * Sempat `null` sampai 11 Sep 2026, dan alasannya benar waktu itu: seluruh
+     * WORKBOOK cuma memuat `SIDIK-FM-CAL-2403_Rev. 0` di footer sheet
+     * `SERTIFIKAT` — formulir SERTIFIKAT yang dipakai bersama semua alat, bukan
+     * lembar kerjanya. Menaruh nomor karangan di dokumen terkendali yang ikut
+     * diaudit lebih mahal daripada kolom kosong yang jelas kosong.
+     *
+     * Yang berubah bukan penilaian itu melainkan BUKTINYA: formulir cetaknya ada
+     * di `Project-PT-Sidik/worksheet_alat_calibration/`, dan dokumen itu
+     * menyatakan nomornya sendiri di kaki halaman — `SIDIK-FM-CAL-0535`,
+     * `Revise : 2` — berikut `Metode : SIDIK-IK-CAL-0529` yang cocok persis
+     * dengan [kodeMetode] profil ini dan nomor lingkup `LK-285-IDN`.
      */
-    public const KODE_DOKUMEN = null;
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0535_Rev.2';
 
     /** Metode dari lampiran akreditasi no. 5 — lihat docblock kelas. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0529_Rev.2';

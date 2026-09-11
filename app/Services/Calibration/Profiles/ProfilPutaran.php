@@ -646,12 +646,26 @@ abstract class ProfilPutaran extends CalibrationProfile
     }
 
     /**
+     * Nomor formulir lembar kerja — SATU kertas untuk DUA alat.
+     *
+     * `SIDIK-FM-CAL-0515_Rev.4 - LEMBAR KERJA CENTRIFUGE & TACHOMETER.pdf`
+     * memang satu formulir yang menaungi keduanya, persis seperti kelas ini
+     * menaungi `CentrifugeProfile` dan `TachometerProfile` dengan satu mesin
+     * hitung. Kaki halamannya menyatakan `SIDIK-FM-CAL-0515`, `Revise : 4`,
+     * berikut `SIDIK-IK-CAL-0511` yang cocok dengan [KODE_METODE] keduanya.
+     *
+     * Sempat `null` karena workbook masternya cuma memuat nomor formulir
+     * SERTIFIKAT bersama, bukan lembar kerjanya.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0515_Rev.4';
+
+    /**
      * @return array<string, mixed>
      */
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = [
-            'kode_dokumen' => null,
+            'kode_dokumen' => self::KODE_DOKUMEN,
             'kode_metode' => self::KODE_METODE,
             'nomor_lingkup' => 'LK-285-IDN',
             'judul' => $this->judulLembar(),

@@ -8,6 +8,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
+use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
@@ -159,6 +160,14 @@ class HitungUlangSesi extends Command
                 // salah tanpa satu pun error.
                 $flow = FlowmeterMentah::dari($baris);
 
+                // Empat penimbangan ABBA satu keping Anak Timbangan.
+                // Diperiksa dengan alasan yang persis sama dengan lima di atas:
+                // barisnya PUNYA `peran_sensor`, cuma kosakatanya lain lagi
+                // (`at_s1`/`at_t1`/`at_t2`/`at_s2`). Kalau tidak dites duluan,
+                // tiap titiknya jatuh ke cabang alat lain, ketemu deret yang
+                // bukan miliknya, dan angkanya salah tanpa satu pun error.
+                $anakTimbangan = AnakTimbanganMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -170,7 +179,31 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($flow !== []) {
+                if ($anakTimbangan !== []) {
+                    // Gerbangnya KEEMPAT peran, bukan jumlah baris: satu keping
+                    // berisi sampai 12 baris (4 peran x 3 pengulangan), jadi
+                    // hitungan datar tetap lolos walau satu peran kosong — dan
+                    // `de` yang lahir dari peran yang kosong justru sebesar
+                    // seluruh pembacaan sisanya, angka yang kelihatan masuk akal.
+                    $kurangPeran = false;
+
+                    foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                        if (($anakTimbangan[$peran] ?? null) === null) {
+                            $kurangPeran = true;
+                        }
+                    }
+
+                    if ($kurangPeran) {
+                        continue;
+                    }
+
+                    // Deret datar sengaja DIKOSONGKAN, sama seperti enclosure,
+                    // Height Gauge, dan Flowmeter: keempat peran ABBA punya
+                    // tanda yang berbeda di rumusnya, dan meratakannya jadi satu
+                    // `pembacaan` membuat rata-ratanya campur aduk lintas peran.
+                    // Yang dibaca profilnya `konteks.at_*`.
+                    $nilai = [];
+                } elseif ($flow !== []) {
                     // Gerbangnya jumlah ULANGAN UUT, bukan jumlah baris: satu
                     // titik berisi sampai 3 ulangan UUT + 3 pembacaan standar +
                     // 6 suhu + 1 densitas, jadi hitungan datar tetap lolos
@@ -346,6 +379,13 @@ class HitungUlangSesi extends Command
                         // budgetnya 8 komponen atau 9. Kosong buat dua puluh
                         // enam alat lain.
                         ...$flow,
+                        // Empat penimbangan ABBA satu keping Anak Timbangan.
+                        // Kejadian KEDUA BELAS dengan pola yang sama, jadi
+                        // ditulis bareng profilnya alih-alih ditemukan
+                        // belakangan lewat `hitung_ulang_gagal` di tiap titik.
+                        // Blok tingkat-sesinya (kelas OIML, neraca, meter,
+                        // kondisi ruangan) ikut lewat `spesifikasi_alat`.
+                        ...$anakTimbangan,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

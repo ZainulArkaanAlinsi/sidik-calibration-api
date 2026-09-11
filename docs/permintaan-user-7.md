@@ -3217,6 +3217,92 @@ kalau jalur itu dipasang lagi, bukan blocker yang berjalan hari ini.
 
 ---
 
+---
+
+## §29 — Alat ke-29: **Anak Timbangan (OIML R111)** — 10 Sep 2026
+
+Master `1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx` (21 sheet, tanpa
+password) + kertas `SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN
+(Non KAN)`. Alat KEDUA di kelompok Massa sesudah Timbangan (alat ke-21), dan
+alat ketiga yang berprofil tapi **di luar lampiran akreditasi** (sesudah Gas
+Detector dan Height Gauge).
+
+**Verifikasi sebelum PHP ditulis: 1033 nilai, nol beda pada 5·10⁻⁶** — 20 titik
+x (ms, de, b, mT) plus 20 blok budget x 6 komponen x (U, divisor, vi, ui, ci,
+uici, uici²) plus uc, veff, k, U95 tiap blok. Ditegakkan
+`AnakTimbanganMasterTest` (12 test / 1011 asersi).
+
+**Nol kolom baru** di `raw_measurements` — sumbu `peran_sensor`/`pembacaan_ke`
+yang sudah ada cukup, dan blok tingkat-sesi masuk `spesifikasi_alat`.
+
+### Yang DIBETULKAN dari master (tiga kerusakan rujukan)
+
+| Yang rusak | Dampak terukur |
+|---|---|
+| Kolom `b` memakai massa keping PERTAMA (100,000144 g), bukan massa keping yang sedang dihitung | sampai **2,58 mg pada keping 1 g yang toleransinya 0,10 mg** (25,8x MPE); sertifikat master mencetak keping 0,1 g sebagai 0,09884965 g — meleset 1,16 mg, 9,4x ketidakpastian yang dicetak di baris yang sama |
+| Koreksi apung dua keping 200 g HILANG (rumusnya menunjuk sel kosong) | +0,0169 mg, kecil — yang tidak boleh ditiru cara diamnya |
+| Ketidakpastian tekanan di sertifikat memakai angka KELEMBABAN meternya (3 hPa, bukan 2) | 3,0017 → 2,0025 hPa |
+
+### Yang DITIRU + diangkat jadi pertanyaan (23 butir)
+
+Yang paling menentukan, dan dampaknya sudah dihitung:
+
+- **§1 keterulangan neraca.** Sel berlabel `Rata-rata STDev` sebenarnya berisi
+  **SIMPANGAN BAKU dari keenam simpangan baku harian** — terbukti untuk kelima
+  neraca sampai epsilon mesin (beda relatif 1,5·10⁻¹⁶). Nilainya (0,046363 mg)
+  lebih kecil daripada keterulangan hari **mana pun** (0,0497–0,1732 mg), dan
+  dia komponen terbesar di budget. Kalau diganti gabungan kuadrat harian,
+  **U95 seluruh sertifikat naik 1,88–1,95x**. Ditiru karena `FORM VALIDASI`
+  mencatatnya sebagai perubahan metode yang SENGAJA (revisi 3, 29 Mei 2026,
+  sudah divalidasi Manajer Teknis) — yang memutuskan lab.
+- **§6 tabel densitas** memuat nilai yang mustahil (10650 kg/m³ = timbal untuk
+  F1 pada 5 g; 14400 kg/m³) dan kolom E2/F1 tertukar antara 0,1 g dan 0,2 g.
+  Disalin apa adanya + ditandai `disengketakan`, karena dampaknya justru KECIL:
+  koreksi apung yang benar untuk seluruh keping cuma 0,0012–0,0303 mg, di bawah
+  seperempat U95.
+- **§20 dimensi `ci` apung** tidak konsisten (kg/m³ x m³/kg x GRAM dibaca
+  miligram). Dibaca konsisten, U95 naik 0,35 %.
+
+### Gerbang yang menahan, bukan yang memperingatkan
+
+Sertifikat master menerbitkan **`#VALUE!` di lima dari dua puluh baris** dan
+satu keping 10 g sebagai **5,500163 g** — meleset 45 %, karena `T1` tertulis
+0,9998 alih-alih 9,9998 — dengan ketidakpastian yang tetap rapi 0,1226 mg.
+Nol sel memprotes.
+
+Enam gerbang dipasang, dan semuanya **menolak titiknya**, bukan memperingatkan:
+peran ABBA kosong, nominal tidak ada di tabel keping, densitas kelas tidak
+ditabelkan, keping kembar tanpa `no_identitas`, `|de| > 10 x MPE`, dan blok
+sesi belum lengkap. Ambang `|de|` memisahkan salah ketik (22.500x MPE) dari
+titik sehat terjauh (di bawah 2x MPE) dengan jarak sangat lebar.
+
+### Temuan dari KERTASNYA, yang tidak ada di workbook
+
+Kertas Rev.0 dibaca lebih dulu supaya bentuk lembarnya benar, dan empat hal
+cuma kelihatan dari situ: dia minta **tiga** pembacaan per baris ABBA (`X1 X2
+X3`, dua belas angka per keping) sementara workbook memakai satu (§23); dia
+**tidak punya kolom tekanan udara** sama sekali padahal tanpa tekanan densitas
+udara tidak bisa dihitung (§21); dia menyebut `TH-3` sementara workbook memakai
+`Thermobarometer`; dan merk Analytical Balance tertulis `X5204` di kertas lawan
+`XS204` di workbook — beda satu karakter (§22).
+
+Satu lagi dari generatornya sendiri: meter `TH-7` **tidak rekonsiliasi dengan
+dirinya sendiri** (offset tetap 0,04 °C dan 0,40 %RH, meleset di empat dari
+lima baris). Generatornya menolak menulis, dan penolakan itu memang menggigit
+waktu pertama dijalankan — tabelnya karena itu tidak disalin ke server (§19).
+
+### Status akreditasi
+
+Kelompok Massa di LK-285-IDN cuma memuat no. 12 "Timbangan (Elektronik,
+mekanik)" — alat yang MENIMBANG. `dalamLingkupAkreditasi() === false`, dan itu
+bukan tafsiran: nama formulirnya sendiri menyebut **(Non KAN)**. Tapi kop
+kertasnya **tetap mencetak `LK-285-IDN`** — satu lembar, dua pernyataan yang
+saling meniadakan (§15).
+
+Tabel CMC yang menggoda di `DATABASE` (sembilan pita) **tidak dipungut**:
+labelnya sendiri berbunyi "Jenis Timbangan", dan namanya menunjuk workbook lain
+lewat tautan luar.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -3613,3 +3699,4 @@ Supaya tidak dibangun ulang:
   database-nya, id-nya balik ke 1 tiap test, dan premisnya selalu kebetulan berlaku. Jadi ini
   gerbang MySQL lokal doang. Kalau mau dibereskan, yang dibetulkan **test-nya** — patok id-nya
   eksplisit atau bandingkan lewat nama, jangan menyandar ke rentang id — bukan endpoint-nya.
+| G18 | Alat baru **Anak Timbangan (OIML R111)** — §29 | **BERES di server** (10 Sep 2026) — alat ke-29, kelompok Massa, **di luar lampiran akreditasi** (kertasnya sendiri menyebut Non KAN). Rumusnya dibuktikan di Python SEBELUM PHP: **1033 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶, ditegakkan `AnakTimbanganMasterTest` (12 test / 1011 asersi). **Nol kolom baru**. Tiga kerusakan rujukan dibetulkan dengan ARAH yang ditegakkan test — yang terbesar kolom koreksi apung yang memakai massa keping PERTAMA untuk dua belas keping lain, meleset sampai 2,58 mg pada keping bertoleransi 0,10 mg. Temuan terbesar justru bukan itu: sel berlabel `Rata-rata STDev` ternyata berisi SIMPANGAN BAKU dari enam simpangan baku harian, lebih kecil dari keterulangan hari mana pun — kalau lab menjawab yang dimaksud gabungan harian, **U95 seluruh sertifikat naik ~1,9x**. Ditiru karena `FORM VALIDASI` mencatatnya sebagai perubahan metode yang sengaja & sudah divalidasi. Enam gerbang penerbitan dipasang; master sendiri menerbitkan `#VALUE!` di lima dari dua puluh baris dan satu keping 10 g sebagai 5,500163 g (meleset 45 %). Kertas Rev.0 dibaca lebih dulu dan menyumbang empat temuan yang tidak ada di workbook. 23 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-anak-timbangan.md` §5 memasang lima butirnya |

@@ -1,0 +1,1552 @@
+{
+  "_sumber": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx, sertifikat 001-CAL-126",
+  "_catatan": "Penanda keping SINTETIS — master mencetak '-' dua puluh kali (pertanyaan lab §11). Nama & alamat pelanggan sengaja tidak ikut.",
+  "konteks": {
+    "kelas_uut": "F1",
+    "kelas_standar": "E2",
+    "timbangan": "Analytical Balance",
+    "meter_lingkungan": "Thermobarometer",
+    "kapasitas_g": 200.0,
+    "suhu_awal": 23.1,
+    "suhu_akhir": 23.0,
+    "kelembaban_awal": 55.0,
+    "kelembaban_akhir": 56.0,
+    "tekanan_awal": 933.2,
+    "tekanan_akhir": 933.1,
+    "identitas": {
+      "2": "AT-200-1",
+      "3": "AT-200-2",
+      "6": "AT-0p02-1",
+      "7": "AT-0p02-2",
+      "10": "AT-0p2-1",
+      "11": "AT-0p2-2",
+      "14": "AT-2-1",
+      "15": "AT-2-2",
+      "18": "AT-20-1",
+      "19": "AT-20-2"
+    }
+  },
+  "master_lingkungan": {
+    "rho_udara": 1.0909731524586854,
+    "suhu": {
+      "rata": 23.05,
+      "titik_indeks": 20.1,
+      "koreksi": 0.1,
+      "u95_tercetak": 1.2041594578792296
+    },
+    "kelembaban": {
+      "rata": 55.5,
+      "titik_indeks": 59.2,
+      "koreksi": -0.8,
+      "u95_tercetak": 3.1622776601683795
+    },
+    "tekanan": {
+      "rata": 933.1500000000001,
+      "titik_indeks": 931.0,
+      "koreksi": 1.0,
+      "u95_tercetak": 2.0024984394500795
+    }
+  },
+  "titik": [
+    {
+      "titik_ke": 1,
+      "nominal_g": 100.0,
+      "at_s1": 100.0,
+      "at_t1": 99.9999,
+      "at_t2": 99.9999,
+      "at_s2": 100.0,
+      "master": {
+        "ms_g": 100.000144,
+        "de_g": -0.00010000000000331966,
+        "b_g": 8.443772559423104e-06,
+        "mt_g": 100.00005244377256,
+        "uc_mg": 0.06390747321429553,
+        "veff": 144.17965512398538,
+        "k": 1.9765750658304413,
+        "u95_mg": 0.12631791807560336,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.023,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0115,
+            "ci": 1.0,
+            "uici": 0.0115
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0115,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0115,
+            "ci": 1.0,
+            "uici": 0.0115
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -7.744672757068785e-05,
+            "uici": -5.372027345943666e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 2,
+      "nominal_g": 200.0,
+      "at_s1": 199.9999,
+      "at_t1": 199.9999,
+      "at_t2": 199.9999,
+      "at_s2": 199.9999,
+      "master": {
+        "ms_g": 200.000149,
+        "de_g": 0.0,
+        "b_g": 0.0,
+        "mt_g": 200.000149,
+        "uc_mg": 0.06534267532946424,
+        "veff": 152.01110941190015,
+        "k": 1.9756939278152725,
+        "u95_mg": 0.1290971268756273,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.03,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.015,
+            "ci": 1.0,
+            "uici": 0.015
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.015,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.015,
+            "ci": 1.0,
+            "uici": 0.015
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -0.00015489334749057396,
+            "uici": -1.0744047224779696e-05
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 3,
+      "nominal_g": 200.0,
+      "at_s1": 199.9999,
+      "at_t1": 199.9999,
+      "at_t2": 199.9999,
+      "at_s2": 199.9999,
+      "master": {
+        "ms_g": 200.000149,
+        "de_g": 0.0,
+        "b_g": 0.0,
+        "mt_g": 200.000149,
+        "uc_mg": 0.06534267532946424,
+        "veff": 152.01110941190015,
+        "k": 1.9756939278152725,
+        "u95_mg": 0.1290971268756273,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.03,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.015,
+            "ci": 1.0,
+            "uici": 0.015
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.015,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.015,
+            "ci": 1.0,
+            "uici": 0.015
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -0.00015489334749057396,
+            "uici": -1.0744047224779696e-05
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 4,
+      "nominal_g": 0.005,
+      "at_s1": 0.005,
+      "at_t1": 0.005,
+      "at_t2": 0.005,
+      "at_s2": 0.005,
+      "master": {
+        "ms_g": 0.0050016,
+        "de_g": 0.0,
+        "b_g": null,
+        "mt_g": null,
+        "uc_mg": null,
+        "veff": null,
+        "k": null,
+        "u95_mg": null,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0009,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00045,
+            "ci": 1.0,
+            "uici": 0.00045
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00045,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00045,
+            "ci": 1.0,
+            "uici": 0.00045
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": null,
+            "uici": null
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 5,
+      "nominal_g": 0.01,
+      "at_s1": 0.00997,
+      "at_t1": 0.01,
+      "at_t2": 0.0099,
+      "at_s2": 0.00996,
+      "master": {
+        "ms_g": 0.010005100000000001,
+        "de_g": -1.4999999999999389e-05,
+        "b_g": null,
+        "mt_g": null,
+        "uc_mg": null,
+        "veff": null,
+        "k": null,
+        "u95_mg": null,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.001,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0005,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": null,
+            "uici": null
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 6,
+      "nominal_g": 0.02,
+      "at_s1": 0.02,
+      "at_t1": 0.02,
+      "at_t2": 0.02,
+      "at_s2": 0.02,
+      "master": {
+        "ms_g": 0.0200027,
+        "de_g": 0.0,
+        "b_g": null,
+        "mt_g": null,
+        "uc_mg": null,
+        "veff": null,
+        "k": null,
+        "u95_mg": null,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.001,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0005,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": null,
+            "uici": null
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 7,
+      "nominal_g": 0.02,
+      "at_s1": 0.02,
+      "at_t1": 0.02,
+      "at_t2": 0.02,
+      "at_s2": 0.02,
+      "master": {
+        "ms_g": 0.0200027,
+        "de_g": 0.0,
+        "b_g": null,
+        "mt_g": null,
+        "uc_mg": null,
+        "veff": null,
+        "k": null,
+        "u95_mg": null,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.001,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0005,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0005,
+            "ci": 1.0,
+            "uici": 0.0005
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": null,
+            "uici": null
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 8,
+      "nominal_g": 0.05,
+      "at_s1": 0.05,
+      "at_t1": 0.05,
+      "at_t2": 0.05,
+      "at_s2": 0.05,
+      "master": {
+        "ms_g": 0.0500026,
+        "de_g": 0.0,
+        "b_g": null,
+        "mt_g": null,
+        "uc_mg": null,
+        "veff": null,
+        "k": null,
+        "u95_mg": null,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0013,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00065,
+            "ci": 1.0,
+            "uici": 0.00065
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00065,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00065,
+            "ci": 1.0,
+            "uici": 0.00065
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": null,
+            "uici": null
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 9,
+      "nominal_g": 0.1,
+      "at_s1": 0.1,
+      "at_t1": 0.1,
+      "at_t2": 0.1,
+      "at_s2": 0.1,
+      "master": {
+        "ms_g": 0.100006,
+        "de_g": 0.0,
+        "b_g": -0.0011563470178482197,
+        "mt_g": 0.09884965298215177,
+        "uc_mg": 0.06181254002480819,
+        "veff": 128.66933056572205,
+        "k": 1.978670849837835,
+        "u95_mg": 0.12230667110152241,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0015,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00075,
+            "ci": 1.0,
+            "uici": 0.00075
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00075,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00075,
+            "ci": 1.0,
+            "uici": 0.00075
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": 1.0606696969696969e-05,
+            "uici": 7.357246452968995e-07
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 10,
+      "nominal_g": 0.2,
+      "at_s1": 0.2,
+      "at_t1": 0.2,
+      "at_t2": 0.2,
+      "at_s2": 0.2,
+      "master": {
+        "ms_g": 0.2000033,
+        "de_g": 0.0,
+        "b_g": 0.0011563470178482197,
+        "mt_g": 0.20115964701784822,
+        "uc_mg": 0.06181379381612326,
+        "veff": 128.6797569737155,
+        "k": 1.978670849837835,
+        "u95_mg": 0.12230915194184931,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0016,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0008,
+            "ci": 1.0,
+            "uici": 0.0008
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0008,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0008,
+            "ci": 1.0,
+            "uici": 0.0008
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -2.121247121212121e-05,
+            "uici": -1.4713852863899102e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 11,
+      "nominal_g": 0.2,
+      "at_s1": 0.2,
+      "at_t1": 0.2,
+      "at_t2": 0.2,
+      "at_s2": 0.2,
+      "master": {
+        "ms_g": 0.2000033,
+        "de_g": 0.0,
+        "b_g": 0.0011563470178482197,
+        "mt_g": 0.20115964701784822,
+        "uc_mg": 0.06181379381612326,
+        "veff": 128.6797569737155,
+        "k": 1.978670849837835,
+        "u95_mg": 0.12230915194184931,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0016,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0008,
+            "ci": 1.0,
+            "uici": 0.0008
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0008,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0008,
+            "ci": 1.0,
+            "uici": 0.0008
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -2.121247121212121e-05,
+            "uici": -1.4713852863899102e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 12,
+      "nominal_g": 0.5,
+      "at_s1": 0.5,
+      "at_t1": 0.5,
+      "at_t2": 0.5,
+      "at_s2": 0.5,
+      "master": {
+        "ms_g": 0.4999991,
+        "de_g": 0.0,
+        "b_g": -0.0024778864668176135,
+        "mt_g": 0.49752121353318235,
+        "uc_mg": 0.061824834540073884,
+        "veff": 128.77152267656578,
+        "k": 1.978670849837835,
+        "u95_mg": 0.12233099790049153,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0023,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00115,
+            "ci": 1.0,
+            "uici": 0.00115
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00115,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00115,
+            "ci": 1.0,
+            "uici": 0.00115
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": 0.00011363615909090909,
+            "uici": 7.882276931161324e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 13,
+      "nominal_g": 1.0,
+      "at_s1": 1.0,
+      "at_t1": 1.0002,
+      "at_t2": 0.9999,
+      "at_s2": 1.0,
+      "master": {
+        "ms_g": 1.0000136,
+        "de_g": 4.999999999999449e-05,
+        "b_g": -0.0026105057425064434,
+        "mt_g": 0.9974530942574934,
+        "uc_mg": 0.06184747674417311,
+        "veff": 128.95944462558685,
+        "k": 1.978670849837835,
+        "u95_mg": 0.12237579936971874,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0033,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00165,
+            "ci": 1.0,
+            "uici": 0.00165
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00165,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00165,
+            "ci": 1.0,
+            "uici": 0.00165
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": 0.00023943987605633802,
+            "uici": 1.6608546316046568e-05
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 14,
+      "nominal_g": 2.0,
+      "at_s1": 2.0002,
+      "at_t1": 2.0005,
+      "at_t2": 2.0003,
+      "at_s2": 2.0002,
+      "master": {
+        "ms_g": 2.0000192,
+        "de_g": 0.00020000000000020002,
+        "b_g": -0.0015142639519440972,
+        "mt_g": 1.998704936048056,
+        "uc_mg": 0.061855844307820616,
+        "veff": 129.02879992587106,
+        "k": 1.9785244914792603,
+        "u95_mg": 0.12238330290415109,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0036,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0018,
+            "ci": 1.0,
+            "uici": 0.0018
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0018,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0018,
+            "ci": 1.0,
+            "uici": 0.0018
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": 0.00027778044444444445,
+            "uici": 1.9268007707129093e-05
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 15,
+      "nominal_g": 2.0,
+      "at_s1": 2.0001,
+      "at_t1": 2.0003,
+      "at_t2": 2.0004,
+      "at_s2": 2.0001,
+      "master": {
+        "ms_g": 2.0000192,
+        "de_g": 0.00024999999999986144,
+        "b_g": -0.0015142639519440972,
+        "mt_g": 1.9987549360480559,
+        "uc_mg": 0.061855844307820616,
+        "veff": 129.02879992587106,
+        "k": 1.9785244914792603,
+        "u95_mg": 0.12238330290415109,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0036,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0018,
+            "ci": 1.0,
+            "uici": 0.0018
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0018,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0018,
+            "ci": 1.0,
+            "uici": 0.0018
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": 0.00027778044444444445,
+            "uici": 1.9268007707129093e-05
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 16,
+      "nominal_g": 5.0,
+      "at_s1": 5.0002,
+      "at_t1": 5.0003,
+      "at_t2": 5.0003,
+      "at_s2": 5.0003,
+      "master": {
+        "ms_g": 5.0000284,
+        "de_g": 4.999999999988347e-05,
+        "b_g": 0.00029781170681000423,
+        "mt_g": 5.00037621170681,
+        "uc_mg": 0.061888974733198036,
+        "veff": 129.30291060673878,
+        "k": 1.9785244914792603,
+        "u95_mg": 0.12244885226217343,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0046,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0023,
+            "ci": 1.0,
+            "uici": 0.0023
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0023,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0023,
+            "ci": 1.0,
+            "uici": 0.0023
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -0.00013657781374306442,
+            "uici": -9.4736055775536e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 17,
+      "nominal_g": 10.0,
+      "at_s1": 9.9999,
+      "at_t1": 0.9998,
+      "at_t2": 10.0001,
+      "at_s2": 10.0001,
+      "master": {
+        "ms_g": 10.000075,
+        "de_g": -4.50005,
+        "b_g": 0.00013793295403847217,
+        "mt_g": 5.500162932954039,
+        "uc_mg": 0.061944089151320936,
+        "veff": 129.75714465284017,
+        "k": 1.9785244914792603,
+        "u95_mg": 0.12255789748826322,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0059,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00295,
+            "ci": 1.0,
+            "uici": 0.00295
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00295,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00295,
+            "ci": 1.0,
+            "uici": 0.00295
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -0.00012651360011001097,
+            "uici": -8.775509834220414e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 18,
+      "nominal_g": 20.0,
+      "at_s1": 20.0002,
+      "at_t1": 20.0,
+      "at_t2": 20.0001,
+      "at_s2": 20.0004,
+      "master": {
+        "ms_g": 20.0000948,
+        "de_g": -0.00024999999999941735,
+        "b_g": 5.118848515304233e-05,
+        "mt_g": 19.99989598848515,
+        "uc_mg": 0.06200701691100083,
+        "veff": 130.27302984862732,
+        "k": 1.9783804054470222,
+        "u95_mg": 0.12267346725694618,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0071,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00355,
+            "ci": 1.0,
+            "uici": 0.00355
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00355,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00355,
+            "ci": 1.0,
+            "uici": 0.00355
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -9.390100737417489e-05,
+            "uici": -6.513364673353171e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 19,
+      "nominal_g": 20.0,
+      "at_s1": 20.0,
+      "at_t1": 20.0003,
+      "at_t2": 20.0005,
+      "at_s2": 20.0001,
+      "master": {
+        "ms_g": 20.0000948,
+        "de_g": 0.0003499999999991843,
+        "b_g": 5.118848515304233e-05,
+        "mt_g": 20.00049598848515,
+        "uc_mg": 0.06200701691100083,
+        "veff": 130.27302984862732,
+        "k": 1.9783804054470222,
+        "u95_mg": 0.12267346725694618,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.0071,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.00355,
+            "ci": 1.0,
+            "uici": 0.00355
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.00355,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.00355,
+            "ci": 1.0,
+            "uici": 0.00355
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -9.390100737417489e-05,
+            "uici": -6.513364673353171e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    },
+    {
+      "titik_ke": 20,
+      "nominal_g": 50.0,
+      "at_s1": 50.0003,
+      "at_t1": 50.0003,
+      "at_t2": 50.0003,
+      "at_s2": 50.0002,
+      "master": {
+        "ms_g": 50.000212,
+        "de_g": 5.000000000165983e-05,
+        "b_g": 1.1792020985213734e-05,
+        "mt_g": 50.000273792020984,
+        "uc_mg": 0.062290971399137265,
+        "veff": 132.56287427158162,
+        "k": 1.978098841924135,
+        "u95_mg": 0.12321769838696284,
+        "cmc": null,
+        "komponen": [
+          {
+            "nama": "Repeatability",
+            "U": 0.04636297841870652,
+            "divisor": 1.0,
+            "vi": 54.0,
+            "ui": 0.04636297841870652,
+            "ci": 1.0,
+            "uici": 0.04636297841870652
+          },
+          {
+            "nama": "Ketidakpastian Baku Sertifikat Kalibrasi Calibrator AT",
+            "U": 0.011,
+            "divisor": 2.0,
+            "vi": 60.0,
+            "ui": 0.0055,
+            "ci": 1.0,
+            "uici": 0.0055
+          },
+          {
+            "nama": "Ketidakpastian Resolusi Timbangan Standard",
+            "U": 0.05,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.04086705202312139,
+            "ci": 1.0,
+            "uici": 0.04086705202312139
+          },
+          {
+            "nama": "Instability",
+            "U": 0.0055,
+            "divisor": 1.0,
+            "vi": 9.0,
+            "ui": 0.0055,
+            "ci": 1.0,
+            "uici": 0.0055
+          },
+          {
+            "nama": "Bouyancy",
+            "U": 0.12,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": 0.06936416184971098,
+            "ci": -5.407867084461227e-05,
+            "uici": -3.7511216770829314e-06
+          },
+          {
+            "nama": "Sensitivity",
+            "U": -0.00026461006456712755,
+            "divisor": 1.73,
+            "vi": 100.0,
+            "ui": -0.00015295379454747257,
+            "ci": 1.0,
+            "uici": -0.00015295379454747257
+          }
+        ]
+      }
+    }
+  ]
+}

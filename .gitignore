@@ -145,3 +145,9 @@ CATATAN/ini-yang-dari-karywan-manual/*
 # kerja), kecualikan SATU berkas dengan `!`, jangan cabut aturannya — dan
 # periksa dulu kop/footer-nya tidak memuat nama pelanggan.
 Project-PT-Sidik/worksheet_alat_calibration/
+
+# Laporan register alat yang dicetak ke PDF buat pemilik proyek. Dia hasil
+# CETAK, bukan sumber — sumbernya kode & dokumen terkendali lab, dan isinya
+# basi begitu satu alat berubah. Di-commit, dia jadi salinan status kedua yang
+# berlawanan dengan docs/BACA-DULU-BACKEND.md tanpa ada yang sadar.
+/Register-Alat-Kalibrasi-PT-Sidik.pdf

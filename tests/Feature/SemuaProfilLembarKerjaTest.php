@@ -405,32 +405,50 @@ class SemuaProfilLembarKerjaTest extends TestCase
         // formulir SERTIFIKAT yang dipakai bersama semua alat — bukan nomor
         // lembar kerjanya. Menaruh nomor karangan di lembar yang ikut diaudit
         // lebih mahal daripada kolom kosong yang jelas kosong.
-        // `timbangan` masuk 31 Agt 2026 dengan alasan yang SAMA, dan sudah
-        // dicek: ketiga workbook master Timbangan disapu buat pola
-        // `SIDIK-FM-…`, dan yang ketemu cuma SATU — `SIDIK-FM-CAL-2403_Rev. 0`
-        // di footer sheet SERTIFIKAT, formulir sertifikat bersama itu lagi.
-        // Nomor lembar kerjanya sendiri memang belum pernah dikirim.
-        // `timer_stopwatch`, `centrifuge`, dan `tachometer` masuk 1 Sep 2026
-        // dengan alasan yang SAMA, dan sudah dicek dengan cara yang sama:
-        // ketiga workbook master kelompok "Waktu dan Frekuensi" disapu buat
-        // pola `SIDIK-FM-…`, dan yang ketemu cuma SATU di masing-masing —
-        // `SIDIK-FM-CAL-2403_Rev. 0`, formulir sertifikat bersama itu lagi
-        // (Tachometer & Timer di footer sheet `SERTIFIKAT`, Centrifuge di
-        // `INPUT DATA!B78`). Nomor lembar kerjanya sendiri belum pernah
-        // dikirim. Yang ADA cuma nomor Instruksi Kerjanya
-        // (`SIDIK-IK-CAL-0509_Rev.6` & `SIDIK-IK-CAL-0511_Rev.6`), dan itu
-        // masuk lewat `kodeMetode()`, bukan `kode_dokumen`.
+        // ## Enam nama KELUAR dari daftar ini 11 Sep 2026
+        //
+        // `thermocouple`, `thermometer_glass`, `thermohygro`, `timbangan`
+        // (metode normal), `timer_stopwatch`, `centrifuge`, dan `tachometer`
+        // dulu ada di sini, dan alasannya benar waktu itu: yang disapu WORKBOOK
+        // master, dan di situ memang cuma ada `SIDIK-FM-CAL-2403_Rev. 0` —
+        // formulir sertifikat bersama.
+        //
+        // Yang berubah bukan aturannya melainkan BUKTINYA. Formulir cetaknya
+        // ada di `Project-PT-Sidik/worksheet_alat_calibration/` (41 berkas),
+        // dan tiap dokumen menyatakan nomornya sendiri di kaki halaman:
+        //
+        //   thermohygro        SIDIK-FM-CAL-0525  Revise : 2
+        //   thermocouple       SIDIK-FM-CAL-0535  Revise : 2
+        //   thermometer_glass  SIDIK-FM-CAL-0537  Revise : 2
+        //   timbangan          SIDIK-FM-CAL-0508  Revise : 6   (normal)
+        //   timer_stopwatch    SIDIK-FM-CAL-0512  Revise : 4
+        //   centrifuge/tacho   SIDIK-FM-CAL-0515  Revise : 4   (satu kertas, dua alat)
+        //
+        // Tiap nomor dicocokkan silang ke nomor Instruksi Kerja yang tercetak
+        // di kertas yang sama (0529, 0509, 0511, 0505) dan cocok dengan
+        // `kodeMetode()` profilnya — jadi bukan sekadar berkas yang namanya
+        // mirip.
+        //
+        // Satu ketidakcocokan ditemukan dan TIDAK ditambal diam-diam: berkas
+        // Thermohygro bernama `Rev.3` sementara kaki halamannya menulis
+        // `Revise : 2`. Yang dipakai yang tertulis di dalam dokumen; diangkat
+        // di `docs/pertanyaan-lab-suhu-3alat.md`.
         $belumAdaKertasnya = [
-            'gas_detector', 'thermocouple', 'thermometer_glass', 'thermohygro',
-            'timer_stopwatch', 'centrifuge', 'tachometer',
+            // Gas Detector — sapuan `SIDIK-FM-` di workbook masternya
+            // (`Gas Detector Uli Skin (std Rigaz).xlsm`) cuma menemukan
+            // formulir sertifikat bersama, DAN folder
+            // `worksheet_alat_calibration/` (41 berkas) tidak memuat lembar
+            // kerja gas detector sama sekali. Dua sumber, dua-duanya kosong.
+            'gas_detector',
             // Height Gauge — dan buktinya bukan "belum sempat dicari": sapuan
             // `SIDIK-FM-` di SELURUH workbook master
             // (`Master_olda_Height_Gauge_600_mm_2026.xlsm`, tujuh sheet)
             // menemukan tepat SATU nomor, `SIDIK-FM-CAL-2403_Rev. 0` di
             // `SERTIFIKAT!A59` — dan itu formulir SERTIFIKAT bersama, bukan
-            // lembar kerja. Menebak nomor berikutnya dari deret yang ada
-            // berarti mencetak nomor formulir karangan di kop lembar yang
-            // dipakai teknisi dan diaudit.
+            // lembar kerja. Folder `worksheet_alat_calibration/` juga tidak
+            // memuatnya. Menebak nomor berikutnya dari deret yang ada berarti
+            // mencetak nomor formulir karangan di kop lembar yang dipakai
+            // teknisi dan diaudit.
             'height_gauge',
         ];
 
@@ -740,8 +758,8 @@ class SemuaProfilLembarKerjaTest extends TestCase
             $pakai[$nomor][] = $profil->kode();
         }
 
-        // Dua nomor yang memang SATU kertas untuk beberapa profil — dan
-        // keduanya dibuktikan berkasnya, bukan diasumsikan:
+        // TIGA nomor yang memang SATU kertas untuk beberapa profil — dan
+        // ketiganya dibuktikan berkasnya, bukan diasumsikan:
         //
         //  - `0504` — kelima profil enclosure (Oven, Furnace, Bath, Inkubator,
         //    Refrigerator).
@@ -750,11 +768,21 @@ class SemuaProfilLembarKerjaTest extends TestCase
         //    Langsung dengan UFM).pdf`, satu formulir yang kotak modenya
         //    dicentang teknisi. Keduanya juga berbagi Instruksi Kerja
         //    (`SIDIK-IK-CAL-0528_Rev.4`) dan kelima standar yang sama.
+        //  - `0515` — Centrifuge & Infrared Tachometer, masuk 11 Sep 2026.
+        //    Kertasnya satu dan judulnya menyebut keduanya:
+        //    `SIDIK-FM-CAL-0515_Rev.4 - LEMBAR KERJA CENTRIFUGE & TACHOMETER.pdf`.
+        //    Sejalan dengan kodenya: keduanya turunan `ProfilPutaran` dengan
+        //    SATU mesin hitung, berbagi Instruksi Kerja `SIDIK-IK-CAL-0511_Rev.6`,
+        //    dan yang membedakan cuma pita CMC-nya.
         //
         // Yang tetap dilarang: dua alat yang kertasnya BEDA tapi nomornya
         // kembar — itu membuat lembar tercetak mengaku formulir yang bukan
         // dirinya, dan yang ketahuan duluan biasanya auditor.
-        $satuKertasBeberapaProfil = ['SIDIK-FM-CAL-0504_Rev.3', 'SIDIK-FM-CAL-0538_Rev.0'];
+        $satuKertasBeberapaProfil = [
+            'SIDIK-FM-CAL-0504_Rev.3',
+            'SIDIK-FM-CAL-0538_Rev.0',
+            'SIDIK-FM-CAL-0515_Rev.4',
+        ];
 
         $kembar = array_filter(
             $pakai,

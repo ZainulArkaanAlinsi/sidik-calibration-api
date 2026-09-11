@@ -419,12 +419,26 @@ class TimerStopwatchProfile extends CalibrationProfile
     }
 
     /**
+     * Nomor formulir lembar kerja, dari kertasnya sendiri.
+     *
+     * Kaki halaman `SIDIK-FM-CAL-0512_Rev.4 - LEMBAR KERJA STOPWATCH & TIMER.pdf`
+     * di `Project-PT-Sidik/worksheet_alat_calibration/` menyatakan
+     * `SIDIK-FM-CAL-0512`, `Revise : 4`, berikut `SIDIK-IK-CAL-0509` yang cocok
+     * persis dengan [KODE_METODE] profil ini.
+     *
+     * Sempat `null` karena workbook masternya cuma memuat nomor formulir
+     * SERTIFIKAT bersama, bukan lembar kerjanya — yang berubah bukti, bukan
+     * aturannya.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0512_Rev.4';
+
+    /**
      * @return array<string, mixed>
      */
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
         $bentuk = [
-            'kode_dokumen' => null,
+            'kode_dokumen' => self::KODE_DOKUMEN,
             'kode_metode' => self::KODE_METODE,
             'nomor_lingkup' => 'LK-285-IDN',
             'judul' => 'Calibration Work Sheet - Stopwatch / Timer',

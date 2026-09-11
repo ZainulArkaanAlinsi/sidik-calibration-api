@@ -3,6 +3,7 @@
 namespace App\Services\Calibration;
 
 use App\Models\Equipment;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\CentrifugeProfile;
@@ -86,9 +87,11 @@ class CalibrationProfileRegistry
             new DoMeterProfile,
             new GasDetectorProfile,
             new TitsProfile,
-            // Saudaranya, "dengan sensor". Bentuk lembar kerjanya jalan penuh;
-            // budget ketidakpastiannya SENGAJA kosong sampai workbook olah
-            // data TIDS turun dari lab — lihat docblock TidsProfile.
+            // Saudaranya, "dengan sensor". Jalan penuh sejak kedua workbook
+            // master TIDS turun 28 Agt 2026 — `TidsCalculator` mereproduksi
+            // kedua sesi contohnya sampai digit terakhir (`TidsMasterTest`),
+            // dan blokir U95 yang berdiri sejak profil ini lahir sudah dicabut.
+            // Yang masih kurang cuma SESI CONTOH di seeder.
             new TidsProfile,
             // Kalibrasi enclosure — lima jenis, satu mesin hitung. Lihat
             // Profiles\Enclosure\EnclosureProfileBase.
@@ -155,6 +158,17 @@ class CalibrationProfileRegistry
             // mengadu ulang ProfilDariNamaAlatTest.
             new FlowmeterTotalizerProfile,
             new FlowmeterFlowrateProfile,
+            // Alat ke-29, dan yang KEDUA di kelompok Massa sesudah Timbangan.
+            // Di luar lampiran LK-285-IDN — nama lembar kerjanya sendiri
+            // menyebut (Non KAN); preseden perlakuannya Height Gauge.
+            //
+            // Urutannya menentukan lewat `bangunIndeksEjaan()`, yang mengurut
+            // kunci dari yang PALING PANJANG: `anak timbangan` (14 huruf) wajib
+            // dicoba sebelum alias `timbangan` (9 huruf) milik TimbanganProfile.
+            // Kalau urutan itu dicabut, SELURUH sesi anak timbangan mendarat di
+            // lembar Timbangan — bentuk lembar yang sah, alat yang salah, nol
+            // error. Dijaga `ProfilDariNamaAlatTest` dari kedua arah.
+            new AnakTimbanganProfile,
         ];
     }
 

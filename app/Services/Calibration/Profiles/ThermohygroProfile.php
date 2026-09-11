@@ -60,8 +60,24 @@ use Carbon\Carbon;
  */
 class ThermohygroProfile extends ProfilSuhuPasangan
 {
-    /** Lihat [ThermocoupleProfile::KODE_DOKUMEN] — alasannya sama persis. */
-    public const KODE_DOKUMEN = null;
+    /**
+     * Nomor formulir lembar kerja, dari kertasnya sendiri — dan SATU-SATUNYA
+     * dari sebelas formulir yang nomor revisinya BERSELISIH dengan dirinya.
+     *
+     * Kaki halaman dokumennya menulis `SIDIK-FM-CAL-0525`, **`Revise : 2`**.
+     * Nama berkasnya menulis **`Rev.3`**. Sepuluh formulir lain yang diperiksa
+     * hari yang sama cocok antara nama berkas dan kaki halamannya; cuma yang ini
+     * yang tidak.
+     *
+     * Yang dipakai **Rev.2**, yaitu yang dinyatakan DI DALAM dokumen
+     * terkendalinya. Alasannya bukan selera: nomor revisi yang dicetak di lembar
+     * kerja ikut diaudit, dan mengklaim revisi yang tidak bisa dibuktikan dari
+     * isi dokumennya sendiri lebih berisiko daripada mengutip yang tertulis.
+     * Kalau ternyata lab sudah menerbitkan Rev.3 dan kaki halamannya yang lupa
+     * diperbarui, yang perlu diganti satu baris ini. Diangkat sebagai pertanyaan
+     * lab di `docs/pertanyaan-lab-suhu-3alat.md`.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0525_Rev.2';
 
     /** `DATABASE!C87`, dan cocok dengan lampiran akreditasi no. 11. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0518_Rev.4';

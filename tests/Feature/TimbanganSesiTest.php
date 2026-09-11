@@ -505,14 +505,25 @@ class TimbanganSesiTest extends TestCase
     }
 
     /**
-     * Nomor formulir cuma dipasang di varian yang kertasnya ADA.
+     * Nomor formulir dipilih PER VARIAN, dan keduanya punya kertasnya sendiri.
      *
      * Kertas metode substitusi (`SIDIK-FM-CAL-0508.A`, Revise 4) dikirim
-     * pemilik proyek 31 Agt 2026; yang kg & gram belum. Menebaknya dari situ —
-     * misal dengan membuang akhiran `.A` — berarti mencetak nomor formulir
-     * karangan di kop lembar lab terakreditasi.
+     * pemilik proyek 31 Agt 2026. Kertas metode NORMAL (`SIDIK-FM-CAL-0508`,
+     * Revise 6) ketemu 11 Sep 2026 di
+     * `Project-PT-Sidik/worksheet_alat_calibration/`, dan isinya memang ketujuh
+     * blok lembar ini (Scale Observation, Effect of Tare, Accuracy,
+     * Repeatability, Loading Influence, Hysterisis, Drift).
+     *
+     * Sampai hari itu varian kg & gram memulangkan `null`, dan test ini
+     * menegakkannya. Alasannya tetap berlaku dan justru terbukti di sini:
+     * menebak nomor normal dengan membuang akhiran `.A` menghasilkan
+     * **`Rev.4`**, sementara yang benar **`Rev.6`** — tebakannya meleset dua
+     * revisi, dan tidak ada satu pun error yang akan memberi tahu.
+     *
+     * Yang diuji sekarang: tiap varian memungut nomornya SENDIRI, dan keduanya
+     * tidak tertukar.
      */
-    public function test_nomor_formulir_cuma_di_varian_yang_kertasnya_ada(): void
+    public function test_nomor_formulir_dipilih_per_varian(): void
     {
         $profil = new TimbanganProfile;
 
@@ -525,20 +536,36 @@ class TimbanganSesiTest extends TestCase
             $profil->bentukLembarKerja(false, $sub)['kode_dokumen'],
         );
 
-        $this->assertNull($profil->bentukLembarKerja(false, $kg)['kode_dokumen']);
+        // Metode normal punya kertasnya sendiri, dan nomor REVISINYA beda —
+        // `Rev.6`, bukan `Rev.4` milik yang substitusi.
+        $this->assertSame(
+            'SIDIK-FM-CAL-0508_Rev.6',
+            $profil->bentukLembarKerja(false, $kg)['kode_dokumen'],
+        );
 
         // Alat GRAM berkapasitas 54 g. Tanpa konversi ke kilogram, `54` dibaca
         // sebagai 54 kg — masih di bawah ambang 200 kg, jadi kebetulan benar.
         // Yang membuktikan konversinya jalan alat gram di ATAS ambang itu.
-        $this->assertNull($profil->bentukLembarKerja(false, $gram)['kode_dokumen']);
+        $this->assertSame(
+            'SIDIK-FM-CAL-0508_Rev.6',
+            $profil->bentukLembarKerja(false, $gram)['kode_dokumen'],
+        );
 
         $gramBesar = new Equipment(['satuan' => 'g', 'range_max' => 500000.0]);
 
         $this->assertSame(
             'SIDIK-FM-CAL-0508.A_Rev.4',
             $profil->bentukLembarKerja(false, $gramBesar)['kode_dokumen'],
-            '500.000 g = 500 kg, di atas ambang 200 kg — kalau ini null, '
-            .'kapasitasnya nggak dikonversi ke kilogram dulu.',
+            '500.000 g = 500 kg, di atas ambang 200 kg — kalau ini memulangkan '
+            .'nomor metode normal, kapasitasnya nggak dikonversi ke kilogram dulu.',
+        );
+
+        // Dan yang paling menentukan: keduanya TIDAK tertukar. Lembar yang
+        // mencetak nomor formulir milik metode lain itu temuan asesor, bukan
+        // sekadar salah ketik.
+        $this->assertNotSame(
+            $profil->bentukLembarKerja(false, $sub)['kode_dokumen'],
+            $profil->bentukLembarKerja(false, $kg)['kode_dokumen'],
         );
     }
 

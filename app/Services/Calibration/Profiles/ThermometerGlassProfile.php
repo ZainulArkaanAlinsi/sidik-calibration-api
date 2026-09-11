@@ -62,8 +62,15 @@ use Carbon\Carbon;
  */
 class ThermometerGlassProfile extends ProfilSuhuPasangan
 {
-    /** Lihat [ThermocoupleProfile::KODE_DOKUMEN] — alasannya sama persis. */
-    public const KODE_DOKUMEN = null;
+    /**
+     * Nomor formulir lembar kerja, dari kertasnya sendiri.
+     *
+     * Kaki halaman dokumennya menulis `SIDIK-FM-CAL-0537`, `Revise : 2`, dan
+     * judulnya `Calibration Work Sheet - Thermometer Glass` ber-lingkup
+     * `LK-285-IDN`. Lihat [ThermocoupleProfile::KODE_DOKUMEN] untuk kenapa nomor
+     * ini sempat `null`.
+     */
+    public const KODE_DOKUMEN = 'SIDIK-FM-CAL-0537_Rev.2';
 
     /** `DATABASE!C95`, revisi yang lebih baru daripada lampiran — lihat docblock kelas. */
     public const KODE_METODE = 'SIDIK-IK-CAL-0527_Rev.1';

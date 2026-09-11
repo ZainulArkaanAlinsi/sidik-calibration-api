@@ -101,6 +101,9 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',
         '2607.59.W (Viscometer)',
+        // Alat ke-29, sesi contoh 14 keping. Di luar lampiran akreditasi,
+        // jadi sertifikatnya terbit tanpa kop KAN.
+        'DEMO-AT-001 (Anak Timbangan)',
         'DEMO-COND-MSCM (Conductivity Meter)',
         // Alat ke-27 & ke-28 — sertifikatnya membawa satu blok tambahan
         // (`PIPE SPECIFICATION & SENSOR MOUNTING`) yang alat lain tidak punya,
@@ -112,6 +115,10 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         'DEMO-FM-GRAV-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
+        // Alat ke-12. Sesi contohnya menyusul 11 Sep 2026 — sampai itu
+        // TIDS satu-satunya alat yang sertifikatnya tidak pernah dirender
+        // sapuan ini.
+        'DEMO-TIDS-001 (Temperature Recorder)',
     ];
 
     /**

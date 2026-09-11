@@ -1,0 +1,1126 @@
+{
+  "sumber": {
+    "workbook": "1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx",
+    "lembar_kerja": "SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN)",
+    "metode": "SIDIK-IK-CAL-0535_Rev.0",
+    "acuan": "OIML R111-1",
+    "revisi_master": "3 (29 Mei 2026)",
+    "dalam_lingkup_akreditasi": false,
+    "catatan": "Lampiran LK-285-IDN kelompok Massa cuma memuat 'Timbangan (Elektronik, mekanik)'. Kalibrasi anak timbangan di luar lingkup, dan nama lembar kerjanya sendiri menyebut (Non KAN). Pertanyaan lab §15.",
+    "digenerate_oleh": "docs/skrip/gen-tabel-standar-anak-timbangan.py"
+  },
+  "konstanta": {
+    "rho_udara_referensi_kg_m3": 1.2,
+    "u_bouyancy_kg_m3": 0.12,
+    "pembagi_rectangular": 1.73,
+    "pembagi_normal": 2.0,
+    "faktor_resolusi_ganda": 1.414,
+    "vi": {
+      "repeatability": 54,
+      "sertifikat_calibrator_at": 60,
+      "resolusi_timbangan_standard": 100,
+      "instability": 9,
+      "bouyancy": 100,
+      "sensitivity": 100
+    },
+    "catatan_pembagi": "1,73 dipakai master, bukan sqrt(3)=1,7320508 (selisih 0,12 %, arah menaikkan ui). 1,414 dipakai master, bukan sqrt(2)=1,41421356 (selisih 0,015 %). Ditiru apa adanya. Pertanyaan lab §18.",
+    "rumus_densitas_udara": "((0,34848*P) - (0,009*RH)*EXP(0,061*T)) / (T + 273,15), OIML R111 Lampiran E; T, RH, P memakai rata-rata MENTAH (§13)"
+  },
+  "standar_at": {
+    "set": [
+      {
+        "nama": "Anak Timbangan E2 200 g",
+        "kapasitas": "1 mg - 200 g",
+        "kelas": "E2",
+        "merk_tipe": "Accurate/Stainless",
+        "no_seri": "75870",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "0518/25/KAL/01/2026",
+        "tanggal_kalibrasi": "2026-01-22",
+        "due_date": "2029-01-22",
+        "interval_tahun": 3
+      },
+      {
+        "nama": "Anak Timbangan E2 500 g",
+        "kapasitas": "500 g",
+        "kelas": "E2",
+        "merk_tipe": "Accurate/Stainless",
+        "no_seri": "100636",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "0221/25/KAL/01/2026",
+        "tanggal_kalibrasi": "2026-01-13",
+        "due_date": "2029-01-13",
+        "interval_tahun": 3
+      },
+      {
+        "nama": "Anak Timbangan E2 1 kg",
+        "kapasitas": "1000 g",
+        "kelas": "E2",
+        "merk_tipe": "Want Ballance/E2",
+        "no_seri": "120015",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "",
+        "tanggal_kalibrasi": "2026-02-23",
+        "due_date": "2029-02-23",
+        "interval_tahun": 3
+      },
+      {
+        "nama": "Anak Timbangan F1-2",
+        "kapasitas": "2000 g",
+        "kelas": "F1",
+        "merk_tipe": "Accurate/F1",
+        "no_seri": "45723",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "",
+        "tanggal_kalibrasi": "2026-02-04",
+        "due_date": "2028-02-04",
+        "interval_tahun": 2
+      },
+      {
+        "nama": "Anak Timbangan F1-5",
+        "kapasitas": "5000 g",
+        "kelas": "F1",
+        "merk_tipe": "Accurate/F1",
+        "no_seri": "111962",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "",
+        "tanggal_kalibrasi": "2026-02-04",
+        "due_date": "2028-02-04",
+        "interval_tahun": 2
+      },
+      {
+        "nama": "Anak Timbangan F1-10",
+        "kapasitas": "10 kg",
+        "kelas": "F1",
+        "merk_tipe": "Excellent/F1",
+        "no_seri": "4321",
+        "tertelusur": "LK-022-IDN",
+        "no_sertifikat": "",
+        "tanggal_kalibrasi": "2024-10-21",
+        "due_date": "2026-10-21",
+        "interval_tahun": 2
+      },
+      {
+        "nama": "Anak Timbangan F1-20",
+        "kapasitas": "20 kg",
+        "kelas": "F1",
+        "merk_tipe": "Want Ballance/F1",
+        "no_seri": "130016",
+        "tertelusur": "LK-045-IDN",
+        "no_sertifikat": "",
+        "tanggal_kalibrasi": "2026-02-23",
+        "due_date": "2028-02-23",
+        "interval_tahun": 2
+      }
+    ],
+    "keping": [
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.001",
+        "nominal_g": 0.001,
+        "bintang": false,
+        "konvensional_g": 0.00100015,
+        "koreksi_g": 1.4999999999997654e-07,
+        "u_mg": 0.0008,
+        "drift_mg": 0.0004,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.002",
+        "nominal_g": 0.002,
+        "bintang": false,
+        "konvensional_g": 0.00200127,
+        "koreksi_g": 1.2699999999998303e-06,
+        "u_mg": 0.0009,
+        "drift_mg": 0.00045,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.002*",
+        "nominal_g": 0.002,
+        "bintang": true,
+        "konvensional_g": 0.00200133,
+        "koreksi_g": 1.3299999999999076e-06,
+        "u_mg": 0.0009,
+        "drift_mg": 0.00045,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.005",
+        "nominal_g": 0.005,
+        "bintang": false,
+        "konvensional_g": 0.0050016,
+        "koreksi_g": 1.6000000000000389e-06,
+        "u_mg": 0.0009,
+        "drift_mg": 0.00045,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.01",
+        "nominal_g": 0.01,
+        "bintang": false,
+        "konvensional_g": 0.010005100000000001,
+        "koreksi_g": 5.100000000000937e-06,
+        "u_mg": 0.001,
+        "drift_mg": 0.0005,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.02",
+        "nominal_g": 0.02,
+        "bintang": false,
+        "konvensional_g": 0.0200027,
+        "koreksi_g": 2.7000000000013125e-06,
+        "u_mg": 0.001,
+        "drift_mg": 0.0005,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.02*",
+        "nominal_g": 0.02,
+        "bintang": true,
+        "konvensional_g": 0.020000900000000002,
+        "koreksi_g": 9.00000000001594e-07,
+        "u_mg": 0.001,
+        "drift_mg": 0.0005,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.05",
+        "nominal_g": 0.05,
+        "bintang": false,
+        "konvensional_g": 0.0500026,
+        "koreksi_g": 2.599999999998437e-06,
+        "u_mg": 0.0013,
+        "drift_mg": 0.00065,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.1",
+        "nominal_g": 0.1,
+        "bintang": false,
+        "konvensional_g": 0.100006,
+        "koreksi_g": 5.999999999992123e-06,
+        "u_mg": 0.0015,
+        "drift_mg": 0.00075,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.2",
+        "nominal_g": 0.2,
+        "bintang": false,
+        "konvensional_g": 0.2000033,
+        "koreksi_g": 3.2999999999838714e-06,
+        "u_mg": 0.0016,
+        "drift_mg": 0.0008,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.2*",
+        "nominal_g": 0.2,
+        "bintang": true,
+        "konvensional_g": 0.2000078,
+        "koreksi_g": 7.80000000000225e-06,
+        "u_mg": 0.0016,
+        "drift_mg": 0.0008,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "0.5",
+        "nominal_g": 0.5,
+        "bintang": false,
+        "konvensional_g": 0.4999991,
+        "koreksi_g": -9.000000000258801e-07,
+        "u_mg": 0.0023,
+        "drift_mg": 0.00115,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "1",
+        "nominal_g": 1.0,
+        "bintang": false,
+        "konvensional_g": 1.0000136,
+        "koreksi_g": 1.3599999999946988e-05,
+        "u_mg": 0.0033,
+        "drift_mg": 0.00165,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "2",
+        "nominal_g": 2.0,
+        "bintang": false,
+        "konvensional_g": 2.0000192,
+        "koreksi_g": 1.920000000010802e-05,
+        "u_mg": 0.0036,
+        "drift_mg": 0.0018,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "2*",
+        "nominal_g": 2.0,
+        "bintang": true,
+        "konvensional_g": 2.0000185,
+        "koreksi_g": 1.8499999999921357e-05,
+        "u_mg": 0.0036,
+        "drift_mg": 0.0018,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "5",
+        "nominal_g": 5.0,
+        "bintang": false,
+        "konvensional_g": 5.0000284,
+        "koreksi_g": 2.8399999999706438e-05,
+        "u_mg": 0.0046,
+        "drift_mg": 0.0023,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "10",
+        "nominal_g": 10.0,
+        "bintang": false,
+        "konvensional_g": 10.000075,
+        "koreksi_g": 7.500000000071338e-05,
+        "u_mg": 0.0059,
+        "drift_mg": 0.00295,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "20",
+        "nominal_g": 20.0,
+        "bintang": false,
+        "konvensional_g": 20.0000948,
+        "koreksi_g": 9.479999999939537e-05,
+        "u_mg": 0.0071,
+        "drift_mg": 0.00355,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "20*",
+        "nominal_g": 20.0,
+        "bintang": true,
+        "konvensional_g": 20.0000812,
+        "koreksi_g": 8.120000000033656e-05,
+        "u_mg": 0.0071,
+        "drift_mg": 0.00355,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "50",
+        "nominal_g": 50.0,
+        "bintang": false,
+        "konvensional_g": 50.000212,
+        "koreksi_g": 0.0002119999999976585,
+        "u_mg": 0.011,
+        "drift_mg": 0.0055,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "100",
+        "nominal_g": 100.0,
+        "bintang": false,
+        "konvensional_g": 100.000144,
+        "koreksi_g": 0.00014400000000591717,
+        "u_mg": 0.023,
+        "drift_mg": 0.0115,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "200",
+        "nominal_g": 200.0,
+        "bintang": false,
+        "konvensional_g": 200.000149,
+        "koreksi_g": 0.00014899999999329339,
+        "u_mg": 0.03,
+        "drift_mg": 0.015,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "200*",
+        "nominal_g": 200.0,
+        "bintang": true,
+        "konvensional_g": 200.000104,
+        "koreksi_g": 0.00010399999999322063,
+        "u_mg": 0.03,
+        "drift_mg": 0.015,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "500",
+        "nominal_g": 500.0,
+        "bintang": false,
+        "konvensional_g": 500.00051,
+        "koreksi_g": 0.0005100000000197724,
+        "u_mg": 0.07,
+        "drift_mg": 0.035,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "E2",
+        "nominal_teks": "1000",
+        "nominal_g": 1000.0,
+        "bintang": false,
+        "konvensional_g": 1000.00053,
+        "koreksi_g": 0.0005300000000261207,
+        "u_mg": 0.28,
+        "drift_mg": 0.14,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "F1",
+        "nominal_teks": "2000",
+        "nominal_g": 2000.0,
+        "bintang": false,
+        "konvensional_g": 2000.00437,
+        "koreksi_g": 0.004370000000108121,
+        "u_mg": 0.34,
+        "drift_mg": 0.17,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "F1",
+        "nominal_teks": "5000",
+        "nominal_g": 5000.0,
+        "bintang": false,
+        "konvensional_g": 5000.01,
+        "koreksi_g": 0.010000000000218279,
+        "u_mg": 0.7,
+        "drift_mg": 0.35,
+        "pola_drift": "U/2"
+      },
+      {
+        "kelas": "F1",
+        "nominal_teks": "10000",
+        "nominal_g": 10000.0,
+        "bintang": false,
+        "konvensional_g": 10000.007,
+        "koreksi_g": 0.006999999999607098,
+        "u_mg": 15,
+        "drift_mg": 2.3094010767038933,
+        "pola_drift": "4/sqrt(3)"
+      },
+      {
+        "kelas": "F1",
+        "nominal_teks": "20000",
+        "nominal_g": 20000.0,
+        "bintang": false,
+        "konvensional_g": 20000.0275,
+        "koreksi_g": 0.02750000000014552,
+        "u_mg": 8.1,
+        "drift_mg": 4.05,
+        "pola_drift": "U/2"
+      }
+    ]
+  },
+  "timbangan": [
+    {
+      "nama": "Semi Micro Balance",
+      "merk_tipe": "OHAUS PIONEER/PX85",
+      "no_seri": "C543502629",
+      "tertelusur": "LK-064-IDN",
+      "tanggal_database": "2026-01-26",
+      "kapasitas_g": 80.0,
+      "resolusi_g": 1e-05,
+      "u95_g": 9.7e-05,
+      "nominal_at_uji_g": 50.0,
+      "stdev_harian_mg": [
+        0.008959786704781921,
+        0.007149203529406107,
+        0.006146362971424353,
+        0.005868938953596891,
+        0.010749676997214276,
+        0.009143911150739058
+      ],
+      "std_dev_mg": 0.001923103720334314,
+      "gabungan_harian_mg": 0.00819326733558974,
+      "u_sens_mg": -2.6461006446691237e-05,
+      "sensitivitas": {
+        "delta1_mg": 2.0050000000004786,
+        "delta2_mg": 2.0000000000024443,
+        "de_sens_mg": -0.014999999997655777,
+        "u_msens_mg": 0.001,
+        "m_sens_mg": 20.0027,
+        "u_relatif": 0.0017640670967217732
+      }
+    },
+    {
+      "nama": "Analytical Balance",
+      "merk_tipe": "Mettler Toledo/XS204",
+      "no_seri": "1129063525",
+      "tertelusur": "LK-305-IDN",
+      "tanggal_database": "2026-01-19",
+      "kapasitas_g": 220.0,
+      "resolusi_g": 0.0001,
+      "u95_g": 0.0011,
+      "nominal_at_uji_g": 200.0,
+      "stdev_harian_mg": [
+        0.05374838499044125,
+        0.04972144630223824,
+        0.11547005384175836,
+        0.12122064364381199,
+        0.11167910378871372,
+        0.17320508076263755
+      ],
+      "std_dev_mg": 0.04636297841870652,
+      "gabungan_harian_mg": 0.11244340140425299,
+      "u_sens_mg": -0.00026461006456712755,
+      "sensitivitas": {
+        "delta1_mg": 20.050000000004786,
+        "delta2_mg": 20.09999999999934,
+        "de_sens_mg": -0.14999999999076863,
+        "u_msens_mg": 0.001,
+        "m_sens_mg": 20.0027,
+        "u_relatif": 0.0017640670972227488
+      }
+    },
+    {
+      "nama": "Electronic Balance Fujitsu",
+      "merk_tipe": "Fujitsu/FSR-A",
+      "no_seri": "SIDIK/134/2024",
+      "tertelusur": "LK-305-IDN",
+      "tanggal_database": "2026-01-19",
+      "kapasitas_g": 1200.0,
+      "resolusi_g": 0.001,
+      "u95_g": 0.0019,
+      "nominal_at_uji_g": 1000.0,
+      "stdev_harian_mg": [
+        0.437797517875104,
+        0.45946829172547576,
+        0.40824829045420924,
+        0.5868938953747554,
+        0.9204467514105059,
+        0.6701782515623399
+      ],
+      "std_dev_mg": 0.1940774013471526,
+      "gabungan_harian_mg": 0.6069390414057214,
+      "u_sens_mg": -0.010659996194014476,
+      "sensitivitas": {
+        "delta1_mg": 99.50000000000614,
+        "delta2_mg": 99.99999999999432,
+        "de_sens_mg": -3.0000000000143245,
+        "u_msens_mg": 0.0015,
+        "m_sens_mg": 100.006,
+        "u_relatif": 0.0035533320646545254
+      }
+    },
+    {
+      "nama": "Electronic Balance Excellent",
+      "merk_tipe": "Excellent/DJ",
+      "no_seri": "HSEX1403752",
+      "tertelusur": "LK-305-IDN",
+      "tanggal_database": "2026-01-19",
+      "kapasitas_g": 3100.0,
+      "resolusi_g": 0.01,
+      "u95_g": 0.007,
+      "nominal_at_uji_g": 2000.0,
+      "stdev_harian_mg": [
+        3.6893239368597524,
+        7.45355992499252,
+        6.258327785167171,
+        4.216370213554004,
+        3.3747427885496952,
+        6.1463629715230015
+      ],
+      "std_dev_mg": 1.6537714466089548,
+      "gabungan_harian_mg": 5.404901753307809,
+      "u_sens_mg": -4.9499326809110374e-05,
+      "sensitivitas": {
+        "delta1_mg": 1000.0,
+        "delta2_mg": 1000.0,
+        "de_sens_mg": -14.999999999986358,
+        "u_msens_mg": 0.0033,
+        "m_sens_mg": 1000.0136,
+        "u_relatif": 3.2999551206103597e-06
+      }
+    },
+    {
+      "nama": "Electronic Balance  Mettler",
+      "merk_tipe": "Mettler Toledo/IND690",
+      "no_seri": "3127471",
+      "tertelusur": "LK-305-IDN",
+      "tanggal_database": "2026-01-19",
+      "kapasitas_g": 30000.0,
+      "resolusi_g": 0.01,
+      "u95_g": 0.32,
+      "nominal_at_uji_g": 20000.0,
+      "stdev_harian_mg": [
+        3.16227765966219,
+        6.433419687839654,
+        7.090682462051761,
+        5.163977794547142,
+        6.4334196882480565,
+        5.676462121778928
+      ],
+      "std_dev_mg": 1.3948572862164343,
+      "gabungan_harian_mg": 5.8015004441672176,
+      "u_sens_mg": -0.007071069308394962,
+      "sensitivitas": {
+        "delta1_mg": 5000.0,
+        "delta2_mg": 4989.999999999782,
+        "de_sens_mg": -5.000000000109139,
+        "u_msens_mg": 0.0046,
+        "m_sens_mg": 5000.0284,
+        "u_relatif": 0.001414213861648123
+      }
+    }
+  ],
+  "densitas": {
+    "status": "disengketakan",
+    "satuan": "kg/m3",
+    "pertanyaan_lab": "§6",
+    "catatan": "Memuat nilai yang mustahil untuk anak timbangan (10650 = timbal, 14400) dan kolom E2/F1 tertukar di 0,1 g dan 0,2 g. Disalin apa adanya supaya sesi lama bisa dihitung ulang; profil WAJIB menaikkan peringatan sesi selama lab belum menjawab.",
+    "kelas": [
+      "E2",
+      "F1",
+      "F2",
+      "M1",
+      "M2"
+    ],
+    "baris": [
+      {
+        "nominal_g": 100.0,
+        "E2": 8010,
+        "F1": 8060.000000000001,
+        "F2": 8550,
+        "M1": 4400,
+        "M2": 2300
+      },
+      {
+        "nominal_g": 50.0,
+        "E2": 8010,
+        "F1": 8080,
+        "F2": 9000,
+        "M1": 4000,
+        "M2": null
+      },
+      {
+        "nominal_g": 20.0,
+        "E2": 8035,
+        "F1": 8350,
+        "F2": 14400,
+        "M1": 2600,
+        "M2": null
+      },
+      {
+        "nominal_g": 10.0,
+        "E2": 8080,
+        "F1": 9000,
+        "F2": 4000,
+        "M1": 2000,
+        "M2": null
+      },
+      {
+        "nominal_g": 5.0,
+        "E2": 8250,
+        "F1": 10650,
+        "F2": 3000,
+        "M1": 4000,
+        "M2": null
+      },
+      {
+        "nominal_g": 2.0,
+        "E2": 9000,
+        "F1": 4000,
+        "F2": 2000,
+        "M1": 3000,
+        "M2": null
+      },
+      {
+        "nominal_g": 1.0,
+        "E2": 10650,
+        "F1": 3000,
+        "F2": 4000,
+        "M1": 2000,
+        "M2": null
+      },
+      {
+        "nominal_g": 0.5,
+        "E2": 4400,
+        "F1": 2200,
+        "F2": 3000,
+        "M1": null,
+        "M2": null
+      },
+      {
+        "nominal_g": 0.2,
+        "E2": 3000,
+        "F1": 4400,
+        "F2": 2200,
+        "M1": null,
+        "M2": null
+      },
+      {
+        "nominal_g": 0.1,
+        "E2": 4400,
+        "F1": 3000,
+        "F2": null,
+        "M1": null,
+        "M2": null
+      },
+      {
+        "nominal_g": 0.05,
+        "E2": 3400,
+        "F1": null,
+        "F2": null,
+        "M1": null,
+        "M2": null
+      },
+      {
+        "nominal_g": 0.01,
+        "E2": 2300,
+        "F1": null,
+        "F2": null,
+        "M1": null,
+        "M2": null
+      }
+    ],
+    "aturan_diatas_100g": "Nominal >= 100 g memakai baris 100 g ('Note : Diatas 100 g nilainya =')"
+  },
+  "mpe": {
+    "satuan": "mg",
+    "acuan": "OIML R111-1 Tabel 1",
+    "kelas": [
+      "F1",
+      "F2",
+      "M1",
+      "M1-2",
+      "M2",
+      "M2-3",
+      "M3"
+    ],
+    "baris": [
+      {
+        "label": "20 kg",
+        "nominal_g": 20000,
+        "F1": 100,
+        "F2": 300,
+        "M1": 1000,
+        "M1-2": null,
+        "M2": 3000,
+        "M2-3": null,
+        "M3": 10000
+      },
+      {
+        "label": "10 kg",
+        "nominal_g": 10000,
+        "F1": 50,
+        "F2": 160,
+        "M1": 500,
+        "M1-2": null,
+        "M2": 1600,
+        "M2-3": null,
+        "M3": 5000
+      },
+      {
+        "label": "5 kg",
+        "nominal_g": 5000,
+        "F1": 25,
+        "F2": 80,
+        "M1": 250,
+        "M1-2": null,
+        "M2": 800,
+        "M2-3": null,
+        "M3": 2500
+      },
+      {
+        "label": "2 kg",
+        "nominal_g": 2000,
+        "F1": 10,
+        "F2": 30,
+        "M1": 100,
+        "M1-2": null,
+        "M2": 300,
+        "M2-3": null,
+        "M3": 1000
+      },
+      {
+        "label": "1 kg",
+        "nominal_g": 1000,
+        "F1": 5,
+        "F2": 16,
+        "M1": 50,
+        "M1-2": null,
+        "M2": 160,
+        "M2-3": null,
+        "M3": 500
+      },
+      {
+        "label": "500 g",
+        "nominal_g": 500,
+        "F1": 2.5,
+        "F2": 8,
+        "M1": 25,
+        "M1-2": null,
+        "M2": 80,
+        "M2-3": null,
+        "M3": 250
+      },
+      {
+        "label": "200 g",
+        "nominal_g": 200,
+        "F1": 1,
+        "F2": 3,
+        "M1": 10,
+        "M1-2": null,
+        "M2": 30,
+        "M2-3": null,
+        "M3": 100
+      },
+      {
+        "label": "100 g",
+        "nominal_g": 100,
+        "F1": 0.5,
+        "F2": 1.6,
+        "M1": 5,
+        "M1-2": null,
+        "M2": 16,
+        "M2-3": null,
+        "M3": 50
+      },
+      {
+        "label": "50 g",
+        "nominal_g": 50,
+        "F1": 0.3,
+        "F2": 1,
+        "M1": 3,
+        "M1-2": null,
+        "M2": 10,
+        "M2-3": null,
+        "M3": 30
+      },
+      {
+        "label": "20 g",
+        "nominal_g": 20,
+        "F1": 0.25,
+        "F2": 0.8,
+        "M1": 2.5,
+        "M1-2": null,
+        "M2": 8,
+        "M2-3": null,
+        "M3": 25
+      },
+      {
+        "label": "10 g",
+        "nominal_g": 10,
+        "F1": 0.2,
+        "F2": 0.6,
+        "M1": 2,
+        "M1-2": null,
+        "M2": 6,
+        "M2-3": null,
+        "M3": 20
+      },
+      {
+        "label": "5 g",
+        "nominal_g": 5,
+        "F1": 0.16,
+        "F2": 0.5,
+        "M1": 1.6,
+        "M1-2": null,
+        "M2": 5,
+        "M2-3": null,
+        "M3": 16
+      },
+      {
+        "label": "2 g",
+        "nominal_g": 2,
+        "F1": 0.12,
+        "F2": 0.4,
+        "M1": 1.2,
+        "M1-2": null,
+        "M2": 4,
+        "M2-3": null,
+        "M3": 12
+      },
+      {
+        "label": "1 g",
+        "nominal_g": 1,
+        "F1": 0.1,
+        "F2": 0.3,
+        "M1": 1,
+        "M1-2": null,
+        "M2": 3,
+        "M2-3": null,
+        "M3": 10
+      },
+      {
+        "label": "500 mg",
+        "nominal_g": 0.5,
+        "F1": 0.08,
+        "F2": 0.25,
+        "M1": 0.8,
+        "M1-2": null,
+        "M2": 2.5,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "200 mg",
+        "nominal_g": 0.2,
+        "F1": 0.06,
+        "F2": 0.2,
+        "M1": 0.6,
+        "M1-2": null,
+        "M2": 2,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "100 mg",
+        "nominal_g": 0.1,
+        "F1": 0.05,
+        "F2": 0.16,
+        "M1": 0.5,
+        "M1-2": null,
+        "M2": 1.6,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "50 mg",
+        "nominal_g": 0.05,
+        "F1": 0.04,
+        "F2": 0.12,
+        "M1": 0.4,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "20 mg",
+        "nominal_g": 0.02,
+        "F1": 0.03,
+        "F2": 0.1,
+        "M1": 0.3,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "10 mg",
+        "nominal_g": 0.01,
+        "F1": 0.025,
+        "F2": 0.08,
+        "M1": 0.25,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "5 mg",
+        "nominal_g": 0.005,
+        "F1": 0.02,
+        "F2": 0.06,
+        "M1": 0.2,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "2 mg",
+        "nominal_g": 0.002,
+        "F1": 0.02,
+        "F2": 0.06,
+        "M1": 0.2,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      },
+      {
+        "label": "1 mg",
+        "nominal_g": 0.001,
+        "F1": 0.02,
+        "F2": 0.06,
+        "M1": 0.2,
+        "M1-2": null,
+        "M2": null,
+        "M2-3": null,
+        "M3": null
+      }
+    ]
+  },
+  "meter_lingkungan": [
+    {
+      "nama": "Thermobarometer",
+      "lokasi": "Inlab (Lab. Volumetrik)",
+      "tanggal_kalibrasi": "2024-06-26",
+      "due_date": "2026-06-27",
+      "tertelusur": "LK-172-IDN",
+      "suhu": {
+        "u95": 1.2,
+        "titik": [
+          [
+            20.1,
+            20,
+            0.1
+          ],
+          [
+            26,
+            25,
+            1
+          ],
+          [
+            29.7,
+            30,
+            -0.3
+          ],
+          [
+            34.7,
+            35,
+            -0.3
+          ],
+          [
+            39.8,
+            40,
+            -0.2
+          ]
+        ]
+      },
+      "kelembaban": {
+        "u95": 3,
+        "titik": [
+          [
+            38,
+            40,
+            -2
+          ],
+          [
+            48.5,
+            50,
+            -1.5
+          ],
+          [
+            59.2,
+            60,
+            -0.8
+          ],
+          [
+            70,
+            70,
+            0
+          ],
+          [
+            81.1,
+            80,
+            1.1
+          ]
+        ]
+      },
+      "tekanan": {
+        "u95": 2,
+        "titik": [
+          [
+            931,
+            930,
+            1
+          ],
+          [
+            941.1,
+            940,
+            1.1
+          ],
+          [
+            950.9,
+            950,
+            0.9
+          ],
+          [
+            961.2,
+            960,
+            1.2
+          ],
+          [
+            971,
+            970,
+            1
+          ],
+          [
+            981.1,
+            980,
+            1.1
+          ],
+          [
+            990.6,
+            990,
+            0.6
+          ],
+          [
+            1001,
+            1000,
+            1
+          ],
+          [
+            1006,
+            1005,
+            1
+          ]
+        ]
+      }
+    }
+  ],
+  "drift_penimbangan": [
+    {
+      "maks_index_standar_g": 200,
+      "kelompok": "E2 0.1-200 g",
+      "u_drift_g": 0
+    },
+    {
+      "maks_index_standar_g": 500,
+      "kelompok": "E2 500 g",
+      "u_drift_g": 0
+    },
+    {
+      "maks_index_standar_g": 1000,
+      "kelompok": "E2 1000 g",
+      "u_drift_g": 0
+    },
+    {
+      "maks_index_standar_g": 2000,
+      "kelompok": "F1 2 kg",
+      "u_drift_g": 0
+    },
+    {
+      "maks_index_standar_g": 5000,
+      "kelompok": "F1 5 kg",
+      "u_drift_g": 0
+    },
+    {
+      "maks_index_standar_g": 10000,
+      "kelompok": "F1 10 kg",
+      "u_drift_g": 0.0023094010767038932
+    },
+    {
+      "maks_index_standar_g": 20000,
+      "kelompok": "F1 20 kg",
+      "u_drift_g": 0
+    }
+  ]
+}

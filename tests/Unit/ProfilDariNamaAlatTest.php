@@ -60,6 +60,17 @@ class ProfilDariNamaAlatTest extends TestCase
         // Detector di atas, dan masternya sendiri mengakuinya: sel lantai CMC
         // `PERHITUNGAN U95%!AA19` kosong.
         'height_gauge' => 'Height Gauge',
+        // Anak Timbangan dikalibrasi lab ini tapi belum diakreditasi —
+        // kelompok Massa di lampiran cuma memuat "Timbangan (Elektronik,
+        // mekanik)", alat yang MENIMBANG. Barisnya lahir dari
+        // `AnakTimbanganCapabilitySeeder` dengan CMC nol, persis pola dua di
+        // atas, dan kertas lembar kerjanya sendiri menyebut (Non KAN).
+        //
+        // Baris ini sekaligus penjaga jebakan routing: `Anak Timbangan` memuat
+        // substring `Timbangan` yang sudah diklaim `TimbanganProfile`. Kalau
+        // urutan terpanjang-duluan di `bangunIndeksEjaan()` pernah dicabut,
+        // nama ini mendarat di `timbangan` dan test ini yang merah.
+        'anak_timbangan' => 'Anak Timbangan',
     ];
 
     /**
