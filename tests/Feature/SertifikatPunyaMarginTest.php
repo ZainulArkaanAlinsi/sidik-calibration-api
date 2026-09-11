@@ -103,7 +103,36 @@ class SertifikatPunyaMarginTest extends TestCase
             $padat = $this->halaman($bahan, false, 0) > 1;
 
             if ($this->halaman($bahan, $padat, self::MARGIN_MIN) > 1) {
-                $mepet[] = sprintf('%s (%s)', $sesi->nomor_sesi, $padat ? 'padat' : 'normal');
+                // Sisa ruang SESUNGGUHNYA ikut dilaporkan, bukan cuma namanya.
+                //
+                // Sapuan ini pernah merah sekali di suite penuh untuk
+                // `0136-CAL-123`, lalu hijau di jalan penuh berikutnya, hijau
+                // sendirian, dan hijau bersama test tetangganya. Yang bikin
+                // penyebabnya tidak ketemu: pesannya cuma menyebut nama, jadi
+                // tidak ada cara membedakan "lembarnya memang berdiri di tepi"
+                // dari "ada yang menambah lima baris".
+                //
+                // Angkanya menjawab itu dalam sekali lihat. Diukur 11 Sep 2026
+                // di KEDUA mesin, hasilnya identik — jadi selisih apa pun dari
+                // baseline di bawah berarti isinya yang berubah, bukan
+                // presisinya:
+                //
+                //     8   DEMO-FM-GRAV-TOT-001    46  2405.32.A.NK
+                //     15  DEMO-SPECTRO-NIAGA      46  DEMO-COND-MSCM
+                //     20  0135-CAL-125            50  2405.03.AV
+                //     23  2607.59.W               66  2405.13.A
+                //     34  DEMO-FM-TOT-001         86  DEMO-TIDS-001 · 015-CAL-424
+                //     34  DEMO-FM-FLW-001         87  0136-CAL-123 · 011-CAL-525
+                //     46  2406.32.A              112+ sisanya
+                //
+                // Pencarian binernya cuma jalan waktu GAGAL, jadi sapuan yang
+                // hijau tidak ikut membayar.
+                $mepet[] = sprintf(
+                    '%s (%s) — sisa %d px, baseline 11 Sep lihat docblock',
+                    $sesi->nomor_sesi,
+                    $padat ? 'padat' : 'normal',
+                    $this->ukurMargin($bahan, $padat),
+                );
 
                 continue;
             }
@@ -129,6 +158,33 @@ class SertifikatPunyaMarginTest extends TestCase
             self::PALING_MEPET,
             implode(', ', $lebihMepetDariJuara),
         ));
+    }
+
+    /**
+     * Sisa ruang sesungguhnya (px), dicari biner 0..200.
+     *
+     * Dipanggil CUMA dari jalur gagal — merender lembar dua puluh kali untuk
+     * tiap sertifikat yang sehat akan melipatgandakan waktu sapuan ini tanpa
+     * menjawab apa pun.
+     *
+     * @param  array<string, mixed>  $bahan
+     */
+    private function ukurMargin(array $bahan, bool $padat): int
+    {
+        $bawah = 0;
+        $atas = 200;
+
+        while ($bawah < $atas) {
+            $tengah = (int) ceil(($bawah + $atas) / 2);
+
+            if ($this->halaman($bahan, $padat, $tengah) <= 1) {
+                $bawah = $tengah;
+            } else {
+                $atas = $tengah - 1;
+            }
+        }
+
+        return $bawah;
     }
 
     private function terbitkan(CalibrationSession $sesi): ?object
