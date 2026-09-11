@@ -22,6 +22,7 @@ use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\AutoclaveCalculator;
 use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\TabelStandarHeightGauge;
@@ -32,6 +33,7 @@ use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
+use App\Support\AnakTimbanganMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\MicrometerMentah;
@@ -1194,6 +1196,20 @@ class CalibrationController extends Controller
         // besar tanpa satu pun error.
         if ($this->profil->untukAlat($alat)->butuhBlokFlowmeter()) {
             return $this->susunBlokFlowmeter($request, $alat, $standarDefault);
+        }
+
+        // Anak Timbangan: satu titik itu EMPAT penimbangan ber-peran ABBA
+        // (standar, UUT, UUT, standar), bukan satu deret. Alasan jalur
+        // terpisahnya sama dengan tujuh di atas — dan di sini yang hilang bukan
+        // sebagian angka melainkan TANDA-nya: `de = (T1 − S1 − S2 + T2)/2`
+        // memberi tanda berbeda ke tiap suku, jadi deret datar yang kehilangan
+        // perannya bisa membalikkan arah koreksi kepingnya.
+        //
+        // Dipaksa lewat cabang pasangan standar/UUT pun tidak selamat:
+        // kosakatanya cuma `standar`/`uut`, jadi T2 mendarat sebagai ulangan
+        // kedua `uut` dan S2 sebagai ulangan kedua `standar`.
+        if ($this->profil->untukAlat($alat)->butuhBlokAnakTimbangan()) {
+            return $this->susunBlokAnakTimbangan($request, $alat, $standarDefault);
         }
 
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
@@ -2616,6 +2632,158 @@ class CalibrationController extends Controller
             $siapHitung[] = [
                 'titik_ke' => $titikKe,
                 'titik_ukur' => is_numeric($titik['titik_ukur'] ?? null) ? (float) $titik['titik_ukur'] : 0.0,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    ...$konteks,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Anak Timbangan — empat deret ber-peran ABBA per titik.
+     *
+     * Bentuk payload yang dikirim HP, satu entri per KEPING (bukan per peran):
+     *
+     * ```json
+     * { "titik_ukur": 100, "at_s1": [100.0, 100.0, 100.0],
+     *   "at_t1": [99.9999, 99.9999, 99.9999],
+     *   "at_t2": [99.9999, 99.9999, 99.9999],
+     *   "at_s2": [100.0, 100.0, 100.0] }
+     * ```
+     *
+     * Keempat kunci itu `grup` tabel di bentuk lembar, jadi bentuk lembar dan
+     * jalur simpan tidak bisa berselisih diam-diam — pola yang sama dipakai
+     * [susunBlokFlowmeter].
+     *
+     * ## Titik kosong dibuang SEBELUM penomoran
+     *
+     * `titik_ke` lahir dari urutan entri yang TERPAKAI, bukan dari indeks
+     * payload. Kertasnya punya sepuluh baris keping dan satu set anak timbangan
+     * jarang mengisi kesepuluhnya; baris yang dilewati tapi tetap memakan satu
+     * slot menggeser seluruh titik sesudahnya, dan geseran itu mendarat
+     * langsung di sertifikat karena `PerhitunganBuilder` mencetak baris per
+     * `titik_ke`.
+     *
+     * ## Nominal nol TIDAK membuang titiknya
+     *
+     * Saringannya melihat ada-tidaknya PEMBACAAN, bukan besar nominalnya.
+     * Keping 0,001 g itu titik yang sah, dan `empty()` atas nominal kecil
+     * adalah kelas kesalahan yang sama dengan membaca sel kosong sebagai nol.
+     *
+     * ## Pembacaannya TIDAK dibulatkan
+     *
+     * Berbeda dari enam jalur blok lain, yang melewatkan tiap angka ke
+     * `bulatkanKolom()`. Lembar ini bekerja di skala miligram pada pembacaan
+     * bernilai ratusan gram: `100,0000` lawan `99,9999` itu selisih 0,1 mg, dan
+     * justru selisih itulah yang sedang diukur. Dibulatkan ke desimal pembacaan
+     * umum, seluruh `de` sesi ini jadi nol.
+     */
+    private function susunBlokAnakTimbangan(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+        $asalKamera = static fn (?array $meta): bool => $sesiKamera || $meta !== null;
+        $adaIsinya = static fn ($v): bool => $v !== null && $v !== '';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+
+        foreach (array_values((array) $request->input('measurements', [])) as $titik) {
+            $konteks = [AnakTimbanganMentah::KUNCI_DERET => []];
+            $barisTitik = [];
+            $adaPembacaan = false;
+            $nominal = is_numeric($titik['titik_ukur'] ?? null) ? (float) $titik['titik_ukur'] : 0.0;
+
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                $ocrPeran = array_values((array) ($titik[$peran.'_ocr'] ?? []));
+                $nilaiPeran = [];
+
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! $adaIsinya($nilai) || ! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $meta = is_array($ocrPeran[$urutan] ?? null) ? $ocrPeran[$urutan] : null;
+                    $dariKamera = $asalKamera($meta);
+                    $angka = (float) $nilai;
+                    $nilaiPeran[] = $angka;
+
+                    // `titik_ke` sengaja belum diisi — nomornya baru pasti
+                    // sesudah titiknya dinyatakan terpakai, lihat docblock.
+                    $barisTitik[] = [
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $nominal,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $angka,
+                        'satuan' => AnakTimbanganProfile::SATUAN,
+                        'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                        'ocr_raw_text' => $meta['raw_text'] ?? null,
+                        'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                        'is_verified' => ! $dariKamera,
+                    ];
+                }
+
+                // Bentuknya HARUS sama dengan yang dipulangkan
+                // `AnakTimbanganMentah::dari()` di jalur hitung ulang: deret
+                // apa adanya di bawah `at_deret` (jejak audit), dan
+                // RATA-RATANYA di bawah nama perannya. `hitungSesi()` membaca
+                // yang kedua dan mensyaratkannya numerik — deret mentah yang
+                // dikirim ke situ terbaca sebagai "peran ini belum diisi", dan
+                // seluruh titik ditolak walau angkanya lengkap.
+                $konteks[AnakTimbanganMentah::KUNCI_DERET][$peran] = $nilaiPeran;
+                $konteks[$peran] = AnakTimbanganMentah::rataDeret($nilaiPeran);
+
+                if ($nilaiPeran !== []) {
+                    $adaPembacaan = true;
+                }
+            }
+
+            // Keping yang tidak disentuh sama sekali tidak jadi titik. Yang
+            // baru terisi SEBAGIAN tetap jadi titik — `hitungSesi()` yang
+            // menolaknya nanti dengan alasan yang kebaca ("Titik 3 belum punya
+            // pembacaan at_t2"), dan alasan itu jauh lebih berguna buat teknisi
+            // daripada baris yang hilang diam-diam.
+            if (! $adaPembacaan) {
+                continue;
+            }
+
+            $titikKe = count($siapHitung) + 1;
+
+            foreach ($barisTitik as $baris) {
+                $mentah[] = ['titik_ke' => $titikKe, ...$baris];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominal,
                 // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
                 // suatu saat ada yang membacanya, yang keluar kosong — bukan
                 // separuh data yang kelihatan lengkap.

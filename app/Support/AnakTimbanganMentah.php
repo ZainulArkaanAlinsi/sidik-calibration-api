@@ -158,7 +158,24 @@ class AnakTimbanganMentah
      *
      * @param  list<float>  $deret
      */
-    private static function rataDeret(array $deret): ?float
+    /**
+     * Rata-rata satu deret pembacaan, atau `null` kalau deretnya kosong.
+     *
+     * `public` supaya JALUR SIMPAN memakai implementasi yang sama dengan jalur
+     * hitung ulang. `CalibrationController::susunBlokAnakTimbangan()` menyusun
+     * `konteks` langsung dari payload HP; kalau dia menghitung rata-ratanya
+     * sendiri, dua jalur yang seharusnya memulangkan angka identik punya dua
+     * salinan rumus — dan salinan yang menyimpang baru ketahuan berbulan-bulan
+     * kemudian, waktu `kalibrasi:hitung-ulang` melaporkan beda pada sertifikat
+     * yang sudah terbit.
+     *
+     * `null` (bukan 0) untuk deret kosong, dan itu yang dipakai
+     * `AnakTimbanganCalculator::hitungSesi()` buat membedakan "peran ini belum
+     * diisi" dari "penunjukannya memang nol".
+     *
+     * @param  list<float>  $deret
+     */
+    public static function rataDeret(array $deret): ?float
     {
         return $deret === [] ? null : array_sum($deret) / count($deret);
     }

@@ -1120,6 +1120,47 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah satu titik lembar ini berisi EMPAT penimbangan ber-peran ABBA.
+     *
+     * Default `false`. `true` cuma untuk `AnakTimbanganProfile`. Waktu `true`,
+     * `CalibrationController` menyimpan tiap deret sebagai baris
+     * `raw_measurements` ber-`peran_sensor` `at_s1`, `at_t1`, `at_t2`, dan
+     * `at_s2`; jalur hitung ulang menyusunnya balik lewat
+     * `AnakTimbanganMentah::dari()`.
+     *
+     * ## Kenapa hook sendiri, bukan menumpang cabang yang sudah ada
+     *
+     * Yang membedakannya dari [butuhPasanganStandarUut] — yang juga membaca dua
+     * deret — bukan jumlah deretnya, tapi **tanda** tiap suku:
+     *
+     * ```
+     * de = (T1 − S1 − S2 + T2) / 2
+     * ```
+     *
+     * Keempatnya masuk dengan tanda yang berbeda. Jalur pasangan cuma punya
+     * kosakata `standar`/`uut`, jadi dipaksa lewat sana T2 mendarat sebagai
+     * ulangan kedua `uut` dan S2 sebagai ulangan kedua `standar` — rata-ratanya
+     * terlihat wajar, dan `de` yang lahir dari situ bisa terbalik ARAHNYA tanpa
+     * satu pun error.
+     *
+     * ## Yang terjadi sebelum hook ini ada
+     *
+     * Tidak ada jalur kirim sama sekali. Keempat tabelnya tidak menyebut tujuan
+     * simpan, jadi payload dari HP tidak membawa satu pun kunci peran, dan
+     * `AnakTimbanganProfile::hitungPerGrup()` menolak SELURUH titik dengan
+     * alasan "nggak punya baris ber-peran". Lembarnya kegambar penuh, teknisi
+     * mengisi sepuluh keping × empat peran × tiga ulangan, tombol kirim jalan —
+     * dan yang kembali sesi tanpa satu pun titik terhitung.
+     *
+     * Sesi contoh `DEMO-AT-001` tidak pernah memperlihatkannya karena seeder
+     * menulis baris mentahnya LANGSUNG ke database, melewati controller.
+     */
+    public function butuhBlokAnakTimbangan(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
      *
      * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah

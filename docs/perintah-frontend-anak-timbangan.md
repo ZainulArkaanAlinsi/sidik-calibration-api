@@ -136,7 +136,8 @@ yang kebaca.
 
 Bentuknya peta `{ "<titik_ke>": "<teks>" }`. Kertasnya sudah punya kotak
 `No Identitas :` di tiap blok keping; mobile perlu memasangnya sebagai satu
-kotak teks per baris tabel. **Ini pekerjaan mobile yang tersisa** — lihat §5.
+kotak teks per baris tabel. **Ini pekerjaan mobile yang tersisa** — lihat §5
+butir 6, termasuk kenapa `kolom_baris` TIDAK bisa dipakai untuk membawanya.
 
 ---
 
@@ -184,22 +185,59 @@ Ada juga tiga **peringatan** sesi (boleh dilewati admin, tidak menahan):
 
 ---
 
-## 5. Yang tersisa di sisi mobile
+## 5. Sisi mobile — status 11 September 2026
 
-1. **Tiga kode pemicu hitung ulang** di `_kodePenentuAngka` (§2.1).
-2. **Kotak `No Identitas` per baris tabel**, menulis ke
-   `spesifikasi_alat.anak_timbangan.identitas[<titik_ke>]` (§2.4).
-3. **Regenerasi `contoh_lembar_kerja_*.dart`** dari server hidup —
-   `php docs/skrip/gen-contoh-lembar-kerja.php`.
-4. **Render empat tabel berdampingan** kalau layarnya muat; kalau tidak,
-   berurutan dengan judul perannya jelas. Yang tidak boleh: menampilkannya
-   sebagai satu tabel dengan empat kolom tanpa label peran.
-5. **Pindai foto masih `didukung = false`.** Geometri di
+### Yang SUDAH beres
+
+1. **Jalur kirim dari HP** — dulu tidak ada sama sekali. Keempat tabel ABBA
+   sekarang menyatakan `simpan_ke: measurements[].at_*`, dan server punya
+   cabang `butuhBlokAnakTimbangan()` → `susunBlokAnakTimbangan()`. Sebelum ini
+   payload dari aplikasi teknisi jatuh ke loop deret-datar generik: lembar
+   penuh di layar, tombol kirim jalan, **nol titik terbit**. Dijaga
+   `tests/Feature/AlurPenuhAnakTimbanganTest.php` (7 test).
+2. **Blok sesi lolos validator** — `anak_timbangan` sekarang terdaftar di
+   `CalibrationRequest::SPEK_BERBENTUK_BLOK`. Sebelumnya blok dari HP ditolak
+   `422 Kolom 'anak_timbangan' di spesifikasi alat harus teks, bukan objek`
+   sebelum satu pun angka dibaca.
+3. **Tiga kode pemicu hitung ulang** sudah masuk `_kodePenentuAngka`
+   (`kelas_uut`, `kelas_standar`, `timbangan`).
+4. **Fixture mock** — `lib/services/contoh_lembar_kerja_anak_timbangan.dart`
+   digenerate dari server dan disambung ke `lembar_kerja_service.dart`.
+   Berkasnya SENDIRI, bukan menumpang `contoh_lembar_kerja_massa.dart`: bentuk
+   Timbangan lahir dari alat contoh `TB-100`, dan digabung salah satunya
+   tertimpa bentuk yang bukan miliknya.
+5. **Render empat tabel** — tidak perlu kode baru. `_measurementsDeretBernama`
+   sudah menyusuri tabel sejajar per indeks baris; yang kurang cuma
+   `simpan_ke`, dan itu sudah dipasang.
+
+### Yang MASIH tersisa
+
+6. **Kotak `No Identitas` per baris tabel.** Belum ada, dan jalurnya tidak
+   sesederhana yang tertulis di revisi sebelumnya.
+
+   `kolom_baris` — mekanisme kotak-tambahan-per-baris yang dipakai `nominal`
+   Timbangan dan `no_probe` Thermocouple — **tidak bisa dipakai di sini**.
+   Isinya mendarat di `measurements[].<kode>`, sementara `no_identitas` wajib
+   duduk di `spesifikasi_alat.anak_timbangan.identitas[<titik_ke>]`. Melipatnya
+   di controller pun terlambat: `susunPengukuran()` berjalan **sesudah**
+   sesinya dibuat, jadi kolom `spesifikasi_alat` sudah tersimpan duluan.
+
+   Jadi yang benar: HP mengirimnya langsung sebagai peta di blok sesi. Itu
+   butuh kotak teks per baris yang nilainya dikumpulkan ke satu peta
+   tingkat-sesi — mekanisme yang belum ada di HP.
+
+   **Jebakan yang wajib dijaga waktu membuatnya:** kunci petanya `titik_ke`,
+   dan `titik_ke` lahir dari urutan keping yang TERPAKAI, bukan dari indeks
+   baris di layar. Keping yang barisnya dilewati tidak memakan nomor (lihat
+   `susunBlokAnakTimbangan`). Kalau HP memakai indeks baris sebagai kunci,
+   penandanya mendarat di keping yang salah begitu ada satu baris kosong di
+   tengah — dan penanda yang salah keping persis kerusakan yang kolom ini ada
+   untuk mencegahnya.
+
+7. **Pindai foto masih `didukung = false`.** Geometri di
    `anak_timbangan-v1.json` masih tebakan generator dan belum diadu ke foto
    formulir asli. Di lembar ini akibatnya lebih buruk daripada di alat lain:
    empat peran ABBA yang tertukar membalik **tanda** koreksi kepingnya.
-
----
 
 ## 6. Yang masih menunggu jawaban lab
 

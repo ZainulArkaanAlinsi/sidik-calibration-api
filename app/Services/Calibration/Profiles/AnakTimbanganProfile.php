@@ -202,6 +202,19 @@ class AnakTimbanganProfile extends CalibrationProfile
     }
 
     /**
+     * Satu titik = EMPAT penimbangan ber-peran, bukan satu deret.
+     *
+     * Alasan lengkapnya di `CalibrationProfile::butuhBlokAnakTimbangan()`.
+     * Singkatnya: `de = (T1 − S1 − S2 + T2) / 2` memberi tanda berbeda ke tiap
+     * suku, jadi deret datar tidak cuma kehilangan presisi — dia bisa
+     * membalikkan ARAH koreksi kepingnya.
+     */
+    public function butuhBlokAnakTimbangan(): bool
+    {
+        return true;
+    }
+
+    /**
      * Sesi Anak Timbangan TIDAK divonis PASS/FAIL.
      *
      * Tabel MPE OIML R111 lengkap ada di workbook master, tapi sertifikatnya
@@ -744,6 +757,24 @@ class AnakTimbanganProfile extends CalibrationProfile
                 'judul_pengulangan' => 'Pembacaan',
                 'titik_bisa_diubah' => true,
                 'offset_kunci' => self::OFFSET[$peran],
+                // Tujuan simpannya dinyatakan EKSPLISIT, dan tanpa ini angkanya
+                // hilang diam-diam. Sisi HP data-driven: `_measurementsDeretBernama`
+                // cuma menyusun `measurements[]` dari tabel yang menyebut
+                // tujuannya, dan tabel yang diam dianggap tidak punya tempat
+                // simpan — kotaknya kegambar, teknisi mengisi sepuluh keping ×
+                // empat peran × tiga ulangan, payloadnya terkirim tanpa satu pun
+                // kunci peran, lalu `hitungPerGrup()` menolak seluruh titiknya.
+                //
+                // `offset_kunci` yang berbeda tidak mengganggu penggabungannya:
+                // HP menyusuri keempat tabel PER INDEKS BARIS dan mencari
+                // titiknya lewat `titikUntukBaris(baris, i, tabel)`, jadi baris
+                // ke-i keempat tabel mendarat di SATU entri `measurements[]`
+                // berisi empat kunci. Persis pola lima deret sejajar Flowmeter.
+                //
+                // Kunci di sini sama persis dengan yang dibaca
+                // `CalibrationController::susunBlokAnakTimbangan()` dan
+                // `AnakTimbanganMentah::dari()`. Ketiganya harus sepakat.
+                'simpan_ke' => 'measurements[].'.$peran,
                 'baris' => array_map(
                     static fn (int $n): array => [
                         'nomor' => $n,

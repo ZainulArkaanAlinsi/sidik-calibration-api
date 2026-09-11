@@ -43,10 +43,11 @@ Biar jelas mana yang dibaca buat apa:
 | [`SPEC-vision-prompt.md`](SPEC-vision-prompt.md) | Prompt & implementasi AI Vision | ✅ ya, kecuali klaim caching (lihat §4) |
 | [`Rekap-Data-Kemampuan-Kalibrasi.md`](Rekap-Data-Kemampuan-Kalibrasi.md) | Data CMC dari lampiran akreditasi LK-285-IDN | ✅ ya (data sumber) |
 | [`infrastruktur-vps-produksi.md`](infrastruktur-vps-produksi.md) | Rencana deploy VPS | ✅ ya (usulan) |
+| [`RINGKASAN-PERTANYAAN-LAB.md`](RINGKASAN-PERTANYAAN-LAB.md) | **Mulai dari sini kalau mau membaca pertanyaan lab.** Peta 21 dokumen / ±213 butir, diurut per AKIBAT kalau dijawab lain: 7 butir mengubah angka yang sudah tercetak, 6 mengubah pernyataan akreditasi, sisanya tidak menahan apa pun. Berikut formulir keputusan | ✅ ya — tiap angka dikutip dari dokumen sumbernya, 11 Sep 2026 |
 | [`pertanyaan-lab-flowmeter-gravimetri.md`](pertanyaan-lab-flowmeter-gravimetri.md) | 23 butir pertanyaan + formulir keputusan untuk varian metode kedua Flowmeter (ISO 4185), 10 Sep 2026 | ✅ ya — tiap butir menyebut sel masternya dan angka sebelum/sesudah |
 | [`perintah-frontend-flowmeter-gravimetri.md`](perintah-frontend-flowmeter-gravimetri.md) | Kontrak serah-terima varian gravimetri ke repo mobile | ✅ ya — §7 menulis terang yang BELUM dikerjakan |
 | [`pertanyaan-lab-anak-timbangan.md`](pertanyaan-lab-anak-timbangan.md) | 23 butir pertanyaan + formulir keputusan untuk alat ke-29 Anak Timbangan (OIML R111), 10 Sep 2026 | ✅ ya — tiap butir membawa angka hasil hitung ulang, bukan kutipan; §1 & §2 yang paling menentukan |
-| [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 menulis terang lima butir yang BELUM dikerjakan |
+| [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 disetel 11 Sep 2026: lima butir beres (termasuk jalur kirim dari HP yang ternyata belum pernah ada), dua masih tersisa |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
 

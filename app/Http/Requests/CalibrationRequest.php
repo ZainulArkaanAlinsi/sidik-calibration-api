@@ -11,6 +11,7 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Support\AnakTimbanganMentah;
 use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -847,6 +848,33 @@ class CalibrationRequest extends FormRequest
             'measurements.*.m' => ['sometimes', 'nullable', 'numeric'],
             'measurements.*.m_aksen' => ['sometimes', 'nullable', 'numeric'],
             'measurements.*.z2' => ['sometimes', 'nullable', 'numeric'],
+            // Lembar ANAK TIMBANGAN — empat deret ber-peran ABBA per keping,
+            // tiga pembacaan tiap deret (`X1 X2 X3` di kertas Rev.0).
+            //
+            // `max:20` bukan `max:3`: kertasnya minta tiga, workbook master
+            // memakai satu, dan teknisi boleh menambah ulangan. Batas longgar di
+            // sini menahan payload yang absurd, BUKAN menegakkan jumlah ulangan
+            // — yang begitu urusan profil, dan penolakannya di sana berbunyi
+            // kalimat yang kebaca alih-alih 422 yang bikin lembar lapangan
+            // nggak bisa dikirim sama sekali.
+            //
+            // `min:0` SENGAJA TIDAK dipasang, beda dari `nominal` Timbangan di
+            // atas: yang dikirim di sini penunjukan neraca, dan neraca bisa
+            // menunjuk negatif waktu tarenya belum disetel. Menolaknya di
+            // validator berarti teknisi kehilangan seluruh lembar gara-gara satu
+            // penunjukan yang justru ingin dia catat.
+            //
+            // Didaftarkan lewat `PERAN_URUT`, bukan diketik empat kali: daftar
+            // peran itu SATU sumber (`AnakTimbanganMentah`), dan peran yang
+            // ditambah di sana tapi kelupaan di sini lolos tanpa validasi.
+            ...array_merge(...array_map(static fn (string $peran): array => [
+                'measurements.*.'.$peran => ['sometimes', 'nullable', 'array', 'max:20'],
+                'measurements.*.'.$peran.'.*' => ['nullable', 'numeric'],
+                'measurements.*.'.$peran.'_ocr' => ['sometimes', 'nullable', 'array', 'max:20'],
+                'measurements.*.'.$peran.'_ocr.*' => ['nullable', 'array'],
+                'measurements.*.'.$peran.'_ocr.*.raw_text' => ['nullable', 'string', 'max:255'],
+                'measurements.*.'.$peran.'_ocr.*.confidence' => ['nullable', 'numeric', 'between:0,1'],
+            ], AnakTimbanganMentah::PERAN_URUT)),
             // Thermohygro: satu lembar memuat dua parameter, dan baris tabelnya
             // yang membedakan — bukan alatnya.
             'measurements.*.parameter' => ['sometimes', 'nullable', Rule::in(['suhu', 'kelembaban'])],
@@ -968,6 +996,17 @@ class CalibrationRequest extends FormRequest
         // ketiga pembacaan paralelisme dan sepuluh pembacaan blok Evaluation
         // diketik teknisi lalu hilang waktu tombol kirim ditekan.
         'height_gauge',
+        // Anak Timbangan — dan di sini yang hilang tanpa tempat simpan yang sah
+        // bukan sebagian angka, melainkan SELURUH sesinya: kelas OIML, neraca,
+        // dan keenam ujung kondisi ruangan adalah prasyarat tingkat-sesi di
+        // `AnakTimbanganCalculator::hitungSesi()`, jadi satu pun yang tidak
+        // sampai membuat `boleh_terbit` false dengan semua titik ditolak.
+        //
+        // Sebelum baris ini ada, blok dari HP jatuh ke penjaga "harus teks,
+        // bukan objek" dan sesinya ditolak 422 sebelum satu pun angka dibaca.
+        // Tidak ada test yang menangkapnya karena `AnakTimbanganSeeder` menulis
+        // sesi contohnya langsung ke database, melewati validator ini.
+        'anak_timbangan',
     ];
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
@@ -139,6 +140,46 @@ $kepalaAliran = <<<'DART'
 library;
 DART;
 
+$kepalaMassa = <<<'DART'
+/// Bentuk lembar kerja contoh **Anak Timbangan** (kelompok Massa, alat ke-29).
+///
+/// Berkas SENDIRI, bukan menumpang `contoh_lembar_kerja_massa.dart` yang memuat
+/// Timbangan (alat ke-21). Bentuk Timbangan lahir dari alat contoh `TB-100`
+/// (kapasitas 100 kg, resolusi 0,02 kg) — dia butuh Equipment, dan generator ini
+/// memanggil `bentukLembarKerja()` tanpa alat. Digabung, fixture Timbangan
+/// tertimpa bentuk yang bukan miliknya.
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan. Isinya salinan APA ADANYA respons
+/// `GET /api/calibrations/lembar-kerja?equipment_id=…`.
+///
+/// ## Yang cuma ada di lembar ini
+///
+///  1. **EMPAT tabel ber-`tahap` sama, satu per peran ABBA.** `at_s1`, `at_t1`,
+///     `at_t2`, `at_s2` — dan urutannya MENGIKAT, karena
+///     `de = (T1 − S1 − S2 + T2)/2` memberi tanda yang berbeda ke tiap suku.
+///     Baris yang mendarat di peran yang salah membalikkan ARAH koreksi
+///     kepingnya, tanpa satu pun error.
+///  2. **Kunci barisnya dipisah `offset_kunci`** (0 / 1000 / 2000 / 3000).
+///     Tanpa itu angka yang diketik di satu tabel muncul di tabel lain.
+///  3. **Keempatnya menyatakan `simpan_ke`** (`measurements[].at_*`). Sampai
+///     itu ada, payload dari HP berangkat tanpa satu pun kunci peran dan
+///     SELURUH titik pulang "belum dihitung" — lembar penuh di layar, nol titik
+///     terbit. Lihat `AlurPenuhAnakTimbanganTest` di repo API.
+///  4. **Tiga kotak yang MENGGERAKKAN ANGKA** di `identitas_alat`:
+///     `kelas_uut` dan `kelas_standar` memilih kolom tabel densitas OIML R111
+///     dan baris tabel MPE; `timbangan` memasok dua dari enam komponen budget.
+///     Ketiganya prasyarat tingkat-SESI — satu pun kosong, seluruh sesi ditolak.
+///  5. **Tekanan udara tetap diminta** walau kertas Rev.0 tidak punya kolomnya.
+///     Tanpa tekanan, densitas udara tidak bisa dihitung dan koreksi apung
+///     seluruh keping hilang.
+///
+/// Dropdown bersumber master (`master_alat`, `master_ruangan`,
+/// `master_thermohygro`) sengaja kosong di sini — sama seperti berkas contoh
+/// alat lain, mode mock memang nggak punya masternya.
+library;
+DART;
+
 $kepalaEnclosure = <<<'DART'
 /// Bentuk lembar kerja contoh **Enclosure** — Oven, Furnace, Bath, Inkubator,
 /// dan Refrigerator.
@@ -254,6 +295,13 @@ $kelompok = [
         'profil' => [
             'FlowmeterTotalizer' => FlowmeterTotalizerProfile::class,
             'FlowmeterFlowrate' => FlowmeterFlowrateProfile::class,
+        ],
+    ],
+    'anak_timbangan' => [
+        'berkas' => 'contoh_lembar_kerja_anak_timbangan.dart',
+        'kepala' => $kepalaMassa,
+        'profil' => [
+            'AnakTimbangan' => AnakTimbanganProfile::class,
         ],
     ],
     'enclosure' => [
