@@ -75,6 +75,9 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
      * @var list<string>
      */
     private const DIPERIKSA = [
+        // Alat ke-31 (15 Sep 2026). Tiga tabel titik (Outside/Inside/Depth) di
+        // satu sertifikat — yang paling panjang dari ketiga alat baru.
+        '001-CAL-126 (Jangka Sorong)',
         '001-UBLK-05.26 (Height Gauge)',
         '002-UB.P-11-20 (Outside Micrometer)',
         '003-UB.P-11-20 (Digital Outside Micrometer)',
@@ -87,7 +90,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '015-CAL-424 (Stopwatch)',
         '019-CAL-425 (Moisture Analyzer)',
         '0312-CAL-624 (Thermohygrometer)',
+        // Alat ke-30 (15 Sep 2026), sepuluh titik tumpukan balok ukur.
+        '0392-CAL-324 (Dial Consolidation)',
         '0513-CAL-1124 (Thermocouple Thermometer)',
+        // Alat ke-32 (15 Sep 2026), tiga baris: warp, weft, Ø kawat.
+        '0736-CAL-526 (Sieve Mesh)',
         '2211.11.R (Refractometer)',
         '22506.01.A (Temperature Calibrator)',
         '2405.03.AV (Incubator)',
@@ -142,6 +149,11 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '003-UB.P-11-20 (Digital Outside Micrometer)',
         '0106-CAL-1023 (Micrometer Digital)',
         '0312-CAL-624 (Thermohygrometer)',
+        // Dial Indicator (alat ke-30, 15 Sep 2026) — sebab yang sama dengan
+        // Height Gauge & Micrometer di atas: sesi contoh masternya SEPULUH titik
+        // tumpukan balok ukur. Lembarnya panjang sejak lahir, bukan tata letak
+        // yang menyusut.
+        '0392-CAL-324 (Dial Consolidation)',
         '22506.01.A (Temperature Calibrator)',
         '2406.32.C (Chlorine Meter)',
         '2406.51.S (Autoclave)',

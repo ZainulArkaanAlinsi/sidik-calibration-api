@@ -620,7 +620,13 @@ class DialIndicatorProfile extends CalibrationProfile
                     'baris' => array_map(
                         static fn (int $n): array => [
                             'nomor' => $n,
-                            'titik_ukur' => null,
+                            // `0`, BUKAN null. HP menahan baris ber-`titik_ukur`
+                            // null dari payload (`TitikState.siapKirim` — penanda
+                            // "set point belum ada" milik TIDS), jadi null di sini
+                            // membuat SELURUH titik Dial tidak pernah terkirim:
+                            // lembar penuh di layar, `measurements` kosong. Nominal
+                            // yang dipakai server tetap jumlah keping (`nominal`).
+                            'titik_ukur' => 0.0,
                             'label' => 'Titik '.$n,
                             'satuan' => self::SATUAN,
                         ],

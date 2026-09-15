@@ -3,6 +3,9 @@
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
+use App\Services\Calibration\Profiles\DialIndicatorProfile;
+use App\Services\Calibration\Profiles\JangkaSorongProfile;
+use App\Services\Calibration\Profiles\SieveProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
 use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
 use App\Services\Calibration\Profiles\Enclosure\InkubatorProfile;
@@ -274,7 +277,41 @@ $kepalaAutoclave = <<<'DART'
 library;
 DART;
 
+$kepalaDimensi = <<<'DART'
+/// Bentuk lembar kerja contoh **Dial Indicator, Jangka Sorong, Sieve Mesh**
+/// (kelompok Panjang, alat ke-30..32).
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan. Micrometer & Height Gauge tetap di
+/// `contoh_lembar_kerja_panjang.dart`; berkas ini terpisah supaya berkas lama
+/// yang tidak digenerate tidak ikut tertimpa.
+///
+/// ## Yang cuma ada di lembar-lembar ini
+///
+///  1. **Dial Indicator** — nominal tiap baris TUMPUKAN balok ukur (`kolom_baris`
+///     `nominal` bertipe `daftar_angka`, mis. `2,5+1,3+1,2`), enam penunjukan
+///     berlabel UP/DOWN (`pengulangan_arah`), dan field tingkat-bagian
+///     `balok_pra_evaluasi` yang juga `daftar_angka`. Koma di dalamnya koma
+///     DESIMAL, bukan pemisah.
+///  2. **Jangka Sorong** — TIGA tabel titik (`simpan_ke`
+///     `measurements[].js_outside|js_inside|js_depth`) yang digabung per POSISI
+///     baris; server memecahnya ke `titik_ke` 1.. / 101.. / 201...
+///  3. **Sieve Mesh** — opening TIDAK lewat `measurements[]`: tabelnya
+///     `simpan_ke: spesifikasi_alat.sieve.opening` dengan tiga kolom
+///     (warp/weft/kawat), baris = nomor opening (sampai 100).
+library;
+DART;
+
 $kelompok = [
+    'dimensi' => [
+        'berkas' => 'contoh_lembar_kerja_dimensi.dart',
+        'kepala' => $kepalaDimensi,
+        'profil' => [
+            'DialIndicator' => DialIndicatorProfile::class,
+            'JangkaSorong' => JangkaSorongProfile::class,
+            'Sieve' => SieveProfile::class,
+        ],
+    ],
     'autoclave' => [
         'berkas' => 'contoh_lembar_kerja_autoclave.dart',
         'kepala' => $kepalaAutoclave,

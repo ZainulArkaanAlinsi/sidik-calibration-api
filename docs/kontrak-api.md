@@ -339,7 +339,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 >
 > ### `punya_toleransi` — Update 27 Agt
 >
-> **`false` = jenis alat ini NGGAK divonis PASS/FAIL, jadi `equipments.toleransi` boleh kosong.** Berlaku buat **24 dari 29** profil — yang DIVONIS justru minoritas: cuma pH Meter, Turbidimeter, Chlorine Meter, Refractometer, dan Viscometer. Sisanya (Conductivity, Spectrophotometer, Autoklaf, DO Meter, Gas Detector, TITS, TIDS, Timbangan, Anak Timbangan, kelima Enclosure, ketiga alat suhu, ketiga alat Waktu & Frekuensi, Micrometer, Height Gauge, dan kedua Flowmeter Ultrasonic) masternya berhenti di `Correction` + `U95%` — nggak ada batas keberterimaan sama sekali di lembar kerjanya.
+> **`false` = jenis alat ini NGGAK divonis PASS/FAIL, jadi `equipments.toleransi` boleh kosong.** Berlaku buat **27 dari 32** profil — yang DIVONIS justru minoritas: cuma pH Meter, Turbidimeter, Chlorine Meter, Refractometer, dan Viscometer. Sisanya (Conductivity, Spectrophotometer, Autoklaf, DO Meter, Gas Detector, TITS, TIDS, Timbangan, Anak Timbangan, kelima Enclosure, ketiga alat suhu, ketiga alat Waktu & Frekuensi, Micrometer, Height Gauge, kedua Flowmeter Ultrasonic, Dial Indicator, Jangka Sorong, dan Sieve — yang terakhir divonis dari Tabel MPE ASTM E11 di server, bukan dari toleransi alat) masternya berhenti di `Correction` + `U95%` — nggak ada batas keberterimaan sama sekali di lembar kerjanya.
 >
 > `true` juga buat nama alat yang nggak dikenal profil mana pun (jalur generik): di situ toleransi memang penentu PASS/FAIL-nya.
 >
@@ -390,7 +390,7 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Aturan lain yang bikin `422` (siapin pesannya di UI)
 > - **Tiap titik ukur minimal 2 pembacaan.** Type A itu standar deviasi antar-pengulangan — dari satu angka nggak ada sebaran yang bisa dihitung. (Aturan "minimal 3" yang kamu tulis di contoh reject itu **nggak** dipaksain backend — biar tetap jadi penilaian admin.)
 > - **Alat yang `toleransi`-nya masih kosong ditolak — TAPI cuma buat alat yang emang divonis PASS/FAIL.** Tanpa batas, PASS/FAIL nggak ada artinya. Isi dulu lewat `PUT /api/equipments/{id}`.
->   **⚠️ Update 27 Agt — batasannya:** 24 dari 29 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
+>   **⚠️ Update 27 Agt — batasannya:** 27 dari 32 profil (semua kecuali pH, Turbidimeter, Chlorine, Refractometer, Viscometer) masternya emang berhenti di `U95%` tanpa batas keberterimaan, dan `CalibrationValidator::periksaKelengkapanHitung()` sengaja melewatinya — 422-nya nggak pernah datang buat alat-alat itu. Jangan dibaca sebagai "semua alat wajib toleransi": bacaan itu bikin form Alat mewajibkan kolom yang nggak punya isi yang benar, dan teknisi ngarang angkanya. Tanya server lewat `punya_toleransi` di `GET /api/categories/{kode}` (§3).
 > - **Standar yang sertifikatnya kadaluarsa ditolak.** Ketertelusurannya putus.
 > - `tanggal_kalibrasi` nggak boleh di masa depan.
 >
