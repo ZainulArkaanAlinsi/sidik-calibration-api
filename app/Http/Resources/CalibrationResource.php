@@ -305,14 +305,24 @@ class CalibrationResource extends JsonResource
                     ])
                     ->values(),
             ),
-            'titik' => $this->uncertaintyCalculations
-                ->sortBy('titik_ke')
-                ->values()
-                ->map(fn (UncertaintyCalculation $titik): array => self::petakanTitik(
-                    $titik,
-                    $this->equipment,
-                    $this->organization ?? $request->user()?->organization,
-                )),
+            // `?ringkas=1` dipakai layar DAFTAR di HP/laptop, yang tidak pernah
+            // membaca `titik` — detailnya diambil segar dari `/calibrations/{id}`.
+            // Diukur di produksi 15 Sep 2026: `titik` = 22,9 KB dari ~26 KB per
+            // sesi, dan satu halaman daftar makan 3,7 s di server 0,1 CPU.
+            // Ditarik berkala dari beberapa perangkat, antreannya melewati batas
+            // tunggu aplikasi dan tombol kirim jadi "Server nggak nyaut".
+            // Tanpa parameter ini bentuknya tetap utuh, untuk pemanggil lain.
+            'titik' => $this->when(
+                ! $request->boolean('ringkas'),
+                fn () => $this->uncertaintyCalculations
+                    ->sortBy('titik_ke')
+                    ->values()
+                    ->map(fn (UncertaintyCalculation $titik): array => self::petakanTitik(
+                        $titik,
+                        $this->equipment,
+                        $this->organization ?? $request->user()?->organization,
+                    )),
+            ),
 
             // Status verifikasi pembacaan — cuma ikut waktu detail sesi dibuka
             // (whenLoaded), biar daftar sesi nggak kebanjiran baris pembacaan.

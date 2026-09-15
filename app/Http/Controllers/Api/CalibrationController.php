@@ -97,6 +97,10 @@ class CalibrationController extends Controller
     private const RELASI = [
         'equipment.customer', 'teknisi', 'reviewer', 'standard', 'thermohygro', 'standarDicek',
         'calibrationMethod', 'room', 'uncertaintyCalculations.standard', 'certificate',
+        // `CalibrationResource` membaca `$this->organization` untuk desimal
+        // tiap sesi. Tanpa dimuat di sini, satu halaman daftar = 16 query
+        // `organizations` (diukur di produksi 15 Sep 2026) di server 0,1 CPU.
+        'organization',
     ];
 
     /**

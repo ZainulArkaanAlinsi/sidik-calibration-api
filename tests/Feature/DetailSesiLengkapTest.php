@@ -319,4 +319,75 @@ class DetailSesiLengkapTest extends TestCase
         // tumbuh seiring jumlah baris", bukan angka persisnya.
         $this->assertLessThan(25, $jumlah, "Query-nya {$jumlah} — kemungkinan ada relasi yang belum di-eager-load.");
     }
+
+    /**
+     * Batas longgar di atas meloloskan `organizations` sekali per baris: di
+     * produksi 15 Sep 2026 satu halaman daftar = 16 query organisasi di server
+     * 0,1 CPU. Yang dijaga di sini jumlahnya TIDAK TUMBUH dari 3 ke 12 sesi.
+     */
+    public function test_jumlah_query_daftar_tidak_tumbuh_bersama_jumlah_sesi(): void
+    {
+        $hitung = function (): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->actingAs($this->teknisi)->getJson('/api/calibrations')->assertOk();
+            $jumlah = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $jumlah;
+        };
+
+        $buat = fn (int $n) => CalibrationSession::factory()->count($n)->create([
+            'teknisi_id' => $this->teknisi->id,
+            'reviewed_by' => $this->admin->id,
+            'equipment_id' => $this->sesi->equipment_id,
+            'standard_id' => $this->standar->id,
+        ]);
+
+        $buat(2);
+        $sedikit = $hitung();
+
+        $buat(9);
+        $banyak = $hitung();
+
+        // `<=`, bukan `===`: pemanggilan kedua bisa satu query lebih sedikit
+        // karena ada yang sudah ter-cache. Yang dilarang cuma TUMBUH.
+        $this->assertLessThanOrEqual($sedikit, $banyak, "3 sesi = {$sedikit} query, 12 sesi = {$banyak} query — ada relasi per baris yang belum di-eager-load.");
+    }
+
+    public function test_daftar_ringkas_tanpa_titik_dan_bawaan_tetap_utuh(): void
+    {
+        $this->sesi->uncertaintyCalculations()->create([
+            'standard_id' => $this->standar->id,
+            'titik_ke' => 1,
+            'titik_ukur' => 7.0,
+            'rata_rata' => 7.03,
+            'error' => 0.03,
+            'koreksi' => -0.03,
+            'jumlah_pengulangan' => 3,
+            'type_a' => 0.00577350,
+            'type_b' => 0.01055448,
+            'ketidakpastian_gabungan' => 0.01055448,
+            'faktor_cakupan_k' => 2,
+            'ketidakpastian_diperluas' => 0.02110895,
+            'keputusan' => 'PASS',
+        ]);
+
+        // Bawaan (tanpa parameter): bentuknya tidak berubah untuk pemanggil lama.
+        $this->actingAs($this->teknisi)->getJson('/api/calibrations')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.0.titik');
+
+        // Layar daftar di HP/laptop: `titik` tidak ikut, ringkasan lain tetap.
+        $this->actingAs($this->teknisi)->getJson('/api/calibrations?ringkas=1')
+            ->assertOk()
+            ->assertJsonMissingPath('data.0.titik')
+            ->assertJsonPath('data.0.id', $this->sesi->id)
+            ->assertJsonPath('data.0.equipment.id', $this->sesi->equipment_id);
+
+        // Detail sesi tidak terpengaruh.
+        $this->actingAs($this->teknisi)->getJson("/api/calibrations/{$this->sesi->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data.titik');
+    }
 }
