@@ -1,0 +1,53 @@
+{
+    "_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), password spirit285. Balok ukur dibaca dari tabel-standar-micrometer.json — set fisik yang sama, sudah diadu skrip ini.",
+    "_digenerate_oleh": "docs/skrip/gen-tabel-standar-dial-indicator.py",
+    "standar": {
+        "nama": "Gauge Block Standard",
+        "merk_tipe": "Metrology/GB-9122-0",
+        "seri": "160006",
+        "traceability": "LK-410-IDN",
+        "tanggal_kalibrasi": "2024-01-24",
+        "interval_tahun": 3
+    },
+    "cmc": [
+        {
+            "kode": "A",
+            "label": "0-25mm",
+            "kapasitas_maks_mm": 25.0,
+            "u95_mm": 0.0065
+        },
+        {
+            "kode": "B",
+            "label": "25-50mm",
+            "kapasitas_maks_mm": 50.0,
+            "u95_mm": 0.0086
+        },
+        {
+            "kode": "C",
+            "label": "50-100mm",
+            "kapasitas_maks_mm": 100.0,
+            "u95_mm": 0.0089
+        },
+        {
+            "kode": "D",
+            "label": "100-300mm",
+            "kapasitas_maks_mm": 300.0,
+            "u95_mm": 0.009699999999999999
+        }
+    ],
+    "konstanta": {
+        "suhu_acuan_c": 20.0,
+        "delta_alpha_per_c": 1e-05,
+        "u_alpha_pengali": 2.0,
+        "pembagi_muai": 2.449489742783178,
+        "alpha_per_c": 1.2e-06,
+        "pengulangan_pembagi_n": 5,
+        "drift_a_um": 0.02,
+        "drift_b_um_per_mm": 0.00025,
+        "drift_pembagi_umur": 12,
+        "wringing_um_per_keping": 0.05,
+        "tegak_lurus_mm": 0.002,
+        "meja_granit_mm": 0.0062,
+        "vi_type_b": 200
+    }
+}

@@ -171,7 +171,9 @@ class ProfilDariNamaAlatTest extends TestCase
             // kerjanya sendiri (alat ke-25, kelompok Dimensi), dari EMPAT
             // workbook master yang turun dari lab. Yang menjaga arah
             // sebaliknya — `test_micrometer_dapat_lembarnya_sendiri` di bawah.
-            'Dial Indicator' => ['Dial Indicator'],
+            // Dial Indicator PINDAH dari sini 15 Sep 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-30, lampiran no. 36). Yang menjaga arah
+            // sebaliknya — `test_dial_indicator_dapat_lembarnya_sendiri`.
             // Kedua Flow Meter Cairan PINDAH dari sini 8 Sep 2026: sekarang
             // punya lembar kerjanya sendiri (alat ke-27 & ke-28, kelompok
             // Aliran, lampiran akreditasi no. 30 & 31), dari dua workbook
@@ -228,7 +230,7 @@ class ProfilDariNamaAlatTest extends TestCase
             // dan yang dijaga di sini tetap hal yang sama: dia tidak boleh
             // nyasar ke `timer_stopwatch`.
             'aliran per menit, BUKAN waktu' => ['Flow Meter Cairan (Flowrate)', 'flowmeter_flowrate'],
-            'panjang, BUKAN waktu' => ['Dial Indicator', null],
+            'panjang, BUKAN waktu' => ['Dial Indicator', 'dial_indicator'],
         ];
     }
 
@@ -267,10 +269,73 @@ class ProfilDariNamaAlatTest extends TestCase
             'bermerk + rentang' => ['Micrometer Mitutoyo 0-25mm', 'micrometer'],
             'outside micrometer' => ['Outside Micrometer', 'micrometer'],
             'mikrometer luar' => ['Mikrometer Luar', 'micrometer'],
-            'jangka sorong, BUKAN micrometer' => ['Jangka Sorong', null],
-            'vernier caliper, BUKAN micrometer' => ['Vernier Caliper', null],
-            'dial indicator, BUKAN micrometer' => ['Dial Indicator', null],
+            'jangka sorong, BUKAN micrometer' => ['Jangka Sorong', 'jangka_sorong'],
+            'vernier caliper, BUKAN micrometer' => ['Vernier Caliper', 'jangka_sorong'],
+            'dial indicator, BUKAN micrometer' => ['Dial Indicator', 'dial_indicator'],
         ];
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-30: nama yang HARUS mendarat di
+     * `dial_indicator` — termasuk nama alat sesi contoh master (`Dial
+     * Consolidation`, tanpa kata "Indicator") — dan tetangga yang HARUS tidak.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaDialIndicator(): array
+    {
+        return [
+            'lampiran akreditasi no. 36' => ['Dial Indicator', 'dial_indicator'],
+            'nama sesi contoh master' => ['Dial Consolidation', 'dial_indicator'],
+            'dial gauge' => ['Dial Gauge Mitutoyo 2046S', 'dial_indicator'],
+            'ejaan Indonesia' => ['Dial Indikator', 'dial_indicator'],
+            'jam ukur' => ['Jam Ukur', 'dial_indicator'],
+            'height gauge, BUKAN dial' => ['Height Gauge', 'height_gauge'],
+            'micrometer, BUKAN dial' => ['Micrometer', 'micrometer'],
+            'pressure gauge, BUKAN dial' => ['Pressure Gauge', null],
+        ];
+    }
+
+    /**
+     * Arah sebaliknya buat alat ke-31 & ke-32. Yang paling rawan: `Caliper
+     * Checker` — STANDAR lembar Height Gauge — tidak boleh mendarat di lembar
+     * Jangka Sorong hanya karena memuat kata "Caliper".
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaJangkaSorongDanSieve(): array
+    {
+        return [
+            'lampiran no. 35' => ['Vernier Caliper', 'jangka_sorong'],
+            'jangka sorong digital' => ['Jangka Sorong Digital', 'jangka_sorong'],
+            'digital caliper' => ['Digital Caliper', 'jangka_sorong'],
+            'caliper checker BUKAN jangka sorong' => ['Caliper Checker', null],
+            'lampiran no. 33' => ['Sieve', 'sieve'],
+            'sieve mesh' => ['Sieve Mesh', 'sieve'],
+            'test sieve bermerk' => ['Test Sieve ASTM E11', 'sieve'],
+            'ayakan' => ['Ayakan', 'sieve'],
+            'height gauge tetap height gauge' => ['Height Gauge', 'height_gauge'],
+        ];
+    }
+
+    #[DataProvider('namaJangkaSorongDanSieve')]
+    public function test_jangka_sorong_dan_sieve_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    #[DataProvider('namaDialIndicator')]
+    public function test_dial_indicator_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
     }
 
     #[DataProvider('namaDimensi')]

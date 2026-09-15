@@ -58,7 +58,9 @@ class CertificateSnapshotBuilder
         // Sesi tanpa alat sama sekali dianggap DI DALAM lingkup — perilaku lama
         // dipertahankan. Yang mencabut klaim harus pernyataan eksplisit sebuah
         // profil, bukan ketiadaan data.
-        $dalamLingkup = $profil?->dalamLingkupAkreditasi() ?? true;
+        // Per SESI, bukan per profil — lampiran membatasi rentang (Vernier
+        // Caliper 0-300 mm), dan caliper 600 mm tidak boleh terbit membawa klaim.
+        $dalamLingkup = $profil?->dalamLingkupAkreditasiSesi($sesi) ?? true;
 
         return [
             'versi' => self::VERSI,

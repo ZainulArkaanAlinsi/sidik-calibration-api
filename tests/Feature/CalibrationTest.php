@@ -48,7 +48,10 @@ class CalibrationTest extends TestCase
         $kategori = EquipmentCategory::factory()->create(['kode' => 'panjang', 'nama' => 'Panjang']);
 
         $this->alat = Equipment::factory()->create([
-            'nama_alat' => 'Jangka Sorong Mitutoyo',
+            // BUKAN "Jangka Sorong" lagi (sampai 15 Sep 2026): nama itu sekarang
+            // diklaim `JangkaSorongProfile`, dan test ini menguji jalur GENERIK
+            // pembacaan datar + PASS/FAIL — alatnya wajib tidak berprofil.
+            'nama_alat' => 'Mistar Baja Mitutoyo',
             'customer_id' => $pelanggan->id,
             'equipment_category_id' => $kategori->id,
             'satuan' => 'mm',
@@ -159,7 +162,7 @@ class CalibrationTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('data.status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
             ->assertJsonPath('data.hasil.keputusan', 'PASS')
-            ->assertJsonPath('data.equipment.nama_alat', 'Jangka Sorong Mitutoyo')
+            ->assertJsonPath('data.equipment.nama_alat', 'Mistar Baja Mitutoyo')
             ->assertJsonPath('data.teknisi.id', $this->teknisi->id)
             ->assertJsonPath('data.catatan_revisi', null)
             ->assertJsonPath('data.certificate_id', null)

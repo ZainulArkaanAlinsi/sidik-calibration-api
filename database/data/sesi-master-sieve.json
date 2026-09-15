@@ -1,0 +1,381 @@
+{
+    "_catatan": "Sesi contoh dari Master Olah Data_Sieve Mesh.xlsm (pw spirit285). Yang ditanam SieveSeeder cuma MASUKANNYA; koreksi, budget, dan vonis dihitung profilnya. `_acuan_master` dipakai SieveMasterTest.",
+    "_digenerate_oleh": "docs/skrip/gen-sesi-sieve.py",
+    "_sesi": {
+        "nama_alat": "Sieve Mesh",
+        "merk": "Soiltest, Inch",
+        "model": "ASTM E11",
+        "serial": "SK 19",
+        "tipe": "inspection",
+        "nominal": 19.0,
+        "satuan": "mm",
+        "standar_dipakai": "caliper",
+        "frame_diameter_mm": [
+            200.0
+        ],
+        "frame_tinggi_mm": [
+            68.52
+        ],
+        "pelanggan": "PT Geoteknik Contoh Nusantara",
+        "alamat": "Jl. Contoh No. 41, Bandung 40124",
+        "tanggal_terima": "2026-05-09",
+        "tanggal": "2026-05-11",
+        "nomor_sertifikat": "0736-CAL-526",
+        "nomor_order": "2605.60.B",
+        "suhu_awal": 20.1,
+        "suhu_akhir": 20.3,
+        "rh_awal": 54.0,
+        "rh_akhir": 55.0,
+        "thermohygro": "TH-1"
+    },
+    "opening": [
+        {
+            "no": 1,
+            "warp": 19.06,
+            "weft": 18.94,
+            "kawat": 3.34
+        },
+        {
+            "no": 2,
+            "warp": 19.04,
+            "weft": 19.28,
+            "kawat": 3.4
+        },
+        {
+            "no": 3,
+            "warp": 19.14,
+            "weft": 19.12,
+            "kawat": 3.5
+        },
+        {
+            "no": 4,
+            "warp": 19.16,
+            "weft": 19.19,
+            "kawat": 3.42
+        },
+        {
+            "no": 5,
+            "warp": 19.15,
+            "weft": 19.22,
+            "kawat": 3.37
+        },
+        {
+            "no": 6,
+            "warp": 19.2,
+            "weft": 19.29,
+            "kawat": 3.37
+        },
+        {
+            "no": 7,
+            "warp": 19.17,
+            "weft": 19.27,
+            "kawat": 3.34
+        },
+        {
+            "no": 8,
+            "warp": 19.19,
+            "weft": 19.12,
+            "kawat": 3.33
+        },
+        {
+            "no": 9,
+            "warp": 19.16,
+            "weft": 19.19,
+            "kawat": 3.42
+        },
+        {
+            "no": 10,
+            "warp": 19.15,
+            "weft": 19.22,
+            "kawat": 3.37
+        },
+        {
+            "no": 11,
+            "warp": 19.2,
+            "weft": 19.29,
+            "kawat": 3.37
+        },
+        {
+            "no": 12,
+            "warp": 19.17,
+            "weft": 19.27,
+            "kawat": 3.34
+        },
+        {
+            "no": 13,
+            "warp": 19.19,
+            "weft": 19.12,
+            "kawat": 3.33
+        },
+        {
+            "no": 14,
+            "warp": 19.06,
+            "weft": 18.94,
+            "kawat": 3.34
+        },
+        {
+            "no": 15,
+            "warp": 19.04,
+            "weft": 19.28,
+            "kawat": 3.4
+        }
+    ],
+    "_acuan_master": {
+        "nominal_mm": 19.0,
+        "kawat_nominal_mm": 3.15,
+        "minimum_opening_master": 15.0,
+        "rata_rata": {
+            "warp": 19.138666666666666,
+            "weft": 19.182666666666666,
+            "kawat": 3.3759999999999994
+        },
+        "simpangan_baku": {
+            "warp": 0.05841558826529973,
+            "weft": 0.11640242183702054,
+            "kawat": 0.04626013402488151
+        },
+        "indeks_koreksi": {
+            "warp": 21.0,
+            "weft": 21.0,
+            "kawat": 2.5
+        },
+        "terkoreksi_master": {
+            "warp": 19.138666666666666,
+            "weft": 19.182666666666666,
+            "kawat": 3.3759999999999994
+        },
+        "simpangan_baku_pengulangan": {
+            "warp": 0.061886993787063464,
+            "weft": 0.13017936344392886,
+            "kawat": 0.05621387729022079
+        },
+        "pengulangan_cache": {
+            "warp": [
+                19.06,
+                19.04,
+                19.14,
+                19.16,
+                19.15,
+                19.2
+            ],
+            "weft": [
+                18.94,
+                19.28,
+                19.12,
+                19.19,
+                19.22,
+                19.29
+            ],
+            "kawat": [
+                3.34,
+                3.4,
+                3.5,
+                3.42,
+                3.37,
+                3.37
+            ]
+        },
+        "budget": {
+            "warp": {
+                "komponen": [
+                    {
+                        "baris": 11,
+                        "u": 0.015,
+                        "pembagi": 2.0,
+                        "vi": 200.0,
+                        "ui": 0.0075,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 12,
+                        "u": 0.005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 1000000.0,
+                        "ui": 0.002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 13,
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 14,
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0,
+                        "ci": 0.00038
+                    },
+                    {
+                        "baris": 15,
+                        "u": 2e-05,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 1.1547005383792517e-05,
+                        "ci": 3.800000000000054
+                    },
+                    {
+                        "baris": 16,
+                        "u": 0.061886993787063464,
+                        "pembagi": 6.0,
+                        "vi": 5.0,
+                        "ui": 0.010314498964510577,
+                        "ci": 1.0
+                    }
+                ],
+                "uc": 0.01307889448267283,
+                "veff": 12.836215277905852,
+                "k": 2.0,
+                "u_diperluas": 0.02615778896534566,
+                "cmc_mm": 0.02,
+                "u95_sertifikat": 0.02615778896534566
+            },
+            "weft": {
+                "komponen": [
+                    {
+                        "baris": 28,
+                        "u": 0.015,
+                        "pembagi": 2.0,
+                        "vi": 200.0,
+                        "ui": 0.0075,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 29,
+                        "u": 0.005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 1000000.0,
+                        "ui": 0.002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 30,
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 31,
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0,
+                        "ci": 0.00038
+                    },
+                    {
+                        "baris": 32,
+                        "u": 2e-05,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 1.1547005383792517e-05,
+                        "ci": 3.800000000000054
+                    },
+                    {
+                        "baris": 33,
+                        "u": 0.13017936344392886,
+                        "pembagi": 6.0,
+                        "vi": 5.0,
+                        "ui": 0.021696560573988142,
+                        "ci": 1.0
+                    }
+                ],
+                "uc": 0.023138913819380904,
+                "veff": 6.465815454777099,
+                "k": 2.0,
+                "u_diperluas": 0.04627782763876181,
+                "cmc_mm": 0.02,
+                "u95_sertifikat": 0.04627782763876181
+            },
+            "kawat": {
+                "komponen": [
+                    {
+                        "baris": 46,
+                        "u": 0.015,
+                        "pembagi": 2.0,
+                        "vi": 200.0,
+                        "ui": 0.0075,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 47,
+                        "u": 0.005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 1000000.0,
+                        "ui": 0.002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 48,
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0
+                    },
+                    {
+                        "baris": 49,
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 0.0,
+                        "ci": 0.00038
+                    },
+                    {
+                        "baris": 50,
+                        "u": 2e-05,
+                        "pembagi": 1.7320508075688772,
+                        "vi": 50.0,
+                        "ui": 1.1547005383792517e-05,
+                        "ci": 3.800000000000054
+                    },
+                    {
+                        "baris": 51,
+                        "u": 0.05621387729022079,
+                        "pembagi": 6.0,
+                        "vi": 5.0,
+                        "ui": 0.009368979548370132,
+                        "ci": 1.0
+                    }
+                ],
+                "uc": 0.012346917420059866,
+                "veff": 14.927912139857908,
+                "k": 2.0,
+                "u_diperluas": 0.024693834840119732,
+                "cmc_mm": 0.02,
+                "u95_sertifikat": 0.024693834840119732
+            }
+        },
+        "sertifikat": {
+            "warp": {
+                "koreksi": 0.1386666666666656,
+                "y_mm": 0.522,
+                "vonis": "PASS"
+            },
+            "weft": {
+                "koreksi": 0.1826666666666661,
+                "y_mm": 0.522,
+                "vonis": "PASS"
+            },
+            "kawat": {
+                "koreksi": 0.22599999999999953,
+                "min_mm": 2.7,
+                "max_mm": 3.6,
+                "vonis": "PASS"
+            },
+            "stdev_warp": {
+                "max_mm": 0.547,
+                "vonis": "PASS"
+            },
+            "stdev_weft": {
+                "max_mm": 0.547,
+                "vonis": "PASS"
+            }
+        }
+    }
+}

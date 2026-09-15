@@ -10,11 +10,14 @@ use App\Services\GumCalculator;
 use App\Services\RumusKalibrasi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
+use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
 use Illuminate\Console\Command;
@@ -168,6 +171,17 @@ class HitungUlangSesi extends Command
                 // bukan miliknya, dan angkanya salah tanpa satu pun error.
                 $anakTimbangan = AnakTimbanganMentah::dari($baris);
 
+                // Tumpukan balok ukur + penunjukan UP/DOWN lembar Dial
+                // Indicator (`di_balok`/`di_pembacaan`). Diperiksa DULUAN dengan
+                // alasan yang sama dengan tujuh di atas — kejadian KETIGA BELAS.
+                $dial = DialIndicatorMentah::dari($baris);
+
+                // Opening Sieve Mesh (`sieve_*`, `sensor_ke` = nomor opening) dan
+                // tiga tabel Jangka Sorong (`js_<grup>_*`). Diperiksa DULUAN
+                // dengan alasan yang sama — kejadian ke-14 & ke-15.
+                $sieve = SieveMentah::dari($baris);
+                $jangkaSorong = JangkaSorongMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -179,7 +193,33 @@ class HitungUlangSesi extends Command
                 // titiknya di-`continue` — perintahnya "sukses" tanpa
                 // menghitung apa pun, dan angkanya kelihatan utuh karena
                 // memang nggak pernah disentuh.
-                if ($anakTimbangan !== []) {
+                if ($sieve !== []) {
+                    // Minimum opening, opening 1..6, dan MPE ditegakkan
+                    // kalkulatornya tingkat SESI dengan alasan kebaca — menahan
+                    // di sini membuat grup yang tertahan hilang tanpa alasan.
+                    if (array_sum(array_map('count', $sieve)) === 0) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($jangkaSorong !== []) {
+                    // Gerbangnya PEMBACAAN: titik yang cuma punya nominal
+                    // melahirkan "koreksi" sebesar total nominalnya.
+                    if (count($jangkaSorong[JangkaSorongMentah::KONTEKS_PEMBACAAN] ?? []) < 1) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($dial !== []) {
+                    // Gerbangnya PENUNJUKAN, bukan jumlah baris: titik yang
+                    // cuma punya keping balok tanpa satu penunjukan pun
+                    // melahirkan "koreksi" sebesar total nominalnya.
+                    if ($dial[DialIndicatorMentah::PERAN_PEMBACAAN] === []) {
+                        continue;
+                    }
+
+                    $nilai = [];
+                } elseif ($anakTimbangan !== []) {
                     // Gerbangnya KEEMPAT peran, bukan jumlah baris: satu keping
                     // berisi sampai 12 baris (4 peran x 3 pengulangan), jadi
                     // hitungan datar tetap lolos walau satu peran kosong — dan
@@ -386,6 +426,13 @@ class HitungUlangSesi extends Command
                         // Blok tingkat-sesinya (kelas OIML, neraca, meter,
                         // kondisi ruangan) ikut lewat `spesifikasi_alat`.
                         ...$anakTimbangan,
+                        // Tumpukan balok + penunjukan Dial Indicator. Blok
+                        // Evaluation ikut lewat `spesifikasi_alat` di bawah.
+                        ...$dial,
+                        // Opening Sieve Mesh & tiga tabel Jangka Sorong. Blok
+                        // tingkat-sesinya ikut lewat `spesifikasi_alat` di bawah.
+                        ...$sieve,
+                        ...$jangkaSorong,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

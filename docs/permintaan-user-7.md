@@ -3303,6 +3303,78 @@ Tabel CMC yang menggoda di `DATABASE` (sembilan pita) **tidak dipungut**:
 labelnya sendiri berbunyi "Jenis Timbangan", dan namanya menunjuk workbook lain
 lewat tautan luar.
 
+## §30 — Alat ke-30..32: **Dial Indicator, Jangka Sorong, Sieve Mesh** — 15 Sep 2026
+
+Tiga workbook master (pw `spirit285`) dari pemilik proyek, beserta analisis & prompt
+implementasi yang ditempel. Kelompok Panjang di lampiran LK-285-IDN sekarang **lengkap
+berprofil**: Sieve (no. 33), Micrometer (34), Vernier Caliper (35), Dial Indicator (36).
+
+### Bukti sebelum kode
+
+Ketiga workbook didekripsi dan tiap sel di-dump nilai + rumusnya, lalu direimplementasi di
+Python dari INPUT mentah:
+
+| Alat | Sel diadu | Beda | Test PHP yang menjaga |
+|---|---|---|---|
+| Dial Indicator | 108 | 0 (1·10⁻⁹) | `DialIndicatorMasterTest` 9 test / 109 asersi |
+| Jangka Sorong | 311 | 0 (5·10⁻⁶) | `JangkaSorongMasterTest` 10 test |
+| Sieve Mesh | 189 | 0 (5·10⁻⁶) | `SieveMasterTest` 16 test / 168 asersi |
+
+Jalur HP → server → hitung ulang dijaga `DialIndicatorSesiTest` (6) dan `JangkaSorongSieveSesiTest` (4).
+
+### Klaim prompt yang ternyata SALAH atau kurang
+
+- Dial Indicator "5 repeat, √5" — Evaluation-nya **sepuluh** bacaan, dibagi √5 (pertanyaan §1).
+  Kertas FM-0526 malah memungut **enam** bacaan per nominal (UP×3 + DOWN×3), workbook lima (§6).
+- Nomor **formulir** `SIDIK-FM-CAL-0526` itu kertas **Dial Indicator**; Sieve `0536`, Jangka Sorong
+  `0527`. (Nomor IK `IK-CAL-0526` memang Sieve — dua deret nomor yang berbeda.)
+- Sieve "6 pengulangan H89:M91" — rentangnya H89:N91 dan isinya **rumus salinan opening 1..6**,
+  bukan pengukuran ulang. Koreksi standar master **selalu 0** (VLOOKUP menunjuk kolom kosong).
+- Sieve "CMC 45 µm–2 mm / 2–150 mm" benar untuk master, **berbeda** dari lampiran (45–4000 µm / 4–100 mm).
+- Jangka Sorong "Kerataan boolean eksklusif" — dua checkbox terpisah; satuan µm tidak ada. Master
+  **tanpa lantai CMC** padahal Vernier Caliper ada di lampiran; repeatability Depth selalu 0.
+
+### Keputusan yang diambil hari ini
+
+- **Koma desimal:** `App\Support\AngkaDesimal` — `"19,06"` → 19.06 di pembacaan, nominal, titik ukur,
+  suhu, kelembapan untuk SEMUA lembar (sebelumnya 422). Bentuk ambigu `1.234,5` tetap ditolak. HP sudah
+  membakukan sendiri (`parseAngka`); ini lapis kedua.
+- **k:** Dial & Jangka Sorong dari t-Student v_eff (`GumCalculator::agregasiBudget`); Sieve dipatok 2
+  (ditiru dari master, pertanyaan lab).
+- **Lantai CMC dipasang di ketiga alat.** Dial Indicator & Sieve di luar pita lampiran → sesi diblokir.
+- **Jangka Sorong > 300 mm** (sesi contoh master 600 mm): terbit **tanpa lantai CMC dan tanpa klaim
+  akreditasi** — hook baru `CalibrationProfile::dalamLingkupAkreditasiSesi()`, dibekukan ke snapshot.
+  Preseden Height Gauge, tapi per SESI karena lampiran membatasi rentang, bukan jenis alat.
+  **Menunggu konfirmasi pemilik proyek.**
+- **Nominal di luar daftar terkalibrasi** (balok ukur, caliper checker, Tabel_MPE) → titik diblokir
+  dengan alasan yang menyebut angkanya. Master menghilangkannya diam-diam lewat `IFERROR`.
+- **Dial Indicator Evaluation identik terbit + peringatan** (beda dari Micrometer/Height Gauge, di mana
+  itu terbukti data rusak).
+- **Sieve:** minimum opening ditegakkan dengan kolom tipe yang BENAR (Calibration = kolom 7), nominal
+  tidak dijepret ke terdekat, standar kedaluwarsa diblokir, verdict ±Y memakai guarded acceptance
+  (keputusan 14 Jul).
+- `kalibrasi:uji-profil` sekarang mendahulukan alat yang punya sesi terhitung — alat demo "Jangka Sorong
+  Mitutoyo" (id kecil, nol sesi) sempat menutupi sesi contoh master.
+
+### Nol kolom baru
+
+`raw_measurements` memakai `peran_sensor`/`sensor_ke` yang sudah ada: `di_balok`/`di_pembacaan`,
+`js_<grup>_nominal`/`js_<grup>_pembacaan` (titik_ke 1../101../201..), `sieve_warp|weft|kawat`
+(`sensor_ke` = nomor opening). Blok tingkat-sesi di `spesifikasi_alat.dial_indicator|jangka_sorong|sieve`.
+
+### Pertanyaan lab
+
+`docs/pertanyaan-lab-dial-indicator.md` (13), `docs/pertanyaan-lab-jangka-sorong.md` (13),
+`docs/pertanyaan-lab-sieve.md` (16).
+
+### Belum
+
+- **Sertifikat Jangka Sorong** belum memisahkan tiga tabel (Outside/Inside/Depth) dengan U95 masing-masing;
+  **sertifikat Sieve** belum punya label baris Warp/Weft/Ø Kawat, dan kolom "Correction" master = `error`
+  (terkoreksi − nominal), bukan `koreksi`.
+- **Sisi mobile BELUM** — kontraknya di `docs/perintah-frontend-{dial-indicator,jangka-sorong,sieve}.md`.
+- Suite MySQL (`phpunit.mysql.xml`) belum dijalankan untuk perubahan ini.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

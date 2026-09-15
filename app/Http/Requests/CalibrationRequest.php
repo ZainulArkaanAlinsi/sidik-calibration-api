@@ -12,6 +12,8 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Support\AnakTimbanganMentah;
+use App\Support\AngkaDesimal;
+use App\Support\DialIndicatorMentah;
 use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -41,10 +43,13 @@ class CalibrationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $this->bakukanKomaDesimal();
         $this->bakukanKeterulanganTimbangan();
         $this->bakukanPraEvaluasiMicrometer();
         $this->bakukanBlokHeightGauge();
         $this->bakukanBlokFlowmeter();
+        $this->bakukanBlokDialIndicator();
+        $this->bakukanBlokSieve();
 
         if ($this->user()?->isAdmin()) {
             return;
@@ -296,6 +301,181 @@ class CalibrationRequest extends FormRequest
         if ($berubah) {
             $this->merge(['spesifikasi_alat' => $spek]);
         }
+    }
+
+    /**
+     * Terima angka berkoma desimal (`"19,06"`) di kotak angka yang diketik
+     * teknisi — pembacaan, nominal, titik ukur, dan kondisi ruangan.
+     *
+     * HP kita sudah membakukannya sendiri, jadi ini penjaga lapis kedua, bukan
+     * satu-satunya. Tanpa dia `"19,06"` dari klien lain ditolak `numeric` (422)
+     * — kelihatan, tapi teknisi di lokasi tidak tahu kenapa angka yang benar
+     * ditolak. Bentuk ambigu (`1.234,5`) SENGAJA dibiarkan ditolak; lihat
+     * [AngkaDesimal].
+     */
+    private function bakukanKomaDesimal(): void
+    {
+        $ganti = [];
+
+        foreach (['suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir'] as $kunci) {
+            if ($this->has($kunci)) {
+                $ganti[$kunci] = AngkaDesimal::bakukan($this->input($kunci));
+            }
+        }
+
+        $titik = $this->input('measurements');
+
+        if (is_array($titik)) {
+            foreach ($titik as $i => $t) {
+                if (! is_array($t)) {
+                    continue;
+                }
+
+                foreach (['titik_ukur', 'pembacaan', 'nominal', 'js_outside', 'js_inside', 'js_depth'] as $kunci) {
+                    if (array_key_exists($kunci, $t)) {
+                        $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
+                    }
+                }
+            }
+
+            $ganti['measurements'] = $titik;
+        }
+
+        if ($ganti !== []) {
+            $this->merge($ganti);
+        }
+    }
+
+    /**
+     * Bakukan blok tingkat-sesi **Dial Indicator** dan tumpukan balok ukur per
+     * titiknya.
+     *
+     * Tiga bentuk yang datang dari HP diubah di sini, sebelum aturan dibaca:
+     *
+     *  1. Tabel Evaluasi (`simpan_ke`) datang sebagai cerminan tabel → deret datar.
+     *  2. Balok ukur Evaluasi field `daftar_angka` bisa datang sebagai TEKS
+     *     `14+11` → `[14, 11]`. Koma di dalamnya koma desimal (`2,5+1,3`).
+     *  3. `measurements.*.nominal` teks tumpukan → deret, dan `titik_ukur` baris
+     *     yang kosong (lembarnya tidak memberi nominal cetak) diisi jumlah
+     *     kepingnya — tanpa itu aturan `titik_ukur required` menolak SELURUH sesi.
+     *
+     * Tidak mengonversi satuan — lihat `DialIndicatorMentah::keMm`.
+     */
+    private function bakukanBlokDialIndicator(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[DialIndicatorMentah::KUNCI_SESI] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        if (is_array($blok['pra_evaluasi'] ?? null)) {
+            $blok['pra_evaluasi'] = self::ratakanDeretTabel(AngkaDesimal::bakukanDalam($blok['pra_evaluasi']));
+        }
+
+        if (array_key_exists('balok_pra_evaluasi', $blok)) {
+            $blok['balok_pra_evaluasi'] = DialIndicatorMentah::deretAngka($blok['balok_pra_evaluasi']);
+        }
+
+        foreach (['kapasitas_mm', 'resolusi_mm'] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
+            }
+        }
+
+        $spek[DialIndicatorMentah::KUNCI_SESI] = $blok;
+        $ganti = ['spesifikasi_alat' => $spek];
+
+        $titik = $this->input('measurements');
+
+        if (is_array($titik)) {
+            foreach ($titik as $i => $t) {
+                if (! is_array($t) || ! array_key_exists('nominal', $t)) {
+                    continue;
+                }
+
+                $keping = DialIndicatorMentah::deretAngka($t['nominal']);
+                $titik[$i]['nominal'] = $keping;
+
+                if (! is_numeric($t['titik_ukur'] ?? null)) {
+                    $titik[$i]['titik_ukur'] = array_sum($keping);
+                }
+            }
+
+            $ganti['measurements'] = $titik;
+        }
+
+        $this->merge($ganti);
+    }
+
+    /**
+     * Ratakan dua tabel lembar **Sieve Mesh** yang dikirim HP sebagai cerminan
+     * tabel:
+     *
+     *     opening = { baris: [ { titik_ukur: 1, warp: [19.06], weft: [18.94], kawat: [3.34] }, … ] }
+     *     frame   = { baris: [ { titik_ukur: null, diameter: [200], tinggi: [68.52] }, … ] }
+     *
+     * jadi `opening = [ {no, warp, weft, kawat} ]` dan `frame = [ {diameter, tinggi} ]`.
+     *
+     * Baris opening yang ketiga kolomnya kosong DIBUANG, tapi nomor sesudahnya
+     * TIDAK bergeser — `no` dari `titik_ukur` baris (nomor opening), jatuh ke
+     * posisi baris kalau kosong. Tidak dikonversi satuan (tidak idempoten).
+     */
+    private function bakukanBlokSieve(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek['sieve'] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        $pertama = static fn (mixed $v): mixed => AngkaDesimal::bakukan(
+            is_array($v) ? (array_values($v)[0] ?? null) : $v,
+        );
+
+        foreach (['nominal', 'jumlah_opening_total'] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
+            }
+        }
+
+        if (isset($blok['opening']['baris']) && is_array($blok['opening']['baris'])) {
+            $rata = [];
+
+            foreach (array_values($blok['opening']['baris']) as $i => $b) {
+                $b = (array) $b;
+                $isi = [
+                    'no' => is_numeric($b['titik_ukur'] ?? null) && (int) $b['titik_ukur'] > 0
+                        ? (int) $b['titik_ukur']
+                        : $i + 1,
+                    'warp' => $pertama($b['warp'] ?? null),
+                    'weft' => $pertama($b['weft'] ?? null),
+                    'kawat' => $pertama($b['kawat'] ?? null),
+                ];
+
+                if ($isi['warp'] === null && $isi['weft'] === null && $isi['kawat'] === null) {
+                    continue;
+                }
+
+                $rata[] = $isi;
+            }
+
+            $blok['opening'] = $rata;
+        } elseif (is_array($blok['opening'] ?? null)) {
+            $blok['opening'] = AngkaDesimal::bakukanDalam($blok['opening']);
+        }
+
+        if (isset($blok['frame']['baris']) && is_array($blok['frame']['baris'])) {
+            $blok['frame'] = array_values(array_map(static fn ($b): array => [
+                'diameter' => $pertama(((array) $b)['diameter'] ?? null),
+                'tinggi' => $pertama(((array) $b)['tinggi'] ?? null),
+            ], $blok['frame']['baris']));
+        }
+
+        $spek['sieve'] = $blok;
+        $this->merge(['spesifikasi_alat' => $spek]);
     }
 
     /**
@@ -614,6 +794,54 @@ class CalibrationRequest extends FormRequest
             'spesifikasi_alat.flowmeter.path_configuration' => ['sometimes', 'nullable', 'string', 'in:Z,V,W'],
             'spesifikasi_alat.flowmeter.liner_material' => ['sometimes', 'nullable', 'string', 'max:120'],
             'spesifikasi_alat.flowmeter.liner_ketebalan_mm' => ['sometimes', 'nullable', 'numeric'],
+            // Blok Dial Indicator: satuan, kapasitas, resolusi, Evaluation, dan
+            // balok ukurnya. Seluruh budget lahir dari sini — tanpa tempat simpan
+            // yang sah, blok dari HP jatuh ke penjaga "harus teks" dan sesinya 422.
+            'spesifikasi_alat.dial_indicator' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.dial_indicator.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
+            'spesifikasi_alat.dial_indicator.kapasitas_mm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.dial_indicator.resolusi_mm' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.dial_indicator.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.dial_indicator.pra_evaluasi.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.dial_indicator.balok_pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:6'],
+            'spesifikasi_alat.dial_indicator.balok_pra_evaluasi.*' => ['nullable', 'numeric', 'gt:0'],
+            // Blok Sieve Mesh — tanpa ini seluruh sesi dari HP ditolak 422.
+            'spesifikasi_alat.sieve' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.sieve.tipe' => ['sometimes', 'nullable', 'string', 'in:compliance,inspection,calibration'],
+            'spesifikasi_alat.sieve.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch,µm'],
+            'spesifikasi_alat.sieve.nominal' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.sieve.standar_dipakai' => ['sometimes', 'nullable', 'string', 'in:caliper,mikroskop'],
+            'spesifikasi_alat.sieve.jumlah_opening_total' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100000'],
+            // 100 opening = batas atas ASTM E11 untuk sampel per sieve. `distinct`:
+            // dua baris bernomor sama saling menimpa di deret per nomor opening.
+            'spesifikasi_alat.sieve.opening' => ['sometimes', 'nullable', 'array', 'max:100'],
+            'spesifikasi_alat.sieve.opening.*.no' => ['required_with:spesifikasi_alat.sieve.opening', 'integer', 'min:1', 'max:100', 'distinct'],
+            'spesifikasi_alat.sieve.opening.*.warp' => ['nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.sieve.opening.*.weft' => ['nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.sieve.opening.*.kawat' => ['nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.sieve.frame' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'spesifikasi_alat.sieve.frame.*.diameter' => ['nullable', 'numeric'],
+            'spesifikasi_alat.sieve.frame.*.tinggi' => ['nullable', 'numeric'],
+            // Blok Jangka Sorong. Tiga tabel tingkat-sesi boleh datang datar ATAU
+            // cerminan tabel HP (`{baris: [...]}`) — `JangkaSorongMentah::blokSesi()`
+            // membaca keduanya, jadi di sini cukup `array`.
+            'spesifikasi_alat.jangka_sorong' => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.jangka_sorong.pra_evaluasi_outside' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.jangka_sorong.pra_evaluasi_inside' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'spesifikasi_alat.jangka_sorong.kesejajaran' => ['sometimes', 'nullable', 'array', 'max:10'],
+            // mm & inch saja — `Satuan_Caliper` master tidak punya µm.
+            'spesifikasi_alat.jangka_sorong.satuan' => ['sometimes', 'nullable', 'string', 'in:mm,inch'],
+            'spesifikasi_alat.jangka_sorong.kapasitas_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.jangka_sorong.resolusi_mm' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.jangka_sorong.kerataan_muka_ukur' => ['sometimes', 'nullable', 'string', 'in:baik,buruk'],
+            // Deret titik tiga tabel — nominalnya TIDAK diterima dari HP (dipatok
+            // `JangkaSorongProfile::barisPraCetak()`).
+            'measurements.*.js_outside' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'measurements.*.js_outside.*' => ['nullable', 'numeric'],
+            'measurements.*.js_inside' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'measurements.*.js_inside.*' => ['nullable', 'numeric'],
+            'measurements.*.js_depth' => ['sometimes', 'nullable', 'array', 'max:10'],
+            'measurements.*.js_depth.*' => ['nullable', 'numeric'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],
@@ -1007,6 +1235,14 @@ class CalibrationRequest extends FormRequest
         // Tidak ada test yang menangkapnya karena `AnakTimbanganSeeder` menulis
         // sesi contohnya langsung ke database, melewati validator ini.
         'anak_timbangan',
+        // Dial Indicator — Evaluation, balok ukurnya, kapasitas (yang memilih
+        // pita CMC), dan resolusi. Tanpa tempat simpan yang sah, sesi dari HP
+        // ditolak 422 sebelum satu angka pun dibaca.
+        'dial_indicator',
+        // Sieve Mesh & Jangka Sorong — alasannya sama: seeder menulis langsung ke
+        // DB dan tidak pernah memperlihatkan 422 dari HP (preseden Anak Timbangan).
+        'sieve',
+        'jangka_sorong',
     ];
 
     /**

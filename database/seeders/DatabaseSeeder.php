@@ -113,6 +113,13 @@ class DatabaseSeeder extends Seeder
             // sumber koreksi kondisi lingkungan.
             MicrometerSeeder::class,
             HeightGaugeSeeder::class,
+            // Alat ke-30 — WAJIB sesudah MicrometerSeeder: baris standar balok
+            // ukurnya (GB-9122-0) ditanam di sana dan cuma dibaca di sini.
+            DialIndicatorSeeder::class,
+            // Alat ke-31 & ke-32. Jangka Sorong butuh baris `Gauge Block Standard`
+            // (Micrometer) dan `Caliper Checker` (Height Gauge) yang sudah ada.
+            JangkaSorongSeeder::class,
+            SieveSeeder::class,
             // Alat ke-27 & ke-28 — dua sesi contoh dalam satu seeder, karena
             // kedua master lab memang satu order yang sama (Totalizer dan
             // Flowrate, selang sehari). Baris kemampuan CMC-nya SUDAH ditanam

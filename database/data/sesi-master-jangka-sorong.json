@@ -1,0 +1,1036 @@
+{
+    "_catatan": "Sesi contoh dari Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (pw spirit285). Yang ditanam JangkaSorongSeeder cuma MASUKANNYA; `_acuan_master` dipakai JangkaSorongMasterTest.",
+    "_digenerate_oleh": "docs/skrip/gen-sesi-jangka-sorong.py",
+    "_sesi": {
+        "nama_alat": "Jangka Sorong",
+        "merk": "-",
+        "model": "-",
+        "serial": "042",
+        "satuan_alat": "mm",
+        "rentang": "600",
+        "kapasitas_mm": 600.0,
+        "resolusi_mm": 0.05,
+        "pelanggan": "Laboratorium Bahan Jalan Contoh",
+        "alamat": "Jl. Contoh No. 27, Kota Contoh",
+        "tanggal_terima": "2026-01-15",
+        "tanggal": "2026-01-15",
+        "nomor_sertifikat": "001-CAL-126",
+        "nomor_order": "2601.15.A.NK",
+        "suhu_awal": 20.2,
+        "suhu_akhir": 20.3,
+        "rh_awal": 44.0,
+        "rh_akhir": 55.0,
+        "thermohygro": "TH-1",
+        "kerataan_muka_ukur": "baik"
+    },
+    "pra_evaluasi_outside_mm": [
+        600.0,
+        600.05,
+        600.05,
+        600.05,
+        600.05,
+        600.05,
+        600.0,
+        600.0,
+        600.0,
+        600.0
+    ],
+    "pra_evaluasi_inside_mm": [
+        600.0,
+        600.05,
+        600.05,
+        600.05,
+        600.05,
+        600.05,
+        600.0,
+        600.0,
+        600.0,
+        600.0
+    ],
+    "kesejajaran": [
+        {
+            "posisi": "Atas",
+            "nominal_mm": 11.0,
+            "pembacaan_mm": 11.0
+        },
+        {
+            "posisi": "Tengah",
+            "nominal_mm": 11.0,
+            "pembacaan_mm": 11.0
+        },
+        {
+            "posisi": "Bawah",
+            "nominal_mm": 11.0,
+            "pembacaan_mm": 11.0
+        }
+    ],
+    "outside": [
+        {
+            "urutan": 1,
+            "nominal_mm": [
+                0.0
+            ],
+            "pembacaan_mm": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "urutan": 2,
+            "nominal_mm": [
+                50.0
+            ],
+            "pembacaan_mm": [
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0
+            ]
+        },
+        {
+            "urutan": 3,
+            "nominal_mm": [
+                100.0
+            ],
+            "pembacaan_mm": [
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05
+            ]
+        },
+        {
+            "urutan": 4,
+            "nominal_mm": [
+                150.0
+            ],
+            "pembacaan_mm": [
+                150.05,
+                150.05,
+                150.05,
+                150.1,
+                150.05,
+                150.05,
+                150.05,
+                150.05,
+                150.05,
+                150.05
+            ]
+        },
+        {
+            "urutan": 5,
+            "nominal_mm": [
+                200.0
+            ],
+            "pembacaan_mm": [
+                200.0,
+                200.05,
+                200.0,
+                200.1,
+                200.0,
+                200.05,
+                200.05,
+                200.05,
+                200.1,
+                200.05
+            ]
+        },
+        {
+            "urutan": 6,
+            "nominal_mm": [
+                300.0
+            ],
+            "pembacaan_mm": [
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1
+            ]
+        },
+        {
+            "urutan": 7,
+            "nominal_mm": [
+                400.0
+            ],
+            "pembacaan_mm": [
+                400.1,
+                400.1,
+                400.1,
+                400.1,
+                400.15,
+                400.5,
+                400.15,
+                400.1,
+                400.1,
+                400.1
+            ]
+        },
+        {
+            "urutan": 8,
+            "nominal_mm": [
+                500.0
+            ],
+            "pembacaan_mm": [
+                500.15,
+                500.2,
+                500.2,
+                500.15,
+                500.2,
+                500.2,
+                500.2,
+                500.15,
+                500.15,
+                500.2
+            ]
+        },
+        {
+            "urutan": 9,
+            "nominal_mm": [
+                550.0
+            ],
+            "pembacaan_mm": [
+                550.2,
+                550.2,
+                550.2,
+                550.2,
+                550.15,
+                550.2,
+                550.2,
+                550.2,
+                550.2,
+                550.2
+            ]
+        },
+        {
+            "urutan": 10,
+            "nominal_mm": [
+                600.0
+            ],
+            "pembacaan_mm": [
+                600.2,
+                600.15,
+                600.2,
+                600.2,
+                600.2,
+                600.2,
+                600.2,
+                600.15,
+                600.2,
+                600.2
+            ]
+        }
+    ],
+    "inside": [
+        {
+            "urutan": 1,
+            "nominal_mm": [
+                0.0
+            ],
+            "pembacaan_mm": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "urutan": 2,
+            "nominal_mm": [
+                50.0
+            ],
+            "pembacaan_mm": [
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0
+            ]
+        },
+        {
+            "urutan": 3,
+            "nominal_mm": [
+                100.0
+            ],
+            "pembacaan_mm": [
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05,
+                100.05
+            ]
+        },
+        {
+            "urutan": 4,
+            "nominal_mm": [
+                150.0
+            ],
+            "pembacaan_mm": [
+                150.05,
+                150.05,
+                150.05,
+                150.1,
+                150.05,
+                150.05,
+                150.05,
+                150.05,
+                150.05,
+                150.05
+            ]
+        },
+        {
+            "urutan": 5,
+            "nominal_mm": [
+                200.0
+            ],
+            "pembacaan_mm": [
+                200.0,
+                200.05,
+                200.0,
+                200.1,
+                200.0,
+                200.05,
+                200.05,
+                200.05,
+                200.1,
+                200.05
+            ]
+        },
+        {
+            "urutan": 6,
+            "nominal_mm": [
+                300.0
+            ],
+            "pembacaan_mm": [
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1,
+                300.0,
+                300.1
+            ]
+        },
+        {
+            "urutan": 7,
+            "nominal_mm": [
+                400.0
+            ],
+            "pembacaan_mm": [
+                400.1,
+                400.1,
+                400.1,
+                400.1,
+                400.15,
+                400.5,
+                400.15,
+                400.1,
+                400.1,
+                400.1
+            ]
+        },
+        {
+            "urutan": 8,
+            "nominal_mm": [
+                500.0
+            ],
+            "pembacaan_mm": [
+                500.15,
+                500.2,
+                500.2,
+                500.15,
+                500.2,
+                500.2,
+                500.2,
+                500.15,
+                500.15,
+                500.2
+            ]
+        },
+        {
+            "urutan": 9,
+            "nominal_mm": [
+                550.0
+            ],
+            "pembacaan_mm": [
+                550.2,
+                550.2,
+                550.2,
+                550.2,
+                550.15,
+                550.2,
+                550.2,
+                550.2,
+                550.2,
+                550.2
+            ]
+        },
+        {
+            "urutan": 10,
+            "nominal_mm": [
+                600.0
+            ],
+            "pembacaan_mm": [
+                600.2,
+                600.15,
+                600.2,
+                600.2,
+                600.2,
+                600.2,
+                600.2,
+                600.15,
+                600.2,
+                600.2
+            ]
+        }
+    ],
+    "depth": [
+        {
+            "urutan": 1,
+            "nominal_mm": [
+                7.5,
+                2.5
+            ],
+            "pembacaan_mm": [
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0
+            ]
+        },
+        {
+            "urutan": 2,
+            "nominal_mm": [
+                11.0,
+                9.0
+            ],
+            "pembacaan_mm": [
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0,
+                20.0
+            ]
+        },
+        {
+            "urutan": 3,
+            "nominal_mm": [
+                21.0,
+                9.0
+            ],
+            "pembacaan_mm": [
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0,
+                30.0
+            ]
+        },
+        {
+            "urutan": 4,
+            "nominal_mm": [
+                40.0
+            ],
+            "pembacaan_mm": [
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0,
+                40.0
+            ]
+        },
+        {
+            "urutan": 5,
+            "nominal_mm": [
+                50.0
+            ],
+            "pembacaan_mm": [
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0,
+                50.0
+            ]
+        }
+    ],
+    "_acuan_master": {
+        "now_master": "2026-06-04T11:20:55.060000",
+        "theta_c": 0.25,
+        "l_maks_outside_mm": 600.0,
+        "keping_maks_outside": 1,
+        "keping_maks_inside": 1,
+        "l_maks_depth_mm": 50.0,
+        "keping_maks_depth": 2,
+        "stdev_evaluasi_outside": 0.026352313834712527,
+        "stdev_evaluasi_inside": 0.026352313834712527,
+        "outside": [
+            {
+                "urutan": 1,
+                "total_nominal": 0.0,
+                "rata_rata": 0.0,
+                "standar_terkoreksi": 0.0,
+                "simpangan_baku": 0.0,
+                "koreksi": 0.0
+            },
+            {
+                "urutan": 2,
+                "total_nominal": 50.0004,
+                "rata_rata": 50.0,
+                "standar_terkoreksi": 50.0004,
+                "simpangan_baku": 0.0,
+                "koreksi": 0.00039999999999906777
+            },
+            {
+                "urutan": 3,
+                "total_nominal": 100.0005,
+                "rata_rata": 100.04999999999998,
+                "standar_terkoreksi": 100.0005,
+                "simpangan_baku": 1.4979556132593925e-14,
+                "koreksi": -0.04949999999998056
+            },
+            {
+                "urutan": 4,
+                "total_nominal": 150.0003,
+                "rata_rata": 150.05499999999998,
+                "standar_terkoreksi": 150.0003,
+                "simpangan_baku": 0.0158113883008365,
+                "koreksi": -0.05469999999996844
+            },
+            {
+                "urutan": 5,
+                "total_nominal": 199.9993,
+                "rata_rata": 200.045,
+                "standar_terkoreksi": 199.9993,
+                "simpangan_baku": 0.03689323936863006,
+                "koreksi": -0.04569999999998231
+            },
+            {
+                "urutan": 6,
+                "total_nominal": 299.99955,
+                "rata_rata": 300.05,
+                "standar_terkoreksi": 299.99955,
+                "simpangan_baku": 0.05270462766948497,
+                "koreksi": -0.050450000000012096
+            },
+            {
+                "urutan": 7,
+                "total_nominal": 399.9982,
+                "rata_rata": 400.15,
+                "standar_terkoreksi": 399.9982,
+                "simpangan_baku": 0.12472191289245763,
+                "koreksi": -0.15179999999998017
+            },
+            {
+                "urutan": 8,
+                "total_nominal": 499.99865,
+                "rata_rata": 500.17999999999995,
+                "standar_terkoreksi": 499.99865,
+                "simpangan_baku": 0.025819888974721983,
+                "koreksi": -0.18134999999995216
+            },
+            {
+                "urutan": 9,
+                "total_nominal": 549.9978,
+                "rata_rata": 550.1949999999999,
+                "standar_terkoreksi": 549.9978,
+                "simpangan_baku": 0.01581138830086347,
+                "koreksi": -0.19719999999995252
+            },
+            {
+                "urutan": 10,
+                "total_nominal": 599.9973,
+                "rata_rata": 600.1899999999998,
+                "standar_terkoreksi": 599.9973,
+                "simpangan_baku": 0.021081851067817958,
+                "koreksi": -0.19269999999983156
+            }
+        ],
+        "inside": [
+            {
+                "urutan": 1,
+                "total_nominal": 0.0,
+                "rata_rata": 0.0,
+                "standar_terkoreksi": 0.0,
+                "simpangan_baku": 0.0,
+                "koreksi": 0.0
+            },
+            {
+                "urutan": 2,
+                "total_nominal": 50.0006,
+                "rata_rata": 50.0,
+                "standar_terkoreksi": 50.0006,
+                "simpangan_baku": 0.0,
+                "koreksi": 0.0005999999999986017
+            },
+            {
+                "urutan": 3,
+                "total_nominal": 100.0011,
+                "rata_rata": 100.04999999999998,
+                "standar_terkoreksi": 100.0011,
+                "simpangan_baku": 0.0,
+                "koreksi": -0.04889999999998906
+            },
+            {
+                "urutan": 4,
+                "total_nominal": 150.0006,
+                "rata_rata": 150.05499999999998,
+                "standar_terkoreksi": 150.0006,
+                "simpangan_baku": 0.02236067977499027,
+                "koreksi": -0.0543999999999869
+            },
+            {
+                "urutan": 5,
+                "total_nominal": 199.99975,
+                "rata_rata": 200.045,
+                "standar_terkoreksi": 199.99975,
+                "simpangan_baku": 0.04472135954999484,
+                "koreksi": -0.04524999999998158
+            },
+            {
+                "urutan": 6,
+                "total_nominal": 300.002,
+                "rata_rata": 300.05,
+                "standar_terkoreksi": 300.002,
+                "simpangan_baku": 0.05477225575052906,
+                "koreksi": -0.04800000000000182
+            },
+            {
+                "urutan": 7,
+                "total_nominal": 399.99885,
+                "rata_rata": 400.15,
+                "standar_terkoreksi": 399.99885,
+                "simpangan_baku": 0.02236067977497756,
+                "koreksi": -0.1511499999999728
+            },
+            {
+                "urutan": 8,
+                "total_nominal": 499.9991,
+                "rata_rata": 500.17999999999995,
+                "standar_terkoreksi": 499.9991,
+                "simpangan_baku": 0.027386127875264534,
+                "koreksi": -0.18089999999995143
+            },
+            {
+                "urutan": 9,
+                "total_nominal": 549.9987,
+                "rata_rata": 550.1949999999999,
+                "standar_terkoreksi": 549.9987,
+                "simpangan_baku": 0.022360679775028404,
+                "koreksi": -0.19629999999995107
+            },
+            {
+                "urutan": 10,
+                "total_nominal": 599.9989,
+                "rata_rata": 600.1899999999998,
+                "standar_terkoreksi": 599.9989,
+                "simpangan_baku": 0.022360679775028404,
+                "koreksi": -0.19109999999977845
+            }
+        ],
+        "depth": [
+            {
+                "urutan": 1,
+                "total_nominal": 10.000029999999999
+            },
+            {
+                "urutan": 2,
+                "total_nominal": 20.00005
+            },
+            {
+                "urutan": 3,
+                "total_nominal": 29.99978
+            },
+            {
+                "urutan": 4,
+                "total_nominal": 40.00014
+            },
+            {
+                "urutan": 5,
+                "total_nominal": 49.9999
+            }
+        ],
+        "kesejajaran_koreksi": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "budget": {
+            "outside": {
+                "komponen": [
+                    {
+                        "baris": 5,
+                        "keterangan": "repeatability  (Urep)",
+                        "u": 0.026352313834712527,
+                        "pembagi": 3.1622776601683795,
+                        "ui": 0.008333333333325754,
+                        "ci": 1.0,
+                        "vi": 9.0
+                    },
+                    {
+                        "baris": 6,
+                        "keterangan": "Resolusi  (U rnd)",
+                        "u": 0.025,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.014433756729740645,
+                        "ci": 1.0,
+                        "vi": 1000000000.0
+                    },
+                    {
+                        "baris": 7,
+                        "keterangan": "Standard Caliper Checker  ( U ls)",
+                        "u": 0.0040999999999999995,
+                        "pembagi": 2.0,
+                        "ui": 0.0020499999999999997,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 8,
+                        "keterangan": "Perubahan suhu terhadap suhu acuan 200c",
+                        "u": 0.25,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.14433756729740646,
+                        "ci": 0.0012,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 9,
+                        "keterangan": "Koefisien muai thermal",
+                        "u": 2e-06,
+                        "pembagi": 2.449489742783178,
+                        "ui": 8.164965809277261e-07,
+                        "ci": 150.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 10,
+                        "keterangan": "Drift standard",
+                        "u": 0.002075032176118857,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.001198020385459357,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 11,
+                        "keterangan": "Lapisan wringing",
+                        "u": 5e-05,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 2.8867513459481293e-05,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 12,
+                        "keterangan": "Kesalahan Geometri",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 13,
+                        "keterangan": "Efek Mekanik",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 14,
+                        "keterangan": "Selisih suhu Jangka Sorong dengan Caliper Checker",
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0,
+                        "ci": 0.0012,
+                        "vi": 60.0
+                    }
+                ],
+                "uc": 0.016841259769436123,
+                "veff": 150.03729986930352,
+                "k": 1.9759053308966197,
+                "u_diperluas": 0.03327673495744361,
+                "u95_sertifikat": 0.03327673495744361
+            },
+            "inside": {
+                "komponen": [
+                    {
+                        "baris": 24,
+                        "keterangan": "repeatability",
+                        "u": 0.026352313834712527,
+                        "pembagi": 3.1622776601683795,
+                        "ui": 0.008333333333325754,
+                        "ci": 1.0,
+                        "vi": 9.0
+                    },
+                    {
+                        "baris": 25,
+                        "keterangan": "Resolusi",
+                        "u": 0.025,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.014433756729740645,
+                        "ci": 1.0,
+                        "vi": 1000000000.0
+                    },
+                    {
+                        "baris": 26,
+                        "keterangan": "Standard Caliper Checker  ( U ls)",
+                        "u": 0.0040999999999999995,
+                        "pembagi": 2.0,
+                        "ui": 0.0020499999999999997,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 27,
+                        "keterangan": "Perubahan suhu terhadap suhu acuan 200c",
+                        "u": 0.25,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.14433756729740646,
+                        "ci": 0.0012,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 28,
+                        "keterangan": "Selisih suhu Jangka Sorong dengan Caliper Checker",
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0,
+                        "ci": 0.0012,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 29,
+                        "keterangan": "Koefisien muai thermal",
+                        "u": 2e-06,
+                        "pembagi": 2.449489742783178,
+                        "ui": 8.164965809277261e-07,
+                        "ci": 150.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 30,
+                        "keterangan": "Drift standard",
+                        "u": 0.002075032176118857,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.001198020385459357,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 31,
+                        "keterangan": "Lapisan wringing",
+                        "u": 5e-05,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 2.8867513459481293e-05,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 32,
+                        "keterangan": "Kesalahan Geometri",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 33,
+                        "keterangan": "Efek Mekanik",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    }
+                ],
+                "uc": 0.016841259769436123,
+                "veff": 150.03729986930352,
+                "k": 1.9759053308966197,
+                "u_diperluas": 0.03327673495744361,
+                "u95_sertifikat": 0.03327673495744361
+            },
+            "depth": {
+                "komponen": [
+                    {
+                        "baris": 43,
+                        "keterangan": "repeatability",
+                        "u": 0.0,
+                        "pembagi": 3.1622776601683795,
+                        "ui": 0.0,
+                        "ci": 1.0,
+                        "vi": 9.0
+                    },
+                    {
+                        "baris": 44,
+                        "keterangan": "Resolusi",
+                        "u": 0.025,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.014433756729740645,
+                        "ci": 1.0,
+                        "vi": 1000000000.0
+                    },
+                    {
+                        "baris": 45,
+                        "keterangan": "Standard balok ukur",
+                        "u": 0.00025,
+                        "pembagi": 2.0,
+                        "ui": 0.000125,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 46,
+                        "keterangan": "Perubahan suhu terhadap suhu acuan 200c",
+                        "u": 0.25,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.14433756729740646,
+                        "ci": 0.0019999979999994364,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 47,
+                        "keterangan": "Selisih suhu Jangka Sorong dengan balok ukur",
+                        "u": 0.0,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0,
+                        "ci": 0.0019999979999994364,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 48,
+                        "keterangan": "Koefisien muai thermal",
+                        "u": 2e-05,
+                        "pembagi": 2.449489742783178,
+                        "ui": 8.164965809277262e-06,
+                        "ci": 50.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 49,
+                        "keterangan": "Drift standard",
+                        "u": 3.2499975e-05,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 1.876386931490611e-05,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 50,
+                        "keterangan": "Lapisan wringing",
+                        "u": 7.071067811865477e-05,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 4.082482904638631e-05,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 51,
+                        "keterangan": "Kesalahan Geometri",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 52,
+                        "keterangan": "Efek Mekanik",
+                        "u": 0.0005,
+                        "pembagi": 1.7320508075688772,
+                        "ui": 0.0002886751345948129,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    },
+                    {
+                        "baris": 53,
+                        "keterangan": "Meja Rata (granite)",
+                        "u": 0.0062,
+                        "pembagi": 2.0,
+                        "ui": 0.0031,
+                        "ci": 1.0,
+                        "vi": 60.0
+                    }
+                ],
+                "uc": 0.014777606151971696,
+                "veff": 30965.55632728878,
+                "k": 1.9600405988582283,
+                "u_diperluas": 0.02896470801180164,
+                "u95_sertifikat": 0.02896470801180164
+            }
+        }
+    }
+}

@@ -1091,6 +1091,70 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Apakah satu titik sesi ini berisi TUMPUKAN balok ukur yang diketik teknisi
+     * plus deret penunjukan UP/DOWN.
+     *
+     * Default `false`. `true` cuma untuk `DialIndicatorProfile`. Waktu `true`,
+     * `CalibrationController` menyimpan tiap keping dan tiap penunjukan sebagai
+     * baris `raw_measurements` ber-`peran_sensor` `di_balok`/`di_pembacaan`, dan
+     * jalur hitung ulang menyusunnya balik lewat `DialIndicatorMentah::dari()`.
+     *
+     * Kenapa bukan [butuhBlokMicrometer], padahal sama-sama tumpukan balok ukur:
+     * di sana tumpukannya DIPATOK server per pita kertas dan HP tidak boleh
+     * mengirimnya, di sini kertasnya kolom nominal kosong dan tumpukannya justru
+     * WAJIB datang dari HP (`measurements.*.nominal`). Dipaksa lewat cabang
+     * Micrometer, tumpukan kiriman teknisi dibuang dan diganti pita 0-25 mm
+     * Micrometer — koreksi yang lahir dari situ salah tanpa satu pun error.
+     */
+    public function butuhBlokDialIndicator(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah sesi ini lembar SIEVE MESH: sampai 100 opening × tiga parameter
+     * (warp, weft, Ø kawat) yang datang lewat `spesifikasi_alat.sieve.opening`,
+     * bukan `measurements[]`.
+     *
+     * Default `false`. `true` cuma untuk `SieveProfile`. Waktu `true`,
+     * `CalibrationController` menulis tiap opening sebagai tiga baris
+     * `raw_measurements` (`titik_ke` 1/2/3, `peran_sensor` `sieve_*`,
+     * `sensor_ke` = nomor opening) dan jalur hitung ulang menyusunnya balik
+     * lewat `SieveMentah::dari()`.
+     *
+     * Hook sendiri karena dua hal: datanya tidak lewat `measurements[]` sama
+     * sekali (`measurements` dibatasi 60, ASTM E11 meminta sampai 100 opening),
+     * dan `sensor_ke` itu NOMOR OPENING, bukan urutan terisi — komponen
+     * pengulangan diambil dari opening 1..6, dan menomori ulang dari urutan
+     * terisi menggeser opening ke-7 ke posisi ke-3 tanpa error.
+     */
+    public function butuhBlokSieve(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apakah satu sesi ini berisi TIGA tabel titik (Outside, Inside, Depth) yang
+     * masing-masing membawa slot nominal plus deret pembacaan sendiri.
+     *
+     * Default `false`. `true` cuma untuk `JangkaSorongProfile`. Waktu `true`,
+     * `CalibrationController` memecah tiap `measurements[i]` — gabungan per POSISI
+     * baris dari tiga tabel ber-kunci-bernama (`js_outside`, `js_inside`,
+     * `js_depth`) — ke tiga rentang `titik_ke` terpisah (1.., 101.., 201..), dengan
+     * `peran_sensor` `js_<grup>_nominal`/`js_<grup>_pembacaan`; jalur hitung ulang
+     * menyusunnya balik lewat `JangkaSorongMentah::dari()`.
+     *
+     * Kenapa bukan cabang Height Gauge: di sana satu `measurements[i]` = satu
+     * titik, di sini TIGA titik dari tiga tabel yang nominal & budgetnya berbeda.
+     * Dipaksa lewat cabang itu, pembacaan Inside dan Depth tidak punya tempat dan
+     * hilang tanpa error.
+     */
+    public function butuhBlokJangkaSorong(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah satu titik sesi ini berisi DUA deret berdampingan — pembacaan UUT
      * dan pembacaan standar — plus deret suhu air dan densitas fluida.
      *
@@ -1195,6 +1259,25 @@ abstract class CalibrationProfile
     public function dalamLingkupAkreditasi(): bool
     {
         return true;
+    }
+
+    /**
+     * Status akreditasi untuk SATU sesi — bawaannya sama dengan
+     * [dalamLingkupAkreditasi].
+     *
+     * Ada karena lampiran membatasi RENTANG, bukan cuma jenis alat: Vernier
+     * Caliper diakreditasi 0-300 mm, sementara lab mengkalibrasi caliper 600 mm
+     * juga (sesi contoh master Jangka Sorong). Dengan status per profil saja,
+     * sesi 600 mm cuma punya dua pilihan buruk — terbit membawa klaim KAN di luar
+     * lingkup (temuan audit), atau tidak terbit sama sekali.
+     *
+     * Method terpisah, bukan parameter tambahan di [dalamLingkupAkreditasi]:
+     * override tanpa parameter di Height Gauge & Anak Timbangan tidak kompatibel
+     * dengan induk yang berparameter, dan PHP menolaknya saat kelas dimuat.
+     */
+    public function dalamLingkupAkreditasiSesi(CalibrationSession $sesi): bool
+    {
+        return $this->dalamLingkupAkreditasi();
     }
 
     /**

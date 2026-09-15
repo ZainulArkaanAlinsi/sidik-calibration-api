@@ -9,6 +9,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
+use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
 use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
@@ -19,10 +20,12 @@ use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
+use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
+use App\Services\Calibration\Profiles\SieveProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
 use App\Services\Calibration\Profiles\TachometerProfile;
 use App\Services\Calibration\Profiles\ThermocoupleProfile;
@@ -169,6 +172,17 @@ class CalibrationProfileRegistry
             // lembar Timbangan — bentuk lembar yang sah, alat yang salah, nol
             // error. Dijaga `ProfilDariNamaAlatTest` dari kedua arah.
             new AnakTimbanganProfile,
+            // Alat ke-30, kelompok Panjang — lampiran LK-285-IDN no. 36. Balok
+            // ukurnya set fisik yang sama dengan Micrometer, jadi tabelnya
+            // dibaca dari sana; lihat TabelStandarDialIndicator.
+            new DialIndicatorProfile,
+            // Alat ke-31, kelompok Panjang — lampiran no. 35 `Vernier Caliper`.
+            // Alias TIDAK memuat kata telanjang `Caliper` supaya `Caliper
+            // Checker` (standar Height Gauge) tidak mendarat di sini.
+            new JangkaSorongProfile,
+            // Alat ke-32, kelompok Panjang — lampiran no. 33 `Sieve`. Satu sesi
+            // sampai 100 opening × tiga parameter lewat `spesifikasi_alat`.
+            new SieveProfile,
         ];
     }
 

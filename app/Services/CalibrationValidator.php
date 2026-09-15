@@ -12,12 +12,15 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
 use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
+use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\JangkaSorongMentah;
 use App\Support\KodeSelRevisi;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
 use Illuminate\Support\Collection;
@@ -1032,6 +1035,14 @@ class CalibrationValidator
                     // barisnya kebetulan pulang terbalik menghasilkan koreksi
                     // keping yang BERLAWANAN ARAH, tanpa satu pun error.
                     ...AnakTimbanganMentah::dari($pembacaan),
+                    // Tumpukan balok ukur + penunjukan UP/DOWN satu titik Dial
+                    // Indicator — kejadian KETIGA BELAS dengan pola yang sama.
+                    ...DialIndicatorMentah::dari($pembacaan),
+                    // Opening Sieve Mesh & tiga tabel Jangka Sorong — kejadian
+                    // ke-14 & ke-15. `titik_ke` Jangka Sorong dipisah per tabel
+                    // (1.., 101.., 201..), jadi satu kelompok tidak memuat dua tabel.
+                    ...SieveMentah::dari($pembacaan),
+                    ...JangkaSorongMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

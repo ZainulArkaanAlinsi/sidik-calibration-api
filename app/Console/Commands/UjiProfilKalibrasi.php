@@ -8,11 +8,14 @@ use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
+use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
+use App\Services\Calibration\Profiles\SieveProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
@@ -134,7 +137,17 @@ class UjiProfilKalibrasi extends Command
     {
         $hasil = [];
 
-        foreach (Equipment::orderBy('id')->get() as $alat) {
+        // Alat yang PUNYA sesi terhitung didahulukan. Tanpa urutan ini alat demo
+        // pertama yang namanya cocok menang walau tidak pernah dikalibrasi —
+        // kejadian 15 Sep 2026: "Jangka Sorong Mitutoyo" dari DemoDataSeeder
+        // (id kecil, nol sesi) menutupi sesi contoh master Jangka Sorong, dan
+        // profil yang sehat dilaporkan "belum siap".
+        $alatBersesi = CalibrationSession::has('uncertaintyCalculations')->pluck('equipment_id')->flip();
+        $urut = Equipment::orderBy('id')->get()
+            ->sortBy(static fn (Equipment $a): int => isset($alatBersesi[$a->id]) ? 0 : 1)
+            ->values();
+
+        foreach ($urut as $alat) {
             $profil = $registry->untukAlat($alat);
             $cocok = mb_strtolower(trim($alat->nama_alat_kemampuan ?? ''))
                 === mb_strtolower($profil->namaAlatKemampuan());
@@ -367,6 +380,9 @@ class UjiProfilKalibrasi extends Command
             || $profil instanceof HeightGaugeProfile
             || $profil instanceof FlowmeterProfile
             || $profil instanceof AnakTimbanganProfile
+            || $profil instanceof DialIndicatorProfile
+            || $profil instanceof JangkaSorongProfile
+            || $profil instanceof SieveProfile
             || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];

@@ -1,0 +1,369 @@
+{
+    "_catatan": "Sesi contoh dari Master Olah Data_Dial Indicator.xlsm (pw spirit285). Yang ditanam DialIndicatorSeeder cuma MASUKANNYA; koreksi & budget dihitung profilnya. `_acuan_master` dipakai DialIndicatorMasterTest.",
+    "_digenerate_oleh": "docs/skrip/gen-sesi-dial-indicator.py",
+    "_sesi": {
+        "nama_alat": "Dial Consolidation",
+        "merk": "Soiltest",
+        "model": "LC-13",
+        "serial": "DC-36",
+        "satuan_alat": "mm",
+        "rentang": "25",
+        "kapasitas_mm": 25.0,
+        "resolusi_mm": 0.01,
+        "pelanggan": "PT Geoteknik Contoh Nusantara",
+        "alamat": "Jl. Contoh No. 41, Bandung 40124",
+        "tanggal_terima": "2024-05-03",
+        "tanggal": "2024-05-06",
+        "nomor_sertifikat": "0392-CAL-324",
+        "nomor_order": "2403.32.GI",
+        "suhu_awal": 20.8,
+        "suhu_akhir": 20.7,
+        "rh_awal": 56.0,
+        "rh_akhir": 59.0,
+        "thermohygro": "TH-1"
+    },
+    "balok_pra_evaluasi_mm": [
+        14.0,
+        11.0
+    ],
+    "pra_evaluasi_mm": [
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01,
+        25.01
+    ],
+    "titik": [
+        {
+            "titik_ke": 1,
+            "balok_mm": [
+                1.1
+            ],
+            "pembacaan_mm": [
+                1.1,
+                1.1,
+                1.1,
+                1.1,
+                1.1
+            ]
+        },
+        {
+            "titik_ke": 2,
+            "balok_mm": [
+                2.5
+            ],
+            "pembacaan_mm": [
+                2.5,
+                2.5,
+                2.5,
+                2.5,
+                2.5
+            ]
+        },
+        {
+            "titik_ke": 3,
+            "balok_mm": [
+                2.5,
+                1.3,
+                1.2
+            ],
+            "pembacaan_mm": [
+                5.0,
+                5.0,
+                5.0,
+                5.0,
+                5.0
+            ]
+        },
+        {
+            "titik_ke": 4,
+            "balok_mm": [
+                7.5
+            ],
+            "pembacaan_mm": [
+                7.5,
+                7.5,
+                7.5,
+                7.5,
+                7.5
+            ]
+        },
+        {
+            "titik_ke": 5,
+            "balok_mm": [
+                6.0,
+                1.7,
+                1.8
+            ],
+            "pembacaan_mm": [
+                9.5,
+                9.5,
+                9.5,
+                9.5,
+                9.5
+            ]
+        },
+        {
+            "titik_ke": 6,
+            "balok_mm": [
+                9.0,
+                1.7,
+                1.3
+            ],
+            "pembacaan_mm": [
+                12.01,
+                12.01,
+                12.01,
+                12.01,
+                12.01
+            ]
+        },
+        {
+            "titik_ke": 7,
+            "balok_mm": [
+                13.0,
+                1.5
+            ],
+            "pembacaan_mm": [
+                14.5,
+                14.5,
+                14.5,
+                14.5,
+                14.5
+            ]
+        },
+        {
+            "titik_ke": 8,
+            "balok_mm": [
+                17.0
+            ],
+            "pembacaan_mm": [
+                17.01,
+                17.01,
+                17.01,
+                17.01,
+                17.01
+            ]
+        },
+        {
+            "titik_ke": 9,
+            "balok_mm": [
+                17.0,
+                2.5
+            ],
+            "pembacaan_mm": [
+                19.51,
+                19.51,
+                19.51,
+                19.51,
+                19.51
+            ]
+        },
+        {
+            "titik_ke": 10,
+            "balok_mm": [
+                21.0,
+                1.8,
+                1.7
+            ],
+            "pembacaan_mm": [
+                24.51,
+                24.51,
+                24.51,
+                24.51,
+                24.51
+            ]
+        }
+    ],
+    "_acuan_master": {
+        "now_master": "2025-12-19T10:06:10.380000",
+        "l_maks_master_mm": 21.0,
+        "keping_maks": 3,
+        "theta_c": 0.75,
+        "titik": [
+            {
+                "titik_ke": 1,
+                "total_nominal": 1.09989,
+                "rata_rata": 1.1,
+                "standar_terkoreksi": 1.09989,
+                "koreksi": -0.0001100000000000545,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 2,
+                "total_nominal": 2.50014,
+                "rata_rata": 2.5,
+                "standar_terkoreksi": 2.50014,
+                "koreksi": 0.000140000000000029,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 3,
+                "total_nominal": 5.00035,
+                "rata_rata": 5.0,
+                "standar_terkoreksi": 5.00035,
+                "koreksi": 0.0003500000000000725,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 4,
+                "total_nominal": 7.49989,
+                "rata_rata": 7.5,
+                "standar_terkoreksi": 7.49989,
+                "koreksi": -0.00011000000000027654,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 5,
+                "total_nominal": 9.500399999999999,
+                "rata_rata": 9.5,
+                "standar_terkoreksi": 9.500399999999999,
+                "koreksi": 0.00039999999999906777,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 6,
+                "total_nominal": 12.000129999999999,
+                "rata_rata": 12.01,
+                "standar_terkoreksi": 12.000129999999999,
+                "koreksi": -0.009870000000001156,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 7,
+                "total_nominal": 14.5001,
+                "rata_rata": 14.5,
+                "standar_terkoreksi": 14.5001,
+                "koreksi": 9.999999999976694e-05,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 8,
+                "total_nominal": 16.99988,
+                "rata_rata": 17.01,
+                "standar_terkoreksi": 16.99988,
+                "koreksi": -0.010120000000000573,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 9,
+                "total_nominal": 19.50002,
+                "rata_rata": 19.51,
+                "standar_terkoreksi": 19.50002,
+                "koreksi": -0.00998000000000232,
+                "simpangan_baku": 0.0
+            },
+            {
+                "titik_ke": 10,
+                "total_nominal": 24.500110000000003,
+                "rata_rata": 24.51,
+                "standar_terkoreksi": 24.500110000000003,
+                "koreksi": -0.009889999999998622,
+                "simpangan_baku": 0.0
+            }
+        ],
+        "komponen": [
+            {
+                "baris": 5,
+                "keterangan": "repeatability",
+                "u": 3.744889033148481e-15,
+                "pembagi": 2.23606797749979,
+                "ui": 1.6747652892626934e-15,
+                "ci": 1.0,
+                "vi": 4.0
+            },
+            {
+                "baris": 6,
+                "keterangan": "Resolusi",
+                "u": 0.005,
+                "pembagi": 1.7320508075688772,
+                "ui": 0.002886751345948129,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 7,
+                "keterangan": "Standard balok ukur",
+                "u": 0.00019798989873223333,
+                "pembagi": 2.0,
+                "ui": 9.899494936611667e-05,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 8,
+                "keterangan": "Perubahan suhu terhadap suhu acuan 200c",
+                "u": 0.75,
+                "pembagi": 1.7320508075688772,
+                "ui": 0.43301270189221935,
+                "ci": 0.00042,
+                "vi": 200.0
+            },
+            {
+                "baris": 9,
+                "keterangan": "Koefisien muai thermal",
+                "u": 2e-05,
+                "pembagi": 2.449489742783178,
+                "ui": 8.164965809277262e-06,
+                "ci": 15.75,
+                "vi": 200.0
+            },
+            {
+                "baris": 10,
+                "keterangan": "Drift standard",
+                "u": 0.001521233335720492,
+                "pembagi": 1.7320508075688772,
+                "ui": 0.0008782844758784585,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 11,
+                "keterangan": "Lapisan wringing",
+                "u": 8.660254037844388e-05,
+                "pembagi": 1.7320508075688772,
+                "ui": 5.000000000000001e-05,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 12,
+                "keterangan": "Kesalahan ketegaklurusan",
+                "u": 0.002,
+                "pembagi": 1.7320508075688772,
+                "ui": 0.0011547005383792516,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 13,
+                "keterangan": "Meja Granit (meja Rata)",
+                "u": 0.0062,
+                "pembagi": 2.0,
+                "ui": 0.0031,
+                "ci": 1.0,
+                "vi": 200.0
+            },
+            {
+                "baris": 14,
+                "keterangan": "Selisih suhu Dial dengan balok ukur",
+                "u": 0.0,
+                "pembagi": 1.7320508075688772,
+                "ui": 0.0,
+                "ci": 0.00042,
+                "vi": 200.0
+            }
+        ],
+        "uc": 0.004484413315834722,
+        "veff": 492.670490233542,
+        "k": 1.964797355653943,
+        "u_diperluas": 0.008810963424611393,
+        "cmc_mm": 0.0065,
+        "u95_sertifikat": 0.008810963424611393
+    }
+}

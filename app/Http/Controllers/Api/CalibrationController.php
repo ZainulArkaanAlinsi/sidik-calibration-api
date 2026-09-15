@@ -24,9 +24,11 @@ use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarMicrometer;
+use App\Services\Calibration\TabelStandarSieve;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -34,9 +36,12 @@ use App\Services\KondisiLingkungan;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
 use App\Support\AnakTimbanganMentah;
+use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
+use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
 use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
@@ -1210,6 +1215,29 @@ class CalibrationController extends Controller
         // kedua `uut` dan S2 sebagai ulangan kedua `standar`.
         if ($this->profil->untukAlat($alat)->butuhBlokAnakTimbangan()) {
             return $this->susunBlokAnakTimbangan($request, $alat, $standarDefault);
+        }
+
+        // Dial Indicator: satu titik itu TUMPUKAN balok ukur kiriman teknisi
+        // plus enam penunjukan UP/DOWN. Alasan jalur terpisahnya sama dengan
+        // delapan di atas; bedanya dari Micrometer, tumpukannya DATANG dari HP
+        // (`measurements.*.nominal`), bukan dipatok server per pita kertas.
+        if ($this->profil->untukAlat($alat)->butuhBlokDialIndicator()) {
+            return $this->susunBlokDialIndicator($request, $alat, $standarDefault);
+        }
+
+        // Jangka Sorong: SATU `measurements[i]` membawa baris ke-i dari TIGA
+        // tabel (Outside, Inside, Depth) — HP menggabung tabel ber-kunci-bernama
+        // per posisi. Lewat cabang lain, dua dari tiga deret per baris tidak
+        // punya tempat dan hilang tanpa error.
+        if ($this->profil->untukAlat($alat)->butuhBlokJangkaSorong()) {
+            return $this->susunBlokJangkaSorong($request, $alat, $standarDefault);
+        }
+
+        // Sieve Mesh: sampai 100 opening × (warp, weft, Ø kawat) lewat
+        // `spesifikasi_alat.sieve.opening`, BUKAN `measurements[]` — loop
+        // per-titik di bawah tidak akan pernah melihat satu angka pun.
+        if ($this->profil->untukAlat($alat)->butuhBlokSieve()) {
+            return $this->susunBlokSieve($request, $alat, $standarDefault);
         }
 
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
@@ -2471,6 +2499,378 @@ class CalibrationController extends Controller
                 $perGrup['hitungan'] ?? [],
             ),
             'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Lembar **Dial Indicator** — tumpukan balok ukur + enam penunjukan per
+     * titik; blok Evaluation lewat `spesifikasi_alat`.
+     *
+     * Yang tersimpan angka MENTAH + satuannya (`DialIndicatorMentah::keMm` yang
+     * mengonversi saat dihitung); keping balok selalu mm. Titik yang tidak
+     * diisi sama sekali dilewati tanpa menggeser nomor titik sesudahnya — nomor
+     * titik = posisi baris, supaya baris 7 di layar tetap titik 7 di sertifikat.
+     *
+     * Keping di luar daftar Gauge Block terkalibrasi TETAP disimpan (teknisi
+     * bisa membetulkannya lewat draft), tapi titiknya pulang di `belum_dihitung`
+     * dengan alasan yang menyebut kepingnya — lihat `DialIndicatorCalculator`.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokDialIndicator(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberKamera = $sesiKamera ? $metodeInput : 'ocr';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[DialIndicatorMentah::KUNCI_SESI] ?? []);
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
+
+        $suhuRata = DialIndicatorMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $keping = DialIndicatorMentah::deretAngka($titik['nominal'] ?? []);
+            $ocr = array_values((array) ($titik['ocr'] ?? []));
+            $pembacaan = [];
+
+            foreach (array_values((array) ($titik['pembacaan'] ?? [])) as $urutan => $nilai) {
+                if (! is_numeric($nilai)) {
+                    continue;
+                }
+
+                $meta = $ocr[$urutan] ?? null;
+                $dariKamera = $sesiKamera || $meta !== null;
+                $pembacaan[] = DialIndicatorMentah::keMm($nilai, $satuanAlat);
+
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $urutan + 1,
+                    // Posisi kotak (1..3 UP, 4..6 DOWN) — dipertahankan walau
+                    // ada kotak kosong di tengah, supaya arahnya tetap terbaca.
+                    'sensor_ke' => $urutan + 1,
+                    'peran_sensor' => DialIndicatorMentah::PERAN_PEMBACAAN,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => array_sum($keping),
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuanAlat,
+                    'input_source' => $dariKamera ? $sumberKamera : 'manual',
+                    'ocr_raw_text' => $meta['raw_text'] ?? null,
+                    'ocr_confidence' => $this->keyakinanTerlemah($meta),
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+
+            if ($pembacaan === [] && $keping === []) {
+                continue;
+            }
+
+            foreach ($keping as $slot => $nominal) {
+                $mentah[] = [
+                    'titik_ke' => $titikKe,
+                    'pembacaan_ke' => $slot + 1,
+                    'sensor_ke' => $slot + 1,
+                    'peran_sensor' => DialIndicatorMentah::PERAN_BALOK,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => array_sum($keping),
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => $nominal,
+                    'satuan' => DialIndicatorMentah::SATUAN_BALOK,
+                    'input_source' => 'manual',
+                    'is_verified' => true,
+                ];
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => array_sum($keping),
+                // Jalur datar TIDAK dipakai alat ini — lihat `susunBlokHeightGauge`.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    DialIndicatorMentah::PERAN_BALOK => $keping,
+                    DialIndicatorMentah::PERAN_PEMBACAAN => $pembacaan,
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Lembar **Jangka Sorong** — tiga tabel titik per baris payload, plus blok
+     * tingkat-sesi (kedua Evaluation, kesejajaran) lewat `spesifikasi_alat`.
+     *
+     * Nominal tiap baris diturunkan server dari `JangkaSorongProfile::barisPraCetak()`
+     * — satu sumber dengan bentuk lembarnya — dan DISIMPAN ke `raw_measurements`,
+     * supaya sesi lama menghitung ulang dengan nominal yang benar-benar dipakai.
+     * Satuan tidak dikonversi di sini (tidak idempoten di jalur draft).
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokJangkaSorong(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $sesiKamera ? $metodeInput : 'manual';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[JangkaSorongMentah::KUNCI_SESI] ?? []);
+        $satuanAlat = (string) ($blok['satuan'] ?? 'mm');
+
+        $profil = $this->profil->untukAlat($alat);
+        $praCetak = [];
+
+        foreach (JangkaSorongMentah::GRUP as $grup) {
+            $praCetak[$grup] = $profil instanceof JangkaSorongProfile ? $profil->barisPraCetak($grup) : [];
+        }
+
+        $suhuRata = JangkaSorongMentah::rataSuhuRuang(
+            $request->input('suhu_awal'),
+            $request->input('suhu_akhir'),
+        );
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            foreach (JangkaSorongMentah::GRUP as $grup) {
+                $baris = $praCetak[$grup][$index] ?? null;
+                $deret = $titik['js_'.$grup] ?? null;
+
+                // Baris di luar lembar dibuang — `titik_bisa_diubah = false`.
+                if (! is_array($deret) || $baris === null) {
+                    continue;
+                }
+
+                $titikKe = JangkaSorongMentah::OFFSET_TITIK[$grup] + $index + 1;
+                $nominal = $baris['nominal'];
+                $titikUkur = array_sum($nominal);
+
+                // `titik_ukur` kiriman HP = baris OUTSIDE (tabel pertama), jadi dia
+                // cuma memeriksa pemetaan Outside — pembacaan yang mendarat di
+                // nominal yang salah ditolak, bukan disimpan.
+                if ($grup === 'outside' && is_numeric($titik['titik_ukur'] ?? null)
+                    && abs((float) $titik['titik_ukur'] - $titikUkur) > 0.05) {
+                    $belumDipetakan[] = [
+                        'titik_ke' => $titikKe,
+                        'alasan' => sprintf(
+                            'Baris ke-%d mengirim nominal %s mm, tapi baris itu di tabel Outside %s mm. '
+                            .'Urutan baris tidak cocok dengan lembarnya — titik tidak disimpan.',
+                            $index + 1, (string) $titik['titik_ukur'], (string) $titikUkur,
+                        ),
+                    ];
+
+                    continue;
+                }
+
+                $pembacaan = [];
+
+                foreach (array_values($deret) as $urutan => $nilai) {
+                    if (! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $pembacaan[] = JangkaSorongMentah::keMm($nilai, $satuanAlat);
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => JangkaSorongMentah::peranPembacaan($grup),
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $titikUkur,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $nilai,
+                        'satuan' => $satuanAlat,
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $sesiKamera,
+                    ];
+                }
+
+                // Baris tanpa pembacaan tidak menyimpan nominalnya — caliper
+                // 150 mm memang cuma memakai sebagian baris pra-cetak.
+                if ($pembacaan === []) {
+                    continue;
+                }
+
+                foreach ($nominal as $slot => $n) {
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $slot + 1,
+                        'sensor_ke' => $slot + 1,
+                        'peran_sensor' => JangkaSorongMentah::peranNominal($grup),
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $titikUkur,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => $n,
+                        'satuan' => JangkaSorongMentah::SATUAN_NOMINAL,
+                        'input_source' => 'manual',
+                        'is_verified' => true,
+                    ];
+                }
+
+                $siapHitung[] = [
+                    'titik_ke' => $titikKe,
+                    'titik_ukur' => $titikUkur,
+                    'pembacaan' => [],
+                    'standard' => $standarDefault,
+                    'suhu_larutan' => null,
+                    'konteks' => [
+                        JangkaSorongMentah::KONTEKS_GRUP => $grup,
+                        JangkaSorongMentah::KONTEKS_NOMINAL => $nominal,
+                        JangkaSorongMentah::KONTEKS_PEMBACAAN => $pembacaan,
+                        'spesifikasi_alat' => $spek,
+                        'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                        'suhu_ruang_rata' => $suhuRata,
+                    ],
+                ];
+            }
+        }
+
+        $perGrup = $profil->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Lembar **Sieve Mesh** — opening dari `spesifikasi_alat.sieve.opening`
+     * (sudah diratakan `CalibrationRequest::bakukanBlokSieve()` jadi
+     * `[{no, warp, weft, kawat}]`) ditulis jadi tiga grup `raw_measurements`.
+     *
+     * Satuan tidak dikonversi di sini (tidak idempoten di jalur draft). Nomor
+     * opening dari posisinya, bukan urutan terisi: opening yang kosong dilewati
+     * TANPA menggeser nomor sesudahnya — opening 1..6 sumber komponen
+     * pengulangan, dan lembar yang opening ke-3-nya kosong wajib ditahan dengan
+     * alasan kebaca, bukan diam-diam memakai opening ke-7.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokSieve(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $dariKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = SieveMentah::blokSesi($spek);
+        $satuan = $blok['satuan'] ?? 'mm';
+
+        // `titik_ukur` baris = nominal PARAMETER, sama dengan `SieveSeeder`:
+        // warp/weft = ukuran sieve, kawat = Ø preferred Tabel MPE.
+        $mpe = ($blok['nominal'] ?? null) !== null
+            ? (new TabelStandarSieve)->barisMpe((float) $blok['nominal'], $satuan)
+            : null;
+        $nominalPeran = [
+            SieveMentah::PERAN_WARP => (float) ($mpe['ukuran_mm'] ?? $blok['nominal'] ?? 0),
+            SieveMentah::PERAN_WEFT => (float) ($mpe['ukuran_mm'] ?? $blok['nominal'] ?? 0),
+            SieveMentah::PERAN_KAWAT => is_numeric($mpe['kawat_preferred_mm'] ?? null)
+                ? (float) $mpe['kawat_preferred_mm']
+                : (float) ($blok['nominal'] ?? 0),
+        ];
+
+        $deret = array_fill_keys(SieveMentah::PERAN_URUT, []);
+        $mentahOpening = (array) (($spek[SieveMentah::KUNCI_SESI] ?? [])['opening'] ?? []);
+
+        foreach ($mentahOpening as $urutan => $o) {
+            if (! is_array($o)) {
+                continue;
+            }
+
+            $no = is_numeric($o['no'] ?? null) ? (int) $o['no'] : $urutan + 1;
+
+            foreach (SieveMentah::PARAMETER as $peran => $parameter) {
+                $nilai = $o[$parameter] ?? null;
+
+                if (! is_numeric($nilai)) {
+                    continue;
+                }
+
+                $deret[$peran][$no] = SieveMentah::keMm($nilai, $satuan);
+
+                $mentah[] = [
+                    'titik_ke' => SieveMentah::titikKe($peran),
+                    'pembacaan_ke' => $no,
+                    'sensor_ke' => $no,
+                    'peran_sensor' => $peran,
+                    'tahap' => 'sesudah_adjustment',
+                    'titik_ukur' => $nominalPeran[$peran],
+                    'standard_id' => $standarDefault?->id,
+                    'pembacaan' => (float) $nilai,
+                    'satuan' => $satuan,
+                    'input_source' => $dariKamera ? $metodeInput : 'manual',
+                    'is_verified' => ! $dariKamera,
+                ];
+            }
+        }
+
+        $suhuRata = SieveMentah::rataSuhuRuang($request->input('suhu_awal'), $request->input('suhu_akhir'));
+        $siapHitung = [];
+
+        foreach (SieveMentah::PERAN_URUT as $peran) {
+            // Parameter tanpa satu opening pun tetap dioper: yang menolaknya
+            // kalkulator, dengan alasan kebaca — bukan hilang diam-diam.
+            $siapHitung[] = [
+                'titik_ke' => SieveMentah::titikKe($peran),
+                'titik_ukur' => $nominalPeran[$peran],
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    $peran => $deret[$peran],
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    'suhu_ruang_rata' => $suhuRata,
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
         ];
     }
 

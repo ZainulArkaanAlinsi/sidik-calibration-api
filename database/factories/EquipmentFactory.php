@@ -45,7 +45,12 @@ class EquipmentFactory extends Factory
             // itu, jadi satu dari TIGA fixture acak mendarat di lembar Height
             // Gauge. Bedanya cuma peluangnya yang lebih besar dari dua kejadian
             // sebelumnya, bukan bentuk kegagalannya.
-            'nama_alat' => fake()->randomElement(['Jangka Sorong', 'Dial Indicator']),
+            // `Dial Indicator` DICABUT 15 Sep 2026 (alat ke-30), dan `Jangka
+            // Sorong` bersamanya — `JangkaSorongProfile` menyusul di hari yang
+            // sama. Kejadian KEEMPAT: tanpa dicabut, SETIAP fixture acak
+            // mendarat di lembar berprofil dan yang merah test lain yang
+            // bergantian tiap jalan.
+            'nama_alat' => fake()->randomElement(['Feeler Gauge', 'Busur Derajat']),
             'merk' => fake()->randomElement(['Mitutoyo', 'Ohaus', 'Memmert']),
             'serial_number' => strtoupper(fake()->unique()->bothify('??-####-##')),
             'satuan' => 'mm',

@@ -1,0 +1,218 @@
+{
+    "_sumber": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (sheet Std_CaliperCek, Standar_GB, DATABASE, Perhitungan koef. Sensitivitas), password spirit285. Caliper Checker dibaca dari tabel-standar-height-gauge.json — keping fisik yang sama, sudah diadu skrip ini.",
+    "_digenerate_oleh": "docs/skrip/gen-tabel-standar-jangka-sorong.py",
+    "balok_ukur": {
+        "nama": "Gauge Block Standard",
+        "merk_tipe": "Metrology/GB-9122-0",
+        "seri": "160006",
+        "traceability": "LK-410-IDN",
+        "tanggal_kalibrasi": "2024-01-24",
+        "keping": [
+            {
+                "nominal_mm": 1.0,
+                "nilai_terkoreksi_mm": 1.00011,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.1,
+                "nilai_terkoreksi_mm": 1.09989,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.2,
+                "nilai_terkoreksi_mm": 1.2001199999999999,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.3,
+                "nilai_terkoreksi_mm": 1.30009,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.5,
+                "nilai_terkoreksi_mm": 1.49996,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.6,
+                "nilai_terkoreksi_mm": 1.5999,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.7,
+                "nilai_terkoreksi_mm": 1.70013,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.8,
+                "nilai_terkoreksi_mm": 1.80011,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 1.9,
+                "nilai_terkoreksi_mm": 1.9000899999999998,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 2.5,
+                "nilai_terkoreksi_mm": 2.50014,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 5.0,
+                "nilai_terkoreksi_mm": 5.00009,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 6.0,
+                "nilai_terkoreksi_mm": 6.00016,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 7.5,
+                "nilai_terkoreksi_mm": 7.49989,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 9.0,
+                "nilai_terkoreksi_mm": 8.99991,
+                "u95_mm": 0.00011999999999999999
+            },
+            {
+                "nominal_mm": 11.0,
+                "nilai_terkoreksi_mm": 11.00014,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 13.0,
+                "nilai_terkoreksi_mm": 13.00014,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 14.0,
+                "nilai_terkoreksi_mm": 14.00009,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 16.0,
+                "nilai_terkoreksi_mm": 16.0001,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 17.0,
+                "nilai_terkoreksi_mm": 16.99988,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 19.0,
+                "nilai_terkoreksi_mm": 19.00011,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 21.0,
+                "nilai_terkoreksi_mm": 20.99987,
+                "u95_mm": 0.00014000000000000001
+            },
+            {
+                "nominal_mm": 76.2,
+                "nilai_terkoreksi_mm": 76.20020000000001,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 101.6,
+                "nilai_terkoreksi_mm": 101.60025999999999,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 40.0,
+                "nilai_terkoreksi_mm": 40.00014,
+                "u95_mm": 0.00025
+            },
+            {
+                "nominal_mm": 50.0,
+                "nilai_terkoreksi_mm": 49.9999,
+                "u95_mm": 0.00025
+            },
+            {
+                "nominal_mm": 60.0,
+                "nilai_terkoreksi_mm": 60.00012,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 70.0,
+                "nilai_terkoreksi_mm": 69.99991,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 75.0,
+                "nilai_terkoreksi_mm": 74.9999,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 80.0,
+                "nilai_terkoreksi_mm": 80.00013,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 90.0,
+                "nilai_terkoreksi_mm": 90.00015,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 100.0,
+                "nilai_terkoreksi_mm": 100.00012,
+                "u95_mm": 0.00026000000000000003
+            },
+            {
+                "nominal_mm": 200.0,
+                "nilai_terkoreksi_mm": 199.99924,
+                "u95_mm": 0.00073
+            }
+        ]
+    },
+    "cmc": {
+        "label": "CMC 0-300mm",
+        "kapasitas_maks_mm": 300.0,
+        "u95_mm": 0.015
+    },
+    "tumpukan_depth_mm": [
+        [
+            7.5,
+            2.5
+        ],
+        [
+            11.0,
+            9.0
+        ],
+        [
+            21.0,
+            9.0
+        ],
+        [
+            40.0
+        ],
+        [
+            50.0
+        ]
+    ],
+    "konstanta": {
+        "suhu_acuan_c": 20.0,
+        "alpha_per_c": 1.2e-06,
+        "u_alpha_caliper_checker_per_c": 2e-06,
+        "u_alpha_balok_ukur_per_c": 2e-05,
+        "pembagi_muai": 2.449489742783178,
+        "drift_a_um": 0.02,
+        "drift_b_um_per_mm": 0.00025,
+        "drift_pembagi_umur": 12,
+        "wringing_um_per_keping": 0.05,
+        "geometri_mm": 0.0005,
+        "efek_mekanik_mm": 0.0005,
+        "meja_granit_mm": 0.0062,
+        "vi_type_b": 60,
+        "vi_resolusi": 1000000000.0,
+        "pengulangan_pembagi_n": 10,
+        "depth_ci_suhu_panjang_mm": 99.9999,
+        "depth_ci_suhu_cte_per_c": 2e-05,
+        "depth_ci_muai": 50.0
+    }
+}
