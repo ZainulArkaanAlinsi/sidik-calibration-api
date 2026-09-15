@@ -277,7 +277,7 @@ class CertificateSnapshotBuilder
                         ? $organisasi->desimalSertifikat($resolusi)
                         : Angka::desimalDariResolusi($resolusi));
 
-                $remark = $profil?->remarkTitik((float) $titik->titik_ukur);
+                $remark = $profil?->remarkTitikKe((int) $titik->titik_ke, (float) $titik->titik_ukur);
 
                 // Nilai acuan yang TERCETAK di kolom `Standard Value`.
                 //
@@ -297,7 +297,8 @@ class CertificateSnapshotBuilder
                     // titiknya nggak punya keterangan parameter.
                     'remark' => $remark,
                     'unit_under_test' => (float) $titik->rata_rata,
-                    'correction' => (float) $titik->koreksi,
+                    // Tanda cetak per alat — lihat `tandaKoreksiSertifikat()`.
+                    'correction' => ($profil?->tandaKoreksiSertifikat() ?? 1) * (float) $titik->koreksi,
                     'u95' => (float) $titik->ketidakpastian_diperluas,
                     // Faktor cakupan yang dipakai buat U95 titik ini.
                     //

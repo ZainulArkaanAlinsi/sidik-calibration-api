@@ -135,6 +135,40 @@ class SieveProfile extends CalibrationProfile
         return 2.0;
     }
 
+    /**
+     * Label baris sertifikat — persis `SERTIFIKAT!B20:B22` master, ejaan
+     * "Wrap" ikut master. `titik_ke` 1/2/3 = warp/weft/kawat
+     * ([SieveMentah::titikKe]); nominalnya tidak bisa membedakan warp dari weft.
+     *
+     * Tiga kelompok satu baris masing-masing, dan itu memang bentuknya: tiap
+     * parameter punya budget, U95, dan vonisnya sendiri.
+     */
+    public function remarkTitikKe(int $titikKe, float $titikUkur): ?string
+    {
+        return match ($titikKe) {
+            1 => "Wrap (x')",
+            2 => "Weft (y')",
+            3 => 'Wire Diameter (Ø)',
+            default => null,
+        };
+    }
+
+    /**
+     * Kolom `Correction` master Sieve = opening terukur − nominal (`K20 = H20 − E20`),
+     * kebalikan konvensi Standard − UUT alat lain. Lihat
+     * [CalibrationProfile::tandaKoreksiSertifikat].
+     */
+    public function tandaKoreksiSertifikat(): int
+    {
+        return -1;
+    }
+
+    /** `SERTIFIKAT!H18` master: kolom opening terukur berjudul "Standard Indication". */
+    public function judulKolomUut(): string
+    {
+        return 'Standard Indication';
+    }
+
     public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): ?string
     {
         return self::SATUAN;

@@ -3374,10 +3374,12 @@ Jalur HP → server → hitung ulang dijaga `DialIndicatorSesiTest` (6) dan `Jan
 
 ### Belum
 
-- **Sertifikat Jangka Sorong** belum memisahkan tiga tabel (Outside/Inside/Depth) dengan U95 masing-masing;
-  **sertifikat Sieve** belum punya label baris Warp/Weft/Ø Kawat, dan kolom "Correction" master = `error`
-  (terkoreksi − nominal), bukan `koreksi`.
-- **Sisi mobile BELUM** — kontraknya di `docs/perintah-frontend-{dial-indicator,jangka-sorong,sieve}.md`.
+- ~~Sertifikat Jangka Sorong & Sieve~~ **BERES 15 Sep 2026.** Hook baru `remarkTitikKe()` (remark dari
+  `titik_ke`, bukan nominal) memisahkan tiga tabel Jangka Sorong dengan judul persis master dan U95/`k`
+  masing-masing; Sieve berlabel `Wrap (x')`/`Weft (y')`/`Wire Diameter (Ø)`, kolom UUT `Standard Indication`,
+  dan `tandaKoreksiSertifikat() = -1` supaya `Correction` = terukur − nominal seperti master. Nilai
+  `koreksi` tersimpan tidak berubah. Dijaga `DimensiSertifikatTest`; Sieve masuk mode padat (tiga kelompok).
+- ~~Sisi mobile~~ **BERES 15 Sep 2026** (mobile `ccdb2bc`) — bentuk lembar digenerate dari server, test payload.
 - Suite MySQL (`phpunit.mysql.xml`) belum dijalankan untuk perubahan ini.
 
 ## Gelombang & status

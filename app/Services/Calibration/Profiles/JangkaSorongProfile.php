@@ -366,6 +366,24 @@ class JangkaSorongProfile extends CalibrationProfile
         return $temuan;
     }
 
+    /**
+     * Judul kelompok sertifikat — persis tiga judul tabel `SERTIFIKAT` master
+     * (`D22`, `D38`, `D54`). Dipilih dari rentang `titik_ke`, bukan nominal:
+     * Outside dan Inside memakai nominal Caliper Checker yang sama.
+     *
+     * Remark juga kunci pengelompokan, jadi tiap tabel mencetak `Uncertainty
+     * U95% = ±` dan `k`-nya sendiri — tiga budget yang berbeda (Outside/Inside
+     * 10 komponen, Depth 11) tidak boleh diwakili satu baris U95.
+     */
+    public function remarkTitikKe(int $titikKe, float $titikUkur): ?string
+    {
+        return match (true) {
+            $titikKe > JangkaSorongMentah::OFFSET_TITIK['depth'] => '<50 mm Kedalaman (Depth Measurement)',
+            $titikKe > JangkaSorongMentah::OFFSET_TITIK['inside'] => 'Pengukuran Dalam (Inside Measurement)',
+            default => 'Pengukuran Luar (Outside Measurement)',
+        };
+    }
+
     public function satuanTitik(float $titikUkur, ?Equipment $equipment = null): ?string
     {
         return self::SATUAN;

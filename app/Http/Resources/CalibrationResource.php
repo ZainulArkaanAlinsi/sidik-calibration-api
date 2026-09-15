@@ -554,7 +554,7 @@ class CalibrationResource extends JsonResource
             // `null` buat alat yang titiknya nggak punya keterangan — layar
             // ngosongin kolomnya, persis kayak sertifikat.
             'remark' => $alat !== null
-                ? self::profil($alat)?->remarkTitik((float) $titik->titik_ukur)
+                ? self::profil($alat)?->remarkTitikKe((int) $titik->titik_ke, (float) $titik->titik_ukur)
                 : null,
             'rata_rata' => $titik->rata_rata,
             'error' => $titik->error,

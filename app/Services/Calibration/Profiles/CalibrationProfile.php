@@ -132,6 +132,36 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Remark satu titik bila yang membedakannya `titik_ke`, bukan nominalnya.
+     *
+     * Bawaannya [remarkTitik]. Ada karena Jangka Sorong mencetak TIGA tabel
+     * (Outside/Inside/Depth) yang nominalnya sama persis — 25, 50, 100 mm muncul
+     * di Outside DAN Inside — jadi remark dari nominal saja menaruh baris Inside
+     * di kelompok Outside, dan U95 kelompok Outside tercetak untuk titik Inside.
+     * Remark juga kunci pengelompokan tabel sertifikat (satu judul, satu baris
+     * `Uncertainty U95% = ±`, satu `k` per kelompok).
+     */
+    public function remarkTitikKe(int $titikKe, float $titikUkur): ?string
+    {
+        return $this->remarkTitik($titikUkur);
+    }
+
+    /**
+     * Pengali tanda kolom `Correction` di SERTIFIKAT: `1` = Standard − UUT (bawaan
+     * semua alat), `-1` = UUT − Standard.
+     *
+     * Cuma Sieve yang `-1`: sertifikat masternya menulis `Correction = H20 − E20`
+     * — opening terukur dikurangi nominal — di bawah kepala kolom yang sama.
+     * Mencetak tanda bawaan membuat sertifikat kita berlawanan tanda dengan yang
+     * lab terbitkan untuk sieve yang sama. Yang disimpan di
+     * `uncertainty_calculations.koreksi` TIDAK berubah — ini cuma cara cetaknya.
+     */
+    public function tandaKoreksiSertifikat(): int
+    {
+        return 1;
+    }
+
+    /**
      * Baris keterangan yang dicetak DI ATAS tabel `CALIBRATION REPORT`, sebelum
      * kepala kolom Standard/UUT/Correction — beda dari `catatan` di snapshot
      * (dua baris baku DI BAWAH tabel) dan beda dari [remarkTitik] (per baris,

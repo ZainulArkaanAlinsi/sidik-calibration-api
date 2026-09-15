@@ -154,6 +154,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // tumpukan balok ukur. Lembarnya panjang sejak lahir, bukan tata letak
         // yang menyusut.
         '0392-CAL-324 (Dial Consolidation)',
+        // Sieve Mesh (alat ke-32) — bukan karena barisnya banyak (cuma tiga),
+        // tapi karena tiap baris KELOMPOK sendiri: Wrap, Weft, dan Wire Diameter
+        // punya budget, U95, dan `k` masing-masing, jadi sertifikatnya mencetak
+        // tiga judul + tiga kalimat `Uncertainty U95% = ±`. Master pun
+        // melaporkan U95 per parameter.
+        '0736-CAL-526 (Sieve Mesh)',
         '22506.01.A (Temperature Calibrator)',
         '2406.32.C (Chlorine Meter)',
         '2406.51.S (Autoclave)',
