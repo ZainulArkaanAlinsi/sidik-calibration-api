@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
-use App\Models\Equipment;
 use App\Models\RawMeasurement;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;

@@ -58,16 +58,6 @@ trait Diaudit
         }
     }
 
-    public static function matikanAudit(): void
-    {
-        static::$auditAktif = false;
-    }
-
-    public static function nyalakanAudit(): void
-    {
-        static::$auditAktif = true;
-    }
-
     /**
      * Kolom yang isinya NGGAK boleh masuk riwayat.
      *

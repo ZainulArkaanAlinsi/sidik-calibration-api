@@ -65,12 +65,6 @@ class CertificateEmailLog extends Model
         return [self::FORMAT_PDF, self::FORMAT_XLSX, self::FORMAT_TAUTAN];
     }
 
-    /** Format yang beneran dikirim server (punya lampiran / badan email). */
-    public static function formatEmail(): array
-    {
-        return self::formatTersedia();
-    }
-
     /** Nggak ada `updated_at` — barisnya nggak pernah diubah. */
     public const UPDATED_AT = null;
 

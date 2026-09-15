@@ -251,12 +251,6 @@ class TataLetakLembar
         return self::JARAK_LABEL_BARIS;
     }
 
-    /** Kolom sel paling kiri: sesudah kolom label, bukan di 25% lebar kertas. */
-    public function kiriGrid(int $lebar): int
-    {
-        return $this->kiri($lebar) + $this->lebarLabelBaris($lebar);
-    }
-
     /** Batas kanan grid — sama dengan batas kanan isian identitas di atasnya. */
     public function kananGrid(int $lebar): int
     {
