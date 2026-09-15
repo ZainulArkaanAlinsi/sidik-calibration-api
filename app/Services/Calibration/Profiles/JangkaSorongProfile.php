@@ -428,11 +428,15 @@ class JangkaSorongProfile extends CalibrationProfile
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
-                $this->bagianKesejajaran(),
-                $this->bagianEvaluasi(),
+                // Urutan kertas FM-0527: Pengukuran Luar → baris Evaluasi tepat
+                // di bawahnya → Pengukuran Dalam → Kedalaman. Kesejajaran muka
+                // ukur tidak punya kotak di kertas; ditaruh sesudah semua tabel
+                // pengukuran supaya tidak menyela alur yang tercetak.
                 $this->bagianTitik('outside'),
+                $this->bagianEvaluasi(),
                 $this->bagianTitik('inside'),
                 $this->bagianTitik('depth'),
+                $this->bagianKesejajaran(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -544,9 +548,9 @@ class JangkaSorongProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat dan Data Customer',
+            'judul' => 'Identitas Alat',
             'field' => [
-                $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 $this->field('alat_model', 'Type', 'teks'),

@@ -3,6 +3,7 @@
 namespace App\Services\Calibration\Profiles;
 
 use App\Models\CalibrationCapability;
+use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Formula;
 use App\Models\Standard;
@@ -276,6 +277,60 @@ class TurbidimeterProfile extends CalibrationProfile
     }
 
     /**
+     * Kotak "Resolusi:" per titik di kepala tabel kertas FM-0530 — *"Tuliskan
+     * resolusi UUT di masing-masing titik kalibrasi"*.
+     *
+     * DICATAT, belum menggeser hitungan: budget tetap memakai resolusi per
+     * titik master (`INPUT DATA!E17:G17`, [TITIK]). Beda tulisan teknisi dari
+     * angka itu naik jadi peringatan sesi — pola yang sama dengan Viscometer.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fieldResolusiPerTitik(): array
+    {
+        return array_map(
+            fn (int $i): array => $this->field(
+                'spesifikasi_alat.resolusi_titik_'.($i + 1),
+                sprintf('Resolusi UUT — %s %s', $this->labelTitik(self::TITIK[$i]['nilai'], self::TITIK[$i]['desimal']), self::SATUAN),
+                'angka',
+                satuan: self::SATUAN,
+            ),
+            array_keys(self::TITIK),
+        );
+    }
+
+    /**
+     * @return list<array{kode: string, pesan: string}>
+     */
+    public function peringatanSesi(CalibrationSession $sesi): array
+    {
+        $spesifikasi = (array) ($sesi->spesifikasi_alat ?? []);
+        $beda = [];
+
+        foreach (self::TITIK as $i => $t) {
+            $ditulis = $spesifikasi['resolusi_titik_'.($i + 1)] ?? null;
+            $ditulis = is_string($ditulis) ? str_replace(',', '.', trim($ditulis)) : $ditulis;
+
+            if (! is_numeric($ditulis) || abs((float) $ditulis - $t['resolusi']) <= 1e-9) {
+                continue;
+            }
+
+            $beda[] = sprintf('titik %s %s ditulis %s (dipakai %s)', $this->labelTitik($t['nilai'], $t['desimal']), self::SATUAN, $ditulis, $t['resolusi']);
+        }
+
+        if ($beda === []) {
+            return [];
+        }
+
+        return [[
+            'kode' => 'resolusi_titik_beda_dari_master',
+            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi yang dipakai menghitung: '
+                .implode('; ', $beda).'. Ketidakpastian resolusi tetap dihitung dari angka master — '
+                .'periksa lagi alatnya sebelum approve.',
+        ]];
+    }
+
+    /**
      * Label titik buat tampilan: nol belakang dibuang HANYA di bagian desimal.
      * "1.00"→"1", "100.0"→"100", "1000"→"1000" (bukan "1").
      */
@@ -397,6 +452,7 @@ class TurbidimeterProfile extends CalibrationProfile
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
+                        ...$this->fieldResolusiPerTitik(),
                     ],
                     'tabel' => [
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),

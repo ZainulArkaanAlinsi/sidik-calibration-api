@@ -635,7 +635,7 @@ class AnakTimbanganProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Identitas Alat',
             'field' => [
-                $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 // Kelas UUT lebih dulu: dia yang menentukan kolom mana yang

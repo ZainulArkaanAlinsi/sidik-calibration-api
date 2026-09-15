@@ -1083,6 +1083,19 @@ class TitsProfile extends CalibrationProfile
                         $this->field('spesifikasi_alat.resolusi', '7. Resolusi Alat', 'angka', satuan: self::SATUAN),
                         $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                        // Environment Condition + Thermohygro dicetak DI DALAM
+                        // panel identitas kertas FM-0505, bukan di Calibration
+                        // Result — dulu di sini ditumpangkan ke bagian `hasil`.
+                        $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
+                        $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
+                        $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
+                        $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
+                        $this->field(
+                            'thermohygro_standard_id',
+                            'Environmental Meter Used',
+                            'pilihan',
+                            sumber: 'master_thermohygro',
+                        ),
                     ],
                 ],
                 [
@@ -1146,18 +1159,7 @@ class TitsProfile extends CalibrationProfile
                     'kode' => 'hasil',
                     'halaman' => 1,
                     'judul' => 'CALIBRATION RESULT',
-                    'field' => [
-                        $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
-                        $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
-                        $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
-                        $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
-                        $this->field(
-                            'thermohygro_standard_id',
-                            'Environmental Meter Used',
-                            'pilihan',
-                            sumber: 'master_thermohygro',
-                        ),
-                    ],
+                    'field' => [],
                     'tabel' => [
                         $this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading'),
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading'),

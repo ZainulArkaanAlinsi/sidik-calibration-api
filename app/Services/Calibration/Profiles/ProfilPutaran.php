@@ -714,12 +714,12 @@ abstract class ProfilPutaran extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat dan Data Customer',
+            'judul' => 'Identitas Alat',
             'field' => [
                 // WAJIB — tombol kirim di HP menahan sesi yang alatnya belum
                 // dipilih. Profil yang lupa memasang field ini menghasilkan
                 // lembar yang bisa diisi penuh lalu tidak bisa dikirim.
-                $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 $this->field('alat_model', 'Type', 'teks'),

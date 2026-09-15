@@ -3382,6 +3382,48 @@ Jalur HP → server → hitung ulang dijaga `DialIndicatorSesiTest` (6) dan `Jan
 - ~~Sisi mobile~~ **BERES 15 Sep 2026** (mobile `ccdb2bc`) — bentuk lembar digenerate dari server, test payload.
 - Suite MySQL (`phpunit.mysql.xml`) belum dijalankan untuk perubahan ini.
 
+## §31 — Lembar kerja disejajarkan ke kertas resmi, semua alat — 15 Sep 2026
+
+Permintaan: *"bikin lembar kerja yang bener dari atas sampai bawah strukturnya … cek semua alat … gk
+bingungin"*. Sumbernya 41 kertas di `Project-PT-Sidik/worksheet_alat_calibration/`, dibaca sebagai
+GAMBAR (bukan dari ringkasan), diadu ke `bentukLembarKerja()` tiap profil. HP merender `bagian` persis
+urutan server, jadi seluruh perbaikan ada di profil PHP.
+
+### Yang diubah
+
+| Alat | Selisih kertas | Perbaikan |
+|---|---|---|
+| Flowmeter gravimetri | Kotak "Volume Pipa dari Std. ke UUT (V) Liter" (FM-0538.A/.B) tidak punya field — `FlowmeterMentah` membacanya tapi nilainya tak pernah bisa sampai | Field `spesifikasi_alat.flowmeter.volume_pipa_l` (tampil hanya varian gravimetri) + aturan request. Belum masuk budget (pertanyaan lab §5 flowmeter gravimetri) |
+| Turbidimeter, Conductivity | Kertas FM-0530/0510: "tulis resolusi UUT di masing-masing titik" — tidak ada field | `spesifikasi_alat.resolusi_titik_N` per titik. **Dicatat, angka tidak digeser** (pola Viscometer): beda dari resolusi yang dipakai budget → peringatan sesi `resolusi_titik_beda_dari_master`. Titik tengah Conductivity lolos di bentuk µS/cm maupun mS/cm |
+| Dial Indicator | Kertas: Data Kalibrasi → Evaluasi | Evaluasi dipindah ke sesudah Data Kalibrasi |
+| Jangka Sorong | Kertas: Pengukuran Luar → Evaluasi → Dalam → Kedalaman | Diurut begitu; Kesejajaran (tanpa kotak di kertas) ke akhir |
+| TITS | Environment Condition + Thermohygro tercetak DI panel identitas FM-0505 | Dipindah dari bagian `hasil` ke `identitas_alat` |
+| Thermocouple, Termometer Gelas, Thermohygro | Tanggal di kolom kanan, bukan baris teratas | Tanggal menutup blok identitas (sama dengan TITS/TIDS/Autoclave) |
+| Refractometer | Judul disalin dari template pH | "General Information", "Standard Used", "Location of Calibration", "Methode", "Data Result", "Corrected by" — `kode` bagian tidak berubah |
+| Timbangan | Nomor label 1..9 tidak sejajar nomor kertas FM-0508 | 1 Name · 2 Capacity · 3 Resolution · 4 e & kelas · 5 Type · 6 Serial · 7 Merk; Rentang Ukur tanpa nomor |
+| 9 profil | Judul "Identitas Alat dan Data Customer" diikuti bagian "Data Customer"; dua kotak berlabel "Nama Alat" | Judul identitas → "Identitas Alat"; dropdown alat → "Pilih Alat" |
+| HP | Petunjuk kotak `daftar_angka` dipatok `20+20+10` (gram) juga di Dial Indicator (mm) | "Pisahkan tiap keping dengan +" |
+
+### Yang SENGAJA tidak diubah
+
+- **Standar dipilih sebelum mengukur.** Di kertas kotak Standard selalu di bawah tabel; di aplikasi tetap di
+  atas karena standar yang menentukan koreksi tiap pembacaan (`SemuaProfilLembarKerjaTest`).
+- **Timer/Stopwatch kolom ke-4.** Kertas FM-0512 mencetak `0.01 S`, workbook master (sumber rumus) `0.001 S`
+  dengan isi 123/211/45 — jelas milidetik. Kode ikut master; diangkat sebagai pertanyaan.
+- **Nomor revisi.** Audit mengira FM-0515 Rev.5 & FM-0525 Rev.3 — kaki halaman kertasnya menulis `Revise : 4`
+  dan `Revise : 2`, sama dengan kode. pH `kode_dokumen` ada di `LembarKerjaTemplate`.
+- **Anak Timbangan "Technician ID".** Teknisi tercatat otomatis dari akun yang login; kotak kedua hanya
+  menggandakan isian.
+
+### Pertanyaan lab baru
+
+1. Timer FM-0512: kolom ke-4 kertas `0.01 S`, master `0.001 S`. Stopwatch lab menampilkan berapa digit? Kalau
+   centidetik, teknisi yang menyalin `12` dari layar akan tercatat 12 ms, bukan 120 ms.
+2. Turbidimeter FM-0530 Rev.2 mencetak LIMA larutan (0.04 / 15 / 100 / 750 / 2000 NTU); master dan lampiran
+   memakai TIGA (1 / 100 / 1000 NTU). Kertas mana yang berlaku?
+3. Resolusi UUT per titik (Turbidimeter/Conductivity): cukup dicatat, atau menggantikan resolusi master di
+   budget?
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

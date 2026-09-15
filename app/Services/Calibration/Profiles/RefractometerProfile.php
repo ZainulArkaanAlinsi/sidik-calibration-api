@@ -521,7 +521,7 @@ class RefractometerProfile extends CalibrationProfile
                 [
                     'kode' => 'identitas_alat',
                     'halaman' => 1,
-                    'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
+                    'judul' => 'General Information — Equipment',
                     'field' => [
                         $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
@@ -559,16 +559,16 @@ class RefractometerProfile extends CalibrationProfile
                 [
                     'kode' => 'pemilik',
                     'halaman' => 1,
-                    'judul' => 'OWNER',
+                    'judul' => 'General Information — Customer',
                     'field' => [
-                        $this->field('pemilik_nama', '1. Name', 'teks'),
-                        $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+                        $this->field('pemilik_nama', 'Customer', 'teks'),
+                        $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
                     ],
                 ],
                 [
                     'kode' => 'usage_check',
                     'halaman' => 1,
-                    'judul' => 'STANDARD',
+                    'judul' => 'Standard Used',
                     'baris' => self::STANDARD_TERCETAK,
                     'field' => [
                         $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -578,9 +578,9 @@ class RefractometerProfile extends CalibrationProfile
                 [
                     'kode' => 'data_kalibrasi',
                     'halaman' => 1,
-                    'judul' => 'CALIBRATION DATA',
+                    'judul' => 'Location of Calibration & Methode',
                     'field' => [
-                        $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
+                        $this->field('lokasi', 'Location of Calibration', 'pilihan', pilihan: [
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
@@ -597,7 +597,7 @@ class RefractometerProfile extends CalibrationProfile
                         ),
                         $this->field(
                             'calibration_method_id',
-                            '2. Calibration Methode',
+                            'Methode',
                             'pilihan',
                             sumber: 'master_metode',
                         ),
@@ -606,7 +606,7 @@ class RefractometerProfile extends CalibrationProfile
                 [
                     'kode' => 'hasil',
                     'halaman' => 1,
-                    'judul' => 'CALIBRATION RESULT',
+                    'judul' => 'Data Result',
                     'field' => [
                         $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
@@ -625,7 +625,7 @@ class RefractometerProfile extends CalibrationProfile
                     'field' => [
                         $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
                         $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
-                        $this->field('reviewer.nama', 'Checked by', 'teks', sumber: 'otomatis'),
+                        $this->field('reviewer.nama', 'Corrected by', 'teks', sumber: 'otomatis'),
                     ],
                 ],
             ],

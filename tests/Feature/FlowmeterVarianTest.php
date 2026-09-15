@@ -179,6 +179,39 @@ class FlowmeterVarianTest extends TestCase
     }
 
     /**
+     * Kertas gravimetri FM-0538.A/.B punya kotak "Volume Pipa dari Std. ke UUT
+     * (V) Liter". `FlowmeterMentah` membacanya, tapi sampai 15 Sep 2026 lembar
+     * HP tidak punya kotaknya — nilainya tidak pernah bisa sampai ke server.
+     */
+    public function test_lembar_gravimetri_punya_kotak_volume_pipa(): void
+    {
+        foreach (['flowmeter_totalizer', 'flowmeter_flowrate'] as $kode) {
+            $bentuk = app(CalibrationProfileRegistry::class)->untukKode($kode)->bentukLembarKerja();
+            $kodeField = [];
+            $field = null;
+
+            foreach ($bentuk['bagian'] as $bagian) {
+                foreach ($bagian['field'] ?? [] as $f) {
+                    $kodeField[] = $f['kode'];
+
+                    if ($f['kode'] === 'spesifikasi_alat.flowmeter.volume_pipa_l') {
+                        $field = $f;
+                    }
+                }
+            }
+
+            $this->assertNotNull($field, "{$kode}: kotak Volume Pipa hilang dari lembar.");
+            $this->assertSame('angka', $field['tipe']);
+            $this->assertSame('L', $field['satuan']);
+            $this->assertSame([VarianMetodeFlowmeter::GRAVIMETRI->value], $field['tampil_kalau']['nilai']);
+
+            // Duduk tepat sesudah Timbangan Standar, seperti di kertas.
+            $i = array_search('spesifikasi_alat.flowmeter.kode_timbangan', $kodeField, true);
+            $this->assertSame('spesifikasi_alat.flowmeter.volume_pipa_l', $kodeField[$i + 1]);
+        }
+    }
+
+    /**
      * `peringatanSesi()` memulangkan `['kode' => ..., 'pesan' => ...]`.
      *
      * Penjaga untuk bug yang HIDUP DIAM-DIAM sampai 10 Sep 2026: sebelumnya

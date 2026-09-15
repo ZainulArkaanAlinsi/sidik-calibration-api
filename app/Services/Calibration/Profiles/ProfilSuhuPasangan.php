@@ -371,14 +371,17 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
                 'halaman' => 1,
                 'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
                 'field' => [
-                    $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                    $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                    // Pilih alat dulu, dua tanggal menutup blok — urutan yang
+                    // sama dengan TITS/TIDS/Autoclave. Di kertas FM-0535/0537
+                    // kedua tanggal ada di kolom kanan, bukan di baris teratas.
                     $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
                     $this->field('equipment.nama_alat', '1. Nama Alat', 'teks', sumber: 'otomatis'),
                     $this->field('alat_merk', '2. Merk', 'teks'),
                     $this->field('alat_model', '3. Type', 'teks'),
                     $this->field('alat_serial_number', '4. No. Seri', 'teks'),
                     ...$fieldSpesifik,
+                    $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                    $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                 ],
             ],
             [

@@ -623,6 +623,96 @@ class ConductivityProfile extends CalibrationProfile
      */
     public function peringatanSesi(CalibrationSession $sesi): array
     {
+        return [...$this->peringatanResolusiTitik($sesi), ...$this->peringatanTitikTengahMili($sesi)];
+    }
+
+    /**
+     * Kotak "Resolusi: ( )" per titik di kepala tabel kertas FM-0510 —
+     * *"Resolusi di tulis di masing-masing titik"*. Satuannya ikut layar alat,
+     * jadi titik tengah boleh µS/cm atau mS/cm.
+     *
+     * DICATAT, belum menggeser hitungan — lihat [peringatanResolusiTitik].
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fieldResolusiPerTitik(): array
+    {
+        return array_map(
+            function (int $i): array {
+                $t = self::TITIK[$i];
+                $label = $this->labelTitik($t['nilai'], $t['desimal']).' '.$t['satuan'];
+
+                if ($t['varian_mili'] !== null) {
+                    $label .= ' / '.$this->labelTitik($t['varian_mili']['nilai'], $t['varian_mili']['desimal'])
+                        .' '.$t['varian_mili']['satuan'];
+                }
+
+                return $this->field(
+                    'spesifikasi_alat.resolusi_titik_'.($i + 1),
+                    'Resolusi UUT — '.$label,
+                    'angka',
+                    // Titik tengah bersatuan ganda: satuannya disebut di label.
+                    satuan: $t['varian_mili'] === null ? $t['satuan'] : null,
+                );
+            },
+            array_keys(self::TITIK),
+        );
+    }
+
+    /**
+     * Resolusi tulisan teknisi vs yang dipakai budget (baris rinci alat dulu,
+     * lalu bawaan master). Beda → peringatan, angka tidak digeser — pola
+     * Viscometer. Titik tengah lolos kalau cocok dengan SALAH SATU bentuknya.
+     *
+     * @return list<array{kode: string, pesan: string}>
+     */
+    private function peringatanResolusiTitik(CalibrationSession $sesi): array
+    {
+        $spesifikasi = (array) ($sesi->spesifikasi_alat ?? []);
+        $beda = [];
+
+        foreach (self::TITIK as $i => $t) {
+            $ditulis = $spesifikasi['resolusi_titik_'.($i + 1)] ?? null;
+            $ditulis = is_string($ditulis) ? str_replace(',', '.', trim($ditulis)) : $ditulis;
+
+            if (! is_numeric($ditulis)) {
+                continue;
+            }
+
+            $dipakai = [];
+            foreach ([$t, $t['varian_mili']] as $bentuk) {
+                if ($bentuk !== null) {
+                    $dipakai[] = (float) ($this->barisAlat($sesi->equipment, $bentuk['nilai'])['resolusi'] ?? $bentuk['resolusi']);
+                }
+            }
+
+            foreach ($dipakai as $r) {
+                if (abs((float) $ditulis - $r) <= 1e-9) {
+                    continue 2;
+                }
+            }
+
+            $beda[] = sprintf(
+                'titik %s %s ditulis %s (dipakai %s)',
+                $this->labelTitik($t['nilai'], $t['desimal']), $t['satuan'], $ditulis, implode(' / ', $dipakai),
+            );
+        }
+
+        if ($beda === []) {
+            return [];
+        }
+
+        return [[
+            'kode' => 'resolusi_titik_beda_dari_master',
+            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi yang dipakai menghitung: '
+                .implode('; ', $beda).'. Ketidakpastian resolusi tetap dihitung dari data alat/master — '
+                .'kalau yang benar yang di kertas, betulkan dulu data alatnya sebelum approve.',
+        ]];
+    }
+
+    /** @return list<array{kode: string, pesan: string}> */
+    private function peringatanTitikTengahMili(CalibrationSession $sesi): array
+    {
         $tengah = self::TITIK[1]['varian_mili'] ?? null;
 
         if ($tengah === null) {
@@ -945,6 +1035,7 @@ class ConductivityProfile extends CalibrationProfile
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
+                        ...$this->fieldResolusiPerTitik(),
                     ],
                     'tabel' => [
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading', $equipment),

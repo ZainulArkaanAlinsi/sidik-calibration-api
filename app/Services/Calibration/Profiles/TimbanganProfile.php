@@ -1036,18 +1036,23 @@ class TimbanganProfile extends CalibrationProfile
                     $this->f('tanggal_terima', 'Received Date', 'tanggal'),
                     $this->f('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                     $this->f('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
+                    // Nomor & urutan ikut kertas FM-0508 Rev.6 / .A Rev.4:
+                    // 1 Name, 2 Capacity, 3 Resolution, 4 Nilai e dan kelas,
+                    // 5 Type/Model, 6 Serial Number, 7 Merk. Nomor yang tidak
+                    // sejajar kertas membuat teknisi mengisi kotak yang salah.
                     $this->f('equipment.nama_alat', '1. Nama Alat', 'teks', sumber: 'otomatis'),
-                    $this->f('alat_merk', '2. Merk', 'teks'),
-                    $this->f('alat_model', '3. Type', 'teks'),
-                    $this->f('alat_serial_number', '4. No. Seri', 'teks'),
-                    $this->f('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'angka'),
-                    $this->f('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka'),
-                    $this->f('spesifikasi_alat.resolusi', '7. Resolusi Alat', 'angka'),
+                    $this->f('spesifikasi_alat.kapasitas', '2. Kapasitas Alat', 'angka'),
+                    // Tidak bernomor: kertasnya tidak punya baris Rentang Ukur.
+                    $this->f('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka'),
+                    $this->f('spesifikasi_alat.resolusi', '3. Resolusi Alat', 'angka'),
                     // `e` & kelas menentukan MPE (SNSU PK.M-02:2021) yang
                     // dicetak di sertifikat. Boleh "-" kalau alatnya memang
                     // tidak punya — master menyediakan kotaknya begitu.
-                    $this->f('spesifikasi_alat.nilai_e', '8. Nilai e (boleh "-")', 'teks'),
-                    $this->f('spesifikasi_alat.kelas', '9. Kelas (I / II / III / IIII, boleh "-")', 'teks'),
+                    $this->f('spesifikasi_alat.nilai_e', '4. Nilai e (boleh "-")', 'teks'),
+                    $this->f('spesifikasi_alat.kelas', '4. Kelas (I / II / III / IIII, boleh "-")', 'teks'),
+                    $this->f('alat_model', '5. Type/Model', 'teks'),
+                    $this->f('alat_serial_number', '6. Serial Number', 'teks'),
+                    $this->f('alat_merk', '7. Merk/Manufacture', 'teks'),
                     $this->f('tipe_display', 'Tipe Display', 'pilihan', pilihan: [
                         ['nilai' => 'Digital', 'label' => 'Digital'],
                         ['nilai' => 'Mekanik', 'label' => 'Mekanik'],

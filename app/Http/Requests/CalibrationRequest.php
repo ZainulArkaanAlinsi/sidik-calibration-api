@@ -776,6 +776,7 @@ class CalibrationRequest extends FormRequest
                 'sometimes', 'nullable', 'string',
                 'in:L,m3,usg,ml,kg,LPM,m3/h,usg/min,m3/min,kg/h,kg/min',
             ],
+            'spesifikasi_alat.flowmeter.volume_pipa_l' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'spesifikasi_alat.flowmeter.kapasitas' => ['sometimes', 'nullable', 'numeric'],
             'spesifikasi_alat.flowmeter.resolusi' => ['sometimes', 'nullable', 'numeric'],
             // Geometri pipa: dari keduanya lahir `u_A`, dan salah satunya

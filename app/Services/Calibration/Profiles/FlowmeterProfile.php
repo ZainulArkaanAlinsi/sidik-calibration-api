@@ -927,9 +927,9 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat dan Data Customer',
+            'judul' => 'Identitas Alat',
             'field' => [
-                $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 $this->field('alat_model', 'Type', 'teks'),
@@ -962,6 +962,17 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 $this->field(
                     'spesifikasi_alat.flowmeter.kode_timbangan', 'Timbangan Standar', 'pilihan',
                     pilihan: $this->pilihanTimbangan(),
+                    tampilKalau: [
+                        'kode' => 'spesifikasi_alat.flowmeter.varian_metode',
+                        'nilai' => [VarianMetodeFlowmeter::GRAVIMETRI->value],
+                    ],
+                ),
+                // Kotak "Volume Pipa dari Std. ke UUT (V)" di kertas FM-0538.A/.B.
+                // Dibaca `FlowmeterMentah` dan dicetak, BELUM masuk budget —
+                // pertanyaan lab §5. Tanpa kotak ini nilainya tidak pernah sampai.
+                $this->field(
+                    'spesifikasi_alat.flowmeter.volume_pipa_l', 'Volume Pipa dari Std. ke UUT (V)', 'angka',
+                    satuan: 'L',
                     tampilKalau: [
                         'kode' => 'spesifikasi_alat.flowmeter.varian_metode',
                         'nilai' => [VarianMetodeFlowmeter::GRAVIMETRI->value],
