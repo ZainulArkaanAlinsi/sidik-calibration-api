@@ -10,7 +10,7 @@
   dua-duanya — penerima yang dapat versi teks tidak boleh dapat informasi berbeda.
 --}}
 {{ $organisasi?->nama ?? config('app.name') }}
-@if ($organisasi?->no_akreditasi)Laboratorium Kalibrasi Terakreditasi KAN - {{ $organisasi->no_akreditasi }}@endif
+@if ($noAkreditasi)Laboratorium Kalibrasi Terakreditasi KAN - {{ $noAkreditasi }}@endif
 
 SERTIFIKAT KALIBRASI {{ $sertifikat->nomor ?? '-' }}
 ==============================================================

@@ -105,9 +105,11 @@
                     <div class="t-utama" style="font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; font-size:15px; font-weight:700; color:{{ $teks }}; line-height:1.35;">
                         {{ $organisasi?->nama ?? config('app.name') }}
                     </div>
-                    @if ($organisasi?->no_akreditasi)
+                    {{-- Bersyarat lingkup akreditasi alatnya, bukan ada-tidaknya
+                         nomor di organisasi — lihat SertifikatKePelanggan::noAkreditasi(). --}}
+                    @if ($noAkreditasi)
                     <div class="t-redup" style="font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; font-size:12px; color:{{ $redup }}; padding-top:3px; letter-spacing:.02em;">
-                        Laboratorium Kalibrasi Terakreditasi KAN &middot; {{ $organisasi->no_akreditasi }}
+                        Laboratorium Kalibrasi Terakreditasi KAN &middot; {{ $noAkreditasi }}
                     </div>
                     @endif
                 </td>

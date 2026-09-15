@@ -96,8 +96,38 @@ class SertifikatKePelanggan extends Mailable
                 'pelanggan' => $this->sertifikat->session?->equipment?->customer,
                 'format' => $this->format,
                 'logo' => $this->berkasLogo(),
+                'noAkreditasi' => $this->noAkreditasi(),
             ],
         );
+    }
+
+    /**
+     * Nomor akreditasi yang BOLEH disebut di badan email, atau `null`.
+     *
+     * Dibaca dari snapshot sertifikat, sumber yang sama dengan PDF yang
+     * dilampirkan (`CertificateSnapshotBuilder` → `meta.organization`). Dulu
+     * badan email membaca `organization.no_akreditasi` langsung, jadi sertifikat
+     * Gas Detector / Height Gauge / Anak Timbangan — yang PDF-nya sudah benar
+     * tanpa klaim KAN — tetap berangkat dengan kop "Laboratorium Kalibrasi
+     * Terakreditasi KAN · LK-285-IDN". Lampirannya jujur, amplopnya mengklaim.
+     *
+     * Snapshot lama yang belum membawa `dalam_lingkup_akreditasi` jatuh ke nomor
+     * organisasi — bawaan yang sama dengan `DataTampilanSertifikat` (`?? true`),
+     * supaya email dan PDF-nya tidak pernah berselisih.
+     */
+    private function noAkreditasi(): ?string
+    {
+        $snapshot = $this->sertifikat->snapshot['meta']['organization'] ?? [];
+
+        if (is_array($snapshot) && array_key_exists('dalam_lingkup_akreditasi', $snapshot)) {
+            return $snapshot['dalam_lingkup_akreditasi'] && filled($snapshot['no_akreditasi'] ?? null)
+                ? (string) $snapshot['no_akreditasi']
+                : null;
+        }
+
+        $nomor = $this->sertifikat->organization?->no_akreditasi;
+
+        return filled($nomor) ? (string) $nomor : null;
     }
 
     /**

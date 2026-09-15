@@ -548,4 +548,70 @@ class KirimEmailSertifikatTest extends TestCase
         $this->assertStringNotContainsString('U95', $isi);
         $this->assertStringNotContainsString('ketidakpastian', mb_strtolower($isi));
     }
+
+    // ------------------------------------------------ klaim akreditasi di badan email
+
+    /**
+     * Alat di luar lampiran LK-285-IDN (Gas Detector, Height Gauge, Anak
+     * Timbangan): PDF-nya sudah tanpa klaim KAN sejak 7 Sep 2026, tapi kop
+     * badan email dulu membaca nomor organisasi langsung — jadi pelanggan
+     * menerima "Terakreditasi KAN" di amplop dokumen yang tidak terakreditasi.
+     */
+    public function test_sertifikat_di_luar_lingkup_emailnya_tanpa_klaim_kan(): void
+    {
+        $sertifikat = $this->sertifikatDenganLingkup(dalamLingkup: false);
+
+        $email = new SertifikatKePelanggan($sertifikat);
+
+        $email->assertDontSeeInHtml('Terakreditasi KAN');
+        $email->assertDontSeeInHtml('LK-285-IDN');
+        $email->assertDontSeeInText('Terakreditasi KAN');
+        $email->assertDontSeeInText('LK-285-IDN');
+        // Identitas lab tetap ada — yang dicabut cuma klaimnya.
+        $email->assertSeeInHtml('PT SIDIK KALIBRASI');
+    }
+
+    public function test_sertifikat_dalam_lingkup_emailnya_tetap_menyebut_kan(): void
+    {
+        $sertifikat = $this->sertifikatDenganLingkup(dalamLingkup: true);
+
+        $email = new SertifikatKePelanggan($sertifikat);
+
+        $email->assertSeeInHtml('Terakreditasi KAN');
+        $email->assertSeeInHtml('LK-285-IDN');
+        $email->assertSeeInText('Terakreditasi KAN - LK-285-IDN');
+    }
+
+    /**
+     * Snapshot yang terbit sebelum penanda lingkup ada: jatuh ke nomor
+     * organisasi, sama dengan bawaan PDF (`DataTampilanSertifikat`), supaya
+     * email dan lampirannya tidak berselisih.
+     */
+    public function test_snapshot_lama_tanpa_penanda_lingkup_ikut_bawaan_pdf(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $sertifikat->update(['snapshot' => ['meta' => ['keputusan' => null]]]);
+
+        $email = new SertifikatKePelanggan($sertifikat->fresh()->load(['organization', 'session.equipment.customer']));
+
+        $email->assertSeeInHtml('LK-285-IDN');
+        $email->assertSeeInText('LK-285-IDN');
+    }
+
+    private function sertifikatDenganLingkup(bool $dalamLingkup): Certificate
+    {
+        $sertifikat = $this->sertifikatTerbit();
+
+        // Bentuknya disalin dari `CertificateSnapshotBuilder` — nomornya
+        // dikosongkan di luar lingkup, persis yang dibekukan builder.
+        $sertifikat->update(['snapshot' => ['meta' => ['organization' => [
+            'nama' => 'PT SIDIK KALIBRASI',
+            'alamat' => null,
+            'no_akreditasi' => $dalamLingkup ? 'LK-285-IDN' : null,
+            'standar_akreditasi' => $dalamLingkup ? 'SNI ISO/IEC 17025:2017' : null,
+            'dalam_lingkup_akreditasi' => $dalamLingkup,
+        ]]]]);
+
+        return $sertifikat->fresh()->load(['organization', 'session.equipment.customer']);
+    }
 }
