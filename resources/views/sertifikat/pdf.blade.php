@@ -266,6 +266,100 @@
 
         .kode-dokumen { font-size: 9.5px; color: #666; margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; }
 
+        /*
+          Mode LONGGAR — kebalikan `padat`, dan lahir dari keluhan pemilik proyek
+          15 Sep 2026 atas `CAL/2026/09/0007`: sertifikat berisi sedikit cuma
+          memakai ~60 % kertas, hurufnya kecil, dan bawahnya kosong lebar.
+
+          `App\Services\SertifikatSatuHalaman` mencoba `longgar-2` dulu, lalu
+          `longgar-1`, lalu normal, lalu padat — yang dipakai tingkat TERBESAR
+          yang masih satu halaman. Jadi sertifikat pendek memenuhi kertas dan
+          sertifikat panjang tetap muat; tidak ada satu ukuran yang dipaksakan.
+
+          `.cadangan-footer` ikut dirender di kedua tingkat ini. Dia yang menjamin
+          footer TIDAK mepet ke tepi bawah: tingkat longgar cuma lolos kalau isi +
+          cadangan itu masih satu halaman, jadi selalu tersisa ruang di bawah kode
+          dokumen. Tinggi `.ruang-ttd` SENGAJA tidak disentuh — dia dipatok bareng
+          `App\Support\UkuranTandaTangan`.
+        */
+        .cadangan-footer { height: 1.3cm; }
+
+        body.longgar-1 { font-size: 12.5px; line-height: 1.45; }
+        body.longgar-1 .kop-gambar { margin-bottom: 14px; }
+        body.longgar-1 .judul { font-size: 18px; margin: 4px 0 16px; }
+        body.longgar-1 table.info { margin-bottom: 14px; }
+        body.longgar-1 table.info td { padding: 4px 7px; }
+        /* Label dilebarkan & tidak dilipat: di huruf besar "Certificate Number"
+           dan "Calibration Location" terbelah dua baris di kolom 17 %. */
+        body.longgar-1 table.info td.lbl,
+        body.longgar-2 table.info td.lbl { width: 21%; white-space: nowrap; }
+        body.longgar-1 table.info td.val,
+        body.longgar-2 table.info td.val { width: 29%; }
+        body.longgar-1 .judul-sub { font-size: 13px; margin: 14px 0 7px; }
+        body.longgar-1 .judul-kelompok { font-size: 12px; margin: 10px 0 4px; }
+        body.longgar-1 table.data { font-size: 12.5px; }
+        body.longgar-1 table.data th,
+        body.longgar-1 table.data td { padding: 5px 9px; }
+        body.longgar-1 .ket-k { font-size: 10px; margin: 4px 0 8px; }
+        body.longgar-1 .catatan { font-size: 11px; margin-top: 10px; }
+        body.longgar-1 table.ttd { margin-top: 18px; }
+        body.longgar-1 table.ttd td { font-size: 12.5px; }
+        body.longgar-1 .kode-dokumen { font-size: 10.5px; margin-top: 14px; padding-top: 6px; }
+
+        /*
+          Tingkat RAPAT — di antara normal dan `padat`. Tanpa ini sertifikat yang
+          meluap sedikit di ukuran normal (Height Gauge, sepuluh titik) langsung
+          jatuh ke `padat`, yang dirancang untuk 24 baris Spectrophotometer: tabel
+          8px, dan lembarnya cuma memakai ~60 % kertas. Itu persis bentuk
+          `CAL/2026/09/0007` yang dikeluhkan.
+        */
+        body.rapat-1 { font-size: 10.5px; line-height: 1.35; }
+        body.rapat-1 .kop-gambar { margin-bottom: 7px; }
+        body.rapat-1 .judul { font-size: 15px; margin: 0 0 8px; }
+        body.rapat-1 table.info { margin-bottom: 6px; }
+        body.rapat-1 table.info td { padding: 1.5px 6px; }
+        body.rapat-1 .judul-sub { font-size: 11px; margin: 7px 0 4px; }
+        body.rapat-1 table.data { font-size: 10.5px; }
+        body.rapat-1 table.data th,
+        body.rapat-1 table.data td { padding: 2px 7px; }
+        body.rapat-1 .catatan { margin-top: 5px; }
+        body.rapat-1 table.ttd { margin-top: 8px; }
+        body.rapat-1 .kode-dokumen { margin-top: 5px; }
+
+        body.rapat-2 { font-size: 10px; line-height: 1.3; }
+        body.rapat-2 .kop-gambar { margin-bottom: 5px; }
+        body.rapat-2 .judul { font-size: 14px; margin: 0 0 6px; }
+        body.rapat-2 table.info { margin-bottom: 4px; font-size: 9.5px; }
+        body.rapat-2 table.info td { padding: 1px 6px; line-height: 1.25; }
+        body.rapat-2 .judul-sub { font-size: 10.5px; margin: 6px 0 3px; }
+        body.rapat-2 .judul-kelompok { font-size: 10px; margin: 6px 0 2px; }
+        body.rapat-2 table.data { font-size: 9.5px; }
+        body.rapat-2 table.data th,
+        body.rapat-2 table.data td { padding: 1px 6px; line-height: 1.2; }
+        body.rapat-2 .ket-k { font-size: 8px; margin: 1px 0 4px; }
+        body.rapat-2 .catatan { font-size: 9px; margin-top: 4px; line-height: 1.35; }
+        body.rapat-2 table.ttd { margin-top: 6px; }
+        body.rapat-2 table.ttd td { font-size: 10.5px; }
+        body.rapat-2 .kode-dokumen { margin-top: 4px; font-size: 8.5px; }
+        body.rapat-1 .cadangan-footer,
+        body.rapat-2 .cadangan-footer { height: 0.8cm; }
+
+        body.longgar-2 { font-size: 13.5px; line-height: 1.5; }
+        body.longgar-2 .kop-gambar { margin-bottom: 18px; }
+        body.longgar-2 .judul { font-size: 20px; margin: 6px 0 20px; }
+        body.longgar-2 table.info { margin-bottom: 18px; }
+        body.longgar-2 table.info td { padding: 5px 8px; }
+        body.longgar-2 .judul-sub { font-size: 14px; margin: 18px 0 9px; }
+        body.longgar-2 .judul-kelompok { font-size: 13px; margin: 12px 0 5px; }
+        body.longgar-2 table.data { font-size: 13.5px; }
+        body.longgar-2 table.data th,
+        body.longgar-2 table.data td { padding: 7px 10px; }
+        body.longgar-2 .ket-k { font-size: 11px; margin: 5px 0 10px; }
+        body.longgar-2 .catatan { font-size: 12px; margin-top: 12px; }
+        body.longgar-2 table.ttd { margin-top: 24px; }
+        body.longgar-2 table.ttd td { font-size: 13.5px; }
+        body.longgar-2 .kode-dokumen { font-size: 11px; margin-top: 18px; padding-top: 7px; }
+
         @if ($web ?? false)
         /*
           Mode web — cuma dipakai halaman hasil scan QR. Isinya NGGAK disentuh
@@ -396,7 +490,11 @@
      baris sebagai wakil tinggi halaman, dan wakilnya bocor buat apa pun yang
      nambah tinggi tanpa nambah baris (logo potret, kop tinggi, catatan
      panjang). Yang ini kenyataan hasil render. --}}
-@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || collect($snapshot['hasil'] ?? [])->count() > 12 || ($snapshot['timbangan'] ?? null) !== null))
+{{-- Tebakan `> 12 baris` cuma berlaku kalau pemanggil TIDAK mengirim tingkat
+     `longgar`. Kalau dikirim, `SertifikatSatuHalaman` sudah mengukur hasil
+     render sungguhan tingkat demi tingkat — tebakan itu justru membuat
+     Centrifuge 13 baris dipaksa ke tabel 8px padahal muat di ukuran rapat. --}}
+@php($padat = ! ($web ?? false) && (($paksaPadat ?? false) || (! isset($longgar) && collect($snapshot['hasil'] ?? [])->count() > 12) || ($snapshot['timbangan'] ?? null) !== null))
 {{-- Autoklaf punya pemadatan SENDIRI, bukan numpang `padat`.
 
      `padat` dirancang buat Spectrophotometer: 24 baris angka dalam satu tabel,
@@ -410,7 +508,11 @@
      tangan balik ke halaman pertama, tanpa bikin tabelnya kelihatan sesak. --}}
 @php($lembarAutoclave = ! ($web ?? false) && ($snapshot['autoclave'] ?? null) !== null)
 @php($lembarTimbangan = ! ($web ?? false) && ($snapshot['timbangan'] ?? null) !== null)
-<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}">
+{{-- Tingkat longgar (0/1/2) dari App\Services\SertifikatSatuHalaman. Tidak
+     berlaku bersama `padat`, dan tidak untuk Autoklaf/Timbangan yang punya
+     pemadatannya sendiri. Lihat `.cadangan-footer`. --}}
+@php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
+<body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
 @if ($web ?? false)
     <div class="bilah">
         <div class="cap">&#10003; Sertifikat terverifikasi</div>
@@ -1304,6 +1406,9 @@
     </table>
 
     <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
+    @if ($longgar !== 0)
+        <div class="cadangan-footer"></div>
+    @endif
 @if ($web ?? false)
     </div>
 @endif

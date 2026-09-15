@@ -79,9 +79,15 @@ class DataTampilanSertifikat
             // sambil tetap memasang banner-nya berarti klaimnya tetap tercetak —
             // cuma jadi lebih sulit dilihat pembaca kode. Tanpa banner, lembarnya
             // jatuh ke kop teks yang klaimnya memang sudah bersyarat.
+            //
+            // Di luar lingkup, yang dipakai VARIAN kop yang sama tanpa blok KAN
+            // (`kop-surat-non-kan.png`), bukan kop teks. Kop teks cadangan itu
+            // desain lain sama sekali — keluhan pemilik proyek 15 Sep 2026 atas
+            // sertifikat Height Gauge `CAL/2026/09/0007` — dan logo di dalamnya
+            // pun masih bertuliskan KAN, jadi dia tidak menyelesaikan klaimnya.
             'kop' => ($sertifikat->snapshot['meta']['organization']['dalam_lingkup_akreditasi'] ?? true)
                 ? $this->kopDataUri($organisasi)
-                : null,
+                : $this->kopBawaan('images/kop-surat-non-kan.png'),
             // `null` kalau belum diunggah — dan itu state yang SAH: sertifikat
             // nyetak garis + nama + jabatan dengan ruang kosong buat tanda
             // tangan basah.
@@ -199,10 +205,21 @@ class DataTampilanSertifikat
             }
         }
 
-        $bawaan = public_path('images/kop-surat.png');
+        return $this->kopBawaan('images/kop-surat.png');
+    }
 
-        return is_file($bawaan)
-            ? self::dataUri($bawaan, (string) file_get_contents($bawaan))
+    /**
+     * Kop bawaan dari `public/`. Varian `kop-surat-non-kan.png` SENGAJA tidak
+     * membaca `kop_path` organisasi: kop unggahan admin bisa memuat lambang KAN,
+     * dan sistem tidak bisa tahu isinya — yang pasti bersih cuma berkas yang
+     * dibuat dari kop bawaan dengan blok KAN dihapus.
+     */
+    private function kopBawaan(string $jalur): ?string
+    {
+        $berkas = public_path($jalur);
+
+        return is_file($berkas)
+            ? self::dataUri($berkas, (string) file_get_contents($berkas))
             : null;
     }
 

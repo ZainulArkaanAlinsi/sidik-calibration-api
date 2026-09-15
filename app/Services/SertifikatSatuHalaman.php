@@ -51,6 +51,35 @@ class SertifikatSatuHalaman
     {
         $bahan = $this->tampilan->untuk($sertifikat);
 
+        // Tingkat LONGGAR dicoba lebih dulu, dari yang terbesar. Sertifikat
+        // berisi sedikit dulu terbit memakai ~60 % kertas dengan huruf kecil
+        // (keluhan pemilik proyek 15 Sep 2026, `CAL/2026/09/0007`); sekarang
+        // yang dipakai ukuran TERBESAR yang masih satu halaman, lengkap dengan
+        // cadangan ruang di bawah footer (`.cadangan-footer` di blade).
+        //
+        // Ongkosnya dibayar sertifikat panjang saja: yang pendek lolos di
+        // percobaan pertama, sama seperti dulu lolos di mode normal.
+        //
+        // Urutannya: longgar-2, longgar-1, normal, rapat-1, rapat-2, lalu jalur
+        // `paling()` (normal → padat). Normal ikut dicoba di sini supaya
+        // sertifikat yang dulu muat normal tetap persis sama bentuknya.
+        // Timbangan & Autoklaf punya pemadatan sendiri dan blade mengabaikan
+        // `longgar` untuk keduanya — mencobanya cuma merender lembar identik
+        // lima kali di server 0,1 CPU. Sertifikat berbaris banyak TETAP dicoba:
+        // tebakan `> 12 baris = padat` di blade dimatikan begitu tingkat dikirim.
+        $snapshot = $bahan['snapshot'] ?? [];
+        $tingkat = ($snapshot['timbangan'] ?? null) !== null || ($snapshot['autoclave'] ?? null) !== null
+            ? []
+            : [2, 1, 0, -1, -2];
+
+        foreach ($tingkat as $longgar) {
+            $hasil = $this->cetak($bahan, false, $longgar);
+
+            if ($hasil['halaman'] <= 1) {
+                return $hasil['isi'];
+            }
+        }
+
         return $this->paling(
             fn (bool $paksaPadat): array => $this->cetak($bahan, $paksaPadat),
             $sertifikat->getKey(),
@@ -96,9 +125,9 @@ class SertifikatSatuHalaman
     }
 
     /** @return array{isi: string, halaman: int} */
-    private function cetak(array $bahan, bool $paksaPadat): array
+    private function cetak(array $bahan, bool $paksaPadat, int $longgar = 0): array
     {
-        $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => $paksaPadat]);
+        $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => $paksaPadat, 'longgar' => $longgar]);
 
         // `output()` dipanggil DULU: jumlah halaman baru ada sesudah dompdf
         // benar-benar merender, dan `getCanvas()` sebelum itu balik nol.
