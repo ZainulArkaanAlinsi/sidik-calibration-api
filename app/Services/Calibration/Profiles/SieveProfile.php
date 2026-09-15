@@ -498,7 +498,7 @@ class SieveProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Equipment Identity and Customer Data',
             'field' => [
-                $this->field('equipment_id', 'Name', 'pilihan', sumber: 'master_alat'),
+                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
                 $this->field('equipment.nama_alat', 'Name', 'teks', sumber: 'otomatis'),
                 $this->field('alat_model', 'Type/Model', 'teks'),
                 $this->field('alat_serial_number', 'Serial Number', 'teks'),
@@ -603,10 +603,16 @@ class SieveProfile extends CalibrationProfile
                 'judul_pengulangan' => 'Opening',
                 'titik_bisa_diubah' => true,
                 'simpan_ke' => 'spesifikasi_alat.sieve.opening',
+                // Nomor opening berurutan 1..30 seperti master (`INPUT DATA`
+                // kolom No.), tapi kertas FM-0536 mencetak dua blok berdampingan
+                // yang masing-masing bernomor 1..15. Label menyebut bloknya
+                // supaya baris kertas "kanan 1" tidak disalin ke opening 1.
                 'baris' => array_map(static fn (int $n): array => [
                     'nomor' => $n,
                     'titik_ukur' => (float) $n,
-                    'label' => (string) $n,
+                    'label' => $n <= self::BARIS_KERTAS / 2
+                        ? sprintf('%d (kiri %d)', $n, $n)
+                        : sprintf('%d (kanan %d)', $n, $n - self::BARIS_KERTAS / 2),
                     'satuan' => null,
                 ], range(1, self::BARIS_KERTAS)),
                 'kolom' => [

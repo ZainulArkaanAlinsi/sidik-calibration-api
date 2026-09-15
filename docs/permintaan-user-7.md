@@ -3423,6 +3423,17 @@ urutan server, jadi seluruh perbaikan ada di profil PHP.
    memakai TIGA (1 / 100 / 1000 NTU). Kertas mana yang berlaku?
 3. Resolusi UUT per titik (Turbidimeter/Conductivity): cukup dicatat, atau menggantikan resolusi master di
    budget?
+4. Centrifuge/Tachometer FM-0515 mencetak tabel **Before** dan **After adjustment** (5 repeat × 3 set point),
+   sedangkan master hanya punya satu blok pembacaan per rentang (6 rentang × 3 set point × 5 repeat) tanpa
+   adjustment. Lembar aplikasi ikut master. Apakah pembacaan sebelum adjustment perlu disimpan?
+
+### Pengecekan visual susulan (15 Sep 2026)
+
+- **Sieve FM-0536:** kertasnya 15 baris × dua blok berdampingan, masing-masing bernomor 1..15; master
+  menomori opening berurutan. Nomor tetap berurutan 1..30 (yang disimpan & dihitung), tapi label baris
+  sekarang `1 (kiri 1)` … `16 (kanan 1)` … `30 (kanan 15)`. Dropdown alat berlabel "Pilih Alat". Bagian 2
+  "Diameter dan Ketinggian Rangka" (3 baris) sudah cocok.
+- **Centrifuge/Tachometer FM-0515:** tidak diubah — lihat pertanyaan 4.
 
 ## Gelombang & status
 
