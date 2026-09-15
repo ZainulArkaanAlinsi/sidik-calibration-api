@@ -92,18 +92,39 @@ class VersiAplikasiController extends Controller
     private function ambilDariGithub(): ?array
     {
         try {
-            $respons = Http::timeout(self::BATAS_WAKTU)
+            $permintaan = Http::timeout(self::BATAS_WAKTU)
                 ->withHeaders([
                     'Accept' => 'application/vnd.github+json',
                     'X-GitHub-Api-Version' => '2022-11-28',
-                ])
-                ->get(sprintf('https://api.github.com/repos/%s/releases/latest', self::REPO));
+                ]);
+
+            // Token opsional. Tanpa token, API GitHub dibatasi 60 panggilan per
+            // jam per ALAMAT IP — dan IP keluar Render paket gratis dipakai
+            // bersama banyak layanan lain.
+            $token = config('services.github.token');
+            if (filled($token)) {
+                $permintaan = $permintaan->withToken((string) $token);
+            }
+
+            $respons = $permintaan->get(sprintf('https://api.github.com/repos/%s/releases/latest', self::REPO));
         } catch (\Throwable $e) {
             Log::warning('Gagal menghubungi GitHub buat versi aplikasi.', [
                 'pesan' => $e->getMessage(),
             ]);
 
-            return null;
+            return $this->ambilLewatRedirect();
+        }
+
+        // 403/429 = jatah API habis, bukan "tidak ada rilis". 15 Sep 2026
+        // endpoint ini menjawab `tersedia: false` dari Render sementara API yang
+        // sama dari mesin lain menjawab v1.0.566 — dan selama itu tidak satu HP
+        // pun ditawari pemutakhiran. Jalur redirect tidak memakai jatah API.
+        if (in_array($respons->status(), [403, 429], true)) {
+            Log::warning('Jatah API GitHub habis, pakai redirect releases/latest.', [
+                'status' => $respons->status(),
+            ]);
+
+            return $this->ambilLewatRedirect();
         }
 
         if (! $respons->successful()) {
@@ -151,6 +172,57 @@ class VersiAplikasiController extends Controller
             // payload berubah dan versi lama mengirim data yang salah),
             // nilainya tinggal dinaikkan dari sisi rilis tanpa menunggu
             // aplikasi lama diperbarui lebih dulu.
+            'wajib' => false,
+        ];
+    }
+
+    /**
+     * Versi terbaru dari redirect `github.com/<repo>/releases/latest`, tanpa API.
+     *
+     * Halaman web GitHub tidak dihitung ke jatah API, dan redirect-nya menyebut
+     * tag rilis terbaru (`…/releases/tag/v1.0.566+566`). URL APK disusun dari
+     * nama berkas yang dipatok `apk-rilis-cloud.yml` (`sidik-kalibrasi-<versi>.apk`).
+     * Ukuran & catatan rilis memang tidak ada di jalur ini — mobile hanya
+     * memakainya untuk tampilan.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function ambilLewatRedirect(): ?array
+    {
+        try {
+            $respons = Http::timeout(self::BATAS_WAKTU)
+                ->withoutRedirecting()
+                ->get(sprintf('https://github.com/%s/releases/latest', self::REPO));
+        } catch (\Throwable $e) {
+            Log::warning('Redirect releases/latest juga gagal.', ['pesan' => $e->getMessage()]);
+
+            return null;
+        }
+
+        $lokasi = (string) $respons->header('Location');
+
+        if (! $respons->redirect()
+            || preg_match('#/releases/tag/([^/?\#]+)$#', $lokasi, $cocok) !== 1) {
+            // Repo tanpa rilis diarahkan ke `/releases`, bukan ke sebuah tag.
+            return null;
+        }
+
+        $tag = rawurldecode($cocok[1]);
+        $versi = $this->versiDariTag($tag);
+
+        return [
+            'versi' => $versi,
+            'build' => $this->buildDariTag($tag),
+            'tag' => $tag,
+            'url_unduh' => sprintf(
+                'https://github.com/%s/releases/download/%s/sidik-kalibrasi-%s.apk',
+                self::REPO,
+                $tag,
+                $versi,
+            ),
+            'ukuran' => 0,
+            'catatan' => '',
+            'terbit_pada' => null,
             'wajib' => false,
         ];
     }

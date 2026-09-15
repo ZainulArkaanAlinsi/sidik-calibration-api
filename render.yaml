@@ -216,6 +216,13 @@ services:
       - key: DIREKTORI_PERUSAHAAN_DRIVER
         value: osm
 
+      # OPSIONAL. `GET /api/app/versi-terbaru` membaca rilis APK dari GitHub;
+      # tanpa token jatahnya 60/jam per IP, dan IP keluar Render gratis dipakai
+      # bersama. Kosong tetap jalan (jatuh ke redirect releases/latest). Kalau
+      # diisi: fine-grained token read-only ke repo mobile saja.
+      - key: GITHUB_TOKEN
+        sync: false
+
       # Nominatim menolak klien yang nggak menyebut dirinya, dan yang diblokir
       # alamat IP service ini — bukan satu request. Sejak DRIVER=osm jadi
       # bawaan, baris ini satu-satunya yang menjaga jalur direktori tetap

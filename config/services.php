@@ -203,4 +203,20 @@ return [
         'timeout' => (int) env('DIREKTORI_PERUSAHAAN_TIMEOUT', 8),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | GitHub — versi APK terbaru untuk `GET /api/app/versi-terbaru`
+    |--------------------------------------------------------------------------
+    | OPSIONAL. Tanpa token pun endpoint tetap jalan: kalau jatah API tanpa
+    | token (60/jam per IP, dibagi dengan layanan lain di IP Render yang sama)
+    | habis, controller jatuh ke redirect `releases/latest` yang tidak memakai
+    | jatah API. Token hanya menaikkan jatahnya ke 5.000/jam.
+    |
+    | Kalau diisi: fine-grained token, akses READ-ONLY ke repo mobile yang
+    | publik saja, tanpa izin lain.
+    */
+    'github' => [
+        'token' => env('GITHUB_TOKEN'),
+    ],
+
 ];

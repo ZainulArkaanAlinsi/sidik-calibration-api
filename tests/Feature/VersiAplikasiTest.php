@@ -172,4 +172,87 @@ class VersiAplikasiTest extends TestCase
             ->assertOk()
             ->assertJson(['tersedia' => true, 'versi' => '1.4.0']);
     }
+
+    // ------------------------------------------ jatah API habis → redirect releases/latest
+
+    /**
+     * Log Render 15 Sep 2026 04:36: `GitHub menolak permintaan versi aplikasi.
+     * {"status":403}` — jatah API tanpa token (per IP, dan IP keluar Render
+     * gratis dipakai bersama) habis, dan selama itu tidak satu HP pun ditawari
+     * pemutakhiran.
+     */
+    public function test_jatah_api_habis_jatuh_ke_redirect_releases_latest(): void
+    {
+        Http::preventStrayRequests();
+        // Urutan penting: pola `github.com/*` juga cocok untuk `api.github.com`.
+        Http::fake([
+            'api.github.com/*' => Http::response(['message' => 'API rate limit exceeded'], 403),
+            'github.com/*' => Http::response('', 302, [
+                'Location' => 'https://github.com/'.VersiAplikasiController::REPO.'/releases/tag/v1.0.566+566',
+            ]),
+        ]);
+
+        $this->getJson('/api/app/versi-terbaru')
+            ->assertOk()
+            ->assertJson([
+                'tersedia' => true,
+                'versi' => '1.0.566',
+                'build' => 566,
+                'tag' => 'v1.0.566+566',
+                'url_unduh' => 'https://github.com/'.VersiAplikasiController::REPO
+                    .'/releases/download/v1.0.566+566/sidik-kalibrasi-1.0.566.apk',
+                'wajib' => false,
+            ]);
+    }
+
+    public function test_429_juga_jatuh_ke_redirect(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.github.com/*' => Http::response('', 429),
+            'github.com/*' => Http::response('', 302, [
+                'Location' => 'https://github.com/x/y/releases/tag/v2.1.0+700',
+            ]),
+        ]);
+
+        $this->getJson('/api/app/versi-terbaru')->assertJson(['tersedia' => true, 'versi' => '2.1.0']);
+    }
+
+    public function test_redirect_tanpa_tag_tetap_tidak_tersedia(): void
+    {
+        // Repo tanpa rilis diarahkan ke `/releases`, bukan ke sebuah tag.
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.github.com/*' => Http::response('', 403),
+            'github.com/*' => Http::response('', 302, [
+                'Location' => 'https://github.com/x/y/releases',
+            ]),
+        ]);
+
+        $this->getJson('/api/app/versi-terbaru')
+            ->assertOk()
+            ->assertJson(['tersedia' => false]);
+    }
+
+    public function test_token_dipakai_kalau_disetel(): void
+    {
+        config(['services.github.token' => 'ghp_contoh']);
+        Http::preventStrayRequests();
+        Http::fake(['api.github.com/*' => Http::response($this->rilis(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru')->assertOk();
+
+        Http::assertSent(fn ($r) => $r->hasHeader('Authorization', 'Bearer ghp_contoh'));
+    }
+
+    public function test_tanpa_token_tidak_mengirim_authorization(): void
+    {
+        config(['services.github.token' => null]);
+        Http::preventStrayRequests();
+        Http::fake(['api.github.com/*' => Http::response($this->rilis(), 200)]);
+
+        $this->getJson('/api/app/versi-terbaru')->assertOk();
+
+        Http::assertSent(fn ($r) => ! $r->hasHeader('Authorization'));
+    }
 }
