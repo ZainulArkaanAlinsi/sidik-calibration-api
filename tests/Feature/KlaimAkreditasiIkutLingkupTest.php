@@ -213,10 +213,19 @@ class KlaimAkreditasiIkutLingkupTest extends TestCase
 
         $data = app(DataTampilanSertifikat::class)->untuk($sertifikat);
 
-        $this->assertNull(
+        // Kop banner KAN (`kop-surat.png`) memuat LK-285-IDN DI DALAM gambarnya,
+        // jadi dia wajib diganti. Sejak 15 Sep 2026 penggantinya varian kop yang
+        // sama dengan blok KAN dihapus — bukan kop teks (keluhan pemilik proyek
+        // atas `CAL/2026/09/0007`).
+        $nonKan = public_path('images/kop-surat-non-kan.png');
+        $kan = public_path('images/kop-surat.png');
+
+        $this->assertNotNull($data['kop'], 'Sesi di luar lingkup tetap berkop — varian tanpa KAN.');
+        $this->assertStringEndsWith(base64_encode((string) file_get_contents($nonKan)), $data['kop']);
+        $this->assertStringNotContainsString(
+            base64_encode((string) file_get_contents($kan)),
             $data['kop'],
-            'Kop banner wajib DISETOP di luar lingkup — `kop-surat.png` memuat LK-285-IDN di '
-            .'dalam gambarnya, jadi klaimnya tetap tercetak walau kop teksnya sudah bersyarat.',
+            'Kop banner KAN wajib DISETOP di luar lingkup.',
         );
 
         $html = view('sertifikat.pdf', $data)->render();
@@ -225,8 +234,9 @@ class KlaimAkreditasiIkutLingkupTest extends TestCase
         $this->assertStringNotContainsString('Terakreditasi', $html);
 
         // Identitas penerbitnya TETAP tercetak — dia bukan klaim akreditasi,
-        // dan sertifikat tanpa nama lab tidak berguna buat siapa pun.
-        $this->assertStringContainsString('PT Sistem Dirgantara', $html);
+        // dan sertifikat tanpa nama lab tidak berguna buat siapa pun. Nama lab
+        // ada DI DALAM gambar kop non-KAN, jadi yang dibuktikan kopnya terpasang.
+        $this->assertStringContainsString($data['kop'], $html);
     }
 
     /**
