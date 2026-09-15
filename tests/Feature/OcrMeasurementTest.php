@@ -385,8 +385,30 @@ class OcrMeasurementTest extends TestCase
      */
     public function test_kolom_sumber_input_bukan_enum_sempit(): void
     {
-        if (DB::getDriverName() !== 'mysql') {
-            $this->markTestSkipped('Enum cuma ditegakkan MySQL; SQLite nerima apa aja.');
+        // SQLite TIDAK dilewati lagi. Migrasi Laravel menulis enum di SQLite
+        // sebagai `CHECK ("kolom" in (...))` di definisi tabelnya, jadi enum
+        // sempit tetap kelihatan di `sqlite_master` walau SQLite-nya sendiri
+        // tidak menagih. Dulu test ini `markTestSkipped` di SQLite — dan CI cuma
+        // menjalankan SQLite, jadi di CI dia tidak pernah memeriksa apa pun.
+        if (DB::getDriverName() === 'sqlite') {
+            foreach ([
+                ['calibration_sessions', 'input_method'],
+                ['raw_measurements', 'input_source'],
+            ] as [$tabel, $kolom]) {
+                $sql = (string) DB::selectOne(
+                    "select sql from sqlite_master where type = 'table' and name = ?",
+                    [$tabel],
+                )?->sql;
+
+                $this->assertStringContainsString("\"{$kolom}\"", $sql, "kolom {$tabel}.{$kolom} nggak ketemu di skema");
+                $this->assertDoesNotMatchRegularExpression(
+                    '/check\s*\(\s*"'.preg_quote($kolom, '/').'"\s+in\s*\(/i',
+                    $sql,
+                    "{$tabel}.{$kolom} balik jadi enum — sumber input baru bakal ditolak diam-diam",
+                );
+            }
+
+            return;
         }
 
         foreach ([

@@ -186,17 +186,33 @@ class ThermohygroSemuaLembarTest extends TestCase
     {
         $this->seed([OrganizationSeeder::class, ThermohygroSeeder::class]);
 
-        if (isset(self::DIKECUALIKAN[$profil->kode()])) {
-            $this->markTestSkipped(
-                "Lembar `{$profil->kode()}` dikecualikan: ".self::DIKECUALIKAN[$profil->kode()],
-            );
-        }
-
         $ditawarkan = array_map(
             static fn (array $p): string => $p['label'],
             $this->fieldThermohygro($profil)['pilihan'] ?? [],
         );
         sort($ditawarkan);
+
+        // Lembar yang dikecualikan TETAP diperiksa — dengan aturannya sendiri,
+        // bukan dilewati. Dulu `markTestSkipped`: skip itu tidak menjaga apa pun,
+        // jadi saringan tekanan Gas Detector bisa menyusut ke nol unit (atau
+        // melebar ke TH-1..7 yang tidak mengukur tekanan) dan suite tetap hijau.
+        if (isset(self::DIKECUALIKAN[$profil->kode()])) {
+            $berTekanan = Standard::whereNotNull('parameter_kondisi')->get()
+                ->filter(static fn (Standard $s): bool => ! empty(((array) $s->parameter_kondisi)['tekanan'] ?? null))
+                ->pluck('nama')
+                ->sort()
+                ->values()
+                ->all();
+
+            $this->assertNotEmpty($berTekanan, 'Seeder tidak lagi menanam unit ber-kalibrasi tekanan.');
+            $this->assertSame(
+                $berTekanan,
+                $ditawarkan,
+                "Lembar `{$profil->kode()}`: ".self::DIKECUALIKAN[$profil->kode()],
+            );
+
+            return;
+        }
 
         $this->assertSame(
             ['TH-1', 'TH-2', 'TH-3', 'TH-4', 'TH-5', 'TH-6', 'TH-7'],

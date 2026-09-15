@@ -32,9 +32,9 @@ use Carbon\Carbon;
  * cuma punya **lima** kotak (X1..X5) di sepuluh baris. Yang dipegang teknisi
  * kertasnya, jadi lembar ini enam kotak berlabel UP/DOWN. Rata-rata dan
  * simpangan baku titik diambil atas SEMUA penunjukan yang terisi — persis
- * `AVERAGE(I31:M33)` master atas kotak yang terisi. Apakah UP dan DOWN
- * semestinya dirata-rata jadi satu (bukan dilaporkan sebagai histeresis)
- * ditanyakan ke lab, `docs/pertanyaan-lab-dial-indicator.md` §6.
+ * `AVERAGE(I31:M33)` master atas kotak yang terisi. UP dan DOWN DIGABUNG —
+ * diputuskan 15 Sep 2026, `docs/pertanyaan-lab-dial-indicator.md` §6; posisi
+ * kotaknya tetap tersimpan di `sensor_ke` kalau histeresis kelak diminta.
  *
  * ## Nominal = TUMPUKAN balok ukur yang diketik teknisi
  *

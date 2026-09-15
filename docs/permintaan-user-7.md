@@ -3345,7 +3345,12 @@ Jalur HP → server → hitung ulang dijaga `DialIndicatorSesiTest` (6) dan `Jan
 - **Jangka Sorong > 300 mm** (sesi contoh master 600 mm): terbit **tanpa lantai CMC dan tanpa klaim
   akreditasi** — hook baru `CalibrationProfile::dalamLingkupAkreditasiSesi()`, dibekukan ke snapshot.
   Preseden Height Gauge, tapi per SESI karena lampiran membatasi rentang, bukan jenis alat.
-  **Menunggu konfirmasi pemilik proyek.**
+  **Diputuskan** 15 Sep 2026 — pemilik proyek menyerahkan keputusannya ("pake keputusan mu").
+- **Dial Indicator UP/DOWN digabung** jadi satu rata-rata & satu koreksi, mengikuti `AVERAGE` master dan
+  format sertifikat satu kolom. Posisi kotak tetap tersimpan (`sensor_ke`) kalau histeresis kelak diminta.
+- **Dua test yang selama ini `markTestSkipped` di CI kini memeriksa sungguhan:** kolom sumber input
+  dibaca dari `sqlite_master` (enum SQLite = `CHECK … IN`), dan dropdown thermohygro Gas Detector wajib
+  persis unit ber-kalibrasi tekanan. CI tinggal nol test dilewati.
 - **Nominal di luar daftar terkalibrasi** (balok ukur, caliper checker, Tabel_MPE) → titik diblokir
   dengan alasan yang menyebut angkanya. Master menghilangkannya diam-diam lewat `IFERROR`.
 - **Dial Indicator Evaluation identik terbit + peringatan** (beda dari Micrometer/Height Gauge, di mana

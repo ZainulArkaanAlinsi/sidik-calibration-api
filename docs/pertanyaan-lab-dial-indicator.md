@@ -65,8 +65,14 @@ Kertas `SIDIK-FM-CAL-0526_Rev.3`: kolom **UP X1 X2 X3** dan **DOWN X1 X2 X3**, l
 `INPUT DATA`: **X1..X5**, sepuluh baris. Sistem mengikuti kertas (enam kotak) dan merata-rata SEMUA
 bacaan yang terisi — sama dengan `AVERAGE(I31:M33)` atas kotak terisi.
 
-**Pertanyaan:** (a) apakah UP dan DOWN memang dirata-rata jadi satu koreksi? (b) atau histeresis
-(UP − DOWN) perlu dilaporkan terpisah seperti USBR 1007-89? (c) berapa baris yang wajib diisi?
+**DIPUTUSKAN 15 Sep 2026 (atas arahan pemilik proyek, "pake keputusan mu"): UP dan DOWN DIGABUNG** jadi
+satu rata-rata dan satu koreksi per titik. Dasarnya: rumus master (`AVERAGE(I31:M33)`) merata-rata semua
+penunjukan, dan format sertifikat master cuma punya satu kolom `Correction`. Melaporkan histeresis
+terpisah berarti mengubah metode DAN format sertifikat — wewenang Instruksi Kerja lab, bukan perangkat
+lunak. Pembacaan UP/DOWN tetap tersimpan terpisah per posisi kotak (`sensor_ke` 1..3 / 4..6), jadi kalau
+lab kelak memutuskan histeresis dilaporkan, datanya sudah ada tanpa perlu input ulang.
+
+**Pertanyaan yang tersisa:** berapa baris yang wajib diisi (kertas 15, workbook 10)?
 
 ## §7 — Masa berlaku balok ukur GB-9122-0 tidak sepakat
 

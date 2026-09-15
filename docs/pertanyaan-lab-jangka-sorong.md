@@ -68,10 +68,13 @@ Height Gauge, tapi per sesi karena lampiran membatasi RENTANG.
 
 **Konsekuensi yang perlu diketahui:** master menerbitkan sesi 600 mm itu **dengan** logo LK-285-IDN.
 
-> **Pertanyaan:**
+> **DIPUTUSKAN 15 Sep 2026 (atas arahan pemilik proyek, "pake keputusan mu"):** jangka sorong > 300 mm
+> **tetap diterbitkan, tanpa klaim akreditasi dan tanpa lantai CMC.** Lab memang mengkalibrasi alat itu
+> (sesi contoh master 600 mm); menolak menerbitkan merugikan pelanggan, sementara yang dilarang KAN
+> hanyalah klaim akreditasi di luar lingkup. Manajer teknis tetap boleh membaliknya.
+>
+> **Pertanyaan yang tersisa:**
 > 1. Setuju lantai 0,015 mm dipasang di ketiga tabel (Outside, Inside, Depth)?
-> 2. Setuju jangka sorong > 300 mm diterbitkan **tanpa** klaim akreditasi (yang dikodekan sekarang), bukan
->    tidak diterbitkan sama sekali?
 > 3. Sertifikat 600 mm yang sudah terbit dengan logo KAN — perlu ditinjau sebagai pekerjaan tidak sesuai?
 
 ## §3 — Repeatability Depth menunjuk sel kosong [DIHITUNG DARI SEL YANG DIMAKSUD]
