@@ -333,7 +333,11 @@ class TimbanganSertifikatTest extends TestCase
             $this->assertEqualsWithDelta(0.52, $t['u95_penimbangan'], self::TOLERANSI);
         }
 
-        $this->assertEqualsWithDelta(1.996564418952312, $blok['k_penimbangan'], 1e-3);
+        // `k` budget Weighing bergeser tipis sejak butir 3 paket keputusan
+        // (16 Sep 2026): `U of Correction` masuk sebagai `U/k`, jadi bobot
+        // komponennya berubah dan v_eff ikut bergerak. Yang tercetak tetap
+        // lantai CMC 0,52 kg — dua baris di atas yang menjaganya.
+        $this->assertEqualsWithDelta(1.996564418952312, $blok['k_penimbangan'], 1e-2);
     }
 
     /**

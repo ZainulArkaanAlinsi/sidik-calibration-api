@@ -373,7 +373,15 @@ class ThermohygroCalculator
      */
     private function akarGanda(float $nilai, float $pembagi): float
     {
-        return $pembagi <= 0.0 ? 0.0 : $nilai / sqrt($pembagi);
+        // Akar ganda master TIDAK lagi ditiru sejak 16 Sep 2026 (butir A-1,
+        // disetujui pemilik proyek; paraf Manajer Teknis menyusul): `Q` di
+        // kolom Divisor sudah berisi pembaginya, jadi `SQRT(Q)` mengakarkannya
+        // dua kali dan menghasilkan pembagi 3^¼ yang tidak dimiliki distribusi
+        // mana pun (GUM 4.3.7). Nama methodnya sengaja dibiarkan supaya
+        // pembaca yang mencari "akar ganda" mendarat di sini dan membaca
+        // kenapa dia berhenti dipakai; selisihnya tetap dicetak di jejak audit
+        // lewat `pembagi_akar_ganda`.
+        return $pembagi <= 0.0 ? 0.0 : $nilai / $pembagi;
     }
 
     /**
@@ -422,34 +430,37 @@ class ThermohygroCalculator
         $stab = (float) ($th['chamber'][$kunciChamber]['stabilitas'] ?? 0.0);
         $homo = (float) ($th['chamber'][$kunciChamber]['homogenitas'] ?? 0.0);
 
-        // Versi "kalau pembaginya dibetulkan": tiga (atau dua) komponen yang
-        // memakai akar ganda dihitung ulang dengan pembagi yang seharusnya.
-        $benar = array_map(
+        // Versi MASTER: tiga (atau dua) komponen yang di master memakai akar
+        // ganda, dihitung ulang dengan pembagi master apa adanya. Dipakai cuma
+        // buat mencetak selisihnya di jejak audit — yang dipakai menghitung
+        // pembagi yang benar (lihat [akarGanda]).
+        $versiMaster = array_map(
             static function (array $k) use ($sqrt3, $drift, $stab, $homo, $chamber, $suhu): array {
                 return match ($k['sumber']) {
-                    'stabilitas_chamber' => [...$k, 'u' => $stab / $sqrt3],
-                    'homogenitas_chamber' => [...$k, 'u' => $homo / $sqrt3],
+                    'stabilitas_chamber' => [...$k, 'u' => $stab / sqrt($sqrt3)],
+                    'homogenitas_chamber' => [...$k, 'u' => $homo / sqrt($sqrt3)],
                     'drift_standar' => (! $suhu && $chamber === self::CHAMBER_GEA)
                         ? $k
-                        : [...$k, 'u' => $drift / (0.5 * $sqrt3)],
+                        : [...$k, 'u' => $drift / sqrt(0.5 * $sqrt3)],
                     default => $k,
                 };
             },
             $dipakai,
         );
-        $aggBenar = $this->agregasi($benar);
+        $aggMaster = $this->agregasi($versiMaster);
 
-        if (abs($aggBenar['ketidakpastian_diperluas'] - $uHitung) > 1e-9) {
+        if (abs($aggMaster['ketidakpastian_diperluas'] - $uHitung) > 1e-9) {
             $catatan[] = [
                 'kode' => 'pembagi_akar_ganda',
                 'pesan' => sprintf(
-                    'Master menulis `U = N/SQRT(Q)` padahal kolom `Q` sudah berisi pembaginya, jadi akar diambil '
-                    .'dua kali. Ditiru mengikuti sertifikat yang sudah terbit. Kalau pembaginya dibetulkan, U95 '
-                    .'grup %s%s jadi %s, bukan %s.',
+                    'Master menulis `U = N/SQRT(Q)` padahal kolom `Q` sudah berisi pembaginya, jadi akar '
+                    .'diambil dua kali. Sejak 16 Sep 2026 pembaginya dibetulkan sesuai GUM 4.3.7 (butir A-1, '
+                    .'disetujui pemilik proyek, paraf MT menyusul): U95 grup %s%s sekarang %s; dengan pembagi '
+                    .'master angkanya %s.',
                     $parameter,
                     $suhu ? '' : ' chamber '.strtoupper($chamber),
-                    $this->angka($aggBenar['ketidakpastian_diperluas']),
                     $this->angka($uHitung),
+                    $this->angka($aggMaster['ketidakpastian_diperluas']),
                 ),
             ];
         }

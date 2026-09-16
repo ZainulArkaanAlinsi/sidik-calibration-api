@@ -48,6 +48,10 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
         'Conductivity Meter',
         'Turbidimeter',
         'Refractometer',
+        // Chlorine SENGAJA tidak di sini — lihat catatan di ujung
+        // `ChlorineProfile`: bentuk per-titik menumbuhkan sertifikatnya sampai
+        // sisa ruangnya nol, dan angkanya sudah benar lewat pengelompokan
+        // remark.
     ];
 
     public function test_tiap_titik_analitik_nyetak_u95_nya_sendiri(): void

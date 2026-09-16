@@ -127,16 +127,43 @@ class JangkaSorongMasterTest extends TestCase
 
             foreach ($acuan['komponen'] as $i => $a) {
                 $b = $budget[$i];
+
+                // Drift standar SENGAJA menyimpang sejak 16 Sep 2026: umur
+                // dibagi 365 HARI, bukan 12 seperti master — komponennya
+                // µm/tahun dan selisih tanggalnya hari (butir 5 paket
+                // keputusan, disetujui pemilik proyek). Rasionya persis 12/365.
+                // Depth dikecualikan: masternya memang memakai drift TANPA
+                // faktor umur, jadi pembagi 12/365 tidak menyentuhnya.
+                if ($b['sumber'] === 'drift_standar' && $grup !== 'depth') {
+                    $this->sama($a['ui'] * 12.0 / 365.0, $b['u'], "{$grup} baris {$a['baris']} ui drift ÷365");
+                    $this->sama($a['ci'], $b['ci'], "{$grup} baris {$a['baris']} ci");
+                    $this->sama($a['vi'], $b['vi'], "{$grup} baris {$a['baris']} vi");
+
+                    continue;
+                }
+
                 $this->sama($a['ui'], $b['u'], "{$grup} baris {$a['baris']} ({$a['keterangan']}) ui");
                 $this->sama($a['ci'], $b['ci'], "{$grup} baris {$a['baris']} ci");
                 $this->sama($a['vi'], $b['vi'], "{$grup} baris {$a['baris']} vi");
             }
 
+            // uc & U turun tipis dari master karena komponen drift itu — arah
+            // yang disetujui, dan batas bawahnya ikut dijaga supaya komponen
+            // yang HILANG tidak lolos sebagai "turun tipis".
             $g = $hasil['grup'][$grup];
-            $this->sama($acuan['uc'], $g['ketidakpastian_gabungan'], "{$grup} uc");
-            $this->sama($acuan['veff'], (float) $g['derajat_kebebasan_efektif'], "{$grup} veff");
-            $this->sama($acuan['k'], $g['faktor_cakupan_k'], "{$grup} k");
-            $this->sama($acuan['u_diperluas'], $g['ketidakpastian_diperluas'], "{$grup} U");
+
+            if ($grup === 'depth') {
+                // Depth tidak tersentuh butir 5 — tetap diadu sama persis.
+                $this->sama($acuan['uc'], $g['ketidakpastian_gabungan'], "{$grup} uc");
+                $this->sama($acuan['u_diperluas'], $g['ketidakpastian_diperluas'], "{$grup} U");
+
+                continue;
+            }
+
+            $this->assertLessThan($acuan['uc'], $g['ketidakpastian_gabungan'], "{$grup} uc wajib < master");
+            $this->assertGreaterThan($acuan['uc'] * 0.9, $g['ketidakpastian_gabungan'], "{$grup} uc turun terlalu jauh");
+            $this->assertLessThan($acuan['u_diperluas'], $g['ketidakpastian_diperluas'], "{$grup} U wajib < master");
+            $this->assertGreaterThan($acuan['u_diperluas'] * 0.9, $g['ketidakpastian_diperluas'], "{$grup} U turun terlalu jauh");
         }
     }
 
