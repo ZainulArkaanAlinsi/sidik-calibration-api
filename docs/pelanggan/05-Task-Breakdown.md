@@ -35,6 +35,15 @@ Total kerja ±65 hari kerja orang. Dengan dua orang yang juga menyelesaikan MVP 
 
 ## M1 — Backend: identitas, keanggotaan, isolasi
 
+> **Sudah mendarat per 16 Sep 2026** (branch `pelanggan/fase-4-auth-pelanggan`):
+> M1-01, M1-02, M1-03, M1-04, M1-06. Berikutnya M1-05 & M1-07.
+>
+> Kolom Status sengaja TIDAK ditambahkan ke tabel di bawah: `CLAUDE.md` menunjuk
+> `docs/BACA-DULU-BACKEND.md` sebagai satu-satunya dokumen status yang boleh
+> dipercaya, dan dua tempat yang mengaku tahu status itu persis cara `docs/permintaan-*.md`
+> jadi punya tanda ✅ yang salah. Rincian tiap task yang mendarat — termasuk yang
+> menyimpang dari DoD di bawah dan alasannya — ada di sana.
+
 | ID | Task | DoD | Estimasi | Dependency | Owner | Link |
 |---|---|---|---|---|---|---|
 | M1-01 | Migrasi identitas | Migrasi §4.1 (users, customers, device_tokens) + tabel `customer_members`, `undangan_pelanggan`, `pengajuan_akun_pelanggan`, `persetujuan_dokumen`. Semua bisa rollback. Diuji di suite MySQL (enum). | 1 | M0-06 | Raihan | 03-SDD §4 |
