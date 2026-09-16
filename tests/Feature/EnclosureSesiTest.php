@@ -233,7 +233,7 @@ class EnclosureSesiTest extends TestCase
 
     /**
      * Recorder (Oven, Type K): 3 set point @ 67 °C, semua U95 dilaporkan 1,5
-     * (lantai CMC Oven), Uc identik 0,5954.
+     * (lantai CMC Oven), Uc identik 0,5954 (0,59535 sejak butir A-1, 16 Sep 2026).
      */
     public function test_sesi_recorder_cocok_master(): void
     {
@@ -245,7 +245,7 @@ class EnclosureSesiTest extends TestCase
         foreach ($baris as $b) {
             $this->assertEqualsWithDelta(67.0, (float) $b->titik_ukur, self::TOLERANSI);
             $this->assertEqualsWithDelta(1.5, (float) $b->ketidakpastian_diperluas, self::TOLERANSI);
-            $this->assertEqualsWithDelta(0.59543500, (float) $b->ketidakpastian_gabungan, self::TOLERANSI);
+            $this->assertEqualsWithDelta(0.59535303, (float) $b->ketidakpastian_gabungan, self::TOLERANSI);
             $this->assertNull($b->keputusan);
         }
 
@@ -504,7 +504,7 @@ class EnclosureSesiTest extends TestCase
      * sini: grid Recorder yang datang dari REQUEST (bukan array PHP yang
      * disusun seeder) nyimpen `channel` per termokopel ke `raw_measurements`,
      * dan hasil hitungnya identik dengan jalur seeder untuk angka yang sama
-     * (`test_sesi_recorder_cocok_master`: Uc 0,59543500, U95 dilaporkan 1,5).
+     * (`test_sesi_recorder_cocok_master`: Uc 0,59535303 sejak butir A-1, U95 dilaporkan 1,5).
      */
     public function test_recorder_tersimpan_lewat_api_dan_cocok_jalur_seeder(): void
     {
@@ -552,7 +552,7 @@ class EnclosureSesiTest extends TestCase
         $baris = $sesi->uncertaintyCalculations()->firstOrFail();
         $this->assertEqualsWithDelta(67.0, (float) $baris->titik_ukur, self::TOLERANSI);
         $this->assertEqualsWithDelta(
-            0.59543500,
+            0.59535303,
             (float) $baris->ketidakpastian_gabungan,
             self::TOLERANSI,
             'Uc lewat API harus sama dengan jalur seeder buat angka yang sama',

@@ -528,12 +528,23 @@ class TimbanganCalculator
         $rentang = (float) ($ekc['rentang'] ?? 0.0);
         $uEkc = $varian->eksentrisitasDibagiDua ? $rentang / 2.0 : $rentang;
 
-        $uKoreksi = match ($varian->turunanUKoreksi) {
-            VarianMasterTimbangan::U_KOREKSI_BAGI_K => $koreksi['ketidakpastian_diperluas']
-                / max($koreksi['faktor_cakupan_k'], 1e-9),
-            VarianMasterTimbangan::U_KOREKSI_BAGI_AKAR3 => $koreksi['ketidakpastian_diperluas'] / sqrt(3.0),
-            default => $koreksi['ketidakpastian_diperluas'],
-        };
+        // `ui = U/k` di KETIGA varian — GUM 4.3.3 & EURAMET cg-18 §7.
+        //
+        // `U95% of Correction` itu ketidakpastian DIPERLUAS; memasukkannya ke
+        // budget Weighing sebagai komponen baku wajib dikembalikan dulu lewat
+        // pembagi `k`-nya sendiri. Master menyimpang dengan tiga cara: kg
+        // memakainya mentah (kelebihan ±2×), gram membaginya `k` (benar),
+        // substitusi membaginya √3 (pembagi distribusi persegi, yang tidak
+        // mengembalikan apa pun).
+        //
+        // Diseragamkan 16 Sep 2026 (paket keputusan butir 3, disetujui pemilik
+        // proyek; paraf Manajer Teknis menyusul). Weighing titik 1 sesi kg
+        // 0,0425 → 0,0248 kg. Arahnya mengecilkan U, dan itu justru yang benar:
+        // versi lama membuat timbangan pelanggan tampak lebih buruk dari
+        // kenyataan, padahal angka ini yang dipakai menentukan minimum weight.
+        // `turunanUKoreksi` tetap disimpan supaya versi master bisa dicetak di
+        // jejak audit.
+        $uKoreksi = $koreksi['ketidakpastian_diperluas'] / max($koreksi['faktor_cakupan_k'], 1e-9);
 
         return [
             [
@@ -641,6 +652,21 @@ class TimbanganCalculator
         // Disatukan, `Maximun STDEV` ikut tercemar dan LOP substitusi meleset
         // 2,26 × (0,041 − 0,0316) = 0,0212 kg. Sempat begitu, dan yang
         // menangkapnya bukan test budget — LOP-nya sendiri yang harus diadu.
+        // T5 (silang-kabel master substitusi) DICOBA dibetulkan 16 Sep 2026 dan
+        // DIKEMBALIKAN di hari yang sama — ini satu-satunya butir paket
+        // keputusan yang tidak bisa diterapkan seperti tertulis.
+        //
+        // Yang terjadi waktu `K6`/`K7` dibaca "dari kolomnya sendiri": kolom
+        // STDEV **Middle** workbook substitusi isinya seragam, jadi simpangan
+        // bakunya 2,7·10⁻¹³ — komponen `Repeatability MID-range` praktis LENYAP
+        // dari budget (0,0707 → ~0). Itu menukar angka yang salah dengan
+        // komponen yang hilang, dan hilangnya komponen persis kelas kegagalan
+        // yang paling mahal di repo ini: tidak ada error, U-nya cuma mengecil.
+        //
+        // Jadi rujukan master tetap ditiru sampai lab menjawab SATU pertanyaan
+        // baru: kenapa kolom Middle sesi substitusi seragam — memang tidak
+        // diukur, atau salinannya yang rusak? Kalau memang tidak diukur, yang
+        // benar bukan membaca kolom itu melainkan memblokir titiknya.
         if ($varian->sumberSr === VarianMasterTimbangan::SR_DUA_PITA) {
             $sresMid = $stdevMaks;
             $sresMaks = $sres;

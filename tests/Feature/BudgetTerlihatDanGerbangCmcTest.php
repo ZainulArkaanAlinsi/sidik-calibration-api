@@ -55,6 +55,70 @@ class BudgetTerlihatDanGerbangCmcTest extends TestCase
     }
 
     /**
+     * Sesi TITS & TIDS ter-seed, dibaca dari BARIS TERSIMPAN.
+     *
+     * Dipisah dari `sesiKelompok()` karena keduanya tidak bisa lewat
+     * `/calibrations/preview` generik: lembarnya berpasangan standar/UUT dan
+     * butuh mode, tipe sensor, serta dryblock. Yang diadu tetap hal yang sama —
+     * ada tidaknya baris `perbandingan_cmc` di jejak audit.
+     *
+     * @return array<string, array{string}>
+     */
+    public static function sesiPasangan(): array
+    {
+        return [
+            'TITS' => ['22506.01.A'],
+            'TIDS' => ['DEMO-TIDS-001'],
+        ];
+    }
+
+    /**
+     * TITS & TIDS menyusun jejak auditnya SENDIRI, dan sampai 16 Sep 2026
+     * keduanya tidak memanggil `barisPerbandinganCmc()`.
+     *
+     * Akibatnya `CalibrationValidator::cmcTitik()` pulang null dan gerbang
+     * `u95_meledak_dari_cmc` melompati kedua alat ini tanpa bunyi — sesi
+     * ber-U95 ratusan kali CMC (bentuk `CAL/2026/08/0043`) lolos terbit. Baris
+     * `lantai_cmc` di catatan audit tidak bisa menggantikannya: dia cuma lahir
+     * waktu CMC MENANG, yaitu justru bukan kasus yang berbahaya.
+     */
+    #[DataProvider('sesiPasangan')]
+    public function test_sesi_pasangan_punya_baris_pembanding_cmc(string $nomorSesi): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $sesi = CalibrationSession::query()->where('nomor_sesi', $nomorSesi)->firstOrFail();
+        $baris = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get();
+
+        $this->assertNotEmpty($baris, "Sesi {$nomorSesi} nggak punya baris hitungan sama sekali.");
+
+        foreach ($baris as $titik) {
+            $cmc = collect($titik->type_b_components ?? [])
+                ->firstWhere('sumber', 'perbandingan_cmc');
+
+            $this->assertNotNull(
+                $cmc,
+                sprintf(
+                    'Sesi %s titik ke-%s nggak punya baris `perbandingan_cmc` — gerbang '
+                    .'`u95_meledak_dari_cmc` mati buat alat ini. Yang ada: %s',
+                    $nomorSesi,
+                    $titik->titik_ke,
+                    implode(', ', array_column($titik->type_b_components ?? [], 'sumber')),
+                ),
+            );
+
+            // `nilai`-nya wajib CMC, BUKAN U hitung: gerbangnya membandingkan
+            // U95 ke angka ini, jadi mengisinya dengan U hitung membuat
+            // perbandingannya selalu 1× — mati dengan cara yang lain.
+            $this->assertNotSame(
+                (float) $titik->ketidakpastian_diperluas,
+                (float) ($cmc['nilai'] ?? 0.0),
+                "Sesi {$nomorSesi} titik ke-{$titik->titik_ke}: `perbandingan_cmc` berisi U hitung, bukan CMC.",
+            );
+        }
+    }
+
+    /**
      * Tiap komponen budget pulang ber-`nilai` yang beneran angka — kecuali baris
      * `jejak_titik`, yang memang catatan teks tanpa sumbangan ke `uc`.
      */

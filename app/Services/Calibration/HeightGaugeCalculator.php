@@ -122,6 +122,14 @@ use DateTimeInterface;
  */
 class HeightGaugeCalculator
 {
+    /**
+     * Pembagi umur drift: **365 hari**, bukan 12 seperti `K10` master.
+     *
+     * Lihat komentar di komponen drift — satuan komponennya mm/tahun dan umur
+     * dihitung dalam hari. Paket keputusan butir 5, 16 Sep 2026.
+     */
+    public const PEMBAGI_UMUR_HARI = 365.0;
+
     private ?GumCalculator $gum = null;
 
     private ?TabelStandarHeightGauge $tabel = null;
@@ -537,12 +545,18 @@ class HeightGaugeCalculator
             $umurHari = 0.0;
         }
 
-        // `/12` walau `$umurHari` satuannya HARI — ditiru dari `K10` master.
-        // Lihat "Yang DITIRU walau janggal" di docblock kelas, dan
-        // `docs/pertanyaan-lab-height-gauge.md` §1.
+        // Umur dibagi 365 HARI, bukan 12 seperti `K10` master.
+        //
+        // Komponennya bersatuan mm/tahun dan `$umurHari` bersatuan hari, jadi
+        // (mm/tahun) × (hari/365) = mm; `/12` hanya benar kalau selisihnya
+        // bulan. Master Micrometer dari lab yang sama memakai /365. Dibetulkan
+        // 16 Sep 2026 (paket keputusan butir 5, disetujui pemilik proyek;
+        // paraf Manajer Teknis menyusul) — U turun ~1,1 % di sesi contoh, dan
+        // alat ini di luar lampiran akreditasi jadi tidak ada lantai yang
+        // tertembus. Pembagi master tetap dicetak di jejak audit.
         $drift = ((float) $k['drift_a_mm'] + (float) $k['drift_b_mm_per_mm'] * $lMaks)
             / 1000
-            * ($umurHari / (float) $k['drift_pembagi_umur']);
+            * ($umurHari / self::PEMBAGI_UMUR_HARI);
 
         return [
             [
