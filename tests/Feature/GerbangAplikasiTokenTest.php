@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route as Router;
 use Tests\TestCase;
 
 /**
@@ -206,14 +207,56 @@ class GerbangAplikasiTokenTest extends TestCase
 
     // -------------------------------------------------------------- NFR-02
 
-    /** Tiga limiter bernama sesuai NFR-02 memang terdaftar. */
+    /**
+     * Limiter bernama yang dipakai `routes/api_pelanggan.php` memang terdaftar.
+     *
+     * Rute yang menyebut limiter yang tidak ada TIDAK meledak — Laravel
+     * memperlakukannya sebagai "tanpa batas" dan permintaannya lewat. Jadi salah
+     * ketik nama di sini artinya throttle-nya hilang diam-diam, dan satu-satunya
+     * yang memberi tahu ya test ini.
+     *
+     * Ember OTP sengaja DUA (`-periksa` dan `-kirim`), bukan satu: alasannya di
+     * `AppServiceProvider::rateLimiters()`.
+     */
     public function test_NFR_02_throttle_pelanggan_terdaftar(): void
     {
-        foreach (['pelanggan-daftar', 'pelanggan-masuk', 'pelanggan-otp'] as $nama) {
+        $wajib = [
+            'pelanggan-daftar',
+            'pelanggan-masuk',
+            'pelanggan-otp-periksa',
+            'pelanggan-otp-kirim',
+            'pelanggan-sandi',
+        ];
+
+        foreach ($wajib as $nama) {
             $this->assertNotNull(
                 RateLimiter::limiter($nama),
                 "Limiter `{$nama}` nggak terdaftar di AppServiceProvider::rateLimiters()."
             );
         }
+
+        // Tiap `throttle:` di rute pelanggan harus ada di daftar di atas —
+        // supaya limiter baru yang ditambahkan Fase 5 tidak lolos tanpa penjaga.
+        $dipakai = [];
+
+        foreach (Router::getRoutes() as $rute) {
+            if (! str_starts_with($rute->uri(), 'api/pelanggan/')) {
+                continue;
+            }
+
+            foreach ($rute->gatherMiddleware() as $middleware) {
+                if (is_string($middleware) && str_starts_with($middleware, 'throttle:')) {
+                    $dipakai[] = substr($middleware, 9);
+                }
+            }
+        }
+
+        $this->assertNotEmpty($dipakai, 'Nol rute pelanggan yang ber-throttle — daftar rutenya kemungkinan nggak kebaca.');
+
+        $this->assertSame([], array_values(array_diff(array_unique($dipakai), $wajib)), sprintf(
+            "Rute pelanggan menyebut limiter yang nggak dijaga test ini: %s.\n".
+            'Limiter yang nggak terdaftar dianggap "tanpa batas" oleh Laravel, jadi throttle-nya hilang tanpa error.',
+            implode(', ', array_diff(array_unique($dipakai), $wajib)),
+        ));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Diaudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,27 @@ class PengajuanAkunPelanggan extends Model
 
     /** Alasan tolak minimal segini karakter (REQ-AUTH-05). */
     public const MIN_ALASAN_TOLAK = 10;
+
+    /**
+     * Pengajuan yang BOLEH muncul di antrean admin.
+     *
+     * Barisnya lahir waktu orangnya menekan "Daftar" (lihat
+     * `AuthPelangganController::daftar()`), jadi `status = menunggu` saja tidak
+     * cukup: yang emailnya belum diverifikasi belum boleh terlihat sama sekali.
+     * Tanpa saringan ini, siapa pun bisa membanjiri antrean admin dengan
+     * mengetik email orang lain — REQ-AUTH-02 menahan persis itu.
+     *
+     * Ditulis sebagai scope, bukan diketik ulang di tiap query, supaya yang
+     * membangun endpoint admin (M1-05) tidak bisa lupa separuhnya.
+     *
+     * @param  Builder<$this>  $query
+     */
+    public function scopeSiapDitinjau(Builder $query): void
+    {
+        $query->where('status', self::STATUS_MENUNGGU)
+            ->whereHas('pemohon', fn (Builder $pemohon) => $pemohon
+                ->where('status', User::STATUS_PENDING_VERIFIKASI));
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

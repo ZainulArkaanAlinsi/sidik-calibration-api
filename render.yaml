@@ -357,3 +357,9 @@ services:
       # Diisi tanggal `Y-m-d` waktu deploy Fase 4; kosong = tanpa batas.
       - key: PELANGGAN_CUTOFF_TOKEN_LAMA
         value: ""
+      # Versi dokumen privasi & syarat yang disetujui pendaftar (S05 langkah 1).
+      # Ditentukan server; dinaikkan bareng deploy tiap kali dokumennya berubah.
+      - key: PELANGGAN_VERSI_KEBIJAKAN_PRIVASI
+        value: "1.0"
+      - key: PELANGGAN_VERSI_SYARAT_KETENTUAN
+        value: "1.0"

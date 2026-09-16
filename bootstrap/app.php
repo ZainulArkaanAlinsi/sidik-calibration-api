@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
 use App\Http\Middleware\PastikanAplikasi;
+use App\Http\Middleware\PelangganAktif;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
             'fitur.pelanggan' => FiturPelanggan::class,
             'aplikasi' => PastikanAplikasi::class,
+            'pelanggan.aktif' => PelangganAktif::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -46,6 +46,11 @@ vendor/bin/pint app/Services/Foo.php   # HANYA berkas yang kamu sentuh — lihat
 composer ide-helper                    # regenerate _ide_helper.php + mixin model
 ```
 
+`pint.json` mematikan SATU aturan: `php_unit_method_casing`. Preset Laravel
+mengubah `test_REQ_AUTH_07_...` jadi `test_re_q_aut_h_07_...`, dan ID requirement
+di nama test itu diminta `docs/pelanggan/02-SRS.md` justru supaya requirement dan
+testnya bisa ditelusuri dua arah. Aturan lain tetap menyala.
+
 ### Perintah artisan milik proyek ini
 
 ```bash

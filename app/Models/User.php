@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -175,6 +176,22 @@ class User extends Authenticatable implements FilamentUser
     public function keanggotaan(): HasMany
     {
         return $this->hasMany(CustomerMember::class);
+    }
+
+    /**
+     * Pengajuan akun pelanggan TERBARU milik orang ini.
+     *
+     * `latestOfMany()`, bukan `hasOne()` polos: seorang pendaftar bisa punya
+     * lebih dari satu baris kalau pengajuan pertamanya ditolak dan admin
+     * memintanya mengajukan ulang. `hasOne()` biasa memulangkan yang mana saja
+     * yang kebetulan pertama ditemukan driver — jadi layar S06 bisa menampilkan
+     * penolakan lama sesudah pengajuan barunya disetujui.
+     *
+     * @return HasOne<PengajuanAkunPelanggan, $this>
+     */
+    public function pengajuanAkun(): HasOne
+    {
+        return $this->hasOne(PengajuanAkunPelanggan::class)->latestOfMany();
     }
 
     /**

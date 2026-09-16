@@ -245,6 +245,141 @@ itu buat menyisir email mana yang punya akun di sini.
 per IP: throttle per IP dilewati dengan ganti jaringan, sementara yang menahan
 penebakan OTP harus menempel ke akun yang ditebak.
 
+## 16 Sep 2026 — auth pelanggan: daftar, OTP, masuk, akun (M1-04, M1-06)
+
+**Yang berubah:** `/api/pelanggan/v1` sekarang punya isi. Sebelas endpoint auth
+& akun, semuanya di balik `FITUR_PELANGGAN` yang masih **default mati**.
+
+Kontraknya ditulis di **`docs/kontrak-api-pelanggan.md`** — itu yang dipegang
+Flutter, bukan dokumen ini. Contoh JSON di sana disalin dari
+`tests/Fixtures/pelanggan/*.json` oleh skrip, **bukan diketik tangan**.
+
+### Endpoint
+
+| | Path | Gerbang |
+|---|---|---|
+| POST | `/auth/daftar` | throttle 5/jam per IP |
+| POST | `/auth/verifikasi-email` · `/auth/kirim-ulang-otp` | throttle 5 per 15 menit per email |
+| POST | `/auth/masuk` | throttle 10/menit per IP **+ kunci 5 kegagalan per email** |
+| POST | `/auth/lupa-sandi` · `/auth/atur-ulang-sandi` | throttle OTP |
+| POST | `/auth/keluar` · `/auth/keluar-semua` | token |
+| GET/PATCH | `/saya` | token (**termasuk** `pelanggan:menunggu`) |
+| POST | `/saya/ganti-sandi` | token |
+
+### Keputusan yang menyimpang dari tulisan SRS, dan alasannya
+
+**Baris `pengajuan_akun_pelanggan` dibuat waktu DAFTAR, bukan waktu OTP cocok.**
+REQ-AUTH-02 menulisnya lahir saat verifikasi. Nama & alamat perusahaan diketik di
+langkah daftar, dan satu-satunya tempat yang bisa menampungnya tabel itu —
+menundanya berarti menambah kolom baru di `users` cuma buat memarkir dua string,
+dan kolom baru itu pilihan terakhir (CLAUDE.md §Alur Kerja poin 4).
+
+Yang sebenarnya dijaga REQ-AUTH-02 — **admin tidak diganggu pengajuan dari email
+yang belum tentu milik si pendaftar** — tetap ditegakkan dua lapis, dan
+dua-duanya tidak bergantung pada ingatan orang:
+
+1. notifikasi ke admin baru dikirim di `verifikasiEmail()`;
+2. antrean admin wajib lewat scope **`PengajuanAkunPelanggan::siapDitinjau()`**,
+   yang menuntut akun pemohonnya sudah `pending_verifikasi`.
+
+Ada test yang memerahkan kalau salah satunya hilang.
+
+### Yang menentukan bentuk seluruh lapisan auth
+
+**1. Balasan tidak boleh menjawab "email ini terdaftar atau tidak".** `lupa-sandi`
+dan `kirim-ulang-otp` SELALU 200. `masuk` memakai satu pesan buat "tidak ada
+akun" dan "sandi salah". Bahkan pesan `email.unique` di pendaftaran diganti,
+karena kalimat bawaan Laravel ("sudah digunakan") justru menjawab pertanyaan itu.
+Siapa saja pelanggan PT Sidik itu informasi bisnis.
+
+**2. Tiap error non-422 punya `kode` stabil.** Aplikasi yang sudah terpasang
+bercabang pada `kode`, bukan pada `message` (NFR-12). `KontrakResponsPelangganTest`
+membekukan SELURUH badan respons ke fixture — jadi kunci yang hilang atau berganti
+nama memerahkan test, bukan lolos diam-diam.
+
+### Dua gerbang, bukan satu
+
+`aplikasi:pelanggan` menjawab "token ini dari aplikasi mana".
+`pelanggan.aktif` menjawab "pemiliknya sudah diverifikasi belum".
+
+Digabung bikin layar S06 mustahil: token `pelanggan:menunggu` **harus** lolos
+gerbang pertama supaya `GET /saya` bisa dijawab, tapi wajib ditahan gerbang
+kedua. `pelanggan.aktif` membaca `users.status` tiap request, **bukan ability
+tokennya** — ability dibekukan waktu token terbit, jadi akun yang baru disetujui
+admin akan terpaksa keluar-masuk dulu kalau abilitynya yang dibaca.
+
+Grup rute ber-`pelanggan.aktif` sudah berdiri di `routes/api_pelanggan.php`
+walaupun masih kosong. Itu disengaja: rute data Fase 5 mewarisi gerbangnya
+otomatis, alih-alih harus diingat satu per satu.
+
+### Dua temuan yang baru muncul waktu testnya dijalankan
+
+**1. Satu ember throttle buat "periksa kode" dan "kirim kode" itu cacat.**
+Awalnya keduanya memakai `pelanggan-otp` (5 per 15 menit per email). Akibatnya
+dua arah, dan dua-duanya nyata:
+
+- penyerang yang menebak kode ikut menghabiskan jatah **kirim ulang** milik
+  korban — korban tidak bisa minta kode baru gara-gara ditembaki orang lain;
+- sebaliknya, orang yang menekan "kirim ulang" tiga kali karena emailnya belum
+  sampai menghabiskan jatah **tebakannya sendiri**, lalu kena 429 pada percobaan
+  pertama kode yang benar.
+
+Sekarang embernya dua: `pelanggan-otp-periksa` (10/15 menit, pagar luar) dan
+`pelanggan-otp-kirim` (3/15 menit, jalur email-bombing). Yang MENEGAKKAN NFR-02
+"OTP 5/15 menit per akun" tetap penguncian di baris `otp_pelanggan` — dia
+menghitung percobaan SALAH saja, menempel ke akun, dan tersimpan di database
+jadi tidak hilang waktu cache dibuang. Ambang `periksa` sengaja lebih longgar
+dari 5 justru supaya tidak menutupi kunci itu; waktu masih 5, `otp_terkunci`
+nyaris tidak pernah sampai ke aplikasi.
+
+`ganti-sandi` dipindah ke `pelanggan-sandi` (5/menit **per orang**). Dia bukan
+jalur OTP dan sudah di balik token; dikunci per IP bikin satu kantor di belakang
+satu NAT saling menghabiskan jatah.
+
+**2. Test "token dicabut" bisa hijau palsu dengan `assertOk()`.**
+`RequestGuard::user()` menyimpan hasilnya di properti dan memulangkannya lagi
+tanpa memeriksa apa pun. Di produksi tidak pernah jadi soal — tiap request HTTP
+dapat instance aplikasi baru. Di test, satu instance melayani semua request dalam
+satu method, jadi request SESUDAH `/auth/keluar` tetap dilayani sebagai pemilik
+token yang sudah dihapus: `personal_access_tokens` benar-benar kosong (0 baris)
+tapi balasannya tetap **200**.
+
+Perbaikannya `Tests\Concerns\JalurPelanggan::lupakanSesiGuard()`, dipanggil di
+antara dua request kalau yang diuji pencabutan. Ditulis sebagai helper bernama
+dengan docblock panjang, bukan satu baris `forgetGuards()` yang ditempel diam-diam
+— berikutnya yang menulis test pencabutan pasti ketemu bentuk kegagalan yang sama.
+
+### Kunci 15 menit SELALU lebih panjang dari masa berlaku kode 10 menit
+
+Konsekuensinya: orang yang terkunci tidak pernah bisa memakai kode lamanya lagi,
+dia wajib minta kode baru. Itu diadu sebagai ANGKA di test (`assertGreaterThan`),
+bukan cuma diceritakan — kalau salah satunya diubah, testnya bicara sebelum ada
+orang kejebak di layar OTP tanpa jalan keluar. Aplikasi jangan menawarkan "coba
+kode yang tadi" sesudah kunci lepas.
+
+### OTP
+
+bcrypt, bukan sha256 — ruang tebakan 6 digit cuma sejuta, dan dump dengan sha256
+di dalamnya dibalik seluruhnya dalam hitungan detik. Penguncian 5 percobaan
+menempel ke **akun**, dan `terbitkan()` menolak selama akunnya terkunci; kalau
+tidak, kuncinya dilewati cukup dengan menekan "kirim ulang".
+
+OTP tidak pernah masuk log (REQ-PRV-02) dan tidak pernah tersimpan polos. Test
+membaca kodenya dari **email yang dipalsukan**, bukan dari kolom database —
+test yang mengintip hash lalu mencocokkannya sendiri tidak pernah membuktikan
+kode yang sampai ke orangnya benar.
+
+### `Password::uncompromised()` dan CI tanpa jaringan
+
+02-SRS §11 mewajibkannya (sandi minimal 10 karakter + ditolak kalau ada di daftar
+bocor). Rulenya menembak API Have I Been Pwned, dan **CI tidak punya jaringan
+keluar**. Kontrak `UncompromisedVerifier` dipalsukan di container lewat trait
+`Tests\Concerns\JalurPelanggan` — bukan `Http::fake()`, yang tidak menangkapnya
+karena verifier bawaan Laravel memakai klien HTTP-nya sendiri.
+
+Di produksi verifier itu **gagal terbuka** (HIBP tidak terjangkau → sandi
+diterima), jadi tidak ada risiko outage.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.

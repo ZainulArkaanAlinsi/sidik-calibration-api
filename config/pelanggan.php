@@ -74,4 +74,20 @@ return [
      */
     'cutoff_token_lama' => env('PELANGGAN_CUTOFF_TOKEN_LAMA'),
 
+    /*
+     * Versi dokumen yang disetujui pendaftar (S05 langkah 1), disimpan di
+     * `persetujuan_dokumen.versi`.
+     *
+     * Ditentukan SERVER, bukan dikirim aplikasi. Kalau klien yang menentukan,
+     * aplikasi lama terus mencatat "setuju v1" selamanya walau dokumennya
+     * sudah v2 — dan catatan persetujuan jadi tidak berguna persis waktu
+     * dibutuhkan (mis. waktu ada pertanyaan hukum soal data pelanggan).
+     *
+     * Dinaikkan setiap kali isi dokumennya berubah, bareng deploy.
+     */
+    'versi_dokumen' => [
+        'kebijakan_privasi' => (string) env('PELANGGAN_VERSI_KEBIJAKAN_PRIVASI', '1.0'),
+        'syarat_ketentuan' => (string) env('PELANGGAN_VERSI_SYARAT_KETENTUAN', '1.0'),
+    ],
+
 ];
