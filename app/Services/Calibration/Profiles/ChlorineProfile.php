@@ -613,4 +613,26 @@ class ChlorineProfile extends CalibrationProfile
 
         return $bentuk;
     }
+
+    /**
+     * U95 dicetak PER TITIK, sama seperti Turbidimeter.
+     *
+     * `SERTIFIKAT.csv` master mencetak dua U95 yang berbeda (0,0910 Free vs
+     * 0,0802 Total), dan satu angka untuk dua titik itu jadi pernyataan yang
+     * salah tentang salah satunya.
+     *
+     * Sampai 16 Sep 2026 lembar ini memakai bawaan `false`, dan angkanya tetap
+     * benar HANYA karena `remarkTitik()` kebetulan memulangkan teks berbeda per
+     * titik sehingga tiap titik jatuh ke grup berisi satu baris. Itu bukan
+     * penjaga: begitu ada dua titik yang remark-nya sama, U95 titik kedua
+     * diam-diam tercetak milik titik pertama. Dijaga
+     * `U95PerTitikInstrumenAnalitikTest`.
+     *
+     * Sertifikat yang SUDAH terbit tidak ikut berubah — bentuk cetaknya
+     * dibekukan ke `snapshot['u95_per_titik']` waktu terbit.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
+    }
 }

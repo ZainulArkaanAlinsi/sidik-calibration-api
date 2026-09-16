@@ -671,6 +671,37 @@ class CalibrationValidator
             && is_array($hasil['suhu'])
             && ! $adaSuhu;
 
+        // Set point tekanan di luar jangkauan tabel kalibrator: koreksi & U95
+        // standarnya DIPINJAM dari baris terdekat. Ditandai kalkulator, dan
+        // wajib kelihatan sebelum sertifikat disetujui — siklus 121 °C berjalan
+        // di ~1,12 bar sementara tabelnya mulai 1,5 bar, jadi ini bukan kasus
+        // langka melainkan kemungkinan mayoritas sesi tekanan.
+        $ekstrapolasi = $hasil['tekanan']['ekstrapolasi_tekanan'] ?? null;
+
+        if (is_array($ekstrapolasi)) {
+            // INFO, bukan PERINGATAN, dan itu keputusan sadar: siklus 121 °C
+            // SELALU berjalan di bawah batas tabel, jadi peringatan di sini
+            // bakal menyala di hampir setiap sesi tekanan — dan peringatan yang
+            // selalu menyala melatih admin menekan "setujui tetap" tanpa
+            // membaca, persis pola yang sudah menggigit repo ini. Yang salah
+            // bukan datanya melainkan jangkauan tabel kalibratornya; itu
+            // pekerjaan lab, dan jejaknya wajib ada di tiap sesi sampai selesai.
+            $temuan[] = $this->temuan(
+                self::INFO,
+                'autoclave_tekanan_ekstrapolasi',
+                sprintf(
+                    'Set point tekanan %s bar di luar tabel kalibrator (%s–%s bar), jadi koreksi & U95 '
+                    .'standarnya dipinjam dari baris %s bar — bukan diukur di titik itu. Angkanya tetap '
+                    .'dicetak, tapi ketertelusurannya cuma sekuat pinjaman itu. Minta lab memperluas '
+                    .'tabel kalibrator tekanan sampai titik yang benar-benar dipakai.',
+                    rtrim(rtrim(number_format((float) ($ekstrapolasi['set_bar'] ?? 0.0), 3, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format((float) ($ekstrapolasi['tabel_min_bar'] ?? 0.0), 3, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format((float) ($ekstrapolasi['tabel_maks_bar'] ?? 0.0), 3, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format((float) ($ekstrapolasi['index_bar'] ?? 0.0), 3, ',', ''), '0'), ','),
+                ),
+            );
+        }
+
         if ($suhuKosongPadahalAda) {
             $temuan[] = $this->temuan(
                 self::ERROR,

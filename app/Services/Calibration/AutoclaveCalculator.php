@@ -297,12 +297,34 @@ class AutoclaveCalculator
         $uBentanganBar = $budget['k'] * $budget['uc'];
         $u95Bar = max($uBentanganBar, $cmcBar);
 
+        // Set point DI LUAR jangkauan tabel kalibrator = koreksi & U95 standar
+        // DIPINJAM dari baris terdekat, bukan diukur di titik itu.
+        //
+        // Tabel tekanan mulai 1,5 bar, sementara siklus 121 °C berjalan di
+        // ~1,12 bar — termasuk sesi contoh master (0281-CAL-624). Artinya
+        // sebagian besar sesi tekanan memakai baris 1,5 bar yang jaraknya 25 %
+        // dari titik sebenarnya, dan sampai 16 Sep 2026 itu terjadi tanpa satu
+        // pun tanda. Angkanya TIDAK digeser di sini — tidak ada data kalibrator
+        // di 1,12 bar untuk menggesernya — tapi sesinya berhenti diam-diam:
+        // penandanya naik jadi peringatan di `CalibrationValidator`.
+        $setTabel = array_map(static fn (array $b): float => (float) ($b['set'] ?? 0.0), $tabel);
+        $setTerendah = $setTabel === [] ? $uutSettingBar : min($setTabel);
+        $setTertinggi = $setTabel === [] ? $uutSettingBar : max($setTabel);
+
         return [
             'satuan' => $satuan,
             'uut_setting' => $uutSetting,
             'uut_setting_bar' => $uutSettingBar,
             'standar_rata_bar' => $standarRata,
             'index_bar' => $indexBar,
+            'ekstrapolasi_tekanan' => $uutSettingBar < $setTerendah - 1e-9 || $uutSettingBar > $setTertinggi + 1e-9
+                ? [
+                    'set_bar' => $uutSettingBar,
+                    'index_bar' => (float) $indexBar,
+                    'tabel_min_bar' => $setTerendah,
+                    'tabel_maks_bar' => $setTertinggi,
+                ]
+                : null,
             'koreksi_standar_bar' => $koreksiStandarBar,
             'standar_terkoreksi_bar' => $standarTerkoreksiBar,
             'koreksi_bar' => $koreksiBar,
