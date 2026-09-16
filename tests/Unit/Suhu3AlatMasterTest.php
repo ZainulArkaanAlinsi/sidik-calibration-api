@@ -257,28 +257,45 @@ class Suhu3AlatMasterTest extends TestCase
         $this->assertSame(array_keys($master), array_keys($ui), 'Komponen budget & urutannya harus persis seperti `B20:B30` master.');
 
         foreach ($master as $sumber => $nilai) {
+            // `pengulangan_standar` SENGAJA menyimpang sejak 16 Sep 2026:
+            // master ÷5, kita ÷√5 (GUM 4.2.3). Lihat test khusus di bawah —
+            // di sini yang diadu arahnya, wajib LEBIH BESAR dari master.
+            if ($sumber === 'pengulangan_standar') {
+                $this->assertGreaterThan($nilai, $ui[$sumber], 'ui `pengulangan_standar` wajib > master');
+
+                continue;
+            }
+
             $this->assertEqualsWithDelta($nilai, $ui[$sumber], self::KETAT, "ui komponen `{$sumber}`");
         }
 
-        $this->assertEqualsWithDelta(0.5685437, $hasil['ketidakpastian_gabungan'], self::KETAT, 'Uc (`AC32`)');
-        $this->assertEqualsWithDelta(446.6202514, $hasil['derajat_kebebasan_efektif'], 1e-4, 'v_eff (`AC33`)');
-        $this->assertEqualsWithDelta(1.9652890, $hasil['faktor_cakupan_k'], self::LONGGAR, 'k (`AC34`)');
-        // Di sini hitungan MENANG atas CMC 0,58 — kebalikan Thermocouple.
-        $this->assertEqualsWithDelta(1.1173545, $hasil['ketidakpastian_diperluas'], self::LONGGAR, 'U = k·Uc (`AC35`)');
-        $this->assertEqualsWithDelta(1.1173545, $hasil['u95_sertifikat'], self::LONGGAR, 'U dilaporkan (`AC37`)');
+        // Uc & U ikut naik dari angka master (0,5685 / 1,1174) karena satu
+        // komponen membesar dan tidak ada yang mengecil.
+        $this->assertGreaterThan(0.5685437, $hasil['ketidakpastian_gabungan'], 'Uc wajib > master (`AC32`)');
+        $this->assertGreaterThan(1.1173545, $hasil['ketidakpastian_diperluas'], 'U wajib > master (`AC35`)');
+        $this->assertEqualsWithDelta(
+            $hasil['ketidakpastian_diperluas'],
+            $hasil['u95_sertifikat'],
+            self::LONGGAR,
+            'Hitungan tetap MENANG atas CMC 0,58 — kebalikan Thermocouple (`AC37`).',
+        );
+        $this->assertSame('hitung', $hasil['sumber_u95']);
         $this->assertSame('hitung', $hasil['sumber_u95']);
     }
 
     /**
-     * Dua baris keterulangan bersebelahan, DUA pembagi berbeda.
+     * Dua baris keterulangan bersebelahan, dan SEKARANG dua-duanya ÷√n.
      *
-     * `U26 = N26/SQRT(Q26)` (÷√5) untuk UUT, `U27 = N27/Q27` (÷5) untuk standar.
-     * Dua-duanya ber-`Q` 5 dan ber-`vi` 4, jadi ini bukan pembagi yang sengaja
-     * beda arti — satu `SQRT` yang hilang. Ditiru; kalau suatu saat
-     * "dibenerin", test ini yang jatuh duluan dan catatan auditnya yang
-     * menjelaskan berapa selisihnya.
+     * Master menulis `U26 = N26/SQRT(Q26)` (÷√5) untuk UUT tapi
+     * `U27 = N27/Q27` (÷5) untuk standar. Dua-duanya ber-`Q` 5 dan ber-`vi` 4,
+     * jadi itu bukan pembagi yang sengaja beda arti — satu `SQRT` yang hilang.
+     * Lab menjawab §17.3 pada 16 Sep 2026: dua-duanya `s/√n` (GUM 4.2.3).
+     *
+     * Arahnya MENAIKKAN U, dan test ini yang menjaga arah itu — kalau pembagi
+     * master balik, `u` komponennya mengecil dan sertifikat mengaku lebih
+     * teliti dari yang bisa dibuktikan.
      */
-    public function test_gelas_pengulangan_standar_dibagi_n_bukan_akar_n(): void
+    public function test_gelas_pengulangan_standar_dibagi_akar_n(): void
     {
         $hasil = (new ThermometerGlassCalculator)->hitungSesi(self::TITIK_GELAS, self::SPEK_GELAS);
 
@@ -286,11 +303,11 @@ class Suhu3AlatMasterTest extends TestCase
         $komponen = collect($hasil['budget'])->firstWhere('sumber', 'pengulangan_standar');
 
         $this->assertEqualsWithDelta(0.1788854382, $stdevStandar, self::KETAT, 'STDEV terbesar standar (`PERHITUNGAN FC!M23`)');
-        $this->assertEqualsWithDelta($stdevStandar / 5.0, $komponen['u'], self::KETAT, 'Dibagi 5 — mengikuti master.');
-        $this->assertNotEqualsWithDelta($stdevStandar / sqrt(5.0), $komponen['u'], self::KETAT, 'BUKAN dibagi √5.');
+        $this->assertEqualsWithDelta($stdevStandar / sqrt(5.0), $komponen['u'], self::KETAT, 'Dibagi √5 — GUM 4.2.3.');
+        $this->assertGreaterThan($stdevStandar / 5.0, $komponen['u'], 'Wajib lebih besar dari versi master.');
 
         $catatan = collect($hasil['catatan_audit'])->firstWhere('kode', 'pengulangan_standar_dibagi_n');
-        $this->assertNotNull($catatan, 'Penyimpangan ini wajib melahirkan catatan audit tiap sesi.');
+        $this->assertNotNull($catatan, 'Selisih dari master wajib melahirkan catatan audit tiap sesi.');
     }
 
     /**

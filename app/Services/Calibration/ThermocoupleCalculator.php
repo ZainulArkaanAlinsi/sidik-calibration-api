@@ -48,17 +48,18 @@ use InvalidArgumentException;
  * Lihat [TabelKalibratorSuhu3Alat] — set point 150 °C yang terbaca 150,1
  * mengambil baris tabel 200, bukan 100.
  *
- * ## Budget: SATU untuk seluruh sesi, dan TANPA komponen keterulangan
+ * ## Budget: SATU untuk seluruh sesi, plus komponen keterulangan
  *
  * `PERHITUNGAN U95%` punya satu tabel sembilan komponen (`AC29 =
  * SUM(AC20:AD28)`), dan tidak satu pun di antaranya STDEV pembacaan — walaupun
  * `PERHITUNGAN FC` menghitung `M23 = MAX(K23:L36)` dan memajangnya. Angka itu
  * lahir, ditampilkan, lalu tidak dipakai siapa pun.
  *
- * Itu **tidak ditiru diam-diam**: `standar_deviasi_maks` tetap dihitung dan ikut
- * dipulangkan, dan tiap sesi melahirkan catatan audit `type_a_tidak_masuk_budget`
- * yang menyebut berapa U95-nya kalau komponen itu disertakan. Yang memutuskan
- * manajer teknis lab, bukan diam-diam kode ini.
+ * Lab menjawab §17.5 pada 16 Sep 2026: keterulangan yang benar-benar terukur
+ * tidak boleh hilang dari budget. Sejak itu komponennya DISERTAKAN (÷√n,
+ * vi = n − 1), dan tiap sesi melahirkan catatan audit `type_a_masuk_budget`
+ * yang menyebut berapa U95-nya kalau dihitung dengan budget master apa adanya.
+ * Arahnya menaikkan U — tidak ada sertifikat yang jadi mengaku lebih teliti.
  *
  * ## Yang TIDAK ditiru: sel kosong dibaca nol
  *
@@ -92,6 +93,12 @@ class ThermocoupleCalculator
 
     /** `vi` variasi aksial, antar-lubang & daya baca (`S26`–`S28`). */
     public const VI_DRYBLOCK = 8;
+
+    /**
+     * Pembacaan per titik yang jadi pembagi Type A — sama dengan dua lembar
+     * suhu lain (`Q26`/`Q27` = 5 di master Termometer Gelas).
+     */
+    public const N_PENGULANGAN = 5;
 
     /**
      * `v_eff` **tidak** dipotong ke bawah sebelum dicari `k`-nya.
@@ -183,6 +190,29 @@ class ThermocoupleCalculator
         ));
 
         $budget = $this->budget($merk, $tipe, $dryblock, $resolusi, $indexMaks);
+
+        // Komponen KETERULANGAN (Type A). Master menghitungnya di
+        // `PERHITUNGAN FC!M23` lalu tidak memakainya — sembilan komponen
+        // `AC29` semuanya Type B. Lab menjawab §17.5 pada 16 Sep 2026:
+        // keterulangan yang benar-benar terukur tidak boleh hilang dari
+        // budget. Dimasukkan dengan pembagi √n dan vi = n − 1, seperti dua
+        // lembar suhu lain; arahnya MENAIKKAN U.
+        if ($stdevMaks > 0.0) {
+            $budget[] = [
+                'sumber' => 'pengulangan',
+                'keterangan' => sprintf(
+                    'Pengulangan pembacaan — STDEV terbesar %s °C (÷√%d). Master menghitungnya tapi tidak memakainya.',
+                    $this->angka($stdevMaks),
+                    self::N_PENGULANGAN,
+                ),
+                'distribusi' => 't-student',
+                'u' => $stdevMaks / sqrt(self::N_PENGULANGAN),
+                'ci' => 1.0,
+                'vi' => self::N_PENGULANGAN - 1,
+                'disertakan' => true,
+            ];
+        }
+
         $dipakai = array_values(array_filter($budget, static fn (array $k): bool => $k['disertakan']));
         $agg = $this->agregasi($dipakai);
 
@@ -468,22 +498,25 @@ class ThermocoupleCalculator
         // Komponen keterulangan yang master hitung tapi tidak pakai. Angka
         // "kalau disertakan"-nya dihitung beneran, bukan ditaksir.
         if ($stdevMaks > 0.0) {
-            $n = 5;
-            $dengan = [...$dipakai, ['u' => $stdevMaks / sqrt($n), 'ci' => 1.0, 'vi' => $n - 1]];
-            $aggDengan = $this->agregasi($dengan);
+            $tanpa = array_values(array_filter(
+                $dipakai,
+                static fn (array $k): bool => $k['sumber'] !== 'pengulangan',
+            ));
+            $aggTanpa = $this->agregasi($tanpa);
 
             $catatan[] = [
-                'kode' => 'type_a_tidak_masuk_budget',
+                'kode' => 'type_a_masuk_budget',
                 'pesan' => sprintf(
                     'Master menghitung STDEV terbesar %s °C dari %d titik (`PERHITUNGAN FC!M23`) lalu TIDAK '
-                    .'memasukkannya ke budget — sembilan komponen `AC29` semuanya Type B. Ditiru apa adanya. '
-                    .'Kalau komponen keterulangan itu disertakan (÷√%d, vi %d), U95 sesi ini jadi %s °C, bukan %s °C.',
+                    .'memasukkannya ke budget — sembilan komponen `AC29` semuanya Type B. Sejak 16 Sep 2026 '
+                    .'komponen keterulangan itu DISERTAKAN (÷√%d, vi %d) sesuai jawaban lab, jadi U95 sesi ini '
+                    .'%s °C; dengan budget master apa adanya angkanya %s °C.',
                     $this->angka($stdevMaks),
                     $jumlahTitik,
-                    $n,
-                    $n - 1,
-                    $this->angka($aggDengan['ketidakpastian_diperluas']),
+                    self::N_PENGULANGAN,
+                    self::N_PENGULANGAN - 1,
                     $this->angka($uHitung),
+                    $this->angka($aggTanpa['ketidakpastian_diperluas']),
                 ),
             ];
         }

@@ -625,6 +625,11 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
         $sekarang = Carbon::now();
         $audit = $this->jejakAudit($hasil, $kemampuan);
 
+        // Sumbangan Type A yang BENAR-BENAR dipakai budget sesi ini — satu
+        // angka untuk seluruh sesi, sama seperti `uc`/`k`/`U95` di bawah,
+        // karena budget Thermocouple memang satu untuk semua titik.
+        $typeA = (float) (collect($hasil['budget'])->firstWhere('sumber', 'pengulangan')['u'] ?? 0.0);
+
         return array_map(static fn (array $t): array => [
             'standard_id' => $standar?->id,
             'titik_ke' => $t['titik_ke'],
@@ -640,10 +645,11 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
             'koreksi' => $t['koreksi'],
             'standar_deviasi' => $t['standar_deviasi_uut'],
             'jumlah_pengulangan' => count($t['pembacaan_uut']),
-            // NOL, dan itu bukan kolom yang lupa diisi: budget Thermocouple
-            // sembilan komponen dan tidak satu pun keterulangan — lihat
-            // catatan audit `type_a_tidak_masuk_budget`.
-            'type_a' => 0.0,
+            // Sumbangan keterulangan yang dipakai budget (satu untuk seluruh
+            // sesi). Dulu selalu NOL karena budget master sembilan komponen
+            // tidak memuat Type A sama sekali; sejak jawaban lab §17.5
+            // komponennya disertakan — lihat catatan audit `type_a_masuk_budget`.
+            'type_a' => $typeA,
             'type_b_components' => [
                 ...$audit,
                 [

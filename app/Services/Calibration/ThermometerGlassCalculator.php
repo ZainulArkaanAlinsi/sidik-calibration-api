@@ -56,11 +56,16 @@ use InvalidArgumentException;
 class ThermometerGlassCalculator
 {
     /**
-     * Pembagi komponen keterulangan STANDAR: **5**, bukan √5.
+     * Pembagi komponen keterulangan STANDAR **milik master**: 5, bukan √5.
+     *
+     * Disimpan sebagai tetapan supaya selisihnya bisa diadu di test dan
+     * dicetak di catatan audit — TIDAK lagi dipakai menghitung. Sejak
+     * 16 Sep 2026 (jawaban lab §17.3) yang dipakai `√n`, sama dengan baris
+     * UUT di atasnya; arahnya menaikkan U (sesi contoh 1,1174 → 1,1268 °C).
      *
      * Lihat blok "Dua baris keterulangan bersebelahan" di docblock kelas.
      */
-    public const PEMBAGI_PENGULANGAN_STANDAR = 5.0;
+    public const PEMBAGI_PENGULANGAN_STANDAR_MASTER = 5.0;
 
     /** Jumlah pembacaan per titik yang jadi pembagi Type A (`Q26`/`Q27` = 5). */
     public const N_PENGULANGAN = 5;
@@ -372,13 +377,13 @@ class ThermometerGlassCalculator
             [
                 'sumber' => 'pengulangan_standar',
                 'keterangan' => sprintf(
-                    'Pengulangan pembacaan standar — STDEV terbesar %s °C (÷%d mengikuti master, bukan ÷√%d)',
+                    'Pengulangan pembacaan standar — STDEV terbesar %s °C (÷√%d; master menulis ÷%d)',
                     $this->angka($stdevStandar),
                     self::N_PENGULANGAN,
                     self::N_PENGULANGAN,
                 ),
                 'distribusi' => 't-student',
-                'u' => $stdevStandar / self::PEMBAGI_PENGULANGAN_STANDAR,
+                'u' => $stdevStandar / sqrt(self::N_PENGULANGAN),
                 'ci' => 1.0,
                 'vi' => self::VI_PENGULANGAN,
                 'disertakan' => true,
@@ -450,24 +455,26 @@ class ThermometerGlassCalculator
         $catatan = [];
 
         if ($stdevStandar > 0.0) {
-            $benar = array_map(
+            $versiMaster = array_map(
                 static fn (array $k): array => $k['sumber'] === 'pengulangan_standar'
-                    ? [...$k, 'u' => $stdevStandar / sqrt(self::N_PENGULANGAN)]
+                    ? [...$k, 'u' => $stdevStandar / self::PEMBAGI_PENGULANGAN_STANDAR_MASTER]
                     : $k,
                 $dipakai,
             );
-            $aggBenar = $this->agregasi($benar);
+            $aggMaster = $this->agregasi($versiMaster);
 
             $catatan[] = [
                 'kode' => 'pengulangan_standar_dibagi_n',
                 'pesan' => sprintf(
-                    'Komponen keterulangan STANDAR dibagi %d, bukan √%d (`U27 = N27/Q27` — satu `SQRT` yang '
-                    .'hilang; baris di atasnya `U26 = N26/SQRT(Q26)` benar). Ditiru mengikuti sertifikat yang '
-                    .'sudah terbit. Kalau dibetulkan, U95 sesi ini jadi %s °C, bukan %s °C.',
+                    'Komponen keterulangan STANDAR di master dibagi %d, bukan √%d (`U27 = N27/Q27` — satu '
+                    .'`SQRT` yang hilang; baris di atasnya `U26 = N26/SQRT(Q26)` benar). Sejak 16 Sep 2026 '
+                    .'yang dipakai √%d sesuai GUM 4.2.3, jadi U95 sesi ini %s °C; dengan pembagi master '
+                    .'angkanya %s °C.',
+                    self::PEMBAGI_PENGULANGAN_STANDAR_MASTER,
                     self::N_PENGULANGAN,
                     self::N_PENGULANGAN,
-                    $this->angka($aggBenar['ketidakpastian_diperluas']),
                     $this->angka($uHitung),
+                    $this->angka($aggMaster['ketidakpastian_diperluas']),
                 ),
             ];
         }
