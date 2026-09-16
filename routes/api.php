@@ -236,7 +236,23 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 |
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+// `role:admin,teknisi,viewer` DI GRUP LUAR — deny by default.
+//
+// Sebelum ini, satu-satunya penjagaan buat sebagian besar rute GET di dalam sini
+// cuma penyaringan `organization_id` di controller. Itu cukup selama semua orang
+// yang punya akun memang orang lab. Begitu role `pelanggan` lahir dan akun
+// pelanggan duduk di organisasi PT Sidik, PT A bisa membaca alat & sertifikat
+// PT B lewat rute internal ini — kerahasiaan antar pelanggan, ISO/IEC 17025
+// klausul 4.2.
+//
+// Ditutup SEKARANG, sebelum role-nya ada, supaya celahnya nggak pernah sempat
+// terbuka. Grup `role:admin,teknisi` dan `role:admin` yang bersarang di bawah
+// TIDAK berubah — dua gerbang bertumpuk artinya dua-duanya harus lolos, jadi
+// yang admin-only tetap admin-only.
+//
+// Dijaga `RuteInternalMenolakRoleLainTest`, yang membaca daftar rute sendiri:
+// rute baru yang lupa dipagari bikin test itu merah, bukan lolos diam-diam.
+Route::middleware(['auth:sanctum', 'role:admin,teknisi,viewer'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     // Izin pemanggil buat nyembunyiin tombol yang bakal ditolak (fase-2 §1).
     // Jawabannya diturunkan dari middleware `role:` di rute-rute di bawah, jadi

@@ -206,16 +206,38 @@ class MatriksIzin
     /**
      * Role yang dibolehin middleware `role:` di rute ini. `null` = nggak dibatesin.
      *
+     * DIIRIS dari SEMUA `role:` yang nempel di rute, bukan diambil yang pertama
+     * ketemu. Itu bukan kerapian — itu yang beneran terjadi waktu request jalan:
+     * middleware ditumpuk, dan tiap gerbang harus lolos.
+     *
+     * Sejak grup luar `auth:sanctum` dipagari `role:admin,teknisi,viewer`
+     * (M0-06), hampir tiap rute punya DUA `role:`. Yang pertama selalu gerbang
+     * luar yang longgar itu. Kalau yang dipulangkan cuma yang pertama, endpoint
+     * ini bakal bilang viewer boleh approve sertifikat — dan tombolnya nyala di
+     * HP orang yang bakal ditolak 403 waktu menekannya.
+     *
+     * Persis kegagalan yang kelas ini ada buat mencegahnya: mobile berhenti
+     * nebak aturan dari 403 yang kejadian di lapangan. Jawaban yang salah di
+     * sini lebih buruk daripada nggak ada jawaban sama sekali.
+     *
      * @return list<string>|null
      */
     private function roleYangBoleh(Route $rute): ?array
     {
+        $hasil = null;
+
         foreach ($rute->gatherMiddleware() as $middleware) {
-            if (is_string($middleware) && str_starts_with($middleware, 'role:')) {
-                return array_values(array_filter(explode(',', substr($middleware, 5))));
+            if (! is_string($middleware) || ! str_starts_with($middleware, 'role:')) {
+                continue;
             }
+
+            $role = array_values(array_filter(explode(',', substr($middleware, 5))));
+
+            $hasil = $hasil === null
+                ? $role
+                : array_values(array_intersect($hasil, $role));
         }
 
-        return null;
+        return $hasil;
     }
 }

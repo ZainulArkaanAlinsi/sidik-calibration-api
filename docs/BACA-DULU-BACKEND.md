@@ -53,6 +53,64 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 16 Sep 2026 — gerbang rute deny-by-default (M0-06)
+
+**Yang berubah:** grup `auth:sanctum` di `routes/api.php` sekarang dibungkus
+`role:admin,teknisi,viewer`, dan channel realtime `organisasi.{id}` memeriksa
+role selain kepemilikan organisasi.
+
+**Kenapa ini mendesak, padahal role `pelanggan` belum ada.** Sebelum ini,
+penjagaan satu-satunya untuk sebagian besar rute GET internal cuma penyaringan
+`organization_id` di controller. Itu cukup selama semua pemegang akun memang
+orang lab. Rancangan modul pelanggan menaruh akun pelanggan di
+`organization_id` PT Sidik juga (01-PRD §8) — jadi penyaring itu **cocok** untuk
+mereka, dan PT A bisa membaca alat & sertifikat PT B lewat rute internal.
+Kerahasiaan antar pelanggan, ISO/IEC 17025 §4.2; di risk register dia R-D01,
+level kritis. Ditutup sekarang supaya celahnya tidak pernah sempat terbuka.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `routes/api.php` | `role:admin,teknisi,viewer` di grup `auth:sanctum` (satu grup, satu suntingan) |
+| `routes/channels.php` | `organisasi.{id}` menuntut role lab, bukan cuma organisasi yang cocok |
+| `app/Services/MatriksIzin.php` | `roleYangBoleh()` mengiris SEMUA `role:` — lihat di bawah |
+
+Nol migrasi, nol perubahan controller, nol perubahan perilaku untuk
+admin/teknisi/viewer (dibuktikan `GerbangRoleRegresiTest`, yang sengaja
+dijalankan di kode LAMA dan kode BARU — dua-duanya hijau).
+
+### Jebakan yang ikut ketahuan: `/me/permissions` nyaris berbohong
+
+Memasang gerbang di grup luar bikin hampir tiap rute punya **dua** middleware
+`role:`. `MatriksIzin::roleYangBoleh()` dulu memulangkan yang **pertama ketemu**
+— yaitu gerbang luar yang longgar itu. Akibatnya `/me/permissions` bakal bilang
+viewer boleh approve sertifikat, dan tombolnya nyala di HP orang yang bakal
+ditolak 403 waktu menekannya. Persis kegagalan yang kelas itu ada untuk
+mencegahnya.
+
+Sekarang dia **mengiris** semua `role:` yang nempel di rute — yang memang
+perilaku sebenarnya waktu request jalan, karena tiap gerbang harus lolos. Tanpa
+perbaikan ini, tiga test lama merah (`MeIzinTest`), termasuk satu yang benar-benar
+memanggil endpointnya dan membandingkan dengan 403 yang sungguhan.
+
+### Penjaga yang dipasang
+
+| Test | Yang dijaga |
+|---|---|
+| `RuteInternalMenolakRoleLainTest` | **138 pasang method+URI** (72 di antaranya ber-parameter) dibaca dari `Router::getRoutes()`, semuanya wajib 403 buat role tak dikenal |
+| ↳ `test_tidak_ada_rute_publik_yang_tidak_terdaftar` | Rute `api/` baru tanpa gerbang `role:` bikin suite merah, bukan lolos diam-diam |
+| `GerbangChannelRoleTest` | Closure `routes/channels.php` dipanggil lewat `verifyUserCanAccessChannel()` — bukan lewat HTTP, karena driver `null` bikin `auth()` no-op yang selalu 200 |
+| `GerbangRoleRegresiTest` | Admin/teknisi/viewer tidak kehilangan apa pun, termasuk `/me`, `/me/permissions`, notifikasi, device token, `/logout`, `/broadcasting/auth` |
+
+**Rute publik baru wajib didaftarkan** di `RuteInternalMenolakRoleLainTest::PUBLIK`
+dengan sadar. Itu disengaja: membuka rute ke orang luar memang keputusan yang
+pantas ditulis, bukan efek samping.
+
+**Prefix `api/pelanggan/` sudah dikecualikan dari sekarang**, walau rutenya belum
+ada — supaya Fase 3 tidak memerahkan test ini pada hari rute pelanggan pertama
+lahir. Modul pelanggan punya gerbangnya sendiri.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.
