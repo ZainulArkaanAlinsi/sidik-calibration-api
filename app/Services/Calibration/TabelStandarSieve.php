@@ -214,6 +214,28 @@ class TabelStandarSieve
         return $parameter === 'weft' ? 'mikroskop_y' : 'mikroskop_x';
     }
 
+    /**
+     * Tiga sel Tabel_MPE yang menyimpang dari ASTM E11, dibetulkan saat DIBACA.
+     *
+     * Berkas JSON-nya sengaja tetap cermin master (digenerate skrip, jangan
+     * diketik tangan) — koreksinya hidup di sini supaya selisihnya kelihatan,
+     * bukan hilang ke dalam data. Lab menjawab §14.9 pada 16 Sep 2026.
+     *
+     *   0,080 mm  Ø kawat preferred  0,56  → 0,056  (salah besar 10×)
+     *   1,000 mm  kolom µm           18000 → 1000   (salin-tempel baris 18 mm)
+     *   10,00 mm  kolom inch         0,279 → 0,394  (0,279 itu kolom y mm)
+     *
+     * Yang pertama MENGGESER ANGKA: nominal Ø kawat 0,56 mm untuk sieve 80 µm
+     * mustahil — kawatnya jadi tujuh kali lebih tebal dari lubangnya.
+     *
+     * @var list<array{ukuran_mm: float, kolom: string, master: float, astm: float}>
+     */
+    private const KOREKSI_ASTM = [
+        ['ukuran_mm' => 0.08, 'kolom' => 'kawat_preferred_mm', 'master' => 0.56, 'astm' => 0.056],
+        ['ukuran_mm' => 1.0, 'kolom' => 'ukuran_um', 'master' => 18000.0, 'astm' => 1000.0],
+        ['ukuran_mm' => 10.0, 'kolom' => 'ukuran_inch', 'master' => 0.279, 'astm' => 0.394],
+    ];
+
     /** @return array<string, mixed> */
     private static function muat(): array
     {
@@ -234,6 +256,23 @@ class TabelStandarSieve
             || ! isset($isi['standar']['caliper']['berlaku_sampai'], $isi['standar']['mikroskop']['berlaku_sampai'])) {
             throw new RuntimeException("Tabel standar sieve rusak: {$berkas}");
         }
+
+        $isi['mpe'] = array_map(static function (array $baris): array {
+            foreach (self::KOREKSI_ASTM as $k) {
+                $cocok = abs((float) $baris['ukuran_mm'] - $k['ukuran_mm']) < 1e-9
+                    && is_numeric($baris[$k['kolom']] ?? null)
+                    && abs((float) $baris[$k['kolom']] - $k['master']) < 1e-9;
+
+                if ($cocok) {
+                    $baris[$k['kolom']] = $k['astm'];
+                    // Jejak, bukan penggantian diam-diam: yang membaca barisnya
+                    // tetap bisa melihat angka master yang digantikan.
+                    $baris['dikoreksi_astm'][$k['kolom']] = $k['master'];
+                }
+            }
+
+            return $baris;
+        }, $isi['mpe']);
 
         return self::$data = $isi;
     }
