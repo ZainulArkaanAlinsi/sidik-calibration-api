@@ -202,8 +202,25 @@ class TidsCalculator
      */
     public const TIGA_KOMPONEN_TERAKHIR = [
         'recorder' => true,     // `AC36 = SUM(AC24:AD35)`
-        'constant' => false,    // `AC36 = SUM(AC24:AD32)`
-        'yokogawa' => false,    // idem
+        // Dibetulkan 16 Sep 2026 (jawaban lab §2.9): rentang `SUM(AC24:AD32)`
+        // yang berhenti di baris 32 itu kesalahan RENTANG, bukan pilihan
+        // metode — ketiga komponennya lahir & ditampilkan di sheet yang sama,
+        // dan workbook Recorder untuk alat yang sama menjumlah keduabelasnya.
+        // Arahnya menaikkan U (sesi contoh 1,0674 → 1,1411 °C).
+        'constant' => true,
+        'yokogawa' => true,
+    ];
+
+    /**
+     * Yang MASTER-nya jumlahkan — dipakai jejak audit buat mencetak berapa
+     * U95-nya kalau dihitung dengan rentang `SUM` aslinya.
+     *
+     * @var array<string, bool>
+     */
+    public const TIGA_KOMPONEN_TERAKHIR_MASTER = [
+        'recorder' => true,
+        'constant' => false,
+        'yokogawa' => false,
     ];
 
     /**
@@ -491,26 +508,38 @@ class TidsCalculator
             )]
             : [$this->tabel->u95Meter($keluarga, $tipe, $indexMaks), null];
 
-        [$u95Sensor, $ketSensor] = $recorder
-            ? [self::U95_SENSOR_RECORDER_TETAP, sprintf(
-                'Sertifikat sensor standar %s — master menulis literal %s °C, bukan tabel U95 termokopel. Ditiru.',
+        // D2 — dibetulkan 16 Sep 2026 (jawaban lab §16): master Recorder
+        // menulis literal 0,14 °C, sementara `TABEL NILAI U95% TERMOKOPEL` di
+        // workbook yang SAMA berbunyi 0,44 (Type K) & 0,76 (Type N). Sekarang
+        // dari tabel, sama seperti dua keluarga lain; arahnya menaikkan U.
+        [$u95Sensor, $ketSensor] = [
+            $this->tabel->u95Sensor($keluarga, $tipe, $noSensorStdev, $indexMaks),
+            $recorder ? sprintf(
+                'Sertifikat sensor standar %s — dari tabel U95 termokopel. Master menulis literal %s °C; '
+                .'selisihnya dicatat di jejak audit.',
                 $tipe,
                 $this->angka(self::U95_SENSOR_RECORDER_TETAP),
-            )]
-            : [$this->tabel->u95Sensor($keluarga, $tipe, $noSensorStdev, $indexMaks), null];
+            ) : null,
+        ];
 
         $inhomogenitas = $recorder
             ? self::INHOMOGENITAS_RECORDER
             : self::KOEF_INHOMOGENITAS_KALIBRATOR * $setPointMaks / 2.0;
 
-        [$driftMeter, $ketDrift] = $recorder
-            ? [self::DRIFT_METER_RECORDER_TETAP, sprintf(
-                'Drift %s — master menunjuk `Standar_Recorder!AM9` (%s °C), sel di tabel KOREKSI (CH16 Type K, '
-                .'−20 °C), bukan `Tabel_Drift_Recorder`. Setengah-lebar negatif itu tandanya. Ditiru.',
+        // D3 — dibetulkan 16 Sep 2026 (jawaban lab §16): master menunjuk
+        // `Standar_Recorder!AM9`, sel di tabel KOREKSI, dan nilainya −0,2 °C.
+        // Setengah-lebar NEGATIF mustahil secara fisika, dan `Tabel_Drift_Recorder`
+        // yang benar ada, bernama, serta tidak dipakai siapa pun. Sekarang dari
+        // tabel itu (Type N 0,25 · Type K 0,5).
+        [$driftMeter, $ketDrift] = [
+            $this->tabel->driftMeter($keluarga, $tipe),
+            $recorder ? sprintf(
+                'Drift %s — dari `Tabel_Drift_Recorder`. Master menunjuk sel tabel KOREKSI (%s °C), dan '
+                .'ketidakpastian negatif tidak mungkin; selisihnya dicatat di jejak audit.',
                 $tercetak,
                 $this->angka(self::DRIFT_METER_RECORDER_TETAP),
-            )]
-            : [$this->tabel->driftMeter($keluarga, $tipe), null];
+            ) : null,
+        ];
 
         $driftSensor = $this->tabel->driftSensor($keluarga, $tipe);
 
@@ -751,24 +780,23 @@ class TidsCalculator
             }
         }
 
-        if (! (self::TIGA_KOMPONEN_TERAKHIR[$keluarga] ?? true)) {
-            $tambahan = array_values(array_filter(
-                $budget,
-                static fn (array $k): bool => in_array($k['sumber'], ['self_heating_rtd', 'interpolasi', 'drift_uut'], true),
+        if (! (self::TIGA_KOMPONEN_TERAKHIR_MASTER[$keluarga] ?? true)) {
+            $tanpaTiga = array_values(array_filter(
+                $dipakai,
+                static fn (array $k): bool => ! in_array($k['sumber'], ['self_heating_rtd', 'interpolasi', 'drift_uut'], true),
             ));
 
             $catatan[] = [
-                'kode' => 'tids_tiga_komponen_tidak_dijumlah',
+                'kode' => 'tids_tiga_komponen_dijumlah',
                 'pesan' => sprintf(
                     'Workbook Constant/Yokogawa menghitung dua belas komponen lalu menjumlah sembilan — '
-                    .'`AC36 = SUM(AC24:AD32)` berhenti sebelum Self Heating, Interpolasi, & Drift UUT. '
-                    .'Workbook Recorder untuk alat yang SAMA menjumlah keduabelasnya (`SUM(AC24:AD35)`). '
-                    .'Ditiru per workbook. Kalau ketiganya ikut, U95 sesi ini jadi %s °C, bukan %s °C.',
-                    $this->angka($this->agregasi([...$dipakai, ...array_map(
-                        static fn (array $k): array => [...$k, 'disertakan' => true],
-                        $tambahan,
-                    )])['ketidakpastian_diperluas']),
+                    .'`AC36 = SUM(AC24:AD32)` berhenti sebelum Self Heating, Interpolasi, & Drift UUT, '
+                    .'sementara workbook Recorder untuk alat yang SAMA menjumlah keduabelasnya '
+                    .'(`SUM(AC24:AD35)`). Sejak 16 Sep 2026 keduabelasnya dijumlah — rentang `SUM` yang '
+                    .'berhenti itu kesalahan rentang, bukan pilihan metode. U95 sesi ini %s °C; dengan '
+                    .'rentang master angkanya %s °C.',
                     $this->angka($uHitung),
+                    $this->angka($this->agregasi($tanpaTiga)['ketidakpastian_diperluas']),
                 ),
             ];
         }

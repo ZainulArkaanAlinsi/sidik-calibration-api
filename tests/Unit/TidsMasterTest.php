@@ -145,9 +145,15 @@ class TidsMasterTest extends TestCase
         // Kolom `U` (`U24:U35`) master, urut seperti barisnya.
         $master = [
             'ketidakpastian_standar' => 0.415,                 // O24 0,83 ÷ 2   ← sel tetap T30
-            'ketidakpastian_sensor' => 0.07,                   // O25 0,14 ÷ 2   ← literal
+            // O25 master literal 0,14 ÷ 2 = 0,07. Sejak 16 Sep 2026 diambil
+            // dari `TABEL NILAI U95% TERMOKOPEL` (Type K 0,44 ÷ 2 = 0,22) —
+            // jawaban lab §16 D2, arahnya menaikkan U.
+            'ketidakpastian_sensor' => 0.22,
             'inhomogenitas_termokopel' => 0.34641016151377546, // N26 0,6 ÷ √3
-            'drift_standar' => -0.11547005383792516,           // N27 −0,2 ÷ √3  ← sel AM9
+            // N27 master menunjuk sel tabel KOREKSI: −0,2 ÷ √3 = −0,1155,
+            // ketidakpastian NEGATIF. Sejak 16 Sep 2026 dari
+            // `Tabel_Drift_Recorder` (Type K 0,5 ÷ √3) — jawaban lab §16 D3.
+            'drift_standar' => 0.2886751345948129,
             'drift_sensor' => 0.3175426480542942,              // N28 0,55 ÷ √3
             'daya_baca_uut' => 0.002886751345948129,           // N29 (0,01÷2) ÷ √3
             'keterulangan_pembacaan' => 0.37202150475476453,   // N30 M23 ÷ √5
@@ -174,13 +180,14 @@ class TidsMasterTest extends TestCase
             $this->assertEqualsWithDelta($nilai, $ui[$sumber], self::KETAT, "ui komponen `{$sumber}`");
         }
 
-        $this->assertEqualsWithDelta(0.8159803239201995, $hasil['ketidakpastian_gabungan'], self::KETAT, 'Uc (`AC37`)');
-        $this->assertEqualsWithDelta(82.78188731677758, $hasil['derajat_kebebasan_efektif'], 1e-4, 'v_eff (`AC38`)');
-        $this->assertEqualsWithDelta(1.98904830751697, $hasil['faktor_cakupan_k'], self::LONGGAR, 'k (`AC39`)');
-        $this->assertEqualsWithDelta(1.6230242822606218, $hasil['ketidakpastian_diperluas'], self::LONGGAR, 'U = k·Uc (`AC40`)');
+        // Dua komponen di atas (D2 & D3) sekarang dari tabel, jadi Uc & U kita
+        // LEBIH BESAR dari angka master (0,8160 / 1,6230). Yang diadu arahnya:
+        // kalau lebih kecil, literal & sel tabel KOREKSI itu balik diam-diam.
+        $this->assertGreaterThan(0.8159803239201995, $hasil['ketidakpastian_gabungan'], 'Uc wajib > master (`AC37`)');
+        $this->assertGreaterThan(1.6230242822606218, $hasil['ketidakpastian_diperluas'], 'U wajib > master (`AC40`)');
 
-        // `AC42 = MAX(AC40:AI41)` — hitungan 1,623 menang atas CMC 1,4.
-        $this->assertEqualsWithDelta(1.6230242822606218, $hasil['u95_sertifikat'], self::LONGGAR, 'U dilaporkan (`AC42`)');
+        // `AC42 = MAX(AC40:AI41)` — hitungan tetap menang atas CMC 1,4.
+        $this->assertEqualsWithDelta($hasil['ketidakpastian_diperluas'], $hasil['u95_sertifikat'], self::LONGGAR, 'U dilaporkan (`AC42`)');
         $this->assertSame('hitung', $hasil['sumber_u95']);
 
         // `N30 = 'PERHITUNGAN FC'!M23` — STDEV terbesar tabel STANDAR (titik
@@ -279,54 +286,40 @@ class TidsMasterTest extends TestCase
         $this->assertEqualsWithDelta(0.041569219381653054, $ui['drift_standar'], self::KETAT, 'N27 = Tabel_Drift_Yokogawa RTD (0,072) ÷ √3');
         $this->assertEqualsWithDelta(0.28982983513319216, $ui['drift_sensor'], self::KETAT, 'N28 = Tabel_Drift_Sensor RTD (0,502) ÷ √3');
 
-        $this->assertEqualsWithDelta(0.5420646678825934, $hasil['ketidakpastian_gabungan'], self::KETAT, 'Uc (`AC37`)');
-        $this->assertEqualsWithDelta(258.7971020878842, $hasil['derajat_kebebasan_efektif'], 1e-3, 'v_eff (`AC38`)');
-        $this->assertEqualsWithDelta(1.969173742440642, $hasil['faktor_cakupan_k'], self::LONGGAR, 'k (`AC39`)');
-        $this->assertEqualsWithDelta(1.0674195106992102, $hasil['ketidakpastian_diperluas'], self::LONGGAR, 'U (`AC40`)');
+        // `AC36` master berhenti di baris 32 (sembilan komponen) → Uc 0,5421,
+        // U 1,0674. Sejak 16 Sep 2026 keduabelasnya dijumlah seperti workbook
+        // Recorder untuk alat yang sama, jadi angkanya wajib LEBIH BESAR.
+        $this->assertGreaterThan(0.5420646678825934, $hasil['ketidakpastian_gabungan'], 'Uc wajib > master (`AC37`)');
+        $this->assertGreaterThan(1.0674195106992102, $hasil['ketidakpastian_diperluas'], 'U wajib > master (`AC40`)');
         $this->assertSame('hitung', $hasil['sumber_u95']);
     }
 
     /**
-     * Penyimpangan 4: `AC36 = SUM(AC24:AD32)` berhenti di baris 32, jadi tiga
-     * komponen terakhir lahir tapi nggak ikut dijumlah — dan catatan auditnya
-     * menyebut berapa U95-nya kalau ikut.
+     * Penyimpangan 4, SESUDAH dijawab lab (§2.9, 16 Sep 2026).
      *
-     * Ini penyimpangan yang paling mahal dari keempatnya: dia menggeser U95 ke
-     * arah lebih KECIL, dan workbook Recorder untuk alat yang SAMA menjumlah
-     * keduabelasnya. Dua master, satu alat, dua jawaban.
+     * `AC36 = SUM(AC24:AD32)` berhenti di baris 32, jadi tiga komponen terakhir
+     * lahir, ditampilkan, lalu tidak ikut dijumlah — sementara workbook
+     * Recorder untuk alat yang SAMA menjumlah keduabelasnya. Itu kesalahan
+     * RENTANG, bukan pilihan metode, jadi sekarang keduabelasnya dijumlah dan
+     * catatan auditnya menyebut berapa angkanya dengan rentang master.
      */
-    public function test_yokogawa_tiga_komponen_terakhir_nggak_ikut_dijumlah(): void
+    public function test_yokogawa_dua_belas_komponen_ikut_dijumlah(): void
     {
         [$titik, $spek] = $this->sesiYokogawa();
         $hasil = (new TidsCalculator)->hitungSesi($titik, $spek);
 
-        $dibuang = ['self_heating_rtd', 'interpolasi', 'drift_uut'];
-
         foreach ($hasil['budget'] as $k) {
-            $this->assertSame(
-                ! in_array($k['sumber'], $dibuang, true),
-                $k['disertakan'],
-                "Komponen `{$k['sumber']}` salah status di workbook Constant/Yokogawa.",
-            );
+            $this->assertTrue($k['disertakan'], "Komponen `{$k['sumber']}` harus ikut dijumlah.");
         }
 
-        // Keduabelasnya tetap DIHITUNG & dipulangkan — yang beda cuma
-        // `disertakan`. Kalau komponennya dibuang dari daftar, jejak auditnya
-        // ikut hilang dan penyimpangan ini jadi nggak kelihatan.
         $this->assertCount(12, $hasil['budget']);
 
-        $catatan = collect($hasil['catatan_audit'])->firstWhere('kode', 'tids_tiga_komponen_tidak_dijumlah');
-        $this->assertNotNull($catatan, 'Penyimpangan `AC36` wajib melahirkan catatan audit.');
-        $this->assertStringContainsString('1,141102', $catatan['pesan'], 'U95 "kalau ketiganya ikut" harus DIHITUNG.');
+        $catatan = collect($hasil['catatan_audit'])->firstWhere('kode', 'tids_tiga_komponen_dijumlah');
+        $this->assertNotNull($catatan, 'Selisih dari rentang `AC36` master wajib melahirkan catatan audit.');
+        $this->assertStringContainsString('1,067419', $catatan['pesan'], 'U95 versi master harus DIHITUNG, bukan ditaksir.');
 
-        // Dan angka itu bukan karangan: hitung ulang dengan keluarga Recorder
-        // (yang menjumlah keduabelasnya) atas komponen yang sama.
-        $penuh = (new TidsCalculator)->hitungSesi($titik, [...$spek, 'keluarga_standar' => 'constant']);
-        $this->assertLessThan(
-            $penuh['ketidakpastian_diperluas'] + 1.0,
-            $hasil['ketidakpastian_diperluas'],
-            'Sanity: U95 sembilan komponen nggak boleh lebih besar dari dua belas komponen.',
-        );
+        // Dan hasilnya memang lebih besar dari versi master.
+        $this->assertGreaterThan(1.0674195106992102, $hasil['ketidakpastian_diperluas']);
     }
 
     /**

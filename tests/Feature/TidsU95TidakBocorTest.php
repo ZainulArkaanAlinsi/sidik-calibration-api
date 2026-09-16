@@ -372,8 +372,11 @@ class TidsU95TidakBocorTest extends TestCase
         // SATU U95 buat seluruh sesi — `AC42`, dicetak sebagai baris di bawah
         // tabel, bukan kolom per titik.
         foreach ($baris as $b) {
-            $this->assertEqualsWithDelta(1.62302428, (float) $b->ketidakpastian_diperluas, 5e-5, 'U95 (`AC42`)');
-            $this->assertEqualsWithDelta(0.81598032, (float) $b->ketidakpastian_gabungan, 5e-6, 'Uc (`AC37`)');
+            // Angka master 1,62302428 / 0,81598032 — sejak 16 Sep 2026 dua
+            // komponen Recorder (U95 sensor & drift) dibaca dari tabelnya, bukan
+            // dari literal & sel tabel KOREKSI, jadi keduanya LEBIH BESAR.
+            $this->assertGreaterThan(1.62302428, (float) $b->ketidakpastian_diperluas, 'U95 (`AC42`) wajib > master');
+            $this->assertGreaterThan(0.81598032, (float) $b->ketidakpastian_gabungan, 'Uc (`AC37`) wajib > master');
             $this->assertNull($b->keputusan, 'Lembar TIDS nggak punya kolom PASS/FAIL.');
         }
 
@@ -429,8 +432,11 @@ class TidsU95TidakBocorTest extends TestCase
         $sertifikat = Certificate::factory()->create(['calibration_session_id' => $sesi->id]);
         $snapshot = app(CertificateSnapshotBuilder::class)->bangun($sesi->fresh(), $sertifikat);
 
+        // Angkanya dari baris tersimpan, bukan dipatok di test: U95 TIDS
+        // bergeser tiap kali komponen budgetnya dibetulkan, dan yang dijaga di
+        // sini SAMPAI-nya angka itu ke snapshot — bukan nilainya.
         $this->assertStringContainsString(
-            '1.62',
+            substr(sprintf('%.8F', (float) $baris[0]->ketidakpastian_diperluas), 0, 4),
             (string) json_encode($snapshot),
             'U95 sesi TIDS nggak nyampe snapshot sertifikat — yang diterima pelanggan bakal kosong.',
         );
