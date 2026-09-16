@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
+use App\Models\Equipment;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -52,6 +53,34 @@ class ResolusiPerTitikLembarTest extends TestCase
 
             $this->assertSame([], $conductivity->peringatanSesi($sesi));
         }
+    }
+
+    /**
+     * Resolusi per titik MASUK budget, tapi cuma ke arah yang membesarkan U.
+     *
+     * Jawaban lab 16 Sep 2026 §3.3: EA-4/02 menghitung `δx/(2√3)` dari resolusi
+     * pada pembacaan itu, dan alat autorange berganti resolusi per rentang.
+     * Sampai Manajer Teknis menyetujui, yang dipakai yang lebih besar antara
+     * tulisan teknisi dan angka master — perbaikan rumus tidak boleh diam-diam
+     * mengecilkan ketidakpastian yang sudah tercetak.
+     */
+    public function test_resolusi_tulisan_teknisi_masuk_budget_hanya_kalau_lebih_besar(): void
+    {
+        $profil = app(CalibrationProfileRegistry::class)->untukKode('turbidimeter');
+        $alat = new Equipment(['resolusi' => 0.01]);
+
+        // Titik 100 NTU: master 0,1. Tulisan lebih KASAR dipakai.
+        $this->assertSame(1.0, $profil->resolusiDipakai(100.0, $alat, [
+            'spesifikasi_alat' => ['resolusi_titik_2' => '1'],
+        ]));
+
+        // Tulisan lebih HALUS diabaikan — master menang.
+        $this->assertSame(0.1, $profil->resolusiDipakai(100.0, $alat, [
+            'spesifikasi_alat' => ['resolusi_titik_2' => 0.001],
+        ]));
+
+        // Kotak kosong: perilaku lama, persis seperti sebelum kotaknya ada.
+        $this->assertSame(0.1, $profil->resolusiDipakai(100.0, $alat, []));
     }
 
     public function test_resolusi_beda_memberi_peringatan_yang_menyebut_titiknya(): void

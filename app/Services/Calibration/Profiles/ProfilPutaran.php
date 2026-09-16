@@ -804,37 +804,59 @@ abstract class ProfilPutaran extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Data Hasil Kalibrasi',
             'field' => [],
+            // Kertas FM-0515 mencetak DUA tabel — Before & After adjustment.
+            // Yang "Before" itu as-found: ISO/IEC 17025:2017 §7.8.4.1 meminta
+            // hasil sebelum & sesudah penyetelan dilaporkan bila tersedia,
+            // karena pelanggan memakainya untuk menilai apakah pengukuran
+            // selama periode sebelumnya masih bisa dipercaya (jawaban lab
+            // 16 Sep 2026 §3.4).
+            //
+            // As-found DICATAT saja: budget, vonis, dan sertifikat tetap lahir
+            // dari tahap `sesudah_adjustment` — `HitungUlangSesi` memang hanya
+            // membaca tahap itu, dan master pun tidak punya blok as-found.
             'tabel' => [
-                [
-                    // `tahap` itu enum `raw_measurements` (sebelum/sesudah
-                    // adjustment), BUKAN identitas tabel. Lembar ini cuma punya
-                    // satu tabel dan tidak mengenal adjustment, jadi semua
-                    // pembacaannya `sesudah_adjustment` — sama seperti sembilan
-                    // lembar lain yang alatnya tidak bisa disetel ulang.
-                    'tahap' => 'sesudah_adjustment',
-                    'grup' => 'pembacaan_standar',
-                    'judul' => 'Pembacaan Tachometer Standar',
-                    'satuan' => self::SATUAN,
-                    'judul_nilai' => 'Set Point',
-                    'judul_pengulangan' => 'Pembacaan Standar (rpm)',
-                    'titik_bisa_diubah' => true,
-                    'baris' => array_map(
-                        static fn (int $n): array => [
-                            'nomor' => $n,
-                            'titik_ukur' => self::TITIK_SARAN[$n - 1] ?? null,
-                            'label' => 'Set point '.$n,
-                            'satuan' => self::SATUAN,
-                        ],
-                        range(1, self::BARIS_KERTAS * PutaranCalculator::TITIK_PER_BLOK),
-                    ),
-                    'kolom' => [
-                        ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
-                    ],
-                    'pengulangan' => range(1, self::PENGULANGAN),
-                    'catatan' => 'Set point diisi sesuai penunjukan alat pelanggan; kelima kolomnya '
-                        .'pembacaan tachometer standar pada putaran yang sama.',
-                ],
+                $this->tabelPembacaan(
+                    'sebelum_adjustment',
+                    'Before adjustment Reading (as-found — isi hanya kalau alat disetel ulang)',
+                ),
+                $this->tabelPembacaan('sesudah_adjustment', 'After adjustment Reading'),
             ],
+        ];
+    }
+
+    /**
+     * Satu tabel pembacaan tachometer standar.
+     *
+     * `tahap` itu enum `raw_measurements` (sebelum/sesudah adjustment), BUKAN
+     * identitas tabel.
+     *
+     * @return array<string, mixed>
+     */
+    private function tabelPembacaan(string $tahap, string $judul): array
+    {
+        return [
+            'tahap' => $tahap,
+            'grup' => 'pembacaan_standar',
+            'judul' => $judul,
+            'satuan' => self::SATUAN,
+            'judul_nilai' => 'Set Point',
+            'judul_pengulangan' => 'Pembacaan Standar (rpm)',
+            'titik_bisa_diubah' => true,
+            'baris' => array_map(
+                static fn (int $n): array => [
+                    'nomor' => $n,
+                    'titik_ukur' => self::TITIK_SARAN[$n - 1] ?? null,
+                    'label' => 'Set point '.$n,
+                    'satuan' => self::SATUAN,
+                ],
+                range(1, self::BARIS_KERTAS * PutaranCalculator::TITIK_PER_BLOK),
+            ),
+            'kolom' => [
+                ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
+            ],
+            'pengulangan' => range(1, self::PENGULANGAN),
+            'catatan' => 'Set point diisi sesuai penunjukan alat pelanggan; kelima kolomnya '
+                .'pembacaan tachometer standar pada putaran yang sama.',
         ];
     }
 

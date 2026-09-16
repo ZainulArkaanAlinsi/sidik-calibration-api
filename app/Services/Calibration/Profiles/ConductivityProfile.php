@@ -416,6 +416,16 @@ class ConductivityProfile extends CalibrationProfile
             ?? $this->resolusiTitik($titikUkur)
             ?? (float) $equipment->resolusi;
 
+        // Resolusi yang ditulis teknisi per titik (kotak "Resolusi: ( )" kertas
+        // FM-0510) ikut budget — alat autorange berganti resolusi per rentang,
+        // jadi yang benar per titik (EA-4/02; jawaban lab 16 Sep 2026 §3.3).
+        // Yang dipakai TERBESAR: perbaikan tidak boleh diam-diam mengecilkan U.
+        $ditulis = $this->resolusiDitulis((array) ($konteksTitik['spesifikasi_alat'] ?? []), $titikUkur);
+
+        if ($ditulis !== null) {
+            $resolusi = max($resolusi, $ditulis);
+        }
+
         // U95% sertifikat larutan disimpen dalam satuan native larutannya
         // (µS/cm buat dua yang pertama, mS/cm buat yang ketiga). Titik tengah
         // varian mS/cm baca botol yang sama, jadi U-nya dibagi 1000 —
@@ -660,9 +670,40 @@ class ConductivityProfile extends CalibrationProfile
     }
 
     /**
+     * Angka resolusi yang ditulis teknisi untuk titik ini, atau null.
+     *
+     * Titik tengah punya dua bentuk (µS/cm & mS/cm) dan teknisi menulis sesuai
+     * layar alatnya, jadi angkanya dipakai apa adanya — yang memilih mana yang
+     * masuk budget tetap `max()` di [komponenBudget].
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     */
+    private function resolusiDitulis(array $spesifikasi, float $titikUkur): ?float
+    {
+        $terdekat = $this->titikTerdekat($titikUkur);
+
+        foreach (self::TITIK as $i => $t) {
+            $cocok = $t === $terdekat
+                || ($t['varian_mili'] !== null && $t['varian_mili'] === $terdekat);
+
+            if (! $cocok) {
+                continue;
+            }
+
+            $nilai = $spesifikasi['resolusi_titik_'.($i + 1)] ?? null;
+            $nilai = is_string($nilai) ? str_replace(',', '.', trim($nilai)) : $nilai;
+
+            return is_numeric($nilai) && (float) $nilai > 0 ? (float) $nilai : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Resolusi tulisan teknisi vs yang dipakai budget (baris rinci alat dulu,
-     * lalu bawaan master). Beda → peringatan, angka tidak digeser — pola
-     * Viscometer. Titik tengah lolos kalau cocok dengan SALAH SATU bentuknya.
+     * lalu bawaan master). Beda → peringatan; yang masuk budget yang TERBESAR
+     * dari keduanya, jadi U tidak pernah mengecil karena tulisan tangan.
+     * Titik tengah lolos kalau cocok dengan SALAH SATU bentuknya.
      *
      * @return list<array{kode: string, pesan: string}>
      */
@@ -704,9 +745,10 @@ class ConductivityProfile extends CalibrationProfile
 
         return [[
             'kode' => 'resolusi_titik_beda_dari_master',
-            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi yang dipakai menghitung: '
-                .implode('; ', $beda).'. Ketidakpastian resolusi tetap dihitung dari data alat/master — '
-                .'kalau yang benar yang di kertas, betulkan dulu data alatnya sebelum approve.',
+            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi master/data alat: '
+                .implode('; ', $beda).'. Yang dipakai menghitung yang LEBIH BESAR dari keduanya — '
+                .'resolusi yang lebih halus tidak boleh mengecilkan U95 sebelum Manajer Teknis '
+                .'memutuskan. Kalau yang benar yang di kertas, betulkan dulu data alatnya.',
         ]];
     }
 

@@ -1484,6 +1484,12 @@ class CalibrationController extends Controller
                     'delta_tekanan' => $deltaTekanan,
                     'mode_tits' => $modeKalibrasi,
                     'tipe_sensor' => $tipeSensor,
+                    // Blok tingkat-sesi, dioper apa adanya — Turbidimeter &
+                    // Conductivity membaca `resolusi_titik_N` dari sini.
+                    // Jalur hitung ulang (`HitungUlangSesi`) sudah mengirimnya
+                    // sejak lembar TIDS; tanpa baris ini kedua jalur memberi
+                    // budget yang berbeda untuk sesi yang sama.
+                    'spesifikasi_alat' => (array) $request->input('spesifikasi_alat', []),
                 ],
             ];
         }

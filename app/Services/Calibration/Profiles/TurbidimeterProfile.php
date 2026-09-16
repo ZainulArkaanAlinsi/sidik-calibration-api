@@ -202,7 +202,7 @@ class TurbidimeterProfile extends CalibrationProfile
         $sqrt3 = sqrt(3);
         $kStandar = $standard->faktor_cakupan ?: 2.0;
         $uTemperature = (float) $kemampuan->u_temperature;
-        $resolusi = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        $resolusi = $this->resolusiDipakai($titikUkur, $equipment, $konteksTitik);
 
         // Koefisien sensitivitas suhu turbidimeter: ci = (UTemperature/400)·titik
         // (sel W13/W27/W41 di sheet PERHITUNGAN U95%). Beda dari pH yang
@@ -277,12 +277,54 @@ class TurbidimeterProfile extends CalibrationProfile
     }
 
     /**
+     * Resolusi yang MASUK BUDGET di satu titik.
+     *
+     * GUM/EA-4/02: komponen resolusi `δx/(2√3)` memakai resolusi pada
+     * pembacaan itu, dan turbidimeter autorange memang berganti resolusi per
+     * rentang — jadi yang benar resolusi per titik, bukan satu angka untuk
+     * seluruh lembar (jawaban lab 16 Sep 2026, §3.3).
+     *
+     * Yang dipakai TERBESAR antara tulisan teknisi dan angka master. Aturan
+     * emas proyek: perbaikan rumus tidak boleh diam-diam mengecilkan U sebelum
+     * Manajer Teknis memutuskan. Kalau teknisi menulis resolusi yang lebih
+     * halus, angkanya tercatat & jadi peringatan, tapi budget tetap memakai
+     * master.
+     */
+    public function resolusiDipakai(float $titikUkur, Equipment $equipment, array $konteksTitik = []): float
+    {
+        $master = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        $ditulis = $this->resolusiDitulis((array) ($konteksTitik['spesifikasi_alat'] ?? []), $titikUkur);
+
+        return $ditulis === null ? $master : max($master, $ditulis);
+    }
+
+    /**
+     * Angka resolusi yang ditulis teknisi untuk titik ini, atau null.
+     *
+     * @param  array<string, mixed>  $spesifikasi
+     */
+    private function resolusiDitulis(array $spesifikasi, float $titikUkur): ?float
+    {
+        foreach (self::TITIK as $i => $t) {
+            if ($t !== $this->titikTerdekat($titikUkur)) {
+                continue;
+            }
+
+            $nilai = $spesifikasi['resolusi_titik_'.($i + 1)] ?? null;
+            $nilai = is_string($nilai) ? str_replace(',', '.', trim($nilai)) : $nilai;
+
+            return is_numeric($nilai) && (float) $nilai > 0 ? (float) $nilai : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Kotak "Resolusi:" per titik di kepala tabel kertas FM-0530 — *"Tuliskan
      * resolusi UUT di masing-masing titik kalibrasi"*.
      *
-     * DICATAT, belum menggeser hitungan: budget tetap memakai resolusi per
-     * titik master (`INPUT DATA!E17:G17`, [TITIK]). Beda tulisan teknisi dari
-     * angka itu naik jadi peringatan sesi — pola yang sama dengan Viscometer.
+     * Masuk budget lewat [resolusiDipakai]; beda dari angka master tetap naik
+     * jadi peringatan sesi supaya admin tahu sebelum menerbitkan.
      *
      * @return list<array<string, mixed>>
      */
@@ -324,9 +366,10 @@ class TurbidimeterProfile extends CalibrationProfile
 
         return [[
             'kode' => 'resolusi_titik_beda_dari_master',
-            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi yang dipakai menghitung: '
-                .implode('; ', $beda).'. Ketidakpastian resolusi tetap dihitung dari angka master — '
-                .'periksa lagi alatnya sebelum approve.',
+            'pesan' => 'Resolusi UUT yang ditulis teknisi beda dari resolusi master: '.implode('; ', $beda)
+                .'. Yang dipakai menghitung yang LEBIH BESAR dari keduanya — resolusi yang lebih halus '
+                .'tidak boleh mengecilkan U95 sebelum Manajer Teknis memutuskan. Periksa lagi alatnya '
+                .'sebelum approve.',
         ]];
     }
 
