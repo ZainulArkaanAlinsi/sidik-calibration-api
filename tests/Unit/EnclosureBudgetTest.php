@@ -99,11 +99,26 @@ class EnclosureBudgetTest extends TestCase
         }
 
         if ($ujiUc) {
-            $this->assertEqualsWithDelta($e['Uc'], $hasil['ketidakpastian_gabungan'], self::TOLERANSI, 'Uc meleset');
+            // Recorder menyimpang dari master sejak 16 Sep 2026: komponen
+            // Pengulangan Standar dibagi √3, bukan √(√3) (butir A-1). Yang
+            // diadu arahnya — wajib LEBIH KECIL dari Uc master, karena pembagi
+            // yang benar lebih besar dan tidak ada komponen lain yang berubah.
+            if ($workbook === 'recorder') {
+                $this->assertLessThan($e['Uc'], $hasil['ketidakpastian_gabungan'], 'Uc recorder wajib < master');
+                $this->assertEqualsWithDelta($e['Uc'], $hasil['ketidakpastian_gabungan'], 1e-3, 'Uc recorder bergeser terlalu jauh dari master');
+            } else {
+                $this->assertEqualsWithDelta($e['Uc'], $hasil['ketidakpastian_gabungan'], self::TOLERANSI, 'Uc meleset');
+            }
         }
 
         if ($ujiVeff) {
-            $this->assertEqualsWithDelta($e['veff'], $hasil['derajat_kebebasan_efektif'], self::TOLERANSI, 'v_eff meleset');
+            // Recorder: v_eff, k, dan U ikut bergeser tipis sejak butir A-1
+            // (pembagi Pengulangan Standar √3, bukan √(√3)). Toleransinya
+            // dilonggarkan SEBATAS pergeseran itu — bukan dimatikan, supaya
+            // perubahan lain yang menggeser lebih jauh tetap merah.
+            $toleransiVeff = $workbook === 'recorder' ? 0.2 : self::TOLERANSI;
+
+            $this->assertEqualsWithDelta($e['veff'], $hasil['derajat_kebebasan_efektif'], $toleransiVeff, 'v_eff meleset');
             $this->assertEqualsWithDelta($e['k'], $hasil['faktor_cakupan_k'], self::TOLERANSI_K, 'k meleset');
             $this->assertEqualsWithDelta($e['U'], $hasil['ketidakpastian_diperluas'], self::TOLERANSI_K, 'U meleset');
         }
@@ -166,10 +181,13 @@ class EnclosureBudgetTest extends TestCase
         $this->assertEqualsWithDelta(0.5 / 1.73, $drift['u'], self::TOLERANSI);
         $this->assertJauhDari(0.5 / sqrt(3.0), $drift['u'], self::TOLERANSI);
 
-        // Pengulangan Standar Recorder ÷ √(√3) = 3^0,25 ≈ 1,3161.
+        // Pengulangan Standar Recorder ÷ √3 sejak 16 Sep 2026 (butir A-1).
+        // Master menulis ÷√(√3) = 3^0,25 ≈ 1,3161 lewat `U29 = N29/SQRT(Q29)`,
+        // dan 3^¼ bukan pembagi distribusi mana pun (GUM 4.3.7).
         $peng = $this->komponen($rec['budget'], 'pengulangan_standar');
-        $this->assertEqualsWithDelta(
-            $rec['kestabilan'] / EnclosureCalculator::PEMBAGI_PENGULANGAN_RECORDER,
+        $this->assertEqualsWithDelta($rec['kestabilan'] / sqrt(3.0), $peng['u'], self::TOLERANSI);
+        $this->assertJauhDari(
+            $rec['kestabilan'] / EnclosureCalculator::PEMBAGI_PENGULANGAN_RECORDER_MASTER,
             $peng['u'],
             self::TOLERANSI,
         );
@@ -361,15 +379,24 @@ class EnclosureBudgetTest extends TestCase
         }
     }
 
-    /** v_eff TIDAK dipotong ke bawah — Recorder v_eff 298,25 (pecahan), bukan 298. */
+    /**
+     * v_eff TIDAK dipotong ke bawah — Recorder v_eff pecahan, bukan bulat.
+     *
+     * Angkanya bergeser tipis sejak butir A-1 (298,2547 → 298,0968) karena
+     * pembagi komponen Pengulangan Standar berubah; yang dijaga di sini tetap
+     * hal yang sama, yaitu v_eff dipakai apa adanya.
+     */
     public function test_v_eff_tidak_dipotong(): void
     {
         $this->assertFalse(EnclosureCalculator::FLOOR_V_EFF);
 
         $fix = self::fixture()['recorder'];
         $hasil = $this->hitung($fix, $fix['setpoints'][0]);
-        $this->assertEqualsWithDelta(298.25471214223484, $hasil['derajat_kebebasan_efektif'], self::TOLERANSI);
-        $this->assertGreaterThan(298.0, $hasil['derajat_kebebasan_efektif']);
+        $veff = $hasil['derajat_kebebasan_efektif'];
+
+        $this->assertGreaterThan(298.0, $veff);
+        $this->assertLessThan(299.0, $veff);
+        $this->assertNotEqualsWithDelta(floor($veff), $veff, 1e-6, 'v_eff kelihatan dipotong ke bawah.');
     }
 
     /**

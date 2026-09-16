@@ -347,7 +347,17 @@ class DoMeterProfile extends CalibrationProfile
         $sqrt3 = sqrt(3);
         $kStandar = $standard->faktor_cakupan ?: 2.0;
         $uTemperature = (float) $kemampuan->u_temperature;
-        $resolusi = $this->resolusiTitik($titikUkur) ?? (float) $equipment->resolusi;
+        // Resolusi master (0,01 mg/L) ATAU resolusi alat pelanggan — yang LEBIH
+        // BESAR. `resolusiTitik()` di lembar ini tidak pernah `null`, jadi
+        // cabang `?? $equipment->resolusi` yang ditulis di sini dulu tidak
+        // pernah jalan: alat pelanggan berlayar 0,1 mg/L tetap dihitung 0,01,
+        // dan komponen resolusinya terbit sepuluh kali lebih kecil dari yang
+        // sebenarnya. `max` sekaligus menutup jebakan sebaliknya — alat yang
+        // resolusinya kosong (0) tidak boleh menghapus komponen ini.
+        $resolusi = max(
+            (float) ($this->resolusiTitik($titikUkur) ?? self::RESOLUSI),
+            (float) $equipment->resolusi,
+        );
 
         // Uc pengenceran dalam ml (0,01650599966678783), buat ci dan buat
         // diturunin ke L (÷1000) sebagai `u`.

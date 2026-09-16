@@ -613,4 +613,27 @@ class ChlorineProfile extends CalibrationProfile
 
         return $bentuk;
     }
+
+    /*
+     * ## Kenapa lembar ini TIDAK memakai `u95PerTitik()`
+     *
+     * `SERTIFIKAT.csv` master mencetak dua U95 berbeda (0,0910 Free · 0,0802
+     * Total), dan dua-duanya memang tercetak benar hari ini — tapi lewat jalan
+     * lain: `remarkTitik()` memulangkan teks yang berbeda per titik, jadi tiap
+     * titik jatuh ke grup berisi satu baris dan membawa U95-nya sendiri.
+     *
+     * Menyalakan `u95PerTitik()` dicoba 16 Sep 2026 dan DICABUT lagi di hari
+     * yang sama: bentuk per-titik mencetak kepala & baris U95 untuk tiap
+     * kelompok, dan sertifikat Chlorine tumbuh ~112 px sampai sisa ruangnya nol
+     * — ditangkap `SertifikatPunyaMarginTest`. Lembar bersisa nol jatuh ke
+     * halaman dua begitu nama pelanggan lebih panjang, sementara headernya
+     * tetap mencetak `Page : 1 of 1`. Itu harga yang lebih mahal daripada
+     * risiko yang ditutupnya.
+     *
+     * Yang tersisa sebagai risiko, dan sengaja dibiarkan terbuka: kalau suatu
+     * saat ada dua titik dengan remark yang SAMA, U95 titik kedua bakal
+     * tercetak milik titik pertama. Ketiga titik lembar ini remark-nya berbeda
+     * menurut konstruksi (`remarkTitik()`), jadi itu baru bisa terjadi lewat
+     * perubahan yang sengaja — dan pembacanya mendarat di catatan ini.
+     */
 }

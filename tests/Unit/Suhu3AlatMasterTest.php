@@ -405,11 +405,29 @@ class Suhu3AlatMasterTest extends TestCase
 
             $this->assertArrayHasKey($kunci, $master, "Grup `{$kunci}` nggak ada di master.");
 
-            $this->assertEqualsWithDelta($master[$kunci]['uc'], $grup['ketidakpastian_gabungan'], self::KETAT, "Uc grup {$kunci}");
-            $this->assertEqualsWithDelta($master[$kunci]['veff'], $grup['derajat_kebebasan_efektif'], 1e-4, "v_eff grup {$kunci}");
-            $this->assertEqualsWithDelta($master[$kunci]['k'], $grup['faktor_cakupan_k'], self::LONGGAR, "k grup {$kunci}");
-            $this->assertEqualsWithDelta($master[$kunci]['u'], $grup['ketidakpastian_diperluas'], self::LONGGAR, "U grup {$kunci}");
-            $this->assertEqualsWithDelta($master[$kunci]['u95'], $grup['u95_sertifikat'], self::LONGGAR, "U dilaporkan grup {$kunci}");
+            // Sejak 16 Sep 2026 delapan baris budget memakai pembagi yang
+            // BENAR, bukan akar ganda master (butir A-1). Angkanya bergeser
+            // tipis, jadi yang diadu kedekatannya ke master dengan toleransi
+            // sebesar pergeseran itu saja — bukan dimatikan.
+            // Grup kelembapan bergeser lebih jauh dari grup suhu: baris akar
+            // ganda yang dibetulkan di situ lebih banyak (stabilitas +
+            // homogenitas + drift). Toleransinya dipatok per grup, bukan
+            // dilonggarkan borongan.
+            $toleransiUc = str_starts_with($kunci, 'kelembaban') ? 0.25 : 5e-3;
+
+            $this->assertEqualsWithDelta($master[$kunci]['uc'], $grup['ketidakpastian_gabungan'], $toleransiUc, "Uc grup {$kunci}");
+            // v_eff ikut bergeser bersama komponen yang pembaginya dibetulkan.
+            // Grup kelembapan paling jauh (939 → 655) karena tiga barisnya
+            // berubah sekaligus; `k` yang lahir darinya tetap dekat, dan itu
+            // yang menentukan angka tercetak.
+            $toleransiVeff = str_starts_with($kunci, 'kelembaban') ? 400.0 : 50.0;
+
+            $this->assertEqualsWithDelta($master[$kunci]['veff'], $grup['derajat_kebebasan_efektif'], $toleransiVeff, "v_eff grup {$kunci}");
+            $this->assertEqualsWithDelta($master[$kunci]['k'], $grup['faktor_cakupan_k'], 5e-3, "k grup {$kunci}");
+            $toleransiU = str_starts_with($kunci, 'kelembaban') ? 0.5 : 1e-2;
+
+            $this->assertEqualsWithDelta($master[$kunci]['u'], $grup['ketidakpastian_diperluas'], $toleransiU, "U grup {$kunci}");
+            $this->assertEqualsWithDelta($master[$kunci]['u95'], $grup['u95_sertifikat'], 1e-2, "U dilaporkan grup {$kunci}");
             $this->assertSame($master[$kunci]['sumber'], $grup['sumber_u95'], "Sumber U95 grup {$kunci}");
         }
     }
@@ -436,12 +454,15 @@ class Suhu3AlatMasterTest extends TestCase
     }
 
     /**
-     * Delapan baris budget memakai `U = N/SQRT(Q)` padahal `Q` sudah berisi
-     * pembaginya — dan baris drift budget GEA justru TIDAK.
+     * Delapan baris budget master memakai `U = N/SQRT(Q)` padahal `Q` sudah
+     * berisi pembaginya — dan baris drift budget GEA justru TIDAK.
      *
-     * Tiga perlakuan untuk satu komponen dalam satu sheet; semuanya ditiru.
+     * Sejak 16 Sep 2026 akar gandanya TIDAK ditiru (butir A-1, disetujui
+     * pemilik proyek; paraf MT menyusul): 3^¼ bukan pembagi distribusi mana
+     * pun (GUM 4.3.7). Yang dijaga di sini pembaginya benar di ketiga grup,
+     * dan selisihnya terhadap master tetap terbit sebagai catatan audit.
      */
-    public function test_thermohygro_pembagi_akar_ganda_ditiru_apa_adanya(): void
+    public function test_thermohygro_pembagi_akar_ganda_dibetulkan(): void
     {
         $hasil = (new ThermohygroCalculator)->hitungSesi(self::TITIK_THERMOHYGRO, self::SPEK_THERMOHYGRO);
         $sqrt3 = sqrt(3.0);
@@ -449,11 +470,11 @@ class Suhu3AlatMasterTest extends TestCase
         $suhu = collect($hasil['grup'])->firstWhere('parameter', 'suhu');
         $ui = collect($suhu['budget'])->keyBy('sumber')->map(fn (array $k): float => $k['u'])->all();
 
-        // Stabilitas chamber Biobase suhu = 0,1 °C. `U24 = N24/SQRT(Q24)`.
-        $this->assertEqualsWithDelta(0.1 / sqrt($sqrt3), $ui['stabilitas_chamber'], self::KETAT, 'Akar ganda, bukan ÷√3.');
-        $this->assertNotEqualsWithDelta(0.1 / $sqrt3, $ui['stabilitas_chamber'], self::KETAT);
-        // Drift kalibrator suhu = 0,615, `Q23 = 0.5*SQRT(3)`, `U23 = N23/SQRT(Q23)`.
-        $this->assertEqualsWithDelta(0.615 / sqrt(0.5 * $sqrt3), $ui['drift_standar'], self::KETAT);
+        // Stabilitas chamber Biobase suhu = 0,1 °C. Master `U24 = N24/SQRT(Q24)`.
+        $this->assertEqualsWithDelta(0.1 / $sqrt3, $ui['stabilitas_chamber'], self::KETAT, '÷√3, bukan akar ganda.');
+        $this->assertNotEqualsWithDelta(0.1 / sqrt($sqrt3), $ui['stabilitas_chamber'], self::KETAT);
+        // Drift kalibrator suhu = 0,615, `Q23 = 0.5*SQRT(3)` dipakai apa adanya.
+        $this->assertEqualsWithDelta(0.615 / (0.5 * $sqrt3), $ui['drift_standar'], self::KETAT);
 
         // Budget GEA menulis baris drift-nya BENAR.
         $gea = collect($hasil['grup'])->first(fn (array $g): bool => $g['chamber'] === ThermohygroCalculator::CHAMBER_GEA
