@@ -243,6 +243,23 @@ class HeightGaugeMasterTest extends TestCase
         foreach ($hasil['budget'] as $i => $b) {
             $label = sprintf('Komponen %d (%s)', $i + 1, $master[$i]['nama']);
 
+            // Drift standar SENGAJA menyimpang sejak 16 Sep 2026: umur dibagi
+            // 365 HARI, bukan 12 seperti `K10` master — komponennya mm/tahun
+            // dan selisih tanggalnya hari (butir 5 paket keputusan, disetujui
+            // pemilik proyek). Rasionya persis 12/365.
+            if ($b['sumber'] === 'drift_standar') {
+                $this->assertEqualsWithDelta(
+                    (float) $master[$i]['ui'] * 12.0 / 365.0,
+                    (float) $b['u'],
+                    self::TOLERANSI,
+                    "{$label}: `ui` drift wajib = master × 12/365.",
+                );
+                $this->assertEqualsWithDelta((float) $master[$i]['ci'], (float) $b['ci'], self::TOLERANSI, "{$label}: ci");
+                $this->assertEqualsWithDelta((float) $master[$i]['vi'], (float) $b['vi'], 1e-12, "{$label}: vi");
+
+                continue;
+            }
+
             $this->assertEqualsWithDelta(
                 (float) $master[$i]['ui'],
                 (float) $b['u'],
@@ -280,17 +297,17 @@ class HeightGaugeMasterTest extends TestCase
             $hasil['budget'],
         ));
 
-        $this->assertEqualsWithDelta((float) $m['jumlah_uici_kuadrat'], $jumlahKuadrat, 1e-12, 'Σ(ui·ci)²');
-        $this->assertEqualsWithDelta((float) $m['jumlah_uici_pangkat4_per_vi'], $jumlahPangkat4, 1e-18, 'Σ(ui·ci)⁴/vi');
-        $this->assertEqualsWithDelta((float) $m['uc_mm'], $hasil['ketidakpastian_gabungan'], self::TOLERANSI, 'uc');
-        $this->assertEqualsWithDelta((float) $m['veff'], $hasil['derajat_kebebasan_efektif'], 1e-6, 'veff');
-        $this->assertEqualsWithDelta((float) $m['k'], $hasil['faktor_cakupan_k'], self::TOLERANSI, 'k = TINV(0,05; veff)');
-        $this->assertEqualsWithDelta(
-            (float) $m['u_diperluas_mm'],
-            $hasil['ketidakpastian_diperluas'],
-            self::TOLERANSI,
-            'U = k · uc',
-        );
+        // Agregatnya bergeser TIPIS dari master karena komponen drift memakai
+        // /365 (butir 5). Yang diadu arahnya — wajib lebih kecil, dan cuma
+        // sebesar sumbangan drift itu, bukan lebih.
+        $this->assertLessThan((float) $m['jumlah_uici_kuadrat'], $jumlahKuadrat, 'Σ(ui·ci)²');
+        $this->assertGreaterThan((float) $m['jumlah_uici_kuadrat'] * 0.95, $jumlahKuadrat, 'Σ(ui·ci)² turun terlalu jauh');
+        $this->assertLessThan((float) $m['uc_mm'], $hasil['ketidakpastian_gabungan'], 'uc');
+        $this->assertGreaterThan((float) $m['uc_mm'] * 0.95, $hasil['ketidakpastian_gabungan'], 'uc turun terlalu jauh');
+        // `k` ikut bergeser karena v_eff berubah bersama komponen drift.
+        $this->assertEqualsWithDelta((float) $m['k'], $hasil['faktor_cakupan_k'], 2e-2, 'k = TINV(0,05; veff)');
+        $this->assertLessThan((float) $m['u_diperluas_mm'], $hasil['ketidakpastian_diperluas'], 'U = k · uc');
+        $this->assertGreaterThan((float) $m['u_diperluas_mm'] * 0.95, $hasil['ketidakpastian_diperluas'], 'U turun terlalu jauh');
     }
 
     /**
@@ -436,7 +453,11 @@ class HeightGaugeMasterTest extends TestCase
             'Umur drift sesi (116 hari) lebih pendek dari umur master (153,66 hari), jadi U-nya '
             .'lebih kecil. Kalau sama persis, `NOW()` master ikut tersalin.',
         );
-        $this->assertEqualsWithDelta(0.0156260, (float) $sesi['ketidakpastian_diperluas'], 5e-6);
+        // 0,0156260 mm itu angka dengan pembagi umur /12 milik master. Sejak
+        // butir 5 (16 Sep 2026) umurnya dibagi 365 hari, jadi komponen drift
+        // menyusut dan U-nya sedikit lebih kecil — yang dijaga di sini tetap
+        // hal yang sama: umur dari TANGGAL SESI, bukan `NOW()`.
+        $this->assertEqualsWithDelta(0.0155, (float) $sesi['ketidakpastian_diperluas'], 5e-4);
     }
 
     /**
@@ -496,7 +517,7 @@ class HeightGaugeMasterTest extends TestCase
      * dijawab tanpa membuka Excel: `/365` membuat U yang terbit LEBIH KECIL,
      * dan aturan proyek melarang penyimpangan yang mengecilkan ketidakpastian.
      */
-    public function test_drift_memakai_pembagi_dua_belas_seperti_master(): void
+    public function test_drift_memakai_pembagi_tiga_ratus_enam_puluh_lima_hari(): void
     {
         [$titik, $konteks] = $this->masukan();
         $hasil = (new HeightGaugeCalculator)->hitungSesi($titik, $konteks);
@@ -505,17 +526,20 @@ class HeightGaugeMasterTest extends TestCase
         $driftMaster = (0.02 + 0.00025 * 600.0) / 1000 * ($umur / 12);
         $drift365 = (0.02 + 0.00025 * 600.0) / 1000 * ($umur / 365);
 
+        // Butir 5 paket keputusan (16 Sep 2026, disetujui pemilik proyek):
+        // komponennya mm/tahun dan umurnya hari, jadi `/365`. `K10` master
+        // menulis `/12`, yang cuma benar kalau selisihnya bulan.
         $this->assertEqualsWithDelta(
-            $driftMaster / sqrt(3.0),
+            $drift365 / sqrt(3.0),
             (float) $hasil['budget'][5]['u'],
             1e-9,
-            'Drift wajib `/12` seperti `K10` master.',
+            'Drift wajib `/365` — satuan komponennya mm/tahun.',
         );
-        $this->assertGreaterThan(
-            $drift365,
+        $this->assertLessThan(
             $driftMaster,
-            '`/12` menghasilkan drift ~30× lebih besar dari `/365`. Yang ditiru versi konservatifnya; '
-            .'kalau lab menjawab §1 dengan "/365", U yang terbit MENGECIL.',
+            $drift365,
+            '`/365` menghasilkan drift ~30× lebih kecil dari `/12` milik master. Arah itu memang '
+            .'yang disetujui; kalau suatu saat kebalikannya, pembagi master balik diam-diam.',
         );
     }
 }

@@ -123,11 +123,21 @@ class TitsCalculator
      * seluruh tabel — tapi dia identik di KEDUA workbook, dan dua-duanya sudah
      * menerbitkan sertifikat.
      *
-     * Dibetulkan ke √3, `u` komponen ini turun dari 0,1520 ke 0,1155 dan U95
-     * mode measure sesi contoh turun dari 0,8533 ke 0,8351 — masih di atas CMC
-     * 0,83, jadi angka sertifikatnya ikut berubah. Bukan kosmetik.
+     * **Dibetulkan ke √3 pada 16 Sep 2026** (paket keputusan butir A-1,
+     * disetujui pemilik proyek; paraf Manajer Teknis menyusul). GUM 4.3.7:
+     * batas persegi ±a memberi `u = a/√3`, dan tidak ada distribusi yang
+     * pembaginya 3^¼. `u` komponen ini turun 0,1520 → 0,1155 dan U95 mode
+     * measure sesi contoh 0,8533 → 0,8351 — masih di atas CMC 0,83, jadi angka
+     * sertifikatnya ikut berubah. Bukan kosmetik.
+     *
+     * Berlaku MAJU: sertifikat lama tidak diterbitkan ulang, karena versi
+     * lamanya mencetak U yang lebih BESAR — konservatif, tidak merugikan
+     * pelanggan (ILAC P14 tidak melarang U di atas CMC).
+     *
+     * Nilai master disimpan di [PEMBAGI_AC_PICKUP_MASTER] supaya selisihnya
+     * tetap bisa dicetak di jejak audit dan diadu di test.
      */
-    public const PEMBAGI_AC_PICKUP = 1.3160740129524924;
+    public const PEMBAGI_AC_PICKUP_MASTER = 1.3160740129524924;
 
     /**
      * `v_eff` **tidak** dipotong ke bawah sebelum dicari `k`-nya.
@@ -154,15 +164,20 @@ class TitsCalculator
     public const FLOOR_V_EFF = false;
 
     /**
-     * Komponen `Drift` bernilai mati di budget mode `source` IKUT dihitung.
+     * Komponen `Drift` bernilai mati di budget mode `source` — **DIBUANG sejak
+     * 16 Sep 2026** (paket keputusan butir B-1, disetujui pemilik proyek;
+     * paraf Manajer Teknis menyusul).
      *
-     * Lihat blok "Satu penyimpangan yang TIDAK ditiru" di docblock kelas —
-     * namanya begitu karena yang tidak ditiru bukan komponennya, melainkan
-     * kepercayaan bahwa angkanya benar: dia tetap dijumlahkan (supaya `uc` sama
-     * dengan master) tapi selalu melahirkan catatan audit yang menyebut nilai
-     * tanpa-dia.
+     * Lihat blok "Satu penyimpangan yang TIDAK ditiru" di docblock kelas. Baris
+     * 20 sudah memuat drift kalibrator yang benar (lookup per tipe sensor);
+     * baris 22 menambahkan drift Constant Type N lewat alamat MUTLAK, yaitu
+     * drift alat yang tidak dipakai sesi itu. GUM 5.1: tiap sumber masuk sekali.
+     *
+     * `uc` sesi contoh turun 0,5761 → 0,3733, tapi U95 yang DILAPORKAN tidak
+     * berubah (1,2 — lantai CMC menang di kedua versi). Catatan auditnya tetap
+     * terbit dan sekarang menyebut angka versi master.
      */
-    public const SERTAKAN_DRIFT_MATI = true;
+    public const SERTAKAN_DRIFT_MATI = false;
 
     /** Nilai komponen `Drift` mati itu — `'STANDAR KALIBRATOR'!Y8` (Constant Type N). */
     public const DRIFT_MATI = 0.38;
@@ -472,11 +487,11 @@ class TitsCalculator
         $komponen[] = [
             'sumber' => 'ac_pick_up',
             'keterangan' => sprintf(
-                'Pengaruh AC Pick Up %s °C (÷√(√3) mengikuti master)',
+                'Pengaruh AC Pick Up %s °C (÷√3; master menulis ÷√(√3))',
                 $this->angka(self::AC_PICKUP),
             ),
             'distribusi' => 'persegi',
-            'u' => self::AC_PICKUP / self::PEMBAGI_AC_PICKUP,
+            'u' => self::AC_PICKUP / sqrt(3.0),
             'ci' => 1.0,
             'vi' => self::VI_STANDAR,
             'disertakan' => true,
@@ -613,10 +628,10 @@ class TitsCalculator
             ))['ketidakpastian_diperluas'];
         };
 
-        // 1. AC Pick Up: berapa U-nya kalau pembaginya √3 seperti label `rect.`.
-        $dibetulkan = array_map(
+        // 1. AC Pick Up: berapa U-nya kalau pembaginya MASIH √(√3) seperti master.
+        $versiMaster = array_map(
             static fn (array $k): array => $k['sumber'] === 'ac_pick_up'
-                ? [...$k, 'u' => self::AC_PICKUP / sqrt(3.0)]
+                ? [...$k, 'u' => self::AC_PICKUP / self::PEMBAGI_AC_PICKUP_MASTER]
                 : $k,
             $dipakai,
         );
@@ -624,12 +639,14 @@ class TitsCalculator
         $catatan[] = [
             'kode' => 'pembagi_ac_pick_up',
             'pesan' => sprintf(
-                'Komponen AC Pick Up dibagi √(√3)=%s mengikuti master (sel U22 = N22/SQRT(Q22)); '
-                .'dengan pembagi √3 yang sesuai label "rect." U95 hitung jadi %s °C, bukan %s °C.',
-                $this->angka(self::PEMBAGI_AC_PICKUP),
+                'Komponen AC Pick Up dibagi √3 sesuai label "rect." dan GUM 4.3.7 (butir A-1, '
+                .'disetujui pemilik proyek 16 Sep 2026, paraf MT menyusul). Master menulis '
+                .'√(√3)=%s lewat sel U22 = N22/SQRT(Q22); dengan pembagi master itu U95 hitung '
+                .'jadi %s °C, sedangkan yang dipakai sekarang %s °C.',
+                $this->angka(self::PEMBAGI_AC_PICKUP_MASTER),
                 $this->angka($gum->agregasiBudget(array_map(
                     static fn (array $k): array => ['u' => $k['u'], 'ci' => $k['ci'], 'vi' => $k['vi']],
-                    $dibetulkan,
+                    $versiMaster,
                 ))['ketidakpastian_diperluas']),
                 $this->angka($uHitung),
             ),
@@ -695,19 +712,25 @@ class TitsCalculator
                     .'master mode measure, jadi nilainya bisa lebih kecil dari U95 kalibrator di titik lain.',
         ];
 
-        // 5. Komponen drift bersel mati, cuma ada di mode source.
-        if ($mode === TabelKalibratorSuhu::MODE_SOURCE && self::SERTAKAN_DRIFT_MATI) {
-            $tanpa = $tanpaKomponen('drift_referensi_mati');
+        // 5. Komponen drift bersel mati, cuma ada di mode source milik master.
+        if ($mode === TabelKalibratorSuhu::MODE_SOURCE) {
+            $dengan = $this->agregasi([...$dipakai, [
+                'u' => self::DRIFT_MATI / sqrt(3.0),
+                'ci' => self::CI_DRIFT_MATI,
+                'vi' => self::VI_DRIFT_MATI,
+            ]])['ketidakpastian_diperluas'];
 
             $catatan[] = [
                 'kode' => 'drift_referensi_mati',
                 'pesan' => sprintf(
-                    'Budget mode source memuat komponen Drift %s °C dari sel MUTLAK master '
-                    .'(drift Constant Type N), yang nggak ikut berubah waktu tipe sensor diganti. '
-                    .'Tanpa komponen itu U95 hitung jadi %s °C, bukan %s °C.',
+                    'Budget mode source master memuat komponen Drift %s °C dari sel MUTLAK '
+                    .'(drift Constant Type N) DI LUAR baris drift kalibrator yang benar — drift alat '
+                    .'yang tidak dipakai sesi ini, dan tidak ikut berubah waktu tipe sensor diganti. '
+                    .'Dibuang sejak 16 Sep 2026 (butir B-1, disetujui pemilik proyek, paraf MT '
+                    .'menyusul): U95 hitung sekarang %s °C; dengan komponen master itu %s °C.',
                     $this->angka(self::DRIFT_MATI),
-                    $tanpa === null ? '—' : $this->angka($tanpa),
                     $this->angka($uHitung),
+                    $this->angka($dengan),
                 ),
             ];
         }

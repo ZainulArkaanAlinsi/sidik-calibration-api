@@ -580,7 +580,17 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                 $alat->organization_id !== null,
                 fn ($q) => $q->milikOrganisasi($alat->organization_id),
             )
-            ->orderByDesc('ketidakpastian_terbaik')
+            // Pita yang BERTUMPUK di batasnya (100 °C ada di pita 0–100 DAN
+            // 100–200) dimenangkan pita BAWAH, sama dengan Thermocouple & TIDS
+            // dan sama dengan rantai `IF` master: `PERHITUNGAN U95%` memakai
+            // CMC 0,58 untuk titik 100 °C, bukan 1,0. Lampiran LK-285-IDN no. 4
+            // menulis 0–100 °C inklusif.
+            //
+            // Sampai 16 Sep 2026 di sini `orderByDesc('ketidakpastian_terbaik')`
+            // — pita yang LEBIH LONGGAR yang menang, kebalikan master dan
+            // kebalikan dua saudaranya. Dibetulkan lewat butir 7 paket
+            // keputusan (disetujui pemilik proyek; paraf MT menyusul).
+            ->orderBy('range_max')
             ->first();
     }
 

@@ -73,6 +73,22 @@ class SertifikatSatuHalaman
             : [2, 1, 0, -1, -2];
 
         foreach ($tingkat as $longgar) {
+            // DIUKUR dengan kotak uji 6 px di kaki halaman, DICETAK tanpa dia.
+            //
+            // Tingkat yang muat "pas" — sisa nol piksel — ditolak di sini:
+            // lembar seperti itu jatuh ke halaman dua begitu ada satu baris
+            // tambahan (nama pelanggan lebih panjang, satu titik ukur lagi),
+            // dan headernya tetap mencetak `Page : 1 of 1`. Ketahuan 16 Sep
+            // 2026 waktu sertifikat Chlorine bertambah kolom U95 per titik.
+            //
+            // Kotaknya sengaja TIDAK ikut ke PDF terbit: menambah ruang di tiap
+            // lembar akan mendorong sertifikat yang selama ini muat normal ke
+            // mode yang lebih rapat, yaitu menggeser tata letak dokumen yang
+            // sudah beredar. Yang berubah cuma SYARAT pemilihan tingkat.
+            if ($this->cetak($bahan, false, $longgar, ujiCadangan: true)['halaman'] > 1) {
+                continue;
+            }
+
             $hasil = $this->cetak($bahan, false, $longgar);
 
             if ($hasil['halaman'] <= 1) {
@@ -125,9 +141,16 @@ class SertifikatSatuHalaman
     }
 
     /** @return array{isi: string, halaman: int} */
-    private function cetak(array $bahan, bool $paksaPadat, int $longgar = 0): array
+    private function cetak(array $bahan, bool $paksaPadat, int $longgar = 0, bool $ujiCadangan = false): array
     {
-        $pdf = Pdf::loadView('sertifikat.pdf', [...$bahan, 'paksaPadat' => $paksaPadat, 'longgar' => $longgar]);
+        $pdf = Pdf::loadView('sertifikat.pdf', [
+            ...$bahan,
+            'paksaPadat' => $paksaPadat,
+            'longgar' => $longgar,
+            // Kotak uji ruang sisa — cuma dipasang waktu tingkat kerapatan
+            // sedang dicari, tidak pernah di PDF yang diterbitkan.
+            'ujiCadangan' => $ujiCadangan,
+        ]);
 
         // `output()` dipanggil DULU: jumlah halaman baru ada sesudah dompdf
         // benar-benar merender, dan `getCanvas()` sebelum itu balik nol.
