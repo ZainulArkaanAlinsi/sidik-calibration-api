@@ -341,6 +341,12 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('pelanggan-putus-pengajuan', 30);
         $perMenitPengguna('pelanggan-undang', 20);
 
+        // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
+        // dari jalur admin lab — tiap undangan mengirim email ke alamat yang
+        // DIKETIK pemanggil, jadi ini jalur yang bisa dipakai membanjiri orang
+        // lain, dan pemanggilnya bukan pegawai lab.
+        $perMenitPengguna('pelanggan-undang-anggota', 5);
+
         $perMenitPengguna('laporan-export', 20);
         $perMenitPengguna('pratinjau-hitung', 120);
         $perMenitPengguna('pratinjau-autoclave', 120);

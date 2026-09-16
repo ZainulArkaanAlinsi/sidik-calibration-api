@@ -468,6 +468,76 @@ hash bergaram tidak akan pernah cocok.
    daftar yang dijaga — limiter yang tidak terdaftar dianggap Laravel "tanpa
    batas", jadi throttle-nya hilang tanpa error.
 
+## 16 Sep 2026 — konteks perusahaan & anggota (M1-07)
+
+**Yang berubah:** `X-Perusahaan-Id` sekarang menentukan perusahaan aktif tiap
+request pelanggan, dan `/anggota` punya isi: lihat, undang, batalkan undangan,
+nonaktifkan.
+
+### Konteks perusahaan itu objek, bukan `->keanggotaan->first()`
+
+Konsultan bisa jadi anggota tiga pabrik (REQ-ANG-04). Controller yang memanggil
+`->first()` sendiri akan benar di 95% kasus dan **diam-diam salah di sisanya** —
+mengambilkan data pabrik A waktu orangnya sedang membuka pabrik B. Itu
+kebocoran antar-pelanggan, bukan bug tampilan.
+
+`KonteksPerusahaan` menaruh `{customer_id, member_id, peran}` per request;
+`AnggotaController` tidak pernah menerima ID perusahaan dari parameter rute atau
+badan permintaan. Jadi isolasinya bukan "tiap query ingat menyaring", melainkan
+"tidak ada ID lain yang bisa masuk".
+
+**Header tidak valid → 404, bukan 403.** Sejalan dengan REQ-ALT-01: 403 sudah
+memberi tahu bahwa perusahaan dengan ID itu ADA. Keanggotaan NONAKTIF
+diperlakukan sama — orang yang baru dikeluarkan tidak boleh bisa membedakan
+"saya dikeluarkan" dari "perusahaan itu tidak ada".
+
+**Header kosong:** satu keanggotaan → dipakai otomatis; lebih dari satu → **400
+`perusahaan_belum_dipilih`** beserta daftar pilihannya, supaya aplikasi bisa
+langsung menampilkan pemilih tanpa memanggil endpoint lain.
+
+### DUA jebakan test yang ketemu di sini, dua-duanya hijau/merah palsu
+
+**1. `Route::getController()` MENYIMPAN instance controller di objek Route.**
+
+```php
+if (! $this->controller) { $this->controller = $this->container->make($class); }
+```
+
+Objek Route hidup selama aplikasinya hidup. Di produksi itu satu request, jadi
+tidak pernah kelihatan. Di test satu instance aplikasi melayani semua request
+dalam satu method, jadi controller request KEDUA masih memegang `Konteks` milik
+request PERTAMA — dan yang dijawab data perusahaan yang salah, **tanpa satu pun
+error**.
+
+Perbaikannya bukan akal-akalan test: `Konteks` pindah dari constructor ke
+**argumen method**, yang di-resolve tiap dispatch. Constructor-injection untuk
+state per-request memang pola yang salah; testnya cuma yang memaksa itu
+kelihatan.
+
+**2. `withHeaders()` MENUMPUK antar-request dalam satu test.** Dia menggabungkan
+ke `$this->defaultHeaders`, jadi `X-Perusahaan-Id` yang dikirim di satu request
+masih terkirim di request berikutnya walau tidak disebut lagi — dan test
+"tanpa header" ternyata menguji hal yang sama sekali berbeda.
+
+Dua-duanya sekarang ditutup satu helper: `JalurPelanggan::permintaanBaru()`
+(buang guard + `flushHeaders()`), dengan docblock yang menyebut keduanya.
+
+### Peran ditegakkan middleware, bukan `if` di controller
+
+`peran:pic_utama` sejajar dengan `role:` di app internal: aturannya terbaca dari
+daftar rute, jadi bisa disapu test dan dijawab endpoint izin tanpa ditulis dua
+kali. Pemeriksaan yang hidup di badan controller tidak bisa disapu, dan yang
+lupa memasangnya tidak memerahkan apa pun.
+
+Urutannya mengikat: `perusahaan` dulu, baru `peran:`. Kalau terbalik,
+`PeranAnggota` melempar 500 — sengaja, bukan diam-diam meloloskan.
+
+### REQ-AUTH-09 tidak selalu mencabut token
+
+Anggota yang dinonaktifkan kehilangan seluruh token & perangkatnya —
+**kecuali** dia masih anggota aktif di perusahaan lain. Kalau tidak, satu PIC
+utama bisa memutus akses orang ke perusahaan yang sama sekali bukan urusannya.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.

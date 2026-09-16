@@ -1,6 +1,6 @@
 # Kontrak API — SIDIK Pelanggan (`/api/pelanggan/v1`)
 
-> Versi 0.2 · 16 Sep 2026 · Cakupan: **M1-03, M1-04, M1-05, M1-06** (auth, akun, undangan).
+> Versi 0.3 · 16 Sep 2026 · Cakupan: **M1-03 s/d M1-07** (auth, akun, undangan, anggota).
 > Endpoint alat, sertifikat, permintaan, dan pesan menyusul di Fase 6.
 
 Dokumen ini buat @ZainulArkaanAlinsi (Flutter, repo `sidik-pelanggan-mobile`).
@@ -69,6 +69,9 @@ tidak (NFR-12).
 | `batas_anggota` | 422 | Perusahaan sudah penuh (`data.maks_anggota`) | Tampilkan angkanya, arahkan hubungi PT Sidik |
 | `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
 | `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |
+| `perusahaan_belum_dipilih` | 400 | Anggota > 1 perusahaan, `X-Perusahaan-Id` kosong | Tampilkan pemilih dari `data.pilihan` |
+| `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
+| `sudah_nonaktif` | 422 | Anggota sudah nonaktif | Muat ulang daftar |
 
 ---
 
@@ -378,9 +381,105 @@ semuanya termasuk yang sekarang, dan memulangkan `data.sesi_dicabut`.
 
 ## 3. Butuh token DAN akun terverifikasi
 
-Belum ada isinya di Fase 4. Grupnya sudah berdiri di server, dan begitu diisi
-(Fase 5: `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/anggota`) semuanya
-otomatis menolak token `pelanggan:menunggu` dengan:
+Semua endpoint di bagian ini juga melewati **`KonteksPerusahaan`**, jadi tiga
+aturan berlaku buat semuanya:
+
+- **`X-Perusahaan-Id` menentukan perusahaan aktif.** Anggota SATU perusahaan
+  boleh menghilangkannya — server memilihkan. Anggota lebih dari satu WAJIB
+  mengirimnya, kalau tidak dapat **400 `perusahaan_belum_dipilih`** beserta
+  `data.pilihan` yang siap ditampilkan sebagai pemilih.
+- **Header yang bukan miliknya dijawab 404, bukan 403** — termasuk keanggotaan
+  yang sudah dinonaktifkan. Jangan tampilkan "akses ditolak"; perlakukan seperti
+  perusahaan yang tidak ada dan kembalikan ke pemilih.
+- **Perusahaan tidak pernah dikirim di body atau di URL.** Server mengambilnya
+  dari header saja.
+
+### `GET /anggota` — REQ-ANG-03
+
+Semua peran boleh melihat.
+
+```json
+{
+  "data": {
+    "anggota": [
+      {
+        "id": "<int>",
+        "peran": "pic_utama",
+        "status": "aktif",
+        "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": {
+          "id": "<int>",
+          "nama": "Budi PIC",
+          "email": "budi@contoh.test",
+          "telepon": "+628123456789",
+          "jabatan": "QA Manager"
+        },
+        "saya": true
+      },
+      {
+        "id": "<int>",
+        "peran": "staf",
+        "status": "aktif",
+        "bergabung_pada": "<iso8601>",
+        "dinonaktifkan_pada": null,
+        "orang": {
+          "id": "<int>",
+          "nama": "Sari Staf",
+          "email": "sari@contoh.test",
+          "telepon": "+628123456789",
+          "jabatan": "QA Manager"
+        },
+        "saya": false
+      }
+    ],
+    "undangan_menunggu": [],
+    "maks_anggota": 50,
+    "saya": {
+      "customer_id": "<int>",
+      "member_id": "<int>",
+      "peran": "pic_utama"
+    }
+  }
+}
+```
+
+`undangan_menunggu` ikut supaya PIC utama tahu dia sudah mengundang seseorang —
+tanpa itu dia mengundang lagi, dan undangan kedua **membatalkan** kode yang sudah
+terkirim.
+
+`saya` di tiap baris anggota dijawab server, jangan dihitung aplikasi dari id
+yang disimpan lokal (nilai yang gampang basi sesudah ganti akun).
+
+### `POST /anggota/undangan` — REQ-ANG-01 · **PIC utama saja**
+
+Throttle: **5 per menit per orang** (lebih ketat dari jalur admin lab: tiap
+undangan mengirim email ke alamat yang diketik pemanggil).
+
+```json
+{ "email": "rekan@contoh.test", "peran": "staf" }
+```
+
+`peran` boleh `staf` atau `pic_utama` — PIC utama memang boleh mengangkat PIC
+utama lain, supaya perusahaan yang PIC-nya keluar kerja tidak perlu menelepon
+lab.
+
+### `DELETE /anggota/undangan/{id}` · **PIC utama saja**
+
+Membatalkan, bukan menghapus — jejak "siapa mengundang siapa" tetap ada.
+
+### `POST /anggota/{id}/nonaktifkan` — REQ-ANG-02 · **PIC utama saja**
+
+Seluruh sesi orang itu dicabut di request yang sama, **kecuali** dia masih
+anggota aktif di perusahaan lain (kasus konsultan) — lalu yang berubah cuma
+`X-Perusahaan-Id` yang boleh dia pakai.
+
+PIC utama **terakhir** tidak bisa menonaktifkan dirinya sendiri: `422
+pic_utama_terakhir`. Arahkan dia mengangkat PIC utama lain dulu.
+
+
+
+Token `pelanggan:menunggu` ditolak di SELURUH bagian ini dengan:
 
 ```json
 {
@@ -469,8 +568,6 @@ Ditulis supaya tidak ditunggu:
 
 | Belum ada | Kapan | Catatan |
 |---|---|---|
-| `GET /anggota`, `POST /anggota/undangan`, `POST /anggota/{id}/nonaktifkan` | Fase 5 commit (b) | REQ-ANG-01..03, sisi PIC utama |
-| Header `X-Perusahaan-Id` (`KonteksPerusahaan`) | Fase 5 commit (b) | REQ-ANG-04 |
 | `DELETE /saya` (hapus akun) | Fase 6 | REQ-AUTH-11; `users.dianonimkan_pada` sudah ada |
 | `POST/DELETE /perangkat` (FCM) | Fase 6 | `device_tokens.aplikasi` sudah ada |
 | `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/pesan` | Fase 6 | |

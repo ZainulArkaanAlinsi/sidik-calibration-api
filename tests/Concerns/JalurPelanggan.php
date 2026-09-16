@@ -157,6 +157,29 @@ trait JalurPelanggan
     }
 
     /**
+     * Mulai request BERSIH: buang guard yang kadung terisi DAN header yang
+     * menempel dari request sebelumnya.
+     *
+     * Dua jebakan berbeda, dua-duanya cuma ada di test, dua-duanya bikin test
+     * hijau/merah palsu tanpa satu pun error:
+     *
+     * 1. `RequestGuard::user()` menyimpan hasilnya — lihat [lupakanSesiGuard()].
+     * 2. **`withHeaders()` MENUMPUK.** Dia menggabungkan ke
+     *    `$this->defaultHeaders`, jadi `X-Perusahaan-Id` yang dikirim di satu
+     *    request masih terkirim di request berikutnya walau tidak disebut lagi.
+     *    Ketahuan waktu menulis test konteks perusahaan: request "tanpa header"
+     *    ternyata masih membawa header perusahaan dari request sebelumnya, dan
+     *    yang diuji jadi bukan yang dimaksud sama sekali.
+     *
+     * Dipanggil di antara dua request yang identitas atau konteksnya berbeda.
+     */
+    protected function permintaanBaru(): void
+    {
+        $this->lupakanSesiGuard();
+        $this->flushHeaders();
+    }
+
+    /**
      * Buang guard yang sudah kadung memutuskan "ini siapa" di request sebelumnya.
      *
      * WAJIB dipanggil di antara dua request dalam SATU test kalau yang diuji

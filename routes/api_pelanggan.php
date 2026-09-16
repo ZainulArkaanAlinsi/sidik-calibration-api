@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Pelanggan\AnggotaController;
 use App\Http\Controllers\Pelanggan\AppStatusController;
 use App\Http\Controllers\Pelanggan\AuthPelangganController;
 use App\Http\Controllers\Pelanggan\SayaController;
+use App\Models\CustomerMember;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -120,7 +122,29 @@ Route::middleware('fitur.pelanggan')->group(function () {
      * otomatis — mendaftarkannya di grup atas tanpa sadar itu persis kelas
      * kelalaian yang bikin REQ-AUTH-03 bocor tanpa satu pun error.
      */
-    Route::middleware(['auth:sanctum', 'aplikasi:pelanggan', 'pelanggan.aktif'])->group(function () {
-        //
+    Route::middleware(['auth:sanctum', 'aplikasi:pelanggan', 'pelanggan.aktif', 'perusahaan'])->group(function () {
+        /*
+         * --- Anggota perusahaan (REQ-ANG-01..03) -------------------------
+         *
+         * `perusahaan` di grup, `peran:pic_utama` per rute. Yang MELIHAT boleh
+         * semua peran (REQ-ANG-03); yang MENGUBAH keanggotaan cuma PIC utama.
+         *
+         * Dipasang sebagai middleware, bukan `if` di controller, supaya
+         * aturannya terbaca dari daftar rute — bisa disapu test, dan rute baru
+         * yang lupa dipagari kelihatan tanpa harus membaca badan controller.
+         */
+        Route::get('/anggota', [AnggotaController::class, 'index'])->name('pelanggan.anggota.index');
+
+        Route::middleware('peran:'.CustomerMember::PERAN_PIC_UTAMA)->group(function () {
+            Route::post('/anggota/undangan', [AnggotaController::class, 'undang'])
+                ->middleware('throttle:pelanggan-undang-anggota')
+                ->name('pelanggan.anggota.undang');
+
+            Route::delete('/anggota/undangan/{undangan}', [AnggotaController::class, 'batalkanUndangan'])
+                ->name('pelanggan.anggota.batal-undangan');
+
+            Route::post('/anggota/{anggota}/nonaktifkan', [AnggotaController::class, 'nonaktifkan'])
+                ->name('pelanggan.anggota.nonaktifkan');
+        });
     });
 });
