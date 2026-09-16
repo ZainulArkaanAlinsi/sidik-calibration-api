@@ -108,6 +108,14 @@ Route::middleware('fitur.pelanggan')->group(function () {
         Route::get('/saya', [SayaController::class, 'tampil'])->name('pelanggan.saya.tampil');
         Route::patch('/saya', [SayaController::class, 'perbarui'])->name('pelanggan.saya.perbarui');
 
+        // REQ-AUTH-11. Di grup yang SAMA dengan `/saya`, bukan di grup
+        // `pelanggan.aktif`: akun yang masih menunggu verifikasi juga berhak
+        // menghapus akunnya — menahannya sampai disetujui admin berarti orang
+        // yang ditolak terjebak dengan data pribadi yang tidak bisa dia cabut.
+        Route::delete('/saya', [SayaController::class, 'hapus'])
+            ->middleware('throttle:pelanggan-sandi')
+            ->name('pelanggan.saya.hapus');
+
         Route::post('/saya/ganti-sandi', [SayaController::class, 'gantiSandi'])
             ->middleware('throttle:pelanggan-sandi')
             ->name('pelanggan.saya.ganti-sandi');

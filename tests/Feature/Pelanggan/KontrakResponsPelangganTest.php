@@ -264,6 +264,18 @@ class KontrakResponsPelangganTest extends TestCase
         $this->aduKeFixture('anggota', $badan);
     }
 
+    public function test_bentuk_respons_hapus_akun(): void
+    {
+        $user = $this->anggota();
+
+        $badan = $this->withHeaders($this->bearer($user))
+            ->deleteJson('/api/pelanggan/v1/saya', ['sandi' => $this->sandiBenar, 'konfirmasi' => true])
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('hapus-akun', $badan);
+    }
+
     /** Bentuk ERROR ikut dibekukan — aplikasi bercabang pada `kode`, bukan pada `message`. */
     public function test_bentuk_respons_error_kredensial_salah(): void
     {

@@ -538,6 +538,88 @@ Anggota yang dinonaktifkan kehilangan seluruh token & perangkatnya —
 **kecuali** dia masih anggota aktif di perusahaan lain. Kalau tidak, satu PIC
 utama bisa memutus akses orang ke perusahaan yang sama sekali bukan urusannya.
 
+## 16 Sep 2026 — sapuan isolasi & hapus akun (M1-08, M1-09)
+
+**Yang berubah:** `IsolasiPerusahaanTest` menyapu rute pelanggan ber-ID secara
+otomatis, dan `DELETE /saya` + halaman web `/hapus-akun` mendarat. Kontrak naik
+ke `docs/kontrak-api-pelanggan.md` **v0.4**. Nol migrasi baru.
+
+### Sapuan isolasi: cakupannya HARI INI kecil, dan itu memang disebut terang
+
+Rute pelanggan ber-parameter baru **dua** (`/anggota/undangan/{undangan}` dan
+`/anggota/{anggota}/nonaktifkan`), dan dua-duanya sudah punya test 404 sendiri.
+Nilai test ini bukan di hari ini — nilainya waktu `/alat/{id}`,
+`/sertifikat/{id}`, dan `/permintaan/{ulid}` mendarat (M3+): mereka tidak bisa
+lahir tanpa bukti isolasi, karena **parameter tanpa fixture memerahkan testnya**.
+
+Tiga penjaga supaya sapuannya tidak bisa hijau-palsu, dan ketiganya perlu:
+
+1. parameter tanpa fixture → URL jadi cacat → 404 karena RUTENYA tidak ketemu,
+   bukan karena isolasinya bekerja. Dijaga `test_tiap_parameter_rute_punya_fixture`.
+2. fixture perusahaan B dibuktikan benar-benar ADA — ID yang kebetulan tidak ada
+   membuat seluruh sapuan 404 tanpa arti.
+3. satu kasus POSITIF (ID milik sendiri **tidak** 404) — tanpa itu, rute yang
+   rusak total dan selalu 404 buat siapa pun ikut lolos sebagai "aman".
+
+Sapuannya **dibuktikan menangkap kebocoran**: `abort_unless` di
+`batalkanUndangan` sengaja dilubangi sebentar, testnya merah dengan
+`DELETE …/{undangan} → 200` dan menyebut "1 dari 2 rute", lalu dikembalikan.
+
+### REQ-AUTH-11 menyebut foto profil, kolomnya TIDAK ADA
+
+Diperiksa langsung: `users` tidak punya kolom foto/avatar apa pun. Jadi bukan
+dilewat — memang tidak ada yang bisa dihapus. Yang dipasang penjaga buat masa
+depan: `HapusAkunTest` membaca `Schema::hasColumn('users', …)` dan memerah kalau
+kolom foto lahir tanpa ikut masuk `PenganonimAkun::kolomPribadi()`.
+
+Daftar kolom pribadinya sengaja dipulangkan sebagai ARRAY dari servicenya, bukan
+ditulis sebaris-sebaris `forceFill`, supaya test bisa mengadu isinya sebagai
+himpunan. Kolom pribadi yang lupa dibersihkan tidak memunculkan error apa pun.
+
+### Satu-satunya tempat penjaga "PIC utama terakhir" boleh dilewati
+
+`Keanggotaan::lepaskanSemuaUntukHapusAkun()`. REQ-AUTH-11 menyebutnya eksplisit:
+orang berhak keluar dari layanan, dan menahannya dengan alasan "perusahaanmu
+nanti tidak punya PIC" itu menyandera orang buat masalah organisasi yang bukan
+miliknya. Gantinya admin lab dikabari lewat `PerusahaanTanpaPicUtama`.
+
+Namanya panjang dan menyebut alasannya justru supaya tidak terpakai sebagai
+jalan pintas dari `nonaktifkan()` waktu penjagaannya terasa merepotkan.
+`HapusAkunTest` membuktikan dulu bahwa jalur `nonaktifkan` MEMANG menolak,
+sebelum membuktikan jalur hapus akun boleh — kalau tidak, testnya cuma
+menunjukkan dua jalur yang kebetulan sama-sama longgar.
+
+### Sandi diacak, bukan dibiarkan
+
+Akun yang dianonimkan dapat sandi acak 64 karakter. Kalau dibiarkan, satu-satunya
+yang menahan masuk tinggal pemeriksaan `dianonimkan_pada` di `masuk()` — dan
+pemeriksaan tunggal itu yang paling gampang hilang waktu jalur login disentuh
+lagi.
+
+### Halaman web `/hapus-akun` — syarat Google Play, TANPA tabel baru
+
+Google menuntut URL yang bisa dibuka **tanpa memasang aplikasinya**: buat orang
+yang HP-nya hilang, yang sudah mencopot aplikasinya, atau yang berhenti sebelum
+sempat masuk. Halamannya **di luar gerbang `fitur.pelanggan`** — tautannya
+terdaftar di Play Store dan tidak boleh mati waktu modulnya dimatikan sementara.
+
+Formulirnya mengirim email ke admin lab dan **tidak mencatat apa pun di
+database**. Konsekuensinya jujur dan harus diketahui: **SLA "diproses ≤ 7 hari"
+dilacak di kotak masuk admin, bukan di aplikasi.** Kalau permintaan lewat jalur
+ini jadi sering, tabel antrean yang beneran tercatat adalah langkah berikutnya —
+bukan sesuatu yang bisa disimpulkan dari nol data.
+
+Balasannya sama persis buat email terdaftar dan email asing. Kalau dibedakan,
+halaman publik ini jadi alat menyisir email pelanggan PT Sidik dari luar, tanpa
+akun dan tanpa aplikasi.
+
+### Bug yang ketemu waktu testnya dijalankan
+
+`layouts.publik` memakai `$organization` di judul dan kop halaman.
+`HapusAkunWebController::tampil()` awalnya memulangkan `view('hapus-akun')`
+tanpa itu, dan halamannya **500 `Undefined variable`** — bukan "logo hilang".
+Test halaman publiknya yang menangkap.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.

@@ -1,6 +1,6 @@
 # Kontrak API — SIDIK Pelanggan (`/api/pelanggan/v1`)
 
-> Versi 0.3 · 16 Sep 2026 · Cakupan: **M1-03 s/d M1-07** (auth, akun, undangan, anggota).
+> Versi 0.4 · 16 Sep 2026 · Cakupan: **M1-03 s/d M1-09** (auth, akun, undangan, anggota, hapus akun).
 > Endpoint alat, sertifikat, permintaan, dan pesan menyusul di Fase 6.
 
 Dokumen ini buat @ZainulArkaanAlinsi (Flutter, repo `sidik-pelanggan-mobile`).
@@ -72,6 +72,7 @@ tidak (NFR-12).
 | `perusahaan_belum_dipilih` | 400 | Anggota > 1 perusahaan, `X-Perusahaan-Id` kosong | Tampilkan pemilih dari `data.pilihan` |
 | `bukan_pic_utama` | 403 | Aksi keanggotaan oleh staf | Sembunyikan tombolnya, jangan tampilkan lalu gagal |
 | `sudah_nonaktif` | 422 | Anggota sudah nonaktif | Muat ulang daftar |
+| `sandi_salah` | 422 | Sandi salah waktu menghapus akun | Tandai field sandi, akun tidak jadi dihapus |
 
 ---
 
@@ -372,6 +373,65 @@ lewat admin (M1-05).
 Berhasil → **200**, `data.sesi_dicabut` berisi jumlah sesi LAIN yang dicabut.
 Sesi yang sedang dipakai **tetap hidup**, jadi aplikasi tidak perlu masuk ulang.
 
+### `DELETE /saya` — REQ-AUTH-11
+
+Throttle: **5 per menit per orang**.
+
+```json
+{ "sandi": "Kalibrasi#2026Sidik", "konfirmasi": true }
+```
+
+`konfirmasi` wajib `true` — konfirmasi KEDUA di luar sandi, karena ini tidak bisa
+dibatalkan dan satu tap yang salah di layar HP tidak boleh cukup.
+
+```json
+{
+  "message": "Akun Anda sudah dihapus.",
+  "data": {
+    "dihapus": [
+      "nama",
+      "email",
+      "nomor HP",
+      "jabatan",
+      "seluruh sesi & perangkat"
+    ],
+    "tetap_tersimpan": [
+      "data perusahaan",
+      "alat",
+      "permintaan kalibrasi",
+      "sertifikat"
+    ]
+  }
+}
+```
+
+**Layar konfirmasi WAJIB menyebut `tetap_tersimpan` sebelum tombolnya ditekan.**
+Ambil kalimatnya dari balasan ini, jangan ditulis ulang di aplikasi — kalau
+berbeda dari yang benar-benar dilakukan server, yang dijanjikan ke orangnya
+bukan yang dia dapatkan.
+
+Kenapa data itu tetap: perusahaan, alat, permintaan, dan sertifikat adalah
+**rekaman laboratorium terakreditasi**. Sertifikat yang sudah terbit harus tetap
+bisa ditelusuri ke alat dan sesi kalibrasinya selama masa simpan yang diwajibkan
+ISO/IEC 17025. Yang hilang identitas orangnya, bukan jejak pengukurannya.
+
+Boleh dipakai akun yang **masih menunggu verifikasi** juga — orang yang ditolak
+tidak boleh terjebak dengan data pribadi yang tidak bisa dia cabut.
+
+PIC utama **terakhir** BOLEH menghapus akunnya (beda dari `nonaktifkan` yang
+menolak). Admin lab yang dikabari bahwa perusahaan itu jadi tanpa PIC utama.
+
+Sesudah berhasil: seluruh sesi mati seketika. Aplikasi hapus token lokalnya dan
+kembali ke layar sambutan.
+
+### Halaman web hapus akun — REQ-PRV-03
+
+`GET /hapus-akun` di domain yang sama (bukan di bawah `/api`). Wajib dicantumkan
+di listing Play Store: Google menuntut URL yang bisa dibuka **tanpa memasang
+aplikasinya**.
+
+Halaman itu **tidak ikut mati** waktu `FITUR_PELANGGAN=false`.
+
 ### `POST /auth/keluar` · `POST /auth/keluar-semua`
 
 `keluar` mencabut token yang sedang dipakai saja. `keluar-semua` mencabut
@@ -568,6 +628,5 @@ Ditulis supaya tidak ditunggu:
 
 | Belum ada | Kapan | Catatan |
 |---|---|---|
-| `DELETE /saya` (hapus akun) | Fase 6 | REQ-AUTH-11; `users.dianonimkan_pada` sudah ada |
 | `POST/DELETE /perangkat` (FCM) | Fase 6 | `device_tokens.aplikasi` sudah ada |
 | `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/pesan` | Fase 6 | |
