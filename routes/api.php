@@ -250,9 +250,19 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 // TIDAK berubah — dua gerbang bertumpuk artinya dua-duanya harus lolos, jadi
 // yang admin-only tetap admin-only.
 //
+// `aplikasi:internal` ditambahkan di depan `role:` (M1-03). Role menjawab
+// "orang ini siapa"; ability token menjawab "token ini dikeluarkan buat
+// aplikasi mana" — dan dua aplikasi Android yang memakai satu backend butuh
+// dua-duanya. Urutannya disengaja: token dari aplikasi yang salah ditolak
+// sebelum rolenya sempat diperiksa.
+//
+// Token teknisi yang SUDAH BEREDAR tetap jalan: abilitynya `['*']` (default
+// `createToken`), dan Sanctum meloloskan wildcard. Lihat docblock
+// `PastikanAplikasi` soal kapan itu berhenti berlaku.
+//
 // Dijaga `RuteInternalMenolakRoleLainTest`, yang membaca daftar rute sendiri:
 // rute baru yang lupa dipagari bikin test itu merah, bukan lolos diam-diam.
-Route::middleware(['auth:sanctum', 'role:admin,teknisi,viewer'])->group(function () {
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,viewer'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     // Izin pemanggil buat nyembunyiin tombol yang bakal ditolak (fase-2 §1).
     // Jawabannya diturunkan dari middleware `role:` di rute-rute di bawah, jadi

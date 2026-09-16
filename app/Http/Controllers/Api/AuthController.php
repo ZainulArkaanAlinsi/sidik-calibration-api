@@ -47,9 +47,30 @@ class AuthController extends Controller
             return response()->json(['message' => 'Akun ini nonaktif. Hubungi admin.'], 403);
         }
 
+        // Akun pelanggan ditolak di pintu internal (REQ-AUTH-07).
+        //
+        // Diperiksa SESUDAH sandinya cocok, bukan sebelum: kalau dicek duluan,
+        // balasan buat email pelanggan jadi beda dari balasan buat email yang
+        // nggak terdaftar, dan orang luar bisa memakai perbedaan itu buat
+        // menyisir email mana yang punya akun di sini.
+        //
+        // Pesannya menyebut nama aplikasinya. Tanpa itu, PIC yang kebetulan
+        // memasang aplikasi teknisi mentok di layar galat tanpa tahu harus ke
+        // mana — dan yang dia lakukan berikutnya menelepon lab.
+        if (in_array($user->role, [User::ROLE_PELANGGAN, User::ROLE_SUPER_ADMIN], true)) {
+            return response()->json([
+                'kode' => 'bukan_akun_internal',
+                'message' => 'Akun ini terdaftar sebagai akun pelanggan. Silakan masuk lewat aplikasi SIDIK Pelanggan.',
+            ], 403);
+        }
+
         return response()->json([
             'data' => [
-                'token' => $user->createToken('mobile')->plainTextToken,
+                // Ability `internal` — dibaca middleware `aplikasi:internal`.
+                // Sebelum ini tokennya `['*']` (default Sanctum), yang lolos
+                // gerbang aplikasi mana pun. Token lama tetap diterima; lihat
+                // `PastikanAplikasi` soal kapan itu berhenti.
+                'token' => $user->createToken('mobile', ['internal'])->plainTextToken,
                 'user' => new UserResource($user),
             ],
         ]);

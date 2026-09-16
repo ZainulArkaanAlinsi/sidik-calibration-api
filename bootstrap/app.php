@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
+use App\Http\Middleware\PastikanAplikasi;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'fitur.pelanggan' => FiturPelanggan::class,
+            'aplikasi' => PastikanAplikasi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

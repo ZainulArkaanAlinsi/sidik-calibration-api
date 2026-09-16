@@ -190,6 +190,61 @@ maintenance, yaitu dua layar yang justru paling dibutuhkan saat fiturnya dimatik
 Endpoint itu juga **nol query database**, dan jumlah query-nya dihitung test — dia
 harus tetap menjawab justru waktu database bermasalah.
 
+## 16 Sep 2026 — gerbang aplikasi & ability token (M1-03)
+
+**Yang berubah:** token sekarang membawa **ability aplikasi**, dan setiap rute
+internal memeriksanya lewat middleware baru `aplikasi:internal`. Akun pelanggan
+ditolak di `POST /api/login` (REQ-AUTH-07).
+
+**Buat app internal teknisi: nol perubahan yang terasa.** Tidak ada yang
+ter-logout, tidak ada yang perlu masuk ulang. Alasannya di bawah, dan itu temuan
+yang membalik rencana awal.
+
+### Temuan yang membalik rencana: token lama BUKAN "tanpa ability"
+
+03-SDD §3.1 menulis token internal yang sudah beredar "nggak punya ability", dan
+merancang masa transisi buat menolongnya. Kenyataannya **punya**:
+`HasApiTokens::createToken()` default-nya `['*']`, dan
+`PersonalAccessToken::can()` meloloskan wildcard buat ability apa pun.
+
+Jadi token yang sekarang ada di HP teknisi **lolos `aplikasi:internal` otomatis**
+— tidak ada yang perlu ditolong. Yang justru jadi soal: token `['*']` juga lolos
+`aplikasi:pelanggan`, jadi lingkupnya kelewat lebar. Di situlah
+`PELANGGAN_CUTOFF_TOKEN_LAMA` dipakai: **sesudah** tanggal itu token wildcard
+ditolak, memaksa semua orang pindah ke token berlingkup tepat. Kosong = tanpa
+batas, dan itu nilai default-nya sekarang.
+
+> Sebelum mengisi tanggal itu di produksi: mengisinya **me-logout setiap teknisi
+> yang tokennya dibuat sebelum hari ini**. Isi hanya sesudah rilis mobile yang
+> membuat token baru sudah 100% rollout.
+
+### Token yang TIDAK ADA sengaja diloloskan
+
+`currentAccessToken()` memulangkan tiga hal, dan ketiganya ditangani sadar:
+
+| Yang dipulangkan | Kapan | Perlakuan |
+|---|---|---|
+| `PersonalAccessToken` | Bearer token sungguhan | **Ini yang dijaga** |
+| `TransientToken` | User datang dari guard `web` (sesi Filament) | Lolos — `canAccessPanel()` sudah menuntut admin aktif |
+| `null` | `actingAs($u, 'sanctum')` di test (41 pemanggilan, 11 berkas) | Lolos |
+
+Dua yang terakhir bukan lubang: di produksi `api/*` cuma bisa dicapai lewat
+Bearer token atau sesi Filament, dan pelanggan tidak punya jalan mendapat sesi
+web sama sekali.
+
+### Penolakan akun pelanggan diperiksa SESUDAH sandinya cocok
+
+Bukan sebelum. Kalau dicek duluan, balasan buat email pelanggan jadi beda dari
+balasan buat email yang tidak terdaftar — dan orang luar bisa memakai perbedaan
+itu buat menyisir email mana yang punya akun di sini.
+
+### Rate limiter baru
+
+`pelanggan-daftar` (5/jam per IP), `pelanggan-masuk` (10/menit per IP),
+`pelanggan-otp` (5 per 15 menit **per akun**). Yang OTP dikunci per akun, bukan
+per IP: throttle per IP dilewati dengan ganti jaringan, sementara yang menahan
+penebakan OTP harus menempel ke akun yang ditebak.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.

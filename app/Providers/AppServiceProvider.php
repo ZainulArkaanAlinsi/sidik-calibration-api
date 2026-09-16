@@ -18,6 +18,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -228,6 +229,32 @@ class AppServiceProvider extends ServiceProvider
         $perMenit('login', 10);
         $perMenit('register', 5);
         $perMenit('password-reset', 5);
+
+        // --- Modul pelanggan (02-SRS NFR-02) ---------------------------------
+        //
+        // Angkanya dari NFR-02, bukan dikarang: daftar 5/jam per IP, masuk
+        // 10/menit per IP, OTP 5 per 15 menit per AKUN.
+        //
+        // Yang OTP dikunci per akun, bukan per IP, dan bedanya menentukan:
+        // throttle per IP dilewati dengan ganti jaringan, sementara yang
+        // menahan penebakan OTP justru harus menempel ke akun yang ditebak.
+        // Penguncian kerasnya sendiri ada di baris `otp_pelanggan`
+        // (`percobaan`, `dikunci_sampai`); limiter ini lapis pertamanya.
+        RateLimiter::for('pelanggan-daftar', fn (Request $request) => Limit::perHour(5)
+            ->by('pelanggan-daftar|'.$request->ip())
+            ->response(fn () => response()->json([
+                'kode' => 'terlalu_sering',
+                'message' => 'Terlalu banyak percobaan pendaftaran. Coba lagi satu jam lagi.',
+            ], 429)));
+
+        $perMenit('pelanggan-masuk', 10);
+
+        RateLimiter::for('pelanggan-otp', fn (Request $request) => Limit::perMinutes(15, 5)
+            ->by('pelanggan-otp|'.Str::lower((string) $request->input('email', $request->ip())))
+            ->response(fn () => response()->json([
+                'kode' => 'terlalu_sering',
+                'message' => 'Terlalu banyak permintaan kode. Coba lagi beberapa menit lagi.',
+            ], 429)));
 
         // Jalur yang SUDAH LOGIN — dikunci per orang, bukan per IP.
         //
