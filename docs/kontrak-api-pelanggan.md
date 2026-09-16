@@ -65,7 +65,7 @@ tidak (NFR-12).
 | `sandi_lama_salah` | 422 | Ganti sandi, sandi lama meleset | Tandai field sandi lama |
 | `akun_belum_diverifikasi` | 403 | Token `pelanggan:menunggu` menyentuh data | Kembali ke S06 |
 | `undangan_tidak_berlaku` | 422 | Kode undangan salah / kedaluwarsa / sudah dipakai | Satu pesan saja — jangan tebak mana penyebabnya |
-| `bukan_akun_pelanggan` | 422 | Email undangan ternyata akun internal PT Sidik | Arahkan ke aplikasi teknisi |
+| `undangan_akun_internal` | 422 | Email undangan ternyata akun internal PT Sidik | "Email ini akun internal, tidak bisa diundang" |
 | `batas_anggota` | 422 | Perusahaan sudah penuh (`data.maks_anggota`) | Tampilkan angkanya, arahkan hubungi PT Sidik |
 | `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
 | `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |

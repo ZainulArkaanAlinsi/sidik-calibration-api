@@ -314,7 +314,7 @@ class TerimaUndanganTest extends TestCase
 
         $this->postJson('/api/pelanggan/v1/auth/terima-undangan', $this->formulir((string) $teknisi->email, $kode))
             ->assertStatus(422)
-            ->assertJsonPath('kode', 'bukan_akun_pelanggan');
+            ->assertJsonPath('kode', 'undangan_akun_internal');
 
         $this->assertSame(User::ROLE_TEKNISI, $teknisi->fresh()->role);
         $this->assertDatabaseCount('customer_members', 0);
