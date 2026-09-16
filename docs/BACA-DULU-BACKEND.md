@@ -380,6 +380,94 @@ karena verifier bawaan Laravel memakai klien HTTP-nya sendiri.
 Di produksi verifier itu **gagal terbuka** (HIBP tidak terjangkau → sandi
 diterima), jadi tidak ada risiko outage.
 
+## 16 Sep 2026 — persetujuan akun & undangan anggota (M1-05)
+
+**Yang berubah:** admin lab sekarang punya antrean pengajuan akun pelanggan
+(`/api/admin/pengajuan-akun`), bisa mengundang anggota lewat kode, dan pelanggan
+bisa menukar kode itu jadi akun yang langsung aktif.
+
+Kontraknya di **`docs/kontrak-api-pelanggan.md` v0.2** — termasuk §4 sisi lab.
+Contoh JSON-nya disalin skrip dari `tests/Fixtures/pelanggan/*.json`.
+
+**Nol migrasi baru.** Kelima tabel sudah berdiri sejak Fase 3.
+
+### Aturan kemiripan nama DIEKSTRAK, bukan disalin
+
+`Pemilah::mirip()` (jalur impor pelanggan) sekarang tinggal di
+`App\Support\KemiripanNama`, dipakai dua jalur: impor, dan saran "pelanggan
+mirip" di antrean pengajuan. Menyalinnya berarti menyalin tiga penjagaan yang
+masing-masing lahir dari kesalahan nyata — dan salinan yang ketinggalan satu di
+antaranya **tidak memunculkan error**, cuma saran yang salah.
+
+Refactor ini dibuktikan netral: `ImporPelangganTest`+`PelangganCepatTest`+
+`PencarianPelangganTest` dijalankan **sebelum** (48/48) dan **sesudah** (48/48).
+
+### Temuan: alasan `BATAS_LEVENSHTEIN` sudah kedaluwarsa sejak PHP 8.0
+
+Komentar aslinya menulis `levenshtein()` "menyerah di atas 255 byte dan
+memulangkan -1", lalu `-1 <= 2` bikin tiap nama panjang mirip dengan tiap nama
+panjang lain. **Benar sampai PHP 7.4.** PHP 8.0 mencabut batas itu, dan repo ini
+jalan di 8.4 — diperiksa langsung: `levenshtein(str_repeat('a',300),
+str_repeat('b',300))` memulangkan `300`.
+
+Penjaganya **sengaja dipertahankan**: mencabutnya adalah perubahan perilaku, dan
+tempatnya bukan di dalam refactor (CLAUDE.md §Alur Kerja poin 10). Yang
+dikorbankan: dua nama di atas 255 BYTE yang sebenarnya mirip dijawab "tidak
+mirip" — praktis tak terjangkau karena `customers.nama` itu `varchar(255)` dan
+nama perusahaan Indonesia praktis ASCII. `KemiripanNamaTest` mengadu DUA-duanya:
+kenyataan PHP hari ini, dan bahwa penjaganya tetap memotong.
+
+### Bug yang ketemu dari test: `email_verified_at` ditelan mass assignment
+
+`User::create([... 'email_verified_at' => now()])` di jalur terima-undangan
+**membuang** kolom itu tanpa satu pun error — dia tidak ada di `#[Fillable]`
+`User`. Akibatnya akun lahir aktif dengan email yang tercatat belum
+terverifikasi. Sekarang lewat `forceFill()` sesudah `create()`.
+
+### Dua admin menekan "setujui" bersamaan
+
+Transisinya `UPDATE ... WHERE status = 'menunggu'` dan dihitung dari baris
+terpengaruh — **bukan** `if ($status === 'menunggu')` di PHP, yang membaca dan
+menulis di dua waktu berbeda. Yang kedua dapat **409 `sudah_diputus`** beserta
+nama admin yang mendahului. Tanpa itu, dua admin yang memilih pelanggan berbeda
+membuat satu orang jadi anggota dua perusahaan, lengkap dengan akses ke
+sertifikat keduanya.
+
+### Batas anggota & peran: satu tempat, bukan dua pintu
+
+`Services\Pelanggan\Keanggotaan` adalah satu-satunya jalan baris
+`customer_members` lahir. Dua pintu memakainya (admin menyetujui, orang menukar
+undangan), jadi aturan "PIC utama kalau perusahaan masih kosong" dan "maksimal
+`maks_anggota` orang aktif" tidak bisa diingat separuh. Pelanggarannya dilempar
+sebagai `AksiPelangganDitolak`, yang punya `render()` sendiri — jadi nol
+`try/catch` di controller DAN nol pendaftaran di `bootstrap/app.php`.
+
+### Nonaktifkan anggota tidak selalu mencabut token
+
+REQ-AUTH-09 mencabut token & perangkat, **kecuali** orangnya masih anggota aktif
+di perusahaan lain. Konsultan yang dilepas satu pabrik tidak boleh ikut
+ter-logout dari dua pabrik lainnya; yang berubah cuma `X-Perusahaan-Id` yang
+boleh dia pakai.
+
+### Kode undangan
+
+8 simbol dari abjad **tanpa `O` `0` `I` `1` `L`** — orang mengetiknya ulang dari
+email, sering di HP. Yang dibuang dari abjadnya, bukan "dimaafkan waktu
+dicocokkan": memaafkan berarti ruang tebakannya mengecil tanpa ada yang sadar.
+Disimpan bcrypt, jadi pencariannya lewat EMAIL lalu `Hash::check` — `where` pada
+hash bergaram tidak akan pernah cocok.
+
+### Tiga penjaga lama yang memerahkan pekerjaan ini, dan itu memang gunanya
+
+1. `MeIzinTest` menuntut tiap izin baru punya rute yang beneran 403 buat role
+   yang tidak berhak — rute `{pengajuan}`/`{customer}` tanpa fixture membalas
+   404, dan 404 bukan bukti gerbang.
+2. `RuteInternalMenolakRoleLainTest` menolak melewati parameter rute yang belum
+   punya fixture, alih-alih diam-diam menguji 404.
+3. `GerbangAplikasiTokenTest` menuntut tiap `throttle:` di rute pelanggan ada di
+   daftar yang dijaga — limiter yang tidak terdaftar dianggap Laravel "tanpa
+   batas", jadi throttle-nya hilang tanpa error.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.

@@ -1,7 +1,7 @@
 # Kontrak API — SIDIK Pelanggan (`/api/pelanggan/v1`)
 
-> Versi 0.1 · 16 Sep 2026 · Cakupan: **M1-03, M1-04, M1-06** (auth & akun).
-> Endpoint alat, sertifikat, permintaan, pesan, dan anggota menyusul di Fase 5–6.
+> Versi 0.2 · 16 Sep 2026 · Cakupan: **M1-03, M1-04, M1-05, M1-06** (auth, akun, undangan).
+> Endpoint alat, sertifikat, permintaan, dan pesan menyusul di Fase 6.
 
 Dokumen ini buat @ZainulArkaanAlinsi (Flutter, repo `sidik-pelanggan-mobile`).
 Isinya endpoint yang SUDAH jalan di server, bukan rencana.
@@ -64,6 +64,11 @@ tidak (NFR-12).
 | `otp_terkunci` | 429 | Salah 5 kali | Hitung mundur 15 menit |
 | `sandi_lama_salah` | 422 | Ganti sandi, sandi lama meleset | Tandai field sandi lama |
 | `akun_belum_diverifikasi` | 403 | Token `pelanggan:menunggu` menyentuh data | Kembali ke S06 |
+| `undangan_tidak_berlaku` | 422 | Kode undangan salah / kedaluwarsa / sudah dipakai | Satu pesan saja — jangan tebak mana penyebabnya |
+| `bukan_akun_pelanggan` | 422 | Email undangan ternyata akun internal PT Sidik | Arahkan ke aplikasi teknisi |
+| `batas_anggota` | 422 | Perusahaan sudah penuh (`data.maks_anggota`) | Tampilkan angkanya, arahkan hubungi PT Sidik |
+| `pic_utama_terakhir` | 422 | PIC utama terakhir menonaktifkan dirinya | Minta angkat PIC utama lain dulu |
+| `sudah_diputus` | 409 | Admin lain mendahului (sisi lab) | Muat ulang antrean |
 
 ---
 
@@ -154,6 +159,72 @@ ulang", dan sebaliknya.
 
 `{ "email": "…" }` → selalu **200**, apa pun emailnya. Kode lama mati begitu
 kode baru terbit.
+
+### `POST /auth/terima-undangan` — REQ-AUTH-06
+
+Throttle: **10 per 15 menit per email**.
+
+Jalur KEDUA masuk ke aplikasi, dan sengaja berbeda dari `daftar`: di sini
+**tidak ada OTP dan tidak ada antrean verifikasi**. Yang menjamin orangnya
+berhak bukan klaim yang dia ketik, melainkan bahwa seseorang yang sudah
+berwenang (PIC utama perusahaan itu, atau admin lab) mengirim kode ke alamat
+emailnya.
+
+```json
+{
+  "email": "budi@contoh.test",
+  "kode": "K7M2QP4R",
+  "nama": "Budi Diundang",
+  "sandi": "Kalibrasi#2026Sidik",
+  "telepon": "0812-3456-7890",
+  "jabatan": "QA Staff",
+  "setuju_syarat": true,
+  "nama_perangkat": "Pixel 8a Budi"
+}
+```
+
+- **Kode 8 simbol**, abjadnya **tanpa `O` `0` `I` `1` `L`** — orang mengetiknya
+  ulang dari email. Huruf kecil dan spasi **dirapikan server**, jadi kirim apa
+  adanya dari field input.
+- Berlaku **7 hari**, sekali pakai, dan hanya cocok untuk email yang diundang.
+- Undangan **baru membatalkan yang lama** untuk pasangan email+perusahaan yang
+  sama.
+- Email yang **sudah punya akun pelanggan** tidak dibuatkan akun kedua — dia
+  jadi anggota perusahaan tambahan (kasus konsultan). `nama` dan `sandi` yang
+  dikirim **diabaikan** untuk akun yang sudah ada.
+
+Balasan **201**, bentuknya sama dengan `masuk`:
+
+```json
+{
+  "data": {
+    "token": "<token>",
+    "kedaluwarsa_pada": "<iso8601>",
+    "kemampuan": "pelanggan",
+    "user": {
+      "id": "<int>",
+      "nama": "Budi Diundang",
+      "email": "budi@contoh.test",
+      "telepon": "+6281234567890",
+      "jabatan": "QA Staff",
+      "status": "aktif",
+      "butuh_verifikasi": false,
+      "keanggotaan": [
+        {
+          "customer_id": "<int>",
+          "nama_perusahaan": "PT Contoh Pelanggan",
+          "peran": "staf"
+        }
+      ],
+      "pengajuan": null
+    }
+  }
+}
+```
+
+Semua kegagalan kode dijawab **satu pesan yang sama** (`undangan_tidak_berlaku`)
+— jangan tampilkan tebakan "mungkin sudah kedaluwarsa"; server memang tidak
+memberi tahu yang mana.
 
 ### `POST /auth/masuk` — REQ-AUTH-03/07/08/10
 
@@ -320,14 +391,86 @@ otomatis menolak token `pelanggan:menunggu` dengan:
 
 ---
 
-## 4. Yang SENGAJA belum ada
+## 4. Sisi LAB — `/api/admin/...` (aplikasi internal, bukan aplikasi pelanggan)
+
+Ditulis di dokumen ini, bukan di `docs/kontrak-api.md`, supaya satu modul
+terbaca di satu tempat. Pemanggilnya **aplikasi internal** dengan token
+ber-ability `internal` dan `role:admin` — base URL `/api`, bukan
+`/api/pelanggan/v1`.
+
+Rutenya sengaja **tidak** ikut mati waktu `FITUR_PELANGGAN=false`: antrean yang
+telanjur berisi tetap harus bisa diputus.
+
+| Metode | Path | Keterangan |
+|---|---|---|
+| GET | `/api/admin/pengajuan-akun` | `?status=menunggu` (default) · `disetujui` · `ditolak` |
+| POST | `/api/admin/pengajuan-akun/{id}/setujui` | `{customer_id}` **atau** `{pelanggan_baru:{nama,…}}` — wajib salah satu |
+| POST | `/api/admin/pengajuan-akun/{id}/tolak` | `{alasan}` minimal 10 karakter |
+| POST | `/api/customers/{id}/undangan` | `{email, peran}` |
+| DELETE | `/api/customers/{id}/undangan/{undanganId}` | Membatalkan, bukan menghapus |
+| PATCH | `/api/customers/{id}/pic-admin` | `{user_id}` (boleh `null`) |
+
+```json
+{
+  "data": [
+    {
+      "id": "<int>",
+      "status": "menunggu",
+      "diajukan_pada": "<iso8601>",
+      "klaim": {
+        "nama_perusahaan": "PT Klaim Pendaftar",
+        "alamat_perusahaan": "Jl. Contoh No. 1, Bandung",
+        "jabatan": "QA Manager"
+      },
+      "pemohon": {
+        "id": "<int>",
+        "nama": "Budi Menunggu",
+        "email": "budi@contoh.test",
+        "telepon": "+628123456789",
+        "status": "pending_verifikasi"
+      },
+      "keputusan": null,
+      "saran_pelanggan": [
+        {
+          "id": "<int>",
+          "nama": "PT Klaim Pendaftar",
+          "alamat": "Jl. Contoh No. 1, Bandung",
+          "sama_persis": true
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 20,
+    "total": 1
+  }
+}
+```
+
+Tiga hal yang menentukan bentuk layarnya:
+
+- **`klaim`, bukan `nama_perusahaan`.** Yang ada di situ nama yang DIKETIK
+  pendaftar, bukan pelanggan yang sudah terverifikasi. Menyajikannya sebagai
+  fakta menuntun admin menyetujui tanpa memeriksa — itu pintu R-D02.
+- **`saran_pelanggan` itu saran, bukan pilihan.** Aturannya sama dengan impor
+  pelanggan: badan usaha yang berbeda (`PT` vs `CV`) tidak pernah disarankan
+  berpasangan, karena itu dua badan hukum dengan NPWP berbeda.
+- **Admin WAJIB memilih.** Mengirim keduanya, atau tidak sama sekali, dijawab
+  422. Tidak ada jalan "terima klaim apa adanya".
+
+Dua admin menekan "setujui" bersamaan: yang kedua dapat **409 `sudah_diputus`**
+beserta nama admin yang mendahului. Muat ulang antrean, jangan ulangi kirim.
+
+## 5. Yang SENGAJA belum ada
 
 Ditulis supaya tidak ditunggu:
 
 | Belum ada | Kapan | Catatan |
 |---|---|---|
-| `POST /auth/terima-undangan` | Fase 5 (M1-05) | Tabel `undangan_pelanggan` sudah berdiri |
-| `DELETE /saya` (hapus akun) | Fase 5 | REQ-AUTH-11; `users.dianonimkan_pada` sudah ada |
+| `GET /anggota`, `POST /anggota/undangan`, `POST /anggota/{id}/nonaktifkan` | Fase 5 commit (b) | REQ-ANG-01..03, sisi PIC utama |
+| Header `X-Perusahaan-Id` (`KonteksPerusahaan`) | Fase 5 commit (b) | REQ-ANG-04 |
+| `DELETE /saya` (hapus akun) | Fase 6 | REQ-AUTH-11; `users.dianonimkan_pada` sudah ada |
 | `POST/DELETE /perangkat` (FCM) | Fase 6 | `device_tokens.aplikasi` sudah ada |
-| `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/pesan` | Fase 5–6 | |
-| Endpoint admin `/api/admin/pengajuan-akun` | Fase 5 (M1-05) | Scope `siapDitinjau()` sudah ada di server |
+| `/beranda`, `/alat`, `/sertifikat`, `/permintaan`, `/pesan` | Fase 6 | |

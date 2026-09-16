@@ -15,8 +15,10 @@ use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\PengajuanAkunPelanggan;
 use App\Models\Room;
 use App\Models\Standard;
+use App\Models\UndanganPelanggan;
 use App\Models\User;
 use App\Models\WorksheetScan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -163,8 +165,32 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'status' => DokumenBacaan::STATUS_OK,
         ]);
 
+        // Modul pelanggan sisi lab (M1-05). `pengajuan` & `undangan` menggantung
+        // ke `customer` yang sudah dibikin di atas, jadi dua-duanya seorganisasi
+        // — kalau tidak, controllernya membalas 404 dan gerbang role-nya tidak
+        // pernah keuji.
+        $pemohonPelanggan = User::factory()->create([
+            'organization_id' => $org->id,
+            'role' => User::ROLE_PELANGGAN,
+            'status' => User::STATUS_PENDING_VERIFIKASI,
+        ]);
+
+        $pengajuan = PengajuanAkunPelanggan::create([
+            'organization_id' => $org->id,
+            'user_id' => $pemohonPelanggan->id,
+            'nama_perusahaan' => 'PT Contoh Pengajuan',
+            'status' => PengajuanAkunPelanggan::STATUS_MENUNGGU,
+        ]);
+
+        $undangan = UndanganPelanggan::factory()->create([
+            'organization_id' => $org->id,
+            'customer_id' => $pelangganPt->id,
+        ]);
+
         $this->isiParameter = [
             'calibration' => (string) $sesi->id,
+            'pengajuan' => (string) $pengajuan->id,
+            'undangan' => (string) $undangan->id,
             'calibrationMethod' => (string) CalibrationMethod::factory()->create(['organization_id' => $org->id])->id,
             'certificate' => (string) $sertifikat->id,
             'customer' => (string) $pelangganPt->id,

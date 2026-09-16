@@ -76,6 +76,10 @@ Route::middleware('fitur.pelanggan')->group(function () {
             ->middleware('throttle:pelanggan-masuk')
             ->name('masuk');
 
+        Route::post('/terima-undangan', [AuthPelangganController::class, 'terimaUndangan'])
+            ->middleware('throttle:pelanggan-undangan-tukar')
+            ->name('terima-undangan');
+
         Route::post('/lupa-sandi', [AuthPelangganController::class, 'lupaSandi'])
             ->middleware('throttle:pelanggan-otp-kirim')
             ->name('lupa-sandi');

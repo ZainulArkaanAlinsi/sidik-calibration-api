@@ -79,6 +79,17 @@ class MatriksIzin
         // --- master data
         'pelanggan.dropdown' => ['GET', 'api/customers/lookup'],
         'pelanggan.kelola' => ['POST', 'api/customers'],
+
+        // --- modul pelanggan, sisi lab (M1-05)
+        //
+        // Dipetakan supaya app internal bisa menyembunyikan menu "Pengajuan
+        // Akun" dari teknisi & viewer, bukan memajangnya lalu kena 403.
+        // Alasannya sama dengan seluruh daftar ini: aturan yang di-hardcode di
+        // mobile basi diam-diam tiap kali gerbang di server berubah.
+        'pengajuan-akun.lihat' => ['GET', 'api/admin/pengajuan-akun'],
+        'pengajuan-akun.putuskan' => ['POST', 'api/admin/pengajuan-akun/{pengajuan}/setujui'],
+        'anggota-pelanggan.undang' => ['POST', 'api/customers/{customer}/undangan'],
+        'anggota-pelanggan.pic-admin' => ['PATCH', 'api/customers/{customer}/pic-admin'],
         'standar.lihat' => ['GET', 'api/standards'],
         'standar.kelola' => ['POST', 'api/standards'],
         'ruangan.lihat' => ['GET', 'api/rooms'],

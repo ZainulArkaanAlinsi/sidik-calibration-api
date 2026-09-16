@@ -76,4 +76,19 @@ class PengajuanAkunPelanggan extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    /**
+     * Admin yang memutuskan pengajuan ini.
+     *
+     * Dipakai buat menyebut NAMANYA waktu admin kedua keduluan (409
+     * `sudah_diputus`). "Sudah diputus admin lain" tanpa nama bikin admin
+     * kedua menebak-nebak dan membuka tiket; dengan nama, dia tinggal
+     * bertanya ke orangnya.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function pemutus(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'diputus_oleh');
+    }
 }

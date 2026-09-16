@@ -71,6 +71,37 @@ trait JalurPelanggan
         });
     }
 
+    /**
+     * Admin LAB (bukan pelanggan) — buat menguji sisi §7.3.
+     *
+     * Tokennya ber-ability `internal` karena itu yang dituntut
+     * `aplikasi:internal` di seluruh `routes/api.php` sejak M1-03.
+     */
+    protected function adminLab(string $role = User::ROLE_ADMIN): User
+    {
+        return User::factory()->create([
+            'organization_id' => $this->organisasi()->id,
+            'role' => $role,
+            'status' => User::STATUS_AKTIF,
+            'password' => Hash::make($this->sandiBenar),
+        ]);
+    }
+
+    /** @return array<string, string> */
+    protected function bearerInternal(User $user): array
+    {
+        return ['Authorization' => 'Bearer '.$user->createToken('uji-internal', ['internal'])->plainTextToken];
+    }
+
+    /** Perusahaan pelanggan milik organisasi lab ini. */
+    protected function perusahaan(?string $nama = null): Customer
+    {
+        return Customer::factory()->create([
+            'organization_id' => $this->organisasi()->id,
+            'nama' => $nama ?? 'PT Contoh Pelanggan '.(++$this->nomorPerusahaan),
+        ]);
+    }
+
     protected function organisasi(): Organization
     {
         return Organization::query()->first() ?? Organization::factory()->create();

@@ -177,6 +177,66 @@ class KontrakResponsPelangganTest extends TestCase
         $this->aduKeFixture('saya-ditolak', $badan);
     }
 
+    public function test_bentuk_respons_terima_undangan(): void
+    {
+        Mail::fake();
+
+        $perusahaan = $this->perusahaan('PT Contoh Pelanggan');
+
+        $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => \App\Models\CustomerMember::PERAN_STAF,
+            ])->assertCreated();
+
+        $kode = null;
+        Mail::assertSent(\App\Mail\Pelanggan\UndanganEmail::class, function ($mail) use (&$kode) {
+            $kode = $mail->kode;
+
+            return true;
+        });
+
+        $this->lupakanSesiGuard();
+
+        $badan = $this->postJson('/api/pelanggan/v1/auth/terima-undangan', [
+            'email' => 'budi@contoh.test',
+            'kode' => $kode,
+            'nama' => 'Budi Diundang',
+            'sandi' => $this->sandiBenar,
+            'telepon' => '0812-3456-7890',
+            'jabatan' => 'QA Staff',
+            'setuju_syarat' => true,
+            'nama_perangkat' => 'Pixel 8a Budi',
+        ])->assertCreated()->json();
+
+        $this->aduKeFixture('terima-undangan', $badan);
+    }
+
+    public function test_bentuk_respons_antrean_pengajuan_sisi_lab(): void
+    {
+        $pemohon = $this->pelanggan(User::STATUS_PENDING_VERIFIKASI, [
+            'name' => 'Budi Menunggu',
+            'email' => 'budi@contoh.test',
+        ]);
+        $this->pengajuan($pemohon);
+
+        // Alamatnya DIPATOK, tidak dibiarkan dari factory: `CustomerFactory`
+        // memakai faker, jadi nilainya berubah tiap kali suite jalan dan
+        // fixture ini jadi merah bergantian tanpa ada yang berubah di kode.
+        // Ketahuan waktu ditulis — jalan pertama hijau (karena fixture-nya baru
+        // ditulis di jalan yang sama), jalan kedua merah.
+        $this->perusahaan('PT Klaim Pendaftar')
+            ->forceFill(['alamat' => 'Jl. Contoh No. 1, Bandung'])
+            ->save();
+
+        $badan = $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->getJson('/api/admin/pengajuan-akun')
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('admin-antrean-pengajuan', $badan);
+    }
+
     /** Bentuk ERROR ikut dibekukan — aplikasi bercabang pada `kode`, bukan pada `message`. */
     public function test_bentuk_respons_error_kredensial_salah(): void
     {
