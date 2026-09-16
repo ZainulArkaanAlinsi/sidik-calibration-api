@@ -876,6 +876,23 @@
                 {{ \App\Support\Angka::id((float) $tek['k'], 0) }}
             </div>
         @endif
+
+        {{-- JALAN C (Bagian 3 paket keputusan, 17 Sep 2026): set point di bawah
+             titik kalibrasi terendah standar dicetak APA ADANYA, tapi tanpa
+             klaim akreditasi dan dengan sebabnya tertulis. Baris SUHU tidak
+             tersentuh — standarnya terkalibrasi di rentang yang dipakai.
+
+             Catatan ini hilang sendiri begitu tabel kalibrator tekanan
+             diperluas sampai titik yang benar-benar dipakai (jalan A). --}}
+        @if (($tek['ekstrapolasi_tekanan'] ?? null) !== null)
+            <div class="ket-k">
+                Titik tekanan ini di bawah titik kalibrasi terendah standar
+                ({{ \App\Support\Angka::id((float) ($tek['ekstrapolasi_tekanan']['tabel_min_bar'] ?? 0), 2) }} bar),
+                sehingga koreksi &amp; ketidakpastian standarnya diambil dari titik terdekat dan
+                ketidakpastian ekstrapolasinya ikut dihitung.
+                <strong>Baris tekanan ini di luar lingkup akreditasi</strong>; baris suhu tidak terpengaruh.
+            </div>
+        @endif
         @endif
     @elseif ($timbangan)
         {{-- Desimal DIBEKUKAN di snapshot, bukan dihitung di sini: tiga

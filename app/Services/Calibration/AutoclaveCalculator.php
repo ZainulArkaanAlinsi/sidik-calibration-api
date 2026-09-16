@@ -292,6 +292,7 @@ class AutoclaveCalculator
             dayaBacaAlat: $dayaBacaAlat,
             resolusiStandarBar: $resolusiStandarBar,
             stdev: $stdev,
+            ekstrapolasiBar: $this->batasEkstrapolasi($tabel, $uutSettingBar),
         );
 
         $uBentanganBar = $budget['k'] * $budget['uc'];
@@ -358,6 +359,7 @@ class AutoclaveCalculator
         float $dayaBacaAlat,
         float $resolusiStandarBar,
         float $stdev,
+        float $ekstrapolasiBar = 0.0,
     ): array {
         $baris = [
             ['Ketidakpastian Baku Sertifikat Kalibrasi Calibrator', $u95StandarBar, 2.0, 60, 1.0],
@@ -366,6 +368,23 @@ class AutoclaveCalculator
             ['Ketidakpastian Drift Standard', 0.10 * $u95StandarBar, self::AKAR3, 50, 1.0],
             ['Ketidakpastian Baku Pengulangan Pembacaan', $stdev, 3.0, 2, 1.0],
         ];
+
+        // JALAN C (keputusan pemilik proyek 17 Sep 2026, Bagian 3 paket
+        // keputusan): set point di bawah titik kalibrasi terendah standar
+        // memakai koreksi & U95 PINJAMAN dari baris terdekat, jadi
+        // ketidakpastian pinjamannya DIHITUNG — bukan diabaikan.
+        //
+        // Batasnya selisih koreksi antara dua baris tabel terbawah: itu ukuran
+        // seberapa cepat koreksi standar berubah di ujung rentangnya, yaitu
+        // persis yang tidak diketahui waktu titiknya diekstrapolasi.
+        // Distribusi persegi, `vi` besar (batas yang diketahui pasti, GUM G.4.2).
+        //
+        // Komponen ini HILANG dengan sendirinya begitu tabel kalibrator
+        // diperluas sampai titik yang benar-benar dipakai — itu jalan A yang
+        // disarankan, dan jalan C cuma menahannya sampai ke sana.
+        if ($ekstrapolasiBar > 0.0) {
+            $baris[] = ['Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah', $ekstrapolasiBar, self::AKAR3, 1000000, 1.0];
+        }
 
         $agregat = $this->agregasi($baris);
         $v = $agregat['v_eff'];
@@ -460,6 +479,39 @@ class AutoclaveCalculator
      * @param  list<array<string, float>>  $tabel
      * @return array<string, float>|null
      */
+    /**
+     * Batas ketidakpastian ekstrapolasi (bar) — nol kalau set point-nya ADA di
+     * dalam jangkauan tabel kalibrator.
+     *
+     * Besarnya selisih koreksi antara dua baris tabel yang paling dekat ke
+     * ujung yang terlampaui: seberapa cepat koreksi standar bergerak di sana.
+     * Lihat alasan panjangnya di [budgetTekanan].
+     *
+     * @param  list<array<string, mixed>>  $tabel
+     */
+    private function batasEkstrapolasi(array $tabel, float $uutSettingBar): float
+    {
+        if (count($tabel) < 2) {
+            return 0.0;
+        }
+
+        $set = array_map(static fn (array $b): float => (float) ($b['set'] ?? 0.0), $tabel);
+        $koreksi = array_map(static fn (array $b): float => (float) ($b['koreksi_up'] ?? 0.0), $tabel);
+        array_multisort($set, $koreksi);
+
+        $n = count($set);
+
+        if ($uutSettingBar < $set[0] - 1e-9) {
+            return abs($koreksi[1] - $koreksi[0]);
+        }
+
+        if ($uutSettingBar > $set[$n - 1] + 1e-9) {
+            return abs($koreksi[$n - 1] - $koreksi[$n - 2]);
+        }
+
+        return 0.0;
+    }
+
     private function barisTerdekat(array $tabel, float $nilai): ?array
     {
         $terpilih = null;

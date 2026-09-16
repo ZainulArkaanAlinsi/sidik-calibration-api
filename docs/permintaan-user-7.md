@@ -3536,6 +3536,32 @@ Sertifikat lama tidak diterbitkan ulang: versi lamanya mencetak U yang lebih BES
 tidak merugikan pelanggan, dan ILAC P14 tidak melarang U di atas CMC. Yang perlu dicatat lab: nomor
 revisi master & FORM VALIDASI, plus paraf MT di formulir paket keputusan.
 
+## §34 — Paket keputusan Bagian 3: tekanan Autoclave, JALAN C — 17 Sep 2026
+
+Pemilik proyek memilih **jalan C** dari tiga pilihan paket keputusan. Isinya: angka tetap dicetak,
+tapi ketidakpastian pinjamannya dihitung dan klaim akreditasinya dicabut untuk baris itu saja.
+
+**Masalahnya.** Siklus sterilisasi 121 °C berjalan di ~1,12 bar, sementara tabel sertifikat Pressure
+Disk Logger mulai 1,5 bar. Koreksi & U95 standar di titik itu DIPINJAM dari baris 1,5 bar — 25 % dari
+titik sebenarnya — dan sampai 16 Sep 2026 itu terjadi tanpa satu pun tanda. Nilai standar di titik
+yang tidak pernah dikalibrasi tidak tertelusur (ISO/IEC 17025 §6.5).
+
+**Yang dikerjakan:**
+
+1. **Komponen ketidakpastian ekstrapolasi** masuk budget tekanan. Batasnya selisih koreksi antara dua
+   baris tabel terdekat ke ujung yang terlampaui — ukuran seberapa cepat koreksi standar bergerak di
+   sana, yaitu persis yang tidak diketahui. Distribusi persegi, `vi` besar (GUM G.4.2). Sesi contoh:
+   Uc 0,0044284 → 0,0044419 bar.
+2. **Baris tekanannya dicetak tanpa klaim akreditasi**, dengan sebabnya tertulis di sertifikat:
+   titiknya di bawah titik kalibrasi terendah standar. **Baris suhu tidak terpengaruh** — standarnya
+   memang terkalibrasi di rentang yang dipakai.
+3. Penanda `ekstrapolasi_tekanan` yang sudah ada sejak audit tetap melahirkan catatan tingkat INFO
+   di validator, jadi jejaknya ada di sesi maupun di dokumen.
+
+**Yang membuat ini sementara.** Komponen dan catatannya HILANG SENDIRI begitu tabel kalibrator
+diperluas sampai titik yang benar-benar dipakai — tidak ada kode yang perlu diubah, cukup tabelnya.
+Itu jalan A, dan tetap yang disarankan di kalibrasi ulang logger berikutnya.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
