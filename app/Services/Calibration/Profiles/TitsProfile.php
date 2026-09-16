@@ -816,6 +816,21 @@ class TitsProfile extends CalibrationProfile
             'disertakan' => $k['disertakan'],
         ], $hasil['budget']);
 
+        // Baris pembanding CMC, SELALU — bukan cuma waktu CMC menang.
+        //
+        // `CalibrationValidator::periksaU95MeledakDariCmc()` mencari angka CMC
+        // titik lewat baris ini (`cmcTitik()`). Tanpa dia gerbangnya `continue`
+        // diam-diam, dan sesi ber-U95 ratusan kali CMC — persis bentuk
+        // `CAL/2026/08/0043` — lolos terbit tanpa satu pun peringatan. Baris
+        // `lantai_cmc` di catatan audit TIDAK bisa menggantikannya: dia cuma
+        // lahir waktu CMC > U hitung, yaitu justru bukan kasus yang berbahaya,
+        // dan `nilai`-nya U hitung, bukan CMC.
+        $audit[] = $this->barisPerbandinganCmc(
+            (float) $hasil['ketidakpastian_diperluas'],
+            (float) ($hasil['cmc'] ?? 0.0),
+            self::SATUAN,
+        );
+
         foreach ($hasil['catatan_audit'] as $catatan) {
             $audit[] = [
                 'sumber' => $catatan['kode'],

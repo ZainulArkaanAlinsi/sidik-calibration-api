@@ -124,11 +124,17 @@ class EnclosureCalculator
     public const PEMBAGI_DRIFT = 1.73;
 
     /**
-     * Pembagi Pengulangan Pembacaan Standar di master RECORDER: `√(√3) ≈ 1,3161`.
-     * Selnya `U29 = N29/SQRT(Q29)` dengan `Q29 = SQRT(3)` — akar diambil dua kali.
-     * Constant/Yokogawa memakai √3 yang benar di komponen yang sama.
+     * Pembagi Pengulangan Pembacaan Standar milik master RECORDER:
+     * `√(√3) ≈ 1,3161`. Selnya `U29 = N29/SQRT(Q29)` dengan `Q29 = SQRT(3)` —
+     * akar diambil dua kali. Constant/Yokogawa memakai √3 yang benar di
+     * komponen yang sama.
+     *
+     * **Sejak 16 Sep 2026 yang dipakai √3** (paket keputusan butir A-1,
+     * disetujui pemilik proyek; paraf Manajer Teknis menyusul). Tetapan ini
+     * disimpan supaya selisih terhadap master tetap bisa dicetak di jejak
+     * audit dan diadu di test.
      */
-    public const PEMBAGI_PENGULANGAN_RECORDER = 1.3160740129524924;
+    public const PEMBAGI_PENGULANGAN_RECORDER_MASTER = 1.3160740129524924;
 
     /** Resolusi STD Meter (`DATABASE!V13`/`W13` = 0,1 °C), dibagi 2 di budget. */
     public const RESOLUSI_STANDAR = 0.1;
@@ -573,10 +579,10 @@ class EnclosureCalculator
             [
                 'sumber' => 'pengulangan_standar',
                 'keterangan' => $recorder
-                    ? sprintf('Pengulangan pembacaan standar %s °C (½·spread, ÷√(√3) mengikuti master)', $this->angka($r41))
+                    ? sprintf('Pengulangan pembacaan standar %s °C (½·spread, ÷√3; master menulis ÷√(√3))', $this->angka($r41))
                     : sprintf('Pengulangan pembacaan standar %s °C (½·spread, ÷√3)', $this->angka($r41)),
                 'distribusi' => 'persegi',
-                'u' => $r41 / ($recorder ? self::PEMBAGI_PENGULANGAN_RECORDER : $sqrt3),
+                'u' => $r41 / $sqrt3,
                 'ci' => 1.0,
                 'vi' => $viPengulanganStd,
                 'disertakan' => true,
@@ -717,20 +723,22 @@ class EnclosureCalculator
             ),
         ];
 
-        // 3. Pengulangan Standar Recorder ÷√(√3).
+        // 3. Pengulangan Standar Recorder: master ÷√(√3), kita ÷√3.
         if ($merk === TabelKalibratorEnclosure::MERK_BERKANAL) {
-            $benar = array_map(
+            $versiMaster = array_map(
                 static fn (array $k): array => $k['sumber'] === 'pengulangan_standar'
-                    ? [...$k, 'u' => $k['u'] * self::PEMBAGI_PENGULANGAN_RECORDER / sqrt(3.0)]
+                    ? [...$k, 'u' => $k['u'] * sqrt(3.0) / self::PEMBAGI_PENGULANGAN_RECORDER_MASTER]
                     : $k,
                 $dipakai,
             );
             $catatan[] = [
                 'kode' => 'pembagi_pengulangan_sqrtsqrt3',
                 'pesan' => sprintf(
-                    'Pengulangan Standar dibagi √(√3) mengikuti master Recorder (sel U29=N29/SQRT(Q29)); '
-                    .'dengan √3 U95 hitung jadi %s °C, bukan %s °C.',
-                    $this->angka($uDengan($benar)),
+                    'Pengulangan Standar dibagi √3 sesuai GUM 4.3.7 (butir A-1, disetujui pemilik '
+                    .'proyek 16 Sep 2026, paraf MT menyusul). Master Recorder menulis √(√3) lewat sel '
+                    .'U29=N29/SQRT(Q29); dengan pembagi master itu U95 hitung jadi %s °C, sedangkan '
+                    .'yang dipakai sekarang %s °C.',
+                    $this->angka($uDengan($versiMaster)),
                     $this->angka($uHitung),
                 ),
             ];

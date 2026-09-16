@@ -93,9 +93,35 @@ class DialIndicatorMasterTest extends TestCase
             $konteks, $a['l_maks_master_mm'], $a['keping_maks'], $a['theta_c'], 0.0, $ditolak,
         );
 
-        $this->assertCount(10, $budget);
+        // Sepuluh komponen master + SATU komponen histeresis (butir 6 paket
+        // keputusan 16 Sep 2026): UP & DOWN cuma boleh digabung jadi
+        // pengulangan kalau histeresisnya dinilai sendiri.
+        $this->assertCount(11, $budget);
+        $this->assertSame('histeresis', $budget[10]['sumber']);
 
         foreach ($a['komponen'] as $i => $m) {
+            // Komponen `pengulangan` SENGAJA menyimpang: master membagi √5
+            // (`N5`/`Q5` — workbook merata-rata lima kotak), kertas FM-0526
+            // Rev.3 memungut enam (UP×3 + DOWN×3) dan sistem merata-ratakan
+            // keenamnya, jadi pembaginya √6 dan `vi` = 10 − 1 = 9.
+            if ($budget[$i]['sumber'] === 'pengulangan') {
+                $this->assertEqualsWithDelta($m['ui'] * sqrt(5.0 / 6.0), $budget[$i]['u'], 1e-12, 'ui pengulangan ÷√6');
+                $this->assertEqualsWithDelta(9.0, $budget[$i]['vi'], 1e-9, 'vi pengulangan = 10 − 1');
+
+                continue;
+            }
+
+            // Drift standar: umur dibagi 365 HARI, bukan 12 seperti `K10`
+            // master — komponennya µm/tahun dan selisih tanggalnya hari
+            // (butir 5 paket keputusan 16 Sep 2026).
+            if ($budget[$i]['sumber'] === 'drift_standar') {
+                $this->assertEqualsWithDelta($m['ui'] * 12.0 / 365.0, $budget[$i]['u'], 1e-12, 'ui drift ÷365 hari');
+                $this->assertEqualsWithDelta($m['ci'], $budget[$i]['ci'], 1e-12, 'ci drift');
+                $this->assertEqualsWithDelta($m['vi'], $budget[$i]['vi'], 1e-9, 'vi drift');
+
+                continue;
+            }
+
             $this->assertEqualsWithDelta($m['ui'], $budget[$i]['u'], 1e-12, "ui baris {$m['baris']} ({$m['keterangan']})");
             $this->assertEqualsWithDelta($m['ci'], $budget[$i]['ci'], 1e-12, "ci baris {$m['baris']}");
             $this->assertEqualsWithDelta($m['vi'], $budget[$i]['vi'], 1e-9, "vi baris {$m['baris']}");
@@ -103,14 +129,21 @@ class DialIndicatorMasterTest extends TestCase
 
         $agregat = (new GumCalculator)->agregasiBudget($budget);
 
-        $this->sama($a['uc'], $agregat['ketidakpastian_gabungan'], 'uc AA16');
-        $this->assertEqualsWithDelta($a['veff'], $agregat['derajat_kebebasan_efektif'], 1e-6, 'veff AA17');
-        $this->sama($a['k'], $agregat['faktor_cakupan_k'], 'k AA18');
-        $this->sama($a['u_diperluas'], $agregat['ketidakpastian_diperluas'], 'U AA19');
-        $this->sama($a['u95_sertifikat'], max($agregat['ketidakpastian_diperluas'], $a['cmc_mm']), 'U95 AA21');
+        // uc & U lebih kecil dari master: pembagi keterulangan yang benar lebih
+        // besar, dan komponen histeresis pada konteks test ini nol (tidak
+        // membawa pembacaan UP/DOWN). Lantai CMC tetap yang dilaporkan.
+        $this->assertLessThan($a['uc'], $agregat['ketidakpastian_gabungan'], 'uc AA16 wajib < master');
+        $this->assertLessThan($a['u_diperluas'], $agregat['ketidakpastian_diperluas'], 'U AA19 wajib < master');
+        // U95 yang DILAPORKAN = MAX(U hitung, lantai CMC) — dan di sesi ini
+        // hitungan masih menang, jadi angkanya ikut turun tipis dari master
+        // (butir 5 & 6). Yang dijaga aturannya berikut arah perubahannya.
+        $u95 = max($agregat['ketidakpastian_diperluas'], $a['cmc_mm']);
+
+        $this->assertGreaterThanOrEqual($a['cmc_mm'], $u95, 'U95 AA21 tidak boleh di bawah lantai CMC');
+        $this->assertLessThan($a['u95_sertifikat'], $u95, 'U95 AA21 wajib < master');
     }
 
-    public function test_sesi_penuh_memakai_tumpukan_terpanjang_dan_tidak_pernah_lebih_kecil_dari_master(): void
+    public function test_sesi_penuh_memakai_tumpukan_terpanjang(): void
     {
         [$titik, $konteks] = $this->masukan();
         $hasil = (new DialIndicatorCalculator)->hitungSesi($titik, $konteks);
@@ -119,7 +152,14 @@ class DialIndicatorMasterTest extends TestCase
         // 21 + 1,8 + 1,7 — bukan keping terbesar 21 mm yang dipakai C61.
         $this->assertGreaterThan($a['l_maks_master_mm'], $hasil['l_maks_mm']);
         $this->assertEqualsWithDelta(24.50011, $hasil['l_maks_mm'], 1e-9);
-        $this->assertGreaterThanOrEqual($a['u_diperluas'], $hasil['ketidakpastian_diperluas']);
+
+        // Sampai 15 Sep 2026 di sini ditegakkan "tidak pernah lebih kecil dari
+        // master". Butir 6 paket keputusan (16 Sep 2026, disetujui pemilik
+        // proyek) mengubah arah itu untuk SATU komponen: pembagi keterulangan
+        // √6, bukan √5. Yang tersisa dijaga: panjang tumpukan tetap yang
+        // terpanjang, sesi tetap boleh terbit, dan lantai CMC tetap terpasang.
+        $this->assertLessThan($a['u_diperluas'], $hasil['ketidakpastian_diperluas']);
+        $this->assertGreaterThan($a['u_diperluas'] * 0.9, $hasil['ketidakpastian_diperluas'], 'Turunnya wajar, bukan komponen yang hilang.');
         $this->assertTrue($hasil['boleh_terbit']);
         $this->assertEqualsWithDelta(0.0065, $hasil['pita_cmc']['u95_mm'], 1e-12);
     }
