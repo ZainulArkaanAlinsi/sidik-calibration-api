@@ -145,7 +145,7 @@ class TimbanganCalculator
             $titik = ['titik_ke' => $baris['titik_ke']];
             $satu = $baris['hitung'];
 
-            $bKoreksi = $this->budgetKoreksi($satu, $ket, $varian, $resolusi);
+            $bKoreksi = $this->budgetKoreksi($satu, $ket, $varian, $resolusi, (float) $sesi['kapasitas']);
             $aKoreksi = $this->gum->agregasiBudget($bKoreksi);
 
             $bTimbang = $this->budgetPenimbangan($aKoreksi, $ekc, $varian, $resolusi, $digital);
@@ -317,6 +317,9 @@ class TimbanganCalculator
         return [
             'total_cn' => $cn,
             'nominal_total' => array_sum($nominal),
+            // Nominal keping Mref (slot pertama) — dipakai menghitung `ci`
+            // baris drift Mref di varian substitusi. Lihat [budgetKoreksi].
+            'nominal_mref' => (float) ($nominal[0] ?? 0.0),
             'u_gram' => $uGram,
             'drift' => $drift,
             'rata_nol' => $rataNol,
@@ -327,6 +330,36 @@ class TimbanganCalculator
             'koreksi_absolut' => $absolut,
             'sr' => $this->stdevSampel($m),
         ];
+    }
+
+    /**
+     * `ci` baris drift Mref = berapa kali keping Mref dipakai ulang sepanjang
+     * rangkaian substitusi, yaitu kapasitas ÷ nominal Mref.
+     *
+     * Master substitusi menulis **10** tetap, tanpa keterangan di mana pun
+     * (T4). Sesinya sendiri 2000 kg dengan Mref 200 kg — 2000/200 = 10, jadi
+     * angka itu memang jumlah pemakaian ulang, bukan tetapan. Lab menegaskan
+     * itu 16 Sep 2026, dan sejak itu DIHITUNG: sesi 1000 kg dengan Mref yang
+     * sama ber-`ci` 5, bukan 10 yang terlalu besar.
+     *
+     * Balik ke angka master kalau kapasitas/nominalnya tidak bisa dibaca —
+     * menebak di sini berarti menggeser U tanpa dasar.
+     *
+     * @param  array<string, mixed>  $titik
+     */
+    private function ciDriftMref(array $titik, VarianMasterTimbangan $varian, ?float $kapasitas): float
+    {
+        if (! $varian->substitusi) {
+            return $varian->ciDriftPertama;
+        }
+
+        $mref = (float) ($titik['nominal_mref'] ?? 0.0);
+
+        if ($kapasitas === null || $kapasitas <= 0.0 || $mref <= 0.0) {
+            return $varian->ciDriftPertama;
+        }
+
+        return max(1.0, round($kapasitas / $mref));
     }
 
     /**
@@ -341,6 +374,7 @@ class TimbanganCalculator
         array $ket,
         VarianMasterTimbangan $varian,
         float $resolusi,
+        ?float $kapasitas = null,
     ): array {
         $komponen = [[
             'sumber' => 'weight_standard',
@@ -374,7 +408,7 @@ class TimbanganCalculator
                 // tetap salah. Dilaporkan sebagai T3.
                 'distribusi' => 'rectangular',
                 'u' => (float) ($titik['drift'][$i] ?? 0.0),
-                'ci' => $i === 0 ? $varian->ciDriftPertama : 1.0,
+                'ci' => $i === 0 ? $this->ciDriftMref($titik, $varian, $kapasitas) : 1.0,
                 'vi' => 50.0,
             ];
         }

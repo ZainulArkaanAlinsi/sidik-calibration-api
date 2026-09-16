@@ -208,6 +208,30 @@ class TimbanganMasterTest extends TestCase
     }
 
     /**
+     * `ci` baris drift Mref DIHITUNG (kapasitas ÷ nominal Mref), bukan dipatok
+     * 10 seperti master substitusi (T4, dijawab lab 16 Sep 2026).
+     *
+     * Sesi masternya sendiri 2000 kg dengan Mref 200 kg, jadi angkanya tetap
+     * 10 dan tidak ada sertifikat lama yang bergeser — yang berubah cuma sesi
+     * berkapasitas lain, yang selama ini memakai 10 milik sesi orang lain.
+     */
+    public function test_ci_drift_mref_dihitung_dari_kapasitas(): void
+    {
+        $sesi = $this->masukan(self::fixture()['sub']);
+        $hasil = (new TimbanganCalculator)->hitung($sesi);
+        // Baris drift PERTAMA = slot Mref (keterangan "…-Mass Mref").
+        $ci = fn (array $h): float => (float) collect($h['titik'][0]['budget_koreksi'])
+            ->where('sumber', 'mass_instability')
+            ->first()['ci'];
+
+        $this->assertSame(10.0, $ci($hasil), 'Sesi master 2000 kg / Mref 200 kg = 10.');
+
+        // Kapasitas separuh, Mref sama → keping dipakai ulang 5 kali.
+        $setengah = (new TimbanganCalculator)->hitung([...$sesi, 'kapasitas' => 1000.0]);
+        $this->assertSame(5.0, $ci($setengah), 'Sesi 1000 kg dengan Mref 200 kg = 5, bukan 10.');
+    }
+
+    /**
      * `Drift Massa Standar (d)` — kotak 7 formulir metode substitusi.
      *
      * Angkanya diadu ke sel `INPUT DATA` master substitusi apa adanya:
