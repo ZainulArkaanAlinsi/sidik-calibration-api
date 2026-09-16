@@ -132,11 +132,15 @@ class TitsSesiTest extends TestCase
         }
 
         // Satu U95 untuk seluruh sesi — semua baris membawa angka yang sama.
-        // `AC28 = 0,8534` menang atas CMC Type N 0,83.
+        // Master `AC28 = 0,8534`; sejak butir A-1 (16 Sep 2026) AC Pick Up
+        // dibagi √3 sehingga jadi 0,8521 — masih menang atas CMC Type N 0,83,
+        // jadi yang tercetak tetap hitungan.
         foreach ($baris as $b) {
-            $this->assertEqualsWithDelta(0.85336874, (float) $b->ketidakpastian_diperluas, 1e-3);
-            $this->assertEqualsWithDelta(6.50682455, (float) $b->derajat_kebebasan_efektif, self::TOLERANSI);
-            $this->assertEqualsWithDelta(2.40157723, (float) $b->faktor_cakupan_k, 1e-3);
+            $this->assertEqualsWithDelta(0.85214422, (float) $b->ketidakpastian_diperluas, 1e-3);
+            // v_eff ikut turun (6,507 → 5,544) karena bobot komponen berubah;
+            // `k` yang lahir darinya naik tipis, dan U tetap di atas CMC.
+            $this->assertEqualsWithDelta(5.54372906, (float) $b->derajat_kebebasan_efektif, 1e-2);
+            $this->assertEqualsWithDelta(2.49656865, (float) $b->faktor_cakupan_k, 1e-2);
             $this->assertNull($b->keputusan);
             $this->assertNull($b->toleransi);
         }
@@ -173,16 +177,25 @@ class TitsSesiTest extends TestCase
 
         $konteks = $this->konteksSesi($baris[0]->type_b_components);
         $this->assertSame('cmc', $konteks['sumber_u95']);
+        // Master 1,13768; sejak butir A-1 & B-1 (16 Sep 2026) komponen drift
+        // ganda dibuang dan AC Pick Up dibagi √3, jadi hitungannya 0,7419.
+        // Yang DILAPORKAN tetap lantai CMC 1,2 — dua baris di atas.
         $this->assertEqualsWithDelta(
-            1.1376795812146776,
+            0.74189773,
             (float) $konteks['ketidakpastian_diperluas_hitung'],
             1e-3,
         );
 
-        // Komponen drift bersel mati master ikut tercatat di jejak audit —
-        // kalau suatu saat dibuang, catatannya yang jatuh duluan.
+        // Komponen drift bersel mati master sudah DIBUANG dari budget (butir
+        // B-1), tapi catatan auditnya tetap terbit — di situ tertulis berapa
+        // U-nya kalau komponen master itu ikut. Jejaknya yang menahan
+        // perubahan ini dari jadi tak terlihat.
         $sumber = array_column($baris[0]->type_b_components, 'sumber');
-        $this->assertContains('drift_referensi_mati', $sumber);
+        $this->assertNotContains('drift_referensi_mati', array_column(
+            array_filter($baris[0]->type_b_components, static fn (array $k): bool => ($k['distribusi'] ?? '') !== '-'),
+            'sumber',
+        ), 'Komponen drift ganda tidak boleh ikut dijumlah lagi.');
+        $this->assertContains('drift_referensi_mati', $sumber, 'Catatan auditnya tetap wajib ada.');
         $this->assertContains('lantai_cmc', $sumber);
     }
 

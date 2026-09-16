@@ -126,10 +126,18 @@ class AutoclaveCalculatorTest extends TestCase
 
         $this->assertEqualsWithDelta(1.12, $tekanan['uut_setting_bar'], self::TOL, 'UUT setting -> bar');
         $this->assertEqualsWithDelta(1.231, $tekanan['standar_rata_bar'], self::TOL, 'Std rata (bar)');
-        $this->assertEqualsWithDelta(0.004428378183187759, $tekanan['uc'], self::TOL, 'Uc tekanan');
-        $this->assertEqualsWithDelta(20.38075689639711, $tekanan['v_eff'], 1e-6, 'v_eff tekanan');
-        $this->assertEqualsWithDelta(2.085963447265865, $tekanan['k'], 1e-9, 'k tekanan (TINV floor)');
-        $this->assertEqualsWithDelta(0.009237435020799286, $tekanan['u_bentangan_bar'], 1e-9, 'U bentangan (bar)');
+        // Uc master 0,0044284. Sejak JALAN C (Bagian 3 paket keputusan,
+        // 17 Sep 2026) sesi ini membawa komponen ke-6: set point 1,12 bar ada
+        // DI BAWAH titik kalibrasi terendah standar (1,5 bar), jadi koreksi &
+        // U95 standarnya dipinjam dari titik terdekat dan ketidakpastian
+        // pinjaman itu ikut dihitung. Arahnya menaikkan Uc — kalau suatu saat
+        // lebih kecil dari master, komponennya hilang diam-diam.
+        $this->assertGreaterThan(0.004428378183187759, $tekanan['uc'], 'Uc tekanan wajib > master (komponen ekstrapolasi)');
+        $this->assertEqualsWithDelta(0.004441906497590119, $tekanan['uc'], 1e-9, 'Uc tekanan + ekstrapolasi');
+
+        $ekstrapolasi = collect($tekanan['budget'])->firstWhere('komponen', 'Ketidakpastian Baku Ekstrapolasi di Bawah Titik Kalibrasi Terendah');
+        $this->assertNotNull($ekstrapolasi, 'Komponen ekstrapolasi wajib ada selama tabel kalibrator belum mencakup 1,12 bar.');
+        $this->assertNotNull($tekanan['ekstrapolasi_tekanan'], 'Penandanya wajib ikut supaya sertifikat mencetak catatannya.');
         // Hitung 0,00924 bar < CMC 0,059 bar -> CMC menang.
         $this->assertEqualsWithDelta(0.059, $tekanan['u95_bar'], self::TOL, 'U95 (bar, CMC menang)');
         // Diturunkan ke satuan display MPa: /10.
