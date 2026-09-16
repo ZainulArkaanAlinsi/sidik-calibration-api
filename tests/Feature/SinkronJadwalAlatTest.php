@@ -34,6 +34,11 @@ use Tests\TestCase;
  * `uncertainty_calculations`) dan tidak pernah sampai ke penerbitan sertifikat.
  * Autoklaf satu-satunya bentuk sesi yang sah tanpa titik hasil hitung — lihat
  * `AutoclaveCertificateTest`.
+ *
+ * Requirement: `docs/pelanggan/02-SRS.md` REQ-ADM-04 (approve memperbarui
+ * `tanggal_kalibrasi_terakhir` & `tanggal_jatuh_tempo` dari sertifikat aktif
+ * terakhir) dan BR-03 (tanggal di alat adalah TURUNAN dari sertifikat aktif
+ * terakhir, bukan angka yang berdiri sendiri).
  */
 class SinkronJadwalAlatTest extends TestCase
 {
@@ -46,6 +51,13 @@ class SinkronJadwalAlatTest extends TestCase
     private User $teknisi;
 
     private Equipment $alat;
+
+    /**
+     * `customers` punya UNIQUE(organization_id, nama), jadi nama pelanggan
+     * nggak boleh dipakai ulang di organisasi yang sama. Dihitung, bukan
+     * dipatok satu nama.
+     */
+    private int $nomorPelanggan = 0;
 
     protected function setUp(): void
     {
@@ -72,7 +84,7 @@ class SinkronJadwalAlatTest extends TestCase
             'organization_id' => $org->id,
             'customer_id' => Customer::factory()->create([
                 'organization_id' => $org->id,
-                'nama' => 'PT Contoh Dua',
+                'nama' => 'PT Contoh Pelanggan '.(++$this->nomorPelanggan),
             ])->id,
             'equipment_category_id' => EquipmentCategory::factory()->create([
                 'organization_id' => $org->id,
@@ -158,7 +170,7 @@ class SinkronJadwalAlatTest extends TestCase
     // memanggil servicenya, test yang menembak service langsung tetap hijau.
 
     /** Masa berlaku pilihan admin mendarat di alat, bukan cuma di sertifikat. */
-    public function test_approve_dengan_berlaku_sampai_kustom_ikut_ke_alat(): void
+    public function test_REQ_ADM_04_approve_dengan_berlaku_sampai_kustom_ikut_ke_alat(): void
     {
         $tanggalKalibrasi = now()->subDay()->toDateString();
         $sesi = $this->sesiAutoklaf($tanggalKalibrasi);
@@ -175,7 +187,7 @@ class SinkronJadwalAlatTest extends TestCase
     }
 
     /** Tanpa pilihan admin, yang dipakai default organisasi — dihitung dari TANGGAL KALIBRASI. */
-    public function test_approve_tanpa_berlaku_sampai_pakai_default_masa_berlaku_organisasi(): void
+    public function test_REQ_ADM_04_approve_tanpa_berlaku_sampai_pakai_default_masa_berlaku_organisasi(): void
     {
         $tanggalKalibrasi = now()->subDays(3)->toDateString();
         $sesi = $this->sesiAutoklaf($tanggalKalibrasi);
@@ -200,7 +212,7 @@ class SinkronJadwalAlatTest extends TestCase
     // ------------------------------------------------------------------ T3–T10
 
     /** Revisi menang atas sertifikat yang direvisinya. */
-    public function test_revisi_dengan_tanggal_baru_bikin_alat_ikut_revisi(): void
+    public function test_BR_03_revisi_dengan_tanggal_baru_bikin_alat_ikut_revisi(): void
     {
         $asli = $this->sertifikatUntuk($this->alat, '2026-01-10', '2027-01-10', '2026-01-12');
         $this->sertifikatUntuk($this->alat, '2026-01-10', '2026-11-30', '2026-02-02', revisiDari: $asli);
@@ -220,7 +232,7 @@ class SinkronJadwalAlatTest extends TestCase
      * kebetulan terbit belakangan — bukan karena aturan "sudah digantikan"-nya
      * beneran jalan.
      */
-    public function test_sertifikat_yang_sudah_digantikan_revisi_terbit_tidak_dipakai(): void
+    public function test_BR_03_sertifikat_yang_sudah_digantikan_revisi_terbit_tidak_dipakai(): void
     {
         $asli = $this->sertifikatUntuk($this->alat, '2026-01-10', '2027-01-10', '2026-06-01');
         // Revisinya terbit LEBIH DULU dari yang direvisinya. Janggal, tapi
@@ -239,7 +251,7 @@ class SinkronJadwalAlatTest extends TestCase
     }
 
     /** Revisi yang GAGAL dirender nggak boleh mematikan sertifikat asalnya. */
-    public function test_revisi_yang_gagal_render_tidak_mematikan_sertifikat_asal(): void
+    public function test_BR_03_revisi_yang_gagal_render_tidak_mematikan_sertifikat_asal(): void
     {
         $asli = $this->sertifikatUntuk($this->alat, '2026-01-10', '2027-01-10', '2026-01-12');
         $this->sertifikatUntuk(
@@ -265,7 +277,7 @@ class SinkronJadwalAlatTest extends TestCase
      * urutannya ditentukan MySQL — alatnya bisa mengambil tanggal dari
      * sertifikat yang salah, bergantian tiap kali sapuannya dijalankan.
      */
-    public function test_dua_sertifikat_terbit_tanggal_sama_dimenangkan_id_terbaru(): void
+    public function test_BR_03_dua_sertifikat_terbit_tanggal_sama_dimenangkan_id_terbaru(): void
     {
         $this->sertifikatUntuk($this->alat, '2026-03-01', '2027-03-01', '2026-03-05');
         $terbaru = $this->sertifikatUntuk($this->alat, '2026-03-02', '2027-09-09', '2026-03-05');
@@ -391,7 +403,7 @@ class SinkronJadwalAlatTest extends TestCase
      * `GenerateCertificate` mengambil `SertifikatSatuHalaman` lewat `app()` ke
      * variabel yang tidak bertipe, jadi stub polos cukup.
      */
-    public function test_sertifikat_gagal_generate_tidak_mengubah_alat(): void
+    public function test_REQ_ADM_04_sertifikat_gagal_generate_tidak_mengubah_alat(): void
     {
         $tempoAwal = $this->alat->tanggal_jatuh_tempo?->toDateString();
         $kalibrasiAwal = $this->alat->tanggal_kalibrasi_terakhir?->toDateString();

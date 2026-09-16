@@ -20,6 +20,9 @@ use Tests\TestCase;
  * Yang paling penting di sini `--dry-run`: keluarannya yang ditinjau admin lab
  * sebelum perintah ini dijalankan di data produksi. Kalau dry-run ternyata
  * menulis sesuatu, seluruh gunanya hilang — dan hilangnya diam-diam.
+ *
+ * Rujukan: `docs/pelanggan/06-Risk-Register.md` R-E04 — perintah ini yang jadi
+ * langkah pemulihannya, dan urutan wajibnya dry-run → ditinjau → dijalankan.
  */
 class SapuJadwalAlatCommandTest extends TestCase
 {
@@ -70,14 +73,25 @@ class SapuJadwalAlatCommandTest extends TestCase
         ]);
     }
 
-    /** Dry-run menampilkan yang bakal berubah, dan TIDAK menulis apa pun. */
+    /**
+     * Dry-run menampilkan yang bakal berubah, dan TIDAK menulis apa pun.
+     *
+     * Tabelnya diadu pakai `expectsTable`, BUKAN `expectsOutputToContain`:
+     * keluaran `Command::table()` dirender Symfony langsung ke OutputInterface
+     * dan nggak ikut tertangkap penangkap keluaran biasa. Dipakai
+     * `expectsOutputToContain` buat isi tabel, assertion-nya hijau palsu —
+     * lolos tanpa pernah melihat tabelnya.
+     */
     public function test_dry_run_tidak_menulis_apa_pun(): void
     {
         $auditSebelum = AuditLog::count();
 
         $this->artisan('alat:sinkron-jadwal --dry-run')
-            ->expectsOutputToContain('CAL/2026/02/0042')
-            ->expectsOutputToContain('2026-01-01 → 2027-02-10')
+            ->expectsTable(
+                ['equipment_id', 'nama_alat', 'tgl_kalibrasi lama→baru', 'jatuh_tempo lama→baru', 'nomor sertifikat sumber'],
+                [[$this->alat->id, 'Timbangan Contoh', '2025-01-01 → 2026-02-10', '2026-01-01 → 2027-02-10', 'CAL/2026/02/0042']],
+            )
+            ->expectsOutputToContain('1 alat AKAN diubah')
             ->assertSuccessful();
 
         $this->alat->refresh();
