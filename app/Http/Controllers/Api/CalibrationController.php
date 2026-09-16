@@ -3253,12 +3253,9 @@ class CalibrationController extends Controller
             return null;
         }
 
-        return WaktuMentah::keMilidetik(
-            (int) ($nilai['jam'] ?? 0),
-            (int) ($nilai['menit'] ?? 0),
-            (float) ($nilai['detik'] ?? 0),
-            (float) ($nilai['milidetik'] ?? 0),
-        );
+        // Kotak keempat boleh `milidetik` atau `sentidetik` — satuannya dari
+        // NAMA kotaknya, dan rumusnya cuma hidup di satu tempat.
+        return WaktuMentah::kotakKeMilidetik($nilai);
     }
 
     /**

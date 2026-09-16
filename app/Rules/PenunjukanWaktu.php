@@ -66,8 +66,25 @@ use Illuminate\Contracts\Validation\ValidationRule;
  */
 class PenunjukanWaktu implements ValidationRule
 {
-    /** Keempat kotak seperti tercetak di lembar master (`J | M | S | 0.001S`). */
-    public const KOTAK = ['jam', 'menit', 'detik', 'milidetik'];
+    /**
+     * Kotak seperti tercetak di lembar master (`J | M | S | 0.001S`).
+     *
+     * Kotak keempat punya DUA nama yang sah, dan itu disengaja: kertas
+     * FM-0512 mencetak `0.01 S` sementara master memakai milidetik. Stopwatch
+     * genggam kebanyakan berlayar 1/100 detik, jadi teknisi yang menyalin
+     * layar apa adanya mengetik dua digit — dan angka itu meleset 10× tanpa
+     * satu pun error kalau dibaca sebagai milidetik (jawaban lab 16 Sep 2026
+     * §3.1).
+     *
+     * Jalan keluarnya BUKAN menebak dari besar angkanya, melainkan satuan yang
+     * ditulis eksplisit di nama kotaknya: `milidetik` atau `sentidetik`.
+     * Lembar HP memilihnya dari resolusi alat sesi
+     * ([\App\Services\Calibration\Profiles\TimerStopwatchProfile]).
+     */
+    public const KOTAK = ['jam', 'menit', 'detik', 'milidetik', 'sentidetik'];
+
+    /** Dua nama kotak pecahan detik — cuma boleh salah satu per penunjukan. */
+    public const KOTAK_PECAHAN = ['milidetik', 'sentidetik'];
 
     /**
      * @param  bool  $bolehObjek  lembar ini dibaca per blok waktu (Timer/Stopwatch)
@@ -154,6 +171,20 @@ class PenunjukanWaktu implements ValidationRule
 
         if ($terisi === 0) {
             $fail('Kolom :attribute berbentuk objek tapi keempat kotaknya kosong.');
+
+            return;
+        }
+
+        // Dua nama untuk kotak yang sama, dua-duanya terisi: satuannya jadi
+        // tidak bisa ditentukan, dan menjumlahkan keduanya berarti mengarang.
+        $pecahan = array_filter(
+            array_map(static fn (string $k): mixed => $nilai[$k] ?? null, self::KOTAK_PECAHAN),
+            static fn ($v): bool => $v !== null && $v !== '',
+        );
+
+        if (count($pecahan) > 1) {
+            $fail('Kolom :attribute mengisi `milidetik` DAN `sentidetik` sekaligus. '
+                .'Pilih satu — namanya yang menentukan satuan kotak keempat.');
         }
     }
 }

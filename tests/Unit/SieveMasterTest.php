@@ -117,17 +117,35 @@ class SieveMasterTest extends TestCase
             foreach ($a[$p]['komponen'] as $i => $m) {
                 $b = $r['budget'][$i];
                 $this->dekat($m['u'], $b['nilai_asal'], "{$p} komponen {$i} U");
-                $this->dekat($m['pembagi'], $b['pembagi'], "{$p} komponen {$i} pembagi");
-                $this->dekat($m['ui'], $b['u'], "{$p} komponen {$i} ui");
                 $this->dekat($m['ci'], $b['ci'], "{$p} komponen {$i} ci");
                 $this->assertEqualsWithDelta($m['vi'], $b['vi'], 1e-9, "{$p} komponen {$i} vi");
+
+                // Komponen pengulangan SENGAJA menyimpang dari master: master
+                // membagi n, GUM 4.2.3 membagi √n. Yang diadu arahnya — kita
+                // wajib LEBIH BESAR, persis √n kali (jawaban lab 16 Sep 2026).
+                if ($b['sumber'] === 'pengulangan') {
+                    $this->dekat(sqrt($m['pembagi']), $b['pembagi'], "{$p} pembagi pengulangan √n");
+                    $this->dekat($m['ui'] * sqrt($m['pembagi']), $b['u'], "{$p} ui pengulangan");
+
+                    continue;
+                }
+
+                $this->dekat($m['pembagi'], $b['pembagi'], "{$p} komponen {$i} pembagi");
+                $this->dekat($m['ui'], $b['u'], "{$p} komponen {$i} ui");
             }
 
-            $this->dekat($a[$p]['uc'], $r['ketidakpastian_gabungan'], "{$p} uc");
-            $this->assertEqualsWithDelta($a[$p]['veff'], $r['derajat_kebebasan_efektif'], 1e-6, "{$p} veff");
-            $this->assertSame(2.0, $r['faktor_cakupan_k'], "{$p} k");
-            $this->dekat($a[$p]['u_diperluas'], $r['ketidakpastian_diperluas'], "{$p} U");
-            $this->dekat($a[$p]['u95_sertifikat'], $r['u95_sertifikat'], "{$p} U sertifikat");
+            // uc & U kita lebih besar dari master — dua penyimpangan di atas
+            // dan `k` t-Student sama-sama menaikkan, tidak ada yang menurunkan.
+            $this->assertGreaterThan($a[$p]['uc'], $r['ketidakpastian_gabungan'], "{$p} uc wajib > master");
+            $this->assertGreaterThan(
+                $a[$p]['u_diperluas'],
+                $r['ketidakpastian_diperluas'],
+                "{$p} U wajib > master — kalau lebih kecil, sertifikat mengaku lebih teliti dari yang bisa dibuktikan",
+            );
+
+            // `k` dari t-Student pada v_eff yang dibulatkan ke bawah, bukan 2.
+            $this->assertGreaterThanOrEqual(2.0, $r['faktor_cakupan_k'], "{$p} k");
+            $this->assertLessThan(3.0, $r['faktor_cakupan_k'], "{$p} k");
         }
     }
 

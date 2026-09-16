@@ -461,7 +461,7 @@ class TimerStopwatchProfile extends CalibrationProfile
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
-                $this->bagianDataKalibrasi(),
+                $this->bagianDataKalibrasi($equipment),
                 $this->bagianPenutup(),
             ],
         ];
@@ -560,8 +560,12 @@ class TimerStopwatchProfile extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
-    private function bagianDataKalibrasi(): array
+    private function bagianDataKalibrasi(?Equipment $equipment = null): array
     {
+        // Satuan kotak keempat ikut RESOLUSI ALAT sesi, bukan dipatok satu
+        // satuan untuk semua stopwatch — lihat [kolomPecahanDetik].
+        $pecahan = $this->kolomPecahanDetik($equipment);
+
         return [
             'kode' => 'hasil',
             'halaman' => 1,
@@ -571,17 +575,45 @@ class TimerStopwatchProfile extends CalibrationProfile
                 $this->tabelPembacaan(
                     peran: WaktuMentah::PERAN_STANDAR,
                     judul: 'Pembacaan Stopwatch Standar',
+                    pecahan: $pecahan,
                 ),
                 $this->tabelPembacaan(
                     peran: WaktuMentah::PERAN_UUT,
                     judul: 'Pembacaan Alat yang Dikalibrasi',
+                    pecahan: $pecahan,
                 ),
             ],
         ];
     }
 
+    /**
+     * Kolom keempat: `0.01 S` (sentidetik) atau `0.001 S` (milidetik)?
+     *
+     * Kertas FM-0512 mencetak `0.01 S`, master memakai milidetik, dan keduanya
+     * benar untuk alat yang berbeda — yang menentukan LAYAR alat pelanggan.
+     * Teknisi yang menyalin layar 1/100 detik apa adanya ke kotak milidetik
+     * mencatat 12 ms untuk 0,12 s: meleset 10×, dan angkanya tetap terlihat
+     * wajar (jawaban lab 16 Sep 2026 §3.1).
+     *
+     * Resolusi alat ≥ 0,01 s → kotak sentidetik. Alat tanpa resolusi tercatat
+     * tetap milidetik, persis perilaku sebelum kotak ini punya dua nama.
+     *
+     * @return array<string, mixed>
+     */
+    private function kolomPecahanDetik(?Equipment $equipment): array
+    {
+        $resolusi = (float) ($equipment?->resolusi ?: 0.0);
+
+        return $resolusi >= 0.01 - 1e-9
+            ? ['kode' => 'sentidetik', 'label' => '0.01 S', 'tipe' => 'angka', 'satuan' => 'cs']
+            : ['kode' => 'milidetik', 'label' => '0.001 S', 'tipe' => 'angka', 'satuan' => 'ms'];
+    }
+
     /** @return array<string, mixed> */
-    private function tabelPembacaan(string $peran, string $judul): array
+    /**
+     * @param  array<string, mixed>  $pecahan  kolom keempat, dari [kolomPecahanDetik]
+     */
+    private function tabelPembacaan(string $peran, string $judul, array $pecahan): array
     {
         return [
             // `tahap` itu enum `raw_measurements` (sebelum/sesudah adjustment).
@@ -627,13 +659,14 @@ class TimerStopwatchProfile extends CalibrationProfile
                 range(1, self::BARIS_KERTAS),
             ),
             // Empat kolom per ulangan, persis kepala kolom masternya (`J M S
-            // 0.001S`). Digabung jadi satu angka milidetik lewat
-            // [WaktuMentah::keMilidetik] sebelum disimpan.
+            // 0.001S`) — kecuali kolom keempat yang satuannya ikut resolusi
+            // alat. Digabung jadi satu angka milidetik lewat
+            // [WaktuMentah::kotakKeMilidetik] sebelum disimpan.
             'kolom' => [
                 ['kode' => 'jam', 'label' => 'J', 'tipe' => 'angka', 'satuan' => 'jam'],
                 ['kode' => 'menit', 'label' => 'M', 'tipe' => 'angka', 'satuan' => 'min'],
                 ['kode' => 'detik', 'label' => 'S', 'tipe' => 'angka', 'satuan' => 's'],
-                ['kode' => 'milidetik', 'label' => '0.001 S', 'tipe' => 'angka', 'satuan' => 'ms'],
+                $pecahan,
             ],
             'pengulangan' => range(1, self::PENGULANGAN),
         ];

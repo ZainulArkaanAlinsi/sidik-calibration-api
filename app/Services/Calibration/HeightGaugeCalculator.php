@@ -148,18 +148,19 @@ class HeightGaugeCalculator
     /**
      * Blok 1 — Paralelisme Ujung Scriber, tingkat SESI.
      *
-     * ## `STDEV(Max; Min)` itu bukan salah ketik kami
+     * ## `Max − Min`, sesudah lab menjawab §5 (16 Sep 2026)
      *
      * Master menulis `Hasil = STDEV(Max; Min)` — simpangan baku atas DUA angka,
-     * yang secara aljabar `|Max − Min| / √2`, bukan `Max − Min`. Di sesi contoh
-     * 0,002 jadi 0,0014142.
+     * yang secara aljabar `|Max − Min| / √2`: selalu 29 % lebih kecil dari
+     * rentangnya. Paralelisme menurut ISO 1101 adalah RENTANG, yaitu jarak dua
+     * bidang sejajar yang mengapit permukaannya, jadi pembagi √2 itu tidak
+     * punya dasar.
      *
-     * Ini kejanggalan METODE, jadi ditiru apa adanya dan diangkat sebagai
-     * pertanyaan lab §5 — bukan dibetulkan diam-diam. Membetulkannya ke
-     * `Max − Min` membuat angka yang tercetak MEMBESAR (0,0014142 → 0,002),
-     * yang arahnya aman, tapi dia tetap mengubah kriteria kelulusan yang sudah
-     * dipakai lab: batasnya ≤ 0,01 mm, dan dua rumus itu melewati batas pada
-     * sebaran yang berbeda.
+     * Sampai 15 Sep 2026 rumus master ditiru apa adanya, dan itu meluluskan
+     * alat yang seharusnya gagal: pita 0,0100–0,0141 mm lolos batas 0,01 mm
+     * cuma karena dibagi √2. Ini satu-satunya penyimpangan Height Gauge yang
+     * arah salahnya MERUGIKAN penerima sertifikat, jadi begitu lab menjawab,
+     * yang dipakai `Max − Min` (sesi contoh 0,0014142 → 0,002).
      *
      * Blok ini TIDAK masuk budget dan TIDAK melahirkan titik ukur. Hasil
      * "Not Good" juga tidak menahan penerbitan — itu hasil ukur, bukan cacat
@@ -183,11 +184,8 @@ class HeightGaugeCalculator
         $maks = max($nilai);
         $min = min($nilai);
         $batas = (float) $this->tabel()->konstanta()['batas_paralelisme_mm'];
-        // STDEV atas dua angka — lihat docblock. Dihitung lewat [simpanganBaku]
-        // yang sama dengan sisa lembar ini, bukan lewat `abs($maks - $min) /
-        // M_SQRT2`: dua tulisan untuk satu rumus berarti satu di antaranya
-        // bakal ketinggalan waktu lab menjawab pertanyaan §5.
-        $hasil = $this->simpanganBaku([$maks, $min]);
+        // Rentang, bukan `STDEV(Max; Min)` master — lihat docblock.
+        $hasil = $maks - $min;
 
         return [
             'maks' => $maks,

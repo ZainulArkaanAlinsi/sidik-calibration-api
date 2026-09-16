@@ -99,6 +99,33 @@ class WaktuMentah
     }
 
     /**
+     * Satu penunjukan `{jam, menit, detik, milidetik|sentidetik}` → milidetik.
+     *
+     * Kotak keempat boleh bernama `sentidetik` (1/100 detik, seperti layar
+     * stopwatch genggam dan kertas FM-0512) — kalau begitu isinya dikali 10.
+     * SATUANNYA DARI NAMA KOTAK, bukan dari besar angkanya: `12` itu penunjukan
+     * yang sah di kedua satuan, jadi tebakan apa pun di sini bakal meleset 10×
+     * pada sebagian sesi tanpa satu pun error (jawaban lab 16 Sep 2026 §3.1).
+     *
+     * @param  array<string, mixed>  $kotak
+     */
+    public static function kotakKeMilidetik(array $kotak): float
+    {
+        $sentidetik = $kotak['sentidetik'] ?? null;
+
+        $pecahan = $sentidetik !== null && $sentidetik !== ''
+            ? ((float) $sentidetik) * 10.0
+            : (float) ($kotak['milidetik'] ?? 0);
+
+        return self::keMilidetik(
+            (int) ($kotak['jam'] ?? 0),
+            (int) ($kotak['menit'] ?? 0),
+            (float) ($kotak['detik'] ?? 0),
+            $pecahan,
+        );
+    }
+
+    /**
      * @param  Collection<int, RawMeasurement>  $baris
      * @return list<float>
      */

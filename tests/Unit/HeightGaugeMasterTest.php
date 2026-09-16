@@ -156,7 +156,15 @@ class HeightGaugeMasterTest extends TestCase
         $this->assertNull((new HeightGaugeCalculator)->totalNominal([250.0]));
     }
 
-    public function test_paralelisme_meniru_stdev_max_min_master(): void
+    /**
+     * Paralelisme = RENTANG (ISO 1101), bukan `STDEV(Max; Min)` master.
+     *
+     * Lab menjawab §5 pada 16 Sep 2026. Pembagi √2 milik master membuat hasil
+     * selalu 29 % lebih kecil dari rentangnya, dan itu MELULUSKAN alat yang
+     * seharusnya gagal — satu-satunya penyimpangan Height Gauge yang arah
+     * salahnya merugikan penerima sertifikat.
+     */
+    public function test_paralelisme_memakai_rentang_bukan_stdev_master(): void
     {
         $f = self::fixture();
         $hasil = (new HeightGaugeCalculator)->paralelisme(array_map('floatval', $f['paralelisme_mm']));
@@ -164,14 +172,21 @@ class HeightGaugeMasterTest extends TestCase
         $this->assertNotNull($hasil);
         $this->assertEqualsWithDelta(0.002, $hasil['maks'], 1e-12);
         $this->assertEqualsWithDelta(0.0, $hasil['min'], 1e-12);
-        $this->assertEqualsWithDelta(
+        $this->assertEqualsWithDelta(0.002, $hasil['hasil'], self::TOLERANSI, 'Max − Min');
+
+        // Wajib LEBIH BESAR dari master: kalau tidak, pembagi √2-nya balik.
+        $this->assertGreaterThan(
             (float) $f['_acuan_master']['paralelisme_hasil_mm'],
             $hasil['hasil'],
-            self::TOLERANSI,
-            'Paralelisme master `STDEV(Max; Min)` = 0,0014142 — BUKAN `Max − Min` = 0,002. '
-            .'Kejanggalan metode yang ditiru; lihat pertanyaan lab §5.',
+            'Master `STDEV(Max; Min)` = 0,0014142; rentangnya 0,002.',
         );
-        $this->assertTrue($hasil['lulus'], 'Batas paralelisme master ≤ 0,01 mm, dan 0,0014142 lulus.');
+        $this->assertTrue($hasil['lulus'], '0,002 mm masih di dalam batas 0,01 mm.');
+
+        // Pita yang dulu lolos HANYA karena dibagi √2 sekarang gagal — itu
+        // seluruh alasan perubahan ini.
+        $duluLolos = (new HeightGaugeCalculator)->paralelisme([0.0, 0.012]);
+        $this->assertNotNull($duluLolos);
+        $this->assertFalse($duluLolos['lulus'], '0,012 mm > batas 0,01 mm, walau STDEV-nya 0,0085.');
     }
 
     public function test_paralelisme_kurang_dari_dua_pembacaan_balik_null(): void
