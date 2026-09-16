@@ -3483,6 +3483,59 @@ Flowmeter CMC, Height Gauge §6, Micrometer 095-CAL-324, Suhu C-12/C-13, nomor m
 satuan Thermohygro). Itu prosedur Pekerjaan Tidak Sesuai ISO/IEC 17025 §7.10 + sertifikat pengganti
 §7.8.8, bukan pekerjaan kode.
 
+## §33 — Paket keputusan Manajer Teknis, Bagian 1 dikerjakan — 16 Sep 2026
+
+Sumbernya `jawaban.md` + paket keputusan MT yang dikirim pemilik proyek. Formulir parafnya masih
+kosong; yang dipakai sebagai dasar **instruksi pemilik proyek** ("terapkan sekarang"), dan tiap
+perubahan mencatat itu di jejak auditnya sendiri: *"disetujui pemilik proyek 16 Sep 2026, paraf
+Manajer Teknis menyusul"*. Paraf MT tetap harus turun — dia catatan validasi metode
+(ISO/IEC 17025 §7.2.2), bukan formalitas.
+
+Ketujuh butir ini MENGECILKAN U, jadi sebelumnya ditahan aturan emas proyek. Yang berubah bukan
+aturannya melainkan dasarnya: aturan itu berbunyi "U tidak boleh turun **tanpa dasar tertulis dan
+persetujuan**", bukan "U tidak boleh turun".
+
+### Yang mendarat
+
+| # | Butir | Sifat kesalahan | Perubahan angka |
+|---|---|---|---|
+| 1 | A-1 pembagi √(√3) | `U = N/SQRT(Q)` padahal `Q` sudah berisi pembagi — 3^¼ bukan pembagi distribusi mana pun (GUM 4.3.7) | TITS AC Pick Up 0,15197 → 0,11547; Uc measure 0,3553 → 0,3351; Enclosure Recorder Uc 0,59543 → 0,59535; Thermohygro tiga grup bergeser |
+| 2 | B-1 drift ganda TITS Source | Baris 22 menambah drift Constant Type N lewat alamat MUTLAK, di luar baris drift kalibrator yang benar (GUM 5.1) | Uc sesi contoh 0,5761 → 0,3600; U95 dilaporkan TETAP 1,2 (lantai CMC menang) |
+| 3 | T2 Timbangan `U/k` | `U of Correction` itu ketidakpastian DIPERLUAS, masuk budget Weighing sebagai baku (GUM 4.3.3, EURAMET cg-18 §7). Master: kg mentah, gram ÷k, substitusi ÷√3 | Weighing kg titik 1 uc 0,02130 → 0,01293 |
+| 5 | Drift `/12` → `/365` | Komponen mm/tahun (atau µm/tahun) dikali umur berSATUAN HARI | Height Gauge U 0,015668 → 0,015499; Dial & Jangka Sorong komponen drift ~30× lebih kecil, U95 umumnya tertutup lantai CMC. Depth Jangka Sorong tidak tersentuh — masternya memang tanpa faktor umur |
+| 6 | Dial §1 √5 → √6 | `s/√n` dengan n = bacaan yang DIRATA-RATA per titik; kertas FM-0526 Rev.3 memungut 6 (UP×3 + DOWN×3), `vi` = 10 − 1 = 9 | U95 sesi contoh 0,008811 → 0,008642 |
+| 7 | Pita CMC Termometer Gelas | Pita bertumpuk di batasnya dimenangkan pita BAWAH — ikut lampiran LK-285-IDN no. 4 dan dua alat saudaranya (`orderBy('range_max')`) | Nol hari ini; berlaku di titik batas 100 °C |
+
+**Syarat butir 6 dipenuhi di kode, bukan di kertas.** UP & DOWN cuma boleh digabung sebagai
+pengulangan kalau histeresisnya dinilai sendiri, jadi `DialIndicatorCalculator` sekarang menerbitkan
+komponen ke-11 `histeresis`: setengah-lebar |rata UP − rata DOWN| terbesar sesi, distribusi persegi.
+Nol berarti "tidak ada histeresis terukur", bukan "tidak diperiksa".
+
+### Butir 4 (T5 silang-kabel Timbangan) — DICOBA lalu DIKEMBALIKAN
+
+Ini satu-satunya butir yang tidak bisa diterapkan seperti tertulis, dan alasannya terukur: waktu
+`K6`/`K7` dibaca dari kolomnya sendiri, kolom STDEV **Middle** workbook substitusi ternyata seragam
+— simpangan bakunya 2,7·10⁻¹³, jadi komponen `Repeatability MID-range` praktis LENYAP dari budget
+(0,0707 → ~0).
+
+Itu menukar angka yang salah dengan komponen yang hilang, dan komponen hilang adalah kelas kegagalan
+paling mahal di repo ini: nol error, U-nya cuma mengecil. Rujukan master tetap ditiru sampai lab
+menjawab satu pertanyaan baru: **kolom Middle sesi substitusi itu memang tidak diukur, atau
+salinannya rusak?** Kalau tidak diukur, yang benar bukan membaca kolomnya melainkan memblokir
+titiknya. Alasannya ditulis di `TimbanganCalculator` supaya tidak "dibetulkan" balik tanpa membaca.
+
+### Test master: dari "sama dengan master" ke "arahnya benar"
+
+Belasan test master beralih dari mengadu nilai ke mengadu ARAH berikut batas bawahnya (mis. "uc
+wajib < master TAPI > 0,9 × master"). Batas bawah itu bukan hiasan: tanpa dia, komponen yang HILANG
+lolos sebagai "turun tipis" — persis yang menangkap butir 4 di atas.
+
+### Berlaku maju
+
+Sertifikat lama tidak diterbitkan ulang: versi lamanya mencetak U yang lebih BESAR — konservatif,
+tidak merugikan pelanggan, dan ILAC P14 tidak melarang U di atas CMC. Yang perlu dicatat lab: nomor
+revisi master & FORM VALIDASI, plus paraf MT di formulir paket keputusan.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

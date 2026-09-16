@@ -67,6 +67,12 @@ class JangkaSorongCalculator
 {
     public const GRUP = ['outside', 'inside', 'depth'];
 
+    /**
+     * Pembagi umur drift: **365 hari**, bukan 12 seperti master.
+     * Paket keputusan butir 5, 16 Sep 2026 — lihat komponen drift di [budget].
+     */
+    public const PEMBAGI_UMUR_HARI = 365.0;
+
     private ?GumCalculator $gum = null;
 
     private ?TabelStandarJangkaSorong $tabel = null;
@@ -413,8 +419,12 @@ class JangkaSorongCalculator
         $ciSuhu = $lMaks * (float) $k['u_alpha_caliper_checker_per_c'];
         $ciMuai = $lMaks * $theta;
 
+        // Umur dibagi 365 HARI, bukan 12 seperti master: komponennya µm/tahun
+        // sementara selisih tanggalnya hari. Paket keputusan butir 5,
+        // 16 Sep 2026 (disetujui pemilik proyek; paraf MT menyusul). U95
+        // tercetak umumnya tertutup lantai CMC.
         $drift = ((float) $k['drift_a_um'] + (float) $k['drift_b_um_per_mm'] * $lMaks) / 1000
-            * ($umurHari / (float) $k['drift_pembagi_umur']);
+            * ($umurHari / self::PEMBAGI_UMUR_HARI);
 
         $kepingMaks = max(array_map(static fn (array $t): int => max(1, count($t['nominal'])), $dihitung));
 

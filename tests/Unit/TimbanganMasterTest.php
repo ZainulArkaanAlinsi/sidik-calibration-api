@@ -130,8 +130,21 @@ class TimbanganMasterTest extends TestCase
                 $rusak = self::SEL_MASTER_RUSAK[$tag.':'.($i + 1)] ?? null;
 
                 if ($rusak !== null) {
-                    // Titik ini SENGAJA beda — yang ditegakkan cuma bahwa
-                    // hitungan kita LEBIH BESAR (arah aman), bukan sama.
+                    // Titik ini SENGAJA beda dari master. Arah yang ditegakkan
+                    // tergantung budget-nya:
+                    //
+                    //  - KOREKSI: master rusak, hitungan kita wajib lebih BESAR.
+                    //  - PENIMBANGAN: sejak butir 3 (U of Correction ÷k,
+                    //    16 Sep 2026) budget ini memang lebih KECIL di varian
+                    //    kg & substitusi, jadi arahnya berbalik. Yang dijaga
+                    //    tetap ada batasnya — bukan bebas turun.
+                    if ($nama === 'penimbangan' && $tag !== 'gram') {
+                        $this->assertLessThan((float) $harap['U'], (float) $t[$kU], "{$tag} titik ".($i + 1).' U penimbangan');
+                        $this->assertGreaterThan((float) $harap['U'] * 0.5, (float) $t[$kU], "{$tag} titik ".($i + 1).' U penimbangan turun terlalu jauh');
+
+                        continue;
+                    }
+
                     $this->assertGreaterThan(
                         (float) $harap['U'] * (1 - self::TOLERANSI),
                         (float) $t[$kU],
@@ -150,6 +163,24 @@ class TimbanganMasterTest extends TestCase
 
                 foreach ($t[$kBudget] as $j => $komp) {
                     $m = $harap['komponen'][$j];
+
+                    // `Uncertainty of Correction` SENGAJA menyimpang sejak
+                    // 16 Sep 2026 (butir 3 paket keputusan, disetujui pemilik
+                    // proyek): `ui = U/k` di ketiga varian, bukan mentah (kg)
+                    // atau ÷√3 (substitusi). GUM 4.3.3 — komponen masuk budget
+                    // sebagai ketidakpastian BAKU. Yang diadu arahnya: varian
+                    // yang dulu memakai pembagi yang salah wajib jadi LEBIH
+                    // KECIL, dan varian gram (yang sudah benar) tetap sama.
+                    if (str_contains((string) $komp['keterangan'], 'Uncertainty of Correction') && $tag !== 'gram') {
+                        $this->assertLessThan(
+                            (float) $m['ui'] * (float) ($m['ci'] ?: 1),
+                            $komp['u'] * $komp['ci'],
+                            "{$tag} titik ".($i + 1)." {$nama}: U of Correction wajib < master sesudah ÷k.",
+                        );
+
+                        continue;
+                    }
+
                     $this->dekat(
                         $komp['u'] * $komp['ci'],
                         (float) $m['ui'] * (float) ($m['ci'] ?: 1),
@@ -161,6 +192,19 @@ class TimbanganMasterTest extends TestCase
                         "{$tag} titik ".($i + 1)." {$nama} vi [{$j}] {$komp['keterangan']}",
                     );
                     $diadu += 2;
+                }
+
+                // Budget PENIMBANGAN varian kg & substitusi ikut bergeser
+                // karena butir 3 (U of Correction ÷k). Yang diadu arahnya —
+                // wajib lebih kecil dari master, dan tidak boleh anjlok jauh
+                // (komponen yang hilang akan kelihatan di sini).
+                if ($nama === 'penimbangan' && $tag !== 'gram') {
+                    $this->assertLessThan($harap['uc'], $t[$kUc], "{$tag} titik ".($i + 1).' uc penimbangan wajib < master');
+                    $this->assertGreaterThan($harap['uc'] * 0.5, $t[$kUc], "{$tag} titik ".($i + 1).' uc penimbangan turun terlalu jauh');
+                    $this->assertLessThan($harap['U'], $t[$kU], "{$tag} titik ".($i + 1).' U penimbangan wajib < master');
+                    $diadu += 4;
+
+                    continue;
                 }
 
                 $this->dekat($t[$kUc], $harap['uc'], "{$tag} titik ".($i + 1)." {$nama} uc");

@@ -111,11 +111,12 @@ class HeightGaugeSertifikatTest extends TestCase
 
         $this->assertCount(1, array_unique($u95), 'U95 wajib SAMA di kesepuluh titik — dia lahir per sesi.');
 
-        // 0,0156260 mm — angka sesi kita, yang memakai umur drift dari TANGGAL
-        // KALIBRASI SESI (116 hari). Master mencetak 0,0156680 mm karena
-        // menghitungnya dari `NOW()`-nya sendiri (153,66 hari); selisihnya
-        // 0,27 % dan seluruhnya berasal dari tanggal, bukan pengukuran.
-        $this->assertEqualsWithDelta(0.0156260, $u95[0], self::TOLERANSI);
+        // 0,0154995 mm — angka sesi kita: umur drift dari TANGGAL KALIBRASI
+        // SESI (116 hari, master memakai `NOW()`-nya sendiri 153,66 hari) DAN
+        // pembagi umur 365 hari, bukan 12 (butir 5 paket keputusan, 16 Sep
+        // 2026). Master mencetak 0,0156680 mm; selisihnya seluruhnya dari
+        // tanggal & satuan, bukan dari pengukuran.
+        $this->assertEqualsWithDelta(0.0154995, $u95[0], self::TOLERANSI);
     }
 
     /**
