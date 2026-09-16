@@ -3435,6 +3435,54 @@ urutan server, jadi seluruh perbaikan ada di profil PHP.
   "Diameter dan Ketinggian Rangka" (3 baris) sudah cocok.
 - **Centrifuge/Tachometer FM-0515:** tidak diubah — lihat pertanyaan 4.
 
+## §32 — Jawaban lab dikerjakan jadi kode — 16 Sep 2026
+
+Sumbernya `jawaban.md` (16 Sep 2026): jawaban teknis atas ±270 butir pertanyaan lab. Yang dikerjakan
+di sini butir yang **menaikkan U atau membetulkan rujukan yang rusak** — arah yang tidak pernah
+membuat sertifikat mengaku lebih teliti dari yang bisa dibuktikan.
+
+### Sudah mendarat
+
+| Butir | Perubahan | Arah |
+|---|---|---|
+| §3.1 Timer | Kotak keempat boleh `sentidetik` (kertas FM-0512 `0.01 S`) selain `milidetik`; satuannya dari NAMA kotak, dipilih lembar dari resolusi alat sesi | — (mencegah salah 10×) |
+| §3.3 Turbidimeter & Conductivity | Resolusi per titik masuk budget, diambil yang TERBESAR antara tulisan teknisi dan master | U naik / tetap |
+| §3.4 Centrifuge & Tachometer | Tabel as-found (`sebelum_adjustment`) sesuai ISO/IEC 17025 §7.8.4.1; dicatat, tidak dihitung | — |
+| §14.1 Sieve | Pengulangan `s/√n`, bukan `s/n` (GUM 4.2.3) | U naik ≈2× |
+| §14.2 Sieve | `k` dari t-Student pada v_eff, bukan dipatok 2 | U naik |
+| §14.9 Sieve | Tiga sel Tabel_MPE dibetulkan ke ASTM E11 saat dibaca (Ø kawat 80 µm 0,56 → 0,056) | Deviasi kawat benar |
+| §11.5 Height Gauge | Paralelisme = `Max − Min` (ISO 1101), bukan `STDEV(Max;Min)` | Alat yang dulu lolos karena ÷√2 sekarang gagal |
+| §17.3 Termometer Gelas | Keterulangan standar ÷√n, sama dengan baris UUT di atasnya | U naik |
+| §17.5 Thermocouple | Komponen keterulangan yang master hitung tapi buang, sekarang masuk budget | U naik |
+| §16 TIDS D2 | U95 sensor Recorder dari tabel termokopel, bukan literal 0,14 | U naik |
+| §16 TIDS D3 | Drift Recorder dari `Tabel_Drift_Recorder`, bukan sel tabel KOREKSI (−0,2 — negatif) | U naik |
+| §2.9 TIDS D4 | Dua belas komponen dijumlah, bukan sembilan (`SUM` yang berhenti di baris 32) | U naik |
+| §8 T4 Timbangan | `ci` drift Mref dihitung (kapasitas ÷ nominal Mref); sesi master tetap 10 | Benar per sesi |
+
+Tiap penyimpangan dari master tetap melahirkan catatan audit yang menyebut angka versi master, dan
+test masternya sekarang menegakkan ARAH (kita wajib lebih besar), bukan kesamaan.
+
+### SENGAJA belum dikerjakan — semuanya MENGECILKAN U
+
+Aturan emas proyek: perbaikan yang mengecilkan U menunggu tanda tangan Manajer Teknis (jawaban.md
+§21 "Rapat 3"). Yang masuk daftar ini: A-1 √(√3) TITS/Thermohygro, B-1 drift ganda TITS, Timbangan
+T2 (`U/k`, kg 0,0425 → 0,0248) & T5, drift `/12 → /365` (Height Gauge, Dial, Jangka Sorong), dan
+Dial §1 (√6).
+
+**Micrometer §11 juga ditahan**, dan alasannya beda: satuan `ci` termalnya memang salah (mm di
+budget µm), tapi membetulkannya sendirian menaikkan U95 ke ~0,978 µm — DI ATAS pita CMC 0,87 µm —
+sementara `u` kedua komponennya juga belum benar (master memakai besaran itu sendiri sebagai
+ketidakpastiannya). `docs/analisis-pertanyaan-lab-micrometer.md` §11 menyebut dua angka yang cuma
+dimiliki lab: ketidakpastian pengukuran suhu Lab Dimensi, dan δα balok ukur vs rangka mikrometer.
+Membetulkan satu sisi saja menukar kesalahan kecil dengan kesalahan yang lebih besar.
+
+### Yang tetap milik lab
+
+Butir 🔴 di `jawaban.md` §2 — sertifikat yang sudah di tangan pelanggan (Anak Timbangan §1 & §12,
+Flowmeter CMC, Height Gauge §6, Micrometer 095-CAL-324, Suhu C-12/C-13, nomor metode Thermocouple,
+satuan Thermohygro). Itu prosedur Pekerjaan Tidak Sesuai ISO/IEC 17025 §7.10 + sertifikat pengganti
+§7.8.8, bukan pekerjaan kode.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
