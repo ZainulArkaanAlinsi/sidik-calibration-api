@@ -48,10 +48,10 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
         'Conductivity Meter',
         'Turbidimeter',
         'Refractometer',
-        // Chlorine masuk 16 Sep 2026: masternya mencetak dua U95 berbeda (Free
-        // 0,0910 · Total 0,0802). Sebelum itu lembar ini lolos cuma karena
-        // remark tiap titiknya kebetulan berbeda, bukan karena dijaga.
-        'Chlorine Meter',
+        // Chlorine SENGAJA tidak di sini — lihat catatan di ujung
+        // `ChlorineProfile`: bentuk per-titik menumbuhkan sertifikatnya sampai
+        // sisa ruangnya nol, dan angkanya sudah benar lewat pengelompokan
+        // remark.
     ];
 
     public function test_tiap_titik_analitik_nyetak_u95_nya_sendiri(): void
@@ -165,7 +165,7 @@ class U95PerTitikInstrumenAnalitikTest extends TestCase
         // Tanpa ini, seeder yang berhenti membuat salah satu alat bikin test-nya
         // hijau tanpa menguji apa pun — gagal SUNYI, persis yang paling mahal.
         $this->assertSame(
-            ['Chlorine Meter', 'Conductivity Meter', 'Conductivity Meter', 'Refractometer', 'Turbidimeter', 'pH Meter'],
+            ['Conductivity Meter', 'Conductivity Meter', 'Refractometer', 'Turbidimeter', 'pH Meter'],
             $diperiksa,
             'Daftar alat analitik yang kesapu berubah. Nama yang HILANG = alat itu '
             .'berhenti diuji; nama BARU = seeder nambah sesi, perbarui daftarnya.',

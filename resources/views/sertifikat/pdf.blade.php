@@ -284,6 +284,18 @@
         */
         .cadangan-footer { height: 1.3cm; }
 
+        /*
+          Kotak UJI, cuma dirender waktu `SertifikatSatuHalaman` mencari tingkat
+          kerapatan — tidak pernah ikut di PDF yang diterbitkan.
+
+          Gunanya menolak tingkat yang muat "pas": lembar bersisa nol piksel
+          jatuh ke halaman dua begitu ada satu baris tambahan (nama pelanggan
+          lebih panjang, satu titik ukur lagi), sementara headernya tetap
+          mencetak `Page : 1 of 1`. Dengan kotak ini tingkat yang dipilih wajib
+          menyisakan ruang sebesar dia.
+        */
+        .cadangan-uji { height: 6px; }
+
         body.longgar-1 { font-size: 12.5px; line-height: 1.45; }
         body.longgar-1 .kop-gambar { margin-bottom: 14px; }
         body.longgar-1 .judul { font-size: 18px; margin: 4px 0 16px; }
@@ -1408,6 +1420,11 @@
     <div class="kode-dokumen">{{ $isi($footer['kode_dokumen'] ?? null) }}</div>
     @if ($longgar !== 0)
         <div class="cadangan-footer"></div>
+    @endif
+    {{-- Kotak uji ruang sisa — cuma waktu tingkat kerapatan sedang dicari,
+         tidak pernah ikut ke PDF terbit. Lihat `.cadangan-uji`. --}}
+    @if ($ujiCadangan ?? false)
+        <div class="cadangan-uji"></div>
     @endif
 @if ($web ?? false)
     </div>
