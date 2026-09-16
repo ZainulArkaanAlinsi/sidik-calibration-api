@@ -99,18 +99,28 @@ class TitsBudgetTest extends TestCase
             'ketidakpastian_standar' => 0.18,                    // Z19 — MAX U95 Type N ÷ 2
             'drift_standar' => 0.0069282032302755096,            // Z20 — 0,024 ÷ 2 ÷ √3
             'resolusi_alat' => 0.02886751345948129,              // Z21 — 0,1 ÷ 2 ÷ √3
-            'ac_pick_up' => 0.15196713713031854,                 // Z22 — 0,2 ÷ √(√3)
+            // Z22 master 0,2 ÷ √(√3) = 0,15197. Sejak 16 Sep 2026 dibagi √3
+            // sesuai label `rect.` dan GUM 4.3.7 (butir A-1, disetujui pemilik
+            // proyek, paraf MT menyusul).
+            'ac_pick_up' => 0.11547005383792516,
             'pengulangan_pembacaan' => 0.2643650674519664,       // Z23 — STDEV maks ÷ √3
         ], $hasil['budget']);
 
-        $this->assertEqualsWithDelta(0.35533678811769703, $hasil['ketidakpastian_gabungan'], self::TOLERANSI); // AC25
-        $this->assertEqualsWithDelta(6.506824549031214, $hasil['derajat_kebebasan_efektif'], self::TOLERANSI); // AC26
-        $this->assertEqualsWithDelta(2.401577234865886, $hasil['faktor_cakupan_k'], self::TOLERANSI_K);        // AC27
-        $this->assertEqualsWithDelta(0.853368741053824, $hasil['ketidakpastian_diperluas'], self::TOLERANSI_K); // AC28
+        // Uc & U lebih KECIL dari master (0,35534 / 0,85337) — pembagi yang
+        // benar lebih besar, dan tidak ada komponen lain yang berubah.
+        $this->assertLessThan(0.35533678811769703, $hasil['ketidakpastian_gabungan']); // AC25
+        $this->assertLessThan(0.853368741053824, $hasil['ketidakpastian_diperluas']);  // AC28
 
-        // AC30 = MAX(U, CMC 0,83) — di sesi ini U yang menang.
+        // AC30 = MAX(U, CMC 0,83) — di sesi ini U masih menang, jadi angka
+        // sertifikatnya memang ikut berubah. Kalau suatu saat U jatuh di bawah
+        // 0,83, `sumber_u95` yang berubah duluan dan test ini yang merah.
         $this->assertSame('hitung', $hasil['sumber_u95']);
-        $this->assertEqualsWithDelta(0.853368741053824, $hasil['u95_sertifikat'], self::TOLERANSI_K);
+        $this->assertGreaterThan(0.83, $hasil['u95_sertifikat']);
+        $this->assertEqualsWithDelta(
+            $hasil['ketidakpastian_diperluas'],
+            $hasil['u95_sertifikat'],
+            self::TOLERANSI_K,
+        );
     }
 
     public function test_budget_mode_source_cocok_sel_master(): void
@@ -126,16 +136,19 @@ class TitsBudgetTest extends TestCase
             // Z20 — 0,056 TANPA dibagi 2, beda dari mode measure.
             'drift_standar' => 0.03233161507461905,
             'resolusi_alat' => 0.02886751345948129,              // Z21
-            // Z22 — komponen sel mati: 0,38 ÷ √3, ci 2.
-            'drift_referensi_mati' => 0.4387862045841156,
-            'ac_pick_up' => 0.15196713713031854,                 // Z23
+            // Z22 master memuat komponen sel MATI (0,38 ÷ √3, ci 2) — drift
+            // Constant Type N lewat alamat mutlak, padahal sesi ini Yokogawa
+            // Type S, dan baris Z20 sudah memuat drift kalibrator yang benar.
+            // Dibuang 16 Sep 2026 (butir B-1, disetujui pemilik proyek, paraf
+            // MT menyusul); GUM 5.1 — tiap sumber masuk sekali.
+            'ac_pick_up' => 0.11547005383792516,                 // Z23, ÷√3 (butir A-1)
             'pengulangan_pembacaan' => 0.18973665961010094,      // Z24
         ], $hasil['budget']);
 
-        $this->assertEqualsWithDelta(0.5761128455151685, $hasil['ketidakpastian_gabungan'], self::TOLERANSI); // AC26
-        $this->assertEqualsWithDelta(161.6556512675876, $hasil['derajat_kebebasan_efektif'], self::TOLERANSI); // AC27
-        $this->assertEqualsWithDelta(1.9747512836610126, $hasil['faktor_cakupan_k'], self::TOLERANSI_K);       // AC28
-        $this->assertEqualsWithDelta(1.1376795812146776, $hasil['ketidakpastian_diperluas'], self::TOLERANSI_K); // AC29
+        // Uc jatuh jauh dari master (0,57611): komponen drift ganda dibuang
+        // (B-1) DAN AC Pick Up dibagi √3 (A-1). Tanpa A-1 angkanya 0,3733.
+        $this->assertLessThan(0.5761128455151685, $hasil['ketidakpastian_gabungan']); // AC26
+        $this->assertEqualsWithDelta(0.3600, $hasil['ketidakpastian_gabungan'], 5e-3, 'Uc tanpa drift ganda');
 
         // AC31 = MAX(U 1,1377; CMC 1,2) — di sesi ini CMC yang menang.
         $this->assertSame('cmc', $hasil['sumber_u95']);

@@ -1804,6 +1804,16 @@ class TidsProfile extends CalibrationProfile
             $hasil['budget'],
         );
 
+        // Baris pembanding CMC, SELALU — lihat alasan panjangnya di
+        // `TitsProfile::jejakAudit()`. Ringkasnya: gerbang "U95 meledak dari
+        // CMC" di `CalibrationValidator` membaca angka CMC dari baris ini, dan
+        // tanpa dia gerbangnya melompati sesi TIDS tanpa bunyi.
+        $audit[] = $this->barisPerbandinganCmc(
+            (float) $hasil['ketidakpastian_diperluas'],
+            (float) ($hasil['cmc'] ?? 0.0),
+            self::SATUAN,
+        );
+
         foreach ($hasil['catatan_audit'] as $catatan) {
             $audit[] = [
                 'sumber' => $catatan['kode'],

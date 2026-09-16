@@ -64,6 +64,12 @@ use DateTimeInterface;
  */
 class DialIndicatorCalculator
 {
+    /**
+     * Pembagi umur drift: **365 hari**, bukan 12 seperti `K10` master.
+     * Paket keputusan butir 5, 16 Sep 2026 — lihat komponen drift di [budget].
+     */
+    public const PEMBAGI_UMUR_HARI = 365.0;
+
     private ?GumCalculator $gum = null;
 
     private ?TabelStandarDialIndicator $tabel = null;
@@ -243,7 +249,26 @@ class DialIndicatorCalculator
         $lMaks = max(array_map(static fn (array $t): float => (float) $t['total_nominal'], $dihitung));
         $kepingMaks = max(array_map(static fn (array $t): int => count($t['keping']), $dihitung));
 
-        $budget = $this->budget($konteks, $lMaks, $kepingMaks, $theta, $deltaTheta, $ditolak);
+        // Dua besaran sesi yang lahir dari pembacaan titik, bukan dari tabel:
+        // berapa bacaan yang dirata-rata per titik (pembagi keterulangan,
+        // butir 6) dan histeresis terukur (syarat butir 6).
+        $bacaanPerTitik = max(array_map(
+            static fn (array $t): int => count($t['pembacaan']),
+            $dihitung ?: [['pembacaan' => []]],
+        )) ?: 6;
+
+        $budget = $this->budget(
+            [
+                ...$konteks,
+                'bacaan_per_titik' => $bacaanPerTitik,
+                'histeresis_mm' => $this->histeresisTerbesar($dihitung),
+            ],
+            $lMaks,
+            $kepingMaks,
+            $theta,
+            $deltaTheta,
+            $ditolak,
+        );
         $agregat = $this->gum()->agregasiBudget(array_map(
             static fn (array $b): array => ['u' => $b['u'], 'ci' => $b['ci'], 'vi' => $b['vi']],
             $budget,
@@ -316,6 +341,44 @@ class DialIndicatorCalculator
      * @param  list<array{titik_ke: int, alasan: string}>  $ditolak
      * @return list<array{sumber: string, keterangan: string, distribusi: string, u: float, ci: float, vi: float, satuan: string}>
      */
+    /**
+     * Histeresis terbesar sesi: |rata-rata UP − rata-rata DOWN| per titik.
+     *
+     * Kertas FM-0526 Rev.3 memungut UP X1..X3 lalu DOWN X1..X3 dalam urutan
+     * itu, jadi separuh pertama pembacaan tiap titik UP dan separuh kedua
+     * DOWN. Titik berjumlah bacaan GANJIL tidak berpasangan — dilewati, bukan
+     * dibelah sembarangan.
+     *
+     * Balik 0.0 kalau tidak ada titik berpasangan. Nol berarti "tidak ada
+     * histeresis terukur", dan komponennya tetap tercetak di budget supaya
+     * pembaca tahu hal ini dinilai.
+     *
+     * @param  list<array<string, mixed>>  $dihitung
+     */
+    private function histeresisTerbesar(array $dihitung): float
+    {
+        $maks = 0.0;
+
+        foreach ($dihitung as $t) {
+            $bacaan = $t['pembacaan'];
+            $n = count($bacaan);
+
+            if ($n < 2 || $n % 2 !== 0) {
+                continue;
+            }
+
+            $separuh = intdiv($n, 2);
+            $up = array_slice($bacaan, 0, $separuh);
+            $down = array_slice($bacaan, $separuh);
+
+            $maks = max($maks, abs(
+                (array_sum($up) / $separuh) - (array_sum($down) / $separuh)
+            ));
+        }
+
+        return $maks;
+    }
+
     public function budget(
         array $konteks,
         float $lMaks,
@@ -326,6 +389,13 @@ class DialIndicatorCalculator
     ): array {
         $k = $this->tabel()->konstanta();
         $akar3 = sqrt(3.0);
+
+        // Berapa bacaan yang dirata-rata per titik, dan berapa histeresis
+        // terukurnya — dua-duanya dititipkan `hitungSesi()` lewat `$konteks`.
+        // Bawaannya angka kertas FM-0526 (6 kotak) dan nol, supaya pemanggil
+        // lama (mis. test master yang menyusun konteksnya sendiri) tetap jalan.
+        $bacaanPerTitik = max(1, (int) ($konteks['bacaan_per_titik'] ?? 6));
+        $histeresis = max(0.0, (float) ($konteks['histeresis_mm'] ?? 0.0));
         $vi = (float) $k['vi_type_b'];
         $uAlpha = (float) $k['delta_alpha_per_c'] * (float) $k['u_alpha_pengali'];   // W22
 
@@ -382,25 +452,38 @@ class DialIndicatorCalculator
         }
 
         $kapasitas = (float) $konteks['kapasitas_mm'];
-        // `K10 = ((0,02 + 0,00025·L21)·1)/1000·((X11 − W13)/12)` — `/12` untuk
-        // selisih HARI ditiru, pertanyaan lab §2.
+        // `K10 = ((0,02 + 0,00025·L21)·1)/1000·((X11 − W13)/12)` — pembagi 12
+        // master TIDAK dipakai: selisih `X11 − W13` bersatuan HARI sementara
+        // komponennya µm/tahun, jadi yang benar /365. Dibetulkan 16 Sep 2026
+        // (paket keputusan butir 5, disetujui pemilik proyek; paraf Manajer
+        // Teknis menyusul). Komponen drift menyusut ~30×, dan U95 tercetak
+        // umumnya tertutup lantai CMC. Pembagi master ikut di jejak audit.
         $drift = ((float) $k['drift_a_um'] + (float) $k['drift_b_um_per_mm'] * $kapasitas)
             / 1000
-            * ($umurHari / (float) $k['drift_pembagi_umur']);
+            * ($umurHari / self::PEMBAGI_UMUR_HARI);
 
         $ciSuhu = $lMaks * $uAlpha;   // V8 = C61·K9
 
         return [
             [
                 'sumber' => 'pengulangan',
-                'keterangan' => 'Repeatability (blok Evaluation)',
+                'keterangan' => sprintf('Repeatability (blok Evaluation, ÷√%d)', $bacaanPerTitik),
                 'distribusi' => 't-student',
-                // `/√5`, `vi = 4` walau pembacaannya sepuluh — §1.
+                // `s` dari SEPULUH pembacaan Evaluation = keterulangan satu
+                // bacaan; pembaginya √n dengan n = jumlah bacaan yang
+                // DIRATA-RATA di tiap titik (GUM 4.2.3). Kertas FM-0526 Rev.3
+                // memungut 6 (UP×3 + DOWN×3) dan sistem merata-ratakan
+                // keenamnya, jadi n = 6 — master menulis 5 karena workbook-nya
+                // merata-rata lima kotak. `vi` = 10 − 1 = 9, bukan 4.
+                //
+                // Butir 6 paket keputusan 16 Sep 2026, disetujui pemilik
+                // proyek (paraf MT menyusul) dengan SYARAT histeresis dinilai
+                // terpisah — komponen `histeresis` di bawah yang memenuhinya.
                 'u' => $nUlang >= 2
-                    ? $this->simpanganBaku($praEvaluasi) / sqrt((float) $k['pengulangan_pembagi_n'])
+                    ? $this->simpanganBaku($praEvaluasi) / sqrt((float) $bacaanPerTitik)
                     : 0.0,
                 'ci' => 1.0,
-                'vi' => $nUlang >= 2 ? (float) $k['pengulangan_pembagi_n'] - 1 : 0.0,
+                'vi' => $nUlang >= 2 ? (float) ($nUlang - 1) : 0.0,
                 'satuan' => 'mm',
             ],
             [
@@ -485,6 +568,27 @@ class DialIndicatorCalculator
                 'ci' => $ciSuhu,   // V14 = V8
                 'vi' => $vi,
                 'satuan' => '°C',
+            ],
+            // Komponen KESEBELAS, sesudah sepuluh baris master — urutannya
+            // sengaja di belakang supaya baris master tetap sejajar indeksnya
+            // waktu diadu di `DialIndicatorMasterTest`.
+            //
+            // Syarat butir 6 paket keputusan: UP & DOWN cuma boleh digabung
+            // sebagai pengulangan kalau histeresisnya dinilai sendiri. Nilainya
+            // setengah-lebar selisih rata-rata UP−DOWN terbesar sesi ini.
+            // Nol berarti "tidak ada histeresis terukur" (lembar tanpa pasangan
+            // UP/DOWN), bukan "tidak diperiksa".
+            [
+                'sumber' => 'histeresis',
+                'keterangan' => sprintf(
+                    'Histeresis UP−DOWN %s mm (½ lebar, ÷√3)',
+                    self::angkaTampil($histeresis),
+                ),
+                'distribusi' => 'persegi',
+                'u' => ($histeresis / 2.0) / $akar3,
+                'ci' => 1.0,
+                'vi' => (float) $k['vi_type_b'],
+                'satuan' => 'mm',
             ],
         ];
     }
