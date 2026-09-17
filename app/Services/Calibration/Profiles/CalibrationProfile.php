@@ -112,6 +112,35 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Konversi nilai budget -> satuan alat pelanggan buat baris SERTIFIKAT.
+     *
+     * `null` = tidak ada konversi, dan itu jawaban buat hampir semua alat:
+     * budget-nya memang hidup dalam satuan yang sama dengan yang dicetak.
+     *
+     * Yang butuh ini cuma alat yang budget-nya SENGAJA dipindah ke satuan lain
+     * sebelum dihitung. Flowmeter satu-satunya sejauh ini: pembacaan m3/h,
+     * kg/h, GPM semuanya diubah ke Lpm dulu supaya satu mesin hitung melayani
+     * semua satuan. Yang tercetak untuk pelanggan harus balik ke satuan
+     * alatnya — master melakukan hal yang sama
+     * (`SERTIFIKAT!E26 = 'PERHITUNGAN FC'!D63 / DATABASE!$S$22`).
+     *
+     * Balikannya sengaja closure, bukan faktor: satuan berbasis massa butuh
+     * densitas fluida, dan densitas itu dibaca PER TITIK, bukan per sesi.
+     *
+     * Closure memulangkan `null` kalau nilainya tidak bisa dikonversi (mis.
+     * satuan massa tanpa densitas). Pemanggil WAJIB memperlakukan itu sebagai
+     * "jangan cetak angka", bukan jatuh diam-diam ke nilai budget — angka
+     * dalam satuan yang salah tanpa tanda apa pun persis bentuk kekeliruan
+     * yang bikin hook ini ada.
+     *
+     * @return array{satuan: string, ubah: \Closure(float, int): ?float}|null
+     */
+    public function cetakDalamSatuanAlat(CalibrationSession $sesi): ?array
+    {
+        return null;
+    }
+
+    /**
      * Keterangan kolom "Remark" buat titik ini — nama parameter atau judul
      * kelompoknya. `null` = titiknya nggak punya keterangan, kolomnya kosong.
      *
