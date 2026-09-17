@@ -5,12 +5,12 @@
 
 ---
 
-## Blok 0 — Tambahkan aturan modul pelanggan ke CLAUDE.md
+## Blok 0 — Tambahkan aturan modul pelanggan ke AGENTS.md
 
 ```
-Baca CLAUDE.md, docs/BACA-DULU-BACKEND.md, dan docs/pelanggan/03-SDD.md §2–§3.
+Baca AGENTS.md, docs/BACA-DULU-BACKEND.md, dan docs/pelanggan/03-SDD.md §2–§3.
 
-Tambahkan satu bagian baru di CLAUDE.md berjudul "Modul Pelanggan — aturan keras" yang merangkum:
+Tambahkan satu bagian baru di AGENTS.md berjudul "Modul Pelanggan — aturan keras" yang merangkum:
 1. Rute pelanggan hanya di routes/api_pelanggan.php, prefix api/pelanggan/v1.
 2. Controller/Request/Resource pelanggan hanya di namespace Pelanggan; Resource pelanggan tidak boleh memakai ulang Resource internal.
 3. customer_id tidak pernah diambil dari request; selalu dari KonteksPerusahaan.
@@ -18,7 +18,7 @@ Tambahkan satu bagian baru di CLAUDE.md berjudul "Modul Pelanggan — aturan ker
 5. Rute ber-parameter baru wajib punya kasus di IsolasiPerusahaanTest.
 6. Migrasi untuk pelanggan additive saja.
 
-Jangan ubah kode. Tunjukkan diff CLAUDE.md, lalu berhenti.
+Jangan ubah kode. Tunjukkan diff AGENTS.md, lalu berhenti.
 ```
 
 ## Blok 1 — M0-05: sinkron jadwal alat

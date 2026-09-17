@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 | API Pelanggan — /api/pelanggan/v1
 |--------------------------------------------------------------------------
 |
-| Berkas TERPISAH dari routes/api.php, dan itu aturan keras (CLAUDE.md §Modul
+| Berkas TERPISAH dari routes/api.php, dan itu aturan keras (AGENTS.md §Modul
 | Pelanggan poin 1). Begitu rute pelanggan bercampur dengan rute internal,
 | gerbang `role:` di sana jadi satu-satunya yang memisahkan dua dunia — dan itu
 | penjagaan yang terlalu tipis buat kerahasiaan antar pelanggan.

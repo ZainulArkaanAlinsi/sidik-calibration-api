@@ -287,7 +287,7 @@ tidak dibaca lagi, dan `env()` jatuh ke null tanpa satu pun error. Khusus di sin
 mahal — `fitur` yang jatuh ke null terbaca "mati", dan seluruh API pelanggan membalas
 503 di produksi tanpa ada yang salah di log.
 
-Tujuh kunci baru masuk **`.env.example` DAN `render.yaml`** (CLAUDE.md §9).
+Tujuh kunci baru masuk **`.env.example` DAN `render.yaml`** (AGENTS.md §9).
 `FITUR_PELANGGAN=false` di blueprint sesuai SDD §10: produksi mati sampai M7.
 
 **`GET /api/pelanggan/v1/app/status` sengaja DI LUAR sakelar itu** — satu-satunya.
@@ -378,7 +378,7 @@ Flutter, bukan dokumen ini. Contoh JSON di sana disalin dari
 REQ-AUTH-02 menulisnya lahir saat verifikasi. Nama & alamat perusahaan diketik di
 langkah daftar, dan satu-satunya tempat yang bisa menampungnya tabel itu —
 menundanya berarti menambah kolom baru di `users` cuma buat memarkir dua string,
-dan kolom baru itu pilihan terakhir (CLAUDE.md §Alur Kerja poin 4).
+dan kolom baru itu pilihan terakhir (AGENTS.md §Alur Kerja poin 4).
 
 Yang sebenarnya dijaga REQ-AUTH-02 — **admin tidak diganggu pengajuan dari email
 yang belum tentu milik si pendaftar** — tetap ditegakkan dua lapis, dan
@@ -517,7 +517,7 @@ jalan di 8.4 — diperiksa langsung: `levenshtein(str_repeat('a',300),
 str_repeat('b',300))` memulangkan `300`.
 
 Penjaganya **sengaja dipertahankan**: mencabutnya adalah perubahan perilaku, dan
-tempatnya bukan di dalam refactor (CLAUDE.md §Alur Kerja poin 10). Yang
+tempatnya bukan di dalam refactor (AGENTS.md §Alur Kerja poin 10). Yang
 dikorbankan: dua nama di atas 255 BYTE yang sebenarnya mirip dijawab "tidak
 mirip" — praktis tak terjangkau karena `customers.nama` itu `varchar(255)` dan
 nama perusahaan Indonesia praktis ASCII. `KemiripanNamaTest` mengadu DUA-duanya:

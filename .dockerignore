@@ -55,7 +55,7 @@ docs
 *.pdf
 *.xlsm
 DAILY_REPORT.md
-CLAUDE.md
+AGENTS.md
 README.md
 
 Dockerfile

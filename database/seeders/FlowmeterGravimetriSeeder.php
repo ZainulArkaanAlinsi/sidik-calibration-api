@@ -42,7 +42,7 @@ use Illuminate\Support\Str;
  * 10 Sep 2026); yang menentukan bukan itu, melainkan bahwa riwayat git menyimpan
  * apa pun yang pernah masuk — `git log -S` bisa dijalankan siapa pun yang punya
  * akses, sekarang atau nanti. Identitas sintetis tetap wajib walau repo tertutup.
- * Lihat CLAUDE.md §Sebelum repo dibalik jadi PUBLIK.
+ * Lihat AGENTS.md §Sebelum repo dibalik jadi PUBLIK.
  *
  * ## SATU sesi yang di-seed, bukan dua — dan kenapa
  *

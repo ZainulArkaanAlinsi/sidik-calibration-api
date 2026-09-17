@@ -1,7 +1,7 @@
 # 03 — SDD: SIDIK Pelanggan
 
 > Versi 0.1 · 16 Sep 2026 · Turunan dari `02-SRS.md`
-> Mengikuti aturan `CLAUDE.md` repo backend: kolom baru adalah pilihan terakhir, dua suite test wajib hijau, dan perubahan dicatat di `docs/BACA-DULU-BACKEND.md`.
+> Mengikuti aturan `AGENTS.md` repo backend: kolom baru adalah pilihan terakhir, dua suite test wajib hijau, dan perubahan dicatat di `docs/BACA-DULU-BACKEND.md`.
 
 ## 1. Arsitektur
 

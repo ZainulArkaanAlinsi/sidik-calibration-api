@@ -289,7 +289,7 @@ semua titik.
 > tapi rumus yang **rusak**: `#REF!` di pengulangannya, dua komponen human
 > reaction terbuang dari rentang yang dijumlah, dan `k` diketik tangan `2` di
 > tiga blok. Meniru yang rusak bertentangan dengan aturan repo ini sendiri
-> (`CLAUDE.md`: kerusakan salin-tempel dihitung benar, bukan ditiru).
+> (`AGENTS.md`: kerusakan salin-tempel dihitung benar, bukan ditiru).
 >
 > **Yang tetap menggantung bukan keputusan, tapi DATA.** Hitungan kita masih
 > tidak bisa dibuktikan cocok di titik ke-2 dan seterusnya, karena masternya

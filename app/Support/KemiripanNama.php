@@ -34,7 +34,7 @@ namespace App\Support;
  *
  * Penjaganya sengaja DIPERTAHANKAN apa adanya, dan itu keputusan sadar:
  * memindahkan aturan ini ke kelas baru adalah refactor, dan refactor tidak
- * boleh mengubah perilaku (CLAUDE.md §Alur Kerja poin 10). Mencabutnya di sini
+ * boleh mengubah perilaku (AGENTS.md §Alur Kerja poin 10). Mencabutnya di sini
  * berarti menyelundupkan perubahan perilaku ke dalam pemindahan berkas.
  *
  * Yang hilang karena dipertahankan: dua nama di atas 255 BYTE yang sebenarnya

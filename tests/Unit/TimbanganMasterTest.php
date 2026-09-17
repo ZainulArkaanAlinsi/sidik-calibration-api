@@ -495,7 +495,7 @@ class TimbanganMasterTest extends TestCase
         //
         // Sekarang non-angka itu KEGAGALAN. Nilai yang hilang dari sisi hitung
         // wajib kelihatan merah, bukan lewat. Ini bentuk yang sama dengan
-        // larangan meniru `IFERROR(…,"")` di CLAUDE.md: yang kosong diblokir
+        // larangan meniru `IFERROR(…,"")` di AGENTS.md: yang kosong diblokir
         // dengan alasan yang kebaca, bukan diam-diam dianggap beres.
         $this->assertIsNumeric(
             $dapat,

@@ -72,7 +72,7 @@ class AuthPelangganController extends Controller
      * perusahaan diketik di langkah ini, dan satu-satunya tempat yang bisa
      * menampungnya adalah tabel itu — menundanya berarti menambah kolom baru di
      * `users` cuma buat memarkir dua string, dan kolom baru itu pilihan
-     * terakhir (CLAUDE.md §Alur Kerja poin 4).
+     * terakhir (AGENTS.md §Alur Kerja poin 4).
      *
      * Yang sebenarnya dijaga REQ-AUTH-02 adalah admin tidak diganggu pengajuan
      * dari email yang belum tentu milik si pendaftar. Itu tetap ditegakkan, dua

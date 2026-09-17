@@ -39,7 +39,7 @@ Total kerja ±65 hari kerja orang. Dengan dua orang yang juga menyelesaikan MVP 
 > (branch `pelanggan/fase-4-auth-pelanggan` lalu `pelanggan/fase-5-persetujuan-dan-anggota`).
 > Berikutnya M2 (mobile) dan M3 (alat).
 >
-> Kolom Status sengaja TIDAK ditambahkan ke tabel di bawah: `CLAUDE.md` menunjuk
+> Kolom Status sengaja TIDAK ditambahkan ke tabel di bawah: `AGENTS.md` menunjuk
 > `docs/BACA-DULU-BACKEND.md` sebagai satu-satunya dokumen status yang boleh
 > dipercaya, dan dua tempat yang mengaku tahu status itu persis cara `docs/permintaan-*.md`
 > jadi punya tanda ✅ yang salah. Rincian tiap task yang mendarat — termasuk yang

@@ -75,4 +75,4 @@ Bahaya terbesar Opsi C bukan di repo app, tapi di **backend yang satu**: perubah
 1. [ ] Buat GitHub Organization PT Sidik dan transfer dua repo yang ada (M0-03)
 2. [ ] Buat `sidik-pelanggan-mobile` dengan branch protection & CODEOWNERS (M2-01)
 3. [ ] Tambah `docs/kontrak-api-pelanggan.md` + folder fixture di repo backend (M1-06)
-4. [ ] Aturan modul pelanggan ditambahkan ke `CLAUDE.md` repo backend supaya asisten coding ikut mematuhinya (08-Prompt)
+4. [ ] Aturan modul pelanggan ditambahkan ke `AGENTS.md` repo backend supaya asisten coding ikut mematuhinya (08-Prompt)

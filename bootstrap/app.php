@@ -25,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // dipasang di SATU tempat — nggak bisa keliru diketik ulang per grup,
         // dan nggak bisa sebagian rute pelanggan mendarat di luar v1. Kedua,
         // berkas rutenya tetap terpisah secara fisik dari `routes/api.php`,
-        // yang jadi aturan keras modul ini (CLAUDE.md §Modul Pelanggan poin 1):
+        // yang jadi aturan keras modul ini (AGENTS.md §Modul Pelanggan poin 1):
         // begitu rute pelanggan bercampur dengan rute internal, gerbang `role:`
         // di sana jadi satu-satunya yang memisahkan dua dunia.
         then: function (): void {
