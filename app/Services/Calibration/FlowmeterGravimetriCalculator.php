@@ -942,8 +942,15 @@ class FlowmeterGravimetriCalculator
      *
      * Rata-rata DULU baru dikoreksi — bukan titik tabel yang dikoreksi.
      * Penyimpangan no. 3.
+     *
+     * PUBLIK sejak jalur sertifikat lahir. `FlowmeterProfile::cetakDalamSatuanAlat()`
+     * perlu angka yang SAMA untuk membalik konversinya ke satuan alat pelanggan,
+     * dan menyalin dua barisnya ke sana berarti dua tempat yang harus ingat
+     * diperbarui bareng — tabel piknometernya, koreksi kalibratornya, urutan
+     * rata-rata-lalu-koreksi. Yang ketinggalan tidak menerbitkan error, cuma
+     * sertifikat yang angkanya beda dari budget-nya sendiri.
      */
-    private function densitasTerkoreksi(float $suhu): ?float
+    public function densitasTerkoreksi(float $suhu): ?float
     {
         $baris = $this->tabel()->koreksiSuhu($suhu);
 

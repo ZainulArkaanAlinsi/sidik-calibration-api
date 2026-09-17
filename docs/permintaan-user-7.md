@@ -3562,6 +3562,123 @@ yang tidak pernah dikalibrasi tidak tertelusur (ISO/IEC 17025 §6.5).
 diperluas sampai titik yang benar-benar dipakai — tidak ada kode yang perlu diubah, cukup tabelnya.
 Itu jalan A, dan tetap yang disarankan di kalibrasi ulang logger berikutnya.
 
+## §35 — Alur verifikasi lembar kerja & peran Super Admin — 17 Sep 2026
+
+Permintaan pemilik proyek, disampaikan 17 Sep 2026. Intinya satu kalimat: **rantai teknisi →
+pemeriksa → sertifikat harus kelihatan utuh, salahnya ditandai bukan dihapus, dan super admin
+memegang hak penuh atas seluruh rantai itu.**
+
+### Yang ternyata SUDAH ADA — dibaca sebelum satu baris ditulis
+
+Ini ditulis paling atas karena menentukan ukuran pekerjaannya. Sebagian besar kerangkanya sudah
+berdiri sejak lama, dan mengarang ulang berarti membangun yang kedua di sebelah yang pertama:
+
+| Yang diminta | Sudah ada? | Di mana |
+|---|---|---|
+| Alur teknisi → pemeriksa → sertifikat | **ADA** | `draft` → `menunggu_approval` → `disetujui`/`perlu_revisi`, `CalibrationSession` |
+| Pemeriksa membuka lembar kerja teknisi | **ADA** | Panel Filament, `CalibrationSessionsTable::detail()` |
+| Tolak → balik ke teknisi + catatan | **ADA** | Aksi `reject`, menulis `catatan_revisi`, `reviewed_by`, `reviewed_at` |
+| Teknisi mengerjakan ulang sesi yang ditolak | **ADA** | `CalibrationController` §"revisi" |
+| Siapa yang mengirim & kapan | **ADA** | kolom teknisi + `submitted_at` di sesi |
+| Notifikasi HP | **ADA** | `FcmPengirimPush`, `PengirimPush`, plus 7 kelas `Notification` (`SesiPerluRevisi`, `SesiDisetujui`, `SesiMenungguApproval`, `SertifikatTerbit`, …) |
+| Aplikasi pelanggan | **ADA** (M0–M1 mendarat) | Modul CertiCal, `routes/api_pelanggan.php` |
+
+**Jadi yang benar-benar baru cuma enam hal di bawah.** Sisanya menyambung, bukan membangun.
+
+### Keputusan yang SUDAH diambil — jangan ditanya ulang
+
+Empat keputusan pemilik proyek, 17 Sep 2026:
+
+1. **"Master Data" itu label tampilan, bukan nilai `users.role`.** Database tetap `admin`. Yang
+   berubah tulisan di panel dan aplikasi. Alasannya bukan malas: mengganti nilai ENUM menyentuh
+   tiap `role:admin` di `routes/api.php`, tiap test, ability token, plus migrasi ENUM berikut
+   datanya — untuk hasil yang identik di mata pengguna.
+2. **Super admin melihat LINTAS laboratorium.** Bukan cuma semua peran dalam satu lab.
+3. **Super admin boleh mengedit lembar kerja kapan saja, termasuk sesudah sertifikat terbit.**
+4. **Notifikasi untuk SEMUA kejadian**: lembar masuk ke pemeriksa, lembar ditolak balik ke
+   teknisi, sertifikat terbit ke pelanggan, sertifikat diunduh kembali ke lab.
+
+### Yang bertabrakan dengan aturan yang sudah berlaku — dicatat, bukan didebat
+
+Dua dari empat keputusan itu diambil SESUDAH risikonya disebutkan. Ditulis di sini supaya yang
+membaca setahun lagi tahu ini pilihan sadar, bukan kelalaian:
+
+**(a) Super admin lintas laboratorium menembus `organization_id`.** Seluruh data lab disaring
+`organization_id`, dan penyaringan itu yang menjaga kerahasiaan antar pelanggan (ISO/IEC 17025
+§4.2). Peran yang menembusnya berarti satu akun bisa membaca pekerjaan lab lain. Konsekuensinya
+mengikat, bukan pilihan: **tiap akses lintas-organisasi WAJIB tercatat** — siapa, kapan, baris
+mana, dari IP mana. Tanpa itu lab tidak bisa menjawab pertanyaan asesor "siapa yang pernah
+melihat data pelanggan saya".
+
+**(b) Edit sesudah sertifikat terbit menembus kebekuan angka.** `uncertainty_calculations`
+DISIMPAN dan tidak pernah dihitung ulang saat dibaca — sertifikat 5 tahun lalu wajib tetap sama
+angkanya. Kalau lembar kerjanya bisa berubah sesudah terbit, sertifikat yang SUDAH DIPEGANG
+pelanggan bisa berbeda dari yang di server, dan itu persis yang dicari asesor akreditasi.
+Konsekuensinya juga mengikat: **tiap edit sesudah terbit menyimpan snapshot sertifikat lama dan
+melahirkan REVISI bernomor**, bukan menimpa diam-diam. Hak super admin tidak dikurangi — dia tetap
+bisa mengubah apa pun, kapan pun; yang ditambahkan cuma jejaknya.
+
+### Enam yang benar-benar baru
+
+**1. Penandaan per titik, bukan satu catatan untuk seluruh sesi.**
+Hari ini `catatan_revisi` satu kolom teks untuk satu sesi — teknisi dapat satu paragraf dan harus
+menebak baris mana. Yang diminta: tanda menempel pada BAGIAN yang salah, isinya tidak dihapus.
+Tabel baru `tanda_revisi` (bukan kolom baru di `raw_measurements` — sumbu yang ada tidak cocok
+untuk data yang lahir dari orang lain di waktu lain): sesi, sasaran (baris mentah / blok
+tingkat-sesi), catatan, ditandai_oleh, ditandai_pada, selesai_pada. Isi lembar tidak pernah
+disentuh penandaan.
+
+**2. Pemeriksa bisa memperbaiki sendiri, bukan cuma menolak.**
+Hari ini pemeriksa cuma punya setujui/tolak. Ditambah: edit nilai, DENGAN jejak siapa yang
+mengubah dari berapa jadi berapa. Untuk lab terakreditasi, "siapa yang memasukkan angka ini"
+tidak boleh kabur.
+
+**3. Peran `super_admin` dihidupkan.** Sudah ada di ENUM `users.role` sejak migrasi modul
+pelanggan, perilakunya belum dibangun. Isinya: semua yang teknisi bisa + semua yang Master Data
+bisa + lintas organisasi + edit sesudah terbit + kirim ke pelanggan.
+
+**4. Pencatatan akses lintas-organisasi.** Konsekuensi (a) di atas.
+
+**5. Revisi sertifikat bernomor.** Konsekuensi (b) di atas.
+
+**6. Notifikasi "sertifikat diunduh".** Enam kejadian lain sudah punya kelas `Notification`-nya;
+yang ini belum ada karena peristiwanya sendiri belum dicatat.
+
+### Sertifikat sampai ke HP pelanggan
+
+Jalurnya sudah setengah berdiri dan tidak perlu dibangun dari nol: modul CertiCal (M0–M1) sudah
+mendarat — pendaftaran, verifikasi, konteks perusahaan, keanggotaan. Grup rute
+`auth:sanctum` + `aplikasi:pelanggan` + `pelanggan.aktif` + `perusahaan` sudah berdiri dan
+menunggu diisi. Yang kurang endpoint `/sertifikat` di grup itu, dan itu memang sudah terjadwal
+sebagai pekerjaan berikutnya modul pelanggan.
+
+Yang mengikat di sini: sertifikat yang dilihat pelanggan HARUS berkas yang sama dengan yang
+diserahkan bersama alatnya — satu sumber, `CertificateSnapshotBuilder`, bukan dokumen kedua yang
+dibangun ulang untuk aplikasi. Dokumen yang berbeda isinya antara cetak dan layar itu temuan
+asesor, bukan ketidaknyamanan.
+
+### Berkas yang akan disentuh — ditulis SEBELUM diketik
+
+Mengikat, sesuai §12 permintaan 7.
+
+**Baru:** migrasi `tanda_revisi` + `akses_lintas_organisasi` + kolom revisi di `certificates`;
+`app/Models/TandaRevisi.php`; `app/Services/Verifikasi/PenandaRevisi.php`;
+`app/Services/Verifikasi/SuntinganPemeriksa.php`; `app/Policies/SesiPolicy.php`;
+`app/Http/Middleware/LintasOrganisasi.php`; `app/Notifications/SertifikatDiunduh.php`;
+`app/Filament/Resources/CalibrationSessions/…` (aksi tandai & sunting).
+
+**Diubah:** `app/Models/User.php` (super_admin masuk `roles()` internal — hari ini SENGAJA tidak,
+dan itu harus jadi perubahan sadar, bukan efek samping); `routes/api.php`;
+`app/Services/MatriksIzin.php`; `app/Filament/**` (label "Master Data");
+`app/Http/Controllers/Api/AuthController.php` (guard `super_admin` — lihat catatan di bawah).
+
+### Yang HARUS dikerjakan lebih dulu, di luar urutan
+
+`AuthController.php:60` hari ini menolak `super_admin` di pintu login internal dengan pesan
+*"Akun ini terdaftar sebagai akun pelanggan"* — salah, dan aplikasi pelanggan akan menolaknya
+lagi. Selama itu belum dibetulkan, akun `super_admin` pertama yang dibuat tidak bisa masuk ke
+mana pun. Ini prasyarat, bukan bagian dari pekerjaan.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -3587,6 +3704,7 @@ berkas profil.
 | G15 | **Audit seluruh 33 master di `alat-alat-Pt-Sidik` lawan yang sudah dibangun** — §26 | **BERES** (9 Sep 2026) — enam dimensi disapu: nomor metode ke-33 master, pita CMC, nomor formulir, cakupan profil, varian per alat, dan apakah tiap snapshot punya test yang mengadu angkanya. **Nol kode produksi berubah** — dan itu hasilnya, bukan kemalasan. **Klaim pertama audit ini SALAH dan dicabut hari yang sama:** sempat disimpulkan "pH satu-satunya alat yang masternya tidak pernah diadu". Tidak benar — `UncertaintyBudgetTest` sudah mengadu KEDUA lembar pH ke workbook aslinya sejak lama, dan docblock-nya sudah membedakan kedua termometernya dengan benar. Sapuan yang melewatkannya cacat sendiri: `grep -lі` yang diketik memakai huruf `і` Kiril, jadi diam-diam memulangkan nol berkas. **Pelajarannya bukan soal pH** — sapuan yang memulangkan "tidak ada" wajib dibuktikan dulu bisa memulangkan "ada", karena hasil nol dari perintah yang rusak kelihatan persis seperti temuan. Yang TERSISA sebagai celah nyata dan ditutup `PhMeterMasterTest` (4 test / 36 asersi) cuma dua: `k` eksak + `U` lembar IMTE-WQ-129 (di sana `k` cuma dipatok ±5e-3 dan `U` tidak diperiksa sama sekali), dan lantai CMC dua arah — lembar lama WAJIB tetap menembus CMC di pH 4 & pH 7, lembar baru WAJIB tetap ketutup di tiga. Yang tetap berdiri dari temuan awal: termometer standarnya memang beda benda (U95 0,5 lawan 0,72 °C) dan `ci_suhu`/`u_perbedaan_suhu`/`ci_perbedaan_suhu` IDENTIK di kedua workbook, jadi cuma `UTemperature` yang ikut perangkat. Konstantanya sengaja **tidak** ditukar (K28). Sapuan lanjutan: ketujuh `*CapabilitySeeder` ber-`u_temperature` diadu ke kepala sheet masternya — **ketujuhnya cocok**, jadi kelas cacat ini tidak menyebar ke alat lain. Yang dikonfirmasi BENAR dan dibiarkan: Flowmeter `0528_Rev.4` (profil ikut lampiran akreditasi, master sudah Rev.6 yang belum diakreditasi — §16 pertanyaan flowmeter), Thermocouple `0529_Rev.2` (master men-VLOOKUP indeks 2 → metode TITS `0502_Rev.3`; sudah tercatat `pertanyaan-lab-suhu-3alat.md` §1), Timbangan `0505-Rev.7` yang bertanda hubung sendirian di antara 30+ IK ber-garis bawah, dan `SIDIK-FM-CAL-2403_Rev. 0` yang muncul di banyak master karena dia formulir SERTIFIKAT bersama, bukan lembar kerja. Keempat tabel CMC master yang eksplisit (Conductivity, Refractometer, Turbidimeter, pH) cocok persis dengan lampiran LK-285-IDN |
 | G16 | **Data pelanggan disapu + riwayat git ditulis ulang** — §27 & K27 | **BERES** (10 Sep 2026) — dua pekerjaan yang saling mengunci. **(1) Sanitasi:** 81 berkas, commit `c0645f6`, empat gelombang — dan tiap gelombang menemukan yang tidak terlihat dari sebelumnya, termasuk **enam nama pelanggan yang tidak ada di daftar `.gitignore`** (jadi daftar itu sendiri tidak lengkap) dan `Puskesad` yang dieja panjang. Celah yang bisa membatalkan semuanya dalam sekali jalan ikut ditutup: dua generator menyalin sel identitas pelanggan langsung ke `database/data/*.json` yang ter-commit. **(2) Rewrite:** 686 commit, 91 branch. Jejaknya empat bentuk, bukan satu — 440 trailer `Co-Authored-By`, 164 `Claude-Session`, **143 commit ber-AUTHOR Claude** (ini yang menentukan daftar Contributors, dan `--message-callback` tidak menyentuhnya), 137 deskripsi PR (tidak ada di git sama sekali), dan 37 branch `claude/*` (yang paling kelihatan). Gerbang sebelum push: tree `main` sebelum/sesudah diadu dan **identik byte-per-byte** — nol byte kode berubah. Branch **diganti nama, bukan dihapus**, karena 32 dari 37 bukan leluhur `main`. Tag ikut dipindah — tanpa itu seluruh riwayat lama tetap terjangkau lewat tag. Hasil: Contributors tinggal dua orang. **Temuan sampingan yang lebih mendesak dari pekerjaannya sendiri:** `~/.claude/settings.json` menyimpan Personal Access Token GitHub polos — dilaporkan, dicabut, dihapus |
 | G17 | Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** untuk alat ke-27 & ke-28 — §27 | **BERES di server** (10 Sep 2026) — bukan alat ke-29: dua workbook master baru mengukur alat, besaran, dan pita CMC yang SAMA dengan varian UFM, dengan metode yang sama sekali lain. Yang dibangun sumbu `varian_metode` di dua profil yang sudah ada, presedennya TimbanganProfile / TITS / TIDS. Rumusnya dibuktikan di Python SEBELUM PHP: **107 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶ — termasuk tabel densitas yang ternyata BUKAN rumus melainkan piknometer 50,3139 ml di empat suhu plus interpolasi linier. Delapan penyimpangan master dibetulkan dengan arah yang ditegakkan test, sepuluh ditiru + diangkat jadi 23 pertanyaan lab. Yang paling menentukan: koreksi timer yang dihitung lalu dibuang **membalik TANDA** deviasi Flowrate titik 2 (+0,0299 → −0,0012 Lpm), dan lantai CMC yang tidak pernah dipasang membuat keempat titik terbit di bawah pita — titik 3 mengklaim ketidakpastian sebelas kali lebih baik dari yang diakui KAN. **Nol kolom baru** di `raw_measurements`. Satu bug LAMA ikut ketemu: `peringatanSesi()` memulangkan deret string sementara `CalibrationValidator` menuntut `['kode','pesan']`, jadi endpoint `/validasi` pulang **500** untuk sesi UFM mana pun yang geometri pipanya kosong — hidup diam-diam sejak 8 Sep karena kedua sesi contoh selalu punya geometri pipa. **Sisi mobile BELUM** — `docs/perintah-frontend-flowmeter-gravimetri.md` §6 memasang syaratnya: sapuan mock registry dulu, baru cabang varian |
+| G18 | **Alur verifikasi lembar kerja & peran Super Admin** — §35 | **PRD DITULIS** (17 Sep 2026), nol baris kode. Yang menentukan ukurannya: sebagian besar kerangkanya SUDAH ADA — alur `draft`→`menunggu_approval`→`disetujui`/`perlu_revisi`, aksi tolak berikut `catatan_revisi`, jalur teknisi mengerjakan ulang, tujuh kelas `Notification`, dan pengirim push FCM. Yang benar-benar baru cuma enam: penandaan per titik (tabel `tanda_revisi`, isi lembar TIDAK dihapus), suntingan pemeriksa berikut jejaknya, peran `super_admin` dihidupkan, pencatatan akses lintas-organisasi, revisi sertifikat bernomor, dan notifikasi sertifikat diunduh. Dua keputusan diambil pemilik proyek SESUDAH risikonya disebutkan dan itu tertulis di §35: super admin menembus `organization_id` (ISO/IEC 17025 §4.2 — karena itu tiap akses lintas-lab wajib tercatat), dan edit sesudah sertifikat terbit menembus kebekuan `uncertainty_calculations` (karena itu tiap edit melahirkan revisi bernomor, bukan menimpa). Prasyarat di luar urutan: `AuthController.php:60` menolak `super_admin` dengan pesan yang salah, jadi akun super admin pertama tidak bisa masuk ke mana pun sampai itu dibetulkan. Delapan pertanyaan terbuka di `docs/pertanyaan-lab-alur-verifikasi.md` |
 
 ### Yang sudah ADA sebelum pekerjaan ini dimulai
 
@@ -3959,3 +4077,4 @@ Supaya tidak dibangun ulang:
   gerbang MySQL lokal doang. Kalau mau dibereskan, yang dibetulkan **test-nya** — patok id-nya
   eksplisit atau bandingkan lewat nama, jangan menyandar ke rentang id — bukan endpoint-nya.
 | G18 | Alat baru **Anak Timbangan (OIML R111)** — §29 | **BERES di server** (10 Sep 2026) — alat ke-29, kelompok Massa, **di luar lampiran akreditasi** (kertasnya sendiri menyebut Non KAN). Rumusnya dibuktikan di Python SEBELUM PHP: **1033 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶, ditegakkan `AnakTimbanganMasterTest` (12 test / 1011 asersi). **Nol kolom baru**. Tiga kerusakan rujukan dibetulkan dengan ARAH yang ditegakkan test — yang terbesar kolom koreksi apung yang memakai massa keping PERTAMA untuk dua belas keping lain, meleset sampai 2,58 mg pada keping bertoleransi 0,10 mg. Temuan terbesar justru bukan itu: sel berlabel `Rata-rata STDev` ternyata berisi SIMPANGAN BAKU dari enam simpangan baku harian, lebih kecil dari keterulangan hari mana pun — kalau lab menjawab yang dimaksud gabungan harian, **U95 seluruh sertifikat naik ~1,9x**. Ditiru karena `FORM VALIDASI` mencatatnya sebagai perubahan metode yang sengaja & sudah divalidasi. Enam gerbang penerbitan dipasang; master sendiri menerbitkan `#VALUE!` di lima dari dua puluh baris dan satu keping 10 g sebagai 5,500163 g (meleset 45 %). Kertas Rev.0 dibaca lebih dulu dan menyumbang empat temuan yang tidak ada di workbook. 23 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-anak-timbangan.md` §5 memasang lima butirnya |
+| G19 | **Sertifikat Flowmeter tercetak dalam satuan hitung, bukan satuan alat pelanggan** — cacat di dalam G14/G17 | **BERES di server** (17 Sep 2026) — bukan alat baru: satu cacat cetak yang hidup diam-diam sejak alat ke-27 & ke-28 mendarat. Mesin hitungnya sengaja dipindah ke L (Totalizer) / Lpm (Flowrate) supaya satu mesin melayani semua satuan, dan `uncertainty_calculations` menyimpan angka yang SUDAH dikonversi. Yang tidak pernah terjadi: membaliknya lagi waktu mencetak. Alat yang layarnya menunjukkan **3,0 m3/h terbit dengan 50,0 Lpm** di kolom Unit Under Test. `FlowmeterCalculator::konversiBalik()` ditulis untuk ini sejak awal — docblock-nya bahkan menyebut *"Dipakai jalur SERTIFIKAT"* dan menghitung selisih 16,7x-nya — lalu **nol pemanggil**. Master membagi balik dengan faktor yang sama (`SERTIFIKAT!E26 = 'PERHITUNGAN FC'!D63 / DATABASE!$S$22`). **Kenapa tidak ketahuan:** dua sesi contohnya bersatuan `L` dan `LPM`, dua-duanya faktor 1,0 — nol test yang pernah melewati jalur konversi sama sekali. Dan angkanya sendiri tidak pernah terlihat ganjil, karena **kolom satuannya ikut berubah**: tabelnya konsisten dengan dirinya sendiri, cuma tidak dengan alat yang dikalibrasi, tidak dengan kop sertifikat (yang membaca `raw_measurements.satuan` dan sudah menulis `m3/h`), dan tidak dengan jumlah desimalnya (yang lahir dari `equipments.resolusi`, juga bersatuan alat). Satu dokumen, dua satuan untuk besaran yang sama. **Bentuknya:** hook baru `CalibrationProfile::cetakDalamSatuanAlat()` yang memulangkan CLOSURE, bukan faktor — satuan berbasis massa butuh densitas, dan densitas dibaca PER TITIK. Bawaannya `null`, jadi profil lain nol tersentuh. Densitasnya diambil dari sumber yang SAMA yang dipakai waktu menghitung: UFM membaca `flow_densitas_uut` yang diketik teknisi, gravimetri memanggil `FlowmeterGravimetriCalculator::densitasTerkoreksi()` — fungsinya, bukan salinannya, yang karena itu dijadikan publik. **Yang sengaja tidak berubah:** sesi bersatuan `L`/`LPM` nol pergeseran (hook-nya memulangkan `null` untuk faktor identitas, bukan closure identitas, supaya ejaan `Lpm` tidak diam-diam jadi `LPM`), sertifikat yang sudah terbit nol pergeseran (snapshot dibekukan waktu terbit — ada test yang menguncinya), dan bentuk JSON snapshot nol kunci berubah, jadi **sisi mobile nol pekerjaan** (dia sudah membaca `hasil[].satuan` per baris). Titik yang bahan baliknya HILANG sesudah hitungannya tersimpan **memblokir sertifikatnya** dengan pesan yang menyebut nomor titiknya — bukan diam-diam mencetak angka hitung berlabel `kg/h`; `GenerateCertificate` menangkapnya, menyetempel sertifikatnya `gagal`, dan mengirim pesannya ke admin. Dijaga `FlowmeterSatuanSertifikatTest` (7 test / 64 asersi), dan penjaganya **dibuktikan menahan**: hook-nya dimatikan → 5 dari 7 merah; labelnya dibiarkan pindah tapi angkanya tidak → 3 merah lagi. Kontraknya ditulis di `docs/perintah-frontend-flowmeter.md` §0.1 |

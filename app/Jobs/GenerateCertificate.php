@@ -15,6 +15,7 @@ use App\Services\DataTampilanSertifikat;
 use App\Services\FolderOrganizer;
 use App\Services\PenerimaNotifikasi;
 use App\Services\SertifikatSatuHalaman;
+use App\Services\SinkronJadwalAlat;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -67,6 +68,7 @@ class GenerateCertificate implements ShouldQueue
         $tampilan = app(DataTampilanSertifikat::class);
         $satuHalaman = app(SertifikatSatuHalaman::class);
         $folder = app(FolderOrganizer::class);
+        $sinkronJadwal = app(SinkronJadwalAlat::class);
 
         $sesi = CalibrationSession::with([
             'equipment.customer', 'organization', 'teknisi', 'reviewer', 'standard', 'thermohygro',
@@ -233,10 +235,41 @@ class GenerateCertificate implements ShouldQueue
                 throw new RuntimeException("Gagal nulis PDF sertifikat ke {$path}.");
             }
 
-            $sertifikat->update([
-                'pdf_path' => $path,
-                'status' => Certificate::STATUS_TERBIT,
-            ]);
+            // Status `terbit` dan jadwal alatnya ditulis dalam SATU transaksi.
+            //
+            // `berlaku_sampai` yang dipilih admin waktu approve cuma mendarat di
+            // baris sertifikat, sementara pengingat pagi membaca
+            // `equipments.tanggal_jatuh_tempo` — kolom yang sebelum ini cuma
+            // berubah lewat form manual & impor Excel. Dua angka yang seharusnya
+            // sama, diisi dari dua jalan yang nggak pernah ketemu, dan
+            // selisihnya nggak pernah memunculkan error.
+            //
+            // Kenapa transaksi BARU, bukan transaksi yang di atas: yang di atas
+            // sudah commit jauh sebelum PDF-nya dirender, dan status `terbit`
+            // memang baru sah sesudah berkasnya beneran ada. Memperbesar
+            // transaksi itu sampai mencakup render dompdf berarti menahan
+            // `lockForUpdate` baris sesi selama seluruh pencetakan.
+            //
+            // Kalau sinkronnya meledak, status `terbit` ikut dibatalkan dan
+            // jatuh ke `catch` di bawah — sertifikatnya `gagal`, admin
+            // dikabarin, tombol retry muncul. Itu disengaja: sertifikat terbit
+            // yang jadwal alatnya nggak ikut ter-update adalah persis keadaan
+            // yang perbaikan ini ada untuk mencegahnya.
+            DB::transaction(function () use ($sertifikat, $sesi, $path, $sinkronJadwal): void {
+                $sertifikat->update([
+                    'pdf_path' => $path,
+                    'status' => Certificate::STATUS_TERBIT,
+                ]);
+
+                // Dibaca ulang di dalam transaksi: instance `$sesi->equipment`
+                // dimuat sebelum PDF dirender, dan `untuk()` membandingkan nilai
+                // yang berlaku sekarang buat memutuskan perlu nulis atau nggak.
+                $alat = $sesi->equipment?->fresh();
+
+                if ($alat !== null) {
+                    $sinkronJadwal->untuk($alat);
+                }
+            });
         } catch (\Throwable $e) {
             // Status `gagal` bikin tombol retry muncul di mobile, bukan diem-diem
             // ngilang. Sesi tetap `disetujui`.
