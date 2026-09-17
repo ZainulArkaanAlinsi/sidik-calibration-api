@@ -255,8 +255,15 @@ class AuthPelangganController extends Controller
                 // Akun LAB tidak boleh berubah jadi akun pelanggan lewat
                 // undangan. Kalau boleh, siapa pun yang bisa mengundang bisa
                 // menarik akun admin ke dalam perusahaannya.
+                // `undangan_akun_internal`, BUKAN `bukan_akun_pelanggan`.
+                // Kode yang kedua sudah dipakai `masuk()` dengan status 403 dan
+                // arti yang berbeda ("masuklah lewat aplikasi teknisi"). Satu
+                // kode buat dua keadaan bikin aplikasi tidak bisa bercabang —
+                // dan bercabang pada `kode` justru satu-satunya yang boleh dia
+                // andalkan (NFR-12). Ketahuan waktu membaca ulang tabel kode di
+                // kontrak, bukan dari test.
                 throw new AksiPelangganDitolak(
-                    'bukan_akun_pelanggan',
+                    'undangan_akun_internal',
                     'Email ini terdaftar sebagai akun internal PT Sidik dan tidak bisa menerima undangan.',
                     422,
                 );

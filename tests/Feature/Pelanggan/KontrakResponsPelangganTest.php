@@ -112,6 +112,58 @@ class KontrakResponsPelangganTest extends TestCase
         );
     }
 
+    /**
+     * Tiap `kode` di kontrak cuma boleh punya SATU arti.
+     *
+     * Ini penjaga buat kesalahan yang beneran terjadi waktu M1-09 ditulis:
+     * `bukan_akun_pelanggan` sempat dipakai dua kali — 403 di `/auth/masuk`
+     * ("masuklah lewat aplikasi teknisi") dan 422 di `/auth/terima-undangan`
+     * ("email ini tidak bisa diundang"). Dua keadaan berbeda, dua penanganan
+     * berbeda, satu kode.
+     *
+     * Yang rusak karena itu bukan servernya — servernya jalan normal. Yang
+     * rusak APLIKASINYA: dia bercabang pada `kode`, dan itu satu-satunya yang
+     * boleh dia andalkan (NFR-12). Kode kembar bikin percabangan itu mustahil.
+     *
+     * Ketahuan waktu membaca ulang tabelnya, bukan dari test — makanya sekarang
+     * ada testnya.
+     */
+    public function test_tiap_kode_di_kontrak_cuma_punya_satu_arti(): void
+    {
+        $dokumen = base_path('docs/kontrak-api-pelanggan.md');
+
+        $this->assertFileExists($dokumen);
+
+        preg_match_all('/^\| `([a-z0-9_]+)` \| (\d{3}) \|/m', (string) file_get_contents($dokumen), $cocok, PREG_SET_ORDER);
+
+        $this->assertGreaterThan(
+            10,
+            count($cocok),
+            'Tabel kode di kontrak nggak kebaca — polanya berubah, dan test ini jadi hijau tanpa memeriksa apa pun.',
+        );
+
+        $perKode = [];
+
+        foreach ($cocok as [, $kode, $status]) {
+            $perKode[$kode][] = $status;
+        }
+
+        $kembar = [];
+
+        foreach ($perKode as $kode => $status) {
+            if (count($status) > 1) {
+                $kembar[] = sprintf('%s (HTTP %s)', $kode, implode(' & ', array_unique($status)));
+            }
+        }
+
+        $this->assertSame([], $kembar, sprintf(
+            "Kode ini muncul lebih dari sekali di tabel kontrak:\n  - %s\n\n".
+            "Aplikasi bercabang pada `kode` dan nggak bisa membedakan dua arti di balik satu kode.\n".
+            'Kasih kode sendiri buat keadaan yang penanganannya beda.',
+            implode("\n  - ", $kembar),
+        ));
+    }
+
     public function test_bentuk_respons_daftar(): void
     {
         $badan = $this->postJson('/api/pelanggan/v1/auth/daftar', [
@@ -262,6 +314,18 @@ class KontrakResponsPelangganTest extends TestCase
             ->json();
 
         $this->aduKeFixture('anggota', $badan);
+    }
+
+    public function test_bentuk_respons_hapus_akun(): void
+    {
+        $user = $this->anggota();
+
+        $badan = $this->withHeaders($this->bearer($user))
+            ->deleteJson('/api/pelanggan/v1/saya', ['sandi' => $this->sandiBenar, 'konfirmasi' => true])
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('hapus-akun', $badan);
     }
 
     /** Bentuk ERROR ikut dibekukan — aplikasi bercabang pada `kode`, bukan pada `message`. */

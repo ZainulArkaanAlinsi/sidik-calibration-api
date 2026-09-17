@@ -361,6 +361,12 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('audit-export', 20);
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
+        // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia
+        // mengirim email ke admin lab berdasarkan alamat yang diketik
+        // pengunjung, jadi ini jalur yang bisa dipakai membanjiri kotak masuk
+        // lab dari luar tanpa akun sama sekali.
+        $perMenit('hapus-akun-web', 3);
+
         $perMenit('versi-aplikasi', 60);
         $perMenit('verifikasi-json', 30);
 

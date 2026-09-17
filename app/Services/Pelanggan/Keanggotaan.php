@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomerMember;
 use App\Models\DeviceToken;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -135,6 +136,57 @@ class Keanggotaan
                 ->where('aplikasi', DeviceToken::APLIKASI_PELANGGAN)
                 ->delete();
         });
+    }
+
+    /**
+     * Lepas SEMUA keanggotaan orang ini — jalur hapus akun (REQ-AUTH-11).
+     *
+     * SENGAJA melewati `pastikanBukanPicUtamaTerakhir()`, dan itu satu-satunya
+     * tempat di repo ini yang boleh. REQ-AUTH-11 menyebutnya eksplisit: orang
+     * berhak keluar dari layanan, dan menahannya dengan alasan "perusahaanmu
+     * nanti tidak punya PIC" itu menyandera orang buat masalah organisasi yang
+     * bukan miliknya.
+     *
+     * Namanya panjang dan menyebut alasannya justru supaya tidak terpakai
+     * sebagai jalan pintas dari `nonaktifkan()` waktu penjagaannya terasa
+     * merepotkan.
+     *
+     * Token & perangkat TIDAK disentuh di sini — pemanggilnya (`PenganonimAkun`)
+     * yang menghapusnya, karena dia menghapus semuanya tanpa kecuali sedangkan
+     * `nonaktifkan()` menyisakan sesi buat perusahaan lain.
+     *
+     * @return Collection<int, Customer> perusahaan yang jadi TANPA PIC utama aktif
+     */
+    public function lepaskanSemuaUntukHapusAkun(User $orang): Collection
+    {
+        $keanggotaan = CustomerMember::query()
+            ->with('customer')
+            ->where('user_id', $orang->getKey())
+            ->where('status', CustomerMember::STATUS_AKTIF)
+            ->get();
+
+        foreach ($keanggotaan as $anggota) {
+            $anggota->forceFill([
+                'status' => CustomerMember::STATUS_NONAKTIF,
+                'dinonaktifkan_oleh' => $orang->getKey(),
+                'dinonaktifkan_pada' => now(),
+            ])->save();
+        }
+
+        // Dihitung SESUDAH semuanya dilepas, bukan sebelum: perusahaan yang
+        // kehilangan PIC utama-nya cuma bisa diketahui dari keadaan akhir, dan
+        // menghitungnya lebih awal melewatkan kasus orang yang jadi PIC utama
+        // di dua perusahaan sekaligus.
+        return $keanggotaan
+            ->map(fn (CustomerMember $anggota) => $anggota->customer)
+            ->filter()
+            ->unique('id')
+            ->filter(fn (Customer $perusahaan) => ! CustomerMember::query()
+                ->where('customer_id', $perusahaan->getKey())
+                ->where('peran', CustomerMember::PERAN_PIC_UTAMA)
+                ->where('status', CustomerMember::STATUS_AKTIF)
+                ->exists())
+            ->values();
     }
 
     /** REQ-ANG-02 — PIC utama terakhir tidak boleh menghilang. */
