@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\CustomerMember;
 use App\Models\Organization;
 use App\Models\UndanganPelanggan;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -44,8 +45,20 @@ class UndanganPelangganFactory extends Factory
         return $this->state(fn (): array => ['kedaluwarsa_pada' => now()->subDay()]);
     }
 
+    /**
+     * Undangan yang SUDAH dipakai — berikut SIAPA yang memakainya.
+     *
+     * `dipakai_oleh` ikut diisi, bukan dibiarkan null: baris dengan
+     * `dipakai_pada` terisi tapi `dipakai_oleh` kosong adalah keadaan yang
+     * jalur aplikasinya sendiri tidak pernah bisa hasilkan. Fixture begitu
+     * bikin test hijau melawan bentuk data yang mustahil, dan kode yang
+     * membaca pemakainya pulang `null` tanpa satu pun test yang merah.
+     */
     public function sudahDipakai(): static
     {
-        return $this->state(fn (): array => ['dipakai_pada' => now()]);
+        return $this->state(fn (): array => [
+            'dipakai_pada' => now(),
+            'dipakai_oleh' => fn () => User::factory(),
+        ]);
     }
 }

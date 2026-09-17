@@ -71,6 +71,24 @@ fixture dari workbook master. Keluarannya disalin apa adanya — menyunting
 hasilnya dengan tangan berarti berkasnya menyimpang diam-diam dari server, dan
 itu sudah tiga kali meloloskan bug (TIDS, Timbangan, Micrometer).
 
+### Dua jebakan waktu menjalankan suite — keduanya bikin hasil PALSU
+
+**1. Jangan pernah dua suite sekaligus di satu checkout.** `Storage::fake()` menulis ke
+`storage/framework/testing/disks`, satu direktori bersama, dan MENGHAPUS subdirektorinya tiap
+dipanggil. Dua proses test di checkout yang sama berarti yang satu menghapus berkas milik yang
+lain di tengah jalan. Gejalanya menyesatkan: yang merah test yang tidak berhubungan, beda-beda
+tiap jalan — PDF hilang, berkas Excel hilang, `422` karena berkas yang divalidasi lenyap. Kalau
+dua suite gagal di test yang BERBEDA tanpa satu pun irisan, curigai ini duluan, bukan kodenya.
+
+**2. Worktree ber-`vendor` symlink menjalankan kode yang SALAH.** Laravel 11+ menyimpulkan base
+path dari lokasi `ClassLoader` yang terdaftar — yaitu direktori induk `vendor`. Kalau `vendor` di
+worktree cuma symlink ke checkout utama, base path-nya resolve ke CHECKOUT UTAMA, dan seluruh
+`app/`, `config/`, serta `database/migrations/` dibaca dari sana. Berkas testnya tetap ditemukan
+dari worktree (itu ikut `phpunit.xml`), jadi test barunya JALAN — melawan kode lama. Ini sudah
+memakan satu jam: migrasi baru tidak pernah jalan, dan test penjaganya merah seolah migrasinya
+salah. Kalau harus pakai worktree, salin `vendor` sungguhan atau setel `APP_BASE_PATH`; paling
+aman, checkout branch-nya di direktori utama.
+
 ### Yang bikin CI beda dari lokal
 
 CI memakai **PHP 8.4**, bukan 8.3 yang tertulis di `composer.json`. Itu batas

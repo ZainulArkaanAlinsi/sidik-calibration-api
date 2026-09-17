@@ -37,6 +37,10 @@ class CustomerMemberFactory extends Factory
         return $this->state(fn (): array => [
             'status' => CustomerMember::STATUS_NONAKTIF,
             'dinonaktifkan_pada' => now(),
+            // Ikut diisi, alasannya sama dengan dua factory pelanggan lainnya:
+            // waktu tanpa pelaku itu bentuk yang aplikasinya sendiri tidak
+            // pernah tulis.
+            'dinonaktifkan_oleh' => fn () => User::factory(),
         ]);
     }
 }

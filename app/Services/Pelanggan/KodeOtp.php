@@ -102,13 +102,26 @@ class KodeOtp
             return self::COCOK;
         }
 
-        $otp->percobaan = (int) $otp->percobaan + 1;
+        // Dinaikkan LEWAT DATABASE (`percobaan = percobaan + 1`), bukan
+        // baca-tambah-tulis di PHP.
+        //
+        // Bentuk lamanya `$otp->percobaan = (int) $otp->percobaan + 1`, dan itu
+        // bocor persis di keadaan yang komponen ini ada untuk menahannya: dua
+        // tebakan salah yang datang bersamaan sama-sama membaca 3, sama-sama
+        // menulis 4, dan pencacahnya naik SATU untuk dua percobaan. Yang
+        // menyerang tidak perlu beruntung — dia tinggal mengirim tebakannya
+        // berbarengan, dan REQ-AUTH-02 yang menjanjikan kunci setelah 5
+        // percobaan berhenti berlaku tanpa satu pun error.
+        //
+        // `refresh()` sesudahnya karena nilai yang menentukan penguncian harus
+        // yang di database, bukan tebakan lokal Eloquent.
+        $otp->increment('percobaan');
+        $otp->refresh();
 
-        if ($otp->percobaan >= OtpPelanggan::MAKS_PERCOBAAN) {
+        if ((int) $otp->percobaan >= OtpPelanggan::MAKS_PERCOBAAN) {
             $otp->dikunci_sampai = now()->addMinutes(OtpPelanggan::KUNCI_MENIT);
+            $otp->save();
         }
-
-        $otp->save();
 
         return $otp->sedangDikunci() ? self::TERKUNCI : self::SALAH;
     }

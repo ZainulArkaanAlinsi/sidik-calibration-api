@@ -37,6 +37,8 @@ class PengajuanAkunPelangganFactory extends Factory
         return $this->state(fn (): array => [
             'status' => PengajuanAkunPelanggan::STATUS_DISETUJUI,
             'diputus_pada' => now(),
+            // Siapa yang memutus ikut diisi — lihat alasannya di [ditolak].
+            'diputus_oleh' => fn () => User::factory(),
         ]);
     }
 
@@ -45,6 +47,12 @@ class PengajuanAkunPelangganFactory extends Factory
         return $this->state(fn (): array => [
             'status' => PengajuanAkunPelanggan::STATUS_DITOLAK,
             'diputus_pada' => now(),
+            // `diputus_oleh` ikut diisi, bukan dibiarkan null: pengajuan yang
+            // sudah diputus TAPI tanpa pemutusnya adalah bentuk yang jalur
+            // aplikasi sendiri tidak pernah hasilkan, dan itu yang paling mahal
+            // hilang di sini — kolom ini jejak audit "siapa menyetujui akun
+            // pelanggan mana".
+            'diputus_oleh' => fn () => User::factory(),
             'alasan_tolak' => 'Data perusahaan tidak bisa diverifikasi.',
         ]);
     }

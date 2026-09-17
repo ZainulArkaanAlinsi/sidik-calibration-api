@@ -57,10 +57,19 @@ class AuthController extends Controller
         // Pesannya menyebut nama aplikasinya. Tanpa itu, PIC yang kebetulan
         // memasang aplikasi teknisi mentok di layar galat tanpa tahu harus ke
         // mana — dan yang dia lakukan berikutnya menelepon lab.
+        // Pesannya DIPILIH per role, bukan satu kalimat buat dua-duanya.
+        //
+        // Gerbang ini nangkep `pelanggan` DAN `super_admin`, tapi kalimatnya
+        // dulu cuma nyebut pelanggan — jadi super admin yang salah buka
+        // aplikasi teknisi dikasih tau dirinya "akun pelanggan" dan disuruh
+        // pindah ke aplikasi yang emang nggak nerima dia. Yang dia lakuin
+        // berikutnya nelpon lab, persis hal yang komentar di atas mau cegah.
         if (in_array($user->role, [User::ROLE_PELANGGAN, User::ROLE_SUPER_ADMIN], true)) {
             return response()->json([
                 'kode' => 'bukan_akun_internal',
-                'message' => 'Akun ini terdaftar sebagai akun pelanggan. Silakan masuk lewat aplikasi SIDIK Pelanggan.',
+                'message' => $user->role === User::ROLE_PELANGGAN
+                    ? 'Akun ini terdaftar sebagai akun pelanggan. Silakan masuk lewat aplikasi SIDIK Pelanggan.'
+                    : 'Akun super admin nggak masuk lewat aplikasi ini. Pakai panel admin di peramban.',
             ], 403);
         }
 
