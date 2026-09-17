@@ -298,6 +298,12 @@ class AppServiceProvider extends ServiceProvider
         // justru di sini embernya ketat.
         $emberOtp('pelanggan-otp-kirim', 15, 3, 'Terlalu banyak permintaan kode. Coba lagi beberapa menit lagi.');
 
+        // Menukar kode undangan itu jalur TEBAKAN: kodenya 8 simbol dan tidak
+        // ada penghitung di database yang menahannya (beda dari OTP, yang
+        // punya `percobaan` di barisnya sendiri). Jadi embernya ketat, dan
+        // dikunci per EMAIL — per IP dilewati cukup dengan ganti jaringan.
+        $emberOtp('pelanggan-undangan-tukar', 15, 10, 'Terlalu banyak percobaan kode undangan. Coba lagi beberapa menit lagi.');
+
         // Ganti sandi BUKAN jalur OTP: dia sudah di balik token, jadi dikunci
         // per ORANG. Dikunci per IP bikin satu kantor di belakang satu NAT
         // saling menghabiskan jatah.
@@ -326,6 +332,21 @@ class AppServiceProvider extends ServiceProvider
         // Angkanya persis seperti sebelum perbaikan ini — lihat riwayat git
         // kalau ada yang perlu disetel ulang; menyetelnya di sini keputusan
         // terpisah, bukan bagian dari perbaikan embernya.
+        // Sisi LAB modul pelanggan (M1-05). Dikunci per ADMIN, bukan per IP:
+        // satu lab duduk di belakang satu IP kantor, jadi kunci per IP bikin
+        // admin saling menghabiskan jatah waktu antrean sedang ramai.
+        //
+        // Angkanya longgar dengan sengaja — ini pagar terhadap skrip yang lepas
+        // kendali, bukan terhadap admin yang memang sedang memproses antrean.
+        $perMenitPengguna('pelanggan-putus-pengajuan', 30);
+        $perMenitPengguna('pelanggan-undang', 20);
+
+        // Sisi PELANGGAN: PIC utama mengundang anggotanya sendiri. Lebih ketat
+        // dari jalur admin lab — tiap undangan mengirim email ke alamat yang
+        // DIKETIK pemanggil, jadi ini jalur yang bisa dipakai membanjiri orang
+        // lain, dan pemanggilnya bukan pegawai lab.
+        $perMenitPengguna('pelanggan-undang-anggota', 5);
+
         $perMenitPengguna('laporan-export', 20);
         $perMenitPengguna('pratinjau-hitung', 120);
         $perMenitPengguna('pratinjau-autoclave', 120);

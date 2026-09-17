@@ -71,6 +71,37 @@ trait JalurPelanggan
         });
     }
 
+    /**
+     * Admin LAB (bukan pelanggan) — buat menguji sisi §7.3.
+     *
+     * Tokennya ber-ability `internal` karena itu yang dituntut
+     * `aplikasi:internal` di seluruh `routes/api.php` sejak M1-03.
+     */
+    protected function adminLab(string $role = User::ROLE_ADMIN): User
+    {
+        return User::factory()->create([
+            'organization_id' => $this->organisasi()->id,
+            'role' => $role,
+            'status' => User::STATUS_AKTIF,
+            'password' => Hash::make($this->sandiBenar),
+        ]);
+    }
+
+    /** @return array<string, string> */
+    protected function bearerInternal(User $user): array
+    {
+        return ['Authorization' => 'Bearer '.$user->createToken('uji-internal', ['internal'])->plainTextToken];
+    }
+
+    /** Perusahaan pelanggan milik organisasi lab ini. */
+    protected function perusahaan(?string $nama = null): Customer
+    {
+        return Customer::factory()->create([
+            'organization_id' => $this->organisasi()->id,
+            'nama' => $nama ?? 'PT Contoh Pelanggan '.(++$this->nomorPerusahaan),
+        ]);
+    }
+
     protected function organisasi(): Organization
     {
         return Organization::query()->first() ?? Organization::factory()->create();
@@ -123,6 +154,29 @@ trait JalurPelanggan
             'jabatan' => $user->jabatan,
             'status' => $status,
         ]);
+    }
+
+    /**
+     * Mulai request BERSIH: buang guard yang kadung terisi DAN header yang
+     * menempel dari request sebelumnya.
+     *
+     * Dua jebakan berbeda, dua-duanya cuma ada di test, dua-duanya bikin test
+     * hijau/merah palsu tanpa satu pun error:
+     *
+     * 1. `RequestGuard::user()` menyimpan hasilnya — lihat [lupakanSesiGuard()].
+     * 2. **`withHeaders()` MENUMPUK.** Dia menggabungkan ke
+     *    `$this->defaultHeaders`, jadi `X-Perusahaan-Id` yang dikirim di satu
+     *    request masih terkirim di request berikutnya walau tidak disebut lagi.
+     *    Ketahuan waktu menulis test konteks perusahaan: request "tanpa header"
+     *    ternyata masih membawa header perusahaan dari request sebelumnya, dan
+     *    yang diuji jadi bukan yang dimaksud sama sekali.
+     *
+     * Dipanggil di antara dua request yang identitas atau konteksnya berbeda.
+     */
+    protected function permintaanBaru(): void
+    {
+        $this->lupakanSesiGuard();
+        $this->flushHeaders();
     }
 
     /**

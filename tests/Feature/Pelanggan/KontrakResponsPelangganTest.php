@@ -3,6 +3,8 @@
 namespace Tests\Feature\Pelanggan;
 
 use App\Mail\Pelanggan\KodeOtpEmail;
+use App\Mail\Pelanggan\UndanganEmail;
+use App\Models\CustomerMember;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,7 +77,7 @@ class KontrakResponsPelangganTest extends TestCase
             return $hasil;
         }
 
-        if (in_array($kunci, ['id', 'customer_id'], true) && is_int($nilai)) {
+        if (in_array($kunci, ['id', 'customer_id', 'member_id', 'user_id'], true) && is_int($nilai)) {
             return '<int>';
         }
 
@@ -175,6 +177,91 @@ class KontrakResponsPelangganTest extends TestCase
             ->json();
 
         $this->aduKeFixture('saya-ditolak', $badan);
+    }
+
+    public function test_bentuk_respons_terima_undangan(): void
+    {
+        Mail::fake();
+
+        $perusahaan = $this->perusahaan('PT Contoh Pelanggan');
+
+        $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->postJson("/api/customers/{$perusahaan->id}/undangan", [
+                'email' => 'budi@contoh.test',
+                'peran' => CustomerMember::PERAN_STAF,
+            ])->assertCreated();
+
+        $kode = null;
+        Mail::assertSent(UndanganEmail::class, function ($mail) use (&$kode) {
+            $kode = $mail->kode;
+
+            return true;
+        });
+
+        $this->lupakanSesiGuard();
+
+        $badan = $this->postJson('/api/pelanggan/v1/auth/terima-undangan', [
+            'email' => 'budi@contoh.test',
+            'kode' => $kode,
+            'nama' => 'Budi Diundang',
+            'sandi' => $this->sandiBenar,
+            'telepon' => '0812-3456-7890',
+            'jabatan' => 'QA Staff',
+            'setuju_syarat' => true,
+            'nama_perangkat' => 'Pixel 8a Budi',
+        ])->assertCreated()->json();
+
+        $this->aduKeFixture('terima-undangan', $badan);
+    }
+
+    public function test_bentuk_respons_antrean_pengajuan_sisi_lab(): void
+    {
+        $pemohon = $this->pelanggan(User::STATUS_PENDING_VERIFIKASI, [
+            'name' => 'Budi Menunggu',
+            'email' => 'budi@contoh.test',
+        ]);
+        $this->pengajuan($pemohon);
+
+        // Alamatnya DIPATOK, tidak dibiarkan dari factory: `CustomerFactory`
+        // memakai faker, jadi nilainya berubah tiap kali suite jalan dan
+        // fixture ini jadi merah bergantian tanpa ada yang berubah di kode.
+        // Ketahuan waktu ditulis — jalan pertama hijau (karena fixture-nya baru
+        // ditulis di jalan yang sama), jalan kedua merah.
+        $this->perusahaan('PT Klaim Pendaftar')
+            ->forceFill(['alamat' => 'Jl. Contoh No. 1, Bandung'])
+            ->save();
+
+        $badan = $this->withHeaders($this->bearerInternal($this->adminLab()))
+            ->getJson('/api/admin/pengajuan-akun')
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('admin-antrean-pengajuan', $badan);
+    }
+
+    public function test_bentuk_respons_daftar_anggota(): void
+    {
+        $pic = $this->anggota(CustomerMember::PERAN_PIC_UTAMA);
+        $pic->forceFill(['name' => 'Budi PIC', 'email' => 'budi@contoh.test'])->save();
+
+        $perusahaan = $pic->keanggotaan()->first()->customer;
+        $perusahaan->forceFill(['nama' => 'PT Contoh Pelanggan', 'maks_anggota' => 50])->save();
+
+        $staf = $this->pelanggan(tambahan: ['name' => 'Sari Staf', 'email' => 'sari@contoh.test']);
+        CustomerMember::create([
+            'organization_id' => $perusahaan->organization_id,
+            'customer_id' => $perusahaan->id,
+            'user_id' => $staf->id,
+            'peran' => CustomerMember::PERAN_STAF,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+
+        $badan = $this->withHeaders($this->bearer($pic))
+            ->getJson('/api/pelanggan/v1/anggota')
+            ->assertOk()
+            ->json();
+
+        $this->aduKeFixture('anggota', $badan);
     }
 
     /** Bentuk ERROR ikut dibekukan — aplikasi bercabang pada `kode`, bukan pada `message`. */

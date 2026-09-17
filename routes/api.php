@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
+use App\Http\Controllers\Api\Admin\PengajuanAkunController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AutoclaveController;
@@ -505,6 +507,25 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
 
     // Approval kalibrasi & master data: admin doang.
     Route::middleware('role:admin')->group(function () {
+        /*
+         * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------
+         *
+         * Sengaja di SINI, bukan di routes/api_pelanggan.php: pemanggilnya
+         * aplikasi internal dengan token ber-ability `internal`, dan menaruhnya
+         * di berkas pelanggan bikin dia ikut 503 waktu `FITUR_PELANGGAN=false`
+         * — padahal antrean yang telanjur berisi tetap harus bisa diputus.
+         */
+        Route::get('/admin/pengajuan-akun', [PengajuanAkunController::class, 'index']);
+        Route::post('/admin/pengajuan-akun/{pengajuan}/setujui', [PengajuanAkunController::class, 'setujui'])
+            ->middleware('throttle:pelanggan-putus-pengajuan');
+        Route::post('/admin/pengajuan-akun/{pengajuan}/tolak', [PengajuanAkunController::class, 'tolak'])
+            ->middleware('throttle:pelanggan-putus-pengajuan');
+
+        Route::post('/customers/{customer}/undangan', [PelangganKeanggotaanController::class, 'undang'])
+            ->middleware('throttle:pelanggan-undang');
+        Route::delete('/customers/{customer}/undangan/{undangan}', [PelangganKeanggotaanController::class, 'batalkanUndangan']);
+        Route::patch('/customers/{customer}/pic-admin', [PelangganKeanggotaanController::class, 'picAdmin']);
+
         // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
         Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);

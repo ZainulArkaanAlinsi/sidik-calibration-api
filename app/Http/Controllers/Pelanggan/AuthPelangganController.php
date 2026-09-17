@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Pelanggan;
 
+use App\Exceptions\Pelanggan\AksiPelangganDitolak;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pelanggan\AturUlangSandiRequest;
 use App\Http\Requests\Pelanggan\DaftarRequest;
 use App\Http\Requests\Pelanggan\EmailSajaRequest;
 use App\Http\Requests\Pelanggan\MasukRequest;
+use App\Http\Requests\Pelanggan\TerimaUndanganRequest;
 use App\Http\Requests\Pelanggan\VerifikasiEmailRequest;
 use App\Http\Resources\Pelanggan\AkunResource;
 use App\Mail\Pelanggan\KodeOtpEmail;
@@ -16,7 +18,9 @@ use App\Models\PengajuanAkunPelanggan;
 use App\Models\PersetujuanDokumen;
 use App\Models\User;
 use App\Notifications\Pelanggan\PengajuanAkunMenunggu;
+use App\Services\Pelanggan\Keanggotaan;
 use App\Services\Pelanggan\KodeOtp;
+use App\Services\Pelanggan\KodeUndangan;
 use App\Services\Pelanggan\TokenPelanggan;
 use App\Services\PenerimaNotifikasi;
 use Illuminate\Http\JsonResponse;
@@ -186,6 +190,91 @@ class AuthPelangganController extends Controller
             'message' => 'Kalau email itu memang menunggu verifikasi, kode barunya sudah dikirim.',
             'data' => ['otp_berlaku_menit' => OtpPelanggan::BERLAKU_MENIT],
         ]);
+    }
+
+    /**
+     * REQ-AUTH-06 — tukar kode undangan jadi akun yang LANGSUNG aktif.
+     *
+     * Tidak lewat antrean verifikasi sama sekali, dan itu aman justru karena
+     * undangannya: yang menjamin orangnya berhak bukan klaim yang dia ketik,
+     * melainkan bahwa seseorang yang sudah berwenang (PIC utama perusahaan itu,
+     * atau admin lab) mengirim kode ke alamat emailnya. Itu bukti yang lebih
+     * kuat daripada apa pun yang bisa diketik sendiri di layar daftar.
+     *
+     * Email TIDAK diverifikasi OTP di jalur ini, dan itu disengaja: kodenya
+     * sendiri sudah membuktikan orangnya membaca email di alamat itu.
+     */
+    public function terimaUndangan(TerimaUndanganRequest $request, KodeUndangan $kodeUndangan, Keanggotaan $keanggotaan): JsonResponse
+    {
+        $data = $request->validated();
+        $undangan = $kodeUndangan->tukar($data['email'], $data['kode']);
+
+        // Satu balasan buat "kode salah", "sudah dipakai", dan "kedaluwarsa".
+        // Membedakannya bikin endpoint ini bisa dipakai memeriksa undangan mana
+        // yang pernah ada buat sebuah email.
+        if ($undangan === null || $undangan->customer === null) {
+            return $this->tolak(
+                'undangan_tidak_berlaku',
+                'Kode undangan tidak cocok, sudah dipakai, atau sudah kedaluwarsa.',
+                422,
+            );
+        }
+
+        $hasil = DB::transaction(function () use ($data, $undangan, $keanggotaan, $request) {
+            $perusahaan = $undangan->customer;
+
+            // Orang yang emailnya SUDAH punya akun tidak dibuatkan akun kedua —
+            // dia ditambahkan sebagai anggota perusahaan ini. Konsultan yang
+            // memegang tiga pabrik itu satu orang, bukan tiga akun.
+            $user = User::query()->where('email', $data['email'])->first();
+
+            if ($user === null) {
+                $user = User::create([
+                    'organization_id' => $perusahaan->organization_id,
+                    'name' => $data['nama'],
+                    'email' => $data['email'],
+                    'password' => $data['sandi'],
+                    'telepon' => $data['telepon'],
+                    'jabatan' => $data['jabatan'] ?? null,
+                    'role' => User::ROLE_PELANGGAN,
+                    'status' => User::STATUS_AKTIF,
+                ]);
+
+                // `forceFill`, BUKAN ikut di `create()` di atas: `email_verified_at`
+                // tidak ada di `#[Fillable]` `User`, jadi mass assignment
+                // MEMBUANGNYA tanpa satu pun error — akunnya jadi aktif dengan
+                // email yang tercatat belum terverifikasi. Ketahuan dari test.
+                //
+                // Terverifikasi sejak detik ini memang benar: kode undangannya
+                // hanya sampai lewat email itu, jadi menukarnya sudah
+                // membuktikan orangnya membacanya.
+                $user->forceFill(['email_verified_at' => now()])->save();
+
+                $this->catatPersetujuan($user, $request);
+            } elseif ($user->role !== User::ROLE_PELANGGAN) {
+                // Akun LAB tidak boleh berubah jadi akun pelanggan lewat
+                // undangan. Kalau boleh, siapa pun yang bisa mengundang bisa
+                // menarik akun admin ke dalam perusahaannya.
+                throw new AksiPelangganDitolak(
+                    'bukan_akun_pelanggan',
+                    'Email ini terdaftar sebagai akun internal PT Sidik dan tidak bisa menerima undangan.',
+                    422,
+                );
+            }
+
+            $anggota = $keanggotaan->daftarkan($perusahaan, $user, $undangan->peran, $undangan->pembuat);
+
+            $undangan->forceFill([
+                'dipakai_pada' => now(),
+                'dipakai_oleh' => $user->getKey(),
+            ])->save();
+
+            return ['user' => $user->refresh(), 'anggota' => $anggota];
+        });
+
+        return response()->json([
+            'data' => $this->bungkusToken($hasil['user'], $data['nama_perangkat'] ?? ''),
+        ], 201);
     }
 
     /** REQ-AUTH-03/07/08/10 — masuk dari aplikasi pelanggan. */

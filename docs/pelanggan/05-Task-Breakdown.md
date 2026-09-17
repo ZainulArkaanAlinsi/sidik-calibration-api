@@ -35,8 +35,9 @@ Total kerja ±65 hari kerja orang. Dengan dua orang yang juga menyelesaikan MVP 
 
 ## M1 — Backend: identitas, keanggotaan, isolasi
 
-> **Sudah mendarat per 16 Sep 2026** (branch `pelanggan/fase-4-auth-pelanggan`):
-> M1-01, M1-02, M1-03, M1-04, M1-06. Berikutnya M1-05 & M1-07.
+> **M1 SELESAI per 16 Sep 2026** — M1-01 s/d M1-07 semuanya sudah mendarat
+> (branch `pelanggan/fase-4-auth-pelanggan` lalu `pelanggan/fase-5-persetujuan-dan-anggota`).
+> Berikutnya M2 (mobile) dan M3 (alat).
 >
 > Kolom Status sengaja TIDAK ditambahkan ke tabel di bawah: `CLAUDE.md` menunjuk
 > `docs/BACA-DULU-BACKEND.md` sebagai satu-satunya dokumen status yang boleh

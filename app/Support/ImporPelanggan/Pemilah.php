@@ -3,6 +3,7 @@
 namespace App\Support\ImporPelanggan;
 
 use App\Models\Customer;
+use App\Support\KemiripanNama;
 
 /**
  * Pilah baris impor jadi tiga keranjang SEBELUM satu baris pun ditulis.
@@ -27,23 +28,13 @@ use App\Models\Customer;
  */
 final class Pemilah
 {
-    /** Jarak maksimum yang masih dianggap "mirip, tolong ditinjau orang". */
-    public const JARAK_TINJAU = 2;
-
     /**
-     * Bentuk badan usaha yang muncul sebagai kata pertama nama PT Indonesia.
+     * Jarak maksimum yang masih dianggap "mirip, tolong ditinjau orang".
      *
-     * Dipakai HANYA untuk membatalkan kemiripan, tidak pernah untuk membuat
-     * kemiripan. Daftar yang kurang lengkap berarti ada pasangan yang lolos ke
-     * tinjauan manusia — aman. Daftar yang kelewat rajin berarti ada pasangan
-     * kembar asli yang lolos jadi baris baru — tidak aman.
-     *
-     * @var list<string>
+     * Tetap diumumkan dari sini karena dipakai di pesan tinjauan, tapi nilainya
+     * milik `KemiripanNama` — satu angka, bukan dua yang bisa berselisih.
      */
-    private const BADAN_USAHA = [
-        'pt', 'cv', 'ud', 'pd', 'fa', 'firma', 'nv', 'perum',
-        'koperasi', 'kop', 'yayasan', 'bumd', 'bumn',
-    ];
+    public const JARAK_TINJAU = KemiripanNama::JARAK_TINJAU;
 
     /**
      * @param  list<BarisMasukan>  $baris
@@ -159,45 +150,20 @@ final class Pemilah
             : 'pelanggan yang sudah ada';
     }
 
+    /**
+     * Aturannya PINDAH ke `App\Support\KemiripanNama`, dipanggil dari sini.
+     *
+     * Sebabnya jalur kedua: saran "pelanggan mirip" waktu admin menyetujui
+     * pengajuan akun pelanggan (REQ-AUTH-04) butuh aturan yang sama persis.
+     * Disalin, dia menyimpang diam-diam — dan tiga penjagaan di dalamnya
+     * (badan usaha, batas 255 byte `levenshtein`, saringan panjang) tidak
+     * memunculkan error waktu hilang, cuma saran yang salah.
+     *
+     * Dibiarkan sebagai method di sini supaya pemanggil di kelas ini tidak
+     * berubah sama sekali — yang membuktikan perilakunya utuh `ImporPelangganTest`.
+     */
     private static function mirip(string $a, string $b): bool
     {
-        if ($a === $b) {
-            return true;
-        }
-
-        // Badan usaha berbeda = badan hukum berbeda. Berhenti di sini SEBELUM
-        // jarak dihitung: `pt maju` vs `cv maju` jaraknya 2 dan akan lolos.
-        if (self::badanUsaha($a) !== self::badanUsaha($b)) {
-            return false;
-        }
-
-        // `levenshtein()` PHP bekerja per BYTE dan menyerah di atas 255 byte.
-        // Tanpa penjaga ini nama panjang balik -1, dan -1 <= 2 itu BENAR —
-        // tiap nama panjang jadi mirip dengan tiap nama panjang lain.
-        if (strlen($a) > 255 || strlen($b) > 255) {
-            return false;
-        }
-
-        // Saringan murah dulu: beda panjang di atas ambang tidak mungkin punya
-        // jarak di bawah ambang.
-        if (abs(strlen($a) - strlen($b)) > self::JARAK_TINJAU) {
-            return false;
-        }
-
-        return levenshtein($a, $b) <= self::JARAK_TINJAU;
-    }
-
-    /**
-     * Kata pertama kalau dia bentuk badan usaha, kosong kalau bukan.
-     *
-     * Nama tanpa bentuk badan usaha (`Maju Jaya`) sama-sama mengembalikan
-     * kosong, jadi dua nama telanjang tetap bisa dibandingkan satu sama lain —
-     * yang dibatalkan cuma pasangan yang bentuknya BERBEDA.
-     */
-    private static function badanUsaha(string $normal): string
-    {
-        $kata = explode(' ', $normal)[0] ?? '';
-
-        return in_array($kata, self::BADAN_USAHA, true) ? $kata : '';
+        return KemiripanNama::mirip($a, $b);
     }
 }

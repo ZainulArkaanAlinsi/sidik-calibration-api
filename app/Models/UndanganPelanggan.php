@@ -47,6 +47,26 @@ class UndanganPelanggan extends Model
     }
 
     /**
+     * Siapa yang mengundang — admin lab ATAU PIC utama perusahaan.
+     *
+     * Dua peran yang sangat berbeda menulis kolom yang sama, dan itu disengaja:
+     * yang dijawab kolom ini "atas tanggung jawab siapa orang ini masuk", dan
+     * jawabannya sama-sama mengikat entah dari lab atau dari perusahaannya.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function pembuat(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dibuat_oleh');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function pemakai(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dipakai_oleh');
+    }
+
+    /**
      * Masih bisa ditukar?
      *
      * Tiga syaratnya diperiksa bareng di satu tempat supaya nggak ada pemanggil

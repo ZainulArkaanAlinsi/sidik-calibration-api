@@ -2,8 +2,10 @@
 
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
+use App\Http\Middleware\KonteksPerusahaan;
 use App\Http\Middleware\PastikanAplikasi;
 use App\Http\Middleware\PelangganAktif;
+use App\Http\Middleware\PeranAnggota;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -52,6 +54,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'fitur.pelanggan' => FiturPelanggan::class,
             'aplikasi' => PastikanAplikasi::class,
             'pelanggan.aktif' => PelangganAktif::class,
+            'perusahaan' => KonteksPerusahaan::class,
+            'peran' => PeranAnggota::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

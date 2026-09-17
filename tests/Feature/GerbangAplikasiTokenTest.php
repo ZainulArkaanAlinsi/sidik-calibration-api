@@ -226,6 +226,8 @@ class GerbangAplikasiTokenTest extends TestCase
             'pelanggan-otp-periksa',
             'pelanggan-otp-kirim',
             'pelanggan-sandi',
+            'pelanggan-undangan-tukar',
+            'pelanggan-undang-anggota',
         ];
 
         foreach ($wajib as $nama) {
