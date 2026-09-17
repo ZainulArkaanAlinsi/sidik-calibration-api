@@ -50,6 +50,7 @@ Biar jelas mana yang dibaca buat apa:
 | [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 disetel 11 Sep 2026: lima butir beres (termasuk jalur kirim dari HP yang ternyata belum pernah ada), dua masih tersisa |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
+| [`pelanggan/`](pelanggan/) | Paket rancangan **modul pelanggan** (00–08 + ADR-001): PRD, SRS ber-REQ, SDD, alur UI, task M0–M8, risk register, runbook rilis | ✅ ya (rancangan, BUKAN status) — mendarat 16 Sep 2026, versi 0.1 **draf**, nol barisnya sudah jadi kode kecuali M0-05 |
 
 ---
 
@@ -89,6 +90,70 @@ di repo mobile. Sudah ditulis di komentar test-nya supaya tidak perlu dicari.
 Yang **belum** diputuskan, dan sengaja tidak diputuskan sepihak di sini: apakah
 menu "Tugas Saya" jadi dipasang balik. Itu keputusan produk, bukan temuan kode.
 Yang dikoreksi hari ini cuma FAKTA yang jadi dasarnya.
+
+---
+
+## 16 Sep 2026 — jadwal alat akhirnya ikut sertifikat (M0-05)
+
+**Yang berubah:** `berlaku_sampai` yang dipilih admin waktu approve sekarang ikut
+ditulis ke `equipments.tanggal_jatuh_tempo`, dan tanggal kalibrasi sesinya ke
+`equipments.tanggal_kalibrasi_terakhir`. Sebelum ini dua angka itu diisi dari dua
+jalan yang tidak pernah bertemu.
+
+**Kenapa ini bug, bukan penambahan.** `approve` menyimpan pilihan admin di
+`certificates.berlaku_sampai`, sementara `PengingatJatuhTempo` — yang jalan tiap
+pagi lewat `alat:cek-jatuh-tempo` — membaca `equipments.tanggal_jatuh_tempo`,
+kolom yang sampai kemarin cuma berubah lewat form panel dan impor Excel. Jadi
+sertifikat bisa terbit dengan masa berlaku baru sementara kolom di alatnya tetap
+yang lama, dan pengingatnya mengabari admin soal tanggal yang sudah tidak
+berlaku — atau, kalau kolomnya kosong, tidak mengabari sama sekali. Nol error di
+mana pun: dua-duanya kolom sah berisi tanggal sah.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `app/Services/SinkronJadwalAlat.php` (baru) | `untuk()` menulis, `rencana()` menghitung tanpa menulis, `sertifikatAktif()` memilih sumbernya |
+| `app/Jobs/GenerateCertificate.php` | Status `terbit` + sinkron jadwal alat sekarang dalam SATU transaksi |
+| `app/Console/Commands/SapuJadwalAlat.php` (baru) | Perintah `alat:sinkron-jadwal {--dry-run}` |
+
+**Nol migrasi, nol kolom baru.** "Sudah digantikan revisi" diturunkan dari
+`revision_of` yang memang sudah ada, bukan dari kolom `digantikan_oleh` baru.
+
+**Yang TIDAK disentuh:** `PengingatJatuhTempo`, validasi `approve`, rute mana pun.
+
+### ⚠️ `alat:sinkron-jadwal` — dry-run WAJIB ditinjau manusia dulu
+
+Perintah ini menulis ke kolom yang menentukan kapan alat pelanggan harus
+dikalibrasi lagi. Urutan yang mengikat:
+
+1. `php artisan alat:sinkron-jadwal --dry-run` di **salinan data produksi**, bukan
+   langsung di produksi.
+2. Tabel keluarannya ditinjau Pak Rohman / admin lab. Yang dilihat: alat yang
+   `jatuh_tempo`-nya MUNDUR, karena itu yang bikin alat mendadak lewat jadwal.
+3. Baru dijalankan tanpa flag. Dia minta konfirmasi sekali lagi sebelum menulis.
+
+**Jangan dijadwalkan.** Perintah ini sengaja tidak masuk `routes/console.php`.
+Dijalankan tiap malam, dia jadi proses yang terus mengadu kolom yang diisi admin
+dengan data yang untuk sebagian alat memang tidak ada. Sambungan di
+`GenerateCertificate` sudah menjaga yang ke depan; perintah ini cuma untuk yang
+terlanjur.
+
+### Yang masih menganga: alur revisi sertifikat TIDAK ADA
+
+`certificates.revision_of` dan `alasan_revisi` ada di migrasi sejak 14 Jul,
+ada di `$fillable`, punya relasi `Certificate::revisionOf()`, dan `alasan_revisi`
+ditampilkan `CertificateInfolist` — tapi **tidak ada satu pun kode produksi yang
+mengisinya**. Satu-satunya penulis `revision_of` di repo ini fixture test
+(`tests/Feature/FilamentAccessTest.php:130`).
+
+`CetakUlangSertifikat` BUKAN alur revisi: dia merender ulang PDF dari snapshot
+beku dan sengaja tidak membuat baris sertifikat baru.
+
+Artinya dari sisi panel admin fitur ini kelihatan ada padahal tidak pernah
+dibangun. `SinkronJadwalAlat` sudah ditulis sadar-revisi, jadi begitu alur
+revisinya dibangun di atas `GenerateCertificate`, sinkronnya ikut jalan tanpa
+perlu disambung lagi.
 
 ---
 
