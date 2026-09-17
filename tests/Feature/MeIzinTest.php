@@ -10,6 +10,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Folder;
 use App\Models\FolderFile;
 use App\Models\Organization;
+use App\Models\PengajuanAkunPelanggan;
 use App\Models\User;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -239,6 +240,21 @@ class MeIzinTest extends TestCase
 
         if (str_contains($uri, '{user}')) {
             $ganti['{user}'] = (string) User::factory()->create()->id;
+        }
+
+        // Modul pelanggan (M1-05). Dua-duanya WAJIB seorganisasi dengan user
+        // yang sedang diuji: controllernya membalas 404 buat baris milik lab
+        // lain, dan 404 itu bikin sapuan ini mengira gerbang role-nya bolong.
+        if (str_contains($uri, '{pengajuan}')) {
+            $ganti['{pengajuan}'] = (string) PengajuanAkunPelanggan::factory()->create([
+                'organization_id' => $user->organization_id,
+            ])->id;
+        }
+
+        if (str_contains($uri, '{customer}')) {
+            $ganti['{customer}'] = (string) Customer::factory()->create([
+                'organization_id' => $user->organization_id,
+            ])->id;
         }
 
         return str_replace(array_keys($ganti), array_values($ganti), $uri);

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\PelangganKeanggotaanController;
+use App\Http\Controllers\Api\Admin\PengajuanAkunController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AutoclaveController;
@@ -236,7 +238,33 @@ Route::get('/verify/{qr_token}', [VerificationController::class, 'show'])->middl
 |
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+// `role:admin,teknisi,viewer` DI GRUP LUAR — deny by default.
+//
+// Sebelum ini, satu-satunya penjagaan buat sebagian besar rute GET di dalam sini
+// cuma penyaringan `organization_id` di controller. Itu cukup selama semua orang
+// yang punya akun memang orang lab. Begitu role `pelanggan` lahir dan akun
+// pelanggan duduk di organisasi PT Sidik, PT A bisa membaca alat & sertifikat
+// PT B lewat rute internal ini — kerahasiaan antar pelanggan, ISO/IEC 17025
+// klausul 4.2.
+//
+// Ditutup SEKARANG, sebelum role-nya ada, supaya celahnya nggak pernah sempat
+// terbuka. Grup `role:admin,teknisi` dan `role:admin` yang bersarang di bawah
+// TIDAK berubah — dua gerbang bertumpuk artinya dua-duanya harus lolos, jadi
+// yang admin-only tetap admin-only.
+//
+// `aplikasi:internal` ditambahkan di depan `role:` (M1-03). Role menjawab
+// "orang ini siapa"; ability token menjawab "token ini dikeluarkan buat
+// aplikasi mana" — dan dua aplikasi Android yang memakai satu backend butuh
+// dua-duanya. Urutannya disengaja: token dari aplikasi yang salah ditolak
+// sebelum rolenya sempat diperiksa.
+//
+// Token teknisi yang SUDAH BEREDAR tetap jalan: abilitynya `['*']` (default
+// `createToken`), dan Sanctum meloloskan wildcard. Lihat docblock
+// `PastikanAplikasi` soal kapan itu berhenti berlaku.
+//
+// Dijaga `RuteInternalMenolakRoleLainTest`, yang membaca daftar rute sendiri:
+// rute baru yang lupa dipagari bikin test itu merah, bukan lolos diam-diam.
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,viewer'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     // Izin pemanggil buat nyembunyiin tombol yang bakal ditolak (fase-2 §1).
     // Jawabannya diturunkan dari middleware `role:` di rute-rute di bawah, jadi
@@ -479,6 +507,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Approval kalibrasi & master data: admin doang.
     Route::middleware('role:admin')->group(function () {
+        /*
+         * --- Modul pelanggan, sisi LAB (03-SDD §7.3) -----------------------
+         *
+         * Sengaja di SINI, bukan di routes/api_pelanggan.php: pemanggilnya
+         * aplikasi internal dengan token ber-ability `internal`, dan menaruhnya
+         * di berkas pelanggan bikin dia ikut 503 waktu `FITUR_PELANGGAN=false`
+         * — padahal antrean yang telanjur berisi tetap harus bisa diputus.
+         */
+        Route::get('/admin/pengajuan-akun', [PengajuanAkunController::class, 'index']);
+        Route::post('/admin/pengajuan-akun/{pengajuan}/setujui', [PengajuanAkunController::class, 'setujui'])
+            ->middleware('throttle:pelanggan-putus-pengajuan');
+        Route::post('/admin/pengajuan-akun/{pengajuan}/tolak', [PengajuanAkunController::class, 'tolak'])
+            ->middleware('throttle:pelanggan-putus-pengajuan');
+
+        Route::post('/customers/{customer}/undangan', [PelangganKeanggotaanController::class, 'undang'])
+            ->middleware('throttle:pelanggan-undang');
+        Route::delete('/customers/{customer}/undangan/{undangan}', [PelangganKeanggotaanController::class, 'batalkanUndangan']);
+        Route::patch('/customers/{customer}/pic-admin', [PelangganKeanggotaanController::class, 'picAdmin']);
+
         // Sesi FAIL tetap boleh di-approve — sertifikatnya terbit dengan hasil
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
         Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
