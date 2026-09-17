@@ -383,7 +383,6 @@ Menulis tanda terkirim sebelum push memilih risiko "satu pengingat tidak sampai"
 |---|---|---|---|
 | `APP_ENV` | local | staging | production |
 | `FITUR_PELANGGAN` | true | true | **false** sampai rilis M7, lalu true |
-| `FITUR_PELANGGAN_PILOT_IDS` | — | — | daftar `customer_id` pilot saat UAT M6 (flag menyala hanya untuk mereka) |
 | `PELANGGAN_VERSI_MINIMUM` | 0.0.0 | naik tiap perubahan merusak | naik tiap perubahan merusak |
 | `PELANGGAN_MAINTENANCE` | false | false | true saat maintenance |
 | `ARSIP_DRIVER` | local | s3 (bucket staging) | s3 (bucket produksi) |

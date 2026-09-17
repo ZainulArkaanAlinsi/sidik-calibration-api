@@ -81,8 +81,7 @@ Kerjakan:
    yang mengubahnya.
 2. Migrasi additive sesuai SDD, semuanya punya down() yang benar.
 3. Model + factory untuk tabel baru. Pakai trait Diaudit di model yang menyimpan aksi manusia.
-4. config/pelanggan.php membaca FITUR_PELANGGAN, FITUR_PELANGGAN_PILOT_IDS,
-   PELANGGAN_VERSI_MINIMUM, PELANGGAN_MAINTENANCE (lewat config, bukan env() di luar config —
+4. config/pelanggan.php membaca FITUR_PELANGGAN, PELANGGAN_VERSI_MINIMUM, PELANGGAN_MAINTENANCE (lewat config, bukan env() di luar config —
    ikuti alasan di config/deploy.php).
 5. routes/api_pelanggan.php terdaftar di bootstrap/app.php dengan prefix api/pelanggan/v1.
    Middleware FiturPelanggan: flag mati → 503 {kode: "belum_tersedia", message}.
