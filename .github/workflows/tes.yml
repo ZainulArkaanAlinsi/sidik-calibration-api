@@ -124,4 +124,76 @@ jobs:
             exit 1
           }
           echo "Render mulai deploy (HTTP $KODE)."
-          echo "Pantau di dashboard Render; build ulang biasanya 2-10 menit tergantung lapisan yang kecache."
+
+      # Gerbang yang dulu nggak ada, dan ketiadaannya mahal.
+      #
+      # Sebelum ini job-nya berhenti tepat sesudah ngetuk hook — mengetuk pintu
+      # lalu pulang. Ketukan yang diterima Render itu cuma berarti "permintaan
+      # deploy masuk antrean", BUKAN "versi barunya jalan". Build gagal, health
+      # check timeout, container mati waktu boot: ketiganya tetap kelihatan
+      # HIJAU di GitHub, dan satu-satunya cara tahu ya membuka dashboard.
+      #
+      # Akibatnya bukan teoretis: orang push perbaikan, lihat centang hijau,
+      # lanjut kerja — sementara server masih menjalankan kode lama dan bug
+      # yang dikira sudah beres masih hidup di lokasi.
+      #
+      # Yang diadu di sini `deploy.versi` dari GET /api/health, yaitu
+      # RENDER_GIT_COMMIT yang disuntik Render ke container yang BENAR-BENAR
+      # jalan. Selama container lama masih melayani, nilainya masih SHA lama —
+      # jadi berubahnya nilai itu bukti pergantian, bukan tebakan.
+      - name: Pastiin versi barunya beneran naik
+        env:
+          URL: ${{ vars.RENDER_APP_URL || secrets.RENDER_APP_URL }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Variable RENDER_APP_URL belum dipasang, jadi nggak ada yang bisa dicek sesudah deploy. Isi URL publik servicenya (mis. https://namamu.onrender.com), TANPA garis miring di akhir: gh variable set RENDER_APP_URL --body \"https://<url>.onrender.com\""
+            exit 1
+          fi
+
+          # Paket gratis Render bisa lagi tidur waktu diketuk, dan bangunnya
+          # ~50 detik. `--max-time 90` biar percobaan pertama nggak dihitung
+          # gagal cuma karena servicenya lagi molor.
+          #
+          # Batas totalnya 25 menit: build ulang 2-10 menit, plus jendela
+          # health check Render yang 15 menit. Lebih pendek dari itu bakal
+          # merah buat deploy yang sebenarnya masih sehat, cuma lambat.
+          BATAS=$(( $(date +%s) + 25 * 60 ))
+          JEDA=15
+          SEBELUMNYA=""
+
+          echo "Nungguin $URL nyajiin commit $SHA ..."
+
+          while [ "$(date +%s)" -lt "$BATAS" ]; do
+            BADAN=$(curl -s --max-time 90 "$URL/api/health" || true)
+            VERSI=$(printf '%s' "$BADAN" | jq -r '.deploy.versi // empty' 2>/dev/null || true)
+
+            if [ "$VERSI" = "$SHA" ]; then
+              # TANPA `// empty`: di jq, `false // empty` menghasilkan empty
+              # karena `//` menganggap `false` setara `null`. Dipakai di sini,
+              # peringatan di bawah nggak akan pernah menyala justru waktu
+              # nilainya `false` — satu-satunya keadaan yang bikin dia ada.
+              ARSIP=$(printf '%s' "$BADAN" | jq -r '.deploy.arsip.awet' 2>/dev/null || true)
+              echo "Versi $SHA udah jalan di server."
+
+              # Bukan gerbang, cuma peringatan — dan sengaja dicetak di sini
+              # karena ini satu-satunya saat ada yang pasti melihatnya.
+              # `awet=false` artinya arsip & PDF sertifikat nulis ke disk
+              # container, yang kehapus tiap deploy. Nggak ada error, nggak ada
+              # yang hilang seketika; yang hilang berkas lama, diam-diam.
+              if [ "$ARSIP" = "false" ]; then
+                echo "::warning::Arsip masih nulis ke disk container (deploy.arsip.awet=false) — berkas yang udah diunggah kehapus tiap deploy. Setel ARSIP_DRIVER=s3 di Render → Environment."
+              fi
+              exit 0
+            fi
+
+            if [ -n "$VERSI" ] && [ "$VERSI" != "$SEBELUMNYA" ]; then
+              echo "  masih versi lama ($VERSI), nunggu..."
+              SEBELUMNYA="$VERSI"
+            fi
+
+            sleep "$JEDA"
+          done
+
+          echo "::error::25 menit lewat dan $URL masih belum nyajiin commit $SHA. Kemungkinannya: build gagal, health check timeout, atau container mati waktu boot — alasannya ada di Render → service → Events. Kalau deploy-nya sendiri kelihatan sukses di sana, cek RENDER_GIT_COMMIT kebaca atau nggak: endpoint health bakal nulis versi null selamanya kalau variabelnya kosong."
+          exit 1
