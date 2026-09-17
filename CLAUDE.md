@@ -192,6 +192,38 @@ Jangan menyimpulkan status repo dari ingatan atau dari dokumen ini; jalankan
 `gh repo view --json visibility`. Berkas ini sendiri sempat salah menulis
 "PUBLIK" selama dua hari setelah statusnya dibalik, dan tidak ada yang error.
 
+## Modul Pelanggan — aturan keras
+
+Role ketiga CertiCal (`pelanggan`) dan aplikasi Android yang memakainya. Per
+16 Sep 2026 **belum ada satu baris pun** di repo ini — yang mendarat duluan
+aturannya, karena ketujuhnya kalau dilanggar TIDAK menghasilkan error. Paket
+rancangannya (`docs/pelanggan/`, 00–08 + ADR-001) juga belum masuk repo; poin 7
+menunjuk ke sana supaya jelas ke mana arahnya begitu berkasnya mendarat.
+
+1. **Rute pelanggan hanya di `routes/api_pelanggan.php`**, prefix
+   `api/pelanggan/v1`. Jangan ada satu pun yang menumpang `routes/api.php` —
+   begitu bercampur, gerbang `role:` di sana jadi satu-satunya yang memisahkan
+   dua dunia, dan itu penjagaan yang terlalu tipis untuk kerahasiaan antar
+   pelanggan (ISO/IEC 17025 klausul 4.2).
+2. **Controller/Request/Resource pelanggan hanya di namespace `Pelanggan`.**
+   Resource pelanggan TIDAK BOLEH memakai ulang atau mewarisi Resource
+   internal. Resource internal memuat `nama_alat_kemampuan`, reviewer, dan
+   status sesi; kalau diwarisi, satu field baru di sana bocor ke pelanggan
+   tanpa ada yang sengaja menambahkannya.
+3. **`customer_id` tidak pernah diambil dari request** — selalu dari
+   `KonteksPerusahaan`. Body dan query string itu milik pemanggil, bukan milik
+   kita.
+4. **Data milik perusahaan lain dijawab 404, bukan 403.** 403 mengakui
+   barangnya ada, dan itu sudah bocor: pelanggan bisa menyisir ID untuk
+   memetakan alat pesaingnya.
+5. **Setiap rute pelanggan ber-parameter wajib punya kasus di
+   `IsolasiPerusahaanTest`.** Test itu membaca daftar rute sendiri, jadi rute
+   baru yang lupa dikasih kasus uji bikin suite merah — bukan lolos diam-diam.
+6. **Migrasi untuk pelanggan hanya additive**, dan perubahan merusak pada
+   `/pelanggan/v1` dilarang. Aplikasi yang sudah terpasang di ribuan HP tidak
+   bisa disuruh ikut berubah hari itu juga; kalau memang harus, buat `/v2`.
+7. Rujukan lengkap: `docs/pelanggan/03-SDD.md`.
+
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.
 - JANGAN commit atau push otomatis setiap habis mengubah kode. Tunggu sampai user minta eksplisit, misal: "commit dan push ya", "commit ini dong".

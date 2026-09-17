@@ -54,6 +54,45 @@ Biar jelas mana yang dibaca buat apa:
 
 ---
 
+## 17 September 2026 — KOREKSI: entitas Order HIDUP LAGI, dan halaman ini yang basi
+
+Yang di bawah nulis Order "nggak jadi dibangun" dan "`main` nol rute". **Dua-duanya
+sekarang salah.** Dicek langsung ke `routes/api.php` hari ini:
+
+```
+GET    /orders                      OrderController@index     semua role
+GET    /orders/{order}              OrderController@show      semua role
+POST   /orders                      OrderController@store     admin
+PUT    /orders/{order}              OrderController@update    admin
+DELETE /orders/{order}              OrderController@destroy   admin
+POST   /orders/{order}/penugasan    OrderController@penugasan admin
+```
+
+`OrderController::index()` juga menerima `teknisi_id=saya` — literal `saya`, bukan
+ID, diterjemahkan dari token di sisi server. Itu persis kontrak yang dulu
+dijanjikan ke layar "Tugas Saya".
+
+**Ongkos yang sudah dibayar karena halaman ini nggak disetel — dan dibayar HARI
+INI:** repo mobile punya `lib/screens/order/my_tasks_screen.dart` yang lengkap
+(243 baris) tapi **nggak dirujuk satu baris pun** — nol rute, nol menu — dan
+`test/desktop_shell_test.dart` punya test yang MENGUNCI absennya menu itu, dengan
+alasan tertulis "`/orders` nol route". Alasan itu dikutip dari halaman ini.
+
+Lalu 17 Sep pukul 12:38, commit `cece462` di repo mobile menyapu "berkas yang
+nggak di-import siapa pun" — dan layar itu **ikut tercabut**. Sapuannya benar;
+premisnya yang tidak. Satu kalimat basi di halaman ini menahan satu layar yang
+sudah jadi selama tujuh minggu, lalu ikut menghapusnya — tanpa satu pun error di
+mana pun.
+
+Kodenya tidak hilang: `git show cece462^:lib/screens/order/my_tasks_screen.dart`
+di repo mobile. Sudah ditulis di komentar test-nya supaya tidak perlu dicari.
+
+Yang **belum** diputuskan, dan sengaja tidak diputuskan sepihak di sini: apakah
+menu "Tugas Saya" jadi dipasang balik. Itu keputusan produk, bukan temuan kode.
+Yang dikoreksi hari ini cuma FAKTA yang jadi dasarnya.
+
+---
+
 ## 16 Sep 2026 — jadwal alat akhirnya ikut sertifikat (M0-05)
 
 **Yang berubah:** `berlaku_sampai` yang dipilih admin waktu approve sekarang ikut
@@ -116,6 +155,8 @@ dibangun. `SinkronJadwalAlat` sudah ditulis sadar-revisi, jadi begitu alur
 revisinya dibangun di atas `GenerateCertificate`, sinkronnya ikut jalan tanpa
 perlu disambung lagi.
 
+---
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.
@@ -130,7 +171,7 @@ minggu ini. Sebagian besar isinya juga udah ada di `main` lewat jalan lain:
 | Arsip / file manager | ✅ ada, ditulis ulang dengan bentuk beda |
 | Matriks peran & `/me/permissions` | ✅ ada |
 | Koreksi suhu buffer, kondisi lingkungan | ✅ ada |
-| **Order Kalibrasi + penugasan teknisi** | ❌ **nggak ada, dan nggak jadi dibangun** |
+| **Order Kalibrasi + penugasan teknisi** | ❌ nggak ada — **status per 31 Juli, DIKOREKSI 17 Sep: rutenya hidup lagi**, lihat bagian di atas |
 
 ### ⚠️ Yang ikut ditutup: entitas Order
 
@@ -141,6 +182,10 @@ sekarang statusnya bukan "belum dibangun", tapi **nggak jadi dibangun**.
 
 §3 di bawah masih nulis `/orders` sebagai "BELUM ADA, jangan dibangun frontend-nya
 dulu". Kalimat itu sekarang perlu dibaca sebagai **permanen**, bukan "nanti".
+
+> ⚠️ **Dikoreksi 17 Sep 2026.** "Permanen" nggak bertahan: rutenya ada lagi di
+> `routes/api.php`, lengkap dengan `teknisi_id=saya`. Bagian **17 September 2026**
+> di atas yang berlaku, bukan paragraf ini.
 
 ### Kodenya nggak hilang
 
