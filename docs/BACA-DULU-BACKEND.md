@@ -50,6 +50,46 @@ Biar jelas mana yang dibaca buat apa:
 | [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 disetel 11 Sep 2026: lima butir beres (termasuk jalur kirim dari HP yang ternyata belum pernah ada), dua masih tersisa |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
+| [`pelanggan/`](pelanggan/) | Paket rancangan **modul pelanggan** (00–08 + ADR-001): PRD, SRS ber-REQ, SDD, alur UI, task M0–M8, risk register, runbook rilis | ✅ ya (rancangan, BUKAN status) — mendarat 16 Sep 2026, versi 0.1 **draf**, nol barisnya sudah jadi kode kecuali M0-05 |
+
+---
+
+## 17 September 2026 — KOREKSI: entitas Order HIDUP LAGI, dan halaman ini yang basi
+
+Yang di bawah nulis Order "nggak jadi dibangun" dan "`main` nol rute". **Dua-duanya
+sekarang salah.** Dicek langsung ke `routes/api.php` hari ini:
+
+```
+GET    /orders                      OrderController@index     semua role
+GET    /orders/{order}              OrderController@show      semua role
+POST   /orders                      OrderController@store     admin
+PUT    /orders/{order}              OrderController@update    admin
+DELETE /orders/{order}              OrderController@destroy   admin
+POST   /orders/{order}/penugasan    OrderController@penugasan admin
+```
+
+`OrderController::index()` juga menerima `teknisi_id=saya` — literal `saya`, bukan
+ID, diterjemahkan dari token di sisi server. Itu persis kontrak yang dulu
+dijanjikan ke layar "Tugas Saya".
+
+**Ongkos yang sudah dibayar karena halaman ini nggak disetel — dan dibayar HARI
+INI:** repo mobile punya `lib/screens/order/my_tasks_screen.dart` yang lengkap
+(243 baris) tapi **nggak dirujuk satu baris pun** — nol rute, nol menu — dan
+`test/desktop_shell_test.dart` punya test yang MENGUNCI absennya menu itu, dengan
+alasan tertulis "`/orders` nol route". Alasan itu dikutip dari halaman ini.
+
+Lalu 17 Sep pukul 12:38, commit `cece462` di repo mobile menyapu "berkas yang
+nggak di-import siapa pun" — dan layar itu **ikut tercabut**. Sapuannya benar;
+premisnya yang tidak. Satu kalimat basi di halaman ini menahan satu layar yang
+sudah jadi selama tujuh minggu, lalu ikut menghapusnya — tanpa satu pun error di
+mana pun.
+
+Kodenya tidak hilang: `git show cece462^:lib/screens/order/my_tasks_screen.dart`
+di repo mobile. Sudah ditulis di komentar test-nya supaya tidak perlu dicari.
+
+Yang **belum** diputuskan, dan sengaja tidak diputuskan sepihak di sini: apakah
+menu "Tugas Saya" jadi dipasang balik. Itu keputusan produk, bukan temuan kode.
+Yang dikoreksi hari ini cuma FAKTA yang jadi dasarnya.
 
 ---
 
@@ -110,6 +150,72 @@ pantas ditulis, bukan efek samping.
 **Prefix `api/pelanggan/` sudah dikecualikan dari sekarang**, walau rutenya belum
 ada — supaya Fase 3 tidak memerahkan test ini pada hari rute pelanggan pertama
 lahir. Modul pelanggan punya gerbangnya sendiri.
+
+---
+
+## 16 Sep 2026 — jadwal alat akhirnya ikut sertifikat (M0-05)
+
+**Yang berubah:** `berlaku_sampai` yang dipilih admin waktu approve sekarang ikut
+ditulis ke `equipments.tanggal_jatuh_tempo`, dan tanggal kalibrasi sesinya ke
+`equipments.tanggal_kalibrasi_terakhir`. Sebelum ini dua angka itu diisi dari dua
+jalan yang tidak pernah bertemu.
+
+**Kenapa ini bug, bukan penambahan.** `approve` menyimpan pilihan admin di
+`certificates.berlaku_sampai`, sementara `PengingatJatuhTempo` — yang jalan tiap
+pagi lewat `alat:cek-jatuh-tempo` — membaca `equipments.tanggal_jatuh_tempo`,
+kolom yang sampai kemarin cuma berubah lewat form panel dan impor Excel. Jadi
+sertifikat bisa terbit dengan masa berlaku baru sementara kolom di alatnya tetap
+yang lama, dan pengingatnya mengabari admin soal tanggal yang sudah tidak
+berlaku — atau, kalau kolomnya kosong, tidak mengabari sama sekali. Nol error di
+mana pun: dua-duanya kolom sah berisi tanggal sah.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `app/Services/SinkronJadwalAlat.php` (baru) | `untuk()` menulis, `rencana()` menghitung tanpa menulis, `sertifikatAktif()` memilih sumbernya |
+| `app/Jobs/GenerateCertificate.php` | Status `terbit` + sinkron jadwal alat sekarang dalam SATU transaksi |
+| `app/Console/Commands/SapuJadwalAlat.php` (baru) | Perintah `alat:sinkron-jadwal {--dry-run}` |
+
+**Nol migrasi, nol kolom baru.** "Sudah digantikan revisi" diturunkan dari
+`revision_of` yang memang sudah ada, bukan dari kolom `digantikan_oleh` baru.
+
+**Yang TIDAK disentuh:** `PengingatJatuhTempo`, validasi `approve`, rute mana pun.
+
+### ⚠️ `alat:sinkron-jadwal` — dry-run WAJIB ditinjau manusia dulu
+
+Perintah ini menulis ke kolom yang menentukan kapan alat pelanggan harus
+dikalibrasi lagi. Urutan yang mengikat:
+
+1. `php artisan alat:sinkron-jadwal --dry-run` di **salinan data produksi**, bukan
+   langsung di produksi.
+2. Tabel keluarannya ditinjau Pak Rohman / admin lab. Yang dilihat: alat yang
+   `jatuh_tempo`-nya MUNDUR, karena itu yang bikin alat mendadak lewat jadwal.
+3. Baru dijalankan tanpa flag. Dia minta konfirmasi sekali lagi sebelum menulis.
+
+**Jangan dijadwalkan.** Perintah ini sengaja tidak masuk `routes/console.php`.
+Dijalankan tiap malam, dia jadi proses yang terus mengadu kolom yang diisi admin
+dengan data yang untuk sebagian alat memang tidak ada. Sambungan di
+`GenerateCertificate` sudah menjaga yang ke depan; perintah ini cuma untuk yang
+terlanjur.
+
+### Yang masih menganga: alur revisi sertifikat TIDAK ADA
+
+`certificates.revision_of` dan `alasan_revisi` ada di migrasi sejak 14 Jul,
+ada di `$fillable`, punya relasi `Certificate::revisionOf()`, dan `alasan_revisi`
+ditampilkan `CertificateInfolist` — tapi **tidak ada satu pun kode produksi yang
+mengisinya**. Satu-satunya penulis `revision_of` di repo ini fixture test
+(`tests/Feature/FilamentAccessTest.php:130`).
+
+`CetakUlangSertifikat` BUKAN alur revisi: dia merender ulang PDF dari snapshot
+beku dan sengaja tidak membuat baris sertifikat baru.
+
+Artinya dari sisi panel admin fitur ini kelihatan ada padahal tidak pernah
+dibangun. `SinkronJadwalAlat` sudah ditulis sadar-revisi, jadi begitu alur
+revisinya dibangun di atas `GenerateCertificate`, sinkronnya ikut jalan tanpa
+perlu disambung lagi.
+
+---
 
 ## 16 Sep 2026 — identitas pelanggan, feature flag, rute `/api/pelanggan/v1` (M1-01, M1-02)
 
@@ -634,7 +740,7 @@ minggu ini. Sebagian besar isinya juga udah ada di `main` lewat jalan lain:
 | Arsip / file manager | ✅ ada, ditulis ulang dengan bentuk beda |
 | Matriks peran & `/me/permissions` | ✅ ada |
 | Koreksi suhu buffer, kondisi lingkungan | ✅ ada |
-| **Order Kalibrasi + penugasan teknisi** | ❌ **nggak ada, dan nggak jadi dibangun** |
+| **Order Kalibrasi + penugasan teknisi** | ❌ nggak ada — **status per 31 Juli, DIKOREKSI 17 Sep: rutenya hidup lagi**, lihat bagian di atas |
 
 ### ⚠️ Yang ikut ditutup: entitas Order
 
@@ -645,6 +751,10 @@ sekarang statusnya bukan "belum dibangun", tapi **nggak jadi dibangun**.
 
 §3 di bawah masih nulis `/orders` sebagai "BELUM ADA, jangan dibangun frontend-nya
 dulu". Kalimat itu sekarang perlu dibaca sebagai **permanen**, bukan "nanti".
+
+> ⚠️ **Dikoreksi 17 Sep 2026.** "Permanen" nggak bertahan: rutenya ada lagi di
+> `routes/api.php`, lengkap dengan `teknisi_id=saya`. Bagian **17 September 2026**
+> di atas yang berlaku, bukan paragraf ini.
 
 ### Kodenya nggak hilang
 

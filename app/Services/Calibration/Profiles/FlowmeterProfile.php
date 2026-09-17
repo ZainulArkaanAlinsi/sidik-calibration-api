@@ -272,6 +272,165 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return $this->satuanHasil();
     }
 
+    /**
+     * Sertifikat dicetak dalam satuan ALAT PELANGGAN, bukan satuan budget.
+     *
+     * Seluruh mesin hitung flowmeter hidup dalam L (Totalizer) / Lpm
+     * (Flowrate): pembacaan `m3/h`, `usg/min`, `kg/h` diubah ke situ lebih
+     * dulu (`FlowmeterCalculator::konversi()`), dan `uncertainty_calculations`
+     * menyimpan hasilnya apa adanya. Itu benar untuk budget — satu mesin, satu
+     * satuan — tapi salah untuk dokumen yang dipegang pelanggan: alat yang
+     * layarnya menunjukkan `3,0 m3/h` terbit dengan `50,0 Lpm` di kolom Unit
+     * Under Test. Angkanya setara, dan JUSTRU ITU masalahnya — tidak ada satu
+     * pun yang terlihat ganjil, karena kolom satuannya ikut berubah.
+     *
+     * Master membagi balik dengan faktor yang sama:
+     * `SERTIFIKAT!E26 = 'PERHITUNGAN FC'!D63 / DATABASE!$S$22`.
+     *
+     * `null` = cetak apa adanya, persis perilaku lama. Tiga sebabnya:
+     *
+     *  1. Sesi tanpa blok flowmeter yang sah, atau blok yang modenya bukan
+     *     mode lembar ini. [hitungPerGrup] sudah menolak SELURUH titiknya,
+     *     jadi di sini tidak ada angka yang perlu dibalik.
+     *  2. Faktornya 1,0 (`L`, `LPM`) — konversinya identitas. Dipulangkan
+     *     `null`, bukan closure identitas, supaya LABELNYA juga tidak
+     *     tersentuh: `satuanHasil()` menulis `Lpm` sementara blok sesinya
+     *     menulis `LPM`. Sertifikat yang sudah terbit memang beku dan tidak
+     *     ikut bergeser, tapi yang terbit BESOK akan berubah ejaan tanpa satu
+     *     pun angka berubah — dan sertifikat sebelum/sesudah yang bunyinya
+     *     beda tanpa sebab itu tepat jenis pertanyaan yang mahal dijawab
+     *     waktu asesmen. Beda huruf besar tidak sepadan dengan itu.
+     *  3. Satuan yang TIDAK DIKENAL tabel master. Titiknya juga sudah ditolak
+     *     waktu dihitung; mengarang faktor di sini berarti menerbitkan angka
+     *     dari konversi yang tidak pernah dipakai siapa pun.
+     */
+    public function cetakDalamSatuanAlat(CalibrationSession $sesi): ?array
+    {
+        $blok = FlowmeterMentah::blokSesi($sesi->spesifikasi_alat);
+
+        if ($blok === null || $blok['mode'] !== $this->mode()) {
+            return null;
+        }
+
+        // Satuannya dioper APA ADANYA, tanpa `trim()`/`strtolower()`.
+        // `FlowmeterCalculator::konversi()` juga memungutnya apa adanya, dan
+        // dua normalisasi yang beda antara jalur hitung dan jalur cetak
+        // melahirkan sertifikat yang faktornya bukan faktor yang dipakai
+        // budget-nya — tanpa satu pun error.
+        $satuan = $blok['satuan'];
+        $mode = $blok['mode'];
+        $tabel = $this->tabel();
+
+        $berbasisMassa = $tabel->satuanBerbasisMassa($mode, $satuan);
+        $faktor = $tabel->faktorSatuan($mode, $satuan);
+
+        if (! $berbasisMassa && ($faktor === null || $faktor == 1.0)) {
+            return null;
+        }
+
+        $kalk = $this->kalk();
+        $densitas = $berbasisMassa ? $this->densitasCetakPerTitik($sesi, $blok['varian_metode']) : [];
+
+        return [
+            'satuan' => $satuan,
+            'ubah' => static fn (float $nilai, int $titikKe): ?float => $kalk->konversiBalik(
+                $mode,
+                $nilai,
+                $satuan,
+                $densitas[$titikKe] ?? null,
+            ),
+        ];
+    }
+
+    /**
+     * Densitas pembagi per titik — sumbernya BEDA per varian, dan itu bukan
+     * detail: memungut yang salah menggeser seluruh kolom sertifikat sambil
+     * tetap terlihat masuk akal.
+     *
+     * UFM membagi dengan densitas fluida UUT yang DIKETIK teknisi
+     * (`flow_densitas_uut`); fluidanya belum tentu air, jadi menebaknya dari
+     * suhu berarti mengarang angka. Gravimetri membagi dengan densitas AIR
+     * pada suhu titik itu — di varian itu fluidanya memang air dan densitasnya
+     * sudah diukur piknometer.
+     *
+     * Keduanya memanggil FUNGSI YANG SAMA yang dipakai waktu menghitung, bukan
+     * salinannya: [FlowmeterMentah::dari] untuk memungut deretnya, dan
+     * `FlowmeterGravimetriCalculator::densitasTerkoreksi()` untuk tabel
+     * piknometernya.
+     *
+     * Titik yang densitasnya tidak ketemu sengaja TIDAK masuk peta — closure
+     * di atas lalu memulangkan `null` untuk titik itu, dan pemanggilnya wajib
+     * memblokirnya. Jatuh diam-diam ke densitas air adalah persis kekeliruan
+     * yang membuat `FlowmeterCalculator::konversi()` memblokir titiknya sejak
+     * awal.
+     *
+     * @return array<int, float>
+     */
+    private function densitasCetakPerTitik(CalibrationSession $sesi, ?string $varian): array
+    {
+        $gravimetri = $varian === VarianMetodeFlowmeter::GRAVIMETRI->value;
+        $peta = [];
+
+        foreach ($sesi->rawMeasurements->groupBy(static fn ($b): int => (int) $b->titik_ke) as $titikKe => $baris) {
+            $mentah = FlowmeterMentah::dari($baris);
+
+            if ($mentah === []) {
+                continue;
+            }
+
+            $rho = $gravimetri
+                ? $this->densitasAirTitik($mentah)
+                : $this->rataDeret($mentah[FlowmeterMentah::PERAN_DENSITAS] ?? []);
+
+            if ($rho !== null && $rho > 0.0) {
+                $peta[(int) $titikKe] = $rho;
+            }
+        }
+
+        return $peta;
+    }
+
+    /**
+     * Densitas air titik ini — rata-rata suhu DULU, baru dikoreksi, lalu awal
+     * dan akhir dirata-ratakan. Urutannya disamakan dengan
+     * `FlowmeterGravimetriCalculator::hitungTitik()`; dibalik, hasilnya beda di
+     * digit yang tercetak.
+     *
+     * @param  array<string, mixed>  $mentah
+     */
+    private function densitasAirTitik(array $mentah): ?float
+    {
+        $awal = $this->rataDeret($mentah[FlowmeterMentah::PERAN_SUHU_AWAL] ?? []);
+        $akhir = $this->rataDeret($mentah[FlowmeterMentah::PERAN_SUHU_AKHIR] ?? []);
+
+        if ($awal === null || $akhir === null) {
+            return null;
+        }
+
+        $kalk = $this->kalkGravimetri();
+        $rhoAwal = $kalk->densitasTerkoreksi($awal);
+        $rhoAkhir = $kalk->densitasTerkoreksi($akhir);
+
+        if ($rhoAwal === null || $rhoAkhir === null) {
+            return null;
+        }
+
+        return ($rhoAwal + $rhoAkhir) / 2;
+    }
+
+    /**
+     * Rata-rata deret, `null` kalau kosong — BUKAN nol.
+     *
+     * Nol di sini jadi pembagi, dan pembagian nol yang dibungkus `?:` pulang
+     * sebagai angka yang kelihatan wajar.
+     *
+     * @param  list<float>  $deret
+     */
+    private function rataDeret(array $deret): ?float
+    {
+        return $deret === [] ? null : array_sum($deret) / count($deret);
+    }
+
     /** Lihat docblock kelas — jalurnya [hitungPerGrup]. */
     public function komponenBudget(
         CalibrationCapability $kemampuan,
