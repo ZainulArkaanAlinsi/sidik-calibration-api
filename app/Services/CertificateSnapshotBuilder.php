@@ -14,6 +14,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
+use RuntimeException;
 
 /**
  * Nyusun ISI sertifikat sesuai struktur baku (spesifikasi poin 9), lalu
@@ -245,8 +246,24 @@ class CertificateSnapshotBuilder
             ? app(CalibrationProfileRegistry::class)->untukAlat($alat)
             : null;
 
+        // Sertifikat dicetak dalam satuan ALAT PELANGGAN, bukan satuan budget.
+        //
+        // Cuma Flowmeter yang menjawab selain `null` sejauh ini: budget-nya
+        // sengaja dipindah ke L/Lpm supaya satu mesin hitung melayani m3/h,
+        // usg/min, dan kg/h sekaligus — dan yang tersimpan di
+        // `uncertainty_calculations` angka L/Lpm itu. Dicetak apa adanya, alat
+        // yang layarnya menunjukkan `3,0 m3/h` terbit `50,0 Lpm`: setara, tapi
+        // bukan angka yang dibaca teknisi maupun pelanggan.
+        //
+        // Dihitung SEKALI di sini, bukan per baris: dia membaca blok sesi dan
+        // menyapu seluruh baris mentah buat densitas per titik.
+        //
+        // Profil lain balik `null` dari kelas dasarnya dan lewat jalur yang
+        // persis sama seperti sebelumnya — nol baris kesenggol.
+        $cetak = $profil?->cetakDalamSatuanAlat($sesi);
+
         $baris = self::titikUrut($sesi)
-            ->map(function ($titik) use ($alat, $organisasi, $profil): array {
+            ->map(function ($titik) use ($alat, $organisasi, $profil, $cetak): array {
                 // Desimal DIHITUNG PER TITIK, bukan sekali buat seluruh tabel.
                 //
                 // Alat yang resolusinya berubah per rentang (Turbidimeter:
@@ -290,16 +307,66 @@ class CertificateSnapshotBuilder
                     ? (float) $titik->rata_rata + (float) $titik->koreksi
                     : (float) $titik->titik_ukur;
 
+                // Identitas buat alat yang nggak minta konversi — jalur lama
+                // persis, nol pembungkus.
+                //
+                // Yang MELEDAK kalau konversinya gagal, bukan jatuh ke angka
+                // budget. `null` di sini artinya faktor/densitas yang dipakai
+                // waktu menghitung udah nggak bisa ditemukan lagi — barisnya
+                // ada di `uncertainty_calculations` tapi bahan baliknya nggak,
+                // jadi datanya bergeser sesudah hitungannya tersimpan.
+                //
+                // Nyetak angka budget dengan label satuan alat itu kekeliruan
+                // paling mahal yang bisa terjadi di berkas ini: sertifikat
+                // terakreditasi yang angkanya 16,7x, dan nggak ada satu pun
+                // kolom yang keliatan ganjil. `GenerateCertificate` nangkep
+                // lemparan ini, nyetempel sertifikatnya `gagal`, dan ngirim
+                // pesan ini ke admin lewat `SertifikatGagal` — jadi yang
+                // kejadian bukan diem, tapi sebabnya kebaca.
+                $konversi = $cetak === null
+                    ? static fn (float $nilai): float => $nilai
+                    : static function (float $nilai) use ($cetak, $titik): float {
+                        $hasil = ($cetak['ubah'])($nilai, (int) $titik->titik_ke);
+
+                        if ($hasil === null) {
+                            throw new RuntimeException(sprintf(
+                                'Titik %d nggak bisa dibalikin ke satuan alat (`%s`). Hitungannya '
+                                .'tersimpan dalam satuan budget, dan bahan buat ngebaliknya — faktor '
+                                .'satuan atau densitas fluida titik ini — nggak ketemu lagi di baris '
+                                .'mentahnya. Sertifikatnya nggak diterbitkan: angka budget yang '
+                                .'dicetak berlabel `%s` bakal meleset sampai belasan kali lipat tanpa '
+                                .'satu pun kolom yang keliatan ganjil. Periksa `flow_densitas_uut` '
+                                .'titik ini, lalu jalanin `php artisan kalibrasi:hitung-ulang`.',
+                                (int) $titik->titik_ke,
+                                $cetak['satuan'],
+                                $cetak['satuan'],
+                            ));
+                        }
+
+                        return $hasil;
+                    };
+
                 return [
                     'titik_ke' => (int) $titik->titik_ke,
-                    'standard_value' => $nilaiStandar,
+                    'standard_value' => $konversi($nilaiStandar),
                     // Kolom "Remark" di sertifikat asli. Null buat alat yang
                     // titiknya nggak punya keterangan parameter.
                     'remark' => $remark,
-                    'unit_under_test' => (float) $titik->rata_rata,
+                    'unit_under_test' => $konversi((float) $titik->rata_rata),
                     // Tanda cetak per alat — lihat `tandaKoreksiSertifikat()`.
-                    'correction' => ($profil?->tandaKoreksiSertifikat() ?? 1) * (float) $titik->koreksi,
-                    'u95' => (float) $titik->ketidakpastian_diperluas,
+                    //
+                    // Dikonversi DULU baru dikasih tanda. Faktornya selalu
+                    // positif (densitas dan faktor satuan dua-duanya > 0), jadi
+                    // urutannya nggak ngubah hasil — ditulis begini biar yang
+                    // dibaca "koreksi dalam satuan alat, lalu tandanya", bukan
+                    // "angka bertanda yang dikonversi".
+                    'correction' => ($profil?->tandaKoreksiSertifikat() ?? 1) * $konversi((float) $titik->koreksi),
+                    // U95 ikut dikonversi. Ketinggalan, dia jadi satu-satunya
+                    // kolom yang masih bersatuan budget di tabel yang seluruh
+                    // kolom lainnya udah pindah — dan di lembar m3/h angkanya
+                    // 16,7x terlalu besar, yang kebaca sebagai alat jelek,
+                    // bukan sebagai bug.
+                    'u95' => $konversi((float) $titik->ketidakpastian_diperluas),
                     // Faktor cakupan yang dipakai buat U95 titik ini.
                     //
                     // Dibekukan karena sertifikat master nyetaknya di bawah
@@ -355,7 +422,14 @@ class CertificateSnapshotBuilder
                     // `null` buat alat bersatuan seragam; PDF & layar jatuh ke
                     // satuan alat kayak biasa, jadi empat alat lain nggak
                     // berubah sama sekali.
-                    'satuan' => $profil?->satuanTitik((float) $titik->titik_ukur, $alat),
+                    //
+                    // Kalau alatnya minta dicetak dalam satuannya sendiri,
+                    // LABELNYA ikut pindah bareng angkanya. Dua-duanya dari
+                    // satu sumber — label yang pindah tanpa angkanya (atau
+                    // sebaliknya) itu persis bentuk kekeliruan yang bikin
+                    // `cetakDalamSatuanAlat()` ada.
+                    'satuan' => $cetak['satuan']
+                        ?? $profil?->satuanTitik((float) $titik->titik_ukur, $alat),
                     // Koreksi negatif yang membulat ke nol kecetak `-0,0` atau
                     // `0,0` — beda per alat, dibaca dari master masing-masing
                     // (lihat `CalibrationProfile::tandaNolDicetak()`).

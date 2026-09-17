@@ -30,6 +30,38 @@ satu mesin hitung. **Flow Meter Cairan (Totalizer)** bersatuan `L`, **Flow Meter
 Ketidakpastiannya lahir **per TITIK** — tiap titik punya blok budget penuh sendiri, jadi
 sertifikatnya mencetak kolom `U95% ±` per baris dan `k` per baris.
 
+### 0.1 Sertifikatnya dicetak dalam satuan ALAT, bukan satuan hitung (17 Sep 2026)
+
+Mesin hitungnya hidup dalam `L`/`Lpm` — apa pun satuan yang dipilih teknisi, pembacaannya
+dikonversi ke situ dulu supaya satu mesin melayani semua satuan, dan
+`uncertainty_calculations` menyimpan angka yang sudah dikonversi itu.
+
+Yang **berubah**: `certificates.snapshot.hasil[].{standard_value, unit_under_test,
+correction, u95}` sekarang dibalik ke satuan yang dipilih teknisi sebelum dibekukan, dan
+`hasil[].satuan` ikut berisi satuan itu. Sebelumnya kolomnya berisi angka `Lpm` sementara
+kop sertifikat (`snapshot.satuan`, dari `raw_measurements.satuan`) sudah menulis `m3/h` —
+satu dokumen, dua satuan untuk besaran yang sama, dan alat yang layarnya menunjukkan
+`3,0` terbit dengan `50,0`.
+
+Yang **tidak** berubah, dan ini yang penting buat HP:
+
+- Bentuk JSON-nya sama persis — nol kunci baru, nol kunci hilang.
+- Sesi bersatuan `L`/`LPM` (faktor 1,0) **nol pergeseran**, angkanya maupun labelnya.
+- Sertifikat yang SUDAH terbit nol pergeseran: snapshot dibekukan waktu terbit dan tidak
+  pernah dihitung ulang waktu dibaca.
+- Lembar kerja, jalur kirim, dan `spesifikasi_alat` nol perubahan.
+
+Jadi HP tidak perlu mengerjakan apa pun — asalkan yang dipajang tetap `hasil[].satuan`
+per baris, bukan satuan yang ditebak dari kode profil. Yang memajang `Lpm` mati di kode
+akan salah begitu ada pelanggan bersatuan `m3/h`.
+
+Kalibrasi bersatuan massa (`kg`, `kg/h`, `kg/min`) dibalik lewat densitas fluida yang
+diketik teknisi (`flow_densitas_uut`). Kalau densitas itu hilang sesudah hitungannya
+tersimpan, sertifikatnya **gagal terbit** dengan pesan yang menyebut nomor titiknya —
+bukan terbit dengan angka satuan hitung berlabel `kg/h`.
+
+---
+
 Yang bikin alat ini beda dari 26 lainnya: **satu titik punya DUA deret berdampingan** —
 pembacaan UUT dan pembacaan totalizer standar. Kalau keduanya tertukar atau saling
 tertimpa, yang terbit bukan error melainkan **deviasi nol** di setiap titik: sertifikat
@@ -100,7 +132,7 @@ Kenapa masing-masing:
 | Kode | Kalau kosong / salah |
 |---|---|
 | `mode` | Menentukan budgetnya **8 komponen (Totalizer) atau 9 (Flowrate)**. Kosong → seluruh titik pulang "belum dihitung". Salah → budget generasi yang keliru, angkanya tetap keluar |
-| `satuan` | **Mengalikan SELURUH pembacaan.** `m3/h` vs `LPM` berbeda 16,67× |
+| `satuan` | **Mengalikan SELURUH pembacaan.** `m3/h` vs `LPM` berbeda 16,67×. Sejak 17 Sep 2026 dia juga menentukan satuan yang TERCETAK di sertifikat — lihat §0.1 |
 | `resolusi` | Komponen resolusi jadi nol; U95 terbit lebih kecil |
 | `diameter_pipa_mm` | Tanpa dia `u_A` nol dan **DUA** komponen lenyap sekaligus |
 | `ketebalan_pipa_mm` | Sama — dan diameter DALAM (`D − 2t`) yang masuk hitungan, bukan yang luar |
