@@ -18,6 +18,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -228,6 +229,84 @@ class AppServiceProvider extends ServiceProvider
         $perMenit('login', 10);
         $perMenit('register', 5);
         $perMenit('password-reset', 5);
+
+        // --- Modul pelanggan (02-SRS NFR-02) ---------------------------------
+        //
+        // Angkanya dari NFR-02, bukan dikarang: daftar 5/jam per IP, masuk
+        // 10/menit per IP, OTP 5 per 15 menit per AKUN.
+        //
+        // Yang OTP dikunci per akun, bukan per IP, dan bedanya menentukan:
+        // throttle per IP dilewati dengan ganti jaringan, sementara yang
+        // menahan penebakan OTP justru harus menempel ke akun yang ditebak.
+        // Penguncian kerasnya sendiri ada di baris `otp_pelanggan`
+        // (`percobaan`, `dikunci_sampai`); limiter ini lapis pertamanya.
+        RateLimiter::for('pelanggan-daftar', fn (Request $request) => Limit::perHour(5)
+            ->by('pelanggan-daftar|'.$request->ip())
+            ->response(fn () => response()->json([
+                'kode' => 'terlalu_sering',
+                'message' => 'Terlalu banyak percobaan pendaftaran. Coba lagi satu jam lagi.',
+            ], 429)));
+
+        // Bukan lewat `$perMenit`: balasan bawaannya tidak punya `kode`, dan
+        // 03-SDD §7 mewajibkan tiap error non-422 di jalur pelanggan punya kode
+        // stabil — aplikasi yang sudah terpasang bercabang pada kode itu, bukan
+        // pada kalimat Indonesianya.
+        //
+        // Ini lapis per-IP. Penguncian per EMAIL sesudah 5 kegagalan
+        // (REQ-AUTH-10) ada di `AuthPelangganController::masuk()`; dua-duanya
+        // perlu karena yang satu menahan banjir dari satu jaringan dan yang
+        // lain menahan penebakan satu akun dari banyak jaringan.
+        RateLimiter::for('pelanggan-masuk', fn (Request $request) => Limit::perMinute(10)
+            ->by('pelanggan-masuk|'.$request->ip())
+            ->response(fn () => response()->json([
+                'kode' => 'terlalu_sering',
+                'message' => 'Terlalu banyak percobaan masuk. Tunggu sebentar, lalu coba lagi.',
+            ], 429)));
+
+        // Dua ember OTP yang TERPISAH, dan pemisahannya bukan kerapian.
+        //
+        // Waktu keduanya satu ember, dua hal patah sekaligus dan dua-duanya
+        // ketahuan dari test, bukan dari teori:
+        //
+        // 1. Penyerang yang menebak kode ikut menghabiskan jatah "kirim ulang"
+        //    milik korban — korban jadi tidak bisa minta kode baru gara-gara
+        //    ditembaki orang lain.
+        // 2. Sebaliknya, orang yang menekan "kirim ulang" tiga kali (karena
+        //    emailnya belum sampai) menghabiskan jatah tebakannya sendiri, lalu
+        //    kena 429 pada percobaan pertama kode yang benar.
+        //
+        // Yang MENEGAKKAN NFR-02 ("OTP 5/15 menit per akun") itu penguncian di
+        // baris `otp_pelanggan` — `percobaan` + `dikunci_sampai`, lihat
+        // `KodeOtp::periksa()`. Dia menghitung percobaan SALAH saja, menempel ke
+        // akun, dan tersimpan di database jadi tidak hilang waktu cache dibuang.
+        // Dua limiter di bawah pagar luarnya, bukan penggantinya — makanya
+        // ambang `periksa` sengaja LEBIH LONGGAR dari 5: kalau lebih ketat, dia
+        // menutupi kunci yang sebenarnya dan `otp_terkunci` tidak pernah
+        // terbaca aplikasi.
+        $emberOtp = fn (string $nama, int $menit, int $jumlah, string $pesan) => RateLimiter::for(
+            $nama,
+            fn (Request $request) => Limit::perMinutes($menit, $jumlah)
+                ->by($nama.'|'.Str::lower((string) $request->input('email', $request->ip())))
+                ->response(fn () => response()->json(['kode' => 'terlalu_sering', 'message' => $pesan], 429)),
+        );
+
+        // MEMERIKSA kode. Kuncinya yang sebenarnya di database (5 salah).
+        $emberOtp('pelanggan-otp-periksa', 15, 10, 'Terlalu banyak percobaan kode. Coba lagi beberapa menit lagi.');
+
+        // MENGIRIM kode. Ini jalur yang bisa dipakai membanjiri email orang
+        // lain, dan tidak ada penghitung di database yang menahannya — jadi
+        // justru di sini embernya ketat.
+        $emberOtp('pelanggan-otp-kirim', 15, 3, 'Terlalu banyak permintaan kode. Coba lagi beberapa menit lagi.');
+
+        // Ganti sandi BUKAN jalur OTP: dia sudah di balik token, jadi dikunci
+        // per ORANG. Dikunci per IP bikin satu kantor di belakang satu NAT
+        // saling menghabiskan jatah.
+        RateLimiter::for('pelanggan-sandi', fn (Request $request) => Limit::perMinute(5)
+            ->by('pelanggan-sandi|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn () => response()->json([
+                'kode' => 'terlalu_sering',
+                'message' => 'Terlalu banyak percobaan. Tunggu sebentar, lalu coba lagi.',
+            ], 429)));
 
         // Jalur yang SUDAH LOGIN — dikunci per orang, bukan per IP.
         //

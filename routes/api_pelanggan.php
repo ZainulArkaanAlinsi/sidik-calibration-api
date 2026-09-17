@@ -1,0 +1,122 @@
+<?php
+
+use App\Http\Controllers\Pelanggan\AppStatusController;
+use App\Http\Controllers\Pelanggan\AuthPelangganController;
+use App\Http\Controllers\Pelanggan\SayaController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Pelanggan — /api/pelanggan/v1
+|--------------------------------------------------------------------------
+|
+| Berkas TERPISAH dari routes/api.php, dan itu aturan keras (CLAUDE.md §Modul
+| Pelanggan poin 1). Begitu rute pelanggan bercampur dengan rute internal,
+| gerbang `role:` di sana jadi satu-satunya yang memisahkan dua dunia — dan itu
+| penjagaan yang terlalu tipis buat kerahasiaan antar pelanggan.
+|
+| Prefix `api/pelanggan/v1` dipasang waktu didaftarkan di bootstrap/app.php,
+| bukan di sini, supaya nggak bisa keliru diketik ulang per grup.
+|
+| Perubahan MERUSAK pada v1 dilarang (NFR-12): aplikasi yang sudah terpasang di
+| HP orang nggak bisa disuruh ikut berubah hari itu juga. Kalau memang harus,
+| buat v2.
+|
+| ## Tiga lapis gerbang, dan masing-masing menjawab hal yang berbeda
+|
+| 1. `fitur.pelanggan` — modulnya menyala atau tidak (M1-02).
+| 2. `aplikasi:pelanggan` — token ini dikeluarkan buat aplikasi pelanggan, bukan
+|    buat aplikasi teknisi (M1-03).
+| 3. `pelanggan.aktif` — pemilik tokennya sudah ditautkan admin ke sebuah
+|    perusahaan (REQ-AUTH-03).
+|
+| Yang ketiga SENGAJA tidak dipasang di grup "butuh token": `GET /saya` harus
+| tetap kebuka buat akun yang menunggu verifikasi, kalau tidak layar S06 tidak
+| punya cara membaca statusnya sendiri.
+|
+*/
+
+/*
+ * DI LUAR gerbang `fitur.pelanggan` — satu-satunya.
+ *
+ * Aplikasi memanggil ini tiap kali dibuka. Kalau dia ikut 503 waktu fiturnya
+ * mati, aplikasi nggak punya cara tahu dirinya usang atau server sedang
+ * maintenance — dua layar yang justru paling dibutuhkan saat itu.
+ */
+Route::get('/app/status', AppStatusController::class)->name('pelanggan.app.status');
+
+Route::middleware('fitur.pelanggan')->group(function () {
+
+    /*
+     * --- Tanpa token -----------------------------------------------------
+     *
+     * Tiap rute punya throttle SENDIRI, bukan satu ember bersama. Ember
+     * bersama bikin banjir di `daftar` ikut mengunci `masuk` — jadi serangan
+     * ke pintu pendaftaran menutup pintu masuk buat pelanggan yang sah.
+     *
+     * Jalur OTP pun dipecah dua: MEMERIKSA kode (`pelanggan-otp-periksa`) dan
+     * MENGIRIM kode (`pelanggan-otp-kirim`). Satu ember bersama bikin penyerang
+     * yang menebak kode menghabiskan jatah "kirim ulang" milik korban, dan
+     * sebaliknya. Alasan lengkapnya di `AppServiceProvider::rateLimiters()`.
+     */
+    Route::prefix('auth')->name('pelanggan.auth.')->group(function () {
+        Route::post('/daftar', [AuthPelangganController::class, 'daftar'])
+            ->middleware('throttle:pelanggan-daftar')
+            ->name('daftar');
+
+        Route::post('/verifikasi-email', [AuthPelangganController::class, 'verifikasiEmail'])
+            ->middleware('throttle:pelanggan-otp-periksa')
+            ->name('verifikasi-email');
+
+        Route::post('/kirim-ulang-otp', [AuthPelangganController::class, 'kirimUlangOtp'])
+            ->middleware('throttle:pelanggan-otp-kirim')
+            ->name('kirim-ulang-otp');
+
+        Route::post('/masuk', [AuthPelangganController::class, 'masuk'])
+            ->middleware('throttle:pelanggan-masuk')
+            ->name('masuk');
+
+        Route::post('/lupa-sandi', [AuthPelangganController::class, 'lupaSandi'])
+            ->middleware('throttle:pelanggan-otp-kirim')
+            ->name('lupa-sandi');
+
+        Route::post('/atur-ulang-sandi', [AuthPelangganController::class, 'aturUlangSandi'])
+            ->middleware('throttle:pelanggan-otp-periksa')
+            ->name('atur-ulang-sandi');
+    });
+
+    /*
+     * --- Butuh token, TERMASUK akun yang menunggu verifikasi --------------
+     *
+     * Isinya sengaja sempit: cuma profil sendiri dan keluar. Tidak ada data
+     * perusahaan di sini sama sekali, jadi akun `pending_verifikasi` yang lolos
+     * ke grup ini tidak bisa melihat apa pun milik pelanggan lain.
+     */
+    Route::middleware(['auth:sanctum', 'aplikasi:pelanggan'])->group(function () {
+        Route::post('/auth/keluar', [AuthPelangganController::class, 'keluar'])
+            ->name('pelanggan.auth.keluar');
+
+        Route::post('/auth/keluar-semua', [AuthPelangganController::class, 'keluarSemua'])
+            ->name('pelanggan.auth.keluar-semua');
+
+        Route::get('/saya', [SayaController::class, 'tampil'])->name('pelanggan.saya.tampil');
+        Route::patch('/saya', [SayaController::class, 'perbarui'])->name('pelanggan.saya.perbarui');
+
+        Route::post('/saya/ganti-sandi', [SayaController::class, 'gantiSandi'])
+            ->middleware('throttle:pelanggan-sandi')
+            ->name('pelanggan.saya.ganti-sandi');
+    });
+
+    /*
+     * --- Butuh token DAN akun yang sudah diverifikasi ---------------------
+     *
+     * Kosong sampai Fase 5: `/beranda`, `/alat`, `/sertifikat`, `/permintaan`,
+     * `/anggota` semuanya mendarat di sini. Grupnya sudah berdiri sekarang
+     * supaya rute data yang ditambahkan nanti mewarisi `pelanggan.aktif`
+     * otomatis — mendaftarkannya di grup atas tanpa sadar itu persis kelas
+     * kelalaian yang bikin REQ-AUTH-03 bocor tanpa satu pun error.
+     */
+    Route::middleware(['auth:sanctum', 'aplikasi:pelanggan', 'pelanggan.aktif'])->group(function () {
+        //
+    });
+});

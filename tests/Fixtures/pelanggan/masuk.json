@@ -1,0 +1,24 @@
+{
+    "data": {
+        "token": "<token>",
+        "kedaluwarsa_pada": "<iso8601>",
+        "kemampuan": "pelanggan",
+        "user": {
+            "id": "<int>",
+            "nama": "Budi Anggota",
+            "email": "budi@contoh.test",
+            "telepon": "+628123456789",
+            "jabatan": "QA Manager",
+            "status": "aktif",
+            "butuh_verifikasi": false,
+            "keanggotaan": [
+                {
+                    "customer_id": "<int>",
+                    "nama_perusahaan": "PT Contoh Pelanggan",
+                    "peran": "pic_utama"
+                }
+            ],
+            "pengajuan": null
+        }
+    }
+}

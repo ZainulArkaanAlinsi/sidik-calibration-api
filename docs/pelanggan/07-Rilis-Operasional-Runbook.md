@@ -108,7 +108,10 @@ Setiap skenario dicatat: tanggal, HP & versi Android, versi app, lulus/gagal, ca
 - [ ] Migrasi dibaca ulang: additive? bisa rollback? berapa lama di tabel besar?
 - [ ] Backup DB produksi diambil tepat sebelum deploy, dan ukurannya masuk akal
 - [ ] Tidak ada teknisi yang sedang input sesi di lapangan (cek dengan admin), di luar jam kerja
-- [ ] Nilai flag `FITUR_PELANGGAN` / `_PILOT_IDS` yang diinginkan sudah jelas
+- [ ] Nilai flag `FITUR_PELANGGAN` yang diinginkan sudah jelas
+- [ ] Kalau ini rilis pilot: daftar perusahaan pilot sudah disepakati, dan admin tahu
+      bahwa pembatasannya MANUAL — cuma pengajuan akun milik perusahaan itu yang
+      disetujui. Tidak ada allowlist otomatis di server.
 - [ ] Rencana rollback ditulis: tag sebelumnya = `api-v…`
 
 **Saat**

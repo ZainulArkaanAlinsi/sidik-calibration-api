@@ -32,6 +32,24 @@ sementara MySQL memberi string, `AUTO_INCREMENT`-nya beda, dan strict mode-nya
 beda. Empat bug pernah bersembunyi di celah itu. Alasan lengkapnya ditulis di
 kepala `phpunit.mysql.xml`.
 
+**Dua suite itu dijalankan BERGANTIAN, jangan diparalelkan.** Menjalankan
+`php artisan test` dan `php artisan test -c phpunit.mysql.xml` berbarengan
+memang menghemat setengah jam, dan hasilnya tidak bisa dipercaya: `TestCase`
+memanggil `Storage::fake('local')` + `Storage::fake('arsip')` buat SEMUA test,
+dan `Storage::fake()` cuma memisahkan direktori per proses kalau
+`ParallelTesting::token()` terisi — yaitu HANYA di bawah `artisan test --parallel`,
+bukan waktu dua perintah terpisah dijalankan bersamaan. Dua proses jadi berbagi
+`storage/framework/testing/disks/`, dan `cleanDirectory($root)` di `setUp` tiap
+test menghapus berkas milik proses sebelah.
+
+Bentuk gagalnya menyesatkan: yang merah test penyimpanan yang TIDAK berhubungan
+dengan perubahanmu (404 waktu unggah, "Unable to retrieve the file_size"), dan
+**berbeda-beda tiap kali jalan** serta berbeda antara dua suite-nya. Kejadian
+16 Sep 2026: tiga kegagalan yang semuanya hijau waktu diulang satu per satu.
+
+Kalau memang mau paralel, yang benar `php artisan test --parallel` (satu
+perintah, Laravel yang membagi token & direktoriya) — bukan dua perintah.
+
 Sekali seumur mesin, buat database khusus test (BUKAN database kerja —
 `RefreshDatabase` menghapus isinya):
 
@@ -45,6 +63,11 @@ CREATE DATABASE asmo_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 vendor/bin/pint app/Services/Foo.php   # HANYA berkas yang kamu sentuh — lihat §Alur Kerja poin 10
 composer ide-helper                    # regenerate _ide_helper.php + mixin model
 ```
+
+`pint.json` mematikan SATU aturan: `php_unit_method_casing`. Preset Laravel
+mengubah `test_REQ_AUTH_07_...` jadi `test_re_q_aut_h_07_...`, dan ID requirement
+di nama test itu diminta `docs/pelanggan/02-SRS.md` justru supaya requirement dan
+testnya bisa ditelusuri dua arah. Aturan lain tetap menyala.
 
 ### Perintah artisan milik proyek ini
 

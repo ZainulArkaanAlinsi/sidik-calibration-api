@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\FiturPelanggan;
+use App\Http\Middleware\PastikanAplikasi;
+use App\Http\Middleware\PelangganAktif;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,6 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        // Rute pelanggan didaftarkan TERPISAH, bukan menumpang `api:` di atas.
+        //
+        // Dua hal yang dibeli dengan ini. Pertama, prefix `api/pelanggan/v1`
+        // dipasang di SATU tempat — nggak bisa keliru diketik ulang per grup,
+        // dan nggak bisa sebagian rute pelanggan mendarat di luar v1. Kedua,
+        // berkas rutenya tetap terpisah secara fisik dari `routes/api.php`,
+        // yang jadi aturan keras modul ini (CLAUDE.md §Modul Pelanggan poin 1):
+        // begitu rute pelanggan bercampur dengan rute internal, gerbang `role:`
+        // di sana jadi satu-satunya yang memisahkan dua dunia.
+        then: function (): void {
+            Route::middleware('api')
+                ->prefix('api/pelanggan/v1')
+                ->group(base_path('routes/api_pelanggan.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Di produksi, request nyampe ke Laravel lewat proxy (Render/Cloudflare)
@@ -31,6 +49,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'fitur.pelanggan' => FiturPelanggan::class,
+            'aplikasi' => PastikanAplikasi::class,
+            'pelanggan.aktif' => PelangganAktif::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

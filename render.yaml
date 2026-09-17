@@ -319,3 +319,41 @@ services:
       # sandi itu tercetak di repo yang publik ini.
       - key: SEED_ADMIN_PASSWORD
         sync: false
+
+      # --- Modul pelanggan (03-SDD §10) ---------------------------------
+      #
+      # WAJIB `false` di produksi sampai rilis M7. Sakelar ini menutup SELURUH
+      # `/api/pelanggan/v1`, dan menyalakannya lebih awal berarti mengekspos
+      # modul yang belum lewat tinjauan keamanan M6-01 ke internet.
+      #
+      # Menyalakannya tetap nggak menyentuh app internal: teknisi di lapangan
+      # nggak melihat perubahan apa pun.
+      - key: FITUR_PELANGGAN
+        value: "false"
+
+      # Versi minimum aplikasi pelanggan. Dinaikkan HANYA sesudah versi baru
+      # mencapai 100% rollout dan stabil (07-Runbook §7) — menaikkannya lebih
+      # awal mengunci pengguna yang belum kebagian update dari Play Store.
+      - key: PELANGGAN_VERSI_MINIMUM
+        value: "0.0.0"
+      - key: PELANGGAN_VERSI_TERBARU
+        value: "0.0.0"
+
+      # Maintenance khusus modul pelanggan — TIDAK menyentuh app internal.
+      # Dipisah dari `php artisan down` justru karena itu: teknisi di lapangan
+      # nggak boleh ikut berhenti waktu sisi pelanggan sedang diperbaiki.
+      - key: PELANGGAN_MAINTENANCE
+        value: "false"
+      - key: PELANGGAN_PESAN_MAINTENANCE
+        value: "Aplikasi sedang dalam perbaikan. Silakan coba lagi sebentar lagi."
+
+      # Batas akhir masa transisi token internal tanpa ability (03-SDD §3.1).
+      # Diisi tanggal `Y-m-d` waktu deploy Fase 4; kosong = tanpa batas.
+      - key: PELANGGAN_CUTOFF_TOKEN_LAMA
+        value: ""
+      # Versi dokumen privasi & syarat yang disetujui pendaftar (S05 langkah 1).
+      # Ditentukan server; dinaikkan bareng deploy tiap kali dokumennya berubah.
+      - key: PELANGGAN_VERSI_KEBIJAKAN_PRIVASI
+        value: "1.0"
+      - key: PELANGGAN_VERSI_SYARAT_KETENTUAN
+        value: "1.0"

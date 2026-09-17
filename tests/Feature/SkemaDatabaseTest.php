@@ -25,8 +25,32 @@ use Tests\TestCase;
  * dan SQLite nggak punya batas panjang identifier. Jadi seluruh test suite nggak
  * pernah nyentuh masalahnya, padahal dev & produksi dua-duanya MySQL.
  *
- * Test ini nutup celah itu TANPA perlu MySQL: nama index yang di-generate Laravel
- * itu sama di semua driver, jadi manjangnya bisa diukur dari skema SQLite.
+ * ## Dulu dua test di sini SKIP waktu jalan di MySQL. Sekarang nggak lagi.
+ *
+ * Katalognya dulu dibaca lewat `sqlite_master`, yang cuma ada di SQLite, jadi
+ * suite MySQL melewatinya dengan `markTestSkipped`. Skip itu benar dan jujur —
+ * tapi skip yang muncul tiap kali suite jalan melatih orang membaca "2 skipped"
+ * sebagai pemandangan biasa, dan lama-lama skip yang BARU (yang mungkin
+ * menyembunyikan masalah beneran) ikut tidak terbaca. Itu kelas kegagalan yang
+ * sama dengan peringatan palsu yang melatih admin menekan "setujui tetap".
+ *
+ * Sekarang katalognya dibaca per driver: `sqlite_master` di SQLite,
+ * `information_schema` di MySQL/MariaDB. Nol skip di dua suite.
+ *
+ * ## Apa yang SEBENARNYA dibuktikan di masing-masing driver
+ *
+ * Ditulis terang supaya pembaca berikutnya nggak salah mengira bobotnya sama:
+ *
+ * - **Di SQLite — ini penjagaan yang sesungguhnya.** SQLite nggak punya batas
+ *   panjang identifier, jadi skema yang melanggar BISA terbentuk di sini, dan
+ *   test inilah satu-satunya yang menangkapnya sebelum sampai ke MySQL.
+ *
+ * - **Di MySQL — ini sabuk kedua, dan memang nyaris pasti lolos.** Skema yang
+ *   melanggar nggak akan pernah terbentuk: `migrate` sudah meledak duluan
+ *   dengan error 1059, jauh sebelum test pertama jalan. Yang tersisa nilainya
+ *   cuma satu hal kecil tapi nyata — memastikan skema yang terpasang memang
+ *   ter-migrate (katalognya nggak kosong), yang diadu di
+ *   `test_katalog_skema_kebaca_di_driver_ini`.
  */
 class SkemaDatabaseTest extends TestCase
 {
@@ -35,32 +59,70 @@ class SkemaDatabaseTest extends TestCase
     /** Batas panjang identifier MySQL/MariaDB. */
     private const BATAS_MYSQL = 64;
 
-    public function test_semua_nama_index_masih_di_bawah_batas_mysql(): void
+    /**
+     * Nama semua index di skema, apa pun drivernya.
+     *
+     * @return list<array{nama: string, tabel: string}>
+     */
+    private function indexDiSkema(): array
     {
-        // Katalognya dibaca lewat `sqlite_master`, jadi tes ini cuma sah di
-        // SQLite. Yang dijaga sendiri batas identifier MySQL — dicek dari
-        // skema SQLite karena di situlah suite hariannya jalan.
-        //
-        // Kembaran terbalik dari `OcrMeasurementTest::test_kolom_sumber_input_
-        // bukan_enum_sempit`, yang cuma sah di MySQL. Dua-duanya perlu, dan
-        // dua-duanya harus BILANG kalau lagi nggak jalan — bukan meledak.
-        if (DB::getDriverName() !== 'sqlite') {
-            $this->markTestSkipped('Katalog `sqlite_master` cuma ada di SQLite.');
+        if (DB::getDriverName() === 'sqlite') {
+            return array_map(
+                fn (object $b): array => ['nama' => (string) $b->nama, 'tabel' => (string) $b->tabel],
+                DB::select(
+                    "SELECT name AS nama, tbl_name AS tabel FROM sqlite_master
+                     WHERE type = 'index' AND name NOT LIKE 'sqlite_%'",
+                ),
+            );
         }
 
+        // `DISTINCT` karena `information_schema.STATISTICS` punya satu baris per
+        // KOLOM di dalam index — index dua kolom muncul dua kali, dan tanpa ini
+        // pesan gagalnya menyebut nama yang sama berulang.
+        return array_map(
+            fn (object $b): array => ['nama' => (string) $b->nama, 'tabel' => (string) $b->tabel],
+            DB::select(
+                'SELECT DISTINCT INDEX_NAME AS nama, TABLE_NAME AS tabel
+                 FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = DATABASE()',
+            ),
+        );
+    }
+
+    /**
+     * Nama semua tabel di skema, apa pun drivernya.
+     *
+     * @return list<string>
+     */
+    private function tabelDiSkema(): array
+    {
+        if (DB::getDriverName() === 'sqlite') {
+            return array_map(
+                fn (object $b): string => (string) $b->nama,
+                DB::select("SELECT name AS nama FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"),
+            );
+        }
+
+        return array_map(
+            fn (object $b): string => (string) $b->nama,
+            DB::select(
+                "SELECT TABLE_NAME AS nama FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED')",
+            ),
+        );
+    }
+
+    public function test_semua_nama_index_masih_di_bawah_batas_mysql(): void
+    {
         $kepanjangan = [];
 
-        $indexes = DB::select(
-            "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%'",
-        );
-
-        foreach ($indexes as $index) {
-            if (strlen($index->name) > self::BATAS_MYSQL) {
+        foreach ($this->indexDiSkema() as $index) {
+            if (strlen($index['nama']) > self::BATAS_MYSQL) {
                 $kepanjangan[] = sprintf(
                     '%s (%d char, tabel %s)',
-                    $index->name,
-                    strlen($index->name),
-                    $index->tbl_name,
+                    $index['nama'],
+                    strlen($index['nama']),
+                    $index['tabel'],
                 );
             }
         }
@@ -76,29 +138,53 @@ class SkemaDatabaseTest extends TestCase
 
     public function test_semua_nama_tabel_masih_di_bawah_batas_mysql(): void
     {
-        // Katalognya dibaca lewat `sqlite_master`, jadi tes ini cuma sah di
-        // SQLite. Yang dijaga sendiri batas identifier MySQL — dicek dari
-        // skema SQLite karena di situlah suite hariannya jalan.
-        //
-        // Kembaran terbalik dari `OcrMeasurementTest::test_kolom_sumber_input_
-        // bukan_enum_sempit`, yang cuma sah di MySQL. Dua-duanya perlu, dan
-        // dua-duanya harus BILANG kalau lagi nggak jalan — bukan meledak.
-        if (DB::getDriverName() !== 'sqlite') {
-            $this->markTestSkipped('Katalog `sqlite_master` cuma ada di SQLite.');
-        }
-
         $kepanjangan = [];
 
-        $tabel = DB::select(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
-        );
-
-        foreach ($tabel as $t) {
-            if (strlen($t->name) > self::BATAS_MYSQL) {
-                $kepanjangan[] = $t->name.' ('.strlen($t->name).' char)';
+        foreach ($this->tabelDiSkema() as $nama) {
+            if (strlen($nama) > self::BATAS_MYSQL) {
+                $kepanjangan[] = $nama.' ('.strlen($nama).' char)';
             }
         }
 
-        $this->assertSame([], $kepanjangan);
+        $this->assertSame([], $kepanjangan, sprintf(
+            "Nama tabel ini lewat batas %d karakter MySQL:\n  - %s",
+            self::BATAS_MYSQL,
+            implode("\n  - ", $kepanjangan),
+        ));
+    }
+
+    /**
+     * Katalog skemanya beneran kebaca di driver yang sedang dipakai.
+     *
+     * Tanpa ini, dua test di atas jadi hijau palsu yang paling gampang terjadi:
+     * query katalog yang salah nama tabel/kolom memulangkan daftar KOSONG,
+     * nol nama yang kepanjangan, dan assertion-nya lolos tanpa pernah memeriksa
+     * satu index pun. Persis bentuk kegagalan yang dulu bikin index 65 karakter
+     * itu lolos ke main.
+     */
+    public function test_katalog_skema_kebaca_di_driver_ini(): void
+    {
+        $tabel = $this->tabelDiSkema();
+        $index = $this->indexDiSkema();
+
+        // Ambangnya jauh DI BAWAH jumlah sebenarnya (39 tabel per 16 Sep 2026),
+        // dan itu disengaja: yang dijaga di sini "katalognya kebaca", bukan
+        // "skemanya sebesar ini". Ambang yang mepet bikin test ini merah tiap
+        // kali ada tabel dihapus — merah yang nggak menunjukkan apa-apa.
+        $this->assertGreaterThan(30, count($tabel), sprintf(
+            'Cuma %d tabel kebaca dari katalog driver `%s`. Query katalognya yang rusak, '.
+            'bukan skemanya — dan dua test panjang identifier di atas jadi hijau tanpa memeriksa apa pun.',
+            count($tabel),
+            DB::getDriverName(),
+        ));
+
+        $this->assertGreaterThan(20, count($index), sprintf(
+            'Cuma %d index kebaca dari katalog driver `%s`. Lihat alasan di test tabel.',
+            count($index),
+            DB::getDriverName(),
+        ));
+
+        $this->assertContains('users', $tabel);
+        $this->assertContains('certificates', $tabel);
     }
 }
