@@ -28,18 +28,6 @@ return [
     'fitur' => (bool) env('FITUR_PELANGGAN', false),
 
     /*
-     * Uji coba terbatas: flag menyala HANYA buat `customer_id` di daftar ini.
-     *
-     * Dipakai waktu UAT pilot (M6-06) — produksi sungguhan, pelanggan
-     * sungguhan, tapi cuma 3-5 perusahaan. Kosong = berlaku aturan `fitur`
-     * di atas buat semua orang.
-     */
-    'pilot_ids' => array_values(array_filter(array_map(
-        'intval',
-        array_filter(explode(',', (string) env('FITUR_PELANGGAN_PILOT_IDS', ''))),
-    ))),
-
-    /*
      * Versi aplikasi pelanggan.
      *
      * `versi_minimum` dinaikkan HANYA sesudah versi baru mencapai 100% rollout

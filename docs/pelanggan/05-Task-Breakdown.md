@@ -107,7 +107,7 @@ Total kerja ±65 hari kerja orang. Dengan dua orang yang juga menyelesaikan MVP 
 | M6-03 | Dokumen legal | Kebijakan privasi & syarat ketentuan disetujui PT Sidik, di-host di domain PT Sidik, versinya tercatat di `persetujuan_dokumen`. Pendaftaran PSE Lingkup Privat dimulai/selesai. | 1 (dev) + legal | K6 | PT Sidik + Arkaan | 07-Runbook §3 |
 | M6-04 | Data safety & listing Play | Formulir Data safety sesuai data yang benar-benar dikumpulkan (termasuk Crashlytics). Screenshot, ikon, deskripsi. Akun demo untuk reviewer Google berisi perusahaan fiktif di produksi yang terisolasi. | 1 | M6-03 | Arkaan | 07-Runbook §3 |
 | M6-05 | Aksesibilitas & perangkat | NFR-09/10 dicek dan dicatat. | 1 | M5-06 | Arkaan | NFR-09/10 |
-| M6-06 | UAT pilot | 3–5 perusahaan pilot memakai build closed testing melawan **produksi dengan flag menyala hanya untuk perusahaan pilot** (`FITUR_PELANGGAN_PILOT_IDS`). Minimal 2 minggu. Bug dicatat & ditriase harian. | 3 (dev) + 10 kalender | K7, M6-01 | Semua | 07-Runbook §5 |
+| M6-06 | UAT pilot | 3–5 perusahaan pilot memakai build closed testing melawan **produksi dengan `FITUR_PELANGGAN` menyala**. Pembatasan ke perusahaan pilot MANUAL lewat persetujuan admin: cuma `PengajuanAkunPelanggan` milik perusahaan pilot yang disetujui. Endpoint pendaftaran tetap terbuka, jadi rilis ini tidak boleh mendahului tinjauan keamanan M6-01. Minimal 2 minggu. Bug dicatat & ditriase harian. | 3 (dev) + 10 kalender | K7, M6-01 | Semua | 07-Runbook §5 |
 | M6-07 | Pelatihan admin lab | Sesi 1 jam + panduan 2 halaman untuk inbox & verifikasi. Admin pilot menjalankan skenario tanpa bantuan dev. | 1 | M4-09 | Arkaan | 04 §7 |
 
 ## M7 — Rilis Play Store bertahap
