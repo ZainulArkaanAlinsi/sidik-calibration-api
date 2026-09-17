@@ -124,7 +124,7 @@ Semua migrasi **additive**: tidak ada drop atau rename kolom yang dipakai app in
 | Tabel | Perubahan | Alasan |
 |---|---|---|
 | `users` | nilai role baru `pelanggan`; `status` + `pending_email`, `pending_verifikasi`; kolom `boleh_otorisasi_sertifikat` bool; `telepon` nullable; `jabatan` nullable; `dianonimkan_pada` nullable | Akun pelanggan, K4, hapus akun |
-| `customers` | `pic_admin_id` FK users nullable; `maks_anggota` smallint default 50; nilai `sumber` + `pelanggan` | PIC default, batas anggota |
+| `customers` | `pic_admin_id` FK users nullable; `maks_anggota` smallint default 50; nilai `sumber` + `pelanggan` — **kolomnya `string`, bukan enum, jadi nol migrasi untuk nilai ini** (dikoreksi 16 Sep 2026) | PIC default, batas anggota |
 | `equipments` | `diinput_oleh` enum(`lab`,`pelanggan`) default `lab`; `status_verifikasi_lab` enum(`terverifikasi`,`belum`,`di_luar_ruang_lingkup`) default `terverifikasi`; `catatan_verifikasi_lab` text null; `dikunci_pada` timestamp null | Alat dari pelanggan, penguncian identitas |
 | `device_tokens` | `aplikasi` enum(`internal`,`pelanggan`) default `internal` | Push hanya ke aplikasi yang benar |
 | `certificates` | `digantikan_oleh` FK certificates nullable (kalau belum bisa diturunkan dari `revision_of`) | Tampilan revisi |
@@ -154,6 +154,23 @@ Catatan `users.status` & `role`: cek dulu apakah kolomnya enum di MySQL. Kalau e
 **`preferensi_notifikasi_anggota`** — member_id PK · jadwal bool · status_permintaan bool · pesan bool · email_ringkasan bool · updated_at
 
 **`persetujuan_dokumen`** — id · user_id · jenis enum(`kebijakan_privasi`,`syarat_ketentuan`) · versi · disetujui_pada · ip null
+
+**`otp_pelanggan`** — id · user_id · tujuan enum(`verifikasi_email`,`atur_ulang_sandi`) · kode_hash · kedaluwarsa_pada · percobaan tinyint default 0 · dikunci_sampai null · dipakai_pada null · timestamps · INDEX(user_id, tujuan)
+
+> **Ditambahkan 16 Sep 2026; tidak ada di versi 0.1 dokumen ini.** REQ-AUTH-01/02
+> dan REQ-AUTH-10 menuntut OTP 6 digit berumur 10 menit, sekali pakai, dan
+> terkunci 15 menit sesudah 5 percobaan salah — tapi tidak ada tabel yang bisa
+> menyimpannya. Tiga hal yang menentukan bentuknya:
+>
+> - **`kode_hash`, bukan kodenya.** OTP itu kredensial berumur pendek. Tabel yang
+>   menyimpannya polos berarti siapa pun yang bisa membaca database bisa
+>   mengambil alih akun mana pun tanpa menyentuh email korban.
+> - **`percobaan` + `dikunci_sampai` ada di baris OTP-nya**, bukan cuma di rate
+>   limiter per IP. Bedanya menentukan: throttle per IP dilewati dengan ganti
+>   jaringan, penguncian per akun tidak.
+> - **Model `OtpPelanggan` sengaja TANPA trait `Diaudit`.** `audit_logs` menyimpan
+>   nilai lama & baru tiap kolom, jadi mengauditnya berarti hash OTP ikut
+>   tersalin ke tabel kedua — dan REQ-PRV-02 melarang log server menyimpan OTP.
 
 ## 5. State machine permintaan
 
@@ -366,7 +383,6 @@ Menulis tanda terkirim sebelum push memilih risiko "satu pengingat tidak sampai"
 |---|---|---|---|
 | `APP_ENV` | local | staging | production |
 | `FITUR_PELANGGAN` | true | true | **false** sampai rilis M7, lalu true |
-| `FITUR_PELANGGAN_PILOT_IDS` | — | — | daftar `customer_id` pilot saat UAT M6 (flag menyala hanya untuk mereka) |
 | `PELANGGAN_VERSI_MINIMUM` | 0.0.0 | naik tiap perubahan merusak | naik tiap perubahan merusak |
 | `PELANGGAN_MAINTENANCE` | false | false | true saat maintenance |
 | `ARSIP_DRIVER` | local | s3 (bucket staging) | s3 (bucket produksi) |

@@ -219,6 +219,143 @@ perlu disambung lagi.
 
 ---
 
+## 16 Sep 2026 — gerbang rute deny-by-default (M0-06)
+
+**Yang berubah:** grup `auth:sanctum` di `routes/api.php` sekarang dibungkus
+`role:admin,teknisi,viewer`, dan channel realtime `organisasi.{id}` memeriksa
+role selain kepemilikan organisasi.
+
+**Kenapa ini mendesak, padahal role `pelanggan` belum ada.** Sebelum ini,
+penjagaan satu-satunya untuk sebagian besar rute GET internal cuma penyaringan
+`organization_id` di controller. Itu cukup selama semua pemegang akun memang
+orang lab. Rancangan modul pelanggan menaruh akun pelanggan di
+`organization_id` PT Sidik juga (01-PRD §8) — jadi penyaring itu **cocok** untuk
+mereka, dan PT A bisa membaca alat & sertifikat PT B lewat rute internal.
+Kerahasiaan antar pelanggan, ISO/IEC 17025 §4.2; di risk register dia R-D01,
+level kritis. Ditutup sekarang supaya celahnya tidak pernah sempat terbuka.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `routes/api.php` | `role:admin,teknisi,viewer` di grup `auth:sanctum` (satu grup, satu suntingan) |
+| `routes/channels.php` | `organisasi.{id}` menuntut role lab, bukan cuma organisasi yang cocok |
+| `app/Services/MatriksIzin.php` | `roleYangBoleh()` mengiris SEMUA `role:` — lihat di bawah |
+
+Nol migrasi, nol perubahan controller, nol perubahan perilaku untuk
+admin/teknisi/viewer (dibuktikan `GerbangRoleRegresiTest`, yang sengaja
+dijalankan di kode LAMA dan kode BARU — dua-duanya hijau).
+
+### Jebakan yang ikut ketahuan: `/me/permissions` nyaris berbohong
+
+Memasang gerbang di grup luar bikin hampir tiap rute punya **dua** middleware
+`role:`. `MatriksIzin::roleYangBoleh()` dulu memulangkan yang **pertama ketemu**
+— yaitu gerbang luar yang longgar itu. Akibatnya `/me/permissions` bakal bilang
+viewer boleh approve sertifikat, dan tombolnya nyala di HP orang yang bakal
+ditolak 403 waktu menekannya. Persis kegagalan yang kelas itu ada untuk
+mencegahnya.
+
+Sekarang dia **mengiris** semua `role:` yang nempel di rute — yang memang
+perilaku sebenarnya waktu request jalan, karena tiap gerbang harus lolos. Tanpa
+perbaikan ini, tiga test lama merah (`MeIzinTest`), termasuk satu yang benar-benar
+memanggil endpointnya dan membandingkan dengan 403 yang sungguhan.
+
+### Penjaga yang dipasang
+
+| Test | Yang dijaga |
+|---|---|
+| `RuteInternalMenolakRoleLainTest` | **138 pasang method+URI** (72 di antaranya ber-parameter) dibaca dari `Router::getRoutes()`, semuanya wajib 403 buat role tak dikenal |
+| ↳ `test_tidak_ada_rute_publik_yang_tidak_terdaftar` | Rute `api/` baru tanpa gerbang `role:` bikin suite merah, bukan lolos diam-diam |
+| `GerbangChannelRoleTest` | Closure `routes/channels.php` dipanggil lewat `verifyUserCanAccessChannel()` — bukan lewat HTTP, karena driver `null` bikin `auth()` no-op yang selalu 200 |
+| `GerbangRoleRegresiTest` | Admin/teknisi/viewer tidak kehilangan apa pun, termasuk `/me`, `/me/permissions`, notifikasi, device token, `/logout`, `/broadcasting/auth` |
+
+**Rute publik baru wajib didaftarkan** di `RuteInternalMenolakRoleLainTest::PUBLIK`
+dengan sadar. Itu disengaja: membuka rute ke orang luar memang keputusan yang
+pantas ditulis, bukan efek samping.
+
+**Prefix `api/pelanggan/` sudah dikecualikan dari sekarang**, walau rutenya belum
+ada — supaya Fase 3 tidak memerahkan test ini pada hari rute pelanggan pertama
+lahir. Modul pelanggan punya gerbangnya sendiri.
+
+## 16 Sep 2026 — identitas pelanggan, feature flag, rute `/api/pelanggan/v1` (M1-01, M1-02)
+
+**Yang berubah:** skema identitas modul pelanggan mendarat, `routes/api_pelanggan.php`
+terdaftar dengan prefix `api/pelanggan/v1`, dan seluruhnya dikunci sakelar
+`FITUR_PELANGGAN` yang **default mati**.
+
+**Nol perubahan perilaku buat app internal.** Semua migrasi additive, tidak ada
+rute internal yang disentuh, dan `User::roles()` tetap bertiga.
+
+### Skema
+
+| Migrasi | Isi |
+|---|---|
+| `..._tambah_kolom_identitas_pelanggan_ke_users` | `telepon`, `jabatan`, `dianonimkan_pada` — ketiganya nullable |
+| `..._tambah_role_pelanggan_dan_status_pending_ke_users` | ENUM `role` + `pelanggan`, `super_admin`; ENUM `status` + `pending_email`, `pending_verifikasi` |
+| `..._tambah_pic_admin_dan_maks_anggota_ke_customers` | `pic_admin_id`, `maks_anggota` default 50 |
+| `..._tambah_aplikasi_ke_device_tokens` | `aplikasi` enum(`internal`,`pelanggan`) default `internal` |
+| 5 tabel baru | `customer_members`, `undangan_pelanggan`, `pengajuan_akun_pelanggan`, `persetujuan_dokumen`, `otp_pelanggan` |
+
+`otp_pelanggan` **tidak ada di SDD versi 0.1** — sudah disusulkan ke
+`docs/pelanggan/03-SDD.md` §4.2 berikut alasan bentuknya.
+
+`customers.sumber` **tidak butuh migrasi**: kolomnya `string`, bukan ENUM. SDD §4.1
+menulisnya seolah ENUM; itu yang keliru, sudah dikoreksi di dokumen.
+
+### Tiga jebakan yang ketahuan waktu mengerjakannya
+
+**1. `User::roles()` TIDAK boleh kedatangan `pelanggan`.** Tiga tempat memakai daftar
+itu sebagai gerbang, dan menambahkannya merusak ketiganya tanpa satu pun memunculkan
+error: `routes/channels.php` (gerbang channel M0-06 langsung terbuka, tiap sesi &
+sertifikat bocor realtime), `UserController` (`Rule::in(User::roles())` bikin admin
+bisa mencetak akun pelanggan dari panel internal, melewati verifikasi yang menahan
+R-D02), dan `role:admin,teknisi,viewer` di grup luar jadi tidak sejalan. `roles()`
+artinya **role internal lab**, dan sekarang ada test yang menjaganya.
+
+**2. SQLite tidak bisa melepas kolom yang ikut dalam definisi foreign key.** Bukan
+soal `dropForeign` — itu batasan `ALTER TABLE ... DROP COLUMN`-nya sendiri, dan tidak
+ada PRAGMA yang menolongnya. Jadi FK `customers.pic_admin_id` **cuma dipasang di
+MySQL/MariaDB**; di SQLite kolomnya berdiri tanpa constraint. Yang dijaga FK itu
+integritas data produksi, dan produksi jalan di MySQL.
+
+**3. `DatabaseMigrations` tidak bisa dipakai di repo ini.** Trait itu memundurkan
+SELURUH riwayat migrasi sesudah tiap test, dan **tujuh migrasi lama memanggil
+`dropForeign`** yang SQLite tolak. Test migrasi memanggil berkas migrasinya langsung
+(`require` → `down()`/`up()`), yang juga lebih tepat sasaran: `migrate:rollback
+--step=N` menghitung mundur dari migrasi terakhir, jadi begitu ada yang menambah
+migrasi sesudahnya, angka itu memundurkan yang salah sambil tetap hijau.
+
+### `super_admin` — nilainya ada, perilakunya belum
+
+Permintaan pemilik proyek 16 Sep: nanti ada role super admin yang melihat seluruh
+proses dari awal sampai akhir. Yang mendarat sekarang **cuma nilai ENUM-nya**.
+
+Alasannya konkret: `ALTER TABLE` pada `users` di produksi menyentuh tabel yang
+dipakai teknisi di lapangan, jadi sekali jalan jauh lebih baik daripada dua kali.
+Nilai ENUM yang menganggur nol risikonya.
+
+Izinnya **menunggu K4** — siapa yang boleh mengesahkan sertifikat vs admin yang
+hanya melayani pelanggan, diputuskan manajer teknis. Membangun hierarki role sebelum
+itu dijawab berisiko membangun yang salah, lalu dibongkar; untuk lab terakreditasi,
+siapa boleh mengesahkan apa bukan soal kenyamanan layar.
+
+### Sakelar fitur
+
+`config/pelanggan.php`, dibaca lewat `config()` — bukan `env()` di luar berkas config,
+alasannya sama dengan `config/deploy.php`: `config:cache` di entrypoint bikin `.env`
+tidak dibaca lagi, dan `env()` jatuh ke null tanpa satu pun error. Khusus di sini itu
+mahal — `fitur` yang jatuh ke null terbaca "mati", dan seluruh API pelanggan membalas
+503 di produksi tanpa ada yang salah di log.
+
+Tujuh kunci baru masuk **`.env.example` DAN `render.yaml`** (CLAUDE.md §9).
+`FITUR_PELANGGAN=false` di blueprint sesuai SDD §10: produksi mati sampai M7.
+
+**`GET /api/pelanggan/v1/app/status` sengaja DI LUAR sakelar itu** — satu-satunya.
+Kalau dia ikut 503, aplikasi tidak punya cara tahu dirinya usang atau server sedang
+maintenance, yaitu dua layar yang justru paling dibutuhkan saat fiturnya dimatikan.
+Endpoint itu juga **nol query database**, dan jumlah query-nya dihitung test — dia
+harus tetap menjawab justru waktu database bermasalah.
+
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
 Branch itu **nggak akan di-merge**. Keputusan Zain, 31 Juli.
