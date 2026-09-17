@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Hash;
  *
  * Orang mengetik ulang kode ini dari email, sering di HP. `0`/`O` dan `1`/`I`/`l`
  * dibuang seluruhnya — bukan "dimaafkan waktu dicocokkan", karena memaafkan
- * berarti ruang tebakannya mengecil tanpa ada yang sadar. Sisa 30 simbol × 8
+ * berarti ruang tebakannya mengecil tanpa ada yang sadar. Sisa 31 simbol × 8
  * posisi ≈ 39 bit, dan itu dipagari masa berlaku 7 hari + terikat satu email.
  */
 class KodeUndangan

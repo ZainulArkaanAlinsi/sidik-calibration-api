@@ -124,11 +124,13 @@ Route::middleware('fitur.pelanggan')->group(function () {
     /*
      * --- Butuh token DAN akun yang sudah diverifikasi ---------------------
      *
-     * Kosong sampai Fase 5: `/beranda`, `/alat`, `/sertifikat`, `/permintaan`,
-     * `/anggota` semuanya mendarat di sini. Grupnya sudah berdiri sekarang
-     * supaya rute data yang ditambahkan nanti mewarisi `pelanggan.aktif`
-     * otomatis — mendaftarkannya di grup atas tanpa sadar itu persis kelas
-     * kelalaian yang bikin REQ-AUTH-03 bocor tanpa satu pun error.
+     * `/anggota` sudah mendarat di sini (Fase 5). Yang masih kosong:
+     * `/beranda`, `/alat`, `/sertifikat`, `/permintaan`.
+     *
+     * Rute data BARU wajib masuk grup ini, bukan grup di atasnya — grup atas
+     * cuma menuntut token, grup ini menuntut akun yang sudah diverifikasi.
+     * Mendaftarkannya di grup atas tanpa sadar itu persis kelas kelalaian yang
+     * bikin REQ-AUTH-03 bocor tanpa satu pun error.
      */
     Route::middleware(['auth:sanctum', 'aplikasi:pelanggan', 'pelanggan.aktif', 'perusahaan'])->group(function () {
         /*

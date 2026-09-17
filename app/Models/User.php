@@ -204,6 +204,12 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            // Tanpa cast ini dia balik STRING, dan yang pertama pecah bukan
+            // error melainkan perbandingan: `$user->dianonimkan_pada?->isPast()`
+            // fatal, sementara `if ($user->dianonimkan_pada)` malah TRUE buat
+            // string kosong mana pun. Kolomnya lahir di fase 6 (hapus akun) dan
+            // yang membacanya gerbang "akun ini masih boleh masuk atau nggak".
+            'dianonimkan_pada' => 'datetime',
         ];
     }
 }
