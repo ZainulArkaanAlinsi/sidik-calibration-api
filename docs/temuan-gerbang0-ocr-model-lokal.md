@@ -378,6 +378,6 @@ kolom ini.
 - API: `php artisan test --filter="OcrMeasurementTest|WorksheetScanTest|AkurasiKameraTest"`
   → **59 test, 58 lulus, 1 skip**. Dijalankan di **SQLite**, bukan MySQL —
   MySQL tidak tersedia di lingkungan kerja ini, jadi gate MySQL di
-  `CLAUDE.md` **belum terpenuhi** dan wajib dijalankan ulang sebelum rilis.
+  `AGENTS.md` **belum terpenuhi** dan wajib dijalankan ulang sebelum rilis.
 - Mobile: **belum dijalankan lokal** — Flutter SDK tidak ada di lingkungan ini.
   Yang memverifikasi `flutter analyze` + `flutter test` di CI (`periksa-pr.yml`).

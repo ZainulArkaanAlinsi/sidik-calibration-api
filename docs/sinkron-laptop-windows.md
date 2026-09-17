@@ -180,7 +180,7 @@ password database, yang memang sengaja berbeda.
 Yang bikin dua mesin melenceng bukan setup awal, tapi kebiasaan harian. Tiga aturan:
 
 1. **Setiap mulai kerja, di mesin mana pun:** `git pull origin main` — ini juga sudah
-   jadi aturan di `CLAUDE.md`.
+   jadi aturan di `AGENTS.md`.
 2. **Setiap selesai kerja:** commit dan push. Kerjaan yang menginap di satu mesin
    sebagai perubahan yang belum di-commit adalah satu-satunya cara kode dua mesin
    bisa berbeda tanpa disadari. `./scripts/cek-sinkron.sh` akan menangkapnya.

@@ -1727,7 +1727,7 @@ class CalibrationValidator
      * lalu membuka datanya dan menemukan hitung ulangnya baik-baik saja belajar
      * satu hal: peringatan di sistem ini bohong. Sesudah itu `abaikan_peringatan`
      * ditekan tanpa dibaca — termasuk waktu peringatannya benar. Itu jebakan
-     * yang sama yang sudah tertulis di `CLAUDE.md`: peringatan palsu melatih
+     * yang sama yang sudah tertulis di `AGENTS.md`: peringatan palsu melatih
      * admin menyetujui tanpa membaca.
      *
      * ## Kenapa TIDAK pakai peta kode → label

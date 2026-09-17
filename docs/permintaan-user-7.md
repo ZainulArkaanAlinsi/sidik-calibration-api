@@ -2977,9 +2977,9 @@ Contributors GitHub tinggal dua orang. Trailer 0, author Claude 0, branch
 
 Tiga belas pesan commit masih menyebut "Claude". Itu **arsitektur, bukan
 atribusi**: `claude-opus-4-8` adalah model yang dipanggil fitur Vision aplikasi
-ini (`VISION_DRIVER=anthropic`), dan `CLAUDE.md` adalah nama berkas instruksi
+ini (`VISION_DRIVER=anthropic`), dan `AGENTS.md` adalah nama berkas instruksi
 proyek. Menghapusnya membuat pesan commit berbohong tentang kodenya sendiri.
-Kalau `CLAUDE.md` pun harus hilang, repo ini sudah punya `AGENTS.md` yang cuma
+Kalau `AGENTS.md` pun harus hilang, repo ini sudah punya `AGENTS.md` yang cuma
 menunjuk ke sana — tinggal dibalik.
 
 ### Pencegahan
