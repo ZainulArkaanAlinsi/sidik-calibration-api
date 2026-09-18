@@ -5,24 +5,18 @@ namespace App\Http\Controllers\Pelanggan;
 use App\Exceptions\Pelanggan\AksiPelangganDitolak;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pelanggan\AturUlangSandiRequest;
-use App\Http\Requests\Pelanggan\DaftarRequest;
 use App\Http\Requests\Pelanggan\EmailSajaRequest;
 use App\Http\Requests\Pelanggan\MasukRequest;
 use App\Http\Requests\Pelanggan\TerimaUndanganRequest;
-use App\Http\Requests\Pelanggan\VerifikasiEmailRequest;
 use App\Http\Resources\Pelanggan\AkunResource;
 use App\Mail\Pelanggan\KodeOtpEmail;
-use App\Models\Organization;
 use App\Models\OtpPelanggan;
-use App\Models\PengajuanAkunPelanggan;
 use App\Models\PersetujuanDokumen;
 use App\Models\User;
-use App\Notifications\Pelanggan\PengajuanAkunMenunggu;
 use App\Services\Pelanggan\Keanggotaan;
 use App\Services\Pelanggan\KodeOtp;
 use App\Services\Pelanggan\KodeUndangan;
 use App\Services\Pelanggan\TokenPelanggan;
-use App\Services\PenerimaNotifikasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -62,135 +56,26 @@ class AuthPelangganController extends Controller
         private readonly TokenPelanggan $token,
     ) {}
 
-    /**
-     * REQ-AUTH-01 — daftar perusahaan baru.
+    /*
+     * TIDAK ADA `daftar()`, `verifikasiEmail()`, `kirimUlangOtp()`.
      *
-     * ## Kenapa baris `pengajuan_akun_pelanggan` dibuat DI SINI, bukan waktu
-     * OTP-nya cocok
+     * Ketiganya melayani pendaftaran mandiri, dan pendaftaran mandiri dicabut:
+     * akun pelanggan sekarang HANYA lahir dari undangan, lewat
+     * [terimaUndangan()] di bawah. Alasannya di AGENTS.md §Akun Lahir dari
+     * Undangan; ringkasnya, yang menjamin seseorang berhak atas data PT X
+     * bukan klaim yang dia ketik sendiri di layar daftar, melainkan bahwa
+     * orang yang SUDAH berwenang mengirim kode ke alamat emailnya.
      *
-     * 02-SRS REQ-AUTH-02 menulis barisnya lahir saat verifikasi. Nama & alamat
-     * perusahaan diketik di langkah ini, dan satu-satunya tempat yang bisa
-     * menampungnya adalah tabel itu — menundanya berarti menambah kolom baru di
-     * `users` cuma buat memarkir dua string, dan kolom baru itu pilihan
-     * terakhir (AGENTS.md §Alur Kerja poin 4).
+     * Yang ikut hilang bersamanya: antrean pengajuan yang bisa dibanjiri siapa
+     * pun dari internet, dan kemungkinan admin yang sedang buru-buru
+     * menyetujui pemohon yang mengaku dari PT X.
      *
-     * Yang sebenarnya dijaga REQ-AUTH-02 adalah admin tidak diganggu pengajuan
-     * dari email yang belum tentu milik si pendaftar. Itu tetap ditegakkan, dua
-     * lapis, dan dua-duanya tidak bergantung pada ingatan orang:
-     *
-     * - notifikasi ke admin baru dikirim di [verifikasiEmail()];
-     * - antrean admin membacanya lewat `PengajuanAkunPelanggan::siapDitinjau()`,
-     *   yang menuntut akun pemohonnya sudah `pending_verifikasi`.
+     * Yang SENGAJA ditinggal berdiri: tabel `pengajuan_akun_pelanggan` beserta
+     * layar peninjauannya. Barisnya adalah bukti persetujuan syarat & kebijakan
+     * privasi — yang justru baru sesi lalu dikunci `restrictOnDelete` supaya
+     * tidak bisa terhapus (UU PDP). Mencabut tabelnya demi kerapian berarti
+     * membuang bukti yang wajib disimpan.
      */
-    public function daftar(DaftarRequest $request): JsonResponse
-    {
-        $data = $request->validated();
-
-        $hasil = DB::transaction(function () use ($data, $request): array {
-            $user = User::create([
-                // Satu instalasi = satu PT Sidik, sama seperti `register()`
-                // internal. Pelanggan tetap menempel ke organisasi lab, bukan
-                // punya organisasi sendiri — `customers` yang memisahkan
-                // perusahaan, dan itu baru ditentukan admin.
-                'organization_id' => Organization::query()->min('id'),
-                'name' => $data['nama'],
-                'email' => $data['email'],
-                'password' => $data['sandi'],
-                'telepon' => $data['telepon'],
-                'jabatan' => $data['jabatan'],
-                'role' => User::ROLE_PELANGGAN,
-                'status' => User::STATUS_PENDING_EMAIL,
-            ]);
-
-            PengajuanAkunPelanggan::create([
-                'organization_id' => $user->organization_id,
-                'user_id' => $user->getKey(),
-                'nama_perusahaan' => $data['nama_perusahaan'],
-                'alamat_perusahaan' => $data['alamat_perusahaan'] ?? null,
-                'jabatan' => $data['jabatan'],
-                'status' => PengajuanAkunPelanggan::STATUS_MENUNGGU,
-            ]);
-
-            $this->catatPersetujuan($user, $request);
-
-            return ['user' => $user, 'kode' => $this->otp->terbitkan($user, OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL)];
-        });
-
-        /** @var User $user */
-        $user = $hasil['user'];
-
-        // `terbitkan()` memulangkan null kalau akunnya terkunci. Buat akun yang
-        // baru saja lahir itu mustahil — dan dijaga di sini supaya kalau
-        // suatu hari jadi mungkin, yang terkirim bukan email berisi kode kosong.
-        if (is_string($hasil['kode'])) {
-            $this->kirimOtp($user, $hasil['kode'], OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL);
-        }
-
-        return response()->json([
-            'message' => 'Kode verifikasi 6 digit dikirim ke '.$user->email.'.',
-            'data' => [
-                'email' => $user->email,
-                'status' => $user->status,
-                'otp_berlaku_menit' => OtpPelanggan::BERLAKU_MENIT,
-            ],
-        ], 201);
-    }
-
-    /** REQ-AUTH-02 — tukar OTP dengan status `pending_verifikasi` + token. */
-    public function verifikasiEmail(VerifikasiEmailRequest $request, PenerimaNotifikasi $penerima): JsonResponse
-    {
-        $data = $request->validated();
-        $user = $this->cariPelanggan($data['email']);
-
-        // Akun yang tidak ada dijawab sama persis dengan OTP yang salah —
-        // kalau dibedakan, endpoint ini jadi alat menyisir email terdaftar.
-        if ($user === null || $user->status !== User::STATUS_PENDING_EMAIL) {
-            return $this->tolakOtp(KodeOtp::TIDAK_ADA);
-        }
-
-        $hasil = $this->otp->periksa($user, OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL, $data['otp']);
-
-        if ($hasil !== KodeOtp::COCOK) {
-            return $this->tolakOtp($hasil);
-        }
-
-        $user->forceFill(['status' => User::STATUS_PENDING_VERIFIKASI, 'email_verified_at' => now()])->save();
-
-        $this->kabariAdmin($user, $penerima);
-
-        return response()->json(['data' => $this->bungkusToken($user, $request->string('nama_perangkat')->toString())]);
-    }
-
-    /**
-     * Kirim ulang OTP (§7.1).
-     *
-     * Selalu 200, apa pun yang ditemukan — alasan yang sama dengan
-     * [lupaSandi()]. Yang membedakan cuma apakah ada email yang benar-benar
-     * terkirim.
-     */
-    public function kirimUlangOtp(EmailSajaRequest $request): JsonResponse
-    {
-        $user = $this->cariPelanggan($request->validated()['email']);
-
-        if ($user !== null && $user->status === User::STATUS_PENDING_EMAIL) {
-            $kode = $this->otp->terbitkan($user, OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL);
-
-            if ($kode === null) {
-                return $this->tolak(
-                    'otp_terkunci',
-                    'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.',
-                    429,
-                );
-            }
-
-            $this->kirimOtp($user, $kode, OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL);
-        }
-
-        return response()->json([
-            'message' => 'Kalau email itu memang menunggu verifikasi, kode barunya sudah dikirim.',
-            'data' => ['otp_berlaku_menit' => OtpPelanggan::BERLAKU_MENIT],
-        ]);
-    }
 
     /**
      * REQ-AUTH-06 — tukar kode undangan jadi akun yang LANGSUNG aktif.
@@ -475,22 +360,6 @@ class AuthPelangganController extends Controller
             Log::warning('Gagal mengirim OTP pelanggan.', [
                 'user_id' => $user->getKey(),
                 'tujuan' => $tujuan,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    private function kabariAdmin(User $user, PenerimaNotifikasi $penerima): void
-    {
-        try {
-            $notifikasi = PengajuanAkunMenunggu::dariUser($user);
-
-            foreach ($penerima->adminAktif((int) $user->organization_id) as $admin) {
-                $admin->notify($notifikasi);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Gagal mengabari admin soal pengajuan akun pelanggan.', [
-                'user_id' => $user->getKey(),
                 'error' => $e->getMessage(),
             ]);
         }

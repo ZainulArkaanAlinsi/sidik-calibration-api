@@ -186,8 +186,15 @@ class GerbangAplikasiTokenTest extends TestCase
         $this->actingAs($this->orang(User::ROLE_ADMIN))->getJson('/api/equipments')->assertOk();
     }
 
-    /** Register internal tetap cuma mencetak teknisi, apa pun yang dikirim klien. */
-    public function test_register_internal_tetap_cuma_bikin_teknisi(): void
+    /**
+     * Pintu pendaftaran mandiri orang lab BENAR-BENAR nggak ada lagi.
+     *
+     * Dites lewat HTTP, bukan dengan membaca `routes/api.php`: yang menentukan
+     * pintunya kebuka atau nggak adalah apa yang dijawab server ke orang luar,
+     * dan rute bisa lahir lagi dari mana saja — berkas rute lain, paket, atau
+     * `Route::any` yang kelewat luas. Nol baris kode yang perlu diingat.
+     */
+    public function test_register_internal_sudah_nggak_ada(): void
     {
         $this->postJson('/api/register', [
             'nama' => 'Calon Teknisi',
@@ -196,13 +203,9 @@ class GerbangAplikasiTokenTest extends TestCase
             'email' => 'calon-teknisi@contoh.test',
             'password' => 'sandi-uji-yang-panjang',
             'password_confirmation' => 'sandi-uji-yang-panjang',
-            'role' => User::ROLE_ADMIN,
-        ])->assertCreated();
+        ])->assertNotFound();
 
-        $baru = User::where('email', 'calon-teknisi@contoh.test')->sole();
-
-        $this->assertSame(User::ROLE_TEKNISI, $baru->role);
-        $this->assertSame(User::STATUS_PENDING, $baru->status);
+        $this->assertDatabaseMissing('users', ['email' => 'calon-teknisi@contoh.test']);
     }
 
     // -------------------------------------------------------------- NFR-02
@@ -221,7 +224,6 @@ class GerbangAplikasiTokenTest extends TestCase
     public function test_NFR_02_throttle_pelanggan_terdaftar(): void
     {
         $wajib = [
-            'pelanggan-daftar',
             'pelanggan-masuk',
             'pelanggan-otp-periksa',
             'pelanggan-otp-kirim',

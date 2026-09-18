@@ -4,17 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
-use App\Models\Organization;
 use App\Models\User;
-use App\Notifications\AkunBaruMenunggu;
 use App\Services\MatriksIzin;
-use App\Services\PenerimaNotifikasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -84,51 +79,19 @@ class AuthController extends Controller
             ],
         ]);
     }
-
-    public function register(RegisterRequest $request, PenerimaNotifikasi $penerima): JsonResponse
-    {
-        $data = $request->validated();
-
-        // role & status di-hardcode, NGGAK diambil dari request.
-        $user = User::create([
-            // Pendaftar langsung nempel ke organisasi bawaan. Satu instalasi =
-            // satu PT, jadi nggak ada yang perlu dipilih — dan kalau dibiarin null,
-            // layar profil di mobile bakal nampilin PT kosong.
-            'organization_id' => Organization::query()->min('id'),
-            'name' => $data['nama'],
-            'employee_id' => $data['employee_id'],
-            'department' => $data['department'],
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'role' => User::ROLE_TEKNISI,
-            'status' => User::STATUS_PENDING,
-        ]);
-
-        // Kabarin admin (fase-2 §2). Tanpa ini, register jadi jebakan: orangnya
-        // kejebak di layar "belum disetujui" dan nggak ada admin yang tahu, jadi
-        // lamanya dia nunggu itu soal keberuntungan — apakah ada admin yang
-        // kebetulan buka layar approval.
-        //
-        // Kegagalan ngirim notifikasi NGGAK boleh ngegagalin pendaftarannya:
-        // akunnya udah kesimpen, dan bikin request-nya 500 malah bikin orangnya
-        // daftar ulang terus kena "employee_id udah kepakai".
-        try {
-            $notifikasi = AkunBaruMenunggu::dariUser($user);
-
-            foreach ($penerima->adminAktif((int) $user->organization_id) as $admin) {
-                $admin->notify($notifikasi);
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Gagal ngabarin admin soal pendaftar baru.', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return response()->json([
-            'message' => 'Pendaftaran terkirim. Akun menunggu persetujuan admin.',
-        ], 201);
-    }
+    /*
+     * TIDAK ADA `register()`.
+     *
+     * Pendaftaran mandiri orang lab dicabut: akun teknisi/admin/viewer dibuat
+     * admin lewat panel (Filament `CreateUser`), bukan lewat form publik.
+     * Alasannya di AGENTS.md §Akun Lahir dari Undangan.
+     *
+     * Yang lama tidak pernah memberi akses langsung — statusnya `pending` dan
+     * admin tetap harus menyetujui. Yang dicabut bukan lubang aksesnya,
+     * melainkan dua hal lain: antrean persetujuan yang bisa dibanjiri siapa pun
+     * dari internet, dan pemohon yang mengarang `employee_id` lalu lolos karena
+     * admin sedang buru-buru. Keduanya hilang begitu tidak ada pintu publik.
+     */
 
     public function me(Request $request): JsonResponse
     {

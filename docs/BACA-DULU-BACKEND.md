@@ -364,8 +364,7 @@ Flutter, bukan dokumen ini. Contoh JSON di sana disalin dari
 
 | | Path | Gerbang |
 |---|---|---|
-| POST | `/auth/daftar` | throttle 5/jam per IP |
-| POST | `/auth/verifikasi-email` · `/auth/kirim-ulang-otp` | throttle 5 per 15 menit per email |
+| POST | `/auth/terima-undangan` | throttle 10 per 15 menit per email |
 | POST | `/auth/masuk` | throttle 10/menit per IP **+ kunci 5 kegagalan per email** |
 | POST | `/auth/lupa-sandi` · `/auth/atur-ulang-sandi` | throttle OTP |
 | POST | `/auth/keluar` · `/auth/keluar-semua` | token |
@@ -374,29 +373,27 @@ Flutter, bukan dokumen ini. Contoh JSON di sana disalin dari
 
 ### Keputusan yang menyimpang dari tulisan SRS, dan alasannya
 
-**Baris `pengajuan_akun_pelanggan` dibuat waktu DAFTAR, bukan waktu OTP cocok.**
-REQ-AUTH-02 menulisnya lahir saat verifikasi. Nama & alamat perusahaan diketik di
-langkah daftar, dan satu-satunya tempat yang bisa menampungnya tabel itu —
-menundanya berarti menambah kolom baru di `users` cuma buat memarkir dua string,
-dan kolom baru itu pilihan terakhir (AGENTS.md §Alur Kerja poin 4).
+**Tidak ada pendaftaran mandiri sama sekali** (18 Sep 2026). REQ-AUTH-01 dan
+REQ-AUTH-02 menulis alur daftar → OTP → persetujuan admin; ketiga rutenya
+dicabut, dan akun pelanggan sekarang HANYA lahir dari undangan. Alasan lengkap di
+`AGENTS.md` §Akun Lahir dari Undangan.
 
 Yang sebenarnya dijaga REQ-AUTH-02 — **admin tidak diganggu pengajuan dari email
-yang belum tentu milik si pendaftar** — tetap ditegakkan dua lapis, dan
-dua-duanya tidak bergantung pada ingatan orang:
+yang belum tentu milik si pemohon** — justru jadi otomatis begitu pintunya
+tertutup: tidak ada lagi pengajuan yang bisa masuk tanpa ada orang berwenang
+yang mengirimkan kodenya lebih dulu.
 
-1. notifikasi ke admin baru dikirim di `verifikasiEmail()`;
-2. antrean admin wajib lewat scope **`PengajuanAkunPelanggan::siapDitinjau()`**,
-   yang menuntut akun pemohonnya sudah `pending_verifikasi`.
-
-Ada test yang memerahkan kalau salah satunya hilang.
+Tabel `pengajuan_akun_pelanggan` dan layar peninjauannya **tetap ada**, dan itu
+bukan sisa yang lupa dibersihkan: barisnya memuat bukti persetujuan syarat &
+kebijakan privasi (UU PDP), yang dikunci `restrictOnDelete` supaya tidak bisa
+terhapus.
 
 ### Yang menentukan bentuk seluruh lapisan auth
 
 **1. Balasan tidak boleh menjawab "email ini terdaftar atau tidak".** `lupa-sandi`
-dan `kirim-ulang-otp` SELALU 200. `masuk` memakai satu pesan buat "tidak ada
-akun" dan "sandi salah". Bahkan pesan `email.unique` di pendaftaran diganti,
-karena kalimat bawaan Laravel ("sudah digunakan") justru menjawab pertanyaan itu.
-Siapa saja pelanggan PT Sidik itu informasi bisnis.
+SELALU 200 — termasuk waktu akunnya sedang terkunci, karena 429 di situ justru
+mengakui akunnya ada. `masuk` memakai satu pesan buat "tidak ada akun" dan "sandi
+salah". Siapa saja pelanggan PT Sidik itu informasi bisnis.
 
 **2. Tiap error non-422 punya `kode` stabil.** Aplikasi yang sudah terpasang
 bercabang pada `kode`, bukan pada `message` (NFR-12). `KontrakResponsPelangganTest`

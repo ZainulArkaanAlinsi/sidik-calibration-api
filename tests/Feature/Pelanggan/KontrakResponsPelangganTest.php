@@ -164,22 +164,6 @@ class KontrakResponsPelangganTest extends TestCase
         ));
     }
 
-    public function test_bentuk_respons_daftar(): void
-    {
-        $badan = $this->postJson('/api/pelanggan/v1/auth/daftar', [
-            'nama' => 'Budi Pendaftar',
-            'email' => 'budi@contoh.test',
-            'sandi' => $this->sandiBenar,
-            'telepon' => '0812-3456-7890',
-            'jabatan' => 'QA Supervisor',
-            'nama_perusahaan' => 'PT Contoh Industri',
-            'alamat_perusahaan' => 'Jl. Contoh No. 1, Bandung',
-            'setuju_syarat' => true,
-        ])->assertCreated()->json();
-
-        $this->aduKeFixture('daftar', $badan);
-    }
-
     public function test_bentuk_respons_masuk_anggota_aktif(): void
     {
         $user = $this->anggota();
@@ -361,20 +345,21 @@ class KontrakResponsPelangganTest extends TestCase
         $this->aduKeFixture('app-status', $badan);
     }
 
-    /** Email OTP memang terkirim — fixture di atas tidak boleh hijau tanpa jalur emailnya jalan. */
-    public function test_email_otp_terkirim_saat_daftar(): void
+    /**
+     * Email OTP memang terkirim — fixture di atas tidak boleh hijau tanpa jalur
+     * emailnya jalan.
+     *
+     * Lewat `lupa-sandi`, bukan `daftar`: sesudah pendaftaran mandiri dicabut,
+     * itu satu-satunya pintu yang masih menerbitkan OTP. Yang diuji tetap sama
+     * — kodenya benar-benar sampai ke email yang dituju, dan bentuknya 6 angka.
+     */
+    public function test_email_otp_terkirim_saat_lupa_sandi(): void
     {
-        $this->postJson('/api/pelanggan/v1/auth/daftar', [
-            'nama' => 'Budi Pendaftar',
-            'email' => 'budi@contoh.test',
-            'sandi' => $this->sandiBenar,
-            'telepon' => '0812-3456-7890',
-            'jabatan' => 'QA Supervisor',
-            'nama_perusahaan' => 'PT Contoh Industri',
-            'setuju_syarat' => true,
-        ])->assertCreated();
+        $user = $this->anggota();
 
-        Mail::assertSent(KodeOtpEmail::class, fn (KodeOtpEmail $mail) => $mail->hasTo('budi@contoh.test')
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+
+        Mail::assertSent(KodeOtpEmail::class, fn (KodeOtpEmail $mail) => $mail->hasTo((string) $user->email)
             && preg_match('/^\d{6}$/', $mail->kode) === 1);
     }
 }

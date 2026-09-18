@@ -227,25 +227,20 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $perMenit('login', 10);
-        $perMenit('register', 5);
         $perMenit('password-reset', 5);
 
         // --- Modul pelanggan (02-SRS NFR-02) ---------------------------------
         //
-        // Angkanya dari NFR-02, bukan dikarang: daftar 5/jam per IP, masuk
-        // 10/menit per IP, OTP 5 per 15 menit per AKUN.
+        // Angkanya dari NFR-02, bukan dikarang: masuk 10/menit per IP, OTP 5 per
+        // 15 menit per AKUN. Jatah `daftar` 5/jam ikut hilang bersama rutenya —
+        // akun pelanggan sekarang lahir dari undangan, bukan pendaftaran
+        // mandiri (AGENTS.md §Akun Lahir dari Undangan).
         //
         // Yang OTP dikunci per akun, bukan per IP, dan bedanya menentukan:
         // throttle per IP dilewati dengan ganti jaringan, sementara yang
         // menahan penebakan OTP justru harus menempel ke akun yang ditebak.
         // Penguncian kerasnya sendiri ada di baris `otp_pelanggan`
         // (`percobaan`, `dikunci_sampai`); limiter ini lapis pertamanya.
-        RateLimiter::for('pelanggan-daftar', fn (Request $request) => Limit::perHour(5)
-            ->by('pelanggan-daftar|'.$request->ip())
-            ->response(fn () => response()->json([
-                'kode' => 'terlalu_sering',
-                'message' => 'Terlalu banyak percobaan pendaftaran. Coba lagi satu jam lagi.',
-            ], 429)));
 
         // Bukan lewat `$perMenit`: balasan bawaannya tidak punya `kode`, dan
         // 03-SDD §7 mewajibkan tiap error non-422 di jalur pelanggan punya kode

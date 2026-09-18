@@ -148,7 +148,7 @@ tombol lalu user kena error 403. Sekarang aturannya di-hardcode di mobile
 >
 > | `kategori` | Kejadian |
 > |---|---|
-> | `akun.menunggu_persetujuan` | ada yang `POST /register` |
+> | ~~`akun.menunggu_persetujuan`~~ | DICABUT bareng `POST /register` (18 Sep 2026) |
 > | `sertifikat.gagal` | PDF sertifikat gagal dibuat |
 > | `standar.kadaluarsa` | standar acuan mendekati / udah habis (harian) |
 >

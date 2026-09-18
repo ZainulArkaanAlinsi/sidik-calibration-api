@@ -47,23 +47,6 @@ class UserManagementTest extends TestCase
         $this->withToken($hpLama)->getJson('/api/me')->assertUnauthorized();
     }
 
-    public function test_pendaftar_baru_langsung_nempel_ke_organisasi(): void
-    {
-        $this->postJson('/api/register', [
-            'nama' => 'Eko Prasetyo',
-            'employee_id' => 'SDK-0099',
-            'department' => 'Kalibrasi',
-            'email' => 'eko@ptsidik.com',
-            'password' => 'rahasia123',
-        ])->assertCreated();
-
-        // Kalau organization_id-nya null, layar profil di mobile nampilin PT kosong.
-        $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptsidik.com',
-            'organization_id' => Organization::first()->id,
-        ]);
-    }
-
     /**
      * Reset password jalannya lewat email, tapi login pakai ID pegawai — jadi
      * orang yang salah ketik email waktu daftar kekunci selamanya kalau nggak

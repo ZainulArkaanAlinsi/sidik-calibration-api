@@ -242,6 +242,51 @@ menunjuk ke sana supaya jelas ke mana arahnya begitu berkasnya mendarat.
    bisa disuruh ikut berubah hari itu juga; kalau memang harus, buat `/v2`.
 7. Rujukan lengkap: `docs/pelanggan/03-SDD.md`.
 
+## Akun Lahir dari Undangan
+
+Tidak ada pendaftaran mandiri, di kedua sisi. Ini keputusan pemilik proyek
+(18 Sep 2026), dan yang dicabut adalah pintunya — bukan penjagaan di baliknya.
+
+| Siapa | Akunnya lahir dari | Yang DICABUT |
+| --- | --- | --- |
+| Orang lab (teknisi/admin/viewer) | admin membuatnya di panel Filament | `POST /register` |
+| Pelanggan | undangan berkode dari admin lab atau PIC utama, ditukar di `POST /pelanggan/v1/auth/terima-undangan` | `POST /pelanggan/v1/auth/daftar`, `/verifikasi-email`, `/kirim-ulang-otp` |
+
+**Kenapa.** Yang lama tidak pernah memberi akses langsung — statusnya `pending`
+dan admin tetap harus menyetujui. Yang dicabut dua hal lain: antrean persetujuan
+yang bisa dibanjiri siapa pun dari internet, dan pemohon yang mengaku dari PT X
+lalu lolos karena admin sedang buru-buru. Undangan menutup dua-duanya sekaligus,
+karena yang menjamin seseorang berhak bukan klaim yang dia ketik sendiri,
+melainkan bahwa orang yang SUDAH berwenang mengirim kode ke alamat emailnya.
+
+**Jangan dibangun ulang.** Kalau ada yang membaca `AuthPelangganController` dan
+merasa `terimaUndangan()` kurang lengkap tanpa `daftar()` — itu bukan kelupaan.
+Dijaga `PintuDaftarMandiriTertutupTest`, yang menguji lewat HTTP (bukan dengan
+membaca daftar rute) dan ikut menjaring rute baru mana pun yang namanya
+berakhiran `register` atau `daftar`.
+
+**Yang SENGAJA ditinggal berdiri, jangan ikut dirapikan:**
+
+- **Mesin OTP** (`otp_pelanggan`, `KodeOtp`). Bukan lagi untuk verifikasi email,
+  tapi `lupa-sandi` dan `atur-ulang-sandi` masih memakainya — dan sesudah
+  pencabutan, itu satu-satunya pintu yang menerbitkan OTP. Penjagaannya (kunci 5
+  percobaan, hash, sekali pakai) ikut pindah ke `SayaDanSandiTest`.
+- **Konstanta `OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL`.** Nilainya tersimpan di
+  baris yang mungkin masih ada; menghapus konstanta tidak menghapus barisnya.
+- **Tabel `pengajuan_akun_pelanggan` beserta layar peninjauannya.** Barisnya
+  bukan sekadar antrean — di situ tercatat bukti persetujuan syarat & kebijakan
+  privasi, yang justru baru dikunci `restrictOnDelete` supaya tidak bisa
+  terhapus (UU PDP). Antreannya memang tidak akan terisi lagi; membuang
+  tabelnya demi kerapian berarti membuang bukti yang wajib disimpan.
+- **Status `pending`, `pending_email`, `pending_verifikasi`.** Tidak dipakai
+  akun baru, tapi baris lama bisa masih memakainya, dan jalur persetujuannya
+  (`PersetujuanAkunLabTest`) tetap harus bisa memutuskannya.
+
+**Satu hal yang belum tertutup.** Admin membuat akun orang lab sambil mengetik
+sandinya, jadi sandi awal itu diketahui admin. Belum ada mekanisme "wajib ganti
+sandi saat pertama masuk". Diterima sadar, bukan kelupaan — dicatat di sini
+supaya tidak ditemukan ulang sebagai temuan baru.
+
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.
 - JANGAN commit atau push otomatis setiap habis mengubah kode. Tunggu sampai user minta eksplisit, misal: "commit dan push ya", "commit ini dong".

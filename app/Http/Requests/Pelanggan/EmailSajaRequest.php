@@ -4,7 +4,7 @@ namespace App\Http\Requests\Pelanggan;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/** `kirim-ulang-otp` & `lupa-sandi` — dua-duanya cuma butuh email. */
+/** `lupa-sandi` — cuma butuh email. */
 class EmailSajaRequest extends FormRequest
 {
     use AturanPelanggan;

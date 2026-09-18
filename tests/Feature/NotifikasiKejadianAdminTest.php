@@ -11,7 +11,6 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\Standard;
 use App\Models\User;
-use App\Notifications\AkunBaruMenunggu;
 use App\Notifications\SertifikatGagal;
 use App\Notifications\StandarMauKadaluarsa;
 use App\Services\CertificateSnapshotBuilder;
@@ -53,91 +52,16 @@ class NotifikasiKejadianAdminTest extends TestCase
         $this->admin = User::factory()->admin()->create();
     }
 
-    // ------------------------------------------------ 1. akun baru mendaftar
-
-    public function test_pendaftar_baru_ngabarin_admin(): void
-    {
-        Notification::fake();
-
-        $this->postJson('/api/register', [
-            'nama' => 'Budi Santoso',
-            'employee_id' => 'SDK-7777',
-            'department' => 'Kalibrasi',
-            'email' => 'budi@sidik.test',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertCreated();
-
-        Notification::assertSentTo($this->admin, AkunBaruMenunggu::class);
-    }
-
-    /** Isi & tautannya harus cukup buat admin langsung nindak, bukan cuma "ada yang daftar". */
-    public function test_isi_notifikasi_pendaftar_nunjuk_ke_layar_approval(): void
-    {
-        $pendaftar = User::factory()->create([
-            'name' => 'Budi Santoso',
-            'employee_id' => 'SDK-7777',
-            'department' => 'Kalibrasi',
-            'status' => User::STATUS_PENDING,
-        ]);
-
-        $data = AkunBaruMenunggu::dariUser($pendaftar)->toDatabase($this->admin);
-
-        $this->assertSame('akun.menunggu_persetujuan', $data['kategori']);
-        $this->assertStringContainsString('Budi Santoso', $data['body']);
-        $this->assertStringContainsString('SDK-7777', $data['body']);
-        $this->assertSame('users', $data['tautan']['tipe']);
-        $this->assertSame('pending', $data['tautan']['filter']);
-        $this->assertSame($pendaftar->id, $data['tautan']['id']);
-    }
-
-    /**
-     * Akun `pending` & `nonaktif` NGGAK dikabarin.
-     *
-     * Yang pending nggak bisa login, jadi notifikasinya cuma numpuk — dan yang
-     * lebih penting, pendaftar nggak boleh dikabarin soal pendaftar lain.
-     */
-    public function test_admin_pending_dan_nonaktif_nggak_dikabarin(): void
-    {
-        Notification::fake();
-
-        $pending = User::factory()->admin()->create(['status' => User::STATUS_PENDING]);
-        $nonaktif = User::factory()->admin()->create(['status' => User::STATUS_NONAKTIF]);
-
-        $this->postJson('/api/register', [
-            'nama' => 'Citra',
-            'employee_id' => 'SDK-7778',
-            'department' => 'Kalibrasi',
-            'email' => 'citra@sidik.test',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertCreated();
-
-        Notification::assertSentTo($this->admin, AkunBaruMenunggu::class);
-        Notification::assertNotSentTo($pending, AkunBaruMenunggu::class);
-        Notification::assertNotSentTo($nonaktif, AkunBaruMenunggu::class);
-    }
-
-    /** Teknisi & viewer nggak dikabarin — ini kerjaan admin. */
-    public function test_teknisi_dan_viewer_nggak_dikabarin(): void
-    {
-        Notification::fake();
-
-        $teknisi = User::factory()->create();
-        $viewer = User::factory()->create(['role' => User::ROLE_VIEWER]);
-
-        $this->postJson('/api/register', [
-            'nama' => 'Dewi',
-            'employee_id' => 'SDK-7779',
-            'department' => 'Kalibrasi',
-            'email' => 'dewi@sidik.test',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertCreated();
-
-        Notification::assertNotSentTo($teknisi, AkunBaruMenunggu::class);
-        Notification::assertNotSentTo($viewer, AkunBaruMenunggu::class);
-    }
+    // ---------------------------------------- 1. akun baru mendaftar (DICABUT)
+    //
+    // Notifikasi `AkunBaruMenunggu` ikut hilang bersama `POST /register`: tidak
+    // ada lagi pendaftaran mandiri yang bisa mengisi antrean admin, jadi tidak
+    // ada lagi kejadian yang perlu dikabarkan. Akun orang lab dibuat admin
+    // sendiri di panel — dia tidak perlu dikabari soal akun yang baru saja dia
+    // ketik. Lihat AGENTS.md §Akun Lahir dari Undangan.
+    //
+    // Penomoran kejadian di bawah SENGAJA tidak digeser: nomornya dirujuk
+    // dokumen fase-2 §2, dan menggesernya bikin dua sumber berselisih.
 
     // -------------------------------------------- 2. sertifikat gagal dibuat
 

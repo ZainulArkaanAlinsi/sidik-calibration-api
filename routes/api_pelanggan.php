@@ -53,8 +53,8 @@ Route::middleware('fitur.pelanggan')->group(function () {
      * --- Tanpa token -----------------------------------------------------
      *
      * Tiap rute punya throttle SENDIRI, bukan satu ember bersama. Ember
-     * bersama bikin banjir di `daftar` ikut mengunci `masuk` — jadi serangan
-     * ke pintu pendaftaran menutup pintu masuk buat pelanggan yang sah.
+     * bersama bikin banjir di `terima-undangan` ikut mengunci `masuk` — jadi
+     * serangan ke pintu undangan menutup pintu masuk buat pelanggan yang sah.
      *
      * Jalur OTP pun dipecah dua: MEMERIKSA kode (`pelanggan-otp-periksa`) dan
      * MENGIRIM kode (`pelanggan-otp-kirim`). Satu ember bersama bikin penyerang
@@ -62,18 +62,14 @@ Route::middleware('fitur.pelanggan')->group(function () {
      * sebaliknya. Alasan lengkapnya di `AppServiceProvider::rateLimiters()`.
      */
     Route::prefix('auth')->name('pelanggan.auth.')->group(function () {
-        Route::post('/daftar', [AuthPelangganController::class, 'daftar'])
-            ->middleware('throttle:pelanggan-daftar')
-            ->name('daftar');
-
-        Route::post('/verifikasi-email', [AuthPelangganController::class, 'verifikasiEmail'])
-            ->middleware('throttle:pelanggan-otp-periksa')
-            ->name('verifikasi-email');
-
-        Route::post('/kirim-ulang-otp', [AuthPelangganController::class, 'kirimUlangOtp'])
-            ->middleware('throttle:pelanggan-otp-kirim')
-            ->name('kirim-ulang-otp');
-
+        // TIDAK ADA `/daftar`, `/verifikasi-email`, `/kirim-ulang-otp`. Akun
+        // pelanggan lahir HANYA dari undangan (`/terima-undangan` di bawah) —
+        // lihat §Akun Lahir dari Undangan di AGENTS.md.
+        //
+        // OTP-nya sendiri TETAP dipakai, cuma bukan buat verifikasi email lagi:
+        // `/lupa-sandi` dan `/atur-ulang-sandi` masih menerbitkan dan memeriksa
+        // kode. Mencabut mesin OTP karena pendaftarannya hilang bakal ikut
+        // mematikan satu-satunya jalan pelanggan yang lupa sandi.
         Route::post('/masuk', [AuthPelangganController::class, 'masuk'])
             ->middleware('throttle:pelanggan-masuk')
             ->name('masuk');
