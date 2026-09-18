@@ -112,10 +112,29 @@ class CalibrationRequest extends FormRequest
 
         $rata = HydrometerMentah::ratakan($blok['diameter_stem']);
 
-        // Kosong dibiarkan apa adanya: `nullable` yang menanganinya, dan
-        // mengganti kotak yang belum diisi jadi `[]` bikin pesan galatnya
-        // berubah tanpa alasan.
+        // Kosong dijadikan `null`, BUKAN dibiarkan apa adanya.
+        //
+        // HP SELALU menanam kunci ini begitu tabelnya ada — `isi` berisi satu
+        // baris walau seluruh selnya kosong — jadi yang datang waktu teknisi
+        // belum mengukur diameter stem itu
+        // `{"baris":[{"titik_ukur":1,"pembacaan":[null,null,null]}]}`, bukan
+        // ketiadaan kunci. Dibiarkan, bentuk tabelnya lolos dari perataan lalu
+        // dihantam `size:3` + `.*` — tepat tiga pesan galat yang method ini ada
+        // untuk mencegahnya, cuma pindah ke kasus "belum diisi".
+        //
+        // `nullable` TIDAK menolong di situ: dia membebaskan nilai `null`, bukan
+        // array. Jadi normalisasinya harus sampai `null`.
+        //
+        // Yang menjaga sesi tanpa diameter stem tetap tidak terbit diam-diam
+        // bukan aturan request, melainkan `hydrometer_diameter_stem_tidak_tiga`
+        // di `HydrometerProfile::peringatanSesi()` — dan itu memang tempatnya:
+        // "belum diukur" pertanyaan buat admin yang menyetujui, bukan galat
+        // bentuk payload.
         if ($rata === []) {
+            $blok['diameter_stem'] = null;
+            $spek[HydrometerMentah::KUNCI_SESI] = $blok;
+            $this->merge(['spesifikasi_alat' => $spek]);
+
             return;
         }
 
@@ -1014,10 +1033,30 @@ class CalibrationRequest extends FormRequest
             // (√3) dan derajat kebebasan (n−1 = 2) komponen pertama budget
             // mengandaikan n = 3; empat ulangan lolos diam-diam dengan pembagi
             // yang salah.
+            // `nullable` di dalam deret, SEJAJAR dengan jalur datar
+            // `measurements.*.pembacaan.*` — bukan `required`.
+            //
+            // HP mengirim sel yang belum diisi sebagai `null` DI POSISINYA
+            // (`deret.any((x) => x != null)`), supaya kolom ke-3 yang kosong
+            // tidak menggeser kolom ke-4 naik. Dengan `required`, teknisi yang
+            // baru menimbang dua kali — neracanya belum stabil — kena **422**
+            // berbunyi "measurements.0.hydro_massa.2 field is required", nama
+            // yang tidak ada di kertas kerjanya, dan draftnya tidak bisa
+            // disimpan sampai ketiga kolomnya lengkap.
+            //
+            // Yang menahan titik separuh-jadi tetap ada dan jauh lebih kebaca:
+            // gerbang di `CalibrationController::susunBlokHydrometer()` yang
+            // berbunyi "Titik ke-N butuh tepat 3 kali timbang DAN 3 kali baca
+            // suhu; yang terkirim X massa & Y suhu", dan menaruh titiknya di
+            // `belum_dipetakan` alih-alih menolak seluruh kiriman. Dengan
+            // `required`, cabang ramah itu TIDAK PERNAH tercapai dari HP.
+            //
+            // `size:3` di deretnya tetap: yang dijaga di situ POSISI kolomnya,
+            // bukan keterisiannya.
             'measurements.*.hydro_massa' => ['sometimes', 'nullable', 'array', 'size:3'],
-            'measurements.*.hydro_massa.*' => ['required', 'numeric'],
+            'measurements.*.hydro_massa.*' => ['nullable', 'numeric'],
             'measurements.*.hydro_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
-            'measurements.*.hydro_suhu.*' => ['required', 'numeric'],
+            'measurements.*.hydro_suhu.*' => ['nullable', 'numeric'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],

@@ -900,6 +900,104 @@ class HydrometerSesiTest extends TestCase
         }
     }
 
+    /**
+     * D Stem yang DIBIARKAN KOSONG tidak bikin 422.
+     *
+     * HP selalu menanam kunci `diameter_stem` begitu tabelnya ada — `isi`
+     * berisi satu baris walau seluruh selnya kosong — jadi yang datang waktu
+     * teknisi belum mengukur diameter stem itu
+     * `{"baris":[{"titik_ukur":1,"pembacaan":[null,null,null]}]}`, bukan
+     * ketiadaan kunci.
+     *
+     * Perataan yang berhenti di situ (`if ($rata === []) return;`) membiarkan
+     * bentuk tabelnya lolos lalu dihantam `size:3` + `.*` — tepat tiga pesan
+     * galat yang perataan itu ada untuk mencegahnya, cuma pindah ke kasus
+     * "belum diisi". `nullable` tidak menolong: dia membebaskan `null`, bukan
+     * array.
+     *
+     * Yang menjaga sesi tanpa diameter stem tidak terbit diam-diam bukan aturan
+     * request, melainkan peringatan `hydrometer_diameter_stem_tidak_tiga` —
+     * dan itu memang tempatnya: "belum diukur" pertanyaan buat admin yang
+     * menyetujui, bukan galat bentuk payload.
+     */
+    public function test_diameter_stem_kosong_tidak_bikin_422(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['diameter_stem'] = [
+            'baris' => [
+                ['titik_ukur' => 1.0, 'pembacaan' => [null, null, null]],
+            ],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        // Dan admin tetap diberi tahu bahwa diameternya belum diukur.
+        $this->assertContains(
+            'hydrometer_diameter_stem_tidak_tiga',
+            $this->kodeTemuan($id, (int) $alat->organization_id),
+            'sesi tanpa diameter stem lolos tanpa satu pun peringatan',
+        );
+    }
+
+    /**
+     * Kolom pembacaan yang terisi SEPARUH tidak bikin 422 — dia dilaporkan.
+     *
+     * HP mengirim sel yang belum diisi sebagai `null` DI POSISINYA, supaya
+     * kolom ke-3 yang kosong tidak menggeser kolom ke-4 naik. Dengan aturan
+     * `required` di dalam deret, teknisi yang baru menimbang dua kali —
+     * neracanya belum stabil — kena 422 berbunyi
+     * "measurements.0.hydro_massa.2 field is required": nama yang tidak ada di
+     * kertas kerjanya, dan draftnya tidak bisa disimpan sampai lengkap.
+     *
+     * Yang benar: kirimannya diterima, dan titik yang belum lengkap dilaporkan
+     * lewat `belum_dipetakan` dengan kalimat yang menyebut berapa yang masuk —
+     * gerbang yang memang sudah ada di `susunBlokHydrometer()`, tapi tidak
+     * pernah tercapai dari HP selama validasinya menolak duluan.
+     */
+    public function test_kolom_pembacaan_terisi_separuh_dilaporkan_bukan_422(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        // Timbang ke-3 belum sempat diambil.
+        $payload['measurements'][0]['hydro_massa'] = [21.2727, 21.2726, null];
+
+        // Diterima, BUKAN 422 — itu inti temuannya.
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        // Dan titik yang belum lengkap TIDAK melahirkan densitas — dua titik
+        // sisanya tetap terhitung. Sertifikat separuh data itu justru yang
+        // paling berbahaya di alat ini.
+        $this->assertCount(
+            2,
+            CalibrationSession::findOrFail($id)->uncertaintyCalculations,
+            'titik yang timbangannya cuma dua ikut melahirkan densitas',
+        );
+
+        // Alasannya kebaca di preview — kalimat yang menyebut berapa yang masuk.
+        $alasan = implode(' ', array_column(
+            $this->actingAs($teknisi)
+                ->postJson('/api/calibrations/preview', $payload)
+                ->assertOk()
+                ->json('data.belum_dihitung') ?? [],
+            'alasan',
+        ));
+
+        $this->assertStringContainsString(
+            'butuh tepat 3 kali timbang',
+            $alasan,
+            'titik separuh-jadi tidak dilaporkan — teknisi tidak tahu kenapa titiknya hilang',
+        );
+    }
+
     /** Dua ukuran diameter stem tetap DITOLAK, walau dikirim bentuk tabel. */
     public function test_bentuk_hp_dengan_dua_ukuran_tetap_ditolak(): void
     {
