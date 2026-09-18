@@ -524,10 +524,22 @@ class CalibrationValidator
             // membaca, lalu peringatan yang benar-benar penting ikut tenggelam.
             // Bedanya, di sini palsunya bukan satu-dua baris tapi semuanya.
             //
-            // Yang hilang dari perlindungan: nol. Massa & suhu punya penjaga
-            // SENDIRI yang mengerti besarannya — gerbang §8.2 di
-            // `HydrometerProfile` — dan densitas hasil hitungnya tetap diadu ke
-            // rentang alat lewat jalur hasil, bukan jalur pembacaan mentah.
+            // Yang hilang dari perlindungan, dan apa gantinya. Melewatkan kedua
+            // deret ini MENCABUT penjaga "koma kegeser" yang dipunyai tiga
+            // puluh dua alat lain — `diLuarRentang` cuma punya satu pemanggil,
+            // yaitu blok di bawah ini. Diukur waktu review: satu koma kegeser
+            // di kolom Weight (21,2727 → 2,12727 g) menerbitkan densitas
+            // 0,468497 g/ml buat tanda skala 0,610 — mustahil, skalanya cuma
+            // 0,600-0,650 — dan sesinya lolos `valid = true` tanpa satu pun
+            // temuan.
+            //
+            // Gantinya BUKAN di sini, karena di sini yang tersedia cuma angka
+            // mentahnya: penggantinya `HydrometerProfile::
+            // peringatanKoreksiTidakMasukAkal()`, yang mengadu DENSITAS TERBIT
+            // ke lebar skala alat. Itu satu-satunya tempat perbandingan itu
+            // bisa dilakukan, karena densitasnya baru ada sesudah rantai Cuckow
+            // jalan. Jangan melonggarkan pengecualian di bawah tanpa memeriksa
+            // gerbang itu masih hidup.
             if (in_array($m->peran_sensor, HydrometerMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
                 continue;
             }

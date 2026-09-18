@@ -14,6 +14,7 @@ use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
+use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -51,12 +52,77 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
         $this->bakukanTogglHydrometer();
+        $this->bakukanBlokHydrometer();
 
         if ($this->user()?->isAdmin()) {
             return;
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /**
+     * `diameter_stem` bentuk-TABEL dari HP diratakan SEBELUM aturan `size:3`
+     * menyentuhnya.
+     *
+     * ## Kegagalan yang ditutup
+     *
+     * Tabel "Diameter Stem" menyatakan `simpan_ke:
+     * spesifikasi_alat.hydrometer.diameter_stem`, dan buat tiap tabel semacam
+     * itu HP SELALU merakit cerminan tabelnya, bukan deret datar
+     * (`LembarKerjaState._tanamTabelSpesifikasi()`:
+     * `induk[jalur.last] = {'baris': isi}`). Jadi yang sampai ke sini:
+     *
+     *     {"baris": [{"titik_ukur": null, "pembacaan": [0.708, 0.710, 0.709]}]}
+     *
+     * Aturannya justru yang paling ketat di seluruh blok ini — `array` +
+     * `size:3` + `.*` `required|numeric|gt:0` — jadi bentuk itu ditolak **422**
+     * dengan tiga pesan sekaligus:
+     *
+     *     ... diameter stem field must contain 3 items.
+     *     ... diameter_stem.baris field must be a number.
+     *     ... diameter_stem.baris field must be greater than 0.
+     *
+     * Artinya TIDAK ADA satu pun sesi Hydrometer yang bisa dikirim dari
+     * aplikasi. Dan itu tidak ketahuan satu test pun, karena seeder dan seluruh
+     * `HydrometerSesiTest` mengirim bentuk DATAR yang memang lolos — bentuk
+     * yang tidak pernah dipakai HP.
+     *
+     * ## Kenapa diratakan di sini, bukan aturannya yang dilonggarkan
+     *
+     * Jangka Sorong memilih jalan sebaliknya (`array`, `max:20`, tanpa `.*`)
+     * dan mengandalkan perataan waktu baca. Itu sah, tapi di sini `size:3`
+     * bukan kerapian: selisih terbesar-terkecil ketiga ukuran jadi komponen
+     * ketidakpastian `Stem Diameter`, dan dua ukuran membuat komponen itu tidak
+     * sah. Melonggarkan aturannya berarti sesi dengan dua ukuran lolos validasi
+     * lalu terbit dengan budget yang cacat. Diratakan dulu, aturannya tetap
+     * ketat, dan keduanya mengadu bentuk yang sama.
+     *
+     * Perataannya memakai `HydrometerMentah::ratakan()` — SATU implementasi
+     * yang sama dengan yang dipakai jalur baca, bukan salinan kedua.
+     */
+    private function bakukanBlokHydrometer(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[HydrometerMentah::KUNCI_SESI] ?? null;
+
+        if (! is_array($blok) || ! array_key_exists('diameter_stem', $blok)) {
+            return;
+        }
+
+        $rata = HydrometerMentah::ratakan($blok['diameter_stem']);
+
+        // Kosong dibiarkan apa adanya: `nullable` yang menanganinya, dan
+        // mengganti kotak yang belum diisi jadi `[]` bikin pesan galatnya
+        // berubah tanpa alasan.
+        if ($rata === []) {
+            return;
+        }
+
+        $blok['diameter_stem'] = $rata;
+        $spek[HydrometerMentah::KUNCI_SESI] = $blok;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
     }
 
     /**

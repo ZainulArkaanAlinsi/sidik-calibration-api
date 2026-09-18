@@ -732,6 +732,251 @@ class HydrometerSesiTest extends TestCase
         $this->assertNotContains('hydrometer_densitas_tidak_mengikuti_skala', $kode);
     }
 
+    /** Kode temuan yang muncul buat sesi ini, lewat endpoint validasi sungguhan. */
+    private function kodeTemuan(int $id, int $organizationId): array
+    {
+        $admin = User::factory()->admin()->create(['organization_id' => $organizationId]);
+
+        return array_column(
+            $this->actingAs($admin)
+                ->getJson("/api/calibrations/{$id}/validasi")
+                ->assertSuccessful()
+                ->json('data.temuan') ?? [],
+            'kode',
+        );
+    }
+
+    /**
+     * Koma kegeser di kolom Weight KETAHUAN — penjaganya nggak boleh hilang.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Hydrometer alat pertama yang pembacaan mentahnya (gram, °C) bukan besaran
+     * alatnya (g/ml), jadi `CalibrationValidator` sengaja melewatkan kedua deret
+     * itu dari `pembacaan_di_luar_rentang` — kalau tidak, sesi yang sempurna
+     * memuntahkan 18 peringatan palsu.
+     *
+     * Harganya: alat ini kehilangan SATU-SATUNYA penjaga "koma kegeser" yang
+     * dipunyai tiga puluh dua alat lain. `diLuarRentang()` cuma punya satu
+     * pemanggil, dan itu blok yang baru saja dilewati.
+     *
+     * Diukur: satu koma kegeser di kolom Weight titik pertama (21,2727 →
+     * 2,12727 g) menerbitkan densitas **0,468497** g/ml buat tanda skala 0,610 —
+     * angka yang alatnya sendiri tidak punya tandanya, karena skalanya cuma
+     * 0,600-0,650. Sesinya lolos `valid = true`, `boleh_terbit = true`, nol
+     * temuan, `U95` tetap 0,00051 dari lantai CMC. Sertifikat terakreditasi
+     * terbit dengan densitas yang mustahil.
+     */
+    public function test_koma_kegeser_di_kolom_weight_ketahuan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['measurements'][0]['hydro_massa'] = array_map(
+            static fn (float $m): float => $m / 10,
+            $payload['measurements'][0]['hydro_massa'],
+        );
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertContains(
+            'hydrometer_koreksi_tidak_masuk_akal',
+            $this->kodeTemuan($id, (int) $alat->organization_id),
+            'koma kegeser di kolom Weight lolos tanpa satu pun temuan',
+        );
+    }
+
+    /**
+     * Deret yang dipetakan TERBALIK ke titiknya ketahuan.
+     *
+     * Gerbang rasio `hydrometer_densitas_tidak_mengikuti_skala` tidak bisa
+     * menangkap ini, dan itu bukan kelalaian melainkan batas bentuknya: yang
+     * diukur di sana SEBARAN (`max − min`), dan deret yang dibalik punya sebaran
+     * yang persis sama — rasionya 1,0181, mulus lolos.
+     *
+     * Yang membongkarnya besar KOREKSINYA: tanda 0,610 menerima hasil timbang
+     * cairan tanda 0,650, jadi koreksinya +0,0346 g/ml pada alat yang seluruh
+     * skalanya cuma selebar 0,050 — 69% lebar skala.
+     */
+    public function test_deret_dipetakan_terbalik_ketahuan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $massa = array_column($payload['measurements'], 'hydro_massa');
+        $suhu = array_column($payload['measurements'], 'hydro_suhu');
+
+        foreach ($payload['measurements'] as $i => $m) {
+            $payload['measurements'][$i]['hydro_massa'] = $massa[count($massa) - 1 - $i];
+            $payload['measurements'][$i]['hydro_suhu'] = $suhu[count($suhu) - 1 - $i];
+        }
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertContains(
+            'hydrometer_koreksi_tidak_masuk_akal',
+            $this->kodeTemuan($id, (int) $alat->organization_id),
+            'deret yang dipetakan terbalik lolos — sebarannya sama, jadi gerbang rasio diam',
+        );
+    }
+
+    /** Dan sesi yang BENAR tetap bersih dari kedua gerbang itu. */
+    public function test_sesi_benar_bersih_dari_gerbang_koreksi(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $kode = $this->kodeTemuan($id, (int) $alat->organization_id);
+
+        $this->assertNotContains('hydrometer_koreksi_tidak_masuk_akal', $kode);
+        $this->assertNotContains('hydrometer_densitas_tidak_mengikuti_skala', $kode);
+    }
+
+    /**
+     * BENTUK PAYLOAD ASLI HP diterima — bukan bentuk datar yang cuma dipakai test.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Tabel "Diameter Stem" menyatakan `simpan_ke:
+     * spesifikasi_alat.hydrometer.diameter_stem`, dan buat tiap tabel semacam
+     * itu HP SELALU merakit cerminan tabelnya
+     * (`LembarKerjaState._tanamTabelSpesifikasi()`:
+     * `induk[jalur.last] = {'baris': isi}`) — bukan deret datar.
+     *
+     * Aturannya `array` + `size:3` + `.*` `required|numeric|gt:0`, jadi bentuk
+     * itu ditolak **422** dengan tiga pesan sekaligus. Artinya tidak ada satu
+     * pun sesi Hydrometer yang bisa dikirim dari aplikasi — alatnya mati total
+     * di lapangan.
+     *
+     * Dan itu lolos 68 test hydrometer tanpa satu pun merah, karena seeder dan
+     * seluruh berkas ini mengirim bentuk DATAR yang memang diterima — bentuk
+     * yang tidak pernah dipakai HP. Pelajarannya: test yang menyusun payloadnya
+     * sendiri cuma menguji bentuk yang dibayangkan penulisnya.
+     */
+    public function test_bentuk_payload_asli_hp_diterima(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+
+        // Persis yang dirakit `_tanamTabelSpesifikasi()` di HP.
+        $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['diameter_stem'] = [
+            'baris' => [
+                ['titik_ukur' => null, 'pembacaan' => [0.708, 0.710, 0.709]],
+            ],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        // Dan angkanya sama persis dengan sesi bentuk datar — perataannya tidak
+        // boleh mengubah hasil, cuma bentuknya.
+        $hitungan = CalibrationSession::findOrFail($id)
+            ->uncertaintyCalculations()
+            ->orderBy('titik_ke')
+            ->get();
+
+        $this->assertCount(3, $hitungan);
+
+        foreach (self::DENSITAS_MASTER as $i => $harap) {
+            $this->assertEqualsWithDelta(
+                $harap,
+                (float) $hitungan[$i]->rata_rata,
+                1e-6,
+                'densitas titik ke-'.($i + 1).' berubah gara-gara bentuk payloadnya',
+            );
+        }
+    }
+
+    /** Dua ukuran diameter stem tetap DITOLAK, walau dikirim bentuk tabel. */
+    public function test_bentuk_hp_dengan_dua_ukuran_tetap_ditolak(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['diameter_stem'] = [
+            'baris' => [
+                ['titik_ukur' => null, 'pembacaan' => [0.708, 0.710]],
+            ],
+        ];
+
+        $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['spesifikasi_alat.hydrometer.diameter_stem']);
+    }
+
+    /**
+     * Kotak Pre Condition yang dibiarkan kosong KETAHUAN satu per satu.
+     *
+     * `HydrometerMentah::blokSesi()` menjatuhkan kotak kosong ke `0.0`, dan nol
+     * itu angka yang sah buat rumusnya — jadi sesinya terbit, cuma dengan angka
+     * yang salah, tanpa satu pun error. Diukur dari master ringan:
+     *
+     *   `yx` kosong       → densitas bergeser **0,0005992** g/ml dan `U95` turun 33%
+     *   `resolusi` kosong → densitas tetap, `U95` turun 19%
+     *
+     * Yang paling mahal `yx`: geseran densitasnya lebih besar daripada lantai
+     * CMC-nya sendiri (0,00051), jadi satu kotak yang lupa diisi menggeser angka
+     * yang tercetak lebih jauh daripada seluruh ketidakpastian yang diklaim
+     * dokumen itu — sambil membuat ketidakpastiannya tampak lebih kecil.
+     */
+    public function test_kotak_pre_condition_kosong_ketahuan(): void
+    {
+        // `siapkan()` SEKALI: dia membentuk organisasi + standar sendiri tiap
+        // dipanggil, dan `payload()` mengambil standar dengan
+        // `Standard::query()->value('id')` — baris pertama, yang mulai panggilan
+        // kedua sudah milik organisasi lain. Yang gagal jadi bukan yang diuji.
+        [$alat, $teknisi] = $this->siapkan();
+
+        foreach ([
+            'tegangan_permukaan' => 'hydrometer_tegangan_permukaan_kosong',
+            'resolusi' => 'hydrometer_resolusi_kosong',
+        ] as $kunci => $kode) {
+            $payload = $this->payload($alat);
+            $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI][$kunci] = null;
+
+            $id = $this->actingAs($teknisi)
+                ->postJson('/api/calibrations', $payload)
+                ->assertSuccessful()
+                ->json('data.id');
+
+            $this->assertContains(
+                $kode,
+                $this->kodeTemuan($id, (int) $alat->organization_id),
+                "kotak `{$kunci}` kosong lolos tanpa peringatan",
+            );
+        }
+    }
+
+    /** Sesi yang lengkap tidak kena satu pun peringatan kotak kosong. */
+    public function test_sesi_lengkap_bersih_dari_peringatan_kotak_kosong(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $kode = $this->kodeTemuan($id, (int) $alat->organization_id);
+
+        $this->assertNotContains('hydrometer_tegangan_permukaan_kosong', $kode);
+        $this->assertNotContains('hydrometer_resolusi_kosong', $kode);
+    }
+
     /** `tr` di luar 15 / 20 / 27,5 ditolak — salah ketik menggeser seluruh koreksi. */
     public function test_suhu_acuan_di_luar_daftar_ditolak_422(): void
     {

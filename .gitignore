@@ -206,3 +206,9 @@ Project-PT-Sidik/worksheet_alat_calibration/*
 # basi begitu satu alat berubah. Di-commit, dia jadi salinan status kedua yang
 # berlawanan dengan docs/BACA-DULU-BACKEND.md tanpa ada yang sadar.
 /Register-Alat-Kalibrasi-PT-Sidik.pdf
+
+# Berkas SQLite yang keciprat waktu perintah artisan dijalanin dengan
+# DB_DATABASE=<nama> sementara phpunit.xml mematok DB_CONNECTION=sqlite —
+# Laravel membaca namanya sebagai JALUR BERKAS relatif ke akar repo, lalu
+# membuatnya. Bukan hasil kerja, dan ukurannya ratusan KB.
+/gen_lembar

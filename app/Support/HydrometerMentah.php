@@ -211,9 +211,18 @@ class HydrometerMentah
      * Deret angka dari deret datar ATAU cerminan tabel HP
      * (`{baris: [{pembacaan: [...]}]}`). Yang bukan angka dilewati.
      *
+     * PUBLIC, dan itu perlu: `CalibrationRequest::bakukanBlokHydrometer()`
+     * memanggilnya di `prepareForValidation()` supaya aturan `size:3` mengadu
+     * bentuk yang SUDAH rata. Kalau perataannya ditulis ulang di sana, dua
+     * salinan bentuk tabel hidup berdampingan — dan yang satu bisa berubah
+     * tanpa yang lain ikut.
+     *
+     * Idempoten: deret yang sudah rata dipulangkan apa adanya, jadi jalur draft
+     * yang menyimpan berulang tidak merusaknya.
+     *
      * @return list<float>
      */
-    private static function ratakan(mixed $nilai): array
+    public static function ratakan(mixed $nilai): array
     {
         if (! is_array($nilai)) {
             return [];

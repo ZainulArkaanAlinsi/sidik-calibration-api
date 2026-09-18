@@ -98,6 +98,16 @@ class HydrometerProfile extends CalibrationProfile
     private const RASIO_RENTANG_MINIMUM = 0.5;
 
     /**
+     * Sejauh apa densitas terbit boleh meleset dari tanda skalanya, sebagai
+     * pecahan LEBAR SKALA alat — lihat [peringatanKoreksiTidakMasukAkal].
+     *
+     * Setengah lebar skala. Kedua master yang sah meleset paling jauh 14,7%
+     * (ringan) dan 2,4% (berat); bentuk salah-isi yang paling ringan yang
+     * ditemukan review meleset 69%. Ambangnya duduk di jurang itu.
+     */
+    private const KOREKSI_MAKS_DARI_LEBAR = 0.5;
+
+    /**
      * Empat standar blok `Uncertainty of Calibrator` master (`NILAI U95%` E9:J12),
      * bukan salinan mentah kop kertas Rev.2.
      *
@@ -663,7 +673,149 @@ class HydrometerProfile extends CalibrationProfile
             $peringatan[] = $p;
         }
 
+        foreach ($this->peringatanKoreksiTidakMasukAkal($sesi) as $p) {
+            $peringatan[] = $p;
+        }
+
+        // Kotak Pre Condition yang dibiarkan KOSONG, satu per satu.
+        //
+        // `HydrometerMentah::blokSesi()` menjatuhkan kotak kosong ke `0.0`, dan
+        // nol itu angka yang sah buat rumusnya — jadi sesinya terbit, cuma
+        // dengan angka yang salah. Diukur dari kedua master:
+        //
+        //             kotak kosong  geser densitas   U95 terbit
+        //   ringan    yx            0,0005992        -33%
+        //   berat     yx            0,0048816        -29%
+        //   ringan    resolusi      0                -19%
+        //   berat     resolusi      0                -24%
+        //
+        // Yang paling mahal `yx`: geseran densitasnya (0,0006) LEBIH BESAR
+        // daripada lantai CMC-nya sendiri (0,00051), jadi satu kotak yang lupa
+        // diisi menggeser angka yang tercetak lebih jauh daripada seluruh
+        // ketidakpastian yang diklaim dokumen itu — sambil membuat
+        // ketidakpastiannya tampak sepertiga lebih kecil.
+        //
+        // `Ma` tidak ikut: kosong, kalkulatornya sudah menahan seluruh sesi
+        // (nol titik terbit), jadi peringatan di sini cuma pengulangan.
+        foreach ([
+            'tegangan_permukaan' => 'Tegangan permukaan cairan (yx)',
+            'resolusi' => 'Resolusi skala hydrometer',
+        ] as $kunci => $sebutan) {
+            if ((float) ($blok[$kunci] ?? 0.0) > 0.0) {
+                continue;
+            }
+
+            $peringatan[] = [
+                'kode' => 'hydrometer_'.$kunci.'_kosong',
+                'pesan' => $sebutan.' belum diisi, dan kotak kosong dibaca sebagai NOL — '
+                    .($kunci === 'tegangan_permukaan'
+                        ? 'densitas yang terbit bergeser lebih jauh daripada lantai ketidakpastiannya sendiri, '
+                        : '')
+                    .'sementara ketidakpastian yang tercetak justru jadi lebih kecil daripada yang sebenarnya. '
+                    .'Isi dulu sebelum sesi ini disetujui.',
+            ];
+        }
+
         return $peringatan;
+    }
+
+    /**
+     * Densitas terbit tidak boleh jauh dari tanda skala yang dibaca.
+     *
+     * ## Lubang yang ditutup gerbang ini
+     *
+     * Hydrometer alat pertama yang pembacaan mentahnya (gram, °C) BUKAN besaran
+     * alatnya (g/ml), jadi `CalibrationValidator` sengaja melewatkan kedua deret
+     * itu dari penjaga `pembacaan_di_luar_rentang` — kalau tidak, satu sesi yang
+     * sempurna memuntahkan 18 peringatan palsu.
+     *
+     * Harga dari pengecualian itu: alat ini kehilangan SATU-SATUNYA penjaga
+     * "koma kegeser" yang dipunyai tiga puluh dua alat lain, dan tidak ada
+     * penggantinya. Diukur: satu koma kegeser di kolom Weight titik pertama
+     * (21,2727 → 2,12727 g) menerbitkan densitas **0,468497** g/ml untuk tanda
+     * skala 0,610 — angka yang alatnya sendiri tidak punya tandanya, karena
+     * skalanya cuma 0,600-0,650. Sesinya lolos dengan `valid = true`,
+     * `boleh_terbit = true`, nol temuan, dan `U95` tetap 0,00051 (lantai CMC).
+     * Sertifikat terakreditasi terbit dengan densitas yang mustahil.
+     *
+     * ## Kenapa diadu ke LEBAR SKALA, bukan ke batas rentang telanjang
+     *
+     * Densitas terbit memang boleh sedikit di luar `range_min..range_max` —
+     * itu justru yang diukur kalibrasi. Yang tidak masuk akal bukan "di luar
+     * rentang" melainkan "meleset sejauh ini dari tanda yang dibaca": hydrometer
+     * membaca skalanya sendiri, jadi koreksinya kecil dibanding lebar skalanya.
+     * Diukur dari kedua master:
+     *
+     *     ringan (0,600-0,650, lebar 0,050)  koreksi terbesar 14,7% lebar
+     *     berat  (1,800-2,000, lebar 0,200)  koreksi terbesar  2,4% lebar
+     *
+     * Dan ketiga bentuk salah-isi yang ditemukan review:
+     *
+     *     koma kegeser di kolom Weight              283% lebar
+     *     deret dipetakan TERBALIK ke titiknya        69% lebar
+     *     deret tertukar + suhu air menyebar 3 °C    135% lebar
+     *
+     * Ambang [KOREKSI_MAKS_DARI_LEBAR] = 0,5 duduk di jurang antara 14,7% dan
+     * 69% — 4,7 kali di atas kasus sah terburuk, dan masih di bawah bentuk
+     * salah-isi yang paling ringan.
+     *
+     * ## Hubungannya dengan [peringatanDeretTertukar]
+     *
+     * Keduanya dipertahankan karena mati di keadaan yang BERBEDA. Gerbang ini
+     * butuh `range_min`/`range_max` terisi — `EquipmentFactory` saja
+     * meninggalkannya null, jadi di alat yang rentangnya belum diisi dia diam
+     * total. Gerbang rasio tidak butuh rentang sama sekali, tapi cuma mengukur
+     * SEBARAN sehingga deret terbalik (sebarannya persis sama) lolos. Yang satu
+     * menambal lubang yang satunya.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function peringatanKoreksiTidakMasukAkal(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null || $alat->range_min === null || $alat->range_max === null) {
+            return [];
+        }
+
+        $lebar = abs((float) $alat->range_max - (float) $alat->range_min);
+
+        // Alat yang rentangnya satu titik tidak punya lebar buat diadu.
+        if ($lebar <= 0.0) {
+            return [];
+        }
+
+        $batas = $lebar * self::KOREKSI_MAKS_DARI_LEBAR;
+        $temuan = [];
+
+        foreach ($sesi->uncertaintyCalculations()->orderBy('titik_ke')->get() as $h) {
+            $titik = (float) $h->titik_ukur;
+            $densitas = (float) $h->rata_rata;
+            $koreksi = $densitas - $titik;
+
+            if (abs($koreksi) <= $batas) {
+                continue;
+            }
+
+            $temuan[] = [
+                'kode' => 'hydrometer_koreksi_tidak_masuk_akal',
+                'pesan' => sprintf(
+                    'Tanda skala %s: densitas terbit %s g/ml, meleset %s g/ml (%.0f%% dari lebar skala '
+                    .'alat %s-%s). Hydrometer membaca skalanya sendiri, jadi koreksi sebesar ini berarti '
+                    .'alatnya rusak berat ATAU ada angka yang salah masuk — yang paling sering koma '
+                    .'kegeser di kolom Weight, atau deret Weight & Temperature tertukar. Periksa blok '
+                    .'Measurement sebelum menyetujui.',
+                    rtrim(rtrim(number_format($titik, 4, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format($densitas, 6, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format($koreksi, 6, ',', ''), '0'), ','),
+                    100 * abs($koreksi) / $lebar,
+                    rtrim(rtrim(number_format((float) $alat->range_min, 4, ',', ''), '0'), ','),
+                    rtrim(rtrim(number_format((float) $alat->range_max, 4, ',', ''), '0'), ','),
+                ),
+            ];
+        }
+
+        return $temuan;
     }
 
     /**
