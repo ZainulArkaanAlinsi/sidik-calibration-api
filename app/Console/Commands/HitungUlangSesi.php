@@ -343,6 +343,34 @@ class HitungUlangSesi extends Command
                     if (count($pasangan['standar']) < 2 || count($pasangan['uut']) < 2) {
                         continue;
                     }
+                } elseif ($hydro !== []) {
+                    // Hydrometer: `pembacaan` datar TIDAK dipakai — profilnya
+                    // membaca kedua deret (`hydro_massa` gram & `hydro_suhu`
+                    // °C) dari `konteks`, sama seperti Micrometer & Height
+                    // Gauge. Dikosongkan, persis jalur simpan di
+                    // `CalibrationController::susunBlokHydrometer()`.
+                    //
+                    // Cabangnya WAJIB di atas `$grid === []`, dan itu bukan
+                    // selera urutan: baris hydrometer PUNYA `peran_sensor`,
+                    // jadi `GridSensorMentah::dari()` memulangkan
+                    // `['sensor_grid' => [], 'indikator' => []]` — yang secara
+                    // PHP bukan `[]`. Tanpa cabang ini setiap sesi hydrometer
+                    // jatuh ke cabang Enclosure terakhir, ketemu grid kosong,
+                    // lalu di-`continue`: perintahnya "sukses" dengan exit 0 dan
+                    // NOL baris ditulis. Persis jebakan yang komentar di atas
+                    // sudah memperingatkannya untuk ketiga alat suhu — dan
+                    // sekali lagi kena.
+                    //
+                    // Akibatnya bukan sekadar satu perintah yang diam: ini
+                    // SATU-SATUNYA jalan membetulkan angka sesi yang sudah
+                    // tersimpan, jadi sesi hydrometer yang salah hitung tidak
+                    // punya jalan pulang sama sekali.
+                    $nilai = [];
+
+                    if (count($hydro[HydrometerMentah::KONTEKS_MASSA] ?? []) < 1
+                        || count($hydro[HydrometerMentah::KONTEKS_SUHU] ?? []) < 1) {
+                        continue;
+                    }
                 } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak

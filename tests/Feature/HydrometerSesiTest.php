@@ -341,6 +341,49 @@ class HydrometerSesiTest extends TestCase
     }
 
     /**
+     * `kalibrasi:hitung-ulang` benar-benar MENGHITUNG sesi hydrometer — bukan
+     * melewatinya diam-diam.
+     *
+     * Yang dijaga di sini bukan exit code-nya. Waktu cacat ini hidup,
+     * perintahnya pulang **exit 0** dengan satu baris
+     * "nggak ada titik yang bisa dihitung, dilewat" dan NOL baris ditulis —
+     * jadi `assertSuccessful()` sendirian lolos tanpa memeriksa apa pun.
+     *
+     * Sebabnya: baris hydrometer punya `peran_sensor`, jadi
+     * `GridSensorMentah::dari()` memulangkan `['sensor_grid' => [],
+     * 'indikator' => []]` yang secara PHP bukan `[]`. Tanpa cabangnya sendiri,
+     * sesi hydrometer jatuh ke cabang Enclosure terakhir, ketemu grid kosong,
+     * lalu di-`continue`.
+     *
+     * Akibatnya bukan satu perintah yang diam: ini SATU-SATUNYA jalan
+     * membetulkan angka sesi yang sudah tersimpan, jadi sesi hydrometer yang
+     * salah hitung tidak punya jalan pulang sama sekali.
+     */
+    public function test_perintah_hitung_ulang_tidak_melewati_sesi_hydrometer(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$id], '--dry-run' => true])
+            ->doesntExpectOutputToContain('dilewat')
+            ->assertSuccessful();
+
+        // Dan angkanya tidak bergeser: hitung ulang memberi hasil yang sama
+        // dengan yang tersimpan, jadi dry-run tidak melaporkan satu pun beda.
+        $sesudah = CalibrationSession::findOrFail($id)
+            ->uncertaintyCalculations()->orderBy('titik_ke')
+            ->pluck('rata_rata')->map(fn ($v): float => (float) $v)->all();
+
+        foreach (self::DENSITAS_MASTER as $i => $harap) {
+            $this->assertEqualsWithDelta($harap, $sesudah[$i], 1e-6);
+        }
+    }
+
+    /**
      * Dua tabel yang TIDAK sinkron ditolak, bukan disimpan separuh.
      *
      * Menyimpan yang terisi saja berarti sesi membawa titik yang massanya ada
