@@ -7,6 +7,7 @@ use App\Models\CustomerMember;
 use App\Models\OtpPelanggan;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\User;
+use App\Services\Pelanggan\KodeOtp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -326,13 +327,146 @@ class SayaDanSandiTest extends TestCase
     {
         $user = $this->pelanggan(User::STATUS_PENDING_EMAIL);
 
-        $this->postJson('/api/pelanggan/v1/auth/kirim-ulang-otp', ['email' => $user->email])->assertOk();
-        $kodeEmail = $this->kodeTerkirim((string) $user->email);
+        // Diterbitkan lewat service, bukan lewat HTTP: rute yang dulu mencetak
+        // OTP verifikasi email (`kirim-ulang-otp`) ikut dicabut bersama
+        // pendaftaran mandiri. Yang dijaga test ini bukan rutenya, melainkan
+        // saringan `tujuan` di tabel OTP — dan itu masih berlaku persis sama
+        // selama kedua tujuan masih menumpang satu tabel.
+        $kodeEmail = app(KodeOtp::class)->terbitkan($user, OtpPelanggan::TUJUAN_VERIFIKASI_EMAIL);
 
         $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
             'email' => $user->email,
             'otp' => $kodeEmail,
             'sandi' => 'SandiHasilReset#2026',
         ])->assertStatus(422)->assertJsonPath('kode', 'otp_salah');
+    }
+
+    /**
+     * REQ-AUTH-02 — lima tebakan salah mengunci 15 menit, di jalur ATUR ULANG
+     * SANDI.
+     *
+     * Dipindahkan ke sini dari DaftarDanVerifikasiTest waktu pendaftaran
+     * mandiri dicabut. Penguncian per-akun itu satu-satunya yang menahan
+     * penebakan OTP — throttle per IP dilewati cukup dengan ganti jaringan —
+     * dan sesudah pencabutan, `lupa-sandi` jadi SATU-SATUNYA pintu yang masih
+     * menerbitkan OTP. Tanpa test ini, penjagaan itu tidak diuji sama sekali.
+     */
+    public function test_REQ_AUTH_02_salah_lima_kali_mengunci_lima_belas_menit(): void
+    {
+        $user = $this->anggota();
+
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+        $kode = $this->kodeTerkirim((string) $user->email);
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
+                'email' => $user->email,
+                'otp' => '000000',
+                'sandi' => 'SandiHasilReset#2026',
+            ])->assertStatus(422)->assertJsonPath('kode', 'otp_salah');
+        }
+
+        $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
+            'email' => $user->email,
+            'otp' => '000000',
+            'sandi' => 'SandiHasilReset#2026',
+        ])->assertStatus(429)->assertJsonPath('kode', 'otp_terkunci');
+
+        // Kode yang BENAR pun ditolak selama masih terkunci — kalau tidak,
+        // penguncian cuma memperlambat penebakan, bukan menghentikannya.
+        $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
+            'email' => $user->email,
+            'otp' => $kode,
+            'sandi' => 'SandiHasilReset#2026',
+        ])->assertStatus(429)->assertJsonPath('kode', 'otp_terkunci');
+
+        $this->assertTrue(Hash::check($this->sandiBenar, (string) $user->fresh()->password));
+
+        // Kunci (15 menit) SELALU lebih panjang dari masa berlaku kode (10
+        // menit), jadi orang yang terkunci tidak pernah bisa memakai kode
+        // lamanya lagi — dia wajib minta kode baru. Diadu sebagai angka, bukan
+        // cuma diceritakan: kalau salah satunya diubah, testnya yang bicara
+        // sebelum orangnya kejebak di layar OTP tanpa jalan keluar.
+        $this->assertGreaterThan(
+            OtpPelanggan::BERLAKU_MENIT,
+            OtpPelanggan::KUNCI_MENIT,
+            'Kunci lebih pendek dari masa berlaku kode: orang yang terkunci bisa memakai kode lamanya.',
+        );
+
+        $this->travel(OtpPelanggan::KUNCI_MENIT + 1)->minutes();
+
+        // Yang membuktikan kuncinya BENERAN lepas: kode BARU diterima. Tanpa
+        // langkah ini, testnya sama saja dengan "kodenya kedaluwarsa" dan tidak
+        // menyentuh penguncian sama sekali.
+        Mail::fake();
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+
+        $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
+            'email' => $user->email,
+            'otp' => $this->kodeTerkirim((string) $user->email),
+            'sandi' => 'SandiHasilReset#2026',
+        ])->assertOk();
+
+        $this->assertTrue(Hash::check('SandiHasilReset#2026', (string) $user->fresh()->password));
+    }
+
+    /**
+     * Kunci tidak bisa dilewati dengan minta kode baru.
+     *
+     * Yang membuktikan itu di jalur ini adalah EMAILNYA, bukan status HTTP-nya.
+     * `lupa-sandi` SELALU menjawab 200 — termasuk buat email yang tidak
+     * terdaftar sama sekali — supaya jawabannya tidak memberi tahu siapa pun
+     * alamat mana yang punya akun. Menjawab 429 waktu terkunci membatalkan
+     * penyamaran itu: yang 429 pasti ada akunnya, yang 200 belum tentu.
+     *
+     * (Pendahulunya, `kirim-ulang-otp`, memang menjawab 429 — dan itu benar di
+     * sana, karena akunnya baru saja didaftarkan orang yang sama, jadi tidak
+     * ada apa pun yang masih perlu disembunyikan. Rute itu ikut dicabut
+     * bersama pendaftaran mandiri.)
+     */
+    public function test_minta_kode_baru_tidak_melepas_kunci(): void
+    {
+        $user = $this->anggota();
+
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/pelanggan/v1/auth/atur-ulang-sandi', [
+                'email' => $user->email,
+                'otp' => '000000',
+                'sandi' => 'SandiHasilReset#2026',
+            ]);
+        }
+
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+
+        // Cuma kode PERTAMA yang pernah terkirim. Kalau yang kedua ikut
+        // berangkat, kuncinya cuma memperlambat penebakan: tinggal minta kode
+        // baru tiap kali kena kunci.
+        Mail::assertSent(KodeOtpEmail::class, 1);
+
+        $this->assertTrue(Hash::check($this->sandiBenar, (string) $user->fresh()->password));
+    }
+
+    /**
+     * Kodenya disimpan sebagai hash, bukan apa adanya.
+     *
+     * Dipindahkan dari DaftarDanVerifikasiTest. Kalau kolomnya berisi kode
+     * mentah, siapa pun yang bisa membaca satu baris tabel bisa mengganti sandi
+     * pemiliknya — dan `otp_pelanggan` sengaja TANPA trait `Diaudit` justru
+     * supaya hash-nya tidak tersalin ke tabel kedua (REQ-PRV-02).
+     */
+    public function test_otp_disimpan_dalam_bentuk_hash(): void
+    {
+        $user = $this->anggota();
+
+        $this->postJson('/api/pelanggan/v1/auth/lupa-sandi', ['email' => $user->email])->assertOk();
+        $kode = $this->kodeTerkirim((string) $user->email);
+
+        $baris = OtpPelanggan::query()->firstOrFail();
+
+        $this->assertNotSame($kode, $baris->kode_hash);
+        $this->assertStringNotContainsString($kode, (string) $baris->kode_hash);
+        $this->assertTrue(Hash::check($kode, (string) $baris->kode_hash));
     }
 }

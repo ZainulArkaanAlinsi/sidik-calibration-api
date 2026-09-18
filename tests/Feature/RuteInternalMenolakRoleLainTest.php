@@ -77,7 +77,6 @@ class RuteInternalMenolakRoleLainTest extends TestCase
     private const PUBLIK = [
         'api/health',
         'api/login',
-        'api/register',
         'api/forgot-password',
         'api/reset-password',
         'api/app/versi-terbaru',

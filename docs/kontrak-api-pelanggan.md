@@ -94,75 +94,27 @@ tiap kali aplikasi dibuka dan tiap kali kembali dari background.
 }
 ```
 
-### `POST /auth/daftar` — REQ-AUTH-01
+### ~~`POST /auth/daftar`~~ · ~~`/auth/verifikasi-email`~~ · ~~`/auth/kirim-ulang-otp`~~ — DICABUT 18 Sep 2026
 
-Throttle: **5 per jam per IP** (`kode: terlalu_sering`).
+Ketiganya menjawab **404**. Pendaftaran mandiri pelanggan tidak ada lagi.
 
-```json
-{
-  "nama": "Budi Pendaftar",
-  "email": "budi@contoh.test",
-  "sandi": "Kalibrasi#2026Sidik",
-  "telepon": "0812-3456-7890",
-  "jabatan": "QA Supervisor",
-  "nama_perusahaan": "PT Contoh Industri",
-  "alamat_perusahaan": "Jl. Contoh No. 1, Bandung",
-  "setuju_syarat": true
-}
-```
+**Satu-satunya cara akun pelanggan lahir: undangan** — `POST /auth/terima-undangan`
+di bawah. Kodenya dikirim admin lab atau PIC utama perusahaan itu ke alamat email
+calon anggota.
 
-Aturan yang gampang kelewat:
+Kenapa dicabut — lengkapnya di `AGENTS.md` §Akun Lahir dari Undangan. Ringkasnya:
+yang menjamin seseorang berhak atas data PT X bukan klaim yang dia ketik sendiri
+di layar daftar, melainkan bahwa orang yang SUDAH berwenang mengirim kode ke
+alamat emailnya.
 
-- **`sandi` minimal 10 karakter** dan ditolak kalau ada di daftar sandi bocor
-  (HIBP). Pesannya keluar di `errors.sandi`.
-- **`telepon` dinormalisasi server** ke `+62…`. Kirim apa adanya (`0812-…`,
-  `+62 812 …`, `812…`), yang tersimpan tetap satu bentuk.
-- **`setuju_syarat` wajib `true`.** Versi dokumen yang dicatat ditentukan
-  server, jangan dikirim dari aplikasi.
-- **Email yang sudah terpakai dijawab 422**, dengan pesan yang **tidak** bilang
-  "sudah terdaftar" — jangan ditulis ulang jadi kalimat itu di aplikasi.
+**Yang aplikasi harus ubah:** buang layar daftar. Layar yang tersisa di alur
+masuk cuma **masuk**, **terima undangan**, dan **lupa sandi**.
 
-Balasan **201** (perhatikan: **tidak ada token** di sini):
+**OTP tidak ikut mati.** `lupa-sandi` dan `atur-ulang-sandi` masih memakainya,
+dengan aturan yang persis sama (berlaku 10 menit, kunci 15 menit sesudah 5
+percobaan salah). Yang hilang cuma OTP bertujuan verifikasi email.
 
-```json
-{
-  "message": "Kode verifikasi 6 digit dikirim ke budi@contoh.test.",
-  "data": {
-    "email": "budi@contoh.test",
-    "status": "pending_email",
-    "otp_berlaku_menit": 10
-  }
-}
-```
-
-### `POST /auth/verifikasi-email` — REQ-AUTH-02
-
-Throttle: **10 per 15 menit per email** — pagar luar saja. Yang mengikat
-penguncian **5 kode salah** yang tersimpan di akunnya (lihat bawah).
-
-```json
-{ "email": "budi@contoh.test", "otp": "483920", "nama_perangkat": "Pixel 8a Budi" }
-```
-
-Berhasil → **200** dengan token ber-`kemampuan: "pelanggan:menunggu"`. Bentuknya
-sama persis dengan `POST /auth/masuk` di bawah.
-
-Salah 5 kali → `otp_terkunci` **15 menit**, dan selama terkunci **kode yang benar
-pun ditolak**. `POST /auth/kirim-ulang-otp` juga ditolak selama itu — jadi jangan
-pasang tombol "kirim ulang" sebagai jalan keluar dari layar terkunci.
-
-Sesudah kuncinya lepas, **kode lama pasti sudah mati** (kunci 15 menit > masa
-berlaku kode 10 menit). Aplikasi harus langsung meminta kode baru, jangan
-menawarkan "coba kode yang tadi".
-
-### `POST /auth/kirim-ulang-otp`
-
-Throttle: **3 per 15 menit per email**, dan embernya **TERPISAH** dari
-`verifikasi-email`. Jadi salah memasukkan kode tidak menghabiskan jatah "kirim
-ulang", dan sebaliknya.
-
-`{ "email": "…" }` → selalu **200**, apa pun emailnya. Kode lama mati begitu
-kode baru terbit.
+Dijaga `PintuDaftarMandiriTertutupTest`.
 
 ### `POST /auth/terima-undangan` — REQ-AUTH-06
 

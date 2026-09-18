@@ -207,7 +207,9 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
 // Kalau pakai yang angka, semua endpoint publik berbagi satu jatah per IP —
 // salah password beberapa kali bikin /forgot-password ikut kena 429.
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+
+// TIDAK ADA `/register`. Akun orang lab lahir dari panel admin, bukan dari
+// pendaftaran mandiri — lihat alasannya di §Akun Lahir dari Undangan (AGENTS.md).
 Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');
 

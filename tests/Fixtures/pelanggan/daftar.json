@@ -1,8 +1,0 @@
-{
-    "message": "Kode verifikasi 6 digit dikirim ke budi@contoh.test.",
-    "data": {
-        "email": "budi@contoh.test",
-        "status": "pending_email",
-        "otp_berlaku_menit": 10
-    }
-}

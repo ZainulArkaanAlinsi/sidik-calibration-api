@@ -241,9 +241,9 @@ Header wajib dari aplikasi: `Authorization`, `Accept: application/json`, `X-App-
 | Metode | Path | Keterangan |
 |---|---|---|
 | GET | `/app/status` | `{versi_minimum, versi_terbaru, maintenance: bool, pesan_maintenance}`. Dibaca dari config, tanpa DB. |
-| POST | `/auth/daftar` | REQ-AUTH-01 |
-| POST | `/auth/verifikasi-email` | `{email, otp}` |
-| POST | `/auth/kirim-ulang-otp` | Throttle ketat |
+| ~~POST~~ | ~~`/auth/daftar`~~ | DICABUT 18 Sep 2026 — 404 |
+| ~~POST~~ | ~~`/auth/verifikasi-email`~~ | DICABUT — 404 |
+| ~~POST~~ | ~~`/auth/kirim-ulang-otp`~~ | DICABUT — 404 |
 | POST | `/auth/terima-undangan` | `{email, kode, nama, sandi, telepon}` |
 | POST | `/auth/masuk` | `{email, sandi, nama_perangkat}` → `{token, kedaluwarsa_pada, user, keanggotaan[]}` |
 | POST | `/auth/lupa-sandi`, `/auth/atur-ulang-sandi` | OTP ke email |
