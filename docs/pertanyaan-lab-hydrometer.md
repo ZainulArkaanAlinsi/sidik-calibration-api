@@ -38,6 +38,8 @@ Klasifikasi tiap temuan mengikuti aturan proyek:
 | §9 | Kertas Rev.2 tidak punya kotak tekanan udara, rumusnya butuh | Sel kosong | **Ya — sistem MEMBLOKIR tanpa tekanan** |
 | §10 | Monitor `EXPIRED` cuma label; kedua file terbit dengan status menyala | Keputusan sistem | Tidak — sistem MEMBLOKIR |
 | §11 | Kertas menulis `SI`, Excel menulis `Sl` | Kosmetik | Tidak |
+| §12 | Kertas Rev.2 masih mencetak `Temp. Kalibrator Victor`, yang dicabut lab 2024 | Kerusakan | Tidak — lembar ikut workbook |
+| §13 | Neraca `Fujitsu FS-AR210` belum pernah ada di master `standards` | Sel kosong | **Ya — sempat menaut ke neraca yang salah** |
 
 ---
 
@@ -203,6 +205,51 @@ kecil), dan `Sl` yang cocok dengan literatur Cuckow (*sinker load*). Lembar apli
 `Sl`.
 
 **Pertanyaan:** perlu dibetulkan di kertas revisi berikutnya?
+
+## §12 — Kertas masih mencetak standar yang sudah dicabut [TIDAK DITIRU]
+
+Kop kertas `SIDIK-FM-CAL-0533_Rev.2` mencetak baris `Temp. Kalibrator **Victor**`.
+
+Victor dicabut lab **24 Mei 2024** — `FORM VALIDASI` TITS rev. 11 menulis
+"Remove std. Victor / Add std kalibrator yokogawa", dan tabel koreksinya di
+workbook-workbook lain sudah `#REF!` semua.
+
+Kedua workbook hydrometer sendiri — Sep DAN Nov 2025, jadi setahun lebih
+sesudah pencabutan — memang sudah memakai penggantinya:
+
+- `DATABASE!E11:J11` → `Temperature Calibrator / Yokogawa / CA 150 Handy / 23P1005`
+- `SERTIFIKAT!B30:N30` → `Termometer & Sensor Std. / Yokogawa/CA 150 Handy Cal / 23P1005`
+
+Jadi yang basi barisnya di KERTAS, bukan di data. Lembar aplikasi mengikuti
+workbook: barisnya berbunyi `Temp. Kalibrator` dan tertaut ke Yokogawa.
+
+**Pertanyaan:** perlu revisi kertas (Rev.3) supaya baris itu berhenti menyebut
+alat yang tidak ada lagi?
+
+## §13 — Neraca Fujitsu FS-AR210 belum terdaftar [DIPERBAIKI]
+
+`NILAI U95%!E9:J9` menyebut neraca yang menimbang hydrometer-nya:
+**Fujitsu FS-AR210, S/N INS-N1600555**. Master `standards` belum pernah
+memuatnya.
+
+Yang membuat ini berbahaya bukan ketiadaannya, tapi apa yang terjadi waktu
+barisnya dicocokkan dengan nama telanjang `Analytical Balance`: master punya
+baris dengan nama PERSIS itu — **Mettler Toledo XS204**, neraca milik lembar
+Anak Timbangan. Barisnya ketemu, hijau di lembar kerja, dan sertifikatnya
+terbit mencetak nomor sertifikat dan ketertelusuran **neraca yang salah**.
+Nol error di mana pun.
+
+Seluruh komponen `U massa aquadest` budget hydrometer (dua dari sebelas
+komponen, di kedua baris massa) lahir dari sertifikat neraca ini.
+
+**Sikap sistem:** `HydrometerSeeder` mendaftarkannya ke master, dan baris
+tercetaknya dicocokkan lewat **nama penuh** `Analytical Balance Fujitsu
+FS-AR210` — bukan nama telanjang. Angka ketidakpastiannya diambil dari blok
+`Utimb` master (0,00074 g, k = 2), sama dengan yang dipakai
+`TabelStandarHydrometer::uMassaAquadest()`.
+
+**Pertanyaan:** apakah S/N `INS-N1600555` dan sertifikatnya sudah benar, dan
+kapan masa berlakunya habis? Yang di-seed sekarang memakai tanggal demo.
 
 ---
 

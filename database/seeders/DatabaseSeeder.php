@@ -139,6 +139,12 @@ class DatabaseSeeder extends Seeder
             // yang sama, dan yang jalan belakangan cuma menemukan barisnya
             // sudah ada.
             AnakTimbanganSeeder::class,
+            // Alat ke-33, kelompok Volumetrik. Sesi contohnya varian DENGAN
+            // beban tambahan — jalur yang paling panjang dari dua varian
+            // hydrometer, dan yang tidak pernah dijalankan tidak pernah
+            // ketahuan rusak. Seeder ini juga yang mendaftarkan neraca Fujitsu
+            // FS-AR210 ke master `standards`.
+            HydrometerSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

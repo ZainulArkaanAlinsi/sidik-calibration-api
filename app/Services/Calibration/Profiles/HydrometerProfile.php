@@ -72,13 +72,73 @@ class HydrometerProfile extends CalibrationProfile
 
     public const TITIK_MAKS = 5;
 
-    /** Standar yang TERCETAK di kop kertas Rev.2. */
+    /**
+     * Empat standar blok `Uncertainty of Calibrator` master (`NILAI U95%` E9:J12),
+     * bukan salinan mentah kop kertas Rev.2.
+     *
+     * Dua barisnya sengaja BEDA dari yang tercetak di kertas:
+     *
+     *  1. Kertas nulis **"Temp. Kalibrator Victor"**. Victor dicabut lab
+     *     24 Mei 2024 (`FORM VALIDASI` TITS rev. 11: "Remove std. Victor / Add
+     *     std kalibrator yokogawa") dan tabel koreksinya sudah `#REF!` semua.
+     *     Kedua workbook hydrometer sendiri — Sep DAN Nov 2025 — sudah memakai
+     *     Yokogawa: `DATABASE!E11:J11` nulis `Temperature Calibrator /
+     *     Yokogawa / CA 150 Handy / 23P1005`, dan sertifikatnya mencetak
+     *     `Termometer & Sensor Std. / Yokogawa/CA 150 Handy Cal / 23P1005`.
+     *     Jadi yang basi barisnya di KERTAS, dan lembar aplikasi mengikuti
+     *     workbook. Pertanyaan §12 `docs/pertanyaan-lab-hydrometer.md`
+     *     (usul revisi kertas).
+     *  2. Neraca yang dipakai **Fujitsu FS-AR210 (INS-N1600555)**, bukan
+     *     `Analytical Balance` Mettler Toledo XS204 milik Anak Timbangan.
+     *     Nama `Analytical Balance` telanjang mendarat di Mettler — cocok,
+     *     terdaftar, dan ALAT YANG SALAH: `U massa aquadest` seluruh budget
+     *     lahir dari sertifikat neraca ini.
+     *
+     * Kuncinya NAMA PERSIS master `standards`, dan itu bukan kerapian: dua
+     * baris master lab berbagi seri `23P1005` (sensor RTD & kalibrator yang
+     * menempel padanya), jadi pencarian yang menerima serial lebih dulu
+     * menautkan barisnya ke dokumen yang salah — lihat
+     * [CalibrationProfile::cocokkanStandar].
+     *
+     * ## Kenapa tanpa `label_cetak`
+     *
+     * [CalibrationProfile::tautkanStandarTercetak] — yang dipakai profil ini
+     * dan dua puluh lainnya — cuma meneruskan `label`; `label_cetak` hidup di
+     * salinan PRIVAT milik `ConductivityProfile`. Menuliskannya di sini berarti
+     * kunci yang tidak pernah sampai ke HP, dan kunci yang diabaikan diam-diam
+     * itu persis kelas cacat yang sudah dua kali digigit lembar ini
+     * (`saklar` yang jatuh ke kotak teks, `titik_maks` yang tidak dibaca
+     * siapa pun).
+     *
+     * Jadi yang tampil nama master-nya — dan itu justru yang dibutuhkan
+     * teknisi: dia mencentang standar yang BENAR-BENAR dia pakai, bukan nama
+     * yang sudah dicabut lab dua tahun lalu. Kalau suatu saat `label_cetak`
+     * diangkat ke kelas dasar dan salinan privat Conductivity dicabut, baris
+     * di sini tinggal menambahkannya.
+     */
     public const STANDARD_TERCETAK = [
-        ['label' => 'Analytical Balance Fujitsu', 'cocok' => ['Analytical Balance', 'Fujitsu', 'FS-AR210']],
-        ['label' => 'Digital Caliper Tesa', 'cocok' => ['Digital Caliper', 'Caliper', 'Tesa', 'Cal-IP67']],
-        ['label' => 'Temp. Kalibrator Victor', 'cocok' => ['Temperature Calibrator', 'Kalibrator', 'Victor', 'CA 150']],
-        ['label' => 'RTD Sensor/SH1/20', 'cocok' => ['Temperature Sensor', 'RTD', 'PRT-PT100', 'SH1/20']],
+        [
+            'label' => 'Analytical Balance Fujitsu FS-AR210',
+            'cocok' => ['Analytical Balance Fujitsu FS-AR210', 'INS-N1600555'],
+        ],
+        [
+            'label' => 'Digital Caliper Tesa',
+            'cocok' => ['Digital Caliper', 'Cal-IP67', 'LPI-0368'],
+        ],
+        [
+            'label' => 'Temperature Calibrator Yokogawa CA 150 Handy Cal',
+            'cocok' => ['Temperature Calibrator Yokogawa CA 150 Handy Cal'],
+        ],
+        [
+            'label' => 'PRT Pt-100',
+            'cocok' => ['PRT Pt-100', 'SH1/20'],
+        ],
     ];
+
+    /** Nama & seri neraca analitik master — dipakai profil DAN seeder. */
+    public const NERACA_NAMA = 'Analytical Balance Fujitsu FS-AR210';
+
+    public const NERACA_SERI = 'INS-N1600555';
 
     /** Ketujuh unit thermohygro `DATABASE!B31:B61` master. */
     public const THERMOHYGRO_TERCETAK = ['TH-1', 'TH-2', 'TH-3', 'TH-4', 'TH-5', 'TH-6', 'TH-7'];
@@ -166,6 +226,42 @@ class HydrometerProfile extends CalibrationProfile
     public function u95PerTitik(): bool
     {
         return true;
+    }
+
+    /**
+     * Hydrometer TIDAK divonis PASS/FAIL.
+     *
+     * Tidak ada satu pun sel di kedua workbook master yang membandingkan hasil
+     * dengan batas keberterimaan, dan sertifikatnya berhenti di `Correction` +
+     * `U95%` lalu langsung ke `Standard Used`. Preseden perlakuannya
+     * Conductivity Meter.
+     *
+     * Dibiarkan `true` (bawaan), `equipments.toleransi` jadi kolom wajib buat
+     * alat yang tidak punya isi yang benar — dan yang terjadi berikutnya bukan
+     * kolomnya dikosongkan, tapi teknisi mengarang angkanya.
+     */
+    public function punyaToleransi(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Pembacaan lembar ini TIDAK boleh diadu ke `equipments.resolusi`.
+     *
+     * Pemeriksa `pembacaan_bukan_kelipatan_resolusi` berdiri di atas premis
+     * bahwa angka yang dicatat dibaca di LAYAR alat yang sedang dikalibrasi.
+     * Di sini premisnya tidak berlaku sama sekali: yang tercatat di
+     * `raw_measurements` adalah **massa hasil timbang (gram)** dan **suhu air
+     * (°C)** — dua besaran yang tidak satu pun terbaca di skala hydrometer.
+     *
+     * Resolusi alatnya 0,0005 g/ml. Diadukan ke situ, massa 21,2727 g bukan
+     * kelipatan 0,0005 dan SETIAP sesi hydrometer memunculkan peringatan
+     * "layarnya nggak mungkin nunjukin angka itu" untuk angka yang benar —
+     * persis cara peringatan berhenti dibaca orang.
+     */
+    public function pembacaanDiadukeResolusi(): bool
+    {
+        return false;
     }
 
     public function resolusiTitik(float $titikUkur): ?float

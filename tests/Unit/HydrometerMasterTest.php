@@ -114,7 +114,7 @@ class HydrometerMasterTest extends TestCase
         $this->assertCount(3, $hasil['titik']);
 
         foreach ($harap as $i => $h) {
-            $this->cocok($h, $hasil['titik'][$i]['densitas'], "densitas titik ke-".($i + 1));
+            $this->cocok($h, $hasil['titik'][$i]['densitas'], 'densitas titik ke-'.($i + 1));
         }
     }
 
@@ -127,7 +127,7 @@ class HydrometerMasterTest extends TestCase
         $this->assertTrue($hasil['boleh_terbit']);
 
         foreach ($harap as $i => $h) {
-            $this->cocok($h, $hasil['titik'][$i]['densitas'], "densitas titik ke-".($i + 1));
+            $this->cocok($h, $hasil['titik'][$i]['densitas'], 'densitas titik ke-'.($i + 1));
         }
     }
 
@@ -206,12 +206,12 @@ class HydrometerMasterTest extends TestCase
 
         foreach ($harap as $i => $h) {
             $t = $hasil['titik'][$i];
-            $this->cocok($h['uc'], $t['ketidakpastian_gabungan'], "uc skala ".($i + 1));
+            $this->cocok($h['uc'], $t['ketidakpastian_gabungan'], 'uc skala '.($i + 1));
             // v_eff ber-orde 10² — toleransi absolut 1e-12 di situ berarti 1e-14
             // relatif, lebih ketat dari presisi float ganda.
-            $this->assertEqualsWithDelta($h['veff'], $t['derajat_kebebasan_efektif'], 1e-9, "v_eff skala ".($i + 1));
-            $this->cocok($h['k'], $t['faktor_cakupan_k'], "k skala ".($i + 1));
-            $this->cocok($h['U'], $t['ketidakpastian_diperluas'], "U skala ".($i + 1));
+            $this->assertEqualsWithDelta($h['veff'], $t['derajat_kebebasan_efektif'], 1e-9, 'v_eff skala '.($i + 1));
+            $this->cocok($h['k'], $t['faktor_cakupan_k'], 'k skala '.($i + 1));
+            $this->cocok($h['U'], $t['ketidakpastian_diperluas'], 'U skala '.($i + 1));
         }
     }
 
@@ -230,7 +230,7 @@ class HydrometerMasterTest extends TestCase
 
         foreach ($harap as $i => $h) {
             $t = $hasil['titik'][$i];
-            $this->cocok($h, max($t['ketidakpastian_diperluas'], (float) $t['cmc']), "U95% sertifikat skala ".($i + 1));
+            $this->cocok($h, max($t['ketidakpastian_diperluas'], (float) $t['cmc']), 'U95% sertifikat skala '.($i + 1));
             $this->assertGreaterThan(
                 (float) $t['cmc'],
                 $t['ketidakpastian_diperluas'],
