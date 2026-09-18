@@ -24,9 +24,11 @@ use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\TabelStandarHeightGauge;
+use App\Services\Calibration\TabelStandarHydrometer;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\Calibration\TabelStandarSieve;
 use App\Services\CalibrationValidator;
@@ -39,6 +41,7 @@ use App\Support\AnakTimbanganMentah;
 use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\SieveMentah;
@@ -1242,6 +1245,22 @@ class CalibrationController extends Controller
         // per-titik di bawah tidak akan pernah melihat satu angka pun.
         if ($this->profil->untukAlat($alat)->butuhBlokSieve()) {
             return $this->susunBlokSieve($request, $alat, $standarDefault);
+        }
+
+        // Hydrometer: satu titik skala membawa DUA deret dengan arti yang beda
+        // — tiga kali timbang (gram) dan tiga kali baca suhu air (°C). Alasan
+        // jalur terpisahnya sama dengan sepuluh di atas: loop per-titik di
+        // bawah cuma punya tempat buat satu deret.
+        //
+        // Bedanya dari jalur pasangan standar/UUT, dan kenapa cabangnya
+        // sendiri: di sana deret kedua pembacaan alat PEMBANDING dalam besaran
+        // yang sama, di sini deret kedua besaran lain sama sekali dan masuk ke
+        // rumus di tempat yang berbeda. Dipaksa lewat cabang pasangan, suhu air
+        // tersimpan sebagai "pembacaan standar" — dan rumus Cuckow yang
+        // membacanya tetap memulangkan densitas ber-orde wajar, jadi
+        // sertifikatnya terbit rapi dan salah.
+        if ($this->profil->untukAlat($alat)->butuhBlokHydrometer()) {
+            return $this->susunBlokHydrometer($request, $alat, $standarDefault);
         }
 
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
@@ -2778,6 +2797,195 @@ class CalibrationController extends Controller
     }
 
     /**
+     * Susun sesi **Hydrometer**: tiap titik skala DUA deret — tiga kali timbang
+     * (gram) dan tiga kali baca suhu air (°C).
+     *
+     * ## Yang disimpan angka MENTAH, bukan yang sudah dikonversi
+     *
+     * `titik_ukur` ikut satuan densitas yang dipilih teknisi (`g/ml` atau
+     * `kg/m3`) dan disimpan apa adanya, berikut satuannya di
+     * `raw_measurements.satuan`. Yang mengubahnya ke g/ml
+     * [HydrometerMentah::keGramPerMl] waktu dipakai menghitung.
+     *
+     * Alasannya sama dengan [MicrometerMentah::keMm]: mengonversi di ujung
+     * masuk TIDAK idempoten. Teknisi menyimpan draft dalam kg/m3 (1000 →
+     * tersimpan 1), membuka lagi lembarnya, menyimpan lagi — HP mengirim
+     * kembali angka yang dia terima, jadi dikali 0,001 lagi. Nol error di
+     * seluruh jalur, dan titik skalanya mengecil seribu kali tiap simpan.
+     *
+     * ## Titik BISA ditambah teknisi
+     *
+     * Beda dari Micrometer & Height Gauge yang nominalnya dipatok kertas:
+     * kertas hydrometer membiarkan `Point of Calibration` kosong untuk diisi,
+     * jadi tidak ada nominal pra-cetak yang bisa dipakai memeriksa pemetaan
+     * baris. Yang menjaganya di sini sinkronisasi dua tabel: titik yang
+     * mengirim massa tanpa suhu (atau sebaliknya) DITOLAK, bukan dihitung
+     * separuh.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokHydrometer(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $sesiKamera ? $metodeInput : 'manual';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $deret = [
+            HydrometerMentah::PERAN_MASSA => HydrometerMentah::SATUAN_MASSA,
+            HydrometerMentah::PERAN_SUHU => '°C',
+        ];
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+
+            // Lembar master menyediakan LIMA kolom `Point of Calibration`
+            // (`'INPUT DATA'!G40:K40`), dan budget ketidakpastiannya disusun
+            // satu blok per kolom — sheet `NILAI U95%` memang berhenti di lima
+            // blok. Titik ke-6 dan seterusnya tidak punya blok budget di
+            // master mana pun, jadi ditolak dengan alasan yang kebaca alih-alih
+            // diterbitkan dengan budget yang dikarang.
+            //
+            // Ditegakkan DI SINI, bukan lewat kunci bentuk lembar: kontrak
+            // lembar kerja HP tidak punya batas jumlah titik, dan mengirimkan
+            // kunci yang tidak dibaca klien berarti batasnya cuma ada di atas
+            // kertas.
+            if ($titikKe > HydrometerProfile::TITIK_MAKS) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Lembar Hydrometer paling banyak %d titik skala — lembar master cuma punya %d '
+                        .'blok budget ketidakpastian. Titik ke-%d tidak disimpan.',
+                        HydrometerProfile::TITIK_MAKS,
+                        HydrometerProfile::TITIK_MAKS,
+                        $titikKe,
+                    ),
+                ];
+
+                continue;
+            }
+
+            $terkumpul = [];
+
+            foreach ($deret as $peran => $satuan) {
+                $terkumpul[$peran] = array_values(array_filter(
+                    (array) ($titik[$peran] ?? []),
+                    static fn ($x): bool => is_numeric($x),
+                ));
+            }
+
+            // Baris yang sama sekali kosong dilewati tanpa suara — teknisi
+            // memang boleh menyisakan kolom `Point of Calibration` yang belum
+            // dipakai, dan lembar ini menyediakan lima.
+            if ($terkumpul[HydrometerMentah::PERAN_MASSA] === []
+                && $terkumpul[HydrometerMentah::PERAN_SUHU] === []) {
+                continue;
+            }
+
+            $n = TabelStandarHydrometer::PENGULANGAN;
+
+            // Dua tabel yang TIDAK sinkron ditolak di sini, sebelum satu baris
+            // pun tersimpan. Menyimpan yang terisi saja berarti sesi tersimpan
+            // membawa titik yang massanya ada dan suhunya tidak — dan jalur
+            // hitung ulang cuma bisa melaporkannya sebagai "belum dihitung",
+            // setiap kali, selamanya.
+            if (count($terkumpul[HydrometerMentah::PERAN_MASSA]) !== $n
+                || count($terkumpul[HydrometerMentah::PERAN_SUHU]) !== $n) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Titik ke-%d butuh tepat %d kali timbang DAN %d kali baca suhu; yang terkirim '
+                        .'%d massa & %d suhu. Kedua tabel lembar Hydrometer harus sinkron kolom per '
+                        .'kolom — titik tidak disimpan supaya tidak ada densitas yang lahir dari '
+                        .'separuh data.',
+                        $titikKe, $n, $n,
+                        count($terkumpul[HydrometerMentah::PERAN_MASSA]),
+                        count($terkumpul[HydrometerMentah::PERAN_SUHU]),
+                    ),
+                ];
+
+                continue;
+            }
+
+            $titikUkur = (float) ($titik['titik_ukur'] ?? 0.0);
+
+            foreach ($terkumpul as $peran => $nilai) {
+                foreach ($nilai as $urutan => $angka) {
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $titikUkur,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $angka,
+                        'satuan' => $deret[$peran],
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $sesiKamera,
+                    ];
+                }
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $titikUkur,
+                // Jalur datar TIDAK dipakai alat ini; dikosongkan supaya kalau
+                // suatu saat ada yang membacanya, yang keluar kosong — bukan
+                // separuh data yang kelihatan lengkap.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    HydrometerMentah::KONTEKS_MASSA => array_map(
+                        'floatval',
+                        $terkumpul[HydrometerMentah::PERAN_MASSA],
+                    ),
+                    HydrometerMentah::KONTEKS_SUHU => array_map(
+                        'floatval',
+                        $terkumpul[HydrometerMentah::PERAN_SUHU],
+                    ),
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    // Kondisi lingkungan ikut konteks, bukan dibaca dari relasi
+                    // sesi: jalur simpan belum punya sesi tersimpan waktu ini
+                    // jalan, dan profil yang menengok relasi cuma benar di jalur
+                    // hitung ulang. Tekanan WAJIB — densitas udara lahir darinya.
+                    'suhu_awal' => $request->input('suhu_awal'),
+                    'suhu_akhir' => $request->input('suhu_akhir'),
+                    'kelembaban_awal' => $request->input('kelembaban_awal'),
+                    'kelembaban_akhir' => $request->input('kelembaban_akhir'),
+                    'tekanan_awal' => $request->input('tekanan_awal'),
+                    'tekanan_akhir' => $request->input('tekanan_akhir'),
+                ],
+            ];
+        }
+
+        // Satuan densitasnya TIDAK dibaca di sini: titik skala dikonversi ke
+        // g/ml di dalam profil (`HydrometerProfile::hitungPerGrup()`), dari
+        // `spesifikasi_alat.hydrometer.satuan_densitas` yang ikut tersimpan di
+        // sesi. Yang masuk `raw_measurements` tetap angka mentah yang diketik
+        // teknisi.
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
      * Lembar **Sieve Mesh** — opening dari `spesifikasi_alat.sieve.opening`
      * (sudah diratakan `CalibrationRequest::bakukanBlokSieve()` jadi
      * `[{no, warp, weft, kawat}]`) ditulis jadi tiga grup `raw_measurements`.
@@ -3899,6 +4107,14 @@ class CalibrationController extends Controller
             // dan nilainya nggak pernah nyampe database.
             'calibration_method_id',
             'room_id', 'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+            // Tekanan udara (hPa) — parameter lingkungan KETIGA. Disebut di
+            // sini sejak 18 Sep 2026; sebelumnya kolomnya ada di database tapi
+            // tidak pernah terisi dari jalur ini, jadi Gas Detector
+            // membacanya langsung dari request dan sesi tersimpannya kehilangan
+            // angka itu. Hydrometer tidak bisa hidup begitu: densitas udaranya
+            // lahir dari tekanan, dan tanpa nilai tersimpan tiap titik pulang
+            // `hitung_ulang_gagal` di setiap approve.
+            'tekanan_awal', 'tekanan_akhir',
             'waktu_awal', 'waktu_akhir', 'catatan_teknisi',
             // Identitas alat & pemilik versi teknisi (lembar kerja poin 3-5 &
             // OWNER 1-2). Ikut `$opsional`, bukan blok wajib di atas: yang

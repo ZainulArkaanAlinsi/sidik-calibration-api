@@ -14,6 +14,7 @@ use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
@@ -181,6 +182,14 @@ class HitungUlangSesi extends Command
                 // dengan alasan yang sama — kejadian ke-14 & ke-15.
                 $sieve = SieveMentah::dari($baris);
                 $jangkaSorong = JangkaSorongMentah::dari($baris);
+
+                // Deret massa + deret suhu air lembar Hydrometer
+                // (`hydro_massa`/`hydro_suhu`). Kejadian ke-16 dengan pola yang
+                // sama. Dia TIDAK ikut rantai `elseif` di bawah: `$nilai`
+                // jalur datar memang tidak dipakai alat ini, dan profilnya
+                // membaca kedua deret dari `konteks` — sama seperti Micrometer
+                // & Height Gauge yang juga lewat `hitungPerGrup()`.
+                $hydro = HydrometerMentah::dari($baris);
 
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
@@ -433,6 +442,20 @@ class HitungUlangSesi extends Command
                         // tingkat-sesinya ikut lewat `spesifikasi_alat` di bawah.
                         ...$sieve,
                         ...$jangkaSorong,
+                        // Deret massa + deret suhu air lembar Hydrometer. Blok
+                        // Pre Condition-nya (Ma, yx, tr, beban tambahan,
+                        // diameter stem) ikut lewat `spesifikasi_alat` di
+                        // bawah, dan tanpa itu seluruh titiknya pulang "belum
+                        // dihitung". Kondisi lingkungannya ikut lewat empat
+                        // kunci di bawahnya — termasuk TEKANAN, yang tanpa dia
+                        // densitas udara tidak bisa dihitung sama sekali.
+                        ...$hydro,
+                        'suhu_awal' => $sesi->suhu_awal,
+                        'suhu_akhir' => $sesi->suhu_akhir,
+                        'kelembaban_awal' => $sesi->kelembaban_awal,
+                        'kelembaban_akhir' => $sesi->kelembaban_akhir,
+                        'tekanan_awal' => $sesi->tekanan_awal,
+                        'tekanan_akhir' => $sesi->tekanan_akhir,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

@@ -75,6 +75,12 @@ class CertificateSnapshotBuilder
             // diedit sesudahnya. Snapshot lama yang belum punya kunci ini
             // dibaca `?? 'Unit Under Test'` — persis judul lamanya.
             'judul_uut' => $profil?->judulKolomUut(),
+            // Judul kolom PERTAMA. Dua puluh master nulis `Standard`, master
+            // Hydrometer nulis `Nominal Value` — kolomnya emang bukan nilai
+            // standar melainkan angka yang terbaca di skala alatnya. Ikut
+            // DIBEKUKAN sama alasannya kayak `judul_uut`; snapshot lama yang
+            // belum punya kunci ini dibaca `?? 'Standard'`.
+            'judul_standar' => $profil?->judulKolomStandar(),
             // `U95` jadi KOLOM per baris (Viscometer) atau satu baris ringkas
             // di bawah tabel (lima alat lain). Ikut DIBEKUKAN sama alasannya
             // kayak `judul_uut`. Snapshot lama yang belum punya kunci ini

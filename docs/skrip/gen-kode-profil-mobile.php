@@ -35,7 +35,18 @@ require __DIR__.'/../../vendor/autoload.php';
 $app = require_once __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
-const KELUARAN = 'C:/Users/USER/sidik-calibration-mobile/test/fixtures/kode_profil.json';
+/**
+ * Berkas tujuan di repo mobile.
+ *
+ * Bawaannya jalur Windows tempat kedua repo hidup berdampingan di laptop lab.
+ * Bisa ditimpa lewat env `KELUARAN_KODE_PROFIL` supaya skrip ini juga jalan di
+ * CI dan di mesin lain tanpa menyunting berkas — skrip yang cuma jalan di satu
+ * komputer berhenti dijalankan, dan daftar yang berhenti digenerate diam-diam
+ * ketinggalan dari registry. Itu persis kegagalan yang skrip ini ada untuk
+ * mencegahnya.
+ */
+define('KELUARAN', getenv('KELUARAN_KODE_PROFIL')
+    ?: 'C:/Users/USER/sidik-calibration-mobile/test/fixtures/kode_profil.json');
 
 $registry = app(CalibrationProfileRegistry::class);
 $daftar = new ReflectionMethod($registry, 'daftarProfil');

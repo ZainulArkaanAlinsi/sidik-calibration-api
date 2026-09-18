@@ -317,7 +317,14 @@ class CalibrationRequest extends FormRequest
     {
         $ganti = [];
 
-        foreach (['suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir'] as $kunci) {
+        // Tekanan ikut: dia kotak angka yang diketik teknisi persis seperti
+        // suhu & kelembaban, dan lembar Hydrometer WAJIB mengisinya (densitas
+        // udara lahir dari situ). Tanpa dia `"933,15"` dari klien lain ditolak
+        // `numeric` dan teknisi tidak tahu kenapa.
+        foreach ([
+            'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+            'tekanan_awal', 'tekanan_akhir',
+        ] as $kunci) {
             if ($this->has($kunci)) {
                 $ganti[$kunci] = AngkaDesimal::bakukan($this->input($kunci));
             }
@@ -331,7 +338,11 @@ class CalibrationRequest extends FormRequest
                     continue;
                 }
 
-                foreach (['titik_ukur', 'pembacaan', 'nominal', 'js_outside', 'js_inside', 'js_depth'] as $kunci) {
+                foreach ([
+                    'titik_ukur', 'pembacaan', 'nominal',
+                    'js_outside', 'js_inside', 'js_depth',
+                    'hydro_massa', 'hydro_suhu',
+                ] as $kunci) {
                     if (array_key_exists($kunci, $t)) {
                         $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
                     }
@@ -684,6 +695,24 @@ class CalibrationRequest extends FormRequest
             'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            // Tekanan udara ruangan, parameter lingkungan KETIGA (kolomnya ada
+            // sejak migrasi 2026_08_20_100000, satuannya **hPa**).
+            //
+            // Sampai 18 Sep 2026 dia tidak punya aturan sama sekali: Gas
+            // Detector cuma membacanya dari request untuk komponen budgetnya,
+            // jadi angkanya tidak pernah sampai database dan hitung ulang sesi
+            // Gas Detector kehilangan Δ tekanan tanpa satu pun error. Hydrometer
+            // tidak bisa hidup begitu — densitas udaranya lahir dari tekanan,
+            // dan tanpa nilai tersimpan tiap titik pulang "belum dihitung" di
+            // setiap approve.
+            //
+            // Batas 300-1100 hPa: 300 di bawah tekanan puncak Everest, 1100 di
+            // atas rekor permukaan laut tertinggi yang pernah tercatat. Yang
+            // dijaga salah satuan — kPa (93,3) dan Pa (93315) dua-duanya jatuh
+            // di luar pita dan keduanya menggeser densitas udara ~10× tanpa
+            // gejala.
+            'tekanan_awal' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
+            'tekanan_akhir' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
             // Kolom `Time` di tabel yang sama (lembar Spectrophotometer
             // SIDIK-FM-CAL-0511_Rev.5). `H:i:s` ikut diterima karena itu bentuk
             // yang dipulangkan kolom `time` MySQL — draft yang dibuka lagi lalu
@@ -843,6 +872,45 @@ class CalibrationRequest extends FormRequest
             'measurements.*.js_inside.*' => ['nullable', 'numeric'],
             'measurements.*.js_depth' => ['sometimes', 'nullable', 'array', 'max:10'],
             'measurements.*.js_depth.*' => ['nullable', 'numeric'],
+            // --- Hydrometer (lampiran LK-285-IDN no. 25) -------------------
+            //
+            // Semua angkanya punya aturan `numeric` sendiri, bukan cuma
+            // `array`: massa 4 desimal & suhu 1 desimal masuk rumus Cuckow, dan
+            // string yang lolos ke situ dibaca `(float)` jadi 0 tanpa satu pun
+            // error — densitasnya tetap terbit.
+            'spesifikasi_alat.hydrometer' => ['sometimes', 'nullable', 'array', 'max:12'],
+            // Toggle varian rumus. BUKAN disimpulkan dari `beban_tambahan`
+            // kosong: itu tidak bisa membedakan "tidak perlu sinker" dari "lupa
+            // mengisi sinker", dan yang kedua terbit dengan rumus yang salah.
+            // `ya`/`tidak` (dropdown lembar kerja HP) atau boolean asli
+            // (seeder, test, klien lain). Bukan teks bebas: lihat
+            // `HydrometerMentah::pakaiBebanTambahan()`.
+            'spesifikasi_alat.hydrometer.pakai_beban_tambahan' => [
+                'sometimes', 'nullable', 'in:ya,tidak,true,false,1,0',
+            ],
+            'spesifikasi_alat.hydrometer.beban_tambahan' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.massa_udara' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.tegangan_permukaan' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.satuan_tegangan' => ['sometimes', 'nullable', 'string', 'in:dyne/cm,mN/m,N/m'],
+            // `tr` DIBATASI ke daftar yang lazim tertera di hydrometer
+            // (`PERHITUNGAN!AE39` master). Teks bebas berisiko salah ketik yang
+            // menggeser seluruh koreksi tanpa gejala.
+            'spesifikasi_alat.hydrometer.suhu_acuan_alat' => ['sometimes', 'nullable', 'numeric', 'in:15,20,27.5'],
+            'spesifikasi_alat.hydrometer.suhu_acuan_faktor' => ['sometimes', 'nullable', 'numeric'],
+            // TEPAT tiga ukuran — `D_max − D_min` jadi komponen ketidakpastian,
+            // dan dua ukuran membuat komponen itu tidak sah.
+            'spesifikasi_alat.hydrometer.diameter_stem' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'spesifikasi_alat.hydrometer.diameter_stem.*' => ['required', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.resolusi' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.satuan_densitas' => ['sometimes', 'nullable', 'string', 'in:g/ml,kg/m3'],
+            // Dua deret per titik, TEPAT tiga ulangan masing-masing. Pembagi
+            // (√3) dan derajat kebebasan (n−1 = 2) komponen pertama budget
+            // mengandaikan n = 3; empat ulangan lolos diam-diam dengan pembagi
+            // yang salah.
+            'measurements.*.hydro_massa' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.hydro_massa.*' => ['required', 'numeric'],
+            'measurements.*.hydro_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.hydro_suhu.*' => ['required', 'numeric'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],

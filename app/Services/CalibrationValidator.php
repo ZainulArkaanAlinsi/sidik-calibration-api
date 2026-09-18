@@ -16,6 +16,7 @@ use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\KodeSelRevisi;
 use App\Support\MicrometerMentah;
@@ -1074,6 +1075,13 @@ class CalibrationValidator
                     // (1.., 101.., 201..), jadi satu kelompok tidak memuat dua tabel.
                     ...SieveMentah::dari($pembacaan),
                     ...JangkaSorongMentah::dari($pembacaan),
+                    // Deret massa + deret suhu air satu titik Hydrometer —
+                    // kejadian ke-16 dengan pola yang sama, dan yang paling
+                    // mahal kalau lolos: di alat ini TIDAK ADA satu pun angka
+                    // di sertifikat yang pernah diketik manusia, jadi densitas
+                    // yang salah tidak punya pembanding sekilas di lembar
+                    // kertas. Kosong buat tiga puluh dua alat lain.
+                    ...HydrometerMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
@@ -1097,6 +1105,19 @@ class CalibrationValidator
                     // terpisah — di keempat workbook masternya ketiganya memang
                     // angka yang sama. Diabaikan profil lain.
                     'suhu_ruang_rata' => MicrometerMentah::rataSuhuRuang($sesi->suhu_awal, $sesi->suhu_akhir),
+                    // Kondisi lingkungan MENTAH, empat ujungnya terpisah.
+                    // Hydrometer butuh keenamnya: densitas udara lahir dari
+                    // suhu + kelembaban + TEKANAN, dan komponen `Air
+                    // Temperature` budget-nya memakai |akhir − awal| suhu
+                    // ruangan — dua-duanya tidak bisa diturunkan dari
+                    // `suhu_ruang_rata` yang cuma membawa rata-ratanya.
+                    // Diabaikan profil lain.
+                    'suhu_awal' => $sesi->suhu_awal,
+                    'suhu_akhir' => $sesi->suhu_akhir,
+                    'kelembaban_awal' => $sesi->kelembaban_awal,
+                    'kelembaban_akhir' => $sesi->kelembaban_akhir,
+                    'tekanan_awal' => $sesi->tekanan_awal,
+                    'tekanan_akhir' => $sesi->tekanan_akhir,
                 ],
                 'tersimpan' => $titik,
             ];

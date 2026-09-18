@@ -13,6 +13,7 @@ use App\Services\Calibration\Profiles\Enclosure\OvenProfile;
 use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
+use App\Services\Calibration\Profiles\HydrometerProfile;
 use Illuminate\Contracts\Console\Kernel;
 
 /**
@@ -47,7 +48,21 @@ require __DIR__.'/../../vendor/autoload.php';
 $app = require_once __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
-const AKAR_MOBILE = 'C:/Users/USER/sidik-calibration-mobile/lib/services/';
+/**
+ * Folder tujuan di repo mobile.
+ *
+ * Bawaannya jalur Windows tempat kedua repo hidup berdampingan di laptop lab.
+ * Bisa ditimpa lewat env `AKAR_MOBILE` supaya skrip ini juga jalan di CI dan di
+ * mesin lain tanpa menyunting berkas — skrip yang cuma jalan di satu komputer
+ * berhenti dijalankan, dan berkas contoh yang berhenti digenerate diam-diam
+ * menyimpang dari server.
+ *
+ *     AKAR_MOBILE=../sidik-calibration-mobile/lib/services php docs/skrip/gen-contoh-lembar-kerja.php
+ */
+define('AKAR_MOBILE', rtrim(
+    getenv('AKAR_MOBILE') ?: 'C:/Users/USER/sidik-calibration-mobile/lib/services',
+    '/\\',
+).'/');
 
 /**
  * Ubah nilai PHP jadi literal Dart yang bisa dibaca.
@@ -302,6 +317,56 @@ $kepalaDimensi = <<<'DART'
 library;
 DART;
 
+$kepalaVolumetrik = <<<'DART'
+/// Bentuk lembar kerja contoh **Hydrometer** (kelompok Volumetrik, alat ke-33).
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan.
+///
+/// ## Kenapa lembar ini tidak sebangun dengan satu pun lembar lain
+///
+/// Tiga puluh dua lembar sebelumnya berbentuk "standar lawan pembacaan".
+/// Hydrometer tidak: yang dipungut kertas `SIDIK-FM-CAL-0533_Rev.2` adalah
+/// **massa hasil timbang (gram)** dan **suhu air (°C)**, masing-masing tiga
+/// ulangan per titik skala — dan densitas yang dicetak sertifikat tidak pernah
+/// diketik siapa pun, dia hasil metode Cuckow di server.
+///
+///  1. **Dua tabel yang harus SINKRON** (`simpan_ke`
+///     `measurements[].hydro_massa` dan `measurements[].hydro_suhu`) — kolom
+///     ke-n keduanya merujuk titik skala yang sama, dan server MENOLAK titik
+///     yang cuma punya salah satunya. Digabung per POSISI baris, sama seperti
+///     tiga tabel Jangka Sorong dan kelima tabel Flowmeter; `titik_ukur` tiap
+///     `measurements[i]` datang dari tabel massa, yang disebut duluan.
+///  2. **`offset_kunci` berbeda di ketiga tabelnya** (1000 massa, 2000 diameter
+///     stem, 3000 suhu). Tanpa itu ketiganya berbagi satu `Map<double,
+///     TitikState>` — `tahap`-nya sama dan `titik_ukur` bawaannya 0,0 — jadi
+///     angka yang diketik di satu tabel muncul di tabel lain.
+///  3. **Varian beban tambahan** (`spesifikasi_alat.hydrometer.pakai_beban_tambahan`)
+///     menentukan RUMUS MANA yang dipakai, dan kotak `Sl` di bawahnya cuma
+///     muncul kalau dipilih `ya` (`tampil_kalau`). Itu yang membuat "tidak
+///     perlu sinker" tidak tertukar dengan "lupa mengisi sinker".
+///
+///     Dropdown `pilihan`, BUKAN saklar boolean: `TipeField.fromApi` cuma
+///     mengenal tujuh tipe, dan tipe tak dikenal jatuh ke `TipeField.teks`
+///     tanpa satu pun error — teknisi bakal melihat kotak ketikan bebas untuk
+///     pertanyaan yang menentukan rumus, dan apa pun yang diketik dibaca server
+///     sebagai "tidak".
+///  4. **Kotak tekanan udara (hPa)** di blok identitas — tidak dimiliki lembar
+///     mana pun selain Gas Detector, dan di sini WAJIB: densitas udara lahir
+///     dari situ.
+///  5. **Kedua tabel `titik_bisa_diubah: true`** — beda dari Micrometer & Dial
+///     Indicator yang nominalnya terkunci kertas. Keduanya, bukan salah
+///     satunya: titik yang ditambah teknisi hidup di satu daftar milik seluruh
+///     lembar, jadi dua tabel yang sama-sama `true` tumbuh berbarengan. Batas
+///     LIMA titik ditegakkan server (`CalibrationController::susunBlokHydrometer`),
+///     bukan lewat kunci bentuk lembar — kontrak lembar kerja HP tidak punya
+///     batas jumlah titik, dan kunci yang tidak dibaca klien bikin batasnya
+///     cuma ada di atas kertas.
+///  6. **Desimal per BARIS** (`desimal`: 4 massa, 1 suhu, 3 diameter stem) —
+///     satu-satunya tempat kontrak ini menyatakan ketelitian kotak isian.
+library;
+DART;
+
 $kelompok = [
     'dimensi' => [
         'berkas' => 'contoh_lembar_kerja_dimensi.dart',
@@ -339,6 +404,13 @@ $kelompok = [
         'kepala' => $kepalaMassa,
         'profil' => [
             'AnakTimbangan' => AnakTimbanganProfile::class,
+        ],
+    ],
+    'volumetrik' => [
+        'berkas' => 'contoh_lembar_kerja_volumetrik.dart',
+        'kepala' => $kepalaVolumetrik,
+        'profil' => [
+            'Hydrometer' => HydrometerProfile::class,
         ],
     ],
     'enclosure' => [

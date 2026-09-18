@@ -1284,6 +1284,27 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Lembar ini punya jalur simpan sendiri di `CalibrationController`.
+     *
+     * Hydrometer: satu titik skala membawa DUA deret dengan arti yang beda —
+     * tiga kali timbang (gram) dan tiga kali baca suhu air (°C). Alasan jalur
+     * terpisahnya sama dengan sembilan di atas: loop per-titik cuma punya
+     * tempat buat satu deret.
+     *
+     * Bedanya dari lembar dua-deret lain, dan kenapa cabangnya sendiri: di
+     * sini deret kedua BUKAN pembacaan alat pembanding melainkan besaran lain
+     * sama sekali, dan keduanya masuk ke rumus di tempat yang berbeda. Dipaksa
+     * lewat cabang pasangan standar/UUT, suhu air tersimpan sebagai "pembacaan
+     * standar" — dan rumus Cuckow yang membacanya memulangkan densitas yang
+     * masih ber-orde satuan yang sama, jadi sertifikatnya terbit rapi dan
+     * salah.
+     */
+    public function butuhBlokHydrometer(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
      *
      * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah
@@ -1588,6 +1609,26 @@ abstract class CalibrationProfile
     public function judulKolomUut(): string
     {
         return 'Unit Under Test';
+    }
+
+    /**
+     * Judul kolom PERTAMA tabel hasil sertifikat.
+     *
+     * Dua puluh master menulis `Standard` — kolomnya memang berisi nilai
+     * standar yang dipakai membandingkan. Master Hydrometer menulis
+     * **`Nominal Value`**, dan itu bukan sinonim: yang tercetak di situ angka
+     * yang TERBACA di skala hydrometer, bukan nilai sebuah standar. Menyebutnya
+     * `Standard` di dokumen terakreditasi berarti mengaku memakai standar
+     * densitas yang tidak pernah ada di sesi itu.
+     *
+     * Ikut DIBEKUKAN ke snapshot sama alasannya dengan [judulKolomUut]:
+     * sertifikat yang sudah terbit tidak boleh ganti judul kolom gara-gara
+     * profilnya diedit sesudahnya. Snapshot lama yang belum punya kunci ini
+     * dibaca `?? 'Standard'` — persis judul lamanya.
+     */
+    public function judulKolomStandar(): string
+    {
+        return 'Standard';
     }
 
     /**
