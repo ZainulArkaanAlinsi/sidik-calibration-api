@@ -149,6 +149,10 @@ class DatabaseSeeder extends Seeder
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena
             // apa-apa — diam-diam, tanpa error.
+            // Akun pelanggan contoh + keanggotaan PIC Utama-nya. Ditaruh
+            // BELAKANGAN karena dia memilih perusahaan yang paling banyak
+            // alatnya, jadi seluruh seeder alat harus sudah jalan.
+            AkunPelangganDemoSeeder::class,
             PengaturanSertifikatSeeder::class,
         ]);
     }
