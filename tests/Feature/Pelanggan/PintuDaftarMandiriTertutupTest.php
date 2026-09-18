@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Concerns\JalurPelanggan;
 use Tests\TestCase;
 
@@ -47,7 +48,7 @@ class PintuDaftarMandiriTertutupTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('rutePelangganYangDicabut')]
+    #[DataProvider('rutePelangganYangDicabut')]
     public function test_rute_pendaftaran_pelanggan_dijawab_404(string $uri): void
     {
         $this->postJson($uri, [
@@ -89,7 +90,7 @@ class PintuDaftarMandiriTertutupTest extends TestCase
 
         $this->assertSame([], $tertuduh, sprintf(
             "Rute pendaftaran mandiri muncul lagi:\n  - %s\n\n".
-            "Akun lahir dari undangan (AGENTS.md §Akun Lahir dari Undangan), bukan dari form publik.",
+            'Akun lahir dari undangan (AGENTS.md §Akun Lahir dari Undangan), bukan dari form publik.',
             implode("\n  - ", $tertuduh),
         ));
     }
