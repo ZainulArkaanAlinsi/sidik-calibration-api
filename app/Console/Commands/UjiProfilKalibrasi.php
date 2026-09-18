@@ -12,6 +12,7 @@ use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
+use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
@@ -376,6 +377,19 @@ class UjiProfilKalibrasi extends Command
         // menangkapnya. Sebelum ini dia punya baris kekecualiannya sendiri yang
         // memulangkan `-` tanpa memeriksa apa pun; kekecualian yang dipelihara
         // lebih lama dari sebabnya berubah jadi tempat sembunyi.
+        //
+        // Hydrometer masuk cabang ini 18 Sep 2026, begitu `HydrometerSeeder`
+        // menanam sesi contohnya. Alasannya paling telak dari sepuluh di atas:
+        // payload generik di bawah menyusun `measurements[i].pembacaan` DATAR
+        // dari `titik_ukur` barisnya sendiri, sementara lembar ini butuh DUA
+        // deret bernama (`hydro_massa` gram & `hydro_suhu` °C) plus blok Pre
+        // Condition di `spesifikasi_alat`. Tidak satu pun bisa diturunkan dari
+        // bentuk lembarnya.
+        //
+        // Dibiarkan lewat jalur generik, tabel yang `firstWhere` pilih justru
+        // tabel DIAMETER STEM (satu baris, `tahap` sama, kebetulan lebih dulu di
+        // urutan bagian) — jadi laporannya `0/1` dan yang dilaporkan rusak bukan
+        // profilnya melainkan payload yang disusun perintah ini.
         if ($profil instanceof MicrometerProfile
             || $profil instanceof HeightGaugeProfile
             || $profil instanceof FlowmeterProfile
@@ -383,6 +397,7 @@ class UjiProfilKalibrasi extends Command
             || $profil instanceof DialIndicatorProfile
             || $profil instanceof JangkaSorongProfile
             || $profil instanceof SieveProfile
+            || $profil instanceof HydrometerProfile
             || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];

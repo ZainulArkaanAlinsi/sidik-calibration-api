@@ -259,6 +259,8 @@ class CertificateExcelExporter
         $adaR2 = collect($snapshot['hasil'] ?? [])
             ->contains(fn ($b) => ($b['r2'] ?? null) !== null);
 
+        $judulStandar = (string) ($snapshot['judul_standar'] ?? 'Standard');
+
         $writer->addRow(Row::fromValues(
             array_merge(
                 // Judul kolom ikut snapshot, sama kayak PDF: master
@@ -268,7 +270,11 @@ class CertificateExcelExporter
                 //
                 // Rekap lintas alat SENGAJA nggak ikut (lihat `rekap()`):
                 // kolomnya mesti stabil biar rekap dua bulan bisa ditumpuk.
-                ['Standard Value', $snapshot['judul_uut'] ?? 'Unit Under Test', 'Correction', 'U95% (±)'],
+                // `Standard` bawaan tetap dicetak `Standard Value` seperti
+                // sejak awal; judul lain dipakai apa adanya. Master Hydrometer
+                // nulis `Nominal Value` — `Nominal Value Value` bukan judul
+                // yang pernah ada di satu pun sertifikat.
+                [$judulStandar === 'Standard' ? 'Standard Value' : $judulStandar, $snapshot['judul_uut'] ?? 'Unit Under Test', 'Correction', 'U95% (±)'],
                 $adaRemark ? ['Remark'] : [],
                 $adaR2 ? ['R2'] : [],
             ),

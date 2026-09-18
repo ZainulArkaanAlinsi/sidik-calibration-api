@@ -14,6 +14,7 @@ use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
@@ -182,6 +183,14 @@ class HitungUlangSesi extends Command
                 $sieve = SieveMentah::dari($baris);
                 $jangkaSorong = JangkaSorongMentah::dari($baris);
 
+                // Deret massa + deret suhu air lembar Hydrometer
+                // (`hydro_massa`/`hydro_suhu`). Kejadian ke-16 dengan pola yang
+                // sama. Dia TIDAK ikut rantai `elseif` di bawah: `$nilai`
+                // jalur datar memang tidak dipakai alat ini, dan profilnya
+                // membaca kedua deret dari `konteks` — sama seperti Micrometer
+                // & Height Gauge yang juga lewat `hitungPerGrup()`.
+                $hydro = HydrometerMentah::dari($baris);
+
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
                 // baris ber-`peran_sensor` — dan baris ketiga alat suhu PUNYA
@@ -334,6 +343,34 @@ class HitungUlangSesi extends Command
                     if (count($pasangan['standar']) < 2 || count($pasangan['uut']) < 2) {
                         continue;
                     }
+                } elseif ($hydro !== []) {
+                    // Hydrometer: `pembacaan` datar TIDAK dipakai — profilnya
+                    // membaca kedua deret (`hydro_massa` gram & `hydro_suhu`
+                    // °C) dari `konteks`, sama seperti Micrometer & Height
+                    // Gauge. Dikosongkan, persis jalur simpan di
+                    // `CalibrationController::susunBlokHydrometer()`.
+                    //
+                    // Cabangnya WAJIB di atas `$grid === []`, dan itu bukan
+                    // selera urutan: baris hydrometer PUNYA `peran_sensor`,
+                    // jadi `GridSensorMentah::dari()` memulangkan
+                    // `['sensor_grid' => [], 'indikator' => []]` — yang secara
+                    // PHP bukan `[]`. Tanpa cabang ini setiap sesi hydrometer
+                    // jatuh ke cabang Enclosure terakhir, ketemu grid kosong,
+                    // lalu di-`continue`: perintahnya "sukses" dengan exit 0 dan
+                    // NOL baris ditulis. Persis jebakan yang komentar di atas
+                    // sudah memperingatkannya untuk ketiga alat suhu — dan
+                    // sekali lagi kena.
+                    //
+                    // Akibatnya bukan sekadar satu perintah yang diam: ini
+                    // SATU-SATUNYA jalan membetulkan angka sesi yang sudah
+                    // tersimpan, jadi sesi hydrometer yang salah hitung tidak
+                    // punya jalan pulang sama sekali.
+                    $nilai = [];
+
+                    if (count($hydro[HydrometerMentah::KONTEKS_MASSA] ?? []) < 1
+                        || count($hydro[HydrometerMentah::KONTEKS_SUHU] ?? []) < 1) {
+                        continue;
+                    }
                 } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak
@@ -433,6 +470,20 @@ class HitungUlangSesi extends Command
                         // tingkat-sesinya ikut lewat `spesifikasi_alat` di bawah.
                         ...$sieve,
                         ...$jangkaSorong,
+                        // Deret massa + deret suhu air lembar Hydrometer. Blok
+                        // Pre Condition-nya (Ma, yx, tr, beban tambahan,
+                        // diameter stem) ikut lewat `spesifikasi_alat` di
+                        // bawah, dan tanpa itu seluruh titiknya pulang "belum
+                        // dihitung". Kondisi lingkungannya ikut lewat empat
+                        // kunci di bawahnya — termasuk TEKANAN, yang tanpa dia
+                        // densitas udara tidak bisa dihitung sama sekali.
+                        ...$hydro,
+                        'suhu_awal' => $sesi->suhu_awal,
+                        'suhu_akhir' => $sesi->suhu_akhir,
+                        'kelembaban_awal' => $sesi->kelembaban_awal,
+                        'kelembaban_akhir' => $sesi->kelembaban_akhir,
+                        'tekanan_awal' => $sesi->tekanan_awal,
+                        'tekanan_akhir' => $sesi->tekanan_akhir,
                         // Tiga kolom SESI ketiga alat suhu — alasannya sama
                         // seperti `tipe_sensor` di atas: tanpa ini seluruh
                         // titiknya pulang tanpa angka.

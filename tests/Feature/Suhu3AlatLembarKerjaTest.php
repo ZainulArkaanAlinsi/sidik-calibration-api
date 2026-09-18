@@ -121,8 +121,12 @@ class Suhu3AlatLembarKerjaTest extends TestCase
     {
         $registry = app(CalibrationProfileRegistry::class);
 
-        $this->assertNull($registry->kodeProfilDariNama('Hydrometer'));
-        $this->assertNull($registry->kodeProfilDariNama('Hydrometer Baume'));
+        // Sejak 18 Sep 2026 `Hydrometer` punya lembarnya SENDIRI (alat ke-33,
+        // lampiran no. 25). Yang dijaga di sini tetap sama: dia tidak boleh
+        // mendarat di lembar suhu. Yang berubah cuma jawaban benarnya — dari
+        // "tidak punya lembar" jadi "punya lembarnya sendiri".
+        $this->assertSame('hydrometer', $registry->kodeProfilDariNama('Hydrometer'));
+        $this->assertSame('hydrometer', $registry->kodeProfilDariNama('Hydrometer Baume'));
     }
 
     #[DataProvider('tigaAlat')]

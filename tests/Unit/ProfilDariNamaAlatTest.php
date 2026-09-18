@@ -166,7 +166,10 @@ class ProfilDariNamaAlatTest extends TestCase
             'Buret Digital' => ['Buret Digital'],
             'Gelas Ukur' => ['Gelas Ukur'],
             'Picnometer' => ['Picnometer'],
-            'Hydrometer' => ['Hydrometer'],
+            // Hydrometer PINDAH dari sini 18 Sep 2026: sekarang punya lembar
+            // kerjanya sendiri (alat ke-33, lampiran no. 25, kelompok
+            // Volumetrik), dari dua workbook master yang turun dari lab. Yang
+            // menjaga arah sebaliknya — `test_hydrometer_dapat_lembarnya_sendiri`.
             // Micrometer PINDAH dari sini 4 Sep 2026: sekarang punya lembar
             // kerjanya sendiri (alat ke-25, kelompok Dimensi), dari EMPAT
             // workbook master yang turun dari lab. Yang menjaga arah
@@ -358,7 +361,10 @@ class ProfilDariNamaAlatTest extends TestCase
      *
      * `Hydrometer` ikut diadu DI SINI supaya jelas dia tetap BUKAN timbangan:
      * dia alat densitas, dan kesalahan sekeluarga persis pernah nyaris lolos
-     * waktu dia didaftarkan sebagai alias Thermohygro (§11).
+     * waktu dia didaftarkan sebagai alias Thermohygro (§11). Sejak 18 Sep 2026
+     * dia punya lembarnya sendiri, jadi yang diadu bukan lagi `null` melainkan
+     * `hydrometer` — kalau suatu saat dia mendarat di `timbangan`, teknisi
+     * mengisi tabel massa untuk alat yang mengukur berat jenis.
      *
      * @return array<string, array{string, string|null}>
      */
@@ -371,7 +377,7 @@ class ProfilDariNamaAlatTest extends TestCase
             'neraca' => ['Neraca Analitik', 'timbangan'],
             'balance' => ['Precision Balance', 'timbangan'],
             'sesi contoh master gram' => ['Moisture Analyzer', 'timbangan'],
-            'densitas, BUKAN timbangan' => ['Hydrometer', null],
+            'densitas, BUKAN timbangan' => ['Hydrometer', 'hydrometer'],
         ];
     }
 
@@ -611,6 +617,35 @@ class ProfilDariNamaAlatTest extends TestCase
                 $kode,
                 $this->registry->kodeProfilDariNama($nama),
                 "'{$nama}' harusnya dapat lembar `{$kode}`, bukan jatuh ke jalur generik.",
+            );
+        }
+    }
+
+    /**
+     * Alat ke-33 — Hydrometer, lampiran akreditasi no. 25, kelompok Volumetrik.
+     *
+     * Arah sebaliknya dari [test_nama_alat_generik_balik_null], dan di alat ini
+     * taruhannya paling tinggi di antara semua profil: lembar generik meminta
+     * teknisi mengetik PEMBACAAN, sementara yang sebenarnya dipungut kertas
+     * Hydrometer massa hasil timbang dan suhu air. Kalau profilnya suatu saat
+     * dicabut, yang terjadi bukan error melainkan sertifikat densitas yang
+     * angkanya adalah angka timbangan mentah.
+     *
+     * Kedua ejaan diadu: master 8 Sep 2025 menulis `Hydrometer`, master
+     * 7 Nov 2025 menulis `Hidrometer` — di sel yang sama.
+     */
+    public function test_hydrometer_dapat_lembarnya_sendiri(): void
+    {
+        foreach ([
+            'Hydrometer',
+            'Hidrometer',
+            'Hydrometer Baume',
+            'Hidrometer Alla France L50',
+        ] as $nama) {
+            $this->assertSame(
+                'hydrometer',
+                $this->registry->kodeProfilDariNama($nama),
+                "'{$nama}' harusnya dapat lembar `hydrometer`, bukan jatuh ke jalur generik.",
             );
         }
     }

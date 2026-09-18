@@ -16,6 +16,7 @@ use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
+use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\KodeSelRevisi;
 use App\Support\MicrometerMentah;
@@ -497,6 +498,49 @@ class CalibrationValidator
                     );
                 }
 
+                continue;
+            }
+
+            // Pembacaan yang BESARANNYA bukan besaran alat itu dilewati
+            // seluruh penjaga di bawah — rentang maupun kelipatan resolusi.
+            //
+            // Dua penjaga itu sama-sama mengadu angka yang diketik ke kolom
+            // `equipments` (`range_min..range_max`, `resolusi`), dan itu benar
+            // selama yang diketik memang besaran yang sama. Hydrometer alat
+            // pertama yang bukan begitu: rentangnya **g/ml** (0,600-0,650),
+            // sementara yang dipungut kertasnya **gram** (21,27) dan **°C**
+            // (20,6). Densitasnya lahir belakangan dari metode Cuckow, tidak
+            // pernah diketik siapa pun.
+            //
+            // Tanpa pengecualian ini, sesi yang angkanya sama persis dengan
+            // master memuntahkan 18 peringatan sekaligus — SEMUA pembacaannya —
+            // berbunyi "pembacaan 21.2727 g/ml jauh di luar rentang ukur alat
+            // (0.6-0.65 g/ml), kemungkinan besar komanya kegeser". Satuannya
+            // pun ikut salah tercetak.
+            //
+            // Alasannya sama persis dengan pengecualian `suhu_ruang` dan
+            // `termokopel` di atas, dan sudah ditulis di sana: peringatan palsu
+            // yang SELALU muncul melatih admin menekan "SETUJUI TETAP" tanpa
+            // membaca, lalu peringatan yang benar-benar penting ikut tenggelam.
+            // Bedanya, di sini palsunya bukan satu-dua baris tapi semuanya.
+            //
+            // Yang hilang dari perlindungan, dan apa gantinya. Melewatkan kedua
+            // deret ini MENCABUT penjaga "koma kegeser" yang dipunyai tiga
+            // puluh dua alat lain — `diLuarRentang` cuma punya satu pemanggil,
+            // yaitu blok di bawah ini. Diukur waktu review: satu koma kegeser
+            // di kolom Weight (21,2727 → 2,12727 g) menerbitkan densitas
+            // 0,468497 g/ml buat tanda skala 0,610 — mustahil, skalanya cuma
+            // 0,600-0,650 — dan sesinya lolos `valid = true` tanpa satu pun
+            // temuan.
+            //
+            // Gantinya BUKAN di sini, karena di sini yang tersedia cuma angka
+            // mentahnya: penggantinya `HydrometerProfile::
+            // peringatanKoreksiTidakMasukAkal()`, yang mengadu DENSITAS TERBIT
+            // ke lebar skala alat. Itu satu-satunya tempat perbandingan itu
+            // bisa dilakukan, karena densitasnya baru ada sesudah rantai Cuckow
+            // jalan. Jangan melonggarkan pengecualian di bawah tanpa memeriksa
+            // gerbang itu masih hidup.
+            if (in_array($m->peran_sensor, HydrometerMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
                 continue;
             }
 
@@ -1074,6 +1118,13 @@ class CalibrationValidator
                     // (1.., 101.., 201..), jadi satu kelompok tidak memuat dua tabel.
                     ...SieveMentah::dari($pembacaan),
                     ...JangkaSorongMentah::dari($pembacaan),
+                    // Deret massa + deret suhu air satu titik Hydrometer —
+                    // kejadian ke-16 dengan pola yang sama, dan yang paling
+                    // mahal kalau lolos: di alat ini TIDAK ADA satu pun angka
+                    // di sertifikat yang pernah diketik manusia, jadi densitas
+                    // yang salah tidak punya pembanding sekilas di lembar
+                    // kertas. Kosong buat tiga puluh dua alat lain.
+                    ...HydrometerMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
@@ -1097,6 +1148,19 @@ class CalibrationValidator
                     // terpisah — di keempat workbook masternya ketiganya memang
                     // angka yang sama. Diabaikan profil lain.
                     'suhu_ruang_rata' => MicrometerMentah::rataSuhuRuang($sesi->suhu_awal, $sesi->suhu_akhir),
+                    // Kondisi lingkungan MENTAH, empat ujungnya terpisah.
+                    // Hydrometer butuh keenamnya: densitas udara lahir dari
+                    // suhu + kelembaban + TEKANAN, dan komponen `Air
+                    // Temperature` budget-nya memakai |akhir − awal| suhu
+                    // ruangan — dua-duanya tidak bisa diturunkan dari
+                    // `suhu_ruang_rata` yang cuma membawa rata-ratanya.
+                    // Diabaikan profil lain.
+                    'suhu_awal' => $sesi->suhu_awal,
+                    'suhu_akhir' => $sesi->suhu_akhir,
+                    'kelembaban_awal' => $sesi->kelembaban_awal,
+                    'kelembaban_akhir' => $sesi->kelembaban_akhir,
+                    'tekanan_awal' => $sesi->tekanan_awal,
+                    'tekanan_akhir' => $sesi->tekanan_akhir,
                 ],
                 'tersimpan' => $titik,
             ];

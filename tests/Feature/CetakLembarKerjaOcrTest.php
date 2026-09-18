@@ -113,7 +113,19 @@ class CetakLembarKerjaOcrTest extends TestCase
         //
         // Dikeluarkan dari daftar wajib begitu pipeline geometrinya sanggup
         // per tabel — bukan dengan menerbitkan berkas yang salah.
-        $sumbuCampuran = ['timbangan'];
+        //
+        // Lembar Hydrometer ikut di sini sejak 18 Sep 2026, sebabnya sama:
+        // satu halaman memuat TIGA tabel dengan orientasi berbeda — dua tabel
+        // Measurement yang titiknya berjajar ke kanan dan tiga ulangan turun ke
+        // bawah, plus tabel diameter stem yang cuma satu baris. Ditambah blok
+        // Pre Condition yang isinya field skalar, bukan tabel sama sekali.
+        //
+        // Lembarnya juga menolak jalur pindai AI sama sekali
+        // (`HydrometerProfile::bentukPindaiFoto()` mengembalikan
+        // `didukung: false` DAN `lokal: false`): yang diketik di situ massa
+        // 4 desimal, dan angka ngawur yang kelihatan wajar di kolom itu tidak
+        // punya satu pun gejala sampai sertifikatnya terbit.
+        $sumbuCampuran = ['timbangan', 'hydrometer'];
 
         // `kodeTersedia()`, bukan `daftar()`: yang dibutuhkan cuma nama-namanya.
         // `daftar()` menuntut konteks organisasi sejak BUG-005 — dan sapuan ini

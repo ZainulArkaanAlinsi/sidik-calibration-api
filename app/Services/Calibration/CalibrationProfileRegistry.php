@@ -20,6 +20,7 @@ use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
+use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
@@ -183,6 +184,19 @@ class CalibrationProfileRegistry
             // Alat ke-32, kelompok Panjang — lampiran no. 33 `Sieve`. Satu sesi
             // sampai 100 opening × tiga parameter lewat `spesifikasi_alat`.
             new SieveProfile,
+            // Alat ke-33, dan yang PERTAMA di kelompok Volumetrik — lampiran
+            // LK-285-IDN no. 25, metode SIDIK-IK-CAL-0525_Rev.3.
+            //
+            // Satu-satunya profil yang keluarannya BUKAN pembacaan teknisi:
+            // yang dipungut lembar kerja massa hasil timbang + suhu air, dan
+            // densitas yang dicetak sertifikat lahir dari metode Cuckow. Dua
+            // workbook master jadi satu profil DUA VARIAN (dengan & tanpa
+            // beban tambahan), dan varian dipilih toggle teknisi — bukan
+            // ditebak dari angka rentang. Lihat HydrometerCalculator.
+            //
+            // Ejaan `Hidrometer` ikut terdaftar sebagai alias: kedua master
+            // mengejanya beda di sel yang sama.
+            new HydrometerProfile,
         ];
     }
 

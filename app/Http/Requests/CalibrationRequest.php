@@ -14,6 +14,7 @@ use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
+use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,12 +51,137 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokFlowmeter();
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
+        $this->bakukanTogglHydrometer();
+        $this->bakukanBlokHydrometer();
 
         if ($this->user()?->isAdmin()) {
             return;
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /**
+     * `diameter_stem` bentuk-TABEL dari HP diratakan SEBELUM aturan `size:3`
+     * menyentuhnya.
+     *
+     * ## Kegagalan yang ditutup
+     *
+     * Tabel "Diameter Stem" menyatakan `simpan_ke:
+     * spesifikasi_alat.hydrometer.diameter_stem`, dan buat tiap tabel semacam
+     * itu HP SELALU merakit cerminan tabelnya, bukan deret datar
+     * (`LembarKerjaState._tanamTabelSpesifikasi()`:
+     * `induk[jalur.last] = {'baris': isi}`). Jadi yang sampai ke sini:
+     *
+     *     {"baris": [{"titik_ukur": null, "pembacaan": [0.708, 0.710, 0.709]}]}
+     *
+     * Aturannya justru yang paling ketat di seluruh blok ini — `array` +
+     * `size:3` + `.*` `required|numeric|gt:0` — jadi bentuk itu ditolak **422**
+     * dengan tiga pesan sekaligus:
+     *
+     *     ... diameter stem field must contain 3 items.
+     *     ... diameter_stem.baris field must be a number.
+     *     ... diameter_stem.baris field must be greater than 0.
+     *
+     * Artinya TIDAK ADA satu pun sesi Hydrometer yang bisa dikirim dari
+     * aplikasi. Dan itu tidak ketahuan satu test pun, karena seeder dan seluruh
+     * `HydrometerSesiTest` mengirim bentuk DATAR yang memang lolos — bentuk
+     * yang tidak pernah dipakai HP.
+     *
+     * ## Kenapa diratakan di sini, bukan aturannya yang dilonggarkan
+     *
+     * Jangka Sorong memilih jalan sebaliknya (`array`, `max:20`, tanpa `.*`)
+     * dan mengandalkan perataan waktu baca. Itu sah, tapi di sini `size:3`
+     * bukan kerapian: selisih terbesar-terkecil ketiga ukuran jadi komponen
+     * ketidakpastian `Stem Diameter`, dan dua ukuran membuat komponen itu tidak
+     * sah. Melonggarkan aturannya berarti sesi dengan dua ukuran lolos validasi
+     * lalu terbit dengan budget yang cacat. Diratakan dulu, aturannya tetap
+     * ketat, dan keduanya mengadu bentuk yang sama.
+     *
+     * Perataannya memakai `HydrometerMentah::ratakan()` — SATU implementasi
+     * yang sama dengan yang dipakai jalur baca, bukan salinan kedua.
+     */
+    private function bakukanBlokHydrometer(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[HydrometerMentah::KUNCI_SESI] ?? null;
+
+        if (! is_array($blok) || ! array_key_exists('diameter_stem', $blok)) {
+            return;
+        }
+
+        $rata = HydrometerMentah::ratakan($blok['diameter_stem']);
+
+        // Kosong dijadikan `null`, BUKAN dibiarkan apa adanya.
+        //
+        // HP SELALU menanam kunci ini begitu tabelnya ada — `isi` berisi satu
+        // baris walau seluruh selnya kosong — jadi yang datang waktu teknisi
+        // belum mengukur diameter stem itu
+        // `{"baris":[{"titik_ukur":1,"pembacaan":[null,null,null]}]}`, bukan
+        // ketiadaan kunci. Dibiarkan, bentuk tabelnya lolos dari perataan lalu
+        // dihantam `size:3` + `.*` — tepat tiga pesan galat yang method ini ada
+        // untuk mencegahnya, cuma pindah ke kasus "belum diisi".
+        //
+        // `nullable` TIDAK menolong di situ: dia membebaskan nilai `null`, bukan
+        // array. Jadi normalisasinya harus sampai `null`.
+        //
+        // Yang menjaga sesi tanpa diameter stem tetap tidak terbit diam-diam
+        // bukan aturan request, melainkan `hydrometer_diameter_stem_tidak_tiga`
+        // di `HydrometerProfile::peringatanSesi()` — dan itu memang tempatnya:
+        // "belum diukur" pertanyaan buat admin yang menyetujui, bukan galat
+        // bentuk payload.
+        if ($rata === []) {
+            $blok['diameter_stem'] = null;
+            $spek[HydrometerMentah::KUNCI_SESI] = $blok;
+            $this->merge(['spesifikasi_alat' => $spek]);
+
+            return;
+        }
+
+        $blok['diameter_stem'] = $rata;
+        $spek[HydrometerMentah::KUNCI_SESI] = $blok;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * Boolean asli `pakai_beban_tambahan` dijadikan `'ya'`/`'tidak'` SEBELUM
+     * aturan `in:` menyentuhnya.
+     *
+     * ## Kenapa perlu, padahal `in:ya,tidak,true,false,1,0` kelihatan sudah muat
+     *
+     * Aturan `in` membandingkan nilai yang sudah di-STRING-kan, dan di PHP
+     * `(string) false` itu **string kosong**, bukan `'false'`. Jadi:
+     *
+     *   - `true`  → `'1'`     → lolos
+     *   - `false` → `''`      → **DITOLAK 422**
+     *
+     * Asimetris, dan asimetrisnya jatuh persis di sisi yang paling dipakai:
+     * `false` itu varian TANPA sinker — variannya master `1.800-2.000`. Klien
+     * yang mengirim boleh jujur (seeder, test, klien non-HP; docblock
+     * `HydrometerMentah::pakaiBebanTambahan()` menjanjikan boolean diterima)
+     * kena 422 buat satu-satunya nilai yang berarti "tidak", dengan pesan yang
+     * menyebut daftar yang jelas-jelas memuat `false`.
+     *
+     * Dibakukan di sini, bukan dengan melonggarkan aturannya jadi menerima
+     * string kosong: string kosong bukan jawaban yang sah buat pertanyaan yang
+     * menentukan rumus mana yang dipakai, dan menerimanya berarti kotak yang
+     * dikosongkan diam-diam terbaca "tidak".
+     */
+    private function bakukanTogglHydrometer(): void
+    {
+        $nilai = $this->input('spesifikasi_alat.hydrometer.pakai_beban_tambahan');
+
+        if (! is_bool($nilai)) {
+            return;
+        }
+
+        $this->merge([
+            'spesifikasi_alat' => array_replace_recursive(
+                (array) $this->input('spesifikasi_alat', []),
+                ['hydrometer' => ['pakai_beban_tambahan' => $nilai ? 'ya' : 'tidak']],
+            ),
+        ]);
     }
 
     /**
@@ -317,7 +443,14 @@ class CalibrationRequest extends FormRequest
     {
         $ganti = [];
 
-        foreach (['suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir'] as $kunci) {
+        // Tekanan ikut: dia kotak angka yang diketik teknisi persis seperti
+        // suhu & kelembaban, dan lembar Hydrometer WAJIB mengisinya (densitas
+        // udara lahir dari situ). Tanpa dia `"933,15"` dari klien lain ditolak
+        // `numeric` dan teknisi tidak tahu kenapa.
+        foreach ([
+            'suhu_awal', 'suhu_akhir', 'kelembaban_awal', 'kelembaban_akhir',
+            'tekanan_awal', 'tekanan_akhir',
+        ] as $kunci) {
             if ($this->has($kunci)) {
                 $ganti[$kunci] = AngkaDesimal::bakukan($this->input($kunci));
             }
@@ -331,7 +464,11 @@ class CalibrationRequest extends FormRequest
                     continue;
                 }
 
-                foreach (['titik_ukur', 'pembacaan', 'nominal', 'js_outside', 'js_inside', 'js_depth'] as $kunci) {
+                foreach ([
+                    'titik_ukur', 'pembacaan', 'nominal',
+                    'js_outside', 'js_inside', 'js_depth',
+                    'hydro_massa', 'hydro_suhu',
+                ] as $kunci) {
                     if (array_key_exists($kunci, $t)) {
                         $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
                     }
@@ -684,6 +821,24 @@ class CalibrationRequest extends FormRequest
             'suhu_akhir' => ['sometimes', 'nullable', 'numeric'],
             'kelembaban_awal' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
             'kelembaban_akhir' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            // Tekanan udara ruangan, parameter lingkungan KETIGA (kolomnya ada
+            // sejak migrasi 2026_08_20_100000, satuannya **hPa**).
+            //
+            // Sampai 18 Sep 2026 dia tidak punya aturan sama sekali: Gas
+            // Detector cuma membacanya dari request untuk komponen budgetnya,
+            // jadi angkanya tidak pernah sampai database dan hitung ulang sesi
+            // Gas Detector kehilangan Δ tekanan tanpa satu pun error. Hydrometer
+            // tidak bisa hidup begitu — densitas udaranya lahir dari tekanan,
+            // dan tanpa nilai tersimpan tiap titik pulang "belum dihitung" di
+            // setiap approve.
+            //
+            // Batas 300-1100 hPa: 300 di bawah tekanan puncak Everest, 1100 di
+            // atas rekor permukaan laut tertinggi yang pernah tercatat. Yang
+            // dijaga salah satuan — kPa (93,3) dan Pa (93315) dua-duanya jatuh
+            // di luar pita dan keduanya menggeser densitas udara ~10× tanpa
+            // gejala.
+            'tekanan_awal' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
+            'tekanan_akhir' => ['sometimes', 'nullable', 'numeric', 'between:300,1100'],
             // Kolom `Time` di tabel yang sama (lembar Spectrophotometer
             // SIDIK-FM-CAL-0511_Rev.5). `H:i:s` ikut diterima karena itu bentuk
             // yang dipulangkan kolom `time` MySQL — draft yang dibuka lagi lalu
@@ -843,6 +998,65 @@ class CalibrationRequest extends FormRequest
             'measurements.*.js_inside.*' => ['nullable', 'numeric'],
             'measurements.*.js_depth' => ['sometimes', 'nullable', 'array', 'max:10'],
             'measurements.*.js_depth.*' => ['nullable', 'numeric'],
+            // --- Hydrometer (lampiran LK-285-IDN no. 25) -------------------
+            //
+            // Semua angkanya punya aturan `numeric` sendiri, bukan cuma
+            // `array`: massa 4 desimal & suhu 1 desimal masuk rumus Cuckow, dan
+            // string yang lolos ke situ dibaca `(float)` jadi 0 tanpa satu pun
+            // error — densitasnya tetap terbit.
+            'spesifikasi_alat.hydrometer' => ['sometimes', 'nullable', 'array', 'max:12'],
+            // Toggle varian rumus. BUKAN disimpulkan dari `beban_tambahan`
+            // kosong: itu tidak bisa membedakan "tidak perlu sinker" dari "lupa
+            // mengisi sinker", dan yang kedua terbit dengan rumus yang salah.
+            // `ya`/`tidak` (dropdown lembar kerja HP) atau boolean asli
+            // (seeder, test, klien lain). Bukan teks bebas: lihat
+            // `HydrometerMentah::pakaiBebanTambahan()`.
+            'spesifikasi_alat.hydrometer.pakai_beban_tambahan' => [
+                'sometimes', 'nullable', 'in:ya,tidak,true,false,1,0',
+            ],
+            'spesifikasi_alat.hydrometer.beban_tambahan' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.massa_udara' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.tegangan_permukaan' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.satuan_tegangan' => ['sometimes', 'nullable', 'string', 'in:dyne/cm,mN/m,N/m'],
+            // `tr` DIBATASI ke daftar yang lazim tertera di hydrometer
+            // (`PERHITUNGAN!AE39` master). Teks bebas berisiko salah ketik yang
+            // menggeser seluruh koreksi tanpa gejala.
+            'spesifikasi_alat.hydrometer.suhu_acuan_alat' => ['sometimes', 'nullable', 'numeric', 'in:15,20,27.5'],
+            'spesifikasi_alat.hydrometer.suhu_acuan_faktor' => ['sometimes', 'nullable', 'numeric'],
+            // TEPAT tiga ukuran — `D_max − D_min` jadi komponen ketidakpastian,
+            // dan dua ukuran membuat komponen itu tidak sah.
+            'spesifikasi_alat.hydrometer.diameter_stem' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'spesifikasi_alat.hydrometer.diameter_stem.*' => ['required', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.resolusi' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.hydrometer.satuan_densitas' => ['sometimes', 'nullable', 'string', 'in:g/ml,kg/m3'],
+            // Dua deret per titik, TEPAT tiga ulangan masing-masing. Pembagi
+            // (√3) dan derajat kebebasan (n−1 = 2) komponen pertama budget
+            // mengandaikan n = 3; empat ulangan lolos diam-diam dengan pembagi
+            // yang salah.
+            // `nullable` di dalam deret, SEJAJAR dengan jalur datar
+            // `measurements.*.pembacaan.*` — bukan `required`.
+            //
+            // HP mengirim sel yang belum diisi sebagai `null` DI POSISINYA
+            // (`deret.any((x) => x != null)`), supaya kolom ke-3 yang kosong
+            // tidak menggeser kolom ke-4 naik. Dengan `required`, teknisi yang
+            // baru menimbang dua kali — neracanya belum stabil — kena **422**
+            // berbunyi "measurements.0.hydro_massa.2 field is required", nama
+            // yang tidak ada di kertas kerjanya, dan draftnya tidak bisa
+            // disimpan sampai ketiga kolomnya lengkap.
+            //
+            // Yang menahan titik separuh-jadi tetap ada dan jauh lebih kebaca:
+            // gerbang di `CalibrationController::susunBlokHydrometer()` yang
+            // berbunyi "Titik ke-N butuh tepat 3 kali timbang DAN 3 kali baca
+            // suhu; yang terkirim X massa & Y suhu", dan menaruh titiknya di
+            // `belum_dipetakan` alih-alih menolak seluruh kiriman. Dengan
+            // `required`, cabang ramah itu TIDAK PERNAH tercapai dari HP.
+            //
+            // `size:3` di deretnya tetap: yang dijaga di situ POSISI kolomnya,
+            // bukan keterisiannya.
+            'measurements.*.hydro_massa' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.hydro_massa.*' => ['nullable', 'numeric'],
+            'measurements.*.hydro_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.hydro_suhu.*' => ['nullable', 'numeric'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],

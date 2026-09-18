@@ -121,6 +121,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // karena di luar pita CMC — sertifikatnya tetap satu halaman.
         'DEMO-FM-GRAV-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
+        'DEMO-HYD-001 (Hydrometer)',
         'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
         // Alat ke-12. Sesi contohnya menyusul 11 Sep 2026 — sampai itu
         // TIDS satu-satunya alat yang sertifikatnya tidak pernah dirender

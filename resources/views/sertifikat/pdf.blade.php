@@ -1104,6 +1104,7 @@
              bloknya, jadi bukan sel yang kepotong). Sertifikat lama yang
              snapshot-nya belum punya kunci ini jatuh ke judul lamanya. --}}
         @php($judulUut = $snapshot['judul_uut'] ?? 'Unit Under Test')
+        @php($judulStandar = $snapshot['judul_standar'] ?? 'Standard')
         {{-- `U95` jadi kolom keempat (Viscometer) atau satu baris ringkas di
              bawah tabel (lima alat lain). Sertifikat lama yang snapshot-nya
              belum punya kunci ini balik `false` — bentuk cetaknya persis kayak
@@ -1112,7 +1113,7 @@
         <table class="data">
             <thead>
                 <tr>
-                    <th>Standard{{ $sufiks }}</th>
+                    <th>{{ $judulStandar }}{{ $sufiks }}</th>
                     <th>{{ $judulUut }}{{ $sufiks }}</th>
                     <th>Correction{{ $sufiks }}</th>
                     {{-- Judulnya nyebut `k` cuma kalau alat ini emang
@@ -1282,7 +1283,7 @@
         @endif
     @empty
         <table class="data">
-            <thead><tr><th>Standard</th><th>{{ $snapshot['judul_uut'] ?? 'Unit Under Test' }}</th><th>Correction</th></tr></thead>
+            <thead><tr><th>{{ $snapshot['judul_standar'] ?? 'Standard' }}</th><th>{{ $snapshot['judul_uut'] ?? 'Unit Under Test' }}</th><th>Correction</th></tr></thead>
             <tbody><tr><td colspan="3">—</td></tr></tbody>
         </table>
     @endforelse
