@@ -65,6 +65,7 @@ class MatriksIzin
         'sertifikat.unduh' => ['GET', 'api/certificates/{certificate}/download'],
         'sertifikat.rekap-excel' => ['GET', 'api/certificates/export/excel'],
         'sertifikat.terbitkan-ulang' => ['POST', 'api/certificates/{certificate}/retry'],
+        'sertifikat.kirim' => ['POST', 'api/certificates/{certificate}/kirim-email'],
 
         // --- laporan
         'laporan.lihat' => ['GET', 'api/laporan/kalibrasi'],
@@ -108,6 +109,7 @@ class MatriksIzin
         'organisasi.lihat' => ['GET', 'api/organization'],
         'organisasi.ubah' => ['PUT', 'api/organization'],
         'organisasi.logo' => ['POST', 'api/organization/logo'],
+        'tanda-tangan.kelola' => ['POST', 'api/organization/tanda-tangan'],
         'pengguna.kelola' => ['GET', 'api/users'],
         'pengguna.setujui' => ['POST', 'api/users/{user}/approve'],
 

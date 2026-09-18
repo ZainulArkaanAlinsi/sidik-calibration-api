@@ -291,6 +291,119 @@ class SemuaProfilLembarKerjaTest extends TestCase
      * Keduanya lolos tanpa pengecualian yang ditulis tangan; itu yang bikin
      * aturan ini murah dijaga.
      */
+    /**
+     * `titik_bisa_diubah` TIDAK boleh nyala di tabel yang semua barisnya
+     * `titik_ukur: null`.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Dua kunci itu saling meniadakan di HP, dan tidak ada satu pun yang
+     * memberi tahu:
+     *
+     *  - `titik_ukur: null` bikin `BarisTabelHasil.titikDitentukan` jadi
+     *    `false` — itu yang MEMBUKA kotak `Point of Calibration` per baris.
+     *  - Panel `PengaturTitik`, satu-satunya jalan menambah titik, cuma
+     *    dirender kalau `baris.every((b) => b.titikDitentukan)`.
+     *
+     * Jadi lembar yang menyalakan keduanya memasang janji yang tidak pernah
+     * ditepati: kontraknya bilang titiknya bisa ditambah, panelnya tidak pernah
+     * muncul, dan lembarnya mentok di jumlah baris bawaan. Nol error di kedua
+     * sisi — dan di Hydrometer itu berarti alat bertanda lima skala cuma bisa
+     * dikalibrasi tiga titik, ketahuan cuma dengan membaca syarat render di
+     * repo sebelah.
+     *
+     * Dan memang sudah benar HP menolak menggabungkan keduanya: `PengaturTitik`
+     * mengatur NILAI titik lewat daftar chip, sementara lembar ber-`titik_ukur:
+     * null` sudah punya kotaknya sendiri per baris. Dua jalan buat mengisi satu
+     * hal yang sama.
+     *
+     * Obatnya: kirim slot barisnya sebanyak yang memang boleh dipakai, lalu
+     * matikan `titik_bisa_diubah`. Baris yang titiknya dibiarkan kosong gugur
+     * sendiri sebelum terkirim (`TitikState.siapKirim`).
+     *
+     * ## Empat profil yang sudah begini sebelum aturan ini ada
+     *
+     * Ketahuan justru waktu aturan ini dipasang, dan SENGAJA belum diperbaiki
+     * di sini: obatnya menaikkan jumlah baris ke batas yang benar, dan batas
+     * yang benar itu pertanyaan buat lab — bukan tebakan developer. Menaikkan
+     * asal-asalan bikin lembar penuh slot yang tidak pernah dipakai, dan
+     * menurunkannya membuang titik yang sah.
+     *
+     * Jumlah baris yang dikirim hari ini, buat dibawa ke lab:
+     *
+     *  - `tids` — 7 baris (2 tabel)
+     *  - `flowmeter_flowrate` — 3 baris (8 tabel)
+     *  - `flowmeter_totalizer` — 3 baris (7 tabel)
+     *  - `anak_timbangan` — 10 baris (4 tabel)
+     *
+     * Keempatnya bukan "boleh begitu", cuma "belum dijawab".
+     */
+    private const PROFIL_TITIK_BISA_DIUBAH_MATI = [
+        'tids',
+        'flowmeter_flowrate',
+        'flowmeter_totalizer',
+        'anak_timbangan',
+    ];
+
+    #[DataProvider('semuaProfil')]
+    public function test_titik_bisa_diubah_nggak_dipasang_di_tabel_titik_kosong(CalibrationProfile $profil): void
+    {
+        $bentrok = [];
+
+        foreach ($profil->bentukLembarKerja()['bagian'] ?? [] as $bagian) {
+            foreach ($bagian['tabel'] ?? [] as $tabel) {
+                if (($tabel['titik_bisa_diubah'] ?? false) !== true) {
+                    continue;
+                }
+
+                $baris = $tabel['baris'] ?? [];
+
+                if ($baris === []) {
+                    continue;
+                }
+
+                $semuaKosong = array_reduce(
+                    $baris,
+                    static fn (bool $bawa, array $b): bool => $bawa && ! is_numeric($b['titik_ukur'] ?? null),
+                    true,
+                );
+
+                if ($semuaKosong) {
+                    $bentrok[] = $tabel['judul'] ?? '(tanpa judul)';
+                }
+            }
+        }
+
+        if (in_array($profil->kode(), self::PROFIL_TITIK_BISA_DIUBAH_MATI, true)) {
+            // Dibalik buat yang sudah terdaftar: begitu profilnya diperbaiki,
+            // test ini yang menyuruh mencoret namanya. Daftar pengecualian yang
+            // isinya tidak pernah menyusut itu daftar yang berhenti dibaca.
+            $this->assertNotSame(
+                [],
+                $bentrok,
+                sprintf(
+                    'Profil `%s` sudah nggak punya tabel `titik_bisa_diubah` yang barisnya kosong '
+                    .'— coret namanya dari PROFIL_TITIK_BISA_DIUBAH_MATI.',
+                    $profil->kode(),
+                ),
+            );
+
+            return;
+        }
+
+        $this->assertSame(
+            [],
+            $bentrok,
+            sprintf(
+                'Profil `%s`: tabel berikut menyalakan `titik_bisa_diubah` padahal semua barisnya '
+                .'`titik_ukur: null` — panel PengaturTitik di HP nggak akan pernah muncul, jadi '
+                .'jumlah titiknya mentok di baris bawaan tanpa satu pun error: %s',
+                $profil->kode(),
+                implode(', ', $bentrok),
+            ),
+        );
+    }
+
     #[DataProvider('semuaProfil')]
     public function test_tabel_sekunci_tidak_berbagi_kunci_baris(CalibrationProfile $profil): void
     {

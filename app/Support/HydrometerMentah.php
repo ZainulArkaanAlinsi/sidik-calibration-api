@@ -40,6 +40,25 @@ class HydrometerMentah
 {
     public const KUNCI_SESI = 'hydrometer';
 
+    /**
+     * Peran yang besarannya BUKAN besaran alatnya.
+     *
+     * Dibaca `CalibrationValidator`, yang mengadu tiap pembacaan ke
+     * `equipments.range_min..range_max` dan `equipments.resolusi`. Buat tiga
+     * puluh dua alat lain itu benar — yang diketik teknisi memang besaran yang
+     * sama dengan rentang alatnya. Di sini rentangnya g/ml sementara yang
+     * diketik gram dan °C, jadi tiap pembacaan sesi yang sempurna dilaporkan
+     * "jauh di luar rentang ukur alat".
+     *
+     * Daftarnya hidup di sini, bukan sebagai literal di validator: kedua nama
+     * peran ini juga yang dipakai `simpan_ke` lembar kerja dan jalur hitung
+     * ulang, dan nama yang ditulis dua kali di dua berkas itu nama yang bisa
+     * menyimpang diam-diam.
+     *
+     * @var list<string>
+     */
+    public const PERAN_BUKAN_BESARAN_ALAT = [self::PERAN_MASSA, self::PERAN_SUHU];
+
     public const PERAN_MASSA = 'hydro_massa';
 
     public const PERAN_SUHU = 'hydro_suhu';

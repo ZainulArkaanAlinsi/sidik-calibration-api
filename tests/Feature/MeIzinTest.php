@@ -143,6 +143,45 @@ class MeIzinTest extends TestCase
     }
 
     /**
+     * Nama izin yang BENERAN ditanyakan aplikasi mobile ada semua di peta.
+     *
+     * ## Kenapa arah ini perlu dites terpisah
+     *
+     * `petaYangNgawur()` menjaga arah sebaliknya — izin yang nunjuk rute nggak
+     * terdaftar. Yang nggak dijaga siapa pun: nama yang DITANYAKAN mobile tapi
+     * nggak pernah ada di peta. `Izin.bolehkah()` di sisi Flutter sengaja jatuh
+     * ke cadangan aturan peran lama buat nama yang nggak dikenal, jadi
+     * salah-nama nggak memunculkan error di mana pun — tombolnya tetap jalan,
+     * cuma pakai aturan hardcode yang justru kelas ini ada buat menggantikannya.
+     *
+     * Persis itu yang kejadian: dari sebelas nama di `NamaIzin` (mobile), LIMA
+     * nggak pernah ada di peta ini — `master-data.ubah`, `akun.kelola`,
+     * `sertifikat.kirim`, `tanda-tangan.kelola`, dan `folder.tulis`. Nol gejala,
+     * dan matriks perannya mati separuh tanpa ada yang tahu.
+     *
+     * Daftar di bawah disalin dari `lib/models/izin.dart` di repo mobile.
+     * Menggantinya di salah satu sisi HARUS bikin test ini merah — itu memang
+     * gunanya: nama izin adalah kontrak, dan kontrak yang bisa berubah sepihak
+     * tanpa gejala itu yang bikin lubang ini lahir.
+     */
+    public function test_nama_izin_yang_ditanya_mobile_ada_semua(): void
+    {
+        $dipakaiMobile = [
+            'alat.tambah', 'alat.ubah', 'alat.hapus',
+            'kalibrasi.buat', 'kalibrasi.setujui',
+            'standar.kelola', 'pengguna.kelola', 'sertifikat.kirim',
+            'tanda-tangan.kelola', 'arsip.folder.kelola',
+        ];
+
+        $this->assertSame(
+            [],
+            array_values(array_diff($dipakaiMobile, array_keys(MatriksIzin::PETA))),
+            'Mobile nanyain izin yang nggak ada di peta. Dia bakal diam-diam '
+                .'balik ke aturan peran hardcode — tanpa error di sisi mana pun.',
+        );
+    }
+
+    /**
      * INTI test ini: daftar izin harus cocok sama penjagaan yang beneran jalan.
      *
      * Buat tiap izin × tiap role, endpoint aslinya dipanggil. `403` harus kejadian

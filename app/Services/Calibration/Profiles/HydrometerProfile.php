@@ -36,12 +36,18 @@ use Illuminate\Support\Collection;
  * bentuk bawaan dan menampilkan lembar yang salah **tanpa satu pun error** —
  * pola yang sudah berulang di repo ini (TIDS, Timbangan, Micrometer).
  *
- * ## Titik skala BISA ditambah teknisi
+ * ## Titik skala DIKETIK teknisi, dan slotnya dikirim penuh
  *
  * Beda dari Micrometer & Dial Indicator yang nominalnya dipatok kertas: kertas
  * hydrometer membiarkan kolom `Point of Calibration` kosong untuk diisi, dan
- * kedua master contoh memakai tiga titik dari lima kolom yang tersedia. Jadi
- * `titik_bisa_diubah: true`.
+ * kedua master contoh memakai tiga titik dari lima kolom yang tersedia.
+ *
+ * Karena itu tiap barisnya `titik_ukur: null` — yang di HP membuka kotak
+ * `Point of Calibration`. Konsekuensinya lembar ini TIDAK bisa memakai
+ * `titik_bisa_diubah`: panel `PengaturTitik` cuma dirender kalau semua barisnya
+ * `titikDitentukan`, dan `titik_ukur: null` justru kebalikannya. Jadi kelima
+ * slotnya dikirim sejak awal ([TITIK_MAKS] baris) dan baris yang tidak diisi
+ * gugur sendiri sebelum terkirim. Lihat `bagianMeasurement()`.
  *
  * ## Yang kertas Rev.2 TIDAK punya tapi rantai hitung BUTUH
  *
@@ -485,6 +491,25 @@ class HydrometerProfile extends CalibrationProfile
             ];
         }
 
+        // `resolusi` itu besaran DENSITAS, sama seperti titik skala — jadi
+        // satuannya ikut dropdown yang sama, dan komentar di kotak `Satuan
+        // Densitas` sudah menulisnya ("mengubah arti titik skala DAN
+        // resolusi"). Yang dikonversi cuma titik skalanya, dan resolusinya
+        // masuk budget apa adanya.
+        //
+        // Akibatnya cuma kelihatan di sesi ber-`kg/m3`: teknisi mengetik 0,5
+        // (kg/m3, setara 0,0005 g/ml) dan komponen `Resolution of Hydrometer`
+        // menerimanya sebagai 0,5 **g/ml** — seribu kali terlalu besar, di
+        // komponen yang labelnya sendiri sudah bertuliskan `g/ml`. Ketidakpastian
+        // terbitnya membengkak tanpa satu pun error.
+        //
+        // Dikonversi DI SINI, sejajar dengan titik skalanya, bukan di
+        // `HydrometerMentah::blokSesi()`: alasannya sama dengan yang sudah
+        // ditulis di `keGramPerMl()` — jalur draft tidak idempoten, dan
+        // mengalikan di ujung masuk membuat angkanya berlipat tiap kali teknisi
+        // menyimpan ulang lembar yang sama.
+        $blok['resolusi'] = HydrometerMentah::keGramPerMl($blok['resolusi'] ?? 0.0, $satuan);
+
         $hasil = $this->kalk()->hitungSesi($masukan, $blok);
 
         // Budget yang tidak utuh TIDAK melahirkan satu pun baris hitungan.
@@ -739,7 +764,11 @@ class HydrometerProfile extends CalibrationProfile
                     ['nilai' => 'g/ml', 'label' => 'g/ml'],
                     ['nilai' => 'kg/m3', 'label' => 'kg/m3'],
                 ]),
-                $this->field("{$kunci}.resolusi", 'Resolution', 'angka', satuan: self::SATUAN),
+                // Satuannya SENGAJA tidak dipatok `g/ml`: kotaknya mengikuti
+                // dropdown di atas, dan label yang memaksa satu satuan justru
+                // menyuruh teknisi yang memilih `kg/m3` mengetik angka dalam
+                // satuan yang tidak dia pilih.
+                $this->field("{$kunci}.resolusi", 'Resolution', 'angka'),
                 // Kotak `Temperature` kertas — dipakai sebagai suhu acuan FAKTOR
                 // koreksi, dan itu BUKAN `tr`. Lihat temuan 6 di calculator.
                 $this->field("{$kunci}.suhu_acuan_faktor", 'Temperature', 'angka', satuan: '°C'),
@@ -898,8 +927,28 @@ class HydrometerProfile extends CalibrationProfile
      *
      * Keduanya memakai `baris` yang sama persis (nomor & label), jadi HP bisa
      * menampilkannya sebagai satu matriks dan mengirim `measurements[i]` yang
-     * membawa dua deret sekaligus. `titik_bisa_diubah: true` — kertas
-     * membiarkan `Point of Calibration` kosong untuk diisi.
+     * membawa dua deret sekaligus.
+     *
+     * ## Barisnya SEBANYAK [TITIK_MAKS], bukan [TITIK_AWAL]
+     *
+     * Mulanya tabel ini mengirim tiga baris plus `titik_bisa_diubah: true`,
+     * dengan maksud teknisi menambah titik ke-4 dan ke-5 sendiri. Kunci itu
+     * **tidak pernah bisa jalan di lembar ini**: panel `PengaturTitik` di HP
+     * baru dirender kalau `baris.every((b) => b.titikDitentukan)`, dan
+     * `titikDitentukan` itu `titik_ukur is num`. Semua baris di sini
+     * `titik_ukur: null` — memang harus, karena `Point of Calibration` diketik
+     * teknisi — jadi syaratnya tidak pernah terpenuhi dan panelnya tidak pernah
+     * muncul. Lembarnya mentok tiga titik, diam-diam.
+     *
+     * Dan itu memang benar begitu: `PengaturTitik` mengatur NILAI titik lewat
+     * daftar chip, sementara lembar ini sudah punya kotak `Point of
+     * Calibration` per baris. Dua jalan mengisi satu hal yang sama justru yang
+     * dihindari syarat tadi.
+     *
+     * Jadi slotnya dikirim penuh sejak awal dan `titik_bisa_diubah` dimatikan.
+     * Baris yang `Point of Calibration`-nya dibiarkan kosong TIDAK ikut
+     * terkirim (`TitikState.siapKirim` di HP), jadi hydrometer bertanda tiga
+     * skala tetap mengirim tiga titik — bukan lima, dua di antaranya kosong.
      *
      * @return array<string, mixed>
      */
@@ -934,7 +983,7 @@ class HydrometerProfile extends CalibrationProfile
                 // termometernya.
                 'desimal' => $desimal,
             ],
-            range(1, self::TITIK_AWAL),
+            range(1, self::TITIK_MAKS),
         );
 
         return [
@@ -960,7 +1009,13 @@ class HydrometerProfile extends CalibrationProfile
                     'satuan' => HydrometerMentah::SATUAN_MASSA,
                     'judul_nilai' => 'Point of Calibration',
                     'judul_pengulangan' => 'Timbang ke',
-                    'titik_bisa_diubah' => true,
+                    // `false`: di lembar yang semua barisnya `titik_ukur: null`
+                    // kunci ini tidak pernah terbaca HP (lihat docblock di
+                    // atas). Dibiarkan `true`, dia cuma janji yang tidak pernah
+                    // ditepati — dan janji yang tidak pernah ditepati di kontrak
+                    // lembar kerja itu yang bikin batas tiga titik lolos tanpa
+                    // ada yang sadar.
+                    'titik_bisa_diubah' => false,
                     // Kedua tabel dikirim HP sebagai `measurements[]` yang
                     // digabung per POSISI baris — jalur `simpan_ke` bernama yang
                     // sama dipakai kelima tabel Flowmeter dan ketiga tabel
@@ -992,16 +1047,11 @@ class HydrometerProfile extends CalibrationProfile
                     'satuan' => '°C',
                     'judul_nilai' => 'Point of Calibration',
                     'judul_pengulangan' => 'Baca ke',
-                    // `true`, SAMA dengan tabel massa — dan itu justru yang
-                    // menjaga keduanya sinkron. Titik yang ditambah teknisi
-                    // hidup di satu daftar milik seluruh lembar
-                    // (`LembarKerjaState.titikKustom`), jadi dua tabel
-                    // ber-`titik_bisa_diubah: true` tumbuh berbarengan.
-                    // Disetel `false` di sini, tabel suhu berhenti di tiga baris
-                    // bawaan sementara tabel massa tumbuh — dan baris massa
-                    // ke-4 dan seterusnya sampai ke server tanpa pasangan
-                    // suhunya, lalu ditolak sebagai titik tidak sinkron.
-                    'titik_bisa_diubah' => true,
+                    // `false`, SAMA dengan tabel massa — keduanya wajib sama.
+                    // Kalau berbeda, jumlah barisnya bisa menyimpang: baris
+                    // massa ke-4 sampai ke server tanpa pasangan suhunya, lalu
+                    // ditolak sebagai titik tidak sinkron.
+                    'titik_bisa_diubah' => false,
                     'simpan_ke' => 'measurements[].'.HydrometerMentah::PERAN_SUHU,
                     'baris' => $baris(1),
                     'kolom' => [

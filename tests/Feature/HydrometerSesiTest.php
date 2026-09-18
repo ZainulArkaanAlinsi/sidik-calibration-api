@@ -140,6 +140,15 @@ class HydrometerSesiTest extends TestCase
             'nama_alat_kemampuan' => 'Hydrometer',
             'serial_number' => '350015',
             'satuan' => 'g/ml',
+            // Rentang alat SUNGGUHAN, dan itu penting buat lebih dari kerapian:
+            // `EquipmentFactory` membiarkan `range_min`/`range_max` null, dan
+            // `CalibrationValidator::diLuarRentang()` langsung pulang `false`
+            // kalau salah satunya null. Dibiarkan begitu, seluruh berkas ini
+            // memeriksa alat yang rentangnya tidak ada — dan penjaga pembacaan
+            // di luar rentang tidak pernah kesentuh sekali pun.
+            'range_min' => 0.600,
+            'range_max' => 0.650,
+            'resolusi' => 0.0005,
         ]);
 
         Standard::factory()->create([
@@ -431,6 +440,221 @@ class HydrometerSesiTest extends TestCase
             ->postJson('/api/calibrations', $payload)
             ->assertStatus(422)
             ->assertJsonValidationErrors(['measurements.0.hydro_massa']);
+    }
+
+    /**
+     * Keempat ejaan "tanpa sinker" diterima, dan semuanya memilih varian yang
+     * sama.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Aturannya `in:ya,tidak,true,false,1,0` dan kelihatan sudah memuat semua.
+     * Tapi `in` membandingkan nilai yang sudah di-STRING-kan, dan di PHP
+     * `(string) false` itu string KOSONG — bukan `'false'`. Jadi boolean asli
+     * `true` lolos (jadi `'1'`) sementara `false` kena **422**, dengan pesan
+     * yang menyebut daftar yang jelas-jelas memuat `false`.
+     *
+     * Asimetrisnya jatuh persis di sisi yang paling dipakai: `false` itu varian
+     * TANPA sinker — variannya master `1.800-2.000`. Dan payload test di berkas
+     * ini memakai `true`, jadi seluruh berkas ini pun lolos tanpa pernah
+     * menyentuhnya.
+     *
+     * Yang diperiksa bukan cuma "tidak 422": keempatnya harus memilih varian
+     * rumus yang SAMA. Ejaan yang lolos validasi tapi terbaca sebagai varian
+     * lain memulangkan densitas yang tampak wajar dan meleset beberapa persen.
+     */
+    public function test_semua_ejaan_toggle_sinker_diterima_dan_artinya_sama(): void
+    {
+        $densitas = [];
+
+        // `siapkan()` SEKALI di luar perulangan: dia membentuk organisasi +
+        // standar sendiri tiap dipanggil, dan `payload()` mengambil standar
+        // dengan `Standard::query()->value('id')` — baris pertama, yang mulai
+        // panggilan kedua sudah milik organisasi lain. Yang gagal bukan yang
+        // diuji: 422 `standard_id` dari data test, bukan dari togglenya.
+        [$alat, $teknisi] = $this->siapkan();
+
+        foreach ([false, 'tidak', 0, '0'] as $ejaan) {
+            $payload = $this->payload($alat);
+            $blok = &$payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI];
+            $blok['pakai_beban_tambahan'] = $ejaan;
+            // Varian tanpa sinker tidak memakai `Sl` sama sekali; dibiarkan
+            // terisi, gerbang "toggle nyala tapi Sl kosong" tidak kesentuh dan
+            // yang diuji jadi bukan togglenya.
+            $blok['beban_tambahan'] = null;
+            unset($blok);
+
+            $id = $this->actingAs($teknisi)
+                ->postJson('/api/calibrations', $payload)
+                ->assertSuccessful()
+                ->json('data.id');
+
+            $densitas[var_export($ejaan, true)] = CalibrationSession::findOrFail($id)
+                ->uncertaintyCalculations()
+                ->orderBy('titik_ke')
+                ->get()
+                ->map(static fn ($h) => round((float) $h->rata_rata, 6))
+                ->all();
+        }
+
+        $pertama = reset($densitas);
+
+        $this->assertNotSame([], $pertama, 'varian tanpa sinker tidak menerbitkan satu titik pun');
+
+        foreach ($densitas as $ejaan => $nilai) {
+            $this->assertSame(
+                $pertama,
+                $nilai,
+                "Ejaan {$ejaan} memilih varian rumus yang berbeda dari ejaan lain.",
+            );
+        }
+    }
+
+    /** Dan varian DENGAN sinker beneran beda hasilnya — togglenya bukan hiasan. */
+    public function test_ejaan_boolean_true_sama_dengan_ya(): void
+    {
+        $densitas = [];
+
+        // Sekali di luar perulangan — alasannya sama dengan test di atas.
+        [$alat, $teknisi] = $this->siapkan();
+
+        foreach ([true, 'ya'] as $ejaan) {
+            $payload = $this->payload($alat);
+            $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['pakai_beban_tambahan'] = $ejaan;
+
+            $id = $this->actingAs($teknisi)
+                ->postJson('/api/calibrations', $payload)
+                ->assertSuccessful()
+                ->json('data.id');
+
+            $densitas[] = CalibrationSession::findOrFail($id)
+                ->uncertaintyCalculations()
+                ->orderBy('titik_ke')
+                ->get()
+                ->map(static fn ($h) => round((float) $h->rata_rata, 6))
+                ->all();
+        }
+
+        $this->assertSame($densitas[0], $densitas[1], '`true` dan `ya` harus satu varian');
+    }
+
+    /**
+     * Sesi yang benar TIDAK memunculkan satu pun peringatan palsu.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * `pembacaan_di_luar_rentang` mengadu tiap pembacaan ke
+     * `equipments.range_min..range_max`. Buat tiga puluh dua alat lain itu
+     * benar: yang diketik teknisi memang besaran yang sama dengan rentang
+     * alatnya.
+     *
+     * Hydrometer alat pertama yang tidak begitu. Rentangnya **g/ml**
+     * (0,600-0,650), sementara yang dipungut kertas itu **gram** (21,27) dan
+     * **°C** (20,6) — densitasnya lahir belakangan dari metode Cuckow, tidak
+     * pernah diketik siapa pun. Jadi tiap satu dari 18 pembacaan sesi yang
+     * SEMPURNA dilaporkan "jauh di luar rentang ukur alat, kemungkinan besar
+     * komanya kegeser".
+     *
+     * Dan yang rusak bukan cuma kerapian. Komentar di `CalibrationValidator`
+     * sendiri sudah menulis alasannya waktu peringatan palsu serupa ditambal
+     * buat suhu ruang autoklaf: peringatan palsu yang SELALU muncul melatih
+     * admin menekan "SETUJUI TETAP" tanpa membaca — lalu peringatan yang
+     * benar-benar penting ikut tenggelam. Di lembar ini peringatan palsunya
+     * bukan satu-dua, tapi SEMUA.
+     */
+    public function test_sesi_benar_tidak_memunculkan_peringatan_palsu(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        // `/validasi` cuma buat admin (`kalibrasi.periksa`) — dan memang
+        // admin yang membaca temuannya waktu memutuskan approve/reject.
+        $admin = User::factory()->admin()->create(['organization_id' => $alat->organization_id]);
+
+        $temuan = $this->actingAs($admin)
+            ->getJson("/api/calibrations/{$id}/validasi")
+            ->assertSuccessful()
+            ->json('data.temuan') ?? [];
+
+        $palsu = array_values(array_filter(
+            $temuan,
+            static fn (array $t): bool => ($t['kode'] ?? '') === 'pembacaan_di_luar_rentang',
+        ));
+
+        $this->assertSame(
+            [],
+            $palsu,
+            sprintf(
+                'Sesi yang angkanya sama persis dengan master memunculkan %d peringatan '
+                .'`pembacaan_di_luar_rentang` — massa (gram) & suhu (°C) diadu ke rentang '
+                .'alat yang bersatuan g/ml.',
+                count($palsu),
+            ),
+        );
+    }
+
+    /**
+     * Sesi ber-`kg/m3` memberi angka yang SAMA dengan sesi ber-`g/ml`.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Dropdown `Satuan Densitas` mengubah arti DUA kotak — titik skala dan
+     * resolusi — dan komentar di kotaknya sendiri sudah menulis begitu. Tapi
+     * yang dikonversi cuma titik skalanya; resolusinya masuk budget apa adanya.
+     *
+     * Jadi teknisi yang memilih `kg/m3` dan mengetik resolusi `0,5` (setara
+     * 0,0005 g/ml) membuat komponen `Resolution of Hydrometer` menerima **0,5
+     * g/ml** — seribu kali terlalu besar, di komponen yang labelnya sendiri
+     * sudah bertuliskan `g/ml`. Ketidakpastiannya membengkak, sertifikatnya
+     * tetap terbit, dan tidak ada satu pun error.
+     *
+     * Yang diadu di sini bukan cuma densitasnya (itu sudah benar sejak awal)
+     * tapi juga `U` — di situlah resolusinya masuk.
+     */
+    public function test_satuan_kg_per_m3_memberi_angka_yang_sama(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $ambil = function (array $payload) use ($teknisi): array {
+            $id = $this->actingAs($teknisi)
+                ->postJson('/api/calibrations', $payload)
+                ->assertSuccessful()
+                ->json('data.id');
+
+            return CalibrationSession::findOrFail($id)
+                ->uncertaintyCalculations()
+                ->orderBy('titik_ke')
+                ->get()
+                ->map(static fn ($h): array => [
+                    'densitas' => round((float) $h->rata_rata, 6),
+                    'u95' => round((float) $h->ketidakpastian_diperluas, 8),
+                ])
+                ->all();
+        };
+
+        $gPerMl = $ambil($this->payload($alat));
+
+        // Sesi yang SAMA, cuma dinyatakan dalam kg/m3: titik skala ×1000 dan
+        // resolusi ×1000. Massa (gram) & suhu (°C) tidak ikut — keduanya bukan
+        // besaran densitas.
+        $payload = $this->payload($alat);
+        $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['satuan_densitas'] = 'kg/m3';
+        $payload['spesifikasi_alat'][HydrometerMentah::KUNCI_SESI]['resolusi'] = 0.5;
+
+        foreach ($payload['measurements'] as $i => $m) {
+            $payload['measurements'][$i]['titik_ukur'] = $m['titik_ukur'] * 1000;
+        }
+
+        $this->assertSame(
+            $gPerMl,
+            $ambil($payload),
+            'sesi yang sama dinyatakan dalam kg/m3 memberi angka berbeda — '
+                .'ada kotak densitas yang satuannya tidak ikut dikonversi',
+        );
     }
 
     /** `tr` di luar 15 / 20 / 27,5 ditolak — salah ketik menggeser seluruh koreksi. */

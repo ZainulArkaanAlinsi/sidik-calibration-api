@@ -501,6 +501,37 @@ class CalibrationValidator
                 continue;
             }
 
+            // Pembacaan yang BESARANNYA bukan besaran alat itu dilewati
+            // seluruh penjaga di bawah — rentang maupun kelipatan resolusi.
+            //
+            // Dua penjaga itu sama-sama mengadu angka yang diketik ke kolom
+            // `equipments` (`range_min..range_max`, `resolusi`), dan itu benar
+            // selama yang diketik memang besaran yang sama. Hydrometer alat
+            // pertama yang bukan begitu: rentangnya **g/ml** (0,600-0,650),
+            // sementara yang dipungut kertasnya **gram** (21,27) dan **°C**
+            // (20,6). Densitasnya lahir belakangan dari metode Cuckow, tidak
+            // pernah diketik siapa pun.
+            //
+            // Tanpa pengecualian ini, sesi yang angkanya sama persis dengan
+            // master memuntahkan 18 peringatan sekaligus — SEMUA pembacaannya —
+            // berbunyi "pembacaan 21.2727 g/ml jauh di luar rentang ukur alat
+            // (0.6-0.65 g/ml), kemungkinan besar komanya kegeser". Satuannya
+            // pun ikut salah tercetak.
+            //
+            // Alasannya sama persis dengan pengecualian `suhu_ruang` dan
+            // `termokopel` di atas, dan sudah ditulis di sana: peringatan palsu
+            // yang SELALU muncul melatih admin menekan "SETUJUI TETAP" tanpa
+            // membaca, lalu peringatan yang benar-benar penting ikut tenggelam.
+            // Bedanya, di sini palsunya bukan satu-dua baris tapi semuanya.
+            //
+            // Yang hilang dari perlindungan: nol. Massa & suhu punya penjaga
+            // SENDIRI yang mengerti besarannya — gerbang §8.2 di
+            // `HydrometerProfile` — dan densitas hasil hitungnya tetap diadu ke
+            // rentang alat lewat jalur hasil, bukan jalur pembacaan mentah.
+            if (in_array($m->peran_sensor, HydrometerMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
+                continue;
+            }
+
             if ($this->diLuarRentang($nilaiAlat, $alat)
                 && ! $this->dekatTitikStandar($nilaiAlat, $titikAlat)) {
                 $temuan[] = $this->temuan(

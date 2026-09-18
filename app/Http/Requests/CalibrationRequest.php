@@ -50,12 +50,53 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokFlowmeter();
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
+        $this->bakukanTogglHydrometer();
 
         if ($this->user()?->isAdmin()) {
             return;
         }
 
         $this->replace(Arr::except($this->all(), CalibrationSession::fieldAdmin()));
+    }
+
+    /**
+     * Boolean asli `pakai_beban_tambahan` dijadikan `'ya'`/`'tidak'` SEBELUM
+     * aturan `in:` menyentuhnya.
+     *
+     * ## Kenapa perlu, padahal `in:ya,tidak,true,false,1,0` kelihatan sudah muat
+     *
+     * Aturan `in` membandingkan nilai yang sudah di-STRING-kan, dan di PHP
+     * `(string) false` itu **string kosong**, bukan `'false'`. Jadi:
+     *
+     *   - `true`  → `'1'`     → lolos
+     *   - `false` → `''`      → **DITOLAK 422**
+     *
+     * Asimetris, dan asimetrisnya jatuh persis di sisi yang paling dipakai:
+     * `false` itu varian TANPA sinker — variannya master `1.800-2.000`. Klien
+     * yang mengirim boleh jujur (seeder, test, klien non-HP; docblock
+     * `HydrometerMentah::pakaiBebanTambahan()` menjanjikan boolean diterima)
+     * kena 422 buat satu-satunya nilai yang berarti "tidak", dengan pesan yang
+     * menyebut daftar yang jelas-jelas memuat `false`.
+     *
+     * Dibakukan di sini, bukan dengan melonggarkan aturannya jadi menerima
+     * string kosong: string kosong bukan jawaban yang sah buat pertanyaan yang
+     * menentukan rumus mana yang dipakai, dan menerimanya berarti kotak yang
+     * dikosongkan diam-diam terbaca "tidak".
+     */
+    private function bakukanTogglHydrometer(): void
+    {
+        $nilai = $this->input('spesifikasi_alat.hydrometer.pakai_beban_tambahan');
+
+        if (! is_bool($nilai)) {
+            return;
+        }
+
+        $this->merge([
+            'spesifikasi_alat' => array_replace_recursive(
+                (array) $this->input('spesifikasi_alat', []),
+                ['hydrometer' => ['pakai_beban_tambahan' => $nilai ? 'ya' : 'tidak']],
+            ),
+        ]);
     }
 
     /**
