@@ -211,4 +211,11 @@ Project-PT-Sidik/worksheet_alat_calibration/*
 # DB_DATABASE=<nama> sementara phpunit.xml mematok DB_CONNECTION=sqlite —
 # Laravel membaca namanya sebagai JALUR BERKAS relatif ke akar repo, lalu
 # membuatnya. Bukan hasil kerja, dan ukurannya ratusan KB.
+#
+# Berkas pendampingnya ikut: SQLite menaruh `-journal` (mode rollback) dan
+# `-wal`/`-shm` (mode WAL) di sebelah berkas utamanya. Tanpa pola ini, yang
+# ketahan cuma yang induk dan sisanya tetap nongol sebagai untracked.
 /gen_lembar
+/gen_lembar-journal
+/gen_lembar-wal
+/gen_lembar-shm
