@@ -202,50 +202,22 @@ flowchart LR
   G -- tidak --> S["berhenti di GitHub"]
 ```
 
-## Kerja berdua: database bersama lewat LAN
+## Kerja berdua: database bersama lewat LAN — SUDAH PENSIUN
 
-Tim ini memakai satu database bersama di laptop Zainul, supaya data yang dilihat berdua
-persis sama. Zainul menyambung ke `127.0.0.1`, Raihan lewat IP LAN. Masing-masing tetap
-menjalankan `php artisan serve` sendiri; yang dibagi cuma databasenya, bukan servernya.
+Dulu tim ini memakai satu MySQL bersama di laptop Zainul, disambung Raihan lewat IP
+LAN dengan user `asmo_dev`. **Cara itu tidak dipakai lagi** sejak backend berhenti
+nebeng laptop dan pindah ke Render + Aiven (`d1cdf063`); `.env` sekarang menunjuk
+Aiven, bukan IP LAN.
 
-```env
-# .env Raihan — sisanya sama
-DB_HOST=192.168.1.x       # IP laptop Zainul, cek ulang pakai `ipconfig` kalau ganti wifi
-DB_DATABASE=sidik_db
-DB_USERNAME=asmo_dev      # user khusus LAN, bukan root
-DB_PASSWORD=<tanya langsung — jangan pernah ditulis di berkas yang ikut git>
-```
+> [!WARNING]
+> Sandi `asmo_dev` pernah tertulis polos di README ini dan **masih terbaca di riwayat
+> git** (3 commit), sementara repo ini publik. User-nya dicabut (`DROP USER`), bukan
+> diganti sandinya — jalurnya sudah tidak dipakai, jadi tidak ada sandi baru yang
+> perlu dijaga. Urutan lengkap yang mengikat ada di `AGENTS.md`, §Sebelum repo
+> dibalik jadi PUBLIK.
 
-Syaratnya keduanya harus benar-benar tersambung ke **router yang sama**, bukan sekadar
-sama-sama memakai wifi. Satu kantor, satu rumah, satu kafe: bisa. Beda rumah: tidak —
-laptop Zainul tidak bisa dihubungi dari luar karena terhalang NAT. Kalau nanti perlu
-kerja dari rumah masing-masing, pindahkan DB ke cloud atau pakai VPN mesh seperti
-Tailscale.
-
-User `asmo_dev` sudah diizinkan dari semua subnet privat umum (`192.168.%`, `10.%`,
-`172.16.%`), jadi ganti wifi tidak masalah. Yang wajib diperbarui cuma `DB_HOST`.
-
-> [!CAUTION]
-> **Jangan `migrate:fresh`, `migrate:refresh`, atau `db:wipe`.** Ketiganya menghapus
-> semua tabel, dan karena databasenya bersama, yang hilang bukan cuma punyamu.
-> `php artisan migrate` cukup dijalankan satu orang; yang lain tinggal `git pull` karena
-> skemanya sudah keburu diterapkan di DB bersama.
-
-Kalau muncul `SQLSTATE[HY000] [2002]` di sisi Raihan, urutan mengeceknya: laptop Zainul
-menyala dan sejaringan? lalu, `DB_HOST` masih IP yang benar?
-
----
-
-```mermaid
-%%{init:{'theme':'base','themeVariables':{'primaryColor':'#ffffff','primaryTextColor':'#12171f','primaryBorderColor':'#3f6ea8','lineColor':'#8d95a1','secondaryColor':'#f7f5ef','tertiaryColor':'#e7e3d8','fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace'}}}%%
-flowchart LR
-  subgraph satu["satu router yang sama"]
-    R["laptop Raihan<br/>php artisan serve"]
-    Z["laptop Zainul<br/>php artisan serve + MySQL :3306"]
-  end
-  R -- "DB_HOST = IP LAN Zainul" --> Z
-  L["beda rumah, beda router"] -- "terhalang NAT" --x Z
-```
+Kalau suatu saat perlu berbagi database lagi, jangan hidupkan ulang pola ini: bikin
+user baru dengan sandi yang tidak pernah masuk berkas mana pun yang ikut git.
 
 ## Konvensi API
 
