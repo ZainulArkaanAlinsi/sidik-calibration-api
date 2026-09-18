@@ -272,6 +272,50 @@ kapan masa berlakunya habis? Yang di-seed sekarang memakai tanggal demo.
 
 ---
 
+## §14 — Baris budget Stem Diameter skala 3 memakai koefisien skala 1 [TIDAK DITIRU — nol angka berubah]
+
+Kedua workbook menghitung koefisien sensitivitas stem **per skala** dengan
+benar. File ringan, sel koefisien `NILAI U95%` baris 57 / 92 / 126:
+
+| Skala | Koefisien yang dihitung master |
+|---|---|
+| 1 | 0,299683703970829 |
+| 2 | 0,306519558373031 |
+| 3 | **0,319989915777664** |
+
+Tapi baris budget skala 3 (`NILAI U95%` baris 139) menuliskan `ci` =
+**0,299683703971** — angka **skala 1**. Rujukan selnya tidak ikut digeser
+waktu blok skala 1 disalin jadi blok skala 3. File berat sama persis:
+baris 139 memakai 2,1409067209711052 (skala 1) padahal koefisien skala 3-nya
+2,377464790411.
+
+Skala 2 benar di kedua file. Itu yang membedakannya dari §8: temuan di sana
+pola yang berlaku **konsisten di semua skala** dan karena itu mungkin
+disengaja; yang ini cuma satu sel yang ketinggalan.
+
+**Kenapa tidak ditiru.** Aturan di dokumen ini: tiru kalau meniru menjaga
+angka sertifikat yang sudah terbit. Di sini meniru tidak menjaga apa pun,
+karena di kedua file contoh kesalahannya kebetulan tidak mengubah satu angka
+pun yang tercetak:
+
+- **File berat** — diameter stem-nya tidak diukur sama sekali (`u` = 0), jadi
+  kontribusinya nol berapa pun `ci`-nya.
+- **File ringan** — ketiga `U` hitungnya di bawah lantai CMC 0,00051, jadi
+  yang tercetak lantainya, bukan angka budget.
+
+**Sikap sistem:** koefisiennya dihitung per skala, sama dengan sel koefisien
+master sendiri. Dijaga
+`HydrometerMasterTest::koefisien_stem_per_skala_bukan_salinan_skala_satu`,
+yang mengadu ketiganya ke sel koefisien master dan sekaligus menuntut skala 3
+**tidak** sama dengan skala 1.
+
+**Pertanyaan:** mohon dibetulkan rujukan selnya di kedua master, supaya
+workbook dan sistem tidak berbeda di titik yang suatu saat bisa berpengaruh —
+yaitu begitu ada hydrometer yang `U` hitungnya di atas lantai CMC **dan**
+diameter stem-nya diukur.
+
+---
+
 ## Yang TIDAK jadi pertanyaan
 
 Supaya jelas apa yang sudah selesai:

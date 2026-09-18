@@ -276,6 +276,72 @@ class HydrometerMasterTest extends TestCase
         }
     }
 
+    /**
+     * Temuan ke-9: baris budget **Stem Diameter skala 3** kedua master memakai
+     * koefisien SKALA 1.
+     *
+     * Kedua workbook menghitung koefisien stem per skala dengan benar
+     * (`NILAI U95%` sel koefisien baris 57 / 92 / 126 file ringan):
+     *
+     *     skala 1  0,299683703970829
+     *     skala 2  0,306519558373031
+     *     skala 3  0,319989915777664
+     *
+     * Tapi baris budget skala 3 (baris 139) menuliskan `ci` = **0,299683703971**
+     * — angka skala 1. Rujukan selnya tidak ikut digeser waktu blok skala 1
+     * disalin jadi blok skala 3. Skala 2 benar, jadi ini bukan pola yang
+     * disengaja seperti temuan 7 & 8 (yang berlaku konsisten di semua skala);
+     * ini salah salin satu sel.
+     *
+     * ## Kenapa ini TIDAK ditiru, padahal tujuh temuan lain ditiru
+     *
+     * Aturannya sepanjang berkas ini: tiru kalau meniru menjaga angka
+     * sertifikat yang sudah terbit. Di sini meniru tidak menjaga apa pun,
+     * karena di KEDUA file contoh kesalahannya kebetulan tidak mengubah satu
+     * angka pun yang tercetak:
+     *
+     *  - File **berat**: diameter stem-nya tidak diukur sama sekali (`u` = 0),
+     *    jadi kontribusinya nol berapa pun `ci`-nya. Itu sebabnya
+     *    `u95_sertifikat_berat_cocok_master` tetap cocok PERSIS di skala 3.
+     *  - File **ringan**: ketiga `U` hitungnya di bawah lantai CMC 0,00051,
+     *    jadi yang tercetak lantainya — bukan angka budget.
+     *
+     * Yang tersisa cuma pilihan antara koefisien yang benar dan salah salin,
+     * dan tidak ada sertifikat yang bergantung padanya. Tetap dicatat di
+     * `docs/pertanyaan-lab-hydrometer.md` §12 supaya masternya bisa dibetulkan.
+     */
+    #[Test]
+    public function koefisien_stem_per_skala_bukan_salinan_skala_satu(): void
+    {
+        $hasil = (new HydrometerCalculator)->hitungSesi(self::TITIK_RINGAN, self::RINGAN);
+
+        // Sel koefisien master sendiri — NILAI U95% baris 57 / 92 / 126.
+        $harap = [0.29968370397082890, 0.30651955837303130, 0.31998991577766384];
+
+        $ci = [];
+
+        foreach ($hasil['titik'] as $t) {
+            foreach ($t['komponen_budget'] as $k) {
+                if (($k['sumber'] ?? '') === 'Stem Diameter') {
+                    $ci[] = (float) $k['ci'];
+                }
+            }
+        }
+
+        $this->assertCount(3, $ci, 'komponen Stem Diameter tidak ada di ketiga skala');
+
+        foreach ($harap as $i => $h) {
+            $this->cocok($h, $ci[$i], 'koefisien stem skala '.($i + 1));
+        }
+
+        $this->assertNotEqualsWithDelta(
+            $ci[0],
+            $ci[2],
+            1e-9,
+            'koefisien stem skala 3 sama dengan skala 1 — salah salin masternya ikut tertiru',
+        );
+    }
+
     /** Correction sertifikat = Actual − Nominal (`SERTIFIKAT!O17`). */
     #[Test]
     public function koreksi_sertifikat_cocok_master(): void

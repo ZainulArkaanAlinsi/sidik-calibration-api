@@ -657,6 +657,81 @@ class HydrometerSesiTest extends TestCase
         );
     }
 
+    /**
+     * Deret massa & suhu TERTUKAR ketahuan sebelum sertifikatnya disetujui.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * Massa hasil timbang (21,27 g) dan suhu air (20,6 °C) ber-orde mirip.
+     * Tertukar, tidak ada satu pun gerbang yang menahannya: dua-duanya angka
+     * positif yang masuk akal, ulangannya tetap tiga, blok Pre Condition-nya
+     * tetap utuh. Sesi contoh master yang deretnya dibalik **terbit dengan 201**
+     * dan memulangkan densitas 0,5977 / 0,5975 / 0,5979 — ketiganya kelihatan
+     * wajar buat hydrometer 0,600-0,650 — dengan `U95` 0,007041, yaitu 13,8 kali
+     * lebih besar daripada 0,00051 yang benar.
+     *
+     * Yang membongkarnya bukan besar angkanya tapi bahwa ketiganya HAMPIR SAMA
+     * padahal tanda skala yang diukur menyebar 0,040. Hydrometer membaca
+     * skalanya sendiri; densitas di tanda 0,650 wajib lebih besar daripada di
+     * tanda 0,610. Deret yang tertukar kehilangan sifat itu — yang tersisa cuma
+     * suhu air, yang memang nyaris tetap sepanjang sesi.
+     */
+    public function test_deret_massa_dan_suhu_tertukar_kena_peringatan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+
+        foreach ($payload['measurements'] as $i => $m) {
+            $payload['measurements'][$i]['hydro_massa'] = $m['hydro_suhu'];
+            $payload['measurements'][$i]['hydro_suhu'] = $m['hydro_massa'];
+        }
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $admin = User::factory()->admin()->create(['organization_id' => $alat->organization_id]);
+
+        $kode = array_column(
+            $this->actingAs($admin)
+                ->getJson("/api/calibrations/{$id}/validasi")
+                ->assertSuccessful()
+                ->json('data.temuan') ?? [],
+            'kode',
+        );
+
+        $this->assertContains(
+            'hydrometer_densitas_tidak_mengikuti_skala',
+            $kode,
+            'sesi yang deret massa & suhunya tertukar lolos tanpa satu pun peringatan',
+        );
+    }
+
+    /** Dan sesi yang BENAR tidak ikut kena — ambangnya bukan asal ketat. */
+    public function test_sesi_benar_tidak_kena_peringatan_deret_tertukar(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $admin = User::factory()->admin()->create(['organization_id' => $alat->organization_id]);
+
+        $kode = array_column(
+            $this->actingAs($admin)
+                ->getJson("/api/calibrations/{$id}/validasi")
+                ->assertSuccessful()
+                ->json('data.temuan') ?? [],
+            'kode',
+        );
+
+        $this->assertNotContains('hydrometer_densitas_tidak_mengikuti_skala', $kode);
+    }
+
     /** `tr` di luar 15 / 20 / 27,5 ditolak — salah ketik menggeser seluruh koreksi. */
     public function test_suhu_acuan_di_luar_daftar_ditolak_422(): void
     {

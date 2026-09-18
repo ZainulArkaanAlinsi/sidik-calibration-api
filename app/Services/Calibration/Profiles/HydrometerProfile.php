@@ -80,6 +80,18 @@ class HydrometerProfile extends CalibrationProfile
     public const TITIK_MAKS = 5;
 
     /**
+     * Serapat apa densitas terbit boleh "tidak mengikuti" titik skalanya sebelum
+     * dianggap mencurigakan — lihat [peringatanDeretTertukar].
+     *
+     * Setengah, dan longgarnya disengaja. Sesi contoh master yang SAH memberi
+     * rasio 0,81 (densitas menyebar 0,0407 buat titik yang menyebar 0,0500),
+     * sementara sesi yang deretnya tertukar memberi 0,011 — dua orde besaran di
+     * bawahnya. Ambang di tengah jurang itu menangkap yang dituju tanpa
+     * menyenggol alat yang sekadar melenceng jauh.
+     */
+    private const RASIO_RENTANG_MINIMUM = 0.5;
+
+    /**
      * Empat standar blok `Uncertainty of Calibrator` master (`NILAI U95%` E9:J12),
      * bukan salinan mentah kop kertas Rev.2.
      *
@@ -641,7 +653,90 @@ class HydrometerProfile extends CalibrationProfile
             ];
         }
 
+        foreach ($this->peringatanDeretTertukar($sesi) as $p) {
+            $peringatan[] = $p;
+        }
+
         return $peringatan;
+    }
+
+    /**
+     * Densitas terbit harus MENGIKUTI titik skala yang diketik teknisi.
+     *
+     * ## Kegagalan yang dijaga: deret massa & suhu tertukar
+     *
+     * Massa hasil timbang (21,27 g) dan suhu air (20,6 °C) ber-orde mirip, dan
+     * begitu keduanya tertukar tidak ada satu pun gerbang yang menahannya:
+     * keduanya angka positif yang masuk akal, ulangannya tetap tiga, dan blok
+     * Pre Condition-nya tetap utuh. Diukur dengan sesi contoh master, yang
+     * terbit dari deret tertukar:
+     *
+     *   titik 0,610 → densitas 0,597704   (seharusnya 0,603910)
+     *   titik 0,625 → densitas 0,597484   (seharusnya 0,617625)
+     *   titik 0,650 → densitas 0,597935   (seharusnya 0,644633)
+     *
+     * Sertifikatnya **terbit** (201), angkanya kelihatan wajar, dan `U95`-nya
+     * 0,007041 — 13,8 kali lebih besar daripada 0,00051 yang benar.
+     *
+     * ## Kenapa yang diperiksa RENTANGNYA, bukan selisih per titik
+     *
+     * Yang paling kentara dari ketiga angka di atas bukan besarnya, tapi bahwa
+     * ketiganya **hampir sama** (menyebar 0,00045) padahal titik skala yang
+     * diukur menyebar 0,040. Itu mustahil secara fisika: hydrometer membaca
+     * skalanya sendiri, jadi densitas di tanda 0,650 wajib lebih besar
+     * daripada di tanda 0,610, kira-kira sebesar jarak tandanya. Deret yang
+     * tertukar kehilangan sifat itu — yang tersisa cuma suhu air yang memang
+     * nyaris tetap sepanjang sesi.
+     *
+     * Selisih per titik TIDAK dipakai: koreksi hydrometer memang bisa beberapa
+     * persen dari rentangnya (sesi contoh master sendiri meleset 0,006 dari
+     * rentang 0,050), jadi ambang per titik yang cukup ketat buat menangkap ini
+     * bakal ikut menahan sesi yang sah.
+     *
+     * PERINGATAN, bukan penolakan: ambangnya heuristik, dan alat yang memang
+     * rusak parah bisa saja jatuh ke sini dengan jujur. Yang dibutuhkan admin
+     * melihatnya sebelum menyetujui, bukan kehilangan sesinya.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function peringatanDeretTertukar(CalibrationSession $sesi): array
+    {
+        $hitungan = $sesi->uncertaintyCalculations()
+            ->orderBy('titik_ke')
+            ->get(['titik_ukur', 'rata_rata']);
+
+        if ($hitungan->count() < 2) {
+            return [];
+        }
+
+        $titik = $hitungan->map(static fn ($h): float => (float) $h->titik_ukur);
+        $densitas = $hitungan->map(static fn ($h): float => (float) $h->rata_rata);
+
+        $rentangTitik = $titik->max() - $titik->min();
+        $rentangDensitas = $densitas->max() - $densitas->min();
+
+        // Titik yang semuanya sama (satu tanda skala diukur berulang) tidak
+        // punya rentang buat diadu — bukan kegagalan, cuma tidak berlaku.
+        if ($rentangTitik <= 0.0) {
+            return [];
+        }
+
+        if ($rentangDensitas >= $rentangTitik * self::RASIO_RENTANG_MINIMUM) {
+            return [];
+        }
+
+        return [[
+            'kode' => 'hydrometer_densitas_tidak_mengikuti_skala',
+            'pesan' => sprintf(
+                'Densitas terbit cuma menyebar %.6g g/ml padahal titik skala yang diukur menyebar '
+                .'%.6g g/ml. Hydrometer membaca skalanya sendiri, jadi densitas di tanda tertinggi '
+                .'wajib lebih besar daripada di tanda terendah — kira-kira sejauh jarak tandanya. '
+                .'Penyebab yang paling sering: deret Weight dan deret Temperature tertukar waktu '
+                .'diisi. Periksa blok Measurement sebelum menyetujui.',
+                $rentangDensitas,
+                $rentangTitik,
+            ),
+        ]];
     }
 
     /**
