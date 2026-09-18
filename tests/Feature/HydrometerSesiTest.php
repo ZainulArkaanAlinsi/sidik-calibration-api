@@ -1035,6 +1035,44 @@ class HydrometerSesiTest extends TestCase
         );
     }
 
+    /**
+     * Nomor baris yang menyamar jadi set point KETAHUAN di sini.
+     *
+     * Teknisi yang mengetik angkanya duluan lalu membiarkan `Point of
+     * Calibration` kosong bikin barisnya berangkat dengan `titik_ukur` dari
+     * `json['nomor']` — 1..5, bukan tanda skala. Slot ke-4 jadi nominal **4,0
+     * g/ml**, dan `measurements.*.titik_ukur => required|numeric` meloloskannya.
+     *
+     * ## Kenapa dijaga DI SINI, bukan di HP
+     *
+     * Saringan di sisi HP sempat dipasang dan ikut membuang baris **Flowmeter**
+     * yang sah — di sana set point-nya memang tidak diketik siapa pun, nomor
+     * barisnya identitasnya, dan kelima deret sejajarnya dicocokkan per posisi.
+     * Dua test payload Flowmeter langsung merah.
+     *
+     * Yang bisa membedakan "nomor baris" dari "tanda skala" cuma sisi yang tahu
+     * fisikanya: densitas 0,603910 pada nominal 4,0 itu koreksi −3,4 g/ml di
+     * alat yang seluruh skalanya selebar 0,050 — 6792% lebar skala.
+     */
+    public function test_nomor_baris_yang_menyamar_jadi_set_point_ketahuan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        $payload['measurements'][0]['titik_ukur'] = 4.0;
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertContains(
+            'hydrometer_koreksi_tidak_masuk_akal',
+            $this->kodeTemuan($id, (int) $alat->organization_id),
+            'titik bernominal nomor baris lolos tanpa satu pun temuan',
+        );
+    }
+
     /** Dua ukuran diameter stem tetap DITOLAK, walau dikirim bentuk tabel. */
     public function test_bentuk_hp_dengan_dua_ukuran_tetap_ditolak(): void
     {
