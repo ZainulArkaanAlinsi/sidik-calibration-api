@@ -83,11 +83,17 @@ class HydrometerProfile extends CalibrationProfile
      * Serapat apa densitas terbit boleh "tidak mengikuti" titik skalanya sebelum
      * dianggap mencurigakan — lihat [peringatanDeretTertukar].
      *
-     * Setengah, dan longgarnya disengaja. Sesi contoh master yang SAH memberi
-     * rasio 0,81 (densitas menyebar 0,0407 buat titik yang menyebar 0,0500),
-     * sementara sesi yang deretnya tertukar memberi 0,011 — dua orde besaran di
-     * bawahnya. Ambang di tengah jurang itu menangkap yang dituju tanpa
-     * menyenggol alat yang sekadar melenceng jauh.
+     * Setengah, dan longgarnya disengaja. Diukur dari KEDUA workbook master:
+     *
+     *     file ringan (0,600-0,650)  rentang titik 0,0400  densitas 0,0407  rasio 1,018
+     *     file berat  (1,800-2,000)  rentang titik 0,2000  densitas 0,1975  rasio 0,987
+     *     file ringan, deret tertukar                                       rasio 0,011
+     *
+     * Sesi yang sah duduk di sekitar 1 — memang harus, karena hydrometer
+     * membaca skalanya sendiri dan koreksinya kecil dibanding jarak antar
+     * tanda. Yang tertukar dua orde besaran di bawahnya. Ambang 0,5 duduk di
+     * tengah jurang itu: alat yang melenceng sampai setengah jarak tandanya pun
+     * masih lolos, dan itu alat yang sudah rusak parah.
      */
     private const RASIO_RENTANG_MINIMUM = 0.5;
 
