@@ -188,7 +188,7 @@ Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu ken
       "laporan.lihat", "laporan.export",
       "arsip.lihat", "arsip.berkas.unduh",
       "pelanggan.dropdown", "standar.lihat", "ruangan.lihat",
-      "metode.lihat", "kategori.lihat",
+      "metode.lihat", "kategori.lihat", "kategori.kemampuan.tambah",
       "dashboard.lihat", "notifikasi.lihat"
     ],
     "batasan": {
@@ -201,7 +201,13 @@ Yang bikin tombol bisa **disembunyiin sebelum ditekan**, bukan dipajang lalu ken
 }
 ```
 
-Jumlah izin sekarang: **admin 44 · teknisi 23 · viewer 15.**
+Jumlah izin sekarang: **admin 51 · teknisi 24 · viewer 15.**
+
+> Contoh di atas disalin dari keluaran `MatriksIzin::bolehUntuk('teknisi')`.
+> Kalau angkanya berubah, yang berubah middleware rutenya — bukan daftar ini.
+> `kategori.kemampuan.tambah` SENGAJA ada di situ: teknisi boleh menambah nama
+> alat baru dari layar pilih-alat, dan contoh lama yang melewatkannya bikin
+> developer mobile menyembunyikan tombol yang sebenarnya boleh.
 
 - **`boleh` itu daftar putih.** Nama izin yang nggak ada di situ = ditolak. Jangan
   nebak dari `role` lagi — itu yang bikin bug "mulus di admin, mentok di teknisi".

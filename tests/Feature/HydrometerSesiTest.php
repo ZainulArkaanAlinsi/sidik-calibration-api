@@ -998,6 +998,43 @@ class HydrometerSesiTest extends TestCase
         );
     }
 
+    /**
+     * Alat tanpa rentang DIBILANGIN bahwa pemeriksaannya sedang mati.
+     *
+     * `equipments.range_min`/`range_max` nullable di mana-mana, jadi hydrometer
+     * bisa terdaftar tanpa rentang lewat jalur normal. Waktu itu terjadi, alat
+     * ini kehilangan KEDUA penjaganya sekaligus — `pembacaan_di_luar_rentang`
+     * sengaja dilewati (massa & suhu bukan besaran alatnya) dan gerbang koreksi
+     * tidak punya pembanding. Koma kegeser di kolom Weight lolos dengan
+     * `valid = true` dan NOL temuan.
+     *
+     * Diam bukan pilihan yang sah di situ: yang hilang bukan satu pemeriksaan
+     * opsional, tapi satu-satunya yang alat ini punya.
+     */
+    public function test_alat_tanpa_rentang_dilaporkan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $alat->forceFill(['range_min' => null, 'range_max' => null])->save();
+
+        $payload = $this->payload($alat);
+        $payload['measurements'][0]['hydro_massa'] = array_map(
+            static fn (float $m): float => $m / 10,
+            $payload['measurements'][0]['hydro_massa'],
+        );
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertContains(
+            'hydrometer_rentang_alat_kosong',
+            $this->kodeTemuan($id, (int) $alat->organization_id),
+            'alat tanpa rentang lolos tanpa satu pun temuan — dan tanpa penjaga apa pun',
+        );
+    }
+
     /** Dua ukuran diameter stem tetap DITOLAK, walau dikirim bentuk tabel. */
     public function test_bentuk_hp_dengan_dua_ukuran_tetap_ditolak(): void
     {

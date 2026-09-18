@@ -166,11 +166,21 @@ class MeIzinTest extends TestCase
      */
     public function test_nama_izin_yang_ditanya_mobile_ada_semua(): void
     {
+        // Disalin dari `NamaIzin` di lib/models/izin.dart (repo mobile). Sisi
+        // sana membacanya dari SUMBERNYA — `nama_izin_test.dart` mem-parse
+        // berkas deklarasinya, bukan menyalin — jadi nama yang ditambah di sana
+        // tapi lupa didaftarkan di sini bikin test ini yang merah, bukan lolos
+        // diam-diam.
         $dipakaiMobile = [
             'alat.tambah', 'alat.ubah', 'alat.hapus',
             'kalibrasi.buat', 'kalibrasi.setujui',
             'standar.kelola', 'pengguna.kelola', 'sertifikat.kirim',
             'tanda-tangan.kelola', 'arsip.folder.kelola',
+            // Satu izin per menu panel desktop — sebelumnya keempat menu
+            // Master Data & Sistem digerbangi SATU nama, jadi satu rute yang
+            // pindah blok bikin tiga menu admin-only nyala buat teknisi.
+            'pelanggan.kelola', 'ruangan.kelola', 'metode.kelola',
+            'teknisi.kelola', 'impor.excel', 'organisasi.ubah',
         ];
 
         $this->assertSame(

@@ -774,8 +774,36 @@ class HydrometerProfile extends CalibrationProfile
     {
         $alat = $sesi->equipment;
 
-        if ($alat === null || $alat->range_min === null || $alat->range_max === null) {
+        if ($alat === null) {
             return [];
+        }
+
+        // Rentang alat KOSONG bukan "tidak berlaku" — itu keadaan paling
+        // telanjang di seluruh lembar ini, dan harus dibilang.
+        //
+        // `equipments.range_min`/`range_max` nullable di mana-mana
+        // (`EquipmentRequest`, form Filament), jadi hydrometer bisa terdaftar
+        // tanpa rentang lewat jalur normal. Waktu itu terjadi, alat ini
+        // kehilangan KEDUA penjaganya sekaligus: penjaga pembacaan mentah
+        // `pembacaan_di_luar_rentang` sengaja dilewati (massa & suhu bukan
+        // besaran alatnya), dan gerbang koreksi di bawah tidak punya pembanding.
+        //
+        // Diukur: dengan rentang kosong, koma kegeser di kolom Weight
+        // menerbitkan densitas 0,468497 g/ml dan sesinya lolos `valid = true`
+        // dengan NOL temuan. Dengan rentang 0,600-0,650 terisi, gerbang di bawah
+        // menangkapnya di 283% lebar skala.
+        //
+        // Jadi yang dilaporkan bukan cuma "isi rentangnya", tapi bahwa
+        // pemeriksaannya sedang MATI.
+        if ($alat->range_min === null || $alat->range_max === null) {
+            return [[
+                'kode' => 'hydrometer_rentang_alat_kosong',
+                'pesan' => 'Rentang ukur alat (range min/max) belum diisi di master alat, jadi '
+                    .'pemeriksaan "densitas terbit masuk akal atau tidak" TIDAK BISA jalan buat sesi '
+                    .'ini — dan lembar Hydrometer tidak punya penjaga pengganti, karena yang diketik '
+                    .'teknisi (gram & °C) beda besaran dari yang diterbitkan (g/ml). Isi rentang '
+                    .'alatnya dulu, lalu hitung ulang sesi ini.',
+            ]];
         }
 
         $lebar = abs((float) $alat->range_max - (float) $alat->range_min);
