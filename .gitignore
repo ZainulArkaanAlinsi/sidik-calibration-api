@@ -144,7 +144,62 @@ CATATAN/ini-yang-dari-karywan-manual/*
 # Kalau suatu saat salah satu PDF-nya perlu ikut (mis. jadi acuan bentuk lembar
 # kerja), kecualikan SATU berkas dengan `!`, jangan cabut aturannya — dan
 # periksa dulu kop/footer-nya tidak memuat nama pelanggan.
-Project-PT-Sidik/worksheet_alat_calibration/
+#
+# 18 Sep 2026 - keempat puluh satu PDF DIKECUALIKAN, aturannya TIDAK dicabut.
+# Dibutuhkan sebagai acuan bentuk lembar kerja buat UI desktop. Prasyarat yang
+# ditulis di atas sudah dijalankan lebih dulu: teks keempat puluh satunya
+# diekstrak (`pdftotext -layout`) lalu disapu - nol nama pelanggan, field
+# `OWNER -> Name/Address` kosong semua, nol alamat. Nomor seri standar lab yang
+# ada di dalamnya (mis. `Victor 14+/992613877`) sudah lebih dulu terbit di 12
+# berkas yang ter-track, jadi tidak menambah kelas data baru.
+#
+# Catatan: aturannya jadi `/*` (bukan direktori) KARENA git tidak bisa
+# me-`!`-kan berkas yang direktori induknya dikecualikan. Pola ini sama dengan
+# `CATATAN/*` di atas. Efeknya tetap: PDF BARU yang ditaruh di direktori ini
+# ketahan otomatis sampai seseorang menuliskan `!`-nya sendiri - dan itu
+# memaksa sapuan kop/footer diulang, persis yang dimau aturan ini.
+Project-PT-Sidik/worksheet_alat_calibration/*
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0504_Rev.3 - LEMBAR KERJA ENCLOSURE.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0505_Rev.3 - LEMBAR KERJA TITS.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0506_Rev.4 - LEMBAR KERJA TIDS.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0507_Rev.5 - LEMBAR KERJA PRESSURE & VACUUM.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0508.A_Rev.4 - LEMBAR KERJA TIMBANGAN (Metode Subtitusi).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0508_Rev.6 - LEMBAR KERJA TIMBANGAN.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0509_Rev.4 - LEMBAR KERJA pH METER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0510_Rev.5 - LEMBAR KERJA CONDUCTIVITY.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0511_Rev.5 - LEMBAR KERJA SPECTROFOTOMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0512_Rev.4 - LEMBAR KERJA STOPWATCH & TIMER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0513_Rev.4 - LEMBAR KERJA VOLUMETRIK TUNGGAL.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0514_Rev.4 - LEMBAR KERJA VOLUMETRIK MAJEMUK.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0515_Rev.4 - LEMBAR KERJA CENTRIFUGE & TACHOMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0516_Rev.2 - LEMBAR KERJA KELISTRIKAN.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0519_Rev.3 - LEMBAR KERJA COMPRESSION (UTM).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0520_Rev.3 - LEMBAR KERJA LOAD CELL.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0521_Rev.3 - LEMBAR KERJA PROFING RING.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0522.A_Rev.1 - LEMBAR KERJA MICROMETER (0-25).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0522.B_Rev.1 - LEMBAR KERJA MICROMETER (25-50).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0522.C_Rev.1 - LEMBAR KERJA MICROMETER (50-75).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0522.D_Rev.1 - LEMBAR KERJA MICROMETER (75-100).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0523_Rev.2 - LEMBAR KERJA REFRACTOMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0524_Rev.3 - LEMBAR KERJA VISCOMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0525_Rev.3 - LEMBAR KERJA THERMOHYGRO.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0526_Rev.3 - LEMBAR KERJA DIAL INDICATOR.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0527_Rev.2 - LEMBAR KERJA JANGKA SORONG.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0528_Rev.3 - LEMBAR KERJA ONE MARK PISTON VOLUME.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0529_Rev.3 - LEMBAR KERJA GRADUATED PISTON VOLUME.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0530_Rev.2 - LEMBAR KERJA TURBIDIMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0531_Rev.2 - LEMBAR KERJA CHLORINE.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0532_Rev.2 - LEMBAR KERJA DO METER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0533_Rev.2 - LEMBAR KERJA HYDROMETER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0535_Rev.2 - LEMBAR KERJA THERMOCOUPLE.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0536_Rev.2 - LEMBAR KERJA SIEVE MESH.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0537_Rev.2 - LEMBAR KERJA THERMOMETER GLASS.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0538-Rev.0 LEMBAR KERJA FLOWMETER (Perbandingan Langsung dengan UFM).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0538.A-Rev.3 LEMBAR KERJA FLOWMETER-FLOWRATE.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0538.B-Rev.3 LEMBAR KERJA FLOWMETER-TOTALIZER.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0539_Rev.4 - LEMBAR KERJA AUTOCLAVE.pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0540_Rev.1 - LEMBAR KERJA TDS (Non KAN).pdf
+!Project-PT-Sidik/worksheet_alat_calibration/SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN).pdf
 
 # Laporan register alat yang dicetak ke PDF buat pemilik proyek. Dia hasil
 # CETAK, bukan sumber — sumbernya kode & dokumen terkendali lab, dan isinya
