@@ -10,6 +10,7 @@ use App\Services\Calibration\HydrometerCalculator;
 use App\Services\Calibration\TabelStandarHydrometer;
 use App\Support\HydrometerMentah;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Profil **Hydrometer** — lampiran akreditasi LK-285-IDN baris no. **25**,
@@ -188,6 +189,41 @@ class HydrometerProfile extends CalibrationProfile
         return true;
     }
 
+    /**
+     * Lampiran memuat Hydrometer di kelompok Densitas no. 32, tapi cuma pada
+     * DUA pita: 0,60-1,00 dan 1,10-1,70 g/mL. Sesi yang titiknya di luar itu
+     * tetap boleh terbit — U95-nya telanjang, murni hasil budget — tapi TIDAK
+     * boleh membawa klaim akreditasi.
+     *
+     * Bukan kasus teoretis: hydrometer contoh rentang berat (1,800-2,000 g/mL)
+     * ada di atas pita tertinggi, dan sertifikatnya sudah terbit 7 Nov 2025.
+     * Preseden perlakuannya Jangka Sorong (caliper 600 mm di luar pita
+     * 0-300 mm) dan Height Gauge.
+     */
+    public function dalamLingkupAkreditasiSesi(CalibrationSession $sesi): bool
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return false;
+        }
+
+        $pita = $this->pitaKemampuan($alat);
+        $titik = $sesi->uncertaintyCalculations;
+
+        if ($pita->isEmpty() || $titik->isEmpty()) {
+            return false;
+        }
+
+        foreach ($titik as $t) {
+            if ($this->cmcTitik($pita, (float) $t->titik_ukur) === null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /** Kolom `UUT` sertifikat master berjudul `Actual Value` (`SERTIFIKAT!J15`). */
     public function judulKolomUut(): string
     {
@@ -338,9 +374,11 @@ class HydrometerProfile extends CalibrationProfile
                 'tersedia' => true,
                 'sumber' => 'Master Olah Data Hydrometer 0.600-0.650 & 1.800-2.000 (.xlsm)',
                 'catatan' => 'Sebelas komponen PER TITIK skala dalam g/ml, k dari t-Student (v_eff '
-                    .'dipotong ke bawah), lantai CMC per pita densitas. Sesi yang titiknya di luar pita '
-                    .'CMC, ulangannya bukan tiga, diameter stem-nya bukan tiga ukuran, atau tekanan '
-                    .'udaranya kosong TIDAK diterbitkan.',
+                    .'dipotong ke bawah), lantai CMC dari pita lampiran akreditasi yang memuat titiknya '
+                    .'(0,60-1,00 → 0,00051; 1,10-1,70 → 0,00070). Titik di luar kedua pita tetap terbit '
+                    .'dengan U95 telanjang, tapi sesinya tidak membawa klaim akreditasi. Sesi yang '
+                    .'ulangannya bukan tiga, diameter stem-nya bukan tiga ukuran, atau tekanan udaranya '
+                    .'kosong TIDAK diterbitkan.',
             ],
             'bagian' => [
                 $this->bagianIdentitas(),
@@ -465,11 +503,19 @@ class HydrometerProfile extends CalibrationProfile
         }
 
         $kemampuan = $this->kemampuanSesi($equipment);
+        $pita = $this->pitaKemampuan($equipment);
         $sekarang = Carbon::now();
         $hitungan = [];
 
         foreach ($hasil['titik'] as $h) {
-            $u95 = max((float) $h['ketidakpastian_diperluas'], (float) $h['cmc']);
+            // Lantai CMC dari pita lampiran akreditasi yang MEMUAT titik ini —
+            // bukan baris pertama yang kebetulan cocok namanya. Hydrometer
+            // punya DUA pita (0,60-1,00 → 0,00051 dan 1,10-1,70 → 0,00070), dan
+            // `kemampuanSesi()` memulangkan yang pertama apa pun titiknya.
+            // Dipakai begitu, hydrometer 0,600-0,650 dilantai 0,0007 — persis
+            // kekeliruan yang dilakukan masternya sendiri.
+            $cmc = $this->cmcTitik($pita, (float) $h['titik_ukur']);
+            $u95 = max((float) $h['ketidakpastian_diperluas'], $cmc ?? 0.0);
 
             $hitungan[] = [
                 'standard_id' => ($standarPerTitik[$h['titik_ke']] ?? null)?->id,
@@ -483,7 +529,7 @@ class HydrometerProfile extends CalibrationProfile
                 'standar_deviasi' => $h['simpangan_baku'],
                 'jumlah_pengulangan' => $h['jumlah_pengulangan'],
                 'type_a' => $h['type_a'],
-                'type_b_components' => $this->jejakAudit($h, $hasil['praolah'], $u95),
+                'type_b_components' => $this->jejakAudit($h, $hasil['praolah'], $u95, $cmc),
                 'type_b' => $h['type_b'],
                 'ketidakpastian_gabungan' => $h['ketidakpastian_gabungan'],
                 'faktor_cakupan_k' => $h['faktor_cakupan_k'],
@@ -578,7 +624,7 @@ class HydrometerProfile extends CalibrationProfile
      * @param  array<string, mixed>  $praolah
      * @return list<array<string, mixed>>
      */
-    private function jejakAudit(array $h, array $praolah, float $u95): array
+    private function jejakAudit(array $h, array $praolah, float $u95, ?float $cmc): array
     {
         $budget = array_map(fn (array $k): array => $this->barisAudit($k), $h['komponen_budget']);
 
@@ -586,7 +632,7 @@ class HydrometerProfile extends CalibrationProfile
         // gerbang `u95_meledak_dari_cmc`.
         $budget[] = $this->barisPerbandinganCmc(
             (float) $h['ketidakpastian_diperluas'],
-            $h['cmc'] === null ? null : (float) $h['cmc'],
+            $cmc,
             self::SATUAN,
         );
 
@@ -595,14 +641,14 @@ class HydrometerProfile extends CalibrationProfile
             'keterangan' => sprintf(
                 'ρ udara %.12g g/cm³ · faktor tekanan %.12g · faktor suhu %.12g · M udara %.12g g · '
                 .'M cairan %.12g g · πDγx/g %.12g · πDγL/g %.12g · D stem %.12g cm · varian %s · '
-                .'densitas per ulangan %s · pita CMC %s (%s) · U95%% terbit %.12g g/ml',
+                .'densitas per ulangan %s · lantai CMC %s (%s) · U95%% terbit %.12g g/ml',
                 $praolah['rho_udara'], $praolah['f_press'], $praolah['f_temp'],
                 $praolah['m_air'], $h['massa_di_cairan'], $praolah['pid_yx'], $praolah['pid_yl'],
                 $praolah['diameter'],
                 $praolah['sinker'] === null ? 'tanpa beban tambahan' : 'beban tambahan '.$praolah['sinker'].' g',
                 implode(' · ', array_map(static fn (float $d): string => sprintf('%.12g', $d), $h['densitas_per_ulangan'])),
-                $h['cmc'] === null ? '-' : $h['cmc'],
-                TabelStandarHydrometer::VERSI_CMC,
+                $cmc === null ? 'di luar lampiran' : $cmc,
+                'lampiran LK-285-IDN (calibration_capabilities)',
                 $u95,
             ),
             'distribusi' => 'jejak',
@@ -614,6 +660,63 @@ class HydrometerProfile extends CalibrationProfile
         ];
 
         return $budget;
+    }
+
+    /**
+     * Semua pita CMC hydrometer milik lab ini, dari lampiran akreditasi.
+     *
+     * `kemampuanSesi()` memulangkan SATU baris — yang pertama cocok nama &
+     * kategori — dan itu benar buat tiga puluh dua alat yang pita CMC-nya cuma
+     * satu. Hydrometer punya DUA (`database/data/kemampuan-kalibrasi.json`,
+     * kelompok Densitas no. 32), jadi yang dibutuhkan seluruh barisnya.
+     *
+     * @return Collection<int, CalibrationCapability>
+     */
+    private function pitaKemampuan(Equipment $equipment): Collection
+    {
+        return CalibrationCapability::query()
+            ->where('nama_alat', $this->namaAlatKemampuan())
+            ->when(
+                $equipment->equipment_category_id !== null,
+                fn ($q) => $q->where('equipment_category_id', $equipment->equipment_category_id),
+            )
+            ->when(
+                $equipment->organization_id !== null,
+                fn ($q) => $q->milikOrganisasi($equipment->organization_id),
+            )
+            ->orderBy('range_min')
+            ->get();
+    }
+
+    /**
+     * Lantai CMC untuk SATU titik skala, atau `null` kalau titiknya di luar
+     * semua pita lampiran.
+     *
+     * `null` di sini berarti **tidak ada lantai**, bukan "tahan sesinya" —
+     * preseden Height Gauge & Jangka Sorong: sesi di luar lampiran tetap
+     * terbit, U95-nya telanjang (murni hasil budget), dan yang dicabut cuma
+     * KLAIM akreditasinya lewat [dalamLingkupAkreditasiSesi].
+     *
+     * Itu yang membuat hydrometer contoh rentang berat (1,800-2,000 g/mL, di
+     * atas pita tertinggi 1,70) tetap bisa direproduksi apa adanya — dan
+     * memang harus: sertifikatnya sudah terbit 7 Nov 2025.
+     *
+     * @param  Collection<int, CalibrationCapability>  $pita
+     */
+    private function cmcTitik(Collection $pita, float $titikGPerMl): ?float
+    {
+        foreach ($pita as $p) {
+            $min = $p->range_min === null ? null : (float) $p->range_min;
+            $maks = $p->range_max === null ? null : (float) $p->range_max;
+
+            if (($min !== null && $titikGPerMl < $min) || ($maks !== null && $titikGPerMl > $maks)) {
+                continue;
+            }
+
+            return $p->ketidakpastian_terbaik === null ? null : (float) $p->ketidakpastian_terbaik;
+        }
+
+        return null;
     }
 
     /** @return array<string, mixed> */

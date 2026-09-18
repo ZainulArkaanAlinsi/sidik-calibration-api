@@ -33,7 +33,7 @@ Klasifikasi tiap temuan mengikuti aturan proyek:
 | §4 | Faktor koreksi suhu diambil dari titik PERTAMA saja | Metode | Ya — ditiru |
 | §5 | `TINV` memotong derajat kebebasan ke bilangan bulat | Metode | Ya — ditiru (dan sesuai GUM G.4.1) |
 | §6 | Suhu acuan faktor koreksi bukan `tr`, tapi kotak `Temperature` | Metode | Ya — ditiru |
-| §7 | **CMC 0,0007 diketik literal; pita `CMC_UTM` 1,1-1,7 g/ml tidak memuat satu pun contoh** | Sel kosong | **Ya — menentukan U95% file ringan** |
+| §7 | **Master memakai pita CMC yang SALAH: 0,0007 (pita 1,1-1,7) untuk alat 0,6-0,65** | Kerusakan | **Ya — U95% file ringan 0,0007 → 0,00051** |
 | §8 | Koefisien 7.9, 7.10b & 7.12 memakai penyebut SKALA 1 untuk semua skala | Kerusakan | Tidak pada kedua file terbit |
 | §9 | Kertas Rev.2 tidak punya kotak tekanan udara, rumusnya butuh | Sel kosong | **Ya — sistem MEMBLOKIR tanpa tekanan** |
 | §10 | Monitor `EXPIRED` cuma label; kedua file terbit dengan status menyala | Keputusan sistem | Tidak — sistem MEMBLOKIR |
@@ -113,36 +113,55 @@ Jadi hydrometer yang acuannya 15 °C tetap dikoreksi terhadap 20 °C.
 **Pertanyaan:** `tr` dipakai untuk apa kalau bukan ini? Sertifikat mencetaknya sebagai "Suhu
 acuan Hydrometer" (`SERTIFIKAT!J14`) — dan yang tercetak di situ pun `E17`, bukan `E34`.
 
-## §7 — CMC: angka literal tanpa rujukan [MEMBLOKIR kalau pita tidak ditemukan]
+## §7 — Master memakai pita CMC yang salah [TIDAK DITIRU — angka berubah]
 
-Ini yang paling mendesak.
+Ini yang paling penting di dokumen ini, dan jawabannya ternyata **sudah ada di
+repo sejak awal**.
 
-`NILAI U95%!L79`, `L113`, `L147` ketiganya berisi **`0.0007` yang diketik langsung** — bukan
-rumus, bukan `VLOOKUP` ke tabel mana pun. Sementara tabel `CMC_UTM` di workbook yang sama
-menyebut pita densitas **1,1-1,7 g/ml**, dan:
+`NILAI U95%!L79`, `L113`, `L147` ketiganya berisi **`0.0007` yang diketik
+langsung** — bukan rumus, bukan `VLOOKUP` ke tabel mana pun.
 
-- hydrometer file ringan: 0,600-0,650 g/ml — **di luar pita**
-- hydrometer file berat: 1,800-2,000 g/ml — **di luar pita**
+Sementara `database/data/kemampuan-kalibrasi.json` — lampiran akreditasi
+LK-285-IDN, yang jadi sumber `calibration_capabilities` dan sudah dipakai
+tiga puluh dua alat lain — memuat Hydrometer di kelompok **Densitas no. 32**,
+metode `SIDIK-IK-CAL-0525 (Metode Cuckcow)`, dengan **DUA** pita:
 
-Untuk file ringan ini bukan soal akademis: `U` hitung ketiga skalanya 0,000482 / 0,000483 /
-0,000494 — semuanya **di bawah** 0,0007, jadi yang tercetak di sertifikat terbit angka CMC itu
-sendiri, bukan budget. Sertifikat 8 Sep 2025 mencetak `U95% = 0,0007 g/ml` tiga kali, dan angka
-itu datang dari sel yang tidak punya rujukan.
+| Pita | CMC |
+|---|---|
+| 1,10 – 1,70 g/mL | 0,00070 g/mL |
+| **0,60 – 1,00 g/mL** | **0,00051 g/mL** |
 
-(File berat sebaliknya: `U` hitungnya 0,000867 / 0,000877 / 0,000901, semuanya menang atas CMC.)
+Hydrometer contoh rentang ringan **0,600-0,650 g/mL** ada di pita **kedua**.
+Masternya memakai angka pita **pertama** — pita yang alat itu tidak ada di
+dalamnya.
 
-**Pertanyaan untuk Technical Manager / Pak Rohman:**
+Dan ini bukan soal akademis: `U` hitung ketiga skalanya 0,000482 / 0,000483 /
+0,000494, semuanya **di bawah kedua pita**, jadi yang tercetak di sertifikat
+adalah lantainya. Sertifikat 8 Sep 2025 mencetak `U95% = 0,0007 g/ml` tiga
+kali; yang seharusnya **0,00051**.
 
-1. Berapa pita CMC hydrometer yang sah, dan sampai densitas berapa?
-2. Kalau pita `CMC_UTM` 1,1-1,7 g/ml itu yang berlaku, atas dasar apa kedua hydrometer di luar
-   pita itu diterbitkan?
-3. Kalau 0,0007 berlaku untuk seluruh rentang, di dokumen mana angka itu ditetapkan?
+**Sikap sistem:** lantai CMC dibaca dari `calibration_capabilities` — pita yang
+BENAR-BENAR memuat titiknya — persis seperti tiga puluh dua alat lain. Jadi
+aplikasi mencetak **0,00051**, dan di titik ini dia **sengaja berbeda dari
+master**. Itu satu-satunya tempat di seluruh implementasi ini yang angkanya
+berbeda dari workbook.
 
-**Sikap sistem sementara:** `TabelStandarHydrometer::PITA_CMC` dibuat **ber-rentang dan
-ber-versi** (versi `master-2025-11-07-belum-dikonfirmasi`), berisi satu pita 0 → tak berbatas
-dengan nilai 0,0007 supaya kedua sertifikat terbit bisa direproduksi. Begitu jawabannya turun,
-yang disunting datanya — satu baris array — bukan rumusnya. Titik di luar semua pita **menahan
-seluruh sesi**, tidak cuma titiknya.
+Kenapa tidak ikut master seperti delapan temuan lain: kedelapan temuan itu soal
+CARA HITUNG, dan menirunya menjaga sertifikat lama tetap bisa dicetak ulang.
+Yang ini soal ANGKA AKREDITASI — memakai CMC pita lain berarti dokumen
+terakreditasi membawa klaim yang tidak sesuai lampirannya, dan itu temuan
+asesor, bukan pilihan gaya.
+
+**Pertanyaan untuk Technical Manager / Pak Rohman — dan ini butuh jawaban
+sebelum sertifikat hydrometer berikutnya terbit:**
+
+1. Betul bahwa alat 0,600-0,650 g/mL dilantai **0,00051**, bukan 0,0007?
+2. Sertifikat 8 Sep 2025 yang sudah terbit dengan 0,0007 — perlu revisi, atau
+   dibiarkan karena 0,0007 lebih konservatif (lebih besar) daripada 0,00051?
+3. Rentang **1,800-2,000 g/mL** (file 7 Nov 2025) ada di **luar kedua pita**.
+   Sistem tetap menerbitkannya dengan `U95%` telanjang dari budget, tapi
+   **tanpa klaim akreditasi** — preseden Jangka Sorong (caliper 600 mm) dan
+   Height Gauge. Betul begitu, atau lampiran perlu ditambah pitanya?
 
 ## §8 — Penyebut koefisien sensitivitas: skala 1 untuk semua skala [DITIRU]
 

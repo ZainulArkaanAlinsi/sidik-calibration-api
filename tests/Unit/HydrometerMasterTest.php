@@ -216,9 +216,13 @@ class HydrometerMasterTest extends TestCase
     }
 
     /**
-     * File berat: `U` hitung MENANG atas CMC di ketiga skala, jadi angka yang
-     * tercetak sertifikat datang dari budget — beda dari file ringan yang
-     * ketiga skalanya jatuh ke lantai CMC.
+     * File berat: angka yang tercetak sertifikat datang MURNI dari budget.
+     *
+     * Dua sebabnya, dan dua-duanya menunjuk arah yang sama: rentangnya
+     * (1,800-2,000 g/mL) ada di ATAS pita CMC tertinggi lampiran (1,70), jadi
+     * tidak ada lantai sama sekali — dan `U` hitungnya pun sudah di atas kedua
+     * pita. Sesinya tetap terbit, tanpa klaim akreditasi; lihat
+     * `HydrometerProfile::dalamLingkupAkreditasiSesi()`.
      */
     #[Test]
     public function u95_sertifikat_berat_cocok_master(): void
@@ -229,28 +233,45 @@ class HydrometerMasterTest extends TestCase
         $harap = [0.0008669981172366112, 0.0008765155395305542, 0.0009011821747909535];
 
         foreach ($harap as $i => $h) {
-            $t = $hasil['titik'][$i];
-            $this->cocok($h, max($t['ketidakpastian_diperluas'], (float) $t['cmc']), 'U95% sertifikat skala '.($i + 1));
+            $this->cocok($h, $hasil['titik'][$i]['ketidakpastian_diperluas'], 'U95% sertifikat skala '.($i + 1));
             $this->assertGreaterThan(
-                (float) $t['cmc'],
-                $t['ketidakpastian_diperluas'],
-                'skala '.($i + 1).' file berat mestinya U hitung yang menang, bukan lantai CMC',
+                0.0007,
+                $hasil['titik'][$i]['ketidakpastian_diperluas'],
+                'skala '.($i + 1).' file berat mestinya di atas kedua pita CMC lampiran',
             );
         }
     }
 
-    /** File ringan sebaliknya: ketiga skalanya jatuh ke lantai CMC 0,0007. */
+    /**
+     * File ringan: ketiga `U` hitungnya di bawah lantai CMC, jadi yang tercetak
+     * sertifikat lantainya — dan DI SITU aplikasi sengaja berbeda dari master.
+     *
+     * Master mencetak **0,0007**. Lampiran akreditasi LK-285-IDN (kelompok
+     * Densitas no. 32) memuat DUA pita CMC hydrometer:
+     *
+     *     1,10 – 1,70 g/mL  →  0,00070
+     *     0,60 – 1,00 g/mL  →  0,00051
+     *
+     * Alat ini 0,600-0,650 g/mL — pita KEDUA. Masternya memakai angka pita
+     * PERTAMA, pita yang alat ini tidak ada di dalamnya. Lihat
+     * `docs/pertanyaan-lab-hydrometer.md` §7.
+     *
+     * Yang dijaga di sini ANGKA HITUNGNYA, dan itu tidak berubah sedikit pun:
+     * ketiganya tetap di bawah 0,00051, jadi lantainya tetap yang menang dan
+     * kesimpulan "U95 sertifikat = CMC" juga tidak berubah. Lantai mana yang
+     * dipasang diputuskan profil dari `calibration_capabilities`, bukan
+     * kalkulator ini — itu diadu di `HydrometerSesiTest`.
+     */
     #[Test]
-    public function u95_sertifikat_ringan_jatuh_ke_lantai_cmc(): void
+    public function u95_hitung_ringan_di_bawah_kedua_pita_cmc_lampiran(): void
     {
         $hasil = (new HydrometerCalculator)->hitungSesi(self::TITIK_RINGAN, self::RINGAN);
 
         foreach ($hasil['titik'] as $i => $t) {
-            $this->cocok(0.0007, (float) $t['cmc'], 'pita CMC skala '.($i + 1));
             $this->assertLessThan(
-                0.0007,
+                0.00051,
                 $t['ketidakpastian_diperluas'],
-                'skala '.($i + 1).' file ringan mestinya di bawah lantai CMC',
+                'skala '.($i + 1).' file ringan mestinya di bawah lantai CMC pita 0,60-1,00',
             );
         }
     }

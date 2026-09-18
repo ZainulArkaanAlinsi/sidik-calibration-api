@@ -154,51 +154,27 @@ class TabelStandarHydrometer
     public const U95_TH_RH = 3.0;
 
     /**
-     * Pita CMC hydrometer — **ber-rentang & ber-versi**, bukan satu angka di
-     * kode, karena yang sah masih menunggu Technical Manager.
+     * Lantai CMC hydrometer TIDAK tinggal di kelas ini.
      *
-     * Kenapa belum dikunci: sel `NILAI U95%` L79/L113/L147 kedua master
-     * menulis `0.0007` LITERAL (bukan rumus, bukan lookup), sementara tabel
-     * `CMC_UTM` menyebut pita densitas **1,1-1,7 g/ml** — dan KEDUA hydrometer
-     * contoh (0,600-0,650 dan 1,800-2,000) ada di LUAR pita itu. Untuk rentang
-     * ringan justru CMC inilah yang menang (`U_hitung` 0,00048 < 0,0007), jadi
-     * angka yang tercetak di sertifikat terbit datang dari sel yang tidak
-     * punya rujukan. Pertanyaan §7.
+     * Versi pertama menaruhnya di sini sebagai satu pita 0 → tak berbatas
+     * bernilai `0,0007`, disalin dari sel literal `NILAI U95%!L79` kedua
+     * master. Itu SALAH, dan jawabannya sudah ada di repo sejak awal:
+     * `database/data/kemampuan-kalibrasi.json` — lampiran akreditasi
+     * LK-285-IDN — memuat Hydrometer di kelompok **Densitas** no. 32 dengan
+     * **DUA** pita:
      *
-     * Bentuknya sengaja per-rentang supaya jawaban lab nanti cukup menambah
-     * baris, bukan mengubah rumus. `null` pada `sampai` = tak berbatas atas.
+     *     1,10 – 1,70 g/mL  →  0,00070 g/mL
+     *     0,60 – 1,00 g/mL  →  0,00051 g/mL
      *
-     * @var list<array{dari: float, sampai: float|null, cmc: float, satuan: string, sumber: string}>
+     * Hydrometer contoh rentang ringan (0,600-0,650 g/mL) jatuh di pita KEDUA,
+     * jadi CMC-nya **0,00051** — sementara masternya mencetak 0,0007, angka
+     * pita PERTAMA. Lihat `docs/pertanyaan-lab-hydrometer.md` §7.
+     *
+     * Jadi lantainya dibaca dari `calibration_capabilities` seperti tiga puluh
+     * dua alat lain ([\App\Services\Calibration\Profiles\HydrometerProfile::cmcTitik]),
+     * bukan dari konstanta di sini: itu data ber-rentang & ber-versi yang bisa
+     * dikoreksi lab tanpa deploy, dan itu yang memang diminta.
      */
-    public const PITA_CMC = [
-        [
-            'dari' => 0.0,
-            'sampai' => null,
-            'cmc' => 0.0007,
-            'satuan' => 'g/ml',
-            'sumber' => 'Sel literal NILAI U95%!L79 kedua master (8 Sep & 7 Nov 2025) — '
-                .'BELUM dikonfirmasi Technical Manager, lihat docs/pertanyaan-lab-hydrometer.md §7.',
-        ],
-    ];
-
-    /** Versi data CMC di atas; ikut ke jejak audit tiap titik. */
-    public const VERSI_CMC = 'master-2025-11-07-belum-dikonfirmasi';
-
-    /**
-     * Lantai CMC untuk satu titik densitas, atau `null` kalau titiknya di luar
-     * semua pita. `null` BUKAN "tidak ada lantai" — pemanggil wajib menahan
-     * penerbitan, sama seperti Micrometer & Jangka Sorong.
-     */
-    public static function cmc(float $titikGPerMl): ?float
-    {
-        foreach (self::PITA_CMC as $pita) {
-            if ($titikGPerMl >= $pita['dari'] && ($pita['sampai'] === null || $titikGPerMl <= $pita['sampai'])) {
-                return $pita['cmc'];
-            }
-        }
-
-        return null;
-    }
 
     /**
      * Tegangan permukaan air suling pada suhu `$t` (dyne/cm).

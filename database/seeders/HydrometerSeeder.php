@@ -94,10 +94,21 @@ class HydrometerSeeder extends Seeder
             ],
         );
 
-        $kategori = EquipmentCategory::updateOrCreate(
-            ['organization_id' => 1, 'kode' => Str::slug('Volumetrik')],
-            ['organization_id' => 1, 'nama' => 'Volumetrik'],
-        );
+        // Kelompok **Densitas**, bukan "Volumetrik".
+        //
+        // Nama kelompoknya WAJIB salah satu dari sepuluh yang ada di lampiran
+        // akreditasi (`database/data/kemampuan-kalibrasi.json`), dan Hydrometer
+        // memang sudah terdaftar di sana — kelompok Densitas, no. 32, metode
+        // `SIDIK-IK-CAL-0525 (Metode Cuckcow)`, lengkap dengan DUA pita CMC-nya.
+        //
+        // Versi pertama seeder ini bikin kategori baru bernama "Volumetrik"
+        // (nama LAB-nya, yang memang Lab. Volumetrik) dan itu melahirkan
+        // kategori hantu: kartunya muncul di HP, isinya kosong, dan alatnya
+        // duduk di kelompok yang tidak terakreditasi. Dijaga
+        // `KategoriAlatIkutLampiranTest` dari dua arah.
+        $kategori = EquipmentCategory::where('organization_id', 1)
+            ->where('kode', Str::slug('Densitas'))
+            ->firstOrFail();
 
         $alat = Equipment::updateOrCreate(
             ['organization_id' => 1, 'serial_number' => '350015'],

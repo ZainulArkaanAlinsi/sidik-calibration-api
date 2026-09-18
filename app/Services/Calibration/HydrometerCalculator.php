@@ -214,20 +214,11 @@ class HydrometerCalculator
 
         $hasil = array_values(array_filter($hasil));
 
-        // Satu titik tanpa pita CMC menahan SELURUH sesi, bukan cuma titiknya.
-        // Alasannya sama dengan Micrometer: sertifikat separuh isi lebih
-        // berbahaya daripada sertifikat yang tertahan, karena yang hilang tidak
-        // meninggalkan bekas di kertasnya.
-        $bolehTerbit = $hasil !== [] && ! collect($hasil)->contains(fn (array $h): bool => $h['cmc'] === null);
-
-        if ($hasil !== [] && ! $bolehTerbit) {
-            $ditolak[] = [
-                'titik_ke' => 0,
-                'alasan' => 'Ada titik skala di luar pita CMC hydrometer yang terdaftar — '
-                    .'sesi ditahan sampai pita CMC yang sah dikonfirmasi Technical Manager '
-                    .'(docs/pertanyaan-lab-hydrometer.md §7).',
-            ];
-        }
+        // Lantai CMC TIDAK diputuskan di sini — dia datang dari baris
+        // `calibration_capabilities` lampiran akreditasi, dan kelas ini sengaja
+        // tidak menyentuh database. Yang memasangnya
+        // `HydrometerProfile::hitungPerGrup()`.
+        $bolehTerbit = $hasil !== [];
 
         usort($ditolak, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
@@ -392,7 +383,6 @@ class HydrometerCalculator
             // Correction sertifikat = Actual − Nominal (`SERTIFIKAT!O17`).
             'koreksi' => $rata - $t['titik_ukur'],
             'massa_di_cairan' => $mLiqRata,
-            'cmc' => $T::cmc($t['titik_ukur']),
         ] + $this->budget($indeks, $t, $praolah, $blok, $stdev, $mLiqRata);
     }
 

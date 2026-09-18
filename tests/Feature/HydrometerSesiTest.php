@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\CalibrationValidator;
 use App\Support\HydrometerMentah;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -106,8 +109,33 @@ class HydrometerSesiTest extends TestCase
     {
         $org = Organization::factory()->create();
 
+        // Kategori + DUA pita CMC lampiran akreditasi (kelompok Densitas no. 32).
+        // Tanpa ini lantai CMC tidak ada sama sekali dan test di bawah cuma
+        // mengadu U hitung — bukan angka yang benar-benar tercetak sertifikat.
+        $kategori = EquipmentCategory::factory()->create([
+            'organization_id' => $org->id,
+            'kode' => 'densitas',
+            'nama' => 'Densitas',
+        ]);
+
+        foreach ([[1.10, 1.70, 0.00070], [0.60, 1.00, 0.00051]] as [$min, $maks, $cmc]) {
+            CalibrationCapability::factory()->create([
+                'organization_id' => $org->id,
+                'equipment_category_id' => $kategori->id,
+                'nama_alat' => 'Hydrometer',
+                'range_min' => $min,
+                'range_max' => $maks,
+                'satuan' => 'g/mL',
+                'ketidakpastian_terbaik' => $cmc,
+                'satuan_ketidakpastian' => 'g/mL',
+                'faktor_cakupan' => 2,
+                'metode' => 'SIDIK-IK-CAL-0525 (Metode Cuckcow)',
+            ]);
+        }
+
         $alat = Equipment::factory()->create([
             'organization_id' => $org->id,
+            'equipment_category_id' => $kategori->id,
             'nama_alat' => 'Hydrometer Alla France L50',
             'nama_alat_kemampuan' => 'Hydrometer',
             'serial_number' => '350015',
@@ -194,10 +222,96 @@ class HydrometerSesiTest extends TestCase
             );
         }
 
-        // Ketiga skala file ringan jatuh ke lantai CMC 0,0007.
+        // Ketiga skala file ringan jatuh ke lantai CMC — dan lantainya
+        // **0,00051**, pita 0,60-1,00 lampiran akreditasi, bukan 0,0007 yang
+        // dicetak masternya (itu angka pita 1,10-1,70, pita yang alat ini tidak
+        // ada di dalamnya). Lihat docs/pertanyaan-lab-hydrometer.md §7.
         foreach ($hitungan as $h) {
-            $this->assertEqualsWithDelta(0.0007, (float) $h->ketidakpastian_diperluas, 1e-9);
+            $this->assertEqualsWithDelta(0.00051, (float) $h->ketidakpastian_diperluas, 1e-9);
         }
+    }
+
+    /**
+     * Lantai CMC diambil dari pita lampiran yang MEMUAT titiknya — bukan baris
+     * pertama yang kebetulan cocok nama alatnya.
+     *
+     * Ini gerbang buat kekeliruan yang dilakukan masternya sendiri.
+     * `CalibrationProfile::kemampuanSesi()` memulangkan SATU baris, yang
+     * pertama ketemu, dan itu benar buat tiga puluh dua alat yang pita CMC-nya
+     * cuma satu. Hydrometer punya DUA (0,60-1,00 → 0,00051 dan 1,10-1,70 →
+     * 0,00070), dan dipakai apa adanya, hydrometer 0,600-0,650 dilantai
+     * 0,0007 — 37 % lebih besar daripada yang diakreditasi buat pita itu.
+     *
+     * Gejalanya nol: sertifikatnya terbit rapi, angkanya masuk akal, dan yang
+     * salah cuma angka `U95%` yang justru jadi isi utama dokumennya.
+     */
+    public function test_lantai_cmc_dari_pita_yang_memuat_titiknya(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        foreach (CalibrationSession::findOrFail($id)->uncertaintyCalculations as $h) {
+            $this->assertEqualsWithDelta(
+                0.00051,
+                (float) $h->ketidakpastian_diperluas,
+                1e-9,
+                sprintf(
+                    'titik %s g/ml ada di pita 0,60-1,00 (CMC 0,00051), tapi dilantai %s',
+                    $h->titik_ukur,
+                    $h->ketidakpastian_diperluas,
+                ),
+            );
+        }
+    }
+
+    /**
+     * Titik di LUAR semua pita lampiran tetap terbit — U95-nya telanjang — tapi
+     * sesinya kehilangan klaim akreditasi.
+     *
+     * Bukan kasus teoretis: hydrometer contoh rentang berat (1,800-2,000 g/mL)
+     * ada di atas pita tertinggi (1,70), dan sertifikatnya sudah terbit
+     * 7 Nov 2025. Menahan sesinya berarti aplikasi tidak bisa mencetak ulang
+     * dokumen yang sudah ada di tangan pelanggan; preseden perlakuannya Jangka
+     * Sorong (caliper 600 mm) dan Height Gauge.
+     */
+    public function test_titik_di_luar_pita_terbit_tanpa_klaim_akreditasi(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+
+        // Digeser ke rentang berat; angkanya tidak perlu realistis, yang diuji
+        // perlakuan terhadap titik di luar pita.
+        foreach ([1.800, 1.900, 2.000] as $i => $titik) {
+            $payload['measurements'][$i]['titik_ukur'] = $titik;
+        }
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $sesi = CalibrationSession::findOrFail($id);
+        $hitungan = $sesi->uncertaintyCalculations;
+
+        $this->assertCount(3, $hitungan, 'sesi di luar pita mestinya tetap terbit');
+
+        foreach ($hitungan as $h) {
+            $this->assertLessThan(
+                0.00051,
+                (float) $h->ketidakpastian_diperluas,
+                'tanpa pita yang memuatnya, U95 mestinya telanjang — bukan dilantai pita mana pun',
+            );
+        }
+
+        $this->assertFalse(
+            app(CalibrationProfileRegistry::class)->untukAlat($alat)->dalamLingkupAkreditasiSesi($sesi),
+            'sesi di luar pita lampiran tidak boleh membawa klaim akreditasi',
+        );
     }
 
     /**
