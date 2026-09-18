@@ -174,6 +174,86 @@ class UndangAnggotaPelangganDariPanelTest extends TestCase
         Mail::assertNotSent(UndanganEmail::class);
     }
 
+    /**
+     * Panel bisa MENCABUT akses anggota — dan tokennya ikut mati.
+     *
+     * `UserResource` menyaring baris ber-role `pelanggan` keluar dari layar
+     * Pengguna (benar: formnya memaksa memilih role internal), tapi penyaringan
+     * itu ikut mencabut satu-satunya jalan yang tersisa buat MENUTUP akses.
+     * Kejadian yang harus bisa ditangani hari itu juga: HP PIC utama hilang,
+     * atau orangnya keluar kerja.
+     *
+     * Yang diuji sampai ujung bukan kolom `status`-nya, tapi TOKENNYA: akun
+     * yang "dicabut" tapi tokennya masih hidup itu akun yang masih bisa dipakai
+     * dari HP yang hilang tadi.
+     */
+    public function test_panel_bisa_mencabut_akses_anggota_berikut_tokennya(): void
+    {
+        $orang = User::factory()->create([
+            'email' => 'pic@pabrik.test',
+            'role' => User::ROLE_PELANGGAN,
+            'status' => User::STATUS_AKTIF,
+        ]);
+
+        $anggota = CustomerMember::factory()->create([
+            'customer_id' => $this->perusahaan->getKey(),
+            'user_id' => $orang->getKey(),
+            'peran' => CustomerMember::PERAN_STAF,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+
+        $orang->createToken('hp-lama');
+
+        $this->assertSame(1, $orang->tokens()->count());
+
+        Livewire::test(ListCustomers::class)
+            ->callAction(
+                TestAction::make('cabutAnggota')->table($this->perusahaan),
+                ['anggota' => $anggota->getKey()],
+            )
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(CustomerMember::STATUS_NONAKTIF, $anggota->fresh()->status);
+        $this->assertSame(
+            0,
+            $orang->tokens()->count(),
+            'aksesnya dicabut tapi tokennya masih hidup — HP yang hilang tetap bisa dipakai',
+        );
+    }
+
+    /**
+     * PIC utama TERAKHIR tidak bisa dicabut dari panel.
+     *
+     * Kalau boleh, perusahaannya berdiri tanpa satu pun orang yang bisa
+     * mengundang anggota baru, dan satu-satunya jalan keluar menelepon lab.
+     * Penjaganya hidup di `Keanggotaan`, bukan di aksi panel ini — yang diuji
+     * di sini bahwa aksi panel beneran lewat situ, bukan menulis statusnya
+     * sendiri.
+     */
+    public function test_pic_utama_terakhir_tidak_bisa_dicabut_dari_panel(): void
+    {
+        $orang = User::factory()->create(['role' => User::ROLE_PELANGGAN]);
+
+        $anggota = CustomerMember::factory()->create([
+            'customer_id' => $this->perusahaan->getKey(),
+            'user_id' => $orang->getKey(),
+            'peran' => CustomerMember::PERAN_PIC_UTAMA,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
+
+        Livewire::test(ListCustomers::class)
+            ->callAction(
+                TestAction::make('cabutAnggota')->table($this->perusahaan),
+                ['anggota' => $anggota->getKey()],
+            );
+
+        $this->assertSame(
+            CustomerMember::STATUS_AKTIF,
+            $anggota->fresh()->status,
+            'PIC utama terakhir kecabut — perusahaannya jadi nggak punya siapa pun yang bisa mengundang',
+        );
+    }
+
     /** Orang yang sudah jadi anggota aktif tidak diundang dua kali. */
     public function test_anggota_aktif_tidak_diundang_ulang(): void
     {

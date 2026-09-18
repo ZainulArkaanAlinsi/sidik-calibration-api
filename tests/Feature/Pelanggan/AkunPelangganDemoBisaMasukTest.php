@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Pelanggan;
 
+use App\Models\Customer;
 use App\Models\CustomerMember;
+use App\Models\Equipment;
 use App\Models\User;
 use Database\Seeders\AkunPelangganDemoSeeder;
 use Database\Seeders\DatabaseSeeder;
@@ -113,6 +115,71 @@ class AkunPelangganDemoBisaMasukTest extends TestCase
         $this->assertTrue(
             Hash::check('sandi-baru-pilihan-saya', $user->fresh()->password),
             'seed ulang mengembalikan sandi akun pelanggan ke bawaan',
+        );
+    }
+
+    /**
+     * Seed ulang TIDAK menghidupkan akun yang sengaja dimatikan admin.
+     *
+     * Aturan `MenyetelSandiAwal` menjaga sandi, dan itu benar tapi tidak cukup:
+     * `status` juga keputusan orang. Admin yang memutuskan akun demo tidak
+     * boleh dipakai lagi menyetelnya `nonaktif` — lalu satu `SEED_ON_BOOT=true`
+     * berikutnya (ritual yang `docker/entrypoint.sh` sebut sebagai satu-satunya
+     * cara menambal master data di paket gratis Render) menghidupkannya lagi,
+     * diam-diam, berminggu-minggu sesudah keputusannya diambil.
+     */
+    public function test_seed_ulang_tidak_menghidupkan_akun_yang_dimatikan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::where('email', AkunPelangganDemoSeeder::EMAIL)->firstOrFail();
+        $user->forceFill(['status' => User::STATUS_NONAKTIF, 'name' => 'JANGAN DIPAKAI'])->save();
+        CustomerMember::where('user_id', $user->id)
+            ->update(['status' => CustomerMember::STATUS_NONAKTIF]);
+
+        $this->seed(AkunPelangganDemoSeeder::class);
+
+        $user->refresh();
+
+        $this->assertSame(User::STATUS_NONAKTIF, $user->status, 'seed ulang menghidupkan akun yang dimatikan');
+        $this->assertSame('JANGAN DIPAKAI', $user->name);
+        $this->assertSame(
+            0,
+            CustomerMember::where('user_id', $user->id)
+                ->where('status', CustomerMember::STATUS_AKTIF)
+                ->count(),
+            'seed ulang menghidupkan keanggotaan yang dimatikan',
+        );
+    }
+
+    /**
+     * Seed ulang TIDAK menumpuk keanggotaan di perusahaan kedua.
+     *
+     * Seeder memilih perusahaan dengan alat TERBANYAK, dan puncak itu bergeser
+     * di lab yang hidup. Dengan `updateOrCreate` berkunci (customer_id,
+     * user_id), seed berikutnya membuat baris KEDUA alih-alih memindahkan yang
+     * pertama — akun demo jadi PIC Utama di dua perusahaan pelanggan SUNGGUHAN
+     * sekaligus, dan lewat `X-Perusahaan-Id` bisa membaca sertifikat keduanya
+     * serta menerbitkan undangan di keduanya. Tiap seed berikutnya yang
+     * puncaknya bergeser menambah satu lagi.
+     */
+    public function test_seed_ulang_tidak_menumpuk_keanggotaan(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::where('email', AkunPelangganDemoSeeder::EMAIL)->firstOrFail();
+        $semula = CustomerMember::where('user_id', $user->id)->firstOrFail()->customer_id;
+
+        // Perusahaan LAIN naik jadi yang alatnya terbanyak.
+        $lain = Customer::where('id', '!=', $semula)->firstOrFail();
+        Equipment::where('customer_id', $semula)->update(['customer_id' => $lain->id]);
+
+        $this->seed(AkunPelangganDemoSeeder::class);
+
+        $this->assertSame(
+            1,
+            CustomerMember::where('user_id', $user->id)->count(),
+            'akun demo dapat keanggotaan di perusahaan pelanggan kedua',
         );
     }
 

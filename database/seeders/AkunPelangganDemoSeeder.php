@@ -74,35 +74,88 @@ class AkunPelangganDemoSeeder extends Seeder
 
         $user = User::query()->where('email', self::EMAIL)->first();
 
-        if ($user === null) {
-            // Sandi cuma ikut waktu barisnya BARU — aturan `MenyetelSandiAwal`.
-            // Kalau dia ikut di `update()` juga, tiap seed ulang mengembalikan
-            // sandi yang sudah diganti orang ke bawaan yang tertulis terbuka di
-            // repo publik ini. Diam-diam, tanpa error.
-            $user = User::create([...$atribut, 'password' => $this->sandiAwal()]);
-            $user->forceFill(['email_verified_at' => now()])->save();
-            $baru = true;
-        } else {
-            $user->update($atribut);
-            $baru = false;
+        // Akun yang SUDAH ADA tidak disentuh sama sekali — bukan cuma sandinya.
+        //
+        // Aturan `MenyetelSandiAwal` menjaga sandi, dan itu benar tapi tidak
+        // cukup di sini. `status` juga keputusan orang: admin yang memutuskan
+        // akun demo tidak boleh dipakai lagi menyetelnya `nonaktif`. Kalau
+        // seeder ini menulisnya lewat `update()`, satu `SEED_ON_BOOT=true`
+        // berikutnya — ritual yang docker/entrypoint.sh sebut sebagai
+        // satu-satunya cara menambal master data di paket gratis Render —
+        // MENGHIDUPKANNYA LAGI. Diam-diam, tanpa error, berminggu-minggu
+        // sesudah keputusannya diambil.
+        //
+        // Jadi yang dikerjakan seed ulang cuma satu: memastikan akunnya PUNYA
+        // keanggotaan, kalau memang belum punya sama sekali.
+        if ($user !== null) {
+            $this->pastikanPunyaKeanggotaan($user, $perusahaan);
+
+            $this->command?->info(sprintf(
+                'Akun pelanggan demo: %s sudah ada — tidak disentuh (sandi, status, maupun keanggotaannya).',
+                self::EMAIL,
+            ));
+
+            return;
         }
 
-        CustomerMember::updateOrCreate(
-            ['customer_id' => $perusahaan->getKey(), 'user_id' => $user->getKey()],
-            [
-                'organization_id' => 1,
-                // PIC Utama, bukan staf: peran inilah yang boleh menerbitkan
-                // undangan, jadi rantai undangan punya titik awal.
-                'peran' => CustomerMember::PERAN_PIC_UTAMA,
-                'status' => CustomerMember::STATUS_AKTIF,
-            ],
-        );
+        // Sandi cuma ikut waktu barisnya BARU — aturan `MenyetelSandiAwal`.
+        $user = User::create([...$atribut, 'password' => $this->sandiAwal()]);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        CustomerMember::create([
+            'organization_id' => 1,
+            'customer_id' => $perusahaan->getKey(),
+            'user_id' => $user->getKey(),
+            // PIC Utama, bukan staf: peran inilah yang boleh menerbitkan
+            // undangan, jadi rantai undangan punya titik awal.
+            'peran' => CustomerMember::PERAN_PIC_UTAMA,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
 
         $this->command?->info(sprintf(
-            'Akun pelanggan demo: %s — PIC Utama %s.%s',
+            'Akun pelanggan demo: %s — PIC Utama %s.',
             self::EMAIL,
             $perusahaan->nama,
-            $baru ? '' : ' (akunnya sudah ada, sandinya tidak disentuh)',
         ));
+    }
+
+    /**
+     * Keanggotaan cuma DITAMBAH kalau akunnya belum punya satu pun yang aktif.
+     *
+     * Seeder ini memilih perusahaan dengan alat TERBANYAK, dan puncak itu
+     * bergeser di lab yang hidup — begitu perusahaan lain melampauinya, seed
+     * ulang yang `updateOrCreate`-nya berkunci (customer_id, user_id) membuat
+     * baris KEDUA alih-alih memindahkan yang pertama. Akun demo lalu jadi PIC
+     * Utama di dua perusahaan pelanggan SUNGGUHAN sekaligus, dan lewat header
+     * `X-Perusahaan-Id` bisa membaca sertifikat keduanya serta menerbitkan
+     * undangan di keduanya. Tiap seed berikutnya yang puncaknya bergeser
+     * menambah satu lagi.
+     *
+     * Yang mana perusahaannya tidak penting — yang penting akunnya punya SATU
+     * pintu masuk. Jadi begitu sudah punya, seeder ini berhenti.
+     */
+    private function pastikanPunyaKeanggotaan(User $user, Customer $perusahaan): void
+    {
+        // `exists()` tanpa menyaring status — SENGAJA. Keanggotaan yang
+        // dinonaktifkan juga keputusan orang, sama persis dengan
+        // `users.status`: admin yang mencabut akses akun demo menyetelnya
+        // `nonaktif`, dan seeder yang cuma melihat "tidak ada yang AKTIF" bakal
+        // menghidupkannya lagi di seed berikutnya — persis lubang yang blok di
+        // atas ditutup buat akunnya.
+        $sudahPunya = CustomerMember::query()
+            ->where('user_id', $user->getKey())
+            ->exists();
+
+        if ($sudahPunya) {
+            return;
+        }
+
+        CustomerMember::create([
+            'organization_id' => 1,
+            'customer_id' => $perusahaan->getKey(),
+            'user_id' => $user->getKey(),
+            'peran' => CustomerMember::PERAN_PIC_UTAMA,
+            'status' => CustomerMember::STATUS_AKTIF,
+        ]);
     }
 }

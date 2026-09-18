@@ -51,6 +51,7 @@ class CustomersTable
             ])
             ->recordActions([
                 self::undangAnggota(),
+                self::cabutAnggota(),
                 EditAction::make(),
             ])
             ->toolbarActions([
@@ -60,6 +61,98 @@ class CustomersTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Cabut akses satu anggota pelanggan — SATU-SATUNYA pintunya di panel.
+     *
+     * ## Kenapa aksi ini harus ada
+     *
+     * `UserResource` menyaring baris ber-role `pelanggan` keluar dari layar
+     * Pengguna, dan itu benar: form di sana memaksa memilih salah satu dari
+     * tiga role internal, jadi admin yang cuma mau membetulkan nomor telepon
+     * malah mempromosikan akun pelanggan jadi akun lab.
+     *
+     * Tapi penyaringan itu ikut mencabut satu-satunya jalan yang tersisa buat
+     * MENUTUP akses. Kejadian yang harus bisa ditangani hari itu juga: HP PIC
+     * utama hilang, atau orangnya keluar kerja, dan lab diminta mencabut
+     * aksesnya. Sesudah penyaringan, barisnya tidak ada di daftar Pengguna,
+     * menebak URL `/admin/users/{id}/edit` memulangkan 404, dan layar Pelanggan
+     * cuma memperlihatkan lencana angka tanpa tautan ke anggotanya. Yang
+     * tersisa cuma `PUT /api/users/{user}` lewat alat pengembang — dan di
+     * lapangan itu sama saja dengan tidak ada jalan.
+     *
+     * Lewat `Keanggotaan::nonaktifkan()`, bukan `update()` langsung: di sana
+     * sudah ada penjaga PIC utama terakhir DAN pencabutan token + perangkat
+     * (REQ-AUTH-09). Menulis statusnya sendiri di sini berarti akun yang
+     * "dicabut" tetap bisa memakai token yang sudah beredar di HP-nya.
+     */
+    private static function cabutAnggota(): Action
+    {
+        return Action::make('cabutAnggota')
+            ->label('Cabut akses anggota')
+            ->icon('heroicon-o-user-minus')
+            ->color('danger')
+            ->modalHeading(fn (Customer $record): string => 'Cabut akses anggota — '.$record->nama)
+            ->modalSubmitActionLabel('Cabut akses')
+            ->modalDescription(
+                'Tokennya ikut dicabut, jadi aplikasi di HP orangnya langsung keluar sendiri. '
+                .'Kalau dia masih anggota aktif di perusahaan lain, dia TIDAK ikut ter-logout dari situ.'
+            )
+            ->visible(fn (Customer $record): bool => $record->members()
+                ->where('status', CustomerMember::STATUS_AKTIF)
+                ->exists())
+            ->schema([
+                Select::make('anggota')
+                    ->label('Anggota yang dicabut')
+                    ->options(fn (Customer $record): array => $record->members()
+                        ->where('status', CustomerMember::STATUS_AKTIF)
+                        ->with('user')
+                        ->get()
+                        ->mapWithKeys(fn (CustomerMember $a): array => [
+                            $a->getKey() => sprintf(
+                                '%s (%s) — %s',
+                                $a->user?->name ?? '(akun terhapus)',
+                                $a->user?->email ?? '—',
+                                $a->peran === CustomerMember::PERAN_PIC_UTAMA ? 'PIC utama' : 'staf',
+                            ),
+                        ])
+                        ->all())
+                    ->required(),
+            ])
+            ->action(function (Customer $record, array $data): void {
+                $anggota = CustomerMember::query()
+                    ->where('customer_id', $record->getKey())
+                    ->whereKey($data['anggota'])
+                    ->first();
+
+                if ($anggota === null) {
+                    Notification::make()->title('Anggotanya sudah tidak ada.')->warning()->send();
+
+                    return;
+                }
+
+                $oleh = User::yangLogin();
+
+                if ($oleh === null) {
+                    Notification::make()->title('Sesi panel sudah habis. Masuk lagi.')->danger()->send();
+
+                    return;
+                }
+
+                try {
+                    app(Keanggotaan::class)->nonaktifkan($anggota, $oleh);
+                } catch (AksiPelangganDitolak $e) {
+                    Notification::make()->title($e->getMessage())->danger()->send();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->title('Akses '.($anggota->user?->email ?? 'anggota').' dicabut, tokennya ikut mati.')
+                    ->success()
+                    ->send();
+            });
     }
 
     /**
