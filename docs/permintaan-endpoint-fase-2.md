@@ -32,7 +32,29 @@ dikerjain ulang dan jangan dianggap blocker:
 | Data Teknisi — *BELUM, tidak ada layar maupun service* | ✅ **ADA** — `technician_list_screen.dart` + `user_service.dart` (approve/tolak/reset password) |
 | Kalibrasi selesai — *SEBAGIAN* | ✅ **ADA** — `kalibrasi_selesai` udah dikirim & dipajang |
 | Rentang Ukur — *BELUM, tidak ketemu di model Equipment* | ✅ **ADA** — `range_min`/`range_max`/`satuan`/`resolusi` di `Equipment` |
-| Order Kalibrasi — *belum ada layar Order tersendiri* | 🔸 **SEBAGIAN** — `my_tasks_screen.dart` + `order_service.dart` udah jalan buat antrean teknisi |
+| Order Kalibrasi — *belum ada layar Order tersendiri* | ⚠️ **BARISNYA BASI** — lihat catatan di bawah tabel |
+
+> ### ⚠️ Koreksi 17 Sep 2026 — baris Order
+>
+> Baris itu ditulis 22 Juli dan sejak itu berubah DUA KALI, jadi jangan dibaca
+> apa adanya:
+>
+> 1. **31 Juli** entitas Order ditutup di backend — `main` nol rute.
+> 2. **Sekarang rutenya hidup lagi**, dicek ke `routes/api.php` hari ini: `GET
+>    /orders`, `GET /orders/{order}`, `POST`/`PUT`/`DELETE /orders`, dan `POST
+>    /orders/{order}/penugasan`. `index()` menerima `teknisi_id=saya`.
+>
+> Yang **tidak** berubah: di repo mobile `my_tasks_screen.dart` nggak pernah
+> dirujuk satu baris pun — nol rute, nol menu, dan ada test yang mengunci
+> absennya. Jadi "udah jalan buat antrean teknisi" salah sejak sebelum 31 Juli:
+> berkasnya jadi, jalurnya nggak pernah nyambung. **17 Sep berkasnya ikut
+> tercabut** (`cece462`, sapuan berkas yang nggak di-import); baliknya dari
+> riwayat, bukan ditulis ulang.
+>
+> Status sebenarnya: **backend siap, mobile belum dirakit, dan apakah menunya
+> dipasang balik itu keputusan produk yang belum diambil.**
+> Rinciannya di [`BACA-DULU-BACKEND.md`](BACA-DULU-BACKEND.md) bagian
+> **17 September 2026**.
 
 Yang **masih beneran kosong** dari peta itu: Data Ruangan (layar mobile),
 Laporan (seluruhnya), dan pelengkap sertifikat (logo, QR, TTD, print, email).
@@ -126,7 +148,7 @@ tombol lalu user kena error 403. Sekarang aturannya di-hardcode di mobile
 >
 > | `kategori` | Kejadian |
 > |---|---|
-> | `akun.menunggu_persetujuan` | ada yang `POST /register` |
+> | ~~`akun.menunggu_persetujuan`~~ | DICABUT bareng `POST /register` (18 Sep 2026) |
 > | `sertifikat.gagal` | PDF sertifikat gagal dibuat |
 > | `standar.kadaluarsa` | standar acuan mendekati / udah habis (harian) |
 >

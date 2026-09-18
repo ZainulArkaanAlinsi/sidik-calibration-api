@@ -1,0 +1,18 @@
+{
+    "message": "Akun Anda sudah dihapus.",
+    "data": {
+        "dihapus": [
+            "nama",
+            "email",
+            "nomor HP",
+            "jabatan",
+            "seluruh sesi & perangkat"
+        ],
+        "tetap_tersimpan": [
+            "data perusahaan",
+            "alat",
+            "permintaan kalibrasi",
+            "sertifikat"
+        ]
+    }
+}

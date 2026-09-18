@@ -1,0 +1,43 @@
+{
+    "data": {
+        "anggota": [
+            {
+                "id": "<int>",
+                "peran": "pic_utama",
+                "status": "aktif",
+                "bergabung_pada": "<iso8601>",
+                "dinonaktifkan_pada": null,
+                "orang": {
+                    "id": "<int>",
+                    "nama": "Budi PIC",
+                    "email": "budi@contoh.test",
+                    "telepon": "+628123456789",
+                    "jabatan": "QA Manager"
+                },
+                "saya": true
+            },
+            {
+                "id": "<int>",
+                "peran": "staf",
+                "status": "aktif",
+                "bergabung_pada": "<iso8601>",
+                "dinonaktifkan_pada": null,
+                "orang": {
+                    "id": "<int>",
+                    "nama": "Sari Staf",
+                    "email": "sari@contoh.test",
+                    "telepon": "+628123456789",
+                    "jabatan": "QA Manager"
+                },
+                "saya": false
+            }
+        ],
+        "undangan_menunggu": [],
+        "maks_anggota": 50,
+        "saya": {
+            "customer_id": "<int>",
+            "member_id": "<int>",
+            "peran": "pic_utama"
+        }
+    }
+}

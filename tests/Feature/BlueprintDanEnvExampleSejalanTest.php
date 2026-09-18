@@ -9,7 +9,7 @@ use Tests\TestCase;
  *
  * ## Aturan proyek, dan kenapa dia ada
  *
- * `CLAUDE.md` §9: key baru wajib ikut ke `.env.example` DAN blueprint. Lahir
+ * `AGENTS.md` §9: key baru wajib ikut ke `.env.example` DAN blueprint. Lahir
  * dari kejadian nyata — kunci yang cuma ada di salah satunya bikin pemasangan
  * baru jatuh ke bawaan diam-diam, tanpa error dan tanpa cara memeriksanya dari
  * luar.
@@ -74,7 +74,7 @@ class BlueprintDanEnvExampleSejalanTest extends TestCase
                 '/^\s*#?\s*'.preg_quote($k, '/').'=/m',
                 $envExample,
                 "{$k} ada di render.yaml tapi tidak punya baris penugasan di "
-                .'.env.example. Aturan proyek (CLAUDE.md §9): key baru wajib '
+                .'.env.example. Aturan proyek (AGENTS.md §9): key baru wajib '
                 .'ikut ke dua-duanya. Kalau kunci ini memang cuma milik '
                 .'platform, tambahkan ke PENGECUALIAN berikut alasannya.',
             );

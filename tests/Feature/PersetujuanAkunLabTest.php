@@ -8,9 +8,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Alur daftar mandiri → nunggu approval admin. Aturannya dari docs/kontrak-api.md.
+ * Persetujuan akun orang lab: admin meninjau akun `pending`, menyetujui atau
+ * menolaknya. Aturannya dari docs/kontrak-api.md.
+ *
+ * Yang MEMBUAT akun `pending` bukan lagi pendaftaran mandiri — rutenya dicabut
+ * (AGENTS.md §Akun Lahir dari Undangan), dan test yang menjaga "pintunya
+ * beneran nggak ada" hidup di GerbangAplikasiTokenTest. Layar peninjauannya
+ * sendiri TETAP dipakai: akun `pending` masih lahir dari panel admin, dan baris
+ * `pending` yang sudah telanjur ada di produksi tetap harus bisa diputuskan.
  */
-class RegisterApprovalTest extends TestCase
+class PersetujuanAkunLabTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,63 +27,6 @@ class RegisterApprovalTest extends TestCase
 
         // User nempel ke organisasi (FK), jadi organisasinya harus ada duluan.
         Organization::factory()->create();
-    }
-
-    /** @var array<string, string> */
-    private array $pendaftar = [
-        'nama' => 'Eko Prasetyo',
-        'employee_id' => 'SDK-0099',
-        'department' => 'Kalibrasi',
-        'email' => 'eko@ptsidik.com',
-        'password' => 'rahasia123',
-    ];
-
-    public function test_register_bikin_akun_pending_dengan_role_teknisi(): void
-    {
-        $this->postJson('/api/register', $this->pendaftar)
-            ->assertCreated()
-            ->assertJsonPath('message', 'Pendaftaran terkirim. Akun menunggu persetujuan admin.');
-
-        $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptsidik.com',
-            'employee_id' => 'SDK-0099',
-            'role' => User::ROLE_TEKNISI,
-            'status' => User::STATUS_PENDING,
-        ]);
-    }
-
-    public function test_pendaftar_tidak_bisa_milih_role_sendiri(): void
-    {
-        // Ini serangan aslinya: daftar sambil nyelipin role admin.
-        $this->postJson('/api/register', [...$this->pendaftar, 'role' => User::ROLE_ADMIN])
-            ->assertCreated();
-
-        $this->assertDatabaseHas('users', [
-            'email' => 'eko@ptsidik.com',
-            'role' => User::ROLE_TEKNISI,
-            'status' => User::STATUS_PENDING,
-        ]);
-    }
-
-    public function test_email_dan_id_pegawai_dobel_ditolak_422(): void
-    {
-        User::factory()->create([
-            'email' => 'eko@ptsidik.com',
-            'employee_id' => 'SDK-0099',
-        ]);
-
-        $this->postJson('/api/register', $this->pendaftar)
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['email', 'employee_id'])
-            ->assertJsonPath('errors.email.0', 'Email ini sudah terdaftar.')
-            ->assertJsonPath('errors.employee_id.0', 'ID pegawai ini sudah terdaftar.');
-    }
-
-    public function test_password_kurang_dari_8_karakter_ditolak(): void
-    {
-        $this->postJson('/api/register', [...$this->pendaftar, 'password' => 'pendek'])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('password');
     }
 
     public function test_admin_bisa_lihat_daftar_akun_pending(): void

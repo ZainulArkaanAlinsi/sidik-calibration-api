@@ -516,7 +516,7 @@ class TimbanganProfile extends CalibrationProfile
      * `Penuh | 0 | 0 | 0` di sertifikat terakreditasi. Master gram nggak punya
      * baris itu sama sekali.
      *
-     * Itu kerusakan salin-tempel, bukan metode — dan aturannya (CLAUDE.md)
+     * Itu kerusakan salin-tempel, bukan metode — dan aturannya (AGENTS.md)
      * kerusakan salin-tempel dihitung benar, bukan ditiru. Barisnya nggak
      * dicetak, dan selisihnya ditulis di docs/pertanyaan-lab-timbangan.md.
      *

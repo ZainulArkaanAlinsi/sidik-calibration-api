@@ -274,7 +274,7 @@ lampiran akreditasi LK-285-IDN.
 | [`docs/Rekap-Data-Kemampuan-Kalibrasi.md`](docs/Rekap-Data-Kemampuan-Kalibrasi.md) | ringkasan CMC LK-285-IDN                         |
 | [`docs/CHECKLIST-DEPLOY-VPS.md`](docs/CHECKLIST-DEPLOY-VPS.md)                     | checklist deploy                                 |
 | `docs/perintah-frontend-*.md`                                                      | serah-terima per alat ke sisi mobile             |
-| `CLAUDE.md`                                                                        | panduan kerja untuk agen AI di repo ini          |
+| `AGENTS.md`                                                                        | panduan kerja untuk agen AI di repo ini          |
 
 Berkas `docs/permintaan-*.md` itu permintaan **dari** sisi mobile, dan beberapa tanda
 centangnya salah. Untuk status sebenarnya, baca `docs/BACA-DULU-BACKEND.md`.
@@ -289,7 +289,7 @@ lain dan mengotori diff. Key `.env` baru wajib ikut ke `.env.example` dan `rende
 Repo ini privat, tapi itu bukan alasan longgar: `Project-PT-Sidik/` berisi workbook master
 lab, dan riwayat git tidak ikut bersih waktu sebuah berkas dihapus. Sapu nama dan alamat
 pelanggan sebelum `git add`, dan jangan pernah menulis kredensial asli di berkas yang ikut
-git. Syarat lengkap kalau repo mau dibalik jadi publik ada di `CLAUDE.md`.
+git. Syarat lengkap kalau repo mau dibalik jadi publik ada di `AGENTS.md`.
 
 ## Tampilan README ini
 

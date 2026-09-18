@@ -1,0 +1,36 @@
+{
+    "data": [
+        {
+            "id": "<int>",
+            "status": "menunggu",
+            "diajukan_pada": "<iso8601>",
+            "klaim": {
+                "nama_perusahaan": "PT Klaim Pendaftar",
+                "alamat_perusahaan": "Jl. Contoh No. 1, Bandung",
+                "jabatan": "QA Manager"
+            },
+            "pemohon": {
+                "id": "<int>",
+                "nama": "Budi Menunggu",
+                "email": "budi@contoh.test",
+                "telepon": "+628123456789",
+                "status": "pending_verifikasi"
+            },
+            "keputusan": null,
+            "saran_pelanggan": [
+                {
+                    "id": "<int>",
+                    "nama": "PT Klaim Pendaftar",
+                    "alamat": "Jl. Contoh No. 1, Bandung",
+                    "sama_persis": true
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "current_page": 1,
+        "last_page": 1,
+        "per_page": 20,
+        "total": 1
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "data": {
+        "id": "<int>",
+        "nama": "Budi Menunggu",
+        "email": "budi@contoh.test",
+        "telepon": "+628123456789",
+        "jabatan": "QA Manager",
+        "status": "pending_verifikasi",
+        "butuh_verifikasi": true,
+        "keanggotaan": [],
+        "pengajuan": {
+            "status": "menunggu",
+            "nama_perusahaan": "PT Klaim Pendaftar",
+            "diajukan_pada": "<iso8601>",
+            "diputus_pada": null,
+            "alasan_tolak": null
+        }
+    }
+}

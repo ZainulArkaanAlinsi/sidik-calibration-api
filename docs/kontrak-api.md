@@ -113,30 +113,24 @@ Kredensial salah → `401` `{ "message": "ID pegawai / email atau password salah
 ```
 Mobile juga nolak di sisi UI, **tapi itu nggak cukup** — orang bisa nembak API langsung pakai curl, jadi backend harus jadi benteng aslinya.
 
-### `POST /api/register`
+### ~~`POST /api/register`~~ — DICABUT 18 Sep 2026
 
-Daftar mandiri buat teknisi. **Akun yang dibuat NGGAK boleh langsung aktif.**
+Pendaftaran mandiri orang lab **tidak ada lagi**. Endpoint ini menjawab `404`.
 
-Request:
-```json
-{
-  "nama": "Eko Prasetyo",
-  "employee_id": "SDK-0099",
-  "department": "Kalibrasi",
-  "email": "eko@ptsidik.com",
-  "password": "rahasia123"
-}
-```
-Response `201`:
-```json
-{ "message": "Pendaftaran terkirim. Akun menunggu persetujuan admin." }
-```
+Penggantinya: **admin membuat akun langsung di panel** (Filament → Users →
+Create). Tidak ada antrean persetujuan untuk akun yang dia ketik sendiri.
 
-Aturan yang wajib dipegang backend:
-- Akun baru **selalu** `status: "pending"` dan `role: "teknisi"` (default)
-- **User NGGAK boleh milih role sendiri** waktu daftar — kalau field `role` dikirim dari client, **abaikan**. Kalau nggak, siapa pun bisa daftar jadi `admin` dan langsung bisa approve dirinya sendiri
-- `email` & `employee_id` dobel → `422` dengan pesan jelas ("Email ini sudah terdaftar." / "ID pegawai ini sudah terdaftar.")
-- Password minimal 8 karakter
+Kenapa dicabut — lengkapnya di `AGENTS.md` §Akun Lahir dari Undangan. Ringkasnya:
+yang lama memang tidak pernah memberi akses langsung (statusnya `pending`, admin
+tetap harus menyetujui), tapi pintunya membuka dua hal lain — antrean yang bisa
+dibanjiri siapa pun dari internet, dan pemohon yang mengarang `employee_id` lalu
+lolos karena admin sedang buru-buru.
+
+Yang TETAP ada: layar persetujuan akun `pending` (`GET /api/users?status=pending`,
+`POST /api/users/{id}/approve`, `/reject`). Baris `pending` lama di produksi
+masih harus bisa diputuskan.
+
+Dijaga `PintuDaftarMandiriTertutupTest`.
 
 ### `POST /api/forgot-password`
 Request: `{ "email": "admin@sidik.test" }`
@@ -1179,7 +1173,7 @@ dikabarin ke siapa pun:
 
 | `kategori` | Kapan | `tautan` | Warna |
 |---|---|---|---|
-| `akun.menunggu_persetujuan` | ada yang `POST /register` | `{tipe: "users", filter: "pending", id}` | `warning` |
+| ~~`akun.menunggu_persetujuan`~~ | DICABUT bareng `POST /register` | `{tipe: "users", filter: "pending", id}` | `warning` |
 | `sertifikat.gagal` | PDF sertifikat gagal dibuat | `{tipe: "certificates", id}` | `danger` |
 | `standar.kadaluarsa` | scheduler harian nemu standar mendekati/lewat habis | `{tipe: "standards", filter: "expired"\|"warning", standar: [...]}` | `danger`/`warning` |
 

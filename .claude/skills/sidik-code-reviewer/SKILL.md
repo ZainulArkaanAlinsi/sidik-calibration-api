@@ -51,7 +51,7 @@ lolos test tapi salah secara akreditasi/audit.
   reject selalu validasi status SEBELUM eksekusi, dan status `disetujui`
   (sertifikat sudah terbit) tidak pernah bisa diedit oleh siapa pun.
 
-### 6. Larangan proyek (dari CLAUDE.md & memori)
+### 6. Larangan proyek (dari AGENTS.md & memori)
 - Nama file/kelas TIDAK boleh memuat nama PT/customer — pakai jenis alat.
 - Jangan pakai `git add -A` / `git add .` dalam saran commit.
 - Jangan sisipkan trailer `Co-Authored-By: Claude` di pesan commit yang

@@ -15,7 +15,13 @@ use Illuminate\Support\Str;
 /**
  * @mixin IdeHelperCustomer
  */
-#[Fillable(['organization_id', 'nama', 'alamat', 'contact_person', 'telepon', 'email'])]
+#[Fillable([
+    'organization_id', 'nama', 'alamat', 'contact_person', 'telepon', 'email',
+    // Dua kolom baru modul pelanggan (03-SDD §4.1). `sumber` SENGAJA tetap di
+    // luar daftar ini — dia keputusan sistem soal asal-usul baris, bukan
+    // sesuatu yang boleh datang dari request.
+    'pic_admin_id', 'maks_anggota',
+])]
 class Customer extends Model
 {
     use Diaudit, HasFactory, SoftDeletes;
@@ -56,7 +62,18 @@ class Customer extends Model
     public const SUMBER_DIREKTORI = 'direktori';
 
     /** @var list<string> */
-    public const SUMBER = [self::SUMBER_ADMIN, self::SUMBER_TEKNISI, self::SUMBER_DIREKTORI];
+    /**
+     * Lahir dari pengajuan akun pelanggan yang disetujui admin (REQ-AUTH-04).
+     *
+     * Nol migrasi buat nilai ini: `customers.sumber` kolom `string`, bukan ENUM
+     * (lihat 2026_08_29_100000). 03-SDD §4.1 menulisnya seolah ENUM — itu yang
+     * keliru, bukan kodenya.
+     */
+    public const SUMBER_PELANGGAN = 'pelanggan';
+
+    public const SUMBER = [
+        self::SUMBER_ADMIN, self::SUMBER_TEKNISI, self::SUMBER_DIREKTORI, self::SUMBER_PELANGGAN,
+    ];
 
     /**
      * Turunkan nama PT ke bentuk yang bisa diadu buat mencari kembar.
@@ -112,6 +129,29 @@ class Customer extends Model
     public function equipments(): HasMany
     {
         return $this->hasMany(Equipment::class);
+    }
+
+    /**
+     * Anggota (PIC & staf) perusahaan ini.
+     *
+     * @return HasMany<CustomerMember, $this>
+     */
+    public function members(): HasMany
+    {
+        return $this->hasMany(CustomerMember::class);
+    }
+
+    /**
+     * Admin lab yang jadi penanggung jawab pelanggan ini.
+     *
+     * Bukan pemilik data — cuma tujuan default notifikasi, supaya pengajuan &
+     * pesan nggak selalu menyiram semua admin sekaligus.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function picAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pic_admin_id');
     }
 
     /**

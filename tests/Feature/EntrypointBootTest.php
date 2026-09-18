@@ -53,7 +53,7 @@ class EntrypointBootTest extends TestCase
     /**
      * Saklar boot wajib ada di `.env.example` DAN `render.yaml`.
      *
-     * Aturan proyek (CLAUDE.md §9), dan lahir dari kejadian nyata: key yang
+     * Aturan proyek (AGENTS.md §9), dan lahir dari kejadian nyata: key yang
      * cuma ada di salah satunya bikin pemasangan baru jatuh ke bawaan diam-diam
      * — tanpa error, dan tanpa cara memeriksanya dari luar.
      */

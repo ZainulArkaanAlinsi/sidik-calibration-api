@@ -50,8 +50,678 @@ Biar jelas mana yang dibaca buat apa:
 | [`perintah-frontend-anak-timbangan.md`](perintah-frontend-anak-timbangan.md) | Kontrak serah-terima Anak Timbangan ke repo mobile, berikut daftar berkas tempat alat ini dibuat | ✅ ya — §5 disetel 11 Sep 2026: lima butir beres (termasuk jalur kirim dari HP yang ternyata belum pernah ada), dua masih tersisa |
 | `permintaan-*.md` | **Permintaan** dari mobile ke backend | ⚠️ **jangan** — beberapa tanda ✅-nya salah, udah dikasih catatan koreksi |
 | [`arsitektur-desktop-database.md`](arsitektur-desktop-database.md) | Rencana desktop | ⚠️ sebagian digantiin `infrastruktur-vps-produksi.md` |
+| [`pelanggan/`](pelanggan/) | Paket rancangan **modul pelanggan** (00–08 + ADR-001): PRD, SRS ber-REQ, SDD, alur UI, task M0–M8, risk register, runbook rilis | ✅ ya (rancangan, BUKAN status) — mendarat 16 Sep 2026, versi 0.1 **draf**, nol barisnya sudah jadi kode kecuali M0-05 |
 
 ---
+
+## 17 September 2026 — KOREKSI: entitas Order HIDUP LAGI, dan halaman ini yang basi
+
+Yang di bawah nulis Order "nggak jadi dibangun" dan "`main` nol rute". **Dua-duanya
+sekarang salah.** Dicek langsung ke `routes/api.php` hari ini:
+
+```
+GET    /orders                      OrderController@index     semua role
+GET    /orders/{order}              OrderController@show      semua role
+POST   /orders                      OrderController@store     admin
+PUT    /orders/{order}              OrderController@update    admin
+DELETE /orders/{order}              OrderController@destroy   admin
+POST   /orders/{order}/penugasan    OrderController@penugasan admin
+```
+
+`OrderController::index()` juga menerima `teknisi_id=saya` — literal `saya`, bukan
+ID, diterjemahkan dari token di sisi server. Itu persis kontrak yang dulu
+dijanjikan ke layar "Tugas Saya".
+
+**Ongkos yang sudah dibayar karena halaman ini nggak disetel — dan dibayar HARI
+INI:** repo mobile punya `lib/screens/order/my_tasks_screen.dart` yang lengkap
+(243 baris) tapi **nggak dirujuk satu baris pun** — nol rute, nol menu — dan
+`test/desktop_shell_test.dart` punya test yang MENGUNCI absennya menu itu, dengan
+alasan tertulis "`/orders` nol route". Alasan itu dikutip dari halaman ini.
+
+Lalu 17 Sep pukul 12:38, commit `cece462` di repo mobile menyapu "berkas yang
+nggak di-import siapa pun" — dan layar itu **ikut tercabut**. Sapuannya benar;
+premisnya yang tidak. Satu kalimat basi di halaman ini menahan satu layar yang
+sudah jadi selama tujuh minggu, lalu ikut menghapusnya — tanpa satu pun error di
+mana pun.
+
+Kodenya tidak hilang: `git show cece462^:lib/screens/order/my_tasks_screen.dart`
+di repo mobile. Sudah ditulis di komentar test-nya supaya tidak perlu dicari.
+
+Yang **belum** diputuskan, dan sengaja tidak diputuskan sepihak di sini: apakah
+menu "Tugas Saya" jadi dipasang balik. Itu keputusan produk, bukan temuan kode.
+Yang dikoreksi hari ini cuma FAKTA yang jadi dasarnya.
+
+---
+
+## 16 Sep 2026 — gerbang rute deny-by-default (M0-06)
+
+**Yang berubah:** grup `auth:sanctum` di `routes/api.php` sekarang dibungkus
+`role:admin,teknisi,viewer`, dan channel realtime `organisasi.{id}` memeriksa
+role selain kepemilikan organisasi.
+
+**Kenapa ini mendesak, padahal role `pelanggan` belum ada.** Sebelum ini,
+penjagaan satu-satunya untuk sebagian besar rute GET internal cuma penyaringan
+`organization_id` di controller. Itu cukup selama semua pemegang akun memang
+orang lab. Rancangan modul pelanggan menaruh akun pelanggan di
+`organization_id` PT Sidik juga (01-PRD §8) — jadi penyaring itu **cocok** untuk
+mereka, dan PT A bisa membaca alat & sertifikat PT B lewat rute internal.
+Kerahasiaan antar pelanggan, ISO/IEC 17025 §4.2; di risk register dia R-D01,
+level kritis. Ditutup sekarang supaya celahnya tidak pernah sempat terbuka.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `routes/api.php` | `role:admin,teknisi,viewer` di grup `auth:sanctum` (satu grup, satu suntingan) |
+| `routes/channels.php` | `organisasi.{id}` menuntut role lab, bukan cuma organisasi yang cocok |
+| `app/Services/MatriksIzin.php` | `roleYangBoleh()` mengiris SEMUA `role:` — lihat di bawah |
+
+Nol migrasi, nol perubahan controller, nol perubahan perilaku untuk
+admin/teknisi/viewer (dibuktikan `GerbangRoleRegresiTest`, yang sengaja
+dijalankan di kode LAMA dan kode BARU — dua-duanya hijau).
+
+### Jebakan yang ikut ketahuan: `/me/permissions` nyaris berbohong
+
+Memasang gerbang di grup luar bikin hampir tiap rute punya **dua** middleware
+`role:`. `MatriksIzin::roleYangBoleh()` dulu memulangkan yang **pertama ketemu**
+— yaitu gerbang luar yang longgar itu. Akibatnya `/me/permissions` bakal bilang
+viewer boleh approve sertifikat, dan tombolnya nyala di HP orang yang bakal
+ditolak 403 waktu menekannya. Persis kegagalan yang kelas itu ada untuk
+mencegahnya.
+
+Sekarang dia **mengiris** semua `role:` yang nempel di rute — yang memang
+perilaku sebenarnya waktu request jalan, karena tiap gerbang harus lolos. Tanpa
+perbaikan ini, tiga test lama merah (`MeIzinTest`), termasuk satu yang benar-benar
+memanggil endpointnya dan membandingkan dengan 403 yang sungguhan.
+
+### Penjaga yang dipasang
+
+| Test | Yang dijaga |
+|---|---|
+| `RuteInternalMenolakRoleLainTest` | **138 pasang method+URI** (72 di antaranya ber-parameter) dibaca dari `Router::getRoutes()`, semuanya wajib 403 buat role tak dikenal |
+| ↳ `test_tidak_ada_rute_publik_yang_tidak_terdaftar` | Rute `api/` baru tanpa gerbang `role:` bikin suite merah, bukan lolos diam-diam |
+| `GerbangChannelRoleTest` | Closure `routes/channels.php` dipanggil lewat `verifyUserCanAccessChannel()` — bukan lewat HTTP, karena driver `null` bikin `auth()` no-op yang selalu 200 |
+| `GerbangRoleRegresiTest` | Admin/teknisi/viewer tidak kehilangan apa pun, termasuk `/me`, `/me/permissions`, notifikasi, device token, `/logout`, `/broadcasting/auth` |
+
+**Rute publik baru wajib didaftarkan** di `RuteInternalMenolakRoleLainTest::PUBLIK`
+dengan sadar. Itu disengaja: membuka rute ke orang luar memang keputusan yang
+pantas ditulis, bukan efek samping.
+
+**Prefix `api/pelanggan/` sudah dikecualikan dari sekarang**, walau rutenya belum
+ada — supaya Fase 3 tidak memerahkan test ini pada hari rute pelanggan pertama
+lahir. Modul pelanggan punya gerbangnya sendiri.
+
+---
+
+## 16 Sep 2026 — jadwal alat akhirnya ikut sertifikat (M0-05)
+
+**Yang berubah:** `berlaku_sampai` yang dipilih admin waktu approve sekarang ikut
+ditulis ke `equipments.tanggal_jatuh_tempo`, dan tanggal kalibrasi sesinya ke
+`equipments.tanggal_kalibrasi_terakhir`. Sebelum ini dua angka itu diisi dari dua
+jalan yang tidak pernah bertemu.
+
+**Kenapa ini bug, bukan penambahan.** `approve` menyimpan pilihan admin di
+`certificates.berlaku_sampai`, sementara `PengingatJatuhTempo` — yang jalan tiap
+pagi lewat `alat:cek-jatuh-tempo` — membaca `equipments.tanggal_jatuh_tempo`,
+kolom yang sampai kemarin cuma berubah lewat form panel dan impor Excel. Jadi
+sertifikat bisa terbit dengan masa berlaku baru sementara kolom di alatnya tetap
+yang lama, dan pengingatnya mengabari admin soal tanggal yang sudah tidak
+berlaku — atau, kalau kolomnya kosong, tidak mengabari sama sekali. Nol error di
+mana pun: dua-duanya kolom sah berisi tanggal sah.
+
+**Berkas:**
+
+| Berkas | Isinya |
+|---|---|
+| `app/Services/SinkronJadwalAlat.php` (baru) | `untuk()` menulis, `rencana()` menghitung tanpa menulis, `sertifikatAktif()` memilih sumbernya |
+| `app/Jobs/GenerateCertificate.php` | Status `terbit` + sinkron jadwal alat sekarang dalam SATU transaksi |
+| `app/Console/Commands/SapuJadwalAlat.php` (baru) | Perintah `alat:sinkron-jadwal {--dry-run}` |
+
+**Nol migrasi, nol kolom baru.** "Sudah digantikan revisi" diturunkan dari
+`revision_of` yang memang sudah ada, bukan dari kolom `digantikan_oleh` baru.
+
+**Yang TIDAK disentuh:** `PengingatJatuhTempo`, validasi `approve`, rute mana pun.
+
+### ⚠️ `alat:sinkron-jadwal` — dry-run WAJIB ditinjau manusia dulu
+
+Perintah ini menulis ke kolom yang menentukan kapan alat pelanggan harus
+dikalibrasi lagi. Urutan yang mengikat:
+
+1. `php artisan alat:sinkron-jadwal --dry-run` di **salinan data produksi**, bukan
+   langsung di produksi.
+2. Tabel keluarannya ditinjau Pak Rohman / admin lab. Yang dilihat: alat yang
+   `jatuh_tempo`-nya MUNDUR, karena itu yang bikin alat mendadak lewat jadwal.
+3. Baru dijalankan tanpa flag. Dia minta konfirmasi sekali lagi sebelum menulis.
+
+**Jangan dijadwalkan.** Perintah ini sengaja tidak masuk `routes/console.php`.
+Dijalankan tiap malam, dia jadi proses yang terus mengadu kolom yang diisi admin
+dengan data yang untuk sebagian alat memang tidak ada. Sambungan di
+`GenerateCertificate` sudah menjaga yang ke depan; perintah ini cuma untuk yang
+terlanjur.
+
+### Yang masih menganga: alur revisi sertifikat TIDAK ADA
+
+`certificates.revision_of` dan `alasan_revisi` ada di migrasi sejak 14 Jul,
+ada di `$fillable`, punya relasi `Certificate::revisionOf()`, dan `alasan_revisi`
+ditampilkan `CertificateInfolist` — tapi **tidak ada satu pun kode produksi yang
+mengisinya**. Satu-satunya penulis `revision_of` di repo ini fixture test
+(`tests/Feature/FilamentAccessTest.php:130`).
+
+`CetakUlangSertifikat` BUKAN alur revisi: dia merender ulang PDF dari snapshot
+beku dan sengaja tidak membuat baris sertifikat baru.
+
+Artinya dari sisi panel admin fitur ini kelihatan ada padahal tidak pernah
+dibangun. `SinkronJadwalAlat` sudah ditulis sadar-revisi, jadi begitu alur
+revisinya dibangun di atas `GenerateCertificate`, sinkronnya ikut jalan tanpa
+perlu disambung lagi.
+
+---
+
+## 16 Sep 2026 — identitas pelanggan, feature flag, rute `/api/pelanggan/v1` (M1-01, M1-02)
+
+**Yang berubah:** skema identitas modul pelanggan mendarat, `routes/api_pelanggan.php`
+terdaftar dengan prefix `api/pelanggan/v1`, dan seluruhnya dikunci sakelar
+`FITUR_PELANGGAN` yang **default mati**.
+
+**Nol perubahan perilaku buat app internal.** Semua migrasi additive, tidak ada
+rute internal yang disentuh, dan `User::roles()` tetap bertiga.
+
+### Skema
+
+| Migrasi | Isi |
+|---|---|
+| `..._tambah_kolom_identitas_pelanggan_ke_users` | `telepon`, `jabatan`, `dianonimkan_pada` — ketiganya nullable |
+| `..._tambah_role_pelanggan_dan_status_pending_ke_users` | ENUM `role` + `pelanggan`, `super_admin`; ENUM `status` + `pending_email`, `pending_verifikasi` |
+| `..._tambah_pic_admin_dan_maks_anggota_ke_customers` | `pic_admin_id`, `maks_anggota` default 50 |
+| `..._tambah_aplikasi_ke_device_tokens` | `aplikasi` enum(`internal`,`pelanggan`) default `internal` |
+| 5 tabel baru | `customer_members`, `undangan_pelanggan`, `pengajuan_akun_pelanggan`, `persetujuan_dokumen`, `otp_pelanggan` |
+
+`otp_pelanggan` **tidak ada di SDD versi 0.1** — sudah disusulkan ke
+`docs/pelanggan/03-SDD.md` §4.2 berikut alasan bentuknya.
+
+`customers.sumber` **tidak butuh migrasi**: kolomnya `string`, bukan ENUM. SDD §4.1
+menulisnya seolah ENUM; itu yang keliru, sudah dikoreksi di dokumen.
+
+### Tiga jebakan yang ketahuan waktu mengerjakannya
+
+**1. `User::roles()` TIDAK boleh kedatangan `pelanggan`.** Tiga tempat memakai daftar
+itu sebagai gerbang, dan menambahkannya merusak ketiganya tanpa satu pun memunculkan
+error: `routes/channels.php` (gerbang channel M0-06 langsung terbuka, tiap sesi &
+sertifikat bocor realtime), `UserController` (`Rule::in(User::roles())` bikin admin
+bisa mencetak akun pelanggan dari panel internal, melewati verifikasi yang menahan
+R-D02), dan `role:admin,teknisi,viewer` di grup luar jadi tidak sejalan. `roles()`
+artinya **role internal lab**, dan sekarang ada test yang menjaganya.
+
+**2. SQLite tidak bisa melepas kolom yang ikut dalam definisi foreign key.** Bukan
+soal `dropForeign` — itu batasan `ALTER TABLE ... DROP COLUMN`-nya sendiri, dan tidak
+ada PRAGMA yang menolongnya. Jadi FK `customers.pic_admin_id` **cuma dipasang di
+MySQL/MariaDB**; di SQLite kolomnya berdiri tanpa constraint. Yang dijaga FK itu
+integritas data produksi, dan produksi jalan di MySQL.
+
+**3. `DatabaseMigrations` tidak bisa dipakai di repo ini.** Trait itu memundurkan
+SELURUH riwayat migrasi sesudah tiap test, dan **tujuh migrasi lama memanggil
+`dropForeign`** yang SQLite tolak. Test migrasi memanggil berkas migrasinya langsung
+(`require` → `down()`/`up()`), yang juga lebih tepat sasaran: `migrate:rollback
+--step=N` menghitung mundur dari migrasi terakhir, jadi begitu ada yang menambah
+migrasi sesudahnya, angka itu memundurkan yang salah sambil tetap hijau.
+
+### `super_admin` — nilainya ada, perilakunya belum
+
+Permintaan pemilik proyek 16 Sep: nanti ada role super admin yang melihat seluruh
+proses dari awal sampai akhir. Yang mendarat sekarang **cuma nilai ENUM-nya**.
+
+Alasannya konkret: `ALTER TABLE` pada `users` di produksi menyentuh tabel yang
+dipakai teknisi di lapangan, jadi sekali jalan jauh lebih baik daripada dua kali.
+Nilai ENUM yang menganggur nol risikonya.
+
+Izinnya **menunggu K4** — siapa yang boleh mengesahkan sertifikat vs admin yang
+hanya melayani pelanggan, diputuskan manajer teknis. Membangun hierarki role sebelum
+itu dijawab berisiko membangun yang salah, lalu dibongkar; untuk lab terakreditasi,
+siapa boleh mengesahkan apa bukan soal kenyamanan layar.
+
+### Sakelar fitur
+
+`config/pelanggan.php`, dibaca lewat `config()` — bukan `env()` di luar berkas config,
+alasannya sama dengan `config/deploy.php`: `config:cache` di entrypoint bikin `.env`
+tidak dibaca lagi, dan `env()` jatuh ke null tanpa satu pun error. Khusus di sini itu
+mahal — `fitur` yang jatuh ke null terbaca "mati", dan seluruh API pelanggan membalas
+503 di produksi tanpa ada yang salah di log.
+
+Tujuh kunci baru masuk **`.env.example` DAN `render.yaml`** (AGENTS.md §9).
+`FITUR_PELANGGAN=false` di blueprint sesuai SDD §10: produksi mati sampai M7.
+
+**`GET /api/pelanggan/v1/app/status` sengaja DI LUAR sakelar itu** — satu-satunya.
+Kalau dia ikut 503, aplikasi tidak punya cara tahu dirinya usang atau server sedang
+maintenance, yaitu dua layar yang justru paling dibutuhkan saat fiturnya dimatikan.
+Endpoint itu juga **nol query database**, dan jumlah query-nya dihitung test — dia
+harus tetap menjawab justru waktu database bermasalah.
+
+## 16 Sep 2026 — gerbang aplikasi & ability token (M1-03)
+
+**Yang berubah:** token sekarang membawa **ability aplikasi**, dan setiap rute
+internal memeriksanya lewat middleware baru `aplikasi:internal`. Akun pelanggan
+ditolak di `POST /api/login` (REQ-AUTH-07).
+
+**Buat app internal teknisi: nol perubahan yang terasa.** Tidak ada yang
+ter-logout, tidak ada yang perlu masuk ulang. Alasannya di bawah, dan itu temuan
+yang membalik rencana awal.
+
+### Temuan yang membalik rencana: token lama BUKAN "tanpa ability"
+
+03-SDD §3.1 menulis token internal yang sudah beredar "nggak punya ability", dan
+merancang masa transisi buat menolongnya. Kenyataannya **punya**:
+`HasApiTokens::createToken()` default-nya `['*']`, dan
+`PersonalAccessToken::can()` meloloskan wildcard buat ability apa pun.
+
+Jadi token yang sekarang ada di HP teknisi **lolos `aplikasi:internal` otomatis**
+— tidak ada yang perlu ditolong. Yang justru jadi soal: token `['*']` juga lolos
+`aplikasi:pelanggan`, jadi lingkupnya kelewat lebar. Di situlah
+`PELANGGAN_CUTOFF_TOKEN_LAMA` dipakai: **sesudah** tanggal itu token wildcard
+ditolak, memaksa semua orang pindah ke token berlingkup tepat. Kosong = tanpa
+batas, dan itu nilai default-nya sekarang.
+
+> Sebelum mengisi tanggal itu di produksi: mengisinya **me-logout setiap teknisi
+> yang tokennya dibuat sebelum hari ini**. Isi hanya sesudah rilis mobile yang
+> membuat token baru sudah 100% rollout.
+
+### Token yang TIDAK ADA sengaja diloloskan
+
+`currentAccessToken()` memulangkan tiga hal, dan ketiganya ditangani sadar:
+
+| Yang dipulangkan | Kapan | Perlakuan |
+|---|---|---|
+| `PersonalAccessToken` | Bearer token sungguhan | **Ini yang dijaga** |
+| `TransientToken` | User datang dari guard `web` (sesi Filament) | Lolos — `canAccessPanel()` sudah menuntut admin aktif |
+| `null` | `actingAs($u, 'sanctum')` di test (41 pemanggilan, 11 berkas) | Lolos |
+
+Dua yang terakhir bukan lubang: di produksi `api/*` cuma bisa dicapai lewat
+Bearer token atau sesi Filament, dan pelanggan tidak punya jalan mendapat sesi
+web sama sekali.
+
+### Penolakan akun pelanggan diperiksa SESUDAH sandinya cocok
+
+Bukan sebelum. Kalau dicek duluan, balasan buat email pelanggan jadi beda dari
+balasan buat email yang tidak terdaftar — dan orang luar bisa memakai perbedaan
+itu buat menyisir email mana yang punya akun di sini.
+
+### Rate limiter baru
+
+`pelanggan-daftar` (5/jam per IP), `pelanggan-masuk` (10/menit per IP),
+`pelanggan-otp` (5 per 15 menit **per akun**). Yang OTP dikunci per akun, bukan
+per IP: throttle per IP dilewati dengan ganti jaringan, sementara yang menahan
+penebakan OTP harus menempel ke akun yang ditebak.
+
+## 16 Sep 2026 — auth pelanggan: daftar, OTP, masuk, akun (M1-04, M1-06)
+
+**Yang berubah:** `/api/pelanggan/v1` sekarang punya isi. Sebelas endpoint auth
+& akun, semuanya di balik `FITUR_PELANGGAN` yang masih **default mati**.
+
+Kontraknya ditulis di **`docs/kontrak-api-pelanggan.md`** — itu yang dipegang
+Flutter, bukan dokumen ini. Contoh JSON di sana disalin dari
+`tests/Fixtures/pelanggan/*.json` oleh skrip, **bukan diketik tangan**.
+
+### Endpoint
+
+| | Path | Gerbang |
+|---|---|---|
+| POST | `/auth/terima-undangan` | throttle 10 per 15 menit per email |
+| POST | `/auth/masuk` | throttle 10/menit per IP **+ kunci 5 kegagalan per email** |
+| POST | `/auth/lupa-sandi` · `/auth/atur-ulang-sandi` | throttle OTP |
+| POST | `/auth/keluar` · `/auth/keluar-semua` | token |
+| GET/PATCH | `/saya` | token (**termasuk** `pelanggan:menunggu`) |
+| POST | `/saya/ganti-sandi` | token |
+
+### Keputusan yang menyimpang dari tulisan SRS, dan alasannya
+
+**Tidak ada pendaftaran mandiri sama sekali** (18 Sep 2026). REQ-AUTH-01 dan
+REQ-AUTH-02 menulis alur daftar → OTP → persetujuan admin; ketiga rutenya
+dicabut, dan akun pelanggan sekarang HANYA lahir dari undangan. Alasan lengkap di
+`AGENTS.md` §Akun Lahir dari Undangan.
+
+Yang sebenarnya dijaga REQ-AUTH-02 — **admin tidak diganggu pengajuan dari email
+yang belum tentu milik si pemohon** — justru jadi otomatis begitu pintunya
+tertutup: tidak ada lagi pengajuan yang bisa masuk tanpa ada orang berwenang
+yang mengirimkan kodenya lebih dulu.
+
+Tabel `pengajuan_akun_pelanggan` dan layar peninjauannya **tetap ada**, dan itu
+bukan sisa yang lupa dibersihkan: barisnya memuat bukti persetujuan syarat &
+kebijakan privasi (UU PDP), yang dikunci `restrictOnDelete` supaya tidak bisa
+terhapus.
+
+### Yang menentukan bentuk seluruh lapisan auth
+
+**1. Balasan tidak boleh menjawab "email ini terdaftar atau tidak".** `lupa-sandi`
+SELALU 200 — termasuk waktu akunnya sedang terkunci, karena 429 di situ justru
+mengakui akunnya ada. `masuk` memakai satu pesan buat "tidak ada akun" dan "sandi
+salah". Siapa saja pelanggan PT Sidik itu informasi bisnis.
+
+**2. Tiap error non-422 punya `kode` stabil.** Aplikasi yang sudah terpasang
+bercabang pada `kode`, bukan pada `message` (NFR-12). `KontrakResponsPelangganTest`
+membekukan SELURUH badan respons ke fixture — jadi kunci yang hilang atau berganti
+nama memerahkan test, bukan lolos diam-diam.
+
+### Dua gerbang, bukan satu
+
+`aplikasi:pelanggan` menjawab "token ini dari aplikasi mana".
+`pelanggan.aktif` menjawab "pemiliknya sudah diverifikasi belum".
+
+Digabung bikin layar S06 mustahil: token `pelanggan:menunggu` **harus** lolos
+gerbang pertama supaya `GET /saya` bisa dijawab, tapi wajib ditahan gerbang
+kedua. `pelanggan.aktif` membaca `users.status` tiap request, **bukan ability
+tokennya** — ability dibekukan waktu token terbit, jadi akun yang baru disetujui
+admin akan terpaksa keluar-masuk dulu kalau abilitynya yang dibaca.
+
+Grup rute ber-`pelanggan.aktif` sudah berdiri di `routes/api_pelanggan.php`
+walaupun masih kosong. Itu disengaja: rute data Fase 5 mewarisi gerbangnya
+otomatis, alih-alih harus diingat satu per satu.
+
+### Dua temuan yang baru muncul waktu testnya dijalankan
+
+**1. Satu ember throttle buat "periksa kode" dan "kirim kode" itu cacat.**
+Awalnya keduanya memakai `pelanggan-otp` (5 per 15 menit per email). Akibatnya
+dua arah, dan dua-duanya nyata:
+
+- penyerang yang menebak kode ikut menghabiskan jatah **kirim ulang** milik
+  korban — korban tidak bisa minta kode baru gara-gara ditembaki orang lain;
+- sebaliknya, orang yang menekan "kirim ulang" tiga kali karena emailnya belum
+  sampai menghabiskan jatah **tebakannya sendiri**, lalu kena 429 pada percobaan
+  pertama kode yang benar.
+
+Sekarang embernya dua: `pelanggan-otp-periksa` (10/15 menit, pagar luar) dan
+`pelanggan-otp-kirim` (3/15 menit, jalur email-bombing). Yang MENEGAKKAN NFR-02
+"OTP 5/15 menit per akun" tetap penguncian di baris `otp_pelanggan` — dia
+menghitung percobaan SALAH saja, menempel ke akun, dan tersimpan di database
+jadi tidak hilang waktu cache dibuang. Ambang `periksa` sengaja lebih longgar
+dari 5 justru supaya tidak menutupi kunci itu; waktu masih 5, `otp_terkunci`
+nyaris tidak pernah sampai ke aplikasi.
+
+`ganti-sandi` dipindah ke `pelanggan-sandi` (5/menit **per orang**). Dia bukan
+jalur OTP dan sudah di balik token; dikunci per IP bikin satu kantor di belakang
+satu NAT saling menghabiskan jatah.
+
+**2. Test "token dicabut" bisa hijau palsu dengan `assertOk()`.**
+`RequestGuard::user()` menyimpan hasilnya di properti dan memulangkannya lagi
+tanpa memeriksa apa pun. Di produksi tidak pernah jadi soal — tiap request HTTP
+dapat instance aplikasi baru. Di test, satu instance melayani semua request dalam
+satu method, jadi request SESUDAH `/auth/keluar` tetap dilayani sebagai pemilik
+token yang sudah dihapus: `personal_access_tokens` benar-benar kosong (0 baris)
+tapi balasannya tetap **200**.
+
+Perbaikannya `Tests\Concerns\JalurPelanggan::lupakanSesiGuard()`, dipanggil di
+antara dua request kalau yang diuji pencabutan. Ditulis sebagai helper bernama
+dengan docblock panjang, bukan satu baris `forgetGuards()` yang ditempel diam-diam
+— berikutnya yang menulis test pencabutan pasti ketemu bentuk kegagalan yang sama.
+
+### Kunci 15 menit SELALU lebih panjang dari masa berlaku kode 10 menit
+
+Konsekuensinya: orang yang terkunci tidak pernah bisa memakai kode lamanya lagi,
+dia wajib minta kode baru. Itu diadu sebagai ANGKA di test (`assertGreaterThan`),
+bukan cuma diceritakan — kalau salah satunya diubah, testnya bicara sebelum ada
+orang kejebak di layar OTP tanpa jalan keluar. Aplikasi jangan menawarkan "coba
+kode yang tadi" sesudah kunci lepas.
+
+### OTP
+
+bcrypt, bukan sha256 — ruang tebakan 6 digit cuma sejuta, dan dump dengan sha256
+di dalamnya dibalik seluruhnya dalam hitungan detik. Penguncian 5 percobaan
+menempel ke **akun**, dan `terbitkan()` menolak selama akunnya terkunci; kalau
+tidak, kuncinya dilewati cukup dengan menekan "kirim ulang".
+
+OTP tidak pernah masuk log (REQ-PRV-02) dan tidak pernah tersimpan polos. Test
+membaca kodenya dari **email yang dipalsukan**, bukan dari kolom database —
+test yang mengintip hash lalu mencocokkannya sendiri tidak pernah membuktikan
+kode yang sampai ke orangnya benar.
+
+### `Password::uncompromised()` dan CI tanpa jaringan
+
+02-SRS §11 mewajibkannya (sandi minimal 10 karakter + ditolak kalau ada di daftar
+bocor). Rulenya menembak API Have I Been Pwned, dan **CI tidak punya jaringan
+keluar**. Kontrak `UncompromisedVerifier` dipalsukan di container lewat trait
+`Tests\Concerns\JalurPelanggan` — bukan `Http::fake()`, yang tidak menangkapnya
+karena verifier bawaan Laravel memakai klien HTTP-nya sendiri.
+
+Di produksi verifier itu **gagal terbuka** (HIBP tidak terjangkau → sandi
+diterima), jadi tidak ada risiko outage.
+
+## 16 Sep 2026 — persetujuan akun & undangan anggota (M1-05)
+
+**Yang berubah:** admin lab sekarang punya antrean pengajuan akun pelanggan
+(`/api/admin/pengajuan-akun`), bisa mengundang anggota lewat kode, dan pelanggan
+bisa menukar kode itu jadi akun yang langsung aktif.
+
+Kontraknya di **`docs/kontrak-api-pelanggan.md` v0.2** — termasuk §4 sisi lab.
+Contoh JSON-nya disalin skrip dari `tests/Fixtures/pelanggan/*.json`.
+
+**Nol migrasi baru.** Kelima tabel sudah berdiri sejak Fase 3.
+
+### Aturan kemiripan nama DIEKSTRAK, bukan disalin
+
+`Pemilah::mirip()` (jalur impor pelanggan) sekarang tinggal di
+`App\Support\KemiripanNama`, dipakai dua jalur: impor, dan saran "pelanggan
+mirip" di antrean pengajuan. Menyalinnya berarti menyalin tiga penjagaan yang
+masing-masing lahir dari kesalahan nyata — dan salinan yang ketinggalan satu di
+antaranya **tidak memunculkan error**, cuma saran yang salah.
+
+Refactor ini dibuktikan netral: `ImporPelangganTest`+`PelangganCepatTest`+
+`PencarianPelangganTest` dijalankan **sebelum** (48/48) dan **sesudah** (48/48).
+
+### Temuan: alasan `BATAS_LEVENSHTEIN` sudah kedaluwarsa sejak PHP 8.0
+
+Komentar aslinya menulis `levenshtein()` "menyerah di atas 255 byte dan
+memulangkan -1", lalu `-1 <= 2` bikin tiap nama panjang mirip dengan tiap nama
+panjang lain. **Benar sampai PHP 7.4.** PHP 8.0 mencabut batas itu, dan repo ini
+jalan di 8.4 — diperiksa langsung: `levenshtein(str_repeat('a',300),
+str_repeat('b',300))` memulangkan `300`.
+
+Penjaganya **sengaja dipertahankan**: mencabutnya adalah perubahan perilaku, dan
+tempatnya bukan di dalam refactor (AGENTS.md §Alur Kerja poin 10). Yang
+dikorbankan: dua nama di atas 255 BYTE yang sebenarnya mirip dijawab "tidak
+mirip" — praktis tak terjangkau karena `customers.nama` itu `varchar(255)` dan
+nama perusahaan Indonesia praktis ASCII. `KemiripanNamaTest` mengadu DUA-duanya:
+kenyataan PHP hari ini, dan bahwa penjaganya tetap memotong.
+
+### Bug yang ketemu dari test: `email_verified_at` ditelan mass assignment
+
+`User::create([... 'email_verified_at' => now()])` di jalur terima-undangan
+**membuang** kolom itu tanpa satu pun error — dia tidak ada di `#[Fillable]`
+`User`. Akibatnya akun lahir aktif dengan email yang tercatat belum
+terverifikasi. Sekarang lewat `forceFill()` sesudah `create()`.
+
+### Dua admin menekan "setujui" bersamaan
+
+Transisinya `UPDATE ... WHERE status = 'menunggu'` dan dihitung dari baris
+terpengaruh — **bukan** `if ($status === 'menunggu')` di PHP, yang membaca dan
+menulis di dua waktu berbeda. Yang kedua dapat **409 `sudah_diputus`** beserta
+nama admin yang mendahului. Tanpa itu, dua admin yang memilih pelanggan berbeda
+membuat satu orang jadi anggota dua perusahaan, lengkap dengan akses ke
+sertifikat keduanya.
+
+### Batas anggota & peran: satu tempat, bukan dua pintu
+
+`Services\Pelanggan\Keanggotaan` adalah satu-satunya jalan baris
+`customer_members` lahir. Dua pintu memakainya (admin menyetujui, orang menukar
+undangan), jadi aturan "PIC utama kalau perusahaan masih kosong" dan "maksimal
+`maks_anggota` orang aktif" tidak bisa diingat separuh. Pelanggarannya dilempar
+sebagai `AksiPelangganDitolak`, yang punya `render()` sendiri — jadi nol
+`try/catch` di controller DAN nol pendaftaran di `bootstrap/app.php`.
+
+### Nonaktifkan anggota tidak selalu mencabut token
+
+REQ-AUTH-09 mencabut token & perangkat, **kecuali** orangnya masih anggota aktif
+di perusahaan lain. Konsultan yang dilepas satu pabrik tidak boleh ikut
+ter-logout dari dua pabrik lainnya; yang berubah cuma `X-Perusahaan-Id` yang
+boleh dia pakai.
+
+### Kode undangan
+
+8 simbol dari abjad **tanpa `O` `0` `I` `1` `L`** — orang mengetiknya ulang dari
+email, sering di HP. Yang dibuang dari abjadnya, bukan "dimaafkan waktu
+dicocokkan": memaafkan berarti ruang tebakannya mengecil tanpa ada yang sadar.
+Disimpan bcrypt, jadi pencariannya lewat EMAIL lalu `Hash::check` — `where` pada
+hash bergaram tidak akan pernah cocok.
+
+### Tiga penjaga lama yang memerahkan pekerjaan ini, dan itu memang gunanya
+
+1. `MeIzinTest` menuntut tiap izin baru punya rute yang beneran 403 buat role
+   yang tidak berhak — rute `{pengajuan}`/`{customer}` tanpa fixture membalas
+   404, dan 404 bukan bukti gerbang.
+2. `RuteInternalMenolakRoleLainTest` menolak melewati parameter rute yang belum
+   punya fixture, alih-alih diam-diam menguji 404.
+3. `GerbangAplikasiTokenTest` menuntut tiap `throttle:` di rute pelanggan ada di
+   daftar yang dijaga — limiter yang tidak terdaftar dianggap Laravel "tanpa
+   batas", jadi throttle-nya hilang tanpa error.
+
+## 16 Sep 2026 — konteks perusahaan & anggota (M1-07)
+
+**Yang berubah:** `X-Perusahaan-Id` sekarang menentukan perusahaan aktif tiap
+request pelanggan, dan `/anggota` punya isi: lihat, undang, batalkan undangan,
+nonaktifkan.
+
+### Konteks perusahaan itu objek, bukan `->keanggotaan->first()`
+
+Konsultan bisa jadi anggota tiga pabrik (REQ-ANG-04). Controller yang memanggil
+`->first()` sendiri akan benar di 95% kasus dan **diam-diam salah di sisanya** —
+mengambilkan data pabrik A waktu orangnya sedang membuka pabrik B. Itu
+kebocoran antar-pelanggan, bukan bug tampilan.
+
+`KonteksPerusahaan` menaruh `{customer_id, member_id, peran}` per request;
+`AnggotaController` tidak pernah menerima ID perusahaan dari parameter rute atau
+badan permintaan. Jadi isolasinya bukan "tiap query ingat menyaring", melainkan
+"tidak ada ID lain yang bisa masuk".
+
+**Header tidak valid → 404, bukan 403.** Sejalan dengan REQ-ALT-01: 403 sudah
+memberi tahu bahwa perusahaan dengan ID itu ADA. Keanggotaan NONAKTIF
+diperlakukan sama — orang yang baru dikeluarkan tidak boleh bisa membedakan
+"saya dikeluarkan" dari "perusahaan itu tidak ada".
+
+**Header kosong:** satu keanggotaan → dipakai otomatis; lebih dari satu → **400
+`perusahaan_belum_dipilih`** beserta daftar pilihannya, supaya aplikasi bisa
+langsung menampilkan pemilih tanpa memanggil endpoint lain.
+
+### DUA jebakan test yang ketemu di sini, dua-duanya hijau/merah palsu
+
+**1. `Route::getController()` MENYIMPAN instance controller di objek Route.**
+
+```php
+if (! $this->controller) { $this->controller = $this->container->make($class); }
+```
+
+Objek Route hidup selama aplikasinya hidup. Di produksi itu satu request, jadi
+tidak pernah kelihatan. Di test satu instance aplikasi melayani semua request
+dalam satu method, jadi controller request KEDUA masih memegang `Konteks` milik
+request PERTAMA — dan yang dijawab data perusahaan yang salah, **tanpa satu pun
+error**.
+
+Perbaikannya bukan akal-akalan test: `Konteks` pindah dari constructor ke
+**argumen method**, yang di-resolve tiap dispatch. Constructor-injection untuk
+state per-request memang pola yang salah; testnya cuma yang memaksa itu
+kelihatan.
+
+**2. `withHeaders()` MENUMPUK antar-request dalam satu test.** Dia menggabungkan
+ke `$this->defaultHeaders`, jadi `X-Perusahaan-Id` yang dikirim di satu request
+masih terkirim di request berikutnya walau tidak disebut lagi — dan test
+"tanpa header" ternyata menguji hal yang sama sekali berbeda.
+
+Dua-duanya sekarang ditutup satu helper: `JalurPelanggan::permintaanBaru()`
+(buang guard + `flushHeaders()`), dengan docblock yang menyebut keduanya.
+
+### Peran ditegakkan middleware, bukan `if` di controller
+
+`peran:pic_utama` sejajar dengan `role:` di app internal: aturannya terbaca dari
+daftar rute, jadi bisa disapu test dan dijawab endpoint izin tanpa ditulis dua
+kali. Pemeriksaan yang hidup di badan controller tidak bisa disapu, dan yang
+lupa memasangnya tidak memerahkan apa pun.
+
+Urutannya mengikat: `perusahaan` dulu, baru `peran:`. Kalau terbalik,
+`PeranAnggota` melempar 500 — sengaja, bukan diam-diam meloloskan.
+
+### REQ-AUTH-09 tidak selalu mencabut token
+
+Anggota yang dinonaktifkan kehilangan seluruh token & perangkatnya —
+**kecuali** dia masih anggota aktif di perusahaan lain. Kalau tidak, satu PIC
+utama bisa memutus akses orang ke perusahaan yang sama sekali bukan urusannya.
+
+## 16 Sep 2026 — sapuan isolasi & hapus akun (M1-08, M1-09)
+
+**Yang berubah:** `IsolasiPerusahaanTest` menyapu rute pelanggan ber-ID secara
+otomatis, dan `DELETE /saya` + halaman web `/hapus-akun` mendarat. Kontrak naik
+ke `docs/kontrak-api-pelanggan.md` **v0.4**. Nol migrasi baru.
+
+### Sapuan isolasi: cakupannya HARI INI kecil, dan itu memang disebut terang
+
+Rute pelanggan ber-parameter baru **dua** (`/anggota/undangan/{undangan}` dan
+`/anggota/{anggota}/nonaktifkan`), dan dua-duanya sudah punya test 404 sendiri.
+Nilai test ini bukan di hari ini — nilainya waktu `/alat/{id}`,
+`/sertifikat/{id}`, dan `/permintaan/{ulid}` mendarat (M3+): mereka tidak bisa
+lahir tanpa bukti isolasi, karena **parameter tanpa fixture memerahkan testnya**.
+
+Tiga penjaga supaya sapuannya tidak bisa hijau-palsu, dan ketiganya perlu:
+
+1. parameter tanpa fixture → URL jadi cacat → 404 karena RUTENYA tidak ketemu,
+   bukan karena isolasinya bekerja. Dijaga `test_tiap_parameter_rute_punya_fixture`.
+2. fixture perusahaan B dibuktikan benar-benar ADA — ID yang kebetulan tidak ada
+   membuat seluruh sapuan 404 tanpa arti.
+3. satu kasus POSITIF (ID milik sendiri **tidak** 404) — tanpa itu, rute yang
+   rusak total dan selalu 404 buat siapa pun ikut lolos sebagai "aman".
+
+Sapuannya **dibuktikan menangkap kebocoran**: `abort_unless` di
+`batalkanUndangan` sengaja dilubangi sebentar, testnya merah dengan
+`DELETE …/{undangan} → 200` dan menyebut "1 dari 2 rute", lalu dikembalikan.
+
+### REQ-AUTH-11 menyebut foto profil, kolomnya TIDAK ADA
+
+Diperiksa langsung: `users` tidak punya kolom foto/avatar apa pun. Jadi bukan
+dilewat — memang tidak ada yang bisa dihapus. Yang dipasang penjaga buat masa
+depan: `HapusAkunTest` membaca `Schema::hasColumn('users', …)` dan memerah kalau
+kolom foto lahir tanpa ikut masuk `PenganonimAkun::kolomPribadi()`.
+
+Daftar kolom pribadinya sengaja dipulangkan sebagai ARRAY dari servicenya, bukan
+ditulis sebaris-sebaris `forceFill`, supaya test bisa mengadu isinya sebagai
+himpunan. Kolom pribadi yang lupa dibersihkan tidak memunculkan error apa pun.
+
+### Satu-satunya tempat penjaga "PIC utama terakhir" boleh dilewati
+
+`Keanggotaan::lepaskanSemuaUntukHapusAkun()`. REQ-AUTH-11 menyebutnya eksplisit:
+orang berhak keluar dari layanan, dan menahannya dengan alasan "perusahaanmu
+nanti tidak punya PIC" itu menyandera orang buat masalah organisasi yang bukan
+miliknya. Gantinya admin lab dikabari lewat `PerusahaanTanpaPicUtama`.
+
+Namanya panjang dan menyebut alasannya justru supaya tidak terpakai sebagai
+jalan pintas dari `nonaktifkan()` waktu penjagaannya terasa merepotkan.
+`HapusAkunTest` membuktikan dulu bahwa jalur `nonaktifkan` MEMANG menolak,
+sebelum membuktikan jalur hapus akun boleh — kalau tidak, testnya cuma
+menunjukkan dua jalur yang kebetulan sama-sama longgar.
+
+### Sandi diacak, bukan dibiarkan
+
+Akun yang dianonimkan dapat sandi acak 64 karakter. Kalau dibiarkan, satu-satunya
+yang menahan masuk tinggal pemeriksaan `dianonimkan_pada` di `masuk()` — dan
+pemeriksaan tunggal itu yang paling gampang hilang waktu jalur login disentuh
+lagi.
+
+### Halaman web `/hapus-akun` — syarat Google Play, TANPA tabel baru
+
+Google menuntut URL yang bisa dibuka **tanpa memasang aplikasinya**: buat orang
+yang HP-nya hilang, yang sudah mencopot aplikasinya, atau yang berhenti sebelum
+sempat masuk. Halamannya **di luar gerbang `fitur.pelanggan`** — tautannya
+terdaftar di Play Store dan tidak boleh mati waktu modulnya dimatikan sementara.
+
+Formulirnya mengirim email ke admin lab dan **tidak mencatat apa pun di
+database**. Konsekuensinya jujur dan harus diketahui: **SLA "diproses ≤ 7 hari"
+dilacak di kotak masuk admin, bukan di aplikasi.** Kalau permintaan lewat jalur
+ini jadi sering, tabel antrean yang beneran tercatat adalah langkah berikutnya —
+bukan sesuatu yang bisa disimpulkan dari nol data.
+
+Balasannya sama persis buat email terdaftar dan email asing. Kalau dibedakan,
+halaman publik ini jadi alat menyisir email pelanggan PT Sidik dari luar, tanpa
+akun dan tanpa aplikasi.
+
+### Bug yang ketemu waktu testnya dijalankan
+
+`layouts.publik` memakai `$organization` di judul dan kop halaman.
+`HapusAkunWebController::tampil()` awalnya memulangkan `view('hapus-akun')`
+tanpa itu, dan halamannya **500 `Undefined variable`** — bukan "logo hilang".
+Test halaman publiknya yang menangkap.
 
 ## 31 Juli 2026 — branch `feat/kalibrasi-ph-lengkap-dan-arsip` DITUTUP
 
@@ -67,7 +737,7 @@ minggu ini. Sebagian besar isinya juga udah ada di `main` lewat jalan lain:
 | Arsip / file manager | ✅ ada, ditulis ulang dengan bentuk beda |
 | Matriks peran & `/me/permissions` | ✅ ada |
 | Koreksi suhu buffer, kondisi lingkungan | ✅ ada |
-| **Order Kalibrasi + penugasan teknisi** | ❌ **nggak ada, dan nggak jadi dibangun** |
+| **Order Kalibrasi + penugasan teknisi** | ❌ nggak ada — **status per 31 Juli, DIKOREKSI 17 Sep: rutenya hidup lagi**, lihat bagian di atas |
 
 ### ⚠️ Yang ikut ditutup: entitas Order
 
@@ -78,6 +748,10 @@ sekarang statusnya bukan "belum dibangun", tapi **nggak jadi dibangun**.
 
 §3 di bawah masih nulis `/orders` sebagai "BELUM ADA, jangan dibangun frontend-nya
 dulu". Kalimat itu sekarang perlu dibaca sebagai **permanen**, bukan "nanti".
+
+> ⚠️ **Dikoreksi 17 Sep 2026.** "Permanen" nggak bertahan: rutenya ada lagi di
+> `routes/api.php`, lengkap dengan `teknisi_id=saya`. Bagian **17 September 2026**
+> di atas yang berlaku, bukan paragraf ini.
 
 ### Kodenya nggak hilang
 
