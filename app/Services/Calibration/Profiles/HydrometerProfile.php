@@ -71,6 +71,47 @@ class HydrometerProfile extends CalibrationProfile
     /** Satuan densitas lembar & sertifikat. */
     public const SATUAN = 'g/ml';
 
+    /**
+     * Lantai CMC yang DITULIS kedua workbook master (`NILAI U95%!L79` — angka
+     * literal yang sama persis di kelima blok skala, di kedua berkas).
+     *
+     * Bukan nilai yang dipakai; dipakai buat MEMBANDINGKAN. Lampiran akreditasi
+     * LK-285-IDN hal. 7 butir 32 memuat DUA pita, dan baris keduanya menyambung
+     * tanpa mengulang nama alat — persis jebakan yang ditulis di CLAUDE.md:
+     *
+     *     32 Densitas Hydrometer 1.1 g/mL ~ 1.7 g/mL   0.00070 g/mL
+     *                            0.6 g/mL ~ 1 g/mL     0.00051 g/mL
+     *
+     * Master membaca baris pertama saja, lalu memakai 0,0007 buat SEMUA
+     * hydrometer — termasuk yang rentangnya 0,600-0,650 dan seharusnya
+     * dilantai 0,00051. Selisihnya 37%, dan LANGSUNG kecetak: U hitung kedua
+     * sesi contoh (0,000482…–0,000494…) ada di bawah dua-duanya, jadi yang
+     * terbit lantainya, bukan hitungannya.
+     *
+     * [jejakAudit] menerbitkan `hydrometer_cmc_pita_akreditasi` tiap kali pita
+     * yang kepakai beda dari angka ini.
+     */
+    public const CMC_MASTER = 0.0007;
+
+    /**
+     * Titik skala pertama yang rujukan `ci` Stem Diameter-nya rusak di master.
+     *
+     * `NILAI U95%!J139` (SKALA 3) berbunyi `=C57` — sel milik SKALA 1 —
+     * sementara pasangannya `J71 = C57` dan `J105 = C92` melangkah benar. Yang
+     * seharusnya `=C126`. Rusaknya IDENTIK di kedua workbook, dan cuma di kolom
+     * ini: sepuluh komponen lain melangkah benar di kelima blok.
+     *
+     * Skala 4 & 5 lebih parah — `J173 = H30` (sel tak berhubungan, nol) dan
+     * `J207 = (0.01/15)*'INPUT DATA'!E15` (rumus tempelan). Sel penurunannya
+     * sendiri (`C160`/`C194`) `#VALUE!` di kedua workbook, jadi mulai titik ke-4
+     * master tidak punya rujukan yang bisa diadu sama sekali.
+     *
+     * Mesin hitung di sini menurunkan `ci` per titik dari massa cairan titik itu
+     * ([HydrometerCalculator::budget]), jadi nilainya ikut skalanya sendiri —
+     * benar, tapi BEDA dari master mulai titik ke-3.
+     */
+    public const TITIK_CI_STEM_MASTER_RUSAK = 3;
+
     /** Tepat tiga ulangan massa & tiga ulangan suhu per titik. */
     public const PENGULANGAN = TabelStandarHydrometer::PENGULANGAN;
 
@@ -942,6 +983,25 @@ class HydrometerProfile extends CalibrationProfile
             self::SATUAN,
         );
 
+        // Dua penyimpangan DARI MASTER yang disengaja. Ditulis di sini karena
+        // aturan repo-nya begitu: master ditiru, dan kalau tidak ditiru
+        // selisihnya WAJIB kebaca — bukan cuma benar diam-diam. Pola & bentuk
+        // barisnya sama dengan `pengulangan_standar_dibagi_n` (Thermometer
+        // Glass), `ac_pick_up_dibagi_akar3` (TITS), dan komponen ekstrapolasi
+        // Autoclave.
+        foreach ($this->catatanAudit($h, $cmc) as $catatan) {
+            $budget[] = [
+                'sumber' => $catatan['kode'],
+                'keterangan' => $catatan['pesan'],
+                'distribusi' => '-',
+                'nilai' => $catatan['nilai'],
+                'u_baku' => 0.0,
+                'ci' => 0.0,
+                'kontribusi' => 0.0,
+                'satuan' => self::SATUAN,
+            ];
+        }
+
         $budget[] = [
             'sumber' => 'jejak_titik',
             'keterangan' => sprintf(
@@ -966,6 +1026,74 @@ class HydrometerProfile extends CalibrationProfile
         ];
 
         return $budget;
+    }
+
+    /**
+     * Penyimpangan yang DISENGAJA dari workbook master, satu baris per kejadian.
+     *
+     * Ada karena aturan §Aturan yang Lahir dari Kesalahan Nyata: kerusakan
+     * salin-tempel di master dihitung BENAR, tapi selisihnya ditulis. Sampai
+     * 19 Sep 2026 hydrometer menyimpang di dua tempat tanpa satu pun catatan —
+     * benar angkanya, diam selisihnya, dan itu justru yang dilarang.
+     *
+     * @param  array<string, mixed>  $h
+     * @return list<array{kode: string, pesan: string, nilai: float|null}>
+     */
+    private function catatanAudit(array $h, ?float $cmc): array
+    {
+        $catatan = [];
+
+        // (1) Lantai CMC dari pita yang MEMUAT titiknya, bukan baris pertama
+        // lampiran — lihat [CMC_MASTER].
+        if ($cmc !== null && abs($cmc - self::CMC_MASTER) > 1e-12) {
+            $catatan[] = [
+                'kode' => 'hydrometer_cmc_pita_akreditasi',
+                'pesan' => sprintf(
+                    'Lantai CMC titik ini %.12g %s, diambil dari pita lampiran akreditasi LK-285-IDN '
+                    .'hal. 7 butir 32 yang MEMUAT titik %.12g %s (pita 0,6-1,0 g/mL). Kedua workbook '
+                    .'master menulis %.12g %s di `NILAI U95%%!L79` untuk SEMUA skala — itu angka pita '
+                    .'1,1-1,7 g/mL, baris PERTAMA lampiran, dan baris keduanya menyambung tanpa '
+                    .'mengulang nama alat sehingga terlewat. Selisihnya %.1f%% dan langsung kecetak, '
+                    .'karena U hitung %.12g %s ada di bawah kedua lantai.',
+                    $cmc,
+                    self::SATUAN,
+                    (float) $h['titik_ukur'],
+                    self::SATUAN,
+                    self::CMC_MASTER,
+                    self::SATUAN,
+                    abs(self::CMC_MASTER - $cmc) / $cmc * 100,
+                    (float) $h['ketidakpastian_diperluas'],
+                    self::SATUAN,
+                ),
+                'nilai' => $cmc,
+            ];
+        }
+
+        // (2) `ci` Stem Diameter per skala — lihat [TITIK_CI_STEM_MASTER_RUSAK].
+        $titikKe = (int) $h['titik_ke'];
+
+        if ($titikKe >= self::TITIK_CI_STEM_MASTER_RUSAK) {
+            $ci = (float) ($h['koefisien_sensitivitas']['diameter_stem'] ?? 0.0);
+
+            $catatan[] = [
+                'kode' => 'hydrometer_ci_stem_per_skala',
+                'pesan' => sprintf(
+                    'Koefisien sensitivitas Stem Diameter titik ke-%d diturunkan dari massa cairan '
+                    .'titik ini sendiri (ci = %.12g). Master menunjuk sel yang salah: `NILAI U95%%!J139` '
+                    .'(SKALA 3) berbunyi `=C57`, sel milik SKALA 1, padahal `J71 = C57` dan `J105 = C92` '
+                    .'melangkah benar — yang seharusnya `=C126`. Identik di kedua workbook, dan cuma '
+                    .'kolom ini; sepuluh komponen lain melangkah benar di kelima blok. Mulai titik ke-%d '
+                    .'master malah tidak punya rujukan sama sekali (`J173 = H30`, `J207` rumus tempelan, '
+                    .'dan sel penurunannya `C160`/`C194` sendiri `#VALUE!`).',
+                    $titikKe,
+                    $ci,
+                    self::TITIK_CI_STEM_MASTER_RUSAK + 1,
+                ),
+                'nilai' => $ci,
+            ];
+        }
+
+        return $catatan;
     }
 
     /**

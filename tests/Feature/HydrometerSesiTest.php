@@ -11,6 +11,7 @@ use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\CalibrationValidator;
 use App\Support\HydrometerMentah;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -273,6 +274,82 @@ class HydrometerSesiTest extends TestCase
                     $h->titik_ukur,
                     $h->ketidakpastian_diperluas,
                 ),
+            );
+        }
+    }
+
+    /**
+     * Dua penyimpangan dari master WAJIB kebaca di tiap sesi.
+     *
+     * Aturannya bukan gaya penulisan: §Aturan yang Lahir dari Kesalahan Nyata
+     * bilang kerusakan salin-tempel di master dihitung BENAR **lalu selisihnya
+     * ditulis**. Sampai 19 Sep 2026 hydrometer menyimpang di dua tempat tanpa
+     * satu pun catatan — angkanya benar, selisihnya diam. Itu keadaan yang
+     * dilarang, dan test ini yang menahannya balik.
+     *
+     * Pola & maksudnya sama persis dengan
+     * `Suhu3AlatMasterTest::test_gelas_pengulangan_standar_dibagi_akar_n`.
+     */
+    public function test_penyimpangan_dari_master_melahirkan_catatan_audit(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $hitungan = CalibrationSession::findOrFail($id)
+            ->uncertaintyCalculations
+            ->sortBy('titik_ke')
+            ->values();
+
+        $this->assertCount(3, $hitungan, 'Sesi contoh master punya tiga titik skala.');
+
+        foreach ($hitungan as $h) {
+            $kode = collect($h->type_b_components)->pluck('sumber')->all();
+
+            // (1) Lantai CMC — ketiga titik ada di pita 0,60-1,00 (0,00051),
+            // sementara kedua workbook menulis 0,0007 buat semua skala.
+            $this->assertContains(
+                'hydrometer_cmc_pita_akreditasi',
+                $kode,
+                sprintf(
+                    'titik ke-%d dilantai %s tapi selisihnya dari master (%s) nggak dicatat',
+                    $h->titik_ke,
+                    $h->ketidakpastian_diperluas,
+                    HydrometerProfile::CMC_MASTER,
+                ),
+            );
+
+            $pesan = collect($h->type_b_components)
+                ->firstWhere('sumber', 'hydrometer_cmc_pita_akreditasi')['keterangan'] ?? '';
+
+            $this->assertStringContainsString('LK-285-IDN', $pesan, 'Catatan wajib menyebut lampirannya.');
+            $this->assertStringContainsString('butir 32', $pesan, 'Catatan wajib menyebut butirnya.');
+
+            // (2) `ci` Stem Diameter — master salah sel MULAI titik ke-3, jadi
+            // titik 1 & 2 sengaja TIDAK bercatatan.
+            if ($h->titik_ke >= HydrometerProfile::TITIK_CI_STEM_MASTER_RUSAK) {
+                $this->assertContains(
+                    'hydrometer_ci_stem_per_skala',
+                    $kode,
+                    "titik ke-{$h->titik_ke} memakai ci per-skala tapi selisihnya dari master nggak dicatat",
+                );
+
+                $pesanCi = collect($h->type_b_components)
+                    ->firstWhere('sumber', 'hydrometer_ci_stem_per_skala')['keterangan'] ?? '';
+
+                $this->assertStringContainsString('J139', $pesanCi, 'Catatan wajib menyebut sel masternya.');
+                $this->assertStringContainsString('C126', $pesanCi, 'Catatan wajib menyebut sel yang seharusnya.');
+
+                continue;
+            }
+
+            $this->assertNotContains(
+                'hydrometer_ci_stem_per_skala',
+                $kode,
+                "titik ke-{$h->titik_ke} masih sejalan dengan master — nggak boleh bercatatan penyimpangan",
             );
         }
     }
