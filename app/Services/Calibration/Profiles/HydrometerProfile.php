@@ -112,6 +112,30 @@ class HydrometerProfile extends CalibrationProfile
      */
     public const TITIK_CI_STEM_MASTER_RUSAK = 3;
 
+    /**
+     * Titik skala pertama yang master TIDAK PUNYA PEMBANDINGNYA sama sekali.
+     *
+     * Beda derajat dari [TITIK_CI_STEM_MASTER_RUSAK]: di skala 3 master masih
+     * memulangkan angka (cuma dari sel yang salah, jadi masih bisa diadu dan
+     * selisihnya bisa dihitung). Mulai skala 4 master tidak memulangkan apa-apa
+     * — `NILAI U95%!C160` & `C194` `#VALUE!`, `SERTIFIKAT!J20`/`J21` ikut
+     * `#VALUE!` — jadi tidak ada angka untuk diadu.
+     *
+     * Yang dipakai mesin hitung tetap rumus yang SAMA dengan titik 1-3, dan
+     * titik 1-3 itu sudah diadu sel demi sel ke kedua workbook dan cocok. Jadi
+     * ini perpanjangan rumus tervalidasi ke titik yang masternya sendiri rusak,
+     * bukan angka tanpa dasar — tapi tetap angka yang tidak punya pembanding,
+     * dan itu yang wajib kebaca admin sebelum dia menyetujui.
+     *
+     * Sesinya SENGAJA tidak ditolak. Preseden repo-nya jelas
+     * (`height_gauge_diluar_akreditasi`, `jangka_sorong_diluar_akreditasi`,
+     * `flowmeter_varian_ufm_belum_divalidasi`): keadaan yang sah tapi di luar
+     * yang bisa dibuktikan diterbitkan dengan alasan yang kebaca, bukan
+     * diblokir. Keputusan pemilik proyek 19 Sep 2026; reversibel kalau lab
+     * memperbaiki workbook-nya.
+     */
+    public const TITIK_TANPA_PEMBANDING_MASTER = 4;
+
     /** Tepat tiga ulangan massa & tiga ulangan suhu per titik. */
     public const PENGULANGAN = TabelStandarHydrometer::PENGULANGAN;
 
@@ -714,6 +738,10 @@ class HydrometerProfile extends CalibrationProfile
             $peringatan[] = $p;
         }
 
+        foreach ($this->peringatanTitikTanpaPembandingMaster($sesi) as $p) {
+            $peringatan[] = $p;
+        }
+
         foreach ($this->peringatanKoreksiTidakMasukAkal($sesi) as $p) {
             $peringatan[] = $p;
         }
@@ -924,6 +952,39 @@ class HydrometerProfile extends CalibrationProfile
      * rusak parah bisa saja jatuh ke sini dengan jujur. Yang dibutuhkan admin
      * melihatnya sebelum menyetujui, bukan kehilangan sesinya.
      *
+     * @return list<array<string, mixed>>
+     */
+    private function peringatanTitikTanpaPembandingMaster(CalibrationSession $sesi): array
+    {
+        $titikKe = $sesi->uncertaintyCalculations()
+            ->where('titik_ke', '>=', self::TITIK_TANPA_PEMBANDING_MASTER)
+            ->orderBy('titik_ke')
+            ->pluck('titik_ke')
+            ->all();
+
+        if ($titikKe === []) {
+            return [];
+        }
+
+        return [[
+            'kode' => 'hydrometer_titik_tanpa_pembanding_master',
+            'pesan' => sprintf(
+                'Sesi ini memakai titik skala ke-%s. Angkanya BUKAN karangan: rumus koefisien '
+                .'sensitivitasnya sama persis dengan titik 1-3, dan titik 1-3 sudah diadu sel demi sel '
+                .'ke kedua workbook master dan cocok — jadi ini perpanjangan rumus yang sudah '
+                .'tervalidasi. Yang TIDAK ada adalah PEMBANDINGNYA: blok budget skala 4 & 5 di kedua '
+                .'workbook rusak (`NILAI U95%%!C160` & `C194` = #VALUE!, `J173` menunjuk sel kosong '
+                .'`H30`, `J207` rumus tempelan), dan `SERTIFIKAT!J20`/`J21` ikut #VALUE!. Artinya U95 '
+                .'titik itu tidak bisa diadu ke master mana pun. Selama U hitung masih di bawah lantai '
+                .'CMC, yang tercetak lantainya dan selisih ini tidak sampai ke kertas — tapi di master '
+                .'rentang 1,8-2,0 U hitung MENANG atas lantai di ketiga skalanya, jadi keadaan itu '
+                .'bukan jaminan. Periksa sebelum menyetujui; lihat docs/pertanyaan-lab-hydrometer.md §14.',
+                implode(' & ', $titikKe),
+            ),
+        ]];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     private function peringatanDeretTertukar(CalibrationSession $sesi): array

@@ -809,6 +809,86 @@ class HydrometerSesiTest extends TestCase
         $this->assertNotContains('hydrometer_densitas_tidak_mengikuti_skala', $kode);
     }
 
+    /**
+     * Titik skala ke-4 & ke-5 terbit, TAPI nggak boleh lolos tanpa suara.
+     *
+     * ## Kegagalan yang dijaga
+     *
+     * `CalibrationController` cuma menolak titik ke-6 ke atas (`TITIK_MAKS`),
+     * jadi 4 & 5 lolos diam-diam. Padahal blok budget skala 4 & 5 di KEDUA
+     * workbook master rusak — `NILAI U95%!C160`/`C194` `#VALUE!`,
+     * `SERTIFIKAT!J20`/`J21` `#VALUE!` — jadi U95 yang terbit di titik itu
+     * nggak punya pembanding sama sekali.
+     *
+     * Rumusnya sendiri bukan karangan: sama persis dengan titik 1-3 yang sudah
+     * diadu sel demi sel ke master dan cocok. Yang hilang pembandingnya, bukan
+     * dasarnya — dan bedanya itu yang wajib kebaca admin sebelum menyetujui.
+     *
+     * Sebelum 19 Sep 2026 sesi lima titik pulang `boleh_terbit = true` dengan
+     * NOL peringatan. Itu yang ditutup di sini.
+     */
+    public function test_titik_empat_dan_lima_melahirkan_peringatan_tanpa_pembanding_master(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $lima = [
+            [0.610, [21.2727, 21.2726, 21.2856], 20.6],
+            [0.620, [22.3230, 22.3225, 22.3240], 20.6],
+            [0.630, [23.3690, 23.3685, 23.3700], 20.6],
+            [0.640, [24.4150, 24.4145, 24.4160], 20.7],
+            [0.650, [25.4602, 25.4608, 25.4621], 20.7],
+        ];
+
+        $measurements = array_map(static fn (array $t): array => [
+            'titik_ukur' => $t[0],
+            'hydro_massa' => $t[1],
+            'hydro_suhu' => [$t[2], $t[2], $t[2]],
+        ], $lima);
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat, ['measurements' => $measurements]))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $kode = $this->kodeTemuan($id, $alat->organization_id);
+
+        $this->assertContains(
+            'hydrometer_titik_tanpa_pembanding_master',
+            $kode,
+            'sesi lima titik lolos tanpa suara — persis lubang yang ditutup 19 Sep 2026',
+        );
+
+        // Pesannya wajib menyebut DUA hal sekaligus: bahwa angkanya bukan
+        // karangan, DAN bahwa dia tidak bisa diadu. Menyebut satu saja bikin
+        // admin salah menimbang — terlalu ngeri, atau terlalu tenang.
+        $pesan = collect(
+            $this->actingAs(User::factory()->admin()->create(['organization_id' => $alat->organization_id]))
+                ->getJson("/api/calibrations/{$id}/validasi")
+                ->json('data.temuan')
+        )->firstWhere('kode', 'hydrometer_titik_tanpa_pembanding_master')['pesan'] ?? '';
+
+        $this->assertStringContainsString('tervalidasi', $pesan, 'Wajib menyebut rumusnya sudah tervalidasi.');
+        $this->assertStringContainsString('tidak bisa diadu ke master', $pesan, 'Wajib menyebut tidak bisa diadu.');
+        $this->assertStringContainsString('C160', $pesan, 'Wajib menyebut sel master yang rusak.');
+    }
+
+    /** Sesi tiga titik — yang persis seperti kedua master — nggak boleh kena peringatan itu. */
+    public function test_tiga_titik_tidak_kena_peringatan_tanpa_pembanding_master(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat))
+            ->assertSuccessful()
+            ->json('data.id');
+
+        $this->assertNotContains(
+            'hydrometer_titik_tanpa_pembanding_master',
+            $this->kodeTemuan($id, $alat->organization_id),
+            'tiga titik itu persis bentuk kedua master — nggak boleh diperingatkan',
+        );
+    }
+
     /** Kode temuan yang muncul buat sesi ini, lewat endpoint validasi sungguhan. */
     private function kodeTemuan(int $id, int $organizationId): array
     {

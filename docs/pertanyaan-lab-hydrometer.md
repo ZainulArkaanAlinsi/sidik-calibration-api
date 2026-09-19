@@ -316,6 +316,58 @@ diameter stem-nya diukur.
 
 ---
 
+## §15 — Blok budget skala 4 & 5 rusak total di kedua workbook [TERBIT DENGAN PERINGATAN]
+
+Lanjutan §14, tapi derajatnya beda. Di skala 3 master masih **memulangkan
+angka** — cuma dari sel yang salah, jadi selisihnya masih bisa dihitung. Mulai
+skala 4 master **tidak memulangkan apa-apa**.
+
+Rujukan `ci` Stem Diameter, kelima blok, kedua workbook identik:
+
+| Skala | Sel `ci` di blok budget | Isinya | Seharusnya |
+|---|---|---|---|
+| 1 | `J71` | `=C57` | ✅ benar |
+| 2 | `J105` | `=C92` | ✅ benar |
+| 3 | `J139` | `=C57` | ❌ `=C126` — §14 |
+| 4 | `J173` | `=H30` (sel tak berhubungan, nilai 0) | ❌ `=C160` |
+| 5 | `J207` | `=(0.01/15)*'INPUT DATA'!E15` (rumus tempelan) | ❌ `=C194` |
+
+Dan sel penurunannya sendiri ikut rusak — `C160` & `C194` dua-duanya `#VALUE!`,
+karena memakai `N154`/`N188` yang kosong **dan** merujuk `PERHITUNGAN!J37`/`K37`
+(baris 37) padahal skala 1-3 memakai baris 44 (`G44`/`H44`/`I44`). Akibatnya
+`SERTIFIKAT!J20` & `J21` juga `#VALUE!`.
+
+Sepuluh komponen budget yang lain melangkah **benar** di kelima blok. Jadi ini
+satu kolom yang ketinggalan, bukan pola.
+
+**Sikap sistem:** sesi 4-5 titik tetap terbit, dengan peringatan
+`hydrometer_titik_tanpa_pembanding_master` yang menyebut dua hal sekaligus —
+bahwa rumusnya **sama persis dengan titik 1-3 yang sudah diadu ke master dan
+cocok** (jadi bukan angka tanpa dasar, melainkan perpanjangan rumus tervalidasi),
+dan bahwa U95 titik itu **tidak bisa diadu ke master mana pun**. Preseden
+perlakuannya `height_gauge_diluar_akreditasi` dan
+`flowmeter_varian_ufm_belum_divalidasi`. Keputusan pemilik proyek 19 Sep 2026;
+reversibel.
+
+**Kenapa tidak diblokir:** menolak sesinya berarti lab yang memang mengalibrasi
+5 titik kehilangan pekerjaannya tanpa jalan keluar, dan master menyediakan
+**lima** kolom `Point of Calibration` — jadi 4-5 titik itu bentuk yang memang
+disediakan lembarnya.
+
+**Kenapa ini tidak bisa dibiarkan diam:** di sesi contoh kedua master, U hitung
+ada di bawah lantai CMC sehingga yang tercetak lantainya dan kerusakan ini tidak
+sampai ke kertas. Tapi di workbook rentang 1,8-2,0 g/mL, U hitung **menang atas
+lantai di ketiga skalanya** (0,000867 · 0,000877 · 0,000901 lawan CMC 0,0007).
+Hydrometer semacam itu dengan 4-5 titik akan mencetak U95 dari koefisien yang
+tidak punya pembanding.
+
+**Pertanyaan:** mohon dibetulkan `J173` → `=C160`, `J207` → `=C194`, dan sel
+`C160`/`C194`-nya sendiri (`N154`/`N188` kosong, dan baris 37 vs 44). Atau, kalau
+lab memang tidak pernah memakai lebih dari 3 titik skala, mohon dikonfirmasi —
+supaya batasnya diturunkan dari 5 ke 3 dan jalur ini hilang sama sekali.
+
+---
+
 ## Yang TIDAK jadi pertanyaan
 
 Supaya jelas apa yang sudah selesai:
