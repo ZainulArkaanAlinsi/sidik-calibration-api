@@ -504,6 +504,55 @@ sudah ikut naik dan tidak ada yang perlu diperbaiki selain menunggu.
 - Subagent yang tugasnya menganalisis, mereview, atau menyintesis jalankan dengan `model="sonnet"`.
 - Sisakan Opus untuk thread utama dan keputusan arsitektur.
 
+## MCP — kebijakan pemasangan & pemakaian
+
+Sesi berikutnya akan ditawari MCP lagi, dan **setelan bawaannya justru yang
+berbahaya**. Keputusan di bawah sudah diambil; jangan dibahas ulang dari nol.
+
+### Aiven MCP — TIDAK dipasang (keputusan 19 Sep 2026)
+
+Dua alasan, dan yang kedua yang menentukan:
+
+1. **Tidak bisa menjalankan SQL.** Yang diberikannya cuma melihat service,
+   metrik, log, dan konfigurasi. Untuk kebutuhan query yang benar-benar pernah
+   muncul — sensus akun, jejak perubahan role, sertifikat hydrometer —
+   `php artisan tinker --execute` dengan `DB::select()` sudah dipakai dan
+   **lebih tepat**: dia menempuh konfigurasi Laravel yang sama dengan
+   aplikasinya, jadi yang diperiksa memang jalur yang dijaga.
+2. **Dokumentasinya sendiri menyatakan tools-nya bisa destruktif** — membuat,
+   mengubah, dan menghapus service, database, serta data. Bandingkan Render MCP
+   yang paling jauh bisa mengubah env var: **Aiven bisa menghapus database.**
+   Database kita produksi dan berisi data pelanggan.
+
+Kalau suatu saat tetap dipasang, dua syarat ini **keras, bukan opsional**:
+
+- **Read-only di tingkat ORGANISASI** — Admin → Authentication → *Restrict MCP
+  connections to read-only*. **Bukan** flag di sisi klien: flag klien bisa
+  terlupa atau ketimpa, kebijakan organisasi tidak bisa di-override dari sana.
+- **`AIVEN_ALLOW_SECRETS=false`, selalu.** Nilai `true` mengirim kredensial
+  koneksi — termasuk URI dan password — ke agen, dan dokumentasinya membatasi
+  itu untuk development dengan service NON-produksi.
+
+### Render MCP — boleh, tapi baca saja
+
+Dipakai **hanya** untuk membaca log dan metrik. **Dilarang menyetel environment
+variable atau memicu deploy tanpa izin eksplisit** dari pemilik proyek, sekali
+per kejadian — izin lama tidak berlaku untuk kejadian berikutnya.
+
+Alasannya sudah terbukti di repo ini: `ARSIP_DRIVER` pernah digeser lewat
+dashboard lalu ketimpa balik diam-diam oleh deploy berikutnya (1 Sep 2026, lihat
+`render.yaml` §ARSIP_DRIVER), dan satu-satunya yang menangkapnya justru
+`/api/health`. Env var di service ini bukan setelan yang aman diubah cepat-cepat.
+
+### Aturan umum untuk MCP apa pun
+
+- **Menulis ke produksi: tidak pernah**, tanpa pengecualian.
+- Izin baca produksi berlaku **untuk pertanyaan yang sedang dibahas saat itu**.
+  Pertanyaan baru di sesi lain: minta lagi.
+- Sebelum memasang MCP baru, periksa dua hal dan laporkan ke pemilik proyek:
+  apakah tools-nya bisa melakukan operasi destruktif, dan apakah pembatasannya
+  bisa ditegakkan di tingkat organisasi (bukan cuma di klien).
+
 ## Daftar Permintaan
 - Tujuh permintaan besar dari pemilik proyek ada di `docs/permintaan-user-7.md` — itu yang jadi
   pegangan, bukan ingatan percakapan. Baca dulu sebelum mulai kerja, dan perbarui kolom Status di
