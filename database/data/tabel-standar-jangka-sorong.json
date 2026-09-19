@@ -1,5 +1,5 @@
 {
-    "_sumber": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (sheet Std_CaliperCek, Standar_GB, DATABASE, Perhitungan koef. Sensitivitas), password spirit285. Caliper Checker dibaca dari tabel-standar-height-gauge.json — keping fisik yang sama, sudah diadu skrip ini.",
+    "_sumber": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (sheet Std_CaliperCek, Standar_GB, DATABASE, Perhitungan koef. Sensitivitas), ber-password. Caliper Checker dibaca dari tabel-standar-height-gauge.json — keping fisik yang sama, sudah diadu skrip ini.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-jangka-sorong.py",
     "balok_ukur": {
         "nama": "Gauge Block Standard",

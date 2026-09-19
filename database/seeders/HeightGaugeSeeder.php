@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
 /**
  * Sesi contoh **Height Gauge** — alat ke-26, kelompok Panjang.
  *
- * Sumbernya `Master_olda_Height_Gauge_600_mm_2026.xlsm` (password `spirit285`),
+ * Sumbernya `Master_olda_Height_Gauge_600_mm_2026.xlsm` (ber-password),
  * sesi `001-UBLK-05.26`. Masukannya digenerate
  * `docs/skrip/gen-sesi-height-gauge.py` ke
  * `database/data/sesi-master-height-gauge.json`, bukan diketik.

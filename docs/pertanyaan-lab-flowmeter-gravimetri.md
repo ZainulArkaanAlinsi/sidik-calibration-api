@@ -5,7 +5,7 @@ Dari pembedahan dua workbook master varian metode kedua alat ke-27 & ke-28:
 - `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
 - `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm`
 
-Keduanya password `spirit285`, dan keduanya **sudah divalidasi**: `FORM VALIDASI`
+Keduanya ber-password, dan keduanya **sudah divalidasi**: `FORM VALIDASI`
 baris terakhir 21 Mei 2026, PIC `NR`, CHECK `AM`, **VALIDATION `AM`**. Itu yang
 membedakannya dari master UFM (`docs/pertanyaan-lab-flowmeter.md`) yang kolom
 VALIDATION-nya kosong — dan yang membuat butir-butir di bawah lebih mendesak,

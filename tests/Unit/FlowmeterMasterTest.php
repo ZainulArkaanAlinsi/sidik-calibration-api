@@ -12,7 +12,7 @@ use Tests\TestCase;
  *
  * Sumbernya `1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer (1000-1900L)
  * 2026.xlsm` dan `Master olda Ultrasonic Flowrate (100-300 lpm) 2026.xlsm`
- * (password `spirit285`). Angka harapan di bawah disalin dari SELNYA, bukan
+ * (ber-password). Angka harapan di bawah disalin dari SELNYA, bukan
  * dari keluaran kode ini — kalau keduanya lahir dari sumber yang sama, test-nya
  * cuma mengukur dirinya sendiri.
  *

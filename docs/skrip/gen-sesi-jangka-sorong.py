@@ -127,7 +127,7 @@ def agregat(r_uc):
 
 
 isi = {
-    "_catatan": "Sesi contoh dari Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (pw spirit285). "
+    "_catatan": "Sesi contoh dari Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (ber-password). "
                 "Yang ditanam JangkaSorongSeeder cuma MASUKANNYA; `_acuan_master` dipakai JangkaSorongMasterTest.",
     "_digenerate_oleh": "docs/skrip/gen-sesi-jangka-sorong.py",
     "_sesi": {

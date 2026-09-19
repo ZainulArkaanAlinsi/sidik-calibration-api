@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate `database/data/tabel-standar-dial-indicator.json` dari master lab.
 
-Sumber: ekspor CSV `Master Olah Data_Dial Indicator.xlsm` (password spirit285).
+Sumber: ekspor CSV `Master Olah Data_Dial Indicator.xlsm` (ber-password).
 
 Yang ditulis cuma yang KHAS Dial Indicator — pita CMC, identitas standar, dan
 tetapan budget yang di master hidup sebagai angka telanjang di dalam rumus.
@@ -82,7 +82,7 @@ for kode, r, maks in (("A", 5, 25.0), ("B", 6, 50.0), ("C", 7, 100.0), ("D", 8, 
     })
 
 isi = {
-    "_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), password spirit285. "
+    "_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), ber-password. "
                "Balok ukur dibaca dari tabel-standar-micrometer.json — set fisik yang sama, sudah diadu skrip ini.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-dial-indicator.py",
     "standar": {

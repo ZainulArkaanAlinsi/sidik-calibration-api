@@ -8,7 +8,7 @@ use App\Services\GumCalculator;
  * Mesin hitung **Flowmeter Gravimetri (ISO 4185)** — varian metode kedua untuk
  * alat ke-27 & ke-28, bukan alat ke-29.
  *
- * Sumbernya dua workbook master (password `spirit285`):
+ * Sumbernya dua workbook master (ber-password):
  *
  *  - `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
  *  - `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm`

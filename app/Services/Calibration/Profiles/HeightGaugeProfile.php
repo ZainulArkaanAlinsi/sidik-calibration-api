@@ -15,7 +15,7 @@ use Carbon\Carbon;
  * Lembar & hitungan **Height Gauge 600 mm** — alat ke-26, kelompok Panjang.
  *
  * Satu workbook master (`Master_olda_Height_Gauge_600_mm_2026.xlsm`, password
- * `spirit285`). Angkanya dibuktikan lebih dulu di Python lalu dijaga
+ * sandi ada di admin lab). Angkanya dibuktikan lebih dulu di Python lalu dijaga
  * `HeightGaugeMasterTest` sel demi sel — kesepuluh koreksi, kesembilan komponen
  * budget, dan kelima angka agregat, toleransi 5·10⁻⁶.
  *

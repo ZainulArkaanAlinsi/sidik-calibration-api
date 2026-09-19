@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Generator `database/data/tabel-standar-flowmeter-gravimetri.json`.
 
-Sumbernya DUA workbook master ber-password `spirit285`:
+Sumbernya DUA workbook master ber-password:
 
   1. `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
   2. `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm`
@@ -334,7 +334,7 @@ konstanta = {
 data = {
     "_sumber": (
         "1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm & "
-        "2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm (password spirit285). "
+        "2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm (ber-password). "
         "Digenerate docs/skrip/gen-tabel-standar-flowmeter-gravimetri.py — jangan diketik tangan."
     ),
     "_metode": "ISO 4185 — static weighing method. PERHITUNGAN FC!B74 menulis judulnya sendiri.",

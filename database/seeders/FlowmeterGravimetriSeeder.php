@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
  * Sesi contoh **Flowmeter Gravimetri (ISO 4185)** — varian metode kedua alat
  * ke-27 (Totalizer) dan ke-28 (Flowrate).
  *
- * Sumbernya dua workbook master (password `spirit285`): `1.2 Master olda
+ * Sumbernya dua workbook master (ber-password): `1.2 Master olda
  * Flowmeter Totalizer dini (2026) 140-2500L.xlsm` dan `2.1 Master olda
  * Flowmeter Flowrate 100-980lpm 2026.xlsm`. Keduanya sesi yang SAMA — satu
  * pelanggan, satu nomor order, satu nomor sertifikat, satu alat, satu hari.

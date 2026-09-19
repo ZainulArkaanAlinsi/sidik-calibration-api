@@ -110,7 +110,7 @@ for p, dasar in (("warp", 11), ("weft", 28), ("kawat", 46)):
     }
 
 isi = {
-    "_catatan": "Sesi contoh dari Master Olah Data_Sieve Mesh.xlsm (pw spirit285). Yang ditanam SieveSeeder cuma "
+    "_catatan": "Sesi contoh dari Master Olah Data_Sieve Mesh.xlsm (ber-password). Yang ditanam SieveSeeder cuma "
                 "MASUKANNYA; koreksi, budget, dan vonis dihitung profilnya. `_acuan_master` dipakai SieveMasterTest.",
     "_digenerate_oleh": "docs/skrip/gen-sesi-sieve.py",
     "_sesi": {

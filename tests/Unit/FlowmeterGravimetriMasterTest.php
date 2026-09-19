@@ -12,7 +12,7 @@ use Tests\TestCase;
  *
  * Sumbernya `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
  * dan `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm` (password
- * `spirit285`). Angka harapan di bawah disalin dari SELNYA, bukan dari keluaran
+ * sandi ada di admin lab). Angka harapan di bawah disalin dari SELNYA, bukan dari keluaran
  * kode ini — kalau keduanya lahir dari sumber yang sama, test-nya cuma mengukur
  * dirinya sendiri.
  *

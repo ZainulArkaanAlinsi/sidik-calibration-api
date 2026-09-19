@@ -2,7 +2,7 @@
 
 **Alat:** Vernier Caliper / Jangka Sorong — lampiran akreditasi LK-285-IDN no. 35 (0-300 mm, CMC 0,015 mm)
 **Metode:** SIDIK-IK-CAL-0520_Rev.2 · **Kertas:** SIDIK-FM-CAL-0527_Rev.2
-**Sumber:** `Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm` (pw spirit285), sesi contoh `001-CAL-126`
+**Sumber:** `Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm` (ber-password), sesi contoh `001-CAL-126`
 **Disiapkan:** 15 September 2026
 
 Rumus master sudah dibuktikan sel demi sel (311 sel cocok, toleransi 5·10⁻⁶) sebelum satu baris PHP

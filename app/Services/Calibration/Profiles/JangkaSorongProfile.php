@@ -16,7 +16,7 @@ use Carbon\Carbon;
  * LK-285-IDN no. 35, kelompok Panjang.
  *
  * Satu workbook master (`Master Olah Data Caliper 2026 (std caliper
- * checker+gb).xlsm`, password `spirit285`), dibuktikan lebih dulu di Python
+ * checker+gb).xlsm`, ber-password), dibuktikan lebih dulu di Python
  * lalu dijaga `JangkaSorongMasterTest` — tiap komponen KETIGA budget dan tiap
  * titik Outside & Inside, toleransi 5·10⁻⁶.
  *

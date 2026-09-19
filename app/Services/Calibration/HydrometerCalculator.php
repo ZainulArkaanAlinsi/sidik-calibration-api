@@ -8,7 +8,7 @@ use App\Services\GumCalculator;
  * Mesin hitung **Hydrometer** — lampiran akreditasi LK-285-IDN baris no. 25,
  * metode `SIDIK-IK-CAL-0525_Rev.3`, Lab. Volumetrik.
  *
- * Dua workbook master (password `spirit285`) jadi sumbernya, dan rantainya
+ * Dua workbook master (ber-password) jadi sumbernya, dan rantainya
  * DIBUKTIKAN lebih dulu di Python sebelum satu baris PHP ditulis: keenam
  * densitas terbitnya, keempat belas koefisien sensitivitasnya, serta `uc`,
  * `v_eff`, `k`, dan `U` tiap skala cocok sampai ≤3·10⁻¹⁷. Test yang mengulang

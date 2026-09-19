@@ -1,5 +1,5 @@
 {
-    "_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), password spirit285. Balok ukur dibaca dari tabel-standar-micrometer.json — set fisik yang sama, sudah diadu skrip ini.",
+    "_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), ber-password. Balok ukur dibaca dari tabel-standar-micrometer.json — set fisik yang sama, sudah diadu skrip ini.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-dial-indicator.py",
     "standar": {
         "nama": "Gauge Block Standard",

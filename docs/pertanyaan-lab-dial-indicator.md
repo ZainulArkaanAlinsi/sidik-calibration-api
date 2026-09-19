@@ -1,6 +1,6 @@
 # Pertanyaan Lab — Dial Indicator (lampiran LK-285-IDN no. 36)
 
-**Sumber:** `Master Olah Data_Dial Indicator.xlsm` (pw `spirit285`), kertas `SIDIK-FM-CAL-0526_Rev.3`.
+**Sumber:** `Master Olah Data_Dial Indicator.xlsm` (ber-password), kertas `SIDIK-FM-CAL-0526_Rev.3`.
 **Disiapkan:** 15 Sep 2026. **Status angka:** 108 sel master direproduksi di Python dan PHP, nol beda
 pada 1·10⁻⁹ (`DialIndicatorMasterTest`).
 

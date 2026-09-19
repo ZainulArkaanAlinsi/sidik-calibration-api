@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
  * Dua sesi contoh **Flowmeter Ultrasonic** — alat ke-27 (Totalizer) dan ke-28
  * (Flowrate), kelompok Aliran.
  *
- * Sumbernya dua workbook master (password `spirit285`): `1.3 Master Olah Data
+ * Sumbernya dua workbook master (ber-password): `1.3 Master Olah Data
  * Flowmeter_Ultrasonic Totalizer (1000-1900L) 2026.xlsm` dan `Master olda
  * Ultrasonic Flowrate (100-300 lpm) 2026.xlsm`. Keduanya sesi yang SAMA —
  * pelanggan sama, order sama, alat sama, dikalibrasi selang sehari.

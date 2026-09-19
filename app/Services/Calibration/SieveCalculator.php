@@ -10,7 +10,7 @@ use DateTimeInterface;
  * metode SIDIK-IK-CAL-0526, ASTM E11 / ISO 3310-1).
  *
  * Satu workbook master (`Master Olah Data_Sieve Mesh.xlsm`, password
- * `spirit285`). Rumusnya dibuktikan di Python lebih dulu — 189 sel diadu,
+ * sandi ada di admin lab). Rumusnya dibuktikan di Python lebih dulu — 189 sel diadu,
  * 189 cocok — lalu dijaga `SieveMasterTest` komponen demi komponen.
  *
  * ## Bentuknya: TIGA budget per sesi, bukan satu per titik

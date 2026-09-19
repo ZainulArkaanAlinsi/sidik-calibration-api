@@ -11,7 +11,7 @@ use DateTimeInterface;
  * LK-285-IDN no. 35 (0-300 mm, CMC 0,015 mm), metode `SIDIK-IK-CAL-0520_Rev.2`.
  *
  * Satu workbook master (`Master Olah Data Caliper 2026 (std caliper
- * checker+gb).xlsm`, password `spirit285`), dibuktikan lebih dulu di Python:
+ * checker+gb).xlsm`, ber-password), dibuktikan lebih dulu di Python:
  * 311 sel cocok pada 5·10⁻⁶. Master Height Gauge TURUNAN master ini, jadi
  * [HeightGaugeCalculator] contekan terdekatnya — tapi bedanya banyak.
  *

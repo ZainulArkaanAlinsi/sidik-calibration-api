@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate `database/data/tabel-standar-sieve.json` dari master lab.
 
-Sumber: ekspor CSV `Master Olah Data_Sieve Mesh.xlsm` (password spirit285),
+Sumber: ekspor CSV `Master Olah Data_Sieve Mesh.xlsm` (ber-password),
 sheet `STANDAR_KALIBRATOR` dan `DATABASE`. Seluruh sel yang dibaca di sini
 KONSTANTA (bukan array formula), jadi nilai CSV-nya sama dengan yang tersimpan
 di workbook — xlsm tidak perlu dibuka.
@@ -148,7 +148,7 @@ def standar(r, kol_resolusi):
 
 
 isi = {
-    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), password spirit285. "
+    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. "
                "Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-sieve.py",
     "standar": {

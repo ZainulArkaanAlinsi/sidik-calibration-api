@@ -1,5 +1,5 @@
 {
-    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), password spirit285. Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
+    "_sumber": "Master Olah Data_Sieve Mesh.xlsm (sheet STANDAR_KALIBRATOR & DATABASE), ber-password. Tabel_MPE disalin apa adanya; kolom yang janggal DITANDAI di `tanda`, tidak dibetulkan.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-sieve.py",
     "standar": {
         "caliper": {

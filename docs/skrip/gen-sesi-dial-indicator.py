@@ -98,7 +98,7 @@ for r in range(5, 15):
     })
 
 isi = {
-    "_catatan": "Sesi contoh dari Master Olah Data_Dial Indicator.xlsm (pw spirit285). Yang ditanam DialIndicatorSeeder "
+    "_catatan": "Sesi contoh dari Master Olah Data_Dial Indicator.xlsm (ber-password). Yang ditanam DialIndicatorSeeder "
                 "cuma MASUKANNYA; koreksi & budget dihitung profilnya. `_acuan_master` dipakai DialIndicatorMasterTest.",
     "_digenerate_oleh": "docs/skrip/gen-sesi-dial-indicator.py",
     "_sesi": {

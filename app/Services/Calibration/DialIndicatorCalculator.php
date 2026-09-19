@@ -11,7 +11,7 @@ use DateTimeInterface;
  * kelompok Panjang.
  *
  * Satu workbook master (`Master Olah Data_Dial Indicator.xlsm`, password
- * `spirit285`). Rumusnya dibuktikan di Python lebih dulu: 108 sel — kesepuluh
+ * sandi ada di admin lab). Rumusnya dibuktikan di Python lebih dulu: 108 sel — kesepuluh
  * titik, kesepuluh komponen budget (ui, ci, vi), dan kelima agregat — cocok
  * pada 1·10⁻⁹. Dijaga `DialIndicatorMasterTest`.
  *

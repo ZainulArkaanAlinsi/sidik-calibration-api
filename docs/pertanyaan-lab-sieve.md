@@ -1,7 +1,7 @@
 # Pertanyaan lab — Sieve Mesh (LK-285-IDN no. 33)
 
 **Untuk:** Manajer Teknis, Lab Kalibrasi PT Sidik
-**Sumber:** `Master Olah Data_Sieve Mesh.xlsm` (pw spirit285), kertas `SIDIK-FM-CAL-0536 Rev.2`
+**Sumber:** `Master Olah Data_Sieve Mesh.xlsm` (ber-password), kertas `SIDIK-FM-CAL-0536 Rev.2`
 **Sesi contoh:** `0736-CAL-526` — sieve 19 mm, tipe Inspection, 15 opening, Digital Caliper
 **Disiapkan:** 15 September 2026
 

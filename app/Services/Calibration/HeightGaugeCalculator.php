@@ -10,7 +10,7 @@ use DateTimeInterface;
  * Mesin hitung **Height Gauge 600 mm** — alat ke-26, kelompok Panjang.
  *
  * Satu workbook master turun dari lab (`Master_olda_Height_Gauge_600_mm_2026.xlsm`,
- * password `spirit285`). Tidak ada `vbaProject.bin` di dalamnya: ekstensinya
+ * ber-password). Tidak ada `vbaProject.bin` di dalamnya: ekstensinya
  * `.xlsm` tapi checkbox "Good / Not Good"-nya Form Control biasa, jadi tidak
  * ada logika tersembunyi yang perlu dibaca ulang.
  *

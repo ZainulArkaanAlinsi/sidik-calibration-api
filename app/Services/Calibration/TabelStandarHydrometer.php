@@ -6,7 +6,7 @@ namespace App\Services\Calibration;
  * Data acuan **Hydrometer** — metode `SIDIK-IK-CAL-0525_Rev.3` (lampiran
  * akreditasi LK-285-IDN, baris no. 25, Lab. Volumetrik).
  *
- * Dua workbook master jadi sumbernya, dua-duanya ber-password `spirit285`:
+ * Dua workbook master jadi sumbernya, dua-duanya ber-password:
  *
  *  - `Master Olah Data Hydrometer 0.600-0.650.xlsm` (terbit 8 Sep 2025) —
  *    rentang RINGAN, pakai beban tambahan (sinker).

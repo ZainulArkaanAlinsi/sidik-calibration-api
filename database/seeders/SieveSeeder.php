@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
 /**
  * Sesi contoh **Sieve Mesh** — lampiran LK-285-IDN no. 33.
  *
- * Sumbernya `Master Olah Data_Sieve Mesh.xlsm` (password `spirit285`), sesi
+ * Sumbernya `Master Olah Data_Sieve Mesh.xlsm` (ber-password), sesi
  * `0736-CAL-526`: sieve 19 mm tipe Inspection, 15 opening, diukur Digital
  * Caliper. Masukannya digenerate `docs/skrip/gen-sesi-sieve.py` ke
  * `database/data/sesi-master-sieve.json`, bukan diketik.

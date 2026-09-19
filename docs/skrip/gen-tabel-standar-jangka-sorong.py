@@ -2,7 +2,7 @@
 """Generate `database/data/tabel-standar-jangka-sorong.json` dari master lab.
 
 Sumber: ekspor CSV `Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm`
-(password spirit285).
+(ber-password).
 
 ## Dua standar, dua perlakuan
 
@@ -109,7 +109,7 @@ for r in range(10, 133):
 
 isi = {
     "_sumber": "Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm (sheet Std_CaliperCek, Standar_GB, "
-               "DATABASE, Perhitungan koef. Sensitivitas), password spirit285. Caliper Checker dibaca dari "
+               "DATABASE, Perhitungan koef. Sensitivitas), ber-password. Caliper Checker dibaca dari "
                "tabel-standar-height-gauge.json — keping fisik yang sama, sudah diadu skrip ini.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-jangka-sorong.py",
     "balok_ukur": {

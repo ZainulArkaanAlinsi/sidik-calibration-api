@@ -15,7 +15,7 @@ use Carbon\Carbon;
  * ("Sieve": 45–4000 µm U 4,33 µm; 4–100 mm U 0,02 mm), metode
  * SIDIK-IK-CAL-0526, kertas SIDIK-FM-CAL-0536 Rev.2.
  *
- * Workbook master `Master Olah Data_Sieve Mesh.xlsm` (password `spirit285`);
+ * Workbook master `Master Olah Data_Sieve Mesh.xlsm` (ber-password);
  * angkanya dijaga `SieveMasterTest` komponen demi komponen di ketiga budget.
  * Rumus, penyimpangan yang ditiru, dan yang dihitung benar ada di docblock
  * [SieveCalculator].

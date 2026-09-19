@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * Adu **Hydrometer** ke dua workbook master lab (password `spirit285`).
+ * Adu **Hydrometer** ke dua workbook master lab (ber-password).
  *
  * Kedua file itu sertifikat yang SUDAH TERBIT — 8 Sep 2025 (rentang ringan,
  * pakai beban tambahan) dan 7 Nov 2025 (rentang berat, tanpa). Kalau aplikasi

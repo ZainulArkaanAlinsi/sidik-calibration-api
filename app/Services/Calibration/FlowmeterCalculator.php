@@ -7,7 +7,7 @@ use App\Services\GumCalculator;
 /**
  * Mesin hitung **Flowmeter Ultrasonic** — alat ke-27 & ke-28, kelompok Aliran.
  *
- * Satu mesin, DUA mode. Sumbernya dua workbook master (password `spirit285`):
+ * Satu mesin, DUA mode. Sumbernya dua workbook master (ber-password):
  *
  *  - `1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer (1000-1900L) 2026.xlsm`
  *  - `Master olda Ultrasonic Flowrate (100-300 lpm) 2026.xlsm`

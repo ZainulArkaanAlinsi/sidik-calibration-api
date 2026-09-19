@@ -1,7 +1,7 @@
 # SPEC — Profil Kalibrasi Turbidimeter (alat ke-2 dari 48)
 
 Serah-terima buat Rehan. Sumber kebenaran: `Master Olah Data_Turbidimeter.xlsm`
-(pw `spirit285`) — sheet INPUT DATA, PERHITUNGAN, PERHITUNGAN U95%, DATABASE.
+(ber-password) — sheet INPUT DATA, PERHITUNGAN, PERHITUNGAN U95%, DATABASE.
 Metode `SIDIK-IK-CAL-0523`, form `SIDIK-FM-CAL-0530_Rev.2` (DATABASE row).
 
 Status: **jalan end-to-end dengan ANGKA ASLI** (worksheet → hitung GUM → seeder

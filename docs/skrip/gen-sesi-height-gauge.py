@@ -114,7 +114,7 @@ def main():
         })
 
     data = {
-        "_catatan": "Sesi contoh dari Master_olda_Height_Gauge_600_mm_2026.xlsm (pw spirit285). "
+        "_catatan": "Sesi contoh dari Master_olda_Height_Gauge_600_mm_2026.xlsm (ber-password). "
                     "Yang ditanam HeightGaugeSeeder cuma MASUKANNYA; koreksi & budget dihitung "
                     "profilnya. `_acuan_master` dipakai HeightGaugeMasterTest, bukan seeder.",
         "_digenerate_oleh": "docs/skrip/gen-sesi-height-gauge.py",

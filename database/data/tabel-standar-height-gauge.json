@@ -1,5 +1,5 @@
 {
-    "_sumber": "Master_olda_Height_Gauge_600_mm_2026.xlsm (sheet Std_CaliperCek & DATABASE), password spirit285. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin hitung — seluruh VLOOKUP jalur Height Gauge memakai Nom_Outside.",
+    "_sumber": "Master_olda_Height_Gauge_600_mm_2026.xlsm (sheet Std_CaliperCek & DATABASE), ber-password. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin hitung — seluruh VLOOKUP jalur Height Gauge memakai Nom_Outside.",
     "_digenerate_oleh": "docs/skrip/gen-tabel-standar-height-gauge.py",
     "standar": {
         "nama": "Caliper Checker",

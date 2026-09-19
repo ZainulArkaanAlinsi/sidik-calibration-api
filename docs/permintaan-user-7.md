@@ -1269,7 +1269,7 @@ belum tentu sama tanggal. Lihat K12.
 
 ## 14. Alat baru **Timbangan** (Massa) — 31 Agt 2026
 
-Ditambahkan pemilik proyek 31 Agt 2026 bersama tiga workbook master ber-password (pw `spirit285`):
+Ditambahkan pemilik proyek 31 Agt 2026 bersama tiga workbook master ber-password (ber-password):
 
 > *"kita ada alat baru lagi yaitu jenis nya TIMBANGAN … pastikan harus beres juga olah data nya
 > gk ada yang error dan juga aneh aneh"*
@@ -2279,7 +2279,7 @@ formulir siap teken. Yang tidak: tanda tangannya.
 ## 23. Alat baru **Height Gauge 600 mm** (Panjang) — 7 Sep 2026
 
 Satu workbook master turun (`Master_olda_Height_Gauge_600_mm_2026.xlsm`,
-password `spirit285`), sudah diekspor ke CSV di
+ber-password), sudah diekspor ke CSV di
 `Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/Height_Gauge_600mm_CSV/`. Alat
 ke-26, kelompok **Panjang** — yang KEDUA berprofil di kelompok itu sesudah
 Micrometer.
@@ -2671,7 +2671,7 @@ tak-terlacak yang tidak punya aturan itu bom waktu yang menunggu satu
 
 Dua workbook master turun (`1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer
 (1000-1900L) 2026.xlsm` dan `Master olda Ultrasonic Flowrate (100-300 lpm)
-2026.xlsm`, password `spirit285`), plus kertas lembar kerjanya
+2026.xlsm`, ber-password), plus kertas lembar kerjanya
 `SIDIK-FM-CAL-0538_Rev.0`. Alat **ke-27 dan ke-28**, kelompok **Aliran** —
 kelompok yang sebelumnya belum punya satu pun profil, dan sekarang LENGKAP
 (lampiran akreditasi cuma memuat no. 30 & 31).
@@ -3001,7 +3001,7 @@ dihapus dari berkas berikut kedua cadangannya.
 
 ## §28 — Varian metode kedua **Flowmeter Gravimetri (ISO 4185)** — 10 Sep 2026
 
-Dua workbook master turun (password `spirit285`):
+Dua workbook master turun (ber-password):
 
 - `1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm`
 - `2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm`
@@ -3305,7 +3305,7 @@ lewat tautan luar.
 
 ## §30 — Alat ke-30..32: **Dial Indicator, Jangka Sorong, Sieve Mesh** — 15 Sep 2026
 
-Tiga workbook master (pw `spirit285`) dari pemilik proyek, beserta analisis & prompt
+Tiga workbook master (ber-password) dari pemilik proyek, beserta analisis & prompt
 implementasi yang ditempel. Kelompok Panjang di lampiran LK-285-IDN sekarang **lengkap
 berprofil**: Sieve (no. 33), Micrometer (34), Vernier Caliper (35), Dial Indicator (36).
 

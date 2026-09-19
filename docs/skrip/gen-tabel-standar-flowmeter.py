@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate `database/data/tabel-standar-flowmeter.json` dari DUA master lab.
 
-Sumber (password `spirit285`, sudah diekspor ke CSV di
+Sumber (ber-password, sudah diekspor ke CSV di
 `Project-PT-Sidik/alat-alat-Pt-Sidik/Aliran_CSV/`):
 
   1. `1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer (1000-1900L) 2026.xlsm`
@@ -166,7 +166,7 @@ def main():
 
     data = {
         "_sumber": "1.3 Master Olah Data Flowmeter_Ultrasonic Totalizer (1000-1900L) 2026.xlsm & "
-                   "Master olda Ultrasonic Flowrate (100-300 lpm) 2026.xlsm (password spirit285). "
+                   "Master olda Ultrasonic Flowrate (100-300 lpm) 2026.xlsm (ber-password). "
                    "Digenerate docs/skrip/gen-tabel-standar-flowmeter.py — jangan diketik tangan.",
         "_catatan_baris_kosong": "std_totalizer menyapu 12 baris di master (4 terisi), std_flowrate 9 "
                                  "baris (3 terisi). Baris kosong SENGAJA tidak disalin: di master dia "

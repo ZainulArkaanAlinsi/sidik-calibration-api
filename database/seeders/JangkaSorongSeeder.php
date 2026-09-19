@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
  * Sesi contoh **Jangka Sorong (Vernier Caliper)** — lampiran LK-285-IDN no. 35.
  *
  * Sumbernya `Master Olah Data Caliper 2026 (std caliper checker+gb).xlsm`
- * (password `spirit285`), sesi `001-CAL-126`. Masukannya digenerate
+ * (ber-password), sesi `001-CAL-126`. Masukannya digenerate
  * `docs/skrip/gen-sesi-jangka-sorong.py`, bukan diketik.
  *
  * ## Angkanya DIHITUNG, bukan ditempel

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate `database/data/tabel-standar-height-gauge.json` dari master lab.
 
-Sumber: `Master_olda_Height_Gauge_600_mm_2026.xlsm` (password `spirit285`),
+Sumber: `Master_olda_Height_Gauge_600_mm_2026.xlsm` (ber-password),
 sudah diekspor ke CSV di
 `Project-PT-Sidik/alat-alat-Pt-Sidik/panjang/Height_Gauge_600mm_CSV/`.
 
@@ -77,7 +77,7 @@ def main():
 
     data = {
         "_sumber": "Master_olda_Height_Gauge_600_mm_2026.xlsm (sheet Std_CaliperCek & DATABASE), "
-                   "password spirit285. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin "
+                   "ber-password. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin "
                    "hitung — seluruh VLOOKUP jalur Height Gauge memakai Nom_Outside.",
         "_digenerate_oleh": "docs/skrip/gen-tabel-standar-height-gauge.py",
         "standar": {

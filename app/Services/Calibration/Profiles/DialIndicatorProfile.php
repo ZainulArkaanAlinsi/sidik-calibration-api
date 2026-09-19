@@ -16,7 +16,7 @@ use Carbon\Carbon;
  * kelompok Panjang.
  *
  * Satu workbook master (`Master Olah Data_Dial Indicator.xlsm`, password
- * `spirit285`), dibuktikan sel demi sel lebih dulu; lihat
+ * sandi ada di admin lab), dibuktikan sel demi sel lebih dulu; lihat
  * [DialIndicatorCalculator] untuk rumus dan penyimpangannya.
  *
  * ## Ketidakpastian lahir per SESI, dalam mm
