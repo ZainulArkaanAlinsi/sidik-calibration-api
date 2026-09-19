@@ -160,6 +160,43 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
         'bangun_ulang_saat_boot' => config('deploy.bangun_ulang_saat_boot'),
     ],
 
+    // Modul pelanggan — saklar yang paling mahal kalau nilainya berubah tanpa
+    // ada yang tahu, dan sampai 19 Sep 2026 satu-satunya cara memeriksanya
+    // membuka dashboard Render.
+    //
+    // ## Kenapa ini bukan kerapian
+    //
+    // `render.yaml` menulis `FITUR_PELANGGAN` dengan `value: "false"`, dan itu
+    // GAMPANG disalahbaca sebagai kunci. Bukan: `value:` cuma berarti blueprint
+    // menyinkronkan nilainya tiap kali dia dibaca — yaitu tiap deploy. Di
+    // ANTARA dua deploy, nilainya bisa digeser dari dashboard dan langsung
+    // berlaku; deploy berikutnya menimpanya balik tanpa satu pun peringatan.
+    //
+    // Dua arah, dua-duanya senyap:
+    //  - dinyalakan buat uji coba lalu lupa -> `/api/pelanggan/v1` terbuka ke
+    //    internet sampai deploy berikutnya, padahal modulnya belum lewat
+    //    tinjauan keamanan M6-01;
+    //  - dinyalakan waktu rilis M7 lalu ketimpa deploy -> modulnya mati
+    //    diam-diam dan yang ketahuan cuma dari keluhan pengguna.
+    //
+    // Preseden persisnya `ARSIP_DRIVER`, 1 Sep 2026: digeser ke `s3` di
+    // dashboard, deploy berikutnya menimpanya balik ke `local`, dan yang
+    // menemukan justru satu huruf berubah di endpoint INI. Lihat render.yaml
+    // §ARSIP_DRIVER.
+    //
+    // Batasnya sama dengan tiga blok di atas: yang dilaporkan STATUS, bukan
+    // nilai. Nol rahasia — ini boolean fitur, bukan kredensial — dan nol
+    // request ke mana pun. Dibaca lewat `config()`, bukan `env()`, karena
+    // entrypoint memanggil `config:cache` sebelum server nyala.
+    //
+    // `maintenance` ikut karena sifatnya sama persis: disetel lewat dashboard,
+    // mematikan sisi pelanggan sendirian tanpa menyentuh app internal, dan
+    // nggak punya satu pun cara diperiksa dari luar.
+    'pelanggan' => [
+        'fitur' => (bool) config('pelanggan.fitur'),
+        'maintenance' => (bool) config('pelanggan.maintenance'),
+    ],
+
     // Realtime sync — pertanyaan yang selama ini nggak bisa dijawab dari luar
     // SAMA SEKALI, dan degradasinya senyap.
     //

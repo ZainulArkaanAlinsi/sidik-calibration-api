@@ -70,6 +70,34 @@ if [ "${SEED_ON_BOOT}" = "true" ]; then
     echo "   deploy pertama berhasil." >&2
 fi
 
+# Modul pelanggan nyala di produksi — diteriakin, bukan diblokir.
+#
+# `render.yaml` nulis FITUR_PELANGGAN `value: "false"`, dan itu GAMPANG
+# disalahbaca sebagai kunci. Bukan: `value:` cuma berarti blueprint nyinkronin
+# nilainya tiap kali dia kebaca — yaitu tiap deploy. Di ANTARA dua deploy,
+# nilainya bisa digeser dari dashboard dan LANGSUNG berlaku.
+#
+# Dua arah, dua-duanya senyap: dinyalain buat nyoba lalu lupa (seluruh
+# /api/pelanggan/v1 kebuka ke internet padahal belum lewat tinjauan keamanan
+# M6-01), atau dinyalain pas rilis lalu ketimpa deploy berikutnya (modulnya
+# mati diam-diam). Preseden persisnya ARSIP_DRIVER 1 Sep 2026.
+#
+# SENGAJA cuma peringatan, bukan `exit 1`. Masalahnya bukan "ada yang sengaja
+# nyalain" tapi "nilainya berubah tanpa ada yang tahu" — itu diobati
+# kekelihatan, bukan kunci tambahan. Matiin boot karena ini malah nuker satu
+# saklar yang salah sama SELURUH server yang dipakai teknisi di lokasi.
+#
+# Pasangannya `GET /api/health` -> `pelanggan.fitur`, yang ngelaporin keadaan
+# yang sama tanpa perlu buka log deploy sama sekali.
+if [ "${FITUR_PELANGGAN}" = "true" ]; then
+    echo "!! FITUR_PELANGGAN=true — SELURUH /api/pelanggan/v1 kebuka di server ini." >&2
+    echo "   render.yaml mematoknya \"false\", jadi nilai ini datang dari dashboard" >&2
+    echo "   dan bakal ketimpa balik diam-diam di deploy berikutnya." >&2
+    echo "   Kalau ini memang rilis M7: pindahin ke render.yaml biar nggak ilang." >&2
+    echo "   Kalau bukan: matiin sekarang di Render -> Environment." >&2
+    echo "   Keadaannya kebaca dari luar lewat GET /api/health -> pelanggan.fitur" >&2
+fi
+
 tahap "bersihin cache build"
 # Cache lama dari tahap build (kalau ada) dibuang dulu, biar config:cache di
 # bawah baca environment yang sekarang, bukan yang keburu kebekukan pas build.
