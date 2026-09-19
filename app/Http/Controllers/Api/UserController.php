@@ -21,6 +21,12 @@ class UserController extends Controller
     {
         $users = User::query()
             ->where('organization_id', $request->user()->organization_id)
+            // Cuma akun INTERNAL. `organization_id` nggak memisahkan apa-apa di
+            // sini: pelanggan PT Sidik memang duduk di organisasi PT Sidik, jadi
+            // tanpa saringan ini seluruh akun pelanggan bocor ke daftar pengguna
+            // internal — dan dari situ `PUT /users/{id}` tinggal satu langkah.
+            // Alasan lengkapnya di [pastikanAkunInternal].
+            ->whereIn('role', User::roles())
             ->when(
                 $request->filled('status'),
                 fn ($query) => $query->where('status', $request->string('status')),
@@ -148,5 +154,43 @@ class UserController extends Controller
     private function pastikanSatuOrganisasi(Request $request, User $user): void
     {
         abort_if($user->organization_id !== $request->user()->organization_id, 404);
+
+        $this->pastikanAkunInternal($user);
+    }
+
+    /**
+     * Endpoint `/users` cuma buat akun INTERNAL — bukan pelanggan, bukan
+     * super admin.
+     *
+     * ## Kegagalan yang ditutup
+     *
+     * `pastikanSatuOrganisasi()` di atas cuma mencocokkan `organization_id`,
+     * dan itu tidak memisahkan apa pun: akun pelanggan PT Sidik memang duduk di
+     * organisasi PT Sidik. `Rule::in(User::roles())` di [update] & [approve]
+     * juga tidak menolong — dia menjaga nilai role yang MASUK, bukan akun yang
+     * DITUJU. Jadi sebelum penjaga ini:
+     *
+     *     PUT  /api/users/{id_pelanggan}          {"role":"admin"}  -> 200
+     *     POST /api/users/{id_pelanggan}/approve  {"role":"admin"}  -> 200
+     *
+     * dua-duanya mengubah akun pelanggan jadi akun lab dengan akses ke seluruh
+     * data seluruh pelanggan. Itu risiko R-D02 di docblock `User`, dan jalannya
+     * satu request.
+     *
+     * Sisi panel Filament sudah ditutup lebih dulu lewat
+     * `UserResource::getEloquentQuery()`; sisi API-nya belum ikut, dan celah itu
+     * yang ditambal di sini. Kedua sisi sekarang memakai daftar yang sama
+     * (`User::roles()`), jadi menambah role internal baru cukup di satu tempat.
+     *
+     * `super_admin` ikut tertolak dengan sendirinya — dia juga bukan anggota
+     * `User::roles()`. Perilakunya sejajar dengan panel, yang sudah menolaknya
+     * lewat `test_akun_super_admin_juga_tidak_bisa_dibuka`.
+     *
+     * 404, bukan 403, dengan alasan yang sama seperti penjaga organisasi di
+     * atas: 403 mengonfirmasi akunnya ada, dan itu sudah bocoran sendiri.
+     */
+    private function pastikanAkunInternal(User $user): void
+    {
+        abort_if(! in_array($user->role, User::roles(), true), 404);
     }
 }
