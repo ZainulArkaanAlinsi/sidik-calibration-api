@@ -85,12 +85,22 @@ class HydrometerSeeder extends Seeder
             ->where('nama', 'Thermobarometer Lutron')
             ->first();
 
+        // Nama & alamat SINTETIS, bukan pelanggan aslinya.
+        //
+        // Yang asli ada di workbook master (`Hydrometer 0.600-0.650 gmL.xlsx`,
+        // `SERTIFIKAT!R2`/`R4`) dan sempat tersalin ke sini waktu alat ke-33
+        // mendarat 18 Sep 2026 — sesudah sapuan besar `c0645f6` (10 Sep, 81
+        // berkas), jadi dia lolos justru karena sapuannya sudah lewat.
+        //
+        // Polanya sama dengan yang dipakai `c0645f6`: sifat pelanggannya
+        // dipertahankan (kilang, unit kilang) supaya sesi contohnya tetap masuk
+        // akal, identitasnya diganti. Lihat AGENTS.md §Data sumber & dokumen.
         $pelanggan = Customer::updateOrCreate(
-            ['organization_id' => 1, 'nama' => 'PT KILANG PERTAMINA INTERNATIONAL - REFINERY UNIT V'],
+            ['organization_id' => 1, 'nama' => 'PT CONTOH KILANG NUSANTARA - REFINERY UNIT V'],
             [
                 'organization_id' => 1,
-                'alamat' => 'JL. YOS SUDARSO, MEKAR SARI, BALIKPAPAN TENGAH, PARAPATAN, '
-                    .'KEC. BALIKPAPAN KOTA, KOTA BALIKPAPAN, KALIMANTAN TIMUR 76111',
+                'alamat' => 'JL. CONTOH RAYA NO. 1, KEC. CONTOH TENGAH, KOTA CONTOH, '
+                    .'PROVINSI CONTOH 10000',
             ],
         );
 

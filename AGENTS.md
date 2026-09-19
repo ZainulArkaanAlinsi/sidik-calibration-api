@@ -158,10 +158,29 @@ kali (lihat §Aturan yang Lahir dari Kesalahan Nyata).
 ### Data sumber & dokumen
 
 - `Project-PT-Sidik/alat-alat-Pt-Sidik/` — workbook master lab per alat. Ini
-  kebenaran untuk rumus. Repo **sekarang PRIVAT** (dicek 10 Sep 2026 lewat
-  `gh repo view --json visibility`) — sempat PUBLIK sampai K27 dijawab, dan
-  status itu bukan alasan longgar: tetap sapu nama/alamat pelanggan sebelum
-  `git add` apa pun dari direktori ini. Lihat §Sebelum repo dibalik jadi PUBLIK.
+  kebenaran untuk rumus.
+
+  **JANGAN percaya status repo yang tertulis di berkas ini — periksa sendiri:**
+
+  ```bash
+  gh repo view ZainulArkaanAlinsi/sidik-calibration-api    --json visibility
+  gh repo view ZainulArkaanAlinsi/sidik-calibration-mobile --json visibility
+  ```
+
+  Berkas ini sudah dua kali salah menulisnya, ke dua arah yang berbeda, dan
+  nol error muncul dari keduanya. Pernah tertulis "PUBLIK" dua hari sesudah
+  dibalik jadi privat; lalu tertulis "PRIVAT (dicek 10 Sep 2026)" sementara
+  pemeriksaan **19 Sep 2026** memulangkan `PUBLIC` untuk **kedua** repo. Status
+  yang ditulis di dokumen selalu membusuk; perintah di atas tidak.
+
+  Apa pun hasilnya, **sapu nama & alamat pelanggan sebelum `git add` apa pun
+  dari direktori ini** — dan itu bukan formalitas: 19 Sep 2026 ditemukan satu
+  nama perusahaan pelanggan asli sudah masuk `database/seeders/HydrometerSeeder.php:89`,
+  ikut alat ke-33 yang mendarat 18 Sep, sesudah sapuan besar `c0645f6`. Yang
+  menyalinnya membaca workbook master yang memang memuat nama itu.
+
+  Lihat §Sebelum repo dibalik jadi PUBLIK untuk daftar yang masih terbaca di
+  riwayat git.
 - Nilai CMC berasal dari lampiran akreditasi **LK-285-IDN**, diseed lewat
   `*CapabilitySeeder`, diringkas di `docs/Rekap-Data-Kemampuan-Kalibrasi.md`.
 - `docs/BACA-DULU-BACKEND.md` — **satu-satunya dokumen status yang boleh
