@@ -242,6 +242,174 @@ menunjuk ke sana supaya jelas ke mana arahnya begitu berkasnya mendarat.
    bisa disuruh ikut berubah hari itu juga; kalau memang harus, buat `/v2`.
 7. Rujukan lengkap: `docs/pelanggan/03-SDD.md`.
 
+## Olah data — aturan keras
+
+Rumus olah data memang berubah: master direvisi, standar direkalibrasi, pita CMC
+diperbarui. Yang TIDAK boleh ikut berubah adalah kemampuan mengadu angkanya ke
+workbook master dan ke lampiran akreditasi. ISO/IEC 17025 klausul 7.2.1.5 & 7.11
+meminta metode perhitungan divalidasi sebelum dipakai — dan "divalidasi" tidak
+bisa berarti "seseorang mengetik di form lalu menekan simpan".
+
+Ini bukan kekhawatiran teoretis. Dua kesalahan yang lolos bertahun-tahun di
+workbook lab berbentuk persis begitu: satu rujukan sel yang meleset
+(`docs/pertanyaan-lab-hydrometer.md` §14) dan satu pita CMC yang terbaca dari
+baris yang salah (0,0007 lawan 0,00051, §7). Dua-duanya selamat karena tidak ada
+yang mengadu ulang. Editor rumus tanpa penjaga menghasilkan kelas kesalahan yang
+sama, cuma lebih cepat.
+
+1. **Tiga lapis, dan cuma lapis 1 & 3 yang boleh berubah lewat konfigurasi.**
+
+   | Lapis | Isi | Lewat konfigurasi? |
+   |---|---|---|
+   | **1. Parameter & tabel referensi** | pita CMC, tabel koreksi standar, tabel MPE, daftar nominal balok ukur, identitas & tanggal jatuh tempo standar, konstanta metode, batas jumlah titik | **Ya**, lewat alur versi di butir 3 |
+   | **2. Struktur perhitungan** | rantai perhitungan, struktur budget ketidakpastian, ekspresi koefisien sensitivitas, urutan konversi satuan | **TIDAK.** Hanya lewat PR kode + test rekonsiliasi master |
+   | **3. Bentuk lembar kerja** | jumlah titik, label field, satuan | **Ya, terbatas** — wajib divalidasi bahwa perhitungan tidak kehilangan input |
+
+   Lapis 2 bersinggungan dengan §Profil kalibrasi di atas, tapi **sumbunya beda
+   dan jangan dicampur**: yang di sana mengatur DI MANA kode duduk (kelas
+   bersama lawan profil), yang di sini mengatur APAKAH boleh diubah tanpa PR.
+   Sebuah nilai bisa tinggal di dalam profil dan tetap lapis 2.
+
+   Hampir semua perubahan nyata di lab ini ada di lapis 1 — rekalibrasi standar,
+   pita CMC, tabel koreksi. Jadi lapis 1 saja sudah menjawab sebagian besar
+   kebutuhan "bisa diubah tanpa deploy".
+
+2. **Tiap sertifikat wajib menyimpan `formula_version_id` yang dipakai
+   menghitungnya.** §Jalur angka di atas sudah menuntut hasilnya kekal
+   (`uncertainty_calculations` DISIMPAN, tidak pernah dihitung ulang saat
+   dibaca); butir ini menyebut mekanisme yang menegakkannya.
+
+   Versi yang sudah dipakai sertifikat terbit **tidak boleh diubah atau
+   dihapus** — hanya dipensiunkan (`FormulaVersion::STATUS_ARSIP`). Versi baru
+   berlaku untuk sesi baru saja, jadi sertifikat lima tahun lalu tetap bisa
+   dihitung ulang persis seperti saat terbit.
+
+   **Sesi yang tersimpan tanpa stempel versi adalah CACAT, bukan keadaan
+   normal.** Per 19 Sep 2026 produksi bersih: 288 dari 288 hasil hitung
+   berstempel, nol null. Kalau angka itu pernah turun, yang rusak jalur
+   penyimpanannya — bukan datanya yang "kebetulan lama".
+
+3. **Versi parameter baru tidak boleh aktif sebelum hasil simulasinya
+   ditinjau.** Simulasi menjalankan versi baru terhadap seluruh sesi tersimpan,
+   lalu menampilkan: sesi mana yang angkanya berubah, berubah berapa dan di
+   kolom mana, dan mana yang **angka CETAKNYA** ikut berubah sesudah pembulatan.
+
+   Kolom terakhir itu yang menentukan. Perubahan yang menggeser nilai antara
+   tapi tidak menggeser angka cetak itu urusan konfigurasi; yang menggeser angka
+   cetak sertifikat yang sudah di tangan pelanggan itu urusan ketidaksesuaian.
+   Tanpa layar ini fitur ubah-parameter berbahaya; dengan layar ini dia justru
+   lebih aman daripada menyunting Excel — karena Excel tidak pernah memberi tahu
+   apa yang ikut berubah.
+
+4. **Penyimpangan dari master wajib punya catatan audit yang terbaca di jejak
+   sesi.** §Aturan yang Lahir dari Kesalahan Nyata di bawah sudah memutuskan
+   *kapan* boleh menyimpang ("kerusakan salin-tempel → hitung benar + tulis
+   selisihnya"). Yang ditambahkan di sini *bentuknya*, karena "tulis selisihnya"
+   pernah dibaca sebagai komentar di kode — dan komentar tidak sampai ke orang
+   yang menyetujui sesi.
+
+   Catatannya hidup di `type_b_components` sesi yang bersangkutan, dan wajib
+   menyebut **sumbernya**: nomor IK, halaman & butir lampiran akreditasi, atau
+   alamat sel master yang bermasalah. Pola bakunya
+   `pengulangan_standar_dibagi_n` di `ThermometerGlassProfile`; contoh terbaru
+   `hydrometer_cmc_pita_akreditasi` dan `hydrometer_ci_stem_per_skala`.
+
+   Ukurannya sederhana: orang yang membuka jejak sesi harus bisa tahu angka ini
+   berbeda dari master, berapa bedanya, dan atas dasar apa — tanpa membuka kode.
+
+5. **Nilai antara tidak dibulatkan.** Pembulatan cuma di lapisan render
+   sertifikat, dan presisinya berbeda per alat (`desimalSertifikat`,
+   `desimalU95`, `desimalFaktorCakupan`). Workbook master pun tidak memakai
+   `ROUND()` di satu pun rumus perhitungannya — pembulatan di sana murni format
+   tampilan. Membulatkan di tengah pipeline menyembunyikan justru jenis selisih
+   yang paling mahal dicari.
+
+6. Rujukan: `docs/pelanggan/09-Adendum-Olah-Data-Peran.md` §2.1 dan §3.
+
+## Peran & pemisahan wewenang
+
+1. **Kunci peran di database dan kode TETAP:** `admin`, `teknisi`, `viewer`,
+   `super_admin`, `pelanggan`. Label tampilan untuk `admin` adalah **"Master
+   Data"** — itu label saja. **Jangan pernah mengubah nilai kolom `role`.**
+   Mengubahnya menyentuh `EnsureUserHasRole`, `MatriksIzin::PETA`, seluruh
+   gerbang rute, `routes/channels.php`, dan puluhan test — risiko tinggi tanpa
+   satu pun manfaat teknis.
+
+2. **`super_admin` boleh membaca semua data lab tanpa batas.** Itu yang membuat
+   pelacakan menyeluruh berguna.
+
+3. **`super_admin` boleh bertindak atas nama peran lain, tapi aksinya tercatat
+   sebagai dilakukan oleh `super_admin`** — tidak pernah menyamar sebagai user
+   lain. Jejak yang menyebut orang yang tidak melakukannya lebih buruk daripada
+   tidak ada jejak sama sekali.
+
+4. **Satu `user_id` yang sama tidak boleh menjadi pengirim lembar kerja DAN
+   pengesah sertifikat pada sesi yang sama.** Berlaku juga untuk `super_admin`.
+   Pengecualian harus eksplisit dan tercatat alasannya.
+
+   Ini R-E08 (kritis) di `docs/pelanggan/06-Risk-Register.md` dan K4 di
+   `docs/pelanggan/00-BACA-DULU.md`. **Per 19 Sep 2026 penjagaan ini BELUM
+   ADA:** `CalibrationController::approve()` memeriksa organisasi, status,
+   verifikasi OCR, dan temuan validator — tapi tidak pernah membandingkan
+   `teknisi_id` dengan `$request->user()->id`. Nol test menjaganya.
+
+   **K4 sendiri BELUM dijawab manajer teknis**, jadi bentuk akhir penjagaannya
+   masih bisa berubah. Yang sudah diputuskan: aturan di atas berlaku sebagai
+   **default aman** — blokir dulu, karena satu orang yang mengisi lalu
+   mengesahkan sendiri menerbitkan sertifikat berlogo akreditasi tanpa satu pun
+   pemeriksaan. Yang BELUM diputuskan: bentuk pengecualiannya — siapa yang boleh
+   memberikannya, bagaimana dicatat, dan apakah lab memang membutuhkannya
+   (persona P4 menyebut sekitar lima admin, jadi pemisahan ini realistis).
+   Jangan menulis bentuk pengecualian itu sebelum K4 turun.
+
+5. **Nilai yang diisi teknisi tidak pernah dihapus.** Kesalahan **ditandai**;
+   koreksi menyimpan nilai lama DAN nilai baru beserta alasannya. Ini ISO/IEC
+   17025 klausul 7.5.2: data asli maupun hasil perubahan sama-sama wajib
+   disimpan. Menandai tidak mengubah nilai apa pun; mengoreksi mengubah nilainya
+   tapi menyimpan dua-duanya.
+
+6. Rujukan: `docs/pelanggan/09-Adendum-Olah-Data-Peran.md` §2.3 dan §4.
+
+### Keadaan nyata `super_admin` hari ini — TERDAFTAR TAPI MACET
+
+**Peran ini BELUM BOLEH DIPAKAI sampai Fase 2 membukanya.** Akun `super_admin`
+yang dibuat sekarang tidak bisa melakukan apa pun, dan yang membuatnya akan
+menghabiskan waktu mencari kesalahan yang tidak ada.
+
+Butir 1 di atas mendeklarasikan `super_admin` sebagai kunci yang tetap, dan itu
+gampang dibaca sebagai "sudah berfungsi". Tidak. Dia diterima di ENUM dan punya
+konstanta, lalu **tertolak di tujuh pintu**:
+
+| # | Pintu | Perilaku | Rujukan |
+|---|---|---|---|
+| 1 | `User::roles()` | tidak termasuk | `app/Models/User.php:92-95` |
+| 2 | `role:admin,teknisi,viewer` (grup luar API) | 403 di seluruh endpoint internal | `routes/api.php:269` |
+| 3 | Login aplikasi teknisi | 403 `bukan_akun_internal` | `app/Http/Controllers/Api/AuthController.php:62-69` |
+| 4 | `PUT/POST /api/users/{id}` | 404 lewat `pastikanAkunInternal()` | `app/Http/Controllers/Api/UserController.php:185-193` |
+| 5 | Daftar pengguna internal | tersaring keluar | `UserController::index()` |
+| 6 | Channel `organisasi.{id}` | ditolak | `routes/channels.php` lewat `roles()` |
+| 7 | **Panel Filament `/admin`** | **`canAccessPanel()` cuma menerima `ROLE_ADMIN`** | `app/Models/User.php:149-152` |
+
+Yang menerimanya cuma ENUM: migrasi
+`2026_09_16_100100_tambah_role_pelanggan_dan_status_pending_ke_users.php:44`,
+sengaja ikut lebih awal supaya `ALTER TABLE users` di produksi cukup sekali jalan.
+Konstantanya `User.php:55`.
+
+**Dan ada kontradiksi yang wajib dibereskan Fase 2, bukan sekadar dicatat.**
+`AuthController.php:67` menolak login `super_admin` dengan kalimat:
+
+> *"Akun super admin nggak masuk lewat aplikasi ini. **Pakai panel admin di
+> peramban.**"*
+
+Sementara `User::canAccessPanel()` (`User.php:151`) memulangkan `true` **hanya**
+untuk `ROLE_ADMIN` — jadi panel yang ditunjuk pesan itu **juga tertutup**
+untuknya. Super admin diberi petunjuk ke pintu yang terkunci.
+
+Belum ada yang kena karena nol akun `super_admin` di produksi (sensus 19 Sep
+2026: 2 admin, 5 teknisi, 1 viewer, nol pelanggan, nol super admin). Begitu satu
+dibuat sebelum Fase 2, orangnya terkunci dari segalanya sambil dikirim
+berputar-putar.
+
 ## Akun Lahir dari Undangan
 
 Tidak ada pendaftaran mandiri, di kedua sisi. Ini keputusan pemilik proyek
