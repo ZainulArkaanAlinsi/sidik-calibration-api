@@ -361,10 +361,32 @@ lantai di ketiga skalanya** (0,000867 · 0,000877 · 0,000901 lawan CMC 0,0007).
 Hydrometer semacam itu dengan 4-5 titik akan mencetak U95 dari koefisien yang
 tidak punya pembanding.
 
-**Pertanyaan:** mohon dibetulkan `J173` → `=C160`, `J207` → `=C194`, dan sel
-`C160`/`C194`-nya sendiri (`N154`/`N188` kosong, dan baris 37 vs 44). Atau, kalau
-lab memang tidak pernah memakai lebih dari 3 titik skala, mohon dikonfirmasi —
-supaya batasnya diturunkan dari 5 ke 3 dan jalur ini hilang sama sekali.
+### Pertanyaan — dan dua jalan ini TIDAK setara
+
+**Yang disarankan: turunkan batasnya dari 5 titik ke 3.**
+
+Satu pertanyaan saja yang perlu dijawab lab: **pernahkah hydrometer dikalibrasi
+di lebih dari 3 titik skala?** Kalau jawabannya tidak — dan kedua master yang
+turun ke repo dua-duanya cuma mengisi 3 — maka menurunkan `TITIK_MAKS` dari 5 ke
+3 **menghapus jalur tak-terverifikasi itu sepenuhnya**. Bukan menutupinya:
+sesinya ditolak di pintu dengan alasan yang kebaca, sama seperti titik ke-6
+sekarang, dan tidak ada lagi angka yang bisa terbit tanpa pembanding.
+
+Itu lebih baik daripada peringatan, dan alasannya sudah ditulis di CLAUDE.md
+sendiri: **peringatan yang sering muncul melatih admin menekan "setujui tetap"
+tanpa membaca.** Peringatan menggantungkan keselamatan pada orang yang sedang
+buru-buru; batas yang diturunkan tidak menggantungkannya pada siapa pun.
+
+**Perbaikan sel master cuma perlu kalau jawabannya IYA** — yaitu lab memang mau
+memakai 4-5 titik. Kalau itu yang terjadi, yang dibetulkan: `J173` → `=C160`,
+`J207` → `=C194`, dan sel `C160`/`C194`-nya sendiri (`N154`/`N188` kosong, dan
+baris 37 vs 44). Sesudah itu titik 4-5 punya pembanding, peringatannya boleh
+dicabut, dan batas 5 boleh dipertahankan.
+
+**Peringatan `hydrometer_titik_tanpa_pembanding_master` tetap dipasang sebagai
+jaring**, apa pun jawabannya — dia yang menahan sampai keputusan turun, dan dia
+juga yang menahan kalau nanti batasnya dinaikkan lagi oleh orang yang tidak tahu
+persoalan ini. Tapi dia **jaring, bukan jawaban**.
 
 ---
 
