@@ -297,6 +297,40 @@ supaya tidak ditemukan ulang sebagai temuan baru.
 - Kalau ada conflict saat pull atau push, jangan force push. Tampilkan conflict-nya ke user dan minta arahan.
 - Selalu kasih tau user ringkasan file apa saja yang berubah sebelum commit.
 
+### SATU PUSH, SATU DEPLOY — tunggu yang sebelumnya terverifikasi
+
+**Push ke `main` = deploy ke produksi.** `.github/workflows/tes.yml` mengetuk
+Deploy Hook Render begitu test hijau, dan langkah terakhirnya (`Pastiin versi
+barunya beneran naik`) menunggu **25 menit** sampai `/api/health` menyajikan SHA
+yang baru.
+
+Aturannya:
+
+1. **Tunggu deploy commit sebelumnya selesai diverifikasi sebelum push
+   berikutnya.** Verifikasi = `gh run list` hijau **dan** `curl .../api/health`
+   memulangkan `deploy.versi` yang cocok.
+2. **Kalau ada beberapa perubahan siap, kumpulkan jadi SATU push.** Beberapa
+   commit dalam satu `git push` cuma memicu satu run CI dan satu deploy — itu
+   yang diinginkan, bukan dihindari.
+
+**Kenapa ini aturan, bukan kerapian.** 19 Sep 2026: lima commit naik ke `main`
+dalam ~1 jam. Waktu workflow `a9a1ed0` menunggu, Render sudah keburu membangun
+`a697b0c`, jadi `a9a1ed0` **tidak pernah disajikan** dan langkah verifikasinya
+merah — padahal `phpunit`-nya hijau penuh dan kodenya tidak salah sedikit pun.
+
+Kali itu tidak ada kerusakan karena riwayatnya linear: `a697b0c` memuat isi
+`a9a1ed0`. Tapi yang ditinggalkan mahal — **riwayat deploy berhenti cocok dengan
+riwayat commit.** Begitu suatu saat perlu rollback, pertanyaan "versi mana yang
+BENAR-BENAR pernah jalan di produksi" tidak bisa dijawab dari `git log`, dan CI
+merah yang sebetulnya cuma balapan bikin orang berikutnya mengira ada kode yang
+rusak. Untuk lab terakreditasi, "sertifikat ini terbit dari kode yang mana"
+bukan pertanyaan opsional.
+
+Kalau langkah `Pastiin versi barunya beneran naik` merah, **periksa dulu apakah
+`phpunit`-nya hijau**. Kalau ya, hampir pasti balapan deploy — bukan kode. Cek
+`deploy.versi` di `/api/health`; kalau yang live commit yang LEBIH BARU, isinya
+sudah ikut naik dan tidak ada yang perlu diperbaiki selain menunggu.
+
 ## Pemilihan Model
 - Subagent yang tugasnya mengumpulkan data (Explore, pencarian file, penghitungan, pembacaan mentah) jalankan dengan `model="haiku"`.
 - Subagent yang tugasnya menganalisis, mereview, atau menyintesis jalankan dengan `model="sonnet"`.
