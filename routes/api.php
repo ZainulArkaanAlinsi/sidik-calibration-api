@@ -154,6 +154,25 @@ Route::get('/health', fn (DirektoriPerusahaan $direktori) => response()->json([
     // `config:cache` sebelum server nyala, dan sesudah itu `env()` di luar
     // berkas config berhenti membaca `.env`.
     'deploy' => [
+        // Lingkungan yang BENAR-BENAR jalan di container ini.
+        //
+        // Prasyarat M0-04 (staging terpisah), dan sengaja mendarat SEBELUM
+        // service kedua dibuat — penjaganya harus ada sebelum yang dijaga.
+        // Begitu ada dua service, ini satu-satunya cara membedakan staging dari
+        // produksi DARI LUAR. Tanpa itu, service staging yang salah menunjuk
+        // database produksi tidak memunculkan error apa pun; yang menemukannya
+        // baru data yang telanjur salah tempat.
+        //
+        // Yang dilaporkan cuma NAMA lingkungannya — batas yang sama dengan tiga
+        // blok tetangganya. `APP_KEY`, `APP_DEBUG`, dan sisa `config/app.php`
+        // TIDAK pernah ikut, dan itu bukan kehati-hatian yang kebetulan:
+        // endpoint ini publik tanpa auth, dan `APP_DEBUG` di sini justru memberi
+        // tahu penyerang kapan halaman errornya bakal memuntahkan isi konfigurasi.
+        //
+        // Lewat `config()`, bukan `env()` — entrypoint memanggil `config:cache`
+        // sebelum server nyala, dan sesudah itu `env()` di luar berkas config
+        // berhenti membaca `.env`. Alasan lengkapnya di config/deploy.php.
+        'lingkungan' => (string) config('app.env'),
         'versi' => config('deploy.versi'),
         'arsip' => ['awet' => config('filesystems.disks.arsip.driver') !== 'local'],
         'seed_saat_boot' => config('deploy.seed_saat_boot'),
