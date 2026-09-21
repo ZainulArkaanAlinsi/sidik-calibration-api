@@ -227,3 +227,4 @@ Project-PT-Sidik/worksheet_alat_calibration/*
 # pembungkusnya sendiri.
 /jalankan-test-mysql.ps1
 /jalankan-test-mysql.sh
+/setup-mysql-test.ps1
