@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Support\WaktuMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -62,10 +61,20 @@ class AlurPenuhWaktuFrekuensiTest extends TestCase
         float $uut,
         float $correction,
     ): void {
-        // Sertifikatnya dibangun lewat job; di test dijalankan sinkron supaya
-        // snapshot-nya sudah ada waktu diperiksa.
-        Bus::fake([]);
-
+        // TIDAK ada `Bus::fake` di sini, dan itu disengaja.
+        //
+        // Yang diuji berkas ini SAMBUNGANNYA sampai sertifikat terbit, jadi
+        // job-nya memang harus jalan: `phpunit.xml` mematok
+        // `QUEUE_CONNECTION=sync`, jadi `GenerateCertificate::dispatch()`
+        // dikerjakan inline dan snapshot-nya sudah ada waktu diperiksa.
+        //
+        // Dulu di sini ada `Bus::fake([])` dengan komentar yang menyatakan
+        // maksud yang sama. Array kosong ternyata berarti PALSUKAN SEMUA job,
+        // bukan "jangan palsukan apa pun" - kebalikan dari yang ditulis. Itu
+        // tidak ketahuan selama penerbitan dikerjakan sinkron lewat
+        // `$job->handle()`, karena pemanggilan langsung melewati dispatcher
+        // sehingga fake-nya tidak pernah kena apa-apa. Begitu penerbitan balik
+        // ke antrean, job-nya ditelan fake dan sertifikatnya tidak pernah ada.
         $this->seed(DatabaseSeeder::class);
 
         $contoh = CalibrationSession::where('nomor_sesi', $nomorSesi)
