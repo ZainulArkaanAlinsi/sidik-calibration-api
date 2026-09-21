@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\GenerateCertificate;
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -79,6 +80,27 @@ class SapuSertifikatTertunda extends Command
             ->where('status', Certificate::STATUS_MENUNGGU_GENERATE)
             ->whereNull('pdf_path')
             ->where('updated_at', '<', now()->subMinutes($menit))
+            // HANYA sesi yang sudah disetujui.
+            //
+            // `GenerateCertificate::handle()` berhenti di baris pertamanya
+            // kalau sesinya bukan `disetujui`, dan berhenti TANPA SUARA -
+            // job-nya selesai "sukses" tanpa mengerjakan apa pun. Tanpa
+            // saringan ini, sertifikat yang sesinya dikembalikan ke
+            // `menunggu_approval` didorong ulang tiap sepuluh menit
+            // SELAMANYA, dan tiap dorongan menulis satu peringatan ke log.
+            //
+            // 21 Sep 2026 ada 6 baris produksi dalam keadaan itu. Mereka bukan
+            // korban render yang putus: sistem memang menolak menerbitkan
+            // sertifikat untuk sesi yang belum disetujui, dan penolakan itu
+            // benar. Yang salah kalau penyapu terus mengetuk pintu yang
+            // memang sengaja dikunci - lalu peringatan yang tidak berarti
+            // menenggelamkan peringatan yang berarti.
+            ->whereExists(function ($q): void {
+                $q->selectRaw('1')
+                    ->from('calibration_sessions')
+                    ->whereColumn('calibration_sessions.id', 'certificates.calibration_session_id')
+                    ->where('calibration_sessions.status', CalibrationSession::STATUS_DISETUJUI);
+            })
             ->orderBy('updated_at')
             ->limit($batas)
             ->get();

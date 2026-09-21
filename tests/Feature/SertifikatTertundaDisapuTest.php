@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\GenerateCertificate;
+use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Organization;
 use App\Models\User;
@@ -132,6 +133,36 @@ class SertifikatTertundaDisapuTest extends TestCase
                 && $job->issuedBy === $this->admin->id
                 && $job->berlakuSampai === '2028-03-31',
         );
+    }
+
+    /**
+     * Sertifikat yang SESINYA belum disetujui tidak disentuh.
+     *
+     * `GenerateCertificate::handle()` berhenti di baris pertamanya kalau sesi
+     * bukan `disetujui`, dan berhenti TANPA SUARA - job-nya selesai "sukses"
+     * tanpa mengerjakan apa pun. Tanpa saringan ini penyapu mendorongnya tiap
+     * sepuluh menit selamanya sambil menulis peringatan tiap kali, dan
+     * peringatan yang tidak berarti menenggelamkan yang berarti.
+     *
+     * Keadaannya nyata: 21 Sep 2026 ada 6 baris produksi seperti ini - sesinya
+     * kembali ke `menunggu_approval` sementara baris sertifikatnya tertinggal
+     * di `menunggu_generate`. Sistem menolak menerbitkannya, dan penolakan itu
+     * BENAR: sertifikat tidak boleh terbit untuk sesi yang belum disetujui.
+     */
+    public function test_sesi_yang_belum_disetujui_tidak_didorong(): void
+    {
+        $sesi = CalibrationSession::factory()->create([
+            'status' => CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+        ]);
+
+        Certificate::factory()->menungguGenerate()->create([
+            'calibration_session_id' => $sesi->id,
+            'updated_at' => now()->subDay(),
+        ]);
+
+        $this->artisan('sertifikat:sapu-tertunda')->assertSuccessful();
+
+        Queue::assertNothingPushed();
     }
 
     /** `--kosongan` melaporkan tanpa mendorong apa pun. */
