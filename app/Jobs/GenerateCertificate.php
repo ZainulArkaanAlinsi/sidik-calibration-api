@@ -48,6 +48,19 @@ class GenerateCertificate implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * Render PDF di worker Render yang CPU-nya kecil bisa melampaui batas
+     * Laravel bawaan (60 detik). `DB_QUEUE_RETRY_AFTER` harus lebih besar dari
+     * nilai ini; keduanya dipatok di `render.yaml` dan `entrypoint.sh`.
+     */
+    public int $timeout = 600;
+
+    /**
+     * Kegagalan sementara boleh dicoba ulang, tetapi sesudah seluruh percobaan
+     * habis `failed()` harus mengembalikan tombol retry ke admin.
+     */
+    public int $tries = 3;
+
+    /**
      * @param  string|null  $berlakuSampai  Masa berlaku pilihan admin (`Y-m-d`).
      *                                      Null → pakai default masa berlaku organisasi.
      */
@@ -302,6 +315,30 @@ class GenerateCertificate implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Timeout worker tidak melewati `catch` di `handle()`. Tanpa penutup ini,
+     * sertifikat berhenti di `menunggu_generate` ketika seluruh percobaan habis
+     * dan mobile tidak punya tombol pemulihan.
+     */
+    public function failed(?\Throwable $exception): void
+    {
+        $sertifikat = Certificate::query()
+            ->where('calibration_session_id', $this->calibrationSessionId)
+            ->where('status', Certificate::STATUS_MENUNGGU_GENERATE)
+            ->first();
+
+        if ($sertifikat === null) {
+            return;
+        }
+
+        $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
+
+        $this->kabarinKegagalan(
+            $sertifikat,
+            $exception ?? new RuntimeException('Penerbitan sertifikat berhenti tanpa pesan galat.'),
+        );
     }
 
     /** Kabarin teknisi yang ngerjain + admin yang nerbitin. */

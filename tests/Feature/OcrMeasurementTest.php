@@ -245,11 +245,13 @@ class OcrMeasurementTest extends TestCase
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
-        // Approve nerbitin sertifikat langsung sejak 29 Juli 2026 — yang
-        // diperiksa hasilnya, bukan job-nya masuk antrean.
-        $this->assertDatabaseHas('certificates', [
+        // Render PDF berjalan di worker supaya request approve tetap cepat.
+        Queue::assertPushed(GenerateCertificate::class, function (GenerateCertificate $job) use ($sesi): bool {
+            return $job->calibrationSessionId === $sesi->id
+                && $job->issuedBy === $this->admin->id;
+        });
+        $this->assertDatabaseMissing('certificates', [
             'calibration_session_id' => $sesi->id,
-            'status' => 'terbit',
         ]);
     }
 

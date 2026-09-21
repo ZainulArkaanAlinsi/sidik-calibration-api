@@ -110,6 +110,10 @@ services:
         value: database
       - key: QUEUE_CONNECTION
         value: database
+      # Harus lebih besar dari `--timeout=600` worker supaya satu job PDF
+      # yang masih hidup tidak dipungut worker kedua.
+      - key: DB_QUEUE_RETRY_AFTER
+        value: "660"
 
       # Disk container Render itu sementara — kehapus tiap deploy DAN tiap
       # container bangun ulang. Yang ikut hilang: foto lembar kerja, tanda

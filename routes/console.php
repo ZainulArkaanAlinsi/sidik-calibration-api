@@ -28,3 +28,16 @@ Schedule::command('standar:cek-kadaluarsa')->dailyAt('07:05');
 // dua kali berbarengan berarti dua proses menghapus berkas yang sama —
 // yang kedua melihat berkas hilang dan melaporkannya sebagai anomali.
 Schedule::command('ocr:bersihkan-citra')->dailyAt('02:30')->withoutOverlapping();
+
+// Sertifikat yang tersangkut di `menunggu_generate` tanpa PDF didorong ulang.
+//
+// Ini penutup satu-satunya untuk kegagalan yang tidak berbunyi: kalau worker
+// antrean mati, approve tetap 200 OK tapi sertifikatnya berhenti selamanya —
+// dan `CertificateController::retry()` menolak apa pun yang bukan `gagal`, jadi
+// admin tidak punya tombol untuk memulihkannya. 21 Sep 2026 ada 9 baris
+// produksi dalam keadaan itu, `failed_jobs` nol.
+//
+// Sepuluh menit, bukan tiap menit: perintahnya sendiri baru menganggap sebuah
+// sertifikat tersangkut sesudah diam 15 menit, jadi memeriksa lebih sering cuma
+// menambah query tanpa mempercepat pemulihan apa pun.
+Schedule::command('sertifikat:sapu-tertunda')->everyTenMinutes()->withoutOverlapping();

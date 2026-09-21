@@ -317,7 +317,7 @@ php artisan view:cache
 # hidup lama, dan penting banget di jatah 512 MB.
 (
     while true; do
-        php artisan queue:work --sleep=3 --tries=3 --max-time=3600 || true
+        php artisan queue:work --sleep=3 --tries=3 --timeout=600 --max-time=3600 || true
         sleep 2
     done
 ) &

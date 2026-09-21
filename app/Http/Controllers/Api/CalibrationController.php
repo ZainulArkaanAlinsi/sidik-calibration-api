@@ -737,7 +737,7 @@ class CalibrationController extends Controller
 
         $calibration->refresh();
 
-        $job = new GenerateCertificate(
+        GenerateCertificate::dispatch(
             $calibration->id,
             $request->user()->id,
             filled($data['berlaku_sampai'] ?? null)
@@ -745,30 +745,10 @@ class CalibrationController extends Controller
                 : null,
         );
 
-        // Sertifikatnya dibikin LANGSUNG, bukan dilempar ke antrean.
-        //
-        // Dulu ini `dispatch()`, dan konsekuensinya nggak kelihatan sampai
-        // dipakai beneran: kalau nggak ada `queue:work` yang jalan, approve-nya
-        // sukses tapi sertifikatnya nggak pernah terbit — dan dari layar admin
-        // itu kelihatan kayak "lagi diproses" selamanya, tanpa error di mana
-        // pun. Satu proses yang lupa dinyalain bikin seluruh alur mati diam.
-        //
-        // Bikin PDF-nya ~1-2 detik; admin nunggu sebentar jauh lebih baik
-        // daripada nunggu sesuatu yang nggak akan datang. Kalau nanti volumenya
-        // naik dan ada pekerja antrean yang beneran diawasi, balikin ke
-        // `dispatch()` — job-nya idempoten, jadi aman dipindah-pindah.
-        try {
-            $job->handle();
-        } catch (\Throwable $e) {
-            // Job-nya udah nandain sertifikatnya `gagal` + ngabarin admin, jadi
-            // tombol retry muncul di layar. Approve-nya sendiri TETAP SAH: sesi
-            // udah disetujui, dan mbatalin approve gara-gara PDF gagal cuma
-            // maksa admin ngulang pemeriksaan yang udah bener.
-            Log::warning('Sertifikat gagal dibikin waktu approve.', [
-                'calibration_session_id' => $calibration->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // Render PDF bisa makan puluhan detik di CPU kecil Render. Menjalankannya
+        // di request approve membuat mobile melewati batas waktu walau sesi sudah
+        // sah disetujui. Worker produksi ada di entrypoint, dan kontrak mobile
+        // memang menerima `certificate_id: null` sampai job selesai.
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));

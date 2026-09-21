@@ -204,23 +204,12 @@ class CertificateController extends Controller
      * Job-nya idempoten & pakai updateOrCreate di baris sesi yang sama, jadi aman
      * dipanggil ulang.
      *
-     * Dikerjain LANGSUNG, bukan lewat antrean — alasannya sama persis kayak di
-     * `CalibrationController::approve()`, dan di sini taruhannya lebih tinggi.
-     * Dulu method ini nge-set status ke `menunggu_generate` DULU baru
-     * `dispatch()`, dan tanpa `queue:work` yang jalan urutannya jadi: admin
-     * pencet retry → 200 OK → job ngendon di tabel `jobs` → mobile nunjukin
-     * "lagi diproses" selamanya → dan tombol retry-nya IKUT ILANG, karena
-     * statusnya udah bukan `gagal` lagi. Sertifikat yang tadinya masih bisa
-     * dicoba ulang jadi nggak bisa disentuh sama sekali tanpa masuk database
-     * manual. Retry itu jalur pemulihan — dia dipencet justru waktu udah ada
-     * yang gagal, jadi dia yang paling nggak boleh punya mode macet sendiri.
-     *
-     * Pre-update ke `menunggu_generate` dibuang, bukan cuma dipindah: job-nya
-     * udah nge-set status itu sendiri di dalam transaksi tepat sebelum ngerender
-     * (`GenerateCertificate::handle()`). Dengan dibuang, status sertifikat
-     * SELALU mendarat di keadaan akhir — `terbit` kalau jadi, `gagal` kalau
-     * nggak — bahkan kalau prosesnya mati total di tengah. Yang gagal tetap
-     * nawarin retry.
+     * Dikerjakan lewat antrean supaya render PDF tidak menahan request admin.
+     * Status sengaja TIDAK diubah di sini: job mengubahnya menjadi
+     * `menunggu_generate` tepat sebelum merender. Kalau worker sedang mati,
+     * sertifikat tetap `gagal` dan tombol retry tidak hilang. Worker produksi
+     * dijalankan dari entrypoint; kalau percobaannya habis, `failed()` pada job
+     * juga mengembalikan statusnya ke `gagal`.
      */
     public function retry(Request $request, Certificate $certificate): JsonResponse
     {
@@ -232,25 +221,23 @@ class CertificateController extends Controller
             ], 422);
         }
 
-        try {
-            (new GenerateCertificate(
-                $certificate->calibration_session_id,
-                $request->user()->id,
-            ))->handle();
-        } catch (\Throwable $e) {
-            // Job-nya udah nandain sertifikatnya `gagal` lagi + ngabarin admin
-            // sebelum ngelempar, jadi tombol retry tetap ada di layar. Responsnya
-            // sengaja tetap 200 dengan status apa adanya: yang nanya "berhasil
-            // nggak?" itu field `status` di data, bukan kode HTTP-nya.
-            Log::warning('Sertifikat gagal dibikin waktu retry.', [
-                'certificate_id' => $certificate->id,
-                'calibration_session_id' => $certificate->calibration_session_id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        GenerateCertificate::dispatch(
+            $certificate->calibration_session_id,
+            $request->user()->id,
+            // Diwariskan dari barisnya, bukan dibiarkan kosong.
+            //
+            // `updateOrCreate` di `GenerateCertificate::handle()` menulis ULANG
+            // `berlaku_sampai` tiap job jalan. Retry tanpa nilainya berarti
+            // tanggal yang DIPILIH ADMIN waktu approve ditimpa default
+            // organisasi — diam-diam, di dokumen terkendali yang akan dicetak
+            // dan dikirim ke pelanggan. Tidak ada error yang muncul, dan
+            // selisihnya cuma ketahuan kalau ada yang membandingkan dua lembar.
+            $certificate->berlaku_sampai?->format('Y-m-d'),
+        );
 
         return response()->json([
             'data' => new CertificateResource($certificate->fresh()->load(self::RELASI)),
+            'message' => 'Sertifikat masuk antrean penerbitan.',
         ]);
     }
 

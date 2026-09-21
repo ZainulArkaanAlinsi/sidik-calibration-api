@@ -188,16 +188,8 @@ class CertificateApiTest extends TestCase
             ->assertJsonPath('data.sertifikat', null);
     }
 
-    /**
-     * Retry nerbitin ulang LANGSUNG, dan statusnya mendarat di keadaan akhir.
-     *
-     * Test ini dulu ngunci `menunggu_generate` + `Queue::assertPushed`. Perilaku
-     * itu punya mode macet yang cuma kelihatan di mesin tanpa `queue:work`:
-     * status kegeser dari `gagal` ke `menunggu_generate`, job-nya nggak pernah
-     * dikerjain, dan tombol retry ILANG karena statusnya udah bukan `gagal`.
-     * Jalur pemulihannya sendiri yang jadi jalan buntu.
-     */
-    public function test_admin_retry_sertifikat_gagal_nerbitin_ulang_langsung(): void
+    /** Retry tidak boleh menahan admin selama PDF dirender di worker. */
+    public function test_admin_retry_sertifikat_gagal_masuk_antrean(): void
     {
         $sertifikat = $this->terbitkanSertifikat($this->teknisi);
         $sertifikat->update(['status' => Certificate::STATUS_GAGAL, 'pdf_path' => null]);
@@ -207,14 +199,28 @@ class CertificateApiTest extends TestCase
         $this->actingAs($this->admin)
             ->postJson("/api/certificates/{$sertifikat->id}/retry")
             ->assertOk()
-            ->assertJsonPath('data.status', Certificate::STATUS_TERBIT);
+            ->assertJsonPath('data.status', Certificate::STATUS_GAGAL)
+            ->assertJsonPath('message', 'Sertifikat masuk antrean penerbitan.');
 
-        // PDF-nya beneran jadi, bukan cuma statusnya yang dioper.
-        $this->assertNotNull($sertifikat->fresh()->pdf_path);
+        // Status tidak dipindah sebelum worker mengambil job. Kalau worker
+        // berhenti, tombol retry tetap terlihat alih-alih macet diam-diam.
+        $this->assertNull($sertifikat->fresh()->pdf_path);
 
-        // Yang paling penting: retry nggak nyandar ke pekerja antrean. Kalau
-        // suatu saat ini balik ke `dispatch()`, mode macet di atas balik juga.
-        Queue::assertNotPushed(GenerateCertificate::class);
+        Queue::assertPushed(GenerateCertificate::class, function (GenerateCertificate $job) use ($sertifikat): bool {
+            return $job->calibrationSessionId === $sertifikat->calibration_session_id
+                && $job->issuedBy === $this->admin->id;
+        });
+    }
+
+    public function test_job_yang_habis_semua_percobaan_membuka_retry_lagi(): void
+    {
+        $sertifikat = $this->terbitkanSertifikat($this->teknisi);
+        $sertifikat->update(['status' => Certificate::STATUS_MENUNGGU_GENERATE]);
+
+        (new GenerateCertificate($sertifikat->calibration_session_id, $this->admin->id))
+            ->failed(new \RuntimeException('Worker kehabisan waktu.'));
+
+        $this->assertSame(Certificate::STATUS_GAGAL, $sertifikat->fresh()->status);
     }
 
     public function test_retry_sertifikat_yang_udah_terbit_ditolak(): void
