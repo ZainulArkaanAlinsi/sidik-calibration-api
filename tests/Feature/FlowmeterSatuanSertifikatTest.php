@@ -93,8 +93,21 @@ class FlowmeterSatuanSertifikatTest extends TestCase
         }
 
         if ($densitas !== null) {
+            // `reorder()` WAJIB, dan ini bukan kerapian.
+            //
+            // Relasi `rawMeasurements()` membawa pengurutan bawaan
+            // `titik_ke, pembacaan_ke, id`. Disambung ke `distinct()`, query
+            // yang lahir jadi `SELECT DISTINCT titik_ke ... ORDER BY titik_ke,
+            // pembacaan_ke, id` - dan MySQL menolaknya dengan error 3065,
+            // karena dua kolom pengurut itu tidak ada di daftar SELECT.
+            //
+            // SQLite menerimanya tanpa keberatan. Jadi test ini hijau
+            // bertahun-tahun di suite harian dan baru merah 21 Sep 2026, di
+            // jalan MySQL penuh pertama yang benar-benar selesai. Persis celah
+            // yang gerbang dua-suite ada untuk menangkapnya.
             $titik = $sesi->rawMeasurements()
                 ->where('peran_sensor', FlowmeterMentah::PERAN_UUT)
+                ->reorder('titik_ke')
                 ->distinct()
                 ->pluck('titik_ke');
 
