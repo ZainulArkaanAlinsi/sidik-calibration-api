@@ -572,6 +572,16 @@ dashboard lalu ketimpa balik diam-diam oleh deploy berikutnya (1 Sep 2026, lihat
   apakah tools-nya bisa melakukan operasi destruktif, dan apakah pembatasannya
   bisa ditegakkan di tingkat organisasi (bukan cuma di klien).
 
+### Akses database — siapa pegang apa
+
+Kredensial database cuma ada di `.env` mesin kerja pemilik proyek, dan Claude
+tidak pernah diberi akses langsung. Aturannya ditulis terpisah dan ikut dibaca:
+urutan wajib untuk penghapusan permanen, keharusan menyebut tabel & perkiraan
+jumlah baris sebelum query jalan, dan kenapa tawaran "kasih akses langsung"
+ditolak.
+
+@docs/aturan-akses-database.md
+
 ## Daftar Permintaan
 - Tujuh permintaan besar dari pemilik proyek ada di `docs/permintaan-user-7.md` — itu yang jadi
   pegangan, bukan ingatan percakapan. Baca dulu sebelum mulai kerja, dan perbarui kolom Status di
