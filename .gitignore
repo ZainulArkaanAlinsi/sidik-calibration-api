@@ -219,3 +219,11 @@ Project-PT-Sidik/worksheet_alat_calibration/*
 /gen_lembar-journal
 /gen_lembar-wal
 /gen_lembar-shm
+
+# Pembungkus lokal buat suite MySQL. Isinya user & password MySQL di mesin
+# masing-masing, jadi dia memang TIDAK boleh ikut — alasan lengkapnya di blok
+# §Kredensial `phpunit.mysql.xml`. Aturannya ditulis di sini (bukan cuma di
+# .git/info/exclude) supaya berlaku juga buat yang baru clone dan bikin
+# pembungkusnya sendiri.
+/jalankan-test-mysql.ps1
+/jalankan-test-mysql.sh

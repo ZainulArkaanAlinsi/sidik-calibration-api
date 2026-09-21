@@ -26,12 +26,35 @@
         muncul di MySQL. Jadi sebelum bilang sebuah modul selesai, jalankan
         keduanya.
 
-        ## Kredensial
+        ## Kredensial — dan kenapa host DIPATOK sejak 21 Sep 2026
 
-        Sengaja HANYA `DB_CONNECTION` & `DB_DATABASE` yang dipatok di sini. Host,
-        port, user, dan password diwarisi dari `.env` masing-masing orang —
-        supaya tidak ada kredensial yang masuk repo, dan supaya setelan MAMP /
-        Docker / Homebrew yang beda-beda tetap jalan tanpa berkas ini diedit.
+        User & password tetap TIDAK ada di sini: dua-duanya diwarisi dari
+        lingkungan, supaya tidak ada kredensial yang masuk repo.
+
+        Yang berubah: `DB_HOST` & `DB_PORT` sekarang dipatok ke localhost.
+        Sebelumnya keduanya ikut diwarisi `.env` — dan `.env` menunjuk database
+        PRODUKSI di Aiven. Akibatnya suite ini me-`RefreshDatabase` database
+        `asmo_db_test` DI SERVER PRODUKSI, lewat internet, tiap test. Tidak ada
+        yang error; yang terasa cuma suite yang makan 2,5–4,5 jam sementara
+        SQLite selesai dalam 87 menit, dan itu dibaca sebagai "MySQL memang
+        lambat" selama berbulan-bulan.
+
+        Patokan ini penjagaan, bukan kenyamanan: suite tidak bisa lagi
+        diam-diam menembak host cloud. Setelan MAMP / Docker / Homebrew yang
+        portnya beda tetap jalan — PHPUnit `<env>` TIDAK menimpa variabel yang
+        sudah ada, jadi `DB_PORT` dari shell tetap menang (sifat yang sama yang
+        dijelaskan di `phpunit.xml` soal `ANTHROPIC_BASE_URL`).
+
+        Cara menjalankannya tanpa menaruh sandi di repo — bikin
+        `jalankan-test-mysql.ps1` (sudah di-gitignore) yang isinya:
+
+            $env:DB_USERNAME = 'sidik_test'
+            $env:DB_PASSWORD = '<sandi lokalmu>'
+            php artisan test -c phpunit.mysql.xml @args
+
+        Tanpa pembungkus itu, user yang kepakai ikut `.env` (`avnadmin`) dan
+        koneksinya ditolak localhost — gagal berisik di mesin sendiri, bukan
+        diam-diam menyentuh produksi. Itu kegagalan yang benar.
 
         ## PERINGATAN — nama database
 
@@ -70,6 +93,10 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="asmo_db_test"/>
+        <!-- Dipatok ke localhost, alasannya di blok §Kredensial di atas. Bisa
+             ditimpa dari shell buat MAMP/Docker yang portnya beda. -->
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
