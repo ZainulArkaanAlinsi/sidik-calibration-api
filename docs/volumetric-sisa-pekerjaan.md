@@ -234,9 +234,10 @@ dari konteks ke blok. Urutkan `hitungan` & `belum_dihitung` per `titik_ke`.
   ⚠️ **Tidak tercetak:** neraca ke-3 (Fujitsu/Precisa) dan kalibrator Yokogawa —
   padahal U95 Yokogawa masuk budget. **Neraca Precisa tidak punya catatan
   standar di database sama sekali** (hanya ada di JSON Volumetric). Pertanyaan lab.
-  ⚠️ **Masa berlaku neraca di `AnakTimbanganSeeder` = 2026-01-19**, sedangkan
-  workbook Volumetric menulis **2027-01-19**. Kalau produksi mengikuti seeder,
-  ketiga neraca sudah kedaluwarsa — periksa sebelum uji coba end-to-end.
+  ℹ️ Masa berlaku neraca di berkas `AnakTimbanganSeeder` masih 2026-01-19, tapi
+  **produksi sudah benar** (diperiksa 22 Sep, baca-saja): Analytical/Fujitsu/
+  Excellent berlaku s.d. 2027-09-18, PRT Pt-100 s.d. 2027-02-14. Yang basi cuma
+  berkas seedernya — berpengaruh ke database test/lokal, bukan produksi.
   Bukan wilayah Volumetric; jangan diubah dari sini.
 - Bagian `usage_check` (dituntut test urutan) = `bagianStandard()`:
   `['kode' => 'usage_check', 'judul' => 'Standard Used', 'baris' => self::STANDARD_TERCETAK,
