@@ -121,6 +121,77 @@ bergantian tiap jalan.
 
 ---
 
+## 3b. Rancangan sambungan — dipelajari dari Hydrometer (22 Sep)
+
+Hydrometer adalah analog terdekat (gravimetri, beberapa deret per titik, tiga
+ulangan). Dia menyentuh 11 tempat; Volumetric menyentuh tempat yang sama.
+
+### Jalur simpan di controller
+- `CalibrationProfile` punya cabang `butuhBlokX()` bawaan `false`. Tambahkan
+  **`butuhBlokVolumetric(): bool`** (bawaan `false`), override `true` di kedua
+  kelas dasar.
+- `CalibrationController` ±baris 1242 (tepat setelah cabang Hydrometer):
+  `if ($this->profil->untukAlat($alat)->butuhBlokVolumetric()) return $this->susunBlokVolumetric($request, $alat, $standarDefault);`
+- **Satu** `susunBlokVolumetric()` untuk kedua keluarga — tiru
+  `susunBlokHydrometer()` (±baris 2807). Bentuk mentah identik, beda keluarga
+  cuma di `hitungPerGrup()` profil.
+- Bentuk `measurements[]` dari HP: `{titik_ukur, vol_kosong: [3], vol_isi: [3], vol_suhu: [3]}`.
+  Tiap angka jadi satu baris `raw_measurements` dengan `peran_sensor` = konstanta
+  di `VolumetricGlasswareMentah` (`PERAN_KOSONG`, `PERAN_ISI`, `PERAN_SUHU`),
+  `pembacaan_ke`/`sensor_ke` = urutan 1..3, `tahap` = `sesudah_adjustment`.
+  **Nol kolom baru.**
+- Penolakan eksplisit (masuk `belum_dihitung` dengan `alasan` yang kebaca):
+  titik melebihi batas (**Fixed 1, Graduated 5**), deret tidak tepat 3 angka, deret
+  tidak sinkron. Baris yang seluruhnya kosong dilewati diam-diam (Graduated boleh
+  menyisakan titik 4–5).
+- `$siapHitung[]` per titik: `titik_ke`, `titik_ukur`, `pembacaan => []`,
+  `standard`, `konteks` berisi ketiga deret + `spesifikasi_alat` +
+  `tanggal_kalibrasi` + `suhu/kelembaban/tekanan _awal/_akhir` **dari request**
+  (bukan dari relasi sesi — sesi belum tersimpan saat jalur simpan jalan).
+  Tekanan WAJIB: ρ udara lahir darinya. Kolom `tekanan_awal`/`tekanan_akhir`
+  sudah ada di sesi.
+- Pulangkan `['mentah' => …, 'hitungan' => array_map(bulatkanHitungan, …), 'belum_dihitung' => …]`.
+
+### Kolom yang WAJIB dipulangkan `hitungPerGrup()` per titik
+(kolom nyata `uncertainty_calculations`, disalin dari `HydrometerProfile`)
+
+`standard_id`, `titik_ke`, `titik_ukur` (nominal), `rata_rata` (V20 rata-rata),
+`error`, `koreksi`, `standar_deviasi`, `jumlah_pengulangan`, `type_a`,
+`type_b_components` (jejak audit — tempat angka master pembanding K3/K4 disimpan),
+`type_b`, `ketidakpastian_gabungan`, `faktor_cakupan_k`,
+`derajat_kebebasan_efektif`, `ketidakpastian_diperluas` (= `MAX(U, CMC)`),
+`toleransi` (null), `keputusan` (null — tidak ada PASS/FAIL), `metode`,
+`calculated_at`.
+
+⚠️ **Tanda koreksi belum diperiksa.** Sheet budget menulis "Correction =
+Equipment Nominal − V20", tapi `PERHITUNGAN` menghitung "Deviation = V20 −
+Nominal". Periksa `SERTIFIKAT.csv` kedua workbook untuk tanda yang tercetak
+sebelum mengisi `error`/`koreksi`.
+
+### Masukan budget per keluarga (sudah terbukti di `VolumetricGlasswareBudgetTest`)
+| Masukan | Fixed | Graduated |
+|---|---|---|
+| `massa` | rata-rata massa titik | **MAX** rata-rata massa titik terisi |
+| `rho_air` | ρ air dari suhu rata-rata | **MAX** ρ air rata-rata titik |
+| `suhu_air` | rata-rata suhu terkoreksi | rata-rata gabungan semua titik × ulangan |
+| `u_massa` | LOP neraca ÷ √3, digabung akar-kuadrat dengan stdev/√10 | U95 neraca ÷ 2, digabung dengan stdev/√10 |
+| `u_suhu` | √((U95 termometer/2)² + (U95 sensor/2)² + ((Tmax−Tmin)/(2√3))²) | sama |
+| `u_meniskus` | `meniskusFixed(diameter dari toleransi)` | `meniskusGraduated(resolusi)` |
+| `u_rho_air` | 5e-05 | 5e-08 |
+| `u_keterulangan` | STDEV V20 3 ulangan ÷ √3 | STDEV nilai nyata dari stdev per titik ÷ √3 (**tanpa** 5 nol hantu) |
+| `tanda_ci_muai` | +1 | −1 |
+
+U95 termometer Yokogawa 0,72 °C dan sensor PRT 0,08 °C (k=2) — baca dari
+master standar yang tertaut, jangan diketik.
+
+### Sambungan lain (daftar dari jejak Hydrometer)
+`CalibrationRequest` (aturan validasi `measurements.*.vol_*`, `spesifikasi_alat.volumetric.*`) ·
+`CalibrationProfileRegistry` · `CalibrationValidator` · `HitungUlangSesi` ·
+`UjiProfilKalibrasi` · `CertificateSnapshotBuilder` · `CertificateExcelExporter` ·
+`DatabaseSeeder`. Hitung jejak Hydrometer di tiap berkas itu
+(`grep -ci hydrometer <berkas>`) sebagai daftar periksa.
+
+
 ## 4. Jebakan yang SUDAH terbukti — jangan diulang
 
 | Jebakan | Kenapa berbahaya | Penjaga |
