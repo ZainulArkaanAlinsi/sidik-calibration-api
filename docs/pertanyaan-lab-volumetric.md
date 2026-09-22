@@ -207,6 +207,28 @@ dipetakan diam-diam ke nilai bawaan.
 
 ---
 
+### 8. Stdev neraca Fujitsu dirujuk dari baris neraca Excellent (Fixed)
+
+`PERHITUNGAN_U95%` Fixed, sel "stdev timb":
+
+```
+IF(C5="Electronic Balance Excellent", DATABASE!AE20,
+IF(C5="Electronic Balance Fujitsu",   DATABASE!AE20, ...     <- seharusnya AE21
+```
+
+Fujitsu ada di baris 21, tetapi rumusnya membaca baris 20 (Excellent). Pola
+salin-tempel yang sama dengan `Veff` di pertanyaan 1.
+
+**Dampak saat ini nol**: kolom stdev ketiga neraca di workbook bernilai 0, jadi
+baris mana pun yang dirujuk hasilnya sama. Tetapi begitu stdev Fujitsu diisi,
+workbook akan memakai stdev Excellent tanpa pemberitahuan.
+
+**Pertanyaan:** Apakah rujukan yang benar `AE21`?
+
+**Sikap sistem:** membaca stdev dari baris neraca yang benar-benar dipilih.
+
+---
+
 ## Koreksi atas dokumen analisis yang menyertai master
 
 Untuk catatan, supaya tidak dipakai sebagai acuan:

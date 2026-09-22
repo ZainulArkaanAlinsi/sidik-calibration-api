@@ -1,0 +1,456 @@
+{
+  "_sumber": "Project-PT-Sidik/alat-alat-Pt-Sidik/Volumetric_Glassware_2026 - DIGENERATE, jangan diketik",
+  "_generator": "docs/skrip/gen-tabel-standar-volumetric.py",
+  "cmc": {
+    "Gelas Ukur": [
+      {
+        "nominal_ml": 10.0,
+        "cmc_ml": 0.067
+      },
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.17
+      },
+      {
+        "nominal_ml": 50.0,
+        "cmc_ml": 0.17
+      },
+      {
+        "nominal_ml": 100.0,
+        "cmc_ml": 0.34
+      },
+      {
+        "nominal_ml": 250.0,
+        "cmc_ml": 0.34
+      },
+      {
+        "nominal_ml": 500.0,
+        "cmc_ml": 1.7
+      },
+      {
+        "nominal_ml": 1000.0,
+        "cmc_ml": 3.3
+      },
+      {
+        "nominal_ml": 2000.0,
+        "cmc_ml": 6.7
+      }
+    ],
+    "Labu Ukur": [
+      {
+        "nominal_ml": 5.0,
+        "cmc_ml": 0.0067
+      },
+      {
+        "nominal_ml": 10.0,
+        "cmc_ml": 0.0068
+      },
+      {
+        "nominal_ml": 20.0,
+        "cmc_ml": 0.011
+      },
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.011
+      },
+      {
+        "nominal_ml": 50.0,
+        "cmc_ml": 0.021
+      },
+      {
+        "nominal_ml": 100.0,
+        "cmc_ml": 0.026
+      },
+      {
+        "nominal_ml": 200.0,
+        "cmc_ml": 0.044
+      },
+      {
+        "nominal_ml": 250.0,
+        "cmc_ml": 0.044
+      },
+      {
+        "nominal_ml": 500.0,
+        "cmc_ml": 0.077
+      },
+      {
+        "nominal_ml": 1000.0,
+        "cmc_ml": 0.12
+      },
+      {
+        "nominal_ml": 2000.0,
+        "cmc_ml": 0.25
+      }
+    ],
+    "Buret": [
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.019
+      },
+      {
+        "nominal_ml": 50.0,
+        "cmc_ml": 0.035
+      }
+    ],
+    "Picnometer": [
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.018
+      },
+      {
+        "nominal_ml": 50.0,
+        "cmc_ml": 0.019
+      },
+      {
+        "nominal_ml": 100.0,
+        "cmc_ml": 0.022
+      }
+    ],
+    "Pipet Volume": [
+      {
+        "nominal_ml": 0.5,
+        "cmc_ml": 0.002
+      },
+      {
+        "nominal_ml": 1.0,
+        "cmc_ml": 0.003
+      },
+      {
+        "nominal_ml": 2.0,
+        "cmc_ml": 0.0034
+      },
+      {
+        "nominal_ml": 5.0,
+        "cmc_ml": 0.0039
+      },
+      {
+        "nominal_ml": 10.0,
+        "cmc_ml": 0.0059
+      },
+      {
+        "nominal_ml": 15.0,
+        "cmc_ml": 0.0061
+      },
+      {
+        "nominal_ml": 20.0,
+        "cmc_ml": 0.0072
+      },
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.0083
+      },
+      {
+        "nominal_ml": 50.0,
+        "cmc_ml": 0.013
+      },
+      {
+        "nominal_ml": 100.0,
+        "cmc_ml": 0.015
+      }
+    ],
+    "Pipet Ukur": [
+      {
+        "nominal_ml": 1.0,
+        "cmc_ml": 0.0033
+      },
+      {
+        "nominal_ml": 2.0,
+        "cmc_ml": 0.0067
+      },
+      {
+        "nominal_ml": 5.0,
+        "cmc_ml": 0.017
+      },
+      {
+        "nominal_ml": 10.0,
+        "cmc_ml": 0.033
+      },
+      {
+        "nominal_ml": 25.0,
+        "cmc_ml": 0.034
+      }
+    ]
+  },
+  "diameter_iso4787": [
+    {
+      "batas_galat_ml": 0.0001,
+      "diameter_maks_mm": 0.56
+    },
+    {
+      "batas_galat_ml": 0.0002,
+      "diameter_maks_mm": 0.78
+    },
+    {
+      "batas_galat_ml": 0.0003,
+      "diameter_maks_mm": 0.96
+    },
+    {
+      "batas_galat_ml": 0.0004,
+      "diameter_maks_mm": 1.1
+    },
+    {
+      "batas_galat_ml": 0.0005,
+      "diameter_maks_mm": 1.2
+    },
+    {
+      "batas_galat_ml": 0.0006,
+      "diameter_maks_mm": 1.3
+    },
+    {
+      "batas_galat_ml": 0.0008,
+      "diameter_maks_mm": 1.5
+    },
+    {
+      "batas_galat_ml": 0.001,
+      "diameter_maks_mm": 1.7
+    },
+    {
+      "batas_galat_ml": 0.002,
+      "diameter_maks_mm": 2.4
+    },
+    {
+      "batas_galat_ml": 0.003,
+      "diameter_maks_mm": 2.9
+    },
+    {
+      "batas_galat_ml": 0.004,
+      "diameter_maks_mm": 3.4
+    },
+    {
+      "batas_galat_ml": 0.005,
+      "diameter_maks_mm": 3.8
+    },
+    {
+      "batas_galat_ml": 0.006,
+      "diameter_maks_mm": 4.2
+    },
+    {
+      "batas_galat_ml": 0.008,
+      "diameter_maks_mm": 4.7
+    },
+    {
+      "batas_galat_ml": 0.01,
+      "diameter_maks_mm": 5.3
+    },
+    {
+      "batas_galat_ml": 0.012,
+      "diameter_maks_mm": 6.0
+    },
+    {
+      "batas_galat_ml": 0.015,
+      "diameter_maks_mm": 6.4
+    },
+    {
+      "batas_galat_ml": 0.02,
+      "diameter_maks_mm": 8.25
+    },
+    {
+      "batas_galat_ml": 0.025,
+      "diameter_maks_mm": 8.25
+    },
+    {
+      "batas_galat_ml": 0.03,
+      "diameter_maks_mm": 8.7
+    },
+    {
+      "batas_galat_ml": 0.04,
+      "diameter_maks_mm": 10.0
+    },
+    {
+      "batas_galat_ml": 0.05,
+      "diameter_maks_mm": 11.2
+    },
+    {
+      "batas_galat_ml": 0.06,
+      "diameter_maks_mm": 12.0
+    },
+    {
+      "batas_galat_ml": 0.08,
+      "diameter_maks_mm": 13.5
+    },
+    {
+      "batas_galat_ml": 0.1,
+      "diameter_maks_mm": 15.2
+    },
+    {
+      "batas_galat_ml": 0.12,
+      "diameter_maks_mm": 17.0
+    },
+    {
+      "batas_galat_ml": 0.15,
+      "diameter_maks_mm": 18.0
+    },
+    {
+      "batas_galat_ml": 0.2,
+      "diameter_maks_mm": 20.0
+    },
+    {
+      "batas_galat_ml": 0.25,
+      "diameter_maks_mm": 23.0
+    },
+    {
+      "batas_galat_ml": 0.3,
+      "diameter_maks_mm": 25.0
+    },
+    {
+      "batas_galat_ml": 0.4,
+      "diameter_maks_mm": 27.0
+    },
+    {
+      "batas_galat_ml": 0.5,
+      "diameter_maks_mm": 29.2
+    },
+    {
+      "batas_galat_ml": 0.6,
+      "diameter_maks_mm": 32.0
+    },
+    {
+      "batas_galat_ml": 0.8,
+      "diameter_maks_mm": 36.0
+    },
+    {
+      "batas_galat_ml": 1.0,
+      "diameter_maks_mm": 40.0
+    },
+    {
+      "batas_galat_ml": 1.2,
+      "diameter_maks_mm": 44.0
+    },
+    {
+      "batas_galat_ml": 1.5,
+      "diameter_maks_mm": 47.0
+    },
+    {
+      "batas_galat_ml": 2.0,
+      "diameter_maks_mm": 52.0
+    },
+    {
+      "batas_galat_ml": 2.5,
+      "diameter_maks_mm": 57.0
+    },
+    {
+      "batas_galat_ml": 3.0,
+      "diameter_maks_mm": 61.0
+    },
+    {
+      "batas_galat_ml": 4.0,
+      "diameter_maks_mm": 68.0
+    },
+    {
+      "batas_galat_ml": 5.0,
+      "diameter_maks_mm": 74.0
+    },
+    {
+      "batas_galat_ml": 6.0,
+      "diameter_maks_mm": 80.0
+    },
+    {
+      "batas_galat_ml": 8.0,
+      "diameter_maks_mm": 83.0
+    },
+    {
+      "batas_galat_ml": 10.0,
+      "diameter_maks_mm": 96.0
+    }
+  ],
+  "koefisien_muai": [
+    {
+      "material": "Borosilicate glass 3.3",
+      "gamma_per_c": 9.9e-06
+    },
+    {
+      "material": "Borosilicate glass 5.0",
+      "gamma_per_c": 1.5e-05
+    },
+    {
+      "material": "Soda-lime glass",
+      "gamma_per_c": 2.7e-05
+    },
+    {
+      "material": "Polypropylene (PP)",
+      "gamma_per_c": 0.00024
+    },
+    {
+      "material": "Polystyrene (PS)",
+      "gamma_per_c": 0.00045
+    },
+    {
+      "material": "Polycarbonate (PC)",
+      "gamma_per_c": 0.00021
+    },
+    {
+      "material": "Perfluoroalkoxy-copolymer (PFA)",
+      "gamma_per_c": 0.00039
+    },
+    {
+      "material": "Polymethylpentene (PMP)",
+      "gamma_per_c": 0.00036
+    },
+    {
+      "material": "Styrene Acrylonitrile (SAN)",
+      "gamma_per_c": 5.5e-05
+    },
+    {
+      "material": "Aluminium",
+      "gamma_per_c": 6.9e-05
+    },
+    {
+      "material": "Stainless steel",
+      "gamma_per_c": 4.8e-05
+    },
+    {
+      "material": "Carbon fibre",
+      "gamma_per_c": 1e-06
+    },
+    {
+      "material": "Silicon dioxide",
+      "gamma_per_c": 4.8e-05
+    },
+    {
+      "material": "Coper-zinc alloy (brass)",
+      "gamma_per_c": 5.4e-05
+    }
+  ],
+  "neraca": {
+    "fixed": [
+      {
+        "nama": "Analytical Balance",
+        "merk_type": "Mettler Toledo/XS204",
+        "lop_g": 0.0001,
+        "stdev_g": 0.0
+      },
+      {
+        "nama": "Electronic Balance Excellent",
+        "merk_type": "Excellent/DJ",
+        "lop_g": 0.01,
+        "stdev_g": 0.0
+      },
+      {
+        "nama": "Electronic Balance Fujitsu",
+        "merk_type": "Fujitsu/FSR-A",
+        "lop_g": 0.001,
+        "stdev_g": 0.0
+      }
+    ],
+    "graduated": [
+      {
+        "nama": "Analytical Balance",
+        "merk_type": "Mettler Toledo/XS204",
+        "lop_g": 0.0,
+        "stdev_g": null
+      },
+      {
+        "nama": "Electronic Balance Excellent",
+        "merk_type": "Excellent/DJ",
+        "lop_g": 0.0,
+        "stdev_g": null
+      },
+      {
+        "nama": "Electronic Balance Precisa",
+        "merk_type": "Precisa/-",
+        "lop_g": 0.0,
+        "stdev_g": null
+      }
+    ]
+  }
+}
