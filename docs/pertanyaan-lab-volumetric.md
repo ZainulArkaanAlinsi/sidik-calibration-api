@@ -262,6 +262,25 @@ tidak mungkin sama-sama benar untuk besaran yang sama.
 
 ---
 
+### 11. Label "Correction" berlawanan dengan rumus yang tercetak
+
+- Sheet budget (`PERHITUNGAN_U95%`): "Correction = Equipment Nominal − V20"
+- Sertifikat kedua workbook, kolom "Correction": `= N21 − E21` = **V20 − Nominal**
+
+Contoh: Pipet Volume 1 mL, V20 = 1,00426 → tercetak **+0,00426**. Dengan label
+budget, angkanya seharusnya −0,00426.
+
+Menurut konvensi umum, *correction* adalah nilai yang ditambahkan ke pembacaan
+untuk mendapat nilai benar (= Nominal − Actual), sedangkan Actual − Nominal
+adalah *error*/*deviation*.
+
+**Pertanyaan:** Apakah kolom sertifikat seharusnya berjudul "Deviation"/"Error",
+atau angkanya seharusnya bertanda sebaliknya?
+
+**Sikap sistem:** mencetak persis seperti sertifikat master (V20 − Nominal).
+
+---
+
 ## Koreksi atas dokumen analisis yang menyertai master
 
 Untuk catatan, supaya tidak dipakai sebagai acuan:

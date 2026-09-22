@@ -163,10 +163,13 @@ ulangan). Dia menyentuh 11 tempat; Volumetric menyentuh tempat yang sama.
 `toleransi` (null), `keputusan` (null — tidak ada PASS/FAIL), `metode`,
 `calculated_at`.
 
-⚠️ **Tanda koreksi belum diperiksa.** Sheet budget menulis "Correction =
-Equipment Nominal − V20", tapi `PERHITUNGAN` menghitung "Deviation = V20 −
-Nominal". Periksa `SERTIFIKAT.csv` kedua workbook untuk tanda yang tercetak
-sebelum mengisi `error`/`koreksi`.
+✅ **Tanda koreksi sudah diperiksa (22 Sep).** Kolom "Correction" di
+`SERTIFIKAT` kedua workbook = `N21 − E21` = **Actual − Nominal = V20 − Nominal**
+(Fixed +0,0042575664928188; Graduated titik 10 mL +0,6248494496854402). Sheet
+budget melabelinya "Nominal − V20" — label berlawanan dengan rumus; yang
+**tercetak** yang ditiru. Pertanyaan lab no. 11. Sebelum mengisi `error`/`koreksi`,
+periksa cara `CertificateSnapshotBuilder` memakai `koreksi` dan
+`CalibrationProfile::tandaKoreksiSertifikat()` supaya angka tercetak = V20 − Nominal.
 
 ### Masukan budget per keluarga (sudah terbukti di `VolumetricGlasswareBudgetTest`)
 | Masukan | Fixed | Graduated |
