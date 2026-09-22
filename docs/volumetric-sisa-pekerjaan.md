@@ -221,11 +221,23 @@ dari konteks ke blok. Urutkan `hitungan` & `belum_dihitung` per `titik_ke`.
 - **`KODE_METODE`**: workbook & master metode lab menulis `SIDIK-IK-CAL-0510_Rev.7`,
   lampiran akreditasi `Rev.6` (pertanyaan lab no. 3). Pakai Rev.7 dan tulis
   alasannya di docblock sampai lab menjawab.
-- **`STANDARD_TERCETAK`** — ambil dari kedua PDF itu (`pdftotext -layout`),
-  JANGAN ditebak. Bentuk: `[['label' => '…', 'cocok' => ['…nama/seri di DB…']], …]`.
-  Kandidat dari workbook: Analytical Balance Mettler Toledo XS204, Electronic
-  Balance Excellent DJ, Electronic Balance Fujitsu FSR-A (Fixed) / Precisa
-  (Graduated), Temperature Calibrator Yokogawa CA 150, PRT Pt-100.
+- **`STANDARD_TERCETAK`** — ✅ sudah diambil dari kedua PDF (22 Sep). Keduanya
+  mencetak TIGA standar yang sama, dan ketiganya ada di seeder:
+  ```php
+  ['label' => 'Balance Excellent',      'cocok' => ['Electronic Balance Excellent', 'HSEX1403752']],
+  ['label' => 'Balance Mettler Toledo', 'cocok' => ['Analytical Balance', '1129063525']],
+  ['label' => 'RTD Sensor',             'cocok' => ['PRT Pt-100', 'SH1/20']],
+  ```
+  (nama persis dari `AnakTimbanganSeeder` & `Suhu3AlatSeeder`.) Judul lembar:
+  Fixed "Calibration Worksheet - One Mark Volumetric Glassware", Graduated
+  "Calibration Worksheet - Graduated Volumetric Glassware".
+  ⚠️ **Tidak tercetak:** neraca ke-3 (Fujitsu/Precisa) dan kalibrator Yokogawa —
+  padahal U95 Yokogawa masuk budget. **Neraca Precisa tidak punya catatan
+  standar di database sama sekali** (hanya ada di JSON Volumetric). Pertanyaan lab.
+  ⚠️ **Masa berlaku neraca di `AnakTimbanganSeeder` = 2026-01-19**, sedangkan
+  workbook Volumetric menulis **2027-01-19**. Kalau produksi mengikuti seeder,
+  ketiga neraca sudah kedaluwarsa — periksa sebelum uji coba end-to-end.
+  Bukan wilayah Volumetric; jangan diubah dari sini.
 - Bagian `usage_check` (dituntut test urutan) = `bagianStandard()`:
   `['kode' => 'usage_check', 'judul' => 'Standard Used', 'baris' => self::STANDARD_TERCETAK,
   'field' => [field('standar_dicek.*.dipakai','Usage Check','centang'), field('standar_dicek.*.keterangan','Keterangan','teks')]]`.
