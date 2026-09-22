@@ -172,6 +172,46 @@ budget melabelinya "Nominal − V20" — label berlawanan dengan rumus; yang
 periksa cara `CertificateSnapshotBuilder` memakai `koreksi` dan
 `CalibrationProfile::tandaKoreksiSertifikat()` supaya angka tercetak = V20 − Nominal.
 
+### Bentuk lembar kerja — format disalin dari `HydrometerProfile` (±baris 455)
+
+`bentukLembarKerja()` memulangkan kepala + `bagian`, lalu dibungkus
+`isiPilihanThermohygro(tautkanStandarTercetak($bentuk, $equipment), $equipment)`:
+
+```php
+'kode_dokumen' => …, 'kode_metode' => …, 'nomor_lingkup' => 'LK-285-IDN',
+'judul' => 'Calibration Worksheet - …', 'jumlah_pengulangan' => 3,
+'satuan' => 'ml', 'satuan_suhu' => '°C', 'semua_kolom_opsional' => true,
+'catatan_pengisian' => '…', 'budget_ketidakpastian' => ['tersedia' => true, 'sumber' => '…', 'catatan' => '…'],
+'bagian' => [identitas, pemilik, standard, pre-condition(blok sesi), measurement, penutup],
+```
+
+Bagian pengukuran = satu entri `tabel` PER DERET (Volumetric: tiga — kosong, isi, suhu):
+
+```php
+['tahap' => 'sesudah_adjustment', 'grup' => M::PERAN_KOSONG, 'offset_kunci' => 1000,
+ 'judul' => 'a. …', 'satuan' => 'g', 'judul_nilai' => 'Point of Calibration',
+ 'judul_pengulangan' => 'Timbang ke', 'titik_bisa_diubah' => false,
+ 'simpan_ke' => 'measurements[].'.M::PERAN_KOSONG,
+ 'baris' => [['nomor' => 1, 'titik_ukur' => null, 'label' => 'Titik 1', 'satuan' => 'g', 'desimal' => 4], …],
+ 'kolom' => [['kode' => 'pembacaan', 'label' => 'Massa', 'tipe' => 'angka', 'satuan' => 'g']],
+ 'pengulangan' => [1, 2, 3]],
+```
+`offset_kunci` beda per deret (Hydrometer 1000 & 3000). Fixed: `baris` 1 titik;
+Graduated: 5 titik. Urutan bagian dijaga `SemuaProfilLembarKerjaTest`
+(identitas_alat > pemilik > usage_check > pengukuran > penutup) — periksa apakah
+`usage_check` wajib sebelum menulis.
+
+Penutup: `field('catatan_teknisi', …, 'teks_panjang')`, `field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis')`,
+`field('reviewer.nama', 'Checked by', …)`.
+
+Kalkulator di profil **selalu malas**: `private function kalk() { return $this->kalk ??= new …; }`
+— penangkal lingkaran konstruktor (profil → GumCalculator → registry → profil).
+
+`hitungPerGrup()`: ambil konteks sesi dari titik pertama yang membawa
+`konteks.spesifikasi_alat`; kalau `blokSesi()` null → semua titik masuk
+`belum_dihitung` dengan alasan yang kebaca. Tambahkan `suhu/kelembaban/tekanan`
+dari konteks ke blok. Urutkan `hitungan` & `belum_dihitung` per `titik_ke`.
+
 ### Masukan budget per keluarga (sudah terbukti di `VolumetricGlasswareBudgetTest`)
 | Masukan | Fixed | Graduated |
 |---|---|---|
