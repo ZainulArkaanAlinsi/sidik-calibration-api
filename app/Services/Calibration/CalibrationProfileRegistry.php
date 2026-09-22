@@ -5,6 +5,7 @@ namespace App\Services\Calibration;
 use App\Models\Equipment;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
+use App\Services\Calibration\Profiles\BuretProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
@@ -19,11 +20,16 @@ use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\Calibration\Profiles\GasDetectorProfile;
+use App\Services\Calibration\Profiles\GelasUkurProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
+use App\Services\Calibration\Profiles\LabuUkurProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
+use App\Services\Calibration\Profiles\PicnometerProfile;
+use App\Services\Calibration\Profiles\PipetUkurProfile;
+use App\Services\Calibration\Profiles\PipetVolumeProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SieveProfile;
@@ -197,6 +203,20 @@ class CalibrationProfileRegistry
             // Ejaan `Hidrometer` ikut terdaftar sebagai alias: kedua master
             // mengejanya beda di sel yang sama.
             new HydrometerProfile,
+            // Alat ke-34..39, kelompok Volumetrik — lampiran no. 13, 17, 18,
+            // 19, 20, 21, metode SIDIK-IK-CAL-0510. DUA workbook master (Fixed
+            // & Graduated) jadi dua kelas keluarga dengan satu mesin hitung
+            // bersama; keenam profil ini cuma menyumbang nama lampiran. Lihat
+            // VolumetricGlasswareProfile.
+            //
+            // `Buret` sengaja menolak `Buret Digital` lewat `namaBukanMilik()`
+            // — alat lampiran lain (no. 14) yang namanya memuat "buret".
+            new LabuUkurProfile,
+            new PipetVolumeProfile,
+            new PicnometerProfile,
+            new BuretProfile,
+            new GelasUkurProfile,
+            new PipetUkurProfile,
         ];
     }
 
@@ -353,17 +373,35 @@ class CalibrationProfileRegistry
         // Cocok persis duluan: nama yang emang identik nggak perlu diadu ke
         // seluruh indeks, dan hasilnya nggak mungkin beda dari penelusuran di
         // bawah (kunci itu pasti nempel di dirinya sendiri).
-        if (isset($this->indeksEjaan[$cari])) {
+        if (isset($this->indeksEjaan[$cari]) && ! $this->bukanMilik($this->indeksEjaan[$cari], $cari)) {
             return $this->indeksEjaan[$cari];
         }
 
         foreach ($this->indeksEjaan as $ejaan => $p) {
-            if (str_contains($cari, $ejaan)) {
+            if (str_contains($cari, $ejaan) && ! $this->bukanMilik($p, $cari)) {
                 return $p;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Nama yang dicari memuat nama alat LAIN yang ditolak profil ini — lihat
+     * [CalibrationProfile::namaBukanMilik]. Contoh: `Buret Digital` memuat
+     * `buret`, tapi bukan milik profil Buret.
+     */
+    private function bukanMilik(CalibrationProfile $p, string $cari): bool
+    {
+        foreach ($p->namaBukanMilik() as $nama) {
+            $kunci = self::rapikanNama($nama);
+
+            if ($kunci !== '' && str_contains($cari, $kunci)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

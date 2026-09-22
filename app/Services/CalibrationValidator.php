@@ -23,6 +23,7 @@ use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
+use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
 use Illuminate\Support\Collection;
 
@@ -541,6 +542,14 @@ class CalibrationValidator
             // jalan. Jangan melonggarkan pengecualian di bawah tanpa memeriksa
             // gerbang itu masih hidup.
             if (in_array($m->peran_sensor, HydrometerMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
+                continue;
+            }
+
+            // Volumetric sama persis: yang tercatat berat (g) dan suhu air
+            // (°C), rentang alatnya mL. Tanpa ini tiap pembacaan sesi yang
+            // benar dilaporkan "di luar rentang ukur" — peringatan palsu yang
+            // melatih admin menekan "setujui tetap" tanpa membaca.
+            if (in_array($m->peran_sensor, VolumetricGlasswareMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
                 continue;
             }
 
@@ -1125,6 +1134,11 @@ class CalibrationValidator
                     // yang salah tidak punya pembanding sekilas di lembar
                     // kertas. Kosong buat tiga puluh dua alat lain.
                     ...HydrometerMentah::dari($pembacaan),
+                    // Tiga deret satu titik Volumetric Glassware (berat kosong,
+                    // berat isi, suhu air) — kejadian ke-17. Sama mahalnya
+                    // dengan Hydrometer: V20 yang terbit tidak pernah diketik
+                    // siapa pun. Kosong buat alat lain.
+                    ...VolumetricGlasswareMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

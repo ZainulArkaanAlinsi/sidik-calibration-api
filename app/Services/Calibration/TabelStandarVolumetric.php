@@ -173,6 +173,16 @@ class TabelStandarVolumetric
         return ['termometer_c' => (float) $u['termometer_c'], 'sensor_c' => (float) $u['sensor_c']];
     }
 
+    /**
+     * Seluruh neraca SATU keluarga — pilihan dropdown "Balance Used".
+     *
+     * @return list<array{nama: string, merk_type: string, serial: string|null, u95_g: float|null, resolusi_g: float|null, stdev_g: float|null}>
+     */
+    public function semuaNeraca(string $keluarga): array
+    {
+        return array_values(self::muat()['neraca'][$keluarga] ?? []);
+    }
+
     /** @return list<string> */
     public function jenisAlat(): array
     {

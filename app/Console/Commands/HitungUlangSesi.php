@@ -20,6 +20,7 @@ use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
 use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
+use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -190,6 +191,11 @@ class HitungUlangSesi extends Command
                 // membaca kedua deret dari `konteks` — sama seperti Micrometer
                 // & Height Gauge yang juga lewat `hitungPerGrup()`.
                 $hydro = HydrometerMentah::dari($baris);
+
+                // Tiga deret lembar Volumetric Glassware (`vol_kosong`,
+                // `vol_isi`, `vol_suhu`) — kejadian ke-17, cabangnya ikut
+                // Hydrometer dan dengan alasan yang sama.
+                $volumetric = VolumetricGlasswareMentah::dari($baris);
 
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
@@ -371,6 +377,14 @@ class HitungUlangSesi extends Command
                         || count($hydro[HydrometerMentah::KONTEKS_SUHU] ?? []) < 1) {
                         continue;
                     }
+                } elseif ($volumetric !== []) {
+                    // Volumetric: sama dengan Hydrometer — deret datar tidak
+                    // dipakai, profilnya membaca ketiga deret dari `konteks`.
+                    // WAJIB di atas `$grid === []` (baris ini ber-`peran_sensor`,
+                    // jadi grid pulang bukan `[]` dan sesinya dilewati diam-diam).
+                    // Deret yang tidak lengkap TIDAK di-`continue` di sini:
+                    // profilnya menolaknya dengan alasan yang kebaca.
+                    $nilai = [];
                 } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak
@@ -478,6 +492,9 @@ class HitungUlangSesi extends Command
                         // kunci di bawahnya — termasuk TEKANAN, yang tanpa dia
                         // densitas udara tidak bisa dihitung sama sekali.
                         ...$hydro,
+                        // Tiga deret Volumetric; blok kelas/toleransi/kapasitas/
+                        // neraca ikut lewat `spesifikasi_alat` di bawah.
+                        ...$volumetric,
                         'suhu_awal' => $sesi->suhu_awal,
                         'suhu_akhir' => $sesi->suhu_akhir,
                         'kelembaban_awal' => $sesi->kelembaban_awal,

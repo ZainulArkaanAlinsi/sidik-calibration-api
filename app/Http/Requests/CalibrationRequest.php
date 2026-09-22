@@ -468,6 +468,7 @@ class CalibrationRequest extends FormRequest
                     'titik_ukur', 'pembacaan', 'nominal',
                     'js_outside', 'js_inside', 'js_depth',
                     'hydro_massa', 'hydro_suhu',
+                    'vol_kosong', 'vol_isi', 'vol_suhu',
                 ] as $kunci) {
                     if (array_key_exists($kunci, $t)) {
                         $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
@@ -1057,6 +1058,31 @@ class CalibrationRequest extends FormRequest
             'measurements.*.hydro_massa.*' => ['nullable', 'numeric'],
             'measurements.*.hydro_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.hydro_suhu.*' => ['nullable', 'numeric'],
+            // --- Volumetric Glassware (lampiran no. 13, 17-21) -------------
+            //
+            // Tiga deret per titik, TEPAT tiga ulangan — pembagi √3 dan
+            // derajat kebebasan komponen keterulangan mengandaikan n = 3.
+            // `nullable` di dalam deret dengan alasan yang sama seperti
+            // Hydrometer di atas: HP mengirim sel kosong sebagai `null` di
+            // posisinya, dan draft yang belum lengkap harus tetap tersimpan.
+            // Deret yang tidak lengkap DITOLAK di `susunBlokVolumetric()`
+            // dengan alasan yang kebaca, bukan dengan 422.
+            'measurements.*.vol_kosong' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.vol_kosong.*' => ['nullable', 'numeric', 'gte:0'],
+            'measurements.*.vol_isi' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.vol_isi.*' => ['nullable', 'numeric', 'gt:0'],
+            'measurements.*.vol_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
+            'measurements.*.vol_suhu.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.volumetric' => ['sometimes', 'nullable', 'array', 'max:8'],
+            // Kelas DIBATASI A/B: cuma dua itu yang punya γ di master, dan γ
+            // yang salah menggeser seluruh V20 tanpa error.
+            'spesifikasi_alat.volumetric.kelas' => ['sometimes', 'nullable', 'string', 'in:A,B,a,b'],
+            'spesifikasi_alat.volumetric.toleransi_ml' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.volumetric.resolusi_ml' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.volumetric.kapasitas_ml' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            // Nama neraca dicocokkan ke tabel PER KELUARGA di profil — neraca
+            // yang bukan milik lembarnya ditahan di sana dengan alasan kebaca.
+            'spesifikasi_alat.volumetric.neraca' => ['sometimes', 'nullable', 'string', 'max:100'],
             'spesifikasi_alat.height_gauge' => ['sometimes', 'nullable', 'array', 'max:12'],
             'spesifikasi_alat.height_gauge.pra_evaluasi' => ['sometimes', 'nullable', 'array', 'max:20'],
             'spesifikasi_alat.height_gauge.pra_evaluasi.*' => ['nullable', 'numeric'],
@@ -1428,6 +1454,11 @@ class CalibrationRequest extends FormRequest
      */
     private const SPEK_BERBENTUK_BLOK = [
         'keterulangan',
+        // Volumetric Glassware — kelas, toleransi, resolusi, kapasitas, dan
+        // neraca. Tanpa baris ini blok dari HP jatuh ke penjaga "harus teks,
+        // bukan objek" dan SELURUH sesi ditolak 422 — kasus yang sama dengan
+        // Anak Timbangan di bawah.
+        'volumetric',
         'eksentrisitas',
         'histeresis',
         'scale_observation',

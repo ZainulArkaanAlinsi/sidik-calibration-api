@@ -47,10 +47,11 @@ class VolumetricGlasswareMentahTest extends TestCase
         $this->assertNull(M::blokSesi(null));
         $this->assertNull(M::blokSesi(['lain' => []]));
 
-        $blok = M::blokSesi([M::KUNCI_SESI => ['kelas' => ' b ', 'toleransi_ml' => '0.008', 'resolusi_ml' => 1]]);
+        $blok = M::blokSesi([M::KUNCI_SESI => ['kelas' => ' b ', 'toleransi_ml' => '0.008', 'resolusi_ml' => 1, 'kapasitas_ml' => '100']]);
         $this->assertSame('B', $blok['kelas']);
         $this->assertSame(0.008, $blok['toleransi_ml']);
         $this->assertSame(1.0, $blok['resolusi_ml']);
+        $this->assertSame(100.0, $blok['kapasitas_ml']);
         $this->assertNull($blok['neraca']);
 
         $this->assertNull(M::blokSesi([M::KUNCI_SESI => ['kelas' => '']])['kelas']);

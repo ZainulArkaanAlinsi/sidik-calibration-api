@@ -31,6 +31,7 @@ use App\Services\Calibration\TabelStandarHeightGauge;
 use App\Services\Calibration\TabelStandarHydrometer;
 use App\Services\Calibration\TabelStandarMicrometer;
 use App\Services\Calibration\TabelStandarSieve;
+use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
@@ -46,6 +47,7 @@ use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\SieveMentah;
 use App\Support\TimbanganMentah;
+use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
 // Relasi tiruan di `preview()` HARUS Eloquent Collection, bukan Support Collection:
 // `loadMissing('uncertaintyCalculations.standard')` di PerhitunganBuilder butuh
@@ -1241,6 +1243,14 @@ class CalibrationController extends Controller
         // sertifikatnya terbit rapi dan salah.
         if ($this->profil->untukAlat($alat)->butuhBlokHydrometer()) {
             return $this->susunBlokHydrometer($request, $alat, $standarDefault);
+        }
+
+        // Volumetric Glassware (enam alat, dua keluarga): satu titik membawa
+        // TIGA deret — berat kosong, berat berisi air (gram), dan suhu air
+        // (°C). Alasan cabangnya sama dengan Hydrometer: loop per-titik di
+        // bawah cuma punya tempat buat satu deret.
+        if ($this->profil->untukAlat($alat)->butuhBlokVolumetric()) {
+            return $this->susunBlokVolumetric($request, $alat, $standarDefault);
         }
 
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
@@ -2954,6 +2964,175 @@ class CalibrationController extends Controller
         // sesi. Yang masuk `raw_measurements` tetap angka mentah yang diketik
         // teknisi.
         $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => [...$belumDipetakan, ...($perGrup['belum_dihitung'] ?? [])],
+        ];
+    }
+
+    /**
+     * Susun sesi **Volumetric Glassware**: tiap titik TIGA deret × tiga
+     * ulangan — berat wadah kosong (g), berat wadah berisi air (g), dan suhu
+     * air suling (°C). Satu jalur untuk keenam alat; beda keluarga (Fixed satu
+     * titik, Graduated sampai lima) cuma di batas titik dan di profilnya.
+     *
+     * Yang disimpan angka MENTAH yang diketik teknisi. Koreksi suhu, densitas,
+     * dan V20 lahir di profil — idempoten di jalur draft, dan jalur hitung
+     * ulang (`VolumetricGlasswareMentah`) membaca baris yang sama persis.
+     *
+     * Tiga tabel yang tidak sinkron (deret yang bukan tepat tiga angka)
+     * DITOLAK sebelum satu baris pun tersimpan — menyimpan separuhnya
+     * melahirkan titik yang selamanya "belum dihitung" di jalur hitung ulang.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokVolumetric(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $profil = $this->profil->untukAlat($alat);
+        $batas = VolumetricGlasswareCalculator::TITIK_MAKS[$profil->keluarga()];
+        $n = VolumetricGlasswareMentah::PENGULANGAN;
+
+        $mentah = [];
+        $siapHitung = [];
+        $belumDipetakan = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $sumberInput = $sesiKamera ? $metodeInput : 'manual';
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $deret = [
+            VolumetricGlasswareMentah::PERAN_KOSONG => VolumetricGlasswareMentah::SATUAN_MASSA,
+            VolumetricGlasswareMentah::PERAN_ISI => VolumetricGlasswareMentah::SATUAN_MASSA,
+            VolumetricGlasswareMentah::PERAN_SUHU => VolumetricGlasswareMentah::SATUAN_SUHU,
+        ];
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+
+            $terkumpul = [];
+            foreach ($deret as $peran => $satuan) {
+                $terkumpul[$peran] = array_values(array_filter(
+                    (array) ($titik[$peran] ?? []),
+                    static fn ($x): bool => is_numeric($x),
+                ));
+            }
+
+            // Baris yang seluruhnya kosong dilewati tanpa suara — lembar
+            // Graduated menyediakan lima titik, dan titik 4–5 boleh tidak dipakai.
+            if (array_merge(...array_values($terkumpul)) === []) {
+                continue;
+            }
+
+            // Batas ditegakkan DI SINI: kontrak lembar kerja HP tidak punya
+            // batas jumlah titik. Fixed = satu nominal; Graduated = lima kolom
+            // `Point` di `INPUT DATA` master.
+            if ($titikKe > $batas) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Lembar %s paling banyak %d titik. Titik ke-%d tidak disimpan.',
+                        $profil->namaAlatKemampuan(), $batas, $titikKe,
+                    ),
+                ];
+
+                continue;
+            }
+
+            $jumlah = array_map('count', $terkumpul);
+            if (array_values(array_unique(array_values($jumlah))) !== [$n]) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Titik ke-%d butuh tepat %d berat kosong, %d berat isi, DAN %d suhu; yang terkirim '
+                        .'%d, %d, dan %d. Ketiga tabel harus sinkron kolom per kolom — titik tidak disimpan '
+                        .'supaya tidak ada volume yang lahir dari separuh data.',
+                        $titikKe, $n, $n, $n,
+                        $jumlah[VolumetricGlasswareMentah::PERAN_KOSONG],
+                        $jumlah[VolumetricGlasswareMentah::PERAN_ISI],
+                        $jumlah[VolumetricGlasswareMentah::PERAN_SUHU],
+                    ),
+                ];
+
+                continue;
+            }
+
+            $titikUkur = (float) ($titik['titik_ukur'] ?? 0.0);
+
+            foreach ($terkumpul as $peran => $nilai) {
+                foreach ($nilai as $urutan => $angka) {
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $titikUkur,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $angka,
+                        'satuan' => $deret[$peran],
+                        'input_source' => $sumberInput,
+                        'is_verified' => ! $sesiKamera,
+                    ];
+                }
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $titikUkur,
+                // Jalur datar TIDAK dipakai alat ini — lihat susunBlokHydrometer.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'suhu_larutan' => null,
+                'konteks' => [
+                    VolumetricGlasswareMentah::KONTEKS_KOSONG => array_map('floatval', $terkumpul[VolumetricGlasswareMentah::PERAN_KOSONG]),
+                    VolumetricGlasswareMentah::KONTEKS_ISI => array_map('floatval', $terkumpul[VolumetricGlasswareMentah::PERAN_ISI]),
+                    VolumetricGlasswareMentah::KONTEKS_SUHU => array_map('floatval', $terkumpul[VolumetricGlasswareMentah::PERAN_SUHU]),
+                    'spesifikasi_alat' => $spek,
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                    // Dari request, bukan relasi sesi — sesinya belum tersimpan
+                    // waktu jalur ini jalan. Tekanan WAJIB: densitas udara.
+                    'suhu_awal' => $request->input('suhu_awal'),
+                    'suhu_akhir' => $request->input('suhu_akhir'),
+                    'kelembaban_awal' => $request->input('kelembaban_awal'),
+                    'kelembaban_akhir' => $request->input('kelembaban_akhir'),
+                    'tekanan_awal' => $request->input('tekanan_awal'),
+                    'tekanan_akhir' => $request->input('tekanan_akhir'),
+                ],
+            ];
+        }
+
+        // Graduated: budget-nya SATU untuk semua titik (MAX massa, MAX ρ air,
+        // rata-rata semua suhu). Titik yang ditolak di atas berarti budget
+        // dari titik sisanya — U yang tercetak bergantung pada titik mana yang
+        // kebetulan diketik benar. Seluruh titik ditahan; mentahnya tetap
+        // tersimpan supaya teknisi tinggal melengkapi yang kurang.
+        if ($profil->keluarga() === VolumetricGlasswareCalculator::KELUARGA_GRADUATED && $belumDipetakan !== []) {
+            return [
+                'mentah' => $mentah,
+                'hitungan' => [],
+                'belum_dihitung' => [
+                    ...$belumDipetakan,
+                    ...array_map(static fn (array $t): array => [
+                        'titik_ke' => $t['titik_ke'],
+                        'alasan' => sprintf(
+                            'Titik ke-%d ditahan: budget alat berskala satu untuk semua titik, dan titik lain '
+                            .'di sesi ini ditolak.', $t['titik_ke'],
+                        ),
+                    ], $siapHitung),
+                ],
+            ];
+        }
+
+        $perGrup = $profil->hitungPerGrup($siapHitung, $alat);
 
         return [
             'mentah' => $mentah,

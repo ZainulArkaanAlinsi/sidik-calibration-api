@@ -636,6 +636,7 @@ class VolumetricGlasswareCalculator
                         'stdev_keterulangan_nol_hantu' => $h55Master,
                         'stdev_keterulangan_benar' => self::stdev($stdevPerTitik),
                         'u95_nol_hantu' => $agregatMaster['ketidakpastian_diperluas'],
+                        'jumlah_titik_budget' => count($olah),
                     ],
                 ];
             }

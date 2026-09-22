@@ -279,6 +279,34 @@ atau angkanya seharusnya bertanda sebaliknya?
 
 **Sikap sistem:** mencetak persis seperti sertifikat master (V20 − Nominal).
 
+### 12. Alat berskala yang dikalibrasi di SATU titik saja
+
+Keterulangan budget Graduated adalah `STDEV` dari simpangan baku V20 **per
+titik** (`PERHITUNGAN!H55`). Dengan satu titik, STDEV satu angka tidak
+terdefinisi; master menutupinya karena lima sel kosong ikut terbaca nol
+(pertanyaan no. 2), sehingga tetap keluar angka.
+
+**Pertanyaan:** Apakah buret / gelas ukur / pipet ukur boleh dikalibrasi di
+satu titik saja? Kalau boleh, komponen keterulangannya diambil dari mana —
+simpangan baku tiga ulangan titik itu sendiri?
+
+**Sikap sistem:** sesi Graduated dengan kurang dari dua titik **ditahan**
+dengan alasan yang terbaca, tidak diterbitkan.
+
+### 13. Kapasitas yang tidak ada di lampiran akreditasi
+
+Lantai CMC master diambil dari kapasitas alat lewat nominal **terdekat**
+(`INDEX/MATCH(MIN(ABS(...)))`). Buret di lampiran cuma 25 mL dan 50 mL, jadi
+buret 10 mL memakai CMC 25 mL (0,019 mL), dan gelas ukur 150 mL memakai
+baris 100 mL.
+
+**Pertanyaan:** Apakah alat yang kapasitasnya tidak tercantum di lampiran
+tetap boleh membawa klaim akreditasi dengan CMC baris terdekat, atau
+sertifikatnya harus terbit tanpa klaim (seperti Hydrometer di luar pita)?
+
+**Sikap sistem:** meniru master — baris terdekat, klaim akreditasi tetap.
+Jejak sesi mencatat baris CMC mana yang terpakai (`jejak_titik`).
+
 ---
 
 ## Koreksi atas dokumen analisis yang menyertai master

@@ -66,6 +66,28 @@ abstract class CalibrationProfile
         return [];
     }
 
+    /**
+     * Nama alat LAIN yang memuat nama profil ini di dalamnya — dan karena itu
+     * TIDAK boleh mendarat di sini.
+     *
+     * Registry mencocokkan nama lewat substring (kunci boleh menempel di
+     * tengah nama alat pelanggan). Itu benar untuk "pH Meter Mettler Toledo",
+     * tapi salah untuk `Buret` lawan `Buret Digital`: dua alat lampiran
+     * akreditasi yang berbeda (no. 13 & 14), metode berbeda (0510 lawan 0522),
+     * dan yang kedua belum punya profil. Tanpa pengecualian ini buret digital
+     * mendarat di lembar gravimetri buret kaca, dihitung dengan rumus yang
+     * salah, tanpa satu pun error.
+     *
+     * Dicocokkan dengan aturan yang sama (huruf kecil, spasi dirapikan,
+     * substring). Bawaan kosong — tiga puluhan profil lain tidak berubah.
+     *
+     * @return list<string>
+     */
+    public function namaBukanMilik(): array
+    {
+        return [];
+    }
+
     /** Kode Formula GUM buat besaran ini (`Formula::KODE_GUM_*`). */
     abstract public function kodeFormula(): string;
 

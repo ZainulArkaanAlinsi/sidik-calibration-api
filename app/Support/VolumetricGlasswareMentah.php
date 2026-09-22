@@ -98,7 +98,11 @@ final class VolumetricGlasswareMentah
      * error.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat
-     * @return array{kelas: string|null, toleransi_ml: float|null, resolusi_ml: float|null, neraca: string|null}|null
+     *                                                      `kapasitas_ml` = kapasitas maksimum alat. Lantai CMC master diambil dari
+     *                                                      SITU (`PERHITUNGAN_U95%!C27 = INPUT DATA!E15`), bukan dari nominal tiap
+     *                                                      titik — gelas ukur 100 mL yang dikalibrasi di 10 mL tetap berlantai CMC
+     *                                                      100 mL.
+     * @return array{kelas: string|null, toleransi_ml: float|null, resolusi_ml: float|null, kapasitas_ml: float|null, neraca: string|null}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -117,6 +121,7 @@ final class VolumetricGlasswareMentah
             'kelas' => $kelas === null ? null : strtoupper($kelas),
             'toleransi_ml' => $angka($blok['toleransi_ml'] ?? null),
             'resolusi_ml' => $angka($blok['resolusi_ml'] ?? null),
+            'kapasitas_ml' => $angka($blok['kapasitas_ml'] ?? null),
             'neraca' => $teks($blok['neraca'] ?? null),
         ];
     }
