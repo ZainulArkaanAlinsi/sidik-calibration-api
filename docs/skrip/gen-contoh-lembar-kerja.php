@@ -14,6 +14,12 @@ use App\Services\Calibration\Profiles\Enclosure\RefrigeratorProfile;
 use App\Services\Calibration\Profiles\FlowmeterFlowrateProfile;
 use App\Services\Calibration\Profiles\FlowmeterTotalizerProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
+use App\Services\Calibration\Profiles\BuretProfile;
+use App\Services\Calibration\Profiles\GelasUkurProfile;
+use App\Services\Calibration\Profiles\LabuUkurProfile;
+use App\Services\Calibration\Profiles\PicnometerProfile;
+use App\Services\Calibration\Profiles\PipetUkurProfile;
+use App\Services\Calibration\Profiles\PipetVolumeProfile;
 use Illuminate\Contracts\Console\Kernel;
 
 /**
@@ -367,7 +373,40 @@ $kepalaVolumetrik = <<<'DART'
 library;
 DART;
 
+$kepalaVolumetricGlassware = <<<'DART'
+/// Bentuk lembar kerja contoh **Volumetric Glassware** (alat ke-34..39) — enam
+/// alat lampiran, dua keluarga:
+///
+///  - Fixed (`SIDIK-FM-CAL-0513_Rev.4`): Labu Ukur, Pipet Volume, Picnometer — 1 titik
+///  - Graduated (`SIDIK-FM-CAL-0514_Rev.4`): Buret, Gelas Ukur, Pipet Ukur — 5 titik
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan.
+///
+/// Yang dipungut BUKAN volume: tiap titik tiga deret × tiga ulangan —
+/// `measurements[].vol_kosong` (g), `measurements[].vol_isi` (g), dan
+/// `measurements[].vol_suhu` (°C), digabung per POSISI baris seperti
+/// Hydrometer. `offset_kunci` 1000/2000/3000 supaya ketiga tabel tidak berbagi
+/// kotak isian. Blok sesi di `spesifikasi_alat.volumetric` (kapasitas, kelas
+/// A/B dropdown, toleransi, neraca per keluarga; resolusi khusus Graduated),
+/// plus kotak tekanan udara (hPa) yang wajib walau tidak tercetak di kertas.
+/// Lihat `docs/perintah-frontend-volumetric.md` di repo API.
+library;
+DART;
+
 $kelompok = [
+    'volumetric_glassware' => [
+        'berkas' => 'contoh_lembar_kerja_volumetric_glassware.dart',
+        'kepala' => $kepalaVolumetricGlassware,
+        'profil' => [
+            'LabuUkur' => LabuUkurProfile::class,
+            'PipetVolume' => PipetVolumeProfile::class,
+            'Picnometer' => PicnometerProfile::class,
+            'Buret' => BuretProfile::class,
+            'GelasUkur' => GelasUkurProfile::class,
+            'PipetUkur' => PipetUkurProfile::class,
+        ],
+    ],
     'dimensi' => [
         'berkas' => 'contoh_lembar_kerja_dimensi.dart',
         'kepala' => $kepalaDimensi,
