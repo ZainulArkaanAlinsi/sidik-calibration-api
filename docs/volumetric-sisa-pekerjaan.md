@@ -20,6 +20,7 @@ proyek. Folder ini ter-gitignore karena memuat nama & alamat pelanggan —
 | `docs/skrip/gen-tabel-standar-volumetric.py` | generator tabel referensi | dijalankan, dicek balik ke master |
 | `database/data/tabel-standar-volumetric.json` | 6 tabel CMC, diameter ISO 4787 (45), koefisien muai (14), neraca per workbook | CMC Pipet Volume 1 mL = 0,003, Gelas Ukur 100 mL = 0,34 — cocok master |
 | `docs/pertanyaan-lab-volumetric.md` | 8 pertanyaan bernomor untuk manajer teknis | siap dibawa ke lab |
+| `app/Services/Calibration/TabelStandarVolumetric.php` | pembaca JSON: CMC (nominal terdekat, seri → baris pertama), diameter (persis), neraca per keluarga | `tests/Unit/TabelStandarVolumetricTest.php`, 7 test hijau |
 
 **Yang sudah terbukti cocok ke cache Excel (selisih nol):** V20 Fixed & Graduated,
 delapan koefisien sensitivitas Fixed, `uc` Fixed & Graduated. `k` Graduated cocok
@@ -45,7 +46,7 @@ sudah melakukan ini, jangan bikin mesin agregasi kedua.
 
 Urutan mengikuti playbook `.claude/skills/sidik-alat-baru-dari-master`.
 
-### 3.1 `TabelStandarVolumetric.php`
+### 3.1 `TabelStandarVolumetric.php` — ✅ SELESAI (22 Sep)
 Pembaca `database/data/tabel-standar-volumetric.json`. Master memilih baris CMC
 lewat `INDEX/MATCH(MIN(ABS(...)))` — **nilai terdekat**, bukan pencocokan persis.
 Tiru perilaku itu, dan tulis di docblock bahwa itu pencocokan terdekat, supaya
