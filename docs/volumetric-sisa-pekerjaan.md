@@ -21,6 +21,7 @@ proyek. Folder ini ter-gitignore karena memuat nama & alamat pelanggan —
 | `database/data/tabel-standar-volumetric.json` | 6 tabel CMC, diameter ISO 4787 (45), koefisien muai (14), neraca per workbook | CMC Pipet Volume 1 mL = 0,003, Gelas Ukur 100 mL = 0,34 — cocok master |
 | `docs/pertanyaan-lab-volumetric.md` | 10 pertanyaan bernomor untuk manajer teknis | siap dibawa ke lab |
 | `VolumetricGlasswareCalculator::komponenBudget()` + `meniskusFixed()`/`meniskusGraduated()` | 8 komponen budget; agregasi lewat `GumCalculator::agregasiBudget()` (otomatis membetulkan `Veff` Fixed) | `tests/Unit/VolumetricGlasswareBudgetTest.php`: Graduated cocok master sampai U; Fixed cocok ci & uc, U > master |
+| `app/Support/VolumetricGlasswareMentah.php` | peran `vol_kosong`/`vol_isi`/`vol_suhu`, `dari()`, `blokSesi()`, `PERAN_BUKAN_BESARAN_ALAT` | `tests/Unit/VolumetricGlasswareMentahTest.php`, 3 test hijau. **Belum disambung** ke `CalibrationValidator:543` & `HitungUlangSesi` — lakukan bareng registrasi profil |
 | `app/Services/Calibration/TabelStandarVolumetric.php` | pembaca JSON: CMC (nominal terdekat, seri → baris pertama), diameter (persis), neraca per keluarga | `tests/Unit/TabelStandarVolumetricTest.php`, 7 test hijau |
 
 **Yang sudah terbukti cocok ke cache Excel (selisih nol):** V20 Fixed & Graduated,
