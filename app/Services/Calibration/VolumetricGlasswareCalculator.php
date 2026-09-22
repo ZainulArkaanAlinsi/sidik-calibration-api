@@ -132,6 +132,109 @@ class VolumetricGlasswareCalculator
     }
 
     /**
+     * Delapan komponen budget ketidakpastian — `PERHITUNGAN_U95%` baris 36–43.
+     *
+     * Memulangkan bahan mentah untuk `GumCalculator::agregasiBudget()`, BUKAN
+     * hasil agregasinya. Agregasinya sengaja diserahkan ke sana: mesin itu
+     * sudah terbukti cocok dengan `TINV` Excel termasuk pemotongan `veff` ke
+     * bawah, dan dia membagi dengan **jumlah** `(ui·ci)⁴/vi` — yang otomatis
+     * membetulkan `Veff` workbook Fixed yang membagi dengan baris terakhir saja
+     * (`K43`, bukan `K44`; lihat `docs/pertanyaan-lab-volumetric.md` no. 1).
+     *
+     * Masukan `u_*` adalah ketidakpastian yang tertulis di kolom **U** master
+     * (sebelum dibagi pembaginya), supaya tiap angkanya bisa diadu langsung ke
+     * sel yang sama di workbook.
+     *
+     * ## Yang beda antar keluarga — ditiru masing-masing, bukan diseragamkan
+     *
+     * | Masukan | Fixed | Graduated |
+     * |---|---|---|
+     * | `u_massa` | resolusi neraca ÷ √3 | U95 sertifikat neraca ÷ 2 |
+     * | `u_rho_air` | 5·10⁻⁵ (`=0,05/1000`) | 5·10⁻⁸ (angka mati) |
+     * | `u_meniskus` | tabel diameter ISO 4787 | resolusi ÷ (2√3) |
+     * | `tanda_ci_muai` | +1 | −1 |
+     *
+     * Keempatnya pertanyaan lab (no. 5, 9, 10). Sampai dijawab, masing-masing
+     * keluarga memakai caranya sendiri — memilih salah satu sebagai "yang benar"
+     * berarti diam-diam menggeser angka yang sudah tercetak.
+     *
+     * @param  array{
+     *     massa: float, rho_udara: float, rho_air: float, suhu_air: float, gamma: float,
+     *     u_massa: float, u_suhu: float, u_meniskus: float, u_rho_air: float,
+     *     u_keterulangan: float, tanda_ci_muai: int, rho_anak_timbangan?: float
+     * }  $m
+     * @return list<array{nama: string, u_diperluas: float, pembagi: float, u: float, ci: float, vi: float}>
+     */
+    public static function komponenBudget(array $m): array
+    {
+        $r3 = $m['massa'];
+        $r4 = $m['rho_udara'];
+        $r5 = $m['rho_air'];
+        $r6 = $m['rho_anak_timbangan'] ?? self::DENSITAS_ANAK_TIMBANGAN;
+        $r7 = $m['suhu_air'];
+        $r8 = $m['gamma'];
+
+        // Nama variabel mengikuti sel catatan master (J3..J8) supaya rumus di
+        // bawah bisa diadu baris per baris ke `PERHITUNGAN_U95%` kolom H.
+        $faktorMuai = 1 - ($r8 * ($r7 - self::SUHU_ACUAN));
+        $ciRho = $r3 * (($r6 - $r5) / ($r6 * (($r5 - $r4) ** 2))) * $faktorMuai;
+
+        $baris = [
+            ['Weight of Destillate Water', $m['u_massa'], 2.0, 18.0,
+                (($r6 - $r4) / ($r6 * ($r5 - $r4))) * $faktorMuai],
+            ['Density of Air', 0.1 * $r4, sqrt(3), 50.0, $ciRho],
+            ['Density of Destillate Water', $m['u_rho_air'], 2.0, 60.0, -$ciRho],
+            ['Density of Weight Standard', 0.1 * $r6, sqrt(3), 50.0,
+                $r3 * $r4 / ($r6 ** 2 * ($r5 - $r4)) * $faktorMuai],
+            ['Temperature of Destillate Water', $m['u_suhu'], 2.0, 60.0,
+                (-$r3 * $r8 * ($r6 - $r4) * ($r7 - self::SUHU_ACUAN) / ($r6 * ($r5 - $r4)))],
+            ['Expansion Coefficient of Material', 0.1 * $r8, sqrt(3), 40.0,
+                $m['tanda_ci_muai'] * ($r3 * ($r6 - $r4)) / ($r6 * ($r5 - $r4))],
+            ['Meniscus', $m['u_meniskus'], sqrt(3), 50.0, 1.0],
+            ['Repeated measurements', $m['u_keterulangan'], 1.0, 2.0, 1.0],
+        ];
+
+        return array_map(static fn (array $b): array => [
+            'nama' => $b[0],
+            'u_diperluas' => $b[1],
+            'pembagi' => $b[2],
+            'u' => $b[1] / $b[2],
+            'ci' => $b[4],
+            'vi' => $b[3],
+        ], $baris);
+    }
+
+    /**
+     * Ketidakpastian meniskus keluarga FIXED (mL) — `PERHITUNGAN_U95%` B27–B32.
+     *
+     * Tebal garis 0,1 mm → Up = 0,05 mm; luas penampang `E = 3,14·ø²/4`;
+     * `U = Up·E` (mm³) → ÷1000 ke mL. Diameter `ø` dari tabel ISO 4787 lewat
+     * toleransi alat (`TabelStandarVolumetric::diameterMaksimum()`).
+     *
+     * **3,14, bukan `M_PI`** — master menulis angka itu, dan selisihnya
+     * (~0,05%) cukup untuk menggeser digit yang diadu test rekonsiliasi.
+     */
+    public static function meniskusFixed(float $diameterMm): float
+    {
+        $up = 0.1 / 2;
+        $luas = (3.14 * ($diameterMm ** 2)) / 4;
+
+        return ($up * $luas) / 1000;
+    }
+
+    /**
+     * Ketidakpastian meniskus keluarga GRADUATED (mL) — `PERHITUNGAN_U95%` B28.
+     *
+     * `resolusi / (2√3)` — dari resolusi alat, BUKAN tabel diameter seperti
+     * Fixed. Budget lalu membaginya dengan √3 LAGI sebagai pembagi komponen;
+     * pembagian ganda itu milik master dan ditiru.
+     */
+    public static function meniskusGraduated(float $resolusiMl): float
+    {
+        return $resolusiMl / (2 * sqrt(3));
+    }
+
+    /**
      * Koefisien muai bahan dari kelas alat.
      *
      * Master cuma memetakan DUA pilihan, walau workbook Graduated menyertakan

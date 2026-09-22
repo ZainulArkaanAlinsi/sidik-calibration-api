@@ -229,6 +229,39 @@ workbook akan memakai stdev Excellent tanpa pemberitahuan.
 
 ---
 
+### 9. Ketidakpastian timbang dihitung dengan cara berbeda antar workbook
+
+Label selnya sama persis di kedua workbook ("LOP atau read."), tetapi isinya:
+
+| | Fixed | Graduated |
+|---|---|---|
+| Diambil dari | kolom `AD` (resolusi neraca) | kolom `AB` (U95 sertifikat neraca) |
+| Dibagi | √3 (sebaran rektangular) | 2 (faktor cakupan sertifikat) |
+| Contoh | 0,0001 / √3 = 0,0000577 g | 0,0019 / 2 = 0,00095 g |
+
+Keduanya cara yang sah, tetapi untuk komponen yang sama.
+
+**Pertanyaan:** Mana yang dimaksud metode `SIDIK-IK-CAL-0510`?
+
+**Sikap sistem:** masing-masing keluarga memakai cara workbook-nya sendiri.
+
+---
+
+### 10. Ketidakpastian densitas air suling beda seribu kali
+
+| | Fixed | Graduated |
+|---|---|---|
+| Komponen "Density of Destillate Water" | `=0,05/1000` = **5·10⁻⁵** g/mL | angka mati **5·10⁻⁸** g/mL |
+
+Pada contoh workbook dampaknya pada `uc` sangat kecil, tetapi kedua angka
+tidak mungkin sama-sama benar untuk besaran yang sama.
+
+**Pertanyaan:** Nilai mana yang benar?
+
+**Sikap sistem:** masing-masing keluarga memakai angka workbook-nya sendiri.
+
+---
+
 ## Koreksi atas dokumen analisis yang menyertai master
 
 Untuk catatan, supaya tidak dipakai sebagai acuan:

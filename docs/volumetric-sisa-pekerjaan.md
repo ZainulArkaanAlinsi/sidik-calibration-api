@@ -19,7 +19,8 @@ proyek. Folder ini ter-gitignore karena memuat nama & alamat pelanggan —
 | `tests/Unit/VolumetricGlasswareMasterTest.php` | 6 test, 21 assertion — adu ke cache Excel + 3 penjaga struktural | hijau |
 | `docs/skrip/gen-tabel-standar-volumetric.py` | generator tabel referensi | dijalankan, dicek balik ke master |
 | `database/data/tabel-standar-volumetric.json` | 6 tabel CMC, diameter ISO 4787 (45), koefisien muai (14), neraca per workbook | CMC Pipet Volume 1 mL = 0,003, Gelas Ukur 100 mL = 0,34 — cocok master |
-| `docs/pertanyaan-lab-volumetric.md` | 8 pertanyaan bernomor untuk manajer teknis | siap dibawa ke lab |
+| `docs/pertanyaan-lab-volumetric.md` | 10 pertanyaan bernomor untuk manajer teknis | siap dibawa ke lab |
+| `VolumetricGlasswareCalculator::komponenBudget()` + `meniskusFixed()`/`meniskusGraduated()` | 8 komponen budget; agregasi lewat `GumCalculator::agregasiBudget()` (otomatis membetulkan `Veff` Fixed) | `tests/Unit/VolumetricGlasswareBudgetTest.php`: Graduated cocok master sampai U; Fixed cocok ci & uc, U > master |
 | `app/Services/Calibration/TabelStandarVolumetric.php` | pembaca JSON: CMC (nominal terdekat, seri → baris pertama), diameter (persis), neraca per keluarga | `tests/Unit/TabelStandarVolumetricTest.php`, 7 test hijau |
 
 **Yang sudah terbukti cocok ke cache Excel (selisih nol):** V20 Fixed & Graduated,
@@ -38,6 +39,7 @@ sudah melakukan ini, jangan bikin mesin agregasi kedua.
 | K3 | Nol hantu `IFERROR` di keterulangan Graduated: **hitung benar** (STDEV nilai nyata saja), **simpan angka master sebagai pembanding** di `type_b_components` | pemilik proyek, 21 Sep |
 | K4 | `Veff` Fixed yang membagi `K43`: **hitung benar** (bagi SUM), simpan angka master sebagai pembanding | aturan AGENTS.md "kerusakan salin-tempel" |
 | K5 | γ hanya Class A/B; nilai lain **ditolak**, bukan dipetakan ke bawaan | sudah diterapkan di kalkulator |
+| K7 | Perbedaan metode antar workbook (u timbang, u densitas air, sumber meniskus, tanda ci muai) **ditiru per keluarga**, tidak diseragamkan | pertanyaan lab no. 5, 9, 10 |
 | K6 | Tabel CMC **boleh dibagi** (identik di kedua workbook); tabel neraca **tidak boleh** (neraca ke-3 beda fisik) | diterapkan di generator |
 
 ---
