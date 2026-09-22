@@ -145,6 +145,12 @@ class DatabaseSeeder extends Seeder
             // ketahuan rusak. Seeder ini juga yang mendaftarkan neraca Fujitsu
             // FS-AR210 ke master `standards`.
             HydrometerSeeder::class,
+            // Alat ke-34..39 — Volumetric Glassware (enam profil, dua
+            // keluarga). Baris kemampuannya sudah ditanam
+            // `CalibrationCapabilitySeeder` dari lampiran (kelompok Volume).
+            // Empat dari enam sesinya MEMINJAM masukan mentah master
+            // keluarganya — lihat docblock seedernya.
+            VolumetricGlasswareSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

@@ -20,6 +20,7 @@ use App\Services\Calibration\Profiles\SieveProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
+use App\Services\Calibration\Profiles\VolumetricGlasswareProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -398,6 +399,9 @@ class UjiProfilKalibrasi extends Command
             || $profil instanceof JangkaSorongProfile
             || $profil instanceof SieveProfile
             || $profil instanceof HydrometerProfile
+            // Volumetric (22 Sep 2026): tiga deret bernama per titik plus blok
+            // sesi — alasannya sama persis dengan Hydrometer di atas.
+            || $profil instanceof VolumetricGlasswareProfile
             || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];

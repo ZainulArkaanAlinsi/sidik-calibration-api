@@ -3679,6 +3679,46 @@ dan itu harus jadi perubahan sadar, bukan efek samping); `routes/api.php`;
 lagi. Selama itu belum dibetulkan, akun `super_admin` pertama yang dibuat tidak bisa masuk ke
 mana pun. Ini prasyarat, bukan bagian dari pekerjaan.
 
+## §36 — Alat ke-34..39: **Volumetric Glassware** (Fixed & Graduated) — 22 Sep 2026
+
+Dua workbook master ber-password (`Volumetric_Glassware_2026`, Fixed & Graduated) dari
+pemilik proyek, beserta analisis & prompt implementasi. Kelompok Volume di lampiran
+LK-285-IDN sekarang berprofil untuk enam alat: Buret (13), Gelas Ukur (17), Labu Ukur (18),
+Pipet Ukur (19), Pipet Volume (20), Picnometer (21). `Buret Digital` (14) tetap generik.
+
+**Keputusan pemilik proyek (21 Sep):** dua mesin, enam pintu — dua kelas keluarga
+(`FixedVolumetricGlasswareProfile`, `GraduatedVolumetricGlasswareProfile`) dan enam profil
+konkret yang cuma menyumbang nama lampiran. Nol hantu `IFERROR` di keterulangan Graduated
+dihitung benar, angka master disimpan sebagai pembanding di jejak sesi.
+
+### Bukti
+
+| Yang diadu | Hasil | Test |
+|---|---|---|
+| ρ udara, ρ air (Tanaka), V20 per ulangan & rata-rata, kedua keluarga | selisih nol | `VolumetricGlasswareMasterTest` |
+| 8 koefisien sensitivitas Fixed & Graduated, `uc`, Veff, k, U Graduated | cocok master sampai U | `VolumetricGlasswareBudgetTest` |
+| Masukan MENTAH `INPUT_DATA` → V20, deviasi, masukan budget, pembanding K3/K4 | cocok master | `VolumetricGlasswareSesiTest` (Unit, 6) |
+| Payload HP → simpan → angka CETAK `SERTIFIKAT` (V20, Correction, U95 0,003 & 0,34) + validator + `kalibrasi:hitung-ulang` | cocok | `VolumetricGlasswareSesiTest` (Feature, 5) |
+| Koreksi suhu kalibrator Yokogawa + sensor PRT (dari sheet LOKAL `FC_Prt_Pt100`, bukan tautan luar `[4]`) | 27,0 → 27,32502900705911 | `TabelStandarVolumetricTest` |
+
+### Temuan yang mengubah rancangan
+
+- **Lantai CMC dari KAPASITAS alat**, bukan nominal titik (`PERHITUNGAN_U95%!C27 = INPUT DATA!E15`),
+  dan U95 dicetak SATU angka di bawah tabel. Blok sesi dapat kunci `kapasitas_ml`.
+- **Correction tercetak = V20 − Nominal**; validator menegakkan `koreksi = −error`, jadi profilnya
+  memakai `tandaKoreksiSertifikat() = −1` (pertanyaan lab no. 11).
+- Generator tabel neraca versi pertama membaca kolom lewat INDEKS dan menulis stdev Graduated
+  sebagai resolusi (Graduated tidak punya kolom Res). Dibetulkan: kolom dicari lewat judulnya.
+- Registry mencocokkan nama lewat substring, jadi "Buret" menangkap "Buret Digital". Kait baru
+  `CalibrationProfile::namaBukanMilik()` (bawaan kosong) menahannya.
+- Graduated: satu budget untuk semua titik, jadi satu titik yang ditolak **menahan seluruh sesi**
+  — di kalkulator DAN di jalur simpan. Kurang dari dua titik ditahan (pertanyaan lab no. 12).
+
+Nol kolom baru. Pertanyaan lab: `docs/pertanyaan-lab-volumetric.md` (13). Serah-terima HP:
+`docs/perintah-frontend-volumetric.md`. Sisa & riset: `docs/volumetric-sisa-pekerjaan.md`.
+
+---
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4078,3 +4118,4 @@ Supaya tidak dibangun ulang:
   eksplisit atau bandingkan lewat nama, jangan menyandar ke rentang id — bukan endpoint-nya.
 | G18 | Alat baru **Anak Timbangan (OIML R111)** — §29 | **BERES di server** (10 Sep 2026) — alat ke-29, kelompok Massa, **di luar lampiran akreditasi** (kertasnya sendiri menyebut Non KAN). Rumusnya dibuktikan di Python SEBELUM PHP: **1033 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶, ditegakkan `AnakTimbanganMasterTest` (12 test / 1011 asersi). **Nol kolom baru**. Tiga kerusakan rujukan dibetulkan dengan ARAH yang ditegakkan test — yang terbesar kolom koreksi apung yang memakai massa keping PERTAMA untuk dua belas keping lain, meleset sampai 2,58 mg pada keping bertoleransi 0,10 mg. Temuan terbesar justru bukan itu: sel berlabel `Rata-rata STDev` ternyata berisi SIMPANGAN BAKU dari enam simpangan baku harian, lebih kecil dari keterulangan hari mana pun — kalau lab menjawab yang dimaksud gabungan harian, **U95 seluruh sertifikat naik ~1,9x**. Ditiru karena `FORM VALIDASI` mencatatnya sebagai perubahan metode yang sengaja & sudah divalidasi. Enam gerbang penerbitan dipasang; master sendiri menerbitkan `#VALUE!` di lima dari dua puluh baris dan satu keping 10 g sebagai 5,500163 g (meleset 45 %). Kertas Rev.0 dibaca lebih dulu dan menyumbang empat temuan yang tidak ada di workbook. 23 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-anak-timbangan.md` §5 memasang lima butirnya |
 | G19 | **Sertifikat Flowmeter tercetak dalam satuan hitung, bukan satuan alat pelanggan** — cacat di dalam G14/G17 | **BERES di server** (17 Sep 2026) — bukan alat baru: satu cacat cetak yang hidup diam-diam sejak alat ke-27 & ke-28 mendarat. Mesin hitungnya sengaja dipindah ke L (Totalizer) / Lpm (Flowrate) supaya satu mesin melayani semua satuan, dan `uncertainty_calculations` menyimpan angka yang SUDAH dikonversi. Yang tidak pernah terjadi: membaliknya lagi waktu mencetak. Alat yang layarnya menunjukkan **3,0 m3/h terbit dengan 50,0 Lpm** di kolom Unit Under Test. `FlowmeterCalculator::konversiBalik()` ditulis untuk ini sejak awal — docblock-nya bahkan menyebut *"Dipakai jalur SERTIFIKAT"* dan menghitung selisih 16,7x-nya — lalu **nol pemanggil**. Master membagi balik dengan faktor yang sama (`SERTIFIKAT!E26 = 'PERHITUNGAN FC'!D63 / DATABASE!$S$22`). **Kenapa tidak ketahuan:** dua sesi contohnya bersatuan `L` dan `LPM`, dua-duanya faktor 1,0 — nol test yang pernah melewati jalur konversi sama sekali. Dan angkanya sendiri tidak pernah terlihat ganjil, karena **kolom satuannya ikut berubah**: tabelnya konsisten dengan dirinya sendiri, cuma tidak dengan alat yang dikalibrasi, tidak dengan kop sertifikat (yang membaca `raw_measurements.satuan` dan sudah menulis `m3/h`), dan tidak dengan jumlah desimalnya (yang lahir dari `equipments.resolusi`, juga bersatuan alat). Satu dokumen, dua satuan untuk besaran yang sama. **Bentuknya:** hook baru `CalibrationProfile::cetakDalamSatuanAlat()` yang memulangkan CLOSURE, bukan faktor — satuan berbasis massa butuh densitas, dan densitas dibaca PER TITIK. Bawaannya `null`, jadi profil lain nol tersentuh. Densitasnya diambil dari sumber yang SAMA yang dipakai waktu menghitung: UFM membaca `flow_densitas_uut` yang diketik teknisi, gravimetri memanggil `FlowmeterGravimetriCalculator::densitasTerkoreksi()` — fungsinya, bukan salinannya, yang karena itu dijadikan publik. **Yang sengaja tidak berubah:** sesi bersatuan `L`/`LPM` nol pergeseran (hook-nya memulangkan `null` untuk faktor identitas, bukan closure identitas, supaya ejaan `Lpm` tidak diam-diam jadi `LPM`), sertifikat yang sudah terbit nol pergeseran (snapshot dibekukan waktu terbit — ada test yang menguncinya), dan bentuk JSON snapshot nol kunci berubah, jadi **sisi mobile nol pekerjaan** (dia sudah membaca `hasil[].satuan` per baris). Titik yang bahan baliknya HILANG sesudah hitungannya tersimpan **memblokir sertifikatnya** dengan pesan yang menyebut nomor titiknya — bukan diam-diam mencetak angka hitung berlabel `kg/h`; `GenerateCertificate` menangkapnya, menyetempel sertifikatnya `gagal`, dan mengirim pesannya ke admin. Dijaga `FlowmeterSatuanSertifikatTest` (7 test / 64 asersi), dan penjaganya **dibuktikan menahan**: hook-nya dimatikan → 5 dari 7 merah; labelnya dibiarkan pindah tapi angkanya tidak → 3 merah lagi. Kontraknya ditulis di `docs/perintah-frontend-flowmeter.md` §0.1 |
+| G20 | Alat baru **Volumetric Glassware** (enam alat lampiran, dua keluarga) — §36 | **BERES di server** (22 Sep 2026) — V20 dan budget diadu ke kedua workbook dari masukan mentah, angka cetak sertifikat master (V20, Correction, U95 0,003 & 0,34) terbukti lewat jalur HP → simpan → validator → hitung ulang. Nol kolom baru. 13 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-volumetric.md` |

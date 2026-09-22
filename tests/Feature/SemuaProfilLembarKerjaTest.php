@@ -887,6 +887,12 @@ class SemuaProfilLembarKerjaTest extends TestCase
         //    Sejalan dengan kodenya: keduanya turunan `ProfilPutaran` dengan
         //    SATU mesin hitung, berbagi Instruksi Kerja `SIDIK-IK-CAL-0511_Rev.6`,
         //    dan yang membedakan cuma pita CMC-nya.
+        //  - `0513` & `0514` — Volumetric Glassware, masuk 22 Sep 2026. Dua
+        //    kertas untuk enam alat lampiran, dan kertasnya sendiri generik:
+        //    `SIDIK-FM-CAL-0513_Rev.4 - LEMBAR KERJA VOLUMETRIK TUNGGAL.pdf`
+        //    (Labu Ukur, Pipet Volume, Picnometer) dan `…0514_Rev.4 - LEMBAR
+        //    KERJA VOLUMETRIK MAJEMUK.pdf` (Buret, Gelas Ukur, Pipet Ukur).
+        //    Satu mesin hitung per kertas; yang membedakan cuma tabel CMC.
         //
         // Yang tetap dilarang: dua alat yang kertasnya BEDA tapi nomornya
         // kembar — itu membuat lembar tercetak mengaku formulir yang bukan
@@ -895,6 +901,8 @@ class SemuaProfilLembarKerjaTest extends TestCase
             'SIDIK-FM-CAL-0504_Rev.3',
             'SIDIK-FM-CAL-0538_Rev.0',
             'SIDIK-FM-CAL-0515_Rev.4',
+            'SIDIK-FM-CAL-0513_Rev.4',
+            'SIDIK-FM-CAL-0514_Rev.4',
         ];
 
         $kembar = array_filter(

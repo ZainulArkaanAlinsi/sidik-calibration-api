@@ -163,9 +163,13 @@ class ProfilDariNamaAlatTest extends TestCase
             // sendiri (alat ke-18..20), dari tiga workbook master yang turun
             // dari lab. Yang menjaga arah sebaliknya —
             // `test_tiga_alat_suhu_dapat_lembarnya_sendiri` di bawah.
+            // `Buret Digital` TETAP di sini walau Buret sudah berprofil:
+            // namanya memuat "buret", dan `BuretProfile::namaBukanMilik()`
+            // yang menahannya. Gelas Ukur & Picnometer PINDAH 22 Sep 2026
+            // (Volumetric Glassware) — arah sebaliknya dijaga
+            // `test_volumetric_dapat_lembarnya_sendiri`.
             'Buret Digital' => ['Buret Digital'],
-            'Gelas Ukur' => ['Gelas Ukur'],
-            'Picnometer' => ['Picnometer'],
+            'Digital Burette' => ['Digital Burette'],
             // Hydrometer PINDAH dari sini 18 Sep 2026: sekarang punya lembar
             // kerjanya sendiri (alat ke-33, lampiran no. 25, kelompok
             // Volumetrik), dari dua workbook master yang turun dari lab. Yang
@@ -646,6 +650,27 @@ class ProfilDariNamaAlatTest extends TestCase
                 'hydrometer',
                 $this->registry->kodeProfilDariNama($nama),
                 "'{$nama}' harusnya dapat lembar `hydrometer`, bukan jatuh ke jalur generik.",
+            );
+        }
+    }
+
+    public function test_volumetric_dapat_lembarnya_sendiri(): void
+    {
+        foreach ([
+            'Labu Ukur' => 'labu_ukur',
+            'Labu Ukur 100 mL Pyrex' => 'labu_ukur',
+            'Pipet Volume' => 'pipet_volume',
+            'Picnometer' => 'picnometer',
+            'Piknometer 25 mL' => 'picnometer',
+            'Buret' => 'buret',
+            'Buret 50 mL' => 'buret',
+            'Gelas Ukur' => 'gelas_ukur',
+            'Pipet Ukur' => 'pipet_ukur',
+        ] as $nama => $kode) {
+            $this->assertSame(
+                $kode,
+                $this->registry->kodeProfilDariNama($nama),
+                "'{$nama}' harusnya dapat lembar `{$kode}`.",
             );
         }
     }

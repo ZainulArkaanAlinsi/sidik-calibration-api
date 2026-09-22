@@ -55,7 +55,7 @@ lewat `INDEX/MATCH(MIN(ABS(...)))` — **nilai terdekat**, bukan pencocokan pers
 Tiru perilaku itu, dan tulis di docblock bahwa itu pencocokan terdekat, supaya
 tidak disangka bug oleh pembaca berikutnya.
 
-### 3.2 Dua kelas dasar profil
+### 3.2 Dua kelas dasar profil — ✅ SELESAI (22 Sep)
 - `FixedVolumetricGlasswareProfile` — satu titik, 3 ulangan, budget 8 komponen biasa.
 - `GraduatedVolumetricGlasswareProfile` — sampai 5 titik, **SATU budget gabungan**
   untuk semua titik (bukan budget per titik seperti Sieve Mesh). Agregasi input budget:
@@ -70,18 +70,18 @@ tidak disangka bug oleh pembaca berikutnya.
   **Titik kosong tidak boleh ikut dihitung sebagai nol** di MAX/MIN/AVERAGE mana pun.
   Satu U95 + satu k hasil budget ini dipakai untuk **semua baris** sertifikat.
 
-### 3.3 Enam profil konkret
+### 3.3 Enam profil konkret — ✅ SELESAI (22 Sep)
 Masing-masing cuma menyumbang `namaAlatKemampuan()` (persis nama lampiran) dan
 kunci tabel CMC-nya. Nama lampiran: **Buret, Gelas Ukur, Labu Ukur, Pipet Ukur,
 Pipet Volume, Picnometer**.
 
-### 3.4 Registry + `*Mentah` + hitung ulang
+### 3.4 Registry + `*Mentah` + hitung ulang — ✅ SELESAI (22 Sep)
 - Enam baris di `CalibrationProfileRegistry::daftarProfil()`.
 - `app/Support/VolumetricGlasswareMentah.php` — **wajib lahir bareng profilnya**,
   disambung ke `CalibrationValidator` **dan** `HitungUlangSesi`. Pola ini sudah
   menggigit tujuh kali di repo ini.
 
-### 3.5 Seeder
+### 3.5 Seeder — ✅ SELESAI (22 Sep; CMC sudah dari `CalibrationCapabilitySeeder`, sesi contoh `VolumetricGlasswareSeeder`)
 - Seeder CMC untuk enam alat (nilai dari JSON, bukan diketik).
 - Seeder sesi contoh — angkanya **dihitung**, bukan ditempel. Pakai data contoh
   dari master (Pipet Volume 1 mL; Gelas Ukur 10/50/100 mL).
@@ -102,7 +102,7 @@ Pipet Volume, Picnometer**.
 
 Tidak ada verdict PASS/FAIL — laporan data murni.
 
-### 3.8 Sapuan test registry yang PASTI merah
+### 3.8 Sapuan test registry yang PASTI merah — ✅ SELESAI (22 Sep)
 Menambah enam profil membuat sapuan registry ikut menguji semuanya. Siapkan
 jawabannya (rincian di playbook §4):
 
@@ -115,7 +115,7 @@ Plus: **cabut enam nama alat ini dari daftar acak `EquipmentFactory`** — kalau
 tidak, fixture acak mendarat di lembar Volumetric dan yang merah test lain,
 bergantian tiap jalan.
 
-### 3.9 Dokumen penutup
+### 3.9 Dokumen penutup — ✅ SELESAI di server (22 Sep); sisi mobile belum
 - `docs/perintah-frontend-volumetric.md` — serah-terima ke repo mobile
   (cabang di `lembar_kerja_service.dart`, fixture dari respons API).
 - §baru di `docs/permintaan-user-7.md` + baris Gelombang.
@@ -355,3 +355,23 @@ Graduated  uc = 0.16801586265445564
   pembacaan_ke, id`. Menyambung `distinct()` ke relasi itu = error 3065 di MySQL,
   lolos di SQLite. Pakai `->reorder()` dulu. Relevan kalau `VolumetricGlasswareMentah`
   perlu daftar titik unik.
+
+
+---
+
+## 8. Keadaan 22 Sep 2026 sore — inti SELESAI di server
+
+Kedua keluarga berjalan dari payload HP sampai angka cetak sertifikat master. Yang
+**masih terbuka** (tidak menghalangi pemakaian, tapi perlu diputuskan/diriset):
+
+1. **Sisi mobile** — `docs/perintah-frontend-volumetric.md`.
+2. **13 pertanyaan lab** — `docs/pertanyaan-lab-volumetric.md`; no. 12 (Graduated satu titik)
+   dan no. 13 (kapasitas di luar lampiran) lahir dari implementasi.
+3. **Neraca Precisa** tidak punya baris `standards`; Yokogawa & neraca ke-3 tidak tercetak di
+   kertas walau masuk budget. Perlu keputusan lab apakah kertas/sertifikat mencantumkannya.
+4. **Geometri OCR** enam profil tergenerate dengan `terverifikasi: false` (koordinat tebakan) —
+   lembar ini memang tidak mendukung pindai foto; baru relevan kalau itu berubah.
+5. **Sesi contoh** empat alat (Labu Ukur, Picnometer, Buret, Pipet Ukur) MEMINJAM masukan
+   mentah master keluarganya — bukan pengukuran alat itu. Ganti dengan data nyata kalau lab
+   menyediakan workbook contohnya.
+6. **Aturan pilih neraca berdasarkan volume** (§6 no. 2) belum ditegakkan — cuma dicatat.

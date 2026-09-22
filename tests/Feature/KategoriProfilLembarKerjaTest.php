@@ -72,6 +72,11 @@ class KategoriProfilLembarKerjaTest extends TestCase
      * nggak ketemu, dan kalau jalur ini ikut begitu, Buret bakal muncul di HP
      * sebagai alat berlembar pH: teknisi ngisi buffer 4/7/10 buat buret, sesi
      * kesimpen, dan nggak ada satu pun error di sepanjang jalur itu.
+     *
+     * Contohnya pindah ke `Buret Digital` 22 Sep 2026: Buret sekarang punya
+     * lembar Volumetric sendiri. Buret Digital sengaja dipakai — namanya
+     * MEMUAT "buret", jadi test ini sekaligus menjaga
+     * `BuretProfile::namaBukanMilik()`.
      */
     public function test_alat_generik_dapat_profil_null(): void
     {
@@ -80,7 +85,7 @@ class KategoriProfilLembarKerjaTest extends TestCase
             'nama' => 'Volume',
         ]);
 
-        $this->buatKemampuan($kategori, 'Buret');
+        $this->buatKemampuan($kategori, 'Buret Digital');
 
         $this->actingAs($this->admin)
             ->getJson('/api/categories/volume')
