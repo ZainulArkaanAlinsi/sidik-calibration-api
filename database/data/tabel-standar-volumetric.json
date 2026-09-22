@@ -411,24 +411,301 @@
       "gamma_per_c": 5.4e-05
     }
   ],
+  "koreksi_suhu": {
+    "kalibrator": [
+      {
+        "titik_c": -100.0,
+        "koreksi_c": 0.14000000000000057,
+        "u95_c": 0.04
+      },
+      {
+        "titik_c": -20.0,
+        "koreksi_c": -0.10000000000000142,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 0.0,
+        "koreksi_c": 0.30000000000000004,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 25.0,
+        "koreksi_c": 0.3249999999999979,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 50.0,
+        "koreksi_c": 0.34999999999999576,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 100.0,
+        "koreksi_c": 0.3999999999999915,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 200.0,
+        "koreksi_c": 0.4000000000000057,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 300.0,
+        "koreksi_c": 0.45000000000000284,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 400.0,
+        "koreksi_c": 0.5,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 500.0,
+        "koreksi_c": 0.5,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 600.0,
+        "koreksi_c": 0.5,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 700.0,
+        "koreksi_c": 0.4499999999999887,
+        "u95_c": 0.72
+      },
+      {
+        "titik_c": 800.0,
+        "koreksi_c": 0.39999999999997726,
+        "u95_c": 0.72
+      }
+    ],
+    "sensor_prt": [
+      {
+        "titik_c": -40.0,
+        "koreksi_c": 0.00342684530068027
+      },
+      {
+        "titik_c": -35.0,
+        "koreksi_c": 0.003580673964115988
+      },
+      {
+        "titik_c": -30.0,
+        "koreksi_c": 0.003721295643888567
+      },
+      {
+        "titik_c": -25.0,
+        "koreksi_c": 0.0038499384970513972
+      },
+      {
+        "titik_c": -20.0,
+        "koreksi_c": 0.003969163676529774
+      },
+      {
+        "titik_c": -15.0,
+        "koreksi_c": 0.00407547495972338
+      },
+      {
+        "titik_c": -10.0,
+        "koreksi_c": 0.004024759417507795
+      },
+      {
+        "titik_c": -5.0,
+        "koreksi_c": -5.1931103755009644e-06
+      },
+      {
+        "titik_c": 0.0,
+        "koreksi_c": 0.0
+      },
+      {
+        "titik_c": 5.0,
+        "koreksi_c": 4.861517164833629e-06
+      },
+      {
+        "titik_c": 10.0,
+        "koreksi_c": 1.223802757444048e-05
+      },
+      {
+        "titik_c": 15.0,
+        "koreksi_c": 1.701503234308177e-05
+      },
+      {
+        "titik_c": 20.0,
+        "koreksi_c": 2.4315430042776143e-05
+      },
+      {
+        "titik_c": 25.0,
+        "koreksi_c": 2.9007059112018396e-05
+      },
+      {
+        "titik_c": 30.0,
+        "koreksi_c": 3.62305354215664e-05
+      },
+      {
+        "titik_c": 35.0,
+        "koreksi_c": 4.0835914170145315e-05
+      },
+      {
+        "titik_c": 40.0,
+        "koreksi_c": 4.7981650062922654e-05
+      },
+      {
+        "titik_c": 45.0,
+        "koreksi_c": 5.249989094835428e-05
+      },
+      {
+        "titik_c": 50.0,
+        "koreksi_c": 5.956705609122537e-05
+      },
+      {
+        "titik_c": 55.0,
+        "koreksi_c": 6.659688968824184e-05
+      },
+      {
+        "titik_c": 60.0,
+        "koreksi_c": 7.098501072988483e-05
+      },
+      {
+        "titik_c": 65.0,
+        "koreksi_c": 7.793502079778136e-05
+      },
+      {
+        "titik_c": 70.0,
+        "koreksi_c": 8.48470903775933e-05
+      },
+      {
+        "titik_c": 75.0,
+        "koreksi_c": 8.91030740746146e-05
+      },
+      {
+        "titik_c": 80.0,
+        "koreksi_c": 9.59340411696985e-05
+      },
+      {
+        "titik_c": 85.0,
+        "koreksi_c": 0.00010272644591680091
+      },
+      {
+        "titik_c": 90.0,
+        "koreksi_c": 0.00010948008373645735
+      },
+      {
+        "titik_c": 95.0,
+        "koreksi_c": 0.00011619474805968366
+      },
+      {
+        "titik_c": 100.0,
+        "koreksi_c": 0.00012287023109536221
+      },
+      {
+        "titik_c": 105.0,
+        "koreksi_c": 0.00012686041615950217
+      },
+      {
+        "titik_c": 110.0,
+        "koreksi_c": 0.00013345218901861244
+      },
+      {
+        "titik_c": 115.0,
+        "koreksi_c": 0.0001400041315520184
+      },
+      {
+        "titik_c": 120.0,
+        "koreksi_c": 0.00014651603012794112
+      },
+      {
+        "titik_c": 125.0,
+        "koreksi_c": 0.00015298766916771456
+      },
+      {
+        "titik_c": 130.0,
+        "koreksi_c": 0.0001594188317710632
+      },
+      {
+        "titik_c": 135.0,
+        "koreksi_c": 0.00016580929948872836
+      },
+      {
+        "titik_c": 140.0,
+        "koreksi_c": 0.00017215885182508828
+      },
+      {
+        "titik_c": 145.0,
+        "koreksi_c": 0.00017846726777293043
+      },
+      {
+        "titik_c": 150.0,
+        "koreksi_c": 0.00018473432362497988
+      },
+      {
+        "titik_c": 155.0,
+        "koreksi_c": 0.00019365365821499836
+      },
+      {
+        "titik_c": 160.0,
+        "koreksi_c": 0.00019984220890023607
+      },
+      {
+        "titik_c": 165.0,
+        "koreksi_c": 0.00020598873823018948
+      },
+      {
+        "titik_c": 170.0,
+        "koreksi_c": 0.00021209301604585562
+      },
+      {
+        "titik_c": 175.0,
+        "koreksi_c": 0.0002181548109376763
+      },
+      {
+        "titik_c": 180.0,
+        "koreksi_c": 0.00022689238835482683
+      },
+      {
+        "titik_c": 185.0,
+        "koreksi_c": 0.00023287349802103563
+      },
+      {
+        "titik_c": 190.0,
+        "koreksi_c": 0.00023881143789594717
+      },
+      {
+        "titik_c": 195.0,
+        "koreksi_c": 0.00024470597080039624
+      },
+      {
+        "titik_c": 200.0,
+        "koreksi_c": 0.0002532953911043023
+      }
+    ],
+    "u95": {
+      "termometer_c": 0.72,
+      "sensor_c": 0.08
+    }
+  },
   "neraca": {
     "fixed": [
       {
         "nama": "Analytical Balance",
         "merk_type": "Mettler Toledo/XS204",
-        "lop_g": 0.0001,
+        "serial": "1129063525",
+        "u95_g": 0.0011,
+        "resolusi_g": 0.0001,
         "stdev_g": 0.0
       },
       {
         "nama": "Electronic Balance Excellent",
         "merk_type": "Excellent/DJ",
-        "lop_g": 0.01,
+        "serial": "HSEX1403752",
+        "u95_g": 0.007,
+        "resolusi_g": 0.01,
         "stdev_g": 0.0
       },
       {
         "nama": "Electronic Balance Fujitsu",
         "merk_type": "Fujitsu/FSR-A",
-        "lop_g": 0.001,
+        "serial": "SIDIK/134/2024",
+        "u95_g": 0.0019,
+        "resolusi_g": 0.001,
         "stdev_g": 0.0
       }
     ],
@@ -436,20 +713,26 @@
       {
         "nama": "Analytical Balance",
         "merk_type": "Mettler Toledo/XS204",
-        "lop_g": 0.0,
-        "stdev_g": null
+        "serial": "1129063525",
+        "u95_g": 0.0011,
+        "resolusi_g": null,
+        "stdev_g": 0.0
       },
       {
         "nama": "Electronic Balance Excellent",
         "merk_type": "Excellent/DJ",
-        "lop_g": 0.0,
-        "stdev_g": null
+        "serial": "HSEX1403752",
+        "u95_g": 0.007,
+        "resolusi_g": null,
+        "stdev_g": 0.0
       },
       {
         "nama": "Electronic Balance Precisa",
         "merk_type": "Precisa/-",
-        "lop_g": 0.0,
-        "stdev_g": null
+        "serial": "4702102",
+        "u95_g": 0.0019,
+        "resolusi_g": null,
+        "stdev_g": 0.0
       }
     ]
   }

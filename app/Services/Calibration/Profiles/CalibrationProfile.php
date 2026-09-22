@@ -1305,6 +1305,25 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Lembar **Volumetric Glassware**: satu titik membawa TIGA deret dengan
+     * arti yang beda — berat wadah kosong (g), berat wadah + air (g), dan suhu
+     * air suling (°C), masing-masing tiga ulangan.
+     *
+     * Jalur simpannya sendiri (`CalibrationController::susunBlokVolumetric()`)
+     * karena loop per-titik bawaan cuma punya tempat untuk satu deret. Dipaksa
+     * lewat jalur datar, dua dari tiga deret hilang — dan V20 yang lahir dari
+     * sisanya tetap berorde mL yang wajar, jadi sertifikatnya terbit rapi dan
+     * salah.
+     *
+     * Satu saklar untuk KEDUA keluarga (Fixed & Graduated): bentuk mentahnya
+     * identik, bedanya cuma di cara profil menghitungnya.
+     */
+    public function butuhBlokVolumetric(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
      *
      * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah

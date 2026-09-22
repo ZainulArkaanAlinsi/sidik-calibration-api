@@ -84,7 +84,11 @@ class TabelStandarVolumetric
      * Graduated — dan daftar gabungan membuat salah satunya bisa terpilih untuk
      * keluarga yang salah.
      *
-     * @return array{nama: string, merk_type: string, lop_g: float|null, stdev_g: float|null}|null
+     * `resolusi_g` selalu `null` di keluarga `graduated` — workbook-nya memang
+     * tidak punya kolom Res, dan budget Graduated memakai U95/2, bukan
+     * resolusi/√3 (pertanyaan lab no. 9).
+     *
+     * @return array{nama: string, merk_type: string, serial: string|null, u95_g: float|null, resolusi_g: float|null, stdev_g: float|null}|null
      */
     public function neraca(string $keluarga, string $nama): ?array
     {
@@ -95,6 +99,78 @@ class TabelStandarVolumetric
         }
 
         return null;
+    }
+
+    /**
+     * Suhu air terkoreksi = bacaan + koreksi kalibrator + koreksi sensor PRT.
+     *
+     * Master (`PERHITUNGAN`) memilih titik tabel kalibrator yang TERDEKAT ke
+     * bacaan lewat `INDEX/MATCH(MIN(ABS(...)))`, lalu memakai titik itu untuk
+     * KEDUA koreksi — sensor PRT tidak diinterpolasi ke bacaannya sendiri.
+     * Ditiru persis: bacaan 27,0 °C memakai koreksi titik 25 °C.
+     *
+     * Koreksi sensor diambil dari sheet lokal `FC_Prt_Pt100`, bukan dari
+     * `SENSOR_PT100` yang membacanya lewat tautan luar `[4]` — lihat generator.
+     *
+     * `null` kalau titik terpilih tidak punya koreksi sensor: menambahkan nol
+     * diam-diam menggeser suhu, dan suhu menggeser seluruh V20.
+     *
+     * @return array{titik_c: float, koreksi_kalibrator_c: float, koreksi_sensor_c: float, terkoreksi_c: float}|null
+     */
+    public function koreksiSuhu(float $bacaan): ?array
+    {
+        $tabel = self::muat()['koreksi_suhu'];
+
+        $terpilih = null;
+        $jarakTerkecil = INF;
+        foreach ($tabel['kalibrator'] as $baris) {
+            $jarak = abs((float) $baris['titik_c'] - $bacaan);
+            if ($jarak < $jarakTerkecil) {
+                $jarakTerkecil = $jarak;
+                $terpilih = $baris;
+            }
+        }
+
+        if ($terpilih === null) {
+            return null;
+        }
+
+        $titik = (float) $terpilih['titik_c'];
+        $sensor = null;
+        foreach ($tabel['sensor_prt'] as $baris) {
+            if (abs((float) $baris['titik_c'] - $titik) < 1e-9) {
+                $sensor = (float) $baris['koreksi_c'];
+                break;
+            }
+        }
+
+        if ($sensor === null) {
+            return null;
+        }
+
+        $kalibrator = (float) $terpilih['koreksi_c'];
+
+        return [
+            'titik_c' => $titik,
+            'koreksi_kalibrator_c' => $kalibrator,
+            'koreksi_sensor_c' => $sensor,
+            'terkoreksi_c' => $bacaan + $kalibrator + $sensor,
+        ];
+    }
+
+    /**
+     * U95 termometer (Yokogawa) dan sensor PRT, °C.
+     *
+     * SATU angka untuk seluruh rentang — master membaca `DATABASE` kolom U95%,
+     * bukan tabel U95 per titik di `STANDARD_KALIBRATOR`.
+     *
+     * @return array{termometer_c: float, sensor_c: float}
+     */
+    public function u95Suhu(): array
+    {
+        $u = self::muat()['koreksi_suhu']['u95'];
+
+        return ['termometer_c' => (float) $u['termometer_c'], 'sensor_c' => (float) $u['sensor_c']];
     }
 
     /** @return list<string> */
@@ -148,7 +224,9 @@ class TabelStandarVolumetric
         // tengah perhitungan satu sesi, bukan waktu tabelnya dimuat.
         if (! is_array($isi)
             || ! isset($isi['cmc'], $isi['diameter_iso4787'], $isi['koefisien_muai'])
-            || ! isset($isi['neraca']['fixed'], $isi['neraca']['graduated'])) {
+            || ! isset($isi['neraca']['fixed'], $isi['neraca']['graduated'])
+            || ! isset($isi['koreksi_suhu']['kalibrator'], $isi['koreksi_suhu']['sensor_prt'])
+            || ! isset($isi['koreksi_suhu']['u95']['termometer_c'], $isi['koreksi_suhu']['u95']['sensor_c'])) {
             throw new RuntimeException("Tabel standar volumetric rusak: {$berkas}");
         }
 

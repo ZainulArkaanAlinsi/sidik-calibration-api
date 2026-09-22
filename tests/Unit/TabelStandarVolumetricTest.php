@@ -94,6 +94,43 @@ class TabelStandarVolumetricTest extends TestCase
         $this->assertNotNull($this->t->neraca('graduated', 'Electronic Balance Precisa'));
         $this->assertNull($this->t->neraca('graduated', 'Electronic Balance Fujitsu'));
 
-        $this->assertSame(0.0001, $this->t->neraca('fixed', 'Analytical Balance')['lop_g']);
+        $this->assertSame(0.0001, $this->t->neraca('fixed', 'Analytical Balance')['resolusi_g']);
+    }
+
+    /**
+     * Graduated TIDAK punya kolom Res. Versi pertama generator membaca indeks
+     * tetap dan menulis stdev Graduated sebagai resolusi — dijaga di sini.
+     */
+    public function test_neraca_graduated_tidak_punya_resolusi_dan_u95_terbaca(): void
+    {
+        $precisa = $this->t->neraca('graduated', 'Electronic Balance Precisa');
+
+        $this->assertNull($precisa['resolusi_g']);
+        $this->assertSame(0.0019, $precisa['u95_g']);
+        $this->assertSame(0.0, $precisa['stdev_g']);
+        $this->assertSame(0.0019, $this->t->neraca('fixed', 'Electronic Balance Fujitsu')['u95_g']);
+    }
+
+    /**
+     * Suhu terkoreksi diadu ke master: Fixed `PERHITUNGAN` 27,0 °C →
+     * 27,32502900705911 (dipakai sebagai `suhu_air` budget Fixed).
+     */
+    public function test_koreksi_suhu_memakai_titik_kalibrator_terdekat(): void
+    {
+        $k = $this->t->koreksiSuhu(27.0);
+
+        $this->assertSame(25.0, $k['titik_c']);
+        $this->assertEqualsWithDelta(0.3249999999999979, $k['koreksi_kalibrator_c'], 1e-15);
+        $this->assertEqualsWithDelta(2.9007059112018396e-05, $k['koreksi_sensor_c'], 1e-18);
+        $this->assertEqualsWithDelta(27.32502900705911, $k['terkoreksi_c'], 1e-12);
+
+        // 38 °C lebih dekat ke 50 daripada ke 25 — koreksi titik 50 yang dipakai.
+        $this->assertSame(50.0, $this->t->koreksiSuhu(38.0)['titik_c']);
+        $this->assertEqualsWithDelta(38.0 + 0.35 + 5.956705609122537e-05, $this->t->koreksiSuhu(38.0)['terkoreksi_c'], 1e-12);
+    }
+
+    public function test_u95_suhu_satu_angka_dari_database(): void
+    {
+        $this->assertSame(['termometer_c' => 0.72, 'sensor_c' => 0.08], $this->t->u95Suhu());
     }
 }
