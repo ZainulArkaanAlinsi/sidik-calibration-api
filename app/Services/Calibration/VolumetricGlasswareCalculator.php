@@ -2,6 +2,8 @@
 
 namespace App\Services\Calibration;
 
+use App\Services\GumCalculator;
+
 /**
  * Rantai inti **Volumetric Glassware** — kalibrasi gravimetri gelas ukur
  * volumetrik, metode `SIDIK-IK-CAL-0510`, Lab. Volumetrik.
@@ -67,6 +69,41 @@ class VolumetricGlasswareCalculator
 
     /** Suhu acuan volume, °C. */
     public const SUHU_ACUAN = 20.0;
+
+    public const KELUARGA_FIXED = 'fixed';
+
+    public const KELUARGA_GRADUATED = 'graduated';
+
+    /** Ulangan per deret per titik — tiga, di kedua workbook. */
+    public const PENGULANGAN = 3;
+
+    /** Titik per sesi: Fixed satu nominal, Graduated sampai lima titik skala. */
+    public const TITIK_MAKS = [self::KELUARGA_FIXED => 1, self::KELUARGA_GRADUATED => 5];
+
+    /**
+     * Ketidakpastian densitas air (kolom U budget), g/mL — BEDA per keluarga.
+     *
+     * Fixed menulis `=0,05/1000` (5·10⁻⁵), Graduated angka mati 5·10⁻⁸.
+     * Pertanyaan lab no. 10; ditiru masing-masing sampai dijawab.
+     */
+    public const U_DENSITAS_AIR = [self::KELUARGA_FIXED => 5e-05, self::KELUARGA_GRADUATED => 5e-08];
+
+    /** Tanda ci muai termal — pertanyaan lab no. 5. */
+    public const TANDA_CI_MUAI = [self::KELUARGA_FIXED => 1, self::KELUARGA_GRADUATED => -1];
+
+    /** `n` pembagi stdev neraca (`PERHITUNGAN_U95%!C16` kedua workbook). */
+    public const N_STDEV_NERACA = 10;
+
+    /**
+     * Jumlah sel kosong yang ikut dibaca NOL oleh keterulangan Graduated master.
+     *
+     * `H55 = STDEV(IFERROR(H54:Q54, ""))` menyapu sepuluh sel berpasangan
+     * (H..Q, tiap titik dua kolom tergabung). Sel pasangan yang kosong lolos
+     * `IFERROR` sebagai 0 — lima nol yang bukan pengukuran. Dipakai HANYA
+     * untuk angka pembanding di jejak audit (keputusan pemilik proyek 21 Sep,
+     * pertanyaan lab no. 2), tidak pernah untuk U yang terbit.
+     */
+    public const NOL_HANTU_MASTER = 5;
 
     /**
      * Densitas udara psikrometrik, g/mL.
@@ -255,5 +292,378 @@ class VolumetricGlasswareCalculator
             'B' => self::GAMMA_KELAS_B,
             default => null,
         };
+    }
+
+    /**
+     * Ketidakpastian suhu air (kolom U budget), °C — `PERHITUNGAN_U95%!H25`.
+     *
+     *   √[(U95 termometer / 2)² + (U95 sensor / 2)² + ((Tmax − Tmin) / 2√3)²]
+     *
+     * Rumus yang sama di kedua workbook; cuma rentang suhunya yang disapu
+     * berbeda (Fixed: tiga ulangan satu titik; Graduated: seluruh titik).
+     */
+    public static function uSuhu(float $u95Termometer, float $u95Sensor, float $rentang): float
+    {
+        return sqrt(($u95Termometer / 2) ** 2 + ($u95Sensor / 2) ** 2 + ($rentang / (2 * sqrt(3))) ** 2);
+    }
+
+    /**
+     * Hitung SATU sesi Volumetric — kedua keluarga lewat pintu yang sama.
+     *
+     * `$titik`: list `{titik_ke, nominal, kosong, isi, suhu}` (massa gram,
+     * suhu °C BACAAN — koreksi kalibrator + sensor dipasang di sini).
+     *
+     * `$blok`: `{kelas, toleransi_ml, resolusi_ml, neraca, suhu_awal, suhu_akhir,
+     * kelembaban_awal, kelembaban_akhir, tekanan_awal, tekanan_akhir}`.
+     *
+     * ## Budget: Fixed per titik, Graduated SATU untuk semua titik
+     *
+     * Graduated master menyusun satu budget dari agregat seluruh titik (MAX
+     * massa rata-rata `R38`, MAX ρ air rata-rata `R85`, rata-rata semua suhu
+     * `Z49`), dan satu U itu dipakai tiap baris sertifikat. Ditiru. Akibatnya
+     * satu titik yang rusak menahan SELURUH sesi Graduated: menghitung budget
+     * dari titik yang tersisa berarti U yang tercetak bergantung pada titik
+     * mana yang kebetulan diketik benar.
+     *
+     * ## Yang ditolak, bukan ditebak
+     *
+     * Kelas di luar A/B, neraca yang bukan milik keluarganya, kondisi
+     * lingkungan tak lengkap (ρ udara lahir dari situ), toleransi yang tidak
+     * ada di tabel ISO 4787 (Fixed), resolusi kosong (Graduated), deret yang
+     * bukan tepat tiga angka, massa air ≤ 0, dan Graduated dengan kurang dari
+     * dua titik — keterulangannya STDEV dari simpangan baku per titik, dan
+     * STDEV satu angka tidak terdefinisi (master menutupinya dengan nol hantu;
+     * pertanyaan lab no. 12).
+     *
+     * @param  list<array{titik_ke: int, nominal: float, kosong: list<float>, isi: list<float>, suhu: list<float>}>  $titik
+     * @param  array<string, mixed>  $blok
+     * @return array{boleh_terbit: bool, ditolak: list<array{titik_ke: int, alasan: string}>, praolah: array<string, mixed>, titik: list<array<string, mixed>>}
+     */
+    public function hitungSesi(string $keluarga, array $titik, array $blok, ?TabelStandarVolumetric $tabel = null): array
+    {
+        $tabel ??= new TabelStandarVolumetric;
+        $tolakSemua = static fn (string $alasan): array => [
+            'boleh_terbit' => false,
+            'ditolak' => array_map(static fn (array $t): array => [
+                'titik_ke' => (int) $t['titik_ke'],
+                'alasan' => $alasan,
+            ], $titik),
+            'praolah' => [],
+            'titik' => [],
+        ];
+
+        if ($titik === []) {
+            return ['boleh_terbit' => false, 'ditolak' => [], 'praolah' => [], 'titik' => []];
+        }
+
+        $gamma = self::gammaDariKelas($blok['kelas'] ?? null);
+        if ($gamma === null) {
+            return $tolakSemua(sprintf(
+                'Kelas alat "%s" bukan A atau B. Koefisien muai cuma dipetakan untuk dua kelas itu, '
+                .'dan γ yang salah menggeser seluruh V20 tanpa error — pilih kelasnya dulu.',
+                (string) ($blok['kelas'] ?? ''),
+            ));
+        }
+
+        $neraca = is_string($blok['neraca'] ?? null) ? $tabel->neraca($keluarga, $blok['neraca']) : null;
+        if ($neraca === null) {
+            return $tolakSemua(sprintf(
+                'Neraca "%s" bukan neraca workbook %s. Neraca ketiga beda fisik antar keluarga '
+                .'(Fujitsu di Fixed, Precisa di Graduated), jadi tidak dicocokkan lintas keluarga.',
+                (string) ($blok['neraca'] ?? ''),
+                $keluarga === self::KELUARGA_FIXED ? 'Fixed' : 'Graduated',
+            ));
+        }
+
+        $lingkungan = [];
+        foreach (['suhu', 'kelembaban', 'tekanan'] as $besaran) {
+            $awal = $blok["{$besaran}_awal"] ?? null;
+            $akhir = $blok["{$besaran}_akhir"] ?? null;
+            if (! is_numeric($awal) || ! is_numeric($akhir)) {
+                return $tolakSemua(
+                    'Kondisi lingkungan belum lengkap (suhu, kelembaban, dan tekanan udara — awal & akhir). '
+                    .'Densitas udara dihitung dari ketiganya; tanpa itu tidak ada V20 yang bisa diterbitkan.'
+                );
+            }
+            // Rata-rata BACAAN mentah, bukan yang terkoreksi thermohygro —
+            // `PERHITUNGAN!G16/G17/G19` memakai kolom G (AVERAGE(E, F)).
+            $lingkungan[$besaran] = ((float) $awal + (float) $akhir) / 2;
+        }
+
+        $rhoUdara = self::densitasUdara($lingkungan['suhu'], $lingkungan['kelembaban'], $lingkungan['tekanan']);
+
+        if ($keluarga === self::KELUARGA_FIXED) {
+            $diameter = is_numeric($blok['toleransi_ml'] ?? null)
+                ? $tabel->diameterMaksimum((float) $blok['toleransi_ml'])
+                : null;
+            if ($diameter === null) {
+                return $tolakSemua(sprintf(
+                    'Toleransi %s mL tidak ada di tabel diameter ISO 4787. Master memakai pencocokan '
+                    .'PERSIS (`VLOOKUP(..., 0)` → #N/A); ketidakpastian meniskus tidak bisa dihitung '
+                    .'dari diameter tetangga.',
+                    (string) ($blok['toleransi_ml'] ?? 'kosong'),
+                ));
+            }
+            $uMeniskus = self::meniskusFixed($diameter);
+            $uTimbang = (float) $neraca['resolusi_g'] / sqrt(3);
+        } else {
+            $resolusi = is_numeric($blok['resolusi_ml'] ?? null) ? (float) $blok['resolusi_ml'] : null;
+            if ($resolusi === null || $resolusi <= 0) {
+                return $tolakSemua(
+                    'Resolusi alat (mL) belum diisi. Ketidakpastian meniskus Graduated lahir dari '
+                    .'resolusi, dan komponen itu yang mendominasi budget-nya.'
+                );
+            }
+            $diameter = null;
+            $uMeniskus = self::meniskusGraduated($resolusi);
+            $uTimbang = (float) $neraca['u95_g'] / 2;
+        }
+
+        $uMassa = sqrt($uTimbang ** 2 + ((float) $neraca['stdev_g'] / sqrt(self::N_STDEV_NERACA)) ** 2);
+
+        $ditolak = [];
+        $olah = [];
+        $batas = self::TITIK_MAKS[$keluarga];
+
+        foreach ($titik as $t) {
+            $ke = (int) $t['titik_ke'];
+
+            if ($ke > $batas) {
+                $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
+                    'Titik ke-%d melebihi batas %d titik untuk alat %s.', $ke, $batas,
+                    $keluarga === self::KELUARGA_FIXED ? 'bernominal tunggal' : 'berskala',
+                )];
+
+                continue;
+            }
+
+            foreach (['kosong', 'isi', 'suhu'] as $nama) {
+                if (count($t[$nama]) !== self::PENGULANGAN) {
+                    $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
+                        'Titik ke-%d: deret %s berisi %d angka, harus tepat %d.',
+                        $ke, $nama, count($t[$nama]), self::PENGULANGAN,
+                    )];
+
+                    continue 2;
+                }
+            }
+
+            $massa = [];
+            $suhu = [];
+            $rhoAir = [];
+            $koreksi = [];
+
+            for ($i = 0; $i < self::PENGULANGAN; $i++) {
+                $m = (float) $t['isi'][$i] - (float) $t['kosong'][$i];
+                if ($m <= 0) {
+                    $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
+                        'Titik ke-%d ulangan %d: berat berisi air (%s g) tidak lebih besar dari berat '
+                        .'kosong (%s g) — kemungkinan kedua deret tertukar.',
+                        $ke, $i + 1, $t['isi'][$i], $t['kosong'][$i],
+                    )];
+
+                    continue 2;
+                }
+
+                $k = $tabel->koreksiSuhu((float) $t['suhu'][$i]);
+                if ($k === null) {
+                    $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
+                        'Titik ke-%d ulangan %d: suhu %s °C tidak punya koreksi sensor di tabel standar.',
+                        $ke, $i + 1, $t['suhu'][$i],
+                    )];
+
+                    continue 2;
+                }
+
+                $massa[] = $m;
+                $suhu[] = $k['terkoreksi_c'];
+                $koreksi[] = $k;
+                $rhoAir[] = self::densitasAirSuling($k['terkoreksi_c']);
+            }
+
+            $v20 = [];
+            foreach ($massa as $i => $m) {
+                $v20[] = self::v20($m, $rhoAir[$i], $rhoUdara, $gamma, $suhu[$i]);
+            }
+
+            $massaRata = self::rata($massa);
+            $suhuRata = self::rata($suhu);
+            $rhoAirRata = self::rata($rhoAir);
+
+            // Fixed mencetak V20 dari RATA-RATA (`PERHITUNGAN!H60`: massa N29,
+            // suhu N35, ρ air N45); Graduated mencetak rata-rata V20 per
+            // ulangan (`H53`). Bedanya di digit ke-16 untuk contoh master,
+            // tapi itu dua rumus yang berbeda dan masing-masing ditiru.
+            $v20Terbit = $keluarga === self::KELUARGA_FIXED
+                ? self::v20($massaRata, $rhoAirRata, $rhoUdara, $gamma, $suhuRata)
+                : self::rata($v20);
+
+            $olah[] = [
+                'titik_ke' => $ke,
+                'nominal' => (float) $t['nominal'],
+                'massa_per_ulangan' => $massa,
+                'suhu_terkoreksi_per_ulangan' => $suhu,
+                'koreksi_suhu' => $koreksi,
+                'rho_air_per_ulangan' => $rhoAir,
+                'v20_per_ulangan' => $v20,
+                'massa_rata_rata' => $massaRata,
+                'suhu_rata_rata' => $suhuRata,
+                'rho_air_rata_rata' => $rhoAirRata,
+                'v20' => $v20Terbit,
+                'deviasi' => $v20Terbit - (float) $t['nominal'],
+                'stdev_v20' => self::stdev($v20),
+            ];
+        }
+
+        if ($keluarga === self::KELUARGA_GRADUATED) {
+            if ($ditolak !== []) {
+                // Satu budget untuk semua titik — lihat docblock. Titik yang
+                // sehat ikut ditahan, dengan alasan yang menyebut sebabnya.
+                foreach ($olah as $o) {
+                    $ditolak[] = ['titik_ke' => $o['titik_ke'], 'alasan' => sprintf(
+                        'Titik ke-%d ditahan: budget alat berskala satu untuk semua titik, dan titik lain '
+                        .'di sesi ini ditolak.', $o['titik_ke'],
+                    )];
+                }
+                $olah = [];
+            } elseif (count($olah) < 2) {
+                foreach ($olah as $o) {
+                    $ditolak[] = ['titik_ke' => $o['titik_ke'], 'alasan' => 'Alat berskala butuh minimal dua '
+                        .'titik. Keterulangan budget-nya adalah STDEV dari simpangan baku per titik, dan '
+                        .'STDEV satu angka tidak terdefinisi (pertanyaan lab no. 12).'];
+                }
+                $olah = [];
+            }
+        }
+
+        $u95Suhu = $tabel->u95Suhu();
+        $praolah = [
+            'keluarga' => $keluarga,
+            'rho_udara' => $rhoUdara,
+            'suhu_ruang' => $lingkungan['suhu'],
+            'kelembaban' => $lingkungan['kelembaban'],
+            'tekanan' => $lingkungan['tekanan'],
+            'gamma' => $gamma,
+            'kelas' => strtoupper(trim((string) $blok['kelas'])),
+            'neraca' => $neraca,
+            'u_timbang' => $uTimbang,
+            'u_massa' => $uMassa,
+            'u_meniskus' => $uMeniskus,
+            'diameter_mm' => $diameter,
+            'u95_termometer' => $u95Suhu['termometer_c'],
+            'u95_sensor' => $u95Suhu['sensor_c'],
+        ];
+
+        usort($ditolak, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
+
+        if ($olah === []) {
+            return ['boleh_terbit' => false, 'ditolak' => $ditolak, 'praolah' => $praolah, 'titik' => []];
+        }
+
+        $gum = app(GumCalculator::class);
+        $hasil = [];
+
+        if ($keluarga === self::KELUARGA_FIXED) {
+            foreach ($olah as $o) {
+                $rentang = max($o['suhu_terkoreksi_per_ulangan']) - min($o['suhu_terkoreksi_per_ulangan']);
+                $masukan = [
+                    'massa' => $o['massa_rata_rata'],
+                    'rho_udara' => $rhoUdara,
+                    'rho_air' => $o['rho_air_rata_rata'],
+                    'suhu_air' => $o['suhu_rata_rata'],
+                    'gamma' => $gamma,
+                    'u_massa' => $uMassa,
+                    'u_suhu' => self::uSuhu($u95Suhu['termometer_c'], $u95Suhu['sensor_c'], $rentang),
+                    'u_meniskus' => $uMeniskus,
+                    'u_rho_air' => self::U_DENSITAS_AIR[$keluarga],
+                    'u_keterulangan' => $o['stdev_v20'] / sqrt(self::PENGULANGAN),
+                    'tanda_ci_muai' => self::TANDA_CI_MUAI[$keluarga],
+                ];
+                $komponen = self::komponenBudget($masukan);
+                $agregat = $gum->agregasiBudget($komponen);
+
+                // Pembanding K4: master membagi Veff dengan baris TERAKHIR
+                // (`K43`), bukan jumlahnya (`K44`).
+                $akhir = $komponen[array_key_last($komponen)];
+                $sukuAkhir = (($akhir['u'] * $akhir['ci']) ** 4) / $akhir['vi'];
+
+                $hasil[] = $o + [
+                    'rentang_suhu' => $rentang,
+                    'masukan_budget' => $masukan,
+                    'komponen_budget' => $komponen,
+                    'agregat' => $agregat,
+                    'pembanding_master' => [
+                        'veff_dibagi_baris_akhir' => $sukuAkhir > 0
+                            ? ($agregat['ketidakpastian_gabungan'] ** 4) / $sukuAkhir
+                            : null,
+                    ],
+                ];
+            }
+        } else {
+            $semuaSuhu = array_merge(...array_column($olah, 'suhu_terkoreksi_per_ulangan'));
+            $rentang = max($semuaSuhu) - min($semuaSuhu);
+            $stdevPerTitik = array_column($olah, 'stdev_v20');
+
+            $masukan = [
+                'massa' => max(array_column($olah, 'massa_rata_rata')),
+                'rho_udara' => $rhoUdara,
+                'rho_air' => max(array_column($olah, 'rho_air_rata_rata')),
+                'suhu_air' => self::rata($semuaSuhu),
+                'gamma' => $gamma,
+                'u_massa' => $uMassa,
+                'u_suhu' => self::uSuhu($u95Suhu['termometer_c'], $u95Suhu['sensor_c'], $rentang),
+                'u_meniskus' => $uMeniskus,
+                'u_rho_air' => self::U_DENSITAS_AIR[$keluarga],
+                'u_keterulangan' => self::stdev($stdevPerTitik) / sqrt(self::PENGULANGAN),
+                'tanda_ci_muai' => self::TANDA_CI_MUAI[$keluarga],
+            ];
+            $komponen = self::komponenBudget($masukan);
+            $agregat = $gum->agregasiBudget($komponen);
+
+            // Pembanding K3: keterulangan master dengan lima nol hantu.
+            $h55Master = self::stdev(array_merge($stdevPerTitik, array_fill(0, self::NOL_HANTU_MASTER, 0.0)));
+            $agregatMaster = $gum->agregasiBudget(self::komponenBudget(
+                ['u_keterulangan' => $h55Master / sqrt(self::PENGULANGAN)] + $masukan,
+            ));
+
+            foreach ($olah as $o) {
+                $hasil[] = $o + [
+                    'rentang_suhu' => $rentang,
+                    'masukan_budget' => $masukan,
+                    'komponen_budget' => $komponen,
+                    'agregat' => $agregat,
+                    'pembanding_master' => [
+                        'stdev_keterulangan_nol_hantu' => $h55Master,
+                        'stdev_keterulangan_benar' => self::stdev($stdevPerTitik),
+                        'u95_nol_hantu' => $agregatMaster['ketidakpastian_diperluas'],
+                    ],
+                ];
+            }
+        }
+
+        return ['boleh_terbit' => true, 'ditolak' => $ditolak, 'praolah' => $praolah, 'titik' => $hasil];
+    }
+
+    /** @param  list<float>  $x */
+    private static function rata(array $x): float
+    {
+        return array_sum($x) / count($x);
+    }
+
+    /**
+     * Simpangan baku sampel (`STDEV` Excel, pembagi n−1). `0.0` untuk n < 2 —
+     * pemanggil yang membutuhkan n ≥ 2 wajib menolak lebih dulu.
+     *
+     * @param  list<float>  $x
+     */
+    private static function stdev(array $x): float
+    {
+        $n = count($x);
+        if ($n < 2) {
+            return 0.0;
+        }
+        $rata = array_sum($x) / $n;
+
+        return sqrt(array_sum(array_map(static fn (float $v): float => ($v - $rata) ** 2, $x)) / ($n - 1));
     }
 }
