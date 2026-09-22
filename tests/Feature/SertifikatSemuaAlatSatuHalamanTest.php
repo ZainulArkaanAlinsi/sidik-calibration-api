@@ -127,6 +127,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // TIDS satu-satunya alat yang sertifikatnya tidak pernah dirender
         // sapuan ini.
         'DEMO-TIDS-001 (Temperature Recorder)',
+        // Alat ke-34..39, Volumetric Glassware (22 Sep 2026). Graduated
+        // mencetak sampai lima baris dengan SATU U95 di bawah tabel.
+        'DEMO-VOL-001 (Pipet Volume)',
+        'DEMO-VOL-002 (Labu Ukur)',
+        'DEMO-VOL-003 (Picnometer)',
+        'DEMO-VOL-004 (Gelas Ukur)',
+        'DEMO-VOL-005 (Buret)',
+        'DEMO-VOL-006 (Pipet Ukur)',
     ];
 
     /**
