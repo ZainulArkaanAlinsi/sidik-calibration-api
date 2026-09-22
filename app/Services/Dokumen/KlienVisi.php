@@ -46,13 +46,18 @@ class KlienVisi
     private const CADANGAN_DETIK = 5;
 
     /**
-     * @return 'anthropic'|'gemini'
+     * @return 'anthropic'|'gemini'|'openai'
      */
     public static function penyediaAktif(): string
     {
-        return strtolower((string) config('services.vision.driver', 'anthropic')) === 'gemini'
-            ? 'gemini'
-            : 'anthropic';
+        // WAJIB mengenal nilai yang sama dengan `WorksheetVisionExtractor`:
+        // keduanya membaca `VISION_DRIVER` yang sama, dan yang tidak kenal
+        // `openai` diam-diam jatuh ke Anthropic yang kuncinya tidak ada.
+        return match (strtolower((string) config('services.vision.driver', 'anthropic'))) {
+            'gemini' => 'gemini',
+            'openai' => 'openai',
+            default => 'anthropic',
+        };
     }
 
     public static function model(): string
@@ -79,9 +84,100 @@ class KlienVisi
             $mimeType = 'image/jpeg';
         }
 
-        return self::penyediaAktif() === 'gemini'
-            ? $this->lewatGemini($isiGambar, $mimeType, $systemPrompt, $instruksi, $skema)
-            : $this->lewatAnthropic($isiGambar, $mimeType, $systemPrompt, $instruksi, $skema);
+        return match (self::penyediaAktif()) {
+            'gemini' => $this->lewatGemini($isiGambar, $mimeType, $systemPrompt, $instruksi, $skema),
+            'openai' => $this->lewatOpenAi($isiGambar, $mimeType, $systemPrompt, $instruksi),
+            default => $this->lewatAnthropic($isiGambar, $mimeType, $systemPrompt, $instruksi, $skema),
+        };
+    }
+
+    /**
+     * OpenAI (ChatGPT) — `POST /v1/chat/completions`, `json_object`.
+     *
+     * Skema TIDAK dikirim: mode `json_schema` OpenAI menuntut skema ketat
+     * (`additionalProperties: false`, semua kunci wajib) yang tidak dipenuhi
+     * skema pemanggil — dan penolakannya 400 untuk seluruh permintaan.
+     * `$isiGambar` sudah base64 di kelas ini (lihat jalur Anthropic).
+     *
+     * @return array<string, mixed>
+     */
+    private function lewatOpenAi(
+        string $isiGambar,
+        string $mimeType,
+        string $systemPrompt,
+        string $instruksi,
+    ): array {
+        $apiKey = (string) config('services.openai.api_key');
+        $model = (string) config('services.openai.model');
+
+        if ($apiKey === '') {
+            throw new RuntimeException('OPENAI_API_KEY belum diisi di server, padahal VISION_DRIVER-nya `openai`.');
+        }
+
+        try {
+            $resp = Http::withToken($apiKey)
+                ->withHeaders(['content-type' => 'application/json'])
+                ->timeout($this->batasWaktu((int) config('services.openai.timeout', 60)))
+                ->baseUrl((string) config('services.openai.base_url', 'https://api.openai.com'))
+                ->post('/v1/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => [
+                            ['type' => 'image_url', 'image_url' => ['url' => 'data:'.$mimeType.';base64,'.$isiGambar]],
+                            ['type' => 'text', 'text' => $instruksi."\n\nJawab dengan JSON saja."],
+                        ]],
+                    ],
+                    'response_format' => ['type' => 'json_object'],
+                    'max_completion_tokens' => (int) config('services.openai.max_tokens', 32768),
+                ]);
+        } catch (ConnectionException $e) {
+            Log::warning('KlienVisi: koneksi ke OpenAI gagal', ['pesan' => $e->getMessage()]);
+
+            return $this->gagal($model, 'Gagal menghubungi layanan AI. Coba lagi sebentar.', null);
+        }
+
+        if ($resp->failed()) {
+            Log::warning('KlienVisi: OpenAI balik error', [
+                'status' => $resp->status(),
+                'pesan' => $resp->json('error.message') ?? $resp->body(),
+            ]);
+
+            return $this->gagal(
+                $model,
+                $this->pesanGagalHttp($resp->status(), $resp->json('error.message')),
+                $resp->json() ?? $resp->body(),
+            );
+        }
+
+        $json = $resp->json();
+        $pilihan = (array) ($json['choices'][0] ?? []);
+        $alasan = (string) ($pilihan['finish_reason'] ?? '');
+        $u = (array) ($json['usage'] ?? []);
+        $usage = [
+            'input_tokens' => isset($u['prompt_tokens']) ? (int) $u['prompt_tokens'] : null,
+            'output_tokens' => isset($u['completion_tokens']) ? (int) $u['completion_tokens'] : null,
+            'cache_read_input_tokens' => isset($u['prompt_tokens_details']['cached_tokens'])
+                ? (int) $u['prompt_tokens_details']['cached_tokens']
+                : null,
+        ];
+
+        if ($alasan === 'content_filter' || ! empty($pilihan['message']['refusal'] ?? null)) {
+            return [
+                'ok' => false,
+                'status' => 'ditolak',
+                'data' => null,
+                'raw' => $json,
+                'usage' => $usage,
+                'error' => 'AI menolak memproses gambar ini. Gunakan input manual.',
+                'model' => $model,
+            ];
+        }
+
+        // `length` = JSON kepotong; lebih baik tak terbaca daripada separuh.
+        $teks = $alasan === 'length' ? '' : (string) ($pilihan['message']['content'] ?? '');
+
+        return $this->hasil($teks, $json, $usage, $model);
     }
 
     /**

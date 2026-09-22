@@ -107,6 +107,23 @@ return [
         'timeout' => (int) env('GEMINI_TIMEOUT', 60),
     ],
 
+    /*
+     * OpenAI (ChatGPT) — dipakai kalau VISION_DRIVER=openai.
+     *
+     * Nama model WAJIB dicek masih dijawab key-nya sebelum dipakai (sama
+     * seperti Gemini — nama model mati tanpa aba-aba):
+     *   curl https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"
+     * `max_tokens` besar karena token penalaran ikut dihitung ke jatah
+     * `max_completion_tokens`; kekecilan = JSON kepotong (`finish_reason: length`).
+     */
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com'),
+        'model' => env('OPENAI_MODEL', 'gpt-5'),
+        'max_tokens' => (int) env('OPENAI_MAX_TOKENS', 32768),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 60),
+    ],
+
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),

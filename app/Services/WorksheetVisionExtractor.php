@@ -86,13 +86,15 @@ class WorksheetVisionExtractor
     /**
      * Penyedia AI yang BENERAN kepakai sekarang.
      *
-     * @return 'anthropic'|'gemini'
+     * @return 'anthropic'|'gemini'|'openai'
      */
     public static function penyediaAktif(): string
     {
-        return strtolower((string) config('services.vision.driver', 'anthropic')) === 'gemini'
-            ? 'gemini'
-            : 'anthropic';
+        return match (strtolower((string) config('services.vision.driver', 'anthropic'))) {
+            'gemini' => 'gemini',
+            'openai' => 'openai',
+            default => 'anthropic',
+        };
     }
 
     /**
@@ -148,6 +150,10 @@ class WorksheetVisionExtractor
 
         if ($penyedia === 'gemini') {
             return $this->lewatGemini($isiGambar, $mimeType, $petunjuk);
+        }
+
+        if ($penyedia === 'openai') {
+            return $this->lewatOpenAi($isiGambar, $mimeType, $petunjuk);
         }
 
         $apiKey = (string) config('services.anthropic.api_key');
@@ -540,6 +546,165 @@ class WorksheetVisionExtractor
             'usage' => $this->usageGemini($json),
             'error' => null,
             'model' => $model,
+        ];
+    }
+
+    /**
+     * Jalur OpenAI (ChatGPT) — `POST /v1/chat/completions`.
+     *
+     * Prompt, few-shot, dan normalisasi hasilnya SAMA dengan Anthropic &
+     * Gemini; yang beda cuma bungkusnya. Tiga hal yang sengaja:
+     *
+     *  - **`response_format: json_object`, bukan `json_schema`.** Mode skema
+     *    OpenAI menuntut `additionalProperties: false` & semua kunci wajib di
+     *    tiap level — skema kita tidak begitu, dan permintaannya ditolak 400.
+     *    Parser toleran yang sudah ada tetap jadi jaringnya.
+     *  - **Tanpa `temperature`.** Model penalaran OpenAI menolak nilai selain
+     *    bawaan — pelajaran yang sama dengan Opus 4.8 di atas.
+     *  - **`max_completion_tokens` besar.** Token penalaran ikut dihitung ke
+     *    jatah itu; kekecilan, JSON-nya kepotong dan balik `finish_reason:
+     *    length` — jebakan yang sama dengan `MAX_TOKENS` Gemini.
+     *
+     * @return array<string, mixed>
+     */
+    private function lewatOpenAi(
+        string $isiGambar,
+        string $mimeType,
+        PetunjukLembarKerja $petunjuk,
+    ): array {
+        $apiKey = (string) config('services.openai.api_key');
+        $model = (string) config('services.openai.model');
+
+        if ($apiKey === '') {
+            throw new RuntimeException('OPENAI_API_KEY belum diisi di server, padahal VISION_DRIVER-nya `openai`.');
+        }
+
+        $messages = [['role' => 'system', 'content' => $this->systemPrompt($petunjuk)]];
+
+        foreach ($this->contohFewShot($petunjuk) as $c) {
+            $path = storage_path('app/'.self::FEW_SHOT_DIR.'/'.$c['file']);
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $messages[] = ['role' => 'user', 'content' => [
+                ['type' => 'image_url', 'image_url' => [
+                    'url' => 'data:image/jpeg;base64,'.base64_encode((string) file_get_contents($path)),
+                ]],
+                ['type' => 'text', 'text' => 'Extract this table.'],
+            ]];
+            $messages[] = ['role' => 'assistant', 'content' => $c['json']];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => [
+            ['type' => 'image_url', 'image_url' => [
+                'url' => 'data:'.$mimeType.';base64,'.base64_encode($isiGambar),
+            ]],
+            // `json_object` menuntut kata "JSON" ada di pesan; instruksinya
+            // sudah memintanya, ini jaring kalau suatu saat kalimatnya berubah.
+            ['type' => 'text', 'text' => $this->instruksiFoto($petunjuk)."\n\nJawab dengan JSON saja."],
+        ]];
+
+        try {
+            $resp = Http::withToken($apiKey)
+                ->withHeaders(['content-type' => 'application/json'])
+                ->timeout($this->batasWaktu((int) config('services.openai.timeout', 60)))
+                ->baseUrl((string) config('services.openai.base_url', 'https://api.openai.com'))
+                ->post('/v1/chat/completions', [
+                    'model' => $model,
+                    'messages' => $messages,
+                    'response_format' => ['type' => 'json_object'],
+                    'max_completion_tokens' => (int) config('services.openai.max_tokens', 32768),
+                ]);
+        } catch (ConnectionException $e) {
+            Log::warning('WorksheetVisionExtractor: koneksi ke OpenAI gagal', ['pesan' => $e->getMessage()]);
+
+            return $this->gagal($model, 'Gagal menghubungi layanan AI. Coba lagi sebentar.', null);
+        }
+
+        if ($resp->failed()) {
+            Log::warning('WorksheetVisionExtractor: OpenAI balik error', [
+                'status' => $resp->status(),
+                'pesan' => $resp->json('error.message') ?? $resp->body(),
+            ]);
+
+            return $this->gagal(
+                $model,
+                $this->pesanGagalHttp($resp->status(), $resp->json('error.message')),
+                $resp->json() ?? $resp->body(),
+            );
+        }
+
+        $json = $resp->json();
+        $pilihan = (array) ($json['choices'][0] ?? []);
+        $alasan = (string) ($pilihan['finish_reason'] ?? '');
+
+        // Penolakan OpenAI datang sebagai HTTP 200: `message.refusal` terisi
+        // atau `finish_reason: content_filter`. Dicek sebelum isinya dibaca.
+        if ($alasan === 'content_filter' || ! empty($pilihan['message']['refusal'] ?? null)) {
+            return [
+                'ok' => false,
+                'status' => 'ditolak',
+                'data' => null,
+                'raw' => $json,
+                'usage' => $this->usageOpenAi($json),
+                'error' => 'AI menolak memproses gambar ini. Gunakan input manual.',
+                'model' => $model,
+            ];
+        }
+
+        $teks = (string) ($pilihan['message']['content'] ?? '');
+
+        // `length` = jatah keluaran habis. JSON kepotong lebih baik dibilang
+        // gagal daripada diparse separuh lalu masuk lembar kerja sebagai angka.
+        $data = $alasan === 'length' ? null : $this->parseJson($teks);
+
+        if ($data === null) {
+            Log::warning('WorksheetVisionExtractor: respons OpenAI bukan JSON valid', [
+                'finish_reason' => $alasan,
+                'teks' => mb_substr($teks, 0, 500),
+            ]);
+
+            return [
+                'ok' => false,
+                'status' => 'gagal',
+                'data' => null,
+                'raw' => $json,
+                'usage' => $this->usageOpenAi($json),
+                'error' => $alasan === 'length'
+                    ? 'Jawaban AI kepotong sebelum selesai (batas token). Ini setelan server, bukan fotonya — lapor ke yang ngurus backend, atau isi manual dulu.'
+                    : 'Hasil AI tidak bisa dibaca. Coba foto ulang atau isi manual.',
+                'model' => $model,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'status' => 'sukses',
+            'data' => $this->hasil($data, $petunjuk),
+            'raw' => $json,
+            'usage' => $this->usageOpenAi($json),
+            'error' => null,
+            'model' => $model,
+        ];
+    }
+
+    /**
+     * Pemakaian token OpenAI, dipetakan ke bentuk yang sama dengan Anthropic.
+     *
+     * @param  array<string, mixed>  $json
+     * @return array<string, int|null>
+     */
+    private function usageOpenAi(array $json): array
+    {
+        $u = (array) ($json['usage'] ?? []);
+
+        return [
+            'input_tokens' => isset($u['prompt_tokens']) ? (int) $u['prompt_tokens'] : null,
+            'output_tokens' => isset($u['completion_tokens']) ? (int) $u['completion_tokens'] : null,
+            'cache_read_input_tokens' => isset($u['prompt_tokens_details']['cached_tokens'])
+                ? (int) $u['prompt_tokens_details']['cached_tokens']
+                : null,
         ];
     }
 

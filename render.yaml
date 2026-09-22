@@ -196,6 +196,14 @@ services:
         value: gemini-3.6-flash
       - key: GEMINI_API_KEY
         sync: false
+      # OpenAI — BELUM dipakai produksi: VISION_DRIVER di atas sengaja tetap
+      # `gemini`. Isi OPENAI_API_KEY di dashboard dulu, BARU ganti
+      # VISION_DRIVER di berkas ini (setelan dashboard ditimpa blueprint tiap
+      # deploy — lihat §ARSIP_DRIVER). Urutan terbalik = kamera mati.
+      - key: OPENAI_MODEL
+        value: gpt-5
+      - key: OPENAI_API_KEY
+        sync: false
 
       # Direktori perusahaan — cari nama & alamat PT dari sumber LUAR waktu
       # teknisi mendaftarkan pelanggan yang belum ada di master lab.
