@@ -212,6 +212,31 @@ Kalkulator di profil **selalu malas**: `private function kalk() { return $this->
 `belum_dihitung` dengan alasan yang kebaca. Tambahkan `suhu/kelembaban/tekanan`
 dari konteks ke blok. Urutkan `hitungan` & `belum_dihitung` per `titik_ke`.
 
+### Kepala profil & bagian lembar — sisa format (22 Sep)
+
+- **Nomor formulir lembar kerja** (dari PDF di `Project-PT-Sidik/worksheet_alat_calibration/`,
+  ter-track):
+  - Fixed → `SIDIK-FM-CAL-0513_Rev.4` — "LEMBAR KERJA VOLUMETRIK TUNGGAL"
+  - Graduated → `SIDIK-FM-CAL-0514_Rev.4` — "LEMBAR KERJA VOLUMETRIK MAJEMUK"
+- **`KODE_METODE`**: workbook & master metode lab menulis `SIDIK-IK-CAL-0510_Rev.7`,
+  lampiran akreditasi `Rev.6` (pertanyaan lab no. 3). Pakai Rev.7 dan tulis
+  alasannya di docblock sampai lab menjawab.
+- **`STANDARD_TERCETAK`** — ambil dari kedua PDF itu (`pdftotext -layout`),
+  JANGAN ditebak. Bentuk: `[['label' => '…', 'cocok' => ['…nama/seri di DB…']], …]`.
+  Kandidat dari workbook: Analytical Balance Mettler Toledo XS204, Electronic
+  Balance Excellent DJ, Electronic Balance Fujitsu FSR-A (Fixed) / Precisa
+  (Graduated), Temperature Calibrator Yokogawa CA 150, PRT Pt-100.
+- Bagian `usage_check` (dituntut test urutan) = `bagianStandard()`:
+  `['kode' => 'usage_check', 'judul' => 'Standard Used', 'baris' => self::STANDARD_TERCETAK,
+  'field' => [field('standar_dicek.*.dipakai','Usage Check','centang'), field('standar_dicek.*.keterangan','Keterangan','teks')]]`.
+- Bagian `identitas_alat`: `equipment_id` (pilihan, master_alat), `equipment.nama_alat`
+  (otomatis), rentang, blok sesi Volumetric (`spesifikasi_alat.volumetric.kelas`
+  pilihan A/B, `.toleransi_ml`, `.resolusi_ml`, `.neraca`), tanggal terima/kalibrasi,
+  model/seri/merk, suhu & kelembaban & **tekanan** awal/akhir, `lokasi`
+  (lab/onsite) + `room_id` (tampilKalau inlab) + `lokasi_nama` (tampilKalau insitu),
+  `thermohygro_standard_id` (pilihan, master_thermohygro).
+- Bagian `pemilik`: `pemilik_nama`, `pemilik_alamat` (teks_panjang), `nomor_order`.
+
 ### Masukan budget per keluarga (sudah terbukti di `VolumetricGlasswareBudgetTest`)
 | Masukan | Fixed | Graduated |
 |---|---|---|
