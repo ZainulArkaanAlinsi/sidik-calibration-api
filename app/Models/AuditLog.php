@@ -30,6 +30,17 @@ class AuditLog extends Model
 
     public const ACTION_DIPULIHKAN = 'dipulihkan';
 
+    /**
+     * Membaca — satu-satunya aksi di sini yang TIDAK mengubah apa pun.
+     *
+     * Dipakai `App\Support\JejakLintasOrganisasi` buat akses super admin yang
+     * menembus `organization_id`. Pembacaan biasa nggak dicatat dan jangan
+     * dibikin dicatat: yang bikin baris ini layak disimpan justru karena dia
+     * melewati batas kerahasiaan antar pelanggan (ISO/IEC 17025 klausul 4.2),
+     * bukan karena ada orang membuka layar.
+     */
+    public const ACTION_DIBACA = 'dibaca';
+
     /** @return list<string> */
     public static function actions(): array
     {

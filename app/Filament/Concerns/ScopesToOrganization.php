@@ -3,6 +3,7 @@
 namespace App\Filament\Concerns;
 
 use App\Models\User;
+use App\Support\JejakLintasOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,7 +28,28 @@ trait ScopesToOrganization
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $kueri = parent::getEloquentQuery();
+
+        // Super admin membaca menembus organisasi — dan tiap layarnya dicatat.
+        //
+        // AGENTS.md §Peran butir 2 memberinya bacaan tanpa batas; §35
+        // `docs/permintaan-user-7.md` menerima itu DENGAN syarat aksesnya
+        // tercatat, karena yang ditembus kerahasiaan antar pelanggan (ISO/IEC
+        // 17025 klausul 4.2). Dua-duanya ditulis di percabangan yang sama supaya
+        // nggak pernah ada versi yang membuka tanpa mencatat.
+        //
+        // Dibuka cuma di panel, dan itu disengaja. Sisi API menyaring organisasi
+        // di ~60 tempat tulis tangan; melebarkan semuanya demi lab kedua yang
+        // BELUM ADA (produksi 23 Sep 2026: satu organisasi) menukar risiko nyata
+        // dengan manfaat nol. Kalau lab kedua mendarat, yang benar memindahkan
+        // penyaring API ke satu tempat dulu — refactor tersendiri.
+        if (User::yangLogin()?->isSuperAdmin()) {
+            JejakLintasOrganisasi::catat(class_basename(static::getModel()));
+
+            return $kueri;
+        }
+
+        return $kueri
             ->where(static::getModel()::make()->getTable().'.organization_id', User::yangLogin()?->organization_id);
     }
 

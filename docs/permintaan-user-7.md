@@ -3637,7 +3637,17 @@ tidak boleh kabur.
 pelanggan, perilakunya belum dibangun. Isinya: semua yang teknisi bisa + semua yang Master Data
 bisa + lintas organisasi + edit sesudah terbit + kirim ke pelanggan.
 
-**4. Pencatatan akses lintas-organisasi.** Konsekuensi (a) di atas.
+**4. Pencatatan akses lintas-organisasi.** Konsekuensi (a) di atas. — **SEBAGIAN
+SELESAI 23 Sep 2026:** lintas organisasi dibuka di **panel** lewat satu pintu
+(`ScopesToOrganization`), dan tiap layar yang dibuka super admin dengan lingkup
+lintas lab dicatat `App\Support\JejakLintasOrganisasi` ke `audit_logs`
+(`action = dibaca`, satu baris per layar per request; diam total selama
+`organizations` cuma satu baris — produksi masih satu). Dijaga
+`SuperAdminLintasOrganisasiTest`. **Sisi API sengaja belum**: ~60 penyaring
+`organization_id` tulis tangan di 15 controller, dan melebarkannya demi lab kedua
+yang belum ada menukar risiko kebocoran dengan manfaat nol. Urutan yang benar
+kalau lab kedua mendarat: pindahkan penyaring API ke satu tempat dulu, baru
+lebarkan.
 
 **5. Revisi sertifikat bernomor.** Konsekuensi (b) di atas.
 

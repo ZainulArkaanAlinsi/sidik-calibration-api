@@ -304,8 +304,12 @@ sama, cuma lebih cepat.
    dihitung ulang persis seperti saat terbit.
 
    **Sesi yang tersimpan tanpa stempel versi adalah CACAT, bukan keadaan
-   normal.** Per 19 Sep 2026 produksi bersih: 288 dari 288 hasil hitung
-   berstempel, nol null. Kalau angka itu pernah turun, yang rusak jalur
+   normal.** Angka lama "288 dari 288 berstempel (19 Sep 2026)" sudah **tidak
+   berlaku**: ke-288 baris itu milik data contoh seeder yang dihapus 23 Sep 2026
+   bersama 37 sesi & 25 sertifikatnya (cadangan `C:\cadangan-sidik`). Produksi
+   sekarang: 2 sesi nyata, **nol** `uncertainty_calculations` — belum ada yang
+   disetujui. Jadi sensus berikutnya mulai dari nol, dan aturannya tetap: begitu
+   ada hasil hitung tersimpan tanpa `formula_version_id`, yang rusak jalur
    penyimpanannya — bukan datanya yang "kebetulan lama".
 
 3. **Versi parameter baru tidak boleh aktif sebelum hasil simulasinya
@@ -355,8 +359,9 @@ sama, cuma lebih cepat.
    satu pun manfaat teknis.
 
 2. **`super_admin` boleh membaca semua data lab tanpa batas.** Itu yang membuat
-   pelacakan menyeluruh berguna. Per 23 Sep 2026 bacanya sudah jalan **di dalam
-   organisasinya sendiri**; lintas organisasi belum — lihat §Keadaan nyata
+   pelacakan menyeluruh berguna. Per 23 Sep 2026 lintas organisasi sudah jalan
+   **di panel** (`ScopesToOrganization`), berikut pencatatan aksesnya; **sisi API
+   masih terkurung** di organisasinya sendiri — lihat §Keadaan nyata
    `super_admin` di bawah.
 
 3. **`super_admin` boleh bertindak atas nama peran lain, tapi aksinya tercatat
@@ -410,10 +415,12 @@ Yang berlaku **sekarang**:
 | Rute API selain baca | **403** | aturan yang sama |
 | Create/edit/delete di panel | **403** | `ScopesToOrganization` |
 | Aksi tulis kustom di panel (approve sesi, retry sertifikat, reset sandi, undang/cabut anggota, ubah status ruangan, Pengaturan Organisasi) | **tersembunyi** | `App\Filament\Concerns\HakTulisPanel` |
+| Baca **lintas organisasi** di panel | **terbuka**, dan tiap layarnya tercatat | `ScopesToOrganization` + `App\Support\JejakLintasOrganisasi` |
+| Baca lintas organisasi lewat **API** | **belum** — masih terkurung ke lab sendiri | ~60 penyaring tulis tangan di controller |
 | `User::roles()` | **tetap tidak memuatnya** | lihat bawah |
 | `/api/users` (daftar & ubah) | **tetap tersaring / 404** | `UserController::pastikanAkunInternal()` |
 
-Dijaga `SuperAdminAksesTest` (13 kasus).
+Dijaga `SuperAdminAksesTest` (13 kasus) dan `SuperAdminLintasOrganisasiTest` (5).
 
 **Dua daftar role, dan bedanya yang menahan eskalasi.** `User::roles()` menjawab
 "role apa yang boleh DIBERIKAN admin ke orang lain" — dipakai `Rule::in`, jadi
@@ -432,10 +439,25 @@ tersentuh policy mana pun — Filament tidak tahu aksi itu menulis atau tidak.
 Aksi tulis baru yang lupa memanggilnya **tidak memunculkan error**; dia cuma
 tombol yang tetap nyala buat orang yang belum boleh menekannya.
 
-**Yang BELUM dibuka dan memang slice terpisah:** baca lintas organisasi. Super
-admin hari ini membaca lab-nya sendiri; 59 tempat menyaring `organization_id`,
-dan menggesernya mengubah isolasi data — pekerjaan yang harus ditinjau sendiri,
-bukan diselipkan.
+**Lintas organisasi: dibuka di panel, DITUNDA di API — dan itu keputusan, bukan
+kelupaan.** Panel punya satu pintu (`ScopesToOrganization`, dipakai kesepuluh
+resource), jadi perubahannya satu berkas yang bisa diuji. Sisi API menyaring
+organisasi di **~60 tempat tulis tangan** (±40 `where()`, 14 `abort_if`, 13
+perbandingan `!==`) yang tersebar di 15 controller; melebarkan semuanya demi lab
+kedua yang **belum ada** — produksi 23 Sep 2026: `organizations = 1`, 8 pengguna
+— menukar risiko nyata (satu sunting meleset = kebocoran antar lab) dengan
+manfaat nol. Kalau lab kedua mendarat, yang benar **memindahkan penyaring API ke
+satu tempat dulu**, sebagai refactor tersendiri yang perilakunya dibuktikan tidak
+berubah; baru sesudah itu lingkupnya dilebarkan.
+
+**Tiap akses lintas lab WAJIB tercatat.** §35 `docs/permintaan-user-7.md`
+menerima penembusan `organization_id` dengan syarat itu, karena yang ditembus
+kerahasiaan antar pelanggan (ISO/IEC 17025 klausul 4.2). Pencatatnya
+`App\Support\JejakLintasOrganisasi` — satu baris `audit_logs` per layar per
+request (`action` = `dibaca`), dan diam total selama `organizations` cuma satu
+baris. Pelebaran lingkup baru mana pun wajib memanggilnya di percabangan yang
+sama, bukan di tempat terpisah: versi yang membuka tanpa mencatat tidak
+menghasilkan error apa pun.
 
 Konstantanya `User.php`, migrasi ENUM-nya
 `2026_09_16_100100_tambah_role_pelanggan_dan_status_pending_ke_users.php:44`.
