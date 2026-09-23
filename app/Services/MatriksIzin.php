@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Middleware\EnsureUserHasRole;
 use App\Models\User;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as Router;
@@ -170,7 +171,15 @@ class MatriksIzin
             $roleYangBoleh = $this->roleYangBoleh($rute);
 
             // null = nggak ada middleware `role:` → semua role yang udah login.
-            if ($roleYangBoleh === null || in_array($role, $roleYangBoleh, true)) {
+            // Super admin nggak pernah ditulis di `role:` mana pun — lolosnya
+            // dari aturan baca di `EnsureUserHasRole`. Aturan itu DIPANGGIL di
+            // sini, bukan ditiru: salinan kedua bisa berbeda diam-diam, dan
+            // bedanya baru ketahuan sebagai tombol yang nyala lalu ditolak 403 —
+            // persis kegagalan yang kelas ini ada buat mencegahnya.
+            if ($roleYangBoleh === null
+                || in_array($role, $roleYangBoleh, true)
+                || EnsureUserHasRole::lolosBacaSuperAdmin($role, $method, $roleYangBoleh)
+            ) {
                 $boleh[] = $izin;
             }
         }

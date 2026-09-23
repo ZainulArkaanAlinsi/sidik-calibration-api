@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Certificates\Tables;
 
+use App\Filament\Concerns\HakTulisPanel;
 use App\Jobs\GenerateCertificate;
 use App\Models\Certificate;
 use App\Models\User;
@@ -144,7 +145,9 @@ class CertificatesTable
                     ->label('Terbitkan ulang')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_GAGAL)
+                    // Baca `HakTulisPanel`: super admin nggak mencetak sertifikat.
+                    ->visible(fn (Certificate $record): bool => $record->status === Certificate::STATUS_GAGAL
+                        && HakTulisPanel::boleh())
                     ->requiresConfirmation()
                     ->modalDescription('Coba bikin ulang PDF sertifikat yang tadinya gagal. Statusnya balik ke "menunggu generate" selagi diproses.')
                     ->action(function (Certificate $record): void {
@@ -180,6 +183,8 @@ class CertificatesTable
                     ->label('Cetak ulang PDF')
                     ->icon('heroicon-o-arrow-path-rounded-square')
                     ->color('warning')
+                    // Mencetak ulang = menulis berkas sertifikat. Super admin lihat saja.
+                    ->visible(HakTulisPanel::boleh(...))
                     ->requiresConfirmation()
                     ->modalHeading('Cetak ulang PDF sertifikat terpilih')
                     ->modalDescription(

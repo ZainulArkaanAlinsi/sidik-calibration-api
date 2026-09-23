@@ -28,7 +28,13 @@ Broadcast::channel('App.Models.User.{id}', function (User $user, string $id): bo
 //
 // Pelanggan memang nggak memakai Reverb di MVP (03-SDD §3.2), tapi "nggak
 // dipakai" bukan penjagaan: yang menahan harus kodenya.
+//
+// Dipakai `rolesInternal()`, BUKAN `roles()` — bedanya super admin. Yang
+// ditanya gerbang ini "orang ini anggota lab atau orang luar", dan super admin
+// jawabannya anggota. `roles()` menjawab pertanyaan lain (role apa yang boleh
+// DIBERIKAN admin ke orang lain), dan memakainya di sini bikin panel super
+// admin diam tanpa satu pun error — cuma layar yang nggak pernah nyegerin.
 Broadcast::channel('organisasi.{organizationId}', function (User $user, string $organizationId): bool {
     return (int) $user->organization_id === (int) $organizationId
-        && in_array($user->role, User::roles(), true);
+        && in_array($user->role, User::rolesInternal(), true);
 });

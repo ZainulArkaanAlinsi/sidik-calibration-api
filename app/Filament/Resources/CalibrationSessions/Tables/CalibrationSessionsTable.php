@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CalibrationSessions\Tables;
 
+use App\Filament\Concerns\HakTulisPanel;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\User;
@@ -99,7 +100,11 @@ class CalibrationSessionsTable
                     ->label('Periksa')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('gray')
-                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+                    // `HakTulisPanel` = super admin melihat sesinya, nggak
+                    // memutuskannya. Menyetujui berarti menerbitkan sertifikat
+                    // berlogo akreditasi, dan K4 belum turun.
+                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+                        && HakTulisPanel::boleh())
                     ->action(function (CalibrationSession $record, CalibrationValidator $validator): void {
                         $hasil = $validator->periksa($record);
 
@@ -125,7 +130,11 @@ class CalibrationSessionsTable
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+                    // `HakTulisPanel` = super admin melihat sesinya, nggak
+                    // memutuskannya. Menyetujui berarti menerbitkan sertifikat
+                    // berlogo akreditasi, dan K4 belum turun.
+                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+                        && HakTulisPanel::boleh())
                     ->schema([
                         Checkbox::make('abaikan_peringatan')
                             ->label('Saya sudah periksa, lanjutkan walau ada peringatan')
@@ -192,7 +201,11 @@ class CalibrationSessionsTable
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL)
+                    // `HakTulisPanel` = super admin melihat sesinya, nggak
+                    // memutuskannya. Menyetujui berarti menerbitkan sertifikat
+                    // berlogo akreditasi, dan K4 belum turun.
+                    ->visible(fn (CalibrationSession $record): bool => $record->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+                        && HakTulisPanel::boleh())
                     ->schema([
                         Textarea::make('catatan_revisi')
                             ->label('Catatan revisi')

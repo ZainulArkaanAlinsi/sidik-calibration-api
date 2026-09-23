@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\HakTulisPanel;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
@@ -36,6 +37,18 @@ class PengaturanOrganisasi extends Page
     protected static ?int $navigationSort = 0;
 
     protected static ?string $title = 'Pengaturan Organisasi';
+
+    /**
+     * Halaman ini seluruhnya tulis — identitas lab, logo, tanda tangan yang
+     * ikut tercetak di sertifikat. Nggak ada mode bacanya, jadi buat super
+     * admin halamannya disembunyikan utuh, bukan tombolnya saja.
+     *
+     * Baca `App\Filament\Concerns\HakTulisPanel` soal kenapa.
+     */
+    public static function canAccess(): bool
+    {
+        return HakTulisPanel::boleh();
+    }
 
     protected string $view = 'filament.pages.pengaturan-organisasi';
 

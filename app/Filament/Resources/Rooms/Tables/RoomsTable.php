@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Rooms\Tables;
 
+use App\Filament\Concerns\HakTulisPanel;
 use App\Models\Room;
 use App\Support\Angka;
 use Filament\Actions\Action;
@@ -92,7 +93,9 @@ class RoomsTable
                     ->label(fn (Room $record): string => $record->aktif ? 'Nonaktifkan' : 'Aktifkan')
                     ->icon(fn (Room $record): string => $record->aktif ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                     ->color(fn (Room $record): string => $record->aktif ? 'gray' : 'success')
-                    ->hidden(fn (Room $record): bool => $record->trashed())
+                    // `trashed()` alasan lama; `HakTulisPanel` yang baru — super
+                    // admin nggak menyalakan/mematikan ruangan, cuma melihatnya.
+                    ->hidden(fn (Room $record): bool => $record->trashed() || ! HakTulisPanel::boleh())
                     ->requiresConfirmation()
                     ->modalHeading(fn (Room $record): string => $record->aktif
                         ? "Nonaktifkan {$record->nama}?"

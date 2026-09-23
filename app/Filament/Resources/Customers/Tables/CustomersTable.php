@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Customers\Tables;
 
 use App\Exceptions\Pelanggan\AksiPelangganDitolak;
+use App\Filament\Concerns\HakTulisPanel;
 use App\Mail\Pelanggan\UndanganEmail;
 use App\Models\Customer;
 use App\Models\CustomerMember;
@@ -93,6 +94,8 @@ class CustomersTable
             ->label('Cabut akses anggota')
             ->icon('heroicon-o-user-minus')
             ->color('danger')
+            // Mencabut akses orang = menulis. Super admin lihat saja (`HakTulisPanel`).
+            ->visible(HakTulisPanel::boleh(...))
             ->modalHeading(fn (Customer $record): string => 'Cabut akses anggota — '.$record->nama)
             ->modalSubmitActionLabel('Cabut akses')
             ->modalDescription(
@@ -184,6 +187,8 @@ class CustomersTable
             ->label('Undang anggota')
             ->icon('heroicon-o-envelope')
             ->color('info')
+            // Menerbitkan kode undangan = menulis. Lihat `HakTulisPanel`.
+            ->visible(HakTulisPanel::boleh(...))
             ->modalHeading(fn (Customer $record): string => 'Undang anggota — '.$record->nama)
             ->modalSubmitActionLabel('Terbitkan kode')
             ->schema([

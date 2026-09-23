@@ -355,7 +355,9 @@ sama, cuma lebih cepat.
    satu pun manfaat teknis.
 
 2. **`super_admin` boleh membaca semua data lab tanpa batas.** Itu yang membuat
-   pelacakan menyeluruh berguna.
+   pelacakan menyeluruh berguna. Per 23 Sep 2026 bacanya sudah jalan **di dalam
+   organisasinya sendiri**; lintas organisasi belum — lihat §Keadaan nyata
+   `super_admin` di bawah.
 
 3. **`super_admin` boleh bertindak atas nama peran lain, tapi aksinya tercatat
    sebagai dilakukan oleh `super_admin`** — tidak pernah menyamar sebagai user
@@ -389,45 +391,54 @@ sama, cuma lebih cepat.
 
 6. Rujukan: `docs/pelanggan/09-Adendum-Olah-Data-Peran.md` §2.3 dan §4.
 
-### Keadaan nyata `super_admin` hari ini — TERDAFTAR TAPI MACET
+### Keadaan nyata `super_admin` — DIBUKA 23 Sep 2026, BACA SAJA
 
-**Peran ini BELUM BOLEH DIPAKAI sampai Fase 2 membukanya.** Akun `super_admin`
-yang dibuat sekarang tidak bisa melakukan apa pun, dan yang membuatnya akan
-menghabiskan waktu mencari kesalahan yang tidak ada.
+Peran ini sebelumnya **terdaftar tapi macet**: diterima ENUM sejak 16 Sep lalu
+tertolak di tujuh pintu, termasuk kontradiksi yang menyuruhnya "pakai panel admin
+di peramban" sementara `canAccessPanel()` cuma menerima `ROLE_ADMIN`. Nol akun
+kena karena nol super admin pernah dibuat (sensus 19 Sep 2026: 2 admin, 5
+teknisi, 1 viewer, nol pelanggan, nol super admin).
 
-Butir 1 di atas mendeklarasikan `super_admin` sebagai kunci yang tetap, dan itu
-gampang dibaca sebagai "sudah berfungsi". Tidak. Dia diterima di ENUM dan punya
-konstanta, lalu **tertolak di tujuh pintu**:
+Yang berlaku **sekarang**:
 
-| # | Pintu | Perilaku | Rujukan |
-|---|---|---|---|
-| 1 | `User::roles()` | tidak termasuk | `app/Models/User.php:92-95` |
-| 2 | `role:admin,teknisi,viewer` (grup luar API) | 403 di seluruh endpoint internal | `routes/api.php:269` |
-| 3 | Login aplikasi teknisi | 403 `bukan_akun_internal` | `app/Http/Controllers/Api/AuthController.php:62-69` |
-| 4 | `PUT/POST /api/users/{id}` | 404 lewat `pastikanAkunInternal()` | `app/Http/Controllers/Api/UserController.php:185-193` |
-| 5 | Daftar pengguna internal | tersaring keluar | `UserController::index()` |
-| 6 | Channel `organisasi.{id}` | ditolak | `routes/channels.php` lewat `roles()` |
-| 7 | **Panel Filament `/admin`** | **`canAccessPanel()` cuma menerima `ROLE_ADMIN`** | `app/Models/User.php:149-152` |
+| Pintu | Keadaan | Rujukan |
+|---|---|---|
+| Login aplikasi | **terbuka**, token ability `internal` | `AuthController::login()` |
+| Panel Filament `/admin` | **terbuka** | `User::canAccessPanel()` |
+| Rute API `GET`/`HEAD` | **terbuka**, walau namanya tidak ditulis di `role:` | `EnsureUserHasRole::lolosBacaSuperAdmin()` |
+| Channel `organisasi.{id}` | **terbuka** | `routes/channels.php` lewat `rolesInternal()` |
+| Rute API selain baca | **403** | aturan yang sama |
+| Create/edit/delete di panel | **403** | `ScopesToOrganization` |
+| Aksi tulis kustom di panel (approve sesi, retry sertifikat, reset sandi, undang/cabut anggota, ubah status ruangan, Pengaturan Organisasi) | **tersembunyi** | `App\Filament\Concerns\HakTulisPanel` |
+| `User::roles()` | **tetap tidak memuatnya** | lihat bawah |
+| `/api/users` (daftar & ubah) | **tetap tersaring / 404** | `UserController::pastikanAkunInternal()` |
 
-Yang menerimanya cuma ENUM: migrasi
-`2026_09_16_100100_tambah_role_pelanggan_dan_status_pending_ke_users.php:44`,
-sengaja ikut lebih awal supaya `ALTER TABLE users` di produksi cukup sekali jalan.
-Konstantanya `User.php:55`.
+Dijaga `SuperAdminAksesTest` (13 kasus).
 
-**Dan ada kontradiksi yang wajib dibereskan Fase 2, bukan sekadar dicatat.**
-`AuthController.php:67` menolak login `super_admin` dengan kalimat:
+**Dua daftar role, dan bedanya yang menahan eskalasi.** `User::roles()` menjawab
+"role apa yang boleh DIBERIKAN admin ke orang lain" — dipakai `Rule::in`, jadi
+memasukkan `super_admin` ke sana bikin admin biasa bisa mencetak super admin.
+`User::rolesInternal()` menjawab "siapa yang bukan orang luar". Super admin ada
+di yang kedua saja. **Jangan digabung.**
 
-> *"Akun super admin nggak masuk lewat aplikasi ini. **Pakai panel admin di
-> peramban.**"*
+**Kenapa baca saja.** K4 (siapa yang boleh mengesahkan sertifikat) belum dijawab
+manajer teknis, dan panel bukan layar baca: tombol `approve` di tabel sesi
+menerbitkan sertifikat berlogo akreditasi. Menulis dibuka setelah K4 turun,
+bukan sebelum.
 
-Sementara `User::canAccessPanel()` (`User.php:151`) memulangkan `true` **hanya**
-untuk `ROLE_ADMIN` — jadi panel yang ditunjuk pesan itu **juga tertutup**
-untuknya. Super admin diberi petunjuk ke pintu yang terkunci.
+**Aksi panel baru wajib ikut `HakTulisPanel`.** `ScopesToOrganization` sudah
+menutup create/edit/delete bawaan Filament, tapi `Action::make(...)` kustom tidak
+tersentuh policy mana pun — Filament tidak tahu aksi itu menulis atau tidak.
+Aksi tulis baru yang lupa memanggilnya **tidak memunculkan error**; dia cuma
+tombol yang tetap nyala buat orang yang belum boleh menekannya.
 
-Belum ada yang kena karena nol akun `super_admin` di produksi (sensus 19 Sep
-2026: 2 admin, 5 teknisi, 1 viewer, nol pelanggan, nol super admin). Begitu satu
-dibuat sebelum Fase 2, orangnya terkunci dari segalanya sambil dikirim
-berputar-putar.
+**Yang BELUM dibuka dan memang slice terpisah:** baca lintas organisasi. Super
+admin hari ini membaca lab-nya sendiri; 59 tempat menyaring `organization_id`,
+dan menggesernya mengubah isolasi data — pekerjaan yang harus ditinjau sendiri,
+bukan diselipkan.
+
+Konstantanya `User.php`, migrasi ENUM-nya
+`2026_09_16_100100_tambah_role_pelanggan_dan_status_pending_ke_users.php:44`.
 
 ## Akun Lahir dari Undangan
 

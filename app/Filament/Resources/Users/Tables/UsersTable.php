@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Filament\Concerns\HakTulisPanel;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -67,7 +68,10 @@ class UsersTable
                     ->label('Setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (User $record): bool => $record->status === User::STATUS_PENDING)
+                    // Menyetujui/menolak akun = menulis. Super admin lihat saja
+                    // sampai K4 turun — baca `HakTulisPanel`.
+                    ->visible(fn (User $record): bool => $record->status === User::STATUS_PENDING
+                        && HakTulisPanel::boleh())
                     ->requiresConfirmation()
                     ->action(function (User $record): void {
                         $record->update(['status' => User::STATUS_AKTIF]);
@@ -79,7 +83,10 @@ class UsersTable
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (User $record): bool => $record->status === User::STATUS_PENDING)
+                    // Menyetujui/menolak akun = menulis. Super admin lihat saja
+                    // sampai K4 turun — baca `HakTulisPanel`.
+                    ->visible(fn (User $record): bool => $record->status === User::STATUS_PENDING
+                        && HakTulisPanel::boleh())
                     ->requiresConfirmation()
                     ->action(function (User $record): void {
                         $record->update(['status' => User::STATUS_NONAKTIF]);
@@ -93,6 +100,8 @@ class UsersTable
                     ->label('Reset password')
                     ->icon('heroicon-o-key')
                     ->color('warning')
+                    // Menyetel sandi orang lain jelas menulis — lihat `HakTulisPanel`.
+                    ->visible(HakTulisPanel::boleh(...))
                     ->schema([
                         TextInput::make('password')
                             ->label('Password baru')

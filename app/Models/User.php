@@ -85,6 +85,14 @@ class User extends Authenticatable implements FilamentUser
      * 3. `role:admin,teknisi,viewer` di grup luar `routes/api.php` jadi tidak
      *    sejalan lagi dengan daftar yang dipakai di tempat lain.
      *
+     * `super_admin` tetap di luar daftar ini SESUDAH Fase 2 membukanya, dan
+     * alasannya beda dari alasan pelanggan: butir 2 di atas. Daftar ini dipakai
+     * `Rule::in(self::roles())` sebagai pilihan role waktu admin MEMBUAT atau
+     * mengubah akun — begitu `super_admin` masuk, admin biasa bisa
+     * mempromosikan dirinya sendiri jadi super admin lewat panel, dan peran yang
+     * seharusnya mengawasi admin jadi bisa dicetak admin. Yang dibuka Fase 2
+     * pintu MASUKNYA (lihat [rolesInternal()]), bukan hak mencetaknya.
+     *
      * Dijaga `RolePelangganTidakMasukRoleInternalTest`.
      *
      * @return array<int, string>
@@ -92,6 +100,27 @@ class User extends Authenticatable implements FilamentUser
     public static function roles(): array
     {
         return [self::ROLE_ADMIN, self::ROLE_TEKNISI, self::ROLE_VIEWER];
+    }
+
+    /**
+     * Role yang boleh MASUK ke sisi internal — [roles()] + `super_admin`.
+     *
+     * Dua daftar, dua pertanyaan yang beda. Menggabungkannya yang bikin
+     * `super_admin` macet sejak 16 Sep:
+     *
+     * - [roles()] menjawab "role apa saja yang boleh DIBERIKAN admin ke orang
+     *   lain" — dipakai `Rule::in`, saringan daftar pengguna, dan form panel.
+     * - [rolesInternal()] menjawab "siapa saja yang bukan orang luar" — dipakai
+     *   gerbang channel dan grup luar `routes/api.php`.
+     *
+     * Super admin ada di yang kedua saja: dia boleh masuk dan membaca, tapi
+     * tidak boleh dicetak dari dalam.
+     *
+     * @return array<int, string>
+     */
+    public static function rolesInternal(): array
+    {
+        return [...self::roles(), self::ROLE_SUPER_ADMIN];
     }
 
     /**
@@ -121,6 +150,19 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Sengaja TIDAK memulangkan `true` buat admin, dan sebaliknya juga nggak.
+     *
+     * Dua peran yang berbeda, bukan bertingkat: admin menulis, super admin
+     * mengawasi. `isAdmin()` menjaga jalur tulis (mis. `ImportExcel`), jadi
+     * membuatnya ikut `true` buat super admin bakal memberi wewenang tulis
+     * lewat pintu belakang — persis yang ditahan sampai K4 turun.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    /**
      * "Technician ID" yang dicetak di sertifikat (mis. `DR`). Kalau admin belum
      * ngisi kodenya, jatuh ke inisial nama — lebih baik inisial daripada kolom
      * kosong di dokumen resmi.
@@ -143,12 +185,20 @@ class User extends Authenticatable implements FilamentUser
     /**
      * Benteng panel admin web (Filament). Ini SATU-SATUNYA yang misahin panel
      * dari sesi login biasa — tanpa ini, teknisi & viewer yang punya akun tetap
-     * bisa buka /admin. Wajib admin DAN aktif: akun yang dinonaktifin harus
-     * langsung kehilangan akses panel, bukan cuma ditolak API.
+     * bisa buka /admin. Wajib admin ATAU super admin, DAN aktif: akun yang
+     * dinonaktifin harus langsung kehilangan akses panel, bukan cuma ditolak API.
+     *
+     * Super admin ikut sejak Fase 2, dan itu membereskan kontradiksi yang
+     * ditulis di AGENTS.md: `AuthController` menolak loginnya dari aplikasi
+     * teknisi sambil menyuruhnya "pakai panel admin di peramban", padahal
+     * panelnya sendiri cuma menerima `ROLE_ADMIN`. Petunjuknya menunjuk pintu
+     * terkunci selama tiga hari — nol akun kena cuma karena nol super admin
+     * pernah dibuat.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->role === self::ROLE_ADMIN && $this->status === self::STATUS_AKTIF;
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN], true)
+            && $this->status === self::STATUS_AKTIF;
     }
 
     /** @return BelongsTo<Organization, $this> */
