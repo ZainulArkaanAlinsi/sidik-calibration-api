@@ -1,0 +1,28 @@
+﻿Based on NMI Monograph 4 (CSIRO 2010),,
+,,
+1. Uncertainty of Correction,,
+"Definisi: Ketidakpastian yang terkait dengan koreksi kalibrasi timbangan, yaitu perbedaan antara pembacaan timbangan dan nilai sebenarnya dari massa yang ditimbang.",,
+Asal Ketidakpastian:,,
+Ketidakpastian dari kalibrasi bobot referensi (massa standar).,,
+Resolusi timbangan (ketidakpastian akibat pembulatan pembacaan).,,
+Ketidakpastian dari stabilitas atau histeresis timbangan (jika relevan).,,
+"Ketidakpastian dari faktor lingkungan, seperti suhu atau tekanan udara.",,
+Tujuan: Untuk menghitung seberapa akurat timbangan dalam memberikan hasil pengukuran setelah koreksi diterapkan.,,
+Penggunaan: Digunakan untuk memperkirakan deviasi antara nilai sebenarnya dan hasil pengukuran oleh timbangan.,,
+,,
+2. Uncertainty of Weighing,,
+"Definisi: Ketidakpastian yang terkait dengan proses penimbangan itu sendiri, meliputi semua sumber ketidakpastian selama operasi penimbangan.",,
+Asal Ketidakpastian:,,
+Ketidakpastian koreksi timbangan (dihitung sebelumnya).,,
+Ketidakpastian resolusi timbangan.,,
+Ketidakpastian akibat pengulangan pengukuran (repeatability).,,
+"Faktor lingkungan seperti getaran, angin, atau suhu selama proses penimbangan.",,
+Tujuan: Untuk menghitung ketidakpastian keseluruhan dari pengukuran massa yang dilakukan dengan timbangan.,,
+Penggunaan: Digunakan untuk mengevaluasi keandalan hasil penimbangan dalam kondisi penggunaan aktual.,,
+,,
+Perbedaan Utama,,
+Aspek,Uncertainty of Correction,Uncertainty of Weighing
+Cakupan,Ketidakpastian dari koreksi kalibrasi timbangan.,Ketidakpastian keseluruhan proses penimbangan.
+Faktor Lingkungan,Biasanya dalam kondisi kontrol laboratorium.,Mempertimbangkan kondisi aktual operasi.
+Pengaruh Repeatability,Tidak memperhitungkan pengulangan.,Memperhitungkan pengulangan (repeatability).
+Tujuan,Mengevaluasi kinerja timbangan setelah koreksi.,Menentukan ketidakpastian dalam aplikasi praktis.

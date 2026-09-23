@@ -90,7 +90,20 @@ Project-PT-Sidik/Master_Olah_Data_Viscometer_CSV/
 # Ditulis per-isi (`/*`), bukan `alat-alat-Pt-Sidik/`, supaya Height Gauge di
 # bawah masih bisa di-include balik — git nggak bisa nge-include file yang
 # folder induknya diabaikan.
-Project-PT-Sidik/alat-alat-Pt-Sidik/*
+# 23 Sep 2026 — aturan ini DICABUT atas keputusan pemilik proyek: seluruh CSV
+# master ikut masuk repo, dengan syarat yang sama yang dulu dipakai Height
+# Gauge — identitas pelanggan DIREDAKSI lebih dulu.
+#
+# Yang dikerjakan sebelum baris ini dicabut, dan angkanya bisa diperiksa ulang:
+# 159 berkas, 350 sel `[NAMA PELANGGAN DIREDAKSI]`/`[ALAMAT PELANGGAN
+# DIREDAKSI]`. Sesudahnya nol pola alamat (`Jl.`, `Kec.`, `Kab.`, `RT/RW`,
+# `Kawasan`) dan nol nama `PT`/`CV`/`UD` selain lab sendiri yang tersisa, dan
+# `gen-tabel-standar-volumetric.py` tetap memulangkan JSON yang IDENTIK — jadi
+# redaksinya tidak menggeser satu angka pun.
+#
+# Yang TETAP berlaku buat alat berikutnya: redaksi dulu blok `Nama
+# Custromer`/`Alamat Customer`/`Owner`/`Address` SEBELUM `git add`. Repo ini
+# rencananya publik, dan yang sudah masuk riwayat tidak bisa ditarik balik.
 #
 # SATU pengecualian: Height Gauge, satu-satunya yang udah terlanjur ke-commit
 # (alat ke-26, 7 Sep 2026). Blok identitas pelanggannya udah DIREDAKSI jadi

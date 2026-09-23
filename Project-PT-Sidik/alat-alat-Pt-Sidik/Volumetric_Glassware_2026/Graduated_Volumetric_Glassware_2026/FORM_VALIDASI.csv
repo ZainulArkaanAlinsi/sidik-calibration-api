@@ -1,0 +1,98 @@
+﻿,FORM VALIDASI MASTER OLAH DATA KALIBRASI,,,,,,,,,,,,,,,,,,,,,,
+,Lingkup Kalibrasi                   :,,Volumetrik,,,,,,,,,,,,,,,,,,,,
+,Jenis/Type Pengukuran       :,,Graduated Volumetric Glassware,,,,,,,,,,,,,,,,,,,,
+,No.,Master Name,Last Modified Date,Detail Modified,PIC,,CHECK,,VALIDATION,,Notes/Revision,,,,,,,,,,,,
+,1,Master Olah Data_Graduated Volumetric Glassware,2022-07-11 00:00:00,"- Creating All Sheets
+",HN,,NR,,,,"Cek ulang cmc, kurang yg 1000 dan 2000 ml",,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F7,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H7,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J7,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-07-11 00:00:00,Date:,2022-07-12 00:00:00,Date:,,,,,,,,,,,,,,
+,2,Master Olah Data_Graduated Volumetric Glassware,2022-08-22 00:00:00,"-Tambahkan cmc under 1000 dan 2000ml di ""Database"" sheet",HN,,NR,,,,"-Updating U95% timbangan analiti std 2022, dan u95% timbangan ambil resolisi/sert(3)",,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F10,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H10,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J10,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-08-11 00:00:00,Date:,2022-08-11 00:00:00,Date:,,,,,,,,,,,,,,
+,3,Master Olah Data_Graduated Volumetric Glassware,2022-08-03 00:00:00,"-Updating U95% timbangan analiti std 2022, dan u95% timbangan ambil resolisi/sert(3) on ""Perhitungan U95%"" sheet.",HN,,NR,,,,"Update IK order number based on DID on database, adding TH-3 s/d 7,
+",,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F13,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H13,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J13,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-08-03 00:00:00,Date:,2022-08-04 00:00:00,Date:,,,,,,,,,,,,,,
+,4,Master Olah Data_Graduated Volumetric Glassware,24 oktober 2022,Update TH-1 - TH-7 & Calibration Methode,HN,,NR,,,,Update latest survaylen 2022 revision result,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F16,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H16,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J16,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-10-24 00:00:00,Date:,2022-10-26 00:00:00,Date:,,,,,,,,,,,,,,
+,5,Master Olah Data_Graduated Volumetric Glassware,2023-03-02 00:00:00,"-Remove lokasi kalibrasi table on ""Database"" sheet
+-Adding DR on pelaksana kalibrasi on ""Database"" sheet
+-Changing jabatan according to latest SO on ""Database"" sheet
+-Updating IK on ""Database"" sheet
+-Adding ""- Calibration results are not to be announced and only apply to related tools -"" statement on ""Sertifikat"" sheet
+-Adding calibrator status monitoring on ""Input Data"" sheets
+-Adding standar kalibrator : Electronic Balance-Excellent",HN,,,,,,Cek RLK baru terhadap CMC jika sudah terbit,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F19,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H19,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J19,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-03-02 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,6,Master Olah Data_Graduated Volumetric Glassware,2023-05-12 00:00:00,"-Updating ""Database"" sheet:  TH-1 & TH-2 recalibration 2023",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F22,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H22,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J22,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-05-12 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,7,Master Olah Data_Graduated Volumetric Glassware,2023-07-04 00:00:00,"-Updating NEW CMC based on New RLK 2023
+-Updating interval kalibrasi std. kalibrator based on schedule program kalibrasi berkala & uji antara",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F25,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H25,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J25,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-07-04 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,8,Master Olah Data_Graduated Volumetric Glassware,2023-07-26 00:00:00,-Updating timbangan excellent & mettler recalibration 2023 on Database sheet,HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F28,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H28,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J28,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-07-26 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,9,Master Olah Data_Graduated Volumetric Glassware,2023-10-26 00:00:00,"-Updating u95% temp. cal. Constant recalibration 2023 on Database sheet
+- Revisi Technician ID (JO,RH)",HN,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F31,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H31,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J31,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-10-26 00:00:00,Date:,2023-12-19 00:00:00,Date:,,,,,,,,,,,,,,
+,10,Master Olah Data_Graduated Volumetric Glassware,2024-02-23 00:00:00,"Update method kalibrasi (latest)
+Change technician ID: RH->CA",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F34,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H34,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J34,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-02-23 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,11,Master Olah Data_Fixed Volumetric Glassware,18 Juni 2024,"Merubah cara hitung densitas udara, memasukan parameter tekanan udara, memsukan nilai koreksi suhu, update rumus perhitungan densitas air berdasarkan persamaan tanaka,",NR,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(F37,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H37,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J37,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-06-18 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,12,Master Olah Data_Fixed Volumetric Glassware,2024-07-22 00:00:00,"Update Timbangan Mettler & Excellent recalibration 2024
+Add timbangan fujitsu baru (res: 0.001g)",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F40,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H40,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J40,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-07-22 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,13,Master Olah Data_Fixed Volumetric Glassware,2024-07-30 00:00:00,"Update recalibration 2024 TH 3 s/d 6
+Update no IK latest revision (after reakreditasi 2024)",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F43,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H43,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J43,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-07-30 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,14,Master Olah Data_Fixed Volumetric Glassware,2024-10-29 00:00:00,"Update CMC baru hasil Reakreditasi
+Updater ketidakpastian rekalibrasi Constant 2024 ",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F46,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H46,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J46,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-10-29 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,15,Master Olah Data_Fixed Volumetric Glassware,2025-01-23 00:00:00,Change thermohgro lingkungan to Thermobarometer lutron,HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F49,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H49,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J49,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-01-23 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,16,Master Olah Data_Fixed Volumetric Glassware,2025-06-20 00:00:00,"Update Recalibration 2025 Timbangan Fujitsu 1200 gram
+Update Nilai Koreksi dan U95% Dari PT-100 (-40-200 C)",DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F52,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H52,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J52,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-06-20 00:00:00,Date:,2025-06-23 00:00:00,Date:,,,,,,,,,,,,,,
+,17,Master Olah Data_Fixed Volumetric Glassware,2025-07-28 00:00:00,Update Recalibration 2025 Timbangan Mettler Toledo 220 gram & Timbangan Excellent 3000 gram,DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F55,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H55,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J55,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-07-28 00:00:00,Date:,2025-07-29 00:00:00,Date:,,,,,,,,,,,,,,
+,18,Master Olah Data_Fixed Volumetric Glassware,2025-08-08 00:00:00,Penambahan Nilai Tekanan Udara Pada Sheet 'Sertifikat',DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F58,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H58,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J58,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-08-08 00:00:00 [=D58],Date:,2025-08-08 00:00:00 [=G60],Date:,,,,,,,,,,,,,,
+,19,Master Olah Data_Fixed Volumetric Glassware,2025-09-01 00:00:00,Change std Constant to Yokogawa,DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F61,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H61,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J61,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-09-01 00:00:00 [=D61],Date:,2025-09-01 00:00:00 [=G63],Date:,,,,,,,,,,,,,,
+,20,Master Olah Data_Fixed Volumetric Glassware,2026-02-13 00:00:00,"Update Recalibration 2025 Timbangan Mettler Toledo 220 gram
+Update Recalibration 2025 Timbangan Fujitsu 1200 gram
+Update Recalibration 2025 Timbangan Excellent 3000 gram",DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F64,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H64,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J64,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2026-02-13 00:00:00 [=D64],Date:,2026-02-13 00:00:00 [=G66],Date:,,,,,,,,,,,,,,
+,21,Master Olah Data_Fixed Volumetric Glassware,2026-06-02 00:00:00,"- Revisi form input data dengan menambahkan suhu pada masing-masing titik ukur penimbangan massa.
+- Revisi dan menambahkan rumus corrected distilled water termperature, density of distilled water, dan V20 pada form PERHITUNGAN di masing-masing titik pengukuran serta mengubah nilai densitas anak timbangan dan koefisien muai bahan.
+- Menambahkan ketidakpastian pengukuran berulang pada form perhitungan U95%.",NS,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F67,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H67,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J67,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2026-06-02 00:00:00 [=D67],Date:,2026-06-02 00:00:00 [=G69],Date:,,,,,,,,,,,,,,
+,Notes:,,,,,,,,,,,,,,,,,,,,,,
+,User Requirement,,,,,,,,,,,,,,,,,,,,,,
+,1,Use Microsoft Office 2016 or higher versions for a better performance.,,,,,,,,,,,,,,,,,,,,,
+,2,Enable excel with macro warnings.,,,,,,,,,,,,,,,,,,,,,
+,3,Please Enable Developer Tab before using this master worksheet.,,,,,,,,,,,,,,,,,,,,,
+,,How to enable Developer Tab:,,,,,,,,,,,,,,,,,,,,,
+,,"*Click File-Options-Customize Ribbons- Check (√) ""Developer"" on Main Tabs-OK",,,,,,,,,,,,,,,,,,,,,
+,4,Fill the raw data (calibration results) on INPUT DATA sheet.,,,,,,,,,,,,,,,,,,,,,
+,Validation Rules,,,,,,,,,,,,,,,,,,,,,,
+,1,Please fill existing format in this sheet with the detailed revision/change.,,,,,,,,,,,,,,,,,,,,,
+,2,Write down the actual date and PIC/Checker/Validator name.,,,,,,,,,,,,,,,,,,,,,
+,3,"Save as the new revision master's file in the same location without deleting the previous files, add it with the number of revision (example: Master Olah Data Suhu_Rev.1)",,,,,,,,,,,,,,,,,,,,,

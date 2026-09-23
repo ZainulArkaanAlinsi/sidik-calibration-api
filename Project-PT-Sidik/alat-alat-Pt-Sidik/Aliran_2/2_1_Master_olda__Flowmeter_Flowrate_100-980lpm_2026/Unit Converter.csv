@@ -1,0 +1,10 @@
+﻿,,,,,,,,,,,,,,,,,
+,All data converted to kg (penimbangan aktual di instalasi inlab),,,,,,Converter to kg,,,,,,,,,,
+,Flowrate,,,,,,m3/h,,,,,,,,,,
+,INPUT DISINI,,,,,,AUTO CONVERT,,,,,,AUTO CONVERT (MASUK KE INPUT DATA),,,,
+,Data Lapangan (Ultrasonic Flowmeter),,,,,,Data Convert to lpm automatic by satuan data lapangan,,,,,,Data Penimbangan (Timbangan Dini Argeo/Sartorius),,,,
+,satuan,m3/h,Point ke-,,,,satuan,lpm,Point ke-,,,,satuan,kg/min,Point ke-,,
+,Data ke,,1,2,3,,Data ke,,1,2,3,,Data ke,,1,2,3
+,1,,39.424,39.634,,,1,,657.0666666666667,660.5666666666667,0,,1,,654.7599084308712,658.2476210112912,0
+,2,,40.01,40.164,,,2,,666.8333333333334,669.4,0,,2,,664.4922873457577,667.0499432380658,0
+,3,,39.945,39.887,,,3,,665.75,664.7833333333333,0,,3,,663.412757261342,662.4494842629401,0

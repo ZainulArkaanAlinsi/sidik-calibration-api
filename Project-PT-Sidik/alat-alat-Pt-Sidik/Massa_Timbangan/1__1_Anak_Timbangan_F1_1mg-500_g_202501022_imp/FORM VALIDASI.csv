@@ -1,0 +1,19 @@
+﻿FORM VALIDASI MASTER OLAH DATA KALIBRASI,,,,,,,,,,
+,,,,,,,,,,
+Lingkup Kalibrasi                                                    :,,Massa,,,,,,,,
+Jenis/Type Pengukuran                                       :,,Anak Timbangan (gr),,,,,,,,
+,,,,,,,,,,
+No.,Master Name,Last Modified Date,Detail Modified,PIC,,CHECK,,VALIDATION,,Notes/Revision
+1,Master Olda Anak Timbangan gr,2024-10-24T00:00:00,"- Creating All Sheets
+",DR,,NR,,AM,,
+,,,,Position :,Data Analyst,Position :,Supervisor,Position :,Technical Manager,
+,,,,Date:,,Date:,,Date:,,
+2,Master Olda Anak Timbangan gr,2025-03-11T00:00:00,"- Adding ""Perhitungan FC"" Formula
+- Adding ""Perhitungan U95"" Formula",DR,,NR,,AM,,
+,,,,Position :,Data Analyst,Position :,Supervisor,Position :,Technical Manager,
+,,,,Date:,,Date:,,Date:,,
+3,Master Olda Anak Timbangan gr,2026-05-29T00:00:00,"- Adding ""Data Sens Semi Micro, Analytical Balance, Fujitsu, Excellent, and Mettler Tolede"" Formula
+- Change Formula ""Ketidakpastian Resolusi Timbangan and Sensitivity"" in Perhitungan U95%
+- Change Formula ""Deviasi Standar Timbangan""",NS,,NR,,AM,,
+,,,,Position :,Data Analyst,Position :,Supervisor,Position :,Technical Manager,
+,,,,Date:,,Date:,,Date:,,
