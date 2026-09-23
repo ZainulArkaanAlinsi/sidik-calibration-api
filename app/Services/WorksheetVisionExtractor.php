@@ -98,6 +98,29 @@ class WorksheetVisionExtractor
     }
 
     /**
+     * Penyedia CADANGAN, atau `null` kalau tidak disetel.
+     *
+     * Sengaja tidak punya nilai bawaan: penyedia kedua berarti foto lembar
+     * kerja pelanggan dikirim ke layanan pihak ketiga KEDUA, dan itu keputusan
+     * lab — bukan sesuatu yang aktif diam-diam karena kodenya diperbarui.
+     * Sama dengan penyedia utama kalau diisi nilai yang sama = tidak ada
+     * cadangan (dipulangkan `null`).
+     *
+     * @return 'anthropic'|'gemini'|'openai'|null
+     */
+    public static function penyediaCadangan(): ?string
+    {
+        $nilai = match (strtolower((string) config('services.vision.driver_cadangan', ''))) {
+            'gemini' => 'gemini',
+            'openai' => 'openai',
+            'anthropic' => 'anthropic',
+            default => null,
+        };
+
+        return $nilai === self::penyediaAktif() ? null : $nilai;
+    }
+
+    /**
      * Nama model yang bakal dipanggil — ngikut penyedia yang aktif.
      *
      * Ada supaya jalur GAGAL bisa nyatat model yang sama dengan jalur sukses.
@@ -141,13 +164,59 @@ class WorksheetVisionExtractor
             $standarDiBaris,
         );
 
-        $penyedia = self::penyediaAktif();
-
         $mimeType = strtolower($mimeType);
         if (! in_array($mimeType, self::MIME_DIDUKUNG, true)) {
             $mimeType = 'image/jpeg';
         }
 
+        $hasil = $this->lewatPenyedia(self::penyediaAktif(), $isiGambar, $mimeType, $petunjuk);
+
+        // Penyedia CADANGAN — dicoba sekali, dan cuma untuk kegagalan yang
+        // penyedia lain memang bisa menolongnya: kuota/kredit habis, key salah,
+        // atau layanannya sedang menolak. Foto yang jelek TIDAK diulang ke
+        // penyedia kedua; yang begitu cuma menggandakan ongkos dan menunda
+        // teknisi mendapat jawaban.
+        //
+        // Ada karena dua kali kejadian dalam satu hari (22 Sep 2026): kredit
+        // OpenAI habis (`credit_balance_exhausted`), dan `GEMINI_API_KEY` diisi
+        // key OpenAI sehingga Google menolak dengan "API key not valid".
+        // Dua-duanya bikin kamera mati total di lapangan, padahal penyedia
+        // satunya sehat. Dibiarkan kosong, perilakunya sama persis seperti
+        // sebelum kunci ini ada.
+        $cadangan = self::penyediaCadangan();
+
+        if ($cadangan !== null && $this->bisaDitolongPenyediaLain($hasil)) {
+            Log::warning('WorksheetVisionExtractor: penyedia utama gagal, coba cadangan.', [
+                'utama' => self::penyediaAktif(),
+                'cadangan' => $cadangan,
+                'error' => $hasil['error'] ?? null,
+            ]);
+
+            $kedua = $this->lewatPenyedia($cadangan, $isiGambar, $mimeType, $petunjuk);
+
+            // Hasil cadangan dipakai HANYA kalau dia berhasil. Kalau dua-duanya
+            // gagal, yang dilaporkan kegagalan penyedia UTAMA — itu yang sedang
+            // disetel lab, dan pesan dari penyedia kedua cuma mengirim orang
+            // menelusuri layanan yang bukan jalur utamanya.
+            if (($kedua['ok'] ?? false) === true) {
+                return $kedua;
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Satu panggilan ke satu penyedia.
+     *
+     * @return array<string, mixed>
+     */
+    private function lewatPenyedia(
+        string $penyedia,
+        string $isiGambar,
+        string $mimeType,
+        PetunjukLembarKerja $petunjuk,
+    ): array {
         if ($penyedia === 'gemini') {
             return $this->lewatGemini($isiGambar, $mimeType, $petunjuk);
         }
@@ -155,6 +224,45 @@ class WorksheetVisionExtractor
         if ($penyedia === 'openai') {
             return $this->lewatOpenAi($isiGambar, $mimeType, $petunjuk);
         }
+
+        return $this->lewatAnthropic($isiGambar, $mimeType, $petunjuk);
+    }
+
+    /**
+     * Kegagalan yang penyedia LAIN bisa menolongnya — bukan kegagalan foto.
+     *
+     * @param  array<string, mixed>  $hasil
+     */
+    private function bisaDitolongPenyediaLain(array $hasil): bool
+    {
+        if (($hasil['ok'] ?? false) === true) {
+            return false;
+        }
+
+        // `ditolak` = classifier penyedia menolak gambarnya. Penyedia lain
+        // biasanya menolak juga, dan kalaupun tidak, gambar yang ditolak satu
+        // layanan bukan hal yang mau kita akali diam-diam.
+        if (($hasil['status'] ?? '') === 'ditolak') {
+            return false;
+        }
+
+        $pesan = mb_strtolower((string) ($hasil['error'] ?? ''));
+
+        return str_contains($pesan, 'kuota')
+            || str_contains($pesan, 'sibuk')
+            || str_contains($pesan, 'menolak permintaan')
+            || str_contains($pesan, 'menghubungi layanan');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lewatAnthropic(
+        string $isiGambar,
+        string $mimeType,
+        PetunjukLembarKerja $petunjuk,
+    ): array {
+        $penyedia = 'anthropic';
 
         $apiKey = (string) config('services.anthropic.api_key');
         $model = (string) config('services.anthropic.model');

@@ -66,6 +66,20 @@ return [
         'driver' => env('VISION_DRIVER', 'gemini'),
 
         /*
+         * Penyedia CADANGAN kalau yang utama menolak karena kuota/kredit habis,
+         * key salah, atau layanannya sedang sibuk. Kosong = tidak ada cadangan
+         * (perilaku lama persis).
+         *
+         * Dicoba SEKALI, dan cuma untuk kegagalan yang penyedia lain bisa
+         * menolongnya — foto yang ditolak classifier tidak diulang ke penyedia
+         * kedua. Lihat `WorksheetVisionExtractor::bisaDitolongPenyediaLain()`.
+         *
+         * Mengisinya berarti foto lembar kerja pelanggan bisa dikirim ke layanan
+         * pihak ketiga KEDUA — keputusan lab, bukan bawaan.
+         */
+        'driver_cadangan' => env('VISION_DRIVER_CADANGAN'),
+
+        /*
          * Saklar jalur pindai AI. `false` = `POST /raw-measurements/extract-from-photo`
          * balik 503 tanpa pernah nyentuh layanan pihak ketiga.
          *

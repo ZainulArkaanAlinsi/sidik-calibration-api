@@ -192,6 +192,11 @@ services:
 
       - key: VISION_DRIVER
         value: gemini
+      # Cadangan otomatis kalau Gemini menolak (kuota/kredit habis, key salah,
+      # layanan sibuk). Kosongkan kalau lab tidak mau fotonya sampai ke layanan
+      # kedua. Butuh OPENAI_API_KEY terisi supaya berguna.
+      - key: VISION_DRIVER_CADANGAN
+        value: openai
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
       - key: GEMINI_API_KEY
