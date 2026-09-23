@@ -8,6 +8,7 @@ use App\Http\Requests\AutoclaveStoreRequest;
 use App\Http\Requests\CalibrationRequest;
 use App\Http\Resources\CalibrationResource;
 use App\Jobs\GenerateCertificate;
+use App\Models\AuditLog;
 use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
@@ -58,8 +59,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
@@ -607,6 +610,46 @@ class CalibrationController extends Controller
             ], 422);
         }
 
+        // Koreksi angka yang SUDAH dikirim teknisi wajib menyebut alasannya, dan
+        // nilai lamanya disimpan sebelum ditimpa — lihat [catatKoreksiPembacaan].
+        //
+        // Cuma berlaku buat ADMIN yang menyunting sesi terkirim: teknisi yang
+        // masih memperbaiki draft-nya sendiri tidak sedang mengoreksi data orang
+        // lain, dan mewajibkan alasan di situ cuma melatih orang mengetik "ok".
+        // Yang memicu syarat ini ANGKANYA yang berubah, bukan tombol simpannya.
+        // Admin yang membetulkan nomor seri lalu mengirim ulang lembar yang
+        // sama tidak sedang mengoreksi pengukuran siapa pun — memintainya
+        // alasan cuma melatih orang mengetik "ok" supaya lolos, dan jejak yang
+        // isinya "ok" lebih buruk daripada jejak yang kosong.
+        $pembacaanLama = $this->potretPembacaan($calibration);
+
+        // `$pembacaanLama !== []` bagian dari syaratnya, bukan penjagaan
+        // teknis: sesi yang belum punya satu pun pembacaan berarti tidak ada
+        // angka teknisi yang sedang diganti — yang terjadi pengisian pertama,
+        // dan menuntut alasan koreksi di situ salah alamat.
+        $koreksiTerkirim = $request->user()->isAdmin()
+            && $calibration->status === CalibrationSession::STATUS_MENUNGGU_APPROVAL
+            && $request->has('measurements')
+            && $pembacaanLama !== []
+            && $this->potretDariSusunan($this->susunPengukuran($request)['mentah']) !== $pembacaanLama;
+
+        $alasanKoreksi = null;
+
+        if ($koreksiTerkirim) {
+            $alasanKoreksi = (string) Validator::make($request->all(), [
+                'alasan_koreksi' => ['required', 'string', 'min:10', 'max:500'],
+            ], [
+                'alasan_koreksi.required' => 'Alasan koreksi wajib diisi — angka yang diganti admin harus '
+                    .'bisa dijelaskan ke asesor, bukan cuma berubah.',
+                'alasan_koreksi.min' => 'Alasan koreksi terlalu pendek; tulis apa yang salah dan dari mana '
+                    .'angka benarnya.',
+            ])->validate()['alasan_koreksi'];
+        }
+
+        if (! $koreksiTerkirim) {
+            $pembacaanLama = [];
+        }
+
         $sesi = DB::transaction(function () use ($request, $calibration): CalibrationSession {
             // Sama kayak `store`: sebelum pengukurannya disusun ulang. Teknisi
             // yang sadar salah pilih satuan lalu ngerevisi sesinya mesti bikin
@@ -629,9 +672,119 @@ class CalibrationController extends Controller
             return $this->isiUlangPengukuran($calibration, $request);
         });
 
+        $this->catatKoreksiPembacaan($sesi, $pembacaanLama, $alasanKoreksi);
+
         $this->siarkan($sesi, 'diubah');
 
         return response()->json(['data' => new CalibrationResource($sesi)]);
+    }
+
+    /**
+     * Pembacaan mentah sesi ini apa adanya — buat dibandingkan sesudah ditimpa.
+     *
+     * Diurutkan supaya perbandingannya soal ISI, bukan urutan baris dari
+     * database: dua potret yang sama isinya tapi beda urutan bikin tiap
+     * penyimpanan admin melahirkan baris audit palsu, dan jejak yang penuh
+     * perubahan-yang-bukan-perubahan berhenti dibaca orang.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function potretPembacaan(CalibrationSession $sesi): array
+    {
+        return $sesi->rawMeasurements()
+            ->reorder()
+            ->orderBy('titik_ke')
+            ->orderBy('peran_sensor')
+            ->orderBy('tahap')
+            ->orderBy('pembacaan_ke')
+            ->orderBy('id')
+            ->get(['titik_ke', 'pembacaan_ke', 'sensor_ke', 'peran_sensor', 'tahap', 'titik_ukur', 'pembacaan', 'satuan'])
+            ->map(static fn ($b): array => (array) $b->getAttributes())
+            ->pipe(fn ($baris): array => $this->potretDariSusunan($baris->all()));
+    }
+
+    /**
+     * Bentuk potret yang SAMA dari baris hasil [susunPengukuran] — dipakai
+     * untuk mengadu payload ke yang tersimpan SEBELUM satu baris pun ditulis.
+     *
+     * Dua sumbernya beda bentuk (model database lawan array payload), jadi
+     * dinormalkan di satu tempat: kalau normalisasinya kembar, yang terjadi
+     * bukan error melainkan perbandingan yang selalu bilang "berubah", dan
+     * tiap penyimpanan admin melahirkan permintaan alasan yang tidak perlu.
+     *
+     * @param  list<array<string, mixed>>  $baris
+     * @return list<array<string, mixed>>
+     */
+    private function potretDariSusunan(array $baris): array
+    {
+        $potret = array_map(static fn (array $b): array => [
+            'titik_ke' => (int) ($b['titik_ke'] ?? 0),
+            'pembacaan_ke' => (int) ($b['pembacaan_ke'] ?? 0),
+            'sensor_ke' => isset($b['sensor_ke']) ? (int) $b['sensor_ke'] : null,
+            'peran_sensor' => $b['peran_sensor'] ?? null,
+            'tahap' => $b['tahap'] ?? null,
+            'titik_ukur' => isset($b['titik_ukur']) ? (float) $b['titik_ukur'] : null,
+            'pembacaan' => isset($b['pembacaan']) ? (float) $b['pembacaan'] : null,
+            'satuan' => $b['satuan'] ?? null,
+        ], $baris);
+
+        usort($potret, static fn (array $a, array $b): int => [
+            $a['titik_ke'], (string) $a['peran_sensor'], (string) $a['tahap'], $a['pembacaan_ke'],
+        ] <=> [
+            $b['titik_ke'], (string) $b['peran_sensor'], (string) $b['tahap'], $b['pembacaan_ke'],
+        ]);
+
+        return $potret;
+    }
+
+    /**
+     * Simpan nilai LAMA dan nilai BARU pembacaan yang dikoreksi admin.
+     *
+     * ## Kenapa ini wajib ada
+     *
+     * `isiUlangPengukuran()` MENGHAPUS baris mentah lalu menulisnya kembali —
+     * itu benar buat teknisi yang menyimpan ulang lembarnya sendiri, tapi
+     * artinya angka yang diganti admin lenyap tanpa bekas. ISO/IEC 17025
+     * klausul 7.5.2 menuntut data asli MAUPUN hasil perubahan sama-sama
+     * tersimpan, dan AGENTS.md §Peran butir 5 menuliskannya lebih keras lagi:
+     * nilai yang diisi teknisi tidak pernah dihapus; koreksi menyimpan nilai
+     * lama DAN nilai baru beserta alasannya.
+     *
+     * Sebelum ini yang tercatat cuma "admin mengubah sesi" — siapa dan kapan,
+     * tanpa apa yang berubah. Jejak seperti itu tidak bisa menjawab pertanyaan
+     * yang justru ditanyakan asesor: angka yang tercetak ini dulunya berapa.
+     *
+     * Baris audit cuma ditulis kalau pembacaannya BENAR-BENAR berubah. Admin
+     * yang membetulkan nomor seri alat lalu menyimpan tidak mengubah satu pun
+     * angka, dan baris audit yang mengaku ada koreksi di situ menyesatkan.
+     *
+     * @param  list<array<string, mixed>>  $lama
+     */
+    private function catatKoreksiPembacaan(CalibrationSession $sesi, array $lama, ?string $alasan): void
+    {
+        if ($alasan === null || $lama === []) {
+            return;
+        }
+
+        $baru = $this->potretPembacaan($sesi);
+
+        if ($lama === $baru) {
+            return;
+        }
+
+        AuditLog::create([
+            'organization_id' => $sesi->organization_id,
+            // Entitasnya SESI, bukan `raw_measurements`: baris mentahnya sudah
+            // dihapus dan yang baru punya id lain, jadi id baris tidak menunjuk
+            // apa pun yang bisa dibuka lagi. Yang kekal identitas sesinya.
+            'entity_type' => $sesi->getTable(),
+            'entity_id' => $sesi->getKey(),
+            'action' => AuditLog::ACTION_DIUBAH,
+            'old_data' => ['pembacaan' => $lama],
+            'new_data' => ['pembacaan' => $baru],
+            'changed_by' => Auth::id(),
+            'note' => 'Koreksi pembacaan oleh Master Data: '.$alasan,
+        ]);
     }
 
     /**
