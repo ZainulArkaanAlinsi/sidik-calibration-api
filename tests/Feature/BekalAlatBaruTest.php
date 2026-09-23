@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalibrationMethod;
+use App\Models\CalibrationSession;
 use App\Models\User;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use Database\Seeders\DatabaseSeeder;
@@ -139,29 +141,37 @@ class BekalAlatBaruTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $sesi = \App\Models\CalibrationSession::whereNotNull('equipment_id')
-            ->where('status', \App\Models\CalibrationSession::STATUS_DRAFT)
+        $sesi = CalibrationSession::whereNotNull('equipment_id')
+            ->where('status', CalibrationSession::STATUS_DRAFT)
             ->first()
-            ?? \App\Models\CalibrationSession::whereNotNull('equipment_id')->firstOrFail();
+            ?? CalibrationSession::whereNotNull('equipment_id')->firstOrFail();
 
-        $metode = \App\Models\CalibrationMethod::where('organization_id', $sesi->organization_id)->firstOrFail();
+        $metode = CalibrationMethod::where('organization_id', $sesi->organization_id)->firstOrFail();
 
         $teknisi = User::where('organization_id', $sesi->organization_id)
             ->where('role', User::ROLE_TEKNISI)
             ->where('status', User::STATUS_AKTIF)
             ->firstOrFail();
 
+        // `saveQuietly()`, bukan `save()`: ini MENYUSUN fixture, bukan menguji
+        // perilaku aplikasi. Kalau nol sesi draft ter-seed, baris di atas jatuh
+        // ke sesi mana pun — dan sesi itu bisa yang sudah disetujui BERIKUT
+        // sertifikatnya. `CalibrationSession::booted()` menahan penurunan status
+        // yang seperti itu (satu sesi produksi pernah mundur diam-diam dan
+        // menelantarkan nomor sertifikat resmi), jadi lewat `save()` statusnya
+        // tetap `disetujui` dan PUT-nya dijawab 422 — gagal yang nol
+        // hubungannya dengan metode kalibrasi yang sedang diuji.
         $sesi->forceFill([
             'teknisi_id' => $teknisi->id,
-            'status' => \App\Models\CalibrationSession::STATUS_DRAFT,
+            'status' => CalibrationSession::STATUS_DRAFT,
             'calibration_method_id' => null,
-        ])->save();
+        ])->saveQuietly();
 
         $this->actingAs($teknisi)
             ->putJson("/api/calibrations/{$sesi->id}", [
                 'equipment_id' => $sesi->equipment_id,
                 'calibration_method_id' => $metode->id,
-                'status' => \App\Models\CalibrationSession::STATUS_DRAFT,
+                'status' => CalibrationSession::STATUS_DRAFT,
                 'measurements' => [],
             ])
             ->assertOk();
@@ -176,7 +186,7 @@ class BekalAlatBaruTest extends TestCase
     /** Kolom yang MEMANG administratif tetap tertutup. */
     public function test_nomor_order_tetap_admin_saja(): void
     {
-        $this->assertContains('nomor_order', \App\Models\CalibrationSession::fieldAdmin());
-        $this->assertNotContains('calibration_method_id', \App\Models\CalibrationSession::fieldAdmin());
+        $this->assertContains('nomor_order', CalibrationSession::fieldAdmin());
+        $this->assertNotContains('calibration_method_id', CalibrationSession::fieldAdmin());
     }
 }

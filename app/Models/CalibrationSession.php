@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @mixin IdeHelperCalibrationSession
@@ -59,6 +60,93 @@ class CalibrationSession extends Model
     public const STATUS_DISETUJUI = 'disetujui';
 
     public const STATUS_PERLU_REVISI = 'perlu_revisi';
+
+    /**
+     * Sesi disetujui yang SUDAH punya sertifikat tidak bisa diturunkan lagi
+     * lewat Eloquent.
+     *
+     * ## Kegagalan yang ditutup penjagaan ini
+     *
+     * Dua puluh enam seeder menanam sesi contohnya dengan
+     * `CalibrationSession::updateOrCreate(['organization_id','nomor_sesi'], [… 'status' =>
+     * STATUS_MENUNGGU_APPROVAL …])`. Pola itu nggak membedakan baris contoh yang
+     * belum disentuh dari baris yang sudah maju — dan di produksi bedanya mahal:
+     *
+     * 1. 7 Sep 2026 seeder menanam enam sesi contoh.
+     * 2. 15–18 Sep keenamnya DISETUJUI lewat panel, dan approval mengalokasikan
+     *    nomor sertifikat resmi `CAL/2026/09/0011`–`0017`.
+     * 3. 18 Sep 12:55 seeder dijalankan ulang. `updateOrCreate` menimpa balik
+     *    `status` ke `menunggu_approval`; `reviewed_by`/`reviewed_at` nggak ikut
+     *    ditulis seeder jadi tetap tertinggal — barisnya jadi mustahil: pernah
+     *    ditinjau, tapi statusnya menunggu ditinjau.
+     * 4. `SapuSertifikatTertunda` cuma menyapu sesi `disetujui`, jadi keenam
+     *    sertifikatnya berhenti di `menunggu_generate` SELAMANYA, memegang nomor
+     *    resmi yang nggak pernah terbit.
+     *
+     * Nol error muncul di keempat langkah itu.
+     *
+     * ## Kenapa di model, bukan di seeder
+     *
+     * Menambal 26 seeder berarti seeder ke-27 bisa lupa — dan lupanya nggak
+     * menghasilkan error, cuma satu baris produksi yang diam-diam mundur. Di
+     * sini satu aturan menjaga SEMUA penulis Eloquent sekaligus.
+     *
+     * ## Kenapa menahan kolomnya, bukan melempar
+     *
+     * Melempar membatalkan seluruh `db:seed` di tengah jalan dan meninggalkan
+     * seed separuh jadi — mengganti satu masalah dengan yang lebih berantakan.
+     * Yang ditahan CUMA kolom `status`; atribut lain di penulisan yang sama
+     * tetap tersimpan, dan penurunannya dicatat ke log berikut nomor sesi &
+     * nomor sertifikatnya supaya kebaca siapa yang mencoba.
+     *
+     * Jalur approve di `CalibrationController` memakai query builder
+     * (`whereKey()->update()`), yang memang TIDAK lewat sini — dan itu nggak
+     * apa-apa: dia cuma menggerakkan status NAIK ke `disetujui`.
+     *
+     * Dijaga `SesiDisetujuiTidakBisaDimundurkanTest`.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (self $sesi): void {
+            if (! $sesi->isDirty('status')) {
+                return;
+            }
+
+            if ($sesi->getOriginal('status') !== self::STATUS_DISETUJUI) {
+                return;
+            }
+
+            // Syaratnya SEMPIT: cuma sesi yang sudah punya baris sertifikat.
+            //
+            // Tanpa batas ini penjagaannya kelewat lebar dan memecahkan hal yang
+            // sah: di dalam SATU kali `db:seed`, seeder menulis ulang barisnya
+            // sendiri — ada sesi yang lahir `disetujui` lalu dikoreksi jadi
+            // `draft` oleh penulisan berikutnya di seed yang sama. Menahan
+            // koreksi itu bikin `BekalAlatBaruTest` nggak menemukan satu pun
+            // sesi draft, jatuh ke sesi disetujui, lalu 422.
+            //
+            // Dan memang bukan itu kerugiannya. Sesi disetujui yang belum punya
+            // sertifikat turun status nggak menelantarkan apa pun; yang mahal
+            // penurunan yang meninggalkan sertifikat memegang NOMOR RESMI tanpa
+            // ada lagi yang akan menyelesaikannya.
+            $nomorSertifikat = $sesi->certificate()->value('nomor');
+
+            if ($nomorSertifikat === null) {
+                return;
+            }
+
+            Log::warning('Penurunan status sesi yang sudah disetujui ditahan.', [
+                'sesi_id' => $sesi->getKey(),
+                'nomor_sesi' => $sesi->getOriginal('nomor_sesi'),
+                'status_diminta' => $sesi->getAttribute('status'),
+                'nomor_sertifikat' => $nomorSertifikat,
+            ]);
+
+            // Dikembalikan ke nilai asli SEBELUM `getDirty()` dibaca
+            // `performUpdate()`, jadi kolomnya nggak ikut terkirim ke database.
+            $sesi->setAttribute('status', self::STATUS_DISETUJUI);
+        });
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

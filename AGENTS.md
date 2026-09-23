@@ -647,6 +647,16 @@ Ditulis di sini karena keempatnya **tidak menghasilkan error** waktu dilanggar:
   berhubungan, bergantian tiap jalan.
 - **Alat baru WAJIB lahir bareng jalur hitung ulangnya** (`App\Support\*Mentah`, disambung ke
   `CalibrationValidator` DAN `HitungUlangSesi`). Pola ini sudah menggigit tujuh kali.
+- **Seeder tidak boleh menimpa baris yang sudah maju.** 26 seeder menanam sesi contohnya lewat
+  `CalibrationSession::updateOrCreate(['organization_id','nomor_sesi'], [… 'status' =>
+  STATUS_MENUNGGU_APPROVAL …])`. Di produksi 18 Sep 2026 `db:seed` memundurkan enam sesi yang
+  sudah **disetujui** kembali ke `menunggu_approval`; `reviewed_by`/`reviewed_at` tidak ikut
+  ditulis jadi tertinggal, dan karena `SapuSertifikatTertunda` cuma menyapu sesi `disetujui`,
+  enam sertifikatnya berhenti selamanya di `menunggu_generate` sambil memegang nomor resmi
+  `CAL/2026/09/0011`–`0017`. Sekarang ditahan di `CalibrationSession::booted()` — kolom `status`
+  saja yang ditolak, sisanya tetap tersimpan, dan percobaannya masuk log. Dijaga
+  `SesiDisetujuiTidakBisaDimundurkanTest`. **Nasib keenam baris & tujuh nomor itu belum
+  diputuskan** — itu tulis ke produksi, urutannya di `docs/aturan-akses-database.md` butir 4.
 
 Playbook lengkapnya: `[[sidik-alat-baru-dari-master]]`.
 
