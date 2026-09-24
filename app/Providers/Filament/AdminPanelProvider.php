@@ -27,6 +27,30 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            /*
+             * Layar profil — ganti nama & SANDI sendiri.
+             *
+             * Sebelum 24 Sep 2026 panel ini nggak punya satu pun jalan buat
+             * orang mengganti sandinya sendiri. Yang ada cuma dua, dan dua-duanya
+             * nggak menutup semua orang:
+             *
+             *   - admin lain menekan `resetPassword` di layar Pengguna — berarti
+             *     sandi barunya diketik orang lain dan diketahui orang lain;
+             *   - `POST /forgot-password` lewat email, yang bergantung pada
+             *     mailer produksi benar-benar mengirim (7 Sep 2026 dua
+             *     percobaannya gagal dengan alasan `MAIL_MAILER` masih `log`).
+             *
+             * Buat `super_admin` dua-duanya BUNTU: akunnya sengaja nggak muncul
+             * di layar Pengguna (`User::roles()`), jadi nggak ada yang bisa
+             * mereset-kan, dan kalau mailernya diam dia terkunci di sandi acak
+             * 32 karakter yang dicetak sekali waktu akunnya dibuat.
+             *
+             * Halaman ini menyentuh baris DIRINYA SENDIRI, bukan data lab, jadi
+             * nggak bertabrakan dengan penjagaan baca-saja super admin:
+             * `HakTulisPanel` menutup aksi tulis pada data lab, dan itu memang
+             * beda urusan dengan orang mengganti sandinya sendiri.
+             */
+            ->profile()
             ->brandName('SIDIK Kalibrasi')
             // Logo resmi Sidik di layar login & topbar panel. brandName tetap
             // dipertahankan sebagai teks alt/fallback.

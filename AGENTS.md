@@ -54,10 +54,11 @@ php artisan kalibrasi:uji-profil       # sapu profil alat lawan datanya
 php artisan kalibrasi:sapu-sesi
 php artisan kemampuan:pastikan         # tegakkan baris CMC dari lampiran akreditasi
 php artisan akun:admin
+php artisan akun:super-admin <email>   # satu-satunya pintu yang melahirkan super_admin
 php artisan flowmeter:audit-cmc
 ```
 
-Daftar lengkapnya di `app/Console/Commands/` (20 perintah).
+Daftar lengkapnya di `app/Console/Commands/` (24 perintah, dihitung 24 Sep 2026).
 
 ### Generator — jangan diketik tangan, dijalankan
 
@@ -422,6 +423,16 @@ Yang berlaku **sekarang**:
 
 Dijaga `SuperAdminAksesTest` (13 kasus) dan `SuperAdminLintasOrganisasiTest` (5).
 
+**Bikinnya lewat `php artisan akun:super-admin <email>`, bukan panel.** Dropdown
+role di `/admin` dibangun dari `User::roles()`, jadi `super_admin` memang tidak
+ada di sana — dan itu penjagaan, bukan kelupaan (lihat paragraf berikutnya).
+Perintahnya minta konfirmasi (`--paksa` untuk terskrip), menolak email/ID pegawai
+kembar dan organisasi yang tidak ada, dan **tidak pernah menaikkan akun yang
+sudah ada** — yang belum ada dibuatkan, yang sudah ada urusan `/admin`. Sengaja
+TIDAK dipasang di `docker/entrypoint.sh`: peran yang membaca menembus
+`organization_id` tidak boleh lahir sebagai efek samping sebuah deploy. Dijaga
+`PerintahAkunSuperAdminTest` (8 kasus).
+
 **Dua daftar role, dan bedanya yang menahan eskalasi.** `User::roles()` menjawab
 "role apa yang boleh DIBERIKAN admin ke orang lain" — dipakai `Rule::in`, jadi
 memasukkan `super_admin` ke sana bikin admin biasa bisa mencetak super admin.
@@ -506,6 +517,17 @@ berakhiran `register` atau `daftar`.
 sandinya, jadi sandi awal itu diketahui admin. Belum ada mekanisme "wajib ganti
 sandi saat pertama masuk". Diterima sadar, bukan kelupaan — dicatat di sini
 supaya tidak ditemukan ulang sebagai temuan baru.
+
+**Yang SUDAH ditutup 24 Sep 2026: menggantinya sendiri.** Panel `/admin` dulu
+tidak punya layar profil sama sekali, jadi satu-satunya jalan ganti sandi adalah
+admin lain menekan `resetPassword` (sandi barunya diketik orang lain) atau
+`POST /forgot-password` lewat email — yang bergantung pada mailer produksi
+benar-benar mengirim, dan 7 Sep 2026 dua percobaannya tercatat gagal karena
+`MAIL_MAILER` masih `log`. Buat `super_admin` dua-duanya buntu: akunnya sengaja
+tidak muncul di layar Pengguna, jadi tidak ada yang bisa mereset-kan untuknya.
+Sekarang panel memakai `->profile()`; mengganti sandi sendiri **bukan** "menulis
+data lab", jadi `HakTulisPanel` sengaja tidak menutupnya. Dijaga
+`GantiSandiSendiriTest`.
 
 ## Git Workflow
 - Setiap mulai sesi kerja, jalankan `git pull origin main` dulu sebelum mengubah kode apapun.
