@@ -1,0 +1,1164 @@
+{
+    "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
+    "template_id": "utm",
+    "versi": 1,
+    "kode_dokumen": "SIDIK-FM-CAL-0519_Rev.3",
+    "terverifikasi": false,
+    "ukuran_referensi": {
+        "w": 1654,
+        "h": 2339,
+        "dpi": 200
+    },
+    "marker": [
+        {
+            "id": 0,
+            "x": 90,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 1,
+            "x": 1564,
+            "y": 90,
+            "ukuran": 90
+        },
+        {
+            "id": 2,
+            "x": 1564,
+            "y": 2249,
+            "ukuran": 90
+        },
+        {
+            "id": 3,
+            "x": 90,
+            "y": 2249,
+            "ukuran": 90
+        }
+    ],
+    "qr": {
+        "isi": "utm|v1",
+        "kotak": {
+            "x": 1309,
+            "y": 55,
+            "w": 170,
+            "h": 170
+        }
+    },
+    "sumbu_pengulangan": "kolom",
+    "jangkar": [
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 1,
+            "teks": "X1",
+            "kotak": {
+                "x": 286,
+                "y": 897,
+                "w": 426,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 2,
+            "teks": "X2",
+            "kotak": {
+                "x": 700,
+                "y": 897,
+                "w": 426,
+                "h": 64
+            }
+        },
+        {
+            "field_id": "label_repeat",
+            "repeat_no": 3,
+            "teks": "X3",
+            "kotak": {
+                "x": 1114,
+                "y": 897,
+                "w": 426,
+                "h": 64
+            }
+        }
+    ],
+    "tabel": [
+        {
+            "tabel_id": "preload",
+            "judul": "Preload Test (3 replikat)",
+            "kiri": 90,
+            "sel": {
+                "preload|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 955,
+                    "w": 414,
+                    "h": 7
+                },
+                "preload|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 962,
+                    "w": 414,
+                    "h": 7
+                },
+                "preload|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 955,
+                    "w": 414,
+                    "h": 7
+                },
+                "preload|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 962,
+                    "w": 414,
+                    "h": 7
+                },
+                "preload|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 955,
+                    "w": 414,
+                    "h": 7
+                },
+                "preload|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 962,
+                    "w": 414,
+                    "h": 7
+                }
+            }
+        },
+        {
+            "tabel_id": "gaya_pos_0",
+            "judul": "a. Posisi 0°",
+            "kiri": 90,
+            "sel": {
+                "gaya_pos_0|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 1154,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1161,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1168,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 1175,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 1182,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 1189,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 1196,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 1203,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 1210,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|10|1|pembacaan": {
+                    "x": 292,
+                    "y": 1217,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|11|1|pembacaan": {
+                    "x": 292,
+                    "y": 1224,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|12|1|pembacaan": {
+                    "x": 292,
+                    "y": 1231,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|13|1|pembacaan": {
+                    "x": 292,
+                    "y": 1238,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|14|1|pembacaan": {
+                    "x": 292,
+                    "y": 1245,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 1154,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 1161,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|3|2|pembacaan": {
+                    "x": 706,
+                    "y": 1168,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|4|2|pembacaan": {
+                    "x": 706,
+                    "y": 1175,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|5|2|pembacaan": {
+                    "x": 706,
+                    "y": 1182,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|6|2|pembacaan": {
+                    "x": 706,
+                    "y": 1189,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|7|2|pembacaan": {
+                    "x": 706,
+                    "y": 1196,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|8|2|pembacaan": {
+                    "x": 706,
+                    "y": 1203,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|9|2|pembacaan": {
+                    "x": 706,
+                    "y": 1210,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|10|2|pembacaan": {
+                    "x": 706,
+                    "y": 1217,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|11|2|pembacaan": {
+                    "x": 706,
+                    "y": 1224,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|12|2|pembacaan": {
+                    "x": 706,
+                    "y": 1231,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|13|2|pembacaan": {
+                    "x": 706,
+                    "y": 1238,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|14|2|pembacaan": {
+                    "x": 706,
+                    "y": 1245,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1154,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1161,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|3|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1168,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|4|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1175,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|5|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1182,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|6|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1189,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|7|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1196,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|8|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1203,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|9|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1210,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|10|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1217,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|11|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1224,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|12|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1231,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|13|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1238,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_0|14|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1245,
+                    "w": 414,
+                    "h": 7
+                }
+            }
+        },
+        {
+            "tabel_id": "gaya_pos_90",
+            "judul": "b. Posisi 90°",
+            "kiri": 90,
+            "sel": {
+                "gaya_pos_90|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 1437,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1444,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1451,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 1458,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 1465,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 1472,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 1479,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 1486,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 1493,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|10|1|pembacaan": {
+                    "x": 292,
+                    "y": 1500,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|11|1|pembacaan": {
+                    "x": 292,
+                    "y": 1507,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|12|1|pembacaan": {
+                    "x": 292,
+                    "y": 1514,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|13|1|pembacaan": {
+                    "x": 292,
+                    "y": 1521,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|14|1|pembacaan": {
+                    "x": 292,
+                    "y": 1528,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 1437,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 1444,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|3|2|pembacaan": {
+                    "x": 706,
+                    "y": 1451,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|4|2|pembacaan": {
+                    "x": 706,
+                    "y": 1458,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|5|2|pembacaan": {
+                    "x": 706,
+                    "y": 1465,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|6|2|pembacaan": {
+                    "x": 706,
+                    "y": 1472,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|7|2|pembacaan": {
+                    "x": 706,
+                    "y": 1479,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|8|2|pembacaan": {
+                    "x": 706,
+                    "y": 1486,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|9|2|pembacaan": {
+                    "x": 706,
+                    "y": 1493,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|10|2|pembacaan": {
+                    "x": 706,
+                    "y": 1500,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|11|2|pembacaan": {
+                    "x": 706,
+                    "y": 1507,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|12|2|pembacaan": {
+                    "x": 706,
+                    "y": 1514,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|13|2|pembacaan": {
+                    "x": 706,
+                    "y": 1521,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|14|2|pembacaan": {
+                    "x": 706,
+                    "y": 1528,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1437,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1444,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|3|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1451,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|4|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1458,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|5|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1465,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|6|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1472,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|7|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1479,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|8|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1486,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|9|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1493,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|10|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1500,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|11|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1507,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|12|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1514,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|13|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1521,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_90|14|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1528,
+                    "w": 414,
+                    "h": 7
+                }
+            }
+        },
+        {
+            "tabel_id": "gaya_pos_180",
+            "judul": "c. Posisi 180°",
+            "kiri": 90,
+            "sel": {
+                "gaya_pos_180|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 1720,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 1727,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 1734,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 1741,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 1748,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 1755,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 1762,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 1769,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 1776,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|10|1|pembacaan": {
+                    "x": 292,
+                    "y": 1783,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|11|1|pembacaan": {
+                    "x": 292,
+                    "y": 1790,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|12|1|pembacaan": {
+                    "x": 292,
+                    "y": 1797,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|13|1|pembacaan": {
+                    "x": 292,
+                    "y": 1804,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|14|1|pembacaan": {
+                    "x": 292,
+                    "y": 1811,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 1720,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 1727,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|3|2|pembacaan": {
+                    "x": 706,
+                    "y": 1734,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|4|2|pembacaan": {
+                    "x": 706,
+                    "y": 1741,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|5|2|pembacaan": {
+                    "x": 706,
+                    "y": 1748,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|6|2|pembacaan": {
+                    "x": 706,
+                    "y": 1755,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|7|2|pembacaan": {
+                    "x": 706,
+                    "y": 1762,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|8|2|pembacaan": {
+                    "x": 706,
+                    "y": 1769,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|9|2|pembacaan": {
+                    "x": 706,
+                    "y": 1776,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|10|2|pembacaan": {
+                    "x": 706,
+                    "y": 1783,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|11|2|pembacaan": {
+                    "x": 706,
+                    "y": 1790,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|12|2|pembacaan": {
+                    "x": 706,
+                    "y": 1797,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|13|2|pembacaan": {
+                    "x": 706,
+                    "y": 1804,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|14|2|pembacaan": {
+                    "x": 706,
+                    "y": 1811,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1720,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1727,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|3|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1734,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|4|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1741,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|5|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1748,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|6|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1755,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|7|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1762,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|8|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1769,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|9|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1776,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|10|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1783,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|11|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1790,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|12|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1797,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|13|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1804,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_180|14|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1811,
+                    "w": 414,
+                    "h": 7
+                }
+            }
+        },
+        {
+            "tabel_id": "gaya_pos_270",
+            "judul": "d. Posisi 270°",
+            "kiri": 90,
+            "sel": {
+                "gaya_pos_270|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 2003,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 2010,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|3|1|pembacaan": {
+                    "x": 292,
+                    "y": 2017,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|4|1|pembacaan": {
+                    "x": 292,
+                    "y": 2024,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|5|1|pembacaan": {
+                    "x": 292,
+                    "y": 2031,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|6|1|pembacaan": {
+                    "x": 292,
+                    "y": 2038,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|7|1|pembacaan": {
+                    "x": 292,
+                    "y": 2045,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|8|1|pembacaan": {
+                    "x": 292,
+                    "y": 2052,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|9|1|pembacaan": {
+                    "x": 292,
+                    "y": 2059,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|10|1|pembacaan": {
+                    "x": 292,
+                    "y": 2066,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|11|1|pembacaan": {
+                    "x": 292,
+                    "y": 2073,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|12|1|pembacaan": {
+                    "x": 292,
+                    "y": 2080,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|13|1|pembacaan": {
+                    "x": 292,
+                    "y": 2087,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|14|1|pembacaan": {
+                    "x": 292,
+                    "y": 2094,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 2003,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 2010,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|3|2|pembacaan": {
+                    "x": 706,
+                    "y": 2017,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|4|2|pembacaan": {
+                    "x": 706,
+                    "y": 2024,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|5|2|pembacaan": {
+                    "x": 706,
+                    "y": 2031,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|6|2|pembacaan": {
+                    "x": 706,
+                    "y": 2038,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|7|2|pembacaan": {
+                    "x": 706,
+                    "y": 2045,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|8|2|pembacaan": {
+                    "x": 706,
+                    "y": 2052,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|9|2|pembacaan": {
+                    "x": 706,
+                    "y": 2059,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|10|2|pembacaan": {
+                    "x": 706,
+                    "y": 2066,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|11|2|pembacaan": {
+                    "x": 706,
+                    "y": 2073,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|12|2|pembacaan": {
+                    "x": 706,
+                    "y": 2080,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|13|2|pembacaan": {
+                    "x": 706,
+                    "y": 2087,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|14|2|pembacaan": {
+                    "x": 706,
+                    "y": 2094,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2003,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2010,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|3|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2017,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|4|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2024,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|5|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2031,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|6|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2038,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|7|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2045,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|8|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2052,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|9|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2059,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|10|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2066,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|11|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2073,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|12|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2080,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|13|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2087,
+                    "w": 414,
+                    "h": 7
+                },
+                "gaya_pos_270|14|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2094,
+                    "w": 414,
+                    "h": 7
+                }
+            }
+        }
+    ]
+}

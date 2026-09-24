@@ -1,0 +1,76 @@
+﻿,FORM VALIDASI MASTER OLAH DATA KALIBRASI,,,,,,,,,,,,,,,,,,,,,,
+,Lingkup Kalibrasi                   :,,Gaya,,,,,,,,,,,,,,,,,,,,
+,Jenis/Type Pengukuran       :,,Load Cell,,,,,,,,,,,,,,,,,,,,
+,No.,Master Name,Last Modified Date,Detail Modified,PIC,,CHECK,,VALIDATION,,Notes/Revision,,,,,,,,,,,,
+,1,Master Olah Data_Gaya_Load Cell,2022-06-07 00:00:00,"- Creating All Sheets
+",HN,,NR,,,,-Update nilai std 3000kN dan 5kN,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F7,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H7,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J7,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-06-07 00:00:00,Date:,2022-06-08 00:00:00,Date:,,,,,,,,,,,,,,
+,2,Master Olah Data_Gaya_Load Cell,2022-08-03 00:00:00,"-Updating std 3000kN and 5kN on ""Standar_Loadcell"" sheet",HN,,NR,,,,"Update IK order number based on DID on database, adding TH-3 s/d 7,
+",,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F10,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H10,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J10,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-08-03 00:00:00,Date:,2022-08-03 00:00:00,Date:,,,,,,,,,,,,,,
+,3,Master Olah Data_Gaya_Load Cell,2022-10-24 00:00:00,-Update TH3-TH7 & Update Calibration Methode,HN,,NR,,,,Record drift kalibrasi load cell standar dan masukkan ke ketidakpastian,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F13,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H13,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J13,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-10-24 00:00:00,Date:,2022-10-26 00:00:00,Date:,,,,,,,,,,,,,,
+,4,Master Olah Data_Gaya_Load Cell,2022-12-02 00:00:00,"-Adding Tabel Latest Record Drift on ""Standar_Loadcell"" sheet.
+-Changing equation of budget uncertainty Drift using vlookup to Tabel Latest Record Drift on ""Perhitungan U95%"" sheet.
+-Channging STD repeat divisor = 1  on ""Perhitungan U95%"" sheet.
+-Adding ""Misalignment"" sheet, an budget uncertainty of misalignment on ""Perhitungan U95%"" sheet.
+-Adding type unit used on ""Sertifikat"" sheet.
+-Adding type of force on ""Database"", ""Input Data"", ""Sertifikat"" sheet.",HN,,NR,,,,Update latest survaylen 2022 revision result,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F16,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H16,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J16,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2022-12-02 00:00:00,Date:,2022-12-02 00:00:00,Date:,,,,,,,,,,,,,,
+,5,Master Olah Data_Gaya_Load Cell,2023-05-11 00:00:00,"-Remove lokasi kalibrasi table on ""Database"" sheet
+-Adding DR on pelaksana kalibrasi on ""Database"" sheet
+-Changing jabatan according to latest SO on ""Database"" sheet
+-Updating IK on ""Database"" sheet
+-Adding ""- Calibration results are not to be announced and only apply to related tools -"" statement on ""Sertifikat"" sheet
+-Adding calibrator status monitoring on ""Input Data"" sheets
+-Updating std 10000kg on ""Standar_Loadcell"" sheet",HN,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F19,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H19,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J19,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-05-11 00:00:00,Date:,2023-05-23 00:00:00,Date:,,,,,,,,,,,,,,
+,6,Master Olah Data_Gaya_Load Cell,2023-07-05 00:00:00,"-Updating NEW CMC based on New RLK 2023
+-Updating interval kalibrasi std. kalibrator based on schedule program kalibrasi berkala & uji antara",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F22,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H22,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J22,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2023-07-05 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,7,Master Olah Data_Gaya_Load Cell,2023-10-30 00:00:00,"-Revisi technician ID (JO,RH)",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F25,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H25,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J25,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,,Date:,,Date:,,,,,,,,,,,,,,
+,8,Master Olah Data_Gaya_Load Cell,2024-02-26 00:00:00,"Update technician ID : Replace RH to CA
+Update metode kalibrasi (last updated)",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F28,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H28,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J28,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-02-26 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,9,Master Olah Data_Gaya_Load Cell,2024-08-02 00:00:00,"Update recalibration 2024 TH 3 s/d 6
+Update no IK latest revision (after reakreditasi 2024)",HN,,,,,,"Tunggu hasil CMC baru dari KAN
+Tunggu hasil rekalibrasi load cell 3000kN+update driftnya",,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F31,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H31,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J31,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-08-02 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,10,Master Olah Data_Gaya_Load Cell,2024-10-30 00:00:00,"Update CMC baru hasil Reakreditasi
+Update rekalibrasi load cell 3000kN, dan driftnya",HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F34,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H34,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J34,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2024-10-30 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,11,Master Olah Data_Gaya_Load Cell,2025-01-20 00:00:00,Update rekalibrasi loadcell 10000kgf 2024 (tekan),HN,,,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F37,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(H37,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J37,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-01-20 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,12,Master Olah Data_Gaya_Load Cell,2025-02-13 00:00:00,Update rekalibrasi loadcell 10000kgf 2024 (tarik),HN,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"[=_xlfn.IFNA(VLOOKUP(F40,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H40,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J40,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-02-13 00:00:00,Date:,2025-03-10 00:00:00,Date:,,,,,,,,,,,,,,
+,13,Master Olah Data_Gaya_Load Cell,2025-04-28 00:00:00,Update Database (Recalibration 2025 TH 2),DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F43,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H43,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J43,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-04-28 00:00:00,Date:,,Date:,,,,,,,,,,,,,,
+,14,Master Olah Data_Gaya_Load Cell,2025-11-26 00:00:00,"-Updating ""Database"" sheet:  TH-1, TH-2, TH-3, TH-4, TH-6 & TH-7. Change to Xiaomi",DR,,NR,,,,,,,,,,,,,,,,
+,,,,,Position :,"Data Analyst [=_xlfn.IFNA(VLOOKUP(F46,Validasi_Oleh,2,0),"""")]",Position :,"Supervisor [=_xlfn.IFNA(VLOOKUP(H46,Validasi_Oleh,2,0),"""")]",Position :,"[=_xlfn.IFNA(VLOOKUP(J46,Validasi_Oleh,2,0),"""")]",,,,,,,,,,,,,
+,,,,,Date:,2025-11-26 00:00:00 [=D46],Date:,,Date:,,,,,,,,,,,,,,
+,Notes:,,,,,,,,,,,,,,,,,,,,,,
+,User Requirement,,,,,,,,,,,,,,,,,,,,,,
+,1,Use Microsoft Office 2016 or higher versions for a better performance.,,,,,,,,,,,,,,,,,,,,,
+,2,Enable excel with macro warnings.,,,,,,,,,,,,,,,,,,,,,
+,3,Please Enable Developer Tab before using this master worksheet.,,,,,,,,,,,,,,,,,,,,,
+,,How to enable Developer Tab:,,,,,,,,,,,,,,,,,,,,,
+,,"*Click File-Options-Customize Ribbons- Check (√) ""Developer"" on Main Tabs-OK",,,,,,,,,,,,,,,,,,,,,
+,4,Fill the raw data (calibration results) on INPUT DATA sheet.,,,,,,,,,,,,,,,,,,,,,
+,Validation Rules,,,,,,,,,,,,,,,,,,,,,,
+,1,Please fill existing format in this sheet with the detailed revision/change.,,,,,,,,,,,,,,,,,,,,,
+,2,Write down the actual date and PIC/Checker/Validator name.,,,,,,,,,,,,,,,,,,,,,
+,3,"Save as the new revision master's file in the same location without deleting the previous files, add it with the number of revision (example: Master Olah Data Suhu_Rev.1)",,,,,,,,,,,,,,,,,,,,,

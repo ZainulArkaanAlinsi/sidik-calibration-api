@@ -1,0 +1,6 @@
+﻿,Sisi ke-,Misalignment Axial  (mm),STDEV
+,X1,8.237,0.001732050807568772 [=STDEV(C3:C6)]
+,X2,8.234,
+,X3,8.237,
+,X4,8.238,
+,Rata-Rata,8.2365 [=AVERAGE(C3:C6)],

@@ -3740,6 +3740,126 @@ Nol kolom baru. Pertanyaan lab: `docs/pertanyaan-lab-volumetric.md` (13). Serah-
 
 ---
 
+## §37 — Alat ke-40 & ke-41: **Mesin UTM** dan **Load Cell** (Gaya) — 24 Sep 2026
+
+Kelompok besaran **Gaya** mendarat, dua dari tiga alatnya. Masternya
+`Project-PT-Sidik/alat-alat-Pt-Sidik/Alat_Gaya/` (tiga workbook + panduan
+gabungan); Proving Ring menyusul sebagai tahap tersendiri, alasannya di bawah.
+
+### Kenapa gaya tidak bisa menumpang pola alat sebelumnya
+
+**Satu titik = dua belas pembacaan.** Empat posisi (0°, 90°, 180°, 270°) × tiga
+replikat. Bukan pengulangan biasa: kalau load cell standar tidak tepat di sumbu
+piringan mesin uji, gaya tidak jatuh lurus dan ada momen lentur yang ikut
+terbaca. Kesalahan itu **cuma kelihatan** kalau alat dihadapkan ke arah berbeda
+— diuji satu posisi saja, dia tersembunyi. Karena itu pula ada komponen
+`misalignment` di budget yang tidak ada di satu pun alat lain di repo ini.
+
+**Dua blok tingkat-SESI yang bukan titik ukur:** preload (zero & kapasitas
+maks, 3 replikat) dan empat pengukuran misalignment. Keduanya masuk budget, jadi
+bukan catatan tambahan. Ditaruh di `spesifikasi_alat`, **nol kolom baru** —
+sesuai §Alur Kerja poin 4.
+
+**Sebaran dilaporkan dua kali dengan angka berbeda:** RSD masuk budget, RRPE
+tercetak di sertifikat. Yang kedua yang memberi tahu pelanggan seberapa
+konsisten mesinnya, dan yang membedakan "meleset tapi konsisten" (bisa disetel)
+dari "rata-ratanya pas tapi acak" (masalah mekanis).
+
+### Yang dibuktikan sebelum satu baris PHP ditulis
+
+Rumusnya diadu di Python lawan ketiga workbook, sel demi sel, sebelum kode.
+Hasil yang menentukan: **mesin GUM yang sudah ada di repo mereproduksi master
+persis**, termasuk pemotongan `v_eff` ke bawah sebelum mencari `t` — jadi tidak
+ada mesin agregasi kedua yang lahir. Nilai CMC diadu ke lampiran akreditasi dan
+**cocok persis**, yang sekaligus menggugurkan satu dari enam temuan panduan
+(G9): pita `Tarik 10–88 kN` memang tidak ada di akreditasi Load Cell, workbook
+benar.
+
+### Yang BEDA antara kedua alat, dan ketiganya menggeser angka kalau tertukar
+
+| | UTM | Load Cell |
+|---|---|---|
+| Satuan sesi master | kgf | kN |
+| Desimal sertifikat | 1 | 2 |
+| Kolom `Standard Value` | `Z` (sesudah koreksi termal) | `Y` (sebelum) |
+| Drift standar arah Tarik | `0` | `0,04` |
+
+Desimalnya datang dari resolusi alat (0,1 kgf lawan 0,01 kN), bukan selera:
+menyamakannya membuat `2,15` runtuh jadi `2,2`. Dan sertifikat dicetak dalam
+satuan ALAT sementara hitungannya hidup dalam kN — tanpa `cetakDalamSatuanAlat()`
+titik 200 kgf tercetak `2,0`, meleset 100 kali lipat tanpa satu pun error.
+Presedennya G19 (Flowmeter), cacat yang persis sama.
+
+### Satu penyimpangan master yang DISENGAJA
+
+Workbook Load Cell memakai `Y` di kolom `Standard Value` **cuma pada cabang
+satuan kN**; cabang N/lbf/kgf/tnf — dan penjaga `IF(…="")` di depannya — masih
+menunjuk `Z`. Satu cabang disunting, lima tertinggal: itu suntingan yang
+berhenti di tengah, bukan keputusan metode. Ditiru apa adanya, angka yang
+TERCETAK berubah arti tergantung satuan tampilan yang dipilih teknisi.
+
+Sistem memakai `Y` untuk semua satuan. Sesi bersatuan kN — satu-satunya yang
+pernah dijalankan lab untuk alat ini, termasuk sesi masternya sendiri — identik
+dengan master. Selisihnya ditulis di **jejak audit sesi**
+(`penyimpangan_master.standard_value_hanya_cabang_kn`), bukan cuma di komentar
+kode, sesuai §Olah data butir 4.
+
+### Kenapa Proving Ring ditunda, bukan dikerjakan sekalian
+
+Tiga dari enam temuan panduan ada di sana, dan yang terbesar baru terbukti di
+sesi ini: **koreksi standarnya HILANG di semua titik**. `VLOOKUP`-nya gagal di
+setiap baris, `ISERROR` menggantinya dengan string kosong, dan `Y = (B + W) × G52`
+membacanya sebagai nol. Kolom set point-nya pun nol — kuncinya tidak pernah
+terbentuk, kemungkinan besar karena identitas standarnya `#REF!` (G4).
+
+Itu kelas kesalahan yang §Aturan yang Lahir dari Kesalahan Nyata melarang
+ditiru. Titiknya akan **diblokir dengan alasan yang kebaca**, bukan dihitung
+dengan `W = 0` — dan konsekuensinya perlu diketahui lab lebih dulu: sertifikat
+Proving Ring yang sudah terbit dari workbook ini angkanya tidak memuat koreksi
+standar. Itu G11, dan itu yang menahan tahapnya.
+
+### Dua kekeliruan yang ditangkap gerbangnya sendiri, sebelum sertifikat terbit
+
+Keduanya ditemukan `GayaSesiContohCocokMasterTest` di jalan PERTAMANYA, dan
+keduanya **tidak menghasilkan satu pun error**.
+
+**1. Kolom sertifikat tertukar, dan satu di antaranya 102x terlalu besar.**
+`CertificateSnapshotBuilder` mengambil kolom `Standard Value` dari `titik_ukur`
+selama `nilaiStandarDariKoreksi()` masih `false`. Untuk dua puluh satu alat itu
+benar — buffer pH 4,01 memang nilai acuan. Di alat gaya kebalikannya: yang
+dibaca berulang justru STANDARNYA (load cell), dan `titik_ukur` menyimpan set
+point dalam satuan ALAT (kgf) sementara seluruh kolom lain bersatuan kN dan ikut
+dibagi faktor satuan waktu dicetak. Akibatnya `Standard Value` dan `Unit Under
+Test` bertukar tempat, DAN yang mendarat di `Standard Value` dibagi 0,00981
+sekali lagi: titik 100 kgf tercetak `10193,7`.
+
+Presedennya sudah ada dan terlewat — kelompok Waktu dan Frekuensi menghadapi
+bentuk yang sama persis dan itulah kenapa hook-nya dibuat. Perbaikannya:
+`rata_rata` menyimpan nominal mesin dalam kN (kolom UUT), `koreksi` tetap
+`Standard − UUT`, dan hook-nya dinyalakan.
+
+**Kenapa PDF-nya tidak pernah kelihatan salah:** `SertifikatSemuaAlatSatuHalamanTest`
+merender sertifikatnya, tapi yang diperiksa cuma dia muat satu halaman. Test
+unit berhenti di nilai antara. Di antara keduanya ada celah selebar seluruh
+tabel hasil — dan celah itu yang sekarang ditutup.
+
+**2. Sesi contoh UTM titik 300 kgf kehilangan satu pembacaan.** Master punya DUA
+sel bernilai `300,2` (ke-4 dan ke-9 di deret `C:Q`); seeder menulis satu.
+Rata-ratanya meleset 0,0084 kgf — pada satu desimal tetap tercetak `300,7`,
+jadi angka CETAKNYA sama dan pemeriksaan yang berhenti di pembulatan akan
+meluluskannya. Yang menangkapnya justru asersi nilai PENUH pada toleransi
+5x10⁻⁶.
+
+Penjaga ketiganya yang paling murah dan paling tajam: `Correction` wajib sama
+dengan `Standard Value − UUT`. Itu berlaku di ketiga workbook
+(`SERTIFIKAT!Q = E − L`), dan dia yang membuat pertukaran kolom ketahuan
+walaupun kedua angkanya kelihatan wajar — di titik 100 kN bedanya cuma 0,13 %.
+
+Nol kolom baru. Pertanyaan lab: `docs/pertanyaan-lab-gaya.md` (12, satu sudah
+terjawab sendiri). Serah-terima HP: `docs/perintah-frontend-gaya.md`.
+
+---
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4140,3 +4260,4 @@ Supaya tidak dibangun ulang:
 | G18 | Alat baru **Anak Timbangan (OIML R111)** — §29 | **BERES di server** (10 Sep 2026) — alat ke-29, kelompok Massa, **di luar lampiran akreditasi** (kertasnya sendiri menyebut Non KAN). Rumusnya dibuktikan di Python SEBELUM PHP: **1033 pengaduan sel-demi-sel, nol beda** pada 5·10⁻⁶, ditegakkan `AnakTimbanganMasterTest` (12 test / 1011 asersi). **Nol kolom baru**. Tiga kerusakan rujukan dibetulkan dengan ARAH yang ditegakkan test — yang terbesar kolom koreksi apung yang memakai massa keping PERTAMA untuk dua belas keping lain, meleset sampai 2,58 mg pada keping bertoleransi 0,10 mg. Temuan terbesar justru bukan itu: sel berlabel `Rata-rata STDev` ternyata berisi SIMPANGAN BAKU dari enam simpangan baku harian, lebih kecil dari keterulangan hari mana pun — kalau lab menjawab yang dimaksud gabungan harian, **U95 seluruh sertifikat naik ~1,9x**. Ditiru karena `FORM VALIDASI` mencatatnya sebagai perubahan metode yang sengaja & sudah divalidasi. Enam gerbang penerbitan dipasang; master sendiri menerbitkan `#VALUE!` di lima dari dua puluh baris dan satu keping 10 g sebagai 5,500163 g (meleset 45 %). Kertas Rev.0 dibaca lebih dulu dan menyumbang empat temuan yang tidak ada di workbook. 23 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-anak-timbangan.md` §5 memasang lima butirnya |
 | G19 | **Sertifikat Flowmeter tercetak dalam satuan hitung, bukan satuan alat pelanggan** — cacat di dalam G14/G17 | **BERES di server** (17 Sep 2026) — bukan alat baru: satu cacat cetak yang hidup diam-diam sejak alat ke-27 & ke-28 mendarat. Mesin hitungnya sengaja dipindah ke L (Totalizer) / Lpm (Flowrate) supaya satu mesin melayani semua satuan, dan `uncertainty_calculations` menyimpan angka yang SUDAH dikonversi. Yang tidak pernah terjadi: membaliknya lagi waktu mencetak. Alat yang layarnya menunjukkan **3,0 m3/h terbit dengan 50,0 Lpm** di kolom Unit Under Test. `FlowmeterCalculator::konversiBalik()` ditulis untuk ini sejak awal — docblock-nya bahkan menyebut *"Dipakai jalur SERTIFIKAT"* dan menghitung selisih 16,7x-nya — lalu **nol pemanggil**. Master membagi balik dengan faktor yang sama (`SERTIFIKAT!E26 = 'PERHITUNGAN FC'!D63 / DATABASE!$S$22`). **Kenapa tidak ketahuan:** dua sesi contohnya bersatuan `L` dan `LPM`, dua-duanya faktor 1,0 — nol test yang pernah melewati jalur konversi sama sekali. Dan angkanya sendiri tidak pernah terlihat ganjil, karena **kolom satuannya ikut berubah**: tabelnya konsisten dengan dirinya sendiri, cuma tidak dengan alat yang dikalibrasi, tidak dengan kop sertifikat (yang membaca `raw_measurements.satuan` dan sudah menulis `m3/h`), dan tidak dengan jumlah desimalnya (yang lahir dari `equipments.resolusi`, juga bersatuan alat). Satu dokumen, dua satuan untuk besaran yang sama. **Bentuknya:** hook baru `CalibrationProfile::cetakDalamSatuanAlat()` yang memulangkan CLOSURE, bukan faktor — satuan berbasis massa butuh densitas, dan densitas dibaca PER TITIK. Bawaannya `null`, jadi profil lain nol tersentuh. Densitasnya diambil dari sumber yang SAMA yang dipakai waktu menghitung: UFM membaca `flow_densitas_uut` yang diketik teknisi, gravimetri memanggil `FlowmeterGravimetriCalculator::densitasTerkoreksi()` — fungsinya, bukan salinannya, yang karena itu dijadikan publik. **Yang sengaja tidak berubah:** sesi bersatuan `L`/`LPM` nol pergeseran (hook-nya memulangkan `null` untuk faktor identitas, bukan closure identitas, supaya ejaan `Lpm` tidak diam-diam jadi `LPM`), sertifikat yang sudah terbit nol pergeseran (snapshot dibekukan waktu terbit — ada test yang menguncinya), dan bentuk JSON snapshot nol kunci berubah, jadi **sisi mobile nol pekerjaan** (dia sudah membaca `hasil[].satuan` per baris). Titik yang bahan baliknya HILANG sesudah hitungannya tersimpan **memblokir sertifikatnya** dengan pesan yang menyebut nomor titiknya — bukan diam-diam mencetak angka hitung berlabel `kg/h`; `GenerateCertificate` menangkapnya, menyetempel sertifikatnya `gagal`, dan mengirim pesannya ke admin. Dijaga `FlowmeterSatuanSertifikatTest` (7 test / 64 asersi), dan penjaganya **dibuktikan menahan**: hook-nya dimatikan → 5 dari 7 merah; labelnya dibiarkan pindah tapi angkanya tidak → 3 merah lagi. Kontraknya ditulis di `docs/perintah-frontend-flowmeter.md` §0.1 |
 | G20 | Alat baru **Volumetric Glassware** (enam alat lampiran, dua keluarga) — §36 | **BERES di server** (22 Sep 2026) — V20 dan budget diadu ke kedua workbook dari masukan mentah, angka cetak sertifikat master (V20, Correction, U95 0,003 & 0,34) terbukti lewat jalur HP → simpan → validator → hitung ulang. Nol kolom baru. 13 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-volumetric.md` |
+| G21 | Alat baru **kelompok Gaya**: Mesin UTM & Load Cell — §37 | **BERES di server** (24 Sep 2026) — alat ke-40 & ke-41, kelompok besaran baru. Rumusnya dibuktikan di Python lawan ketiga workbook SEBELUM PHP, dan hasil yang menentukan: **mesin GUM yang sudah ada mereproduksi master persis**, termasuk pemotongan `v_eff` ke bawah — nol mesin agregasi kedua. CMC diadu ke lampiran akreditasi, cocok persis, sekaligus menggugurkan satu dari enam temuan panduan (G9). **Nol kolom baru**: dua blok tingkat-sesi (preload & misalignment) masuk `spesifikasi_alat`, dua belas bacaan per titik memakai sumbu `peran_sensor` yang sudah ada. Kedua alat berbagi satu kelas induk `GayaProfile`, jadi sisi HP **satu layar untuk dua alat**. Satu penyimpangan master DISENGAJA: workbook Load Cell memakai `Y` di kolom `Standard Value` cuma pada cabang satuan kN sementara lima cabang lain dan penjaganya masih `Z` — suntingan yang berhenti di tengah, yang kalau ditiru bikin angka tercetak berubah arti tergantung satuan tampilan; sistem memakai `Y` untuk semua satuan dan menulis selisihnya di jejak audit sesi. **Proving Ring SENGAJA ditunda** (G11): koreksi standarnya hilang di semua titik karena `ISERROR` menelan `VLOOKUP` yang gagal jadi sel kosong yang dibaca nol — kelas kesalahan yang AGENTS.md larang ditiru, dan konsekuensinya (sertifikat Proving Ring yang sudah terbit tidak memuat koreksi standar) perlu diketahui lab lebih dulu. 12 pertanyaan lab. **Gerbangnya menangkap dua kekeliruan sendiri sebelum satu pun sertifikat gaya terbit**, dua-duanya tanpa error: kolom `Standard Value` & `Unit Under Test` TERTUKAR dan yang satu 102x terlalu besar (titik 100 kgf tercetak `10193,7`) karena `nilaiStandarDariKoreksi()` belum dinyalakan — preseden Waktu & Frekuensi yang terlewat; dan sesi contoh UTM titik 300 kgf kehilangan satu pembacaan `300,2` sehingga rata-ratanya meleset 0,0084 kgf — pada satu desimal angka cetaknya SAMA, jadi yang menangkapnya asersi nilai penuh 5x10⁻⁶, bukan pemeriksaan angka cetak. Penjaga barunya mengadu **snapshot sertifikat** (bukan kolom mentah) untuk keenam belas titik kedua alat, plus satu asersi hubungan: `Correction` wajib sama dengan `Standard Value − UUT`. **Sisi mobile BELUM** — `docs/perintah-frontend-gaya.md` |

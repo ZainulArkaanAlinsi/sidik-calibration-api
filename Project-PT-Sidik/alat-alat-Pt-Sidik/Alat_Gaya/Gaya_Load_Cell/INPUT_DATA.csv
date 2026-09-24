@@ -1,0 +1,43 @@
+﻿PT. SIDIK,,,"KALIBRASI GAYA
+LOAD CELL",,,,,,,,,,,,,,LK-285-IDN,,,,,,,,
+Calibrator Standard Status Monitoring :,,,,,,,,,,"ALL STANDARDS ARE VALID [=IF(AND(T23=""VALID""),""ALL STANDARDS ARE VALID"",""ONE OR MORE STANDARD EXPIRED"")]",,,,,,,,,,,,,,,
+,Tipe Beban,,:,2,,,,,,,,,,Certificate Number,,,:,085-CAL-124,,,,,,,
+,Temperature of Load Cell Std from Certificate :,,,,,,"23.45 [=IF(Q23=1,STANDAR_LOADCELL!L10,IF(Q23=2,STANDAR_LOADCELL!L41,IF(Q23=3,STANDAR_LOADCELL!L63,""pilih standar"")))]",oC,,,,,,Order Number,,,:,2401.03.B,,,,,,,
+,Actual Temperature of Load Cell Standard When Calibration Process :,,,,,,,,,27.7 [=H21],oC,,,,,,,,,,,,,,
+,IDENTITAS ALAT,,,,,,,,,,,IDENTITAS CUSTOMER,,,,,,,,,,,,,
+,Nama Alat,,:,Load Cell,,,,,,,,Nama Custromer,,,:,[NAMA PELANGGAN DIREDAKSI],,,,,,,DON'T ERASE ! THIS DATA ARE FOR CALCULATION ,,
+,Merk,,:,PT. Global,,,,,,,,,,,,,,,,,,,Units,:,"kN [=_xlfn.IFNA(VLOOKUP(G14,Tabel_Satuan,2,0),"""")]"
+,Type,,:,-,,,,,,,,Alamat Customer,,,:,"[ALAMAT PELANGGAN DIREDAKSI]",,,,,,,Thermohygro,:,"TH-2 [=_xlfn.IFNA(IF(E23=1,""TH-1"",IF(E23=2,""TH-2"",IF(E23=3,""TH-3"",IF(E23=4,""TH-4"",IF(E23=5,""TH-5"",IF(E23=6,""TH-6"",IF(E23=7,""TH-7"",""pilih TH""))))))),"""")]"
+,No. Seri,,:,LDC-E-002,,,,,,,,,,,,,,,,,,,Lokasi,:,"[=_xlfn.IFNA(VLOOKUP(Q20,Lokasi_Kalibrasi,2,0),"""")]"
+,Rentang Ukur,,:,9,,1,,,,,,,,,,,,,,,,,Teknisi,:,"NS [=_xlfn.IFNA(VLOOKUP(Q21,Pelaksana_Kalibrasi,2,0),"""")]"
+,Kapasitas Max.,,:,100,,kN [=Z11],,,,,,Tanggal Terima ,,,:,2024-01-06 00:00:00,,,,,,,Metode Kalibrasi,:,"Load Cell & Proving Ring [=_xlfn.IFNA(VLOOKUP(Q22,Metode_Kalibrasi,2,0),"""")]"
+,Resolusi Alat,,:,0.01,,kN [=Z11],,,,,,Tanggal Kalibrasi,,,:,2024-01-06 00:00:00 [=Q15],,,,,,,Standar Used,:,"Load Cell 100 kN [=_xlfn.IFNA(VLOOKUP(Q23,Tabel_Standar,2,0),"""")]"
+,KONDISI LINGKUNGAN,,,,,,,,,,,PENGERJAAN,,,,,,,,,,,Dihitung oleh,:,"NR [=_xlfn.IFNA(VLOOKUP(C54,Dihitung_Oleh,2,0),"""")]"
+,,,,Awal,Akhir,,Average,,,,,Lokasi Kalibrasi,,,:,Insitu ([NAMA PELANGGAN DIREDAKSI]),,,,,,,Penandatangan,:,"Alex Misramto [=_xlfn.IFNA(VLOOKUP(F54,Penandatangan,2,0),"""")]"
+,Suhu Ruangan,,:,27.7,27.7,,"27.7 [=IFERROR(AVERAGE(E21:F21),"""")]",oC,,,,Technician ID,,,:,6,,,,,,,Posisi,:,"Technical Manager [=_xlfn.IFNA(VLOOKUP(F54,Penandatangan,3,0),"""")]"
+,Kelembaban,,:,70,70,,"70 [=IFERROR(AVERAGE(E22:F22),"""")]",%RH,,,,Calibration Method,,,:,14,,,,,,,Tipe Beban,:,"Pull [=VLOOKUP(E5,Tipe_Beban,2,0)]"
+,Thermohygro Used,,:,2,,,,,,,,Standar Used,,,:,1,,,"VALID [=IF(Z27>=31,""VALID"",IF(AND(Z27<31,Z27>=0),""WARNING"",""EXPIRED""))]",,,,Status kalibrator 100kN,:,1317.4245560185154 [=DATABASE!Z13]
+,,,,,,,,,,,,,,,,,,,,,,,Status kalibrator 3000kN,:,1219.4245560185154 [=DATABASE!Z14]
+DATA HASIL KALIBRASI,,,,,,,,,,,,,,,,,,,,,,,Statu kalibrator 5kN,:,1130.4245560185154 [=DATABASE!Z15]
+,1. Preload Test,,,,,,,,,,,,,,,,,,,,,,Setelcted std ,:,"1317.4245560185154 [=IF(Q23=1,Z23,IF(Q23=2,Z24,Z25))]"
+,Set Value,Reading,,,kN [=G15],,,,,,,,,,,,,,,,,,,,
+,,1,2,,3,,,,,,,,,,,,,,,,,,,,
+,Zero,0,0,,0,,,,,,,,,,,,,,,,,,,,
+,Max. Capacity,68.86,70.89,,71.86,,,,,,,,,,,,,,,,,,,,
+,2. Accuracy Test,,,,,,,,,,,,,,,,,,,,,,,,
+,UUT Setting,Standard Reading,,,,,,,,,kN [=G15],,,,,,,,,,,,,,
+,,Position: 0o,,,,Position: 90o,,,Position: 180o,,,Position: 270o,,,,,,,,,,,,,
+,kN [=G15],1,2,,3,1,2,3,1,2,3,1,2,,3,,,,,,,,,,
+,0,0,0,,0,0,0,0,0,0,0,0,0,,0,,,,,,,,,,
+,100,100,100,,100,100,100,100,100,100,100,100,100,,100,,,,,,,,,,
+,2,2.16,2.14,,2.16,2.16,2.16,2.16,2.16,2.16,2.16,2.16,2.14,,2.14,,,,,,,,,,
+,3,3.48,3.45,,3.48,3.48,3.48,3.48,3.48,3.48,3.48,3.48,3.45,,3.45,,,,,,,,,,
+,4,4.06,4.06,,4.06,4.06,4.06,4.06,4.06,4.06,4.06,4.06,4.06,,4.06,,,,,,,,,,
+,5,5.02,5.03,,5.02,5.02,5.02,5.02,5.02,5.02,5.02,5.02,5.03,,5.03,,,,,,,,,,
+,6,5.95,5.96,,5.95,5.95,5.95,5.95,5.95,5.95,5.95,5.95,5.96,,5.96,,,,,,,,,,
+,7,6.86,6.88,,6.86,6.86,6.86,6.86,6.86,6.86,6.86,6.86,6.88,,6.88,,,,,,,,,,
+,8,7.88,7.85,,7.88,7.88,7.88,7.88,7.88,7.88,7.88,7.88,7.85,,7.85,,,,,,,,,,
+,9,8.91,8.92,,8.91,8.91,8.91,8.91,8.91,8.91,8.91,8.91,8.92,,8.92,,,,,,,,,,
+,Issuance Date,:,2024-01-10 00:00:00 [=Q16+4],,,,,,,,,,,,,,,,,,,,,,
+,Calculated by,,,Signed by,,,,,,,,,,,,,,,,,,,,,
+,Name   :,2,,Name   :,2,,,,,,,,,,,,,,,,,,,,

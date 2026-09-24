@@ -14,6 +14,7 @@ use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
 use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
+use App\Support\GayaMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\HydrometerMentah;
@@ -550,6 +551,15 @@ class CalibrationValidator
             // benar dilaporkan "di luar rentang ukur" — peringatan palsu yang
             // melatih admin menekan "setujui tetap" tanpa membaca.
             if (in_array($m->peran_sensor, VolumetricGlasswareMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
+                continue;
+            }
+
+            // Gaya: yang tercatat pembacaan UUT dalam satuan mesinnya (kgf/kN),
+            // dibaca dari empat posisi. Rentang alatnya sendiri bisa ditulis
+            // dalam satuan lain, jadi tanpa pengecualian ini tiap pembacaan sesi
+            // yang benar dilaporkan "di luar rentang ukur" — dan peringatan
+            // palsu melatih admin menekan "setujui tetap" tanpa membaca.
+            if (in_array($m->peran_sensor, GayaMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
                 continue;
             }
 
@@ -1139,6 +1149,12 @@ class CalibrationValidator
                     // dengan Hydrometer: V20 yang terbit tidak pernah diketik
                     // siapa pun. Kosong buat alat lain.
                     ...VolumetricGlasswareMentah::dari($pembacaan),
+                    // Dua belas bacaan satu titik Gaya (empat posisi x tiga
+                    // replikat) — kejadian ke-18. Disambung DI SINI dan di
+                    // `HitungUlangSesi`; alat baru yang cuma tersambung ke salah
+                    // satunya lolos tanpa error, dan itu sudah menggigit tujuh
+                    // kali. Kosong buat alat lain.
+                    ...GayaMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,

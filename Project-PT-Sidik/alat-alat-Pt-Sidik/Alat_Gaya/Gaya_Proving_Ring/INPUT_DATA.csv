@@ -1,0 +1,43 @@
+﻿PT. SIDIK,,,"KALIBRASI GAYA
+PROVING RING",,,,,,,,,,,,,,LK-285-IDN,,,,,,,,
+Calibrator Standard Status Monitoring :,,,,,,,,,,"ALL STANDARDS ARE VALID [=IF(AND(T23=""VALID""),""ALL STANDARDS ARE VALID"",""ONE OR MORE STANDARD EXPIRED"")]",,,,,,,,,,,,,,,
+,Temperature of Load Cell Std from Certificate :,,,,,"28.6 [=IF(Q23=1,STANDAR_LOADCELL!L10,IF(Q23=2,STANDAR_LOADCELL!L41,IF(Q23=3,STANDAR_LOADCELL!L63,""pilih standar"")))]",oC,,,,,,,Certificate Number,,,:,0410-CAL-324,,,,,,,
+,Actual Temperature of Load Cell Standard When Calibration Process :,,,,,,,23.1 [=H21],oC,,,,,Order Number,,,:,2403.32.HA,,,,,,,
+,IDENTITAS ALAT,,,,,,,,,,,IDENTITAS CUSTOMER,,,,,,,,,,,,,
+,Nama Alat,,:,Proving Ring,,,,Spec. of Dial :,,,,Nama Custromer,,,:,[NAMA PELANGGAN DIREDAKSI],,,,,,,DON'T ERASE ! THIS DATA ARE FOR CALCULATION ,,
+,Merk,,:,Mitutoyo,,,,Merk,:,-,,,,,,,,,,,,,Units,:,"kgf [=_xlfn.IFNA(VLOOKUP(G14,Tabel_Satuan,2,0),"""")]"
+,Type,,:,Analog,,,,Type,:,Analog,,Alamat Customer,,,:,"[ALAMAT PELANGGAN DIREDAKSI]",,,,,,,Thermohygro,:,"TH-2 [=_xlfn.IFNA(IF(E23=1,""TH-1"",IF(E23=2,""TH-2"",IF(E23=3,""TH-3"",IF(E23=4,""TH-4"",IF(E23=5,""TH-5"",IF(E23=6,""TH-6"",IF(E23=7,""TH-7"",""pilih TH""))))))),"""")]"
+,No. Seri,,:,7711,,,,No. Seri,:,7711 [=E13],,,,,,,,,,,,,,,
+,Rentang Ukur,,:,240,,4,,Range,:,25,1,,,,,,,,,,,,Teknisi,:,"NS [=_xlfn.IFNA(VLOOKUP(Q21,Pelaksana_Kalibrasi,2,0),"""")]"
+,Kapasitas Max.,,:,500,,kgf [=Z11],,Resolution,:,0.002,mm [=Z22],Tanggal Terima ,,,:,2024-05-15 00:00:00,,,,,,,Metode Kalibrasi,:,"Load Cell & Proving Ring [=_xlfn.IFNA(VLOOKUP(Q22,Metode_Kalibrasi,2,0),"""")]"
+,Resolusi Alat,,:,0.002,,kgf [=Z11],,Divisi →,(1 Division x 0.002 mm),,,Tanggal Kalibrasi,,,:,2024-05-15 00:00:00,,,,,,,Standar Used,:,"Load Cell 3000 kN [=_xlfn.IFNA(VLOOKUP(Q23,Tabel_Standar,2,0),"""")]"
+,KONDISI LINGKUNGAN,,,,,,,,,,,PENGERJAAN,,,,,,,,,,,Dihitung oleh,:,"NR [=_xlfn.IFNA(VLOOKUP(C57,Dihitung_Oleh,2,0),"""")]"
+,,,,Awal,Akhir,,Average,,,,,Lokasi Kalibrasi,,,:,Lab General PT SIDIK,,,,,,,Penandatangan,:,"Alex Misramto [=_xlfn.IFNA(VLOOKUP(F57,Penandatangan,2,0),"""")]"
+,Suhu Ruangan,,:,23.1,23.1,,"23.1 [=IFERROR(AVERAGE(E21:F21),"""")]",oC,,,,Technician ID,,,:,6,,,,,,,Posisi,:,"Technical Manager [=_xlfn.IFNA(VLOOKUP(F57,Penandatangan,3,0),"""")]"
+,Kelembaban,,:,57,57,,"57 [=IFERROR(AVERAGE(E22:F22),"""")]",%RH,,,,Calibration Method,,,:,14,,,,,,,Satuan dial,:,"mm [=_xlfn.IFNA(VLOOKUP(L14,Satuan_Dial,2,0),"""")]"
+,Thermohygro Used,,:,2,,,,,,,,Standar Used,,,:,2,,,"VALID [=IF(Z27>=31,""VALID"",IF(AND(Z27<31,Z27>=0),""WARNING"",""EXPIRED""))]",,,,Status kalibrator 100kN,:,1317.4245560185154 [=DATABASE!Z13]
+,,,,,,,,,,,,,,,,,,,,,,,Status kalibrator 3000kN,:,1219.4245560185154 [=DATABASE!Z14]
+DATA HASIL KALIBRASI,,,,,,,,,,,,,,,,,,,,,,,Statu kalibrator 5kN,:,1130.4245560185154 [=DATABASE!Z15]
+,1. Preload Test,,,,,,,,,,,,,,,,,,,,,,Setelcted std ,:,"1219.4245560185154 [=IF(Q23=1,Z23,IF(Q23=2,Z24,Z25))]"
+,Set Value,Reading,,,kgf [=G15],,,,,,,,,,,,,,,,,,,,
+,,1,2,,3,,,,,,,,,,,,,,,,,,,,
+,Zero,0,0,,0,,,,,,,,,,,,,,,,,,,,
+,Max. Capacity,219,219,,219,,,,,,,,,,,,,,,,,,,,
+,2. Accuracy Test,,,,,,,,,,,,,,,,,,,,,,,,
+,STD Setting,                                  Standard Reading,,,,,(1 Div),,,,,,,,,,,,,,,,,,
+,,(1 Division x 0.002 mm) [=J16],,,,,,,,,,,,,,,,,,,,,,,
+,,UP,,,,DOWN,,,,,,,,,,,,,,,,,,,
+,kgf [=G15],1,2,,3,4,5,6,,,,,,,,,,,,,,,,,
+,0,0,0,,0,0,0,0,,,,,,,,,,,,,,,,,
+,30,237,237,,238,238,237,238,,,,,,,,,,,,,,,,,
+,90,726,726,,725,725,725,724,,,,,,,,,,,,,,,,,
+,120,934,935,,935,936,936,937,,,,,,,,,,,,,,,,,
+,150,1205,1205,,1206,1205,1206,1208,,,,,,,,,,,,,,,,,
+,210,1698,1697,,1697,1696,1697,1696,,,,,,,,,,,,,,,,,
+,240,1941,1942,,1943,1942,1943,1944,,,,,,,,,,,,,,,,,
+,350,2832,2833,,2832,2833,2833,2834,,,,,,,,,,,,,,,,,
+,450,3642,3641,,3644,3643,3644,3644,,,,,,,,,,,,,,,,,
+,500,4047,4045,,4045,4046,4048,4045,,,,,,,,,,,,,,,,,
+,Issuance Date,:,2024-05-19 00:00:00 [=Q16+4],,,,,,,,,,,,,,,,,,,,,,
+,Calculated by,,,Signed by,,,,,,,,,,,,,,,,,,,,,
+,Name   :,2,,Name   :,2,,,,,,,,,,,,,,,,,,,,

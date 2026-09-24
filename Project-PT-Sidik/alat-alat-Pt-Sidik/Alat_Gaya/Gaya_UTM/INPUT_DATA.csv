@@ -1,0 +1,39 @@
+﻿PT. SIDIK,,,"KALIBRASI GAYA
+UTM",,,,,,,,,,,,,,LK-285-IDN,,,,,,,,
+Calibrator Standard Status Monitoring :,,,,,,,,,,"ALL STANDARDS ARE VALID [=IF(AND(T23=""VALID""),""ALL STANDARDS ARE VALID"",""ONE OR MORE STANDARD EXPIRED"")]",,,,,,,,,,,,,,,
+,Tipe Beban,,:,2,,,,,,,,,,Certificate Number,,,:,0169-CAL-324,,,,,,,
+,Temperature of Load Cell Std from Certificate :,,,,,,"23.15 [=IF(Q23=1,STANDAR_LOADCELL!L10,IF(Q23=2,STANDAR_LOADCELL!L41,IF(Q23=3,STANDAR_LOADCELL!L63,""pilih standar"")))]",oC,,,,,,Order Number,,,:,2403.22.A,,,,,,,
+,Actual Temperature of Load Cell Standard When Calibration Process :,,,,,,,,,24.4 [=H21],oC,,,,,,,,,,,,,,
+,IDENTITAS ALAT,,,,,,,,,,,IDENTITAS CUSTOMER,,,,,,,,,,,,,
+,Nama Alat,,:,Universal Testing Machine,,,,,,,,Nama Custromer,,,:,[NAMA PELANGGAN DIREDAKSI] ,,,,,,,DON'T ERASE ! THIS DATA ARE FOR CALCULATION ,,
+,Merk,,:,Hung Ta,,,,,,,,,,,,,,,,,,,Units,:,"kgf [=_xlfn.IFNA(VLOOKUP(G14,Tabel_Satuan,2,0),"""")]"
+,Type,,:,-,,,,,,,,Alamat Customer,,,:,[ALAMAT PELANGGAN DIREDAKSI],,,,,,,Thermohygro,:,"TH-3 [=_xlfn.IFNA(IF(E23=1,""TH-1"",IF(E23=2,""TH-2"",IF(E23=3,""TH-3"",IF(E23=4,""TH-4"",IF(E23=5,""TH-5"",IF(E23=6,""TH-6"",IF(E23=7,""TH-7"",""pilih TH""))))))),"""")]"
+,No. Seri,,:,1300,,,,,,,,,,,,,,,,,,,Lokasi,:,"[=_xlfn.IFNA(VLOOKUP(Q20,Lokasi_Kalibrasi,2,0),"""")]"
+,Rentang Ukur,,:,500,,4,,,,,,,,,,,,,,,,,Teknisi,:,"NS [=_xlfn.IFNA(VLOOKUP(Q21,Pelaksana_Kalibrasi,2,0),"""")]"
+,Kapasitas Max.,,:,500,,kgf [=Z11],,,,,,Tanggal Terima ,,,:,2024-03-18 00:00:00,,,,,,,Metode Kalibrasi,:,"Gaya (UTM) [=_xlfn.IFNA(VLOOKUP(Q22,Metode_Kalibrasi,2,0),"""")]"
+,Resolusi Alat,,:,0.1,,kgf [=Z11],,,,,,Tanggal Kalibrasi,,,:,2024-03-18 00:00:00 [=Q15],,,,,,,Standar Used,:,"Load Cell 5 kN [=_xlfn.IFNA(VLOOKUP(Q23,Tabel_Standar,2,0),"""")]"
+,KONDISI LINGKUNGAN,,,,,,,,,,,PENGERJAAN,,,,,,,,,,,Dihitung oleh,:,"NR [=_xlfn.IFNA(VLOOKUP(C54,Dihitung_Oleh,2,0),"""")]"
+,,,,Awal,Akhir,,Average,,,,,Lokasi Kalibrasi,,,:,Insitu ([NAMA PELANGGAN DIREDAKSI]),,,,,,,Penandatangan,:,"Alex Misramto [=_xlfn.IFNA(VLOOKUP(F54,Penandatangan,2,0),"""")]"
+,Suhu Ruangan,,:,24.5,24.3,,"24.4 [=IFERROR(AVERAGE(E21:F21),"""")]",oC,,,,Technician ID,,,:,6,,,,,,,Posisi,:,"Technical Manager [=_xlfn.IFNA(VLOOKUP(F54,Penandatangan,3,0),"""")]"
+,Kelembaban,,:,55,54,,"54.5 [=IFERROR(AVERAGE(E22:F22),"""")]",%RH,,,,Calibration Method,,,:,13,,,,,,,Tipe Beban,:,"Pull [=VLOOKUP(E5,Tipe_Beban,2,0)]"
+,Thermohygro Used,,:,3,,,,,,,,Standar Used,,,:,3,,,"VALID [=IF(Z27>=31,""VALID"",IF(AND(Z27<31,Z27>=0),""WARNING"",""EXPIRED""))]",,,,Status kalibrator 100kN,:,1317.4245560185154 [=DATABASE!Z13]
+,,,,,,,,,,,,,,,,,,,,,,,Status kalibrator 3000kN,:,1219.4245560185154 [=DATABASE!Z14]
+DATA HASIL KALIBRASI,,,,,,,,,,,,,,,,,,,,,,,Statu kalibrator 5kN,:,1130.4245560185154 [=DATABASE!Z15]
+,1. Preload Test,,,,,,,,,,,,,,,,,,,,,,Setelcted std ,:,"1130.4245560185154 [=IF(Q23=1,Z23,IF(Q23=2,Z24,Z25))]"
+,Set Value,Reading,,,kgf [=G15],,,,,,,,,,,,,,,,,,,,
+,,1,2,,3,,,,,,,,,,,,,,,,,,,,
+,Zero,0,0,,0,,,,,,,,,,,,,,,,,,,,
+,Max. Capacity,999.1,998.9,,999.1,,,,,,,,,,,,,,,,,,,,
+,2. Accuracy Test,,,,,,,,,,,,,,,,,,,,,,,,
+,UUT Setting,Standard Reading,,,,,,,,,kgf [=G15],,,,,,,,,,,,,,
+,,Position: 0o,,,,Position: 90o,,,Position: 180o,,,Position: 270o,,,,,,,,,,,,,
+,kgf [=G15],1,2,,3,1,2,3,1,2,3,1,2,,3,,,,,,,,,,
+,0,0,0,,0,0,0,0,0,0,0,0,0,,0,,,,,,,,,,
+,100,100.16,100.16,,100.16,100.16,100.16,100.16,100.16,100.16,100.16,100.16,100.16,,100.16,,,,,,,,,,
+,200,200.538,200.6,,200.538,200.538,200.538,200.538,200.538,200.538,200.538,200.538,200.538,,200.538,,,,,,,,,,
+,300,300.3006,300.3006,,300.3006,300.2,300.3006,300.3006,300.3006,300.3006,300.2,300.3006,300.3006,,300.3006,,,,,,,,,,
+,400,399.939,399.9,,399.939,399.939,399.939,399.939,399.939,399.939,399.939,399.939,399.939,,399.939,,,,,,,,,,
+,500,500.16,500.16,,500.16,500.16,500.16,500.16,500.16,500.16,500.16,500.16,500.16,,500.16,,,,,,,,,,
+,Issuance Date,:,2024-03-22 00:00:00 [=Q16+4],,,,,,,,,,,,,,,,,,,,,,
+,Calculated by,,,Signed by,,,,,,,,,,,,,,,,,,,,,
+,Name   :,2,,Name   :,2,,,,,,,,,,,,,,,,,,,,

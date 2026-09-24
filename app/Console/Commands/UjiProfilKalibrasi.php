@@ -11,6 +11,7 @@ use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\DialIndicatorProfile;
 use App\Services\Calibration\Profiles\Enclosure\EnclosureProfileBase;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
+use App\Services\Calibration\Profiles\GayaProfile;
 use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
@@ -402,6 +403,11 @@ class UjiProfilKalibrasi extends Command
             // Volumetric (22 Sep 2026): tiga deret bernama per titik plus blok
             // sesi — alasannya sama persis dengan Hydrometer di atas.
             || $profil instanceof VolumetricGlasswareProfile
+            // Gaya (24 Sep 2026): dua belas bacaan bernama per titik (empat
+            // posisi x tiga replikat) plus blok sesi berisi standar, preload,
+            // dan misalignment. Alasannya sama persis dengan Volumetric di atas
+            // — titiknya tidak bisa dikarang dari rentang alat saja.
+            || $profil instanceof GayaProfile
             || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];

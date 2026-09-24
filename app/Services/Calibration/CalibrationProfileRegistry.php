@@ -25,6 +25,7 @@ use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\LabuUkurProfile;
+use App\Services\Calibration\Profiles\LoadCellProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\PicnometerProfile;
@@ -43,6 +44,7 @@ use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
+use App\Services\Calibration\Profiles\UtmProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 use LogicException;
 
@@ -217,6 +219,21 @@ class CalibrationProfileRegistry
             new BuretProfile,
             new GelasUkurProfile,
             new PipetUkurProfile,
+            // Keluarga GAYA, alat ke-40. UTM duluan dari tiga alat gaya: cabang
+            // CMC-nya paling lengkap, dan tiga dari temuan master ada di Proving
+            // Ring — mengerjakan yang bermasalah belakangan bikin pola benarnya
+            // sudah terbentuk sebelum menghadapinya.
+            //
+            // Ditaruh di URUTAN AKHIR, bukan awal, dan itu bukan selera: profil
+            // pertama di daftar ini jadi cadangan buat nama alat yang tidak
+            // dikenali. Waktu UTM sempat ditaruh paling atas, alat bernama
+            // kosong berhenti jatuh ke pH Meter dan mendarat di UTM —
+            // `RoutingProfilSepakatTest` yang menangkapnya.
+            new UtmProfile,
+            // Alat gaya kedua. Rantai hitungnya sama persis dengan UTM — yang
+            // beda cuma data: satuan kN, standar 100 kN, dua desimal, dan
+            // kolom Standard Value yang memakai Y bukan Z (G12).
+            new LoadCellProfile,
         ];
     }
 

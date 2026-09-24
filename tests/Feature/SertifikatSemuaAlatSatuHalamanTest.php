@@ -122,11 +122,21 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         'DEMO-FM-GRAV-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-FM-TOT-001 (Flow Meter Cairan (Totalizer))',
         'DEMO-HYD-001 (Hydrometer)',
+        // Alat ke-41, gaya kedua (24 Sep 2026). Sepuluh titik — lima lebih
+        // banyak dari UTM — dan dua desimal, bukan satu. Pasangan itu yang
+        // bikin dia pantas disapu: tabelnya paling tinggi di kelompok gaya.
+        'DEMO-LC-001 (Load Cell)',
         'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
         // Alat ke-12. Sesi contohnya menyusul 11 Sep 2026 — sampai itu
         // TIDS satu-satunya alat yang sertifikatnya tidak pernah dirender
         // sapuan ini.
         'DEMO-TIDS-001 (Temperature Recorder)',
+        // Alat ke-40, dan yang PERTAMA di kelompok Gaya (24 Sep 2026).
+        // Sertifikatnya mencetak empat kolom yang sama dengan alat lain
+        // (Standard | UUT | Correction | RRPE), tapi angkanya dikonversi balik
+        // dari kN ke satuan mesin lewat `cetakDalamSatuanAlat()` — tanpa itu
+        // titik 200 kgf tercetak `2,0`.
+        'DEMO-UTM-001 (Universal Testing Machine)',
         // Alat ke-34..39, Volumetric Glassware (22 Sep 2026). Graduated
         // mencetak sampai lima baris dengan SATU U95 di bawah tabel.
         'DEMO-VOL-001 (Pipet Volume)',
@@ -174,6 +184,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         '2406.51.S (Autoclave)',
         '2602.03.A (Multi Gas Detector)',
         '2606.08.C (Temperature Recorder Controller)',
+        // Load Cell (alat ke-41, 24 Sep 2026) — sebab yang sama dengan Height
+        // Gauge & Micrometer: jumlah baris. Sertifikat masternya mencetak
+        // SEPULUH titik, dan tiap angkanya dua desimal (resolusi 0,01 kN),
+        // jadi kolomnya juga lebih lebar dari UTM yang satu desimal. UTM
+        // sendiri cuma enam titik dan tetap muat di mode normal — jadi ini
+        // bukan gejala tata letak gaya yang menyusut, melainkan sesi contoh
+        // yang memang paling panjang di kelompoknya.
+        'DEMO-LC-001 (Load Cell)',
     ];
 
     /**

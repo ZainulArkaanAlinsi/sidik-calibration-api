@@ -1,0 +1,22 @@
+﻿ ,TABEL BUDGET KETIDAKPASTIAN INSTRUMEN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,Nama Alat,,,,,,,,:,Proving Ring [='INPUT DATA'!E10],,,,,,,,,,Standar Used,,,,:,Load Cell 3000 kN [='INPUT DATA'!Z16],,,,,,,,,,,
+,Rentang Ukur,,,,,,,,:,4.904999999999999 [='PERHITUNGAN FC'!G8],,kN [='PERHITUNGAN FC'!H8],Kapasitas Dial :,,,,,25 [='PERHITUNGAN FC'!J8],,mm [=M5],,Std Max. Cap,,:,"3000 [=IF('INPUT DATA'!Q23=1,""100"",IF('INPUT DATA'!Q23=2,""3000"",IF('INPUT DATA'!Q23=3,""5"","""")))]",kN,,,,,,,,,,
+,Ketelitian Baca Alat,,,,,,,,:,0.002 [='PERHITUNGAN FC'!G9],,mm [='PERHITUNGAN FC'!H9],,,,,,,,,,,,,,,,,,,,,,,,
+,Ketelitian Baca Standar,,,,,,,,:,"0.1 [=_xlfn.IFNA(VLOOKUP('INPUT DATA'!Q23,Tabel_Standar,6,0),"""")]",,kN [=M4],,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,0.00980665,,,,,,,,
+,Component,,,,,,,Unit,,Distribution,,,U,,,Divisor,,vi,,ui,,,ci,,uici,,,( uici )2,,,,( uici )4/ vi,,,,
+,Ketidakpastian Baku Sertifikat Kalibrasi Kalibrator,,,,,,,%,,normal,,,"0.36 [=IF($Z$3=""Load Cell 100 kN"",STANDAR_LOADCELL!H9,IF($Z$3=""Load Cell 3000 kN"",STANDAR_LOADCELL!G40,IF($Z$3=""Load Cell 5 kN"",STANDAR_LOADCELL!H62,""pilih satuan"")))]",,,2,,200,,0.18 [=N9/Q9],,,1,,0.18 [=U9*X9],,,0.0324 [=Z9^2],,,,5.2488e-06 [=((AC9^2)/S9)],,,,
+,Ketidakpastian Baku Daya Baca Alat yang dikalibrasi,,,,,,,% [=I9],,rect.,,,0.004 [=((K5/S4)*100)/2],,,1.7320508075688772 [=SQRT(3)],,1000000,,0.002309401076758503 [=N10/Q10],,,1,,0.002309401076758503 [=U10*X10],,,5.333333333333334e-06 [=Z10^2],,,,2.844444444444445e-17 [=((AC10^2)/S10)],,,,
+,Ketidakpastian Baku Daya Baca Standar,,,,,,,% [=I10],,rect.,,,0.0016666666666666668 [=((K6/Z4)*100)/2],,,1.7320508075688772 [=Q10],,1000000,,0.0009622504486493764 [=N11/Q11],,,1,,0.0009622504486493764 [=U11*X11],,,9.259259259259263e-07 [=Z11^2],,,,8.573388203017839e-19 [=((AC11^2)/S11)],,,,
+,Ketidakpastian Temperature,,,,,,,% [=I10],,rect.,,,0.027,,,1.7320508075688772 [=Q11],,50,,0.015588457268119896 [=N12/Q12],,,1,,0.015588457268119896 [=U12*X12],,,0.00024300000000000002 [=Z12^2],,,,1.1809800000000002e-09 [=((AC12^2)/S12)],,,,
+,Drift Standard,,,,,,,% [=I12],,rect.,,,"0.07428573463572993 [=VLOOKUP(Z3,Tabel_Drift,2,0)]",,,1.7320508075688772 [=Q11],,50,,0.07428573463572993 [=N13],,,1,,0.07428573463572993 [=U13*X13],,,0.005518370370370086 [=Z13^2],,,,6.090482308915697e-07 [=((AC13^2)/S13)],,,,
+,Ketidakpastian Baku Pengulangan Pembacaan,,,,,,,% [=I12],,t-student,,,0.09415277275643451 [=('PERHITUNGAN FC'!L48)/SQRT(6)],,,1,,5,,0.09415277275643451 [=N14/SQRT(Q14)],,,1,,0.09415277275643451 [=U14*X14],,,0.008864744617724796 [=Z14^2],,,,1.5716739427496148e-05 [=((AC14^2)/S14)],,,,
+,Ketidakpastian Baku Pengaruh Zero Eror,,,,,,,% [=I13],,rect.,,,0 [=('PERHITUNGAN FC'!C48/'PERHITUNGAN FC'!C49)*100],,,1,,5,,0 [=N15/SQRT(Q15)],,,2,,0 [=U15*X15],,,0 [=Z15^2],,,,0 [=((AC15^2)/S15)],,,,
+,Ketidakpastian Baku Missalignment,,,,,,,% [=I13],,rect.,,,0.021028966278987093 [=Misalignment!D3/Misalignment!C7*100],,,1,,5,,0.021028966278987093 [=N16/SQRT(Q16)],,,2,,0.04205793255797419 [=U16*X16],,,0.0017688696910511052 [=Z16^2],,,,6.257799967838465e-07 [=((AC16^2)/S16)],,,,
+,Jumlah,,,,,,,,,,,,,,,,,,,,,,,,,,,0.04703237424735414 [=SUM(AC9:AC14)],,,,2.1575768638417016e-05 [=SUM(AG9:AG14)],,,,
+,"Ketidakpastian Baku Gabungan , Uc",,,,,,,,,,,,,,,,,,,,,,,,,,,0.2168694866673367 [=SQRT(AC17)],,,,,,,,
+,"Derajat Kebebasan , v eff",,,,,,,,,,,,,,,,,,,,,,,,,,,102.52446920498103 [=AC18^4/AG17],,,,,,,,
+,"Factor Cakupan , k=student's for v eff and CL 95 %",,,,,,,,,,,,,,,,,,,,,,,,,,,"1.9834952585628811 [=TINV(0.05,AC19)]",,,,,,,,
+,"Ketidakpastian Bentangan  , U = k Uc",,,,,,,,,,,,,,,,,,,,,,,,,,,0.43015959853162833 [=AC18*AC20],,,,%,0.021099328307976367 [=(AC21/100*K4)],,,kN
+,,,,,,,,,,,,,,,,,,,,,,,,,,,CMC PT. SIDIK,"0.22 [=IF(Z3=""Load Cell 5 kN"",DATABASE!S6,DATABASE!S5)]",,,,kN,4.485219164118248 [=AC22/K4*100],,,%
+,,,,,,,,,,,,,,,,,,,,,,,U95% Sertifikat,,,,,"4.485219164118248 [=MAX(AC21,AH22)]",,,,%,0.22 [=AC23%*K4],,,kN

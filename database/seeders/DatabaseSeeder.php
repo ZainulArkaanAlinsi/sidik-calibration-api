@@ -151,6 +151,14 @@ class DatabaseSeeder extends Seeder
             // Empat dari enam sesinya MEMINJAM masukan mentah master
             // keluarganya — lihat docblock seedernya.
             VolumetricGlasswareSeeder::class,
+            // Alat gaya pertama. Angkanya dari sesi contoh master `0169-CAL-324`;
+            // datanya seragam dan itu disengaja disebut di docblock seedernya —
+            // yang menutup cabang data tidak rapi `GayaCalculatorTest` blok B.
+            UtmSeeder::class,
+            // Alat gaya kedua. WAJIB sesudah `UtmSeeder`: standar `Load Cell
+            // 100 kN` diseed di sana, dan seeder ini memakainya — bukan
+            // membuat duplikatnya sendiri.
+            LoadCellSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

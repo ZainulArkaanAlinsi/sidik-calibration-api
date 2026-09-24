@@ -1,0 +1,367 @@
+{
+  "_sumber": "Project-PT-Sidik/alat-alat-Pt-Sidik/Alat_Gaya/*/STANDAR_LOADCELL.csv + DATABASE.csv",
+  "_generator": "docs/skrip/gen-tabel-standar-gaya.py - JANGAN disunting tangan",
+  "_catatan": {
+    "cmc": "TIDAK di sini - sumbernya database/data/kemampuan-kalibrasi.json (LK-285-IDN).",
+    "drift": "Per arah per WORKBOOK, karena ketiganya tidak sepakat untuk standar yang sama.",
+    "faktor_set_point_kg_ke_kn": "Eksak 0,00980665, beda dari faktor pembacaan kgf 0,00981."
+  },
+  "faktor_satuan": {
+    "kN": 1.0,
+    "N": 0.001,
+    "lbf": 0.00445,
+    "kgf": 0.00981,
+    "tnf": 9.8067
+  },
+  "faktor_set_point_kg_ke_kn": 0.00980665,
+  "koefisien_suhu_per_c": 0.00027,
+  "standar": {
+    "100kN": {
+      "nama": "Load Cell 100 kN (10000 kg)",
+      "merek": "Uscell",
+      "tipe": "ST2-C3-10+",
+      "serial": "J10CC13283",
+      "tertelusur": "LK-057-IDN",
+      "tanggal_kalibrasi": "2024-12-17",
+      "berlaku_sampai": "2026-12-17",
+      "suhu_sertifikat": 23.45,
+      "u95_persen": 0.13,
+      "tabel": {
+        "Push": [
+          {
+            "set_point_kn": 9.80665,
+            "koreksi_kn": 0.04511059,
+            "set_point_kg": 1000.0,
+            "koreksi_kg": 4.6
+          },
+          {
+            "set_point_kn": 19.6133,
+            "koreksi_kn": 0.03530394,
+            "set_point_kg": 2000.0,
+            "koreksi_kg": 3.6
+          },
+          {
+            "set_point_kn": 29.41995,
+            "koreksi_kn": 0.034323275,
+            "set_point_kg": 3000.0,
+            "koreksi_kg": 3.5
+          },
+          {
+            "set_point_kn": 39.2266,
+            "koreksi_kn": 0.034323275,
+            "set_point_kg": 4000.0,
+            "koreksi_kg": 3.5
+          },
+          {
+            "set_point_kn": 49.03325,
+            "koreksi_kn": 0.0039226600000000006,
+            "set_point_kg": 5000.0,
+            "koreksi_kg": 0.4
+          },
+          {
+            "set_point_kn": 58.8399,
+            "koreksi_kn": -0.024516625,
+            "set_point_kg": 6000.0,
+            "koreksi_kg": -2.5
+          },
+          {
+            "set_point_kn": 68.64655,
+            "koreksi_kn": -0.03530394,
+            "set_point_kg": 7000.0,
+            "koreksi_kg": -3.6
+          },
+          {
+            "set_point_kn": 78.4532,
+            "koreksi_kn": -0.056878569999999996,
+            "set_point_kg": 8000.0,
+            "koreksi_kg": -5.8
+          },
+          {
+            "set_point_kn": 88.25985,
+            "koreksi_kn": -0.06864655,
+            "set_point_kg": 9000.0,
+            "koreksi_kg": -7.0
+          }
+        ],
+        "Pull": [
+          {
+            "set_point_kn": 9.80665,
+            "koreksi_kn": -0.0019613300000000003,
+            "set_point_kg": 1000.0,
+            "koreksi_kg": -0.2
+          },
+          {
+            "set_point_kn": 19.6133,
+            "koreksi_kn": -0.007845320000000001,
+            "set_point_kg": 2000.0,
+            "koreksi_kg": -0.8
+          },
+          {
+            "set_point_kn": 29.41995,
+            "koreksi_kn": -0.022555295,
+            "set_point_kg": 3000.0,
+            "koreksi_kg": -2.3
+          },
+          {
+            "set_point_kn": 39.2266,
+            "koreksi_kn": -0.026477955,
+            "set_point_kg": 4000.0,
+            "koreksi_kg": -2.7
+          },
+          {
+            "set_point_kn": 49.03325,
+            "koreksi_kn": -0.034323275,
+            "set_point_kg": 5000.0,
+            "koreksi_kg": -3.5
+          },
+          {
+            "set_point_kn": 58.8399,
+            "koreksi_kn": -0.048052585,
+            "set_point_kg": 6000.0,
+            "koreksi_kg": -4.9
+          },
+          {
+            "set_point_kn": 68.64655,
+            "koreksi_kn": -0.06276256000000001,
+            "set_point_kg": 7000.0,
+            "koreksi_kg": -6.4
+          },
+          {
+            "set_point_kn": 78.4532,
+            "koreksi_kn": -0.08041453,
+            "set_point_kg": 8000.0,
+            "koreksi_kg": -8.2
+          },
+          {
+            "set_point_kn": 88.25985,
+            "koreksi_kn": -0.122583125,
+            "set_point_kg": 9000.0,
+            "koreksi_kg": -12.5
+          }
+        ]
+      }
+    },
+    "3000kN": {
+      "nama": "Load Cell 3000 kN",
+      "merek": "Matest",
+      "tipe": "C-140-08",
+      "serial": "C-140-BZ/0008",
+      "tertelusur": "LK-013-IDN",
+      "tanggal_kalibrasi": "2024-09-10",
+      "berlaku_sampai": "2026-09-10",
+      "suhu_sertifikat": 28.6,
+      "u95_persen": 0.36,
+      "tabel": {
+        "Push": [
+          {
+            "set_point_kn": 0.0,
+            "koreksi_kn": 0.0
+          },
+          {
+            "set_point_kn": 300.0,
+            "koreksi_kn": 8.089999999999975
+          },
+          {
+            "set_point_kn": 600.0,
+            "koreksi_kn": 7.350000000000023
+          },
+          {
+            "set_point_kn": 900.0,
+            "koreksi_kn": 7.779999999999973
+          },
+          {
+            "set_point_kn": 1200.0,
+            "koreksi_kn": 8.849999999999909
+          },
+          {
+            "set_point_kn": 1500.0,
+            "koreksi_kn": 10.819999999999936
+          },
+          {
+            "set_point_kn": 1800.0,
+            "koreksi_kn": 13.599999999999909
+          },
+          {
+            "set_point_kn": 2100.0,
+            "koreksi_kn": 17.920000000000073
+          },
+          {
+            "set_point_kn": 2400.0,
+            "koreksi_kn": 22.409999999999854
+          },
+          {
+            "set_point_kn": 2700.0,
+            "koreksi_kn": 26.940000000000055
+          },
+          {
+            "set_point_kn": 3000.0,
+            "koreksi_kn": 31.389999999999873
+          }
+        ]
+      }
+    },
+    "5kN": {
+      "nama": "Load Cell 5 kN (500kg)",
+      "merek": "Usscell/STI-C3-500kg",
+      "tipe": "Usscell/STI-C3-500kg",
+      "serial": "LC-01-SDK",
+      "tertelusur": "LK-057-IDN",
+      "tanggal_kalibrasi": "2024-06-13",
+      "berlaku_sampai": "2026-06-13",
+      "suhu_sertifikat": 23.15,
+      "u95_persen": 0.4,
+      "tabel": {
+        "Push": [
+          {
+            "set_point_kn": 0.0,
+            "koreksi_kn": 0.0,
+            "set_point_kg": 0.0,
+            "koreksi_kg": 0.0
+          },
+          {
+            "set_point_kn": 0.4903325,
+            "koreksi_kn": 0.0,
+            "set_point_kg": 50.0,
+            "koreksi_kg": 0.0
+          },
+          {
+            "set_point_kn": 0.980665,
+            "koreksi_kn": 0.000392266,
+            "set_point_kg": 100.0,
+            "koreksi_kg": 0.04
+          },
+          {
+            "set_point_kn": 1.4709975,
+            "koreksi_kn": 0.0002941995,
+            "set_point_kg": 150.0,
+            "koreksi_kg": 0.03
+          },
+          {
+            "set_point_kn": 1.96133,
+            "koreksi_kn": 0.000784532,
+            "set_point_kg": 200.0,
+            "koreksi_kg": 0.08
+          },
+          {
+            "set_point_kn": 2.4516625,
+            "koreksi_kn": 0.0012748645,
+            "set_point_kg": 250.0,
+            "koreksi_kg": 0.13
+          },
+          {
+            "set_point_kn": 2.941995,
+            "koreksi_kn": 0.0013729310000000002,
+            "set_point_kg": 300.0,
+            "koreksi_kg": 0.14
+          },
+          {
+            "set_point_kn": 3.92266,
+            "koreksi_kn": 0.002549729,
+            "set_point_kg": 400.0,
+            "koreksi_kg": 0.26
+          },
+          {
+            "set_point_kn": 4.903325,
+            "koreksi_kn": 0.0036284605,
+            "set_point_kg": 500.0,
+            "koreksi_kg": 0.37
+          }
+        ],
+        "Pull": [
+          {
+            "set_point_kn": 0.0,
+            "koreksi_kn": 0.0,
+            "set_point_kg": 0.0,
+            "koreksi_kg": 0.0
+          },
+          {
+            "set_point_kn": 0.4903325,
+            "koreksi_kn": 0.0019613300000000003,
+            "set_point_kg": 50.0,
+            "koreksi_kg": 0.2
+          },
+          {
+            "set_point_kn": 0.980665,
+            "koreksi_kn": 0.0024516625,
+            "set_point_kg": 100.0,
+            "koreksi_kg": 0.25
+          },
+          {
+            "set_point_kn": 1.4709975,
+            "koreksi_kn": 0.0034323275,
+            "set_point_kg": 150.0,
+            "koreksi_kg": 0.35
+          },
+          {
+            "set_point_kn": 1.96133,
+            "koreksi_kn": 0.0030400615,
+            "set_point_kg": 200.0,
+            "koreksi_kg": 0.31
+          },
+          {
+            "set_point_kn": 2.4516625,
+            "koreksi_kn": 0.004020726499999999,
+            "set_point_kg": 250.0,
+            "koreksi_kg": 0.41
+          },
+          {
+            "set_point_kn": 2.941995,
+            "koreksi_kn": 0.005099458,
+            "set_point_kg": 300.0,
+            "koreksi_kg": 0.52
+          },
+          {
+            "set_point_kn": 3.92266,
+            "koreksi_kn": 0.0059820565,
+            "set_point_kg": 400.0,
+            "koreksi_kg": 0.61
+          },
+          {
+            "set_point_kn": 4.903325,
+            "koreksi_kn": 0.005491724000000001,
+            "set_point_kg": 500.0,
+            "koreksi_kg": 0.56
+          }
+        ]
+      }
+    }
+  },
+  "drift": {
+    "5kN": {
+      "Push": {
+        "utm": 0.0692820323027551,
+        "load_cell": 0.0692820323027551,
+        "proving_ring": 0.0692820323027551
+      },
+      "Pull": {
+        "utm": 0.0,
+        "load_cell": 0.04000000000000001,
+        "proving_ring": 0.04000000000000001
+      }
+    },
+    "100kN": {
+      "Push": {
+        "utm": 0.031834452342817454,
+        "load_cell": 0.031834452342817454,
+        "proving_ring": 0.031834452342817454
+      },
+      "Pull": {
+        "utm": 0.034272153479393656,
+        "load_cell": 0.034272153479393656,
+        "proving_ring": 0.034272153479393656
+      }
+    },
+    "3000kN": {
+      "Push": {
+        "utm": 0.07428573463572993,
+        "load_cell": 0.07428573463572993,
+        "proving_ring": 0.07428573463572993
+      },
+      "Pull": {
+        "utm": 0.0,
+        "load_cell": 0.0,
+        "proving_ring": 0.0
+      }
+    }
+  }
+}

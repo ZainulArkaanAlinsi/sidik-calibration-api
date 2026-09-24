@@ -12,6 +12,7 @@ use App\Support\AnakTimbanganMentah;
 use App\Support\Angka;
 use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
+use App\Support\GayaMentah;
 use App\Support\GridSensorMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\HydrometerMentah;
@@ -196,6 +197,13 @@ class HitungUlangSesi extends Command
                 // `vol_isi`, `vol_suhu`) — kejadian ke-17, cabangnya ikut
                 // Hydrometer dan dengan alasan yang sama.
                 $volumetric = VolumetricGlasswareMentah::dari($baris);
+
+                // Dua belas bacaan satu titik Gaya (empat posisi x tiga
+                // replikat) — kejadian ke-18, cabangnya ikut dua di atasnya.
+                // Baris gaya PUNYA `peran_sensor`, jadi `GridSensorMentah` tidak
+                // pulang `[]` dan sesinya bakal dilewati diam-diam kalau cabang
+                // ini ditaruh di bawah `$grid === []`.
+                $gaya = GayaMentah::dari($baris);
 
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
@@ -385,6 +393,11 @@ class HitungUlangSesi extends Command
                     // Deret yang tidak lengkap TIDAK di-`continue` di sini:
                     // profilnya menolaknya dengan alasan yang kebaca.
                     $nilai = [];
+                } elseif ($gaya !== []) {
+                    // Gaya: keduabelas bacaan satu titik dibaca profilnya dari
+                    // `konteks`, jadi deret datar di sini memang tidak dipakai.
+                    // Alasan penempatan sama dengan Volumetric di atas.
+                    $nilai = [];
                 } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak
@@ -495,6 +508,9 @@ class HitungUlangSesi extends Command
                         // Tiga deret Volumetric; blok kelas/toleransi/kapasitas/
                         // neraca ikut lewat `spesifikasi_alat` di bawah.
                         ...$volumetric,
+                        // Dua belas bacaan Gaya; blok satuan/standar/preload/
+                        // misalignment ikut lewat `spesifikasi_alat` di bawah.
+                        ...$gaya,
                         'suhu_awal' => $sesi->suhu_awal,
                         'suhu_akhir' => $sesi->suhu_akhir,
                         'kelembaban_awal' => $sesi->kelembaban_awal,
