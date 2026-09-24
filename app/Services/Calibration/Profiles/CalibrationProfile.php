@@ -1346,6 +1346,23 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Lembar **Gaya** (UTM, Load Cell, Proving Ring): satu titik membawa EMPAT
+     * deret — satu per posisi mesin uji (0°, 90°, 180°, 270°), tiga replikat
+     * masing-masing.
+     *
+     * Jalur simpannya sendiri (`CalibrationController::susunBlokGaya()`) karena
+     * loop per-titik bawaan cuma punya tempat untuk satu deret. Dipaksa lewat
+     * jalur datar, tiga dari empat posisi hilang — dan rata-rata dari tiga
+     * bacaan tersisa tetap berorde beban yang wajar, jadi sertifikatnya terbit
+     * rapi dan salah. Lebih buruk lagi: yang hilang justru sebaran ANTAR
+     * POSISI, yaitu satu-satunya hal yang membuat empat posisi diuji.
+     */
+    public function butuhBlokGaya(): bool
+    {
+        return false;
+    }
+
+    /**
      * Apakah jenis alat ini ADA di lampiran akreditasi LK-285-IDN.
      *
      * Menentukan satu hal, dan hal itu punya konsekuensi audit: apakah

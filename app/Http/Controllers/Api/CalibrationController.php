@@ -42,6 +42,7 @@ use App\Services\RumusKalibrasi;
 use App\Support\AnakTimbanganMentah;
 use App\Support\DialIndicatorMentah;
 use App\Support\FlowmeterMentah;
+use App\Support\GayaMentah;
 use App\Support\HeightGaugeMentah;
 use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
@@ -1406,6 +1407,15 @@ class CalibrationController extends Controller
             return $this->susunBlokVolumetric($request, $alat, $standarDefault);
         }
 
+        // Gaya (UTM & Load Cell): satu titik membawa EMPAT deret posisi. Alasan
+        // cabangnya sama dengan dua di atas, tapi yang hilang kalau dipaksa
+        // lewat jalur datar lebih mahal: bukan cuma tiga deret, melainkan
+        // sebaran ANTAR POSISI — satu-satunya alasan mesin uji diputar empat
+        // kali, dan satu dari delapan komponen budget-nya.
+        if ($this->profil->untukAlat($alat)->butuhBlokGaya()) {
+            return $this->susunBlokGaya($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -2689,6 +2699,106 @@ class CalibrationController extends Controller
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
+    /**
+     * Lembar GAYA: empat tabel posisi yang barisnya SINKRON.
+     *
+     * HP mengirimnya lewat `simpan_ke` bernama (`measurements[].gaya_pos_0`
+     * dan seterusnya), jadi keempat deret sampai ke sini TERPISAH — dan itu
+     * memang yang dibutuhkan: `peran_sensor` per baris mentah adalah satu-satunya
+     * tempat posisi itu tersimpan, dan `GayaMentah::dari()` membacanya balik
+     * waktu sesi dihitung ulang.
+     *
+     * ## Yang digabung, dan yang TIDAK
+     *
+     * Untuk budget, keduabelas bacaan satu titik digabung jadi satu deret:
+     * rata-rata, simpangan baku, RSD, dan RRPE semuanya lahir dari dua belas
+     * angka itu bersama-sama. Jadi urutan posisinya tidak mengubah angka.
+     *
+     * Yang TIDAK boleh digabung: penyimpanannya. Baris mentah tetap membawa
+     * `peran_sensor` posisinya masing-masing, karena tanpa itu lembar yang
+     * dibuka ulang tidak tahu angka mana milik kotak mana — dan teknisi yang
+     * mengoreksi satu bacaan mengoreksi kotak yang salah.
+     *
+     * `sensor_ke` menyimpan nomor REPLIKAT (1..3), bukan nomor kotak global.
+     * Bersama `peran_sensor` itu sudah menentukan kotaknya secara unik, dan
+     * angka yang kecil lebih mudah dibaca waktu baris mentahnya diperiksa
+     * manusia.
+     */
+    private function susunBlokGaya(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[GayaMentah::KUNCI_SESI] ?? []);
+        $satuan = (string) ($blok['satuan'] ?? ($alat->satuan ?? ''));
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $nominal = $titik['titik_ukur'] ?? null;
+            $semuaBacaan = [];
+
+            foreach (GayaMentah::PERAN_POSISI as $peran) {
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $nilai,
+                        'satuan' => $satuan,
+                        'input_source' => $sesiKamera ? $metodeInput : 'manual',
+                        'is_verified' => ! $sesiKamera,
+                    ];
+
+                    $semuaBacaan[] = (float) $nilai;
+                }
+            }
+
+            if ($semuaBacaan === []) {
+                continue;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                // Jalur datar TIDAK dipakai alat ini.
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'konteks' => [
+                    'bacaan' => $semuaBacaan,
+                    'spesifikasi_alat' => $spek,
+                    'suhu_awal' => $request->input('suhu_awal'),
+                    'suhu_akhir' => $request->input('suhu_akhir'),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
     private function susunBlokDialIndicator(
         CalibrationRequest $request,
         Equipment $alat,

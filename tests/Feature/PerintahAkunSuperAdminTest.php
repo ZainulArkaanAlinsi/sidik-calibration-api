@@ -28,16 +28,30 @@ class PerintahAkunSuperAdminTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Organisasi tempat akunnya duduk — id-nya DIPEGANG, tidak diasumsikan 1.
+     *
+     * Perintahnya berdefault `--organisasi=1`, dan itu benar untuk lab ini.
+     * Yang tidak benar: menganggap baris buatan factory pasti dapat id 1.
+     * `AUTO_INCREMENT` MySQL tidak ikut di-rollback antar test, jadi test
+     * kedua dan seterusnya mendapat organisasi ber-id 2, 3, 4 … dan
+     * perintahnya menolak dengan benar ("Organisasi #1 tidak ada") — yang
+     * merah penjaganya, bukan kodenya. Di SQLite tidak pernah kelihatan:
+     * database-nya dibangun ulang tiap test, jadi id-nya selalu kembali ke 1.
+     */
+    private Organization $organisasi;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        Organization::factory()->create();
+        $this->organisasi = Organization::factory()->create();
     }
 
     public function test_bikin_akun_super_admin(): void
     {
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--nama' => 'Pengawas Lab',
             '--paksa' => true,
@@ -54,6 +68,7 @@ class PerintahAkunSuperAdminTest extends TestCase
     public function test_akunnya_langsung_bisa_masuk_panel(): void
     {
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--paksa' => true,
         ])->assertSuccessful();
@@ -69,6 +84,7 @@ class PerintahAkunSuperAdminTest extends TestCase
     public function test_pembuatannya_tercatat_di_audit(): void
     {
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--paksa' => true,
         ])->assertSuccessful();
@@ -99,6 +115,7 @@ class PerintahAkunSuperAdminTest extends TestCase
     public function test_sandinya_tidak_pernah_sandi_fixture(): void
     {
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--paksa' => true,
         ])->assertSuccessful();
@@ -116,6 +133,7 @@ class PerintahAkunSuperAdminTest extends TestCase
         $lama = User::factory()->admin()->create(['email' => 'pengawas@contoh.test']);
 
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--paksa' => true,
         ])->assertFailed();
@@ -131,6 +149,7 @@ class PerintahAkunSuperAdminTest extends TestCase
         User::factory()->admin()->create(['employee_id' => 'SDK-0001']);
 
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'pengawas@contoh.test',
             '--id-pegawai' => 'SDK-0001',
             '--paksa' => true,
@@ -153,6 +172,7 @@ class PerintahAkunSuperAdminTest extends TestCase
     public function test_email_ngawur_ditolak(): void
     {
         $this->artisan('akun:super-admin', [
+            '--organisasi' => $this->organisasi->id,
             'email' => 'bukan-email',
             '--paksa' => true,
         ])->assertFailed();
@@ -163,7 +183,10 @@ class PerintahAkunSuperAdminTest extends TestCase
     /** Tanpa `--paksa`, jawaban "tidak" berarti nol akun dibuat. */
     public function test_konfirmasi_bisa_membatalkan(): void
     {
-        $this->artisan('akun:super-admin', ['email' => 'pengawas@contoh.test'])
+        $this->artisan('akun:super-admin', [
+            'email' => 'pengawas@contoh.test',
+            '--organisasi' => $this->organisasi->id,
+        ])
             ->expectsConfirmation(
                 'Bikin akun super admin pengawas@contoh.test? Dia bisa MEMBACA data seluruh lab, termasuk lab lain.',
                 'no',

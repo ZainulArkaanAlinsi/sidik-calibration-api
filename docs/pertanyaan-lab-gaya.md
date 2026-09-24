@@ -316,6 +316,35 @@ belum dijawab, dua alat mencetak kolom yang berbeda untuk besaran yang sama.
 
 ---
 
+## G13 🟡 Panduan menyuruh blokir urutan titik yang tidak naik — tapi master sendiri melanggarnya
+
+Panduan §8.1 mendaftarkan "Nominal harus naik monoton" sebagai **pemblokir
+submit**, lengkap dengan pesannya: *"Titik ke-4 (300) lebih kecil dari titik
+ke-3 (400)"*.
+
+Sesi master Load Cell `085-CAL-124` urutan titiknya:
+
+```
+0 → 100 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 kN
+```
+
+Titik kedua langsung kapasitas penuh, baru turun ke rentang bawah — dan
+sertifikatnya mencetak dalam urutan itu juga. Jadi aturan panduan, kalau
+ditegakkan sebagai pemblokir, membuat lembar yang benar-benar dipakai lab
+tidak bisa dikirim.
+
+**Yang dilakukan sistem:** urutan turun **tidak memblokir**, tapi tetap muncul
+sebagai peringatan di jejak sesi. Antara panduan dan master, yang menang master
+(AGENTS.md §Aturan yang Lahir dari Kesalahan Nyata). Dijaga
+`GayaValidasiSesiTest::test_urutan_titik_tidak_naik_cuma_peringatan`.
+
+**Yang perlu dijawab:** apakah urutan `0 → 100 → 2 → 3 …` itu memang metode
+yang disengaja (membebani penuh dulu untuk melihat histeresis, lalu turun), atau
+kebiasaan pengisian yang boleh diseragamkan. Kalau yang kedua, aturannya bisa
+dinaikkan jadi pemblokir — tapi sesi lama harus diperiksa dulu.
+
+---
+
 ## Yang sudah diputuskan sendiri, tidak perlu ditanyakan
 
 - **`v_eff` dipotong ke bawah** sebelum mencari `t`. Bukan pilihan: GUM G.4.1

@@ -38,11 +38,23 @@ class GantiSandiSendiriTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Organisasinya DIPEGANG, id-nya tidak diasumsikan 1.
+     *
+     * `AUTO_INCREMENT` MySQL tidak ikut di-rollback antar test, jadi test
+     * kedua dan seterusnya mendapat organisasi ber-id 2, 3, 4 … sementara
+     * `'organization_id' => 1` yang dipatok di bawah menunjuk baris yang sudah
+     * tidak ada. Yang muncul bukan asersi yang gagal melainkan pelanggaran
+     * foreign key — dan cuma di MySQL, karena SQLite membangun ulang
+     * database-nya tiap test sehingga id-nya selalu kembali ke 1.
+     */
+    private Organization $organisasi;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        Organization::factory()->create();
+        $this->organisasi = Organization::factory()->create();
     }
 
     /** @return array<string, array{string}> */
@@ -58,7 +70,7 @@ class GantiSandiSendiriTest extends TestCase
     public function test_layar_profil_bisa_dibuka(string $peran): void
     {
         $user = User::factory()->create([
-            'organization_id' => 1,
+            'organization_id' => $this->organisasi->id,
             'role' => $peran,
             'status' => User::STATUS_AKTIF,
         ]);
@@ -78,7 +90,7 @@ class GantiSandiSendiriTest extends TestCase
     public function test_super_admin_bisa_menyimpan_sandi_baru(): void
     {
         $user = User::factory()->create([
-            'organization_id' => 1,
+            'organization_id' => $this->organisasi->id,
             'role' => User::ROLE_SUPER_ADMIN,
             'status' => User::STATUS_AKTIF,
             'password' => 'sandi-lama-yang-panjang',
@@ -108,7 +120,7 @@ class GantiSandiSendiriTest extends TestCase
     public function test_teknisi_tetap_tidak_bisa_masuk_panel(): void
     {
         $teknisi = User::factory()->create([
-            'organization_id' => 1,
+            'organization_id' => $this->organisasi->id,
             'role' => User::ROLE_TEKNISI,
             'status' => User::STATUS_AKTIF,
         ]);

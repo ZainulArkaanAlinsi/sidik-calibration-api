@@ -58,6 +58,32 @@ class GayaCalculator
     private const NOL = 0.0;
 
     /**
+     * RRPE di atas ini diangkat sebagai peringatan (%).
+     *
+     * Panduan §8.2 butir 2 menyebut "biasanya < 0,5%". Angka ini BUKAN batas
+     * keberterimaan — alat gaya memang tidak divonis PASS/FAIL di repo ini —
+     * melainkan ambang "pantas dilihat manusia". Sesi contoh UTM tertinggi
+     * 0,034% dan Load Cell 1,0%, jadi yang Load Cell memang ikut tersorot, dan
+     * itu benar: sepuluh titiknya di luar rentang tabel standar.
+     */
+    public const RRPE_PANTAS_DILIHAT = 0.5;
+
+    /**
+     * Ambang z-skor MAD untuk menandai satu bacaan menyimpang.
+     *
+     * Panduan §8.3. MAD dipakai, bukan STDEV, karena satu salah ketik ikut
+     * menggelembungkan STDEV-nya sendiri sehingga menyamarkan dirinya.
+     *
+     * Yang ditandai TIDAK PERNAH dibuang — ISO/IEC 17025 klausul 7.5.2, dan
+     * AGENTS.md §Peran butir 5. Manusia yang memutuskan: salah ketik (koreksi,
+     * dengan jejak) atau memang begitu bacaannya.
+     */
+    public const Z_MAD_MENYIMPANG = 3.5;
+
+    /** Faktor baku yang membuat MAD sebanding dengan simpangan baku normal. */
+    private const MAD_KE_SIGMA = 0.6745;
+
+    /**
      * Konversi nilai gaya ke kN.
      *
      * Satuan yang tidak dikenal DILEMPAR, bukan dianggap 1. Master menjawab
@@ -163,6 +189,88 @@ class GayaCalculator
     }
 
     /**
+     * Indeks bacaan yang menyimpang jauh dari tetangganya, lewat z-skor MAD.
+     *
+     * Kenapa MAD dan bukan simpangan baku: satu ketikan `250,1` yang mestinya
+     * `200,1` ikut menggelembungkan STDEV-nya sendiri, sehingga z-skor
+     * berbasis STDEV justru mengecil dan nilai itu lolos. Median dan MAD tidak
+     * ikut tergeser oleh satu nilai.
+     *
+     * MAD nol (mayoritas bacaan identik) memulangkan daftar KOSONG, bukan
+     * menandai semua yang berbeda: pembagi nol di sana melahirkan tak-hingga,
+     * dan lembar yang seluruh bacaannya identik sudah punya peringatannya
+     * sendiri.
+     *
+     * @param  array<int, float>  $nilai
+     * @return list<int> indeks 0-basis
+     */
+    public static function menyimpangMad(array $nilai): array
+    {
+        if (count($nilai) < 3) {
+            return [];
+        }
+
+        $median = self::median($nilai);
+        $simpangan = array_map(static fn (float $x): float => abs($x - $median), $nilai);
+        $mad = self::median($simpangan);
+
+        // MAD NOL adalah keadaan NORMAL di sini, bukan kasus pinggiran.
+        //
+        // Bentuk data gaya yang paling lazim: satu posisi membaca beda, sebelas
+        // bacaan lain identik. Sesi contoh Load Cell titik 2 kN begitu —
+        // sembilan kali 2,16 dan tiga kali 2,14 — dan median simpangannya nol
+        // karena mayoritasnya berimpit dengan median.
+        //
+        // Berhenti di sini berarti detektornya mati justru pada bentuk data
+        // yang paling sering muncul. Jadi skalanya diambil dari simpangan yang
+        // BUKAN nol: itu ukuran "seberapa jauh bacaan yang memang berbeda
+        // biasanya berbeda", dan si salah ketik tetap menonjol jauh di atasnya.
+        //
+        // Yang TIDAK tertangkap cara ini, dan ditulis di sini supaya tidak
+        // ditemukan ulang sebagai kejutan: satu bacaan nyasar di antara SEBELAS
+        // yang identik. Simpangan bukan-nol-nya cuma ada satu, jadi dia jadi
+        // skalanya sendiri dan z-nya selalu 0,67. Keadaan itu tertangkap RRPE
+        // di tingkat titik — yang hilang cuma penyebutan bacaan keberapa.
+        if ($mad <= 0.0) {
+            $bukanNol = array_values(array_filter($simpangan, static fn (float $d): bool => $d > 0.0));
+
+            if ($bukanNol === []) {
+                return [];
+            }
+
+            $mad = self::median($bukanNol);
+        }
+
+        $menyimpang = [];
+
+        foreach (array_values($nilai) as $i => $x) {
+            if (abs($x - $median) / $mad * self::MAD_KE_SIGMA > self::Z_MAD_MENYIMPANG) {
+                $menyimpang[] = $i;
+            }
+        }
+
+        return $menyimpang;
+    }
+
+    /** @param  array<int, float>  $nilai */
+    public static function median(array $nilai): float
+    {
+        $urut = array_values($nilai);
+        sort($urut);
+        $n = count($urut);
+
+        if ($n === 0) {
+            return 0.0;
+        }
+
+        $tengah = intdiv($n, 2);
+
+        return $n % 2 === 1
+            ? $urut[$tengah]
+            : ($urut[$tengah - 1] + $urut[$tengah]) / 2;
+    }
+
+    /**
      * Satu titik beban, dari 12 bacaan mentah sampai angka sertifikat.
      *
      * @param  array<int, float>  $bacaan  bacaan UUT dalam satuan aslinya (belum kN)
@@ -232,6 +340,52 @@ class GayaCalculator
                 count($bacaan),
                 $nominal,
                 $satuan,
+            );
+        }
+
+        // Panduan §8.2 butir 3 — yang paling sering menyelamatkan.
+        //
+        // Salah ketik satu digit (250,1 alih-alih 200,1) lolos SEMUA
+        // pemeriksaan rentang: nilainya masuk akal untuk alat 500 kgf. Yang
+        // membongkarnya cuma membandingkannya ke sebelas tetangganya.
+        foreach (self::menyimpangMad($bacaan) as $i) {
+            $temuan[] = sprintf(
+                'Bacaan ke-%d pada titik %s %s (%s) menyimpang jauh dari yang lain (median %s) — '
+                .'kemungkinan salah ketik. Nilainya TIDAK diubah; Master Data yang memutuskan.',
+                $i + 1,
+                $nominal,
+                $satuan,
+                $bacaan[$i],
+                self::median($bacaan),
+            );
+        }
+
+        // Panduan §8.2 butir 6. Dipisah dari "baca nol" di atas: nol berarti
+        // alat tidak merespons, negatif berarti arahnya terbalik — dua sebab
+        // berbeda yang perlu dua kalimat berbeda buat orang di lapangan.
+        $negatif = array_values(array_filter(
+            array_keys($bacaan),
+            static fn (int $i): bool => $bacaan[$i] < 0.0,
+        ));
+
+        if ($B > 0.0 && $negatif !== []) {
+            $temuan[] = sprintf(
+                'Bacaan negatif pada titik %s %s (ke-%s) padahal bebannya positif — periksa arah beban atau pemasangan.',
+                $nominal,
+                $satuan,
+                implode(', ', array_map(static fn (int $i): int => $i + 1, $negatif)),
+            );
+        }
+
+        // Panduan §8.2 butir 2. Bukan vonis: alat gaya tidak punya toleransi di
+        // repo ini, jadi yang bisa dilakukan cuma menyorot.
+        if ($AB !== null && $AB > self::RRPE_PANTAS_DILIHAT) {
+            $temuan[] = sprintf(
+                'RRPE %s%% pada titik %s %s (biasanya di bawah %s%%) — periksa kondisi mesin.',
+                round($AB, 3),
+                $nominal,
+                $satuan,
+                self::RRPE_PANTAS_DILIHAT,
             );
         }
 

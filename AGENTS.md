@@ -33,11 +33,28 @@ beda. Empat bug pernah bersembunyi di celah itu. Alasan lengkapnya ditulis di
 kepala `phpunit.mysql.xml`.
 
 Sekali seumur mesin, buat database khusus test (BUKAN database kerja —
-`RefreshDatabase` menghapus isinya):
+`RefreshDatabase` menghapus isinya) beserta user yang haknya SEMPIT:
 
 ```sql
 CREATE DATABASE asmo_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'sidik_test'@'127.0.0.1' IDENTIFIED BY '<sandi lokalmu>';
+GRANT ALL PRIVILEGES ON asmo_db_test.* TO 'sidik_test'@'127.0.0.1';
 ```
+
+**Haknya dikunci ke satu database, dan itu bukan kerapian.** Mesin kerja pemilik
+proyek juga memegang `sidik_db` dan lima database proyek lain; `RefreshDatabase`
+MENGHAPUS ISI database yang ditunjuknya, jadi user yang berhak lebih luas dari
+satu database test cuma berjarak satu salah ketik `DB_DATABASE` dari kehilangan
+data kerja.
+
+Sandinya TIDAK masuk repo. Pembungkusnya `jalankan-test-mysql.ps1` (sudah
+di-gitignore) yang menyetel `DB_USERNAME`/`DB_PASSWORD` lalu memanggil
+`php artisan test -c phpunit.mysql.xml`. Tanpa pembungkus itu, user yang kepakai
+ikut `.env` dan koneksinya ditolak localhost — gagal berisik di mesin sendiri,
+bukan diam-diam menyentuh produksi.
+
+Dicek 24 Sep 2026 di mesin kerja: MySQL 8.0.44, service `MySQL80`, port 3306.
+Suite MySQL penuh **3 jam 3 menit** (SQLite 56 menit).
 
 ### Format & bantu ketik
 

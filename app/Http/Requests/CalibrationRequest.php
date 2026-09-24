@@ -14,6 +14,7 @@ use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
+use App\Support\GayaMentah as M;
 use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
 use Illuminate\Database\Eloquent\Collection;
@@ -51,6 +52,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokFlowmeter();
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
+        $this->bakukanBlokGaya();
         $this->bakukanTogglHydrometer();
         $this->bakukanBlokHydrometer();
 
@@ -469,6 +471,12 @@ class CalibrationRequest extends FormRequest
                     'js_outside', 'js_inside', 'js_depth',
                     'hydro_massa', 'hydro_suhu',
                     'vol_kosong', 'vol_isi', 'vol_suhu',
+                    // Empat deret posisi lembar gaya. Ikut ke sini, bukan ke
+                    // `bakukanBlokGaya()`, karena dia bagian dari `measurements`
+                    // — dan pembacaan gaya ditulis sampai empat desimal
+                    // (`300,3006`), jadi koma yang lolos bukan cuma ditolak
+                    // `numeric`, dia menggeser angkanya ratusan kali.
+                    ...M::PERAN_POSISI,
                 ] as $kunci) {
                     if (array_key_exists($kunci, $t)) {
                         $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
@@ -560,6 +568,54 @@ class CalibrationRequest extends FormRequest
      * TIDAK bergeser — `no` dari `titik_ukur` baris (nomor opening), jatuh ke
      * posisi baris kalau kosong. Tidak dikonversi satuan (tidak idempoten).
      */
+    /**
+     * Blok sesi GAYA: preload, misalignment, kapasitas, resolusi.
+     *
+     * ## Kenapa ini perlu, dan kenapa ketiadaannya tidak pernah error
+     *
+     * Keempat deret di blok ini tidak pernah lewat aturan `numeric` — dia
+     * masuk sebagai bagian dari `spesifikasi_alat` yang bebas bentuk, lalu
+     * `GayaMentah::blokSesi()` melemparkannya ke `(float)`. Dan
+     * `(float) "8,237"` di PHP bukan galat melainkan **8.0**.
+     *
+     * Jadi misalignment `8,237` yang diketik di keyboard HP Indonesia mendarat
+     * sebagai `8`, simpangan bakunya runtuh, dan komponen misalignment di
+     * budget mengecil — U95 yang tercetak lebih kecil dari yang seharusnya,
+     * tanpa satu pun pesan galat di jalan mana pun.
+     *
+     * Panduan §8.4 memintanya eksplisit: normalisasi di Flutter DAN di
+     * Laravel. HP kita memang sudah melakukannya; ini penjaga lapis kedua,
+     * karena server tidak boleh bertumpu pada satu klien.
+     */
+    private function bakukanBlokGaya(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[M::KUNCI_SESI] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        foreach (['preload_zero', 'preload_max', 'misalignment'] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukanDalam($blok[$kunci]);
+            }
+        }
+
+        foreach ([
+            'kapasitas', 'resolusi_uut', 'resolusi_standar',
+            'kapasitas_standar', 'suhu_sertifikat_standar',
+        ] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
+            }
+        }
+
+        $spek[M::KUNCI_SESI] = $blok;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
     private function bakukanBlokSieve(): void
     {
         $spek = (array) $this->input('spesifikasi_alat', []);
@@ -1067,6 +1123,19 @@ class CalibrationRequest extends FormRequest
             // posisinya, dan draft yang belum lengkap harus tetap tersimpan.
             // Deret yang tidak lengkap DITOLAK di `susunBlokVolumetric()`
             // dengan alasan yang kebaca, bukan dengan 422.
+            // Empat deret posisi lembar GAYA. `size:3` bukan kelonggaran:
+            // tiap posisi TEPAT tiga replikat, dan empat posisi x tiga = dua
+            // belas yang diasumsikan divisor pengulangan di budget. Jumlah yang
+            // lain ditolak di sini supaya pesannya menyebut kotak mana, bukan
+            // baru ketahuan waktu dihitung sebagai "titik belum lengkap".
+            'measurements.*.gaya_pos_0' => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.gaya_pos_0.*' => ['nullable', 'numeric'],
+            'measurements.*.gaya_pos_90' => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.gaya_pos_90.*' => ['nullable', 'numeric'],
+            'measurements.*.gaya_pos_180' => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.gaya_pos_180.*' => ['nullable', 'numeric'],
+            'measurements.*.gaya_pos_270' => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.gaya_pos_270.*' => ['nullable', 'numeric'],
             'measurements.*.vol_kosong' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.vol_kosong.*' => ['nullable', 'numeric', 'gte:0'],
             'measurements.*.vol_isi' => ['sometimes', 'nullable', 'array', 'size:3'],
@@ -1454,6 +1523,12 @@ class CalibrationRequest extends FormRequest
      */
     private const SPEK_BERBENTUK_BLOK = [
         'keterulangan',
+        // Gaya — satuan, standar, arah beban, preload, dan misalignment.
+        // Tanpa baris ini blok dari HP jatuh ke penjaga "harus teks, bukan
+        // objek" dan SELURUH sesi ditolak 422, persis kasus Volumetric
+        // Glassware di bawah. Gejalanya menyesatkan: yang disebut `gaya`,
+        // padahal yang salah bukan isinya melainkan ketiadaan baris ini.
+        M::KUNCI_SESI,
         // Volumetric Glassware — kelas, toleransi, resolusi, kapasitas, dan
         // neraca. Tanpa baris ini blok dari HP jatuh ke penjaga "harus teks,
         // bukan objek" dan SELURUH sesi ditolak 422 — kasus yang sama dengan

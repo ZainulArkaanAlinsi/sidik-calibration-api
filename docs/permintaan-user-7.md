@@ -3860,6 +3860,59 @@ terjawab sendiri). Serah-terima HP: `docs/perintah-frontend-gaya.md`.
 
 ---
 
+### Sesudah §37 mendarat: empat hal yang ketahuan karena gerbangnya dijalankan penuh
+
+Ditulis terpisah karena keempatnya ditemukan SESUDAH commit pertama naik, dan
+tiga di antaranya tidak akan pernah muncul dari membaca kode.
+
+**1. HP belum bisa menyimpan lembar gaya sama sekali.**
+`CalibrationController::susunPengukuran()` punya sebelas cabang alat dan nol
+untuk gaya. Sesi contoh kedua alat lahir dari seeder yang menulis
+`raw_measurements` LANGSUNG, jadi seluruh rantai hitung terbukti benar — sel
+demi sel, sampai kolom sertifikat — sementara **pintu masuknya tidak ada**.
+Fitur yang kelihatan selesai dari semua sudut kecuali yang dipakai orang.
+
+Bentuknya sekarang: hook `butuhBlokGaya()` + `susunBlokGaya()` yang menyimpan
+keempat deret posisi ke `peran_sensor` masing-masing. Yang digabung cuma
+BUDGET-nya (dua belas bacaan jadi satu deret); penyimpanannya tetap terpisah,
+karena lembar yang dibuka ulang harus tahu angka mana milik kotak mana — tanpa
+itu teknisi yang mengoreksi satu bacaan mengoreksi kotak yang salah, tanpa
+error. Dijaga `GayaSesiSimpanTest` (5 kasus, lewat HTTP).
+
+**2. `spesifikasi_alat.gaya` belum terdaftar sebagai blok objek**, jadi kiriman
+HP jatuh ke penjaga "harus teks, bukan objek" dan SELURUH sesi ditolak 422.
+Kasus yang sama persis dengan Volumetric Glassware dan Anak Timbangan
+sebelumnya — ketiga kalinya pola ini terulang.
+
+**3. Koma desimal blok sesi tidak dinormalisasi.** `(float) "8,237"` di PHP
+bukan galat melainkan **8.0**. Misalignment yang mendarat sebagai 8 meruntuhkan
+simpangan bakunya dan MENGECILKAN U95 yang tercetak — arah yang salah, tanpa
+satu pun gejala. Panduan §8.4 memintanya eksplisit dan itu terlewat.
+
+**4. Aturan validasi §8.1/§8.2 dipasang** — 5 pemblokir, 8 peringatan.
+
+Satu di antaranya SENGAJA menyimpang dari panduan: "nominal harus naik monoton"
+didaftarkan panduan sebagai **pemblokir**, tapi sesi master Load Cell sendiri
+urutannya `0 → 100 → 2 → 3 … 9 kN`. Ditegakkan sebagai pemblokir, lembar yang
+benar-benar dipakai lab tidak bisa dikirim. Diturunkan jadi peringatan dan
+diangkat sebagai pertanyaan lab G13.
+
+Dan satu cacat implementasi yang ditangkap testnya sendiri: detektor pencilan
+MAD **mati** persis pada bentuk data gaya yang paling normal. Sembilan bacaan
+identik + tiga beda membuat median simpangannya NOL, jadi pembaginya nol dan
+detektornya berhenti — justru di bentuk data yang paling sering muncul.
+Diperbaiki dengan mengambil skala dari simpangan yang bukan nol; satu kasus
+yang tetap tidak tertangkap (satu bacaan nyasar di antara sebelas yang identik)
+ditulis terang di kodenya dan ditangkap RRPE di tingkat titik.
+
+**Gerbang dua-suite akhirnya utuh.** MySQL lokal disetel 24 Sep 2026 (user
+`sidik_test`, hak dikunci ke `asmo_db_test` saja), dan jalan pertamanya langsung
+menemukan 9 test merah yang **tidak pernah terlihat di SQLite**: `AUTO_INCREMENT`
+MySQL tidak ikut di-rollback antar test, jadi organisasi buatan `setUp()` dapat
+id 2, 3, … sementara `PerintahAkunSuperAdminTest` dan `GantiSandiSendiriTest`
+memaku id 1. Keduanya lahir bersama commit super admin 24 Sep dan tidak pernah
+diuji di MySQL. Yang salah penjaganya, bukan kodenya.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

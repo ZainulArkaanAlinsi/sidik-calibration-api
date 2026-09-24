@@ -75,6 +75,45 @@ abstract class GayaProfile extends CalibrationProfile
      * sendiri berarti menggeser angka yang sudah tercetak di sertifikat
      * pelanggan salah satu dari keduanya. Diangkat sebagai pertanyaan lab G12.
      */
+    /**
+     * Berapa bacaan yang WAJIB ada di tiap titik.
+     *
+     * Dua belas untuk UTM & Load Cell (empat posisi x tiga replikat). Bukan
+     * kelengkapan administratif: divisor pengulangan di budget mengasumsikan
+     * n = 12, jadi titik yang cuma terisi sembilan menerbitkan ketidakpastian
+     * yang lebih KECIL dari yang seharusnya — arah yang salah, dan tanpa satu
+     * pun error.
+     *
+     * Proving Ring memulangkan 6 (UP 3x + DOWN 3x) waktu dia mendarat.
+     */
+    /** Empat deret posisi per titik — lihat [CalibrationProfile::butuhBlokGaya]. */
+    public function butuhBlokGaya(): bool
+    {
+        return true;
+    }
+
+    public function jumlahBacaanWajib(): int
+    {
+        return count(M::PERAN_POSISI) * M::REPLIKAT;
+    }
+
+    /**
+     * Rentang suhu ruangan yang diterima metodenya (°C), inklusif.
+     *
+     * Catatan eksplisit di workbook master; panduan §8.1 mengulangnya. Di luar
+     * itu koefisien termal 0,00027/°C yang dipakai rantai hitung tidak lagi
+     * bisa diklaim berlaku.
+     */
+    public const SUHU_RUANGAN_MIN = 10.0;
+
+    public const SUHU_RUANGAN_MAKS = 35.0;
+
+    /** Sebaran suhu awal-akhir di atas ini disorot (°C). Panduan §8.2 butir 8. */
+    public const SEBARAN_SUHU_PANTAS_DILIHAT = 2.0;
+
+    /** Berapa pengukuran misalignment yang wajib ada. STDEV butuh minimal itu. */
+    public const MISALIGNMENT_WAJIB = 4;
+
     abstract public function pakaiKoreksiTermalDiSertifikat(): bool;
 
     /** Nomor formulir lembar kerjanya, dari kertas resmi — bukan dikarang. */
@@ -168,6 +207,26 @@ abstract class GayaProfile extends CalibrationProfile
             $konteksSesi['suhu_akhir'] ?? null,
         ) ?? $suhuSertifikat;
 
+        // ---- Pemblokir tingkat-SESI (panduan §8.1) ------------------------
+        //
+        // Ditaruh di sini, sebelum satu titik pun dihitung, karena ketiganya
+        // merusak SELURUH sesi — bukan satu titik. Memblokir per titik akan
+        // menerbitkan enam pesan yang sebenarnya satu sebab, dan orang yang
+        // membacanya mengira ada enam masalah.
+        $penghalangSesi = $this->penghalangSesi($blok, $konteksSesi);
+
+        if ($penghalangSesi !== null) {
+            return [
+                'hitungan' => [],
+                'belum_dihitung' => array_map(static fn (array $t): array => [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => $penghalangSesi,
+                ], $titik),
+            ];
+        }
+
+        $temuanSesi = $this->temuanSesi($blok, $konteksSesi, $titik);
+
         $hasilTitik = [];
         $belumDihitung = [];
 
@@ -180,6 +239,29 @@ abstract class GayaProfile extends CalibrationProfile
                 $belumDihitung[] = [
                     'titik_ke' => (int) $t['titik_ke'],
                     'alasan' => 'Titik ini belum punya satu pun pembacaan.',
+                ];
+
+                continue;
+            }
+
+            // Panduan §8.1: TEPAT sekian bacaan, bukan "minimal".
+            //
+            // Lebih dari yang diminta sama bermasalahnya dengan kurang: divisor
+            // pengulangan mengasumsikan satu angka tetap, dan lembar yang
+            // terisi tiga belas kali berarti ada satu baris yang tidak tahu
+            // dari posisi mana.
+            if (count($bacaan) !== $this->jumlahBacaanWajib()) {
+                $belumDihitung[] = [
+                    'titik_ke' => (int) $t['titik_ke'],
+                    'alasan' => sprintf(
+                        'Titik %s baru terisi %d dari %d pembacaan. Budget ketidakpastiannya '
+                        .'mengasumsikan %d bacaan, jadi menghitungnya sekarang menerbitkan U95 '
+                        .'yang lebih kecil dari yang seharusnya.',
+                        $nominal,
+                        count($bacaan),
+                        $this->jumlahBacaanWajib(),
+                        $this->jumlahBacaanWajib(),
+                    ),
                 ];
 
                 continue;
@@ -291,7 +373,7 @@ abstract class GayaProfile extends CalibrationProfile
                 'standar_deviasi' => $h['S'],
                 'jumlah_pengulangan' => $h['jumlah_bacaan'],
                 'type_a' => $typeA,
-                'type_b_components' => $this->jejakAudit($h, $komponen, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok),
+                'type_b_components' => $this->jejakAudit($h, $komponen, $agregat, $uKn, $cmcKn, $u95, (string) $arah, $blok, $temuanSesi),
                 'type_b' => sqrt(max(0.0, $uc ** 2 - $typeA ** 2)),
                 'ketidakpastian_gabungan' => $uc,
                 'faktor_cakupan_k' => $agregat['faktor_cakupan_k'],
@@ -307,6 +389,134 @@ abstract class GayaProfile extends CalibrationProfile
         usort($hitungan, static fn (array $a, array $b): int => $a['titik_ke'] <=> $b['titik_ke']);
 
         return ['hitungan' => $hitungan, 'belum_dihitung' => $belumDihitung];
+    }
+
+    /**
+     * Alasan sesi ini TIDAK boleh dihitung sama sekali, atau `null` kalau lolos.
+     *
+     * Panduan §8.1. Yang tidak ada di sini dan memang sengaja:
+     *
+     * - **Satuan wajib dipilih** dan **kombinasi standar x arah harus punya
+     *   tabel** sudah ditegakkan lebih dalam, di `GayaCalculator` — yang
+     *   pertama melempar, yang kedua memulangkan `W` null. Mengulangnya di
+     *   sini bikin dua tempat yang harus ikut berubah bersamaan.
+     * - **Standar tidak kedaluwarsa** ditegakkan `CalibrationValidator` untuk
+     *   SEMUA alat. Menyalinnya ke sini menghasilkan dua pesan berbeda untuk
+     *   satu keadaan.
+     * - **Nominal naik monoton** SENGAJA bukan pemblokir — lihat
+     *   [temuanSesi].
+     *
+     * @param  array<string, mixed>  $blok
+     * @param  array<string, mixed>  $konteksSesi
+     */
+    protected function penghalangSesi(array $blok, array $konteksSesi): ?string
+    {
+        $misalignment = $blok['misalignment'] ?? [];
+
+        if (count($misalignment) !== self::MISALIGNMENT_WAJIB) {
+            return sprintf(
+                'Misalignment perlu %d pengukuran, yang terisi %d. Simpangan bakunya masuk budget '
+                .'ketidakpastian, jadi jumlah yang kurang menerbitkan U95 dari sebaran yang tidak '
+                .'pernah diukur penuh.',
+                self::MISALIGNMENT_WAJIB,
+                count($misalignment),
+            );
+        }
+
+        $suhu = array_values(array_filter(
+            [$konteksSesi['suhu_awal'] ?? null, $konteksSesi['suhu_akhir'] ?? null],
+            static fn (mixed $x): bool => $x !== null && $x !== '',
+        ));
+
+        foreach ($suhu as $nilai) {
+            $t = (float) $nilai;
+
+            if ($t < self::SUHU_RUANGAN_MIN || $t > self::SUHU_RUANGAN_MAKS) {
+                return sprintf(
+                    'Suhu %s °C di luar rentang metode (%s–%s °C). Koreksi termal 0,00027/°C yang '
+                    .'dipakai rantai hitung tidak bisa diklaim berlaku di luar rentang itu.',
+                    $t,
+                    self::SUHU_RUANGAN_MIN,
+                    self::SUHU_RUANGAN_MAKS,
+                );
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Peringatan tingkat-SESI: terlihat, tapi tidak memblokir. Panduan §8.2.
+     *
+     * ## Kenapa urutan titik cuma PERINGATAN, padahal panduan menaruhnya di §8.1
+     *
+     * Panduan meminta nominal naik monoton dan menyebutnya pemblokir. Sesi
+     * master Load Cell sendiri melanggarnya: urutannya `0, 100, 2, 3, … 9 kN`
+     * — titik kedua langsung kapasitas penuh, baru turun ke rentang bawah. Dan
+     * sertifikatnya mencetak dalam urutan itu juga.
+     *
+     * Jadi menjadikannya pemblokir berarti lembar yang benar-benar dipakai lab
+     * tidak bisa dikirim. Antara panduan dan master, yang menang master —
+     * AGENTS.md §Aturan yang Lahir dari Kesalahan Nyata. Yang benar dilakukan:
+     * tiru masternya, sorot urutannya, dan angkat pertentangannya sebagai
+     * pertanyaan lab bernomor (G13).
+     *
+     * @param  array<string, mixed>  $blok
+     * @param  array<string, mixed>  $konteksSesi
+     * @param  list<array<string, mixed>>  $titik
+     * @return list<string>
+     */
+    protected function temuanSesi(array $blok, array $konteksSesi, array $titik): array
+    {
+        $temuan = [];
+
+        $nominal = array_map(static fn (array $t): float => (float) ($t['titik_ukur'] ?? 0), $titik);
+
+        for ($i = 1, $n = count($nominal); $i < $n; $i++) {
+            if ($nominal[$i] < $nominal[$i - 1]) {
+                $temuan[] = sprintf(
+                    'Titik ke-%d (%s) lebih kecil dari titik ke-%d (%s) — urutan bebannya tidak naik. '
+                    .'Tidak memblokir: sesi master Load Cell memang begitu (G13).',
+                    $i + 1,
+                    $nominal[$i],
+                    $i,
+                    $nominal[$i - 1],
+                );
+
+                break;
+            }
+        }
+
+        $awal = $konteksSesi['suhu_awal'] ?? null;
+        $akhir = $konteksSesi['suhu_akhir'] ?? null;
+
+        if ($awal !== null && $akhir !== null && $awal !== '' && $akhir !== '') {
+            $sebaran = abs((float) $awal - (float) $akhir);
+
+            if ($sebaran > self::SEBARAN_SUHU_PANTAS_DILIHAT) {
+                $temuan[] = sprintf(
+                    'Suhu bergeser %s °C selama pengukuran (%s → %s °C) — kondisi tidak stabil.',
+                    round($sebaran, 2),
+                    $awal,
+                    $akhir,
+                );
+            }
+        }
+
+        // Zero error masuk budget lewat komponennya sendiri, jadi ini bukan
+        // "angkanya belum terhitung" — ini "angkanya terhitung, dan besarnya
+        // pantas dilihat sebelum sertifikatnya terbit".
+        $zeroError = M::zeroErrorMaks($blok['preload_zero'] ?? []);
+
+        if ($zeroError > 0.0) {
+            $temuan[] = sprintf(
+                'Zero error %s %s sesudah preload — sudah masuk budget, tapi patut dilihat.',
+                $zeroError,
+                $blok['satuan'] ?? '',
+            );
+        }
+
+        return $temuan;
     }
 
     /**
@@ -385,21 +595,6 @@ abstract class GayaProfile extends CalibrationProfile
     }
 
     /**
-     * Jejak audit yang terbaca TANPA membuka kode.
-     *
-     * Dua penyimpangan master wajib kelihatan di jejak sesi, bukan cuma di
-     * komentar: baris drift yang tidak dibagi divisornya, dan `Correction` yang
-     * memakai Y sementara sertifikat mencetak Z. Orang yang menyetujui sesi
-     * harus bisa tahu angka ini berbeda dari master, berapa bedanya, dan atas
-     * dasar apa.
-     *
-     * @param  array<string, mixed>  $h
-     * @param  list<array<string, mixed>>  $komponen
-     * @param  array<string, mixed>  $agregat
-     * @param  array<string, mixed>  $blok
-     * @return array<string, mixed>
-     */
-    /**
      * Sertifikat dicetak dalam satuan ALAT; hitungannya hidup dalam kN.
      *
      * Tanpa hook ini titik 200 kgf tercetak `2,0` — angka kN berlabel kgf,
@@ -466,6 +661,26 @@ abstract class GayaProfile extends CalibrationProfile
         return $this->pakaiKoreksiTermalDiSertifikat() ? 'Z' : 'Y';
     }
 
+    /**
+     * Jejak audit yang terbaca TANPA membuka kode.
+     *
+     * Penyimpangan master wajib kelihatan di jejak sesi, bukan cuma di
+     * komentar, karena komentar tidak sampai ke orang yang menyetujui sesi
+     * (AGENTS.md §Olah data butir 4). Yang dibawa ke sini: baris drift yang
+     * tidak dibagi divisornya, kolom mana yang dicetak di `Standard Value`,
+     * dan — untuk Load Cell — keputusan memakai Y di semua satuan sementara
+     * master cuma memakainya di cabang kN.
+     *
+     * Ikut juga temuan per titik DAN temuan tingkat-sesi. Yang kedua diulang
+     * di tiap baris dengan sengaja; alasannya di bawah, dekat kuncinya.
+     *
+     * @param  array<string, mixed>  $h
+     * @param  list<array<string, mixed>>  $komponen
+     * @param  array<string, mixed>  $agregat
+     * @param  array<string, mixed>  $blok
+     * @param  list<string>  $temuanSesi
+     * @return array<string, mixed>
+     */
     protected function jejakAudit(
         array $h,
         array $komponen,
@@ -475,6 +690,7 @@ abstract class GayaProfile extends CalibrationProfile
         float $u95,
         string $arah,
         array $blok,
+        array $temuanSesi = [],
     ): array {
         return [
             'komponen' => $komponen,
@@ -531,6 +747,11 @@ abstract class GayaProfile extends CalibrationProfile
                     .'yang dipakai sesi ini dari workbook `'.$this->sumberDrift().'`. Pertanyaan lab bernomor G2.',
             ], static fn (?string $x): bool => $x !== null),
             'temuan' => $h['temuan'],
+            // Peringatan tingkat-SESI diulang di tiap baris, dan itu disengaja.
+            // Jejak audit dibaca PER TITIK di layar persetujuan; ditaruh sekali
+            // di satu baris saja, sembilan titik lain tidak memperlihatkannya
+            // dan orang yang membuka titik ke-3 mengira sesinya bersih.
+            'temuan_sesi' => $temuanSesi,
         ];
     }
 

@@ -179,21 +179,68 @@ Tiga hal yang perlu diketahui sisi HP:
 
 ---
 
-## 7. Peringatan yang sebaiknya ditampilkan di HP
+## 7. Validasi — apa yang server TAHAN dan apa yang cuma DISOROT
 
-Server mengirimkannya sebagai temuan; menampilkannya lebih awal menghemat satu
-putaran bolak-balik ke Master Data:
+Dua jenis, dan HP sebaiknya membedakannya di layar.
 
-- **12 pembacaan identik pada satu titik** — mesin uji nyata hampir selalu
-  berbeda di digit terakhir. Bukan blokir, tapi minta konfirmasi.
-- **Beban di luar rentang tabel standar** — koreksinya diambil dari titik
-  terdekat, bukan interpolasi tervalidasi.
-- **Pembacaan nol pada beban non-nol** — ini temuan, bukan angka nol yang wajar.
+### Yang MENAHAN (sesi/titik tidak dihitung)
+
+| Aturan | Cakupan | Pesan yang dipulangkan |
+|---|---|---|
+| Misalignment wajib 4 pengukuran | seluruh sesi | *"Misalignment perlu 4 pengukuran, yang terisi 2…"* |
+| Suhu ruangan 10–35 °C | seluruh sesi | *"Suhu 38.2 °C di luar rentang metode (10–35 °C)…"* |
+| Tepat 12 bacaan per titik | titik itu saja | *"Titik 200 baru terisi 9 dari 12 pembacaan…"* |
+| Blok `gaya` tidak lengkap | seluruh sesi | menyebut field yang hilang |
+| Kombinasi standar × arah tanpa tabel | titik itu saja | menyebut standar & arahnya |
+
+**Deret replikat ditolak lebih awal, di HTTP 422.** Tiap `gaya_pos_*` wajib
+berisi **tepat tiga** angka; kurang atau lebih dibalas
+`measurements.0.gaya_pos_0`. Ditolak di sana pesannya bisa menyebut kotak mana
+— kalau lolos sampai tahap hitung, yang muncul cuma "titik belum lengkap".
+
+### Yang cuma DISOROT (sesi tetap dihitung)
+
+Muncul di jejak sesi, dan **HP tidak perlu memblokir tombol kirim**:
+
+1. Dua belas bacaan satu titik identik semua
+2. RRPE di atas 0,5 % pada satu titik
+3. Satu bacaan menyimpang jauh dari sebelas tetangganya — menyebut **bacaan
+   keberapa**, dan nilainya **tidak pernah diubah**
+4. Beban di luar rentang tabel standar
+5. Bacaan negatif padahal bebannya positif — dan terpisah dari itu,
+   **bacaan NOL pada beban non-nol**, yang artinya alat tidak merespons sama
+   sekali
+6. Urutan titik tidak naik
+7. Zero error bukan nol sesudah preload
+8. Suhu bergeser lebih dari 2 °C antara awal dan akhir
+
+> **Butir 6 sengaja tidak memblokir.** Sesi master Load Cell urutannya
+> `0 → 100 → 2 → 3 … 9 kN`, jadi memblokirnya bikin lembar yang benar-benar
+> dipakai lab tidak bisa dikirim. Lihat pertanyaan lab G13.
+
+> **Butir 3 tidak pernah menghapus apa pun.** ISO/IEC 17025 klausul 7.5.2:
+> nilai yang diisi teknisi tidak dibuang, cuma ditandai. Master Data yang
+> memutuskan salah ketik atau memang begitu bacaannya.
 
 ---
 
-## 8. Desimal koma
+## 8. Koma desimal
 
-Pembacaan gaya ditulis sampai empat desimal (`300,3006`). Keyboard HP Indonesia
-default koma. **Normalisasi di Flutter sebelum kirim**; test wajib:
-`"300,3006"` → `300.3006`, bukan `3003006` atau `300`.
+Keyboard angka HP Indonesia menampilkan koma, dan pembacaan gaya ditulis sampai
+empat desimal (`300,3006`). Server **membakukan sendiri** koma jadi titik untuk:
+
+- keempat deret `measurements[].gaya_pos_*`
+- `titik_ukur`, suhu, dan kelembaban
+- blok sesi: `preload_zero`, `preload_max`, `misalignment`, `kapasitas`,
+  `resolusi_uut`, `resolusi_standar`, `kapasitas_standar`,
+  `suhu_sertifikat_standar`
+
+HP tetap membakukannya sendiri — ini lapis kedua, bukan pengganti. Yang
+**tidak** ditebak server: bentuk bermakna ganda seperti `1.234,5`. Dia sengaja
+dibiarkan ditolak `numeric`, karena menebak mana pemisah ribuan bisa menggeser
+angka seribu kali tanpa satu pun error.
+
+Kenapa ini bukan soal sepele: `(float) "8,237"` di PHP **bukan galat**, dia
+`8.0`. Misalignment yang mendarat sebagai 8 meruntuhkan simpangan bakunya dan
+MENGECILKAN U95 yang tercetak — arah yang salah, dan tanpa gejala.
+
