@@ -1494,7 +1494,11 @@ class WorksheetVisionExtractor
         // nyuruh "foto ulang" bikin teknisi motret berkali-kali buat sesuatu
         // yang mustahil berhasil sampai bebannya turun — kejadian 12 Agt 2026,
         // dan dua kali kelihatan kayak "fotonya jelek".
-        if (in_array($status, [429, 503], true)) {
+        //
+        // 529 itu `overloaded_error` milik Anthropic — driver bawaan. Sebelum
+        // chaos review 25 Sep 2026 dia jatuh ke "menolak permintaan", pesan
+        // yang persis bikin teknisi motret ulang.
+        if (in_array($status, [429, 503, 529], true)) {
             return 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.';
         }
 

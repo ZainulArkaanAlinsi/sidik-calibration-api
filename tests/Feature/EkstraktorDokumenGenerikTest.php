@@ -164,6 +164,29 @@ class EkstraktorDokumenGenerikTest extends TestCase
         $this->assertNull($hasil['dokumen']);
     }
 
+    /**
+     * Chaos review 25 Sep 2026: 529 adalah kode "kewalahan" Anthropic yang
+     * sebenarnya. Test di atas memakai 503, jadi kode aslinya tidak pernah
+     * diuji dan jatuh ke "menolak permintaan".
+     */
+    public function test_anthropic_kewalahan_529_tidak_menyuruh_foto_ulang(): void
+    {
+        config([
+            'services.vision.driver' => 'anthropic',
+            'services.anthropic.api_key' => 'kunci-uji',
+            'services.anthropic.model' => 'model-uji',
+        ]);
+
+        Http::fake(['*/v1/messages' => Http::response(
+            ['type' => 'error', 'error' => ['type' => 'overloaded_error', 'message' => 'Overloaded']], 529,
+        )]);
+
+        $hasil = $this->ekstraktor()->ekstrak('x', 'image/jpeg');
+
+        $this->assertFalse($hasil['ok']);
+        $this->assertStringContainsString('nggak perlu diulang', $hasil['error']);
+    }
+
     public function test_kuota_habis_dibedakan_dari_sibuk(): void
     {
         config([

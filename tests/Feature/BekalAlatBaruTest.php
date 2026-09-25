@@ -167,12 +167,18 @@ class BekalAlatBaruTest extends TestCase
             'calibration_method_id' => null,
         ])->saveQuietly();
 
+        $jumlahPembacaan = $sesi->rawMeasurements()->count();
+
+        // TANPA kunci `measurements` — mode "simpan header saja" milik HP
+        // (`sertakanMeasurements: false`). Sampai chaos review 25 Sep 2026
+        // kiriman ini membawa `'measurements' => []`, dan diam-diam MENGHAPUS
+        // seluruh pembacaan sesi ber-seed-nya; sekarang kiriman kosong seperti
+        // itu ditolak 422 (lihat `ChaosSimpanLembarKerjaTest`).
         $this->actingAs($teknisi)
             ->putJson("/api/calibrations/{$sesi->id}", [
                 'equipment_id' => $sesi->equipment_id,
                 'calibration_method_id' => $metode->id,
                 'status' => CalibrationSession::STATUS_DRAFT,
-                'measurements' => [],
             ])
             ->assertOk();
 
@@ -181,6 +187,7 @@ class BekalAlatBaruTest extends TestCase
             $sesi->fresh()->calibration_method_id,
             'Metode yang dipilih teknisi dibuang diam-diam — kolomnya sampai di admin kosong.',
         );
+        $this->assertSame($jumlahPembacaan, $sesi->rawMeasurements()->count(), 'Simpan header ikut menghapus pembacaan.');
     }
 
     /** Kolom yang MEMANG administratif tetap tertutup. */

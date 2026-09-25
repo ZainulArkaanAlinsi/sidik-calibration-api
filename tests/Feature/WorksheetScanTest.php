@@ -9,6 +9,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\WorksheetScan;
+use App\Models\WorksheetScanCell;
 use App\Services\Ocr\TemplateLembarKerja;
 use App\Services\Ocr\ValidasiSel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -696,6 +697,38 @@ class WorksheetScanTest extends TestCase
         $this->assertStringContainsString('private', $respons->headers->get('Cache-Control'));
         // JPEG asli, bukan badan kosong: dua byte pertamanya penanda SOI.
         $this->assertStringStartsWith("\xFF\xD8", $respons->getContent());
+    }
+
+    /**
+     * Chaos review 25 Sep 2026 (F2-3): penyimpanan pindai batal di tengah,
+     * sesudah citranya sudah ditulis ke disk.
+     *
+     * `store()` citra dipanggil di dalam `DB::transaction`, tapi disk tidak
+     * ikut di-rollback. Kalau transaksinya batal, berkasnya tertinggal tanpa
+     * satu baris pun yang menunjuknya — dan `ocr:bersihkan-citra` cuma
+     * membersihkan berkas yang PUNYA baris. Citra lembar kerja itu data
+     * pelanggan; yang yatim tidak pernah kadaluwarsa.
+     */
+    public function test_citra_tidak_yatim_kalau_penyimpanan_pindai_batal_di_tengah(): void
+    {
+        Storage::fake('local');
+
+        WorksheetScanCell::creating(function (): void {
+            throw new \RuntimeException('simulasi: koneksi database putus di tengah menyimpan sel');
+        });
+
+        $this->actingAs($this->teknisi)->post(self::URL, [
+            ...$this->payload(),
+            'citra' => UploadedFile::fake()->image('lembar.jpg', 1000, 1400),
+            'citra_warp' => UploadedFile::fake()->image('lembar-warp.jpg', 1654, 2339),
+        ])->assertServerError();
+
+        $this->assertSame(0, WorksheetScan::count(), 'Gangguannya tidak membatalkan transaksi — eksperimen tidak sah.');
+        $this->assertSame(
+            [],
+            Storage::disk('local')->allFiles(),
+            'Citra tertinggal di disk tanpa baris pindai yang menunjuknya.',
+        );
     }
 
     public function test_crop_sel_yang_tidak_ada_404(): void

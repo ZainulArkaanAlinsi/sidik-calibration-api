@@ -112,6 +112,7 @@ class SapuSertifikatTertunda extends Command
         }
 
         $baris = [];
+        $gagal = 0;
 
         foreach ($tersangkut as $sertifikat) {
             $baris[] = [
@@ -125,11 +126,27 @@ class SapuSertifikatTertunda extends Command
                 continue;
             }
 
-            GenerateCertificate::dispatch(
-                $sertifikat->calibration_session_id,
-                $sertifikat->issued_by,
-                $sertifikat->berlaku_sampai?->format('Y-m-d'),
-            );
+            // Per baris, bukan untuk seluruh sapuan: satu dispatch yang ditolak
+            // antrean dulu menghentikan perintahnya di tengah, dan baris-baris
+            // sesudahnya tidak pernah dicoba. Barisnya tetap `menunggu_generate`,
+            // jadi sapuan berikutnya mencobanya lagi. Dijaga `ChaosTerbitSertifikatTest`.
+            try {
+                GenerateCertificate::dispatch(
+                    $sertifikat->calibration_session_id,
+                    $sertifikat->issued_by,
+                    $sertifikat->berlaku_sampai?->format('Y-m-d'),
+                );
+            } catch (\Throwable $e) {
+                $gagal++;
+
+                Log::error('Sertifikat tersangkut gagal didorong ulang ke antrean.', [
+                    'certificate_id' => $sertifikat->id,
+                    'calibration_session_id' => $sertifikat->calibration_session_id,
+                    'galat' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
 
             // Dicatat karena sapuan ini jalan tanpa ada yang menontonnya. Kalau
             // satu sertifikat muncul di sini berulang kali, yang rusak bukan
@@ -149,6 +166,15 @@ class SapuSertifikatTertunda extends Command
             $this->components->warn($tersangkut->count().' sertifikat tersangkut. Tidak didorong (--kosongan).');
 
             return self::SUCCESS;
+        }
+
+        if ($gagal > 0) {
+            $this->components->error(
+                "{$gagal} sertifikat gagal didorong ulang ke antrean; "
+                .($tersangkut->count() - $gagal).' berhasil. Yang gagal dicoba lagi di sapuan berikutnya.',
+            );
+
+            return self::FAILURE;
         }
 
         $this->components->info($tersangkut->count().' sertifikat didorong ulang ke antrean.');

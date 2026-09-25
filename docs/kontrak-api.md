@@ -397,6 +397,8 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 > ### Tambahan di luar kontrak
 > - **`status: "draft"` boleh dikirim di `POST`** — buat "simpan dulu, lanjut nanti". Kalau nggak dikirim, sesi langsung masuk antrean approval (`menunggu_approval`), sesuai contoh kamu.
 > - **`PUT /api/calibrations/{id}`** — teknisi ngerjain ulang sesi yang ditolak admin (`perlu_revisi`) atau nerusin draft. Body-nya sama kayak `POST`. Tanpa ini, tombol "reject" jadi jalan buntu: teknisi dikasih catatan revisi tapi nggak bisa ngapa-ngapain. Sesi yang udah `disetujui` **nggak bisa** diubah (`422`) — angka di sertifikat yang udah dipegang pelanggan nggak boleh berubah diam-diam.
+> - **Tabel kosong untuk sesi yang sudah punya pembacaan → `422` (baru 25 Sep 2026).** `measurements: []`, atau tabel yang tidak menghasilkan satu baris pun (mis. semua sel kosong), ditolak dengan `errors.measurements` — **tidak ada yang dihapus**. Dulu kiriman begitu menghapus seluruh pembacaan secara permanen dengan jawaban `200`. Untuk simpan bagian atas lembar saja, jangan kirim kunci `measurements` sama sekali. Sieve dan alat berblok lain yang datanya di `spesifikasi_alat` tidak terpengaruh: yang diukur hasil susunannya, bukan isi array.
+> - **Kiriman ganda berbarengan dengan `client_request_id` sama → `200` replay (baru 25 Sep 2026).** Dulu yang kalah balapan dijawab `500` padahal datanya sudah tersimpan satu.
 > - **Field bonus di response** (superset, aman diabaikan): `nomor_sesi` (`KAL/2026/07/0001`), `standar_acuan`, `suhu_ruang`, `kelembaban`, `lokasi`, `sertifikat`, dan **`titik`** — rincian tiap titik ukur. Mobile udah nampilin ini di layar Detail Hasil Kalibrasi (`lib/screens/history/calibration_detail_screen.dart`), sinkron sama `CalibrationResource::toArray()`.
 >
 > **✅ Bentuk `titik` — dikonfirmasi dari `CalibrationResource.php` (commit `06af54e`, 18 Jul):**
@@ -1063,6 +1065,15 @@ pakai default organisasi (`tanggal_kalibrasi` + N bulan) supaya admin nggak perl
 ngetik tiap kali — ngetik tanggal manual berulang itu justru sumber salah ketik di
 kolom yang nentuin kapan alat harus dikalibrasi lagi.
 
+**`503` — sesi disetujui, penerbitan gagal dimulai (baru 25 Sep 2026).** Kalau
+antrean menolak job penerbitan (tabel `jobs` tidak bisa ditulisi), sesinya TETAP
+`disetujui` dan respons membawa `message` + `data` sesi seperti biasa, tapi
+statusnya `503`. Server meninggalkan baris sertifikat `status: "gagal"` dengan
+**`nomor: null`** — nomornya baru dialokasikan waktu diterbitkan ulang, jadi
+dokumen yang tidak pernah terbit tidak menghabiskan nomor. Mobile cukup
+menampilkan `message` dan tombol retry biasa di sertifikatnya. Dulu keadaan ini
+dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
+
 ### `POST /api/calibrations/{id}/reject`
 ```json
 { "catatan_revisi": "Titik ukur 100mm cuma 2 pembacaan, minimal 3." }
@@ -1085,6 +1096,7 @@ Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal namp
 }
 ```
 > **`status`: `menunggu_generate` / `terbit` / `gagal`.** Kalau `gagal`, mobile nampilin tombol retry — jadi tolong sediain `POST /api/certificates/{id}/retry`.
+> Retry yang antreannya menolak job dijawab **`503`** dengan `message` (baru 25 Sep 2026); barisnya tetap `gagal`, jadi tombol retry tetap ada. Sertifikat `gagal` bisa ber-`nomor: null` — lihat `approve` di atas.
 > `pdf_url` idealnya URL yang bisa langsung diunduh mobile (signed URL / route yang nerima Bearer token).
 
 ### `GET /api/verify/{qr_token}` — **tanpa auth** (dipakai orang luar yang scan QR).

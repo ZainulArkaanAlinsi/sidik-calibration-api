@@ -117,7 +117,27 @@ class WorksheetScanController extends Controller
             ]
             : $this->pemroses->proses($request->payload(), $template);
 
-        $scan = DB::transaction(fn (): WorksheetScan => $this->simpan($request, $user, $sesi, $template, $hasil));
+        // Citra ditulis SEBELUM transaksi dan dibuang lagi kalau transaksinya
+        // batal — termasuk batal waktu commit. Disk tidak ikut di-rollback:
+        // dulu `store()`-nya duduk di dalam transaksi, jadi pindai yang gagal
+        // disimpan meninggalkan citra lembar kerja pelanggan tanpa satu baris
+        // pun yang menunjuknya, dan `ocr:bersihkan-citra` cuma menyapu berkas
+        // yang PUNYA baris. Dijaga
+        // `WorksheetScanTest::test_citra_tidak_yatim_kalau_penyimpanan_pindai_batal_di_tengah`.
+        $disk = (string) config('ocr.penyimpanan.disk', 'local');
+        $folder = (string) config('ocr.penyimpanan.folder', 'worksheet-scans').'/'.now()->format('Y/m');
+        $citra = [
+            'citra_path' => $request->file('citra')?->store($folder, $disk) ?: null,
+            'citra_warp_path' => $request->file('citra_warp')?->store($folder, $disk) ?: null,
+        ];
+
+        try {
+            $scan = DB::transaction(fn (): WorksheetScan => $this->simpan($request, $user, $sesi, $template, $hasil, $citra));
+        } catch (\Throwable $e) {
+            Storage::disk($disk)->delete(array_values(array_filter($citra)));
+
+            throw $e;
+        }
 
         // Semua kegagalan dicatat terstruktur — ini bahan buat nyetel ambang &
         // nyari tau kenapa teknisi di satu lokasi selalu gagal mindai.
@@ -299,6 +319,7 @@ class WorksheetScanController extends Controller
     /**
      * @param  array<string, mixed>|null  $template
      * @param  array<string, mixed>  $hasil
+     * @param  array{citra_path: string|null, citra_warp_path: string|null}  $citra
      */
     private function simpan(
         WorksheetScanRequest $request,
@@ -306,10 +327,8 @@ class WorksheetScanController extends Controller
         ?CalibrationSession $sesi,
         ?array $template,
         array $hasil,
+        array $citra,
     ): WorksheetScan {
-        $disk = (string) config('ocr.penyimpanan.disk', 'local');
-        $folder = (string) config('ocr.penyimpanan.folder', 'worksheet-scans').'/'.now()->format('Y/m');
-
         $scan = WorksheetScan::create([
             'organization_id' => $user->organization_id,
             'calibration_session_id' => $sesi?->id,
@@ -340,8 +359,7 @@ class WorksheetScanController extends Controller
                 'template_versi' => $template['versi'] ?? null,
                 'kode_dokumen' => $template['kode_dokumen'] ?? null,
             ],
-            'citra_path' => $request->file('citra')?->store($folder, $disk) ?: null,
-            'citra_warp_path' => $request->file('citra_warp')?->store($folder, $disk) ?: null,
+            ...$citra,
             'diambil_pada' => $request->input('diambil_pada'),
         ]);
 

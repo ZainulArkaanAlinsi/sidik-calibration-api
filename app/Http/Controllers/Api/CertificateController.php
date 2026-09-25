@@ -221,7 +221,7 @@ class CertificateController extends Controller
             ], 422);
         }
 
-        GenerateCertificate::dispatch(
+        $job = new GenerateCertificate(
             $certificate->calibration_session_id,
             $request->user()->id,
             // Diwariskan dari barisnya, bukan dibiarkan kosong.
@@ -234,6 +234,19 @@ class CertificateController extends Controller
             // selisihnya cuma ketahuan kalau ada yang membandingkan dua lembar.
             $certificate->berlaku_sampai?->format('Y-m-d'),
         );
+
+        // Status baris sengaja tidak diubah di sini (lihat di atas), jadi
+        // antrean yang menolak job tidak menghilangkan tombol retry — yang
+        // dulu salah cuma jawabannya: 500 generik. Dijaga `ChaosTerbitSertifikatTest`.
+        try {
+            dispatch($job);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'message' => 'Sertifikat belum bisa masuk antrean penerbitan. Coba lagi beberapa saat lagi.',
+            ], 503);
+        }
 
         return response()->json([
             'data' => new CertificateResource($certificate->fresh()->load(self::RELASI)),

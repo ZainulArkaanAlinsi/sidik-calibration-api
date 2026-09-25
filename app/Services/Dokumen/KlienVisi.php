@@ -452,7 +452,9 @@ class KlienVisi
                 .'Sementara ini isi manual.';
         }
 
-        if (in_array($status, [429, 503], true)) {
+        // 529 = `overloaded_error` Anthropic; kembaran dari
+        // `WorksheetVisionExtractor::pesanGagalHttp()`, lihat di sana.
+        if (in_array($status, [429, 503, 529], true)) {
             return 'Layanan AI lagi sibuk. Tunggu beberapa menit lalu coba lagi — fotonya nggak perlu diulang.';
         }
 

@@ -152,7 +152,37 @@ class CertificatesTable
                     ->modalDescription('Coba bikin ulang PDF sertifikat yang tadinya gagal. Statusnya balik ke "menunggu generate" selagi diproses.')
                     ->action(function (Certificate $record): void {
                         $record->update(['status' => Certificate::STATUS_MENUNGGU_GENERATE]);
-                        GenerateCertificate::dispatch($record->calibration_session_id, User::yangLogin()?->id);
+
+                        // `berlaku_sampai` DIWARISKAN dari barisnya, sama dengan
+                        // `CertificateController::retry()`. Dulu cuma dua argumen:
+                        // `handle()` menulis ulang masa berlaku tiap job jalan, jadi
+                        // tanggal yang dipilih admin waktu approve diganti default
+                        // organisasi di dokumen terakreditasi, tanpa satu pun error.
+                        $job = new GenerateCertificate(
+                            $record->calibration_session_id,
+                            User::yangLogin()?->id,
+                            $record->berlaku_sampai?->format('Y-m-d'),
+                        );
+
+                        // Antrean yang menolak job dulu meninggalkan baris di
+                        // `menunggu_generate` tanpa job — tombol ini ikut hilang
+                        // sampai penyapu lewat. Dikembalikan ke `gagal` supaya
+                        // admin bisa mencoba lagi. Dijaga `ChaosTerbitSertifikatTest`.
+                        try {
+                            dispatch($job);
+                        } catch (\Throwable $e) {
+                            report($e);
+                            $record->update(['status' => Certificate::STATUS_GAGAL]);
+
+                            Notification::make()
+                                ->title('Sertifikat belum bisa masuk antrean penerbitan.')
+                                ->body('Coba tekan "Terbitkan ulang" lagi beberapa saat lagi.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
                         Notification::make()->title('Sertifikat sedang diterbitkan ulang.')->success()->send();
                     }),
             ])

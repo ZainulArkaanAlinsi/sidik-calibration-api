@@ -23,6 +23,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 
 class CalibrationSessionsTable
 {
@@ -186,13 +187,59 @@ class CalibrationSessionsTable
                             return;
                         }
 
-                        $record->update([
-                            'status' => CalibrationSession::STATUS_DISETUJUI,
-                            'reviewed_by' => User::yangLogin()?->id,
-                            'reviewed_at' => now(),
-                            'catatan_revisi' => null,
-                        ]);
-                        GenerateCertificate::dispatch($record->id, User::yangLogin()?->id);
+                        // Status asal diperiksa ULANG di bawah lock, bukan cuma di
+                        // `visible()` waktu tombolnya digambar. Dua admin yang
+                        // menekan "Setujui" hampir bersamaan dulu sama-sama lolos:
+                        // `reviewed_by` ditimpa admin yang kalah balapan dan job
+                        // penerbitan dikirim dua kali. API sudah menutupnya dengan
+                        // UPDATE bersyarat + 409; di sini lewat model supaya
+                        // `Diaudit` tetap mencatat persetujuannya. Dijaga
+                        // `ChaosTerbitSertifikatTest`.
+                        $disetujui = DB::transaction(function () use ($record): bool {
+                            $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
+
+                            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+                                return false;
+                            }
+
+                            $terkini->update([
+                                'status' => CalibrationSession::STATUS_DISETUJUI,
+                                'reviewed_by' => User::yangLogin()?->id,
+                                'reviewed_at' => now(),
+                                'catatan_revisi' => null,
+                            ]);
+
+                            return true;
+                        });
+
+                        if (! $disetujui) {
+                            Notification::make()
+                                ->title('Sesi ini barusan sudah disetujui lewat permintaan lain.')
+                                ->body('Sertifikatnya nggak dibikin dua kali. Muat ulang halamannya.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        $job = new GenerateCertificate($record->id, User::yangLogin()?->id);
+
+                        try {
+                            dispatch($job);
+                        } catch (\Throwable $e) {
+                            report($e);
+                            $job->tinggalkanJalanPulih($e);
+
+                            Notification::make()
+                                ->title('Sesi disetujui, tapi penerbitan sertifikatnya gagal dimulai.')
+                                ->body('Buka sertifikatnya di daftar Sertifikat lalu tekan "Terbitkan ulang".')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
                         Notification::make()->title('Sesi disetujui. Sertifikat sedang diterbitkan.')->success()->send();
                     }),
 

@@ -324,21 +324,81 @@ class GenerateCertificate implements ShouldQueue
      */
     public function failed(?\Throwable $exception): void
     {
+        $penyebab = $exception ?? new RuntimeException('Penerbitan sertifikat berhenti tanpa pesan galat.');
+
         $sertifikat = Certificate::query()
             ->where('calibration_session_id', $this->calibrationSessionId)
             ->where('status', Certificate::STATUS_MENUNGGU_GENERATE)
             ->first();
 
         if ($sertifikat === null) {
+            $this->tinggalkanJalanPulih($penyebab);
+
             return;
         }
 
         $sertifikat->update(['status' => Certificate::STATUS_GAGAL]);
 
-        $this->kabarinKegagalan(
-            $sertifikat,
-            $exception ?? new RuntimeException('Penerbitan sertifikat berhenti tanpa pesan galat.'),
-        );
+        $this->kabarinKegagalan($sertifikat, $penyebab);
+    }
+
+    /**
+     * Beri sesi yang sudah `disetujui` baris sertifikat `gagal`, kalau
+     * penerbitannya berhenti SEBELUM barisnya sempat lahir.
+     *
+     * Transaksi pertama `handle()` — yang mengalokasikan nomor — duduk di luar
+     * `try`, dan `dispatch()` di `approve()` jalan sesudah status sesi
+     * di-commit. Gagal di salah satu titik itu (deadlock, koneksi putus,
+     * antrean menolak job) meninggalkan sesi disetujui tanpa baris sertifikat
+     * sama sekali: `sertifikat:sapu-tertunda` cuma menyapu `menunggu_generate`,
+     * dan tombol "Terbitkan ulang" cuma muncul untuk `gagal`. Tidak ada jalan
+     * keluar selain menyunting database.
+     *
+     * Kenapa baris `gagal`, bukan menyuruh penyapu mengirim ulang job untuk
+     * sesi yang tidak punya baris: masa berlaku pilihan admin HANYA hidup di
+     * argumen job ini. Pengirim ulang yang menebak argumennya mencetak masa
+     * berlaku default di dokumen terakreditasi, tanpa satu pun error. Di sini
+     * nilainya masih dipegang, jadi ditulis ke baris yang kemudian diwariskan
+     * `CertificateController::retry()`.
+     *
+     * Tanpa nomor, dengan sengaja: dokumen yang tidak pernah terbit tidak
+     * boleh menghabiskan satu nomor dari urutan lab. `handle()` memberinya
+     * nomor waktu diterbitkan ulang.
+     */
+    public function tinggalkanJalanPulih(\Throwable $penyebab): void
+    {
+        $sertifikat = DB::transaction(function (): ?Certificate {
+            // Lock yang sama dengan `handle()`: job lain untuk sesi ini yang
+            // kebetulan sedang membuat barisnya ditunggu, bukan ditabrak.
+            $sesi = CalibrationSession::whereKey($this->calibrationSessionId)->lockForUpdate()->first();
+
+            if (! $sesi || $sesi->status !== CalibrationSession::STATUS_DISETUJUI || $sesi->certificate()->exists()) {
+                return null;
+            }
+
+            $token = $this->tokenUnik();
+
+            return $sesi->certificate()->create([
+                'organization_id' => $sesi->organization_id,
+                'issued_by' => $this->issuedBy,
+                'qr_token' => $token,
+                'qr_payload' => rtrim((string) config('app.url'), '/')."/verify/{$token}",
+                'berlaku_sampai' => $this->berlakuSampai,
+                'status' => Certificate::STATUS_GAGAL,
+            ]);
+        });
+
+        if ($sertifikat === null) {
+            return;
+        }
+
+        Log::error('Penerbitan sertifikat berhenti sebelum barisnya lahir; baris `gagal` dibuat supaya bisa diterbitkan ulang.', [
+            'certificate_id' => $sertifikat->id,
+            'calibration_session_id' => $this->calibrationSessionId,
+            'penyebab' => $penyebab->getMessage(),
+        ]);
+
+        $this->kabarinKegagalan($sertifikat, $penyebab);
     }
 
     /** Kabarin teknisi yang ngerjain + admin yang nerbitin. */

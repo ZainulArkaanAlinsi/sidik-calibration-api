@@ -56,6 +56,7 @@ use App\Support\WaktuMentah;
 // method `load()` yang cuma ada di Eloquent Collection.
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -65,6 +66,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Sesi kalibrasi: draft → menunggu_approval → disetujui / perlu_revisi.
@@ -354,23 +356,38 @@ class CalibrationController extends Controller
             return $replay;
         }
 
-        $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
-            // Duluan sebelum pengukurannya disusun: `isiUlangPengukuran` muter
-            // GUM pakai alat yang dibaca ulang dari DB, jadi satuannya mesti
-            // udah kesimpen kalau nggak mau hasil hitungnya ikut satuan lama.
-            $this->simpanSatuanAlat($request);
+        try {
+            $sesi = DB::transaction(function () use ($request, $clientRequestId): CalibrationSession {
+                // Duluan sebelum pengukurannya disusun: `isiUlangPengukuran` muter
+                // GUM pakai alat yang dibaca ulang dari DB, jadi satuannya mesti
+                // udah kesimpen kalau nggak mau hasil hitungnya ikut satuan lama.
+                $this->simpanSatuanAlat($request);
 
-            $sesi = CalibrationSession::create([
-                ...$this->atributDariRequest($request),
-                'organization_id' => $request->user()->organization_id,
-                'teknisi_id' => $request->user()->id,
-                'client_request_id' => $clientRequestId,
-                'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
-                'status' => CalibrationSession::STATUS_DRAFT,
-            ]);
+                $sesi = CalibrationSession::create([
+                    ...$this->atributDariRequest($request),
+                    'organization_id' => $request->user()->organization_id,
+                    'teknisi_id' => $request->user()->id,
+                    'client_request_id' => $clientRequestId,
+                    'nomor_sesi' => $this->nomorSesiBerikutnya($request->user()->organization_id),
+                    'status' => CalibrationSession::STATUS_DRAFT,
+                ]);
 
-            return $this->isiUlangPengukuran($sesi, $request);
-        });
+                return $this->isiUlangPengukuran($sesi, $request);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // Kiriman ulang yang berbarengan dengan kiriman pertamanya: HP kena
+            // timeout lalu mengirim lagi selagi yang pertama masih diproses.
+            // `replay()` di atas belum melihat baris yang pertama, lalu yang
+            // pertama commit dan unique index `(organization_id,
+            // client_request_id)` menolak yang ini. Datanya sudah benar; yang
+            // dulu salah jawabannya — 500 untuk kiriman yang sebenarnya sudah
+            // tersimpan. Dijaga `ChaosSimpanLembarKerjaTest`.
+            if (($replay = $this->replay($request, $clientRequestId)) !== null) {
+                return $replay;
+            }
+
+            throw $e;
+        }
 
         $this->siarkan($sesi, 'dibuat');
 
@@ -634,7 +651,7 @@ class CalibrationController extends Controller
             && $pembacaanLama !== []
             && $this->potretDariSusunan($this->susunPengukuran($request)['mentah']) !== $pembacaanLama;
 
-        $alasanKoreksi = null;
+        $catatanJejak = null;
 
         if ($koreksiTerkirim) {
             $alasanKoreksi = (string) Validator::make($request->all(), [
@@ -645,9 +662,26 @@ class CalibrationController extends Controller
                 'alasan_koreksi.min' => 'Alasan koreksi terlalu pendek; tulis apa yang salah dan dari mana '
                     .'angka benarnya.',
             ])->validate()['alasan_koreksi'];
+
+            $catatanJejak = 'Koreksi pembacaan oleh Master Data: '.$alasanKoreksi;
+        } elseif (
+            // Revisi teknisi atas lembar yang DIKEMBALIKAN admin. Beda dari
+            // draft: angka-angka ini sudah pernah disubmit dan dibaca admin, jadi
+            // yang lama wajib tetap bisa ditelusuri (ISO/IEC 17025 klausul
+            // 7.5.2). Alasannya TIDAK diminta — `catatan_revisi` admin yang
+            // mengembalikan lembarnya sudah menjelaskan kenapa angkanya berubah,
+            // dan alasan paksaan cuma melatih orang mengetik "ok". Draft yang
+            // belum pernah disubmit tetap tidak dijejak. Dijaga
+            // `ChaosSimpanLembarKerjaTest`.
+            $calibration->status === CalibrationSession::STATUS_PERLU_REVISI
+            && $request->has('measurements')
+            && $pembacaanLama !== []
+        ) {
+            $catatanJejak = 'Revisi pembacaan sesudah lembar dikembalikan. Catatan revisi: '
+                .($calibration->catatan_revisi ?: '-');
         }
 
-        if (! $koreksiTerkirim) {
+        if ($catatanJejak === null) {
             $pembacaanLama = [];
         }
 
@@ -673,7 +707,7 @@ class CalibrationController extends Controller
             return $this->isiUlangPengukuran($calibration, $request);
         });
 
-        $this->catatKoreksiPembacaan($sesi, $pembacaanLama, $alasanKoreksi);
+        $this->catatKoreksiPembacaan($sesi, $pembacaanLama, $catatanJejak);
 
         $this->siarkan($sesi, 'diubah');
 
@@ -739,13 +773,15 @@ class CalibrationController extends Controller
     }
 
     /**
-     * Simpan nilai LAMA dan nilai BARU pembacaan yang dikoreksi admin.
+     * Simpan nilai LAMA dan nilai BARU pembacaan yang dikoreksi admin, atau
+     * yang direvisi teknisi sesudah lembarnya dikembalikan.
      *
      * ## Kenapa ini wajib ada
      *
      * `isiUlangPengukuran()` MENGHAPUS baris mentah lalu menulisnya kembali —
-     * itu benar buat teknisi yang menyimpan ulang lembarnya sendiri, tapi
-     * artinya angka yang diganti admin lenyap tanpa bekas. ISO/IEC 17025
+     * itu benar buat teknisi yang masih mengisi draft-nya sendiri, tapi
+     * artinya angka yang sudah pernah disubmit lenyap tanpa bekas begitu
+     * diganti. ISO/IEC 17025
      * klausul 7.5.2 menuntut data asli MAUPUN hasil perubahan sama-sama
      * tersimpan, dan AGENTS.md §Peran butir 5 menuliskannya lebih keras lagi:
      * nilai yang diisi teknisi tidak pernah dihapus; koreksi menyimpan nilai
@@ -761,9 +797,9 @@ class CalibrationController extends Controller
      *
      * @param  list<array<string, mixed>>  $lama
      */
-    private function catatKoreksiPembacaan(CalibrationSession $sesi, array $lama, ?string $alasan): void
+    private function catatKoreksiPembacaan(CalibrationSession $sesi, array $lama, ?string $catatan): void
     {
-        if ($alasan === null || $lama === []) {
+        if ($catatan === null || $lama === []) {
             return;
         }
 
@@ -784,7 +820,7 @@ class CalibrationController extends Controller
             'old_data' => ['pembacaan' => $lama],
             'new_data' => ['pembacaan' => $baru],
             'changed_by' => Auth::id(),
-            'note' => 'Koreksi pembacaan oleh Master Data: '.$alasan,
+            'note' => $catatan,
         ]);
     }
 
@@ -873,6 +909,9 @@ class CalibrationController extends Controller
         // jadi `GenerateCertificate` di bawah cuma dipanggil sekali. Ini yang
         // pertama dari dua lapis; lapis keduanya lock di job-nya sendiri, buat
         // pemanggil yang tidak lewat sini.
+        $kolomPersetujuan = array_flip(['status', 'reviewed_by', 'reviewed_at', 'catatan_revisi', 'revisi_field']);
+        $sebelumDisetujui = array_intersect_key($calibration->getAttributes(), $kolomPersetujuan);
+
         $berhasilDisetujui = CalibrationSession::whereKey($calibration->id)
             ->where('status', CalibrationSession::STATUS_MENUNGGU_APPROVAL)
             ->update([
@@ -893,13 +932,48 @@ class CalibrationController extends Controller
 
         $calibration->refresh();
 
-        GenerateCertificate::dispatch(
+        // UPDATE bersyarat di atas lewat query builder, dan query builder tidak
+        // memicu event model — `Diaudit` tidak pernah tahu. Persetujuan lewat
+        // panel tercatat, lewat HP dulu tidak; padahal ini keputusan yang
+        // menerbitkan sertifikat berlogo akreditasi, dan `reviewed_by` di baris
+        // sesi tertimpa lagi kalau sesinya dikembalikan lalu disetujui ulang.
+        // Dicatat dengan bentuk yang sama dengan `Diaudit::perubahanAudit()`:
+        // hanya kolom yang berubah. Dijaga `ChaosTerbitSertifikatTest`.
+        $sesudahDisetujui = array_intersect_key($calibration->getAttributes(), $kolomPersetujuan);
+        $kolomBerubah = array_keys(array_filter(
+            $sesudahDisetujui,
+            fn (mixed $nilai, string $kolom): bool => $nilai != ($sebelumDisetujui[$kolom] ?? null),
+            ARRAY_FILTER_USE_BOTH,
+        ));
+        $calibration->catatAudit(
+            AuditLog::ACTION_DIUBAH,
+            array_intersect_key($sebelumDisetujui, array_flip($kolomBerubah)),
+            array_intersect_key($sesudahDisetujui, array_flip($kolomBerubah)),
+        );
+
+        $job = new GenerateCertificate(
             $calibration->id,
             $request->user()->id,
             filled($data['berlaku_sampai'] ?? null)
                 ? Carbon::parse($data['berlaku_sampai'])->toDateString()
                 : null,
         );
+
+        // Status sesi SUDAH di-commit `disetujui` di atas. Antrean yang menolak
+        // job di sini (tabel `jobs` tidak bisa ditulisi) dulu meninggalkan sesi
+        // disetujui tanpa baris sertifikat dan tanpa tombol retry, dengan 500
+        // generik ke admin. Baris `gagal` yang ditinggalkan `tinggalkanJalanPulih`
+        // memunculkan tombol "Terbitkan ulang" lagi. Dijaga
+        // `ChaosTerbitSertifikatTest`.
+        $gagalAntre = null;
+
+        try {
+            dispatch($job);
+        } catch (\Throwable $e) {
+            report($e);
+            $gagalAntre = $e;
+            $job->tinggalkanJalanPulih($e);
+        }
 
         // Render PDF bisa makan puluhan detik di CPU kecil Render. Menjalankannya
         // di request approve membuat mobile melewati batas waktu walau sesi sudah
@@ -909,6 +983,15 @@ class CalibrationController extends Controller
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiDisetujui::dariSesi($segar));
         $this->siarkan($segar, 'disetujui');
+
+        if ($gagalAntre !== null) {
+            return response()->json([
+                'message' => 'Sesi sudah disetujui, tapi penerbitan sertifikatnya gagal dimulai. '
+                    .'Buka sertifikatnya lalu tekan "Terbitkan ulang".',
+                'data' => new CalibrationResource($segar),
+                'validasi' => $periksa,
+            ], 503);
+        }
 
         return response()->json([
             'data' => new CalibrationResource($segar),
@@ -1146,10 +1229,29 @@ class CalibrationController extends Controller
             return $this->tutupPengisian($sesi, $request, $sesi->uncertaintyCalculations()->get());
         }
 
+        // Disusun DULU, baru yang lama dihapus. `susunPengukuran` tidak
+        // membaca baris sesi ini sama sekali (jalur koreksi admin di `update()`
+        // sudah memanggilnya sebelum transaksi), jadi urutannya tidak mengubah
+        // hasil hitung.
+        $susunan = $this->susunPengukuran($request);
+
+        // Kiriman yang menghasilkan NOL baris untuk sesi yang sudah punya
+        // pembacaan ditolak, bukan dituruti. Dulu `measurements: []` — tabel di
+        // HP gagal dimuat, atau ter-reset — menghapus seluruh pembacaan secara
+        // permanen dengan jawaban 200 (`raw_measurements` tidak punya
+        // SoftDeletes). Diukur dari HASIL susunan, bukan dari isi array:
+        // Sieve dan alat berblok lain memang mengirim `measurements: []`
+        // dengan datanya di `spesifikasi_alat`. Dijaga `ChaosSimpanLembarKerjaTest`.
+        if ($susunan['mentah'] === [] && $sesi->rawMeasurements()->exists()) {
+            throw ValidationException::withMessages([
+                'measurements' => 'Tabel pembacaan yang dikirim kosong, padahal lembar ini sudah punya pembacaan — '
+                    .'nggak ada yang dihapus. Muat ulang lembarnya dulu. Kalau cuma mau menyimpan bagian atas '
+                    .'lembar, kirim tanpa kunci `measurements`.',
+            ]);
+        }
+
         $sesi->rawMeasurements()->delete();
         $sesi->uncertaintyCalculations()->delete();
-
-        $susunan = $this->susunPengukuran($request);
 
         foreach ($susunan['mentah'] as $baris) {
             $sesi->rawMeasurements()->create($baris);

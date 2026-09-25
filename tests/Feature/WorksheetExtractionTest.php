@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WorksheetExtractionLog;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -290,6 +291,48 @@ class WorksheetExtractionTest extends TestCase
             'Tunggu beberapa menit',
             (string) $this->kirim($this->teknisi)->json('message'),
         );
+    }
+
+    /**
+     * Chaos review 25 Sep 2026 (F2-1): Anthropic membalas 529 `overloaded_error`.
+     *
+     * Itu kode "sibuk" milik Anthropic sendiri — driver yang dipatok di kedua
+     * phpunit.xml dan default produksi. Pesannya harus sama dengan 429/503:
+     * suruh tunggu, jangan suruh foto ulang.
+     */
+    public function test_anthropic_kewalahan_529_disuruh_nunggu_bukan_foto_ulang(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'type' => 'error',
+            'error' => ['type' => 'overloaded_error', 'message' => 'Overloaded'],
+        ], 529)]);
+
+        $respons = $this->kirim($this->teknisi)
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
+
+        $this->assertStringContainsString('Tunggu beberapa menit', (string) $respons->json('message'));
+        $this->assertSame('gagal', WorksheetExtractionLog::query()->firstOrFail()->status);
+    }
+
+    /**
+     * Chaos review 25 Sep 2026 (F2-2): koneksi ke Anthropic putus / timeout.
+     *
+     * Test timeout yang ada cuma untuk driver Gemini; yang ini driver bawaan.
+     * Steady state-nya: galat terkendali dengan jalur ketik manual tetap
+     * kebuka dan percobaannya tercatat — bukan 500.
+     */
+    public function test_koneksi_anthropic_putus_jadi_gagal_terkendali(): void
+    {
+        Config::set('services.anthropic.api_key', 'test-key');
+        Http::fake(['api.anthropic.com/*' => fn () => throw new ConnectionException('cURL error 28: Operation timed out')]);
+
+        $this->kirim($this->teknisi)
+            ->assertStatus(422)
+            ->assertJsonPath('fallback_manual', true);
+
+        $this->assertSame('gagal', WorksheetExtractionLog::query()->firstOrFail()->status);
     }
 
     public function test_tanpa_api_key_balik_503(): void
