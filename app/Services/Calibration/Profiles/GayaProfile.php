@@ -86,6 +86,19 @@ abstract class GayaProfile extends CalibrationProfile
      *
      * Proving Ring memulangkan 6 (UP 3x + DOWN 3x) waktu dia mendarat.
      */
+    /**
+     * Kolom KEEMPAT sertifikat gaya: sebaran per titik.
+     *
+     * Sertifikat master ketiga alat punya kolom ini — dan sampai 25 Sep 2026
+     * kolomnya TIDAK ADA di template kita, jadi sertifikat gaya terbit tanpa
+     * angka yang justru paling sering dicari pelanggan. Proving Ring
+     * menimpanya dengan `Repeatability`, karena pembaginya beda.
+     */
+    public function judulKolomSebaran(): ?string
+    {
+        return 'RRPE';
+    }
+
     /** Empat deret posisi per titik — lihat [CalibrationProfile::butuhBlokGaya]. */
     public function butuhBlokGaya(): bool
     {
@@ -117,7 +130,16 @@ abstract class GayaProfile extends CalibrationProfile
     abstract public function pakaiKoreksiTermalDiSertifikat(): bool;
 
     /** Nomor formulir lembar kerjanya, dari kertas resmi — bukan dikarang. */
-    abstract protected function kodeDokumen(): string;
+    /**
+     * Nomor formulir lembar kerjanya, atau `null` kalau kertasnya BELUM ada.
+     *
+     * `null`, bukan string kosong: `SemuaProfilLembarKerjaTest` membedakan
+     * "belum ada kertasnya" (null, dan namanya terdaftar di
+     * `belumAdaKertasnya` berikut buktinya) dari "ada tapi bentuknya salah".
+     * String kosong jatuh ke yang kedua, dan pesan merahnya menyuruh
+     * membetulkan format nomor yang sebenarnya tidak pernah ada.
+     */
+    abstract protected function kodeDokumen(): ?string;
 
     abstract protected function judulLembar(): string;
 
@@ -202,7 +224,7 @@ abstract class GayaProfile extends CalibrationProfile
         // Suhu load cell standar saat kalibrasi = rata-rata suhu ruangan.
         // Master mengasumsikan load cell sudah menyesuaikan dengan ruangan, dan
         // itu memang yang terjadi sesudah alat didiamkan sebelum diuji.
-        $suhuAktual = self::rataDua(
+        $suhuAktual = self::rataSuhuRuang(
             $konteksSesi['suhu_awal'] ?? null,
             $konteksSesi['suhu_akhir'] ?? null,
         ) ?? $suhuSertifikat;
@@ -767,7 +789,7 @@ abstract class GayaProfile extends CalibrationProfile
         return 0.0;
     }
 
-    private static function rataDua(mixed $awal, mixed $akhir): ?float
+    protected static function rataSuhuRuang(mixed $awal, mixed $akhir): ?float
     {
         $nilai = array_values(array_filter(
             [$awal, $akhir],
@@ -781,7 +803,7 @@ abstract class GayaProfile extends CalibrationProfile
         return array_sum(array_map('floatval', $nilai)) / count($nilai);
     }
 
-    private function gum(): GumCalculator
+    protected function gum(): GumCalculator
     {
         // Malas, bukan di konstruktor: `GumCalculator` menyentuh
         // `CalibrationProfileRegistry`, dan registry memuat profil ini lagi —
@@ -796,6 +818,33 @@ abstract class GayaProfile extends CalibrationProfile
             $this->tautkanStandarTercetak($this->rangkaLembar(), $equipment),
             $equipment,
         );
+    }
+
+    /**
+     * Kalimat pengarah di kepala lembar kerja.
+     *
+     * Jadi hook karena Proving Ring diisi ENAM kali (UP/DOWN), bukan dua belas
+     * (empat posisi) — dan kalimat yang salah di sini bukan soal gaya bahasa:
+     * dia yang dibaca teknisi di lokasi sebelum mengisi.
+     */
+    protected function catatanPengisian(): string
+    {
+        return 'Tiap titik beban diisi DUA BELAS kali: empat posisi (0°, 90°, 180°, 270°) '
+            .'x tiga replikat. Empat posisi bukan pengulangan biasa — kalau load cell standar tidak tepat '
+            .'di sumbu piringan, kesalahannya cuma kelihatan waktu alat dihadapkan ke arah berbeda. '
+            .'Preload (zero & kapasitas maks) dan empat pengukuran misalignment diisi sekali per sesi, '
+            .'bukan per titik.';
+    }
+
+    /**
+     * Ketiga master gaya menulis `Standard Value`, bukan `Standard`.
+     *
+     * Bawaan kelas dasar `Standard` — dan buat alat lain itu memang yang
+     * tercetak di kertasnya.
+     */
+    public function judulKolomStandar(): string
+    {
+        return 'Standard Value';
     }
 
     /** @return array<string, mixed> */
@@ -816,11 +865,7 @@ abstract class GayaProfile extends CalibrationProfile
             'judul' => $this->judulLembar(),
             'jumlah_pengulangan' => M::REPLIKAT,
             'semua_kolom_opsional' => false,
-            'catatan_pengisian' => 'Tiap titik beban diisi DUA BELAS kali: empat posisi (0°, 90°, 180°, 270°) '
-                .'x tiga replikat. Empat posisi bukan pengulangan biasa — kalau load cell standar tidak tepat '
-                .'di sumbu piringan, kesalahannya cuma kelihatan waktu alat dihadapkan ke arah berbeda. '
-                .'Preload (zero & kapasitas maks) dan empat pengukuran misalignment diisi sekali per sesi, '
-                .'bukan per titik.',
+            'catatan_pengisian' => $this->catatanPengisian(),
             'budget_ketidakpastian' => [
                 'tersedia' => true,
                 'sumber' => $this->sumberMaster(),

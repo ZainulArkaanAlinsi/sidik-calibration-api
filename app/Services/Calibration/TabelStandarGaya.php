@@ -114,6 +114,20 @@ class TabelStandarGaya
             // titik terdekat — itu ekstrapolasi tanpa ada yang tahu. Di sini
             // keadaannya dilaporkan; yang memutuskan boleh-tidaknya Master Data.
             'di_luar_rentang' => $nilaiKn < min($semua) || $nilaiKn > max($semua),
+            // Seberapa JAUH baris yang terpilih dari beban yang diminta.
+            //
+            // `di_luar_rentang` cuma menangkap yang melewati ujung tabel, dan
+            // itu tidak cukup. Proving Ring 500 kgf yang dikalibrasi dengan
+            // standar 3000 kN membuktikannya: titik 0,2943 kN ada di DALAM
+            // [0, 3000], jadi tidak ditandai apa pun — padahal baris terdekat
+            // yang terpilih 0 kN sementara baris berikutnya 300 kN, seribu kali
+            // lipat bebannya. Koreksinya jadi nol bukan karena alatnya bagus,
+            // tapi karena tidak ada titik tertelusur di rentang itu.
+            //
+            // Angkanya dipulangkan mentah, bukan jadi vonis: yang menentukan
+            // berapa jauh itu "terlalu jauh" beda per alat, dan itu urusan
+            // kalkulatornya.
+            'jarak_ke_set_point_kn' => abs($nilaiKn - (float) $tabel[$terbaik]['set_point_kn']),
         ];
     }
 

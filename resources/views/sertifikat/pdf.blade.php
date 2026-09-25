@@ -1110,12 +1110,28 @@
              belum punya kunci ini balik `false` — bentuk cetaknya persis kayak
              waktu diterbitkan. Lihat `CalibrationProfile::u95PerTitik()`. --}}
         @php($u95Kolom = $snapshot['u95_per_titik'] ?? false)
+        {{-- Judul kolom KETIGA. Empat puluh alat nyetak `Correction`; Proving
+             Ring nyetak `Calibration Factor`, dan isinya bukan selisih
+             melainkan pembagian (kN per divisi dial). Snapshot lama yang belum
+             punya kunci ini jatuh ke judul lamanya. --}}
+        @php($judulKoreksi = $snapshot['judul_koreksi'] ?? 'Correction')
+        {{-- Kolom KEEMPAT: sebaran per titik. `null` = nggak dicetak, dan itu
+             perilaku empat puluh alat lain. Kelompok Gaya makai: UTM & Load
+             Cell nulis `RRPE`, Proving Ring `Repeatability` — dua nama karena
+             dua besaran yang beda pembaginya. --}}
+        @php($judulSebaran = $snapshot['judul_sebaran'] ?? null)
+        {{-- Desimal khusus kolom ketiga. `null` = ikut desimal barisnya, dan
+             itu perilaku empat puluh alat lain. --}}
+        @php($dKoreksi = $snapshot['desimal_koreksi'] ?? null)
         <table class="data">
             <thead>
                 <tr>
                     <th>{{ $judulStandar }}{{ $sufiks }}</th>
                     <th>{{ $judulUut }}{{ $sufiks }}</th>
-                    <th>Correction{{ $sufiks }}</th>
+                    <th>{{ $judulKoreksi }}{{ $sufiks }}</th>
+                    @if ($judulSebaran !== null)
+                        <th>{{ $judulSebaran }} (%)</th>
+                    @endif
                     {{-- Judulnya nyebut `k` cuma kalau alat ini emang
                          MENGUNCI-nya. Viscometer nulis `U95%, k=2` persis
                          kayak masternya (`SERTIFIKAT` R21): angka
@@ -1180,7 +1196,22 @@
                             ? \App\Support\Angka::nilaiStandar($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db)
                             : \App\Support\Angka::hasil($baris['standard_value'] === null ? null : (float) $baris['standard_value'], $db, tandaNol: $tandaNol) }}</td>
                         <td>{{ \App\Support\Angka::hasil($baris['unit_under_test'] === null ? null : (float) $baris['unit_under_test'], $db, tandaNol: $tandaNol) }}</td>
-                        <td>{{ \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $db, tandaNol: $tandaNol) }}</td>
+                        {{-- `-`, bukan `0,00000`: titik yang memang nggak punya
+                             nilai di kolom ini (faktor kalibrasi titik nol
+                             Proving Ring — pembaginya nol). Masternya nyetak
+                             `-` juga. Snapshot lama nggak punya kunci ini dan
+                             jatuh ke `false`, persis perilaku lamanya. --}}
+                        <td>{{ ($baris['koreksi_kosong'] ?? false)
+                            ? '-'
+                            : \App\Support\Angka::hasil($baris['correction'] === null ? null : (float) $baris['correction'], $dKoreksi ?? $db, tandaNol: $tandaNol) }}</td>
+                        @if ($judulSebaran !== null)
+                            {{-- Titik nol nggak punya sebaran, dan masternya
+                                 nyetak `-` di situ — bukan `0,00`, yang kebaca
+                                 sebagai "diukur dan hasilnya nol sempurna". --}}
+                            <td>{{ $baris['sebaran'] === null
+                                ? '-'
+                                : \App\Support\Angka::hasil((float) $baris['sebaran'], 2) }}</td>
+                        @endif
                         @if ($u95Kolom)
                             {{-- Desimalnya lewat jalur `desimal_u95` yang sama
                                  kayak baris ringkas di bawah — bukan `$db` —

@@ -42,6 +42,29 @@ Sesi contoh di seeder sengaja **tidak** memakai tanggal itu, dan alasannya
 ditulis di `UtmSeeder`: sesi contoh yang selalu ber-ERROR melatih orang
 mengabaikan temuan yang justru paling penting dibaca.
 
+### Diperluas 25 Sep 2026 — BUKAN cuma yang 5 kN
+
+Waktu Proving Ring dikerjakan, standar ketiga ikut diperiksa:
+
+| Standar | `berlaku_sampai` di master | Keadaan 25 Sep 2026 |
+|---|---|---|
+| Load Cell 5 kN | 13 Jun 2026 | **kedaluwarsa** |
+| Load Cell 100 kN | 17 Des 2026 | masih berlaku |
+| Load Cell 3000 kN | 10 Sep 2026 | **kedaluwarsa** |
+
+**Dua dari tiga load cell standar gaya sudah lewat masa berlakunya**, dan yang
+3000 kN baru lewat lima belas hari — jadi ini bukan temuan lama yang tertinggal,
+tapi yang sedang berjalan.
+
+Sesi contoh keduanya memakai tanggal yang dimajukan **di seeder saja**, dengan
+alasan yang sama: sesi contoh yang selalu ber-ERROR "standar kadaluarsa" melatih
+orang mengabaikan temuan yang justru paling penting dibaca. Angka itu tidak ikut
+ke mana pun selain fixture.
+
+**Yang perlu dijawab:** kapan keduanya direkalibrasi, dan sampai itu terjadi —
+apakah kalibrasi gaya yang memakainya boleh tetap diterbitkan.
+
+
 ---
 
 ## G2 🔴 Tiga workbook tidak sepakat soal drift standar yang SAMA
@@ -135,14 +158,35 @@ Standard Value yang seharusnya mencetak Y), atau Correction seharusnya dari Z?
 
 ---
 
-## G6 🟡 Koreksi suhu ganda di Proving Ring
+## G6 ✅ DIKOREKSI — koreksi suhu Proving Ring GANDA di rumus, TUNGGAL di hasil
 
-Proving Ring memakai `G52 = 1 + 0,00027 × (23 − T_ruangan)` (acuan 23 °C) **dan**
-koreksi termal terhadap suhu sertifikat standar. Dua koreksi suhu pada rantai
-yang sama.
+Versi pertama butir ini menyebut Proving Ring memakai dua koreksi suhu pada satu
+rantai dan menanyakan apakah itu dimaksudkan. Sesudah diperiksa sel per sel,
+pertanyaannya hampir seluruhnya gugur.
 
-**Yang perlu dijawab:** apakah keduanya memang dimaksudkan, dan kenapa acuannya
-23 °C sementara koreksi termal memakai suhu sertifikat.
+Yang benar-benar bekerja cuma **satu**: faktor ruangan
+`G52 = 1 + 0,00027 × (23 − T_ruangan)`, acuannya 23 °C dipatok di rumus, dipakai
+dua kali — pada pembacaan dial (`J`) dan pada nilai standar (`Y`).
+
+Koreksi termal terhadap suhu sertifikat kalibrator — yang menggigit di UTM —
+**ada di rumusnya tapi tidak pernah menggigit di sini**:
+
+```
+Z = Y × (1 + 0,00027 × ('INPUT DATA'!H6 − 'INPUT DATA'!K7))
+```
+
+Lembar Proving Ring tidak punya field *Actual Temperature of Standard* yang
+dipunyai lembar UTM, jadi pengurangnya nol dan **`Z` sama persis dengan `Y` di
+kesembilan barisnya** — diperiksa satu per satu, bukan disimpulkan dari satu
+baris.
+
+Sistem menyamakan perilakunya: kedua argumen suhu diberi nilai yang sama
+sehingga faktornya tepat 1. Kalau suatu saat lab menambahkan field itu, yang
+berubah satu argumen di `ProvingRingProfile`.
+
+**Yang masih layak ditanyakan, tapi ringan:** apakah acuan 23 °C itu memang
+suhu acuan metode Proving Ring, dan kenapa berbeda dari UTM yang mengacu ke suhu
+sertifikat kalibratornya.
 
 ---
 
@@ -158,23 +202,40 @@ mesinnya diservis.
 
 ---
 
-## G8 🟡 Budget Proving Ring cuma menjumlahkan 6 dari 8 komponen
+## G8 🟠 Budget Proving Ring cuma menjumlahkan 6 dari 8 komponen — TERBUKTI, bukan dugaan
 
-```
-UTM         : AC17 = SUM(AC9:AC16)   <- 8 komponen
-Load Cell   : AC17 = SUM(AC9:AC16)   <- 8 komponen
-Proving Ring: AC17 = SUM(AC9:AC14)   <- 6 komponen
-```
+Versi pertama butir ini menulisnya sebagai dugaan yang "akan dihadapi waktu
+Tahap 4 dikerjakan". Sekarang sudah dihitung, dan angkanya tidak menyisakan
+ruang tafsir.
 
-Baris 15 (Zero Error) dan 16 (Misalignment) dihitung lengkap tapi tidak ikut
-dijumlahkan. `uc` jadi `0,216869` padahal seharusnya `0,220910` — understatement
-sekitar 1,9%, ke arah yang berbahaya: sertifikat terlihat lebih presisi dari
-kenyataan.
+`PERHITUNGAN U95%` Proving Ring mendaftarkan delapan komponen, lalu sel `Jumlah`
+berisi `0,04703237424735414`. Dijumlahkan kuadrat `uici`-nya:
 
-Akan dihadapi waktu Tahap 4 (Proving Ring) dikerjakan.
+| Yang dijumlahkan | Hasil | Beda dari `Jumlah` master |
+|---|---|---|
+| Kedelapan komponen | 0,048801243938405243 | 0,0017688696910511045 |
+| **Enam komponen pertama** | **0,04703237424735414** | **0** |
+
+Selisihnya persis suku misalignment (0,04205793² = 0,0017689). Jadi **zero error
+dan misalignment berada di luar penjumlahannya.**
+
+Satu catatan kejujuran: zero error di sesi contoh bernilai NOL, jadi dari angka
+saja tidak bisa dibedakan "sengaja dikecualikan" dari "kebetulan tidak
+menyumbang". Yang benar-benar terbukti dikecualikan cuma misalignment.
+
+**Yang dilakukan sistem:** kedelapan komponen tetap DIHITUNG; yang masuk agregasi
+cuma enam. Dua yang di luar disimpan di jejak audit sesi
+(`komponen_di_luar_jumlah`) berikut `ci`-nya, supaya kontribusi yang hilang
+kebaca tanpa membuka kode. Dijaga
+`ProvingRingMasterTest::test_budget_cocok_master_dan_hanya_enam_komponen`, yang
+juga membuktikan bahwa menjumlahkan delapan MENAIKKAN `u_c` — jadi "enam" bukan
+kebetulan yang kebetulan cocok.
 
 **Yang perlu dijawab:** apakah kedua komponen itu memang sengaja tidak masuk
-untuk Proving Ring, atau rumusnya terpotong?
+untuk Proving Ring — dan kalau ya, kenapa tetap dihitung dan ditampilkan di
+lembar budget-nya. Kalau ternyata rumusnya terpotong, `u_c` naik dari
+0,2168694867 ke 0,2209100358 — sekitar 1,9 % lebih besar, dan U95 yang tercetak
+ikut naik sepadan.
 
 ---
 
@@ -231,43 +292,57 @@ koreksi yang berlaku di rentang yang tidak tercakup.
 
 ---
 
-## G11 🔴 Proving Ring: koreksi standar HILANG di semua titik, ditelan `ISERROR`
+## G11 🔴 DIKOREKSI — Proving Ring dikalibrasi dengan standar 600× kapasitasnya
 
-Ini bukan kejanggalan metode — ini sel kosong yang dibaca nol, kelas kesalahan
-yang paling mahal dicari.
+> **Versi pertama butir ini salah arah, dan dicatat di sini supaya tidak
+> dibaca ulang sebagai fakta.** Semula ditulis "koreksi standar HILANG di semua
+> titik, ditelan `ISERROR`", dengan kesimpulan bahwa sertifikat yang sudah
+> terbit kehilangan koreksi standarnya. Sesudah pencariannya dijalankan
+> sungguhan lawan tabelnya, kesimpulan itu **terlalu jauh**.
 
-`PERHITUNGAN FC` Proving Ring, kolom `W` (koreksi standar):
+### Yang benar
+
+`PERHITUNGAN FC` kolom `W` memang ditelan `ISERROR`:
 
 ```
 =IF(ISERROR(IF($X$26="Load Cell 100 kN", VLOOKUP(V34,Standar_100kN_tekan,3,0), …)), "", …)
 ```
 
-`VLOOKUP`-nya gagal di **setiap** baris, `ISERROR` menggantinya dengan string
-kosong, dan baris berikutnya menjumlahkannya:
+Tapi dengan standar yang disebut workbook — **Load Cell 3000 kN** — pencarian
+yang BENAR pun memulangkan nol. Tabel 3000 kN barisnya `0, 300, 600, … 3000 kN`;
+seluruh titik Proving Ring ada di 0–4,905 kN, jadi baris terdekatnya **selalu
+baris nol**, yang koreksinya memang 0.
 
-```
-Y = (B + W) × G52     <- W kosong, dibaca 0
-```
+Jadi `ISERROR` **menyembunyikan** keadaan itu, bukan menyebabkannya. Angkanya
+sama; yang hilang cuma pengetahuan bahwa angkanya nol karena tidak ada titik
+tertelusur di sana. Dibuktikan
+`ProvingRingMasterTest::test_koreksi_standar_3000kn_memang_nol_bukan_karena_error`.
 
-Hasilnya seluruh rantai Proving Ring berjalan **tanpa koreksi standar sama
-sekali**. Kolom `V` (set point standar) pun nol di semua baris, jadi yang rusak
-bukan cuma pencariannya — kuncinya sendiri tidak pernah terbentuk.
+### Masalah yang sebenarnya
 
-Penyebab kemungkinan besar sama dengan G4: identitas standar di workbook ini
-`#REF!`, sehingga `$X$26` tidak pernah cocok dengan satu pun nama di
-`IF` berantai itu.
+Alat **500 kgf (4,905 kN)** dikalibrasi dengan standar yang titik terkalibrasi
+terendahnya **300 kN** — 61× kapasitas alatnya, dan resolusi bacanya 0,1 kN
+= 2 % dari skala penuh alat. Tidak ada koreksi tertelusur di rentang alat itu
+sama sekali.
 
-**Ini TIDAK akan ditiru.** AGENTS.md §Aturan yang Lahir dari Kesalahan Nyata
-menyebutnya eksplisit: `IFERROR(…,"")` yang bikin sel kosong dibaca nol jangan
-pernah direplikasi. Waktu Tahap 4 dikerjakan, titik yang koreksi standarnya
-tidak ketemu akan **diblokir dengan alasan yang kebaca**, bukan dihitung dengan
-`W = 0`, dan selisihnya terhadap master ditulis di jejak audit sesi.
+Sementara tabel **Load Cell 5 kN** membentang `0 … 4,903325 kN` — pas menutupi
+kapasitasnya, dengan sembilan titik yang koreksinya nyata (0 sampai 0,00363 kN).
 
-Konsekuensinya perlu diketahui lab: **sertifikat Proving Ring yang sudah terbit
-dari workbook ini angkanya tidak memuat koreksi standar.**
+Bersama G4 (identitas standar di workbook ini `#REF!`), keduanya menunjuk ke satu
+sebab: lembar Proving Ring disalin dari lembar alat lain dan field identitasnya
+tidak pernah diperbarui.
 
-**Yang perlu dijawab:** standar mana yang seharusnya dipakai Proving Ring, dan
-apa yang dilakukan terhadap sertifikat yang sudah terbit.
+### Yang dilakukan sistem
+
+Pencariannya dijalankan sungguhan, dan titik yang baris tabelnya **meleset lebih
+dari 10 %** dari bebannya diangkat jadi temuan — penjaga baru, karena
+`di_luar_rentang` tidak menangkapnya: 0,29 kN memang ada di dalam [0, 3000].
+Standarnya dibaca dari blok sesi, jadi begitu lab memutuskan, yang berubah cuma
+isian teknisi — bukan kode.
+
+**Yang perlu dijawab:** standar mana yang seharusnya dipakai Proving Ring? Kalau
+`Load Cell 5 kN`, koreksi standarnya berhenti nol dan angka sertifikatnya
+bergeser — termasuk sertifikat yang sudah terbit.
 
 ---
 
@@ -342,6 +417,43 @@ sebagai peringatan di jejak sesi. Antara panduan dan master, yang menang master
 yang disengaja (membebani penuh dulu untuk melihat histeresis, lalu turun), atau
 kebiasaan pengisian yang boleh diseragamkan. Kalau yang kedua, aturannya bisa
 dinaikkan jadi pemblokir — tapi sesi lama harus diperiksa dulu.
+
+---
+
+## G14 🔴 Pita CMC Proving Ring terbaca dari baris yang SALAH — sekitar 10×
+
+Lampiran akreditasi LK-285-IDN memuat dua pita untuk Proving Ring:
+
+```
+0-500 kgf    2,3 kgf      <- yang mencakup alat 500 kgf
+10-88 kN     0,22 kN
+```
+
+Budget master memakai **`CMC PT. SIDIK = 0,22 kN`** — itu baris kedua, yang
+**tidak mencakup** alat berkapasitas 500 kgf. Yang benar 2,3 kgf = **0,022563
+kN**, hampir sepuluh kali lebih kecil.
+
+Akibatnya di angka yang tercetak:
+
+| | Master | Sistem ini |
+|---|---|---|
+| U95 hitung (sebelum lantai CMC) | 0,021099 kN | 0,021099 kN |
+| Lantai CMC yang dipakai | 0,22 kN | 0,022563 kN |
+| **U95 yang terbit** | **0,22 kN** | **0,022563 kN** |
+
+Lantai CMC repo ini memilih pita berdasarkan **kapasitas alat**, jadi dia
+memakai yang benar tanpa perlu disetel — dan itu berarti U95 kita ~10× lebih
+kecil dari yang tercetak di sertifikat yang sudah terbit.
+
+Ini kelas kesalahan yang AGENTS.md sebut eksplisit: *"Jangan percaya bacaan
+tabel yang terpotong — tabel lampiran akreditasi barisnya menyambung dengan
+kolom kosong."* Dan bersama G11 di atas, keduanya menunjuk sebab yang sama:
+identitas standar & pita di lembar ini disalin dari alat lain.
+
+**Yang perlu dijawab:** pita mana yang berlaku untuk Proving Ring 500 kgf, dan
+apa yang dilakukan terhadap sertifikat yang sudah terbit dengan U95 sepuluh kali
+lebih besar. Mengaku ketidakpastian yang LEBIH KECIL dari yang pernah
+diterbitkan bukan keputusan yang boleh diambil di kode.
 
 ---
 

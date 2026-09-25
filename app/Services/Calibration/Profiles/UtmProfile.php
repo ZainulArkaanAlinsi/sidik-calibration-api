@@ -95,7 +95,7 @@ class UtmProfile extends GayaProfile
      * SERTIFIKAT bersama (lihat preseden Height Gauge di
      * `SemuaProfilLembarKerjaTest`). Yang menjawab sumber kedua.
      */
-    protected function kodeDokumen(): string
+    protected function kodeDokumen(): ?string
     {
         return 'SIDIK-FM-CAL-0519_Rev.3';
     }

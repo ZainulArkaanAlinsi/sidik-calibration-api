@@ -563,6 +563,18 @@ class SemuaProfilLembarKerjaTest extends TestCase
             // mencetak nomor formulir karangan di kop lembar yang dipakai
             // teknisi dan diaudit.
             'height_gauge',
+            // Proving Ring — dan buktinya juga bukan "belum sempat dicari":
+            // sapuan `SIDIK-FM-` di SELURUH workbook master
+            // (`Gaya_Proving_Ring/`, delapan sheet) memulangkan NOL. Yang ada
+            // di sana cuma daftar nomor IK (`SIDIK-IK-CAL-0501` … `0534`),
+            // dan itu instruksi kerja, bukan formulir.
+            //
+            // Dua alat gaya lain punya kertasnya (`SIDIK-FM-CAL-0519_Rev.3`
+            // untuk UTM, `0520_Rev.3` untuk Load Cell), jadi deretnya memang
+            // ada — dan justru itu yang bikin menebak `0521` berbahaya: nomor
+            // karangan yang kelihatan masuk akal tercetak di kop lembar yang
+            // dipakai teknisi dan diaudit.
+            'proving_ring',
         ];
 
         // Kertasnya ADA, tapi nomornya dipilih dari ALATnya — jadi panggilan

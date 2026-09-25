@@ -80,6 +80,18 @@ class GayaCalculator
      */
     public const Z_MAD_MENYIMPANG = 3.5;
 
+    /**
+     * Seberapa jauh baris tabel standar boleh meleset dari beban yang diminta,
+     * sebagai pecahan beban itu, sebelum diangkat jadi temuan.
+     *
+     * Sepuluh persen, dan angkanya dipilih supaya yang tersorot cuma yang
+     * benar-benar tidak tertelusur. Sesi UTM meleset 0,03% (baris 1,96133 kN
+     * untuk beban 1,962 kN) — jauh di bawah ambang. Proving Ring yang
+     * dikalibrasi dengan standar 3000 kN meleset 100% di tiap titik, karena
+     * baris terdekatnya nol dan baris berikutnya 300 kN.
+     */
+    public const JARAK_SET_POINT_PANTAS_DILIHAT = 0.10;
+
     /** Faktor baku yang membuat MAD sebanding dengan simpangan baku normal. */
     private const MAD_KE_SIGMA = 0.6745;
 
@@ -334,6 +346,12 @@ class GayaCalculator
             );
         }
 
+        $jauh = self::temuanJarakSetPoint($std, $B, "{$nominal} {$satuan}");
+
+        if ($jauh !== null) {
+            $temuan[] = $jauh;
+        }
+
         if (count($bacaan) > 1 && count(array_unique($bacaan, SORT_REGULAR)) === 1) {
             $temuan[] = sprintf(
                 '%d pembacaan pada titik %s %s identik semua — mesin uji nyata biasanya bervariasi di digit terakhir.',
@@ -396,6 +414,310 @@ class GayaCalculator
             'di_luar_rentang_tabel' => $std['di_luar_rentang'],
             'bacaan_kn' => $bacaanKn,
             'temuan' => $temuan,
+        ];
+    }
+
+    /**
+     * Temuan "baris tabel yang terpilih terlalu jauh dari bebannya".
+     *
+     * Dipisah jadi helper karena DUA rantai memakainya, dan pesannya harus
+     * sama persis: yang membaca jejak sesi tidak boleh menebak apakah dua
+     * kalimat berbeda berarti dua keadaan berbeda.
+     *
+     * Diam kalau titiknya sudah ditandai `di_luar_rentang` — dua peringatan
+     * untuk satu sebab melatih orang berhenti membaca keduanya.
+     *
+     * @param  array<string, mixed>  $std
+     */
+    private static function temuanJarakSetPoint(array $std, float $B, string $bebanTertulis): ?string
+    {
+        if ($std['di_luar_rentang'] || $B <= 0.0) {
+            return null;
+        }
+
+        $jarak = (float) ($std['jarak_ke_set_point_kn'] ?? 0.0);
+
+        if ($jarak / $B <= self::JARAK_SET_POINT_PANTAS_DILIHAT) {
+            return null;
+        }
+
+        return sprintf(
+            'Baris tabel standar yang terpilih (%s kN) meleset %s%% dari beban %s. Koreksinya tidak '
+            .'mewakili beban ini — periksa apakah standarnya sesuai kapasitas alat.',
+            $std['set_point_kn'],
+            round($jarak / $B * 100, 1),
+            $bebanTertulis,
+        );
+    }
+
+    /**
+     * Suhu acuan koreksi ruangan Proving Ring (°C).
+     *
+     * Master: `G52 = 1 + 0,00027 x (23 - suhu ruangan)`. Acuannya 23 °C dan
+     * dipatok di rumusnya, bukan diambil dari sertifikat standar — beda dari
+     * koreksi termal yang sudah ada, yang acuannya suhu sertifikat kalibrator.
+     *
+     * Proving Ring memakai KEDUANYA pada rantai yang sama. Itu ganjil dan sudah
+     * diangkat sebagai pertanyaan lab G6; ditiru apa adanya.
+     */
+    public const SUHU_ACUAN_RUANGAN = 23.0;
+
+    /**
+     * Faktor koreksi ruangan Proving Ring.
+     *
+     * Dipakai DUA kali di rantainya, dan itu bukan salah ketik: sekali pada
+     * pembacaan alat (`J`), sekali pada nilai standar (`Y`). Master melakukan
+     * hal yang sama — `AVERAGE(C:I)*$G$52` dan `(B+W)*$G$52`.
+     */
+    public static function faktorRuangan(float $suhuRuangRata): float
+    {
+        return 1 + TabelStandarGaya::koefisienSuhu() * (self::SUHU_ACUAN_RUANGAN - $suhuRuangRata);
+    }
+
+    /**
+     * Satu titik PROVING RING — rantai yang BERBEDA dari UTM & Load Cell.
+     *
+     * ## Tiga hal yang membuatnya tidak bisa menumpang `hitungTitik()`
+     *
+     * 1. **Pembacaannya bukan gaya.** Yang dibaca teknisi jumlah DIVISI pada
+     *    dial (`237`, `726`, …), bukan kgf atau kN. Jadi tidak ada konversi
+     *    satuan sama sekali di sisi UUT, dan rata-ratanya tetap bersatuan divisi.
+     *
+     * 2. **Keluarannya FAKTOR, bukan koreksi.** Yang dicetak sertifikat
+     *    `Calibration Factor = Z / J` — berapa kN per satu divisi. Selisih
+     *    `standar − UUT` tidak punya arti di sini: dua besaran yang berbeda.
+     *
+     * 3. **Enam bacaan, bukan dua belas.** UP 3x lalu DOWN 3x, karena cincin
+     *    bajanya punya histeresis. Tidak ada empat posisi.
+     *
+     * Dan sebaran yang dilaporkan RSD (`L`), bukan RRPE — lagi-lagi karena
+     * pembaginya rata-rata pembacaan, bukan beban nominal.
+     *
+     * @param  array<int, float>  $bacaanDiv  pembacaan dial, dalam DIVISI
+     * @return array{
+     *     B: float, J: float, K: float, L: float|null, W: float|null,
+     *     Y: float|null, Z: float|null, CF: float|null,
+     *     set_point_standar_kn: float|null, di_luar_rentang_tabel: bool,
+     *     bacaan_div: array<int, float>, temuan: array<int, string>
+     * }
+     */
+    public static function hitungTitikProvingRing(
+        float $setPointKn,
+        array $bacaanDiv,
+        string $kunciStandar,
+        string $arah,
+        float $suhuRuangRata,
+        float $suhuSertifikatStandar,
+        float $suhuStandarAktual,
+    ): array {
+        $g52 = self::faktorRuangan($suhuRuangRata);
+
+        $B = $setPointKn;
+        $J = self::rata($bacaanDiv) * $g52;
+        $K = self::stdev($bacaanDiv);
+
+        // RSD di sini dibagi rata-rata PEMBACAAN, bukan beban nominal — beda
+        // dari `rsd()` yang dipakai UTM & Load Cell. Titik nol tetap tidak
+        // punya sebaran, dan itu normal.
+        $L = $J == 0.0 ? null : $K / $J * 100;
+
+        $temuan = [];
+
+        if ($B > 0.0 && $J == 0.0) {
+            $temuan[] = "Pembacaan nol pada beban {$setPointKn} kN — dial tidak bergerak.";
+        }
+
+        foreach (self::menyimpangMad($bacaanDiv) as $i) {
+            $temuan[] = sprintf(
+                'Bacaan ke-%d pada titik %s kN (%s divisi) menyimpang jauh dari yang lain '
+                .'(median %s) — kemungkinan salah ketik. Nilainya TIDAK diubah.',
+                $i + 1,
+                $setPointKn,
+                $bacaanDiv[$i],
+                self::median($bacaanDiv),
+            );
+        }
+
+        $std = TabelStandarGaya::koreksi($B, $kunciStandar, $arah);
+
+        if ($std === null) {
+            return [
+                'B' => $B, 'J' => $J, 'K' => $K, 'L' => $L,
+                'W' => null, 'Y' => null, 'Z' => null, 'CF' => null,
+                'set_point_standar_kn' => null,
+                'di_luar_rentang_tabel' => false,
+                'bacaan_div' => $bacaanDiv,
+                'temuan' => [...$temuan, "Standar `{$kunciStandar}` nggak punya tabel arah `{$arah}`."],
+            ];
+        }
+
+        $W = $std['koreksi_kn'];
+        $Y = ($B + $W) * $g52;
+        $Z = self::koreksiTermal($Y, $suhuSertifikatStandar, $suhuStandarAktual);
+        $CF = $J == 0.0 ? null : $Z / $J;
+
+        if ($std['di_luar_rentang']) {
+            $temuan[] = sprintf(
+                'Beban %s kN di luar rentang tabel standar — koreksi diambil dari titik terdekat (%s kN), '
+                .'bukan interpolasi tervalidasi.',
+                $setPointKn,
+                $std['set_point_kn'],
+            );
+        }
+
+        $jauh = self::temuanJarakSetPoint($std, $B, "{$setPointKn} kN");
+
+        if ($jauh !== null) {
+            $temuan[] = $jauh;
+        }
+
+        if (count($bacaanDiv) > 1 && count(array_unique($bacaanDiv, SORT_REGULAR)) === 1) {
+            $temuan[] = sprintf(
+                '%d pembacaan pada titik %s kN identik semua — dial nyata biasanya bervariasi satu divisi.',
+                count($bacaanDiv),
+                $setPointKn,
+            );
+        }
+
+        return [
+            'B' => $B, 'J' => $J, 'K' => $K, 'L' => $L,
+            'W' => $W, 'Y' => $Y, 'Z' => $Z, 'CF' => $CF,
+            'set_point_standar_kn' => $std['set_point_kn'],
+            'di_luar_rentang_tabel' => $std['di_luar_rentang'],
+            'bacaan_div' => $bacaanDiv,
+            'temuan' => $temuan,
+        ];
+    }
+
+    /**
+     * Budget PROVING RING — delapan komponen dihitung, ENAM dijumlahkan.
+     *
+     * ## Yang beda dari UTM & Load Cell, dan semuanya diadu ke master
+     *
+     * | Komponen | UTM / Load Cell | Proving Ring |
+     * |---|---|---|
+     * | Daya baca alat | resolusi gaya / rentang | resolusi DIAL (mm) / kapasitas dial (mm) |
+     * | Pengulangan | RSD / akar 12 | RSD / akar 6 |
+     * | Misalignment | dibagi akar 3, ci = 1 | TIDAK dibagi, ci = 2 |
+     * | Zero error | ci = 1 | ci = 2 |
+     * | Yang dijumlahkan | delapan | **enam** |
+     *
+     * ## Enam dari delapan — dan itu bukan tafsir
+     *
+     * `Jumlah` di master = 0,04703237424735414. Menjumlahkan kuadrat kedelapan
+     * `uici` memberi 0,048801243938405243; menjumlahkan yang ENAM pertama
+     * memberi 0,04703237424735414 — **beda nol**. Selisihnya persis suku
+     * misalignment (0,04205793²). Jadi zero error dan misalignment memang
+     * berada di luar penjumlahannya.
+     *
+     * Zero error kebetulan bernilai nol di sesi contoh, jadi dari angka saja
+     * tidak bisa dibedakan "sengaja dikecualikan" dari "kebetulan tidak
+     * menyumbang". Yang pasti terbukti cuma misalignment. Keduanya tetap
+     * DIHITUNG dan disimpan di jejak audit supaya kontribusinya yang hilang
+     * bisa dibaca tanpa membuka kode — itu G8, dan lab yang memutuskan.
+     *
+     * @param  array<string, mixed>  $blok
+     * @return array{dijumlahkan: list<array<string, mixed>>, di_luar_jumlah: list<array<string, mixed>>}
+     */
+    public static function komponenBudgetProvingRing(
+        array $blok,
+        float $rsdMaks,
+        float $rentangKn,
+        float $u95Standar,
+        ?float $drift,
+    ): array {
+        $akar3 = sqrt(3);
+        $mis = $blok['misalignment'] ?? [];
+
+        $resolusiDialMm = (float) ($blok['resolusi_dial_mm'] ?? 0);
+        $kapasitasDialMm = (float) ($blok['kapasitas_dial_mm'] ?? 0);
+        $resolusiStdKn = (float) ($blok['resolusi_standar'] ?? 0);
+        $kapasitasStdKn = (float) ($blok['kapasitas_standar'] ?? 0);
+
+        $zeroKn = self::keKn(
+            GayaMentah::zeroErrorMaks($blok['preload_zero'] ?? []),
+            (string) $blok['satuan'],
+        );
+
+        $bagi = static fn (float $atas, float $bawah): float => $bawah === 0.0 ? 0.0 : $atas / $bawah;
+
+        $uMisalignment = 0.0;
+        if ($mis !== [] && self::rata($mis) !== 0.0) {
+            // TANPA divisor — master Proving Ring menulis Divisor = 1 di baris
+            // ini, sementara UTM & Load Cell membaginya akar 3. Ditiru apa
+            // adanya; toh komponen ini tidak ikut dijumlahkan.
+            $uMisalignment = self::stdev($mis) / self::rata($mis) * 100;
+        }
+
+        return [
+            'dijumlahkan' => [
+                [
+                    'sumber' => 'sertifikat_kalibrator',
+                    'keterangan' => 'Sertifikat load cell standar (U95% % reading, k=2)',
+                    'distribusi' => 'normal',
+                    'u' => $u95Standar / 2,
+                    'ci' => 1.0,
+                    'vi' => 200.0,
+                ],
+                [
+                    'sumber' => 'daya_baca_uut',
+                    'keterangan' => 'Resolusi DIAL proving ring terhadap kapasitas dial (mm)',
+                    'distribusi' => 'rectangular',
+                    'u' => ($bagi($resolusiDialMm, $kapasitasDialMm) * 100 / 2) / $akar3,
+                    'ci' => 1.0,
+                    'vi' => 1e6,
+                ],
+                [
+                    'sumber' => 'daya_baca_standar',
+                    'keterangan' => 'Resolusi load cell standar',
+                    'distribusi' => 'rectangular',
+                    'u' => ($bagi($resolusiStdKn, $kapasitasStdKn) * 100 / 2) / $akar3,
+                    'ci' => 1.0,
+                    'vi' => 1e6,
+                ],
+                [
+                    'sumber' => 'temperature',
+                    'keterangan' => 'Pengaruh suhu, konstanta metode 0,027%',
+                    'distribusi' => 'rectangular',
+                    'u' => 0.027 / $akar3,
+                    'ci' => 1.0,
+                    'vi' => 50.0,
+                ],
+                [
+                    'sumber' => 'drift_standar',
+                    'keterangan' => 'Drift standar (master tidak membagi divisornya — pertanyaan lab G3)',
+                    'distribusi' => 'rectangular',
+                    'u' => (float) ($drift ?? 0.0),
+                    'ci' => 1.0,
+                    'vi' => 50.0,
+                ],
+                [
+                    'sumber' => 'pengulangan',
+                    'keterangan' => 'RSD terbesar antar titik dibagi akar 6 (UP 3x + DOWN 3x)',
+                    'distribusi' => 'normal',
+                    'u' => $rsdMaks / sqrt(GayaMentah::REPLIKAT * 2),
+                    'ci' => 1.0,
+                    'vi' => 5.0,
+                ],
+            ],
+            'di_luar_jumlah' => [
+                [
+                    'sumber' => 'zero_error',
+                    'keterangan' => 'Zero error sesudah preload — DIHITUNG tapi tidak ikut dijumlahkan master (G8)',
+                    'distribusi' => 'rectangular',
+                    'u' => $bagi($zeroKn, $rentangKn) * 100,
+                    'ci' => 2.0,
+                    'vi' => 5.0,
+                ],
+                [
+                    'sumber' => 'misalignment',
+                    'keterangan' => 'Sebaran misalignment — DIHITUNG tapi tidak ikut dijumlahkan master (G8)',
+                    'distribusi' => 'rectangular',
+                    'u' => $uMisalignment,
+                    'ci' => 2.0,
+                    'vi' => 5.0,
+                ],
+            ],
         ];
     }
 

@@ -3,13 +3,16 @@
 > Buat pengembang `sidik-calibration-mobile`. Berdiri sendiri: tidak perlu
 > membuka kode server untuk mengerjakan sisi HP-nya.
 >
-> Status per 24 Sep 2026: **UTM** (`utm`) dan **Load Cell** (`load_cell`) sudah
-> ada di server. Proving Ring menyusul. Dokumen ini sudah memuat bentuk
-> ketiganya supaya layarnya tidak perlu dibongkar dua kali.
+> Status per 25 Sep 2026: **ketiganya** sudah ada di server — `utm`,
+> `load_cell`, dan `proving_ring`.
 >
-> UTM dan Load Cell memakai **layar yang sama persis** — bentuk lembarnya lahir
-> dari kelas induk yang sama. Yang berbeda cuma nomor formulir, jumlah desimal
-> yang tercetak di sertifikat, dan satuan bawaannya. Jangan bikin dua layar.
+> UTM dan Load Cell memakai **layar yang sama persis**: empat tabel posisi, tiga
+> replikat, pembacaan dalam satuan gaya. Yang berbeda cuma nomor formulir,
+> jumlah desimal sertifikat, dan satuan bawaannya. Jangan bikin dua layar.
+>
+> **Proving Ring layar yang BERBEDA**, dan bukan soal tata letak: yang diisi
+> jumlah DIVISI dial (bukan gaya), tabelnya DUA (UP & DOWN, bukan empat posisi),
+> dan keluarannya faktor kalibrasi — lihat §9.
 
 ---
 
@@ -157,15 +160,32 @@ Sebaiknya HP menyaring dropdown-nya begitu tipe beban dipilih.
 
 ## 6. Yang dicetak di sertifikat
 
+> **Berkas ini sempat salah menulis bagian ini (24 Sep 2026).** Contoh lamanya
+> memakai angka kolom `AA` lembar perhitungan, bukan yang benar-benar tercetak,
+> dan menjanjikan kolom RRPE yang saat itu belum ada di template. Dua-duanya
+> sudah dibetulkan; yang di bawah ini diadu ke sertifikat master.
+
+**UTM & Load Cell** — empat kolom:
+
 ```
 Standard Value │ Unit Under Test │ Correction │ RRPE
-    (kgf)      │      (kgf)      │   (kgf)    │  (%)
+    (kgf)      │      (kgf)       │   (kgf)    │  (%)
 ───────────────┼─────────────────┼────────────┼───────
      0,0       │       0,0       │    0,0     │   −
    100,4       │     100,0       │    0,4     │  0,00
-   200,8       │     200,0       │    0,9     │  0,03
+   200,8       │     200,0       │    0,8     │  0,03
 
 Uncertainty U95% = ± 2,1 kgf,  k = 2
+```
+
+**Proving Ring** — empat kolom yang BERBEDA, karena besarannya berbeda:
+
+```
+Standard Value │ Unit Under Test (1 Div) │ Calibration Factor │ Repeatability
+    (kgf)      │        (divisi)         │     (kgf/Div)       │     (%)
+───────────────┼────────────────────────┼───────────────────┼──────────────
+     30,00     │        237,49          │      0,12632       │    0,23
+     90,00     │        725,15          │      0,12411       │    0,10
 ```
 
 Tiga hal yang perlu diketahui sisi HP:
@@ -173,9 +193,13 @@ Tiga hal yang perlu diketahui sisi HP:
 1. **Tidak ada PASS/FAIL.** Sertifikat gaya tidak memvonis lulus/tidak — lab
    melaporkan seberapa meleset, pelanggan yang menilai. Jangan menampilkan
    lencana "laik pakai" di layar mana pun.
-2. **RRPE titik nol dicetak `−`**, bukan `0,00`. Titik nol memang tidak punya
-   RRPE (pembaginya nol).
-3. **`k` dicetak 2** walau nilai hitungnya 1,9698…
+2. **Kolom sebaran titik nol dicetak `−`**, bukan `0,00`. Titik nol memang tidak
+   punya sebaran (pembaginya nol), dan `0,00` kebaca sebagai "diukur, hasilnya
+   nol sempurna".
+3. **Kolom ketiga Proving Ring bukan koreksi, tapi FAKTOR** — berapa kgf per
+   satu divisi dial. Itu satu-satunya angka yang dipakai pelanggan untuk
+   mengubah bacaan dialnya jadi gaya, dan dia dicetak **lima desimal** sementara
+   dua kolom gaya di sebelahnya dua desimal. Jangan dipukul rata.
 
 ---
 
@@ -243,4 +267,64 @@ angka seribu kali tanpa satu pun error.
 Kenapa ini bukan soal sepele: `(float) "8,237"` di PHP **bukan galat**, dia
 `8.0`. Misalignment yang mendarat sebagai 8 meruntuhkan simpangan bakunya dan
 MENGECILKAN U95 yang tercetak — arah yang salah, dan tanpa gejala.
+
+---
+
+## 9. Proving Ring — layar yang BERBEDA
+
+Bukan varian tata letak. Tiga hal yang mengubah isian, bukan tampilan.
+
+### a. Yang diisi DIVISI, bukan gaya
+
+Cincin bajanya melendut, dan yang dibaca teknisi jumlah divisi pada dial —
+`237`, `726`, `4047`. Label kotaknya **`Pembacaan Dial (Div)`**, dan jangan
+pernah menulis satuan gaya di situ: teknisi yang mengetik kgf ke kotak yang
+dihitung sebagai divisi menghasilkan angka yang tetap masuk akal sampai
+sertifikatnya terbit.
+
+### b. DUA tabel, bukan empat
+
+```
+gaya_up     offset_kunci 1000   "a. Beban NAIK (UP)"
+gaya_down   offset_kunci 2000   "b. Beban TURUN (DOWN)"
+```
+
+Tiga replikat masing-masing → **enam bacaan per titik**, bukan dua belas. Arahnya
+bukan label: baja punya histeresis, jadi bacaan saat beban naik memang berbeda
+dari saat turun pada beban yang sama, dan perbedaan itu yang diukur.
+
+Kirimnya sama pola dengan empat tabel posisi:
+`measurements[].gaya_up` dan `measurements[].gaya_down`, masing-masing **tepat
+tiga** angka.
+
+### c. Blok sesi punya DUA field tambahan
+
+```jsonc
+"gaya": {
+  "satuan": "kgf",
+  "tipe_beban": "Push",
+  "standar": "3000kN",
+  "kapasitas": 500,
+  "kapasitas_dial_mm": 25,      // WAJIB — hanya Proving Ring
+  "resolusi_dial_mm": 0.002,    // WAJIB — hanya Proving Ring
+  "resolusi_standar": 0.1,
+  "kapasitas_standar": 3000,
+  "preload_zero": [0, 0, 0],
+  "preload_max": [219, 219, 219],
+  "misalignment": [8.237, 8.234, 8.237, 8.238]
+}
+```
+
+`resolusi_uut` **tidak dipakai** alat ini — kotaknya memang tidak ada di
+lembarnya. Yang menggantikannya dua field dial di atas, dan keduanya bukan
+kelengkapan administratif: komponen `daya baca alat` di budget lahir dari
+`resolusi_dial / kapasitas_dial`. Kosong, komponen itu jadi nol dan U95 yang
+tercetak lebih kecil dari yang seharusnya.
+
+### d. Satu peringatan yang hampir pasti muncul, dan itu benar
+
+Sesi contoh memakai standar `3000kN` untuk alat 4,905 kN, jadi **setiap titik**
+akan membawa temuan bahwa baris tabel standar yang terpilih meleset jauh dari
+bebannya. Itu bukan bug yang perlu disembunyikan di layar — itu keadaan nyata
+yang sedang ditanyakan ke lab (G11 & G14). Tampilkan apa adanya.
 

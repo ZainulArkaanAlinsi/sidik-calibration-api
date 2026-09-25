@@ -181,7 +181,19 @@ class UtmSeeder extends Seeder
                 'merk' => 'Matest',
                 'model' => 'C-140-08',
                 'tertelusur_ke' => 'LK-013-IDN',
-                'berlaku_sampai' => '2026-09-10',
+                // Master menulis `berlaku_sampai` 10 Sep 2026 — SUDAH LEWAT,
+                // sama seperti Load Cell 5 kN di atas, dan temuan nyata yang
+                // sama buat lab: dua dari tiga load cell standar gaya sudah
+                // kedaluwarsa.
+                //
+                // Sesi contoh Proving Ring memakai standar ini, dan sesi contoh
+                // yang selalu ber-ERROR "standar kadaluarsa" melatih orang
+                // mengabaikan temuan yang justru paling penting dibaca. Jadi
+                // tanggalnya dimajukan DI SEEDER saja; angkanya tidak ikut ke
+                // mana pun selain fixture.
+                //
+                // Diangkat sebagai pertanyaan lab bernomor G1.
+                'berlaku_sampai' => '2027-09-10',
                 'ketidakpastian' => 0.36,
                 'satuan_ketidakpastian' => '% reading',
                 'faktor_cakupan' => 2,

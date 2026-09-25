@@ -119,7 +119,7 @@ class LoadCellProfile extends GayaProfile
         return 'SIDIK-IK-CAL-0514_Rev.3';
     }
 
-    protected function kodeDokumen(): string
+    protected function kodeDokumen(): ?string
     {
         return 'SIDIK-FM-CAL-0520_Rev.3';
     }

@@ -1690,6 +1690,67 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Judul kolom KETIGA. Bawaannya `Correction`, dan buat empat puluh alat
+     * itu memang yang dicetak masternya.
+     *
+     * Proving Ring tidak: kolom ketiganya `Calibration Factor`, dan isinya
+     * bukan selisih melainkan PEMBAGIAN — berapa kN per satu divisi dial.
+     * Menyebutnya `Correction` bukan cuma judul yang keliru, dia bikin pembaca
+     * sertifikat mengurangkan dua kolom yang memang tidak bisa dikurangkan:
+     * kN dan divisi.
+     */
+    public function judulKolomKoreksi(): string
+    {
+        return 'Correction';
+    }
+
+    /**
+     * Kolom KEEMPAT: sebaran per titik. `null` = tidak dicetak (bawaan).
+     *
+     * Dipakai kelompok Gaya, dan sertifikat masternya memang punya kolom ini:
+     * UTM & Load Cell menulis `RRPE (%)`, Proving Ring `Repeatability (%)`.
+     * Keduanya menjawab pertanyaan yang sama untuk pelanggan — seberapa
+     * konsisten mesinnya — dan itu yang membedakan "meleset tapi konsisten"
+     * (bisa disetel) dari "rata-ratanya pas tapi acak" (masalah mekanis).
+     *
+     * Sampai 25 Sep 2026 kolom ini TIDAK ADA di berkas ini, jadi sertifikat
+     * gaya terbit tanpa angka yang justru paling sering dicari pelanggan —
+     * dan dokumentasinya terlanjur menjanjikannya.
+     */
+    public function judulKolomSebaran(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Apakah kolom UUT ikut dikonversi ke satuan alat.
+     *
+     * Bawaannya `true`: empat puluh alat mencetak UUT dalam besaran yang sama
+     * dengan standarnya, jadi keduanya ikut faktor satuan yang sama.
+     *
+     * Proving Ring tidak. Kolom UUT-nya jumlah DIVISI dial — bukan gaya sama
+     * sekali. Ikut dibagi faktor kgf, angkanya melar seratus kali lipat dan
+     * berlabel satuan yang bukan miliknya.
+     */
+    public function uutIkutSatuanAlat(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Desimal khusus kolom KETIGA. `null` = ikut desimal barisnya (bawaan).
+     *
+     * Ada karena Proving Ring: kolom ketiganya kN per divisi dial, berorde
+     * 0,0012 — di dua desimal yang dipakai kolom gaya di sebelahnya dia runtuh
+     * jadi `0,00` dan kehilangan SELURUH isinya. Preseden mekanismenya
+     * `desimalU95()`, yang lahir dari kebutuhan yang sama.
+     */
+    public function desimalKolomKoreksi(): ?int
+    {
+        return null;
+    }
+
+    /**
      * Kolom **Standard Value** nulis nol di belakang koma atau nggak.
      *
      * `true` (bawaan) = nol di belakang dibuang — master Turbidimeter nulis

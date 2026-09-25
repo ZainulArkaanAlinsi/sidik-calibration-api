@@ -159,6 +159,11 @@ class DatabaseSeeder extends Seeder
             // 100 kN` diseed di sana, dan seeder ini memakainya — bukan
             // membuat duplikatnya sendiri.
             LoadCellSeeder::class,
+            // Alat gaya ketiga. WAJIB sesudah `UtmSeeder` juga: standar
+            // `Load Cell 3000 kN` diseed di sana, dan sesi ini memakainya —
+            // walau standar itu 600x kapasitas alatnya, yang justru jadi
+            // temuannya sendiri (pertanyaan lab G11 & G14).
+            ProvingRingSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

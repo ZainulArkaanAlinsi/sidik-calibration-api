@@ -26,6 +26,7 @@ use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\LabuUkurProfile;
 use App\Services\Calibration\Profiles\LoadCellProfile;
+use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\PicnometerProfile;
@@ -234,6 +235,10 @@ class CalibrationProfileRegistry
             // beda cuma data: satuan kN, standar 100 kN, dua desimal, dan
             // kolom Standard Value yang memakai Y bukan Z (G12).
             new LoadCellProfile,
+            // Alat gaya ketiga. Rantainya paling beda dari dua di atas: yang
+            // dibaca DIVISI dial, keluarannya faktor kalibrasi kN/Div, dan
+            // budget-nya cuma menjumlahkan enam dari delapan komponen.
+            new ProvingRingProfile,
         ];
     }
 

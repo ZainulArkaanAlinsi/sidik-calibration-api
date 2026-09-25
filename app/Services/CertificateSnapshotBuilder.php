@@ -86,6 +86,14 @@ class CertificateSnapshotBuilder
             // kayak `judul_uut`. Snapshot lama yang belum punya kunci ini
             // dibaca `?? false` — bentuk cetaknya nggak berubah.
             'u95_per_titik' => $profil?->u95PerTitik() ?? false,
+            // Judul kolom KETIGA & KEEMPAT. Ikut DIBEKUKAN sama alasannya
+            // kayak `judul_uut`: sertifikat yang udah terbit nggak boleh
+            // berubah bentuk gara-gara profilnya diedit sesudahnya. Snapshot
+            // lama yang belum punya kunci ini jatuh ke perilaku lamanya —
+            // `Correction`, dan tanpa kolom keempat.
+            'judul_koreksi' => $profil?->judulKolomKoreksi(),
+            'judul_sebaran' => $profil?->judulKolomSebaran(),
+            'desimal_koreksi' => $profil?->desimalKolomKoreksi(),
             // Faktor cakupan yang DIKUNCI alat ini, atau null kalau `k`-nya
             // dihitung per titik dari `v_eff`. Yang membacanya cuma judul
             // kolom `U95`: Viscometer menulis `U95%, k=2` karena `k`-nya
@@ -358,7 +366,27 @@ class CertificateSnapshotBuilder
                     // Kolom "Remark" di sertifikat asli. Null buat alat yang
                     // titiknya nggak punya keterangan parameter.
                     'remark' => $remark,
-                    'unit_under_test' => $konversi((float) $titik->rata_rata),
+                    // UUT Proving Ring jumlah DIVISI dial, bukan gaya — ikut
+                    // dibagi faktor kgf, angkanya melar seratus kali lipat dan
+                    // berlabel satuan yang bukan miliknya.
+                    'unit_under_test' => ($profil?->uutIkutSatuanAlat() ?? true)
+                        ? $konversi((float) $titik->rata_rata)
+                        : (float) $titik->rata_rata,
+                    // Kolom sebaran (RRPE / Repeatability). Angkanya PERSEN,
+                    // jadi TIDAK ikut konversi satuan — persen tetap persen.
+                    // Dibaca dari jejak audit karena `uncertainty_calculations`
+                    // tidak punya kolomnya, dan menambah kolom baru buat satu
+                    // kelompok alat itu pilihan terakhir (AGENTS §Alur Kerja 4).
+                    'sebaran' => self::sebaranTitik($titik),
+                    // Kolom ketiga yang memang TIDAK punya nilai di titik ini.
+                    //
+                    // Titik nol Proving Ring: faktor kalibrasi = nilai standar
+                    // dibagi pembacaan, dan pembacaannya nol. Master mencetak
+                    // `-`. Kolom `koreksi` di database `NOT NULL`, jadi yang
+                    // tersimpan penampung 0 — dan mencetak penampung itu berarti
+                    // menerbitkan "0 kgf per divisi", pernyataan yang salah dan
+                    // kelihatan wajar.
+                    'koreksi_kosong' => self::koreksiKosong($titik),
                     // Tanda cetak per alat — lihat `tandaKoreksiSertifikat()`.
                     //
                     // Dikonversi DULU baru dikasih tanda. Faktornya selalu
@@ -593,6 +621,65 @@ class CertificateSnapshotBuilder
      *
      * @param  Collection<int, CalibrationMethod>  $kandidat
      */
+    /**
+     * Apakah kolom ketiga titik ini memang tidak punya nilai.
+     *
+     * Dibaca dari jejak audit, bukan dari kolom tersimpannya: yang tersimpan
+     * penampung nol karena kolomnya `NOT NULL`, sementara jejaknya menyimpan
+     * `null` yang sesungguhnya.
+     *
+     * `false` buat empat puluh satu alat lain — jejaknya tidak punya kunci ini
+     * sama sekali, jadi perilaku lamanya nol tersentuh.
+     */
+    private static function koreksiKosong(mixed $titik): bool
+    {
+        $jejak = $titik->type_b_components ?? null;
+
+        if (! is_array($jejak)) {
+            return false;
+        }
+
+        $rantai = $jejak['gaya_rantai'] ?? null;
+
+        return is_array($rantai)
+            && array_key_exists('CF_faktor_kn_per_divisi', $rantai)
+            && $rantai['CF_faktor_kn_per_divisi'] === null;
+    }
+
+    /**
+     * Angka sebaran satu titik (%), dari jejak auditnya.
+     *
+     * UTM & Load Cell menyimpannya sebagai `AB_rrpe_persen`, Proving Ring
+     * sebagai `L_rsd_persen`. Dua nama karena dua besaran yang beda: RRPE
+     * dibagi beban nominal, RSD dibagi rata-rata pembacaan. Yang dicari di
+     * sini yang mana pun yang ada.
+     *
+     * `null` kalau tidak ada — dan itu keadaan normal buat empat puluh alat
+     * lain, yang memang tidak mencetak kolom ini.
+     */
+    private static function sebaranTitik(mixed $titik): ?float
+    {
+        $jejak = $titik->type_b_components ?? null;
+
+        if (! is_array($jejak)) {
+            return null;
+        }
+
+        $rantai = $jejak['gaya_rantai'] ?? null;
+
+        if (! is_array($rantai)) {
+            return null;
+        }
+
+        foreach (['AB_rrpe_persen', 'L_rsd_persen'] as $kunci) {
+            if (isset($rantai[$kunci]) && is_numeric($rantai[$kunci])) {
+                return (float) $rantai[$kunci];
+            }
+        }
+
+        return null;
+    }
+
     public static function metodeTerpilih(Collection $kandidat, string $namaAlat): ?CalibrationMethod
     {
         return $kandidat

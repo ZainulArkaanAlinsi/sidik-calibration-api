@@ -3913,6 +3913,81 @@ id 2, 3, … sementara `PerintahAkunSuperAdminTest` dan `GantiSandiSendiriTest`
 memaku id 1. Keduanya lahir bersama commit super admin 24 Sep dan tidak pernah
 diuji di MySQL. Yang salah penjaganya, bukan kodenya.
 
+### §37b — Alat ke-42: **Proving Ring**, dan tiga koreksi atas temuan sendiri (25 Sep 2026)
+
+Kelompok Gaya lengkap. Proving Ring sengaja dikerjakan terakhir karena tiga dari
+enam temuan panduan ada di sana — dan tiga di antaranya, sesudah diperiksa sel
+demi sel, **ternyata salah arah**. Ditulis lengkap di sini karena ketiganya
+pernah saya sampaikan sebagai fakta.
+
+#### Rantainya paling tidak sebangun dua alat gaya lain
+
+| | UTM / Load Cell | Proving Ring |
+|---|---|---|
+| Yang dibaca | gaya (kgf / kN) | **jumlah DIVISI dial** |
+| Bacaan per titik | 12 (4 posisi × 3) | **6 (UP 3× + DOWN 3×)** |
+| Keluaran sertifikat | Correction | **Calibration Factor (kgf/Div)** |
+| Kolom sebaran | RRPE (dibagi beban) | **Repeatability (dibagi rata-rata bacaan)** |
+| Koreksi suhu | termal ke suhu sertifikat | **faktor ruangan, acuan 23 °C** |
+| Komponen budget dijumlahkan | delapan | **enam** |
+| Divisor pengulangan | akar 12 | **akar 6** |
+| Daya baca alat | resolusi gaya / rentang | **resolusi DIAL / kapasitas dial (mm)** |
+
+Dibuktikan sebelum PHP, lalu diadu ulang di PHP: `J`, `K`, `L` cocok master di
+kesepuluh titik pada 5×10⁻⁶, dan seluruh budget — `u_c` 0,2168694867,
+`v_eff` 102,52446920, `k` 1,9834952586, `U95%` 0,4301595985 — cocok persis.
+`ProvingRingMasterTest` (11 test / 90 asersi).
+
+#### Tiga koreksi atas temuan yang sudah saya sampaikan
+
+**G11 — saya nyatakan terlalu jauh.** Semula: "koreksi standar HILANG di semua
+titik, ditelan `ISERROR`", dengan kesimpulan sertifikat yang sudah terbit
+kehilangan koreksinya. Kenyataannya: dengan standar yang disebut workbook
+(3000 kN), pencarian yang BENAR pun memulangkan nol — baris tabel di bawah
+300 kN cuma baris nol. `ISERROR` **menyembunyikan**, bukan menyebabkan.
+
+Masalah sebenarnya lebih dalam: alat **500 kgf** dikalibrasi dengan standar yang
+titik terkalibrasi terendahnya **300 kN**, 61× kapasitasnya. Tabel 5 kN justru
+pas menutupinya.
+
+**G6 — "koreksi suhu ganda" ganda di rumus, TUNGGAL di hasil.** Lembar Proving
+Ring tidak punya field *Actual Temperature of Standard* yang dipunyai lembar UTM,
+jadi pengurangnya nol dan `Z` sama persis dengan `Y` di kesembilan barisnya.
+
+**G8 — dari dugaan jadi terbukti.** Jumlah master cocok NOL BEDA dengan enam
+komponen pertama; selisih terhadap delapan persis suku misalignment.
+
+#### Satu temuan BARU, dan yang paling material
+
+**G14 — pita CMC terbaca dari baris yang SALAH, sekitar 10×.** Lampiran
+akreditasi memuat Proving Ring `0–500 kgf → 2,3 kgf`; budget master memakai
+`0,22 kN`, yaitu baris `10–88 kN` yang **tidak mencakup** alat 500 kgf. Yang
+benar 0,022563 kN.
+
+Lantai CMC repo ini memilih pita berdasarkan kapasitas alat, jadi dia memakai
+yang benar tanpa disetel — dan itu berarti U95 kita **~10× lebih kecil** dari
+yang tercetak di sertifikat yang sudah terbit. Mengaku ketidakpastian yang lebih
+KECIL dari yang pernah diterbitkan bukan keputusan yang boleh diambil di kode.
+
+#### Dua celah bersama yang ikut tertutup
+
+**1. Penjaga rentang tabel terlalu sempit.** `di_luar_rentang` cuma menangkap
+yang melewati ujung tabel. Titik 0,29 kN yang mengambil koreksi dari baris 0 kN
+sementara baris berikutnya 300 kN **ada di dalam** [0, 3000] — lolos tanpa suara.
+Sekarang jaraknya diukur, dan yang meleset lebih dari 10 % dari bebannya jadi
+temuan. Berlaku untuk ketiga alat gaya.
+
+**2. Kolom sebaran tidak pernah ada di sertifikat.** Template cuma mencetak
+`Standard | UUT | Correction | U95%`, padahal ketiga master punya kolom keempat
+— dan dokumen serah-terima yang saya tulis 24 Sep terlanjur menjanjikannya.
+Sekarang jadi kolom opsional: `RRPE` untuk UTM & Load Cell, `Repeatability`
+untuk Proving Ring. Ikut lahir: judul kolom ketiga yang bisa diganti
+(`Calibration Factor`), desimal khusus kolom ketiga (lima, bukan dua — faktor
+0,126 kgf/Div runtuh jadi `0,13` di dua desimal), dan penanda bahwa kolom UUT
+Proving Ring **tidak** ikut konversi satuan karena isinya divisi, bukan gaya.
+
+Nol kolom baru di database. Pertanyaan lab: `docs/pertanyaan-lab-gaya.md` (14).
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

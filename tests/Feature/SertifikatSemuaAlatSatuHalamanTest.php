@@ -126,6 +126,10 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // banyak dari UTM — dan dua desimal, bukan satu. Pasangan itu yang
         // bikin dia pantas disapu: tabelnya paling tinggi di kelompok gaya.
         'DEMO-LC-001 (Load Cell)',
+        // Alat ke-42, gaya ketiga (25 Sep 2026). Sepuluh titik, dan kolom
+        // ketiganya FAKTOR kalibrasi berdesimal lima — paling lebar di
+        // kelompoknya.
+        'DEMO-PR-001 (Proving Ring)',
         'DEMO-SPECTRO-NIAGA (Visible Spectrofotometer)',
         // Alat ke-12. Sesi contohnya menyusul 11 Sep 2026 — sampai itu
         // TIDS satu-satunya alat yang sertifikatnya tidak pernah dirender
@@ -192,6 +196,16 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // bukan gejala tata letak gaya yang menyusut, melainkan sesi contoh
         // yang memang paling panjang di kelompoknya.
         'DEMO-LC-001 (Load Cell)',
+        // Proving Ring (alat ke-42, 25 Sep 2026) — sepuluh titik, DAN kolom
+        // ketiganya berdesimal lima (faktor kalibrasi 0,12632 kgf/Div) sementara
+        // dua kolom gaya di sebelahnya dua desimal. Tabel paling lebar sekaligus
+        // paling tinggi di kelompok gaya.
+        //
+        // Yang justru TIDAK masuk sini: UTM. Kolom sebaran (RRPE) yang baru
+        // ditambahkan 25 Sep 2026 tidak menggesernya ke mode padat — enam titik
+        // masih muat berempat kolom. Itu yang membedakan "tata letak menyusut"
+        // dari "lembarnya memang panjang".
+        'DEMO-PR-001 (Proving Ring)',
     ];
 
     /**
