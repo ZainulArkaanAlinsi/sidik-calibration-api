@@ -1,0 +1,650 @@
+{
+    "_catatan": "Pemetaan TULISAN MANUSIA: kotak di ph_meter-0509.draf.json -> kunci sel profil ph_meter. Drafnya keluaran docs/skrip/draf-geometri-dari-pdf.py apa adanya dan TIDAK PERNAH disunting tangan; yang diputuskan manusia cuma berkas ini. Kotak dirujuk lewat TITIK TENGAH ternormal (x, y), bukan id sNNN, karena id bergeser begitu skripnya diperbaiki. Tiap titik wajib jatuh di TEPAT SATU kotak draf sejenisnya (GeometriFormulirAsliPhTest). Belum diadu ke foto nyata, jadi terverifikasi=false dan berkas ini TIDAK dibaca TemplateLembarKerja.",
+    "template_id": "ph_meter",
+    "kode_dokumen": "SIDIK-FM-CAL-0509_Rev.4",
+    "draf": "ph_meter-0509.draf.json",
+    "sumber_sha256": "468b6e15f56f5bfb05a35134e9c6b4fd72a07cde13b82a12dd59823ff893c85a",
+    "terverifikasi": false,
+    "koordinat": "ternormal_0_1",
+    "_cara": "Nilai `cara` mengikuti PANDUAN-OCR-LEMBAR-KERJA.md §4: angka = OCR angka lewat NormalisasiAngka; tanggal = OCR + parser format ketat; banding = diisi dari data order/alat, OCR cuma membandingkan; usulan = OCR jadi usulan yang wajib dikonfirmasi; centang = rasio piksel gelap, bukan OCR.",
+    "sel": [
+        {
+            "kunci": "sebelum_adjustment|1|1|pembacaan",
+            "x": 0.5405,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|1|1|suhu",
+            "x": 0.6065,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|pembacaan",
+            "x": 0.672,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|2|1|suhu",
+            "x": 0.742,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|3|1|pembacaan",
+            "x": 0.8135,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|3|1|suhu",
+            "x": 0.882,
+            "y": 0.388
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|pembacaan",
+            "x": 0.5405,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|1|2|suhu",
+            "x": 0.6065,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|pembacaan",
+            "x": 0.672,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|2|2|suhu",
+            "x": 0.742,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|3|2|pembacaan",
+            "x": 0.8135,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|3|2|suhu",
+            "x": 0.882,
+            "y": 0.424
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|pembacaan",
+            "x": 0.5405,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|1|3|suhu",
+            "x": 0.6065,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|pembacaan",
+            "x": 0.672,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|2|3|suhu",
+            "x": 0.742,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|3|3|pembacaan",
+            "x": 0.8135,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|3|3|suhu",
+            "x": 0.882,
+            "y": 0.46
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|pembacaan",
+            "x": 0.5405,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|1|4|suhu",
+            "x": 0.6065,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|pembacaan",
+            "x": 0.672,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|2|4|suhu",
+            "x": 0.742,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|3|4|pembacaan",
+            "x": 0.8135,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|3|4|suhu",
+            "x": 0.882,
+            "y": 0.496
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|pembacaan",
+            "x": 0.5405,
+            "y": 0.532
+        },
+        {
+            "kunci": "sebelum_adjustment|1|5|suhu",
+            "x": 0.6065,
+            "y": 0.532
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|pembacaan",
+            "x": 0.672,
+            "y": 0.532
+        },
+        {
+            "kunci": "sebelum_adjustment|2|5|suhu",
+            "x": 0.742,
+            "y": 0.532
+        },
+        {
+            "kunci": "sebelum_adjustment|3|5|pembacaan",
+            "x": 0.8135,
+            "y": 0.532
+        },
+        {
+            "kunci": "sebelum_adjustment|3|5|suhu",
+            "x": 0.882,
+            "y": 0.532
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|pembacaan",
+            "x": 0.5405,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|1|1|suhu",
+            "x": 0.6065,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|pembacaan",
+            "x": 0.672,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|2|1|suhu",
+            "x": 0.742,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|3|1|pembacaan",
+            "x": 0.8135,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|3|1|suhu",
+            "x": 0.882,
+            "y": 0.639
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|pembacaan",
+            "x": 0.5405,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|1|2|suhu",
+            "x": 0.6065,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|pembacaan",
+            "x": 0.672,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|2|2|suhu",
+            "x": 0.742,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|3|2|pembacaan",
+            "x": 0.8135,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|3|2|suhu",
+            "x": 0.882,
+            "y": 0.677
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|pembacaan",
+            "x": 0.5405,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|1|3|suhu",
+            "x": 0.6065,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|pembacaan",
+            "x": 0.672,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|2|3|suhu",
+            "x": 0.742,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|3|3|pembacaan",
+            "x": 0.8135,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|3|3|suhu",
+            "x": 0.882,
+            "y": 0.715
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|pembacaan",
+            "x": 0.5405,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|1|4|suhu",
+            "x": 0.6065,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|pembacaan",
+            "x": 0.672,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|2|4|suhu",
+            "x": 0.742,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|3|4|pembacaan",
+            "x": 0.8135,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|3|4|suhu",
+            "x": 0.882,
+            "y": 0.753
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|pembacaan",
+            "x": 0.5405,
+            "y": 0.7915
+        },
+        {
+            "kunci": "sesudah_adjustment|1|5|suhu",
+            "x": 0.6065,
+            "y": 0.7915
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|pembacaan",
+            "x": 0.672,
+            "y": 0.7915
+        },
+        {
+            "kunci": "sesudah_adjustment|2|5|suhu",
+            "x": 0.742,
+            "y": 0.7915
+        },
+        {
+            "kunci": "sesudah_adjustment|3|5|pembacaan",
+            "x": 0.8135,
+            "y": 0.7915
+        },
+        {
+            "kunci": "sesudah_adjustment|3|5|suhu",
+            "x": 0.882,
+            "y": 0.7915
+        }
+    ],
+    "isian": [
+        {
+            "kode": "tanggal_terima",
+            "cara": "tanggal",
+            "x": 0.6851,
+            "y": 0.2067
+        },
+        {
+            "kode": "tanggal_kalibrasi",
+            "cara": "tanggal",
+            "x": 0.6851,
+            "y": 0.2296
+        },
+        {
+            "kode": "equipment.nama_alat",
+            "cara": "banding",
+            "x": 0.2693,
+            "y": 0.3061
+        },
+        {
+            "kode": "equipment.range_resolusi",
+            "cara": "banding",
+            "x": 0.1912,
+            "y": 0.3276
+        },
+        {
+            "kode": "alat_model",
+            "cara": "usulan",
+            "x": 0.2693,
+            "y": 0.3612
+        },
+        {
+            "kode": "alat_serial_number",
+            "cara": "banding",
+            "x": 0.2693,
+            "y": 0.3801
+        },
+        {
+            "kode": "alat_merk",
+            "cara": "banding",
+            "x": 0.2693,
+            "y": 0.3975
+        },
+        {
+            "kode": "pemilik_nama",
+            "cara": "banding",
+            "x": 0.2687,
+            "y": 0.4701
+        },
+        {
+            "kode": "pemilik_alamat",
+            "cara": "banding",
+            "x": 0.2687,
+            "y": 0.4899
+        },
+        {
+            "kode": "suhu_awal",
+            "cara": "angka",
+            "x": 0.6067,
+            "y": 0.2894
+        },
+        {
+            "kode": "kelembaban_awal",
+            "cara": "angka",
+            "x": 0.8359,
+            "y": 0.29
+        },
+        {
+            "kode": "suhu_akhir",
+            "cara": "angka",
+            "x": 0.6059,
+            "y": 0.3049
+        },
+        {
+            "kode": "kelembaban_akhir",
+            "cara": "angka",
+            "x": 0.8351,
+            "y": 0.3055
+        }
+    ],
+    "centang": [
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 1,
+            "label": "pH Buffer Solutions 4",
+            "x": 0.1836,
+            "y": 0.5583
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 2,
+            "label": "pH Buffer Solutions 7",
+            "x": 0.1836,
+            "y": 0.5758
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 3,
+            "label": "pH Buffer Solutions 10",
+            "x": 0.1836,
+            "y": 0.5928
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 4,
+            "label": "RTD Sensor/SH1/20",
+            "x": 0.1836,
+            "y": 0.6107
+        },
+        {
+            "kode": "standar_dicek.*.dipakai",
+            "cara": "centang",
+            "baris_ke": 5,
+            "label": "Victor 14+/992613877",
+            "x": 0.1836,
+            "y": 0.6284
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-2",
+            "x": 0.1882,
+            "y": 0.415
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-6",
+            "x": 0.2307,
+            "y": 0.415
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-7",
+            "x": 0.2723,
+            "y": 0.4133
+        },
+        {
+            "kode": "thermohygro_standard_id",
+            "cara": "centang",
+            "pilihan": "TH-4",
+            "x": 0.1882,
+            "y": 0.433
+        }
+    ],
+    "abaikan": [
+        {
+            "jenis": "sel",
+            "alasan": "Kolom palsu di tepi kanan kedua tabel: kolom tipis tanpa kepala di kanan 10,01 °C yang ikut terbaca find_tables(). Di kertas tidak ada yang ditulis di situ. Utang skrip, dicatat di PANDUAN-OCR-LEMBAR-KERJA.md §8.",
+            "titik": [
+                {
+                    "x": 0.94,
+                    "y": 0.3257
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.344
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.3615
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.3795
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.3975
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.4154
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.4334
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.4514
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.4694
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.4874
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.5054
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.5228
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.5408
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.5757
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.5927
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.6107
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.6297
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.6486
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.6677
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.6866
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.7056
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.7245
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.7434
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.7624
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.784
+                },
+                {
+                    "x": 0.94,
+                    "y": 0.8035
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Sel kepala \"Solution Standard\" (dua sel bertumpuk per tabel). Garis mendatar antar-selnya (y 0,3354 dan 0,5842) memotong tulisan itu tepat di tengah, jadi teks_di_dalam() yang cuma menangkap kata utuh tidak menemukannya di sel mana pun dan skrip menganggapnya calon isian. Utang skrip, §8.",
+            "titik": [
+                {
+                    "x": 0.4544,
+                    "y": 0.3257
+                },
+                {
+                    "x": 0.4544,
+                    "y": 0.344
+                },
+                {
+                    "x": 0.4544,
+                    "y": 0.5757
+                },
+                {
+                    "x": 0.4544,
+                    "y": 0.5927
+                }
+            ]
+        },
+        {
+            "jenis": "sel",
+            "alasan": "Celah kosong di antara kotak Env. °C dan kotak %RH. find_tables() membacanya sebagai sel karena dibatasi dua sisi kotak; di kertas tidak ada yang ditulis di situ.",
+            "titik": [
+                {
+                    "x": 0.7502,
+                    "y": 0.2968
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Ruang kosong antara \"Env. Condition :\" dan kotak Env. Nilainya ditulis DI DALAM kotak (First/End × °C/%RH), dan keempatnya sudah dipetakan di atas.",
+            "titik": [
+                {
+                    "x": 0.4934,
+                    "y": 0.2971
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "\"1. Location\" belum punya kode: kertasnya teks bebas, sedangkan profil memisah `lokasi` (pilihan lab/onsite) dan `lokasi_nama` (cuma tampil untuk insitu). Menunggu keputusan — PANDUAN-OCR-LEMBAR-KERJA.md §7 butir 7.",
+            "titik": [
+                {
+                    "x": 0.2693,
+                    "y": 0.706
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Tanda tangan / paraf (§4): tidak dibaca dan tidak pernah dibuat. Nama pengesah datang dari akun (`teknisi.nama`, `reviewer.nama`, sumber otomatis).",
+            "titik": [
+                {
+                    "x": 0.1959,
+                    "y": 0.7623
+                },
+                {
+                    "x": 0.3644,
+                    "y": 0.7623
+                }
+            ]
+        },
+        {
+            "jenis": "isian",
+            "alasan": "Catatan bebas (§4): tidak di-OCR, teknisi mengetik `catatan_teknisi` sendiri.",
+            "titik": [
+                {
+                    "x": 0.4729,
+                    "y": 0.8369
+                }
+            ]
+        }
+    ]
+}
