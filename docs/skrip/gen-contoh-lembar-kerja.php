@@ -418,6 +418,7 @@ $kepalaGaya = <<<'DART'
 ///     POSISI baris; nominalnya dari tabel PERTAMA, dan kotak Nominal tabel lain
 ///     menampilkannya (`LembarKerjaState.acuanNominal`).
 ///  2. **Dua halaman** — identitas & standar | pengukuran & penutup.
+library;
 DART;
 
 $kelompok = [
