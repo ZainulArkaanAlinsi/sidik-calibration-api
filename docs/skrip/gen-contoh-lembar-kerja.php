@@ -20,6 +20,9 @@ use App\Services\Calibration\Profiles\LabuUkurProfile;
 use App\Services\Calibration\Profiles\PicnometerProfile;
 use App\Services\Calibration\Profiles\PipetUkurProfile;
 use App\Services\Calibration\Profiles\PipetVolumeProfile;
+use App\Services\Calibration\Profiles\LoadCellProfile;
+use App\Services\Calibration\Profiles\ProvingRingProfile;
+use App\Services\Calibration\Profiles\UtmProfile;
 use Illuminate\Contracts\Console\Kernel;
 
 /**
@@ -394,7 +397,39 @@ $kepalaVolumetricGlassware = <<<'DART'
 library;
 DART;
 
+$kepalaGaya = <<<'DART'
+/// Bentuk lembar kerja contoh **Gaya** — Mesin UTM, Load Cell, Proving Ring
+/// (alat ke-40, 41, 42).
+///
+/// DIGENERATE `docs/skrip/gen-contoh-lembar-kerja.php` di repo API — jangan
+/// disunting tangan.
+///
+/// ## Kenapa berkas ini baru ada 25 Sep 2026
+///
+/// Ketiga alat Gaya mendarat di server tanpa satu pun bentuk contoh di HP, jadi
+/// nol test yang pernah menyusun payload Gaya dari definisi lembarnya. Chaos
+/// review hari itu menemukan akibatnya: tabel Preload ber-`simpan_ke`
+/// `spesifikasi_alat.gaya` menimpa seluruh blok spesifikasi — satuan, standar,
+/// kapasitas, misalignment — di tiap kiriman, dan tidak satu sesi Gaya pun dari
+/// HP pernah terhitung. Sekarang `simpan_ke`-nya `spesifikasi_alat.gaya.preload`.
+///
+///  1. **Tabel deret-bernama** (`measurements[].gaya_pos_0/90/180/270` untuk
+///     UTM & Load Cell, `gaya_up`/`gaya_down` untuk Proving Ring) digabung per
+///     POSISI baris; nominalnya dari tabel PERTAMA, dan kotak Nominal tabel lain
+///     menampilkannya (`LembarKerjaState.acuanNominal`).
+///  2. **Dua halaman** — identitas & standar | pengukuran & penutup.
+DART;
+
 $kelompok = [
+    'gaya' => [
+        'berkas' => 'contoh_lembar_kerja_gaya.dart',
+        'kepala' => $kepalaGaya,
+        'profil' => [
+            'Utm' => UtmProfile::class,
+            'LoadCell' => LoadCellProfile::class,
+            'ProvingRing' => ProvingRingProfile::class,
+        ],
+    ],
     'volumetric_glassware' => [
         'berkas' => 'contoh_lembar_kerja_volumetric_glassware.dart',
         'kepala' => $kepalaVolumetricGlassware,

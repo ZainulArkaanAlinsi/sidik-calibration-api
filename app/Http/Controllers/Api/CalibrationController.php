@@ -25,6 +25,7 @@ use App\Services\Calibration\AutoclaveInputBuilder;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\GayaProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
@@ -2846,7 +2847,16 @@ class CalibrationController extends Controller
             $nominal = $titik['titik_ukur'] ?? null;
             $semuaBacaan = [];
 
-            foreach (GayaMentah::PERAN_POSISI as $peran) {
+            // Deret milik PROFIL alatnya: empat posisi untuk UTM/Load Cell,
+            // UP/DOWN untuk Proving Ring. Dulu `PERAN_POSISI` untuk ketiganya,
+            // jadi Proving Ring tersimpan tanpa satu bacaan pun. Dijaga
+            // `GayaDariHpTest`.
+            $profilGaya = $this->profil->untukAlat($alat);
+            $peranBacaan = $profilGaya instanceof GayaProfile
+                ? $profilGaya->peranBacaan()
+                : GayaMentah::PERAN_POSISI;
+
+            foreach ($peranBacaan as $peran) {
                 foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
                     if (! is_numeric($nilai)) {
                         continue;

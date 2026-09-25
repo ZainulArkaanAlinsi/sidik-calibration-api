@@ -1470,7 +1470,15 @@ class TimbanganProfile extends CalibrationProfile
                 // daftar begitu menyusut diam-diam tiap ada alat baru, dan
                 // yang ketinggalan justru yang paling baru. Kunci ini sudah
                 // dipakai lembar TIDS untuk maksud yang serumpun.
-                'simpan_ke' => 'spesifikasi_alat.keterulangan',
+                //
+                // Sub-kunci `tabel`, bukan `keterulangan` itu sendiri: HP
+                // menanam tabel dengan menimpa kunci tujuannya utuh, dan dua
+                // kotak "beban yang dipakai" (`keterulangan.mid.nominal`,
+                // `.maks.nominal`) tinggal di kunci yang sama. Dulu beban yang
+                // diketik teknisi hilang dan yang tersimpan nominal bawaan
+                // dari kapasitas alat. Dijaga `KontrakLembarSemuaAlatTest` dan
+                // `TimbanganSesiTest`.
+                'simpan_ke' => 'spesifikasi_alat.keterulangan.tabel',
                 // Kertasnya menyusun blok ini KE BAWAH: kolom `No.` berisi
                 // 1..10 turun, dan yang berjajar ke samping dua KAPASITAS —
                 // masing-masing dengan sepasang sub-kolom `Zero (zi)` /

@@ -129,6 +129,20 @@ Dikirim di `spesifikasi_alat.gaya`:
 }
 ```
 
+> **Bentuk yang benar-benar dikirim HP (25 Sep 2026).** HP tidak menamai
+> `preload_zero`/`preload_max`: tabel Preload ber-`simpan_ke:
+> spesifikasi_alat.gaya.preload`, jadi yang terkirim cerminan tabelnya —
+> `"preload": {"baris": [{"titik_ukur": null, "pembacaan": [..3..]}, {…}]}`,
+> baris pertama Zero, kedua Max Capacity. Server menerjemahkannya
+> (`CalibrationRequest::bakukanBlokGaya`) dan menyimpan keduanya. Misalignment
+> dari empat kotak datang sebagai peta `{"1": …, "4": …}` — juga diterima.
+>
+> Sampai hari itu `simpan_ke`-nya `spesifikasi_alat.gaya`, dan HP menanam tabel
+> dengan menimpa kunci tujuannya utuh: satuan, standar, kapasitas, dan
+> misalignment ikut terhapus di tiap kiriman, jadi **tidak satu sesi Gaya pun
+> dari HP pernah terhitung**. Dijaga `GayaDariHpTest` dan
+> `KontrakLembarSemuaAlatTest`.
+
 **Kalau blok ini tidak lengkap, sesinya tidak dihitung** — server memulangkan
 alasannya per titik, bukan angka kosong. Tiga yang paling sering terlupa:
 `satuan`, `standar`, dan `tipe_beban`.
@@ -294,7 +308,9 @@ bukan label: baja punya histeresis, jadi bacaan saat beban naik memang berbeda
 dari saat turun pada beban yang sama, dan perbedaan itu yang diukur.
 
 Kirimnya sama pola dengan empat tabel posisi:
-`measurements[].gaya_up` dan `measurements[].gaya_down`, masing-masing **tepat
+`measurements[].gaya_up` dan `measurements[].gaya_down` (sampai 25 Sep 2026 server
+tidak membaca keduanya sama sekali — sesi Proving Ring tersimpan tanpa satu bacaan;
+sekarang dibaca dan divalidasi), masing-masing **tepat
 tiga** angka.
 
 ### c. Blok sesi punya DUA field tambahan

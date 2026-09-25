@@ -14,6 +14,7 @@ use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
+use App\Support\FlowmeterMentah;
 use App\Support\GayaMentah as M;
 use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
@@ -217,7 +218,11 @@ class CalibrationRequest extends FormRequest
      */
     private function bakukanKeterulanganTimbangan(): void
     {
-        $baris = $this->input('spesifikasi_alat.keterulangan.baris');
+        // `tabel.baris` = bentuk sejak 25 Sep 2026 (tabel punya sub-kunci
+        // sendiri, lihat `TimbanganProfile`); `baris` = bentuk sebelumnya,
+        // tetap diterima.
+        $baris = $this->input('spesifikasi_alat.keterulangan.tabel.baris')
+            ?? $this->input('spesifikasi_alat.keterulangan.baris');
 
         if (! is_array($baris) || $baris === []) {
             return;
@@ -234,8 +239,15 @@ class CalibrationRequest extends FormRequest
                 continue;
             }
 
+            // Beban yang DIKETIK teknisi di kotak "beban yang dipakai" menang
+            // atas nominal bawaan baris (setengah & penuh kapasitas alat). Dulu
+            // kotak itu tertimpa tabelnya di HP dan tidak pernah sampai sini.
+            $diketik = AngkaDesimal::bakukan(
+                $this->input("spesifikasi_alat.keterulangan.{$slot[$i]}.nominal"),
+            );
+
             $baku[$slot[$i]] = [
-                'nominal' => $b['titik_ukur'] ?? null,
+                'nominal' => is_numeric($diketik) ? (float) $diketik : ($b['titik_ukur'] ?? null),
                 // `zero` & `pembacaan` itu kode KOLOM yang dikirim bentuknya;
                 // `zi` & `mi` nama yang dipakai master. Dipetakan di sini,
                 // satu-satunya tempat kedua kosakata itu bertemu.
@@ -596,7 +608,28 @@ class CalibrationRequest extends FormRequest
             return;
         }
 
-        foreach (['preload_zero', 'preload_max', 'misalignment'] as $kunci) {
+        // Tabel Preload dari HP datang sebagai cerminan tabelnya
+        // (`preload.baris[] = {titik_ukur, pembacaan: [...]}`) — baris pertama
+        // Zero, kedua Max Capacity, urutan yang dikirim
+        // `GayaProfile::bagianStandarDanPreload()`. Diterjemahkan di sini ke
+        // kunci yang dibaca `GayaMentah::blokSesi()`; bentuk tabelnya IKUT
+        // disimpan supaya draft yang dibuka ulang tetap punya preload-nya.
+        // Kunci bernama yang sudah dikirim menang — sama seperti keterulangan
+        // Timbangan. Tanpa terjemahan ini preload bentuk HP diabaikan dan U95
+        // terbit lebih kecil dari seharusnya (`GayaDariHpTest`).
+        $barisPreload = $blok['preload']['baris'] ?? null;
+
+        if (is_array($barisPreload)) {
+            foreach (['preload_zero' => 0, 'preload_max' => 1] as $kunci => $i) {
+                $deret = $barisPreload[$i]['pembacaan'] ?? null;
+
+                if (! array_key_exists($kunci, $blok) && is_array($deret)) {
+                    $blok[$kunci] = array_values($deret);
+                }
+            }
+        }
+
+        foreach (['preload_zero', 'preload_max', 'misalignment', 'preload'] as $kunci) {
             if (array_key_exists($kunci, $blok)) {
                 $blok[$kunci] = AngkaDesimal::bakukanDalam($blok[$kunci]);
             }
@@ -605,6 +638,9 @@ class CalibrationRequest extends FormRequest
         foreach ([
             'kapasitas', 'resolusi_uut', 'resolusi_standar',
             'kapasitas_standar', 'suhu_sertifikat_standar',
+            // Dua kotak dial Proving Ring — komponen daya baca budget lahir
+            // dari sini, dan `(float) "0,002"` di PHP itu 0.0.
+            'kapasitas_dial_mm', 'resolusi_dial_mm',
         ] as $kunci) {
             if (array_key_exists($kunci, $blok)) {
                 $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
@@ -1114,6 +1150,19 @@ class CalibrationRequest extends FormRequest
             'measurements.*.hydro_massa.*' => ['nullable', 'numeric'],
             'measurements.*.hydro_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.hydro_suhu.*' => ['nullable', 'numeric'],
+            // Flowmeter: dulu tanpa aturan sama sekali (`KontrakLembarSemuaAlatTest`).
+            // Sengaja LONGGAR — cuma "harus deret": Flowrate mengirim deret
+            // BERSARANG (ulangan × durasi, lihat `FlowmeterMentah`), dan
+            // aturan isi yang terlalu ketat mematahkan lembar yang sudah jalan.
+            ...array_fill_keys(array_map(
+                static fn (string $peran): string => "measurements.*.{$peran}",
+                [
+                    FlowmeterMentah::PERAN_UUT, FlowmeterMentah::PERAN_STD,
+                    FlowmeterMentah::PERAN_SUHU_AWAL, FlowmeterMentah::PERAN_SUHU_AKHIR,
+                    FlowmeterMentah::PERAN_DENSITAS, FlowmeterMentah::PERAN_BERAT_ISI,
+                    FlowmeterMentah::PERAN_BERAT_KOSONG, FlowmeterMentah::PERAN_WAKTU,
+                ],
+            ), ['sometimes', 'nullable', 'array']),
             // --- Volumetric Glassware (lampiran no. 13, 17-21) -------------
             //
             // Tiga deret per titik, TEPAT tiga ulangan — pembagi √3 dan
@@ -1136,6 +1185,13 @@ class CalibrationRequest extends FormRequest
             'measurements.*.gaya_pos_180.*' => ['nullable', 'numeric'],
             'measurements.*.gaya_pos_270' => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
             'measurements.*.gaya_pos_270.*' => ['nullable', 'numeric'],
+            // Proving Ring: beban naik & turun. Dulu tanpa aturan sama sekali —
+            // deretnya lolos tanpa pemeriksaan bentuk. Dijaga
+            // `KontrakLembarSemuaAlatTest`.
+            'measurements.*.'.M::PERAN_UP => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.'.M::PERAN_UP.'.*' => ['nullable', 'numeric'],
+            'measurements.*.'.M::PERAN_DOWN => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
+            'measurements.*.'.M::PERAN_DOWN.'.*' => ['nullable', 'numeric'],
             'measurements.*.vol_kosong' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.vol_kosong.*' => ['nullable', 'numeric', 'gte:0'],
             'measurements.*.vol_isi' => ['sometimes', 'nullable', 'array', 'size:3'],

@@ -395,6 +395,46 @@ class TimbanganSesiTest extends TestCase
      * substitusi) dan lewat `srTerdekat()`, jadi yang meleset bukan cuma
      * labelnya.
      */
+    /**
+     * Beban keterulangan yang DIKETIK teknisi yang tersimpan, bukan nominal
+     * bawaan dari kapasitas alat.
+     *
+     * Chaos review 25 Sep 2026. Tabel keterulangan dulu ber-`simpan_ke:
+     * spesifikasi_alat.keterulangan` — kunci yang SAMA dengan dua kotak
+     * "beban yang dipakai" (`keterulangan.mid.nominal`, `.maks.nominal`). HP
+     * menanam tabelnya dengan menimpa kunci itu utuh, jadi 40 dan 90 yang
+     * diketik teknisi hilang dan server memakai 50 dan 100 dari baris
+     * bawaan. Dibuktikan di HP: ketik 40/90, yang terkirim 50/100.
+     */
+    public function test_beban_keterulangan_yang_diketik_teknisi_tersimpan(): void
+    {
+        [$alat, $teknisi] = $this->siapkan();
+
+        $payload = $this->payload($alat);
+        // Bentuk HP sesudah tabelnya punya sub-kunci sendiri: kotak isian
+        // dan tabel hidup berdampingan di blok yang sama.
+        $payload['spesifikasi_alat']['keterulangan'] = [
+            'mid' => ['nominal' => '40'],
+            'maks' => ['nominal' => '90'],
+            'tabel' => ['baris' => [
+                ['titik_ukur' => 50, 'zero' => array_fill(0, 10, 0), 'pembacaan' => array_fill(0, 10, 40.02)],
+                ['titik_ukur' => 100, 'zero' => array_fill(0, 10, 0), 'pembacaan' => array_fill(0, 10, 90.02)],
+            ]],
+        ];
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertCreated()
+            ->json('data.id');
+
+        $ket = CalibrationSession::findOrFail($id)->spesifikasi_alat['keterulangan'];
+
+        $this->assertArrayNotHasKey('tabel', $ket, 'Bentuk mentah tabel lolos ke DB — hitung ulang membacanya sebagai nol.');
+        $this->assertCount(10, $ket['mid']['mi'] ?? [], 'Pembacaan keterulangan tidak dibakukan.');
+        $this->assertEqualsWithDelta(40.0, (float) $ket['mid']['nominal'], self::TOLERANSI, 'Beban Middle yang diketik teknisi hilang.');
+        $this->assertEqualsWithDelta(90.0, (float) $ket['maks']['nominal'], self::TOLERANSI, 'Beban Maximum yang diketik teknisi hilang.');
+    }
+
     public function test_kapasitas_keterulangan_punya_kotak_isian(): void
     {
         $bagian = $this->bagianKeterulangan();

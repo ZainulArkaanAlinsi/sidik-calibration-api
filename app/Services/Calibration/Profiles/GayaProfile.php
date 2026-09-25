@@ -107,7 +107,24 @@ abstract class GayaProfile extends CalibrationProfile
 
     public function jumlahBacaanWajib(): int
     {
-        return count(M::PERAN_POSISI) * M::REPLIKAT;
+        return count($this->peranBacaan()) * M::REPLIKAT;
+    }
+
+    /**
+     * Deret bernama per titik yang dibaca jalur simpan
+     * (`CalibrationController::susunBlokGaya`).
+     *
+     * Per profil, bukan satu daftar bersama: jalur simpan dulu memutar
+     * `PERAN_POSISI` untuk ketiga alat, jadi deret UP/DOWN Proving Ring tidak
+     * pernah dibaca — sesinya tersimpan 201 tanpa satu bacaan pun. Jalur hitung
+     * ulang (`GayaMentah::dari`) membaca semua peran, jadi keduanya dulu
+     * diam-diam berbeda.
+     *
+     * @return list<string>
+     */
+    public function peranBacaan(): array
+    {
+        return M::PERAN_POSISI;
     }
 
     /**
@@ -999,7 +1016,14 @@ abstract class GayaProfile extends CalibrationProfile
                     'judul_nilai' => 'Pemeriksaan',
                     'judul_pengulangan' => 'Ulangan ke',
                     'titik_bisa_diubah' => false,
-                    'simpan_ke' => 'spesifikasi_alat.gaya',
+                    // Sub-kunci SENDIRI, bukan `spesifikasi_alat.gaya`. HP
+                    // menanam tabel dengan menimpa kunci tujuannya utuh
+                    // (`{baris: …}`), jadi dulu satuan, standar, kapasitas, dan
+                    // misalignment ketiga alat Gaya lenyap di tiap kiriman.
+                    // `CalibrationRequest::bakukanBlokGaya()` menerjemahkan
+                    // barisnya ke `preload_zero`/`preload_max`. Dijaga
+                    // `KontrakLembarSemuaAlatTest` dan `GayaDariHpTest`.
+                    'simpan_ke' => 'spesifikasi_alat.gaya.preload',
                     'baris' => [
                         [
                             'nomor' => 1,

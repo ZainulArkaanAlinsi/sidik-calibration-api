@@ -117,6 +117,12 @@ class ProvingRingProfile extends GayaProfile
         return M::REPLIKAT * 2;
     }
 
+    /** Beban naik lalu turun — lihat [GayaProfile::peranBacaan]. */
+    public function peranBacaan(): array
+    {
+        return [M::PERAN_UP, M::PERAN_DOWN];
+    }
+
     /**
      * Sertifikat mencetak `Z` — sesudah KEDUA koreksi suhu.
      *
