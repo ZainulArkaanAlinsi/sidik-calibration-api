@@ -111,8 +111,13 @@ class AutoclaveApiTest extends TestCase
             $this->assertContains($label, $penutup->all(), "Kertas punya baris {$label}.");
         }
 
-        // Kertasnya SATU halaman — nggak ada bagian yang dilempar ke halaman 2.
-        $this->assertSame([1], $bagian->pluck('halaman')->unique()->values()->all());
+        // Kertasnya satu halaman, tapi LAYARNYA dua (permintaan pemilik proyek
+        // 25 Sep 2026, `CalibrationProfile::susunDuaHalaman`): sampai "Standard
+        // Used" di halaman 1, matriks pengukuran & kaki lembar di halaman 2.
+        $this->assertSame(
+            ['identitas_alat' => 1, 'informasi_umum' => 1, 'kondisi_lokasi' => 1, 'usage_check' => 1, 'hasil_pengukuran' => 2, 'penutup' => 2],
+            $bagian->pluck('halaman', 'kode')->all(),
+        );
     }
 
     public function test_preview_reproduksi_angka_master(): void
