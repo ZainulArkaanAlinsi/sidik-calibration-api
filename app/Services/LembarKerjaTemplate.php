@@ -129,19 +129,12 @@ class LembarKerjaTemplate
     {
         return [
             'kode' => 'administratif',
-            // SEMUA bagian sekarang di halaman 1 — lembar kerjanya satu
-            // gulungan, nggak dipecah dua lagi.
-            //
-            // Dulu dipecah biar persis kayak kertasnya (identitas & standar di
-            // muka, tabel hasil di belakang). Dipakai beneran, itu malah bikin
-            // teknisi bolak-balik: tabel hasil butuh nengok standar yang
-            // dipilih di halaman sebelumnya, dan tiap pindah halaman itu satu
-            // kesempatan lupa. Kertas dipecah karena kertas ADA batas fisiknya;
-            // layar nggak.
-            //
-            // Kunci `halaman` sengaja DIPERTAHANKAN, bukan dihapus: mobile
-            // udah baca field ini, dan kalau nanti ada lembar alat lain yang
-            // beneran perlu dipecah, tinggal diisi 2 tanpa ngubah kontrak.
+            // Profil menulis SEMUA bagiannya di halaman 1; pembelahan jadi dua
+            // halaman (persiapan | pengukuran) terjadi di endpoint lewat
+            // `CalibrationProfile::susunDuaHalaman()`, satu aturan buat semua
+            // lembar — permintaan pemilik proyek 25 Sep 2026, membalik
+            // keputusan "satu gulungan" 3ab1d09. Bagian admin ini menempel di
+            // ujung, jadi ikut halaman 2.
             'halaman' => 1,
             'judul' => 'Data Administratif (Admin)',
             'field' => [
