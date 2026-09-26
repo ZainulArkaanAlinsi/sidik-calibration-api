@@ -1608,6 +1608,43 @@ folder biasa — jangan ditebak ke pelanggan.
 menampilkannya (nama tebal, alamat kecil di bawahnya), dan sebelum ini baris
 kecil itu selalu kosong tanpa ada error yang bunyi.
 
+### Update 26 Sep — daftar akar yang dibuka ADMIN memuat SEMUA PT
+
+Sebelumnya daftar ini cuma memuat PT yang **sudah punya folder**, dan folder
+baru lahir dari lembar kerja/sertifikat. Lab yang belum punya sesi disetujui
+melihat Arsip kosong, dan PT yang nggak tampil nggak bisa dipencet, jadi
+find-or-create di `/arsip/perusahaan/{customer}/folder` pun nggak pernah
+kepanggil.
+
+Sekarang `GET /api/arsip/perusahaan` dan `GET /api/folders` (tanpa `parent_id`)
+yang dipanggil **admin** membuatkan folder akar untuk tiap PT organisasinya
+yang belum punya, lalu baru mendaftar. Bentuk barisnya sama persis dengan
+tabel di atas: PT yang baru dibuatkan foldernya muncul dengan `jumlah_folder`
+dan `jumlah_file` = 0.
+
+| Peran | Membuat folder? | Yang tampil |
+|---|---|---|
+| admin | **ya**, sekali per PT | semua PT |
+| viewer, super_admin | tidak | folder yang sudah ada |
+| teknisi | tidak | folder yang berisi kerjaannya sendiri (tetap) |
+
+**`?search=` sekarang diterima sebagai alias `?q=`.** Mobile mengirim `search`,
+dan sebelumnya parameter itu diabaikan diam-diam: daftarnya balik utuh dan
+kotak cari kelihatan jalan tanpa menyaring apa pun. Kalau dua-duanya
+dikirim, `q` yang dipakai. Dijaga `FolderTiapPelangganTest`.
+
+Dua hal di `file[]` yang perlu diketahui layar Arsip, dua-duanya **bukan**
+perubahan. Buktinya rekaman `GET /arsip/folders/{id}` dari kode server,
+26 Sep:
+
+- Baris **sertifikat** (`sumber: sertifikat`) dan **unggahan**
+  (`sumber: unggahan`) punya `lembar_kerja: null`. Parser yang mewajibkan
+  `lembar_kerja.calibration_session_id` membuang keduanya, sehingga PDF
+  sertifikat terbit tidak pernah tampil.
+- Baris **lembar kerja** tidak pernah membawa `sertifikat` (selalu `null`).
+  Sertifikat sesi itu datang sebagai baris sendiri. Kartu lembar kerja yang
+  menulis "sertifikat belum terbit" dari `sertifikat == null` selalu salah.
+
 ### `GET /api/arsip/perusahaan/{customer}/folder`
 
 Tap PT → lihat isinya. `{customer}` itu **id PELANGGAN**, bukan id folder (lihat
