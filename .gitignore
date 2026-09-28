@@ -241,3 +241,13 @@ Project-PT-Sidik/worksheet_alat_calibration/*
 /jalankan-test-mysql.ps1
 /jalankan-test-mysql.sh
 /setup-mysql-test.ps1
+
+# CSV analisis master 6 alat tekanan & piston (28 Sep 2026) — dibuat di luar
+# repo buat membaca workbook, dan MEMUAT nama + alamat pelanggan asli (12 dari
+# 60 berkas). Angkanya sudah dibaca generator langsung dari .xlsm dan diadu ke
+# manifest sha256, jadi CSV-nya tidak menambah apa-apa selain data pelanggan.
+# Sengaja SEMPIT: pola `*_CSV/` ikut menelan Panjang_CSV/Aliran_CSV/Sieve yang
+# ter-track dan dibaca generator — pembaruan master di sana bakal diam-diam
+# tidak ikut commit. Aturan 23 Sep (CSV master masuk SESUDAH diredaksi) tetap.
+Project-PT-Sidik/alat-alat-Pt-Sidik/6_Alat_Pressure_Piston_MasterOlahData_CSV/
+Project-PT-Sidik/alat-alat-Pt-Sidik/*_CSV.zip

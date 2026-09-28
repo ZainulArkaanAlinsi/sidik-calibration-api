@@ -12,6 +12,7 @@ use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\FlowmeterProfile;
+use App\Services\Calibration\Profiles\TekananProfile;
 use App\Support\Angka;
 use Illuminate\Support\Collection;
 use RuntimeException;
@@ -157,6 +158,13 @@ class CertificateSnapshotBuilder
             // enam alat lain ikut membawa method yang selalu `null`.
             'flowmeter' => $profil instanceof FlowmeterProfile
                 ? $profil->spesifikasiPipaSertifikat($sesi)
+                : null,
+            // Tekanan: tabel dua arah (UP/DOWN + histeresis). `instanceof` dengan
+            // alasan yang sama seperti `flowmeter` di atas — yang butuh cuma
+            // keluarga ini. Snapshot lama tidak punya kuncinya dan blade
+            // melewatinya.
+            'tekanan' => $profil instanceof TekananProfile
+                ? $profil->tabelSertifikatTekanan($sesi)
                 : null,
             'catatan' => self::CATATAN_HASIL,
             'standar_digunakan' => $this->standarDigunakan($sesi),

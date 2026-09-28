@@ -1,0 +1,12 @@
+{
+  "dibekukan": "2026-09-28",
+  "catatan": "Versi workbook yang dipakai untuk 962 sel tekanan + 274 sel piston (docs/skrip/gen-tabel-standar-*.py) dan verifikasi_6_alat.py. sha256 diverifikasi ulang 28 Sep 2026 terhadap berkas asli di mesin kerja: keenamnya cocok. Kalau salah satu sha256 berubah, seluruh test alat itu HARUS dijalankan ulang, selisihnya ditelusuri, dan versi rumus baru dicatat di log-metode-tekanan-piston.json.",
+  "berkas": [
+    {"berkas": "Master_Olda_Pressure_DRUCK07G_-0.82bar_new.xlsm", "nama_asli": "Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm", "varian": "druck07g", "sha256": "a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3ce1669fa939301fb88", "ukuran_byte": 556544},
+    {"berkas": "Master_Olda_Pressure_DRUCK13G_020bar.xlsm", "nama_asli": "Master Olda Pressure DRUCK13G 0~20bar.xlsm", "varian": "druck13g", "sha256": "5ccb64f527c7547fd61a8b3b0291451a16e79edce93f576df31c02e534452dd3", "ukuran_byte": 553472},
+    {"berkas": "Master_Olda_Pressure_SPMK.xlsm", "nama_asli": "Master Olda Pressure SPMK.xlsm", "varian": "spmk", "sha256": "27cce61b06fb4dec1ab714d5494433b954c9e14a02771a600745d3d21b30bbaf", "ukuran_byte": 1169920},
+    {"berkas": "Master_Olda_Pressure_Differential.xlsm", "nama_asli": "Master Olda Pressure Differential.xlsm", "varian": "differential", "sha256": "91564b56c246e643cacb9c0a32f5eaa6613e499b4db9e99cd71dbfe5ac424596", "ukuran_byte": 1175552},
+    {"berkas": "Master_Olah_Data_Fixed_Piston_Volume.xlsm", "nama_asli": "Master Olah Data_Fixed Piston Volume.xlsm", "varian": "fixed", "sha256": "228991d120343995d2a6c70a79739230bf1a7a203845a30970ae864f86e90491", "ukuran_byte": 321536},
+    {"berkas": "Master_Olah_Data_Graduated_Piston_Volume.xlsm", "nama_asli": "Master Olah Data_Graduated Piston Volume.xlsm", "varian": "graduated", "sha256": "c09a6efdb172a730eb47108812a463c8dbd19f65ed40b092e5de22035238b036", "ukuran_byte": 314880}
+  ]
+}

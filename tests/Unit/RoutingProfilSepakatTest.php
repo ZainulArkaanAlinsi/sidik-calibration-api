@@ -152,10 +152,13 @@ class RoutingProfilSepakatTest extends TestCase
     public static function namaGenerik(): array
     {
         return [
-            'Buret Digital' => ['Buret Digital'],
+            // Buret Digital dicabut 28 Sep 2026 — punya `BuretDigitalProfile`.
+            'Erlenmeyer' => ['Erlenmeyer'],
             // Timbangan dicabut 31 Agt 2026 — punya `TimbanganProfile` sejak
             // alat ke-21 ditambahkan.
-            'Pressure Gauge' => ['Pressure Gauge'],
+            // Pressure Gauge dicabut 28 Sep 2026 — punya `PressureGaugeProfile`.
+            // Transmitter (lampiran no. 22) memang belum punya lembar.
+            'Pressure Transmitter' => ['Pressure Transmitter'],
             'TIDS (singkatan, sengaja nggak didaftarin)' => ['TIDS'],
         ];
     }

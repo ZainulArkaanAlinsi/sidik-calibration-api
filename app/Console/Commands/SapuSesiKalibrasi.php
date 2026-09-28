@@ -62,6 +62,7 @@ class SapuSesiKalibrasi extends Command
 
         $baris = [];
         $jumlahError = 0;
+        $jumlahDitahan = 0;
         $jumlahCrash = 0;
         $diperiksa = 0;
 
@@ -87,10 +88,25 @@ class SapuSesiKalibrasi extends Command
 
             $temuan = collect($hasil['temuan']);
             $error = $temuan->where('tingkat', 'error');
+            // Ditahan menunggu keputusan metode Technical Manager: sesinya
+            // SEHAT, keputusannya yang belum ada. Tetap tidak bisa terbit, tapi
+            // tidak dihitung sebagai sesi rusak — kalau dihitung, perintah ini
+            // merah terus sampai TM menjawab, dan merah yang tidak bisa
+            // dibereskan developer melatih orang berhenti membacanya.
+            $ditahan = $error->where('kode', CalibrationValidator::MENUNGGU_KEPUTUSAN_TM);
+            $rusak = $error->where('kode', '!==', CalibrationValidator::MENUNGGU_KEPUTUSAN_TM);
 
-            if ($error->isNotEmpty()) {
+            if ($rusak->isNotEmpty()) {
                 $jumlahError++;
-                $baris[] = ['ERROR', $s->id, $s->nomor_sesi, $kode, $error->pluck('kode')->implode(', ')];
+                $baris[] = ['ERROR', $s->id, $s->nomor_sesi, $kode, $rusak->pluck('kode')->implode(', ')];
+            }
+
+            if ($ditahan->isNotEmpty()) {
+                $jumlahDitahan++;
+                $baris[] = [
+                    'DITAHAN', $s->id, $s->nomor_sesi, $kode,
+                    'menunggu TM: '.$ditahan->pluck('konteks.pertanyaan')->unique()->implode(', '),
+                ];
             }
 
             if ($semua) {
@@ -123,7 +139,9 @@ class SapuSesiKalibrasi extends Command
             return self::FAILURE;
         }
 
-        $this->components->info('Tidak ada ERROR maupun crash.');
+        $this->components->info($jumlahDitahan > 0
+            ? "Bersih dari ERROR & crash — {$jumlahDitahan} sesi DITAHAN menunggu keputusan Technical Manager (tidak bisa terbit, bukan rusak)."
+            : 'Tidak ada ERROR maupun crash.');
 
         return self::SUCCESS;
     }

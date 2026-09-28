@@ -851,7 +851,7 @@ class SemuaProfilLembarKerjaTest extends TestCase
 
         try {
             $this->actingAs(User::factory()->create())
-                ->getJson('/api/calibrations/lembar-kerja?instrumen=Buret+Digital')
+                ->getJson('/api/calibrations/lembar-kerja?instrumen=Erlenmeyer')
                 ->assertStatus(422)
                 ->assertJsonPath('message', fn (string $m): bool => str_contains($m, 'form generik'));
         } catch (\Throwable $e) {
@@ -905,6 +905,12 @@ class SemuaProfilLembarKerjaTest extends TestCase
         //    (Labu Ukur, Pipet Volume, Picnometer) dan `…0514_Rev.4 - LEMBAR
         //    KERJA VOLUMETRIK MAJEMUK.pdf` (Buret, Gelas Ukur, Pipet Ukur).
         //    Satu mesin hitung per kertas; yang membedakan cuma tabel CMC.
+        //  - `0507` — Pressure Gauge, Vacuum Gauge & Differential Pressure,
+        //    masuk 28 Sep 2026. Kertasnya satu dan judulnya menyebut
+        //    keduanya: `SIDIK-FM-CAL-0507_Rev.5 - LEMBAR KERJA PRESSURE &
+        //    VACUUM.pdf`, dan kotak metodenya mendaftar IK-0504 (pressure),
+        //    IK-0532 (differential), IK-0534 (vacuum) di kertas yang sama.
+        //    Satu mesin hitung (`TekananCalculator`), empat varian kalibrator.
         //
         // Yang tetap dilarang: dua alat yang kertasnya BEDA tapi nomornya
         // kembar — itu membuat lembar tercetak mengaku formulir yang bukan
@@ -915,6 +921,11 @@ class SemuaProfilLembarKerjaTest extends TestCase
             'SIDIK-FM-CAL-0515_Rev.4',
             'SIDIK-FM-CAL-0513_Rev.4',
             'SIDIK-FM-CAL-0514_Rev.4',
+            'SIDIK-FM-CAL-0507_Rev.5',
+            // Piston Pipette, Dispensett, Buret Digital (28 Sep 2026) — satu
+            // mesin hitung, kertas `SIDIK-FM-CAL-0529_Rev.3 - LEMBAR KERJA
+            // GRADUATED PISTON VOLUME.pdf` (superset FM-0528 one mark).
+            'SIDIK-FM-CAL-0529_Rev.3',
         ];
 
         $kembar = array_filter(

@@ -168,8 +168,9 @@ class ProfilDariNamaAlatTest extends TestCase
             // yang menahannya. Gelas Ukur & Picnometer PINDAH 22 Sep 2026
             // (Volumetric Glassware) — arah sebaliknya dijaga
             // `test_volumetric_dapat_lembarnya_sendiri`.
-            'Buret Digital' => ['Buret Digital'],
-            'Digital Burette' => ['Digital Burette'],
+            // `Buret Digital` & `Digital Burette` PINDAH 28 Sep 2026 — keluarga
+            // Piston Volume; arah sebaliknya `test_piston_dapat_lembarnya_sendiri`.
+            'Erlenmeyer' => ['Erlenmeyer'],
             // Hydrometer PINDAH dari sini 18 Sep 2026: sekarang punya lembar
             // kerjanya sendiri (alat ke-33, lampiran no. 25, kelompok
             // Volumetrik), dari dua workbook master yang turun dari lab. Yang
@@ -190,7 +191,12 @@ class ProfilDariNamaAlatTest extends TestCase
             // kerjanya sendiri (alat ke-21, kelompok Massa), dari tiga workbook
             // master yang turun dari lab. Yang menjaga arah sebaliknya —
             // `test_timbangan_dapat_lembarnya_sendiri` di bawah.
-            'Pressure Gauge' => ['Pressure Gauge'],
+            // Pressure Gauge PINDAH dari sini 28 Sep 2026: sekarang punya lembar
+            // kerjanya sendiri (keluarga Tekanan, lampiran no. 23–26, kertas
+            // FM-0507). Yang menjaga arah sebaliknya —
+            // `test_tekanan_dapat_lembarnya_sendiri` di bawah. Yang tetap di
+            // luar: Pressure Transmitter (no. 22, 4–20 mA, master lain).
+            'Pressure Transmitter' => ['Pressure Transmitter'],
             // `Timer/Stopwatch` PINDAH dari sini 1 Sep 2026, bareng
             // `Centrifuge` & `Infrared Tachometer` yang memang belum pernah
             // ada di daftar ini: ketiganya sekarang punya lembar kerjanya
@@ -299,7 +305,7 @@ class ProfilDariNamaAlatTest extends TestCase
             'jam ukur' => ['Jam Ukur', 'dial_indicator'],
             'height gauge, BUKAN dial' => ['Height Gauge', 'height_gauge'],
             'micrometer, BUKAN dial' => ['Micrometer', 'micrometer'],
-            'pressure gauge, BUKAN dial' => ['Pressure Gauge', null],
+            'pressure gauge, BUKAN dial' => ['Pressure Gauge', 'pressure_gauge'],
         ];
     }
 
@@ -421,8 +427,72 @@ class ProfilDariNamaAlatTest extends TestCase
             'nama standarnya' => ['Ultrasonic Flowmeter', 'flowmeter_flowrate'],
             'water meter itu totalizer' => ['Water Meter', 'flowmeter_totalizer'],
             // Bukan aliran: dia alat TEKANAN, dan namanya memuat "Meter".
-            'tekanan, BUKAN aliran' => ['Pressure Gauge', null],
+            'tekanan, BUKAN aliran' => ['Pressure Gauge', 'pressure_gauge'],
         ];
+    }
+
+    /**
+     * Keluarga TEKANAN (28 Sep 2026). Yang paling rawan: `Differential
+     * Pressure Gauge` memuat `Pressure Gauge` — kunci terpanjang harus menang —
+     * dan `Pressure Transmitter` (mA, master lain) tidak boleh ikut terseret.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaTekanan(): array
+    {
+        return [
+            'lampiran no. 23' => ['Pressure Gauge', 'pressure_gauge'],
+            'lampiran no. 24 nama panjang' => [
+                'Pressure Gauge; Pressure Tranducer; Pressure Recorder; Pressure Safety Valve; Manometer',
+                'pressure_gauge',
+            ],
+            'manometer' => ['Manometer', 'pressure_gauge'],
+            'pressure module (sesi contoh 07G)' => ['Pressure Module', 'pressure_gauge'],
+            'lampiran no. 25' => ['Vacuum Gauge', 'vacuum_gauge'],
+            'lampiran no. 26' => ['Differential Pressure', 'differential_pressure'],
+            'differential BUKAN pressure gauge' => ['Differential Pressure Gauge', 'differential_pressure'],
+            'transmitter BUKAN tekanan' => ['Pressure Transmitter', null],
+        ];
+    }
+
+    /**
+     * Keluarga PISTON VOLUME (28 Sep 2026). Yang rawan: `Buret Digital` memuat
+     * `Buret` (buret kaca, profil lain) dan `Micropipette` memuat `pipet`.
+     *
+     * @return array<string, array{string, string|null}>
+     */
+    public static function namaPiston(): array
+    {
+        return [
+            'lampiran no. 14' => ['Buret Digital', 'buret_digital'],
+            'digital burette' => ['Digital Burette', 'buret_digital'],
+            'buret kaca BUKAN digital' => ['Buret', 'buret'],
+            'lampiran no. 15' => ['Piston Pipette', 'piston_pipette'],
+            'micropipette (sesi contoh Fixed)' => ['Micropipette', 'piston_pipette'],
+            'pipet volume kaca BUKAN piston' => ['Pipet Volume', 'pipet_volume'],
+            'lampiran no. 16' => ['Dispensett', 'dispensett'],
+            'ejaan master' => ['Dispenset', 'dispensett'],
+        ];
+    }
+
+    #[DataProvider('namaPiston')]
+    public function test_piston_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
+    }
+
+    #[DataProvider('namaTekanan')]
+    public function test_tekanan_dapat_lembarnya_sendiri(string $nama, ?string $harap): void
+    {
+        $this->assertSame(
+            $harap,
+            $this->registry->kodeProfilDariNama($nama),
+            "'{$nama}' mendarat di profil yang salah.",
+        );
     }
 
     #[DataProvider('namaAliran')]

@@ -91,6 +91,39 @@ abstract class CalibrationProfile
     /** Kode Formula GUM buat besaran ini (`Formula::KODE_GUM_*`). */
     abstract public function kodeFormula(): string;
 
+    /**
+     * Versi rumus yang SEDANG dijalankan kode profil ini, dari log metode yang
+     * append-only (mis. `TEKANAN-2026.09.28-1`). `null` = profil ini belum
+     * dicatat di log metode mana pun — tiga puluhan profil lama.
+     *
+     * Kalau tidak null, versi ini distempelkan ke `parameter.versi_rumus` versi
+     * formula pertama (`RumusKalibrasi`), ditulis ke jejak tiap hasil hitung,
+     * dan diadu `CalibrationValidator` sebelum sertifikat terbit.
+     */
+    public function versiRumus(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Alasan sesi ini TIDAK boleh terbit walau hitungannya lengkap — keputusan
+     * metode yang belum diambil Technical Manager. `CalibrationValidator`
+     * menjadikan tiap butirnya ERROR `menunggu_keputusan_tm`; tidak ada
+     * "setujui tetap" untuk ini.
+     *
+     * Beda dengan `peringatanSesi()` (boleh dikonfirmasi admin) dan dengan
+     * `penghalangSesi` (sesi tidak dihitung sama sekali): di sini angkanya
+     * DIHITUNG, dua versinya ditampilkan berdampingan, tapi yang mana yang
+     * sah belum diputuskan. Bawaan kosong — tiga puluhan profil lama tidak
+     * berubah.
+     *
+     * @return list<array{penyimpangan: string, pesan: string, konteks: array<string, mixed>}>
+     */
+    public function penahanTerbit(CalibrationSession $sesi): array
+    {
+        return [];
+    }
+
     /** Nama besaran buat metadata Formula (`ph`, `turbidity`, ...). */
     abstract public function besaran(): string;
 
@@ -1450,6 +1483,33 @@ abstract class CalibrationProfile
      * POSISI, yaitu satu-satunya hal yang membuat empat posisi diuji.
      */
     public function butuhBlokGaya(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Lembar **Tekanan** (Pressure Gauge, Vacuum Gauge, Differential Pressure):
+     * satu titik membawa DUA deret — tiga bacaan standar arah naik (UP) dan
+     * tiga arah turun (DOWN).
+     *
+     * Jalur simpannya sendiri (`CalibrationController::susunBlokTekanan()`).
+     * Dipaksa lewat jalur datar, keenam bacaan jadi satu deret dan yang hilang
+     * justru ARAHNYA: histeresis per pengulangan (`up[i] − down[i]`) tercetak
+     * di sertifikat, dan tanpa arah angkanya tidak bisa disusun sama sekali.
+     */
+    public function butuhBlokTekanan(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Lembar **Piston Volume** (Piston Pipette, Dispensett, Buret Digital):
+     * satu titik membawa SEBELAS massa KUMULATIF (M0..M10) dan dua suhu air.
+     * Jalur simpannya sendiri (`CalibrationController::susunBlokPiston()`):
+     * dipaksa lewat jalur datar, urutan M0..M10 hilang — dan selisih dari
+     * urutan yang salah menghasilkan massa yang saling menutupi di rata-rata.
+     */
+    public function butuhBlokPiston(): bool
     {
         return false;
     }

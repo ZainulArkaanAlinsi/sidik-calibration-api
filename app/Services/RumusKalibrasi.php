@@ -7,6 +7,7 @@ use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Support\LogMetodeTekananPiston;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 
@@ -112,7 +113,7 @@ class RumusKalibrasi
         );
 
         if (! $formula->versions()->where('status', FormulaVersion::STATUS_AKTIF)->exists()) {
-            $this->bikinVersiSatu($formula);
+            $this->bikinVersiSatu($formula, $profil);
         }
 
         return $formula->fresh();
@@ -136,10 +137,10 @@ class RumusKalibrasi
      * berlaku di tanggalnya dan bakal null. Padahal aturan yang dipakai buat sesi
      * itu ya aturan yang sama ini.
      */
-    private function bikinVersiSatu(Formula $formula): FormulaVersion
+    private function bikinVersiSatu(Formula $formula, CalibrationProfile $profil): FormulaVersion
     {
         try {
-            return $this->sisipkanVersiSatu($formula);
+            return $this->sisipkanVersiSatu($formula, $profil);
         } catch (UniqueConstraintViolationException $e) {
             // KALAH BALAPAN, dan itu keadaan yang sah.
             //
@@ -176,8 +177,18 @@ class RumusKalibrasi
         }
     }
 
-    private function sisipkanVersiSatu(Formula $formula): FormulaVersion
+    /**
+     * Profil yang dicatat di log metode (`versiRumus()` tidak null) ikut
+     * menitipkan versi rumusnya ke parameter. Itu yang diadu
+     * `CalibrationValidator` dengan versi yang tertulis di jejak tiap hasil
+     * hitung: begitu kode pindah ke versi baru di log, sesi baru tertahan
+     * sampai versi formula baru yang membawa versi itu diterbitkan lewat alur
+     * versi — bukan diam-diam distempel versi lama.
+     */
+    private function sisipkanVersiSatu(Formula $formula, CalibrationProfile $profil): FormulaVersion
     {
+        $versiRumus = $profil->versiRumus();
+
         return $formula->versions()->create([
             'organization_id' => $formula->organization_id,
             'nomor_versi' => FormulaVersion::nomorBerikutnya($formula->id),
@@ -189,6 +200,10 @@ class RumusKalibrasi
                 'desimal_suhu' => 2,
                 'desimal_k' => 2,
                 'dihitung_oleh' => 'App\\Services\\GumCalculator',
+                ...($versiRumus === null ? [] : [
+                    'versi_rumus' => $versiRumus,
+                    'log_metode' => LogMetodeTekananPiston::BERKAS,
+                ]),
             ],
             'ekspresi' => null,
             'status' => FormulaVersion::STATUS_AKTIF,

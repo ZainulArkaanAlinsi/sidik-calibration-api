@@ -1,0 +1,380 @@
+{
+  "_sumber": {
+    "dibuat_oleh": "docs/skrip/gen-tabel-standar-piston-volume.py",
+    "tanggal": "2026-09-28",
+    "workbook": {
+      "fixed": "Master Olah Data_Fixed Piston Volume.xlsm",
+      "graduated": "Master Olah Data_Graduated Piston Volume.xlsm"
+    },
+    "workbook_sha256": {
+      "fixed": "228991d120343995d2a6c70a79739230bf1a7a203845a30970ae864f86e90491",
+      "graduated": "c09a6efdb172a730eb47108812a463c8dbd19f65ed40b092e5de22035238b036"
+    },
+    "catatan": "Digenerate dari dua Master Olah Data piston volume. JANGAN disunting tangan. Identitas pelanggan tidak ikut diekspor."
+  },
+  "konstanta": {
+    "tanaka": {
+      "a1": -3.983035,
+      "a2": 301.797,
+      "a3": 522528.9,
+      "a4": 69.34881,
+      "a5": 999.97495
+    },
+    "densitas_anak_timbangan": 8.0,
+    "koefisien_muai": 0.0003,
+    "u_operator": 0.00015
+  },
+  "timbangan": [
+    {
+      "nomor": 1,
+      "nama": "Analytical Balance",
+      "merk_tipe": "Mettler Toledo/XS204",
+      "nomor_seri": "1129063525",
+      "tertelusur": "LK-305-IDN",
+      "jatuh_tempo": "2027-01-19",
+      "u95": 0.0011,
+      "resolusi": 0.0001,
+      "stdev": 0.0
+    },
+    {
+      "nomor": 2,
+      "nama": "Electronic Balance Excellent",
+      "merk_tipe": "Excellent/DJ",
+      "nomor_seri": "HSEX1403752",
+      "tertelusur": "LK-305-IDN",
+      "jatuh_tempo": "2027-01-19",
+      "u95": 0.007,
+      "resolusi": 0.01,
+      "stdev": 0.0
+    },
+    {
+      "nomor": 3,
+      "nama": "Electronic Balance Fujitsu",
+      "merk_tipe": "Fujitsu/FSR-A",
+      "nomor_seri": "SIDIK/134/2024",
+      "tertelusur": "LK-305-IDN",
+      "jatuh_tempo": "2027-01-19",
+      "u95": 0.0019,
+      "resolusi": 0.001,
+      "stdev": 0.0
+    }
+  ],
+  "termometer": {
+    "nama": "Termometer & Sensor Std.",
+    "merk_tipe": "Yokogawa/CA 150 Handy Cal",
+    "nomor_seri": "23P1005",
+    "tertelusur": "LK-285-IDN",
+    "jatuh_tempo": "2026-08-12",
+    "u95": 0.72
+  },
+  "sensor": {
+    "nama": "Sensor Suhu PRT PT100",
+    "jatuh_tempo": "2027-02-15",
+    "u95": 0.08
+  },
+  "koreksi_meter_suhu": [
+    {
+      "indeks": -20.0,
+      "koreksi": -0.10000000000000142
+    },
+    {
+      "indeks": 0.0,
+      "koreksi": 0.30000000000000004
+    },
+    {
+      "indeks": 25.0,
+      "koreksi": 0.3249999999999979
+    },
+    {
+      "indeks": 50.0,
+      "koreksi": 0.34999999999999576
+    },
+    {
+      "indeks": 100.0,
+      "koreksi": 0.3999999999999915
+    },
+    {
+      "indeks": 200.0,
+      "koreksi": 0.4000000000000057
+    },
+    {
+      "indeks": 300.0,
+      "koreksi": 0.45000000000000284
+    },
+    {
+      "indeks": 400.0,
+      "koreksi": 0.5
+    },
+    {
+      "indeks": 500.0,
+      "koreksi": 0.5
+    },
+    {
+      "indeks": 600.0,
+      "koreksi": 0.5
+    },
+    {
+      "indeks": 700.0,
+      "koreksi": 0.4499999999999887
+    },
+    {
+      "indeks": 800.0,
+      "koreksi": 0.39999999999997726
+    }
+  ],
+  "koreksi_sensor_suhu": [
+    {
+      "indeks": -20.0,
+      "koreksi": 0.003969163676529774
+    },
+    {
+      "indeks": 0.0,
+      "koreksi": 0.0
+    },
+    {
+      "indeks": 25.0,
+      "koreksi": 2.9007059112018396e-05
+    },
+    {
+      "indeks": 50.0,
+      "koreksi": 5.956705609122537e-05
+    },
+    {
+      "indeks": 100.0,
+      "koreksi": 0.00012287023109536221
+    },
+    {
+      "indeks": 150.0,
+      "koreksi": 0.00018473432362497988
+    },
+    {
+      "indeks": 200.0,
+      "koreksi": 0.0002532953911043023
+    }
+  ],
+  "cmc": {
+    "buret_digital": [
+      {
+        "maks_ml": 10,
+        "nilai_ml": 0.0044
+      },
+      {
+        "maks_ml": 50,
+        "nilai_ml": 0.023
+      }
+    ],
+    "piston_pipette": [
+      {
+        "maks_ml": 1,
+        "nilai_ml": 0.0012
+      },
+      {
+        "maks_ml": 5,
+        "nilai_ml": 0.004200000000000001
+      },
+      {
+        "maks_ml": 10,
+        "nilai_ml": 0.0083
+      }
+    ],
+    "dispensett": [
+      {
+        "maks_ml": 10,
+        "nilai_ml": 0.0082
+      },
+      {
+        "maks_ml": 50,
+        "nilai_ml": 0.042
+      },
+      {
+        "maks_ml": 100,
+        "nilai_ml": 0.083
+      }
+    ]
+  },
+  "mpe": {
+    "piston_pipette": [
+      {
+        "nominal_ml": 0.001,
+        "mpe_ul": 0.05
+      },
+      {
+        "nominal_ml": 0.002,
+        "mpe_ul": 0.06
+      },
+      {
+        "nominal_ml": 0.005,
+        "mpe_ul": 0.125
+      },
+      {
+        "nominal_ml": 0.01,
+        "mpe_ul": 0.12
+      },
+      {
+        "nominal_ml": 0.02,
+        "mpe_ul": 0.2
+      },
+      {
+        "nominal_ml": 0.05,
+        "mpe_ul": 0.5
+      },
+      {
+        "nominal_ml": 0.1,
+        "mpe_ul": 0.8
+      },
+      {
+        "nominal_ml": 0.2,
+        "mpe_ul": 1.6
+      },
+      {
+        "nominal_ml": 0.5,
+        "mpe_ul": 4.0
+      },
+      {
+        "nominal_ml": 1.0,
+        "mpe_ul": 8.0
+      },
+      {
+        "nominal_ml": 2.0,
+        "mpe_ul": 16.0
+      },
+      {
+        "nominal_ml": 5.0,
+        "mpe_ul": 40.0
+      },
+      {
+        "nominal_ml": 10.0,
+        "mpe_ul": 60.0
+      }
+    ],
+    "buret_digital": [
+      {
+        "nominal_ml": 1.0,
+        "hand_driven_ul": 6.0,
+        "motor_driven_ul": 6.0
+      },
+      {
+        "nominal_ml": 2.0,
+        "hand_driven_ul": 10.0,
+        "motor_driven_ul": 10.0
+      },
+      {
+        "nominal_ml": 5.0,
+        "hand_driven_ul": 15.0,
+        "motor_driven_ul": 15.0
+      },
+      {
+        "nominal_ml": 10.0,
+        "hand_driven_ul": 30.0,
+        "motor_driven_ul": 20.0
+      },
+      {
+        "nominal_ml": 20.0,
+        "hand_driven_ul": 40.0,
+        "motor_driven_ul": 40.0
+      },
+      {
+        "nominal_ml": 25.0,
+        "hand_driven_ul": 50.0,
+        "motor_driven_ul": 50.0
+      },
+      {
+        "nominal_ml": 50.0,
+        "hand_driven_ul": 100.0,
+        "motor_driven_ul": 100.0
+      },
+      {
+        "nominal_ml": 100.0,
+        "hand_driven_ul": 200.0,
+        "motor_driven_ul": 200.0
+      }
+    ],
+    "dispensett": [
+      {
+        "nominal_ml": 0.001,
+        "single_stroke_ul": null,
+        "multi_stroke_ul": 0.05
+      },
+      {
+        "nominal_ml": 0.002,
+        "single_stroke_ul": null,
+        "multi_stroke_ul": 0.1
+      },
+      {
+        "nominal_ml": 0.003,
+        "single_stroke_ul": null,
+        "multi_stroke_ul": 0.075
+      },
+      {
+        "nominal_ml": 0.01,
+        "single_stroke_ul": 0.2,
+        "multi_stroke_ul": 0.2
+      },
+      {
+        "nominal_ml": 0.02,
+        "single_stroke_ul": 0.4,
+        "multi_stroke_ul": 0.3
+      },
+      {
+        "nominal_ml": 0.05,
+        "single_stroke_ul": 0.75,
+        "multi_stroke_ul": 0.5
+      },
+      {
+        "nominal_ml": 0.1,
+        "single_stroke_ul": 1.5,
+        "multi_stroke_ul": 1.0
+      },
+      {
+        "nominal_ml": 0.2,
+        "single_stroke_ul": 2.0,
+        "multi_stroke_ul": 2.0
+      },
+      {
+        "nominal_ml": 0.5,
+        "single_stroke_ul": 5.0,
+        "multi_stroke_ul": 5.0
+      },
+      {
+        "nominal_ml": 1.0,
+        "single_stroke_ul": 6.0,
+        "multi_stroke_ul": 10.0
+      },
+      {
+        "nominal_ml": 2.0,
+        "single_stroke_ul": 12.0,
+        "multi_stroke_ul": 16.0
+      },
+      {
+        "nominal_ml": 5.0,
+        "single_stroke_ul": 30.0,
+        "multi_stroke_ul": 30.0
+      },
+      {
+        "nominal_ml": 10.0,
+        "single_stroke_ul": 60.0,
+        "multi_stroke_ul": 50.0
+      },
+      {
+        "nominal_ml": 25.0,
+        "single_stroke_ul": 150.0,
+        "multi_stroke_ul": 125.0
+      },
+      {
+        "nominal_ml": 50.0,
+        "single_stroke_ul": 300.0,
+        "multi_stroke_ul": 250.0
+      },
+      {
+        "nominal_ml": 100.0,
+        "single_stroke_ul": 600.0,
+        "multi_stroke_ul": 500.0
+      },
+      {
+        "nominal_ml": 200.0,
+        "single_stroke_ul": 1200.0,
+        "multi_stroke_ul": 1000.0
+      }
+    ]
+  }
+}

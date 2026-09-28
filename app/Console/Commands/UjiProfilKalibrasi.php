@@ -16,8 +16,10 @@ use App\Services\Calibration\Profiles\HeightGaugeProfile;
 use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
+use App\Services\Calibration\Profiles\PistonVolumeProfile;
 use App\Services\Calibration\Profiles\ProfilSuhuPasangan;
 use App\Services\Calibration\Profiles\SieveProfile;
+use App\Services\Calibration\Profiles\TekananProfile;
 use App\Services\Calibration\Profiles\TidsProfile;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\Calibration\Profiles\TimerStopwatchProfile;
@@ -408,6 +410,13 @@ class UjiProfilKalibrasi extends Command
             // dan misalignment. Alasannya sama persis dengan Volumetric di atas
             // — titiknya tidak bisa dikarang dari rentang alat saja.
             || $profil instanceof GayaProfile
+            // Tekanan (28 Sep 2026): dua deret bernama per titik (UP & DOWN)
+            // plus blok sesi berisi varian kalibrator, satuan, tampilan, rasio
+            // jarum. Alasannya sama persis dengan Gaya di atas.
+            || $profil instanceof TekananProfile
+            // Piston Volume (28 Sep 2026): sebelas massa kumulatif + dua suhu
+            // air per titik, plus blok sesi — sama alasannya.
+            || $profil instanceof PistonVolumeProfile
             || $profil instanceof TidsProfile) {
             if ($alat === null) {
                 return ['-', 'belum ada alat contoh di database', false];

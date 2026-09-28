@@ -164,6 +164,13 @@ class DatabaseSeeder extends Seeder
             // walau standar itu 600x kapasitas alatnya, yang justru jadi
             // temuannya sendiri (pertanyaan lab G11 & G14).
             ProvingRingSeeder::class,
+            // Keluarga TEKANAN: empat kalibrator (SPMK, Additel, Druck 07G &
+            // 13G) + tiga sesi contoh. Standarnya diseed di seeder ini sendiri.
+            TekananSeeder::class,
+            // Keluarga PISTON VOLUME: tiga sesi contoh. WAJIB sesudah
+            // `AnakTimbanganSeeder`, `TitsSeeder`, `Suhu3AlatSeeder` — neraca,
+            // Yokogawa, dan PT100-nya diseed di sana.
+            PistonVolumeSeeder::class,
             // PALING BURITAN, dan wajib begitu: dia nambal alat yang UDAH ada
             // (rentang resolusi Turbidimeter) + ngisi pengaturan organisasi.
             // Jalan duluan, alatnya belum kebentuk dan tambalannya nggak kena

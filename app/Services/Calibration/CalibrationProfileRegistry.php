@@ -5,12 +5,15 @@ namespace App\Services\Calibration;
 use App\Models\Equipment;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\AutoclaveProfile;
+use App\Services\Calibration\Profiles\BuretDigitalProfile;
 use App\Services\Calibration\Profiles\BuretProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\CentrifugeProfile;
 use App\Services\Calibration\Profiles\ChlorineProfile;
 use App\Services\Calibration\Profiles\ConductivityProfile;
 use App\Services\Calibration\Profiles\DialIndicatorProfile;
+use App\Services\Calibration\Profiles\DifferentialPressureProfile;
+use App\Services\Calibration\Profiles\DispensettProfile;
 use App\Services\Calibration\Profiles\DoMeterProfile;
 use App\Services\Calibration\Profiles\Enclosure\BathProfile;
 use App\Services\Calibration\Profiles\Enclosure\FurnaceProfile;
@@ -26,13 +29,15 @@ use App\Services\Calibration\Profiles\HydrometerProfile;
 use App\Services\Calibration\Profiles\JangkaSorongProfile;
 use App\Services\Calibration\Profiles\LabuUkurProfile;
 use App\Services\Calibration\Profiles\LoadCellProfile;
-use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\Profiles\PhMeterProfile;
 use App\Services\Calibration\Profiles\PicnometerProfile;
 use App\Services\Calibration\Profiles\PipetUkurProfile;
 use App\Services\Calibration\Profiles\PipetVolumeProfile;
+use App\Services\Calibration\Profiles\PistonPipetteProfile;
+use App\Services\Calibration\Profiles\PressureGaugeProfile;
 use App\Services\Calibration\Profiles\ProfilGenerik;
+use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\RefractometerProfile;
 use App\Services\Calibration\Profiles\SieveProfile;
 use App\Services\Calibration\Profiles\SpectrophotometerProfile;
@@ -46,6 +51,7 @@ use App\Services\Calibration\Profiles\TimerStopwatchProfile;
 use App\Services\Calibration\Profiles\TitsProfile;
 use App\Services\Calibration\Profiles\TurbidimeterProfile;
 use App\Services\Calibration\Profiles\UtmProfile;
+use App\Services\Calibration\Profiles\VacuumGaugeProfile;
 use App\Services\Calibration\Profiles\ViscometerProfile;
 use LogicException;
 
@@ -239,6 +245,25 @@ class CalibrationProfileRegistry
             // dibaca DIVISI dial, keluarannya faktor kalibrasi kN/Div, dan
             // budget-nya cuma menjumlahkan enam dari delapan komponen.
             new ProvingRingProfile,
+            // Keluarga TEKANAN, alat ke-43..45 — lampiran LK-285-IDN no. 23–26,
+            // kertas bersama SIDIK-FM-CAL-0507_Rev.5. Empat workbook master
+            // (DRUCK07G, DRUCK13G, SPMK, Differential) BUKAN empat alat
+            // melainkan empat kalibrator: jadi VARIAN yang dipilih teknisi per
+            // sesi, bukan profil. Lihat TekananProfile.
+            //
+            // `Differential Pressure Gauge` memuat `Pressure Gauge`, tapi kunci
+            // terpanjang yang menang lewat `bangunIndeksEjaan()`, jadi dia
+            // mendarat di Differential. Dijaga ProfilDariNamaAlatTest.
+            new PressureGaugeProfile,
+            new VacuumGaugeProfile,
+            new DifferentialPressureProfile,
+            // Keluarga PISTON VOLUME, alat ke-46..48 — lampiran no. 15, 16, 14,
+            // metode SIDIK-IK-CAL-0522. Dua workbook (Fixed & Graduated) jadi
+            // VARIAN per sesi, bukan profil. `Buret Digital` sudah ditolak
+            // `BuretProfile::namaBukanMilik()` sejak Volumetric mendarat.
+            new PistonPipetteProfile,
+            new DispensettProfile,
+            new BuretDigitalProfile,
         ];
     }
 
