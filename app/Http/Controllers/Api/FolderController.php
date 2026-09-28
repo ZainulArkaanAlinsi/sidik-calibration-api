@@ -27,8 +27,30 @@ class FolderController extends Controller
 {
     use ScopesFolderAccess;
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, FolderOrganizer $organizer): AnonymousResourceCollection
     {
+        // Daftar akar yang dibuka ADMIN = pintu masuk Arsip. Tiap PT yang belum
+        // punya folder dibikinkan dulu di sini.
+        //
+        // Tanpa ini daftarnya cuma memuat PT yang pernah punya lembar kerja
+        // atau sertifikat — folder baru lahir dari situ. Lab yang baru mulai
+        // (produksi 26 Sep 2026: belum ada satu sesi pun yang disetujui) melihat
+        // Arsip KOSONG, dan karena PT yang nggak tampil nggak bisa ditekan,
+        // find-or-create di `folderPelanggan()` pun nggak pernah terpanggil.
+        //
+        // Cuma admin, alasannya sama persis dengan `folderPelanggan()`: GET
+        // dari teknisi, viewer, atau super admin nggak boleh jadi celah nulis.
+        if (! $request->filled('parent_id') && $request->user()->isAdmin()) {
+            $this->siapkanFolderTiapPelanggan($request->user()->organization_id, $organizer);
+        }
+
+        // `search` diterima sebagai alias `q`. Mobile mengirim `search`, dan
+        // selama itu diabaikan diam-diam daftarnya balik UTUH — kotak cari
+        // kelihatan jalan padahal nggak menyaring apa pun (kontrak-api.md §8).
+        $kataKunci = $request->filled('q')
+            ? $request->string('q')->trim()
+            : $request->string('search')->trim();
+
         $folder = $this->query($request)
             ->withCount(['children', 'files'])
             // `parent_id` nggak dikirim = tampilkan akar (daftar PT). Dikirim
@@ -43,13 +65,47 @@ class FolderController extends Controller
                 fn (Builder $query) => $query->where('customer_id', $request->integer('customer_id')),
             )
             ->when(
-                $request->filled('q'),
-                fn (Builder $query) => $query->where('nama', 'like', '%'.$request->string('q').'%'),
+                $kataKunci->isNotEmpty(),
+                fn (Builder $query) => $query->where('nama', 'like', '%'.$kataKunci.'%'),
             )
             ->orderBy('nama')
             ->get();
 
         return FolderResource::collection($folder);
+    }
+
+    /**
+     * Folder akar buat tiap PT organisasi ini yang belum punya.
+     *
+     * Biasanya nol baris: yang kena cuma PT yang baru didaftarkan sejak admin
+     * terakhir membuka Arsip. Kueri penyaringnya satu, jadi daftar yang sudah
+     * lengkap nggak bayar apa-apa selain itu.
+     *
+     * `eachById`, bukan `each`: `each` membagi halaman pakai OFFSET, dan tiap
+     * folder yang dibikin menggeser PT itu keluar dari saringan — halaman kedua
+     * lalu melompati seribu PT yang belum tersentuh.
+     */
+    private function siapkanFolderTiapPelanggan(int $organizationId, FolderOrganizer $organizer): void
+    {
+        Customer::query()
+            ->where('organization_id', $organizationId)
+            ->whereNotExists(fn ($folder) => $folder->select(DB::raw(1))
+                ->from('folders')
+                ->whereColumn('folders.customer_id', 'customers.id')
+                ->whereNull('folders.parent_id')
+                // Folder akar yang dibuang admin dianggap nggak ada — sama
+                // dengan `firstOrCreate` di FolderOrganizer yang ikut
+                // SoftDeletes, jadi dua sisi ini nggak bisa beda pendapat.
+                ->whereNull('folders.deleted_at'))
+            ->eachById(function (Customer $pelanggan) use ($organizer): void {
+                // Kunci yang sama dengan `folderPelanggan()`: dua admin yang
+                // membuka Arsip bersamaan nggak boleh bikin DUA folder akar
+                // (unique index-nya nggak menahan `parent_id` NULL).
+                DB::transaction(function () use ($pelanggan, $organizer): void {
+                    Customer::whereKey($pelanggan->id)->lockForUpdate()->first();
+                    $organizer->folderPelanggan($pelanggan);
+                });
+            });
     }
 
     /**

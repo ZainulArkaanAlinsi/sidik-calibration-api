@@ -1,4 +1,4 @@
-# Foto few-shot AI Vision (worksheet pH Tirta Gracia)
+# Foto few-shot AI Vision (worksheet pH sesi pilot)
 
 Folder ini tempat foto contoh ("few-shot") yang dilampirkan ke prompt AI Vision
 biar pembacaan lebih akurat & kenal variasi tulisan tangan.
@@ -6,7 +6,7 @@ Lihat `Project-PT-Sidik/SPEC-vision-prompt.md` §4.
 
 ## Yang perlu diisi (tugas transisi — Arkaan)
 
-Foto tabel worksheet fisik Tirta Gracia (cert **012-CAL-524**,
+Foto tabel worksheet fisik sesi pilot pH (cert **012-CAL-524**,
 `SIDIK-FM-CAL-0509_Rev.4`), simpan dengan nama PERSIS:
 
 | File | Isi |
