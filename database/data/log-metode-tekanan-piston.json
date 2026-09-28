@@ -1,0 +1,166 @@
+{
+  "_aturan": "APPEND-ONLY. Setiap perbedaan antara aplikasi dan workbook acuan adalah KEJADIAN yang tercatat di sini: apa yang berubah, sel mana, siapa yang memutuskan, tanggal, dan versi rumus yang membawanya. Entri lama TIDAK diubah atau dihapus (ISO/IEC 17025 7.2.1.5); perubahan berikutnya = entri versi BARU di akhir daftar. Versi rumus terakhir per keluarga distempelkan ke formula_versions.parameter lewat RumusKalibrasi, jadi sertifikat mana pun bisa ditelusuri balik ke entri di berkas ini. `tahan_terbit: true` = sesi yang MEMICU perubahan itu dihitung dua mode tapi sertifikatnya TIDAK terbit (validator ERROR `menunggu_keputusan_tm`) sampai entri versi baru mencatat jawaban Technical Manager. Versi -1 kedua keluarga disusun dan dikoreksi pada hari yang sama (28 Sep 2026), sebelum ada commit, sesi nyata, atau sertifikat — riwayat koreksinya di `keputusan`. Dijaga LogMetodeTekananPistonTest.",
+  "acuan": {
+    "ditetapkan": "2026-09-28",
+    "ditetapkan_oleh": "Pemilik proyek (Zainul Arkaan)",
+    "isi": "Acuan = enam workbook master pada sha256 di manifest-workbook-tekanan-piston.json, APA ADANYA. Aplikasi hanya boleh berbeda dari acuan lewat entri di berkas ini. Pembanding yang TIDAK ikut bergerak waktu Excel dibetulkan: sertifikat arsip yang sudah terbit beserta data mentahnya (diminta di docs/permintaan-arsip-sertifikat-tekanan-piston.md).",
+    "manifest": "database/data/manifest-workbook-tekanan-piston.json"
+  },
+  "keputusan": [
+    {
+      "no": 1,
+      "tanggal": "2026-09-28",
+      "oleh": "Pemilik proyek (Zainul Arkaan)",
+      "isi": "\"Hitung benar\" untuk T-1/T-2/T-11 tekanan. Pertanyaannya dibingkai sebagai salah ketik (ABC4, kolom 4) dan sel kosong dibaca nol — soal aritmetika, bukan mengganti metode lab. Pilihan \"Blokir sampai TM jawab\" ditawarkan dan tidak dipilih.",
+      "status": "DIGANTIKAN keputusan 2"
+    },
+    {
+      "no": 2,
+      "tanggal": "2026-09-28",
+      "oleh": "Pemilik proyek (Zainul Arkaan)",
+      "isi": "Tahan semua T-1/T-2/T-11: sesi DRUCK07G, DRUCK13G, dan Differential dihitung dua mode (tiru master & benar), kedua angka ditampilkan berdampingan, sertifikat TIDAK terbit sampai Technical Manager menjawab P-1/P-2/P-11. SPMK tidak tersentuh cacat ini.",
+      "dasar": "ISO/IEC 17025 7.2.1.5: menghitung berbeda dari metode yang divalidasi = menerbitkan dari metode yang belum disahkan; meniru = sadar menerbitkan koreksi bertanda terbalik (T-11: 0,1383 psi = 65,5 % U95). Menahan dua-duanya konsisten dengan vonis piston yang ditahan (V-6). Masukan peninjau eksternal (errata E-4) — E-4 yang meminta tiru persis DIGANTIKAN keputusan ini."
+    },
+    {
+      "no": 3,
+      "tanggal": "2026-09-28",
+      "oleh": "Pemilik proyek (Zainul Arkaan)",
+      "isi": "Piston G-2/G-7/G-8: tahan HANYA sesi yang memicunya (angka master dan benar memang berbeda); sesi lain terbit. G-9 tidak menahan: porsinya 0,026 % dari jumlah (u_i c_i)^2 dan U95 tetap di lantai CMC.",
+      "dasar": "Koreksi: sebelumnya Claude melebarkan keputusan 1 ke piston tanpa pemilik proyek ditanya. Dicatat sebagai kesalahan, bukan keputusan."
+    },
+    {
+      "no": 4,
+      "tanggal": "2026-09-28",
+      "oleh": "Pemilik proyek (Zainul Arkaan)",
+      "isi": "Errata panduan E-5 diterapkan: kapasitas piston di luar SEMUA pita CMC lampiran DIBLOKIR (tidak dihitung)."
+    }
+  ],
+  "versi": [
+    {
+      "versi_rumus": "TEKANAN-2026.09.28-1",
+      "keluarga": "tekanan",
+      "berlaku_sejak": "2026-09-28",
+      "diputuskan_oleh": "Pemilik proyek (Zainul Arkaan), keputusan 2: hitung dua mode, TAHAN terbit sampai Technical Manager menjawab P-1, P-2, P-11 (docs/pertanyaan-lab-tekanan.md).",
+      "sha256_acuan": [
+        "a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3ce1669fa939301fb88",
+        "5ccb64f527c7547fd61a8b3b0291451a16e79edce93f576df31c02e534452dd3",
+        "27cce61b06fb4dec1ab714d5494433b954c9e14a02771a600745d3d21b30bbaf",
+        "91564b56c246e643cacb9c0a32f5eaa6613e499b4db9e99cd71dbfe5ac424596"
+      ],
+      "bukti": "docs/skrip/gen-tabel-standar-tekanan.py: 962/962 sel mode master cocok dengan cache Excel; tests/Unit/TekananMasterTest.php menegakkan kedua mode.",
+      "perubahan": [
+        {
+          "kode": "T-1",
+          "berkas": "DRUCK07G",
+          "sel": "PERHITUNGAN FC!AH24:AH37",
+          "master": "VLOOKUP(ABC4,…,4,0): U95 kalibrator selalu diambil dari set point 0",
+          "aplikasi": "VLOOKUP(AC24,…,4,0) per baris, lalu MAX — dihitung, belum boleh terbit",
+          "dampak": "sesi contoh: U95 kalibrator 0,06 → 0,09 kPa",
+          "tahan_terbit": true,
+          "terpicu_bila": "varian druck07g",
+          "status_tm": "menunggu P-1"
+        },
+        {
+          "kode": "T-2",
+          "berkas": "DRUCK07G, DRUCK13G, Differential",
+          "sel": "PERHITUNGAN U95%!N14 → PERHITUNGAN FC!I44 (sel KOSONG)",
+          "master": "komponen pengulangan pembacaan selalu 0",
+          "aplikasi": "rumus induk SPMK MAX(U24:V37), pembagi 3, v = 2 — dihitung, belum boleh terbit",
+          "dampak": "sesi contoh DRUCK07G: U 0,0692 → 0,7533 kPa; Differential: 3,998 → 5,047 mbar",
+          "tahan_terbit": true,
+          "terpicu_bila": "varian druck07g, druck13g, differential",
+          "status_tm": "menunggu P-2 (termasuk: sertifikat yang sudah terbit dari tiga master ini perlu ditinjau?)"
+        },
+        {
+          "kode": "T-11",
+          "berkas": "DRUCK13G",
+          "sel": "PERHITUNGAN FC!AD24:AD37, cabang Vacum",
+          "master": "VLOOKUP(…,4,0): kolom U95 dipakai sebagai koreksi standar UP",
+          "aplikasi": "kolom 2 (koreksi UP), sama dengan cabang Non Vacum — dihitung, belum boleh terbit",
+          "dampak": "koreksi UP set point 0 psi: +0,077 → −0,0613 (selisih 0,1383 psi = 65,5 % U95); tanda terbalik di 4 dari 5 titik sesi contoh",
+          "tahan_terbit": true,
+          "terpicu_bila": "varian druck13g DAN jenis tekanan vakum",
+          "status_tm": "menunggu P-11"
+        }
+      ],
+      "ditiru_apa_adanya": [
+        "pembagi pengulangan 3 (P-3)",
+        "pilihan drift per master (P-5, P-6)",
+        "faktor Torr DRUCK13G (P-10)",
+        "zero error dari titik pertama (P-15)"
+      ]
+    },
+    {
+      "versi_rumus": "PISTON-2026.09.28-1",
+      "keluarga": "piston",
+      "berlaku_sejak": "2026-09-28",
+      "diputuskan_oleh": "Pemilik proyek (Zainul Arkaan), keputusan 3 & 4: G-2/G-7/G-8 tahan saat terpicu, G-9 tidak menahan, E-5 blokir. Technical Manager BELUM menjawab (V-6, V-7, V-9, V-11, V-12 di docs/pertanyaan-lab-piston-volume.md).",
+      "sha256_acuan": [
+        "228991d120343995d2a6c70a79739230bf1a7a203845a30970ae864f86e90491",
+        "c09a6efdb172a730eb47108812a463c8dbd19f65ed40b092e5de22035238b036"
+      ],
+      "bukti": "docs/skrip/gen-tabel-standar-piston-volume.py: 274/274 sel mode master cocok dengan cache Excel; tests/Unit/PistonVolumeMasterTest.php menegakkan kedua mode.",
+      "perubahan": [
+        {
+          "kode": "G-2",
+          "berkas": "Graduated",
+          "sel": "PERHITUNGAN!H48",
+          "master": "=IF(AND('INPUT DATA'!G15=\"ml\",H38>20),H35,H35-H34): ambang tara-ulang m7 titik MIN 20 g (sel tujuan H35 = M7 benar)",
+          "aplikasi": "ambang 200 g, sama dengan J48/L48",
+          "dampak": "terpicu hanya kalau satuan ml dan 20 g < M10 titik MIN ≤ 200 g; sesi contoh tidak terpicu",
+          "tahan_terbit": true,
+          "terpicu_bila": "graduated, satuan ml, 20 < M10(MIN) ≤ 200 g",
+          "status_tm": "menunggu V-11"
+        },
+        {
+          "kode": "G-8",
+          "berkas": "Graduated",
+          "sel": "PERHITUNGAN!J48, PERHITUNGAN!L48",
+          "master": "=IF(…,J38>200),PERHITUNGAN!J32,J35-J34) / =IF(…,L38>200),L32,L35-L34): ambang 200 g benar, tapi cabang tara-ulang m7 MID/MAX mengambil baris 32 (M4), bukan 35 (M7)",
+          "aplikasi": "baris M7, sama dengan H48",
+          "dampak": "terpicu hanya kalau satuan ml dan M10 titik MID/MAX > 200 g; sesi contoh tidak terpicu. Digabung dengan G-2: tidak ada satu kolom m7 pun yang benar di master",
+          "tahan_terbit": true,
+          "terpicu_bila": "graduated, satuan ml, M10(MID atau MAX) > 200 g",
+          "status_tm": "menunggu V-12"
+        },
+        {
+          "kode": "G-9",
+          "berkas": "Graduated",
+          "sel": "PERHITUNGAN!P87 → PERHITUNGAN U95%!D38",
+          "master": "(SQRT(P86^2)+(H87^2)): U densitas air 1,000226e-06",
+          "aplikasi": "SQRT(P86^2+H87^2): U densitas air 1,506852e-05",
+          "dampak": "komponen densitas air ±15× lebih besar tapi porsinya cuma 0,000116 % (master) / 0,026 % (benar) dari jumlah (u_i c_i)^2; sesi contoh U 0,0097528 → 0,0097541 ml, U95 terbit tetap 0,023 ml (lantai CMC)",
+          "tahan_terbit": false,
+          "terpicu_bila": "semua sesi graduated",
+          "status_tm": "menunggu V-9"
+        },
+        {
+          "kode": "G-7",
+          "berkas": "Fixed, Graduated",
+          "sel": "PERHITUNGAN U95%!J48",
+          "master": "pita CMC berbatas bilangan bulat; kapasitas di celah (mis. 1,5 ml) → \"cek range\" → U95 tanpa lantai CMC",
+          "aplikasi": "pita kontinu (0,1] (1,5] (5,10] dst.; di luar SEMUA pita diblokir (E-5)",
+          "dampak": "terpicu hanya kalau kapasitas jatuh di celah pita bulat; sesi contoh tidak terpicu",
+          "tahan_terbit": true,
+          "terpicu_bila": "kapasitas di celah pita CMC master (mis. pipet 1 < n < 2 ml)",
+          "status_tm": "menunggu V-7"
+        },
+        {
+          "kode": "V-6",
+          "berkas": "Graduated",
+          "sel": "SERTIFIKAT!AD18:AE26",
+          "master": "#N/A: kunci pencarian $AE$17 kosong",
+          "aplikasi": "pernyataan kesesuaian TIDAK diterbitkan; MPE dan vonis usulan hanya di jejak sesi",
+          "dampak": "sertifikat piston terbit tanpa PASS/FAIL sampai aturan keputusan ditetapkan",
+          "tahan_terbit": false,
+          "terpicu_bila": "semua sesi piston",
+          "status_tm": "menunggu V-6"
+        }
+      ],
+      "ditiru_apa_adanya": [
+        "pembagi densitas air Fixed 2 / Graduated √3, suhu air Fixed √3 / Graduated 2 (V-10)",
+        "Fixed tanpa vonis (V-5)"
+      ]
+    }
+  ]
+}

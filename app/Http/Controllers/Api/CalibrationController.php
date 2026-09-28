@@ -48,7 +48,9 @@ use App\Support\HeightGaugeMentah;
 use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
+use App\Support\PistonVolumeMentah;
 use App\Support\SieveMentah;
+use App\Support\TekananMentah;
 use App\Support\TimbanganMentah;
 use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
@@ -1524,6 +1526,19 @@ class CalibrationController extends Controller
             return $this->susunBlokGaya($request, $alat, $standarDefault);
         }
 
+        // Tekanan (Pressure/Vacuum/Differential): satu titik membawa DUA deret
+        // — tiga bacaan standar UP dan tiga DOWN. Dipaksa lewat jalur datar,
+        // arahnya hilang, dan histeresis per pengulangan yang tercetak di
+        // sertifikat tidak bisa disusun sama sekali.
+        if ($this->profil->untukAlat($alat)->butuhBlokTekanan()) {
+            return $this->susunBlokTekanan($request, $alat, $standarDefault);
+        }
+
+        // Piston Volume: satu titik = sebelas massa kumulatif + dua suhu air.
+        if ($this->profil->untukAlat($alat)->butuhBlokPiston()) {
+            return $this->susunBlokPiston($request, $alat, $standarDefault);
+        }
+
         // Rata-rata suhu ruang MENTAH — (awal + akhir) / 2, SEBELUM koreksi
         // sertifikat thermohygro. Cuma Refractometer yang makai (komponen budget
         // "Pengaruh Perbedaan Temperature"), dan master Excel-nya emang ngambil
@@ -2832,6 +2847,186 @@ class CalibrationController extends Controller
      * angka yang kecil lebih mudah dibaca waktu baris mentahnya diperiksa
      * manusia.
      */
+    /**
+     * Lembar TEKANAN: dua tabel (UP & DOWN) yang barisnya SINKRON.
+     *
+     * HP mengirim lewat `simpan_ke` bernama (`measurements[].tekanan_up` /
+     * `measurements[].tekanan_down`), dan keduanya disimpan TERPISAH per
+     * `peran_sensor` — arah adalah satu-satunya tempat pasangan UP/DOWN
+     * tersimpan, dan histeresis per pengulangan (`up[i] − down[i]`) tercetak di
+     * sertifikat. `sensor_ke` = nomor pengulangan 1..3, supaya pasangan ke-i
+     * tetap pasangan ke-i waktu dibaca balik `TekananMentah::dari()`.
+     *
+     * Titik yang tidak diisi sama sekali dilewati tanpa menggeser nomor titik
+     * sesudahnya — nomor titik = posisi baris.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokTekanan(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $blok = (array) ($spek[TekananMentah::KUNCI_SESI] ?? []);
+        $satuan = (string) ($blok['satuan'] ?? ($alat->satuan ?? ''));
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $nominal = $titik['titik_ukur'] ?? null;
+            $deret = [TekananMentah::PERAN_UP => [], TekananMentah::PERAN_DOWN => []];
+
+            foreach (TekananMentah::PERAN_SEMUA as $peran) {
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + 1,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $nilai,
+                        'satuan' => $satuan,
+                        'input_source' => $sesiKamera ? $metodeInput : 'manual',
+                        'is_verified' => ! $sesiKamera,
+                    ];
+
+                    $deret[$peran][] = (float) $nilai;
+                }
+            }
+
+            if ($deret[TekananMentah::PERAN_UP] === [] && $deret[TekananMentah::PERAN_DOWN] === []) {
+                continue;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'konteks' => [
+                    TekananMentah::KONTEKS_UP => $deret[TekananMentah::PERAN_UP],
+                    TekananMentah::KONTEKS_DOWN => $deret[TekananMentah::PERAN_DOWN],
+                    'spesifikasi_alat' => $spek,
+                    'suhu_awal' => $request->input('suhu_awal'),
+                    'suhu_akhir' => $request->input('suhu_akhir'),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
+    /**
+     * Lembar PISTON VOLUME: tabel massa kumulatif (M0..M10) dan tabel suhu air
+     * yang barisnya sinkron — baris ke-n keduanya titik yang sama (1 untuk
+     * volume tetap; MIN/MID/MAX graduated).
+     *
+     * `sensor_ke` kumulatif = indeks M (0..10), BUKAN nomor kotak 1..11:
+     * `PistonVolumeMentah::dari()` mengurutkan balik per `sensor_ke`, dan M0
+     * yang tersimpan sebagai 1 menggeser seluruh selisih satu langkah.
+     *
+     * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
+     */
+    private function susunBlokPiston(
+        CalibrationRequest $request,
+        Equipment $alat,
+        ?Standard $standarDefault,
+    ): array {
+        $mentah = [];
+        $siapHitung = [];
+
+        $metodeInput = (string) $request->string('input_method', 'manual');
+        $sesiKamera = in_array($metodeInput, ['ocr', 'ai_vision'], true);
+        $spek = (array) $request->input('spesifikasi_alat', []);
+        $satuanAlat = (string) (($spek[PistonVolumeMentah::KUNCI_SESI]['satuan'] ?? null) ?: ($alat->satuan ?? 'ml'));
+
+        foreach (array_values((array) $request->input('measurements', [])) as $index => $titik) {
+            $titikKe = $index + 1;
+            $nominal = $titik['titik_ukur'] ?? null;
+            $deret = [PistonVolumeMentah::PERAN_KUMULATIF => [], PistonVolumeMentah::PERAN_SUHU_AIR => []];
+
+            foreach ([PistonVolumeMentah::PERAN_KUMULATIF => [0, 'g'], PistonVolumeMentah::PERAN_SUHU_AIR => [1, '°C']] as $peran => [$awal, $satuan]) {
+                foreach (array_values((array) ($titik[$peran] ?? [])) as $urutan => $nilai) {
+                    if (! is_numeric($nilai)) {
+                        continue;
+                    }
+
+                    $mentah[] = [
+                        'titik_ke' => $titikKe,
+                        'pembacaan_ke' => $urutan + 1,
+                        'sensor_ke' => $urutan + $awal,
+                        'peran_sensor' => $peran,
+                        'tahap' => 'sesudah_adjustment',
+                        'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                        'standard_id' => $standarDefault?->id,
+                        'pembacaan' => (float) $nilai,
+                        'satuan' => $satuan,
+                        'input_source' => $sesiKamera ? $metodeInput : 'manual',
+                        'is_verified' => ! $sesiKamera,
+                    ];
+
+                    $deret[$peran][] = (float) $nilai;
+                }
+            }
+
+            if ($deret[PistonVolumeMentah::PERAN_KUMULATIF] === [] && $deret[PistonVolumeMentah::PERAN_SUHU_AIR] === []) {
+                continue;
+            }
+
+            $siapHitung[] = [
+                'titik_ke' => $titikKe,
+                'titik_ukur' => $nominal === null ? null : (float) $nominal,
+                'pembacaan' => [],
+                'standard' => $standarDefault,
+                'konteks' => [
+                    PistonVolumeMentah::KONTEKS_KUMULATIF => $deret[PistonVolumeMentah::PERAN_KUMULATIF],
+                    PistonVolumeMentah::KONTEKS_SUHU_AIR => $deret[PistonVolumeMentah::PERAN_SUHU_AIR],
+                    'spesifikasi_alat' => $spek,
+                    'satuan_alat' => $satuanAlat,
+                    'suhu_awal' => $request->input('suhu_awal'),
+                    'suhu_akhir' => $request->input('suhu_akhir'),
+                    'kelembaban_awal' => $request->input('kelembaban_awal'),
+                    'kelembaban_akhir' => $request->input('kelembaban_akhir'),
+                    'tekanan_awal' => $request->input('tekanan_awal'),
+                    'tekanan_akhir' => $request->input('tekanan_akhir'),
+                    'tanggal_kalibrasi' => $request->input('tanggal_kalibrasi'),
+                ],
+            ];
+        }
+
+        $perGrup = $this->profil->untukAlat($alat)->hitungPerGrup($siapHitung, $alat);
+
+        return [
+            'mentah' => $mentah,
+            'hitungan' => array_map(
+                fn (array $h): array => $this->bulatkanHitungan($h),
+                $perGrup['hitungan'] ?? [],
+            ),
+            'belum_dihitung' => $perGrup['belum_dihitung'] ?? [],
+        ];
+    }
+
     private function susunBlokGaya(
         CalibrationRequest $request,
         Equipment $alat,

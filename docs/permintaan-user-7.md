@@ -4045,6 +4045,127 @@ bukan itu — tujuh dari sembilan mock yang sudah ter-commit terbukti byte-ident
 dengan keluarannya. Di HP, grid sensor Enclosure pindah ke bagian pertama
 halaman terakhir supaya ikut halaman pengukuran.
 
+## §39 — Alat ke-43..48: **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** — 28 Sep 2026
+
+**Permintaan (28 Sep 2026):** enam master olah data baru (4 tekanan: DRUCK07G,
+DRUCK13G, SPMK, Differential; 2 piston volume: Fixed & Graduated), backend +
+frontend + olah data + OCR, "wajib singkron, gk boleh asal asalan". Datang
+bersama tiga berkas panduan eksternal (panduan olah data, adendum OCR, prompt)
+dan skrip verifikasi Python.
+
+**Keputusan yang SUDAH diambil (jangan ditanya ulang):**
+
+1. **Cacat master yang mengubah angka: dihitung DUA mode, sertifikat DITAHAN
+   sampai Technical Manager menjawab** (keputusan akhir pemilik proyek 28 Sep
+   2026, menggantikan "Hitung benar" pagi itu — lihat §39a butir 7). Tekanan:
+   T-1 (`ABC4`), T-2 (`I44` kosong), T-11 (13G Vacum kolom 4) — semua sesi
+   DRUCK07G/13G/Differential ditahan, SPMK tidak. Piston: G-2/G-7/G-8 ditahan
+   hanya kalau terpicu; G-9 dihitung benar tanpa menahan. Angka versi master
+   di jejak audit tiap sesi (`versi_master`). Kejanggalan METODE (pembagi 3,
+   pilihan drift, beda metode antar master) tetap ditiru + ditanyakan.
+2. **Profil = nama lampiran, varian = workbook master.** Empat master tekanan
+   adalah empat KALIBRATOR; dua master piston adalah dua keluarga (volume
+   tetap / graduated). Enam profil: `pressure_gauge`, `vacuum_gauge`,
+   `differential_pressure`, `piston_pipette`, `dispensett`, `buret_digital`.
+3. **Nol kolom & tabel baru** — `peran_sensor` (`tekanan_up/down`,
+   `piston_kumulatif/suhu_air`) + `spesifikasi_alat.{tekanan,piston}`.
+
+**Bukti sebelum kode:** `docs/skrip/gen-tabel-standar-tekanan.py` (962/962 sel
+master cocok) dan `gen-tabel-standar-piston-volume.py` (274/274), dua mode
+(master & benar). `TekananMasterTest` (3.191 asersi) & `PistonVolumeMasterTest`
+(1.053) mengadu PHP ke keluaran itu pada `1e-12 × max(1,|x|)`.
+
+**Temuan yang MEMBANTAH panduan eksternal** (panduan bukan sumber kebenaran —
+selnya): CMC Vacum bukan "hasil tempel" (0,43 inHg lampiran no. 25
+dikonversi); SPMK menambahkan koreksi beda tinggi ke bacaan standar;
+Volumetric Glassware di repo memakai V20 bersarang (Cuckow), bukan bentuk
+piston; indeks suhu Fixed bukan diketik tangan (rumus array lewat tautan luar);
+Fixed & Graduated beda pembagi densitas air & suhu air; scipy 1.15.3 meleset
+7e-11 di `k` sehingga skrip verifikasi eksternal sendiri merah.
+
+**Langkah 0 (TINV):** `GumCalculator::agregasiBudget()` sudah memotong v_eff;
+enam alat suhu sengaja tidak memotong (masternya polinomial, bukan TINV);
+`StudentTDistribution` 4–9e-13 di bawah nilai eksak (dalam toleransi).
+
+**Pertanyaan lab:** `docs/pertanyaan-lab-tekanan.md` (P-1..P-16),
+`docs/pertanyaan-lab-piston-volume.md` (V-1..V-18). Kontrak HP:
+`docs/perintah-frontend-tekanan-piston.md`. Paling mendesak: P-2 (sertifikat
+tekanan terbit dengan komponen pengulangan nol — perlu ditinjau?), V-14
+(termometer Yokogawa jatuh tempo 12 Agt 2026 di tabel master → sesi piston
+sesudahnya DIBLOKIR sampai sertifikat barunya masuk), V-3 (kertas piston tanpa
+kotak tekanan udara).
+
+**OCR:** rangka geometri `*-v1.json` keenamnya ada (`terverifikasi: false`).
+Pemetaan kotak → kunci profil (OCR-3) MENUNGGU persetujuan pemilik proyek.
+
+### §39a — Acuan, catatan perubahan metode, dan percobaan paralel (28 Sep 2026)
+
+Permintaan lanjutan, tiga langkah berurutan: tetapkan acuan dan catat tiap
+perubahan metode sebagai kejadian (ISO/IEC 17025 7.2.1.5); rancang percobaan
+paralel yang menghasilkan BUKTI; ajukan 2–3 sertifikat arsip per alat beserta
+data mentahnya.
+
+1. **Acuan:** `database/data/manifest-workbook-tekanan-piston.json` —
+   keenam workbook pada sha256 yang dibekukan 28 Sep 2026 (diverifikasi ulang
+   terhadap berkas asli: keenamnya cocok). Kedua generator kini MENOLAK menulis
+   JSON kalau sha256 workbook yang dibaca tidak ada di manifest, dan mencatat
+   sha256-nya di `_sumber.workbook_sha256`.
+2. **Catatan perubahan:** `database/data/log-metode-tekanan-piston.json`,
+   append-only. Tiap perbedaan aplikasi lawan acuan (T-1, T-2, T-11, G-2, G-7,
+   G-8, G-9, V-6) tercatat dengan berkas, sel, rumus master, rumus aplikasi,
+   dampak, siapa yang memutuskan, dan pertanyaan lab yang ditunggu. Versi rumus
+   `TEKANAN-2026.09.28-1` / `PISTON-2026.09.28-1`.
+3. **Versi rumus sampai ke sertifikat:** profil memulangkan `versiRumus()`;
+   versi 1 formula tiap profil membawa `parameter.versi_rumus`; tiap hasil
+   hitung menulis versi yang MENGHITUNGnya di `type_b_components.versi_rumus`;
+   `CalibrationValidator` mengadu keduanya dan memulangkan ERROR
+   `versi_rumus_tidak_sepadan` kalau beda. Artinya: menambah entri versi di log
+   tanpa menerbitkan versi formula baru lewat alur versi = sesi baru tertahan,
+   bukan diam-diam distempel versi lama. Seeder tekanan & piston ikut
+   menstempel `formula_version_id` (sebelumnya tidak — cacat, sudah ditutup).
+4. **Percobaan paralel:** `docs/skrip/uji-paralel-tekanan-piston.py` +
+   `php artisan kalibrasi:hitung-mentah`. Data mentah yang SAMA dari workbook
+   sesi masuk ke cache Excel, reimplementasi Python, dan mesin hitung aplikasi;
+   yang diadu NILAI ANTARA (rata-rata naik/turun, simpangan baku, indeks,
+   koreksi standar, tiap komponen U/pembagi/v/c/u, u_c, v_eff, df, k, U, CMC,
+   U95), toleransi `1e-12 × max(1,|x|)`. Satu selisih = TAHAN. Laporan
+   mencatat sha256 workbook sesi, kecocokan tabel referensinya dengan acuan,
+   versi rumus, dan kode formula; ringkasan per ALAT (bukan per kalibrator)
+   memperingatkan kurang dari 5 sesi atau variasi sempit. Uji asap pada
+   keenam workbook master: 6/6 COCOK; uji negatif (gangguan satu nilai antara
+   pada stdev, ci, v_eff, CMC): 8/8 TAHAN.
+5. **Sertifikat arsip:** permintaannya di
+   `docs/permintaan-arsip-sertifikat-tekanan-piston.md` — 2–3 per alat, WAJIB
+   dengan workbook sesi asli dan scan lembar kerja. Disimpan di
+   `CATATAN/arsip-uji-paralel/` (diabaikan git). **Belum diterima.**
+6. **Errata panduan eksternal:** E-5 (kapasitas di luar semua pita CMC)
+   diterapkan — sesi piston seperti itu DIBLOKIR. E-4 (tiru T-11) digantikan
+   butir 7.
+7. **Penahanan menunggu Technical Manager** (keputusan akhir 28 Sep 2026,
+   sesudah masukan peninjau). Bunyi pertanyaan "Hitung benar" pagi itu hanya
+   mencakup T-1/T-2/T-11 dan dibingkai sebagai salah ketik & sel kosong;
+   pelebarannya ke piston dilakukan Claude tanpa bertanya — dicatat sebagai
+   kesalahan di `keputusan` log metode. Keputusan akhir: sesi yang memicu cacat
+   yang belum dijawab TM DIHITUNG dua mode, kedua angka (U hitung, U95 terbit,
+   dan untuk T-11 koreksi per titik; untuk piston V20 per titik / CMC)
+   ditampilkan di pesan temuan, tapi validator memulangkan ERROR
+   `menunggu_keputusan_tm` — approve 422, tidak ada "setujui tetap". Mesinnya
+   `CalibrationProfile::penahanTerbit()` (bawaan kosong) yang membaca
+   `penyimpangan_terpicu` dari hasil TERSIMPAN, dan `tahan_terbit` di log:
+   jawaban TM = entri versi baru → penahanan lepas tanpa sunting kode.
+   `kalibrasi:sapu-sesi` melaporkan sesi itu sebagai DITAHAN (bukan rusak).
+   Ketiga sesi contoh tekanan (07G, 13G, Differential) kini DITAHAN; ketiga
+   sesi contoh piston tidak memicu apa pun dan tetap terbit. Temuan sampingan:
+   di sesi contoh VG-07G, U95 TERCETAK kedua mode sama (1,4561477 kPa, lantai
+   CMC Vacum) walau U-nya berbeda — karena itu pesan memuat U, bukan cuma U95.
+   Dijaga `PenahananKeputusanTmTest` (8 test, mutasi 5/5 merah) dan
+   `SertifikatSemuaAlatSatuHalamanTest` (daftar DITAHAN dipatok).
+
+Dijaga `LogMetodeTekananPistonTest`, `VersiRumusTekananPistonTest`,
+`PerintahHitungMentahTest`, dan `PistonSesiTest` (E-5). Uji mutasi: mencabut
+pemeriksaan validator, stempel jejak, stempel versi formula, atau blok E-5 —
+keempatnya membuat test merah.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4447,3 +4568,4 @@ Supaya tidak dibangun ulang:
 | G20 | Alat baru **Volumetric Glassware** (enam alat lampiran, dua keluarga) — §36 | **BERES di server** (22 Sep 2026) — V20 dan budget diadu ke kedua workbook dari masukan mentah, angka cetak sertifikat master (V20, Correction, U95 0,003 & 0,34) terbukti lewat jalur HP → simpan → validator → hitung ulang. Nol kolom baru. 13 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-volumetric.md` |
 | G21 | Alat baru **kelompok Gaya**: Mesin UTM & Load Cell — §37 | **BERES di server** (24 Sep 2026) — alat ke-40 & ke-41, kelompok besaran baru. Rumusnya dibuktikan di Python lawan ketiga workbook SEBELUM PHP, dan hasil yang menentukan: **mesin GUM yang sudah ada mereproduksi master persis**, termasuk pemotongan `v_eff` ke bawah — nol mesin agregasi kedua. CMC diadu ke lampiran akreditasi, cocok persis, sekaligus menggugurkan satu dari enam temuan panduan (G9). **Nol kolom baru**: dua blok tingkat-sesi (preload & misalignment) masuk `spesifikasi_alat`, dua belas bacaan per titik memakai sumbu `peran_sensor` yang sudah ada. Kedua alat berbagi satu kelas induk `GayaProfile`, jadi sisi HP **satu layar untuk dua alat**. Satu penyimpangan master DISENGAJA: workbook Load Cell memakai `Y` di kolom `Standard Value` cuma pada cabang satuan kN sementara lima cabang lain dan penjaganya masih `Z` — suntingan yang berhenti di tengah, yang kalau ditiru bikin angka tercetak berubah arti tergantung satuan tampilan; sistem memakai `Y` untuk semua satuan dan menulis selisihnya di jejak audit sesi. **Proving Ring SENGAJA ditunda** (G11): koreksi standarnya hilang di semua titik karena `ISERROR` menelan `VLOOKUP` yang gagal jadi sel kosong yang dibaca nol — kelas kesalahan yang AGENTS.md larang ditiru, dan konsekuensinya (sertifikat Proving Ring yang sudah terbit tidak memuat koreksi standar) perlu diketahui lab lebih dulu. 12 pertanyaan lab. **Gerbangnya menangkap dua kekeliruan sendiri sebelum satu pun sertifikat gaya terbit**, dua-duanya tanpa error: kolom `Standard Value` & `Unit Under Test` TERTUKAR dan yang satu 102x terlalu besar (titik 100 kgf tercetak `10193,7`) karena `nilaiStandarDariKoreksi()` belum dinyalakan — preseden Waktu & Frekuensi yang terlewat; dan sesi contoh UTM titik 300 kgf kehilangan satu pembacaan `300,2` sehingga rata-ratanya meleset 0,0084 kgf — pada satu desimal angka cetaknya SAMA, jadi yang menangkapnya asersi nilai penuh 5x10⁻⁶, bukan pemeriksaan angka cetak. Penjaga barunya mengadu **snapshot sertifikat** (bukan kolom mentah) untuk keenam belas titik kedua alat, plus satu asersi hubungan: `Correction` wajib sama dengan `Standard Value − UUT`. **Sisi mobile BELUM** — `docs/perintah-frontend-gaya.md`. **25 Sep 2026: jalur simpan dari HP dibetulkan** (§37c) — tabel Preload menimpa seluruh blok Gaya, bacaan UP/DOWN Proving Ring tidak pernah dibaca, dan beban keterulangan Timbangan yang diketik hilang; dijaga `KontrakLembarSemuaAlatTest` yang menyapu semua profil |
 | G22 | Semua lembar kerja jadi **dua halaman** (persiapan \| pengukuran) — §37d | **BERES di server** (26 Sep 2026) — satu aturan `CalibrationProfile::susunDuaHalaman()` di endpoint lembar kerja & generator mock, diturunkan dari isi bagian; 39 lembar yang tadinya satu gulungan kini dua halaman, Gaya tidak diubah. Dijaga `LembarKerjaDuaHalamanTest` (ke-42 profil lewat endpoint: tepat [1, 2], standar di 1, tabel & penutup di 2, isi bagian lain tidak berubah). Generator mock kini SELALU SQLite in-memory yang di-seed — tidak pernah membaca produksi. **Sisi mobile**: grid Enclosure pindah ke halaman terakhir, mock & test disesuaikan — PR mobile |
+| G25 | Alat baru **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** (Piston Pipette, Dispensett, Buret Digital) — §39 | **SERVER DIKERJAKAN** (28 Sep 2026, branch `feat/tekanan-piston-volume`) — enam profil, dua kalkulator, rekonsiliasi 962 + 274 sel master; acuan sha256 + log metode append-only + versi rumus terstempel & diadu validator + harness uji paralel (§39a). Sesi yang memicu T-1/T-2/T-11 (dan piston G-2/G-7/G-8 bila terpicu) DITAHAN menunggu TM — P-1/P-2/P-11, V-7/V-11/V-12. Mobile: fixture generator, cabang mock, dan selisih `M_i − M_{i−1}` di tabel kumulatif SUDAH. Sisa: suite penuh SQLite+MySQL, sertifikat arsip dari lab (§39a butir 5), OCR-3 menunggu persetujuan |

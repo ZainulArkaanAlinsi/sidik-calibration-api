@@ -19,7 +19,9 @@ use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\PistonVolumeMentah;
 use App\Support\SieveMentah;
+use App\Support\TekananMentah;
 use App\Support\TimbanganMentah;
 use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
@@ -204,6 +206,15 @@ class HitungUlangSesi extends Command
                 // pulang `[]` dan sesinya bakal dilewati diam-diam kalau cabang
                 // ini ditaruh di bawah `$grid === []`.
                 $gaya = GayaMentah::dari($baris);
+
+                // Deret UP & DOWN satu titik Tekanan — kejadian ke-19, cabangnya
+                // ikut Gaya dan dengan alasan yang sama: baris tekanan PUNYA
+                // `peran_sensor`, jadi `GridSensorMentah` tidak pulang `[]`.
+                $tekanan = TekananMentah::dari($baris);
+
+                // Sebelas massa kumulatif + dua suhu air satu titik Piston
+                // Volume — kejadian ke-20, alasan cabangnya sama dengan Tekanan.
+                $piston = PistonVolumeMentah::dari($baris);
 
                 // Pasangan DILIHAT DULUAN, dan urutannya bukan selera.
                 // [GridSensorMentah] balik `[]` cuma kalau nggak ada satu pun
@@ -398,6 +409,14 @@ class HitungUlangSesi extends Command
                     // `konteks`, jadi deret datar di sini memang tidak dipakai.
                     // Alasan penempatan sama dengan Volumetric di atas.
                     $nilai = [];
+                } elseif ($tekanan !== []) {
+                    // Tekanan: deret UP & DOWN dibaca profilnya dari `konteks`.
+                    // Deret yang tidak lengkap TIDAK di-`continue` di sini —
+                    // profilnya menahan seluruh sesi dengan alasan yang kebaca.
+                    $nilai = [];
+                } elseif ($piston !== []) {
+                    // Piston volume: sama dengan Tekanan di atas.
+                    $nilai = [];
                 } elseif ($grid === []) {
                     // Alat single-channel biasa: satu titik = satu deret
                     // pembacaan datar. Minimal dua, karena satu pembacaan nggak
@@ -511,6 +530,12 @@ class HitungUlangSesi extends Command
                         // Dua belas bacaan Gaya; blok satuan/standar/preload/
                         // misalignment ikut lewat `spesifikasi_alat` di bawah.
                         ...$gaya,
+                        // Deret UP & DOWN Tekanan; varian, satuan, tampilan,
+                        // rasio jarum ikut lewat `spesifikasi_alat` di bawah.
+                        ...$tekanan,
+                        // Massa kumulatif & suhu air Piston Volume; keluarga,
+                        // timbangan, satuan ikut lewat `spesifikasi_alat`.
+                        ...$piston,
                         'suhu_awal' => $sesi->suhu_awal,
                         'suhu_akhir' => $sesi->suhu_akhir,
                         'kelembaban_awal' => $sesi->kelembaban_awal,

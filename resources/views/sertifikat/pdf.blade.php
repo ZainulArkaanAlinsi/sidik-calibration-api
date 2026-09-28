@@ -705,6 +705,14 @@
          dicetak sama sekali. --}}
     @php($flowmeter = $snapshot['flowmeter'] ?? null)
 
+    {{-- Tekanan (Pressure / Vacuum / Differential): satu titik DUA arah.
+         Tabel master `SERTIFIKAT!E20:V34` mencetak setelan, penunjukan standar
+         UP & DOWN, koreksi UP & DOWN, dan histeresis ketiga pengulangan — tabel
+         empat kolom bawaan cuma punya tempat untuk satu arah. Dibaca dari
+         `TekananProfile::tabelSertifikatTekanan`, dibekukan ke snapshot waktu
+         terbit. Alat lain balik `null` dan blok ini tidak dicetak. --}}
+    @php($tekanan = $snapshot['tekanan'] ?? null)
+
     @if ($flowmeter)
         @php($mm = fn ($v) => $v === null ? '—' : \App\Support\Angka::id((float) $v, 2).' mm')
         <div class="judul-sub">PIPE SPECIFICATION &amp; SENSOR MOUNTING</div>
@@ -1078,6 +1086,55 @@
                      salah ejaannya. Format sel `k`-nya `0` -> `2`. --}}
                 That weighing uncertainty is measured at confidence level 95 % &amp; coverage factor ( K ) =
                 {{ \App\Support\Angka::id((float) $timbangan['k_penimbangan'], 0) }}
+            </div>
+        @endif
+    @elseif ($tekanan)
+        @php($sat = $tekanan['satuan'] ?? '')
+        @php($satKurung = $sat === '' ? '' : ' ('.$sat.')')
+        @php($dP = (int) ($tekanan['desimal'] ?? $desimal))
+        @php($dPU = (int) ($tekanan['desimal_u95'] ?? $dP + 1))
+        @php($nP = fn ($v, $d) => $v === null ? '&mdash;' : e(\App\Support\Angka::id((float) $v, $d)))
+        <table class="data">
+            <thead>
+                <tr>
+                    <th rowspan="2">UUT Setting{{ $satKurung }}</th>
+                    <th colspan="2">Standard Indication{{ $satKurung }}</th>
+                    <th colspan="2">Correction{{ $satKurung }}</th>
+                    <th colspan="3">Hysteresis{{ $satKurung }}</th>
+                </tr>
+                <tr>
+                    <th>Up</th>
+                    <th>Down</th>
+                    <th>Up</th>
+                    <th>Down</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($tekanan['baris'] ?? [] as $b)
+                    <tr>
+                        <td>{!! $nP($b['setelan'] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['standar_up'] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['standar_down'] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['koreksi_up'] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['koreksi_down'] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['histeresis'][0] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['histeresis'][1] ?? null, $dP) !!}</td>
+                        <td>{!! $nP($b['histeresis'][2] ?? null, $dP) !!}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @if (($tekanan['u95'] ?? null) !== null)
+            <div class="ket-k">
+                Uncertainty U95% = &plusmn; {!! $nP($tekanan['u95'], $dPU) !!} {{ $sat }}.
+                The uncertainty is taken at a confidence level 95 % and coverage factor ( k ) =
+                {{-- Master: `ROUND(k;1)` berformat General — 1,98 tercetak `2`,
+                     4,30 tercetak `4,3`. Bukan `2,0`. --}}
+                @php($kP = round((float) ($tekanan['k_cetak'] ?? 2), 1))
+                {{ \App\Support\Angka::id($kP, floor($kP) == $kP ? 0 : 1) }}
             </div>
         @endif
     @else

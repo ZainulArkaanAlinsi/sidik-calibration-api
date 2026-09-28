@@ -20,9 +20,12 @@ use App\Support\HeightGaugeMentah;
 use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\KodeSelRevisi;
+use App\Support\LogMetodeTekananPiston;
 use App\Support\MicrometerMentah;
 use App\Support\PasanganStandarUutMentah;
+use App\Support\PistonVolumeMentah;
 use App\Support\SieveMentah;
+use App\Support\TekananMentah;
 use App\Support\TimbanganMentah;
 use App\Support\VolumetricGlasswareMentah;
 use App\Support\WaktuMentah;
@@ -64,6 +67,15 @@ class CalibrationValidator
     private const FAKTOR_U95_MELEDAK = 10.0;
 
     public const INFO = 'info';
+
+    /**
+     * Kode ERROR untuk sesi yang SENGAJA ditahan menunggu keputusan metode
+     * Technical Manager (`CalibrationProfile::penahanTerbit()`). Tetap ERROR —
+     * tidak ada "setujui tetap" — tapi `kalibrasi:sapu-sesi` melaporkannya
+     * sebagai DITAHAN, bukan sesi rusak: datanya sehat, keputusannya yang
+     * belum ada.
+     */
+    public const MENUNGGU_KEPUTUSAN_TM = 'menunggu_keputusan_tm';
 
     /**
      * Batas panjang judul peringatan sebelum dipotong.
@@ -128,6 +140,8 @@ class CalibrationValidator
                 ...$this->periksaKeputusanSesi($sesi),
                 ...$this->periksaKelengkapanSertifikat($sesi),
                 ...$this->periksaPeringatanProfil($sesi),
+                ...$this->periksaVersiRumus($sesi),
+                ...$this->periksaPenahanProfil($sesi),
             ];
 
         $ringkasan = [
@@ -560,6 +574,12 @@ class CalibrationValidator
             // yang benar dilaporkan "di luar rentang ukur" — dan peringatan
             // palsu melatih admin menekan "setujui tetap" tanpa membaca.
             if (in_array($m->peran_sensor, GayaMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
+                continue;
+            }
+
+            // Piston volume: yang tercatat massa kumulatif (g) & suhu air (°C),
+            // rentang alatnya ml. Alasannya sama dengan Volumetric di atas.
+            if (in_array($m->peran_sensor, PistonVolumeMentah::PERAN_BUKAN_BESARAN_ALAT, true)) {
                 continue;
             }
 
@@ -1155,6 +1175,16 @@ class CalibrationValidator
                     // satunya lolos tanpa error, dan itu sudah menggigit tujuh
                     // kali. Kosong buat alat lain.
                     ...GayaMentah::dari($pembacaan),
+                    // Deret UP & DOWN satu titik Tekanan — kejadian ke-19, dan
+                    // disambung DI SINI dan di `HitungUlangSesi` sekaligus.
+                    // Kuncinya sendiri (`tekanan_up`/`tekanan_down`), bukan
+                    // `bacaan` milik Gaya: dua jalur yang berbagi kunci di
+                    // spread yang sama saling menimpa tanpa error.
+                    ...TekananMentah::dari($pembacaan),
+                    // Sebelas massa kumulatif + dua suhu air satu titik Piston
+                    // Volume — kejadian ke-20, disambung di sini DAN di
+                    // `HitungUlangSesi`.
+                    ...PistonVolumeMentah::dari($pembacaan),
                     // Tiga kolom SESI (bukan per titik) yang ikut nentuin
                     // budget: dryblock/oilbath yang dicentang, cara pencelupan,
                     // dan pembacaan uji titik es. Dibaca balik dari sesinya,
@@ -1963,6 +1993,87 @@ class CalibrationValidator
             fn (array $p): array => $this->temuan(self::PERINGATAN, $p['kode'], $p['pesan']),
             $profil->peringatanSesi($sesi),
         );
+    }
+
+    /**
+     * Keputusan metode yang belum diambil Technical Manager, diserahkan ke
+     * profilnya lewat `CalibrationProfile::penahanTerbit()` — validator ini
+     * tetap tidak tahu nama alat mana pun.
+     *
+     * ERROR, bukan peringatan: angkanya dihitung dua versi, dan yang mana yang
+     * sah belum diputuskan. Pesannya memuat KEDUA angka berdampingan.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaPenahanProfil(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return [];
+        }
+
+        return array_map(
+            fn (array $p): array => $this->temuan(
+                self::ERROR,
+                self::MENUNGGU_KEPUTUSAN_TM,
+                $p['pesan'],
+                ['penyimpangan' => $p['penyimpangan'], ...$p['konteks']],
+            ),
+            $this->profil->untukAlat($alat)->penahanTerbit($sesi),
+        );
+    }
+
+    /**
+     * Versi rumus yang MENGHITUNG tiap baris (jejak
+     * `type_b_components.versi_rumus`) wajib sama dengan versi rumus yang
+     * DISTEMPELKAN (`formula_version_id` → `parameter.versi_rumus`).
+     *
+     * Cuma untuk profil yang tercatat di log metode (`versiRumus()` tidak
+     * null) — tiga puluhan profil lain tidak punya log itu, jadi tidak ada yang
+     * bisa diadu.
+     *
+     * ERROR, bukan peringatan. Angkanya sendiri tidak salah; yang rusak
+     * ketertelusurannya — sertifikat yang mengaku dihitung dengan aturan yang
+     * tidak dipakai (ISO/IEC 17025 7.2.1.5). Tidak ada yang bisa "dilihat lalu
+     * disetujui tetap": jalan keluarnya menerbitkan versi formula yang membawa
+     * versi itu, lalu menghitung ulang sesinya.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function periksaVersiRumus(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null || $this->profil->untukAlat($alat)->versiRumus() === null) {
+            return [];
+        }
+
+        $sesi->loadMissing('uncertaintyCalculations.formulaVersion');
+        $pasangan = [];
+
+        foreach ($sesi->uncertaintyCalculations as $u) {
+            $dihitung = $u->type_b_components['versi_rumus']['versi'] ?? null;
+            $distempel = $u->formulaVersion?->parameter['versi_rumus'] ?? null;
+
+            if ($dihitung !== $distempel) {
+                $pasangan[($dihitung ?? '-').'|'.($distempel ?? '-')] = [$dihitung, $distempel];
+            }
+        }
+
+        return array_map(fn (array $p): array => $this->temuan(
+            self::ERROR,
+            'versi_rumus_tidak_sepadan',
+            sprintf(
+                'Hasil hitung sesi ini dihitung dengan versi rumus %s, tapi versi formula yang distempelkan mencatat %s. '
+                .'Sertifikatnya akan mengaku dihitung dengan aturan yang tidak dipakai. Terbitkan versi formula baru '
+                .'yang membawa `versi_rumus` itu (catatan perubahannya di %s), lalu hitung ulang sesinya.',
+                $p[0] ?? '(tidak tercatat di jejak)',
+                $p[1] ?? '(tanpa versi_rumus)',
+                LogMetodeTekananPiston::BERKAS,
+            ),
+            ['dihitung' => $p[0], 'distempel' => $p[1]],
+        ), array_values($pasangan));
     }
 
     /**

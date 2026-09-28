@@ -85,7 +85,10 @@ class KategoriProfilLembarKerjaTest extends TestCase
             'nama' => 'Volume',
         ]);
 
-        $this->buatKemampuan($kategori, 'Buret Digital');
+        // `Buret Digital` punya profil sendiri sejak 28 Sep 2026 (keluarga
+        // Piston Volume) — contohnya pindah ke alat gelas yang memang belum
+        // berprofil.
+        $this->buatKemampuan($kategori, 'Erlenmeyer');
 
         $this->actingAs($this->admin)
             ->getJson('/api/categories/volume')

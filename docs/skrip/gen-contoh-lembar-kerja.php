@@ -24,6 +24,12 @@ use App\Services\Calibration\Profiles\LoadCellProfile;
 use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\UtmProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\DifferentialPressureProfile;
+use App\Services\Calibration\Profiles\PressureGaugeProfile;
+use App\Services\Calibration\Profiles\VacuumGaugeProfile;
+use App\Services\Calibration\Profiles\BuretDigitalProfile;
+use App\Services\Calibration\Profiles\DispensettProfile;
+use App\Services\Calibration\Profiles\PistonPipetteProfile;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -453,7 +459,69 @@ $kepalaGaya = <<<'DART'
 library;
 DART;
 
+$kepalaTekanan = <<<'DART'
+/// Bentuk lembar kerja contoh keluarga **TEKANAN** — Pressure Gauge, Vacuum
+/// Gauge, Differential Pressure (kertas bersama `SIDIK-FM-CAL-0507_Rev.5`).
+///
+/// Yang HARUS diperhatikan HP, karena salah satu dari ini tidak menghasilkan
+/// error apa pun:
+///
+///  1. **Dua tabel deret-bernama yang barisnya sinkron** —
+///     `measurements[].tekanan_up` dan `measurements[].tekanan_down`, tiga
+///     pengulangan masing-masing. Baris ke-n keduanya titik setelan yang SAMA;
+///     nominal dari tabel PERTAMA (`LembarKerjaState.acuanNominal`), persis
+///     Proving Ring. UP dan DOWN yang tertukar tidak membuat sertifikat
+///     terlihat aneh — rata-rata bergeser sedikit dan histeresis berganti tanda.
+///  2. **`spesifikasi_alat.tekanan.*`** — varian kalibrator, satuan, tampilan,
+///     rasio jarum, resolusi, kapasitas (SPMK: media & beda tinggi). Kotak
+///     bertanda `mempengaruhi_ketidakpastian: true` tidak boleh diisi otomatis
+///     dari OCR tanpa konfirmasi teknisi.
+///  3. **Koma desimal** — `99,6` dikirim `99.6` (server membakukannya juga).
+///  4. **Dua halaman** — identitas & standar | pengukuran & penutup.
+library;
+DART;
+
+$kepalaPiston = <<<'DART'
+/// Bentuk lembar kerja contoh keluarga **PISTON VOLUME** — Piston Pipette,
+/// Dispensett, Buret Digital (kertas FM-0528 one mark / FM-0529 graduated).
+///
+/// Yang HARUS diperhatikan HP, karena salah satu dari ini tidak menghasilkan
+/// error apa pun:
+///
+///  1. **Tabel `measurements[].piston_kumulatif` berisi massa KUMULATIF**
+///     M0..M10 (label dari `pengulangan_arah`). Tabel ini membawa
+///     `kumulatif: true`: tampilkan SELISIH `M_i − M_{i−1}` di bawah tiap
+///     kotak (`TabelHasil.kumulatif` + `_SelisihKumulatif`). Satu digit salah
+///     di M1..M9 menggeser dua selisih berlawanan arah — rata-ratanya tidak
+///     berubah sama sekali, cuma STDEV yang membengkak.
+///  2. **Tabel `measurements[].piston_suhu_air`** — suhu awal & akhir per
+///     titik, barisnya sinkron dengan tabel kumulatif.
+///  3. **`spesifikasi_alat.piston.keluarga`** — `fixed` isi Titik 1 saja;
+///     `graduated` isi MIN, MID, MAX.
+///  4. **Tekanan udara (`tekanan_awal`/`tekanan_akhir`, hPa) WAJIB** — masuk
+///     densitas udara, dan kertas lamanya belum punya kotak itu.
+library;
+DART;
+
 $kelompok = [
+    'piston' => [
+        'berkas' => 'contoh_lembar_kerja_piston.dart',
+        'kepala' => $kepalaPiston,
+        'profil' => [
+            'PistonPipette' => PistonPipetteProfile::class,
+            'Dispensett' => DispensettProfile::class,
+            'BuretDigital' => BuretDigitalProfile::class,
+        ],
+    ],
+    'tekanan' => [
+        'berkas' => 'contoh_lembar_kerja_tekanan.dart',
+        'kepala' => $kepalaTekanan,
+        'profil' => [
+            'PressureGauge' => PressureGaugeProfile::class,
+            'VacuumGauge' => VacuumGaugeProfile::class,
+            'DifferentialPressure' => DifferentialPressureProfile::class,
+        ],
+    ],
     'gaya' => [
         'berkas' => 'contoh_lembar_kerja_gaya.dart',
         'kepala' => $kepalaGaya,
@@ -532,6 +600,14 @@ $kelompok = [
         ],
     ],
 ];
+
+// `KELOMPOK=tekanan,piston php docs/skrip/gen-contoh-lembar-kerja.php` menulis
+// grup itu saja — supaya menambah alat baru tidak ikut menulis ulang fixture
+// grup lain di repo mobile yang sedang dikerjakan orang lain. Tanpa env ini,
+// semua grup ditulis seperti biasa.
+if (($hanya = getenv('KELOMPOK')) !== false && $hanya !== '') {
+    $kelompok = array_intersect_key($kelompok, array_flip(array_map('trim', explode(',', $hanya))));
+}
 
 foreach ($kelompok as $k) {
     $fungsi = [];

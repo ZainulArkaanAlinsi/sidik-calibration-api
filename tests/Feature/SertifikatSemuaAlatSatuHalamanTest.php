@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\CalibrationValidator;
 use App\Services\DataTampilanSertifikat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\DatabaseSeeder;
@@ -111,7 +112,12 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // Alat ke-29, sesi contoh 14 keping. Di luar lampiran akreditasi,
         // jadi sertifikatnya terbit tanpa kop KAN.
         'DEMO-AT-001 (Anak Timbangan)',
+        // Alat ke-46..48, piston volume (28 Sep 2026). Terbit TANPA vonis
+        // PASS/FAIL (aturan keputusan menunggu V-6); tidak memicu G-2/G-7/G-8,
+        // jadi tidak ditahan.
+        'DEMO-BD-GRD-001 (Buret Digital)',
         'DEMO-COND-MSCM (Conductivity Meter)',
+        'DEMO-DS-FIX-001 (Dispensett)',
         // Alat ke-27 & ke-28 — sertifikatnya membawa satu blok tambahan
         // (`PIPE SPECIFICATION & SENSOR MOUNTING`) yang alat lain tidak punya,
         // jadi justru keduanya yang paling perlu diperiksa muat satu halaman.
@@ -126,6 +132,7 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         // banyak dari UTM — dan dua desimal, bukan satu. Pasangan itu yang
         // bikin dia pantas disapu: tabelnya paling tinggi di kelompok gaya.
         'DEMO-LC-001 (Load Cell)',
+        'DEMO-PP-FIX-001 (Micropipette)',
         // Alat ke-42, gaya ketiga (25 Sep 2026). Sepuluh titik, dan kolom
         // ketiganya FAKTOR kalibrasi berdesimal lima — paling lebar di
         // kelompoknya.
@@ -149,6 +156,22 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         'DEMO-VOL-004 (Gelas Ukur)',
         'DEMO-VOL-005 (Buret)',
         'DEMO-VOL-006 (Pipet Ukur)',
+    ];
+
+    /**
+     * Sesi bawaan yang SENGAJA tidak bisa terbit: ditahan menunggu keputusan
+     * metode Technical Manager (T-1/T-2/T-11 tekanan, keputusan 28 Sep 2026 di
+     * `database/data/log-metode-tekanan-piston.json`). Dipatok juga — sesi yang
+     * diam-diam lepas dari penahanan sama berbahayanya dengan sesi yang diam-diam
+     * berhenti terbit. Begitu TM menjawab dan log mencatatnya, sesi ini pindah
+     * ke `DIPERIKSA`.
+     *
+     * @var list<string>
+     */
+    private const DITAHAN = [
+        'DEMO-DP-ADT-001',
+        'DEMO-PG-13G-001',
+        'DEMO-VG-07G-001',
     ];
 
     /**
@@ -227,8 +250,22 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         $meluap = [];
         $padat = [];
         $diperiksa = [];
+        $ditahan = [];
+        $validator = app(CalibrationValidator::class);
 
         foreach (CalibrationSession::query()->get() as $sesi) {
+            $menungguTm = collect($validator->periksa($sesi)['temuan'])
+                ->contains('kode', CalibrationValidator::MENUNGGU_KEPUTUSAN_TM);
+
+            if ($menungguTm) {
+                // Konfirmasi admin pun tidak boleh menembusnya.
+                $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+                    ->assertStatus(422);
+                $ditahan[] = $sesi->nomor_sesi;
+
+                continue;
+            }
+
             $sertifikat = $this->terbitkan($sesi);
 
             $diperiksa[] = $this->sebut($sesi, $sertifikat);
@@ -251,6 +288,14 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
         }
 
         sort($diperiksa);
+        sort($ditahan);
+
+        $this->assertSame(
+            self::DITAHAN,
+            $ditahan,
+            'Daftar sesi bawaan yang DITAHAN menunggu keputusan TM berubah. Nama HILANG = penahanannya lepas '
+            .'(sudah dicatat di log metode?); nama BARU = cacat master baru ikut menahan.',
+        );
 
         $this->assertSame(
             self::DIPERIKSA,

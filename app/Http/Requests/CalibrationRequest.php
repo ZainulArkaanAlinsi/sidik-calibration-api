@@ -11,6 +11,8 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Services\Calibration\TabelStandarTekanan;
+use App\Services\Calibration\TekananCalculator;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
@@ -18,6 +20,8 @@ use App\Support\FlowmeterMentah;
 use App\Support\GayaMentah as M;
 use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
+use App\Support\PistonVolumeMentah;
+use App\Support\TekananMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -489,6 +493,11 @@ class CalibrationRequest extends FormRequest
                     // (`300,3006`), jadi koma yang lolos bukan cuma ditolak
                     // `numeric`, dia menggeser angkanya ratusan kali.
                     ...M::PERAN_POSISI,
+                    // Dua deret lembar tekanan. `"99,6"` wajib tersimpan
+                    // `99.6` — bukan `996`, bukan `99`.
+                    ...TekananMentah::PERAN_SEMUA,
+                    // Massa kumulatif piston ditulis empat desimal (`10,0768`).
+                    ...PistonVolumeMentah::PERAN_SEMUA,
                 ] as $kunci) {
                     if (array_key_exists($kunci, $t)) {
                         $titik[$i][$kunci] = AngkaDesimal::bakukanDalam($t[$kunci]);
@@ -497,6 +506,39 @@ class CalibrationRequest extends FormRequest
             }
 
             $ganti['measurements'] = $titik;
+        }
+
+        // Kotak angka blok sesi TEKANAN. Resolusi `0,1` yang lolos tanpa
+        // dibakukan ditolak `numeric`; yang lebih buruk, beda tinggi `0,18` m
+        // SPMK masuk koreksi setiap bacaan standar.
+        $blokTekanan = $this->input('spesifikasi_alat.'.TekananMentah::KUNCI_SESI);
+
+        if (is_array($blokTekanan)) {
+            foreach (['resolusi', 'kapasitas', 'tinggi_standar', 'tinggi_uut', 'beda_tinggi'] as $kunci) {
+                if (array_key_exists($kunci, $blokTekanan)) {
+                    $blokTekanan[$kunci] = AngkaDesimal::bakukan($blokTekanan[$kunci]);
+                }
+            }
+
+            $spek = (array) ($ganti['spesifikasi_alat'] ?? $this->input('spesifikasi_alat', []));
+            $spek[TekananMentah::KUNCI_SESI] = $blokTekanan;
+            $ganti['spesifikasi_alat'] = $spek;
+        }
+
+        $blokPiston = $this->input('spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI);
+
+        if (is_array($blokPiston)) {
+            if (array_key_exists('kapasitas', $blokPiston)) {
+                $blokPiston['kapasitas'] = AngkaDesimal::bakukan($blokPiston['kapasitas']);
+            }
+
+            if (isset($blokPiston['penguapan']) && is_array($blokPiston['penguapan'])) {
+                $blokPiston['penguapan'] = AngkaDesimal::bakukanDalam($blokPiston['penguapan']);
+            }
+
+            $spek = (array) ($ganti['spesifikasi_alat'] ?? $this->input('spesifikasi_alat', []));
+            $spek[PistonVolumeMentah::KUNCI_SESI] = $blokPiston;
+            $ganti['spesifikasi_alat'] = $spek;
         }
 
         if ($ganti !== []) {
@@ -1192,6 +1234,47 @@ class CalibrationRequest extends FormRequest
             'measurements.*.'.M::PERAN_UP.'.*' => ['nullable', 'numeric'],
             'measurements.*.'.M::PERAN_DOWN => ['sometimes', 'nullable', 'array', 'size:'.M::REPLIKAT],
             'measurements.*.'.M::PERAN_DOWN.'.*' => ['nullable', 'numeric'],
+            // Tekanan: tepat tiga bacaan standar per arah. Kurang dari itu tidak
+            // ditolak DI SINI (draft boleh setengah jadi) — profilnya menahan
+            // titiknya dengan alasan yang kebaca. Lebih dari tiga ditolak: tidak
+            // ada kotak keempat di kertas FM-0507.
+            'measurements.*.'.TekananMentah::PERAN_UP => ['sometimes', 'nullable', 'array', 'max:'.TekananCalculator::PENGULANGAN],
+            'measurements.*.'.TekananMentah::PERAN_UP.'.*' => ['nullable', 'numeric'],
+            'measurements.*.'.TekananMentah::PERAN_DOWN => ['sometimes', 'nullable', 'array', 'max:'.TekananCalculator::PENGULANGAN],
+            'measurements.*.'.TekananMentah::PERAN_DOWN.'.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI => ['sometimes', 'nullable', 'array', 'max:12'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.varian' => [
+                'sometimes', 'nullable', 'string', 'in:'.implode(',', TabelStandarTekanan::VARIAN),
+            ],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.satuan' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.tampilan' => [
+                'sometimes', 'nullable', 'string', 'in:'.TekananMentah::TAMPILAN_ANALOG.','.TekananMentah::TAMPILAN_DIGITAL,
+            ],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.rasio_jarum' => [
+                'sometimes', 'nullable', 'string', 'in:'.implode(',', TekananMentah::RASIO_JARUM),
+            ],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.resolusi' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.kapasitas' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.media' => ['sometimes', 'nullable', 'integer', 'in:1,2,3'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.tinggi_standar' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.tinggi_uut' => ['sometimes', 'nullable', 'numeric'],
+            'spesifikasi_alat.'.TekananMentah::KUNCI_SESI.'.beda_tinggi' => ['sometimes', 'nullable', 'numeric'],
+            // Piston volume: sebelas massa kumulatif (M0..M10) & dua suhu air
+            // per titik. Lebih dari itu tidak punya kotak di kertas FM-0528/0529.
+            'measurements.*.'.PistonVolumeMentah::PERAN_KUMULATIF => ['sometimes', 'nullable', 'array', 'max:11'],
+            'measurements.*.'.PistonVolumeMentah::PERAN_KUMULATIF.'.*' => ['nullable', 'numeric', 'gte:0'],
+            'measurements.*.'.PistonVolumeMentah::PERAN_SUHU_AIR => ['sometimes', 'nullable', 'array', 'max:2'],
+            'measurements.*.'.PistonVolumeMentah::PERAN_SUHU_AIR.'.*' => ['nullable', 'numeric'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI => ['sometimes', 'nullable', 'array', 'max:8'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.keluarga' => ['sometimes', 'nullable', 'string', 'in:fixed,graduated'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.satuan' => ['sometimes', 'nullable', 'string', 'in:ml,µl'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.sub_jenis' => [
+                'sometimes', 'nullable', 'string', 'in:single_stroke,multi_stroke,motor_driven,hand_driven',
+            ],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.kapasitas' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.timbangan' => ['sometimes', 'nullable', 'string', 'max:60'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.penguapan' => ['sometimes', 'nullable', 'array', 'max:3'],
+            'spesifikasi_alat.'.PistonVolumeMentah::KUNCI_SESI.'.penguapan.*' => ['nullable', 'numeric'],
             'measurements.*.vol_kosong' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.vol_kosong.*' => ['nullable', 'numeric', 'gte:0'],
             'measurements.*.vol_isi' => ['sometimes', 'nullable', 'array', 'size:3'],

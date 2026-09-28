@@ -486,6 +486,13 @@ class WorksheetExtractionTest extends TestCase
                 'status' => CalibrationSession::STATUS_DRAFT,
             ]);
 
+            // Jam dimajukan satu menit tiap putaran: rute ini ber-
+            // `throttle:ekstrak-foto` 30/menit per pengguna, dan sapuan ini
+            // sendiri sudah melewati 30 profil tak-didukung sejak keluarga
+            // Tekanan mendarat (28 Sep 2026). Tanpa ini yang merah 429 — batas
+            // lajunya, bukan penolakan yang sedang diuji.
+            $this->travel(61)->seconds();
+
             $this->kirim($this->teknisi, ['calibration_session_id' => $sesi->id])
                 ->assertStatus(422)
                 ->assertJsonPath('fallback_manual', true);
