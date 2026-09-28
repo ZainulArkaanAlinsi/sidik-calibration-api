@@ -4045,6 +4045,192 @@ bukan itu — tujuh dari sembilan mock yang sudah ter-commit terbukti byte-ident
 dengan keluarannya. Di HP, grid sensor Enclosure pindah ke bagian pertama
 halaman terakhir supaya ikut halaman pengukuran.
 
+### §37e — Arsip: "folder perusahaan kosong" & kotak cari yang tidak menyaring (26 Sep 2026)
+
+Laporan pemilik proyek: "folder sama arsip harusnya buat nyimpen data pelanggan, dari kemarin masih
+belum bisa" — tiga gejala dipilih: folder perusahaan kosong, tidak bisa unggah berkas, muncul pesan
+error.
+
+Yang terbukti di server, dan diperbaiki di sini:
+
+- **Folder kosong.** Daftar akar Arsip (`GET /arsip/perusahaan`, `GET /folders`) cuma memuat PT yang
+  SUDAH punya folder, dan folder baru lahir dari lembar kerja/sertifikat. Lab yang belum punya sesi
+  disetujui melihat Arsip kosong total, dan PT yang tidak tampil tidak bisa ditekan — find-or-create
+  di `folderPelanggan()` pun tidak pernah terpanggil. Sekarang daftar akar yang dibuka **admin**
+  membuatkan folder akar untuk tiap PT yang belum punya (kunci baris yang sama dengan
+  `folderPelanggan()`); teknisi, viewer, super admin tetap baca-saja.
+- **Cari tidak menyaring.** Mobile mengirim `?search=`, server cuma membaca `?q=` — diabaikan diam-diam,
+  daftar balik utuh. `search` kini alias `q`.
+
+Yang terbukti di MOBILE dan diserahkan ke pengerja UI (bukan di PR ini — UI mobile sedang dikerjakan
+sesi lain; patch + rekaman payload server ada di `Desktop\handoff-arsip-mobile\`):
+
+- `ArsipIsiFolder.fromJson` MEMBUANG baris PDF sertifikat & unggahan (keduanya `lembar_kerja: null`),
+  jadi sertifikat terbit tidak pernah tampil di layar Arsip. Kartu lembar kerja menulis "Sertifikat
+  belum terbit" untuk semua sesi karena baris lembar kerja memang tidak pernah membawa `sertifikat`.
+- Layar Arsip menampilkan Folder baru / ganti nama / hapus / tarik-pindah untuk semua peran → 403 untuk
+  teknisi & viewer (kandidat kuat "muncul pesan error"; screenshot belum diterima).
+- Tidak ada jalur unggah sama sekali di mobile, padahal `POST /folder-files` sudah ada.
+
+Dijaga `FolderTiapPelangganTest` (13 kasus; dengan controller lama 7 merah — "actual size 0").
+
+<!-- Baris G23 & G24 untuk tabel Gelombang & status: -->
+
+## §38 — Revisi & pembatalan sertifikat — PRD (26 Sep 2026)
+
+> "nanti kan ada fitur yang bisa edit sertificate asma hapus serta ada tanggal
+> di sna nya juga" · "pikirin nanti kalo pas di cancel itu gimana dari pihak apk
+> customer … lu harus bisa membaca situasi antara pihak sidik dengan si
+> customer"
+
+**Status: PRD, belum ada kode.** Kolom `certificates.revision_of` &
+`alasan_revisi` sudah ada sejak 14 Jul, tapi belum satu baris kode produksi pun
+yang menulisnya (BACA-DULU-BACKEND: "alur revisi sertifikat TIDAK ADA").
+`CetakUlangSertifikat` BUKAN revisi — dia merender ulang snapshot yang sama.
+
+### 38.1 Keputusan pemilik (26 Sep, jangan ditanya ulang)
+
+| # | Keputusan |
+|---|---|
+| D1 | Tidak ada hapus permanen. "Edit" = **REVISI**: baris sertifikat BARU yang menggantikan yang lama; yang lama tetap tersimpan dan ditandai digantikan (ISO/IEC 17025 §7.8.8). "Hapus" = **BATALKAN**: status + alasan + tanggal; PDF tetap diarsip. |
+| D2 | Revisi cuma **data administratif**: nama & alamat pelanggan, merk / tipe / nomor seri alat, lokasi kalibrasi, tanggal kalibrasi & berlaku sampai. Angka pengukuran TIDAK PERNAH berubah lewat jalur ini. |
+| D3 | Sertifikat satu-satunya sebuah alat dibatalkan → **jadwal alat dikosongkan** (jatuh ke sertifikat sah sebelumnya kalau ada). Admin diperingatkan di layar konfirmasi. |
+| D4 | **Dua catatan terpisah**: alasan internal (wajib, cuma orang lab) + catatan untuk pelanggan (opsional). Halaman QR publik cuma "Dibatalkan pada X" / "Digantikan oleh Y" — tanpa alasan. |
+| D5 | Pelanggan **boleh minta koreksi** dari aplikasinya; lab yang memutuskan & menerbitkan. Pelanggan tidak pernah mengubah sertifikat sendiri. |
+| D6 | Revisi ditandatangani **penandatangan resmi pada hari revisi**; PDF mencetak "Revisi ke-n, menggantikan <nomor>". |
+
+### 38.2 Membaca situasi lab ↔ pelanggan
+
+Sertifikat yang sudah terbit itu **sudah di tangan orang lain**: PDF-nya
+dicetak, dilampirkan ke audit pelanggan, dipindai QR-nya oleh auditor pihak
+ketiga. Revisi atau pembatalan tidak bisa menarik kertas itu kembali — yang
+bisa dijaga cuma bahwa setiap pintu yang MEMERIKSA sertifikat itu menjawab
+jujur. Ada empat pembaca dengan kebutuhan berbeda:
+
+| Pembaca | Yang dia lihat saat sertifikat DIREVISI | … saat DIBATALKAN |
+|---|---|---|
+| Orang lab (panel/HP internal) | dua baris: X "digantikan oleh X′" + X′ aktif; alasan internal | status Dibatalkan, tanggal, siapa, alasan internal; PDF arsip tetap bisa diunduh |
+| Pelanggan (aplikasi pelanggan) | X′ sebagai sertifikat berlaku; X tampil "Digantikan oleh X′" + catatan pelanggan | "Dibatalkan pada <tgl>" + catatan pelanggan (kalau diisi); tombol unduh MATI supaya PDF batal tidak beredar lagi sebagai dokumen sah |
+| Auditor yang memindai QR di kertas lama | "Sertifikat ini sudah direvisi. Yang berlaku: X′ (terbit <tgl>)" | "Sertifikat ini DIBATALKAN pada <tgl>." Tanpa alasan |
+| Jadwal & pengingat alat | ikut X′ (tanggal baru kalau direvisi) | kosong / jatuh ke sertifikat sah sebelumnya (D3) |
+
+Alasan internal ≠ catatan pelanggan karena isinya bisa menyangkut sengketa,
+salah ketik orang lab, atau urusan pembayaran — bukan untuk pihak ketiga.
+
+**Aplikasi pelanggan belum punya rute sertifikat sama sekali**
+(`routes/api_pelanggan.php`: "Yang masih kosong: /beranda, /alat,
+/sertifikat, /permintaan"). Jadi status digantikan/dibatalkan dirancang masuk
+`Resources\Pelanggan\SertifikatResource` sejak hari pertama, bukan ditambal:
+status pelanggan dipetakan ke tiga label (`berlaku`, `digantikan`,
+`dibatalkan`), membawa `digantikan_oleh {id, nomor}` dan `catatan_pelanggan`,
+dan **tidak pernah** membawa alasan internal (REQ-SRT-05). "Minta koreksi"
+(D5) ikut modul pelanggan `/permintaan` — di luar PR pertama.
+
+### 38.3 Rancangan
+
+**Nomor revisi: `<nomor asli>-R<n>`** (mis. `CAL/2026/09/0011-R1`) — skema
+yang sudah dipakai fixture `FilamentAccessTest`. Nomor asli tidak pernah
+dipakai ulang atau dinomori ulang. `revision_of` menunjuk **pendahulu
+langsung** (rantai X → X′ → X″), sesuai `SinkronJadwalAlat::sertifikatAktif()`
+yang memeriksa satu langkah.
+
+> ⚠️ **Jebakan yang WAJIB ditutup di PR yang sama:**
+> `GenerateCertificate::nomorBerikutnya()` (baris 473) mencari nomor terakhir
+> bulan itu dengan `orderByDesc('nomor')` lalu `substr(..., -4)`. Begitu ada
+> `CAL/2026/09/0011-R1`, string itu yang "terbesar", `substr` memulangkan
+> `1-R1`, `(int)` → 1, dan sertifikat baru berikutnya dapat **`0002` — nomor
+> yang sudah terbit**. Penyaringnya harus membuang nomor revisi, dan ada test
+> yang menerbitkan sertifikat baru SESUDAH revisi di bulan yang sama.
+
+**Snapshot revisi disalin, bukan dibangun ulang.** Job baru
+`ReviseCertificate` (bukan perluasan `GenerateCertificate`, yang
+`updateOrCreate` per sesi dan akan MENIMPA baris asli). Metode baru
+`CertificateSnapshotBuilder::revisi(array $asli, array $perubahan)` menerima
+daftar putih kunci `header`:
+
+| Boleh diubah (D2) | Dikunci (disalin apa adanya) |
+|---|---|
+| `owner`, `address`, `manufacturer`, `model_type`, `serial_number`, `calibration_location`, `calibration_date` + kolom `berlaku_sampai` | `hasil[]`, `autoclave`, `timbangan`, `flowmeter`, `standar_digunakan[]`, `meta.keputusan`, `satuan`, `desimal*`, `equipment_name`, `order_number`, `received_date`, `calibration_method`, `capacity_graduation`, `env_condition`, `technician_id` |
+
+Diganti otomatis: `header.certificate_number`, `meta.qr_token`/`qr_payload`
+(X′ punya token sendiri), `footer.issuance_date`, dan `footer.penandatangan`/
+`jabatan` dari pengaturan hari itu (D6). Kunci baru `header.catatan_revisi`
+("Revisi ke-1, menggantikan CAL/…"). Kunci di luar daftar putih → exception,
+bukan diabaikan. `formula_version_id` & `uncertainty_calculations` tidak
+disentuh (milik sesi, bukan sertifikat).
+
+**Status & kolom (migrasi additive + satu pelebaran ENUM).**
+`certificates.status` itu ENUM MySQL SUNGGUHAN (SQLite tidak menegakkannya) →
+pelebaran `dibatalkan` meniru pola `ubahEnum` di
+`2026_09_16_100100_tambah_role_pelanggan_…` (`down()` menolak menyempit kalau
+barisnya sudah dipakai). Kolom baru: `dibatalkan_pada`, `dibatalkan_oleh`
+(FK users), `alasan_pembatalan`, `catatan_pelanggan`. Tidak ada kolom
+`digantikan_oleh` — diturunkan satu langkah dari `revision_of`.
+
+**Pintu yang harus ikut berubah:**
+
+| Pintu | Perubahan |
+|---|---|
+| `VerificationController` (web) & `Api\VerificationController` (JSON) | sekarang 404 untuk yang bukan `terbit` → tampilkan halaman "dibatalkan" / "digantikan oleh" (38.2) |
+| `SinkronJadwalAlat::sertifikatAktif()` | sertifikat yang punya penerus APA PUN statusnya dianggap tidak aktif; yang `dibatalkan` tidak aktif |
+| `SinkronJadwalAlat::untuk()` | sengaja diam saat tak ada sertifikat aktif (melindungi tanggal impor Excel). Pembatalan memanggil jalur KHUSUS yang boleh mengosongkan (D3); sapuan rutin tetap diam |
+| `FolderOrganizer::tautkanSertifikat()` | X′ dapat baris `folder_files` sendiri; baris X tidak disentuh |
+| `CertificateController::kirimEmail`/WA | sudah menolak `!== terbit` → yang dibatalkan otomatis tertolak |
+| `CertificateResource`, `CalibrationResource`, `FolderFileResource` | + `revision_of`, `digantikan_oleh`, status `dibatalkan`, `dibatalkan_pada`; alasan internal cuma di resource internal |
+| Audit | `Certificate` sudah `Diaudit` → nilai lama/baru tercatat otomatis selama ditulis lewat Eloquent (bukan `DB::table()`), dan tidak pernah lewat `tanpaAudit()` |
+
+**Rute (API, `role:admin`, `throttle:` sendiri):**
+`POST /api/certificates/{certificate}/revisi`,
+`POST /api/certificates/{certificate}/batalkan`. Super admin tetap 403
+(baca-saja sampai K4). Aksi panel Filament wajib lewat `HakTulisPanel` —
+fase 2, sesudah API.
+
+### 38.4 Berkas yang akan dibuat / diubah (§12: disebut SEBELUM mengetik)
+
+Baru: `app/Jobs/ReviseCertificate.php`, migrasi status+kolom,
+`tests/Feature/RevisiSertifikatTest.php`, `BatalkanSertifikatTest.php`,
+`VerifikasiSertifikatRevisiTest.php`, `NomorSertifikatSesudahRevisiTest.php`.
+Diubah: `Certificate.php`, `GenerateCertificate.php` (penyaring nomor),
+`CertificateSnapshotBuilder.php` (`revisi()`), `CertificateController.php`,
+`routes/api.php`, `AppServiceProvider.php` (limiter), dua
+`VerificationController`, view verifikasi, `SinkronJadwalAlat.php`, tiga
+Resource, `CertificateFactory.php` (state `dibatalkan()`),
+`docs/kontrak-api.md`.
+
+### 38.5 Test yang mengikat
+
+1. Revisi hanya mengubah kunci daftar putih — snapshot X′ dibandingkan
+   kunci-per-kunci dengan X; `hasil[]` identik byte-per-byte.
+2. Kunci di luar daftar putih ditolak 422.
+3. Sertifikat baru SESUDAH revisi di bulan yang sama dapat nomor urut yang
+   benar (jebakan 38.3).
+4. QR X memulangkan "digantikan oleh X′"; QR sertifikat batal memulangkan
+   "dibatalkan" tanpa alasan; JSON twin sama.
+5. Batal satu-satunya sertifikat → jadwal alat kosong; batal sertifikat
+   yang punya pendahulu sah → jadwal ikut pendahulu; sapuan rutin tetap
+   tidak mengosongkan tanggal impor.
+6. Revisi dari sertifikat yang sudah digantikan / dibatalkan ditolak 422.
+7. Teknisi, viewer, super admin → 403.
+8. **MySQL**: ENUM menerima `dibatalkan` sesudah migrasi (SQLite hijau palsu).
+
+### 38.6 Pertanyaan terbuka (nomor lanjut; default dipakai kalau belum dijawab)
+
+- **K38-1** Field header selain D2 (`equipment_name`, `order_number`,
+  `received_date`, …) boleh direvisi? *Default: dikunci.*
+- **K38-2** Membatalkan REVISI (X′): apakah X hidup lagi? *Default: tidak —
+  "batalkan" berlaku untuk sertifikat itu seluruhnya; pendahulu tetap
+  digantikan, tidak ada yang bangkit.*
+- **K38-3** Pembatalan bisa dicabut? *Default: tidak — final; kalau salah,
+  terbitkan sertifikat dari kalibrasi baru.*
+- **K38-4** Pelanggan diberi tahu otomatis (email)? *Default: tidak —
+  mengirim itu keputusan admin lewat jalur Kirim yang sudah ada; notifikasi
+  in-app menyusul bersama modul pelanggan.*
+- **K38-5** Tanggal kalibrasi direvisi → `berlaku_sampai` ikut bergeser?
+  *Default: tidak otomatis; dua-duanya diisi eksplisit, divalidasi
+  `berlaku_sampai` > tanggal kalibrasi.*
+- **K38-6** Siapa yang boleh merevisi/membatalkan sertifikat yang dia sahkan
+  sendiri? *Ikut K4 — belum diputuskan; sementara admin mana pun.*
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4447,3 +4633,5 @@ Supaya tidak dibangun ulang:
 | G20 | Alat baru **Volumetric Glassware** (enam alat lampiran, dua keluarga) — §36 | **BERES di server** (22 Sep 2026) — V20 dan budget diadu ke kedua workbook dari masukan mentah, angka cetak sertifikat master (V20, Correction, U95 0,003 & 0,34) terbukti lewat jalur HP → simpan → validator → hitung ulang. Nol kolom baru. 13 pertanyaan lab. **Sisi mobile BELUM** — `docs/perintah-frontend-volumetric.md` |
 | G21 | Alat baru **kelompok Gaya**: Mesin UTM & Load Cell — §37 | **BERES di server** (24 Sep 2026) — alat ke-40 & ke-41, kelompok besaran baru. Rumusnya dibuktikan di Python lawan ketiga workbook SEBELUM PHP, dan hasil yang menentukan: **mesin GUM yang sudah ada mereproduksi master persis**, termasuk pemotongan `v_eff` ke bawah — nol mesin agregasi kedua. CMC diadu ke lampiran akreditasi, cocok persis, sekaligus menggugurkan satu dari enam temuan panduan (G9). **Nol kolom baru**: dua blok tingkat-sesi (preload & misalignment) masuk `spesifikasi_alat`, dua belas bacaan per titik memakai sumbu `peran_sensor` yang sudah ada. Kedua alat berbagi satu kelas induk `GayaProfile`, jadi sisi HP **satu layar untuk dua alat**. Satu penyimpangan master DISENGAJA: workbook Load Cell memakai `Y` di kolom `Standard Value` cuma pada cabang satuan kN sementara lima cabang lain dan penjaganya masih `Z` — suntingan yang berhenti di tengah, yang kalau ditiru bikin angka tercetak berubah arti tergantung satuan tampilan; sistem memakai `Y` untuk semua satuan dan menulis selisihnya di jejak audit sesi. **Proving Ring SENGAJA ditunda** (G11): koreksi standarnya hilang di semua titik karena `ISERROR` menelan `VLOOKUP` yang gagal jadi sel kosong yang dibaca nol — kelas kesalahan yang AGENTS.md larang ditiru, dan konsekuensinya (sertifikat Proving Ring yang sudah terbit tidak memuat koreksi standar) perlu diketahui lab lebih dulu. 12 pertanyaan lab. **Gerbangnya menangkap dua kekeliruan sendiri sebelum satu pun sertifikat gaya terbit**, dua-duanya tanpa error: kolom `Standard Value` & `Unit Under Test` TERTUKAR dan yang satu 102x terlalu besar (titik 100 kgf tercetak `10193,7`) karena `nilaiStandarDariKoreksi()` belum dinyalakan — preseden Waktu & Frekuensi yang terlewat; dan sesi contoh UTM titik 300 kgf kehilangan satu pembacaan `300,2` sehingga rata-ratanya meleset 0,0084 kgf — pada satu desimal angka cetaknya SAMA, jadi yang menangkapnya asersi nilai penuh 5x10⁻⁶, bukan pemeriksaan angka cetak. Penjaga barunya mengadu **snapshot sertifikat** (bukan kolom mentah) untuk keenam belas titik kedua alat, plus satu asersi hubungan: `Correction` wajib sama dengan `Standard Value − UUT`. **Sisi mobile BELUM** — `docs/perintah-frontend-gaya.md`. **25 Sep 2026: jalur simpan dari HP dibetulkan** (§37c) — tabel Preload menimpa seluruh blok Gaya, bacaan UP/DOWN Proving Ring tidak pernah dibaca, dan beban keterulangan Timbangan yang diketik hilang; dijaga `KontrakLembarSemuaAlatTest` yang menyapu semua profil |
 | G22 | Semua lembar kerja jadi **dua halaman** (persiapan \| pengukuran) — §37d | **BERES di server** (26 Sep 2026) — satu aturan `CalibrationProfile::susunDuaHalaman()` di endpoint lembar kerja & generator mock, diturunkan dari isi bagian; 39 lembar yang tadinya satu gulungan kini dua halaman, Gaya tidak diubah. Dijaga `LembarKerjaDuaHalamanTest` (ke-42 profil lewat endpoint: tepat [1, 2], standar di 1, tabel & penutup di 2, isi bagian lain tidak berubah). Generator mock kini SELALU SQLite in-memory yang di-seed — tidak pernah membaca produksi. **Sisi mobile**: grid Enclosure pindah ke halaman terakhir, mock & test disesuaikan — PR mobile |
+| G23 | **Arsip: folder perusahaan kosong & cari tidak menyaring** — §37e | **BERES di server** (26 Sep 2026) — daftar akar Arsip yang dibuka admin membuatkan folder akar untuk tiap PT yang belum punya; `?search=` jadi alias `?q=`. Dijaga `FolderTiapPelangganTest`. Nama pelanggan asli ikut dibuang dari `storage/app/few_shot/README.md`. **Sisi mobile BELUM**: parser Arsip membuang baris sertifikat & unggahan, tombol tulis tampil untuk semua peran, jalur unggah belum ada — diserahkan ke pengerja UI |
+| G24 | **Revisi & pembatalan sertifikat** — §38 | **PRD** (26 Sep 2026) — keputusan D1–D6 dari pemilik proyek; belum ada kode. Termasuk jebakan penomoran `-R1` yang WAJIB ditutup di rilis yang sama |
