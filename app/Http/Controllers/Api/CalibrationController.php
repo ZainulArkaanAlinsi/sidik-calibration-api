@@ -287,6 +287,11 @@ class CalibrationController extends Controller
             $bentuk = CalibrationProfile::setelKolomPengulangan($bentuk, $request->integer('pengulangan'));
         }
 
+        // Dua halaman — persiapan | pengukuran — buat SEMUA lembar (permintaan
+        // pemilik proyek 25 Sep 2026). Satu aturan di satu tempat; generator
+        // mock HP memanggil fungsi yang sama supaya mock tidak menyimpang.
+        $bentuk = CalibrationProfile::susunDuaHalaman($bentuk);
+
         // Bekal buat BIKIN ALAT BARU langsung dari lembar ini.
         //
         // Kenapa perlu: sejak dropdown "Pilih alat" disaring ke lembar yang

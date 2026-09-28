@@ -910,6 +910,98 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Susun lembar kerja jadi DUA halaman di HP: persiapan | pengukuran.
+     *
+     * Permintaan pemilik proyek 25 Sep 2026 ("jadi 2 aja lebih rapih"): semua
+     * lembar ikut pola Gaya, yang sejak mendarat memang dua halaman.
+     *
+     * - **Halaman 1** — semua bagian sampai `usage_check` (identitas, pemilik,
+     *   standar), plus bagian PERSIAPAN yang langsung menyusul: tanpa tabel dan
+     *   tanpa isian angka (lokasi, ruang, metode, tipe sensor, model).
+     * - **Halaman 2** — mulai bagian PENGUKURAN pertama sesudah `usage_check`
+     *   (punya tabel atau isian angka) sampai penutup.
+     *
+     * Diturunkan dari ISI bagian, bukan dari daftar kode bagian, supaya profil
+     * baru ikut tanpa disentuh. Ditulis sekali di sini — dipakai endpoint lembar
+     * kerja DAN generator mock HP — bukan di tiap `bentukLembarKerja()`: 186
+     * titik sunting, dan yang ketinggalan satu pun jadi lembar yang diam-diam
+     * tetap satu gulungan.
+     *
+     * Tidak mengubah apa pun kalau lembarnya sudah menyusun halamannya sendiri
+     * (Gaya), tidak punya `usage_check`, atau tidak punya bagian pengukuran
+     * sesudahnya — lembar yang tidak bisa dibelah dibiarkan satu halaman,
+     * bukan dibelah di tempat karangan. `LembarKerjaDuaHalamanTest` memastikan
+     * ke-42 lembar hari ini memang terbelah.
+     *
+     * Kertas cetak, geometri OCR, dan sertifikat TIDAK membaca `halaman` bagian
+     * (masing-masing menghitung halaman kertasnya sendiri), jadi ini murni tata
+     * letak layar HP.
+     *
+     * @param  array<string, mixed>  $bentuk
+     * @return array<string, mixed>
+     */
+    public static function susunDuaHalaman(array $bentuk): array
+    {
+        $bagian = array_values($bentuk['bagian'] ?? []);
+
+        foreach ($bagian as $b) {
+            if ((int) ($b['halaman'] ?? 1) > 1) {
+                return $bentuk;
+            }
+        }
+
+        $standar = null;
+        $mulai = null;
+
+        foreach ($bagian as $i => $b) {
+            if ($standar === null) {
+                $standar = ($b['kode'] ?? null) === 'usage_check' ? $i : null;
+
+                continue;
+            }
+
+            if (self::bagianPengukuran($b)) {
+                $mulai = $i;
+
+                break;
+            }
+        }
+
+        if ($mulai === null) {
+            return $bentuk;
+        }
+
+        foreach ($bagian as $i => $b) {
+            $bagian[$i]['halaman'] = $i < $mulai ? 1 : 2;
+        }
+
+        $bentuk['bagian'] = $bagian;
+
+        return $bentuk;
+    }
+
+    /**
+     * Bagian yang isinya hasil UKUR: punya tabel, atau punya isian angka
+     * (titik es, dimensi ruang, kondisi lingkungan, Scale Observation).
+     *
+     * @param  array<string, mixed>  $bagian
+     */
+    private static function bagianPengukuran(array $bagian): bool
+    {
+        if (($bagian['tabel'] ?? []) !== []) {
+            return true;
+        }
+
+        foreach ($bagian['field'] ?? [] as $field) {
+            if (($field['tipe'] ?? null) === 'angka') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Daftar komponen budget ketidakpastian buat SATU titik ukur, siap disuap
      * ke `GumCalculator::agregasiBudget()`. Balikin `null` kalau profil ini
      * nggak (atau belum) bisa nyusun budget penuh buat titik ini — pemanggil

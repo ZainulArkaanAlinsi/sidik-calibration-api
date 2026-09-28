@@ -23,7 +23,10 @@ use App\Services\Calibration\Profiles\PipetVolumeProfile;
 use App\Services\Calibration\Profiles\LoadCellProfile;
 use App\Services\Calibration\Profiles\ProvingRingProfile;
 use App\Services\Calibration\Profiles\UtmProfile;
+use App\Services\Calibration\Profiles\CalibrationProfile;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Generate berkas bentuk lembar kerja contoh (`contoh_lembar_kerja_*.dart`) di
@@ -51,11 +54,40 @@ use Illuminate\Contracts\Console\Kernel;
  *
  * Jalankan dari akar repo API:
  *     php docs/skrip/gen-contoh-lembar-kerja.php
+ *
+ * ## Database: SQLite in-memory yang di-seed, SELALU
+ *
+ * Bentuk lembar menautkan standar dari tabel `standards` (`standard_id`,
+ * serial, ketertelusuran). Dulu skrip ini membaca database di `.env` — di
+ * laptop lab itu database PRODUKSI — jadi tiap kali dijalankan, `standard_id`
+ * di mock ikut keadaan produksi hari itu: 25 Sep 2026 lima mock bergeser
+ * padahal bentuknya tidak berubah, dan mock Gaya tercatat tanpa satu standar
+ * pun. Diadu 26 Sep 2026: mock yang sudah ter-commit ternyata lahir dari
+ * database SEED — tujuh dari sembilan berkas byte-identik dengan keluaran
+ * skrip ini di SQLite in-memory yang dimigrasi & di-seed.
+ *
+ * Jadi koneksinya dipaksa ke situ sebelum aplikasi dinyalakan, dan skrip
+ * BERHENTI kalau ternyata bukan `sqlite :memory:` (mis. config ter-cache
+ * menelan env ini) — lebih baik gagal berisik daripada membaca produksi.
+ * Keluarannya jadi sama di mesin mana pun, dan produksi tidak pernah dibaca.
  */
+foreach (['DB_CONNECTION' => 'sqlite', 'DB_DATABASE' => ':memory:', 'DB_URL' => ''] as $kunci => $nilai) {
+    putenv("{$kunci}={$nilai}");
+    $_ENV[$kunci] = $_SERVER[$kunci] = $nilai;
+}
+
 require __DIR__.'/../../vendor/autoload.php';
 
 $app = require_once __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
+
+if (DB::connection()->getDriverName() !== 'sqlite' || config('database.connections.sqlite.database') !== ':memory:') {
+    fwrite(STDERR, "Berhenti: koneksi database bukan sqlite :memory: (config ter-cache?). Produksi tidak disentuh.\n");
+    exit(1);
+}
+
+Artisan::call('migrate', ['--force' => true]);
+Artisan::call('db:seed', ['--force' => true]);
 
 /**
  * Folder tujuan di repo mobile.
@@ -506,7 +538,9 @@ foreach ($kelompok as $k) {
 
     foreach ($k['profil'] as $suffix => $kelas) {
         $p = new $kelas;
-        $bentuk = $p->bentukLembarKerja();
+        // Aturan dua halaman yang SAMA dengan endpoint — tanpa ini mock HP
+        // tetap satu gulungan sementara server mengirim dua halaman.
+        $bentuk = CalibrationProfile::susunDuaHalaman($p->bentukLembarKerja());
 
         $fungsi[] = sprintf(
             <<<'DART'

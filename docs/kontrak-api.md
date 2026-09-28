@@ -448,6 +448,15 @@ Mobile butuh ini buat isi dropdown kategori + nyiapin worksheet dinamis (kolom t
 Tanpa param = pH (default — mobile lama nggak berubah). Detail rumus & arsitektur
 profil: `docs/SPEC-turbidimeter-profile.md`.
 
+> **`bagian[].halaman` — DUA halaman untuk semua lembar (26 Sep 2026).** Endpoint ini
+> membelah tiap lembar lewat `CalibrationProfile::susunDuaHalaman()`:
+> **halaman 1** = semua bagian sampai `usage_check` (identitas, pemilik, standar) plus bagian
+> persiapan yang langsung menyusul — tanpa tabel, tanpa isian angka (lokasi, ruang, metode);
+> **halaman 2** = mulai bagian pengukuran pertama (punya tabel atau isian angka) sampai penutup.
+> Lembar yang sudah menyusun halamannya sendiri (Gaya) tidak diubah. HP menggambar halamannya
+> dari nilai ini; grid sensor Enclosure digambar di bagian pertama halaman TERAKHIR. Kertas
+> cetak, geometri OCR, dan sertifikat tidak membaca kunci ini. Dijaga `LembarKerjaDuaHalamanTest`.
+
 ### Lembar **Timbangan** (`profil=timbangan`) — alat ke-21, kelompok Massa
 
 ✅ **Live 31 Agt 2026.** Satu-satunya lembar yang bentuknya **tujuh blok**, bukan satu tabel
