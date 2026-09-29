@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Jobs\GenerateCertificate;
 use App\Models\AuditLog;
 use App\Models\CalibrationSession;
@@ -13,6 +14,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\PemisahanWewenang;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -317,6 +319,75 @@ class GerbangPengesahanTest extends TestCase
             $this->sesi->fresh()->status,
         );
         $this->assertSame(0, Certificate::query()->count());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SINKRON ANTAR-PERANGKAT
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Super admin bisa masuk dari dua HP sekaligus, dan admin yang mengajukan
+     * menonton antreannya dari laptop. Tanpa siaran, pengesahan dari satu
+     * perangkat baru terlihat di perangkat lain sesudah tarikan berkala — dan
+     * dua super admin yang sama-sama menekan "Sahkan" pada kartu yang sudah
+     * basi adalah persis balapan yang dijaga `test_sahkan_dua_kali_cuma_satu_sertifikat`.
+     */
+    public function test_sahkan_kembalikan_dan_tarik_menyiarkan_sinyal_ke_perangkat_lain(): void
+    {
+        Queue::fake();
+        $this->ajukan();
+        Event::fake([PerubahanDataOrganisasi::class]);
+
+        $this->actingAs($this->superAdmin)
+            ->postJson("/api/calibrations/{$this->sesi->id}/kembalikan-dari-pengesahan", [
+                'alasan' => 'Lampiran sertifikat standar belum diunggah.',
+            ])
+            ->assertOk();
+
+        $this->ajukan();
+        $this->actingAs($this->admin)
+            ->postJson("/api/calibrations/{$this->sesi->id}/tarik-pengajuan", ['alasan' => 'Salah ttd.'])
+            ->assertOk();
+
+        $this->ajukan();
+        $this->actingAs($this->superAdmin)
+            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan")
+            ->assertOk();
+
+        foreach (['dikembalikan', 'ditarik', 'disahkan'] as $aksi) {
+            Event::assertDispatched(
+                PerubahanDataOrganisasi::class,
+                fn (PerubahanDataOrganisasi $e): bool => $e->jenis === 'kalibrasi'
+                    && $e->aksi === $aksi
+                    && $e->id === $this->sesi->id
+                    && $e->organizationId === $this->org->id,
+            );
+        }
+    }
+
+    public function test_sahkan_tetap_tersimpan_walau_siaran_meledak(): void
+    {
+        Queue::fake();
+        $this->ajukan();
+
+        // Driver siaran yang tidak bisa dihubungi = exception waktu dispatch,
+        // persis Reverb yang sedang mati. Pola yang sama dengan
+        // `KabarGagalTidakGagalinSesiTest`.
+        config(['broadcasting.default' => 'reverb', 'broadcasting.connections.reverb' => [
+            'driver' => 'reverb',
+            'key' => 'x',
+            'secret' => 'x',
+            'app_id' => 'x',
+            'options' => ['host' => '127.0.0.1', 'port' => 1, 'scheme' => 'http'],
+            'client_options' => ['timeout' => 1],
+        ]]);
+
+        $this->actingAs($this->superAdmin)
+            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan")
+            ->assertOk();
+
+        $this->assertSame(CalibrationSession::STATUS_DISETUJUI, $this->sesi->fresh()->status);
+        $this->assertNotNull(Queue::pushed(GenerateCertificate::class)->first());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

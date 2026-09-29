@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PaketLacakResource;
 use App\Models\AuditLog;
@@ -192,6 +193,8 @@ class PelacakanController extends Controller
             'changed_by' => $request->user()->id,
             'note' => 'Tahap fisik alat: '.$data['tahap_fisik'],
         ]);
+
+        PerubahanDataOrganisasi::siarkanAman($order->organization_id, 'paket', 'diubah', $order->id);
 
         return response()->json([
             'message' => $data['tahap_fisik'] === TahapPaket::DISERAHKAN

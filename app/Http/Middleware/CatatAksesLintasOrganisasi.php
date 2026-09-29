@@ -92,7 +92,11 @@ class CatatAksesLintasOrganisasi
             return;
         }
 
-        $milikPemanggil = $request->user()->organization_id;
+        // Di-cast, bukan dipercaya tipenya: `organization_id` dari `DB::table()`
+        // dan dari model bisa pulang sebagai string di driver/versi PHP tertentu,
+        // dan `!==` int-lawan-string menulis "akses lintas lab" palsu untuk
+        // setiap 404 di dalam lab sendiri — jejak audit yang bohong.
+        $milikPemanggil = (int) $request->user()->organization_id;
 
         foreach ($rute->parameters() as $nama => $nilai) {
             // Model yang sudah ter-resolve lewat route binding: langsung kebaca,
@@ -100,7 +104,7 @@ class CatatAksesLintasOrganisasi
             if ($nilai instanceof Model) {
                 $pemilik = $nilai->getAttribute('organization_id');
 
-                if ($pemilik !== null && $pemilik !== $milikPemanggil) {
+                if ($pemilik !== null && (int) $pemilik !== $milikPemanggil) {
                     yield [$nilai->getTable(), (int) $nilai->getKey(), $pemilik];
                 }
 
@@ -123,7 +127,7 @@ class CatatAksesLintasOrganisasi
 
             $pemilik = DB::table($tabel)->where('id', (int) $nilai)->value('organization_id');
 
-            if ($pemilik !== null && $pemilik !== $milikPemanggil) {
+            if ($pemilik !== null && (int) $pemilik !== $milikPemanggil) {
                 yield [$tabel, (int) $nilai, $pemilik];
             }
         }

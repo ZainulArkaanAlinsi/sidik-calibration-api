@@ -53,9 +53,14 @@ return [
     |
     | Kenapa di config, bukan langsung dinyalakan: perubahan ini mengubah
     | perilaku endpoint yang dipakai ratusan test. Sakelar mati = approve()
-    | byte-identik dengan sebelumnya, jadi berkas-berkas barunya bisa mendarat
-    | hijau dalam satu PR, lalu perilakunya dinyalakan di PR kedua bersama
-    | pembaruan test lama.
+    | menulis & menerbitkan persis seperti sebelumnya, jadi berkas-berkas
+    | barunya bisa mendarat hijau dalam satu PR, lalu perilakunya dinyalakan di
+    | PR kedua bersama pembaruan test lama.
+    |
+    | Satu-satunya beda saat sakelar mati: dua field OPSIONAL baru
+    | (`penandatangan_user_id`, `catatan_pengajuan`) ikut divalidasi di
+    | approve(). Klien lama tidak mengirimnya, jadi tidak tersentuh; nilai yang
+    | dikirim dan valid diabaikan selama sakelar mati.
     |
     | Kenapa nggak di database: sakelar yang cuma hidup di DB gampang
     | ketinggalan waktu deploy ke server baru, dan dua server yang diam-diam

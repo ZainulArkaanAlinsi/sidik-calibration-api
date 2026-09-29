@@ -7,6 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Sinyal "ada data yang berubah" buat realtime sync mobile ↔ desktop.
@@ -24,8 +25,8 @@ class PerubahanDataOrganisasi implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param  string  $jenis  kalibrasi | sertifikat | alat | folder | ...
-     * @param  string  $aksi  dibuat | diubah | disetujui | ditolak | diterbitkan
+     * @param  string  $jenis  kalibrasi | sertifikat | alat | folder | penugasan | paket | ...
+     * @param  string  $aksi  dibuat | diubah | disetujui | ditolak | diterbitkan | disahkan | dikembalikan | ditarik
      * @param  int|null  $id  id record yang berubah (opsional)
      */
     public function __construct(
@@ -39,6 +40,31 @@ class PerubahanDataOrganisasi implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [new PrivateChannel('organisasi.'.$this->organizationId)];
+    }
+
+    /**
+     * Siarkan tanpa pernah menggagalkan permintaan yang memicunya.
+     *
+     * Event ini ShouldBroadcastNow — SINKRON. Kalau Reverb mati, exception-nya
+     * naik sampai ke respons, dan pengesahan / serah terima / laporan progres
+     * yang SUDAH tersimpan dijawab HTTP 500. Siaran cuma pemicu refresh layar
+     * perangkat lain; kehilangan satu siaran berarti HP lain baru melihatnya di
+     * tarikan berkala berikutnya, bukan data yang hilang. Pola yang sama dengan
+     * `CalibrationController::siarkan()`.
+     */
+    public static function siarkanAman(int $organizationId, string $jenis, string $aksi, ?int $id = null): void
+    {
+        try {
+            static::dispatch($organizationId, $jenis, $aksi, $id);
+        } catch (\Throwable $e) {
+            Log::warning('Siaran perubahan data gagal.', [
+                'organization_id' => $organizationId,
+                'jenis' => $jenis,
+                'aksi' => $aksi,
+                'id' => $id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function broadcastAs(): string

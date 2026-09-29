@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\KembalikanDariPengesahanRequest;
 use App\Http\Requests\SahkanSertifikatRequest;
@@ -19,6 +20,7 @@ use App\Services\PenjagaOrganisasi;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -240,6 +242,10 @@ class PengesahanController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI_ANTREAN);
 
+        // Antrean pengesahan di HP/desktop super admin lain dan antrean admin
+        // yang mengajukan ikut menyusut tanpa menunggu tarikan berkala.
+        PerubahanDataOrganisasi::siarkanAman($calibration->organization_id, 'kalibrasi', 'disahkan', $calibration->id);
+
         if ($gagalAntre !== null) {
             return response()->json([
                 'message' => 'Sesi sudah disahkan, tapi penerbitan sertifikatnya gagal dimulai. '
@@ -373,16 +379,33 @@ class PengesahanController extends Controller
 
         $segar = $calibration->fresh()->load(self::RELASI_ANTREAN);
 
+        PerubahanDataOrganisasi::siarkanAman(
+            $calibration->organization_id,
+            'kalibrasi',
+            $olehPengesah ? 'dikembalikan' : 'ditarik',
+            $calibration->id,
+        );
+
         // Yang ditarik sendiri nggak perlu dikabari — orangnya yang mencet.
         // Yang dikembalikan pengesah HARUS: adminnya tidak sedang melihat layar
         // itu, dan pengajuan yang diam-diam balik ke antreannya adalah cara
         // paling rapi untuk membuat sertifikat tertahan seminggu tanpa ada yang
         // sadar.
+        // Dibungkus `try` karena UPDATE di atas sudah ter-commit: saluran
+        // `broadcast` yang meledak (Reverb mati) tidak boleh menjawab 500 untuk
+        // pengembalian yang sudah terjadi.
         if ($olehPengesah) {
-            Notification::send(
-                app(PenerimaNotifikasi::class)->adminAktif($calibration->organization_id),
-                PengajuanDikembalikan::dariSesi($segar, $pelaku->name, $alasan),
-            );
+            try {
+                Notification::send(
+                    app(PenerimaNotifikasi::class)->adminAktif($calibration->organization_id),
+                    PengajuanDikembalikan::dariSesi($segar, $pelaku->name, $alasan),
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Notifikasi pengembalian pengajuan gagal dikirim.', [
+                    'calibration_session_id' => $calibration->id,
+                    'pesan' => $e->getMessage(),
+                ]);
+            }
         }
 
         return response()->json([

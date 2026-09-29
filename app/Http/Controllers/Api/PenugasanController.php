@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PenugasanRequest;
 use App\Models\Penugasan;
@@ -13,6 +14,7 @@ use App\Services\PenjagaOrganisasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -144,10 +146,26 @@ class PenugasanController extends Controller
         // HP teknisi untuk penugasan yang transaksinya kemudian di-rollback —
         // dan teknisi yang membuka notifikasi lalu menemukan halaman kosong akan
         // melaporkannya sebagai aplikasi rusak.
-        Notification::send(
-            User::query()->whereIn('id', $data['teknisi'])->get(),
-            PenugasanBaru::dariPenugasan($penugasan, $request->user()->name),
-        );
+        //
+        // Dan dibungkus `try`: `PenugasanBaru` ikut saluran `broadcast`, jadi
+        // Reverb yang mati melempar exception DI SINI — sesudah penugasannya
+        // tersimpan. Tanpa `try`, pembuatnya dapat 500, menekan Kirim lagi, dan
+        // lahir penugasan kembar. Kotak masuk di aplikasi (saluran `database`)
+        // tetap sumber kebenarannya; pola yang sama dengan
+        // `CalibrationController::kirimKabar()`.
+        try {
+            Notification::send(
+                User::query()->whereIn('id', $data['teknisi'])->get(),
+                PenugasanBaru::dariPenugasan($penugasan, $request->user()->name),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi penugasan gagal dikirim.', [
+                'penugasan_id' => $penugasan->id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
+
+        PerubahanDataOrganisasi::siarkanAman($penugasan->organization_id, 'penugasan', 'dibuat', $penugasan->id);
 
         return response()->json([
             'message' => $penugasan->tipe === Penugasan::TIPE_GRUP
@@ -195,6 +213,10 @@ class PenugasanController extends Controller
         ])->save();
 
         $penugasan->load(self::RELASI);
+
+        // Anggota grup lain dan admin yang memantau melihat angka yang sama,
+        // dari HP mana pun mereka masuk.
+        PerubahanDataOrganisasi::siarkanAman($penugasan->organization_id, 'penugasan', 'diubah', $penugasan->id);
 
         return response()->json([
             'message' => 'Progres tercatat.',

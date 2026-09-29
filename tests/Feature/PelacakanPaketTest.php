@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\Customer;
@@ -13,6 +14,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\TahapPaket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
@@ -171,6 +173,30 @@ class PelacakanPaketTest extends TestCase
 
         $this->assertSame(TahapPaket::DISERAHKAN, $item->fresh()->tahap_fisik);
         $this->assertSame('Pak Budi (kurir JNE)', $item->fresh()->diserahkan_kepada);
+    }
+
+    /**
+     * Meja depan menandai alat siap diambil dari laptop; admin yang ditelepon
+     * pelanggan membuka pelacakan dari HP. Dua layar itu harus menjawab sama.
+     */
+    public function test_tahap_fisik_menyiarkan_sinyal_ke_perangkat_lain(): void
+    {
+        Event::fake([PerubahanDataOrganisasi::class]);
+        $item = $this->itemDenganSesi(CalibrationSession::STATUS_DISETUJUI, denganSertifikatTerbit: true);
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/pelacakan/item/{$item->id}/tahap-fisik", [
+                'tahap_fisik' => TahapPaket::SIAP_DIAMBIL,
+            ])
+            ->assertOk();
+
+        Event::assertDispatched(
+            PerubahanDataOrganisasi::class,
+            fn (PerubahanDataOrganisasi $e): bool => $e->jenis === 'paket'
+                && $e->aksi === 'diubah'
+                && $e->id === $this->paket->id
+                && $e->organizationId === $this->org->id,
+        );
     }
 
     public function test_alat_yang_sudah_diserahkan_tidak_bisa_dimundurkan(): void

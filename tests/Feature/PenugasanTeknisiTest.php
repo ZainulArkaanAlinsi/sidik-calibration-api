@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Penugasan;
@@ -9,6 +10,7 @@ use App\Models\PenugasanTeknisi;
 use App\Models\User;
 use App\Notifications\PenugasanBaru;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -194,6 +196,59 @@ class PenugasanTeknisiTest extends TestCase
             .'`organization_id`, dan tanpa override-nya `catatAudit()` diam-diam '
             .'tidak menulis apa pun.',
         );
+    }
+
+    /**
+     * Anggota grup lain dan admin yang memantau melihat angka yang sama dari
+     * perangkat mana pun mereka masuk — tanpa menunggu tarikan berkala.
+     */
+    public function test_buat_dan_lapor_progres_menyiarkan_sinyal_ke_perangkat_lain(): void
+    {
+        Notification::fake();
+        Event::fake([PerubahanDataOrganisasi::class]);
+
+        $this->actingAs($this->superAdmin)
+            ->postJson('/api/penugasan', $this->badan([$this->teknisiA->id, $this->teknisiB->id]))
+            ->assertCreated();
+
+        $penugasan = Penugasan::with('item')->firstOrFail();
+
+        $this->actingAs($this->teknisiA)
+            ->patchJson("/api/penugasan/item/{$penugasan->item->first()->id}", ['jumlah_selesai' => 3])
+            ->assertOk();
+
+        foreach (['dibuat', 'diubah'] as $aksi) {
+            Event::assertDispatched(
+                PerubahanDataOrganisasi::class,
+                fn (PerubahanDataOrganisasi $e): bool => $e->jenis === 'penugasan'
+                    && $e->aksi === $aksi
+                    && $e->id === $penugasan->id
+                    && $e->organizationId === $this->org->id,
+            );
+        }
+    }
+
+    /**
+     * `PenugasanBaru` ikut saluran `broadcast`. Reverb yang mati melempar
+     * exception SESUDAH penugasan tersimpan — tanpa penjagaan, pembuatnya dapat
+     * 500, menekan Kirim lagi, dan lahir penugasan kembar.
+     */
+    public function test_penugasan_tetap_tersimpan_sekali_walau_siaran_meledak(): void
+    {
+        config(['broadcasting.default' => 'reverb', 'broadcasting.connections.reverb' => [
+            'driver' => 'reverb',
+            'key' => 'x',
+            'secret' => 'x',
+            'app_id' => 'x',
+            'options' => ['host' => '127.0.0.1', 'port' => 1, 'scheme' => 'http'],
+            'client_options' => ['timeout' => 1],
+        ]]);
+
+        $this->actingAs($this->superAdmin)
+            ->postJson('/api/penugasan', $this->badan([$this->teknisiA->id]))
+            ->assertCreated();
+
+        $this->assertSame(1, Penugasan::query()->count());
     }
 
     public function test_lapor_lebih_dari_rencana_diterima_dan_persennya_dipotong_100(): void

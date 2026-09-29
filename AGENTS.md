@@ -430,7 +430,9 @@ Yang berlaku **sekarang**:
 | Panel Filament `/admin` | **terbuka** | `User::canAccessPanel()` |
 | Rute API `GET`/`HEAD` | **terbuka**, walau namanya tidak ditulis di `role:` | `EnsureUserHasRole::lolosBacaSuperAdmin()` |
 | Channel `organisasi.{id}` | **terbuka** | `routes/channels.php` lewat `rolesInternal()` |
-| Rute API selain baca | **403** | aturan yang sama |
+| Rute API selain baca | **403** — kecuali empat di bawah | aturan yang sama |
+| `POST /calibrations/{c}/sahkan` & `/kembalikan-dari-pengesahan` | **terbuka** (29 Sep 2026), tapi baru bermakna saat `GERBANG_PENGESAHAN=true` — sakelar mati = tidak ada sesi `menunggu_pengesahan` | grup `role:super_admin` di ekor `routes/api.php` |
+| `POST /pelacakan/item/{i}/tahap-fisik` & `POST /penugasan` | **terbuka** (29 Sep 2026), bersama admin | grup `role:admin,super_admin` |
 | Create/edit/delete di panel | **403** | `ScopesToOrganization` |
 | Aksi tulis kustom di panel (approve sesi, retry sertifikat, reset sandi, undang/cabut anggota, ubah status ruangan, Pengaturan Organisasi) | **tersembunyi** | `App\Filament\Concerns\HakTulisPanel` |
 | Baca **lintas organisasi** di panel | **terbuka**, dan tiap layarnya tercatat | `ScopesToOrganization` + `App\Support\JejakLintasOrganisasi` |
@@ -460,6 +462,15 @@ di yang kedua saja. **Jangan digabung.**
 manajer teknis, dan panel bukan layar baca: tombol `approve` di tabel sesi
 menerbitkan sertifikat berlogo akreditasi. Menulis dibuka setelah K4 turun,
 bukan sebelum.
+
+**Pengecualian yang sudah mendarat (29 Sep 2026, keputusan 26 Sep).** Gerbang
+pengesahan menjadikan super admin satu-satunya yang boleh MENGESAHKAN, jadi
+empat rute tulis di tabel atas dibuka lewat grup rute saudara — middleware
+`lolosBacaSuperAdmin` sendiri TIDAK dilonggarkan. `sahkan` baru hidup saat
+`GERBANG_PENGESAHAN=true`, dan sakelar itu **tidak boleh dinyalakan sebelum K4
+dijawab**: bawaan `PEMISAHAN_WEWENANG_MEMBLOKIR=false` (peringatan tercatat, bukan
+blokir) bertentangan dengan default aman di §Peran butir 4. Rinciannya
+`docs/permintaan-user-7.md` §40.3.
 
 **Aksi panel baru wajib ikut `HakTulisPanel`.** `ScopesToOrganization` sudah
 menutup create/edit/delete bawaan Filament, tapi `Action::make(...)` kustom tidak
