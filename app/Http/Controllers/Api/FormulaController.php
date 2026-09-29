@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\FormulaVersionResource;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
+use App\Services\PenjagaOrganisasi;
 use App\Services\RumusKalibrasi;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -297,6 +298,9 @@ class FormulaController extends Controller
     /** Jaring pengaman multi-tenant. */
     private function pastikanSatuOrganisasi(Request $request, Formula $formula): void
     {
-        abort_if($formula->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $formula);
     }
 }

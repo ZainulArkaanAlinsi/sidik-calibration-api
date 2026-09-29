@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,6 +19,23 @@ Schedule::command('alat:cek-jatuh-tempo')->dailyAt('07:00');
 // sama nggak diulang seminggu, tapi begitu ada standar yang statusnya berubah,
 // dikabarin saat itu juga.
 Schedule::command('standar:cek-kadaluarsa')->dailyAt('07:05');
+
+// Alarm jatuh tempo ke HP PELANGGAN (slice E). Berselang dari dua pengingat di
+// atas karena ketiganya menembak FCM, dan kuota kirim per menit lebih mudah
+// terlampaui kalau ratusan pesan berangkat di detik yang sama.
+// `withoutOverlapping` wajib: scheduler yang dipicu dua kali (deploy di jam yang
+// sama, dua container) membuat dua proses membaca masa tenang yang belum
+// ditulis proses satunya, dan pelanggan menerima dua notifikasi identik.
+Artisan::command('pelanggan:cek-jatuh-tempo', function (PengingatJatuhTempoPelanggan $pengingat) {
+    $hasil = $pengingat->jalankan();
+    $this->info(sprintf(
+        '%d lab diproses, %d pelanggan dikabari, %d dilewat.',
+        count($hasil),
+        array_sum(array_column($hasil, 'pelanggan_dikabarin')),
+        array_sum(array_column($hasil, 'pelanggan_dilewat')),
+    ));
+})->purpose('Kabari HP pelanggan soal alat yang jatuh tempo (tangga H-30/H-7/H-1/+7)');
+Schedule::command('pelanggan:cek-jatuh-tempo')->dailyAt('07:10')->withoutOverlapping();
 
 // Buang citra pindai lembar kerja yang lewat batas retensi `config/ocr.php`.
 // Jam 02:30 karena dia menyentuh disk & menghapus berkas: dijalankan waktu

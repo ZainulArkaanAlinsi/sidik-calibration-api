@@ -7,6 +7,7 @@ use App\Http\Requests\OrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -254,6 +255,9 @@ class OrderController extends Controller
 
     private function pastikanSatuOrganisasi(Request $request, Order $order): void
     {
-        abort_if($order->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $order);
     }
 }

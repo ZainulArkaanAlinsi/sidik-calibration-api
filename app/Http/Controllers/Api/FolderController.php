@@ -9,6 +9,7 @@ use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Folder;
 use App\Services\FolderOrganizer;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -498,6 +499,9 @@ class FolderController extends Controller
     /** Jaring pengaman multi-tenant: PT lain nggak boleh baca folder kita. */
     private function pastikanSatuOrganisasi(Request $request, Folder $folder): void
     {
-        abort_if($folder->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $folder);
     }
 }

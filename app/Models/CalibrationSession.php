@@ -57,6 +57,17 @@ class CalibrationSession extends Model
 
     public const STATUS_MENUNGGU_APPROVAL = 'menunggu_approval';
 
+    /**
+     * Admin sudah memeriksa dan mengajukan; pengesah belum mengesahkan
+     * (gerbang pengesahan, keputusan 26 Sep 2026).
+     *
+     * Status ini yang membuat "masih bisa dibalik" bisa dijanjikan tanpa
+     * melanggar ISO/IEC 17025 §7.8.8: di sini BELUM ADA sertifikat, belum ada
+     * nomor yang terpakai, belum ada PDF yang keluar. Begitu pindah ke
+     * `DISETUJUI`, pintu itu tertutup permanen.
+     */
+    public const STATUS_MENUNGGU_PENGESAHAN = 'menunggu_pengesahan';
+
     public const STATUS_DISETUJUI = 'disetujui';
 
     public const STATUS_PERLU_REVISI = 'perlu_revisi';
@@ -162,6 +173,11 @@ class CalibrationSession extends Model
             'spesifikasi_alat' => 'array',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            // Gerbang pengesahan. Tanpa cast, antrean pengesahan memanggil
+            // diffInDays() di atas string dan meledak di layar super admin.
+            'diajukan_pada' => 'datetime',
+            'disahkan_pada' => 'datetime',
+            'berlaku_sampai_diminta' => 'date',
             'suhu_ruang' => 'float',
             'suhu_ketidakpastian' => 'float',
             'kelembaban' => 'float',
@@ -378,10 +394,46 @@ class CalibrationSession extends Model
         return $this->belongsTo(User::class, 'teknisi_id');
     }
 
-    /** Admin yang approve/reject — penandatangan sertifikat. */
+    /**
+     * Admin yang memeriksa & mengajukan (approve/reject).
+     *
+     * BUKAN penandatangan sertifikat, dan bukan pengesahnya — itu
+     * `penandatangan()` dan `pengesah()`. Komentar di sini pernah menyebutnya
+     * "penandatangan sertifikat", dan itu benar sampai gerbang pengesahan
+     * 26 Sep 2026 memisahkan ketiganya. Jangan disatukan lagi: yang memeriksa
+     * angka, yang mengesahkan dokumen, dan yang namanya tercetak di kertas
+     * adalah tiga peran berbeda, dan pemisahan itu yang diperiksa asesor
+     * (ISO/IEC 17025 §6.2).
+     */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /** Admin yang mengajukan sertifikat ini untuk disahkan. */
+    public function pengaju(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'diajukan_oleh');
+    }
+
+    /**
+     * Yang MENGESAHKAN — kolom yang ditunjuk auditor kalau bertanya "siapa yang
+     * mengesahkan dokumen ini". Berdiri sendiri, tidak pernah ditimpa
+     * `reviewed_by` yang tertimpa lagi kalau sesinya dikembalikan lalu diajukan
+     * ulang.
+     */
+    public function pengesah(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disahkan_oleh');
+    }
+
+    /**
+     * Yang namanya TERCETAK di kotak tanda tangan. Null = pakai
+     * `organizations.settings.penandatangan_nama`, persis seperti sebelumnya.
+     */
+    public function penandatangan(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'penandatangan_user_id');
     }
 
     /**

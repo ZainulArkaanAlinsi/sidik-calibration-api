@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Services\Direktori\DirektoriGagal;
 use App\Services\Direktori\DirektoriPerusahaan;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -380,6 +381,9 @@ class CustomerController extends Controller
 
     private function pastikanSatuOrganisasi(Request $request, Customer $customer): void
     {
-        abort_if($customer->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $customer);
     }
 }

@@ -354,6 +354,15 @@ class AppServiceProvider extends ServiceProvider
         $perMenitPengguna('sertifikat-kirim-email', 20);
         $perMenitPengguna('sertifikat-catat-whatsapp', 20);
         $perMenitPengguna('audit-export', 20);
+        // Pengesahan mengalokasikan NOMOR SERTIFIKAT — sumber daya yang tidak bisa
+        // dikembalikan. Klik beruntun sudah ditahan UPDATE bersyarat di
+        // PengesahanController; ini lapis kedua untuk skrip yang lepas kendali.
+        // Lab tersibuk pun tidak mengesahkan 20 sertifikat per menit dengan tangan.
+        $perMenitPengguna('pengesahan', 20);
+        // Unduh PDF sertifikat dari app pelanggan. Tiap unduhan membaca berkas
+        // dari disk arsip; 30 per menit longgar buat manusia yang mengunduh
+        // satu-satu, dan menahan skrip yang menyedot seluruh arsip sekaligus.
+        $perMenitPengguna('pelanggan-unduh', 30);
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
         // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia

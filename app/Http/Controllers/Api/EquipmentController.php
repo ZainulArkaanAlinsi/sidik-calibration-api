@@ -8,6 +8,7 @@ use App\Http\Resources\EquipmentResource;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -254,6 +255,9 @@ class EquipmentController extends Controller
     /** Jaring pengaman multi-tenant: jangan sampai PT lain bisa baca/ubah alat kita. */
     private function pastikanSatuOrganisasi(Request $request, Equipment $equipment): void
     {
-        abort_if($equipment->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $equipment);
     }
 }

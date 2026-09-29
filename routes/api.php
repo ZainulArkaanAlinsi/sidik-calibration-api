@@ -24,6 +24,9 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\PelacakanController;
+use App\Http\Controllers\Api\PengesahanController;
+use App\Http\Controllers\Api\PenugasanController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
@@ -36,6 +39,7 @@ use App\Http\Controllers\Api\WorksheetScanController;
 use App\Services\Direktori\DirektoriLokalDb;
 use App\Services\Direktori\DirektoriPerusahaan;
 use App\Services\Direktori\PilihanDriver;
+use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -446,8 +450,31 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/certificates/{certificate}/qr', [CertificateController::class, 'qr'])
         ->name('certificates.qr');
 
+    // Antrean pengesahan (keputusan 26 Sep §1). BACA-saja, jadi cukup di grup
+    // luar: admin melihat punyanya masih mengantre, super admin melihat
+    // pekerjaannya (lolos lewat jalan baca `lolosBacaSuperAdmin`). Yang MENULIS
+    // ada di grup `role:super_admin` di ekor berkas — kepisah karena
+    // wewenangnya beda, bukan karena rapi-rapi.
+    Route::get('/pengesahan/antrean', [PengesahanController::class, 'antrean']);
+
+    // Pelacakan paket (poin 1 & 7). Baca: semua role lab — teknisi juga perlu
+    // tahu alat mana yang sudah diambil pelanggan. Tahapnya DITURUNKAN dari
+    // status sesi & sertifikat, lihat `TahapPaket`.
+    Route::get('/pelacakan', [PelacakanController::class, 'index']);
+    Route::get('/pelacakan/{order}', [PelacakanController::class, 'show']);
+
+    // Penugasan (poin 8). Teknisi cuma dapat punyanya — disaring di controller,
+    // bukan dengan menyembunyikan tab di mobile.
+    Route::get('/penugasan', [PenugasanController::class, 'index']);
+    Route::get('/penugasan/{penugasan}', [PenugasanController::class, 'show']);
+    // "Dia udah tau belum?" — waktu PERTAMA teknisi membuka tugasnya.
+    Route::post('/penugasan/{penugasan}/dilihat', [PenugasanController::class, 'tandaiDilihat']);
+
     // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
+        // Teknisi melaporkan jumlah tuntas satu baris penugasan. Viewer tidak.
+        Route::patch('/penugasan/item/{penugasanItem}', [PenugasanController::class, 'laporProgres']);
+
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
         Route::delete('/equipments/{equipment}', [EquipmentController::class, 'destroy']);
@@ -588,6 +615,11 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // "tidak laik pakai". Yang beda keputusannya, bukan boleh/nggaknya terbit.
         Route::post('/calibrations/{calibration}/approve', [CalibrationController::class, 'approve']);
         Route::post('/calibrations/{calibration}/reject', [CalibrationController::class, 'reject']);
+        // Tarik pengajuan sendiri, selama pengesah belum mengesahkan. Janji yang
+        // dibeli gerbang pengesahan: "masih bisa dibalik" — ditepati tanpa
+        // urusan ISO 17025 §7.8.8 karena sertifikatnya belum pernah ada. Sesudah
+        // disahkan, rute ini menjawab 422 dan yang tersisa Revisi / Pembatalan.
+        Route::post('/calibrations/{calibration}/tarik-pengajuan', [PengesahanController::class, 'tarikPengajuan']);
 
         // Hitung ulang & periksa tanpa nyetujuin (spesifikasi poin 11) — buat
         // tombol "Periksa" sebelum admin mutusin.
@@ -647,6 +679,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // tiap pagi lewat scheduler (routes/console.php). Ambang H- diatur di
         // organization.settings.reminder_hari_sebelum (default 30 hari).
         Route::post('/reminders/jatuh-tempo', [ReminderController::class, 'jatuhTempo']);
+        // Pemicu manual pengingat ke HP PELANGGAN (slice E). Tangganya `===`,
+        // jadi "menunggu besok" bukan cara menguji H-7 — ini yang dipakai admin
+        // waktu uji lapangan dengan satu alat yang tanggalnya disetel tangan.
+        Route::post('/reminders/jatuh-tempo-pelanggan', fn (Request $request) => response()->json([
+            'data' => app(PengingatJatuhTempoPelanggan::class)->untukOrganisasi($request->user()->organization),
+        ]))->middleware('throttle:laporan-export');
 
         // Standar acuan: bacanya semua role (di atas), nulisnya admin doang —
         // salah ngetik ketidakpastian di sini bikin SEMUA sertifikat yang pakai
@@ -738,4 +776,40 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Buat kasus yang /forgot-password nggak bisa tolong: emailnya salah ketik.
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Wewenang tulis super admin (keputusan 26 Sep 2026)
+|--------------------------------------------------------------------------
+|
+| Grup SAUDARA, bukan bersarang di grup luar — dan itu perlu dijelaskan sekali
+| supaya tidak ada yang "merapikan"-nya ke dalam.
+|
+| Grup luar dipagari `role:admin,teknisi,viewer`. Super admin lolos ke dalamnya
+| lewat `EnsureUserHasRole::lolosBacaSuperAdmin()`, dan jalan itu CUMA GET/HEAD
+| — disengaja. Rute tulis super admin yang ditaruh di dalam grup luar kena 403
+| di gerbang luar sebelum `role:super_admin`-nya sempat jalan. Middleware
+| `lolosBacaSuperAdmin` sendiri TIDAK disentuh: melonggarkannya memberi super
+| admin wewenang menyetujui sesi & mengelola pengguna, dua hal yang dokumen
+| Super Admin §9 justru tutup.
+|
+| `RuteInternalMenolakRoleLainTest` & `MeIzinTest` membaca rute-rute ini
+| langsung, jadi tidak ada daftar tulis tangan yang bisa basi.
+*/
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])->group(function () {
+    // SATU-SATUNYA pintu di seluruh sistem yang melahirkan nomor sertifikat.
+    Route::post('/calibrations/{calibration}/sahkan', [PengesahanController::class, 'sahkan'])
+        ->middleware('throttle:pengesahan');
+    // Kembalikan ke ADMIN, bukan ke teknisi — angkanya tidak dipersoalkan.
+    Route::post('/calibrations/{calibration}/kembalikan-dari-pengesahan', [PengesahanController::class, 'kembalikan']);
+});
+
+// Dikerjakan admin (meja depan) DAN super admin (pengendali). Tetap grup
+// saudara karena alasan yang sama: super admin tidak bisa POST di grup luar.
+Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,super_admin'])->group(function () {
+    // Serah terima alat — peristiwa fisik di meja depan.
+    Route::post('/pelacakan/item/{orderItem}/tahap-fisik', [PelacakanController::class, 'tandaiTahapFisik']);
+    // Membagi pekerjaan ke teknisi, personal atau grup.
+    Route::post('/penugasan', [PenugasanController::class, 'store']);
 });

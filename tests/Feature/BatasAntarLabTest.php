@@ -14,6 +14,7 @@ use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\Penugasan;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
@@ -110,6 +111,17 @@ class BatasAntarLabTest extends TestCase
         // Butuh satu baris `worksheet_scan_cells` + citra crop-nya. Tanpa itu
         // 404-nya soal sel, bukan soal lab.
         'api/worksheet-scans/{worksheetScan}/sel/{kunci}/crop' => 'butuh sel & citra crop nyata',
+
+        // Rute APLIKASI PELANGGAN (slice F). Batasnya PERUSAHAAN, bukan lab:
+        // token internal (admin lab mana pun) sudah ditolak `aplikasi:pelanggan`
+        // sebelum organisasi sempat ditanya, jadi sapuan di sini hijau karena
+        // alasan yang salah. Isolasinya disapu `Pelanggan\IsolasiPerusahaanTest`
+        // (ID milik perusahaan lain → 404), dan saringan lab-nya ada di satu
+        // tempat: `App\Support\Pelanggan\LingkupData` (customer_id + organization_id).
+        'api/pelanggan/v1/alat/{alat}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        'api/pelanggan/v1/sertifikat/{sertifikat}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        'api/pelanggan/v1/sertifikat/{sertifikat}/unduh' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        'api/pelanggan/v1/paket/{paket}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
     ];
 
     /**
@@ -141,6 +153,9 @@ class BatasAntarLabTest extends TestCase
             'worksheet-scan' => ['api/worksheet-scans/{worksheetScan}', 'pindaian'],
             'dokumen bacaan' => ['api/dokumen/bacaan/{dokumenBacaan}', 'bacaanDokumen'],
             'folder-file download' => ['api/folder-files/{folderFile}/download', 'berkasFolder'],
+            // Keputusan 26 Sep — pelacakan paket & penugasan membaca milik lab.
+            'pelacakan paket' => ['api/pelacakan/{order}', 'order'],
+            'penugasan' => ['api/penugasan/{penugasan}', 'penugasan'],
         ];
     }
 
@@ -185,7 +200,7 @@ class BatasAntarLabTest extends TestCase
         $this->assertNotSame(
             self::STATUS_TOLAK,
             $this->actingAs($pemilik)->getJson($jalan)->getStatusCode(),
-            "Pemiliknya sendiri dapat ".self::STATUS_TOLAK." di `{$jalan}`. Berarti kasus ini "
+            'Pemiliknya sendiri dapat '.self::STATUS_TOLAK." di `{$jalan}`. Berarti kasus ini "
             .'nggak menguji batas antar-lab sama sekali — 404 buat penyerang bakal keluar '
             .'walau penjaganya dicabut. Betulkan cara sumber dayanya dibikin, bukan '
             .'assertion-nya.',
@@ -361,6 +376,12 @@ class BatasAntarLabTest extends TestCase
                 'skema' => ['bagian' => []],
             ])->id,
             'berkasFolder' => $this->berkasFolderLabB($labB),
+            'penugasan' => Penugasan::create([
+                'organization_id' => $labB->id,
+                'judul' => 'Penugasan lab B',
+                'tipe' => Penugasan::TIPE_PERSONAL,
+                'status' => Penugasan::STATUS_AKTIF,
+            ])->id,
         ];
     }
 }

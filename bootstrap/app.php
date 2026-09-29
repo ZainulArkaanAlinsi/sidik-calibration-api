@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CatatAksesLintasOrganisasi;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\FiturPelanggan;
 use App\Http\Middleware\KonteksPerusahaan;
@@ -57,6 +58,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'perusahaan' => KonteksPerusahaan::class,
             'peran' => PeranAnggota::class,
         ]);
+
+        // Jaring pengaman isolasi antar-lab, dipasang di grup `api` supaya dia
+        // menutupi rute yang ditulis besok oleh orang yang belum membaca
+        // `PenjagaOrganisasi`. Cuma bekerja pada respons 404 dari pemanggil yang
+        // sudah login — biayanya nol untuk request yang berhasil — dan TIDAK
+        // pernah mengubah respons (404 tidak dinaikkan jadi 403).
+        $middleware->appendToGroup('api', CatatAksesLintasOrganisasi::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -41,6 +41,25 @@ class AuditLog extends Model
      */
     public const ACTION_DIBACA = 'dibaca';
 
+    /**
+     * Percobaan membuka baris milik lab lain — ditolak 404.
+     *
+     * Bukan perubahan data: `new_data` memuat konteks request (method, path,
+     * role, ip). Dicatat di riwayat lab PEMANGGIL, bukan lab pemilik data —
+     * lihat `PenjagaOrganisasi::catat()`. 16 karakter: kolom `action` itu
+     * `string(20)`, dan `akses_lintas_organisasi` (23) terpotong diam-diam di
+     * MySQL sampai filter riwayat berhenti cocok.
+     */
+    public const ACTION_AKSES_LINTAS_LAB = 'akses_lintas_lab';
+
+    /**
+     * PDF sertifikat diunduh pemiliknya dari aplikasi pelanggan. `new_data`
+     * memuat `customer_id`; `changed_by` = akun pelanggan yang mengunduh.
+     * Menjawab "sertifikatnya sudah sampai belum?" tanpa menyisir log email.
+     * 17 karakter — muat di `string(20)`.
+     */
+    public const ACTION_DIUNDUH_PELANGGAN = 'diunduh_pelanggan';
+
     /** @return list<string> */
     public static function actions(): array
     {

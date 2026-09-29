@@ -2,13 +2,18 @@
 
 namespace Tests\Feature\Pelanggan;
 
+use App\Models\CalibrationSession;
+use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\CustomerMember;
+use App\Models\Equipment;
+use App\Models\Order;
 use App\Models\UndanganPelanggan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RuteTerdaftar;
 use Illuminate\Support\Facades\Route as Router;
+use Illuminate\Support\Str;
 use Tests\Concerns\JalurPelanggan;
 use Tests\TestCase;
 
@@ -23,11 +28,11 @@ use Tests\TestCase;
  * `/anggota/{anggota}/nonaktifkan`), dan dua-duanya sudah punya test 404
  * sendiri di `AnggotaDanPeranTest`.
  *
- * Ditulis terang supaya tidak salah dibaca: **nilai test ini bukan di hari
- * ini.** Nilainya waktu `/alat/{id}`, `/sertifikat/{id}`, dan
- * `/permintaan/{ulid}` mendarat — mereka tidak bisa lahir tanpa bukti isolasi,
- * karena parameter tanpa fixture memerahkan
- * [test_tiap_parameter_rute_punya_fixture()].
+ * Sejak slice F (29 Sep 2026) sapuan ini ikut memeriksa `/alat/{alat}`,
+ * `/sertifikat/{sertifikat}` (+ `/unduh`), `/paket/{paket}`, dan
+ * `/notifikasi/{notifikasi}/dibaca` — keempatnya tidak bisa lahir tanpa
+ * fixture milik B, karena parameter tanpa fixture memerahkan
+ * [test_tiap_parameter_rute_punya_fixture()]. `/permintaan/{ulid}` menyusul.
  *
  * ## Sumbu yang TIDAK diuji di sini
  *
@@ -76,6 +81,38 @@ class IsolasiPerusahaanTest extends TestCase
                 'organization_id' => $this->perusahaanB->organization_id,
                 'customer_id' => $this->perusahaanB->getKey(),
             ])->getKey(),
+        ];
+
+        // Slice F (29 Sep 2026): data perusahaan B yang BENERAN milik B —
+        // alat, sertifikat terbit atas alat itu, paket, dan satu notifikasi
+        // milik PIC B.
+        $alatB = Equipment::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        $sertifikatB = Certificate::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'calibration_session_id' => CalibrationSession::factory()->create([
+                'organization_id' => $this->perusahaanB->organization_id,
+                'equipment_id' => $alatB->getKey(),
+            ])->getKey(),
+            'pdf_path' => 'sertifikat/milik-b.pdf',
+        ]);
+        $paketB = Order::factory()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        $notifikasiB = $picB->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => 'uji',
+            'data' => ['title' => 'milik B'],
+        ]);
+
+        $this->milikB += [
+            'alat' => (string) $alatB->getKey(),
+            'sertifikat' => (string) $sertifikatB->getKey(),
+            'paket' => (string) $paketB->getKey(),
+            'notifikasi' => (string) $notifikasiB->getKey(),
         ];
     }
 
@@ -190,6 +227,20 @@ class IsolasiPerusahaanTest extends TestCase
             'id' => $this->milikB['undangan'],
             'customer_id' => $this->perusahaanB->getKey(),
         ]);
+
+        $this->assertDatabaseHas('equipments', [
+            'id' => $this->milikB['alat'],
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        $this->assertDatabaseHas('certificates', [
+            'id' => $this->milikB['sertifikat'],
+            'status' => Certificate::STATUS_TERBIT,
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $this->milikB['paket'],
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        $this->assertDatabaseHas('notifications', ['id' => $this->milikB['notifikasi']]);
 
         $this->assertNotSame($this->perusahaanA->getKey(), $this->perusahaanB->getKey());
     }

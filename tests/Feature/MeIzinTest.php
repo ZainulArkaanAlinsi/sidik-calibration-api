@@ -9,8 +9,11 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Folder;
 use App\Models\FolderFile;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Organization;
 use App\Models\PengajuanAkunPelanggan;
+use App\Models\Penugasan;
 use App\Models\User;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -181,6 +184,11 @@ class MeIzinTest extends TestCase
             // pindah blok bikin tiga menu admin-only nyala buat teknisi.
             'pelanggan.kelola', 'ruangan.kelola', 'metode.kelola',
             'teknisi.kelola', 'impor.excel', 'organisasi.ubah',
+            // Gerbang pengesahan, pelacakan & penugasan (keputusan 26 Sep).
+            'kalibrasi.sahkan', 'kalibrasi.kembalikan-dari-pengesahan',
+            'kalibrasi.tarik-pengajuan', 'pengesahan.antrean',
+            'pelacakan.lihat', 'pelacakan.serah-terima',
+            'penugasan.lihat', 'penugasan.buat', 'penugasan.lapor-progres',
         ];
 
         $this->assertSame(
@@ -297,6 +305,36 @@ class MeIzinTest extends TestCase
         if (str_contains($uri, '{pengajuan}')) {
             $ganti['{pengajuan}'] = (string) PengajuanAkunPelanggan::factory()->create([
                 'organization_id' => $user->organization_id,
+            ])->id;
+        }
+
+        // Fitur 26 Sep. Dua-duanya WAJIB seorganisasi: kalau tidak, binding-nya
+        // 404 sebelum gerbang role sempat jalan, dan sapuan ini salah membaca
+        // 404 itu sebagai "role yang dilarang malah lolos".
+        if (str_contains($uri, '{orderItem}')) {
+            $paket = Order::factory()->create([
+                'organization_id' => $user->organization_id,
+                'customer_id' => Customer::factory()->create(['organization_id' => $user->organization_id])->id,
+            ]);
+            $ganti['{orderItem}'] = (string) OrderItem::factory()->create([
+                'order_id' => $paket->id,
+                'equipment_id' => $this->alat()->id,
+            ])->id;
+        }
+
+        if (str_contains($uri, '{penugasanItem}')) {
+            $penugasan = Penugasan::create([
+                'organization_id' => $user->organization_id,
+                'judul' => 'Penugasan uji',
+                'tipe' => Penugasan::TIPE_PERSONAL,
+                'status' => Penugasan::STATUS_AKTIF,
+            ]);
+            // Pemanggilnya dijadikan anggota supaya teknisi tidak kena saring
+            // "bukan tugasmu" (404) dan hasil ujinya jelas.
+            $penugasan->anggota()->create(['user_id' => $user->id, 'peran' => 'ketua']);
+            $ganti['{penugasanItem}'] = (string) $penugasan->item()->create([
+                'jenis_alat' => 'Autoklaf',
+                'jumlah' => 1,
             ])->id;
         }
 
