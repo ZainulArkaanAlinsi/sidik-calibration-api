@@ -52,6 +52,12 @@ class CategoryResource extends JsonResource
         $max = $sesuaiSatuan->max('range_max');
 
         return [
+            // `id` numerik ikut dikirim sejak 1 Okt 2026: layar "Terima
+            // permintaan" di aplikasi lab mengirim `equipment_category_id` untuk
+            // alat baru dari pelanggan, dan tanpa `id` di sini tombol Terima
+            // mati untuk setiap permintaan yang memuat alat baru. Additive —
+            // `kode` tetap kunci yang dipakai layar lain.
+            'id' => $this->id,
             'kode' => $this->kode,
             'nama' => $this->nama,
             'rentang_ukur' => $this->formatRentang($min, $max, $satuanDominan),
