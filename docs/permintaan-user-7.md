@@ -4440,6 +4440,47 @@ perlu dipastikan adalah KAPAN tiap perangkat menarik ulang.
 - Desain saja: SA_Jadwal, SA_Pusat_Pelanggan, SA_Beranda khusus,
   PL_Sambutan, PL_Preferensi. Menunggu API: `/permintaan` pelanggan (5 layar).
 
+### 40.6 30 Sep: stabilisasi
+
+Dua hal dari peninjauan sesudah PR #203 mendarat. Cabang `fix/stabil-tes-sertifikat-throttle`.
+
+**Tes goyah.** `SertifikatSemuaAlatSatuHalamanTest` ("Meluap ke halaman dua walau
+mode padat dipaksa: 22506.01.A") merah sekali di suite MySQL penuh, dan
+`SertifikatPunyaMarginTest` (`DEMO-FM-TOT-001` "lebih mepet") merah sekali di
+suite SQLite penuh; keduanya hijau bila dijalankan sendiri.
+
+Akarnya **belum berhasil direproduksi**, dan itu ditulis apa adanya. Yang sudah
+dibuktikan: HTML lembar semua sesi bawaan (49 sertifikat) identik byte-per-byte
+antara dua jalan sendirian dan satu jalan sesudah suite SQLite penuh (5068 tes);
+margin normal & padat tiap sertifikat diukur ulang dan sama dengan baseline
+(FM-TOT 34 px, juara `DEMO-FM-GRAV-TOT-001` 8 px, `22506.01.A` padat >260 px).
+Jadi isi lembar bukan pelakunya, dan kehilangan >160 px bukan noise pecahan
+piksel. Dua sumber yang tersisa dan sama-sama bisa dicabut:
+
+- **Jam dinding.** Sapuan butuh 10-20 menit; tanggal terbit dicetak dari `now()`
+  per sertifikat dan jatuh tempo standar dihitung dari `now()` waktu seeder.
+- **Direktori sementara dompdf** (`sys_get_temp_dir()`, dipakai semua proses di
+  mesin). Dua proses test bersamaan diuji: satu mati dengan
+  `unlink(...cpdXXXX.tmp.png): Permission denied`.
+
+Perbaikan di kedua berkas test: `freezeTime()` dan `dompdf.options.temp_dir`
+unik per test (dibersihkan di `tearDown`). Ambang `MARGIN_MIN`, juara, `BUTUH_PADAT`
+dan `DITAHAN` tidak disentuh. Kalau merah muncul lagi, pesan gagal margin sudah
+membawa angka sisa ruangnya; catat suite mana yang berjalan bersamaan.
+
+**Throttle rute tulis paket 29 Sep.** Enam rute belum ber-`throttle:`. Limiter
+baru di `AppServiceProvider::rateLimiters()`, per pengguna, ember terpisah:
+
+| Limiter | Jatah/menit | Rute |
+|---|---|---|
+| `penugasan-tulis` | 60 | `POST /penugasan`, `PATCH /penugasan/item/{penugasanItem}`, `POST /penugasan/{penugasan}/dilihat` |
+| `pelacakan-tahap` | 60 | `POST /pelacakan/item/{orderItem}/tahap-fisik` |
+| `pengesahan-balik` | 20 | `POST /calibrations/{calibration}/tarik-pengajuan`, `POST /calibrations/{calibration}/kembalikan-dari-pengesahan` |
+
+`pengesahan` (20) sengaja tidak dipakai ulang: menarik atau mengembalikan tidak
+melahirkan nomor sertifikat dan tidak boleh menguras jatah orang yang sedang
+mengesahkan. Dijaga `ThrottleRuteTulisPaket29SepTest`.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4845,4 +4886,4 @@ Supaya tidak dibangun ulang:
 | G23 | **Arsip: folder perusahaan kosong & cari tidak menyaring** — §37e | **BERES di server** (26 Sep 2026) — daftar akar Arsip yang dibuka admin membuatkan folder akar untuk tiap PT yang belum punya; `?search=` jadi alias `?q=`. Dijaga `FolderTiapPelangganTest`. Nama pelanggan asli ikut dibuang dari `storage/app/few_shot/README.md`. **Sisi mobile BELUM**: parser Arsip membuang baris sertifikat & unggahan, tombol tulis tampil untuk semua peran, jalur unggah belum ada — diserahkan ke pengerja UI |
 | G24 | **Revisi & pembatalan sertifikat** — §38 | **PRD** (26 Sep 2026) — keputusan D1–D6 dari pemilik proyek; belum ada kode. Termasuk jebakan penomoran `-R1` yang WAJIB ditutup di rilis yang sama |
 | G25 | Alat baru **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** (Piston Pipette, Dispensett, Buret Digital) — §39 | **SERVER DIKERJAKAN** (28 Sep 2026, branch `feat/tekanan-piston-volume`) — enam profil, dua kalkulator, rekonsiliasi 962 + 274 sel master; acuan sha256 + log metode append-only + versi rumus terstempel & diadu validator + harness uji paralel (§39a). Sesi yang memicu T-1/T-2/T-11 (dan piston G-2/G-7/G-8 bila terpicu) DITAHAN menunggu TM — P-1/P-2/P-11, V-7/V-11/V-12. Mobile: fixture generator, cabang mock, dan selisih `M_i − M_{i−1}` di tabel kumulatif SUDAH. Sisa: suite penuh SQLite+MySQL, sertifikat arsip dari lab (§39a butir 5), OCR-3 menunggu persetujuan |
-| G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **SERVER DIKERJAKAN** (29 Sep 2026, branch `redesign/backend-29sep`) — patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Mobile lab PR #183; aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: suite MySQL, golden mobile, sentence case, Firebase pelanggan |
+| G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |

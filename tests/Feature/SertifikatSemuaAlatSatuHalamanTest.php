@@ -65,6 +65,50 @@ class SertifikatSemuaAlatSatuHalamanTest extends TestCase
     use RefreshDatabase;
 
     /**
+     * Dua sumber goyah yang dicabut dari render sapuan ini (30 Sep 2026).
+     *
+     * Akar flake "meluap / lebih mepet" yang muncul SEKALI di suite penuh
+     * (MySQL: `22506.01.A`; SQLite: `DEMO-FM-TOT-001`) tidak berhasil
+     * direproduksi: HTML lembar diadu byte-per-byte antara jalan sendirian dan
+     * sesudah suite penuh, identik; margin diukur ulang, sama dengan baseline.
+     * Jadi isi lembar bukan pelakunya. Yang terbukti bersama dan bisa dicabut:
+     *
+     *   1. Jam dinding. Sapuan ini butuh 10-20 menit; tanggal terbit tercetak
+     *      dari `now()` per sertifikat, dan tanggal jatuh tempo standar dihitung
+     *      dari `now()` waktu seeder. Suite yang melintasi tengah malam, atau
+     *      sekadar berjalan berjam-jam, merender lembar yang isinya bergantung
+     *      pada kapan tiap baris dieksekusi. `freezeTime()` menjadikannya satu
+     *      instan.
+     *   2. Direktori sementara dompdf. `temp_dir` bawaannya `sys_get_temp_dir()`,
+     *      dipakai bersama SEMUA proses di mesin. Dua proses test bersamaan
+     *      diuji 30 Sep 2026: salah satunya mati dengan
+     *      `unlink(...cpdXXXX.tmp.png): Permission denied` — berkas gambar
+     *      sementaranya bertabrakan. Tiap test sekarang punya direktori sendiri.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->freezeTime();
+
+        $this->tempDompdf = storage_path('framework/testing/dompdf-'.getmypid().'-'.bin2hex(random_bytes(4)));
+        @mkdir($this->tempDompdf, 0777, true);
+        config(['dompdf.options.temp_dir' => $this->tempDompdf]);
+    }
+
+    protected function tearDown(): void
+    {
+        foreach (glob($this->tempDompdf.'/*') ?: [] as $berkas) {
+            @unlink($berkas);
+        }
+        @rmdir($this->tempDompdf);
+
+        parent::tearDown();
+    }
+
+    private string $tempDompdf = '';
+
+    /**
      * Semua sesi bawaan yang harus keterbit, `nomor_sesi (nama alat)`.
      *
      * Dipatok, bukan dihitung. Sapuan yang daftarnya datang dari database punya

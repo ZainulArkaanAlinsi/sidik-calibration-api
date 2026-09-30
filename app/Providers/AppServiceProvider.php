@@ -359,6 +359,21 @@ class AppServiceProvider extends ServiceProvider
         // PengesahanController; ini lapis kedua untuk skrip yang lepas kendali.
         // Lab tersibuk pun tidak mengesahkan 20 sertifikat per menit dengan tangan.
         $perMenitPengguna('pengesahan', 20);
+        // Dua jalan PULANG dari gerbang pengesahan: teknisi menarik pengajuannya
+        // sendiri, dan super admin mengembalikan sesi ke admin. Ember TERPISAH
+        // dari `pengesahan` — menarik atau mengembalikan tidak melahirkan nomor
+        // sertifikat, jadi tidak boleh menghabiskan jatah orang yang memang
+        // sedang mengesahkan. Angkanya sama longgarnya: pagar terhadap skrip
+        // yang lepas kendali, bukan terhadap orang yang sedang bekerja.
+        $perMenitPengguna('pengesahan-balik', 20);
+        // Tulis alur pekerjaan lapangan (paket 29 Sep): pembagian tugas, laporan
+        // progres, tanda "sudah dilihat", dan serah terima fisik alat. Lebih
+        // longgar dari pengesahan karena teknisi melaporkan progres per baris
+        // dan membuka banyak tugas berturut-turut; ember dipisah supaya
+        // rentetan laporan progres tidak menghabiskan jatah serah terima meja
+        // depan.
+        $perMenitPengguna('penugasan-tulis', 60);
+        $perMenitPengguna('pelacakan-tahap', 60);
         // Unduh PDF sertifikat dari app pelanggan. Tiap unduhan membaca berkas
         // dari disk arsip; 30 per menit longgar buat manusia yang mengunduh
         // satu-satu, dan menahan skrip yang menyedot seluruh arsip sekaligus.
