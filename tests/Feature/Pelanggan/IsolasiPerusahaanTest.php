@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerMember;
 use App\Models\Equipment;
 use App\Models\Order;
+use App\Models\PermintaanKalibrasi;
 use App\Models\UndanganPelanggan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,7 +33,12 @@ use Tests\TestCase;
  * `/sertifikat/{sertifikat}` (+ `/unduh`), `/paket/{paket}`, dan
  * `/notifikasi/{notifikasi}/dibaca` — keempatnya tidak bisa lahir tanpa
  * fixture milik B, karena parameter tanpa fixture memerahkan
- * [test_tiap_parameter_rute_punya_fixture()]. `/permintaan/{ulid}` menyusul.
+ * [test_tiap_parameter_rute_punya_fixture()].
+ *
+ * Sejak 30 Sep 2026 ikut `/permintaan/{permintaan}` beserta `/batal` dan
+ * `/pesan` (GET & POST). POST-nya dijawab 404 SEBELUM validasi body — kalau
+ * validasi jalan duluan, id perusahaan lain dijawab 422 dan itu sudah mengakui
+ * barisnya ada.
  *
  * ## Sumbu yang TIDAK diuji di sini
  *
@@ -108,7 +114,16 @@ class IsolasiPerusahaanTest extends TestCase
             'data' => ['title' => 'milik B'],
         ]);
 
+        $permintaanB = PermintaanKalibrasi::create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'nomor' => 'PMT/2026/10/0001',
+            'status' => PermintaanKalibrasi::STATUS_BARU,
+            'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
+        ]);
+
         $this->milikB += [
+            'permintaan' => (string) $permintaanB->getKey(),
             'alat' => (string) $alatB->getKey(),
             'sertifikat' => (string) $sertifikatB->getKey(),
             'paket' => (string) $paketB->getKey(),
@@ -241,6 +256,11 @@ class IsolasiPerusahaanTest extends TestCase
             'customer_id' => $this->perusahaanB->getKey(),
         ]);
         $this->assertDatabaseHas('notifications', ['id' => $this->milikB['notifikasi']]);
+        $this->assertDatabaseHas('permintaan_kalibrasi', [
+            'id' => $this->milikB['permintaan'],
+            'customer_id' => $this->perusahaanB->getKey(),
+            'status' => 'baru',
+        ]);
 
         $this->assertNotSame($this->perusahaanA->getKey(), $this->perusahaanB->getKey());
     }

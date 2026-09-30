@@ -6,6 +6,7 @@ use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\Order;
+use App\Models\PermintaanKalibrasi;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -76,5 +77,22 @@ final class LingkupData
             ->where('customer_id', $this->konteks->customerId)
             ->where('organization_id', $this->perusahaan()->organization_id)
             ->where('status', '!=', Order::STATUS_DIBATALKAN);
+    }
+
+    /**
+     * Permintaan kalibrasi milik perusahaan ini — semua status.
+     *
+     * Berbeda dari `paket()`, yang dibatalkan TIDAK disembunyikan: pelanggan
+     * perlu melihat ajuannya yang ditolak (beserta alasannya) dan yang ia
+     * batalkan sendiri. Dua saringan yang sama dengan lainnya (customer_id +
+     * organization_id).
+     *
+     * @return Builder<PermintaanKalibrasi>
+     */
+    public function permintaan(): Builder
+    {
+        return PermintaanKalibrasi::query()
+            ->where('customer_id', $this->konteks->customerId)
+            ->where('organization_id', $this->perusahaan()->organization_id);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\PenjagaOrganisasi;
+use App\Services\PenomoranOrder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -80,7 +81,7 @@ class OrderController extends Controller
                 'organization_id' => $organizationId,
                 'customer_id' => $data['customer_id'],
                 'diterima_oleh' => $request->user()->id,
-                'nomor' => $this->nomorOrderBerikutnya($organizationId),
+                'nomor' => app(PenomoranOrder::class)->berikutnya($organizationId),
                 'tanggal_masuk' => $data['tanggal_masuk'],
                 'tanggal_janji_selesai' => $data['tanggal_janji_selesai'] ?? null,
                 'status' => $data['status'] ?? Order::STATUS_BARU,
@@ -233,24 +234,6 @@ class OrderController extends Controller
     private function muatRelasi(Order $order): Order
     {
         return $order->load(['customer', 'penerima', 'items.equipment', 'items.teknisi'])->loadCount('items');
-    }
-
-    /** Nomor order urut per organisasi per bulan: ORD/2026/07/0001. */
-    private function nomorOrderBerikutnya(int $organizationId): string
-    {
-        $prefix = sprintf('ORD/%s/', now()->format('Y/m'));
-
-        $urutanTerakhir = Order::where('organization_id', $organizationId)
-            ->where('nomor', 'like', $prefix.'%')
-            // Dikunci biar dua petugas yang nyimpen barengan nggak dapet nomor
-            // yang sama — sama kayak penomoran sesi & sertifikat.
-            ->lockForUpdate()
-            ->orderByDesc('nomor')
-            ->value('nomor');
-
-        $urutan = $urutanTerakhir ? ((int) substr($urutanTerakhir, -4)) + 1 : 1;
-
-        return $prefix.str_pad((string) $urutan, 4, '0', STR_PAD_LEFT);
     }
 
     private function pastikanSatuOrganisasi(Request $request, Order $order): void

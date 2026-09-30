@@ -4,7 +4,9 @@ namespace App\Services\Pelanggan;
 
 use App\Models\Customer;
 use App\Models\Equipment;
+use App\Models\Order;
 use App\Models\Organization;
+use App\Models\PermintaanKalibrasi;
 use App\Models\User;
 use App\Notifications\Pelanggan\AlatAndaJatuhTempo;
 use App\Services\PenjagaNotifikasiUlang;
@@ -72,7 +74,10 @@ class PengingatJatuhTempoPelanggan
      */
     public const MASA_TENANG_HARI = 6;
 
-    public function __construct(private readonly PenjagaNotifikasiUlang $penjaga) {}
+    public function __construct(
+        private readonly PenjagaNotifikasiUlang $penjaga,
+        private readonly PreferensiNotifikasi $preferensi,
+    ) {}
 
     /**
      * Jalanin buat semua organisasi (dipakai scheduler harian).
@@ -105,6 +110,21 @@ class PengingatJatuhTempoPelanggan
             // Batas atas = tangga tertinggi. Yang lebih jauh dari itu belum
             // waktunya dikabari, dan mengambilnya cuma membebani memori.
             ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays(max(self::TANGGA_HARI)))
+            // REQ-NTF-05: alat yang SUDAH diajukan / sedang diproses tidak
+            // diingatkan lagi. Pelanggan yang baru menekan "Ajukan" lalu
+            // menerima "ajukan kalibrasi dari aplikasi" besoknya akan merasa
+            // aplikasinya tidak membaca apa yang baru ia lakukan.
+            ->whereNotExists(fn ($q) => $q->selectRaw(1)
+                ->from('permintaan_kalibrasi_item')
+                ->join('permintaan_kalibrasi', 'permintaan_kalibrasi.id', '=', 'permintaan_kalibrasi_item.permintaan_kalibrasi_id')
+                ->whereColumn('permintaan_kalibrasi_item.equipment_id', 'equipments.id')
+                ->where('permintaan_kalibrasi.status', PermintaanKalibrasi::STATUS_BARU))
+            ->whereNotExists(fn ($q) => $q->selectRaw(1)
+                ->from('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->whereColumn('order_items.equipment_id', 'equipments.id')
+                ->whereNull('orders.deleted_at')
+                ->whereIn('orders.status', [Order::STATUS_BARU, Order::STATUS_DIPROSES]))
             ->get()
             ->filter(fn (Equipment $a): bool => $this->waktunyaDikabari($a));
 
@@ -214,27 +234,17 @@ class PengingatJatuhTempoPelanggan
     }
 
     /**
-     * Akun pelanggan yang aktif dan memang punya akses ke perusahaan ini.
+     * Akun pelanggan yang aktif, anggota aktif perusahaan ini, DAN saklar
+     * "pengingat jadwal"-nya menyala.
      *
-     * Lewat `customer_members`, bukan `users.customer_id` — satu orang bisa jadi
-     * anggota beberapa perusahaan, dan pengingat yang dikirim berdasarkan kolom
-     * di `users` akan melewatkan anggota kedua dan seterusnya.
+     * Dipilih lewat `PreferensiNotifikasi::penerima()` — satu tempat yang tahu
+     * cara membaca saklar, dipakai semua pengirim notifikasi pelanggan. Lewat
+     * `customer_members`, bukan `users.customer_id` (alasannya di sana).
      *
      * @return Collection<int, User>
      */
     private function penerimaPelanggan(Customer $pelanggan): Collection
     {
-        return User::query()
-            ->where('role', User::ROLE_PELANGGAN)
-            ->where('status', User::STATUS_AKTIF)
-            ->whereExists(fn ($q) => $q->selectRaw(1)
-                ->from('customer_members')
-                ->whereColumn('customer_members.user_id', 'users.id')
-                ->where('customer_members.customer_id', $pelanggan->id)
-                // Anggota yang sudah dinonaktifkan PIC-nya tidak boleh terus
-                // menerima daftar alat perusahaan yang sudah bukan urusannya —
-                // itu kebocoran yang pelan tapi pasti.
-                ->where('customer_members.status', 'aktif'))
-            ->get();
+        return $this->preferensi->penerima($pelanggan, PreferensiNotifikasi::PENGINGAT_JADWAL);
     }
 }

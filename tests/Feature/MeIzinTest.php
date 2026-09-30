@@ -14,6 +14,7 @@ use App\Models\OrderItem;
 use App\Models\Organization;
 use App\Models\PengajuanAkunPelanggan;
 use App\Models\Penugasan;
+use App\Models\PermintaanKalibrasi;
 use App\Models\User;
 use App\Services\MatriksIzin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -335,6 +336,18 @@ class MeIzinTest extends TestCase
             $ganti['{penugasanItem}'] = (string) $penugasan->item()->create([
                 'jenis_alat' => 'Autoklaf',
                 'jumlah' => 1,
+            ])->id;
+        }
+
+        // Permintaan kalibrasi pelanggan (30 Sep): seorganisasi, dan dibuat baru
+        // tiap panggilan karena sapuan ini ikut MENERIMA permintaannya (POST).
+        if (str_contains($uri, '{permintaan}')) {
+            $ganti['{permintaan}'] = (string) PermintaanKalibrasi::create([
+                'organization_id' => $user->organization_id,
+                'customer_id' => Customer::factory()->create(['organization_id' => $user->organization_id])->id,
+                'nomor' => 'PMT/uji/'.uniqid(),
+                'status' => 'baru',
+                'metode_pengantaran' => 'diantar_sendiri',
             ])->id;
         }
 

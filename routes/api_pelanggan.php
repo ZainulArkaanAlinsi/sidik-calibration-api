@@ -8,6 +8,8 @@ use App\Http\Controllers\Pelanggan\BerandaController;
 use App\Http\Controllers\Pelanggan\NotifikasiController;
 use App\Http\Controllers\Pelanggan\PaketController;
 use App\Http\Controllers\Pelanggan\PerangkatController;
+use App\Http\Controllers\Pelanggan\PermintaanController;
+use App\Http\Controllers\Pelanggan\PreferensiNotifikasiController;
 use App\Http\Controllers\Pelanggan\SayaController;
 use App\Http\Controllers\Pelanggan\SertifikatController;
 use App\Models\CustomerMember;
@@ -145,7 +147,8 @@ Route::middleware('fitur.pelanggan')->group(function () {
      * --- Butuh token DAN akun yang sudah diverifikasi ---------------------
      *
      * `/anggota` (Fase 5), lalu `/beranda`, `/alat`, `/sertifikat`, `/paket`
-     * (slice F, 29 Sep 2026). Yang masih kosong: `/permintaan`.
+     * (slice F, 29 Sep 2026), lalu `/permintaan` & `/preferensi-notifikasi`
+     * (30 Sep 2026).
      *
      * Rute data BARU wajib masuk grup ini, bukan grup di atasnya — grup atas
      * cuma menuntut token, grup ini menuntut akun yang sudah diverifikasi.
@@ -183,6 +186,38 @@ Route::middleware('fitur.pelanggan')->group(function () {
             ->name('pelanggan.sertifikat.unduh');
         Route::get('/paket', [PaketController::class, 'index'])->name('pelanggan.paket.index');
         Route::get('/paket/{paket}', [PaketController::class, 'show'])->name('pelanggan.paket.tampil');
+
+        /*
+         * --- Permintaan kalibrasi (30 Sep 2026) -----------------------------
+         *
+         * Pelanggan mengajukan, lab yang memutuskan (tidak pernah otomatis).
+         * Tiap rute ber-ID mencari barisnya DI DALAM `LingkupData::permintaan()`
+         * dan memakai string, bukan route-model binding: milik perusahaan lain
+         * dijawab 404 sebelum validasi body sempat menjawab 422.
+         *
+         * Semua tulis ber-throttle per pengguna. Satu ember bersama untuk
+         * ajuan, batal, dan pesan — tiga aksi itu dilakukan manusia satu per
+         * satu, dan yang dijaga skrip yang lepas kendali.
+         */
+        Route::get('/permintaan', [PermintaanController::class, 'index'])->name('pelanggan.permintaan.index');
+        Route::post('/permintaan', [PermintaanController::class, 'store'])
+            ->middleware('throttle:pelanggan-permintaan-tulis')
+            ->name('pelanggan.permintaan.buat');
+        Route::get('/permintaan/{permintaan}', [PermintaanController::class, 'show'])->name('pelanggan.permintaan.tampil');
+        Route::post('/permintaan/{permintaan}/batal', [PermintaanController::class, 'batal'])
+            ->middleware('throttle:pelanggan-permintaan-tulis')
+            ->name('pelanggan.permintaan.batal');
+        Route::get('/permintaan/{permintaan}/pesan', [PermintaanController::class, 'pesan'])->name('pelanggan.permintaan.pesan');
+        Route::post('/permintaan/{permintaan}/pesan', [PermintaanController::class, 'kirimPesan'])
+            ->middleware('throttle:pelanggan-permintaan-tulis')
+            ->name('pelanggan.permintaan.kirim-pesan');
+
+        // Saklar notifikasi PER perusahaan (anggota dari `Konteks`, bukan body).
+        Route::get('/preferensi-notifikasi', [PreferensiNotifikasiController::class, 'tampil'])
+            ->name('pelanggan.preferensi.tampil');
+        Route::put('/preferensi-notifikasi', [PreferensiNotifikasiController::class, 'simpan'])
+            ->middleware('throttle:pelanggan-preferensi')
+            ->name('pelanggan.preferensi.simpan');
 
         Route::middleware('peran:'.CustomerMember::PERAN_PIC_UTAMA)->group(function () {
             Route::post('/anggota/undangan', [AnggotaController::class, 'undang'])

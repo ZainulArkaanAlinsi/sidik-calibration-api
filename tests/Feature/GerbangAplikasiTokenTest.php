@@ -232,6 +232,9 @@ class GerbangAplikasiTokenTest extends TestCase
             'pelanggan-undang-anggota',
             // Slice F — unduh PDF sertifikat dari aplikasi pelanggan.
             'pelanggan-unduh',
+            // Permintaan kalibrasi & saklar notifikasi (30 Sep 2026).
+            'pelanggan-permintaan-tulis',
+            'pelanggan-preferensi',
         ];
 
         foreach ($wajib as $nama) {
