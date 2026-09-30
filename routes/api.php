@@ -468,12 +468,14 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     Route::get('/penugasan', [PenugasanController::class, 'index']);
     Route::get('/penugasan/{penugasan}', [PenugasanController::class, 'show']);
     // "Dia udah tau belum?" — waktu PERTAMA teknisi membuka tugasnya.
-    Route::post('/penugasan/{penugasan}/dilihat', [PenugasanController::class, 'tandaiDilihat']);
+    Route::post('/penugasan/{penugasan}/dilihat', [PenugasanController::class, 'tandaiDilihat'])
+        ->middleware('throttle:penugasan-tulis');
 
     // Nulis data alat & sesi kalibrasi: admin & teknisi. Viewer ditolak 403.
     Route::middleware('role:admin,teknisi')->group(function () {
         // Teknisi melaporkan jumlah tuntas satu baris penugasan. Viewer tidak.
-        Route::patch('/penugasan/item/{penugasanItem}', [PenugasanController::class, 'laporProgres']);
+        Route::patch('/penugasan/item/{penugasanItem}', [PenugasanController::class, 'laporProgres'])
+            ->middleware('throttle:penugasan-tulis');
 
         Route::post('/equipments', [EquipmentController::class, 'store']);
         Route::put('/equipments/{equipment}', [EquipmentController::class, 'update']);
@@ -619,7 +621,8 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // dibeli gerbang pengesahan: "masih bisa dibalik" — ditepati tanpa
         // urusan ISO 17025 §7.8.8 karena sertifikatnya belum pernah ada. Sesudah
         // disahkan, rute ini menjawab 422 dan yang tersisa Revisi / Pembatalan.
-        Route::post('/calibrations/{calibration}/tarik-pengajuan', [PengesahanController::class, 'tarikPengajuan']);
+        Route::post('/calibrations/{calibration}/tarik-pengajuan', [PengesahanController::class, 'tarikPengajuan'])
+            ->middleware('throttle:pengesahan-balik');
 
         // Hitung ulang & periksa tanpa nyetujuin (spesifikasi poin 11) — buat
         // tombol "Periksa" sebelum admin mutusin.
@@ -802,14 +805,17 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:super_admin'])->gr
     Route::post('/calibrations/{calibration}/sahkan', [PengesahanController::class, 'sahkan'])
         ->middleware('throttle:pengesahan');
     // Kembalikan ke ADMIN, bukan ke teknisi — angkanya tidak dipersoalkan.
-    Route::post('/calibrations/{calibration}/kembalikan-dari-pengesahan', [PengesahanController::class, 'kembalikan']);
+    Route::post('/calibrations/{calibration}/kembalikan-dari-pengesahan', [PengesahanController::class, 'kembalikan'])
+        ->middleware('throttle:pengesahan-balik');
 });
 
 // Dikerjakan admin (meja depan) DAN super admin (pengendali). Tetap grup
 // saudara karena alasan yang sama: super admin tidak bisa POST di grup luar.
 Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,super_admin'])->group(function () {
     // Serah terima alat — peristiwa fisik di meja depan.
-    Route::post('/pelacakan/item/{orderItem}/tahap-fisik', [PelacakanController::class, 'tandaiTahapFisik']);
+    Route::post('/pelacakan/item/{orderItem}/tahap-fisik', [PelacakanController::class, 'tandaiTahapFisik'])
+        ->middleware('throttle:pelacakan-tahap');
     // Membagi pekerjaan ke teknisi, personal atau grup.
-    Route::post('/penugasan', [PenugasanController::class, 'store']);
+    Route::post('/penugasan', [PenugasanController::class, 'store'])
+        ->middleware('throttle:penugasan-tulis');
 });
