@@ -31,6 +31,13 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
+    @if ($web ?? false)
+        {{-- Halaman hasil pindai QR: dibuka dari HP orang luar dan memuat nama
+             pelanggan utuh, jadi (1) layarnya harus kebaca di HP dan (2) tidak
+             boleh terindeks mesin pencari. Dompdf tidak pernah kena blok ini. --}}
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+    @endif
     <title>Sertifikat {{ $header['certificate_number'] ?? $sertifikat->nomor }}</title>
     <style>
         /*
@@ -380,7 +387,7 @@
           blok ini, jadi PDF-nya nggak mungkin ikut berubah.
         */
         body {
-            background: #eef1f5;
+            background: #ece8dc;
             /* Ukuran font lembar dipatok px kecil buat cetak; di layar itu
                kekecilan, jadi dinaikin khusus web. */
             font-size: 13px;
@@ -398,27 +405,40 @@
                         0 8px 24px rgba(16, 24, 40, .08);
         }
 
+        /*
+          Bilah status di atas lembar — gayanya mengikuti artboard
+          Web_Verifikasi (kertas hangat, hijau "lulus", tombol biru). Isinya
+          TIDAK berubah: teks & dua tautan unduh sama persis dengan sebelumnya.
+        */
         .bilah {
             max-width: 820px;
             margin: 0 auto 14px;
-            background: #0f766e;
-            color: #fff;
-            border-radius: 12px;
+            background: #f5f1e7;
+            color: #1a1f26;
+            border: 1px solid color-mix(in srgb, #125739 45%, #d9d2c0);
+            border-left: 6px solid #125739;
+            border-radius: 6px;
             padding: 16px 18px;
         }
-        .bilah .cap { font-size: 15px; font-weight: bold; letter-spacing: .2px; }
-        .bilah .ket { font-size: 12px; opacity: .92; margin-top: 4px; }
+        .bilah .cap { font-size: 18px; font-weight: bold; color: #125739; }
+        .bilah .ket { font-size: 13px; color: #4a5059; margin-top: 4px; }
         .bilah .aksi { margin-top: 14px; }
         .bilah a {
             display: inline-block;
-            background: #fff;
-            color: #0f766e;
+            background: #1d4292;
+            color: #fff;
             text-decoration: none;
             font-weight: bold;
-            font-size: 12.5px;
-            padding: 9px 16px;
-            border-radius: 8px;
+            font-size: 13px;
+            padding: 10px 16px;
+            border-radius: 4px;
             margin: 0 8px 8px 0;
+        }
+        .bilah a + a {
+            background: transparent;
+            color: #1d4292;
+            border: 1px solid #1d4292;
+            padding: 9px 15px;
         }
 
         /*
