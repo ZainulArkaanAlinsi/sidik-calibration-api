@@ -62,7 +62,12 @@ final class LingkupData
         $customerId = $this->konteks->customerId;
 
         return Certificate::query()
-            ->where('status', Certificate::STATUS_TERBIT)
+            // `dibatalkan` ikut sejak 1 Okt 2026 (§38.2): pelanggan harus
+            // MELIHAT bahwa dokumennya dibatalkan — menghilangkannya diam-diam
+            // membuat dia terus mengirim nomor itu ke auditornya. Unduhnya
+            // ditolak 410 di `SertifikatController::unduh`. Pemanggil yang butuh
+            // "yang berlaku saja" menyaring `status = terbit` sendiri.
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
             ->where('organization_id', $this->perusahaan()->organization_id)
             ->whereHas('session', fn (Builder $sesi) => $sesi->whereHas(
                 'equipment',

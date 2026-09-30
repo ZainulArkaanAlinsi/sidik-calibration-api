@@ -64,6 +64,9 @@ class PermintaanKalibrasi extends Model
             'tanggal_diinginkan_sampai' => 'date',
             'diputuskan_pada' => 'datetime',
             'dibatalkan_pada' => 'datetime',
+            'resi_diisi_pada' => 'datetime',
+            'jadwal_pada' => 'datetime',
+            'alat_tiba_pada' => 'datetime',
         ];
     }
 

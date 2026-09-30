@@ -4083,10 +4083,11 @@ Dijaga `FolderTiapPelangganTest` (13 kasus; dengan controller lama 7 merah — "
 > customer … lu harus bisa membaca situasi antara pihak sidik dengan si
 > customer"
 
-**Status: PRD, belum ada kode.** Kolom `certificates.revision_of` &
-`alasan_revisi` sudah ada sejak 14 Jul, tapi belum satu baris kode produksi pun
-yang menulisnya (BACA-DULU-BACKEND: "alur revisi sertifikat TIDAK ADA").
-`CetakUlangSertifikat` BUKAN revisi — dia merender ulang snapshot yang sama.
+**Status: DIKERJAKAN 1 Okt 2026** (branch `feat/revisi-koreksi-sertifikat`) —
+lihat §38.7 di bawah untuk yang mendarat dan dua penyimpangan dari rancangan.
+Sebelumnya: kolom `certificates.revision_of` & `alasan_revisi` sudah ada sejak
+14 Jul tapi tidak pernah ditulis kode produksi. `CetakUlangSertifikat` BUKAN
+revisi — dia merender ulang snapshot yang sama.
 
 ### 38.1 Keputusan pemilik (26 Sep, jangan ditanya ulang)
 
@@ -4230,6 +4231,51 @@ Resource, `CertificateFactory.php` (state `dibatalkan()`),
   `berlaku_sampai` > tanggal kalibrasi.*
 - **K38-6** Siapa yang boleh merevisi/membatalkan sertifikat yang dia sahkan
   sendiri? *Ikut K4 — belum diputuskan; sementara admin mana pun.*
+
+### 38.7 Yang mendarat (1 Okt 2026)
+
+- Migrasi `2026_10_01_100000`: ENUM `certificates.status` + `dibatalkan`
+  (lewat `change()` — SQLite menulis ENUM sebagai `CHECK`, jadi test ikut
+  menolak tanpa pelebaran ini), kolom `revisi_ke`, `dibatalkan_pada`,
+  `dibatalkan_oleh`, `alasan_pembatalan`, `catatan_pelanggan`. `down()` menolak
+  kalau sudah ada baris `dibatalkan`.
+- `App\Services\RevisiSertifikat` (dipakai tombol admin DAN penerimaan koreksi
+  pelanggan §42) + job `ReviseCertificate`; `App\Services\PembatalanSertifikat`
+  + `SinkronJadwalAlat::sesudahPembatalan()` (jalur khusus yang boleh
+  mengosongkan, D3). Rute `POST /api/certificates/{id}/revisi|batalkan`,
+  throttle `sertifikat-ubah`.
+- Penyaring `-R` di `GenerateCertificate::nomorBerikutnya()` + test yang
+  menerbitkan sertifikat baru sesudah revisi di bulan yang sama.
+- `CalibrationSession::certificate()` sekarang **cuma sertifikat asli**
+  (`whereNull('revision_of')`) — tanpa itu `updateOrCreate` per sesi di
+  `GenerateCertificate` menimpa revisi. Revisi dibaca lewat
+  `Certificate::revisiTerakhir()`.
+- `retry` & `sertifikat:sapu-tertunda` mendorong baris revisi ke
+  `ReviseCertificate`, bukan `GenerateCertificate` (yang langsung berhenti
+  karena sertifikat asli sesinya sudah terbit — revisinya tersangkut selamanya).
+- PDF mencetak "Revisi ke-n, menggantikan <nomor>" di bawah judul
+  (`header.catatan_revisi`); lembar lama tidak bergeser.
+- Halaman QR: digantikan → bilah "sudah direvisi" + tautan yang berlaku, lembar
+  lama tetap tampil sebagai riwayat; dibatalkan → kartu status saja, unduh 410.
+  JSON kembarannya ikut. Kartu ringkas + nama pemilik disamarkan
+  (`App\Support\SamarkanNama`), lembar lengkap di balik "Tampilkan lembar lengkap".
+- Pelanggan: status `berlaku/digantikan/dibatalkan`, unduh batal 410, kabar
+  in-app `SertifikatBerubah` ke semua anggota aktif (tidak lewat saklar —
+  ISO/IEC 17025 §7.8.8).
+- Dijaga `RevisiSertifikatTest` (20 kasus, §38.5 butir 1–7).
+
+**Dua penyimpangan dari 38.3, disengaja:**
+
+1. *"Sertifikat yang punya penerus APA PUN statusnya dianggap tidak aktif"* →
+   yang dihitung menggantikan cuma penerus `terbit` atau `dibatalkan`
+   (`Certificate::STATUS_PENGGANTI`). Revisi yang masih diantre atau gagal
+   dirender TIDAK mematikan asalnya — kalau begitu alat kehilangan jadwal
+   gara-gara dokumen yang tidak pernah ada (alasan yang sudah tertulis di
+   `SinkronJadwalAlat` sebelum §38). K38-2 tetap dipenuhi lewat `dibatalkan`.
+2. *K38-4 (tidak memberi tahu pelanggan otomatis)* → email memang tidak
+   dikirim, tapi modul pelanggan sekarang ada, jadi kabar **in-app**
+   dikirim. Dokumen yang dipegang pelanggan berubah status; diam di situ yang
+   justru melanggar §7.8.8.
 
 ## §39 — Alat ke-43..48: **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** — 28 Sep 2026
 
@@ -4547,17 +4593,76 @@ Sumbernya layar paket 29 Sep (`PL_Ajukan`, `PL_Permintaan`, `PL_Daftar_Permintaa
 - **Dua admin menekan Terima bersamaan:** baris dikunci (`lockForUpdate`) dan status
   dibaca ulang di dalam kunci — yang kedua dijawab 422, tidak lahir order kembar.
 
-### 41.4 Yang sengaja BELUM
+### 41.4 Yang sengaja BELUM (per 30 Sep) — **semuanya mendarat 1 Okt di §42 / §38.7**
 
-- **Foto pelat nama** pada alat baru (PL_Form_Alat) — belum ada endpoint unggah.
-- **`POST /alat/{id}/minta-koreksi`** (PL_Ubah_Alat) — tidak dibangun: butuh alur
-  penanganan sisi admin yang belum diputuskan, dan kuncian identitas alat
-  (`field_terkunci` setelah sertifikat terbit) belum ada. Jangan dipaksakan jadi
-  "permintaan jenis koreksi" — itu mencampur dua antrean yang penanganannya berbeda.
-- **"Teknisi dijadwalkan" / resi pengiriman** (PL_Daftar_Permintaan) — di luar empat
-  keputusan di atas; status hanya `baru/diterima/ditolak/dibatalkan`.
-- **Status Digantikan/Dibatalkan & penyamaran nama** di halaman verifikasi — belum.
-- **Ringkasan email mingguan** — saklar tersimpan, pengirim belum ada.
+- ~~Foto pelat nama~~ → §42.2.
+- ~~`POST /alat/{id}/minta-koreksi`~~ → §42.1, antrean SENDIRI (bukan "permintaan
+  jenis koreksi" — peringatan di bawah tetap berlaku) + kuncian identitas alat.
+- ~~"Teknisi dijadwalkan" / resi pengiriman~~ → §42.3.
+- ~~Status Digantikan/Dibatalkan & penyamaran nama di halaman verifikasi~~ → §38.7.
+- ~~Ringkasan email mingguan~~ → §42.4.
+
+Catatan lama yang tetap berlaku: jangan paksakan koreksi jadi "permintaan jenis
+koreksi" — itu mencampur dua antrean yang penanganannya berbeda.
+
+## §42 — Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan — 1 Okt 2026
+
+> "intinya yang belum-belum perintah gw kerjakan jangan gk di kerjakan" — sisa
+> §41.4 dan layar paket 29 Sep (`PL_Ubah_Alat`, `PL_Form_Alat` foto,
+> `PL_Daftar_Permintaan`, `PL_Preferensi`). Kontrak frontend untuk dua aplikasi:
+> `docs/perintah-frontend-revisi-koreksi.md`.
+
+**Keputusan yang diambil di sini (belum ditanyakan ke pemilik — default aman,
+boleh diubah):**
+
+| # | Keputusan | Kenapa |
+|---|---|---|
+| K42-1 | Koreksi = antrean SENDIRI (`koreksi_pelanggan`), admin mana pun memutus | §41.4 melarang mencampurnya dengan permintaan; pola "semua admin" sama dengan §41.1 |
+| K42-2 | Koreksi ALAT yang diterima langsung mengubah kolom alat; koreksi SERTIFIKAT yang diterima menerbitkan REVISI lewat `RevisiSertifikat` | D5 §38 — lab memutuskan & menerbitkan; satu pintu revisi untuk dua jalur |
+| K42-3 | Admin boleh membetulkan nilai sebelum menerapkan; yang diminta DAN yang diterapkan dua-duanya tercatat | ISO/IEC 17025 §7.5.2 |
+| K42-4 | Satu koreksi `menunggu` per sasaran | dua ajuan menunggu untuk alat yang sama membingungkan admin |
+| K42-5 | Identitas alat (9 kolom) terkunci begitu ada sertifikat TERBIT; lokasi & catatan selalu boleh | artboard `PL_Ubah_Alat` |
+| K42-6 | Catatan pelanggan disimpan di kolom BARU `equipments.catatan_pelanggan` | `equipments.catatan` itu catatan INTERNAL lab dan tidak pernah dikirim ke pelanggan — menyuntingnya berarti membocorkan & menimpanya |
+| K42-7 | Foto: maks 3 per pemilik (alat / item alat baru / koreksi), jpg/png/webp ≤ 5 MB, disk `arsip` privat, cuma lewat rute yang memeriksa kepemilikan | `PL_Form_Alat` "2 dari 3" |
+| K42-8 | Foto alat baru DISALIN (baris kedua, berkas sama) ke alat yang lahir saat permintaan diterima; berkas dibuang cuma kalau tak ada baris lain yang memakainya | permintaan tetap menyimpan buktinya |
+| K42-9 | Resi diisi pelanggan untuk `diantar_sendiri` yang sudah diterima, boleh diubah sampai alat ditandai tiba; jadwal teknisi diisi admin untuk `diambil_lab` | artboard `PL_Daftar_Permintaan` |
+| K42-10 | Tahap permintaan dihitung server (`App\Support\TahapPermintaan`); yang lebih maju selalu menang | dua aplikasi tidak boleh punya dua salinan aturan |
+| K42-11 | Ringkasan email: Senin 07.15, cuma ke yang menyalakan saklar, minggu kosong tidak dikirimi, sekali per orang per perusahaan per minggu ISO, diam selama `FITUR_PELANGGAN` mati | email kosong tiap minggu melatih orang mematikan semua email kita |
+
+### 42.1 Koreksi data
+
+Tabel `koreksi_pelanggan` (additive). Pelanggan: `POST /alat/{id}/minta-koreksi`,
+`POST /sertifikat/{id}/minta-koreksi`, `GET /koreksi`, `GET /koreksi/{id}`,
+`POST /koreksi/{id}/foto`. Lab: `GET/POST /api/koreksi-pelanggan…` (terima,
+tolak; teknisi/viewer 403, super admin baca saja). `PATCH /alat/{id}` untuk
+lokasi, catatan, dan identitas selama belum terkunci (422 `kode: field_terkunci`).
+
+### 42.2 Foto pelat nama
+
+Tabel `foto_pelanggan` (morph `pemilik`). `POST /alat/{id}/foto`,
+`POST /permintaan/{id}/item/{item}/foto`, `GET|DELETE /foto/{id}`; lab membaca
+lewat `GET /api/foto-pelanggan/{id}`. HP mengompres & membuang EXIF/GPS dulu.
+
+### 42.3 Resi & jadwal teknisi
+
+Kolom baru di `permintaan_kalibrasi` (additive): `kurir`, `nomor_resi`,
+`resi_diisi_pada`, `jadwal_pada`, `jadwal_lokasi`, `jadwal_catatan`,
+`alat_tiba_pada`. Pelanggan `POST /permintaan/{id}/resi`; lab
+`POST /api/permintaan-pelanggan/{id}/jadwal|alat-tiba`. Daftar permintaan
+pelanggan mengurutkan yang perlu tindakan ke atas.
+
+### 42.4 Ringkasan email mingguan
+
+`pelanggan:ringkasan-mingguan` (`--kosongan` untuk hitung saja), dijadwal
+`weeklyOn(1, '07:15')`. `App\Services\Pelanggan\RingkasanMingguan` +
+`App\Mail\Pelanggan\RingkasanMingguanEmail`. Kalau `MAIL_MAILER` masih `log`,
+emailnya cuma mendarat di log — dicatat sebagai peringatan, bukan diklaim terkirim.
+
+### 42.5 Test
+
+`Pelanggan\KoreksiFotoResiTest` (16), `Pelanggan\RingkasanMingguanTest` (6),
+`IsolasiPerusahaanTest` (fixture `item`, `koreksi`, `foto` — 12 rute baru ikut
+disapu 404).
 - **Suite MySQL penuh** tidak dijalankan untuk PR ini (jalur cepat pilihan pemilik
   proyek): yang dijalankan set terfilter saja.
 
@@ -4964,7 +5069,8 @@ Supaya tidak dibangun ulang:
 | G21 | Alat baru **kelompok Gaya**: Mesin UTM & Load Cell — §37 | **BERES di server** (24 Sep 2026) — alat ke-40 & ke-41, kelompok besaran baru. Rumusnya dibuktikan di Python lawan ketiga workbook SEBELUM PHP, dan hasil yang menentukan: **mesin GUM yang sudah ada mereproduksi master persis**, termasuk pemotongan `v_eff` ke bawah — nol mesin agregasi kedua. CMC diadu ke lampiran akreditasi, cocok persis, sekaligus menggugurkan satu dari enam temuan panduan (G9). **Nol kolom baru**: dua blok tingkat-sesi (preload & misalignment) masuk `spesifikasi_alat`, dua belas bacaan per titik memakai sumbu `peran_sensor` yang sudah ada. Kedua alat berbagi satu kelas induk `GayaProfile`, jadi sisi HP **satu layar untuk dua alat**. Satu penyimpangan master DISENGAJA: workbook Load Cell memakai `Y` di kolom `Standard Value` cuma pada cabang satuan kN sementara lima cabang lain dan penjaganya masih `Z` — suntingan yang berhenti di tengah, yang kalau ditiru bikin angka tercetak berubah arti tergantung satuan tampilan; sistem memakai `Y` untuk semua satuan dan menulis selisihnya di jejak audit sesi. **Proving Ring SENGAJA ditunda** (G11): koreksi standarnya hilang di semua titik karena `ISERROR` menelan `VLOOKUP` yang gagal jadi sel kosong yang dibaca nol — kelas kesalahan yang AGENTS.md larang ditiru, dan konsekuensinya (sertifikat Proving Ring yang sudah terbit tidak memuat koreksi standar) perlu diketahui lab lebih dulu. 12 pertanyaan lab. **Gerbangnya menangkap dua kekeliruan sendiri sebelum satu pun sertifikat gaya terbit**, dua-duanya tanpa error: kolom `Standard Value` & `Unit Under Test` TERTUKAR dan yang satu 102x terlalu besar (titik 100 kgf tercetak `10193,7`) karena `nilaiStandarDariKoreksi()` belum dinyalakan — preseden Waktu & Frekuensi yang terlewat; dan sesi contoh UTM titik 300 kgf kehilangan satu pembacaan `300,2` sehingga rata-ratanya meleset 0,0084 kgf — pada satu desimal angka cetaknya SAMA, jadi yang menangkapnya asersi nilai penuh 5x10⁻⁶, bukan pemeriksaan angka cetak. Penjaga barunya mengadu **snapshot sertifikat** (bukan kolom mentah) untuk keenam belas titik kedua alat, plus satu asersi hubungan: `Correction` wajib sama dengan `Standard Value − UUT`. **Sisi mobile BELUM** — `docs/perintah-frontend-gaya.md`. **25 Sep 2026: jalur simpan dari HP dibetulkan** (§37c) — tabel Preload menimpa seluruh blok Gaya, bacaan UP/DOWN Proving Ring tidak pernah dibaca, dan beban keterulangan Timbangan yang diketik hilang; dijaga `KontrakLembarSemuaAlatTest` yang menyapu semua profil |
 | G22 | Semua lembar kerja jadi **dua halaman** (persiapan \| pengukuran) — §37d | **BERES di server** (26 Sep 2026) — satu aturan `CalibrationProfile::susunDuaHalaman()` di endpoint lembar kerja & generator mock, diturunkan dari isi bagian; 39 lembar yang tadinya satu gulungan kini dua halaman, Gaya tidak diubah. Dijaga `LembarKerjaDuaHalamanTest` (ke-42 profil lewat endpoint: tepat [1, 2], standar di 1, tabel & penutup di 2, isi bagian lain tidak berubah). Generator mock kini SELALU SQLite in-memory yang di-seed — tidak pernah membaca produksi. **Sisi mobile**: grid Enclosure pindah ke halaman terakhir, mock & test disesuaikan — PR mobile |
 | G23 | **Arsip: folder perusahaan kosong & cari tidak menyaring** — §37e | **BERES di server** (26 Sep 2026) — daftar akar Arsip yang dibuka admin membuatkan folder akar untuk tiap PT yang belum punya; `?search=` jadi alias `?q=`. Dijaga `FolderTiapPelangganTest`. Nama pelanggan asli ikut dibuang dari `storage/app/few_shot/README.md`. **Sisi mobile BELUM**: parser Arsip membuang baris sertifikat & unggahan, tombol tulis tampil untuk semua peran, jalur unggah belum ada — diserahkan ke pengerja UI |
-| G24 | **Revisi & pembatalan sertifikat** — §38 | **PRD** (26 Sep 2026) — keputusan D1–D6 dari pemilik proyek; belum ada kode. Termasuk jebakan penomoran `-R1` yang WAJIB ditutup di rilis yang sama |
+| G24 | **Revisi & pembatalan sertifikat** — §38 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`) — revisi `-Rn` bersnapshot salinan, batal final + jadwal alat (D3), penyaring nomor `-R`, halaman QR digantikan/dibatalkan + nama disamarkan, status di aplikasi pelanggan. Dua penyimpangan disengaja di §38.7. Mobile lab & pelanggan di PR masing-masing |
 | G25 | Alat baru **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** (Piston Pipette, Dispensett, Buret Digital) — §39 | **SERVER DIKERJAKAN** (28 Sep 2026, branch `feat/tekanan-piston-volume`) — enam profil, dua kalkulator, rekonsiliasi 962 + 274 sel master; acuan sha256 + log metode append-only + versi rumus terstempel & diadu validator + harness uji paralel (§39a). Sesi yang memicu T-1/T-2/T-11 (dan piston G-2/G-7/G-8 bila terpicu) DITAHAN menunggu TM — P-1/P-2/P-11, V-7/V-11/V-12. Mobile: fixture generator, cabang mock, dan selisih `M_i − M_{i−1}` di tabel kumulatif SUDAH. Sisa: suite penuh SQLite+MySQL, sertifikat arsip dari lab (§39a butir 5), OCR-3 menunggu persetujuan |
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
-| G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. Belum: foto alat baru, minta-koreksi alat, penjadwalan teknisi/resi, email mingguan. Suite MySQL penuh tidak dijalankan (set terfilter saja) |
+| G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
+| G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |

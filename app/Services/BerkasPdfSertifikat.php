@@ -100,7 +100,11 @@ class BerkasPdfSertifikat
         // berkas yang memang belum dibikin. Yang benar di situ tetap 404/422 —
         // membangunnya di sini bakal menerbitkan PDF buat sertifikat yang
         // statusnya `gagal` atau `draf`.
-        if ($path === '' || $sertifikat->status !== Certificate::STATUS_TERBIT) {
+        //
+        // `dibatalkan` ikut lolos: arsipnya wajib tetap bisa dibuka orang lab
+        // (§38 D1). Pintu pelanggan & QR publik sudah menjawab 410 SEBELUM
+        // sampai sini, jadi yang lewat cuma unduhan internal.
+        if ($path === '' || ! in_array($sertifikat->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN], true)) {
             return null;
         }
 

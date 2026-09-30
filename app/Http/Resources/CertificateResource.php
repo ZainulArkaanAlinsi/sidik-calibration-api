@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Certificate;
+use App\Services\RevisiSertifikat;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -58,10 +59,40 @@ class CertificateResource extends JsonResource
             'penanda_tangan' => $this->penandaTangan(),
 
             // Cuma ada kalau PDF-nya emang udah jadi. Kalau `gagal`/`menunggu_generate`,
-            // null — mobile munculin tombol retry, bukan tombol unduh.
-            'pdf_url' => $this->status === Certificate::STATUS_TERBIT
+            // null — mobile munculin tombol retry, bukan tombol unduh. Yang
+            // `dibatalkan` tetap punya tautan: arsip lab (D1), bukan dokumen sah.
+            'pdf_url' => in_array($this->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN], true)
                 ? route('certificates.download', $this->resource)
                 : null,
+
+            // --- Revisi & pembatalan (§38) --------------------------------
+            // Alasan internal (`alasan_revisi`, `alasan_pembatalan`) CUMA ada
+            // di resource internal ini — resource pelanggan tidak pernah
+            // membawanya (D4).
+            'status_dokumen' => Certificate::labelDokumen((string) $this->status, $this->revisiTerakhir?->status),
+            'revisi_ke' => (int) $this->revisi_ke,
+            'revisi_dari' => $this->revision_of === null ? null : [
+                'id' => $this->revision_of,
+                'nomor' => $this->revisionOf?->nomor,
+            ],
+            'digantikan_oleh' => $this->revisiTerakhir === null ? null : [
+                'id' => $this->revisiTerakhir->id,
+                'nomor' => $this->revisiTerakhir->nomor,
+                'status' => $this->revisiTerakhir->status,
+            ],
+            'alasan_revisi' => $this->alasan_revisi,
+            'dibatalkan_pada' => $this->dibatalkan_pada?->toIso8601ZuluString(),
+            'dibatalkan_oleh' => $this->dibatalkan_oleh === null ? null : [
+                'id' => $this->dibatalkan_oleh,
+                'nama' => $this->pembatal?->name,
+            ],
+            'alasan_pembatalan' => $this->alasan_pembatalan,
+            'catatan_pelanggan' => $this->catatan_pelanggan,
+            // Sama dengan `Certificate::bisaDiubahStatusnya()`, tapi dari relasi
+            // yang sudah dimuat — tanpa satu query per baris daftar.
+            'bisa_direvisi' => $this->status === Certificate::STATUS_TERBIT && $this->revisiTerakhir === null,
+            'bisa_dibatalkan' => $this->status === Certificate::STATUS_TERBIT && $this->revisiTerakhir === null,
+            'data_cetak' => RevisiSertifikat::dataCetak($this->resource),
 
             'alat' => [
                 'nama_alat' => $this->session?->equipment?->nama_alat,

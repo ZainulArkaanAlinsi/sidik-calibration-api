@@ -7,6 +7,7 @@ use App\Models\Certificate;
 use App\Models\Customer;
 use App\Models\CustomerMember;
 use App\Models\Equipment;
+use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\PermintaanKalibrasi;
 use App\Models\UndanganPelanggan;
@@ -122,12 +123,35 @@ class IsolasiPerusahaanTest extends TestCase
             'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
         ]);
 
+        // §42 (1 Okt 2026): item alat baru di permintaan B, koreksi milik B,
+        // dan foto pelat nama milik B — untuk `/permintaan/{}/item/{}/foto`,
+        // `/koreksi/{}`, `/koreksi/{}/foto`, dan `/foto/{}`.
+        $itemB = $permintaanB->items()->create(['alat_baru' => ['nama_alat' => 'Alat milik B']]);
+        $koreksiB = KoreksiPelanggan::create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'jenis' => KoreksiPelanggan::JENIS_ALAT,
+            'equipment_id' => $alatB->getKey(),
+            'perubahan' => [['field' => 'merk', 'label' => 'Merk', 'lama' => 'A', 'baru' => 'B']],
+            'status' => KoreksiPelanggan::STATUS_MENUNGGU,
+        ]);
+        $fotoB = $alatB->fotoPelat()->create([
+            'organization_id' => $this->perusahaanB->organization_id,
+            'customer_id' => $this->perusahaanB->getKey(),
+            'path' => 'foto-pelanggan/milik-b.jpg',
+            'mime' => 'image/jpeg',
+            'ukuran' => 1,
+        ]);
+
         $this->milikB += [
             'permintaan' => (string) $permintaanB->getKey(),
             'alat' => (string) $alatB->getKey(),
             'sertifikat' => (string) $sertifikatB->getKey(),
             'paket' => (string) $paketB->getKey(),
             'notifikasi' => (string) $notifikasiB->getKey(),
+            'item' => (string) $itemB->getKey(),
+            'koreksi' => (string) $koreksiB->getKey(),
+            'foto' => (string) $fotoB->getKey(),
         ];
     }
 
@@ -260,6 +284,18 @@ class IsolasiPerusahaanTest extends TestCase
             'id' => $this->milikB['permintaan'],
             'customer_id' => $this->perusahaanB->getKey(),
             'status' => 'baru',
+        ]);
+        $this->assertDatabaseHas('permintaan_kalibrasi_item', [
+            'id' => $this->milikB['item'],
+            'permintaan_kalibrasi_id' => $this->milikB['permintaan'],
+        ]);
+        $this->assertDatabaseHas('koreksi_pelanggan', [
+            'id' => $this->milikB['koreksi'],
+            'customer_id' => $this->perusahaanB->getKey(),
+        ]);
+        $this->assertDatabaseHas('foto_pelanggan', [
+            'id' => $this->milikB['foto'],
+            'customer_id' => $this->perusahaanB->getKey(),
         ]);
 
         $this->assertNotSame($this->perusahaanA->getKey(), $this->perusahaanB->getKey());

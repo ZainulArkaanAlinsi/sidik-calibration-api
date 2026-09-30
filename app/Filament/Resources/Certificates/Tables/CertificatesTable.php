@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Certificates\Tables;
 
 use App\Filament\Concerns\HakTulisPanel;
 use App\Jobs\GenerateCertificate;
+use App\Jobs\ReviseCertificate;
 use App\Models\Certificate;
 use App\Models\User;
 use App\Services\BerkasPdfSertifikat;
@@ -46,7 +47,7 @@ class CertificatesTable
                     ->color(fn (string $state): string => match ($state) {
                         Certificate::STATUS_TERBIT => 'success',
                         Certificate::STATUS_MENUNGGU_GENERATE => 'warning',
-                        Certificate::STATUS_GAGAL => 'danger',
+                        Certificate::STATUS_GAGAL, Certificate::STATUS_DIBATALKAN => 'danger',
                         default => 'gray',
                     }),
                 TextColumn::make('diterbitkan_pada')
@@ -65,6 +66,7 @@ class CertificatesTable
                     Certificate::STATUS_MENUNGGU_GENERATE => 'Menunggu generate',
                     Certificate::STATUS_TERBIT => 'Terbit',
                     Certificate::STATUS_GAGAL => 'Gagal',
+                    Certificate::STATUS_DIBATALKAN => 'Dibatalkan',
                 ]),
                 // Sama kayak filter "Kadaluarsa" di resource Standards — sertifikat
                 // yang masa berlakunya lewat perlu gampang ditemukan biar pelanggan
@@ -158,11 +160,16 @@ class CertificatesTable
                         // `handle()` menulis ulang masa berlaku tiap job jalan, jadi
                         // tanggal yang dipilih admin waktu approve diganti default
                         // organisasi di dokumen terakreditasi, tanpa satu pun error.
-                        $job = new GenerateCertificate(
-                            $record->calibration_session_id,
-                            User::yangLogin()?->id,
-                            $record->berlaku_sampai?->format('Y-m-d'),
-                        );
+                        // Baris REVISI (§38) punya job sendiri — `GenerateCertificate`
+                        // bekerja per sesi dan langsung berhenti karena sertifikat
+                        // asli sesinya sudah terbit, jadi tombol ini diam saja.
+                        $job = $record->revision_of !== null
+                            ? new ReviseCertificate($record->id)
+                            : new GenerateCertificate(
+                                $record->calibration_session_id,
+                                User::yangLogin()?->id,
+                                $record->berlaku_sampai?->format('Y-m-d'),
+                            );
 
                         // Antrean yang menolak job dulu meninggalkan baris di
                         // `menunggu_generate` tanpa job — tombol ini ikut hilang

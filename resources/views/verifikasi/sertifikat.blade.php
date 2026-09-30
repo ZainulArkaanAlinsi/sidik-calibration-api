@@ -6,6 +6,20 @@
 @section('isi')
     @php($kedaluwarsa = (bool) $certificate->berlaku_sampai?->isPast())
 
+    @if (($pengganti ?? null) !== null)
+        {{-- §38.2 — sudah direvisi. Tanpa alasan (D4). --}}
+        <section class="kartu kartu-status kedaluwarsa" role="status">
+            <div>
+                <span class="label">Status sertifikat</span>
+                <h2 class="status">Digantikan</h2>
+                <p class="kecil">
+                    Sudah direvisi. Yang berlaku: <strong>{{ $pengganti->nomor }}</strong>.
+                    <a href="{{ route('verify', $pengganti->qr_token) }}">Buka yang berlaku</a>
+                </p>
+            </div>
+        </section>
+    @endif
+
     {{-- Status diturunkan dari "berlaku sampai" yang memang sudah tampil di
          bawah — bukan data baru. Sertifikat FAIL tetap sah & tetap terbit;
          statusnya di sini soal masa berlaku, bukan soal lulus/tidaknya. --}}
@@ -56,7 +70,10 @@
             </div>
             <div class="baris">
                 <dt>Pemilik alat</dt>
-                <dd>{{ $certificate->session->equipment->customer->nama }}</dd>
+                {{-- Disamarkan sebagian: halaman ini sering di-screenshot &
+                     diteruskan. PDF-nya tetap memuat nama utuh. --}}
+                <dd>{{ $pemilikSamar ?? \App\Support\SamarkanNama::untuk($certificate->session->equipment->customer->nama) }}
+                    <span class="kecil">Disamarkan sebagian</span></dd>
             </div>
             <div class="baris">
                 <dt>Tgl kalibrasi</dt>

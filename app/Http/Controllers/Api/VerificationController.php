@@ -19,7 +19,8 @@ class VerificationController extends Controller
         $certificate = Certificate::query()
             ->with(['session.equipment.customer', 'organization'])
             ->where('qr_token', $qrToken)
-            ->where('status', Certificate::STATUS_TERBIT)
+            // Kembaran JSON halaman web: yang dibatalkan ikut menjawab (§38.2).
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
             ->first();
 
         if (! $certificate) {
@@ -29,11 +30,20 @@ class VerificationController extends Controller
         }
 
         $alat = $certificate->session->equipment;
+        $pengganti = $certificate->status === Certificate::STATUS_TERBIT ? $certificate->penggantiSah() : null;
 
         return response()->json([
             'data' => [
                 'nomor' => $certificate->nomor,
                 'status' => $certificate->status,
+                // §38.2 — tanpa alasan apa pun (D4).
+                'status_dokumen' => Certificate::labelDokumen((string) $certificate->status, $pengganti?->status),
+                'digantikan_oleh' => $pengganti === null ? null : [
+                    'nomor' => $pengganti->nomor,
+                    'diterbitkan_pada' => $pengganti->diterbitkan_pada?->toDateString(),
+                    'tautan' => route('verify', $pengganti->qr_token),
+                ],
+                'dibatalkan_pada' => $certificate->dibatalkan_pada?->toDateString(),
                 'keputusan' => $certificate->session->keputusan,
                 'diterbitkan_pada' => $certificate->diterbitkan_pada?->toDateString(),
                 'berlaku_sampai' => $certificate->berlaku_sampai?->toDateString(),

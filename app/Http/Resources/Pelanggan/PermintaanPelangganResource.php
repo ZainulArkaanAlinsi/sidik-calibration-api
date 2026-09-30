@@ -2,8 +2,11 @@
 
 namespace App\Http\Resources\Pelanggan;
 
+use App\Models\FotoPelanggan;
 use App\Models\PermintaanKalibrasi;
 use App\Models\PermintaanKalibrasiItem;
+use App\Services\Pelanggan\FotoPelangganLayanan;
+use App\Support\TahapPermintaan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -50,6 +53,9 @@ class PermintaanPelangganResource extends JsonResource
             'paket' => $p->order !== null && $p->order->status !== 'dibatalkan'
                 ? ['id' => $p->order->id, 'nomor' => $p->order->nomor]
                 : null,
+            // §42 B5 — tahap, resi, jadwal teknisi. Dari `TahapPermintaan`, BUKAN
+            // dari resource internal (aturan Modul Pelanggan butir 2).
+            ...TahapPermintaan::bentuk($p),
         ];
 
         if ($p->status === PermintaanKalibrasi::STATUS_DITOLAK) {
@@ -74,6 +80,7 @@ class PermintaanPelangganResource extends JsonResource
                 'merk' => $item->equipment->merk,
                 'model' => $item->equipment->model,
                 'serial' => $item->equipment->serial_number,
+                'foto' => self::foto($item),
             ];
         }
 
@@ -87,6 +94,17 @@ class PermintaanPelangganResource extends JsonResource
             'merk' => $a['merk'] ?? null,
             'model' => $a['model'] ?? null,
             'serial' => $a['serial_number'] ?? null,
+            'foto' => self::foto($item),
         ];
+    }
+
+    /** @return list<array{id: int, url: string}> */
+    private static function foto(PermintaanKalibrasiItem $item): array
+    {
+        if (! $item->relationLoaded('foto')) {
+            return [];
+        }
+
+        return $item->foto->map(fn (FotoPelanggan $f) => FotoPelangganLayanan::bentukPelanggan($f))->values()->all();
     }
 }

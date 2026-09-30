@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\GenerateCertificate;
+use App\Jobs\ReviseCertificate;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use Illuminate\Console\Command;
@@ -131,11 +132,18 @@ class SapuSertifikatTertunda extends Command
             // sesudahnya tidak pernah dicoba. Barisnya tetap `menunggu_generate`,
             // jadi sapuan berikutnya mencobanya lagi. Dijaga `ChaosTerbitSertifikatTest`.
             try {
-                GenerateCertificate::dispatch(
-                    $sertifikat->calibration_session_id,
-                    $sertifikat->issued_by,
-                    $sertifikat->berlaku_sampai?->format('Y-m-d'),
-                );
+                // Baris REVISI (§38) punya job sendiri. `GenerateCertificate`
+                // bekerja per sesi dan langsung berhenti karena sertifikat
+                // ASLI sesinya sudah terbit — revisinya tersangkut selamanya.
+                if ($sertifikat->revision_of !== null) {
+                    ReviseCertificate::dispatch($sertifikat->id);
+                } else {
+                    GenerateCertificate::dispatch(
+                        $sertifikat->calibration_session_id,
+                        $sertifikat->issued_by,
+                        $sertifikat->berlaku_sampai?->format('Y-m-d'),
+                    );
+                }
             } catch (\Throwable $e) {
                 $gagal++;
 

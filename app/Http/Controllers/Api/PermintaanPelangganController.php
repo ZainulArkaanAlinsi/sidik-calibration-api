@@ -2,14 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PermintaanKalibrasiResource;
 use App\Models\PermintaanKalibrasi;
 use App\Models\PesanPermintaan;
+use App\Notifications\Pelanggan\KabarKoreksiPermintaan;
+use App\Services\Pelanggan\PreferensiNotifikasi;
 use App\Services\PenjagaOrganisasi;
 use App\Services\Permintaan\AlurPermintaan;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification as Kabar;
 use Illuminate\Validation\Rule;
 
 /**
@@ -29,6 +37,15 @@ use Illuminate\Validation\Rule;
  */
 class PermintaanPelangganController extends Controller
 {
+    /**
+     * `order.items.sesiTerakhir.certificate` untuk tahap & progres
+     * (`TahapPermintaan`), `items.foto` untuk foto pelat nama alat baru.
+     */
+    private const RELASI = [
+        'customer:id,nama', 'pemohon:id,name,email,telepon', 'pemutus:id,name', 'order:id,nomor,status',
+        'order.items.sesiTerakhir.certificate', 'items.equipment', 'items.foto',
+    ];
+
     public function __construct(private readonly AlurPermintaan $alur) {}
 
     public function index(Request $request): JsonResponse
@@ -56,7 +73,7 @@ class PermintaanPelangganController extends Controller
                 $q->where(fn ($c) => $c->where('nomor', 'like', $kata)
                     ->orWhereHas('customer', fn ($k) => $k->where('nama', 'like', $kata)));
             })
-            ->with(['customer:id,nama', 'pemohon:id,name,email,telepon', 'pemutus:id,name', 'order:id,nomor,status', 'items.equipment'])
+            ->with(self::RELASI)
             ->withCount('pesan')
             // Antrean "baru": yang paling lama menunggu di atas. Daftar lain
             // (riwayat) terbaru di atas — sama alasannya dengan antrean
@@ -144,6 +161,77 @@ class PermintaanPelangganController extends Controller
         ]);
     }
 
+    /**
+     * Jadwal kunjungan teknisi untuk permintaan `diambil_lab` yang sudah
+     * diterima (PL_Daftar_Permintaan "Teknisi dijadwalkan"). Boleh diubah
+     * ulang selama alatnya belum ditandai tiba — tiap perubahan dikabarkan.
+     */
+    public function jadwal(Request $request, PermintaanKalibrasi $permintaan): JsonResponse
+    {
+        PenjagaOrganisasi::pastikanSatu($request, $permintaan);
+
+        $data = $request->validate([
+            'jadwal_pada' => ['required', 'date', 'after_or_equal:today'],
+            'lokasi' => ['nullable', 'string', 'max:255'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $baris = DB::transaction(function () use ($permintaan, $data): PermintaanKalibrasi {
+            $baris = PermintaanKalibrasi::query()->whereKey($permintaan->id)->lockForUpdate()->firstOrFail();
+
+            abort_unless(
+                $baris->status === PermintaanKalibrasi::STATUS_DITERIMA
+                    && $baris->metode_pengantaran === PermintaanKalibrasi::METODE_DIAMBIL_LAB
+                    && $baris->alat_tiba_pada === null,
+                422,
+                'Jadwal teknisi cuma untuk permintaan "diambil lab" yang sudah diterima dan alatnya belum tiba.',
+            );
+
+            $baris->update([
+                'jadwal_pada' => Carbon::parse($data['jadwal_pada']),
+                'jadwal_lokasi' => $data['lokasi'] ?? null,
+                'jadwal_catatan' => $data['catatan'] ?? null,
+            ]);
+
+            return $baris;
+        });
+
+        $this->kabariPelanggan($baris, KabarKoreksiPermintaan::jadwalTeknisi($baris));
+        PerubahanDataOrganisasi::siarkanAman((int) $baris->organization_id, 'permintaan', 'jadwal', $baris->id);
+
+        return response()->json([
+            'message' => 'Jadwal teknisi disimpan. Pelanggan dikabari.',
+            'data' => $this->bentuk($baris, $request),
+        ]);
+    }
+
+    /** Tandai alat sudah tiba di lab (dari kurir, diantar, atau dijemput teknisi). */
+    public function alatTiba(Request $request, PermintaanKalibrasi $permintaan): JsonResponse
+    {
+        PenjagaOrganisasi::pastikanSatu($request, $permintaan);
+
+        $baris = DB::transaction(function () use ($permintaan): PermintaanKalibrasi {
+            $baris = PermintaanKalibrasi::query()->whereKey($permintaan->id)->lockForUpdate()->firstOrFail();
+
+            abort_unless(
+                $baris->status === PermintaanKalibrasi::STATUS_DITERIMA && $baris->alat_tiba_pada === null,
+                422,
+                'Cuma permintaan yang sudah diterima dan alatnya belum ditandai tiba.',
+            );
+
+            $baris->update(['alat_tiba_pada' => now()]);
+
+            return $baris;
+        });
+
+        PerubahanDataOrganisasi::siarkanAman((int) $baris->organization_id, 'permintaan', 'alat_tiba', $baris->id);
+
+        return response()->json([
+            'message' => 'Alat ditandai sudah tiba di lab.',
+            'data' => $this->bentuk($baris, $request),
+        ]);
+    }
+
     public function pesan(Request $request, PermintaanKalibrasi $permintaan): JsonResponse
     {
         PenjagaOrganisasi::pastikanSatu($request, $permintaan);
@@ -182,10 +270,29 @@ class PermintaanPelangganController extends Controller
     /** @return array<string, mixed> */
     private function bentuk(PermintaanKalibrasi $permintaan, Request $request): array
     {
-        $permintaan->load(['customer:id,nama', 'pemohon:id,name,email,telepon', 'pemutus:id,name', 'order:id,nomor,status', 'items.equipment'])
-            ->loadCount('pesan');
+        $permintaan->load(self::RELASI)->loadCount('pesan');
 
         return (new PermintaanKalibrasiResource($permintaan))->resolve($request);
+    }
+
+    /** Pola `AlurPermintaan::kabari` — gagal kirim tidak boleh jadi 500. */
+    private function kabariPelanggan(PermintaanKalibrasi $permintaan, Notification $notifikasi): void
+    {
+        try {
+            $permintaan->loadMissing('customer');
+
+            if ($permintaan->customer !== null) {
+                Kabar::send(
+                    app(PreferensiNotifikasi::class)->penerima($permintaan->customer, PreferensiNotifikasi::STATUS_PERMINTAAN),
+                    $notifikasi,
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi jadwal teknisi gagal dikirim.', [
+                'permintaan_id' => $permintaan->id,
+                'pesan' => $e->getMessage(),
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */

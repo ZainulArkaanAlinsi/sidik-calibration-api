@@ -75,6 +75,9 @@
         .kop .akr { font-size: 10.5px; color: #555; }
 
         .judul { text-align: center; font-size: 16px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 12px; }
+        /* D6 §38: "Revisi ke-n, menggantikan <nomor>" tepat di bawah judul —
+           cuma dicetak untuk sertifikat revisi, jadi lembar lama tidak bergeser. */
+        .catatan-revisi { text-align: center; font-size: 9.5px; font-weight: bold; margin: -8px 0 10px; }
 
         table.info { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         table.info td { padding: 3px 6px; vertical-align: top; }
@@ -440,6 +443,48 @@
             border: 1px solid #1d4292;
             padding: 9px 15px;
         }
+        /* Digantikan revisi (§38.2) — warna "awas", bukan "gagal": dokumennya
+           tidak palsu, cuma sudah ada yang lebih baru. */
+        .bilah.digantikan {
+            background: #fbf3e0;
+            border-color: color-mix(in srgb, #8a5a00 45%, #d9d2c0);
+            border-left-color: #8a5a00;
+        }
+        .bilah.digantikan .cap { color: #8a5a00; }
+
+        /* Kartu ringkas di atas lembar. */
+        .ringkas {
+            max-width: 820px;
+            margin: 0 auto 14px;
+            background: #fff;
+            border: 1px solid #d9d2c0;
+            border-radius: 6px;
+            padding: 6px 18px;
+        }
+        .ringkas-baris {
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid #eee8da;
+            font-size: 14px;
+        }
+        .ringkas-baris:last-child { border-bottom: 0; }
+        .ringkas-label { color: #4a5059; flex: 0 0 38%; }
+        .ringkas-nilai { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+        .ringkas-nilai.mono { font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace; font-weight: 500; }
+        .ringkas-catatan { display: block; font-size: 12px; font-weight: 400; color: #6b7280; }
+        summary .ringkas-catatan { display: inline; }
+
+        details.lembar-lengkap { max-width: 820px; margin: 0 auto; }
+        details.lembar-lengkap > summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #1d4292;
+            padding: 12px 4px;
+            font-size: 14px;
+        }
+        details.lembar-lengkap > summary:focus-visible { outline: 2px solid #1d4292; outline-offset: 2px; }
 
         /*
           Tabel hasil & standar dibikin selebar lembarnya.
@@ -546,18 +591,83 @@
 @php($longgar = ($web ?? false) || $padat || $lembarAutoclave || $lembarTimbangan ? 0 : max(-2, min(2, (int) ($longgar ?? 0))))
 <body class="{{ $padat ? 'padat' : '' }}{{ $lembarAutoclave ? ' lembar-autoclave' : '' }}{{ $lembarTimbangan ? ' lembar-timbangan' : '' }}{{ $longgar > 0 ? ' longgar-'.$longgar : '' }}{{ $longgar < 0 ? ' rapat-'.abs($longgar) : '' }}">
 @if ($web ?? false)
-    <div class="bilah">
-        <div class="cap">&#10003; Sertifikat terverifikasi</div>
-        <div class="ket">
-            Lembar di bawah ini salinan sah dari sistem
-            {{ $snapshot['meta']['organization']['nama'] ?? 'laboratorium' }}.
-            Cocokkan dengan lembar yang kamu pegang.
+    @if (($pengganti ?? null) !== null)
+        {{-- §38.2: kertas lama dipindai sesudah direvisi. Lembarnya tetap
+             tampil sebagai RIWAYAT; yang berlaku ditunjuk dengan jelas. Tanpa
+             alasan revisi apa pun (D4). --}}
+        <div class="bilah digantikan" role="status">
+            <div class="cap">Sertifikat ini sudah direvisi</div>
+            <div class="ket">
+                Yang berlaku: <strong>{{ $pengganti->nomor }}</strong>@if ($pengganti->diterbitkan_pada), terbit {{ $pengganti->diterbitkan_pada->locale('id')->translatedFormat('j F Y') }}@endif.
+                @if ($pengganti->status === \App\Models\Certificate::STATUS_DIBATALKAN)
+                    Revisi itu kemudian <strong>dibatalkan</strong>.
+                @endif
+                Lembar di bawah ini riwayat, bukan dokumen yang berlaku.
+            </div>
+            <div class="aksi">
+                <a href="{{ route('verify', $pengganti->qr_token) }}">Buka yang berlaku</a>
+                <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF lama</a>
+            </div>
         </div>
-        <div class="aksi">
-            <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF</a>
-            <a href="{{ route('verify.download', $sertifikat->qr_token) }}?format=xlsx">Unduh Excel</a>
+    @else
+        <div class="bilah">
+            <div class="cap">&#10003; Sertifikat terverifikasi</div>
+            <div class="ket">
+                Lembar di bawah ini salinan sah dari sistem
+                {{ $snapshot['meta']['organization']['nama'] ?? 'laboratorium' }}.
+                Cocokkan dengan lembar yang kamu pegang.
+            </div>
+            <div class="aksi">
+                <a href="{{ route('verify.download', $sertifikat->qr_token) }}">Unduh PDF</a>
+                <a href="{{ route('verify.download', $sertifikat->qr_token) }}?format=xlsx">Unduh Excel</a>
+            </div>
         </div>
-    </div>
+    @endif
+
+    {{-- Kartu ringkas: yang dicocokkan orang dengan kertasnya. Nama pemilik
+         DISAMARKAN sebagian (App\Support\SamarkanNama) — halaman ini sering
+         di-screenshot & diteruskan. Nama utuh tetap ada di lembar lengkap. --}}
+    <section class="ringkas" aria-label="Ringkasan sertifikat">
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Nomor sertifikat</span>
+            <span class="ringkas-nilai mono">{{ $header['certificate_number'] ?? $sertifikat->nomor }}</span>
+        </div>
+        @if (filled($keputusan ?? null))
+            <div class="ringkas-baris">
+                <span class="ringkas-label">Hasil kalibrasi</span>
+                <span class="ringkas-nilai">{{ $keputusan }}</span>
+            </div>
+        @endif
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Alat</span>
+            <span class="ringkas-nilai">{{ $isi(collect([$header['equipment_name'] ?? null, trim(($header['manufacturer'] ?? '').' '.($header['model_type'] ?? ''))])->filter()->implode(' · ')) }}</span>
+        </div>
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Nomor seri</span>
+            <span class="ringkas-nilai mono">{{ $isi($header['serial_number'] ?? null) }}</span>
+        </div>
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Pemilik alat</span>
+            <span class="ringkas-nilai">{{ $isi($pemilikSamar ?? null) }} <span class="ringkas-catatan">Disamarkan sebagian</span></span>
+        </div>
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Tanggal kalibrasi</span>
+            <span class="ringkas-nilai">{{ $tgl($header['calibration_date'] ?? null) }}</span>
+        </div>
+        <div class="ringkas-baris">
+            <span class="ringkas-label">Diterbitkan</span>
+            <span class="ringkas-nilai">{{ $tgl($footer['issuance_date'] ?? null) }}</span>
+        </div>
+        @if ($sertifikat->berlaku_sampai)
+            <div class="ringkas-baris">
+                <span class="ringkas-label">Berlaku sampai</span>
+                <span class="ringkas-nilai">{{ $tgl($sertifikat->berlaku_sampai->toDateString()) }}</span>
+            </div>
+        @endif
+    </section>
+
+    <details class="lembar-lengkap">
+        <summary>Tampilkan lembar lengkap <span class="ringkas-catatan">— memuat nama pelanggan utuh</span></summary>
     <div class="lembar">
 @endif
     {{--
@@ -608,6 +718,9 @@
     @endif
 
     <div class="judul">CALIBRATION CERTIFICATE</div>
+    @if (filled($header['catatan_revisi'] ?? null))
+        <div class="catatan-revisi">{{ $header['catatan_revisi'] }}</div>
+    @endif
 
     {{-- Header informasi: 16 field, urutannya dikunci spesifikasi. --}}
     <table class="info">
@@ -1554,6 +1667,7 @@
     @endif
 @if ($web ?? false)
     </div>
+    </details>
 @endif
 </body>
 </html>

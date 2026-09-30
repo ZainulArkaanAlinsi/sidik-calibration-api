@@ -17,8 +17,10 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\FolderController;
 use App\Http\Controllers\Api\FolderFileController;
 use App\Http\Controllers\Api\FormulaController;
+use App\Http\Controllers\Api\FotoPelangganController;
 use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\KemampuanKalibrasiController;
+use App\Http\Controllers\Api\KoreksiPelangganController;
 use App\Http\Controllers\Api\LaporanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
@@ -639,6 +641,12 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Terbitin ulang sertifikat yang generate-nya gagal. Penerbitan = admin,
         // sejalan sama approve. Ini yang nyalain tombol retry di mobile.
         Route::post('/certificates/{certificate}/retry', [CertificateController::class, 'retry']);
+        // Revisi & pembatalan (§38). Admin saja; super admin tetap 403 lewat
+        // `lolosBacaSuperAdmin` (baca saja sampai K4). Tidak ada hapus permanen.
+        Route::post('/certificates/{certificate}/revisi', [CertificateController::class, 'revisi'])
+            ->middleware('throttle:sertifikat-ubah');
+        Route::post('/certificates/{certificate}/batalkan', [CertificateController::class, 'batalkan'])
+            ->middleware('throttle:sertifikat-ubah');
         // Kirim sertifikat ke email pelanggan (fase-2 §3d). Di backend, bukan
         // mobile, karena dua hal: alamat pengirim harus domain lab, dan
         // pengirimannya wajib tercatat buat audit. Throttle-nya ketat — ini ngirim
@@ -724,6 +732,23 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         Route::get('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'pesan']);
         Route::post('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'kirimPesan'])
             ->middleware('throttle:permintaan-pesan');
+        // §42 — jadwal teknisi (`diambil_lab`) & tanda alat tiba.
+        Route::post('/permintaan-pelanggan/{permintaan}/jadwal', [PermintaanPelangganController::class, 'jadwal'])
+            ->middleware('throttle:koreksi-putus');
+        Route::post('/permintaan-pelanggan/{permintaan}/alat-tiba', [PermintaanPelangganController::class, 'alatTiba'])
+            ->middleware('throttle:koreksi-putus');
+
+        // Koreksi data dari pelanggan (§42). Sama dengan permintaan: GET lolos
+        // untuk super admin (baca), POST tidak — sampai K4.
+        Route::get('/koreksi-pelanggan', [KoreksiPelangganController::class, 'index']);
+        Route::get('/koreksi-pelanggan/{koreksi}', [KoreksiPelangganController::class, 'show']);
+        Route::post('/koreksi-pelanggan/{koreksi}/terima', [KoreksiPelangganController::class, 'terima'])
+            ->middleware('throttle:koreksi-putus');
+        Route::post('/koreksi-pelanggan/{koreksi}/tolak', [KoreksiPelangganController::class, 'tolak'])
+            ->middleware('throttle:koreksi-putus');
+        // Foto pelat nama dari pelanggan — baca saja, disk arsip privat.
+        Route::get('/foto-pelanggan/{foto}', [FotoPelangganController::class, 'tampil'])
+            ->name('foto-pelanggan.tampil');
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,

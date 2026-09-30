@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CertificateResource;
 use App\Jobs\GenerateCertificate;
+use App\Jobs\ReviseCertificate;
 use App\Mail\SertifikatKePelanggan;
 use App\Models\Certificate;
 use App\Models\CertificateEmailLog;
 use App\Models\User;
 use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
+use App\Services\PembatalanSertifikat;
 use App\Services\PenjagaOrganisasi;
 use App\Services\QrCodeGenerator;
+use App\Services\RevisiSertifikat;
 use App\Support\Mailer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +46,16 @@ class CertificateController extends Controller
     // `customer` ikut karena resource-nya nampilin kontak pelanggan (email &
     // telepon) buat tombol kirim. Tanpa dimuat di sini, daftar sertifikat jadi
     // satu query tambahan per baris.
-    private const RELASI = ['session.equipment.customer'];
+    // Revisi & pembatalan (§38) ikut dimuat di sini — `CertificateResource`
+    // membacanya untuk tiap baris daftar.
+    //
+    // `revisiTerakhir` SENGAJA tanpa daftar kolom: `latestOfMany()` pada relasi
+    // ke tabel yang sama menggabungkan `certificates` dengan dirinya sendiri,
+    // dan `id`/`revision_of` tanpa nama tabel jadi ambigu (SQLSTATE ambiguous
+    // column) — daftar sertifikat langsung 500.
+    private const RELASI = [
+        'session.equipment.customer', 'revisionOf:id,nomor', 'revisiTerakhir', 'pembatal:id,name',
+    ];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -95,7 +107,70 @@ class CertificateController extends Controller
                 // 11) — biar admin bisa lihat sertifikat mana yang dulu terbit
                 // dengan peringatan.
                 'validasi' => $certificate->validasi,
+                // D3 — peringatan di modal konfirmasi pembatalan. Cuma di layar
+                // detail: menghitungnya per baris daftar itu satu query per baris.
+                'dampak_pembatalan' => app(PembatalanSertifikat::class)->dampak($certificate),
             ],
+        ]);
+    }
+
+    /**
+     * Terbitkan REVISI (§38, D2). Cuma data administratif; angka disalin.
+     *
+     * 202, bukan 201: barisnya lahir sekarang, PDF-nya dirender di antrean.
+     */
+    public function revisi(Request $request, Certificate $certificate, RevisiSertifikat $revisi): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $certificate);
+
+        $data = $request->validate([
+            'perubahan' => ['required', 'array', 'min:1'],
+            'perubahan.pemilik' => ['sometimes', 'required', 'string', 'max:255'],
+            'perubahan.alamat' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'perubahan.merk' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'perubahan.tipe' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'perubahan.nomor_seri' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'perubahan.lokasi_kalibrasi' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'perubahan.tanggal_kalibrasi' => ['sometimes', 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'perubahan.berlaku_sampai' => ['sometimes', 'required', 'date_format:Y-m-d'],
+            'alasan' => ['required', 'string', 'max:2000'],
+            'catatan_pelanggan' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $baru = $revisi->terbitkan(
+            $certificate,
+            (array) $request->input('perubahan'),
+            $data['alasan'],
+            $data['catatan_pelanggan'] ?? null,
+            $request->user(),
+        );
+
+        return response()->json([
+            'message' => "Revisi {$baru->nomor} dibuat. PDF-nya sedang dirender.",
+            'data' => new CertificateResource($baru->fresh()->load(self::RELASI)),
+        ], 202);
+    }
+
+    /** BATALKAN (§38, D1/D3/D4). Final. */
+    public function batalkan(Request $request, Certificate $certificate, PembatalanSertifikat $pembatalan): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $certificate);
+
+        $data = $request->validate([
+            'alasan' => ['required', 'string', 'max:2000'],
+            'catatan_pelanggan' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $baris = $pembatalan->batalkan(
+            $certificate,
+            $data['alasan'],
+            $data['catatan_pelanggan'] ?? null,
+            $request->user(),
+        );
+
+        return response()->json([
+            'message' => "Sertifikat {$baris->nomor} dibatalkan.",
+            'data' => new CertificateResource($baris->fresh()->load(self::RELASI)),
         ]);
     }
 
@@ -107,8 +182,12 @@ class CertificateController extends Controller
     ): StreamedResponse {
         $this->pastikanBolehLihat($request, $certificate);
 
+        // Yang dibatalkan TETAP bisa diunduh orang lab — arsipnya wajib
+        // disimpan (D1). Yang ditutup untuk sertifikat batal adalah pintu
+        // pelanggan & QR publik, bukan arsip internal.
         abort_unless(
-            $certificate->status === Certificate::STATUS_TERBIT && $certificate->pdf_path,
+            in_array($certificate->status, [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN], true)
+                && $certificate->pdf_path,
             404,
             'Sertifikat ini belum punya PDF yang bisa diunduh.',
         );
@@ -234,7 +313,9 @@ class CertificateController extends Controller
             ], 422);
         }
 
-        $job = new GenerateCertificate(
+        // Baris REVISI punya job sendiri: `GenerateCertificate` bekerja per
+        // sesi dan akan menerbitkan ulang sertifikat ASLI-nya, bukan revisinya.
+        $job = $certificate->revision_of !== null ? new ReviseCertificate($certificate->id) : new GenerateCertificate(
             $certificate->calibration_session_id,
             $request->user()->id,
             // Diwariskan dari barisnya, bukan dibiarkan kosong.

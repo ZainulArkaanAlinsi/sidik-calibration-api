@@ -469,13 +469,21 @@ class GenerateCertificate implements ShouldQueue
         )->startOfDay();
     }
 
-    /** Nomor sertifikat urut per organisasi per bulan: CAL/2026/07/0001. */
+    /**
+     * Nomor sertifikat urut per organisasi per bulan: CAL/2026/07/0001.
+     *
+     * Nomor revisi (`…/0011-R1`) WAJIB disaring. Tanpa itu `orderByDesc('nomor')`
+     * memilih `…/0011-R1` sebagai yang terbesar, `substr(..., -4)` memulangkan
+     * `1-R1`, `(int)` jadi 1, dan sertifikat baru berikutnya mendapat `0002` —
+     * nomor yang sudah terbit (§38.3). Dijaga `NomorSertifikatSesudahRevisiTest`.
+     */
     private function nomorBerikutnya(int $organizationId): string
     {
         $prefix = sprintf('CAL/%s/', now()->format('Y/m'));
 
         $terakhir = Certificate::where('organization_id', $organizationId)
             ->where('nomor', 'like', $prefix.'%')
+            ->where('nomor', 'not like', '%-R%')
             ->lockForUpdate()
             ->orderByDesc('nomor')
             ->value('nomor');

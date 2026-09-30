@@ -24,7 +24,7 @@ class CertificateInfolist
                             ->color(fn (string $state): string => match ($state) {
                                 Certificate::STATUS_TERBIT => 'success',
                                 Certificate::STATUS_MENUNGGU_GENERATE => 'warning',
-                                Certificate::STATUS_GAGAL => 'danger',
+                                Certificate::STATUS_GAGAL, Certificate::STATUS_DIBATALKAN => 'danger',
                                 default => 'gray',
                             }),
                         TextEntry::make('diterbitkan_pada')

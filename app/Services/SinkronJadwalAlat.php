@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Certificate;
 use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * Samain `equipments.tanggal_kalibrasi_terakhir` & `tanggal_jatuh_tempo` sama
@@ -126,18 +125,45 @@ class SinkronJadwalAlat
      */
     public function sertifikatAktif(Equipment $alat): ?Certificate
     {
+        // Syarat 2 lewat `belumDigantikan()` — revisi yang `dibatalkan` ikut
+        // dihitung menggantikan (K38-2): membatalkan X′ tidak menghidupkan X.
         return Certificate::query()
             ->with('session')
             ->where('certificates.organization_id', $alat->organization_id)
             ->where('certificates.status', Certificate::STATUS_TERBIT)
             ->whereHas('session', fn (Builder $sesi) => $sesi->where('equipment_id', $alat->getKey()))
-            ->whereNotExists(fn (QueryBuilder $revisi) => $revisi
-                ->selectRaw('1')
-                ->from('certificates as pengganti')
-                ->whereColumn('pengganti.revision_of', 'certificates.id')
-                ->where('pengganti.status', Certificate::STATUS_TERBIT))
+            ->belumDigantikan()
             ->orderByDesc('diterbitkan_pada')
             ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * Jalur KHUSUS sesudah sertifikat dibatalkan (D3) — satu-satunya yang boleh
+     * mengosongkan jadwal alat.
+     *
+     * [untuk] sengaja diam saat alat tidak punya sertifikat aktif, supaya tanggal
+     * hasil impor Excel tidak ditimpa `null` oleh sapuan rutin. Di sini justru
+     * sebaliknya: jadwal yang TADI bersumber dari sertifikat yang baru dibatalkan
+     * tidak boleh bertahan, karena pengingat pagi akan terus mengabarkan jatuh
+     * tempo dari dokumen yang sudah tidak sah. Kalau masih ada sertifikat sah
+     * sebelumnya, jadwal jatuh ke situ.
+     */
+    public function sesudahPembatalan(Equipment $alat): void
+    {
+        if ($this->rencana($alat) !== null) {
+            $this->untuk($alat);
+
+            return;
+        }
+
+        if ($alat->tanggal_kalibrasi_terakhir === null && $alat->tanggal_jatuh_tempo === null) {
+            return;
+        }
+
+        $alat->update([
+            'tanggal_kalibrasi_terakhir' => null,
+            'tanggal_jatuh_tempo' => null,
+        ]);
     }
 }
