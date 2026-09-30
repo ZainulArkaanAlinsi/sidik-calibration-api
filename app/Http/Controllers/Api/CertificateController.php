@@ -60,6 +60,18 @@ class CertificateController extends Controller
                 fn ($query) => $query->whereHas('session', fn ($q) => $q->where('teknisi_id', $user->id)),
             )
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            // Sertifikat milik satu pelanggan (pusat pelanggan di aplikasi lab).
+            // Kepemilikan dibaca dari ALAT sesinya, termasuk yang sudah dihapus
+            // lunak — sertifikat yang pernah terbit tetap milik pelanggannya,
+            // sama dengan `LingkupData::sertifikat()` di sisi pelanggan.
+            // `organization_id` di atas tetap mengurung hasilnya ke lab sendiri.
+            ->when(
+                $request->filled('customer_id'),
+                fn ($query) => $query->whereHas(
+                    'session.equipment',
+                    fn ($e) => $e->withTrashed()->where('customer_id', $request->integer('customer_id')),
+                ),
+            )
             ->latest('id')
             ->paginate(15)
             ->withQueryString();

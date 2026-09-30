@@ -25,9 +25,43 @@ class EquipmentController extends Controller
     {
         $organisasi = $request->user()->organization_id;
 
+        // Tiga penyaring/urutan untuk layar jatuh tempo & pusat pelanggan (30 Sep
+        // 2026). Semuanya OPSIONAL dan TIDAK mengubah bawaan: tanpa parameter ini
+        // daftarnya persis seperti sebelumnya (terbaru dulu, tanpa batas tanggal).
+        // Divalidasi supaya `?jatuh_tempo_dalam=abc` ditolak, bukan diam-diam
+        // dibaca 0 dan memulangkan daftar yang kelihatan benar.
+        $saring = $request->validate([
+            'customer_id' => ['sometimes', 'nullable', 'integer'],
+            'jatuh_tempo_dalam' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:3650'],
+            'termasuk_lewat' => ['sometimes', 'boolean'],
+            'urut' => ['sometimes', 'nullable', 'in:terbaru,jatuh_tempo'],
+        ]);
+
         $equipments = Equipment::query()
             ->with(['customer', 'category'])
             ->where('organization_id', $organisasi)
+            // `customer_id` cukup disaring begini: `organization_id` di atas
+            // sudah mengurung hasilnya ke lab pemanggil, jadi ID pelanggan lab
+            // lain memulangkan daftar kosong, bukan alat orang lain.
+            ->when(
+                filled($saring['customer_id'] ?? null),
+                fn (Builder $query) => $query->where('customer_id', $saring['customer_id']),
+            )
+            // Jatuh tempo dalam N hari ke depan, cuma alat AKTIF. Yang sudah
+            // lewat sengaja tidak ikut (itu `status=overdue`) kecuali diminta
+            // `termasuk_lewat=1` — layar jatuh tempo butuh dua-duanya dalam
+            // satu daftar berurutan.
+            ->when(
+                filled($saring['jatuh_tempo_dalam'] ?? null),
+                fn (Builder $query) => $query
+                    ->where('status', Equipment::STATUS_AKTIF)
+                    ->whereNotNull('tanggal_jatuh_tempo')
+                    ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays((int) $saring['jatuh_tempo_dalam']))
+                    ->when(
+                        ! $request->boolean('termasuk_lewat'),
+                        fn (Builder $q) => $q->whereDate('tanggal_jatuh_tempo', '>=', now()->startOfDay()),
+                    ),
+            )
             ->when(
                 $request->filled('profil'),
                 fn (Builder $query) => $this->saringProfil(
@@ -61,7 +95,17 @@ class EquipmentController extends Controller
                     default => $query->where('status', $status),
                 };
             })
-            ->latest('id')
+            // Bawaan tetap terbaru dulu. `urut=jatuh_tempo`: yang paling lama
+            // lewat di atas, alat tanpa jadwal di dasar — sama dengan daftar
+            // alat di aplikasi pelanggan.
+            ->when(
+                ($saring['urut'] ?? null) === 'jatuh_tempo',
+                fn (Builder $query) => $query
+                    ->orderByRaw('tanggal_jatuh_tempo IS NULL ASC')
+                    ->orderBy('tanggal_jatuh_tempo')
+                    ->orderBy('id'),
+                fn (Builder $query) => $query->latest('id'),
+            )
             ->paginate(15)
             ->withQueryString();
 
