@@ -15,6 +15,7 @@ use App\Models\Formula;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Penugasan;
+use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
@@ -87,6 +88,7 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
         'worksheetScan' => 'pindai',
         'dokumenBacaan' => 'bacaan',
         'penugasan' => 'penugasan',
+        'permintaan' => 'permintaan',
     ];
 
     /**
@@ -399,6 +401,19 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'status' => Penugasan::STATUS_AKTIF,
         ]);
 
+        $permintaan = PermintaanKalibrasi::create([
+            'organization_id' => $this->lab2->id,
+            'customer_id' => $pelanggan->id,
+            'nomor' => 'BOCOR-PMT-LAB2',
+            'status' => PermintaanKalibrasi::STATUS_BARU,
+            'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
+            'catatan' => 'BOCOR-CATATAN-PERMINTAAN-LAB2',
+        ]);
+        $permintaan->pesan()->create([
+            'sisi' => 'pelanggan',
+            'isi' => 'BOCOR-PESAN-LAB2',
+        ]);
+
         $this->idLab2 = [
             'technician' => $teknisiLab2->id,
             'order' => $paket->id,
@@ -408,6 +423,7 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'worksheetScan' => $pindai->id,
             'dokumenBacaan' => $bacaan->id,
             'penugasan' => $penugasan->id,
+            'permintaan' => $permintaan->id,
             'calibration' => $sesi->id,
             'certificate' => $sertifikat->id,
             'equipment' => $alat->id,
@@ -436,6 +452,9 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'BOCOR-BERKAS-LAB2',
             'BOCOR-BACAAN-LAB2',
             'BOCOR-PENUGASAN-LAB2',
+            'BOCOR-PMT-LAB2',
+            'BOCOR-CATATAN-PERMINTAAN-LAB2',
+            'BOCOR-PESAN-LAB2',
         ];
     }
 }

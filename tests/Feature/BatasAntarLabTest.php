@@ -15,6 +15,7 @@ use App\Models\Formula;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Penugasan;
+use App\Models\PermintaanKalibrasi;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\User;
@@ -122,6 +123,9 @@ class BatasAntarLabTest extends TestCase
         'api/pelanggan/v1/sertifikat/{sertifikat}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
         'api/pelanggan/v1/sertifikat/{sertifikat}/unduh' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
         'api/pelanggan/v1/paket/{paket}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        // Permintaan kalibrasi (30 Sep) — batasnya perusahaan, bukan lab.
+        'api/pelanggan/v1/permintaan/{permintaan}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        'api/pelanggan/v1/permintaan/{permintaan}/pesan' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
     ];
 
     /**
@@ -156,6 +160,9 @@ class BatasAntarLabTest extends TestCase
             // Keputusan 26 Sep — pelacakan paket & penugasan membaca milik lab.
             'pelacakan paket' => ['api/pelacakan/{order}', 'order'],
             'penugasan' => ['api/penugasan/{penugasan}', 'penugasan'],
+            // Permintaan kalibrasi dari pelanggan (30 Sep) — sisi lab.
+            'permintaan pelanggan' => ['api/permintaan-pelanggan/{permintaan}', 'permintaan'],
+            'permintaan pelanggan pesan' => ['api/permintaan-pelanggan/{permintaan}/pesan', 'permintaan'],
         ];
     }
 
@@ -381,6 +388,13 @@ class BatasAntarLabTest extends TestCase
                 'judul' => 'Penugasan lab B',
                 'tipe' => Penugasan::TIPE_PERSONAL,
                 'status' => Penugasan::STATUS_AKTIF,
+            ])->id,
+            'permintaan' => PermintaanKalibrasi::create([
+                'organization_id' => $labB->id,
+                'customer_id' => $pelanggan->id,
+                'nomor' => 'PMT/2026/10/0001',
+                'status' => PermintaanKalibrasi::STATUS_BARU,
+                'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
             ])->id,
         ];
     }

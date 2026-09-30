@@ -378,6 +378,15 @@ class AppServiceProvider extends ServiceProvider
         // dari disk arsip; 30 per menit longgar buat manusia yang mengunduh
         // satu-satu, dan menahan skrip yang menyedot seluruh arsip sekaligus.
         $perMenitPengguna('pelanggan-unduh', 30);
+        // Tulis di modul permintaan kalibrasi (ajuan, batal, pesan) & saklar
+        // notifikasi. Per pengguna: satu perusahaan di belakang satu IP kantor,
+        // jadi kunci per IP bikin rekan sekantor saling menghabiskan jatah.
+        $perMenitPengguna('pelanggan-permintaan-tulis', 30);
+        $perMenitPengguna('pelanggan-preferensi', 30);
+        // Sisi LAB: terima/tolak dan balas pesan. Longgar — admin yang memproses
+        // antrean banyak sekaligus tetap aman; yang dijaga skrip yang lepas.
+        $perMenitPengguna('permintaan-putus', 60);
+        $perMenitPengguna('permintaan-pesan', 60);
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
         // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia

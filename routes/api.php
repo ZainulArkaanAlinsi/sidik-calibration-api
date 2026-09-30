@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PelacakanController;
 use App\Http\Controllers\Api\PengesahanController;
 use App\Http\Controllers\Api\PenugasanController;
+use App\Http\Controllers\Api\PermintaanPelangganController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StandardController;
@@ -709,6 +710,20 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
         // Bagi-bagi kerjaan ke teknisi tanpa ngirim ulang seluruh order —
         // aksinya sering, payload `PUT` lengkap kemahalan buat ini.
         Route::post('/orders/{order}/penugasan', [OrderController::class, 'penugasan']);
+
+        // Permintaan kalibrasi dari pelanggan (30 Sep 2026). Semua di grup
+        // `role:admin`: GET lolos untuk super admin lewat `lolosBacaSuperAdmin`
+        // (baca saja), POST tidak — memutuskan permintaan belum dibuka untuknya.
+        // Teknisi & viewer 403 untuk semuanya: isi ajuan memuat data pelanggan.
+        Route::get('/permintaan-pelanggan', [PermintaanPelangganController::class, 'index']);
+        Route::get('/permintaan-pelanggan/{permintaan}', [PermintaanPelangganController::class, 'show']);
+        Route::post('/permintaan-pelanggan/{permintaan}/terima', [PermintaanPelangganController::class, 'terima'])
+            ->middleware('throttle:permintaan-putus');
+        Route::post('/permintaan-pelanggan/{permintaan}/tolak', [PermintaanPelangganController::class, 'tolak'])
+            ->middleware('throttle:permintaan-putus');
+        Route::get('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'pesan']);
+        Route::post('/permintaan-pelanggan/{permintaan}/pesan', [PermintaanPelangganController::class, 'kirimPesan'])
+            ->middleware('throttle:permintaan-pesan');
 
         // Master data teknisi. Beda sama /users yang ngurusin approval akun:
         // yang ini khusus akun role `teknisi` dan bawa jumlah kalibrasinya,

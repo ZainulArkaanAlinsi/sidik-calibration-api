@@ -4481,6 +4481,86 @@ baru di `AppServiceProvider::rateLimiters()`, per pengguna, ember terpisah:
 melahirkan nomor sertifikat dan tidak boleh menguras jatah orang yang sedang
 mengesahkan. Dijaga `ThrottleRuteTulisPaket29SepTest`.
 
+## §41 — Permintaan kalibrasi dari pelanggan — 30 Sep 2026
+
+Sumbernya layar paket 29 Sep (`PL_Ajukan`, `PL_Permintaan`, `PL_Daftar_Permintaan`,
+`PL_Form_Alat`, `PL_Preferensi`) yang di matriks layar ditandai "menunggu API", plus
+`03-BACKEND.md` §5. Branch `feat/permintaan-kalibrasi`. Kontrak frontend:
+`docs/perintah-frontend-permintaan.md`.
+
+### 41.1 Keputusan pemilik proyek (30 Sep 2026) — jangan ditanya ulang
+
+1. Permintaan pelanggan masuk ke **SEMUA admin aktif** lab (notifikasi); siapa pun
+   boleh memprosesnya. Tidak ada "ditugaskan ke".
+2. Status awal `baru`. Admin meninjau lalu **MENERIMA** (lahir `Order` + `OrderItem`
+   lewat penomoran order yang sama dengan meja penerimaan, dan `Equipment` untuk
+   "alat baru" atas pelanggan itu) atau **MENOLAK** dengan alasan yang dibaca
+   pelanggan. **Tidak pernah otomatis.**
+3. Isi: alat yang sudah terdaftar dan/atau alat baru lewat formulir (field
+   PL_Form_Alat), catatan, cara pengantaran `diantar_sendiri` | `diambil_lab`.
+4. Satu utas pesan per permintaan, pelanggan ↔ admin lab.
+
+### 41.2 Yang mendarat
+
+- **Empat tabel, semuanya additive:** `permintaan_kalibrasi`,
+  `permintaan_kalibrasi_item`, `pesan_permintaan`, `preferensi_notifikasi_anggota`.
+  Nol kolom lama disentuh.
+- **Pelanggan** (`routes/api_pelanggan.php`, grup terverifikasi): `GET/POST /permintaan`,
+  `GET /permintaan/{id}`, `POST /permintaan/{id}/batal`, `GET/POST /permintaan/{id}/pesan`,
+  `GET/PUT /preferensi-notifikasi`. Tulis ber-throttle per pengguna.
+- **Lab** (`routes/api.php`, grup `role:admin`): `GET /permintaan-pelanggan`,
+  `GET …/{id}`, `POST …/{id}/terima`, `POST …/{id}/tolak`, `GET/POST …/{id}/pesan`.
+  Teknisi/viewer 403; super admin baca saja (POST 403); lab lain 404 sebelum validasi.
+- **Penomoran order dipindah** ke `App\Services\PenomoranOrder` (perilaku sama) supaya
+  meja penerimaan dan penerimaan permintaan tidak punya dua urutan.
+- **Notifikasi:** ajuan baru & pesan pelanggan → semua admin aktif lab itu; diterima /
+  ditolak / balasan lab → anggota aktif perusahaan yang saklarnya menyala. Semua
+  `Notification::send` dibungkus `try/catch` + `Log::warning` (Reverb mati tidak boleh
+  menjawab 500 sesudah data tersimpan), dan perubahan disiarkan lewat
+  `PerubahanDataOrganisasi::siarkanAman('permintaan', …)`.
+- **Preferensi notifikasi:** kunci per anggota per perusahaan. SATU tempat yang memilih
+  penerima — `PreferensiNotifikasi::penerima()` — dipakai `PengingatJatuhTempoPelanggan`
+  dan tiga notifikasi baru. Sekaligus REQ-NTF-05: alat yang sedang diajukan (`baru`)
+  atau ada di order `baru/diproses` tidak diingatkan jatuh tempo.
+- **`GET /equipments`:** `customer_id`, `jatuh_tempo_dalam`, `termasuk_lewat`,
+  `urut=jatuh_tempo`. **`GET /certificates`:** `customer_id`. Bawaan tidak berubah.
+- **Halaman verifikasi publik** direstyle mengikuti `Web_Verifikasi(_HP)`: layout
+  sendiri `layouts/verifikasi` (bukan `layouts/publik`, yang dipakai beranda &
+  hapus-akun). Data yang tampil tidak bertambah. Temuan di jalan: lembar penuh hasil
+  pindai QR (`sertifikat/pdf.blade.php` mode web) **tidak punya** meta `robots` &
+  `viewport` walau halaman ini memuat nama pelanggan utuh — sekarang ada, dijaga tes.
+
+### 41.3 Jebakan yang ditutup di sini
+
+- **`equipments.serial_number` NOT NULL dan UNIQUE per organisasi** (termasuk baris
+  terhapus lunak), padahal formulir alat baru membolehkannya kosong. Alat baru karena
+  itu tidak jadi baris `equipments` saat diajukan: disimpan sebagai JSON di item
+  ajuan, dan baru dibuat saat admin MENERIMA — dengan kategori (juga wajib) dan nomor
+  seri yang dilengkapi admin. Ajuan yang ditolak tidak meninggalkan alat sampah yang
+  ikut menyalakan alarm jatuh tempo.
+- **Nomor seri bentrok** dijawab 422 yang menyebut alatnya, bukan 500 dari batas
+  UNIQUE. Waktu pelanggan mengajukan, hanya bentrok dengan alat perusahaan SENDIRI yang
+  ditolak; bentrok dengan perusahaan lain sengaja tidak disebut (memetakan alat
+  pesaing) dan diputuskan admin waktu menerima.
+- **Validasi body jalan SESUDAH pencarian ID** di semua rute tulis ber-ID: kalau
+  terbalik, ID milik perusahaan/lab lain dijawab 422 dan itu sudah mengakui barisnya ada.
+- **Dua admin menekan Terima bersamaan:** baris dikunci (`lockForUpdate`) dan status
+  dibaca ulang di dalam kunci — yang kedua dijawab 422, tidak lahir order kembar.
+
+### 41.4 Yang sengaja BELUM
+
+- **Foto pelat nama** pada alat baru (PL_Form_Alat) — belum ada endpoint unggah.
+- **`POST /alat/{id}/minta-koreksi`** (PL_Ubah_Alat) — tidak dibangun: butuh alur
+  penanganan sisi admin yang belum diputuskan, dan kuncian identitas alat
+  (`field_terkunci` setelah sertifikat terbit) belum ada. Jangan dipaksakan jadi
+  "permintaan jenis koreksi" — itu mencampur dua antrean yang penanganannya berbeda.
+- **"Teknisi dijadwalkan" / resi pengiriman** (PL_Daftar_Permintaan) — di luar empat
+  keputusan di atas; status hanya `baru/diterima/ditolak/dibatalkan`.
+- **Status Digantikan/Dibatalkan & penyamaran nama** di halaman verifikasi — belum.
+- **Ringkasan email mingguan** — saklar tersimpan, pengirim belum ada.
+- **Suite MySQL penuh** tidak dijalankan untuk PR ini (jalur cepat pilihan pemilik
+  proyek): yang dijalankan set terfilter saja.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4887,3 +4967,4 @@ Supaya tidak dibangun ulang:
 | G24 | **Revisi & pembatalan sertifikat** — §38 | **PRD** (26 Sep 2026) — keputusan D1–D6 dari pemilik proyek; belum ada kode. Termasuk jebakan penomoran `-R1` yang WAJIB ditutup di rilis yang sama |
 | G25 | Alat baru **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** (Piston Pipette, Dispensett, Buret Digital) — §39 | **SERVER DIKERJAKAN** (28 Sep 2026, branch `feat/tekanan-piston-volume`) — enam profil, dua kalkulator, rekonsiliasi 962 + 274 sel master; acuan sha256 + log metode append-only + versi rumus terstempel & diadu validator + harness uji paralel (§39a). Sesi yang memicu T-1/T-2/T-11 (dan piston G-2/G-7/G-8 bila terpicu) DITAHAN menunggu TM — P-1/P-2/P-11, V-7/V-11/V-12. Mobile: fixture generator, cabang mock, dan selisih `M_i − M_{i−1}` di tabel kumulatif SUDAH. Sisa: suite penuh SQLite+MySQL, sertifikat arsip dari lab (§39a butir 5), OCR-3 menunggu persetujuan |
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
+| G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. Belum: foto alat baru, minta-koreksi alat, penjadwalan teknisi/resi, email mingguan. Suite MySQL penuh tidak dijalankan (set terfilter saja) |

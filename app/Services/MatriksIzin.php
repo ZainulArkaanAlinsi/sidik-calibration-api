@@ -76,6 +76,11 @@ class MatriksIzin
         'kalibrasi.tolak' => ['POST', 'api/calibrations/{calibration}/reject'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],
 
+        // --- permintaan kalibrasi dari pelanggan (admin; super admin cuma baca)
+        'permintaan.lihat' => ['GET', 'api/permintaan-pelanggan'],
+        'permintaan.putuskan' => ['POST', 'api/permintaan-pelanggan/{permintaan}/terima'],
+        'permintaan.balas' => ['POST', 'api/permintaan-pelanggan/{permintaan}/pesan'],
+
         // --- sertifikat
         'sertifikat.lihat' => ['GET', 'api/certificates'],
         'sertifikat.unduh' => ['GET', 'api/certificates/{certificate}/download'],

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -150,6 +151,29 @@ class PdfSertifikatSelamatDariDeployTest extends TestCase
 
         $this->get("/verify/{$sertifikat->qr_token}")->assertOk();
         $this->get("/verify/{$sertifikat->qr_token}/download?format=xlsx")->assertOk();
+    }
+
+    /**
+     * Lembar penuh hasil pindai QR memuat nama pelanggan utuh: wajib
+     * `noindex` dan wajib kebaca di HP. Dua meta itu cuma ada di mode web —
+     * PDF dompdf tidak boleh ikut membawanya.
+     */
+    public function test_lembar_qr_noindex_dan_viewport_hanya_di_mode_web(): void
+    {
+        $sertifikat = $this->sertifikatTerbit();
+        $this->deploy($sertifikat);
+
+        $this->get("/verify/{$sertifikat->qr_token}")
+            ->assertOk()
+            ->assertSee('<meta name="robots" content="noindex, nofollow">', false)
+            ->assertSee('<meta name="viewport" content="width=device-width, initial-scale=1">', false)
+            // Isi bilahnya tidak berubah oleh restyle.
+            ->assertSee('Sertifikat terverifikasi')
+            ->assertSee('Unduh PDF')
+            ->assertSee('Unduh Excel');
+
+        $pdf = view('sertifikat.pdf', app(DataTampilanSertifikat::class)->untuk($sertifikat->fresh()))->render();
+        $this->assertStringNotContainsString('noindex', $pdf);
     }
 
     /**

@@ -105,6 +105,58 @@ class VerificationTest extends TestCase
             ->assertDontSee($teknisi->name);
     }
 
+    /**
+     * Kartu ringkas (sertifikat lama tanpa snapshot) & halaman tidak-ketemu:
+     * wajib `noindex` karena memuat nama pelanggan, dan wajib kebaca di HP.
+     * Restyle artboard Web_Verifikasi tidak boleh menghilangkan dua meta itu
+     * — layout-nya baru, jadi gampang terlewat.
+     */
+    public function test_kartu_dan_halaman_tidak_ketemu_noindex_dan_viewport(): void
+    {
+        $this->sertifikat();
+
+        foreach (['/verify/DEMOQR123', '/verify/QR-KARANGAN'] as $url) {
+            $this->get($url)
+                ->assertSee('<meta name="robots" content="noindex, nofollow">', false)
+                ->assertSee('<meta name="viewport" content="width=device-width, initial-scale=1">', false);
+        }
+    }
+
+    public function test_kartu_menurunkan_status_dari_masa_berlaku_tanpa_data_baru(): void
+    {
+        $this->sertifikat();
+
+        $this->get('/verify/DEMOQR123')
+            ->assertOk()
+            ->assertSee('Berlaku')
+            ->assertDontSee('Kedaluwarsa');
+
+        Certificate::query()->update(['berlaku_sampai' => now()->subDay()]);
+
+        $this->get('/verify/DEMOQR123')
+            ->assertOk()
+            ->assertSee('Kedaluwarsa')
+            ->assertSee('Kadaluarsa');
+    }
+
+    /** Yang tampil TETAP delapan hal yang tampil sebelum restyle — tidak lebih. */
+    public function test_kartu_tetap_memuat_data_yang_sama_dan_tidak_menambah(): void
+    {
+        $sertifikat = $this->sertifikat();
+
+        $this->get('/verify/DEMOQR123')
+            ->assertOk()
+            ->assertSee('CAL/2026/07/0001')
+            ->assertSee('Jangka Sorong Mitutoyo')
+            ->assertSee('MT-500-196-30')
+            ->assertSee('PT Maju Jaya')
+            ->assertSee('PASS')
+            ->assertDontSee($sertifikat->session->teknisi->name)
+            ->assertDontSee($sertifikat->session->teknisi->email)
+            ->assertDontSee('organization_id')
+            ->assertDontSee((string) $sertifikat->qr_token.'/download');
+    }
+
     public function test_versi_json_buat_mobile(): void
     {
         $this->sertifikat();
