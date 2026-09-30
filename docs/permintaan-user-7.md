@@ -4352,6 +4352,94 @@ Dijaga `LogMetodeTekananPistonTest`, `VersiRumusTekananPistonTest`,
 pemeriksaan validator, stempel jejak, stempel versi formula, atau blok E-5 —
 keempatnya membuat test merah.
 
+## §40 — Paket 29 Sep 2026: gerbang pengesahan, pelacakan, penugasan, data pelanggan, sinkron antar-perangkat
+
+Sumbernya paket `SIDIK-Paket-Lengkap-29Sep2026` (TIDAK di-commit): patch API 75
+berkas berdasar `be0222f`, patch mobile 48 berkas berdasar `ad7a9df`, aplikasi
+pelanggan utuh, 130 artboard, dan lima dokumen. Keputusan asalnya keputusan
+26 Sep (gerbang sertifikat: "sahkan dulu, terbit belakangan").
+
+### 40.1 Yang mendarat di server
+
+- **Slice A–E:** gerbang pengesahan (`kalibrasi.gerbang_pengesahan`, env
+  `GERBANG_PENGESAHAN`, bawaan `false` = `approve()` menulis & menerbitkan
+  persis seperti sebelumnya; satu-satunya beda: dua field opsional baru,
+  `penandatangan_user_id` & `catatan_pengajuan`, ikut divalidasi — klien lama
+  tidak mengirimnya), data tidak bocor antar lab (`PenjagaOrganisasi`,
+  `CatatAksesLintasOrganisasi`, `SapuRuteIsolasiOrganisasiTest`), pelacakan
+  paket (`TahapPaket`: tahap DITURUNKAN dari status sesi & sertifikat, cuma
+  dua tahap fisik yang disimpan), penugasan teknisi (tabel `penugasan`,
+  `penugasan_teknisi`, `penugasan_item`), dan alarm jatuh tempo pelanggan
+  (`pelanggan:cek-jatuh-tempo`, tiap hari 07.10).
+- **Slice F:** API data aplikasi pelanggan — `/beranda`, `/alat`,
+  `/sertifikat` (+ `/unduh` yang tercatat di audit sebagai
+  `diunduh_pelanggan`), `/paket`, `/notifikasi`, `/perangkat`. Semua query
+  lewat SATU tempat, `App\Support\Pelanggan\LingkupData`; controller &
+  resource di namespace `Pelanggan` (aturan Modul Pelanggan butir 1–5).
+- **Push disaring per aplikasi** (`DeviceToken::aplikasiUntuk`): kabar kerja
+  lab tidak mendarat di aplikasi pelanggan pada HP yang memasang keduanya.
+- Lima migrasi, semuanya additive.
+
+### 40.2 Sinkron antar-perangkat — ditambahkan waktu memasang
+
+Permintaan pemilik proyek (29 Sep): data harus sinkron di HP dan perangkat
+mana pun tempat tiap peran masuk. Server tetap satu-satunya sumber data; yang
+perlu dipastikan adalah KAPAN tiap perangkat menarik ulang.
+
+- Paketnya ternyata belum menyiarkan apa pun dari ketiga controller baru:
+  pengesahan dari HP super admin baru terlihat di laptop admin sesudah
+  di-refresh tangan. Sekarang `PengesahanController` (disahkan /
+  dikembalikan / ditarik), `PenugasanController` (dibuat / progres), dan
+  `PelacakanController` (tahap fisik) menyiarkan `PerubahanDataOrganisasi`
+  lewat `PerubahanDataOrganisasi::siarkanAman()` — siaran yang gagal (Reverb
+  mati) dicatat ke log, tidak menggagalkan permintaan yang datanya sudah
+  tersimpan. Dijaga tambahan di `GerbangPengesahanTest` (2),
+  `PenugasanTeknisiTest` (1), `PelacakanPaketTest` (1).
+- Mobile lab: `realtime_provider` ikut me-refresh antrean pengesahan,
+  pelacakan, dan penugasan — termasuk lewat tarikan berkala 3 menit selama
+  produksi masih `BROADCAST_CONNECTION=log`. Kata cari & saringan dipindah ke
+  provider sendiri: Riverpod 3 membuat ulang `Notifier` tiap invalidate, jadi
+  saringan di field hilang begitu sinyal dari perangkat lain masuk.
+- Aplikasi pelanggan: data ditarik ulang waktu aplikasi kembali ke layar
+  depan dan waktu push masuk (`sinkron_provider.dart`). `Rangka` memakai
+  `IndexedStack`, jadi tanpa itu angka pagi masih tampil sore.
+
+### 40.3 Yang WAJIB diputuskan sebelum sakelar dinyalakan
+
+1. **`GERBANG_PENGESAHAN`** — nyalakan SESUDAH akun super admin pengesah dibuat
+   (`php artisan akun:super-admin <email>`). Lebih dulu = semua sertifikat
+   tertahan tanpa ada yang bisa mengesahkan.
+2. **`PEMISAHAN_WEWENANG_MEMBLOKIR` bertentangan dengan AGENTS.md.** Paket
+   memasang bawaan `false` (peringatan yang harus diakui + tercatat di
+   `audit_logs`) dengan alasan PT Sidik baru punya satu super admin.
+   AGENTS.md §Peran butir 4 menulis default aman "blokir dulu" dan melarang
+   menulis bentuk pengecualian sebelum K4 turun. Selama gerbang mati, jalur
+   pengesahan tidak pernah terpakai, jadi pertentangan ini belum berakibat —
+   tapi K4 harus dijawab sebelum butir 1 dinyalakan.
+3. **Super admin kini punya rute TULIS lewat API**: `sahkan` & `kembalikan`
+   (baru bermakna saat gerbang nyala), tahap fisik pelacakan, dan membuat
+   penugasan. Tabel §Keadaan nyata `super_admin` di AGENTS.md diperbarui.
+4. `CalibrationController::approve()` masih belum membandingkan `teknisi_id`
+   dengan penyetuju (AGENTS.md §Peran butir 4) — gerbang mati = perilaku lama.
+
+### 40.4 Repo
+
+- API: branch `redesign/backend-29sep`.
+- Mobile lab: PR mobile #183 (`redesign/meja-kerja-lab`).
+- Aplikasi pelanggan: repo baru **`sidik-pelanggan-mobile`** (privat) — folder
+  platform dari `flutter create --org id.ptsidik`, CI analyze + test.
+
+### 40.5 Belum
+
+- Suite MySQL (±3 jam, mesin kerja).
+- Golden mobile (macOS) pasti berubah karena reskin — dibuat ulang lalu
+  ditinjau mata satu per satu; onboarding 3D & sakelar matahari/bulan wajib
+  sama dengan golden lama.
+- Sentence case tombol (commit terpisah, `alat/ke_sentence_case.py`).
+- Firebase untuk aplikasi pelanggan (tanpa itu jalan penuh, cuma tanpa push).
+- Desain saja: SA_Jadwal, SA_Pusat_Pelanggan, SA_Beranda khusus,
+  PL_Sambutan, PL_Preferensi. Menunggu API: `/permintaan` pelanggan (5 layar).
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -4757,3 +4845,4 @@ Supaya tidak dibangun ulang:
 | G23 | **Arsip: folder perusahaan kosong & cari tidak menyaring** — §37e | **BERES di server** (26 Sep 2026) — daftar akar Arsip yang dibuka admin membuatkan folder akar untuk tiap PT yang belum punya; `?search=` jadi alias `?q=`. Dijaga `FolderTiapPelangganTest`. Nama pelanggan asli ikut dibuang dari `storage/app/few_shot/README.md`. **Sisi mobile BELUM**: parser Arsip membuang baris sertifikat & unggahan, tombol tulis tampil untuk semua peran, jalur unggah belum ada — diserahkan ke pengerja UI |
 | G24 | **Revisi & pembatalan sertifikat** — §38 | **PRD** (26 Sep 2026) — keputusan D1–D6 dari pemilik proyek; belum ada kode. Termasuk jebakan penomoran `-R1` yang WAJIB ditutup di rilis yang sama |
 | G25 | Alat baru **Tekanan** (Pressure/Vacuum/Differential) & **Piston Volume** (Piston Pipette, Dispensett, Buret Digital) — §39 | **SERVER DIKERJAKAN** (28 Sep 2026, branch `feat/tekanan-piston-volume`) — enam profil, dua kalkulator, rekonsiliasi 962 + 274 sel master; acuan sha256 + log metode append-only + versi rumus terstempel & diadu validator + harness uji paralel (§39a). Sesi yang memicu T-1/T-2/T-11 (dan piston G-2/G-7/G-8 bila terpicu) DITAHAN menunggu TM — P-1/P-2/P-11, V-7/V-11/V-12. Mobile: fixture generator, cabang mock, dan selisih `M_i − M_{i−1}` di tabel kumulatif SUDAH. Sisa: suite penuh SQLite+MySQL, sertifikat arsip dari lab (§39a butir 5), OCR-3 menunggu persetujuan |
+| G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **SERVER DIKERJAKAN** (29 Sep 2026, branch `redesign/backend-29sep`) — patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Mobile lab PR #183; aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: suite MySQL, golden mobile, sentence case, Firebase pelanggan |

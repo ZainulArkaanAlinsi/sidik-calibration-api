@@ -9,6 +9,7 @@ use App\Models\CalibrationSession;
 use App\Models\Certificate;
 use App\Models\FolderFile;
 use App\Services\BerkasPdfSertifikat;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -307,6 +308,9 @@ class FolderFileController extends Controller
     /** Jaring pengaman multi-tenant. */
     private function pastikanSatuOrganisasi(Request $request, FolderFile $file): void
     {
-        abort_if($file->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $file);
     }
 }

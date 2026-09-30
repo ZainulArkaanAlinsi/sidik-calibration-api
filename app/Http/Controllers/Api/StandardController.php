@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StandardRequest;
 use App\Http\Resources\StandardResource;
 use App\Models\Standard;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -83,6 +84,9 @@ class StandardController extends Controller
     /** Jaring pengaman multi-tenant: PT lain nggak boleh baca/ubah standar kita. */
     private function pastikanSatuOrganisasi(Request $request, Standard $standard): void
     {
-        abort_if($standard->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $standard);
     }
 }

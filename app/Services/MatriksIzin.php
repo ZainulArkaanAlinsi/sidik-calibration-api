@@ -58,6 +58,21 @@ class MatriksIzin
         'kalibrasi.periksa' => ['GET', 'api/calibrations/{calibration}/validasi'],
         'kalibrasi.lembar-perhitungan' => ['GET', 'api/calibrations/{calibration}/perhitungan'],
         'kalibrasi.setujui' => ['POST', 'api/calibrations/{calibration}/approve'],
+        // Gerbang pengesahan (keputusan 26 Sep §1). Tiga izin, tiga tombol yang
+        // beda pemiliknya — sengaja tidak digabung jadi satu `pengesahan.kelola`:
+        // mobile perlu menyalakan "Tarik pengajuan" untuk admin sambil mematikan
+        // "Sahkan" untuknya di layar yang sama.
+        'kalibrasi.sahkan' => ['POST', 'api/calibrations/{calibration}/sahkan'],
+        'kalibrasi.kembalikan-dari-pengesahan' => ['POST', 'api/calibrations/{calibration}/kembalikan-dari-pengesahan'],
+        'kalibrasi.tarik-pengajuan' => ['POST', 'api/calibrations/{calibration}/tarik-pengajuan'],
+        'pengesahan.antrean' => ['GET', 'api/pengesahan/antrean'],
+
+        // --- pelacakan & penugasan
+        'pelacakan.lihat' => ['GET', 'api/pelacakan'],
+        'pelacakan.serah-terima' => ['POST', 'api/pelacakan/item/{orderItem}/tahap-fisik'],
+        'penugasan.lihat' => ['GET', 'api/penugasan'],
+        'penugasan.buat' => ['POST', 'api/penugasan'],
+        'penugasan.lapor-progres' => ['PATCH', 'api/penugasan/item/{penugasanItem}'],
         'kalibrasi.tolak' => ['POST', 'api/calibrations/{calibration}/reject'],
         'kalibrasi.ubah-field-admin' => ['PATCH', 'api/calibrations/{calibration}/admin'],
 

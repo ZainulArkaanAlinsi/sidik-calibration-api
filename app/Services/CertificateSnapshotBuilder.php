@@ -753,19 +753,35 @@ class CertificateSnapshotBuilder
     /**
      * Footer: tanggal terbit, penandatangan, jabatan, kode dokumen.
      *
-     * Penandatangan diambil dari pengaturan organisasi dulu — di lab, yang tanda
-     * tangan sertifikat itu Technical Manager, belum tentu admin yang kebetulan
-     * mencet tombol approve. Kalau pengaturannya kosong, baru jatuh ke reviewer.
+     * Urutan sumber nama penandatangan:
+     *
+     *  1. `penandatangan_user_id` di sesi — dipilih PER SERTIFIKAT di layar
+     *     pengajuan/pengesahan (gerbang pengesahan 26 Sep; permintaan "bisa Pak
+     *     Rohman atau Alex tergantung siapa yang mengesahkan").
+     *  2. Pengaturan organisasi — di lab, yang tanda tangan sertifikat itu
+     *     Technical Manager, belum tentu admin yang kebetulan mencet approve.
+     *  3. Pengesah (`disahkan_oleh`), lalu reviewer — cadangan lama, dipertahankan
+     *     supaya sertifikat lab yang belum mengisi pengaturan tidak berubah isi.
+     *
+     * Null di nomor 1 berarti perilaku persis seperti sebelum gerbang ada.
      *
      * @param  array<string, mixed>  $pengaturan
      * @return array<string, string|null>
      */
     private function footer(CalibrationSession $sesi, Certificate $sertifikat, array $pengaturan): array
     {
+        $dipilih = $sesi->penandatangan;
+
         return [
             'issuance_date' => $sertifikat->diterbitkan_pada?->toDateString(),
-            'penandatangan' => $pengaturan[Organization::KEY_PENANDATANGAN_NAMA] ?? $sesi->reviewer?->name,
-            'jabatan' => $pengaturan['penandatangan_jabatan'] ?? $sesi->reviewer?->department ?? 'Technical Manager',
+            'penandatangan' => $dipilih?->name
+                ?? $pengaturan[Organization::KEY_PENANDATANGAN_NAMA]
+                ?? $sesi->pengesah?->name
+                ?? $sesi->reviewer?->name,
+            'jabatan' => ($dipilih !== null ? $dipilih->department : null)
+                ?? $pengaturan['penandatangan_jabatan']
+                ?? $sesi->reviewer?->department
+                ?? 'Technical Manager',
             'kode_dokumen' => $pengaturan['kode_dokumen_form'] ?? self::KODE_DOKUMEN_DEFAULT,
         ];
     }

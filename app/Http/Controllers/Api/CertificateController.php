@@ -11,6 +11,7 @@ use App\Models\CertificateEmailLog;
 use App\Models\User;
 use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
+use App\Services\PenjagaOrganisasi;
 use App\Services\QrCodeGenerator;
 use App\Support\Mailer;
 use Illuminate\Http\JsonResponse;
@@ -641,6 +642,9 @@ class CertificateController extends Controller
     /** Jaring pengaman multi-tenant: PT lain nggak boleh baca sertifikat kita. */
     private function pastikanSatuOrganisasi(Request $request, Certificate $certificate): void
     {
-        abort_if($certificate->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $certificate);
     }
 }

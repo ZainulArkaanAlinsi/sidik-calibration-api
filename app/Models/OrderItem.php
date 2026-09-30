@@ -7,9 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** Satu alat di dalam sebuah order kalibrasi. */
-#[Fillable(['order_id', 'equipment_id', 'teknisi_id', 'kondisi_terima', 'kelengkapan', 'catatan'])]
+#[Fillable([
+    'order_id', 'equipment_id', 'teknisi_id', 'kondisi_terima', 'kelengkapan', 'catatan',
+    // Pelacakan paket: dua tahap FISIK yang tidak punya sumber lain. Enam tahap
+    // lainnya diturunkan `TahapPaket` dari status sesi & sertifikat.
+    'tahap_fisik', 'tahap_fisik_pada', 'tahap_fisik_oleh', 'diserahkan_kepada',
+])]
 class OrderItem extends Model
 {
     use HasFactory;
@@ -48,5 +54,27 @@ class OrderItem extends Model
     public function calibrationSessions(): HasMany
     {
         return $this->hasMany(CalibrationSession::class);
+    }
+
+    /**
+     * Sesi TERAKHIR untuk baris paket ini — sumber tahap pelacakan.
+     *
+     * Lewat `calibration_sessions.order_item_id`, bukan lewat `equipment_id`:
+     * satu alat bisa masuk dua paket (kalibrasi ulang tahun berikutnya), dan
+     * relasi lewat alat akan membaca sesi milik paket lain. Sesi yang ditolak
+     * lalu diulang punya baris sendiri; yang relevan untuk pelacakan cuma yang
+     * terbaru, dan `latestOfMany()` menjawab itu di SQL.
+     *
+     * @return HasOne<CalibrationSession, $this>
+     */
+    public function sesiTerakhir(): HasOne
+    {
+        return $this->hasOne(CalibrationSession::class)->latestOfMany();
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['tahap_fisik_pada' => 'datetime'];
     }
 }

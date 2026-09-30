@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CalibrationMethodResource;
 use App\Models\CalibrationMethod;
+use App\Services\PenjagaOrganisasi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -116,6 +117,9 @@ class CalibrationMethodController extends Controller
     /** Jaring pengaman multi-tenant. */
     private function pastikanSatuOrganisasi(Request $request, CalibrationMethod $metode): void
     {
-        abort_if($metode->organization_id !== $request->user()->organization_id, 404);
+        // Diteruskan ke PenjagaOrganisasi: satu tempat yang memutuskan dan
+        // satu tempat yang MENCATAT percobaannya. Perilaku dari luar identik
+        // (404 yang sama); yang ditambahkan cuma jejaknya di audit_logs.
+        PenjagaOrganisasi::pastikanSatu($request, $metode);
     }
 }

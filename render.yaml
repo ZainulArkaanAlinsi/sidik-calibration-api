@@ -348,6 +348,19 @@ services:
       - key: FITUR_PELANGGAN
         value: "false"
 
+      # Gerbang pengesahan sertifikat (keputusan 26 Sep). "false" = perilaku
+      # lama: sertifikat terbit begitu admin menyetujui. Dinyalakan SESUDAH
+      # akun super admin pengesah dibuat (`php artisan akun:super-admin`) —
+      # menyalakannya lebih dulu menahan semua sertifikat di antrean tanpa
+      # ada yang bisa mengesahkan.
+      - key: GERBANG_PENGESAHAN
+        value: "false"
+
+      # "true" = pengesah yang juga mengisi/menyetujui sesi yang sama DITOLAK,
+      # bukan cuma diperingatkan. Menunggu jawaban K4 manajer teknis.
+      - key: PEMISAHAN_WEWENANG_MEMBLOKIR
+        value: "false"
+
       # Versi minimum aplikasi pelanggan. Dinaikkan HANYA sesudah versi baru
       # mencapai 100% rollout dan stabil (07-Runbook §7) — menaikkannya lebih
       # awal mengunci pengguna yang belum kebagian update dari Play Store.

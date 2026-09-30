@@ -24,15 +24,15 @@ class DeviceToken extends Model
     public const APLIKASI_PELANGGAN = 'pelanggan';
 
     /**
-     * CATATAN buat Fase 6: `SaluranPush` memilih perangkat dari `user_id` SAJA,
-     * kolom ini belum ikut disaring.
-     *
-     * Hari ini itu belum jadi cacat — satu akun punya satu role, jadi perangkat
-     * satu orang tidak pernah campur dua aplikasi. Yang membuatnya jadi cacat
-     * nanti: `POST /pelanggan/v1/perangkat` (Fase 6), yaitu saat baris
-     * `aplikasi = pelanggan` pertama lahir. Saringannya dipasang di sana, bareng
-     * test yang beneran mendaftarkan perangkat — bukan di sini sebagai tebakan.
+     * `SaluranPush` menyaring perangkat dengan kolom ini (sejak
+     * `POST /pelanggan/v1/perangkat` mendarat, 29 Sep 2026): akun pelanggan
+     * cuma dikirimi ke baris `aplikasi = pelanggan`, akun lab ke `internal`.
+     * Dijaga `PerangkatPelangganTest`.
      */
+    public static function aplikasiUntuk(User $user): string
+    {
+        return $user->role === User::ROLE_PELANGGAN ? self::APLIKASI_PELANGGAN : self::APLIKASI_INTERNAL;
+    }
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -60,12 +60,14 @@ class DeviceToken extends Model
         string $token,
         string $platform,
         ?string $versiApp = null,
+        string $aplikasi = self::APLIKASI_INTERNAL,
     ): self {
         return static::updateOrCreate(
             ['token' => $token],
             [
                 'user_id' => $user->id,
                 'platform' => $platform,
+                'aplikasi' => $aplikasi,
                 'versi_app' => $versiApp,
                 'terakhir_aktif' => now(),
             ],

@@ -230,6 +230,8 @@ class GerbangAplikasiTokenTest extends TestCase
             'pelanggan-sandi',
             'pelanggan-undangan-tukar',
             'pelanggan-undang-anggota',
+            // Slice F — unduh PDF sertifikat dari aplikasi pelanggan.
+            'pelanggan-unduh',
         ];
 
         foreach ($wajib as $nama) {

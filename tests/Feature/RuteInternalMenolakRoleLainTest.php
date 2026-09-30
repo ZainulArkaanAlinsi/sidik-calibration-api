@@ -14,8 +14,10 @@ use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Organization;
 use App\Models\PengajuanAkunPelanggan;
+use App\Models\Penugasan;
 use App\Models\Room;
 use App\Models\Standard;
 use App\Models\UndanganPelanggan;
@@ -186,7 +188,26 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'customer_id' => $pelangganPt->id,
         ]);
 
+        // Fitur 26 Sep (pelacakan & penugasan). Dibuat lewat Eloquent biasa
+        // supaya route model binding ketemu barisnya — kalau tidak, rutenya
+        // menjawab 404 dan gerbang role-nya tidak pernah keuji.
+        $barisPaket = OrderItem::factory()->create([
+            'order_id' => $order->id,
+            'equipment_id' => $alat->id,
+        ]);
+        $penugasan = Penugasan::create([
+            'organization_id' => $org->id,
+            'judul' => 'Penugasan contoh',
+            'tipe' => Penugasan::TIPE_PERSONAL,
+            'status' => Penugasan::STATUS_AKTIF,
+            'dibuat_oleh' => $admin->id,
+        ]);
+        $barisPenugasan = $penugasan->item()->create(['jenis_alat' => 'Autoklaf', 'jumlah' => 1]);
+
         $this->isiParameter = [
+            'orderItem' => (string) $barisPaket->id,
+            'penugasan' => (string) $penugasan->id,
+            'penugasanItem' => (string) $barisPenugasan->id,
             'calibration' => (string) $sesi->id,
             'pengajuan' => (string) $pengajuan->id,
             'undangan' => (string) $undangan->id,

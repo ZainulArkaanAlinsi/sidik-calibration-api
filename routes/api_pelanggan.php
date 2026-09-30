@@ -1,9 +1,15 @@
 <?php
 
+use App\Http\Controllers\Pelanggan\AlatController;
 use App\Http\Controllers\Pelanggan\AnggotaController;
 use App\Http\Controllers\Pelanggan\AppStatusController;
 use App\Http\Controllers\Pelanggan\AuthPelangganController;
+use App\Http\Controllers\Pelanggan\BerandaController;
+use App\Http\Controllers\Pelanggan\NotifikasiController;
+use App\Http\Controllers\Pelanggan\PaketController;
+use App\Http\Controllers\Pelanggan\PerangkatController;
 use App\Http\Controllers\Pelanggan\SayaController;
+use App\Http\Controllers\Pelanggan\SertifikatController;
 use App\Models\CustomerMember;
 use Illuminate\Support\Facades\Route;
 
@@ -115,13 +121,31 @@ Route::middleware('fitur.pelanggan')->group(function () {
         Route::post('/saya/ganti-sandi', [SayaController::class, 'gantiSandi'])
             ->middleware('throttle:pelanggan-sandi')
             ->name('pelanggan.saya.ganti-sandi');
+
+        /*
+         * Perangkat push (slice F). Di grup "cukup token", bukan grup akun
+         * terverifikasi: akun yang baru mendaftar perlu sudah terdaftar HP-nya
+         * supaya kabar "akun Anda diverifikasi" sampai. Tidak membuka data
+         * perusahaan apa pun — lihat `PerangkatController`.
+         */
+        Route::post('/perangkat', [PerangkatController::class, 'store'])->name('pelanggan.perangkat.daftar');
+        Route::delete('/perangkat', [PerangkatController::class, 'destroy'])->name('pelanggan.perangkat.cabut');
+
+        /*
+         * Kotak masuk. Diikat ke PENGGUNA, jadi aman di grup ini: akun yang
+         * menunggu verifikasi juga perlu membaca kabar soal akunnya sendiri.
+         */
+        Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('pelanggan.notifikasi.index');
+        Route::get('/notifikasi/jumlah', [NotifikasiController::class, 'jumlah'])->name('pelanggan.notifikasi.jumlah');
+        Route::post('/notifikasi/dibaca-semua', [NotifikasiController::class, 'dibacaSemua'])->name('pelanggan.notifikasi.dibaca-semua');
+        Route::post('/notifikasi/{notifikasi}/dibaca', [NotifikasiController::class, 'dibaca'])->name('pelanggan.notifikasi.dibaca');
     });
 
     /*
      * --- Butuh token DAN akun yang sudah diverifikasi ---------------------
      *
-     * `/anggota` sudah mendarat di sini (Fase 5). Yang masih kosong:
-     * `/beranda`, `/alat`, `/sertifikat`, `/permintaan`.
+     * `/anggota` (Fase 5), lalu `/beranda`, `/alat`, `/sertifikat`, `/paket`
+     * (slice F, 29 Sep 2026). Yang masih kosong: `/permintaan`.
      *
      * Rute data BARU wajib masuk grup ini, bukan grup di atasnya — grup atas
      * cuma menuntut token, grup ini menuntut akun yang sudah diverifikasi.
@@ -140,6 +164,25 @@ Route::middleware('fitur.pelanggan')->group(function () {
          * yang lupa dipagari kelihatan tanpa harus membaca badan controller.
          */
         Route::get('/anggota', [AnggotaController::class, 'index'])->name('pelanggan.anggota.index');
+
+        /*
+         * --- Data perusahaan (slice F) -----------------------------------
+         *
+         * Semua peran anggota boleh MEMBACA. Tiap query dimulai dari
+         * `App\Support\Pelanggan\LingkupData` — satu-satunya tempat saringan
+         * `customer_id` ditulis — dan ID di URL dicari DI DALAM lingkup itu,
+         * jadi milik perusahaan lain dijawab 404 (poin 4).
+         */
+        Route::get('/beranda', BerandaController::class)->name('pelanggan.beranda');
+        Route::get('/alat', [AlatController::class, 'index'])->name('pelanggan.alat.index');
+        Route::get('/alat/{alat}', [AlatController::class, 'show'])->name('pelanggan.alat.tampil');
+        Route::get('/sertifikat', [SertifikatController::class, 'index'])->name('pelanggan.sertifikat.index');
+        Route::get('/sertifikat/{sertifikat}', [SertifikatController::class, 'show'])->name('pelanggan.sertifikat.tampil');
+        Route::get('/sertifikat/{sertifikat}/unduh', [SertifikatController::class, 'unduh'])
+            ->middleware('throttle:pelanggan-unduh')
+            ->name('pelanggan.sertifikat.unduh');
+        Route::get('/paket', [PaketController::class, 'index'])->name('pelanggan.paket.index');
+        Route::get('/paket/{paket}', [PaketController::class, 'show'])->name('pelanggan.paket.tampil');
 
         Route::middleware('peran:'.CustomerMember::PERAN_PIC_UTAMA)->group(function () {
             Route::post('/anggota/undangan', [AnggotaController::class, 'undang'])

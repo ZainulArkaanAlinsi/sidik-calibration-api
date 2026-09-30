@@ -3,6 +3,7 @@
 namespace App\Notifications\Channels;
 
 use App\Models\DeviceToken;
+use App\Models\User;
 use App\Services\Push\PengirimPush;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
@@ -30,8 +31,15 @@ class SaluranPush
         /** @var array{judul: string, isi: string, data?: array<string, string>} $isi */
         $isi = $notification->toPush($notifiable);
 
+        // Disaring per APLIKASI, bukan cuma per pemilik: satu HP yang
+        // memasang dua aplikasi SIDIK (lab & pelanggan) memegang dua token,
+        // dan kabar kerja lab tidak boleh muncul di aplikasi pelanggan.
         $perangkat = DeviceToken::query()
             ->where('user_id', $notifiable->getKey())
+            ->when(
+                $notifiable instanceof User,
+                fn ($q) => $q->where('aplikasi', DeviceToken::aplikasiUntuk($notifiable)),
+            )
             ->get();
 
         foreach ($perangkat as $satu) {
