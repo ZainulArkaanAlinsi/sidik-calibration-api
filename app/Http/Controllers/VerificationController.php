@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Services\BerkasPdfSertifikat;
 use App\Services\CertificateExcelExporter;
 use App\Services\DataTampilanSertifikat;
+use App\Support\SamarkanNama;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -31,7 +32,10 @@ class VerificationController extends Controller
             ->with(['session.equipment.customer', 'organization'])
             ->where('qr_token', $qrToken)
             // Sertifikat yang belum kelar digenerate belum boleh diverifikasi.
-            ->where('status', Certificate::STATUS_TERBIT)
+            // Yang DIBATALKAN justru harus menjawab — kertasnya masih beredar,
+            // dan halaman ini satu-satunya yang bisa memberi tahu pemindainya
+            // (§38.2, alasan utama QR dipertahankan di kertas).
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
             ->first();
 
         if (! $certificate) {
@@ -41,6 +45,22 @@ class VerificationController extends Controller
                 404,
             );
         }
+
+        // Dibatalkan: kartu status saja, TANPA lembar & TANPA alasan (D4) —
+        // lembarnya tidak boleh tampil seolah masih dokumen yang sah.
+        if ($certificate->status === Certificate::STATUS_DIBATALKAN) {
+            return response()->view('verifikasi.dibatalkan', [
+                'organization' => $certificate->organization,
+                'certificate' => $certificate,
+            ]);
+        }
+
+        // Digantikan revisi: lembar lama tetap tampil sebagai riwayat, dengan
+        // bilah yang menunjuk ke yang berlaku.
+        $pengganti = $certificate->penggantiSah();
+        $pemilikSamar = SamarkanNama::untuk(
+            $certificate->snapshot['header']['owner'] ?? $certificate->session?->equipment?->customer?->nama,
+        );
 
         // Yang ditampilin LEMBAR SERTIFIKATNYA SENDIRI — blade yang sama persis
         // dengan yang dicetak jadi PDF, bukan ringkasan versi web.
@@ -63,15 +83,18 @@ class VerificationController extends Controller
             return response()->view('verifikasi.sertifikat', [
                 'organization' => $certificate->organization,
                 'certificate' => $certificate,
+                'pengganti' => $pengganti,
+                'pemilikSamar' => $pemilikSamar,
                 'catatanKetidakpastian' => $settings['catatan_ketidakpastian'] ?? null,
                 'catatanPenggandaan' => $settings['catatan_penggandaan'] ?? null,
             ]);
         }
 
-        return response()->view(
-            'sertifikat.pdf',
-            app(DataTampilanSertifikat::class)->untuk($certificate, web: true),
-        );
+        return response()->view('sertifikat.pdf', [
+            ...app(DataTampilanSertifikat::class)->untuk($certificate, web: true),
+            'pengganti' => $pengganti,
+            'pemilikSamar' => $pemilikSamar,
+        ]);
     }
 
     /**
@@ -95,8 +118,17 @@ class VerificationController extends Controller
         $certificate = Certificate::query()
             ->with(['session.equipment.customer', 'organization'])
             ->where('qr_token', $qrToken)
-            ->where('status', Certificate::STATUS_TERBIT)
+            ->whereIn('status', [Certificate::STATUS_TERBIT, Certificate::STATUS_DIBATALKAN])
             ->firstOr(fn () => abort(404, 'Sertifikat dengan kode QR ini tidak terdaftar.'));
+
+        // 410, bukan 404: barisnya ADA, dan pemegang QR berhak tahu kenapa
+        // berkasnya tidak diberikan. PDF batal tidak boleh beredar lagi sebagai
+        // dokumen sah (§38.2). Yang DIGANTIKAN tetap boleh diunduh — riwayat.
+        abort_if(
+            $certificate->status === Certificate::STATUS_DIBATALKAN,
+            410,
+            'Sertifikat ini sudah dibatalkan, jadi berkasnya tidak bisa diunduh lagi.',
+        );
 
         $format = $request->string('format', 'pdf')->lower()->value();
 

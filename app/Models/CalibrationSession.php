@@ -604,9 +604,20 @@ class CalibrationSession extends Model
         };
     }
 
-    /** @return HasOne<Certificate, $this> */
+    /**
+     * Sertifikat ASLI sesi ini — revisinya (`revision_of` terisi) tidak ikut.
+     *
+     * Sejak revisi ada (1 Okt 2026, §38), satu sesi bisa punya beberapa baris
+     * sertifikat. `hasOne` tanpa saringan ini memulangkan baris mana pun yang
+     * kebetulan pertama, dan `GenerateCertificate::handle()` yang
+     * `updateOrCreate` lewat relasi ini bakal MENIMPA nomor & token revisi
+     * dengan milik sertifikat asli. Revisi terbaru dibaca lewat
+     * `Certificate::revisiTerakhir()`.
+     *
+     * @return HasOne<Certificate, $this>
+     */
     public function certificate(): HasOne
     {
-        return $this->hasOne(Certificate::class);
+        return $this->hasOne(Certificate::class)->whereNull('revision_of');
     }
 }

@@ -2,8 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\FotoPelanggan;
 use App\Models\PermintaanKalibrasi;
 use App\Models\PermintaanKalibrasiItem;
+use App\Services\Pelanggan\FotoPelangganLayanan;
+use App\Support\TahapPermintaan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -52,6 +55,9 @@ class PermintaanKalibrasiResource extends JsonResource
             'jumlah_pesan' => (int) ($p->pesan_count ?? 0),
             'alat' => $p->items->map(fn (PermintaanKalibrasiItem $i): array => self::alat($i))->values()->all(),
             'dibuat_pada' => $p->created_at?->toIso8601ZuluString(),
+            // §42 — tahap, resi (dari pelanggan), jadwal teknisi (dari admin).
+            // Dari `TahapPermintaan`, satu sumber untuk dua aplikasi.
+            ...TahapPermintaan::bentuk($p),
         ];
     }
 
@@ -79,6 +85,9 @@ class PermintaanKalibrasiResource extends JsonResource
             // Petunjuk buat layar Terima: apa yang masih harus dilengkapi admin.
             'perlu_kategori' => $belumJadi,
             'perlu_nomor_seri' => $belumJadi && blank($a['serial_number'] ?? null),
+            'foto' => $item->relationLoaded('foto')
+                ? $item->foto->map(fn (FotoPelanggan $f) => FotoPelangganLayanan::bentukLab($f))->values()->all()
+                : [],
         ];
     }
 }

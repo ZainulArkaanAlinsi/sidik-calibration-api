@@ -235,6 +235,10 @@ class GerbangAplikasiTokenTest extends TestCase
             // Permintaan kalibrasi & saklar notifikasi (30 Sep 2026).
             'pelanggan-permintaan-tulis',
             'pelanggan-preferensi',
+            // Koreksi data, ubah alat, foto pelat nama (1 Okt 2026, §42).
+            'pelanggan-koreksi',
+            'pelanggan-alat-tulis',
+            'pelanggan-foto',
         ];
 
         foreach ($wajib as $nama) {

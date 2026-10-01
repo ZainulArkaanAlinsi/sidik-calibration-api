@@ -53,8 +53,11 @@ class BerandaController extends Controller
             ->limit(self::BATAS)
             ->get();
 
+        // Yang berlaku saja — beranda bukan tempat riwayat.
         $sertifikatTerbaru = $lingkup->sertifikat()
-            ->with(['session:id,equipment_id', 'revisionOf:id,nomor'])
+            ->where('status', Certificate::STATUS_TERBIT)
+            ->belumDigantikan()
+            ->with(['session:id,equipment_id', 'revisionOf:id,nomor', 'revisiTerakhir'])
             ->orderByDesc('diterbitkan_pada')
             ->orderByDesc('id')
             ->limit(self::BATAS)

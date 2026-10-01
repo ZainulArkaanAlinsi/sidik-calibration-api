@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
+use App\Services\Pelanggan\RingkasanMingguan;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -36,6 +37,31 @@ Artisan::command('pelanggan:cek-jatuh-tempo', function (PengingatJatuhTempoPelan
     ));
 })->purpose('Kabari HP pelanggan soal alat yang jatuh tempo (tangga H-30/H-7/H-1/+7)');
 Schedule::command('pelanggan:cek-jatuh-tempo')->dailyAt('07:10')->withoutOverlapping();
+
+// Ringkasan email mingguan ke anggota pelanggan yang menyalakan saklarnya
+// (§42 B7). Senin 07.15 — sesudah pengingat harian, supaya isi jatuh tempo di
+// email sama dengan yang baru saja dikabarkan ke HP. Diam total selama
+// FITUR_PELANGGAN mati. `--kosongan` menghitung tanpa mengirim.
+Artisan::command('pelanggan:ringkasan-mingguan {--kosongan : hitung saja, jangan kirim}', function (RingkasanMingguan $ringkasan) {
+    $hasil = $ringkasan->jalankan((bool) $this->option('kosongan'));
+
+    if ($hasil['dilewati'] !== null) {
+        $this->warn("Dilewati: {$hasil['dilewati']}.");
+
+        return;
+    }
+
+    $this->info(sprintf(
+        '%d perusahaan berlangganan, %d email %s, %d tanpa isi, %d sudah dikirim minggu ini, %d gagal.',
+        $hasil['perusahaan'],
+        $hasil['dikirim'],
+        $this->option('kosongan') ? 'akan dikirim' : 'dikirim',
+        $hasil['kosong'],
+        $hasil['sudah'],
+        $hasil['gagal'],
+    ));
+})->purpose('Kirim ringkasan email mingguan ke pelanggan yang berlangganan');
+Schedule::command('pelanggan:ringkasan-mingguan')->weeklyOn(1, '07:15')->withoutOverlapping();
 
 // Buang citra pindai lembar kerja yang lewat batas retensi `config/ocr.php`.
 // Jam 02:30 karena dia menyentuh disk & menghapus berkas: dijalankan waktu

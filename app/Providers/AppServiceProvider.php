@@ -387,6 +387,18 @@ class AppServiceProvider extends ServiceProvider
         // antrean banyak sekaligus tetap aman; yang dijaga skrip yang lepas.
         $perMenitPengguna('permintaan-putus', 60);
         $perMenitPengguna('permintaan-pesan', 60);
+        // Revisi & pembatalan sertifikat (§38). Revisi melahirkan nomor
+        // `-R<n>` dan PDF baru; batal final. Ketat seperti pengesahan — dua
+        // aksi ini mengubah status dokumen yang sudah di tangan pelanggan.
+        $perMenitPengguna('sertifikat-ubah', 20);
+        // Koreksi pelanggan sisi lab (terima/tolak) & jadwal/alat-tiba
+        // permintaan — longgar seperti `permintaan-putus`.
+        $perMenitPengguna('koreksi-putus', 60);
+        // Sisi PELANGGAN: ajuan koreksi, ubah alat, unggah/hapus foto.
+        // Foto dipisah — tiap unggahan menulis ke disk arsip.
+        $perMenitPengguna('pelanggan-koreksi', 20);
+        $perMenitPengguna('pelanggan-alat-tulis', 30);
+        $perMenitPengguna('pelanggan-foto', 30);
 
         // Sisa jalur tamu di API — tetap per-IP, dan tetap membalas JSON.
         // Formulir hapus akun di halaman PUBLIK (REQ-PRV-03). Ketat: dia

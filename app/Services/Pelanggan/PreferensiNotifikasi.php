@@ -33,8 +33,9 @@ class PreferensiNotifikasi
 
     /**
      * Nilai bagi anggota yang belum pernah menyentuh layarnya. Kabar yang
-     * menyangkut pekerjaannya menyala; ringkasan email mati (belum ada
-     * pengirimnya, dan email yang tidak diminta itu spam).
+     * menyangkut pekerjaannya menyala; ringkasan email mati — email yang tidak
+     * diminta itu spam. Pengirimnya `RingkasanMingguan` (sejak 1 Okt 2026) dan
+     * cuma mengirim ke yang menyalakannya sendiri.
      *
      * @var array<string, bool>
      */
@@ -93,6 +94,29 @@ class PreferensiNotifikasi
         $baris->fill(array_intersect_key($nilai, self::BAWAAN))->save();
 
         return $this->untuk($anggota);
+    }
+
+    /**
+     * SEMUA akun pelanggan aktif yang jadi anggota aktif perusahaan ini, tanpa
+     * melihat saklar.
+     *
+     * Cuma untuk kabar yang tidak boleh dimatikan: sertifikat yang dipegang
+     * pelanggan direvisi atau dibatalkan (ISO/IEC 17025 §7.8.8). Kabar lain
+     * wajib lewat [penerima] supaya saklarnya dihormati.
+     *
+     * @return Collection<int, User>
+     */
+    public function anggotaAktif(Customer $pelanggan): Collection
+    {
+        return User::query()
+            ->where('role', User::ROLE_PELANGGAN)
+            ->where('status', User::STATUS_AKTIF)
+            ->whereExists(fn ($q) => $q->selectRaw(1)
+                ->from('customer_members')
+                ->whereColumn('customer_members.user_id', 'users.id')
+                ->where('customer_members.customer_id', $pelanggan->id)
+                ->where('customer_members.status', CustomerMember::STATUS_AKTIF))
+            ->get();
     }
 
     /**

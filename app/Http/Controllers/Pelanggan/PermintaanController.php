@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers\Pelanggan;
 
+use App\Events\PerubahanDataOrganisasi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Pelanggan\PermintaanPelangganResource;
 use App\Http\Resources\Pelanggan\PesanPermintaanPelangganResource;
 use App\Models\Order;
 use App\Models\PermintaanKalibrasi;
+use App\Models\PermintaanKalibrasiItem;
 use App\Models\PesanPermintaan;
+use App\Notifications\ResiDiisi;
+use App\Services\Pelanggan\FotoPelangganLayanan;
+use App\Services\PenerimaNotifikasi;
 use App\Services\Permintaan\AlurPermintaan;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
+use App\Support\TahapPermintaan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -53,6 +61,14 @@ class PermintaanController extends Controller
             ->when($saring === 'selesai', fn (Builder $q) => $q->whereNot(fn (Builder $n) => $this->aktif($n)))
             ->with($this->relasi())
             ->withCount('pesan')
+            // PL_Daftar_Permintaan: kartu yang menunggu tindakan PELANGGAN
+            // (alat belum dikirim, resi belum diisi) naik ke atas. Syaratnya
+            // sama dengan tahap `menunggu_alat` di `TahapPermintaan`, ditulis
+            // ulang di SQL supaya urutannya benar lintas halaman.
+            ->orderByRaw(
+                'CASE WHEN status = ? AND metode_pengantaran = ? AND nomor_resi IS NULL AND alat_tiba_pada IS NULL THEN 0 ELSE 1 END',
+                [PermintaanKalibrasi::STATUS_DITERIMA, PermintaanKalibrasi::METODE_DIANTAR_SENDIRI],
+            )
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate($data['per_page'] ?? 20);
@@ -277,9 +293,85 @@ class PermintaanController extends Controller
         return (new PermintaanPelangganResource($p))->resolve($request);
     }
 
+    /**
+     * Isi nomor resi pengiriman (B5). Boleh diisi ulang selama tahapnya masih
+     * `menunggu_alat`/`dalam_pengiriman` — salah ketik resi itu biasa.
+     */
+    public function resi(Request $request, Konteks $konteks, string $permintaan): JsonResponse
+    {
+        $baris = (new LingkupData($konteks))->permintaan()->whereKey($permintaan)->with($this->relasi())->firstOrFail();
+
+        $data = $request->validate([
+            'kurir' => ['required', 'string', 'max:60'],
+            'nomor_resi' => ['required', 'string', 'max:80'],
+        ]);
+
+        if (! TahapPermintaan::bolehIsiResi($baris)) {
+            return response()->json([
+                'message' => 'Nomor resi cuma bisa diisi untuk permintaan yang sudah diterima, diantar sendiri, dan alatnya belum tiba di lab.',
+            ], 422);
+        }
+
+        $baris->update([
+            'kurir' => $data['kurir'],
+            'nomor_resi' => $data['nomor_resi'],
+            'resi_diisi_pada' => now(),
+        ]);
+
+        try {
+            Notification::send(
+                app(PenerimaNotifikasi::class)->adminAktif((int) $baris->organization_id),
+                ResiDiisi::dari($baris),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi resi gagal dikirim.', ['permintaan_id' => $baris->id, 'pesan' => $e->getMessage()]);
+        }
+
+        PerubahanDataOrganisasi::siarkanAman((int) $baris->organization_id, 'permintaan', 'resi', $baris->id);
+
+        return response()->json([
+            'message' => 'Nomor resi tersimpan. Tim lab sudah dikabari.',
+            'data' => $this->bentuk($baris->fresh($this->relasi())->loadCount('pesan'), $request),
+        ]);
+    }
+
+    /**
+     * Unggah foto pelat nama untuk alat BARU di permintaan yang masih `baru`
+     * (PL_Form_Alat). Item dicari di dalam permintaan milik perusahaan ini —
+     * item permintaan lain dijawab 404.
+     */
+    public function unggahFotoItem(
+        Request $request,
+        Konteks $konteks,
+        FotoPelangganLayanan $foto,
+        string $permintaan,
+        string $item,
+    ): JsonResponse {
+        $baris = (new LingkupData($konteks))->permintaan()->whereKey($permintaan)->firstOrFail();
+        /** @var PermintaanKalibrasiItem $butir */
+        $butir = $baris->items()->whereKey($item)->firstOrFail();
+
+        $request->validate(['foto' => FotoController::aturanBerkas()]);
+
+        if (! $baris->masihBaru() || ! $butir->alatBaru() || $butir->equipment_id !== null) {
+            return response()->json([
+                'message' => 'Foto cuma bisa ditambahkan ke alat baru di permintaan yang masih menunggu ditinjau.',
+            ], 422);
+        }
+
+        $baru = $foto->simpan(
+            $butir, $butir->foto(), (int) $baris->organization_id, (int) $baris->customer_id,
+            $request->file('foto'), $request->user(),
+        );
+
+        return response()->json(['data' => FotoPelangganLayanan::bentukPelanggan($baru)], 201);
+    }
+
     /** @return list<string> */
     private function relasi(): array
     {
-        return ['items.equipment', 'order:id,nomor,status'];
+        // `order.items…` untuk tahap & progres (`TahapPermintaan`), `items.foto`
+        // untuk foto pelat nama alat baru.
+        return ['items.equipment', 'items.foto', 'order:id,nomor,status', 'order.items.sesiTerakhir.certificate'];
     }
 }

@@ -10,7 +10,6 @@ use App\Services\BerkasPdfSertifikat;
 use App\Support\Pelanggan\Konteks;
 use App\Support\Pelanggan\LingkupData;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -34,12 +33,10 @@ class SertifikatController extends Controller
         ]);
 
         $sertifikat = (new LingkupData($konteks))->sertifikat()
-            ->when(! $request->boolean('termasuk_digantikan'), fn (Builder $q) => $q->whereNotExists(
-                fn (QueryBuilder $pengganti) => $pengganti->selectRaw('1')
-                    ->from('certificates as pengganti')
-                    ->whereColumn('pengganti.revision_of', 'certificates.id')
-                    ->where('pengganti.status', Certificate::STATUS_TERBIT)
-            ))
+            // Satu definisi "digantikan" untuk semua pintu (`Certificate::
+            // scopeBelumDigantikan`). Yang DIBATALKAN tetap tampil — dengan
+            // statusnya — supaya pelanggan tahu dokumen itu tidak sah lagi.
+            ->when(! $request->boolean('termasuk_digantikan'), fn (Builder $q) => $q->belumDigantikan())
             ->when(filled($data['q'] ?? null), fn (Builder $q) => $q->where(function (Builder $cari) use ($data): void {
                 $kata = '%'.$data['q'].'%';
                 $cari->where('nomor', 'like', $kata)
@@ -47,7 +44,7 @@ class SertifikatController extends Controller
                         ->where(fn (Builder $b) => $b->where('nama_alat', 'like', $kata)
                             ->orWhere('serial_number', 'like', $kata)));
             }))
-            ->with(['session:id,equipment_id', 'revisionOf:id,nomor'])
+            ->with(self::RELASI)
             ->orderByDesc('diterbitkan_pada')
             ->orderByDesc('id')
             ->paginate($data['per_page'] ?? 20);
@@ -69,14 +66,8 @@ class SertifikatController extends Controller
     {
         $baris = $this->milikSendiri($konteks, $sertifikat);
 
-        $pengganti = Certificate::query()
-            ->where('revision_of', $baris->id)
-            ->where('status', Certificate::STATUS_TERBIT)
-            ->latest('id')
-            ->first(['id', 'nomor']);
-
         return response()->json([
-            'data' => (new SertifikatPelangganResource($baris))->rinci($pengganti)->resolve($request),
+            'data' => (new SertifikatPelangganResource($baris))->rinci()->resolve($request),
         ]);
     }
 
@@ -95,6 +86,14 @@ class SertifikatController extends Controller
         string $sertifikat,
     ): StreamedResponse {
         $baris = $this->milikSendiri($konteks, $sertifikat);
+
+        // 410, bukan 404: barisnya ada & milik dia, tapi PDF batal tidak boleh
+        // beredar lagi sebagai dokumen sah (§38.2).
+        abort_if(
+            $baris->status === Certificate::STATUS_DIBATALKAN,
+            410,
+            'Sertifikat ini sudah dibatalkan lab, jadi PDF-nya tidak bisa diunduh lagi.',
+        );
 
         abort_unless(filled($baris->pdf_path), 404, 'Sertifikat ini belum punya PDF yang bisa diunduh.');
 
@@ -120,7 +119,10 @@ class SertifikatController extends Controller
     {
         return (new LingkupData($konteks))->sertifikat()
             ->whereKey($id)
-            ->with(['session:id,equipment_id', 'revisionOf:id,nomor'])
+            ->with(self::RELASI)
             ->firstOrFail();
     }
+
+    /** `revisiTerakhir` & `koreksiMenunggu` untuk status dokumen & tombol koreksi. */
+    private const RELASI = ['session:id,equipment_id', 'revisionOf:id,nomor', 'revisiTerakhir', 'koreksiMenunggu'];
 }

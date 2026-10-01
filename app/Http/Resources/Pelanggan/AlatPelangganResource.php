@@ -4,6 +4,10 @@ namespace App\Http\Resources\Pelanggan;
 
 use App\Models\Certificate;
 use App\Models\Equipment;
+use App\Models\FotoPelanggan;
+use App\Models\KoreksiPelanggan;
+use App\Services\Pelanggan\AlurKoreksi;
+use App\Services\Pelanggan\FotoPelangganLayanan;
 use App\Services\Pelanggan\PengingatJatuhTempoPelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -76,6 +80,28 @@ class AlatPelangganResource extends JsonResource
         $this->sertifikatTerakhir = $sertifikat;
 
         return $this;
+    }
+
+    /**
+     * Bagian yang cuma ada di layar DETAIL & ubah alat (PL_Ubah_Alat, §42 B2):
+     * kunci identitas, catatan milik pelanggan, foto pelat, koreksi menunggu.
+     * Dihitung controller (butuh query) — daftar alat tidak membawanya.
+     *
+     * `catatan` di sini = `equipments.catatan_pelanggan`, BUKAN `catatan` lab.
+     *
+     * @return array<string, mixed>
+     */
+    public static function rincianUbah(Equipment $alat, bool $terkunci, ?KoreksiPelanggan $koreksiMenunggu): array
+    {
+        return [
+            // Isian awal PL_Ubah_Alat — salah satu dari sembilan kolom identitas.
+            'resolusi' => $alat->resolusi,
+            'catatan' => $alat->catatan_pelanggan,
+            'terkunci' => $terkunci,
+            'field_terkunci' => $terkunci ? array_keys(AlurKoreksi::KUNCI_ALAT) : [],
+            'foto' => $alat->fotoPelat->map(fn (FotoPelanggan $f) => FotoPelangganLayanan::bentukPelanggan($f))->values()->all(),
+            'koreksi_menunggu' => $koreksiMenunggu === null ? null : ['id' => $koreksiMenunggu->id],
+        ];
     }
 
     /** Negatif = sudah lewat sekian hari. Null = belum ada jadwal. */

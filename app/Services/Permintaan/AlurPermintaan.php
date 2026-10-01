@@ -163,7 +163,19 @@ class AlurPermintaan
 
             foreach ($items as $item) {
                 if ($item->alatBaru()) {
-                    $item->equipment_id = $this->buatAlat($baris, $item, $rencana[$item->id])->id;
+                    $alat = $this->buatAlat($baris, $item, $rencana[$item->id]);
+                    $item->equipment_id = $alat->id;
+
+                    // Foto pelat nama ikut ke alat yang lahir — sebagai BARIS
+                    // KEDUA yang menunjuk berkas yang sama, bukan dipindah:
+                    // permintaan tetap menyimpan buktinya, alat mendapat
+                    // fotonya. `FotoPelangganLayanan::hapus` cuma membuang
+                    // berkas kalau tidak ada baris lain yang masih memakainya.
+                    foreach ($item->foto()->get() as $foto) {
+                        $alat->fotoPelat()->create(
+                            $foto->only(['organization_id', 'customer_id', 'path', 'mime', 'ukuran', 'diunggah_oleh']),
+                        );
+                    }
                 }
 
                 $barisOrder = $order->items()->create(['equipment_id' => $item->equipment_id]);

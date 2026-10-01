@@ -66,7 +66,12 @@ class VerificationTest extends TestCase
             ->assertSee('CAL/2026/07/0001')
             ->assertSee('Jangka Sorong Mitutoyo')
             ->assertSee('MT-500-196-30')
-            ->assertSee('PT Maju Jaya')
+            // Disamarkan sebagian sejak 1 Okt 2026 (artboard Web_Verifikasi,
+            // App\Support\SamarkanNama) — kartu lama tidak punya lembar
+            // lengkap, jadi nama utuh tidak muncul sama sekali di sini.
+            ->assertSee('PT Ma•• Jaya')
+            ->assertSee('Disamarkan sebagian')
+            ->assertDontSee('PT Maju Jaya')
             ->assertSee('PASS')
             ->assertSee('LK-285-IDN');
     }
@@ -149,7 +154,7 @@ class VerificationTest extends TestCase
             ->assertSee('CAL/2026/07/0001')
             ->assertSee('Jangka Sorong Mitutoyo')
             ->assertSee('MT-500-196-30')
-            ->assertSee('PT Maju Jaya')
+            ->assertSee('PT Ma•• Jaya')
             ->assertSee('PASS')
             ->assertDontSee($sertifikat->session->teknisi->name)
             ->assertDontSee($sertifikat->session->teknisi->email)

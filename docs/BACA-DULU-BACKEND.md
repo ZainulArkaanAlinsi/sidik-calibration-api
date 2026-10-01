@@ -199,21 +199,29 @@ dengan data yang untuk sebagian alat memang tidak ada. Sambungan di
 `GenerateCertificate` sudah menjaga yang ke depan; perintah ini cuma untuk yang
 terlanjur.
 
-### Yang masih menganga: alur revisi sertifikat TIDAK ADA
+### ~~Yang masih menganga: alur revisi sertifikat TIDAK ADA~~ — ditutup 1 Okt 2026
 
-`certificates.revision_of` dan `alasan_revisi` ada di migrasi sejak 14 Jul,
-ada di `$fillable`, punya relasi `Certificate::revisionOf()`, dan `alasan_revisi`
-ditampilkan `CertificateInfolist` — tapi **tidak ada satu pun kode produksi yang
-mengisinya**. Satu-satunya penulis `revision_of` di repo ini fixture test
-(`tests/Feature/FilamentAccessTest.php:130`).
+Sejak 1 Okt 2026 revisi & pembatalan sertifikat ADA (`permintaan-user-7.md`
+§38.7): `POST /api/certificates/{id}/revisi|batalkan`, layanan
+`RevisiSertifikat` & `PembatalanSertifikat`, job `ReviseCertificate` (BUKAN
+`GenerateCertificate` — yang itu `updateOrCreate` per sesi dan akan menimpa
+revisi). Tiga hal yang gampang kelewat:
 
-`CetakUlangSertifikat` BUKAN alur revisi: dia merender ulang PDF dari snapshot
+- `CalibrationSession::certificate()` sekarang **cuma sertifikat asli**
+  (`whereNull('revision_of')`). Revisi terbaru: `Certificate::revisiTerakhir()`.
+- "Digantikan" = punya revisi berstatus `terbit` ATAU `dibatalkan`
+  (`Certificate::STATUS_PENGGANTI`, scope `belumDigantikan()`). Satu definisi
+  itu dipakai jadwal alat, aplikasi pelanggan, dan halaman QR.
+- `LingkupData::sertifikat()` (pelanggan) ikut memuat `dibatalkan` supaya
+  pelanggan MELIHAT statusnya; unduhnya 410. Pemanggil yang butuh "yang
+  berlaku saja" menyaring `status = terbit` + `belumDigantikan()` sendiri.
+
+`CetakUlangSertifikat` tetap BUKAN revisi: dia merender ulang PDF dari snapshot
 beku dan sengaja tidak membuat baris sertifikat baru.
 
-Artinya dari sisi panel admin fitur ini kelihatan ada padahal tidak pernah
-dibangun. `SinkronJadwalAlat` sudah ditulis sadar-revisi, jadi begitu alur
-revisinya dibangun di atas `GenerateCertificate`, sinkronnya ikut jalan tanpa
-perlu disambung lagi.
+Koreksi data dari pelanggan, foto pelat nama, resi & jadwal teknisi, dan
+ringkasan email mingguan mendarat di hari yang sama — `permintaan-user-7.md`
+§42, kontrak `docs/perintah-frontend-revisi-koreksi.md`.
 
 ---
 

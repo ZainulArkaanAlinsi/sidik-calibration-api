@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     // kena hal yang sama. Ketahuan 11 Agt 2026 waktu form-nya mau dibikin.
     'resolusi_rentang',
     'toleransi', 'lokasi', 'tanggal_kalibrasi_terakhir', 'tanggal_jatuh_tempo', 'status', 'catatan',
+    // Catatan milik PELANGGAN (PL_Ubah_Alat) — terpisah dari `catatan` lab.
+    'catatan_pelanggan',
 ])]
 class Equipment extends Model
 {
@@ -250,6 +253,16 @@ class Equipment extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(EquipmentCategory::class, 'equipment_category_id');
+    }
+
+    /**
+     * Foto pelat nama yang diunggah pelanggan (PL_Ubah_Alat, maks 3).
+     *
+     * @return MorphMany<FotoPelanggan, $this>
+     */
+    public function fotoPelat(): MorphMany
+    {
+        return $this->morphMany(FotoPelanggan::class, 'pemilik')->orderBy('id');
     }
 
     /** @return HasMany<CalibrationSession, $this> */
