@@ -190,15 +190,25 @@ class MigrasiIdentitasPelangganTest extends TestCase
      */
     public function test_tabel_baru_bisa_turun_dan_naik_lagi(): void
     {
-        foreach (self::TABEL_BARU as $tabel => $berkas) {
-            $migrasi = $this->migrasi($berkas);
+        // FK dimatikan selama turun-naik. Migrasi yang LEBIH BARU boleh
+        // menunjuk tabel ini — `preferensi_notifikasi_anggota` (30 Sep) memegang
+        // FK ke `customer_members` — dan MySQL menolak menghapus tabel induk
+        // yang masih dirujuk (3730). Rollback sungguhan tidak kena karena
+        // berjalan mundur: tabel anak turun lebih dulu. Yang diuji di sini cuma
+        // `down()`/`up()` migrasi ini sendiri. SQLite tidak menegakkannya, jadi
+        // test ini hanya merah di suite MySQL — dan suite itulah yang
+        // menemukannya, 1 Okt 2026.
+        Schema::withoutForeignKeyConstraints(function (): void {
+            foreach (self::TABEL_BARU as $tabel => $berkas) {
+                $migrasi = $this->migrasi($berkas);
 
-            $migrasi->down();
-            $this->assertFalse(Schema::hasTable($tabel), "down() {$berkas} nggak menghapus {$tabel}.");
+                $migrasi->down();
+                $this->assertFalse(Schema::hasTable($tabel), "down() {$berkas} nggak menghapus {$tabel}.");
 
-            $migrasi->up();
-            $this->assertTrue(Schema::hasTable($tabel), "up() {$berkas} nggak membangun ulang {$tabel}.");
-        }
+                $migrasi->up();
+                $this->assertTrue(Schema::hasTable($tabel), "up() {$berkas} nggak membangun ulang {$tabel}.");
+            }
+        });
     }
 
     /** Kolom tambahan di tabel yang sudah ada juga turun-naik dengan benar. */
