@@ -48,6 +48,8 @@ Accept: application/json
 
 **Error lain**: `401` token invalid/kadaluarsa · `403` role nggak punya akses · `404` nggak ketemu · `500` error server. Selalu ada field `message` yang layak ditampilin ke user.
 
+`401` dengan `"kode": "akun_nonaktif"` (baru 1 Okt 2026) = akun ini dinonaktifkan atau belum disetujui admin. Semua token akun itu sudah dicabut server, jadi aplikasi keluar ke layar login dan menampilkan `message`. Jangan mencoba ulang.
+
 ---
 
 ## 1. PALING PERTAMA — Health Check
@@ -1088,6 +1090,8 @@ dijawab `500` dan sesinya tertinggal tanpa sertifikat maupun tombol retry.
 { "catatan_revisi": "Titik ukur 100mm cuma 2 pembacaan, minimal 3." }
 ```
 Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal nampilin catatan ini ke teknisi.
+
+`409` (baru 1 Okt 2026) = sesi ini barusan sudah diputus lewat permintaan lain (mis. admin lain menyetujuinya). Tidak ada yang berubah; muat ulang detail sesinya.
 
 ### `GET /api/certificates/{id}`
 ```json

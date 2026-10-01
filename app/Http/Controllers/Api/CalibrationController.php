@@ -1235,13 +1235,37 @@ class CalibrationController extends Controller
 
         $field = array_values(array_unique($data['revisi_field'] ?? []));
 
-        $calibration->update([
-            'status' => CalibrationSession::STATUS_PERLU_REVISI,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-            'catatan_revisi' => $data['catatan_revisi'],
-            'revisi_field' => $field === [] ? null : $field,
-        ]);
+        // Status diperiksa ULANG di bawah lock, bukan cuma di atas (temuan B08,
+        // paket 30 Sep). Admin yang layarnya basi bisa menekan Tolak tepat
+        // sesudah admin lain menyetujui: pemeriksaan di atas membaca model yang
+        // dimuat SEBELUM persetujuan itu, lalu `update()` polos menimpanya jadi
+        // `perlu_revisi` sementara job sertifikat sudah jalan. Penjaga di
+        // `CalibrationSession::booted()` tidak menolong — dia membaca status
+        // asli di memori. Lewat model (bukan query builder) supaya `Diaudit`
+        // tetap mencatat penolakannya; pola yang sama dengan aksi Setujui panel.
+        $ditolak = DB::transaction(function () use ($calibration, $request, $data, $field): bool {
+            $terkini = CalibrationSession::whereKey($calibration->id)->lockForUpdate()->first();
+
+            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+                return false;
+            }
+
+            $terkini->update([
+                'status' => CalibrationSession::STATUS_PERLU_REVISI,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'catatan_revisi' => $data['catatan_revisi'],
+                'revisi_field' => $field === [] ? null : $field,
+            ]);
+
+            return true;
+        });
+
+        if (! $ditolak) {
+            return response()->json([
+                'message' => 'Sesi ini barusan sudah diputus lewat permintaan lain. Muat ulang halamannya.',
+            ], 409);
+        }
 
         $segar = $calibration->fresh()->load(self::RELASI);
         $this->kabarinTeknisi($segar, SesiPerluRevisi::dariSesi($segar));

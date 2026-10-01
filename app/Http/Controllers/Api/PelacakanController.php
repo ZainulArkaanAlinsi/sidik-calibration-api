@@ -12,6 +12,7 @@ use App\Services\PenjagaOrganisasi;
 use App\Services\TahapPaket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 
 /**
@@ -63,7 +64,7 @@ class PelacakanController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $paket = Order::query()
+        $kueri = Order::query()
             ->where('organization_id', $request->user()->organization_id)
             ->when(filled($data['customer_id'] ?? null), fn ($q) => $q->where('customer_id', $data['customer_id']))
             ->when(filled($data['q'] ?? null), fn ($q) => $q->where(function ($cari) use ($data): void {
@@ -83,22 +84,41 @@ class PelacakanController extends Controller
             // dan mendorong paket yang beneran mendesak ke bawah.
             ->orderByRaw('tanggal_janji_selesai IS NULL ASC')
             ->orderBy('tanggal_janji_selesai')
-            ->orderByDesc('id')
-            ->paginate($data['per_page'] ?? 20);
+            ->orderByDesc('id');
+
+        $perHalaman = $data['per_page'] ?? 20;
+
+        // Tahap diturunkan di PHP dari status sesi & sertifikat, jadi tidak ada
+        // kolom yang bisa di-`WHERE` — dan kolom salinan `tahap` sengaja tidak
+        // dibuat karena pasti melenceng (lihat docblock migrasinya).
+        //
+        // Yang dulu salah: penyaringnya jalan SESUDAH `paginate()`. Halaman
+        // pertama bisa kosong padahal paket yang dicari ada di halaman lain,
+        // dan `meta.total` tetap menghitung paket semua tahap (temuan B12, paket
+        // 30 Sep). Sekarang disaring dulu, baru dipotong per halaman.
+        //
+        // Harganya: dengan `?tahap=`, semua paket lab yang lolos penyaring lain
+        // dimuat untuk diturunkan tahapnya. Wajar di volume sekarang (satu lab);
+        // Papan Pantau (F11) yang butuh hitungan per tahap harus dibangun di atas
+        // jalur yang tidak memuat semuanya.
+        if (filled($data['tahap'] ?? null)) {
+            $tersaring = $kueri->get()
+                ->filter(fn (Order $o): bool => $this->tahap->untukPaket($o->items) === $data['tahap'])
+                ->values();
+            $halaman = LengthAwarePaginator::resolveCurrentPage();
+
+            $paket = new LengthAwarePaginator(
+                $tersaring->forPage($halaman, $perHalaman)->values(),
+                $tersaring->count(),
+                $perHalaman,
+                $halaman,
+                ['path' => $request->url(), 'query' => $request->query()],
+            );
+        } else {
+            $paket = $kueri->paginate($perHalaman);
+        }
 
         $baris = collect($paket->items());
-
-        // Penyaring tahap dilakukan SESUDAH pengambilan, bukan di SQL — tahapnya
-        // diturunkan di PHP dari status sesi & sertifikat, jadi tidak ada kolom
-        // yang bisa di-`WHERE`. Konsekuensinya jujur dan harus diketahui: dengan
-        // `?tahap=`, jumlah baris per halaman bisa lebih sedikit dari `per_page`.
-        // Itu pilihan sadar — alternatifnya menyimpan kolom `tahap` yang pasti
-        // melenceng (lihat docblock migrasinya).
-        if (filled($data['tahap'] ?? null)) {
-            $baris = $baris->filter(
-                fn (Order $o): bool => $this->tahap->untukPaket($o->items) === $data['tahap']
-            )->values();
-        }
 
         return response()->json([
             'data' => PaketLacakResource::collection($baris),

@@ -4666,6 +4666,38 @@ disapu 404).
 - **Suite MySQL penuh** tidak dijalankan untuk PR ini (jalur cepat pilihan pemilik
   proyek): yang dijalankan set terfilter saja.
 
+## §43 — Paket perbaikan pra-rilis 30 Sep: Gelombang 1 bagian tanpa keputusan — 1 Okt 2026
+
+Sumber: `docs/paket-30sep/PERINTAH-CLAUDE-CODE-PERBAIKAN-30SEP.md` (lokal, belum di-commit
+karena belum disapu nama pelanggan). Berkas itu meminta "§41"; nomor itu sudah terpakai,
+jadi paketnya dicatat di sini. Temuan diverifikasi ulang ke kode `0beb5bb` di
+`docs/paket-30sep/VERIFIKASI-DAN-RENCANA-G0-G1.md`.
+
+Pemilik memilih (1 Okt 2026): kerjakan dulu bagian Gelombang 1 yang **tidak** menunggu
+K-30-01..05/10/16.
+
+### 43.1 Yang mendarat
+
+| Temuan | Perubahan | Penjaga |
+|---|---|---|
+| B04 | `tarik-pengajuan` hanya oleh `diajukan_oleh`; admin lain **403** (bukan 404 — sesinya memang terlihat olehnya). Baris lama tanpa `diajukan_oleh` tidak berubah perilaku | `GerbangPengesahanTest::test_admin_lain_tidak_bisa_menarik_pengajuan_orang_lain` |
+| B06 | `EnsureUserHasRole` menolak akun non-`aktif` dengan **401** `kode: akun_nonaktif` dan mencabut SEMUA tokennya — menutup jalur panel yang tidak mencabut token | `AkunNonaktifDitolakTest` (3) |
+| B08 | `reject()` memeriksa ulang status di bawah `lockForUpdate`; kalah balapan → **409**, status tidak turun. Tetap lewat model supaya `Diaudit` mencatat | `TolakSesiTidakMenimpaPersetujuanTest` |
+| B12 | `GET /pelacakan?tahap=` disaring dulu baru dipaginasi; isi halaman & `meta.total` benar | `PelacakanPaketTest::test_saring_tahap_dipaginasi_sesudah_disaring` |
+
+Kelima test baru dibuktikan merah di kode lama, hijau sesudah patch.
+
+### 43.2 Yang sengaja BELUM
+
+- Masa berlaku token Sanctum — menunggu K-30-16.
+- B01/B02 pemisahan wewenang di `approve()` & panel — menunggu K-30-03 (tabrakan: §Peran
+  butir 4 AGENTS.md "blokir dulu" vs keputusan 26 Sep "peringatan dulu").
+- B05/B07 tata kelola akun & soft delete — menunggu K-30-04.
+- B16 viewer di app — menunggu K-30-05. B13 apk pelanggan: izin `INTERNET` dikerjakan di
+  repo `sidik-pelanggan-mobile`; kunci rilis & Firebase menunggu K-30-10.
+- B12: penyaring memuat semua paket lab yang lolos penyaring lain. Papan Pantau (F11)
+  butuh jalur hitung per tahap yang tidak memuat semuanya.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -5074,3 +5106,4 @@ Supaya tidak dibangun ulang:
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
+| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. Sisa G1 menunggu K-30-03/04/05/10/16 (§43.2) |

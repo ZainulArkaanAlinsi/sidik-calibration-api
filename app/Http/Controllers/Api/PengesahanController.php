@@ -317,6 +317,25 @@ class PengesahanController extends Controller
             ], 422);
         }
 
+        // "Pengajuannya sendiri" ditegakkan, bukan cuma ditulis di docblock
+        // (temuan B04, paket 30 Sep). Admin lain yang menarik membatalkan
+        // pemeriksaan orang lain tanpa sepengetahuannya; jalur yang sah untuk
+        // itu `kembalikan` milik pengesah, yang tercatat sebagai pengesah.
+        //
+        // 403, bukan 404: sesinya memang terlihat oleh admin ini (satu lab, ada
+        // di antrean), jadi 404 cuma membingungkan. Baris tanpa `diajukan_oleh`
+        // (dipindah tangan sebelum kolom itu diisi) tidak punya pemilik yang
+        // bisa dicocokkan, dan perilakunya dibiarkan seperti sebelumnya.
+        if (
+            $calibration->diajukan_oleh !== null
+            && (int) $calibration->diajukan_oleh !== (int) $request->user()->id
+        ) {
+            return response()->json([
+                'message' => 'Cuma admin yang mengajukan yang bisa menarik pengajuan ini. '
+                    .'Minta dia, atau minta pengesah mengembalikannya.',
+            ], 403);
+        }
+
         return $this->batalkanPengajuan(
             $calibration,
             $request->user(),
