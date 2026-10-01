@@ -296,6 +296,28 @@ class GerbangPengesahanTest extends TestCase
             ->assertJsonPath('message', fn (string $m): bool => str_contains($m, 'Revisi'));
     }
 
+    public function test_admin_lain_tidak_bisa_menarik_pengajuan_orang_lain(): void
+    {
+        Queue::fake();
+        $this->ajukan();
+
+        $adminLain = User::factory()->admin()->create(['organization_id' => $this->org->id]);
+
+        // Temuan B04 (paket 30 Sep). Pengajuan itu pemeriksaan milik admin yang
+        // mengajukannya; admin lain yang menariknya membatalkan pemeriksaan
+        // orang lain tanpa sepengetahuannya. Dulu `tarikPengajuan()` tidak
+        // membandingkan `diajukan_oleh` sama sekali.
+        $this->actingAs($adminLain)
+            ->postJson("/api/calibrations/{$this->sesi->id}/tarik-pengajuan", [
+                'alasan' => 'Ditarik admin lain.',
+            ])
+            ->assertForbidden();
+
+        $segar = $this->sesi->fresh();
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $segar->status);
+        $this->assertSame($this->admin->id, $segar->diajukan_oleh);
+    }
+
     public function test_pengesah_mengembalikan_ke_admin_dan_wajib_beralasan(): void
     {
         Queue::fake();

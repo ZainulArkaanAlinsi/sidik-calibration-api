@@ -261,10 +261,55 @@ class PelacakanPaketTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_saring_tahap_dipaginasi_sesudah_disaring(): void
+    {
+        // Temuan B12 (paket 30 Sep). Penyaring tahap dulu dijalankan SESUDAH
+        // `paginate()`: halaman pertama bisa kosong padahal paket yang dicari
+        // ada di halaman berikutnya, dan `meta.total` tetap menghitung semua
+        // paket. Urutan daftar = janji selesai paling dekat dulu, jadi tiga
+        // paket "diterima" di depan menutupi dua paket "dikalibrasi" di belakang.
+        $paketBaru = fn (int $hari): Order => Order::factory()->create([
+            'organization_id' => $this->org->id,
+            'customer_id' => $this->pelanggan->id,
+            'tanggal_masuk' => now()->subDays(5)->toDateString(),
+            'tanggal_janji_selesai' => now()->addDays($hari)->toDateString(),
+        ]);
+
+        $paketBaru(1);
+        $paketBaru(3);
+        $dikalibrasiA = $paketBaru(5);
+        $dikalibrasiB = $paketBaru(6);
+        $this->itemDenganSesi(CalibrationSession::STATUS_DRAFT, paket: $dikalibrasiA);
+        $this->itemDenganSesi(CalibrationSession::STATUS_DRAFT, paket: $dikalibrasiB);
+
+        // Prasyarat: sesi draft memang terbaca "dikalibrasi". Kalau aturan
+        // turunannya berubah, test ini harus gagal di sini, bukan di bawah.
+        $this->assertSame(
+            TahapPaket::DIKALIBRASI,
+            app(TahapPaket::class)->untukPaket($dikalibrasiA->fresh()->load('items.sesiTerakhir.certificate')->items),
+        );
+
+        $respons = $this->actingAs($this->admin)
+            ->getJson('/api/pelacakan?tahap='.TahapPaket::DIKALIBRASI.'&per_page=2')
+            ->assertOk();
+
+        $this->assertEqualsCanonicalizing(
+            [$dikalibrasiA->id, $dikalibrasiB->id],
+            array_column($respons->json('data'), 'id'),
+        );
+        $respons->assertJsonPath('meta.total', 2)
+            ->assertJsonPath('meta.last_page', 1);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function itemDenganSesi(string $status, bool $denganSertifikatTerbit = false): OrderItem
-    {
+    private function itemDenganSesi(
+        string $status,
+        bool $denganSertifikatTerbit = false,
+        ?Order $paket = null,
+    ): OrderItem {
+        $paket ??= $this->paket;
+
         $alat = Equipment::factory()->create([
             'organization_id' => $this->org->id,
             'customer_id' => $this->pelanggan->id,
@@ -274,7 +319,7 @@ class PelacakanPaketTest extends TestCase
         ]);
 
         $item = OrderItem::factory()->create([
-            'order_id' => $this->paket->id,
+            'order_id' => $paket->id,
             'equipment_id' => $alat->id,
             'teknisi_id' => $this->teknisi->id,
         ]);

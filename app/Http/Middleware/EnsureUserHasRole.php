@@ -16,6 +16,21 @@ class EnsureUserHasRole
     {
         $user = $request->user();
 
+        // Akun yang tidak aktif ditolak SEBELUM pertanyaan peran, dan semua
+        // tokennya dicabut. Jalur penulisan status tidak semuanya mencabut
+        // token (form Edit di panel cuma menyimpan kolomnya), dan Sanctum di
+        // sini tanpa masa berlaku — tanpa penjagaan ini karyawan yang keluar
+        // tetap masuk dari HP lamanya (temuan B06, paket 30 Sep). 401, bukan
+        // 403: buat aplikasi artinya "sesi berakhir", jadi dia keluar sendiri.
+        if ($user instanceof User && $user->status !== User::STATUS_AKTIF) {
+            $user->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Akun kamu tidak aktif. Hubungi admin lab.',
+                'kode' => 'akun_nonaktif',
+            ], 401);
+        }
+
         $boleh = $user && (
             in_array($user->role, $roles, true)
             || self::lolosBacaSuperAdmin($user->role, $request->getMethod(), $roles)
