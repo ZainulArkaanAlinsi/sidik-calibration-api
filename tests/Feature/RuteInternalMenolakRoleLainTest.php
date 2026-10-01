@@ -13,6 +13,7 @@ use App\Models\Folder;
 use App\Models\FolderFile;
 use App\Models\Formula;
 use App\Models\FormulaVersion;
+use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Organization;
@@ -214,7 +215,27 @@ class RuteInternalMenolakRoleLainTest extends TestCase
             'metode_pengantaran' => 'diantar_sendiri',
         ]);
 
+        // Koreksi & foto pelat nama dari pelanggan (1 Okt, §42) — seorganisasi,
+        // sama alasannya dengan permintaan di atas.
+        $koreksi = KoreksiPelanggan::create([
+            'organization_id' => $org->id,
+            'customer_id' => $pelangganPt->id,
+            'jenis' => KoreksiPelanggan::JENIS_ALAT,
+            'equipment_id' => $alat->id,
+            'perubahan' => [['field' => 'merk', 'label' => 'Merk', 'lama' => 'A', 'baru' => 'B']],
+            'status' => KoreksiPelanggan::STATUS_MENUNGGU,
+        ]);
+        $foto = $alat->fotoPelat()->create([
+            'organization_id' => $org->id,
+            'customer_id' => $pelangganPt->id,
+            'path' => 'foto-pelanggan/contoh.jpg',
+            'mime' => 'image/jpeg',
+            'ukuran' => 1,
+        ]);
+
         $this->isiParameter = [
+            'koreksi' => (string) $koreksi->id,
+            'foto' => (string) $foto->id,
             'orderItem' => (string) $barisPaket->id,
             'penugasan' => (string) $penugasan->id,
             'penugasanItem' => (string) $barisPenugasan->id,

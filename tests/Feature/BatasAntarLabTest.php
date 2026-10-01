@@ -12,6 +12,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Folder;
 use App\Models\FolderFile;
 use App\Models\Formula;
+use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Penugasan;
@@ -126,6 +127,9 @@ class BatasAntarLabTest extends TestCase
         // Permintaan kalibrasi (30 Sep) — batasnya perusahaan, bukan lab.
         'api/pelanggan/v1/permintaan/{permintaan}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
         'api/pelanggan/v1/permintaan/{permintaan}/pesan' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        // Koreksi & foto pelat nama (1 Okt, §42) — batasnya perusahaan, bukan lab.
+        'api/pelanggan/v1/koreksi/{koreksi}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
+        'api/pelanggan/v1/foto/{foto}' => 'rute pelanggan — disapu IsolasiPerusahaanTest',
     ];
 
     /**
@@ -163,6 +167,9 @@ class BatasAntarLabTest extends TestCase
             // Permintaan kalibrasi dari pelanggan (30 Sep) — sisi lab.
             'permintaan pelanggan' => ['api/permintaan-pelanggan/{permintaan}', 'permintaan'],
             'permintaan pelanggan pesan' => ['api/permintaan-pelanggan/{permintaan}/pesan', 'permintaan'],
+            // Koreksi data & foto pelat nama dari pelanggan (1 Okt, §42) — sisi lab.
+            'koreksi pelanggan' => ['api/koreksi-pelanggan/{koreksi}', 'koreksi'],
+            'foto pelanggan' => ['api/foto-pelanggan/{foto}', 'foto'],
         ];
     }
 
@@ -396,6 +403,36 @@ class BatasAntarLabTest extends TestCase
                 'status' => PermintaanKalibrasi::STATUS_BARU,
                 'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
             ])->id,
+            'koreksi' => KoreksiPelanggan::create([
+                'organization_id' => $labB->id,
+                'customer_id' => $pelanggan->id,
+                'jenis' => KoreksiPelanggan::JENIS_ALAT,
+                'equipment_id' => $alat->id,
+                'perubahan' => [['field' => 'merk', 'label' => 'Merk', 'lama' => 'A', 'baru' => 'B']],
+                'status' => KoreksiPelanggan::STATUS_MENUNGGU,
+            ])->id,
+            'foto' => $this->fotoLabB($labB, $pelanggan, $alat),
         ];
+    }
+
+    /**
+     * Foto pelat nama milik lab B — berkasnya BENAR-BENAR ada di disk arsip
+     * palsu, supaya kontrol pemilik (harus bukan 404) tidak gagal karena
+     * berkasnya hilang, bukan karena batas labnya.
+     */
+    private function fotoLabB(Organization $labB, Customer $pelanggan, Equipment $alat): int
+    {
+        // Disk `arsip` sudah dipalsukan `setUp()` — JANGAN dipalsukan ulang di
+        // sini: `Storage::fake()` mengosongkan disknya, dan berkas folder
+        // lab B yang ditanam lebih dulu ikut hilang (kontrol pemiliknya 404).
+        Storage::disk('arsip')->put('foto-pelanggan/lab-b.jpg', 'isi-gambar');
+
+        return $alat->fotoPelat()->create([
+            'organization_id' => $labB->id,
+            'customer_id' => $pelanggan->id,
+            'path' => 'foto-pelanggan/lab-b.jpg',
+            'mime' => 'image/jpeg',
+            'ukuran' => 10,
+        ])->id;
     }
 }

@@ -12,6 +12,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Folder;
 use App\Models\FolderFile;
 use App\Models\Formula;
+use App\Models\KoreksiPelanggan;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Penugasan;
@@ -89,6 +90,9 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
         'dokumenBacaan' => 'bacaan',
         'penugasan' => 'penugasan',
         'permintaan' => 'permintaan',
+        // Koreksi data & foto pelat nama dari pelanggan (1 Okt, §42).
+        'koreksi' => 'koreksi',
+        'foto' => 'foto',
     ];
 
     /**
@@ -414,7 +418,26 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'isi' => 'BOCOR-PESAN-LAB2',
         ]);
 
+        $koreksi = KoreksiPelanggan::create([
+            'organization_id' => $this->lab2->id,
+            'customer_id' => $pelanggan->id,
+            'jenis' => KoreksiPelanggan::JENIS_ALAT,
+            'equipment_id' => $alat->id,
+            'perubahan' => [['field' => 'merk', 'label' => 'Merk', 'lama' => 'A', 'baru' => 'B']],
+            'catatan' => 'BOCOR-CATATAN-KOREKSI-LAB2',
+            'status' => KoreksiPelanggan::STATUS_MENUNGGU,
+        ]);
+        $foto = $alat->fotoPelat()->create([
+            'organization_id' => $this->lab2->id,
+            'customer_id' => $pelanggan->id,
+            'path' => 'foto-pelanggan/bocor-lab2.jpg',
+            'mime' => 'image/jpeg',
+            'ukuran' => 1,
+        ]);
+
         $this->idLab2 = [
+            'koreksi' => $koreksi->id,
+            'foto' => $foto->id,
             'technician' => $teknisiLab2->id,
             'order' => $paket->id,
             'calibrationMethod' => $metode->id,
@@ -454,6 +477,7 @@ class SapuRuteIsolasiOrganisasiTest extends TestCase
             'BOCOR-PENUGASAN-LAB2',
             'BOCOR-PMT-LAB2',
             'BOCOR-CATATAN-PERMINTAAN-LAB2',
+            'BOCOR-CATATAN-KOREKSI-LAB2',
             'BOCOR-PESAN-LAB2',
         ];
     }
