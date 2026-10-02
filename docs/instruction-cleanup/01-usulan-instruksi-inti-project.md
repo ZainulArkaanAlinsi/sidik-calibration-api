@@ -225,8 +225,8 @@ sebelum menyentuh rute, panel, atau channel yang berhubungan dengan peran ini.
   yang bukan orang luar.
 - Tulis oleh `super_admin` masih tertutup, kecuali empat rute di grup `role:super_admin` /
   `role:admin,super_admin` di ekor `routes/api.php`.
-- `GERBANG_PENGESAHAN` **tidak dinyalakan tanpa perintah pemilik**; akun super admin
-  pengesah belum ada di produksi.
+- `GERBANG_PENGESAHAN` **tidak dinyalakan tanpa perintah pemilik**. Satu akun super
+  admin sudah ada di produksi sejak 24 Sep 2026; pastikan pemegangnya bisa masuk dulu.
 - **Aksi tulis panel baru wajib lewat `HakTulisPanel`.** Tanpa itu tombol tetap menyala
   untuk orang yang belum boleh menekannya, tanpa error.
 - **Tiap akses lintas organisasi wajib dicatat** lewat `App\Support\JejakLintasOrganisasi`,
