@@ -465,10 +465,12 @@ pengesahan menjadikan super admin satu-satunya yang boleh MENGESAHKAN, jadi
 empat rute tulis di tabel atas dibuka lewat grup rute saudara — middleware
 `lolosBacaSuperAdmin` sendiri TIDAK dilonggarkan. `sahkan` baru hidup saat
 `GERBANG_PENGESAHAN=true`, dan sakelar itu **tidak dinyalakan tanpa perintah
-pemilik proyek**. Dua syarat lama sudah terpenuhi 2 Okt 2026 — pemisahan
-wewenang memblokir (K-30-03) dan panel ikut gerbang (B02) — tapi akun super admin
-pengesah belum ada di produksi; menyalakan gerbang lebih dulu menahan semua
-sertifikat tanpa ada yang bisa mengesahkan. Rinciannya
+pemilik proyek**. Syarat teknisnya sudah terpenuhi 2 Okt 2026: pemisahan
+wewenang memblokir (K-30-03), panel ikut gerbang (B02), dan satu akun super admin
+sudah ada di produksi sejak 24 Sep 2026 (dicek lewat query 2 Okt; catatan lama
+yang menulis "belum ada" salah). Sebelum menyalakan, pastikan pemegang akun itu
+benar-benar bisa masuk — gerbang tanpa pengesah yang bisa login menahan semua
+sertifikat. Rinciannya
 `docs/permintaan-user-7.md` §40.3 dan §43.1b.
 
 **Aksi panel baru wajib ikut `HakTulisPanel`.** `ScopesToOrganization` sudah
