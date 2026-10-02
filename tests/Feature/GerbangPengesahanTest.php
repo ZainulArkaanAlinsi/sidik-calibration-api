@@ -69,7 +69,6 @@ class GerbangPengesahanTest extends TestCase
 
         Storage::fake('arsip');
         config()->set('kalibrasi.gerbang_pengesahan', true);
-        config()->set('kalibrasi.pemisahan_wewenang_memblokir', false);
 
         $this->org = Organization::factory()->create();
         $this->admin = User::factory()->admin()->create(['organization_id' => $this->org->id]);
@@ -486,7 +485,7 @@ class GerbangPengesahanTest extends TestCase
     // PEMISAHAN WEWENANG
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function test_pemisahan_wewenang_memperingatkan_sekali_lalu_boleh_dilanjut(): void
+    public function test_pemisahan_wewenang_memblokir_pengesahan_tanpa_pengecualian(): void
     {
         Queue::fake();
         $this->ajukan();
@@ -494,50 +493,20 @@ class GerbangPengesahanTest extends TestCase
         // Super admin yang juga teknisi pengisi lembar kerja ini.
         $this->sesi->forceFill(['teknisi_id' => $this->superAdmin->id])->save();
 
+        // K-30-03 (1 Okt 2026): blokir, tanpa pengecualian, untuk semua peran.
+        // Mode "peringatan lalu boleh dilanjut" keputusan 26 Sep sudah dicabut,
+        // jadi `abaikan_peringatan` tidak menembusnya.
         $this->actingAs($this->superAdmin)
-            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan")
+            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan", ['abaikan_peringatan' => true])
             ->assertStatus(422)
-            ->assertJsonPath('butuh_konfirmasi', true)
+            ->assertJsonPath('kode', 'pemisahan_wewenang')
             ->assertJsonPath(
                 'wewenang.temuan.0.kode',
                 PemisahanWewenang::KODE_PENGESAH_SAMA_DENGAN_TEKNISI,
             );
 
-        // Diakui → lanjut. Pelanggarannya tercatat, bukan diblokir: lab yang
-        // cuma punya satu pengesah dan diblokir akan saling pinjam akun, dan
-        // jejak audit yang bohong jauh lebih buruk daripada satu peringatan.
-        $this->actingAs($this->superAdmin)
-            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan", ['abaikan_peringatan' => true])
-            ->assertOk();
-
-        $this->assertTrue(
-            AuditLog::query()
-                ->where('entity_id', $this->sesi->id)
-                ->where('note', 'like', '%'.PemisahanWewenang::KODE_PENGESAH_SAMA_DENGAN_TEKNISI.'%')
-                ->exists(),
-            'Pelanggaran pemisahan wewenang dilanjutkan tanpa tercatat di riwayat. '
-            .'Peringatan yang tidak meninggalkan jejak sama saja dengan tidak ada.',
-        );
-    }
-
-    public function test_pemisahan_wewenang_memblokir_kalau_sakelarnya_nyala(): void
-    {
-        config()->set('kalibrasi.pemisahan_wewenang_memblokir', true);
-
-        Queue::fake();
-        $this->ajukan();
-        $this->sesi->forceFill(['teknisi_id' => $this->superAdmin->id])->save();
-
-        $this->actingAs($this->superAdmin)
-            ->postJson("/api/calibrations/{$this->sesi->id}/sahkan", ['abaikan_peringatan' => true])
-            ->assertStatus(422);
-
-        $this->assertSame(
-            CalibrationSession::STATUS_MENUNGGU_PENGESAHAN,
-            $this->sesi->fresh()->status,
-            '`abaikan_peringatan` menembus mode memblokir. Sakelar yang bisa dilewati '
-            .'flag bukan sakelar.',
-        );
+        $this->assertSame(CalibrationSession::STATUS_MENUNGGU_PENGESAHAN, $this->sesi->fresh()->status);
+        $this->assertTrue(Queue::pushed(GenerateCertificate::class)->isEmpty());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -73,7 +73,7 @@ class HeightGaugeSertifikatTest extends TestCase
         // `height_gauge_diluar_akreditasi` karena alat ini memang di luar
         // lampiran LK-285-IDN. Peringatan itu benar dan sengaja tidak
         // dihilangkan.
-        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
         return [$sesi->fresh(), $sesi->fresh()->certificate()->firstOrFail()->snapshot];

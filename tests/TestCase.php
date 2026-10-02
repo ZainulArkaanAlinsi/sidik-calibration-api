@@ -2,6 +2,8 @@
 
 namespace Tests;
 
+use App\Models\CalibrationSession;
+use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -81,5 +83,29 @@ abstract class TestCase extends BaseTestCase
         // `npm run build` di tahap `aset` Dockerfile, yang gagal keras waktu
         // build kalau temanya nggak bisa dikompilasi.
         $this->withoutVite();
+    }
+
+    /**
+     * Bertindak sebagai admin pemeriksa yang TIDAK ikut mengisi sesi ini.
+     *
+     * Sejak K-30-03 (1 Okt 2026) pengisi lembar tidak bisa menyetujui sesinya
+     * sendiri. Sesi contoh dari seeder diisi admin seeder, jadi test sertifikat
+     * yang dulu menyetujuinya dengan admin yang sama sekarang lewat orang kedua
+     * di organisasi yang sama — persis yang harus terjadi di lab.
+     */
+    protected function sebagaiPemeriksaLain(CalibrationSession $sesi): static
+    {
+        $pemeriksa = User::query()
+            ->where('organization_id', $sesi->organization_id)
+            ->where('role', User::ROLE_ADMIN)
+            ->where('status', User::STATUS_AKTIF)
+            ->whereKeyNot($sesi->teknisi_id)
+            ->first()
+            ?? User::factory()->admin()->create([
+                'organization_id' => $sesi->organization_id,
+                'status' => User::STATUS_AKTIF,
+            ]);
+
+        return $this->actingAs($pemeriksa);
     }
 }

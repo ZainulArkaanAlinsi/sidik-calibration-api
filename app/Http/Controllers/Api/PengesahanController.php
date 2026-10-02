@@ -143,24 +143,15 @@ class PengesahanController extends Controller
 
         $wewenang = $this->pemisahan->periksa($calibration, $pengesah, $penandatanganId);
 
-        // Peringatan, bukan penghalang — sampai `kalibrasi.pemisahan_wewenang_memblokir`
-        // dinyalakan. Alasan lengkapnya di docblock `PemisahanWewenang`.
-        if ($wewenang['memblokir']) {
+        // Ditahan, tanpa pengecualian (K-30-03, 1 Okt 2026). `abaikan_peringatan`
+        // sengaja TIDAK menembus: mode "peringatan lalu boleh lanjut" sudah
+        // dicabut bersama sakelarnya. Alasan lengkapnya di docblock
+        // `PemisahanWewenang`.
+        if (! $wewenang['bersih']) {
             return response()->json([
-                'message' => 'Pengesahan ditahan: pemisahan wewenang nggak terpenuhi.',
-                'wewenang' => $wewenang,
-            ], 422);
-        }
-
-        // Peringatan yang belum diakui pengirimnya dibalikkan sekali, supaya
-        // orangnya MEMBACA dulu. Pola & nama flag-nya disamakan dengan
-        // `abaikan_peringatan` di approve() — bukan istilah baru untuk hal yang
-        // sama.
-        if (! $wewenang['bersih'] && ! $request->boolean('abaikan_peringatan')) {
-            return response()->json([
-                'message' => 'Ada peringatan pemisahan wewenang. Baca dulu; kalau memang mau '
-                    .'lanjut, kirim ulang dengan `abaikan_peringatan: true`.',
-                'butuh_konfirmasi' => true,
+                'message' => 'Pengesahan ditahan: kamu ikut mengisi, memeriksa, atau mengajukan sesi ini. '
+                    .'Minta pengesah lain.',
+                'kode' => 'pemisahan_wewenang',
                 'wewenang' => $wewenang,
             ], 422);
         }
@@ -220,7 +211,7 @@ class PengesahanController extends Controller
             AuditLog::ACTION_DIUBAH,
             array_intersect_key($sebelum, array_flip($berubah)),
             array_intersect_key($sesudah, array_flip($berubah)),
-            $this->pemisahan->ringkasUntukAudit($wewenang) ?? 'Disahkan & diterbitkan.',
+            'Disahkan & diterbitkan.',
         );
 
         $job = new GenerateCertificate($calibration->id, $pengesah->id, $berlakuSampai);

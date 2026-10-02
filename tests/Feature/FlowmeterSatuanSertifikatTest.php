@@ -157,7 +157,7 @@ class FlowmeterSatuanSertifikatTest extends TestCase
     {
         // Sesi contoh Flowrate selalu membawa dua peringatan yang benar dan
         // sengaja tidak dihilangkan — lihat [FlowmeterSertifikatTest::terbitkan].
-        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail()->snapshot;

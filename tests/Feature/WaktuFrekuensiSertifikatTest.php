@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
-use App\Models\User;
 use App\Services\CertificateSnapshotBuilder;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
@@ -224,7 +223,7 @@ class WaktuFrekuensiSertifikatTest extends TestCase
         $sesi = CalibrationSession::where('nomor_sesi', $nomorSesi)->firstOrFail();
 
         $sertifikat = $sesi->certificate()->first() ?? tap(null, function () use ($sesi) {
-            $this->actingAs(User::where('role', User::ROLE_ADMIN)->firstOrFail())
+            $this->sebagaiPemeriksaLain($sesi)
                 ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
                 ->assertOk();
         }) ?? $sesi->fresh()->certificate()->firstOrFail();

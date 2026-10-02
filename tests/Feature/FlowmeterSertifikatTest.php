@@ -58,7 +58,7 @@ class FlowmeterSertifikatTest extends TestCase
         // catatan bahwa kedua master belum divalidasi (`FORM VALIDASI` kolom
         // VALIDATION kosong), dan sesi Flowrate menambah peringatan jarak titik
         // tabel 23,8 %. Keduanya benar dan sengaja tidak dihilangkan.
-        $this->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
+        $this->sebagaiPemeriksaLain($sesi)->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 
         return $sesi->fresh()->certificate()->firstOrFail()->snapshot;

@@ -73,22 +73,8 @@ return [
     */
     'gerbang_pengesahan' => (bool) env('GERBANG_PENGESAHAN', false),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Pemisahan wewenang: memblokir atau memperingatkan
-    |--------------------------------------------------------------------------
-    |
-    | false (default) → pengesah yang juga mengisi/memeriksa lembar kerja dapat
-    | peringatan yang harus diakui, boleh lanjut, dan pelanggarannya tercatat di
-    | `audit_logs`. true → 422, pengesahan ditahan.
-    |
-    | Default false bukan kelonggaran yang dilupakan: PT SIDIK hari ini punya
-    | satu super admin. Memblokir berarti sertifikat berhenti terbit, dan yang
-    | terjadi berikutnya bukan kepatuhan tapi saling pinjam akun — jejak audit
-    | yang bohong jauh lebih buruk daripada satu peringatan yang tercatat.
-    | Naikkan ke true begitu ada dua orang yang berwenang mengesahkan.
-    |
-    */
-    'pemisahan_wewenang_memblokir' => (bool) env('PEMISAHAN_WEWENANG_MEMBLOKIR', false),
+    // Pemisahan wewenang TIDAK punya sakelar lagi. K-30-03 (1 Okt 2026):
+    // blokir, tanpa pengecualian, semua peran — `PEMISAHAN_WEWENANG_MEMBLOKIR`
+    // dicabut. Lihat docblock `App\Services\PemisahanWewenang`.
 
 ];

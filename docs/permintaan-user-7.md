@@ -4687,11 +4687,34 @@ K-30-01..05/10/16.
 
 Kelima test baru dibuktikan merah di kode lama, hijau sesudah patch.
 
+### 43.1b Keputusan K-30-03 & yang mendarat sesudahnya (2 Okt 2026)
+
+**Keputusan pemilik proyek (1 Okt 2026), jangan ditanya ulang:** pemisahan wewenang
+**diblokir, tanpa pengecualian, untuk semua peran termasuk super admin.** Ini menutup
+tabrakan §Peran butir 4 AGENTS.md ("blokir dulu") vs keputusan 26 Sep ("peringatan dulu").
+Sakelar `PEMISAHAN_WEWENANG_MEMBLOKIR` dicabut dari config, `render.yaml`, dan
+`.env.example`: `render.yaml` memakunya "false", jadi keputusan yang bergantung pada env bisa
+diam-diam tidak berlaku di produksi.
+
+"Ikut mengisi" = pengisi lembar (`teknisi_id`), admin yang mengoreksi pembacaan (baris
+`audit_logs` berawalan `AuditLog::CATATAN_KOREKSI_PEMBACAAN`), atau yang mengonfirmasi hasil
+pindai (`raw_measurements.verified_by`). Mengisi kolom administratif tidak dihitung.
+
+| Temuan | Perubahan | Penjaga |
+|---|---|---|
+| B01 | `approve()` memanggil `PemisahanWewenang::periksaPersetujuan()` → **422** `kode: pemisahan_wewenang` | `PemisahanWewenangPersetujuanTest` (3 kasus API) |
+| B02 | Tombol Setujui panel memakai pemeriksaan yang sama **dan** ikut `GERBANG_PENGESAHAN` (mendarat di `menunggu_pengesahan`, `diajukan_*` terisi, tanpa job, super admin dikabari) | `PemisahanWewenangPersetujuanTest` (2 kasus panel) |
+| B03 | Migrasi additive `raw_measurements.verified_by` + `verified_at`; `measurements/verify` mencatat pelaku & waktu, tertulis di audit sesi, ditolak sesudah sesi diputus | `PemisahanWewenangPersetujuanTest::test_verifikasi_mencatat_pelaku_dan_ditolak_sesudah_disetujui` |
+| `sahkan` | Mode peringatan + `abaikan_peringatan` dicabut; temuan = **422**. Pengesah yang mengoreksi atau mengonfirmasi pindai juga ditahan | `GerbangPengesahanTest::test_pemisahan_wewenang_memblokir_pengesahan_tanpa_pengecualian` |
+| B08 (panel) | Tombol Tolak panel memeriksa ulang status di bawah lock, sama dengan `reject()` API | pola yang sama dengan `TolakSesiTidakMenimpaPersetujuanTest`; belum ada test Livewire khusus |
+
+Aplikasi lab: `422` tanpa `butuh_konfirmasi` tampil sebagai pesan biasa. Dialog
+"lanjutkan walau ada peringatan" di layar pengesahan jadi tidak terpakai (dirapikan di repo
+mobile, bukan blocker — gerbang masih mati di produksi).
+
 ### 43.2 Yang sengaja BELUM
 
 - Masa berlaku token Sanctum — menunggu K-30-16.
-- B01/B02 pemisahan wewenang di `approve()` & panel — menunggu K-30-03 (tabrakan: §Peran
-  butir 4 AGENTS.md "blokir dulu" vs keputusan 26 Sep "peringatan dulu").
 - B05/B07 tata kelola akun & soft delete — menunggu K-30-04.
 - B16 viewer di app — menunggu K-30-05. B13 apk pelanggan: izin `INTERNET` dikerjakan di
   repo `sidik-pelanggan-mobile`; kunci rilis & Firebase menunggu K-30-10.
@@ -5106,4 +5129,4 @@ Supaya tidak dibangun ulang:
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
-| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. Sisa G1 menunggu K-30-03/04/05/10/16 (§43.2) |
+| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2) |
