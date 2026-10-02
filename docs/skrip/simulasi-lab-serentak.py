@@ -89,7 +89,7 @@ class Skenario:
 class Klien:
     """HTTP ke beberapa server bergantian, seperti load balancer."""
 
-    def __init__(self, bases: list[str], timeout: int = 180) -> None:
+    def __init__(self, bases: list[str], timeout: int = 90) -> None:
         self._putar = itertools.cycle(bases)
         self._kunci = threading.Lock()
         self.bases = bases
@@ -193,6 +193,8 @@ class Simulasi:
         self.sesi_siap: list[dict[str, Any]] = []
         self.alat = list(fixture["alat"])
         self.sertifikat: list[dict[str, Any]] = []
+        self.permintaan: list[int] = []
+        self.sesi_dikenal: set[int] = set()
         self.ip_orang = {
             o["email"]: f"10.20.{i // 250}.{i % 250 + 1}"
             for i, o in enumerate([*fixture["admin"], *fixture["teknisi"], fixture["viewer"]])
@@ -248,10 +250,18 @@ class Simulasi:
         return isi
 
     def kirim(self, kode: str, email: str, alat: dict[str, Any], client_id: str | None, catatan: str) -> Respons:
-        return self.api.panggil(
+        r = self.api.panggil(
             kode, "POST", "/calibrations",
             token=self.token[email], body=self.payload(alat, client_id, catatan), ip=self.ip(email),
         )
+        # Tiap sesi yang DIJAWAB ke klien dicatat. Test PHP mengadu daftar ini ke
+        # isi database: sesi yang tersimpan tapi tidak pernah dijawab ke siapa pun
+        # berarti ada jalur yang menyimpan diam-diam.
+        sesi_id = ((r.data or {}).get("data") or {}).get("id") if isinstance(r.data, dict) else None
+        if r.status in (200, 201) and sesi_id:
+            with self.api._kunci:
+                self.sesi_dikenal.add(sesi_id)
+        return r
 
     def approve(self, kode: str, email: str, sesi_id: int) -> Respons:
         return self.api.panggil(
@@ -486,7 +496,7 @@ class Simulasi:
                 s.gagal(f"baca: HTTP {r.status} {_pesan(r.data)}")
         s.catatan.append(f"{len(sisa)} approve serentak + 30 pembacaan selesai")
 
-    def s7_tunggu_sertifikat(self, batas_detik: int = 900) -> None:
+    def s7_tunggu_sertifikat(self, batas_detik: int = 600) -> None:
         s = self.baru("S7", "Pekerja antrean menerbitkan semua sertifikat; nomor wajib unik")
         admin = self.f["admin"][0]["email"]
         menunggu = set(self.sesi_disetujui)
@@ -537,6 +547,78 @@ class Simulasi:
         else:
             s.gagal(f"unduh PDF: HTTP {pdf.status}")
 
+    def s11_permintaan_serentak(self) -> None:
+        pel = self.f.get("pelanggan") or []
+        s = self.baru("S11", f"{len(pel)} pelanggan mengirim permintaan kalibrasi di detik yang sama")
+
+        def ajukan(i: int, p: dict[str, Any]) -> Respons:
+            return self.api.panggil(
+                "S11", "POST", "/pelanggan/v1/permintaan", token=p["token"], ip=f"10.30.0.{i + 1}",
+                body={
+                    "metode_pengantaran": self.f["metode_pengantaran"],
+                    "alat_id": [p["alat_permintaan"]],
+                    "catatan": "Simulasi: mohon kalibrasi rutin tahunan.",
+                },
+            )
+
+        hasil = serentak([lambda i=i, p=p: (i, p, ajukan(i, p)) for i, p in enumerate(pel)])
+        nomor: list[str] = []
+        for i, p, r in hasil:
+            if r.status == 201:
+                data = r.data["data"]
+                nomor.append(data.get("nomor"))
+                self.permintaan.append(data["id"])
+                continue
+            s.gagal(f"{p['email']}: HTTP {r.status} {_pesan(r.data)}")
+            # Permintaan tidak punya kunci kiriman-ulang, jadi kirim ulang hanya
+            # aman karena transaksi yang gagal tadi sudah dibatalkan seluruhnya.
+            ulang = ajukan(i, p)
+            if ulang.status == 201:
+                self.permintaan.append(ulang.data["data"]["id"])
+                nomor.append(ulang.data["data"].get("nomor"))
+                s.catatan.append(f"{p['email']}: kirim ulang berhasil sesudah HTTP {r.status}")
+        if len(set(nomor)) != len(nomor):
+            s.gagal(f"nomor permintaan KEMBAR: {sorted(nomor)}")
+        s.catatan.append(f"{len(self.permintaan)}/{len(pel)} tersimpan. Nomor: {', '.join(sorted(n for n in nomor if n))}")
+
+    def s12_terima_dan_order_serentak(self) -> None:
+        pel = self.f.get("pelanggan") or []
+        s = self.baru(
+            "S12",
+            f"Admin menerima {len(self.permintaan)} permintaan + mencatat {min(6, len(pel))} order di meja depan, bersamaan",
+        )
+        admin = [x["email"] for x in self.f["admin"][:2]]
+        hari_ini = time.strftime("%Y-%m-%d")
+        tugas: list[Callable[[], Any]] = []
+        for i, pid in enumerate(self.permintaan):
+            e = admin[i % 2]
+            tugas.append(lambda e=e, pid=pid: ("terima", pid, self.api.panggil(
+                "S12", "POST", f"/permintaan-pelanggan/{pid}/terima", token=self.token[e], ip=self.ip(e),
+                body={"tanggal_masuk": hari_ini, "catatan": "Simulasi: diterima serentak."},
+            )))
+        for i, p in enumerate(pel[:6]):
+            e = admin[(i + 1) % 2]
+            tugas.append(lambda e=e, p=p: ("order", p["customer_id"], self.api.panggil(
+                "S12", "POST", "/orders", token=self.token[e], ip=self.ip(e),
+                body={
+                    "customer_id": p["customer_id"],
+                    "tanggal_masuk": hari_ini,
+                    "catatan": "Simulasi: alat diantar langsung ke meja depan.",
+                    "items": [{"equipment_id": p["alat_order"], "kondisi_terima": "Baik"}],
+                },
+            )))
+        if not tugas:
+            s.gagal("tidak ada permintaan atau pelanggan untuk diproses")
+            return
+
+        jumlah = {"terima": 0, "order": 0}
+        for jenis, sasaran, r in serentak(tugas):
+            if r.status in (200, 201):
+                jumlah[jenis] += 1
+            else:
+                s.gagal(f"{jenis} {sasaran}: HTTP {r.status} {_pesan(r.data)}")
+        s.catatan.append(f"{jumlah['terima']} permintaan diterima, {jumlah['order']} order dicatat")
+
     # ── laporan ─────────────────────────────────────────────────────────────
 
     def statistik(self) -> dict[str, Any]:
@@ -562,7 +644,7 @@ class Simulasi:
             self.s0_server_benar, self.s1_login_pagi, self.s1b_satu_wifi, self.s2_kirim_serentak,
             self.s3_kirim_dobel, self.s8_pemisahan_wewenang, self.s9_viewer, self.s4_rebutan_approve,
             self.s5_approve_lawan_tolak, self.s6_approve_massal_dan_baca, self.s7_tunggu_sertifikat,
-            self.s10_verifikasi_publik,
+            self.s10_verifikasi_publik, self.s11_permintaan_serentak, self.s12_terima_dan_order_serentak,
         ]
         for f in langkah:
             jumlah_awal = len(self.skenario)
@@ -581,6 +663,7 @@ class Simulasi:
             "server": self.api.bases,
             "skenario": [s.__dict__ for s in self.skenario],
             "sesi_disetujui": sorted(self.sesi_disetujui),
+            "sesi_dikenal": sorted(self.sesi_dikenal),
             "sertifikat": self.sertifikat,
             "statistik": self.statistik(),
         }

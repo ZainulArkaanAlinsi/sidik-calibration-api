@@ -4,7 +4,11 @@ namespace Tests\Simulasi;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
+use App\Models\Customer;
+use App\Models\CustomerMember;
 use App\Models\Equipment;
+use App\Models\Order;
+use App\Models\PermintaanKalibrasi;
 use App\Models\Standard;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
@@ -75,15 +79,17 @@ class SimulasiLabSerentakTest extends TestCase
             [$this->python(), base_path('docs/skrip/simulasi-lab-serentak.py'), $jalurFixture, $jalurLaporan],
             base_path(),
         );
-        $python->setTimeout(1800);
-        $python->run();
-        file_put_contents($folder.DIRECTORY_SEPARATOR.'keluaran.txt', $python->getOutput().$python->getErrorOutput());
+        // Keluarannya ditulis SELAGI jalan, bukan sesudah selesai: kalau ada
+        // skenario yang macet, berkas ini yang menunjukkan di mana berhentinya.
+        $jalurKeluaran = $folder.DIRECTORY_SEPARATOR.'keluaran.txt';
+        $python->setTimeout(1200);
+        $python->run(fn (string $jenis, string $isi) => file_put_contents($jalurKeluaran, $isi, FILE_APPEND));
         fwrite(STDOUT, PHP_EOL.$python->getOutput().$python->getErrorOutput().PHP_EOL);
 
         $this->assertFileExists($jalurLaporan, 'Skrip simulasi tidak menulis laporan: '.$python->getErrorOutput());
         $laporan = json_decode((string) file_get_contents($jalurLaporan), true);
 
-        $invarian = $this->periksaInvarianDatabase();
+        $invarian = $this->periksaInvarianDatabase($laporan['sesi_dikenal'] ?? []);
         $laporan['invarian_database'] = $invarian;
         file_put_contents($jalurLaporan, json_encode($laporan, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         fwrite(STDOUT, 'INVARIAN DATABASE: '.json_encode($invarian, JSON_UNESCAPED_UNICODE).PHP_EOL);
@@ -138,7 +144,7 @@ class SimulasiLabSerentakTest extends TestCase
         $adminSeeder = User::query()->where('email', 'admin@sidik.test')->firstOrFail();
         $org = $adminSeeder->organization_id;
 
-        $buat = fn (string $email, string $nama, string $role, string $idPegawai) => User::query()->create([
+        $buat = fn (string $email, string $nama, string $role, ?string $idPegawai) => User::query()->create([
             'organization_id' => $org,
             'employee_id' => $idPegawai,
             'name' => $nama,
@@ -179,6 +185,48 @@ class SimulasiLabSerentakTest extends TestCase
             $alat[] = ['id' => $kembar->id, 'serial' => $kembar->serial_number];
         }
 
+        // Delapan perusahaan pelanggan fiktif, masing-masing satu PIC dan dua alat:
+        // satu dimintakan lewat aplikasi pelanggan, satu didaftarkan langsung di
+        // meja penerimaan. Dua pintu itu memakai SATU penomoran order
+        // (`PenomoranOrder`), jadi keduanya sengaja ditembak bersamaan.
+        // Token dibuat langsung, bukan lewat `/auth/masuk`: pintu masuk itu
+        // memeriksa sandi bocor ke layanan luar, dan simulasi tidak boleh keluar.
+        $namaPerusahaan = [
+            'PT Simulasi Tirta Lestari', 'CV Simulasi Analitika', 'RS Simulasi Medika Utama',
+            'PDAM Simulasi Kota Hujan', 'PT Simulasi Pangan Nusantara', 'PT Simulasi Farma Sejahtera',
+            'CV Simulasi Laboratorium Prima', 'PT Simulasi Kimia Mandiri',
+        ];
+        $pelanggan = [];
+        foreach ($namaPerusahaan as $i => $namaPt) {
+            $customer = Customer::factory()->create(['organization_id' => $org, 'nama' => $namaPt]);
+            $pic = $buat(sprintf('pic%02d@contoh.test', $i + 1), 'PIC '.$namaPt, User::ROLE_PELANGGAN, null);
+            CustomerMember::query()->create([
+                'organization_id' => $org,
+                'customer_id' => $customer->id,
+                'user_id' => $pic->id,
+                'peran' => CustomerMember::PERAN_PIC_UTAMA,
+                'status' => CustomerMember::STATUS_AKTIF,
+            ]);
+
+            $alatPelanggan = [];
+            foreach ([1, 2] as $k) {
+                $kembar = $ph->replicate();
+                $kembar->serial_number = sprintf('SIM-PL-%02d-%d', $i + 1, $k);
+                $kembar->customer_id = $customer->id;
+                $kembar->status = Equipment::STATUS_AKTIF;
+                $kembar->save();
+                $alatPelanggan[] = $kembar->id;
+            }
+
+            $pelanggan[] = [
+                'email' => $pic->email,
+                'token' => $pic->createToken('simulasi', ['pelanggan'])->plainTextToken,
+                'customer_id' => $customer->id,
+                'alat_permintaan' => $alatPelanggan[0],
+                'alat_order' => $alatPelanggan[1],
+            ];
+        }
+
         $buffer = [];
         foreach (['4' => 'HC32513535', '7' => 'HC46341939', '10' => 'HC45400338'] as $nilaiPh => $serial) {
             $standar = Standard::query()->where('organization_id', $org)->where('serial_number', $serial)->firstOrFail();
@@ -198,6 +246,8 @@ class SimulasiLabSerentakTest extends TestCase
             'viewer' => ['email' => $viewer->email, 'nama' => $viewer->name],
             'alat' => $alat,
             'buffer' => $buffer,
+            'pelanggan' => $pelanggan,
+            'metode_pengantaran' => PermintaanKalibrasi::METODE_DIANTAR_SENDIRI,
         ];
     }
 
@@ -222,7 +272,9 @@ class SimulasiLabSerentakTest extends TestCase
             'OPENAI_API_KEY' => '',
             'GITHUB_TOKEN' => '',
             'GERBANG_PENGESAHAN' => 'false',
-            'FITUR_PELANGGAN' => 'false',
+            // Menyala di simulasi (MATI di produksi, 2 Okt 2026) supaya penomoran
+            // permintaan & order pelanggan ikut diuji sebelum sakelarnya dinyalakan.
+            'FITUR_PELANGGAN' => 'true',
             'SEED_ON_BOOT' => 'false',
             'DB_HOST' => '127.0.0.1',
             'DB_DATABASE' => 'asmo_db_test',
@@ -274,10 +326,17 @@ class SimulasiLabSerentakTest extends TestCase
      *
      * @return array{ringkas: array<string, mixed>, pelanggaran: list<string>}
      */
-    private function periksaInvarianDatabase(): array
+    private function periksaInvarianDatabase(array $sesiDikenal): array
     {
         $pelanggaran = [];
         $sesiSim = CalibrationSession::query()->where('created_at', '>=', $this->mulaiSimulasi);
+
+        // Sesi yang tersimpan tapi tidak pernah dijawab ke klien mana pun. Belum
+        // dijadikan pelanggaran sampai asal-usulnya jelas — rinciannya dicetak
+        // supaya bisa dilacak, bukan ditebak.
+        $takDikenal = (clone $sesiSim)->whereNotIn('id', $sesiDikenal ?: [0])
+            ->get(['id', 'status', 'nomor_sesi', 'teknisi_id', 'equipment_id', 'client_request_id', 'order_item_id', 'created_at'])
+            ->toArray();
 
         $sertifikatPerSesi = Certificate::query()
             ->whereIn('calibration_session_id', (clone $sesiSim)->select('id'))
@@ -318,9 +377,31 @@ class SimulasiLabSerentakTest extends TestCase
             ->orderBy('nomor')->pluck('nomor')->map(fn (string $n) => (int) substr($n, -4))->all();
         $celah = $nomor === [] ? [] : array_values(array_diff(range(min($nomor), max($nomor)), $nomor));
 
+        $permintaanSim = PermintaanKalibrasi::query()->where('created_at', '>=', $this->mulaiSimulasi);
+        $diterimaTanpaOrder = (clone $permintaanSim)
+            ->where('status', PermintaanKalibrasi::STATUS_DITERIMA)->whereNull('order_id')->pluck('id');
+        if ($diterimaTanpaOrder->isNotEmpty()) {
+            $pelanggaran[] = 'Permintaan diterima tanpa order: '.$diterimaTanpaOrder->implode(', ');
+        }
+        $orderDipakaiDua = (clone $permintaanSim)->whereNotNull('order_id')
+            ->groupBy('order_id')->havingRaw('COUNT(*) > 1')->pluck('order_id');
+        if ($orderDipakaiDua->isNotEmpty()) {
+            $pelanggaran[] = 'Satu order dipakai >1 permintaan: '.$orderDipakaiDua->implode(', ');
+        }
+
+        $urutan = fn (string $kelas, string $awalan) => $kelas::query()
+            ->where('nomor', 'like', $awalan.now()->format('Y/m').'/%')
+            ->orderBy('nomor')->pluck('nomor')->map(fn (string $n) => (int) substr($n, -4))->all();
+        $celahDari = fn (array $angka) => $angka === [] ? [] : array_values(array_diff(range(min($angka), max($angka)), $angka));
+
         return [
             'ringkas' => [
+                'permintaan_baru' => (clone $permintaanSim)->selectRaw('status, COUNT(*) n')->groupBy('status')->pluck('n', 'status'),
+                'order_baru' => Order::query()->where('created_at', '>=', $this->mulaiSimulasi)->count(),
+                'celah_nomor_permintaan_bulan_ini' => $celahDari($urutan(PermintaanKalibrasi::class, 'PMT/')),
+                'celah_nomor_order_bulan_ini' => $celahDari($urutan(Order::class, 'ORD/')),
                 'sesi_baru' => (clone $sesiSim)->count(),
+                'sesi_tak_dikenal' => $takDikenal,
                 'per_status' => (clone $sesiSim)->selectRaw('status, COUNT(*) n')->groupBy('status')->pluck('n', 'status'),
                 'sertifikat_baru' => Certificate::query()->where('created_at', '>=', $this->mulaiSimulasi)->count(),
                 'celah_nomor_sertifikat_bulan_ini' => $celah,

@@ -6,6 +6,7 @@ use App\Events\PerubahanDataOrganisasi;
 use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\Order;
+use App\Models\Organization;
 use App\Models\PermintaanKalibrasi;
 use App\Models\PermintaanKalibrasiItem;
 use App\Models\PesanPermintaan;
@@ -419,6 +420,10 @@ class AlurPermintaan
     /** PMT/2026/09/0001 — urut per organisasi per bulan. Wajib di dalam transaksi. */
     private function nomorBerikutnya(int $organizationId): string
     {
+        // Tanpa ini dua pelanggan yang mengirim bersamaan bisa deadlock (500) —
+        // alasannya di `Organization::kunciUntukPenomoran()`.
+        Organization::kunciUntukPenomoran($organizationId);
+
         $prefix = sprintf('PMT/%s/', now()->format('Y/m'));
 
         $terakhir = PermintaanKalibrasi::query()
