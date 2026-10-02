@@ -4721,6 +4721,36 @@ mobile, bukan blocker — gerbang masih mati di produksi).
 - B12: penyaring memuat semua paket lab yang lolos penyaring lain. Papan Pantau (F11)
   butuh jalur hitung per tahap yang tidak memuat semuanya.
 
+### 43.3 Simulasi lab sibuk & kiriman serentak (2 Okt 2026)
+
+Permintaan pemilik: "data dummy kayak orang beneran yang lagi make … pas dikirim di saat
+berbarengan gimana reaksinya". Dijalankan di DB tes lokal, **bukan produksi** — data dummy di
+produksi pernah memakan nomor sertifikat resmi (18 Sep).
+
+- `tests/Simulasi/SimulasiLabSerentakTest.php` menyiapkan `asmo_db_test`, 13 orang fiktif, 20
+  alat pH, lalu menyalakan 4 server + 1 pekerja antrean (meniru FrankenPHP + `entrypoint.sh`).
+  Di luar `tests/Unit`/`tests/Feature`, jadi tidak ikut CI. Jalankan:
+  `.\jalankan-test-mysql.ps1 tests/Simulasi/SimulasiLabSerentakTest.php` (±4–5 menit).
+- `docs/skrip/simulasi-lab-serentak.py` berisi 12 skenario (login pagi, satu WiFi, 10 kiriman
+  di detik yang sama, kirim dobel, pemisahan wewenang, viewer, rebutan approve, approve lawan
+  tolak, approve massal + baca, terbit sertifikat, QR + PDF), lalu test mengadu invarian DB.
+
+**Bug yang ketemu & ditutup:** 5 dari 10 kiriman serentak dapat **500 `1213 Deadlock`** di
+`nomorSesiBerikutnya()` — `SELECT … ORDER BY DESC LIMIT 1 FOR UPDATE` mengambil gap lock yang
+dipegang dua transaksi sekaligus. Kirim dobel ber-`client_request_id` sama juga kena. Data tidak
+hilang (kirim ulang berhasil, tidak ada sesi kembar), tapi teknisi melihat error. Perbaikan: kunci
+baris organisasi dulu. Sesudahnya 12/12 skenario lulus, 10/10 kiriman serentak tersimpan.
+
+**Yang aman sejak awal:** rebutan approve (satu 200, satu 409), approve lawan tolak (satu
+menang, status konsisten), sertifikat dobel nol, nomor sertifikat unik tanpa celah.
+
+**Risiko yang perlu keputusan pemilik (belum diubah):** batas login 10/menit dihitung **per IP**.
+Dari satu WiFi kantor, orang ke-11 dan ke-12 dalam semenit ditolak 429 walau sandinya benar.
+
+**Pola sama, belum dibuktikan:** `AlurPermintaan::nomorBerikutnya()` dan `PenomoranOrder` memakai
+`ORDER BY DESC FOR UPDATE` yang sama. Keduanya modul pelanggan (`FITUR_PELANGGAN` mati di
+produksi), jadi belum masuk simulasi.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -5129,4 +5159,4 @@ Supaya tidak dibangun ulang:
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
-| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2) |
+| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3) |

@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\CalibrationCapability;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\Organization;
 use App\Models\RawMeasurement;
 use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
@@ -5190,9 +5191,23 @@ class CalibrationController extends Controller
         }
     }
 
-    /** Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001. */
+    /**
+     * Nomor sesi urut per organisasi per bulan: KAL/2026/07/0001.
+     *
+     * Baris organisasi dikunci DULU, dan itu yang membuat kiriman serentak aman.
+     * `SELECT … ORDER BY … DESC LIMIT 1 FOR UPDATE` di bawah mengambil gap lock
+     * di ujung rentang indeks, dan gap lock tidak saling menolak — dua transaksi
+     * sama-sama memegangnya, lalu sama-sama menunggu satu sama lain waktu INSERT.
+     * MySQL membunuh salah satunya (`1213 Deadlock`) dan teknisinya dapat 500.
+     * `tests/Simulasi/SimulasiLabSerentakTest.php` memperlihatkannya: 5 dari 10
+     * kiriman di detik yang sama gagal begitu, 2 Okt 2026. Kunci baris organisasi
+     * adalah kunci baris biasa, jadi pengirim berikutnya menunggu giliran, bukan
+     * saling mengunci.
+     */
     private function nomorSesiBerikutnya(int $organizationId): string
     {
+        Organization::query()->whereKey($organizationId)->lockForUpdate()->value('id');
+
         $prefix = sprintf('KAL/%s/', now()->format('Y/m'));
 
         $urutanTerakhir = CalibrationSession::where('organization_id', $organizationId)
