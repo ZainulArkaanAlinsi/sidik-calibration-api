@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Organization;
 
 /**
  * Nomor order: ORD/2026/07/0001 — urut per organisasi per bulan.
@@ -20,6 +21,10 @@ class PenomoranOrder
 {
     public function berikutnya(int $organizationId): string
     {
+        // Tanpa ini dua order yang disimpan bersamaan bisa deadlock (500) —
+        // alasannya di `Organization::kunciUntukPenomoran()`.
+        Organization::kunciUntukPenomoran($organizationId);
+
         $prefix = sprintf('ORD/%s/', now()->format('Y/m'));
 
         $urutanTerakhir = Order::where('organization_id', $organizationId)

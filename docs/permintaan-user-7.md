@@ -4747,9 +4747,21 @@ menang, status konsisten), sertifikat dobel nol, nomor sertifikat unik tanpa cel
 **Risiko yang perlu keputusan pemilik (belum diubah):** batas login 10/menit dihitung **per IP**.
 Dari satu WiFi kantor, orang ke-11 dan ke-12 dalam semenit ditolak 429 walau sandinya benar.
 
-**Pola sama, belum dibuktikan:** `AlurPermintaan::nomorBerikutnya()` dan `PenomoranOrder` memakai
-`ORDER BY DESC FOR UPDATE` yang sama. Keduanya modul pelanggan (`FITUR_PELANGGAN` mati di
-produksi), jadi belum masuk simulasi.
+**Lanjutan 3 Okt — penomoran pelanggan & order ikut ditutup.** Simulasi ditambah S11 (8
+pelanggan mengirim permintaan di detik yang sama) dan S12 (admin menerima 8 permintaan sambil
+mencatat 6 order di meja depan, bersamaan), dengan `FITUR_PELANGGAN=true` di proses anak. Sebelum
+perbaikan: **5/8 permintaan dan 3/14 terima+order dapat 500 `1213 Deadlock`** — pola yang sama
+persis. `PenomoranOrder` juga dipakai `OrderController::store` (meja penerimaan), jadi celah `ORD/`
+berlaku di produksi walau fitur pelanggan mati. Perbaikan: satu pintu
+`Organization::kunciUntukPenomoran()` dipanggil ketiga penomoran (`KAL/`, `PMT/`, `ORD/`).
+Sesudahnya **14/14 skenario lulus**, nomor PMT/ORD/CAL unik tanpa celah.
+
+Satu run (2 Okt 20:46) menggantung >1 jam tanpa satu baris pun di `laravel.log` dan tanpa
+laporan; run sesudahnya (kode sama) selesai 3,4 menit. Penyebabnya **tidak ketemu** — tidak
+direproduksi. Sejak itu keluaran skrip ditulis selagi jalan (`keluaran.txt`) dan batas waktunya
+dipendekkan (90 detik per request, 20 menit total), supaya macet berikutnya menunjuk skenarionya.
+Run sebelum perbaikan pelanggan juga sempat menyimpan 1 sesi yang tidak pernah dijawab ke klien;
+pelacak `sesi_tak_dikenal` dipasang dan run sesudahnya mencatat **nol** — juga belum terjelaskan.
 
 ## Gelombang & status
 
@@ -5159,4 +5171,4 @@ Supaya tidak dibangun ulang:
 | G26 | **Paket 29 Sep**: gerbang pengesahan, pelacakan, penugasan, API data pelanggan, sinkron antar-perangkat — §40 | **TERKIRIM** (30 Sep 2026) — API PR #203 di-merge & terdeploy (merge commit `0783148`; `/api/health` `deploy.versi` cocok), berisi patch paket (Slice A–F) + siaran realtime dari ketiga controller baru. Mobile lab PR #183 (menyerap #184 sentence case dan #185 penyamaran nama pelanggan) terbit sebagai rilis **v1.0.620**. Sakelar `GERBANG_PENGESAHAN` & `PEMISAHAN_WEWENANG_MEMBLOKIR` tetap mati; K4 wajib dijawab sebelum gerbang dinyalakan (§40.3). Aplikasi pelanggan di repo baru `sidik-pelanggan-mobile`. Sisa: golden mobile, Firebase pelanggan; stabilisasi tes & throttle di §40.6 |
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
-| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3) |
+| G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3), **LIVE `3eff913`**. **3 Okt** (branch `fix/penomoran-pelanggan-serentak`): deadlock nomor permintaan & order ikut ditutup |

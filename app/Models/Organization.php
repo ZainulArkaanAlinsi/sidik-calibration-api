@@ -251,4 +251,26 @@ class Organization extends Model
     {
         return $this->hasMany(Equipment::class);
     }
+
+    /**
+     * Kunci baris organisasi sebelum menghitung nomor urut berikutnya
+     * (sesi `KAL/`, permintaan `PMT/`, order `ORD/`). Wajib di dalam transaksi.
+     *
+     * Ketiga penomoran membaca nomor terbesar lewat `ORDER BY … DESC LIMIT 1
+     * FOR UPDATE`. Kunci itu ikut mengambil gap lock di ujung rentang indeks,
+     * dan gap lock tidak saling menolak: dua transaksi sama-sama memegangnya,
+     * lalu sama-sama menunggu satu sama lain waktu INSERT. MySQL membunuh salah
+     * satunya (`1213 Deadlock`) dan penggunanya dapat 500. Dibuktikan
+     * `tests/Simulasi/SimulasiLabSerentakTest.php`, 2 Okt 2026: 5/10 kiriman
+     * lembar kerja, 5/8 permintaan pelanggan, dan 3/14 terima-permintaan + order
+     * yang datang bersamaan gagal begitu.
+     *
+     * Kunci baris organisasi adalah kunci baris biasa, jadi yang datang belakangan
+     * menunggu giliran, bukan saling mengunci. Ongkosnya: penomoran per lab jalan
+     * satu-satu — wajar untuk volume lab, dan memang itu arti "nomor urut".
+     */
+    public static function kunciUntukPenomoran(int $organizationId): void
+    {
+        static::query()->whereKey($organizationId)->lockForUpdate()->value('id');
+    }
 }
