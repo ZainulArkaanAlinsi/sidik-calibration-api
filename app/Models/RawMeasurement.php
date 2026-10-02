@@ -36,6 +36,10 @@ class RawMeasurement extends Model
             'rpm' => 'float',
             'ocr_confidence' => 'float',
             'is_verified' => 'boolean',
+            // Siapa & kapan hasil pindai dikonfirmasi (migrasi 2026_10_02_100000).
+            // Di-cast supaya perbandingan id sama di MySQL & SQLite.
+            'verified_by' => 'integer',
+            'verified_at' => 'datetime',
         ];
     }
 

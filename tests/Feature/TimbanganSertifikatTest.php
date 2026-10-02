@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Certificate;
-use App\Models\User;
 use App\Services\Calibration\Profiles\TimbanganProfile;
 use App\Services\DataTampilanSertifikat;
 use Database\Seeders\DatabaseSeeder;
@@ -70,9 +69,7 @@ class TimbanganSertifikatTest extends TestCase
             return $ada;
         }
 
-        $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
-
-        $this->actingAs($admin)
+        $this->sebagaiPemeriksaLain($sesi)
             ->postJson("/api/calibrations/{$sesi->id}/approve")
             ->assertOk();
 
@@ -132,9 +129,7 @@ class TimbanganSertifikatTest extends TestCase
         // Peringatan `keterulangan_kosong` menahan approve sekali — itu memang
         // maunya. Admin melewatinya secara SADAR, dan di sini test berperan
         // sebagai admin itu.
-        $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
-
-        $this->actingAs($admin)
+        $this->sebagaiPemeriksaLain($sesi)
             ->postJson("/api/calibrations/{$sesi->id}/approve", ['abaikan_peringatan' => true])
             ->assertOk();
 

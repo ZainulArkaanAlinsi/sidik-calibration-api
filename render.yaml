@@ -356,10 +356,9 @@ services:
       - key: GERBANG_PENGESAHAN
         value: "false"
 
-      # "true" = pengesah yang juga mengisi/menyetujui sesi yang sama DITOLAK,
-      # bukan cuma diperingatkan. Menunggu jawaban K4 manajer teknis.
-      - key: PEMISAHAN_WEWENANG_MEMBLOKIR
-        value: "false"
+      # PEMISAHAN_WEWENANG_MEMBLOKIR dicabut 2 Okt 2026: K-30-03 memutuskan
+      # pemisahan wewenang SELALU memblokir, tanpa sakelar. Kalau nilainya
+      # masih tersimpan di dashboard Render, kode tidak membacanya lagi.
 
       # Versi minimum aplikasi pelanggan. Dinaikkan HANYA sesudah versi baru
       # mencapai 100% rollout dan stabil (07-Runbook §7) — menaikkannya lebih

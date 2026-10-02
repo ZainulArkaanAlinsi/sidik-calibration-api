@@ -60,6 +60,16 @@ class AuditLog extends Model
      */
     public const ACTION_DIUNDUH_PELANGGAN = 'diunduh_pelanggan';
 
+    /**
+     * Awalan `note` baris koreksi pembacaan oleh admin (`catatKoreksiPembacaan`).
+     *
+     * Satu konstanta, dua pemakai: yang MENULIS jejak koreksi, dan
+     * `PemisahanWewenang` yang MEMBACANYA untuk mengenali admin yang ikut
+     * mengubah angka sesi. Kalau kalimatnya diubah di satu tempat saja,
+     * pencocokannya berhenti diam-diam dan penyunting lolos menyetujui.
+     */
+    public const CATATAN_KOREKSI_PEMBACAAN = 'Koreksi pembacaan oleh Master Data: ';
+
     /** @return list<string> */
     public static function actions(): array
     {

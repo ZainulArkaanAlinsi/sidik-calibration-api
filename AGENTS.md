@@ -389,22 +389,19 @@ sama, cuma lebih cepat.
 
 4. **Satu `user_id` yang sama tidak boleh menjadi pengirim lembar kerja DAN
    pengesah sertifikat pada sesi yang sama.** Berlaku juga untuk `super_admin`.
-   Pengecualian harus eksplisit dan tercatat alasannya.
+   **Tanpa pengecualian** — keputusan K-30-03 pemilik proyek, 1 Okt 2026.
 
    Ini R-E08 (kritis) di `docs/pelanggan/06-Risk-Register.md` dan K4 di
-   `docs/pelanggan/00-BACA-DULU.md`. **Per 19 Sep 2026 penjagaan ini BELUM
-   ADA:** `CalibrationController::approve()` memeriksa organisasi, status,
-   verifikasi OCR, dan temuan validator — tapi tidak pernah membandingkan
-   `teknisi_id` dengan `$request->user()->id`. Nol test menjaganya.
+   `docs/pelanggan/00-BACA-DULU.md`. Penjagaannya satu pintu,
+   `App\Services\PemisahanWewenang`, dipanggil `approve()` API, tombol Setujui
+   panel, dan `sahkan`. "Ikut mengisi" = pengisi lembar, admin yang mengoreksi
+   pembacaan, dan yang mengonfirmasi hasil pindai. Tidak ada sakelar env: sakelar
+   lama `PEMISAHAN_WEWENANG_MEMBLOKIR` dicabut karena `render.yaml` memakunya
+   "false". Dijaga `PemisahanWewenangPersetujuanTest` dan `GerbangPengesahanTest`.
+   Rincian: `docs/permintaan-user-7.md` §43.1b.
 
-   **K4 sendiri BELUM dijawab manajer teknis**, jadi bentuk akhir penjagaannya
-   masih bisa berubah. Yang sudah diputuskan: aturan di atas berlaku sebagai
-   **default aman** — blokir dulu, karena satu orang yang mengisi lalu
-   mengesahkan sendiri menerbitkan sertifikat berlogo akreditasi tanpa satu pun
-   pemeriksaan. Yang BELUM diputuskan: bentuk pengecualiannya — siapa yang boleh
-   memberikannya, bagaimana dicatat, dan apakah lab memang membutuhkannya
-   (persona P4 menyebut sekitar lima admin, jadi pemisahan ini realistis).
-   Jangan menulis bentuk pengecualian itu sebelum K4 turun.
+   Jangan menambahkan jalur pengecualian (flag, peran, atau env) tanpa keputusan
+   baru dari pemilik proyek.
 
 5. **Nilai yang diisi teknisi tidak pernah dihapus.** Kesalahan **ditandai**;
    koreksi menyimpan nilai lama DAN nilai baru beserta alasannya. Ini ISO/IEC
@@ -467,10 +464,12 @@ bukan sebelum.
 pengesahan menjadikan super admin satu-satunya yang boleh MENGESAHKAN, jadi
 empat rute tulis di tabel atas dibuka lewat grup rute saudara — middleware
 `lolosBacaSuperAdmin` sendiri TIDAK dilonggarkan. `sahkan` baru hidup saat
-`GERBANG_PENGESAHAN=true`, dan sakelar itu **tidak boleh dinyalakan sebelum K4
-dijawab**: bawaan `PEMISAHAN_WEWENANG_MEMBLOKIR=false` (peringatan tercatat, bukan
-blokir) bertentangan dengan default aman di §Peran butir 4. Rinciannya
-`docs/permintaan-user-7.md` §40.3.
+`GERBANG_PENGESAHAN=true`, dan sakelar itu **tidak dinyalakan tanpa perintah
+pemilik proyek**. Dua syarat lama sudah terpenuhi 2 Okt 2026 — pemisahan
+wewenang memblokir (K-30-03) dan panel ikut gerbang (B02) — tapi akun super admin
+pengesah belum ada di produksi; menyalakan gerbang lebih dulu menahan semua
+sertifikat tanpa ada yang bisa mengesahkan. Rinciannya
+`docs/permintaan-user-7.md` §40.3 dan §43.1b.
 
 **Aksi panel baru wajib ikut `HakTulisPanel`.** `ScopesToOrganization` sudah
 menutup create/edit/delete bawaan Filament, tapi `Action::make(...)` kustom tidak

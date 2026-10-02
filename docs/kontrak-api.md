@@ -844,6 +844,12 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 >
 > Konsekuensi buat HP: sesi yang mengirim tebakan **wajib** melewati
 > `POST /calibrations/{id}/measurements/verify` sebelum bisa disetujui admin.
+>
+> **Sejak 2 Okt 2026** konfirmasi itu mencatat **siapa & kapan**
+> (`raw_measurements.verified_by`, `verified_at`) dan hanya diterima selama sesi
+> `draft`, `perlu_revisi`, atau `menunggu_approval`; status lain dijawab `422`.
+> Orang yang mengonfirmasi hasil pindai sebuah sesi **tidak bisa** menyetujui
+> atau mengesahkan sesi itu (lihat `approve` di bawah).
 
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
@@ -1040,6 +1046,23 @@ Response `200`:
 
 ### `POST /api/calibrations/{id}/approve` — **admin doang**, teknisi/viewer → `403`.
 Response: sesi dengan `status: "disetujui"`. Generate sertifikat jalan di **queue** (async), jadi `certificate_id` boleh masih `null` sesaat.
+
+**Pemisahan wewenang (2 Okt 2026, keputusan K-30-03: blokir tanpa pengecualian).**
+Admin yang ikut mengisi data sesi — pengisi lembar (`teknisi_id`), yang mengoreksi
+pembacaannya, atau yang mengonfirmasi hasil pindainya — dijawab `422`:
+
+```json
+{
+  "message": "Kamu ikut mengisi atau mengoreksi data sesi ini, jadi tidak bisa menyetujuinya sendiri. Minta Master Data lain.",
+  "kode": "pemisahan_wewenang",
+  "wewenang": { "bersih": false, "memblokir": true, "temuan": [{ "kode": "penyetuju_sama_dengan_teknisi", "pesan": "…" }] }
+}
+```
+
+`abaikan_peringatan` **tidak** menembusnya. Tampilkan `wewenang.temuan[].pesan`, jangan
+tawarkan "lanjutkan". Aturan yang sama berlaku di tombol Setujui panel `/admin` dan di
+`POST /calibrations/{id}/sahkan` (kode `pengesah_*`); mode "peringatan lalu boleh
+lanjut" (`butuh_konfirmasi`) di `sahkan` sudah dicabut.
 
 Body-nya opsional semua:
 

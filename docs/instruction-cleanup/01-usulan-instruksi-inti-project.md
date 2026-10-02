@@ -205,10 +205,10 @@ dari baris yang salah (`docs/pertanyaan-lab-hydrometer.md` §7, §14).
 3. `super_admin` boleh bertindak atas nama peran lain, tapi aksinya **tercatat sebagai
    `super_admin`**. Tidak pernah menyamar.
 4. **Satu `user_id` tidak boleh menjadi pengirim lembar kerja DAN pengesah sertifikat pada
-   sesi yang sama**, termasuk `super_admin`. Default aman: blokir. K4 **belum** dijawab;
-   jangan menulis bentuk pengecualian sebelum K4 turun. Status kode (1 Okt 2026):
-   `approve()` belum membandingkan pengisi dengan penyetuju — temuan B01,
-   `docs/paket-30sep/VERIFIKASI-DAN-RENCANA-G0-G1.md`. `[K-I4]`
+   sesi yang sama**, termasuk `super_admin`, **tanpa pengecualian** (K-30-03, 1 Okt 2026).
+   Satu pintu: `App\Services\PemisahanWewenang` (API `approve()`, panel, `sahkan`); "ikut
+   mengisi" = pengisi, pengoreksi pembacaan, pengonfirmasi hasil pindai. Tidak ada sakelar
+   env. Jangan menambah jalur pengecualian tanpa keputusan baru pemilik.
 5. **Nilai yang diisi teknisi tidak pernah dihapus.** Kesalahan ditandai; koreksi
    menyimpan nilai lama & baru beserta alasan (ISO/IEC 17025 klausul 7.5.2).
 6. Rujukan: `docs/pelanggan/09-Adendum-Olah-Data-Peran.md` §2.3 dan §4.
@@ -225,7 +225,8 @@ sebelum menyentuh rute, panel, atau channel yang berhubungan dengan peran ini.
   yang bukan orang luar.
 - Tulis oleh `super_admin` masih tertutup, kecuali empat rute di grup `role:super_admin` /
   `role:admin,super_admin` di ekor `routes/api.php`.
-- `GERBANG_PENGESAHAN` **tidak boleh dinyalakan sebelum K4 dijawab.**
+- `GERBANG_PENGESAHAN` **tidak dinyalakan tanpa perintah pemilik**; akun super admin
+  pengesah belum ada di produksi.
 - **Aksi tulis panel baru wajib lewat `HakTulisPanel`.** Tanpa itu tombol tetap menyala
   untuk orang yang belum boleh menekannya, tanpa error.
 - **Tiap akses lintas organisasi wajib dicatat** lewat `App\Support\JejakLintasOrganisasi`,

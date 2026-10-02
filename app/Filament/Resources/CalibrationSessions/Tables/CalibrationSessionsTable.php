@@ -6,7 +6,9 @@ use App\Filament\Concerns\HakTulisPanel;
 use App\Jobs\GenerateCertificate;
 use App\Models\CalibrationSession;
 use App\Models\User;
+use App\Notifications\SesiPerluDisahkan;
 use App\Services\CalibrationValidator;
+use App\Services\PemisahanWewenang;
 use App\Services\PerhitunganBuilder;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
@@ -24,6 +26,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification as Kabar;
 
 class CalibrationSessionsTable
 {
@@ -141,7 +145,9 @@ class CalibrationSessionsTable
                             ->label('Saya sudah periksa, lanjutkan walau ada peringatan')
                             ->helperText('Cuma berlaku buat peringatan. Temuan fatal tetap nahan penerbitan.'),
                     ])
-                    ->modalDescription('Sesi disetujui dan sertifikat langsung diterbitkan. Sesi FAIL pun tetap terbit (hasil "tidak laik pakai").')
+                    ->modalDescription(fn (): string => config('kalibrasi.gerbang_pengesahan', false)
+                        ? 'Sesi disetujui dan diajukan ke pengesah. Sertifikat baru terbit sesudah disahkan.'
+                        : 'Sesi disetujui dan sertifikat langsung diterbitkan. Sesi FAIL pun tetap terbit (hasil "tidak laik pakai").')
                     ->action(function (CalibrationSession $record, array $data, CalibrationValidator $validator): void {
                         // Angka hasil pindai AI yang belum dikonfirmasi manusia
                         // nggak boleh ikut disertifikasi — dicek duluan biar
@@ -150,6 +156,27 @@ class CalibrationSessionsTable
                             Notification::make()
                                 ->title('Masih ada pembacaan hasil pindai yang belum diverifikasi.')
                                 ->body('Teknisi harus konfirmasi angkanya dulu sebelum sesi ini bisa disetujui.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            return;
+                        }
+
+                        // Pemisahan wewenang — penjagaan yang SAMA dengan API
+                        // (temuan B02, K-30-03: blokir tanpa pengecualian).
+                        // Dulu panel tidak memeriksanya, jadi admin yang ditolak
+                        // di HP tinggal pindah ke laptop.
+                        $penyetuju = User::yangLogin();
+                        $wewenang = $penyetuju === null
+                            ? ['bersih' => false, 'temuan' => []]
+                            : app(PemisahanWewenang::class)->periksaPersetujuan($record, $penyetuju);
+
+                        if (! $wewenang['bersih']) {
+                            Notification::make()
+                                ->title('Kamu tidak bisa menyetujui sesi ini.')
+                                ->body(implode("\n", array_column($wewenang['temuan'], 'pesan'))
+                                    ?: 'Masuk ulang lalu coba lagi.')
                                 ->danger()
                                 ->persistent()
                                 ->send();
@@ -195,19 +222,32 @@ class CalibrationSessionsTable
                         // UPDATE bersyarat + 409; di sini lewat model supaya
                         // `Diaudit` tetap mencatat persetujuannya. Dijaga
                         // `ChaosTerbitSertifikatTest`.
-                        $disetujui = DB::transaction(function () use ($record): bool {
+                        // Gerbang pengesahan berlaku juga di sini (temuan B02).
+                        // Dulu panel selalu mendarat di `disetujui` dan menerbitkan,
+                        // jadi gerbang cuma menutup jalur HP.
+                        $gerbangAktif = (bool) config('kalibrasi.gerbang_pengesahan', false);
+
+                        $disetujui = DB::transaction(function () use ($record, $penyetuju, $gerbangAktif): bool {
                             $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
 
                             if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
                                 return false;
                             }
 
-                            $terkini->update([
-                                'status' => CalibrationSession::STATUS_DISETUJUI,
-                                'reviewed_by' => User::yangLogin()?->id,
+                            // `forceFill` karena kolom pengajuan tidak ada di
+                            // `Fillable`; lewat model supaya `Diaudit` mencatat.
+                            $terkini->forceFill([
+                                'status' => $gerbangAktif
+                                    ? CalibrationSession::STATUS_MENUNGGU_PENGESAHAN
+                                    : CalibrationSession::STATUS_DISETUJUI,
+                                'reviewed_by' => $penyetuju->id,
                                 'reviewed_at' => now(),
                                 'catatan_revisi' => null,
-                            ]);
+                                ...($gerbangAktif ? [
+                                    'diajukan_pada' => now(),
+                                    'diajukan_oleh' => $penyetuju->id,
+                                ] : []),
+                            ])->save();
 
                             return true;
                         });
@@ -222,7 +262,33 @@ class CalibrationSessionsTable
                             return;
                         }
 
-                        $job = new GenerateCertificate($record->id, User::yangLogin()?->id);
+                        if ($gerbangAktif) {
+                            // Penerbitan pindah ke `PengesahanController::sahkan()`,
+                            // sama seperti jalur API. Pengesah tidak sedang menatap
+                            // layar, jadi dia dikabari — kegagalan kabar tidak boleh
+                            // membatalkan persetujuan yang sudah tersimpan.
+                            try {
+                                Kabar::send(
+                                    User::query()
+                                        ->where('organization_id', $record->organization_id)
+                                        ->where('role', User::ROLE_SUPER_ADMIN)
+                                        ->where('status', User::STATUS_AKTIF)
+                                        ->get(),
+                                    SesiPerluDisahkan::dariSesi($record->fresh(), (string) $penyetuju->name),
+                                );
+                            } catch (\Throwable $e) {
+                                Log::warning('Kabar pengesahan dari panel gagal dikirim.', [
+                                    'calibration_session_id' => $record->id,
+                                    'pesan' => $e->getMessage(),
+                                ]);
+                            }
+
+                            Notification::make()->title('Sesi disetujui dan diajukan ke pengesah.')->success()->send();
+
+                            return;
+                        }
+
+                        $job = new GenerateCertificate($record->id, $penyetuju->id);
 
                         try {
                             dispatch($job);
@@ -261,12 +327,36 @@ class CalibrationSessionsTable
                             ->helperText('Teknisi perlu tahu apa yang harus dibenerin.'),
                     ])
                     ->action(function (CalibrationSession $record, array $data): void {
-                        $record->update([
-                            'status' => CalibrationSession::STATUS_PERLU_REVISI,
-                            'reviewed_by' => User::yangLogin()?->id,
-                            'reviewed_at' => now(),
-                            'catatan_revisi' => $data['catatan_revisi'],
-                        ]);
+                        // Diperiksa ulang di bawah lock — kelas bug yang sama
+                        // dengan B08 di API: layar basi menolak sesi yang barusan
+                        // disetujui admin lain dan menurunkannya ke `perlu_revisi`.
+                        $ditolak = DB::transaction(function () use ($record, $data): bool {
+                            $terkini = CalibrationSession::whereKey($record->id)->lockForUpdate()->first();
+
+                            if ($terkini?->status !== CalibrationSession::STATUS_MENUNGGU_APPROVAL) {
+                                return false;
+                            }
+
+                            $terkini->update([
+                                'status' => CalibrationSession::STATUS_PERLU_REVISI,
+                                'reviewed_by' => User::yangLogin()?->id,
+                                'reviewed_at' => now(),
+                                'catatan_revisi' => $data['catatan_revisi'],
+                            ]);
+
+                            return true;
+                        });
+
+                        if (! $ditolak) {
+                            Notification::make()
+                                ->title('Sesi ini barusan sudah diputus lewat permintaan lain.')
+                                ->body('Muat ulang halamannya.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
                         Notification::make()->title('Sesi dikembalikan ke teknisi buat revisi.')->warning()->send();
                     }),
             ]);

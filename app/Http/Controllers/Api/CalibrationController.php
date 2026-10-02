@@ -39,6 +39,7 @@ use App\Services\CalibrationValidator;
 use App\Services\FolderOrganizer;
 use App\Services\GumCalculator;
 use App\Services\KondisiLingkungan;
+use App\Services\PemisahanWewenang;
 use App\Services\PenjagaOrganisasi;
 use App\Services\PerhitunganBuilder;
 use App\Services\RumusKalibrasi;
@@ -91,6 +92,7 @@ class CalibrationController extends Controller
         private readonly CalibrationProfileRegistry $profil,
         private readonly AutoclaveCalculator $autoclave,
         private readonly AutoclaveInputBuilder $perakitAutoclave,
+        private readonly PemisahanWewenang $pemisahan,
     ) {}
 
     /**
@@ -674,7 +676,9 @@ class CalibrationController extends Controller
                     .'angka benarnya.',
             ])->validate()['alasan_koreksi'];
 
-            $catatanJejak = 'Koreksi pembacaan oleh Master Data: '.$alasanKoreksi;
+            // Awalannya konstanta: `PemisahanWewenang` mencocokkannya untuk
+            // mengenali admin yang ikut mengubah angka sesi ini.
+            $catatanJejak = AuditLog::CATATAN_KOREKSI_PEMBACAAN.$alasanKoreksi;
         } elseif (
             // Revisi teknisi atas lembar yang DIKEMBALIKAN admin. Beda dari
             // draft: angka-angka ini sudah pernah disubmit dan dibaca admin, jadi
@@ -861,6 +865,24 @@ class CalibrationController extends Controller
         if ($calibration->rawMeasurements()->where('is_verified', false)->exists()) {
             return response()->json([
                 'message' => 'Masih ada pembacaan hasil pindai (AI Vision) yang belum diverifikasi. Verifikasi dulu sebelum disetujui.',
+            ], 422);
+        }
+
+        // Pemisahan wewenang (temuan B01, keputusan K-30-03 1 Okt 2026: blokir,
+        // tanpa pengecualian, semua peran). Yang ikut mengisi data sesi ini —
+        // pengisi lembar, admin yang mengoreksi pembacaannya, atau yang
+        // mengonfirmasi hasil pindai — tidak boleh juga menyetujuinya. Tanpa
+        // ini satu admin bisa mengisi lalu menerbitkan sertifikat berlogo
+        // akreditasi sendirian. Diperiksa sebelum validasi supaya pesannya
+        // menunjuk ke tindakan yang benar: minta orang lain.
+        $wewenang = $this->pemisahan->periksaPersetujuan($calibration, $request->user());
+
+        if (! $wewenang['bersih']) {
+            return response()->json([
+                'message' => 'Kamu ikut mengisi atau mengoreksi data sesi ini, jadi tidak bisa '
+                    .'menyetujuinya sendiri. Minta Master Data lain.',
+                'kode' => 'pemisahan_wewenang',
+                'wewenang' => $wewenang,
             ], 422);
         }
 
@@ -1327,6 +1349,22 @@ class CalibrationController extends Controller
             'Cuma teknisi yang ngerjain sesi ini yang boleh verifikasi pembacaannya.',
         );
 
+        // Konfirmasi hanya berarti sebelum sesinya diputus. Sesudah disetujui
+        // atau diajukan, angka itu sudah dipakai menerbitkan (atau sedang
+        // menunggu pengesah); "mengonfirmasi" sesudahnya cuma menulis jejak
+        // yang urutannya terbalik (temuan B03, paket 30 Sep).
+        $bolehDikonfirmasi = [
+            CalibrationSession::STATUS_DRAFT,
+            CalibrationSession::STATUS_PERLU_REVISI,
+            CalibrationSession::STATUS_MENUNGGU_APPROVAL,
+        ];
+
+        if (! in_array($calibration->status, $bolehDikonfirmasi, true)) {
+            return response()->json([
+                'message' => 'Pembacaan cuma bisa dikonfirmasi selama sesi belum disetujui atau diajukan.',
+            ], 422);
+        }
+
         $data = $request->validate([
             'measurement_ids' => ['sometimes', 'array'],
             'measurement_ids.*' => ['integer'],
@@ -1338,7 +1376,28 @@ class CalibrationController extends Controller
             $query->whereIn('id', $data['measurement_ids']);
         }
 
-        $jumlah = $query->update(['is_verified' => true]);
+        $idTerkonfirmasi = (clone $query)->pluck('id')->all();
+
+        // Siapa & kapan, bukan cuma boolean: aturan "hasil pindai wajib
+        // dikonfirmasi manusia" baru bisa dibuktikan ke asesor kalau orangnya
+        // tercatat. `verified_by` juga dibaca `PemisahanWewenang` — yang
+        // mengonfirmasi angka tidak boleh menyetujui sesinya sendiri.
+        $jumlah = $query->update([
+            'is_verified' => true,
+            'verified_by' => $request->user()->id,
+            'verified_at' => now(),
+        ]);
+
+        // `update()` lewat query builder tidak memicu event model, jadi
+        // jejaknya ditulis tangan di riwayat sesi.
+        if ($jumlah > 0) {
+            $calibration->catatAudit(
+                AuditLog::ACTION_DIUBAH,
+                null,
+                ['pembacaan_terkonfirmasi' => $idTerkonfirmasi],
+                'Konfirmasi '.$jumlah.' pembacaan hasil pindai.',
+            );
+        }
 
         return response()->json([
             'data' => new CalibrationResource($calibration->fresh()->load([...self::RELASI, 'rawMeasurements'])),
