@@ -4761,12 +4761,26 @@ berlaku di produksi walau fitur pelanggan mati. Perbaikan: satu pintu
 `Organization::kunciUntukPenomoran()` dipanggil ketiga penomoran (`KAL/`, `PMT/`, `ORD/`).
 Sesudahnya **14/14 skenario lulus**, nomor PMT/ORD/CAL unik tanpa celah.
 
-Satu run (2 Okt 20:46) menggantung >1 jam tanpa satu baris pun di `laravel.log` dan tanpa
-laporan; run sesudahnya (kode sama) selesai 3,4 menit. Penyebabnya **tidak ketemu** — tidak
-direproduksi. Sejak itu keluaran skrip ditulis selagi jalan (`keluaran.txt`) dan batas waktunya
-dipendekkan (90 detik per request, 20 menit total), supaya macet berikutnya menunjuk skenarionya.
-Run sebelum perbaikan pelanggan juga sempat menyimpan 1 sesi yang tidak pernah dijawab ke klien;
-pelacak `sesi_tak_dikenal` dipasang dan run sesudahnya mencatat **nol** — juga belum terjelaskan.
+**Dua keanehan run simulasi — TERJELASKAN 3 Okt, keduanya bukan bug aplikasi.**
+
+- *Run 2 Okt 20:48 yang "menggantung >1 jam" tanpa jejak di `laravel.log`:* laptop kerja masuk
+  Modern Standby 31 detik sesudah `fixture.json` ditulis (log event Windows, `Kernel-Power` 506
+  "Idle Timeout"), lalu bangun 23:09:47 — detik yang sama dengan job-nya dibunuh batas waktu.
+  Selama standby server PHP, pekerja, dan Python beku. Run ulang 3 Okt dengan penahan standby:
+  14/14 lulus dalam 3 menit 38 detik. Pembungkus lokal `jalankan-test-mysql.ps1` sekarang menahan
+  standby selama test jalan. Keluaran yang ditulis selagi jalan (`keluaran.txt`) dan batas waktu
+  yang lebih pendek (90 detik per request, 20 menit total) tetap dipertahankan.
+- *Run 2 Okt 20:41 yang menghitung 13 sesi dari 12 kiriman `201`:* alat ukurnya yang bocor.
+  Batas "baru" waktu itu `created_at >= now()->subSecond()` yang dihitung sesudah fixture, dan
+  fixture selesai dalam 1–2 detik (`BCRYPT_ROUNDS=4`), jadi sesi `DEMO-*` terakhir dari seeder
+  (`menunggu_approval`, persis status baris ke-13) bisa ikut terhitung. Dibuktikan lewat eliminasi,
+  bukan dilihat langsung — DB tesnya sudah tertimpa run berikutnya: run itu mengirim tepat 14
+  `POST /calibrations` (12 × `201`, 2 jawaban ulang `200`), `store()` satu-satunya jalur yang
+  membuat sesi, ke-12 id-nya tercatat, dan id 64 yang kosong adalah id yang termakan kiriman
+  dobel S3 yang ditolak unique index `(organization_id, client_request_id)` (celah yang sama
+  muncul di tiap run sesudah kunci nomor sesi). Sekarang batasnya **id terbesar sesudah
+  fixture**, dan `sesi_tak_dikenal` dijadikan **pelanggaran** — tiap baris di situ temuan
+  sungguhan.
 
 ## Gelombang & status
 
