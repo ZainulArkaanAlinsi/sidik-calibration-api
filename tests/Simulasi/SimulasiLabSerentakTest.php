@@ -58,7 +58,19 @@ class SimulasiLabSerentakTest extends TestCase
     /** @var list<Process> */
     private array $proses = [];
 
-    private ?string $mulaiSimulasi = null;
+    /**
+     * Id terbesar tiap tabel sesudah seeder & fixture selesai. Baris yang id-nya
+     * lebih besar lahir selama simulasi.
+     *
+     * Dulu batasnya `created_at >= now()->subSecond()`, dan itu bocor: fixture
+     * selesai dalam 1–2 detik (`BCRYPT_ROUNDS=4`), jadi sesi `DEMO-*` terakhir
+     * dari seeder bisa ikut terhitung "baru". Run 2 Okt 20:41 menghitung 13 sesi
+     * dari 12 kiriman yang dijawab `201` — satu `menunggu_approval` tak dikenal.
+     * Id tidak bergantung pada jam.
+     *
+     * @var array{sesi: int, sertifikat: int, permintaan: int, order: int}|null
+     */
+    private ?array $batasId = null;
 
     public function test_lab_sibuk_dengan_kiriman_serentak(): void
     {
@@ -66,7 +78,7 @@ class SimulasiLabSerentakTest extends TestCase
 
         Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
         $fixture = $this->siapkanOrangDanAlat();
-        $this->mulaiSimulasi = now()->subSecond()->toDateTimeString();
+        $this->batasId = $this->catatBatasId();
 
         $folder = $this->folderKeluaran();
         $jalurFixture = $folder.DIRECTORY_SEPARATOR.'fixture.json';
@@ -112,10 +124,10 @@ class SimulasiLabSerentakTest extends TestCase
         // PDF hasil simulasi ditulis proses anak ke disk `arsip` SUNGGUHAN, bukan
         // disk palsu milik test ini. Dibersihkan supaya tidak menumpuk seperti
         // kebocoran 11 GB yang dicatat di `Tests\TestCase`.
-        if ($this->mulaiSimulasi !== null) {
+        if ($this->batasId !== null) {
             $disk = Storage::build(config('filesystems.disks.arsip'));
             Certificate::query()
-                ->where('created_at', '>=', $this->mulaiSimulasi)
+                ->where('id', '>', $this->batasId['sertifikat'])
                 ->whereNotNull('pdf_path')
                 ->pluck('pdf_path')
                 ->each(fn (string $path) => $disk->delete($path));
@@ -251,6 +263,24 @@ class SimulasiLabSerentakTest extends TestCase
         ];
     }
 
+    /**
+     * Lewat query builder, bukan model: scope global apa pun (mis. soft delete)
+     * tidak boleh membuat batasnya lebih rendah dari id terbesar yang sudah ada.
+     *
+     * @return array{sesi: int, sertifikat: int, permintaan: int, order: int}
+     */
+    private function catatBatasId(): array
+    {
+        $terbesar = fn (string $kelas): int => (int) DB::table((new $kelas)->getTable())->max('id');
+
+        return [
+            'sesi' => $terbesar(CalibrationSession::class),
+            'sertifikat' => $terbesar(Certificate::class),
+            'permintaan' => $terbesar(PermintaanKalibrasi::class),
+            'order' => $terbesar(Order::class),
+        ];
+    }
+
     private function nyalakanServerDanPekerja(): void
     {
         // Diwarisi dari proses test (DB tes + kredensial dari pembungkus), lalu
@@ -329,14 +359,18 @@ class SimulasiLabSerentakTest extends TestCase
     private function periksaInvarianDatabase(array $sesiDikenal): array
     {
         $pelanggaran = [];
-        $sesiSim = CalibrationSession::query()->where('created_at', '>=', $this->mulaiSimulasi);
+        $sesiSim = CalibrationSession::query()->where('id', '>', $this->batasId['sesi']);
 
-        // Sesi yang tersimpan tapi tidak pernah dijawab ke klien mana pun. Belum
-        // dijadikan pelanggaran sampai asal-usulnya jelas — rinciannya dicetak
-        // supaya bisa dilacak, bukan ditebak.
+        // Sesi yang tersimpan tapi tidak pernah dijawab ke klien mana pun: ada
+        // jalur yang menyimpan diam-diam, dan teknisinya tidak tahu datanya
+        // masuk. Sejak batasnya id (bukan jam), baris seeder tidak bisa lagi
+        // ikut terhitung, jadi tiap baris di sini temuan sungguhan.
         $takDikenal = (clone $sesiSim)->whereNotIn('id', $sesiDikenal ?: [0])
             ->get(['id', 'status', 'nomor_sesi', 'teknisi_id', 'equipment_id', 'client_request_id', 'order_item_id', 'created_at'])
             ->toArray();
+        if ($takDikenal !== []) {
+            $pelanggaran[] = 'Sesi tersimpan tanpa pernah dijawab ke klien: '.implode(', ', array_column($takDikenal, 'id'));
+        }
 
         $sertifikatPerSesi = Certificate::query()
             ->whereIn('calibration_session_id', (clone $sesiSim)->select('id'))
@@ -377,7 +411,7 @@ class SimulasiLabSerentakTest extends TestCase
             ->orderBy('nomor')->pluck('nomor')->map(fn (string $n) => (int) substr($n, -4))->all();
         $celah = $nomor === [] ? [] : array_values(array_diff(range(min($nomor), max($nomor)), $nomor));
 
-        $permintaanSim = PermintaanKalibrasi::query()->where('created_at', '>=', $this->mulaiSimulasi);
+        $permintaanSim = PermintaanKalibrasi::query()->where('id', '>', $this->batasId['permintaan']);
         $diterimaTanpaOrder = (clone $permintaanSim)
             ->where('status', PermintaanKalibrasi::STATUS_DITERIMA)->whereNull('order_id')->pluck('id');
         if ($diterimaTanpaOrder->isNotEmpty()) {
@@ -397,13 +431,13 @@ class SimulasiLabSerentakTest extends TestCase
         return [
             'ringkas' => [
                 'permintaan_baru' => (clone $permintaanSim)->selectRaw('status, COUNT(*) n')->groupBy('status')->pluck('n', 'status'),
-                'order_baru' => Order::query()->where('created_at', '>=', $this->mulaiSimulasi)->count(),
+                'order_baru' => Order::query()->where('id', '>', $this->batasId['order'])->count(),
                 'celah_nomor_permintaan_bulan_ini' => $celahDari($urutan(PermintaanKalibrasi::class, 'PMT/')),
                 'celah_nomor_order_bulan_ini' => $celahDari($urutan(Order::class, 'ORD/')),
                 'sesi_baru' => (clone $sesiSim)->count(),
                 'sesi_tak_dikenal' => $takDikenal,
                 'per_status' => (clone $sesiSim)->selectRaw('status, COUNT(*) n')->groupBy('status')->pluck('n', 'status'),
-                'sertifikat_baru' => Certificate::query()->where('created_at', '>=', $this->mulaiSimulasi)->count(),
+                'sertifikat_baru' => Certificate::query()->where('id', '>', $this->batasId['sertifikat'])->count(),
                 'celah_nomor_sertifikat_bulan_ini' => $celah,
                 'job_tersisa' => DB::table('jobs')->count(),
                 'job_gagal' => DB::table('failed_jobs')->count(),
