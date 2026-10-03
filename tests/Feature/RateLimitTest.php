@@ -25,8 +25,44 @@ class RateLimitTest extends TestCase
         parent::setUp();
 
         Organization::factory()->create();
-        RateLimiter::clear('login|127.0.0.1');
+        RateLimiter::clear('login|teknisi@sidik.test|127.0.0.1');
         RateLimiter::clear('password-reset|127.0.0.1');
+    }
+
+    /**
+     * Satu lab, satu WiFi, satu IP publik: dua belas orang masuk dalam semenit
+     * semuanya harus lolos. Dulu jatahnya per IP saja, jadi orang ke-11 ditolak
+     * walau sandinya benar (simulasi S1b, 2 Okt 2026).
+     */
+    public function test_dua_belas_orang_dari_satu_wifi_semuanya_bisa_masuk(): void
+    {
+        $orang = User::factory()->count(12)->create();
+
+        foreach ($orang as $user) {
+            $this->postJson('/api/login', ['identifier' => $user->email, 'password' => 'password'])
+                ->assertOk();
+        }
+    }
+
+    /**
+     * Jatah tetap per akun: menghabiskan jatah satu akun tidak boleh menyentuh
+     * akun lain dari IP yang sama — dan mengganti huruf besar/kecil email tidak
+     * boleh membuka ember baru, karena MySQL menganggapnya akun yang sama.
+     */
+    public function test_jatah_habis_hanya_untuk_akun_itu_dan_tidak_bisa_diakali_huruf_besar(): void
+    {
+        $sasaran = User::factory()->create(['email' => 'teknisi@sidik.test']);
+        $lain = User::factory()->create();
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/login', ['identifier' => $sasaran->email, 'password' => 'salah']);
+        }
+
+        $this->postJson('/api/login', ['identifier' => ' TEKNISI@Sidik.test ', 'password' => 'salah'])
+            ->assertStatus(429);
+
+        $this->postJson('/api/login', ['identifier' => $lain->email, 'password' => 'password'])
+            ->assertOk();
     }
 
     public function test_gagal_login_berkali_kali_nggak_ngabisin_jatah_forgot_password(): void
