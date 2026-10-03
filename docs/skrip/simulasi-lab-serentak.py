@@ -329,14 +329,26 @@ class Simulasi:
         ditahan = sum(1 for r in hasil if r.status == 429)
         lain = [r.status for r in hasil if r.status not in (200, 429)]
         s.catatan.append(f"{ok} berhasil, {ditahan} ditahan 429, lainnya {lain or '-'}")
+        # Sejak 3 Okt 2026 jatah login per AKUN + IP: satu kantor tidak boleh
+        # lagi saling menghabiskan jatah. Dulu 2 dari 12 orang ditolak di sini.
         if ditahan:
-            s.risiko.append(
-                f"Batas login 10/menit dihitung PER IP. {ditahan} dari 12 orang di WiFi yang sama "
-                "ditolak 'Kebanyakan percobaan' walau sandinya benar. Di lab, semua HP lewat satu "
-                "IP publik kantor, jadi ini bisa kejadian saat jam masuk."
-            )
+            s.gagal(f"{ditahan} dari 12 orang di WiFi yang sama ditolak 429 walau sandinya benar")
         if lain:
             s.gagal(f"status tak terduga: {lain}")
+
+        # Penjagaan tebak sandi tidak boleh ikut hilang: satu akun dari satu IP
+        # tetap cuma dapat 10 percobaan per menit.
+        korban = self.f["viewer"]["email"]
+        tebakan = [
+            self.api.panggil(
+                "S1b", "POST", "/login", ip="10.99.0.2",
+                body={"identifier": korban, "password": "tebakan-salah"},
+            ).status
+            for _ in range(11)
+        ]
+        s.catatan.append(f"tebak sandi 11x ke satu akun -> {tebakan[-1]} di percobaan ke-11")
+        if tebakan[-1] != 429 or 429 in tebakan[:10]:
+            s.gagal(f"penjagaan tebak sandi tidak bekerja seperti seharusnya: {tebakan}")
 
     def s2_kirim_serentak(self) -> None:
         s = self.baru("S2", "10 teknisi menekan 'Kirim' lembar kerja pada detik yang sama")

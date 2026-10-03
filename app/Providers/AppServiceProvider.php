@@ -226,7 +226,26 @@ class AppServiceProvider extends ServiceProvider
                 ], 429)),
         );
 
-        $perMenit('login', 10);
+        // Login dikunci per AKUN + IP, bukan per IP saja — keputusan pemilik
+        // proyek, 3 Okt 2026. Satu lab keluar lewat satu IP publik kantor;
+        // dengan kunci per-IP, orang ke-11 yang masuk dalam semenit ditolak 429
+        // walau sandinya benar (dibuktikan simulasi S1b,
+        // `tests/Simulasi/SimulasiLabSerentakTest.php`). Perlindungan tebak
+        // sandi tetap ada: satu akun tetap cuma dapat 10 percobaan per menit
+        // dari satu IP.
+        //
+        // Yang SENGAJA dilepas: satu IP sekarang bisa mencoba satu sandi ke
+        // banyak akun (password spraying) sebanyak 10 per akun per menit,
+        // bukan 10 total. Diterima karena akun internal cuma belasan.
+        //
+        // `identifier` dikecilkan & dipangkas: MySQL membandingkan email dan
+        // ID pegawai tanpa peduli huruf besar, jadi tanpa itu `Admin@…` dan
+        // `admin@…` jadi dua ember untuk akun yang sama.
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(10)
+            ->by('login|'.Str::lower(trim((string) $request->input('identifier'))).'|'.$request->ip())
+            ->response(fn () => response()->json([
+                'message' => 'Kebanyakan percobaan. Tunggu sebentar, terus coba lagi.',
+            ], 429)));
         $perMenit('password-reset', 5);
 
         // --- Modul pelanggan (02-SRS NFR-02) ---------------------------------

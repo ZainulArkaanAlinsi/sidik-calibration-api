@@ -70,7 +70,7 @@ Bikin ini duluan, hari ini juga kalau bisa. Kecil, tapi begitu ada, mobile bisa 
 > ✅ **Semua endpoint di bagian ini udah live sejak 14 Jul** — login (ID pegawai & email dua-duanya jalan), register, `/me`, `/logout`, plus approval admin (`GET /api/users?status=pending`, `approve`, `reject`). Dites end-to-end, termasuk skenario daftar-sambil-ngaku-admin: role dari client diabaikan, akunnya tetap `teknisi` + `pending`.
 >
 > Yang belum ada di dokumen ini, tolong dicatat mobile:
-> - **`429 Too Many Requests`** bisa muncul: login dibatesin **10 percobaan/menit per IP**, register **5/menit**. Siapin pesan "coba lagi sebentar" di UI.
+> - **`429 Too Many Requests`** bisa muncul: login dibatesin **10 percobaan/menit per AKUN + IP** (sejak 3 Okt 2026; dulu per IP saja, jadi orang ke-11 dari satu WiFi kantor ikut ditolak), register **5/menit**. Siapin pesan "coba lagi sebentar" di UI.
 > - Akun **`nonaktif`** ditolak `403` juga, pesannya `"Akun ini nonaktif. Hubungi admin."` (beda dari pesan `pending`).
 > - **`organization_id` masih `null`** buat akun hasil register — tabel `organizations` belum ada (baru dirancang di ERD hari ini). Jangan dianggap wajib int dulu di sisi Dart, biar nggak crash pas parsing.
 > - Akun dev buat nyoba: `SDK-0001` (admin) · `SDK-0002` (teknisi) · `SDK-0003` (viewer) · `SDK-0099` (sengaja `pending`, buat nyobain layar "belum disetujui"). Password semua `rahasia123` — **di laptop doang**. Di server sandinya dari `SEED_ADMIN_PASSWORD`, atau acak kalau variabel itu kosong.
