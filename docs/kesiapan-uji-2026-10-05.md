@@ -8,6 +8,33 @@ memakai tiga label: **SIAP** (ada bukti perintah/test dan hasilnya), **BELUM SIA
 Berkas ini ada di repo publik, jadi sengaja tidak memuat nama pelanggan, sandi,
 token, kunci API, atau email pribadi.
 
+> **Pembaruan 5 Okt (keputusan pemilik):** uji **tidak** dilakukan di produksi
+> (karena R2). Uji memakai **lingkungan lokal dari backup** yang sudah teruji
+> restore — lihat §0. Tidak ada sertifikat yang diterbitkan di produksi. Kode tetap
+> beku; PR ini tidak di-merge.
+
+## 0. Lingkungan uji lokal (disiapkan 4 Okt malam)
+
+Semua berkas pendukung ada di `C:\uji-sidik\` (di luar repo):
+
+| Komponen | Isi |
+|---|---|
+| Database | `asmo_db_test` di MySQL lokal, hasil restore `C:\cadangan-sidik\produksi-20261004-2033.sql` |
+| Konfigurasi | `.env.uji` di folder repo (di-exclude lokal, tidak ikut commit). Dimuat **sebagai ganti** `.env` saat `APP_ENV=uji`, jadi tidak ada nilai produksi yang ikut. `VISION_AKTIF=false`, kunci AI/FCM kosong, `MAIL_MAILER=log`, antrean `sync`, `GERBANG_PENGESAHAN=false` (sama dengan produksi) |
+| Menyalakan server | `jalankan-server-uji.ps1` — penjaga menolak jalan kecuali koneksinya `127.0.0.1/asmo_db_test`, env `uji`, vision OFF; menahan standby; mendengar di port 8000 |
+| Akun | 5 akun `UJI-`: super admin, **dua** admin (skenario A4/A7 butuh admin kedua karena pemisahan wewenang), teknisi, viewer. Sandi acak di `akun-uji.txt`, tidak dicetak, tidak masuk repo |
+| Data uji | Pelanggan `UJI-PT Simulasi Laboratorium`, alat `UJI-PH-001`, `UJI-PH-002`, `UJI-OVEN-001` |
+| Reset | `php C:\uji-sidik\pulihkan-db-uji.php` (isi ulang dari backup), lalu `siapkan-data-uji.php` lewat tinker dengan `APP_ENV=uji` |
+| Uji API otomatis | `python C:\uji-sidik\uji-skenario.py` — hasil di `hasil-uji-*.json` |
+
+**Aplikasi HP uji:** `C:\uji-sidik\sidik-uji-debug-192.168.1.14.apk` (debug, 249 MB),
+dibangun dengan `APP_ENV=staging` dan `API_BASE_URL=http://192.168.1.14:8000/api`.
+Build produksi v1.0.652 tidak diubah. Cara memasang:
+1. Laptop dan HP di WiFi yang sama; nyalakan `jalankan-server-uji.ps1` dan pastikan IP yang dicetak = `192.168.1.14`. Kalau IP berubah, bangun ulang APK: `flutter build apk --debug --dart-define=APP_ENV=staging --dart-define=API_BASE_URL=http://<IP>:8000/api` di repo mobile.
+2. Izinkan `php.exe` di Windows Firewall (jaringan Private) bila HP tidak bisa tersambung.
+3. Build debug memakai package yang sama (`com.ptsidik.kalibrasi`) dengan tanda tangan berbeda, jadi **tidak bisa dipasang di atas APK produksi**. Pakai HP kedua, atau hapus dulu aplikasi produksi di HP uji, atau pakai emulator laptop (`Pixel_9_Pro` / `flutter_emulator`: jalankan emulator lalu `adb install C:\uji-sidik\sidik-uji-debug-192.168.1.14.apk`).
+4. Login dengan akun dari `akun-uji.txt`. Panel admin uji: `http://192.168.1.14:8000/admin`.
+
 ---
 
 ## 1. Status per area
@@ -73,13 +100,13 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 | Langkah | Status | Bukti / celah |
 |---|---|---|
 | Buat sesi, simpan draf, lanjut, kirim | **SIAP** | `CalibrationTest::test_sesi_bisa_disimpen_sebagai_draft_dulu`, `ChaosSimpanLembarKerjaTest`, alur penuh 4 alat (`AlurPenuh*Test`, `RantaiTimbanganTeknisiSampaiSertifikatTest`) |
-| Draf utuh sesudah aplikasi ditutup | **TIDAK TERVERIFIKASI** | Test mobile memulihkan draf **yang sudah tersimpan di server** (`lembar_kerja_pulihkan_draft_test.dart`). Isian yang belum pernah disimpan ke server sebelum aplikasi ditutup tidak punya test |
+| Draf utuh sesudah aplikasi ditutup | **TIDAK TERVERIFIKASI** (draf tersimpan: SIAP, uji lokal T3b; isian belum disimpan: kemungkinan hilang, R8) | Test mobile memulihkan draf **yang sudah tersimpan di server** (`lembar_kerja_pulihkan_draft_test.dart`). Isian yang belum pernah disimpan ke server sebelum aplikasi ditutup tidak punya test |
 | Admin koreksi dengan alasan (nilai lama + baru) | **SIAP** | `KoreksiPembacaanAdminTest::test_angka_lama_dan_baru_tersimpan_berikut_alasannya`, `::test_koreksi_angka_tanpa_alasan_ditolak` |
 | Kembalikan untuk revisi / tolak dengan alasan | **SIAP** | `CalibrationTest::test_nolak_sesi_wajib_pakai_catatan_revisi`. Bukti produksi: audit sesi `KAL/2026/08/0002` memuat baris penolakan (`status`, `catatan_revisi`, `reviewed_by`) |
 | Setujui, terbitkan | **SIAP** | `CalibrationTest::test_admin_nyetujuin_sesi`, `ApproveDuaKaliSatuSertifikatTest`, simulasi S4–S7 |
 | Koneksi putus + kirim ulang / kirim dua kali | **SIAP** | `CalibrationTest::test_retry_dengan_client_request_id_sama_cuma_bikin_1_sesi`, `ChaosSimpanLembarKerjaTest::test_kiriman_ganda_berbarengan_dijawab_replay_bukan_500`, simulasi S3 |
-| Teknisi dan admin mengedit bersamaan | **TIDAK TERVERIFIKASI** | Tidak ada test. Yang ada cuma penguncian status (`AdminEditSesiTeknisiTest`) |
-| Koma desimal | **TIDAK TERVERIFIKASI** di API | Mobile mengubah koma (`kondisi_lingkungan_pakai_koma_test.dart`); kiriman `"1,5"` mentah ke API tidak punya test |
+| Teknisi dan admin mengedit bersamaan | **BELUM SIAP** (risiko diterima/ditunda) | Uji lokal X2 (§7): keduanya 200, yang terakhir menang tanpa deteksi bentrok (R9) |
+| Koma desimal | **SIAP** | Uji lokal T4 (§7): `"10,11"` tersimpan 10.11, `"24,5"` → 24.50 lewat API langsung; mobile juga mengubah koma (`kondisi_lingkungan_pakai_koma_test.dart`) |
 | Sel kosong / satuan salah | **SIAP** | `TitikKosongTidakMenggeserTest`, `VarianSatuanWajibDitentukanTest` |
 | Audit log koreksi/penolakan/persetujuan/penerbitan | **SIAP** sebagian | `AuditLogTest` (baris tidak bisa diubah/dihapus), `AdminEditSesiTeknisiTest::test_editan_admin_kecatat_di_audit_log`, `GerbangPengesahanTest::test_pengesahan_tercatat_di_jejak_audit`. Pembacaan lama yang diganti (koreksi admin & revisi sesudah dikembalikan) tersimpan sebagai `old_data`/`new_data` — lihat R1. **Celah:** perubahan centang standar tidak masuk `audit_logs` |
 | Izin peran di server | **SIAP** | `RoleAccessTest` (termasuk `test_tanpa_token_semua_endpoint_data_nolak_401`), `PemisahanWewenangPersetujuanTest`, `GerbangPengesahanTest`, `SuperAdminAksesTest`, `RuteInternalMenolakRoleLainTest` |
@@ -117,8 +144,9 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 | R5 | Standar dobel dengan data bertentangan: Yokogawa 23P1005 (id 13 tertelusur LK-285-IDN, U 0,72 °C; id 45 tertelusur LK-202-IDN, U kosong) dan recorder C305B1470 (id 46 berlaku s/d 2027-09-18; id 62 s/d 2027-02-18) | Sedang (ketertelusuran) | Tidak; pilih satu baris saat uji |
 | R6 | Sesi Oven produksi `KAL/2026/08/0002` tidak terhitung (dua kalibrator dicentang) | Rendah untuk uji | Tidak |
 | R7 | Versi rumus tidak tercetak di sertifikat | Rendah–sedang | Tidak |
-| R8 | Draf yang belum tersimpan ke server tidak terbukti selamat saat aplikasi ditutup | Sedang (UX lapangan) | Tidak — uji manual besok |
-| R9 | Edit bersamaan teknisi/admin dan koma desimal di API tanpa test | Rendah | Tidak — uji manual besok |
+| R8 | Isian lembar kerja yang **belum disimpan** hampir pasti hilang saat aplikasi ditutup: kode mobile memakai `SharedPreferences` cuma untuk login/avatar/bahasa/onboarding/tema, tidak ada penyimpanan lokal (Hive/sqflite/prefs) untuk isian lembar. Analisis kode, belum dicoba di perangkat (T3a) | Sedang (UX lapangan) | Tidak — buktikan di T3a; perbaikan sesudah uji |
+| R9 | Edit bersamaan: teknisi dan admin menyimpan draf yang sama di detik yang sama → **keduanya 200, yang terakhir menang**, tanpa deteksi bentrok (uji lokal X2). Koma desimal di API **aman**: `"10,11"` tersimpan 10.11 (uji lokal T4) | Rendah–sedang | Tidak |
+| R11 | Kualitas data produksi: tabel kemampuan (CMC) memuat satu baris bernama `kaka` | Rendah | Tidak — rapikan sesudah konfirmasi lab |
 | R10 | Log Render 24 jam tidak bisa diperiksa dari sini | Rendah | Tidak — periksa di dashboard Render |
 
 Tidak ada perbaikan kode yang dikerjakan malam ini: R2 adalah keputusan rancangan,
@@ -130,14 +158,11 @@ dan sisa R1 (audit centang standar) dikerjakan sesudah uji di branch terpisah.
 
 ### Persiapan (sebelum mulai)
 
-1. **Putuskan R2 dulu.** Pilih salah satu:
-   - (a) Uji di produksi **sampai "disetujui" hanya untuk satu sesi**, lalu sertifikatnya **dibatalkan resmi** dengan alasan "UJI SISTEM" (nomornya tetap tercatat beserta pembatalannya); atau
-   - (b) Uji di produksi **berhenti sebelum persetujuan** (draf, kirim, koreksi, kembalikan, tolak), dan langkah terbit diuji di lingkungan lokal; atau
-   - (c) Siapkan staging dulu (belum ada; `render.yaml` cuma punya satu layanan web).
-2. **Akun (R4).** Salah satu: jalankan `ganti-sandi-akun.ps1` untuk empat akun yang ada, atau setujui pembuatan empat akun `UJI-` (satu per peran, sandi acak, dinonaktifkan sesudah uji). Pembuatan akun = tulis ke produksi, menunggu persetujuan.
-3. **Data uji.** Buat lewat panel `/admin`, semua berawalan `UJI-`: pelanggan `UJI-PT Simulasi`, alat pH dengan nomor seri `UJI-PH-001`, alat Oven `UJI-OVEN-001`. Jangan memakai alat pelanggan asli.
-4. **AI cloud (R3).** Sampai lab memutuskan, jangan menekan fitur baca dokumen/AI. Jalur pindai lokal boleh.
-5. Pasang APK v1.0.652 di HP teknisi; panel admin di `https://sidik-calibration-api.onrender.com/admin`.
+1. **Lingkungan:** lokal (§0), bukan produksi. Nyalakan `C:\uji-sidik\jalankan-server-uji.ps1`; cek baris `Koneksi: 127.0.0.1|asmo_db_test|uji|vision-OFF`.
+2. **Akun:** lima akun `UJI-` di `C:\uji-sidik\akun-uji.txt` (hanya ada di DB lokal). `ganti-sandi-akun.ps1` **tidak** dijalankan ke produksi.
+3. **Data uji:** sudah ada — `UJI-PH-001`, `UJI-PH-002`, `UJI-OVEN-001`, pelanggan `UJI-PT Simulasi Laboratorium`. Kalau sesudah uji ingin mengulang dari bersih: `pulihkan-db-uji.php` lalu `siapkan-data-uji.php`.
+4. **AI cloud:** mati di lingkungan uji (`VISION_AKTIF=false`).
+5. **Aplikasi:** APK uji (§0) di HP kedua/emulator; panel admin uji di `http://192.168.1.14:8000/admin`.
 
 ### Teknisi (HP)
 
@@ -262,3 +287,42 @@ Tidak dijalankan. Isinya:
 - Flag: `VISION_AKTIF` (default `true`), `VISION_DRIVER` (`gemini` di blueprint), `VISION_DRIVER_CADANGAN` (`openai` di blueprint). Dimatikan → kedua rute menjawab 503 `dimatikan` sebelum menyentuh layanan luar; jalur lokal tetap jalan.
 - Kunci tertanam: pola kunci Google/Anthropic/OpenAI/GitHub/private key **tidak ditemukan** di berkas ter-track kedua repo maupun di riwayat git (`git log -G`); `.env` tidak ter-track. Apakah `GEMINI_API_KEY` terisi di dashboard Render: tidak terverifikasi (sengaja tidak dibaca).
 - Usulan (default OFF, belum diterapkan): `render.yaml` tambah `VISION_AKTIF: "false"` dan kosongkan `VISION_DRIVER_CADANGAN`; opsional default kode `false`. Butuh deploy — tunggu keputusan lab (K3).
+- **Bisakah dashboard Render menimpa tanpa deploy kode dan tanpa dikembalikan sinkronisasi blueprint?** Ya, untuk `VISION_AKTIF`, karena kunci itu **tidak** ada di `render.yaml`. Dokumentasi Render (Blueprint spec): *"Render preserves existing environment variables, even if you omit them from the Blueprint file"*; yang disinkronkan hanya kunci ber-`value:`, dan kunci `sync: false` diabaikan. Pengalaman repo sendiri (`render.yaml:144–157`, 1 Sep 2026) cocok: `ARSIP_DRIVER` ber-`value:` tertimpa balik, `AWS_*` ber-`sync: false` selamat. Cara menerapkan: Dashboard → Environment → tambah `VISION_AKTIF=false` → **"Save and deploy"** (memakai ulang build yang ada dengan env baru, tanpa build kode; dokumentasi "Configure environment variables"). Dua catatan: (1) pemilihan "Save and deploy" tetap me-restart layanan; (2) kalau kelak ada yang menambahkan `VISION_AKTIF` ber-`value:` ke `render.yaml`, nilai dashboard akan tertimpa. Verifikasi sesudahnya tidak bisa lewat `/api/health` (flag ini tidak dilaporkan di sana); verifikasi lewat tampilan Environment di dashboard. **Belum diubah — menunggu persetujuan.**
+
+---
+
+## 7. Hasil uji di lingkungan lokal (4 Okt 2026, 22:10)
+
+Dijalankan `C:\uji-sidik\uji-skenario.py` lewat HTTP ke server uji lokal (jalur
+API yang sama dengan aplikasi). Ini **uji API, bukan uji layar** HP/panel; langkah
+yang hanya bisa dibuktikan di layar ditandai. Bukti tersimpan dicek langsung di DB
+uji (`cek-hasil-uji.php`). Ringkasan: **17 lulus, 0 gagal, 3 tidak terverifikasi**
+lewat API — dua di antaranya terjawab sesudah pemeriksaan lanjutan (T4, X2).
+
+| # | Skenario | Hasil | Bukti |
+|---|---|---|---|
+| T1 | Teknisi login (email & ID pegawai) | **LULUS** | 200 / 200 |
+| T2 | Simpan draf pH 2 titik | **LULUS** | 201 |
+| T3a | Isian belum disimpan selamat saat aplikasi ditutup | **TIDAK TERVERIFIKASI** (perangkat) | Analisis kode: tidak ada penyimpanan lokal isian lembar (R8) — kemungkinan besar hilang |
+| T3b | Draf tersimpan dibuka lagi utuh | **LULUS** | 200, status draft, angka ada |
+| T4 | Koma desimal & sel kosong langsung ke API | **LULUS** | `"10,11"` → 10.11, `suhu_awal "24,5"` → 24.50, `"55,5"` → 55.50 (dicek di DB); titik tanpa pembacaan diterima tanpa menggeser titik lain |
+| T5 | Kirim ganda (`client_request_id` sama, 2 serentak + 1 ulang) | **LULUS** | status [201, 200, 200], 1 sesi |
+| T6 | Oven dua kalibrator → ditolak | **LULUS** | 422 "Centang SATU kalibrator saja…" menyebut S/N 99875850 dan 23P1005 |
+| T7 | Oven satu kalibrator → terhitung | **LULUS** | 201, 1 titik, U95 1.5 |
+| T8 | Teknisi mencoba menyetujui | **LULUS** | 403 |
+| A1 | Admin membuka sesi, rincian U95 tampil | **LULUS** | 200, 3 titik dengan uc, v_eff, k, U95, komponen |
+| A2 | Koreksi tanpa alasan → ditolak | **LULUS** | 422 `alasan_koreksi` wajib |
+| A3 | Koreksi dengan alasan | **LULUS** | 200; audit #351: 15 baris pembacaan lama + baru + alasan |
+| A4 | Admin pengoreksi menyetujui sendiri → ditolak | **LULUS** | 422 `pemisahan_wewenang` |
+| A5 | Kembalikan untuk revisi | **LULUS** | status `perlu_revisi`, teknisi melihat catatan; audit #352 |
+| A6 | Teknisi revisi; admin lain menolak beralasan; kirim ulang | **LULUS** | 200/200/200; audit #356 menyimpan pembacaan lama (revisi), #357 penolakan admin kedua |
+| A7 | Admin lain menyetujui → sertifikat terbit (LOKAL) | **LULUS** | `CAL/2026/10/0001` terbit di DB lokal, PDF terunduh, QR verifikasi publik 200 |
+| A8 | Batalkan sertifikat beralasan | **LULUS** | status `dibatalkan`; audit #367: pelaku, waktu, alasan |
+| A9 | Viewer cuma membaca | **LULUS** | baca 200; buat/setujui/ubah 403 |
+| X0 | Endpoint data tanpa token | **LULUS** | 401 |
+| X2 | Teknisi & admin mengedit draf yang sama bersamaan | **TERJAWAB: tidak ada deteksi bentrok** | keduanya 200, nilai akhir milik yang terakhir (R9) |
+
+Catatan:
+- Nomor `CAL/2026/10/0001` di atas hanya ada di DB lokal. Produksi tidak disentuh.
+- T3a dan tampilan layar (A1 "tampil", T6 pesan di HP) tetap perlu dilihat besok di perangkat dengan APK uji.
+- Sisa R1 (centang standar tidak diaudit) tidak diuji ulang di sini; itu temuan kode (`simpanUsageCheck()` → `sync()` tanpa audit).
