@@ -81,7 +81,7 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 | Teknisi dan admin mengedit bersamaan | **TIDAK TERVERIFIKASI** | Tidak ada test. Yang ada cuma penguncian status (`AdminEditSesiTeknisiTest`) |
 | Koma desimal | **TIDAK TERVERIFIKASI** di API | Mobile mengubah koma (`kondisi_lingkungan_pakai_koma_test.dart`); kiriman `"1,5"` mentah ke API tidak punya test |
 | Sel kosong / satuan salah | **SIAP** | `TitikKosongTidakMenggeserTest`, `VarianSatuanWajibDitentukanTest` |
-| Audit log koreksi/penolakan/persetujuan/penerbitan | **SIAP** sebagian | `AuditLogTest` (baris tidak bisa diubah/dihapus), `AdminEditSesiTeknisiTest::test_editan_admin_kecatat_di_audit_log`, `GerbangPengesahanTest::test_pengesahan_tercatat_di_jejak_audit`. **Celah:** perubahan `raw_measurements` dan centang standar tidak masuk `audit_logs` (lihat R1) |
+| Audit log koreksi/penolakan/persetujuan/penerbitan | **SIAP** sebagian | `AuditLogTest` (baris tidak bisa diubah/dihapus), `AdminEditSesiTeknisiTest::test_editan_admin_kecatat_di_audit_log`, `GerbangPengesahanTest::test_pengesahan_tercatat_di_jejak_audit`. Pembacaan lama yang diganti (koreksi admin & revisi sesudah dikembalikan) tersimpan sebagai `old_data`/`new_data` — lihat R1. **Celah:** perubahan centang standar tidak masuk `audit_logs` |
 | Izin peran di server | **SIAP** | `RoleAccessTest` (termasuk `test_tanpa_token_semua_endpoint_data_nolak_401`), `PemisahanWewenangPersetujuanTest`, `GerbangPengesahanTest`, `SuperAdminAksesTest`, `RuteInternalMenolakRoleLainTest` |
 
 ### D. OCR
@@ -101,7 +101,7 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 | Sertifikat dari data uji, kolom vs master | **SIAP** pada data contoh | `SertifikatCocokMasterTest` (22), `CertificateGenerationTest`, `CertificateSnapshotTest`, `BerkasPdfSertifikatTest`; simulasi S7/S10: 10 sertifikat terbit, PDF terunduh, QR verifikasi 200 |
 | Pembulatan dan satuan | **SIAP** | `DesimalLayarSamaDenganSertifikatTest`, `FlowmeterSatuanSertifikatTest`, test sertifikat per alat |
 | Versi metode tercantum | **BELUM SIAP** | `formula_version_id` tidak dicetak (lihat B) |
-| Tanda tangan/persetujuan hanya peran berwenang | **SIAP** | `GerbangPengesahanTest`, `PemisahanWewenangPersetujuanTest`, `TandaTanganSertifikatTest`. Catatan: `GERBANG_PENGESAHAN=false` di blueprint, jadi saat ini admin menyetujui = sertifikat terbit (tanpa langkah sahkan super admin) |
+| Tanda tangan/persetujuan hanya peran berwenang | **SIAP** | `GerbangPengesahanTest`, `PemisahanWewenangPersetujuanTest`, `TandaTanganSertifikatTest`. **Penting:** `GERBANG_PENGESAHAN=false` di blueprint produksi, artinya menekan **"Setujui" di produksi langsung menerbitkan sertifikat bernomor resmi** `CAL/…` — tidak ada langkah sahkan super admin di antaranya |
 | Terbit tidak bisa ditimpa, revisi dengan riwayat | **SIAP** | `CalibrationTest::test_sesi_yang_udah_disetujui_nggak_bisa_diubah_lagi`, `SesiDisetujuiTidakBisaDimundurkanTest`, `RevisiSertifikatTest` (11 kasus, nomor `-Rn`, batal wajib alasan) |
 
 ---
@@ -110,8 +110,8 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 
 | # | Temuan | Bahaya | Memblokir uji besok? |
 |---|---|---|---|
-| R1 | Revisi lembar kerja (`PUT`) **menghapus lalu menulis ulang** seluruh `raw_measurements` (`CalibrationController.php:1445`); `RawMeasurement` tanpa SoftDeletes maupun audit. Nilai kiriman sebelumnya hilang tanpa jejak — bertentangan dengan aturan "nilai teknisi tidak pernah dihapus" (ISO/IEC 17025 §7.5.2). Koreksi oleh admin tidak kena (punya jalur lama+baru sendiri) | Tinggi (akreditasi) | Tidak, tapi jangan dijadikan kebiasaan sebelum diputuskan |
-| R2 | Sesi, sertifikat, pembacaan, permintaan, dan pengguna **tidak punya soft delete**. Data uji di produksi tidak bisa "dibersihkan lewat soft delete"; sertifikat uji yang terbit **memakai nomor resmi** `CAL/2026/10/…` | Tinggi (jejak nomor sertifikat diperiksa asesor) | **Ya** untuk langkah "terbitkan" di produksi — butuh keputusan |
+| R1 | **Dikoreksi 5 Okt — versi awal keliru.** Versi pertama dokumen ini menulis bahwa revisi lewat `PUT` menghapus pembacaan lama tanpa jejak. Itu salah: `update()` memotret pembacaan lama sebelum ditimpa (`CalibrationController.php:657`), lalu `catatKoreksiPembacaan()` (`:817–841`) menulis baris `audit_logs` berisi `old_data`/`new_data` untuk koreksi admin (sesi `menunggu_approval`) **dan** revisi teknisi sesudah lembar dikembalikan (`perlu_revisi`, `:684–698`). Draf yang belum pernah dikirim sengaja tidak dijejak. Bukti test (lulus 5 Okt): `ChaosSimpanLembarKerjaTest::test_revisi_teknisi_sesudah_dikembalikan_menyimpan_angka_lama`, `::test_draft_yang_belum_pernah_disubmit_tidak_dijejak`, `KoreksiPembacaanAdminTest::test_angka_lama_dan_baru_tersimpan_berikut_alasannya`. **Yang tersisa:** perubahan centang standar (`simpanUsageCheck()` → `sync()`) tidak diaudit, jadi pergantian kalibrator yang dipakai sesi tidak meninggalkan jejak | Rendah–sedang (ketertelusuran standar) | Tidak |
+| R2 | Sesi, sertifikat, pembacaan, permintaan, dan pengguna **tidak punya soft delete**. Data uji di produksi tidak bisa "dibersihkan lewat soft delete". Karena `GERBANG_PENGESAHAN=false`, satu tekan **"Setujui" di produksi langsung menerbitkan sertifikat bernomor resmi** `CAL/2026/10/…` | Tinggi (jejak nomor sertifikat diperiksa asesor) | **Diputuskan 5 Okt:** uji tidak dilakukan di produksi; tidak ada sertifikat diterbitkan di produksi |
 | R3 | Jalur AI cloud hidup secara default (lihat D). Foto lembar kerja bisa terkirim ke Gemini, dan bila gagal ke OpenAI (`VISION_DRIVER_CADANGAN=openai`) | Sedang (privasi/kebijakan) | **Ya** untuk uji OCR cloud; jalur lokal tidak terpengaruh |
 | R4 | Login empat peran butuh sandi yang belum disetel | Sedang | **Ya** — tanpa akun, uji tidak bisa mulai |
 | R5 | Standar dobel dengan data bertentangan: Yokogawa 23P1005 (id 13 tertelusur LK-285-IDN, U 0,72 °C; id 45 tertelusur LK-202-IDN, U kosong) dan recorder C305B1470 (id 46 berlaku s/d 2027-09-18; id 62 s/d 2027-02-18) | Sedang (ketertelusuran) | Tidak; pilih satu baris saat uji |
@@ -121,8 +121,8 @@ bawah, ditambah simulasi serentak `tests/Simulasi/SimulasiLabSerentakTest.php`
 | R9 | Edit bersamaan teknisi/admin dan koma desimal di API tanpa test | Rendah | Tidak — uji manual besok |
 | R10 | Log Render 24 jam tidak bisa diperiksa dari sini | Rendah | Tidak — periksa di dashboard Render |
 
-Tidak ada perbaikan kode yang dikerjakan malam ini: R1 dan R2 adalah keputusan
-rancangan, bukan bug kecil.
+Tidak ada perbaikan kode yang dikerjakan malam ini: R2 adalah keputusan rancangan,
+dan sisa R1 (audit centang standar) dikerjakan sesudah uji di branch terpisah.
 
 ---
 
@@ -145,9 +145,10 @@ rancangan, bukan bug kecil.
 |---|---|---|
 | T1 | Login (email atau ID pegawai) | Masuk ke beranda teknisi |
 | T2 | Buka lembar pH untuk `UJI-PH-001`, isi identitas + standar, isi 2 titik, **Simpan draf** | Draf tersimpan, muncul di daftar Draf |
-| T3 | Tutup aplikasi sepenuhnya, buka lagi, lanjutkan draf | Semua isian tadi utuh (R8 — catat kalau ada yang hilang) |
+| T3a | Buka lembar baru, isi beberapa sel, **jangan simpan**. Tutup aplikasi sepenuhnya (geser dari daftar aplikasi terbuka), buka lagi | Menguji R8: catat apakah isian yang belum disimpan masih ada atau hilang. Ini yang belum pernah dibuktikan |
+| T3b | Lanjutkan draf dari T2 (yang sudah disimpan), lalu tutup-buka aplikasi lagi | Isian draf yang sudah tersimpan tetap utuh |
 | T4 | Isi titik ke-3 dengan koma desimal (`7,01`), kosongkan satu sel | Koma diterima sebagai desimal; sel kosong tidak menggeser titik |
-| T5 | Aktifkan mode pesawat, tekan **Kirim**, matikan mode pesawat, kirim ulang | Satu sesi saja di server (tidak ganda) |
+| T5 | Kirim ganda: tekan **Kirim**, lalu putus koneksi **saat menunggu jawaban** (matikan WiFi HP begitu tombol ditekan), sambungkan lagi dan kirim ulang. Di API diuji juga dengan dua kiriman ber-`client_request_id` sama | Satu sesi saja di server; kiriman kedua dijawab sebagai ulangan (200), bukan sesi baru. Catatan: mode pesawat **sebelum** Kirim tidak menguji ini — kirimannya tidak pernah sampai ke server |
 | T6 | Lembar Oven `UJI-OVEN-001`: centang **dua** kalibrator, tekan Kirim | Ditolak dengan pesan "Centang SATU kalibrator saja…" yang menyebut kedua kalibrator |
 | T7 | Lepas satu centang, kirim | Terkirim; titik terhitung |
 | T8 | Coba buka menu setujui (kalau ada) / panggil approve | Ditolak (403/422) |
@@ -187,7 +188,8 @@ eksplisit pemilik, dan sesudah semua pengguna berhenti memakai aplikasi):
 Prosedur ini sudah diuji ke DB lokal 4 Okt (lihat A).
 
 **Membersihkan data uji.**
-- Alat, pelanggan, order, standar: soft delete lewat panel (model punya SoftDeletes).
+- Alat, pelanggan, standar: soft delete lewat panel `/admin` (resource Filament ada, model punya SoftDeletes).
+- Order: **tidak ada resource Order di Filament.** Satu-satunya jalur hapus adalah `DELETE /api/orders/{order}`, dan itu dijawab 422 bila order sudah terkait sesi kalibrasi (`OrderController::destroy`). Order seperti itu diubah statusnya jadi "dibatalkan", tidak dihapus.
 - Akun uji: ubah status jadi nonaktif (model `User` tanpa soft delete).
 - Sesi, pembacaan, permintaan, sertifikat: **tidak ada soft delete** (R2). Pilihannya: dibiarkan dengan penanda `UJI-` (sesi) dan **dibatalkan resmi** (sertifikat), atau dihapus permanen lewat prosedur `docs/aturan-akses-database.md` butir 4 (rencana tertulis → cadangan terverifikasi → dry-run → instruksi terpisah).
 - `audit_logs` tidak bisa dan tidak boleh dihapus.
@@ -203,7 +205,7 @@ Prosedur ini sudah diuji ke DB lokal 4 Okt (lihat A).
 | K3 | Kebijakan foto lembar kerja ke AI cloud (R3). Kalau dilarang: tambah `VISION_AKTIF=false` dan kosongkan `VISION_DRIVER_CADANGAN` di `render.yaml` (perlu deploy) | Lab |
 | K4 | Standar dobel (R5): baris mana yang benar (sertifikat kalibrasi alat), lalu baris lain dinonaktifkan, bukan dihapus | Lab |
 | K5 | Sesi Oven `KAL/2026/08/0002`: kalibrator mana yang sebenarnya dipakai; buka ulang lewat "kembalikan untuk revisi" | Penanggung jawab teknis |
-| K6 | R1: apakah revisi teknisi wajib menyimpan nilai kiriman sebelumnya (perubahan rancangan, sesudah uji) | Manajer mutu |
+| K6 | Sisa R1: perubahan centang standar ikut diaudit (dikerjakan sesudah uji, branch terpisah) | Manajer mutu |
 | K7 | Versi rumus wajib tercetak di sertifikat? (R7) | Manajer teknis |
 | K8 | Pertanyaan lab terbuka suhu & pH sebelum alat terkait dipakai untuk sertifikat | Lab |
 | K9 | Menyalakan `GERBANG_PENGESAHAN` (super admin mengesahkan) atau tetap admin langsung terbit | Pemilik |
@@ -240,7 +242,7 @@ Rekomendasi (belum dieksekusi):
 - Status `menunggu_approval`, belum disetujui, **0** sertifikat, **0** hasil hitung, 220 pembacaan (180 termokopel, 20 indikator, 20 suhu ruang; 4 titik), tipe sensor Type K, `standard_id` sesi kosong.
 - Centang "Dipakai": standar 44 (Constant, S/N 99875850) **dan** 45 (Yokogawa, S/N 23P1005).
 - Riwayat audit (10 baris): dibuat oleh teknisi 2026-08-26 10:07 → dikirim → **ditolak admin** 2026-08-26 10:34 (`status`, `catatan_revisi`, `reviewed_by`) → disunting dan dikirim ulang oleh **akun admin** 2026-09-28 07:09–07:12 (dua kali). Kolom `reviewed_at` masih menyimpan waktu penolakan 26 Agt.
-- Alur resmi membuka ulang: `POST /calibrations/{id}/reject` (admin, `catatan_revisi` wajib ≥5 karakter) → `perlu_revisi` → teknisi melepas satu centang dan mengirim lewat `PUT /calibrations/{id}`. Efek: status & alasan tercatat di `audit_logs`; **pembacaan ditulis ulang tanpa jejak nilai lama (R1)**; perubahan centang tidak diaudit. `tarik-pengajuan` tidak berlaku (khusus status menunggu pengesahan).
+- Alur resmi membuka ulang: `POST /calibrations/{id}/reject` (admin, `catatan_revisi` wajib ≥5 karakter) → `perlu_revisi` → teknisi melepas satu centang dan mengirim lewat `PUT /calibrations/{id}`. Efek: status & alasan tercatat di `audit_logs`; pembacaan yang berubah dicatat lama+baru oleh `catatKoreksiPembacaan()` (status `perlu_revisi`); perubahan centang **tidak** diaudit (sisa R1). `tarik-pengajuan` tidak berlaku (khusus status menunggu pengesahan).
 - Admin yang mengirim ulang 28 Sep **tidak bisa** menyetujui sesi ini (pemisahan wewenang).
 - Backup baca-saja: `C:\cadangan-sidik\sesi-13-KAL-2026-08-0002-20261004-2039.json` (sesi, 220 pembacaan, centang, 10 audit, sertifikat). Ditambah backup penuh di atas.
 
