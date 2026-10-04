@@ -512,7 +512,20 @@ abstract class EnclosureProfileBase extends CalibrationProfile
 
         $merk = $this->merkKalibrator($sesi->rawMeasurements->first()?->standard ?? $sesi->standard);
 
-        if ($merk === null) {
+        // Penyebab paling umum merk kosong justru BUKAN belum dicentang, tapi
+        // kebanyakan dicentang. Pesan lama ("belum kebaca") menyalahkan kotak
+        // yang sudah dicentang teknisi — sesi Oven produksi KAL/2026/08/0002
+        // tertahan begitu dengan dua kalibrator tercentang (3 Okt 2026).
+        $ganda = $merk === null
+            ? $this->masalahCentangStandar($sesi->standarDicek()->wherePivot('dipakai', true)->get())
+            : null;
+
+        if ($ganda !== null) {
+            $peringatan[] = [
+                'kode' => 'enclosure_kalibrator_ganda',
+                'pesan' => $ganda,
+            ];
+        } elseif ($merk === null) {
             $peringatan[] = [
                 'kode' => 'enclosure_kalibrator_kosong',
                 'pesan' => 'Merk kalibrator (Constant/Yokogawa/Recorder) belum kebaca dari standar yang dicentang. '
@@ -1085,12 +1098,42 @@ abstract class EnclosureProfileBase extends CalibrationProfile
         return $kalibrator->count() === 1 ? $kalibrator->first() : null;
     }
 
+    /**
+     * Dua kalibrator atau lebih tercentang: `standarSesiDariCentang()` menolak
+     * menebak (lihat alasannya di sana), jadi kirimannya yang ditolak — dengan
+     * menyebut kalibrator mana saja yang tercentang, supaya teknisi tahu yang
+     * harus dilepas. Nol kalibrator TIDAK ditolak di sini: `standard_id`
+     * eksplisit atau sesi lama yang sudah punya kalibrator masih sah.
+     */
+    public function masalahCentangStandar(Collection $dicentang): ?string
+    {
+        $kalibrator = $dicentang
+            ->filter(fn (Standard $s): bool => $this->merkKalibrator($s) !== null)
+            ->values();
+
+        if ($kalibrator->count() < 2) {
+            return null;
+        }
+
+        return sprintf(
+            'Centang SATU kalibrator saja. Yang tercentang "Dipakai" ada %d: %s. Tabel koreksi & drift '
+            .'beda per kalibrator, jadi aplikasi tidak memilih sendiri — lepas centang kalibrator yang '
+            .'tidak dipakai, lalu kirim lagi.',
+            $kalibrator->count(),
+            $kalibrator->map(fn (Standard $s): string => sprintf('%s (S/N %s)', $s->nama, $s->serial_number))->implode(', '),
+        );
+    }
+
     private function merkKalibrator(?Standard $standar): ?string
     {
         $merk = strtolower(trim((string) ($standar?->merk ?? '')));
 
-        // "Temperature Recorder" / "Graphtech" → recorder.
-        if (str_contains($merk, 'recorder') || str_contains($merk, 'graphtech')) {
+        // "Temperature Recorder" / "Graphtech" / "Graptech" → recorder. Dua
+        // ejaan itu beredar untuk SATU alat (S/N C305B1470): master menulis
+        // "Graphtech", kertas lembar kerja "Graptech" — dan produksi punya
+        // baris standar dengan ejaan kertas (id 62, 3 Okt 2026). Tanpa ejaan
+        // kedua, sesi yang memakai baris itu tidak pernah terhitung.
+        if (str_contains($merk, 'recorder') || str_contains($merk, 'graphtech') || str_contains($merk, 'graptech')) {
             return 'recorder';
         }
 

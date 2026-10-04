@@ -21,6 +21,7 @@ use App\Support\GayaMentah as M;
 use App\Support\HydrometerMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PistonVolumeMentah;
+use App\Support\StandarDicentang;
 use App\Support\TekananMentah;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
@@ -1914,6 +1915,22 @@ class CalibrationRequest extends FormRequest
                         "measurements.$i.standard_id",
                         'Sertifikat standar acuan titik ini udah kadaluarsa, jadi nggak boleh dipakai kalibrasi.',
                     );
+                }
+            }
+
+            // Centangan "Dipakai" yang mustahil diturunkan jadi standar sesi
+            // (mis. dua kalibrator Enclosure). Cuma KIRIMAN yang ditolak — draft
+            // itu catatan setengah jadi — dan cuma kalau `standard_id` tidak
+            // dikirim, karena pilihan eksplisit selalu menang atas turunan.
+            // Sumbernya `StandarDicentang`, pintu yang sama dengan jalur hitung,
+            // supaya yang lolos di sini memang terhitung di sana.
+            if (! $this->disimpanSebagaiDraft() && ! $this->filled('standard_id')
+                && ($alat = Equipment::find($this->integer('equipment_id'))) !== null) {
+                $masalah = app(CalibrationProfileRegistry::class)->untukAlat($alat)
+                    ->masalahCentangStandar(StandarDicentang::dari($this, $alat));
+
+                if ($masalah !== null) {
+                    $validator->errors()->add('standar_dicek', $masalah);
                 }
             }
 

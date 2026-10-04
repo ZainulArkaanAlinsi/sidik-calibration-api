@@ -2118,6 +2118,23 @@ abstract class CalibrationProfile
         return null;
     }
 
+    /**
+     * Alasan centangan ini TIDAK BISA dipakai menurunkan standar sesi — atau
+     * `null` kalau tidak ada masalah.
+     *
+     * Pasangan wajib `standarSesiDariCentang()`. Kalau turunan itu mustahil
+     * (mis. dua kalibrator Enclosure sama-sama dicentang), `CalibrationRequest`
+     * menolak KIRIMAN dengan kalimat ini. Draft tetap boleh tersimpan. Tanpa
+     * penolakan itu sesinya terkirim, lalu tidak satu titik pun terhitung, dan
+     * teknisi baru tahu waktu admin gagal menyetujui.
+     *
+     * @param  Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     */
+    public function masalahCentangStandar(Collection $dicentang): ?string
+    {
+        return null;
+    }
+
     public function toleransiDariKolomAlat(): bool
     {
         return true;

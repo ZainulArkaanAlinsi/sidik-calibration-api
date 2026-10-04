@@ -851,6 +851,28 @@ Response `201` — balikin sesi yang udah kehitung (lihat bentuknya di bawah).
 > Orang yang mengonfirmasi hasil pindai sebuah sesi **tidak bisa** menyetujui
 > atau mengesahkan sesi itu (lihat `approve` di bawah).
 
+#### Lembar Enclosure: centang SATU kalibrator (sejak 4 Okt 2026)
+
+Lembar Enclosure (Oven, Furnace, Bath, Inkubator, Refrigerator) tidak punya
+kotak `standard_id`. Server menurunkan kalibrator sesi dari baris
+`standar_dicek` yang `dipakai: true` dan merk-nya Constant, Yokogawa, atau
+Recorder (ejaan "Graphtech" dan "Graptech" sama-sama dikenali).
+
+| Keadaan | Akibat |
+|---|---|
+| Satu kalibrator tercentang | diturunkan jadi `standard_id` sesi, titik terhitung |
+| Dua kalibrator atau lebih tercentang, **dikirim** (tanpa `status` atau `menunggu_approval`) | **422** di `errors.standar_dicek`, menyebut nama + S/N tiap kalibrator yang tercentang. Sesi tidak tersimpan |
+| Sama, tapi `status: "draft"` | tersimpan, kalibrator **tidak ditebak**, peringatan sesi `enclosure_kalibrator_ganda` |
+| `standard_id` dikirim eksplisit | `standard_id` itu yang dipakai, centangan tidak dinilai |
+
+`POST /calibrations/preview` memakai validasi yang sama, jadi preview juga
+menjawab 422 begitu dua kalibrator tercentang. Itu disengaja: teknisi tahu
+sebelum menekan Kirim. HP cukup menampilkan `errors.standar_dicek` apa adanya.
+
+Latar: sesi Oven produksi `KAL/2026/08/0002` mencentang Constant 40T dan
+Yokogawa CA 150, lolos terkirim, lalu 220 pembacaannya tidak menghasilkan
+satu titik pun.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;
