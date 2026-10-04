@@ -54,6 +54,7 @@ use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PistonVolumeMentah;
 use App\Support\SieveMentah;
+use App\Support\StandarDicentang;
 use App\Support\TekananMentah;
 use App\Support\TimbanganMentah;
 use App\Support\VolumetricGlasswareMentah;
@@ -4836,39 +4837,13 @@ class CalibrationController extends Controller
             return null;
         }
 
-        $profil = $this->profil->untukAlat($alat);
-
-        $id = [];
-
-        if ($request->has('standar_dicek')) {
-            foreach ((array) $request->input('standar_dicek', []) as $baris) {
-                if ((bool) ($baris['dipakai'] ?? true)) {
-                    $id[] = (int) $baris['standard_id'];
-                }
-            }
-        } elseif ($request->filled('calibration_session_id')) {
-            $sesi = CalibrationSession::find($request->integer('calibration_session_id'));
-
-            $id = $sesi === null ? [] : $sesi->standarDicek()
-                ->wherePivot('dipakai', true)
-                ->pluck('standards.id')
-                ->all();
-        }
-
-        if ($id === []) {
-            return null;
-        }
-
-        // Disaring ke organisasi pemilik alat: ID standar datang dari payload,
-        // dan tanpa saringan ini sesi bisa menunjuk kalibrator milik lab lain.
-        $dicentang = Standard::query()
-            ->whereIn('id', $id)
-            ->where('organization_id', $alat->organization_id)
-            ->get();
+        // Sumbernya satu pintu dengan `CalibrationRequest`, yang menolak kiriman
+        // kalau turunan di bawah ini mustahil — lihat `StandarDicentang`.
+        $dicentang = StandarDicentang::dari($request, $alat);
 
         return $this->standarTurunan = $dicentang->isEmpty()
             ? null
-            : $profil->standarSesiDariCentang($dicentang);
+            : $this->profil->untukAlat($alat)->standarSesiDariCentang($dicentang);
     }
 
     /**

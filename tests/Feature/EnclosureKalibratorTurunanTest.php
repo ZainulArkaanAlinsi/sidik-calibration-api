@@ -168,19 +168,17 @@ class EnclosureKalibratorTurunanTest extends TestCase
      * Dua kalibrator tercentang = nggak ada dasar buat memilih.
      *
      * Memilih diam-diam berarti sertifikat terbit dengan tabel koreksi yang
-     * mungkin salah tanpa satu pun jejak. Lebih baik sesinya tetap belum
-     * kehitung dengan peringatan yang jujur.
+     * mungkin salah tanpa satu pun jejak. DRAFT tetap boleh tersimpan (catatan
+     * setengah jadi), tapi kalibratornya tidak ditebak.
      */
     public function test_dua_kalibrator_tercentang_nggak_ditebak(): void
     {
         [$alat, $yokogawa, $teknisi] = $this->bahan();
-
-        $recorder = Standard::where('organization_id', $alat->organization_id)
-            ->where('nama', 'like', '%Recorder%')
-            ->firstOrFail();
+        $recorder = $this->recorder($alat);
 
         $id = $this->actingAs($teknisi)
             ->postJson('/api/calibrations', $this->payload($alat) + [
+                'status' => CalibrationSession::STATUS_DRAFT,
                 'standar_dicek' => [
                     ['standard_id' => $yokogawa->id, 'dipakai' => true],
                     ['standard_id' => $recorder->id, 'dipakai' => true],
@@ -190,6 +188,144 @@ class EnclosureKalibratorTurunanTest extends TestCase
             ->json('data.id');
 
         $this->assertNull(CalibrationSession::findOrFail($id)->standard_id);
+    }
+
+    /**
+     * KIRIMAN dengan dua kalibrator ditolak, dan pesannya menyebut keduanya.
+     *
+     * Kejadian nyata: sesi Oven produksi `KAL/2026/08/0002` (3 Okt 2026)
+     * mencentang Constant 40T DAN Yokogawa CA 150, lolos terkirim, lalu 220
+     * pembacaannya tidak menghasilkan satu titik pun. Teknisinya tidak pernah
+     * tahu; yang terlihat cuma sesi yang tidak bisa disetujui admin.
+     */
+    public function test_kiriman_dua_kalibrator_ditolak_dengan_nama_keduanya(): void
+    {
+        [$alat, $yokogawa, $teknisi] = $this->bahan();
+        $recorder = $this->recorder($alat);
+        $sebelum = CalibrationSession::count();
+
+        $respons = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat) + [
+                'standar_dicek' => [
+                    ['standard_id' => $yokogawa->id, 'dipakai' => true],
+                    ['standard_id' => $recorder->id, 'dipakai' => true],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('standar_dicek');
+
+        $pesan = implode(' ', $respons->json('errors.standar_dicek'));
+        $this->assertStringContainsString('SATU kalibrator', $pesan);
+        $this->assertStringContainsString((string) $yokogawa->serial_number, $pesan);
+        $this->assertStringContainsString((string) $recorder->serial_number, $pesan);
+        $this->assertSame($sebelum, CalibrationSession::count(), 'Kiriman yang ditolak tetap menyimpan sesi.');
+    }
+
+    /** Preview memakai validasi yang sama: teknisi tahu sebelum menekan Kirim. */
+    public function test_preview_dua_kalibrator_juga_ditolak(): void
+    {
+        [$alat, $yokogawa, $teknisi] = $this->bahan();
+        $recorder = $this->recorder($alat);
+
+        $this->actingAs($teknisi)
+            ->postJson('/api/calibrations/preview', $this->payload($alat) + [
+                'standar_dicek' => [
+                    ['standard_id' => $yokogawa->id, 'dipakai' => true],
+                    ['standard_id' => $recorder->id, 'dipakai' => true],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('standar_dicek');
+    }
+
+    /** `standard_id` eksplisit menang, jadi centangan ganda tidak menghalangi kiriman. */
+    public function test_kiriman_dua_kalibrator_lolos_kalau_standard_id_eksplisit(): void
+    {
+        [$alat, $yokogawa, $teknisi] = $this->bahan();
+        $recorder = $this->recorder($alat);
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat) + [
+                'standard_id' => $yokogawa->id,
+                'standar_dicek' => [
+                    ['standard_id' => $yokogawa->id, 'dipakai' => true],
+                    ['standard_id' => $recorder->id, 'dipakai' => true],
+                ],
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertSame($yokogawa->id, CalibrationSession::findOrFail($id)->standard_id);
+    }
+
+    /**
+     * Peringatan sesi menyebut penyebab yang benar: kebanyakan dicentang,
+     * bukan "belum kebaca".
+     */
+    public function test_peringatan_menyebut_kalibrator_ganda_bukan_kosong(): void
+    {
+        [$alat, $yokogawa, $teknisi] = $this->bahan();
+        $recorder = $this->recorder($alat);
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat) + [
+                'status' => CalibrationSession::STATUS_DRAFT,
+                'standar_dicek' => [
+                    ['standard_id' => $yokogawa->id, 'dipakai' => true],
+                    ['standard_id' => $recorder->id, 'dipakai' => true],
+                ],
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $admin = User::where('role', User::ROLE_ADMIN)->firstOrFail();
+        $kode = array_column(
+            $this->actingAs($admin)->getJson("/api/calibrations/{$id}/validasi")->assertOk()->json('data.temuan'),
+            'kode',
+        );
+
+        $this->assertContains('enclosure_kalibrator_ganda', $kode);
+        $this->assertNotContains('enclosure_kalibrator_kosong', $kode);
+    }
+
+    /**
+     * Ejaan kertas "Graptech" dikenali sama seperti ejaan master "Graphtech".
+     *
+     * Produksi punya baris standar recorder ber-merk "Graptech" (id 62, S/N
+     * C305B1470). Dulu pencocok merk cuma kenal "graphtech", jadi sesi yang
+     * mencentang baris itu tidak pernah punya kalibrator — dan tidak pernah
+     * terhitung.
+     */
+    public function test_recorder_ejaan_kertas_graptech_dikenali(): void
+    {
+        [$alat, , $teknisi] = $this->bahan();
+
+        $graptech = $this->recorder($alat)->replicate();
+        $graptech->merk = 'Graptech';
+        $graptech->nama = 'Temperature Recorder Graptech GL840-SDWV';
+        $graptech->serial_number = 'C305B1470-UJI';
+        $graptech->save();
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payload($alat) + [
+                'status' => CalibrationSession::STATUS_DRAFT,
+                'standar_dicek' => [['standard_id' => $graptech->id, 'dipakai' => true]],
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertSame(
+            $graptech->id,
+            CalibrationSession::findOrFail($id)->standard_id,
+            'Recorder ber-merk "Graptech" tidak diturunkan jadi kalibrator sesi.',
+        );
+    }
+
+    private function recorder(Equipment $alat): Standard
+    {
+        return Standard::where('organization_id', $alat->organization_id)
+            ->where('nama', 'like', '%Recorder%')
+            ->firstOrFail();
     }
 
     /**
