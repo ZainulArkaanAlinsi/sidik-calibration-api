@@ -380,6 +380,117 @@ class AnakTimbanganGerbangTest extends TestCase
         $this->assertFalse($hasil['boleh_terbit']);
     }
 
+    // ------------------------------------ nominal sah tidak boleh ikut ditolak
+
+    /**
+     * Konteks neraca 30 kg (Electronic Balance Mettler, kapasitas 30000 g)
+     * dengan kapasitas yang dibawa blok sesi. Nama neraca di tabel standar
+     * memang memuat DUA spasi ("Electronic Balance  Mettler").
+     *
+     * @return array<string, mixed>
+     */
+    private function konteksNeraca30kg(): array
+    {
+        $konteks = self::KONTEKS;
+        $konteks['timbangan'] = 'Electronic Balance  Mettler';
+        $konteks['kapasitas_g'] = 30000.0;
+
+        return $konteks;
+    }
+
+    /**
+     * Keping 20 kg ditulis 20000 (lembar ini selalu GRAM) dengan bacaan
+     * ≈ 20000 g di neraca 30 kg harus TERHITUNG — dua penjaga satuan
+     * (kapasitas & separuh nominal) cuma boleh menolak salah satuan, bukan
+     * keping besar yang sah.
+     */
+    #[Test]
+    public function keping_20_kg_di_neraca_30_kg_tidak_ditolak_penjaga_satuan(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 20000.0,
+            'at_s1' => 20000.0275,
+            'at_t1' => 20000.0250,
+            'at_t2' => 20000.0255,
+            'at_s2' => 20000.0275,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $this->konteksNeraca30kg());
+
+        $this->assertTrue($hasil['boleh_terbit']);
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+        $this->assertGreaterThan(0.0, $hasil['titik'][0]['u95_g']);
+    }
+
+    #[Test]
+    public function keping_10_kg_di_neraca_30_kg_tidak_ditolak_penjaga_satuan(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 10000.0,
+            'at_s1' => 10000.0140,
+            'at_t1' => 10000.0120,
+            'at_t2' => 10000.0125,
+            'at_s2' => 10000.0140,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $this->konteksNeraca30kg());
+
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+    }
+
+    /** Keping kecil (0,1 g dibaca 0,1001) lolos tanpa penjaga mengira itu salah satuan. */
+    #[Test]
+    public function keping_kecil_dengan_bacaan_wajar_tidak_ditolak(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 0.1,
+            'at_s1' => 0.1001,
+            'at_t1' => 0.1000,
+            'at_t2' => 0.1000,
+            'at_s2' => 0.1001,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
+
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+    }
+
+    /**
+     * Batas separuh nominal: selisih rata-rata S1/S2 terhadap nominal PERSIS
+     * di batas (50 g untuk 100 g) masih lolos penjaga ini; sedikit di atasnya
+     * ditolak. Titik yang lolos penjaga tidak dijamin terhitung penuh, jadi
+     * yang diperiksa alasan penolakannya, bukan hasil akhirnya.
+     */
+    #[Test]
+    public function batas_separuh_nominal_lolos_dan_sedikit_di_atasnya_ditolak(): void
+    {
+        $dasar = [
+            'titik_ke' => 1,
+            'nominal_g' => 100.0,
+            'at_t1' => 149.9999,
+            'at_t2' => 149.9999,
+        ];
+
+        $dalam = (new AnakTimbanganCalculator)->hitungSesi(
+            [$dasar + ['at_s1' => 150.0, 'at_s2' => 150.0]],
+            self::KONTEKS,
+        );
+        $this->assertSame([], $dalam['ditolak'], 'Selisih tepat nominal/2 tidak boleh ditolak.');
+
+        $luar = (new AnakTimbanganCalculator)->hitungSesi(
+            [$dasar + ['at_s1' => 150.01, 'at_s2' => 150.01]],
+            self::KONTEKS,
+        );
+        $this->assertCount(1, $luar['ditolak']);
+        $this->assertStringContainsString('tidak sesuai nominal', $luar['ditolak'][0]['alasan']);
+    }
+
     #[Test]
     public function rata_ujung_balik_null_kalau_salah_satunya_kosong(): void
     {
