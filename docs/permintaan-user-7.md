@@ -4782,6 +4782,42 @@ Sesudahnya **14/14 skenario lulus**, nomor PMT/ORD/CAL unik tanpa celah.
   fixture**, dan `sesi_tak_dikenal` dijadikan **pelanggaran** — tiap baris di situ temuan
   sungguhan.
 
+## §44 — Revisi lapangan Anak Timbangan, berlaku ke semua lembar kerja — 5 Okt 2026
+
+Pemilik mencoba kalibrasi Anak Timbangan di lokasi dan mengirim delapan revisi.
+Semuanya diminta berlaku ke **semua** lembar kerja. Malam itu yang dikerjakan
+adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
+
+| # | Permintaan | Status 5 Okt malam |
+|---|---|---|
+| 0 | Baris tabel kurang (kertas 10, set 15 keping) → bisa tambah baris/tabel | **Anak Timbangan & TIDS SELESAI di HP** (mobile#191): tombol Tambah baris di tabel bernominal-ketik; draft >10 keping pulih. Lembar bertitik cetak (pH dll.) dan "tambah tabel" belum |
+| 1 | Tanda bintang (`20*`) bisa diketik dari HP mana pun | **Anak Timbangan SELESAI** (#219 + mobile#192): kotak teks No. Identitas per keping, keyboard biasa. Alat lain: belum ada kebutuhan konkret |
+| 2 | "Standard Used" (centang neraca) dan dropdown "Neraca yang dipakai" ganda → gabung, tampilkan batas (maks/res), bisa tambah kalau tidak ada | **BELUM**. Rencana: neraca diturunkan dari centang standar lewat nomor seri (`TabelStandarAnakTimbangan` punya `no_seri`), dropdown dihapus, label centang memuat maks/res. Lalu sapu lembar lain yang punya pola ganda yang sama |
+| 3 | Jumlah pengulangan bisa 1–10, hasil olah data harus konsisten | **BELUM — butuh keputusan metode.** Di beberapa alat jumlah ulangan masuk budget (Type A, `n` di pembagi, `veff`); mengubahnya mengubah U95. Per alat harus diputuskan lab apakah n bebas atau terkunci IK. Pertanyaan lab baru |
+| 4 | Nomor seri per keping/per baris, satu lembar banyak seri | **Anak Timbangan SELESAI** (#219 + mobile#192): `measurements[].no_identitas` → `spesifikasi_alat.anak_timbangan.identitas[titik_ke]`. Alat lain: belum |
+| 5 | Draft dibuka ulang: tidak boleh ada angka berubah | **SELESAI** (mobile#191): akar masalahnya `IsianTeknisi.fromJson` meratakan blok `spesifikasi_alat` BERSARANG jadi satu teks. Berlaku ke semua alat yang bloknya bersarang. Tabel yang disimpan ke `spesifikasi_alat` (bukan `measurements`) belum dicek pulang-pergi |
+| 6 | UI mengikuti kertas — tabel berpasangan per nomor, bukan gulir naik-turun | **Anak Timbangan SELESAI** (#219 + mobile#192): `tampilan: kartu_per_baris`, cuma tampilan. Flowmeter (set point × 20"/40"/60"), Thermohygro (STD/UUT suhu & RH), Timbangan (Scale Obs./Accuracy z-m-m') belum; masing-masing perlu dibandingkan ke PDF formulirnya |
+| 7 | Kapasitas alat: bisa beberapa tabel, satuan custom per lembar | **BELUM — perlu diperjelas**: maksudnya multi-rentang (satu alat dua kapasitas/resolusi) atau beberapa alat dalam satu lembar? Di produksi kotak "Kapasitas Alat" Anak Timbangan diisi teks bebas (`1-500`, `1000,500,200,50`) |
+| 8 | Cek ulang olah data semua alat | Bukti terakhir: CI #218 menjalankan suite SQLite penuh (hijau); suite MySQL penuh terakhir 4 Okt (`4c0de53`, 5218/5218). Belum diulang untuk #218/#219 |
+
+**Temuan data nyata yang ikut terbawa (5 Okt):**
+
+- PR #218: koma desimal di kondisi ruangan Anak Timbangan dulu terbaca kosong, sehingga semua keping ditolak.
+- PR #218: nominal salah satuan (keping 20 g ditulis `20000`) dulu terhitung mulus sebagai keping 20 kg. Sekarang dua penjaga menolaknya: kapasitas neraca terpilih, dan bacaan standar yang menyimpang lebih dari separuh nominal.
+- Tabel densitas master tidak punya baris untuk:
+
+  | Kelas | Nominal yang kosong |
+  |---|---|
+  | E1 | semua |
+  | M3 | semua |
+  | M2 | 0,001–50 g |
+  | M1 | 0,001–0,5 g |
+  | F2 | 0,001–0,1 g |
+  | F1 | 0,001–0,05 g |
+  | E2 | 0,001; 0,002; 0,005; 0,02 g |
+
+  Ini **pertanyaan lab**, tidak boleh diisi dari pengetahuan umum OIML.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
