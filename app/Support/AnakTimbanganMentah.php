@@ -202,7 +202,7 @@ class AnakTimbanganMentah
      * koreksi apung yang tidak bersumber.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat  isi `calibration_sessions.spesifikasi_alat`
-     * @return array{kelas_uut: string|null, kelas_standar: string|null, timbangan: string|null, meter_lingkungan: string|null, kapasitas_g: float|null, suhu: array{awal: float|null, akhir: float|null}, kelembaban: array{awal: float|null, akhir: float|null}, tekanan: array{awal: float|null, akhir: float|null}, identitas: array<int, string>}|null
+     * @return array{kelas_uut: string|null, kelas_standar: string|null, timbangan: string|null, meter_lingkungan: string|null, kapasitas_g: float|null, kapasitas_min_g: float|null, suhu: array{awal: float|null, akhir: float|null}, kelembaban: array{awal: float|null, akhir: float|null}, tekanan: array{awal: float|null, akhir: float|null}, identitas: array<int, string>, bintang: list<int>}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -217,12 +217,44 @@ class AnakTimbanganMentah
             'kelas_standar' => self::kelas($blok['kelas_standar'] ?? null),
             'timbangan' => self::teks($blok['timbangan'] ?? null),
             'meter_lingkungan' => self::teks($blok['meter_lingkungan'] ?? null),
+            // Kapasitas Alat di kertas itu RENTANG ("dari … g sampai … g");
+            // `kapasitas_g` ujung atasnya, `kapasitas_min_g` ujung bawahnya.
             'kapasitas_g' => self::angka($blok['kapasitas_g'] ?? null),
+            'kapasitas_min_g' => self::angka($blok['kapasitas_min_g'] ?? null),
             'suhu' => self::pasangan($blok, 'suhu'),
             'kelembaban' => self::pasangan($blok, 'kelembaban'),
             'tekanan' => self::pasangan($blok, 'tekanan'),
             'identitas' => self::identitas($blok['identitas'] ?? null),
+            'bintang' => self::bintang($blok['bintang'] ?? null),
         ];
+    }
+
+    /**
+     * `titik_ke` keping yang nominalnya BERBINTANG (`20*`) — keping KEDUA dari
+     * pasangan bernominal sama, persis cara kertas membedakannya.
+     *
+     * Disimpan sebagai peta `{titik_ke: true}`; nilai yang tidak benar (false,
+     * "", "0") dibuang. Urut naik.
+     *
+     * @return list<int>
+     */
+    private static function bintang(mixed $nilai): array
+    {
+        if (! is_array($nilai)) {
+            return [];
+        }
+
+        $hasil = [];
+
+        foreach ($nilai as $titikKe => $ya) {
+            if (is_numeric($titikKe) && filter_var($ya, FILTER_VALIDATE_BOOLEAN)) {
+                $hasil[] = (int) $titikKe;
+            }
+        }
+
+        sort($hasil);
+
+        return $hasil;
     }
 
     /**

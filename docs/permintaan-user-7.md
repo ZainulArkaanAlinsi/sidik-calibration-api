@@ -4818,6 +4818,23 @@ adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
 
   Ini **pertanyaan lab**, tidak boleh diisi dari pengetahuan umum OIML.
 
+**Koreksi pemilik 6 Okt 2026 (dini hari), dikerjakan:**
+- **Bintang ikut NOMINAL**, bukan kotak samping: tombol ★ di kotak Nominal AT (`20*`), dikirim
+  sebagai `measurements[].bintang` → `spesifikasi_alat.anak_timbangan.bintang[titik_ke]`. Aturan
+  keping kembar diganti: yang ditolak cuma keping bernominal sama yang tidak bisa dibedakan (tanpa
+  bintang maupun No. Seri yang berbeda). Keputusan pemilik — menggantikan "kembar wajib No.
+  Identitas" (pertanyaan lab §11).
+- **Kotak samping = "No. Seri keping"** (bukan "No. Seri", label itu milik No. Seri alat).
+- **Kapasitas Alat = rentang**: `kapasitas_min_g` (dari) + `kapasitas_g` (sampai).
+- **#2 untuk Anak Timbangan SELESAI**: dropdown "Timbangan yang Dipakai" dihapus; neraca diturunkan
+  dari centang "Standard yang Digunakan" lewat nomor seri (`TabelStandarAnakTimbangan::
+  timbanganDariSeri`), label centang memuat maks/res, dan centang LEBIH DARI SATU neraca ditolak 422
+  (pola Enclosure #216).
+- Label kartu persis kertas: "Nominal AT", baris "Standard / UUT / UUT / Standard".
+- **Belum**: sertifikat Anak Timbangan masih tabel generik — No. Seri keping, bintang, kelas, dan
+  rentang kapasitas belum tercetak di PDF (audit 6 Okt). Dua kotak TH ("TH Used" + "Environmental
+  Meter Used") masih dobel.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

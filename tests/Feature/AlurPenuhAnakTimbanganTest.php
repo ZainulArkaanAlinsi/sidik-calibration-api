@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
+use App\Models\Standard;
 use App\Models\User;
 use App\Support\AnakTimbanganMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -348,6 +350,128 @@ class AlurPenuhAnakTimbanganTest extends TestCase
             [1, 2, 3],
             $sesi->uncertaintyCalculations()->orderBy('titik_ke')->pluck('titik_ke')->all(),
             'Kedua keping kembar 200 g (beridentitas) dan keping 100 g harus terbit.',
+        );
+    }
+
+    /**
+     * Kiriman tanpa `standard_id` (neraca dipilih lewat centang), dengan
+     * hasil [ubah] ditimpakan ke payload. [ubah] dipanggil SESUDAH seeder,
+     * supaya bisa menunjuk baris `standards` hasil seed. Balik respons mentahnya.
+     *
+     * @param  \Closure(): array<string, mixed>  $ubah
+     */
+    private function kirimMentah(\Closure $ubah): TestResponse
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $contoh = CalibrationSession::where('nomor_sesi', 'DEMO-AT-001')->firstOrFail();
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+
+        return $this->actingAs($teknisi)->postJson('/api/calibrations', array_replace([
+            'equipment_id' => $contoh->equipment_id,
+            'thermohygro_standard_id' => $contoh->thermohygro_standard_id,
+            'tanggal_kalibrasi' => '2026-09-11',
+            'suhu_awal' => 23.1,
+            'suhu_akhir' => 23.0,
+            'kelembaban_awal' => 55.0,
+            'kelembaban_akhir' => 56.0,
+            'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => self::blokSesi()],
+            'measurements' => self::keping(),
+        ], $ubah()));
+    }
+
+    /** @return array{standard_id: int, dipakai: bool} */
+    private static function centang(string $seri): array
+    {
+        return ['standard_id' => Standard::where('serial_number', $seri)->firstOrFail()->id, 'dipakai' => true];
+    }
+
+    /**
+     * Bintang di NOMINAL (`20*`) — cara kertas membedakan keping kedua —
+     * mendarat di `bintang[titik_ke]`, dan dua keping kembar 200 g / 200* g
+     * terbit tanpa No. Seri.
+     */
+    public function test_bintang_nominal_dipetakan_ke_titik_dan_kembar_berbintang_terbit(): void
+    {
+        $abba = static fn (float $s, float $t): array => [
+            'at_s1' => [$s, $s, $s], 'at_t1' => [$t, $t, $t],
+            'at_t2' => [$t, $t, $t], 'at_s2' => [$s, $s, $s],
+        ];
+
+        $sesi = $this->kirim(keping: [
+            ['titik_ukur' => 200.0, 'bintang' => false, ...$abba(199.9999, 199.9999)],
+            ['titik_ukur' => 50.0, 'bintang' => true, 'at_s1' => [], 'at_t1' => [], 'at_t2' => [], 'at_s2' => []],
+            ['titik_ukur' => 200.0, 'bintang' => true, ...$abba(199.9999, 200.0001)],
+        ]);
+
+        $this->assertEquals(
+            [2 => true],
+            $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['bintang'],
+            'Bintang tidak mendarat di titik_ke yang benar (baris kosong tidak boleh memakan nomor).',
+        );
+        $this->assertSame(
+            [1, 2],
+            $sesi->uncertaintyCalculations()->orderBy('titik_ke')->pluck('titik_ke')->all(),
+            'Keping 200 g dan 200* g harus terbit tanpa No. Seri.',
+        );
+    }
+
+    /**
+     * Neraca diturunkan dari CENTANG "Standard yang Digunakan" lewat nomor
+     * seri — dan menang atas isian `timbangan` lama di blok sesi.
+     */
+    public function test_neraca_diambil_dari_centang_standar(): void
+    {
+        $blok = self::blokSesi();
+        $blok['timbangan'] = 'Electronic Balance Fujitsu';
+
+        $respons = $this->kirimMentah(fn (): array => [
+            'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => $blok],
+            'standar_dicek' => [self::centang('1129063525')],
+        ])->assertCreated();
+
+        $sesi = CalibrationSession::findOrFail($respons->json('data.id'));
+
+        $this->assertSame(
+            'Analytical Balance',
+            $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['timbangan'],
+        );
+        $this->assertCount(2, $sesi->uncertaintyCalculations()->get());
+    }
+
+    /** Dua neraca dicentang: kiriman ditolak 422 dengan nama & S/N keduanya. */
+    public function test_dua_neraca_dicentang_ditolak(): void
+    {
+        $pesan = (string) $this->kirimMentah(fn (): array => [
+            'standar_dicek' => [self::centang('1129063525'), self::centang('C543502629')],
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('standar_dicek')
+            ->json('errors.standar_dicek.0');
+
+        $this->assertStringContainsString('Centang SATU neraca', $pesan);
+        $this->assertStringContainsString('1129063525', $pesan);
+        $this->assertStringContainsString('C543502629', $pesan);
+    }
+
+    /**
+     * Kapasitas Alat itu RENTANG (dari … sampai … g): ujung bawahnya tersimpan
+     * di `kapasitas_min_g`, koma desimalnya dibakukan.
+     */
+    public function test_kapasitas_alat_tersimpan_sebagai_rentang(): void
+    {
+        $blok = self::blokSesi();
+        $blok['kapasitas_min_g'] = '0,001';
+        $blok['kapasitas_g'] = '500';
+
+        $sesi = $this->kirim($blok);
+        $simpan = $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI];
+
+        $this->assertSame('0.001', $simpan['kapasitas_min_g']);
+        $this->assertEqualsWithDelta(
+            0.001,
+            AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat)['kapasitas_min_g'],
+            1e-12,
         );
     }
 
