@@ -788,6 +788,16 @@ class AnakTimbanganProfile extends CalibrationProfile
                     ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                 ],
                 'pengulangan' => range(1, self::PENGULANGAN),
+                // No. Identitas / seri per KEPING — teks bebas, jadi tanda
+                // bintang keping kedua (`20*`) atau nomor seri bisa diketik dari
+                // keyboard HP mana pun. Cuma di tabel S1: satu keping satu
+                // identitas, dan tabel pertama yang jadi acuan baris di HP.
+                // `CalibrationRequest` memetakannya ke
+                // `spesifikasi_alat.anak_timbangan.identitas[titik_ke]` — kunci
+                // yang sudah dibaca kalkulator (keping kembar) dan sertifikat.
+                'kolom_baris' => $peran === AnakTimbanganMentah::PERAN_S1
+                    ? [$this->field('no_identitas', 'No. Identitas / Seri keping', 'teks')]
+                    : [],
             ];
         }
 
@@ -795,6 +805,13 @@ class AnakTimbanganProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 1,
             'judul' => 'Data Hasil Kalibrasi',
+            // Tampilan saja: HP menggambar SATU KARTU PER KEPING — Nominal AT,
+            // No. Identitas, lalu Standard/UUT/UUT/Standard × X1–X3 — persis
+            // susunan kertas SIDIK-FM-CAL-0541, bukan empat tabel peran yang
+            // harus digulir naik-turun (laporan lapangan 5 Okt 2026). Kotak
+            // dan payload-nya tetap empat tabel di bawah; klien lama yang tidak
+            // mengenal kunci ini menggambar tabelnya seperti biasa.
+            'tampilan' => 'kartu_per_baris',
             'field' => [],
             'tabel' => $tabel,
         ];

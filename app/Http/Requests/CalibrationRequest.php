@@ -711,9 +711,22 @@ class CalibrationRequest extends FormRequest
     {
         $spek = (array) $this->input('spesifikasi_alat', []);
         $blok = $spek[AnakTimbanganMentah::KUNCI_SESI] ?? null;
+        $identitas = $this->identitasKepingDariBaris();
 
-        if (! is_array($blok)) {
+        if (! is_array($blok) && $identitas === null) {
             return;
+        }
+
+        $blok = is_array($blok) ? $blok : [];
+
+        // No. Identitas per keping dikirim HP per BARIS (`measurements[i]
+        // .no_identitas`), tapi disimpan per `titik_ke` — nomor yang baru lahir
+        // sesudah baris tanpa bacaan dibuang. Diterjemahkan di sini dengan aturan
+        // penomoran yang SAMA dengan `CalibrationController::
+        // susunBlokAnakTimbangan()`; kalau keduanya berselisih, identitas
+        // keping lain yang tercetak di sertifikat.
+        if ($identitas !== null) {
+            $blok['identitas'] = $identitas;
         }
 
         foreach ([
@@ -730,6 +743,56 @@ class CalibrationRequest extends FormRequest
         $spek[AnakTimbanganMentah::KUNCI_SESI] = $blok;
 
         $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * `titik_ke` → No. Identitas dari `measurements[].no_identitas`, atau
+     * `null` kalau tidak satu baris pun membawa kunci itu (klien lama — identitas
+     * yang sudah tersimpan dibiarkan).
+     *
+     * Baris dihitung sebagai keping kalau salah satu peran ABBA-nya punya angka,
+     * persis saringan `$adaPembacaan` di jalur simpan. Identitas di baris yang
+     * tidak jadi keping dibuang bersama barisnya.
+     *
+     * @return array<int, string>|null
+     */
+    private function identitasKepingDariBaris(): ?array
+    {
+        $baris = array_values((array) $this->input('measurements', []));
+        $adaKunci = false;
+        $hasil = [];
+        $titikKe = 0;
+
+        foreach ($baris as $b) {
+            if (! is_array($b)) {
+                continue;
+            }
+
+            $adaKunci = $adaKunci || array_key_exists('no_identitas', $b);
+
+            $adaPembacaan = false;
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                foreach ((array) ($b[$peran] ?? []) as $nilai) {
+                    if ($nilai !== null && $nilai !== '' && is_numeric($nilai)) {
+                        $adaPembacaan = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if (! $adaPembacaan) {
+                continue;
+            }
+
+            $titikKe++;
+            $penanda = is_string($b['no_identitas'] ?? null) ? trim($b['no_identitas']) : '';
+
+            if ($penanda !== '') {
+                $hasil[$titikKe] = $penanda;
+            }
+        }
+
+        return $adaKunci ? $hasil : null;
     }
 
     private function bakukanBlokSieve(): void
