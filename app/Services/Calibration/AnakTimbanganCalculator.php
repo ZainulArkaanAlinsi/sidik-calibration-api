@@ -142,7 +142,7 @@ class AnakTimbanganCalculator
 
         if ($timbangan === null) {
             $kurang[] = $namaTimbangan === null
-                ? 'neraca yang dipakai'
+                ? 'neraca yang dipakai (centang SATU neraca di Standard yang Digunakan)'
                 : "neraca '{$namaTimbangan}' nggak ada di tabel standar";
         }
 
@@ -162,6 +162,17 @@ class AnakTimbanganCalculator
         $rhoUdara = $this->densitasUdara($suhu, $rh, $tekanan);
         $kembar = TabelStandarAnakTimbangan::kepingKembar();
         $identitas = $konteks['identitas'] ?? [];
+        $berbintang = array_flip(array_map('intval', $konteks['bintang'] ?? []));
+
+        // Tanda pembeda tiap keping = nominal + bintang + No. Seri keping. Dua
+        // keping bernominal kembar dengan tanda yang sama tidak bisa dibedakan.
+        $kunciTanda = static fn (array $t): string => sprintf('%.9F', (float) $t['nominal_g'])
+            .'|'.(isset($berbintang[(int) $t['titik_ke']]) ? '*' : '')
+            .'|'.($identitas[(int) $t['titik_ke']] ?? '');
+        $jumlahTanda = [];
+        foreach ($titik as $t) {
+            $jumlahTanda[$kunciTanda($t)] = ($jumlahTanda[$kunciTanda($t)] ?? 0) + 1;
+        }
         $msPertama = self::msKepingPertama($titik);
         $hasil = [];
 
@@ -267,12 +278,19 @@ class AnakTimbanganCalculator
                 continue;
             }
 
-            if (self::adaDiDaftar($nominal, $kembar) && ! isset($identitas[$titikKe])) {
+            // Keping KEMBAR dibedakan seperti di kertas: keping kedua berbintang
+            // (`20*`), atau No. Seri keping yang berbeda. Yang ditolak cuma
+            // keping yang tanda-nya PERSIS sama dengan keping lain bernominal
+            // sama di sesi ini — dua baris sertifikat yang tidak bisa dipetakan
+            // pelanggan ke keping fisiknya (pertanyaan lab §11). Keputusan
+            // pemilik 6 Okt 2026: bintang di nominal cukup sebagai pembeda,
+            // menggantikan aturan lama "kembar wajib No. Identitas".
+            if (self::adaDiDaftar($nominal, $kembar) && ($jumlahTanda[$kunciTanda($t)] ?? 0) > 1) {
                 $tolak(sprintf(
-                    'Titik %d: nominal %s g punya lebih dari satu keping di set ini, jadi `no_identitas` '
-                    .'wajib diisi. Tanpa penanda, dua baris sertifikat bernominal sama nggak bisa '
-                    .'dipetakan pelanggan ke kepingnya (pertanyaan lab §11).',
+                    'Titik %d: ada lebih dari satu keping %s g yang tidak bisa dibedakan. Beri bintang di '
+                    .'nominal keping kedua (%s*) atau isi No. Seri keping yang berbeda.',
                     $titikKe,
+                    self::angka($nominal),
                     self::angka($nominal),
                 ));
 
@@ -324,6 +342,7 @@ class AnakTimbanganCalculator
                 'titik_ke' => $titikKe,
                 'nominal_g' => $nominal,
                 'no_identitas' => $identitas[$titikKe] ?? null,
+                'bintang' => isset($berbintang[$titikKe]),
                 'keping_standar' => $keping,
                 'rho_uut' => $rhoUut,
                 'rho_standar' => $rhoStd,

@@ -10,6 +10,7 @@ use App\Services\Calibration\AnakTimbanganCalculator;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Support\AnakTimbanganMentah;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Kalibrasi **Anak Timbangan** (OIML R111) — alat ke-29, dan yang KEDUA di
@@ -155,6 +156,38 @@ class AnakTimbanganProfile extends CalibrationProfile
     public function namaAlatKemampuan(): string
     {
         return 'Anak Timbangan';
+    }
+
+    /**
+     * Kiriman yang mencentang LEBIH DARI SATU neraca ditolak, dengan nama dan
+     * nomor seri tiap neraca.
+     *
+     * Neraca sesi diturunkan dari centang (`CalibrationRequest::
+     * neracaDariCentang()`), dan satu sesi memakai SATU neraca: di master
+     * kedua puluh keping ditimbang di neraca yang sama, dan neraca memasok dua
+     * dari enam komponen budget tiap keping. Aplikasi tidak memilih sendiri —
+     * preseden yang sama dengan dua kalibrator Enclosure (PR #216). Data nyata
+     * 5 Okt 2026: sesi KAL/2026/10/0003 mencentang tiga neraca sekaligus.
+     *
+     * Centang keping standar (bukan neraca) tidak dihitung di sini.
+     */
+    public function masalahCentangStandar(Collection $dicentang): ?string
+    {
+        $neraca = $dicentang
+            ->filter(fn (Standard $s): bool => TabelStandarAnakTimbangan::timbanganDariSeri($s->serial_number) !== null)
+            ->values();
+
+        if ($neraca->count() < 2) {
+            return null;
+        }
+
+        return sprintf(
+            'Centang SATU neraca saja. Yang tercentang "Dipakai" ada %d: %s. Satu sesi Anak Timbangan '
+            .'ditimbang di satu neraca (keterulangan dan resolusinya masuk budget tiap keping), jadi '
+            .'aplikasi tidak memilih sendiri — lepas centang neraca yang tidak dipakai, lalu kirim lagi.',
+            $neraca->count(),
+            $neraca->map(fn (Standard $s): string => sprintf('%s (S/N %s)', $s->nama, $s->serial_number))->implode(', '),
+        );
     }
 
     /**
@@ -581,17 +614,18 @@ class AnakTimbanganProfile extends CalibrationProfile
                 .'jadi baris yang tertukar membalik arah koreksi kepingnya tanpa satu pun error. '
                 .'TEKANAN UDARA wajib diisi walau kertas Rev.0 belum punya kolomnya — tanpa tekanan, '
                 .'densitas udara tidak bisa dihitung dan koreksi apung seluruh keping hilang. Keping '
-                .'yang nominalnya KEMBAR (dua 200 g, dua 20 g, dua 2 g, dua 0,2 g, dua 0,02 g) wajib '
-                .'diberi No. Identitas — tanpa itu pelanggan tidak bisa memetakan sertifikat ke keping '
-                .'fisiknya, dan titiknya tidak akan diterbitkan.',
+                .'yang nominalnya KEMBAR (dua 200 g, dua 20 g, dua 2 g, dua 0,2 g, dua 0,02 g) dibedakan '
+                .'seperti di kertas: keping kedua diberi BINTANG di nominalnya (20*), atau isi No. Seri '
+                .'keping yang berbeda — dua keping yang tidak bisa dibedakan tidak diterbitkan. Neraca '
+                .'dipilih lewat centang di Standard yang Digunakan, SATU neraca per sesi.',
             'budget_ketidakpastian' => [
                 'tersedia' => true,
                 'sumber' => '1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx',
                 'catatan' => 'Enam komponen per keping dalam miligram, mengikuti OIML R111. TANPA lantai '
                     .'CMC — kalibrasi anak timbangan di luar lampiran LK-285-IDN, dan sel lantai '
                     .'masternya memang kosong di kedua puluh blok. Titik yang densitasnya tidak ada di '
-                    .'tabel, yang |de|-nya melebihi 10x MPE, atau yang keping kembarnya belum diberi '
-                    .'No. Identitas TIDAK diterbitkan.',
+                    .'tabel, yang |de|-nya melebihi 10x MPE, atau keping kembar yang tidak bisa '
+                    .'dibedakan (tanpa bintang maupun No. Seri keping yang berbeda) TIDAK diterbitkan.',
             ],
             'bagian' => [
                 $this->bagianIdentitas(),
@@ -616,20 +650,6 @@ class AnakTimbanganProfile extends CalibrationProfile
             AnakTimbanganMentah::KELAS,
         );
 
-        $timbangan = array_map(
-            static fn (array $t): array => [
-                'nilai' => $t['nama'],
-                'label' => sprintf(
-                    '%s — %s (maks %s g, res %s g)',
-                    $t['nama'],
-                    $t['merk_tipe'],
-                    rtrim(rtrim(number_format((float) $t['kapasitas_g'], 2, ',', '.'), '0'), ','),
-                    rtrim(number_format((float) $t['resolusi_g'], 5, ',', '.'), '0'),
-                ),
-            ],
-            TabelStandarAnakTimbangan::semuaTimbangan(),
-        );
-
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
@@ -649,13 +669,19 @@ class AnakTimbanganProfile extends CalibrationProfile
                     pilihan: $kelas,
                 ),
                 $this->field('alat_serial_number', 'No. Seri', 'teks'),
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat', 'angka', satuan: self::SATUAN),
+                // Kapasitas Alat di kertas itu RENTANG set ("1 mg – 500 g"). Satu
+                // kotak angka membuat teknisi mengetik "1-500" dan
+                // "1000,500,200,50" di produksi (5 Okt 2026) — dua-duanya tidak
+                // terbaca sebagai angka.
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat — dari', 'angka', satuan: self::SATUAN),
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat — sampai', 'angka', satuan: self::SATUAN),
                 $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
                 $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
-                $this->field(
-                    'spesifikasi_alat.anak_timbangan.timbangan', 'Timbangan yang Dipakai', 'pilihan',
-                    pilihan: $timbangan,
-                ),
+                // Neraca TIDAK lagi dipilih di sini. Kertas memilihnya lewat
+                // centang "Standard yang Digunakan"; dropdown kedua di sini dulu
+                // tidak terhubung ke centang itu, jadi teknisi bisa mencentang
+                // satu neraca sementara hitungan memakai yang lain.
+                // `CalibrationRequest::neracaDariCentang()` yang mengisinya.
                 $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
                 $this->field(
                     'spesifikasi_alat.anak_timbangan.meter_lingkungan', 'TH Used', 'pilihan',
@@ -713,7 +739,23 @@ class AnakTimbanganProfile extends CalibrationProfile
             'kode' => 'usage_check',
             'halaman' => 1,
             'judul' => 'Standard Used',
-            'baris' => self::STANDARD_TERCETAK,
+            // Neraca dipilih DI SINI (centang), jadi batasnya ikut tertulis —
+            // teknisi tidak perlu menebak neraca mana yang sanggup memikul
+            // keping terbesarnya.
+            'baris' => array_map(static function (array $b): array {
+                $cocok = $b['cocok'];
+                $neraca = TabelStandarAnakTimbangan::timbanganDariSeri((string) end($cocok));
+
+                if ($neraca !== null) {
+                    $b['label'] .= sprintf(
+                        ' (maks %s g, res %s g)',
+                        rtrim(rtrim(number_format((float) $neraca['kapasitas_g'], 2, ',', '.'), '0'), ','),
+                        rtrim(number_format((float) $neraca['resolusi_g'], 5, ',', '.'), '0'),
+                    );
+                }
+
+                return $b;
+            }, self::STANDARD_TERCETAK),
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
                 $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
@@ -788,15 +830,19 @@ class AnakTimbanganProfile extends CalibrationProfile
                     ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                 ],
                 'pengulangan' => range(1, self::PENGULANGAN),
-                // No. Identitas / seri per KEPING — teks bebas, jadi tanda
-                // bintang keping kedua (`20*`) atau nomor seri bisa diketik dari
-                // keyboard HP mana pun. Cuma di tabel S1: satu keping satu
-                // identitas, dan tabel pertama yang jadi acuan baris di HP.
+                // No. Seri per KEPING — teks bebas, karena satu set bisa berisi
+                // keping dari beberapa seri. Cuma di tabel S1: satu keping satu
+                // nomor seri, dan tabel pertama yang jadi acuan baris di HP.
                 // `CalibrationRequest` memetakannya ke
-                // `spesifikasi_alat.anak_timbangan.identitas[titik_ke]` — kunci
-                // yang sudah dibaca kalkulator (keping kembar) dan sertifikat.
+                // `spesifikasi_alat.anak_timbangan.identitas[titik_ke]`. Tanda
+                // BINTANG keping kedua (`20*`) bukan di sini — dia ikut NOMINAL,
+                // seperti di kertas (`measurements[].bintang`).
+                //
+                // "No. Seri keping", bukan "No. Seri" — label itu sudah milik
+                // No. Seri ALAT di bagian identitas, dan dua kotak berlabel sama
+                // di satu layar membuat teknisi mengisi yang salah.
                 'kolom_baris' => $peran === AnakTimbanganMentah::PERAN_S1
-                    ? [$this->field('no_identitas', 'No. Identitas / Seri keping', 'teks')]
+                    ? [$this->field('no_identitas', 'No. Seri keping', 'teks')]
                     : [],
             ];
         }
@@ -855,12 +901,13 @@ class AnakTimbanganProfile extends CalibrationProfile
         $budget[] = [
             'sumber' => 'jejak_titik',
             'keterangan' => sprintf(
-                'Keping %s g%s · massa standar %s g · de %s g · koreksi apung %s g '
+                'Keping %s%s g%s · massa standar %s g · de %s g · koreksi apung %s g '
                 .'(jalur master %s g, selisih %s mg — pertanyaan lab §2) · massa konvensional %s g · '
                 .'densitas UUT %s / standar %s kg/m3 · densitas udara %s kg/m3 dari T %s °C, RH %s %%, '
                 .'P %s hPa (rata-rata MENTAH — pertanyaan lab §13) · U95 %s g tanpa lantai CMC',
                 $this->angka($h['nominal_g']),
-                $h['no_identitas'] === null ? '' : ' ('.$h['no_identitas'].')',
+                ($h['bintang'] ?? false) ? '*' : '',
+                $h['no_identitas'] === null ? '' : ' (No. Seri '.$h['no_identitas'].')',
                 $this->angka($h['ms_g']),
                 $this->angka($h['de_g']),
                 $this->angka($h['b_g']),

@@ -8,9 +8,11 @@ use App\Models\Standard;
 use App\Rules\AngkaTerhingga;
 use App\Rules\PenunjukanWaktu;
 use App\Services\Calibration\CalibrationProfileRegistry;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
+use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
 use App\Support\AnakTimbanganMentah;
@@ -711,26 +713,47 @@ class CalibrationRequest extends FormRequest
     {
         $spek = (array) $this->input('spesifikasi_alat', []);
         $blok = $spek[AnakTimbanganMentah::KUNCI_SESI] ?? null;
-        $identitas = $this->identitasKepingDariBaris();
+        $alat = $this->alatAnakTimbangan();
 
-        if (! is_array($blok) && $identitas === null) {
+        // Penanda per keping & neraca dari centang cuma milik lembar Anak
+        // Timbangan. Lembar deret-bernama lain (Flowmeter, Hydrometer) ikut
+        // mengirim kunci per baris dari jalur HP yang sama; tanpa saringan ini
+        // sesi mereka mendapat blok `anak_timbangan` yang tidak pernah diisi.
+        ['identitas' => $identitas, 'bintang' => $bintang] = $alat !== null
+            ? $this->perKepingDariBaris()
+            : ['identitas' => null, 'bintang' => null];
+        $neraca = $alat !== null ? $this->neracaDariCentang($alat) : null;
+
+        if (! is_array($blok) && $identitas === null && $bintang === null && $neraca === null) {
             return;
         }
 
         $blok = is_array($blok) ? $blok : [];
 
-        // No. Identitas per keping dikirim HP per BARIS (`measurements[i]
-        // .no_identitas`), tapi disimpan per `titik_ke` — nomor yang baru lahir
-        // sesudah baris tanpa bacaan dibuang. Diterjemahkan di sini dengan aturan
-        // penomoran yang SAMA dengan `CalibrationController::
-        // susunBlokAnakTimbangan()`; kalau keduanya berselisih, identitas
-        // keping lain yang tercetak di sertifikat.
+        // No. Seri keping dan bintang nominal dikirim HP per BARIS
+        // (`measurements[i].no_identitas` / `.bintang`), tapi disimpan per
+        // `titik_ke` — nomor yang baru lahir sesudah baris tanpa bacaan dibuang.
+        // Diterjemahkan di sini dengan aturan penomoran yang SAMA dengan
+        // `CalibrationController::susunBlokAnakTimbangan()`; kalau keduanya
+        // berselisih, penanda keping lain yang menempel di titik itu.
         if ($identitas !== null) {
             $blok['identitas'] = $identitas;
         }
 
+        if ($bintang !== null) {
+            $blok['bintang'] = $bintang;
+        }
+
+        // Neraca dari CENTANG "Standard yang Digunakan" — cara kertas memilihnya.
+        // Menang atas isian `timbangan` lama: dua sumber yang tidak terhubung
+        // pernah membuat teknisi mencentang satu neraca sementara hitungan
+        // memakai neraca lain dari dropdown.
+        if ($neraca !== null) {
+            $blok['timbangan'] = $neraca;
+        }
+
         foreach ([
-            'kapasitas_g',
+            'kapasitas_g', 'kapasitas_min_g',
             'suhu_awal', 'suhu_akhir',
             'kelembaban_awal', 'kelembaban_akhir',
             'tekanan_awal', 'tekanan_akhir',
@@ -746,21 +769,67 @@ class CalibrationRequest extends FormRequest
     }
 
     /**
-     * `titik_ke` → No. Identitas dari `measurements[].no_identitas`, atau
-     * `null` kalau tidak satu baris pun membawa kunci itu (klien lama — identitas
-     * yang sudah tersimpan dibiarkan).
+     * Nama neraca (kunci tabel standar) dari centang "Standard yang Digunakan",
+     * atau `null` kalau bukan lembar Anak Timbangan, tidak ada neraca tercentang,
+     * atau tercentang LEBIH DARI SATU (kiriman itu ditolak validasi lewat
+     * `AnakTimbanganProfile::masalahCentangStandar()`; draft dibiarkan).
+     *
+     * Dicocokkan lewat NOMOR SERI (`TabelStandarAnakTimbangan::timbanganDariSeri`),
+     * bukan nama.
+     */
+    private function neracaDariCentang(Equipment $alat): ?string
+    {
+        if (! $this->has('standar_dicek')) {
+            return null;
+        }
+
+        $neraca = StandarDicentang::dari($this, $alat)
+            ->map(fn (Standard $s): ?array => TabelStandarAnakTimbangan::timbanganDariSeri($s->serial_number))
+            ->filter()
+            ->pluck('nama')
+            ->unique()
+            ->values();
+
+        return $neraca->count() === 1 ? (string) $neraca->first() : null;
+    }
+
+    /**
+     * Alat request ini kalau profilnya Anak Timbangan, selain itu `null`.
+     *
+     * `equipment_id` dari body (simpan baru), atau alat sesi di rute (ubah).
+     */
+    private function alatAnakTimbangan(): ?Equipment
+    {
+        $sesi = $this->route('calibration');
+        $alat = $this->filled('equipment_id')
+            ? Equipment::find($this->integer('equipment_id'))
+            : ($sesi instanceof CalibrationSession ? $sesi->equipment : null);
+
+        return $alat instanceof Equipment
+            && app(CalibrationProfileRegistry::class)->untukAlat($alat) instanceof AnakTimbanganProfile
+            ? $alat
+            : null;
+    }
+
+    /**
+     * Penanda per KEPING dari `measurements[]`, sudah dipetakan ke `titik_ke`:
+     * `identitas` (No. Seri keping, `no_identitas`) dan `bintang` (nominal
+     * `20*`, `bintang`). Masing-masing `null` kalau tidak satu baris pun membawa
+     * kuncinya (klien lama — yang sudah tersimpan dibiarkan).
      *
      * Baris dihitung sebagai keping kalau salah satu peran ABBA-nya punya angka,
-     * persis saringan `$adaPembacaan` di jalur simpan. Identitas di baris yang
+     * persis saringan `$adaPembacaan` di jalur simpan. Penanda di baris yang
      * tidak jadi keping dibuang bersama barisnya.
      *
-     * @return array<int, string>|null
+     * @return array{identitas: array<int, string>|null, bintang: array<int, true>|null}
      */
-    private function identitasKepingDariBaris(): ?array
+    private function perKepingDariBaris(): array
     {
         $baris = array_values((array) $this->input('measurements', []));
         $adaKunci = false;
+        $adaKunciBintang = false;
         $hasil = [];
+        $bintang = [];
         $titikKe = 0;
 
         foreach ($baris as $b) {
@@ -769,6 +838,7 @@ class CalibrationRequest extends FormRequest
             }
 
             $adaKunci = $adaKunci || array_key_exists('no_identitas', $b);
+            $adaKunciBintang = $adaKunciBintang || array_key_exists('bintang', $b);
 
             $adaPembacaan = false;
             foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
@@ -790,9 +860,16 @@ class CalibrationRequest extends FormRequest
             if ($penanda !== '') {
                 $hasil[$titikKe] = $penanda;
             }
+
+            if (filter_var($b['bintang'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                $bintang[$titikKe] = true;
+            }
         }
 
-        return $adaKunci ? $hasil : null;
+        return [
+            'identitas' => $adaKunci ? $hasil : null,
+            'bintang' => $adaKunciBintang ? $bintang : null,
+        ];
     }
 
     private function bakukanBlokSieve(): void

@@ -186,6 +186,35 @@ class TabelStandarAnakTimbangan
     }
 
     /**
+     * Neraca bernomor seri [seri], atau `null` kalau tidak ada.
+     *
+     * Kertas SIDIK-FM-CAL-0541 memilih neraca lewat CENTANG di "Standard yang
+     * Digunakan", bukan lewat daftar terpisah. Centang itu menunjuk baris
+     * `standards`, dan yang mengikat baris itu ke tabel neraca ini nomor
+     * serinya — namanya beda tulis antar-sumber ("Electronic Balance  Mettler"
+     * dua spasi), serinya tidak. Spasi dan huruf besar-kecil diabaikan.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function timbanganDariSeri(?string $seri): ?array
+    {
+        $rapi = static fn (string $x): string => strtolower((string) preg_replace('/\s+/u', '', $x));
+        $dicari = $rapi((string) $seri);
+
+        if ($dicari === '') {
+            return null;
+        }
+
+        foreach (self::data()['timbangan'] as $baris) {
+            if ($rapi((string) $baris['no_seri']) === $dicari) {
+                return self::timbangan((string) $baris['nama']);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Neraca TERKECIL yang masih sanggup memikul sebuah nominal, atau `null`
      * kalau tidak ada yang cukup.
      *

@@ -139,7 +139,54 @@ class AnakTimbanganGerbangTest extends TestCase
      * sama-sama `-`, persis seperti di sertifikat master.
      */
     #[Test]
-    public function keping_kembar_tanpa_penanda_ditolak_lalu_terbit_begitu_diberi_penanda(): void
+    public function keping_kembar_tanpa_pembeda_ditolak_lalu_terbit_begitu_dibedakan(): void
+    {
+        $keping = static fn (int $ke): array => [
+            'titik_ke' => $ke,
+            'nominal_g' => 200.0,
+            'at_s1' => 199.9999,
+            'at_t1' => 199.9999,
+            'at_t2' => 199.9999,
+            'at_s2' => 199.9999,
+        ];
+        $titik = [$keping(1), $keping(2)];
+
+        // Dua keping 200 g tanpa bintang maupun No. Seri: tidak bisa dibedakan.
+        $tanpa = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
+
+        $this->assertSame([], $tanpa['titik']);
+        $this->assertCount(2, $tanpa['ditolak']);
+        $this->assertStringContainsString('tidak bisa dibedakan', $tanpa['ditolak'][0]['alasan']);
+        $this->assertStringContainsString('200*', $tanpa['ditolak'][0]['alasan']);
+
+        // Keping kedua berbintang — cara kertas membedakannya.
+        $konteks = self::KONTEKS;
+        $konteks['bintang'] = [2];
+
+        $berbintang = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
+
+        $this->assertCount(2, $berbintang['titik']);
+        $this->assertSame([], $berbintang['ditolak']);
+        $this->assertFalse($berbintang['titik'][0]['bintang']);
+        $this->assertTrue($berbintang['titik'][1]['bintang']);
+
+        // Atau No. Seri keping yang berbeda.
+        $konteks = self::KONTEKS;
+        $konteks['identitas'] = [1 => 'SN-A', 2 => 'SN-B'];
+
+        $berseri = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
+
+        $this->assertCount(2, $berseri['titik']);
+        $this->assertSame('SN-B', $berseri['titik'][1]['no_identitas']);
+    }
+
+    /**
+     * Satu keping bernominal kembar yang dikalibrasi SENDIRIAN tidak ditolak:
+     * tanpa bintang dia keping pertama, dan tidak ada keping lain bernominal sama
+     * di sesi ini yang bisa tertukar dengannya.
+     */
+    #[Test]
+    public function keping_kembar_sendirian_tidak_ditolak(): void
     {
         $titik = [[
             'titik_ke' => 1,
@@ -150,19 +197,10 @@ class AnakTimbanganGerbangTest extends TestCase
             'at_s2' => 199.9999,
         ]];
 
-        $tanpa = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
 
-        $this->assertSame([], $tanpa['titik']);
-        $this->assertStringContainsString('no_identitas', $tanpa['ditolak'][0]['alasan']);
-
-        $konteks = self::KONTEKS;
-        $konteks['identitas'] = [1 => 'AT-200-1'];
-
-        $dengan = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
-
-        $this->assertCount(1, $dengan['titik']);
-        $this->assertSame([], $dengan['ditolak']);
-        $this->assertSame('AT-200-1', $dengan['titik'][0]['no_identitas']);
+        $this->assertCount(1, $hasil['titik']);
+        $this->assertSame([], $hasil['ditolak']);
     }
 
     /**
