@@ -111,8 +111,11 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         ];
     }
 
-    /** @param  array<string, mixed>|null  $blok  blok sesi; default [blokSesi] */
-    private function kirim(?array $blok = null): CalibrationSession
+    /**
+     * @param  array<string, mixed>|null  $blok  blok sesi; default [blokSesi]
+     * @param  list<array<string, mixed>>|null  $keping  default [keping]
+     */
+    private function kirim(?array $blok = null, ?array $keping = null): CalibrationSession
     {
         $this->seed(DatabaseSeeder::class);
 
@@ -131,7 +134,7 @@ class AlurPenuhAnakTimbanganTest extends TestCase
                 'kelembaban_awal' => 55.0,
                 'kelembaban_akhir' => 56.0,
                 'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => $blok ?? self::blokSesi()],
-                'measurements' => self::keping(),
+                'measurements' => $keping ?? self::keping(),
             ])
             ->assertCreated()
             ->json('data.id');
@@ -305,6 +308,63 @@ class AlurPenuhAnakTimbanganTest extends TestCase
             '933.2',
             $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['tekanan_awal'],
             'Koma di blok Anak Timbangan tidak dibakukan sebelum disimpan.',
+        );
+    }
+
+    /**
+     * No. Identitas per keping dari HP (`measurements[].no_identitas`) mendarat
+     * di `identitas[titik_ke]`, dan keping KEMBAR yang diberi identitas terbit.
+     *
+     * Sebelum ini lembar HP tidak punya kotak identitas sama sekali, jadi set
+     * yang punya keping kembar (2 g + 2 g, 20 g + 20 g, 200 g + 200 g — hampir
+     * semua set) tidak pernah bisa menerbitkan titik kembarnya.
+     *
+     * Baris kosong di tengah membawa identitas `X`: barisnya tidak jadi keping,
+     * identitasnya ikut dibuang, dan keping sesudahnya TIDAK bergeser nomor.
+     */
+    public function test_identitas_per_keping_dipetakan_ke_titik_dan_keping_kembar_terbit(): void
+    {
+        $abba = static fn (float $s, float $t): array => [
+            'at_s1' => [$s, $s, $s],
+            'at_t1' => [$t, $t, $t],
+            'at_t2' => [$t, $t, $t],
+            'at_s2' => [$s, $s, $s],
+        ];
+
+        $sesi = $this->kirim(keping: [
+            ['titik_ukur' => 200.0, 'no_identitas' => 'A', ...$abba(199.9999, 199.9999)],
+            ['titik_ukur' => 50.0, 'no_identitas' => 'X', 'at_s1' => [], 'at_t1' => [], 'at_t2' => [], 'at_s2' => []],
+            ['titik_ukur' => 200.0, 'no_identitas' => ' B* ', ...$abba(199.9999, 200.0001)],
+            ['titik_ukur' => 100.0, 'no_identitas' => '', ...$abba(100.0, 99.9999)],
+        ]);
+
+        $this->assertSame(
+            [1 => 'A', 2 => 'B*'],
+            $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['identitas'],
+            'Identitas tidak mendarat di titik_ke yang benar.',
+        );
+
+        $this->assertSame(
+            [1, 2, 3],
+            $sesi->uncertaintyCalculations()->orderBy('titik_ke')->pluck('titik_ke')->all(),
+            'Kedua keping kembar 200 g (beridentitas) dan keping 100 g harus terbit.',
+        );
+    }
+
+    /**
+     * Klien lama yang tidak mengirim `no_identitas` sama sekali tidak
+     * menghapus identitas yang dikirim lewat blok sesi.
+     */
+    public function test_tanpa_kunci_no_identitas_identitas_blok_dibiarkan(): void
+    {
+        $blok = self::blokSesi();
+        $blok['identitas'] = ['1' => 'LAMA-1'];
+
+        $sesi = $this->kirim($blok);
+
+        $this->assertSame(
+            ['1' => 'LAMA-1'],
+            $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['identitas'],
         );
     }
 
