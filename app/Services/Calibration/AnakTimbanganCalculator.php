@@ -191,6 +191,47 @@ class AnakTimbanganCalculator
                 continue;
             }
 
+            // Nominal yang salah SATUAN tidak boleh lolos jadi keping lain.
+            //
+            // Sesi produksi pertama (5 Okt 2026) menulis keping 20 g sebagai
+            // `20000` — dan 20000 g ADA di tabel keping standar. Tanpa dua
+            // penjaga ini sesinya terhitung mulus sebagai anak timbangan 20 kg
+            // (mT 19999,37 g, U95 0,014 g): angka yang tampak wajar, di neraca
+            // berkapasitas 2000 g, untuk keping yang bacaannya 20,0018 g.
+            //
+            // Bacaan neraca di lembar ini massa ABSOLUT keping (master: 100 g
+            // dibaca 100,0; 0,1 g dibaca 0,1), bukan selisih — jadi rata-rata
+            // penimbangan standar pasti dekat nominalnya. Ambang separuh
+            // nominal jauh di atas penyimpangan keping mana pun, dan jauh di
+            // bawah salah satuan (×1000) atau salah ketik satu digit (×10).
+            $kapasitas = $konteks['kapasitas_g'] ?? null;
+
+            if (is_numeric($kapasitas) && (float) $kapasitas > 0 && $nominal > (float) $kapasitas) {
+                $tolak(sprintf(
+                    'Titik %d: nominal %s g melebihi kapasitas neraca %s g. Lembar ini memakai GRAM — '
+                    .'keping 20 g ditulis 20, bukan 20000.',
+                    $titikKe,
+                    self::angka($nominal),
+                    self::angka((float) $kapasitas),
+                ));
+
+                continue;
+            }
+
+            $rataStandar = ($baca['at_s1'] + $baca['at_s2']) / 2;
+
+            if ($nominal > 0 && abs($rataStandar - $nominal) > $nominal / 2) {
+                $tolak(sprintf(
+                    'Titik %d: bacaan neraca keping standar %s g tidak sesuai nominal %s g. Periksa '
+                    .'satuan nominal — lembar ini memakai GRAM (keping 20 g ditulis 20, bukan 20000).',
+                    $titikKe,
+                    self::angka($rataStandar),
+                    self::angka($nominal),
+                ));
+
+                continue;
+            }
+
             $keping = TabelStandarAnakTimbangan::cariKeping($nominal);
 
             if ($keping === null) {
