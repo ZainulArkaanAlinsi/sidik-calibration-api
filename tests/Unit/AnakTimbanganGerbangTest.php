@@ -181,14 +181,81 @@ class AnakTimbanganGerbangTest extends TestCase
     #[Test]
     public function nominal_yang_tidak_ada_di_tabel_keping_ditolak(): void
     {
-        $titik = self::TITIK;
-        $titik[0]['nominal_g'] = 0.3;
+        // Bacaannya ikut 0,3 g supaya yang diuji memang tabel kepingnya, bukan
+        // penjaga satuan nominal di bawah.
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 0.3,
+            'at_s1' => 0.3,
+            'at_t1' => 0.3001,
+            'at_t2' => 0.3001,
+            'at_s2' => 0.3,
+        ]];
 
         $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
 
         $this->assertSame([], $hasil['titik']);
         $this->assertStringContainsString('tabel keping standar', $hasil['ditolak'][0]['alasan']);
         $this->assertStringContainsString('IFERROR', $hasil['ditolak'][0]['alasan']);
+    }
+
+    /**
+     * Keping 20 g yang nominalnya ditulis `20000` DITOLAK, bukan terhitung
+     * sebagai anak timbangan 20 kg.
+     *
+     * Bentuk persis sesi produksi 5 Okt 2026: 20000 g ada di tabel keping, jadi
+     * tanpa penjaga ini sesinya terbit dengan mT 19999,37 g dan U95 0,014 g —
+     * angka yang tampak wajar untuk keping yang bacaannya 20,0018 g.
+     *
+     * Kapasitas yang diadu milik NERACA terpilih (Analytical Balance, maks
+     * 220 g di tabel standar), bukan "Kapasitas Alat" blok sesi — kotak itu
+     * milik set pelanggan dan di lapangan diisi teks bebas ("1-500"). Nilai
+     * kotak itu sengaja dibuat besar di sini supaya terbukti tidak dipakai.
+     */
+    #[Test]
+    public function nominal_salah_satuan_melebihi_kapasitas_neraca_ditolak(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 20000.0,
+            'at_s1' => 20.0018,
+            'at_t1' => 19.99075,
+            'at_t2' => 19.99093,
+            'at_s2' => 20.0018,
+        ]];
+        $konteks = self::KONTEKS;
+        $konteks['kapasitas_g'] = 999999.0;
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
+
+        $this->assertSame([], $hasil['titik'], 'Keping 20 g terhitung sebagai 20 kg.');
+        $this->assertStringContainsString('kapasitas neraca', $hasil['ditolak'][0]['alasan']);
+        $this->assertStringContainsString('GRAM', $hasil['ditolak'][0]['alasan']);
+    }
+
+    /**
+     * Neracanya SANGGUP memikul 20 kg (persis sesi produksi 41: Mettler 30 kg),
+     * jadi penjaga kapasitas lolos — yang menahan bacaannya, 20,0018 g untuk
+     * nominal 20000 g.
+     */
+    #[Test]
+    public function bacaan_yang_tidak_seorde_dengan_nominal_ditolak(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 20000.0,
+            'at_s1' => 20.0018,
+            'at_t1' => 19.99075,
+            'at_t2' => 19.99093,
+            'at_s2' => 20.0018,
+        ]];
+        $konteks = self::KONTEKS;
+        $konteks['timbangan'] = 'Electronic Balance  Mettler';
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
+
+        $this->assertSame([], $hasil['titik']);
+        $this->assertStringContainsString('tidak sesuai nominal', $hasil['ditolak'][0]['alasan']);
     }
 
     // ------------------------------------------------------- tabel standar
@@ -321,6 +388,117 @@ class AnakTimbanganGerbangTest extends TestCase
         ]);
 
         $this->assertFalse($hasil['boleh_terbit']);
+    }
+
+    // ------------------------------------ nominal sah tidak boleh ikut ditolak
+
+    /**
+     * Konteks neraca 30 kg (Electronic Balance Mettler, kapasitas 30000 g)
+     * dengan kapasitas yang dibawa blok sesi. Nama neraca di tabel standar
+     * memang memuat DUA spasi ("Electronic Balance  Mettler").
+     *
+     * @return array<string, mixed>
+     */
+    private function konteksNeraca30kg(): array
+    {
+        $konteks = self::KONTEKS;
+        $konteks['timbangan'] = 'Electronic Balance  Mettler';
+        $konteks['kapasitas_g'] = 30000.0;
+
+        return $konteks;
+    }
+
+    /**
+     * Keping 20 kg ditulis 20000 (lembar ini selalu GRAM) dengan bacaan
+     * ≈ 20000 g di neraca 30 kg harus TERHITUNG — dua penjaga satuan
+     * (kapasitas & separuh nominal) cuma boleh menolak salah satuan, bukan
+     * keping besar yang sah.
+     */
+    #[Test]
+    public function keping_20_kg_di_neraca_30_kg_tidak_ditolak_penjaga_satuan(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 20000.0,
+            'at_s1' => 20000.0275,
+            'at_t1' => 20000.0250,
+            'at_t2' => 20000.0255,
+            'at_s2' => 20000.0275,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $this->konteksNeraca30kg());
+
+        $this->assertTrue($hasil['boleh_terbit']);
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+        $this->assertGreaterThan(0.0, $hasil['titik'][0]['u95_g']);
+    }
+
+    #[Test]
+    public function keping_10_kg_di_neraca_30_kg_tidak_ditolak_penjaga_satuan(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 10000.0,
+            'at_s1' => 10000.0140,
+            'at_t1' => 10000.0120,
+            'at_t2' => 10000.0125,
+            'at_s2' => 10000.0140,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $this->konteksNeraca30kg());
+
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+    }
+
+    /** Keping kecil (0,1 g dibaca 0,1001) lolos tanpa penjaga mengira itu salah satuan. */
+    #[Test]
+    public function keping_kecil_dengan_bacaan_wajar_tidak_ditolak(): void
+    {
+        $titik = [[
+            'titik_ke' => 1,
+            'nominal_g' => 0.1,
+            'at_s1' => 0.1001,
+            'at_t1' => 0.1000,
+            'at_t2' => 0.1000,
+            'at_s2' => 0.1001,
+        ]];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
+
+        $this->assertSame([], $hasil['ditolak'], json_encode($hasil['ditolak']));
+        $this->assertCount(1, $hasil['titik']);
+    }
+
+    /**
+     * Batas separuh nominal: selisih rata-rata S1/S2 terhadap nominal PERSIS
+     * di batas (50 g untuk 100 g) masih lolos penjaga ini; sedikit di atasnya
+     * ditolak. Titik yang lolos penjaga tidak dijamin terhitung penuh, jadi
+     * yang diperiksa alasan penolakannya, bukan hasil akhirnya.
+     */
+    #[Test]
+    public function batas_separuh_nominal_lolos_dan_sedikit_di_atasnya_ditolak(): void
+    {
+        $dasar = [
+            'titik_ke' => 1,
+            'nominal_g' => 100.0,
+            'at_t1' => 149.9999,
+            'at_t2' => 149.9999,
+        ];
+
+        $dalam = (new AnakTimbanganCalculator)->hitungSesi(
+            [$dasar + ['at_s1' => 150.0, 'at_s2' => 150.0]],
+            self::KONTEKS,
+        );
+        $this->assertSame([], $dalam['ditolak'], 'Selisih tepat nominal/2 tidak boleh ditolak.');
+
+        $luar = (new AnakTimbanganCalculator)->hitungSesi(
+            [$dasar + ['at_s1' => 150.01, 'at_s2' => 150.01]],
+            self::KONTEKS,
+        );
+        $this->assertCount(1, $luar['ditolak']);
+        $this->assertStringContainsString('tidak sesuai nominal', $luar['ditolak'][0]['alasan']);
     }
 
     #[Test]

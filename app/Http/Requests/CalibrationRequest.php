@@ -59,6 +59,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
         $this->bakukanBlokGaya();
+        $this->bakukanBlokAnakTimbangan();
         $this->bakukanTogglHydrometer();
         $this->bakukanBlokHydrometer();
 
@@ -693,6 +694,105 @@ class CalibrationRequest extends FormRequest
         $spek[M::KUNCI_SESI] = $blok;
 
         $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * Koma desimal di blok sesi Anak Timbangan dibakukan sebelum disimpan.
+     *
+     * Kotak kondisi ruangan dan kapasitas neraca dikirim HP sebagai teks apa
+     * adanya. Sesi produksi pertama tersimpan dengan `"22,1"` dan `"936,9"`, lalu
+     * seluruh kepingnya ditolak karena kondisi ruangan terbaca kosong. Jalur baca
+     * (`AnakTimbanganMentah::blokSesi()`) sudah memaafkannya untuk baris lama;
+     * yang di sini menjaga baris BARU tersimpan bersih, sama seperti blok alat
+     * lain. Kunci teks (kelas, neraca, identitas keping) sengaja tidak disentuh —
+     * penanda keping `"1,2"` itu label, bukan angka.
+     */
+    private function bakukanBlokAnakTimbangan(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[AnakTimbanganMentah::KUNCI_SESI] ?? null;
+        $identitas = $this->identitasKepingDariBaris();
+
+        if (! is_array($blok) && $identitas === null) {
+            return;
+        }
+
+        $blok = is_array($blok) ? $blok : [];
+
+        // No. Identitas per keping dikirim HP per BARIS (`measurements[i]
+        // .no_identitas`), tapi disimpan per `titik_ke` — nomor yang baru lahir
+        // sesudah baris tanpa bacaan dibuang. Diterjemahkan di sini dengan aturan
+        // penomoran yang SAMA dengan `CalibrationController::
+        // susunBlokAnakTimbangan()`; kalau keduanya berselisih, identitas
+        // keping lain yang tercetak di sertifikat.
+        if ($identitas !== null) {
+            $blok['identitas'] = $identitas;
+        }
+
+        foreach ([
+            'kapasitas_g',
+            'suhu_awal', 'suhu_akhir',
+            'kelembaban_awal', 'kelembaban_akhir',
+            'tekanan_awal', 'tekanan_akhir',
+        ] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
+            }
+        }
+
+        $spek[AnakTimbanganMentah::KUNCI_SESI] = $blok;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * `titik_ke` → No. Identitas dari `measurements[].no_identitas`, atau
+     * `null` kalau tidak satu baris pun membawa kunci itu (klien lama — identitas
+     * yang sudah tersimpan dibiarkan).
+     *
+     * Baris dihitung sebagai keping kalau salah satu peran ABBA-nya punya angka,
+     * persis saringan `$adaPembacaan` di jalur simpan. Identitas di baris yang
+     * tidak jadi keping dibuang bersama barisnya.
+     *
+     * @return array<int, string>|null
+     */
+    private function identitasKepingDariBaris(): ?array
+    {
+        $baris = array_values((array) $this->input('measurements', []));
+        $adaKunci = false;
+        $hasil = [];
+        $titikKe = 0;
+
+        foreach ($baris as $b) {
+            if (! is_array($b)) {
+                continue;
+            }
+
+            $adaKunci = $adaKunci || array_key_exists('no_identitas', $b);
+
+            $adaPembacaan = false;
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                foreach ((array) ($b[$peran] ?? []) as $nilai) {
+                    if ($nilai !== null && $nilai !== '' && is_numeric($nilai)) {
+                        $adaPembacaan = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if (! $adaPembacaan) {
+                continue;
+            }
+
+            $titikKe++;
+            $penanda = is_string($b['no_identitas'] ?? null) ? trim($b['no_identitas']) : '';
+
+            if ($penanda !== '') {
+                $hasil[$titikKe] = $penanda;
+            }
+        }
+
+        return $adaKunci ? $hasil : null;
     }
 
     private function bakukanBlokSieve(): void
