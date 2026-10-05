@@ -205,8 +205,12 @@ class AnakTimbanganGerbangTest extends TestCase
      *
      * Bentuk persis sesi produksi 5 Okt 2026: 20000 g ada di tabel keping, jadi
      * tanpa penjaga ini sesinya terbit dengan mT 19999,37 g dan U95 0,014 g —
-     * angka yang tampak wajar untuk keping yang bacaannya 20,0018 g di neraca
-     * berkapasitas 2000 g.
+     * angka yang tampak wajar untuk keping yang bacaannya 20,0018 g.
+     *
+     * Kapasitas yang diadu milik NERACA terpilih (Analytical Balance, maks
+     * 220 g di tabel standar), bukan "Kapasitas Alat" blok sesi — kotak itu
+     * milik set pelanggan dan di lapangan diisi teks bebas ("1-500"). Nilai
+     * kotak itu sengaja dibuat besar di sini supaya terbukti tidak dipakai.
      */
     #[Test]
     public function nominal_salah_satuan_melebihi_kapasitas_neraca_ditolak(): void
@@ -220,7 +224,7 @@ class AnakTimbanganGerbangTest extends TestCase
             'at_s2' => 20.0018,
         ]];
         $konteks = self::KONTEKS;
-        $konteks['kapasitas_g'] = 2000.0;
+        $konteks['kapasitas_g'] = 999999.0;
 
         $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
 
@@ -229,7 +233,11 @@ class AnakTimbanganGerbangTest extends TestCase
         $this->assertStringContainsString('GRAM', $hasil['ditolak'][0]['alasan']);
     }
 
-    /** Tanpa kapasitas neraca pun, bacaan yang tidak seorde dengan nominal ditolak. */
+    /**
+     * Neracanya SANGGUP memikul 20 kg (persis sesi produksi 41: Mettler 30 kg),
+     * jadi penjaga kapasitas lolos — yang menahan bacaannya, 20,0018 g untuk
+     * nominal 20000 g.
+     */
     #[Test]
     public function bacaan_yang_tidak_seorde_dengan_nominal_ditolak(): void
     {
@@ -241,8 +249,10 @@ class AnakTimbanganGerbangTest extends TestCase
             'at_t2' => 19.99093,
             'at_s2' => 20.0018,
         ]];
+        $konteks = self::KONTEKS;
+        $konteks['timbangan'] = 'Electronic Balance  Mettler';
 
-        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, self::KONTEKS);
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
 
         $this->assertSame([], $hasil['titik']);
         $this->assertStringContainsString('tidak sesuai nominal', $hasil['ditolak'][0]['alasan']);
