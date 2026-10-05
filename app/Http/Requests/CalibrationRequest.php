@@ -59,6 +59,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokDialIndicator();
         $this->bakukanBlokSieve();
         $this->bakukanBlokGaya();
+        $this->bakukanBlokAnakTimbangan();
         $this->bakukanTogglHydrometer();
         $this->bakukanBlokHydrometer();
 
@@ -691,6 +692,42 @@ class CalibrationRequest extends FormRequest
         }
 
         $spek[M::KUNCI_SESI] = $blok;
+
+        $this->merge(['spesifikasi_alat' => $spek]);
+    }
+
+    /**
+     * Koma desimal di blok sesi Anak Timbangan dibakukan sebelum disimpan.
+     *
+     * Kotak kondisi ruangan dan kapasitas neraca dikirim HP sebagai teks apa
+     * adanya. Sesi produksi pertama tersimpan dengan `"22,1"` dan `"936,9"`, lalu
+     * seluruh kepingnya ditolak karena kondisi ruangan terbaca kosong. Jalur baca
+     * (`AnakTimbanganMentah::blokSesi()`) sudah memaafkannya untuk baris lama;
+     * yang di sini menjaga baris BARU tersimpan bersih, sama seperti blok alat
+     * lain. Kunci teks (kelas, neraca, identitas keping) sengaja tidak disentuh —
+     * penanda keping `"1,2"` itu label, bukan angka.
+     */
+    private function bakukanBlokAnakTimbangan(): void
+    {
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $blok = $spek[AnakTimbanganMentah::KUNCI_SESI] ?? null;
+
+        if (! is_array($blok)) {
+            return;
+        }
+
+        foreach ([
+            'kapasitas_g',
+            'suhu_awal', 'suhu_akhir',
+            'kelembaban_awal', 'kelembaban_akhir',
+            'tekanan_awal', 'tekanan_akhir',
+        ] as $kunci) {
+            if (array_key_exists($kunci, $blok)) {
+                $blok[$kunci] = AngkaDesimal::bakukan($blok[$kunci]);
+            }
+        }
+
+        $spek[AnakTimbanganMentah::KUNCI_SESI] = $blok;
 
         $this->merge(['spesifikasi_alat' => $spek]);
     }

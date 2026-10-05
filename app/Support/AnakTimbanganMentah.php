@@ -240,11 +240,14 @@ class AnakTimbanganMentah
      */
     public static function rataUjung(mixed $awal, mixed $akhir): ?float
     {
-        if (! is_numeric($awal) || ! is_numeric($akhir)) {
+        $awal = self::angka($awal);
+        $akhir = self::angka($akhir);
+
+        if ($awal === null || $akhir === null) {
             return null;
         }
 
-        return ((float) $awal + (float) $akhir) / 2;
+        return ($awal + $akhir) / 2;
     }
 
     /** @return array{awal: float|null, akhir: float|null} */
@@ -312,8 +315,24 @@ class AnakTimbanganMentah
         return $bersih === '' ? null : $bersih;
     }
 
+    /**
+     * Angka dari blok sesi, termasuk yang tersimpan dengan KOMA desimal.
+     *
+     * Kotak kondisi ruangan di HP dikirim sebagai teks apa adanya, dan sampai
+     * 5 Okt 2026 `CalibrationRequest` tidak membakukan blok ini. Sesi produksi
+     * pertama yang dikirim dari HP tersimpan dengan `"22,1"` dan `"936,9"`;
+     * `is_numeric()` menolak keduanya, keenam ujung kondisi ruangan terbaca
+     * kosong, densitas udara tidak bisa dihitung, dan SELURUH keping ditolak —
+     * dengan pesan yang menyuruh orang mengecek pengulangan, bukan koma.
+     *
+     * Dibakukan di jalur BACA juga, bukan cuma di jalur simpan: baris lama yang
+     * sudah tersimpan berkoma tidak boleh tetap mati, dan hitung ulang membaca
+     * dari sini. Bentuk yang dibakukan cuma `^\d+,\d+$` — lihat [AngkaDesimal].
+     */
     private static function angka(mixed $nilai): ?float
     {
+        $nilai = AngkaDesimal::bakukan($nilai);
+
         return is_numeric($nilai) ? (float) $nilai : null;
     }
 }

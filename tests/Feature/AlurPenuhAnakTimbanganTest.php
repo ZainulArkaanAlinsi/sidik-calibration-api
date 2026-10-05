@@ -111,7 +111,8 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         ];
     }
 
-    private function kirim(): CalibrationSession
+    /** @param  array<string, mixed>|null  $blok  blok sesi; default [blokSesi] */
+    private function kirim(?array $blok = null): CalibrationSession
     {
         $this->seed(DatabaseSeeder::class);
 
@@ -129,7 +130,7 @@ class AlurPenuhAnakTimbanganTest extends TestCase
                 'suhu_akhir' => 23.0,
                 'kelembaban_awal' => 55.0,
                 'kelembaban_akhir' => 56.0,
-                'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => self::blokSesi()],
+                'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => $blok ?? self::blokSesi()],
                 'measurements' => self::keping(),
             ])
             ->assertCreated()
@@ -275,6 +276,67 @@ class AlurPenuhAnakTimbanganTest extends TestCase
             'Keping tanpa `at_t2` tetap terbit. `de` yang lahir dari tiga suku bukan sekadar '
             .'kurang teliti — dia besaran yang berbeda.',
         );
+    }
+
+    /**
+     * Kondisi ruangan yang diketik dengan KOMA dari HP tetap menghasilkan titik.
+     *
+     * Sesi Anak Timbangan pertama di produksi (5 Okt 2026) tersimpan dengan
+     * `"22,1"` dan `"936,9"`. Blok ini tidak dibakukan, `is_numeric()` menolak
+     * keduanya, kondisi ruangan terbaca kosong, dan SELURUH keping ditolak —
+     * dengan pesan yang menyebut pengulangan, bukan koma.
+     */
+    public function test_kondisi_ruangan_berkoma_dari_hp_tetap_terhitung(): void
+    {
+        $blok = array_map(
+            static fn (mixed $v): mixed => is_float($v) || is_int($v) ? str_replace('.', ',', (string) $v) : $v,
+            self::blokSesi(),
+        );
+        $this->assertSame('933,2', $blok['tekanan_awal'], 'Payload uji harus benar-benar berkoma.');
+
+        $sesi = $this->kirim($blok);
+
+        $this->assertCount(
+            2,
+            $sesi->uncertaintyCalculations()->get(),
+            'Kondisi ruangan berkoma membuat seluruh keping ditolak.',
+        );
+        $this->assertSame(
+            '933.2',
+            $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI]['tekanan_awal'],
+            'Koma di blok Anak Timbangan tidak dibakukan sebelum disimpan.',
+        );
+    }
+
+    /**
+     * Baris LAMA yang sudah tersimpan berkoma tetap terbaca di jalur hitung.
+     *
+     * Hitung ulang dan penyimpanan ulang membaca blok yang sudah ada di
+     * database, jadi pembakuan di jalur simpan saja tidak menyelamatkan sesi
+     * yang terlanjur tersimpan sebelum perbaikan.
+     */
+    public function test_blok_tersimpan_berkoma_tetap_terbaca(): void
+    {
+        $blok = AnakTimbanganMentah::blokSesi([AnakTimbanganMentah::KUNCI_SESI => [
+            'kelas_uut' => 'M2',
+            'kelas_standar' => 'F1',
+            'kapasitas_g' => '2000',
+            'suhu_awal' => '23',
+            'suhu_akhir' => '22,1',
+            'kelembaban_awal' => '60,6',
+            'kelembaban_akhir' => '67,3',
+            'tekanan_awal' => '936,9',
+            'tekanan_akhir' => '937,0',
+        ]]);
+
+        $this->assertEqualsWithDelta(22.1, $blok['suhu']['akhir'], 1e-9);
+        $this->assertEqualsWithDelta(60.6, $blok['kelembaban']['awal'], 1e-9);
+        $this->assertEqualsWithDelta(936.9, $blok['tekanan']['awal'], 1e-9);
+        $this->assertEqualsWithDelta(63.95, AnakTimbanganMentah::rataUjung('60,6', '67,3'), 1e-9);
+
+        // Dua pemisah tetap DITOLAK, bukan ditebak — salah tebak menggeser
+        // angka seribu kali tanpa error (lihat `AngkaDesimal`).
+        $this->assertNull(AnakTimbanganMentah::rataUjung('1.234,5', '1'));
     }
 
     /**
