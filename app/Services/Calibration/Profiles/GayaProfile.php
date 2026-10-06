@@ -105,6 +105,29 @@ abstract class GayaProfile extends CalibrationProfile
         return true;
     }
 
+    /**
+     * Load cell standar dari centang Standard Used, bukan dropdown kedua.
+     *
+     * Kuncinya kunci `tabel-standar-gaya.json` (`5kN`, `100kN`, `3000kN`).
+     */
+    public function kolomDariCentang(): array
+    {
+        $kunci = [
+            'Load Cell 5 kN' => '5kN',
+            'Load Cell 100 kN' => '100kN',
+            'Load Cell 3000 kN' => '3000kN',
+        ];
+        $baris = [];
+
+        foreach (static::STANDARD_TERCETAK as $b) {
+            if (isset($kunci[$b['label']])) {
+                $baris[] = ['cocok' => $b['cocok'], 'nilai' => $kunci[$b['label']]];
+            }
+        }
+
+        return ['gaya.standar' => ['judul' => 'load cell standar', 'baris' => $baris]];
+    }
+
     public function jumlahBacaanWajib(): int
     {
         return count($this->peranBacaan()) * M::REPLIKAT;
@@ -996,9 +1019,10 @@ abstract class GayaProfile extends CalibrationProfile
             // dan lembar kerjanya lahir tanpa baris Standard Used.
             'baris' => static::STANDARD_TERCETAK,
             'field' => [
-                $this->field('spesifikasi_alat.gaya.standar', 'Load Cell Standar', 'pilihan', pilihan: [
-                    '5kN', '100kN', '3000kN',
-                ]),
+                // Load cell standar TIDAK ditanya lagi lewat dropdown: dia
+                // lahir dari baris yang dicentang di atas — lihat
+                // `kolomDariCentang()`. Kunci `gaya.standar` kiriman lama tetap
+                // diterima validasi.
                 $this->field('spesifikasi_alat.gaya.kapasitas_standar', 'Kapasitas Standar (kN)', 'angka'),
                 $this->field('spesifikasi_alat.gaya.resolusi_standar', 'Resolusi Standar (kN)', 'angka'),
                 $this->field(

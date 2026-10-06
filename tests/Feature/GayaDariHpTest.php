@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
+use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Support\GayaMentah as M;
@@ -137,6 +138,91 @@ class GayaDariHpTest extends TestCase
         $blok = CalibrationSession::findOrFail($id)->spesifikasi_alat[M::KUNCI_SESI];
         $this->assertSame('kN', $blok['satuan'], 'Isian spesifikasi Gaya lain ikut hilang.');
         $this->assertArrayHasKey('preload', $blok, 'Bentuk tabel preload hilang — draft yang dibuka ulang kehilangan preload-nya.');
+    }
+
+    /**
+     * Payload Load Cell bentuk HP SESUDAH dropdown load cell dicabut: tanpa
+     * `gaya.standar`, standarnya dinyatakan lewat centang Standard Used.
+     *
+     * @param  list<string>  $serialDicentang
+     * @return array<string, mixed>
+     */
+    private function payloadLoadCellDariCentang(Equipment $alat, array $serialDicentang): array
+    {
+        $deret = static fn (float $a, float $b): array => [$a, $a, $b];
+        $standar = Standard::where('organization_id', $alat->organization_id)
+            ->whereIn('serial_number', $serialDicentang)->pluck('id');
+        $this->assertCount(count($serialDicentang), $standar, 'Load cell contoh belum ada di master standar.');
+
+        return [
+            'equipment_id' => $alat->id,
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2026-09-24',
+            'suhu_awal' => '27,7', 'suhu_akhir' => '27,7',
+            'kelembaban_awal' => '70', 'kelembaban_akhir' => '70',
+            'standar_dicek' => $standar->map(fn (int $id): array => ['standard_id' => $id, 'dipakai' => true])->all(),
+            'measurements' => [
+                self::titikHp(2.0, [
+                    M::PERAN_POSISI[0] => $deret(2.16, 2.16), M::PERAN_POSISI[1] => $deret(2.16, 2.16),
+                    M::PERAN_POSISI[2] => $deret(2.16, 2.16), M::PERAN_POSISI[3] => $deret(2.14, 2.14),
+                ]),
+            ],
+            'spesifikasi_alat' => [M::KUNCI_SESI => [
+                'satuan' => 'kN',
+                'tipe_beban' => M::ARAH_PULL,
+                'suhu_sertifikat_standar' => '23,45',
+                'kapasitas' => '100',
+                'resolusi_uut' => '0,01',
+                'resolusi_standar' => '0,001',
+                'kapasitas_standar' => '100',
+                'misalignment' => ['1' => '8,237', '2' => '8,234', '3' => '8,237', '4' => '8,238'],
+                'preload' => self::preloadHp([0.01, 0.0, 0.02], [68.86, 70.89, 71.86]),
+            ]],
+        ];
+    }
+
+    /**
+     * Laporan lapangan 5 Okt 2026: dropdown "Load Cell Standar" menanyakan
+     * ulang yang sudah dicentang di Standard Used. Dropdown dicabut; load cell
+     * lahir dari centang.
+     */
+    public function test_load_cell_standar_lahir_dari_centang_tanpa_dropdown(): void
+    {
+        [$alat, $teknisi] = $this->siapkan('DEMO-LC-001');
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payloadLoadCellDariCentang($alat, ['J10CC13283']))
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertSame('100kN', CalibrationSession::findOrFail($id)->spesifikasi_alat[M::KUNCI_SESI]['standar']);
+        $this->assertSame(
+            1,
+            UncertaintyCalculation::where('calibration_session_id', $id)->count(),
+            'Load cell dari centang tidak terbaca — titiknya ditahan.',
+        );
+
+        $bentuk = $this->actingAs($teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$alat->id)
+            ->assertOk()
+            ->json('data.bagian');
+        $kode = collect($bentuk)->flatMap(fn (array $b): array => array_column($b['field'] ?? [], 'kode'))->all();
+        $this->assertNotEmpty($kode);
+        $this->assertNotContains('spesifikasi_alat.gaya.standar', $kode, 'Dropdown load cell dobel muncul lagi.');
+    }
+
+    public function test_dua_load_cell_dicentang_kiriman_ditolak_draft_boleh(): void
+    {
+        [$alat, $teknisi] = $this->siapkan('DEMO-LC-001');
+        $payload = $this->payloadLoadCellDariCentang($alat, ['J10CC13283', 'LC-01-SDK']);
+
+        $this->actingAs($teknisi)->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('standar_dicek');
+
+        $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', [...$payload, 'status' => CalibrationSession::STATUS_DRAFT])
+            ->assertCreated();
     }
 
     public function test_proving_ring_dari_bentuk_hp_terhitung(): void

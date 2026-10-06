@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\RawMeasurement;
+use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
 use App\Support\PistonVolumeMentah as M;
@@ -104,6 +105,64 @@ class PistonSesiTest extends TestCase
         $this->assertEqualsWithDelta($h['per_titik'][0]['V20'], $b->type_b_components['piston_rantai']['V20_ml'], 1e-12);
         $this->assertEqualsWithDelta($h['per_titik'][0]['V20'], (float) $b->rata_rata, 1e-8, 'Actual Volume');
         $this->assertNull($b->keputusan, 'Master Fixed tidak memvonis (G-5).');
+    }
+
+    /**
+     * Dropdown "Timbangan" dicabut (UI dobel dengan centang Standard Used,
+     * laporan lapangan 5 Okt 2026). Timbangan lahir dari baris yang dicentang,
+     * dan angkanya tetap sama dengan master Fixed.
+     */
+    public function test_timbangan_lahir_dari_centang_angka_tetap_master(): void
+    {
+        [$alat, $teknisi, $sesi] = $this->siapkan();
+        $payload = $this->payload($alat, $sesi);
+        unset($payload['spesifikasi_alat'][M::KUNCI_SESI]['timbangan']);
+        $neraca = Standard::where('organization_id', $alat->organization_id)
+            ->where('serial_number', '1129063525')->firstOrFail();
+        $termometer = Standard::where('organization_id', $alat->organization_id)
+            ->where('serial_number', 'SH1/20')->first();
+        $payload['standar_dicek'] = array_values(array_filter([
+            ['standard_id' => $neraca->id, 'dipakai' => true],
+            // Standar non-timbangan ikut tercentang: tidak boleh mengganggu.
+            $termometer ? ['standard_id' => $termometer->id, 'dipakai' => true] : null,
+        ]));
+
+        $id = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $payload)
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertSame(
+            $sesi['masukan']['timbangan'],
+            CalibrationSession::findOrFail($id)->spesifikasi_alat[M::KUNCI_SESI]['timbangan'],
+        );
+        $b = UncertaintyCalculation::where('calibration_session_id', $id)->firstOrFail();
+        $this->assertEqualsWithDelta($sesi['harapan_benar']['u95'], $b->type_b_components['piston_budget']['u95'], 1e-12);
+
+        $bentuk = $this->actingAs($teknisi)
+            ->getJson('/api/calibrations/lembar-kerja?equipment_id='.$alat->id)
+            ->assertOk()
+            ->json('data.bagian');
+        $kode = collect($bentuk)->flatMap(fn (array $b): array => array_column($b['field'] ?? [], 'kode'))->all();
+        $this->assertNotEmpty($kode);
+        $this->assertNotContains('spesifikasi_alat.'.M::KUNCI_SESI.'.timbangan', $kode, 'Dropdown timbangan dobel muncul lagi.');
+    }
+
+    public function test_dua_timbangan_dicentang_kiriman_ditolak(): void
+    {
+        [$alat, $teknisi, $sesi] = $this->siapkan();
+        $payload = $this->payload($alat, $sesi);
+        unset($payload['spesifikasi_alat'][M::KUNCI_SESI]['timbangan']);
+        $payload['standar_dicek'] = Standard::where('organization_id', $alat->organization_id)
+            ->whereIn('serial_number', ['1129063525', 'HSEX1403752'])
+            ->pluck('id')
+            ->map(fn (int $id): array => ['standard_id' => $id, 'dipakai' => true])
+            ->all();
+        $this->assertCount(2, $payload['standar_dicek']);
+
+        $this->actingAs($teknisi)->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('standar_dicek');
     }
 
     public function test_kumulatif_turun_diblokir(): void
