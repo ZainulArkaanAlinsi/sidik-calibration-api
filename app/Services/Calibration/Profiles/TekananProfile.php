@@ -955,7 +955,7 @@ abstract class TekananProfile extends CalibrationProfile
             // Tampilan saja: satu kartu per set point, UP & DOWN berdampingan
             // di layar lebar — kertas 0507 satu baris `UUT | UP 1-3 | DOWN
             // 1-3`, bukan dua tabel yang digulir naik-turun (6 Okt 2026).
-            'tampilan' => 'kartu_per_baris',
+            'tampilan' => 'kartu_per_set_point',
             'kartu_sejajar' => true,
             'nominal_berbintang' => false,
             'field' => [],

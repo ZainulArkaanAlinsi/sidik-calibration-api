@@ -870,6 +870,33 @@ class CalibrationRequest extends FormRequest
      *
      * @return array{identitas: array<int, string>|null, bintang: array<int, true>|null}
      */
+    /**
+     * Jumlah baris `measurements[]` yang punya angka di salah satu peran ABBA —
+     * aturan "baris = keping" yang sama dengan [perKepingDariBaris].
+     */
+    private function jumlahKepingTerisi(): int
+    {
+        $jumlah = 0;
+
+        foreach ((array) $this->input('measurements', []) as $b) {
+            if (! is_array($b)) {
+                continue;
+            }
+
+            foreach (AnakTimbanganMentah::PERAN_URUT as $peran) {
+                foreach ((array) ($b[$peran] ?? []) as $nilai) {
+                    if ($nilai !== null && $nilai !== '' && is_numeric($nilai)) {
+                        $jumlah++;
+
+                        continue 3;
+                    }
+                }
+            }
+        }
+
+        return $jumlah;
+    }
+
     private function perKepingDariBaris(): array
     {
         $baris = array_values((array) $this->input('measurements', []));
@@ -2168,6 +2195,23 @@ class CalibrationRequest extends FormRequest
 
                 if ($masalah !== null) {
                     $validator->errors()->add('standar_dicek', $masalah);
+                }
+            }
+
+            // Sertifikat wajib pas satu halaman (aturan pemilik): Anak
+            // Timbangan muat sampai BATAS_KEPING_SATU_HALAMAN keping. HP
+            // berhenti menambah baris di angka yang sama; ini penjaga sisi
+            // server untuk klien yang tidak tahu batasnya. Draft dibiarkan.
+            if (! $this->disimpanSebagaiDraft() && $this->alatAnakTimbangan() !== null) {
+                $terisi = $this->jumlahKepingTerisi();
+
+                if ($terisi > AnakTimbanganProfile::BATAS_KEPING_SATU_HALAMAN) {
+                    $validator->errors()->add('measurements', sprintf(
+                        'Satu sesi Anak Timbangan maksimal %d keping supaya sertifikatnya pas satu halaman; '
+                        .'yang terisi %d. Pecah jadi dua sesi.',
+                        AnakTimbanganProfile::BATAS_KEPING_SATU_HALAMAN,
+                        $terisi,
+                    ));
                 }
             }
 

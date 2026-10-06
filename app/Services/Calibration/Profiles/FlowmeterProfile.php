@@ -1359,7 +1359,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
             // susunan kertas 0538, bukan delapan tabel yang digulir
             // naik-turun (permintaan pemilik 5 Okt 2026). Bertumpuk, bukan
             // sejajar: tabelnya terlalu banyak untuk sebaris.
-            'tampilan' => 'kartu_per_baris',
+            'tampilan' => 'kartu_per_set_point',
             'kartu_sejajar' => false,
             'nominal_berbintang' => false,
             'field' => [],

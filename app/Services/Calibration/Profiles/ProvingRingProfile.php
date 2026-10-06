@@ -344,7 +344,7 @@ class ProvingRingProfile extends GayaProfile
             'judul' => 'Accuracy Test',
             // Tampilan saja: satu kartu per titik beban, UP & DOWN berdampingan
             // di layar lebar — lihat `GayaProfile` (6 Okt 2026).
-            'tampilan' => 'kartu_per_baris',
+            'tampilan' => 'kartu_per_set_point',
             'kartu_sejajar' => true,
             'nominal_berbintang' => false,
             'field' => [],

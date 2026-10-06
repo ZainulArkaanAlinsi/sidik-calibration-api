@@ -74,6 +74,14 @@ class AnakTimbanganProfile extends CalibrationProfile
     /** Satuan massa lembar ini — gram, apa adanya seperti master. */
     public const SATUAN = 'g';
 
+    /**
+     * Keping terbanyak yang sertifikatnya masih pas SATU halaman (aturan
+     * pemilik proyek, 6 Okt 2026). Diukur dompdf: 40 muat, 45 meluap ke
+     * halaman dua — `AnakTimbanganSertifikatSatuHalamanTest`. Set yang lebih
+     * besar dipecah jadi dua sesi.
+     */
+    public const BATAS_KEPING_SATU_HALAMAN = 40;
+
     /** Sepuluh blok keping di kertas `SIDIK-FM-CAL-0541_Rev.0`. */
     public const BARIS_KERTAS = 10;
 

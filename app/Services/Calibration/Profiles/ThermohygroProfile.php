@@ -421,7 +421,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                     // Tampilan saja: satu kartu per set point, Standard & UUT
                     // berdampingan di layar lebar — kertas memasangkan STD 1-5
                     // dan UUT 1-5 per nomor (permintaan pemilik 5 Okt 2026).
-                    'tampilan' => 'kartu_per_baris',
+                    'tampilan' => 'kartu_per_set_point',
                     'kartu_sejajar' => true,
                     'nominal_berbintang' => false,
                     'field' => $this->fieldKondisiLingkungan(),
@@ -454,7 +454,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                     'kode' => 'hasil_kelembaban',
                     'halaman' => 1,
                     'judul' => '2. KALIBRASI KELEMBAPAN (HUMIDITY)',
-                    'tampilan' => 'kartu_per_baris',
+                    'tampilan' => 'kartu_per_set_point',
                     'kartu_sejajar' => true,
                     'nominal_berbintang' => false,
                     'field' => [],

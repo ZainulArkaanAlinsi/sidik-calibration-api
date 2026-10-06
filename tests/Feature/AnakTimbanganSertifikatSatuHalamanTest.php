@@ -7,6 +7,7 @@ use App\Models\Certificate;
 use App\Models\Equipment;
 use App\Models\UncertaintyCalculation;
 use App\Models\User;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\DataTampilanSertifikat;
 use App\Support\AnakTimbanganMentah;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,6 +34,46 @@ class AnakTimbanganSertifikatSatuHalamanTest extends TestCase
     public static function jumlahKeping(): array
     {
         return ['15 keping' => [15], '30 keping' => [30], '40 keping' => [40]];
+    }
+
+    /**
+     * Lebih dari batas = sertifikat dua halaman, jadi kirimannya ditolak di
+     * server (HP berhenti di batas yang sama). Draft tetap boleh tersimpan.
+     */
+    public function test_lebih_dari_batas_keping_kiriman_ditolak_draft_boleh(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $contoh = CalibrationSession::where('nomor_sesi', 'DEMO-AT-001')->firstOrFail();
+        $teknisi = User::where('role', User::ROLE_TEKNISI)->firstOrFail();
+        $jumlah = AnakTimbanganProfile::BATAS_KEPING_SATU_HALAMAN + 1;
+
+        $keping = [];
+        for ($i = 0; $i < $jumlah; $i++) {
+            $n = self::NOMINAL[$i % count(self::NOMINAL)];
+            $keping[] = [
+                'titik_ukur' => $n,
+                'no_identitas' => 'K'.($i + 1),
+                'at_s1' => [$n, $n, $n], 'at_t1' => [$n, $n, $n],
+                'at_t2' => [$n, $n, $n], 'at_s2' => [$n, $n, $n],
+            ];
+        }
+        $payload = [
+            'equipment_id' => $contoh->equipment_id,
+            'standard_id' => $contoh->standard_id,
+            'tanggal_kalibrasi' => '2026-09-11',
+            'suhu_awal' => 23.1, 'suhu_akhir' => 23.0,
+            'kelembaban_awal' => 55.0, 'kelembaban_akhir' => 56.0,
+            'measurements' => $keping,
+        ];
+
+        $this->actingAs($teknisi)->postJson('/api/calibrations', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('measurements');
+
+        $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', [...$payload, 'status' => CalibrationSession::STATUS_DRAFT])
+            ->assertCreated();
     }
 
     #[DataProvider('jumlahKeping')]
