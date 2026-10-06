@@ -67,6 +67,13 @@ final class RiwayatPersetujuanSesi
                 continue;
             }
 
+            // Sesi asli LAHIR sebagai draft (`CalibrationController::store`):
+            // baris `dibikin` itu kelahiran, bukan "kembali ke draft". Tanpa
+            // penjaga ini tiap riwayat diawali peristiwa palsu (tinjauan 6 Okt).
+            if ($status === CalibrationSession::STATUS_DRAFT && $statusLama === null) {
+                continue;
+            }
+
             $jenis = self::JENIS[$status];
             if ($jenis === 'diajukan' && $statusLama === CalibrationSession::STATUS_PERLU_REVISI) {
                 $jenis = 'diajukan_ulang';

@@ -113,6 +113,33 @@ class RiwayatPersetujuanSesiTest extends TestCase
         $this->assertSame(['ditolak', 'diajukan_ulang', 'ditolak', 'diajukan_ulang', 'ditolak'], $urutan);
     }
 
+    /**
+     * Sesi asli lahir sebagai DRAFT (`CalibrationController::store`). Baris
+     * audit kelahirannya bukan peristiwa "kembali ke draft" (tinjauan 6 Okt).
+     */
+    public function test_sesi_yang_lahir_sebagai_draft_tidak_diawali_kembali_ke_draft(): void
+    {
+        [, $admin, $teknisi, $sesi] = $this->siapkan();
+        $draft = CalibrationSession::factory()->create([
+            'organization_id' => $sesi->organization_id,
+            'equipment_id' => $sesi->equipment_id,
+            'teknisi_id' => $teknisi->id,
+            'status' => CalibrationSession::STATUS_DRAFT,
+        ]);
+        $this->ajukanUlang($teknisi, $draft);
+        $this->tolak($admin, $draft, 'Alasan sesudah draft diajukan');
+
+        $jenis = array_column(
+            $this->actingAs($admin, 'sanctum')
+                ->getJson("/api/calibrations/{$draft->id}/riwayat-persetujuan")
+                ->assertOk()
+                ->json('data'),
+            'jenis',
+        );
+
+        $this->assertSame(['diajukan', 'ditolak'], $jenis);
+    }
+
     public function test_penolakan_meninggalkan_jejak_audit_atas_nama_admin(): void
     {
         [, $admin, , $sesi] = $this->siapkan();
