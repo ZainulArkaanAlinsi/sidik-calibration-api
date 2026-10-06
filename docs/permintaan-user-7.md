@@ -4858,6 +4858,25 @@ adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
 
   Rincian per lembar: laporan audit G1–G6 (scratchpad sesi, belum masuk repo).
 
+**6 Okt 2026 (siang, gelombang kedua):**
+- **Tata letak kartu per set point** (#6) diperluas ke Tekanan (UP | DOWN), UTM/Load Cell
+  (0/90/180/270°), Proving Ring (UP | DOWN), dan Thermohygro (Standard | UUT):
+  `tampilan: kartu_per_baris` + `kartu_sejajar`. Di layar lebar (tablet/Windows) berdampingan
+  seperti satu baris kertas; di HP bertumpuk. Bintang hanya Anak Timbangan (`nominal_berbintang`).
+- **Thermohygro: titik suhu dulu ikut menimpa titik %RH** (satu daftar titik kustom untuk seluruh
+  lembar). Sekarang daftar titiknya per bagian — mobile.
+- **Kapasitas Alat Anak Timbangan satu baris** (`[dari] g [sampai] g`). Beberapa rentang sekaligus
+  ("bisa lebih dari satu") **menunggu bentuk dari pemilik**.
+- **Sertifikat pas satu halaman** (aturan pemilik): Anak Timbangan diukur 15/30/40 keping muat,
+  45 meluap. HP berhenti di 40 baris. Dijaga `AnakTimbanganSertifikatSatuHalamanTest`.
+- **Dobel yang belum digabung, butuh keputusan**:
+  - "Environmental Meter Used" (`thermohygro_standard_id`) vs "TH Used" (`meter_lingkungan`) di
+    Anak Timbangan. Kertas cuma punya "TH Used". Tabel koreksi meter master hanya punya
+    Thermobarometer, jadi pemetaan dari daftar TH master belum terbukti.
+- **Antrian sesudah revisi lembar kerja selesai** (permintaan pemilik): riwayat penolakan lembar kerja
+  (alasan lama ada di `audit_logs` tapi belum ada layarnya), test penjaga jejak tolak, `revisi_field`
+  di panel, batas panjang `catatan_revisi`.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
