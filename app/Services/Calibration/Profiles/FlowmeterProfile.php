@@ -1354,6 +1354,14 @@ abstract class FlowmeterProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 1,
             'judul' => 'Measurement',
+            // Tampilan saja: satu kartu per set point — Pembacaan UUT sebagai
+            // sub-grid ulangan × durasi, lalu Standar/berat/suhu di bawahnya —
+            // susunan kertas 0538, bukan delapan tabel yang digulir
+            // naik-turun (permintaan pemilik 5 Okt 2026). Bertumpuk, bukan
+            // sejajar: tabelnya terlalu banyak untuk sebaris.
+            'tampilan' => 'kartu_per_baris',
+            'kartu_sejajar' => false,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 [
