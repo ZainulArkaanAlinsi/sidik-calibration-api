@@ -673,8 +673,13 @@ class AnakTimbanganProfile extends CalibrationProfile
                 // kotak angka membuat teknisi mengetik "1-500" dan
                 // "1000,500,200,50" di produksi (5 Okt 2026) — dua-duanya tidak
                 // terbaca sebagai angka.
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat — dari', 'angka', satuan: self::SATUAN),
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat — sampai', 'angka', satuan: self::SATUAN),
+                //
+                // Dua kotak, SATU baris: labelnya sengaja sama persis, jadi HP
+                // menggambarnya sebaris (`_BarisSpesifikasi`) — `[dari] g
+                // [sampai] g` seperti kertas. Label berbeda dulu membuatnya
+                // tampil sebagai dua kolom terpisah (keluhan pemilik 6 Okt 2026).
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
                 $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
                 $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
                 // Neraca TIDAK lagi dipilih di sini. Kertas memilihnya lewat
