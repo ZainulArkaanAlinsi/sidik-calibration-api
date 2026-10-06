@@ -62,6 +62,7 @@ class CalibrationRequest extends FormRequest
         $this->bakukanBlokSieve();
         $this->bakukanBlokGaya();
         $this->bakukanBlokAnakTimbangan();
+        $this->turunkanKolomDariCentang();
         $this->bakukanTogglHydrometer();
         $this->bakukanBlokHydrometer();
 
@@ -800,15 +801,61 @@ class CalibrationRequest extends FormRequest
      */
     private function alatAnakTimbangan(): ?Equipment
     {
+        $alat = $this->alatRequest();
+
+        return $alat !== null
+            && app(CalibrationProfileRegistry::class)->untukAlat($alat) instanceof AnakTimbanganProfile
+            ? $alat
+            : null;
+    }
+
+    /**
+     * Alat request ini: `equipment_id` dari body (simpan baru), atau alat sesi
+     * di rute (ubah). `null` kalau tidak ada keduanya.
+     */
+    private function alatRequest(): ?Equipment
+    {
         $sesi = $this->route('calibration');
         $alat = $this->filled('equipment_id')
             ? Equipment::find($this->integer('equipment_id'))
             : ($sesi instanceof CalibrationSession ? $sesi->equipment : null);
 
-        return $alat instanceof Equipment
-            && app(CalibrationProfileRegistry::class)->untukAlat($alat) instanceof AnakTimbanganProfile
-            ? $alat
-            : null;
+        return $alat instanceof Equipment ? $alat : null;
+    }
+
+    /**
+     * Kolom `spesifikasi_alat` yang lahir dari centang Standard Used —
+     * `CalibrationProfile::kolomDariCentang()` (load cell gaya, timbangan
+     * piston). Tepat SATU baris dikenali = nilainya ditulis, menang atas
+     * isian dropdown lama. Nol = isian lama dibiarkan (draft dan APK lama).
+     * Lebih dari satu = dibiarkan juga; kirimannya ditolak validasi lewat
+     * `masalahKolomDariCentang()`.
+     */
+    private function turunkanKolomDariCentang(): void
+    {
+        if (! $this->has('standar_dicek') || ($alat = $this->alatRequest()) === null) {
+            return;
+        }
+
+        $profil = app(CalibrationProfileRegistry::class)->untukAlat($alat);
+
+        if ($profil->kolomDariCentang() === []) {
+            return;
+        }
+
+        $spek = (array) $this->input('spesifikasi_alat', []);
+        $berubah = false;
+
+        foreach ($profil->nilaiDariCentang(StandarDicentang::dari($this, $alat)) as $jalur => $nilai) {
+            if (count($nilai) === 1) {
+                data_set($spek, $jalur, $nilai[0]);
+                $berubah = true;
+            }
+        }
+
+        if ($berubah) {
+            $this->merge(['spesifikasi_alat' => $spek]);
+        }
     }
 
     /**
@@ -2105,6 +2152,19 @@ class CalibrationRequest extends FormRequest
                 && ($alat = Equipment::find($this->integer('equipment_id'))) !== null) {
                 $masalah = app(CalibrationProfileRegistry::class)->untukAlat($alat)
                     ->masalahCentangStandar(StandarDicentang::dari($this, $alat));
+
+                if ($masalah !== null) {
+                    $validator->errors()->add('standar_dicek', $masalah);
+                }
+            }
+
+            // Dua load cell / dua timbangan tercentang: kolom turunannya
+            // mustahil dipilih. Diperiksa terlepas dari `standard_id` — yang
+            // diturunkan di sini kolom `spesifikasi_alat`, bukan standar sesi.
+            if (! $this->disimpanSebagaiDraft() && $this->has('standar_dicek')
+                && ($alat = $this->alatRequest()) !== null) {
+                $masalah = app(CalibrationProfileRegistry::class)->untukAlat($alat)
+                    ->masalahKolomDariCentang(StandarDicentang::dari($this, $alat));
 
                 if ($masalah !== null) {
                     $validator->errors()->add('standar_dicek', $masalah);

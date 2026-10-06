@@ -1201,14 +1201,13 @@ class TidsProfile extends CalibrationProfile
                     ],
                     array_keys(self::TIPE_SENSOR_TERCETAK),
                 )),
-                // Kunci LAMA, tetap dikirim. APK yang sudah terpasang menulis
-                // ke sini, dan `hitungPerGrup()` membacanya sebagai cadangan —
-                // dicabut, sesi dari APK lama sampai ke server tanpa tipe
-                // sensor dan seluruh titiknya ditahan.
-                $this->field('spesifikasi_alat.sensor_standar', 'Sensor Standard (lama)', 'pilihan', pilihan: array_map(
-                    static fn (string $nama): array => ['nilai' => $nama, 'label' => $nama],
-                    self::SENSOR_STANDAR_TERCETAK,
-                )),
+                // Kunci LAMA `spesifikasi_alat.sensor_standar` dicabut dari
+                // bentuk lembar 6 Okt 2026: begitu HP menggambar kolom bagian
+                // ini, dia muncul sebagai dropdown kedua yang menanyakan hal
+                // yang sama dengan `tipe_sensor`. Tidak ada APK yang pernah
+                // mengisinya (bagian `usage_check` dulu tidak menggambar kolom
+                // sama sekali). `hitungPerGrup()` tetap membacanya sebagai
+                // cadangan untuk baris lama.
             ],
         ];
     }

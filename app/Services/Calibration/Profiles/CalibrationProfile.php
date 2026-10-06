@@ -2119,6 +2119,82 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Kolom `spesifikasi_alat` yang nilainya LAHIR dari centang Standard Used.
+     *
+     * Kertas memilih load cell / timbangan dengan mencentang barisnya. Dropdown
+     * kedua yang menanyakan hal yang sama itu UI dobel (laporan lapangan 5 Okt
+     * 2026), dan dua sumber yang tidak terhubung bisa berselisih: tercentang
+     * Load Cell 100 kN, terhitung 5 kN. Pola yang sama dengan neraca Anak
+     * Timbangan.
+     *
+     * Kunci = jalur di bawah `spesifikasi_alat` (`gaya.standar`). `baris` =
+     * baris kertas yang dikenali: `cocok` (nama/seri master, sama dengan
+     * `STANDARD_TERCETAK`) dan `nilai` yang disimpan.
+     *
+     * @return array<string, array{judul: string, baris: list<array{cocok: list<string>, nilai: string}>}>
+     */
+    public function kolomDariCentang(): array
+    {
+        return [];
+    }
+
+    /**
+     * Nilai tiap kolom [kolomDariCentang] dari standar yang dicentang — unik,
+     * urut centang. Standar yang tidak dikenali (termometer, RTD) dilewati.
+     *
+     * @param  Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     * @return array<string, list<string>>
+     */
+    public function nilaiDariCentang(Collection $dicentang): array
+    {
+        $hasil = [];
+
+        foreach ($this->kolomDariCentang() as $jalur => $kolom) {
+            $nilai = [];
+
+            foreach ($dicentang as $standar) {
+                foreach ($kolom['baris'] as $baris) {
+                    if (in_array($standar->nama, $baris['cocok'], true)
+                        || in_array($standar->serial_number, $baris['cocok'], true)) {
+                        $nilai[$baris['nilai']] = true;
+                        break;
+                    }
+                }
+            }
+
+            $hasil[$jalur] = array_keys($nilai);
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Kalimat penolakan kalau satu kolom [kolomDariCentang] tercentang lebih
+     * dari satu baris, atau `null`. Aplikasi tidak memilih sendiri: satu sesi
+     * memakai satu load cell / satu timbangan.
+     *
+     * @param  Collection<int, Standard>  $dicentang  Standar yang `dipakai`-nya true.
+     */
+    public function masalahKolomDariCentang(Collection $dicentang): ?string
+    {
+        $kolom = $this->kolomDariCentang();
+
+        foreach ($this->nilaiDariCentang($dicentang) as $jalur => $nilai) {
+            if (count($nilai) > 1) {
+                return sprintf(
+                    'Centang SATU %s saja. Yang tercentang "Dipakai": %s. Satu sesi memakai satu %s, '
+                    .'jadi aplikasi tidak memilih sendiri — lepas centang yang tidak dipakai, lalu kirim lagi.',
+                    $kolom[$jalur]['judul'],
+                    implode(', ', $nilai),
+                    $kolom[$jalur]['judul'],
+                );
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Alasan centangan ini TIDAK BISA dipakai menurunkan standar sesi — atau
      * `null` kalau tidak ada masalah.
      *
