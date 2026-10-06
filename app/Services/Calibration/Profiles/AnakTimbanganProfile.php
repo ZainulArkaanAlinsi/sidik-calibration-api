@@ -74,6 +74,14 @@ class AnakTimbanganProfile extends CalibrationProfile
     /** Satuan massa lembar ini — gram, apa adanya seperti master. */
     public const SATUAN = 'g';
 
+    /**
+     * Keping terbanyak yang sertifikatnya masih pas SATU halaman (aturan
+     * pemilik proyek, 6 Okt 2026). Diukur dompdf: 40 muat, 45 meluap ke
+     * halaman dua — `AnakTimbanganSertifikatSatuHalamanTest`. Set yang lebih
+     * besar dipecah jadi dua sesi.
+     */
+    public const BATAS_KEPING_SATU_HALAMAN = 40;
+
     /** Sepuluh blok keping di kertas `SIDIK-FM-CAL-0541_Rev.0`. */
     public const BARIS_KERTAS = 10;
 
@@ -673,8 +681,13 @@ class AnakTimbanganProfile extends CalibrationProfile
                 // kotak angka membuat teknisi mengetik "1-500" dan
                 // "1000,500,200,50" di produksi (5 Okt 2026) — dua-duanya tidak
                 // terbaca sebagai angka.
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat — dari', 'angka', satuan: self::SATUAN),
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat — sampai', 'angka', satuan: self::SATUAN),
+                //
+                // Dua kotak, SATU baris: labelnya sengaja sama persis, jadi HP
+                // menggambarnya sebaris (`_BarisSpesifikasi`) — `[dari] g
+                // [sampai] g` seperti kertas. Label berbeda dulu membuatnya
+                // tampil sebagai dua kolom terpisah (keluhan pemilik 6 Okt 2026).
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
                 $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
                 $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
                 // Neraca TIDAK lagi dipilih di sini. Kertas memilihnya lewat
@@ -858,6 +871,8 @@ class AnakTimbanganProfile extends CalibrationProfile
             // dan payload-nya tetap empat tabel di bawah; klien lama yang tidak
             // mengenal kunci ini menggambar tabelnya seperti biasa.
             'tampilan' => 'kartu_per_baris',
+            // Bintang di nominal (`20*`) cuma milik kertas Anak Timbangan.
+            'nominal_berbintang' => true,
             'field' => [],
             'tabel' => $tabel,
         ];

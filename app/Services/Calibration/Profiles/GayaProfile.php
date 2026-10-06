@@ -1148,6 +1148,12 @@ abstract class GayaProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 2,
             'judul' => 'Accuracy Test',
+            // Tampilan saja: satu kartu per titik beban, posisi 0/90/180/270°
+            // (atau UP/DOWN Proving Ring) berdampingan di layar lebar —
+            // kertasnya satu baris per titik, bukan empat tabel (6 Okt 2026).
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => true,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 $tabel(M::PERAN_POSISI[0], 1000, 'a. Posisi 0°'),

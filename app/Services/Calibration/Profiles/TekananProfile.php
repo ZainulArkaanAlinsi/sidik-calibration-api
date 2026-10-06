@@ -952,6 +952,12 @@ abstract class TekananProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 2,
             'judul' => 'Pressure Calibration',
+            // Tampilan saja: satu kartu per set point, UP & DOWN berdampingan
+            // di layar lebar — kertas 0507 satu baris `UUT | UP 1-3 | DOWN
+            // 1-3`, bukan dua tabel yang digulir naik-turun (6 Okt 2026).
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => true,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 $tabel(M::PERAN_UP, 1000, 'UP (tekanan dinaikkan)'),
