@@ -4873,6 +4873,13 @@ adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
   - "Environmental Meter Used" (`thermohygro_standard_id`) vs "TH Used" (`meter_lingkungan`) di
     Anak Timbangan. Kertas cuma punya "TH Used". Tabel koreksi meter master hanya punya
     Thermobarometer, jadi pemetaan dari daftar TH master belum terbukti.
+- **TITS**: tabel Before Adjustment **dilipat** secara bawaan (keputusan pemilik 6 Okt 2026), tidak
+  dihapus; pemilih standar per titik pindah ke tabel After. Penanda server `terlipat`.
+- **Timbangan Accuracy per blok nominal**: master MENGHITUNG per titik beban (`INPUT DATA!S37`,
+  `PERHITUNGAN FC!B50:K86`, `PERHITUNGAN U95% - Correction` POINT 1–11); app sudah per titik. Tata
+  letaknya menyusul + paritas penjaga-angka (syarat pemilik).
+- **Pertanyaan lab baru**: `pertanyaan-lab-anak-timbangan.md` §24 (rentang kapasitas), §25 (TH Used vs
+  Environmental Meter Used), §26 (kolom sertifikat AT & huruf set besar).
 - **Antrian sesudah revisi lembar kerja selesai** (permintaan pemilik): riwayat penolakan lembar kerja
   (alasan lama ada di `audit_logs` tapi belum ada layarnya), test penjaga jejak tolak, `revisi_field`
   di panel, batas panjang `catatan_revisi`.

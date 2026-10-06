@@ -618,6 +618,59 @@ kertas) dan barisnya bisa ditambah kalau setnya lebih panjang.
 
 ---
 
+## §24 — Kapasitas Alat: satu rentang atau beberapa?
+
+Sejak 6 Okt 2026 aplikasi meminta Kapasitas Alat sebagai **satu rentang** di satu baris:
+`[dari] g – [sampai] g`. Nilainya tersimpan di `spesifikasi_alat.anak_timbangan.kapasitas_min_g`
+dan `kapasitas_g`. Sertifikat mencetaknya di "Capacity/Graduation".
+
+Pemilik proyek meminta kotak ini "satu tabel saja, tapi bisa di-custom jadi lebih dari satu".
+Yang perlu dipastikan lab sebelum dibangun:
+
+1. Satu sertifikat bisa memuat **beberapa rentang**? Contoh: satu set 1 mg–500 mg dan satu set
+   1 g–1 kg diserahkan bersama. Kalau bisa, berapa rentang paling banyak?
+2. Tiap rentang punya **satuan sendiri** (mg / g / kg), atau satuannya sama untuk satu lembar?
+3. Di sertifikat, rentang-rentang itu ditulis bagaimana? Contoh: "1 mg – 500 mg; 1 g – 1 kg",
+   atau satu baris per rentang.
+4. Rentang dipakai untuk hitungan apa pun (misalnya memilih neraca atau kelas), atau hanya identitas?
+   Saat ini **tidak dipakai hitungan**; penjaga kapasitas memakai kapasitas NERACA.
+
+Yang tidak dilakukan sebelum dijawab: membuat tabel rentang yang bisa ditambah.
+
+## §25 — "Environmental Meter Used" dan "TH Used" menanyakan hal yang sama
+
+Kertas SIDIK-FM-CAL-0541 Rev.0 hanya punya **satu** kotak: `TH Used: TH-3`. Aplikasi menampilkan dua:
+
+| Kotak di aplikasi | Sumber daftar | Dipakai untuk |
+|---|---|---|
+| Environmental Meter Used (`thermohygro_standard_id`) | master standar lab (TH-1..TH-7) | identitas & ketertelusuran sesi |
+| TH Used (`spesifikasi_alat.anak_timbangan.meter_lingkungan`) | `Thermobarometer`, `TH-1`..`TH-7` | koreksi & U95 kondisi lingkungan di olah data AT |
+
+Tabel koreksi meter di workbook master AT **hanya punya baris Thermobarometer** (lihat §19 untuk TH-7).
+Kalau dua kotak digabung tanpa aturan, unit TH-n tidak punya tabel koreksi.
+
+1. Meter lingkungan yang sebenarnya dipakai saat menimbang anak timbangan itu apa: Thermobarometer,
+   TH-n, atau keduanya (suhu/RH dari TH-n, tekanan dari Thermobarometer)?
+2. Kalau satu: kotak mana yang dipertahankan, dan tabel koreksi untuk unit TH-n diambil dari mana?
+3. Kalau dua alat dipakai bersamaan, kertas Rev. berikutnya menulis keduanya?
+
+Yang tidak dilakukan sebelum dijawab: menggabung kedua kotak.
+
+## §26 — Sertifikat: No. Seri keping & bintang belum tercetak; huruf mengecil di set besar
+
+Contoh PDF 31 keping (6 Okt 2026, data sintetis): pas satu halaman, tetapi lewat **mode padat**.
+Huruf tabel data turun dari 11 px ke 8 px, dan sisa ±15% halaman di bawah kosong. Batas aplikasi:
+40 keping per sesi; 45 keping meluap ke halaman dua.
+
+Tabel hasil sertifikat Anak Timbangan saat ini hanya tiga kolom: `Standard (g) | Conventional Mass (g) |
+Correction (g)`. No. Seri keping dan tanda bintang (`20*`) **tidak tercetak**, jadi keping kembar
+(misalnya dua keping 0,2 g) tidak bisa dibedakan di sertifikat.
+
+1. Kolom apa yang wajib ada di tabel sertifikat AT? No. Seri keping? Tanda bintang? Kelas per keping?
+   MPE? Vonis?
+2. Untuk set ≥ 20 keping, mana yang lebih diterima: huruf 8 px dalam satu kolom, atau tabel dua
+   kolom berdampingan (keping 1–20 | 21–40) dengan huruf normal?
+
 ## Yang TIDAK bisa saya nilai dari berkas ini
 
 Berkas `_imp` cuma menyimpan nilai. Hal-hal berikut **tidak** saya klaim, dan
@@ -654,5 +707,8 @@ pasti cuma **di mana** memperbaikinya di master.
 | 21 | Teknisi mencatat tekanan udara di mana; Rev. berikutnya | | | |
 | 22 | `XS204` atau `X5204`; berapa neraca yang dicetak di kertas | | | |
 | 23 | Tiga pembacaan `X1 X2 X3` — dirata-ratakan atau dipilih | | | |
+| 24 | Kapasitas Alat: satu rentang atau beberapa; satuan; cara cetak | | | |
+| 25 | Meter lingkungan: Thermobarometer / TH-n / keduanya; kotak mana | | | |
+| 26 | Kolom tabel sertifikat AT; set besar: 8 px atau dua kolom | | | |
 
 Manajer Teknis: ______________________  Tanggal: ____________

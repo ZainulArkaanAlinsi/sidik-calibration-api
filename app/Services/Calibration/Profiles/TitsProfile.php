@@ -1176,7 +1176,11 @@ class TitsProfile extends CalibrationProfile
                     'judul' => 'CALIBRATION RESULT',
                     'field' => [],
                     'tabel' => [
-                        $this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading'),
+                        // Kertas 0505 cuma punya SATU tabel; Before tidak
+                        // dihitung maupun dicetak. Keputusan pemilik 6 Okt 2026:
+                        // dilipat secara bawaan di HP, JANGAN dihapus — isiannya
+                        // tetap tersimpan dan bisa dibuka saat pemeriksaan.
+                        [...$this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading'), 'terlipat' => true],
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading'),
                     ],
                 ],
