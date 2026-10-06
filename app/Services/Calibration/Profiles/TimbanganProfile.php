@@ -1325,6 +1325,15 @@ class TimbanganProfile extends CalibrationProfile
             'kode' => 'akurasi',
             'halaman' => 1,
             'judul' => '3. ACCURACY',
+            // Tampilan saja: satu kartu per titik beban dengan bacaan MENURUN
+            // (z, m, m', z') — susunan kertas dan master (`INPUT DATA!S37`:
+            // tiap titik satu blok, bacaannya bertumpuk; dihitung per titik di
+            // `PERHITUNGAN FC!B50:K86` dan `PERHITUNGAN U95% - Correction`).
+            // Payload dan hitungan tidak berubah.
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => false,
+            'kartu_vertikal' => true,
+            'nominal_berbintang' => false,
             'tabel' => [[
                 // Nominal keping PER BARIS, bukan satu kotak untuk selembar.
                 //

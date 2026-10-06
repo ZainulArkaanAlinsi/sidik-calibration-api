@@ -48,6 +48,22 @@ class TampilanKartuLembarKerjaTest extends TestCase
         }
     }
 
+    /**
+     * Accuracy Timbangan: kartu per titik beban dengan bacaan MENURUN (z, m,
+     * m', z') — master menyusun dan menghitungnya per titik (`INPUT DATA!S37`,
+     * `PERHITUNGAN FC!B50:K86`).
+     */
+    public function test_accuracy_timbangan_kartu_vertikal(): void
+    {
+        $bentuk = app(CalibrationProfileRegistry::class)->untukKode('timbangan')->bentukLembarKerja();
+        $akurasi = collect($bentuk['bagian'])->firstWhere('kode', 'akurasi');
+
+        $this->assertSame('kartu_per_set_point', $akurasi['tampilan']);
+        $this->assertTrue($akurasi['kartu_vertikal']);
+        $this->assertFalse($akurasi['kartu_sejajar']);
+        $this->assertFalse($akurasi['nominal_berbintang']);
+    }
+
     public function test_anak_timbangan_tetap_kartu_per_baris_berbintang(): void
     {
         $bentuk = app(CalibrationProfileRegistry::class)->untukKode('anak_timbangan')->bentukLembarKerja();
