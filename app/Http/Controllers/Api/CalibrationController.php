@@ -53,6 +53,7 @@ use App\Support\HydrometerMentah;
 use App\Support\JangkaSorongMentah;
 use App\Support\MicrometerMentah;
 use App\Support\PistonVolumeMentah;
+use App\Support\RiwayatPersetujuanSesi;
 use App\Support\SieveMentah;
 use App\Support\StandarDicentang;
 use App\Support\TekananMentah;
@@ -1222,7 +1223,9 @@ class CalibrationController extends Controller
         $this->pastikanSatuOrganisasi($request, $calibration);
 
         $data = $request->validate([
-            'catatan_revisi' => ['required', 'string', 'min:5'],
+            // `max:2000`: kolomnya `text` (64 KB) — tanpa batas, teks yang lebih
+            // panjang jadi 500 di MySQL strict, bukan 422 yang terbaca.
+            'catatan_revisi' => ['required', 'string', 'min:5', 'max:2000'],
             // Kode kolom yang diminta dibetulin, mis. `alat_serial_number`.
             // Opsional: nolak tanpa nunjuk kolom tertentu tetap sah ("hasilnya
             // nggak masuk akal, ulangi seluruh titik 7").
@@ -1297,6 +1300,23 @@ class CalibrationController extends Controller
 
         return response()->json([
             'data' => new CalibrationResource($segar),
+        ]);
+    }
+
+    /**
+     * Riwayat persetujuan sesi: tiap penolakan (alasan, kolom yang ditandai,
+     * siapa, kapan), pengajuan ulang, persetujuan — dari `audit_logs`, lihat
+     * [RiwayatPersetujuanSesi].
+     *
+     * Hanya admin & super admin (keputusan pemilik proyek 6 Okt 2026); rutenya
+     * di grup `role:admin`. Sesi lab lain dijawab 404 seperti rute sesi lain.
+     */
+    public function riwayatPersetujuan(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanSatuOrganisasi($request, $calibration);
+
+        return response()->json([
+            'data' => RiwayatPersetujuanSesi::untuk($calibration),
         ]);
     }
 

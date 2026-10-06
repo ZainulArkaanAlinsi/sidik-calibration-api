@@ -10,6 +10,7 @@ use App\Notifications\SesiPerluDisahkan;
 use App\Services\CalibrationValidator;
 use App\Services\PemisahanWewenang;
 use App\Services\PerhitunganBuilder;
+use App\Support\RiwayatPersetujuanSesi;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
@@ -97,6 +98,23 @@ class CalibrationSessionsTable
                     ->modalContent(fn (CalibrationSession $record): View => view(
                         'filament.perhitungan',
                         ['perhitungan' => app(PerhitunganBuilder::class)->bangun($record)],
+                    )),
+
+                // Riwayat persetujuan (baca saja): tiap penolakan beserta
+                // alasannya, pengajuan ulang, persetujuan — dari audit_logs.
+                // Tidak menulis apa pun, jadi tidak lewat HakTulisPanel; panel
+                // sendiri cuma untuk admin & super admin (keputusan pemilik
+                // proyek 6 Okt 2026: riwayat ini khusus admin & super admin).
+                Action::make('riwayat')
+                    ->label('Riwayat persetujuan')
+                    ->icon('heroicon-o-clock')
+                    ->color('gray')
+                    ->modalHeading(fn (CalibrationSession $record): string => 'Riwayat persetujuan — '.$record->nomor_sesi)
+                    ->modalWidth('3xl')
+                    ->modalSubmitAction(false)
+                    ->modalContent(fn (CalibrationSession $record): View => view(
+                        'filament.riwayat-persetujuan',
+                        ['riwayat' => RiwayatPersetujuanSesi::untuk($record)],
                     )),
 
                 // Periksa → hitung ulang tanpa nyetujuin (spesifikasi poin 11).
@@ -324,6 +342,8 @@ class CalibrationSessionsTable
                             ->label('Catatan revisi')
                             ->required()
                             ->minLength(5)
+                            // Sama dengan API (`max:2000`): kolom `text`.
+                            ->maxLength(2000)
                             ->helperText('Teknisi perlu tahu apa yang harus dibenerin.'),
                     ])
                     ->action(function (CalibrationSession $record, array $data): void {
