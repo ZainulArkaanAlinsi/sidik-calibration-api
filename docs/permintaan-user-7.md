@@ -4835,6 +4835,29 @@ adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
   rentang kapasitas belum tercetak di PDF (audit 6 Okt). Dua kotak TH ("TH Used" + "Environmental
   Meter Used") masih dobel.
 
+**6 Okt 2026 (siang) — audit 41 PDF lembar kerja, gelombang pertama:**
+- **Ganti jumlah pengulangan tidak lagi mengosongkan lembar** (mobile#194, laporan lapangan):
+  formulir dipasang ber-`key` jumlah pengulangan, jadi tiap ganti = State baru.
+- **Kolom di kotak Standard Used tidak pernah tergambar di HP** (mobile#194). Kolom yang hilang:
+  `gaya.standar`, kapasitas, resolusi, dan suhu standar (UTM/Load Cell/Proving Ring);
+  `tekanan.varian`, media, dan tinggi (Pressure/Vacuum/Differential); `tipe_sensor` TIDS;
+  `piston.timbangan`; dan `sieve.standar_dipakai`. Sesi gaya dari HP tertahan seluruh titiknya.
+- **Tabel Preload Test UTM/Load Cell/Proving Ring crash** (`Null check operator`), lalu tampil
+  sebagai kotak abu-abu di HP rilis (mobile#194). Kini dijaga `semua_lembar_tergambar_tanpa_error_test`,
+  yang menggambar ke-48 lembar.
+- **#2 menyebar ke Gaya & Piston**: dropdown "Load Cell Standar" dan "Timbangan" dicabut. Nilainya
+  lahir dari centang Standard Used (`CalibrationProfile::kolomDariCentang()`), dan dua centang
+  ditolak 422. Dropdown TIDS "Sensor Standard (lama)" dicabut (cadangan baca tetap).
+- **Belum (butuh keputusan, bukan kode)**:
+  - Tekanan `varian` vs centang: kotak tinggi SPMK bergantung pada `varian`.
+  - Sieve `standar_dipakai`: caliper dan mikroskop bisa sama-sama dipakai?
+  - Thermocouple `tipe_sensor` vs centang PRT/TC: dua sensor tercentang = ambigu.
+  - Autoclave `uut_setting` vs baris Indikator Pressure.
+  - TITS: tabel Before tidak dihitung.
+  - Profil TDS 0540 belum ada.
+
+  Rincian per lembar: laporan audit G1–G6 (scratchpad sesi, belum masuk repo).
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

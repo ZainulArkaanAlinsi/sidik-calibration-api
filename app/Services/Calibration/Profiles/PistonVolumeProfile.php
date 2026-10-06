@@ -76,6 +76,25 @@ abstract class PistonVolumeProfile extends CalibrationProfile
     abstract public function jenis(): string;
 
     /**
+     * Timbangan dari centang Standard Used, bukan dropdown kedua.
+     *
+     * Nilainya nama di `tabel-standar-piston-volume.json` — yang kebetulan
+     * sama dengan nama master pertama di `cocok` tiap baris timbangan.
+     */
+    public function kolomDariCentang(): array
+    {
+        $baris = [];
+
+        foreach (self::STANDARD_TERCETAK as $b) {
+            if (in_array($b['cocok'][0], Tabel::namaTimbangan(), true)) {
+                $baris[] = ['cocok' => $b['cocok'], 'nilai' => $b['cocok'][0]];
+            }
+        }
+
+        return [M::KUNCI_SESI.'.timbangan' => ['judul' => 'timbangan', 'baris' => $baris]];
+    }
+
+    /**
      * Pilihan sub-jenis yang menentukan kolom tabel MPE, atau `[]` kalau alat
      * ini tidak punya sub-jenis.
      *
@@ -714,10 +733,9 @@ abstract class PistonVolumeProfile extends CalibrationProfile
                     'halaman' => 1,
                     'judul' => 'Standard',
                     'baris' => static::STANDARD_TERCETAK,
-                    'field' => [
-                        $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.timbangan', 'Timbangan', 'pilihan',
-                            pilihan: Tabel::namaTimbangan(), ekstra: ['mempengaruhi_ketidakpastian' => true]),
-                    ],
+                    // Timbangan lahir dari baris yang dicentang — lihat
+                    // `kolomDariCentang()`. Dropdown keduanya dicabut 6 Okt 2026.
+                    'field' => [],
                 ],
                 [
                     'kode' => 'hasil',
