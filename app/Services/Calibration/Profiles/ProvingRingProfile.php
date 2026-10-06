@@ -342,6 +342,11 @@ class ProvingRingProfile extends GayaProfile
             'kode' => 'hasil',
             'halaman' => 2,
             'judul' => 'Accuracy Test',
+            // Tampilan saja: satu kartu per titik beban, UP & DOWN berdampingan
+            // di layar lebar — lihat `GayaProfile` (6 Okt 2026).
+            'tampilan' => 'kartu_per_baris',
+            'kartu_sejajar' => true,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 $tabel(M::PERAN_UP, 1000, 'a. Beban NAIK (UP)'),

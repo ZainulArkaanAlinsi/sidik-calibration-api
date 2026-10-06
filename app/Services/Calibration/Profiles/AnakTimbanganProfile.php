@@ -863,6 +863,8 @@ class AnakTimbanganProfile extends CalibrationProfile
             // dan payload-nya tetap empat tabel di bawah; klien lama yang tidak
             // mengenal kunci ini menggambar tabelnya seperti biasa.
             'tampilan' => 'kartu_per_baris',
+            // Bintang di nominal (`20*`) cuma milik kertas Anak Timbangan.
+            'nominal_berbintang' => true,
             'field' => [],
             'tabel' => $tabel,
         ];
