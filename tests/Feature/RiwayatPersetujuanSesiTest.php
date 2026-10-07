@@ -10,6 +10,7 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\RiwayatPersetujuanSesi;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -174,6 +175,39 @@ class RiwayatPersetujuanSesiTest extends TestCase
 
         $adminLain = User::factory()->admin()->create(['organization_id' => Organization::factory()->create()->id]);
         $this->actingAs($adminLain, 'sanctum')->getJson($url)->assertNotFound();
+
+        // Super admin lab lain juga 404: baca lintas organisasi lewat API
+        // memang BELUM dibuka (AGENTS.md §Keadaan nyata `super_admin`).
+        $superLain = User::factory()->create([
+            'organization_id' => $adminLain->organization_id,
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+        $this->actingAs($superLain, 'sanctum')->getJson($url)->assertNotFound();
+    }
+
+    /**
+     * Kebanyakan penolakan lewat panel, bukan API. Tombol Tolak panel menulis
+     * lewat model juga — kalau suatu saat diganti query builder, baris audit
+     * tidak lahir dan riwayatnya bolong tanpa error.
+     */
+    public function test_penolakan_lewat_panel_masuk_riwayat(): void
+    {
+        [, $admin, , $sesi] = $this->siapkan();
+
+        Livewire::actingAs($admin)
+            ->test(ListCalibrationSessions::class)
+            ->callAction(TestAction::make('reject')->table($sesi), ['catatan_revisi' => 'ALASAN DARI PANEL'])
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(CalibrationSession::STATUS_PERLU_REVISI, $sesi->fresh()->status, 'Prasyarat: panel benar-benar menolak.');
+
+        $tolak = array_values(array_filter(
+            RiwayatPersetujuanSesi::untuk($sesi->fresh()),
+            fn (array $p): bool => $p['jenis'] === 'ditolak',
+        ));
+        $this->assertCount(1, $tolak);
+        $this->assertSame('ALASAN DARI PANEL', $tolak[0]['alasan']);
+        $this->assertSame('Admin Pemeriksa', $tolak[0]['oleh']['nama']);
     }
 
     /**
