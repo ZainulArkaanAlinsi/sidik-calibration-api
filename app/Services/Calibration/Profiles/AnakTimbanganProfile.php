@@ -959,6 +959,27 @@ class AnakTimbanganProfile extends CalibrationProfile
         // CMC", bukan "vs CMC 0.00000000" yang terbaca seperti klaim sempurna.
         $budget[] = $this->barisPerbandinganCmc((float) $h['u95_g'], null, self::SATUAN);
 
+        // Penyimpangan dari master wajib terbaca di jejak sesi, dengan sumbernya
+        // (AGENTS.md §Olah data butir 4): master tidak punya densitas M3 sama
+        // sekali, jadi angka keping M3 lahir dari asumsi OIML, bukan dari tabel.
+        if (($h['kelas_uut'] ?? null) === 'M3') {
+            $budget[] = [
+                'sumber' => 'anak_timbangan_densitas_m3_asumsi',
+                'keterangan' => sprintf(
+                    'Densitas keping M3 = %s kg/m3 (ASUMSI besi tuang kelabu, OIML R111-1:2004 Tabel B.7, '
+                    .'± 600 kg/m3). Tabel 5 OIML tidak memberi batas densitas M3 dan tabel master lab tidak '
+                    .'punya kolom M3; B.7.9.3: "the density of class M3 weights is usually of no concern". '
+                    .'Keputusan pemilik 7 Okt 2026, menunggu konfirmasi lab (pertanyaan §27).',
+                    $this->angka(TabelStandarAnakTimbangan::DENSITAS_M3_ASUMSI, 0),
+                ),
+                'distribusi' => 'jejak',
+                'nilai' => null,
+                'u_baku' => 0.0,
+                'ci' => 0.0,
+                'vi' => 0.0,
+            ];
+        }
+
         $ling = $hasil['lingkungan'];
 
         $budget[] = [

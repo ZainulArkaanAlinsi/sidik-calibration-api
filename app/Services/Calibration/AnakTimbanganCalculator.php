@@ -371,6 +371,7 @@ class AnakTimbanganCalculator
                 // Neraca tempat keping INI ditimbang — bisa beda antar-keping
                 // kalau sesinya mencentang lebih dari satu neraca.
                 'timbangan' => $timbangan['nama'],
+                'kelas_uut' => $kelasUut,
                 'no_identitas' => $identitas[$titikKe] ?? null,
                 'bintang' => isset($berbintang[$titikKe]),
                 'keping_standar' => $keping,

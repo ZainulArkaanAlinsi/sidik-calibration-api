@@ -695,8 +695,12 @@ Di workbook master, kasus yang sama mencetak `#VALUE!` (bentuk §4).
    Setuju?
 3. Untuk M2 di bawah 100 g yang sekarang kosong: pertanyaan yang sama.
 
-Yang tidak dilakukan sebelum dijawab: mengisi angka densitas M3 atau M2 < 100 g. Server tetap
-memblokir titiknya dengan alasan yang terbaca.
+**Perkembangan 7 Okt 2026 (keputusan pemilik, tidak menunggu lab).** OIML R111-1:2004 Tabel 5
+menulis "for class M3, no value is specified", dan B.7.9.3: "The density of class M3 weights is usually
+of no concern". Server sekarang memakai densitas ASUMSI besi tuang kelabu **7 100 kg/m³** (Tabel B.7,
+± 600 kg/m³) untuk kelas M3, tercatat di jejak audit sesi (`anak_timbangan_densitas_m3_asumsi`).
+Pengaruhnya sekitar 1,6 mg pada keping 1 kg (MPE M3 1 kg = 500 mg). Lab tetap diminta mengonfirmasi
+atau mengganti angkanya. M2 < 100 g belum diubah.
 
 ## §28 — Beberapa neraca dalam satu sesi: neraca mana untuk keping mana?
 
