@@ -154,6 +154,8 @@ class BatasAntarLabTest extends TestCase
             'calibration' => ['api/calibrations/{calibration}', 'sesi'],
             'calibration perhitungan' => ['api/calibrations/{calibration}/perhitungan', 'sesi'],
             'calibration validasi' => ['api/calibrations/{calibration}/validasi', 'sesi'],
+            // Riwayat persetujuan (6 Okt) — alasan tolak termasuk isi lembar kerja lab.
+            'calibration riwayat-persetujuan' => ['api/calibrations/{calibration}/riwayat-persetujuan', 'sesi'],
             'certificate' => ['api/certificates/{certificate}', 'sertifikat'],
             'certificate riwayat-email' => ['api/certificates/{certificate}/riwayat-email', 'sertifikat'],
             'certificate qr' => ['api/certificates/{certificate}/qr', 'sertifikat'],
