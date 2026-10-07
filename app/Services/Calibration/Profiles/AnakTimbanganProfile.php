@@ -253,26 +253,27 @@ class AnakTimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * Delapan desimal gram.
+     * LIMA desimal — keputusan pemilik proyek 7 Okt 2026, atas masukan Pak
+     * Rohman bahwa delapan desimal "kebanyakan".
      *
-     * Bukan kemewahan: massa konvensional keping 0,1 g di sertifikat master
-     * tercetak `0,09884965` dan U95-nya 0,1223 **mg** = 0,0001223 g. Di lima
-     * desimal, U95 seluruh lembar runtuh jadi `0,00012` dan kehilangan angka
-     * pentingnya; di tiga desimal dia jadi `0,000` — klaim pengukuran sempurna.
+     * Dulu delapan, meniru sertifikat master (`0,09884965` g). Lima desimal
+     * gram = resolusi 0,01 mg, setara keterulangan neraca terhalus lab (Semi
+     * Micro PX85, U95 keping kecil ±0,00001 g), jadi U95 tidak pernah runtuh
+     * jadi `0,00000`. Batasnya: keping kelas E1/E2 di bawah 1 g dengan neraca
+     * lebih halus dari yang dimiliki lab sekarang akan butuh desimal lebih.
      *
-     * Sertifikat master mencetak ketidakpastiannya dalam MILIGRAM sementara
-     * massanya dalam gram. Di sini keduanya gram, jadi satu baris tidak memuat
-     * dua satuan. Angkanya sama, penyajiannya beda — dicatat di
-     * `docs/perintah-frontend-anak-timbangan.md`.
+     * Berlaku untuk sertifikat yang terbit SESUDAH perubahan ini; jumlah
+     * desimal dibekukan ke snapshot, jadi sertifikat lama tidak berubah sampai
+     * direvisi. Sesi bersatuan kg dicetak lima desimal kg (resolusi 0,01 g).
      */
     public function desimalSertifikat(): ?int
     {
-        return 8;
+        return 5;
     }
 
     public function desimalU95(): ?int
     {
-        return 8;
+        return 5;
     }
 
     /**

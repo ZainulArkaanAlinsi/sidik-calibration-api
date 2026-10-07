@@ -677,7 +677,8 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         // `decimal(20,8)` — bukan angka yang dilonggarkan supaya lolos.
         //
         // Jalur simpan membulatkan lebih dulu lewat `bulatkanHitungan()`
-        // (`desimalU95()` = 8); jalur hitung ulang menulis apa adanya dan
+        // (`DESIMAL_PEMBACAAN` = 8, presisi kolom — BUKAN `desimalU95()`, yang
+        // cuma mengatur tampilan); jalur hitung ulang menulis apa adanya dan
         // membiarkan kolomnya yang membulatkan. Di MySQL keduanya mendarat
         // identik karena kolomnya memang decimal. Di SQLite presisi desimal
         // diabaikan, jadi nilai mentahnya bertahan dan selisihnya muncul —
