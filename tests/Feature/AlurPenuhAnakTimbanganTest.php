@@ -7,9 +7,12 @@ use App\Models\Equipment;
 use App\Models\Standard;
 use App\Models\User;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
+use App\Services\CalibrationValidator;
 use App\Support\AnakTimbanganMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -471,6 +474,37 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         // keping() = 100 g, 50 g, (5 g tanpa T2 — tidak terbit).
         $this->assertStringContainsString('ditimbang di Analytical Balance', $jejak[1]);
         $this->assertStringContainsString('ditimbang di Semi Micro Balance', $jejak[2]);
+    }
+
+    /**
+     * Pemeriksa persetujuan menghitung ulang sesi AT dari HP — yang neracanya
+     * dari centang, TANPA `standard_id` per titik — tanpa peringatan palsu, dan
+     * angka tersimpan yang diubah sesudahnya KETAHUAN.
+     *
+     * Sebelum 7 Okt 2026 pemeriksa menuntut standar per titik: sesi produksi
+     * KAL/2026/10/0003 pulang dengan dua belas `standar_titik_hilang` dan hitung
+     * ulangnya dilewati seluruhnya.
+     */
+    public function test_validator_menghitung_ulang_sesi_hp_tanpa_standar_titik(): void
+    {
+        $id = $this->kirimMentah(fn (): array => [
+            'standar_dicek' => [self::centang('1129063525')],
+        ])->assertCreated()->json('data.id');
+
+        $sesi = CalibrationSession::findOrFail($id);
+        $this->assertNull($sesi->standard_id, 'Prasyarat: kiriman tanpa standar acuan sesi, seperti dari HP.');
+
+        $kode = fn (): Collection => collect(app(CalibrationValidator::class)->periksa($sesi->fresh())['temuan'])
+            ->pluck('kode');
+
+        $this->assertNotContains('standar_titik_hilang', $kode());
+        $this->assertNotContains('hitung_ulang_gagal', $kode());
+        $this->assertNotContains('hitung_ulang_beda', $kode());
+
+        // Bukti hitung ulangnya BENAR-BENAR jalan, bukan sekadar diam.
+        $sesi->uncertaintyCalculations()->where('titik_ke', 1)->update(['rata_rata' => DB::raw('rata_rata + 0.001')]);
+
+        $this->assertContains('hitung_ulang_beda', $kode());
     }
 
     /**
