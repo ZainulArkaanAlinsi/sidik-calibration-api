@@ -116,10 +116,30 @@ class AnakTimbanganCalculator
 
         $kelasUut = $konteks['kelas_uut'] ?? null;
         $kelasStandar = $konteks['kelas_standar'] ?? null;
-        $namaTimbangan = $konteks['timbangan'] ?? null;
-        $timbangan = $namaTimbangan === null
-            ? null
-            : TabelStandarAnakTimbangan::timbangan($namaTimbangan);
+        // Neraca yang dicentang — boleh lebih dari satu (lihat [pilihNeraca]).
+        // Konteks lama yang cuma membawa `timbangan` dibaca sebagai daftar
+        // berisi satu neraca itu.
+        $namaNeraca = array_values(array_filter(
+            (array) ($konteks['timbangan_daftar'] ?? []),
+            static fn ($n): bool => is_string($n) && trim($n) !== '',
+        ));
+
+        if ($namaNeraca === [] && is_string($konteks['timbangan'] ?? null) && trim($konteks['timbangan']) !== '') {
+            $namaNeraca = [$konteks['timbangan']];
+        }
+
+        $neracaSesi = [];
+        $neracaAsing = [];
+
+        foreach ($namaNeraca as $nama) {
+            $baris = TabelStandarAnakTimbangan::timbangan($nama);
+
+            if ($baris === null) {
+                $neracaAsing[] = $nama;
+            } else {
+                $neracaSesi[] = $baris;
+            }
+        }
 
         // Prasyarat tingkat SESI. Satu pun yang hilang membuat seluruh sesi
         // tidak bisa dihitung — bukan "dihitung sebagian", karena densitas udara
@@ -140,10 +160,12 @@ class AnakTimbanganCalculator
             $kurang[] = 'kelas OIML keping standar';
         }
 
-        if ($timbangan === null) {
-            $kurang[] = $namaTimbangan === null
-                ? 'neraca yang dipakai (centang SATU neraca di Standard yang Digunakan)'
-                : "neraca '{$namaTimbangan}' nggak ada di tabel standar";
+        if ($namaNeraca === []) {
+            $kurang[] = 'neraca yang dipakai (centang neraca di Standard yang Digunakan)';
+        }
+
+        foreach ($neracaAsing as $nama) {
+            $kurang[] = "neraca '{$nama}' nggak ada di tabel standar";
         }
 
         if ($kurang !== []) {
@@ -216,19 +238,23 @@ class AnakTimbanganCalculator
             // nominal jauh di atas penyimpangan keping mana pun, dan jauh di
             // bawah salah satuan (×1000) atau salah ketik satu digit (×10).
             //
-            // Kapasitasnya milik NERACA yang dipilih (tabel standar), bukan
-            // `kapasitas_g` blok sesi — kotak itu "Kapasitas Alat" milik set
-            // pelanggan, dan di lapangan diisi teks bebas ("1-500",
-            // "1000,500,200,50").
-            $kapasitas = $timbangan['kapasitas_g'];
+            // Kapasitasnya milik NERACA (tabel standar), bukan `kapasitas_g`
+            // blok sesi — kotak itu "Kapasitas Alat" milik set pelanggan, dan di
+            // lapangan diisi teks bebas ("1-500", "1000,500,200,50").
+            //
+            // Keping ini ditimbang di neraca tercentang terkecil yang sanggup
+            // memikulnya. Tidak ada satu pun yang sanggup = nominalnya salah
+            // satuan atau neracanya kurang dicentang.
+            $timbangan = self::pilihNeraca($neracaSesi, $nominal);
 
-            if ($kapasitas > 0 && $nominal > $kapasitas) {
+            if ($timbangan === null) {
                 $tolak(sprintf(
-                    'Titik %d: nominal %s g melebihi kapasitas neraca %s g. Lembar ini memakai GRAM — '
-                    .'keping 20 g ditulis 20, bukan 20000.',
+                    'Titik %d: nominal %s g melebihi kapasitas neraca %s g. Periksa satuan nominal '
+                    .'(keping 20 g ditulis 20 dengan satuan g, atau 0,02 dengan satuan kg), atau '
+                    .'centang neraca yang sanggup memikulnya.',
                     $titikKe,
                     self::angka($nominal),
-                    self::angka($kapasitas),
+                    self::angka(max(array_map(static fn (array $n): float => (float) $n['kapasitas_g'], $neracaSesi))),
                 ));
 
                 continue;
@@ -239,7 +265,8 @@ class AnakTimbanganCalculator
             if ($nominal > 0 && abs($rataStandar - $nominal) > $nominal / 2) {
                 $tolak(sprintf(
                     'Titik %d: bacaan neraca keping standar %s g tidak sesuai nominal %s g. Periksa '
-                    .'satuan nominal — lembar ini memakai GRAM (keping 20 g ditulis 20, bukan 20000).',
+                    .'pilihan Satuan lembar ini (g atau kg) — nominal dan bacaan neraca wajib ditulis '
+                    .'dalam satuan yang sama.',
                     $titikKe,
                     self::angka($rataStandar),
                     self::angka($nominal),
@@ -341,6 +368,9 @@ class AnakTimbanganCalculator
             $hasil[] = [
                 'titik_ke' => $titikKe,
                 'nominal_g' => $nominal,
+                // Neraca tempat keping INI ditimbang — bisa beda antar-keping
+                // kalau sesinya mencentang lebih dari satu neraca.
+                'timbangan' => $timbangan['nama'],
                 'no_identitas' => $identitas[$titikKe] ?? null,
                 'bintang' => isset($berbintang[$titikKe]),
                 'keping_standar' => $keping,
@@ -380,6 +410,50 @@ class AnakTimbanganCalculator
             'titik' => $hasil,
             'ditolak' => $ditolak,
         ];
+    }
+
+    /**
+     * Neraca untuk satu keping: yang KAPASITASNYA TERKECIL di antara neraca
+     * tercentang yang sanggup memikul nominalnya.
+     *
+     * Aturannya sama dengan `TabelStandarAnakTimbangan::timbanganTerbaikUntuk()`
+     * yang sudah dipakai peringatan `anak_timbangan_neraca_terlalu_kasar`,
+     * cuma dibatasi ke neraca yang benar-benar dicentang teknisi. Di tabel
+     * standar lab, neraca berkapasitas lebih kecil juga yang keterulangan dan
+     * resolusinya lebih halus, jadi ini juga pilihan dengan budget terkecil.
+     *
+     * Dasarnya kertas lapangan 5 Okt 2026: set F2 1 g–500 g dicentang di tiga
+     * neraca sekaligus (Semi Micro 80 g, Analytical 220 g, Fujitsu 1200 g),
+     * dan kertasnya tidak menulis neraca per keping. Keputusan pemilik 7 Okt
+     * 2026: "sistemnya menyesuaikan sendiri". Neraca yang terpilih tercatat
+     * di jejak audit tiap keping, jadi pemeriksa bisa membacanya.
+     *
+     * Kapasitas ≤ 0 (tidak diketahui) dianggap sanggup, tapi dipilih paling
+     * akhir. `null` = tidak ada neraca yang sanggup.
+     *
+     * @param  list<array<string, mixed>>  $neraca  baris tabel standar
+     * @return array<string, mixed>|null
+     */
+    public static function pilihNeraca(array $neraca, float $nominalG): ?array
+    {
+        $cocok = null;
+        $kapasitasCocok = INF;
+
+        foreach ($neraca as $baris) {
+            $kapasitas = (float) $baris['kapasitas_g'];
+            $urutan = $kapasitas > 0 ? $kapasitas : INF;
+
+            if ($kapasitas > 0 && $kapasitas < $nominalG) {
+                continue;
+            }
+
+            if ($cocok === null || $urutan < $kapasitasCocok) {
+                $cocok = $baris;
+                $kapasitasCocok = $urutan;
+            }
+        }
+
+        return $cocok;
     }
 
     /**

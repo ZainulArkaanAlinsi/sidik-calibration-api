@@ -6,6 +6,7 @@ use App\Models\CalibrationSession;
 use App\Models\Equipment;
 use App\Models\Standard;
 use App\Models\User;
+use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Support\AnakTimbanganMentah;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -439,19 +440,106 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         $this->assertCount(2, $sesi->uncertaintyCalculations()->get());
     }
 
-    /** Dua neraca dicentang: kiriman ditolak 422 dengan nama & S/N keduanya. */
-    public function test_dua_neraca_dicentang_ditolak(): void
+    /**
+     * Tiga neraca dicentang (kertas lapangan 5 Okt 2026): kiriman DITERIMA, dan
+     * tiap keping ditimbang di neraca tercentang terkecil yang sanggup
+     * memikulnya — tercatat di jejak audit keping itu.
+     */
+    public function test_tiga_neraca_dicentang_tiap_keping_di_neraca_yang_sanggup(): void
     {
-        $pesan = (string) $this->kirimMentah(fn (): array => [
-            'standar_dicek' => [self::centang('1129063525'), self::centang('C543502629')],
-        ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('standar_dicek')
-            ->json('errors.standar_dicek.0');
+        $respons = $this->kirimMentah(fn (): array => [
+            'standar_dicek' => [
+                self::centang('C543502629'),
+                self::centang('1129063525'),
+                self::centang('SIDIK/134/2024'),
+            ],
+        ])->assertCreated();
 
-        $this->assertStringContainsString('Centang SATU neraca', $pesan);
-        $this->assertStringContainsString('1129063525', $pesan);
-        $this->assertStringContainsString('C543502629', $pesan);
+        $sesi = CalibrationSession::findOrFail($respons->json('data.id'));
+        $blok = $sesi->spesifikasi_alat[AnakTimbanganMentah::KUNCI_SESI];
+
+        $this->assertEqualsCanonicalizing(
+            ['Semi Micro Balance', 'Analytical Balance', 'Electronic Balance Fujitsu'],
+            $blok['timbangan_daftar'],
+        );
+        $this->assertNull($blok['timbangan']);
+
+        $jejak = $sesi->uncertaintyCalculations()->orderBy('titik_ke')->get()
+            ->mapWithKeys(fn ($u): array => [(int) $u->titik_ke => collect($u->type_b_components)
+                ->firstWhere('sumber', 'jejak_titik')['keterangan'] ?? '']);
+
+        // keping() = 100 g, 50 g, (5 g tanpa T2 — tidak terbit).
+        $this->assertStringContainsString('ditimbang di Analytical Balance', $jejak[1]);
+        $this->assertStringContainsString('ditimbang di Semi Micro Balance', $jejak[2]);
+    }
+
+    /**
+     * Lembar 2 kertas lapangan (sesi produksi KAL/2026/10/0001): keping 20 kg &
+     * 10 kg, neraca Mettler 30 kg, bacaan ditulis dalam KG. Dengan Satuan `kg`
+     * kiriman terhitung — dan angkanya SAMA PERSIS dengan kiriman yang sama
+     * yang ditulis dalam gram.
+     */
+    public function test_satuan_kg_terhitung_sama_dengan_gram(): void
+    {
+        $lembar = [
+            [20.0, 20.00180, 19.99075, 19.99093, 20.00180],
+            [20.0, 20.00180, 20.00450, 20.00457, 20.00180],
+            [10.0, 10.00060, 10.00698, 10.00703, 10.00060],
+        ];
+        $kirim = function (string $satuan, float $faktor) use ($lembar): CalibrationSession {
+            $blok = self::blokSesi();
+            $blok['kelas_uut'] = 'M2';
+            $blok['kelas_standar'] = 'F1';
+            $blok['satuan'] = $satuan;
+            unset($blok['timbangan']);
+
+            $id = $this->kirimMentah(fn (): array => [
+                'tanggal_kalibrasi' => '2025-12-01',
+                'spesifikasi_alat' => [AnakTimbanganMentah::KUNCI_SESI => $blok],
+                'standar_dicek' => [self::centang('3127471')],
+                'measurements' => array_map(fn (array $b): array => [
+                    'titik_ukur' => $b[0] * $faktor,
+                    'at_s1' => [$b[1] * $faktor],
+                    'at_t1' => [$b[2] * $faktor],
+                    'at_t2' => [$b[3] * $faktor],
+                    'at_s2' => [$b[4] * $faktor],
+                ], $lembar),
+            ])->assertCreated()->json('data.id');
+
+            return CalibrationSession::findOrFail($id);
+        };
+
+        $kg = $kirim('kg', 1.0);
+        $gram = $kirim('g', 1000.0);
+
+        $hasilKg = $kg->uncertaintyCalculations()->orderBy('titik_ke')->get();
+        $hasilGram = $gram->uncertaintyCalculations()->orderBy('titik_ke')->get();
+
+        $this->assertCount(3, $hasilKg, 'Ketiga keping kilogram harus terhitung.');
+
+        foreach ($hasilKg as $i => $u) {
+            $this->assertEqualsWithDelta((float) $hasilGram[$i]->rata_rata, (float) $u->rata_rata, 1e-6);
+            $this->assertEqualsWithDelta((float) $hasilGram[$i]->ketidakpastian_diperluas, (float) $u->ketidakpastian_diperluas, 1e-9);
+            $this->assertEqualsWithDelta((float) $hasilGram[$i]->titik_ukur, (float) $u->titik_ukur, 1e-9);
+        }
+
+        // Tersimpan apa adanya (kg), bukan dikalikan — simpan ulang draft tidak
+        // boleh melipatgandakan angkanya.
+        $this->assertSame(20.0, (float) $kg->rawMeasurements()->where('titik_ke', 1)->value('titik_ukur'));
+        // Labelnya satuan yang diketik — layar periksa admin tidak menulis
+        // `20,0018 g` untuk bacaan kilogram.
+        // Disaring di koleksi, bukan `distinct()` di query: relasinya membawa
+        // ORDER BY bawaan, dan MySQL strict menolak DISTINCT + ORDER BY kolom
+        // yang tidak dipilih (SQLite meloloskannya — itu sebabnya dua suite).
+        $this->assertSame(['kg'], $kg->rawMeasurements()->pluck('satuan')->unique()->values()->all());
+        $this->assertSame(['g'], $gram->rawMeasurements()->pluck('satuan')->unique()->values()->all());
+
+        // Sertifikat sesi kg dicetak dalam kg; sesi gram tidak berubah.
+        $profil = new AnakTimbanganProfile;
+        $cetak = $profil->cetakDalamSatuanAlat($kg);
+        $this->assertSame('kg', $cetak['satuan']);
+        $this->assertEqualsWithDelta(20.0018, ($cetak['ubah'])(20001.8, 1), 1e-12);
+        $this->assertNull($profil->cetakDalamSatuanAlat($gram));
     }
 
     /**
