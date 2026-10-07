@@ -239,6 +239,19 @@ Ada juga tiga **peringatan** sesi (boleh dilewati admin, tidak menahan):
    formulir asli. Di lembar ini akibatnya lebih buruk daripada di alat lain:
    empat peran ABBA yang tertukar membalik **tanda** koreksi kepingnya.
 
+## 5a. Perubahan 7 Okt 2026 — satuan g/kg, beberapa neraca, satu pembacaan
+
+Dari tiga lembar kertas lapangan 5 Okt 2026.
+
+| Perubahan | Server | HP |
+|---|---|---|
+| **Satuan g / kg** | field pilihan `spesifikasi_alat.anak_timbangan.satuan`; angka tersimpan apa adanya, diubah ke gram di `AnakTimbanganProfile::hitungPerGrup()`; sertifikat sesi kg dicetak kg (`cetakDalamSatuanAlat`) | bentuk membawa `satuan_dari` (tingkat lembar & kotak kapasitas); label kartu, tabel, dan kotak ikut pilihan (`LembarKerjaState.satuanTampil`). Satuan masuk daftar penentu angka yang ditanya sebelum kirim |
+| **Beberapa neraca** | centang lebih dari satu neraca diterima; tersimpan di `timbangan_daftar`; tiap keping memakai neraca tercentang terkecil yang sanggup (`AnakTimbanganCalculator::pilihNeraca()`), tercatat di jejak audit | tidak ada perubahan — centang sudah ada |
+| **Satu pembacaan per baris** | `jumlah_pengulangan` = 1 | ikut bentuk server |
+
+Sesi lama (tanpa `satuan`, dengan satu `timbangan`) dibaca gram dan satu neraca,
+jadi angkanya tidak bergeser. Pertanyaan lab §28 (aturan neraca per keping).
+
 ## 6. Yang masih menunggu jawaban lab
 
 23 butir bernomor di `docs/pertanyaan-lab-anak-timbangan.md`. Yang paling

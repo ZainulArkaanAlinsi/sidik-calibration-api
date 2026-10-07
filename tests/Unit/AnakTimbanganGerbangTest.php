@@ -268,7 +268,80 @@ class AnakTimbanganGerbangTest extends TestCase
 
         $this->assertSame([], $hasil['titik'], 'Keping 20 g terhitung sebagai 20 kg.');
         $this->assertStringContainsString('kapasitas neraca', $hasil['ditolak'][0]['alasan']);
-        $this->assertStringContainsString('GRAM', $hasil['ditolak'][0]['alasan']);
+        $this->assertStringContainsString('satuan nominal', $hasil['ditolak'][0]['alasan']);
+    }
+
+    /**
+     * Beberapa neraca dicentang: tiap keping memakai neraca TERKECIL yang
+     * sanggup memikulnya — persis kertas lapangan 5 Okt 2026 (set F2 1 g–500 g
+     * di Semi Micro 80 g, Analytical 220 g, dan Fujitsu 1200 g).
+     */
+    #[Test]
+    public function neraca_dipilih_per_keping_dari_yang_dicentang(): void
+    {
+        $neraca = array_map(
+            static fn (string $n): array => TabelStandarAnakTimbangan::timbangan($n),
+            ['Electronic Balance Fujitsu', 'Semi Micro Balance', 'Analytical Balance'],
+        );
+        $pilih = static fn (float $g): ?string => AnakTimbanganCalculator::pilihNeraca($neraca, $g)['nama'] ?? null;
+
+        $this->assertSame('Semi Micro Balance', $pilih(1.0));
+        $this->assertSame('Semi Micro Balance', $pilih(50.0));
+        $this->assertSame('Analytical Balance', $pilih(100.0));
+        $this->assertSame('Analytical Balance', $pilih(200.0));
+        $this->assertSame('Electronic Balance Fujitsu', $pilih(500.0));
+        $this->assertNull($pilih(2000.0), 'Tidak ada neraca tercentang yang sanggup memikul 2 kg.');
+    }
+
+    /**
+     * Sesi tiga neraca: keping kecil dan besar sama-sama terhitung, masing-masing
+     * dengan budget neraca TEMPAT dia ditimbang.
+     */
+    #[Test]
+    public function sesi_beberapa_neraca_menghitung_tiap_keping_dengan_neracanya(): void
+    {
+        $konteks = self::KONTEKS;
+        $konteks['kelas_uut'] = 'F2';
+        $konteks['timbangan'] = null;
+        $konteks['timbangan_daftar'] = ['Semi Micro Balance', 'Analytical Balance', 'Electronic Balance Fujitsu'];
+
+        $titik = [
+            ['titik_ke' => 1, 'nominal_g' => 50.0, 'at_s1' => 49.99992, 'at_t1' => 50.00012, 'at_t2' => 50.00012, 'at_s2' => 49.99992],
+            ['titik_ke' => 2, 'nominal_g' => 100.0, 'at_s1' => 100.0, 'at_t1' => 100.0007, 'at_t2' => 100.0007, 'at_s2' => 100.0],
+            ['titik_ke' => 3, 'nominal_g' => 500.0, 'at_s1' => 500.0, 'at_t1' => 500.0, 'at_t2' => 500.0, 'at_s2' => 500.0],
+        ];
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi($titik, $konteks);
+
+        $this->assertSame([], $hasil['ditolak']);
+        $this->assertSame(
+            ['Semi Micro Balance', 'Analytical Balance', 'Electronic Balance Fujitsu'],
+            array_column($hasil['titik'], 'timbangan'),
+        );
+
+        // Satu neraca saja (Analytical) untuk keping 100 g = angka yang SAMA
+        // persis dengan keping 100 g di sesi tiga neraca.
+        $konteksTunggal = self::KONTEKS;
+        $konteksTunggal['kelas_uut'] = 'F2';
+        $tunggal = (new AnakTimbanganCalculator)->hitungSesi([$titik[1]], $konteksTunggal);
+
+        $this->assertSame($tunggal['titik'][0]['u95_g'], $hasil['titik'][1]['u95_g']);
+        $this->assertSame($tunggal['titik'][0]['mt_g'], $hasil['titik'][1]['mt_g']);
+    }
+
+    /**
+     * Blok sesi lama (cuma `timbangan`) dibaca sebagai daftar berisi satu
+     * neraca, dan satuannya gram.
+     */
+    #[Test]
+    public function blok_lama_dibaca_sebagai_satu_neraca_bersatuan_gram(): void
+    {
+        $blok = AnakTimbanganMentah::blokSesi([AnakTimbanganMentah::KUNCI_SESI => ['timbangan' => 'Analytical Balance']]);
+
+        $this->assertSame(['Analytical Balance'], $blok['timbangan_daftar']);
+        $this->assertSame('g', $blok['satuan']);
+        $this->assertSame(20000.0, AnakTimbanganMentah::keGram('20', 'kg'));
+        $this->assertSame(20.0, AnakTimbanganMentah::keGram('20', 'lb'), 'Satuan asing dibaca gram, tidak ditebak.');
     }
 
     /**

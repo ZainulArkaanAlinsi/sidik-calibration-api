@@ -749,8 +749,16 @@ class CalibrationRequest extends FormRequest
         // Menang atas isian `timbangan` lama: dua sumber yang tidak terhubung
         // pernah membuat teknisi mencentang satu neraca sementara hitungan
         // memakai neraca lain dari dropdown.
+        //
+        // Boleh LEBIH DARI SATU (7 Okt 2026): kertas di lapangan mencentang
+        // Semi Micro, Analytical, dan Fujitsu sekaligus untuk set 1 g–500 g,
+        // karena keping 500 g tidak muat di neraca 80 g. Tiap keping lalu
+        // ditimbang di neraca tercentang terkecil yang sanggup memikulnya
+        // (`AnakTimbanganCalculator::pilihNeraca()`). `timbangan` tetap diisi
+        // kalau cuma satu, supaya pembaca lama tidak berubah.
         if ($neraca !== null) {
-            $blok['timbangan'] = $neraca;
+            $blok['timbangan_daftar'] = $neraca;
+            $blok['timbangan'] = count($neraca) === 1 ? $neraca[0] : null;
         }
 
         foreach ([
@@ -770,15 +778,16 @@ class CalibrationRequest extends FormRequest
     }
 
     /**
-     * Nama neraca (kunci tabel standar) dari centang "Standard yang Digunakan",
-     * atau `null` kalau bukan lembar Anak Timbangan, tidak ada neraca tercentang,
-     * atau tercentang LEBIH DARI SATU (kiriman itu ditolak validasi lewat
-     * `AnakTimbanganProfile::masalahCentangStandar()`; draft dibiarkan).
+     * Nama-nama neraca (kunci tabel standar) dari centang "Standard yang
+     * Digunakan", atau `null` kalau bukan lembar Anak Timbangan atau tidak ada
+     * neraca tercentang. Boleh lebih dari satu — lihat [bakukanBlokAnakTimbangan].
      *
      * Dicocokkan lewat NOMOR SERI (`TabelStandarAnakTimbangan::timbanganDariSeri`),
      * bukan nama.
+     *
+     * @return list<string>|null
      */
-    private function neracaDariCentang(Equipment $alat): ?string
+    private function neracaDariCentang(Equipment $alat): ?array
     {
         if (! $this->has('standar_dicek')) {
             return null;
@@ -788,10 +797,12 @@ class CalibrationRequest extends FormRequest
             ->map(fn (Standard $s): ?array => TabelStandarAnakTimbangan::timbanganDariSeri($s->serial_number))
             ->filter()
             ->pluck('nama')
+            ->map(fn ($nama): string => (string) $nama)
             ->unique()
-            ->values();
+            ->values()
+            ->all();
 
-        return $neraca->count() === 1 ? (string) $neraca->first() : null;
+        return $neraca === [] ? null : $neraca;
     }
 
     /**

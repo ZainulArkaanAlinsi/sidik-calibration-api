@@ -4913,6 +4913,34 @@ draft, tolak lewat panel, akses per peran, super admin lab lain 404) dan satu ka
 
 **Status:** API PR #224, mobile PR #198. **Belum:** menandai `revisi_field` dari panel.
 
+## §46 — Anak Timbangan dari kertas lapangan: satuan g/kg, beberapa neraca, satu pembacaan — 7 Okt 2026
+
+**Asal.** Pemilik mengirim foto tiga lembar kertas Anak Timbangan (kalibrasi 5 Okt) dan
+meminta ketiganya jadi sertifikat. Tiga hal di kertas tidak bisa dimasukkan:
+
+1. **Bacaan dalam kg.** Keping 20 kg & 10 kg (M2) ditimbang di neraca Mettler 30 kg yang
+   menunjukkan kg. Sesi produksi KAL/2026/10/0001 menulis nominal `20000` di samping bacaan
+   `20,0018`, dan seluruh kepingnya ditolak.
+2. **Tiga neraca dicentang** (set F2 1 g–500 g). Server dulu menolak "centang SATU neraca".
+3. **Satu kotak pembacaan per baris.** Aplikasi meminta tiga (kertas Rev.0 lama).
+
+**Keputusan pemilik (7 Okt 2026):** satuan bisa dipilih kg atau gram dan sistem menyesuaikan
+sendiri; neraca menyesuaikan kondisi lapangan; pengulangan satu kali. Pengesahan tetap oleh
+Pak Alex sendiri — Claude mengisi sebagai teknisi SDK-0005 atas izin pemilik, tidak login
+sebagai orang lain.
+
+**Yang dibangun:** lihat `docs/perintah-frontend-anak-timbangan.md` §5a. Ringkasnya:
+- satuan `g`/`kg`, dikonversi di tempat pakai (pola Height Gauge);
+- sertifikat sesi kg dicetak kg;
+- tiap keping memakai neraca tercentang terkecil yang sanggup, tercatat di jejak audit;
+- `jumlah_pengulangan` 1.
+
+**Angka:** sesi gram satu neraca tidak bergeser (`AnakTimbanganMasterTest` tetap hijau). Lembar
+kg = lembar gram yang sama persis (`test_satuan_kg_terhitung_sama_dengan_gram`).
+
+**Masih tertahan:** lembar M3 (KAL/2026/10/0002) menunggu densitas M3 dari lab
+(`pertanyaan-lab-anak-timbangan.md` §27). Aturan neraca per keping ditanyakan di §28.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

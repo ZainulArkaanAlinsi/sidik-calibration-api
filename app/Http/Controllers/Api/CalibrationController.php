@@ -4269,6 +4269,11 @@ class CalibrationController extends Controller
 
         $spek = (array) $request->input('spesifikasi_alat', []);
 
+        // Label satuan baris mentah = satuan yang DIKETIK teknisi (g/kg), bukan
+        // satuan hitungan. Angkanya tersimpan apa adanya; tanpa ini bacaan kg
+        // tampil berlabel `g` di layar periksa admin (tinjauan 7 Okt 2026).
+        $satuanKetik = AnakTimbanganMentah::blokSesi($spek)['satuan'] ?? AnakTimbanganProfile::SATUAN;
+
         foreach (array_values((array) $request->input('measurements', [])) as $titik) {
             $konteks = [AnakTimbanganMentah::KUNCI_DERET => []];
             $barisTitik = [];
@@ -4299,7 +4304,7 @@ class CalibrationController extends Controller
                         'titik_ukur' => $nominal,
                         'standard_id' => $standarDefault?->id,
                         'pembacaan' => $angka,
-                        'satuan' => AnakTimbanganProfile::SATUAN,
+                        'satuan' => $satuanKetik,
                         'input_source' => $dariKamera ? $sumberKamera : 'manual',
                         'ocr_raw_text' => $meta['raw_text'] ?? null,
                         'ocr_confidence' => $this->keyakinanTerlemah($meta),

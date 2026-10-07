@@ -97,14 +97,43 @@ class AnakTimbanganMentah
     public const KELAS = ['E1', 'E2', 'F1', 'F2', 'M1', 'M2', 'M3'];
 
     /**
+     * Satuan nominal & bacaan neraca yang boleh dipilih teknisi, dan faktornya
+     * ke GRAM — satuan seluruh mesin hitung, tabel standar, dan budget.
+     *
+     * Keping 20 kg ditimbang di neraca yang menunjukkan kg (`20,00180`), dan
+     * kertasnya ditulis begitu. Sebelum pilihan ini ada, sesi produksi
+     * KAL/2026/10/0001 (5 Okt 2026) menulis nominal `20000` di samping bacaan
+     * `20,0018` — dan seluruh kepingnya ditolak.
+     */
+    public const FAKTOR_KE_G = ['g' => 1.0, 'kg' => 1000.0];
+
+    /**
+     * Ubah satu angka ke gram, menurut satuan blok sesi.
+     *
+     * Konversinya di TEMPAT PAKAI, bukan di ujung masuk — angka mentah
+     * tersimpan persis seperti diketik. Alasannya bug nyata Micrometer (lihat
+     * `HeightGaugeMentah::keMm()`): HP mengirim balik angka yang dia terima,
+     * jadi konversi di jalur simpan berlipat tiap kali draft disimpan ulang.
+     *
+     * Satuan yang tidak dikenali dibaca gram (faktor 1), sama seperti kosong.
+     */
+    public static function keGram(mixed $nilai, ?string $satuan): float
+    {
+        return (float) $nilai * (self::FAKTOR_KE_G[(string) $satuan] ?? 1.0);
+    }
+
+    /**
      * Jumlah pembacaan tiap peran menurut KERTASNYA.
      *
-     * Lembar `SIDIK-FM-CAL-0541_Rev.0` menyediakan tiga kolom (`X1 X2 X3`) untuk
-     * tiap baris Standard/UUT/UUT/Standard — dua belas angka per keping.
-     * Workbook masternya cuma menyimpan SATU angka per baris, jadi delapan dari
-     * dua belas tidak punya tempat di sana. Pertanyaan lab §23.
+     * SATU. Kertas yang dipakai di lapangan 5 Okt 2026 (foto tiga lembar yang
+     * dikirim pemilik 7 Okt) hanya punya satu kotak "Repeatability" per baris
+     * Standard/UUT/UUT/Standard — persis workbook master, yang juga cuma
+     * menyimpan satu angka per baris. Versi Rev.0 lama menyediakan tiga kolom
+     * (`X1 X2 X3`); deret yang tersimpan dengan lebih dari satu angka tetap
+     * dirata-ratakan oleh [rataDeret], jadi sesi lama tidak berubah angkanya.
+     * Pertanyaan lab §23.
      */
-    public const PENGULANGAN_KERTAS = 3;
+    public const PENGULANGAN_KERTAS = 1;
 
     /**
      * @param  Collection<int, RawMeasurement>  $baris  baris satu `titik_ke`
@@ -202,7 +231,14 @@ class AnakTimbanganMentah
      * koreksi apung yang tidak bersumber.
      *
      * @param  array<string, mixed>|null  $spesifikasiAlat  isi `calibration_sessions.spesifikasi_alat`
-     * @return array{kelas_uut: string|null, kelas_standar: string|null, timbangan: string|null, meter_lingkungan: string|null, kapasitas_g: float|null, kapasitas_min_g: float|null, suhu: array{awal: float|null, akhir: float|null}, kelembaban: array{awal: float|null, akhir: float|null}, tekanan: array{awal: float|null, akhir: float|null}, identitas: array<int, string>, bintang: list<int>}|null
+     *                                                      `timbangan_daftar` memuat SEMUA neraca yang dicentang (kertas boleh
+     *                                                      mencentang lebih dari satu — tiap keping ditimbang di neraca yang sanggup
+     *                                                      memikulnya). Baris lama yang cuma punya `timbangan` dibaca sebagai daftar
+     *                                                      berisi satu neraca itu, jadi angkanya tidak bergeser.
+     *
+     * `satuan` = satuan nominal & bacaan yang diketik teknisi (`g`/`kg`),
+     * default gram. Lihat [FAKTOR_KE_G].
+     * @return array{kelas_uut: string|null, kelas_standar: string|null, timbangan: string|null, timbangan_daftar: list<string>, satuan: string, meter_lingkungan: string|null, kapasitas_g: float|null, kapasitas_min_g: float|null, suhu: array{awal: float|null, akhir: float|null}, kelembaban: array{awal: float|null, akhir: float|null}, tekanan: array{awal: float|null, akhir: float|null}, identitas: array<int, string>, bintang: list<int>}|null
      */
     public static function blokSesi(?array $spesifikasiAlat): ?array
     {
@@ -216,6 +252,8 @@ class AnakTimbanganMentah
             'kelas_uut' => self::kelas($blok['kelas_uut'] ?? null),
             'kelas_standar' => self::kelas($blok['kelas_standar'] ?? null),
             'timbangan' => self::teks($blok['timbangan'] ?? null),
+            'timbangan_daftar' => self::daftarNeraca($blok['timbangan_daftar'] ?? null, $blok['timbangan'] ?? null),
+            'satuan' => self::satuan($blok['satuan'] ?? null),
             'meter_lingkungan' => self::teks($blok['meter_lingkungan'] ?? null),
             // Kapasitas Alat di kertas itu RENTANG ("dari … g sampai … g");
             // `kapasitas_g` ujung atasnya, `kapasitas_min_g` ujung bawahnya.
@@ -338,6 +376,39 @@ class AnakTimbanganMentah
         $bersih = is_string($nilai) ? strtoupper(trim($nilai)) : null;
 
         return in_array($bersih, self::KELAS, true) ? $bersih : null;
+    }
+
+    /**
+     * Daftar neraca yang dicentang, unik dan urut seperti tersimpan. Kosong
+     * kalau tidak ada; baris lama jatuh ke `timbangan` tunggalnya.
+     *
+     * @return list<string>
+     */
+    private static function daftarNeraca(mixed $daftar, mixed $tunggal): array
+    {
+        $hasil = [];
+
+        foreach (is_array($daftar) ? $daftar : [] as $nama) {
+            $bersih = self::teks($nama);
+
+            if ($bersih !== null && ! in_array($bersih, $hasil, true)) {
+                $hasil[] = $bersih;
+            }
+        }
+
+        if ($hasil === [] && ($bersih = self::teks($tunggal)) !== null) {
+            $hasil[] = $bersih;
+        }
+
+        return $hasil;
+    }
+
+    /** `g` atau `kg`; selain itu (termasuk kosong) dibaca gram. */
+    private static function satuan(mixed $nilai): string
+    {
+        $bersih = is_string($nilai) ? strtolower(trim($nilai)) : '';
+
+        return array_key_exists($bersih, self::FAKTOR_KE_G) ? $bersih : 'g';
     }
 
     private static function teks(mixed $nilai): ?string

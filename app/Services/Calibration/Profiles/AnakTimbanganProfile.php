@@ -10,7 +10,6 @@ use App\Services\Calibration\AnakTimbanganCalculator;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Support\AnakTimbanganMentah;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 /**
  * Kalibrasi **Anak Timbangan** (OIML R111) — alat ke-29, dan yang KEDUA di
@@ -73,6 +72,9 @@ class AnakTimbanganProfile extends CalibrationProfile
 {
     /** Satuan massa lembar ini — gram, apa adanya seperti master. */
     public const SATUAN = 'g';
+
+    /** Field pilihan Satuan lembar (`g`/`kg`) — lihat `AnakTimbanganMentah::FAKTOR_KE_G`. */
+    public const KUNCI_SATUAN = 'spesifikasi_alat.anak_timbangan.satuan';
 
     /**
      * Keping terbanyak yang sertifikatnya masih pas SATU halaman (aturan
@@ -166,37 +168,10 @@ class AnakTimbanganProfile extends CalibrationProfile
         return 'Anak Timbangan';
     }
 
-    /**
-     * Kiriman yang mencentang LEBIH DARI SATU neraca ditolak, dengan nama dan
-     * nomor seri tiap neraca.
-     *
-     * Neraca sesi diturunkan dari centang (`CalibrationRequest::
-     * neracaDariCentang()`), dan satu sesi memakai SATU neraca: di master
-     * kedua puluh keping ditimbang di neraca yang sama, dan neraca memasok dua
-     * dari enam komponen budget tiap keping. Aplikasi tidak memilih sendiri —
-     * preseden yang sama dengan dua kalibrator Enclosure (PR #216). Data nyata
-     * 5 Okt 2026: sesi KAL/2026/10/0003 mencentang tiga neraca sekaligus.
-     *
-     * Centang keping standar (bukan neraca) tidak dihitung di sini.
-     */
-    public function masalahCentangStandar(Collection $dicentang): ?string
-    {
-        $neraca = $dicentang
-            ->filter(fn (Standard $s): bool => TabelStandarAnakTimbangan::timbanganDariSeri($s->serial_number) !== null)
-            ->values();
-
-        if ($neraca->count() < 2) {
-            return null;
-        }
-
-        return sprintf(
-            'Centang SATU neraca saja. Yang tercentang "Dipakai" ada %d: %s. Satu sesi Anak Timbangan '
-            .'ditimbang di satu neraca (keterulangan dan resolusinya masuk budget tiap keping), jadi '
-            .'aplikasi tidak memilih sendiri — lepas centang neraca yang tidak dipakai, lalu kirim lagi.',
-            $neraca->count(),
-            $neraca->map(fn (Standard $s): string => sprintf('%s (S/N %s)', $s->nama, $s->serial_number))->implode(', '),
-        );
-    }
+    // Penolakan "centang SATU neraca" dicabut 7 Okt 2026. Kertas lapangan
+    // mencentang beberapa neraca sekaligus untuk satu set, dan tiap keping
+    // sekarang ditimbang di neraca tercentang terkecil yang sanggup memikulnya
+    // — `AnakTimbanganCalculator::pilihNeraca()`.
 
     /**
      * Ejaan yang datang dari pelanggan.
@@ -298,6 +273,48 @@ class AnakTimbanganProfile extends CalibrationProfile
     public function desimalU95(): ?int
     {
         return 8;
+    }
+
+    /**
+     * Sertifikat sesi bersatuan kg dicetak dalam kg.
+     *
+     * Hitungan & `uncertainty_calculations` tetap gram (satuan tabel standar
+     * dan budget). Yang dibalik cuma baris SERTIFIKAT, dan labelnya ikut
+     * pindah bersama angkanya — lihat kontrak di induk. Sesi bersatuan gram
+     * memulangkan `null`: perilaku lama, tidak ada yang bergeser.
+     *
+     * @return array{satuan: string, ubah: \Closure(float, int): ?float}|null
+     */
+    public function cetakDalamSatuanAlat(CalibrationSession $sesi): ?array
+    {
+        $blok = AnakTimbanganMentah::blokSesi($sesi->spesifikasi_alat);
+        $faktor = $blok === null ? 1.0 : AnakTimbanganMentah::FAKTOR_KE_G[$blok['satuan']];
+
+        if ($blok === null || $faktor == 1.0) {
+            return null;
+        }
+
+        return [
+            'satuan' => $blok['satuan'],
+            'ubah' => static fn (float $nilai, int $titikKe): float => $nilai / $faktor,
+        ];
+    }
+
+    /**
+     * Bacaan sesi kg diadu ke rentang alat dalam satuan ALAT (umumnya gram).
+     *
+     * Dipakai pemeriksa rentang `CalibrationValidator`. Tanpa ini bacaan
+     * `20,0018` (kg) diadu ke rentang alat bergram dan menelurkan peringatan
+     * palsu — jenis peringatan yang melatih admin menekan "setujui tetap".
+     * Satuan yang tidak dikenali dibaca gram, sama seperti [AnakTimbanganMentah::keGram].
+     */
+    public function nilaiDalamSatuanAlat(float $nilai, ?string $satuanTitik, Equipment $equipment): float
+    {
+        $faktor = AnakTimbanganMentah::FAKTOR_KE_G;
+        $dari = $faktor[strtolower(trim((string) $satuanTitik))] ?? 1.0;
+        $ke = $faktor[strtolower(trim((string) $equipment->satuan))] ?? 1.0;
+
+        return $nilai * $dari / $ke;
     }
 
     /** Kolom hasilnya massa konvensional, bukan "pembacaan alat". */
@@ -432,13 +449,21 @@ class AnakTimbanganProfile extends CalibrationProfile
                 continue;
             }
 
+            // Nominal & bacaan diketik dalam satuan pilihan lembar (`g`/`kg`)
+            // dan tersimpan APA ADANYA; diubah ke gram di sini, di tempat
+            // pakai — satu titik konversi untuk jalur simpan, hitung ulang,
+            // dan validator sekaligus. Lihat `AnakTimbanganMentah::keGram()`.
+            $keG = static fn ($v): ?float => is_numeric($v)
+                ? AnakTimbanganMentah::keGram($v, $blok['satuan'])
+                : null;
+
             $masukan[] = [
                 'titik_ke' => (int) $t['titik_ke'],
-                'nominal_g' => (float) $t['titik_ukur'],
-                'at_s1' => $k[AnakTimbanganMentah::PERAN_S1] ?? null,
-                'at_t1' => $k[AnakTimbanganMentah::PERAN_T1] ?? null,
-                'at_t2' => $k[AnakTimbanganMentah::PERAN_T2] ?? null,
-                'at_s2' => $k[AnakTimbanganMentah::PERAN_S2] ?? null,
+                'nominal_g' => AnakTimbanganMentah::keGram($t['titik_ukur'], $blok['satuan']),
+                'at_s1' => $keG($k[AnakTimbanganMentah::PERAN_S1] ?? null),
+                'at_t1' => $keG($k[AnakTimbanganMentah::PERAN_T1] ?? null),
+                'at_t2' => $keG($k[AnakTimbanganMentah::PERAN_T2] ?? null),
+                'at_s2' => $keG($k[AnakTimbanganMentah::PERAN_S2] ?? null),
                 'standard' => $t['standard'] ?? null,
             ];
         }
@@ -568,12 +593,18 @@ class AnakTimbanganProfile extends CalibrationProfile
             ];
         }
 
-        $timbangan = $blok['timbangan'] === null
-            ? null
-            : TabelStandarAnakTimbangan::timbangan($blok['timbangan']);
+        $neracaSesi = array_values(array_filter(array_map(
+            static fn (string $n): ?array => TabelStandarAnakTimbangan::timbangan($n),
+            $blok['timbangan_daftar'],
+        )));
+        $terkecil = $this->nominalTerkecil($sesi, $blok['satuan']);
+        // Neraca tempat keping TERKECIL ditimbang — dengan beberapa neraca
+        // tercentang, itu yang dipilih `pilihNeraca()` untuknya.
+        $timbangan = $terkecil === null
+            ? ($neracaSesi[0] ?? null)
+            : AnakTimbanganCalculator::pilihNeraca($neracaSesi, $terkecil);
 
         if ($timbangan !== null) {
-            $terkecil = $this->nominalTerkecil($sesi);
             $terbaik = $terkecil === null
                 ? null
                 : TabelStandarAnakTimbangan::timbanganTerbaikUntuk($terkecil);
@@ -615,6 +646,9 @@ class AnakTimbanganProfile extends CalibrationProfile
             'judul' => 'Calibration Work Sheet - Anak Timbangan',
             'jumlah_pengulangan' => self::PENGULANGAN,
             'satuan' => self::SATUAN,
+            // Label satuan seluruh lembar ikut pilihan Satuan (g/kg). `satuan`
+            // di atas tetap `g` untuk APK lama yang tidak mengenal kunci ini.
+            'satuan_dari' => self::KUNCI_SATUAN,
             'satuan_suhu' => '°C',
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Urutan penimbangan ABBA WAJIB diisi sesuai perannya: Standard, UUT, '
@@ -624,8 +658,10 @@ class AnakTimbanganProfile extends CalibrationProfile
                 .'densitas udara tidak bisa dihitung dan koreksi apung seluruh keping hilang. Keping '
                 .'yang nominalnya KEMBAR (dua 200 g, dua 20 g, dua 2 g, dua 0,2 g, dua 0,02 g) dibedakan '
                 .'seperti di kertas: keping kedua diberi BINTANG di nominalnya (20*), atau isi No. Seri '
-                .'keping yang berbeda — dua keping yang tidak bisa dibedakan tidak diterbitkan. Neraca '
-                .'dipilih lewat centang di Standard yang Digunakan, SATU neraca per sesi.',
+                .'keping yang berbeda — dua keping yang tidak bisa dibedakan tidak diterbitkan. Centang '
+                .'SEMUA neraca yang dipakai di Standard yang Digunakan; tiap keping otomatis memakai '
+                .'neraca tercentang terkecil yang sanggup memikulnya. Pilih Satuan (g atau kg) sesuai '
+                .'tampilan neraca — nominal dan bacaan ditulis dalam satuan itu.',
             'budget_ketidakpastian' => [
                 'tersedia' => true,
                 'sumber' => '1.1 Anak Timbangan F1 1mg-500 g 202501022 imp.xlsx',
@@ -677,6 +713,18 @@ class AnakTimbanganProfile extends CalibrationProfile
                     pilihan: $kelas,
                 ),
                 $this->field('alat_serial_number', 'No. Seri', 'teks'),
+                // Satuan nominal & bacaan neraca. Keping kilogram ditimbang di
+                // neraca yang menunjukkan kg, dan teknisi menulis apa yang dia
+                // baca. Server mengubahnya ke gram waktu menghitung
+                // (`AnakTimbanganMentah::keGram()`), dan sertifikat mencetak
+                // kembali dalam satuan ini ([cetakDalamSatuanAlat]).
+                $this->field(
+                    self::KUNCI_SATUAN, 'Satuan (nominal & bacaan)', 'pilihan',
+                    pilihan: array_map(
+                        static fn (string $s): array => ['nilai' => $s, 'label' => $s],
+                        array_keys(AnakTimbanganMentah::FAKTOR_KE_G),
+                    ),
+                ),
                 // Kapasitas Alat di kertas itu RENTANG set ("1 mg – 500 g"). Satu
                 // kotak angka membuat teknisi mengetik "1-500" dan
                 // "1000,500,200,50" di produksi (5 Okt 2026) — dua-duanya tidak
@@ -686,8 +734,8 @@ class AnakTimbanganProfile extends CalibrationProfile
                 // menggambarnya sebaris (`_BarisSpesifikasi`) — `[dari] g
                 // [sampai] g` seperti kertas. Label berbeda dulu membuatnya
                 // tampil sebagai dua kolom terpisah (keluhan pemilik 6 Okt 2026).
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
-                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN),
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN, ekstra: ['satuan_dari' => self::KUNCI_SATUAN]),
+                $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN, ekstra: ['satuan_dari' => self::KUNCI_SATUAN]),
                 $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
                 $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
                 // Neraca TIDAK lagi dipilih di sini. Kertas memilihnya lewat
@@ -919,7 +967,8 @@ class AnakTimbanganProfile extends CalibrationProfile
                 'Keping %s%s g%s · massa standar %s g · de %s g · koreksi apung %s g '
                 .'(jalur master %s g, selisih %s mg — pertanyaan lab §2) · massa konvensional %s g · '
                 .'densitas UUT %s / standar %s kg/m3 · densitas udara %s kg/m3 dari T %s °C, RH %s %%, '
-                .'P %s hPa (rata-rata MENTAH — pertanyaan lab §13) · U95 %s g tanpa lantai CMC',
+                .'P %s hPa (rata-rata MENTAH — pertanyaan lab §13) · ditimbang di %s (neraca tercentang '
+                .'terkecil yang sanggup memikul keping ini) · U95 %s g tanpa lantai CMC',
                 $this->angka($h['nominal_g']),
                 ($h['bintang'] ?? false) ? '*' : '',
                 $h['no_identitas'] === null ? '' : ' (No. Seri '.$h['no_identitas'].')',
@@ -935,6 +984,7 @@ class AnakTimbanganProfile extends CalibrationProfile
                 $this->angka((float) $ling['suhu']['rata'], 2),
                 $this->angka((float) $ling['kelembaban']['rata'], 2),
                 $this->angka((float) $ling['tekanan']['rata'], 2),
+                (string) ($h['timbangan'] ?? '-'),
                 $this->angka($h['u95_g']),
             ),
             'distribusi' => 'jejak',
@@ -947,15 +997,15 @@ class AnakTimbanganProfile extends CalibrationProfile
         return $budget;
     }
 
-    /** Nominal keping TERKECIL sesi ini, dari baris mentahnya. */
-    private function nominalTerkecil(CalibrationSession $sesi): ?float
+    /** Nominal keping TERKECIL sesi ini dalam GRAM, dari baris mentahnya. */
+    private function nominalTerkecil(CalibrationSession $sesi, string $satuan): ?float
     {
         $nominal = $sesi->rawMeasurements()
             ->whereIn('peran_sensor', AnakTimbanganMentah::PERAN_URUT)
             ->whereNotNull('titik_ukur')
             ->min('titik_ukur');
 
-        return $nominal === null ? null : (float) $nominal;
+        return $nominal === null ? null : AnakTimbanganMentah::keGram($nominal, $satuan);
     }
 
     private function angka(float $nilai, int $desimal = 8): string
