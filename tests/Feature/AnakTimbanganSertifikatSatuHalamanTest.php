@@ -138,6 +138,11 @@ class AnakTimbanganSertifikatSatuHalamanTest extends TestCase
         $this->assertInstanceOf(Certificate::class, $sertifikat);
 
         $bahan = app(DataTampilanSertifikat::class)->untuk($sertifikat);
+
+        // U95 PER KEPING, bukan satu baris di bawah tabel: tiap keping punya
+        // budget sendiri (CAL/2026/10/0001 sempat mencetak U95 keping 1 g untuk
+        // keping 500 g). Kolom tambahan ini juga wajib tetap muat satu halaman.
+        $this->assertTrue($bahan['snapshot']['u95_per_titik'] ?? false, 'U95 Anak Timbangan harus dicetak per keping.');
         $halaman = $this->halaman($bahan, false);
         if ($halaman > 1) {
             $halaman = $this->halaman($bahan, true);

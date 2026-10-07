@@ -317,6 +317,21 @@ class AnakTimbanganProfile extends CalibrationProfile
         return $nilai * $dari / $ke;
     }
 
+    /**
+     * U95 dicetak PER KEPING, bukan satu baris di bawah tabel.
+     *
+     * Tiap keping punya budget sendiri, dan sejak satu sesi boleh memakai
+     * beberapa neraca bedanya bisa ratusan kali lipat: sertifikat
+     * CAL/2026/10/0001 (7 Okt 2026) mencetak "Uncertainty U95% = ± 0,00001004 g"
+     * — U95 keping 1 g — untuk seluruh tabel, padahal keping 500 g ber-U95
+     * 0,0009 g. Baris ringkas itu mengambil baris PERTAMA, jadi ketidakpastian
+     * keping besar tercetak sembilan puluh kali terlalu kecil.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
+    }
+
     /** Kolom hasilnya massa konvensional, bukan "pembacaan alat". */
     public function judulKolomUut(): string
     {
