@@ -528,8 +528,11 @@ class AlurPenuhAnakTimbanganTest extends TestCase
         $this->assertSame(20.0, (float) $kg->rawMeasurements()->where('titik_ke', 1)->value('titik_ukur'));
         // Labelnya satuan yang diketik — layar periksa admin tidak menulis
         // `20,0018 g` untuk bacaan kilogram.
-        $this->assertSame(['kg'], $kg->rawMeasurements()->distinct()->pluck('satuan')->all());
-        $this->assertSame(['g'], $gram->rawMeasurements()->distinct()->pluck('satuan')->all());
+        // Disaring di koleksi, bukan `distinct()` di query: relasinya membawa
+        // ORDER BY bawaan, dan MySQL strict menolak DISTINCT + ORDER BY kolom
+        // yang tidak dipilih (SQLite meloloskannya — itu sebabnya dua suite).
+        $this->assertSame(['kg'], $kg->rawMeasurements()->pluck('satuan')->unique()->values()->all());
+        $this->assertSame(['g'], $gram->rawMeasurements()->pluck('satuan')->unique()->values()->all());
 
         // Sertifikat sesi kg dicetak dalam kg; sesi gram tidak berubah.
         $profil = new AnakTimbanganProfile;
