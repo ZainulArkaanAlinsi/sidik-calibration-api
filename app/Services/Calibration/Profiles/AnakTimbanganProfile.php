@@ -253,26 +253,27 @@ class AnakTimbanganProfile extends CalibrationProfile
     }
 
     /**
-     * Delapan desimal gram.
+     * LIMA desimal — keputusan pemilik proyek 7 Okt 2026, atas masukan Pak
+     * Rohman bahwa delapan desimal "kebanyakan".
      *
-     * Bukan kemewahan: massa konvensional keping 0,1 g di sertifikat master
-     * tercetak `0,09884965` dan U95-nya 0,1223 **mg** = 0,0001223 g. Di lima
-     * desimal, U95 seluruh lembar runtuh jadi `0,00012` dan kehilangan angka
-     * pentingnya; di tiga desimal dia jadi `0,000` — klaim pengukuran sempurna.
+     * Dulu delapan, meniru sertifikat master (`0,09884965` g). Lima desimal
+     * gram = resolusi 0,01 mg, setara keterulangan neraca terhalus lab (Semi
+     * Micro PX85, U95 keping kecil ±0,00001 g), jadi U95 tidak pernah runtuh
+     * jadi `0,00000`. Batasnya: keping kelas E1/E2 di bawah 1 g dengan neraca
+     * lebih halus dari yang dimiliki lab sekarang akan butuh desimal lebih.
      *
-     * Sertifikat master mencetak ketidakpastiannya dalam MILIGRAM sementara
-     * massanya dalam gram. Di sini keduanya gram, jadi satu baris tidak memuat
-     * dua satuan. Angkanya sama, penyajiannya beda — dicatat di
-     * `docs/perintah-frontend-anak-timbangan.md`.
+     * Berlaku untuk sertifikat yang terbit SESUDAH perubahan ini; jumlah
+     * desimal dibekukan ke snapshot, jadi sertifikat lama tidak berubah sampai
+     * direvisi. Sesi bersatuan kg dicetak lima desimal kg (resolusi 0,01 g).
      */
     public function desimalSertifikat(): ?int
     {
-        return 8;
+        return 5;
     }
 
     public function desimalU95(): ?int
     {
-        return 8;
+        return 5;
     }
 
     /**
@@ -315,6 +316,21 @@ class AnakTimbanganProfile extends CalibrationProfile
         $ke = $faktor[strtolower(trim((string) $equipment->satuan))] ?? 1.0;
 
         return $nilai * $dari / $ke;
+    }
+
+    /**
+     * U95 dicetak PER KEPING, bukan satu baris di bawah tabel.
+     *
+     * Tiap keping punya budget sendiri, dan sejak satu sesi boleh memakai
+     * beberapa neraca bedanya bisa ratusan kali lipat: sertifikat
+     * CAL/2026/10/0001 (7 Okt 2026) mencetak "Uncertainty U95% = ± 0,00001004 g"
+     * — U95 keping 1 g — untuk seluruh tabel, padahal keping 500 g ber-U95
+     * 0,0009 g. Baris ringkas itu mengambil baris PERTAMA, jadi ketidakpastian
+     * keping besar tercetak sembilan puluh kali terlalu kecil.
+     */
+    public function u95PerTitik(): bool
+    {
+        return true;
     }
 
     /** Kolom hasilnya massa konvensional, bukan "pembacaan alat". */
@@ -958,6 +974,27 @@ class AnakTimbanganProfile extends CalibrationProfile
         // `null` dioper apa adanya supaya keterangannya berbunyi "tanpa lantai
         // CMC", bukan "vs CMC 0.00000000" yang terbaca seperti klaim sempurna.
         $budget[] = $this->barisPerbandinganCmc((float) $h['u95_g'], null, self::SATUAN);
+
+        // Penyimpangan dari master wajib terbaca di jejak sesi, dengan sumbernya
+        // (AGENTS.md §Olah data butir 4): master tidak punya densitas M3 sama
+        // sekali, jadi angka keping M3 lahir dari asumsi OIML, bukan dari tabel.
+        if (($h['kelas_uut'] ?? null) === 'M3') {
+            $budget[] = [
+                'sumber' => 'anak_timbangan_densitas_m3_asumsi',
+                'keterangan' => sprintf(
+                    'Densitas keping M3 = %s kg/m3 (ASUMSI besi tuang kelabu, OIML R111-1:2004 Tabel B.7, '
+                    .'± 600 kg/m3). Tabel 5 OIML tidak memberi batas densitas M3 dan tabel master lab tidak '
+                    .'punya kolom M3; B.7.9.3: "the density of class M3 weights is usually of no concern". '
+                    .'Keputusan pemilik 7 Okt 2026, menunggu konfirmasi lab (pertanyaan §27).',
+                    $this->angka(TabelStandarAnakTimbangan::DENSITAS_M3_ASUMSI, 0),
+                ),
+                'distribusi' => 'jejak',
+                'nilai' => null,
+                'u_baku' => 0.0,
+                'ci' => 0.0,
+                'vi' => 0.0,
+            ];
+        }
 
         $ling = $hasil['lingkungan'];
 

@@ -1012,7 +1012,15 @@ class CalibrationValidator
 
             $standar = $titik->standard ?? $sesi->standard;
 
-            if (! $standar instanceof Standard) {
+            // Anak Timbangan tidak punya standar acuan PER TITIK: neraca dan
+            // keping standarnya datang dari centang "Standard yang Digunakan"
+            // dan blok sesi, bukan `standard_id`. Menuntutnya di sini membuat
+            // SETIAP sesi AT dari HP memunculkan satu peringatan per keping DAN
+            // melewati hitung ulang sama sekali — sesi produksi KAL/2026/10/0003
+            // (7 Okt 2026) pulang dengan dua belas peringatan palsu.
+            $tanpaStandarTitik = $this->profil->untukAlat($alat)->butuhBlokAnakTimbangan();
+
+            if (! $standar instanceof Standard && ! $tanpaStandarTitik) {
                 $temuan[] = $this->temuan(
                     self::PERINGATAN,
                     'standar_titik_hilang',
@@ -1023,12 +1031,14 @@ class CalibrationValidator
                 continue;
             }
 
-            $temuan = [...$temuan, ...$this->periksaKoreksiSuhu(
-                $ke,
-                $standar,
-                $pembacaan,
-                $this->profil->untukAlat($alat)->standarBerkurvaSuhu(),
-            )];
+            if ($standar instanceof Standard) {
+                $temuan = [...$temuan, ...$this->periksaKoreksiSuhu(
+                    $ke,
+                    $standar,
+                    $pembacaan,
+                    $this->profil->untukAlat($alat)->standarBerkurvaSuhu(),
+                )];
+            }
 
             $siapHitung[] = [
                 'titik_ke' => $ke,

@@ -204,9 +204,13 @@ NERACA = {
     "Electronic Balance Fujitsu": (
         "Fujitsu/FSR-A", "SIDIK/134/2024", "LK-305-IDN", "2026-01-19",
         1200.0, 0.001, 0.0019, 1000.0,
-        [0.000437797517875104, 0.00045946829172547574, 0.00040824829045420924,
-         0.0005868938953747555, 0.0009204467514105059, 0.0006701782515623399],
-        0.0001940774013471526,
+        # Diperbarui 7 Okt 2026 dari workbook lab terbaru (Pak Rohman,
+        # `Anak timbangan F2_IMTE-LQ-197`, sheet `Deviasi Standard Timbangan`
+        # D59:AC60): tiga dari enam simpangan harian (5, 7, 11 Mei 2026)
+        # berbeda dari salinan lama, keterulangan 0,194 -> 0,348 mg.
+        [0.000437797517875104, 0.0009368979548148584, 0.00040824829046194464,
+         0.0008432740426946229, 0.0009204467514105059, 0.0013363403591500009],
+        0.00034822229419560654,
     ),
     "Electronic Balance Excellent": (
         "Excellent/DJ", "HSEX1403752", "LK-305-IDN", "2026-01-19",

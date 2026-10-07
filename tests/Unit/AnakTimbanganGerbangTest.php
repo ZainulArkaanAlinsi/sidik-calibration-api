@@ -330,6 +330,32 @@ class AnakTimbanganGerbangTest extends TestCase
     }
 
     /**
+     * Kelas M3 terhitung dengan densitas ASUMSI OIML R111 (7100 kg/m³, Tabel
+     * B.7) — tabel master tidak punya kolom M3 dan OIML Tabel 5 memang tidak
+     * memberi batasnya. Sebelum 7 Okt 2026 seluruh keping M3 ditolak (sesi
+     * produksi KAL/2026/10/0002).
+     */
+    #[Test]
+    public function kelas_m3_memakai_densitas_asumsi_oiml(): void
+    {
+        $this->assertSame(TabelStandarAnakTimbangan::DENSITAS_M3_ASUMSI, TabelStandarAnakTimbangan::densitas(50.0, 'M3'));
+        $this->assertSame(7100.0, TabelStandarAnakTimbangan::densitas(1000.0, 'M3'));
+
+        $konteks = self::KONTEKS;
+        $konteks['kelas_uut'] = 'M3';
+        $konteks['timbangan'] = 'Electronic Balance Fujitsu';
+
+        $hasil = (new AnakTimbanganCalculator)->hitungSesi([
+            ['titik_ke' => 1, 'nominal_g' => 1000.0, 'at_s1' => 1000.0, 'at_t1' => 1000.455, 'at_t2' => 1000.457, 'at_s2' => 1000.0],
+            ['titik_ke' => 2, 'nominal_g' => 50.0, 'at_s1' => 50.0, 'at_t1' => 50.012, 'at_t2' => 50.012, 'at_s2' => 50.0],
+        ], $konteks);
+
+        $this->assertSame([], $hasil['ditolak']);
+        $this->assertSame([7100.0, 7100.0], array_column($hasil['titik'], 'rho_uut'));
+        $this->assertSame(['M3', 'M3'], array_column($hasil['titik'], 'kelas_uut'));
+    }
+
+    /**
      * Blok sesi lama (cuma `timbangan`) dibaca sebagai daftar berisi satu
      * neraca, dan satuannya gram.
      */

@@ -46,6 +46,28 @@ use RuntimeException;
  */
 class TabelStandarAnakTimbangan
 {
+    /**
+     * Densitas ASUMSI anak timbangan kelas M3 (kg/m³): besi tuang kelabu.
+     *
+     * Sumber: OIML R111-1:2004 —
+     *   - Tabel 5: "for class M3, no value is specified" (tidak ada batas
+     *     densitas, jadi tabel master memang tidak punya kolom M3);
+     *   - B.7.9.3: "For class E2 to M2 weights the 'assumed density' values in
+     *     Table B.7 are adequate. The density of class M3 weights is usually of
+     *     no concern.";
+     *   - Tabel B.7: Cast iron (grey) 7 100 kg/m³ ± 600 kg/m³ — bahan paling
+     *     lazim untuk anak timbangan kelas M.
+     *
+     * Pengaruhnya kecil sekali: keping 1 kg bergeser sekitar 1,6 mg antara
+     * asumsi besi tuang dan baja tahan karat, sedangkan MPE M3 1 kg 500 mg.
+     *
+     * Keputusan pemilik proyek 7 Okt 2026 (tidak menunggu lab) supaya sesi
+     * KAL/2026/10/0002 bisa terbit; masih ditanyakan ke lab sebagai
+     * pertanyaan §27. Tercatat di jejak audit tiap sesi M3
+     * (`anak_timbangan_densitas_m3_asumsi`).
+     */
+    public const DENSITAS_M3_ASUMSI = 7100.0;
+
     /** @var array<string, mixed>|null */
     private static ?array $cache = null;
 
@@ -105,6 +127,13 @@ class TabelStandarAnakTimbangan
      */
     public static function densitas(float $nominalG, string $kelas): ?float
     {
+        // Kelas M3 tidak punya kolom di tabel master — dan memang tidak bisa
+        // punya: OIML R111-1:2004 Tabel 5 menulis "for class M3, no value is
+        // specified". Dipakai densitas ASUMSI, lihat [DENSITAS_M3_ASUMSI].
+        if ($kelas === 'M3') {
+            return self::DENSITAS_M3_ASUMSI;
+        }
+
         // Lihat penjagaan 4 di docblock kelas.
         $cari = $nominalG >= 100.0 ? 100.0 : $nominalG;
 
