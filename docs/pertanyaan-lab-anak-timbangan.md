@@ -671,6 +671,27 @@ Correction (g)`. No. Seri keping dan tanda bintang (`20*`) **tidak tercetak**, j
 2. Untuk set ≥ 20 keping, mana yang lebih diterima: huruf 8 px dalam satu kolom, atau tabel dua
    kolom berdampingan (keping 1–20 | 21–40) dengan huruf normal?
 
+## §27 — Densitas kelas M3 tidak ada di tabel master
+
+Tabel densitas `STD AT` (§6) hanya punya lima kolom kelas: **E2, F1, F2, M1, M2**. Kolom
+**M3 tidak ada sama sekali**. Kolom M2 juga hanya terisi di baris 100 g; di bawahnya kosong
+(50 g M2 = kosong). Nominal ≥ 100 g memakai baris 100 g ("Diatas 100 g nilainya =").
+
+Akibatnya nyata di produksi. Sesi **KAL/2026/10/0002** (5 Okt 2026) mendaftarkan keping
+**M3** 1000 / 500 / 200 / 100 / 50 g dengan standar E2. Kelima titiknya diblokir server
+("tabel densitas nggak punya baris … g untuk kelas M3"), jadi sesinya tidak bisa terbit.
+Di workbook master, kasus yang sama mencetak `#VALUE!` (bentuk §4).
+
+1. Lab memang mengkalibrasi anak timbangan **kelas M3**? Kalau ya, densitas M3 per nominal
+   diambil dari mana: OIML R111-1 Tabel 5, nilai asumsi baja (mis. 7 950 kg/m³), atau
+   pengukuran sendiri?
+2. Kalau M3 tidak dilayani, aplikasi sebaiknya **tidak menawarkan M3** di pilihan kelas UUT.
+   Setuju?
+3. Untuk M2 di bawah 100 g yang sekarang kosong: pertanyaan yang sama.
+
+Yang tidak dilakukan sebelum dijawab: mengisi angka densitas M3 atau M2 < 100 g. Server tetap
+memblokir titiknya dengan alasan yang terbaca.
+
 ## Yang TIDAK bisa saya nilai dari berkas ini
 
 Berkas `_imp` cuma menyimpan nilai. Hal-hal berikut **tidak** saya klaim, dan
@@ -710,5 +731,6 @@ pasti cuma **di mana** memperbaikinya di master.
 | 24 | Kapasitas Alat: satu rentang atau beberapa; satuan; cara cetak | | | |
 | 25 | Meter lingkungan: Thermobarometer / TH-n / keduanya; kotak mana | | | |
 | 26 | Kolom tabel sertifikat AT; set besar: 8 px atau dua kolom | | | |
+| 27 | Densitas kelas M3 (dan M2 < 100 g): sumber nilai, atau M3 tidak dilayani | | | |
 
 Manajer Teknis: ______________________  Tanggal: ____________
