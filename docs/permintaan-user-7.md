@@ -4882,7 +4882,36 @@ adalah yang menahan pekerjaan lapangan Anak Timbangan. Sisanya PRD di bawah ini.
   Environmental Meter Used), §26 (kolom sertifikat AT & huruf set besar).
 - **Antrian sesudah revisi lembar kerja selesai** (permintaan pemilik): riwayat penolakan lembar kerja
   (alasan lama ada di `audit_logs` tapi belum ada layarnya), test penjaga jejak tolak, `revisi_field`
-  di panel, batas panjang `catatan_revisi`.
+  di panel, batas panjang `catatan_revisi`. → Tiga yang pertama dan batas panjang dikerjakan di §45;
+  `revisi_field` di panel masih menunggu.
+
+## §45 — Riwayat persetujuan sesi (riwayat penolakan lembar kerja) — 6–7 Okt 2026
+
+**Masalah.** Sesi cuma menyimpan alasan tolak TERAKHIR (`catatan_revisi`); penolakan kedua
+menimpanya. Alasan lama sebetulnya tidak hilang — trait `Diaudit` mencatat tiap `update()` ke
+`audit_logs` — tapi tidak ada layar yang membacanya, dan tidak ada test yang menjaga jejaknya.
+
+**Keputusan pemilik (6 Okt 2026):** hanya admin & super admin yang boleh melihat; panel dapat
+tombol "Riwayat persetujuan" baca-saja.
+
+**Yang dibangun:**
+- `App\Support\RiwayatPersetujuanSesi` — memutar ulang baris audit sesi jadi daftar peristiwa
+  (`diajukan`, `ditolak`, `diajukan_ulang`, `menunggu_pengesahan`, `disetujui`,
+  `kembali_ke_draft`), lengkap dengan pelaku (nama saja), waktu, alasan, dan kolom yang ditandai.
+  Diputar ulang, bukan dibaca per baris: penolakan dengan alasan yang kebetulan sama tidak membawa
+  `catatan_revisi` di `new_data`. Tanpa tabel baru — satu sumber untuk satu kebenaran.
+- `GET /api/calibrations/{calibration}/riwayat-persetujuan` (grup `role:admin`; super admin lewat
+  `lolosBacaSuperAdmin`; lab lain 404). Kontrak di `docs/kontrak-api.md`.
+- Panel: aksi "Riwayat persetujuan" (modal baca-saja) di tabel sesi.
+- `catatan_revisi` dibatasi 5–2000 karakter, sama di API dan panel.
+- Mobile (#198): kartu "Riwayat persetujuan" di detail sesi, khusus admin & super admin; dimuat
+  saat dibuka, dan diambil ulang sesudah setuju/tolak dari aplikasi.
+
+**Dijaga:** `RiwayatPersetujuanSesiTest` (7 kasus — termasuk alasan kembar, sesi lahir sebagai
+draft, tolak lewat panel, akses per peran, super admin lab lain 404) dan satu kasus baru di
+`BatasAntarLabTest`. Mobile: `riwayat_persetujuan_test.dart`.
+
+**Status:** API PR #224, mobile PR #198. **Belum:** menandai `revisi_field` dari panel.
 
 ## Gelombang & status
 

@@ -1138,6 +1138,30 @@ Response: status jadi `perlu_revisi` + `catatan_revisi` keisi. Mobile bakal namp
 
 `409` (baru 1 Okt 2026) = sesi ini barusan sudah diputus lewat permintaan lain (mis. admin lain menyetujuinya). Tidak ada yang berubah; muat ulang detail sesinya.
 
+`catatan_revisi` wajib, 5–2000 karakter (batas atas baru 6 Okt 2026; sebelumnya tanpa batas dan teks sangat panjang jadi 500 di MySQL).
+
+### `GET /api/calibrations/{id}/riwayat-persetujuan` — **admin & super admin saja** (6 Okt 2026)
+
+Kolom `catatan_revisi` sesi cuma menyimpan alasan TERAKHIR. Endpoint ini membaca jejak audit sesi dan
+memulangkan seluruh riwayat — tiap penolakan dengan alasannya masing-masing, pengajuan ulang, persetujuan.
+Teknisi & viewer → `403` (keputusan pemilik proyek); sesi lab lain → `404`.
+
+```json
+{
+  "data": [
+    { "jenis": "ditolak", "status": "perlu_revisi", "status_sebelumnya": "menunggu_approval",
+      "waktu": "2026-10-06T08:12:00+00:00", "oleh": { "id": 3, "nama": "Admin Pemeriksa" },
+      "alasan": "Titik 3 meleset", "kolom": ["alat_merk", "sel:sesudah_adjustment:7:pembacaan:1"] },
+    { "jenis": "diajukan_ulang", "status": "menunggu_approval", "status_sebelumnya": "perlu_revisi",
+      "waktu": "2026-10-06T09:01:00+00:00", "oleh": { "id": 7, "nama": "Teknisi Lapangan" } }
+  ]
+}
+```
+
+- Urut waktu, terlama dulu. `jenis`: `diajukan`, `diajukan_ulang`, `ditolak`, `menunggu_pengesahan`, `disetujui`, `kembali_ke_draft`.
+- `alasan` & `kolom` hanya ada di `ditolak`. `kolom` = kode kolom / kode sel yang ditandai (`revisi_field`), selalu daftar.
+- `oleh` `null` = perubahan oleh sistem (queue/command). Hanya nama — tanpa email.
+
 ### `GET /api/certificates/{id}`
 ```json
 {
