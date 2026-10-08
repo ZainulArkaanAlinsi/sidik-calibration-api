@@ -5040,9 +5040,14 @@ terjawab.
   `core.autocrlf=true`. Katalog **tidak** dibangun ulang, karena membangun ulang di mesin ini
   justru menanam sha256 versi CRLF.
 - `database/data/manifest-workbook-micrometer.json`: sha256 keempat workbook terenkripsi asli,
-  tanggal ubah 4 Sep 2026. Isi workbook **belum** diadu langsung ke `tabel-standar-micrometer.json`
-  karena bersandi. Yang sudah terbukti: 32/32 balok ukur di CSV `Standar_GB` keempat varian sama
-  dengan JSON (`alat-bantu/cek_balok_ukur_micrometer.py`).
+  tanggal ubah 4 Sep 2026. **Isi .xlsm = JSON, terbukti 8 Okt 2026.** Keempat berkas didekripsi
+  ke folder sementara di luar repo, `gen-tabel-standar-micrometer.py` dijalankan ke sana, dan
+  `git diff --ignore-cr-at-eol --exit-code` pada `tabel-standar-micrometer.json` kosong. Jadi
+  versi 1 Micrometer di P1 boleh dibangun dari JSON itu.
+- Validator dan pembangun katalog kini menormalkan CRLF sebelum hash, jadi validator LULUS
+  langsung di folder kerja Windows.
+- Pertanyaan untuk Lab (toleransi uji pembanding Micrometer, konfirmasi K-48):
+  `docs/pertanyaan-lab-studio-acuan.md`.
 - Tidak ada perubahan di `app/`, migrasi, atau test.
 
 **Status:** P0 selesai. P1 (`docs/studio-data-acuan/prompts/P1-fondasi-server.md`) menunggu
