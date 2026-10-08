@@ -23,7 +23,9 @@ for kode in sorted(os.listdir(os.path.join(kat, 'paket'))):
         p = os.path.join(akar, 'database/data', jf)
         if not os.path.exists(p):
             gagal += 1; print(f'HILANG   {kode}: database/data/{jf} tidak ada'); continue
-        kini = hashlib.sha256(open(p, 'rb').read()).hexdigest()
+        # CRLF dinormalkan dulu: checkout Windows (core.autocrlf) mengubah akhir baris
+        # tanpa mengubah isi, dan hash mentahnya akan terbaca sebagai drift palsu.
+        kini = hashlib.sha256(open(p, 'rb').read().replace(b'\r\n', b'\n')).hexdigest()
         if kini != sha:
             gagal += 1; print(f'DRIFT    {kode}: {jf} berubah sejak katalog dibangun')
     n = sum(c['daun'] for c in d.get('cakupan', {}).values())

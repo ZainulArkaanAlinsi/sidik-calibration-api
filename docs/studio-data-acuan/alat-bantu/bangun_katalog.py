@@ -415,7 +415,9 @@ for p in PAKET:
         # Grid lebar ratusan kolom (mis. TIDS: index × titik) tidak terbaca di
         # layar; Studio menampilkannya memanjang: satu baris per (kunci, kolom).
         l['tampilan_usulan'] = 'panjang' if len(l.get('kolom', [])) > 24 else 'lebar'
-    d['sha256_json'] = {jf: hashlib.sha256(open(os.path.join(DATA, jf), 'rb').read()).hexdigest() for jf in p['json']}
+    # CRLF dinormalkan supaya hash sama di Windows (core.autocrlf) dan Linux;
+    # validasi_katalog.py menghitung dengan cara yang sama.
+    d['sha256_json'] = {jf: hashlib.sha256(open(os.path.join(DATA, jf), 'rb').read().replace(b'\r\n', b'\n')).hexdigest() for jf in p['json']}
     d['lembar'] = lembar
     d['metadata_json'] = metadata
     d['cakupan'] = cakupan
