@@ -233,14 +233,7 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
                 .'tiga kali berat wadah berisi air suling (gram), dan tiga kali suhu air (°C). Volume pada '
                 .'20 °C dihitung server secara gravimetri. Tekanan udara (hPa) wajib walau tidak tercetak di '
                 .'kertas: densitas udara dihitung dari situ.',
-            'budget_ketidakpastian' => [
-                'tersedia' => true,
-                'sumber' => 'Master Olah Data Volumetric Glassware 2026 (Fixed & Graduated, .xlsm)',
-                'catatan' => 'Delapan komponen dalam mL, k dari t-Student (v_eff dipotong ke bawah), lantai '
-                    .'CMC dari lampiran akreditasi pada kapasitas alat, dan satu U95 untuk seluruh titik. '
-                    .'Sesi dengan kelas selain A/B, neraca yang bukan milik lembarnya, atau kondisi '
-                    .'lingkungan tak lengkap TIDAK diterbitkan.',
-            ],
+            'budget_ketidakpastian' => $this->budgetKetidakpastianLembar(),
             'bagian' => [
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
@@ -332,7 +325,10 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             ];
         }
 
-        $hasil = $this->kalk()->hitungSesi($this->keluarga(), $masukan, $blok);
+        // Parameter per profil lewat SATU pintu ini: jalur simpan,
+        // `CalibrationValidator`, dan `HitungUlangSesi` semuanya memanggil
+        // `hitungPerGrup()`, jadi ketiganya memakai parameter yang sama.
+        $hasil = $this->kalk()->hitungSesi($this->keluarga(), $masukan, $blok, null, $this->parameterHitung());
 
         foreach ($hasil['ditolak'] as $d) {
             $belumDihitung[] = $d;
@@ -432,7 +428,112 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             ];
         }
 
+        return [...$peringatan, ...$this->peringatanTitikBelumDihitung($sesi)];
+    }
+
+    /**
+     * ALASAN titik yang punya pembacaan tapi tidak punya baris hitungan.
+     *
+     * Sesi Volumetric bisa tersimpan (201) dengan nol baris hitungan — mis.
+     * alat berkemampuan "Pipet Ukur" (berskala) dengan satu titik, atau
+     * resolusi yang belum diisi. `CalibrationValidator` sudah menahannya
+     * (`titik_kosong` / `titik_tidak_terhitung`), tapi kalimat di sana sebab
+     * umum ("pengulangan kurang, standar belum kebaca") yang bukan sebab di
+     * alat ini. Di sini sesinya dihitung ulang dari baris mentah lewat
+     * [hitungPerGrup] — pintu yang sama dengan jalur simpan — dan alasan
+     * aslinya diteruskan apa adanya, pola Sieve/Hydrometer.
+     *
+     * @return list<array{kode: string, pesan: string}>
+     */
+    private function peringatanTitikBelumDihitung(CalibrationSession $sesi): array
+    {
+        $alat = $sesi->equipment;
+
+        if ($alat === null) {
+            return [];
+        }
+
+        $terhitung = $sesi->uncertaintyCalculations->pluck('titik_ke')->map(static fn ($k): int => (int) $k)->all();
+        $mentah = $sesi->rawMeasurements
+            ->where('tahap', 'sesudah_adjustment')
+            ->groupBy('titik_ke');
+
+        // SELURUH titik ikut dihitung ulang, bukan cuma yang hilang: budget
+        // Graduated satu untuk semua titik, jadi alasan titik yang hilang baru
+        // benar kalau tetangganya ikut. Yang dilaporkan tetap yang hilang saja.
+        $hilang = $mentah->keys()
+            ->map(static fn ($ke): int => (int) $ke)
+            ->reject(static fn (int $ke): bool => in_array($ke, $terhitung, true))
+            ->values()
+            ->all();
+
+        if ($hilang === []) {
+            return [];
+        }
+
+        $konteksSesi = [
+            'spesifikasi_alat' => $sesi->spesifikasi_alat ?? [],
+            'suhu_awal' => $sesi->suhu_awal,
+            'suhu_akhir' => $sesi->suhu_akhir,
+            'kelembaban_awal' => $sesi->kelembaban_awal,
+            'kelembaban_akhir' => $sesi->kelembaban_akhir,
+            'tekanan_awal' => $sesi->tekanan_awal,
+            'tekanan_akhir' => $sesi->tekanan_akhir,
+        ];
+
+        $titik = $mentah->map(static fn ($baris, $ke): array => [
+            'titik_ke' => (int) $ke,
+            'titik_ukur' => (float) ($baris->first()?->titik_ukur ?? 0.0),
+            'pembacaan' => [],
+            'standard' => null,
+            'konteks' => [...M::dari($baris), ...$konteksSesi],
+        ])->values()->all();
+
+        $peringatan = [];
+
+        foreach ($this->hitungPerGrup($titik, $alat)['belum_dihitung'] ?? [] as $b) {
+            if (! in_array((int) $b['titik_ke'], $hilang, true)) {
+                continue;
+            }
+
+            $peringatan[] = [
+                'kode' => 'volumetric_titik_belum_dihitung',
+                'pesan' => sprintf('Titik ke-%d tidak terhitung: %s', $b['titik_ke'], $b['alasan']),
+            ];
+        }
+
         return $peringatan;
+    }
+
+    /**
+     * Ringkasan budget di bentuk lembar. Bawaan: workbook master 2026
+     * (delapan komponen). Profil Rev.7 menimpanya — lihat
+     * [FixedVolumetricGlasswareRev7Profile].
+     *
+     * @return array{tersedia: bool, sumber: string, catatan: string}
+     */
+    protected function budgetKetidakpastianLembar(): array
+    {
+        return [
+            'tersedia' => true,
+            'sumber' => 'Master Olah Data Volumetric Glassware 2026 (Fixed & Graduated, .xlsm)',
+            'catatan' => 'Delapan komponen dalam mL, k dari t-Student (v_eff dipotong ke bawah), lantai '
+                .'CMC dari lampiran akreditasi pada kapasitas alat, dan satu U95 untuk seluruh titik. '
+                .'Sesi dengan kelas selain A/B, neraca yang bukan milik lembarnya, atau kondisi '
+                .'lingkungan tak lengkap TIDAK diterbitkan.',
+        ];
+    }
+
+    /**
+     * Parameter hitung yang menimpa `VolumetricGlasswareCalculator::parameterBawaan()`.
+     * Bawaan kosong — angka profil lama tidak bergeser. Labu Ukur & Pipet
+     * Volume mengoper `parameterRev7()` (keputusan pemilik 8 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    protected function parameterHitung(): array
+    {
+        return [];
     }
 
     /**
@@ -643,7 +744,9 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             'kode' => 'usage_check',
             'halaman' => 1,
             'judul' => 'Standard',
-            'baris' => self::STANDARD_TERCETAK,
+            // `static::` — profil Rev.7 menimpa daftarnya (neraca Fujitsu &
+            // termometer standar workbook).
+            'baris' => static::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
                 $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),

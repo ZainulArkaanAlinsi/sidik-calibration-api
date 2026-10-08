@@ -111,6 +111,19 @@ class CalibrationController extends Controller
     private Standard|null|false $standarTurunan = false;
 
     /**
+     * `belum_dihitung` dari penyusunan pengukuran request ini — bentuk yang
+     * SAMA dengan `data.belum_dihitung` di `POST /calibrations/preview`.
+     *
+     * Dikirim balik di `meta` jawaban simpan (`store`/`update`). Tanpa ini
+     * sesi yang tersimpan dengan nol baris hitungan (mis. alat berkemampuan
+     * "Pipet Ukur" dengan satu titik) pulang 201 tanpa satu kalimat pun, dan
+     * teknisi baru tahu waktu admin gagal menyetujui.
+     *
+     * @var list<array{titik_ke: int, alasan: string}>
+     */
+    private array $belumDihitungTerakhir = [];
+
+    /**
      * Relasi yang selalu dibutuhin CalibrationResource.
      *
      * `reviewer` ikut karena resource-nya nampilin "Checked by" — tanpa dimuat di
@@ -412,7 +425,10 @@ class CalibrationController extends Controller
 
         $this->siarkan($sesi, 'dibuat');
 
-        return response()->json(['data' => new CalibrationResource($sesi)], 201);
+        return response()->json([
+            'data' => new CalibrationResource($sesi),
+            'meta' => ['belum_dihitung' => $this->belumDihitungTerakhir],
+        ], 201);
     }
 
     /**
@@ -771,7 +787,10 @@ class CalibrationController extends Controller
 
         $this->siarkan($sesi, 'diubah');
 
-        return response()->json(['data' => new CalibrationResource($sesi)]);
+        return response()->json([
+            'data' => new CalibrationResource($sesi),
+            'meta' => ['belum_dihitung' => $this->belumDihitungTerakhir],
+        ]);
     }
 
     /**
@@ -1488,6 +1507,7 @@ class CalibrationController extends Controller
         // sudah memanggilnya sebelum transaksi), jadi urutannya tidak mengubah
         // hasil hitung.
         $susunan = $this->susunPengukuran($request);
+        $this->belumDihitungTerakhir = $susunan['belum_dihitung'];
 
         // Kiriman yang menghasilkan NOL baris untuk sesi yang sudah punya
         // pembacaan ditolak, bukan dituruti. Dulu `measurements: []` — tabel di
@@ -4904,13 +4924,25 @@ class CalibrationController extends Controller
             return null;
         }
 
+        $profil = $this->profil->untukAlat($alat);
+
+        // Lembar yang memilih standarnya lewat blok `spesifikasi_alat` (neraca
+        // Labu Ukur & Pipet Volume) — `null` untuk semua lembar lain, dan
+        // jalurnya jatuh ke centang di bawah persis seperti sebelumnya. Cuma
+        // dibaca kalau bloknya DIKIRIM: simpan-ulang kepala lembar tanpa blok
+        // tidak boleh mengosongkan standar yang sudah tertaut.
+        if ($request->has('spesifikasi_alat')
+            && ($dariBlok = $profil->standarSesiDariSpesifikasi((array) $request->input('spesifikasi_alat', []), $alat)) !== null) {
+            return $this->standarTurunan = $dariBlok;
+        }
+
         // Sumbernya satu pintu dengan `CalibrationRequest`, yang menolak kiriman
         // kalau turunan di bawah ini mustahil — lihat `StandarDicentang`.
         $dicentang = StandarDicentang::dari($request, $alat);
 
         return $this->standarTurunan = $dicentang->isEmpty()
             ? null
-            : $this->profil->untukAlat($alat)->standarSesiDariCentang($dicentang);
+            : $profil->standarSesiDariCentang($dicentang);
     }
 
     /**

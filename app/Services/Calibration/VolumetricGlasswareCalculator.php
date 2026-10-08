@@ -3,6 +3,7 @@
 namespace App\Services\Calibration;
 
 use App\Services\GumCalculator;
+use InvalidArgumentException;
 
 /**
  * Rantai inti **Volumetric Glassware** — kalibrasi gravimetri gelas ukur
@@ -67,6 +68,45 @@ class VolumetricGlasswareCalculator
     /** Koefisien muai kubik borosilicate 5.0 (/°C) — dipetakan dari Class B. */
     public const GAMMA_KELAS_B = 15e-6;
 
+    /**
+     * ρ anak timbangan workbook **Rev.7** (`PERHITUNGAN!H58` = 8), g/mL.
+     *
+     * Hanya untuk profil yang memakai [parameterRev7] — Labu Ukur & Pipet
+     * Volume. Konstanta bersama [DENSITAS_ANAK_TIMBANGAN] tidak digeser.
+     */
+    public const DENSITAS_ANAK_TIMBANGAN_REV7 = 8.0;
+
+    /** γ kelas A workbook Rev.7 (`PERHITUNGAN!H59` = `10/1000000`), /°C. */
+    public const GAMMA_KELAS_A_REV7 = 10e-6;
+
+    /**
+     * Sakelar butir D: suhu mana yang melahirkan ρ air ulangan ke-1 dan ke-2
+     * pada profil Rev.7.
+     *
+     *  - [SUHU_DENSITAS_AIR_UKUR] — suhu terkoreksi tiap ulangan (hitung
+     *    benar). Catatan audit tetap menulis V20 kalau master ditiru.
+     *  - [SUHU_DENSITAS_AIR_MASTER] — meniru `PERHITUNGAN!H40`/`J40` workbook
+     *    Rev.7 yang berisi ANGKA MATI 25,5 °C; hanya `L40` berumus
+     *    `AVERAGE(L39:M39)`. Catatan audit menulis V20 hitung benar.
+     *
+     * **Keputusan pemilik 8 Okt 2026 (terakhir): `master`** — angka sertifikat
+     * ikut workbook Pak Rohman 100%. Cabang `ukur` tetap dihitung di belakang
+     * layar dan V20 + U-nya tercatat di jejak sesi
+     * (`volumetric_rev7_suhu_densitas_air`); kalau angka CETAK V20/Correction
+     * kedua cabang berbeda, validator memunculkan peringatan
+     * `volumetric_suhu_25_5_menggeser_cetak` (lihat
+     * `FixedVolumetricGlasswareRev7Profile::peringatanSuhuMenggeserCetak()`).
+     * Pertanyaan lab volumetric no. 14.
+     */
+    public const SUHU_DENSITAS_AIR_REV7 = self::SUHU_DENSITAS_AIR_MASTER;
+
+    public const SUHU_DENSITAS_AIR_UKUR = 'ukur';
+
+    public const SUHU_DENSITAS_AIR_MASTER = 'master';
+
+    /** `PERHITUNGAN!H40`/`J40` workbook Rev.7 — angka mati, °C. */
+    public const SUHU_DENSITAS_AIR_MATI_REV7 = 25.5;
+
     /** Suhu acuan volume, °C. */
     public const SUHU_ACUAN = 20.0;
 
@@ -104,6 +144,54 @@ class VolumetricGlasswareCalculator
      * pertanyaan lab no. 2), tidak pernah untuk U yang terbit.
      */
     public const NOL_HANTU_MASTER = 5;
+
+    /**
+     * Parameter hitung workbook Fixed **Rev.7** (`SIDIK-IK-CAL-0510_Rev.7`) —
+     * Labu Ukur LU-200/250/500 & Pipet Volume PV 0,5/2/3/4 (keputusan pemilik
+     * 8 Okt 2026: workbook lab adalah acuan).
+     *
+     * Beda dari parameter bawaan (workbook `Fixed_Volumetric_Glassware_2026`):
+     *
+     * | | Bawaan | Rev.7 | Sel Rev.7 |
+     * |---|---|---|---|
+     * | ρ anak timbangan | 7,95 | 8 | `PERHITUNGAN!H58` |
+     * | γ kelas A | 9,9·10⁻⁶ | 10·10⁻⁶ | `PERHITUNGAN!H59` |
+     * | keterulangan di budget | ya (baris ke-8) | **tidak** — tujuh komponen | `PERHITUNGAN U95%!I36:I42` |
+     * | ρ air ulangan 1 & 2 | suhu terkoreksi | sakelar [SUHU_DENSITAS_AIR_REV7] | `PERHITUNGAN!H40`/`J40` |
+     *
+     * Dipakai PROFIL lewat `VolumetricGlasswareProfile::parameterHitung()`,
+     * jadi jalur simpan, `CalibrationValidator`, dan `HitungUlangSesi` —
+     * ketiganya lewat `hitungPerGrup()` — memakai parameter yang sama.
+     *
+     * @return array{rev7: bool, rho_anak_timbangan: float, gamma_kelas: array{A: float, B: float}, keterulangan_di_budget: bool, suhu_densitas_air: string}
+     */
+    public static function parameterRev7(?string $suhuDensitasAir = null): array
+    {
+        return [
+            'rev7' => true,
+            'rho_anak_timbangan' => self::DENSITAS_ANAK_TIMBANGAN_REV7,
+            'gamma_kelas' => ['A' => self::GAMMA_KELAS_A_REV7, 'B' => self::GAMMA_KELAS_B],
+            'keterulangan_di_budget' => false,
+            'suhu_densitas_air' => $suhuDensitasAir ?? self::SUHU_DENSITAS_AIR_REV7,
+        ];
+    }
+
+    /**
+     * Parameter bawaan — workbook `Fixed_Volumetric_Glassware_2026` dan
+     * Graduated. Dipakai semua profil yang tidak menimpa `parameterHitung()`.
+     *
+     * @return array{rev7: bool, rho_anak_timbangan: float, gamma_kelas: array{A: float, B: float}, keterulangan_di_budget: bool, suhu_densitas_air: string}
+     */
+    public static function parameterBawaan(): array
+    {
+        return [
+            'rev7' => false,
+            'rho_anak_timbangan' => self::DENSITAS_ANAK_TIMBANGAN,
+            'gamma_kelas' => ['A' => self::GAMMA_KELAS_A, 'B' => self::GAMMA_KELAS_B],
+            'keterulangan_di_budget' => true,
+            'suhu_densitas_air' => self::SUHU_DENSITAS_AIR_UKUR,
+        ];
+    }
 
     /**
      * Densitas udara psikrometrik, g/mL.
@@ -198,8 +286,9 @@ class VolumetricGlasswareCalculator
      * @param  array{
      *     massa: float, rho_udara: float, rho_air: float, suhu_air: float, gamma: float,
      *     u_massa: float, u_suhu: float, u_meniskus: float, u_rho_air: float,
-     *     u_keterulangan: float, tanda_ci_muai: int, rho_anak_timbangan?: float
-     * }  $m
+     *     u_keterulangan: float|null, tanda_ci_muai: int, rho_anak_timbangan?: float
+     * }  $m  `u_keterulangan` null = baris ke-8 TIDAK ada — budget tujuh
+     *        komponen workbook Rev.7 (`PERHITUNGAN U95%!I36:I42`)
      * @return list<array{nama: string, u_diperluas: float, pembagi: float, u: float, ci: float, vi: float}>
      */
     public static function komponenBudget(array $m): array
@@ -228,8 +317,11 @@ class VolumetricGlasswareCalculator
             ['Expansion Coefficient of Material', 0.1 * $r8, sqrt(3), 40.0,
                 $m['tanda_ci_muai'] * ($r3 * ($r6 - $r4)) / ($r6 * ($r5 - $r4))],
             ['Meniscus', $m['u_meniskus'], sqrt(3), 50.0, 1.0],
-            ['Repeated measurements', $m['u_keterulangan'], 1.0, 2.0, 1.0],
         ];
+
+        if ($m['u_keterulangan'] !== null) {
+            $baris[] = ['Repeated measurements', $m['u_keterulangan'], 1.0, 2.0, 1.0];
+        }
 
         return array_map(static fn (array $b): array => [
             'nama' => $b[0],
@@ -284,12 +376,19 @@ class VolumetricGlasswareCalculator
      * A/B" itu kelas akurasi ISO 4787 atau representasi bahan gelas. Sampai itu
      * dijawab, kelas di luar A/B **ditolak** — tidak dipetakan diam-diam ke
      * nilai bawaan, karena γ yang meleset menggeser seluruh V20 tanpa error.
+     *
+     * `$peta` = `gamma_kelas` dari [parameterRev7]/[parameterBawaan]; null =
+     * peta bawaan.
+     *
+     * @param  array{A: float, B: float}|null  $peta
      */
-    public static function gammaDariKelas(?string $kelas): ?float
+    public static function gammaDariKelas(?string $kelas, ?array $peta = null): ?float
     {
+        $peta ??= self::parameterBawaan()['gamma_kelas'];
+
         return match (strtoupper(trim((string) $kelas))) {
-            'A' => self::GAMMA_KELAS_A,
-            'B' => self::GAMMA_KELAS_B,
+            'A' => $peta['A'],
+            'B' => $peta['B'],
             default => null,
         };
     }
@@ -335,12 +434,39 @@ class VolumetricGlasswareCalculator
      * STDEV satu angka tidak terdefinisi (master menutupinya dengan nol hantu;
      * pertanyaan lab no. 12).
      *
+     * ## Parameter per profil
+     *
+     * `$parameter` menimpa [parameterBawaan] — kosong = perilaku lama, persis.
+     * Labu Ukur & Pipet Volume mengoper [parameterRev7]; profil lain tidak
+     * mengoper apa pun dan angkanya tidak bergeser.
+     *
      * @param  list<array{titik_ke: int, nominal: float, kosong: list<float>, isi: list<float>, suhu: list<float>}>  $titik
      * @param  array<string, mixed>  $blok
+     * @param  array<string, mixed>  $parameter
      * @return array{boleh_terbit: bool, ditolak: list<array{titik_ke: int, alasan: string}>, praolah: array<string, mixed>, titik: list<array<string, mixed>>}
      */
-    public function hitungSesi(string $keluarga, array $titik, array $blok, ?TabelStandarVolumetric $tabel = null): array
-    {
+    public function hitungSesi(
+        string $keluarga,
+        array $titik,
+        array $blok,
+        ?TabelStandarVolumetric $tabel = null,
+        array $parameter = [],
+    ): array {
+        $p = array_replace(self::parameterBawaan(), $parameter);
+
+        if (! in_array($p['suhu_densitas_air'], [self::SUHU_DENSITAS_AIR_UKUR, self::SUHU_DENSITAS_AIR_MASTER], true)) {
+            throw new InvalidArgumentException(sprintf(
+                'suhu_densitas_air "%s" tidak dikenal — pilih ukur atau master.',
+                (string) $p['suhu_densitas_air'],
+            ));
+        }
+
+        // Rev.7 cuma dibuktikan untuk workbook Fixed (satu ulangan = satu
+        // pasang sel H/J/L baris 40). Graduated tidak punya sel itu.
+        if ($p['rev7'] && $keluarga !== self::KELUARGA_FIXED) {
+            throw new InvalidArgumentException('Parameter Rev.7 hanya berlaku untuk keluarga Fixed.');
+        }
+
         $tabel ??= new TabelStandarVolumetric;
         $tolakSemua = static fn (string $alasan): array => [
             'boleh_terbit' => false,
@@ -356,7 +482,8 @@ class VolumetricGlasswareCalculator
             return ['boleh_terbit' => false, 'ditolak' => [], 'praolah' => [], 'titik' => []];
         }
 
-        $gamma = self::gammaDariKelas($blok['kelas'] ?? null);
+        $gamma = self::gammaDariKelas($blok['kelas'] ?? null, $p['gamma_kelas']);
+        $rhoAt = (float) $p['rho_anak_timbangan'];
         if ($gamma === null) {
             return $tolakSemua(sprintf(
                 'Kelas alat "%s" bukan A atau B. Koefisien muai cuma dipetakan untuk dua kelas itu, '
@@ -481,9 +608,28 @@ class VolumetricGlasswareCalculator
                 $rhoAir[] = self::densitasAirSuling($k['terkoreksi_c']);
             }
 
+            // Butir D — Rev.7 `PERHITUNGAN!H40`/`J40` angka mati 25,5 °C untuk
+            // ulangan 1 & 2; `L40` berumus. Kedua cara dihitung supaya yang
+            // tidak dipakai tetap terbaca di jejak audit.
+            $pembandingSuhu = null;
+            if ($p['rev7']) {
+                $rhoAirMaster = $rhoAir;
+                $rhoAirMaster[0] = $rhoAirMaster[1] = self::densitasAirSuling(self::SUHU_DENSITAS_AIR_MATI_REV7);
+                $pakaiMaster = $p['suhu_densitas_air'] === self::SUHU_DENSITAS_AIR_MASTER;
+                $rhoAirLain = $pakaiMaster ? $rhoAir : $rhoAirMaster;
+                if ($pakaiMaster) {
+                    $rhoAir = $rhoAirMaster;
+                }
+                $pembandingSuhu = [
+                    'dipakai' => $p['suhu_densitas_air'],
+                    'lain' => $pakaiMaster ? self::SUHU_DENSITAS_AIR_UKUR : self::SUHU_DENSITAS_AIR_MASTER,
+                    'rho_air_rata_rata_lain' => self::rata($rhoAirLain),
+                ];
+            }
+
             $v20 = [];
             foreach ($massa as $i => $m) {
-                $v20[] = self::v20($m, $rhoAir[$i], $rhoUdara, $gamma, $suhu[$i]);
+                $v20[] = self::v20($m, $rhoAir[$i], $rhoUdara, $gamma, $suhu[$i], $rhoAt);
             }
 
             $massaRata = self::rata($massa);
@@ -495,8 +641,14 @@ class VolumetricGlasswareCalculator
             // ulangan (`H53`). Bedanya di digit ke-16 untuk contoh master,
             // tapi itu dua rumus yang berbeda dan masing-masing ditiru.
             $v20Terbit = $keluarga === self::KELUARGA_FIXED
-                ? self::v20($massaRata, $rhoAirRata, $rhoUdara, $gamma, $suhuRata)
+                ? self::v20($massaRata, $rhoAirRata, $rhoUdara, $gamma, $suhuRata, $rhoAt)
                 : self::rata($v20);
+
+            if ($pembandingSuhu !== null) {
+                $pembandingSuhu['v20_lain'] = self::v20(
+                    $massaRata, $pembandingSuhu['rho_air_rata_rata_lain'], $rhoUdara, $gamma, $suhuRata, $rhoAt,
+                );
+            }
 
             $olah[] = [
                 'titik_ke' => $ke,
@@ -512,6 +664,7 @@ class VolumetricGlasswareCalculator
                 'v20' => $v20Terbit,
                 'deviasi' => $v20Terbit - (float) $t['nominal'],
                 'stdev_v20' => self::stdev($v20),
+                'pembanding_suhu_densitas_air' => $pembandingSuhu,
             ];
         }
 
@@ -566,6 +719,7 @@ class VolumetricGlasswareCalculator
         if ($keluarga === self::KELUARGA_FIXED) {
             foreach ($olah as $o) {
                 $rentang = max($o['suhu_terkoreksi_per_ulangan']) - min($o['suhu_terkoreksi_per_ulangan']);
+                $uKeterulangan = $o['stdev_v20'] / sqrt(self::PENGULANGAN);
                 $masukan = [
                     'massa' => $o['massa_rata_rata'],
                     'rho_udara' => $rhoUdara,
@@ -576,27 +730,48 @@ class VolumetricGlasswareCalculator
                     'u_suhu' => self::uSuhu($u95Suhu['termometer_c'], $u95Suhu['sensor_c'], $rentang),
                     'u_meniskus' => $uMeniskus,
                     'u_rho_air' => self::U_DENSITAS_AIR[$keluarga],
-                    'u_keterulangan' => $o['stdev_v20'] / sqrt(self::PENGULANGAN),
+                    'u_keterulangan' => $p['keterulangan_di_budget'] ? $uKeterulangan : null,
                     'tanda_ci_muai' => self::TANDA_CI_MUAI[$keluarga],
+                    'rho_anak_timbangan' => $rhoAt,
                 ];
                 $komponen = self::komponenBudget($masukan);
                 $agregat = $gum->agregasiBudget($komponen);
 
-                // Pembanding K4: master membagi Veff dengan baris TERAKHIR
-                // (`K43`), bukan jumlahnya (`K44`).
-                $akhir = $komponen[array_key_last($komponen)];
-                $sukuAkhir = (($akhir['u'] * $akhir['ci']) ** 4) / $akhir['vi'];
+                // Pembanding K4: master LAMA membagi Veff dengan baris TERAKHIR
+                // (`K43`), bukan jumlahnya (`K44`). Di Rev.7 baris keterulangan
+                // hilang dan `K43` justru baris SUM — tidak ada selisih, jadi
+                // tidak ada pembanding.
+                $veffBarisAkhir = null;
+                if ($p['keterulangan_di_budget']) {
+                    $akhir = $komponen[array_key_last($komponen)];
+                    $sukuAkhir = (($akhir['u'] * $akhir['ci']) ** 4) / $akhir['vi'];
+                    $veffBarisAkhir = $sukuAkhir > 0 ? ($agregat['ketidakpastian_gabungan'] ** 4) / $sukuAkhir : null;
+                }
+
+                $pembanding = ['veff_dibagi_baris_akhir' => $veffBarisAkhir];
+
+                if ($p['rev7']) {
+                    $lain = $o['pembanding_suhu_densitas_air'];
+                    $pembanding['rev7'] = [
+                        'u_keterulangan' => $uKeterulangan,
+                        'u95_dengan_keterulangan' => $gum->agregasiBudget(self::komponenBudget(
+                            ['u_keterulangan' => $uKeterulangan] + $masukan,
+                        ))['ketidakpastian_diperluas'],
+                        'suhu_densitas_air' => $lain['dipakai'],
+                        'suhu_densitas_air_lain' => $lain['lain'],
+                        'v20_lain' => $lain['v20_lain'],
+                        'u95_lain' => $gum->agregasiBudget(self::komponenBudget(
+                            ['rho_air' => $lain['rho_air_rata_rata_lain']] + $masukan,
+                        ))['ketidakpastian_diperluas'],
+                    ];
+                }
 
                 $hasil[] = $o + [
                     'rentang_suhu' => $rentang,
                     'masukan_budget' => $masukan,
                     'komponen_budget' => $komponen,
                     'agregat' => $agregat,
-                    'pembanding_master' => [
-                        'veff_dibagi_baris_akhir' => $sukuAkhir > 0
-                            ? ($agregat['ketidakpastian_gabungan'] ** 4) / $sukuAkhir
-                            : null,
-                    ],
+                    'pembanding_master' => $pembanding,
                 ];
             }
         } else {
@@ -616,6 +791,7 @@ class VolumetricGlasswareCalculator
                 'u_rho_air' => self::U_DENSITAS_AIR[$keluarga],
                 'u_keterulangan' => self::stdev($stdevPerTitik) / sqrt(self::PENGULANGAN),
                 'tanda_ci_muai' => self::TANDA_CI_MUAI[$keluarga],
+                'rho_anak_timbangan' => $rhoAt,
             ];
             $komponen = self::komponenBudget($masukan);
             $agregat = $gum->agregasiBudget($komponen);

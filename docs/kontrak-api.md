@@ -873,6 +873,33 @@ Latar: sesi Oven produksi `KAL/2026/08/0002` mencentang Constant 40T dan
 Yokogawa CA 150, lolos terkirim, lalu 220 pembacaannya tidak menghasilkan
 satu titik pun.
 
+#### `meta.belum_dihitung` di jawaban simpan (8 Okt 2026)
+
+`POST /api/calibrations` (201) dan `PUT /api/calibrations/{id}` (200) sekarang
+membawa `meta.belum_dihitung` — **bentuk sama persis** dengan
+`data.belum_dihitung` di preview (4a): `[{titik_ke, alasan}]`. Kosong (`[]`)
+kalau semua titik terhitung, atau kalau kiriman tidak membawa `measurements`.
+Kunci tambahan, tidak mengubah `data`.
+
+Gunanya: sesi bisa tersimpan dengan NOL baris hitungan (mis. alat berkemampuan
+"Pipet Ukur" — lembar berskala — dikirim dengan satu titik). Dulu jawabannya
+201 tanpa satu kalimat pun. HP sebaiknya menampilkan isinya sesudah kirim
+("Tersimpan, tapi titik X belum dihitung: …"). Jawaban kiriman ulang
+(`client_request_id` yang sama) tidak membawa `meta`.
+
+Admin melihat alasan yang sama di `GET /calibrations/{id}/validasi` sebagai
+peringatan `volumetric_titik_belum_dihitung` (lembar Volumetric).
+
+#### Labu Ukur & Pipet Volume: standar sesi diturunkan server (8 Okt 2026)
+
+Lembar Volumetric tidak punya kotak `standard_id`. Untuk Labu Ukur & Pipet
+Volume, server menurunkan `standard_id` sesi dari neraca yang dipakai
+(`spesifikasi_alat.volumetric.neraca`, dicocokkan ke master standar lewat nama &
+S/N). Mencentang SATU neraca di Usage Check (Excellent / Mettler / **Fujitsu**)
+menimpa isian "Balance Used"; mencentang dua neraca lalu mengirim → **422**
+`errors.standar_dicek`. Termometer standar (Yokogawa CA 150 "Termometer & Sensor
+Std.") dan sensor PRT Pt-100 SELALU dianggap dipakai — tidak perlu dicentang.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;

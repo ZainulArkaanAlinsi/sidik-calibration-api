@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Diaudit;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +45,18 @@ class Standard extends Model
     public function masihBerlaku(): bool
     {
         return $this->berlaku_sampai === null || $this->berlaku_sampai->isFuture();
+    }
+
+    /**
+     * Masih berlaku pada TANGGAL tertentu — dipakai untuk tanggal kalibrasi
+     * sesi, bukan hari ini ([masihBerlaku]). Sertifikat berlaku sampai akhir
+     * tanggalnya, jadi dibandingkan per hari: dikalibrasi tepat di tanggal
+     * `berlaku_sampai` masih sah, sehari sesudahnya tidak.
+     */
+    public function berlakuPada(CarbonInterface $tanggal): bool
+    {
+        return $this->berlaku_sampai === null
+            || $this->berlaku_sampai->copy()->startOfDay()->greaterThanOrEqualTo($tanggal->copy()->startOfDay());
     }
 
     /**
