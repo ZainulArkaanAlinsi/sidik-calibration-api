@@ -30,20 +30,15 @@ use App\Services\GumCalculator;
  * Aturannya dari `[[sidik-alat-baru-dari-master]]`: kejanggalan METODE ditiru
  * lalu ditanyakan; kerusakan RUJUKAN dihitung benar lalu selisihnya ditulis.
  *
- * **Dibetulkan — kolom `b` memakai `ms` keping PERTAMA.** Sejak titik 9 sampai
- * 20, master memungut `ms` titik 1 (100,000144 g) alih-alih massa keping yang
- * sedang dihitung. Itu rujukan relatif yang tidak ikut bergeser waktu rumusnya
- * di-drag ke bawah — kerusakan rujukan, bukan pilihan metode. Selisihnya sampai
- * **2,58 mg pada keping 1 g yang toleransinya 0,10 mg** (25,8× MPE), dan
- * sertifikat master mencetak keping 0,1 g sebagai 0,09884965 g — meleset 1,16 mg.
- * Di sini `b` memakai `ms` keping itu sendiri; nilai jalur master ikut disimpan
- * sebagai `b_jalur_master_g` supaya selisihnya bisa dibaca, bukan cuma
- * dipercaya. Pertanyaan lab §2, dan `AnakTimbanganMasterTest` menegakkan arahnya.
- *
- * **Dibetulkan — titik yang koreksi apungnya HILANG.** Di sesi contoh, kolom `b`
- * kedua keping 200 g bernilai 0 padahal densitasnya ada dan koreksi yang benar
- * +0,0169 mg. Besarnya kecil (14 % U95); yang tidak boleh ditiru cara diamnya.
- * Pertanyaan lab §5.
+ * **Koreksi apung `b` — DITIRU persis dari workbook (keputusan pemilik 8 Okt
+ * 2026).** Workbook lab punya dua rujukan rusak di kolom `b`: kotak 2–4 merujuk
+ * sel kosong sehingga `b = 0` (pertanyaan lab §5), dan kotak 5+ memakai `ms`
+ * keping kotak 1 alih-alih massa keping itu sendiri (pertanyaan lab §2). Sampai
+ * 8 Okt keduanya dibetulkan di sini; pemilik memutuskan sertifikat harus sama
+ * angka per angka dengan workbook Pak Rohman, jadi sekarang dua-duanya DITIRU
+ * lewat [CARA_KOREKSI_APUNG] = `master`. Nilai OIML (massa keping sendiri)
+ * tetap dihitung sebagai `b_oiml_g` dan tercatat di jejak audit, supaya
+ * selisihnya terbaca dan cara ini bisa dibalik satu baris begitu lab menjawab.
  *
  * **Dibetulkan — ketidakpastian tekanan yang tercetak.** Sertifikat master
  * memakai ketidakpastian KELEMBABAN meternya untuk kolom tekanan. Rujukan
@@ -84,6 +79,26 @@ class AnakTimbanganCalculator
 {
     /** Massa jenis udara acuan untuk massa konvensional (kg/m³), OIML R111. */
     private const RHO_ACUAN = 1.2;
+
+    /**
+     * Cara koreksi apung (`b`) yang dipakai hitungan: `master` atau `oiml`.
+     *
+     * `master` — PERSIS rumus sel workbook lab (`PERHITUNGAN FC`), dihitung per
+     * NERACA karena lab memakai satu workbook per neraca:
+     *   - kotak 1 : `(ρa − 1,2)(1/ρUUT − 1/ρstd) · ms` keping itu (`D29`);
+     *   - kotak 2–4: 0 — rumusnya merujuk sel kosong `AM26`/`AM29` (`J29`, `P29`,
+     *     `V29`; pertanyaan lab §5);
+     *   - kotak 5+: faktor keping itu × ms keping KOTAK 1 (`AG29`; pertanyaan
+     *     lab §2).
+     * `oiml` — `b` per keping dari massa keping itu sendiri (OIML R111).
+     *
+     * Keputusan pemilik proyek 8 Okt 2026: "samakan persis dengan workbook Pak
+     * Rohman" — sertifikat wajib sama angka per angka dengan workbook lab,
+     * diadu ke tiga workbook F2_IMTE-LQ-197 (`AnakTimbanganRohmanTest`). Nilai
+     * OIML tetap dihitung dan tercatat di jejak audit tiap keping, supaya
+     * selisihnya terbaca dan cara ini bisa dibalik begitu lab menjawab §2/§5.
+     */
+    public const CARA_KOREKSI_APUNG = 'master';
 
     /**
      * Ambang penolakan `|de|`, dalam kelipatan MPE kelas UUT.
@@ -195,7 +210,7 @@ class AnakTimbanganCalculator
         foreach ($titik as $t) {
             $jumlahTanda[$kunciTanda($t)] = ($jumlahTanda[$kunciTanda($t)] ?? 0) + 1;
         }
-        $msPertama = self::msKepingPertama($titik);
+        $kotak = self::kotakMaster($titik, $neracaSesi);
         $hasil = [];
 
         foreach ($titik as $t) {
@@ -347,8 +362,31 @@ class AnakTimbanganCalculator
             $ms = $keping['konvensional_g'];
             $faktorApung = ($rhoUdara - self::RHO_ACUAN) * (1 / $rhoUut - 1 / $rhoStd);
 
-            // `ms` keping INI — bukan keping pertama. Lihat docblock kelas.
-            $b = $faktorApung * $ms;
+            // Dua jalur selalu dihitung; yang DIPAKAI ditentukan
+            // [CARA_KOREKSI_APUNG]. Lihat docblock-nya.
+            $bOiml = $faktorApung * $ms;
+            $nomorKotak = $kotak[$titikKe]['ke'] ?? 1;
+            $msKotakSatu = $kotak[$titikKe]['ms_pertama'] ?? $ms;
+
+            if ($nomorKotak >= 5 && $msKotakSatu === null) {
+                $tolak(sprintf(
+                    'Titik %d: keping pertama neraca %s tidak punya massa standar, jadi koreksi apung '
+                    .'aturan workbook (kotak %d memakai ms kotak 1) tidak bisa dihitung.',
+                    $titikKe,
+                    $timbangan['nama'],
+                    $nomorKotak,
+                ));
+
+                continue;
+            }
+
+            $bMaster = match (true) {
+                $nomorKotak === 1 => $faktorApung * $ms,
+                $nomorKotak <= 4 => 0.0,
+                default => $faktorApung * $msKotakSatu,
+            };
+
+            $b = self::CARA_KOREKSI_APUNG === 'master' ? $bMaster : $bOiml;
             $mt = $ms + $de + $b;
 
             $budget = $this->budget($timbangan, $keping, $rhoUut, $rhoStd);
@@ -383,7 +421,11 @@ class AnakTimbanganCalculator
                 // Nilai yang akan dikeluarkan master untuk titik ini. Disimpan
                 // supaya selisihnya bisa DIBACA di jejak audit, bukan dipercaya
                 // begitu saja — lihat docblock kelas.
-                'b_jalur_master_g' => $faktorApung * $msPertama,
+                'b_jalur_master_g' => $bMaster,
+                // Koreksi apung OIML R111 (massa keping itu sendiri) — dicatat
+                // walau tidak dipakai, supaya selisihnya terbaca di jejak.
+                'b_oiml_g' => $bOiml,
+                'kotak_master' => $nomorKotak,
                 'mt_g' => $mt,
                 // Sebaran kedua penimbangan UUT. INFORMATIF: bukan dia yang jadi
                 // Type A budget — master memakai keterulangan neraca dari sheet
@@ -654,30 +696,38 @@ class AnakTimbanganCalculator
     }
 
     /**
-     * Massa konvensional keping titik PERTAMA — satu-satunya tempat jalur
-     * master yang cacat masih dipakai, dan cuma untuk dicatat di jejak audit.
+     * Nomor kotak workbook tiap titik, dihitung PER NERACA (lab memakai satu
+     * workbook per neraca), plus `ms` keping kotak 1 neraca itu.
      *
-     * Titik pertama dicari lewat `titik_ke` TERKECIL, bukan elemen pertama
-     * larik: jalur hitung ulang mengelompokkan per `titik_ke` lewat `groupBy`
-     * dan urutannya tidak dijamin.
+     * Urutan = `titik_ke` naik, bukan urutan larik: jalur hitung ulang
+     * mengelompokkan lewat `groupBy` dan urutannya tidak dijamin.
      *
      * @param  list<array{titik_ke: int, nominal_g: float}>  $titik
+     * @param  list<array<string, mixed>>  $neracaSesi
+     * @return array<int, array{ke: int, ms_pertama: float|null}>
      */
-    private static function msKepingPertama(array $titik): float
+    private static function kotakMaster(array $titik, array $neracaSesi): array
     {
-        $pertama = null;
+        usort($titik, static fn (array $a, array $b): int => (int) $a['titik_ke'] <=> (int) $b['titik_ke']);
+
+        $hitung = [];
+        $msPertama = [];
+        $hasil = [];
 
         foreach ($titik as $t) {
-            if ($pertama === null || (int) $t['titik_ke'] < (int) $pertama['titik_ke']) {
-                $pertama = $t;
+            $nominal = (float) $t['nominal_g'];
+            $neraca = self::pilihNeraca($neracaSesi, $nominal)['nama'] ?? '';
+
+            if (! isset($hitung[$neraca])) {
+                $hitung[$neraca] = 0;
+                $msPertama[$neraca] = TabelStandarAnakTimbangan::cariKeping($nominal)['konvensional_g'] ?? null;
             }
+
+            $hitung[$neraca]++;
+            $hasil[(int) $t['titik_ke']] = ['ke' => $hitung[$neraca], 'ms_pertama' => $msPertama[$neraca]];
         }
 
-        $keping = $pertama === null
-            ? null
-            : TabelStandarAnakTimbangan::cariKeping((float) $pertama['nominal_g']);
-
-        return $keping === null ? 0.0 : $keping['konvensional_g'];
+        return $hasil;
     }
 
     /**

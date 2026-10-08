@@ -1002,7 +1002,8 @@ class AnakTimbanganProfile extends CalibrationProfile
             'sumber' => 'jejak_titik',
             'keterangan' => sprintf(
                 'Keping %s%s g%s · massa standar %s g · de %s g · koreksi apung %s g '
-                .'(jalur master %s g, selisih %s mg — pertanyaan lab §2) · massa konvensional %s g · '
+                .'(aturan workbook lab, kotak %d; rumus OIML %s g, selisih %s mg — pertanyaan lab §2/§5, '
+                .'keputusan pemilik 8 Okt 2026 menyamakan dengan workbook) · massa konvensional %s g · '
                 .'densitas UUT %s / standar %s kg/m3 · densitas udara %s kg/m3 dari T %s °C, RH %s %%, '
                 .'P %s hPa (rata-rata MENTAH — pertanyaan lab §13) · ditimbang di %s (neraca tercentang '
                 .'terkecil yang sanggup memikul keping ini) · U95 %s g tanpa lantai CMC',
@@ -1012,8 +1013,9 @@ class AnakTimbanganProfile extends CalibrationProfile
                 $this->angka($h['ms_g']),
                 $this->angka($h['de_g']),
                 $this->angka($h['b_g']),
-                $this->angka($h['b_jalur_master_g']),
-                $this->angka(($h['b_jalur_master_g'] - $h['b_g']) * 1000, 4),
+                (int) ($h['kotak_master'] ?? 1),
+                $this->angka((float) ($h['b_oiml_g'] ?? $h['b_g'])),
+                $this->angka(((float) ($h['b_oiml_g'] ?? $h['b_g']) - $h['b_g']) * 1000, 4),
                 $this->angka($h['mt_g']),
                 $this->angka($h['rho_uut'], 1),
                 $this->angka($h['rho_standar'], 1),

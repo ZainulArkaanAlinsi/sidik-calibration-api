@@ -151,6 +151,11 @@ class CalibrationController extends Controller
 
         $sesi = CalibrationSession::query()
             ->with(self::RELASI)
+            // `tersembunyi` = akun YANG LOGIN pernah menyembunyikan sesi ini dari
+            // Riwayat-nya (§47). Satu subquery EXISTS di query yang sama, bukan
+            // query per baris. Daftarnya sengaja TIDAK disaring: HP yang memilih
+            // menampilkan atau tidak, dan sesinya tetap ada untuk akun lain.
+            ->withExists(['penyembunyi as tersembunyi' => fn ($q) => $q->where('users.id', $user->id)])
             ->where('organization_id', $user->organization_id)
             // Teknisi SELALU cuma lihat sesi miliknya sendiri — nggak peduli query
             // param-nya diisi apa. Kalau `mine` dipercaya apa adanya, teknisi
@@ -589,6 +594,43 @@ class CalibrationController extends Controller
         return response()->json([
             'data' => new CalibrationResource($calibration->load([...self::RELASI, 'rawMeasurements'])),
         ]);
+    }
+
+    /**
+     * Sembunyikan sesi dari layar Riwayat AKUN INI saja (§47, keputusan pemilik
+     * 8 Okt 2026).
+     *
+     * Cuma menulis satu baris preferensi di `riwayat_tersembunyi` — sesi,
+     * pembacaan, sertifikat, dan audit tidak disentuh, dan akun lain tetap
+     * melihat sesinya. Siapa yang boleh menyembunyikan = siapa yang bisa
+     * melihat sesi itu di `index`: organisasi sama, teknisi cuma sesinya
+     * sendiri; selain itu 404.
+     *
+     * Idempoten: menyembunyikan yang sudah tersembunyi tetap 200, tanpa baris
+     * kembar (UNIQUE `user_id`+`calibration_session_id`).
+     */
+    public function sembunyikan(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        try {
+            $calibration->penyembunyi()->syncWithoutDetaching([$request->user()->id]);
+        } catch (UniqueConstraintViolationException) {
+            // Dua ketukan yang balapan: yang kalah menabrak indeks unik, padahal
+            // hasil yang dia minta sudah berlaku. Bukan galat buat pemanggil.
+        }
+
+        return response()->json(['data' => ['id' => $calibration->id, 'tersembunyi' => true]]);
+    }
+
+    /** Kebalikan [sembunyikan]: tampilkan lagi di Riwayat akun ini. Idempoten. */
+    public function tampilkan(Request $request, CalibrationSession $calibration): JsonResponse
+    {
+        $this->pastikanBolehLihat($request, $calibration);
+
+        $calibration->penyembunyi()->detach($request->user()->id);
+
+        return response()->json(['data' => ['id' => $calibration->id, 'tersembunyi' => false]]);
     }
 
     /**

@@ -183,6 +183,13 @@ class CalibrationResource extends JsonResource
             'status' => $this->status,
             'input_method' => $this->input_method,
 
+            // Akun yang login menyembunyikan sesi ini dari Riwayat-nya (§47).
+            // Cuma terisi di `GET /calibrations` (lewat `withExists`); endpoint
+            // lain tidak memuatnya dan selalu `false` — bukan berarti tidak
+            // tersembunyi, cuma tidak dibaca di sana.
+            'tersembunyi' => array_key_exists('tersembunyi', $this->resource->getAttributes())
+                && (bool) $this->resource->getAttribute('tersembunyi'),
+
             // Snapshot hasil olah data Autoklaf (Section A/B/C + budget), kalau
             // sesi ini Autoklaf. Alat lain nggak punya ini (null) — hasilnya di
             // `hasil`/`titik`. Layar detail Autoklaf baca dari sini.

@@ -4941,6 +4941,29 @@ kg = lembar gram yang sama persis (`test_satuan_kg_terhitung_sama_dengan_gram`).
 **Masih tertahan:** lembar M3 (KAL/2026/10/0002) menunggu densitas M3 dari lab
 (`pertanyaan-lab-anak-timbangan.md` §27). Aturan neraca per keping ditanyakan di §28.
 
+## §47 — Sembunyikan sesi dari layar Riwayat (per akun) — 8 Okt 2026
+
+**Keputusan pemilik (8 Okt 2026):** tiap akun boleh menyembunyikan sesi dari daftar Riwayat-nya
+sendiri. Ini HANYA preferensi tampilan — sesi, pembacaan, sertifikat, dan audit tidak dihapus atau
+diubah, dan akun lain (mis. admin) tetap melihat sesinya.
+
+**Yang dibangun:**
+- Tabel baru `riwayat_tersembunyi` (`user_id`, `calibration_session_id`, UNIQUE berdua, cascade) —
+  additive, nol kolom baru di `calibration_sessions`. Relasi `CalibrationSession::penyembunyi()`.
+- `POST`/`DELETE /api/calibrations/{calibration}/sembunyikan`, grup yang sama dengan
+  `GET /calibrations` (`role:admin,teknisi,viewer`), throttle `riwayat-sembunyikan` 60/menit per
+  akun. Idempoten. Penjaganya `pastikanBolehLihat` yang sama dengan detail sesi: lab lain 404,
+  teknisi cuma sesinya sendiri (404). Super admin 403 (jalur bacanya cuma GET).
+- `GET /api/calibrations` membawa `tersembunyi` per item untuk akun yang login (satu subquery
+  `withExists`, bukan per baris). Daftarnya tidak disaring — HP yang menyaring. Kontrak di
+  `docs/kontrak-api.md` §4 "Riwayat".
+
+**Dijaga:** `RiwayatSembunyikanTest` (12 kasus — tanda per akun, tampilkan lagi, idempoten,
+jumlah baris sesi/pembacaan/sertifikat/audit tidak berubah, teknisi lain & lab lain 404, viewer &
+admin boleh, super admin 403, satu query untuk tanda, throttle terdaftar).
+
+**Status:** API branch `feat/riwayat-sembunyikan`; mobile dikerjakan paralel dengan kontrak di atas.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12

@@ -393,6 +393,10 @@ class AppServiceProvider extends ServiceProvider
         // depan.
         $perMenitPengguna('penugasan-tulis', 60);
         $perMenitPengguna('pelacakan-tahap', 60);
+        // Sembunyikan/tampilkan sesi di Riwayat (§47). Cuma preferensi tampilan,
+        // jadi longgar — orang yang merapikan daftarnya menekan banyak baris
+        // berturut-turut. Ember sendiri supaya tidak memakan jatah tulis lain.
+        $perMenitPengguna('riwayat-sembunyikan', 60);
         // Unduh PDF sertifikat dari app pelanggan. Tiap unduhan membaca berkas
         // dari disk arsip; 30 per menit longgar buat manusia yang mengunduh
         // satu-satu, dan menahan skrip yang menyedot seluruh arsip sekaligus.

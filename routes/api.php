@@ -436,6 +436,16 @@ Route::middleware(['auth:sanctum', 'aplikasi:internal', 'role:admin,teknisi,view
     // sendiri. Penyaringnya di controller, bukan di query param dari mobile.
     Route::get('/calibrations', [CalibrationController::class, 'index']);
     Route::get('/calibrations/{calibration}', [CalibrationController::class, 'show']);
+    // Sembunyikan / tampilkan lagi sesi di layar Riwayat AKUN INI (§47, 8 Okt
+    // 2026). Preferensi tampilan per akun — sesi, sertifikat, dan audit tidak
+    // berubah. Grupnya SAMA dengan baca daftar di atas, jadi siapa pun yang
+    // melihat sesinya di Riwayat boleh menyembunyikannya; teknisi tetap cuma
+    // sesinya sendiri (dijaga di controller). Super admin ditolak 403 —
+    // `lolosBacaSuperAdmin` cuma meloloskan GET/HEAD.
+    Route::post('/calibrations/{calibration}/sembunyikan', [CalibrationController::class, 'sembunyikan'])
+        ->middleware('throttle:riwayat-sembunyikan');
+    Route::delete('/calibrations/{calibration}/sembunyikan', [CalibrationController::class, 'tampilkan'])
+        ->middleware('throttle:riwayat-sembunyikan');
 
     // Sertifikat terbit: semua role bisa lihat & unduh — teknisi cuma miliknya
     // sendiri (scope di controller). PDF-nya di disk privat, cuma bisa lewat sini.

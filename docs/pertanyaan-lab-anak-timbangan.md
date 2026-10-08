@@ -702,6 +702,22 @@ of no concern". Server sekarang memakai densitas ASUMSI besi tuang kelabu **7 10
 Pengaruhnya sekitar 1,6 mg pada keping 1 kg (MPE M3 1 kg = 500 mg). Lab tetap diminta mengonfirmasi
 atau mengganti angkanya. M2 < 100 g belum diubah.
 
+## Keputusan pemilik 8 Okt 2026 — koreksi apung disamakan dengan workbook (§2, §5)
+
+Pemilik proyek memutuskan angka sertifikat Anak Timbangan wajib SAMA PERSIS dengan workbook lab
+(diadu ke workbook Pak Rohman `F2_IMTE-LQ-197` hal 1–3). Server sekarang meniru rumus sel kolom `b`
+apa adanya, dihitung per neraca (satu workbook per neraca):
+
+- kotak 1: `(ρa − 1,2)(1/ρUUT − 1/ρstd) · ms` keping itu;
+- kotak 2–4: `b = 0` (rumus merujuk sel kosong `AM26`/`AM29` — §5);
+- kotak 5+: faktor keping itu × `ms` keping kotak 1 (`AG29` — §2).
+
+Nilai OIML (massa keping sendiri) tetap dihitung dan tercatat di jejak audit tiap keping. Dampak
+terbesar: set kilogram, misalnya keping 20 kg M2 kedua/ketiga kehilangan koreksi sekitar 0,6 g.
+Pertanyaan §2 dan §5 TETAP terbuka untuk lab; begitu dijawab, cara hitung bisa dibalik
+(`AnakTimbanganCalculator::CARA_KOREKSI_APUNG`). Dijaga `AnakTimbanganRohmanTest` dan
+`AnakTimbanganMasterTest`.
+
 ## §28 — Beberapa neraca dalam satu sesi: neraca mana untuk keping mana?
 
 Kertas lapangan 5 Okt 2026 (set F2 1 g – 500 g) mencentang **tiga** neraca
