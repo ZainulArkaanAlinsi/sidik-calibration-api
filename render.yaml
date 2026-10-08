@@ -261,6 +261,16 @@ services:
       - key: DIREKTORI_PERUSAHAAN_KEY
         sync: false
 
+      # Sumber tabel data acuan (Studio Data Acuan): `json` = berkas
+      # database/data/*.json seperti hari ini, `db` = versi paket_acuan_versi.
+      # Dipatok `value`, BUKAN `sync: false`: angka sertifikat ikut sumber ini,
+      # jadi pindahnya harus lewat commit yang ditinjau — setelan dashboard
+      # ditimpa blueprint tiap deploy (lihat §ARSIP_DRIVER). Pindah ke `db` =
+      # rollout tahap 3, SESUDAH impor awal paket di produksi — sebelum itu
+      # belum ada versi di database untuk dibaca.
+      - key: DATA_ACUAN_SUMBER
+        value: json
+
       # Nyalain SEKALI pas deploy pertama biar master data (organisasi,
       # kemampuan kalibrasi, standar) keisi, terus balikin ke "false".
       # Ditinggal "true" bikin data uji ketimpa tiap container bangun.

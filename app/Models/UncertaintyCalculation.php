@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'ketidakpastian_gabungan', 'faktor_cakupan_k', 'derajat_kebebasan_efektif',
     'ketidakpastian_diperluas', 'toleransi', 'keputusan', 'metode', 'calculated_at',
     'formula_version_id',
+    // Stempel versi data acuan (migrasi 2026_10_08_100100); null = dari berkas JSON.
+    'paket_acuan_versi_id',
 ])]
 class UncertaintyCalculation extends Model
 {
@@ -71,5 +73,19 @@ class UncertaintyCalculation extends Model
     public function formulaVersion(): BelongsTo
     {
         return $this->belongsTo(FormulaVersion::class);
+    }
+
+    /**
+     * Versi data acuan yang dipakai menghitung baris ini (Studio Data Acuan).
+     *
+     * `null` = tabel acuan dibaca dari berkas JSON, bukan dari versi di
+     * database. Kolomnya `nullOnDelete`: hilangnya versi tidak boleh menyeret
+     * hasil hitung yang sudah dipakai sertifikat.
+     *
+     * @return BelongsTo<PaketAcuanVersi, $this>
+     */
+    public function paketAcuanVersi(): BelongsTo
+    {
+        return $this->belongsTo(PaketAcuanVersi::class);
     }
 }

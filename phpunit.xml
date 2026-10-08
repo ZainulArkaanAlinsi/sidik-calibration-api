@@ -38,6 +38,12 @@
         -->
         <env name="VISION_DRIVER" value="anthropic"/>
         <!--
+          Sumber data acuan dipatok `json` dengan alasan yang sama: test
+          yang mengadu angka ke master tidak boleh ikut pindah sumber karena
+          `.env` lokal disetel `db` (config/acuan.php).
+        -->
+        <env name="DATA_ACUAN_SUMBER" value="json"/>
+        <!--
           Alamat penyedianya dipatok di `Tests\TestCase::setUp()`, BUKAN di
           sini. `<env>` nggak bisa dipakai buat itu: PHPUnit cuma nyetel
           variabel yang belum ada, dan yang bikin masalah justru variabel shell

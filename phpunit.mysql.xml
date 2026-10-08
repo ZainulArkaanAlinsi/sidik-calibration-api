@@ -86,6 +86,7 @@
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="VISION_DRIVER" value="anthropic"/>
+        <env name="DATA_ACUAN_SUMBER" value="json"/>
         <env name="APP_TIMEZONE" value="Asia/Jakarta"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
