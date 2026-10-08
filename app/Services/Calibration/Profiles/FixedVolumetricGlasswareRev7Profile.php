@@ -225,6 +225,15 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
     public function peringatanSesi(CalibrationSession $sesi): array
     {
         $peringatan = [...parent::peringatanSesi($sesi), ...$this->peringatanSuhuMenggeserCetak($sesi)];
+        $blok = M::blokSesi($sesi->spesifikasi_alat);
+
+        // Sesi tanpa blok Volumetric (atau tanpa lab) sudah diperingatkan
+        // induknya dan tidak bisa menerbitkan apa pun — standarnya belum
+        // relevan, dan master standar tanpa saringan lab tidak boleh dibaca.
+        if ($blok === null || $sesi->organization_id === null) {
+            return $peringatan;
+        }
+
         $master = $this->masterStandarLengkap($sesi->organization_id);
 
         foreach (['termometer standar' => self::COCOK_TERMOMETER, 'sensor PRT' => self::COCOK_SENSOR] as $nama => $cocok) {
@@ -240,9 +249,7 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
             }
         }
 
-        $blok = M::blokSesi($sesi->spesifikasi_alat);
-
-        if ($sesi->standard === null && ($blok['neraca'] ?? null) !== null) {
+        if ($sesi->standard === null && $blok['neraca'] !== null) {
             $peringatan[] = [
                 'kode' => 'volumetric_neraca_tidak_tertaut',
                 'pesan' => sprintf(

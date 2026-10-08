@@ -58,6 +58,19 @@ class ThermohygroSemuaLembarTest extends TestCase
     ];
 
     /**
+     * Lembar yang menawarkan unit master DITAMBAH unit lain, dengan alasannya.
+     * Ketujuh TH tetap wajib ada — yang ditambahkan tidak boleh menggantikan.
+     *
+     * @var array<string, array{unit: list<string>, alasan: string}>
+     */
+    private const DITAMBAH = [
+        'labu_ukur' => ['unit' => ['Thermobarometer Lutron'], 'alasan' => 'workbook Rev.7 `INPUT DATA!E24` '
+            .'memakai Thermobarometer Lutron — satu-satunya yang mengukur tekanan untuk densitas udara.'],
+        'pipet_volume' => ['unit' => ['Thermobarometer Lutron'], 'alasan' => 'workbook Rev.7 `INPUT DATA!E24` '
+            .'memakai Thermobarometer Lutron — satu-satunya yang mengukur tekanan untuk densitas udara.'],
+    ];
+
+    /**
      * Semua profil berlembar.
      *
      * @return array<string, array{CalibrationProfile}>
@@ -214,8 +227,11 @@ class ThermohygroSemuaLembarTest extends TestCase
             return;
         }
 
+        $harap = ['TH-1', 'TH-2', 'TH-3', 'TH-4', 'TH-5', 'TH-6', 'TH-7', ...(self::DITAMBAH[$profil->kode()]['unit'] ?? [])];
+        sort($harap);
+
         $this->assertSame(
-            ['TH-1', 'TH-2', 'TH-3', 'TH-4', 'TH-5', 'TH-6', 'TH-7'],
+            $harap,
             $ditawarkan,
             "Lembar `{$profil->kode()}` nggak menawarkan ketujuh unit master. "
             .'Kalau lembar ini memang cuma boleh sebagian, tulis alasannya di DIKECUALIKAN — '
