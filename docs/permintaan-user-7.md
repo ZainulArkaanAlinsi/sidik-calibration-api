@@ -4997,7 +4997,8 @@ sebenarnya Pipet Volume (`INPUT DATA!E6 = 5`, CMC `CMC_pipetvolume`). Lima selis
 
 **Keputusan pemilik (8 Okt 2026):** workbook lab adalah acuan, sama seperti Anak Timbangan (§46).
 Server disesuaikan; kejanggalan workbook ditiru lalu diangkat sebagai pertanyaan lab bernomor.
-Butir D masih menunggu keputusan.
+Butir D diputuskan pemilik 8 Okt 2026 (keputusan terakhir, menggantikan `ukur`): **angka ikut
+workbook (`master`, 25,5 °C) + peringatan bila suhu terukur menggeser angka cetak**.
 
 **Yang dibangun** (hanya `LabuUkurProfile` dan `PipetVolumeProfile`, lewat
 `parameterHitung()` → `VolumetricGlasswareCalculator::parameterRev7()`; konstanta bersama dan
@@ -5008,12 +5009,15 @@ profil Volumetric lain tidak digeser):
 - **B.** ρ anak timbangan 8 (`PERHITUNGAN!H58`), bukan 7,95.
 - **C.** γ kelas A 10·10⁻⁶ (`PERHITUNGAN!H59`), bukan 9,9·10⁻⁶.
 - **D.** Sakelar `SUHU_DENSITAS_AIR_REV7`: `master` meniru `PERHITUNGAN!H40`/`J40` (angka mati
-  25,5 °C untuk ρ air ulangan 1 & 2); `ukur` memakai suhu terkoreksi tiap ulangan. **Bawaan
-  sementara `ukur`.** Cara yang tidak dipakai tetap dihitung dan tercatat
+  25,5 °C untuk ρ air ulangan 1 & 2); `ukur` memakai suhu terkoreksi tiap ulangan. **Keputusan
+  pemilik: `master`** — `ukur` tetap dihitung dan tercatat; validator memberi PERINGATAN
+  `volumetric_suhu_25_5_menggeser_cetak` kalau angka cetak V20/Correction kedua cara berbeda
+  (di ketujuh workbook hanya LU-500). Cara yang tidak dipakai tetap dihitung dan tercatat
   (`volumetric_rev7_suhu_densitas_air`, berisi V20 dan U cara lainnya). Pada LU-500 angka cetak
   V20 berbeda antar cara (500,24 lawan 500,25 mL).
-- **E.** Desimal cetak: Labu Ukur 2 / U95 3, Pipet Volume 3 / U95 4, k tetap bulat. Format PV di
-  workbook tidak seragam (PV 2 `0.00`, PV 4 `0.0000`), jadi dipilih 3 dan ditanyakan.
+- **E.** Desimal cetak: Labu Ukur 2 / U95 3, k tetap bulat. Pipet Volume ikut workbook PER
+  NOMINAL (`desimalSertifikatTitik()`, dibaca layar HP & sertifikat): 0,5→3, 2→2, 3→3, 4→4, lain
+  3; U95 4.
 - Pembanding K4 (`volumetric_veff_dibagi_jumlah`) tidak muncul lagi untuk kedua profil: di Rev.7
   `K43` adalah baris SUM.
 
@@ -5035,6 +5039,36 @@ itu diperbarui ke Rev.7 (V20 +8,7·10⁻⁷ mL; catatan K4 diganti dua catatan R
 **Status:** PR terbuka, belum di-merge. Gate MySQL penuh belum dijalankan. Sesi Labu Ukur/Pipet
 Volume yang sudah tersimpan sebelum perubahan ini bisa memunculkan `hitung_ulang_beda` di
 validator sampai dihitung ulang.
+
+### §49 tahap 1 — alur, standar, dan isi sertifikat (8 Okt 2026)
+
+Simulasi ujung ke ujung atas ketujuh workbook (angka cetak sudah sama) menemukan celah ALUR.
+Pemilik memutuskan semuanya diperbaiki; deploy dua tahap — tahap 1 di bawah, tahap 2 (enam
+bacaan suhu air, `INPUT DATA!H39:M39`) menyusul di branch terpisah.
+
+| # | Celah | Perbaikan |
+|---|---|---|
+| 1.1 | Tiap sesi Volumetric dari HP memunculkan `standar_titik_hilang` palsu; hitung ulang validator DILEWATI (7/7) | Validator tidak menuntut standar per titik untuk keluarga Volumetric (rumusnya tidak membacanya — pola Anak Timbangan). Labu Ukur & PV: `standard_id` sesi diturunkan dari neraca blok (`standarSesiDariSpesifikasi()`) |
+| 1.2 | Sesi tersimpan 201 dengan nol hitungan tanpa alasan (mis. kemampuan "Pipet Ukur" satu titik) | `meta.belum_dihitung` di jawaban `store`/`update` (bentuk preview), dan peringatan validator `volumetric_titik_belum_dihitung` berisi alasan asli dari `hitungPerGrup()` |
+| 1.3 | Teks basi "menunggu keputusan" & "Delapan komponen" | Diperbarui ke keputusan terakhir (angka ikut workbook + peringatan pergeseran); bentuk lembar Labu Ukur/PV menulis "Tujuh komponen" + sumber workbook Rev.7 |
+| D' | Keputusan terakhir: angka ikut workbook | Sakelar bawaan `master`; peringatan `volumetric_suhu_25_5_menggeser_cetak` (PERINGATAN) kalau angka cetak V20/Correction `master` ≠ `ukur`. Muncul di LU-500 (500,24 lawan 500,25) — diinginkan |
+| E' | Desimal PV per nominal | `PipetVolumeProfile::desimalSertifikatTitik()`: 0,5→3, 2→2, 3→3, 4→4, lain 3 |
+| 2.1 | Neraca Fujitsu tidak bisa dicentang | Usage Check Rev.7 = `DATABASE!V19:V22`: Excellent, Mettler, **Fujitsu**, Termometer & Sensor Std. Satu neraca tercentang menimpa "Balance Used"; dua → 422 (pola Piston/Gaya) |
+| 2.2 | Thermobarometer Lutron tidak ada di pilihan | Ditambahkan (Labu Ukur & PV) |
+| 2.3 | Termometer standar tidak tertaut | Yokogawa "Termometer & Sensor Std." + PRT Pt-100 diturunkan dari master standar lab tiap sesi diperiksa/diterbitkan (`standarTambahanSesi()`); U95-nya tetap dari tabel metode |
+| 2.4 | Masa berlaku dibandingkan dengan HARI INI saja | `standar_kadaluarsa` (ERROR, pola semua alat) kini juga menyala kalau standar sudah lewat pada TANGGAL KALIBRASI. Aturan "lewat hari ini" tetap. Labu Ukur & PV ikut memeriksa termometer, sensor, thermohygro, dan standar tercentang |
+| 3 | Isi sertifikat beda dari sheet `SERTIFIKAT` | Standard Used = neraca + Termometer & Sensor Std.; Env. Condition `T: 20,9°C ± 1,2°C — %RH: 49% ± 3,2% — P: 1001 hPa ± 2,0 hPa`; baris atas tabel `Class/Permitted Error : A/±0,15 ml — Suhu Dasar Volume : 20 °C`; nominal dengan nol di belakang (`200,00`, `0,500`). Hanya Labu Ukur & PV |
+
+**Akibat yang perlu diketahui sebelum deploy:** di workbook, "Termometer & Sensor Std." jatuh
+tempo 12 Agu 2026, lebih awal dari tanggal kalibrasi ketujuh workbook (6 Okt 2026). Kalau master
+standar produksi mencatat tanggal yang sama, sesi seperti itu sekarang DITAHAN
+(`standar_kadaluarsa`, ERROR) sampai sertifikat Yokogawa yang baru dicatat. Itu sengaja
+(pertanyaan lab 18). Isi master produksi BELUM diperiksa (tidak ada akses baca DB di pekerjaan ini).
+
+**Pertanyaan lab baru:** no. 22 (tekanan dicetak tanpa koreksi thermobarometer — ditiru).
+
+**Dijaga:** `VolumetrikRev7AlurTest` (19 test) dan `VolumetrikRev7WorkbookTest` (bawaan `master`
+sama dengan cache workbook sampai angka cetak `N21`/`S21`/`Q22` ketujuh berkas).
 
 ## Gelombang & status
 

@@ -331,10 +331,15 @@ sampai 5,2·10⁻⁵ mL (PV 4). Pada LU-500 angka cetaknya ikut berubah:
 **Pertanyaan:** Apakah 25,5 di `H40`/`J40` sisa uji yang lupa dikembalikan ke
 rumus `AVERAGE(H39:I39)`/`AVERAGE(J39:K39)`?
 
-**Sikap sistem:** menunggu keputusan pemilik. Sakelar
-`VolumetricGlasswareCalculator::SUHU_DENSITAS_AIR_REV7`; bawaan sementara
-`ukur` (suhu terukur). Cara lainnya selalu dihitung dan tercatat di jejak sesi
-(`volumetric_rev7_suhu_densitas_air`).
+**Sikap sistem:** keputusan pemilik 8 Okt 2026 (terakhir, menggantikan `ukur`):
+**angka ikut workbook** — sakelar `VolumetricGlasswareCalculator::SUHU_DENSITAS_AIR_REV7`
+= `master` (25,5 °C untuk ulangan 1 & 2) — **dan sistem tetap berjaga**: cabang
+suhu terukur (`ukur`) tetap dihitung dan V20 + U-nya tercatat di jejak sesi
+(`volumetric_rev7_suhu_densitas_air`). Kalau angka CETAK V20 atau Correction
+(desimal sertifikat titik itu) berbeda antara kedua cabang, validator memunculkan
+PERINGATAN `volumetric_suhu_25_5_menggeser_cetak` berisi kedua angka cetak. Di
+ketujuh workbook acuan peringatan itu hanya muncul di LU-500 (500,24 lawan
+500,25 mL); suhu air yang jauh dari 25,5 °C (mis. 22 °C) selalu memunculkannya.
 
 ### 15. Rentang suhu air tidak menyapu sel terakhir
 
@@ -372,7 +377,11 @@ lewat jatuh tempo. Baris termometer dan sensor (`AA22`, `AA23`) memakai
 **Pertanyaan:** Apakah rujukan yang benar `$Z$17`?
 
 **Sikap sistem:** status standar diperiksa dari data standar di sistem, bukan
-dari workbook.
+dari workbook. Sejak 8 Okt 2026 `CalibrationValidator` membandingkan
+`berlaku_sampai` neraca, termometer & sensor standar, dan thermohygro sesi
+Labu Ukur/Pipet Volume dengan **tanggal kalibrasi** sesi (selain dengan hari
+ini) — kedaluwarsa = `standar_kadaluarsa` tingkat ERROR, sertifikat tidak bisa
+terbit.
 
 ### 18. Termometer standar Yokogawa lewat jatuh tempo saat dipakai
 
@@ -384,6 +393,13 @@ dari workbook.
 **Pertanyaan:** Apakah Yokogawa sudah dikalibrasi ulang dan workbook belum
 diperbarui? Kalau belum, sertifikat yang terbit dari sesi itu memakai standar
 kedaluwarsa.
+
+**Sikap sistem (8 Okt 2026):** termometer standar ("Termometer & Sensor Std.",
+23P1005) dan sensor PRT Pt-100 (SH1/20) diturunkan dari master standar lab untuk
+SETIAP sesi Labu Ukur/Pipet Volume — tabel koreksi & U95-nya selalu dipakai
+rumus. Kalau `berlaku_sampai` di master lebih awal dari tanggal kalibrasi, sesi
+ditahan (`standar_kadaluarsa`, ERROR). Begitu sertifikat Yokogawa yang baru
+dicatat di master standar, sesinya bisa terbit.
 
 ### 19. Berkas bernama "Pipet Ukur" berisi Pipet Volume
 
@@ -423,7 +439,25 @@ U95 (`Q22`) `0.0000` di keempatnya. Labu Ukur seragam: `0.00` dan U95 `0.000`.
 
 **Pertanyaan:** Berapa desimal yang baku untuk Pipet Volume?
 
-**Sikap sistem:** tiga desimal (dua dari empat workbook), U95 empat desimal.
+**Sikap sistem:** keputusan pemilik 8 Okt 2026 — ikut workbook PER NOMINAL:
+0,5 mL → 3, 2 mL → 2, 3 mL → 3, 4 mL → 4, nominal lain → 3; U95 empat desimal.
+Layar HP dan sertifikat membaca hook yang sama
+(`PipetVolumeProfile::desimalSertifikatTitik()`).
+
+### 22. Tekanan udara dicetak tanpa koreksi thermobarometer
+
+`SERTIFIKAT!U11 = PERHITUNGAN!G16 + M16` (suhu terkoreksi) dan
+`U12 = G17 + M17` (RH terkoreksi), tetapi `U13 = PERHITUNGAN!G19` — rata-rata
+BACAAN tekanan tanpa koreksi Lutron (`M19` = +1 hPa). Di ketujuh workbook
+tercetak 1001 hPa; dengan koreksi 1002 hPa. Densitas udara (`H57`) memang
+memakai bacaan mentah ketiganya.
+
+**Pertanyaan:** Apakah tekanan di sertifikat sengaja tanpa koreksi, atau
+seharusnya `G19 + M19` seperti suhu dan RH?
+
+**Sikap sistem:** meniru workbook — sertifikat Labu Ukur & Pipet Volume
+mencetak rata-rata bacaan tekanan (format `0`) dengan ketidakpastian dari
+sertifikat thermobarometer + pergeseran awal–akhir (format `0.0`).
 
 ---
 
@@ -454,9 +488,9 @@ berubah.
 | A. Komponen budget | 8, termasuk keterulangan | **7** | `PERHITUNGAN U95%!I36:I42` (pertanyaan 20) |
 | B. ρ anak timbangan | 7,95 g/mL (u 0,795) | **8** (u 0,8) | `PERHITUNGAN!H58`, `PERHITUNGAN U95%!D39` |
 | C. γ kelas A | 9,9·10⁻⁶ /°C | **10·10⁻⁶** | `PERHITUNGAN!H59` |
-| D. ρ air ulangan 1 & 2 | suhu terukur | **sakelar, bawaan `ukur`** | `PERHITUNGAN!H40`/`J40` = 25,5 (pertanyaan 14) |
+| D. ρ air ulangan 1 & 2 | suhu terukur | **`master`** (25,5 °C, ikut workbook) + peringatan bila suhu terukur menggeser angka cetak | `PERHITUNGAN!H40`/`J40` = 25,5 (pertanyaan 14) |
 | E. Desimal cetak Labu Ukur | 4 / U95 4 | **2 / U95 3** | `SERTIFIKAT!N21/S21` `0.00`, `Q22` `0.000` |
-| E. Desimal cetak Pipet Volume | 4 / U95 4 | **3 / U95 4** | `SERTIFIKAT!N21/S21` `0.000`, `Q22` `0.0000` (pertanyaan 21) |
+| E. Desimal cetak Pipet Volume | 4 / U95 4 | **per nominal: 0,5→3, 2→2, 3→3, 4→4, lain 3 / U95 4** | `SERTIFIKAT!N21/S21` keempat workbook, `Q22` `0.0000` (pertanyaan 21) |
 
 k tetap dicetak bulat (`SERTIFIKAT!V23` `0`). Pembanding K4 (pertanyaan 1)
 tidak berlaku untuk Rev.7: `I45 = I44^4/K43` dan `K43` di Rev.7 adalah baris

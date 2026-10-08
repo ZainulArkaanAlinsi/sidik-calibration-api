@@ -138,3 +138,25 @@ Tidak ada PASS/FAIL (`keputusan` selalu `null`).
 - Angka berbeda dari Excel lab di digit belakang → wajar untuk dua hal yang
   sengaja dihitung benar (Veff Fixed, keterulangan Graduated); selisihnya
   tercatat di jejak sesi, lihat `docs/pertanyaan-lab-volumetric.md` no. 1 & 2.
+
+## 7. Labu Ukur & Pipet Volume ikut workbook Rev.7 — perubahan 8 Okt 2026 (tahap 1)
+
+Semua datang dari bentuk lembar server; HP yang merender `bagian[]` apa adanya
+tidak perlu diubah untuk butir 1–3.
+
+1. **Usage Check** (`bagian[kode=usage_check].baris`) Labu Ukur & Pipet Volume
+   jadi empat baris: Balance Excellent, Balance Mettler Toledo, **Balance
+   Fujitsu**, **Termometer & Sensor Std. (Yokogawa CA 150)**. Baris "RTD Sensor"
+   tidak ada lagi di kedua lembar ini (Picnometer & Graduated tidak berubah).
+   Mencentang SATU neraca menimpa "Balance Used"; mencentang dua lalu mengirim
+   → 422 `errors.standar_dicek` (tampilkan apa adanya). Termometer tidak wajib
+   dicentang — server selalu menautkannya.
+2. **Thermohygro Used** menawarkan **Thermobarometer Lutron** (satu-satunya yang
+   mengukur tekanan) selain TH-1..TH-7.
+3. `budget_ketidakpastian` bertuliskan tujuh komponen + sumber workbook Rev.7.
+4. **Sesi tanpa angka:** jawaban `POST`/`PUT /api/calibrations` membawa
+   `meta.belum_dihitung` (bentuk sama dengan preview). Yang PERLU ditambah di HP:
+   tampilkan daftar itu sesudah kirim kalau tidak kosong. Rinciannya
+   `docs/kontrak-api.md` §4 `meta.belum_dihitung`.
+5. **Enam bacaan suhu air (awal & akhir per ulangan) BELUM** — tahap 2, kontraknya
+   menyusul. Sampai itu `vol_suhu` tetap tepat tiga angka.
