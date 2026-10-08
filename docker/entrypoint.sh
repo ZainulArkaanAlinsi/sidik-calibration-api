@@ -315,9 +315,19 @@ php artisan view:cache
 # --max-time=3600 bikin worker mati sendiri tiap jam lalu dihidupin ulang
 # sama loop di bawah; ini cara standar ngelawan memory leak di proses PHP yang
 # hidup lama, dan penting banget di jatah 512 MB.
+#
+# --max-jobs=1 bikin worker mati sesudah SETIAP job, dan loop di bawah
+# menghidupkannya lagi dengan memori bersih. Sejam ternyata terlalu lama:
+# 8 Okt 2026 tujuh sertifikat disetujui berturut-turut, dan job KEDUA di
+# proses yang sama selalu mati 3 detik setelah mulai — "Allowed memory size of
+# 134217728 bytes exhausted" di TandaTanganTebal.php (imagecreatefromstring).
+# Sisa memori dompdf dari job pertama tidak pernah dilepas. Enam sertifikat
+# lolos lewat percobaan ulang, satu berhenti di `gagal` sesudah tiga
+# percobaan. Ongkosnya cuma boot artisan ±2 detik per job, kecil dibanding
+# render PDF ±45 detik di CPU paket gratis.
 (
     while true; do
-        php artisan queue:work --sleep=3 --tries=3 --timeout=600 --max-time=3600 || true
+        php artisan queue:work --sleep=3 --tries=3 --timeout=600 --max-time=3600 --max-jobs=1 || true
         sleep 2
     done
 ) &

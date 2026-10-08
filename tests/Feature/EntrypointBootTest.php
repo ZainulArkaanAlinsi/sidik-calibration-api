@@ -141,6 +141,36 @@ class EntrypointBootTest extends TestCase
     }
 
     /**
+     * Worker antrean wajib mati sesudah tiap job (`--max-jobs=1`).
+     *
+     * 8 Okt 2026: tujuh sertifikat disetujui berturut-turut, dan job kedua di
+     * proses worker yang sama selalu kehabisan memori 128 MB di
+     * `TandaTanganTebal` — sisa dompdf dari job pertama tidak dilepas. Satu
+     * sertifikat berhenti di `gagal`. Bendera ini yang menutupnya, dan
+     * menghapusnya tidak memunculkan error apa pun sampai lab menyetujui dua
+     * sesi berdekatan lagi.
+     */
+    public function test_worker_antrean_mati_sesudah_tiap_job(): void
+    {
+        preg_match_all(
+            '/^[ \t]*php artisan queue:work\b(.*)$/m',
+            (string) file_get_contents(base_path(self::ENTRYPOINT)),
+            $cocok,
+        );
+
+        $this->assertNotEmpty($cocok[1], 'Baris `php artisan queue:work` hilang dari entrypoint.');
+
+        foreach ($cocok[1] as $argumen) {
+            $this->assertMatchesRegularExpression(
+                '/(^|\s)--max-jobs=1(\s|$)/',
+                $argumen,
+                'Worker antrean di entrypoint tidak memakai --max-jobs=1 — job sertifikat '
+                .'kedua di proses yang sama kehabisan memori 128 MB.',
+            );
+        }
+    }
+
+    /**
      * Nama perintah `php artisan <x>` yang muncul di entrypoint.
      *
      * @return list<string>
