@@ -1,0 +1,349 @@
+{
+ "kode": "dial_indicator",
+ "nama": "Dial Indicator",
+ "kelompok": "Panjang",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-dial-indicator.json"
+ ],
+ "kelas": [
+  "TabelStandarDialIndicator"
+ ],
+ "kalkulator": [
+  "DialIndicatorCalculator"
+ ],
+ "profil": [
+  "DialIndicatorProfile"
+ ],
+ "formulir": [
+  "0526"
+ ],
+ "master": [
+  "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator"
+ ],
+ "generator": [
+  "gen-tabel-standar-dial-indicator.py"
+ ],
+ "fixture": [
+  "sesi-master-dial-indicator.json"
+ ],
+ "kata": [
+  "dial-indicator"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0526_Rev.3 - LEMBAR KERJA DIAL INDICATOR.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 182,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 296,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 286,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "Perhitungan koef. Sensitivitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 7,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 54,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator",
+   "sheet": "Standar_GB",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 133,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Name : | Gauge block standard | Tanggal Kalibrasi | 2024-01-24T00:00:00",
+    "No Seri | 160006 | LK-410-IDN",
+    "Merk | Metrology",
+    "Tipe | GB-9122-0",
+    "Rentang Ukur | 0.5-100 mm"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-dial-indicator.json": "0332686ce3d13052714c9da307d572b0a662c1955ab51ed3d53a61889da0208a"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "traceability",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 6,
+   "contoh": {
+    "nama": "Gauge Block Standard",
+    "merk_tipe": "Metrology/GB-9122-0",
+    "seri": "160006"
+   },
+   "sumber_json": "tabel-standar-dial-indicator.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "kode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kapasitas_maks_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "u95_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "kode": "A",
+    "label": "0-25mm",
+    "kapasitas_maks_mm": 25.0,
+    "u95_mm": 0.0065
+   },
+   "sumber_json": "tabel-standar-dial-indicator.json",
+   "jumlah_sel_data": 16,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu_acuan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "delta_alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "u_alpha_pengali",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_muai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "pengulangan_pembagi_n",
+     "tipe": "desimal",
+     "satuan_tebakan": "N"
+    },
+    {
+     "kunci": "drift_a_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    },
+    {
+     "kunci": "drift_b_um_per_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm/mm"
+    },
+    {
+     "kunci": "drift_pembagi_umur",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "wringing_um_per_keping",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tegak_lurus_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "meja_granit_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "vi_type_b",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "contoh": {
+    "suhu_acuan_c": 20.0,
+    "delta_alpha_per_c": 1e-05,
+    "u_alpha_pengali": 2.0
+   },
+   "sumber_json": "tabel-standar-dial-indicator.json",
+   "jumlah_sel_data": 13,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-dial-indicator.json:_sumber": "Master Olah Data_Dial Indicator.xlsm (sheet DATABASE, Standar_GB, PERHITUNGAN U95%), ber-password. Balok ukur dibaca dari tabel-standar-micrometer.json — set fisik yang sama, sudah diadu skrip ini.",
+  "tabel-standar-dial-indicator.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-dial-indicator.py"
+ },
+ "cakupan": {
+  "tabel-standar-dial-indicator.json": {
+   "daun": 35,
+   "tercakup": 35,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!X11",
+  "INPUT DATA!E15",
+  "PERHITUNGAN U95%!AA20",
+  "PERHITUNGAN U95%!K10",
+  "PERHITUNGAN U95%!K11",
+  "PERHITUNGAN U95%!K12",
+  "PERHITUNGAN U95%!K13",
+  "PERHITUNGAN U95%!N5",
+  "PERHITUNGAN U95%!N9",
+  "PERHITUNGAN U95%!Q6:Q14",
+  "PERHITUNGAN!G14",
+  "PERHITUNGAN!G8",
+  "PERHITUNGAN!H23",
+  "PERHITUNGAN!Q31",
+  "PERHITUNGAN!S31",
+  "PERHITUNGAN!V22",
+  "PERHITUNGAN!W22",
+  "Standar_GB!Q10:R132"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarDialIndicator.php",
+  "app/Services/Calibration/DialIndicatorCalculator.php",
+  "app/Services/Calibration/Profiles/DialIndicatorProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarDialIndicator": [
+   "CalibrationProfileRegistry",
+   "DialIndicatorCalculator",
+   "DialIndicatorProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/DialIndicatorSesiTest.php",
+  "tests/Unit/DialIndicatorMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-dial-indicator.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-dial-indicator.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-dial-indicator.json"
+ ]
+}

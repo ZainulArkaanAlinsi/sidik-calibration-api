@@ -1,0 +1,184 @@
+{
+ "kode": "ph_meter",
+ "nama": "pH Meter",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "PhMeterProfile"
+ ],
+ "formulir": [
+  "0509"
+ ],
+ "master": [
+  "instrument-analiitk/pH_meter_IMTE-WQ-129"
+ ],
+ "generator": [],
+ "fixture": [
+  "kalibrasi-ph-meter.json"
+ ],
+ "kata": [
+  "ph-dua-master"
+ ],
+ "catatan_master": "Titik buffer (4,00 / 7,00 / 10,01) dan ci/vi komponen budget ditulis di dalam method profil; nilai standar buffer (U, k, drift) sudah di tabel `standards`.",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0509_Rev.4 - LEMBAR KERJA pH METER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 176,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 244,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "Nilai koefisien Sensitifitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 54,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 82,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/pH_meter_IMTE-WQ-129",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/PhMeterProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/ConductivityBudgetTest.php",
+  "tests/Feature/Suhu3AlatLembarKerjaTest.php",
+  "tests/Feature/TidsLembarKerjaTest.php",
+  "tests/Unit/AngkaTandaNolTest.php",
+  "tests/Unit/PengulanganBebasTest.php",
+  "tests/Unit/PhMeterMasterTest.php",
+  "tests/Unit/RoutingProfilSepakatTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-ph-dua-master.md"
+ ],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 35,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0506_Rev.6';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 78,
+   "nama": "titik",
+   "nilai_awal": "4.00",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 79,
+   "nama": "titik",
+   "nilai_awal": "7.00",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 80,
+   "nama": "titik",
+   "nilai_awal": "10.01",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 117,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 118,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 125,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 126,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 137,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 148,
+   "nama": "vi",
+   "nilai_awal": "50",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  },
+  {
+   "baris": 155,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/PhMeterProfile.php"
+  }
+ ],
+ "fixture_ada": [
+  "kalibrasi-ph-meter.json"
+ ]
+}

@@ -1,0 +1,203 @@
+{
+ "kode": "turbidimeter",
+ "nama": "Turbidimeter",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "TurbidimeterProfile"
+ ],
+ "formulir": [
+  "0530"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Turbidimeter"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0530_Rev.2 - LEMBAR KERJA TURBIDIMETER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 173,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 248,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 66,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Turbidimeter",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 55,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/ConductivityBudgetTest.php",
+  "tests/Feature/LembarKerjaTest.php",
+  "tests/Unit/AngkaTandaNolTest.php",
+  "tests/Unit/PengulanganBebasTest.php",
+  "tests/Unit/TurbidimeterBudgetTest.php",
+  "tests/Unit/ViscometerBudgetTest.php"
+ ],
+ "pertanyaan_lab": [],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 49,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0523_Rev.1';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 51,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0530_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 53,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 63,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 69,
+   "nama": "SATUAN",
+   "nilai_awal": "'NTU';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 78,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 104,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 123,
+   "nama": "titik",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 124,
+   "nama": "titik",
+   "nilai_awal": "100.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 125,
+   "nama": "titik",
+   "nilai_awal": "1000.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 222,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 223,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 230,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 231,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 242,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  },
+  {
+   "baris": 249,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/TurbidimeterProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

@@ -1,0 +1,219 @@
+{
+ "kode": "do_meter",
+ "nama": "DO Meter",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "DoMeterProfile"
+ ],
+ "formulir": [
+  "0532"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_DO_Meter"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0532_Rev.2 - LEMBAR KERJA DO METER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 173,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 245,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 65,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_DO_Meter",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 52,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/DoMeterProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Unit/DoMeterBudgetTest.php"
+ ],
+ "pertanyaan_lab": [],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 68,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0530_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 70,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0532_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 72,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 74,
+   "nama": "SATUAN",
+   "nilai_awal": "'mg/L';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 77,
+   "nama": "RESOLUSI",
+   "nilai_awal": "0.01;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 84,
+   "nama": "TOLERANSI_TITIK",
+   "nilai_awal": "0.05;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 95,
+   "nama": "U95_MICROPIPETTE",
+   "nilai_awal": "0.89;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 97,
+   "nama": "U95_LABU_UKUR",
+   "nilai_awal": "0.033;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 108,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 119,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 138,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 263,
+   "nama": "titik",
+   "nilai_awal": "8.77",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 380,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 381,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 388,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 389,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 400,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 411,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  },
+  {
+   "baris": 418,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/DoMeterProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

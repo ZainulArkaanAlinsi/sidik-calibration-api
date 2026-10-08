@@ -1,0 +1,1457 @@
+{
+ "kode": "tits",
+ "nama": "TITS & kalibrator suhu (measure/source)",
+ "kelompok": "Suhu",
+ "jenis": "json",
+ "json": [
+  "tabel-kalibrator-suhu.json"
+ ],
+ "kelas": [
+  "TabelKalibratorSuhu"
+ ],
+ "kalkulator": [
+  "TitsCalculator"
+ ],
+ "profil": [
+  "TitsProfile"
+ ],
+ "formulir": [
+  "0505"
+ ],
+ "master": [
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "tits"
+ ],
+ "catatan_master": "Tabel kalibrator ini juga dibaca TIDS, Enclosure, dan tabel suhu 3 alat — perubahan di sini menggeser alat-alat itu juga. Simulasi wajib menjalankan semua profil pemakainya.",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0505_Rev.3 - LEMBAR KERJA TITS.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "Drawing Enclosure",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 103,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-09-19T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2024-09-19T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "0.003878 | A | 0.003501"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 188,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 37,
+   "cuplikan_atas": [
+    "Temp Calibrator : Constant",
+    "Titik Kalibrasi | PRT PT100 | Titik Kalibrasi | Thermocouple Type K | Titik Kalibrasi | Thermocouple Type N | Titik Kalibrasi | Thermocouple Type B | Titik Kalibrasi | Thermocouple Type T | Titik Kalibrasi | Thermocouple",
+    "-20 | 0 | -20 | -0.10000000000000142 | -20 | -0.10000000000000142 | 600 | -0.39999999999997726 | -100 | -0.15000000000000568 | 0 | 0 | 0 | 0",
+    "0 | 0.2 | 0 | -1 | 0 | -0.2 | 800 | -0.4199999999999591 | 0 | -0.2 | 50 | -0.20000000000000284 | 50 | -0.20000000000000284",
+    "100 | 0.29999999999999716 | 100 | -0.20000000000000284 | 100 | -0.20000000000000284 | 1000 | -0.5399999999999636 | 50 | -0.20000000000000284 | 100 | -0.20000000000000284 | 100 | -0.20000000000000284",
+    "200 | 0.30000000000001137 | 200 | -0.09999999999999432 | 200 | -0.30000000000001137 | 1200 | -0.6600000000000819 | 100 | -0.29999999999999716 | 200 | -0.30000000000001137 | 200 | -0.09999999999999432"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 42,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 36,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-09-19T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2024-09-19T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | -0.13466592594299698 | 0.04"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 58,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": [
+    "STANDAR METER/INDIKATOR",
+    "TABEL RECORD DRIFT",
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00 | Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | Std Mode: | Source",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-28T00:00:00 | Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN | Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN | Constant | Yokogawa",
+    "S/N | : | 99875850 | S/N | : | 23P1005 | Termocouple | Udrift | Termocouple | Udrift"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "STANDAR-CONSTANT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 129,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-29T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 99875850",
+    "Mode | : | Source (Simulator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 304,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-241-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Source (Simulator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-07-07T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2024-07-06T00:00:00",
+    "S/N | : | TCK-01~16 | Tertelusur | : | LK-202-IDN",
+    "Tikal | TCK-01 | Correct | Tikal | TCK-02 | Correct | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "0.223 | 0.26 | -0.037000000000000005 | 0.223 | 0.16 | 0.063 | 0.012999999999999998 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-",
+    "50.062 | 49.91 | 0.15200000000000102 | 50.079 | 49.97 | 0.10900000000000176 | 0.1305000000000014 | 0 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0."
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2021-08-24T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2023-08-24T00:00:00",
+    "S/N | : | TCN-01,02 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TC3 | TC4 | AVERAGE | oC | TC3 | TC4 | TC5 | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12",
+    "-20 | 3.42 | 3.86 | 3.6399999999999997 | -20 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.639"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "Drawing Enclosure",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 103,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-09-19T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2024-09-19T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "0.003878 | A | 0.003501"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 55,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 52,
+   "cuplikan_atas": [
+    "Temp Calibrator : Constant",
+    "Titik Kalibrasi | PRT PT100 | Titik Kalibrasi | Thermocouple Type K | Titik Kalibrasi | Thermocouple Type N | Titik Kalibrasi | Thermocouple Type B | Titik Kalibrasi | Thermocouple Type T | Titik Kalibrasi | Thermocouple",
+    "-20 | 0 | -20 | -0.10000000000000142 | -20 | -0.10000000000000142 | 600 | -0.39999999999997726 | -100 | -0.15000000000000568 | 0 | -0.1 | 0 | 0.09",
+    "0 | 0.2 | 0 | -1 | 0 | -0.2 | 800 | -0.4199999999999591 | 0 | -0.05 | 50 | -0.14999999999999858 | 50 | 0.240000000000002",
+    "100 | 0.29999999999999716 | 100 | -0.20000000000000284 | 100 | -0.20000000000000284 | 1000 | -0.5399999999999636 | 50 | -0.03999999999999915 | 100 | -0.12999999999999545 | 100 | 0.20000000000000284",
+    "200 | 0.30000000000001137 | 200 | -0.09999999999999432 | 200 | -0.30000000000001137 | 1200 | -0.6600000000000819 | 100 | -0.01999999999999602 | 200 | -0.12999999999999545 | 200 | 0.3100000000000023"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 40,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 37,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-09-19T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2024-09-19T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | -0.13466592594299698 | 0.04"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 52,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": [
+    "STANDAR METER/INDIKATOR",
+    "TABEL RECORD DRIFT",
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00 | Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | Std Mode: | Source",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-28T00:00:00 | Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00 | TGL Update : | 2024-08-14T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN | Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN | Constant | Yokogawa",
+    "S/N | : | 99875850 | S/N | : | 23P1005 | Termocouple | Udrift | Termocouple | Udrift"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "STANDAR-CONSTANT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 129,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-29T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 99875850",
+    "Mode | : | Source (Simulator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 137,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-241-IDN & LK-285-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Source",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2022-07-07T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2024-07-06T00:00:00",
+    "S/N | : | TCK-01~16 | Tertelusur | : | LK-202-IDN",
+    "Tikal | TCK-01 | Correct | Tikal | TCK-02 | Correct | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "0.223 | 0.26 | -0.037000000000000005 | 0.223 | 0.16 | 0.063 | 0.012999999999999998 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-",
+    "50.062 | 49.91 | 0.15200000000000102 | 50.079 | 49.97 | 0.10900000000000176 | 0.1305000000000014 | 0 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0.012999999999999998 | 0."
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2021-08-24T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2023-08-24T00:00:00",
+    "S/N | : | TCN-01,02 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TC3 | TC4 | AVERAGE | oC | TC3 | TC4 | TC5 | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12",
+    "-20 | 3.42 | 3.86 | 3.6399999999999997 | -20 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.6399999999999997 | 3.639"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-kalibrator-suhu.json": "6b2fa06fb74b227c8953348579a4383a2ef3bcf2604af6bee77d00a3a9b722fc"
+ },
+ "lembar": [
+  {
+   "jalur": "mode/measure",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "drift.RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type J",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {},
+   "lembar_anak": [
+    "mode/measure/*/titik"
+   ],
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 13,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik",
+   "bentuk": "tabel_anak",
+   "kolom": [],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {},
+   "lembar_anak": [
+    "mode/measure/*/titik/*/RTD",
+    "mode/measure/*/titik/*/Type K",
+    "mode/measure/*/titik/*/Type N",
+    "mode/measure/*/titik/*/Type B",
+    "mode/measure/*/titik/*/Type T",
+    "mode/measure/*/titik/*/Type R",
+    "mode/measure/*/titik/*/Type S",
+    "mode/measure/*/titik/*/Type J"
+   ],
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 0,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/RTD",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 26,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": 0.0,
+    "u95": 0.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 78,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type K",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 31,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14",
+    "yokogawa·15"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "koreksi": -0.1,
+    "u95": 0.54
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 93,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type N",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 33,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "constant·15",
+    "constant·16",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14",
+    "yokogawa·15"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "koreksi": -0.1,
+    "u95": 0.7
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 99,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type B",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7"
+   ],
+   "contoh": {
+    "titik": 600.0,
+    "koreksi": -0.4,
+    "u95": 1.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 24,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type T",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": -0.15,
+    "u95": 0.63
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 54,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type R",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 28,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13"
+   ],
+   "contoh": {
+    "titik": 0.0,
+    "koreksi": 0.0,
+    "u95": 1.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 84,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type S",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 30,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "constant·15",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13"
+   ],
+   "contoh": {
+    "titik": 0.0,
+    "koreksi": 0.0,
+    "u95": 1.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 90,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/measure/*/titik/*/Type J",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": 0.05,
+    "u95": 0.27
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 45,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "drift.RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift.Type J",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {},
+   "lembar_anak": [
+    "mode/source/*/titik"
+   ],
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 13,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik",
+   "bentuk": "tabel_anak",
+   "kolom": [],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {},
+   "lembar_anak": [
+    "mode/source/*/titik/*/RTD",
+    "mode/source/*/titik/*/Type K",
+    "mode/source/*/titik/*/Type N",
+    "mode/source/*/titik/*/Type B",
+    "mode/source/*/titik/*/Type T",
+    "mode/source/*/titik/*/Type R",
+    "mode/source/*/titik/*/Type S",
+    "mode/source/*/titik/*/Type J"
+   ],
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 0,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/RTD",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 26,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": 0.0,
+    "u95": 0.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 78,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type K",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 31,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14",
+    "yokogawa·15"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "koreksi": -0.1,
+    "u95": 0.54
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 93,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type N",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 33,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "constant·15",
+    "constant·16",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14",
+    "yokogawa·15"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "koreksi": -0.1,
+    "u95": 0.7
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 99,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type B",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7"
+   ],
+   "contoh": {
+    "titik": 600.0,
+    "koreksi": -0.4,
+    "u95": 1.0
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 24,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type T",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 17,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": -0.15,
+    "u95": 0.47
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 51,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type R",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 28,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13"
+   ],
+   "contoh": {
+    "titik": 0.0,
+    "koreksi": -0.1,
+    "u95": 0.74
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 84,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type S",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 30,
+   "kunci_baris": [
+    "constant·0",
+    "constant·1",
+    "constant·2",
+    "constant·3",
+    "constant·4",
+    "constant·5",
+    "constant·6",
+    "constant·7",
+    "constant·8",
+    "constant·9",
+    "constant·10",
+    "constant·11",
+    "constant·12",
+    "constant·13",
+    "constant·14",
+    "constant·15",
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13"
+   ],
+   "contoh": {
+    "titik": 0.0,
+    "koreksi": 0.09,
+    "u95": 0.81
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 90,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "mode/source/*/titik/*/Type J",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 16,
+   "kunci_baris": [
+    "yokogawa·0",
+    "yokogawa·1",
+    "yokogawa·2",
+    "yokogawa·3",
+    "yokogawa·4",
+    "yokogawa·5",
+    "yokogawa·6",
+    "yokogawa·7",
+    "yokogawa·8",
+    "yokogawa·9",
+    "yokogawa·10",
+    "yokogawa·11",
+    "yokogawa·12",
+    "yokogawa·13",
+    "yokogawa·14",
+    "yokogawa·15"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "koreksi": 0.05,
+    "u95": 0.27
+   },
+   "sumber_json": "tabel-kalibrator-suhu.json",
+   "jumlah_sel_data": 48,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-kalibrator-suhu.json:_sumber": "Master Olah Data_Suhu_TITS fungsi Measure utk UUT.xlsm & fungsi Source utk UUT.xlsm (terkunci sandi), sheet 'STANDAR KALIBRATOR' — blok B8:J27 & B30:J49 (Constant 40T) dan M8:U27 & M30:U49 (Yokogawa CA 150 Handy Cal), tabel drift X5:AA13.",
+  "tabel-kalibrator-suhu.json:_catatan": "Dua MODE, dua tabel yang BEDA ISI (135 sel berbeda antar workbook) — bukan salinan. 'measure' = UUT berfungsi sebagai pembaca, kalibrator yang men-source sinyal; 'source' = kebalikannya. Koreksi & U95 kalibrator memang beda per fungsi, jadi tabelnya tidak boleh dipakai silang.",
+  "tabel-kalibrator-suhu.json:_kejanggalan": "[\"Sel #REF! (kolom Type B & Type S Yokogawa di titik >=600) dibuang jadi kosong, bukan dibaca 0.\", \"Kolom U95 'Type K' Yokogawa di workbook SOURCE berisi angka NEGATIF (-0,06 s/d -0,31) — itu nilai KOREKSI yang tersalin ke tabel U95. Dibiarkan apa adanya di sini supaya tidak mengarang, tapi TitsCalculator menolaknya (U95 tidak boleh negatif) dan sesi Type K mode Source jatuh ke lantai CMC. Ditanya"
+ },
+ "cakupan": {
+  "tabel-kalibrator-suhu.json": {
+   "daun": 1160,
+   "tercakup": 1160,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!Q3:S11",
+  "KALIBRATOR!X7:AA13",
+  "PERHITUNGAN FC!P35",
+  "PERHITUNGAN U95%!N22",
+  "SERTIFIKAT!L20"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelKalibratorSuhu.php",
+  "app/Services/Calibration/TitsCalculator.php",
+  "app/Services/Calibration/Profiles/TitsProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelKalibratorSuhu": [
+   "CalibrationRequest",
+   "TabelKalibratorEnclosure",
+   "TabelKalibratorSuhu3Alat",
+   "TabelStandarTids",
+   "TidsProfile",
+   "TitsCalculator",
+   "TitsProfile",
+   "UjiProfilKalibrasi"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/Suhu3AlatLembarKerjaTest.php",
+  "tests/Feature/ThermohygroSemuaLembarTest.php",
+  "tests/Feature/TidsLembarKerjaTest.php",
+  "tests/Feature/TitsSesiTest.php",
+  "tests/Unit/TitsBudgetTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-tits.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-tits.md"
+ ],
+ "fixture_ada": []
+}

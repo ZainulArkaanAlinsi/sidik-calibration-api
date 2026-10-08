@@ -1,0 +1,2684 @@
+{
+ "kode": "suhu_3alat",
+ "nama": "Thermocouple · Termometer gelas · Thermohygrometer",
+ "kelompok": "Suhu",
+ "jenis": "json",
+ "json": [
+  "tabel-master-suhu-3alat.json"
+ ],
+ "kelas": [
+  "TabelKalibratorSuhu3Alat"
+ ],
+ "kalkulator": [
+  "ThermocoupleCalculator",
+  "ThermometerGlassCalculator",
+  "ThermohygroCalculator"
+ ],
+ "profil": [
+  "ThermocoupleProfile",
+  "ThermometerGlassProfile",
+  "ThermohygroProfile"
+ ],
+ "formulir": [
+  "0535",
+  "0537",
+  "0525"
+ ],
+ "master": [
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+  "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "suhu-3alat",
+  "thermohygro-satuan"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0525_Rev.3 - LEMBAR KERJA THERMOHYGRO.pdf",
+  "SIDIK-FM-CAL-0535_Rev.2 - LEMBAR KERJA THERMOCOUPLE.pdf",
+  "SIDIK-FM-CAL-0537_Rev.2 - LEMBAR KERJA THERMOMETER GLASS.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "Drawing Enclosure",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 68,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "0.003878 | A | 0.00390954"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 185,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 71,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 76,
+   "cuplikan_atas": [
+    "Temp Calibrator : Constant",
+    "Titik Kalibrasi | PRT PT100 | Titik Kalibrasi | Thermocouple Type K | Titik Kalibrasi | Thermocouple Type N | Titik Kalibrasi | Thermocouple Type B | Titik Kalibrasi | Thermocouple Type T | Titik Kalibrasi | Thermocouple",
+    "-20 | 0.10000000000000142 | -20 | 0.1999999999999993 | -20 | 0.10000000000000142 | 600 | 0.10000000000002274 | -100 | 0.12999999999999545 | 0 | 0.05 | 0 | 0.23",
+    "0 | 0.1 | 0 | 0.1 | 0 | 0.1 | 800 | 0.16999999999995907 | 0 | 0.06 | 50 | -0.17999999999999972 | 50 | 0.21000000000000085",
+    "200 | 0.09999999999999432 | 100 | -0.09999999999999432 | 100 | 0.09999999999999432 | 1000 | 0.2999999999999545 | 50 | 0.07000000000000028 | 100 | -0.15000000000000568 | 100 | 0.18999999999999773",
+    "400 | 0.10000000000002274 | 200 | -0.09999999999999432 | 200 | -0.09999999999999432 | 1200 | 0.31999999999993634 | 100 | 0.10999999999999943 | 200 | -0.12999999999999545 | 200 | 0.30000000000001137"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 41,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.0039691640657189 | 0.08"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 63,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": [
+    "STANDAR METER/INDIKATOR | TABEL RECORD DRIFT",
+    "Std Mode: | Measure",
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00 | Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | Std Meter | Update drift juni 2024",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-28T00:00:00 | Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00 | Constant | Yokogawa",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN | Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN | Termocouple | Udrift | Termocouple | Udrift",
+    "S/N | : | 99875850 | S/N | : | 23P1005 | PRT PT100 | 0.23 | PRT PT100 | 0.072"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "STANDAR-CONSTANT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 130,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-28T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 99875850",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "STANDAR-VICTOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 146,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2020-09-25T00:00:00",
+    "Merek | : | Victor | Due Date Kalibrasi | : | 2021-09-25T00:00:00",
+    "Type | : | Victor 14+ | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 992613877",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "STANDAR-YOKOGAWA",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 145,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | 0",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TC-01,02 | Tertelusur | : | LK-064-IDN",
+    "Tikal | TC-01 Correct | Tikal | TC-02 Corret | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "-20 | -0.21 | -20 | -0.33 | -0.27 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-15 | TCK-16",
+    "0 | -0.06 | 0 | -0.1 | -0.08 | -20 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TCN-06,11 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TCN-06 | TCN-11 | AVERAGE | oC | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12 | TC13 | TC14 | TC15",
+    "-20 | -0.24 | -0.06 | -0.15 | -20 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "Variasi axial Dryblok A",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | TeCal 700xs",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | DB-B-2",
+    "Kapasitas: | 0~600 oC",
+    "Standard: | Dryblok",
+    "Merk: | Techne"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "Variasi axial Dryblok B",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 50,
+   "cuplikan_atas": [
+    "Variasi Axial",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | TeCal 700xs",
+    "TGL Tes : | 2024-07-17T00:00:00 | SN : | DB-B-2",
+    "Kapasitas: | 0~600 oC",
+    "Standard: | Dryblok",
+    "Merk: | Techne"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "sheet": "stdev drywell",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": [
+    "KESTABILAN | KESERAGAMAN",
+    "Posisi | Lubang | Stdev | Average | Stdev",
+    "100 | 200 | 300 | 400 | 100 | 200 | 300 | 400 | 100 | 200 | 300 | 400",
+    "Tengah | 1 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.43999999999998 | 198.44 | 298.24 | 398.0400000000001 | 1.1879393923934147 | 1.1879393923934047 | 1.3293607486307062 | ",
+    "Bawah | 0.0836660026534096 | 0.0836660026534028 | 0.08366600265339941 | 0.08366600265339941 | 100.12 | 200.12 | 300.12 | 400.12",
+    "Tengah | 2 | 0.0547722557505135 | 0.0547722557505135 | 0.05477225575049793 | 0.05477225575049793 | 98.55999999999999 | 198.56 | 298.26 | 397.9599999999999 | 1.315218613006978 | 1.2727922061357735 | 1.4142135623730951 | 1"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "FC Prt Pt100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 68,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00 | Link calculator : https://www.fluke.com/en-us/learn/tools-calculators/pt100-calculator?srsltid=AfmBOoqPe_j-N87lgotXxrFrPdjOLAJ5b_2mxDXIuBjJ08Xi",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | LK-070-IDN",
+    "For t ≥0 oC : | For t≤0 oC :",
+    "0",
+    "Lama: | Terbaru :"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 179,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 70,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "Interpolasi",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 60,
+   "cuplikan_atas": [
+    "Temp Calibrator : Constant",
+    "Titik Kalibrasi | PRT PT100 | Titik Kalibrasi | Thermocouple Type K | Titik Kalibrasi | Thermocouple Type N | Titik Kalibrasi | Thermocouple Type B | Titik Kalibrasi | Thermocouple Type T | Titik Kalibrasi | Thermocouple",
+    "-20 | 0.10000000000000142 | -20 | 0.1999999999999993 | -20 | 0.10000000000000142 | 600 | 0.10000000000002274 | -100 | 0.12999999999999545 | 0 | 0.05 | 0 | 0.23",
+    "0 | 0.1 | 0 | 0.1 | 0 | 0.1 | 800 | 0.16999999999995907 | 0 | 0.06 | 50 | -0.17999999999999972 | 50 | 0.21000000000000085",
+    "200 | 0.09999999999999432 | 100 | -0.09999999999999432 | 100 | 0.09999999999999432 | 1000 | 0.2999999999999545 | 50 | 0.07000000000000028 | 100 | -0.15000000000000568 | 100 | 0.18999999999999773",
+    "400 | 0.10000000000002274 | 200 | -0.09999999999999432 | 200 | -0.09999999999999432 | 1200 | 0.31999999999993634 | 100 | 0.10999999999999943 | 200 | -0.12999999999999545 | 200 | 0.30000000000001137"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 56,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "SENSOR PT100",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2025-02-14T00:00:00",
+    "Type | : | PRT PT100 | Due Date Kalibrasi | : | 2027-02-15T00:00:00",
+    "S/N | : | SH1/20 | Tertelusur | : | SNSU-BSN",
+    "Titik Kalibrasi | Correction | Uncertainty U95%",
+    "oC | oC | oC",
+    "-20 | 0.003969163676529774 | 0.08"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 64,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": [
+    "STANDAR METER/INDIKATOR | TABEL RECORD DRIFT",
+    "Std Mode: | Measure",
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2022-08-25T00:00:00 | Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00 | Std Meter",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2023-08-25T00:00:00 | Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00 | Constant | Yokogawa",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN | Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN | Termocouple | Udrift | Termocouple | Udrift",
+    "S/N | : | 99875850 | S/N | : | 23P1005 | PRT PT100 | 0.23 | PRT PT100 | 0.072"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "STANDAR-CONSTANT",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 131,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2024-08-28T00:00:00",
+    "Merek | : | Constant | Due Date Kalibrasi | : | 2025-08-29T00:00:00",
+    "Type | : | 40T | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 99875850",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "Stndar Yokogawa",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 146,
+   "cuplikan_atas": [
+    "Nama Alat | : | Temperature Calibrator | Tanggal Kalibrasi | : | 2025-08-12T00:00:00",
+    "Merek | : | Yokogawa | Due Date Kalibrasi | : | 2026-08-12T00:00:00",
+    "Type | : | CA 150 Handy Cal | Tertelusur | : | LK-202-IDN",
+    "S/N | : | 23P1005",
+    "Mode | : | Measure (Indikator)",
+    "Sensor | : | PRT PT100"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "TERMOCOUPLE TYPE K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 132,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type K | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TC-01,02 | Tertelusur | : | LK-064-IDN",
+    "Tikal | TC-01 Correct | Tikal | TC-02 Corret | AVERAGE | Titik Kalibrasi | Correction (oC)",
+    "-20 | -0.21 | -20 | -0.33 | -0.27 | oC | TCK-01 | TCK-02 | TCK-03 | TCK-04 | TCK-05 | TCK-06 | TCK-07 | TCK-08 | TCK-09 | TCK-10 | TCK-11 | TCK-12 | TCK-13 | TCK-14 | TCK-15 | TCK-16",
+    "0 | -0.06 | 0 | -0.1 | -0.08 | 0 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27 | -0.27"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "TERMOCOUPLE TYPE N",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": [
+    "Nama Alat | : | Thermocouple | Tanggal Kalibrasi | : | 2024-09-06T00:00:00",
+    "Type | : | Type N | Due Date Kalibrasi | : | 2026-09-06T00:00:00",
+    "S/N | : | TCN-06,11 | Tertelusur | : | LK-064-IDN",
+    "Titik Kalibrasi | Correction (oC)",
+    "Tikal | TCN-06 | TCN-11 | AVERAGE | oC | TC3 | TC4 | TC5 | TC6 | TC7 | TC8 | TC9 | TC10 | TC11 | TC12",
+    "-20 | -0.24 | -0.06 | -0.15 | -20 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15 | -0.15"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "sheet": "Variasi Spasial & stab Oilbath",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 58,
+   "cuplikan_atas": [
+    "Data Oilbath",
+    "Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | - | Owner : | PT. Sistem Dirgantara Inovasi Teknologi | Type : | -",
+    "TGL Kalibrasi : | 7 mei 2024 | SN : | SIDIK/079/2022 | TGL Kalibrasi : | 6 Mei 2024 | SN : | -",
+    "Tertelusur | LK-285-IDN | Rentang | 5-15 | °C | Tertelusur | LK-202-IDN | Rentang | 30-200 | °C",
+    "Nama alat | OilBath 1 | Nama alat | OilBath 2",
+    "Merk: | - | Merk: | -"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "ClimaticChamberStability(unuse)",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 41,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 185,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 74,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 87,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "STANDAR_KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 27,
+   "cuplikan_atas": [
+    "Standard Kalibrator | Drift Kalibrator",
+    "Temperature Humidity Meter | Kelembapan | %RH | 0C | %RH",
+    "Merk/Type | : | - | Titik Kalibrasi (%RH) | Correction | 0.615 | 0.635",
+    "Serial Number | : | 201701023483 | %RH | Sumber",
+    "Calibration Date | : | 2026-01-09T00:00:00 | 20 | 0.3 | \\\\192.168.100.70\\sidcal\\SIDIK\\7.5 Rekaman Teknis\\01. MASTER OLAH DATA\\Record Drift\\1. Drift kalibrator temp baru 04 juni 2024",
+    "Due Date of Calibration | : | 2027-01-09T00:00:00 | 25 | 0.3"
+   ]
+  },
+  {
+   "master": "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan",
+   "sheet": "stabilitas dan homogenitas Cham",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 34,
+   "cuplikan_atas": [
+    "Nama alat | Climatic Chamber",
+    "Merk | Biobase",
+    "Tipe | BJPX-HT150B11",
+    "SN | TH-24-PRFR-01",
+    "Tgl Kal. | 03 mei 2024",
+    "Tertelusur | LK-375-IDN"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-master-suhu-3alat.json": "fa0be219e8d0671aa0173251d07b6265fb65222d599ef55965b141c464181c2a"
+ },
+ "lembar": [
+  {
+   "jalur": "thermocouple",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "_sumber",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "_yokogawa_dari_tautan_luar",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "index_kalibrator",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stabilitas_cold_junction",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "ac_pick_up",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "_sumber": "Master_Olah_Data_Suhu_Thermocouple.xlsm (sesi 0513-CAL-1124)",
+    "_yokogawa_dari_tautan_luar": "Koreksi_Yokogawa & U95_Yokogawa menunjuk '[4]STANDAR KALIBRATOR' = Master Olda Enclosure - Yokogawa.xlsm; nilainya diambil dari cache tautan luar workbook ini.",
+    "index_kalibrator": [
+     -100.0,
+     -20.0,
+     0.0,
+     25.0,
+     50.0,
+     100.0,
+     200.0,
+     300.0,
+     400.0,
+     500.0,
+     600.0,
+     700.0,
+     800.0,
+     900.0,
+     1000.0,
+     1200.0,
+     1400.0,
+     1700.0
+    ]
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/koreksi_kalibrator/constant",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.0,
+    "Type K": 0.0,
+    "Type N": 0.0,
+    "Type T": 0.13
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 112,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/koreksi_kalibrator/yokogawa",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.14
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 61,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/u95_kalibrator/constant",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.0,
+    "Type K": 0.0,
+    "Type N": 0.0,
+    "Type T": 0.26
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 110,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/u95_kalibrator/yokogawa",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.04
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 61,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/koreksi_sensor",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN4",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN7",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN8",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN9",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-01",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-02",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-03",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-04",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-05",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-06",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-07",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-08",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-09",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-13",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-14",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-15",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-16",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "RTD": 0.003969164,
+    "TCN3": -0.15,
+    "TCN4": -0.15,
+    "TCN5": -0.15,
+    "TCN6": -0.15,
+    "TCN7": -0.15,
+    "TCN8": -0.15,
+    "TCN9": -0.15,
+    "TCN10": -0.15,
+    "TCN11": -0.15,
+    "TCN12": -0.15
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 300,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "thermocouple/u95_sensor",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN4",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN7",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN8",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN9",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-01",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-02",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-03",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-04",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-05",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-06",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-07",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-08",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-09",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-13",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-14",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-15",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-16",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "RTD": 0.08,
+    "TCN3": 0.76,
+    "TCN4": 0.76,
+    "TCN5": 0.76,
+    "TCN6": 0.76,
+    "TCN7": 0.76,
+    "TCN8": 0.76,
+    "TCN9": 0.76,
+    "TCN10": 0.76,
+    "TCN11": 0.76,
+    "TCN12": 0.76
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 302,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "thermocouple/drift_kalibrator",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {
+    "RTD": 0.23,
+    "Type N": 0.2,
+    "Type K": 0.125
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/drift_sensor",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "RTD": 0.502,
+    "Type N": 0.55,
+    "Type K": 0.5
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/dryblock",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "axial_u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "radial_max",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "A",
+    "B"
+   ],
+   "contoh": {
+    "axial_u": 0.2,
+    "radial_max": 0.13
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "rentang",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "rentang": "-20 ~ 150",
+    "u": 0.84
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermocouple/probe_per_tipe",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "1",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "Type K",
+    "Type N",
+    "RTD"
+   ],
+   "contoh": {
+    "1": "TCK-01",
+    "2": "TCK-02",
+    "3": "TCK-03",
+    "4": "TCK-04",
+    "5": "TCK-05",
+    "6": "TCK-06",
+    "7": "TCK-07",
+    "8": "TCK-08",
+    "9": "TCK-09",
+    "10": "TCK-10",
+    "11": "TCK-11",
+    "12": "TCK-12",
+    "13": "TCK-13",
+    "14": "TCK-14",
+    "15": "TCK-15",
+    "16": "TCK-16"
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 27,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "_sumber",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "index_kalibrator",
+     "tipe": "daftar_angka",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "_sumber": "Master_Olah_Data_Suhu_Thermometer_Glass.xlsm (sesi 0135-CAL-125)",
+    "index_kalibrator": [
+     -100.0,
+     -20.0,
+     0.0,
+     25.0,
+     50.0,
+     100.0,
+     200.0,
+     300.0,
+     400.0,
+     500.0,
+     600.0,
+     700.0,
+     800.0,
+     900.0,
+     1000.0,
+     1200.0,
+     1400.0,
+     1700.0
+    ]
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/koreksi_kalibrator/constant",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.0,
+    "Type K": 0.0,
+    "Type N": 0.0,
+    "Type T": 0.13
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 80,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/koreksi_kalibrator/yokogawa",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.14
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 61,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/u95_kalibrator/constant",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type T",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type R",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type S",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type B",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.0,
+    "Type K": 0.0,
+    "Type N": 0.0,
+    "Type T": 0.26
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 110,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/u95_kalibrator/yokogawa",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 18,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17"
+   ],
+   "contoh": {
+    "titik": -100.0,
+    "RTD": 0.04
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 61,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/koreksi_sensor",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN4",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN7",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN8",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN9",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-01",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-02",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-03",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-04",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-05",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-06",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-07",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-08",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-09",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-13",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-14",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-15",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-16",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "RTD": 0.003969164,
+    "TCN3": -0.15,
+    "TCN4": -0.15,
+    "TCN5": -0.15,
+    "TCN6": -0.15,
+    "TCN7": -0.15,
+    "TCN8": -0.15,
+    "TCN9": -0.15,
+    "TCN10": -0.15,
+    "TCN11": -0.15,
+    "TCN12": -0.15
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 284,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "thermometer_glass/u95_sensor",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN3",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN4",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN6",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN7",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN8",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN9",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCN12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-01",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-02",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-03",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-04",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-05",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-06",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-07",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-08",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-09",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-11",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-12",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-13",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-14",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-15",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "TCK-16",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 15,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14"
+   ],
+   "contoh": {
+    "titik": -20.0,
+    "RTD": 0.08,
+    "TCN3": 0.8,
+    "TCN4": 0.8,
+    "TCN5": 0.8,
+    "TCN6": 0.8,
+    "TCN7": 0.8,
+    "TCN8": 0.8,
+    "TCN9": 0.8,
+    "TCN10": 0.8,
+    "TCN11": 0.8,
+    "TCN12": 0.8
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 300,
+   "tampilan_usulan": "panjang"
+  },
+  {
+   "jalur": "thermometer_glass/drift_kalibrator",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "constant",
+    "yokogawa"
+   ],
+   "contoh": {
+    "RTD": 0.23,
+    "Type N": 0.2,
+    "Type K": 0.125
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/drift_sensor",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "RTD",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type N",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "Type K",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "contoh": {
+    "RTD": 0.501701242,
+    "Type N": 0.55,
+    "Type K": 0.55
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 3,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/oilbath",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "variasi_spasial",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stabilitas",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "satu",
+    "dua"
+   ],
+   "contoh": {
+    "variasi_spasial": 0.57,
+    "stabilitas": 0.07
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/tipe_thermometer",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "label",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nilai": 1.0,
+    "label": "Partial Immersion"
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "rentang",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "0",
+    "1"
+   ],
+   "contoh": {
+    "rentang": "0~100",
+    "u": 0.58
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermometer_glass/probe_per_tipe",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "1",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "2",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "3",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "4",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "5",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "6",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "7",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "8",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "9",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "10",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "11",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "12",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "13",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "14",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "15",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "16",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "17",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "Type K",
+    "Type N",
+    "RTD"
+   ],
+   "contoh": {
+    "1": "TCK-01",
+    "2": "TCK-02",
+    "3": "TCK-03",
+    "4": "TCK-04",
+    "5": "TCK-05",
+    "6": "TCK-06",
+    "7": "TCK-07",
+    "8": "TCK-08",
+    "9": "TCK-09",
+    "10": "TCK-10",
+    "11": "TCK-11",
+    "12": "TCK-12",
+    "13": "TCK-13",
+    "14": "TCK-14",
+    "15": "TCK-15",
+    "16": "TCK-16"
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 27,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "_sumber",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "_sumber": "Master_Olah_Data_Suhu__Kelembapan.xlsm (sesi 0312-CAL-624)"
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/koreksi_suhu",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "contoh": {
+    "titik": 15.0,
+    "koreksi": 0.81
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 14,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/koreksi_rh",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 9,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+   ],
+   "contoh": {
+    "titik": 20.0,
+    "koreksi": 0.3
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 18,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/u95_kalibrator",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rh",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "suhu": 1.3,
+    "rh": 3.0
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/drift_kalibrator",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rh",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "contoh": {
+    "suhu": 0.615,
+    "rh": 0.635
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/chamber",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "homogenitas",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "stabilitas",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "biobase_suhu",
+    "biobase_rh",
+    "gea_rh"
+   ],
+   "contoh": {
+    "homogenitas": 0.5,
+    "stabilitas": 0.1
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 6,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "thermohygro/cmc",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "parameter",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "0",
+    "1"
+   ],
+   "contoh": {
+    "parameter": "Suhu",
+    "u": 1.7
+   },
+   "sumber_json": "tabel-master-suhu-3alat.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {},
+ "cakupan": {
+  "tabel-master-suhu-3alat.json": {
+   "daun": 1992,
+   "tercakup": 1992,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!Q20:V23",
+  "DATABASE!R5:S7",
+  "PERHITUNGAN FC!M23",
+  "PERHITUNGAN FC!P23",
+  "PERHITUNGAN FC!R23",
+  "PERHITUNGAN U95%!B20:B28",
+  "PERHITUNGAN U95%!B20:B30",
+  "PERHITUNGAN U95%!N22",
+  "SERTIFIKAT!L20"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelKalibratorSuhu3Alat.php",
+  "app/Services/Calibration/ThermocoupleCalculator.php",
+  "app/Services/Calibration/ThermometerGlassCalculator.php",
+  "app/Services/Calibration/ThermohygroCalculator.php",
+  "app/Services/Calibration/Profiles/ThermocoupleProfile.php",
+  "app/Services/Calibration/Profiles/ThermometerGlassProfile.php",
+  "app/Services/Calibration/Profiles/ThermohygroProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelKalibratorSuhu3Alat": [
+   "TabelStandarTids",
+   "ThermocoupleCalculator",
+   "ThermocoupleProfile",
+   "ThermohygroCalculator",
+   "ThermohygroProfile",
+   "ThermometerGlassCalculator",
+   "ThermometerGlassProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/Suhu3AlatLembarKerjaTest.php",
+  "tests/Feature/ThermohygroSemuaLembarTest.php",
+  "tests/Feature/TipeThermocoupleUutTest.php",
+  "tests/Unit/Suhu3AlatMasterTest.php",
+  "tests/Unit/TermometerGelasButuhDuaPembacaanUutTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-suhu-3alat.md",
+  "docs/pertanyaan-lab-thermohygro-satuan.md"
+ ],
+ "perintah_frontend": [],
+ "fixture_ada": []
+}

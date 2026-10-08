@@ -1,0 +1,279 @@
+{
+ "kode": "conductivity",
+ "nama": "Conductivity Meter",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "ConductivityProfile"
+ ],
+ "formulir": [
+  "0510"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Conductivity"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [
+  "conductivity"
+ ],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0510_Rev.5 - LEMBAR KERJA CONDUCTIVITY.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 185,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 593,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 157,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 587,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "SERTIFIKAT STYLE 1",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 69,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "SERTIFIKAT STYLE 2",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 69,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Conductivity",
+   "sheet": "nilai koefisien sensitifitas",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 86,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/ConductivityProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/ConductivityBudgetTest.php",
+  "tests/Feature/ConductivitySesiVarianMiliTest.php",
+  "tests/Feature/ConductivityUjungKeUjungTest.php",
+  "tests/Feature/ThermohygroSemuaLembarTest.php",
+  "tests/Feature/TitikKosongTidakMenggeserTest.php",
+  "tests/Unit/AngkaTandaNolTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-conductivity.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-conductivity.md"
+ ],
+ "kandidat_konstanta": [
+  {
+   "baris": 80,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0510_Rev.5';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 88,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0507_Rev.6';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 90,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 92,
+   "nama": "SATUAN_MIKRO",
+   "nilai_awal": "'µS/cm';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 94,
+   "nama": "SATUAN_MILI",
+   "nilai_awal": "'mS/cm';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 123,
+   "nama": "SLOT_CETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 124,
+   "nama": "titik",
+   "nilai_awal": "25.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 125,
+   "nama": "titik",
+   "nilai_awal": "1412.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 126,
+   "nama": "titik",
+   "nilai_awal": "111.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 141,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 214,
+   "nama": "KOEF_SUHU",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 228,
+   "nama": "KOEF_SUHU_1412_TERDOKUMENTASI",
+   "nilai_awal": "['a' => 2.0e-13, 'b' => 27.0, 'c' => 738.0];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 246,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 260,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 328,
+   "nama": "titik",
+   "nilai_awal": "25.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 329,
+   "nama": "titik",
+   "nilai_awal": "1412.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 330,
+   "nama": "titik",
+   "nilai_awal": "1.412",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 331,
+   "nama": "titik",
+   "nilai_awal": "111.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 475,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 476,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 483,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 484,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 497,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  },
+  {
+   "baris": 504,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ConductivityProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

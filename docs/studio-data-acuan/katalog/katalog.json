@@ -1,0 +1,757 @@
+[
+ {
+  "kode": "micrometer",
+  "nama": "Micrometer 0–100 mm (4 varian)",
+  "kelompok": "Panjang",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-micrometer.json"
+  ],
+  "profil": [
+   "MicrometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0522.A_Rev.1 - LEMBAR KERJA MICROMETER (0-25).pdf",
+   "SIDIK-FM-CAL-0522.B_Rev.1 - LEMBAR KERJA MICROMETER (25-50).pdf",
+   "SIDIK-FM-CAL-0522.C_Rev.1 - LEMBAR KERJA MICROMETER (50-75).pdf",
+   "SIDIK-FM-CAL-0522.D_Rev.1 - LEMBAR KERJA MICROMETER (75-100).pdf"
+  ],
+  "master": [
+   "Panjang_CSV/Master_Olah_Data_Micrometer_0-25mm",
+   "Panjang_CSV/Master_Olah_Data_Micrometer_25-50mm",
+   "Panjang_CSV/Master_Olah_Data_Micrometer_50-75mm",
+   "Panjang_CSV/Master_Olah_Data_Micrometer_75-100mm"
+  ],
+  "cakupan": {
+   "tabel-standar-micrometer.json": {
+    "daun": 175,
+    "tercakup": 175,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "height_gauge",
+  "nama": "Height Gauge 600 mm",
+  "kelompok": "Panjang",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-height-gauge.json"
+  ],
+  "profil": [
+   "HeightGaugeProfile"
+  ],
+  "formulir_pdf": [],
+  "master": [
+   "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026"
+  ],
+  "cakupan": {
+   "tabel-standar-height-gauge.json": {
+    "daun": 82,
+    "tercakup": 82,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "dial_indicator",
+  "nama": "Dial Indicator",
+  "kelompok": "Panjang",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-dial-indicator.json"
+  ],
+  "profil": [
+   "DialIndicatorProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0526_Rev.3 - LEMBAR KERJA DIAL INDICATOR.pdf"
+  ],
+  "master": [
+   "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Dial_Indicator"
+  ],
+  "cakupan": {
+   "tabel-standar-dial-indicator.json": {
+    "daun": 35,
+    "tercakup": 35,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "jangka_sorong",
+  "nama": "Jangka Sorong (Caliper)",
+  "kelompok": "Panjang",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-jangka-sorong.json"
+  ],
+  "profil": [
+   "JangkaSorongProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0527_Rev.2 - LEMBAR KERJA JANGKA SORONG.pdf"
+  ],
+  "master": [
+   "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Caliper_2026__std_caliper_checker_gb_"
+  ],
+  "cakupan": {
+   "tabel-standar-jangka-sorong.json": {
+    "daun": 127,
+    "tercakup": 127,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "sieve",
+  "nama": "Sieve Mesh",
+  "kelompok": "Panjang",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-sieve.json"
+  ],
+  "profil": [
+   "SieveProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0536_Rev.2 - LEMBAR KERJA SIEVE MESH.pdf"
+  ],
+  "master": [
+   "Sieve_Dial_Caliper_CSV (4)/Master_Olah_Data_Sieve_Mesh"
+  ],
+  "cakupan": {
+   "tabel-standar-sieve.json": {
+    "daun": 1493,
+    "tercakup": 1493,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "anak_timbangan",
+  "nama": "Anak Timbangan (OIML R111)",
+  "kelompok": "Massa",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-anak-timbangan.json"
+  ],
+  "profil": [
+   "AnakTimbanganProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0541_Rev.0 - LEMBAR KERJA ANAK TIMBANGAN (Non KAN).pdf"
+  ],
+  "master": [
+   "Massa_Timbangan/1__1_Anak_Timbangan_F1_1mg-500_g_202501022_imp"
+  ],
+  "cakupan": {
+   "tabel-standar-anak-timbangan.json": {
+    "daun": 783,
+    "tercakup": 783,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "timbangan",
+  "nama": "Timbangan (gram / kg / substitusi)",
+  "kelompok": "Massa",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-timbangan.json"
+  ],
+  "profil": [
+   "TimbanganProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0508.A_Rev.4 - LEMBAR KERJA TIMBANGAN (Metode Subtitusi).pdf",
+   "SIDIK-FM-CAL-0508_Rev.6 - LEMBAR KERJA TIMBANGAN.pdf"
+  ],
+  "master": [
+   "Massa_Timbangan/_New__Master_Olda_Timbangan_gram",
+   "Massa_Timbangan/_New__Master_Olda_Timbangan_kg",
+   "Massa_Timbangan/_TERBARU__Master_Olda_Timbangan_Subtitusi_291025"
+  ],
+  "cakupan": {
+   "tabel-standar-timbangan.json": {
+    "daun": 824,
+    "tercakup": 824,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "waktu",
+  "nama": "Timer & Stopwatch",
+  "kelompok": "Waktu",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-waktu.json"
+  ],
+  "profil": [
+   "TimerStopwatchProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0512_Rev.4 - LEMBAR KERJA STOPWATCH & TIMER.pdf"
+  ],
+  "master": [
+   "Waktu_/Master_Olda_Timer_dan_Stopwatch"
+  ],
+  "cakupan": {
+   "tabel-standar-waktu.json": {
+    "daun": 173,
+    "tercakup": 173,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "putaran",
+  "nama": "Centrifuge & Tachometer",
+  "kelompok": "Waktu",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-putaran.json"
+  ],
+  "profil": [
+   "ProfilPutaran",
+   "CentrifugeProfile",
+   "TachometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0515_Rev.4 - LEMBAR KERJA CENTRIFUGE & TACHOMETER.pdf"
+  ],
+  "master": [
+   "Waktu_/Master_Olda_Centrifuge",
+   "Waktu_/Master_Olda_Tachometer"
+  ],
+  "cakupan": {
+   "tabel-standar-putaran.json": {
+    "daun": 214,
+    "tercakup": 214,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "gaya",
+  "nama": "Gaya — UTM, Load Cell, Proving Ring",
+  "kelompok": "Gaya",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-gaya.json"
+  ],
+  "profil": [
+   "GayaProfile",
+   "UtmProfile",
+   "LoadCellProfile",
+   "ProvingRingProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0519_Rev.3 - LEMBAR KERJA COMPRESSION (UTM).pdf",
+   "SIDIK-FM-CAL-0520_Rev.3 - LEMBAR KERJA LOAD CELL.pdf",
+   "SIDIK-FM-CAL-0521_Rev.3 - LEMBAR KERJA PROFING RING.pdf"
+  ],
+  "master": [
+   "Alat_Gaya/Gaya_UTM",
+   "Alat_Gaya/Gaya_Load_Cell",
+   "Alat_Gaya/Gaya_Proving_Ring"
+  ],
+  "cakupan": {
+   "tabel-standar-gaya.json": {
+    "daun": 218,
+    "tercakup": 218,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "flowmeter",
+  "nama": "Flowmeter — pembanding UFM",
+  "kelompok": "Aliran",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-flowmeter.json"
+  ],
+  "profil": [
+   "FlowmeterProfile",
+   "FlowmeterFlowrateProfile",
+   "FlowmeterTotalizerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0538-Rev.0 LEMBAR KERJA FLOWMETER (Perbandingan Langsung dengan UFM).pdf",
+   "SIDIK-FM-CAL-0538.A-Rev.3 LEMBAR KERJA FLOWMETER-FLOWRATE.pdf",
+   "SIDIK-FM-CAL-0538.B-Rev.3 LEMBAR KERJA FLOWMETER-TOTALIZER.pdf"
+  ],
+  "master": [
+   "Aliran_2/1_3_Master_Olah_Data_Flowmeter_Ultrasonic_Totalizer__1000-1900L__2026",
+   "Aliran_2/Master_olda_Ultrasonic_Flowrate__100-300_lpm__2026"
+  ],
+  "cakupan": {
+   "tabel-standar-flowmeter.json": {
+    "daun": 136,
+    "tercakup": 136,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "flowmeter_gravimetri",
+  "nama": "Flowmeter — gravimetri (ISO 4185)",
+  "kelompok": "Aliran",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-flowmeter-gravimetri.json"
+  ],
+  "profil": [
+   "FlowmeterProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0538.A-Rev.3 LEMBAR KERJA FLOWMETER-FLOWRATE.pdf",
+   "SIDIK-FM-CAL-0538.B-Rev.3 LEMBAR KERJA FLOWMETER-TOTALIZER.pdf"
+  ],
+  "master": [
+   "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026"
+  ],
+  "cakupan": {
+   "tabel-standar-flowmeter-gravimetri.json": {
+    "daun": 318,
+    "tercakup": 318,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "volumetric",
+  "nama": "Volumetric Glassware (fixed & graduated)",
+  "kelompok": "Volume",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-volumetric.json"
+  ],
+  "profil": [
+   "VolumetricGlasswareProfile",
+   "FixedVolumetricGlasswareProfile",
+   "GraduatedVolumetricGlasswareProfile",
+   "LabuUkurProfile",
+   "PipetVolumeProfile",
+   "PipetUkurProfile",
+   "GelasUkurProfile",
+   "BuretProfile",
+   "PicnometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0513_Rev.4 - LEMBAR KERJA VOLUMETRIK TUNGGAL.pdf",
+   "SIDIK-FM-CAL-0514_Rev.4 - LEMBAR KERJA VOLUMETRIK MAJEMUK.pdf"
+  ],
+  "master": [
+   "Volumetric_Glassware_2026/Fixed_Volumetric_Glassware_2026",
+   "Volumetric_Glassware_2026/Graduated_Volumetric_Glassware_2026"
+  ],
+  "cakupan": {
+   "tabel-standar-volumetric.json": {
+    "daun": 371,
+    "tercakup": 371,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "tekanan",
+  "nama": "Tekanan — pressure, vacuum, differential",
+  "kelompok": "Tekanan",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-tekanan.json"
+  ],
+  "profil": [
+   "TekananProfile",
+   "PressureGaugeProfile",
+   "VacuumGaugeProfile",
+   "DifferentialPressureProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0507_Rev.5 - LEMBAR KERJA PRESSURE & VACUUM.pdf"
+  ],
+  "master": [],
+  "cakupan": {
+   "tabel-standar-tekanan.json": {
+    "daun": 463,
+    "tercakup": 463,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "piston_volume",
+  "nama": "Piston Volume (fixed & graduated, buret digital, dispensett, piston pipette)",
+  "kelompok": "Volume",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-piston-volume.json"
+  ],
+  "profil": [
+   "PistonVolumeProfile",
+   "BuretDigitalProfile",
+   "DispensettProfile",
+   "PistonPipetteProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0528_Rev.3 - LEMBAR KERJA ONE MARK PISTON VOLUME.pdf",
+   "SIDIK-FM-CAL-0529_Rev.3 - LEMBAR KERJA GRADUATED PISTON VOLUME.pdf"
+  ],
+  "master": [],
+  "cakupan": {
+   "tabel-standar-piston-volume.json": {
+    "daun": 199,
+    "tercakup": 199,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "tids",
+  "nama": "TIDS (indikator suhu digital)",
+  "kelompok": "Suhu",
+  "jenis": "json",
+  "json": [
+   "tabel-standar-tids.json"
+  ],
+  "profil": [
+   "TidsProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0506_Rev.4 - LEMBAR KERJA TIDS.pdf"
+  ],
+  "master": [
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Recorder__Graptech_",
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_TIDS_-_Yokogawa_K_N"
+  ],
+  "cakupan": {
+   "tabel-standar-tids.json": {
+    "daun": 2763,
+    "tercakup": 2763,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "tits",
+  "nama": "TITS & kalibrator suhu (measure/source)",
+  "kelompok": "Suhu",
+  "jenis": "json",
+  "json": [
+   "tabel-kalibrator-suhu.json"
+  ],
+  "profil": [
+   "TitsProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0505_Rev.3 - LEMBAR KERJA TITS.pdf"
+  ],
+  "master": [
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Measure_utk_UUT",
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_TITS_fungsi_Source_utk_UUT"
+  ],
+  "cakupan": {
+   "tabel-kalibrator-suhu.json": {
+    "daun": 1160,
+    "tercakup": 1160,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "enclosure",
+  "nama": "Enclosure — oven, inkubator, bath, furnace, refrigerator",
+  "kelompok": "Suhu",
+  "jenis": "json",
+  "json": [
+   "tabel-kalibrator-enclosure.json"
+  ],
+  "profil": [
+   "EnclosureProfileBase",
+   "OvenProfile",
+   "InkubatorProfile",
+   "BathProfile",
+   "FurnaceProfile",
+   "RefrigeratorProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0504_Rev.3 - LEMBAR KERJA ENCLOSURE.pdf"
+  ],
+  "master": [
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_Enclosure_Constant_Yokogawa",
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_Enclosure_Recorder"
+  ],
+  "cakupan": {
+   "tabel-kalibrator-enclosure.json": {
+    "daun": 2639,
+    "tercakup": 2639,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "suhu_3alat",
+  "nama": "Thermocouple · Termometer gelas · Thermohygrometer",
+  "kelompok": "Suhu",
+  "jenis": "json",
+  "json": [
+   "tabel-master-suhu-3alat.json"
+  ],
+  "profil": [
+   "ThermocoupleProfile",
+   "ThermometerGlassProfile",
+   "ThermohygroProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0525_Rev.3 - LEMBAR KERJA THERMOHYGRO.pdf",
+   "SIDIK-FM-CAL-0535_Rev.2 - LEMBAR KERJA THERMOCOUPLE.pdf",
+   "SIDIK-FM-CAL-0537_Rev.2 - LEMBAR KERJA THERMOMETER GLASS.pdf"
+  ],
+  "master": [
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermocouple",
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu_Thermometer_Glass",
+   "suhu_&_kelembapan/Master_Olah_Data_Suhu___Kelembapan"
+  ],
+  "cakupan": {
+   "tabel-master-suhu-3alat.json": {
+    "daun": 1992,
+    "tercakup": 1992,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "thermohygro_lab",
+  "nama": "Thermohygrometer lab (alat kondisi lingkungan, lintas alat)",
+  "kelompok": "Lintas alat",
+  "jenis": "seed-standards",
+  "json": [
+   "thermohygro-lab.json"
+  ],
+  "profil": [
+   "(semua profil yang memakai Environmental Meter)"
+  ],
+  "formulir_pdf": [],
+  "master": [],
+  "cakupan": {
+   "thermohygro-lab.json": {
+    "daun": 456,
+    "tercakup": 456,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "cmc_lampiran",
+  "nama": "Pita CMC lampiran akreditasi LK-285-IDN (semua alat)",
+  "kelompok": "Lintas alat",
+  "jenis": "seed-db",
+  "json": [
+   "kemampuan-kalibrasi.json"
+  ],
+  "profil": [
+   "(semua profil)"
+  ],
+  "formulir_pdf": [],
+  "master": [],
+  "cakupan": {
+   "kemampuan-kalibrasi.json": {
+    "daun": 1117,
+    "tercakup": 1117,
+    "contoh_hilang": []
+   }
+  }
+ },
+ {
+  "kode": "ph_meter",
+  "nama": "pH Meter",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "PhMeterProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0509_Rev.4 - LEMBAR KERJA pH METER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/pH_meter_IMTE-WQ-129"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "conductivity",
+  "nama": "Conductivity Meter",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "ConductivityProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0510_Rev.5 - LEMBAR KERJA CONDUCTIVITY.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Conductivity"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "chlorine",
+  "nama": "Chlorine Meter",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "ChlorineProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0531_Rev.2 - LEMBAR KERJA CHLORINE.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Chlorine_Meter"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "do_meter",
+  "nama": "DO Meter",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "DoMeterProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0532_Rev.2 - LEMBAR KERJA DO METER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_DO_Meter"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "turbidimeter",
+  "nama": "Turbidimeter",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "TurbidimeterProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0530_Rev.2 - LEMBAR KERJA TURBIDIMETER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Turbidimeter"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "refractometer",
+  "nama": "Refractometer",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "RefractometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0523_Rev.2 - LEMBAR KERJA REFRACTOMETER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Refractometer"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "spectrophotometer",
+  "nama": "Spektrofotometer",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "SpectrophotometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0511_Rev.5 - LEMBAR KERJA SPECTROFOTOMETER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Spectrofotometer"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "viscometer",
+  "nama": "Viscometer",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "ViscometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0524_Rev.3 - LEMBAR KERJA VISCOMETER.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Viscometer",
+   "instrument-analiitk/5__Viscometer_86068360_terbaru_"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "gas_detector",
+  "nama": "Gas Detector",
+  "kelompok": "Analitik",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "GasDetectorProfile"
+  ],
+  "formulir_pdf": [],
+  "master": [
+   "instrument-analiitk/Gas_Detector_Uli_Skin__std_Rigaz_"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "autoclave",
+  "nama": "Autoclave",
+  "kelompok": "Suhu & tekanan",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "AutoclaveProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0539_Rev.4 - LEMBAR KERJA AUTOCLAVE.pdf"
+  ],
+  "master": [
+   "instrument-analiitk/Master_Olah_Data_Autoclave"
+  ],
+  "cakupan": {}
+ },
+ {
+  "kode": "hydrometer",
+  "nama": "Hydrometer",
+  "kelompok": "Massa jenis",
+  "jenis": "konstanta-php",
+  "json": [],
+  "profil": [
+   "HydrometerProfile"
+  ],
+  "formulir_pdf": [
+   "SIDIK-FM-CAL-0533_Rev.2 - LEMBAR KERJA HYDROMETER.pdf"
+  ],
+  "master": [
+   "Hydrometer/Hydrometer_0.600-0.650_gmL",
+   "Hydrometer/Hydrometer_1.800-2.000_gmL"
+  ],
+  "cakupan": {}
+ }
+]

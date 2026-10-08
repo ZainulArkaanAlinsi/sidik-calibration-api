@@ -1,0 +1,1414 @@
+{
+ "kode": "tekanan",
+ "nama": "Tekanan — pressure, vacuum, differential",
+ "kelompok": "Tekanan",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-tekanan.json"
+ ],
+ "kelas": [
+  "TabelStandarTekanan"
+ ],
+ "kalkulator": [
+  "TekananCalculator"
+ ],
+ "profil": [
+  "TekananProfile",
+  "PressureGaugeProfile",
+  "VacuumGaugeProfile",
+  "DifferentialPressureProfile"
+ ],
+ "formulir": [
+  "0507"
+ ],
+ "master": [],
+ "generator": [
+  "gen-tabel-standar-tekanan.py"
+ ],
+ "fixture": [
+  "sesi-master-tekanan.json"
+ ],
+ "kata": [
+  "tekanan"
+ ],
+ "catatan_master": "Master tekanan (4 workbook) TIDAK ada di folder alat-alat (CSV-nya di-gitignore karena memuat data pelanggan). Sha256 workbook di database/data/manifest-workbook-tekanan-piston.json; riwayat metode di log-metode-tekanan-piston.json.",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0507_Rev.5 - LEMBAR KERJA PRESSURE & VACUUM.pdf"
+ ],
+ "sheet_master": [],
+ "sha256_json": {
+  "tabel-standar-tekanan.json": "d3291b1c3dcb16fa0aa035c0f97a330184c67c40559b98221f8c808d55bf788c"
+ },
+ "lembar": [
+  {
+   "jalur": "gravitasi_lokal",
+   "bentuk": "nilai_tunggal",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": 9.676,
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "gravitasi_standar",
+   "bentuk": "nilai_tunggal",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": 9.807,
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "beda_level",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "u",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sumber",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "contoh": {
+    "u": 0.37,
+    "pembagi": 2.0,
+    "vi": 60
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "pembagi_resolusi",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "1/2",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1/5",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "1/10",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "digital",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "contoh": {
+    "1/2": 2.0,
+    "1/5": 5.0,
+    "1/10": 10.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "satuan_kerja",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "satuan_kerja": "kPa"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/konversi",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "faktor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 12,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11"
+   ],
+   "contoh": {
+    "satuan": "Bar",
+    "faktor": 100.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 24,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/titik_standar",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "set_point",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_up",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_down",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_dari_sel_gabungan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 19,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18"
+   ],
+   "contoh": {
+    "set_point": -80.0,
+    "koreksi_up": 0.0,
+    "koreksi_down": 0.0,
+    "u95": 0.06
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 83,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nomor_seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "nama": "Pressure Vacuum Calibrator",
+    "merk_tipe": "GE/Druck DPI611-07G",
+    "nomor_seri": "5568079"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/media",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nomor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "media",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "massa_jenis",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nomor": 1,
+    "media": "Water",
+    "massa_jenis": 1000.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sel_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "metode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nilai": 0.01554,
+    "sel_master": "'Druck (kPa) vacum'!H4",
+    "rumus_master": "=0.0185%*84"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck07g/cmc_master",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Vacum",
+    "Non Vacum"
+   ],
+   "contoh": {
+    "nilai": 1.4561477,
+    "rumus_master": "=0.43*S34"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "satuan_kerja",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "satuan_kerja": "Psi"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/konversi",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "faktor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 12,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11"
+   ],
+   "contoh": {
+    "satuan": "Bar",
+    "faktor": 14.503773773
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 24,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/titik_standar",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "set_point",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_up",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_down",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 11,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+   ],
+   "contoh": {
+    "set_point": 0.0,
+    "koreksi_up": -0.0613,
+    "koreksi_down": -0.0613,
+    "u95": 0.077
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 44,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nomor_seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "nama": "Pressure Calibrator",
+    "merk_tipe": "GE/Druck DPI611-13G",
+    "nomor_seri": "5608066"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/media",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nomor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "media",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "massa_jenis",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nomor": 1,
+    "media": "Water",
+    "massa_jenis": 1000.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sel_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "metode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nilai": 0.053649999999999996,
+    "sel_master": "'Druck (psi)'!H5",
+    "rumus_master": "=0.0185%*290"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/druck13g/cmc_master",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 2,
+   "kunci_baris": [
+    "Vacum",
+    "Non Vacum"
+   ],
+   "contoh": {
+    "nilai": 0.21119628545744232,
+    "rumus_master": "=0.43*S34"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 4,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "satuan_kerja",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "satuan_kerja": "Bar"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/konversi",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "faktor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 7,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "contoh": {
+    "satuan": "Bar",
+    "faktor": 1.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 14,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/titik_standar",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "set_point",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_up",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_down",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "contoh": {
+    "set_point": 0.0,
+    "koreksi_up": 0.0,
+    "koreksi_down": 0.0,
+    "u95": 0.12
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 52,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nomor_seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "nama": "Pressure Calibrator",
+    "merk_tipe": "SPMK/SPMK 700",
+    "nomor_seri": "223180480"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/media",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nomor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "media",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "massa_jenis",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nomor": 1,
+    "media": "Water",
+    "massa_jenis": 1000.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sel_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "metode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nilai": 0.25499999999999545,
+    "sel_master": "'Drift SPMK (bar)'!P26",
+    "rumus_master": "=MAX(P15:P25)"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/spmk/cmc_master",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "Pressure"
+   ],
+   "contoh": {
+    "nilai": 0.11,
+    "rumus_master": 0.11
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "satuan_kerja",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "contoh": {
+    "satuan_kerja": "mBar"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 1,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/konversi",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "satuan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "faktor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 10,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "contoh": {
+    "satuan": "Bar",
+    "faktor": 1000.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 20,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/titik_standar",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "set_point",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_up",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_down",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 22,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21"
+   ],
+   "contoh": {
+    "set_point": 0.0,
+    "koreksi_up": 0.0,
+    "koreksi_down": 0.0,
+    "u95": 0.003
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 88,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nomor_seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interval_tahun",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "resolusi",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "nama": "Digital Pressure Gauge",
+    "merk_tipe": "Additel/ADT681-05-DP5-MBAR",
+    "nomor_seri": "21H18280008"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/media",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nomor",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "media",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "massa_jenis",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2"
+   ],
+   "contoh": {
+    "nomor": 1,
+    "media": "Water",
+    "massa_jenis": 1000.0
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/drift",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "sel_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "metode",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "catatan",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "nilai": 0.023399999999999622,
+    "sel_master": "'Record Drift Additel'!M39",
+    "rumus_master": "=0.5*M38"
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "varian/differential/cmc_master",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "nilai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rumus_master",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 1,
+   "kunci_baris": [
+    "-10 mbar ~ 10 mbar"
+   ],
+   "contoh": {
+    "nilai": 0.0093,
+    "rumus_master": 0.0093
+   },
+   "sumber_json": "tabel-standar-tekanan.json",
+   "jumlah_sel_data": 2,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-tekanan.json:_sumber": "{\"dibuat_oleh\": \"docs/skrip/gen-tabel-standar-tekanan.py\", \"tanggal\": \"2026-09-28\", \"workbook\": {\"druck07g\": \"Master Olda Pressure DRUCK07G -0.8~2bar new.xlsm\", \"druck13g\": \"Master Olda Pressure DRUCK13G 0~20bar.xlsm\", \"spmk\": \"Master Olda Pressure SPMK.xlsm\", \"differential\": \"Master Olda Pressure Differential.xlsm\"}, \"workbook_sha256\": {\"druck07g\": \"a7dde40cdfe61bc7df8aee7c4fea2bd3f80dc7999021c3c"
+ },
+ "cakupan": {
+  "tabel-standar-tekanan.json": {
+   "daun": 463,
+   "tercakup": 463,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!S5",
+  "STANDAR_ADDITEL!J6",
+  "STANDAR_DRUCK!K4",
+  "STANDAR_DRUCK!K5",
+  "STANDAR_SPMK!K5"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarTekanan.php",
+  "app/Services/Calibration/TekananCalculator.php",
+  "app/Services/Calibration/Profiles/TekananProfile.php",
+  "app/Services/Calibration/Profiles/PressureGaugeProfile.php",
+  "app/Services/Calibration/Profiles/VacuumGaugeProfile.php",
+  "app/Services/Calibration/Profiles/DifferentialPressureProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarTekanan": [
+   "CalibrationRequest",
+   "DifferentialPressureProfile",
+   "HitungMentahKalibrasi",
+   "PressureGaugeProfile",
+   "TekananCalculator",
+   "TekananProfile",
+   "VacuumGaugeProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/KoreksiTekananMustahilTest.php",
+  "tests/Feature/PenahananKeputusanTmTest.php",
+  "tests/Feature/SemuaProfilLembarKerjaTest.php",
+  "tests/Feature/TekananCmcTest.php",
+  "tests/Feature/TekananIkutPulangDiDetailSesiTest.php",
+  "tests/Feature/TekananSesiTest.php",
+  "tests/Feature/VersiRumusTekananPistonTest.php",
+  "tests/Unit/LogMetodeTekananPistonTest.php",
+  "tests/Unit/RoutingProfilSepakatTest.php",
+  "tests/Unit/TekananMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-tekanan.md"
+ ],
+ "perintah_frontend": [],
+ "fixture_ada": [
+  "sesi-master-tekanan.json"
+ ]
+}

@@ -1,0 +1,1151 @@
+{
+ "kode": "flowmeter_gravimetri",
+ "nama": "Flowmeter — gravimetri (ISO 4185)",
+ "kelompok": "Aliran",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-flowmeter-gravimetri.json"
+ ],
+ "kelas": [
+  "TabelStandarFlowmeterGravimetri"
+ ],
+ "kalkulator": [
+  "FlowmeterGravimetriCalculator"
+ ],
+ "profil": [
+  "FlowmeterProfile"
+ ],
+ "formulir": [
+  "0538.A",
+  "0538.B"
+ ],
+ "master": [
+  "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+  "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026"
+ ],
+ "generator": [
+  "gen-tabel-standar-flowmeter-gravimetri.py"
+ ],
+ "fixture": [],
+ "kata": [
+  "flowmeter-gravimetri"
+ ],
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0538.A-Rev.3 LEMBAR KERJA FLOWMETER-FLOWRATE.pdf",
+  "SIDIK-FM-CAL-0538.B-Rev.3 LEMBAR KERJA FLOWMETER-TOTALIZER.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 111,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "Drift Constant-TC Type K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 34,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Temperature Calibrator",
+    "Merk | : | Constant",
+    "Type | : | 40T (measure type K)",
+    "No. Seri | : | 992613877",
+    "Range | : | 1200 | oC"
+   ]
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "Drift Timbangan Dini Argeo",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Dini Argeo",
+    "Type | : | DFWLB-3",
+    "No. Seri | : | 0792531584",
+    "Range | : | 2000 | kg"
+   ]
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "Drift Timbangan Mettler",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Mettler",
+    "Type | : | DJ Series",
+    "No. Seri | : | HSEX1403752",
+    "Range | : | 3000 | g"
+   ]
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "Drift Timbangan Sartorius",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 41,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Sartorius",
+    "Type | : | MWP1P1-150GF-L",
+    "No. Seri | : | 34166240",
+    "Range | : | 150 | kg"
+   ]
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "Drift Yokogawa-TC Type K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 35,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Temperature Calibrator",
+    "Merk | : | Yokogawa",
+    "Type | : | CA150 Handy Cal (measure type K)",
+    "No. Seri | : | 23P1005",
+    "Range | : | 1200 | oC"
+   ]
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 209,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 62,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 83,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 100,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/1_2_Master_olda_Flowmeter_Totalizer_dini__2026__140-2500L_",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 130,
+   "cuplikan_atas": [
+    "STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan Digital | Tanggal Kalibrasi | : | 2025-08-08T00:00:00 | Nama Alat | : | Timbangan Digital | Tanggal Kalibrasi | : | 2025-07-07T00:00:00",
+    "Merek | : | Dini Argeo | Due Date Kalibrasi | : | 2026-08-08T00:00:00 | Merek | : | Sartorius | Due Date Kalibrasi | : | 2026-07-07T00:00:00",
+    "Type | : | DFWLB-3 | Tertelusur | : | LK-285-IDN | Type | : | 150GF | Tertelusur | : | LK-285-IDN",
+    "S/N | : | 0792531584 | Resolusi | : | 0.1 | kg | S/N | : | 34166240 | Resolusi | : | 0.01 | kg",
+    "U95 % (kg) | 0.52 | Weight Correction | U95 % (kg) | 0.033 | Weight Correction"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 109,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Constant-TC Type K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 34,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Temperature Calibrator",
+    "Merk | : | Constant",
+    "Type | : | 40T (measure type K)",
+    "No. Seri | : | 992613877",
+    "Range | : | 1200 | oC"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Timbangan Dini Argeo",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 43,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Dini Argeo",
+    "Type | : | DFWLB-3",
+    "No. Seri | : | 0792531584",
+    "Range | : | 2000 | kg"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Timbangan Mettler",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 41,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Mettler",
+    "Type | :",
+    "No. Seri | : | 34166240",
+    "Range | : | 30 | kg"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Timbangan Sartorius",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 41,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan",
+    "Merk | : | Sartorius",
+    "Type | : | MWP1P1-150GF-L",
+    "No. Seri | : | 34166240",
+    "Range | : | 150 | kg"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Timer Software Flowmeter",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 30,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Timer",
+    "Merk | : | Weight Scale",
+    "Type | : | -",
+    "No. Seri | : | Timer.FM.1",
+    "Range | : | 60 | s"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Drift Yokogawa-TC Type K",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 35,
+   "cuplikan_atas": [
+    "RECORD HASIL REKALIBRASI STANDAR KALIBRATOR",
+    "Nama Alat | : | Temperature Calibrator",
+    "Merk | : | Yokogawa",
+    "Type | : | CA150 Handy Cal (measure type K)",
+    "No. Seri | : | 23P1005",
+    "Range | : | 1200 | oC"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 207,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 65,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 92,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 87,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 52,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 117,
+   "cuplikan_atas": [
+    "STANDAR KALIBRATOR",
+    "Nama Alat | : | Timbangan Digital | Tanggal Kalibrasi | : | 2025-08-08T00:00:00 | Nama Alat | : | Timbangan Digital | Tanggal Kalibrasi | : | 2025-07-07T00:00:00",
+    "Merek | : | Dini Argeo | Due Date Kalibrasi | : | 2026-08-08T00:00:00 | Merek | : | Sartorius | Due Date Kalibrasi | : | 2026-07-07T00:00:00",
+    "Type | : | DFWLB-3 | Tertelusur | : | LK-285-IDN | Type | : | 150GF | Tertelusur | : | LK-285-IDN",
+    "S/N | : | 0792531584 | Resolusi | : | 0.1 | kg | S/N | : | 34166240 | Resolusi | : | 0.01 | kg",
+    "U95 % (kg) | 0.52 | Weight Correction | U95 % (kg) | 0.033 | Weight Correction"
+   ]
+  },
+  {
+   "master": "Aliran_2/2_1_Master_olda__Flowmeter_Flowrate_100-980lpm_2026",
+   "sheet": "Unit Converter",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 10,
+   "cuplikan_atas": [
+    "All data converted to kg (penimbangan aktual di instalasi inlab) | Converter to kg",
+    "Flowrate | m3/h",
+    "INPUT DISINI | AUTO CONVERT | AUTO CONVERT (MASUK KE INPUT DATA)",
+    "Data Lapangan (Ultrasonic Flowmeter) | Data Convert to lpm automatic by satuan data lapangan | Data Penimbangan (Timbangan Dini Argeo/Sartorius)",
+    "satuan | m3/h | Point ke- | satuan | lpm | Point ke- | satuan | kg/min | Point ke-",
+    "Data ke | 1 | 2 | 3 | Data ke | 1 | 2 | 3 | Data ke | 1 | 2 | 3"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-flowmeter-gravimetri.json": "3a734ae286e36aefe8739d792425891f1693b1cd6f6626bac4cad7ce2a75be6c"
+ },
+ "lembar": [
+  {
+   "jalur": "timbangan/totalizer",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "kode",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nama_kertas",
+     "tipe": "kosong",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "resolusi_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "satuan_tabel_koreksi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kestabilan_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "drift_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "contoh": {
+    "kode": 1,
+    "nama": "Timbangan Elektronik",
+    "nama_kertas": null,
+    "merk": "Dini Argeo",
+    "tipe": "DFWLB-3",
+    "seri": "0792531584",
+    "tertelusur": "LK-285-IDN",
+    "tanggal_kalibrasi": "2025-08-08",
+    "tanggal_jatuh_tempo": "2026-08-08",
+    "u95_kg": 0.52,
+    "resolusi_kg": 0.1,
+    "satuan_tabel_koreksi": "kg",
+    "kestabilan_kg": 0.8000000000000114,
+    "drift_kg": 0.2
+   },
+   "lembar_anak": [
+    "timbangan/totalizer/*/koreksi"
+   ],
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 56,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timbangan/totalizer/*/koreksi",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    }
+   ],
+   "jumlah_baris": 40,
+   "kunci_baris": [
+    "1·0",
+    "1·1",
+    "1·2",
+    "1·3",
+    "1·4",
+    "1·5",
+    "1·6",
+    "1·7",
+    "1·8",
+    "1·9",
+    "2·0",
+    "2·1",
+    "2·2",
+    "2·3",
+    "2·4",
+    "2·5",
+    "2·6",
+    "2·7",
+    "2·8",
+    "2·9",
+    "3·0",
+    "3·1",
+    "3·2",
+    "3·3",
+    "3·4",
+    "3·5",
+    "3·6",
+    "3·7",
+    "3·8",
+    "3·9",
+    "4·0",
+    "4·1",
+    "4·2",
+    "4·3",
+    "4·4",
+    "4·5",
+    "4·6",
+    "4·7",
+    "4·8",
+    "4·9"
+   ],
+   "contoh": {
+    "titik": 200,
+    "koreksi_kg": 0.0
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 80,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timbangan/flowrate",
+   "bentuk": "tabel_berkunci",
+   "kolom": [
+    {
+     "kunci": "kode",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "nama_kertas",
+     "tipe": "kosong",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "resolusi_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "satuan_tabel_koreksi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "kestabilan_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    },
+    {
+     "kunci": "drift_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    }
+   ],
+   "jumlah_baris": 3,
+   "kunci_baris": [
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "kode": 1,
+    "nama": "Timbangan Elektronik",
+    "nama_kertas": null,
+    "merk": "Dini Argeo",
+    "tipe": "DFWLB-3",
+    "seri": "0792531584",
+    "tertelusur": "LK-285-IDN",
+    "tanggal_kalibrasi": "2025-08-08",
+    "tanggal_jatuh_tempo": "2026-08-08",
+    "u95_kg": 0.52,
+    "resolusi_kg": 0.1,
+    "satuan_tabel_koreksi": "kg",
+    "kestabilan_kg": 0.6999999999999886,
+    "drift_kg": 0.2
+   },
+   "lembar_anak": [
+    "timbangan/flowrate/*/koreksi"
+   ],
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 42,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timbangan/flowrate/*/koreksi",
+   "bentuk": "tabel_anak",
+   "kolom": [
+    {
+     "kunci": "titik",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_kg",
+     "tipe": "desimal",
+     "satuan_tebakan": "kg"
+    }
+   ],
+   "jumlah_baris": 30,
+   "kunci_baris": [
+    "1·0",
+    "1·1",
+    "1·2",
+    "1·3",
+    "1·4",
+    "1·5",
+    "1·6",
+    "1·7",
+    "1·8",
+    "1·9",
+    "2·0",
+    "2·1",
+    "2·2",
+    "2·3",
+    "2·4",
+    "2·5",
+    "2·6",
+    "2·7",
+    "2·8",
+    "2·9",
+    "3·0",
+    "3·1",
+    "3·2",
+    "3·3",
+    "3·4",
+    "3·5",
+    "3·6",
+    "3·7",
+    "3·8",
+    "3·9"
+   ],
+   "contoh": {
+    "titik": 200,
+    "koreksi_kg": 0.0
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 60,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "densitas_air",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "volume_piknometer_ml",
+     "tipe": "desimal",
+     "satuan_tebakan": "mL"
+    },
+    {
+     "kunci": "tanggal_ukur",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pic",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "interpolasi",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 5,
+   "contoh": {
+    "volume_piknometer_ml": 50.3139,
+    "tanggal_ukur": "2026-05-18",
+    "pic": "NR"
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 5,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "densitas_air/titik",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "suhu_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "tertimbang_g",
+     "tipe": "desimal",
+     "satuan_tebakan": "g"
+    },
+    {
+     "kunci": "densitas_kg_per_l",
+     "tipe": "desimal",
+     "satuan_tebakan": "L"
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "suhu_c": 20.0,
+    "tertimbang_g": 50.2242,
+    "densitas_kg_per_l": 0.9982171924657005
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 12,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "kalibrator_suhu",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 8,
+   "contoh": {
+    "nama": "Temperature Calibrator",
+    "merk": "Yokogawa",
+    "tipe": "CA 150 Handy Cal"
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "kalibrator_suhu/titik",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "pembacaan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "koreksi_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "u95_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 6,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+   ],
+   "contoh": {
+    "pembacaan_c": -100.0,
+    "koreksi_c": 0.0,
+    "u95_c": 0.35
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 18,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "sensor_suhu",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    }
+   ],
+   "jumlah_baris": 7,
+   "contoh": {
+    "nama": "Thermocouple",
+    "tipe": "Type K",
+    "seri": "TC-01,02"
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 7,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timer",
+   "bentuk": "peta",
+   "campuran": true,
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_jatuh_tempo",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_s",
+     "tipe": "desimal",
+     "satuan_tebakan": "s"
+    },
+    {
+     "kunci": "u95_min",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "drift_min",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 10,
+   "contoh": {
+    "nama": "Stopwatch",
+    "merk": "Weight Scale",
+    "tipe": "Timer.FM.1"
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 10,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "timer/titik",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "titik_min",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "koreksi_min",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 4,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3"
+   ],
+   "contoh": {
+    "titik_min": 1.0,
+    "koreksi_min": 0.0035
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 8,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "densitas_udara_kg_per_l",
+     "tipe": "desimal",
+     "satuan_tebakan": "L"
+    },
+    {
+     "kunci": "densitas_anak_timbang_kg_per_l",
+     "tipe": "desimal",
+     "satuan_tebakan": "L"
+    },
+    {
+     "kunci": "u95_densitas_air_kg_per_l",
+     "tipe": "desimal",
+     "satuan_tebakan": "L"
+    },
+    {
+     "kunci": "koefisien_muai_air_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "persen_bouyancy",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_rect",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_normal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_drift",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_ut_water",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_type_b",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_normal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "volume_pipa_l",
+     "tipe": "desimal",
+     "satuan_tebakan": "L"
+    }
+   ],
+   "jumlah_baris": 12,
+   "contoh": {
+    "densitas_udara_kg_per_l": 0.0012,
+    "densitas_anak_timbang_kg_per_l": 8.0,
+    "u95_densitas_air_kg_per_l": 0.0005
+   },
+   "sumber_json": "tabel-standar-flowmeter-gravimetri.json",
+   "jumlah_sel_data": 12,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-flowmeter-gravimetri.json:_sumber": "1.2 Master olda Flowmeter Totalizer dini (2026) 140-2500L.xlsm & 2.1 Master olda Flowmeter Flowrate 100-980lpm 2026.xlsm (ber-password). Digenerate docs/skrip/gen-tabel-standar-flowmeter-gravimetri.py — jangan diketik tangan.",
+  "tabel-standar-flowmeter-gravimetri.json:_metode": "ISO 4185 — static weighing method. PERHITUNGAN FC!B74 menulis judulnya sendiri.",
+  "tabel-standar-flowmeter-gravimetri.json:_penyimpangan": "{\"timbangan_3_beda_alat\": \"Kedua workbook menyimpan timbangan ke-3 dengan tipe, S/N, nomor akreditasi, tanggal kalibrasi, DAN satuan tabel koreksi yang berbeda. Keduanya disimpan; dipilih per mode. Ditambah nama KETIGA: kertas lembar kerja Rev.3 menyebutnya `Excellent`, bukan `Mettler` — disimpan di `nama_kertas`. Pertanyaan lab §15.\", \"drift_tanpa_akar3\": \"Judul kolom sheet drift menulis 0,5·ΔC/√"
+ },
+ "cakupan": {
+  "tabel-standar-flowmeter-gravimetri.json": {
+   "daun": 318,
+   "tercakup": 318,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!R5:S6",
+  "INPUT DATA!D49:D51",
+  "INPUT DATA!X24",
+  "PERHITUNGAN FC!B74",
+  "PERHITUNGAN FC!D44:D46",
+  "PERHITUNGAN FC!D66",
+  "STANDAR KALIBRATOR!N61:P65",
+  "STANDAR KALIBRATOR!P66:P80",
+  "STANDAR KALIBRATOR!Q51",
+  "static weighing method. PERHITUNGAN FC!B74"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarFlowmeterGravimetri.php",
+  "app/Services/Calibration/FlowmeterGravimetriCalculator.php",
+  "app/Services/Calibration/Profiles/FlowmeterProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarFlowmeterGravimetri": [
+   "FlowmeterGravimetriCalculator",
+   "FlowmeterProfile"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/AlurPenuhFlowmeterTest.php",
+  "tests/Feature/AuditFlowmeterCmcTest.php",
+  "tests/Feature/FlowmeterLantaiCmcTest.php",
+  "tests/Feature/FlowmeterSatuanSertifikatTest.php",
+  "tests/Feature/FlowmeterSertifikatTest.php",
+  "tests/Feature/FlowmeterSesiTest.php",
+  "tests/Feature/FlowmeterVarianTest.php",
+  "tests/Unit/FlowmeterGravimetriGerbangTest.php",
+  "tests/Unit/FlowmeterGravimetriMasterTest.php",
+  "tests/Unit/FlowmeterMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-flowmeter-gravimetri.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-flowmeter-gravimetri.md"
+ ],
+ "fixture_ada": []
+}

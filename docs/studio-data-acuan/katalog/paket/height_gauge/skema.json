@@ -1,0 +1,387 @@
+{
+ "kode": "height_gauge",
+ "nama": "Height Gauge 600 mm",
+ "kelompok": "Panjang",
+ "jenis": "json",
+ "json": [
+  "tabel-standar-height-gauge.json"
+ ],
+ "kelas": [
+  "TabelStandarHeightGauge"
+ ],
+ "kalkulator": [
+  "HeightGaugeCalculator"
+ ],
+ "profil": [
+  "HeightGaugeProfile"
+ ],
+ "formulir": [],
+ "master": [
+  "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026"
+ ],
+ "generator": [
+  "gen-tabel-standar-height-gauge.py"
+ ],
+ "fixture": [
+  "sesi-master-height-gauge.json"
+ ],
+ "kata": [
+  "height-gauge"
+ ],
+ "formulir_pdf": [],
+ "sheet_master": [
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 111,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 140,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 300,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 21,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 288,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 59,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "Panjang_CSV/Master_olda_Height_Gauge_600_mm_2026",
+   "sheet": "Std_CaliperCek",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 32,
+   "cuplikan_atas": [
+    "STANDAR GAUGE BLOCK",
+    "Nama Alat | : | Caliper Checker | Tanggal Kalibrasi | 2026-01-09T00:00:00",
+    "No Seri | : | 800035 | Tertelusur | LK-404-IDN",
+    "Merk | : | Metrology",
+    "Tipe | : | CMG-9060C",
+    "Rentang Ukur | : | 0-600 mm"
+   ]
+  }
+ ],
+ "sha256_json": {
+  "tabel-standar-height-gauge.json": "89bdd4b0f43bdc8dbb3fab717040b6594a01166ed412480adc9c8c6fdf7c5f4a"
+ },
+ "lembar": [
+  {
+   "jalur": "standar",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "nama",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "merk_tipe",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "seri",
+     "tipe": "desimal_teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tanggal_kalibrasi",
+     "tipe": "tanggal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "tertelusur",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "rentang",
+     "tipe": "teks",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "u95_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    }
+   ],
+   "jumlah_baris": 9,
+   "contoh": {
+    "nama": "Caliper Checker",
+    "merk": "Metrology",
+    "tipe": "CMG-9060C"
+   },
+   "sumber_json": "tabel-standar-height-gauge.json",
+   "jumlah_sel_data": 9,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "outside",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "nilai_terkoreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "koreksi_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    }
+   ],
+   "jumlah_baris": 10,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "contoh": {
+    "nominal_mm": 25.0,
+    "nilai_terkoreksi_mm": 25.0008,
+    "koreksi_um": 0.8
+   },
+   "sumber_json": "tabel-standar-height-gauge.json",
+   "jumlah_sel_data": 30,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "inside",
+   "bentuk": "tabel",
+   "kolom": [
+    {
+     "kunci": "nominal_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "nilai_terkoreksi_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "koreksi_um",
+     "tipe": "desimal",
+     "satuan_tebakan": "µm"
+    }
+   ],
+   "jumlah_baris": 10,
+   "kunci_baris": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+   ],
+   "contoh": {
+    "nominal_mm": 25.0,
+    "nilai_terkoreksi_mm": 25.0003,
+    "koreksi_um": 0.3
+   },
+   "sumber_json": "tabel-standar-height-gauge.json",
+   "jumlah_sel_data": 30,
+   "tampilan_usulan": "lebar"
+  },
+  {
+   "jalur": "konstanta",
+   "bentuk": "peta",
+   "kolom": [
+    {
+     "kunci": "kunci",
+     "tipe": "teks"
+    },
+    {
+     "kunci": "nilai",
+     "tipe": "campuran"
+    }
+   ],
+   "baris": [
+    {
+     "kunci": "suhu_acuan_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "°C"
+    },
+    {
+     "kunci": "alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "delta_alpha_per_c",
+     "tipe": "desimal",
+     "satuan_tebakan": "/°C"
+    },
+    {
+     "kunci": "drift_a_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "drift_b_mm_per_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "drift_pembagi_umur",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "geometri_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "meja_granit_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "batas_paralelisme_mm",
+     "tipe": "desimal",
+     "satuan_tebakan": "mm"
+    },
+    {
+     "kunci": "vi_type_b_normal",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_type_b_rect",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "vi_repeatability",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    },
+    {
+     "kunci": "pembagi_muai",
+     "tipe": "desimal",
+     "satuan_tebakan": null
+    }
+   ],
+   "jumlah_baris": 13,
+   "contoh": {
+    "suhu_acuan_c": 20.0,
+    "alpha_per_c": 1.2e-06,
+    "delta_alpha_per_c": 2e-06
+   },
+   "sumber_json": "tabel-standar-height-gauge.json",
+   "jumlah_sel_data": 13,
+   "tampilan_usulan": "lebar"
+  }
+ ],
+ "metadata_json": {
+  "tabel-standar-height-gauge.json:_sumber": "Master_olda_Height_Gauge_600_mm_2026.xlsm (sheet Std_CaliperCek & DATABASE), ber-password. Tabel Inside ikut disalin tapi TIDAK tersambung ke mesin hitung — seluruh VLOOKUP jalur Height Gauge memakai Nom_Outside.",
+  "tabel-standar-height-gauge.json:_digenerate_oleh": "docs/skrip/gen-tabel-standar-height-gauge.py"
+ },
+ "cakupan": {
+  "tabel-standar-height-gauge.json": {
+   "daun": 82,
+   "tercakup": 82,
+   "contoh_hilang": []
+  }
+ },
+ "rujukan_sel_ditemukan": [
+  "DATABASE!S5:T5",
+  "DATABASE!X11",
+  "PERHITUNGAN!C30:M30",
+  "PERHITUNGAN!C65",
+  "PERHITUNGAN!M35",
+  "PERHITUNGAN!M44",
+  "SERTIFIKAT!L27",
+  "Std_CaliperCek!C23:J32"
+ ],
+ "berkas_kode": [
+  "app/Services/Calibration/TabelStandarHeightGauge.php",
+  "app/Services/Calibration/HeightGaugeCalculator.php",
+  "app/Services/Calibration/Profiles/HeightGaugeProfile.php"
+ ],
+ "kelas_dipakai_oleh": {
+  "TabelStandarHeightGauge": [
+   "CalibrationController",
+   "HeightGaugeCalculator",
+   "HeightGaugeProfile",
+   "TabelStandarJangkaSorong"
+  ]
+ },
+ "test_terkait": [
+  "tests/Feature/HeightGaugeSertifikatTest.php",
+  "tests/Feature/HeightGaugeSesiTest.php",
+  "tests/Unit/HeightGaugeMasterTest.php"
+ ],
+ "pertanyaan_lab": [
+  "docs/pertanyaan-lab-height-gauge.md"
+ ],
+ "perintah_frontend": [
+  "docs/perintah-frontend-height-gauge.md"
+ ],
+ "fixture_ada": [
+  "sesi-master-height-gauge.json"
+ ]
+}

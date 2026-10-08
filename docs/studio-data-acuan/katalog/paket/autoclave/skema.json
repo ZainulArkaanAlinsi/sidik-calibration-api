@@ -1,0 +1,219 @@
+{
+ "kode": "autoclave",
+ "nama": "Autoclave",
+ "kelompok": "Suhu & tekanan",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "AutoclaveProfile"
+ ],
+ "formulir": [
+  "0539"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Autoclave"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0539_Rev.4 - LEMBAR KERJA AUTOCLAVE.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 108,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "Drawing Autoclave",
+   "golongan": "dokumen_bukan_data",
+   "jumlah_baris_csv": 13,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 197,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 57,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "PERHITUNGAN FC",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 128,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 135,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 71,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "STANDAR KALIBRATOR",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 63,
+   "cuplikan_atas": [
+    "Nama Alat | : | Pressure Disk | Tanggal Kalibrasi | : | 2025-06-16T00:00:00",
+    "Merek | : | Tecnosoft | Due Date Kalibrasi | : | 2026-06-17T00:00:00",
+    "Type | : | PressureDisk 05 | Tertelusur | : | LK-285-IDN",
+    "S/N | : | 3501009550 | Resolusi | : | 0.001 | Bar",
+    "Set Point (bar) | Correction (bar) | U95% (bar)",
+    "UP | DOWN"
+   ]
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Autoclave",
+   "sheet": "Tabel Suhu - Tekanan",
+   "golongan": "acuan_lapis1",
+   "jumlah_baris_csv": 19,
+   "cuplikan_atas": [
+    "Reference:  https://blueskypharmacy.wordpress.com/2022/12/07/sterilisasi-media-kultur-difco/",
+    "1 pound | 6.89475728 | kPa | Grafik Hubungan Pressure dan Temp",
+    "Pounds | Pressure (kPa) | Pressure (MPa) | Temp (oC)",
+    "5 | 34.4737864 | 0.034473786400000005 | 109",
+    "10 | 68.9475728 | 0.06894757280000001 | 115",
+    "15 | 103.42135920000001 | 0.10342135920000001 | 121"
+   ]
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/AutoclaveApiTest.php",
+  "tests/Feature/AutoclaveCertificateTest.php",
+  "tests/Feature/AutoclaveSeederTest.php",
+  "tests/Feature/AutoclaveStoreTest.php",
+  "tests/Feature/KoreksiTekananMustahilTest.php",
+  "tests/Feature/PindaiAutoclaveTest.php",
+  "tests/Feature/TebakanMesinAutoclaveTest.php",
+  "tests/Unit/AutoclaveCalculatorTest.php"
+ ],
+ "pertanyaan_lab": [],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 50,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0531_Rev.4';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 52,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0539_Rev.4';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 55,
+   "nama": "JUMLAH_TITIK_WAKTU",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 58,
+   "nama": "JUMLAH_DISK",
+   "nilai_awal": "3;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 61,
+   "nama": "JUMLAH_PEMBACAAN_TEKANAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 63,
+   "nama": "SATUAN_SUHU",
+   "nilai_awal": "'°C';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 71,
+   "nama": "PITA_SUHU_KALIBRATOR",
+   "nilai_awal": "['min' => 21.0, 'maks' => 140.0];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 74,
+   "nama": "PITA_SUHU_RUANG",
+   "nilai_awal": "['min' => 5.0, 'maks' => 45.0];",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 83,
+   "nama": "SATUAN_TEKANAN",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 95,
+   "nama": "DISPLAY_TEKANAN",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 103,
+   "nama": "KODE_LEMBAR",
+   "nilai_awal": "'LK-285-IDN';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 117,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  },
+  {
+   "baris": 147,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/AutoclaveProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

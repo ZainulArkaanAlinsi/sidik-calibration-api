@@ -1,0 +1,238 @@
+{
+ "kode": "chlorine",
+ "nama": "Chlorine Meter",
+ "kelompok": "Analitik",
+ "jenis": "konstanta-php",
+ "json": [],
+ "kelas": [],
+ "kalkulator": [],
+ "profil": [
+  "ChlorineProfile"
+ ],
+ "formulir": [
+  "0531"
+ ],
+ "master": [
+  "instrument-analiitk/Master_Olah_Data_Chlorine_Meter"
+ ],
+ "generator": [],
+ "fixture": [],
+ "kata": [],
+ "catatan_master": "",
+ "formulir_pdf": [
+  "SIDIK-FM-CAL-0531_Rev.2 - LEMBAR KERJA CHLORINE.pdf"
+ ],
+ "sheet_master": [
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "DATABASE",
+   "golongan": "database_internal_jangan_disalin_kecuali_sel_terpetakan",
+   "jumlah_baris_csv": 110,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "FORM VALIDASI",
+   "golongan": "versi_workbook",
+   "jumlah_baris_csv": 173,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "INPUT DATA",
+   "golongan": "bentuk_lembar",
+   "jumlah_baris_csv": 245,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "PERHITUNGAN U95%",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 92,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "PERHITUNGAN",
+   "golongan": "rumus_baca_saja",
+   "jumlah_baris_csv": 242,
+   "cuplikan_atas": []
+  },
+  {
+   "master": "instrument-analiitk/Master_Olah_Data_Chlorine_Meter",
+   "sheet": "SERTIFIKAT",
+   "golongan": "pratinjau_sertifikat",
+   "jumlah_baris_csv": 51,
+   "cuplikan_atas": []
+  }
+ ],
+ "sha256_json": {},
+ "lembar": [],
+ "metadata_json": {},
+ "cakupan": {},
+ "rujukan_sel_ditemukan": [],
+ "berkas_kode": [
+  "app/Services/Calibration/Profiles/ChlorineProfile.php"
+ ],
+ "kelas_dipakai_oleh": {},
+ "test_terkait": [
+  "tests/Feature/CalibrationValidationTest.php",
+  "tests/Feature/ConductivityBudgetTest.php",
+  "tests/Feature/U95PerTitikInstrumenAnalitikTest.php",
+  "tests/Unit/AngkaTandaNolTest.php",
+  "tests/Unit/ChlorineBudgetTest.php",
+  "tests/Unit/PengulanganBebasTest.php"
+ ],
+ "pertanyaan_lab": [],
+ "perintah_frontend": [],
+ "kandidat_konstanta": [
+  {
+   "baris": 60,
+   "nama": "KODE_METODE",
+   "nilai_awal": "'SIDIK-IK-CAL-0524_Rev.1';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 62,
+   "nama": "KODE_DOKUMEN",
+   "nilai_awal": "'SIDIK-FM-CAL-0531_Rev.2';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 64,
+   "nama": "JUMLAH_PENGULANGAN",
+   "nilai_awal": "5;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 66,
+   "nama": "SATUAN",
+   "nilai_awal": "'mg/L';",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 73,
+   "nama": "RESOLUSI",
+   "nilai_awal": "0.01;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 84,
+   "nama": "TOLERANSI_TITIK",
+   "nilai_awal": "0.05;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 92,
+   "nama": "TITIK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 130,
+   "nama": "CI_PENGENCERAN",
+   "nilai_awal": "0.00028720439420210824;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 136,
+   "nama": "U95_MICROPIPETTE_ML",
+   "nilai_awal": "0.00089;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 138,
+   "nama": "U95_LABU_UKUR_ML",
+   "nilai_awal": "0.033;",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 146,
+   "nama": "STANDARD_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 169,
+   "nama": "titik",
+   "nilai_awal": "1.74",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 170,
+   "nama": "titik",
+   "nilai_awal": "1.83",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 192,
+   "nama": "THERMOHYGRO_TERCETAK",
+   "nilai_awal": "[",
+   "jenis": "const",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 341,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 342,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 349,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 350,
+   "nama": "vi",
+   "nilai_awal": "1_000_000",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 361,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 372,
+   "nama": "vi",
+   "nilai_awal": "200",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  },
+  {
+   "baris": 379,
+   "nama": "ci",
+   "nilai_awal": "1.0",
+   "jenis": "literal_dalam_method",
+   "berkas": "app/Services/Calibration/Profiles/ChlorineProfile.php"
+  }
+ ],
+ "fixture_ada": []
+}

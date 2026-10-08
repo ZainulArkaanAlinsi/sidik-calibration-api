@@ -1,0 +1,10 @@
+{
+  "dibekukan": "2026-10-08",
+  "catatan": "Workbook master Micrometer (pilot Studio Data Acuan, CR-48 / §48). sha256 dihitung 8 Okt 2026 dari berkas terenkripsi asli di mesin kerja pemilik, di luar repo; tanggal ubah keempatnya 4 Sep 2026, hari tabel-standar-micrometer.json lahir (§17). Isi workbook BELUM diadu langsung ke tabel-standar-micrometer.json karena berkasnya bersandi; yang sudah terbukti hanya 32/32 balok ukur di CSV ekspor Standar_GB keempat varian (docs/studio-data-acuan/alat-bantu/cek_balok_ukur_micrometer.py). Kalau salah satu sha256 berubah, seluruh test Micrometer HARUS dijalankan ulang dan selisihnya ditelusuri. Sandi workbook tidak pernah ditulis di sini.",
+  "berkas": [
+    {"berkas": "Master_Olah_Data_Micrometer_025mm.xlsm", "nama_asli": "Master Olah Data_Micrometer 0-25mm.xlsm", "varian": "A", "sha256": "fc2ddcf7135212ec3abe6ee051588dd6e327aff1280fcb30112b8ee4d4aa0957", "ukuran_byte": 336384},
+    {"berkas": "Master_Olah_Data_Micrometer_2550mm.xlsm", "nama_asli": "Master Olah Data_Micrometer 25-50mm.xlsm", "varian": "B", "sha256": "9bcd9cc5fe8e4fa7bca58c98739244e5d2ebb744d012a70bee3184b6f140586b", "ukuran_byte": 311808},
+    {"berkas": "Master_Olah_Data_Micrometer_5075mm.xlsm", "nama_asli": "Master Olah Data_Micrometer 50-75mm.xlsm", "varian": "C", "sha256": "6b4ca0ed427b1c5e99a499ffdede7e11447e060c4b9ef4c83b5a6ba66d508ed6", "ukuran_byte": 311296},
+    {"berkas": "Master_Olah_Data_Micrometer_75100mm.xlsm", "nama_asli": "Master Olah Data_Micrometer 75-100mm.xlsm", "varian": "D", "sha256": "7712b33db74aec314eaabd164e29d744e7f266f629516784d829cdaf0d1f2cec", "ukuran_byte": 310784}
+  ]
+}
