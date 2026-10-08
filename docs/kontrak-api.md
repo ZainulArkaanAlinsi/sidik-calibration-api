@@ -1062,6 +1062,27 @@ Response `200`:
 ### Riwayat
 `GET /api/calibrations?mine=true` — teknisi cuma lihat kalibrasi miliknya sendiri; **admin lihat semua**. Filter ini penting, jangan sampai teknisi bisa lihat punya orang lain.
 
+### `POST` · `DELETE /api/calibrations/{id}/sembunyikan` — sembunyikan dari Riwayat akun sendiri (8 Okt 2026)
+
+Preferensi tampilan **per akun**. Sesi, pembacaan, sertifikat, dan jejak audit **tidak berubah sama
+sekali**, dan akun lain (mis. admin) tetap melihat sesinya tanpa tanda.
+
+- `POST` = sembunyikan → `200 {"data":{"id":88,"tersembunyi":true}}`
+- `DELETE` = tampilkan lagi → `200 {"data":{"id":88,"tersembunyi":false}}`
+- **Idempoten.** POST dua kali / DELETE dua kali tetap `200`, tanpa baris kembar.
+- **Siapa boleh** = siapa yang melihat sesi itu di `GET /api/calibrations`: admin, teknisi, viewer
+  seorganisasi; **teknisi cuma sesinya sendiri**. Sesi teknisi lain / lab lain → `404`.
+  Super admin → `403` (rute tulis; jalur baca super admin cuma GET).
+- Throttle `riwayat-sembunyikan`: 60/menit per akun → `429`.
+
+`GET /api/calibrations` sekarang membawa `"tersembunyi": true|false` di **tiap item**, dihitung untuk
+**akun yang login**. Daftarnya **tidak disaring** — HP yang memilih menampilkan atau tidak (mis. sakelar
+"Tampilkan yang disembunyikan"). Paginasi tetap 15 per halaman termasuk yang tersembunyi.
+
+> Di endpoint lain (`GET /calibrations/{id}`, respons simpan/approve/tolak) kuncinya ikut ada tapi
+> **selalu `false`** — tandanya cuma dibaca di daftar. Jangan memakai nilai dari detail untuk
+> menimpa tanda di daftar.
+
 ---
 
 ## 5. Approval & Sertifikat (dibutuhin Minggu 8)

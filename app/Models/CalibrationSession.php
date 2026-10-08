@@ -516,6 +516,20 @@ class CalibrationSession extends Model
     }
 
     /**
+     * Akun yang menyembunyikan sesi ini dari layar Riwayat-nya sendiri (§47,
+     * keputusan pemilik 8 Okt 2026). Preferensi tampilan per akun — sesi,
+     * pembacaan, sertifikat, dan audit tidak berubah, dan akun lain tetap
+     * melihatnya. Dibaca lewat `withExists` di `CalibrationController::index()`.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function penyembunyi(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'riwayat_tersembunyi', 'calibration_session_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    /**
      * @return HasMany<RawMeasurement, $this>
      *
      * Urutannya DIPATOK, lihat alasan panjangnya di [uncertaintyCalculations].
