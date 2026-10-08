@@ -332,7 +332,10 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             ];
         }
 
-        $hasil = $this->kalk()->hitungSesi($this->keluarga(), $masukan, $blok);
+        // Parameter per profil lewat SATU pintu ini: jalur simpan,
+        // `CalibrationValidator`, dan `HitungUlangSesi` semuanya memanggil
+        // `hitungPerGrup()`, jadi ketiganya memakai parameter yang sama.
+        $hasil = $this->kalk()->hitungSesi($this->keluarga(), $masukan, $blok, null, $this->parameterHitung());
 
         foreach ($hasil['ditolak'] as $d) {
             $belumDihitung[] = $d;
@@ -433,6 +436,18 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
         }
 
         return $peringatan;
+    }
+
+    /**
+     * Parameter hitung yang menimpa `VolumetricGlasswareCalculator::parameterBawaan()`.
+     * Bawaan kosong — angka profil lama tidak bergeser. Labu Ukur & Pipet
+     * Volume mengoper `parameterRev7()` (keputusan pemilik 8 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    protected function parameterHitung(): array
+    {
+        return [];
     }
 
     /**

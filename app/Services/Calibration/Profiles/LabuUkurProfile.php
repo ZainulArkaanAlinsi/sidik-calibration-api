@@ -2,7 +2,14 @@
 
 namespace App\Services\Calibration\Profiles;
 
-/** **Labu Ukur** — lampiran LK-285-IDN no. 18, keluarga Fixed. */
+use App\Services\Calibration\VolumetricGlasswareCalculator as V;
+
+/**
+ * **Labu Ukur** — lampiran LK-285-IDN no. 18, keluarga Fixed.
+ *
+ * Mengikuti workbook lab **Rev.7** (LU-200/250/500-1, `SIDIK-IK-CAL-0510_Rev.7`)
+ * — keputusan pemilik 8 Okt 2026, diadu di `tests/Unit/VolumetrikRev7WorkbookTest.php`.
+ */
 class LabuUkurProfile extends FixedVolumetricGlasswareProfile
 {
     public function kode(): string
@@ -19,5 +26,22 @@ class LabuUkurProfile extends FixedVolumetricGlasswareProfile
     public function aliasNama(): array
     {
         return ['Volumetric Flask'];
+    }
+
+    /** `SERTIFIKAT!E21/N21/S21` workbook Rev.7 Labu Ukur: format `0.00`. */
+    public function desimalSertifikat(): ?int
+    {
+        return 2;
+    }
+
+    /** `SERTIFIKAT!Q22` workbook Rev.7 Labu Ukur: format `0.000`. */
+    public function desimalU95(): ?int
+    {
+        return 3;
+    }
+
+    protected function parameterHitung(): array
+    {
+        return V::parameterRev7();
     }
 }

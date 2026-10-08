@@ -152,16 +152,76 @@ class VolumetricGlasswareSesiTest extends TestCase
 
         $t = $sesi->uncertaintyCalculations()->sole();
 
-        // `SERTIFIKAT!N17` dan `S17` (= V20 − Nominal, dicetak lewat tanda −1).
-        $this->assertEqualsWithDelta(1.0042575664928188, (float) $t->rata_rata, 1e-6);
-        $this->assertEqualsWithDelta(0.004257566492818832, (float) $t->error, 1e-6);
-        $this->assertEqualsWithDelta(-0.004257566492818832, (float) $t->koreksi, 1e-6);
-        // `SERTIFIKAT!Q18` = 0,003 — lantai CMC Pipet Volume 1 mL.
+        // Sejak 8 Okt 2026 Pipet Volume mengikuti workbook lab Rev.7
+        // (`VolumetrikRev7WorkbookTest`): ρ_AT 8 (bukan 7,95) dan budget tujuh
+        // komponen. Masukannya masih contoh master Fixed lama, jadi V20 bergeser
+        // dari `SERTIFIKAT!N17` lama (1,0042575664928188) sebesar +8,7·10⁻⁷ mL
+        // — angka di bawah hasil hitung Rev.7 dengan sakelar suhu `ukur`
+        // (kolom `decimal(20,8)`, jadi delta 1e-8).
+        $this->assertEqualsWithDelta(1.0042584359956983, (float) $t->rata_rata, 1e-8);
+        $this->assertEqualsWithDelta(0.0042584359956983064, (float) $t->error, 1e-8);
+        $this->assertEqualsWithDelta(-0.0042584359956983064, (float) $t->koreksi, 1e-8);
+        // `SERTIFIKAT!Q18` = 0,003 — lantai CMC Pipet Volume 1 mL, tidak berubah.
         $this->assertEqualsWithDelta(0.003, (float) $t->ketidakpastian_diperluas, 1e-9);
 
         $sumber = array_column((array) $t->type_b_components, 'sumber');
         $this->assertContains('perbandingan_cmc', $sumber);
-        $this->assertContains('volumetric_veff_dibagi_jumlah', $sumber);
+        // K4 (`Veff` dibagi baris terakhir) tidak ada di Rev.7 — `K43` di sana
+        // baris SUM. Gantinya dua catatan Rev.7.
+        $this->assertNotContains('volumetric_veff_dibagi_jumlah', $sumber);
+        $this->assertContains('volumetric_rev7_keterulangan_tidak_masuk_budget', $sumber);
+        $this->assertContains('volumetric_rev7_suhu_densitas_air', $sumber);
+        $this->assertNotContains('volumetric_repeated_measurements', $sumber);
+    }
+
+    /**
+     * Labu Ukur LU-200-1 (workbook lab Rev.7) dari payload HP sampai validator
+     * dan perintah hitung ulang: V20 & U cetak sama dengan workbook, jalur
+     * simpan dan hitung ulang memakai parameter Rev.7 yang sama.
+     */
+    public function test_labu_ukur_rev7_dari_hp_sampai_hitung_ulang(): void
+    {
+        [$alat, $teknisi] = $this->siapkan('Labu Ukur 200 mL', 'Labu Ukur', [[100, 0.026], [200, 0.044], [250, 0.044]], [0, 200, null]);
+        $sesi = $this->simpan($teknisi, [
+            'equipment_id' => $alat->id,
+            'standard_id' => Standard::where('organization_id', $alat->organization_id)->value('id'),
+            'input_method' => 'manual',
+            'tanggal_kalibrasi' => '2026-10-06',
+            'suhu_awal' => 20.9, 'suhu_akhir' => 20.6,
+            'kelembaban_awal' => 51, 'kelembaban_akhir' => 50,
+            'tekanan_awal' => 1001.2, 'tekanan_akhir' => 1001.5,
+            'measurements' => [[
+                'titik_ukur' => 200,
+                M::PERAN_KOSONG => [0, 0, 0],
+                M::PERAN_ISI => [199.026, 199.027, 199.031],
+                M::PERAN_SUHU => [25.2, 25.3, 25.2],
+            ]],
+            'spesifikasi_alat' => [M::KUNCI_SESI => [
+                'kelas' => 'A', 'toleransi_ml' => 0.15, 'kapasitas_ml' => 200,
+                'neraca' => 'Electronic Balance Fujitsu',
+            ]],
+        ]);
+
+        $t = $sesi->uncertaintyCalculations()->sole();
+        // Sakelar suhu `ukur` (bawaan): replika rumus workbook dengan H40/J40
+        // dari suhu terkoreksi. Workbook (25,5 °C mati) = 199,85125467654402.
+        $this->assertEqualsWithDelta(199.85388300835908, (float) $t->rata_rata, 1e-8);
+        // `PERHITUNGAN U95%!J49` = MAX(U, CMC 0,044).
+        $this->assertEqualsWithDelta(0.044, (float) $t->ketidakpastian_diperluas, 1e-12);
+        $this->assertEqualsWithDelta(0.0, (float) $t->type_a, 1e-15, 'keterulangan tidak masuk budget Rev.7');
+
+        $catatan = collect((array) $t->type_b_components)->keyBy('sumber');
+        $this->assertEqualsWithDelta(199.85125467654402, (float) $catatan['volumetric_rev7_suhu_densitas_air']['nilai'], 1e-9);
+
+        $temuan = app(CalibrationValidator::class)->periksa($sesi)['temuan'];
+        $kode = array_column($temuan, 'kode');
+        $pesan = implode(' | ', array_column($temuan, 'pesan'));
+        $this->assertNotContains('hitung_ulang_gagal', $kode, $pesan);
+        $this->assertNotContains('hitung_ulang_beda', $kode, $pesan);
+
+        $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$sesi->id], '--dry-run' => true])
+            ->doesntExpectOutputToContain('dilewat')
+            ->assertSuccessful();
     }
 
     public function test_graduated_satu_u95_dan_angka_cetaknya_sama_dengan_master(): void
@@ -213,6 +273,7 @@ class VolumetricGlasswareSesiTest extends TestCase
 
         $this->artisan('kalibrasi:hitung-ulang', ['sesi' => [$sesi->id], '--dry-run' => true])
             ->doesntExpectOutputToContain('dilewat')
+            ->doesntExpectOutputToContain('→')
             ->assertSuccessful();
     }
 

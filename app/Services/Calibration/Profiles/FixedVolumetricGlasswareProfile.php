@@ -64,13 +64,14 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
      */
     protected function catatanAudit(array $h, float $uHitung): array
     {
+        $catatan = $this->catatanRev7($h);
         $veffMaster = $h['pembanding_master']['veff_dibagi_baris_akhir'] ?? null;
 
         if ($veffMaster === null) {
-            return [];
+            return $catatan;
         }
 
-        return [[
+        return [...$catatan, [
             'kode' => 'volumetric_veff_dibagi_jumlah',
             'pesan' => sprintf(
                 'Derajat kebebasan efektif dihitung %.12g (Welch–Satterthwaite, penyebut = JUMLAH '
@@ -85,5 +86,55 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
             ),
             'nilai' => $veffMaster,
         ]];
+    }
+
+    /**
+     * Catatan audit profil yang mengikuti workbook Rev.7 (`parameterRev7()`):
+     * keterulangan yang tidak masuk budget, dan sakelar suhu densitas air
+     * (butir D). Kosong untuk profil yang tidak memakai Rev.7.
+     *
+     * @param  array<string, mixed>  $h
+     * @return list<array{kode: string, pesan: string, nilai: float|null}>
+     */
+    private function catatanRev7(array $h): array
+    {
+        $r = $h['pembanding_master']['rev7'] ?? null;
+
+        if ($r === null) {
+            return [];
+        }
+
+        $pakaiMaster = $r['suhu_densitas_air'] === V::SUHU_DENSITAS_AIR_MASTER;
+
+        return [
+            [
+                'kode' => 'volumetric_rev7_keterulangan_tidak_masuk_budget',
+                'pesan' => sprintf(
+                    'Keterulangan (stdev V20 per ulangan ÷ √3 = %.12g mL, ν = 2) TIDAK masuk budget: workbook '
+                    .'Rev.7 `PERHITUNGAN U95%%!I36:I42` hanya tujuh komponen. Kalau dimasukkan, U hitung %.12g mL. '
+                    .'Ditiru sesuai keputusan pemilik 8 Okt 2026 (docs/pertanyaan-lab-volumetric.md no. 20).',
+                    $r['u_keterulangan'],
+                    $r['u95_dengan_keterulangan'],
+                ),
+                'nilai' => $r['u95_dengan_keterulangan'],
+            ],
+            [
+                'kode' => 'volumetric_rev7_suhu_densitas_air',
+                'pesan' => $pakaiMaster
+                    ? sprintf(
+                        'ρ air ulangan 1 & 2 dihitung pada 25,5 °C, meniru angka mati `PERHITUNGAN!H40`/`J40` '
+                        .'workbook Rev.7 (hanya `L40` berumus). Dari suhu terkoreksi tiap ulangan: V20 %.12g mL '
+                        .'(selisih %.12g mL), U hitung %.12g mL. Pertanyaan lab no. 14.',
+                        $r['v20_lain'], $r['v20_lain'] - $h['v20'], $r['u95_lain'],
+                    )
+                    : sprintf(
+                        'ρ air tiap ulangan dihitung dari suhu terkoreksinya. Workbook Rev.7 `PERHITUNGAN!H40`/`J40` '
+                        .'berisi angka mati 25,5 °C (hanya `L40` berumus); kalau ditiru: V20 %.12g mL (selisih '
+                        .'%.12g mL), U hitung %.12g mL. Menunggu keputusan pemilik; pertanyaan lab no. 14.',
+                        $r['v20_lain'], $r['v20_lain'] - $h['v20'], $r['u95_lain'],
+                    ),
+                'nilai' => $r['v20_lain'],
+            ],
+        ];
     }
 }

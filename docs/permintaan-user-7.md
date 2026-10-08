@@ -4986,6 +4986,118 @@ pencarian, lencana status sertifikat, sembunyikan + Urungkan, chip "Tampilkan ya
 dokumennya sudah digantikan. Perbaikannya butuh API dan HP bersamaan
 (`Certificate::labelDokumen()` sudah punya status `digantikan`), dan belum dikerjakan.
 
+## §48 — Studio Data Acuan: "Excel kedua" di panel desktop (CR-48) — 8 Okt 2026
+
+**Permintaan pemilik (8 Okt 2026):** satu layar di laptop/PC yang rasanya seperti workbook
+master, tempat data acuan olah data tiap alat diubah langsung. Data acuan di sini mencakup nilai
+standar, koreksi, U standar, drift, pita CMC, tabel MPE, konstanta metode, dan bentuk lembar.
+Begitu sebuah versi disahkan, server memakainya untuk menghitung, jadi semua HP dan laptop ikut
+tanpa install ulang.
+
+**Rujukan rinci:** `docs/studio-data-acuan/` — `00-CR-Impact-Analysis.md` (dampak ke DB, API, izin,
+data lama, app lama), lalu 01–08 dan Lampiran A. Sesuai §Alur Kerja poin 1 di `AGENTS.md`, PRD
+yang mengikat adalah § ini. Berkas 01-PRD dan seterusnya adalah rincian. Urutan kalau bertentangan:
+`AGENTS.md`, lalu § ini, lalu paket.
+
+**Batas yang tidak ikut berubah:**
+- Studio hanya mengubah **lapis 1** (data acuan) dan **lapis 3** (bentuk lembar).
+- **Lapis 2** (rumus, struktur budget, koefisien sensitivitas) tetap kode dan test rekonsiliasi
+  master. Lapis 2 diubah lewat `prompts/P9-ubah-rumus-master.md`, tidak dari layar.
+- Tidak ada versi yang berlaku tanpa simulasi dan pengesah orang kedua.
+- Sertifikat terbit tidak pernah dihitung ulang. Stempelnya `paket_acuan_versi_id`, di samping
+  `formula_version_id`.
+- Server tetap satu-satunya database.
+
+### Keputusan K-48
+
+Pemilik memilih (8 Okt 2026): **default untuk ketujuhnya.**
+
+| ID | Pertanyaan | Jawaban |
+|---|---|---|
+| K-48-01 | Lapis 2 (rumus) boleh diubah dari UI lewat mesin ekspresi? | **Tidak.** Fase 1–3 tanpa itu; aturan keras §Olah data `AGENTS.md` tetap utuh |
+| K-48-02 | Alat pilot | **Micrometer** (00 §5). pH jadi alat kedua, untuk membuktikan langkah "ekstrak konstanta PHP" |
+| K-48-03 | Pengesah versi data acuan | **`super_admin`**, tidak pernah penyunting atau pengaju versi itu |
+| K-48-04 | Versi baru berlaku menurut apa | **`tanggal_kalibrasi` sesi**, sama dengan `RumusKalibrasi::versiUntukSesi()` |
+| K-48-05 | Master Data boleh menyunting tanpa mengajukan (draf pribadi) | **Boleh.** Draf tidak berpengaruh ke apa pun |
+| K-48-06 | Teknisi boleh melihat tabel acuan aktif | **Boleh**, baca saja, tanpa riwayat draf |
+| K-48-07 | Toleransi uji pembanding per alat | **Ditetapkan Lab per alat** (06 §3). **Belum ada yang diisi**, jadi belum ada alat yang boleh disebut selesai |
+
+**Akibat K-48-03 yang harus dijaga di P2.** `super_admin` hari ini hanya boleh baca, kecuali
+empat rute di §Keadaan nyata `super_admin` (`AGENTS.md`). Mengesahkan versi berarti menambah grup
+rute tulis saudara seperti `sahkan` sertifikat (pola §40). Middleware `lolosBacaSuperAdmin` tidak
+boleh dilonggarkan. `PemisahanWewenang` diperluas ke penyunting dan pengaju versi, tanpa
+pengecualian (K-30-03). K-48-03 berlaku untuk data acuan saja; K4 tentang sertifikat tidak ikut
+terjawab.
+
+### P0 — persiapan (8 Okt 2026, branch `feat/studio-data-acuan`)
+
+- Dokumen 00–08 dan Lampiran A diambil dari branch `docs/studio-data-acuan` (`023d366`), tidak
+  ditulis ulang. Isinya identik dengan paket.
+- Paket dipasang di `docs/studio-data-acuan/`: `katalog/` (32 paket), `alat-bantu/`, `prompts/`.
+- `validasi_katalog.py` terhadap blob git `HEAD`: **LULUS**. Cakupan 15.738/15.738 sel di 21 paket
+  ber-JSON, nol drift. Dijalankan pada working copy Windows, delapan JSON tampak DRIFT. Isinya
+  sama byte-per-byte dengan blob sesudah CR dibuang; yang beda hanya akhir baris CRLF dari
+  `core.autocrlf=true`. Katalog **tidak** dibangun ulang, karena membangun ulang di mesin ini
+  justru menanam sha256 versi CRLF.
+- `database/data/manifest-workbook-micrometer.json`: sha256 keempat workbook terenkripsi asli,
+  tanggal ubah 4 Sep 2026. Isi workbook **belum** diadu langsung ke `tabel-standar-micrometer.json`
+  karena bersandi. Yang sudah terbukti: 32/32 balok ukur di CSV `Standar_GB` keempat varian sama
+  dengan JSON (`alat-bantu/cek_balok_ukur_micrometer.py`).
+- Tidak ada perubahan di `app/`, migrasi, atau test.
+
+**Status:** P0 selesai. P1 (`docs/studio-data-acuan/prompts/P1-fondasi-server.md`) menunggu
+perintah pemilik.
+
+## §49 — Labu Ukur & Pipet Volume ikut workbook lab Rev.7 — 8 Okt 2026
+
+Nomor §48 sudah dipakai Studio Data Acuan (branch `feat/studio-data-acuan`), jadi § ini §49.
+
+**Asal.** Dua audit paritas (8 Okt 2026) mengadu server ke tujuh workbook lab template Fixed
+`SIDIK-IK-CAL-0510_Rev.7`: Labu Ukur LU-200/250/500-1 dan "Pipet Ukur" PV 0,5/2/3/4-1-26, yang
+sebenarnya Pipet Volume (`INPUT DATA!E6 = 5`, CMC `CMC_pipetvolume`). Lima selisih ditemukan
+(A–E di bawah).
+
+**Keputusan pemilik (8 Okt 2026):** workbook lab adalah acuan, sama seperti Anak Timbangan (§46).
+Server disesuaikan; kejanggalan workbook ditiru lalu diangkat sebagai pertanyaan lab bernomor.
+Butir D masih menunggu keputusan.
+
+**Yang dibangun** (hanya `LabuUkurProfile` dan `PipetVolumeProfile`, lewat
+`parameterHitung()` → `VolumetricGlasswareCalculator::parameterRev7()`; konstanta bersama dan
+profil Volumetric lain tidak digeser):
+- **A.** Budget tujuh komponen (`PERHITUNGAN U95%!I36:I42`), tanpa "Repeated measurements".
+  `type_a` = 0. U dengan keterulangan tetap tercatat di jejak sesi
+  (`volumetric_rev7_keterulangan_tidak_masuk_budget`).
+- **B.** ρ anak timbangan 8 (`PERHITUNGAN!H58`), bukan 7,95.
+- **C.** γ kelas A 10·10⁻⁶ (`PERHITUNGAN!H59`), bukan 9,9·10⁻⁶.
+- **D.** Sakelar `SUHU_DENSITAS_AIR_REV7`: `master` meniru `PERHITUNGAN!H40`/`J40` (angka mati
+  25,5 °C untuk ρ air ulangan 1 & 2); `ukur` memakai suhu terkoreksi tiap ulangan. **Bawaan
+  sementara `ukur`.** Cara yang tidak dipakai tetap dihitung dan tercatat
+  (`volumetric_rev7_suhu_densitas_air`, berisi V20 dan U cara lainnya). Pada LU-500 angka cetak
+  V20 berbeda antar cara (500,24 lawan 500,25 mL).
+- **E.** Desimal cetak: Labu Ukur 2 / U95 3, Pipet Volume 3 / U95 4, k tetap bulat. Format PV di
+  workbook tidak seragam (PV 2 `0.00`, PV 4 `0.0000`), jadi dipilih 3 dan ditanyakan.
+- Pembanding K4 (`volumetric_veff_dibagi_jumlah`) tidak muncul lagi untuk kedua profil: di Rev.7
+  `K43` adalah baris SUM.
+
+Jalur simpan, `CalibrationValidator`, dan `kalibrasi:hitung-ulang` semuanya lewat
+`hitungPerGrup()`, jadi memakai parameter yang sama.
+
+**Pertanyaan lab baru:** `docs/pertanyaan-lab-volumetric.md` no. 14–21 (H40/J40 25,5; `O35`
+tanpa `M39`; enam lawan tiga suhu; status neraca selalu VALID; Yokogawa lewat jatuh tempo
+12 Agu 2026 dipakai 6 Okt 2026; berkas "Pipet Ukur" berisi Pipet Volume; keterulangan hilang dari
+budget; desimal PV). No. 3 (Rev.7 lawan Rev.6) dan no. 8 (`C17` Fujitsu membaca `AE20`) masih
+berlaku di Rev.7.
+
+**Dijaga:** `VolumetrikRev7WorkbookTest` (ketujuh workbook × dua cabang sakelar: V20, deviasi,
+tujuh u·c, u_c, ν_eff, k, U, U cetak dengan CMC, toleransi 1e-9 relatif; cabang `master` sama
+dengan cache Excel, selisih terbesar 5,5·10⁻¹³ di k) dan `VolumetricGlasswareSesiTest`
+(LU-200 dari payload HP sampai validator & hitung ulang). Ekspektasi Pipet Volume lama di test
+itu diperbarui ke Rev.7 (V20 +8,7·10⁻⁷ mL; catatan K4 diganti dua catatan Rev.7).
+
+**Status:** PR terbuka, belum di-merge. Gate MySQL penuh belum dijalankan. Sesi Labu Ukur/Pipet
+Volume yang sudah tersimpan sebelum perubahan ini bisa memunculkan `hitung_ulang_beda` di
+validator sampai dihitung ulang.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
@@ -5395,3 +5507,4 @@ Supaya tidak dibangun ulang:
 | G27 | **Permintaan kalibrasi dari pelanggan** + preferensi notifikasi + penyaring `/equipments` & `/certificates` + restyle halaman verifikasi — §41 | **DIKERJAKAN** (30 Sep 2026, branch `feat/permintaan-kalibrasi`, PR menunggu tinjauan) — empat tabel additive, 8 rute pelanggan + 6 rute lab, penerimaan melahirkan Order/OrderItem/Equipment utuh-atau-tidak-sama-sekali. Kontrak: `docs/perintah-frontend-permintaan.md`. **TERKIRIM** (API #205, `7063b53`). Sisa "belum"-nya pindah ke G28 |
 | G28 | **Koreksi data pelanggan, foto pelat nama, resi & jadwal teknisi, ringkasan email mingguan** — §42 | **DIKERJAKAN** (1 Okt 2026, branch `feat/revisi-koreksi-sertifikat`, satu PR bersama G24) — tiga tabel/kolom additive (`koreksi_pelanggan`, `foto_pelanggan`, kolom resi/jadwal, `equipments.catatan_pelanggan`), 12 rute pelanggan + 7 rute lab, semua rute ber-ID ikut `IsolasiPerusahaanTest`. Kontrak: `docs/perintah-frontend-revisi-koreksi.md`. K42-1..11 default aman, belum ditanyakan |
 | G29 | **Paket pra-rilis 30 Sep — Gelombang 1 tanpa keputusan** (B04, B06, B08, B12) — §43 | **DIKERJAKAN** (1 Okt 2026, branch `fix/g1-wewenang-tanpa-keputusan`) — tarik-pengajuan hanya pengaju (403), akun non-aktif 401 + token dicabut, reject bersyarat 409, saring tahap pelacakan sebelum paginasi. Lima test penjaga merah→hijau. **TERKIRIM** (API #209, `bfc1c1f`). **Lanjutan 2 Okt** (branch `fix/g1-pemisahan-wewenang`): K-30-03 = blokir → B01, B02, B03 + `sahkan` tanpa mode peringatan, sakelar dicabut (§43.1b). Sisa G1 menunggu K-30-04/05/10/16 (§43.2). **Lanjutan 2 Okt sore** (branch `test/simulasi-lab-serentak`): simulasi lab serentak + deadlock nomor sesi ditutup (§43.3), **LIVE `3eff913`**. **3 Okt** (branch `fix/penomoran-pelanggan-serentak`): deadlock nomor permintaan & order ikut ditutup, **LIVE `f6e3666`**. Batas login jadi per akun + IP (branch `fix/batas-login-per-akun`) |
+| G30 | **Studio Data Acuan** ("Excel kedua" di panel desktop, CR-48) — §48 | **P0 SELESAI** (8 Okt 2026, branch `feat/studio-data-acuan`). Paket dokumen, katalog 32 paket, alat bantu, dan prompt dipasang di `docs/studio-data-acuan/`. Validator LULUS terhadap blob git: 15.738 sel, nol drift. Manifest workbook Micrometer ada. K-48-01..07 = default. Belum ada kode. P1–P10 dan prompt per alat menunggu perintah. Toleransi uji pembanding (K-48-07) belum diisi Lab |
