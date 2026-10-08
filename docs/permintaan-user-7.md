@@ -4938,8 +4938,24 @@ sebagai orang lain.
 **Angka:** sesi gram satu neraca tidak bergeser (`AnakTimbanganMasterTest` tetap hijau). Lembar
 kg = lembar gram yang sama persis (`test_satuan_kg_terhitung_sama_dengan_gram`).
 
-**Masih tertahan:** lembar M3 (KAL/2026/10/0002) menunggu densitas M3 dari lab
+**Masih tertahan (7 Okt):** lembar M3 (KAL/2026/10/0002) menunggu densitas M3 dari lab
 (`pertanyaan-lab-anak-timbangan.md` §27). Aturan neraca per keping ditanyakan di §28.
+
+**Hasil 8 Okt 2026 — TERBIT.** M3 memakai densitas asumsi OIML R111-1 Tabel B.7 (7100 kg/m³, §27).
+Koreksi apung disamakan dengan workbook lab, dan workbook Pak Rohman dijadikan acuan (keputusan
+pemilik, lihat "Keputusan pemilik 8 Okt 2026" di `pertanyaan-lab-anak-timbangan.md`). Sertifikat
+yang berlaku:
+
+| Lembar | Sesi | Sertifikat |
+|---|---|---|
+| F2 1 g – 500 g, tiga neraca | KAL/2026/10/0009 | CAL/2026/10/0009 — sama dengan workbook hal 1–3, 12/12 keping |
+| M2 20/10 kg, satuan kg | KAL/2026/10/0010 | CAL/2026/10/0008 |
+| M3 1000–50 g | KAL/2026/10/0011 | CAL/2026/10/0007 |
+
+CAL/2026/10/0001–0006 adalah terbitan sebelumnya (format atau cara hitung lama). Semuanya
+dibatalkan lewat aplikasi oleh admin, bukan dihapus. Ketiganya dicetak satu halaman, U95 per
+keping, 5 desimal, tanpa logo KAN (AT tidak ada di LK-285-IDN). Pertanyaan kelas standar E2/F1
+untuk set F2: §29.
 
 ## §47 — Sembunyikan sesi dari layar Riwayat (per akun) — 8 Okt 2026
 
@@ -4962,7 +4978,13 @@ diubah, dan akun lain (mis. admin) tetap melihat sesinya.
 jumlah baris sesi/pembacaan/sertifikat/audit tidak berubah, teknisi lain & lab lain 404, viewer &
 admin boleh, super admin 403, satu query untuk tanda, throttle terdaftar).
 
-**Status:** API branch `feat/riwayat-sembunyikan`; mobile dikerjakan paralel dengan kontrak di atas.
+**Status:** **TERKIRIM 8 Okt 2026.** API `abdc80a` (PR #228) dan HP v1.0.684 (PR #200: kolom
+pencarian, lencana status sertifikat, sembunyikan + Urungkan, chip "Tampilkan yang disembunyikan").
+
+**Celah yang diketahui:** lencana memakai status sertifikat ASLI (relasi `certificate` menyaring
+`revision_of`). Sertifikat yang sudah punya revisi `-Rn` tetap tampil hijau "Terbit", padahal
+dokumennya sudah digantikan. Perbaikannya butuh API dan HP bersamaan
+(`Certificate::labelDokumen()` sudah punya status `digantikan`), dan belum dikerjakan.
 
 ## Gelombang & status
 

@@ -718,6 +718,16 @@ Pertanyaan §2 dan §5 TETAP terbuka untuk lab; begitu dijawab, cara hitung bisa
 (`AnakTimbanganCalculator::CARA_KOREKSI_APUNG`). Dijaga `AnakTimbanganRohmanTest` dan
 `AnakTimbanganMasterTest`.
 
+**Lanjutan keputusan (8 Okt 2026): acuan Anak Timbangan adalah workbook Pak Rohman.** Kalau angka
+sistem berbeda dari workbook beliau, sistem yang disesuaikan. Kejanggalan di workbook tetap ditiru
+dan diangkat sebagai pertanyaan bernomor di berkas ini, bukan dibetulkan diam-diam. Begitu workbook
+direvisi lab, sistem ikut versi barunya.
+
+Diadu per keping: set F2 1 g – 500 g (sertifikat CAL/2026/10/0009) sama dengan workbook hal 1–3
+pada 12/12 keping. Set M3 1000–50 g (CAL/2026/10/0007) dan set M2 20/10 kg (CAL/2026/10/0008)
+memakai rumus yang sama, tetapi **belum punya workbook pembanding**. Mohon workbook kedua set itu
+kalau ada.
+
 ## §28 — Beberapa neraca dalam satu sesi: neraca mana untuk keping mana?
 
 Kertas lapangan 5 Okt 2026 (set F2 1 g – 500 g) mencentang **tiga** neraca
@@ -733,6 +743,20 @@ Neraca terpilih tercatat di jejak audit tiap keping.
 1. Aturan itu sesuai praktik lab? Kalau tidak, kertas Rev. berikutnya perlu kolom
    "neraca" per keping.
 2. Keping 50 g di neraca 80 g (Semi Micro) atau di 220 g (Analytical)?
+
+## §29 — Kelas standar set F2: E2 di daftar standar, F1 di workbook
+
+Sertifikat CAL/2026/10/0009 (set F2 1 g – 500 g) dihitung dengan kelas standar **F1**. Itu masukan
+`INPUT DATA` workbook Pak Rohman, dan sengaja disamakan (keputusan pemilik 8 Okt). Tetapi standar
+yang dicentang di kertas dan tercetak di "STANDARD USED" adalah anak timbangan **E2**
+(No. Seri 75870 dan 100636).
+
+Kelas standar mengubah dua hal: ketidakpastian standar (MPE kelasnya) dan densitas standar di
+koreksi apung. Jadi U95 dan massa konvensional ikut bergeser kalau kelasnya diganti.
+
+1. Standar fisik yang dipakai untuk set F2 itu kelas E2 atau F1?
+2. Kalau E2: workbook hal 1–3 perlu diperbaiki. Sesudah workbook direvisi, sistem ikut dan sertifikat
+   diterbitkan ulang lewat sesi baru.
 
 ## Yang TIDAK bisa saya nilai dari berkas ini
 
