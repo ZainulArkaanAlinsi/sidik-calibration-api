@@ -123,14 +123,17 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
                 'pesan' => $pakaiMaster
                     ? sprintf(
                         'ρ air ulangan 1 & 2 dihitung pada 25,5 °C, meniru angka mati `PERHITUNGAN!H40`/`J40` '
-                        .'workbook Rev.7 (hanya `L40` berumus). Dari suhu terkoreksi tiap ulangan: V20 %.12g mL '
-                        .'(selisih %.12g mL), U hitung %.12g mL. Pertanyaan lab no. 14.',
+                        .'workbook Rev.7 (hanya `L40` berumus) — keputusan pemilik 8 Okt 2026: angka ikut '
+                        .'workbook, dengan peringatan bila suhu terukur menggeser angka cetak. Dari suhu '
+                        .'terkoreksi tiap ulangan: V20 %.12g mL (selisih %.12g mL), U hitung %.12g mL. '
+                        .'Pertanyaan lab no. 14.',
                         $r['v20_lain'], $r['v20_lain'] - $h['v20'], $r['u95_lain'],
                     )
                     : sprintf(
                         'ρ air tiap ulangan dihitung dari suhu terkoreksinya. Workbook Rev.7 `PERHITUNGAN!H40`/`J40` '
                         .'berisi angka mati 25,5 °C (hanya `L40` berumus); kalau ditiru: V20 %.12g mL (selisih '
-                        .'%.12g mL), U hitung %.12g mL. Menunggu keputusan pemilik; pertanyaan lab no. 14.',
+                        .'%.12g mL), U hitung %.12g mL. Sakelar dipasang `ukur` (bawaan keputusan pemilik '
+                        .'8 Okt 2026 adalah `master`); pertanyaan lab no. 14.',
                         $r['v20_lain'], $r['v20_lain'] - $h['v20'], $r['u95_lain'],
                     ),
                 'nilai' => $r['v20_lain'],

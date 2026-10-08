@@ -737,6 +737,11 @@ class CertificateSnapshotBuilder
                     ->filter(fn (Standard $s): bool => (bool) $s->pivot->dipakai)
                     ->sortBy('id')
             )
+            // Standar yang SELALU dipakai rumus profilnya walau tidak dicentang
+            // — termometer standar Labu Ukur & Pipet Volume (`SERTIFIKAT!B30`
+            // workbook Rev.7). Kosong untuk alat lain, jadi sertifikat mereka
+            // tidak berubah. Lihat `CalibrationProfile::standarTambahanSesi()`.
+            ->concat($this->standarTambahanDicetak($sesi))
             ->unique('id')
             ->values();
 
@@ -748,6 +753,21 @@ class CertificateSnapshotBuilder
                 'traceable_to' => $s->tertelusur_ke,
             ])
             ->all();
+    }
+
+    /** @return list<Standard> */
+    private function standarTambahanDicetak(CalibrationSession $sesi): array
+    {
+        if ($sesi->equipment === null) {
+            return [];
+        }
+
+        $tambahan = app(CalibrationProfileRegistry::class)->untukAlat($sesi->equipment)->standarTambahanSesi($sesi);
+
+        return array_values(array_map(
+            static fn (array $t): Standard => $t['standar'],
+            array_filter($tambahan, static fn (array $t): bool => $t['dicetak']),
+        ));
     }
 
     /**
@@ -1099,6 +1119,23 @@ class CertificateSnapshotBuilder
 
             if ($sesi->kelembaban_ketidakpastian !== null) {
                 $teks .= ' ± '.Angka::id($sesi->kelembaban_ketidakpastian, 1).'%';
+            }
+
+            $bagian[] = $teks;
+        }
+
+        // Tekanan udara — cuma alat yang profilnya memintanya (Labu Ukur &
+        // Pipet Volume, `SERTIFIKAT!T13:Y13` workbook Rev.7); `null` untuk alat
+        // lain, jadi baris mereka tidak berubah. Nilainya bulat TANPA pemisah
+        // ribuan (`1001`, format sel `0`), ketidakpastiannya satu desimal
+        // (`0.0`) — sama dengan suhu & kelembaban di atas.
+        $tekanan = $profil?->tekananEnvSertifikat($sesi);
+
+        if ($tekanan !== null) {
+            $teks = 'P: '.Angka::hasil($tekanan, 0).' hPa';
+
+            if ($sesi->tekanan_ketidakpastian !== null) {
+                $teks .= ' ± '.Angka::id($sesi->tekanan_ketidakpastian, 1).' hPa';
             }
 
             $bagian[] = $teks;

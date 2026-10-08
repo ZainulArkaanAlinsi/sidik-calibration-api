@@ -2119,6 +2119,59 @@ abstract class CalibrationProfile
     }
 
     /**
+     * Turunkan standar acuan SESI dari blok `spesifikasi_alat` kiriman —
+     * pasangan [standarSesiDariCentang] untuk lembar yang memilih standarnya
+     * lewat isian blok, bukan kotak `standard_id`.
+     *
+     * Default `null`: jalur lama tidak berubah. Yang memakainya Labu Ukur &
+     * Pipet Volume ([FixedVolumetricGlasswareRev7Profile]): neraca yang
+     * menghitung V20 dipilih di `spesifikasi_alat.volumetric.neraca`, dan
+     * lembarnya tidak punya kotak `standard_id`. Tanpa turunan ini sesi dari
+     * HP tersimpan tanpa standar acuan — validator melewati hitung ulangnya,
+     * masa berlaku neracanya tidak pernah diperiksa, dan sertifikatnya tidak
+     * mencetak neraca yang dipakai.
+     *
+     * Pilihan eksplisit `standard_id` tetap menang
+     * (`CalibrationController::standarTurunan()`).
+     *
+     * @param  array<string, mixed>  $spesifikasiAlat
+     */
+    public function standarSesiDariSpesifikasi(array $spesifikasiAlat, Equipment $equipment): ?Standard
+    {
+        return null;
+    }
+
+    /**
+     * Standar yang DIPAKAI sesi ini di luar `standard_id` sesi & titik —
+     * diperiksa masa berlakunya oleh `CalibrationValidator`, dan yang
+     * `dicetak` ikut tabel "Standard Used" sertifikat.
+     *
+     * Default kosong: validator & sertifikat alat lain tidak berubah sama
+     * sekali. Yang memakainya Labu Ukur & Pipet Volume: termometer standar
+     * (Yokogawa CA 150 + sensor PRT) yang tabel koreksi & U95-nya SELALU
+     * dipakai rumus, thermohygro, dan standar yang dicentang "Dipakai".
+     *
+     * @return list<array{standar: Standard, dicetak: bool}>
+     */
+    public function standarTambahanSesi(CalibrationSession $sesi): array
+    {
+        return [];
+    }
+
+    /**
+     * Tekanan udara yang dicetak di baris `Env. Condition` sertifikat, atau
+     * `null` = tidak dicetak (bawaan; perilaku lama semua alat).
+     *
+     * Ketidakpastiannya dibaca dari `tekanan_ketidakpastian` sesi (dihitung
+     * `KondisiLingkungan` dari sertifikat thermobarometer + pergeseran awal–
+     * akhir), sama dengan suhu & kelembaban.
+     */
+    public function tekananEnvSertifikat(CalibrationSession $sesi): ?float
+    {
+        return null;
+    }
+
+    /**
      * Kolom `spesifikasi_alat` yang nilainya LAHIR dari centang Standard Used.
      *
      * Kertas memilih load cell / timbangan dengan mencentang barisnya. Dropdown

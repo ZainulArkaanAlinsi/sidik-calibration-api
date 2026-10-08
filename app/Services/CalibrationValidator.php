@@ -297,8 +297,30 @@ class CalibrationValidator
 
         // Standar yang sertifikatnya kadaluarsa bikin ketertelusuran putus —
         // temuan asesor, dan sertifikatnya bisa ditarik.
+        //
+        // DUA ukuran, dan dua-duanya ERROR:
+        //
+        //  - kedaluwarsa pada TANGGAL KALIBRASI sesi — yang menentukan sah
+        //    tidaknya pengukuran itu (ISO/IEC 17025 6.4/6.5). Sebelum 8 Okt
+        //    2026 tidak diperiksa sama sekali: tujuh workbook Volumetric Rev.7
+        //    dihitung dengan termometer standar yang sudah lewat 56 hari, dan
+        //    sistem diam.
+        //  - kedaluwarsa HARI INI — aturan lama, dipertahankan (tidak
+        //    dilonggarkan): menerbitkan sertifikat yang menunjuk standar yang
+        //    hari ini sudah tidak berlaku tetap ditahan.
+        $tanggalKalibrasi = $sesi->tanggal_kalibrasi;
+
         foreach ($this->standarTerpakai($sesi) as $standar) {
-            if (! $standar->masihBerlaku()) {
+            if ($tanggalKalibrasi !== null && ! $standar->berlakuPada($tanggalKalibrasi)) {
+                $temuan[] = $this->temuan(
+                    self::ERROR,
+                    'standar_kadaluarsa',
+                    "Sertifikat standar \"{$standar->nama}\" berlaku sampai "
+                        .$standar->berlaku_sampai?->format('d/m/Y').', sedangkan sesi ini dikalibrasi '
+                        .$tanggalKalibrasi->format('d/m/Y').' — kedaluwarsa pada tanggal kalibrasi.',
+                    ['standard_id' => $standar->id, 'tanggal_kalibrasi' => $tanggalKalibrasi->toDateString()],
+                );
+            } elseif (! $standar->masihBerlaku()) {
                 $temuan[] = $this->temuan(
                     self::ERROR,
                     'standar_kadaluarsa',
@@ -1018,7 +1040,16 @@ class CalibrationValidator
             // SETIAP sesi AT dari HP memunculkan satu peringatan per keping DAN
             // melewati hitung ulang sama sekali — sesi produksi KAL/2026/10/0003
             // (7 Okt 2026) pulang dengan dua belas peringatan palsu.
-            $tanpaStandarTitik = $this->profil->untukAlat($alat)->butuhBlokAnakTimbangan();
+            //
+            // Volumetric Glassware sama: rumusnya tidak membaca `Standard` per
+            // titik sama sekali — neraca & termometer datang dari blok sesi dan
+            // tabel standar metode. Lembarnya juga tidak punya kotak
+            // `standard_id`, jadi tiap sesi dari HP dulu memunculkan
+            // `standar_titik_hilang` dan hitung ulangnya DILEWATI (simulasi 7
+            // workbook Rev.7, 8 Okt 2026: 7 dari 7). Masa berlaku standarnya
+            // diperiksa di `periksaKelengkapanHitung()`.
+            $profilAlat = $this->profil->untukAlat($alat);
+            $tanpaStandarTitik = $profilAlat->butuhBlokAnakTimbangan() || $profilAlat->butuhBlokVolumetric();
 
             if (! $standar instanceof Standard && ! $tanpaStandarTitik) {
                 $temuan[] = $this->temuan(
@@ -1821,13 +1852,25 @@ class CalibrationValidator
         return $temuan;
     }
 
-    /** @return list<Standard> */
+    /**
+     * Standar hitungan + standar sesi, ditambah standar yang profilnya
+     * nyatakan ikut dipakai (`CalibrationProfile::standarTambahanSesi()` —
+     * kosong untuk alat yang tidak menimpanya, jadi pemeriksaan alat lain
+     * tidak berubah).
+     *
+     * @return list<Standard>
+     */
     private function standarTerpakai(CalibrationSession $sesi): array
     {
+        $tambahan = $sesi->equipment !== null
+            ? array_column($this->profil->untukAlat($sesi->equipment)->standarTambahanSesi($sesi), 'standar')
+            : [];
+
         return $sesi->uncertaintyCalculations
             ->pluck('standard')
             ->filter()
             ->when($sesi->standard, fn ($c) => $c->push($sesi->standard))
+            ->concat($tambahan)
             ->unique('id')
             ->values()
             ->all();

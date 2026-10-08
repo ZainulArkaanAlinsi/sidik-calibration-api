@@ -80,8 +80,8 @@ class VolumetricGlasswareCalculator
     public const GAMMA_KELAS_A_REV7 = 10e-6;
 
     /**
-     * Sakelar butir D (keputusan pemilik 8 Okt 2026 masih ditunggu): suhu
-     * mana yang melahirkan ρ air ulangan ke-1 dan ke-2 pada profil Rev.7.
+     * Sakelar butir D: suhu mana yang melahirkan ρ air ulangan ke-1 dan ke-2
+     * pada profil Rev.7.
      *
      *  - [SUHU_DENSITAS_AIR_UKUR] — suhu terkoreksi tiap ulangan (hitung
      *    benar). Catatan audit tetap menulis V20 kalau master ditiru.
@@ -89,9 +89,16 @@ class VolumetricGlasswareCalculator
      *    Rev.7 yang berisi ANGKA MATI 25,5 °C; hanya `L40` berumus
      *    `AVERAGE(L39:M39)`. Catatan audit menulis V20 hitung benar.
      *
-     * Bawaan sementara `ukur`. Pertanyaan lab volumetric no. 14.
+     * **Keputusan pemilik 8 Okt 2026 (terakhir): `master`** — angka sertifikat
+     * ikut workbook Pak Rohman 100%. Cabang `ukur` tetap dihitung di belakang
+     * layar dan V20 + U-nya tercatat di jejak sesi
+     * (`volumetric_rev7_suhu_densitas_air`); kalau angka CETAK V20/Correction
+     * kedua cabang berbeda, validator memunculkan peringatan
+     * `volumetric_suhu_25_5_menggeser_cetak` (lihat
+     * `FixedVolumetricGlasswareRev7Profile::peringatanSuhuMenggeserCetak()`).
+     * Pertanyaan lab volumetric no. 14.
      */
-    public const SUHU_DENSITAS_AIR_REV7 = self::SUHU_DENSITAS_AIR_UKUR;
+    public const SUHU_DENSITAS_AIR_REV7 = self::SUHU_DENSITAS_AIR_MASTER;
 
     public const SUHU_DENSITAS_AIR_UKUR = 'ukur';
 

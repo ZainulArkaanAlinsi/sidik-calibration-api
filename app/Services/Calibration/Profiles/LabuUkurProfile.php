@@ -2,15 +2,13 @@
 
 namespace App\Services\Calibration\Profiles;
 
-use App\Services\Calibration\VolumetricGlasswareCalculator as V;
-
 /**
  * **Labu Ukur** — lampiran LK-285-IDN no. 18, keluarga Fixed.
  *
  * Mengikuti workbook lab **Rev.7** (LU-200/250/500-1, `SIDIK-IK-CAL-0510_Rev.7`)
  * — keputusan pemilik 8 Okt 2026, diadu di `tests/Unit/VolumetrikRev7WorkbookTest.php`.
  */
-class LabuUkurProfile extends FixedVolumetricGlasswareProfile
+class LabuUkurProfile extends FixedVolumetricGlasswareRev7Profile
 {
     public function kode(): string
     {
@@ -38,10 +36,5 @@ class LabuUkurProfile extends FixedVolumetricGlasswareProfile
     public function desimalU95(): ?int
     {
         return 3;
-    }
-
-    protected function parameterHitung(): array
-    {
-        return V::parameterRev7();
     }
 }

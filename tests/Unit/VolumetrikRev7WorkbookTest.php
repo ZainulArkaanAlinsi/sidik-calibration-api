@@ -248,11 +248,50 @@ class VolumetrikRev7WorkbookTest extends TestCase
         $this->assertNull($h['pembanding_master']['veff_dibagi_baris_akhir']);
     }
 
-    /** Butir D masih menunggu pemilik — bawaan sementara `ukur`. */
-    public function test_sakelar_suhu_densitas_air_bawaan_ukur(): void
+    /**
+     * Butir D: keputusan pemilik 8 Okt 2026 (terakhir) — angka ikut workbook,
+     * `master` (25,5 °C di `H40`/`J40`). `ukur` tetap dihitung sebagai
+     * pembanding dan memicu peringatan kalau menggeser angka cetak.
+     */
+    public function test_sakelar_suhu_densitas_air_bawaan_master(): void
     {
-        $this->assertSame(V::SUHU_DENSITAS_AIR_UKUR, V::SUHU_DENSITAS_AIR_REV7);
-        $this->assertSame(V::SUHU_DENSITAS_AIR_UKUR, V::parameterRev7()['suhu_densitas_air']);
+        $this->assertSame(V::SUHU_DENSITAS_AIR_MASTER, V::SUHU_DENSITAS_AIR_REV7);
+        $this->assertSame(V::SUHU_DENSITAS_AIR_MASTER, V::parameterRev7()['suhu_densitas_air']);
+    }
+
+    /**
+     * Parameter BAWAAN (tanpa memilih cabang) = cache workbook, dan angka
+     * CETAK-nya — desimal sertifikat profil per nominal — sama dengan teks
+     * `SERTIFIKAT!N21`, `S21`, `Q22` ketujuh workbook (format selnya sendiri).
+     */
+    #[DataProvider('kodeKasus')]
+    public function test_bawaan_sama_dengan_workbook_sampai_angka_cetak(string $kode): void
+    {
+        $c = self::kasus()[$kode];
+        $hasil = (new V)->hitungSesi(V::KELUARGA_FIXED, $this->titik($c), $this->blok($c), null, V::parameterRev7());
+        $h = $hasil['titik'][0];
+        $this->aduKe($kode, 'master', $h);
+
+        // [N21 Actual, S21 Correction (= V20 − Nominal), Q22 U95].
+        $cetakWorkbook = [
+            'LU-200' => ['199.85', '-0.15', '0.044'],
+            'LU-250' => ['249.86', '-0.14', '0.044'],
+            'LU-500' => ['500.24', '0.24', '0.077'],
+            'PV-0.5' => ['0.495', '-0.005', '0.0020'],
+            'PV-2' => ['1.99', '-0.01', '0.0034'],
+            'PV-3' => ['2.986', '-0.014', '0.0034'],
+            'PV-4' => ['3.9850', '-0.0150', '0.0039'],
+        ][$kode];
+
+        $profil = str_starts_with($kode, 'LU') ? new LabuUkurProfile : new PipetVolumeProfile;
+        $d = $profil->desimalSertifikatTitik($c['nominal']) ?? $profil->desimalSertifikat();
+        $u95 = max($h['agregat']['ketidakpastian_diperluas'], $c['cmc']);
+
+        $this->assertSame($cetakWorkbook, [
+            number_format($h['v20'], $d, '.', ''),
+            number_format($h['deviasi'], $d, '.', ''),
+            number_format($u95, $profil->desimalU95(), '.', ''),
+        ], "$kode angka cetak");
     }
 
     /**
@@ -271,7 +310,7 @@ class VolumetrikRev7WorkbookTest extends TestCase
         }
     }
 
-    /** `SERTIFIKAT!N21/S21` & `Q22` workbook Rev.7; `V23` (k) format `0` tetap. */
+    /** `SERTIFIKAT!N21/S21` & `Q22` workbook Rev.7 (PV per nominal); `V23` (k) format `0` tetap. */
     public function test_desimal_cetak_mengikuti_workbook(): void
     {
         $labu = new LabuUkurProfile;
@@ -283,6 +322,13 @@ class VolumetrikRev7WorkbookTest extends TestCase
         $this->assertSame(3, $pipet->desimalSertifikat());
         $this->assertSame(4, $pipet->desimalU95());
         $this->assertSame(0, $pipet->desimalFaktorCakupan());
+        // Per nominal — `SERTIFIKAT!N21/S21` keempat workbook PV.
+        $this->assertSame(3, $pipet->desimalSertifikatTitik(0.5));
+        $this->assertSame(2, $pipet->desimalSertifikatTitik(2.0));
+        $this->assertSame(3, $pipet->desimalSertifikatTitik(3.0));
+        $this->assertSame(4, $pipet->desimalSertifikatTitik(4.0));
+        $this->assertNull($pipet->desimalSertifikatTitik(1.0), 'nominal lain ikut desimalSertifikat() = 3');
+        $this->assertNull($labu->desimalSertifikatTitik(500.0));
 
         $picno = new PicnometerProfile;
         $this->assertSame(4, $picno->desimalSertifikat(), 'Picnometer tidak ikut Rev.7');

@@ -2,8 +2,6 @@
 
 namespace App\Services\Calibration\Profiles;
 
-use App\Services\Calibration\VolumetricGlasswareCalculator as V;
-
 /**
  * **Pipet Volume** — lampiran LK-285-IDN no. 20, keluarga Fixed.
  *
@@ -11,7 +9,7 @@ use App\Services\Calibration\VolumetricGlasswareCalculator as V;
  * sebenarnya Pipet Volume: `INPUT DATA!E6 = 5`, CMC `CMC_pipetvolume`) —
  * keputusan pemilik 8 Okt 2026, diadu di `tests/Unit/VolumetrikRev7WorkbookTest.php`.
  */
-class PipetVolumeProfile extends FixedVolumetricGlasswareProfile
+class PipetVolumeProfile extends FixedVolumetricGlasswareRev7Profile
 {
     public function kode(): string
     {
@@ -30,18 +28,36 @@ class PipetVolumeProfile extends FixedVolumetricGlasswareProfile
     }
 
     /**
-     * `SERTIFIKAT!E21/N21/S21` workbook Rev.7 PV 0,5 & PV 3: format `0.000`.
-     * Formatnya TIDAK seragam antar workbook (PV 2 `0.00`, PV 4 `0.0000`) —
-     * pertanyaan lab volumetric no. 21. U95 (`Q22`) `0.0000` di keempatnya,
-     * sama dengan bawaan keluarga Fixed.
+     * Desimal cetak per NOMINAL — `SERTIFIKAT!E21/N21/S21` keempat workbook
+     * Rev.7 (keputusan pemilik 8 Okt 2026: angka ikut workbook 100%).
+     *
+     * @var array<string, int>
+     */
+    public const DESIMAL_PER_NOMINAL = ['0.5' => 3, '2' => 2, '3' => 3, '4' => 4];
+
+    /**
+     * Nominal di luar keempat workbook: `0.000` (PV 0,5 & PV 3, format
+     * terbanyak). U95 (`Q22`) `0.0000` di keempatnya, sama dengan bawaan
+     * keluarga Fixed. Pertanyaan lab volumetric no. 21.
      */
     public function desimalSertifikat(): ?int
     {
         return 3;
     }
 
-    protected function parameterHitung(): array
+    /**
+     * PV 0,5 `0.000`, PV 2 `0.00`, PV 3 `0.000`, PV 4 `0.0000`. Hook per baris
+     * yang sama dibaca sertifikat (`CertificateSnapshotBuilder::hasil()`) dan
+     * layar HP (`CalibrationResource::petakanTitik()`), jadi keduanya sepakat.
+     */
+    public function desimalSertifikatTitik(float $titikUkur): ?int
     {
-        return V::parameterRev7();
+        foreach (self::DESIMAL_PER_NOMINAL as $nominal => $desimal) {
+            if (abs($titikUkur - (float) $nominal) < 1e-9) {
+                return $desimal;
+            }
+        }
+
+        return null;
     }
 }
