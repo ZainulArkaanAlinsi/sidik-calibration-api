@@ -25,12 +25,13 @@ use Tests\TestCase;
  *  - `ms`, `de` — cocok. Tabel standar dan rantai ABBA ditiru apa adanya.
  *  - keenam komponen budget, `uc`, `veff`, `k`, `U95` — cocok. Metodenya ditiru,
  *    termasuk yang dipertanyakan (pertanyaan lab §1, §18, §20).
- *  - `b_jalur_master_g` — cocok. Ini nilai master yang sengaja tetap dihitung
- *    supaya selisihnya bisa dibaca.
- *  - `b_g` — BEDA, dan bedanya ditegakkan: koreksi yang benar wajib lebih KECIL
- *    daripada yang diterbitkan master, dengan rasio yang persis sama dengan
- *    `ms_titik / ms_keping_pertama`. Master mengalikan dengan massa keping 100 g
- *    alih-alih massa keping yang sedang dihitung (pertanyaan lab §2).
+ *  - `b_g` dan `mT` — COCOK dengan master di setiap titik yang master hitung,
+ *    termasuk titik yang `b`-nya 0. Sejak 8 Okt 2026 koreksi apung meniru rumus
+ *    sel workbook persis (`AnakTimbanganCalculator::CARA_KOREKSI_APUNG`,
+ *    keputusan pemilik), walau dua rujukannya rusak (pertanyaan lab §2/§5).
+ *  - `b_oiml_g` — nilai OIML (massa keping sendiri) yang tetap dihitung untuk
+ *    jejak audit; arahnya tetap ditegakkan: lebih KECIL daripada master dengan
+ *    rasio persis `ms_titik / ms_keping_pertama` (pertanyaan lab §2).
  *
  * Tanpa penegakan arah itu, "test hijau" cuma berarti kodenya konsisten dengan
  * dirinya sendiri.
@@ -212,24 +213,20 @@ class AnakTimbanganMasterTest extends TestCase
         $diperiksa = 0;
 
         foreach ($hasil['titik'] as $t) {
-            $bMaster = $master[$t['titik_ke']]['b_g'];
+            $m = $master[$t['titik_ke']];
 
-            // Titik 2 & 3: master menerbitkan 0 karena rumusnya menunjuk sel
-            // kosong (pertanyaan lab §5), bukan karena jalur `ms` keping
-            // pertama. Yang diadu di sini cuma titik yang masternya menghitung.
-            if ($bMaster === null || $bMaster === 0.0) {
+            if ($m['b_g'] === null) {
                 continue;
             }
 
-            $this->assertCocok(
-                $bMaster,
-                $t['b_jalur_master_g'],
-                "titik {$t['titik_ke']} b jalur master",
-            );
+            // Termasuk titik 2 & 3 yang master terbitkan 0 (rujukan sel kosong,
+            // pertanyaan lab §5): yang DIPAKAI wajib sama persis dengan master.
+            $this->assertCocok($m['b_g'], $t['b_g'], "titik {$t['titik_ke']} b dipakai");
+            $this->assertCocok($m['mt_g'], $t['mt_g'], "titik {$t['titik_ke']} mT");
             $diperiksa++;
         }
 
-        $this->assertSame(12, $diperiksa, 'Dua belas titik masternya menghitung koreksi apung.');
+        $this->assertSame(14, $diperiksa, 'Keempat belas titik yang master hitung wajib sama persis.');
     }
 
     /** Inti perbaikan §2 — dan penegakan ARAHNYA, bukan cuma "berbeda". */
@@ -249,14 +246,14 @@ class AnakTimbanganMasterTest extends TestCase
 
             // Titik 1 memang keping 100 g itu sendiri, jadi kedua jalur berimpit.
             if ((float) $t['nominal_g'] === 100.0) {
-                $this->assertCocok($bMaster, $t['b_g'], 'titik 1 b (keping 100 g, jalurnya berimpit)');
+                $this->assertCocok($bMaster, $t['b_oiml_g'], 'titik 1 b (keping 100 g, jalurnya berimpit)');
 
                 continue;
             }
 
             $this->assertLessThan(
                 abs($bMaster),
-                abs($t['b_g']),
+                abs($t['b_oiml_g']),
                 "Titik {$t['titik_ke']}: koreksi apung yang benar wajib lebih kecil daripada "
                 .'jalur master yang mengalikan dengan massa keping 100 g.',
             );
@@ -264,7 +261,7 @@ class AnakTimbanganMasterTest extends TestCase
             // Rasionya = ms_titik / ms_keping_pertama, bukan angka sembarang.
             $this->assertCocok(
                 $t['ms_g'] / 100.000144,
-                $t['b_g'] / $bMaster,
+                $t['b_oiml_g'] / $bMaster,
                 "titik {$t['titik_ke']} rasio b benar : b master",
             );
             $diperiksa++;
