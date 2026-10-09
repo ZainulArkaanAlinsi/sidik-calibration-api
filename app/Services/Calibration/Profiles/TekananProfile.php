@@ -826,26 +826,30 @@ abstract class TekananProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
+            // Bernomor & berurutan seperti blok EQUIPMENT kertas 0507:
+            // 1. Name, 2. Range/Resolution ( ), 3. Type/Model,
+            // 4. Serial Number/LPI, 5. Merk/Manufacture.
             'judul' => 'Equipment',
             'field' => [
-                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('alat_model', 'Type/Model', 'teks'),
-                $this->field('alat_merk', 'Merk/Manufacture', 'teks'),
-                $this->field('alat_serial_number', 'Serial Number/LPI', 'teks'),
-                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.kapasitas', 'Kapasitas Maks (Range)', 'angka'),
-                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.resolusi', 'Resolusi', 'angka'),
+                $this->field('equipment_id', '1. Name', 'pilihan', sumber: 'master_alat'),
+                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.kapasitas', '2. Range/Resolution — Range', 'angka'),
+                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.resolusi', '2. Range/Resolution — Resolution', 'angka'),
                 // Satu satuan untuk setelan DAN bacaan standar — master
                 // (`G15 = Z6`, `M28 = G15`) tidak pernah membedakannya.
                 // Daftarnya per varian; yang tidak cocok dengan kalibrator
                 // yang dipilih ditolak [penghalangSesi] dengan alasan terbaca.
-                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.satuan', 'Satuan Tekanan', 'pilihan',
+                // Di kertas dia kurung "( )" di belakang Range/Resolution.
+                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.satuan', '2. Range/Resolution — satuan ( )', 'pilihan',
                     pilihan: array_values($satuan)),
+                $this->field('alat_model', '3. Type/Model', 'teks'),
+                $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
+                $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
                 $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.tampilan', 'Option of Resolution Display', 'pilihan',
                     pilihan: [
                         ['nilai' => M::TAMPILAN_DIGITAL, 'label' => 'Digital'],
                         ['nilai' => M::TAMPILAN_ANALOG, 'label' => 'Analog (rasio jarum/NST)'],
                     ]),
-                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.rasio_jarum', 'Rasio jarum/NST', 'pilihan',
+                $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.rasio_jarum', 'Analog (rasio jarum/NST)', 'pilihan',
                     pilihan: M::RASIO_JARUM,
                     ekstra: ['mempengaruhi_ketidakpastian' => true]),
             ],
@@ -860,8 +864,8 @@ abstract class TekananProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Owner',
             'field' => [
-                $this->field('pemilik_nama', 'Name', 'teks'),
-                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
+                $this->field('pemilik_nama', '1. Name', 'teks'),
+                $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
                 $this->field('suhu_awal', 'Environment Cond. — First (°C)', 'angka', satuan: '°C'),
                 $this->field('suhu_akhir', 'Environment Cond. — End (°C)', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Environment Cond. — First (%RH)', 'angka', satuan: '%RH'),
@@ -887,12 +891,15 @@ abstract class TekananProfile extends CalibrationProfile
     protected function bagianStandar(): array
     {
         $field = [
+            // Pemilih kalibrator TIDAK ada di kertas 0507 (kertasnya cuma
+            // daftar standar). Tetap di blok Standard karena dia yang
+            // menentukan tabel koreksi & satuan sah — ditandai, bukan dipindah.
             $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.varian', 'Kalibrator (master olah data)', 'pilihan',
                 pilihan: array_map(
                     static fn (string $v): array => ['nilai' => $v, 'label' => self::labelVarian($v)],
                     $this->varianDiizinkan(),
                 ),
-                ekstra: ['mempengaruhi_ketidakpastian' => true]),
+                ekstra: ['mempengaruhi_ketidakpastian' => true, 'di_luar_kertas' => true]),
         ];
 
         if (in_array(Tabel::SPMK, $this->varianDiizinkan(), true)) {
@@ -901,7 +908,7 @@ abstract class TekananProfile extends CalibrationProfile
                     static fn (array $m): array => ['nilai' => (string) $m['nomor'], 'label' => (string) $m['media']],
                     Tabel::daftarMedia(Tabel::SPMK),
                 ),
-                ekstra: ['mempengaruhi_ketidakpastian' => true]);
+                ekstra: ['mempengaruhi_ketidakpastian' => true, 'di_luar_kertas' => true]);
             $field[] = $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.tinggi_standar', 'Standard Pressure Height (m)', 'angka', satuan: 'm');
             $field[] = $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.tinggi_uut', 'UUT Pressure Height (m)', 'angka', satuan: 'm');
             $field[] = $this->field('spesifikasi_alat.'.M::KUNCI_SESI.'.beda_tinggi', 'Deviation Height (h) (m)', 'angka', satuan: 'm',
@@ -937,7 +944,8 @@ abstract class TekananProfile extends CalibrationProfile
             'grup' => $peran,
             'offset_kunci' => $offset,
             'judul' => $judul,
-            'judul_nilai' => 'UUT Setting',
+            // Kepala kertas: "UUT ( )" di kiri, "Standard Reading ( )" UP/DOWN 1-3.
+            'judul_nilai' => 'UUT',
             'judul_pengulangan' => 'Pengulangan ke',
             'titik_bisa_diubah' => false,
             'simpan_ke' => 'measurements[].'.$peran,
@@ -951,7 +959,7 @@ abstract class TekananProfile extends CalibrationProfile
         return [
             'kode' => 'hasil',
             'halaman' => 2,
-            'judul' => 'Pressure Calibration',
+            'judul' => '2. Pressure Calibration',
             // Tampilan saja: satu kartu per set point, UP & DOWN berdampingan
             // di layar lebar — kertas 0507 satu baris `UUT | UP 1-3 | DOWN
             // 1-3`, bukan dua tabel yang digulir naik-turun (6 Okt 2026).
@@ -960,8 +968,8 @@ abstract class TekananProfile extends CalibrationProfile
             'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
-                $tabel(M::PERAN_UP, 1000, 'UP (tekanan dinaikkan)'),
-                $tabel(M::PERAN_DOWN, 2000, 'DOWN (tekanan diturunkan)'),
+                $tabel(M::PERAN_UP, 1000, 'UP'),
+                $tabel(M::PERAN_DOWN, 2000, 'DOWN'),
             ],
         ];
     }

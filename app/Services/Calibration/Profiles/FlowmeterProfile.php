@@ -107,6 +107,12 @@ abstract class FlowmeterProfile extends CalibrationProfile
     public const PENGULANGAN = 3;
 
     /**
+     * Kepala kolom durasi seperti TERCETAK di kertas 0538 & 0538.A
+     * (`20"  40"  60"`). Cuma tulisan; kodenya tetap `durasi_1..3`.
+     */
+    public const LABEL_DURASI = ['20"', '40"', '60"'];
+
+    /**
      * Tiga titik ukur, dan `titik_bisa_diubah = true`.
      *
      * Beda dari Height Gauge yang nominalnya dipatok Instruksi Kerja: di sini
@@ -1068,6 +1074,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 $this->bagianStandard(),
                 $this->bagianPipa(),
                 $this->bagianDataKalibrasi($flowrate),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -1086,19 +1093,61 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
+            // Urutan & tulisan kertas FM-0538 / 0538.A / 0538.B: IDENTITAS
+            // ALAT (Nama Alat, Range/Capacity, Resolusi, Type/Model, Serial
+            // Number, Merk/Manufacture, Tanggal Terima, Tanggal Kalibrasi),
+            // lalu KONDISI LINGKUNGAN PENGERJAAN (suhu & RH, Thermohygro
+            // used, Lokasi & Metode Kalibrasi), lalu isian pipa kertas UFM.
+            // Rentang Ukur tidak tercetak — pindah ke [bagianDiLuarKertas].
             'judul' => 'Identitas Alat',
             'field' => [
                 $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
-                $this->field('alat_merk', 'Merk', 'teks'),
-                $this->field('alat_model', 'Type', 'teks'),
-                $this->field('alat_serial_number', 'No. Seri', 'teks'),
                 // Mode dikunci ke profilnya, tapi tetap DIKIRIM: `blokSesi()`
                 // balik null tanpa dia, dan jalur hitung ulang membaca blok itu
-                // apa adanya tanpa tahu profil mana yang memanggilnya.
+                // apa adanya tanpa tahu profil mana yang memanggilnya. Tidak
+                // tercetak di kertas — ditandai, bukan dipindah, karena
+                // `catatan_pengisian` menyuruh mengisinya lebih dulu.
                 $this->field(
                     'spesifikasi_alat.flowmeter.mode', 'Mode', 'pilihan',
                     pilihan: [['nilai' => $this->mode(), 'label' => $flowrate ? 'Flowrate' : 'Totalizer']],
+                    ekstra: ['di_luar_kertas' => true],
+                ),
+                $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
+                // Kurung "( )" di belakang Range/Capacity & Resolusi kertas.
+                $this->field(
+                    'spesifikasi_alat.flowmeter.satuan', 'Satuan ( ) — Range/Capacity & Resolusi', 'pilihan',
+                    pilihan: array_map(
+                        static fn (string $s): array => ['nilai' => $s, 'label' => $s],
+                        $satuan,
+                    ),
+                ),
+                $this->field('spesifikasi_alat.flowmeter.kapasitas', 'Range/Capacity', 'angka', satuan: $this->satuanHasil()),
+                $this->field('spesifikasi_alat.flowmeter.resolusi', 'Resolusi', 'angka', satuan: $this->satuanHasil()),
+                $this->field('alat_model', 'Type/Model', 'teks'),
+                $this->field('alat_serial_number', 'Serial Number', 'teks'),
+                $this->field('alat_merk', 'Merk/Manufacture', 'teks'),
+                $this->field('tanggal_terima', 'Tanggal Terima', 'tanggal'),
+                $this->field('tanggal_kalibrasi', 'Tanggal Kalibrasi', 'tanggal'),
+                $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
+                $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
+                $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
+                $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+                $this->field('thermohygro_standard_id', 'Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
+                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                    ['nilai' => 'lab', 'label' => 'Inlab'],
+                    ['nilai' => 'onsite', 'label' => 'Insitu'],
+                ]),
+                // Dua kotak lokasi yang saling meniadakan — tanpa `tampil_kalau`,
+                // dropdown Ruangan tetap menyimpan pilihan lama walau sedang
+                // Insitu, dan sertifikatnya mencetak nama ruang lab yang tidak
+                // pernah didatangi.
+                $this->field(
+                    'room_id', 'Ruangan (Inlab)', 'pilihan',
+                    sumber: 'master_ruangan', tampilKalau: self::TAMPIL_KALAU_INLAB,
+                ),
+                $this->field(
+                    'lokasi_nama', 'Nama Tempat (Insitu)', 'teks',
+                    tampilKalau: self::TAMPIL_KALAU_INSITU,
                 ),
                 // VARIAN METODE — kotak yang MENENTUKAN ANGKA, dan yang paling
                 // gampang dilewati karena bawaannya sudah benar. Gravimetri
@@ -1137,22 +1186,12 @@ abstract class FlowmeterProfile extends CalibrationProfile
                         'nilai' => [VarianMetodeFlowmeter::GRAVIMETRI->value],
                     ],
                 ),
-                $this->field(
-                    'spesifikasi_alat.flowmeter.satuan', 'Satuan Alat', 'pilihan',
-                    pilihan: array_map(
-                        static fn (string $s): array => ['nilai' => $s, 'label' => $s],
-                        $satuan,
-                    ),
-                ),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks'),
-                $this->field('spesifikasi_alat.flowmeter.kapasitas', 'Kapasitas Max.', 'angka', satuan: $this->satuanHasil()),
-                $this->field('spesifikasi_alat.flowmeter.resolusi', 'Resolusi Alat', 'angka', satuan: $this->satuanHasil()),
                 // Empat kolom kertas yang TIDAK masuk budget — lihat docblock
                 // kelas. Dicatat & dicetak, bukan dihitung.
                 $this->field('spesifikasi_alat.flowmeter.material_pipa', 'Material Pipa', 'teks'),
                 $this->field('spesifikasi_alat.flowmeter.jenis_fluida', 'Jenis Fluida', 'teks'),
                 $this->field(
-                    'spesifikasi_alat.flowmeter.path_configuration', 'Path Configuration', 'pilihan',
+                    'spesifikasi_alat.flowmeter.path_configuration', 'Path Configuration (Sensor Mounting Method)', 'pilihan',
                     pilihan: array_map(
                         static fn (string $p): array => ['nilai' => $p, 'label' => $p.'-Method'],
                         FlowmeterMentah::PATH_CONFIGURATION,
@@ -1160,29 +1199,6 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ),
                 $this->field('spesifikasi_alat.flowmeter.liner_material', 'Liner — Material', 'teks'),
                 $this->field('spesifikasi_alat.flowmeter.liner_ketebalan_mm', 'Liner — Ketebalan', 'angka', satuan: 'mm'),
-                $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
-                $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
-                $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
-                $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
-                $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
-                    ['nilai' => 'lab', 'label' => 'Inlab'],
-                    ['nilai' => 'onsite', 'label' => 'Insitu'],
-                ]),
-                // Dua kotak lokasi yang saling meniadakan — tanpa `tampil_kalau`,
-                // dropdown Ruangan tetap menyimpan pilihan lama walau sedang
-                // Insitu, dan sertifikatnya mencetak nama ruang lab yang tidak
-                // pernah didatangi.
-                $this->field(
-                    'room_id', 'Ruangan (Inlab)', 'pilihan',
-                    sumber: 'master_ruangan', tampilKalau: self::TAMPIL_KALAU_INLAB,
-                ),
-                $this->field(
-                    'lokasi_nama', 'Nama Tempat (Insitu)', 'teks',
-                    tampilKalau: self::TAMPIL_KALAU_INSITU,
-                ),
-                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
             ],
         ];
     }
@@ -1193,11 +1209,39 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return [
             'kode' => 'pemilik',
             'halaman' => 1,
-            'judul' => 'Data Customer',
+            'judul' => 'Identitas Customer',
             'field' => [
-                $this->field('pemilik_nama', 'Nama Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', 'Nama', 'teks'),
+                $this->field('pemilik_alamat', 'Alamat', 'teks_panjang'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": isian yang tidak tercetak di FM-0538/.A/.B tapi
+     * dipakai olah data/sertifikat. Tidak disembunyikan; kodenya sama persis
+     * dengan sebelum dipindah (9 Okt 2026).
+     *
+     * Tabel Densitas Fluida UUT SENGAJA tidak ikut dipindah walau tidak
+     * tercetak: titik tabel-tabel bagian `hasil` diatur bersama per BAGIAN di
+     * HP (`titik_bisa_diubah`), jadi tabel yang dipisah bagiannya bisa
+     * kehilangan baris set point tambahan. Dia ditandai di tempat.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas — dipakai hitung',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0538, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks', ekstra: $luar),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
             ],
         ];
     }
@@ -1208,7 +1252,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            'judul' => 'Standard',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -1234,13 +1278,15 @@ abstract class FlowmeterProfile extends CalibrationProfile
         return [
             'kode' => 'pipa',
             'halaman' => 1,
-            'judul' => 'Geometri Pipa',
+            // Kertas UFM 0538: "Diameter pipa (mm) X1 X2 X3" dan "Ketebalan
+            // pipa (mm) X1 X2 X3".
+            'judul' => 'Diameter & Ketebalan pipa',
             'field' => [],
             'tabel' => [
                 [
                     'tahap' => 'sesudah_adjustment',
                     'grup' => 'pipa_diameter',
-                    'judul' => 'Diameter Luar Pipa (Digital Caliper)',
+                    'judul' => 'Diameter pipa (mm)',
                     'satuan' => 'mm',
                     'judul_nilai' => 'Diameter Luar',
                     'judul_pengulangan' => 'Pembacaan',
@@ -1264,7 +1310,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 [
                     'tahap' => 'sesudah_adjustment',
                     'grup' => 'pipa_ketebalan',
-                    'judul' => 'Ketebalan Dinding Pipa (Ultrasonic Thickness Gauge)',
+                    'judul' => 'Ketebalan pipa (mm)',
                     'satuan' => 'mm',
                     'judul_nilai' => 'Ketebalan',
                     'judul_pengulangan' => 'Pembacaan',
@@ -1295,7 +1341,8 @@ abstract class FlowmeterProfile extends CalibrationProfile
             static fn (int $n): array => [
                 'nomor' => $n,
                 'titik_ukur' => null,
-                'label' => 'Titik '.$n,
+                // Tulisan kertas: "Set Point 1/2/3".
+                'label' => 'Set Point '.$n,
                 'satuan' => $satuan,
             ],
             range(1, self::TITIK),
@@ -1310,7 +1357,9 @@ abstract class FlowmeterProfile extends CalibrationProfile
             ? array_map(
                 static fn (int $d): array => [
                     'kode' => 'durasi_'.$d,
-                    'label' => 'Durasi '.$d,
+                    // Kepala kolom kertas 0538/0538.A: 20" 40" 60". Kodenya
+                    // tetap durasi_1..3 — yang berubah cuma tulisannya.
+                    'label' => self::LABEL_DURASI[$d - 1] ?? 'Durasi '.$d,
                     'tipe' => 'angka',
                     'satuan' => $satuan,
                 ],
@@ -1326,8 +1375,8 @@ abstract class FlowmeterProfile extends CalibrationProfile
             'grup' => $grup,
             'judul' => $judul,
             'satuan' => $satuanKolom,
-            'judul_nilai' => 'Titik',
-            'judul_pengulangan' => 'Pembacaan',
+            'judul_nilai' => 'Set Point',
+            'judul_pengulangan' => 'Repeat',
             'titik_bisa_diubah' => true,
             'pita_cetak' => $pita,
             'offset_kunci' => $offset,
@@ -1367,10 +1416,10 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 [
                     'tahap' => 'sesudah_adjustment',
                     'grup' => FlowmeterMentah::PERAN_UUT,
-                    'judul' => 'Pembacaan UUT',
+                    'judul' => 'Reading of UUT',
                     'satuan' => $satuan,
-                    'judul_nilai' => 'Titik',
-                    'judul_pengulangan' => 'Ulangan',
+                    'judul_nilai' => 'Set Point',
+                    'judul_pengulangan' => 'Repeat',
                     'titik_bisa_diubah' => true,
                     // Pita SENDIRI: pada mode flowrate tabel ini tiga kolom
                     // durasi kali tiga ulangan — paling lebar di lembar ini,
@@ -1401,7 +1450,7 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 ],
                 // --- varian UFM ---------------------------------------------
                 $this->hanyaVarian($tabelSederhana(
-                    FlowmeterMentah::PERAN_STD, 'Pembacaan Standar (Krohne UFC300)',
+                    FlowmeterMentah::PERAN_STD, 'Standard Reading',
                     self::OFFSET_STD, $satuan, self::PENGULANGAN, 3,
                 ), VarianMetodeFlowmeter::UFM),
                 // --- varian GRAVIMETRI (ISO 4185) ----------------------------
@@ -1424,11 +1473,11 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 // Ketiganya berdampingan di satu pita: dua tabel suhu bentuknya
                 // kembar, dan densitas cuma satu kolom.
                 $tabelSederhana(
-                    FlowmeterMentah::PERAN_SUHU_AWAL, 'Suhu Air — awal',
+                    FlowmeterMentah::PERAN_SUHU_AWAL, 'Temperature Awal',
                     self::OFFSET_SUHU_AWAL, '°C', self::PENGULANGAN, 4,
                 ),
                 $tabelSederhana(
-                    FlowmeterMentah::PERAN_SUHU_AKHIR, 'Suhu Air — akhir',
+                    FlowmeterMentah::PERAN_SUHU_AKHIR, 'Temperature Akhir',
                     self::OFFSET_SUHU_AKHIR, '°C', self::PENGULANGAN, 4,
                 ),
                 // Densitas SATU nilai per titik — dia sifat fluida, bukan
@@ -1439,13 +1488,15 @@ abstract class FlowmeterProfile extends CalibrationProfile
                 // titik suhu), bukan diketik teknisi. Kotak yang tetap muncul
                 // di situ akan diisi orang, dan angkanya tidak akan dibaca
                 // siapa pun.
-                $this->hanyaVarian($tabelSederhana(
+                // Tidak tercetak di kertas 0538 — ditandai di tempat, lihat
+                // [bagianDiLuarKertas] kenapa tidak dipindah.
+                [...$this->hanyaVarian($tabelSederhana(
                     FlowmeterMentah::PERAN_DENSITAS,
                     'Densitas Fluida UUT (wajib kalau satuan berbasis massa)',
                     self::OFFSET_DENSITAS, 'kg/L', 1, 4,
-                ), VarianMetodeFlowmeter::UFM),
+                ), VarianMetodeFlowmeter::UFM), 'di_luar_kertas' => true],
                 ...($flowrate ? [$this->hanyaVarian($tabelSederhana(
-                    FlowmeterMentah::PERAN_WAKTU, 'Durasi Penimbangan',
+                    FlowmeterMentah::PERAN_WAKTU, 'Time',
                     self::OFFSET_WAKTU, 'menit', self::PENGULANGAN, 4,
                 ), VarianMetodeFlowmeter::GRAVIMETRI)] : []),
             ],

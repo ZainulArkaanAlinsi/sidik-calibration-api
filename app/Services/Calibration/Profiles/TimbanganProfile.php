@@ -1031,7 +1031,9 @@ class TimbanganProfile extends CalibrationProfile
             [
                 'kode' => 'identitas_alat',
                 'halaman' => 1,
-                'judul' => 'IDENTITAS ALAT',
+                // Kertas 0508 Rev.6 / 0508.A Rev.4: "EQUIPMENT IDENTITY AND
+                // CUSTOMER DATA" → blok EQUIPMENT.
+                'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA — EQUIPMENT',
                 'field' => [
                     $this->f('tanggal_terima', 'Received Date', 'tanggal'),
                     $this->f('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
@@ -1040,61 +1042,68 @@ class TimbanganProfile extends CalibrationProfile
                     // 1 Name, 2 Capacity, 3 Resolution, 4 Nilai e dan kelas,
                     // 5 Type/Model, 6 Serial Number, 7 Merk. Nomor yang tidak
                     // sejajar kertas membuat teknisi mengisi kotak yang salah.
-                    $this->f('equipment.nama_alat', '1. Nama Alat', 'teks', sumber: 'otomatis'),
-                    $this->f('spesifikasi_alat.kapasitas', '2. Kapasitas Alat', 'angka'),
-                    // Tidak bernomor: kertasnya tidak punya baris Rentang Ukur.
-                    $this->f('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka'),
-                    $this->f('spesifikasi_alat.resolusi', '3. Resolusi Alat', 'angka'),
+                    $this->f('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
+                    $this->f('spesifikasi_alat.kapasitas', '2. Capacity', 'angka'),
+                    $this->f('spesifikasi_alat.resolusi', '3. Resolution', 'angka'),
                     // `e` & kelas menentukan MPE (SNSU PK.M-02:2021) yang
                     // dicetak di sertifikat. Boleh "-" kalau alatnya memang
                     // tidak punya — master menyediakan kotaknya begitu.
-                    $this->f('spesifikasi_alat.nilai_e', '4. Nilai e (boleh "-")', 'teks'),
-                    $this->f('spesifikasi_alat.kelas', '4. Kelas (I / II / III / IIII, boleh "-")', 'teks'),
+                    $this->f('spesifikasi_alat.nilai_e', '4. Nilai e dan kelas — e = (boleh "-")', 'teks'),
+                    $this->f('spesifikasi_alat.kelas', '4. Nilai e dan kelas — Kelas = (I / II / III / IIII, boleh "-")', 'teks'),
                     $this->f('alat_model', '5. Type/Model', 'teks'),
                     $this->f('alat_serial_number', '6. Serial Number', 'teks'),
-                    $this->f('alat_merk', '7. Merk/Manufacture', 'teks'),
-                    $this->f('tipe_display', 'Tipe Display', 'pilihan', pilihan: [
+                    $this->f('alat_merk', '7. Merk/Manufacturing', 'teks'),
+                    // Lima isian di bawah TIDAK ada di kertas 0508/0508.A, tapi
+                    // dipakai olah data (pilih tabel anak timbangan, varian
+                    // master, MPE). Ditandai `di_luar_kertas` dan ditaruh
+                    // sesudah nomor 1–7 — tidak dihapus, kodenya tetap.
+                    // Rentang Ukur dulu terselip di antara nomor 2 dan 3.
+                    [...$this->f('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka'), 'di_luar_kertas' => true],
+                    [...$this->f('tipe_display', 'Tipe Display', 'pilihan', pilihan: [
                         ['nilai' => 'Digital', 'label' => 'Digital'],
                         ['nilai' => 'Mekanik', 'label' => 'Mekanik'],
-                    ]),
+                    ]), 'di_luar_kertas' => true],
                     // Yang MEMILIH tabel anak timbangan (E2 vs F1) — bukan
                     // satuannya, bukan nominalnya. Salah pilih di sini bikin
                     // koreksi meleset di digit yang justru dilaporkan.
-                    $this->f('tipe_timbangan', 'Tipe Timbangan', 'pilihan', pilihan: [
+                    [...$this->f('tipe_timbangan', 'Tipe Timbangan', 'pilihan', pilihan: [
                         ['nilai' => TabelStandarTimbangan::NON_ANALYTICAL, 'label' => 'Non-Analytical'],
                         ['nilai' => TabelStandarTimbangan::ANALYTICAL, 'label' => 'Analytical'],
-                    ]),
-                    $this->f('jenis_timbangan', 'Jenis Timbangan', 'pilihan', pilihan: [
+                    ]), 'di_luar_kertas' => true],
+                    [...$this->f('jenis_timbangan', 'Jenis Timbangan', 'pilihan', pilihan: [
                         ['nilai' => 'tak_bertingkat', 'label' => 'Tak Bertingkat'],
                         ['nilai' => 'bertingkat_analog', 'label' => 'Bertingkat, tanpa alat penunjuk tambahan (analog)'],
                         ['nilai' => 'bertingkat_digital', 'label' => 'Bertingkat, dengan alat penunjuk tambahan (digital)'],
-                    ]),
-                    $this->f('varian_master', 'Metode Pembebanan', 'pilihan', pilihan: [
+                    ]), 'di_luar_kertas' => true],
+                    [...$this->f('varian_master', 'Metode Pembebanan', 'pilihan', pilihan: [
                         ['nilai' => VarianMasterTimbangan::KG, 'label' => 'Langsung (kg)'],
                         ['nilai' => VarianMasterTimbangan::GRAM, 'label' => 'Langsung (gram)'],
                         ['nilai' => VarianMasterTimbangan::SUBSTITUSI, 'label' => 'Beban substitusi (kapasitas besar)'],
-                    ]),
+                    ]), 'di_luar_kertas' => true],
                 ],
             ],
             [
                 'kode' => 'pemilik',
                 'halaman' => 1,
-                'judul' => 'IDENTITAS CUSTOMER',
+                // Blok OWNER kertas, ditambah Calibration Location/Metode dan
+                // ENVIRONMENT COND. + THERMOHYGRO yang di kertasnya berdiri
+                // di sebelahnya.
+                'judul' => 'OWNER',
                 'field' => [
-                    $this->f('pemilik_nama', '1. Nama Customer', 'teks'),
-                    $this->f('pemilik_alamat', '2. Alamat Customer', 'teks_panjang'),
-                    $this->f('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                    $this->f('pemilik_nama', '1. Name', 'teks'),
+                    $this->f('pemilik_alamat', '2. Address', 'teks_panjang'),
+                    $this->f('lokasi', 'Calibration Location', 'pilihan', pilihan: [
                         ['nilai' => 'lab', 'label' => 'Inlab'],
                         ['nilai' => 'onsite', 'label' => 'Insitu'],
                     ]),
                     $this->f('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
                     $this->f('room_id', 'Ruangan (Inlab)', 'pilihan', sumber: 'master_ruangan', tampilKalau: self::TAMPIL_KALAU_INLAB),
-                    $this->f('calibration_method_id', 'Calibration Method', 'pilihan', sumber: 'master_metode'),
+                    $this->f('calibration_method_id', 'Calibration Metode', 'pilihan', sumber: 'master_metode'),
                     $this->f('suhu_awal', 'Suhu Ruangan — Awal', 'angka', satuan: '°C'),
                     $this->f('suhu_akhir', 'Suhu Ruangan — Akhir', 'angka', satuan: '°C'),
                     $this->f('kelembaban_awal', 'Kelembaban — Awal', 'angka', satuan: '%RH'),
                     $this->f('kelembaban_akhir', 'Kelembaban — Akhir', 'angka', satuan: '%RH'),
-                    $this->f('thermohygro_standard_id', 'Thermohygro Used', 'pilihan', sumber: 'master_thermohygro'),
+                    $this->f('thermohygro_standard_id', 'THERMOHYGRO', 'pilihan', sumber: 'master_thermohygro'),
                 ],
             ],
         ];
@@ -1106,7 +1115,7 @@ class TimbanganProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'STANDAR ANAK TIMBANGAN',
+            'judul' => 'STANDARD',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->f('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -1200,6 +1209,7 @@ class TimbanganProfile extends CalibrationProfile
         return [
             'kode' => 'scale_observation',
             'halaman' => 1,
+            // Kertas menulis "SCALL" — salah ketik, tidak disalin.
             'judul' => '1. SCALE OBSERVATION',
             // TIDAK ada `baris` di sini. Kunci itu di HP berarti "baris tabel
             // STANDARD yang tercetak" (`BagianLembarKerja.baris`), dan
@@ -1208,8 +1218,8 @@ class TimbanganProfile extends CalibrationProfile
             // kotak (`…scale_observation.sebelum_adjustment.z1`), yang lebih
             // baik: tidak ada urutan yang perlu ditebak dua sisi.
             'field' => [
-                ...$this->fieldScaleObservation('sebelum_adjustment', 'Before'),
-                ...$this->fieldScaleObservation('sesudah_adjustment', 'After'),
+                ...$this->fieldScaleObservation('sebelum_adjustment', 'Before Adjustment'),
+                ...$this->fieldScaleObservation('sesudah_adjustment', 'After Adjustment'),
                 // "Standar deviasi yang lalu (SD)" — kotak paling bawah blok
                 // ini di kertas.
                 //
@@ -1225,7 +1235,7 @@ class TimbanganProfile extends CalibrationProfile
                 // itu perubahan metode, bukan penambahan kolom.
                 $this->f(
                     'spesifikasi_alat.scale_observation.sd_tahun_lalu',
-                    'Standar deviasi tahun lalu (s)',
+                    'Standar deviasi yang lalu (SD)',
                     'angka',
                 ),
             ],
@@ -1259,12 +1269,15 @@ class TimbanganProfile extends CalibrationProfile
      */
     private function fieldScaleObservation(string $tahap, string $label): array
     {
+        // Tulisan kertas: baris After memakai tanda aksen (z'1, m'1, m'2,
+        // z'2). Kode kotaknya TETAP z1/m1/m2/z2 di kedua tahap.
+        $aksen = $tahap === 'sesudah_adjustment' ? "'" : '';
         $kotak = [
-            'standar' => 'Standar Weight',
-            'z1' => 'z1',
-            'm1' => 'm1',
-            'm2' => 'm2',
-            'z2' => 'z2',
+            'standar' => 'Standard Weight',
+            'z1' => "z{$aksen}1",
+            'm1' => "m{$aksen}1",
+            'm2' => "m{$aksen}2",
+            'z2' => "z{$aksen}2",
         ];
 
         return array_values(array_map(
@@ -1288,14 +1301,14 @@ class TimbanganProfile extends CalibrationProfile
             'field' => [
                 // Awalan `spesifikasi_alat.` — lihat `fieldScaleObservation()`
                 // soal kenapa kode bertitik tanpa awalan itu read-only di HP.
-                $this->f('spesifikasi_alat.effect_of_tare.standar', 'Standar Weight', 'angka'),
+                $this->f('spesifikasi_alat.effect_of_tare.standar', 'Standard Weight', 'angka'),
                 $this->f('spesifikasi_alat.effect_of_tare.m1', 'm1', 'angka'),
                 $this->f('spesifikasi_alat.effect_of_tare.m2', 'm2', 'angka'),
                 $this->f('spesifikasi_alat.effect_of_tare.bentuk_pan', 'Bentuk Pan', 'pilihan', pilihan: [
                     ['nilai' => 'kotak', 'label' => 'Kotak'],
                     ['nilai' => 'lingkaran', 'label' => 'Lingkaran'],
                 ]),
-                $this->f('spesifikasi_alat.effect_of_tare.ukuran_pan', 'Ukuran / Diameter Pan', 'teks'),
+                $this->f('spesifikasi_alat.effect_of_tare.ukuran_pan', 'Diameter Pan', 'teks'),
             ],
         ];
     }
@@ -1715,7 +1728,9 @@ class TimbanganProfile extends CalibrationProfile
         return [
             'kode' => 'histeresis',
             'halaman' => 1,
-            'judul' => '6. HYSTERISIS',
+            // Kertas menulis "HYSTERISIS" — salah ketik, tidak disalin ke
+            // lembar. (Sertifikat tidak disentuh revisi tampilan ini.)
+            'judul' => '6. HYSTERESIS',
             'field' => [
                 $this->f('spesifikasi_alat.histeresis.m', 'M', 'angka'),
                 $this->f('spesifikasi_alat.histeresis.m_aksen', "M'", 'angka'),
@@ -1781,8 +1796,8 @@ class TimbanganProfile extends CalibrationProfile
             'judul' => 'Catatan & Tanda Tangan',
             'field' => [
                 $this->f('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                $this->f('teknisi.nama', 'Calculated by', 'teks', sumber: 'otomatis'),
-                $this->f('reviewer.nama', 'Signed by', 'teks', sumber: 'otomatis'),
+                $this->f('teknisi.nama', 'Calibrated By', 'teks', sumber: 'otomatis'),
+                $this->f('reviewer.nama', 'Checked By', 'teks', sumber: 'otomatis'),
             ],
         ];
     }

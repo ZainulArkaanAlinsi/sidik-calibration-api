@@ -752,14 +752,18 @@ class AnakTimbanganProfile extends CalibrationProfile
                 // tampil sebagai dua kolom terpisah (keluhan pemilik 6 Okt 2026).
                 $this->field('spesifikasi_alat.anak_timbangan.kapasitas_min_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN, ekstra: ['satuan_dari' => self::KUNCI_SATUAN]),
                 $this->field('spesifikasi_alat.anak_timbangan.kapasitas_g', 'Kapasitas Alat (dari – sampai)', 'angka', satuan: self::SATUAN, ekstra: ['satuan_dari' => self::KUNCI_SATUAN]),
-                $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
+                // Tulisan kertas 0541 Rev.0 (blok IDENTITAS CUSTOMER di kertas).
+                $this->field('tanggal_terima', 'Tanggal Terima', 'tanggal'),
+                $this->field('tanggal_kalibrasi', 'Tanggal Kalibrasi', 'tanggal'),
                 // Neraca TIDAK lagi dipilih di sini. Kertas memilihnya lewat
                 // centang "Standard yang Digunakan"; dropdown kedua di sini dulu
                 // tidak terhubung ke centang itu, jadi teknisi bisa mencentang
                 // satu neraca sementara hitungan memakai yang lain.
                 // `CalibrationRequest::neracaDariCentang()` yang mengisinya.
-                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
+                // Kertas cuma punya "TH Used" (di bawah). Pemilih standar
+                // thermohygro ini tidak tercetak tapi dipakai koreksi suhu &
+                // kelembaban — ditandai, tidak dipindah (AT acuan, 9 Okt 2026).
+                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro', ekstra: ['di_luar_kertas' => true]),
                 $this->field(
                     'spesifikasi_alat.anak_timbangan.meter_lingkungan', 'TH Used', 'pilihan',
                     pilihan: array_map(
@@ -769,11 +773,13 @@ class AnakTimbanganProfile extends CalibrationProfile
                 ),
                 $this->field('spesifikasi_alat.anak_timbangan.suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
                 $this->field('spesifikasi_alat.anak_timbangan.suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
-                $this->field('spesifikasi_alat.anak_timbangan.kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
-                $this->field('spesifikasi_alat.anak_timbangan.kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+                $this->field('spesifikasi_alat.anak_timbangan.kelembaban_awal', 'Kelembaban — awal', 'angka', satuan: '%RH'),
+                $this->field('spesifikasi_alat.anak_timbangan.kelembaban_akhir', 'Kelembaban — akhir', 'angka', satuan: '%RH'),
                 // Kertas Rev.0 belum punya kolom ini — lihat docblock kelas.
-                $this->field('spesifikasi_alat.anak_timbangan.tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa'),
-                $this->field('spesifikasi_alat.anak_timbangan.tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa'),
+                // Ditandai `di_luar_kertas`, tidak dipindah: koreksi apung
+                // memakainya dan blok AT tidak dirombak di W1.
+                $this->field('spesifikasi_alat.anak_timbangan.tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
+                $this->field('spesifikasi_alat.anak_timbangan.tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
                 $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
@@ -804,7 +810,8 @@ class AnakTimbanganProfile extends CalibrationProfile
             'field' => [
                 $this->field('pemilik_nama', 'Nama Customer', 'teks'),
                 $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                // Tidak ada di kertas 0541 — ditandai, tidak dipindah.
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: ['di_luar_kertas' => true]),
             ],
         ];
     }
@@ -815,7 +822,8 @@ class AnakTimbanganProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            // Tulisan kertas 0541: "STANDARD YANG DIGUNAKAN".
+            'judul' => 'Standard yang Digunakan',
             // Neraca dipilih DI SINI (centang), jadi batasnya ikut tertulis —
             // teknisi tidak perlu menebak neraca mana yang sanggup memikul
             // keping terbesarnya.
