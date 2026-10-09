@@ -299,9 +299,12 @@ class LembarKerjaTemplate
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
                         $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
                     ],
-                    // Kartu per larutan (Before & After bertumpuk, Repeat 1..5
-                    // menurun di tiap kartu) + tombol pindah ke tabel. Cuma
-                    // tampilan HP — kotak & payload tetap milik `tabel`.
+                    // SENGAJA tanpa `tampilan: kartu_per_set_point` (tabel tetap
+                    // tampilan awal): kartu HP belum punya pemilih/centang
+                    // buffer per titik (`titikBisaDiisi`/`eksklusif_dengan`),
+                    // padahal kartu jadi tampilan AWAL — teknisi yang perlu
+                    // mengganti buffer per titik tidak menemukannya (tinjauan
+                    // W1 9 Okt 2026 temuan 3).
                     //
                     // `sumbu_pengulangan: 'baris'` (Repeat turun seperti kertas)
                     // SENGAJA belum dipasang: kunci itu ikut dibaca
@@ -309,9 +312,6 @@ class LembarKerjaTemplate
                     // cetak OCR v1 (`ph_meter-v1.json`, kertas uji lapangan)
                     // kecetak di dalam grid — dibuktikan 3 test
                     // `CetakLembarKerjaOcrTest` merah, 9 Okt 2026.
-                    'tampilan' => 'kartu_per_set_point',
-                    'kartu_sejajar' => false,
-                    'nominal_berbintang' => false,
                 ],
                 [
                     'kode' => 'penutup',

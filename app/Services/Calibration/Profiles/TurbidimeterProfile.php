@@ -507,12 +507,14 @@ class TurbidimeterProfile extends CalibrationProfile
                         $this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading of UUT (NTU)'),
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading of UUT (NTU)'),
                     ],
-                    // Kartu per larutan + tombol pindah ke tabel — tampilan HP
-                    // saja. Repeat-turun (`sumbu_pengulangan`) belum dipasang:
-                    // kunci itu ikut menggambar lembar cetak OCR v1.
-                    'tampilan' => 'kartu_per_set_point',
-                    'kartu_sejajar' => false,
-                    'nominal_berbintang' => false,
+                    // SENGAJA tanpa `tampilan: kartu_per_set_point` (tabel tetap
+                    // tampilan awal): kartu HP belum punya pemilih/centang
+                    // standar per titik (`titikBisaDiisi`/`eksklusif_dengan`),
+                    // padahal kartu jadi tampilan AWAL — teknisi yang perlu
+                    // mengganti buffer per titik tidak menemukannya (tinjauan
+                    // W1 9 Okt 2026 temuan 3). Repeat-turun
+                    // (`sumbu_pengulangan`) juga belum: kunci itu ikut
+                    // menggambar lembar cetak OCR v1.
                 ],
                 [
                     'kode' => 'penutup',

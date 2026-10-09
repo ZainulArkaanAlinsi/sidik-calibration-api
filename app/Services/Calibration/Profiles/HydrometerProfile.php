@@ -1256,9 +1256,14 @@ class HydrometerProfile extends CalibrationProfile
                 $this->field('kelembaban_awal', 'Env. Condition — First (%RH)', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Env. Condition — End (%RH)', 'angka', satuan: '%RH'),
                 // Tekanan udara TIDAK tercetak di kertas Rev.2, tapi rantai
-                // hitungnya BUTUH (docblock kelas & pertanyaan §9) — pindah ke
-                // blok "Di luar kertas" dengan kode yang sama. Lihat
-                // [bagianDiLuarKertas].
+                // hitungnya BUTUH (docblock kelas & pertanyaan §9). DITANDAI di
+                // tempat, TIDAK dipindah ke blok "Di luar kertas": HP menggambar
+                // tekanan sebagai kolom ketiga tabel Env. Condition dan
+                // melewati kodenya di daftar field biasa — di bagian tanpa
+                // suhu/RH kotaknya tidak tergambar sama sekali (tinjauan W1
+                // 9 Okt 2026, dijaga LembarKerjaIkutKertasPenjagaHpTest).
+                $this->field('tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
+                $this->field('tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
                 $this->field('lokasi', 'Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
@@ -1295,9 +1300,12 @@ class HydrometerProfile extends CalibrationProfile
      * dipakai olah data/sertifikat. Tidak disembunyikan; kodenya sama persis
      * dengan sebelum dipindah (9 Okt 2026), jadi yang dikirim tidak berubah.
      *
-     *  - Tekanan udara awal/akhir — tanpa itu densitas udara tidak bisa
-     *    dihitung (lihat `catatan_pengisian`).
      *  - Order Number — nomor order lab, tidak ada kotaknya di kertas.
+     *
+     * Tekanan udara awal/akhir juga tidak tercetak, tapi SENGAJA tetap di
+     * [bagianIdentitas] bersama suhu/RH (ditandai `di_luar_kertas`): HP
+     * menggambarnya sebagai kolom tabel Env. Condition, dan kotak kondisi
+     * lingkungan di bagian lain tidak tergambar sama sekali.
      *
      * @return array<string, mixed>
      */
@@ -1312,8 +1320,6 @@ class HydrometerProfile extends CalibrationProfile
             'di_luar_kertas' => true,
             'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0533, tapi dipakai olah data. Tetap diisi.',
             'field' => [
-                $this->field('tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa', ekstra: $luar),
-                $this->field('tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa', ekstra: $luar),
                 $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
             ],
         ];

@@ -1018,17 +1018,22 @@ abstract class GayaProfile extends CalibrationProfile
     }
 
     /**
-     * Blok "Standard Used" kertas — cuma daftar load cell tercetak.
+     * Blok "Standard Used" kertas — daftar load cell tercetak, plus data
+     * standar (kapasitas, resolusi, suhu sertifikat).
      *
-     * Dulu blok ini juga memuat data standar (kapasitas, resolusi, suhu
-     * sertifikat) dan tabel Preload. Keduanya TIDAK ada di kertas
-     * 0519/0520/0521, jadi pindah ke [bagianMisalignment] — blok "Di luar
-     * kertas". Kodenya tidak berubah, jadi yang dikirim & disimpan sama persis.
+     * Data standar TIDAK ada di kertas 0519/0520/0521, tapi tetap di blok ini
+     * dan cuma DITANDAI `di_luar_kertas` — tidak dipindah. Di sinilah teknisi
+     * mencarinya (sesudah mencentang load cell-nya), dan HP menjaga kolom-kolom
+     * ini tergambar di Standard Used (`kolom_usage_check_tergambar_test.dart`).
+     * Tabel Preload pindah ke [bagianMisalignment] — blok "Di luar kertas";
+     * kode tabelnya tidak berubah, jadi yang dikirim & disimpan sama persis.
      *
      * @return array<string, mixed>
      */
     protected function bagianStandarDanPreload(): array
     {
+        $luar = ['di_luar_kertas' => true];
+
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
@@ -1044,15 +1049,25 @@ abstract class GayaProfile extends CalibrationProfile
             'baris' => static::STANDARD_TERCETAK,
             // Load cell standar TIDAK ditanya lewat dropdown: dia lahir dari
             // baris yang dicentang di atas — lihat `kolomDariCentang()`.
-            'field' => [],
+            'field' => [
+                $this->field('spesifikasi_alat.gaya.kapasitas_standar', 'Kapasitas Standar (kN)', 'angka', ekstra: $luar),
+                $this->field('spesifikasi_alat.gaya.resolusi_standar', 'Resolusi Standar (kN)', 'angka', ekstra: $luar),
+                $this->field(
+                    'spesifikasi_alat.gaya.suhu_sertifikat_standar',
+                    'Suhu Sertifikat Standar (°C)',
+                    'angka',
+                    ekstra: $luar,
+                ),
+            ],
         ];
     }
 
     /**
-     * Blok "Di luar kertas": Preload, empat pengukuran misalignment, dan data
-     * load cell standar — tidak ada di kertas 0519/0520/0521, tapi dipakai
-     * olah data. Ditaruh sesudah Data Result supaya bagian yang tercetak bisa
-     * diadu baris-per-baris dengan kertasnya; TIDAK disembunyikan.
+     * Blok "Di luar kertas": Preload dan empat pengukuran misalignment — tidak
+     * ada di kertas 0519/0520/0521, tapi dipakai olah data. Data load cell
+     * standar ditandai di tempat, di [bagianStandarDanPreload]. Ditaruh
+     * sesudah Data Result supaya bagian yang tercetak bisa diadu
+     * baris-per-baris dengan kertasnya; TIDAK disembunyikan.
      *
      * Kode bagiannya tetap `misalignment` dan kode tiap isian/tabelnya tidak
      * berubah — yang pindah cuma letak gambarnya (9 Okt 2026).
@@ -1075,18 +1090,10 @@ abstract class GayaProfile extends CalibrationProfile
         return [
             'kode' => 'misalignment',
             'halaman' => 2,
-            'judul' => 'Di luar kertas — Preload, Misalignment & data standar',
+            'judul' => 'Di luar kertas — Preload & Misalignment',
             'di_luar_kertas' => true,
             'catatan' => 'Tidak ada di formulir kertas, tapi dipakai olah data. Tetap diisi.',
             'field' => [
-                $this->field('spesifikasi_alat.gaya.kapasitas_standar', 'Kapasitas Standar (kN)', 'angka', ekstra: $luar),
-                $this->field('spesifikasi_alat.gaya.resolusi_standar', 'Resolusi Standar (kN)', 'angka', ekstra: $luar),
-                $this->field(
-                    'spesifikasi_alat.gaya.suhu_sertifikat_standar',
-                    'Suhu Sertifikat Standar (°C)',
-                    'angka',
-                    ekstra: $luar,
-                ),
                 ...array_map(
                     fn (int $n): array => $this->field(
                         "spesifikasi_alat.gaya.misalignment.{$n}",
