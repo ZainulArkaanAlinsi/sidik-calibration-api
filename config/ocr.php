@@ -238,4 +238,18 @@ return [
      */
     'folder_template' => env('OCR_FOLDER_TEMPLATE', 'ocr-templates'),
 
+    /*
+     * Formulir ASLI lab — kertas SIDIK-FM-CAL tanpa marker/QR, geometrinya di
+     * `{folder_template}/asli/` (`App\Services\Ocr\FormulirAsli`).
+     *
+     * `mode_uji`: sebelum formulir itu lulus >=20 foto nyata
+     * (PANDUAN-OCR-LEMBAR-KERJA.md §5 langkah 5), pindai BOLEH dicoba dengan
+     * semua sel maksimal kuning — keputusan pemilik 9 Okt 2026. Sakelar ini
+     * cuma memberi tahu HP; vonis kuningnya ditegakkan pemroses pindai.
+     * Tidak pernah menyalakan `siap_pindai`.
+     */
+    'formulir_asli' => [
+        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', false),
+    ],
+
 ];

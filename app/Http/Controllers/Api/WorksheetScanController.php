@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\User;
 use App\Models\WorksheetScan;
 use App\Models\WorksheetScanCell;
+use App\Services\Ocr\FormulirAsli;
 use App\Services\Ocr\PemrosesScanLembarKerja;
 use App\Services\Ocr\TemplateLembarKerja;
 use App\Services\Ocr\ValidasiSel;
@@ -42,6 +43,7 @@ class WorksheetScanController extends Controller
     public function __construct(
         private readonly TemplateLembarKerja $template,
         private readonly PemrosesScanLembarKerja $pemroses,
+        private readonly FormulirAsli $formulirAsli,
     ) {}
 
     /**
@@ -70,14 +72,29 @@ class WorksheetScanController extends Controller
         $data = $request->validate([
             'equipment_id' => ['sometimes', 'nullable', 'integer'],
             'jumlah_pengulangan' => ['sometimes', 'nullable', 'integer', 'between:2,10'],
+            // `cetak` (bawaan) = lembar cetak bermarker+QR, kontrak lama.
+            // `asli` = formulir SIDIK-FM-CAL asli lab, lihat [FormulirAsli].
+            'kertas' => ['sometimes', 'nullable', 'string', 'in:cetak,asli'],
         ]);
 
-        $template = $this->template->untukKode(
-            $kode,
-            $this->alat($request, $data['equipment_id'] ?? null)
-                ?? $this->konteksOrganisasi($request),
-            $data['jumlah_pengulangan'] ?? null,
-        );
+        $alat = $this->alat($request, $data['equipment_id'] ?? null)
+            ?? $this->konteksOrganisasi($request);
+
+        if (($data['kertas'] ?? 'cetak') === 'asli') {
+            $template = $this->formulirAsli->untukKode($kode, $alat, $data['jumlah_pengulangan'] ?? null);
+
+            abort_if(
+                $template === null,
+                404,
+                in_array($kode, $this->template->kodeTersedia(), true)
+                    ? 'Formulir asli lab buat alat ini belum dipetakan. Pakai lembar cetak atau isi manual dulu.'
+                    : 'Template lembar kerja nggak dikenal.',
+            );
+
+            return response()->json(['data' => $template]);
+        }
+
+        $template = $this->template->untukKode($kode, $alat, $data['jumlah_pengulangan'] ?? null);
 
         abort_if($template === null, 404, 'Template lembar kerja nggak dikenal.');
 
