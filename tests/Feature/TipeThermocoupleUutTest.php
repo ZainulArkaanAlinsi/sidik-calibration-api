@@ -108,13 +108,18 @@ class TipeThermocoupleUutTest extends TestCase
 
         $bentuk = $this->bentuk();
 
+        // Sejak revisi ikut-kertas 9 Okt 2026 sensor acuan dipilih di blok
+        // Standard Used — di kertas FM-0535 dia dicentang di situ (PRT PT100 /
+        // TC Type-N / TC Type-K). Dulu di PENGERJAAN.
         $acuan = null;
         foreach ($bentuk['bagian'] as $b) {
-            if ($b['kode'] !== 'data_kalibrasi') continue;
+            if ($b['kode'] !== 'usage_check') {
+                continue;
+            }
             $acuan = collect($b['field'])->firstWhere('kode', 'tipe_sensor');
         }
 
-        $this->assertNotNull($acuan, 'Sensor acuan lab wajib tetap ada di PENGERJAAN.');
+        $this->assertNotNull($acuan, 'Sensor acuan lab wajib tetap ada di blok Standard Used.');
         $this->assertSame(
             TabelKalibratorSuhu3Alat::TIPE_SENSOR_STANDAR,
             array_column($acuan['pilihan'], 'label'),
@@ -122,7 +127,7 @@ class TipeThermocoupleUutTest extends TestCase
             .'jadi sepuluh cuma karena kertas UUT-nya sepuluh.',
         );
 
-        // Letaknya pun beda, dan itu ikut kertas: identitas alat vs pengerjaan.
+        // Letaknya pun beda, dan itu ikut kertas: identitas alat vs blok standar.
         $this->assertArrayHasKey(
             'spesifikasi_alat.tipe_thermocouple',
             $this->fieldIdentitas($bentuk),

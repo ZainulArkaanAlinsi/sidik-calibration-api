@@ -1073,81 +1073,38 @@ class TitsProfile extends CalibrationProfile
                 .'tetap bisa dikirim. Titik yang datanya belum cukup nggak ikut dihitung. Khusus alat ini, '
                 .'MODE (Measure/Source) dan TIPE SENSOR wajib dipilih: arah perhitungan koreksi berbalik antara '
                 .'dua mode, dan koreksi kalibrator beda per tipe sensor.',
+            // Urutan & tulisan ikut `SIDIK-FM-CAL-0505_Rev.3` (revisi tampilan
+            // 9 Okt 2026) — kertasnya BERBAHASA INGGRIS, jadi labelnya pun
+            // Inggris. Dua hal ditahan kerangka bersama: blok Standard Used
+            // tetap SEBELUM tabel (di kertas di bawahnya), dan isian di luar
+            // kertas dikumpulkan sebelum tanda tangan.
+            //
+            // Tabelnya SENGAJA tanpa `tampilan: kartu_per_set_point`: tabel
+            // Before dilipat (keputusan 6 Okt 2026), dan baris UP/DOWN per set
+            // point seperti kertas butuh widget HP baru.
             'bagian' => [
                 [
                     'kode' => 'identitas_alat',
                     'halaman' => 1,
-                    'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
+                    'judul' => 'Identitas Alat dan Data Customer',
                     'field' => [
                         // Urutannya sengaja SAMA dengan tujuh lembar suhu yang
                         // lain: pilih alat dulu, identitas yang keisi otomatis
-                        // menyusul, dua tanggal menutup blok.
+                        // menyusul, dua tanggal sesudahnya.
                         //
                         // Dulu dua tanggal itu ada di PALING ATAS — cuma di
                         // lembar ini. Teknisi yang pindah antar lembar suhu
                         // ketemu kotak pertama yang beda tiap kali, dan kotak
                         // pertama itu justru yang paling sering salah isi:
                         // matanya sudah hafal "yang atas itu Pilih alat".
-                        $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
-                        $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
-                        $this->field('alat_merk', '2. Merk/Manufacture', 'teks'),
-                        $this->field('alat_model', '3. Type/Model', 'teks'),
-                        $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
-                        $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'angka', satuan: self::SATUAN),
-                        $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka', satuan: self::SATUAN),
-                        $this->field('spesifikasi_alat.resolusi', '7. Resolusi Alat', 'angka', satuan: self::SATUAN),
-                        $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                        $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
-                        // Environment Condition + Thermohygro dicetak DI DALAM
-                        // panel identitas kertas FM-0505, bukan di Calibration
-                        // Result — dulu di sini ditumpangkan ke bagian `hasil`.
-                        $this->field('suhu_awal', 'Env. Condition — First', 'angka', satuan: '°C'),
-                        $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
-                        $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
-                        $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
-                        $this->field(
-                            'thermohygro_standard_id',
-                            'Environmental Meter Used',
-                            'pilihan',
-                            sumber: 'master_thermohygro',
-                        ),
-                    ],
-                ],
-                [
-                    'kode' => 'pemilik',
-                    'halaman' => 1,
-                    'judul' => 'OWNER',
-                    'field' => [
-                        $this->field('pemilik_nama', '1. Name', 'teks'),
-                        $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
-                    ],
-                ],
-                [
-                    'kode' => 'usage_check',
-                    'halaman' => 1,
-                    'judul' => 'STANDARD',
-                    'baris' => self::STANDARD_TERCETAK,
-                    'field' => [
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
-                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
-                    ],
-                ],
-                [
-                    'kode' => 'data_kalibrasi',
-                    'halaman' => 1,
-                    'judul' => 'CALIBRATION DATA',
-                    'field' => [
-                        // DUA field yang cuma alat ini punya, dan dua-duanya
-                        // menentukan angka — bukan catatan.
-                        $this->field('mode_kalibrasi', '1. Mode', 'pilihan', pilihan: [
-                            ['nilai' => TabelKalibratorSuhu::MODE_MEASURE, 'label' => 'Measure (UUT membaca)'],
-                            ['nilai' => TabelKalibratorSuhu::MODE_SOURCE, 'label' => 'Source (UUT men-source)'],
-                        ]),
-                        $this->field('tipe_sensor', '2. Temperature Type', 'pilihan', pilihan: array_map(
-                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
-                            TabelKalibratorSuhu::TIPE_SENSOR,
-                        )),
-                        $this->field('lokasi', '3. Location', 'pilihan', pilihan: [
+                        $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
+                        $this->field('equipment.nama_alat', 'Name', 'teks', sumber: 'otomatis'),
+                        $this->field('alat_merk', 'Merk', 'teks'),
+                        $this->field('alat_model', 'Type', 'teks'),
+                        $this->field('alat_serial_number', 'Serial Number', 'teks'),
+                        $this->field('spesifikasi_alat.kapasitas', 'Capacity', 'angka', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.resolusi', 'Graduation/Resolution', 'angka', satuan: self::SATUAN),
+                        $this->field('lokasi', 'Calibration Location', 'pilihan', pilihan: [
                             ['nilai' => 'lab', 'label' => 'Inlab'],
                             ['nilai' => 'onsite', 'label' => 'Insitu'],
                         ]),
@@ -1162,18 +1119,61 @@ class TitsProfile extends CalibrationProfile
                             sumber: 'master_ruangan',
                             tampilKalau: self::TAMPIL_KALAU_INLAB,
                         ),
+                        // "Type Cal." di kertas = tipe sensor yang disimulasikan
+                        // kalibrator. Menentukan angka (koreksi kalibrator beda
+                        // per tipe), dan memang tercetak di kop — bukan isian di
+                        // luar kertas. Daftar pilihannya TIDAK diubah ke kertas
+                        // (kertas tanpa "B"): itu kosakata tabel koreksi.
+                        $this->field('tipe_sensor', 'Type Cal.', 'pilihan', pilihan: array_map(
+                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
+                            TabelKalibratorSuhu::TIPE_SENSOR,
+                        )),
+                        $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                        $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                        // Environment Condition + Thermohygro dicetak DI DALAM
+                        // panel identitas kertas FM-0505, bukan di Calibration
+                        // Result — dulu di sini ditumpangkan ke bagian `hasil`.
+                        //
+                        // Awalan `Env. Condition —` SENGAJA dipertahankan (kertas:
+                        // "Environment Condition : T awal / RH awal"): lembar cetak
+                        // OCR menyusun tabel kondisi lingkungannya dari awalan
+                        // itu (`TataLetakLembar::AWALAN_LINGKUNGAN`). Yang ikut
+                        // kertas nama barisnya — awal/akhir.
+                        $this->field('suhu_awal', 'Env. Condition — awal', 'angka', satuan: '°C'),
+                        $this->field('kelembaban_awal', 'Env. Condition — awal', 'angka', satuan: '%RH'),
+                        $this->field('suhu_akhir', 'Env. Condition — akhir', 'angka', satuan: '°C'),
+                        $this->field('kelembaban_akhir', 'Env. Condition — akhir', 'angka', satuan: '%RH'),
                         $this->field(
-                            'calibration_method_id',
-                            '4. Calibration Methode',
+                            'thermohygro_standard_id',
+                            'Thermohygro used',
                             'pilihan',
-                            sumber: 'master_metode',
+                            sumber: 'master_thermohygro',
                         ),
+                    ],
+                ],
+                [
+                    'kode' => 'pemilik',
+                    'halaman' => 1,
+                    'judul' => 'Data Customer',
+                    'field' => [
+                        $this->field('pemilik_nama', 'Owner', 'teks'),
+                        $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
+                    ],
+                ],
+                [
+                    'kode' => 'usage_check',
+                    'halaman' => 1,
+                    'judul' => 'Standard Used',
+                    'baris' => self::STANDARD_TERCETAK,
+                    'field' => [
+                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
+                        $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
                     ],
                 ],
                 [
                     'kode' => 'hasil',
                     'halaman' => 1,
-                    'judul' => 'CALIBRATION RESULT',
+                    'judul' => 'Data Kalibrasi',
                     'field' => [],
                     'tabel' => [
                         // Kertas 0505 cuma punya SATU tabel; Before tidak
@@ -1184,14 +1184,41 @@ class TitsProfile extends CalibrationProfile
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading'),
                     ],
                 ],
+                // Isian yang TIDAK tercetak di FM-0505 tapi dipakai olah data.
+                // Kodenya tetap; yang pindah cuma letaknya (dulu CALIBRATION
+                // DATA, di depan tabel). Lihat `ProfilSuhuPasangan::bagianDiLuarKertas()`.
+                [
+                    'kode' => 'data_kalibrasi',
+                    'halaman' => 1,
+                    'judul' => 'Di luar kertas',
+                    'di_luar_kertas' => true,
+                    'field' => array_map(
+                        static fn (array $f): array => [...$f, 'di_luar_kertas' => true],
+                        [
+                            // Menentukan ARAH koreksi — berbalik antara dua mode.
+                            $this->field('mode_kalibrasi', 'Mode (Measure/Source)', 'pilihan', pilihan: [
+                                ['nilai' => TabelKalibratorSuhu::MODE_MEASURE, 'label' => 'Measure (UUT membaca)'],
+                                ['nilai' => TabelKalibratorSuhu::MODE_SOURCE, 'label' => 'Source (UUT men-source)'],
+                            ]),
+                            // Kertas cuma mencetak Capacity & Graduation/Resolution.
+                            $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka', satuan: self::SATUAN),
+                            $this->field(
+                                'calibration_method_id',
+                                'Metode Kalibrasi',
+                                'pilihan',
+                                sumber: 'master_metode',
+                            ),
+                        ],
+                    ),
+                ],
                 [
                     'kode' => 'penutup',
                     'halaman' => 1,
                     'judul' => 'Catatan & Tanda Tangan',
                     'field' => [
                         $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                        $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
-                        $this->field('reviewer.nama', 'Checked by', 'teks', sumber: 'otomatis'),
+                        $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
+                        $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
                     ],
                 ],
             ],

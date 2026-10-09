@@ -253,6 +253,7 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
         bool $titikBisaDiubah = true,
         ?string $grup = null,
         array $labelPengulangan = [],
+        string $judulNilai = 'Set Point',
     ): array {
         return [
             'tahap' => 'sesudah_adjustment',
@@ -271,16 +272,19 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             'satuan' => $satuan,
             // Kepala kolom KIRI. Di lembar ini isinya set point, bukan nilai
             // standar yang dipatok master — nilai standarnya justru dibaca
-            // teknisi dan masuk tabel di sebelahnya.
-            'judul_nilai' => 'Set Point',
+            // teknisi dan masuk tabel di sebelahnya. Tulisannya ikut kertas
+            // masing-masing: `Setpoint` (FM-0535), `Set Point` (FM-0537),
+            // `Alat (°C)` (FM-0525).
+            'judul_nilai' => $judulNilai,
             'judul_pengulangan' => $judulPengulangan,
-            // Label tiap kolom pengulangan — `0" (PRT1)`, `20" (PRT2)`, dst.
+            // Label tiap kolom pengulangan, persis tulisan kepala kolom kertas:
+            // `X1`…`X5` (FM-0535/0537), `STD1`…`STD5` / `UUT1`…`UUT5` (FM-0525).
             //
             // Ditaruh PER KOLOM, bukan disambung jadi satu kalimat panjang di
             // `judul_pengulangan`: kepala tabel tingginya dipatok, jadi kalimat
-            // yang membungkus jadi tiga baris meluber keluar kotaknya. Dan
-            // memang begitu bentuk kertasnya — detiknya tercetak di atas tiap
-            // kolom, bukan di judul gabungannya.
+            // yang membungkus jadi tiga baris meluber keluar kotaknya. Cuma
+            // label — `ke` (nomor ulangan) yang jadi kunci sel, bukan tulisan
+            // ini.
             'pengulangan_arah' => array_map(
                 static fn (int $i): array => [
                     'ke' => $i,
@@ -358,52 +362,92 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
     }
 
     /**
-     * Bagian kop lembar kerja yang sama di ketiga alat.
+     * Bagian kop lembar kerja yang sama di ketiga alat — SATU blok kertas
+     * "Identitas Alat dan Data Customer".
      *
-     * @param  list<array<string, mixed>>  $fieldSpesifik  kotak identitas khusus alat ini
+     * Kertas FM-0535/0537/0525 mencetak lokasi, Suhu Ruangan, Kelembapan, dan
+     * Thermohygro used DI DALAM blok ini. Sampai 9 Okt 2026 keempatnya tersebar
+     * ke bagian PENGERJAAN dan DATA HASIL KALIBRASI, jadi teknisi yang
+     * menyalin dari kertas mencari kotaknya di tiga tempat. Yang dipindah cuma
+     * letak & labelnya; kode field-nya tidak berubah (dijaga
+     * `LembarKerjaIkutKertasSuhuTest`).
+     *
+     * Customer tetap bagian sendiri (`pemilik`) walau di kertas satu blok:
+     * kerangka bagian semua lembar dijaga
+     * `SemuaProfilLembarKerjaTest::test_urutan_bagian_seragam_di_semua_lembar`.
+     *
+     * @param  list<array<string, mixed>>  $fieldSpesifik  rentang/kapasitas/resolusi alat ini
+     * @param  list<array<string, mixed>>  $fieldKanan  kotak khusus kolom kanan kertas (tipe sensor/pencelupan)
+     * @param  array{0: string, 1: string}  $labelCustomer  tulisan kertas untuk nama & alamat customer
+     * @param  list<array<string, mixed>>  $fieldStandar  kotak tambahan di blok standar (sensor acuan yang dicentang di kertas)
      * @return list<array<string, mixed>>
      */
-    protected function bagianUmumAtas(array $fieldSpesifik): array
-    {
+    protected function bagianUmumAtas(
+        array $fieldSpesifik,
+        array $fieldKanan = [],
+        array $labelCustomer = ['Nama Customer', 'Alamat Customer'],
+        array $fieldStandar = [],
+    ): array {
         return [
             [
                 'kode' => 'identitas_alat',
                 'halaman' => 1,
-                'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
+                'judul' => 'Identitas Alat dan Data Customer',
                 'field' => [
-                    // Pilih alat dulu, dua tanggal menutup blok — urutan yang
-                    // sama dengan TITS/TIDS/Autoclave. Di kertas FM-0535/0537
-                    // kedua tanggal ada di kolom kanan, bukan di baris teratas.
-                    $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
-                    $this->field('equipment.nama_alat', '1. Nama Alat', 'teks', sumber: 'otomatis'),
-                    $this->field('alat_merk', '2. Merk', 'teks'),
-                    $this->field('alat_model', '3. Type', 'teks'),
-                    $this->field('alat_serial_number', '4. No. Seri', 'teks'),
+                    // Pilih alat dulu, dua tanggal menyusul identitas — urutan
+                    // yang sama dengan TITS/TIDS/Autoclave. Sisanya urut kolom
+                    // kertas: kiri (identitas), tengah (spesifikasi & lokasi),
+                    // kanan (tanggal, tipe). Suhu Ruangan & Kelembapan (baris
+                    // lebar di kertas) dikumpulkan di akhir bersama Thermohygro
+                    // used — angkanya dibaca dari unit itu.
+                    $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
+                    $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
+                    $this->field('alat_merk', 'Merk', 'teks'),
+                    $this->field('alat_model', 'Type', 'teks'),
+                    $this->field('alat_serial_number', 'No. Seri', 'teks'),
                     ...$fieldSpesifik,
-                    $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                    $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                    ...$this->fieldLokasi(),
+                    $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
+                    $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
+                    ...$fieldKanan,
+                    ...$this->fieldKondisiLingkungan(),
                 ],
             ],
             [
                 'kode' => 'pemilik',
                 'halaman' => 1,
-                'judul' => 'IDENTITAS CUSTOMER',
+                'judul' => 'Data Customer',
                 'field' => [
-                    $this->field('pemilik_nama', '1. Nama Customer', 'teks'),
-                    $this->field('pemilik_alamat', '2. Alamat Customer', 'teks_panjang'),
+                    $this->field('pemilik_nama', $labelCustomer[0], 'teks'),
+                    $this->field('pemilik_alamat', $labelCustomer[1], 'teks_panjang'),
                 ],
             ],
             [
                 'kode' => 'usage_check',
                 'halaman' => 1,
-                'judul' => 'STANDARD',
+                'judul' => $this->judulStandar(),
                 'baris' => $this->standardTercetak(),
                 'field' => [
                     $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
                     $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
+                    ...$fieldStandar,
                 ],
             ],
         ];
+    }
+
+    /**
+     * Judul blok standar seperti TERCETAK di kertas alat ini.
+     *
+     * Kertas tidak seragam: FM-0535 "Standard Used:", FM-0537 "Standar Used:",
+     * FM-0525 cuma "Standar : Temp. Humidity Meter" di kop. Posisinya tetap di
+     * depan tabel (standar dipilih sebelum mengukur — dijaga
+     * `SemuaProfilLembarKerjaTest`), walau di kertas FM-0535/0537 blok ini
+     * tercetak di bawah tabel.
+     */
+    protected function judulStandar(): string
+    {
+        return 'Standard Used';
     }
 
     /**
@@ -423,27 +467,62 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             // tempat yang alatnya tidak pernah ke sana.
             $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
             $this->field('room_id', 'Ruangan (Inlab)', 'pilihan', sumber: 'master_ruangan', tampilKalau: self::TAMPIL_KALAU_INLAB),
-            $this->field('calibration_method_id', 'Calibration Method', 'pilihan', sumber: 'master_metode', hanyaAdmin: true),
+            $this->field('calibration_method_id', 'Metode Kalibrasi', 'pilihan', sumber: 'master_metode', hanyaAdmin: true),
         ];
     }
 
     /**
-     * Kotak kondisi lingkungan — identik di ketiga alat.
+     * Kotak kondisi lingkungan — identik di ketiga alat, tulisan kertasnya
+     * "Suhu Ruangan : awal … akhir" dan "Kelembapan : awal … akhir".
      *
      * @return list<array<string, mixed>>
      */
     protected function fieldKondisiLingkungan(): array
     {
         return [
-            $this->field('suhu_awal', 'Suhu Ruangan — Awal', 'angka', satuan: '°C'),
-            $this->field('suhu_akhir', 'Suhu Ruangan — Akhir', 'angka', satuan: '°C'),
-            $this->field('kelembaban_awal', 'Kelembaban — Awal', 'angka', satuan: '%RH'),
-            $this->field('kelembaban_akhir', 'Kelembaban — Akhir', 'angka', satuan: '%RH'),
-            $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
+            $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
+            $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
+            $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
+            $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+            $this->field('thermohygro_standard_id', 'Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
         ];
     }
 
     /**
+     * Blok isian yang TIDAK tercetak di kertas tapi dipakai olah data.
+     *
+     * Kodenya tetap `data_kalibrasi` (nama bagian lama "PENGERJAAN") — yang
+     * berubah judul, letak (tepat sebelum tanda tangan, sesudah semua bagian
+     * yang tercetak), dan penandanya. Isiannya tidak dihapus: tiap kotak di sini
+     * memilih tabel koreksi atau komponen budget, dan kotak yang hilang membuat
+     * titiknya ditahan tanpa teknisi tahu kenapa.
+     *
+     * `di_luar_kertas` (bukan `di_kertas: false`): penanda yang terakhir juga
+     * mencabut barisnya dari lembar cetak OCR (`TataLetakLembar::isian()`), dan
+     * revisi ini cuma tampilan layar.
+     *
+     * @param  list<array<string, mixed>>  $field
+     * @return array<string, mixed>
+     */
+    protected function bagianDiLuarKertas(array $field): array
+    {
+        return [
+            'kode' => 'data_kalibrasi',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas',
+            'di_luar_kertas' => true,
+            'field' => array_map(
+                static fn (array $f): array => [...$f, 'di_luar_kertas' => true],
+                $field,
+            ),
+        ];
+    }
+
+    /**
+     * Tanda tangan & catatan. Kertas ketiganya: "Dikalibrasi Oleh",
+     * "Diperiksa Oleh", "Catatan" — urutan kotak sama dengan lembar Anak
+     * Timbangan & TIDS (Catatan dulu).
+     *
      * @return array<string, mixed>
      */
     protected function bagianPenutup(): array
@@ -454,8 +533,8 @@ abstract class ProfilSuhuPasangan extends CalibrationProfile
             'judul' => 'Catatan & Tanda Tangan',
             'field' => [
                 $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                $this->field('teknisi.nama', 'Calculated by', 'teks', sumber: 'otomatis'),
-                $this->field('reviewer.nama', 'Signed by', 'teks', sumber: 'otomatis'),
+                $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
+                $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
             ],
         ];
     }

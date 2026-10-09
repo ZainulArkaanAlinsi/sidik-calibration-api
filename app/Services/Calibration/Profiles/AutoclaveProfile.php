@@ -346,11 +346,12 @@ class AutoclaveProfile extends CalibrationProfile
 
     /**
      * Blok teratas General Information — empat baris polos di kertas:
-     * Receive Date / Customer / Addresss / Calibration Date.
+     * Receive Date / Customer / Address / Calibration Date.
      *
-     * "Addresss" emang tiga huruf s. Ditulis apa adanya karena label di layar
-     * harus bisa diadu langsung sama kertasnya waktu lab ngecek; label yang
-     * "dibetulin" diam-diam bikin orang ragu ini lembar yang sama atau bukan.
+     * Kertasnya menulis "Addresss" (tiga huruf s). Sampai 9 Okt 2026 itu
+     * disalin apa adanya; sejak revisi ikut-kertas aturannya: tulisan kertas
+     * diikuti, SALAH KETIK-nya tidak (keputusan pemilik — label data tidak
+     * mewarisi typo formulir).
      *
      * @return array<string, mixed>
      */
@@ -364,7 +365,7 @@ class AutoclaveProfile extends CalibrationProfile
             'field' => [
                 $this->field('tanggal_terima', 'Receive Date', 'tanggal'),
                 $this->field('pemilik_nama', 'Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Addresss', 'teks_panjang'),
+                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
                 $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
             ],
         ];
