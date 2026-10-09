@@ -217,6 +217,26 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
         return null;
     }
 
+    /**
+     * Jumlah bacaan suhu air (`vol_suhu`) per titik yang diterima lembar ini:
+     * `[3]`, atau `[3, 6]` untuk profil Rev.7 (awal & akhir tiap ulangan).
+     * Satu sumber — `VolumetricGlasswareCalculator::jumlahBacaanSuhuDiterima()`
+     * dengan parameter hitung profil ini — dibaca validasi request, jalur
+     * simpan, dan bentuk lembar.
+     *
+     * @return list<int>
+     */
+    public function jumlahBacaanSuhuDiterima(): array
+    {
+        return VolumetricGlasswareCalculator::jumlahBacaanSuhuDiterima($this->parameterHitung());
+    }
+
+    /** Lembar ini menyediakan enam kotak suhu air (awal & akhir per ulangan)? */
+    private function suhuAwalAkhir(): bool
+    {
+        return in_array(VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR, $this->jumlahBacaanSuhuDiterima(), true);
+    }
+
     /** @return array<string, mixed> */
     public function bentukLembarKerja(bool $untukAdmin = false, ?Equipment $equipment = null): array
     {
@@ -230,9 +250,13 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             'satuan_suhu' => '°C',
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Yang diisi BUKAN volume: tiap titik diisi tiga kali berat wadah kosong, '
-                .'tiga kali berat wadah berisi air suling (gram), dan tiga kali suhu air (°C). Volume pada '
-                .'20 °C dihitung server secara gravimetri. Tekanan udara (hPa) wajib walau tidak tercetak di '
-                .'kertas: densitas udara dihitung dari situ.',
+                .'tiga kali berat wadah berisi air suling (gram), dan '
+                .($this->suhuAwalAkhir()
+                    ? 'enam kali suhu air (°C) — awal & akhir tiap ulangan, urut X1 awal, X1 akhir, X2 awal, '
+                        .'X2 akhir, X3 awal, X3 akhir. '
+                    : 'tiga kali suhu air (°C). ')
+                .'Volume pada 20 °C dihitung server secara gravimetri. Tekanan udara (hPa) wajib walau tidak '
+                .'tercetak di kertas: densitas udara dihitung dari situ.',
             'budget_ketidakpastian' => $this->budgetKetidakpastianLembar(),
             'bagian' => [
                 $this->bagianIdentitas(),
@@ -585,6 +609,14 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             ];
         }
 
+        // Enam bacaan suhu (awal & akhir per ulangan): keenam suhu terkoreksi
+        // ikut tertulis, bukan cuma rata-rata per ulangannya — `O35`/`P35`
+        // membaca bacaan, bukan rata-rata. Tiga bacaan: kalimatnya tetap.
+        $suhuBacaan = $h['suhu_terkoreksi_per_bacaan'] ?? [];
+        $suhuJejak = count($suhuBacaan) === VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR
+            ? self::deret($suhuBacaan).' (awal & akhir X1–X3; per ulangan '.self::deret($h['suhu_terkoreksi_per_ulangan']).')'
+            : self::deret($h['suhu_terkoreksi_per_ulangan']);
+
         $budget[] = [
             'sumber' => 'jejak_titik',
             'keterangan' => sprintf(
@@ -594,7 +626,7 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
                 .'U95%% terbit %.12g mL',
                 $praolah['rho_udara'], $praolah['suhu_ruang'], $praolah['kelembaban'], $praolah['tekanan'],
                 $praolah['kelas'], $praolah['gamma'], $praolah['neraca']['nama'], $praolah['u_timbang'],
-                self::deret($h['massa_per_ulangan']), self::deret($h['suhu_terkoreksi_per_ulangan']),
+                self::deret($h['massa_per_ulangan']), $suhuJejak,
                 self::deret($h['rho_air_per_ulangan']), self::deret($h['v20_per_ulangan']),
                 $cmc === null ? 'tidak ada (di luar lampiran)' : sprintf('%.12g (baris %.12g mL)', $cmc['cmc'], $cmc['nominal']),
                 $kapasitas, $u95,
@@ -793,6 +825,23 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             'pengulangan' => range(1, self::PENGULANGAN),
         ];
 
+        $tabelSuhu = $tabel(M::PERAN_SUHU, 3000, 'c. Temperature of Destillate Water (°C)', M::SATUAN_SUHU, 'Suhu', 'Baca ke', 1);
+
+        // Rev.7 (Labu Ukur & Pipet Volume): enam kotak — awal & akhir tiap
+        // ulangan, `INPUT DATA!H39:M39`. Urutan kotak = urutan `vol_suhu` yang
+        // dikirim, dan labelnya lewat `pengulangan_arah` (sudah dibaca HP ke
+        // kepala kolom), jadi HP tidak perlu menurunkan arti dari nomor.
+        if ($this->suhuAwalAkhir()) {
+            $tabelSuhu['pengulangan'] = range(1, VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR);
+            $tabelSuhu['pengulangan_arah'] = array_map(
+                static fn (int $i): array => [
+                    'ke' => $i + 1,
+                    'label' => sprintf('X%d %s', intdiv($i, 2) + 1, $i % 2 === 0 ? 'Awal' : 'Akhir'),
+                ],
+                range(0, VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR - 1),
+            );
+        }
+
         return [
             'kode' => 'hasil',
             'halaman' => 1,
@@ -801,7 +850,7 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
             'tabel' => [
                 $tabel(M::PERAN_KOSONG, 1000, 'a. Empty Container Weight (g)', M::SATUAN_MASSA, 'Berat Kosong', 'Timbang ke', 4),
                 $tabel(M::PERAN_ISI, 2000, 'b. Weight of Contents (g)', M::SATUAN_MASSA, 'Berat Isi', 'Timbang ke', 4),
-                $tabel(M::PERAN_SUHU, 3000, 'c. Temperature of Destillate Water (°C)', M::SATUAN_SUHU, 'Suhu', 'Baca ke', 1),
+                $tabelSuhu,
             ],
         ];
     }

@@ -15,6 +15,12 @@ use Illuminate\Support\Collection;
  * Dipakai bersama kedua keluarga (Fixed & Graduated): bentuk mentahnya
  * identik, beda keluarga cuma di cara profil menghitungnya.
  *
+ * Suhu air Labu Ukur & Pipet Volume (workbook Rev.7) boleh ENAM baris — awal
+ * & akhir tiap ulangan, `sensor_ke` 1..6 urut X1 awal, X1 akhir, X2 awal,
+ * X2 akhir, X3 awal, X3 akhir (`INPUT DATA!H39:M39`). Kelas ini tidak perlu
+ * tahu: deretnya diurutkan `sensor_ke` dan diteruskan utuh, jadi jalur simpan,
+ * `CalibrationValidator`, dan `HitungUlangSesi` menerima enam angka yang sama.
+ *
  * Alat ini WAJIB lahir bareng kelas ini. Pola "profil baru tanpa jalur hitung
  * ulang" sudah menggigit tujuh kali di repo ini — sesinya tersimpan rapi, tapi
  * `CalibrationValidator` dan `kalibrasi:hitung-ulang` tidak bisa menghitungnya
@@ -42,7 +48,10 @@ final class VolumetricGlasswareMentah
 
     public const SATUAN_SUHU = '°C';
 
-    /** Ulangan per deret per titik — tiga, di kedua workbook. */
+    /**
+     * Ulangan per deret per titik — tiga, di kedua workbook. Suhu air profil
+     * Rev.7 boleh enam (lihat docblock kelas).
+     */
     public const PENGULANGAN = 3;
 
     /**

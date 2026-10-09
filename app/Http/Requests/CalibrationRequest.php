@@ -11,10 +11,12 @@ use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\AnakTimbanganProfile;
 use App\Services\Calibration\Profiles\CalibrationProfile;
 use App\Services\Calibration\Profiles\MicrometerProfile;
+use App\Services\Calibration\Profiles\VolumetricGlasswareProfile;
 use App\Services\Calibration\TabelKalibratorSuhu;
 use App\Services\Calibration\TabelStandarAnakTimbangan;
 use App\Services\Calibration\TabelStandarTekanan;
 use App\Services\Calibration\TekananCalculator;
+use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Support\AnakTimbanganMentah;
 use App\Support\AngkaDesimal;
 use App\Support\DialIndicatorMentah;
@@ -1118,6 +1120,51 @@ class CalibrationRequest extends FormRequest
             && app(CalibrationProfileRegistry::class)->untukAlat($alat)->butuhBlokWaktu();
     }
 
+    /**
+     * Aturan jumlah kotak `vol_suhu` per titik untuk alat request ini.
+     *
+     * Labu Ukur & Pipet Volume (workbook Rev.7) menerima 3 ATAU 6 — enam =
+     * awal & akhir tiap ulangan, urut X1 awal, X1 akhir, X2 awal, X2 akhir,
+     * X3 awal, X3 akhir (`INPUT DATA!H39:M39`). Sumbernya satu:
+     * `VolumetricGlasswareProfile::jumlahBacaanSuhuDiterima()`, yang juga
+     * dibaca jalur simpan dan kalkulator.
+     *
+     * Dipanggil dari `rules()`, jadi `equipment_id` belum tervalidasi: alat
+     * yang belum bisa dipastikan (tidak ada, milik lab lain, bukan
+     * Volumetric) dijawab `size:3` — persis aturan sebelum ini ada.
+     */
+    private function aturanJumlahSuhuVolumetric(): string|\Closure
+    {
+        $diterima = [VolumetricGlasswareCalculator::PENGULANGAN];
+        $id = $this->input('equipment_id');
+
+        if (is_numeric($id)) {
+            $alat = Equipment::query()
+                ->where('organization_id', $this->user()->organization_id)
+                ->find((int) $id);
+            $profil = $alat === null ? null : app(CalibrationProfileRegistry::class)->untukAlat($alat);
+
+            if ($profil instanceof VolumetricGlasswareProfile) {
+                $diterima = $profil->jumlahBacaanSuhuDiterima();
+            }
+        }
+
+        if ($diterima === [VolumetricGlasswareCalculator::PENGULANGAN]) {
+            return 'size:'.VolumetricGlasswareCalculator::PENGULANGAN;
+        }
+
+        return function (string $atribut, mixed $nilai, \Closure $gagal) use ($diterima): void {
+            if (is_array($nilai) && ! in_array(count($nilai), $diterima, true)) {
+                $gagal(sprintf(
+                    'Suhu air diisi %s kotak per titik: tiga (satu per ulangan) atau enam (awal & akhir tiap '
+                    .'ulangan, urut X1 awal, X1 akhir, X2 awal, X2 akhir, X3 awal, X3 akhir). Yang terkirim %d.',
+                    implode(' atau ', $diterima),
+                    count($nilai),
+                ));
+            }
+        };
+    }
+
     public function rules(): array
     {
         $organizationId = $this->user()->organization_id;
@@ -1542,7 +1589,10 @@ class CalibrationRequest extends FormRequest
             'measurements.*.vol_kosong.*' => ['nullable', 'numeric', 'gte:0'],
             'measurements.*.vol_isi' => ['sometimes', 'nullable', 'array', 'size:3'],
             'measurements.*.vol_isi.*' => ['nullable', 'numeric', 'gt:0'],
-            'measurements.*.vol_suhu' => ['sometimes', 'nullable', 'array', 'size:3'],
+            // Suhu air: tepat 3 (satu per ulangan) — kecuali Labu Ukur & Pipet
+            // Volume (workbook Rev.7) yang juga menerima 6: awal & akhir tiap
+            // ulangan, `INPUT DATA!H39:M39`. Profil lain tetap `size:3` persis.
+            'measurements.*.vol_suhu' => ['sometimes', 'nullable', 'array', $this->aturanJumlahSuhuVolumetric()],
             'measurements.*.vol_suhu.*' => ['nullable', 'numeric'],
             'spesifikasi_alat.volumetric' => ['sometimes', 'nullable', 'array', 'max:8'],
             // Kelas DIBATASI A/B: cuma dua itu yang punya γ di master, dan γ

@@ -3829,6 +3829,8 @@ class CalibrationController extends Controller
      * Tiga tabel yang tidak sinkron (deret yang bukan tepat tiga angka)
      * DITOLAK sebelum satu baris pun tersimpan — menyimpan separuhnya
      * melahirkan titik yang selamanya "belum dihitung" di jalur hitung ulang.
+     * Pengecualian: suhu air Labu Ukur & Pipet Volume (Rev.7) boleh enam —
+     * awal & akhir tiap ulangan, `sensor_ke` 1..6 — asal keenam kotaknya terisi.
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
@@ -3840,6 +3842,8 @@ class CalibrationController extends Controller
         $profil = $this->profil->untukAlat($alat);
         $batas = VolumetricGlasswareCalculator::TITIK_MAKS[$profil->keluarga()];
         $n = VolumetricGlasswareMentah::PENGULANGAN;
+        // Suhu air: 3, atau 6 (awal & akhir tiap ulangan) untuk profil Rev.7.
+        $nSuhu = $profil->jumlahBacaanSuhuDiterima();
 
         $mentah = [];
         $siapHitung = [];
@@ -3889,17 +3893,30 @@ class CalibrationController extends Controller
             }
 
             $jumlah = array_map('count', $terkumpul);
-            if (array_values(array_unique(array_values($jumlah))) !== [$n]) {
+            $jumlahSuhu = $jumlah[VolumetricGlasswareMentah::PERAN_SUHU];
+            // Enam kotak suhu (lembar Rev.7) yang terisi SEBAGIAN tidak boleh
+            // dirapatkan jadi "tiga bacaan": kotak null dibuang di atas, jadi
+            // [X1 awal, X1 akhir, X2 awal, null, null, null] akan terbaca
+            // sebagai tiga ulangan yang salah tempat — tanpa error. Jumlah
+            // kotak yang DIKIRIM yang menentukan arti posisinya.
+            $kotakSuhu = count((array) ($titik[VolumetricGlasswareMentah::PERAN_SUHU] ?? []));
+            $suhuSah = in_array($jumlahSuhu, $nSuhu, true)
+                && ($kotakSuhu <= $n || $jumlahSuhu === $kotakSuhu);
+
+            if ($jumlah[VolumetricGlasswareMentah::PERAN_KOSONG] !== $n
+                || $jumlah[VolumetricGlasswareMentah::PERAN_ISI] !== $n
+                || ! $suhuSah) {
                 $belumDipetakan[] = [
                     'titik_ke' => $titikKe,
                     'alasan' => sprintf(
-                        'Titik ke-%d butuh tepat %d berat kosong, %d berat isi, DAN %d suhu; yang terkirim '
+                        'Titik ke-%d butuh tepat %d berat kosong, %d berat isi, DAN %s suhu; yang terkirim '
                         .'%d, %d, dan %d. Ketiga tabel harus sinkron kolom per kolom — titik tidak disimpan '
                         .'supaya tidak ada volume yang lahir dari separuh data.',
-                        $titikKe, $n, $n, $n,
+                        $titikKe, $n, $n,
+                        count($nSuhu) === 1 ? (string) $nSuhu[0] : implode(' atau ', $nSuhu).' (enam = awal & akhir tiap ulangan, semua kotak terisi)',
                         $jumlah[VolumetricGlasswareMentah::PERAN_KOSONG],
                         $jumlah[VolumetricGlasswareMentah::PERAN_ISI],
-                        $jumlah[VolumetricGlasswareMentah::PERAN_SUHU],
+                        $jumlahSuhu,
                     ),
                 ];
 

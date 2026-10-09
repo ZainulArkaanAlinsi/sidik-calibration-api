@@ -107,7 +107,8 @@ di kertas; densitas udara lahir dari situ.
 }
 ```
 
-Sel kosong dikirim `null` di posisinya (tiap deret `size:3`). Titik yang
+Sel kosong dikirim `null` di posisinya (tiap deret `size:3`; Labu Ukur & Pipet
+Volume: `vol_suhu` 3 atau 6, lihat §8). Titik yang
 ketiga deretnya tidak lengkap **tidak disimpan** dan pulang sebagai
 `belum_dihitung` — bukan 422 — supaya draft tetap bisa disimpan.
 
@@ -158,5 +159,58 @@ tidak perlu diubah untuk butir 1–3.
    `meta.belum_dihitung` (bentuk sama dengan preview). Yang PERLU ditambah di HP:
    tampilkan daftar itu sesudah kirim kalau tidak kosong. Rinciannya
    `docs/kontrak-api.md` §4 `meta.belum_dihitung`.
-5. **Enam bacaan suhu air (awal & akhir per ulangan) BELUM** — tahap 2, kontraknya
-   menyusul. Sampai itu `vol_suhu` tetap tepat tiga angka.
+5. **Enam bacaan suhu air (awal & akhir per ulangan)** — tahap 2, lihat §8.
+
+## 8. Labu Ukur & Pipet Volume: enam bacaan suhu air — 9 Okt 2026 (tahap 2)
+
+Workbook Rev.7 mencatat suhu air awal & akhir tiap ulangan (`INPUT DATA!H39:M39`).
+Lembar Labu Ukur & Pipet Volume kini mengirim tabel `vol_suhu` dengan **enam**
+kotak; profil lain (Picnometer, Buret, Gelas Ukur, Pipet Ukur) tetap tiga.
+
+**Bentuk lembar** — hanya tabel `vol_suhu` yang berubah; `vol_kosong` & `vol_isi`
+tetap `pengulangan: [1, 2, 3]`:
+
+```json
+{
+  "grup": "vol_suhu",
+  "offset_kunci": 3000,
+  "simpan_ke": "measurements[].vol_suhu",
+  "pengulangan": [1, 2, 3, 4, 5, 6],
+  "pengulangan_arah": [
+    { "ke": 1, "label": "X1 Awal" }, { "ke": 2, "label": "X1 Akhir" },
+    { "ke": 3, "label": "X2 Awal" }, { "ke": 4, "label": "X2 Akhir" },
+    { "ke": 5, "label": "X3 Awal" }, { "ke": 6, "label": "X3 Akhir" }
+  ]
+}
+```
+
+`pengulangan_arah` sudah dibaca HP ke kepala kolom (pola TITS/Timbangan/Piston),
+jadi **tidak perlu kode HP baru**: renderer data-driven menggambar enam kotak
+berlabel, dan `_measurementsDeretBernama` mengirim enam angka berurutan.
+
+**Payload** — urutan = urutan kotak:
+
+```json
+{ "titik_ukur": 250,
+  "vol_kosong": [0, 0, 0],
+  "vol_isi":    [248.823, 248.833, 248.831],
+  "vol_suhu":   [25.2, 25.2, 25.3, 25.3, 25.2, 25.2] }
+```
+
+| Kiriman `vol_suhu` | Labu Ukur & Pipet Volume | Profil Volumetric lain |
+|---|---|---|
+| 3 angka (APK lama) | **diterima**, angka persis seperti sebelumnya | diterima |
+| 6 angka, semua terisi | **diterima** — awal & akhir tiap ulangan | **422** `errors["measurements.0.vol_suhu"]` |
+| 6 kotak, sebagian `null` | titik **tidak disimpan**, alasan di `meta.belum_dihitung` (bukan 422, supaya draft tetap tersimpan) | — |
+| panjang lain (1, 2, 4, 5, 7, …) | **422** `errors["measurements.0.vol_suhu"]`, pesan menyebut 3 atau 6 | **422** (`size:3`) |
+
+Kotak yang terisi sebagian sengaja tidak "dirapatkan" jadi tiga bacaan: tiga
+angka pertama dari enam kotak adalah X1 awal, X1 akhir, X2 awal — bukan tiga
+ulangan.
+
+**Yang dihitung server** (rinci: `docs/pertanyaan-lab-volumetric.md` no. 14–16):
+tiap bacaan dikoreksi sendiri; suhu ulangan = rata-rata awal & akhir terkoreksi,
+ρ air dari suhu itu (ulangan 1 & 2 tetap 25,5 °C); suhu air budget = rata-rata
+keenamnya; rentang u suhu meniru `O35` workbook (lima bacaan pertama untuk MAX).
+Enam bacaan kembar (awal = akhir) memberi angka identik dengan tiga bacaan.
+HP tidak menghitung apa pun.

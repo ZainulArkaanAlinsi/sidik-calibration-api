@@ -900,6 +900,28 @@ menimpa isian "Balance Used"; mencentang dua neraca lalu mengirim → **422**
 `errors.standar_dicek`. Termometer standar (Yokogawa CA 150 "Termometer & Sensor
 Std.") dan sensor PRT Pt-100 SELALU dianggap dipakai — tidak perlu dicentang.
 
+#### Labu Ukur & Pipet Volume: enam bacaan suhu air (9 Okt 2026)
+
+`measurements[].vol_suhu` Labu Ukur & Pipet Volume menerima **3 atau 6** angka
+per titik. Enam = awal & akhir tiap ulangan, urut X1 awal, X1 akhir, X2 awal,
+X2 akhir, X3 awal, X3 akhir (workbook Rev.7 `INPUT DATA!H39:M39`). Tiga (APK lama)
+tetap diterima dan angkanya tidak bergeser. Profil Volumetric lain tetap tepat 3
+(`size:3`).
+
+- Panjang selain 3/6 → **422** `errors["measurements.N.vol_suhu"]`, pesan
+  menyebut kedua bentuk yang sah. Profil lain yang menerima 6 → **422**.
+- Enam kotak yang terisi sebagian (ada `null`) → titik **tidak disimpan**, alasan
+  di `meta.belum_dihitung` (pola titik tak lengkap yang sudah ada; draft tetap 201).
+- Tersimpan sebagai enam baris `raw_measurements` `peran_sensor = vol_suhu`,
+  `sensor_ke` 1..6 — **nol kolom baru**. `CalibrationValidator` dan
+  `kalibrasi:hitung-ulang` membaca keenamnya lewat `VolumetricGlasswareMentah`.
+- Bentuk lembar: tabel `vol_suhu` membawa `pengulangan: [1..6]` dan
+  `pengulangan_arah` berlabel `X1 Awal` … `X3 Akhir` (kunci yang sudah dibaca HP).
+- Jejak titik sesi enam bacaan memuat `volumetric_rev7_rentang_suhu_o35_tanpa_m39`
+  (rentang u suhu meniru `O35 = MAX(H39:L39)`; pertanyaan lab volumetric no. 15).
+
+Rincian untuk HP: `docs/perintah-frontend-volumetric.md` §8.
+
 ### 4a. `POST /api/calibrations/preview` — hitung sambil ngetik
 
 ✅ **Live 25 Jul.** Diminta di `permintaan-worksheet-ph.md` §4. Admin & teknisi;

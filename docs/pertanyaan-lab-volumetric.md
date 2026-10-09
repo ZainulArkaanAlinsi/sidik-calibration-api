@@ -350,7 +350,14 @@ ikut dicari maksimumnya. Rentang ini masuk `PERHITUNGAN U95%!H21`
 
 **Pertanyaan:** Apakah rujukan yang benar `MAX(H39:M39)`?
 
-**Sikap sistem:** maksimum dan minimum dari ketiga bacaan suhu yang disimpan.
+**Sikap sistem (9 Okt 2026, §49 tahap 2):** sesi Labu Ukur & Pipet Volume yang
+mengirim **enam** bacaan suhu (no. 16) meniru workbook — rentang = MAX lima
+bacaan terkoreksi pertama − MIN keenamnya — sesuai keputusan pemilik (workbook
+acuan, kejanggalan ditiru). Tiap sesi seperti itu mencatat
+`volumetric_rev7_rentang_suhu_o35_tanpa_m39` di jejak titik: rentang yang
+dipakai, rentang bila `M39` ikut, dan U hitung bila `M39` ikut. Sesi **tiga**
+bacaan tetap memakai maksimum dan minimum ketiganya (setara workbook, karena
+tiap bacaan mewakili awal = akhir).
 
 ### 16. Suhu air dicatat enam kali di workbook, tiga kali di sistem
 
@@ -363,7 +370,14 @@ workbook acuan.
 ya, lembar kerja di HP perlu enam kotak suhu, dan suhu rata-rata (`N35`) serta
 rentangnya ikut berubah.
 
-**Sikap sistem:** tiga suhu per ulangan sampai dijawab.
+**Sikap sistem (9 Okt 2026, §49 tahap 2):** lembar Labu Ukur & Pipet Volume
+menyediakan **enam** kotak suhu (X1 awal, X1 akhir, X2 awal, X2 akhir, X3 awal,
+X3 akhir) dan server menghitungnya persis rantai `PERHITUNGAN!H35:P40`: tiap
+bacaan dikoreksi sendiri; suhu ulangan = rata-rata awal & akhir terkoreksi
+(`L40`), ρ air dari suhu rata-rata itu; ulangan 1 & 2 tetap 25,5 °C (no. 14);
+`N35` = rata-rata keenamnya; rentang ikut no. 15. Kiriman **tiga** suhu (APK
+lama) tetap diterima dan angkanya tidak bergeser. Profil Volumetric lain tetap
+tiga. Pertanyaan di atas tetap terbuka untuk dijawab lab.
 
 ### 17. Status neraca selalu VALID
 
