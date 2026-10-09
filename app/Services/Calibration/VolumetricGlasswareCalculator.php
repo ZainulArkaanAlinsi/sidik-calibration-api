@@ -482,9 +482,12 @@ class VolumetricGlasswareCalculator
      *    punya tepat dua bacaan — supaya enam bacaan kembar (awal = akhir)
      *    memberi angka yang IDENTIK bit per bit dengan payload tiga bacaan;
      *  - rentang u suhu = `O35 − P35` = MAX lima bacaan pertama (`H39:L39`,
-     *    `M39` TIDAK ikut) − MIN keenamnya (`H39:M39`). Kejanggalan ditiru
-     *    (keputusan pemilik 9 Okt 2026, pertanyaan lab volumetric no. 15);
-     *    rentang & U bila `M39` ikut tercatat di jejak sesi.
+     *    `M39` TIDAK ikut) − MIN keenamnya (`H39:M39`). Kejanggalan ditiru —
+     *    keputusan pemilik 8 Okt 2026: workbook lab acuan, kejanggalan ditiru
+     *    lalu diangkat jadi pertanyaan lab (volumetric no. 15) — dengan pola
+     *    "gabungkan" yang sama dengan 25,5 °C: rentang & U bila `M39` ikut
+     *    tercatat di jejak sesi, dan validator memberi peringatan
+     *    `volumetric_o35_menggeser_u_cetak` kalau angka cetak U95-nya bergeser.
      *
      * Payload tiga bacaan menempuh jalur lama, tidak bergeser satu digit pun.
      *

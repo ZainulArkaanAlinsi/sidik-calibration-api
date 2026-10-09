@@ -224,7 +224,11 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
      */
     public function peringatanSesi(CalibrationSession $sesi): array
     {
-        $peringatan = [...parent::peringatanSesi($sesi), ...$this->peringatanSuhuMenggeserCetak($sesi)];
+        $peringatan = [
+            ...parent::peringatanSesi($sesi),
+            ...$this->peringatanSuhuMenggeserCetak($sesi),
+            ...$this->peringatanO35MenggeserCetak($sesi),
+        ];
         $blok = M::blokSesi($sesi->spesifikasi_alat);
 
         // Sesi tanpa blok Volumetric (atau tanpa lab) sudah diperingatkan
@@ -324,6 +328,65 @@ abstract class FixedVolumetricGlasswareRev7Profile extends FixedVolumetricGlassw
                     $cetakV20, $cetakKoreksi,
                     $pakaiMaster ? 'suhu air terukur' : '25,5 °C seperti workbook',
                     $cetakV20Lain, $cetakKoreksiLain,
+                ),
+            ];
+        }
+
+        return $peringatan;
+    }
+
+    /**
+     * Pola yang sama dengan [peringatanSuhuMenggeserCetak], untuk rentang suhu
+     * air sesi ENAM bacaan: angka ikut workbook — `PERHITUNGAN!O35 =
+     * MAX(H39:L39)` melewatkan bacaan akhir ulangan 3 (`M39`) — DAN sistem
+     * berjaga. Kalau angka CETAK U95 bila `M39` ikut (U hitung di jejak
+     * `volumetric_rev7_rentang_suhu_o35_tanpa_m39`, dengan lantai CMC yang sama)
+     * berbeda dari yang dipakai, admin diberi PERINGATAN berisi kedua angka.
+     *
+     * Sesi tiga bacaan tidak punya jejak itu (tidak ada `M39` yang terlewat),
+     * jadi peringatan ini tidak pernah muncul di sana. Keputusan pemilik
+     * 8 Okt 2026 (workbook acuan, kejanggalan ditiru + pertanyaan lab no. 15).
+     *
+     * @return list<array{kode: string, pesan: string}>
+     */
+    private function peringatanO35MenggeserCetak(CalibrationSession $sesi): array
+    {
+        $peringatan = [];
+
+        foreach ($sesi->uncertaintyCalculations as $titik) {
+            $komponen = collect((array) $titik->type_b_components);
+            $jejak = $komponen->first(static fn ($b): bool => is_array($b)
+                && ($b['sumber'] ?? null) === 'volumetric_rev7_rentang_suhu_o35_tanpa_m39');
+
+            if (! is_array($jejak) || ! is_numeric($jejak['nilai'] ?? null)) {
+                continue;
+            }
+
+            // Lantai CMC yang sama dengan yang dipakai `hitungPerGrup()`.
+            $cmc = $komponen->first(static fn ($b): bool => is_array($b)
+                && ($b['sumber'] ?? null) === 'perbandingan_cmc')['nilai'] ?? null;
+
+            $nominal = (float) $titik->titik_ukur;
+            $desimal = $this->desimalU95Titik($nominal) ?? $this->desimalU95()
+                ?? $this->desimalSertifikatTitik($nominal) ?? $this->desimalSertifikat() ?? 4;
+            $cetak = fn (float $x): string => Angka::hasil($x, $desimal, tandaNol: $this->tandaNolDicetak());
+
+            $cetakDipakai = $cetak((float) $titik->ketidakpastian_diperluas);
+            $cetakDenganM39 = $cetak(max((float) $jejak['nilai'], is_numeric($cmc) ? (float) $cmc : 0.0));
+
+            if ($cetakDipakai === $cetakDenganM39) {
+                continue;
+            }
+
+            $peringatan[] = [
+                'kode' => 'volumetric_o35_menggeser_u_cetak',
+                'pesan' => sprintf(
+                    'Titik %s mL: angka cetak U95 bergantung pada rentang suhu air. Workbook Rev.7 '
+                    .'`PERHITUNGAN!O35 = MAX(H39:L39)` melewatkan suhu akhir ulangan 3 (`M39`). Tercetak (ikut '
+                    .'workbook): U95 %s mL. Kalau `M39` ikut: U95 %s mL. Angka ikut workbook sesuai keputusan '
+                    .'pemilik 8 Okt 2026 — periksa suhu airnya sebelum menyetujui '
+                    .'(docs/pertanyaan-lab-volumetric.md no. 15).',
+                    Angka::nilaiStandar($nominal, 6), $cetakDipakai, $cetakDenganM39,
                 ),
             ];
         }

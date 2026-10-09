@@ -149,10 +149,13 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
                 'pesan' => sprintf(
                     'Rentang suhu air u suhu = %.12g °C, meniru workbook Rev.7 `PERHITUNGAN U95%%!H21 = O35 − P35`: '
                     .'`PERHITUNGAN!O35 = MAX(H39:L39)` hanya lima bacaan terkoreksi pertama — bacaan AKHIR '
-                    .'ulangan 3 (`M39`) tidak ikut — sedangkan `P35 = MIN(H39:M39)` keenamnya. Kalau `M39` ikut: '
-                    .'rentang %.12g °C, U hitung %.12g mL. Ditiru sesuai keputusan pemilik 9 Okt 2026 (workbook '
-                    .'acuan, kejanggalan ditiru); docs/pertanyaan-lab-volumetric.md no. 15.',
-                    $r['rentang_suhu_o35'], $r['rentang_suhu_dengan_m39'], $r['u95_rentang_dengan_m39'],
+                    .'ulangan 3 (`M39`) tidak ikut — sedangkan `P35 = MIN(H39:M39)` keenamnya. U hitung yang '
+                    .'dipakai %.12g mL; kalau `M39` ikut: rentang %.12g °C, U hitung %.12g mL. Ditiru sesuai '
+                    .'keputusan pemilik 8 Okt 2026 (workbook lab acuan, kejanggalan ditiru lalu diangkat jadi '
+                    .'pertanyaan lab — docs/pertanyaan-lab-volumetric.md no. 15), dengan peringatan bila angka '
+                    .'cetak U95 bergeser, pola 25,5 °C (no. 14).',
+                    $r['rentang_suhu_o35'], $h['agregat']['ketidakpastian_diperluas'],
+                    $r['rentang_suhu_dengan_m39'], $r['u95_rentang_dengan_m39'],
                 ),
                 'nilai' => $r['u95_rentang_dengan_m39'],
             ];

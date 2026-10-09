@@ -199,18 +199,42 @@ berlabel, dan `_measurementsDeretBernama` mengirim enam angka berurutan.
 
 | Kiriman `vol_suhu` | Labu Ukur & Pipet Volume | Profil Volumetric lain |
 |---|---|---|
-| 3 angka (APK lama) | **diterima**, angka persis seperti sebelumnya | diterima |
-| 6 angka, semua terisi | **diterima** — awal & akhir tiap ulangan | **422** `errors["measurements.0.vol_suhu"]` |
-| 6 kotak, sebagian `null` | titik **tidak disimpan**, alasan di `meta.belum_dihitung` (bukan 422, supaya draft tetap tersimpan) | — |
+| 3 angka | **diterima**, angka persis seperti sebelumnya | diterima |
+| 6 kotak, semua terisi | **diterima** — awal & akhir tiap ulangan | **422** `errors["measurements.0.vol_suhu"]` |
+| 6 kotak, hanya Awal (1, 3, 5) terisi, ketiga Akhir kosong | **diterima** — satu bacaan per ulangan, dihitung persis seperti 3 angka | — |
+| 6 kotak, pola lain (mis. X1 lengkap, X2 hanya Akhir) | titik **tidak disimpan** — lihat di bawah | — |
 | panjang lain (1, 2, 4, 5, 7, …) | **422** `errors["measurements.0.vol_suhu"]`, pesan menyebut 3 atau 6 | **422** (`size:3`) |
 
-Kotak yang terisi sebagian sengaja tidak "dirapatkan" jadi tiga bacaan: tiga
-angka pertama dari enam kotak adalah X1 awal, X1 akhir, X2 awal — bukan tiga
-ulangan.
+Yang mengirim **3 angka** bukan APK terpasang — APK membaca `pengulangan` dari
+server dan menggambar enam kotak tanpa update. Tiga angka hanya datang dari HP
+yang memakai bentuk lembar lama ter-cache/offline, atau klien lama.
+
+Kotak kosong tidak pernah "dirapatkan": tiga angka pertama dari enam kotak
+adalah X1 awal, X1 akhir, X2 awal — bukan tiga ulangan. Alasan titik yang tidak
+disimpan menyebut kotak yang kurang, mis. *"Titik ke-1: suhu air X2 Awal, X3
+Awal, X3 Akhir belum diisi — lengkapi keenam kotak, atau isi kotak Awal saja
+(X1, X2, X3 Awal) untuk satu bacaan per ulangan."* Tempat pulangnya:
+
+- **`POST` pertama** (atau `PUT` atas sesi yang belum punya pembacaan): **201/200**,
+  titik itu tidak tersimpan sama sekali — berat & suhu yang sudah diketik pun
+  tidak ada di server — dan alasannya di `meta.belum_dihitung`. Tampilkan.
+- **`PUT` atas sesi yang sudah punya pembacaan**: **422** `errors.measurements`
+  berisi alasan yang sama ("Belum ada titik yang lengkap untuk disimpan —
+  pembacaan yang tersimpan tetap utuh, nggak ada yang dihapus. …"). Pembacaan lama
+  tidak tersentuh. **Jangan buang isian lokal** dan jangan suruh teknisi memuat
+  ulang; tampilkan pesannya, biarkan dia melengkapi kotaknya.
+
+**Draft lama tiga suhu.** `GET /calibrations/{id}` menyajikan titik yang tersimpan
+dengan tiga suhu (sesi sebelum tahap 2, atau kiriman Awal saja) dengan
+`pembacaan_ke` 1, 3, 5, jadi pemulihan draft HP (`pembacaan_ke − 1`) menaruhnya di
+X1/X2/X3 Awal dan kotak Akhir kosong. Dikirim ulang tanpa diubah = tiga bacaan yang
+sama, angka identik. Baris tersimpan tidak diubah.
 
 **Yang dihitung server** (rinci: `docs/pertanyaan-lab-volumetric.md` no. 14–16):
 tiap bacaan dikoreksi sendiri; suhu ulangan = rata-rata awal & akhir terkoreksi,
 ρ air dari suhu itu (ulangan 1 & 2 tetap 25,5 °C); suhu air budget = rata-rata
-keenamnya; rentang u suhu meniru `O35` workbook (lima bacaan pertama untuk MAX).
-Enam bacaan kembar (awal = akhir) memberi angka identik dengan tiga bacaan.
+keenamnya; rentang u suhu meniru `O35` workbook (lima bacaan pertama untuk MAX) —
+kalau angka cetak U95 bergeser karenanya, admin mendapat peringatan
+`volumetric_o35_menggeser_u_cetak`. Enam bacaan kembar (awal = akhir) memberi
+angka identik dengan tiga bacaan.
 HP tidak menghitung apa pun.

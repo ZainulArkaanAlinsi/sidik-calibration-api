@@ -379,6 +379,45 @@ class VolumetrikEnamSuhuAirTest extends TestCase
         $this->samaRelatif($lain['u'], $h['pembanding_master']['rev7']['u95_lain'], "$kode U cabang lain");
     }
 
+    /** Enam kotak ditafsir per posisi; kotak kosong tidak pernah dirapatkan. */
+    public function test_tafsir_enam_kotak_suhu(): void
+    {
+        // Keenamnya terisi.
+        $this->assertSame(
+            ['bacaan' => [25.2, 25.3, 25.3, 25.4, 25.2, 26.0], 'kurang' => []],
+            M::tafsirKotakSuhu([25.2, 25.3, 25.3, 25.4, 25.2, 26.0]),
+        );
+        // Awal saja = satu bacaan per ulangan; nilai Akhir tidak dikarang.
+        $this->assertSame(['bacaan' => [25.2, 25.3, 25.4], 'kurang' => []], M::tafsirKotakSuhu([25.2, null, 25.3, null, 25.4, null]));
+        $this->assertSame(['bacaan' => [25.2, 25.3, 25.4], 'kurang' => []], M::tafsirKotakSuhu(['25.2', '', '25.3', null, '25.4', '']));
+        // Awal belum lengkap, belum ada Akhir → cukup Awal yang kosong.
+        $this->assertSame(['bacaan' => [], 'kurang' => ['X3 Awal']], M::tafsirKotakSuhu([25.2, null, 25.3, null, null, null]));
+        $this->assertSame(['bacaan' => [], 'kurang' => ['X1 Awal', 'X2 Awal', 'X3 Awal']], M::tafsirKotakSuhu(array_fill(0, 6, null)));
+        // Ada Akhir terisi → harus lengkap keenamnya.
+        $this->assertSame(['bacaan' => [], 'kurang' => ['X2 Akhir', 'X3 Awal', 'X3 Akhir']], M::tafsirKotakSuhu([25.2, 25.3, 25.3, null, null, null]));
+        $this->assertSame(['bacaan' => [], 'kurang' => ['X2 Awal', 'X3 Awal', 'X3 Akhir']], M::tafsirKotakSuhu([25.2, 25.3, null, 25.4, null, null]));
+        $this->assertSame(['bacaan' => [], 'kurang' => ['X1 Akhir', 'X2 Akhir']], M::tafsirKotakSuhu([25.2, null, 25.3, null, 25.4, 26.0]));
+    }
+
+    /** Titik tiga suhu disajikan di kotak 1, 3, 5; titik enam suhu apa adanya. */
+    public function test_kotak_sajian_suhu_tiga_bacaan(): void
+    {
+        $baris = collect();
+        $id = 1;
+        // Titik 1: tiga suhu, disimpan acak urutannya.
+        foreach ([3, 1, 2] as $ke) {
+            $baris->push((object) ['id' => $id++, 'peran_sensor' => M::PERAN_SUHU, 'tahap' => 'sesudah_adjustment', 'titik_ke' => 1, 'sensor_ke' => $ke, 'pembacaan_ke' => $ke]);
+        }
+        $baris->push((object) ['id' => $id++, 'peran_sensor' => M::PERAN_ISI, 'tahap' => 'sesudah_adjustment', 'titik_ke' => 1, 'sensor_ke' => 1, 'pembacaan_ke' => 1]);
+        // Titik 2: enam suhu.
+        foreach (range(1, 6) as $ke) {
+            $baris->push((object) ['id' => $id++, 'peran_sensor' => M::PERAN_SUHU, 'tahap' => 'sesudah_adjustment', 'titik_ke' => 2, 'sensor_ke' => $ke, 'pembacaan_ke' => $ke]);
+        }
+
+        // id 1 = sensor_ke 3 → kotak 5; id 2 = sensor_ke 1 → kotak 1; id 3 = sensor_ke 2 → kotak 3.
+        $this->assertSame([2 => 1, 3 => 3, 1 => 5], M::kotakSajianSuhuTigaBacaan($baris));
+    }
+
     /** Jalur hitung ulang membaca keenam baris, urut `sensor_ke` — bukan urut simpan. */
     public function test_mentah_meneruskan_enam_suhu_urut_sensor_ke(): void
     {

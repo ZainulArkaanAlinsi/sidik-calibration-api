@@ -902,23 +902,55 @@ Std.") dan sensor PRT Pt-100 SELALU dianggap dipakai — tidak perlu dicentang.
 
 #### Labu Ukur & Pipet Volume: enam bacaan suhu air (9 Okt 2026)
 
-`measurements[].vol_suhu` Labu Ukur & Pipet Volume menerima **3 atau 6** angka
+`measurements[].vol_suhu` Labu Ukur & Pipet Volume menerima **3 atau 6** kotak
 per titik. Enam = awal & akhir tiap ulangan, urut X1 awal, X1 akhir, X2 awal,
-X2 akhir, X3 awal, X3 akhir (workbook Rev.7 `INPUT DATA!H39:M39`). Tiga (APK lama)
-tetap diterima dan angkanya tidak bergeser. Profil Volumetric lain tetap tepat 3
-(`size:3`).
+X2 akhir, X3 awal, X3 akhir (workbook Rev.7 `INPUT DATA!H39:M39`). Profil Volumetric
+lain tetap tepat 3 (`size:3`).
+
+APK terpasang membaca `pengulangan`/`pengulangan_arah` dari server, jadi otomatis
+menggambar enam kotak. Kiriman **tiga** angka hanya datang dari HP yang memakai
+bentuk lembar lama ter-cache/offline, atau klien lama; tetap diterima dan angkanya
+tidak bergeser.
+
+Enam kotak ditafsir **per posisi** — kotak kosong tidak pernah dirapatkan:
+
+| Isi enam kotak | Hasil |
+|---|---|
+| keenamnya terisi | enam bacaan (awal & akhir tiap ulangan) |
+| hanya Awal (kotak 1, 3, 5), ketiga Akhir kosong | **satu bacaan per ulangan** — dihitung persis jalur tiga bacaan, tersimpan `sensor_ke` 1..3; nilai Akhir tidak dikarang |
+| pola lain (mis. X1 lengkap, X2 hanya Akhir) | titik **tidak disimpan**; alasannya menyebut kotak yang kurang, mis. *"suhu air X2 Awal, X3 Awal, X3 Akhir belum diisi — lengkapi keenam kotak, atau isi kotak Awal saja …"* |
+
+Ke mana alasan "tidak disimpan" itu pulang **bergantung pada keadaan sesi**:
+
+- `POST` pertama, atau `PUT` atas sesi yang **belum** punya pembacaan → **201/200**,
+  titik itu tidak punya baris sama sekali (berat & suhu yang sudah diketik pun
+  tidak tersimpan di server), alasannya di `meta.belum_dihitung`.
+- `PUT` atas sesi yang **sudah** punya pembacaan, dan tidak satu titik pun lengkap
+  → **422** `errors.measurements` berisi alasan per titik di atas ("Belum ada titik
+  yang lengkap untuk disimpan — pembacaan yang tersimpan tetap utuh, nggak ada yang
+  dihapus. …"). Pembacaan lama tidak tersentuh. HP **wajib menyimpan isian lokalnya**
+  — 422 ini bukan perintah memuat ulang.
+
+Lainnya:
 
 - Panjang selain 3/6 → **422** `errors["measurements.N.vol_suhu"]`, pesan
-  menyebut kedua bentuk yang sah. Profil lain yang menerima 6 → **422**.
-- Enam kotak yang terisi sebagian (ada `null`) → titik **tidak disimpan**, alasan
-  di `meta.belum_dihitung` (pola titik tak lengkap yang sudah ada; draft tetap 201).
-- Tersimpan sebagai enam baris `raw_measurements` `peran_sensor = vol_suhu`,
-  `sensor_ke` 1..6 — **nol kolom baru**. `CalibrationValidator` dan
-  `kalibrasi:hitung-ulang` membaca keenamnya lewat `VolumetricGlasswareMentah`.
+  menyebut kedua bentuk yang sah. Profil lain yang mengirim 6 → **422**.
+- Tersimpan sebagai baris `raw_measurements` `peran_sensor = vol_suhu`,
+  `sensor_ke` 1..6 (enam) atau 1..3 (satu per ulangan) — **nol kolom baru**.
+  `CalibrationValidator` dan `kalibrasi:hitung-ulang` membacanya lewat
+  `VolumetricGlasswareMentah`.
+- `GET /calibrations/{id}` → `pembacaan_mentah`: titik Labu Ukur/PV yang
+  tersimpan dengan TIGA suhu (sesi lama, atau kiriman Awal saja) disajikan dengan
+  `pembacaan_ke` **1, 3, 5** — kotak X1/X2/X3 Awal — supaya draft yang dibuka ulang
+  tidak mendarat di X1 Awal, X1 Akhir, X2 Awal. Baris tersimpan tidak diubah
+  (`sensor_ke` tetap 1..3); dikirim ulang tanpa diubah = tiga bacaan yang sama.
 - Bentuk lembar: tabel `vol_suhu` membawa `pengulangan: [1..6]` dan
   `pengulangan_arah` berlabel `X1 Awal` … `X3 Akhir` (kunci yang sudah dibaca HP).
 - Jejak titik sesi enam bacaan memuat `volumetric_rev7_rentang_suhu_o35_tanpa_m39`
-  (rentang u suhu meniru `O35 = MAX(H39:L39)`; pertanyaan lab volumetric no. 15).
+  (rentang u suhu meniru `O35 = MAX(H39:L39)`; U yang dipakai dan U bila `M39`
+  ikut; pertanyaan lab volumetric no. 15). Kalau angka CETAK U95 bila `M39` ikut
+  berbeda dari yang dipakai, `GET /calibrations/{id}/validasi` memberi PERINGATAN
+  `volumetric_o35_menggeser_u_cetak` (pola `volumetric_suhu_25_5_menggeser_cetak`).
 
 Rincian untuk HP: `docs/perintah-frontend-volumetric.md` §8.
 

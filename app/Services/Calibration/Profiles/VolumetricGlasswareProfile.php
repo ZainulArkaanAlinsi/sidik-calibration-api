@@ -253,7 +253,8 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
                 .'tiga kali berat wadah berisi air suling (gram), dan '
                 .($this->suhuAwalAkhir()
                     ? 'enam kali suhu air (°C) — awal & akhir tiap ulangan, urut X1 awal, X1 akhir, X2 awal, '
-                        .'X2 akhir, X3 awal, X3 akhir. '
+                        .'X2 akhir, X3 awal, X3 akhir (kalau suhu dibaca sekali per ulangan, isi kotak Awal '
+                        .'saja). '
                     : 'tiga kali suhu air (°C). ')
                 .'Volume pada 20 °C dihitung server secara gravimetri. Tekanan udara (hPa) wajib walau tidak '
                 .'tercetak di kertas: densitas udara dihitung dari situ.',
@@ -834,10 +835,7 @@ abstract class VolumetricGlasswareProfile extends CalibrationProfile
         if ($this->suhuAwalAkhir()) {
             $tabelSuhu['pengulangan'] = range(1, VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR);
             $tabelSuhu['pengulangan_arah'] = array_map(
-                static fn (int $i): array => [
-                    'ke' => $i + 1,
-                    'label' => sprintf('X%d %s', intdiv($i, 2) + 1, $i % 2 === 0 ? 'Awal' : 'Akhir'),
-                ],
+                static fn (int $i): array => ['ke' => $i + 1, 'label' => M::LABEL_KOTAK_SUHU[$i]],
                 range(0, VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR - 1),
             );
         }

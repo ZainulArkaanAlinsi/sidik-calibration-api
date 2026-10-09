@@ -55,6 +55,15 @@ final class VolumetricGlasswareMentah
     public const PENGULANGAN = 3;
 
     /**
+     * Label keenam kotak suhu air lembar Rev.7, urut kotak = urut `vol_suhu`
+     * yang dikirim — `INPUT DATA!H39:M39`. Satu sumber untuk bentuk lembar
+     * (`pengulangan_arah`) dan pesan kotak yang kurang.
+     *
+     * @var list<string>
+     */
+    public const LABEL_KOTAK_SUHU = ['X1 Awal', 'X1 Akhir', 'X2 Awal', 'X2 Akhir', 'X3 Awal', 'X3 Akhir'];
+
+    /**
      * Peran yang besarannya BUKAN besaran alatnya.
      *
      * `CalibrationValidator` mengadu tiap pembacaan ke rentang & resolusi alat.
@@ -133,6 +142,92 @@ final class VolumetricGlasswareMentah
             'kapasitas_ml' => $angka($blok['kapasitas_ml'] ?? null),
             'neraca' => $teks($blok['neraca'] ?? null),
         ];
+    }
+
+    /**
+     * Tafsir ENAM kotak suhu air (lembar Rev.7) yang dikirim, posisi demi
+     * posisi — kotak kosong TIDAK dirapatkan.
+     *
+     *  - keenamnya terisi → enam bacaan (awal & akhir tiap ulangan);
+     *  - hanya kotak Awal (1, 3, 5) terisi dan ketiga kotak Akhir kosong →
+     *    satu bacaan per ulangan = tiga bacaan, jalur lama persis. Nilai Akhir
+     *    TIDAK dikarang;
+     *  - pola lain → `bacaan` kosong, `kurang` = label kotak yang harus diisi:
+     *    Awal yang kosong kalau belum satu pun Akhir terisi (isi Awal saja
+     *    sudah sah), selain itu semua kotak yang kosong (lengkapi keenamnya).
+     *
+     * Merapatkan kotak kosong itu yang dicegah: [X1 Awal, X1 Akhir, X2 Awal,
+     * null, null, null] akan terbaca sebagai tiga ulangan yang salah tempat —
+     * angka yang kelihatan wajar, tanpa error.
+     *
+     * @param  array<int, mixed>  $kotak  tepat enam, urut [LABEL_KOTAK_SUHU]
+     * @return array{bacaan: list<float>, kurang: list<string>}
+     */
+    public static function tafsirKotakSuhu(array $kotak): array
+    {
+        $kotak = array_values($kotak);
+        $terisi = array_map(static fn (mixed $x): bool => is_numeric($x), $kotak);
+        $kosong = static fn (array $posisi): array => array_values(array_map(
+            static fn (int $i): string => self::LABEL_KOTAK_SUHU[$i],
+            array_filter($posisi, static fn (int $i): bool => ! $terisi[$i]),
+        ));
+
+        if (! in_array(false, $terisi, true)) {
+            return ['bacaan' => array_map('floatval', $kotak), 'kurang' => []];
+        }
+
+        $awal = [0, 2, 4];
+        $akhirTerisi = array_filter([1, 3, 5], static fn (int $i): bool => $terisi[$i]);
+
+        if ($akhirTerisi === []) {
+            $kurang = $kosong($awal);
+
+            return $kurang === []
+                ? ['bacaan' => array_map(static fn (int $i): float => (float) $kotak[$i], $awal), 'kurang' => []]
+                : ['bacaan' => [], 'kurang' => $kurang];
+        }
+
+        return ['bacaan' => [], 'kurang' => $kosong(range(0, count($kotak) - 1))];
+    }
+
+    /**
+     * Nomor kotak tempat baris suhu SATU BACAAN PER ULANGAN disajikan di
+     * lembar enam kotak: bacaan ke-k → kotak 2k − 1 (X1/X2/X3 Awal).
+     *
+     * Sesi Labu Ukur/PV yang tersimpan dengan tiga suhu (`sensor_ke` 1..3 —
+     * sesi lama, atau kiriman Awal saja) dibuka ulang di lembar enam kotak.
+     * HP menaruh tiap baris di kotak `pembacaan_ke − 1`; tanpa pemetaan ini
+     * ketiganya mendarat di X1 Awal, X1 Akhir, X2 Awal, dan teknisi yang
+     * melengkapi sisanya menghasilkan penempatan salah tanpa error. Barisnya
+     * sendiri TIDAK diubah — ini cuma cara menyajikannya; kiriman ulang yang
+     * tidak disentuh kembali jadi tiga bacaan yang sama (`tafsirKotakSuhu`).
+     *
+     * Hanya titik yang tepat tiga baris suhunya; titik enam bacaan disajikan
+     * apa adanya.
+     *
+     * @param  Collection<int, object>  $baris
+     * @return array<int, int> id baris → nomor kotak (1-based)
+     */
+    public static function kotakSajianSuhuTigaBacaan(Collection $baris): array
+    {
+        $peta = [];
+
+        $baris
+            ->filter(static fn ($b): bool => (string) $b->peran_sensor === self::PERAN_SUHU)
+            ->groupBy(static fn ($b): string => $b->tahap.'|'.$b->titik_ke)
+            ->each(function (Collection $grup) use (&$peta): void {
+                if ($grup->count() !== self::PENGULANGAN) {
+                    return;
+                }
+
+                $grup->sortBy(static fn ($b): int => (int) ($b->sensor_ke ?? $b->pembacaan_ke ?? 0))
+                    ->values()
+                    ->each(function ($b, int $k) use (&$peta): void {
+                        $peta[(int) $b->id] = 2 * $k + 1;
+                    });
+            });
+
+        return $peta;
     }
 
     /**

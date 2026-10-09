@@ -287,8 +287,178 @@ class VolumetrikEnamSuhuAirTest extends TestCase
         $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
 
         $alasan = implode(' | ', array_column($balasan->json('meta.belum_dihitung'), 'alasan'));
-        $this->assertStringContainsString('3 atau 6', $alasan);
-        $this->assertStringContainsString('semua kotak terisi', $alasan);
+        // X1 Akhir sudah terisi → jalur "Awal saja" tertutup; yang kurang
+        // semua kotak kosong.
+        $this->assertStringContainsString('suhu air X2 Akhir, X3 Awal, X3 Akhir belum diisi', $alasan);
+        $this->assertStringContainsString('isi kotak Awal saja', $alasan);
+    }
+
+    /** X1 lengkap, X2 hanya Akhir: bukan enam, bukan Awal saja — tidak dihitung. */
+    public function test_pola_sebagian_lain_tidak_dihitung(): void
+    {
+        [$alat, $teknisi] = $this->labuUkur();
+
+        $balasan = $this->actingAs($teknisi)
+            ->postJson('/api/calibrations', $this->payloadLabu($alat, [25.2, 25.3, null, 25.4, null, null]))
+            ->assertSuccessful();
+
+        $sesi = CalibrationSession::findOrFail($balasan->json('data.id'));
+        $this->assertSame(0, RawMeasurement::where('calibration_session_id', $sesi->id)->count());
+        $this->assertSame(0, $sesi->uncertaintyCalculations()->count());
+        $this->assertStringContainsString(
+            'suhu air X2 Awal, X3 Awal, X3 Akhir belum diisi',
+            implode(' | ', array_column($balasan->json('meta.belum_dihitung'), 'alasan')),
+        );
+    }
+
+    /**
+     * Kotak Awal saja (1, 3, 5) dengan ketiga Akhir kosong = satu bacaan per
+     * ulangan: jalur tiga bacaan lama, baris & angka identik dengan payload
+     * tiga angka. Nilai Akhir tidak dikarang.
+     */
+    public function test_kotak_awal_saja_dihitung_jalur_tiga_bacaan(): void
+    {
+        [$alat, $teknisi] = $this->labuUkur();
+        $tiga = $this->simpan($teknisi, $this->payloadLabu($alat, [25.2, 25.3, 25.4]));
+        $awal = $this->simpan($teknisi, $this->payloadLabu($alat, [25.2, null, 25.3, null, 25.4, null]));
+
+        $suhu = static fn (CalibrationSession $s): array => RawMeasurement::where('calibration_session_id', $s->id)
+            ->where('peran_sensor', M::PERAN_SUHU)->orderBy('sensor_ke')->get()
+            ->map(static fn ($b): array => [(int) $b->sensor_ke, (int) $b->pembacaan_ke, (string) $b->pembacaan])->all();
+        $this->assertSame($suhu($tiga), $suhu($awal));
+        $this->assertCount(3, $suhu($awal), 'nilai Akhir dikarang');
+
+        $this->assertSame($this->kolomAngka($tiga), $this->kolomAngka($awal));
+        $this->assertNotContains(
+            'volumetric_rev7_rentang_suhu_o35_tanpa_m39',
+            array_column((array) $awal->uncertaintyCalculations()->sole()->type_b_components, 'sumber'),
+        );
+    }
+
+    /**
+     * Draft LAMA tiga suhu (`sensor_ke` 1..3) dibuka di lembar enam kotak:
+     * disajikan di X1/X2/X3 Awal (kotak 1, 3, 5), bukan X1 Awal, X1 Akhir,
+     * X2 Awal. Dikirim ulang apa adanya → baris & angka identik. Baris
+     * tersimpan tidak diubah oleh penyajian.
+     */
+    public function test_draft_lama_tiga_suhu_disajikan_di_kotak_awal_lalu_dikirim_ulang_identik(): void
+    {
+        [$alat, $teknisi] = $this->labuUkur();
+        $payload = ['status' => 'draft'] + $this->payloadLabu($alat, [25.2, 25.3, 25.4]);
+        $sesi = $this->simpan($teknisi, $payload);
+        $angkaSebelum = $this->kolomAngka($sesi);
+
+        $mentah = collect($this->actingAs($teknisi)->getJson("/api/calibrations/{$sesi->id}")->assertOk()
+            ->json('data.pembacaan_mentah'))->where('peran_sensor', M::PERAN_SUHU)->values();
+
+        $this->assertSame([1, 3, 5], $mentah->pluck('pembacaan_ke')->all(), 'disajikan di X1/X2/X3 Awal');
+        $this->assertSame([1, 2, 3], $mentah->pluck('sensor_ke')->all(), 'nomor simpan tetap');
+        $this->assertSame(
+            [1, 2, 3],
+            RawMeasurement::where('calibration_session_id', $sesi->id)->where('peran_sensor', M::PERAN_SUHU)
+                ->orderBy('sensor_ke')->pluck('pembacaan_ke')->map(static fn ($k): int => (int) $k)->all(),
+            'baris tersimpan diubah oleh penyajian',
+        );
+
+        // Pemulihan HP: kotak = `pembacaan_ke − 1`, sisanya null.
+        $kotak = array_fill(0, 6, null);
+        foreach ($mentah as $m) {
+            $kotak[$m['pembacaan_ke'] - 1] = (float) $m['pembacaan'];
+        }
+        $this->assertSame([25.2, null, 25.3, null, 25.4, null], $kotak);
+
+        $this->actingAs($teknisi)
+            ->putJson("/api/calibrations/{$sesi->id}", ['status' => 'draft'] + $this->payloadLabu($alat, $kotak))
+            ->assertOk();
+
+        $sesi->refresh();
+        $this->assertSame(
+            [[1, 25.2], [2, 25.3], [3, 25.4]],
+            RawMeasurement::where('calibration_session_id', $sesi->id)->where('peran_sensor', M::PERAN_SUHU)
+                ->orderBy('sensor_ke')->get()->map(static fn ($b): array => [(int) $b->sensor_ke, (float) $b->pembacaan])->all(),
+        );
+        $this->assertSame($angkaSebelum, $this->kolomAngka($sesi));
+    }
+
+    /**
+     * `PUT` atas sesi yang sudah punya pembacaan dengan enam kotak sebagian:
+     * 422 yang menyebut kotak yang kurang — bukan "tabel kosong, muat ulang".
+     * Pembacaan lama utuh.
+     */
+    public function test_put_enam_kotak_sebagian_422_menyebut_kotak_yang_kurang(): void
+    {
+        [$alat, $teknisi] = $this->labuUkur();
+        $sesi = $this->simpan($teknisi, ['status' => 'draft'] + $this->payloadLabu($alat, self::SUHU_ENAM));
+        $sebelum = RawMeasurement::where('calibration_session_id', $sesi->id)->count();
+
+        $balasan = $this->actingAs($teknisi)->putJson(
+            "/api/calibrations/{$sesi->id}",
+            ['status' => 'draft'] + $this->payloadLabu($alat, [25.2, 25.3, 25.3, null, 25.2, 26.0]),
+        );
+
+        $balasan->assertStatus(422)->assertJsonValidationErrors(['measurements']);
+        $pesan = (string) $balasan->json('errors.measurements.0');
+        $this->assertStringContainsString('suhu air X2 Akhir belum diisi', $pesan);
+        $this->assertStringContainsString('isi kotak Awal saja', $pesan);
+        $this->assertStringContainsString('nggak ada yang dihapus', $pesan);
+        $this->assertStringNotContainsString('Muat ulang', $pesan);
+        $this->assertSame($sebelum, RawMeasurement::where('calibration_session_id', $sesi->id)->count());
+    }
+
+    /**
+     * Pola "gabungkan" 25,5 °C untuk `O35`: angka ikut workbook, PERINGATAN
+     * kalau angka cetak U95 bila `M39` ikut berbeda. Lantai CMC 0,03 (di bawah
+     * U hitung ±0,036) supaya U hitung yang tercetak.
+     */
+    public function test_peringatan_o35_muncul_bila_u95_cetak_bergeser(): void
+    {
+        [$alat, $teknisi] = $this->siapkan('Labu Ukur 250 mL', 'Labu Ukur', [[250, 0.03]], [0, 250, null]);
+        // M39 melonjak: O35 melewatkannya, rentang & U bila M39 ikut jauh lebih besar.
+        $sesi = $this->simpan($teknisi, $this->payloadLabu($alat, [25.2, 25.2, 25.3, 25.3, 25.2, 30.0]));
+
+        $temuan = array_values(array_filter(
+            app(CalibrationValidator::class)->periksa($sesi)['temuan'],
+            static fn (array $t): bool => $t['kode'] === 'volumetric_o35_menggeser_u_cetak',
+        ));
+
+        $this->assertCount(1, $temuan);
+        $this->assertSame('peringatan', $temuan[0]['tingkat']);
+        $this->assertStringContainsString('Tercetak (ikut workbook): U95 0,036 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('Kalau `M39` ikut: U95 0,042 mL', $temuan[0]['pesan']);
+        $this->assertStringContainsString('no. 15', $temuan[0]['pesan']);
+        $this->assertTrue(app(CalibrationValidator::class)->periksa($sesi->fresh())['boleh_terbit'], 'peringatan, bukan penahan');
+    }
+
+    public function test_peringatan_o35_tidak_muncul_bila_u95_cetak_sama(): void
+    {
+        $kode = static fn (CalibrationSession $s): array => array_column(
+            app(CalibrationValidator::class)->periksa($s)['temuan'], 'kode',
+        );
+
+        // (1) Angka cetak sama walau rentangnya beda (CMC di bawah U, M39 sedikit lebih tinggi).
+        [$alat, $teknisi] = $this->siapkan('Labu Ukur 250 mL', 'Labu Ukur', [[250, 0.03]], [0, 250, null]);
+        $this->assertNotContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, self::SUHU_ENAM))));
+        // (2) Tiga bacaan: tidak ada M39 yang terlewat.
+        $this->assertNotContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, [25.2, 25.3, 30.0]))));
+
+        // (3) Lonjakan M39, tapi lantai CMC 0,044 yang tercetak di kedua cara.
+        [$alat, $teknisi] = $this->labuUkur();
+        $this->assertNotContains('volumetric_o35_menggeser_u_cetak', $kode($this->simpan($teknisi, $this->payloadLabu($alat, [25.2, 25.2, 25.3, 25.3, 25.2, 30.0]))));
+    }
+
+    /** @return array<string, string> */
+    private function kolomAngka(CalibrationSession $sesi): array
+    {
+        $t = $sesi->uncertaintyCalculations()->sole();
+        $kolom = [];
+        foreach ([
+            'rata_rata', 'error', 'koreksi', 'standar_deviasi', 'type_a', 'type_b', 'ketidakpastian_gabungan',
+            'faktor_cakupan_k', 'derajat_kebebasan_efektif', 'ketidakpastian_diperluas',
+        ] as $k) {
+            $kolom[$k] = (string) $t->{$k};
+        }
+
+        return $kolom;
     }
 
     /** Bentuk lembar: enam kotak berlabel hanya di tabel suhu Labu Ukur & PV. */
