@@ -83,9 +83,14 @@ class TemplateFormulirAsliTest extends TestCase
         $asli = $this->asli();
         $cetak = $this->cetak();
 
-        foreach (['judul', 'satuan', 'jumlah_pengulangan', 'tabel', 'pipeline_versi', 'aturan_versi'] as $kunci) {
+        foreach (['judul', 'satuan', 'jumlah_pengulangan', 'tabel', 'pipeline_versi'] as $kunci) {
             $this->assertSame($cetak[$kunci], $asli[$kunci], "`{$kunci}` formulir asli beda dari jalur cetak.");
         }
+
+        // `aturan_versi` sengaja BEDA: vonis formulir asli ikut ambang jangkar
+        // teks & centang miliknya sendiri (B2). Ambang sel lama tetap tercakup.
+        $this->assertSame($cetak['aturan_versi'].'+'.config('ocr.formulir_asli.aturan_versi'), $asli['aturan_versi']);
+        $this->assertSame(FormulirAsli::aturanVersi(), $asli['aturan_versi']);
     }
 
     public function test_geometri_ternormal_ukuran_lanskap_dan_93_jangkar_teks(): void

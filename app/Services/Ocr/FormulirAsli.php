@@ -152,8 +152,21 @@ class FormulirAsli
             // vonisnya di server pemroses pindai, bukan di sini.
             'mode_uji' => (bool) config('ocr.formulir_asli.mode_uji', false),
             'pipeline_versi' => $cetak['pipeline_versi'],
-            'aturan_versi' => $cetak['aturan_versi'],
+            // Bukan versi jalur cetak: vonis formulir asli juga bergantung pada
+            // ambang jangkar teks & centang. Nilai yang SAMA dicatat tiap pindai
+            // asli (`WorksheetScanController::simpan()`).
+            'aturan_versi' => self::aturanVersi(),
         ];
+    }
+
+    /**
+     * Versi aturan yang menentukan vonis pindai formulir asli: ambang sel lama
+     * (`ocr.aturan_versi`) + ambang khusus asli (`ocr.formulir_asli.aturan_versi`).
+     * Dua-duanya ikut karena geser salah satunya mengubah vonis.
+     */
+    public static function aturanVersi(): string
+    {
+        return config('ocr.aturan_versi').'+'.config('ocr.formulir_asli.aturan_versi');
     }
 
     /**

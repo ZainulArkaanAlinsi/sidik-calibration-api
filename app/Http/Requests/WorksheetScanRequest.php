@@ -25,9 +25,28 @@ class WorksheetScanRequest extends FormRequest
      */
     private const MAKS_SEL = 600;
 
+    /**
+     * Langit array formulir ASLI. Pilot pH: 93 jangkar teks, 4 isian, 9 centang.
+     */
+    private const MAKS_JANGKAR = 200;
+
+    private const MAKS_ISIAN = 20;
+
+    private const MAKS_CENTANG = 30;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * `kertas: "asli"` = formulir SIDIK-FM-CAL asli lab, tanpa marker & QR
+     * (`App\Services\Ocr\FormulirAsli`). Tanpa `kertas` atau `cetak` = lembar
+     * cetak bermarker, kontrak lama.
+     */
+    public function kertasAsli(): bool
+    {
+        return $this->input('kertas') === 'asli';
     }
 
     /**
@@ -35,7 +54,61 @@ class WorksheetScanRequest extends FormRequest
      */
     public function rules(): array
     {
+        $aturan = $this->aturanCetak();
+
+        return $this->kertasAsli() ? [...$aturan, ...$this->aturanAsli()] : $aturan;
+    }
+
+    /**
+     * Tambahan & penimpa untuk formulir asli. Aturan cetak di atas TIDAK
+     * berubah: ini dipasang hanya kalau `kertas=asli`.
+     *
+     * @return array<string, mixed>
+     */
+    private function aturanAsli(): array
+    {
         return [
+            // Formulir asli tidak punya QR — pengenalnya kode FM tercetak.
+            'qr' => ['sometimes', 'nullable', 'array'],
+            'qr.terbaca' => ['sometimes', 'nullable', 'boolean'],
+            'kode_dokumen_terbaca' => ['required', 'string', 'max:40'],
+            'revisi_terbaca' => ['sometimes', 'nullable', 'string', 'max:20'],
+            // Revisi TERCETAK formulir (Rev.0 sah di dokumen mutu).
+            'template_versi' => ['required', 'integer', 'between:0,999'],
+
+            // Jangkar = tulisan cetak formulir yang dicocokkan HP ke
+            // `geometri.jangkar_teks[indeks]` template. Jumlah & sebarannya
+            // dinilai pemroses, bukan di sini.
+            'geometri.jangkar_cocok' => ['sometimes', 'array', 'max:'.self::MAKS_JANGKAR],
+            'geometri.jangkar_cocok.*.indeks' => ['required', 'integer', 'between:0,9999'],
+            'geometri.jangkar_cocok.*.teks_mentah' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'geometri.residual_reproyeksi_pt' => ['sometimes', 'nullable', 'numeric', 'between:0,10000'],
+
+            'isian' => ['sometimes', 'array', 'max:'.self::MAKS_ISIAN],
+            'isian.*.kode' => ['required', 'string', 'max:40'],
+            'isian.*.teks_mentah' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'isian.*.confidence_ocr' => ['sometimes', 'nullable', 'numeric', 'between:0,1'],
+            'isian.*.kotak_teks_di_dalam_sel' => ['sometimes', 'nullable', 'boolean'],
+            'isian.*.sumber' => ['sometimes', 'nullable', 'string', 'max:40'],
+
+            'centang' => ['sometimes', 'array', 'max:'.self::MAKS_CENTANG],
+            'centang.*.kode' => ['required', 'string', 'max:60'],
+            'centang.*.baris_ke' => ['sometimes', 'nullable', 'integer', 'between:1,200'],
+            'centang.*.pilihan' => ['sometimes', 'nullable', 'string', 'max:20'],
+            // Rasio piksel gelap di dalam kotak, BUKAN OCR (PANDUAN §4).
+            'centang.*.rasio_gelap' => ['sometimes', 'nullable', 'numeric', 'between:0,1'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function aturanCetak(): array
+    {
+        return [
+            // `cetak` (bawaan) atau `asli` — lihat [kertasAsli].
+            'kertas' => ['sometimes', 'nullable', 'string', 'in:cetak,asli'],
+
             'template_id' => ['required', 'string', 'max:60'],
             'template_versi' => ['required', 'integer', 'between:1,999'],
 
@@ -121,6 +194,7 @@ class WorksheetScanRequest extends FormRequest
             'geometri.required' => 'Data penyelarasan lembar (marker & homography) wajib dikirim.',
             'citra.max' => 'Foto maksimal 8 MB.',
             'citra_warp.max' => 'Foto maksimal 8 MB.',
+            'kode_dokumen_terbaca.required' => 'Kode formulir yang kebaca (SIDIK-FM-CAL-…) wajib dikirim untuk formulir asli.',
         ];
     }
 
@@ -131,6 +205,37 @@ class WorksheetScanRequest extends FormRequest
      * @return array<string, mixed>
      */
     public function payload(): array
+    {
+        $dasar = $this->payloadCetak();
+
+        if (! $this->kertasAsli()) {
+            return $dasar;
+        }
+
+        return [
+            ...$dasar,
+            'kertas' => 'asli',
+            'kode_dokumen_terbaca' => $this->input('kode_dokumen_terbaca'),
+            'revisi_terbaca' => $this->input('revisi_terbaca'),
+            'isian' => array_values(
+                array_map(
+                    // Kolom boolean BARU — wajib ikut dirapikan, alasannya sama
+                    // dengan `sel.*.kotak_teks_di_dalam_sel` (lihat [bolean]).
+                    fn ($s) => $this->bolean((array) $s, ['kotak_teks_di_dalam_sel']),
+                    (array) $this->input('isian', []),
+                ),
+            ),
+            'centang' => array_values(array_map(
+                static fn ($c): array => (array) $c,
+                (array) $this->input('centang', []),
+            )),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payloadCetak(): array
     {
         return [
             'template_id' => $this->string('template_id')->toString(),

@@ -685,10 +685,13 @@ class CalibrationValidator
      * Batas kelembaban yang MASUK AKAL buat ruang lab. Bukan batas alat —
      * higrometer bisa baca 0–100 — tapi batas ruangan berpendingin yang lagi
      * dipakai kerja. Di luar ini hampir pasti salah ketik.
+     *
+     * Publik karena pindai formulir asli memakai rentang yang SAMA untuk isian
+     * Env. (`PemrosesScanLembarKerja::aturanIsian()`) — satu sumber, bukan salinan.
      */
-    private const KELEMBABAN_MIN = 20.0;
+    public const KELEMBABAN_MIN = 20.0;
 
-    private const KELEMBABAN_MAKS = 90.0;
+    public const KELEMBABAN_MAKS = 90.0;
 
     /**
      * Pergeseran kelembaban selama satu sesi. Ruangan bisa naik-turun beberapa

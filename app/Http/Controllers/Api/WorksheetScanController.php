@@ -40,6 +40,13 @@ use Illuminate\Support\Facades\Storage;
  */
 class WorksheetScanController extends Controller
 {
+    /**
+     * Selisih rasio sisi citra warp formulir asli terhadap halaman acuan yang
+     * masih diterima `crop` (2 %). Ini penjaga TAMPILAN potongan, bukan ambang
+     * vonis angka — vonisnya sudah diambil saat pindai diterima.
+     */
+    private const TOLERANSI_RASIO_HALAMAN = 0.02;
+
     public function __construct(
         private readonly TemplateLembarKerja $template,
         private readonly PemrosesScanLembarKerja $pemroses,
@@ -116,18 +123,28 @@ class WorksheetScanController extends Controller
             ?? $sesi?->equipment
             ?? $this->konteksOrganisasi($request);
 
-        $template = $this->template->untukKode(
-            $request->string('template_id')->toString(),
-            $alat,
-            $request->input('jumlah_pengulangan'),
-        );
+        // Formulir ASLI lab memakai template dari `FormulirAsli` (konteks alat &
+        // jumlah pengulangan sama dengan `template()`); sisanya jalur cetak.
+        $template = $request->kertasAsli()
+            ? $this->formulirAsli->untukKode(
+                $request->string('template_id')->toString(),
+                $alat,
+                $request->input('jumlah_pengulangan'),
+            )
+            : $this->template->untukKode(
+                $request->string('template_id')->toString(),
+                $alat,
+                $request->input('jumlah_pengulangan'),
+            );
 
         $hasil = $template === null
             ? [
                 'ok' => false,
                 'status' => PemrosesScanLembarKerja::TEMPLATE_TIDAK_DIKENALI,
                 'alasan_gagal' => PemrosesScanLembarKerja::TEMPLATE_TIDAK_DIKENALI,
-                'pesan' => 'Template lembar kerja `'.$request->string('template_id')->toString().'` nggak dikenal sistem.',
+                'pesan' => $request->kertasAsli()
+                    ? 'Formulir asli lab buat `'.$request->string('template_id')->toString().'` belum dikenal sistem.'
+                    : 'Template lembar kerja `'.$request->string('template_id')->toString().'` nggak dikenal sistem.',
                 'sel' => [],
                 'tabel' => [],
                 'ringkasan' => ['total_sel' => 0, 'hijau' => 0, 'kuning' => 0, 'merah' => 0, 'kosong' => 0],
@@ -237,6 +254,10 @@ class WorksheetScanController extends Controller
 
         abort_if($gambar === false, 422, 'Citra hasil pindai rusak.');
 
+        if (($worksheetScan->hasil['kertas'] ?? null) === 'asli') {
+            $kotak = $this->kotakPikselFormulirAsli($worksheetScan, $kotak, imagesx($gambar), imagesy($gambar));
+        }
+
         // Margin biar teknisi lihat sedikit di luar kotak selnya — angka yang
         // ketulis mepet garis jadi nggak kepotong pas dibandingin.
         $margin = 6;
@@ -264,6 +285,46 @@ class WorksheetScanController extends Controller
     }
 
     /**
+     * Kotak formulir asli disimpan TERNORMAL 0..1 terhadap halaman (geometri
+     * PDF), bukan piksel. Citra warp formulir asli = halaman UTUH yang sudah
+     * diratakan, resolusinya bebas — jadi potongannya kotak × ukuran citra.
+     *
+     * Penjaganya rasio sisi: citra yang cuma separuh lembar atau orientasinya
+     * lain akan terpotong di tempat yang salah tanpa gejala, dan potongan yang
+     * salah di layar review lebih buruk daripada tidak ada potongan.
+     *
+     * @param  array<string, mixed>  $kotak
+     * @return array{x: float, y: float, w: float, h: float}
+     */
+    private function kotakPikselFormulirAsli(WorksheetScan $scan, array $kotak, int $lebar, int $tinggi): array
+    {
+        abort_if(
+            ! isset($kotak['x'], $kotak['y'], $kotak['w'], $kotak['h']),
+            422,
+            'Butir ini nggak punya kotak di geometri formulir asli.',
+        );
+
+        $acuan = $scan->hasil['ukuran_referensi'] ?? null;
+        $rasioAcuan = is_array($acuan) && (float) ($acuan['h'] ?? 0) > 0
+            ? (float) ($acuan['w'] ?? 0) / (float) $acuan['h']
+            : null;
+
+        abort_if(
+            $rasioAcuan === null || $rasioAcuan <= 0 || $tinggi <= 0
+                || abs(($lebar / $tinggi) / $rasioAcuan - 1) > self::TOLERANSI_RASIO_HALAMAN,
+            422,
+            'Citra hasil pindai bukan halaman formulir utuh yang sudah diratakan — potongannya nggak bisa dipercaya.',
+        );
+
+        return [
+            'x' => (float) $kotak['x'] * $lebar,
+            'y' => (float) $kotak['y'] * $tinggi,
+            'w' => (float) $kotak['w'] * $lebar,
+            'h' => (float) $kotak['h'] * $tinggi,
+        ];
+    }
+
+    /**
      * Angka yang AKHIRNYA dipakai teknisi → ground truth.
      *
      * Ini jantung feedback loop-nya, dan sengaja dipisah dari submit lembar
@@ -282,6 +343,21 @@ class WorksheetScanController extends Controller
         ]);
 
         $sel = $worksheetScan->cells()->get()->keyBy('kunci');
+
+        // Kotak centang formulir asli: ground truth-nya cuma 1 (dicentang) atau
+        // 0 (kosong). Angka lain bukan koreksi tapi salah kirim, dan yang masuk
+        // sini jadi dataset penyetel ambang centang.
+        abort_if(
+            ($worksheetScan->hasil['kertas'] ?? null) === 'asli'
+                && collect($data['koreksi'])->contains(
+                    static fn (array $k): bool => $sel->get($k['kunci'])?->tabel_id === 'centang'
+                        && isset($k['nilai_final'])
+                        && ! in_array((float) $k['nilai_final'], [0.0, 1.0], true),
+                ),
+            422,
+            'Koreksi kotak centang cuma boleh 1 (dicentang) atau 0 (kosong).',
+        );
+
         $tidakDikenal = [];
         $cocok = 0;
         $meleset = 0;
@@ -353,7 +429,12 @@ class WorksheetScanController extends Controller
             'template_id' => $request->string('template_id')->toString(),
             'template_versi' => $request->integer('template_versi'),
             'pipeline_versi' => (string) config('ocr.pipeline_versi'),
-            'aturan_versi' => (string) config('ocr.aturan_versi'),
+            // Formulir asli punya ambang sendiri (jangkar teks, centang) di
+            // atas ambang sel lama — versinya gabungan, sama dengan yang
+            // diumumkan template ke HP.
+            'aturan_versi' => $request->kertasAsli()
+                ? FormulirAsli::aturanVersi()
+                : (string) config('ocr.aturan_versi'),
             'status' => $hasil['status'],
             'alasan_gagal' => $hasil['alasan_gagal'],
             'pesan' => $hasil['pesan'],
@@ -370,21 +451,27 @@ class WorksheetScanController extends Controller
             // mau disetel ulang — tanpa itu, satu-satunya bukti yang tersisa
             // adalah teknisi yang bilang "kameranya nggak jalan".
             'payload' => $request->payload(),
-            'hasil' => [
-                'tabel' => $hasil['tabel'],
-                'ringkasan' => $hasil['ringkasan'],
-                'template_versi' => $template['versi'] ?? null,
-                'kode_dokumen' => $template['kode_dokumen'] ?? null,
-            ],
+            'hasil' => $request->kertasAsli()
+                ? $this->hasilFormulirAsli($template, $hasil)
+                : [
+                    'tabel' => $hasil['tabel'],
+                    'ringkasan' => $hasil['ringkasan'],
+                    'template_versi' => $template['versi'] ?? null,
+                    'kode_dokumen' => $template['kode_dokumen'] ?? null,
+                ],
             ...$citra,
             'diambil_pada' => $request->input('diambil_pada'),
         ]);
 
-        foreach ($hasil['sel'] as $s) {
+        // Formulir asli: isian Env. & centang ikut jadi baris sel — satu baris
+        // per butir yang divonis, jadi koreksi, crop, dan `ocr:akurasi`
+        // berlaku sama untuknya. Jalur cetak tidak punya keduanya.
+        foreach ([...$hasil['sel'], ...($hasil['isian'] ?? []), ...($hasil['centang'] ?? [])] as $s) {
             $scan->cells()->create([
                 'kunci' => $s['kunci'],
                 'tabel_id' => $s['tabel_id'],
-                'baris_ke' => $s['baris_ke'],
+                // Centang TH-n tidak punya baris; kolomnya wajib terisi.
+                'baris_ke' => $s['baris_ke'] ?? 0,
                 'repeat_no' => $s['repeat_no'],
                 'field_id' => $s['field_id'],
                 'titik_ukur' => $s['titik_ukur'],
@@ -405,10 +492,65 @@ class WorksheetScanController extends Controller
     }
 
     /**
+     * Isi `worksheet_scans.hasil` untuk formulir asli — di kolom JSON yang
+     * sudah ada, tanpa kolom baru. `kertas` di sini yang memisahkan pindai asli
+     * dari lembar cetak di `crop`, `koreksi`, `show`, dan `ocr:akurasi`.
+     *
+     * @param  array<string, mixed>|null  $template
+     * @param  array<string, mixed>  $hasil
+     * @return array<string, mixed>
+     */
+    private function hasilFormulirAsli(?array $template, array $hasil): array
+    {
+        return [
+            'tabel' => $hasil['tabel'],
+            'ringkasan' => $hasil['ringkasan'],
+            'template_versi' => isset($template['revisi']) && is_numeric($template['revisi']) ? (int) $template['revisi'] : null,
+            'kode_dokumen' => $template['kode_dokumen'] ?? null,
+            'kertas' => 'asli',
+            'revisi' => $template['revisi'] ?? null,
+            'sumber_sha256' => $template['sumber_sha256'] ?? null,
+            'mode_uji' => (bool) ($hasil['mode_uji'] ?? false),
+            'isian' => $hasil['isian'] ?? [],
+            'centang' => $hasil['centang'] ?? [],
+            'geometri' => $hasil['geometri'] ?? null,
+            // Kotak formulir asli ternormal 0..1 terhadap halaman ini — `crop`
+            // butuh rasio sisinya untuk memastikan citra warp-nya halaman utuh.
+            'ukuran_referensi' => $template['geometri']['ukuran_referensi'] ?? null,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $hasil
      * @return array<string, mixed>
      */
     private function bentukHasil(WorksheetScan $scan, array $hasil): array
+    {
+        $bentuk = $this->bentukHasilCetak($scan, $hasil);
+
+        if (($scan->hasil['kertas'] ?? null) !== 'asli') {
+            return $bentuk;
+        }
+
+        $modeUji = (bool) ($scan->hasil['mode_uji'] ?? false);
+
+        return [
+            ...$bentuk,
+            'kertas' => 'asli',
+            'mode_uji' => $modeUji,
+            // Mode uji: tidak ada pindai formulir asli yang lolos tanpa mata
+            // teknisi, termasuk yang semua butirnya kosong.
+            'wajib_dicek' => $bentuk['wajib_dicek'] || $modeUji,
+            'isian' => $scan->hasil['isian'] ?? [],
+            'centang' => $scan->hasil['centang'] ?? [],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $hasil
+     * @return array<string, mixed>
+     */
+    private function bentukHasilCetak(WorksheetScan $scan, array $hasil): array
     {
         return [
             'scan_id' => $scan->id,
