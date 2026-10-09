@@ -1338,12 +1338,9 @@ class ViscometerProfile extends CalibrationProfile
                         $this->tabelHasil('sebelum_adjustment', 'Before Adjustment'),
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment'),
                     ],
-                    // Kartu per larutan + tombol pindah ke tabel — tampilan HP
-                    // saja; kotak & payload tetap milik `tabel`. Blok kertas
-                    // (Standard + Rpm/Resolusi/Spindle per larutan) = W2.
-                    'tampilan' => 'kartu_per_set_point',
-                    'kartu_sejajar' => false,
-                    'nominal_berbintang' => false,
+                    // Tanpa kartu: standar dipilih per titik, dan kartu HP belum
+                    // punya pemilih standar per titik (sama dengan pH, 9 Okt).
+                    // Blok kertas (Standard + Rpm/Resolusi/Spindle per larutan) = W2.
                 ],
                 [
                     'kode' => 'penutup',

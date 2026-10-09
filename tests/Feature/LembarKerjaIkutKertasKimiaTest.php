@@ -277,21 +277,14 @@ class LembarKerjaIkutKertasKimiaTest extends TestCase
      * Yang SENGAJA tidak: Conductivity (baris varian `eksklusif_dengan` yang
      * tidak dikunci kartu), Spectrophotometer (tiga tabel dengan baris beda),
      * Stopwatch & Putaran (label baris `Set point n` jadi `Set point Set point
-     * n` di kepala kartu), dan pH/Turbidimeter/Chlorine/DO — kartu HP belum
-     * punya pemilih/centang standar per titik, padahal kartu jadi tampilan
-     * awal (tinjauan W1 9 Okt 2026 temuan 3). Tabel tetap tampilan awal mereka.
+     * n` di kepala kartu), dan pH/Turbidimeter/Chlorine/DO/Refractometer/
+     * Viscometer — kartu HP belum punya pemilih/centang standar per titik,
+     * padahal kartu jadi tampilan awal (tinjauan W1 9 Okt 2026 temuan 3).
+     * Tabel tetap tampilan awal mereka.
      */
     public function test_kartu_per_set_point_hanya_di_tabel_yang_cocok(): void
     {
         Organization::factory()->create();
-
-        foreach (['refractometer', 'viscometer'] as $kode) {
-            $hasil = collect($this->bentuk($kode)['bagian'])->firstWhere('kode', 'hasil');
-
-            $this->assertSame('kartu_per_set_point', $hasil['tampilan'] ?? null, $kode);
-            $this->assertFalse($hasil['kartu_sejajar'], $kode);
-            $this->assertFalse($hasil['nominal_berbintang'], "{$kode}: bintang cuma Anak Timbangan");
-        }
 
         foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'do_meter', 'refractometer', 'viscometer'] as $kode) {
             $hasil = collect($this->bentuk($kode)['bagian'])->firstWhere('kode', 'hasil');
@@ -303,7 +296,7 @@ class LembarKerjaIkutKertasKimiaTest extends TestCase
         }
 
         foreach (['ph_meter', 'turbidimeter', 'chlorine_meter', 'do_meter', 'conductivity_meter', 'spectrophotometer',
-            'timer_stopwatch', 'centrifuge', 'tachometer'] as $kode) {
+            'refractometer', 'viscometer', 'timer_stopwatch', 'centrifuge', 'tachometer'] as $kode) {
             $hasil = collect($this->bentuk($kode)['bagian'])->firstWhere('kode', 'hasil');
 
             $this->assertArrayNotHasKey('tampilan', $hasil, $kode);
