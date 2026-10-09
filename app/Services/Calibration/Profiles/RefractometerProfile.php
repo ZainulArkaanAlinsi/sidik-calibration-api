@@ -526,7 +526,13 @@ class RefractometerProfile extends CalibrationProfile
                         $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                         $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                         $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
-                        $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
+                        // Label & urutan ikut kolom kanan "General Information"
+                        // kertas 0523 Rev.2: Equipment Name, Manufacturer, Type,
+                        // SN, Range, Resolution.
+                        $this->field('equipment.nama_alat', 'Equipment Name', 'teks', sumber: 'otomatis'),
+                        $this->field('alat_merk', 'Manufacturer', 'teks'),
+                        $this->field('alat_model', 'Type', 'teks'),
+                        $this->field('alat_serial_number', 'SN', 'teks'),
                         // SENGAJA tanpa `satuan`, beda dari tiga profil lain.
                         //
                         // Nilai yang ditampilin (`equipment.range_resolusi`) udah
@@ -540,20 +546,24 @@ class RefractometerProfile extends CalibrationProfile
                         //
                         // Ketahuan 7 Agt 2026 waktu lembarnya dibuka di HP pakai
                         // alat Atago MASTER-53M.
-                        $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
-                        $this->field('alat_model', '3. Type/Model', 'teks'),
-                        $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
-                        $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+                        //
+                        // Kertas memisah "Range : ( )" dan "Resolution : ( )";
+                        // di sini satu kotak otomatis yang memuat keduanya.
+                        $this->field('equipment.range_resolusi', 'Range / Resolution', 'teks', sumber: 'otomatis'),
                         $this->field(
                             'thermohygro_standard_id',
-                            '6. Thermohygro Used',
+                            'Thermohygro Used',
                             'pilihan',
                             sumber: 'master_thermohygro',
                         ),
-                        $this->field('equipment.satuan', '7. Satuan Refracto', 'pilihan', pilihan: [
+                        // TIDAK ada di kertas (kertas cuma menulis "oBrix / nD20"
+                        // di tiap baris), tapi menentukan baris & satuan yang
+                        // dihitung — jadi tetap di sini, sebelum tabel diisi,
+                        // dan ditandai `di_kertas: false`.
+                        $this->field('equipment.satuan', 'Satuan Refracto', 'pilihan', pilihan: [
                             ['nilai' => self::SATUAN_N20D, 'label' => 'n20D'],
                             ['nilai' => self::SATUAN_BRIX, 'label' => '°Brix'],
-                        ]),
+                        ], ekstra: ['di_kertas' => false]),
                     ],
                 ],
                 [
@@ -613,10 +623,14 @@ class RefractometerProfile extends CalibrationProfile
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
                     ],
+                    // Judul blok persis kertas: "Before Adjustment" / "After
+                    // Adjustment", kepala kolom "Standard" & "UUT Reading".
                     'tabel' => [
-                        $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
-                        $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
+                        $this->tabelHasil('sebelum_adjustment', 'Before Adjustment'),
+                        $this->tabelHasil('sesudah_adjustment', 'After Adjustment'),
                     ],
+                    // Tanpa kartu: standar dipilih per titik, dan kartu HP belum
+                    // punya pemilih standar per titik (sama dengan pH, 9 Okt).
                 ],
                 [
                     'kode' => 'penutup',
@@ -680,6 +694,8 @@ class RefractometerProfile extends CalibrationProfile
         return [
             'tahap' => $tahap,
             'judul' => $judul,
+            'judul_nilai' => 'Standard',
+            'judul_pengulangan' => 'UUT Reading',
             'baris' => $this->barisTitik(self::TITIK),
             // Dua set baris dikirim SEKALIGUS, bukan lembar kerjanya diambil
             // ulang tiap satuan diganti.

@@ -126,7 +126,13 @@ class LoadCellProfile extends GayaProfile
 
     protected function judulLembar(): string
     {
-        return 'Lembar Kerja Kalibrasi Load Cell';
+        return 'Calibration Worksheet - Load Cell';
+    }
+
+    /** Kertas 0520 mencetak 15 baris kosong di Data Result. */
+    protected function jumlahBarisHasil(): int
+    {
+        return 15;
     }
 
     protected function sumberMaster(): string

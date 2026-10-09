@@ -975,6 +975,10 @@ class TidsProfile extends CalibrationProfile
             // digeser cuma urutan baca di LAYAR.
             //
             // Dijaga `SemuaProfilLembarKerjaTest::test_urutan_bagian_seragam_di_semua_lembar()`.
+            //
+            // Revisi tampilan 9 Okt 2026: satu-satunya isian yang TIDAK
+            // tercetak di kertas (`Calibration Methode`) pindah ke blok "Di luar
+            // kertas" sebelum tanda tangan; kodenya tetap.
             'bagian' => [
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
@@ -982,7 +986,37 @@ class TidsProfile extends CalibrationProfile
                 $this->bagianDryblock(),
                 $this->bagianTitikEs(),
                 $this->bagianDataKalibrasi(),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
+            ],
+        ];
+    }
+
+    /**
+     * Isian yang dipakai sistem tapi TIDAK tercetak di `SIDIK-FM-CAL-0506
+     * Rev.4`. Kodenya `data_kalibrasi` — sama dengan blok yang sama di lembar
+     * suhu lain (`ProfilSuhuPasangan::bagianDiLuarKertas()`).
+     *
+     * Kolom `No. Termokopel` juga di luar kertas, tapi dia kolom per baris
+     * tabel Pembacaan Standard, jadi tetap di sana — cuma ditandai.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        return [
+            'kode' => 'data_kalibrasi',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas',
+            'di_luar_kertas' => true,
+            'field' => [
+                $this->field(
+                    'calibration_method_id',
+                    'Metode Kalibrasi',
+                    'pilihan',
+                    sumber: 'master_metode',
+                    ekstra: ['di_luar_kertas' => true],
+                ),
             ],
         ];
     }
@@ -1046,7 +1080,7 @@ class TidsProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            'judul' => 'Identitas Alat dan Data Customer',
             'field' => [
                 // `equipment_id` WAJIB ada di sini.
                 //
@@ -1095,12 +1129,8 @@ class TidsProfile extends CalibrationProfile
                     'pilihan',
                     sumber: 'master_thermohygro',
                 ),
-                $this->field(
-                    'calibration_method_id',
-                    'Calibration Methode',
-                    'pilihan',
-                    sumber: 'master_metode',
-                ),
+                // `calibration_method_id` pindah ke [bagianDiLuarKertas] —
+                // kertasnya tidak punya baris metode.
             ],
             // Empat thermohygro yang TERCETAK di kop, berikut lokasi
             // pemakaiannya. Dikirim terpisah dari dropdown master di atas
@@ -1291,8 +1321,17 @@ class TidsProfile extends CalibrationProfile
                     // tipe_sensor` — dikirim kosong, dropdown-nya lahir tanpa
                     // satu pun pilihan dan lembarnya nggak bisa diisi sama
                     // sekali, tanpa satu pun error.
+                    //
+                    // Kolom ini TIDAK tercetak di kertas — ditandai
+                    // `di_luar_kertas`, kodenya tetap.
                     'kolom_baris' => [
-                        $this->field('no_probe', 'No. Termokopel', 'pilihan', pilihan: $this->pilihanSensor()),
+                        $this->field(
+                            'no_probe',
+                            'No. Termokopel',
+                            'pilihan',
+                            pilihan: $this->pilihanSensor(),
+                            ekstra: ['di_luar_kertas' => true],
+                        ),
                     ],
                     'catatan' => 'Type N mulai dari nomor 3 (TCN3…TCN12); Type K nomor 1..16 (TCK-01…TCK-16); '
                         .'PRT PT100 (RTD) selalu nomor 17. Nomornya nentuin kolom tabel koreksi, jadi salah '

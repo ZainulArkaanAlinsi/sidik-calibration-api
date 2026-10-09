@@ -67,6 +67,9 @@ use Illuminate\Support\Carbon;
  */
 class ProvingRingProfile extends GayaProfile
 {
+    /** Isian Force Type induknya — tidak tercetak di kertas 0521. */
+    private const KODE_TIPE_BEBAN = 'spesifikasi_alat.gaya.tipe_beban';
+
     public const KODE = 'proving_ring';
 
     /** Sama dengan dua alat gaya lain: tiga load cell standar lab. */
@@ -150,21 +153,23 @@ class ProvingRingProfile extends GayaProfile
     }
 
     /**
-     * BELUM ada nomor formulirnya, dan itu sudah diperiksa.
+     * Nomor formulir dari kertasnya sendiri, bukan tebakan dari deret.
      *
-     * Sapuan `SIDIK-FM-` di seluruh `Gaya_Proving_Ring/` memulangkan NOL — yang
-     * ada cuma daftar nomor IK. Dua alat gaya lain punya kertasnya
-     * (`SIDIK-FM-CAL-0519` & `0520`); yang ini tidak, jadi dia masuk
-     * `belumAdaKertasnya` di `SemuaProfilLembarKerjaTest` dengan bukti itu.
+     * Sampai 9 Okt 2026 ini `null`: sapuan `SIDIK-FM-` di workbook master
+     * `Gaya_Proving_Ring/` memang memulangkan NOL. Buktinya datang dari sumber
+     * kedua — `worksheet_alat_calibration/SIDIK-FM-CAL-0521_Rev.3 - LEMBAR
+     * KERJA PROFING RING.pdf`, kaki halamannya `Rev: 3` / `SIDIK-FM-CAL-0521`
+     * (pola yang sama dengan UTM 0519 & Load Cell 0520).
      */
     protected function kodeDokumen(): ?string
     {
-        return null;
+        return 'SIDIK-FM-CAL-0521_Rev.3';
     }
 
+    /** Judul kertas 0521 (salah ketik "Profing" tidak disalin). */
     protected function judulLembar(): string
     {
-        return 'Lembar Kerja Kalibrasi Proving Ring';
+        return 'Calibration Worksheet - Proving Ring';
     }
 
     protected function sumberMaster(): string
@@ -272,21 +277,47 @@ class ProvingRingProfile extends GayaProfile
     {
         $bagian = parent::bagianIdentitasAlat();
 
+        // `tipe_beban` ikut disaring dari sini: kertas 0521 tidak punya baris
+        // Force Type. Kotaknya tidak hilang — pindah ke blok "Di luar kertas"
+        // ([bagianMisalignment]) dengan kode yang sama.
         $bagian['field'] = array_values(array_filter(
             $bagian['field'],
-            static fn (array $f): bool => ($f['kode'] ?? null) !== 'spesifikasi_alat.gaya.resolusi_uut',
+            static fn (array $f): bool => ! in_array($f['kode'] ?? null, [
+                'spesifikasi_alat.gaya.resolusi_uut',
+                self::KODE_TIPE_BEBAN,
+            ], true),
         ));
 
+        // Blok "Spec of Dial Indicator" kertas 0521. Merk/Type/No. Seri/Divisi
+        // dial belum punya kotak (kunci data baru — ditunda W2/W3).
         $bagian['field'][] = $this->field(
             'spesifikasi_alat.gaya.kapasitas_dial_mm',
-            'Kapasitas Dial (mm)',
+            'Spec of Dial Indicator — Range Dial (mm)',
             'angka',
         );
         $bagian['field'][] = $this->field(
             'spesifikasi_alat.gaya.resolusi_dial_mm',
-            'Resolusi Dial (mm)',
+            'Spec of Dial Indicator — Resolusi Dial (mm)',
             'angka',
         );
+
+        return $bagian;
+    }
+
+    /**
+     * Blok "Di luar kertas" induknya, ditambah Force Type — kertas 0521 tidak
+     * mencetak baris itu, tapi kotaknya tetap ada (kode tidak berubah).
+     *
+     * @return array<string, mixed>
+     */
+    protected function bagianMisalignment(): array
+    {
+        $bagian = parent::bagianMisalignment();
+        $tipeBeban = collect(parent::bagianIdentitasAlat()['field'])->firstWhere('kode', self::KODE_TIPE_BEBAN);
+
+        if ($tipeBeban !== null) {
+            array_unshift($bagian['field'], [...$tipeBeban, 'di_luar_kertas' => true]);
+        }
 
         return $bagian;
     }
@@ -315,7 +346,8 @@ class ProvingRingProfile extends GayaProfile
                 'titik_ukur' => null,
                 'label' => 'Titik '.$n,
             ],
-            range(1, 14),
+            // Kertas 0521 mencetak 15 baris kosong di Data Result.
+            range(1, 15),
         );
 
         $tabel = static fn (string $peran, int $offset, string $judul): array => [
@@ -323,7 +355,10 @@ class ProvingRingProfile extends GayaProfile
             'grup' => $peran,
             'offset_kunci' => $offset,
             'judul' => $judul,
-            'judul_nilai' => 'Nominal',
+            // Kepala kertas 0521: "Standard ( )" di kiri, "UUT Reading ( )"
+            // berjajar. Kertasnya SATU tabel bernomor 1–6; lembar ini masih
+            // dua tabel UP/DOWN × 3 — penyatuannya ditunda (W2/W3).
+            'judul_nilai' => 'Standard',
             'judul_pengulangan' => 'Replikat ke',
             'titik_bisa_diubah' => false,
             'simpan_ke' => 'measurements[].'.$peran,
@@ -333,7 +368,7 @@ class ProvingRingProfile extends GayaProfile
                 // membuat teknisi mengetik kgf ke kotak yang dihitung sebagai
                 // divisi — dan angkanya tetap masuk akal sampai sertifikatnya
                 // terbit.
-                ['kode' => 'pembacaan', 'label' => 'Pembacaan Dial (Div)', 'tipe' => 'angka'],
+                ['kode' => 'pembacaan', 'label' => 'UUT Reading (Div)', 'tipe' => 'angka'],
             ],
             'pengulangan' => range(1, M::REPLIKAT),
         ];
@@ -341,7 +376,7 @@ class ProvingRingProfile extends GayaProfile
         return [
             'kode' => 'hasil',
             'halaman' => 2,
-            'judul' => 'Accuracy Test',
+            'judul' => 'Data Result',
             // Tampilan saja: satu kartu per titik beban, UP & DOWN berdampingan
             // di layar lebar — lihat `GayaProfile` (6 Okt 2026).
             'tampilan' => 'kartu_per_set_point',

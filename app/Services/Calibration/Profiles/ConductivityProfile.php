@@ -1011,7 +1011,8 @@ class ConductivityProfile extends CalibrationProfile
                         $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
                         $this->field('equipment.range_resolusi', '2. Range/Resolution', 'teks', sumber: 'otomatis'),
                         $this->field('alat_model', '3. Type/Model', 'teks'),
-                        $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
+                        // Kertas 0510 Rev.5 menulis "4. Serial Number" (tanpa /LPI).
+                        $this->field('alat_serial_number', '4. Serial Number', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
                         $this->field(
                             'thermohygro_standard_id',
@@ -1080,8 +1081,8 @@ class ConductivityProfile extends CalibrationProfile
                         ...$this->fieldResolusiPerTitik(),
                     ],
                     'tabel' => [
-                        $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading', $equipment),
-                        $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading', $equipment),
+                        $this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading', $equipment),
+                        $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading', $equipment),
                     ],
                 ],
                 [

@@ -485,6 +485,7 @@ class HydrometerProfile extends CalibrationProfile
                 $this->bagianStandard(),
                 $this->bagianPreCondition(),
                 $this->bagianMeasurement(),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -1222,15 +1223,18 @@ class HydrometerProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Equipment Identity',
+            // Kertas 0533 Rev.2: "EQUIPMENT IDENTITY AND CUSTOMER DATA",
+            // nomor 1–8 seperti tercetak.
+            'judul' => 'Equipment Identity and Customer Data',
             'field' => [
                 $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('equipment.nama_alat', 'Name', 'teks', sumber: 'otomatis'),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Range', 'teks'),
+                $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
+                $this->field('spesifikasi_alat.rentang_ukur', '2. Range/Resolution — Range', 'teks'),
                 // Satuan lebih dulu — dia mengubah arti titik skala DAN resolusi.
                 // Dropdown, bukan teks bebas: satuan tak dikenal jatuh ke faktor 1
-                // dan angkanya salah diam-diam.
-                $this->field("{$kunci}.satuan_densitas", 'Satuan Densitas', 'pilihan', pilihan: [
+                // dan angkanya salah diam-diam. Di kertas dia kurung "( )" di
+                // belakang Range/Resolution.
+                $this->field("{$kunci}.satuan_densitas", '2. Range/Resolution — satuan ( )', 'pilihan', pilihan: [
                     ['nilai' => 'g/ml', 'label' => 'g/ml'],
                     ['nilai' => 'kg/m3', 'label' => 'kg/m3'],
                 ]),
@@ -1238,23 +1242,28 @@ class HydrometerProfile extends CalibrationProfile
                 // dropdown di atas, dan label yang memaksa satu satuan justru
                 // menyuruh teknisi yang memilih `kg/m3` mengetik angka dalam
                 // satuan yang tidak dia pilih.
-                $this->field("{$kunci}.resolusi", 'Resolution', 'angka'),
+                $this->field("{$kunci}.resolusi", '2. Range/Resolution — Resolution', 'angka'),
                 // Kotak `Temperature` kertas — dipakai sebagai suhu acuan FAKTOR
                 // koreksi, dan itu BUKAN `tr`. Lihat temuan 6 di calculator.
-                $this->field("{$kunci}.suhu_acuan_faktor", 'Temperature', 'angka', satuan: '°C'),
-                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
-                $this->field('alat_model', 'Type/Model', 'teks'),
-                $this->field('alat_serial_number', 'Serial Number/LPI', 'teks'),
-                $this->field('alat_merk', 'Merk/Manufacture', 'teks'),
+                $this->field("{$kunci}.suhu_acuan_faktor", '3. Temperature', 'angka', satuan: '°C'),
+                $this->field('tanggal_terima', '4. Received Date', 'tanggal'),
+                $this->field('tanggal_kalibrasi', '5. Calibration Date', 'tanggal'),
+                $this->field('alat_model', '6. Type/Model', 'teks'),
+                $this->field('alat_serial_number', '7. Serial Number/LPI', 'teks'),
+                $this->field('alat_merk', '8. Merk/Manufacture', 'teks'),
                 $this->field('suhu_awal', 'Env. Condition — First (°C)', 'angka', satuan: '°C'),
                 $this->field('suhu_akhir', 'Env. Condition — End (°C)', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Env. Condition — First (%RH)', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Env. Condition — End (%RH)', 'angka', satuan: '%RH'),
-                // Tidak tercetak di kertas Rev.2, tapi rantai hitungnya BUTUH —
-                // lihat docblock kelas & pertanyaan §9.
-                $this->field('tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa'),
-                $this->field('tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa'),
+                // Tekanan udara TIDAK tercetak di kertas Rev.2, tapi rantai
+                // hitungnya BUTUH (docblock kelas & pertanyaan §9). DITANDAI di
+                // tempat, TIDAK dipindah ke blok "Di luar kertas": HP menggambar
+                // tekanan sebagai kolom ketiga tabel Env. Condition dan
+                // melewati kodenya di daftar field biasa — di bagian tanpa
+                // suhu/RH kotaknya tidak tergambar sama sekali (tinjauan W1
+                // 9 Okt 2026, dijaga LembarKerjaIkutKertasPenjagaHpTest).
+                $this->field('tekanan_awal', 'Tekanan Udara — awal', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
+                $this->field('tekanan_akhir', 'Tekanan Udara — akhir', 'angka', satuan: 'hPa', ekstra: ['di_luar_kertas' => true]),
                 $this->field('lokasi', 'Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
@@ -1280,9 +1289,38 @@ class HydrometerProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Owner',
             'field' => [
-                $this->field('pemilik_nama', 'Name', 'teks'),
-                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', '1. Name', 'teks'),
+                $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": isian yang TIDAK tercetak di kertas 0533 tapi
+     * dipakai olah data/sertifikat. Tidak disembunyikan; kodenya sama persis
+     * dengan sebelum dipindah (9 Okt 2026), jadi yang dikirim tidak berubah.
+     *
+     *  - Order Number — nomor order lab, tidak ada kotaknya di kertas.
+     *
+     * Tekanan udara awal/akhir juga tidak tercetak, tapi SENGAJA tetap di
+     * [bagianIdentitas] bersama suhu/RH (ditandai `di_luar_kertas`): HP
+     * menggambarnya sebagai kolom tabel Env. Condition, dan kotak kondisi
+     * lingkungan di bagian lain tidak tergambar sama sekali.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas — dipakai hitung',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0533, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
             ],
         ];
     }
@@ -1337,10 +1375,12 @@ class HydrometerProfile extends CalibrationProfile
                 // Dua pilihan yang sama-sama HARUS dipilih, bukan satu centang
                 // yang boleh dibiarkan: itu yang membuat "tidak perlu sinker"
                 // tidak bisa tertukar dengan "lupa mengisi sinker".
+                // Sakelar ini TIDAK tercetak di kertas, tapi dia yang membuka
+                // kotak Sl di bawahnya — jadi tetap di sini, ditandai.
                 $this->field("{$kunci}.pakai_beban_tambahan", 'Beban Tambahan (Sinker)', 'pilihan', pilihan: [
                     ['nilai' => 'ya', 'label' => 'Pakai beban tambahan'],
                     ['nilai' => 'tidak', 'label' => 'Tanpa beban tambahan'],
-                ]),
+                ], ekstra: ['di_luar_kertas' => true]),
                 $this->field(
                     "{$kunci}.beban_tambahan", 'Sl — Beban Tambahan', 'angka',
                     satuan: 'g',
@@ -1366,7 +1406,7 @@ class HydrometerProfile extends CalibrationProfile
                 [
                     'tahap' => 'sesudah_adjustment',
                     'grup' => 'hydro_diameter',
-                    'judul' => 'D Stem (cm) — tiga kali ukur',
+                    'judul' => 'D (Diameter Stem)',
                     'satuan' => 'cm',
                     'judul_nilai' => 'D Stem',
                     'judul_pengulangan' => 'Ukur ke',
@@ -1460,6 +1500,13 @@ class HydrometerProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 1,
             'judul' => '2. Measurement',
+            // Tampilan saja: satu kartu per titik skala, Weight & Temperature
+            // berdampingan di layar lebar — kertas 0533 menyusun tiap titik
+            // sebagai satu kolom berisi tiga timbang dan tiga suhu. Kunci &
+            // payload tidak berubah (titik sebagai KOLOM = W2).
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => true,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 [
@@ -1475,7 +1522,7 @@ class HydrometerProfile extends CalibrationProfile
                     // sisi. Dijaga
                     // `SemuaProfilLembarKerjaTest::test_tabel_sekunci_tidak_berbagi_kunci_baris`.
                     'offset_kunci' => 1000,
-                    'judul' => 'a. Weight — Weight of Hydrometer (gram)',
+                    'judul' => 'a. Weight',
                     'satuan' => HydrometerMentah::SATUAN_MASSA,
                     'judul_nilai' => 'Point of Calibration',
                     'judul_pengulangan' => 'Timbang ke',
@@ -1503,7 +1550,7 @@ class HydrometerProfile extends CalibrationProfile
                     'simpan_ke' => 'measurements[].'.HydrometerMentah::PERAN_MASSA,
                     'baris' => $baris(4),
                     'kolom' => [
-                        ['kode' => 'pembacaan', 'label' => 'Massa', 'tipe' => 'angka', 'satuan' => HydrometerMentah::SATUAN_MASSA],
+                        ['kode' => 'pembacaan', 'label' => 'Weight of Hydrometer', 'tipe' => 'angka', 'satuan' => HydrometerMentah::SATUAN_MASSA],
                     ],
                     'pengulangan' => range(1, self::PENGULANGAN),
                 ],
@@ -1513,7 +1560,7 @@ class HydrometerProfile extends CalibrationProfile
                     // Beda dari tabel massa (1000) dan tabel diameter stem
                     // (2000) — lihat alasannya di tabel massa.
                     'offset_kunci' => 3000,
-                    'judul' => 'b. Temperature — Temperature (°C)',
+                    'judul' => 'b. Temperature',
                     'satuan' => '°C',
                     'judul_nilai' => 'Point of Calibration',
                     'judul_pengulangan' => 'Baca ke',
@@ -1525,7 +1572,7 @@ class HydrometerProfile extends CalibrationProfile
                     'simpan_ke' => 'measurements[].'.HydrometerMentah::PERAN_SUHU,
                     'baris' => $baris(1),
                     'kolom' => [
-                        ['kode' => 'pembacaan', 'label' => 'Suhu', 'tipe' => 'angka', 'satuan' => '°C'],
+                        ['kode' => 'pembacaan', 'label' => 'Temperature', 'tipe' => 'angka', 'satuan' => '°C'],
                     ],
                     'pengulangan' => range(1, self::PENGULANGAN),
                 ],

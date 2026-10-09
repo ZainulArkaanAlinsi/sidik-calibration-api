@@ -684,11 +684,17 @@ abstract class ProfilPutaran extends CalibrationProfile
                 'catatan' => 'Lima komponen per blok tiga titik, lantai CMC dari lampiran akreditasi. '
                     .'Tiga penyimpangan master dihitung benar dan dilaporkan lewat peringatan sesi.',
             ],
+            // Urutan & judul bagian ikut kertas SIDIK-FM-CAL-0515 Rev.4:
+            // EQUIPMENT IDENTITY AND CUSTOMER DATA, OWNER, STANDARD,
+            // CALIBRATION DATA, CALIBRATION RESULT. Kotak yang dipakai tapi
+            // tidak tercetak dikumpulkan di "Di luar kertas" sebelum tanda tangan.
             'bagian' => [
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
+                $this->bagianLokasi(),
                 $this->bagianDataKalibrasi(),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -714,28 +720,39 @@ abstract class ProfilPutaran extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            'judul' => 'EQUIPMENT IDENTITY AND CUSTOMER DATA',
             'field' => [
                 // WAJIB — tombol kirim di HP menahan sesi yang alatnya belum
                 // dipilih. Profil yang lupa memasang field ini menghasilkan
                 // lembar yang bisa diisi penuh lalu tidak bisa dikirim.
-                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
-                $this->field('alat_merk', 'Merk', 'teks'),
-                $this->field('alat_model', 'Type', 'teks'),
-                $this->field('alat_serial_number', 'No. Seri', 'teks'),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka', satuan: self::SATUAN),
-                // Kapasitas tinggal di `spesifikasi_alat`, BUKAN kolom
-                // `equipments` — tabel itu cuma punya `range_min`/`range_maks`.
-                $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Max.', 'angka', satuan: self::SATUAN),
-                $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
-                $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
-                $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
-                $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
-                $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
-                $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
+                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
+                $this->field('spesifikasi_alat.rentang_ukur', '2. Range', 'angka', satuan: self::SATUAN),
+                $this->field('spesifikasi_alat.resolusi', 'Resolution', 'angka', satuan: self::SATUAN),
+                $this->field('alat_model', '3. Type/Model', 'teks'),
+                $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
+                $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+                $this->field('thermohygro_standard_id', '6. Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "CALIBRATION DATA" kertas: lokasi. Nomor metodenya sudah TERCETAK
+     * (`SIDIK-IK-CAL-0511`), jadi tidak ada kotak isiannya.
+     *
+     * @return array<string, mixed>
+     */
+    protected function bagianLokasi(): array
+    {
+        return [
+            'kode' => 'data_kalibrasi',
+            'halaman' => 1,
+            'judul' => 'CALIBRATION DATA',
+            'field' => [
+                $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -751,7 +768,6 @@ abstract class ProfilPutaran extends CalibrationProfile
                     'lokasi_nama', 'Nama Tempat (Insitu)', 'teks',
                     tampilKalau: self::TAMPIL_KALAU_INSITU,
                 ),
-                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
             ],
         ];
     }
@@ -762,11 +778,33 @@ abstract class ProfilPutaran extends CalibrationProfile
         return [
             'kode' => 'pemilik',
             'halaman' => 1,
-            'judul' => 'Data Customer',
+            'judul' => 'OWNER',
             'field' => [
-                $this->field('pemilik_nama', 'Nama Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', '1. Name', 'teks'),
+                $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+            ],
+        ];
+    }
+
+    /**
+     * Kotak yang TIDAK tercetak di kertas 0515 tapi tetap dipakai
+     * (kapasitas alat & nomor order). Tidak dihapus atau disembunyikan —
+     * cuma dikumpulkan di sini supaya teknisi tidak mencarinya di kertas.
+     * Kode field-nya sama persis dengan sebelumnya.
+     *
+     * @return array<string, mixed>
+     */
+    protected function bagianDiLuarKertas(): array
+    {
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas',
+            'field' => [
+                // Kapasitas tinggal di `spesifikasi_alat`, BUKAN kolom
+                // `equipments` — tabel itu cuma punya `range_min`/`range_maks`.
+                $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Max.', 'angka', satuan: self::SATUAN, ekstra: ['di_kertas' => false]),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: ['di_kertas' => false]),
             ],
         ];
     }
@@ -787,7 +825,7 @@ abstract class ProfilPutaran extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            'judul' => 'STANDARD',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -802,8 +840,17 @@ abstract class ProfilPutaran extends CalibrationProfile
         return [
             'kode' => 'hasil',
             'halaman' => 1,
-            'judul' => 'Data Hasil Kalibrasi',
-            'field' => [],
+            'judul' => 'CALIBRATION RESULT',
+            // Di kertas "Env. Condition" ada di kepala blok CALIBRATION RESULT.
+            // Label sengaja TIDAK diawali `Env. Condition`: awalan itu membuat
+            // `TataLetakLembar` menggambar tabel kondisi lingkungan di lembar
+            // cetak OCR v1 lembar ini — bentuk cetak yang belum pernah diuji.
+            'field' => [
+                $this->field('suhu_awal', 'T — First', 'angka', satuan: '°C'),
+                $this->field('suhu_akhir', 'T — End', 'angka', satuan: '°C'),
+                $this->field('kelembaban_awal', 'RH — First', 'angka', satuan: '%RH'),
+                $this->field('kelembaban_akhir', 'RH — End', 'angka', satuan: '%RH'),
+            ],
             // Kertas FM-0515 mencetak DUA tabel — Before & After adjustment.
             // Yang "Before" itu as-found: ISO/IEC 17025:2017 §7.8.4.1 meminta
             // hasil sebelum & sesudah penyetelan dilaporkan bila tersedia,
@@ -815,9 +862,12 @@ abstract class ProfilPutaran extends CalibrationProfile
             // dari tahap `sesudah_adjustment` — `HitungUlangSesi` memang hanya
             // membaca tahap itu, dan master pun tidak punya blok as-found.
             'tabel' => [
+                // Judul persis kertas; petunjuk "as-found" pindah ke catatan
+                // tabelnya (tetap terbaca di layar, bukan bagian judul).
                 $this->tabelPembacaan(
                     'sebelum_adjustment',
-                    'Before adjustment Reading (as-found — isi hanya kalau alat disetel ulang)',
+                    'Before adjustment Reading',
+                    'As-found — isi hanya kalau alat disetel ulang. ',
                 ),
                 $this->tabelPembacaan('sesudah_adjustment', 'After adjustment Reading'),
             ],
@@ -832,7 +882,7 @@ abstract class ProfilPutaran extends CalibrationProfile
      *
      * @return array<string, mixed>
      */
-    private function tabelPembacaan(string $tahap, string $judul): array
+    private function tabelPembacaan(string $tahap, string $judul, string $awalanCatatan = ''): array
     {
         return [
             'tahap' => $tahap,
@@ -840,7 +890,9 @@ abstract class ProfilPutaran extends CalibrationProfile
             'judul' => $judul,
             'satuan' => self::SATUAN,
             'judul_nilai' => 'Set Point',
-            'judul_pengulangan' => 'Pembacaan Standar (rpm)',
+            // Kertas: "Repeat" 1..5. Bahwa kelimanya bacaan tachometer
+            // STANDAR tetap disebut di `catatan` tabel.
+            'judul_pengulangan' => 'Repeat',
             'titik_bisa_diubah' => true,
             'baris' => array_map(
                 static fn (int $n): array => [
@@ -855,8 +907,8 @@ abstract class ProfilPutaran extends CalibrationProfile
                 ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
             ],
             'pengulangan' => range(1, self::PENGULANGAN),
-            'catatan' => 'Set point diisi sesuai penunjukan alat pelanggan; kelima kolomnya '
-                .'pembacaan tachometer standar pada putaran yang sama.',
+            'catatan' => $awalanCatatan.'Set point diisi sesuai penunjukan alat pelanggan; kelima kolomnya '
+                .'pembacaan tachometer standar (rpm) pada putaran yang sama.',
         ];
     }
 
@@ -869,8 +921,8 @@ abstract class ProfilPutaran extends CalibrationProfile
             'judul' => 'Catatan & Tanda Tangan',
             'field' => [
                 $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
-                $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
+                $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
+                $this->field('reviewer.nama', 'Checked by', 'teks', sumber: 'otomatis'),
             ],
         ];
     }

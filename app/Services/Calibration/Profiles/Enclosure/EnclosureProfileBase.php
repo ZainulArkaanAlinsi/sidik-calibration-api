@@ -594,22 +594,74 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                         // nahan kalau `_isian.alat == null`. Jadi sesi enclosure
                         // baru NGGAK BISA DIKIRIM sama sekali — bukan "kurang
                         // mirip kertas", tapi fitur mati sejak lahir.
-                        $this->field('equipment_id', 'Nama Alat', 'pilihan', sumber: 'master_alat'),
-                        $this->field('equipment.nama_alat', 'Nama Alat (terpilih)', 'teks', sumber: 'otomatis'),
+                        $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
+                        $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                         $this->field('alat_merk', 'Merk', 'teks'),
                         $this->field('alat_model', 'Type', 'teks'),
                         $this->field('alat_serial_number', 'No. Seri', 'teks'),
                         $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka', satuan: self::SATUAN),
                         $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Alat', 'angka', satuan: self::SATUAN),
                         $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
+                        // Lokasi, kondisi lingkungan, dan thermohygro tercetak DI
+                        // DALAM kop kertas FM-0504 — dulu masing-masing di bagian
+                        // CALIBRATION DATA dan Kondisi Lingkungan sesudah dimensi.
+                        // Yang pindah letaknya saja; kodenya tetap.
+                        $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                            ['nilai' => 'lab', 'label' => 'Inlab'],
+                            ['nilai' => 'onsite', 'label' => 'Insitu'],
+                        ]),
+                        // Kelima profil enclosure lahir cuma dengan pilihan
+                        // Inlab/Insitu — pasangan kotaknya nggak pernah ikut.
+                        // Akibatnya sesi enclosure nggak punya tempat nyimpen
+                        // LOKASINYA sama sekali, dan "Calibration Location" di
+                        // sertifikat selalu jatuh ke tebakan
+                        // `CertificateSnapshotBuilder::lokasiKalibrasi()`:
+                        // `Laboratorium` buat yang Inlab, alamat pelanggan buat
+                        // yang Insitu — dua-duanya kalimat yang nggak pernah
+                        // diketik siapa pun.
+                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
+                        $this->field(
+                            'room_id',
+                            'Ruangan (Inlab)',
+                            'pilihan',
+                            sumber: 'master_ruangan',
+                            tampilKalau: self::TAMPIL_KALAU_INLAB,
+                        ),
                         $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
                         $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
+                        // ## Ini "Suhu Ruangan" yang HIDUP — jangan ketuker sama yang di grid
+                        //
+                        // Di lembar enclosure ada DUA hal bernama nyaris sama, dan cuma
+                        // satu yang berpengaruh:
+                        //
+                        //  (a) "Suhu Ruangan" awal/akhir DI SINI — hidup. Di master dia
+                        //      dirata-ratain, dikoreksi pakai sertifikat thermohygro,
+                        //      diturunin U95-nya, lalu KECETAK di sertifikat sebagai
+                        //      Env. Condition.
+                        //  (b) baris "Suhu Ruang" di GRID sensor — mati. Nol konsumen
+                        //      di seluruh workbook.
+                        //
+                        // Bedanya nyata: yang (b) di master Recorder rumus ringkasannya
+                        // bahkan salah baris — nunjuk baris Indikator, bukan baris Suhu
+                        // Ruang — dan keluar 67 °C padahal suhu ruang aslinya 24,6 °C.
+                        // Selisih 43 °C yang nggak pernah ketahuan siapa pun, dan itu
+                        // cuma mungkin kalau angkanya emang nggak pernah dipakai.
+                        $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: self::SATUAN),
+                        $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: self::SATUAN),
+                        $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
+                        $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
+                        $this->field(
+                            'thermohygro_standard_id',
+                            'Thermohygro used',
+                            'pilihan',
+                            sumber: 'master_thermohygro',
+                        ),
                     ],
                 ],
                 [
                     'kode' => 'pemilik',
                     'halaman' => 1,
-                    'judul' => 'Customer',
+                    'judul' => 'Data Customer',
                     'field' => [
                         $this->field('pemilik_nama', 'Nama Customer', 'teks'),
                         $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
@@ -623,6 +675,14 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                     'field' => [
                         $this->field('standar_dicek.*.dipakai', 'Dipakai', 'centang'),
                         $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
+                        // Tipe termokopel dipilih DI SINI, seperti di kertas: FM-0504
+                        // mencetak "Thermocouple Type-K" & "Type-N" sebagai kotak
+                        // centang di blok Standar used. Kodenya tetap `tipe_sensor`
+                        // (dulu di CALIBRATION DATA) — koreksi & U95 beda per tipe.
+                        $this->field('tipe_sensor', 'Thermocouple Type', 'pilihan', pilihan: array_map(
+                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
+                            TabelKalibratorEnclosure::TIPE_SENSOR,
+                        )),
                     ],
                 ],
                 [
@@ -653,7 +713,7 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                         $this->field('dimensi_panjang', 'Panjang (P)', 'angka', satuan: 'm'),
                         $this->field('dimensi_lebar', 'Lebar (L)', 'angka', satuan: 'm'),
                         $this->field('dimensi_tinggi', 'Tinggi (T)', 'angka', satuan: 'm'),
-                        $this->field('dimensi_jari_jari', 'Jari-jari (r)', 'angka', satuan: 'm'),
+                        $this->field('dimensi_jari_jari', 'Jari-Jari (r)', 'angka', satuan: 'm'),
                         $this->field('dimensi_tinggi_silinder', 'Tinggi silinder (T)', 'angka', satuan: 'm'),
                         // Volume DIHITUNG, bukan diketik — persis kayak masternya:
                         // balok `P × L × T`, silinder `π · r² · t`, dalam METER,
@@ -682,75 +742,26 @@ abstract class EnclosureProfileBase extends CalibrationProfile
                         $this->field('persyaratan_alat', 'Persyaratan Alat (ΔT)', 'angka', satuan: self::SATUAN),
                     ],
                 ],
+                // Isian yang TIDAK tercetak di FM-0504 tapi dipakai sistem.
+                // Kodenya tetap; yang pindah cuma letaknya (dulu CALIBRATION
+                // DATA). Lihat `ProfilSuhuPasangan::bagianDiLuarKertas()`.
+                //
+                // Grid termokopel (`grid_sensor`) SENGAJA belum disentuh:
+                // kertas 15 TC + kolom Channel + dua volume butuh widget HP,
+                // dan `jumlah_sensor_saran` 9 → 15 menggeser kunci sel baris
+                // Indikator & Suhu Ruang di berkas geometri OCR.
                 [
                     'kode' => 'data_kalibrasi',
                     'halaman' => 1,
-                    'judul' => 'CALIBRATION DATA',
+                    'judul' => 'Di luar kertas',
+                    'di_luar_kertas' => true,
                     'field' => [
-                        $this->field('tipe_sensor', 'Temperature Type', 'pilihan', pilihan: array_map(
-                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
-                            TabelKalibratorEnclosure::TIPE_SENSOR,
-                        )),
-                        $this->field('lokasi', 'Location', 'pilihan', pilihan: [
-                            ['nilai' => 'lab', 'label' => 'Inlab'],
-                            ['nilai' => 'onsite', 'label' => 'Insitu'],
-                        ]),
-                        // Kelima profil enclosure lahir cuma dengan pilihan
-                        // Inlab/Insitu — pasangan kotaknya nggak pernah ikut.
-                        // Akibatnya sesi enclosure nggak punya tempat nyimpen
-                        // LOKASINYA sama sekali, dan "Calibration Location" di
-                        // sertifikat selalu jatuh ke tebakan
-                        // `CertificateSnapshotBuilder::lokasiKalibrasi()`:
-                        // `Laboratorium` buat yang Inlab, alamat pelanggan buat
-                        // yang Insitu — dua-duanya kalimat yang nggak pernah
-                        // diketik siapa pun.
-                        $this->field('lokasi_nama', 'Nama Tempat (Insitu)', 'teks', tampilKalau: self::TAMPIL_KALAU_INSITU),
-                        $this->field(
-                            'room_id',
-                            'Ruangan (Inlab)',
-                            'pilihan',
-                            sumber: 'master_ruangan',
-                            tampilKalau: self::TAMPIL_KALAU_INLAB,
-                        ),
                         $this->field(
                             'calibration_method_id',
-                            'Calibration Methode',
+                            'Metode Kalibrasi',
                             'pilihan',
                             sumber: 'master_metode',
-                        ),
-                    ],
-                ],
-                [
-                    'kode' => 'kondisi_lingkungan',
-                    'halaman' => 1,
-                    // ## Ini "Suhu Ruangan" yang HIDUP — jangan ketuker sama yang di grid
-                    //
-                    // Di lembar enclosure ada DUA hal bernama nyaris sama, dan cuma
-                    // satu yang berpengaruh:
-                    //
-                    //  (a) "Suhu Ruangan" awal/akhir DI SINI — hidup. Di master dia
-                    //      dirata-ratain, dikoreksi pakai sertifikat thermohygro,
-                    //      diturunin U95-nya, lalu KECETAK di sertifikat sebagai
-                    //      Env. Condition.
-                    //  (b) baris "Suhu Ruang" di GRID sensor — mati. Nol konsumen
-                    //      di seluruh workbook.
-                    //
-                    // Bedanya nyata: yang (b) di master Recorder rumus ringkasannya
-                    // bahkan salah baris — nunjuk baris Indikator, bukan baris Suhu
-                    // Ruang — dan keluar 67 °C padahal suhu ruang aslinya 24,6 °C.
-                    // Selisih 43 °C yang nggak pernah ketahuan siapa pun, dan itu
-                    // cuma mungkin kalau angkanya emang nggak pernah dipakai.
-                    'judul' => 'Kondisi Lingkungan',
-                    'field' => [
-                        $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: self::SATUAN),
-                        $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: self::SATUAN),
-                        $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
-                        $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
-                        $this->field(
-                            'thermohygro_standard_id',
-                            'Thermohygro used',
-                            'pilihan',
-                            sumber: 'master_thermohygro',
+                            ekstra: ['di_luar_kertas' => true],
                         ),
                     ],
                 ],

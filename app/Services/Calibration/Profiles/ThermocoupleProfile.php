@@ -207,11 +207,16 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
     ];
 
     /**
-     * Label kolom pengulangan sisi STANDAR & sisi UUT.
+     * Detik baca tiap pengulangan sisi STANDAR & sisi UUT.
      *
      * Detiknya bukan hiasan: standar dan UUT dibaca BERGANTIAN dalam satu
      * sapuan 90 detik, dan urutan itu yang bikin dua deret bisa dipasangkan
-     * per titik. Tercetak persis begini di `INPUT DATA!D33:K33` & `D50:K50`.
+     * per titik. Tercetak begini di master (`INPUT DATA!D33:K33` & `D50:K50`).
+     *
+     * Sejak 9 Okt 2026 BUKAN lagi label kolom di layar: kertas
+     * `SIDIK-FM-CAL-0535_Rev.2` & `0537_Rev.2` menulis `X1`…`X5` di kepala
+     * kolom kedua tabel, dan layar ikut kertas. Urutan bacanya tetap dijelaskan
+     * di `catatan_pengisian`.
      */
     public const LABEL_STANDAR = ['0″', '20″', '40″', '60″', '80″'];
 
@@ -500,50 +505,64 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
             'catatan_pengisian' => 'Kolom yang belum bisa diisi di lapangan boleh dikosongin — lembar kerja '
                 .'tetap bisa dikirim. Khusus alat ini: TIPE SENSOR STANDAR, DRYBLOCK, dan NO. TERMOKOPEL tiap '
                 .'baris wajib diisi. Ketiganya nentuin ANGKA, bukan catatan — tabel koreksi & dua komponen '
-                .'budget diambil dari situ. Tiap titik dibaca DUA deret: standar (detik ke-0, 20, 40, 60, 80) '
-                .'dan UUT (detik ke-10, 30, 50, 70, 90).',
+                .'budget diambil dari situ. Sensor standar dipilih di blok Standard Used; DRYBLOCK (blok '
+                .'"Di luar kertas") dan NO. TERMOKOPEL tidak tercetak di kertas. Tiap titik dibaca DUA deret '
+                .'bergantian: standar X1–X5 (detik ke-0, '
+                .'20, 40, 60, 80) dan UUT X1–X5 (detik ke-10, 30, 50, 70, 90).',
+            // Urutan & tulisan ikut `SIDIK-FM-CAL-0535_Rev.2` (revisi tampilan
+            // 9 Okt 2026), kecuali dua hal yang ditahan kerangka bersama:
+            // blok Standard Used tetap SEBELUM tabel (di kertas di bawahnya),
+            // dan isian di luar kertas dikumpulkan sebelum tanda tangan.
+            //
+            // Tabelnya SENGAJA tanpa `tampilan: kartu_per_set_point`: kartu di
+            // HP melewati kolom `no_probe`, dan nomor termokopel itu yang
+            // memilih kolom tabel koreksi. Delapan baris kosong kertas juga
+            // belum diikuti — titik saran di bawah bernilai, dan menambah dua
+            // baris menggeser kunci sel OCR.
             'bagian' => [
-                ...$this->bagianUmumAtas([
-                    $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'teks', satuan: self::SATUAN),
-                    $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka', satuan: self::SATUAN),
-                    $this->field('spesifikasi_alat.resolusi', '7. Resolusi Indikator', 'angka', satuan: self::SATUAN),
-                    $this->field(
-                        'spesifikasi_alat.tipe_thermocouple',
-                        '8. Tipe Thermocouple (alat pelanggan)',
-                        'pilihan',
-                        pilihan: array_map(
-                            static fn (string $t): array => ['nilai' => $t, 'label' => $t],
-                            self::TIPE_THERMOCOUPLE_UUT,
+                ...$this->bagianUmumAtas(
+                    [
+                        $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Alat', 'angka', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
+                    ],
+                    [
+                        // Tipe termokopel ALAT PELANGGAN — kolom kanan kertas,
+                        // bukan sensor acuan lab (`tipe_sensor` di bawah).
+                        $this->field(
+                            'spesifikasi_alat.tipe_thermocouple',
+                            'Tipe Thermocouple',
+                            'pilihan',
+                            pilihan: array_map(
+                                static fn (string $t): array => ['nilai' => $t, 'label' => $t],
+                                self::TIPE_THERMOCOUPLE_UUT,
+                            ),
                         ),
-                    ),
-                    $this->field(
-                        'spesifikasi_alat.tipe_thermocouple_lain',
-                        '8b. Tipe Thermocouple — sebutkan',
-                        'teks',
-                        tampilKalau: self::TAMPIL_KALAU_TIPE_UUT_LAIN,
-                    ),
-                ]),
-                [
-                    'kode' => 'data_kalibrasi',
-                    'halaman' => 1,
-                    'judul' => 'PENGERJAAN',
-                    'field' => [
+                        $this->field(
+                            'spesifikasi_alat.tipe_thermocouple_lain',
+                            'Tipe Thermocouple — Others',
+                            'teks',
+                            tampilKalau: self::TAMPIL_KALAU_TIPE_UUT_LAIN,
+                        ),
+                    ],
+                    ['Nama Cust.', 'Alamat Cust.'],
+                    [
+                        // Sensor ACUAN lab — di kertas dicentang di blok Standard
+                        // Used (PRT PT100 / TC Type-N / TC Type-K), jadi kotaknya
+                        // di blok itu, sama seperti TIDS & Enclosure. Kodenya
+                        // tetap `tipe_sensor` (dulu di PENGERJAAN): dia memilih
+                        // tabel koreksi & dua komponen budget.
                         $this->field('tipe_sensor', 'Standar Sensor', 'pilihan', pilihan: array_map(
                             static fn (string $t): array => ['nilai' => $t, 'label' => $t],
                             TabelKalibratorSuhu3Alat::TIPE_SENSOR_STANDAR,
                         )),
-                        $this->field('alat_bantu', 'Dry Block Used', 'pilihan', pilihan: array_map(
-                            static fn (array $d): array => ['nilai' => $d['nilai'], 'label' => $d['label']],
-                            self::DRYBLOCK,
-                        )),
-                        ...$this->fieldLokasi(),
                     ],
-                ],
+                ),
                 [
                     'kode' => 'hasil',
                     'halaman' => 1,
-                    'judul' => 'DATA HASIL KALIBRASI',
-                    'field' => $this->fieldKondisiLingkungan(),
+                    'judul' => 'Data Kalibrasi',
+                    'field' => [],
                     'tabel' => [
                         [
                             ...$this->tabelPembacaan(
@@ -551,27 +570,40 @@ class ThermocoupleProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard',
                                 self::TITIK_SARAN,
                                 self::SATUAN,
-                                'Data Hasil Pengukuran',
-                                labelPengulangan: self::LABEL_STANDAR,
+                                'Data Kalibrasi/Ulangan (°C)',
+                                judulNilai: 'Setpoint',
                             ),
                             // Kolom tambahan yang cuma alat ini punya: tiap baris
                             // standar menyebut PROBE mana yang dicelup. Tersimpan
-                            // ke `raw_measurements.sensor_ke`.
+                            // ke `raw_measurements.sensor_ke`. Tidak tercetak di
+                            // kertas — penandanya dibaca layar, kodenya tetap.
                             'kolom_baris' => [
-                                $this->field('no_probe', 'No. Termokopel', 'pilihan', pilihan: $this->pilihanProbe($alat)),
+                                $this->field(
+                                    'no_probe',
+                                    'No. Termokopel',
+                                    'pilihan',
+                                    pilihan: $this->pilihanProbe($alat),
+                                    ekstra: ['di_luar_kertas' => true],
+                                ),
                             ],
                             'catatan' => 'Type N mulai dari nomor 3; PRT PT100 (RTD) selalu nomor 17.',
                         ],
                         $this->tabelPembacaan(
                             'uut',
-                            'Pembacaan UUT',
+                            'Pembacaan Alat yang Dikalibrasi',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran',
-                            labelPengulangan: self::LABEL_UUT,
+                            'Data Kalibrasi/Ulangan (°C)',
+                            judulNilai: 'Setpoint',
                         ),
                     ],
                 ],
+                $this->bagianDiLuarKertas([
+                    $this->field('alat_bantu', 'Dry Block Used', 'pilihan', pilihan: array_map(
+                        static fn (array $d): array => ['nilai' => $d['nilai'], 'label' => $d['label']],
+                        self::DRYBLOCK,
+                    )),
+                ]),
                 $this->bagianPenutup(),
             ],
         ];

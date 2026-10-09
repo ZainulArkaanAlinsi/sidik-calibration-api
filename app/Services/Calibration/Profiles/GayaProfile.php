@@ -920,12 +920,19 @@ abstract class GayaProfile extends CalibrationProfile
                     .'meleset; pelanggan yang menilai apakah itu cukup baik untuk pemakaiannya. ISO/IEC 17025 '
                     .'klausul 7.8.6.1 — pernyataan kesesuaian butuh aturan keputusan yang disepakati.',
             ],
+            // Urutan ikut kertas 0519/0520/0521 di dalam kerangka seragam
+            // semua lembar (`SemuaProfilLembarKerjaTest::
+            // test_urutan_bagian_seragam_di_semua_lembar`): General
+            // Information → Standard Used → Data Result. Preload, misalignment,
+            // dan data standar TIDAK ada di kertas; dikumpulkan di blok
+            // "Di luar kertas" sesudah Data Result, bukan dihapus — olah datanya
+            // butuh ketiganya. Kunci datanya tidak berubah (9 Okt 2026).
             'bagian' => [
                 $this->bagianIdentitasAlat(),
                 $this->bagianPemilik(),
                 $this->bagianStandarDanPreload(),
-                $this->bagianMisalignment(),
                 $this->bagianMeasurement(),
+                $this->bagianMisalignment(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -937,24 +944,30 @@ abstract class GayaProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            // Label = tulisan kertas "General Information" (kolom kanan),
+            // urutannya juga: Equipment Name, Manufacturer, Type, SN, Range,
+            // Resolution, Force Type.
+            'judul' => 'General Information — Equipment',
             'field' => [
                 // Tanpa kotak ini sesinya tidak bisa dikirim sama sekali:
                 // `equipment_id` yang menyambungkan lembar ke alat pelanggan.
-                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('alat_model', 'Nama Alat', 'teks'),
-                $this->field('alat_merk', 'Merk', 'teks'),
-                $this->field('alat_serial_number', 'No. Seri', 'teks'),
-                $this->field('spesifikasi_alat.gaya.kapasitas', 'Kapasitas Maks', 'angka'),
+                $this->field('equipment_id', 'Equipment Name', 'pilihan', sumber: 'master_alat'),
+                $this->field('alat_merk', 'Manufacturer', 'teks'),
+                // `alat_model` dicetak sertifikat sebagai Model/Type
+                // (`CertificateSnapshotBuilder` `model_type`). Labelnya dulu
+                // "Nama Alat" — kertasnya "Type".
+                $this->field('alat_model', 'Type', 'teks'),
+                $this->field('alat_serial_number', 'SN', 'teks'),
+                $this->field('spesifikasi_alat.gaya.kapasitas', 'Range', 'angka'),
                 // Tanpa satuan, master menjawab string "PILIH SATUAN" yang bisa
                 // ikut mengalir ke hasil — angka lahir dari satuan yang tidak
                 // pernah ditentukan. Karena itu disodorkan sebagai pilihan, bukan
                 // kotak teks bebas.
-                $this->field('spesifikasi_alat.gaya.satuan', 'Satuan Gaya', 'pilihan', pilihan: [
+                $this->field('spesifikasi_alat.gaya.satuan', 'Satuan (Range & Resolution)', 'pilihan', pilihan: [
                     'kN', 'N', 'lbf', 'kgf', 'tnf',
                 ]),
-                $this->field('spesifikasi_alat.gaya.resolusi_uut', 'Resolusi Alat', 'angka'),
-                $this->field('spesifikasi_alat.gaya.tipe_beban', 'Tipe Beban', 'pilihan', pilihan: [
+                $this->field('spesifikasi_alat.gaya.resolusi_uut', 'Resolution', 'angka'),
+                $this->field('spesifikasi_alat.gaya.tipe_beban', 'Force Type', 'pilihan', pilihan: [
                     M::ARAH_PUSH, M::ARAH_PULL,
                 ]),
             ],
@@ -967,10 +980,12 @@ abstract class GayaProfile extends CalibrationProfile
         return [
             'kode' => 'pemilik',
             'halaman' => 1,
-            'judul' => 'Pemilik Alat',
+            // Kolom kiri "General Information" kertas: Customer, Address,
+            // Location of Calibration, T/RH awal-akhir, Thermohygro used.
+            'judul' => 'General Information — Customer',
             'field' => [
-                $this->field('pemilik_nama', 'Nama Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
+                $this->field('pemilik_nama', 'Customer', 'teks'),
+                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
                 // Kondisi lingkungan: rata-rata awal & akhir jadi suhu load cell
                 // standar saat kalibrasi, dan itu yang dipakai koreksi termal.
                 $this->field('suhu_awal', 'Env. Condition — First (°C)', 'angka', satuan: '°C'),
@@ -981,7 +996,7 @@ abstract class GayaProfile extends CalibrationProfile
                 // ruangan terdaftar, yang Insitu mengetik nama tempat. Muncul
                 // berbarengan, teknisi mengisi dua-duanya dan yang tercetak di
                 // sertifikat jadi bergantung urutan baca.
-                $this->field('lokasi', 'Location', 'pilihan', pilihan: [
+                $this->field('lokasi', 'Location of Calibration', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -997,18 +1012,32 @@ abstract class GayaProfile extends CalibrationProfile
                 // sertifikatnya sendiri sebelum dipakai. Tanpa kotak ini teknisi
                 // tidak bisa menyebut unit mana yang dipakai, dan koreksinya
                 // tidak punya sumber.
-                $this->field('thermohygro_standard_id', 'Thermohygro Used', 'pilihan', sumber: 'master_thermohygro'),
+                $this->field('thermohygro_standard_id', 'Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
             ],
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Blok "Standard Used" kertas — daftar load cell tercetak, plus data
+     * standar (kapasitas, resolusi, suhu sertifikat).
+     *
+     * Data standar TIDAK ada di kertas 0519/0520/0521, tapi tetap di blok ini
+     * dan cuma DITANDAI `di_luar_kertas` — tidak dipindah. Di sinilah teknisi
+     * mencarinya (sesudah mencentang load cell-nya), dan HP menjaga kolom-kolom
+     * ini tergambar di Standard Used (`kolom_usage_check_tergambar_test.dart`).
+     * Tabel Preload pindah ke [bagianMisalignment] — blok "Di luar kertas";
+     * kode tabelnya tidak berubah, jadi yang dikirim & disimpan sama persis.
+     *
+     * @return array<string, mixed>
+     */
     protected function bagianStandarDanPreload(): array
     {
+        $luar = ['di_luar_kertas' => true];
+
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standar & Preload Test',
+            'judul' => 'Standard Used',
             // Ditaut ke master `standards` lab pemilik alat oleh
             // `tautkanStandarTercetak()`; baris yang tidak ketemu tetap dikirim
             // dengan `terdaftar => false` supaya teknisi tidak mengira kertasnya
@@ -1018,22 +1047,67 @@ abstract class GayaProfile extends CalibrationProfile
             // membaca daftar milik `GayaProfile` yang tidak punya satu pun,
             // dan lembar kerjanya lahir tanpa baris Standard Used.
             'baris' => static::STANDARD_TERCETAK,
+            // Load cell standar TIDAK ditanya lewat dropdown: dia lahir dari
+            // baris yang dicentang di atas — lihat `kolomDariCentang()`.
             'field' => [
-                // Load cell standar TIDAK ditanya lagi lewat dropdown: dia
-                // lahir dari baris yang dicentang di atas — lihat
-                // `kolomDariCentang()`. Kunci `gaya.standar` kiriman lama tetap
-                // diterima validasi.
-                $this->field('spesifikasi_alat.gaya.kapasitas_standar', 'Kapasitas Standar (kN)', 'angka'),
-                $this->field('spesifikasi_alat.gaya.resolusi_standar', 'Resolusi Standar (kN)', 'angka'),
+                $this->field('spesifikasi_alat.gaya.kapasitas_standar', 'Kapasitas Standar (kN)', 'angka', ekstra: $luar),
+                $this->field('spesifikasi_alat.gaya.resolusi_standar', 'Resolusi Standar (kN)', 'angka', ekstra: $luar),
                 $this->field(
                     'spesifikasi_alat.gaya.suhu_sertifikat_standar',
                     'Suhu Sertifikat Standar (°C)',
                     'angka',
+                    ekstra: $luar,
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": Preload dan empat pengukuran misalignment — tidak
+     * ada di kertas 0519/0520/0521, tapi dipakai olah data. Data load cell
+     * standar ditandai di tempat, di [bagianStandarDanPreload]. Ditaruh
+     * sesudah Data Result supaya bagian yang tercetak bisa diadu
+     * baris-per-baris dengan kertasnya; TIDAK disembunyikan.
+     *
+     * Kode bagiannya tetap `misalignment` dan kode tiap isian/tabelnya tidak
+     * berubah — yang pindah cuma letak gambarnya (9 Okt 2026).
+     *
+     * Empat pengukuran misalignment — properti PEMASANGAN, bukan properti titik.
+     * Masuk `spesifikasi_alat`, bukan dipaksa jadi titik ukur ber-`titik_ke = 0`.
+     * Blok tanpa titik yang diberi titik hantu selalu gagal di jalur hitung
+     * ulang, dan gagalnya jauh dari sebabnya.
+     *
+     * Apakah nilainya milik alat atau milik mesin uji lab masih pertanyaan
+     * terbuka ke lab (temuan §5.3 butir 6) — kalau ternyata milik mesin,
+     * tempatnya pindah ke tabel referensi, bukan per sesi.
+     *
+     * @return array<string, mixed>
+     */
+    protected function bagianMisalignment(): array
+    {
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'misalignment',
+            'halaman' => 2,
+            'judul' => 'Di luar kertas — Preload & Misalignment',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                ...array_map(
+                    fn (int $n): array => $this->field(
+                        "spesifikasi_alat.gaya.misalignment.{$n}",
+                        "Misalignment Axial — Sisi X{$n} (mm)",
+                        'angka',
+                        ekstra: $luar,
+                    ),
+                    range(1, 4),
                 ),
             ],
             'tabel' => [
                 [
                     'tahap' => 'sebelum_adjustment',
+                    'di_luar_kertas' => true,
                     'grup' => 'preload',
                     'offset_kunci' => 9000,
                     'judul' => 'Preload Test (3 replikat)',
@@ -1072,36 +1146,6 @@ abstract class GayaProfile extends CalibrationProfile
     }
 
     /**
-     * Empat pengukuran misalignment — properti PEMASANGAN, bukan properti titik.
-     *
-     * Masuk `spesifikasi_alat`, bukan dipaksa jadi titik ukur ber-`titik_ke = 0`.
-     * Blok tanpa titik yang diberi titik hantu selalu gagal di jalur hitung
-     * ulang, dan gagalnya jauh dari sebabnya.
-     *
-     * Apakah nilainya milik alat atau milik mesin uji lab masih pertanyaan
-     * terbuka ke lab (temuan §5.3 butir 6) — kalau ternyata milik mesin,
-     * tempatnya pindah ke tabel referensi, bukan per sesi.
-     *
-     * @return array<string, mixed>
-     */
-    protected function bagianMisalignment(): array
-    {
-        return [
-            'kode' => 'misalignment',
-            'halaman' => 1,
-            'judul' => 'Misalignment Axial',
-            'field' => array_map(
-                fn (int $n): array => $this->field(
-                    "spesifikasi_alat.gaya.misalignment.{$n}",
-                    "Sisi X{$n} (mm)",
-                    'angka',
-                ),
-                range(1, 4),
-            ),
-        ];
-    }
-
-    /**
      * Empat tabel yang barisnya SINKRON: baris ke-n keempatnya titik beban yang
      * sama, dibaca dari empat posisi berbeda.
      *
@@ -1113,6 +1157,7 @@ abstract class GayaProfile extends CalibrationProfile
      */
     protected function bagianMeasurement(): array
     {
+        $jumlahBaris = $this->jumlahBarisHasil();
         $baris = static fn (): array => array_map(
             static fn (int $n): array => [
                 'nomor' => $n,
@@ -1121,15 +1166,20 @@ abstract class GayaProfile extends CalibrationProfile
                 'titik_ukur' => null,
                 'label' => 'Titik '.$n,
             ],
-            range(1, 14),
+            range(1, $jumlahBaris),
         );
 
+        // Kepala kolom = kertas 0519/0520: baris berkepala "UUT ( )" (set
+        // point yang diketik teknisi), bacaannya "Standard Reading ( )" di
+        // 0°/90°/180°/270°. Label lama "Nominal"/"Pembacaan UUT" membalik
+        // artinya — yang dibaca di kotak ini load cell STANDAR
+        // (`GayaMentah`: `titik_ukur` = set point, 12 bacaan = standar).
         $tabel = static fn (string $peran, int $offset, string $judul): array => [
             'tahap' => 'sesudah_adjustment',
             'grup' => $peran,
             'offset_kunci' => $offset,
             'judul' => $judul,
-            'judul_nilai' => 'Nominal',
+            'judul_nilai' => 'UUT',
             'judul_pengulangan' => 'Replikat ke',
             // `false` karena semua barisnya lahir ber-`titik_ukur: null` —
             // nominalnya diketik teknisi di tiap baris. Menyalakannya bikin
@@ -1139,7 +1189,7 @@ abstract class GayaProfile extends CalibrationProfile
             'simpan_ke' => 'measurements[].'.$peran,
             'baris' => $baris(),
             'kolom' => [
-                ['kode' => 'pembacaan', 'label' => 'Pembacaan UUT', 'tipe' => 'angka'],
+                ['kode' => 'pembacaan', 'label' => 'Standard Reading', 'tipe' => 'angka'],
             ],
             'pengulangan' => range(1, M::REPLIKAT),
         ];
@@ -1147,7 +1197,7 @@ abstract class GayaProfile extends CalibrationProfile
         return [
             'kode' => 'hasil',
             'halaman' => 2,
-            'judul' => 'Accuracy Test',
+            'judul' => $this->judulDataResult(),
             // Tampilan saja: satu kartu per titik beban, posisi 0/90/180/270°
             // (atau UP/DOWN Proving Ring) berdampingan di layar lebar —
             // kertasnya satu baris per titik, bukan empat tabel (6 Okt 2026).
@@ -1156,12 +1206,31 @@ abstract class GayaProfile extends CalibrationProfile
             'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
-                $tabel(M::PERAN_POSISI[0], 1000, 'a. Posisi 0°'),
-                $tabel(M::PERAN_POSISI[1], 2000, 'b. Posisi 90°'),
-                $tabel(M::PERAN_POSISI[2], 3000, 'c. Posisi 180°'),
-                $tabel(M::PERAN_POSISI[3], 4000, 'd. Posisi 270°'),
+                $tabel(M::PERAN_POSISI[0], 1000, '0°'),
+                $tabel(M::PERAN_POSISI[1], 2000, '90°'),
+                $tabel(M::PERAN_POSISI[2], 3000, '180°'),
+                $tabel(M::PERAN_POSISI[3], 4000, '270°'),
             ],
         ];
+    }
+
+    /**
+     * Jumlah baris bawaan Data Result — sebanyak baris kosong di kertasnya.
+     *
+     * UTM tetap 14 walau kertas 0519 mencetak 10 baris per tabel: mengurangi
+     * baris bawaan bisa menyembunyikan baris 11–14 draf/sesi yang sudah terisi
+     * waktu dibuka ulang di HP (`LembarKerjaState.barisTabel` membangun baris
+     * dari bentuk ini). Ditunda sampai diuji di HP — lihat laporan W1 mekanik.
+     */
+    protected function jumlahBarisHasil(): int
+    {
+        return 14;
+    }
+
+    /** Judul blok Data Result — tulisan kertas. */
+    protected function judulDataResult(): string
+    {
+        return 'Data Result';
     }
 
     /** @return array<string, mixed> */
@@ -1172,9 +1241,9 @@ abstract class GayaProfile extends CalibrationProfile
             'halaman' => 2,
             'judul' => 'Catatan & Tanda Tangan',
             'field' => [
-                $this->field('catatan_teknisi', 'Note', 'teks_panjang'),
+                $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
                 $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
-                $this->field('reviewer.nama', 'Checked by', 'teks', sumber: 'otomatis'),
+                $this->field('reviewer.nama', 'Corrected by', 'teks', sumber: 'otomatis'),
             ],
         ];
     }

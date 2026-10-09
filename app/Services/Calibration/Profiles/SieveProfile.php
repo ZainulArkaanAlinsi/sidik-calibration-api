@@ -420,6 +420,7 @@ class SieveProfile extends CalibrationProfile
                 $this->bagianStandard(),
                 $this->bagianOpening(),
                 $this->bagianFrame(),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -496,34 +497,32 @@ class SieveProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
+            // Judul & nomor 1–5 = tulisan kertas FM-0536 Rev.2.
             'judul' => 'Equipment Identity and Customer Data',
             'field' => [
                 $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('equipment.nama_alat', 'Name', 'teks', sumber: 'otomatis'),
-                $this->field('alat_model', 'Type/Model', 'teks'),
-                $this->field('alat_serial_number', 'Serial Number', 'teks'),
-                $this->field('alat_merk', 'Merk/Manufacture', 'teks'),
-                $this->field('spesifikasi_alat.sieve.tipe', 'Tipe Sieve', 'pilihan', pilihan: [
-                    ['nilai' => 'compliance', 'label' => 'Compliance'],
-                    ['nilai' => 'inspection', 'label' => 'Inspection'],
-                    ['nilai' => 'calibration', 'label' => 'Calibration'],
-                ]),
+                $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
                 // Satuan sebelum nominal — dia yang menentukan kolom Tabel MPE
-                // yang dicocokkan (inch ke kolom inch).
-                $this->field('spesifikasi_alat.sieve.satuan', 'Satuan Nominal', 'pilihan', pilihan: [
+                // yang dicocokkan (inch ke kolom inch). Di kertas dia kurung
+                // "( )" di belakang Range/Nominal Sieve.
+                $this->field('spesifikasi_alat.sieve.satuan', '2. Range/Nominal Sieve — satuan ( )', 'pilihan', pilihan: [
                     ['nilai' => 'mm', 'label' => 'mm'],
                     ['nilai' => 'inch', 'label' => 'inch'],
                     ['nilai' => 'µm', 'label' => 'µm'],
                 ]),
-                $this->field('spesifikasi_alat.sieve.nominal', 'Range/Nominal Sieve', 'angka'),
-                $this->field('spesifikasi_alat.sieve.jumlah_opening_total', 'Jumlah total opening (untuk ukuran "all")', 'angka'),
+                $this->field('spesifikasi_alat.sieve.nominal', '2. Range/Nominal Sieve', 'angka'),
+                $this->field('alat_model', '3. Type/Model', 'teks'),
+                $this->field('alat_serial_number', '4. Serial Number', 'teks'),
+                $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+                // Tipe Sieve & jumlah total opening TIDAK ada di kertas —
+                // pindah ke blok "Di luar kertas" ([bagianDiLuarKertas]).
                 $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                 $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                 $this->field('suhu_awal', 'Suhu — First', 'angka', satuan: '°C'),
                 $this->field('suhu_akhir', 'Suhu — End', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Kelembapan — First', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Kelembapan — End', 'angka', satuan: '%RH'),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                $this->field('lokasi', 'Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -542,9 +541,37 @@ class SieveProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Owner',
             'field' => [
-                $this->field('pemilik_nama', 'Name', 'teks'),
-                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', '1. Name', 'teks'),
+                $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": isian yang tidak tercetak di FM-0536 Rev.2 tapi
+     * dipakai olah data/sertifikat. Tidak disembunyikan; kodenya sama persis
+     * dengan sebelum dipindah (9 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas — dipakai hitung',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0536, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                $this->field('spesifikasi_alat.sieve.tipe', 'Tipe Sieve', 'pilihan', pilihan: [
+                    ['nilai' => 'compliance', 'label' => 'Compliance'],
+                    ['nilai' => 'inspection', 'label' => 'Inspection'],
+                    ['nilai' => 'calibration', 'label' => 'Calibration'],
+                ], ekstra: $luar),
+                $this->field('spesifikasi_alat.sieve.jumlah_opening_total', 'Jumlah total opening (untuk ukuran "all")', 'angka', ekstra: $luar),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
             ],
         ];
     }
@@ -566,10 +593,12 @@ class SieveProfile extends CalibrationProfile
             'judul' => 'Standard',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
+                // Tidak tercetak (kertas cuma centang Usage Check), tapi dia
+                // yang dihitung — tetap di blok standar, ditandai.
                 $this->field('spesifikasi_alat.sieve.standar_dipakai', 'Standar yang dipakai mengukur', 'pilihan', pilihan: [
                     ['nilai' => 'mikroskop', 'label' => 'Digital Microscope/Dino-Lite'],
                     ['nilai' => 'caliper', 'label' => 'Digital Caliper Tesa'],
-                ]),
+                ], ekstra: ['di_luar_kertas' => true]),
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
                 $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
             ],
@@ -593,6 +622,11 @@ class SieveProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 1,
             'judul' => '1. Kalibrasi Dimensi Lubang dan Diameter Kawat',
+            // Tampilan saja: satu kartu per opening (Wrap, Weft, Ø Kawat).
+            // Dua set berdampingan & kolom Nominal per baris kertas = W2.
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => false,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [[
                 'tahap' => 'sesudah_adjustment',
@@ -638,6 +672,9 @@ class SieveProfile extends CalibrationProfile
             'kode' => 'frame',
             'halaman' => 1,
             'judul' => '2. Kalibrasi Diameter dan Ketinggian Rangka',
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => false,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [[
                 'tahap' => 'sesudah_adjustment',

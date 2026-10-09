@@ -1338,6 +1338,9 @@ class ViscometerProfile extends CalibrationProfile
                         $this->tabelHasil('sebelum_adjustment', 'Before Adjustment'),
                         $this->tabelHasil('sesudah_adjustment', 'After Adjustment'),
                     ],
+                    // Tanpa kartu: standar dipilih per titik, dan kartu HP belum
+                    // punya pemilih standar per titik (sama dengan pH, 9 Okt).
+                    // Blok kertas (Standard + Rpm/Resolusi/Spindle per larutan) = W2.
                 ],
                 [
                     'kode' => 'penutup',
@@ -1478,19 +1481,21 @@ class ViscometerProfile extends CalibrationProfile
 
             $field[] = $this->field(
                 "spesifikasi_alat.spindle_titik_{$ke}",
-                sprintf('Spindle — %s cP', $t['label']),
+                // Tulisan kertas 0524 Rev.3 per blok: "Spindle used : No. …",
+                // "Rpm used : …(rpm)", "Resolusi UUT: ( )".
+                sprintf('Spindle used — %s cP', $t['label']),
                 'pilihan',
                 pilihan: $pilihanSpindle,
             );
             $field[] = $this->field(
                 "spesifikasi_alat.rpm_titik_{$ke}",
-                sprintf('RPM — %s cP', $t['label']),
+                sprintf('Rpm used — %s cP', $t['label']),
                 'angka',
                 satuan: 'rpm',
             );
             $field[] = $this->field(
                 "spesifikasi_alat.resolusi_titik_{$ke}",
-                sprintf('Resolusi — %s cP', $t['label']),
+                sprintf('Resolusi UUT — %s cP', $t['label']),
                 'angka',
                 satuan: self::SATUAN,
             );

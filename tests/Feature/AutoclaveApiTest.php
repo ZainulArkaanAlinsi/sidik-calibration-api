@@ -56,8 +56,9 @@ class AutoclaveApiTest extends TestCase
         $bagian = collect($data['bagian']);
 
         // --- Panel "General Information" ---
+        // Kertas menulis "Addresss"; salah ketiknya tidak disalin (9 Okt 2026).
         $this->assertSame(
-            ['Receive Date', 'Customer', 'Addresss', 'Calibration Date'],
+            ['Receive Date', 'Customer', 'Address', 'Calibration Date'],
             collect($bagian->firstWhere('kode', 'informasi_umum')['field'])->pluck('label')->all(),
         );
 

@@ -443,12 +443,6 @@ class ChlorineProfile extends CalibrationProfile
                         $this->field('alat_model', '3. Type/Model', 'teks'),
                         $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
-                        $this->field(
-                            'thermohygro_standard_id',
-                            '6. Thermohygro Used',
-                            'pilihan',
-                            sumber: 'master_thermohygro',
-                        ),
                     ],
                 ],
                 [
@@ -466,7 +460,9 @@ class ChlorineProfile extends CalibrationProfile
                     'judul' => 'STANDARD',
                     'baris' => self::STANDARD_TERCETAK,
                     'field' => [
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
+                        // Kertas 0531 menulis "Standard Used :" di atas daftar
+                        // kotak centangnya — tanpa kepala kolom "Usage Check".
+                        $this->field('standar_dicek.*.dipakai', 'Standard Used', 'centang'),
                         $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
                     ],
                 ],
@@ -511,11 +507,29 @@ class ChlorineProfile extends CalibrationProfile
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
+                        // Di kertas 0531 "Thermohygro Used:" ada di kolom kanan
+                        // blok CALIBRATION RESULT (butir "6." di EQUIPMENT
+                        // IDENTITY tercetak kosong) — sama seperti lembar DO.
+                        // Cuma pindah tempat tampil; kode field-nya tetap.
+                        $this->field(
+                            'thermohygro_standard_id',
+                            'Thermohygro Used',
+                            'pilihan',
+                            sumber: 'master_thermohygro',
+                        ),
                     ],
                     'tabel' => [
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
                         $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
                     ],
+                    // SENGAJA tanpa `tampilan: kartu_per_set_point` (tabel tetap
+                    // tampilan awal): kartu HP belum punya pemilih/centang
+                    // standar per titik (`titikBisaDiisi`/`eksklusif_dengan`),
+                    // padahal kartu jadi tampilan AWAL — teknisi yang perlu
+                    // mengganti buffer per titik tidak menemukannya (tinjauan
+                    // W1 9 Okt 2026 temuan 3). Repeat-turun
+                    // (`sumbu_pengulangan`) juga belum: kunci itu ikut
+                    // menggambar lembar cetak OCR v1.
                 ],
                 [
                     'kode' => 'penutup',
@@ -572,7 +586,9 @@ class ChlorineProfile extends CalibrationProfile
                 self::TITIK,
             ),
             'kolom' => [
-                ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
+                // Kepala kolom ditulis seperti kertas (`mg/l`); satuan datanya
+                // tetap `mg/L`.
+                ['kode' => 'pembacaan', 'label' => 'mg/l', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                 ['kode' => 'suhu', 'label' => '°C', 'tipe' => 'angka', 'satuan' => '°C'],
             ],
             'pengulangan' => range(1, self::JUMLAH_PENGULANGAN),

@@ -468,7 +468,9 @@ class DoMeterProfile extends CalibrationProfile
                     'judul' => 'STANDARD',
                     'baris' => self::STANDARD_TERCETAK,
                     'field' => [
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
+                        // Kertas 0532 menulis "Standard Used :" di atas daftar
+                        // kotak centangnya — tanpa kepala kolom "Usage Check".
+                        $this->field('standar_dicek.*.dipakai', 'Standard Used', 'centang'),
                         $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
                     ],
                 ],
@@ -511,10 +513,11 @@ class DoMeterProfile extends CalibrationProfile
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
                         // Thermohygro di kertas DO Meter ada di kolom kanan blok
                         // CALIBRATION RESULT (kotak centang TH-2/6/7/4), bukan di
-                        // EQUIPMENT IDENTITY kayak lembar pH/Chlorine.
+                        // EQUIPMENT IDENTITY kayak lembar pH. Tulisannya persis
+                        // kertas: "Thermohygro used:" (u kecil).
                         $this->field(
                             'thermohygro_standard_id',
-                            'Thermohygro Used',
+                            'Thermohygro used',
                             'pilihan',
                             sumber: 'master_thermohygro',
                         ),
@@ -523,6 +526,14 @@ class DoMeterProfile extends CalibrationProfile
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
                         $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
                     ],
+                    // SENGAJA tanpa `tampilan: kartu_per_set_point` (tabel tetap
+                    // tampilan awal): kartu HP belum punya pemilih/centang
+                    // standar per titik (`titikBisaDiisi`/`eksklusif_dengan`),
+                    // padahal kartu jadi tampilan AWAL — teknisi yang perlu
+                    // mengganti buffer per titik tidak menemukannya (tinjauan
+                    // W1 9 Okt 2026 temuan 3). Repeat-turun
+                    // (`sumbu_pengulangan`) juga belum: kunci itu ikut
+                    // menggambar lembar cetak OCR v1.
                 ],
                 [
                     'kode' => 'penutup',
@@ -576,7 +587,9 @@ class DoMeterProfile extends CalibrationProfile
                 self::TITIK,
             ),
             'kolom' => [
-                ['kode' => 'pembacaan', 'label' => self::SATUAN, 'tipe' => 'angka', 'satuan' => self::SATUAN],
+                // Kepala kolom ditulis seperti kertas (`mg/l`); satuan datanya
+                // tetap `mg/L`.
+                ['kode' => 'pembacaan', 'label' => 'mg/l', 'tipe' => 'angka', 'satuan' => self::SATUAN],
                 ['kode' => 'suhu', 'label' => '°C', 'tipe' => 'angka', 'satuan' => '°C'],
             ],
             'pengulangan' => range(1, self::JUMLAH_PENGULANGAN),
