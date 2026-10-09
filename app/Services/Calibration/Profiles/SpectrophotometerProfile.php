@@ -164,6 +164,21 @@ class SpectrophotometerProfile extends CalibrationProfile
     private const TOLERANSI_TITIK = 0.05;
 
     /**
+     * Judul tabel seperti TERCETAK di kertas Rev.5 — cuma buat layar & lembar
+     * cetak.
+     *
+     * Sengaja dipisah dari `TITIK[...]['judul']`: yang itu dipakai
+     * [remarkTitik] sebagai kolom "Remark" SERTIFIKAT (`SERTIFIKAT!C17`, `C32`,
+     * `C46`), dan sertifikat tidak boleh ikut berubah karena layar mengikuti
+     * kertas. "Didiynium" di kertas salah ketik — tidak disalin.
+     */
+    private const JUDUL_KERTAS = [
+        SpectrophotometerCalculator::GRUP_HOLMIUM => 'Wavelength (nm) - Holmium',
+        SpectrophotometerCalculator::GRUP_DIDYNIUM => 'Wavelength (nm) - Didynium',
+        SpectrophotometerCalculator::GRUP_TRANSMITAN => 'Neutral Filter (%T)',
+    ];
+
+    /**
      * Titik ukur tercetak, per kelompok. Nilai panjang gelombang dari
      * `STANDAR_KALIBRATOR!J5:J14` (Holmium) & `J18:J26` (Didynium); nilai %T
      * dari `K29:K31` ditambah dua titik acuan yang diketik langsung di
@@ -192,7 +207,7 @@ class SpectrophotometerProfile extends CalibrationProfile
     public const TITIK = [
         SpectrophotometerCalculator::GRUP_HOLMIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Holmium',
-            'judul_nilai' => 'Std Value (λ1)',
+            'judul_nilai' => 'Std. Value (λ1)',
             'kolom_tetap' => null,
             'catatan' => null,
             'satuan' => self::SATUAN_PANJANG_GELOMBANG,
@@ -207,7 +222,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         ],
         SpectrophotometerCalculator::GRUP_DIDYNIUM => [
             'judul' => 'Wave Length ( λ ) - Filter Didynium',
-            'judul_nilai' => 'Std Value (λ1)',
+            'judul_nilai' => 'Std. Value (λ1)',
             'kolom_tetap' => null,
             // Tercetak persis begini di bawah tabel Didynium.
             'catatan' => '*) Measured at 25°C and with spectral bandwidth 1 nm.',
@@ -224,7 +239,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         ],
         SpectrophotometerCalculator::GRUP_TRANSMITAN => [
             'judul' => 'Accuracy %T and Linierity at λ = 560nm',
-            'judul_nilai' => 'Std Value',
+            'judul_nilai' => 'Std. Value',
             // Kolom kiri yang di kertas kegabung buat SELURUH tabel: panjang
             // gelombang tempat %T diukur.
             'kolom_tetap' => ['label' => 'λ (nm)', 'nilai' => '560'],
@@ -1121,7 +1136,7 @@ class SpectrophotometerProfile extends CalibrationProfile
         return [
             'tahap' => 'sesudah_adjustment',
             'grup' => $grup,
-            'judul' => $blok['judul'],
+            'judul' => self::JUDUL_KERTAS[$grup],
             'satuan' => $blok['satuan'],
             // Bentuk tabel seperti di lembar cetak — lihat catatan di [TITIK].
             //
