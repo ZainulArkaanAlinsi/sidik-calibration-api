@@ -660,7 +660,7 @@ class PemrosesScanLembarKerja
         if ($modeUji) {
             $sel = array_map(fn (array $b): array => $this->batasiModeUji($b), $sel);
             $isian = array_map(fn (array $b): array => $this->batasiModeUji($b), $isian);
-            $centang = array_map(fn (array $b): array => $this->batasiModeUji($b), $centang);
+            $centang = array_map(fn (array $b): array => $this->batasiModeUjiCentang($b), $centang);
         }
 
         $ringkasan = $this->ringkas([...array_values($sel), ...$isian, ...$centang]);
@@ -1202,6 +1202,28 @@ class PemrosesScanLembarKerja
         }
 
         return $butir;
+    }
+
+    /**
+     * Centang yang terbaca kosong ikut naik ke KUNING selama mode uji
+     * (keputusan pemilik, 9 Okt 2026). Ambang rasio gelapnya masih sementara,
+     * jadi centang tipis yang lolos di bawah `ambang_kosong` tidak boleh
+     * tersimpan diam-diam sebagai "tidak dicentang". Bacaan mesinnya tetap
+     * `dicentang: false` — yang berubah cuma kewajiban teknisi melihatnya.
+     *
+     * @param  array<string, mixed>  $butir
+     * @return array<string, mixed>
+     */
+    private function batasiModeUjiCentang(array $butir): array
+    {
+        if ($butir['status'] === ValidasiSel::KOSONG) {
+            $butir['status'] = ValidasiSel::KUNING;
+            $butir['alasan'][] = self::ALASAN_MODE_UJI;
+
+            return $butir;
+        }
+
+        return $this->batasiModeUji($butir);
     }
 
     /**

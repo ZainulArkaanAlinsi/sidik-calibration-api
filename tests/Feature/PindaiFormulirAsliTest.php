@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\WorksheetScan;
 use App\Services\Ocr\FormulirAsli;
+use App\Services\Ocr\PemrosesScanLembarKerja;
 use App\Services\Ocr\ValidasiSel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -182,10 +183,12 @@ class PindaiFormulirAsliTest extends TestCase
             $payload['centang'][$i]['rasio_gelap'] = 0.0;
         }
 
+        // 60 sel + 4 isian kosong; 9 centang kosong naik ke kuning di mode uji.
         $this->kirimMentah($payload)
             ->assertCreated()
             ->assertJsonPath('status', 'perlu_review')
-            ->assertJsonPath('ringkasan.kosong', 73);
+            ->assertJsonPath('ringkasan.kosong', 64)
+            ->assertJsonPath('ringkasan.kuning', 9);
     }
 
     /**
@@ -466,7 +469,10 @@ class PindaiFormulirAsliTest extends TestCase
         $this->assertTrue($th2['dicentang']);
         $this->assertSame(1.0, (float) $th2['nilai']);
         $this->assertFalse($th6['dicentang']);
-        $this->assertSame(ValidasiSel::KOSONG, $th6['status']);
+        $this->assertSame(0.0, (float) $th6['nilai']);
+        // Mode uji: kosong tetap terbaca kosong, tapi wajib dilihat.
+        $this->assertSame(ValidasiSel::KUNING, $th6['status']);
+        $this->assertContains(PemrosesScanLembarKerja::ALASAN_MODE_UJI, $th6['alasan']);
         $this->assertNull($th7['dicentang']);
         $this->assertNull($th7['nilai']);
         $this->assertSame(ValidasiSel::KUNING, $th7['status']);
@@ -492,10 +498,31 @@ class PindaiFormulirAsliTest extends TestCase
         $respons = $this->kirim(['centang' => $this->centang(['TH-2' => 0.0])])->assertCreated();
 
         foreach (['TH-2', 'TH-6', 'TH-7', 'TH-4'] as $pilihan) {
-            $this->assertSame(ValidasiSel::KOSONG, $this->centangDari($respons, 'thermohygro_standard_id', $pilihan)['status']);
+            $c = $this->centangDari($respons, 'thermohygro_standard_id', $pilihan);
+            $this->assertFalse($c['dicentang']);
+            $this->assertSame(ValidasiSel::KUNING, $c['status']);
+            $this->assertContains(PemrosesScanLembarKerja::ALASAN_MODE_UJI, $c['alasan']);
         }
 
         $respons->assertJsonPath('ringkasan.merah', 0);
+    }
+
+    /**
+     * Di luar mode uji (formulir sudah terverifikasi), centang yang jelas
+     * kosong tetap KOSONG — naik ke kuning itu aturan mode uji saja.
+     */
+    public function test_centang_kosong_tanpa_mode_uji_tetap_kosong(): void
+    {
+        $this->fixtureAsli(terverifikasi: true);
+        Config::set('ocr.formulir_asli.mode_uji', false);
+
+        $respons = $this->kirim(['centang' => $this->centang(['TH-2' => 0.0])])->assertCreated();
+
+        foreach (['TH-2', 'TH-6', 'TH-7', 'TH-4'] as $pilihan) {
+            $c = $this->centangDari($respons, 'thermohygro_standard_id', $pilihan);
+            $this->assertSame(ValidasiSel::KOSONG, $c['status']);
+            $this->assertNotContains(PemrosesScanLembarKerja::ALASAN_MODE_UJI, $c['alasan']);
+        }
     }
 
     /**
