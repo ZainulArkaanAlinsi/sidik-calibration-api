@@ -67,7 +67,8 @@ class TachometerProfile extends ProfilPutaran
 
     protected function judulLembar(): string
     {
-        return 'Calibration Work Sheet - Infrared Tachometer';
+        // Judul persis kertas SIDIK-FM-CAL-0515 (satu kertas untuk dua alat).
+        return 'Calibration Worksheet - Centrifuge/Tachometer';
     }
 
     /**

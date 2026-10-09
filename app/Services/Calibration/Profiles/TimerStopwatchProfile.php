@@ -441,7 +441,8 @@ class TimerStopwatchProfile extends CalibrationProfile
             'kode_dokumen' => self::KODE_DOKUMEN,
             'kode_metode' => self::KODE_METODE,
             'nomor_lingkup' => 'LK-285-IDN',
-            'judul' => 'Calibration Work Sheet - Stopwatch / Timer',
+            // Judul persis kertas SIDIK-FM-CAL-0512 Rev.4.
+            'judul' => 'Calibration Worksheet - Stop Watch/Timer',
             'jumlah_pengulangan' => self::PENGULANGAN,
             'satuan' => self::SATUAN,
             'satuan_suhu' => '°C',
@@ -457,11 +458,17 @@ class TimerStopwatchProfile extends CalibrationProfile
                 'catatan' => 'Enam komponen per titik termasuk dua human reaction, lantai CMC 0,81 s. '
                     .'Tiga penyimpangan master dihitung benar dan dilaporkan lewat peringatan sesi.',
             ],
+            // Urutan & judul bagian ikut kertas SIDIK-FM-CAL-0512 Rev.4:
+            // EQUIPMENT, OWNER, STANDARD, CALIBRATION DATA, CALIBRATION RESULT.
+            // Kotak yang dipakai hitung/sertifikat tapi tidak tercetak di kertas
+            // dikumpulkan di blok "Di luar kertas" sebelum tanda tangan.
             'bagian' => [
                 $this->bagianIdentitas(),
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
+                $this->bagianLokasi(),
                 $this->bagianDataKalibrasi($equipment),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -487,23 +494,36 @@ class TimerStopwatchProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            'judul' => 'EQUIPMENT',
             'field' => [
-                $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
-                $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
-                $this->field('alat_merk', 'Merk', 'teks'),
-                $this->field('alat_model', 'Type', 'teks'),
-                $this->field('alat_serial_number', 'No. Seri', 'teks'),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'angka', satuan: 'min'),
-                $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Max.', 'angka', satuan: 'min'),
-                $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
-                $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
-                $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
-                $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
-                $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
-                $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                $this->field('equipment_id', 'Equipment', 'pilihan', sumber: 'master_alat'),
+                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
+                $this->field('equipment.nama_alat', '1. Name', 'teks', sumber: 'otomatis'),
+                // Kertas: "2. Range/Resolution : ( ) ( )" — dua kotak satu baris.
+                $this->field('spesifikasi_alat.rentang_ukur', '2. Range', 'angka', satuan: 'min'),
+                $this->field('spesifikasi_alat.resolusi', '2. Resolution', 'angka', satuan: self::SATUAN),
+                $this->field('alat_model', '3. Type/Model', 'teks'),
+                $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
+                $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "CALIBRATION DATA" kertas: lokasi. Nomor metodenya sudah TERCETAK
+     * (`SIDIK-IK-CAL-0509`), jadi tidak ada kotak isiannya.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianLokasi(): array
+    {
+        return [
+            'kode' => 'data_kalibrasi',
+            'halaman' => 1,
+            'judul' => 'CALIBRATION DATA',
+            'field' => [
+                $this->field('lokasi', '1. Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -519,7 +539,6 @@ class TimerStopwatchProfile extends CalibrationProfile
                     'lokasi_nama', 'Nama Tempat (Insitu)', 'teks',
                     tampilKalau: self::TAMPIL_KALAU_INSITU,
                 ),
-                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
             ],
         ];
     }
@@ -530,11 +549,31 @@ class TimerStopwatchProfile extends CalibrationProfile
         return [
             'kode' => 'pemilik',
             'halaman' => 1,
-            'judul' => 'Data Customer',
+            'judul' => 'OWNER',
             'field' => [
-                $this->field('pemilik_nama', 'Nama Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', '1. Name', 'teks'),
+                $this->field('pemilik_alamat', '2. Address', 'teks_panjang'),
+            ],
+        ];
+    }
+
+    /**
+     * Kotak yang TIDAK tercetak di kertas 0512 tapi tetap dipakai
+     * (spesifikasi alat & nomor order). Tidak dihapus atau disembunyikan —
+     * cuma dikumpulkan di sini supaya teknisi tidak mencarinya di kertas.
+     * Kode field-nya sama persis dengan sebelumnya.
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas',
+            'field' => [
+                $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Max.', 'angka', satuan: 'min', ekstra: ['di_kertas' => false]),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: ['di_kertas' => false]),
             ],
         ];
     }
@@ -545,7 +584,7 @@ class TimerStopwatchProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            'judul' => 'STANDARD',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -569,17 +608,27 @@ class TimerStopwatchProfile extends CalibrationProfile
         return [
             'kode' => 'hasil',
             'halaman' => 1,
-            'judul' => 'Data Hasil Kalibrasi',
-            'field' => [],
+            'judul' => 'CALIBRATION RESULT',
+            // Di kertas, "Environment Condition" & "Thermohygro used" ada di
+            // kepala blok CALIBRATION RESULT. Label sengaja TIDAK diawali
+            // `Env. Condition`: awalan itu membuat `TataLetakLembar` menggambar
+            // tabel kondisi lingkungan di lembar cetak OCR v1 lembar ini.
+            'field' => [
+                $this->field('suhu_awal', 'T — First', 'angka', satuan: '°C'),
+                $this->field('suhu_akhir', 'T — End', 'angka', satuan: '°C'),
+                $this->field('kelembaban_awal', 'RH — First', 'angka', satuan: '%RH'),
+                $this->field('kelembaban_akhir', 'RH — End', 'angka', satuan: '%RH'),
+                $this->field('thermohygro_standard_id', 'Thermohygro used', 'pilihan', sumber: 'master_thermohygro'),
+            ],
             'tabel' => [
                 $this->tabelPembacaan(
                     peran: WaktuMentah::PERAN_STANDAR,
-                    judul: 'Pembacaan Stopwatch Standar',
+                    judul: 'Standard',
                     pecahan: $pecahan,
                 ),
                 $this->tabelPembacaan(
                     peran: WaktuMentah::PERAN_UUT,
-                    judul: 'Pembacaan Alat yang Dikalibrasi',
+                    judul: 'UUT',
                     pecahan: $pecahan,
                 ),
             ],
@@ -647,7 +696,8 @@ class TimerStopwatchProfile extends CalibrationProfile
             'judul' => $judul,
             'satuan' => self::SATUAN,
             'judul_nilai' => 'Set Point',
-            'judul_pengulangan' => 'Ulangan (jam:menit:detik,ms)',
+            // Kertas: "Repeatability" 1..3, kepala kolom J M S + pecahan detik.
+            'judul_pengulangan' => 'Repeatability',
             'titik_bisa_diubah' => true,
             'baris' => array_map(
                 static fn (int $n): array => [
@@ -681,8 +731,8 @@ class TimerStopwatchProfile extends CalibrationProfile
             'judul' => 'Catatan & Tanda Tangan',
             'field' => [
                 $this->field('catatan_teknisi', 'Catatan', 'teks_panjang'),
-                $this->field('teknisi.nama', 'Dikalibrasi Oleh', 'teks', sumber: 'otomatis'),
-                $this->field('reviewer.nama', 'Diperiksa Oleh', 'teks', sumber: 'otomatis'),
+                $this->field('teknisi.nama', 'Calibrated by', 'teks', sumber: 'otomatis'),
+                $this->field('reviewer.nama', 'Checked by', 'teks', sumber: 'otomatis'),
             ],
         ];
     }
