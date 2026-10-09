@@ -330,6 +330,12 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
         return self::STANDARD_TERCETAK;
     }
 
+    /** Kertas FM-0537 menulis "Standar Used:" — beda ejaan dari FM-0535. */
+    protected function judulStandar(): string
+    {
+        return 'Standar Used';
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -345,35 +351,33 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
             'satuan_suhu' => '°C',
             'semua_kolom_opsional' => true,
             'catatan_pengisian' => 'Kolom yang belum bisa diisi di lapangan boleh dikosongin — lembar kerja '
-                .'tetap bisa dikirim. Khusus alat ini: OILBATH dan TIPE PENCELUPAN wajib dipilih, dan UJI '
-                .'TITIK ES diisi lebih dulu (Pre-Evaluation) karena rentangnya masuk budget. Tiap titik dibaca '
-                .'DUA deret: standar (detik ke-0, 20, 40, 60, 80) dan UUT (detik ke-10, 30, 50, 70, 90).',
+                .'tetap bisa dikirim. Khusus alat ini: OILBATH (blok "Di luar kertas") dan TIPE THERMO GLASS '
+                .'wajib dipilih, dan ICE POINT diisi lebih dulu (Pre-Evaluation, 30 menit) karena rentangnya '
+                .'masuk budget. Tiap titik dibaca DUA deret bergantian: standar X1–X5 (detik ke-0, 20, 40, '
+                .'60, 80) dan UUT X1–X5 (detik ke-10, 30, 50, 70, 90).',
+            // Urutan & tulisan ikut `SIDIK-FM-CAL-0537_Rev.2` (revisi tampilan
+            // 9 Okt 2026). Ice Point tetap bagian sendiri tepat di depan tabel:
+            // di kertas dia kotak X1–X3 di sebelah tabel Pembacaan Standard,
+            // dan memang diisi lebih dulu.
             'bagian' => [
-                ...$this->bagianUmumAtas([
-                    $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur', 'teks', satuan: self::SATUAN),
-                    $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Alat', 'angka', satuan: self::SATUAN),
-                    $this->field('spesifikasi_alat.resolusi', '7. Resolusi Alat (skala terkecil)', 'angka', satuan: self::SATUAN),
-                ]),
-                [
-                    'kode' => 'data_kalibrasi',
-                    'halaman' => 1,
-                    'judul' => 'PENGERJAAN',
-                    'field' => [
-                        $this->field('tipe_pencelupan', 'Thermometer Type', 'pilihan', pilihan: array_map(
+                ...$this->bagianUmumAtas(
+                    [
+                        $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Alat', 'angka', satuan: self::SATUAN),
+                        $this->field('spesifikasi_alat.resolusi', 'Resolusi Alat', 'angka', satuan: self::SATUAN),
+                    ],
+                    [
+                        // Total / Partial / Complete Immersion — kolom kanan kertas.
+                        $this->field('tipe_pencelupan', 'Tipe Thermo Glass', 'pilihan', pilihan: array_map(
                             static fn (array $t): array => ['nilai' => $t['label'], 'label' => $t['label']],
                             $this->tabel->tipeThermometer(),
                         )),
-                        $this->field('alat_bantu', 'Oilbath Used', 'pilihan', pilihan: array_map(
-                            static fn (array $o): array => ['nilai' => $o['nilai'], 'label' => $o['label']],
-                            self::OILBATH,
-                        )),
-                        ...$this->fieldLokasi(),
                     ],
-                ],
+                ),
                 [
                     'kode' => 'pre_evaluasi',
                     'halaman' => 1,
-                    'judul' => '1. Pre-Evaluation (UUT) — Ice Point 30 menit',
+                    'judul' => 'Ice Point (°C)',
                     'field' => [
                         // Kodenya TANPA titik (`titik_es_1`, bukan
                         // `titik_es.0`). Kode bertitik punya arti sendiri di
@@ -391,27 +395,38 @@ class ThermometerGlassProfile extends ProfilSuhuPasangan
                 [
                     'kode' => 'hasil',
                     'halaman' => 1,
-                    'judul' => 'DATA HASIL KALIBRASI',
-                    'field' => $this->fieldKondisiLingkungan(),
+                    'judul' => 'Data Kalibrasi',
+                    // Tampilan saja: satu kartu per set point, Standard & UUT
+                    // berdampingan di layar lebar — pola Thermohygro. Bentuk
+                    // tabelnya sama persis (dua deret sebaris, tanpa kolom per
+                    // baris), jadi kotak & payload-nya tetap dua tabel di bawah.
+                    'tampilan' => 'kartu_per_set_point',
+                    'kartu_sejajar' => true,
+                    'nominal_berbintang' => false,
+                    'field' => [],
                     'tabel' => [
                         $this->tabelPembacaan(
                             'standar',
-                            '2. Pembacaan Standard',
+                            'Pembacaan Standard',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran',
-                            labelPengulangan: ThermocoupleProfile::LABEL_STANDAR,
+                            'Data Kalibrasi/Ulangan (°C)',
                         ),
                         $this->tabelPembacaan(
                             'uut',
-                            '3. Pembacaan UUT',
+                            'Pembacaan Alat yang Dikalibrasi',
                             self::TITIK_SARAN,
                             self::SATUAN,
-                            'Data Hasil Pengukuran',
-                            labelPengulangan: ThermocoupleProfile::LABEL_UUT,
+                            'Data Kalibrasi/Ulangan (°C)',
                         ),
                     ],
                 ],
+                $this->bagianDiLuarKertas([
+                    $this->field('alat_bantu', 'Oilbath Used', 'pilihan', pilihan: array_map(
+                        static fn (array $o): array => ['nilai' => $o['nilai'], 'label' => $o['label']],
+                        self::OILBATH,
+                    )),
+                ]),
                 $this->bagianPenutup(),
             ],
         ];

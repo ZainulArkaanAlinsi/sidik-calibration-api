@@ -104,6 +104,18 @@ class ThermohygroProfile extends ProfilSuhuPasangan
      */
     public const TITIK_RH = [30.0, 49.0, 50.0, 70.0, 90.0];
 
+    /**
+     * Kepala kolom pengulangan seperti TERCETAK di FM-0525: `STD1`…`STD5` di
+     * tabel Pembacaan Standard, `UUT1`…`UUT5` di tabel alat yang dikalibrasi.
+     *
+     * Kertasnya menulis kolom pertama "STD 1" (berspasi) dan sisanya "STD2"…
+     * — spasi itu salah ketik, tidak disalin. Cuma label: nomor ulangan (`ke`)
+     * yang jadi kunci sel.
+     */
+    public const LABEL_STD = ['STD1', 'STD2', 'STD3', 'STD4', 'STD5'];
+
+    public const LABEL_UUT = ['UUT1', 'UUT2', 'UUT3', 'UUT4', 'UUT5'];
+
     /** `SERTIFIKAT!B71` — satu standar, dan cuma satu. */
     public const STANDARD_TERCETAK = [
         ['label' => 'Temperature Humidity Meter', 'cocok' => ['Temperature Humidity Meter', '201701023483']],
@@ -369,6 +381,12 @@ class ThermohygroProfile extends ProfilSuhuPasangan
         return self::STANDARD_TERCETAK;
     }
 
+    /** Kop FM-0525 cuma menulis "Standar : Temp. Humidity Meter". */
+    protected function judulStandar(): string
+    {
+        return 'Standar';
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -399,52 +417,62 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                 .'tetap bisa dikirim. Alat ini punya DUA parameter: suhu (°C) dan kelembapan (%RH), '
                 .'masing-masing dengan tabel & U95 sendiri. Chamber kelembapan dipilih sistem dari set '
                 .'point-nya: ≥ 50 %RH BIOBASE, < 50 %RH GEA.',
+            // Urutan & tulisan ikut `SIDIK-FM-CAL-0525` (revisi tampilan 9 Okt
+            // 2026). Lokasi pindah ke kop seperti di kertas, jadi bagian
+            // PENGERJAAN yang dulu cuma memuat lokasi tidak ada lagi.
+            //
+            // Kertasnya menaruh TEMPERATURE dan HUMIDITY BERDAMPINGAN dalam satu
+            // tabel per peran. Di sini tetap dua bagian (suhu, lalu kelembapan)
+            // — menyandingkannya butuh widget HP baru, dan grup tabelnya kunci
+            // sel OCR yang tidak boleh berubah.
             'bagian' => [
                 ...$this->bagianUmumAtas([
-                    $this->field('spesifikasi_alat.rentang_ukur', '5. Rentang Ukur Suhu', 'teks', satuan: self::SATUAN_SUHU),
-                    $this->field('spesifikasi_alat.kapasitas', '6. Kapasitas Suhu', 'teks', satuan: self::SATUAN_SUHU),
-                    $this->field('spesifikasi_alat.resolusi', '7. Resolusi Suhu', 'angka', satuan: self::SATUAN_SUHU),
-                    $this->field('spesifikasi_alat.rentang_ukur_kelembaban', '8. Rentang Ukur Humi.', 'teks', satuan: self::SATUAN_RH),
-                    $this->field('spesifikasi_alat.kapasitas_kelembaban', '9. Kapasitas Humi.', 'teks', satuan: self::SATUAN_RH),
-                    $this->field('spesifikasi_alat.resolusi_kelembaban', '10. Resolusi Humi.', 'angka', satuan: self::SATUAN_RH),
+                    $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur Temp.', 'teks', satuan: self::SATUAN_SUHU),
+                    $this->field('spesifikasi_alat.kapasitas', 'Kapasitas Temp.', 'teks', satuan: self::SATUAN_SUHU),
+                    $this->field('spesifikasi_alat.resolusi', 'Resolusi Temp.', 'angka', satuan: self::SATUAN_SUHU),
+                    $this->field('spesifikasi_alat.rentang_ukur_kelembaban', 'Rentang Ukur Humi.', 'teks', satuan: self::SATUAN_RH),
+                    $this->field('spesifikasi_alat.kapasitas_kelembaban', 'Kapasitas Humi.', 'teks', satuan: self::SATUAN_RH),
+                    $this->field('spesifikasi_alat.resolusi_kelembaban', 'Resolusi Humi.', 'angka', satuan: self::SATUAN_RH),
                 ]),
-                [
-                    'kode' => 'data_kalibrasi',
-                    'halaman' => 1,
-                    'judul' => 'PENGERJAAN',
-                    'field' => $this->fieldLokasi(),
-                ],
                 [
                     'kode' => 'hasil_suhu',
                     'halaman' => 1,
-                    'judul' => '1. KALIBRASI SUHU (TEMPERATURE)',
+                    'judul' => 'TEMPERATURE',
                     // Tampilan saja: satu kartu per set point, Standard & UUT
                     // berdampingan di layar lebar — kertas memasangkan STD 1-5
                     // dan UUT 1-5 per nomor (permintaan pemilik 5 Okt 2026).
                     'tampilan' => 'kartu_per_set_point',
                     'kartu_sejajar' => true,
                     'nominal_berbintang' => false,
-                    'field' => $this->fieldKondisiLingkungan(),
+                    'field' => [],
                     'tabel' => [
                         [
                             ...$this->tabelPembacaan(
                                 'standar',
-                                'Pembacaan Standard [CHAMBER BIOBASE]',
+                                'Pembacaan Standard',
                                 self::TITIK_SUHU,
                                 self::SATUAN_SUHU,
-                                'Data Hasil Pengukuran',
+                                'Data Kalibrasi/Ulangan (°C)',
                                 grup: 'suhu_standar',
+                                labelPengulangan: self::LABEL_STD,
+                                judulNilai: 'Alat (°C)',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_SUHU,
+                            // Bukan tulisan kertas — keterangan sistem. Suhu
+                            // selalu dibaca di chamber BIOBASE; kelembapan
+                            // dipilihkan per set point (`chamber_per_baris`).
+                            'catatan' => 'Suhu dibaca di chamber BIOBASE.',
                         ],
                         [
                             ...$this->tabelPembacaan(
                                 'uut',
-                                'Pembacaan UUT',
+                                'Pembacaan Alat yang Dikalibrasi',
                                 self::TITIK_SUHU,
                                 self::SATUAN_SUHU,
-                                'Data Hasil Pengukuran',
+                                'Data Kalibrasi/Ulangan (°C)',
                                 grup: 'suhu_uut',
+                                labelPengulangan: self::LABEL_UUT,
+                                judulNilai: 'Alat (°C)',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_SUHU,
                         ],
@@ -453,7 +481,7 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                 [
                     'kode' => 'hasil_kelembaban',
                     'halaman' => 1,
-                    'judul' => '2. KALIBRASI KELEMBAPAN (HUMIDITY)',
+                    'judul' => 'HUMIDITY',
                     'tampilan' => 'kartu_per_set_point',
                     'kartu_sejajar' => true,
                     'nominal_berbintang' => false,
@@ -465,8 +493,10 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                                 'Pembacaan Standard',
                                 self::TITIK_RH,
                                 self::SATUAN_RH,
-                                'Data Hasil Pengukuran',
+                                'Data Kalibrasi/Ulangan (%RH)',
                                 grup: 'kelembaban_standar',
+                                labelPengulangan: self::LABEL_STD,
+                                judulNilai: 'Alat (%RH)',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_KELEMBABAN,
                             // Chamber ditempel per BARIS supaya layar bisa
@@ -484,11 +514,13 @@ class ThermohygroProfile extends ProfilSuhuPasangan
                         [
                             ...$this->tabelPembacaan(
                                 'uut',
-                                'Pembacaan UUT',
+                                'Pembacaan Alat yang Dikalibrasi',
                                 self::TITIK_RH,
                                 self::SATUAN_RH,
-                                'Data Hasil Pengukuran',
+                                'Data Kalibrasi/Ulangan (%RH)',
                                 grup: 'kelembaban_uut',
+                                labelPengulangan: self::LABEL_UUT,
+                                judulNilai: 'Alat (%RH)',
                             ),
                             'parameter' => ThermohygroCalculator::PARAMETER_KELEMBABAN,
                         ],
