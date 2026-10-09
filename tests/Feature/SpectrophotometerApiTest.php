@@ -266,11 +266,14 @@ class SpectrophotometerApiTest extends TestCase
         $tabel = $hasil['tabel'];
 
         $this->assertCount(3, $tabel);
+        // Judul tabel = tulisan kertas Rev.5 (W1 ikut kertas, 9 Okt 2026). Kolom
+        // "Remark" sertifikat tetap judul master — lihat
+        // `SpectrophotometerProfile::JUDUL_KERTAS` & `remarkTitik()`.
         $this->assertSame(
             [
-                'Wave Length ( λ ) - Filter Holmium',
-                'Wave Length ( λ ) - Filter Didynium',
-                'Accuracy %T and Linierity at λ = 560nm',
+                'Wavelength (nm) - Holmium',
+                'Wavelength (nm) - Didynium',
+                'Neutral Filter (%T)',
             ],
             array_column($tabel, 'judul'),
         );
@@ -320,7 +323,7 @@ class SpectrophotometerApiTest extends TestCase
 
         $this->assertSame([3, 3, 3], array_column($tabel, 'pengulangan_per_baris'));
         $this->assertSame(
-            ['Std Value (λ1)', 'Std Value (λ1)', 'Std Value'],
+            ['Std. Value (λ1)', 'Std. Value (λ1)', 'Std. Value'],
             array_column($tabel, 'judul_nilai'),
         );
         $this->assertSame(
