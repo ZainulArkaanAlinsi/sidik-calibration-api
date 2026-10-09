@@ -350,7 +350,17 @@ ikut dicari maksimumnya. Rentang ini masuk `PERHITUNGAN U95%!H21`
 
 **Pertanyaan:** Apakah rujukan yang benar `MAX(H39:M39)`?
 
-**Sikap sistem:** maksimum dan minimum dari ketiga bacaan suhu yang disimpan.
+**Sikap sistem (§49 tahap 2, 9 Okt 2026):** sesi Labu Ukur & Pipet Volume yang
+mengirim **enam** bacaan suhu (no. 16) meniru workbook — rentang = MAX lima
+bacaan terkoreksi pertama − MIN keenamnya. Dasarnya keputusan pemilik 8 Okt 2026
+(workbook lab acuan; kejanggalan ditiru lalu diangkat jadi pertanyaan ini), dengan
+pola "gabungkan" yang sama dengan no. 14: angka ikut workbook **dan** sistem
+berjaga. Tiap sesi seperti itu mencatat `volumetric_rev7_rentang_suhu_o35_tanpa_m39`
+di jejak titik (rentang & U hitung yang dipakai, rentang & U hitung bila `M39`
+ikut), dan validator memberi PERINGATAN `volumetric_o35_menggeser_u_cetak` kalau
+angka CETAK U95 bila `M39` ikut berbeda dari yang dipakai. Sesi **tiga** bacaan
+tetap memakai maksimum dan minimum ketiganya (setara workbook, karena tiap bacaan
+mewakili awal = akhir).
 
 ### 16. Suhu air dicatat enam kali di workbook, tiga kali di sistem
 
@@ -363,7 +373,17 @@ workbook acuan.
 ya, lembar kerja di HP perlu enam kotak suhu, dan suhu rata-rata (`N35`) serta
 rentangnya ikut berubah.
 
-**Sikap sistem:** tiga suhu per ulangan sampai dijawab.
+**Sikap sistem (§49 tahap 2, 9 Okt 2026):** lembar Labu Ukur & Pipet Volume
+menyediakan **enam** kotak suhu (X1 awal, X1 akhir, X2 awal, X2 akhir, X3 awal,
+X3 akhir) dan server menghitungnya persis rantai `PERHITUNGAN!H35:P40`: tiap
+bacaan dikoreksi sendiri; suhu ulangan = rata-rata awal & akhir terkoreksi
+(`L40`), ρ air dari suhu rata-rata itu; ulangan 1 & 2 tetap 25,5 °C (no. 14);
+`N35` = rata-rata keenamnya; rentang ikut no. 15. Kotak **Awal saja** (X1, X2,
+X3 Awal; ketiga Akhir kosong) = satu bacaan per ulangan, dihitung persis jalur
+tiga bacaan — nilai Akhir tidak dikarang. Kiriman **tiga** angka (HP dengan bentuk
+lembar lama ter-cache/offline, atau klien lama) tetap diterima dan angkanya tidak
+bergeser. Sesi lama tiga suhu dibuka ulang di kotak X1/X2/X3 Awal. Profil
+Volumetric lain tetap tiga. Pertanyaan di atas tetap terbuka untuk dijawab lab.
 
 ### 17. Status neraca selalu VALID
 

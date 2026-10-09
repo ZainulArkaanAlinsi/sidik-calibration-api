@@ -117,6 +117,14 @@ class VolumetricGlasswareCalculator
     /** Ulangan per deret per titik — tiga, di kedua workbook. */
     public const PENGULANGAN = 3;
 
+    /**
+     * Bacaan suhu air per titik workbook **Rev.7**: awal & akhir tiap ulangan,
+     * `INPUT DATA!H39:M39` (X1 awal, X1 akhir, X2 awal, X2 akhir, X3 awal,
+     * X3 akhir). Hanya profil yang memakai [parameterRev7] — lihat
+     * [jumlahBacaanSuhuDiterima].
+     */
+    public const BACAAN_SUHU_AWAL_AKHIR = 6;
+
     /** Titik per sesi: Fixed satu nominal, Graduated sampai lima titik skala. */
     public const TITIK_MAKS = [self::KELUARGA_FIXED => 1, self::KELUARGA_GRADUATED => 5];
 
@@ -191,6 +199,28 @@ class VolumetricGlasswareCalculator
             'keterulangan_di_budget' => true,
             'suhu_densitas_air' => self::SUHU_DENSITAS_AIR_UKUR,
         ];
+    }
+
+    /**
+     * Jumlah bacaan suhu air per titik yang diterima dengan parameter ini.
+     *
+     * Tiga = satu bacaan per ulangan (payload lama, semua profil). Enam =
+     * awal & akhir per ulangan, `INPUT DATA!H39:M39` workbook Rev.7 — HANYA
+     * untuk parameter Rev.7 (Labu Ukur & Pipet Volume). Profil lain tetap
+     * tiga: workbook mereka tidak punya sel awal/akhir, jadi enam angka di sana
+     * tidak punya arti yang bisa dibuktikan.
+     *
+     * Satu pintu untuk tiga tempat: validasi request, jalur simpan
+     * (`CalibrationController::susunBlokVolumetric()`), dan [hitungSesi].
+     *
+     * @param  array<string, mixed>  $parameter  `parameterRev7()`/kosong (= bawaan)
+     * @return list<int>
+     */
+    public static function jumlahBacaanSuhuDiterima(array $parameter = []): array
+    {
+        $p = array_replace(self::parameterBawaan(), $parameter);
+
+        return $p['rev7'] ? [self::PENGULANGAN, self::BACAAN_SUHU_AWAL_AKHIR] : [self::PENGULANGAN];
     }
 
     /**
@@ -411,6 +441,8 @@ class VolumetricGlasswareCalculator
      *
      * `$titik`: list `{titik_ke, nominal, kosong, isi, suhu}` (massa gram,
      * suhu °C BACAAN — koreksi kalibrator + sensor dipasang di sini).
+     * `suhu` berisi tiga bacaan (satu per ulangan), atau — hanya parameter
+     * Rev.7 — enam bacaan awal & akhir per ulangan; lihat bagian di bawah.
      *
      * `$blok`: `{kelas, toleransi_ml, resolusi_ml, neraca, suhu_awal, suhu_akhir,
      * kelembaban_awal, kelembaban_akhir, tekanan_awal, tekanan_akhir}`.
@@ -429,10 +461,35 @@ class VolumetricGlasswareCalculator
      * Kelas di luar A/B, neraca yang bukan milik keluarganya, kondisi
      * lingkungan tak lengkap (ρ udara lahir dari situ), toleransi yang tidak
      * ada di tabel ISO 4787 (Fixed), resolusi kosong (Graduated), deret yang
-     * bukan tepat tiga angka, massa air ≤ 0, dan Graduated dengan kurang dari
-     * dua titik — keterulangannya STDEV dari simpangan baku per titik, dan
-     * STDEV satu angka tidak terdefinisi (master menutupinya dengan nol hantu;
-     * pertanyaan lab no. 12).
+     * bukan tepat tiga angka (suhu: lihat [jumlahBacaanSuhuDiterima]), massa
+     * air ≤ 0, dan Graduated dengan kurang dari dua titik — keterulangannya
+     * STDEV dari simpangan baku per titik, dan STDEV satu angka tidak
+     * terdefinisi (master menutupinya dengan nol hantu; pertanyaan lab no. 12).
+     *
+     * ## Enam bacaan suhu air — workbook Rev.7 (`PERHITUNGAN!H35:P40`)
+     *
+     * Urutannya X1 awal, X1 akhir, X2 awal, X2 akhir, X3 awal, X3 akhir
+     * (`INPUT DATA!H39:M39`). Rantainya, sel demi sel, sama di ketujuh workbook:
+     *
+     *  - tiap bacaan dikoreksi SENDIRI (`H36:M38` mencari titik tabel dari
+     *    bacaannya sendiri; `H39:M39` = bacaan + koreksi meter + koreksi sensor);
+     *  - suhu ulangan = rata-rata awal & akhir TERKOREKSI (`L40 =
+     *    AVERAGE(L39:M39)`), dan ρ air ulangan dihitung dari suhu rata-rata itu
+     *    (`L45`) — bukan rata-rata dua ρ. Cabang `master` tetap menimpa ulangan
+     *    1 & 2 dengan 25,5 °C (`H40`/`J40` angka mati);
+     *  - tair = `N35 = AVERAGE(H39:M39)`. Dihitung sebagai rata-rata ketiga
+     *    suhu ulangan — setara persis secara matematis karena tiap ulangan
+     *    punya tepat dua bacaan — supaya enam bacaan kembar (awal = akhir)
+     *    memberi angka yang IDENTIK bit per bit dengan payload tiga bacaan;
+     *  - rentang u suhu = `O35 − P35` = MAX lima bacaan pertama (`H39:L39`,
+     *    `M39` TIDAK ikut) − MIN keenamnya (`H39:M39`). Kejanggalan ditiru —
+     *    keputusan pemilik 8 Okt 2026: workbook lab acuan, kejanggalan ditiru
+     *    lalu diangkat jadi pertanyaan lab (volumetric no. 15) — dengan pola
+     *    "gabungkan" yang sama dengan 25,5 °C: rentang & U bila `M39` ikut
+     *    tercatat di jejak sesi, dan validator memberi peringatan
+     *    `volumetric_o35_menggeser_u_cetak` kalau angka cetak U95-nya bergeser.
+     *
+     * Payload tiga bacaan menempuh jalur lama, tidak bergeser satu digit pun.
      *
      * ## Parameter per profil
      *
@@ -551,6 +608,7 @@ class VolumetricGlasswareCalculator
         $ditolak = [];
         $olah = [];
         $batas = self::TITIK_MAKS[$keluarga];
+        $jumlahSuhuDiterima = self::jumlahBacaanSuhuDiterima($p);
 
         foreach ($titik as $t) {
             $ke = (int) $t['titik_ke'];
@@ -565,18 +623,27 @@ class VolumetricGlasswareCalculator
             }
 
             foreach (['kosong', 'isi', 'suhu'] as $nama) {
-                if (count($t[$nama]) !== self::PENGULANGAN) {
+                $diterima = $nama === 'suhu' ? $jumlahSuhuDiterima : [self::PENGULANGAN];
+
+                if (! in_array(count($t[$nama]), $diterima, true)) {
                     $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
-                        'Titik ke-%d: deret %s berisi %d angka, harus tepat %d.',
-                        $ke, $nama, count($t[$nama]), self::PENGULANGAN,
+                        'Titik ke-%d: deret %s berisi %d angka, harus tepat %s.',
+                        $ke, $nama, count($t[$nama]), count($diterima) === 1
+                            ? (string) $diterima[0]
+                            : implode(' atau ', $diterima).' (enam = awal & akhir tiap ulangan)',
                     )];
 
                     continue 2;
                 }
             }
 
+            // Enam bacaan = awal & akhir tiap ulangan (`INPUT DATA!H39:M39`),
+            // hanya lolos ke sini untuk parameter Rev.7.
+            $awalAkhir = count($t['suhu']) === self::BACAAN_SUHU_AWAL_AKHIR;
+
             $massa = [];
             $suhu = [];
+            $suhuBacaan = [];
             $rhoAir = [];
             $koreksi = [];
 
@@ -592,6 +659,38 @@ class VolumetricGlasswareCalculator
                     continue 2;
                 }
 
+                if ($awalAkhir) {
+                    // Tiap bacaan dikoreksi SENDIRI — `PERHITUNGAN!H36:M38`
+                    // mencari titik tabel dari bacaannya sendiri.
+                    $pasangan = [];
+                    foreach ([2 * $i, 2 * $i + 1] as $j) {
+                        $k = $tabel->koreksiSuhu((float) $t['suhu'][$j]);
+                        if ($k === null) {
+                            $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
+                                'Titik ke-%d ulangan %d (suhu %s): %s °C tidak punya koreksi sensor di tabel standar.',
+                                $ke, $i + 1, $j % 2 === 0 ? 'awal' : 'akhir', $t['suhu'][$j],
+                            )];
+
+                            continue 3;
+                        }
+
+                        $pasangan[] = $k['terkoreksi_c'];
+                        $koreksi[] = $k;
+                    }
+
+                    // `L40 = AVERAGE(L39:M39)`: suhu ulangan = rata-rata awal &
+                    // akhir TERKOREKSI, lalu ρ air dari suhu rata-rata itu
+                    // (`L45`) — bukan rata-rata dua ρ.
+                    $suhuUlangan = ($pasangan[0] + $pasangan[1]) / 2;
+
+                    $massa[] = $m;
+                    $suhu[] = $suhuUlangan;
+                    array_push($suhuBacaan, ...$pasangan);
+                    $rhoAir[] = self::densitasAirSuling($suhuUlangan);
+
+                    continue;
+                }
+
                 $k = $tabel->koreksiSuhu((float) $t['suhu'][$i]);
                 if ($k === null) {
                     $ditolak[] = ['titik_ke' => $ke, 'alasan' => sprintf(
@@ -604,6 +703,7 @@ class VolumetricGlasswareCalculator
 
                 $massa[] = $m;
                 $suhu[] = $k['terkoreksi_c'];
+                $suhuBacaan[] = $k['terkoreksi_c'];
                 $koreksi[] = $k;
                 $rhoAir[] = self::densitasAirSuling($k['terkoreksi_c']);
             }
@@ -633,6 +733,9 @@ class VolumetricGlasswareCalculator
             }
 
             $massaRata = self::rata($massa);
+            // Enam bacaan: = `N35 = AVERAGE(H39:M39)` — rata-rata tiga suhu
+            // ulangan yang masing-masing rata-rata DUA bacaan sama dengan
+            // rata-rata keenamnya (lihat docblock metode).
             $suhuRata = self::rata($suhu);
             $rhoAirRata = self::rata($rhoAir);
 
@@ -655,6 +758,9 @@ class VolumetricGlasswareCalculator
                 'nominal' => (float) $t['nominal'],
                 'massa_per_ulangan' => $massa,
                 'suhu_terkoreksi_per_ulangan' => $suhu,
+                // Tiga (satu per ulangan) atau enam (awal & akhir per ulangan,
+                // `PERHITUNGAN!H39:M39`). Tiga bacaan: sama dengan di atas.
+                'suhu_terkoreksi_per_bacaan' => $suhuBacaan,
                 'koreksi_suhu' => $koreksi,
                 'rho_air_per_ulangan' => $rhoAir,
                 'v20_per_ulangan' => $v20,
@@ -718,7 +824,20 @@ class VolumetricGlasswareCalculator
 
         if ($keluarga === self::KELUARGA_FIXED) {
             foreach ($olah as $o) {
-                $rentang = max($o['suhu_terkoreksi_per_ulangan']) - min($o['suhu_terkoreksi_per_ulangan']);
+                $bacaan = $o['suhu_terkoreksi_per_bacaan'];
+                $rentangDenganM39 = null;
+
+                if (count($bacaan) === self::BACAAN_SUHU_AWAL_AKHIR) {
+                    // `PERHITUNGAN U95%!H21 = O35 − P35`: `O35 = MAX(H39:L39)`
+                    // berhenti di bacaan KELIMA (akhir X3, `M39`, tidak ikut),
+                    // `P35 = MIN(H39:M39)` menyapu keenamnya. Ditiru; yang
+                    // menyapu keenamnya tercatat di jejak (pertanyaan lab no. 15).
+                    $rentang = max(array_slice($bacaan, 0, self::BACAAN_SUHU_AWAL_AKHIR - 1)) - min($bacaan);
+                    $rentangDenganM39 = max($bacaan) - min($bacaan);
+                } else {
+                    $rentang = max($o['suhu_terkoreksi_per_ulangan']) - min($o['suhu_terkoreksi_per_ulangan']);
+                }
+
                 $uKeterulangan = $o['stdev_v20'] / sqrt(self::PENGULANGAN);
                 $masukan = [
                     'massa' => $o['massa_rata_rata'],
@@ -764,6 +883,17 @@ class VolumetricGlasswareCalculator
                             ['rho_air' => $lain['rho_air_rata_rata_lain']] + $masukan,
                         ))['ketidakpastian_diperluas'],
                     ];
+
+                    // Hanya enam bacaan: tiga bacaan tidak punya `M39` yang
+                    // terlewat (tiap bacaan mewakili awal = akhir).
+                    if ($rentangDenganM39 !== null) {
+                        $pembanding['rev7']['rentang_suhu_o35'] = $rentang;
+                        $pembanding['rev7']['rentang_suhu_dengan_m39'] = $rentangDenganM39;
+                        $pembanding['rev7']['u95_rentang_dengan_m39'] = $gum->agregasiBudget(self::komponenBudget(
+                            ['u_suhu' => self::uSuhu($u95Suhu['termometer_c'], $u95Suhu['sensor_c'], $rentangDenganM39)]
+                            + $masukan,
+                        ))['ketidakpastian_diperluas'];
+                    }
                 }
 
                 $hasil[] = $o + [

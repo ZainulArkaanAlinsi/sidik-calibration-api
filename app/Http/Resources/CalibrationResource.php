@@ -11,7 +11,10 @@ use App\Models\Standard;
 use App\Models\UncertaintyCalculation;
 use App\Services\Calibration\CalibrationProfileRegistry;
 use App\Services\Calibration\Profiles\CalibrationProfile;
+use App\Services\Calibration\Profiles\VolumetricGlasswareProfile;
+use App\Services\Calibration\VolumetricGlasswareCalculator;
 use App\Support\Angka;
+use App\Support\VolumetricGlasswareMentah;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -358,7 +361,11 @@ class CalibrationResource extends JsonResource
                         // Centang standar acuan baris ini. Null = teknisi
                         // belum milih, dan itu sah buat draft.
                         'standard_id' => $m->standard_id,
-                        'pembacaan_ke' => $m->pembacaan_ke,
+                        // Nomor KOTAK di lembar, bukan selalu nomor simpan: sesi
+                        // Labu Ukur/PV tiga suhu disajikan di X1/X2/X3 Awal
+                        // (kotak 1, 3, 5) lembar enam kotak — lihat
+                        // `kotakSajianSuhu()`. Barisnya sendiri tidak diubah.
+                        'pembacaan_ke' => $this->kotakSajianSuhu()[$m->id] ?? $m->pembacaan_ke,
                         'tahap' => $m->tahap,
                         'pembacaan' => $m->pembacaan,
                         // Suhu larutan waktu pembacaan diambil — kolom °C di
@@ -670,5 +677,35 @@ class CalibrationResource extends JsonResource
     private static function profil(Equipment $alat): ?CalibrationProfile
     {
         return app(CalibrationProfileRegistry::class)->untukAlat($alat);
+    }
+
+    /** @var array<int, int>|null */
+    private ?array $kotakSajianSuhu = null;
+
+    /**
+     * Baris suhu air yang disajikan di kotak lain dari nomor simpannya: id
+     * baris → nomor kotak (1-based).
+     *
+     * Hanya lembar Volumetric yang menyediakan enam kotak suhu (Labu Ukur &
+     * Pipet Volume, workbook Rev.7). Titik yang tersimpan dengan TIGA suhu
+     * (sesi lama, atau kiriman Awal saja) disajikan di X1/X2/X3 Awal — tanpa
+     * ini HP menaruhnya di X1 Awal, X1 Akhir, X2 Awal (`pembacaan_ke − 1`).
+     * Dihitung sekali per sesi.
+     *
+     * @return array<int, int>
+     */
+    private function kotakSajianSuhu(): array
+    {
+        if ($this->kotakSajianSuhu !== null) {
+            return $this->kotakSajianSuhu;
+        }
+
+        $alat = $this->resource->equipment;
+        $profil = $alat !== null ? self::profil($alat) : null;
+
+        return $this->kotakSajianSuhu = $profil instanceof VolumetricGlasswareProfile
+            && in_array(VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR, $profil->jumlahBacaanSuhuDiterima(), true)
+                ? VolumetricGlasswareMentah::kotakSajianSuhuTigaBacaan($this->rawMeasurements)
+                : [];
     }
 }

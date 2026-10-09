@@ -1517,10 +1517,21 @@ class CalibrationController extends Controller
         // Sieve dan alat berblok lain memang mengirim `measurements: []`
         // dengan datanya di `spesifikasi_alat`. Dijaga `ChaosSimpanLembarKerjaTest`.
         if ($susunan['mentah'] === [] && $sesi->rawMeasurements()->exists()) {
+            // Lembar Volumetric: kiriman yang TIDAK kosong tapi tidak satu
+            // titik pun lengkap (mis. enam kotak suhu yang baru terisi
+            // sebagian) — "tabel kosong, muat ulang" menyuruh teknisi membuang
+            // isiannya. Alasan per titik yang dipakai: kotak mana yang kurang.
+            $alasan = $sesi->equipment !== null && $this->profil->untukAlat($sesi->equipment)->butuhBlokVolumetric()
+                ? array_column($susunan['belum_dihitung'], 'alasan')
+                : [];
+
             throw ValidationException::withMessages([
-                'measurements' => 'Tabel pembacaan yang dikirim kosong, padahal lembar ini sudah punya pembacaan — '
-                    .'nggak ada yang dihapus. Muat ulang lembarnya dulu. Kalau cuma mau menyimpan bagian atas '
-                    .'lembar, kirim tanpa kunci `measurements`.',
+                'measurements' => $alasan !== []
+                    ? 'Belum ada titik yang lengkap untuk disimpan — pembacaan yang tersimpan tetap utuh, nggak ada '
+                        .'yang dihapus. '.implode(' ', $alasan)
+                    : 'Tabel pembacaan yang dikirim kosong, padahal lembar ini sudah punya pembacaan — '
+                        .'nggak ada yang dihapus. Muat ulang lembarnya dulu. Kalau cuma mau menyimpan bagian atas '
+                        .'lembar, kirim tanpa kunci `measurements`.',
             ]);
         }
 
@@ -3829,6 +3840,8 @@ class CalibrationController extends Controller
      * Tiga tabel yang tidak sinkron (deret yang bukan tepat tiga angka)
      * DITOLAK sebelum satu baris pun tersimpan — menyimpan separuhnya
      * melahirkan titik yang selamanya "belum dihitung" di jalur hitung ulang.
+     * Pengecualian: suhu air Labu Ukur & Pipet Volume (Rev.7) boleh enam —
+     * awal & akhir tiap ulangan, `sensor_ke` 1..6 — asal keenam kotaknya terisi.
      *
      * @return array{mentah: list<array<string, mixed>>, hitungan: list<array<string, mixed>>, belum_dihitung: list<array{titik_ke: int, alasan: string}>}
      */
@@ -3840,6 +3853,8 @@ class CalibrationController extends Controller
         $profil = $this->profil->untukAlat($alat);
         $batas = VolumetricGlasswareCalculator::TITIK_MAKS[$profil->keluarga()];
         $n = VolumetricGlasswareMentah::PENGULANGAN;
+        // Suhu air: 3, atau 6 (awal & akhir tiap ulangan) untuk profil Rev.7.
+        $nSuhu = $profil->jumlahBacaanSuhuDiterima();
 
         $mentah = [];
         $siapHitung = [];
@@ -3888,18 +3903,51 @@ class CalibrationController extends Controller
                 continue;
             }
 
+            // Enam kotak suhu (lembar Rev.7) ditafsir per POSISI, bukan
+            // dirapatkan: kotak null dibuang di atas, jadi [X1 awal, X1 akhir,
+            // X2 awal, null, null, null] akan terbaca sebagai tiga ulangan
+            // yang salah tempat — tanpa error. Awal saja (kotak 1, 3, 5) = satu
+            // bacaan per ulangan, jalur tiga bacaan lama.
+            $kotakSuhu = (array) ($titik[VolumetricGlasswareMentah::PERAN_SUHU] ?? []);
+            $kurangSuhu = [];
+            if (count($kotakSuhu) === VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR
+                && in_array(VolumetricGlasswareCalculator::BACAAN_SUHU_AWAL_AKHIR, $nSuhu, true)) {
+                $tafsir = VolumetricGlasswareMentah::tafsirKotakSuhu($kotakSuhu);
+                $terkumpul[VolumetricGlasswareMentah::PERAN_SUHU] = $tafsir['bacaan'];
+                $kurangSuhu = $tafsir['kurang'];
+            }
+
             $jumlah = array_map('count', $terkumpul);
-            if (array_values(array_unique(array_values($jumlah))) !== [$n]) {
+            $jumlahSuhu = $jumlah[VolumetricGlasswareMentah::PERAN_SUHU];
+
+            if ($kurangSuhu !== []) {
                 $belumDipetakan[] = [
                     'titik_ke' => $titikKe,
                     'alasan' => sprintf(
-                        'Titik ke-%d butuh tepat %d berat kosong, %d berat isi, DAN %d suhu; yang terkirim '
+                        'Titik ke-%d: suhu air %s belum diisi — lengkapi keenam kotak, atau isi kotak Awal '
+                        .'saja (X1, X2, X3 Awal) untuk satu bacaan per ulangan. Titik tidak disimpan supaya '
+                        .'tidak ada volume yang lahir dari separuh data.',
+                        $titikKe, implode(', ', $kurangSuhu),
+                    ),
+                ];
+
+                continue;
+            }
+
+            if ($jumlah[VolumetricGlasswareMentah::PERAN_KOSONG] !== $n
+                || $jumlah[VolumetricGlasswareMentah::PERAN_ISI] !== $n
+                || ! in_array($jumlahSuhu, $nSuhu, true)) {
+                $belumDipetakan[] = [
+                    'titik_ke' => $titikKe,
+                    'alasan' => sprintf(
+                        'Titik ke-%d butuh tepat %d berat kosong, %d berat isi, DAN %s suhu; yang terkirim '
                         .'%d, %d, dan %d. Ketiga tabel harus sinkron kolom per kolom — titik tidak disimpan '
                         .'supaya tidak ada volume yang lahir dari separuh data.',
-                        $titikKe, $n, $n, $n,
+                        $titikKe, $n, $n,
+                        count($nSuhu) === 1 ? (string) $nSuhu[0] : implode(' atau ', $nSuhu).' (enam = awal & akhir tiap ulangan)',
                         $jumlah[VolumetricGlasswareMentah::PERAN_KOSONG],
                         $jumlah[VolumetricGlasswareMentah::PERAN_ISI],
-                        $jumlah[VolumetricGlasswareMentah::PERAN_SUHU],
+                        $jumlahSuhu,
                     ),
                 ];
 

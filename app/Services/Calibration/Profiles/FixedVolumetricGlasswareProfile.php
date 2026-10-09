@@ -90,8 +90,9 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
 
     /**
      * Catatan audit profil yang mengikuti workbook Rev.7 (`parameterRev7()`):
-     * keterulangan yang tidak masuk budget, dan sakelar suhu densitas air
-     * (butir D). Kosong untuk profil yang tidak memakai Rev.7.
+     * keterulangan yang tidak masuk budget, sakelar suhu densitas air
+     * (butir D), dan — hanya sesi enam bacaan suhu — rentang suhu `O35` yang
+     * melewatkan `M39`. Kosong untuk profil yang tidak memakai Rev.7.
      *
      * @param  array<string, mixed>  $h
      * @return list<array{kode: string, pesan: string, nilai: float|null}>
@@ -106,7 +107,7 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
 
         $pakaiMaster = $r['suhu_densitas_air'] === V::SUHU_DENSITAS_AIR_MASTER;
 
-        return [
+        $catatan = [
             [
                 'kode' => 'volumetric_rev7_keterulangan_tidak_masuk_budget',
                 'pesan' => sprintf(
@@ -139,5 +140,27 @@ abstract class FixedVolumetricGlasswareProfile extends VolumetricGlasswareProfil
                 'nilai' => $r['v20_lain'],
             ],
         ];
+
+        // Hanya sesi enam bacaan suhu (awal & akhir per ulangan): tiga bacaan
+        // tidak punya `M39` yang terlewat, jadi catatan sesi tiga bacaan tetap.
+        if (isset($r['rentang_suhu_dengan_m39'])) {
+            $catatan[] = [
+                'kode' => 'volumetric_rev7_rentang_suhu_o35_tanpa_m39',
+                'pesan' => sprintf(
+                    'Rentang suhu air u suhu = %.12g °C, meniru workbook Rev.7 `PERHITUNGAN U95%%!H21 = O35 − P35`: '
+                    .'`PERHITUNGAN!O35 = MAX(H39:L39)` hanya lima bacaan terkoreksi pertama — bacaan AKHIR '
+                    .'ulangan 3 (`M39`) tidak ikut — sedangkan `P35 = MIN(H39:M39)` keenamnya. U hitung yang '
+                    .'dipakai %.12g mL; kalau `M39` ikut: rentang %.12g °C, U hitung %.12g mL. Ditiru sesuai '
+                    .'keputusan pemilik 8 Okt 2026 (workbook lab acuan, kejanggalan ditiru lalu diangkat jadi '
+                    .'pertanyaan lab — docs/pertanyaan-lab-volumetric.md no. 15), dengan peringatan bila angka '
+                    .'cetak U95 bergeser, pola 25,5 °C (no. 14).',
+                    $r['rentang_suhu_o35'], $h['agregat']['ketidakpastian_diperluas'],
+                    $r['rentang_suhu_dengan_m39'], $r['u95_rentang_dengan_m39'],
+                ),
+                'nilai' => $r['u95_rentang_dengan_m39'],
+            ];
+        }
+
+        return $catatan;
     }
 }

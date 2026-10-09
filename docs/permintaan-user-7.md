@@ -5070,6 +5070,50 @@ standar produksi mencatat tanggal yang sama, sesi seperti itu sekarang DITAHAN
 **Dijaga:** `VolumetrikRev7AlurTest` (19 test) dan `VolumetrikRev7WorkbookTest` (bawaan `master`
 sama dengan cache workbook sampai angka cetak `N21`/`S21`/`Q22` ketujuh berkas).
 
+### §49 tahap 2 — enam bacaan suhu air (9 Okt 2026)
+
+Workbook Rev.7 mencatat suhu air awal & akhir tiap ulangan (`INPUT DATA!H39:M39`, enam sel);
+server sebelumnya tiga. Rantai `PERHITUNGAN!H35:P40` diperiksa ulang ke ketujuh workbook (rumus
+sel identik di ketujuhnya) sebelum kode ditulis. Hanya `LabuUkurProfile` & `PipetVolumeProfile`
+(lewat `parameterRev7()`); profil Volumetric lain tidak berubah perilaku.
+
+| Bagian | Isi |
+|---|---|
+| Kontrak | `measurements[].vol_suhu` Labu Ukur & PV: **3 atau 6** kotak. 3 angka (HP berbentuk lembar lama ter-cache/offline, klien lama) = perilaku & angka lama persis. Enam kotak ditafsir per posisi: keenamnya = enam bacaan; **Awal saja** (1, 3, 5) = satu bacaan per ulangan, jalur tiga bacaan (nilai Akhir tidak dikarang); pola lain → titik tidak disimpan, alasan menyebut kotak yang kurang (`meta.belum_dihitung` pada simpan pertama; **422** pada `PUT` atas sesi yang sudah punya pembacaan — pembacaan lama utuh). Panjang lain → 422. Profil lain tetap `size:3` (6 → 422) |
+| Bentuk lembar | Tabel `vol_suhu` Labu Ukur & PV: `pengulangan` 1..6 + `pengulangan_arah` `X1 Awal` … `X3 Akhir` — kunci yang sudah dibaca HP, jadi nol kode HP. `vol_kosong`/`vol_isi` tetap tiga |
+| Hitung | Tiap bacaan dikoreksi sendiri (`H36:M39`); suhu ulangan = rata-rata awal & akhir terkoreksi (`L40`), ρ air dari suhu rata-rata itu (bukan rata-rata ρ); ulangan 1 & 2 tetap 25,5 °C (`master`) atau rata-rata awal/akhir-nya (`ukur`, tetap dihitung untuk peringatan pergeseran); tair = `N35` rata-rata keenamnya (`U95!J7`); rentang u suhu = `O35 − P35` = MAX lima bacaan pertama − MIN keenamnya |
+| Kejanggalan ditiru | `O35 = MAX(H39:L39)` melewatkan `M39`. Dasar: keputusan pemilik 8 Okt 2026 (workbook lab acuan; kejanggalan ditiru lalu diangkat jadi pertanyaan lab volumetric no. 15), dengan pola "gabungkan" yang sama dengan 25,5 °C: dicatat per titik di `type_b_components` sebagai `volumetric_rev7_rentang_suhu_o35_tanpa_m39` (rentang & U yang dipakai, rentang & U bila `M39` ikut) **dan** PERINGATAN validator `volumetric_o35_menggeser_u_cetak` kalau angka CETAK U95 bila `M39` ikut berbeda. No. 16 diperbarui |
+| Simpan / validator / hitung ulang | Baris `raw_measurements` `vol_suhu`, `sensor_ke` 1..6 (enam) atau 1..3 (satu per ulangan) — nol kolom baru. `CalibrationValidator` & `HitungUlangSesi` membaca lewat `VolumetricGlasswareMentah` yang sama; dibuktikan test |
+| Draft lama tiga suhu | `GET /calibrations/{id}` menyajikan titik Labu Ukur/PV yang tersimpan dengan tiga suhu di `pembacaan_ke` 1, 3, 5 (X1/X2/X3 Awal) — pemulihan draft HP memakai `pembacaan_ke − 1`. Baris tersimpan tidak diubah; dikirim ulang tanpa diubah = tiga bacaan yang sama, angka identik |
+
+Enam bacaan kembar (awal = akhir, isi ketujuh workbook) memberi angka **identik bit per bit**
+dengan tiga bacaan, kedua cabang sakelar (`tair` dihitung sebagai rata-rata tiga suhu ulangan —
+setara matematis dengan rata-rata keenamnya karena tiap ulangan tepat dua bacaan).
+
+**Rekonsiliasi awal ≠ akhir:** diadu ke replika Python independen rumus workbook (tidak memakai
+kode PHP; replika itu memulangkan cache Excel LU-250 & PV-2 dengan selisih ≤ 1,1·10⁻¹⁵ relatif
+saat diberi suhu asli). LU-250 & PV-2, kedua cabang sakelar, suhu awal ≠ akhir dengan `M39`
+tertinggi: N35, `O35 − P35`, u suhu, ρ air per ulangan, N45, V20, deviasi, tujuh u·c, u_c, ν_eff,
+k, U, U cetak — V20 identik bit per bit, selisih terbesar 4,7·10⁻¹² relatif (di k); angka cetak
+`N21`/`S21`/`Q22` sama persis.
+
+**Dijaga:** `tests/Unit/VolumetrikEnamSuhuAirTest.php` (kembar = tiga, 7 workbook × 2 cabang;
+rekonsiliasi replika; bentuk rantai sel; tafsir enam kotak; penolakan) dan
+`tests/Feature/VolumetrikEnamSuhuAirTest.php` (HP → simpan → validator → hitung ulang; 422; Awal
+saja = tiga bacaan; draft lama tiga suhu disajikan di kotak Awal lalu dikirim ulang identik; enam
+kotak sebagian pada `POST` dan `PUT`; peringatan `volumetric_o35_menggeser_u_cetak` muncul & tidak
+muncul; bentuk lembar).
+
+**Ikut berubah:** rangka geometri OCR `database/ocr-templates/labu_ukur-v1.json` &
+`pipet_volume-v1.json` digenerate ulang (`ocr:rangka-geometri --timpa`, SQLite in-memory ter-seed) —
+hanya enam sel `vol_suhu`; keduanya tetap `terverifikasi: false` (lembar Volumetric memang tidak
+lewat pindai). Dijaga `CetakLembarKerjaOcrTest`.
+
+**Status:** PR #232 (`feat/volumetrik-enam-suhu-air`), putaran perbaikan 1 dari tinjauan (draft lama
+tiga suhu, pesan `PUT`, peringatan O35, redaksi). Gate MySQL penuh belum dijalankan.
+Fixture HP `contoh_lembar_kerja_volumetric_glassware.dart` digenerate ulang (ikut membawa drift
+tahap 1 yang belum pernah digenerate).
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
