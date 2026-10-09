@@ -431,12 +431,6 @@ class TurbidimeterProfile extends CalibrationProfile
                         $this->field('alat_model', '3. Type/Model', 'teks'),
                         $this->field('alat_serial_number', '4. Serial Number/LPI', 'teks'),
                         $this->field('alat_merk', '5. Merk/Manufacture', 'teks'),
-                        $this->field(
-                            'thermohygro_standard_id',
-                            '6. Thermohygro used',
-                            'pilihan',
-                            sumber: 'master_thermohygro',
-                        ),
                     ],
                 ],
                 [
@@ -454,7 +448,9 @@ class TurbidimeterProfile extends CalibrationProfile
                     'judul' => 'STANDARD',
                     'baris' => self::STANDARD_TERCETAK,
                     'field' => [
-                        $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
+                        // Kertas 0530 menulis "Standard Used :" di atas daftar
+                        // kotak centangnya — tanpa kepala kolom "Usage Check".
+                        $this->field('standar_dicek.*.dipakai', 'Standard Used', 'centang'),
                         $this->field('standar_dicek.*.keterangan', 'Keterangan', 'teks'),
                     ],
                 ],
@@ -495,12 +491,28 @@ class TurbidimeterProfile extends CalibrationProfile
                         $this->field('kelembaban_awal', 'Env. Condition — First', 'angka', satuan: '%RH'),
                         $this->field('suhu_akhir', 'Env. Condition — End', 'angka', satuan: '°C'),
                         $this->field('kelembaban_akhir', 'Env. Condition — End', 'angka', satuan: '%RH'),
+                        // Di kertas 0530 kotak centang thermohygro ("TH used:")
+                        // ada di kolom kanan blok CALIBRATION RESULT, bukan di
+                        // EQUIPMENT IDENTITY — sama seperti lembar DO Meter.
+                        // Cuma pindah tempat tampil; kode field-nya tetap.
+                        $this->field(
+                            'thermohygro_standard_id',
+                            'TH used',
+                            'pilihan',
+                            sumber: 'master_thermohygro',
+                        ),
                         ...$this->fieldResolusiPerTitik(),
                     ],
                     'tabel' => [
-                        $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
-                        $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
+                        $this->tabelHasil('sebelum_adjustment', 'Before Adjustment Reading of UUT (NTU)'),
+                        $this->tabelHasil('sesudah_adjustment', 'After Adjustment Reading of UUT (NTU)'),
                     ],
+                    // Kartu per larutan + tombol pindah ke tabel — tampilan HP
+                    // saja. Repeat-turun (`sumbu_pengulangan`) belum dipasang:
+                    // kunci itu ikut menggambar lembar cetak OCR v1.
+                    'tampilan' => 'kartu_per_set_point',
+                    'kartu_sejajar' => false,
+                    'nominal_berbintang' => false,
                 ],
                 [
                     'kode' => 'penutup',

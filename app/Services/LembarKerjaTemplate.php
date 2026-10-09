@@ -278,7 +278,7 @@ class LembarKerjaTemplate
                             '2. Calibration Methode',
                             'pilihan',
                             sumber: 'master_metode',
-                                                    ),
+                        ),
                     ],
                 ],
                 [
@@ -299,6 +299,19 @@ class LembarKerjaTemplate
                         $this->tabelHasil('sebelum_adjustment', 'Before adjustment Reading'),
                         $this->tabelHasil('sesudah_adjustment', 'After adjustment Reading'),
                     ],
+                    // Kartu per larutan (Before & After bertumpuk, Repeat 1..5
+                    // menurun di tiap kartu) + tombol pindah ke tabel. Cuma
+                    // tampilan HP — kotak & payload tetap milik `tabel`.
+                    //
+                    // `sumbu_pengulangan: 'baris'` (Repeat turun seperti kertas)
+                    // SENGAJA belum dipasang: kunci itu ikut dibaca
+                    // `ocr:cetak-lembar`, dan memasangnya membuat label lembar
+                    // cetak OCR v1 (`ph_meter-v1.json`, kertas uji lapangan)
+                    // kecetak di dalam grid — dibuktikan 3 test
+                    // `CetakLembarKerjaOcrTest` merah, 9 Okt 2026.
+                    'tampilan' => 'kartu_per_set_point',
+                    'kartu_sejajar' => false,
+                    'nominal_berbintang' => false,
                 ],
                 [
                     'kode' => 'penutup',
@@ -437,8 +450,11 @@ class LembarKerjaTemplate
         return [
             'tahap' => $tahap,
             'judul' => $judul,
+            // Label persis tulisan kertas `4.00 / 7.00 / 10.01` (titik desimal,
+            // seperti tercetak di kepala kolom Solution Standard). Cuma
+            // tulisan — kunci barisnya `titik_ukur`.
             'baris' => array_map(
-                fn (float $nilai): array => ['titik_ukur' => $nilai, 'label' => number_format($nilai, 2, ',', '')],
+                fn (float $nilai): array => ['titik_ukur' => $nilai, 'label' => number_format($nilai, 2, '.', '')],
                 self::LARUTAN_STANDAR_PH,
             ),
             'kolom' => [
