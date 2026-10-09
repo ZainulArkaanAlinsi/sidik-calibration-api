@@ -31,6 +31,12 @@ class TampilanKartuLembarKerjaTest extends TestCase
             'thermohygro' => ['thermohygro', ['hasil_suhu', 'hasil_kelembaban'], true],
             'flowmeter_flowrate' => ['flowmeter_flowrate', ['hasil'], false],
             'flowmeter_totalizer' => ['flowmeter_totalizer', ['hasil'], false],
+            // Ikut kertas W1 mekanik (9 Okt 2026): tabel data biasa yang
+            // sebelumnya tanpa kartu.
+            'dial_indicator' => ['dial_indicator', ['hasil'], false],
+            'jangka_sorong' => ['jangka_sorong', ['hasil_outside', 'hasil_inside', 'hasil_depth'], false],
+            'sieve' => ['sieve', ['hasil', 'frame'], false],
+            'hydrometer' => ['hydrometer', ['hasil'], true],
         ];
     }
 

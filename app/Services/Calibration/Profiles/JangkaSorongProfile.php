@@ -429,13 +429,15 @@ class JangkaSorongProfile extends CalibrationProfile
                 $this->bagianPemilik(),
                 $this->bagianStandard(),
                 // Urutan kertas FM-0527: Pengukuran Luar → baris Evaluasi tepat
-                // di bawahnya → Pengukuran Dalam → Kedalaman. Kesejajaran muka
-                // ukur tidak punya kotak di kertas; ditaruh sesudah semua tabel
-                // pengukuran supaya tidak menyela alur yang tercetak.
+                // di bawahnya → Pengukuran Dalam → Kedalaman. Yang TIDAK ada di
+                // kertas (Evaluation Inside, Kesejajaran, Kerataan, Rentang
+                // Ukur, Order Number) dikumpulkan di blok "Di luar kertas"
+                // sesudah semua tabel pengukuran — tidak dihapus, kodenya tetap.
                 $this->bagianTitik('outside'),
                 $this->bagianEvaluasi(),
                 $this->bagianTitik('inside'),
                 $this->bagianTitik('depth'),
+                $this->bagianDiLuarKertas(),
                 $this->bagianKesejajaran(),
                 $this->bagianPenutup(),
             ],
@@ -548,32 +550,31 @@ class JangkaSorongProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            // Judul & label = tulisan kertas FM-0527 Rev.2 ("Identitas Alat
+            // dan Data Customer"). Owner/Address tetap di bagian `pemilik`
+            // (kerangka bagian seragam semua lembar).
+            'judul' => 'Identitas Alat dan Data Customer',
             'field' => [
                 $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 $this->field('alat_model', 'Type', 'teks'),
-                $this->field('alat_serial_number', 'No. Seri', 'teks'),
-                $this->field("{$kunci}.satuan", 'Satuan Alat', 'pilihan', pilihan: [
+                $this->field('alat_serial_number', 'Serial Number', 'teks'),
+                // Kurung "( )" di belakang Capacity & Resolusi kertas.
+                $this->field("{$kunci}.satuan", 'Satuan ( ) — Capacity & Resolusi', 'pilihan', pilihan: [
                     ['nilai' => 'mm', 'label' => 'mm'],
                     ['nilai' => 'inch', 'label' => 'inch'],
                 ]),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks'),
-                $this->field("{$kunci}.kapasitas_mm", 'Kapasitas Max.', 'angka', satuan: self::SATUAN),
-                $this->field("{$kunci}.resolusi_mm", 'Resolusi Alat', 'angka', satuan: self::SATUAN),
-                $this->field('tanggal_terima', 'Tgl. Diterima', 'tanggal'),
-                $this->field('tanggal_kalibrasi', 'Tgl. Kalibrasi', 'tanggal'),
+                $this->field("{$kunci}.kapasitas_mm", 'Capacity', 'angka', satuan: self::SATUAN),
+                $this->field("{$kunci}.resolusi_mm", 'Resolusi', 'angka', satuan: self::SATUAN),
+                $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                 $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
                 $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
                 // SATU pilihan, bukan dua centang — lihat [JangkaSorongMentah::kerataan].
-                $this->field("{$kunci}.kerataan_muka_ukur", 'Kerataan Muka Ukur', 'pilihan', pilihan: [
-                    ['nilai' => 'baik', 'label' => 'Baik'],
-                    ['nilai' => 'buruk', 'label' => 'Buruk'],
-                ]),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                $this->field('lokasi', 'Calib. Location', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -585,7 +586,7 @@ class JangkaSorongProfile extends CalibrationProfile
                     'lokasi_nama', 'Nama Tempat (Insitu)', 'teks',
                     tampilKalau: self::TAMPIL_KALAU_INSITU,
                 ),
-                $this->field('thermohygro_standard_id', 'Environmental Meter Used', 'pilihan', sumber: 'master_thermohygro'),
+                $this->field('thermohygro_standard_id', 'TH used', 'pilihan', sumber: 'master_thermohygro'),
             ],
         ];
     }
@@ -598,10 +599,42 @@ class JangkaSorongProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Data Customer',
             'field' => [
-                $this->field('pemilik_nama', 'Nama Customer', 'teks'),
-                $this->field('pemilik_alamat', 'Alamat Customer', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+                $this->field('pemilik_nama', 'Owner', 'teks'),
+                $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
             ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": yang tidak tercetak di FM-0527 Rev.2 tapi dipakai
+     * olah data/sertifikat — Rentang Ukur, Kerataan Muka Ukur, Order Number,
+     * dan Evaluation INSIDE (kertasnya cuma punya satu baris Evaluasi, di
+     * bawah Pengukuran Luar; repeatability Inside lahir dari baris ini).
+     * Tidak disembunyikan; kode isian & identitas tabelnya sama persis dengan
+     * sebelum dipindah (9 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        $kunci = 'spesifikasi_alat.'.JangkaSorongMentah::KUNCI_SESI;
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas — dipakai hitung',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0527, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks', ekstra: $luar),
+                $this->field("{$kunci}.kerataan_muka_ukur", 'Kerataan Muka Ukur', 'pilihan', pilihan: [
+                    ['nilai' => 'baik', 'label' => 'Baik'],
+                    ['nilai' => 'buruk', 'label' => 'Buruk'],
+                ], ekstra: $luar),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
+            ],
+            'tabel' => [[...$this->tabelEvaluasi('inside', 4000), 'di_luar_kertas' => true]],
         ];
     }
 
@@ -611,7 +644,8 @@ class JangkaSorongProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            // Kepala daftar standar kertas: "Standard Name".
+            'judul' => 'Standard Name',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -631,10 +665,13 @@ class JangkaSorongProfile extends CalibrationProfile
         return [
             'kode' => 'kesejajaran',
             'halaman' => 1,
-            'judul' => 'Pengukuran Kesejajaran Muka Ukur (Outside)',
+            // Tidak ada di kertas FM-0527 — blok "Di luar kertas".
+            'judul' => 'Di luar kertas — Kesejajaran Muka Ukur (Outside)',
+            'di_luar_kertas' => true,
             'field' => [],
             'tabel' => [[
                 'tahap' => 'sesudah_adjustment',
+                'di_luar_kertas' => true,
                 'grup' => 'kesejajaran',
                 'judul' => 'Kesejajaran Muka Ukur',
                 'satuan' => self::SATUAN,
@@ -670,39 +707,49 @@ class JangkaSorongProfile extends CalibrationProfile
      */
     private function bagianEvaluasi(): array
     {
-        $tabel = [];
-
-        foreach (['outside' => 3000, 'inside' => 4000] as $grup => $offset) {
-            $label = ucfirst($grup);
-            $tabel[] = [
-                'tahap' => 'sesudah_adjustment',
-                'grup' => 'pra_pembacaan_'.$grup,
-                'judul' => "Evaluation {$label} (pembacaan berulang di kapasitas)",
-                'satuan' => self::SATUAN,
-                'judul_nilai' => 'Evaluation',
-                'judul_pengulangan' => 'Pembacaan',
-                'titik_bisa_diubah' => false,
-                'offset_kunci' => $offset,
-                'simpan_ke' => 'spesifikasi_alat.'.JangkaSorongMentah::KUNCI_SESI.'.pra_evaluasi_'.$grup,
-                'baris' => [[
-                    'nomor' => 1,
-                    'titik_ukur' => null,
-                    'label' => "Evaluation {$label}",
-                    'satuan' => self::SATUAN,
-                ]],
-                'kolom' => [
-                    ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
-                ],
-                'pengulangan' => range(1, self::PRA_EVALUASI),
-            ];
-        }
-
+        // Kertas FM-0527 cuma punya SATU baris "Evaluasi", di bawah Pengukuran
+        // Luar. Evaluation Inside tetap ada (repeatability Inside lahir dari
+        // situ) tapi digambar di blok "Di luar kertas" — [bagianDiLuarKertas].
         return [
             'kode' => 'evaluasi',
             'halaman' => 1,
-            'judul' => 'Evaluation',
+            'judul' => 'Evaluasi',
             'field' => [],
-            'tabel' => $tabel,
+            'tabel' => [$this->tabelEvaluasi('outside', 3000)],
+        ];
+    }
+
+    /**
+     * Satu tabel Evaluation (sepuluh pembacaan berulang di kapasitas).
+     * Identitasnya — grup, offset, simpan_ke — tidak berubah dari sebelum
+     * dipecah ke dua blok (9 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    private function tabelEvaluasi(string $grup, int $offset): array
+    {
+        $label = ucfirst($grup);
+
+        return [
+            'tahap' => 'sesudah_adjustment',
+            'grup' => 'pra_pembacaan_'.$grup,
+            'judul' => "Evaluasi {$label} (pembacaan berulang di kapasitas)",
+            'satuan' => self::SATUAN,
+            'judul_nilai' => 'Evaluasi',
+            'judul_pengulangan' => 'Pembacaan',
+            'titik_bisa_diubah' => false,
+            'offset_kunci' => $offset,
+            'simpan_ke' => 'spesifikasi_alat.'.JangkaSorongMentah::KUNCI_SESI.'.pra_evaluasi_'.$grup,
+            'baris' => [[
+                'nomor' => 1,
+                'titik_ukur' => null,
+                'label' => "Evaluasi {$label}",
+                'satuan' => self::SATUAN,
+            ]],
+            'kolom' => [
+                ['kode' => 'pembacaan', 'label' => 'Nilai', 'tipe' => 'angka', 'satuan' => self::SATUAN],
+            ],
+            'pengulangan' => range(1, self::PRA_EVALUASI),
         ];
     }
 
@@ -718,10 +765,11 @@ class JangkaSorongProfile extends CalibrationProfile
      */
     private function bagianTitik(string $grup): array
     {
+        // Judul = tulisan kertas FM-0527 Rev.2.
         $judul = [
-            'outside' => 'Outside Measurement',
-            'inside' => 'Inside Measurement',
-            'depth' => 'Depth Measurement (Kedalaman < 50 mm)',
+            'outside' => 'Pengukuran Luar',
+            'inside' => 'Pengukuran Dalam',
+            'depth' => 'Pengukuran Kedalaman (< 50 mm)',
         ][$grup];
 
         $arah = $grup === 'outside'
@@ -737,13 +785,21 @@ class JangkaSorongProfile extends CalibrationProfile
             'kode' => 'hasil_'.$grup,
             'halaman' => 1,
             'judul' => $judul,
+            // Tampilan saja: satu kartu per nominal, pembacaan X1..Xn
+            // berjajar seperti satu baris kertas. Kunci & payload tetap.
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => false,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [[
                 'tahap' => 'sesudah_adjustment',
                 'grup' => $grup,
                 'judul' => $judul,
                 'satuan' => self::SATUAN,
-                'judul_nilai' => $grup === 'depth' ? 'Nominal Gauge Block' : 'Nominal Caliper Checker',
+                // Kertasnya menulis "Nominal Balok Ukur ( )" di ketiga tabel.
+                // Nominalnya tetap dipatok dari Caliper Checker (Luar/Dalam)
+                // dan Gauge Block (Kedalaman) — pertanyaan lab, tidak diubah.
+                'judul_nilai' => 'Nominal Balok Ukur',
                 'judul_pengulangan' => 'Pembacaan Alat',
                 'titik_bisa_diubah' => false,
                 'offset_kunci' => $offset,

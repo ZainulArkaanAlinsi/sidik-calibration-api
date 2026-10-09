@@ -100,9 +100,20 @@ class UtmProfile extends GayaProfile
         return 'SIDIK-FM-CAL-0519_Rev.3';
     }
 
+    /** Judul kertas 0519 (salah ketik "Macine" tidak disalin). */
     protected function judulLembar(): string
     {
-        return 'Lembar Kerja Kalibrasi Mesin UTM';
+        return 'Calibration Worksheet - Compression Machine (UTM)';
+    }
+
+    /**
+     * Kertas 0519 punya DUA tabel: Before Adjustment dan After Adjustment.
+     * Lembar ini baru memuat yang After — tabel Before ditunda (W2/W3,
+     * keputusan lab: dipakai hitung atau tidak).
+     */
+    protected function judulDataResult(): string
+    {
+        return 'Data Result — After Adjustment';
     }
 
     protected function sumberMaster(): string

@@ -49,8 +49,12 @@ class DialIndicatorProfile extends CalibrationProfile
 {
     public const SATUAN = 'mm';
 
-    /** Baris awal lembar — sepuluh, sebanyak `INPUT DATA` master. Teknisi boleh menambah. */
-    public const BARIS_AWAL = 10;
+    /**
+     * Baris awal lembar — lima belas, sebanyak baris kosong di kertas FM-0526
+     * Rev.3 (`INPUT DATA` master memuat sepuluh). Teknisi boleh menambah;
+     * baris yang dibiarkan kosong tidak ikut terkirim.
+     */
+    public const BARIS_AWAL = 15;
 
     /** UP X1..X3 + DOWN X1..X3, dari kertas FM-0526 Rev.3. */
     public const PENGULANGAN = 6;
@@ -392,6 +396,7 @@ class DialIndicatorProfile extends CalibrationProfile
                 // bawahnya. Standar tetap dipilih sebelum mengukur.
                 $this->bagianDataKalibrasi(),
                 $this->bagianEvaluasi(),
+                $this->bagianDiLuarKertas(),
                 $this->bagianPenutup(),
             ],
         ];
@@ -467,9 +472,13 @@ class DialIndicatorProfile extends CalibrationProfile
         return [
             'kode' => 'identitas_alat',
             'halaman' => 1,
-            'judul' => 'Identitas Alat',
+            // Judul & label = tulisan kertas FM-0526 Rev.3 ("Identitas Alat
+            // dan Data Customer"). Owner/Address tetap di bagian `pemilik`
+            // (kerangka bagian seragam semua lembar).
+            'judul' => 'Identitas Alat dan Data Customer',
             'field' => [
                 $this->field('equipment_id', 'Pilih Alat', 'pilihan', sumber: 'master_alat'),
+                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
                 $this->field('equipment.nama_alat', 'Nama Alat', 'teks', sumber: 'otomatis'),
                 $this->field('alat_merk', 'Merk', 'teks'),
                 $this->field('alat_model', 'Type', 'teks'),
@@ -477,22 +486,21 @@ class DialIndicatorProfile extends CalibrationProfile
                 // Satuan lebih dulu — dia mengubah arti dua field di bawahnya,
                 // blok Evaluation, dan seluruh penunjukan. Dropdown, bukan teks
                 // bebas: satuan tak dikenal jatuh ke faktor 1 dan angkanya salah
-                // diam-diam.
-                $this->field("{$kunci}.satuan", 'Satuan Alat', 'pilihan', pilihan: [
+                // diam-diam. Di kertas dia kurung "( )" di belakang Capacity
+                // dan Resolusi.
+                $this->field("{$kunci}.satuan", 'Satuan ( ) — Capacity & Resolusi', 'pilihan', pilihan: [
                     ['nilai' => 'mm', 'label' => 'mm'],
                     ['nilai' => 'inch', 'label' => 'inch'],
                     ['nilai' => 'µm', 'label' => 'µm'],
                 ]),
-                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks'),
-                $this->field("{$kunci}.kapasitas_mm", 'Capacity (satuan alat)', 'angka'),
-                $this->field("{$kunci}.resolusi_mm", 'Resolusi (satuan alat)', 'angka'),
-                $this->field('tanggal_terima', 'Received Date', 'tanggal'),
+                $this->field("{$kunci}.kapasitas_mm", 'Capacity', 'angka'),
+                $this->field("{$kunci}.resolusi_mm", 'Resolusi', 'angka'),
                 $this->field('tanggal_kalibrasi', 'Calibration Date', 'tanggal'),
                 $this->field('suhu_awal', 'Suhu Ruangan — awal', 'angka', satuan: '°C'),
                 $this->field('suhu_akhir', 'Suhu Ruangan — akhir', 'angka', satuan: '°C'),
                 $this->field('kelembaban_awal', 'Kelembapan — awal', 'angka', satuan: '%RH'),
                 $this->field('kelembaban_akhir', 'Kelembapan — akhir', 'angka', satuan: '%RH'),
-                $this->field('lokasi', 'Lokasi Kalibrasi', 'pilihan', pilihan: [
+                $this->field('lokasi', 'Calibration Loc.', 'pilihan', pilihan: [
                     ['nilai' => 'lab', 'label' => 'Inlab'],
                     ['nilai' => 'onsite', 'label' => 'Insitu'],
                 ]),
@@ -519,7 +527,30 @@ class DialIndicatorProfile extends CalibrationProfile
             'field' => [
                 $this->field('pemilik_nama', 'Owner', 'teks'),
                 $this->field('pemilik_alamat', 'Address', 'teks_panjang'),
-                $this->field('nomor_order', 'Order Number', 'teks'),
+            ],
+        ];
+    }
+
+    /**
+     * Blok "Di luar kertas": isian yang tidak tercetak di FM-0526 Rev.3 tapi
+     * dipakai olah data/sertifikat. Tidak disembunyikan; kodenya sama persis
+     * dengan sebelum dipindah (9 Okt 2026).
+     *
+     * @return array<string, mixed>
+     */
+    private function bagianDiLuarKertas(): array
+    {
+        $luar = ['di_luar_kertas' => true];
+
+        return [
+            'kode' => 'di_luar_kertas',
+            'halaman' => 1,
+            'judul' => 'Di luar kertas — dipakai hitung',
+            'di_luar_kertas' => true,
+            'catatan' => 'Tidak ada di formulir kertas SIDIK-FM-CAL-0526, tapi dipakai olah data. Tetap diisi.',
+            'field' => [
+                $this->field('spesifikasi_alat.rentang_ukur', 'Rentang Ukur', 'teks', ekstra: $luar),
+                $this->field('nomor_order', 'Order Number', 'teks', ekstra: $luar),
             ],
         ];
     }
@@ -530,7 +561,8 @@ class DialIndicatorProfile extends CalibrationProfile
         return [
             'kode' => 'usage_check',
             'halaman' => 1,
-            'judul' => 'Standard Used',
+            // Kepala tabel standar kertas: "Standard Name | Merk/Type Grade | SN".
+            'judul' => 'Standard Name',
             'baris' => self::STANDARD_TERCETAK,
             'field' => [
                 $this->field('standar_dicek.*.dipakai', 'Usage Check', 'centang'),
@@ -555,11 +587,15 @@ class DialIndicatorProfile extends CalibrationProfile
             'halaman' => 1,
             'judul' => 'Evaluasi',
             'field' => [
+                // Tidak ada kotaknya di kertas (cuma kurung satuan di baris
+                // Evaluasi), tapi tanpa ini Repeatability tidak lahir. Tetap
+                // di sini, menempel ke barisnya — ditandai, bukan dipindah.
                 $this->field(
                     "{$kunci}.balok_pra_evaluasi",
                     'Nominal Balok Ukur Evaluasi (mm, pisahkan dengan +)',
                     'daftar_angka',
                     satuan: 'mm',
+                    ekstra: ['di_luar_kertas' => true],
                 ),
             ],
             'tabel' => [
@@ -598,6 +634,12 @@ class DialIndicatorProfile extends CalibrationProfile
             'kode' => 'hasil',
             'halaman' => 1,
             'judul' => 'Data Kalibrasi',
+            // Tampilan saja: satu kartu per baris balok ukur, UP X1-X3 lalu
+            // DOWN X1-X3 — seperti satu baris kertas FM-0526. Tombol di HP
+            // tetap bisa kembali ke tabel. Kunci & payload tidak berubah.
+            'tampilan' => 'kartu_per_set_point',
+            'kartu_sejajar' => false,
+            'nominal_berbintang' => false,
             'field' => [],
             'tabel' => [
                 [

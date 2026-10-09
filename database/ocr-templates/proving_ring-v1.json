@@ -2,7 +2,7 @@
     "_catatan": "RANGKA hasil `php artisan ocr:rangka-geometri`. Koordinatnya grid rata, bukan hasil ukur. Ukur dari formulir cetak asli, adu ke foto nyata, baru setel terverifikasi = true.",
     "template_id": "proving_ring",
     "versi": 1,
-    "kode_dokumen": "",
+    "kode_dokumen": "SIDIK-FM-CAL-0521_Rev.3",
     "terverifikasi": false,
     "ukuran_referensi": {
         "w": 1654,
@@ -82,304 +82,279 @@
     ],
     "tabel": [
         {
-            "tabel_id": "preload",
-            "judul": "Preload Test (3 replikat)",
-            "kiri": 90,
-            "sel": {
-                "preload|1|1|pembacaan": {
-                    "x": 292,
-                    "y": 955,
-                    "w": 414,
-                    "h": 27
-                },
-                "preload|2|1|pembacaan": {
-                    "x": 292,
-                    "y": 982,
-                    "w": 414,
-                    "h": 27
-                },
-                "preload|1|2|pembacaan": {
-                    "x": 706,
-                    "y": 955,
-                    "w": 414,
-                    "h": 27
-                },
-                "preload|2|2|pembacaan": {
-                    "x": 706,
-                    "y": 982,
-                    "w": 414,
-                    "h": 27
-                },
-                "preload|1|3|pembacaan": {
-                    "x": 1120,
-                    "y": 955,
-                    "w": 414,
-                    "h": 27
-                },
-                "preload|2|3|pembacaan": {
-                    "x": 1120,
-                    "y": 982,
-                    "w": 414,
-                    "h": 27
-                }
-            }
-        },
-        {
             "tabel_id": "gaya_up",
             "judul": "a. Beban NAIK (UP)",
             "kiri": 90,
             "sel": {
                 "gaya_up|1|1|pembacaan": {
                     "x": 292,
-                    "y": 1194,
+                    "y": 955,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|2|1|pembacaan": {
                     "x": 292,
-                    "y": 1221,
+                    "y": 980,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|3|1|pembacaan": {
                     "x": 292,
-                    "y": 1248,
+                    "y": 1005,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|4|1|pembacaan": {
                     "x": 292,
-                    "y": 1275,
+                    "y": 1030,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|5|1|pembacaan": {
                     "x": 292,
-                    "y": 1302,
+                    "y": 1055,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|6|1|pembacaan": {
                     "x": 292,
-                    "y": 1329,
+                    "y": 1080,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|7|1|pembacaan": {
                     "x": 292,
-                    "y": 1356,
+                    "y": 1105,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|8|1|pembacaan": {
                     "x": 292,
-                    "y": 1383,
+                    "y": 1130,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|9|1|pembacaan": {
                     "x": 292,
-                    "y": 1410,
+                    "y": 1155,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|10|1|pembacaan": {
                     "x": 292,
-                    "y": 1437,
+                    "y": 1180,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|11|1|pembacaan": {
                     "x": 292,
-                    "y": 1464,
+                    "y": 1205,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|12|1|pembacaan": {
                     "x": 292,
-                    "y": 1491,
+                    "y": 1230,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|13|1|pembacaan": {
                     "x": 292,
-                    "y": 1518,
+                    "y": 1255,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|14|1|pembacaan": {
                     "x": 292,
-                    "y": 1545,
+                    "y": 1280,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_up|15|1|pembacaan": {
+                    "x": 292,
+                    "y": 1305,
+                    "w": 414,
+                    "h": 25
                 },
                 "gaya_up|1|2|pembacaan": {
                     "x": 706,
-                    "y": 1194,
+                    "y": 955,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|2|2|pembacaan": {
                     "x": 706,
-                    "y": 1221,
+                    "y": 980,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|3|2|pembacaan": {
                     "x": 706,
-                    "y": 1248,
+                    "y": 1005,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|4|2|pembacaan": {
                     "x": 706,
-                    "y": 1275,
+                    "y": 1030,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|5|2|pembacaan": {
                     "x": 706,
-                    "y": 1302,
+                    "y": 1055,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|6|2|pembacaan": {
                     "x": 706,
-                    "y": 1329,
+                    "y": 1080,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|7|2|pembacaan": {
                     "x": 706,
-                    "y": 1356,
+                    "y": 1105,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|8|2|pembacaan": {
                     "x": 706,
-                    "y": 1383,
+                    "y": 1130,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|9|2|pembacaan": {
                     "x": 706,
-                    "y": 1410,
+                    "y": 1155,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|10|2|pembacaan": {
                     "x": 706,
-                    "y": 1437,
+                    "y": 1180,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|11|2|pembacaan": {
                     "x": 706,
-                    "y": 1464,
+                    "y": 1205,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|12|2|pembacaan": {
                     "x": 706,
-                    "y": 1491,
+                    "y": 1230,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|13|2|pembacaan": {
                     "x": 706,
-                    "y": 1518,
+                    "y": 1255,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|14|2|pembacaan": {
                     "x": 706,
-                    "y": 1545,
+                    "y": 1280,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_up|15|2|pembacaan": {
+                    "x": 706,
+                    "y": 1305,
+                    "w": 414,
+                    "h": 25
                 },
                 "gaya_up|1|3|pembacaan": {
                     "x": 1120,
-                    "y": 1194,
+                    "y": 955,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|2|3|pembacaan": {
                     "x": 1120,
-                    "y": 1221,
+                    "y": 980,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|3|3|pembacaan": {
                     "x": 1120,
-                    "y": 1248,
+                    "y": 1005,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|4|3|pembacaan": {
                     "x": 1120,
-                    "y": 1275,
+                    "y": 1030,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|5|3|pembacaan": {
                     "x": 1120,
-                    "y": 1302,
+                    "y": 1055,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|6|3|pembacaan": {
                     "x": 1120,
-                    "y": 1329,
+                    "y": 1080,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|7|3|pembacaan": {
                     "x": 1120,
-                    "y": 1356,
+                    "y": 1105,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|8|3|pembacaan": {
                     "x": 1120,
-                    "y": 1383,
+                    "y": 1130,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|9|3|pembacaan": {
                     "x": 1120,
-                    "y": 1410,
+                    "y": 1155,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|10|3|pembacaan": {
                     "x": 1120,
-                    "y": 1437,
+                    "y": 1180,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|11|3|pembacaan": {
                     "x": 1120,
-                    "y": 1464,
+                    "y": 1205,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|12|3|pembacaan": {
                     "x": 1120,
-                    "y": 1491,
+                    "y": 1230,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|13|3|pembacaan": {
                     "x": 1120,
-                    "y": 1518,
+                    "y": 1255,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_up|14|3|pembacaan": {
                     "x": 1120,
-                    "y": 1545,
+                    "y": 1280,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_up|15|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1305,
+                    "w": 414,
+                    "h": 25
                 }
             }
         },
@@ -390,255 +365,316 @@
             "sel": {
                 "gaya_down|1|1|pembacaan": {
                     "x": 292,
-                    "y": 1757,
+                    "y": 1515,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|2|1|pembacaan": {
                     "x": 292,
-                    "y": 1784,
+                    "y": 1540,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|3|1|pembacaan": {
                     "x": 292,
-                    "y": 1811,
+                    "y": 1565,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|4|1|pembacaan": {
                     "x": 292,
-                    "y": 1838,
+                    "y": 1590,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|5|1|pembacaan": {
                     "x": 292,
-                    "y": 1865,
+                    "y": 1615,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|6|1|pembacaan": {
                     "x": 292,
-                    "y": 1892,
+                    "y": 1640,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|7|1|pembacaan": {
                     "x": 292,
-                    "y": 1919,
+                    "y": 1665,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|8|1|pembacaan": {
                     "x": 292,
-                    "y": 1946,
+                    "y": 1690,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|9|1|pembacaan": {
                     "x": 292,
-                    "y": 1973,
+                    "y": 1715,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|10|1|pembacaan": {
                     "x": 292,
-                    "y": 2000,
+                    "y": 1740,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|11|1|pembacaan": {
                     "x": 292,
-                    "y": 2027,
+                    "y": 1765,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|12|1|pembacaan": {
                     "x": 292,
-                    "y": 2054,
+                    "y": 1790,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|13|1|pembacaan": {
                     "x": 292,
-                    "y": 2081,
+                    "y": 1815,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|14|1|pembacaan": {
                     "x": 292,
-                    "y": 2108,
+                    "y": 1840,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_down|15|1|pembacaan": {
+                    "x": 292,
+                    "y": 1865,
+                    "w": 414,
+                    "h": 25
                 },
                 "gaya_down|1|2|pembacaan": {
                     "x": 706,
-                    "y": 1757,
+                    "y": 1515,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|2|2|pembacaan": {
                     "x": 706,
-                    "y": 1784,
+                    "y": 1540,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|3|2|pembacaan": {
                     "x": 706,
-                    "y": 1811,
+                    "y": 1565,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|4|2|pembacaan": {
                     "x": 706,
-                    "y": 1838,
+                    "y": 1590,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|5|2|pembacaan": {
                     "x": 706,
-                    "y": 1865,
+                    "y": 1615,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|6|2|pembacaan": {
                     "x": 706,
-                    "y": 1892,
+                    "y": 1640,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|7|2|pembacaan": {
                     "x": 706,
-                    "y": 1919,
+                    "y": 1665,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|8|2|pembacaan": {
                     "x": 706,
-                    "y": 1946,
+                    "y": 1690,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|9|2|pembacaan": {
                     "x": 706,
-                    "y": 1973,
+                    "y": 1715,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|10|2|pembacaan": {
                     "x": 706,
-                    "y": 2000,
+                    "y": 1740,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|11|2|pembacaan": {
                     "x": 706,
-                    "y": 2027,
+                    "y": 1765,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|12|2|pembacaan": {
                     "x": 706,
-                    "y": 2054,
+                    "y": 1790,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|13|2|pembacaan": {
                     "x": 706,
-                    "y": 2081,
+                    "y": 1815,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|14|2|pembacaan": {
                     "x": 706,
-                    "y": 2108,
+                    "y": 1840,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_down|15|2|pembacaan": {
+                    "x": 706,
+                    "y": 1865,
+                    "w": 414,
+                    "h": 25
                 },
                 "gaya_down|1|3|pembacaan": {
                     "x": 1120,
-                    "y": 1757,
+                    "y": 1515,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|2|3|pembacaan": {
                     "x": 1120,
-                    "y": 1784,
+                    "y": 1540,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|3|3|pembacaan": {
                     "x": 1120,
-                    "y": 1811,
+                    "y": 1565,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|4|3|pembacaan": {
                     "x": 1120,
-                    "y": 1838,
+                    "y": 1590,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|5|3|pembacaan": {
                     "x": 1120,
-                    "y": 1865,
+                    "y": 1615,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|6|3|pembacaan": {
                     "x": 1120,
-                    "y": 1892,
+                    "y": 1640,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|7|3|pembacaan": {
                     "x": 1120,
-                    "y": 1919,
+                    "y": 1665,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|8|3|pembacaan": {
                     "x": 1120,
-                    "y": 1946,
+                    "y": 1690,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|9|3|pembacaan": {
                     "x": 1120,
-                    "y": 1973,
+                    "y": 1715,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|10|3|pembacaan": {
                     "x": 1120,
-                    "y": 2000,
+                    "y": 1740,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|11|3|pembacaan": {
                     "x": 1120,
-                    "y": 2027,
+                    "y": 1765,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|12|3|pembacaan": {
                     "x": 1120,
-                    "y": 2054,
+                    "y": 1790,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|13|3|pembacaan": {
                     "x": 1120,
-                    "y": 2081,
+                    "y": 1815,
                     "w": 414,
-                    "h": 27
+                    "h": 25
                 },
                 "gaya_down|14|3|pembacaan": {
                     "x": 1120,
-                    "y": 2108,
+                    "y": 1840,
                     "w": 414,
-                    "h": 27
+                    "h": 25
+                },
+                "gaya_down|15|3|pembacaan": {
+                    "x": 1120,
+                    "y": 1865,
+                    "w": 414,
+                    "h": 25
+                }
+            }
+        },
+        {
+            "tabel_id": "preload",
+            "judul": "Preload Test (3 replikat)",
+            "kiri": 90,
+            "sel": {
+                "preload|1|1|pembacaan": {
+                    "x": 292,
+                    "y": 2075,
+                    "w": 414,
+                    "h": 25
+                },
+                "preload|2|1|pembacaan": {
+                    "x": 292,
+                    "y": 2100,
+                    "w": 414,
+                    "h": 25
+                },
+                "preload|1|2|pembacaan": {
+                    "x": 706,
+                    "y": 2075,
+                    "w": 414,
+                    "h": 25
+                },
+                "preload|2|2|pembacaan": {
+                    "x": 706,
+                    "y": 2100,
+                    "w": 414,
+                    "h": 25
+                },
+                "preload|1|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2075,
+                    "w": 414,
+                    "h": 25
+                },
+                "preload|2|3|pembacaan": {
+                    "x": 1120,
+                    "y": 2100,
+                    "w": 414,
+                    "h": 25
                 }
             }
         }
