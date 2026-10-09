@@ -88,6 +88,41 @@ return [
         // margin aman segini (rasio terhadap ukuran sel). Angka yang meluber
         // dari sel tetangga ketangkep di sini.
         'margin_dalam_sel' => (float) env('OCR_MARGIN_DALAM_SEL', 0.08),
+
+        /*
+         * Formulir ASLI (tanpa marker): halaman diratakan dari TULISAN CETAK
+         * formulir yang dicocokkan ke `jangkar_teks` geometri PDF
+         * (PANDUAN-OCR-LEMBAR-KERJA.md §3 langkah 2). Ini pengganti `marker_min`
+         * & `residual_maks_px` untuk kertas itu — dua ambang lama di atas TIDAK
+         * diturunkan dan tidak dipakai jalur asli.
+         *
+         * SEMENTARA. `residual_maks_pt` (satuan pt halaman referensi 792×612)
+         * belum diukur dari foto nyata; dikalibrasi dari pindai mode uji.
+         * Sengaja TANPA env(): menggeser ambang = PR yang sekaligus menaikkan
+         * `formulir_asli.aturan_versi` (§6 butir 3). Env yang digeser di
+         * dashboard mengubah vonis tanpa mengubah versi yang dicatat pindai.
+         */
+        'jangkar_teks' => [
+            // Minimal jangkar yang teksnya cocok (PANDUAN §3: >=8, menyebar di
+            // keempat kuadran halaman).
+            'jumlah_min' => 8,
+            'residual_maks_pt' => 1.5,
+        ],
+    ],
+
+    /*
+     * Kotak centang formulir asli (TH-n, Usage Check): dibaca dari RASIO piksel
+     * gelap di dalam kotak, bukan OCR (PANDUAN §4). `>= ambang_tercentang` =
+     * dicentang, `<= ambang_kosong` = kosong, di antaranya = KUNING (ragu).
+     *
+     * SEMENTARA — belum diukur dari foto nyata; dikalibrasi dari pasangan
+     * (rasio, koreksi teknisi) pindai mode uji. Tanpa env() dengan alasan yang
+     * sama dengan `geometri.jangkar_teks`: geser = PR + naikkan
+     * `formulir_asli.aturan_versi`.
+     */
+    'centang' => [
+        'ambang_tercentang' => 0.15,
+        'ambang_kosong' => 0.05,
     ],
 
     /*
@@ -237,5 +272,24 @@ return [
      * dan ikut test.
      */
     'folder_template' => env('OCR_FOLDER_TEMPLATE', 'ocr-templates'),
+
+    /*
+     * Formulir ASLI lab — kertas SIDIK-FM-CAL tanpa marker/QR, geometrinya di
+     * `{folder_template}/asli/` (`App\Services\Ocr\FormulirAsli`).
+     *
+     * `mode_uji`: sebelum formulir itu lulus >=20 foto nyata
+     * (PANDUAN-OCR-LEMBAR-KERJA.md §5 langkah 5), pindai BOLEH dicoba dengan
+     * semua sel maksimal kuning — keputusan pemilik 9 Okt 2026. Sakelar ini
+     * cuma memberi tahu HP; vonis kuningnya ditegakkan pemroses pindai.
+     * Tidak pernah menyalakan `siap_pindai`.
+     */
+    'formulir_asli' => [
+        'mode_uji' => (bool) env('OCR_FORMULIR_ASLI_UJI', false),
+        // Versi ambang KHUSUS formulir asli (`geometri.jangkar_teks`,
+        // `centang`). Yang dicatat tiap pindai asli adalah gabungannya dengan
+        // `aturan_versi` di atas (`FormulirAsli::aturanVersi()`), karena jalur
+        // asli tetap memakai ambang sel lama. Naikkan tiap ambang asli digeser.
+        'aturan_versi' => 'asli-1',
+    ],
 
 ];

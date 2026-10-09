@@ -36,6 +36,7 @@ class AkurasiOcr extends Command
 {
     protected $signature = 'ocr:akurasi
         {--template= : batasi ke satu template, misal ph_meter}
+        {--kertas=cetak : cetak (lembar bermarker) atau asli (formulir asli lab) — tidak pernah dicampur}
         {--hari=30 : rentang koreksi yang dihitung (hari ke belakang)}';
 
     protected $description = 'Akurasi OCR lembar kerja per kolom, dihitung dari koreksi teknisi';
@@ -43,6 +44,13 @@ class AkurasiOcr extends Command
     public function handle(): int
     {
         $hari = (int) $this->option('hari');
+        $kertas = (string) $this->option('kertas');
+
+        if (! in_array($kertas, ['cetak', 'asli'], true)) {
+            $this->error('--kertas cuma boleh `cetak` atau `asli`.');
+
+            return self::FAILURE;
+        }
 
         $sel = WorksheetScanCell::query()
             ->whereNotNull('dikoreksi_pada')
@@ -51,6 +59,13 @@ class AkurasiOcr extends Command
                 'scan',
                 fn ($s) => $s->where('template_id', $this->option('template')),
             ))
+            // Formulir asli (`hasil.kertas = asli`) dan lembar cetak bisa
+            // ber-`template_id` sama (`ph_meter`) tapi kertas, pembaca, dan
+            // ambangnya beda. Dicampur = angka akurasi yang tidak menjawab
+            // pertanyaan apa pun. Pindai cetak lama tidak punya `kertas`.
+            ->whereHas('scan', fn ($s) => $kertas === 'asli'
+                ? $s->where('hasil->kertas', 'asli')
+                : $s->where(fn ($q) => $q->whereNull('hasil->kertas')->orWhere('hasil->kertas', '!=', 'asli')))
             ->get();
 
         if ($sel->isEmpty()) {
@@ -61,7 +76,7 @@ class AkurasiOcr extends Command
             return self::SUCCESS;
         }
 
-        $this->info("Koreksi teknisi {$hari} hari terakhir: {$sel->count()} sel");
+        $this->info("Koreksi teknisi {$hari} hari terakhir, kertas {$kertas}: {$sel->count()} sel");
         $this->newLine();
 
         $this->tabelPerKolom($sel);

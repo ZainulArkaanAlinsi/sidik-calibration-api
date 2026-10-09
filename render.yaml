@@ -210,6 +210,12 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
+      # Pindai formulir ASLI lab dalam MODE UJI (semua sel maks kuning) sebelum
+      # formulirnya lulus >=20 foto nyata. Dinyalakan HANYA atas perintah
+      # pemilik proyek; tidak pernah menyalakan `siap_pindai`.
+      - key: OCR_FORMULIR_ASLI_UJI
+        value: "false"
+
       # Direktori perusahaan — cari nama & alamat PT dari sumber LUAR waktu
       # teknisi mendaftarkan pelanggan yang belum ada di master lab.
       #
