@@ -1,0 +1,45 @@
+# Ping /up biar service Render plan free nggak ketiduran.
+#
+# Render nidurin service free yang 15 menit nggak dapet request, dan request
+# pertama sesudahnya nunggu ±50 detik — teknisi di lapangan ngira app-nya
+# rusak. Ping tiap 5 menit dari sini bikin selalu ada request masuk.
+#
+# Jadwal GitHub nggak presisi: di jam sibuk run bisa telat belasan menit atau
+# kelewat, jadi sesekali service masih bisa sempat tidur. Kalau itu kejadian
+# terus, pindah ke UptimeRobot (docs/deploy-gratis-render.md langkah 7) atau
+# plan berbayar.
+#
+# Jatah plan free: 750 jam instance per bulan per WORKSPACE. Satu service
+# melek terus = maks 744 jam, masih muat. Kalau ada service free lain di
+# workspace yang sama yang juga dibikin melek, jatahnya habis dan Render
+# nangguhin service sampai akhir bulan.
+#
+# GitHub mematikan jadwal ini kalau repo 60 hari tanpa aktivitas.
+
+name: Jaga server melek
+
+on:
+  schedule:
+    # Mulai menit :02 biar nggak rebutan antrean jadwal di menit :00.
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /up
+        env:
+          URL: ${{ vars.RENDER_APP_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Variable RENDER_APP_URL belum dipasang: gh variable set RENDER_APP_URL --body \"https://<url>.onrender.com\""
+            exit 1
+          fi
+          # --max-time 90: bangun dari tidur bisa ±50 detik.
+          curl -fsS -o /dev/null -w '%{http_code} %{time_total}s\n' \
+            --retry 2 --retry-delay 10 --retry-all-errors --max-time 90 \
+            "$URL/up"
