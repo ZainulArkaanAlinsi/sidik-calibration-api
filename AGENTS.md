@@ -130,9 +130,32 @@ Pencocokan alat → profil lewat `equipments.nama_alat_kemampuan` (+ `aliasNama(
 **bukan kategori**: pH dan Turbidimeter satu kategori yang sama, jadi kategori
 tidak cukup memisahkan.
 
-Yang **tetap** di kelas bersama dan tidak boleh pindah ke profil: agregasi budget
-(u_c, Welch–Satterthwaite, k), lantai CMC, dan keputusan PASS/FAIL. Profil cuma
+Untuk alat yang **belum** punya Lembar Hitung aktif, yang **tetap** di kelas
+bersama dan tidak boleh pindah ke profil: agregasi budget (u_c,
+Welch–Satterthwaite, k), lantai CMC, dan keputusan PASS/FAIL. Profil cuma
 menyetor DAFTAR KOMPONEN lewat `komponenBudget()`.
+
+Untuk alat yang **sudah** punya Lembar Hitung aktif, agregasi itu boleh
+dirumuskan di lembarnya sendiri (keputusan pemilik K-49-07, 9 Okt 2026,
+`docs/permintaan-user-7.md` §49), dengan tiga syarat yang tidak bisa ditawar:
+
+- Setiap lembar lahir dari templat yang memuat blok agregasi GUM bawaan, setara
+  `GumCalculator`: `uc = √Σ(ui·ci)²`, Welch–Satterthwaite dengan penyebut JUMLAH
+  semua baris, `k` = t-quantile 0,975 dengan derajat bebas `floor(veff)`, lantai
+  CMC, PASS bila `|error| + U ≤ toleransi`. Versi pertama tiap alat tetap lewat
+  gerbang paritas (§Olah data butir 1), jadi blok bawaannya identik dengan jalur
+  sekarang.
+- `GumCalculator` **tetap jalan sebagai pengawas.** Setiap sesi yang dihitung
+  lembar juga dihitung agregasi bersamanya. Kalau beda, simulasi menampilkan
+  selisihnya dan validator memberi PERINGATAN `agregasi_beda_dari_gum` yang
+  terbaca di jejak sesi, dan penyimpangannya wajib punya catatan sumber (§Olah
+  data butir 4). Tidak memblokir — pemilik mengizinkan suntingan — tapi tidak
+  boleh diam.
+- Kesalahan master yang sudah diketahui tidak ikut terbawa diam-diam. Contohnya
+  veff Volumetric Fixed yang dibagi satu baris `K43`
+  (`docs/pertanyaan-lab-volumetric.md` no. 1): lembar pertama memakai blok
+  bawaan, dan meniru master butuh versi baru + simulasi + pengesahan + jawaban
+  lab.
 
 ### Jalur angka, dari pembacaan sampai sertifikat
 
@@ -294,18 +317,39 @@ baris yang salah (0,0007 lawan 0,00051, §7). Dua-duanya selamat karena tidak ad
 yang mengadu ulang. Editor rumus tanpa penjaga menghasilkan kelas kesalahan yang
 sama, cuma lebih cepat.
 
-1. **Tiga lapis, dan cuma lapis 1 & 3 yang boleh berubah lewat konfigurasi.**
+1. **Tiga lapis. Lapis 1 & 3 berubah lewat konfigurasi; lapis 2 hanya lewat
+   Lembar Hitung Sidik Studio yang lolos gerbang paritas.**
 
    | Lapis | Isi | Lewat konfigurasi? |
    |---|---|---|
    | **1. Parameter & tabel referensi** | pita CMC, tabel koreksi standar, tabel MPE, daftar nominal balok ukur, identitas & tanggal jatuh tempo standar, konstanta metode, batas jumlah titik | **Ya**, lewat alur versi di butir 3 |
-   | **2. Struktur perhitungan** | rantai perhitungan, struktur budget ketidakpastian, ekspresi koefisien sensitivitas, urutan konversi satuan | **TIDAK.** Hanya lewat PR kode + test rekonsiliasi master |
+   | **2. Struktur perhitungan** | rantai perhitungan, struktur budget ketidakpastian, ekspresi koefisien sensitivitas, urutan konversi satuan | **Ya, tapi hanya lewat Lembar Hitung Studio** (keputusan pemilik K-49-02, 9 Okt 2026) dengan syarat di bawah. Selama sebuah alat belum punya Lembar Hitung aktif, rumusnya tetap kode PHP: PR kode + test rekonsiliasi master |
    | **3. Bentuk lembar kerja** | jumlah titik, label field, satuan | **Ya, terbatas** — wajib divalidasi bahwa perhitungan tidak kehilangan input |
+
+   **Syarat lapis 2 lewat Studio** (`docs/permintaan-user-7.md` §49). Kalau satu
+   syarat tidak terpenuhi, rumusnya tidak boleh dipakai sesi mana pun:
+   - Server satu-satunya yang mengevaluasi. Rumus disimpan sebagai versi di
+     `formula_versions` (`sumber = database`) dengan sha256 isi kanonik. Versi
+     yang sudah dipakai tidak boleh diubah atau dihapus, hanya dipensiunkan.
+   - **Gerbang paritas:** Lembar Hitung pertama untuk sebuah alat baru aktif
+     setelah hasilnya terbukti sama dengan profil PHP pada semua sesi tersimpan
+     dan vektor master, termasuk angka cetak dan keputusan. Pemeriksanya
+     independen.
+   - Versi berikutnya wajib disimulasikan ke semua sesi tersimpan (butir 3),
+     lalu disahkan `super_admin` yang bukan pembuat draf (`PemisahanWewenang`),
+     dan baru berlaku untuk sesi baru menurut `tanggal_kalibrasi`.
+   - Sumber setiap versi (IK, sel master, siapa yang memutuskan, kapan) masuk
+     log metode append-only. Penyimpangan dari master tetap mengikuti butir 4.
+   - Agregasi (u_c, veff, k, lantai CMC, PASS/FAIL) ikut boleh disunting di
+     lembar (K-49-07), tetapi `GumCalculator` tetap menghitungnya sebagai
+     pengawas; beda dari pengawas = PERINGATAN `agregasi_beda_dari_gum` + catatan
+     sumber, tidak pernah diam. Syarat lengkapnya di §Profil kalibrasi.
 
    Lapis 2 bersinggungan dengan §Profil kalibrasi di atas, tapi **sumbunya beda
    dan jangan dicampur**: yang di sana mengatur DI MANA kode duduk (kelas
-   bersama lawan profil), yang di sini mengatur APAKAH boleh diubah tanpa PR.
-   Sebuah nilai bisa tinggal di dalam profil dan tetap lapis 2.
+   bersama lawan profil, atau lembar untuk alat ber-Lembar Hitung), yang di sini
+   mengatur APAKAH boleh diubah tanpa PR. Sebuah nilai bisa tinggal di dalam
+   profil dan tetap lapis 2.
 
    Hampir semua perubahan nyata di lab ini ada di lapis 1 — rekalibrasi standar,
    pita CMC, tabel koreksi. Jadi lapis 1 saja sudah menjawab sebagian besar

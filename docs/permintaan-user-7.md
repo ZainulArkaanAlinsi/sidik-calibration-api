@@ -5116,6 +5116,83 @@ lain (termasuk Dial Indicator). Perbaikan putaran 1:
 200 mm serta nilai `lainnya`, dan `INPUT DATA!F5` untuk ambang kapasitas pita CMC. Keduanya baru
 berbukti dari komentar kode.
 
+## §49 — Sidik Studio: aplikasi terpisah, pusat kendali data & olah data — 9 Okt 2026
+
+**Permintaan pemilik (9 Okt 2026):** Studio bukan menu di aplikasi lapangan. Sidik Studio adalah
+aplikasi tersendiri yang menggantikan workbook Excel master dan akses MySQL bagi orang lab. Dari
+situ cara olah data tiap alat (46 alat, bisa bertambah) diatur dan disunting, dan hasilnya langsung
+dipakai API serta aplikasi lapangan. Contoh yang ditunjukkan pemilik: lembar "CALIBRATION BUDGET
+UNCERTAINTY" workbook Volumetric Glassware (Pipet Ukur).
+
+§ ini **mengubah tiga batas §48**. Bagian §48 yang tidak disebut di bawah tetap berlaku.
+
+**Keputusan pemilik (9 Okt 2026, dijawab lewat pilihan terstruktur):**
+
+| Kode | Pertanyaan | Keputusan |
+|---|---|---|
+| K-49-01 | Platform | Aplikasi Flutter **terpisah**: nama, ikon, identitas, dan desain berbeda total dari aplikasi lapangan. Dibangun untuk Windows dan tablet Android. |
+| K-49-02 | Rumus (lapis 2) | **Boleh disunting langsung di Studio** lewat editor rumus mirip Excel dan mesin hitung di server, dengan versi, simulasi, dan pengesahan. Mengubah §48 "Lapis 2 tetap kode" dan `AGENTS.md` §Olah data butir 1. |
+| K-49-03 | Cakupan | **Semua tabel database**, bukan hanya olah data. Invarian tetap berlaku (lihat bawah). |
+| K-49-04 | Mesin rumus | `phpoffice/phpspreadsheet` (Calculation engine kompatibel Excel). |
+| K-49-05 | Pengesah versi rumus & data acuan | `super_admin`, dan wajib orang kedua: berbeda dari pembuat draf (`PemisahanWewenang`). |
+| K-49-06 | Hapus dari Studio | **Tidak ada hapus permanen.** Studio hanya mengarsipkan (soft delete) dengan riwayat. Hapus permanen tetap lewat `docs/aturan-akses-database.md` butir 4. |
+| K-49-07 | Agregasi budget (u_c, veff Welch–Satterthwaite, faktor k), lantai CMC, PASS/FAIL | **Ikut bisa disunting per alat di Lembar Hitung.** Mengubah `AGENTS.md` §Profil kalibrasi ("tetap di kelas bersama") untuk alat yang punya Lembar Hitung aktif, dengan syarat di bawah. Dijawab pemilik 9 Okt 2026 lewat pilihan terstruktur; menjawab Q-49-10. |
+
+**Syarat K-49-07** (penjabaran gerbang paritas dan simulasi di atas, bukan aturan baru): setiap
+Lembar Hitung lahir dari templat yang memuat blok agregasi GUM bawaan, setara `GumCalculator`
+(`uc = √Σ(ui·ci)²`, Welch–Satterthwaite dengan penyebut **jumlah** semua baris, `k` = t-quantile
+0,975 dengan derajat bebas `floor(veff)`, lantai CMC, PASS bila `|error| + U ≤ toleransi`). Versi
+pertama tiap alat tetap wajib lolos gerbang paritas, jadi blok bawaan itu harus identik dengan
+jalur sekarang. `GumCalculator` tetap menghitung agregasi bersama untuk setiap sesi yang dihitung
+lembar, sebagai **pengawas**: bila hasil lembar beda, simulasi menampilkan selisihnya dan validator
+memberi PERINGATAN berkode (`agregasi_beda_dari_gum`) yang terbaca di jejak sesi, dan penyimpangan
+itu wajib punya catatan sumber (`AGENTS.md` §Olah data butir 4). Tidak memblokir, karena pemilik
+mengizinkan suntingan, tetapi tidak boleh diam. Kesalahan master yang sudah diketahui (mis. veff
+Volumetric Fixed yang dibagi satu baris `K43`, `docs/pertanyaan-lab-volumetric.md` no. 1) tidak
+otomatis ditiru: lembar pertama memakai blok bawaan; meniru master butuh versi baru, simulasi,
+pengesahan, dan jawaban lab. Karena `TINV`/`T.INV.2T` di lembar sekarang ikut jalur terbit, beda
+algoritmenya dengan `StudentTDistribution` (keduanya memotong derajat bebas ke bawah) diukur di
+spike S0a sebelum lembar mana pun aktif.
+
+**Syarat yang membuat K-49-02 aman** (berlaku untuk setiap versi rumus yang dibuat di Studio):
+1. Server tetap satu-satunya tempat menghitung. Studio menyunting; server mengevaluasi untuk
+   pratinjau, simulasi, dan sesi nyata.
+2. Rumus disimpan sebagai "Lembar Hitung" (sheet, sel, rumus, named range, pengikat input dan
+   output) di `formula_versions` (`sumber = database`), dengan isi kanonik dan sha256. Versi yang
+   sudah dipakai satu sesi saja tidak boleh diubah atau dihapus, hanya dipensiunkan.
+3. **Gerbang paritas.** Versi Lembar Hitung pertama untuk sebuah alat baru boleh aktif bila
+   hasilnya sama dengan profil PHP saat ini (nilai antara, U, angka cetak, keputusan) pada semua
+   sesi tersimpan dan vektor master. Pemeriksaannya dilakukan pihak independen (penjaga angka).
+4. Versi berikutnya: draf, lalu simulasi ke semua sesi tersimpan (apa yang berubah, berapa, dan
+   apakah angka cetak berubah), lalu pengesahan orang kedua, lalu berlaku untuk sesi baru menurut
+   `tanggal_kalibrasi`. Sertifikat terbit tetap memakai versi yang distempelkan padanya.
+5. Setiap versi wajib mencatat sumbernya (nomor IK, sel master, keputusan siapa dan kapan) di log
+   metode append-only. Penyimpangan dari master tetap dicatat di `type_b_components`
+   (`AGENTS.md` §Olah data butir 4).
+
+**Invarian yang tidak ikut longgar walau Studio mengelola semua tabel:** nilai isian teknisi tidak
+pernah dihapus (koreksi menyimpan nilai lama dan baru); `audit_logs`, `certificate_email_logs`, dan
+`paket_acuan_suntingan` tidak bisa diubah; sertifikat terbit, sesi disetujui, dan
+`uncertainty_calculations` tersimpan hanya bisa dibaca; penyaringan `organization_id`; pemisahan
+wewenang; `super_admin` tetap baca saja di luar pengecualian yang sudah tercatat. Studio mengakses
+tabel lewat API dengan daftar putih per tabel dan melewati model Eloquent, bukan SQL mentah.
+
+**Tahap:** S0 fondasi (tutup P1, spike mesin rumus, spike aplikasi Studio, pembaca .xlsm) → S1
+kerangka aplikasi → S2 Kelola Data → S3 data acuan tulis (P2 §48) → S4 mesin rumus dan Lembar
+Hitung, pilot Volumetric dan Micrometer → S5 editor rumus → S6 migrasi per alat. Rencana kerja ada
+di `_agents_workspace/studio-data-acuan/06-rencana-rescope.md` (lokal, tidak di-commit).
+
+**Status (9 Okt 2026):** P1 selesai dengan dua suite hijau (SQLite 5408 lulus dan 2 dilewati dari
+5410; MySQL 5410/5410, 286,5 menit). S0 berjalan.
+
+**Butuh dari pemilik:** `.xlsm` asli per alat, minimal Volumetric dan Micrometer untuk pilot.
+Ekspor CSV di `Project-PT-Sidik/alat-alat-Pt-Sidik/` memuat rumus, tetapi alamat rujukannya
+bergeser 1–3 baris di 46 folder non-tekanan, jadi tidak bisa dipakai sebagai peta sel final.
+
+**Temuan terpisah, belum dikerjakan:** `CalibrationController::isiUlangPengukuran()` menghapus
+`raw_measurements` dan `uncertainty_calculations` saat revisi tanpa menyimpan nilai lama. Ini
+dugaan pelanggaran `AGENTS.md` §Peran butir 5 dan belum dibuktikan dengan test.
+
 ## Gelombang & status
 
 Urutannya ditentukan berkas yang bertabrakan, bukan selera — G1 dan G3 sama-sama menyentuh 12
